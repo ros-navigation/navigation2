@@ -26,7 +26,7 @@ from cmath import sqrt
 
 class LineIterator():
 
-    def __init__(self, x0, y0, x1, y1):
+    def __init__(self, x0, y0, x1, y1, step_size=1):
         """
         Initializer for LineIterator.
 
@@ -36,6 +36,7 @@ class LineIterator():
                 y0: Ordinate of the initial point
                 x1: Abscissa of the final point
                 y1: Ordinate of the final point
+                step_size: Resolution of increments, default is 1
             Returns:
                 None
         """
@@ -45,10 +46,10 @@ class LineIterator():
         self.y1_ = y1
         self.x_ = x0
         self.y_ = y0
+        self.step_size_ = step_size
 
         if x1 != x0 and y1 != y0:
             self.valid_ = True
-            self.distance_ = abs(x1-x0)
             self.m_ = (y1-y0)/(x1-x0)
             self.b_ = y1 - (self.m_*x1)
             if (self.b_ < 0):
@@ -57,16 +58,15 @@ class LineIterator():
                 self.equation_ = "y = " + str(self.m_) + "*x + " + str(self.b_)
         elif x1 == x0 and y1 != y0:
             self.valid_ = True
-            self.distance_ = abs(y1-y0)
             self.equation_ = "x = " + str(x1)
         elif y1 == y1 and x1 != x0:
             self.valid_ = True
-            self.distance_ = abs(x1-x0)
+            self.m_ = (y1-y0)/(x1-x0)
+            self.b_ = y1 - (self.m_*x1)
             self.equation_ = "y = " + str(y1)
         else:
             self.valid_ = False
             self.equation_ = "Invalid"
-        self.step_ = self.distance_/1000
 
     def isValid(self):
         """Returns True if the line is valid"""
@@ -76,25 +76,29 @@ class LineIterator():
         """Advances to the next point in the line."""
         if self.x1_ > self.x0_:
             if self.x_ < self.x1_:
-                self.x_ = round(self.x_ + self.step_, 5)
+                self.x_ = round(self.clamp(
+                    self.x_ + self.step_size_, self.x0_, self.x1_), 5)
                 self.y_ = round(self.m_ * self.x_ + self.b_, 5)
             else:
                 self.valid_ = False
         elif self.x1_ < self.x0_:
             if self.x_ > self.x1_:
-                self.x_ = round(self.x_ - self.step_, 5)
+                self.x_ = round(self.clamp(
+                    self.x_ - self.step_size_, self.x1_, self.x0_), 5)
                 self.y_ = round(self.m_ * self.x_ + self.b_, 5)
             else:
                 self.valid_ = False
         else:
             if self.y1_ > self.y0_:
                 if self.y_ < self.y1_:
-                    self.y_ = round(self.y_ + self.step_, 5)
+                    self.y_ = round(self.clamp(
+                        self.y_ + self.step_size_, self.y0_, self.y1_), 5)
                 else:
                     self.valid_ = False
             elif self.y1_ < self.y0_:
                 if self.y_ > self.y1_:
-                    self.y_ = round(self.y_ - self.step_, 5)
+                    self.y_ = round(self.clamp(
+                        self.y_ - self.step_size_, self.y1_, self.y0_), 5)
                 else:
                     self.valid_ = False
             else:
@@ -139,3 +143,12 @@ class LineIterator():
     def get_curr_point(self):
         """Returns the coordinates of the current point as list [X,Y]."""
         return [self.x_, self.y_]
+
+    def clamp(self, n, min_n, max_n):
+        """Class Helper Function: Clamps n to be between min_n and max_n"""
+        if n < min_n:
+            return min_n
+        elif n > max_n:
+            return max_n
+        else:
+            return n
