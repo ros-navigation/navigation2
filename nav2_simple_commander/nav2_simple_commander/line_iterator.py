@@ -25,20 +25,15 @@ from cmath import sqrt
 
 
 class LineIterator():
+    def __init__(self, x0, y0, x1, y1, step_size=1.0):
+        """Initializer for LineIterator.
 
-    def __init__(self, x0, y0, x1, y1, step_size=1):
-        """
-        Initializer for LineIterator.
-
-        Initialize instance variables with parameter occupancy_map.
-            Args:
-                x0: Abscissa of the initial point
-                y0: Ordinate of the initial point
-                x1: Abscissa of the final point
-                y1: Ordinate of the final point
-                step_size: Resolution of increments, default is 1
-            Returns:
-                None
+        Args:
+            x0 (Float): Abscissa of the initial point
+            y0 (Float): Ordinate of the initial point
+            x1 (Float): Abscissa of the final point
+            y1 (Float): Ordinate of the final point
+            step_size (Float, optional): Resolution of increments. Defaults to 1.
         """
         self.x0_ = x0
         self.y0_ = x0
@@ -69,7 +64,10 @@ class LineIterator():
             self.equation_ = "Invalid"
 
     def isValid(self):
-        """Returns True if the line is valid"""
+        """Returns True if the line is valid
+        Returns:
+            Bool: Flag if live is valid (true) or not (false)
+        """
         return self.valid_
 
     def advance(self):
@@ -105,47 +103,96 @@ class LineIterator():
                 self.valid_ = False
 
     def getX(self):
-        """Returns the abscissa of the current point."""
+        """Returns the abscissa of the current point.
+
+        Returns:
+            Float: abscissa of current point
+        """
         return self.x_
 
     def getY(self):
-        """Returns the ordinate of the current point."""
+        """Returns the ordinate of the current point.
+
+        Returns:
+            Float: ordinate of current point
+        """
         return self.y_
 
     def getX0(self):
-        """Returns the abscissa of the initial point."""
+        """Returns the abscissa of the initial point.
+
+        Returns:
+            Float: abscissa of initial point
+        """
         return self.x0_
 
     def getY0(self):
-        """Returns the ordinate of the initial point."""
+        """Returns the ordinate of the intial point.
+
+        Returns:
+            Float: ordinate of intial point
+        """
         return self.y0_
 
     def getX1(self):
-        """Returns the abscissa of the final point."""
+        """Returns the abscissa of the final point.
+
+        Returns:
+            Float: abscissa of final point
+        """
         return self.x1_
 
     def getY1(self):
-        """Returns the ordinate of the final point."""
+        """Returns the ordinate of the final point.
+
+        Returns:
+            Float: ordinate of final point
+        """
         return self.y1_
 
     def get_line_length(self):
-        """Returns the length of the line."""
+        """Returns the length of the line.
+
+        Returns:
+            Float: Line Length
+        """
         return sqrt(pow(self.x1_ - self.x0_, 2) + pow(self.y1_ - self.y0_, 2))
 
     def get_line_equation(self):
-        """Returns the equation of the line as a string."""
+        """Returns the equation of the line as a string.
+
+        Returns:
+            String: Line's Equation
+        """
         return self.equation_
 
     def get_curr_point_str(self):
-        """Returns the coordinates of the current point as string."""
+        """Returns the coordinates of the current point as string.
+
+        Returns:
+            String: Current Coordinates
+        """
         return "X: " + str(self.x_) + "   Y: " + str(self.y_)
 
     def get_curr_point(self):
-        """Returns the coordinates of the current point as list [X,Y]."""
+        """Returns the coordinates of the current point as list [X,Y].
+
+        Returns:
+            List: Current Coordinates as float [X,Y]
+        """
         return [self.x_, self.y_]
 
     def clamp(self, n, min_n, max_n):
-        """Class Helper Function: Clamps n to be between min_n and max_n"""
+        """Class Helper Function: Clamps n to be between min_n and max_n
+
+        Args:
+            n (Float): input value
+            min_n (Float): minimum value
+            max_n (Float): maximum value
+
+        Returns:
+            Float: input value clamped between given min and max
+        """
         if n < min_n:
             return min_n
         elif n > max_n:
