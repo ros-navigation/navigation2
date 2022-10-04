@@ -61,7 +61,7 @@ public:
     getInput("service_name", service_name_);
     service_client_ = node_->create_client<ServiceT>(
       service_name_,
-      rmw_qos_profile_services_default,
+      rclcpp::SystemDefaultsQoS(),
       callback_group_);
 
     // Make a request for the service without parameter
