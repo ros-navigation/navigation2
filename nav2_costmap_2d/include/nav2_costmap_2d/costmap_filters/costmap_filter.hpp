@@ -42,6 +42,7 @@
 #include <mutex>
 
 #include "geometry_msgs/msg/pose2_d.hpp"
+#include "std_srvs/srv/set_bool.hpp"
 #include "nav2_costmap_2d/layer.hpp"
 
 namespace nav2_costmap_2d
@@ -154,6 +155,17 @@ public:
 
 protected:
   /**
+   * @brief Costmap filter enabling/disabling callback
+   * @param request_header Service request header
+   * @param request Service request
+   * @param response Service response
+   */
+  void enableCallback(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
+    std::shared_ptr<std_srvs::srv::SetBool::Response> response);
+
+  /**
    * @brief: Name of costmap filter info topic
    */
   std::string filter_info_topic_;
@@ -167,6 +179,11 @@ protected:
    * @brief: mask_frame_->global_frame_ transform tolerance
    */
   tf2::Duration transform_tolerance_;
+
+  /**
+   * @brief: A service to enable/disable costmap filter
+   */
+  rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr enable_service_;
 
 private:
   /**

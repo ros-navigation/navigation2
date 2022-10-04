@@ -63,15 +63,25 @@ void CostmapFilter::onInitialize()
   try {
     // Declare common for all costmap filters parameters
     declareParameter("enabled", rclcpp::ParameterValue(true));
+    declareParameter("enable_service", rclcpp::ParameterValue("enable"));
     declareParameter("filter_info_topic", rclcpp::PARAMETER_STRING);
     declareParameter("transform_tolerance", rclcpp::ParameterValue(0.1));
 
     // Get parameters
     node->get_parameter(name_ + "." + "enabled", enabled_);
     filter_info_topic_ = node->get_parameter(name_ + "." + "filter_info_topic").as_string();
+    std::string enable_service_name;
+    node->get_parameter(name_ + "." + "enable_service", enable_service_name);
     double transform_tolerance;
     node->get_parameter(name_ + "." + "transform_tolerance", transform_tolerance);
     transform_tolerance_ = tf2::durationFromSec(transform_tolerance);
+
+    // Costmap Filter enabling service
+    enable_service_ = node->create_service<std_srvs::srv::SetBool>(
+      name_ + "/" + enable_service_name,
+      std::bind(
+        &CostmapFilter::enableCallback, this,
+        std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
   } catch (const std::exception & ex) {
     RCLCPP_ERROR(logger_, "Parameter problem: %s", ex.what());
     throw ex;
@@ -118,6 +128,20 @@ void CostmapFilter::updateCosts(
 
   process(master_grid, min_i, min_j, max_i, max_j, latest_pose_);
   current_ = true;
+}
+
+void CostmapFilter::enableCallback(
+  const std::shared_ptr<rmw_request_id_t>/*request_header*/,
+  const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
+  std::shared_ptr<std_srvs::srv::SetBool::Response> response)
+{
+  enabled_ = request->data;
+  response->success = true;
+  if (enabled_) {
+    response->message = "Enabled";
+  } else {
+    response->message = "Disabled";
+  }
 }
 
 }  // namespace nav2_costmap_2d
