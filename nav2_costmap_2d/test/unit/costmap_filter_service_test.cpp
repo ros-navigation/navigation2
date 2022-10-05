@@ -24,7 +24,6 @@
 #include "std_srvs/srv/set_bool.hpp"
 
 static const char FILTER_NAME[]{"costmap_filter"};
-static const char ENABLE_SERVICE_NAME[]{"enable_service"};
 
 class CostmapFilterWrapper : public nav2_costmap_2d::CostmapFilter
 {
@@ -72,10 +71,6 @@ public:
 
     // Set CostmapFilter ROS-parameters
     node_->declare_parameter(
-      std::string(FILTER_NAME) + ".enable_service", rclcpp::ParameterValue(ENABLE_SERVICE_NAME));
-    node_->set_parameter(
-      rclcpp::Parameter(std::string(FILTER_NAME) + ".enable_service", ENABLE_SERVICE_NAME));
-    node_->declare_parameter(
       std::string(FILTER_NAME) + ".filter_info_topic", rclcpp::ParameterValue("filter_info"));
     node_->set_parameter(
       rclcpp::Parameter(std::string(FILTER_NAME) + ".filter_info_topic", "filter_info"));
@@ -115,7 +110,7 @@ TEST_F(TestNode, testEnableService)
   RCLCPP_INFO(node_->get_logger(), "Testing enabling service");
   auto req = std::make_shared<std_srvs::srv::SetBool::Request>();
   auto client = node_->create_client<std_srvs::srv::SetBool>(
-    std::string(FILTER_NAME) + "/" + std::string(ENABLE_SERVICE_NAME));
+    std::string(FILTER_NAME) + "/toggle_filter");
 
   RCLCPP_INFO(node_->get_logger(), "Waiting for enabling service");
   ASSERT_TRUE(client->wait_for_service());
