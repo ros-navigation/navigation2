@@ -17,6 +17,7 @@ find_package(rclcpp_lifecycle REQUIRED)
 find_package(rmw REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
@@ -66,6 +67,7 @@ set(dependencies
   rclcpp_lifecycle
   sensor_msgs
   std_msgs
+  std_srvs
   tf2
   tf2_geometry_msgs
   tf2_ros
