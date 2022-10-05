@@ -51,7 +51,7 @@ namespace nav2_costmap_2d
 BinaryFilter::BinaryFilter()
 : filter_info_sub_(nullptr), mask_sub_(nullptr),
   binary_state_pub_(nullptr), filter_mask_(nullptr), mask_frame_(""), global_frame_(""),
-  binary_state_(false)
+  default_state_(false), binary_state_(default_state_)
 {
 }
 
@@ -65,8 +65,10 @@ void BinaryFilter::initializeFilter(
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  // Declare "binary_state_topic" parameter specific to BinaryFilter only
+  // Declare parameters specific to BinaryFilter only
   std::string binary_state_topic;
+  declareParameter("default_state", rclcpp::ParameterValue(false));
+  node->get_parameter(name_ + "." + "default_state", default_state_);
   declareParameter("binary_state_topic", rclcpp::ParameterValue("binary_state"));
   node->get_parameter(name_ + "." + "binary_state_topic", binary_state_topic);
 
@@ -89,7 +91,7 @@ void BinaryFilter::initializeFilter(
   binary_state_pub_->on_activate();
 
   // Initialize state as "false" by-default
-  changeState(false);
+  changeState(default_state_);
 }
 
 void BinaryFilter::filterInfoCallback(
@@ -179,7 +181,10 @@ void BinaryFilter::process(
   unsigned int mask_robot_i, mask_robot_j;
   if (!worldToMask(filter_mask_, mask_pose.x, mask_pose.y, mask_robot_i, mask_robot_j)) {
     // Robot went out of mask range. Set "false" state by-default
-    changeState(false);
+    RCLCPP_WARN(
+      logger_,
+      "BinaryFilter: Robot is outside of filter mask. Resetting binary state to default.");
+    changeState(default_state_);
     return;
   }
 
@@ -190,12 +195,12 @@ void BinaryFilter::process(
     mask_data != nav2_util::OCC_GRID_UNKNOWN &&
     mask_data != nav2_util::OCC_GRID_FREE)
   {
-    if (!binary_state_) {
-      changeState(true);
+    if (binary_state_ == default_state_) {
+      changeState(!default_state_);
     }
   } else {
-    if (binary_state_) {
-      changeState(false);
+    if (binary_state_ != default_state_) {
+      changeState(default_state_);
     }
   }
 }
@@ -203,6 +208,9 @@ void BinaryFilter::process(
 void BinaryFilter::resetFilter()
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
+
+  RCLCPP_INFO(logger_, "BinaryFilter: Resetting the filter to default state");
+  changeState(default_state_);
 
   filter_info_sub_.reset();
   mask_sub_.reset();
