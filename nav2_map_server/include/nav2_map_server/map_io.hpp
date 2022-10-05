@@ -22,6 +22,9 @@
 
 #include "nav2_map_server/map_mode.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
+#include "grid_map_ros/grid_map_ros.hpp"
+#include "grid_map_ros/GridMapRosConverter.hpp"
+#include "grid_map_msgs/msg/grid_map.hpp"
 
 /* Map input part */
 
@@ -37,6 +40,9 @@ struct LoadParameters
   double occupied_thresh;
   MapMode mode;
   bool negate;
+  std::string elevation_image_file_name;
+  double min_height;
+  double max_height;
 };
 
 typedef enum
@@ -77,6 +83,19 @@ LOAD_MAP_STATUS loadMapFromYaml(
   nav_msgs::msg::OccupancyGrid & map);
 
 
+/**
+ * @brief Load the map YAML, image from map file and
+ * generate an OccupancyGrid
+ * @param yaml_file Name of input YAML file
+ * @param map Output loaded map
+ * @param msg_grid_map Output loaded grid_map
+ * @return status of map loaded
+ */
+LOAD_MAP_STATUS loadMapFromYaml(
+  const std::string & yaml_file,
+  nav_msgs::msg::OccupancyGrid & map,
+  grid_map_msgs::msg::GridMap & msg_grid_map);
+
 /* Map output part */
 
 struct SaveParameters
@@ -97,6 +116,11 @@ struct SaveParameters
 bool saveMapToFile(
   const nav_msgs::msg::OccupancyGrid & map,
   const SaveParameters & save_parameters);
+
+bool saveMapToFile(
+  const grid_map_msgs::msg::GridMap & map,
+  const SaveParameters & save_parameters);
+
 
 }  // namespace nav2_map_server
 

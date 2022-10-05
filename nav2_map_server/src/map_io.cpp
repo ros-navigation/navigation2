@@ -156,6 +156,28 @@ LoadParameters loadMapYaml(const std::string & yaml_filename)
     load_parameters.negate = yaml_get_value<bool>(doc, "negate");
   }
 
+
+  auto map_elevation_image_node = doc["elevation_image"];
+  if (!map_elevation_image_node.IsDefined()) {
+    load_parameters.elevation_image_file_name = "";
+  } else {
+
+    auto elevation_image_file_name = yaml_get_value<std::string>(doc, "elevation_image");
+    if (elevation_image_file_name.empty()) {
+      throw YAML::Exception(doc["elevation_image"].Mark(), "The elevation_image tag was empty.");
+    }
+    if (elevation_image_file_name[0] != '/') {
+      // dirname takes a mutable char *, so we copy into a vector
+      std::vector<char> fname_copy(yaml_filename.begin(), yaml_filename.end());
+      fname_copy.push_back('\0');
+      elevation_image_file_name = std::string(dirname(fname_copy.data())) + '/' + elevation_image_file_name;
+    }
+    load_parameters.elevation_image_file_name = elevation_image_file_name;
+
+    load_parameters.min_height = yaml_get_value<double>(doc, "min_height");
+    load_parameters.max_height = yaml_get_value<double>(doc, "max_height");
+
+  }
   std::cout << "[DEBUG] [map_io]: resolution: " << load_parameters.resolution << std::endl;
   std::cout << "[DEBUG] [map_io]: origin[0]: " << load_parameters.origin[0] << std::endl;
   std::cout << "[DEBUG] [map_io]: origin[1]: " << load_parameters.origin[1] << std::endl;
@@ -166,6 +188,11 @@ LoadParameters loadMapYaml(const std::string & yaml_filename)
   std::cout << "[DEBUG] [map_io]: mode: " << map_mode_to_string(load_parameters.mode) << std::endl;
   std::cout << "[DEBUG] [map_io]: negate: " << load_parameters.negate << std::endl;  //NOLINT
 
+  if (load_parameters.elevation_image_file_name != "") {
+    std::cout << "[DEBUG] [map_io]: elevation_file_name: " << load_parameters.elevation_image_file_name  << std::endl;
+    std::cout << "[DEBUG] [map_io]: min_height: " << load_parameters.min_height << std::endl; 
+    std::cout << "[DEBUG] [map_io]: max_height: " << load_parameters.max_height << std::endl;
+  }
   return load_parameters;
 }
 
@@ -272,6 +299,60 @@ void loadMapFromFile(
   map = msg;
 }
 
+void loadGridMapFromFile(
+  const LoadParameters & load_parameters,
+  grid_map::GridMap & grid_map_to_fill)
+{
+  Magick::InitializeMagick(nullptr);
+
+  std::cout << "[INFO] [map_io]: Loading elevation_image_file: " <<
+    load_parameters.elevation_image_file_name << std::endl;
+  Magick::Image img(load_parameters.elevation_image_file_name);
+
+  // supposing the iterator gives the same order as the img
+  for (grid_map::GridMapIterator grid_iterator(grid_map_to_fill); !grid_iterator.isPastEnd();
+    ++grid_iterator) {
+    // get the value at the iterator
+    grid_map::Position current_pos;
+    grid_map_to_fill.getPosition(*grid_iterator, current_pos);
+    auto pixel = img.pixelColor((current_pos.y() + 30) / 0.5, (current_pos.x() + 30) / 0.5);
+    // (current_pos.x - min_x) / resolution to get the index
+
+    std::vector<Magick::Quantum> channels = {pixel.redQuantum(), pixel.greenQuantum(),
+      pixel.blueQuantum()};
+    if (load_parameters.mode == MapMode::Trinary && img.matte()) {
+      // To preserve existing behavior, average in alpha with color channels in Trinary mode.
+      // CAREFUL. alpha is inverted from what you might expect. High = transparent, low = opaque
+      channels.push_back(MaxRGB - pixel.alphaQuantum());
+    }
+    double sum = 0;
+    for (auto c : channels) {
+      sum += c;
+    }
+    /// on a scale from 0.0 to 1.0 how bright is the pixel?
+    double shade = Magick::ColorGray::scaleQuantumToDouble(sum / channels.size());
+
+    // If negate is true, we consider blacker pixels free, and whiter
+    // pixels occupied. Otherwise, it's vice versa.
+    /// on a scale from 0.0 to 1.0, how occupied is the map cell (before thresholding)?
+    double occ = (load_parameters.negate ? shade : 1.0 - shade);
+
+    double map_cell;
+    // we suppose that the elevation uses the Scale mode
+    // ignore the occupied and free threshold
+    map_cell =
+      occ * (load_parameters.max_height - load_parameters.min_height) + load_parameters.min_height;
+
+    grid_map_to_fill.atPosition("elevation", current_pos) = map_cell;
+  }
+
+  std::cout <<
+    "[DEBUG] [map_io]: Read map " << load_parameters.elevation_image_file_name << ": " <<
+     img.size().width() << " X " << img.size().height() << " map @ " <<
+     load_parameters.resolution << " m/cell" << std::endl;
+
+}
+
 LOAD_MAP_STATUS loadMapFromYaml(
   const std::string & yaml_file,
   nav_msgs::msg::OccupancyGrid & map)
@@ -308,6 +389,68 @@ LOAD_MAP_STATUS loadMapFromYaml(
   return LOAD_MAP_SUCCESS;
 }
 
+LOAD_MAP_STATUS loadMapFromYaml(
+  const std::string & yaml_file,
+  nav_msgs::msg::OccupancyGrid & map, grid_map_msgs::msg::GridMap & msg_grid_map)
+{
+  if (yaml_file.empty()) {
+    std::cerr << "[ERROR] [map_io]: YAML file name is empty, can't load!" << std::endl;
+    return MAP_DOES_NOT_EXIST;
+  }
+  std::cout << "[INFO] [map_io]: Loading yaml file: " << yaml_file << std::endl;
+  LoadParameters load_parameters;
+  try {
+    load_parameters = loadMapYaml(yaml_file);
+  } catch (YAML::Exception & e) {
+    std::cerr <<
+      "[ERROR] [map_io]: Failed processing YAML file " << yaml_file << " at position (" <<
+      e.mark.line << ":" << e.mark.column << ") for reason: " << e.what() << std::endl;
+    return INVALID_MAP_METADATA;
+  } catch (std::exception & e) {
+    std::cerr <<
+      "[ERROR] [map_io]: Failed to parse map YAML loaded from file " << yaml_file <<
+      " for reason: " << e.what() << std::endl;
+    return INVALID_MAP_METADATA;
+  }
+
+  try {
+    loadMapFromFile(load_parameters, map);
+  } catch (std::exception & e) {
+    std::cerr <<
+      "[ERROR] [map_io]: Failed to load image file " << load_parameters.image_file_name <<
+      " for reason: " << e.what() << std::endl;
+    return INVALID_MAP_DATA;
+  }
+
+  try {
+    grid_map::GridMap grid_map_to_fill({"elevation", "occupancy"});
+
+    // convert the occupation map to a layer in the grid_map
+    grid_map::GridMapRosConverter::fromOccupancyGrid(map, "occupancy", grid_map_to_fill);
+    // it sets the length, resolution etc to the params in the map
+
+    msg_grid_map = * grid_map::GridMapRosConverter::toMessage(grid_map_to_fill);
+
+    if (load_parameters.elevation_image_file_name != "") {
+      loadGridMapFromFile(load_parameters, grid_map_to_fill);
+
+    } else {
+      // set an elevation layer of 0.0
+
+      grid_map_to_fill.add("elevation", 0.0);
+    }
+
+    msg_grid_map = * grid_map::GridMapRosConverter::toMessage(grid_map_to_fill);
+  } catch (std::exception & e) {
+    std::cerr <<
+      "[ERROR] [map_io]: Failed to load elevation image file " <<
+       load_parameters.elevation_image_file_name <<
+      " for reason: " << e.what() << std::endl;
+    return INVALID_MAP_DATA;
+  }
+
+  return LOAD_MAP_SUCCESS;
+}
 // === Map output part ===
 
 /**
@@ -495,10 +638,16 @@ void tryWriteMapToFile(
     std::cout << "[INFO] [map_io]: Writing map occupancy data to " << mapdatafile << std::endl;
     image.write(mapdatafile);
   }
+}
 
-  std::string mapmetadatafile = save_parameters.map_file_name + ".yaml";
-  {
-    std::ofstream yaml(mapmetadatafile);
+void WriteMetadataOcc(
+  const nav_msgs::msg::OccupancyGrid & map,
+  const SaveParameters & save_parameters,
+  std::string mapdatafile,
+  std::string mapmetadatafile)
+{
+
+  std::ofstream yaml(mapmetadatafile);
 
     geometry_msgs::msg::Quaternion orientation = map.info.origin.orientation;
     tf2::Matrix3x3 mat(tf2::Quaternion(orientation.x, orientation.y, orientation.z, orientation.w));
@@ -528,7 +677,58 @@ void tryWriteMapToFile(
 
     std::cout << "[INFO] [map_io]: Writing map metadata to " << mapmetadatafile << std::endl;
     std::ofstream(mapmetadatafile) << e.c_str();
+}
+
+void WriteMetadataToFile(
+  const nav_msgs::msg::OccupancyGrid & map,
+  const SaveParameters & save_parameters)
+{
+  std::string mapdatafile = save_parameters.map_file_name + "." + save_parameters.image_format;
+  std::string mapmetadatafile = save_parameters.map_file_name + ".yaml";
+  {
+    WriteMetadataOcc(map, save_parameters, mapdatafile, mapmetadatafile);
   }
+  std::cout << "[INFO] [map_io]: Map saved" << std::endl;
+}
+
+void WriteMetadataToFile(
+  const grid_map_msgs::msg::GridMap & map,
+  const SaveParameters & save_parameters)
+{
+  std::string mapdatafile = save_parameters.map_file_name + "." + save_parameters.image_format;
+  std::string mapmetadatafile = save_parameters.map_file_name + ".yaml";
+
+  // occupancy
+
+  nav_msgs::msg::OccupancyGrid occ_map;
+  grid_map::GridMap my_grid_map;
+  grid_map::GridMapRosConverter::fromMessage(map, my_grid_map);
+  grid_map::GridMapRosConverter::toOccupancyGrid(my_grid_map, "occupancy", 0.0, 254.0, occ_map);
+
+  {
+    WriteMetadataOcc(occ_map, save_parameters, "occ_" + mapdatafile, mapmetadatafile);
+  }
+
+  // occupancy data added
+
+  // elevation
+  YAML::Emitter e;
+  e << YAML::Precision(3);
+  e << YAML::Newline;
+  e << YAML::Comment(" elevation layer");
+  e << YAML::BeginMap;
+  e << YAML::Key << "elevation_image" << YAML::Value << "ele_" + mapdatafile;
+  e << YAML::Key << "min_height" << YAML::Value << -5.0;
+  e << YAML::Key << "max_height" << YAML::Value << 5.0;
+  
+  if (!e.good()) {
+      std::cout <<
+        "[WARN] [map_io]: YAML writer failed with an error " << e.GetLastError() <<
+        ". The map metadata may be invalid." << std::endl;
+  }
+
+  std::cout << "[INFO] [map_io]: Writing map metadata to " << mapmetadatafile << std::endl;
+  std::ofstream(mapmetadatafile, std::ios_base::openmode::_S_app) << e.c_str();
   std::cout << "[INFO] [map_io]: Map saved" << std::endl;
 }
 
@@ -544,10 +744,59 @@ bool saveMapToFile(
     checkSaveParameters(save_parameters_loc);
 
     tryWriteMapToFile(map, save_parameters_loc);
+    WriteMetadataToFile(map, save_parameters_loc);
   } catch (std::exception & e) {
     std::cout << "[ERROR] [map_io]: Failed to write map for reason: " << e.what() << std::endl;
     return false;
   }
+  return true;
+}
+
+bool saveMapToFile(
+  const grid_map_msgs::msg::GridMap & map,
+  const SaveParameters & save_parameters)
+{
+  // Local copy of SaveParameters that might be modified by checkSaveParameters()
+  SaveParameters save_parameters_loc = save_parameters;
+  checkSaveParameters(save_parameters_loc);
+
+  grid_map::GridMap gridmap;
+  grid_map::GridMapRosConverter::fromMessage(map, gridmap, {"occupancy", "elevation"});
+
+  nav_msgs::msg::OccupancyGrid occ_grid;
+  grid_map::GridMapRosConverter::toOccupancyGrid(gridmap, "occupancy", 0.0, 254.0, occ_grid);
+  nav_msgs::msg::OccupancyGrid ele_grid;
+  // TO-DO: min_height max_height to be added
+  grid_map::GridMapRosConverter::toOccupancyGrid(gridmap, "elevation", -5.0, 5.0, ele_grid);
+
+  try {
+    // Checking map parameters for consistency
+    checkSaveParameters(save_parameters_loc);
+    save_parameters_loc.map_file_name = "occ_" + save_parameters_loc.map_file_name;
+
+    tryWriteMapToFile(occ_grid, save_parameters_loc);
+  } catch (std::exception & e) {
+    std::cout << "[ERROR] [map_io]: Failed to write map for reason: " << e.what() << std::endl;
+    return false;
+  }
+
+    try {
+    // Checking map parameters for consistency
+    save_parameters_loc = save_parameters;
+    checkSaveParameters(save_parameters_loc);
+    save_parameters_loc.map_file_name = "ele_" + save_parameters_loc.map_file_name;
+    // elevation must be read in scale mode
+    save_parameters_loc.mode = nav2_map_server::MapMode::Scale;
+    tryWriteMapToFile(ele_grid, save_parameters_loc);
+  } catch (std::exception & e) {
+    std::cout << "[ERROR] [map_io]: Failed to write map for reason: " << e.what() << std::endl;
+    return false;
+  }
+
+  save_parameters_loc = save_parameters;
+  checkSaveParameters(save_parameters_loc);
+  WriteMetadataToFile(map, save_parameters_loc);
+
   return true;
 }
 

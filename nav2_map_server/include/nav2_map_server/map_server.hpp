@@ -24,6 +24,8 @@
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav_msgs/srv/get_map.hpp"
 #include "nav2_msgs/srv/load_map.hpp"
+#include "grid_map_msgs/msg/grid_map.hpp"
+#include "grid_map_msgs/srv/get_grid_map.hpp"
 
 namespace nav2_map_server
 {
@@ -108,6 +110,17 @@ protected:
     std::shared_ptr<nav_msgs::srv::GetMap::Response> response);
 
   /**
+   * @brief GridMap getting service callback
+   * @param request_header Service request header
+   * @param request Service request
+   * @param response Service response
+   */
+  void getGridMapCallback(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<grid_map_msgs::srv::GetGridMap::Request> request,
+    std::shared_ptr<grid_map_msgs::srv::GetGridMap::Response> response);
+
+  /**
    * @brief Map loading service callback
    * @param request_header Service request header
    * @param request Service request
@@ -119,7 +132,10 @@ protected:
     std::shared_ptr<nav2_msgs::srv::LoadMap::Response> response);
 
   // The name of the service for getting a map
-  const std::string service_name_{"map"};
+  const std::string occ_map_service_name_{"map"};
+
+  // The name of the service for getting a map
+  const std::string grid_map_service_name_{"grid_map"};
 
   // The name of the service for loading a map
   const std::string load_map_service_name_{"load_map"};
@@ -127,11 +143,17 @@ protected:
   // A service to provide the occupancy grid (GetMap) and the message to return
   rclcpp::Service<nav_msgs::srv::GetMap>::SharedPtr occ_service_;
 
+  // A service to provide the grid_map (GetGridMap) and the message to return
+  rclcpp::Service<grid_map_msgs::srv::GetGridMap>::SharedPtr grid_map_service_;
+
   // A service to load the occupancy grid from file at run time (LoadMap)
   rclcpp::Service<nav2_msgs::srv::LoadMap>::SharedPtr load_map_service_;
 
   // A topic on which the occupancy grid will be published
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::OccupancyGrid>::SharedPtr occ_pub_;
+
+  // A topic on which the grid_map will be published
+  rclcpp_lifecycle::LifecyclePublisher<grid_map_msgs::msg::GridMap>::SharedPtr grid_map_pub_;
 
   // The frame ID used in the returned OccupancyGrid message
   std::string frame_id_;
@@ -141,6 +163,8 @@ protected:
 
   // true if msg_ was initialized
   bool map_available_;
+  // The message to publish on the occupancy grid topic
+  grid_map_msgs::msg::GridMap msg_grid_map_;
 };
 
 }  // namespace nav2_map_server
