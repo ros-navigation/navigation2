@@ -74,7 +74,10 @@ protected:
    * there is no footprint subscription in this class.
    * @return True if all parameters were obtained or false in failure case
    */
-  bool getParameters(std::string & polygon_pub_topic, std::string & footprint_topic) override;
+  bool getParameters(
+    std::string & polygon_sub_topic,
+    std::string & polygon_pub_topic,
+    std::string & footprint_topic) override;
 
   // ----- Variables -----
 

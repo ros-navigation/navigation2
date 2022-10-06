@@ -43,6 +43,8 @@ Polygon::Polygon(
 Polygon::~Polygon()
 {
   RCLCPP_INFO(logger_, "[%s]: Destroying Polygon", polygon_name_.c_str());
+  polygon_sub_.reset();
+  polygon_pub_.reset();
   poly_.clear();
 }
 
@@ -53,13 +55,28 @@ bool Polygon::configure()
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  std::string polygon_pub_topic, footprint_topic;
+  std::string polygon_sub_topic, polygon_pub_topic, footprint_topic;
 
-  if (!getParameters(polygon_pub_topic, footprint_topic)) {
+  if (!getParameters(polygon_sub_topic, polygon_pub_topic, footprint_topic)) {
     return false;
   }
 
+  if (!polygon_sub_topic.empty()) {
+    RCLCPP_INFO(
+      logger_,
+      "[%s]: Subscribing on %s topic for polygon",
+      polygon_name_.c_str(), polygon_sub_topic.c_str());
+    rclcpp::QoS polygon_qos = rclcpp::SystemDefaultsQoS();  // set to default
+    polygon_sub_ = node->create_subscription<geometry_msgs::msg::PolygonStamped>(
+      polygon_sub_topic, polygon_qos,
+      std::bind(&Polygon::polygonCallback, this, std::placeholders::_1));
+  }
+
   if (!footprint_topic.empty()) {
+    RCLCPP_INFO(
+      logger_,
+      "[%s]: Making footprint subscriber on %s topic",
+      polygon_name_.c_str(), footprint_topic.c_str());
     footprint_sub_ = std::make_unique<nav2_costmap_2d::FootprintSubscriber>(
       node, footprint_topic, *tf_buffer_,
       base_frame_id_, tf2::durationToSec(transform_tolerance_));
@@ -280,7 +297,10 @@ bool Polygon::getCommonParameters(std::string & polygon_pub_topic)
   return true;
 }
 
-bool Polygon::getParameters(std::string & polygon_pub_topic, std::string & footprint_topic)
+bool Polygon::getParameters(
+  std::string & polygon_sub_topic,
+  std::string & polygon_pub_topic,
+  std::string & footprint_topic)
 {
   auto node = node_.lock();
   if (!node) {
@@ -300,12 +320,27 @@ bool Polygon::getParameters(std::string & polygon_pub_topic, std::string & footp
       footprint_topic =
         node->get_parameter(polygon_name_ + ".footprint_topic").as_string();
 
-      // This is robot footprint: do not need to get polygon points from ROS parameters.
+      // This is robot footprint: do not need to get polygon points from ROS parameters or topic.
       // It will be set dynamically later.
+      polygon_sub_topic.clear();
       return true;
     } else {
       // Make it empty otherwise
       footprint_topic.clear();
+    }
+
+    try {
+      nav2_util::declare_parameter_if_not_declared(
+        node, polygon_name_ + ".polygon_sub_topic", rclcpp::PARAMETER_STRING);
+      polygon_sub_topic =
+        node->get_parameter(polygon_name_ + ".polygon_sub_topic").as_string();
+      // Do not need to proceed further, if polygon_sub_topic parameter is defined.
+      // Dynamic polygon will be used.
+      return true;
+    } catch (const rclcpp::exceptions::ParameterUninitializedException & ex) {
+      // polygon_sub_topic parameter is not defined: initializing polygon with points.
+      // Static polygon will be used.
+      polygon_sub_topic.clear();
     }
 
     // Leave it not initialized: the will cause an error if it will not set
@@ -343,6 +378,37 @@ bool Polygon::getParameters(std::string & polygon_pub_topic, std::string & footp
   }
 
   return true;
+}
+
+void Polygon::updatePolygon(geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg)
+{
+  std::size_t new_size = msg->polygon.points.size();
+
+  if (new_size < 3) {
+    RCLCPP_ERROR(
+      logger_,
+      "[%s]: Polygon should have at least 3 points",
+      polygon_name_.c_str());
+    return;
+  }
+
+  // Set main polygon vertices
+  poly_.resize(new_size);
+  for (std::size_t i = 0; i < new_size; i++) {
+    poly_[i] = {msg->polygon.points[i].x, msg->polygon.points[i].y};
+  }
+
+  // Set polygon for visualization
+  polygon_ = msg->polygon;
+}
+
+void Polygon::polygonCallback(geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg)
+{
+  RCLCPP_INFO(
+    logger_,
+    "[%s]: Polygon shape update has been arrived",
+    polygon_name_.c_str());
+  updatePolygon(msg);
 }
 
 inline bool Polygon::isPointInside(const Point & point) const

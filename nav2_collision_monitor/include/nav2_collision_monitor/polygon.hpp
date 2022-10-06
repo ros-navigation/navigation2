@@ -150,11 +150,27 @@ protected:
 
   /**
    * @brief Supporting routine obtaining polygon-specific ROS-parameters
+   * @brief polygon_sub_topic Input name of polygon subscription topic
    * @param polygon_pub_topic Output name of polygon publishing topic
    * @param footprint_topic Output name of footprint topic. Empty, if no footprint subscription
    * @return True if all parameters were obtained or false in failure case
    */
-  virtual bool getParameters(std::string & polygon_pub_topic, std::string & footprint_topic);
+  virtual bool getParameters(
+    std::string & polygon_sub_topic,
+    std::string & polygon_pub_topic,
+    std::string & footprint_topic);
+
+  /**
+   * @brief Updates polygon from geometry_msgs::msg::Polygon points
+   * @param msg Polygon message to update points from
+   */
+  void updatePolygon(geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg);
+
+  /**
+   * @brief Dynamic polygon callback
+   * @param msg Shared pointer to the polygon message
+   */
+  void polygonCallback(geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg);
 
   /**
    * @brief Checks if point is inside polygon
@@ -183,6 +199,8 @@ protected:
   double time_before_collision_;
   /// @brief Time step for robot movement simulation
   double simulation_time_step_;
+  /// @brief Polygon subscription
+  rclcpp::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_sub_;
   /// @brief Footprint subscriber
   std::unique_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
 
