@@ -217,7 +217,7 @@ void MapServer::getGridMapCallback(
   const std::shared_ptr<grid_map_msgs::srv::GetGridMap::Request>/*request*/,
   std::shared_ptr<grid_map_msgs::srv::GetGridMap::Response> response)
 {
- // if not in ACTIVE state, ignore request
+  // if not in ACTIVE state, ignore request
   if (get_current_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
     RCLCPP_WARN(
       get_logger(),

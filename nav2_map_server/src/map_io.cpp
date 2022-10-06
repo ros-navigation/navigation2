@@ -161,7 +161,6 @@ LoadParameters loadMapYaml(const std::string & yaml_filename)
   if (!map_elevation_image_node.IsDefined()) {
     load_parameters.elevation_image_file_name = "";
   } else {
-
     auto elevation_image_file_name = yaml_get_value<std::string>(doc, "elevation_image");
     if (elevation_image_file_name.empty()) {
       throw YAML::Exception(doc["elevation_image"].Mark(), "The elevation_image tag was empty.");
@@ -170,14 +169,15 @@ LoadParameters loadMapYaml(const std::string & yaml_filename)
       // dirname takes a mutable char *, so we copy into a vector
       std::vector<char> fname_copy(yaml_filename.begin(), yaml_filename.end());
       fname_copy.push_back('\0');
-      elevation_image_file_name = std::string(dirname(fname_copy.data())) + '/' + elevation_image_file_name;
+      elevation_image_file_name =
+        std::string(dirname(fname_copy.data())) + '/' + elevation_image_file_name;
     }
     load_parameters.elevation_image_file_name = elevation_image_file_name;
 
     load_parameters.min_height = yaml_get_value<double>(doc, "min_height");
     load_parameters.max_height = yaml_get_value<double>(doc, "max_height");
-
   }
+
   std::cout << "[DEBUG] [map_io]: resolution: " << load_parameters.resolution << std::endl;
   std::cout << "[DEBUG] [map_io]: origin[0]: " << load_parameters.origin[0] << std::endl;
   std::cout << "[DEBUG] [map_io]: origin[1]: " << load_parameters.origin[1] << std::endl;
@@ -189,8 +189,9 @@ LoadParameters loadMapYaml(const std::string & yaml_filename)
   std::cout << "[DEBUG] [map_io]: negate: " << load_parameters.negate << std::endl;  //NOLINT
 
   if (load_parameters.elevation_image_file_name != "") {
-    std::cout << "[DEBUG] [map_io]: elevation_file_name: " << load_parameters.elevation_image_file_name  << std::endl;
-    std::cout << "[DEBUG] [map_io]: min_height: " << load_parameters.min_height << std::endl; 
+    std::cout << "[DEBUG] [map_io]: elevation_file_name: "
+              << load_parameters.elevation_image_file_name << std::endl;
+    std::cout << "[DEBUG] [map_io]: min_height: " << load_parameters.min_height << std::endl;
     std::cout << "[DEBUG] [map_io]: max_height: " << load_parameters.max_height << std::endl;
   }
   return load_parameters;
@@ -311,7 +312,8 @@ void loadGridMapFromFile(
 
   // supposing the iterator gives the same order as the img
   for (grid_map::GridMapIterator grid_iterator(grid_map_to_fill); !grid_iterator.isPastEnd();
-    ++grid_iterator) {
+    ++grid_iterator)
+  {
     // get the value at the iterator
     grid_map::Position current_pos;
     grid_map_to_fill.getPosition(*grid_iterator, current_pos);
@@ -348,9 +350,8 @@ void loadGridMapFromFile(
 
   std::cout <<
     "[DEBUG] [map_io]: Read map " << load_parameters.elevation_image_file_name << ": " <<
-     img.size().width() << " X " << img.size().height() << " map @ " <<
-     load_parameters.resolution << " m/cell" << std::endl;
-
+    img.size().width() << " X " << img.size().height() << " map @ " <<
+    load_parameters.resolution << " m/cell" << std::endl;
 }
 
 LOAD_MAP_STATUS loadMapFromYaml(
@@ -429,7 +430,7 @@ LOAD_MAP_STATUS loadMapFromYaml(
     grid_map::GridMapRosConverter::fromOccupancyGrid(map, "occupancy", grid_map_to_fill);
     // it sets the length, resolution etc to the params in the map
 
-    msg_grid_map = * grid_map::GridMapRosConverter::toMessage(grid_map_to_fill);
+    msg_grid_map = *grid_map::GridMapRosConverter::toMessage(grid_map_to_fill);
 
     if (load_parameters.elevation_image_file_name != "") {
       loadGridMapFromFile(load_parameters, grid_map_to_fill);
@@ -440,11 +441,11 @@ LOAD_MAP_STATUS loadMapFromYaml(
       grid_map_to_fill.add("elevation", 0.0);
     }
 
-    msg_grid_map = * grid_map::GridMapRosConverter::toMessage(grid_map_to_fill);
+    msg_grid_map = *grid_map::GridMapRosConverter::toMessage(grid_map_to_fill);
   } catch (std::exception & e) {
     std::cerr <<
       "[ERROR] [map_io]: Failed to load elevation image file " <<
-       load_parameters.elevation_image_file_name <<
+      load_parameters.elevation_image_file_name <<
       " for reason: " << e.what() << std::endl;
     return INVALID_MAP_DATA;
   }
@@ -646,37 +647,36 @@ void WriteMetadataOcc(
   std::string mapdatafile,
   std::string mapmetadatafile)
 {
-
   std::ofstream yaml(mapmetadatafile);
 
-    geometry_msgs::msg::Quaternion orientation = map.info.origin.orientation;
-    tf2::Matrix3x3 mat(tf2::Quaternion(orientation.x, orientation.y, orientation.z, orientation.w));
-    double yaw, pitch, roll;
-    mat.getEulerYPR(yaw, pitch, roll);
+  geometry_msgs::msg::Quaternion orientation = map.info.origin.orientation;
+  tf2::Matrix3x3 mat(tf2::Quaternion(orientation.x, orientation.y, orientation.z, orientation.w));
+  double yaw, pitch, roll;
+  mat.getEulerYPR(yaw, pitch, roll);
 
-    const int file_name_index = mapdatafile.find_last_of("/\\");
-    std::string image_name = mapdatafile.substr(file_name_index + 1);
+  const int file_name_index = mapdatafile.find_last_of("/\\");
+  std::string image_name = mapdatafile.substr(file_name_index + 1);
 
-    YAML::Emitter e;
-    e << YAML::Precision(3);
-    e << YAML::BeginMap;
-    e << YAML::Key << "image" << YAML::Value << image_name;
-    e << YAML::Key << "mode" << YAML::Value << map_mode_to_string(save_parameters.mode);
-    e << YAML::Key << "resolution" << YAML::Value << map.info.resolution;
-    e << YAML::Key << "origin" << YAML::Flow << YAML::BeginSeq << map.info.origin.position.x <<
-      map.info.origin.position.y << yaw << YAML::EndSeq;
-    e << YAML::Key << "negate" << YAML::Value << 0;
-    e << YAML::Key << "occupied_thresh" << YAML::Value << save_parameters.occupied_thresh;
-    e << YAML::Key << "free_thresh" << YAML::Value << save_parameters.free_thresh;
+  YAML::Emitter e;
+  e << YAML::Precision(3);
+  e << YAML::BeginMap;
+  e << YAML::Key << "image" << YAML::Value << image_name;
+  e << YAML::Key << "mode" << YAML::Value << map_mode_to_string(save_parameters.mode);
+  e << YAML::Key << "resolution" << YAML::Value << map.info.resolution;
+  e << YAML::Key << "origin" << YAML::Flow << YAML::BeginSeq << map.info.origin.position.x <<
+    map.info.origin.position.y << yaw << YAML::EndSeq;
+  e << YAML::Key << "negate" << YAML::Value << 0;
+  e << YAML::Key << "occupied_thresh" << YAML::Value << save_parameters.occupied_thresh;
+  e << YAML::Key << "free_thresh" << YAML::Value << save_parameters.free_thresh;
 
-    if (!e.good()) {
-      std::cout <<
-        "[WARN] [map_io]: YAML writer failed with an error " << e.GetLastError() <<
-        ". The map metadata may be invalid." << std::endl;
-    }
+  if (!e.good()) {
+    std::cout <<
+      "[WARN] [map_io]: YAML writer failed with an error " << e.GetLastError() <<
+      ". The map metadata may be invalid." << std::endl;
+  }
 
-    std::cout << "[INFO] [map_io]: Writing map metadata to " << mapmetadatafile << std::endl;
-    std::ofstream(mapmetadatafile) << e.c_str();
+  std::cout << "[INFO] [map_io]: Writing map metadata to " << mapmetadatafile << std::endl;
+  std::ofstream(mapmetadatafile) << e.c_str();
 }
 
 void WriteMetadataToFile(
@@ -720,11 +720,11 @@ void WriteMetadataToFile(
   e << YAML::Key << "elevation_image" << YAML::Value << "ele_" + mapdatafile;
   e << YAML::Key << "min_height" << YAML::Value << -5.0;
   e << YAML::Key << "max_height" << YAML::Value << 5.0;
-  
+
   if (!e.good()) {
-      std::cout <<
-        "[WARN] [map_io]: YAML writer failed with an error " << e.GetLastError() <<
-        ". The map metadata may be invalid." << std::endl;
+    std::cout <<
+      "[WARN] [map_io]: YAML writer failed with an error " << e.GetLastError() <<
+      ". The map metadata may be invalid." << std::endl;
   }
 
   std::cout << "[INFO] [map_io]: Writing map metadata to " << mapmetadatafile << std::endl;
@@ -780,7 +780,7 @@ bool saveMapToFile(
     return false;
   }
 
-    try {
+  try {
     // Checking map parameters for consistency
     save_parameters_loc = save_parameters;
     checkSaveParameters(save_parameters_loc);

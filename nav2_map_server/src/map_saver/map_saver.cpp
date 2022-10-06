@@ -206,8 +206,9 @@ bool MapSaver::saveMapTopicToFile(
 bool MapSaver::saveOccGridTopicToFile(
   const std::string & map_topic,
   const SaveParameters & save_parameters)
-{ std::cerr << "===> saveOccGridTopicToFile" << std::endl;
-  
+{
+  std::cerr << "===> saveOccGridTopicToFile" << std::endl;
+
   // Local copies of map_topic and save_parameters that could be changed
   std::string map_topic_loc = map_topic;
   SaveParameters save_parameters_loc = save_parameters;
@@ -297,7 +298,7 @@ bool MapSaver::saveGridmapTopicToFile(
   const SaveParameters & save_parameters)
 {
   std::cerr << "===> saveGridmapTopicToFile" << std::endl;
-  
+
   // Local copies of map_topic and save_parameters that could be changed
   std::string map_topic_loc = map_topic;
   SaveParameters save_parameters_loc = save_parameters;
