@@ -29,9 +29,9 @@
 #include "tf2_ros/transform_broadcaster.h"
 #include "nav2_util/occ_grid_values.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
+#include "std_msgs/msg/bool.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav2_msgs/msg/costmap_filter_info.hpp"
-#include "nav2_msgs/msg/binary_state.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 #include "nav2_costmap_2d/costmap_filters/binary_filter.hpp"
@@ -107,19 +107,19 @@ public:
   explicit BinaryStateSubscriber(const std::string & binary_state_topic)
   : Node("binary_state_sub"), binary_state_updated_(false)
   {
-    subscriber_ = this->create_subscription<nav2_msgs::msg::BinaryState>(
+    subscriber_ = this->create_subscription<std_msgs::msg::Bool>(
       binary_state_topic, rclcpp::QoS(10),
       std::bind(&BinaryStateSubscriber::binaryStateCallback, this, std::placeholders::_1));
   }
 
   void binaryStateCallback(
-    const nav2_msgs::msg::BinaryState::SharedPtr msg)
+    const std_msgs::msg::Bool::SharedPtr msg)
   {
     msg_ = msg;
     binary_state_updated_ = true;
   }
 
-  nav2_msgs::msg::BinaryState::SharedPtr getBinaryState()
+  std_msgs::msg::Bool::SharedPtr getBinaryState()
   {
     return msg_;
   }
@@ -135,8 +135,8 @@ public:
   }
 
 private:
-  rclcpp::Subscription<nav2_msgs::msg::BinaryState>::SharedPtr subscriber_;
-  nav2_msgs::msg::BinaryState::SharedPtr msg_;
+  rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr subscriber_;
+  std_msgs::msg::Bool::SharedPtr msg_;
   bool binary_state_updated_;
 };  // BinaryStateSubscriber
 
@@ -234,8 +234,8 @@ protected:
 private:
   void waitSome(const std::chrono::nanoseconds & duration);
   void verifyBinaryState(unsigned int x, unsigned int y, bool state);
-  nav2_msgs::msg::BinaryState::SharedPtr getBinaryState();
-  nav2_msgs::msg::BinaryState::SharedPtr waitBinaryState();
+  std_msgs::msg::Bool::SharedPtr getBinaryState();
+  std_msgs::msg::Bool::SharedPtr waitBinaryState();
 
   const unsigned int width_ = 10;
   const unsigned int height_ = 11;
@@ -303,14 +303,14 @@ void TestNode::rePublishMask()
   waitSome(100ms);
 }
 
-nav2_msgs::msg::BinaryState::SharedPtr TestNode::getBinaryState()
+std_msgs::msg::Bool::SharedPtr TestNode::getBinaryState()
 {
   std::this_thread::sleep_for(100ms);
   rclcpp::spin_some(binary_state_subscriber_);
   return binary_state_subscriber_->getBinaryState();
 }
 
-nav2_msgs::msg::BinaryState::SharedPtr TestNode::waitBinaryState()
+std_msgs::msg::Bool::SharedPtr TestNode::waitBinaryState()
 {
   const std::chrono::nanoseconds timeout = 500ms;
 
@@ -439,7 +439,7 @@ void TestNode::testSimpleMask(double tr_x, double tr_y)
   const int max_j = height_ + 4;
 
   geometry_msgs::msg::Pose2D pose;
-  nav2_msgs::msg::BinaryState::SharedPtr binary_state;
+  std_msgs::msg::Bool::SharedPtr binary_state;
 
   // data = 0
   pose.x = 1 - tr_x;
@@ -458,7 +458,7 @@ void TestNode::testSimpleMask(double tr_x, double tr_y)
   binary_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   binary_state = waitBinaryState();
   ASSERT_TRUE(binary_state != nullptr);
-  verifyBinaryState(x, y, binary_state->state);
+  verifyBinaryState(x, y, binary_state->data);
 
   // data = 100
   x = width_ - 1;
@@ -469,7 +469,7 @@ void TestNode::testSimpleMask(double tr_x, double tr_y)
   binary_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   binary_state = getBinaryState();  // Binary state won't be updated
   ASSERT_TRUE(binary_state != nullptr);
-  verifyBinaryState(x, y, binary_state->state);
+  verifyBinaryState(x, y, binary_state->data);
 
   // data = 0
   pose.x = 1 - tr_x;
@@ -478,7 +478,7 @@ void TestNode::testSimpleMask(double tr_x, double tr_y)
   binary_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   binary_state = waitBinaryState();
   ASSERT_TRUE(binary_state != nullptr);
-  ASSERT_EQ(binary_state->state, default_state_);
+  ASSERT_EQ(binary_state->data, default_state_);
 
   // data = -1
   pose.x = -tr_x;
@@ -487,7 +487,7 @@ void TestNode::testSimpleMask(double tr_x, double tr_y)
   binary_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   binary_state = getBinaryState();  // Binary state won't be updated
   ASSERT_TRUE(binary_state != nullptr);
-  ASSERT_EQ(binary_state->state, default_state_);
+  ASSERT_EQ(binary_state->data, default_state_);
 }
 
 void TestNode::testOutOfMask()
@@ -498,7 +498,7 @@ void TestNode::testOutOfMask()
   const int max_j = height_ + 4;
 
   geometry_msgs::msg::Pose2D pose;
-  nav2_msgs::msg::BinaryState::SharedPtr binary_state;
+  std_msgs::msg::Bool::SharedPtr binary_state;
 
   // data = <some_middle_value>
   pose.x = width_ / 2 - 1;
@@ -506,7 +506,7 @@ void TestNode::testOutOfMask()
   binary_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   binary_state = waitBinaryState();
   ASSERT_TRUE(binary_state != nullptr);
-  verifyBinaryState(pose.x, pose.y, binary_state->state);
+  verifyBinaryState(pose.x, pose.y, binary_state->data);
 
   // Then go to out of mask bounds and ensure that binary state is set to false
   pose.x = -2.0;
@@ -514,14 +514,14 @@ void TestNode::testOutOfMask()
   binary_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   binary_state = getBinaryState();
   ASSERT_TRUE(binary_state != nullptr);
-  ASSERT_EQ(binary_state->state, default_state_);
+  ASSERT_EQ(binary_state->data, default_state_);
 
   pose.x = width_ + 1.0;
   pose.y = height_ + 1.0;
   binary_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   binary_state = getBinaryState();
   ASSERT_TRUE(binary_state != nullptr);
-  ASSERT_EQ(binary_state->state, default_state_);
+  ASSERT_EQ(binary_state->data, default_state_);
 }
 
 void TestNode::testIncorrectTF()
@@ -532,7 +532,7 @@ void TestNode::testIncorrectTF()
   const int max_j = height_ + 4;
 
   geometry_msgs::msg::Pose2D pose;
-  nav2_msgs::msg::BinaryState::SharedPtr binary_state;
+  std_msgs::msg::Bool::SharedPtr binary_state;
 
   // data = <some_middle_value>
   pose.x = width_ / 2 - 1;
@@ -550,7 +550,7 @@ void TestNode::testResetFilter()
   const int max_j = height_ + 4;
 
   geometry_msgs::msg::Pose2D pose;
-  nav2_msgs::msg::BinaryState::SharedPtr binary_state;
+  std_msgs::msg::Bool::SharedPtr binary_state;
 
   // Switch-on binary filter
   pose.x = width_ / 2 - 1;
@@ -559,13 +559,13 @@ void TestNode::testResetFilter()
   binary_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   binary_state = waitBinaryState();
   ASSERT_TRUE(binary_state != nullptr);
-  verifyBinaryState(pose.x, pose.y, binary_state->state);
+  verifyBinaryState(pose.x, pose.y, binary_state->data);
 
   // Reset binary filter and check its state was resetted to default
   binary_filter_->resetFilter();
   binary_state = waitBinaryState();
   ASSERT_TRUE(binary_state != nullptr);
-  ASSERT_EQ(binary_state->state, default_state_);
+  ASSERT_EQ(binary_state->data, default_state_);
 }
 
 void TestNode::resetMaps()

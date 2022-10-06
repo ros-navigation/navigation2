@@ -86,7 +86,7 @@ void BinaryFilter::initializeFilter(
   global_frame_ = layered_costmap_->getGlobalFrameID();
 
   // Create new binary state publisher
-  binary_state_pub_ = node->create_publisher<nav2_msgs::msg::BinaryState>(
+  binary_state_pub_ = node->create_publisher<std_msgs::msg::Bool>(
     binary_state_topic, rclcpp::QoS(10));
   binary_state_pub_->on_activate();
 
@@ -240,9 +240,9 @@ void BinaryFilter::changeState(const bool state)
   }
 
   // Forming and publishing new BinaryState message
-  std::unique_ptr<nav2_msgs::msg::BinaryState> msg =
-    std::make_unique<nav2_msgs::msg::BinaryState>();
-  msg->state = state;
+  std::unique_ptr<std_msgs::msg::Bool> msg =
+    std::make_unique<std_msgs::msg::Bool>();
+  msg->data = state;
   binary_state_pub_->publish(std::move(msg));
 }
 

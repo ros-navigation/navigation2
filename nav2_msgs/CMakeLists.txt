@@ -20,7 +20,6 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/VoxelGrid.msg"
   "msg/BehaviorTreeStatusChange.msg"
   "msg/BehaviorTreeLog.msg"
-  "msg/BinaryState.msg"
   "msg/Particle.msg"
   "msg/ParticleCloud.msg"
   "srv/GetCostmap.srv"

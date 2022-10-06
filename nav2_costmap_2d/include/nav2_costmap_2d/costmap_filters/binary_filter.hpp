@@ -43,8 +43,8 @@
 
 #include "nav2_costmap_2d/costmap_filters/costmap_filter.hpp"
 
+#include "std_msgs/msg/bool.hpp"
 #include "nav2_msgs/msg/costmap_filter_info.hpp"
-#include "nav2_msgs/msg/binary_state.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -105,7 +105,7 @@ private:
   rclcpp::Subscription<nav2_msgs::msg::CostmapFilterInfo>::SharedPtr filter_info_sub_;
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr mask_sub_;
 
-  rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::BinaryState>::SharedPtr binary_state_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Bool>::SharedPtr binary_state_pub_;
 
   nav_msgs::msg::OccupancyGrid::SharedPtr filter_mask_;
 

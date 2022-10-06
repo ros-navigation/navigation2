@@ -1,2 +1,0 @@
-# Binary state
-bool state
