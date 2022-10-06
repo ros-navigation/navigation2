@@ -112,6 +112,11 @@ private:
   std::string mask_frame_;  // Frame where mask located in
   std::string global_frame_;  // Frame of currnet layer (master_grid)
 
+  double base_, multiplier_;
+  // Filter values higher than this threshold,
+  // will set binary state to non-default
+  double flip_threshold_;
+
   bool default_state_;  // Default Binary Filter state
   bool binary_state_;  // Current Binary Filter state
 };

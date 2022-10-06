@@ -71,6 +71,8 @@ void BinaryFilter::initializeFilter(
   node->get_parameter(name_ + "." + "default_state", default_state_);
   declareParameter("binary_state_topic", rclcpp::ParameterValue("binary_state"));
   node->get_parameter(name_ + "." + "binary_state_topic", binary_state_topic);
+  declareParameter("flip_threshold", rclcpp::ParameterValue(50.0));
+  node->get_parameter(name_ + "." + "flip_threshold", flip_threshold_);
 
   filter_info_topic_ = filter_info_topic;
   // Setting new costmap filter info subscriber
@@ -89,6 +91,10 @@ void BinaryFilter::initializeFilter(
   binary_state_pub_ = node->create_publisher<std_msgs::msg::Bool>(
     binary_state_topic, rclcpp::QoS(10));
   binary_state_pub_->on_activate();
+
+  // Reset parameters
+  base_ = BASE_DEFAULT;
+  multiplier_ = MULTIPLIER_DEFAULT;
 
   // Initialize state as "false" by-default
   changeState(default_state_);
@@ -122,6 +128,10 @@ void BinaryFilter::filterInfoCallback(
     return;
   }
 
+  // Set base_ and multiplier_
+  base_ = msg->base;
+  multiplier_ = msg->multiplier;
+  // Set topic name to receive filter mask from
   mask_topic_ = msg->filter_mask_topic;
 
   // Setting new filter mask subscriber
@@ -190,11 +200,17 @@ void BinaryFilter::process(
 
   // Getting filter_mask data from cell where the robot placed
   int8_t mask_data = getMaskData(filter_mask_, mask_robot_i, mask_robot_j);
-  // If filter_mask data is not empty, change binary state (if necessary)
-  if (
-    mask_data != nav2_util::OCC_GRID_UNKNOWN &&
-    mask_data != nav2_util::OCC_GRID_FREE)
-  {
+  if (mask_data == nav2_util::OCC_GRID_UNKNOWN) {
+    // Corresponding filter mask cell is unknown.
+    // Warn and do nothing.
+    RCLCPP_WARN_THROTTLE(
+      logger_, *(clock_), 2000,
+      "BinaryFilter: Filter mask [%i, %i] data is unknown. Do nothing.",
+      mask_robot_i, mask_robot_j);
+    return;
+  }
+  // Check and flip binary state, if necessary
+  if (base_ + mask_data * multiplier_ > flip_threshold_) {
     if (binary_state_ == default_state_) {
       changeState(!default_state_);
     }
