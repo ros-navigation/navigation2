@@ -36,14 +36,16 @@ using namespace std::chrono_literals;
 using rcl_interfaces::msg::ParameterType;
 using std::placeholders::_1;
 
-namespace nav2_planner {
+namespace nav2_planner
+{
 
-PlannerServer::PlannerServer(const rclcpp::NodeOptions &options)
+PlannerServer::PlannerServer(const rclcpp::NodeOptions & options)
 : nav2_util::LifecycleNode("planner_server", "", options),
   gp_loader_("nav2_core", "nav2_core::GlobalPlanner"),
   default_ids_{"GridBased"},
   default_types_{"nav2_navfn_planner/NavfnPlanner"},
-  costmap_(nullptr) {
+  costmap_(nullptr)
+{
   RCLCPP_INFO(get_logger(), "Creating");
 
   // Declare this node's parameters
@@ -100,7 +102,7 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
         planner_ids_[i].c_str(), planner_types_[i].c_str());
       planner->configure(node, planner_ids_[i], tf_, costmap_ros_);
       planners_.insert({planner_ids_[i], planner});
-    } catch (const pluginlib::PluginlibException &ex) {
+    } catch (const pluginlib::PluginlibException & ex) {
       RCLCPP_FATAL(
         get_logger(), "Failed to create global planner. Exception: %s",
         ex.what());
@@ -236,7 +238,7 @@ PlannerServer::on_shutdown(const rclcpp_lifecycle::State &)
 
 template<typename T>
 bool PlannerServer::isServerInactive(
-  std::unique_ptr<nav2_util::SimpleActionServer<T>> &action_server)
+  std::unique_ptr<nav2_util::SimpleActionServer<T>> & action_server)
 {
   if (action_server == nullptr || !action_server->is_server_active()) {
     RCLCPP_DEBUG(get_logger(), "Action server unavailable or inactive. Stopping.");
@@ -246,7 +248,8 @@ bool PlannerServer::isServerInactive(
   return false;
 }
 
-void PlannerServer::waitForCostmap() {
+void PlannerServer::waitForCostmap()
+{
   // Don't compute a plan until costmap is valid (after clear costmap)
   rclcpp::Rate r(100);
   while (!costmap_ros_->isCurrent()) {
@@ -256,7 +259,7 @@ void PlannerServer::waitForCostmap() {
 
 template<typename T>
 bool PlannerServer::isCancelRequested(
-  std::unique_ptr<nav2_util::SimpleActionServer<T>> &action_server)
+  std::unique_ptr<nav2_util::SimpleActionServer<T>> & action_server)
 {
   if (action_server->is_cancel_requested()) {
     RCLCPP_INFO(get_logger(), "Goal was canceled. Canceling planning action.");
@@ -269,7 +272,7 @@ bool PlannerServer::isCancelRequested(
 
 template<typename T>
 void PlannerServer::getPreemptedGoalIfRequested(
-  std::unique_ptr<nav2_util::SimpleActionServer<T>> &action_server,
+  std::unique_ptr<nav2_util::SimpleActionServer<T>> & action_server,
   typename std::shared_ptr<const typename T::Goal> goal)
 {
   if (action_server->is_preempt_requested()) {
@@ -416,7 +419,8 @@ void PlannerServer::computePlanThroughPoses()
 }
 
 void
-PlannerServer::computePlan() {
+PlannerServer::computePlan()
+{
   std::lock_guard<std::mutex> lock(dynamic_params_lock_);
 
   auto start_time = steady_clock_.now();
@@ -504,9 +508,10 @@ PlannerServer::computePlan() {
 
 nav_msgs::msg::Path
 PlannerServer::getPlan(
-    const geometry_msgs::msg::PoseStamped &start,
-    const geometry_msgs::msg::PoseStamped &goal,
-    const std::string &planner_id) {
+  const geometry_msgs::msg::PoseStamped &start,
+  const geometry_msgs::msg::PoseStamped &goal,
+  const std::string &planner_id)
+{
   RCLCPP_DEBUG(
     get_logger(), "Attempting to a find path from (%.2f, %.2f) to "
     "(%.2f, %.2f).", start.pose.position.x, start.pose.position.y,
@@ -533,7 +538,7 @@ PlannerServer::getPlan(
 }
 
 void
-PlannerServer::publishPlan(const nav_msgs::msg::Path &path)
+PlannerServer::publishPlan(const nav_msgs::msg::Path & path)
 {
   auto msg = std::make_unique<nav_msgs::msg::Path>(path);
   if (plan_publisher_->is_activated() && plan_publisher_->get_subscription_count() > 0) {
@@ -592,7 +597,8 @@ void PlannerServer::isPathValid(
 }
 
 rcl_interfaces::msg::SetParametersResult
-PlannerServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters) {
+PlannerServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
+{
   std::lock_guard<std::mutex> lock(dynamic_params_lock_);
   rcl_interfaces::msg::SetParametersResult result;
   for (auto parameter : parameters) {
