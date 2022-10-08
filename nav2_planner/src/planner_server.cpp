@@ -508,8 +508,8 @@ PlannerServer::computePlan()
 
 nav_msgs::msg::Path
 PlannerServer::getPlan(
-  const geometry_msgs::msg::PoseStamped &start,
-  const geometry_msgs::msg::PoseStamped &goal,
+  const geometry_msgs::msg::PoseStamped & start,
+  const geometry_msgs::msg::PoseStamped & goal,
   const std::string &planner_id)
 {
   RCLCPP_DEBUG(
@@ -589,7 +589,8 @@ void PlannerServer::isPathValid(
       unsigned int cost = costmap_->getCost(mx, my);
 
       if (cost == nav2_costmap_2d::LETHAL_OBSTACLE ||
-        cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE) {
+        cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE)
+      {
         response->is_valid = false;
       }
     }
