@@ -72,6 +72,13 @@ void CostmapFilter::onInitialize()
     double transform_tolerance;
     node->get_parameter(name_ + "." + "transform_tolerance", transform_tolerance);
     transform_tolerance_ = tf2::durationFromSec(transform_tolerance);
+
+    // Costmap Filter enabling service
+    enable_service_ = node->create_service<std_srvs::srv::SetBool>(
+      name_ + "/toggle_filter",
+      std::bind(
+        &CostmapFilter::enableCallback, this,
+        std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
   } catch (const std::exception & ex) {
     RCLCPP_ERROR(logger_, "Parameter problem: %s", ex.what());
     throw ex;
@@ -118,6 +125,20 @@ void CostmapFilter::updateCosts(
 
   process(master_grid, min_i, min_j, max_i, max_j, latest_pose_);
   current_ = true;
+}
+
+void CostmapFilter::enableCallback(
+  const std::shared_ptr<rmw_request_id_t>/*request_header*/,
+  const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
+  std::shared_ptr<std_srvs::srv::SetBool::Response> response)
+{
+  enabled_ = request->data;
+  response->success = true;
+  if (enabled_) {
+    response->message = "Enabled";
+  } else {
+    response->message = "Disabled";
+  }
 }
 
 }  // namespace nav2_costmap_2d
