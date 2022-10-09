@@ -403,6 +403,20 @@ void ControllerServer::computeControl()
           controller_frequency_);
       }
     }
+  } catch (nav2_core::ControllerTFError & e) {
+    RCLCPP_ERROR(this->get_logger(), "%s", e.what());
+    publishZeroVelocity();
+    std::shared_ptr<nav2_msgs::action::FollowPath::Result> result;
+    result->error_code = nav2_msgs::action::FollowPath::Goal::TF_ERROR;
+    action_server_->terminate_current(result);
+    return;
+  } catch (nav2_core::NoValidTrajectories & e) {
+    RCLCPP_ERROR(this->get_logger(), "%s", e.what());
+    publishZeroVelocity();
+    std::shared_ptr<nav2_msgs::action::FollowPath::Result> result;
+    result->error_code = nav2_msgs::action::FollowPath::Goal::NO_VALID_TRAJECTORIES;
+    action_server_->terminate_current(result);
+    return;
   } catch (nav2_core::FailedToMakeProgress & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
     publishZeroVelocity();

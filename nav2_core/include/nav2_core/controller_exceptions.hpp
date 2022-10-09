@@ -55,6 +55,13 @@ public:
   : ControllerException(description) {}
 };
 
+class NoValidTrajectories : public ControllerException
+{
+public:
+  explicit NoValidTrajectories(const std::string & description)
+  : ControllerException(description) {}
+};
+
 }  // namespace nav2_core
 
 #endif  // NAV2_CORE__CONTROLLER_EXCEPTIONS_HPP_
