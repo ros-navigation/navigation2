@@ -116,7 +116,7 @@ DenoiseLayer::updateCosts(
 
   const size_t width = max_x - min_x;
   const size_t height = max_y - min_y;
-  Image<uint8_t> roi_image(height, width, master_array + min_x, step);
+  Image<uint8_t> roi_image(height, width, master_array + min_y * step + min_x, step);
 
   try {
     denoise(roi_image);
