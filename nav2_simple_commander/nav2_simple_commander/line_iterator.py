@@ -33,10 +33,29 @@ class LineIterator():
             y0 (Float): Ordinate of the initial point
             x1 (Float): Abscissa of the final point
             y1 (Float): Ordinate of the final point
-            step_size (Float, optional): Resolution of increments. Defaults to 1.
+            step_size (Float, optional): Increments Resolution. Defaults to 1.
         """
+
+        if type(x0) not in [int, float]:
+            raise TypeError("x0 must be a number (int or float)")
+
+        if type(y0) not in [int, float]:
+            raise TypeError("y0 must be a number (int or float)")
+
+        if type(x1) not in [int, float]:
+            raise TypeError("x1 must be a number (int or float)")
+
+        if type(y1) not in [int, float]:
+            raise TypeError("y1 must be a number (int or float)")
+
+        if type(step_size) not in [int, float]:
+            raise TypeError("step_size must be a number (int or float)")
+
+        if step_size <= 0:
+            raise ValueError("step_size must be a positive number")
+
         self.x0_ = x0
-        self.y0_ = x0
+        self.y0_ = y0
         self.x1_ = x1
         self.y1_ = y1
         self.x_ = x0
@@ -62,6 +81,8 @@ class LineIterator():
         else:
             self.valid_ = False
             self.equation_ = "Invalid"
+            raise ValueError(
+                "Line has zero length (All 4 points have same coordinates)")
 
     def isValid(self):
         """Returns True if the line is valid
