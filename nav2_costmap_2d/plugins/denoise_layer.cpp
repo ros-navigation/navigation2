@@ -18,6 +18,7 @@
 #include <vector>
 #include <algorithm>
 #include <memory>
+#include <fstream>
 
 #include "rclcpp/rclcpp.hpp"
 
@@ -33,6 +34,8 @@ DenoiseLayer::onInitialize()
   declareParameter("minimal_group_size", rclcpp::ParameterValue(2));
   // Pixels connectivity type
   declareParameter("group_connectivity_type", rclcpp::ParameterValue(8));
+
+  declareParameter("debug_directory", rclcpp::ParameterValue(""));
 
   const auto node = node_.lock();
 
@@ -76,6 +79,13 @@ DenoiseLayer::onInitialize()
         group_connectivity_type_param);
     }
   }
+
+  node->get_parameter(name_ + ".debug_directory", debug_directory);
+
+  if (!debug_directory.empty() && debug_directory.back() != '/') {
+    debug_directory += "/";
+  }
+
   current_ = true;
 }
 
@@ -98,6 +108,36 @@ DenoiseLayer::updateBounds(
   double * /*max_x*/, double * /*max_y*/) {}
 
 void
+saveTga(const std::string & path, const Image<uint8_t> & image)
+{
+  const uint16_t width = image.columns();
+  const uint16_t height = image.rows();
+  std::array<char, 18> header =
+  {
+    0, 0, 3,              // grayscale
+    0, 0, 0, 0, 0,        // without color map,
+    0, 0,                 // x origin
+    0, 0,                 // y origin
+    char(width & 0x00ff), // width (little endian)
+    char((width & 0xff00) >> 8),
+    char(height & 0x00ff),// height (little endian)
+    char((height & 0xff00) >> 8),
+    8,                    // depth
+    0x20                  // top-to-bottom
+  };
+
+  std::vector<uint8_t> continuousBuffer(size_t(width) * height);
+
+  for (uint16_t i = 0; i < height; ++i) {
+    auto begin = image.row(i);
+    std::copy(begin, begin + width, continuousBuffer.begin() + i * width);
+  }
+  std::ofstream f(path, std::ios_base::binary);
+  f.write(header.data(), header.size());
+  f.write(reinterpret_cast<const char *>(continuousBuffer.data()), continuousBuffer.size());
+}
+
+void
 DenoiseLayer::updateCosts(
   nav2_costmap_2d::Costmap2D & master_grid, int min_x, int min_y, int max_x, int max_y)
 {
@@ -118,12 +158,36 @@ DenoiseLayer::updateCosts(
   const size_t height = max_y - min_y;
   Image<uint8_t> roi_image(height, width, master_array + min_y * step + min_x, step);
 
+  static int iteration = 0;
+  std::string debug_path_prefix;
+
+  if (!debug_directory.empty()) {
+    std::vector<int> params = {
+      int(minimal_group_size_),
+      group_connectivity_type_ == ConnectivityType::Way4 ? 4 : 8,
+      no_information_is_obstacle_,
+      min_y,
+      min_x
+    };
+    debug_path_prefix = debug_directory + std::to_string(iteration);
+    for (int param: params) {
+      debug_path_prefix += "_" + std::to_string(param);
+    }
+  }
+  if (!debug_path_prefix.empty()) {
+    saveTga(debug_path_prefix + "_before.tga", roi_image);
+  }
+
   try {
     denoise(roi_image);
   } catch (std::exception & ex) {
     RCLCPP_ERROR(logger_, (std::string("Inner error: ") + ex.what()).c_str());
   }
 
+  if (!debug_path_prefix.empty()) {
+    saveTga(debug_path_prefix + "_after.tga", roi_image);
+    ++iteration;
+  }
   current_ = true;
 }
 
