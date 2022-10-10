@@ -2,7 +2,7 @@
  *
  * Software License Agreement (BSD License)
  *
- *  Copyright (c) 2020 Samsung Research Russia
+ *  Copyright (c) 2022 Samsung R&D Institute Russia
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,7 @@
  * Author: Alexey Merzlyakov
  *********************************************************************/
 
-#include "nav2_costmap_2d/costmap_filters/speed_filter.hpp"
+#include "nav2_costmap_2d/costmap_filters/binary_filter.hpp"
 
 #include <cmath>
 #include <utility>
@@ -43,18 +43,19 @@
 #include <string>
 
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
+#include "nav2_util/occ_grid_values.hpp"
 
 namespace nav2_costmap_2d
 {
 
-SpeedFilter::SpeedFilter()
+BinaryFilter::BinaryFilter()
 : filter_info_sub_(nullptr), mask_sub_(nullptr),
-  speed_limit_pub_(nullptr), filter_mask_(nullptr), mask_frame_(""), global_frame_(""),
-  speed_limit_(NO_SPEED_LIMIT), speed_limit_prev_(NO_SPEED_LIMIT)
+  binary_state_pub_(nullptr), filter_mask_(nullptr), mask_frame_(""), global_frame_(""),
+  default_state_(false), binary_state_(default_state_)
 {
 }
 
-void SpeedFilter::initializeFilter(
+void BinaryFilter::initializeFilter(
   const std::string & filter_info_topic)
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
@@ -64,36 +65,42 @@ void SpeedFilter::initializeFilter(
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  // Declare "speed_limit_topic" parameter specific to SpeedFilter only
-  std::string speed_limit_topic;
-  declareParameter("speed_limit_topic", rclcpp::ParameterValue("speed_limit"));
-  node->get_parameter(name_ + "." + "speed_limit_topic", speed_limit_topic);
+  // Declare parameters specific to BinaryFilter only
+  std::string binary_state_topic;
+  declareParameter("default_state", rclcpp::ParameterValue(false));
+  node->get_parameter(name_ + "." + "default_state", default_state_);
+  declareParameter("binary_state_topic", rclcpp::ParameterValue("binary_state"));
+  node->get_parameter(name_ + "." + "binary_state_topic", binary_state_topic);
+  declareParameter("flip_threshold", rclcpp::ParameterValue(50.0));
+  node->get_parameter(name_ + "." + "flip_threshold", flip_threshold_);
 
   filter_info_topic_ = filter_info_topic;
   // Setting new costmap filter info subscriber
   RCLCPP_INFO(
     logger_,
-    "SpeedFilter: Subscribing to \"%s\" topic for filter info...",
+    "BinaryFilter: Subscribing to \"%s\" topic for filter info...",
     filter_info_topic_.c_str());
   filter_info_sub_ = node->create_subscription<nav2_msgs::msg::CostmapFilterInfo>(
     filter_info_topic_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
-    std::bind(&SpeedFilter::filterInfoCallback, this, std::placeholders::_1));
+    std::bind(&BinaryFilter::filterInfoCallback, this, std::placeholders::_1));
 
-  // Get global frame required for speed limit publisher
+  // Get global frame required for binary state publisher
   global_frame_ = layered_costmap_->getGlobalFrameID();
 
-  // Create new speed limit publisher
-  speed_limit_pub_ = node->create_publisher<nav2_msgs::msg::SpeedLimit>(
-    speed_limit_topic, rclcpp::QoS(10));
-  speed_limit_pub_->on_activate();
+  // Create new binary state publisher
+  binary_state_pub_ = node->create_publisher<std_msgs::msg::Bool>(
+    binary_state_topic, rclcpp::QoS(10));
+  binary_state_pub_->on_activate();
 
-  // Reset speed conversion states
+  // Reset parameters
   base_ = BASE_DEFAULT;
   multiplier_ = MULTIPLIER_DEFAULT;
-  percentage_ = false;
+
+  // Initialize state as "false" by-default
+  changeState(default_state_);
 }
 
-void SpeedFilter::filterInfoCallback(
+void BinaryFilter::filterInfoCallback(
   const nav2_msgs::msg::CostmapFilterInfo::SharedPtr msg)
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
@@ -106,52 +113,38 @@ void SpeedFilter::filterInfoCallback(
   if (!mask_sub_) {
     RCLCPP_INFO(
       logger_,
-      "SpeedFilter: Received filter info from %s topic.", filter_info_topic_.c_str());
+      "BinaryFilter: Received filter info from %s topic.", filter_info_topic_.c_str());
   } else {
     RCLCPP_WARN(
       logger_,
-      "SpeedFilter: New costmap filter info arrived from %s topic. Updating old filter info.",
+      "BinaryFilter: New costmap filter info arrived from %s topic. Updating old filter info.",
       filter_info_topic_.c_str());
     // Resetting previous subscriber each time when new costmap filter information arrives
     mask_sub_.reset();
   }
 
-  // Set base_/multiplier_ or use speed limit in % of maximum speed
-  base_ = msg->base;
-  multiplier_ = msg->multiplier;
-  if (msg->type == SPEED_FILTER_PERCENT) {
-    // Using speed limit in % of maximum speed
-    percentage_ = true;
-    RCLCPP_INFO(
-      logger_,
-      "SpeedFilter: Using expressed in a percent from maximum speed"
-      "speed_limit = %f + filter_mask_data * %f",
-      base_, multiplier_);
-  } else if (msg->type == SPEED_FILTER_ABSOLUTE) {
-    // Using speed limit in m/s
-    percentage_ = false;
-    RCLCPP_INFO(
-      logger_,
-      "SpeedFilter: Using absolute speed_limit = %f + filter_mask_data * %f",
-      base_, multiplier_);
-  } else {
-    RCLCPP_ERROR(logger_, "SpeedFilter: Mode is not supported");
+  if (msg->type != BINARY_FILTER) {
+    RCLCPP_ERROR(logger_, "BinaryFilter: Mode %i is not supported", msg->type);
     return;
   }
 
+  // Set base_ and multiplier_
+  base_ = msg->base;
+  multiplier_ = msg->multiplier;
+  // Set topic name to receive filter mask from
   mask_topic_ = msg->filter_mask_topic;
 
   // Setting new filter mask subscriber
   RCLCPP_INFO(
     logger_,
-    "SpeedFilter: Subscribing to \"%s\" topic for filter mask...",
+    "BinaryFilter: Subscribing to \"%s\" topic for filter mask...",
     mask_topic_.c_str());
   mask_sub_ = node->create_subscription<nav_msgs::msg::OccupancyGrid>(
     mask_topic_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
-    std::bind(&SpeedFilter::maskCallback, this, std::placeholders::_1));
+    std::bind(&BinaryFilter::maskCallback, this, std::placeholders::_1));
 }
 
-void SpeedFilter::maskCallback(
+void BinaryFilter::maskCallback(
   const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
@@ -159,11 +152,11 @@ void SpeedFilter::maskCallback(
   if (!filter_mask_) {
     RCLCPP_INFO(
       logger_,
-      "SpeedFilter: Received filter mask from %s topic.", mask_topic_.c_str());
+      "BinaryFilter: Received filter mask from %s topic.", mask_topic_.c_str());
   } else {
     RCLCPP_WARN(
       logger_,
-      "SpeedFilter: New filter mask arrived from %s topic. Updating old filter mask.",
+      "BinaryFilter: New filter mask arrived from %s topic. Updating old filter mask.",
       mask_topic_.c_str());
     filter_mask_.reset();
   }
@@ -172,7 +165,7 @@ void SpeedFilter::maskCallback(
   mask_frame_ = msg->header.frame_id;
 }
 
-void SpeedFilter::process(
+void BinaryFilter::process(
   nav2_costmap_2d::Costmap2D & /*master_grid*/,
   int /*min_i*/, int /*min_j*/, int /*max_i*/, int /*max_j*/,
   const geometry_msgs::msg::Pose2D & pose)
@@ -183,7 +176,7 @@ void SpeedFilter::process(
     // Show warning message every 2 seconds to not litter an output
     RCLCPP_WARN_THROTTLE(
       logger_, *(clock_), 2000,
-      "SpeedFilter: Filter mask was not received");
+      "BinaryFilter: Filter mask was not received");
     return;
   }
 
@@ -197,82 +190,53 @@ void SpeedFilter::process(
   // Converting mask_pose robot position to filter_mask_ indexes (mask_robot_i, mask_robot_j)
   unsigned int mask_robot_i, mask_robot_j;
   if (!worldToMask(filter_mask_, mask_pose.x, mask_pose.y, mask_robot_i, mask_robot_j)) {
+    // Robot went out of mask range. Set "false" state by-default
+    RCLCPP_WARN(
+      logger_,
+      "BinaryFilter: Robot is outside of filter mask. Resetting binary state to default.");
+    changeState(default_state_);
     return;
   }
 
-  // Getting filter_mask data from cell where the robot placed and
-  // calculating speed limit value
-  int8_t speed_mask_data = getMaskData(filter_mask_, mask_robot_i, mask_robot_j);
-  if (speed_mask_data == SPEED_MASK_NO_LIMIT) {
-    // Corresponding filter mask cell is free.
-    // Setting no speed limit there.
-    speed_limit_ = NO_SPEED_LIMIT;
-  } else if (speed_mask_data == SPEED_MASK_UNKNOWN) {
+  // Getting filter_mask data from cell where the robot placed
+  int8_t mask_data = getMaskData(filter_mask_, mask_robot_i, mask_robot_j);
+  if (mask_data == nav2_util::OCC_GRID_UNKNOWN) {
     // Corresponding filter mask cell is unknown.
-    // Do nothing.
-    RCLCPP_ERROR(
-      logger_,
-      "SpeedFilter: Found unknown cell in filter_mask[%i, %i], "
-      "which is invalid for this kind of filter",
+    // Warn and do nothing.
+    RCLCPP_WARN_THROTTLE(
+      logger_, *(clock_), 2000,
+      "BinaryFilter: Filter mask [%i, %i] data is unknown. Do nothing.",
       mask_robot_i, mask_robot_j);
     return;
-  } else {
-    // Normal case: speed_mask_data in range of [1..100]
-    speed_limit_ = speed_mask_data * multiplier_ + base_;
-    if (percentage_) {
-      if (speed_limit_ < 0.0 || speed_limit_ > 100.0) {
-        RCLCPP_WARN(
-          logger_,
-          "SpeedFilter: Speed limit in filter_mask[%i, %i] is %f%%, "
-          "out of bounds of [0, 100]. Setting it to no-limit value.",
-          mask_robot_i, mask_robot_j, speed_limit_);
-        speed_limit_ = NO_SPEED_LIMIT;
-      }
-    } else {
-      if (speed_limit_ < 0.0) {
-        RCLCPP_WARN(
-          logger_,
-          "SpeedFilter: Speed limit in filter_mask[%i, %i] is less than 0 m/s, "
-          "which can not be true. Setting it to no-limit value.",
-          mask_robot_i, mask_robot_j);
-        speed_limit_ = NO_SPEED_LIMIT;
-      }
-    }
   }
-
-  if (speed_limit_ != speed_limit_prev_) {
-    if (speed_limit_ != NO_SPEED_LIMIT) {
-      RCLCPP_DEBUG(logger_, "SpeedFilter: Speed limit is set to %f", speed_limit_);
-    } else {
-      RCLCPP_DEBUG(logger_, "SpeedFilter: Speed limit is set to its default value");
+  // Check and flip binary state, if necessary
+  if (base_ + mask_data * multiplier_ > flip_threshold_) {
+    if (binary_state_ == default_state_) {
+      changeState(!default_state_);
     }
-
-    // Forming and publishing new SpeedLimit message
-    std::unique_ptr<nav2_msgs::msg::SpeedLimit> msg =
-      std::make_unique<nav2_msgs::msg::SpeedLimit>();
-    msg->header.frame_id = global_frame_;
-    msg->header.stamp = clock_->now();
-    msg->percentage = percentage_;
-    msg->speed_limit = speed_limit_;
-    speed_limit_pub_->publish(std::move(msg));
-
-    speed_limit_prev_ = speed_limit_;
+  } else {
+    if (binary_state_ != default_state_) {
+      changeState(default_state_);
+    }
   }
 }
 
-void SpeedFilter::resetFilter()
+void BinaryFilter::resetFilter()
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
+  RCLCPP_INFO(logger_, "BinaryFilter: Resetting the filter to default state");
+  changeState(default_state_);
+
   filter_info_sub_.reset();
   mask_sub_.reset();
-  if (speed_limit_pub_) {
-    speed_limit_pub_->on_deactivate();
-    speed_limit_pub_.reset();
+  if (binary_state_pub_) {
+    binary_state_pub_->on_deactivate();
+    binary_state_pub_.reset();
   }
 }
 
-bool SpeedFilter::isActive()
+bool BinaryFilter::isActive()
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
@@ -282,7 +246,23 @@ bool SpeedFilter::isActive()
   return false;
 }
 
+void BinaryFilter::changeState(const bool state)
+{
+  binary_state_ = state;
+  if (state) {
+    RCLCPP_INFO(logger_, "BinaryFilter: Switched on");
+  } else {
+    RCLCPP_INFO(logger_, "BinaryFilter: Switched off");
+  }
+
+  // Forming and publishing new BinaryState message
+  std::unique_ptr<std_msgs::msg::Bool> msg =
+    std::make_unique<std_msgs::msg::Bool>();
+  msg->data = state;
+  binary_state_pub_->publish(std::move(msg));
+}
+
 }  // namespace nav2_costmap_2d
 
 #include "pluginlib/class_list_macros.hpp"
-PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::SpeedFilter, nav2_costmap_2d::Layer)
+PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::BinaryFilter, nav2_costmap_2d::Layer)
