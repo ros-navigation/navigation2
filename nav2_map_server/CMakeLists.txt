@@ -17,6 +17,7 @@ find_package(std_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(GRAPHICSMAGICKCPP REQUIRED)
+find_package(geometry_msgs REQUIRED)
 find_package(grid_map_ros REQUIRED)
 find_package(grid_map_msgs REQUIRED)
 find_package(grid_map_core REQUIRED)
@@ -63,6 +64,7 @@ set(map_io_dependencies
   nav_msgs
   nav2_util
   tf2
+  geometry_msgs
   grid_map_ros
   grid_map_msgs
   grid_map_core)
@@ -76,6 +78,7 @@ set(map_server_dependencies
   yaml_cpp_vendor
   std_msgs
   nav2_util
+  geometry_msgs
   grid_map_ros
   grid_map_msgs
   grid_map_core)

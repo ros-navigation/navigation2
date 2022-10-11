@@ -22,6 +22,7 @@
 
 #include "nav2_map_server/map_mode.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
+#include "geometry_msgs/msg/quaternion.hpp"
 #include "grid_map_ros/grid_map_ros.hpp"
 #include "grid_map_ros/GridMapRosConverter.hpp"
 #include "grid_map_msgs/msg/grid_map.hpp"

@@ -426,8 +426,20 @@ LOAD_MAP_STATUS loadMapFromYaml(
   try {
     grid_map::GridMap grid_map_to_fill({"elevation", "occupancy"});
 
+    geometry_msgs::msg::Quaternion prev_orientation, zero_orientation;
+    zero_orientation.x = 0.0;
+    zero_orientation.y = 0.0;
+    zero_orientation.z = 0.0;
+    zero_orientation.w = 1.0;
+    
+    prev_orientation = map.info.origin.orientation;
+    map.info.origin.orientation = zero_orientation;
     // convert the occupation map to a layer in the grid_map
     grid_map::GridMapRosConverter::fromOccupancyGrid(map, "occupancy", grid_map_to_fill);
+
+    //restore the prev_orient
+    map.info.origin.orientation = prev_orientation;
+    
     // it sets the length, resolution etc to the params in the map
 
     msg_grid_map = *grid_map::GridMapRosConverter::toMessage(grid_map_to_fill);
