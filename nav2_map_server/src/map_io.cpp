@@ -317,7 +317,7 @@ void loadGridMapFromFile(
     // get the value at the iterator
     grid_map::Position current_pos;
     grid_map_to_fill.getPosition(*grid_iterator, current_pos);
-    auto pixel = img.pixelColor((current_pos.y() + 30) / 0.5, (current_pos.x() + 30) / 0.5);
+    auto pixel = img.pixelColor((current_pos.y() + grid_map_to_fill.getLength().y() / 2) / grid_map_to_fill.getResolution(), (current_pos.x() + grid_map_to_fill.getLength().x() / 2) / grid_map_to_fill.getResolution());
     // (current_pos.x - min_x) / resolution to get the index
 
     std::vector<Magick::Quantum> channels = {pixel.redQuantum(), pixel.greenQuantum(),
