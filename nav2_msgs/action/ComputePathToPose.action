@@ -1,15 +1,3 @@
-# Error codes
-# Note: The expected priority order of the errors should match the message order
-int16 NONE=0
-int16 UNKNOWN=1
-int16 TF_ERROR=2
-int16 START_OUTSIDE_MAP=3
-int16 GOAL_OUTSIDE_MAP=4
-int16 START_OCCUPIED=5
-int16 GOAL_OCCUPIED=6
-int16 TIMEOUT=7
-int16 NO_VALID_PATH=8
-
 #goal definition
 geometry_msgs/PoseStamped goal
 geometry_msgs/PoseStamped start
@@ -19,6 +7,5 @@ bool use_start # If false, use current robot pose as path start, if true, use st
 #result definition
 nav_msgs/Path path
 builtin_interfaces/Duration planning_time
-int16 error_code
 ---
 #feedback definition

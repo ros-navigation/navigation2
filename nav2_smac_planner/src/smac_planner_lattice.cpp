@@ -247,21 +247,13 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
 
   // Set starting point, in A* bin search coordinates
   unsigned int mx, my;
-  if (!_costmap->worldToMap(start.pose.position.x, start.pose.position.y, mx, my)) {
-    throw nav2_core::StartOutsideMapBounds(
-            "Start Coordinates of(" + std::to_string(start.pose.position.x) + ", " +
-            std::to_string(start.pose.position.y) + ") was outside bounds");
-  }
+  _costmap->worldToMap(start.pose.position.x, start.pose.position.y, mx, my);
   _a_star->setStart(
     mx, my,
     NodeLattice::motion_table.getClosestAngularBin(tf2::getYaw(start.pose.orientation)));
 
   // Set goal point, in A* bin search coordinates
-  if (!_costmap->worldToMap(goal.pose.position.x, goal.pose.position.y, mx, my)) {
-    throw nav2_core::GoalOutsideMapBounds(
-            "Goal Coordinates of(" + std::to_string(goal.pose.position.x) + ", " +
-            std::to_string(goal.pose.position.y) + ") was outside bounds");
-  }
+  _costmap->worldToMap(goal.pose.position.x, goal.pose.position.y, mx, my);
   _a_star->setGoal(
     mx, my,
     NodeLattice::motion_table.getClosestAngularBin(tf2::getYaw(goal.pose.orientation)));
@@ -282,14 +274,27 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
   NodeLattice::CoordinateVector path;
   int num_iterations = 0;
   std::string error;
-
-  // Note: All exceptions thrown are handled by the planner server and returned to the action
-  if (!_a_star->createPath(path, num_iterations, 0 /*no tolerance*/)) {
-    if (num_iterations < _a_star->getMaxIterations()) {
-      throw nav2_core::NoValidPathCouldBeFound("no valid path found");
-    } else {
-      throw nav2_core::PlannerTimedOut("exceeded maximum iterations");
+  try {
+    if (!_a_star->createPath(
+        path, num_iterations, _tolerance / static_cast<float>(_costmap->getResolution())))
+    {
+      if (num_iterations < _a_star->getMaxIterations()) {
+        error = std::string("no valid path found");
+      } else {
+        error = std::string("exceeded maximum iterations");
+      }
     }
+  } catch (const std::runtime_error & e) {
+    error = "invalid use: ";
+    error += e.what();
+  }
+
+  if (!error.empty()) {
+    RCLCPP_WARN(
+      _logger,
+      "%s: failed to create plan, %s.",
+      _name.c_str(), error.c_str());
+    return plan;
   }
 
   // Convert to world coordinates
