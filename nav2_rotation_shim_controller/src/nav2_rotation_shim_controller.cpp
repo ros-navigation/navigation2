@@ -258,11 +258,11 @@ void RotationShimController::isCollisionFree(
     if (footprint_cost == static_cast<double>(NO_INFORMATION) &&
       costmap_ros_->getLayeredCostmap()->isTrackingUnknown())
     {
-      throw nav2_core::ControllerException("RotationShimController detected a potential collision ahead!");
+      throw nav2_core::NoValidControl("RotationShimController detected a potential collision ahead!");
     }
 
     if (footprint_cost >= static_cast<double>(LETHAL_OBSTACLE)) {
-      throw nav2_core::ControllerException("RotationShimController detected collision ahead!");
+      throw nav2_core::NoValidControl("RotationShimController detected collision ahead!");
     }
   }
 }

@@ -352,8 +352,8 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
 
   // Collision checking on this velocity heading
   const double & carrot_dist = hypot(carrot_pose.pose.position.x, carrot_pose.pose.position.y);
-  if (isCollisionImminent(pose, linear_vel, angular_vel, carrot_dist)) {
-    throw nav2_core::ControllerException("RegulatedPurePursuitController detected collision ahead!");
+  if (use_collision_detection_ && isCollisionImminent(pose, linear_vel, angular_vel, carrot_dist)) {
+    throw nav2_core::NoValidControl("RegulatedPurePursuitController detected collision ahead!");
   }
 
   // populate and return message
@@ -751,7 +751,7 @@ nav_msgs::msg::Path RegulatedPurePursuitController::transformGlobalPlan(
   global_path_pub_->publish(transformed_plan);
 
   if (transformed_plan.poses.empty()) {
-    throw nav2_core::ControllerTFError("Resulting plan has 0 poses in it.");
+    throw nav2_core::InvalidPath("Resulting plan has 0 poses in it.");
   }
 
   return transformed_plan;

@@ -55,10 +55,10 @@ public:
   : ControllerException(description) {}
 };
 
-class NoValidTrajectories : public ControllerException
+class NoValidControl : public ControllerException
 {
 public:
-  explicit NoValidTrajectories(const std::string & description)
+  explicit NoValidControl(const std::string & description)
   : ControllerException(description) {}
 };
 

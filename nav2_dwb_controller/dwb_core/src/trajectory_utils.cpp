@@ -73,7 +73,7 @@ geometry_msgs::msg::Pose2D projectPose(
   rclcpp::Duration goal_time = rclcpp::Duration::from_seconds(time_offset);
   const unsigned int num_poses = trajectory.poses.size();
   if (num_poses == 0) {
-    throw nav2_core::ControllerException("Cannot call projectPose on empty trajectory.");
+    throw nav2_core::InvalidPath("Cannot call projectPose on empty trajectory.");
   }
   if (goal_time <= (trajectory.time_offsets[0])) {
     return trajectory.poses[0];

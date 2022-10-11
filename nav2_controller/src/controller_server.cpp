@@ -410,11 +410,11 @@ void ControllerServer::computeControl()
     result->error_code = nav2_msgs::action::FollowPath::Goal::TF_ERROR;
     action_server_->terminate_current(result);
     return;
-  } catch (nav2_core::NoValidTrajectories & e) {
+  } catch (nav2_core::NoValidControl & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
     publishZeroVelocity();
     std::shared_ptr<nav2_msgs::action::FollowPath::Result> result;
-    result->error_code = nav2_msgs::action::FollowPath::Goal::NO_VALID_TRAJECTORIES;
+    result->error_code = nav2_msgs::action::FollowPath::Goal::NO_VALID_CONTROL;
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::FailedToMakeProgress & e) {
@@ -481,7 +481,7 @@ void ControllerServer::computeAndPublishVelocity()
   geometry_msgs::msg::PoseStamped pose;
 
   if (!getRobotPose(pose)) {
-    throw nav2_core::ControllerException("Failed to obtain robot pose");
+    throw nav2_core::ControllerTFError("Failed to obtain robot pose");
   }
 
   if (!progress_checker_->check(pose)) {

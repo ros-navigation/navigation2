@@ -343,7 +343,7 @@ DWBLocalPlanner::computeVelocityCommands(
     pub_->publishLocalPlan(pose.header, empty_traj);
     pub_->publishCostGrid(costmap_ros_, critics_);
 
-    throw nav2_core::ControllerException(
+    throw nav2_core::NoValidControl(
             "Could not find a legal trajectory: " +
             std::string(e.what()));
   }
