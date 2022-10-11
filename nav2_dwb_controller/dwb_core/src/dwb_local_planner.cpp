@@ -547,7 +547,7 @@ DWBLocalPlanner::transformGlobalPlan(
   }
 
   if (transformed_plan.poses.empty()) {
-    throw nav2_core::ControllerTFError("Resulting plan has 0 poses in it.");
+    throw nav2_core::InvalidPath("Resulting plan has 0 poses in it.");
   }
   return transformed_plan;
 }
