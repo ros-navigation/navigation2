@@ -98,7 +98,7 @@
 
       <link name="base_scan">
         <inertial>
-          <pose>-0.052 0 0.111 0 0 0</pose>
+          <pose>-0.064 0 0.15 0 0 0</pose>
           <inertia>
             <ixx>0.001</ixx>
             <ixy>0.000</ixy>
