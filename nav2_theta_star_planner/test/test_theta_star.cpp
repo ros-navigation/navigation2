@@ -174,8 +174,8 @@ TEST(ThetaStarPlanner, test_theta_star_planner) {
   }
   goal.pose.position.x = 1.0;
   goal.pose.position.y = 1.0;
-
-  EXPECT_THROW(planner_2d->createPlan(start, goal), nav2_core::GoalOccupied);
+  path = planner_2d->createPlan(start, goal);
+  EXPECT_EQ(static_cast<int>(path.poses.size()), 0);
 
   planner_2d->deactivate();
   planner_2d->cleanup();

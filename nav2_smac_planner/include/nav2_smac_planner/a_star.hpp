@@ -25,7 +25,6 @@
 #include "Eigen/Core"
 
 #include "nav2_costmap_2d/costmap_2d.hpp"
-#include "nav2_core/exceptions.hpp"
 
 #include "nav2_smac_planner/thirdparty/robin_hood.h"
 #include "nav2_smac_planner/analytic_expansion.hpp"
