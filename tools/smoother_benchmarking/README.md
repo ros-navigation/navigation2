@@ -10,22 +10,13 @@ pip install seaborn
 pip install tabulate
 ```
 
-To perform the benchmarking, the following changes should be made for planner and smoother servers:
+For the benchmarking purposes, the clarification of execution time should be made for planner and smoother servers:
 
 ```
 diff --git a/nav2_planner/src/planner_server.cpp b/nav2_planner/src/planner_server.cpp
-index c7a90bcb..510bb6ea 100644
+index c7a90bcb..6f93edbf 100644
 --- a/nav2_planner/src/planner_server.cpp
 +++ b/nav2_planner/src/planner_server.cpp
-@@ -285,7 +285,7 @@ bool PlannerServer::getStartPose(
-   typename std::shared_ptr<const typename T::Goal> goal,
-   geometry_msgs::msg::PoseStamped & start)
- {
--  if (goal->use_start) {
-+  if (true) {
-     start = goal->start;
-   } else if (!costmap_ros_->getRobotPose(start)) {
-     return false;
 @@ -381,7 +381,10 @@ void PlannerServer::computePlanThroughPoses()
        }
  
@@ -70,7 +61,7 @@ index ada1f664..610e9512 100644
      result->smoothing_duration = steady_clock_.now() - start_time;
 ```
 
-To use the suite, modify the Nav2 bringup parameters to include selected path planner:
+To use the suite, modify the Nav2 bringup parameters `nav2_params.yaml` to include selected path planner:
 
 ```
 planner_server:
@@ -99,23 +90,10 @@ planner_server:
       w_smooth: 100000.0 # tuned
 ```
 
-Then enable SmoothPath sequence for selected path planner, as shown for default `navigate_to_pose_w_replanning_and_recovery.xml` behavior tree:
+Set global costmap, path planner and smoothers parameters to those desired in `nav2_params.yaml`.
+Inside of `metrics.py`, you can change reference path planner / path smoothers to use.
 
-```
-       <PipelineSequence name="NavigateWithReplanning">
-         <RateController hz="1.0">
-           <RecoveryNode number_of_retries="1" name="ComputePathToPose">
--            <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
-+            <Sequence name="ComputeAndSmoothPath">
-+              <ComputePathToPose goal="{goal}" path="{path}" planner_id="SmacHybrid"/>
-+              <SmoothPath unsmoothed_path="{path}" smoothed_path="{path}"/>
-+            </Sequence>
-             <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap"/>
-           </RecoveryNode>
-         </RateController>
-```
-
-Inside of `metrics.py`, you can modify the map or reference planner / path smoothers to use. Set global costmap, path planner and smoothers settings to those desired for benchmarking and execute it:
+Then execute the benchmarking:
 
 - `ros2 launch ./smoother_benchmark_bringup.py` to launch the nav2 stack and path smoothers benchmarking
 - `python3 ./process_data.py` to take the metric files and process them into key results (and plots)

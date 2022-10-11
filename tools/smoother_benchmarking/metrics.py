@@ -23,8 +23,6 @@ import os
 import pickle
 import numpy as np
 
-import time
-
 from random import seed
 from random import randint
 from random import uniform
@@ -35,7 +33,7 @@ from transforms3d.euler import euler2quat
 # Note: Map origin is assumed to be (0,0)
 
 def getPlannerResults(navigator, initial_pose, goal_pose, planner):
-    return navigator._getPathImpl(initial_pose, goal_pose, planner)
+    return navigator._getPathImpl(initial_pose, goal_pose, planner, use_start=True)
 
 def getSmootherResults(navigator, path, smoothers):
     smoothed_results = []
@@ -46,7 +44,6 @@ def getSmootherResults(navigator, path, smoothers):
         else:
             print(smoother, " failed to smooth the path")
             return None
-        #time.sleep(10)
     return smoothed_results
 
 def getRandomStart(costmap, max_cost, side_buffer, time_stamp, res):
@@ -104,26 +101,15 @@ def main():
 
     navigator = BasicNavigator()
 
-    # Set our experiment's initial pose
-    initial_pose = PoseStamped()
-    initial_pose.header.frame_id = 'map'
-    initial_pose.header.stamp = navigator.get_clock().now().to_msg()
-    initial_pose.pose.position.x = 1.0
-    initial_pose.pose.position.y = 1.0
-    initial_pose.pose.orientation.z = 0.0
-    initial_pose.pose.orientation.w = 1.0
-    navigator.setInitialPose(initial_pose)
-
-    # Wait for navigation to fully activate
-    print("Waiting for nav2 to activate")
-    navigator.waitUntilNav2Active()
+    # Wait for planner and smoother to fully activate
+    print("Waiting for planner and smoother servers to activate")
+    navigator.waitUntilNav2Active('smoother_server', 'planner_server')
 
     # Get the costmap for start/goal validation
     costmap_msg = navigator.getGlobalCostmap()
     costmap = np.asarray(costmap_msg.data)
     costmap.resize(costmap_msg.metadata.size_y, costmap_msg.metadata.size_x)
 
-    # planner: 'NavFn', 'SmacLattice', 'SmacHybrid', 'ThetaStarPlanner'
     planner = 'SmacHybrid'
     smoothers = ['simple_smoother', 'constrained_smoother']
     max_cost = 210
@@ -143,7 +129,6 @@ def main():
         print("Goal", goal)
         result = getPlannerResults(navigator, start, goal, planner)
         if result is not None:
-            print("MAO: result = ", result)
             smoothed_results = getSmootherResults(navigator, result.path, smoothers)
             if smoothed_results is not None:
               results.append(result)
@@ -153,19 +138,18 @@ def main():
             print(planner, " planner failed to produce the path")
 
     print("Write Results...")
-    nav2_planner_metrics_dir = os.getcwd()
-    with open(os.path.join(nav2_planner_metrics_dir, 'results.pickle'), 'wb') as f:
+    benchmark_dir = os.getcwd()
+    with open(os.path.join(benchmark_dir, 'results.pickle'), 'wb') as f:
         pickle.dump(results, f, pickle.HIGHEST_PROTOCOL)
 
-    with open(os.path.join(nav2_planner_metrics_dir, 'costmap.pickle'), 'wb') as f:
+    with open(os.path.join(benchmark_dir, 'costmap.pickle'), 'wb') as f:
         pickle.dump(costmap_msg, f, pickle.HIGHEST_PROTOCOL)
 
     smoothers.insert(0, planner)
-    with open(os.path.join(nav2_planner_metrics_dir, 'methods.pickle'), 'wb') as f:
+    with open(os.path.join(benchmark_dir, 'methods.pickle'), 'wb') as f:
         pickle.dump(smoothers, f, pickle.HIGHEST_PROTOCOL)
     print("Write Complete")
 
-    navigator.lifecycleShutdown()
     exit(0)
 
 

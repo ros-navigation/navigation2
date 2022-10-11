@@ -215,18 +215,18 @@ def maxPathCost(paths, costmap, num_of_planners):
 
 def main():
     # Read the data
-    nav2_planner_metrics_dir = os.getcwd()
+    benchmark_dir = os.getcwd()
     print("Read data")
-    with open(os.path.join(nav2_planner_metrics_dir, 'results.pickle'), 'rb') as f:
+    with open(os.path.join(benchmark_dir, 'results.pickle'), 'rb') as f:
         results = pickle.load(f)
 
-    with open(os.path.join(nav2_planner_metrics_dir, 'methods.pickle'), 'rb') as f:
+    with open(os.path.join(benchmark_dir, 'methods.pickle'), 'rb') as f:
         smoothers = pickle.load(f)
     planner = smoothers[0]
     del smoothers[0]
     methods_num = len(smoothers) + 1
 
-    with open(os.path.join(nav2_planner_metrics_dir, 'costmap.pickle'), 'rb') as f:
+    with open(os.path.join(benchmark_dir, 'costmap.pickle'), 'rb') as f:
         costmap = pickle.load(f)
 
     # Paths (planner and smoothers)

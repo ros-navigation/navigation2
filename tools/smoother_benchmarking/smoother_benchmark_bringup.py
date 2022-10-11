@@ -22,85 +22,73 @@ from ament_index_python.packages import get_package_share_directory
 
 def generate_launch_description():
     nav2_bringup_dir = get_package_share_directory('nav2_bringup')
-    python_commander_dir = get_package_share_directory('nav2_simple_commander')
+    benchmark_dir = os.getcwd()
+    metrics_py = os.path.join(benchmark_dir, 'metrics.py')
+    config = os.path.join(get_package_share_directory('nav2_bringup'), 'params', 'nav2_params.yaml')
+    map_file = os.path.join(benchmark_dir, 'maps', 'smoothers_world.yaml')
+    lifecycle_nodes = ['map_server', 'planner_server', 'smoother_server']
 
-    map_yaml_file = os.path.join(os.getcwd(), 'maps', 'smoothers_world.yaml')
+    static_transform_one = Node(
+        package = 'tf2_ros',
+        executable = 'static_transform_publisher',
+        output = 'screen',
+        arguments = ["0", "0", "0", "0", "0", "0", "base_link", "map"])
 
-    # start the simulation
-    start_gazebo_server_cmd = ExecuteProcess(
-        cmd=['gzserver', '-s', 'libgazebo_ros_init.so', '-s', 'libgazebo_ros_factory.so'],
-        output='screen')
+    static_transform_two = Node(
+        package = 'tf2_ros',
+        executable = 'static_transform_publisher',
+        output = 'screen',
+        arguments = ["0", "0", "0", "0", "0", "0", "base_link", "odom"])
 
-    start_gazebo_client_cmd = ExecuteProcess(
-        cmd=['gzclient'],
-        output='screen')
-
-    pose = {'x': '1.00',
-            'y': '1.00',
-            'z': '0.01',
-            'R': '0.00',
-            'P': '0.00',
-            'Y': '0.00'}
-
-    start_gazebo_spawner_cmd = Node(
-        package='gazebo_ros',
-        executable='spawn_entity.py',
+    start_map_server_cmd = Node(
+        package='nav2_map_server',
+        executable='map_server',
+        name='map_server',
         output='screen',
-        arguments=[
-            '-entity', 'turtlebot3_waffle',
-            '-file', os.path.join(nav2_bringup_dir, 'worlds', 'waffle.model'),
-            '-robot_namespace', '',
-            '-x', pose['x'], '-y', pose['y'], '-z', pose['z'],
-            '-R', pose['R'], '-P', pose['P'], '-Y', pose['Y']])
+        parameters=[{'use_sim_time': True},
+                    {'yaml_filename': map_file},
+                    {'topic_name': "map"}])
 
-    urdf = os.path.join(nav2_bringup_dir, 'urdf', 'turtlebot3_waffle.urdf')
-    start_robot_state_publisher_cmd = Node(
-        package='robot_state_publisher',
-        executable='robot_state_publisher',
-        name='robot_state_publisher',
+    start_planner_server_cmd = Node(
+        package='nav2_planner',
+        executable='planner_server',
+        name='planner_server',
         output='screen',
-        arguments=[urdf])
+        parameters=[config])
 
-    # start the visualization
+    start_smoother_server_cmd = Node(
+        package='nav2_smoother',
+        executable='smoother_server',
+        name='smoother_server',
+        output='screen',
+        parameters=[config])
+
+    start_lifecycle_manager_cmd = Node(
+        package='nav2_lifecycle_manager',
+        executable='lifecycle_manager',
+        name='lifecycle_manager',
+        output='screen',
+        parameters=[{'use_sim_time': True},
+                    {'autostart': True},
+                    {'node_names': lifecycle_nodes}])
+
     rviz_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(nav2_bringup_dir, 'launch', 'rviz_launch.py')),
         launch_arguments={'namespace': '',
                           'use_namespace': 'False'}.items())
 
-    # start navigation
-    bringup_cmd = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(nav2_bringup_dir, 'launch', 'bringup_launch.py')),
-        launch_arguments={'map': map_yaml_file}.items())
-
-    # start the demo autonomy task
     metrics_cmd = ExecuteProcess(
-        cmd=['python3', './metrics.py'],
-        output='screen')
-
-    static_transform_one = Node(
-            package = 'tf2_ros',
-            executable = 'static_transform_publisher',
-            output = 'screen',
-            arguments = ["0", "0", "0", "0", "0", "0", "base_link", "map"]
-        )
-
-    static_transform_two = Node(
-            package = 'tf2_ros',
-            executable = 'static_transform_publisher',
-            output = 'screen',
-            arguments = ["0", "0", "0", "0", "0", "0", "base_link", "odom"]
-        )
+        cmd=['python3', '-u', metrics_py],
+        cwd=[benchmark_dir], output='screen')
 
     ld = LaunchDescription()
-    #ld.add_action(static_transform_one)
-    #ld.add_action(static_transform_two)
-    ld.add_action(start_gazebo_server_cmd)
-    ld.add_action(start_gazebo_client_cmd)
-    ld.add_action(start_gazebo_spawner_cmd)
-    ld.add_action(start_robot_state_publisher_cmd)
+    ld.add_action(static_transform_one)
+    ld.add_action(static_transform_two)
+    ld.add_action(start_map_server_cmd)
+    ld.add_action(start_planner_server_cmd)
+    ld.add_action(start_smoother_server_cmd)
+    ld.add_action(start_lifecycle_manager_cmd)
     ld.add_action(rviz_cmd)
-    ld.add_action(bringup_cmd)
     ld.add_action(metrics_cmd)
     return ld
