@@ -25,7 +25,6 @@
 #include <vector>
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_core/global_planner.hpp"
-#include "nav2_core/exceptions.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_util/lifecycle_node.hpp"
