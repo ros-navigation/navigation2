@@ -528,6 +528,16 @@ void ControllerServer::updateGlobalPath()
       action_server_->terminate_current();
       return;
     }
+    std::string current_goal_checker;
+    if (findGoalCheckerId(goal->goal_checker_id, current_goal_checker)) {
+      current_goal_checker_ = current_goal_checker;
+    } else {
+      RCLCPP_INFO(
+        get_logger(), "Terminating action, invalid goal checker %s requested.",
+        goal->goal_checker_id.c_str());
+      action_server_->terminate_current();
+      return;
+    }
     setPlannerPath(goal->path);
   }
 }
