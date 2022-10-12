@@ -51,7 +51,7 @@
 #include <OgreManualObject.h>
 #include <OgreMaterialManager.h>
 #include <OgreSceneNode.h>
-#include <OgreVector3.h>
+#include <Ogre.h>
 #include <OgreQuaternion.h>
 
 #include "nav2_rviz_plugins/particle_cloud_display/particle_cloud_display.hpp"

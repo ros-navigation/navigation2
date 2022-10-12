@@ -98,7 +98,7 @@
 
       <link name="base_scan">
         <inertial>
-          <pose>-0.052 0 0.111 0 0 0</pose>
+          <pose>-0.064 0 0.121 0 0 0</pose>
           <inertia>
             <ixx>0.001</ixx>
             <ixy>0.000</ixy>
@@ -133,7 +133,7 @@
         <sensor name="hls_lfcd_lds" type="ray">
           <always_on>true</always_on>
           <visualize>true</visualize>
-          <pose>-0.064 0 0.121 0 0 0</pose>
+          <pose>-0.064 0 0.15 0 0 0</pose>
           <update_rate>5</update_rate>
           <ray>
             <scan>
