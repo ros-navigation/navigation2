@@ -134,30 +134,6 @@ nav_msgs::msg::Path NavfnPlanner::createPlan(
 #ifdef BENCHMARK_TESTING
   steady_clock::time_point a = steady_clock::now();
 #endif
-  unsigned int mx_start, my_start, mx_goal, my_goal;
-  if (!costmap_->worldToMap(start.pose.position.x, start.pose.position.y, mx_start, my_start)) {
-    throw nav2_core::StartOutsideMapBounds(
-            "Start Coordinates of(" + std::to_string(start.pose.position.x) + ", " +
-            std::to_string(start.pose.position.y) + ") was outside bounds");
-  }
-
-  if (!costmap_->worldToMap(goal.pose.position.x, goal.pose.position.y, mx_goal, my_goal)) {
-    throw nav2_core::GoalOutsideMapBounds(
-            "Goal Coordinates of(" + std::to_string(goal.pose.position.x) + ", " +
-            std::to_string(goal.pose.position.y) + ") was outside bounds");
-  }
-
-  if (costmap_->getCost(mx_start, my_goal) == nav2_costmap_2d::LETHAL_OBSTACLE) {
-    throw nav2_core::StartOccupied(
-            "Start Coordinates of(" + std::to_string(start.pose.position.x) + ", " +
-            std::to_string(start.pose.position.y) + ") was in lethal cost");
-  }
-
-  if (tolerance_ == 0 && costmap_->getCost(mx_goal, my_goal) == nav2_costmap_2d::LETHAL_OBSTACLE) {
-    throw nav2_core::GoalOccupied(
-            "Goal Coordinates of(" + std::to_string(goal.pose.position.x) + ", " +
-            std::to_string(goal.pose.position.y) + ") was in lethal cost");
-  }
 
   // Update planner based on the new costmap size
   if (isPlannerOutOfDate()) {
@@ -172,6 +148,12 @@ nav_msgs::msg::Path NavfnPlanner::createPlan(
   if (start.pose.position.x == goal.pose.position.x &&
     start.pose.position.y == goal.pose.position.y)
   {
+    unsigned int mx, my;
+    costmap_->worldToMap(start.pose.position.x, start.pose.position.y, mx, my);
+    if (costmap_->getCost(mx, my) == nav2_costmap_2d::LETHAL_OBSTACLE) {
+      RCLCPP_WARN(logger_, "Failed to create a unique pose path because of obstacles");
+      return path;
+    }
     path.header.stamp = clock_->now();
     path.header.frame_id = global_frame_;
     geometry_msgs::msg::PoseStamped pose;
@@ -190,8 +172,9 @@ nav_msgs::msg::Path NavfnPlanner::createPlan(
   }
 
   if (!makePlan(start.pose, goal.pose, tolerance_, path)) {
-    throw nav2_core::NoValidPathCouldBeFound(
-            "Failed to create plan with tolerance of: " + std::to_string(tolerance_) );
+    RCLCPP_WARN(
+      logger_, "%s: failed to create plan with "
+      "tolerance %.2f.", name_.c_str(), tolerance_);
   }
 
 
@@ -238,7 +221,14 @@ NavfnPlanner::makePlan(
     start.position.x, start.position.y, goal.position.x, goal.position.y);
 
   unsigned int mx, my;
-  worldToMap(wx, wy, mx, my);
+  if (!worldToMap(wx, wy, mx, my)) {
+    RCLCPP_WARN(
+      logger_,
+      "Cannot create a plan: the robot's start position is off the global"
+      " costmap. Planning will always fail, are you sure"
+      " the robot has been properly localized?");
+    return false;
+  }
 
   // clear the starting cell within the costmap because we know it can't be an obstacle
   clearRobotCell(mx, my);
@@ -261,7 +251,14 @@ NavfnPlanner::makePlan(
   wx = goal.position.x;
   wy = goal.position.y;
 
-  worldToMap(wx, wy, mx, my);
+  if (!worldToMap(wx, wy, mx, my)) {
+    RCLCPP_WARN(
+      logger_,
+      "The goal sent to the planner is off the global costmap."
+      " Planning will always fail to this goal.");
+    return false;
+  }
+
   int map_goal[2];
   map_goal[0] = mx;
   map_goal[1] = my;
@@ -388,7 +385,13 @@ NavfnPlanner::getPlanFromPotential(
 
   // the potential has already been computed, so we won't update our copy of the costmap
   unsigned int mx, my;
-  worldToMap(wx, wy, mx, my);
+  if (!worldToMap(wx, wy, mx, my)) {
+    RCLCPP_WARN(
+      logger_,
+      "The goal sent to the navfn planner is off the global costmap."
+      " Planning will always fail to this goal.");
+    return false;
+  }
 
   int map_goal[2];
   map_goal[0] = mx;
