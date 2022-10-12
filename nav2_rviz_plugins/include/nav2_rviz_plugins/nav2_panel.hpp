@@ -34,6 +34,7 @@
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 #include "nav2_util/geometry_utils.hpp"
+#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 
 class QPushButton;
 
@@ -72,6 +73,7 @@ private Q_SLOTS:
   void handleGoalSaver();
   void handleGoalLoader();
   void loophandler();
+  void initialStateHandler();
 
 private:
   void loadLogFiles();
@@ -81,6 +83,13 @@ private:
   int unique_id {0};
   std::string loop = "0";
   int goal_index_ = 0;
+  bool pause_button_pressed_ = false;
+  int accumulated_pose_size_ = 0;
+  int loop_count_ = 0;
+  bool loop_counter_stop_ = false;
+  int last_stored_index_ = 0;
+  geometry_msgs::msg::PoseWithCovarianceStamped initial_pose_;
+  bool store_initial_pose = false;
 
 
   // Call to send NavigateToPose action request for goal poses
@@ -122,6 +131,8 @@ private:
     navigation_goal_status_sub_;
   rclcpp::Subscription<nav2_msgs::action::NavigateThroughPoses::Impl::GoalStatusMessage>::SharedPtr
     nav_through_poses_goal_status_sub_;
+  rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr
+    map_pose_sub_;
 
   // Goal-related state
   nav2_msgs::action::NavigateToPose::Goal navigation_goal_;
@@ -134,6 +145,8 @@ private:
   // The client used to control the nav2 stack
   std::shared_ptr<nav2_lifecycle_manager::LifecycleManagerClient> client_nav_;
   std::shared_ptr<nav2_lifecycle_manager::LifecycleManagerClient> client_loc_;
+
+  QCheckBox * store_initial_pose_checkbox_{nullptr};
 
   QPushButton * start_reset_button_{nullptr};
   QPushButton * pause_resume_button_{nullptr};
