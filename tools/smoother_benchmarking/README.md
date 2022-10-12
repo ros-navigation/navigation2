@@ -10,6 +10,38 @@ pip install seaborn
 pip install tabulate
 ```
 
+To use the suite, modify the Nav2 bringup parameters `nav2_params.yaml` to include selected path planner:
+
+```
+planner_server:
+  ros__parameters:
+    expected_planner_frequency: 20.0
+    planner_plugins: ["SmacHybrid"]
+    SmacHybrid:
+      plugin: "nav2_smac_planner/SmacPlannerHybrid"
+      tolerance: 0.5
+      motion_model_for_search: "DUBIN" # default, non-reverse motion
+      smooth_path: false # should be disabled for experiment
+      analytic_expansion_max_length: 0.3 # decreased to avoid robot jerking
+```
+
+... and path smoothers for benchmark:
+
+```
+ smoother_server:
+   ros__parameters:
+    smoother_plugins: ["simple_smoother", "constrained_smoother"]
+    simple_smoother:
+      plugin: "nav2_smoother::SimpleSmoother"
+      holonomic: False # should be disabled to utilize motion/rotation model
+    constrained_smoother:
+      plugin: "nav2_constrained_smoother/ConstrainedSmoother"
+      w_smooth: 100000.0 # tuned
+```
+
+Set global costmap, path planner and smoothers parameters to those desired in `nav2_params.yaml`.
+Inside of `metrics.py`, you can change reference path planner / path smoothers to use.
+
 For the benchmarking purposes, the clarification of execution time may be made for planner and smoother servers, to reduce impacts caused by other system actions outside of the planning / smoothing algorithm (optional):
 
 ```
@@ -60,38 +92,6 @@ index ada1f664..610e9512 100644
        result->path, goal->max_smoothing_duration);
      result->smoothing_duration = steady_clock_.now() - start_time;
 ```
-
-To use the suite, modify the Nav2 bringup parameters `nav2_params.yaml` to include selected path planner:
-
-```
-planner_server:
-  ros__parameters:
-    expected_planner_frequency: 20.0
-    planner_plugins: ["SmacHybrid"]
-    SmacHybrid:
-      plugin: "nav2_smac_planner/SmacPlannerHybrid"
-      tolerance: 0.5
-      motion_model_for_search: "DUBIN" # default, non-reverse motion
-      smooth_path: false # should be disabled for experiment
-      analytic_expansion_max_length: 0.3 # decreased to avoid robot jerking
-```
-
-... and path smoothers for benchmark:
-
-```
- smoother_server:
-   ros__parameters:
-    smoother_plugins: ["simple_smoother", "constrained_smoother"]
-    simple_smoother:
-      plugin: "nav2_smoother::SimpleSmoother"
-      holonomic: False # should be disabled to utilize motion/rotation model
-    constrained_smoother:
-      plugin: "nav2_constrained_smoother/ConstrainedSmoother"
-      w_smooth: 100000.0 # tuned
-```
-
-Set global costmap, path planner and smoothers parameters to those desired in `nav2_params.yaml`.
-Inside of `metrics.py`, you can change reference path planner / path smoothers to use.
 
 Then execute the benchmarking:
 
