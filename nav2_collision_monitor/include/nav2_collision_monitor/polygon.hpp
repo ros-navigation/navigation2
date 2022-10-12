@@ -111,6 +111,16 @@ public:
   virtual void getPolygon(std::vector<Point> & poly) const;
 
   /**
+   * @brief Obtains a transform from source_frame_id -> to base_frame_id_
+   * @param source_frame_id Source frame ID to convert data from
+   * @param tf_transform Output source->base transform
+   * @return True if got correct transform, otherwise false
+   */
+  bool getTransform(
+    const std::string & source_frame_id,
+    tf2::Transform & tf2_transform) const;
+
+  /**
    * @brief Updates polygon from footprint subscriber (if any)
    */
   void updatePolygon();

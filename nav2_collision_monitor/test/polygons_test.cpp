@@ -40,6 +40,7 @@ using namespace std::chrono_literals;
 static constexpr double EPSILON = std::numeric_limits<float>::epsilon();
 
 static const char BASE_FRAME_ID[]{"base_link"};
+static const char BASE2_FRAME_ID[]{"base2_link"};
 static const char FOOTPRINT_TOPIC[]{"footprint"};
 static const char POLYGON_SUB_TOPIC[]{"polygon_sub"};
 static const char POLYGON_PUB_TOPIC[]{"polygon_pub"};
@@ -73,7 +74,7 @@ public:
     footprint_pub_.reset();
   }
 
-  void publishPolygon(const bool is_correct)
+  void publishPolygon(const std::string & frame_id, const bool is_correct)
   {
     polygon_pub_ = this->create_publisher<geometry_msgs::msg::PolygonStamped>(
       POLYGON_SUB_TOPIC, rclcpp::SystemDefaultsQoS());
@@ -88,7 +89,7 @@ public:
       polygon_size = 2;
     }
 
-    msg->header.frame_id = BASE_FRAME_ID;
+    msg->header.frame_id = frame_id;
     msg->header.stamp = this->now();
 
     geometry_msgs::msg::Point32 p;
@@ -216,6 +217,8 @@ protected:
   // Creating routines
   void createPolygon(const std::string & action_type, const std::string & polygon_sub_topic);
   void createCircle(const std::string & action_type);
+
+  void sendTransforms();
 
   // Wait until polygon will be received
   bool waitPolygon(
@@ -364,6 +367,29 @@ void Tester::createCircle(const std::string & action_type)
     tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_TRUE(circle_->configure());
   circle_->activate();
+}
+
+void Tester::sendTransforms()
+{
+  std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster =
+    std::make_shared<tf2_ros::TransformBroadcaster>(test_node_);
+
+  geometry_msgs::msg::TransformStamped transform;
+
+  // base_frame -> base2_frame transform
+  transform.header.frame_id = BASE_FRAME_ID;
+  transform.child_frame_id = BASE2_FRAME_ID;
+
+  transform.header.stamp = test_node_->now();
+  transform.transform.translation.x = 0.1;
+  transform.transform.translation.y = 0.1;
+  transform.transform.translation.z = 0.0;
+  transform.transform.rotation.x = 0.0;
+  transform.transform.rotation.y = 0.0;
+  transform.transform.rotation.z = 0.0;
+  transform.transform.rotation.w = 1.0;
+
+  tf_broadcaster->sendTransform(transform);
 }
 
 bool Tester::waitPolygon(
@@ -557,11 +583,11 @@ TEST_F(Tester, testPolygonTopicUpdate)
   ASSERT_EQ(poly.size(), 0u);
 
   // Publish incorrect shape and check that polygon was not updated
-  test_node_->publishPolygon(false);
+  test_node_->publishPolygon(BASE_FRAME_ID, false);
   ASSERT_FALSE(waitPolygon(100ms, poly));
 
   // Publush correct polygon and make shure that it was set correctly
-  test_node_->publishPolygon(true);
+  test_node_->publishPolygon(BASE_FRAME_ID, true);
   ASSERT_TRUE(waitPolygon(500ms, poly));
   ASSERT_EQ(poly.size(), 4u);
   EXPECT_NEAR(poly[0].x, SQUARE_POLYGON[0], EPSILON);
@@ -572,6 +598,43 @@ TEST_F(Tester, testPolygonTopicUpdate)
   EXPECT_NEAR(poly[2].y, SQUARE_POLYGON[5], EPSILON);
   EXPECT_NEAR(poly[3].x, SQUARE_POLYGON[6], EPSILON);
   EXPECT_NEAR(poly[3].y, SQUARE_POLYGON[7], EPSILON);
+}
+
+TEST_F(Tester, testPolygonTopicUpdateDifferentFrame)
+{
+  createPolygon("stop", POLYGON_SUB_TOPIC);
+  sendTransforms();
+
+  std::vector<nav2_collision_monitor::Point> poly;
+  polygon_->getPolygon(poly);
+  ASSERT_EQ(poly.size(), 0u);
+
+  // Publush polygon in different frame and make shure that it was set correctly
+  test_node_->publishPolygon(BASE2_FRAME_ID, true);
+  ASSERT_TRUE(waitPolygon(500ms, poly));
+  ASSERT_EQ(poly.size(), 4u);
+  EXPECT_NEAR(poly[0].x, SQUARE_POLYGON[0] + 0.1, EPSILON);
+  EXPECT_NEAR(poly[0].y, SQUARE_POLYGON[1] + 0.1, EPSILON);
+  EXPECT_NEAR(poly[1].x, SQUARE_POLYGON[2] + 0.1, EPSILON);
+  EXPECT_NEAR(poly[1].y, SQUARE_POLYGON[3] + 0.1, EPSILON);
+  EXPECT_NEAR(poly[2].x, SQUARE_POLYGON[4] + 0.1, EPSILON);
+  EXPECT_NEAR(poly[2].y, SQUARE_POLYGON[5] + 0.1, EPSILON);
+  EXPECT_NEAR(poly[3].x, SQUARE_POLYGON[6] + 0.1, EPSILON);
+  EXPECT_NEAR(poly[3].y, SQUARE_POLYGON[7] + 0.1, EPSILON);
+}
+
+TEST_F(Tester, testPolygonTopicUpdateIncorrectFrame)
+{
+  createPolygon("stop", POLYGON_SUB_TOPIC);
+  sendTransforms();
+
+  std::vector<nav2_collision_monitor::Point> poly;
+  polygon_->getPolygon(poly);
+  ASSERT_EQ(poly.size(), 0u);
+
+  // Publush polygon in incorrect frame and check that polygon was not updated
+  test_node_->publishPolygon("incorrect_frame", true);
+  ASSERT_FALSE(waitPolygon(100ms, poly));
 }
 
 TEST_F(Tester, testPolygonFootprintUpdate)
