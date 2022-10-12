@@ -44,7 +44,6 @@
 #include "nav2_costmap_2d/costmap_filters/costmap_filter.hpp"
 
 #include "rclcpp/rclcpp.hpp"
-#include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav2_msgs/msg/costmap_filter_info.hpp"
 
 namespace nav2_costmap_2d
