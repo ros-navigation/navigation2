@@ -203,7 +203,7 @@ RotationShimController::transformPoseToBaseFrame(const geometry_msgs::msg::PoseS
 {
   geometry_msgs::msg::PoseStamped pt_base;
   if (!nav2_util::transformPoseInTargetFrame(pt, pt_base, *tf_, costmap_ros_->getBaseFrameID())) {
-    throw nav2_core::ControllerException("Failed to transform pose to base frame!");
+    throw nav2_core::ControllerTFError("Failed to transform pose to base frame!");
   }
   return pt_base.pose;
 }
