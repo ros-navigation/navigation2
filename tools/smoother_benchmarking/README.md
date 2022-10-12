@@ -10,7 +10,7 @@ pip install seaborn
 pip install tabulate
 ```
 
-For the benchmarking purposes, the clarification of execution time should be made for planner and smoother servers:
+For the benchmarking purposes, the clarification of execution time may be made for planner and smoother servers, to reduce impacts caused by other system actions outside of the planning / smoothing algorithm (optional):
 
 ```
 diff --git a/nav2_planner/src/planner_server.cpp b/nav2_planner/src/planner_server.cpp
