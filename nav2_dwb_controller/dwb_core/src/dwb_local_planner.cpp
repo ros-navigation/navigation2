@@ -263,6 +263,9 @@ DWBLocalPlanner::computeVelocityCommands(
   } catch (const nav2_core::InvalidPath & e) {
     pub_->publishEvaluation(results);
     throw e;
+  } catch (const nav2_core::NoValidControl & e) {
+    pub_->publishEvaluation(results);
+    throw e;
   } catch (const nav2_core::ControllerException & e) {
     pub_->publishEvaluation(results);
     throw e;

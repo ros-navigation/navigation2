@@ -406,43 +406,43 @@ void ControllerServer::computeControl()
   } catch (nav2_core::ControllerTFError & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
     publishZeroVelocity();
-    std::shared_ptr<nav2_msgs::action::FollowPath::Result> result = std::make_shared<nav2_msgs::action::FollowPath::Result>();
-    result->error_code = nav2_msgs::action::FollowPath::Goal::TF_ERROR;
+    std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
+    result->error_code = Action::Goal::TF_ERROR;
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::NoValidControl & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
     publishZeroVelocity();
-    std::shared_ptr<nav2_msgs::action::FollowPath::Result> result = std::make_shared<nav2_msgs::action::FollowPath::Result>();
-    result->error_code = nav2_msgs::action::FollowPath::Goal::NO_VALID_CONTROL;
+    std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
+    result->error_code = Action::Goal::NO_VALID_CONTROL;
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::FailedToMakeProgress & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
     publishZeroVelocity();
-    std::shared_ptr<nav2_msgs::action::FollowPath::Result> result = std::make_shared<nav2_msgs::action::FollowPath::Result>();
-    result->error_code = nav2_msgs::action::FollowPath::Goal::FAILED_TO_MAKE_PROGRESS;
+    std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
+    result->error_code = Action::Goal::FAILED_TO_MAKE_PROGRESS;
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::PatienceExceeded & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
     publishZeroVelocity();
-    std::shared_ptr<nav2_msgs::action::FollowPath::Result> result = std::make_shared<nav2_msgs::action::FollowPath::Result>();
-    result->error_code = nav2_msgs::action::FollowPath::Goal::PATIENCE_EXCEEDED;
+    std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
+    result->error_code = Action::Goal::PATIENCE_EXCEEDED;
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::InvalidPath & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
     publishZeroVelocity();
-   std::shared_ptr<nav2_msgs::action::FollowPath::Result> result = std::make_shared<nav2_msgs::action::FollowPath::Result>();
-    result->error_code = nav2_msgs::action::FollowPath::Goal::INVALID_PATH;
+    std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
+    result->error_code = Action::Goal::INVALID_PATH;
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::ControllerException & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
     publishZeroVelocity();
-    std::shared_ptr<nav2_msgs::action::FollowPath::Result> result = std::make_shared<nav2_msgs::action::FollowPath::Result>();
-    result->error_code = nav2_msgs::action::FollowPath::Goal::UNKNOWN;
+    std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
+    result->error_code = Action::Goal::UNKNOWN;
     action_server_->terminate_current(result);
     return;
   }
@@ -499,7 +499,7 @@ void ControllerServer::computeAndPublishVelocity()
       nav_2d_utils::twist2Dto3D(twist),
       goal_checkers_[current_goal_checker_].get());
     last_valid_cmd_time_ = now();
-  } catch (nav2_core::ControllerException & e) {
+  } catch (nav2_core::NoValidControl & e) {
     if (failure_tolerance_ > 0 || failure_tolerance_ == -1.0) {
       RCLCPP_WARN(this->get_logger(), e.what());
       cmd_vel_2d.twist.angular.x = 0;
@@ -516,7 +516,7 @@ void ControllerServer::computeAndPublishVelocity()
         throw nav2_core::PatienceExceeded("Controller patience exceeded");
       }
     } else {
-      throw nav2_core::ControllerException(e.what());
+      throw nav2_core::NoValidControl(e.what());
     }
   }
 
