@@ -712,7 +712,7 @@ Nav2Panel::onInitialize()
 
   // create map_pose subscription for initial_pose
   map_pose_sub_ = node->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-    "map_pose",
+    "amcl_pose",
     rclcpp::SystemDefaultsQoS(),
     [this](const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg) {
       initial_pose_ = *msg;

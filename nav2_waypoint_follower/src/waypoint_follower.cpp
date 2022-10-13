@@ -287,6 +287,7 @@ WaypointFollower::followWaypoints()
           failed_ids_.clear();
           return;
         }
+        std::cout << "Starting a new loop, current loop count is: " << current_loop_no << std::endl;
         goal_index = 0;
         current_loop_no++;
       }
