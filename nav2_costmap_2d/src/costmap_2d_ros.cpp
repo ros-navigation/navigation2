@@ -661,7 +661,7 @@ Costmap2DROS::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameter
           resize_map = true;
           map_width_meters_ = parameter.as_int();
         } else {
-            RCLCPP_ERROR(
+          RCLCPP_ERROR(
             get_logger(), "You try to set width of map to be negative or zero,"
             " this isn't allowed, please give a positive value.");
         }
@@ -670,7 +670,7 @@ Costmap2DROS::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameter
           resize_map = true;
           map_height_meters_ = parameter.as_int();
         } else {
-            RCLCPP_ERROR(
+          RCLCPP_ERROR(
             get_logger(), "You try to set height of map to be negative or zero,"
             " this isn't allowed, please give a positive value.");
         }
