@@ -696,8 +696,8 @@ Nav2Panel::onInitialize()
       pause_button_pressed_)
       {
         navigation_feedback_indicator_->setText(
-          QString(std::string("<b> Note: </b> Last cancelled waypoint is stored").c_str()) +
-          QString(std::string("Please press resume to continue the navigation").c_str()));
+          QString(std::string("<b> Note: </b> Last cancelled waypoint is stored. ").c_str()) +
+          QString(std::string("Please press resume to continue the navigation.").c_str()));
         pause_button_pressed_ = false;
       }
     });
@@ -919,6 +919,7 @@ Nav2Panel::onAccumulating()
   loop = "0";
   initial_pose_stored_ = false;
   loop_counter_stop_ = true;
+  goal_index_ = 0;
   updateWpNavigationMarkers();
 }
 
