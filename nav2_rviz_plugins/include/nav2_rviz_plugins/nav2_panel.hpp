@@ -34,7 +34,6 @@
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 
 class QPushButton;
 
@@ -84,12 +83,11 @@ private:
   std::string loop = "0";
   int goal_index_ = 0;
   bool pause_button_pressed_ = false;
-  int accumulated_pose_size_ = 0;
   int loop_count_ = 0;
-  bool loop_counter_stop_ = false;
-  int last_stored_index_ = 0;
+  bool loop_counter_stop_ = true;
   geometry_msgs::msg::PoseWithCovarianceStamped initial_pose_;
-  bool store_initial_pose = false;
+  bool store_initial_pose_ = false;
+  bool initial_pose_stored_ = false;
 
 
   // Call to send NavigateToPose action request for goal poses
@@ -161,7 +159,7 @@ private:
   QLabel * navigation_feedback_indicator_{nullptr};
   QLabel * number_of_loops_{nullptr};
 
-  QLineEdit * nr_of_loops{nullptr};
+  QLineEdit * nr_of_loops_{nullptr};
 
   QStateMachine state_machine_;
   InitialThread * initial_thread_;
