@@ -96,6 +96,19 @@ protected:
     }
   }
 
+  // Check that map_msg corresponds to reference pattern
+  // Input: grid_map_msg
+  void verifyGridMapMsg(const grid_map_msgs::msg::GridMap & grid_map_msg)
+  {
+    ASSERT_FLOAT_EQ(grid_map_msg.info.resolution, g_valid_image_res);
+    ASSERT_FLOAT_EQ(grid_map_msg.info.length_x, g_valid_image_width * g_valid_image_res);
+    ASSERT_FLOAT_EQ(grid_map_msg.info.length_y, g_valid_image_height * g_valid_image_res);
+
+    for (unsigned int i = 0; i < (unsigned int) (grid_map_msg.info.length_x * grid_map_msg.info.length_y) / (grid_map_msg.info.resolution * grid_map_msg.info.resolution); i++) {  
+      ASSERT_FLOAT_EQ(grid_map_msg.data[0].data[i], g_valid_elevation_content[i]);
+    }
+  }
+
   static rclcpp::Node::SharedPtr node_;
   static std::shared_ptr<nav2_util::LifecycleServiceClient> lifecycle_client_;
 };
@@ -234,4 +247,23 @@ TEST_F(MapServerTestFixture, NoInitialMap)
 
   ASSERT_EQ(load_res->result, nav2_msgs::srv::LoadMap::Response::RESULT_SUCCESS);
   verifyMapMsg(load_res->map);
+}
+
+
+// Send map loading service request and verify obtained grid_map
+TEST_F(MapServerTestFixture, LoadGridMap)
+{
+  RCLCPP_INFO(node_->get_logger(), "Testing LoadGridMap service");
+  auto req = std::make_shared<nav2_msgs::srv::LoadMap::Request>();
+  auto client = node_->create_client<nav2_msgs::srv::LoadMap>(
+    "/map_server/load_map");
+
+  RCLCPP_INFO(node_->get_logger(), "Waiting for load_map service");
+  ASSERT_TRUE(client->wait_for_service());
+
+  req->map_url = path(TEST_DIR) / path(g_valid_grid_map_yaml_file);
+  auto resp = send_request<nav2_msgs::srv::LoadMap>(node_, client, req);
+
+  ASSERT_EQ(resp->result, nav2_msgs::srv::LoadMap::Response::RESULT_SUCCESS);
+  verifyGridMapMsg(resp->grid_map);
 }

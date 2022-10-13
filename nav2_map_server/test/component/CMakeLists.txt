@@ -5,7 +5,7 @@ ament_add_gtest_executable(test_map_server_node
   test_map_server_node.cpp
   ${PROJECT_SOURCE_DIR}/test/test_constants.cpp
 )
-ament_target_dependencies(test_map_server_node rclcpp nav_msgs)
+ament_target_dependencies(test_map_server_node rclcpp nav_msgs grid_map_msgs)
 target_link_libraries(test_map_server_node
   ${library_name}
   stdc++fs

@@ -1,0 +1,11 @@
+image: "testmap.png"
+resolution: 0.1
+origin: [2.0, 3.0, 1.0]
+occupied_thresh: 0.65
+free_thresh: 0.196
+negate: 0
+mode: "trinary"
+#  elevation layer
+elevation_image: ele_testmap.pgm
+min_height: -1
+max_height: 1
