@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#ifndef NAV2_SMOOTHER__SIMPLE_SMOOTHER_HPP_
-#define NAV2_SMOOTHER__SIMPLE_SMOOTHER_HPP_
+#ifndef NAV2_SMOOTHER__SAVITZKY_GOLAY_SMOOTHER_HPP_
+#define NAV2_SMOOTHER__SAVITZKY_GOLAY_SMOOTHER_HPP_
 
 #include <cmath>
 #include <vector>
@@ -37,21 +37,21 @@ namespace nav2_smoother
 {
 
 /**
- * @class nav2_smoother::SimpleSmoother
- * @brief A path smoother implementation
+ * @class nav2_smoother::SavitzkyGolaySmoother
+ * @brief A path smoother implementation using Savitzky Golay filters
  */
-class SimpleSmoother : public nav2_core::Smoother
+class SavitzkyGolaySmoother : public nav2_core::Smoother
 {
 public:
   /**
-   * @brief A constructor for nav2_smoother::SimpleSmoother
+   * @brief A constructor for nav2_smoother::SavitzkyGolaySmoother
    */
-  SimpleSmoother() = default;
+  SavitzkyGolaySmoother() = default;
 
   /**
-   * @brief A destructor for nav2_smoother::SimpleSmoother
+   * @brief A destructor for nav2_smoother::SavitzkyGolaySmoother
    */
-  ~SimpleSmoother() override = default;
+  ~SavitzkyGolaySmoother() override = default;
 
   void configure(
     const rclcpp_lifecycle::LifecycleNode::WeakPtr &,
@@ -62,7 +62,7 @@ public:
   /**
    * @brief Method to cleanup resources.
    */
-  void cleanup() override {costmap_sub_.reset();}
+  void cleanup() override {}
 
   /**
    * @brief Method to activate smoother and any threads involved in execution.
@@ -96,37 +96,13 @@ protected:
    */
   bool smoothImpl(
     nav_msgs::msg::Path & path,
-    bool & reversing_segment,
-    const nav2_costmap_2d::Costmap2D * costmap,
-    const double & max_time);
+    bool & reversing_segment);
 
-  /**
-   * @brief Get the field value for a given dimension
-   * @param msg Current pose to sample
-   * @param dim Dimension ID of interest
-   * @return dim value
-   */
-  inline double getFieldByDim(
-    const geometry_msgs::msg::PoseStamped & msg,
-    const unsigned int & dim);
-
-  /**
-   * @brief Set the field value for a given dimension
-   * @param msg Current pose to sample
-   * @param dim Dimension ID of interest
-   * @param value to set the dimention to for the pose
-   */
-  inline void setFieldByDim(
-    geometry_msgs::msg::PoseStamped & msg, const unsigned int dim,
-    const double & value);
-
-  double tolerance_, data_w_, smooth_w_;
-  int max_its_, refinement_ctr_;
   bool do_refinement_;
-  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
-  rclcpp::Logger logger_{rclcpp::get_logger("SimpleSmoother")};
+  int refinement_num_;
+  rclcpp::Logger logger_{rclcpp::get_logger("SGSmoother")};
 };
 
 }  // namespace nav2_smoother
 
-#endif  // NAV2_SMOOTHER__SIMPLE_SMOOTHER_HPP_
+#endif  // NAV2_SMOOTHER__SAVITZKY_GOLAY_SMOOTHER_HPP_
