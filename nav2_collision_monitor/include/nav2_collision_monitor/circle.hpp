@@ -69,6 +69,7 @@ public:
 protected:
   /**
    * @brief Supporting routine obtaining polygon-specific ROS-parameters
+   * @brief polygon_sub_topic Input name of polygon subscription topic
    * @param polygon_pub_topic Output name of polygon publishing topic
    * @param footprint_topic Output name of footprint topic. For Circle returns empty string,
    * there is no footprint subscription in this class.
