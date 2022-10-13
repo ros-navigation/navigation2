@@ -707,7 +707,7 @@ Nav2Panel::onInitialize()
         getGoalStatusLabel(msg->status_list.back().status));
     });
 
-  // create map_pose subscription
+  // create map_pose subscription for initial_pose
   map_pose_sub_ = node->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "map_pose",
     rclcpp::SystemDefaultsQoS(),
@@ -876,6 +876,8 @@ void
 Nav2Panel::onAccumulatedWp()
 {
   std::cout << "Start waypoint" << std::endl;
+
+  // storing and removing the initial pose based on checkbox state
   if (store_poses_.size() == 0) {
     if (store_initial_pose_) {
       geometry_msgs::msg::PoseStamped initial_pose;
@@ -890,6 +892,7 @@ Nav2Panel::onAccumulatedWp()
         acummulated_poses_.begin());
     }
   }
+
   startWaypointFollowing(acummulated_poses_);
   store_poses_ = acummulated_poses_;
   acummulated_poses_.clear();

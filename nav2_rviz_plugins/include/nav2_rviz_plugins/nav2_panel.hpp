@@ -80,15 +80,14 @@ private:
   void timerEvent(QTimerEvent * event) override;
 
   int unique_id {0};
-  std::string loop = "0";
   int goal_index_ = 0;
-  bool pause_button_pressed_ = false;
   int loop_count_ = 0;
-  bool loop_counter_stop_ = true;
-  geometry_msgs::msg::PoseWithCovarianceStamped initial_pose_;
   bool store_initial_pose_ = false;
   bool initial_pose_stored_ = false;
-
+  bool pause_button_pressed_ = false;
+  bool loop_counter_stop_ = true;
+  std::string loop = "0";
+  geometry_msgs::msg::PoseWithCovarianceStamped initial_pose_;
 
   // Call to send NavigateToPose action request for goal poses
   geometry_msgs::msg::PoseStamped convert_to_msg(
@@ -129,6 +128,8 @@ private:
     navigation_goal_status_sub_;
   rclcpp::Subscription<nav2_msgs::action::NavigateThroughPoses::Impl::GoalStatusMessage>::SharedPtr
     nav_through_poses_goal_status_sub_;
+
+  // map_pose subscriber for initial pose
   rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr
     map_pose_sub_;
 
