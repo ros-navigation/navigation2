@@ -705,6 +705,9 @@ Nav2Panel::onInitialize()
     [this](const action_msgs::msg::GoalStatusArray::SharedPtr msg) {
       navigation_goal_status_indicator_->setText(
         getGoalStatusLabel(msg->status_list.back().status));
+      if (msg->status_list.back().status != action_msgs::msg::GoalStatus::STATUS_EXECUTING) {
+        navigation_feedback_indicator_->setText(getNavThroughPosesFeedbackLabel());
+      }
     });
 
   // create map_pose subscription for initial_pose
