@@ -673,6 +673,8 @@ Nav2Panel::onInitialize()
             std::string(
               "</td></tr><tr><td width=150>Loop:</td><td>" +
               toString(loop_count_)).c_str()));
+      } else {
+        navigation_feedback_indicator_->setText(getNavToPoseFeedbackLabel(msg->feedback));
       }
     });
   nav_through_poses_feedback_sub_ =
