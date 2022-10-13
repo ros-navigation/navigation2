@@ -21,7 +21,6 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/polygon_stamped.hpp"
-#include "geometry_msgs/msg/polygon.hpp"
 
 #include "tf2/time.h"
 #include "tf2_ros/buffer.h"
@@ -138,7 +137,7 @@ public:
   /**
    * @brief Publishes polygon message into a its own topic
    */
-  void publish() const;
+  void publish();
 
 protected:
   /**
@@ -171,8 +170,8 @@ protected:
     tf2::Transform & tf2_transform) const;
 
   /**
-   * @brief Updates polygon from geometry_msgs::msg::Polygon points
-   * @param msg Polygon message to update points from
+   * @brief Updates polygon from geometry_msgs::msg::PolygonStamped message
+   * @param msg Message to update polygon from
    */
   void updatePolygon(geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg);
 
@@ -225,8 +224,8 @@ protected:
   // Visualization
   /// @brief Whether to publish the polygon
   bool visualize_;
-  /// @brief Polygon points stored for later publishing
-  geometry_msgs::msg::Polygon polygon_;
+  /// @brief Polygon stored for later publishing
+  geometry_msgs::msg::PolygonStamped polygon_;
   /// @brief Polygon publisher for visualization purposes
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_pub_;
 

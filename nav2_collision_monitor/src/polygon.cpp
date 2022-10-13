@@ -86,7 +86,8 @@ bool Polygon::configure()
   }
 
   if (visualize_) {
-    // Fill polygon_ points for future usage
+    // Fill polygon_ for future usage
+    polygon_.header.frame_id = base_frame_id_;
     std::vector<Point> poly;
     getPolygon(poly);
     for (const Point & p : poly) {
@@ -94,7 +95,7 @@ bool Polygon::configure()
       p_s.x = p.x;
       p_s.y = p.y;
       // p_s.z will remain 0.0
-      polygon_.points.push_back(p_s);
+      polygon_.polygon.points.push_back(p_s);
     }
 
     rclcpp::QoS polygon_qos = rclcpp::SystemDefaultsQoS();  // set to default
@@ -159,14 +160,15 @@ void Polygon::updatePolygon()
 
     std::size_t new_size = footprint_vec.size();
     poly_.resize(new_size);
-    polygon_.points.resize(new_size);
+    polygon_.header.frame_id = base_frame_id_;
+    polygon_.polygon.points.resize(new_size);
 
     geometry_msgs::msg::Point32 p_s;
     for (std::size_t i = 0; i < new_size; i++) {
       poly_[i] = {footprint_vec[i].x, footprint_vec[i].y};
       p_s.x = footprint_vec[i].x;
       p_s.y = footprint_vec[i].y;
-      polygon_.points[i] = p_s;
+      polygon_.polygon.points[i] = p_s;
     }
   }
 }
@@ -212,7 +214,7 @@ double Polygon::getCollisionTime(
   return -1.0;
 }
 
-void Polygon::publish() const
+void Polygon::publish()
 {
   if (!visualize_) {
     return;
@@ -223,15 +225,9 @@ void Polygon::publish() const
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  // Fill PolygonStamped struct
-  std::unique_ptr<geometry_msgs::msg::PolygonStamped> poly_s =
-    std::make_unique<geometry_msgs::msg::PolygonStamped>();
-  poly_s->header.stamp = node->now();
-  poly_s->header.frame_id = base_frame_id_;
-  poly_s->polygon = polygon_;
-
-  // Publish polygon
-  polygon_pub_->publish(std::move(poly_s));
+  // Actualize the time to current and publish the polygon
+  polygon_.header.stamp = node->now();
+  polygon_pub_->publish(polygon_);
 }
 
 bool Polygon::getCommonParameters(std::string & polygon_pub_topic)
@@ -442,8 +438,10 @@ void Polygon::updatePolygon(geometry_msgs::msg::PolygonStamped::ConstSharedPtr m
     poly_[i] = {p_v3_b.x(), p_v3_b.y()};
   }
 
-  // Set polygon for visualization
-  polygon_ = msg->polygon;
+  if (visualize_) {
+    // Store polygon_ for visualization
+    polygon_ = *msg;
+  }
 }
 
 void Polygon::polygonCallback(geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg)
