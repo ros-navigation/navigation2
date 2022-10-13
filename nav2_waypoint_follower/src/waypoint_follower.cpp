@@ -178,13 +178,6 @@ WaypointFollower::followWaypoints()
   bool new_goal = true;
 
   while (rclcpp::ok()) {
-    if (no_of_loops > 0) {
-      RCLCPP_INFO_EXPRESSION(
-        get_logger(),
-        (static_cast<int>(now().seconds()) % 10 == 0),
-        "Executing loop count: %u....", current_loop_no);
-    }
-
     // Check if asked to stop processing action
     if (action_server_->is_cancel_requested()) {
       auto cancel_future = nav_to_pose_client_->async_cancel_all_goals();
