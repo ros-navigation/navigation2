@@ -607,10 +607,8 @@ void Nav2Panel::handleGoalSaver()
     std::cout << "No accumulated Points to Save!" << std::endl;
     return;
   } else {
-    std::cout << "Clearing Waypoints!" << std::endl;
+    std::cout << "Saving Waypoints!" << std::endl;
   }
-
-  std::cout << "Saving Waypoints!" << std::endl;
 
   YAML::Emitter out;
   out << YAML::BeginMap;
@@ -659,22 +657,22 @@ Nav2Panel::onInitialize()
     "navigate_to_pose/_action/feedback",
     rclcpp::SystemDefaultsQoS(),
     [this](const nav2_msgs::action::NavigateToPose::Impl::FeedbackMessage::SharedPtr msg) {
-        if (stoi(loop) > 0) {
-          if (goal_index_ == 0 && !loop_counter_stop_) {
-            loop_count_++;
-            loop_counter_stop_ = true;
-          }
-          if (goal_index_ != 0) {
-            loop_counter_stop_ = false;
-          }
+      if (stoi(loop) > 0) {
+        if (goal_index_ == 0 && !loop_counter_stop_) {
+          loop_count_++;
+          loop_counter_stop_ = true;
+        }
+        if (goal_index_ != 0) {
+          loop_counter_stop_ = false;
+        }
         navigation_feedback_indicator_->setText(
-        getNavToPoseFeedbackLabel(msg->feedback) + QString(
-          std::string(
-            "</td></tr><tr><td width=150>Waypoint:</td><td>" +
-            toString(goal_index_ + 1)).c_str()) + QString(
-          std::string(
-            "</td></tr><tr><td width=150>Loop:</td><td>" +
-            toString(loop_count_)).c_str()));
+          getNavToPoseFeedbackLabel(msg->feedback) + QString(
+            std::string(
+              "</td></tr><tr><td width=150>Waypoint:</td><td>" +
+              toString(goal_index_ + 1)).c_str()) + QString(
+            std::string(
+              "</td></tr><tr><td width=150>Loop:</td><td>" +
+              toString(loop_count_)).c_str()));
       }
     });
   nav_through_poses_feedback_sub_ =

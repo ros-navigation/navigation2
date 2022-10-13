@@ -295,11 +295,6 @@ WaypointFollower::followWaypoints()
         goal_index = 0;
         current_loop_no++;
       }
-    } else {
-      RCLCPP_INFO_EXPRESSION(
-        get_logger(),
-        (static_cast<int>(now().seconds()) % 30 == 0),
-        "Processing waypoint %i...", goal_index);
     }
 
     callback_group_executor_.spin_some();
