@@ -33,7 +33,6 @@ planner_server:
     smoother_plugins: ["simple_smoother", "constrained_smoother"]
     simple_smoother:
       plugin: "nav2_smoother::SimpleSmoother"
-      holonomic: False # should be disabled to utilize motion/rotation model
     constrained_smoother:
       plugin: "nav2_constrained_smoother/ConstrainedSmoother"
       w_smooth: 100000.0 # tuned
