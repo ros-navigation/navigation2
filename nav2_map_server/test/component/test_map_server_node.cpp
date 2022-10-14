@@ -104,7 +104,11 @@ protected:
     ASSERT_FLOAT_EQ(grid_map_msg.info.length_x, g_valid_image_width * g_valid_image_res);
     ASSERT_FLOAT_EQ(grid_map_msg.info.length_y, g_valid_image_height * g_valid_image_res);
 
-    for (unsigned int i = 0; i < (unsigned int) (grid_map_msg.info.length_x * grid_map_msg.info.length_y) / (grid_map_msg.info.resolution * grid_map_msg.info.resolution); i++) {  
+    for (unsigned int i = 0;
+      i <
+      (unsigned int) (grid_map_msg.info.length_x * grid_map_msg.info.length_y) /
+      (grid_map_msg.info.resolution * grid_map_msg.info.resolution); i++)
+    {
       ASSERT_FLOAT_EQ(grid_map_msg.data[0].data[i], g_valid_elevation_content[i]);
     }
   }

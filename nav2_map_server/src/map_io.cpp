@@ -316,7 +316,7 @@ void loadGridMapFromFile(
   {
     // get the value at the iterator
     grid_map::Index index = grid_iterator.getUnwrappedIndex();
-    
+
     grid_map::Position current_pos;
     grid_map_to_fill.getPosition(*grid_iterator, current_pos);
 
@@ -433,17 +433,16 @@ LOAD_MAP_STATUS loadMapFromYaml(
     zero_orientation.y = 0.0;
     zero_orientation.z = 0.0;
     zero_orientation.w = 1.0;
-    
+
     prev_orientation = map.info.origin.orientation;
     map.info.origin.orientation = zero_orientation;
     // convert the occupation map to a layer in the grid_map
     grid_map::GridMapRosConverter::fromOccupancyGrid(map, "occupancy", grid_map_to_fill);
 
-    //restore the prev_orient
+    // restore the prev_orient
     map.info.origin.orientation = prev_orientation;
-    
-    // it sets the length, resolution etc to the params in the map
 
+    // it sets the length, resolution etc to the params in the map
     msg_grid_map = *grid_map::GridMapRosConverter::toMessage(grid_map_to_fill);
 
     if (load_parameters.elevation_image_file_name != "") {
