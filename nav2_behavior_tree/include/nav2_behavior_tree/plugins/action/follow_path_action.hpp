@@ -29,9 +29,10 @@ namespace nav2_behavior_tree
  */
 class FollowPathAction : public BtActionNode<nav2_msgs::action::FollowPath>
 {
-using Action = nav2_msgs::action::FollowPath;
-using ActionResult = Action::Result;
-using ActionGoal = Action::Goal;
+  using Action = nav2_msgs::action::FollowPath;
+  using ActionResult = Action::Result;
+  using ActionGoal = Action::Goal;
+
 public:
   /**
    * @brief A constructor for nav2_behavior_tree::FollowPathAction
@@ -84,7 +85,7 @@ public:
         BT::InputPort<std::string>("controller_id", ""),
         BT::InputPort<std::string>("goal_checker_id", ""),
         BT::OutputPort<ActionResult::_error_code_type>(
-            "follow_path_error_code", "The follow path error code"),
+          "follow_path_error_code", "The follow path error code"),
       });
   }
 };
