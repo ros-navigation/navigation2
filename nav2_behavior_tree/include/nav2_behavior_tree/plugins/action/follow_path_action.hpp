@@ -81,10 +81,10 @@ public:
     return providedBasicPorts(
       {
         BT::InputPort<nav_msgs::msg::Path>("path", "Path to follow"),
-        BT::OutputPort<ActionResult::_error_code_type>(
-            "follow_path_error_code", "The follow path error code"),
         BT::InputPort<std::string>("controller_id", ""),
         BT::InputPort<std::string>("goal_checker_id", ""),
+        BT::OutputPort<ActionResult::_error_code_type>(
+            "follow_path_error_code", "The follow path error code"),
       });
   }
 };
