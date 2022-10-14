@@ -236,6 +236,12 @@ Nav2Panel::Nav2Panel(QWidget * parent)
     navigation_mode_button_, "toolTip",
     waypoint_goal_msg);
 
+  accumulated_nav_through_poses_->assignProperty(
+    nr_of_loops_, "text",
+    QString::fromStdString(loop));
+  accumulated_nav_through_poses_->assignProperty(nr_of_loops_, "enabled", false);
+  accumulated_nav_through_poses_->assignProperty(store_initial_pose_checkbox_, "enabled", false);
+
   // State entered to cancel the navigate_to_pose action
   canceled_ = new QState();
   canceled_->setObjectName("canceled");
