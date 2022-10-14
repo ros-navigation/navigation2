@@ -17,7 +17,6 @@
 #include <string>
 #include <memory>
 #include <vector>
-#include "nav2_core/exceptions.hpp"
 #include "nav_2d_utils/conversions.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/pose2_d.hpp"
