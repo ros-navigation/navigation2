@@ -64,7 +64,7 @@ bool transformPoseInTargetFrame(
  * @param source_frame_id Source frame ID to convert from
  * @param source_time Source timestamp to convert from
  * @param target_frame_id Target frame ID to convert to
- * @param target_time Current node time to interpolate to
+ * @param target_time Target time to interpolate to
  * @param transform_tolerance Transform tolerance
  * @param tf_transform Output source->target transform
  * @return True if got correct transform, otherwise false
