@@ -34,35 +34,23 @@
 #ifndef DWB_CORE__EXCEPTIONS_HPP_
 #define DWB_CORE__EXCEPTIONS_HPP_
 
-#include <stdexcept>
 #include <string>
 #include <memory>
 
-#include "nav2_core/exceptions.hpp"
+#include "nav2_core/controller_exceptions.hpp"
 
 namespace dwb_core
 {
 
 /**
- * @class PlannerTFException
- * @brief Thrown when the planner cannot complete its operation due to TF errors
- */
-class PlannerTFException : public nav2_core::PlannerException
-{
-public:
-  explicit PlannerTFException(const std::string description)
-  : nav2_core::PlannerException(description) {}
-};
-
-/**
  * @class IllegalTrajectoryException
  * @brief Thrown when one of the critics encountered a fatal error
  */
-class IllegalTrajectoryException : public nav2_core::PlannerException
+class IllegalTrajectoryException : public nav2_core::ControllerException
 {
 public:
-  IllegalTrajectoryException(const std::string critic_name, const std::string description)
-  : nav2_core::PlannerException(description), critic_name_(critic_name) {}
+  IllegalTrajectoryException(const std::string & critic_name, const std::string & description)
+  : nav2_core::ControllerException(description), critic_name_(critic_name) {}
   std::string getCriticName() const {return critic_name_;}
 
 protected:

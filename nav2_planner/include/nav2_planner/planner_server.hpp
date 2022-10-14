@@ -39,7 +39,7 @@
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_core/global_planner.hpp"
 #include "nav2_msgs/srv/is_path_valid.hpp"
-#include "nav2_core/exceptions.hpp"
+#include "nav2_core/planner_exceptions.hpp"
 
 namespace nav2_planner
 {
@@ -253,7 +253,7 @@ protected:
   // Publishers for the path
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr plan_publisher_;
 
-  // Service to deterime if the path is valid
+  // Service to determine if the path is valid
   rclcpp::Service<nav2_msgs::srv::IsPathValid>::SharedPtr is_path_valid_service_;
 };
 

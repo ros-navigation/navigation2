@@ -25,7 +25,7 @@
 #include "path_utils/path_utils.hpp"
 #include "nav2_regulated_pure_pursuit_controller/regulated_pure_pursuit_controller.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
-#include "nav2_core/exceptions.hpp"
+#include "nav2_core/controller_exceptions.hpp"
 
 class RclCppFixture
 {
@@ -849,7 +849,7 @@ TEST_F(TransformGlobalPlanTest, all_poses_outside_of_costmap)
   ctrl_->setPlan(global_plan);
 
   // Transform the plan
-  EXPECT_THROW(ctrl_->transformGlobalPlanWrapper(robot_pose), nav2_core::PlannerException);
+  EXPECT_THROW(ctrl_->transformGlobalPlanWrapper(robot_pose), nav2_core::ControllerException);
 }
 
 // Should shortcut the circle if the circle is shorter than max_robot_pose_search_dist

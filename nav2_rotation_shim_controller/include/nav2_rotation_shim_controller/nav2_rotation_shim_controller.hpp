@@ -27,7 +27,7 @@
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_core/controller.hpp"
-#include "nav2_core/exceptions.hpp"
+#include "nav2_core/controller_exceptions.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
 #include "angles/angles.h"

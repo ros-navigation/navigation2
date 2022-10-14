@@ -39,7 +39,7 @@
 #include <utility>
 #include <string>
 #include "dwb_core/exceptions.hpp"
-#include "nav2_core/exceptions.hpp"
+#include "nav2_core/controller_exceptions.hpp"
 
 namespace dwb_core
 {
@@ -66,11 +66,11 @@ protected:
  * @brief Thrown when all the trajectories explored are illegal
  */
 class NoLegalTrajectoriesException
-  : public nav2_core::PlannerException
+  : public nav2_core::ControllerException
 {
 public:
   explicit NoLegalTrajectoriesException(const IllegalTrajectoryTracker & tracker)
-  : PlannerException(tracker.getMessage()),
+  : ControllerException(tracker.getMessage()),
     tracker_(tracker) {}
   IllegalTrajectoryTracker tracker_;
 };
