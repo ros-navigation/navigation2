@@ -20,10 +20,8 @@
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/point32.hpp"
 
-#include "tf2/convert.h"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
-
 #include "nav2_util/node_utils.hpp"
+#include "nav2_util/robot_utils.hpp"
 
 #include "nav2_collision_monitor/kinematics.hpp"
 
@@ -379,36 +377,6 @@ bool Polygon::getParameters(
   return true;
 }
 
-bool Polygon::getTransform(
-  const std::string & source_frame_id,
-  tf2::Transform & tf2_transform) const
-{
-  geometry_msgs::msg::TransformStamped transform;
-  tf2_transform.setIdentity();  // initialize by identical transform
-
-  if (source_frame_id == base_frame_id_) {
-    // We are already in required frame
-    return true;
-  }
-
-  try {
-    // Obtaining the transform to get data from source to base frame
-    transform = tf_buffer_->lookupTransform(
-      base_frame_id_, source_frame_id,
-      tf2::TimePointZero, transform_tolerance_);
-  } catch (tf2::TransformException & e) {
-    RCLCPP_ERROR(
-      logger_,
-      "[%s]: Failed to get \"%s\"->\"%s\" frame transform: %s",
-      polygon_name_.c_str(), source_frame_id.c_str(), base_frame_id_.c_str(), e.what());
-    return false;
-  }
-
-  // Convert TransformStamped to TF2 transform
-  tf2::fromMsg(transform.transform, tf2_transform);
-  return true;
-}
-
 void Polygon::updatePolygon(geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg)
 {
   std::size_t new_size = msg->polygon.points.size();
@@ -423,7 +391,11 @@ void Polygon::updatePolygon(geometry_msgs::msg::PolygonStamped::ConstSharedPtr m
 
   // Get the transform from PolygonStamped frame to base_frame_id_
   tf2::Transform tf_transform;
-  if (!getTransform(msg->header.frame_id, tf_transform)) {
+  if (
+    !nav2_util::getTransform(
+      msg->header.frame_id, base_frame_id_,
+      transform_tolerance_, tf_buffer_, tf_transform))
+  {
     return;
   }
 
