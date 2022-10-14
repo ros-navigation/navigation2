@@ -84,8 +84,8 @@ private:
   int loop_count_ = 0;
   bool store_initial_pose_ = false;
   bool initial_pose_stored_ = false;
-  bool pause_button_pressed_ = false;
   bool loop_counter_stop_ = true;
+
   std::string loop = "0";
   geometry_msgs::msg::PoseWithCovarianceStamped initial_pose_;
 
@@ -158,6 +158,7 @@ private:
   QLabel * localization_status_indicator_{nullptr};
   QLabel * navigation_goal_status_indicator_{nullptr};
   QLabel * navigation_feedback_indicator_{nullptr};
+  QLabel * pause_status_indicator_{nullptr};
   QLabel * number_of_loops_{nullptr};
 
   QLineEdit * nr_of_loops_{nullptr};
