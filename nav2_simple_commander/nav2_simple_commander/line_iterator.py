@@ -26,14 +26,25 @@ from cmath import sqrt
 
 class LineIterator():
     def __init__(self, x0, y0, x1, y1, step_size=1.0):
-        """Initializer for LineIterator.
+        """Initialize the LineIterator
 
-        Args:
-            x0 (Float): Abscissa of the initial point
-            y0 (Float): Ordinate of the initial point
-            x1 (Float): Abscissa of the final point
-            y1 (Float): Ordinate of the final point
-            step_size (Float, optional): Increments Resolution. Defaults to 1.
+        Arguments:
+            x0 -- Abscissa of the initial point
+            y0 -- Ordinate of the initial point
+            x1 -- Abscissa of the final point
+            y1 -- Ordinate of the final point
+
+        Keyword Arguments:
+            step_size -- Increments' Resolution (default: {1.0})
+
+        Raises:
+            TypeError: When x0 is not a number
+            TypeError: When y0 is not a number
+            TypeError: When x1 is not a number
+            TypeError: When y1 is not a number
+            TypeError: When step_size is not a number
+            ValueError: When x0 is not a positive number
+            ValueError: When line has zero length
         """
 
         if type(x0) not in [int, float]:
@@ -86,13 +97,15 @@ class LineIterator():
 
     def isValid(self):
         """Returns True if the line is valid
+
         Returns:
-            Bool: Flag if live is valid (true) or not (false)
+            True if line is valid, false otherwise
         """
         return self.valid_
 
     def advance(self):
-        """Advances to the next point in the line."""
+        """Advance to the next point in the line
+        """
         if self.x1_ > self.x0_:
             if self.x_ < self.x1_:
                 self.x_ = round(self.clamp(
@@ -124,10 +137,10 @@ class LineIterator():
                 self.valid_ = False
 
     def getX(self):
-        """Returns the abscissa of the current point.
+        """Get the abscissa of the current point
 
         Returns:
-            Float: abscissa of current point
+            Abscissa of current point
         """
         return self.x_
 
