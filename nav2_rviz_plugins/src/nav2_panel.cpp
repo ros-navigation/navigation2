@@ -318,7 +318,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   resumed_wp_->assignProperty(navigation_mode_button_, "enabled", false);
 
   resumed_wp_->assignProperty(save_waypoints_button_, "text", "Save waypoints");
-  resumed_wp_->assignProperty(save_waypoints_button_, "enabled", false);
+  resumed_wp_->assignProperty(save_waypoints_button_, "enabled", true);
 
   resumed_wp_->assignProperty(load_waypoints_button_, "text", "Load waypoints");
   resumed_wp_->assignProperty(load_waypoints_button_, "enabled", false);
