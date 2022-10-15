@@ -78,6 +78,7 @@ private:
   void loadLogFiles();
   void onCancelButtonPressed();
   void timerEvent(QTimerEvent * event) override;
+  bool ValidLoopValue(std::string & loop);
 
   int unique_id {0};
   int goal_index_ = 0;
@@ -158,7 +159,7 @@ private:
   QLabel * localization_status_indicator_{nullptr};
   QLabel * navigation_goal_status_indicator_{nullptr};
   QLabel * navigation_feedback_indicator_{nullptr};
-  QLabel * pause_status_indicator_{nullptr};
+  QLabel * waypoint_status_indicator_{nullptr};
   QLabel * number_of_loops_{nullptr};
 
   QLineEdit * nr_of_loops_{nullptr};
@@ -174,6 +175,7 @@ private:
   QState * resumed_{nullptr};
   QState * paused_wp_{nullptr};
   QState * resumed_wp_{nullptr};
+
   // The following states are added to allow for the state of the button to only expose reset
   // while the NavigateToPoses action is not active. While running, the user will be allowed to
   // cancel the action. The ROSActionTransition allows for the state of the action to be detected

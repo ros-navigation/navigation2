@@ -20,6 +20,7 @@
 #include <QTextEdit>
 #include <QCheckBox>
 
+#include <ctype.h>
 #include <memory>
 #include <vector>
 #include <utility>
@@ -56,7 +57,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   localization_status_indicator_ = new QLabel;
   navigation_goal_status_indicator_ = new QLabel;
   navigation_feedback_indicator_ = new QLabel;
-  pause_status_indicator_ = new QLabel;
+  waypoint_status_indicator_ = new QLabel;
   number_of_loops_ = new QLabel;
   nr_of_loops_ = new QLineEdit;
   store_initial_pose_checkbox_ = new QCheckBox("Store initial_pose");
@@ -95,7 +96,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   localization_status_indicator_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
   navigation_goal_status_indicator_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
   navigation_feedback_indicator_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-  pause_status_indicator_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+  waypoint_status_indicator_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
   pre_initial_ = new QState();
   pre_initial_->setObjectName("pre_initial");
@@ -488,7 +489,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   main_layout->addWidget(localization_status_indicator_);
   main_layout->addWidget(navigation_goal_status_indicator_);
   main_layout->addWidget(navigation_feedback_indicator_);
-  main_layout->addWidget(pause_status_indicator_);
+  main_layout->addWidget(waypoint_status_indicator_);
   main_layout->addWidget(pause_resume_button_);
   main_layout->addWidget(start_reset_button_);
   main_layout->addWidget(navigation_mode_button_);
@@ -545,11 +546,57 @@ void Nav2Panel::initialStateHandler()
   }
 }
 
+bool Nav2Panel::ValidLoopValue(std::string & loop_value)
+{
+  // Check for just empty space
+  if (loop_value.empty()) {
+    std::cout << "Loop value cannot be set to empty, setting to 0" << std::endl;
+    loop_value = "0";
+    nr_of_loops_->setText("0");
+    return true;
+  }
+
+  // Check for any chars or spaces in the string
+  for (char & c : loop_value) {
+    if (isalpha(c) || isspace(c)) {
+      waypoint_status_indicator_->setText(
+        "<b> Note: </b> Set a valid value for the loop, check for alphabets and spaces");
+      return false;
+    }
+  }
+
+  try {
+    stoi(loop_value);
+  } catch (std::invalid_argument const & ex) {
+    // Handling special symbols
+    waypoint_status_indicator_->setText("<b> Note: </b> Set a valid value for the loop");
+    navigation_mode_button_->setEnabled(false);
+    return false;
+  } catch (std::out_of_range const & ex) {
+    // Handling out of range values
+    waypoint_status_indicator_->setText(
+      "<b> Note: </b> Loop value out of range, setting max possible value"
+    );
+    loop_value = std::to_string(std::numeric_limits<int>::max());
+    nr_of_loops_->setText(QString::fromStdString(loop_value));
+  }
+  return true;
+}
+
 void Nav2Panel::loophandler()
 {
   loop = nr_of_loops_->displayText().toStdString();
 
-  if (!loop.empty() && stoi(loop) > 0) {
+  // Sanity check for the loop value
+  if (!ValidLoopValue(loop)) {
+    return;
+  }
+
+  // Enabling the start_waypoint_follow button, if disabled.
+  navigation_mode_button_->setEnabled(true);
+
+  // Disabling nav_through_poses button
+  if (!loop.empty() && abs(stoi(loop)) > 0) {
     pause_resume_button_->setEnabled(false);
   } else {
     pause_resume_button_->setEnabled(true);
@@ -667,7 +714,7 @@ Nav2Panel::onInitialize()
     "navigate_to_pose/_action/feedback",
     rclcpp::SystemDefaultsQoS(),
     [this](const nav2_msgs::action::NavigateToPose::Impl::FeedbackMessage::SharedPtr msg) {
-      if (stoi(loop) > 0) {
+      if (abs(stoi(loop)) > 0) {
         if (goal_index_ == 0 && !loop_counter_stop_) {
           loop_count_++;
           loop_counter_stop_ = true;
@@ -799,7 +846,7 @@ Nav2Panel::onCancel()
     std::bind(
       &Nav2Panel::onCancelButtonPressed,
       this));
-  pause_status_indicator_->clear();
+  waypoint_status_indicator_->clear();
 }
 
 void Nav2Panel::onResumedWp()
@@ -810,7 +857,7 @@ void Nav2Panel::onResumedWp()
       &Nav2Panel::onCancelButtonPressed,
       this));
   acummulated_poses_ = store_poses_;
-  pause_status_indicator_->setText(
+  waypoint_status_indicator_->setText(
     QString(std::string("<b> Note: </b> Last cancelled waypoint is stored. ").c_str()) +
     QString(std::string("Please press resume to continue the navigation.").c_str()));
 }
@@ -884,14 +931,26 @@ Nav2Panel::onCancelButtonPressed()
 void
 Nav2Panel::onAccumulatedWp()
 {
-  std::cout << "Start waypoint" << std::endl;
-
   if (acummulated_poses_.size() == 0) {
-    navigation_feedback_indicator_->setText(
-      ("<b> Note: </b> Uh oh! Someone forgot to select the waypoints"));
+    state_machine_.postEvent(new ROSActionQEvent(QActionState::INACTIVE));
+    waypoint_status_indicator_->setText(
+      "<b> Note: </b> Uh oh! Someone forgot to select the waypoints");
+    return;
+  }
+
+  // Sanity check for the loop value
+  if (!ValidLoopValue(loop)) {
     state_machine_.postEvent(new ROSActionQEvent(QActionState::INACTIVE));
     return;
   }
+
+  // Setting the final loop value on the text box for sanity
+  nr_of_loops_->setText(QString::fromStdString(loop));
+
+  // Remove any warning status at this point
+  waypoint_status_indicator_->clear();
+
+  std::cout << "Start waypoint" << std::endl;
 
   // storing and removing the initial pose based on checkbox state
   if (store_poses_.size() == 0) {
@@ -1018,7 +1077,7 @@ Nav2Panel::startWaypointFollowing(std::vector<geometry_msgs::msg::PoseStamped> p
   // Send the goal poses
   waypoint_follower_goal_.poses = poses;
   waypoint_follower_goal_.goal_index = goal_index_;
-  waypoint_follower_goal_.number_of_loops = stoi(loop);
+  waypoint_follower_goal_.number_of_loops = abs(stoi(loop));
 
   RCLCPP_DEBUG(
     client_node_->get_logger(), "Sending a path of %zu waypoints:",
