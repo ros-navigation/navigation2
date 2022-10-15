@@ -1158,18 +1158,53 @@ AmclNode::dynamicParametersCallback(
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (param_name == "alpha1") {
         alpha1_ = parameter.as_double();
+        //alpha restricted to be non-negative
+        if (alpha1_ < 0.0) {
+          RCLCPP_WARN(
+            get_logger(), "You've set alpha1 to be negative,"
+            " this isn't allowed, so the alpha1 will be set to be zero.");
+          alpha1_ = 0.0;
+        }
         reinit_odom = true;
       } else if (param_name == "alpha2") {
         alpha2_ = parameter.as_double();
+        //alpha restricted to be non-negative
+        if (alpha2_ < 0.0) {
+          RCLCPP_WARN(
+            get_logger(), "You've set alpha2 to be negative,"
+            " this isn't allowed, so the alpha2 will be set to be zero.");
+          alpha2_ = 0.0;
+        }
         reinit_odom = true;
       } else if (param_name == "alpha3") {
         alpha3_ = parameter.as_double();
+        //alpha restricted to be non-negative
+        if (alpha3_ < 0.0) {
+          RCLCPP_WARN(
+            get_logger(), "You've set alpha3 to be negative,"
+            " this isn't allowed, so the alpha3 will be set to be zero.");
+          alpha3_ = 0.0;
+        }
         reinit_odom = true;
       } else if (param_name == "alpha4") {
         alpha4_ = parameter.as_double();
+        //alpha restricted to be non-negative
+        if (alpha4_ < 0.0) {
+          RCLCPP_WARN(
+            get_logger(), "You've set alpha4 to be negative,"
+            " this isn't allowed, so the alpha4 will be set to be zero.");
+          alpha4_ = 0.0;
+        }
         reinit_odom = true;
       } else if (param_name == "alpha5") {
         alpha5_ = parameter.as_double();
+        //alpha restricted to be non-negative
+        if (alpha5_ < 0.0) {
+          RCLCPP_WARN(
+            get_logger(), "You've set alpha5 to be negative,"
+            " this isn't allowed, so the alpha5 will be set to be zero.");
+          alpha5_ = 0.0;
+        }
         reinit_odom = true;
       } else if (param_name == "beam_skip_distance") {
         beam_skip_distance_ = parameter.as_double();

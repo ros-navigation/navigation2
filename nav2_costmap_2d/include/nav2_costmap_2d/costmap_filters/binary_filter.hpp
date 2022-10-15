@@ -2,7 +2,7 @@
  *
  * Software License Agreement (BSD License)
  *
- *  Copyright (c) 2020 Samsung Research Russia
+ *  Copyright (c) 2022 Samsung R&D Institute Russia
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -35,32 +35,32 @@
  * Author: Alexey Merzlyakov
  *********************************************************************/
 
-#ifndef NAV2_COSTMAP_2D__COSTMAP_FILTERS__SPEED_FILTER_HPP_
-#define NAV2_COSTMAP_2D__COSTMAP_FILTERS__SPEED_FILTER_HPP_
+#ifndef NAV2_COSTMAP_2D__COSTMAP_FILTERS__BINARY_FILTER_HPP_
+#define NAV2_COSTMAP_2D__COSTMAP_FILTERS__BINARY_FILTER_HPP_
 
 #include <memory>
 #include <string>
 
 #include "nav2_costmap_2d/costmap_filters/costmap_filter.hpp"
 
+#include "std_msgs/msg/bool.hpp"
 #include "nav2_msgs/msg/costmap_filter_info.hpp"
-#include "nav2_msgs/msg/speed_limit.hpp"
 
 namespace nav2_costmap_2d
 {
 /**
- * @class SpeedFilter
+ * @class BinaryFilter
  * @brief Reads in a speed restriction mask and enables a robot to
  * dynamically adjust speed based on pose in map to slow in dangerous
  * areas. Done via absolute speed setting or percentage of maximum speed
  */
-class SpeedFilter : public CostmapFilter
+class BinaryFilter : public CostmapFilter
 {
 public:
   /**
    * @brief A constructor
    */
-  SpeedFilter();
+  BinaryFilter();
 
   /**
    * @brief Initialize the filter and subscribe to the info topic
@@ -95,11 +95,17 @@ private:
    * @brief Callback for the filter mask
    */
   void maskCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
+  /**
+   * @brief Changes binary state of filter. Sends a message with new state.
+   * @param state New binary state
+   */
+  void changeState(const bool state);
 
+  // Working with filter info and mask
   rclcpp::Subscription<nav2_msgs::msg::CostmapFilterInfo>::SharedPtr filter_info_sub_;
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr mask_sub_;
 
-  rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::SpeedLimit>::SharedPtr speed_limit_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Bool>::SharedPtr binary_state_pub_;
 
   nav_msgs::msg::OccupancyGrid::SharedPtr filter_mask_;
 
@@ -107,10 +113,14 @@ private:
   std::string global_frame_;  // Frame of currnet layer (master_grid)
 
   double base_, multiplier_;
-  bool percentage_;
-  double speed_limit_, speed_limit_prev_;
+  // Filter values higher than this threshold,
+  // will set binary state to non-default
+  double flip_threshold_;
+
+  bool default_state_;  // Default Binary Filter state
+  bool binary_state_;  // Current Binary Filter state
 };
 
 }  // namespace nav2_costmap_2d
 
-#endif  // NAV2_COSTMAP_2D__COSTMAP_FILTERS__SPEED_FILTER_HPP_
+#endif  // NAV2_COSTMAP_2D__COSTMAP_FILTERS__BINARY_FILTER_HPP_
