@@ -89,7 +89,7 @@ private:
   bool initial_pose_stored_ = false;
   bool loop_counter_stop_ = true;
 
-  std::string loop = "0";
+  std::string loop_no_ = "0";
   geometry_msgs::msg::PoseWithCovarianceStamped initial_pose_;
 
   // Call to send NavigateToPose action request for goal poses

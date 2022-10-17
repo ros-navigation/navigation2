@@ -204,7 +204,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   accumulating_->assignProperty(pause_waypoint_button_, "text", "Pause waypoint");
   accumulating_->assignProperty(pause_waypoint_button_, "enabled", false);
 
-  accumulating_->assignProperty(nr_of_loops_, "text", QString::fromStdString(loop));
+  accumulating_->assignProperty(nr_of_loops_, "text", QString::fromStdString(loop_no_));
   accumulating_->assignProperty(nr_of_loops_, "enabled", true);
   accumulating_->assignProperty(store_initial_pose_checkbox_, "enabled", true);
 
@@ -257,7 +257,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
 
   accumulated_nav_through_poses_->assignProperty(
     nr_of_loops_, "text",
-    QString::fromStdString(loop));
+    QString::fromStdString(loop_no_));
   accumulated_nav_through_poses_->assignProperty(nr_of_loops_, "enabled", false);
   accumulated_nav_through_poses_->assignProperty(store_initial_pose_checkbox_, "enabled", false);
 
@@ -603,10 +603,10 @@ bool Nav2Panel::isLoopValueValid(std::string & loop_value)
 
 void Nav2Panel::loophandler()
 {
-  loop = nr_of_loops_->displayText().toStdString();
+  loop_no_ = nr_of_loops_->displayText().toStdString();
 
   // Sanity check for the loop value
-  if (!isLoopValueValid(loop)) {
+  if (!isLoopValueValid(loop_no_)) {
     return;
   }
 
@@ -614,7 +614,7 @@ void Nav2Panel::loophandler()
   navigation_mode_button_->setEnabled(true);
 
   // Disabling nav_through_poses button
-  if (!loop.empty() && abs(stoi(loop)) > 0) {
+  if (!loop_no_.empty() && abs(stoi(loop_no_)) > 0) {
     pause_resume_button_->setEnabled(false);
   } else {
     pause_resume_button_->setEnabled(true);
@@ -789,7 +789,7 @@ Nav2Panel::onInitialize()
       {
         store_poses_.clear();
         waypoint_status_indicator_->clear();
-        loop = "0";
+        loop_no_ = "0";
         loop_count_ = 0;
       }
     });
@@ -905,7 +905,7 @@ void Nav2Panel::onResumedWp()
       &Nav2Panel::onCancelButtonPressed,
       this));
   acummulated_poses_ = store_poses_;
-  loop = std::to_string(abs(stoi(loop)) - loop_count_);
+  loop_no_ = std::to_string(abs(stoi(loop_no_)) - loop_count_);
   waypoint_status_indicator_->setText(
     QString(std::string("<b> Note: </b> Last cancelled waypoint is stored. ").c_str()) +
     QString(std::string("Please press resume to continue the navigation.").c_str()));
@@ -1026,7 +1026,7 @@ Nav2Panel::onAccumulatedWp()
   }
 
   // Sanity check for the loop value
-  if (!isLoopValueValid(loop)) {
+  if (!isLoopValueValid(loop_no_)) {
     state_machine_.postEvent(new ROSActionQEvent(QActionState::INACTIVE));
     return;
   }
@@ -1043,7 +1043,7 @@ Nav2Panel::onAccumulatedWp()
   // storing and removing the initial pose based on checkbox state
   if (store_poses_.size() == 0) {
     // Setting the final loop value on the text box for sanity
-    nr_of_loops_->setText(QString::fromStdString(loop));
+    nr_of_loops_->setText(QString::fromStdString(loop_no_));
     if (store_initial_pose_) {
       geometry_msgs::msg::PoseStamped initial_pose;
       initial_pose.header = initial_pose_.header;
@@ -1076,7 +1076,7 @@ Nav2Panel::onAccumulating()
   acummulated_poses_.clear();
   store_poses_.clear();
   loop_count_ = 0;
-  loop = "0";
+  loop_no_ = "0";
   initial_pose_stored_ = false;
   loop_counter_stop_ = true;
   goal_index_ = 0;
@@ -1167,7 +1167,7 @@ Nav2Panel::startWaypointFollowing(std::vector<geometry_msgs::msg::PoseStamped> p
   // Send the goal poses
   waypoint_follower_goal_.poses = poses;
   waypoint_follower_goal_.goal_index = goal_index_;
-  waypoint_follower_goal_.number_of_loops = abs(stoi(loop));
+  waypoint_follower_goal_.number_of_loops = abs(stoi(loop_no_));
 
   RCLCPP_DEBUG(
     client_node_->get_logger(), "Sending a path of %zu waypoints:",
