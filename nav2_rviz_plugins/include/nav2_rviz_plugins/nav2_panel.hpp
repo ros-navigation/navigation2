@@ -80,7 +80,7 @@ private:
   void loadLogFiles();
   void onCancelButtonPressed();
   void timerEvent(QTimerEvent * event) override;
-  bool ValidLoopValue(std::string & loop);
+  bool isLoopValueValid(std::string & loop);
 
   int unique_id {0};
   int goal_index_ = 0;
@@ -197,7 +197,7 @@ private:
   std::vector<geometry_msgs::msg::PoseStamped> acummulated_poses_;
   std::vector<geometry_msgs::msg::PoseStamped> store_poses_;
 
-  bool waypointChecker(double x, double y);
+  bool isWaypointValid(double x, double y);
   // Publish the visual markers with the waypoints
   void updateWpNavigationMarkers();
 

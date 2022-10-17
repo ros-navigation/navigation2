@@ -563,7 +563,7 @@ void Nav2Panel::initialStateHandler()
   }
 }
 
-bool Nav2Panel::ValidLoopValue(std::string & loop_value)
+bool Nav2Panel::isLoopValueValid(std::string & loop_value)
 {
   // Check for just empty space
   if (loop_value.empty()) {
@@ -606,7 +606,7 @@ void Nav2Panel::loophandler()
   loop = nr_of_loops_->displayText().toStdString();
 
   // Sanity check for the loop value
-  if (!ValidLoopValue(loop)) {
+  if (!isLoopValueValid(loop)) {
     return;
   }
 
@@ -653,7 +653,7 @@ void Nav2Panel::handleGoalLoader()
   costmap_ = costmap_sub_->getCostmap();
   for (unsigned int i = 0; i < acummulated_poses_.size(); ++i) {
     if (
-      !waypointChecker(
+      !isWaypointValid(
         acummulated_poses_[i].pose.position.x,
         acummulated_poses_[i].pose.position.y))
     {
@@ -929,7 +929,7 @@ Nav2Panel::onNewGoal(double x, double y, double theta, QString frame)
        * also check if it is not in the region of lethal obstacle
        **/
       costmap_ = costmap_sub_->getCostmap();
-      if (waypointChecker(x, y)) {
+      if (isWaypointValid(x, y)) {
         waypoint_status_indicator_->clear();
         acummulated_poses_.push_back(pose);
       } else {
@@ -952,7 +952,7 @@ Nav2Panel::onNewGoal(double x, double y, double theta, QString frame)
   updateWpNavigationMarkers();
 }
 
-bool Nav2Panel::waypointChecker(double x, double y)
+bool Nav2Panel::isWaypointValid(double x, double y)
 {
   unsigned int mx, my;
   if (!costmap_->worldToMap(x, y, mx, my)) {
@@ -1026,7 +1026,7 @@ Nav2Panel::onAccumulatedWp()
   }
 
   // Sanity check for the loop value
-  if (!ValidLoopValue(loop)) {
+  if (!isLoopValueValid(loop)) {
     state_machine_.postEvent(new ROSActionQEvent(QActionState::INACTIVE));
     return;
   }
