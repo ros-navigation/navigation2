@@ -939,6 +939,7 @@ Nav2Panel::onNewGoal(double x, double y, double theta, QString frame)
         std::cout << "Please select a valid pose" << std::endl;
       }
     } else {
+      acummulated_poses_.clear();
       updateWpNavigationMarkers();
       std::cout << "Start navigation" << std::endl;
       startNavigation(pose);
