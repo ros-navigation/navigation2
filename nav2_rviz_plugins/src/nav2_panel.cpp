@@ -649,6 +649,20 @@ void Nav2Panel::handleGoalLoader()
     acummulated_poses_.push_back(convert_to_msg(pose, orientation));
   }
 
+  // Check for goal poses, if they are not in an obstacle
+  costmap_ = costmap_sub_->getCostmap();
+  for (unsigned int i = 0; i < acummulated_poses_.size(); ++i) {
+    if (
+      !waypointChecker(
+        acummulated_poses_[i].pose.position.x,
+        acummulated_poses_[i].pose.position.y))
+    {
+      waypoint_status_indicator_->setText(
+        "<b> Note: </b> waypoint list has Invalid waypoints");
+      acummulated_poses_.clear();
+      break;
+    }
+  }
   // Publishing Waypoint Navigation marker after loading wp's
   updateWpNavigationMarkers();
 }
