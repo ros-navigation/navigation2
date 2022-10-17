@@ -106,6 +106,20 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   pre_initial_->assignProperty(pause_resume_button_, "text", "Pause");
   pre_initial_->assignProperty(pause_resume_button_, "enabled", false);
 
+  pre_initial_->assignProperty(save_waypoints_button_, "text", "Save waypoints");
+  pre_initial_->assignProperty(save_waypoints_button_, "enabled", false);
+
+  pre_initial_->assignProperty(load_waypoints_button_, "text", "Load waypoints");
+  pre_initial_->assignProperty(load_waypoints_button_, "enabled", false);
+
+  pre_initial_->assignProperty(pause_waypoint_button_, "text", "Pause waypoint");
+  pre_initial_->assignProperty(pause_waypoint_button_, "enabled", false);
+
+  pre_initial_->assignProperty(nr_of_loops_, "text", "0");
+  pre_initial_->assignProperty(nr_of_loops_, "enabled", false);
+
+  pre_initial_->assignProperty(store_initial_pose_checkbox_, "enabled", false);
+
   pre_initial_->assignProperty(
     navigation_mode_button_, "text",
     "Waypoint / Nav Through Poses Mode");
@@ -134,6 +148,8 @@ Nav2Panel::Nav2Panel(QWidget * parent)
 
   initial_->assignProperty(nr_of_loops_, "text", "0");
   initial_->assignProperty(nr_of_loops_, "enabled", false);
+
+  initial_->assignProperty(store_initial_pose_checkbox_, "enabled", false);
 
   // State entered when navigate_to_pose action is not active
   idle_ = new QState();
