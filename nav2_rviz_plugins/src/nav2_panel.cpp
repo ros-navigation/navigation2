@@ -230,6 +230,8 @@ Nav2Panel::Nav2Panel(QWidget * parent)
 
   accumulated_wp_->assignProperty(pause_waypoint_button_, "text", "Pause waypoint");
   accumulated_wp_->assignProperty(pause_waypoint_button_, "enabled", true);
+
+  accumulated_wp_->assignProperty(nr_of_loops_, "enabled", false);
   accumulated_wp_->assignProperty(store_initial_pose_checkbox_, "enabled", false);
 
   accumulated_nav_through_poses_ = new QState();
@@ -342,7 +344,6 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   resumed_wp_->assignProperty(pause_waypoint_button_, "text", "Resume waypoint");
   resumed_wp_->assignProperty(pause_waypoint_button_, "enabled", true);
 
-  resumed_wp_->assignProperty(nr_of_loops_, "text", "0");
   resumed_wp_->assignProperty(nr_of_loops_, "enabled", false);
   resumed_wp_->assignProperty(store_initial_pose_checkbox_, "enabled", false);
 
@@ -577,6 +578,7 @@ bool Nav2Panel::ValidLoopValue(std::string & loop_value)
     if (isalpha(c) || isspace(c)) {
       waypoint_status_indicator_->setText(
         "<b> Note: </b> Set a valid value for the loop, check for alphabets and spaces");
+      navigation_mode_button_->setEnabled(false);
       return false;
     }
   }
@@ -730,7 +732,7 @@ Nav2Panel::onInitialize()
     "navigate_to_pose/_action/feedback",
     rclcpp::SystemDefaultsQoS(),
     [this](const nav2_msgs::action::NavigateToPose::Impl::FeedbackMessage::SharedPtr msg) {
-      if (abs(stoi(loop)) > 0) {
+      if (abs(stoi(nr_of_loops_->displayText().toStdString())) > 0) {
         if (goal_index_ == 0 && !loop_counter_stop_) {
           loop_count_++;
           loop_counter_stop_ = true;
@@ -765,6 +767,17 @@ Nav2Panel::onInitialize()
     [this](const action_msgs::msg::GoalStatusArray::SharedPtr msg) {
       navigation_goal_status_indicator_->setText(
         getGoalStatusLabel(msg->status_list.back().status));
+      // Clearing all the stored values once reaching the final goal
+      if (
+        loop_count_ == abs(stoi(nr_of_loops_->displayText().toStdString())) &&
+        goal_index_ == static_cast<int>(store_poses_.size()) - 1 &&
+        msg->status_list.back().status == action_msgs::msg::GoalStatus::STATUS_SUCCEEDED)
+      {
+        store_poses_.clear();
+        waypoint_status_indicator_->clear();
+        loop = "0";
+        loop_count_ = 0;
+      }
     });
   nav_through_poses_goal_status_sub_ = node->create_subscription<action_msgs::msg::GoalStatusArray>(
     "navigate_through_poses/_action/status",
@@ -866,6 +879,8 @@ Nav2Panel::onCancel()
       &Nav2Panel::onCancelButtonPressed,
       this));
   waypoint_status_indicator_->clear();
+  store_poses_.clear();
+  acummulated_poses_.clear();
 }
 
 void Nav2Panel::onResumedWp()
@@ -876,6 +891,7 @@ void Nav2Panel::onResumedWp()
       &Nav2Panel::onCancelButtonPressed,
       this));
   acummulated_poses_ = store_poses_;
+  loop = std::to_string(abs(stoi(loop)) - loop_count_);
   waypoint_status_indicator_->setText(
     QString(std::string("<b> Note: </b> Last cancelled waypoint is stored. ").c_str()) +
     QString(std::string("Please press resume to continue the navigation.").c_str()));
@@ -893,25 +909,31 @@ Nav2Panel::onNewGoal(double x, double y, double theta, QString frame)
   pose.pose.position.z = 0.0;
   pose.pose.orientation = orientationAroundZAxis(theta);
 
-  if (state_machine_.configuration().contains(accumulating_)) {
-    /** Check if the selected waypoint is inside the map
-     * also check if it is not in the region of lethal obstacle
-     **/
-    if (waypointChecker(x, y)) {
-      waypoint_status_indicator_->clear();
-      acummulated_poses_.push_back(pose);
+  if (store_poses_.empty()) {
+    if (state_machine_.configuration().contains(accumulating_)) {
+      /** Check if the selected waypoint is inside the map
+       * also check if it is not in the region of lethal obstacle
+       **/
+      costmap_ = costmap_sub_->getCostmap();
+      if (waypointChecker(x, y)) {
+        waypoint_status_indicator_->clear();
+        acummulated_poses_.push_back(pose);
+      } else {
+        waypoint_status_indicator_->setText(
+          "<b> Note: </b> Please select a valid pose"
+        );
+        std::cout << "Please select a valid pose" << std::endl;
+      }
     } else {
-      waypoint_status_indicator_->setText(
-        "<b> Note: </b> Please select a valid pose"
-      );
-      std::cout << "Please select a valid pose" << std::endl;
+      updateWpNavigationMarkers();
+      std::cout << "Start navigation" << std::endl;
+      startNavigation(pose);
     }
   } else {
-    waypoint_status_indicator_->clear();
-    std::cout << "Start navigation" << std::endl;
-    startNavigation(pose);
+    waypoint_status_indicator_->setText(
+      QString(std::string("<b> Note: </b> Cannot set goal in pause state, ").c_str()) +
+      QString(std::string("press resume to continue").c_str()));
   }
-
   updateWpNavigationMarkers();
 }
 
@@ -933,7 +955,6 @@ bool Nav2Panel::waypointChecker(double x, double y)
   }
   return true;
 }
-
 
 void
 Nav2Panel::onCancelButtonPressed()
@@ -995,16 +1016,19 @@ Nav2Panel::onAccumulatedWp()
     return;
   }
 
-  // Setting the final loop value on the text box for sanity
-  nr_of_loops_->setText(QString::fromStdString(loop));
-
   // Remove any warning status at this point
   waypoint_status_indicator_->clear();
+
+  // Disable navigation modes
+  navigation_mode_button_->setEnabled(false);
+  pause_resume_button_->setEnabled(false);
 
   std::cout << "Start waypoint" << std::endl;
 
   // storing and removing the initial pose based on checkbox state
   if (store_poses_.size() == 0) {
+    // Setting the final loop value on the text box for sanity
+    nr_of_loops_->setText(QString::fromStdString(loop));
     if (store_initial_pose_) {
       geometry_msgs::msg::PoseStamped initial_pose;
       initial_pose.header = initial_pose_.header;
@@ -1042,7 +1066,6 @@ Nav2Panel::onAccumulating()
   loop_counter_stop_ = true;
   goal_index_ = 0;
   updateWpNavigationMarkers();
-  costmap_ = costmap_sub_->getCostmap();
 }
 
 void
