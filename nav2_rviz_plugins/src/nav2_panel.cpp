@@ -768,6 +768,9 @@ Nav2Panel::onInitialize()
     [this](const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg) {
       initial_pose_ = *msg;
     });
+
+  // Initializing costmap subscriber
+  costmap_sub_ = new nav2_costmap_2d::CostmapSubscriber(node, "global_costmap/costmap_raw");
 }
 
 void
@@ -875,14 +878,46 @@ Nav2Panel::onNewGoal(double x, double y, double theta, QString frame)
   pose.pose.orientation = orientationAroundZAxis(theta);
 
   if (state_machine_.configuration().contains(accumulating_)) {
-    acummulated_poses_.push_back(pose);
+    /** Check if the selected waypoint is inside the map
+     * also check if it is not in the region of lethal obstacle
+     **/
+    if (waypointChecker(x, y)) {
+      waypoint_status_indicator_->clear();
+      acummulated_poses_.push_back(pose);
+    } else {
+      waypoint_status_indicator_->setText(
+        "<b> Note: </b> Please select a valid pose"
+      );
+      std::cout << "Please select a valid pose" << std::endl;
+    }
   } else {
+    waypoint_status_indicator_->clear();
     std::cout << "Start navigation" << std::endl;
     startNavigation(pose);
   }
 
   updateWpNavigationMarkers();
 }
+
+bool Nav2Panel::waypointChecker(double x, double y)
+{
+  unsigned int mx, my;
+  if (!costmap_->worldToMap(x, y, mx, my)) {
+    std::cout << "Goal Coordinates of(" + std::to_string(x) + ", " +
+      std::to_string(y) + ") was outside bounds" << std::endl;
+    return false;
+  }
+
+  if (costmap_->getCost(mx, my) == nav2_costmap_2d::LETHAL_OBSTACLE ||
+    costmap_->getCost(mx, my) == nav2_costmap_2d::NO_INFORMATION)
+  {
+    std::cout << "Goal Coordinates of(" + std::to_string(x) + ", " +
+      std::to_string(y) + ") is either occupied or out of bounds" << std::endl;
+    return false;
+  }
+  return true;
+}
+
 
 void
 Nav2Panel::onCancelButtonPressed()
@@ -991,6 +1026,7 @@ Nav2Panel::onAccumulating()
   loop_counter_stop_ = true;
   goal_index_ = 0;
   updateWpNavigationMarkers();
+  costmap_ = costmap_sub_->getCostmap();
 }
 
 void

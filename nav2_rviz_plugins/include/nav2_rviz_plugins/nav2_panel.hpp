@@ -34,6 +34,8 @@
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 #include "nav2_util/geometry_utils.hpp"
+#include "nav2_costmap_2d/costmap_subscriber.hpp"
+#include "nav2_costmap_2d/costmap_2d_ros.hpp"
 
 class QPushButton;
 
@@ -134,6 +136,10 @@ private:
   rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr
     map_pose_sub_;
 
+  // global_costmap subscriber
+  nav2_costmap_2d::CostmapSubscriber * costmap_sub_;
+  std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap_;
+
   // Goal-related state
   nav2_msgs::action::NavigateToPose::Goal navigation_goal_;
   nav2_msgs::action::FollowWaypoints::Goal waypoint_follower_goal_;
@@ -191,6 +197,7 @@ private:
   std::vector<geometry_msgs::msg::PoseStamped> acummulated_poses_;
   std::vector<geometry_msgs::msg::PoseStamped> store_poses_;
 
+  bool waypointChecker(double x, double y);
   // Publish the visual markers with the waypoints
   void updateWpNavigationMarkers();
 
