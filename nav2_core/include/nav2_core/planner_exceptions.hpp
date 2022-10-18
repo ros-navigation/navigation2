@@ -103,7 +103,7 @@ class NoWaypointsGiven : public PlannerException
 {
 public:
   explicit NoWaypointsGiven(const std::string & description)
-      : PlannerException(description) {}
+  : PlannerException(description) {}
 };
 
 }  // namespace nav2_core
