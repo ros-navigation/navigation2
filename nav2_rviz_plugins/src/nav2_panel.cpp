@@ -575,7 +575,7 @@ bool Nav2Panel::isLoopValueValid(std::string & loop_value)
 
   // Check for any chars or spaces in the string
   for (char & c : loop_value) {
-    if (isalpha(c) || isspace(c)) {
+    if (isalpha(c) || isspace(c) || ispunct(c)) {
       waypoint_status_indicator_->setText(
         "<b> Note: </b> Set a valid value for the loop, check for alphabets and spaces");
       navigation_mode_button_->setEnabled(false);
@@ -614,7 +614,7 @@ void Nav2Panel::loophandler()
   navigation_mode_button_->setEnabled(true);
 
   // Disabling nav_through_poses button
-  if (!loop_no_.empty() && abs(stoi(loop_no_)) > 0) {
+  if (!loop_no_.empty() && stoi(loop_no_) > 0) {
     pause_resume_button_->setEnabled(false);
   } else {
     pause_resume_button_->setEnabled(true);
@@ -746,7 +746,7 @@ Nav2Panel::onInitialize()
     "navigate_to_pose/_action/feedback",
     rclcpp::SystemDefaultsQoS(),
     [this](const nav2_msgs::action::NavigateToPose::Impl::FeedbackMessage::SharedPtr msg) {
-      if (abs(stoi(nr_of_loops_->displayText().toStdString())) > 0) {
+      if (stoi(nr_of_loops_->displayText().toStdString()) > 0) {
         if (goal_index_ == 0 && !loop_counter_stop_) {
           loop_count_++;
           loop_counter_stop_ = true;
@@ -783,7 +783,7 @@ Nav2Panel::onInitialize()
         getGoalStatusLabel(msg->status_list.back().status));
       // Clearing all the stored values once reaching the final goal
       if (
-        loop_count_ == abs(stoi(nr_of_loops_->displayText().toStdString())) &&
+        loop_count_ == stoi(nr_of_loops_->displayText().toStdString()) &&
         goal_index_ == static_cast<int>(store_poses_.size()) - 1 &&
         msg->status_list.back().status == action_msgs::msg::GoalStatus::STATUS_SUCCEEDED)
       {
@@ -905,7 +905,7 @@ void Nav2Panel::onResumedWp()
       &Nav2Panel::onCancelButtonPressed,
       this));
   acummulated_poses_ = store_poses_;
-  loop_no_ = std::to_string(abs(stoi(loop_no_)) - loop_count_);
+  loop_no_ = std::to_string(stoi(loop_no_) - loop_count_);
   waypoint_status_indicator_->setText(
     QString(std::string("<b> Note: </b> Last cancelled waypoint is stored. ").c_str()) +
     QString(std::string("Please press resume to continue the navigation.").c_str()));
@@ -1167,7 +1167,7 @@ Nav2Panel::startWaypointFollowing(std::vector<geometry_msgs::msg::PoseStamped> p
   // Send the goal poses
   waypoint_follower_goal_.poses = poses;
   waypoint_follower_goal_.goal_index = goal_index_;
-  waypoint_follower_goal_.number_of_loops = abs(stoi(loop_no_));
+  waypoint_follower_goal_.number_of_loops = stoi(loop_no_);
 
   RCLCPP_DEBUG(
     client_node_->get_logger(), "Sending a path of %zu waypoints:",
