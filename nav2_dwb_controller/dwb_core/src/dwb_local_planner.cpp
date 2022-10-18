@@ -44,11 +44,11 @@
 #include "dwb_msgs/msg/critic_score.hpp"
 #include "nav_2d_msgs/msg/twist2_d.hpp"
 #include "nav_2d_utils/conversions.hpp"
-#include "nav_2d_utils/parameters.hpp"
 #include "nav_2d_utils/tf_help.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_util/node_utils.hpp"
+#include "nav2_core/controller_exceptions.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
@@ -133,7 +133,9 @@ void DWBLocalPlanner::configure(
     loadCritics();
   } catch (const std::exception & e) {
     RCLCPP_ERROR(logger_, "Couldn't load critics! Caught exception: %s", e.what());
-    throw;
+    throw nav2_core::ControllerException(
+            "Couldn't load critics! Caught exception: " +
+            std::string(e.what()));
   }
 }
 
@@ -214,7 +216,9 @@ DWBLocalPlanner::loadCritics()
       plugin->initialize(node, critic_plugin_name, dwb_plugin_name_, costmap_ros_);
     } catch (const std::exception & e) {
       RCLCPP_ERROR(logger_, "Couldn't initialize critic plugin!");
-      throw;
+      throw nav2_core::ControllerException(
+              "Couldn't initialize critic plugin: " +
+              std::string(e.what()));
     }
     RCLCPP_INFO(logger_, "Critic plugin initialized");
   }
@@ -253,9 +257,18 @@ DWBLocalPlanner::computeVelocityCommands(
     geometry_msgs::msg::TwistStamped cmd_vel;
     cmd_vel.twist = nav_2d_utils::twist2Dto3D(cmd_vel2d.velocity);
     return cmd_vel;
-  } catch (const nav2_core::PlannerException & e) {
+  } catch (const nav2_core::ControllerTFError & e) {
     pub_->publishEvaluation(results);
-    throw;
+    throw e;
+  } catch (const nav2_core::InvalidPath & e) {
+    pub_->publishEvaluation(results);
+    throw e;
+  } catch (const nav2_core::NoValidControl & e) {
+    pub_->publishEvaluation(results);
+    throw e;
+  } catch (const nav2_core::ControllerException & e) {
+    pub_->publishEvaluation(results);
+    throw e;
   }
 }
 
@@ -333,7 +346,9 @@ DWBLocalPlanner::computeVelocityCommands(
     pub_->publishLocalPlan(pose.header, empty_traj);
     pub_->publishCostGrid(costmap_ros_, critics_);
 
-    throw;
+    throw nav2_core::NoValidControl(
+            "Could not find a legal trajectory: " +
+            std::string(e.what()));
   }
 }
 
@@ -441,7 +456,7 @@ DWBLocalPlanner::transformGlobalPlan(
   const nav_2d_msgs::msg::Pose2DStamped & pose)
 {
   if (global_plan_.poses.empty()) {
-    throw nav2_core::PlannerException("Received plan with zero length");
+    throw nav2_core::InvalidPath("Received plan with zero length");
   }
 
   // let's get the pose of the robot in the frame of the plan
@@ -450,8 +465,8 @@ DWBLocalPlanner::transformGlobalPlan(
       tf_, global_plan_.header.frame_id, pose,
       robot_pose, transform_tolerance_))
   {
-    throw dwb_core::
-          PlannerTFException("Unable to transform robot pose into global plan's frame");
+    throw nav2_core::
+          ControllerTFError("Unable to transform robot pose into global plan's frame");
   }
 
   // we'll discard points on the plan that are outside the local costmap
@@ -535,7 +550,7 @@ DWBLocalPlanner::transformGlobalPlan(
   }
 
   if (transformed_plan.poses.empty()) {
-    throw nav2_core::PlannerException("Resulting plan has 0 poses in it.");
+    throw nav2_core::InvalidPath("Resulting plan has 0 poses in it.");
   }
   return transformed_plan;
 }
