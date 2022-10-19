@@ -21,14 +21,16 @@
 #include <vector>
 #include <map>
 #include <stdexcept>
+#include <algorithm>
 
 namespace nav2_costmap_2d
 {
 template<class T>
-Image<T> makeImage(size_t rows, size_t columns, std::vector<T> & buffer)
+Image<T> makeImage(size_t rows, size_t columns, std::vector<T> & buffer, size_t step = 0)
 {
-  buffer.resize(rows * columns);
-  return Image<T>(rows, columns, buffer.data(), columns);
+  step = std::max(step, columns);
+  buffer.resize(rows * step);
+  return Image<T>(rows, columns, buffer.data(), step);
 }
 
 template<class T>
@@ -64,12 +66,15 @@ Image<T> imageFromString(
   const std::string & s, std::vector<T> & buffer,
   const std::map<char, T> & codes = {{'.', 0}, {'x', 255}})
 {
-  const int side_size = static_cast<int>(std::sqrt(s.size()));
+  const size_t side_size = static_cast<size_t>(std::sqrt(s.size()));
 
   if (size_t(side_size) * side_size != s.size()) {
     throw std::logic_error("Test data error: parseBinaryMatrix: Unexpected input string size");
   }
-  Image<T> image = makeImage(side_size, side_size, buffer);
+
+  const size_t step = static_cast<size_t>(side_size * 3);
+
+  Image<T> image = makeImage(side_size, side_size, buffer, step);
   auto iter = s.begin();
   image.forEach(
     [&](T & pixel) {
