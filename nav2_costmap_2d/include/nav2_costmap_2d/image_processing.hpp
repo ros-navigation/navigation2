@@ -643,34 +643,45 @@ struct ProcessPixel<ConnectivityType::Way4>
  * Signature should be equivalent to the following:
  * void fn(uint8_t& out, std::initializer_list<uint8_t> in),
  * where out - pixel of the output image, in - result of overlaying the shape on the neighborhood of source pixel
- * @param in pointer to the first row of the input image
- * @param out pointer to the first row of the output image
- * @param rows number of image rows
- * @param columns number of image columns
+ * @param input input image
+ * @param first_input_row row from which to start processing on the input image
+ * @param output output image
+ * @param first_output_row row from which to start processing on the output image
  * @param shape structuring element row (size 3, i.e. shape[0], shape[1], shape[2])
  * Should only contain values 0 (ignore neighborhood pixel) or 255 (use pixel).
  * @param touch_fn binary operation that updates a pixel in the output image with an overlay
  */
 template<class Apply>
 void probeRows(
-  const uint8_t * in, uint8_t * out,
-  size_t rows, size_t columns, const uint8_t * shape, Apply touch_fn)
+  const Image<uint8_t> & input, size_t first_input_row,
+  Image<uint8_t> & output, size_t first_output_row,
+  const uint8_t * shape, Apply touch_fn)
 {
+  const size_t rows = input.rows() - std::max(first_input_row, first_output_row);
+  const size_t columns = input.columns();
+
   auto apply_shape = [&shape](uint8_t value, uint8_t index) -> uint8_t {
       return value & shape[index];
+    };
+
+  auto get_input_row = [&input, first_input_row](size_t row) {
+      return input.row(row + first_input_row);
+    };
+  auto get_output_row = [&output, first_output_row](size_t row) {
+      return output.row(row + first_output_row);
     };
 
   if (columns == 1) {
     for (size_t i = 0; i < rows; ++i) {
       // process single column. Interpret pixel from column -1 and 1 as 0
-      auto overlay = {uint8_t(0), apply_shape(*in, 1), uint8_t(0)};
-      touch_fn(*out, overlay);
-      ++in;
-      ++out;
+      auto overlay = {uint8_t(0), apply_shape(*get_input_row(i), 1), uint8_t(0)};
+      touch_fn(*get_output_row(i), overlay);
     }
   } else {
     for (size_t i = 0; i < rows; ++i) {
+      const uint8_t * in = get_input_row(i);
       const uint8_t * last_column_pixel = in + columns - 1;
+      uint8_t * out = get_output_row(i);
 
       // process first column. Interpret pixel from column -1 as 0
       {
@@ -740,14 +751,19 @@ void morphologyOperation(
       res = aggregate({res, aggregate(lst), 0});
     };
 
-  // Apply the second shape row
-  probeRows(input.row(0), output.row(0), input.rows(), input.columns(), shape.row(1), set);
+  // Apply the central shape row.
+  // This operation is applicable to all rows of the image, because at any position of the sliding window,
+  // its central row is located on the image. So we start from the zero line of input and output
+  probeRows(input, 0, output, 0, shape.row(1), set);
 
   if (input.rows() > 1) {
-    // Apply the first (top) shape row
-    probeRows(input.row(0), output.row(1), input.rows() - 1, input.columns(), shape.row(0), update);
-    // Apply the last shape row
-    probeRows(input.row(1), output.row(0), input.rows() - 1, input.columns(), shape.row(2), update);
+    // Apply the top shape row.
+    // In the uppermost position of the sliding window, its first row is outside the image border.
+    // Therefore, we start filling the output image starting from the line 1 and will process input.rows() - 1 lines in total
+    probeRows(input, 0, output, 1, shape.row(0), update);
+    // Apply the bottom shape row.
+    // Similarly, the input image starting from the line 1 and will process input.rows() - 1 lines in total
+    probeRows(input, 1, output, 0, shape.row(2), update);
   }
 }
 
