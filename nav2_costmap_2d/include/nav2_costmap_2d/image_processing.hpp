@@ -17,6 +17,10 @@
 
 #include "image.hpp"
 #include <algorithm>
+#include <vector>
+#include <array>
+#include <memory>
+#include <limits>
 
 namespace nav2_costmap_2d
 {
