@@ -4,6 +4,7 @@ string behavior_tree
 ---
 #result definition
 std_msgs/Empty result
+int16 error_code
 ---
 #feedback definition
 geometry_msgs/PoseStamped current_pose

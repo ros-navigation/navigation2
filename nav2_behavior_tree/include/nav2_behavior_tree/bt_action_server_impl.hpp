@@ -21,10 +21,12 @@
 #include <set>
 #include <exception>
 #include <vector>
+#include <numeric>
 
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav2_behavior_tree/bt_action_server.hpp"
 #include "ament_index_cpp/get_package_share_directory.hpp"
+#include "std_msgs/msg/int16.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -226,6 +228,22 @@ void BtActionServer<ActionT>::executeCallback()
   // Give server an opportunity to populate the result message or simple give
   // an indication that the action is complete.
   auto result = std::make_shared<typename ActionT::Result>();
+
+  try
+  {
+    std::vector<int> error_codes;
+
+    // 0-99 error codes for follow path
+    error_codes.push_back(blackboard_->get<int>("follow_path_error_code");
+
+    //100-199 error codes for compute path to pose
+    error_codes.push_back(blackboard_->get<int>("compute_path_to_pose_error_code") + 100);
+
+    result->error_code = std::accumulate(error_codes.begin(), error_codes.end(), 0);
+  } catch (std::exception & ex) {
+    RCLCPP_WARN(logger_, "Failed to get error_code: \"%s\"", ex.what());
+  }
+
   on_completion_callback_(result, rc);
 
   switch (rc) {
