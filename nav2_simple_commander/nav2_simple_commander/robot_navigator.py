@@ -389,8 +389,12 @@ class BasicNavigator(Node):
 
         return self.result_future.result().result.path
 
-    def smoothPath(self, path, smoother_id='', max_duration=2.0, check_for_collision=False):
-        """Send a `SmoothPath` action request."""
+    def _smoothPathImpl(self, path, smoother_id='', max_duration=2.0, check_for_collision=False):
+        """
+        Send a `SmoothPath` action request.
+
+        Internal implementation to get the full result, not just the path.
+        """
         self.debug("Waiting for 'SmoothPath' action server")
         while not self.smoother_client.wait_for_server(timeout_sec=1.0):
             self.info("'SmoothPath' action server not available, waiting...")
@@ -417,7 +421,16 @@ class BasicNavigator(Node):
             self.warn(f'Getting path failed with status code: {self.status}')
             return None
 
-        return self.result_future.result().result.path
+        return self.result_future.result().result
+
+    def smoothPath(self, path, smoother_id='', max_duration=2.0, check_for_collision=False):
+        """Send a `SmoothPath` action request."""
+        rtn = self._smoothPathImpl(
+            self, path, smoother_id='', max_duration=2.0, check_for_collision=False)
+        if not rtn:
+            return None
+        else:
+            return rtn.path
 
     def changeMap(self, map_filepath):
         """Change the current static map in the map server."""

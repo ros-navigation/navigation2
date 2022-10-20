@@ -16,9 +16,7 @@
 #include <memory>
 #include <chrono>
 #include <iostream>
-#include <future>
 #include <thread>
-#include <algorithm>
 #include <vector>
 
 #include "gtest/gtest.h"
@@ -26,10 +24,9 @@
 
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "nav2_core/smoother.hpp"
-#include "nav2_core/exceptions.hpp"
+#include "nav2_core/planner_exceptions.hpp"
 #include "nav2_msgs/action/smooth_path.hpp"
 #include "nav2_smoother/nav2_smoother.hpp"
-#include "tf2_ros/create_timer_ros.h"
 
 using SmoothAction = nav2_msgs::action::SmoothPath;
 using ClientGoalHandle = rclcpp_action::ClientGoalHandle<SmoothAction>;

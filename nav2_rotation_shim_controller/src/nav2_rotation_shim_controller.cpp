@@ -14,7 +14,6 @@
 
 #include <algorithm>
 #include <string>
-#include <limits>
 #include <memory>
 #include <vector>
 #include <utility>
@@ -175,7 +174,7 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
 geometry_msgs::msg::PoseStamped RotationShimController::getSampledPathPt()
 {
   if (current_path_.poses.size() < 2) {
-    throw nav2_core::PlannerException(
+    throw nav2_core::ControllerException(
             "Path is too short to find a valid sampled path point for rotation.");
   }
 
@@ -193,7 +192,7 @@ geometry_msgs::msg::PoseStamped RotationShimController::getSampledPathPt()
     }
   }
 
-  throw nav2_core::PlannerException(
+  throw nav2_core::ControllerException(
           std::string(
             "Unable to find a sampling point at least %0.2f from the robot,"
             "passing off to primary controller plugin.", forward_sampling_distance_));
@@ -204,7 +203,7 @@ RotationShimController::transformPoseToBaseFrame(const geometry_msgs::msg::PoseS
 {
   geometry_msgs::msg::PoseStamped pt_base;
   if (!nav2_util::transformPoseInTargetFrame(pt, pt_base, *tf_, costmap_ros_->getBaseFrameID())) {
-    throw nav2_core::PlannerException("Failed to transform pose to base frame!");
+    throw nav2_core::ControllerTFError("Failed to transform pose to base frame!");
   }
   return pt_base.pose;
 }
@@ -259,11 +258,12 @@ void RotationShimController::isCollisionFree(
     if (footprint_cost == static_cast<double>(NO_INFORMATION) &&
       costmap_ros_->getLayeredCostmap()->isTrackingUnknown())
     {
-      throw std::runtime_error("RotationShimController detected a potential collision ahead!");
+      throw nav2_core::NoValidControl(
+              "RotationShimController detected a potential collision ahead!");
     }
 
     if (footprint_cost >= static_cast<double>(LETHAL_OBSTACLE)) {
-      throw std::runtime_error("RotationShimController detected collision ahead!");
+      throw nav2_core::NoValidControl("RotationShimController detected collision ahead!");
     }
   }
 }
