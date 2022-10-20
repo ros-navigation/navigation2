@@ -42,7 +42,7 @@ BT::NodeStatus ComputePathToPoseAction::on_success()
   setOutput("path", result_.result->path);
   // Set empty error code, action was successful
   result_.result->error_code = nav2_msgs::action::ComputePathToPose::Goal::NONE;
-  setOutput("compute_path_to_pose_error_code", result_.result->error_code);
+  config().blackboard->set<int>("compute_path_to_pose_error_code", result_.result->error_code);
   return BT::NodeStatus::SUCCESS;
 }
 
@@ -50,7 +50,7 @@ BT::NodeStatus ComputePathToPoseAction::on_aborted()
 {
   nav_msgs::msg::Path empty_path;
   setOutput("path", empty_path);
-  setOutput("compute_path_to_pose_error_code", result_.result->error_code);
+  config().blackboard->set<int>("compute_path_to_pose_error_code", result_.result->error_code);
   return BT::NodeStatus::FAILURE;
 }
 
@@ -60,7 +60,7 @@ BT::NodeStatus ComputePathToPoseAction::on_cancelled()
   setOutput("path", empty_path);
   // Set empty error code, action was cancelled
   result_.result->error_code = nav2_msgs::action::ComputePathToPose::Goal::NONE;
-  setOutput("compute_path_to_pose_error_code", result_.result->error_code);
+  config().blackboard->set<int>("compute_path_to_pose_error_code", result_.result->error_code);
   return BT::NodeStatus::SUCCESS;
 }
 

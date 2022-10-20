@@ -229,20 +229,16 @@ void BtActionServer<ActionT>::executeCallback()
   // an indication that the action is complete.
   auto result = std::make_shared<typename ActionT::Result>();
 
-  try
-  {
-    std::vector<int> error_codes;
+  // Grab error codes from blackboard
+  std::vector<int> error_codes;
 
-    // 0-99 error codes for follow path
-    error_codes.push_back(blackboard_->get<int>("follow_path_error_code");
+  // 0-99 error codes for follow path
+  error_codes.push_back(blackboard_->get<int>("follow_path_error_code"));
 
-    //100-199 error codes for compute path to pose
-    error_codes.push_back(blackboard_->get<int>("compute_path_to_pose_error_code") + 100);
+  //100-199 error codes for compute path to pose
+  error_codes.push_back(blackboard_->get<int>("compute_path_to_pose_error_code") + 100);
 
-    result->error_code = std::accumulate(error_codes.begin(), error_codes.end(), 0);
-  } catch (std::exception & ex) {
-    RCLCPP_WARN(logger_, "Failed to get error_code: \"%s\"", ex.what());
-  }
+  result->error_code = std::accumulate(error_codes.begin(), error_codes.end(), 0);
 
   on_completion_callback_(result, rc);
 

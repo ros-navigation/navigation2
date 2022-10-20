@@ -212,6 +212,8 @@ NavigateToPoseNavigator::initializeGoalPose(ActionT::Goal::ConstSharedPtr goal)
   start_time_ = clock_->now();
   auto blackboard = bt_action_server_->getBlackboard();
   blackboard->set<int>("number_recoveries", 0);  // NOLINT
+  blackboard->set<int>("follow_path_error_code", 0);
+  blackboard->set<int>("compute_path_to_pose_error_code", 0); //NOLINT
 
   // Update the goal pose on the blackboard
   blackboard->set<geometry_msgs::msg::PoseStamped>(goal_blackboard_id_, goal->pose);
