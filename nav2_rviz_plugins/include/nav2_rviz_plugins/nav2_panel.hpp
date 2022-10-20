@@ -137,7 +137,7 @@ private:
     map_pose_sub_;
 
   // global_costmap subscriber
-  nav2_costmap_2d::CostmapSubscriber * costmap_sub_;
+  std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
   std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap_;
 
   // Goal-related state

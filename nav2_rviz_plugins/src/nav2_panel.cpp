@@ -813,7 +813,8 @@ Nav2Panel::onInitialize()
     });
 
   // Initializing costmap subscriber
-  costmap_sub_ = new nav2_costmap_2d::CostmapSubscriber(node, "global_costmap/costmap_raw");
+  costmap_sub_ = std::make_unique<nav2_costmap_2d::CostmapSubscriber>(
+    node, "global_costmap/costmap_raw");
 }
 
 void
