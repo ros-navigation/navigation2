@@ -219,6 +219,10 @@ public:
    */
   void updateCellAstar(int n);
 
+  /**
+   * @brief  Set up navigation potential arrays for new propagation
+   * @param keepit whether or not use COST_NEUTRAL
+   */
   void setupNavFn(bool keepit = false);
 
   /**
@@ -253,18 +257,24 @@ public:
    */
   int calcPath(int n, int * st = NULL);
 
+  /**
+   * @brief  Calculate gradient at a cell
+   * @param n Cell number <n>
+   * @return float norm
+   */
   float gradCell(int n);  /**< calculates gradient at cell <n>, returns norm */
+
   float pathStep;  /**< step size for following gradient */
 
   /** display callback */
   /**< <n> is the number of cycles between updates  */
-  void display(void fn(NavFn * nav), int n = 100);
-  int displayInt;  /**< save second argument of display() above */
-  void (* displayFn)(NavFn * nav);  /**< display function itself */
+  // void display(void fn(NavFn * nav), int n = 100);
+  // int displayInt;  /**< save second argument of display() above */
+  // void (* displayFn)(NavFn * nav);  /**< display function itself */
 
   /** save costmap */
   /**< write out costmap and start/goal states as fname.pgm and fname.txt */
-  void savemap(const char * fname);
+  // void savemap(const char * fname);
 };
 
 }  // namespace nav2_navfn_planner

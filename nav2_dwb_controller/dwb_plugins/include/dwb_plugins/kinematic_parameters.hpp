@@ -36,6 +36,8 @@
 #define DWB_PLUGINS__KINEMATIC_PARAMETERS_HPP_
 
 #include <memory>
+#include <string>
+#include <vector>
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/lifecycle_node.hpp"
@@ -44,14 +46,12 @@ namespace dwb_plugins
 {
 
 /**
- * @class KinematicParameters
- * @brief A class containing one representation of the robot's kinematics
+ * @struct KinematicParameters
+ * @brief A struct containing one representation of the robot's kinematics
  */
-class KinematicParameters
+struct KinematicParameters
 {
-public:
-  KinematicParameters();
-  void initialize(const nav2_util::LifecycleNode::SharedPtr & nh);
+  friend class KinematicsHandler;
 
   inline double getMinX() {return min_vel_x_;}
   inline double getMaxX() {return max_vel_x_;}
@@ -64,6 +64,7 @@ public:
   inline double getDecelY() {return decel_lim_y_;}
 
   inline double getMinSpeedXY() {return min_speed_xy_;}
+  inline double getMaxSpeedXY() {return max_speed_xy_;}
 
   inline double getMinTheta() {return -max_vel_theta_;}
   inline double getMaxTheta() {return max_vel_theta_;}
@@ -71,25 +72,8 @@ public:
   inline double getDecelTheta() {return decel_lim_theta_;}
   inline double getMinSpeedTheta() {return min_speed_theta_;}
 
-  /**
-   * @brief Check to see whether the combined x/y/theta velocities are valid
-   * @return True if the magnitude hypot(x,y) and theta are within the robot's absolute limits
-   *
-   * This is based on three parameters: min_speed_xy, max_speed_xy and min_speed_theta.
-   * The speed is valid if
-   *  1) The combined magnitude hypot(x,y) is less than max_speed_xy (or max_speed_xy is negative)
-   *  AND
-   *  2) min_speed_xy is negative or min_speed_theta is negative or
-   *     hypot(x,y) is greater than min_speed_xy or fabs(theta) is greater than min_speed_theta.
-   *
-   * In English, it makes sure the diagonal motion is not too fast,
-   * and that the velocity is moving in some meaningful direction.
-   *
-   * In Latin, quod si motus sit signum quaerit et movere ieiunium et significantissime comprehendite.
-   */
-  bool isValidSpeed(double x, double y, double theta);
-
-  using Ptr = std::shared_ptr<KinematicParameters>;
+  inline double getMinSpeedXY_SQ() {return min_speed_xy_sq_;}
+  inline double getMaxSpeedXY_SQ() {return max_speed_xy_sq_;}
 
 protected:
   // For parameter descriptions, see cfg/KinematicParams.cfg
@@ -97,9 +81,13 @@ protected:
   double min_vel_y_{0};
   double max_vel_x_{0};
   double max_vel_y_{0};
+  double base_max_vel_x_{0};
+  double base_max_vel_y_{0};
   double max_vel_theta_{0};
+  double base_max_vel_theta_{0};
   double min_speed_xy_{0};
   double max_speed_xy_{0};
+  double base_max_speed_xy_{0};
   double min_speed_theta_{0};
   double acc_lim_x_{0};
   double acc_lim_y_{0};
@@ -111,8 +99,38 @@ protected:
   // Cached square values of min_speed_xy and max_speed_xy
   double min_speed_xy_sq_{0};
   double max_speed_xy_sq_{0};
+};
 
-  void reconfigureCB();
+/**
+ * @class KinematicsHandler
+ * @brief A class managing the representation of the robot's kinematics
+ */
+class KinematicsHandler
+{
+public:
+  KinematicsHandler();
+  ~KinematicsHandler();
+  void initialize(const nav2_util::LifecycleNode::SharedPtr & nh, const std::string & plugin_name);
+
+  inline KinematicParameters getKinematics() {return *kinematics_.load();}
+
+  void setSpeedLimit(const double & speed_limit, const bool & percentage);
+
+  using Ptr = std::shared_ptr<KinematicsHandler>;
+
+protected:
+  std::atomic<KinematicParameters *> kinematics_;
+
+  // Dynamic parameters handler
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
+  /**
+   * @brief Callback executed when a paramter change is detected
+   * @param parameters list of changed parameters
+   */
+  rcl_interfaces::msg::SetParametersResult
+  dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
+  void update_kinematics(KinematicParameters kinematics);
+  std::string plugin_name_;
 };
 
 }  // namespace dwb_plugins

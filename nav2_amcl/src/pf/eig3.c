@@ -1,3 +1,23 @@
+/*
+ *  Player - One Hell of a Robot Server
+ *  Copyright (C) 2000  Brian Gerkey   &  Kasper Stoy
+ *                      gerkey@usc.edu    kaspers@robotics.usc.edu
+ *
+ *  This library is free software; you can redistribute it and/or
+ *  modify it under the terms of the GNU Lesser General Public
+ *  License as published by the Free Software Foundation; either
+ *  version 2.1 of the License, or (at your option) any later version.
+ *
+ *  This library is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public
+ *  License along with this library; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ */
 /* Eigen decomposition code for symmetric 3x3 matrices, copied from the public
    domain Java Matrix library JAMA. */
 
@@ -7,13 +27,11 @@
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #endif
 
-// #define n 3
-static const int n = 3;
-
-static double hypot2(double x, double y)
-{
-  return sqrt(x * x + y * y);
-}
+#ifdef _MSC_VER
+#define n 3
+#else
+static int n = 3;
+#endif
 
 // Symmetric Householder reduction to tridiagonal form.
 
@@ -174,7 +192,7 @@ static void tql2(double V[n][n], double d[n], double e[n])
 
         g = d[l];
         p = (d[l + 1] - g) / (2.0 * e[l]);
-        r = hypot2(p, 1.0);
+        r = hypot(p, 1.0);
         if (p < 0) {
           r = -r;
         }
@@ -202,7 +220,7 @@ static void tql2(double V[n][n], double d[n], double e[n])
           s2 = s;
           g = c * e[i];
           h = c * p;
-          r = hypot2(p, e[i]);
+          r = hypot(p, e[i]);
           e[i + 1] = s * r;
           s = e[i] / r;
           c = p / r;

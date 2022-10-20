@@ -21,57 +21,75 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/footprint.hpp"
 #include "nav2_util/lifecycle_node.hpp"
+#include "nav2_util/robot_utils.hpp"
 
 namespace nav2_costmap_2d
 {
-
+/**
+ * @class FootprintSubscriber
+ * @brief Subscriber to the footprint topic to get current robot footprint
+ * (if changing) for use in collision avoidance
+ */
 class FootprintSubscriber
 {
 public:
+  /**
+   * @brief A constructor
+   */
   FootprintSubscriber(
-    nav2_util::LifecycleNode::SharedPtr node,
+    const nav2_util::LifecycleNode::WeakPtr & parent,
     const std::string & topic_name,
-    const double & footprint_timeout);
+    tf2_ros::Buffer & tf,
+    std::string robot_base_frame = "base_link",
+    double transform_tolerance = 0.1);
 
+  /**
+   * @brief A constructor
+   */
   FootprintSubscriber(
-    rclcpp::Node::SharedPtr node,
+    const rclcpp::Node::WeakPtr & parent,
     const std::string & topic_name,
-    const double & footprint_timeout);
+    tf2_ros::Buffer & tf,
+    std::string robot_base_frame = "base_link",
+    double transform_tolerance = 0.1);
 
-  FootprintSubscriber(
-    const rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base,
-    const rclcpp::node_interfaces::NodeTopicsInterface::SharedPtr node_topics,
-    const rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging,
-    const rclcpp::node_interfaces::NodeClockInterface::SharedPtr node_clock,
-    const std::string & topic_name,
-    const double & footprint_timeout);
-
+  /**
+   * @brief A destructor
+   */
   ~FootprintSubscriber() {}
 
-  // Returns an oriented robot footprint at current time.
-  bool getFootprint(
+  /**
+   * @brief Returns the latest robot footprint, in the form as received from topic (oriented).
+   *
+   * @param footprint Output param. Latest received footprint
+   * @param footprint_header Output param. Header associated with the footprint
+   * @return False if no footprint has been received
+   */
+  bool getFootprintRaw(
     std::vector<geometry_msgs::msg::Point> & footprint,
-    rclcpp::Duration & valid_footprint_timeout);
-  bool getFootprint(std::vector<geometry_msgs::msg::Point> & footprint);
+    std_msgs::msg::Header & footprint_header);
 
-  // Returns an oriented robot footprint.
-  // The second parameter is the time the fooptrint was at this orientation.
-  bool getFootprint(
+  /**
+   * @brief Returns the latest robot footprint, transformed into robot base frame (unoriented).
+   *
+   * @param footprint Output param. Latest received footprint, unoriented
+   * @param footprint_header Output param. Header associated with the footprint
+   * @return False if no footprint has been received or if transformation failed
+   */
+  bool getFootprintInRobotFrame(
     std::vector<geometry_msgs::msg::Point> & footprint,
-    rclcpp::Time & stamp, rclcpp::Duration valid_footprint_timeout);
+    std_msgs::msg::Header & footprint_header);
 
 protected:
-  // Interfaces used for logging and creating publishers and subscribers
-  rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base_;
-  rclcpp::node_interfaces::NodeTopicsInterface::SharedPtr node_topics_;
-  rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging_;
-  rclcpp::node_interfaces::NodeClockInterface::SharedPtr node_clock_;
-
+  /**
+   * @brief Callback to process new footprint updates.
+   */
   void footprint_callback(const geometry_msgs::msg::PolygonStamped::SharedPtr msg);
 
-  std::string topic_name_;
+  tf2_ros::Buffer & tf_;
+  std::string robot_base_frame_;
+  double transform_tolerance_;
   bool footprint_received_{false};
-  rclcpp::Duration footprint_timeout_;
   geometry_msgs::msg::PolygonStamped::SharedPtr footprint_;
   rclcpp::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr footprint_sub_;
 };

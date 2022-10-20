@@ -47,6 +47,7 @@
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 #include "nav2_util/lifecycle_node.hpp"
+#include "builtin_interfaces/msg/duration.hpp"
 
 using rclcpp_lifecycle::LifecyclePublisher;
 
@@ -68,7 +69,9 @@ namespace dwb_core
 class DWBPublisher
 {
 public:
-  explicit DWBPublisher(nav2_util::LifecycleNode::SharedPtr node);
+  explicit DWBPublisher(
+    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+    const std::string & plugin_name);
 
   nav2_util::CallbackReturn on_configure();
   nav2_util::CallbackReturn on_activate();
@@ -98,12 +101,6 @@ public:
 protected:
   void publishTrajectories(const dwb_msgs::msg::LocalPlanEvaluation & results);
 
-  void addDeleteMarkers(
-    visualization_msgs::msg::MarkerArray & ma,
-    unsigned startingId,
-    std::string & ns
-  );
-
   // Helper function for publishing other plans
   void publishGenericPlan(
     const nav_2d_msgs::msg::Path2D plan,
@@ -116,9 +113,10 @@ protected:
   bool publish_local_plan_;
   bool publish_trajectories_;
   bool publish_cost_grid_pc_;
+  bool publish_input_params_;
 
-  // Previously published marker count for removing markers as needed
-  unsigned int prev_marker_count_;
+  // Marker Lifetime
+  builtin_interfaces::msg::Duration marker_lifetime_;
 
   // Publisher Objects
   std::shared_ptr<LifecyclePublisher<dwb_msgs::msg::LocalPlanEvaluation>> eval_pub_;
@@ -126,9 +124,11 @@ protected:
   std::shared_ptr<LifecyclePublisher<nav_msgs::msg::Path>> transformed_pub_;
   std::shared_ptr<LifecyclePublisher<nav_msgs::msg::Path>> local_pub_;
   std::shared_ptr<LifecyclePublisher<visualization_msgs::msg::MarkerArray>> marker_pub_;
-  std::shared_ptr<LifecyclePublisher<sensor_msgs::msg::PointCloud>> cost_grid_pc_pub_;
+  std::shared_ptr<LifecyclePublisher<sensor_msgs::msg::PointCloud2>> cost_grid_pc_pub_;
 
-  nav2_util::LifecycleNode::SharedPtr node_;
+  rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
+  rclcpp::Clock::SharedPtr clock_;
+  std::string plugin_name_;
 };
 
 }  // namespace dwb_core

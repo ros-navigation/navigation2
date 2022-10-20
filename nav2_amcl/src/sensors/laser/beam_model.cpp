@@ -75,8 +75,9 @@ BeamModel::sensorFunction(LaserData * data, pf_sample_set_t * set)
       obs_bearing = data->ranges[i][1];
 
       // Compute the range according to the map
-      map_range = map_calc_range(self->map_, pose.v[0], pose.v[1],
-          pose.v[2] + obs_bearing, data->range_max);
+      map_range = map_calc_range(
+        self->map_, pose.v[0], pose.v[1],
+        pose.v[2] + obs_bearing, data->range_max);
       pz = 0.0;
 
       // Part 1: good, but noisy, hit

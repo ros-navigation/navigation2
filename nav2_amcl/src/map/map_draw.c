@@ -61,7 +61,8 @@ void map_draw_occ(map_t * map, rtk_fig_t * fig)
   }
 
   // Draw the entire occupancy map as an image
-  rtk_fig_image(fig, map->origin_x, map->origin_y, 0,
+  rtk_fig_image(
+    fig, map->origin_x, map->origin_y, 0,
     map->scale, map->size_x, map->size_y, 16, image, NULL);
 
   free(image);
@@ -93,7 +94,8 @@ void map_draw_cspace(map_t * map, rtk_fig_t * fig)
   }
 
   // Draw the entire occupancy map as an image
-  rtk_fig_image(fig, map->origin_x, map->origin_y, 0,
+  rtk_fig_image(
+    fig, map->origin_x, map->origin_y, 0,
     map->scale, map->size_x, map->size_y, 16, image, NULL);
 
   free(image);
@@ -133,7 +135,8 @@ void map_draw_wifi(map_t * map, rtk_fig_t * fig, int index)
   }
 
   // Draw the entire occupancy map as an image
-  rtk_fig_image(fig, map->origin_x, map->origin_y, 0,
+  rtk_fig_image(
+    fig, map->origin_x, map->origin_y, 0,
     map->scale, map->size_x, map->size_y, 16, image, mask);
 
   free(mask);

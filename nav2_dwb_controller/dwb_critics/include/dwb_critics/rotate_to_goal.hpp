@@ -45,25 +45,56 @@ namespace dwb_critics
  * @class RotateToGoalCritic
  * @brief Forces the commanded trajectories to only be rotations if within a certain distance window
  *
- * This used to be built in to the DWA Local Planner, but has been moved to a critic for consistency.
+ * This used to be built in to the DWA Local Planner as the LatchedStopRotate controller,
+ * but has been moved to a critic for consistency.
  *
- * If the current pose is within xy_goal_tolerance LINEAR distance from the goal pose, score trajectories
- * that have linear movement as invalid and prefer trajectories that will move toward the goal yaw.
+ * The critic has three distinct phases.
+ *  1) If the current pose is outside xy_goal_tolerance LINEAR distance from the goal pose, this critic
+ *     will just return score 0.0.
+ *  2) If within the xy_goal_tolerance and the robot is still moving with non-zero linear motion, this critic
+ *     will only allow trajectories that are slower than the current speed in order to stop the robot (within
+ *     the robot's acceleration limits). The returned score will be the robot's linear speed squared, multiplied
+ *     by the slowing_factor parameter (default 5.0) added to the result of scoreRotation.
+ *  3) If within the xy_goal_tolerance and the robot has sufficiently small linear motion, this critic will
+ *     score trajectories that have linear movement as invalid and score the rest based on the result of the
+ *     scoreRotation method
+ *
+ * The scoreRotation method can be overriden, but the default behavior is to return the shortest angular distance
+ * between the goal pose and a pose from the trajectory. Which pose depends on the lookahead_time parameter.
+ *  * If the lookahead_time parameter is negative, the pose evaluated will be the last pose in the trajectory,
+ *    which is the same as DWA's behavior. This is the default.
+ *  * Otherwise, a new pose will be projected using the dwb_local_planner::projectPose. By using a lookahead
+ *    time shorter than sim_time, the critic will be less concerned about overshooting the goal yaw and thus will
+ *    continue to turn faster for longer.
  */
 class RotateToGoalCritic : public dwb_core::TrajectoryCritic
 {
 public:
   void onInit() override;
+  void reset() override;
   bool prepare(
     const geometry_msgs::msg::Pose2D & pose, const nav_2d_msgs::msg::Twist2D & vel,
     const geometry_msgs::msg::Pose2D & goal, const nav_2d_msgs::msg::Path2D & global_plan) override;
   double scoreTrajectory(const dwb_msgs::msg::Trajectory2D & traj) override;
+  /**
+   * @brief Assuming that this is an actual rotation when near the goal, score the trajectory.
+   *
+   * This (easily overridden) method assumes that the critic is in the third phase (as described above)
+   * and returns a numeric score for the trajectory relative to the goal yaw.
+   * @param traj Trajectory to score
+   * @return numeric score
+   */
+  virtual double scoreRotation(const dwb_msgs::msg::Trajectory2D & traj);
 
 private:
   bool in_window_;
+  bool rotating_;
   double goal_yaw_;
   double xy_goal_tolerance_;
   double xy_goal_tolerance_sq_;  ///< Cached squared tolerance
+  double current_xy_speed_sq_, stopped_xy_velocity_sq_;
+  double slowing_factor_;
+  double lookahead_time_;
 };
 
 }  // namespace dwb_critics

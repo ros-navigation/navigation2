@@ -12,54 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BEHAVIOR_TREE__RATE_CONTROLLER_HPP_
-#define NAV2_BEHAVIOR_TREE__RATE_CONTROLLER_HPP_
-
 #include <chrono>
 #include <string>
 
-#include "behaviortree_cpp_v3/decorator_node.h"
+#include "nav2_behavior_tree/plugins/decorator/rate_controller.hpp"
 
 namespace nav2_behavior_tree
 {
 
-class RateController : public BT::DecoratorNode
+RateController::RateController(
+  const std::string & name,
+  const BT::NodeConfiguration & conf)
+: BT::DecoratorNode(name, conf),
+  first_time_(false)
 {
-public:
-  RateController(
-    const std::string & name,
-    const BT::NodeConfiguration & conf)
-  : BT::DecoratorNode(name, conf)
-  {
-    double hz = 1.0;
-    getInput("hz", hz);
-    period_ = 1.0 / hz;
-  }
+  double hz = 1.0;
+  getInput("hz", hz);
+  period_ = 1.0 / hz;
+}
 
-  // Any BT node that accepts parameters must provide a requiredNodeParameters method
-  static BT::PortsList providedPorts()
-  {
-    return {
-      BT::InputPort<double>("hz", 10.0, "Rate")
-    };
-  }
-
-private:
-  BT::NodeStatus tick() override;
-
-  std::chrono::time_point<std::chrono::high_resolution_clock> start_;
-  double period_;
-};
-
-static bool first_time{false};
-
-inline BT::NodeStatus RateController::tick()
+BT::NodeStatus RateController::tick()
 {
   if (status() == BT::NodeStatus::IDLE) {
     // Reset the starting point since we're starting a new iteration of
     // the rate controller (moving from IDLE to RUNNING)
     start_ = std::chrono::high_resolution_clock::now();
-    first_time = true;
+    first_time_ = true;
   }
 
   setStatus(BT::NodeStatus::RUNNING);
@@ -75,10 +53,10 @@ inline BT::NodeStatus RateController::tick()
   // The child gets ticked the first time through and any time the period has
   // expired. In addition, once the child begins to run, it is ticked each time
   // 'til completion
-  if (first_time || (child_node_->status() == BT::NodeStatus::RUNNING) ||
+  if (first_time_ || (child_node_->status() == BT::NodeStatus::RUNNING) ||
     seconds.count() >= period_)
   {
-    first_time = false;
+    first_time_ = false;
     const BT::NodeStatus child_state = child_node_->executeTick();
 
     switch (child_state) {
@@ -86,13 +64,11 @@ inline BT::NodeStatus RateController::tick()
         return BT::NodeStatus::RUNNING;
 
       case BT::NodeStatus::SUCCESS:
-        child_node_->setStatus(BT::NodeStatus::IDLE);
         start_ = std::chrono::high_resolution_clock::now();  // Reset the timer
         return BT::NodeStatus::SUCCESS;
 
       case BT::NodeStatus::FAILURE:
       default:
-        child_node_->setStatus(BT::NodeStatus::IDLE);
         return BT::NodeStatus::FAILURE;
     }
   }
@@ -107,6 +83,3 @@ BT_REGISTER_NODES(factory)
 {
   factory.registerNodeType<nav2_behavior_tree::RateController>("RateController");
 }
-
-
-#endif  // NAV2_BEHAVIOR_TREE__RATE_CONTROLLER_HPP_

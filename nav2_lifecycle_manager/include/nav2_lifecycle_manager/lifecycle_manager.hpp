@@ -1,4 +1,5 @@
 // Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2022 Samsung Research America
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,23 +19,29 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <thread>
 #include <unordered_map>
 #include <vector>
 
 #include "nav2_util/lifecycle_service_client.hpp"
+#include "nav2_util/node_thread.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "std_srvs/srv/empty.hpp"
 #include "nav2_msgs/srv/manage_lifecycle_nodes.hpp"
 #include "std_srvs/srv/trigger.hpp"
+#include "bondcpp/bond.hpp"
+#include "diagnostic_updater/diagnostic_updater.hpp"
+
 
 namespace nav2_lifecycle_manager
 {
+using namespace std::chrono_literals;  // NOLINT
 
 using nav2_msgs::srv::ManageLifecycleNodes;
 /**
  * @class nav2_lifecycle_manager::LifecycleManager
  * @brief Implements service interface to transition the lifecycle nodes of
- * Navigation2 stack. It receives transition request and then uses lifecycle
+ * Nav2 stack. It receives transition request and then uses lifecycle
  * interface to change lifecycle node's state.
  */
 class LifecycleManager : public rclcpp::Node
@@ -42,16 +49,18 @@ class LifecycleManager : public rclcpp::Node
 public:
   /**
    * @brief A constructor for nav2_lifecycle_manager::LifecycleManager
+   * @param options Additional options to control creation of the node.
    */
-  LifecycleManager();
+  explicit LifecycleManager(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
   /**
    * @brief A destructor for nav2_lifecycle_manager::LifecycleManager
    */
   ~LifecycleManager();
 
 protected:
-  // The ROS node to use when calling lifecycle services
-  rclcpp::Node::SharedPtr service_client_node_;
+  // Callback group used by services and timers
+  rclcpp::CallbackGroup::SharedPtr callback_group_;
+  std::unique_ptr<nav2_util::NodeThread> service_thread_;
 
   // The services provided by this node
   rclcpp::Service<ManageLifecycleNodes>::SharedPtr manager_srv_;
@@ -93,7 +102,7 @@ protected:
    * @brief Reset all the managed nodes.
    * @return true or false
    */
-  bool reset();
+  bool reset(bool hard_reset = false);
   /**
    * @brief Pause all the managed nodes.
    * @return true or false
@@ -121,21 +130,70 @@ protected:
    */
   void destroyLifecycleServiceClients();
 
+  // Support function for creating bond timer
+  /**
+   * @brief Support function for creating bond timer
+   */
+  void createBondTimer();
+
+  // Support function for creating bond connection
+  /**
+   * @brief Support function for creating bond connections
+   */
+  bool createBondConnection(const std::string & node_name);
+
+  // Support function for killing bond connections
+  /**
+   * @brief Support function for killing bond connections
+   */
+  void destroyBondTimer();
+
+  // Support function for checking on bond connections
+  /**
+   * @ brief Support function for checking on bond connections
+   * will take down system if there's something non-responsive
+   */
+  void checkBondConnections();
+
+  // Support function for checking if bond connections come back after respawn
+  /**
+   * @ brief Support function for checking on bond connections
+   * will bring back the system if something goes from non-responsive to responsive
+   */
+  void checkBondRespawnConnection();
+
   /**
    * @brief For a node, transition to the new target state
    */
-  bool changeStateForNode(const std::string & node_name, std::uint8_t transition);
+  bool changeStateForNode(
+    const std::string & node_name,
+    std::uint8_t transition);
 
   /**
    * @brief For each node in the map, transition to the new target state
    */
-  bool changeStateForAllNodes(std::uint8_t transition, bool reverse_order = false);
+  bool changeStateForAllNodes(std::uint8_t transition, bool hard_change = false);
 
   // Convenience function to highlight the output on the console
   /**
    * @brief Helper function to highlight the output on the console
    */
   void message(const std::string & msg);
+
+  // Diagnostics functions
+  /**
+   * @brief function to check if the Nav2 system is active
+   */
+  void CreateActiveDiagnostic(diagnostic_updater::DiagnosticStatusWrapper & stat);
+
+  // Timer thread to look at bond connections
+  rclcpp::TimerBase::SharedPtr init_timer_;
+  rclcpp::TimerBase::SharedPtr bond_timer_;
+  rclcpp::TimerBase::SharedPtr bond_respawn_timer_;
+  std::chrono::milliseconds bond_timeout_;
+
+  // A map of all nodes to check bond connection
+  std::map<std::string, std::shared_ptr<bond::Bond>> bond_map_;
 
   // A map of all nodes to be controlled
   std::map<std::string, std::shared_ptr<nav2_util::LifecycleServiceClient>> node_map_;
@@ -150,8 +208,13 @@ protected:
 
   // Whether to automatically start up the system
   bool autostart_;
+  bool attempt_respawn_reconnection_;
 
   bool system_active_{false};
+  diagnostic_updater::Updater diagnostics_updater_;
+
+  rclcpp::Time bond_respawn_start_time_{0};
+  rclcpp::Duration bond_respawn_max_duration_{10s};
 };
 
 }  // namespace nav2_lifecycle_manager

@@ -14,49 +14,90 @@
 
 #include "nav2_bt_navigator/bt_navigator.hpp"
 
-#include <fstream>
 #include <memory>
-#include <streambuf>
 #include <string>
 #include <utility>
+#include <set>
+#include <limits>
 #include <vector>
 
+#include "nav2_util/geometry_utils.hpp"
+#include "nav2_util/robot_utils.hpp"
 #include "nav2_behavior_tree/bt_conversions.hpp"
 
 namespace nav2_bt_navigator
 {
 
-BtNavigator::BtNavigator()
-: nav2_util::LifecycleNode("bt_navigator", "", true)
+BtNavigator::BtNavigator(const rclcpp::NodeOptions & options)
+: nav2_util::LifecycleNode("bt_navigator", "", options)
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
-  // Declare this node's parameters
-  declare_parameter("bt_xml_filename");
+  const std::vector<std::string> plugin_libs = {
+    "nav2_compute_path_to_pose_action_bt_node",
+    "nav2_compute_path_through_poses_action_bt_node",
+    "nav2_smooth_path_action_bt_node",
+    "nav2_follow_path_action_bt_node",
+    "nav2_spin_action_bt_node",
+    "nav2_wait_action_bt_node",
+    "nav2_assisted_teleop_action_bt_node",
+    "nav2_back_up_action_bt_node",
+    "nav2_drive_on_heading_bt_node",
+    "nav2_clear_costmap_service_bt_node",
+    "nav2_is_stuck_condition_bt_node",
+    "nav2_goal_reached_condition_bt_node",
+    "nav2_initial_pose_received_condition_bt_node",
+    "nav2_goal_updated_condition_bt_node",
+    "nav2_globally_updated_goal_condition_bt_node",
+    "nav2_is_path_valid_condition_bt_node",
+    "nav2_reinitialize_global_localization_service_bt_node",
+    "nav2_rate_controller_bt_node",
+    "nav2_distance_controller_bt_node",
+    "nav2_speed_controller_bt_node",
+    "nav2_truncate_path_action_bt_node",
+    "nav2_truncate_path_local_action_bt_node",
+    "nav2_goal_updater_node_bt_node",
+    "nav2_recovery_node_bt_node",
+    "nav2_pipeline_sequence_bt_node",
+    "nav2_round_robin_node_bt_node",
+    "nav2_transform_available_condition_bt_node",
+    "nav2_time_expired_condition_bt_node",
+    "nav2_path_expiring_timer_condition",
+    "nav2_distance_traveled_condition_bt_node",
+    "nav2_single_trigger_bt_node",
+    "nav2_goal_updated_controller_bt_node",
+    "nav2_is_battery_low_condition_bt_node",
+    "nav2_navigate_through_poses_action_bt_node",
+    "nav2_navigate_to_pose_action_bt_node",
+    "nav2_remove_passed_goals_action_bt_node",
+    "nav2_planner_selector_bt_node",
+    "nav2_controller_selector_bt_node",
+    "nav2_goal_checker_selector_bt_node",
+    "nav2_controller_cancel_bt_node",
+    "nav2_path_longer_on_approach_bt_node",
+    "nav2_wait_cancel_bt_node",
+    "nav2_spin_cancel_bt_node",
+    "nav2_assisted_teleop_cancel_bt_node",
+    "nav2_back_up_cancel_bt_node",
+    "nav2_back_up_cancel_bt_node",
+    "nav2_drive_on_heading_cancel_bt_node"
+  };
 
-  declare_parameter("plugin_lib_names",
-    rclcpp::ParameterValue(std::vector<std::string>({"nav2_behavior_tree_nodes"})));
+  declare_parameter("plugin_lib_names", plugin_libs);
+  declare_parameter("transform_tolerance", rclcpp::ParameterValue(0.1));
+  declare_parameter("global_frame", std::string("map"));
+  declare_parameter("robot_base_frame", std::string("base_link"));
+  declare_parameter("odom_topic", std::string("odom"));
 }
 
 BtNavigator::~BtNavigator()
 {
-  RCLCPP_INFO(get_logger(), "Destroying");
 }
 
 nav2_util::CallbackReturn
 BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
-
-  auto options = rclcpp::NodeOptions().arguments(
-    {"--ros-args",
-      "-r", std::string("__node:=") + get_name() + "_client_node",
-      "--"});
-  // Support for handling the topic-based goal pose from rviz
-  client_node_ = std::make_shared<rclcpp::Node>("_", options);
-
-  self_client_ = rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(
-    client_node_, "navigate_to_pose");
 
   tf_ = std::make_shared<tf2_ros::Buffer>(get_clock());
   auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
@@ -65,61 +106,37 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   tf_->setUsingDedicatedThread(true);
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_, this, false);
 
-  goal_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>(
-    "goal_pose",
-    rclcpp::SystemDefaultsQoS(),
-    std::bind(&BtNavigator::onGoalPoseReceived, this, std::placeholders::_1));
+  global_frame_ = get_parameter("global_frame").as_string();
+  robot_frame_ = get_parameter("robot_base_frame").as_string();
+  transform_tolerance_ = get_parameter("transform_tolerance").as_double();
+  odom_topic_ = get_parameter("odom_topic").as_string();
 
-  action_server_ = std::make_unique<ActionServer>(
-    get_node_base_interface(),
-    get_node_clock_interface(),
-    get_node_logging_interface(),
-    get_node_waitables_interface(),
-    "NavigateToPose", std::bind(&BtNavigator::navigateToPose, this), false);
+  // Libraries to pull plugins (BT Nodes) from
+  auto plugin_lib_names = get_parameter("plugin_lib_names").as_string_array();
 
-  // Get the libraries to pull plugins from
-  get_parameter("plugin_lib_names", plugin_lib_names_);
+  pose_navigator_ = std::make_unique<nav2_bt_navigator::NavigateToPoseNavigator>();
+  poses_navigator_ = std::make_unique<nav2_bt_navigator::NavigateThroughPosesNavigator>();
 
-  // Create the class that registers our custom nodes and executes the BT
-  bt_ = std::make_unique<nav2_behavior_tree::BehaviorTreeEngine>(plugin_lib_names_);
+  nav2_bt_navigator::FeedbackUtils feedback_utils;
+  feedback_utils.tf = tf_;
+  feedback_utils.global_frame = global_frame_;
+  feedback_utils.robot_frame = robot_frame_;
+  feedback_utils.transform_tolerance = transform_tolerance_;
 
-  // Create the blackboard that will be shared by all of the nodes in the tree
-  blackboard_ = BT::Blackboard::create();
+  // Odometry smoother object for getting current speed
+  odom_smoother_ = std::make_shared<nav2_util::OdomSmoother>(shared_from_this(), 0.3, odom_topic_);
 
-  // Put items on the blackboard
-  blackboard_->set<rclcpp::Node::SharedPtr>("node", client_node_);  // NOLINT
-  blackboard_->set<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer", tf_);  // NOLINT
-  blackboard_->set<std::chrono::milliseconds>("server_timeout", std::chrono::milliseconds(10));  // NOLINT
-  blackboard_->set<bool>("path_updated", false);  // NOLINT
-  blackboard_->set<bool>("initial_pose_received", false);  // NOLINT
-
-  // Get the BT filename to use from the node parameter
-  std::string bt_xml_filename;
-  get_parameter("bt_xml_filename", bt_xml_filename);
-
-  // Read the input BT XML from the specified file into a string
-  std::ifstream xml_file(bt_xml_filename);
-
-  if (!xml_file.good()) {
-    RCLCPP_ERROR(get_logger(), "Couldn't open input XML file: %s", bt_xml_filename.c_str());
+  if (!pose_navigator_->on_configure(
+      shared_from_this(), plugin_lib_names, feedback_utils, &plugin_muxer_, odom_smoother_))
+  {
     return nav2_util::CallbackReturn::FAILURE;
   }
 
-  xml_string_ = std::string(std::istreambuf_iterator<char>(xml_file),
-      std::istreambuf_iterator<char>());
-
-  RCLCPP_DEBUG(get_logger(), "Behavior Tree file: '%s'", bt_xml_filename.c_str());
-  RCLCPP_DEBUG(get_logger(), "Behavior Tree XML: %s", xml_string_.c_str());
-
-  // Create the Behavior Tree from the XML input (after registering our own node types)
-  BT::Tree temp_tree = bt_->buildTreeFromText(xml_string_, blackboard_);
-
-  // Unfortunately, the BT library provides the tree as a struct instead of a pointer. So, we will
-  // createa new BT::Tree ourselves and move the data over
-  tree_ = std::make_unique<BT::Tree>();
-  tree_->root_node = temp_tree.root_node;
-  tree_->nodes = std::move(temp_tree.nodes);
-  temp_tree.root_node = nullptr;
+  if (!poses_navigator_->on_configure(
+      shared_from_this(), plugin_lib_names, feedback_utils, &plugin_muxer_, odom_smoother_))
+  {
+    return nav2_util::CallbackReturn::FAILURE;
+  }
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -129,7 +146,12 @@ BtNavigator::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
-  action_server_->activate();
+  if (!poses_navigator_->on_activate() || !pose_navigator_->on_activate()) {
+    return nav2_util::CallbackReturn::FAILURE;
+  }
+
+  // create bond connection
+  createBond();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -139,7 +161,12 @@ BtNavigator::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
-  action_server_->deactivate();
+  if (!poses_navigator_->on_deactivate() || !pose_navigator_->on_deactivate()) {
+    return nav2_util::CallbackReturn::FAILURE;
+  }
+
+  // destroy bond connection
+  destroyBond();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -149,35 +176,18 @@ BtNavigator::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
-  // TODO(orduno) Fix the race condition between the worker thread ticking the tree
-  //              and the main thread resetting the resources, see #1344
-
-  goal_sub_.reset();
-  client_node_.reset();
-  self_client_.reset();
-
   // Reset the listener before the buffer
   tf_listener_.reset();
   tf_.reset();
 
-  action_server_.reset();
-  plugin_lib_names_.clear();
-  xml_string_.clear();
+  if (!poses_navigator_->on_cleanup() || !pose_navigator_->on_cleanup()) {
+    return nav2_util::CallbackReturn::FAILURE;
+  }
 
-  RCLCPP_INFO(get_logger(), "Cleaning tree");
-
-  tree_.reset();
-  blackboard_.reset();
-  bt_.reset();
+  poses_navigator_.reset();
+  pose_navigator_.reset();
 
   RCLCPP_INFO(get_logger(), "Completed Cleaning up");
-  return nav2_util::CallbackReturn::SUCCESS;
-}
-
-nav2_util::CallbackReturn
-BtNavigator::on_error(const rclcpp_lifecycle::State & /*state*/)
-{
-  RCLCPP_FATAL(get_logger(), "Lifecycle node entered error state");
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -188,77 +198,11 @@ BtNavigator::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
-void
-BtNavigator::navigateToPose()
-{
-  initializeGoalPose();
-
-  auto is_canceling = [this]() {
-      if (action_server_ == nullptr) {
-        RCLCPP_DEBUG(get_logger(), "Action server unavailable. Canceling.");
-        return true;
-      }
-
-      if (!action_server_->is_server_active()) {
-        RCLCPP_DEBUG(get_logger(), "Action server is inactive. Canceling.");
-        return true;
-      }
-
-      return action_server_->is_cancel_requested();
-    };
-
-  auto on_loop = [this]() {
-      if (action_server_->is_preempt_requested()) {
-        RCLCPP_INFO(get_logger(), "Received goal preemption request");
-        action_server_->accept_pending_goal();
-        initializeGoalPose();
-      }
-    };
-
-  // Execute the BT that was previously created in the configure step
-  nav2_behavior_tree::BtStatus rc = bt_->run(tree_, on_loop, is_canceling);
-
-  switch (rc) {
-    case nav2_behavior_tree::BtStatus::SUCCEEDED:
-      RCLCPP_INFO(get_logger(), "Navigation succeeded");
-      action_server_->succeeded_current();
-      break;
-
-    case nav2_behavior_tree::BtStatus::FAILED:
-      RCLCPP_ERROR(get_logger(), "Navigation failed");
-      action_server_->terminate_current();
-      break;
-
-    case nav2_behavior_tree::BtStatus::CANCELED:
-      RCLCPP_INFO(get_logger(), "Navigation canceled");
-      action_server_->terminate_all();
-      // Reset the BT so that it can be run again in the future
-      bt_->resetTree(tree_->root_node);
-      break;
-
-    default:
-      throw std::logic_error("Invalid status return from BT");
-  }
-}
-
-void
-BtNavigator::initializeGoalPose()
-{
-  auto goal = action_server_->get_current_goal();
-
-  RCLCPP_INFO(get_logger(), "Begin navigating from current location to (%.2f, %.2f)",
-    goal->pose.pose.position.x, goal->pose.pose.position.y);
-
-  // Update the goal pose on the blackboard
-  blackboard_->set("goal", goal->pose);
-}
-
-void
-BtNavigator::onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose)
-{
-  nav2_msgs::action::NavigateToPose::Goal goal;
-  goal.pose = *pose;
-  self_client_->async_send_goal(goal);
-}
-
 }  // namespace nav2_bt_navigator
+
+#include "rclcpp_components/register_node_macro.hpp"
+
+// Register the component with class_loader.
+// This acts as a sort of entry point, allowing the component to be discoverable when its library
+// is being loaded into a running process.
+RCLCPP_COMPONENTS_REGISTER_NODE(nav2_bt_navigator::BtNavigator)

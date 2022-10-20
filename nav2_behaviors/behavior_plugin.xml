@@ -1,0 +1,31 @@
+<class_libraries>
+	<library path="nav2_spin_behavior">
+	  <class name="nav2_behaviors/Spin" type="nav2_behaviors::Spin" base_class_type="nav2_core::Behavior">
+	    <description></description>
+	  </class>
+	</library>
+
+	<library path="nav2_back_up_behavior">
+	  <class name="nav2_behaviors/BackUp" type="nav2_behaviors::BackUp" base_class_type="nav2_core::Behavior">
+	    <description></description>
+	  </class>
+	</library>
+
+	<library path="nav2_drive_on_heading_behavior">
+	  <class name="nav2_behaviors/DriveOnHeading" type="nav2_behaviors::DriveOnHeading&lt;&gt;" base_class_type="nav2_core::Behavior">
+	    <description></description>
+	  </class>
+	</library>
+
+	<library path="nav2_wait_behavior">
+	  <class name="nav2_behaviors/Wait" type="nav2_behaviors::Wait" base_class_type="nav2_core::Behavior">
+	    <description></description>
+	  </class>
+	</library>
+
+	<library path="nav2_assisted_teleop_behavior">
+	  <class name="nav2_behaviors/AssistedTeleop" type="nav2_behaviors::AssistedTeleop" base_class_type="nav2_core::Behavior">
+	    <description></description>
+	  </class>
+	</library>
+</class_libraries>

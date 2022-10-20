@@ -96,6 +96,11 @@ public:
     double current, double min, double max, double acc_limit, double decel_limit, double acc_time,
     int num_samples)
   {
+    if (current < min) {
+      current = min;
+    } else if (current > max) {
+      current = max;
+    }
     max_vel_ = projectVelocity(current, acc_limit, decel_limit, acc_time, max);
     min_vel_ = projectVelocity(current, acc_limit, decel_limit, acc_time, min);
     reset();

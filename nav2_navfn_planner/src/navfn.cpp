@@ -55,6 +55,8 @@ namespace nav2_navfn_planner
 //   if the size of the environment does not change
 //
 
+// Example usage:
+/*
 int
 create_nav_plan_astar(
   COSTTYPE * costmap, int nx, int ny,
@@ -100,7 +102,7 @@ create_nav_plan_astar(
 
   return len;
 }
-
+*/
 
 //
 // create nav fn buffers
@@ -129,8 +131,8 @@ NavFn::NavFn(int xs, int ys)
   start[0] = start[1] = 0;
 
   // display function
-  displayFn = NULL;
-  displayInt = 0;
+  // displayFn = NULL;
+  // displayInt = 0;
 
   // path buffers
   npathbuf = npath = 0;
@@ -191,7 +193,8 @@ NavFn::setStart(int * g)
 {
   start[0] = g[0];
   start[1] = g[1];
-  RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"), "[NavFn] Setting start to %d,%d\n", start[0],
+  RCLCPP_DEBUG(
+    rclcpp::get_logger("rclcpp"), "[NavFn] Setting start to %d,%d\n", start[0],
     start[1]);
 }
 
@@ -604,9 +607,9 @@ NavFn::propNavFnDijkstra(int cycles, bool atStart)
       updateCell(*pb++);
     }
 
-    if (displayInt > 0 && (cycle % displayInt) == 0) {
-      displayFn(this);
-    }
+    // if (displayInt > 0 && (cycle % displayInt) == 0) {
+    //   displayFn(this);
+    // }
 
     // swap priority blocks curP <=> nextP
     curPe = nextPe;
@@ -633,7 +636,8 @@ NavFn::propNavFnDijkstra(int cycles, bool atStart)
     }
   }
 
-  RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"),
+  RCLCPP_DEBUG(
+    rclcpp::get_logger("rclcpp"),
     "[NavFn] Used %d cycles, %d cells visited (%d%%), priority buf max %d\n",
     cycle, nc, (int)((nc * 100.0) / (ns - nobs)), nwv);
 
@@ -689,9 +693,9 @@ NavFn::propNavFnAstar(int cycles)
       updateCellAstar(*pb++);
     }
 
-    if (displayInt > 0 && (cycle % displayInt) == 0) {
-      displayFn(this);
-    }
+    // if (displayInt > 0 && (cycle % displayInt) == 0) {
+    //   displayFn(this);
+    // }
 
     // swap priority blocks curP <=> nextP
     curPe = nextPe;
@@ -718,7 +722,8 @@ NavFn::propNavFnAstar(int cycles)
 
   last_path_cost_ = potarr[startCell];
 
-  RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"),
+  RCLCPP_DEBUG(
+    rclcpp::get_logger("rclcpp"),
     "[NavFn] Used %d cycles, %d cells visited (%d%%), priority buf max %d\n",
     cycle, nc, (int)((nc * 100.0) / (ns - nobs)), nwv);
 
@@ -775,8 +780,10 @@ NavFn::calcPath(int n, int * st)
   // go for <n> cycles at most
   for (int i = 0; i < n; i++) {
     // check if near goal
-    int nearest_point = std::max(0,
-        std::min(nx * ny - 1, stc + static_cast<int>(round(dx)) +
+    int nearest_point = std::max(
+      0,
+      std::min(
+        nx * ny - 1, stc + static_cast<int>(round(dx)) +
         static_cast<int>(nx * round(dy))));
     if (potarr[nearest_point] < COST_NEUTRAL) {
       pathx[npath] = static_cast<float>(goal[0]);
@@ -799,7 +806,8 @@ NavFn::calcPath(int n, int * st)
       pathx[npath - 1] == pathx[npath - 3] &&
       pathy[npath - 1] == pathy[npath - 3])
     {
-      RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"),
+      RCLCPP_DEBUG(
+        rclcpp::get_logger("rclcpp"),
         "[PathCalc] oscillation detected, attempting fix.");
       oscillation_detected = true;
     }
@@ -819,7 +827,8 @@ NavFn::calcPath(int n, int * st)
       potarr[stcpx - 1] >= POT_HIGH ||
       oscillation_detected)
     {
-      RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"),
+      RCLCPP_DEBUG(
+        rclcpp::get_logger("rclcpp"),
         "[Path] Pot fn boundary, following grid (%0.1f/%d)", potarr[stc], npath);
 
       // check eight neighbors to find the lowest
@@ -845,7 +854,8 @@ NavFn::calcPath(int n, int * st)
       dx = 0;
       dy = 0;
 
-      RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"), "[Path] Pot: %0.1f  pos: %0.1f,%0.1f",
+      RCLCPP_DEBUG(
+        rclcpp::get_logger("rclcpp"), "[Path] Pot: %0.1f  pos: %0.1f,%0.1f",
         potarr[stc], pathx[npath - 1], pathy[npath - 1]);
 
       if (potarr[stc] >= POT_HIGH) {
@@ -871,7 +881,8 @@ NavFn::calcPath(int n, int * st)
 
 #if 0
       // show gradients
-      RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"),
+      RCLCPP_DEBUG(
+        rclcpp::get_logger("rclcpp"),
         "[Path] %0.2f,%0.2f  %0.2f,%0.2f  %0.2f,%0.2f  %0.2f,%0.2f; final x=%.3f, y=%.3f\n",
         gradx[stc], grady[stc], gradx[stc + 1], grady[stc + 1],
         gradx[stcnx], grady[stcnx], gradx[stcnx + 1], grady[stcnx + 1],
@@ -974,12 +985,12 @@ NavFn::gradCell(int n)
 // <n> is the number of cycles to wait before displaying,
 //     use 0 to turn it off
 
-void
-NavFn::display(void fn(NavFn * nav), int n)
-{
-  displayFn = fn;
-  displayInt = n;
-}
+// void
+// NavFn::display(void fn(NavFn * nav), int n)
+// {
+//   displayFn = fn;
+//   displayInt = n;
+// }
 
 
 //
@@ -987,35 +998,35 @@ NavFn::display(void fn(NavFn * nav), int n)
 // saves costmap and start/goal
 //
 
-void
-NavFn::savemap(const char * fname)
-{
-  char fn[4096];
+// void
+// NavFn::savemap(const char * fname)
+// {
+//   char fn[4096];
 
-  RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"), "[NavFn] Saving costmap and start/goal points");
-  // write start and goal points
-  snprintf(fn, sizeof(fn), "%s.txt", fname);
-  FILE * fp = fopen(fn, "w");
-  if (!fp) {
-    RCLCPP_WARN(rclcpp::get_logger("rclcpp"), "Can't open file %s", fn);
-    return;
-  }
-  fprintf(fp, "Goal: %d %d\nStart: %d %d\n", goal[0], goal[1], start[0], start[1]);
-  fclose(fp);
+//   RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"), "[NavFn] Saving costmap and start/goal points");
+//   // write start and goal points
+//   snprintf(fn, sizeof(fn), "%s.txt", fname);
+//   FILE * fp = fopen(fn, "w");
+//   if (!fp) {
+//     RCLCPP_WARN(rclcpp::get_logger("rclcpp"), "Can't open file %s", fn);
+//     return;
+//   }
+//   fprintf(fp, "Goal: %d %d\nStart: %d %d\n", goal[0], goal[1], start[0], start[1]);
+//   fclose(fp);
 
-  // write cost array
-  if (!costarr) {
-    return;
-  }
-  snprintf(fn, sizeof(fn), "%s.pgm", fname);
-  fp = fopen(fn, "wb");
-  if (!fp) {
-    RCLCPP_WARN(rclcpp::get_logger("rclcpp"), "Can't open file %s", fn);
-    return;
-  }
-  fprintf(fp, "P5\n%d\n%d\n%d\n", nx, ny, 0xff);
-  fwrite(costarr, 1, nx * ny, fp);
-  fclose(fp);
-}
+//   // write cost array
+//   if (!costarr) {
+//     return;
+//   }
+//   snprintf(fn, sizeof(fn), "%s.pgm", fname);
+//   fp = fopen(fn, "wb");
+//   if (!fp) {
+//     RCLCPP_WARN(rclcpp::get_logger("rclcpp"), "Can't open file %s", fn);
+//     return;
+//   }
+//   fprintf(fp, "P5\n%d\n%d\n%d\n", nx, ny, 0xff);
+//   fwrite(costarr, 1, nx * ny, fp);
+//   fclose(fp);
+// }
 
 }  // namespace nav2_navfn_planner

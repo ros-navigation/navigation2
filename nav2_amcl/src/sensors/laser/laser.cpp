@@ -23,7 +23,6 @@
 #include <math.h>
 #include <stdlib.h>
 #include <assert.h>
-#include <unistd.h>
 
 #include "nav2_amcl/sensors/laser/laser.hpp"
 

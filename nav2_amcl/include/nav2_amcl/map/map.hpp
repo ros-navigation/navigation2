@@ -87,15 +87,6 @@ map_t * map_alloc(void);
 // Destroy a map
 void map_free(map_t * map);
 
-// Get the cell at the given point
-map_cell_t * map_get_cell(map_t * map, double ox, double oy, double oa);
-
-// Load an occupancy map
-int map_load_occ(map_t * map, const char * filename, double scale, int negate);
-
-// Load a wifi signal strength map
-// int map_load_wifi(map_t *map, const char *filename, int index);
-
 // Update the cspace distances
 void map_update_cspace(map_t * map, double max_occ_dist);
 

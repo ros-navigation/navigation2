@@ -36,6 +36,7 @@
 #define DWB_CORE__TRAJECTORY_GENERATOR_HPP_
 
 #include <vector>
+#include <string>
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
 #include "nav_2d_msgs/msg/twist2_d.hpp"
@@ -71,8 +72,10 @@ public:
    * @brief Initialize parameters as needed
    * @param nh NodeHandle to read parameters from
    */
-  virtual void initialize(const nav2_util::LifecycleNode::SharedPtr & nh) = 0;
-
+  virtual void initialize(
+    const nav2_util::LifecycleNode::SharedPtr & nh,
+    const std::string & plugin_name) = 0;
+  virtual void reset() {}
   /**
    * @brief Start a new iteration based on the current velocity
    * @param current_velocity
@@ -120,6 +123,15 @@ public:
     const geometry_msgs::msg::Pose2D & start_pose,
     const nav_2d_msgs::msg::Twist2D & start_vel,
     const nav_2d_msgs::msg::Twist2D & cmd_vel) = 0;
+
+  /**
+   * @brief Limits the maximum linear speed of the robot.
+   * @param speed_limit expressed in absolute value (in m/s)
+   * or in percentage from maximum robot speed.
+   * @param percentage Setting speed limit in percentage if true
+   * or in absolute values in false case.
+   */
+  virtual void setSpeedLimit(const double & speed_limit, const bool & percentage) = 0;
 };
 
 }  // namespace dwb_core

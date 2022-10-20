@@ -12,65 +12,64 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BEHAVIOR_TREE__COMPUTE_PATH_TO_POSE_ACTION_HPP_
-#define NAV2_BEHAVIOR_TREE__COMPUTE_PATH_TO_POSE_ACTION_HPP_
-
 #include <memory>
 #include <string>
 
-#include "nav2_msgs/action/compute_path_to_pose.hpp"
-#include "nav_msgs/msg/path.h"
-#include "nav2_behavior_tree/bt_action_node.hpp"
+#include "nav2_behavior_tree/plugins/action/compute_path_to_pose_action.hpp"
 
 namespace nav2_behavior_tree
 {
 
-class ComputePathToPoseAction : public BtActionNode<nav2_msgs::action::ComputePathToPose>
+ComputePathToPoseAction::ComputePathToPoseAction(
+  const std::string & xml_tag_name,
+  const std::string & action_name,
+  const BT::NodeConfiguration & conf)
+: BtActionNode<nav2_msgs::action::ComputePathToPose>(xml_tag_name, action_name, conf)
 {
-public:
-  ComputePathToPoseAction(
-    const std::string & xml_tag_name,
-    const std::string & action_name,
-    const BT::NodeConfiguration & conf)
-  : BtActionNode<nav2_msgs::action::ComputePathToPose>(xml_tag_name, action_name, conf)
-  {
-    std::string remapped_action_name;
-    if (getInput("server_name", remapped_action_name)) {
-      action_client_.reset();
-      createActionClient(remapped_action_name);
-    }
+}
+
+void ComputePathToPoseAction::on_tick()
+{
+  getInput("goal", goal_.goal);
+  getInput("planner_id", goal_.planner_id);
+  if (getInput("start", goal_.start)) {
+    goal_.use_start = true;
   }
+}
 
-  void on_tick() override
-  {
-    getInput("goal", goal_.pose);
-    getInput("planner_id", goal_.planner_id);
-  }
+BT::NodeStatus ComputePathToPoseAction::on_success()
+{
+  setOutput("path", result_.result->path);
+  // Set empty error code, action was successful
+  result_.result->error_code = nav2_msgs::action::ComputePathToPose::Goal::NONE;
+  setOutput("compute_path_to_pose_error_code", result_.result->error_code);
+  return BT::NodeStatus::SUCCESS;
+}
 
-  void on_success() override
-  {
-    setOutput("path", result_.result->path);
+BT::NodeStatus ComputePathToPoseAction::on_aborted()
+{
+  nav_msgs::msg::Path empty_path;
+  setOutput("path", empty_path);
+  setOutput("compute_path_to_pose_error_code", result_.result->error_code);
+  return BT::NodeStatus::FAILURE;
+}
 
-    if (first_time_) {
-      first_time_ = false;
-    } else {
-      config().blackboard->set("path_updated", true);
-    }
-  }
+BT::NodeStatus ComputePathToPoseAction::on_cancelled()
+{
+  nav_msgs::msg::Path empty_path;
+  setOutput("path", empty_path);
+  // Set empty error code, action was cancelled
+  result_.result->error_code = nav2_msgs::action::ComputePathToPose::Goal::NONE;
+  setOutput("compute_path_to_pose_error_code", result_.result->error_code);
+  return BT::NodeStatus::SUCCESS;
+}
 
-  static BT::PortsList providedPorts()
-  {
-    return providedBasicPorts({
-        BT::OutputPort<nav_msgs::msg::Path>("path", "Path created by ComputePathToPose node"),
-        BT::InputPort<geometry_msgs::msg::PoseStamped>("goal", "Destination to plan to"),
-        BT::InputPort<std::string>("planner_id", ""),
-        BT::InputPort<std::string>("server_name", "")
-      });
-  }
-
-private:
-  bool first_time_{true};
-};
+void ComputePathToPoseAction::halt()
+{
+  nav_msgs::msg::Path empty_path;
+  setOutput("path", empty_path);
+  BtActionNode::halt();
+}
 
 }  // namespace nav2_behavior_tree
 
@@ -87,5 +86,3 @@ BT_REGISTER_NODES(factory)
   factory.registerBuilder<nav2_behavior_tree::ComputePathToPoseAction>(
     "ComputePathToPose", builder);
 }
-
-#endif  // NAV2_BEHAVIOR_TREE__COMPUTE_PATH_TO_POSE_ACTION_HPP_

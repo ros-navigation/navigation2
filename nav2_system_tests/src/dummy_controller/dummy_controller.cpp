@@ -16,6 +16,7 @@
 #include <ctime>
 #include <thread>
 #include <memory>
+#include <utility>
 
 #include "dummy_controller.hpp"
 
@@ -76,9 +77,9 @@ DummyController::followPath(const nav2_behavior_tree::FollowPathCommand::SharedP
     }
 
     // Output control command
-    geometry_msgs::msg::Twist cmd_vel;
-    cmd_vel.linear.x = 0.1;
-    vel_pub_->publish(cmd_vel);
+    auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>();
+    cmd_vel->linear.x = 0.1;
+    vel_pub_->publish(std::move(cmd_vel));
 
     if (current_time - start_time >= 30s) {
       RCLCPP_INFO(get_logger(), "Reached end point");
@@ -93,11 +94,11 @@ DummyController::followPath(const nav2_behavior_tree::FollowPathCommand::SharedP
 
 void DummyController::setZeroVelocity()
 {
-  geometry_msgs::msg::Twist cmd_vel;
-  cmd_vel.linear.x = 0.0;
-  cmd_vel.linear.y = 0.0;
-  cmd_vel.angular.z = 0.0;
-  vel_pub_->publish(cmd_vel);
+  auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>();
+  cmd_vel->linear.x = 0.0;
+  cmd_vel->linear.y = 0.0;
+  cmd_vel->angular.z = 0.0;
+  vel_pub_->publish(std::move(cmd_vel));
 }
 
 }  // namespace nav2_system_tests

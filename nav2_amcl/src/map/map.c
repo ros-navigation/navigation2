@@ -63,22 +63,3 @@ void map_free(map_t * map)
   free(map->cells);
   free(map);
 }
-
-
-// Get the cell at the given point
-map_cell_t * map_get_cell(map_t * map, double ox, double oy, double oa)
-{
-  (void)oa;
-  int i, j;
-  map_cell_t * cell;
-
-  i = MAP_GXWX(map, ox);
-  j = MAP_GYWY(map, oy);
-
-  if (!MAP_VALID(map, i, j)) {
-    return NULL;
-  }
-
-  cell = map->cells + MAP_INDEX(map, i, j);
-  return cell;
-}

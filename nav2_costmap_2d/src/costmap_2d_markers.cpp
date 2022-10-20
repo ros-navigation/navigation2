@@ -38,13 +38,14 @@
  *********************************************************************/
 #include <string>
 #include <vector>
+#include <memory>
+#include <utility>
 
 #include "rclcpp/rclcpp.hpp"
 #include "visualization_msgs/msg/marker.hpp"
 #include "nav2_msgs/msg/voxel_grid.hpp"
 #include "nav2_voxel_grid/voxel_grid.hpp"
 #include "nav2_util/execution_timer.hpp"
-#include "nav2_util/lifecycle_node.hpp"
 
 struct Cell
 {
@@ -61,8 +62,8 @@ float g_colors_b[] = {0.0f, 1.0f, 0.0f};
 float g_colors_a[] = {0.0f, 0.5f, 1.0f};
 
 V_Cell g_cells;
-nav2_util::LifecycleNode::SharedPtr g_node;
-rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::Marker>::SharedPtr pub;
+rclcpp::Node::SharedPtr g_node;
+rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub;
 
 void voxelCallback(const nav2_msgs::msg::VoxelGrid::ConstSharedPtr grid)
 {
@@ -95,8 +96,9 @@ void voxelCallback(const nav2_msgs::msg::VoxelGrid::ConstSharedPtr grid)
     for (uint32_t x_grid = 0; x_grid < x_size; ++x_grid) {
       for (uint32_t z_grid = 0; z_grid < z_size; ++z_grid) {
         nav2_voxel_grid::VoxelStatus status =
-          nav2_voxel_grid::VoxelGrid::getVoxel(x_grid, y_grid,
-            z_grid, x_size, y_size, z_size, data);
+          nav2_voxel_grid::VoxelGrid::getVoxel(
+          x_grid, y_grid,
+          z_grid, x_size, y_size, z_size, data);
         if (status == nav2_voxel_grid::MARKED) {
           Cell c;
           c.status = status;
@@ -111,47 +113,47 @@ void voxelCallback(const nav2_msgs::msg::VoxelGrid::ConstSharedPtr grid)
     }
   }
 
-  visualization_msgs::msg::Marker m;
-  m.header.frame_id = frame_id;
-  m.header.stamp = stamp;
-  m.ns = g_node->get_namespace();
-  m.id = 0;
-  m.type = visualization_msgs::msg::Marker::CUBE_LIST;
-  m.action = visualization_msgs::msg::Marker::ADD;
-  m.pose.orientation.w = 1.0;
-  m.scale.x = x_res;
-  m.scale.y = y_res;
-  m.scale.z = z_res;
-  m.color.r = g_colors_r[nav2_voxel_grid::MARKED];
-  m.color.g = g_colors_g[nav2_voxel_grid::MARKED];
-  m.color.b = g_colors_b[nav2_voxel_grid::MARKED];
-  m.color.a = g_colors_a[nav2_voxel_grid::MARKED];
-  m.points.resize(num_markers);
+  auto m = std::make_unique<visualization_msgs::msg::Marker>();
+  m->header.frame_id = frame_id;
+  m->header.stamp = stamp;
+  m->ns = g_node->get_namespace();
+  m->id = 0;
+  m->type = visualization_msgs::msg::Marker::CUBE_LIST;
+  m->action = visualization_msgs::msg::Marker::ADD;
+  m->pose.orientation.w = 1.0;
+  m->scale.x = x_res;
+  m->scale.y = y_res;
+  m->scale.z = z_res;
+  m->color.r = g_colors_r[nav2_voxel_grid::MARKED];
+  m->color.g = g_colors_g[nav2_voxel_grid::MARKED];
+  m->color.b = g_colors_b[nav2_voxel_grid::MARKED];
+  m->color.a = g_colors_a[nav2_voxel_grid::MARKED];
+  m->points.resize(num_markers);
   for (uint32_t i = 0; i < num_markers; ++i) {
     Cell & c = g_cells[i];
-    geometry_msgs::msg::Point & p = m.points[i];
+    geometry_msgs::msg::Point & p = m->points[i];
     p.x = c.x;
     p.y = c.y;
     p.z = c.z;
   }
 
-  pub->publish(m);
+  pub->publish(std::move(m));
 
   timer.end();
-  RCLCPP_INFO(g_node->get_logger(), "Published %d markers in %f seconds",
+  RCLCPP_INFO(
+    g_node->get_logger(), "Published %d markers in %f seconds",
     num_markers, timer.elapsed_time_in_seconds());
 }
 
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  g_node = nav2_util::LifecycleNode::make_shared("costmap_2d_marker");
+  g_node = rclcpp::Node::make_shared("costmap_2d_marker");
 
   RCLCPP_DEBUG(g_node->get_logger(), "Starting costmap_2d_marker");
 
   pub = g_node->create_publisher<visualization_msgs::msg::Marker>(
     "visualization_marker", 1);
-  pub->on_activate();
 
   auto sub = g_node->create_subscription<nav2_msgs::msg::VoxelGrid>(
     "voxel_grid", rclcpp::SystemDefaultsQoS(), voxelCallback);

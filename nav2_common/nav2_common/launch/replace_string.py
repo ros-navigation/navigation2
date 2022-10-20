@@ -21,6 +21,8 @@ import launch
 class ReplaceString(launch.Substitution):
   """
   Substitution that replaces strings on a given file.
+
+  Used in launch system
   """
 
   def __init__(self,
@@ -49,7 +51,7 @@ class ReplaceString(launch.Substitution):
     try:
       input_file = open(launch.utilities.perform_substitutions(context, self.name), 'r')
       self.replace(input_file, output_file, replacements)
-    except Exception as err:
+    except Exception as err:  # noqa: B902
       print('ReplaceString substitution error: ', err)
     finally:
       input_file.close()

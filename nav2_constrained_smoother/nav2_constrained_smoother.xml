@@ -1,0 +1,7 @@
+<class_libraries>
+  <library path="nav2_constrained_smoother">
+    <class name="nav2_constrained_smoother/ConstrainedSmoother" type="nav2_constrained_smoother::ConstrainedSmoother" base_class_type="nav2_core::Smoother">
+      <description>Increases smoothness and distance from obstacles of a path using Ceres solver optimization</description>
+    </class>
+  </library>
+</class_libraries>

@@ -41,6 +41,8 @@
 #include <cstdio>
 #include <string>
 #include <vector>
+#include "nav2_costmap_2d/cost_values.hpp"
+#include "nav2_util/occ_grid_values.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -55,6 +57,37 @@ Costmap2D::Costmap2D(
   // create the costmap
   initMaps(size_x_, size_y_);
   resetMaps();
+}
+
+Costmap2D::Costmap2D(const nav_msgs::msg::OccupancyGrid & map)
+: default_value_(FREE_SPACE)
+{
+  access_ = new mutex_t();
+
+  // fill local variables
+  size_x_ = map.info.width;
+  size_y_ = map.info.height;
+  resolution_ = map.info.resolution;
+  origin_x_ = map.info.origin.position.x;
+  origin_y_ = map.info.origin.position.y;
+
+  // create the costmap
+  costmap_ = new unsigned char[size_x_ * size_y_];
+
+  // fill the costmap with a data
+  int8_t data;
+  for (unsigned int it = 0; it < size_x_ * size_y_; it++) {
+    data = map.data[it];
+    if (data == nav2_util::OCC_GRID_UNKNOWN) {
+      costmap_[it] = NO_INFORMATION;
+    } else {
+      // Linear conversion from OccupancyGrid data range [OCC_GRID_FREE..OCC_GRID_OCCUPIED]
+      // to costmap data range [FREE_SPACE..LETHAL_OBSTACLE]
+      costmap_[it] = std::round(
+        static_cast<double>(data) * (LETHAL_OBSTACLE - FREE_SPACE) /
+        (nav2_util::OCC_GRID_OCCUPIED - nav2_util::OCC_GRID_FREE));
+    }
+  }
 }
 
 void Costmap2D::deleteMaps()
@@ -126,8 +159,9 @@ bool Costmap2D::copyCostmapWindow(
   // compute the bounds of our new map
   unsigned int lower_left_x, lower_left_y, upper_right_x, upper_right_y;
   if (!map.worldToMap(win_origin_x, win_origin_y, lower_left_x, lower_left_y) ||
-    !map.worldToMap(win_origin_x + win_size_x, win_origin_y + win_size_y, upper_right_x,
-    upper_right_y))
+    !map.worldToMap(
+      win_origin_x + win_size_x, win_origin_y + win_size_y, upper_right_x,
+      upper_right_y))
   {
     // ROS_ERROR("Cannot window a map that the window bounds don't fit inside of");
     return false;
@@ -143,9 +177,33 @@ bool Costmap2D::copyCostmapWindow(
   initMaps(size_x_, size_y_);
 
   // copy the window of the static map and the costmap that we're taking
-  copyMapRegion(map.costmap_, lower_left_x, lower_left_y, map.size_x_, costmap_, 0, 0, size_x_,
+  copyMapRegion(
+    map.costmap_, lower_left_x, lower_left_y, map.size_x_, costmap_, 0, 0, size_x_,
     size_x_,
     size_y_);
+  return true;
+}
+
+bool Costmap2D::copyWindow(
+  const Costmap2D & source,
+  unsigned int sx0, unsigned int sy0, unsigned int sxn, unsigned int syn,
+  unsigned int dx0, unsigned int dy0)
+{
+  const unsigned int sz_x = sxn - sx0;
+  const unsigned int sz_y = syn - sy0;
+
+  if (sxn > source.getSizeInCellsX() || syn > source.getSizeInCellsY()) {
+    return false;
+  }
+
+  if (dx0 + sz_x > size_x_ || dy0 + sz_y > size_y_) {
+    return false;
+  }
+
+  copyMapRegion(
+    source.costmap_, sx0, sy0, source.size_x_,
+    costmap_, dx0, dy0, size_x_,
+    sz_x, sz_y);
   return true;
 }
 
@@ -210,6 +268,11 @@ unsigned char Costmap2D::getCost(unsigned int mx, unsigned int my) const
   return costmap_[getIndex(mx, my)];
 }
 
+unsigned char Costmap2D::getCost(unsigned int undex) const
+{
+  return costmap_[undex];
+}
+
 void Costmap2D::setCost(unsigned int mx, unsigned int my, unsigned char cost)
 {
   costmap_[getIndex(mx, my)] = cost;
@@ -227,13 +290,12 @@ bool Costmap2D::worldToMap(double wx, double wy, unsigned int & mx, unsigned int
     return false;
   }
 
-  mx = static_cast<int>((wx - origin_x_) / resolution_);
-  my = static_cast<int>((wy - origin_y_) / resolution_);
+  mx = static_cast<unsigned int>((wx - origin_x_) / resolution_);
+  my = static_cast<unsigned int>((wy - origin_y_) / resolution_);
 
   if (mx < size_x_ && my < size_y_) {
     return true;
   }
-
   return false;
 }
 
@@ -296,7 +358,8 @@ void Costmap2D::updateOrigin(double new_origin_x, double new_origin_y)
   unsigned char * local_map = new unsigned char[cell_size_x * cell_size_y];
 
   // copy the local window in the costmap to the local map
-  copyMapRegion(costmap_, lower_left_x, lower_left_y, size_x_, local_map, 0, 0, cell_size_x,
+  copyMapRegion(
+    costmap_, lower_left_x, lower_left_y, size_x_, local_map, 0, 0, cell_size_x,
     cell_size_x,
     cell_size_y);
 
@@ -312,7 +375,8 @@ void Costmap2D::updateOrigin(double new_origin_x, double new_origin_y)
   int start_y = lower_left_y - cell_oy;
 
   // now we want to copy the overlapping information back into the map, but in its new location
-  copyMapRegion(local_map, 0, 0, cell_size_x, costmap_, start_x, start_y, size_x_, cell_size_x,
+  copyMapRegion(
+    local_map, 0, 0, cell_size_x, costmap_, start_x, start_y, size_x_, cell_size_x,
     cell_size_y);
 
   // make sure to clean up
@@ -359,7 +423,8 @@ void Costmap2D::polygonOutlineCells(
   if (!polygon.empty()) {
     unsigned int last_index = polygon.size() - 1;
     // we also need to close the polygon by going from the last point to the first
-    raytraceLine(cell_gatherer, polygon[last_index].x, polygon[last_index].y, polygon[0].x,
+    raytraceLine(
+      cell_gatherer, polygon[last_index].x, polygon[last_index].y, polygon[0].x,
       polygon[0].y);
   }
 }
@@ -425,7 +490,7 @@ void Costmap2D::convexFillCells(
 
     MapLocation pt;
     // loop though cells in the column
-    for (unsigned int y = min_pt.y; y < max_pt.y; ++y) {
+    for (unsigned int y = min_pt.y; y <= max_pt.y; ++y) {
       pt.x = x;
       pt.y = y;
       polygon_cells.push_back(pt);

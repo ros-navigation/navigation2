@@ -1,0 +1,29 @@
+repositories:
+  # BehaviorTree/BehaviorTree.CPP:
+  #   type: git
+  #   url: https://github.com/BehaviorTree/BehaviorTree.CPP.git
+  #   version: master
+  # ros/angles:
+  #   type: git
+  #   url: https://github.com/ros/angles.git
+  #   version: ros2
+  # ros-simulation/gazebo_ros_pkgs:
+  #   type: git
+  #   url: https://github.com/ros-simulation/gazebo_ros_pkgs.git
+  #   version: ros2
+  # ros-perception/vision_opencv:
+  #   type: git
+  #   url: https://github.com/ros-perception/vision_opencv.git
+  #   version: ros2
+  # ros/bond_core:
+  #   type: git
+  #   url: https://github.com/ros/bond_core.git
+  #   version: ros2
+  # ompl/ompl:
+  #   type: git
+  #   url: https://github.com/ompl/ompl.git
+  #   version: main
+  # ros-simulation/gazebo_ros_pkgs:
+  #   type: git
+  #   url: https://github.com/ros-simulation/gazebo_ros_pkgs.git
+  #   version: ros2

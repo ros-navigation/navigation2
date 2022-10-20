@@ -62,26 +62,19 @@ public:
    * @param default_topic Name of the topic that will be loaded of the odom_topic param is not set.
    */
   explicit OdomSubscriber(
-    nav2_util::LifecycleNode::SharedPtr & nh,
+    nav2_util::LifecycleNode::SharedPtr nh,
     std::string default_topic = "odom")
   {
+    nav2_util::declare_parameter_if_not_declared(
+      nh, "odom_topic", rclcpp::ParameterValue(default_topic));
+
     std::string odom_topic;
     nh->get_parameter_or("odom_topic", odom_topic, default_topic);
     odom_sub_ =
-      nh->create_subscription<nav_msgs::msg::Odometry>(odom_topic,
-        rclcpp::SystemDefaultsQoS(),
-        std::bind(&OdomSubscriber::odomCallback, this, std::placeholders::_1));
-
-    nav2_util::declare_parameter_if_not_declared(nh,
-      "min_x_velocity_threshold", rclcpp::ParameterValue(0.0001));
-    nav2_util::declare_parameter_if_not_declared(nh,
-      "min_y_velocity_threshold", rclcpp::ParameterValue(0.0001));
-    nav2_util::declare_parameter_if_not_declared(nh,
-      "min_theta_velocity_threshold", rclcpp::ParameterValue(0.0001));
-
-    nh->get_parameter("min_x_velocity_threshold", min_x_velocity_threshold_);
-    nh->get_parameter("min_y_velocity_threshold", min_y_velocity_threshold_);
-    nh->get_parameter("min_theta_velocity_threshold", min_theta_velocity_threshold_);
+      nh->create_subscription<nav_msgs::msg::Odometry>(
+      odom_topic,
+      rclcpp::SystemDefaultsQoS(),
+      std::bind(&OdomSubscriber::odomCallback, this, std::placeholders::_1));
   }
 
   inline nav_2d_msgs::msg::Twist2D getTwist() {return odom_vel_.velocity;}
@@ -93,26 +86,14 @@ protected:
     // ROS_INFO_ONCE("odom received!");
     std::lock_guard<std::mutex> lock(odom_mutex_);
     odom_vel_.header = msg->header;
-    odom_vel_.velocity.x =
-      thresholded_velocity(msg->twist.twist.linear.x, min_x_velocity_threshold_);
-    odom_vel_.velocity.y =
-      thresholded_velocity(msg->twist.twist.linear.y, min_y_velocity_threshold_);
-    odom_vel_.velocity.theta =
-      thresholded_velocity(msg->twist.twist.angular.z, min_theta_velocity_threshold_);
-  }
-
-  double thresholded_velocity(double velocity, double threshold)
-  {
-    return (std::abs(velocity) > threshold) ? velocity : 0.0;
+    odom_vel_.velocity.x = msg->twist.twist.linear.x;
+    odom_vel_.velocity.y = msg->twist.twist.linear.y;
+    odom_vel_.velocity.theta = msg->twist.twist.angular.z;
   }
 
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
   nav_2d_msgs::msg::Twist2DStamped odom_vel_;
   std::mutex odom_mutex_;
-
-  double min_x_velocity_threshold_;
-  double min_y_velocity_threshold_;
-  double min_theta_velocity_threshold_;
 };
 
 }  // namespace nav_2d_utils

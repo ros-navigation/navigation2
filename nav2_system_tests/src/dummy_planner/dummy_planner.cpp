@@ -49,7 +49,8 @@ DummyPlanner::~DummyPlanner()
 void
 DummyPlanner::computePlan(const nav2_behavior_tree::ComputePathToPoseCommand::SharedPtr cmd)
 {
-  RCLCPP_INFO(get_logger(), "Attempting to a find path from (%.2f, %.2f) to "
+  RCLCPP_INFO(
+    get_logger(), "Attempting to a find path from (%.2f, %.2f) to "
     "(%.2f, %.2f).", cmd->start.position.x, cmd->start.position.y,
     cmd->goal.position.x, cmd->goal.position.y);
 

@@ -38,10 +38,21 @@
 namespace nav2_util
 {
 
-/** An iterator implementing Bresenham Ray-Tracing. */
+
+/**
+ * @class nav2_util::LineIterator
+ * @brief An iterator implementing Bresenham Ray-Tracing.
+ */
 class LineIterator
 {
 public:
+  /**
+   * @brief A constructor for LineIterator
+   * @param x0 Starting x
+   * @param y0 Starting y
+   * @param x1 Ending x
+   * @param y1 Ending y
+   */
   LineIterator(int x0, int y0, int x1, int y1)
   : x0_(x0),
     y0_(y0),
@@ -86,11 +97,18 @@ public:
     }
   }
 
+  /**
+   * @brief If the iterator is valid
+   * @return bool If valid
+   */
   bool isValid() const
   {
     return curpixel_ <= numpixels_;
   }
 
+  /**
+   * @brief Advance iteration along the line
+   */
   void advance()
   {
     num_ += numadd_;              // Increase the numerator by the top of the fraction
@@ -105,28 +123,55 @@ public:
     curpixel_++;
   }
 
+  /**
+   * @brief Get current X value
+   * @return X
+   */
   int getX() const
   {
     return x_;
   }
+
+  /**
+   * @brief Get current Y value
+   * @return Y
+   */
   int getY() const
   {
     return y_;
   }
 
+  /**
+   * @brief Get initial X value
+   * @return X
+   */
   int getX0() const
   {
     return x0_;
   }
+
+  /**
+   * @brief Get initial Y value
+   * @return Y
+   */
   int getY0() const
   {
     return y0_;
   }
 
+  /**
+   * @brief Get terminal X value
+   * @return X
+   */
   int getX1() const
   {
     return x1_;
   }
+
+  /**
+   * @brief Get terminal Y value
+   * @return Y
+   */
   int getY1() const
   {
     return y1_;

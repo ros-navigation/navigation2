@@ -36,11 +36,15 @@
 #define NAV2_CORE__GOAL_CHECKER_HPP_
 
 #include <memory>
+#include <string>
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/twist.hpp"
+
+#include "nav2_costmap_2d/costmap_2d_ros.hpp"
+
 
 namespace nav2_core
 {
@@ -63,9 +67,14 @@ public:
 
   /**
    * @brief Initialize any parameters from the NodeHandle
-   * @param nh NodeHandle for grabbing parameters
+   * @param parent Node pointer for grabbing parameters
    */
-  virtual void initialize(const rclcpp_lifecycle::LifecycleNode::SharedPtr & nh) = 0;
+  virtual void initialize(
+    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+    const std::string & plugin_name,
+    const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) = 0;
+
+  virtual void reset() = 0;
 
   /**
    * @brief Check whether the goal should be considered reached
@@ -77,6 +86,20 @@ public:
   virtual bool isGoalReached(
     const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
     const geometry_msgs::msg::Twist & velocity) = 0;
+
+  /**
+   * @brief Get the maximum possible tolerances used for goal checking in the major types.
+   * Any field without a valid entry is replaced with std::numeric_limits<double>::lowest()
+   * to indicate that it is not measured. For tolerance across multiple entries
+   * (e.x. XY tolerances), both fields will contain this value since it is the maximum tolerance
+   * that each independent field could be assuming the other has no error (e.x. X and Y).
+   * @param pose_tolerance The tolerance used for checking in Pose fields
+   * @param vel_tolerance The tolerance used for checking velocity fields
+   * @return True if the tolerances are valid to use
+   */
+  virtual bool getTolerances(
+    geometry_msgs::msg::Pose & pose_tolerance,
+    geometry_msgs::msg::Twist & vel_tolerance) = 0;
 };
 
 }  // namespace nav2_core

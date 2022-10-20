@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <string>
+
 #include "nav2_util/string_utils.hpp"
 #include "gtest/gtest.h"
 
@@ -26,4 +28,5 @@ TEST(Split, SplitFunction)
   ASSERT_EQ(split("foo:bar:", ':'), Tokens({"foo", "bar", ""}));
   ASSERT_EQ(split(":", ':'), Tokens({"", ""}));
   ASSERT_EQ(split("foo::bar", ':'), Tokens({"foo", "", "bar"}));
+  ASSERT_TRUE(nav2_util::strip_leading_slash(std::string("/hi")) == std::string("hi"));
 }

@@ -43,22 +43,37 @@
 #include "dwb_core/exceptions.hpp"
 #include "nav2_util/node_utils.hpp"
 
-using nav_2d_utils::loadParameterWithDeprecation;
-
 namespace dwb_plugins
 {
 
-void StandardTrajectoryGenerator::initialize(const nav2_util::LifecycleNode::SharedPtr & nh)
+void StandardTrajectoryGenerator::initialize(
+  const nav2_util::LifecycleNode::SharedPtr & nh,
+  const std::string & plugin_name)
 {
-  kinematics_ = std::make_shared<KinematicParameters>();
-  kinematics_->initialize(nh);
+  plugin_name_ = plugin_name;
+  kinematics_handler_ = std::make_shared<KinematicsHandler>();
+  kinematics_handler_->initialize(nh, plugin_name_);
   initializeIterator(nh);
 
-  nav2_util::declare_parameter_if_not_declared(nh, "sim_time", rclcpp::ParameterValue(1.7));
-  nav2_util::declare_parameter_if_not_declared(nh,
-    "discretize_by_time", rclcpp::ParameterValue(false));
+  nav2_util::declare_parameter_if_not_declared(
+    nh,
+    plugin_name + ".sim_time", rclcpp::ParameterValue(1.7));
+  nav2_util::declare_parameter_if_not_declared(
+    nh,
+    plugin_name + ".discretize_by_time", rclcpp::ParameterValue(false));
 
-  nh->get_parameter("sim_time", sim_time_);
+  nav2_util::declare_parameter_if_not_declared(
+    nh,
+    plugin_name + ".time_granularity", rclcpp::ParameterValue(0.5));
+  nav2_util::declare_parameter_if_not_declared(
+    nh,
+    plugin_name + ".linear_granularity", rclcpp::ParameterValue(0.5));
+  nav2_util::declare_parameter_if_not_declared(
+    nh,
+    plugin_name + ".angular_granularity", rclcpp::ParameterValue(0.025));
+  nav2_util::declare_parameter_if_not_declared(
+    nh,
+    plugin_name + ".include_last_point", rclcpp::ParameterValue(true));
 
   /*
    * If discretize_by_time, then sim_granularity represents the amount of time that should be between
@@ -68,23 +83,19 @@ void StandardTrajectoryGenerator::initialize(const nav2_util::LifecycleNode::Sha
    *  two successive points on the trajectory, and angular_sim_granularity is the maximum amount of
    *  angular distance between two successive points.
    */
-  nh->get_parameter("discretize_by_time", discretize_by_time_);
-  if (discretize_by_time_) {
-    time_granularity_ = loadParameterWithDeprecation(
-      nh, "time_granularity", "sim_granularity", 0.5);
-  } else {
-    linear_granularity_ = loadParameterWithDeprecation(
-      nh, "linear_granularity", "sim_granularity", 0.5);
-    angular_granularity_ = loadParameterWithDeprecation(
-      nh, "angular_granularity", "angular_sim_granularity", 0.025);
-  }
+  nh->get_parameter(plugin_name + ".sim_time", sim_time_);
+  nh->get_parameter(plugin_name + ".discretize_by_time", discretize_by_time_);
+  nh->get_parameter(plugin_name + ".time_granularity", time_granularity_);
+  nh->get_parameter(plugin_name + ".linear_granularity", linear_granularity_);
+  nh->get_parameter(plugin_name + ".angular_granularity", angular_granularity_);
+  nh->get_parameter(plugin_name + ".include_last_point", include_last_point_);
 }
 
 void StandardTrajectoryGenerator::initializeIterator(
   const nav2_util::LifecycleNode::SharedPtr & nh)
 {
   velocity_iterator_ = std::make_shared<XYThetaIterator>();
-  velocity_iterator_->initialize(nh, kinematics_);
+  velocity_iterator_->initialize(nh, kinematics_handler_, plugin_name_);
 }
 
 void StandardTrajectoryGenerator::startNewIteration(
@@ -119,7 +130,9 @@ std::vector<double> StandardTrajectoryGenerator::getTimeSteps(
     double projected_angular_distance = fabs(cmd_vel.theta) * sim_time_;
 
     // Pick the maximum of the two
-    int num_steps = ceil(std::max(projected_linear_distance / linear_granularity_,
+    int num_steps = ceil(
+      std::max(
+        projected_linear_distance / linear_granularity_,
         projected_angular_distance / angular_granularity_));
     steps.resize(num_steps);
   }
@@ -137,10 +150,10 @@ dwb_msgs::msg::Trajectory2D StandardTrajectoryGenerator::generateTrajectory(
 {
   dwb_msgs::msg::Trajectory2D traj;
   traj.velocity = cmd_vel;
-  traj.duration = rclcpp::Duration::from_seconds(sim_time_);
   //  simulate the trajectory
   geometry_msgs::msg::Pose2D pose = start_pose;
   nav_2d_msgs::msg::Twist2D vel = start_vel;
+  double running_time = 0.0;
   std::vector<double> steps = getTimeSteps(cmd_vel);
   traj.poses.push_back(start_pose);
   for (double dt : steps) {
@@ -151,7 +164,14 @@ dwb_msgs::msg::Trajectory2D StandardTrajectoryGenerator::generateTrajectory(
     pose = computeNewPosition(pose, vel, dt);
 
     traj.poses.push_back(pose);
+    traj.time_offsets.push_back(rclcpp::Duration::from_seconds(running_time));
+    running_time += dt;
   }  //  end for simulation steps
+
+  if (include_last_point_) {
+    traj.poses.push_back(pose);
+    traj.time_offsets.push_back(rclcpp::Duration::from_seconds(running_time));
+  }
 
   return traj;
 }
@@ -163,14 +183,18 @@ nav_2d_msgs::msg::Twist2D StandardTrajectoryGenerator::computeNewVelocity(
   const nav_2d_msgs::msg::Twist2D & cmd_vel,
   const nav_2d_msgs::msg::Twist2D & start_vel, const double dt)
 {
+  KinematicParameters kinematics = kinematics_handler_->getKinematics();
   nav_2d_msgs::msg::Twist2D new_vel;
-  new_vel.x = projectVelocity(start_vel.x, kinematics_->getAccX(),
-      kinematics_->getDecelX(), dt, cmd_vel.x);
-  new_vel.y = projectVelocity(start_vel.y, kinematics_->getAccY(),
-      kinematics_->getDecelY(), dt, cmd_vel.y);
-  new_vel.theta = projectVelocity(start_vel.theta,
-      kinematics_->getAccTheta(), kinematics_->getDecelTheta(),
-      dt, cmd_vel.theta);
+  new_vel.x = projectVelocity(
+    start_vel.x, kinematics.getAccX(),
+    kinematics.getDecelX(), dt, cmd_vel.x);
+  new_vel.y = projectVelocity(
+    start_vel.y, kinematics.getAccY(),
+    kinematics.getDecelY(), dt, cmd_vel.y);
+  new_vel.theta = projectVelocity(
+    start_vel.theta,
+    kinematics.getAccTheta(), kinematics.getDecelTheta(),
+    dt, cmd_vel.theta);
   return new_vel;
 }
 
@@ -189,5 +213,6 @@ geometry_msgs::msg::Pose2D StandardTrajectoryGenerator::computeNewPosition(
 
 }  // namespace dwb_plugins
 
-PLUGINLIB_EXPORT_CLASS(dwb_plugins::StandardTrajectoryGenerator,
+PLUGINLIB_EXPORT_CLASS(
+  dwb_plugins::StandardTrajectoryGenerator,
   dwb_core::TrajectoryGenerator)

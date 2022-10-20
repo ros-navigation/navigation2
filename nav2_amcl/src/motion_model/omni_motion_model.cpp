@@ -19,17 +19,13 @@
  *
  */
 
-#include <sys/types.h>
-#include <math.h>
-#include <algorithm>
-
-#include "nav2_amcl/motion_model/motion_model.hpp"
-#include "nav2_amcl/angleutils.hpp"
+#include "nav2_amcl/motion_model/omni_motion_model.hpp"
 
 namespace nav2_amcl
 {
 
-OmniMotionModel::OmniMotionModel(
+void
+OmniMotionModel::initialize(
   double alpha1, double alpha2, double alpha3, double alpha4,
   double alpha5)
 {
@@ -41,7 +37,9 @@ OmniMotionModel::OmniMotionModel(
 }
 
 void
-OmniMotionModel::odometryUpdate(pf_t * pf, const pf_vector_t & pose, const pf_vector_t & delta)
+OmniMotionModel::odometryUpdate(
+  pf_t * pf, const pf_vector_t & pose,
+  const pf_vector_t & delta)
 {
   // Compute the new sample poses
   pf_sample_set_t * set;
@@ -52,23 +50,28 @@ OmniMotionModel::odometryUpdate(pf_t * pf, const pf_vector_t & pose, const pf_ve
   double delta_trans, delta_rot, delta_bearing;
   double delta_trans_hat, delta_rot_hat, delta_strafe_hat;
 
-  delta_trans = sqrt(delta.v[0] * delta.v[0] +
-      delta.v[1] * delta.v[1]);
+  delta_trans = sqrt(
+    delta.v[0] * delta.v[0] +
+    delta.v[1] * delta.v[1]);
   delta_rot = delta.v[2];
 
   // Precompute a couple of things
-  double trans_hat_stddev = sqrt(alpha3_ * (delta_trans * delta_trans) +
-      alpha4_ * (delta_rot * delta_rot) );
-  double rot_hat_stddev = sqrt(alpha1_ * (delta_rot * delta_rot) +
-      alpha2_ * (delta_trans * delta_trans) );
-  double strafe_hat_stddev = sqrt(alpha4_ * (delta_rot * delta_rot) +
-      alpha5_ * (delta_trans * delta_trans) );
+  double trans_hat_stddev = sqrt(
+    alpha3_ * (delta_trans * delta_trans) +
+    alpha4_ * (delta_rot * delta_rot) );
+  double rot_hat_stddev = sqrt(
+    alpha1_ * (delta_rot * delta_rot) +
+    alpha2_ * (delta_trans * delta_trans) );
+  double strafe_hat_stddev = sqrt(
+    alpha4_ * (delta_rot * delta_rot) +
+    alpha5_ * (delta_trans * delta_trans) );
 
   for (int i = 0; i < set->sample_count; i++) {
     pf_sample_t * sample = set->samples + i;
 
-    delta_bearing = angleutils::angle_diff(atan2(delta.v[1], delta.v[0]),
-        old_pose.v[2]) + sample->pose.v[2];
+    delta_bearing = angleutils::angle_diff(
+      atan2(delta.v[1], delta.v[0]),
+      old_pose.v[2]) + sample->pose.v[2];
     double cs_bearing = cos(delta_bearing);
     double sn_bearing = sin(delta_bearing);
 
@@ -86,3 +89,6 @@ OmniMotionModel::odometryUpdate(pf_t * pf, const pf_vector_t & pose, const pf_ve
 }
 
 }  // namespace nav2_amcl
+
+#include <pluginlib/class_list_macros.hpp>
+PLUGINLIB_EXPORT_CLASS(nav2_amcl::OmniMotionModel, nav2_amcl::MotionModel)

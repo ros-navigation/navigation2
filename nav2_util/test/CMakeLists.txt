@@ -3,7 +3,8 @@ ament_add_gtest(test_execution_timer test_execution_timer.cpp)
 ament_add_gtest(test_node_utils test_node_utils.cpp)
 target_link_libraries(test_node_utils ${library_name})
 
-find_package(std_srvs)
+find_package(std_srvs REQUIRED)
+find_package(test_msgs REQUIRED)
 
 ament_add_gtest(test_service_client test_service_client.cpp)
 ament_target_dependencies(test_service_client std_srvs)
@@ -24,3 +25,19 @@ target_link_libraries(test_actions ${library_name})
 ament_add_gtest(test_lifecycle_node test_lifecycle_node.cpp)
 ament_target_dependencies(test_lifecycle_node rclcpp_lifecycle)
 target_link_libraries(test_lifecycle_node ${library_name})
+
+ament_add_gtest(test_lifecycle_cli_node test_lifecycle_cli_node.cpp)
+ament_target_dependencies(test_lifecycle_cli_node rclcpp_lifecycle)
+target_link_libraries(test_lifecycle_cli_node ${library_name})
+
+ament_add_gtest(test_geometry_utils test_geometry_utils.cpp)
+ament_target_dependencies(test_geometry_utils geometry_msgs)
+target_link_libraries(test_geometry_utils ${library_name})
+
+ament_add_gtest(test_odometry_utils test_odometry_utils.cpp)
+ament_target_dependencies(test_odometry_utils nav_msgs geometry_msgs)
+target_link_libraries(test_odometry_utils ${library_name})
+
+ament_add_gtest(test_robot_utils test_robot_utils.cpp)
+ament_target_dependencies(test_robot_utils geometry_msgs)
+target_link_libraries(test_robot_utils ${library_name})

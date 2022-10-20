@@ -37,6 +37,7 @@
 
 #include <vector>
 #include <memory>
+#include <string>
 
 #include "rclcpp/rclcpp.hpp"
 #include "dwb_core/trajectory_generator.hpp"
@@ -55,7 +56,9 @@ class StandardTrajectoryGenerator : public dwb_core::TrajectoryGenerator
 {
 public:
   // Standard TrajectoryGenerator interface
-  void initialize(const nav2_util::LifecycleNode::SharedPtr & nh) override;
+  void initialize(
+    const nav2_util::LifecycleNode::SharedPtr & nh,
+    const std::string & plugin_name) override;
   void startNewIteration(const nav_2d_msgs::msg::Twist2D & current_velocity) override;
   bool hasMoreTwists() override;
   nav_2d_msgs::msg::Twist2D nextTwist() override;
@@ -64,6 +67,20 @@ public:
     const geometry_msgs::msg::Pose2D & start_pose,
     const nav_2d_msgs::msg::Twist2D & start_vel,
     const nav_2d_msgs::msg::Twist2D & cmd_vel) override;
+
+  /**
+   * @brief Limits the maximum linear speed of the robot.
+   * @param speed_limit expressed in absolute value (in m/s)
+   * or in percentage from maximum robot speed.
+   * @param percentage Setting speed limit in percentage if true
+   * or in absolute values in false case.
+   */
+  void setSpeedLimit(const double & speed_limit, const bool & percentage) override
+  {
+    if (kinematics_handler_) {
+      kinematics_handler_->setSpeedLimit(speed_limit, percentage);
+    }
+  }
 
 protected:
   /**
@@ -79,7 +96,7 @@ protected:
    * @param dt amount of time in seconds
    * @return new velocity after dt seconds
    */
-  nav_2d_msgs::msg::Twist2D computeNewVelocity(
+  virtual nav_2d_msgs::msg::Twist2D computeNewVelocity(
     const nav_2d_msgs::msg::Twist2D & cmd_vel, const nav_2d_msgs::msg::Twist2D & start_vel,
     const double dt);
 
@@ -91,7 +108,7 @@ protected:
    * @param dt amount of time in seconds
    * @return New pose after dt seconds
    */
-  geometry_msgs::msg::Pose2D computeNewPosition(
+  virtual geometry_msgs::msg::Pose2D computeNewPosition(
     const geometry_msgs::msg::Pose2D start_pose, const nav_2d_msgs::msg::Twist2D & vel,
     const double dt);
 
@@ -108,9 +125,9 @@ protected:
    * Right now the vector contains a single value repeated many times, but this method could be overridden
    * to allow for dynamic spacing
    */
-  std::vector<double> getTimeSteps(const nav_2d_msgs::msg::Twist2D & cmd_vel);
+  virtual std::vector<double> getTimeSteps(const nav_2d_msgs::msg::Twist2D & cmd_vel);
 
-  KinematicParameters::Ptr kinematics_;
+  KinematicsHandler::Ptr kinematics_handler_;
   std::shared_ptr<VelocityIterator> velocity_iterator_;
 
   double sim_time_;
@@ -126,6 +143,24 @@ protected:
 
   /// @brief If not discretizing by time, the amount of angular space between points
   double angular_granularity_;
+
+  /// @brief the name of the overlying plugin ID
+  std::string plugin_name_;
+
+  /* Backwards Compatibility Parameter: include_last_point
+   *
+   * dwa had an off-by-one error built into it.
+   * It generated N trajectory points, where N = ceil(sim_time / time_delta).
+   * If for example, sim_time=3.0 and time_delta=1.5, it would generate trajectories with 2 points, which
+   * indeed were time_delta seconds apart. However, the points would be at t=0 and t=1.5, and thus the
+   * actual sim_time was much less than advertised.
+   *
+   * This is remedied by adding one final point at t=sim_time, but only if include_last_point_ is true.
+   *
+   * Nothing I could find actually used the time_delta variable or seemed to care that the trajectories
+   * were not projected out as far as they intended.
+   */
+  bool include_last_point_;
 };
 
 

@@ -1,4 +1,5 @@
 // Copyright (c) 2018 Intel Corporation
+// Copyright (c) 2020 Florian Gramss
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,46 +23,71 @@
 #include "behaviortree_cpp_v3/behavior_tree.h"
 #include "behaviortree_cpp_v3/bt_factory.h"
 #include "behaviortree_cpp_v3/xml_parsing.h"
+#include "behaviortree_cpp_v3/loggers/bt_zmq_publisher.h"
+
 
 namespace nav2_behavior_tree
 {
 
+/**
+ * @enum nav2_behavior_tree::BtStatus
+ * @brief An enum class representing BT execution status
+ */
 enum class BtStatus { SUCCEEDED, FAILED, CANCELED };
 
+/**
+ * @class nav2_behavior_tree::BehaviorTreeEngine
+ * @brief A class to create and handle behavior trees
+ */
 class BehaviorTreeEngine
 {
 public:
+  /**
+   * @brief A constructor for nav2_behavior_tree::BehaviorTreeEngine
+   * @param plugin_libraries vector of BT plugin library names to load
+   */
   explicit BehaviorTreeEngine(const std::vector<std::string> & plugin_libraries);
   virtual ~BehaviorTreeEngine() {}
 
+  /**
+   * @brief Function to execute a BT at a specific rate
+   * @param tree BT to execute
+   * @param onLoop Function to execute on each iteration of BT execution
+   * @param cancelRequested Function to check if cancel was requested during BT execution
+   * @param loopTimeout Time period for each iteration of BT execution
+   * @return nav2_behavior_tree::BtStatus Status of BT execution
+   */
   BtStatus run(
-    std::unique_ptr<BT::Tree> & tree,
+    BT::Tree * tree,
     std::function<void()> onLoop,
     std::function<bool()> cancelRequested,
     std::chrono::milliseconds loopTimeout = std::chrono::milliseconds(10));
 
-  BT::Tree buildTreeFromText(
+  /**
+   * @brief Function to create a BT from a XML string
+   * @param xml_string XML string representing BT
+   * @param blackboard Blackboard for BT
+   * @return BT::Tree Created behavior tree
+   */
+  BT::Tree createTreeFromText(
     const std::string & xml_string,
     BT::Blackboard::Ptr blackboard);
 
-  void haltAllActions(BT::TreeNode * root_node)
-  {
-    auto visitor = [](BT::TreeNode * node) {
-        if (auto action = dynamic_cast<BT::CoroActionNode *>(node)) {
-          action->halt();
-        }
-      };
-    BT::applyRecursiveVisitor(root_node, visitor);
-  }
+  /**
+   * @brief Function to create a BT from an XML file
+   * @param file_path Path to BT XML file
+   * @param blackboard Blackboard for BT
+   * @return BT::Tree Created behavior tree
+   */
+  BT::Tree createTreeFromFile(
+    const std::string & file_path,
+    BT::Blackboard::Ptr blackboard);
 
-  // In order to re-run a Behavior Tree, we must be able to reset all nodes to the initial state
-  void resetTree(BT::TreeNode * root_node)
-  {
-    auto visitor = [](BT::TreeNode * node) {
-        node->setStatus(BT::NodeStatus::IDLE);
-      };
-    BT::applyRecursiveVisitor(root_node, visitor);
-  }
+  /**
+   * @brief Function to explicitly reset all BT nodes to initial state
+   * @param root_node Pointer to BT root node
+   */
+  void haltAllActions(BT::TreeNode * root_node);
 
 protected:
   // The factory that will be used to dynamically construct the behavior tree

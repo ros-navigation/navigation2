@@ -9,10 +9,13 @@ find_package(nav2_msgs REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
+find_package(rclcpp_components REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
+find_package(bondcpp REQUIRED)
+find_package(diagnostic_updater REQUIRED)
 
 nav2_package()
 
@@ -35,9 +38,12 @@ set(dependencies
   rclcpp
   rclcpp_action
   rclcpp_lifecycle
+  rclcpp_components
   std_msgs
   std_srvs
   tf2_geometry_msgs
+  bondcpp
+  diagnostic_updater
 )
 
 ament_target_dependencies(${library_name}
@@ -56,11 +62,17 @@ ament_target_dependencies(lifecycle_manager
   ${dependencies}
 )
 
+rclcpp_components_register_nodes(${library_name} "nav2_lifecycle_manager::LifecycleManager")
+
 install(TARGETS
-  lifecycle_manager
   ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+install(TARGETS
+  lifecycle_manager
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
@@ -69,6 +81,11 @@ install(DIRECTORY include/ DESTINATION include/)
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
+
+  find_package(ament_cmake_gtest REQUIRED)
+  find_package(ament_cmake_pytest REQUIRED)
+
+  add_subdirectory(test)
 endif()
 
 ament_export_include_directories(include)

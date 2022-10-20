@@ -52,7 +52,8 @@ bool PathDistCritic::prepare(
     nav_2d_utils::adjustPlanResolution(global_plan, costmap_->getResolution());
 
   if (adjusted_global_plan.poses.size() != global_plan.poses.size()) {
-    RCLCPP_DEBUG(rclcpp::get_logger(
+    RCLCPP_DEBUG(
+      rclcpp::get_logger(
         "PathDistCritic"), "Adjusted global plan resolution, added %zu points",
       adjusted_global_plan.poses.size() - global_plan.poses.size());
   }
@@ -63,8 +64,9 @@ bool PathDistCritic::prepare(
     double g_x = adjusted_global_plan.poses[i].x;
     double g_y = adjusted_global_plan.poses[i].y;
     unsigned int map_x, map_y;
-    if (costmap_->worldToMap(g_x, g_y, map_x,
-      map_y) && costmap_->getCost(map_x, map_y) != nav2_costmap_2d::NO_INFORMATION)
+    if (costmap_->worldToMap(
+        g_x, g_y, map_x,
+        map_y) && costmap_->getCost(map_x, map_y) != nav2_costmap_2d::NO_INFORMATION)
     {
       int index = costmap_->getIndex(map_x, map_y);
       cell_values_[index] = 0.0;

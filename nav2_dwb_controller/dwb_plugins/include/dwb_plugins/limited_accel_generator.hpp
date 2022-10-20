@@ -36,6 +36,7 @@
 #define DWB_PLUGINS__LIMITED_ACCEL_GENERATOR_HPP_
 
 #include <memory>
+#include <string>
 
 #include "dwb_plugins/standard_traj_generator.hpp"
 #include "nav2_util/lifecycle_node.hpp"
@@ -49,15 +50,28 @@ namespace dwb_plugins
 class LimitedAccelGenerator : public StandardTrajectoryGenerator
 {
 public:
-  void initialize(const nav2_util::LifecycleNode::SharedPtr & nh) override;
+  void initialize(
+    const nav2_util::LifecycleNode::SharedPtr & nh,
+    const std::string & plugin_name) override;
   void startNewIteration(const nav_2d_msgs::msg::Twist2D & current_velocity) override;
-  dwb_msgs::msg::Trajectory2D generateTrajectory(
-    const geometry_msgs::msg::Pose2D & start_pose,
-    const nav_2d_msgs::msg::Twist2D & start_vel,
-    const nav_2d_msgs::msg::Twist2D & cmd_vel) override;
 
 protected:
+  /**
+   * @brief Calculate the velocity after a set period of time, given the desired velocity and acceleration limits
+   *
+   * Unlike the StandardTrajectoryGenerator, the velocity remains constant in the LimitedAccelGenerator
+   *
+   * @param cmd_vel Desired velocity
+   * @param start_vel starting velocity
+   * @param dt amount of time in seconds
+   * @return cmd_vel
+   */
+  nav_2d_msgs::msg::Twist2D computeNewVelocity(
+    const nav_2d_msgs::msg::Twist2D & cmd_vel,
+    const nav_2d_msgs::msg::Twist2D & start_vel,
+    const double dt) override;
   double acceleration_time_;
+  std::string plugin_name_;
 };
 }  // namespace dwb_plugins
 
