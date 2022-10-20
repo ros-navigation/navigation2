@@ -201,6 +201,8 @@ install(DIRECTORY include/
   DESTINATION include/
 )
 
+install(FILES test/test_action_server.hpp test/test_service.hpp DESTINATION include/nav2_behavior_tree)
+
 install(FILES nav2_tree_nodes.xml DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)
