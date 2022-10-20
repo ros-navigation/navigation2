@@ -272,7 +272,7 @@ bool PlannerServer::getStartPose(
   typename std::shared_ptr<const typename T::Goal> goal,
   geometry_msgs::msg::PoseStamped & start)
 {
-  if (goal->use_start) {
+  if (goal->use_start_poses) {
     start = goal->start;
   } else if (!costmap_ros_->getRobotPose(start)) {
     action_server->terminate_current();
@@ -344,37 +344,67 @@ PlannerServer::computePlan()
     // waitForCostmap();
 
     getPreemptedGoalIfRequested(action_server_, goal);
-
-    auto start_local = goal->start_local;
-    auto goals_local = goal->goals_local;
-    auto start_global = goal->start_global;
-    auto goals_global = goal->goals_global;
-
-    if (!goal->use_start)
+    geometry_msgs::msg::PoseStamped starting_cartesian_pose;
+    auto start_cartesian_poses = goal->start_cartesian_poses;
+    /**
+     * @todo: In case that there is a set of starting poses we compute the last one.
+     * However, this need to be generalized to consider multiple starting poses from
+     * different robots.
+     */
+    if (!start_cartesian_poses.empty())
     {
-      // TODO: We might have to revisit this about getRobotPose if we are using GPS
-      if (!costmap_ros_->getRobotPose(start_local))
+      for (const auto& pose : start_cartesian_poses )
       {
-        action_server_->terminate_current();
-        return;
+        starting_cartesian_pose = pose;
       }
     }
 
-    if (goal->mode == nav2_msgs::action::ComputePath::Goal::LOCAL)
+    auto cartesian_path = goal->cartesian_path;
+    geographic_msgs::msg::GeoPoseStamped starting_geographic_pose;
+    auto start_geographic_poses = goal->start_geographic_poses;
+
+    if (!start_geographic_poses.empty())
     {
-      RCLCPP_INFO(
-          get_logger(),
-          "Local mode selected.");
-      result->path_and_boundary = getPlan(start_local, goals_local,
-                                          goal->planner_id, goal->robots);
+      for (const auto &pose : start_geographic_poses)
+      {
+        starting_geographic_pose = pose;
+      }
     }
-    else if (goal->mode == nav2_msgs::action::ComputePath::Goal::GLOBAL)
+    auto geographic_path = goal->geographic_path;
+    auto number_of_robots = static_cast<int>(goal->robot_ids.size());
+
+    if (!goal->use_start_poses)
+    {
+      /**
+       * @brief TODO: We might have to revisit this about getRobotPose if we are using GPS.
+       * 
+       * For now, if starting poses are not available, it is handled by the client. In the
+       * request message definition we throw an error, if the starting poses are not defined
+       * by the user in the BT input port.
+       */
+
+      // if (!costmap_ros_->getRobotPose(start_local))
+      // {
+      //   action_server_->terminate_current();
+      //   return;
+      // }
+    }
+
+    if (goal->reference_mode == nav2_msgs::action::ComputePath::Goal::CARTESIAN)
     {
       RCLCPP_INFO(
           get_logger(),
-          "Global mode selected.");
-      result->path_and_boundary = getPlan(start_global, goals_global,
-                                          goal->planner_id, goal->robots);
+          "Cartesian reference mode selected.");
+      result->path_and_boundary = getPlan(starting_cartesian_pose, cartesian_path,
+                                          goal->planner_id, number_of_robots);
+    }
+    else if (goal->reference_mode == nav2_msgs::action::ComputePath::Goal::GEOGRAPHIC)
+    {
+      RCLCPP_INFO(
+          get_logger(),
+          "Geographical reference mode selected.");
+      result->path_and_boundary = getPlan(starting_geographic_pose, geographic_path,
+                                          goal->planner_id, number_of_robots);
     }
 
     if (result->path_and_boundary.path_local.empty() &&

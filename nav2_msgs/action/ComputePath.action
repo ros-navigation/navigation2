@@ -1,18 +1,18 @@
 #goal definition
-uint8 LOCAL = 0
-uint8 GLOBAL = 1
-uint8 mode
+uint8 CARTESIAN = 0
+uint8 GEOGRAPHIC = 1
+uint8 reference_mode
 
-nav_msgs/Path goals_local
-geometry_msgs/PoseStamped start_local
+nav_msgs/Path cartesian_path
+geometry_msgs/PoseStamped[] start_cartesian_poses
 
-geographic_msgs/GeoPath goals_global
-geographic_msgs/GeoPoseStamped start_global
+geographic_msgs/GeoPath geographic_path
+geographic_msgs/GeoPoseStamped[] start_geographic_poses
 
 string planner_id
-bool use_start # If false, use robot pose as path start from , if true, use start above instead
+bool use_start_poses
 
-int8 robots
+string[] robot_ids
 ---
 #result definition
 nav2_msgs/PathAndBoundary path_and_boundary

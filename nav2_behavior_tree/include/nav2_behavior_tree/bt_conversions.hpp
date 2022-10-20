@@ -25,6 +25,11 @@
 
 namespace BT
 {
+/// @brief  Custom type
+struct Vector4D
+{
+    double x{0.0}, y{0.0}, z{0.0}, w{0.0};
+};
 
 // The follow templates are required when using these types as parameters
 // in our BT XML files. They parse the strings in the XML into their corresponding
@@ -109,6 +114,77 @@ template<>
 inline std::chrono::milliseconds convertFromString<std::chrono::milliseconds>(const StringView key)
 {
   return std::chrono::milliseconds(std::stoul(key.data()));
+}
+
+/**
+ * @brief Parse XML string to custom Vector4D
+ * by comma-separated-values.
+ * FORMAT: X,Y,Z,W;X,Y,Z,W; ...
+ * @param key XML string
+ * @return Vector4D
+ */
+template <> inline
+Vector4D convertFromString(StringView key)
+{
+    // three real numbers separated by colons
+    auto parts = BT::splitString(key, ',');
+    if (parts.size() != 4)
+    {
+      throw BT::RuntimeError("invalid input)");
+    }
+    else
+    {
+      Vector4D output;
+      output.x = convertFromString<double>(parts[0]);
+      output.y = convertFromString<double>(parts[1]);
+      output.z = convertFromString<double>(parts[2]);
+      output.w = convertFromString<double>(parts[3]);
+      return output; 
+    }
+}
+
+/**
+ * @brief Parse XML string to custom std::vector of Vector4D
+ * by comma-separated-values.
+ * FORMAT: X,Y,Z,W;X,Y,Z,W; ...
+ * @param key XML string
+ * @return std::vector<Vector4D>
+ */
+template <> inline
+std::vector<Vector4D> convertFromString(StringView key)
+{
+    std::vector<Vector4D> output_vector;
+    auto parts_vector = BT::splitString(key, ';');
+
+    for (auto& part_vector : parts_vector)
+    {
+      Vector4D output = convertFromString<Vector4D>(part_vector);
+      output_vector.push_back(output);
+    }
+    return output_vector; 
+
+}
+
+/**
+ * @brief Parse XML string to custom std::vector of string
+ * by colon-separated-values.
+ * FORMAT: str;str; ...
+ * @param key XML string
+ * @return std::vector<std::string>
+ */
+template <> inline
+std::vector<std::string> convertFromString(StringView key)
+{
+    std::vector<std::string> output_vector;
+    auto parts_vector = BT::splitString(key, ';');
+
+    for (auto& part_vector : parts_vector)
+    {
+      std::string output = convertFromString<std::string>(part_vector);
+      output_vector.push_back(output);
+    }
+    return output_vector; 
+
 }
 
 }  // namespace BT
