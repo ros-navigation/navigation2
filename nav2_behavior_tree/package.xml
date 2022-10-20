@@ -48,7 +48,6 @@
   <exec_depend>tf2_geometry_msgs</exec_depend>
   <exec_depend>nav2_util</exec_depend>
   <exec_depend>lifecycle_msgs</exec_depend>
-  <exec_depend>amr_interfaces</exec_depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>

@@ -49,8 +49,6 @@
 #include "nav2_costmap_2d/clear_costmap_service.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_costmap_2d/layer.hpp"
-#include "nav2_costmap_2d/costmap_subscriber.hpp"
-#include "nav2_costmap_2d/footprint_subscriber.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "tf2/convert.h"
@@ -74,10 +72,6 @@ namespace nav2_costmap_2d
 class Costmap2DROS : public nav2_util::LifecycleNode
 {
 public:
-  /**
-   * @brief  Constructor for the wrapper
-   */
-  Costmap2DROS();
 
   /**
    * @brief  Constructor for the wrapper, the node will
@@ -96,11 +90,6 @@ public:
     const std::string & name,
     const std::string & parent_namespace,
     const std::string & local_namespace);
-
-  /**
-   * @brief Common initialization for constructors
-   */
-  void init();
 
   /**
    * @brief A destructor

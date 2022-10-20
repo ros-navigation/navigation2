@@ -81,7 +81,8 @@ bool BtActionServer<ActionT>::on_configure()
   auto options = rclcpp::NodeOptions().arguments(
     {"--ros-args",
       "-r",
-      std::string("__node:=") + std::string(node->get_name()) + client_node_name + "_rclcpp_node",
+      std::string("__node:=") +
+      std::string(node->get_name()) + "_" + client_node_name + "_rclcpp_node",
       "--"});
 
   // Support for handling the topic-based goal pose from rviz
@@ -142,8 +143,7 @@ bool BtActionServer<ActionT>::on_cleanup()
   plugin_lib_names_.clear();
   current_bt_xml_filename_.clear();
   blackboard_.reset();
-  bt_->haltAllActions(tree_.rootNode());
-  bt_->resetGrootMonitor();
+  bt_->haltAllActions(tree_->rootNode());
   bt_.reset();
   return true;
 }
@@ -179,20 +179,16 @@ bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filena
     std::istreambuf_iterator<char>());
 
   // Create the Behavior Tree from the XML input
-  tree_ = bt_->createTreeFromText(xml_string, blackboard_);
+  try {
+    tree_ = bt_->createTreeFromText(xml_string, blackboard_);
+  } catch (const std::exception & e) {
+    RCLCPP_ERROR(logger_, "Exception when loading BT: %s", e.what());
+    return false;
+  }
+  
   topic_logger_ = std::make_unique<RosTopicLogger>(client_node_, tree_);
 
   current_bt_xml_filename_ = filename;
-
-  // Enable monitoring with Groot
-  if (enable_groot_monitoring_) {
-    // optionally add max_msg_per_second = 25 (default) here
-    try {
-      bt_->addGrootMonitoring(&tree_, groot_zmq_publisher_port_, groot_zmq_server_port_);
-    } catch (const std::logic_error & e) {
-      RCLCPP_ERROR(logger_, "ZMQ already enabled, Error: %s", e.what());
-    }
-  }
 
   return true;
 }
