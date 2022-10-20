@@ -79,6 +79,8 @@ set(map_server_dependencies
   std_msgs
   nav2_util
   geometry_msgs
+  tf2
+  tf2_ros
   grid_map_ros
   grid_map_msgs
   grid_map_core)

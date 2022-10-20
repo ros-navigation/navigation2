@@ -71,6 +71,7 @@ MapServer::MapServer(const rclcpp::NodeOptions & options)
   declare_parameter("yaml_filename", rclcpp::PARAMETER_STRING);
   declare_parameter("topic_name", "map");
   declare_parameter("frame_id", "map");
+  declare_parameter("grid_map_frame_id", "grid_map");
 }
 
 MapServer::~MapServer()
@@ -86,6 +87,7 @@ MapServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   std::string yaml_filename = get_parameter("yaml_filename").as_string();
   std::string topic_name = get_parameter("topic_name").as_string();
   frame_id_ = get_parameter("frame_id").as_string();
+  grid_map_frame_id_ = get_parameter("grid_map_frame_id").as_string();
 
   // only try to load map if parameter was set
   if (!yaml_filename.empty()) {
@@ -133,6 +135,9 @@ MapServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     service_prefix + std::string(load_map_service_name_),
     std::bind(&MapServer::loadMapCallback, this, _1, _2, _3));
 
+  // create tf broadcaster
+  tf_static_broadcaster_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -150,9 +155,12 @@ MapServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
   // Publish the grid_map using the latched topic
   grid_map_pub_->on_activate();
-  auto grid_map_to_pub = std::make_unique<grid_map_msgs::msg::GridMap>(msg_grid_map_);
-  grid_map_pub_->publish(std::move(grid_map_to_pub));
+  if (map_available_) {
+    tf_static_broadcaster_->sendTransform(map_to_grid_map_t_);
 
+    auto grid_map_to_pub = std::make_unique<grid_map_msgs::msg::GridMap>(msg_grid_map_);
+    grid_map_pub_->publish(std::move(grid_map_to_pub));
+  }
   // create bond connection
   createBond();
 
@@ -224,7 +232,7 @@ void MapServer::getGridMapCallback(
       "Received GetGridMap request but not in ACTIVE state, ignoring!");
     return;
   }
-  RCLCPP_INFO(get_logger(), "Handling GetMap request");
+  RCLCPP_INFO(get_logger(), "Handling GetGridMap request");
   response->map = msg_grid_map_;
 }
 
@@ -246,6 +254,8 @@ void MapServer::loadMapCallback(
   if (loadMapResponseFromYaml(request->map_url, response)) {
     auto occ_grid = std::make_unique<nav_msgs::msg::OccupancyGrid>(msg_);
     occ_pub_->publish(std::move(occ_grid));  // publish new map
+    
+    tf_static_broadcaster_->sendTransform(map_to_grid_map_t_);
 
     auto grid_map_to_pub = std::make_unique<grid_map_msgs::msg::GridMap>(msg_grid_map_);
     grid_map_pub_->publish(std::move(grid_map_to_pub));  // publish new map
@@ -269,7 +279,7 @@ bool MapServer::loadMapResponseFromYaml(
     case LOAD_MAP_SUCCESS:
       // Correcting msg_ header when it belongs to specific node
       updateMsgHeader();
-
+      updateTransform();
       map_available_ = true;
       response->map = msg_;
       response->grid_map = msg_grid_map_;
@@ -285,8 +295,27 @@ void MapServer::updateMsgHeader()
   msg_.header.frame_id = frame_id_;
   msg_.header.stamp = now();
 
-  msg_grid_map_.header.frame_id = frame_id_;
+  msg_grid_map_.header.frame_id = grid_map_frame_id_;
   msg_grid_map_.header.stamp = now();
+
+  RCLCPP_INFO(get_logger(), "Gridmap header frame is %s\n", grid_map_frame_id_.c_str());
+}
+
+void MapServer::updateTransform()
+{
+  map_to_grid_map_t_.header.stamp = this->get_clock()->now();
+  map_to_grid_map_t_.header.frame_id = frame_id_;
+  map_to_grid_map_t_.child_frame_id = grid_map_frame_id_;
+
+  map_to_grid_map_t_.transform.translation.x = 0.0;
+  map_to_grid_map_t_.transform.translation.y = 0.0;
+  map_to_grid_map_t_.transform.translation.z = 0.0;
+
+  // set the orient to the same as the 2d map
+  map_to_grid_map_t_.transform.rotation.x = msg_.info.origin.orientation.x;
+  map_to_grid_map_t_.transform.rotation.y = msg_.info.origin.orientation.y;
+  map_to_grid_map_t_.transform.rotation.z = msg_.info.origin.orientation.z;
+  map_to_grid_map_t_.transform.rotation.w = msg_.info.origin.orientation.w;
 }
 
 }  // namespace nav2_map_server

@@ -27,6 +27,10 @@
 #include "grid_map_msgs/msg/grid_map.hpp"
 #include "grid_map_msgs/srv/get_grid_map.hpp"
 
+#include "geometry_msgs/msg/transform_stamped.hpp"
+#include "tf2/LinearMath/Quaternion.h"
+#include "tf2_ros/static_transform_broadcaster.h"
+
 namespace nav2_map_server
 {
 
@@ -97,6 +101,10 @@ protected:
    * @brief Method correcting msg_ header when it belongs to instantiated object
    */
   void updateMsgHeader();
+  /**
+   * @brief Method correcting transform
+   */
+  void updateTransform();
 
   /**
    * @brief Map getting service callback
@@ -165,6 +173,11 @@ protected:
   bool map_available_;
   // The message to publish on the occupancy grid topic
   grid_map_msgs::msg::GridMap msg_grid_map_;
+
+  // The transform frame ID to represent orient
+  std::string grid_map_frame_id_;
+  geometry_msgs::msg::TransformStamped map_to_grid_map_t_;
+  std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_static_broadcaster_;
 };
 
 }  // namespace nav2_map_server
