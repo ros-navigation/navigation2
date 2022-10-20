@@ -307,9 +307,16 @@ void MapServer::updateTransform()
   map_to_grid_map_t_.header.frame_id = frame_id_;
   map_to_grid_map_t_.child_frame_id = grid_map_frame_id_;
 
-  map_to_grid_map_t_.transform.translation.x = 0.0;
-  map_to_grid_map_t_.transform.translation.y = 0.0;
-  map_to_grid_map_t_.transform.translation.z = 0.0;
+  // we are going to use the transform to set the pos
+  map_to_grid_map_t_.transform.translation.x = msg_.info.origin.position.x;
+  map_to_grid_map_t_.transform.translation.y = msg_.info.origin.position.y;
+  map_to_grid_map_t_.transform.translation.z = msg_.info.origin.position.z;
+
+  // therefore, the grid_map will have its position changed
+  //  position in grid_map_frame = pos_in_map_frame - pos_origin_map_frame  
+  msg_grid_map_.info.pose.position.x -= msg_.info.origin.position.x;
+  msg_grid_map_.info.pose.position.y -= msg_.info.origin.position.y;
+  msg_grid_map_.info.pose.position.z -= msg_.info.origin.position.z;
 
   // set the orient to the same as the 2d map
   map_to_grid_map_t_.transform.rotation.x = msg_.info.origin.orientation.x;
