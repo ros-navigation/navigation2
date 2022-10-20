@@ -25,6 +25,7 @@
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_core/global_planner.hpp"
+#include "nav2_core/planner_exceptions.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_navfn_planner/navfn.hpp"
 #include "nav2_util/robot_utils.hpp"
