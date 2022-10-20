@@ -71,7 +71,7 @@ public:
     RCLCPP_DEBUG(
       node_->get_logger(), "Waiting for \"%s\" service",
       service_name_.c_str());
-    service_client_->wait_for_service();
+    service_client_->wait_for_service(std::chrono::seconds(10));
 
     RCLCPP_DEBUG(
       node_->get_logger(), "\"%s\" BtServiceNode initialized",

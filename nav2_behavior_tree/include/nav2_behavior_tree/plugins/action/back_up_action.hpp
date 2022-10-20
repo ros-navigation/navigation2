@@ -56,6 +56,8 @@ public:
         BT::InputPort<double>("backup_dist", 0.15, "Distance to backup"),
         BT::InputPort<double>("backup_speed", 0.025, "Speed at which to backup"),
         BT::InputPort<double>("time_allowance", 10.0, "Allowed time for reversing")
+        BT::InputPort<bool>("free_goal_vel", false, "Don't stop when goal reached"),
+        BT::InputPort<bool>("check_local_costmap", true, "Check local costmap for collisions")
       });
   }
 };

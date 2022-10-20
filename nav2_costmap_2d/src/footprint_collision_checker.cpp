@@ -101,6 +101,11 @@ double FootprintCollisionChecker<CostmapT>::lineCost(int x0, int x1, int y0, int
     if (line_cost < point_cost) {
       line_cost = point_cost;
     }
+
+    // if in collision, no need to continue
+    if (line_cost == static_cast<double>(LETHAL_OBSTACLE)) {
+      return line_cost;
+    }
   }
 
   return line_cost;

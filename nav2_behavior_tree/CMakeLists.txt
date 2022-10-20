@@ -17,6 +17,8 @@ find_package(tf2_geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(nav2_util REQUIRED)
+find_package(angles REQUIRED)
+find_package(amr_interfaces REQUIRED)
 
 nav2_package()
 
@@ -41,6 +43,8 @@ set(dependencies
   std_msgs
   std_srvs
   nav2_util
+  angles
+  amr_interfaces
 )
 
 add_library(${library_name} SHARED
@@ -198,6 +202,8 @@ install(TARGETS ${library_name}
 install(DIRECTORY include/
   DESTINATION include/
 )
+
+install(FILES test/test_action_server.hpp test/test_service.hpp DESTINATION include/nav2_behavior_tree)
 
 install(FILES nav2_tree_nodes.xml DESTINATION share/${PROJECT_NAME})
 

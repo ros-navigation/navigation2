@@ -399,7 +399,7 @@ LifecycleManager::checkBondConnections()
       RCLCPP_ERROR(
         get_logger(),
         "CRITICAL FAILURE: SERVER %s IS DOWN after not receiving a heartbeat for %i ms."
-        " Shutting down related nodes.",
+        " Trying to relaunch it",
         node_name.c_str(), static_cast<int>(bond_timeout_.count()));
       reset(true);  // hard reset to transition all still active down
       // if a server crashed, it won't get cleared due to failed transition, clear manually

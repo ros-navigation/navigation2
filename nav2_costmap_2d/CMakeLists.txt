@@ -23,6 +23,7 @@ find_package(tf2_ros REQUIRED)
 find_package(tf2_sensor_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(angles REQUIRED)
+find_package(amr_interfaces REQUIRED)
 
 remove_definitions(-DDISABLE_LIBUSB-1.0)
 find_package(Eigen3 REQUIRED)
@@ -48,6 +49,9 @@ add_library(nav2_costmap_2d_core SHARED
   src/costmap_layer.cpp
   src/observation_buffer.cpp
   src/clear_costmap_service.cpp
+  src/costmap_subscriber.cpp
+  src/footprint_subscriber.cpp
+  src/costmap_topic_collision_checker.cpp
   src/footprint_collision_checker.cpp
   plugins/costmap_filters/costmap_filter.cpp
 )
@@ -72,6 +76,7 @@ set(dependencies
   tf2_sensor_msgs
   visualization_msgs
   angles
+  amr_interfaces
 )
 
 ament_target_dependencies(nav2_costmap_2d_core

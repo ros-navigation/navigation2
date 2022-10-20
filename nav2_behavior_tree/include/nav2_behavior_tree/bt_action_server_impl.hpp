@@ -21,6 +21,7 @@
 #include <set>
 #include <exception>
 #include <vector>
+#include <algorithm>
 
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav2_behavior_tree/bt_action_server.hpp"
@@ -80,8 +81,7 @@ bool BtActionServer<ActionT>::on_configure()
   auto options = rclcpp::NodeOptions().arguments(
     {"--ros-args",
       "-r",
-      std::string("__node:=") +
-      std::string(node->get_name()) + "_" + client_node_name + "_rclcpp_node",
+      std::string("__node:=") + std::string(node->get_name()) + client_node_name + "_rclcpp_node",
       "--"});
 
   // Support for handling the topic-based goal pose from rviz
@@ -143,6 +143,7 @@ bool BtActionServer<ActionT>::on_cleanup()
   current_bt_xml_filename_.clear();
   blackboard_.reset();
   bt_->haltAllActions(tree_.rootNode());
+  bt_->resetGrootMonitor();
   bt_.reset();
   return true;
 }
@@ -153,11 +154,17 @@ bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filena
   // Empty filename is default for backward compatibility
   auto filename = bt_xml_filename.empty() ? default_bt_xml_filename_ : bt_xml_filename;
 
+  // This is removed as part of the changes about BT hashing as we still want to check for
+  // changes in the xml file even if current_bt_xml_filename_ == filename
+
+  /*
   // Use previous BT if it is the existing one
   if (current_bt_xml_filename_ == filename) {
     RCLCPP_DEBUG(logger_, "BT will not be reloaded as the given xml is already loaded");
     return true;
   }
+  */
+ 
 
   // Read the input BT XML from the specified file into a string
   std::ifstream xml_file(filename);
@@ -172,16 +179,21 @@ bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filena
     std::istreambuf_iterator<char>());
 
   // Create the Behavior Tree from the XML input
-  try {
-    tree_ = bt_->createTreeFromText(xml_string, blackboard_);
-  } catch (const std::exception & e) {
-    RCLCPP_ERROR(logger_, "Exception when loading BT: %s", e.what());
-    return false;
-  }
-
+  tree_ = bt_->createTreeFromText(xml_string, blackboard_);
   topic_logger_ = std::make_unique<RosTopicLogger>(client_node_, tree_);
 
   current_bt_xml_filename_ = filename;
+
+  // Enable monitoring with Groot
+  if (enable_groot_monitoring_) {
+    // optionally add max_msg_per_second = 25 (default) here
+    try {
+      bt_->addGrootMonitoring(&tree_, groot_zmq_publisher_port_, groot_zmq_server_port_);
+    } catch (const std::logic_error & e) {
+      RCLCPP_ERROR(logger_, "ZMQ already enabled, Error: %s", e.what());
+    }
+  }
+
   return true;
 }
 
@@ -192,7 +204,7 @@ void BtActionServer<ActionT>::executeCallback()
     action_server_->terminate_current();
     return;
   }
-
+  RCLCPP_INFO(logger_, "Action server name is %s", action_name_.c_str());
   auto is_canceling = [&]() {
       if (action_server_ == nullptr) {
         RCLCPP_DEBUG(logger_, "Action server unavailable. Canceling.");
@@ -214,11 +226,11 @@ void BtActionServer<ActionT>::executeCallback()
     };
 
   // Execute the BT that was previously created in the configure step
-  nav2_behavior_tree::BtStatus rc = bt_->run(&tree_, on_loop, is_canceling, bt_loop_duration_);
+  nav2_behavior_tree::BtStatus rc = bt_->run(tree_, on_loop, is_canceling, bt_loop_duration_);
 
   // Make sure that the Bt is not in a running state from a previous execution
   // note: if all the ControlNodes are implemented correctly, this is not needed.
-  bt_->haltAllActions(tree_.rootNode());
+  bt_->haltAllActions(tree_->rootNode());
 
   // Give server an opportunity to populate the result message or simple give
   // an indication that the action is complete.

@@ -18,6 +18,8 @@
 #include "nav2_util/robot_utils.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_util/node_utils.hpp"
+#include "tf2/utils.h"
+#include "angles/angles.h"
 
 #include "nav2_behavior_tree/plugins/condition/goal_reached_condition.hpp"
 
@@ -34,6 +36,10 @@ GoalReachedCondition::GoalReachedCondition(
 {
   getInput("global_frame", global_frame_);
   getInput("robot_base_frame", robot_base_frame_);
+  getInput("xy_goal_tolerance", goal_reached_tol_);
+  getInput("yaw_goal_tolerance", goal_reached_tol_yaw_);
+  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+  tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
 }
 
 GoalReachedCondition::~GoalReachedCondition()
@@ -57,10 +63,10 @@ void GoalReachedCondition::initialize()
 {
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
 
-  nav2_util::declare_parameter_if_not_declared(
-    node_, "goal_reached_tol",
-    rclcpp::ParameterValue(0.25));
-  node_->get_parameter_or<double>("goal_reached_tol", goal_reached_tol_, 0.25);
+  //nav2_util::declare_parameter_if_not_declared(
+  //  node_, "goal_reached_tol",
+  //  rclcpp::ParameterValue(0.25));
+  //node_->get_parameter_or<double>("goal_reached_tol", goal_reached_tol_, 0.25);
   tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
 
   node_->get_parameter("transform_tolerance", transform_tolerance_);
@@ -81,10 +87,14 @@ bool GoalReachedCondition::isGoalReached()
 
   geometry_msgs::msg::PoseStamped goal;
   getInput("goal", goal);
+
+  double current_yaw = tf2::getYaw(current_pose.pose.orientation);
+  double goal_yaw = tf2::getYaw(goal.pose.orientation);
+  double dangle = fabs(angles::shortest_angular_distance(goal_yaw, current_yaw));
   double dx = goal.pose.position.x - current_pose.pose.position.x;
   double dy = goal.pose.position.y - current_pose.pose.position.y;
 
-  return (dx * dx + dy * dy) <= (goal_reached_tol_ * goal_reached_tol_);
+  return (dx * dx + dy * dy) <= (goal_reached_tol_ * goal_reached_tol_) && dangle <= goal_reached_tol_yaw_;
 }
 
 }  // namespace nav2_behavior_tree
