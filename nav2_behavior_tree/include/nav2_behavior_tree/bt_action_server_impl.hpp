@@ -202,17 +202,6 @@ bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filena
 
   current_bt_xml_filename_ = filename;
 
-  // Enable monitoring with Groot
-  if (enable_groot_monitoring_) {
-    // optionally add max_msg_per_second = 25 (default) here
-    try {
-      bt_->addGrootMonitoring(tree_, groot_zmq_publisher_port_, groot_zmq_server_port_);
-      RCLCPP_INFO(logger_, "Added groot publishing for %s", action_name_.c_str());
-    } catch (const std::logic_error & e) {
-      RCLCPP_ERROR(logger_, "ZMQ already enabled, Error: %s", e.what());
-    }
-  }
-
   return true;
 }
 
