@@ -171,7 +171,7 @@ void ObservationBuffer::bufferCloud(const sensor_msgs::msg::PointCloud2 & cloud)
       sensor_frame_.c_str(),
       cloud.header.frame_id.c_str(), ex.what());
     return;
-  } 
+  }
 
   // if the update was successful, we want to update the last updated time
   last_updated_ = clock_->now();
