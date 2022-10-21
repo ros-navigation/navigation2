@@ -162,6 +162,15 @@ void ObservationBuffer::bufferCloud(const sensor_msgs::msg::PointCloud2 & cloud)
       sensor_frame_.c_str(),
       cloud.header.frame_id.c_str(), ex.what());
     return;
+  } catch (tf2::ExtrapolationException & ex) {
+    // if an exception occurs, we need to remove the empty observation from the list
+    observation_list_.pop_front();
+    RCLCPP_ERROR(
+      logger_,
+      "TF Extrapolation Exception that should never happen for sensor frame: %s, cloud frame: %s, %s",
+      sensor_frame_.c_str(),
+      cloud.header.frame_id.c_str(), ex.what());
+    return;
   }
 
   // if the update was successful, we want to update the last updated time
