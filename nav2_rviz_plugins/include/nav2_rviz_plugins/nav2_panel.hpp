@@ -36,6 +36,9 @@
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
+#include "nav2_costmap_2d/costmap_topic_collision_checker.hpp"
+#include "tf2_ros/transform_listener.h"
+#include "tf2_ros/create_timer_ros.h"
 
 class QPushButton;
 
@@ -136,9 +139,19 @@ private:
   rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr
     map_pose_sub_;
 
-  // global_costmap subscriber
+  // global_costmap and footprint subscriber
   std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
-  std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap_;
+  std::unique_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
+
+  // Collision checker
+  std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> collision_checker_;
+
+  // Parameter client for getting parameters from costmap
+  std::shared_ptr<rclcpp::SyncParametersClient> param_client_;
+
+  // Tf's for collision checker
+  std::shared_ptr<tf2_ros::Buffer> tf_;
+  std::shared_ptr<tf2_ros::TransformListener> transform_listener_;
 
   // Goal-related state
   nav2_msgs::action::NavigateToPose::Goal navigation_goal_;
@@ -197,7 +210,7 @@ private:
   std::vector<geometry_msgs::msg::PoseStamped> acummulated_poses_;
   std::vector<geometry_msgs::msg::PoseStamped> store_poses_;
 
-  bool isWaypointValid(double x, double y);
+  bool isWaypointValid(geometry_msgs::msg::Pose pose);
   // Publish the visual markers with the waypoints
   void updateWpNavigationMarkers();
 

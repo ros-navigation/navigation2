@@ -31,6 +31,7 @@
 #include "rviz_common/display_context.hpp"
 #include "ament_index_cpp/get_package_share_directory.hpp"
 #include "yaml-cpp/yaml.h"
+#include "geometry_msgs/msg/pose2_d.hpp"
 
 using namespace std::chrono_literals;
 
@@ -535,6 +536,19 @@ Nav2Panel::Nav2Panel(QWidget * parent)
     rclcpp_action::create_client<nav2_msgs::action::NavigateThroughPoses>(
     client_node_,
     "navigate_through_poses");
+
+  // getting parameters from the global costmap for collision_checker_
+  param_client_ = std::make_shared<rclcpp::SyncParametersClient>(
+    client_node_, "/global_costmap/global_costmap");
+
+  // Setting up tf for collision checker
+  tf_ = std::make_shared<tf2_ros::Buffer>(client_node_->get_clock());
+  auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
+    client_node_->get_node_base_interface(),
+    client_node_->get_node_timers_interface());
+  tf_->setCreateTimerInterface(timer_interface);
+  transform_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_);
+
   navigation_goal_ = nav2_msgs::action::NavigateToPose::Goal();
   waypoint_follower_goal_ = nav2_msgs::action::FollowWaypoints::Goal();
   nav_through_poses_goal_ = nav2_msgs::action::NavigateThroughPoses::Goal();
@@ -650,12 +664,10 @@ void Nav2Panel::handleGoalLoader()
   }
 
   // Check for goal poses, if they are not in an obstacle
-  costmap_ = costmap_sub_->getCostmap();
   for (unsigned int i = 0; i < acummulated_poses_.size(); ++i) {
     if (
       !isWaypointValid(
-        acummulated_poses_[i].pose.position.x,
-        acummulated_poses_[i].pose.position.y))
+        acummulated_poses_[i].pose))
     {
       waypoint_status_indicator_->setText(
         "<b> Note: </b> waypoint list has Invalid waypoints");
@@ -812,9 +824,41 @@ Nav2Panel::onInitialize()
       initial_pose_ = *msg;
     });
 
-  // Initializing costmap subscriber
+  while (!param_client_->wait_for_service(1s)) {
+    if (!rclcpp::ok()) {
+      RCLCPP_ERROR(node->get_logger(), "Interrupted while waiting for the service. Exiting.");
+      rclcpp::shutdown();
+    }
+    RCLCPP_INFO(node->get_logger(), "service not available, waiting again...");
+  }
+
+  // Get parameters needed for collision checker from global costmap
+  auto parameters = param_client_->get_parameters(
+    {"robot_base_frame", "transform_tolerance"});
+
+  // Initializing variables for the parameters recieved from the param client
+  std::string robot_base_frame = "base_footprint";
+  double transform_tolerance = 0.2;
+
+  // Assigining parameters recieved to the variables
+  for (auto & parameter : parameters) {
+    if (parameter.get_name() == "robot_base_frame") {
+      robot_base_frame = parameter.as_string();
+    }
+    if (parameter.get_name() == "transform_tolerance") {
+      transform_tolerance = parameter.as_double();
+    }
+  }
+
+  // Initializing costmap subscriber and footprint subscriber
   costmap_sub_ = std::make_unique<nav2_costmap_2d::CostmapSubscriber>(
     node, "global_costmap/costmap_raw");
+  footprint_sub_ = std::make_unique<nav2_costmap_2d::FootprintSubscriber>(
+    node, "/global_costmap/published_footprint", *tf_, robot_base_frame, transform_tolerance);
+
+  // Initializing collision checker
+  collision_checker_ = std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
+    *costmap_sub_, *footprint_sub_, node->get_name());
 }
 
 void
@@ -929,8 +973,7 @@ Nav2Panel::onNewGoal(double x, double y, double theta, QString frame)
       /** Check if the selected waypoint is inside the map
        * also check if it is not in the region of lethal obstacle
        **/
-      costmap_ = costmap_sub_->getCostmap();
-      if (isWaypointValid(x, y)) {
+      if (isWaypointValid(pose.pose)) {
         waypoint_status_indicator_->clear();
         acummulated_poses_.push_back(pose);
       } else {
@@ -953,20 +996,14 @@ Nav2Panel::onNewGoal(double x, double y, double theta, QString frame)
   updateWpNavigationMarkers();
 }
 
-bool Nav2Panel::isWaypointValid(double x, double y)
+bool Nav2Panel::isWaypointValid(geometry_msgs::msg::Pose pose)
 {
-  unsigned int mx, my;
-  if (!costmap_->worldToMap(x, y, mx, my)) {
-    std::cout << "Goal Coordinates of(" + std::to_string(x) + ", " +
-      std::to_string(y) + ") was outside bounds" << std::endl;
-    return false;
-  }
+  geometry_msgs::msg::Pose2D pose2d;
+  pose2d.x = pose.position.x;
+  pose2d.y = pose.position.y;
+  pose2d.theta = tf2::getYaw(pose.orientation);
 
-  if (costmap_->getCost(mx, my) == nav2_costmap_2d::LETHAL_OBSTACLE ||
-    costmap_->getCost(mx, my) == nav2_costmap_2d::NO_INFORMATION)
-  {
-    std::cout << "Goal Coordinates of(" + std::to_string(x) + ", " +
-      std::to_string(y) + ") is either occupied or out of bounds" << std::endl;
+  if (!collision_checker_->isCollisionFree(pose2d, true)) {
     return false;
   }
   return true;
