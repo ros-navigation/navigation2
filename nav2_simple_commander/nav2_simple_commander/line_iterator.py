@@ -17,36 +17,38 @@
 """
 This is a Python3 API for a line iterator.
 
-It provides the ability to iterate through the points of a line.
+It provides the ability to iterate
+through the points of a line.
 """
-
 
 from cmath import sqrt
 
 
 class LineIterator():
+    """
+    LineIterator.
+
+    LineIterator Python3 API for iterating along the points of a given line
+    """
+
     def __init__(self, x0, y0, x1, y1, step_size=1.0):
-        """Initialize the LineIterator
+        """
+        Initialize the LineIterator.
 
-        Arguments:
-            x0 -- Abscissa of the initial point
-            y0 -- Ordinate of the initial point
-            x1 -- Abscissa of the final point
-            y1 -- Ordinate of the final point
-
-        Keyword Arguments:
-            step_size -- Increments' Resolution (default: {1.0})
+        Args:
+        ----
+            x0 (float): Abscissa of the initial point
+            y0 (float): Ordinate of the initial point
+            x1 (float): Abscissa of the final point
+            y1 (float): Ordinate of the final point
+            step_size (float): Optional, Increments' resolution, defaults to 1
 
         Raises:
-            TypeError: When x0 is not a number
-            TypeError: When y0 is not a number
-            TypeError: When x1 is not a number
-            TypeError: When y1 is not a number
-            TypeError: When step_size is not a number
-            ValueError: When x0 is not a positive number
-            ValueError: When line has zero length
-        """
+        ------
+            TypeError: When one (or more) of the inputs is not a number
+            ValueError: When step_size is not a positive number
 
+        """
         if type(x0) not in [int, float]:
             raise TypeError("x0 must be a number (int or float)")
 
@@ -96,16 +98,11 @@ class LineIterator():
                 "Line has zero length (All 4 points have same coordinates)")
 
     def isValid(self):
-        """Returns True if the line is valid
-
-        Returns:
-            True if line is valid, false otherwise
-        """
+        """Check if line is valid."""
         return self.valid_
 
     def advance(self):
-        """Advance to the next point in the line
-        """
+        """Advance to the next point in the line."""
         if self.x1_ > self.x0_:
             if self.x_ < self.x1_:
                 self.x_ = round(self.clamp(
@@ -137,95 +134,59 @@ class LineIterator():
                 self.valid_ = False
 
     def getX(self):
-        """Get the abscissa of the current point
-
-        Returns:
-            Abscissa of current point
-        """
+        """Get the abscissa of the current point."""
         return self.x_
 
     def getY(self):
-        """Returns the ordinate of the current point.
-
-        Returns:
-            Float: ordinate of current point
-        """
+        """Get the ordinate of the current point."""
         return self.y_
 
     def getX0(self):
-        """Returns the abscissa of the initial point.
-
-        Returns:
-            Float: abscissa of initial point
-        """
+        """Get the abscissa of the initial point."""
         return self.x0_
 
     def getY0(self):
-        """Returns the ordinate of the intial point.
-
-        Returns:
-            Float: ordinate of intial point
-        """
+        """Get the ordinate of the intial point."""
         return self.y0_
 
     def getX1(self):
-        """Returns the abscissa of the final point.
-
-        Returns:
-            Float: abscissa of final point
-        """
+        """Get the abscissa of the final point."""
         return self.x1_
 
     def getY1(self):
-        """Returns the ordinate of the final point.
-
-        Returns:
-            Float: ordinate of final point
-        """
+        """Get the ordinate of the final point."""
         return self.y1_
 
     def get_line_length(self):
-        """Returns the length of the line.
-
-        Returns:
-            Float: Line Length
-        """
+        """Get the length of the line."""
         return sqrt(pow(self.x1_ - self.x0_, 2) + pow(self.y1_ - self.y0_, 2))
 
     def get_line_equation(self):
-        """Returns the equation of the line as a string.
-
-        Returns:
-            String: Line's Equation
-        """
+        """Get the equation of the line as a string."""
         return self.equation_
 
     def get_curr_point_str(self):
-        """Returns the coordinates of the current point as string.
-
-        Returns:
-            String: Current Coordinates
-        """
+        """Get the coordinates of the current point as string."""
         return "X: " + str(self.x_) + "   Y: " + str(self.y_)
 
     def get_curr_point(self):
-        """Returns the coordinates of the current point as list [X,Y].
-
-        Returns:
-            List: Current Coordinates as float [X,Y]
-        """
+        """Get the coordinates of the current point as list [X,Y]."""
         return [self.x_, self.y_]
 
     def clamp(self, n, min_n, max_n):
-        """Class Helper Function: Clamps n to be between min_n and max_n
+        """
+        Clamp n to be between min_n and max_n.
 
-        Args:
-            n (Float): input value
-            min_n (Float): minimum value
-            max_n (Float): maximum value
+        Args
+        ----
+            n (float): input value
+            min_n (float): minimum value
+            max_n (float): maximum value
 
-        Returns:
-            Float: input value clamped between given min and max
+        Returns
+        -------
+            n (float): input value clamped between given min and max
+
         """
         if n < min_n:
             return min_n
