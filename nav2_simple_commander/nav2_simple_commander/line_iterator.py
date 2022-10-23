@@ -35,7 +35,7 @@ class LineIterator():
         """
         Initialize the LineIterator.
 
-        Args:
+        Args
         ----
             x0 (float): Abscissa of the initial point
             y0 (float): Ordinate of the initial point
@@ -43,7 +43,7 @@ class LineIterator():
             y1 (float): Ordinate of the final point
             step_size (float): Optional, Increments' resolution, defaults to 1
 
-        Raises:
+        Raises
         ------
             TypeError: When one (or more) of the inputs is not a number
             ValueError: When step_size is not a positive number
