@@ -126,6 +126,12 @@ public:
    */
   bool isClearable() {return false;}
 
+  /**
+   * @brief If this layer can be published or not
+   */
+  virtual bool isPublishable() {return false;}
+
+
   /** CostmapFilter API **/
   /**
    * @brief: Initializes costmap filter. Creates subscriptions to filter-related topics

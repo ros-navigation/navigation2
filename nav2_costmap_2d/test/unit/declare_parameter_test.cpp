@@ -34,6 +34,7 @@ class LayerWrapper : public nav2_costmap_2d::Layer
   void updateBounds(double, double, double, double *, double *, double *, double *) {}
   void updateCosts(nav2_costmap_2d::Costmap2D &, int, int, int, int) {}
   bool isClearable() {return false;}
+  bool isPublishable() {return false;}
 };
 
 TEST(DeclareParameter, useValidParameter)

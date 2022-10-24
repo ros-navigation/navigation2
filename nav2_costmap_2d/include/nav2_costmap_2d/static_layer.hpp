@@ -93,6 +93,11 @@ public:
   virtual bool isClearable() {return false;}
 
   /**
+   * @brief If this layer can be published or not
+   */
+  virtual bool isPublishable() {return false;}
+
+  /**
    * @brief Update the bounds of the master costmap by this layer's update dimensions
    * @param robot_x X pose of robot
    * @param robot_y Y pose of robot

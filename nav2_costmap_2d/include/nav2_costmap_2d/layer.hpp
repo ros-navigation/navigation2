@@ -90,6 +90,11 @@ public:
   virtual bool isClearable() = 0;
 
   /**
+   * @brief If publishing operations should be processed on this layer or not
+   */
+   virtual bool isPublishable() = 0;
+
+  /**
    * @brief This is called by the LayeredCostmap to poll this plugin as to how
    *        much of the costmap it needs to update. Each layer can increase
    *        the size of this bounds.

@@ -132,6 +132,11 @@ public:
   virtual bool isClearable() {return true;}
 
   /**
+   * @brief If this layer can be published or not
+   */
+  virtual bool isPublishable() {return true;}
+
+  /**
    * @brief Callback executed when a parameter change is detected
    * @param event ParameterEvent message
    */
