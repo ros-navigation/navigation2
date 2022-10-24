@@ -92,7 +92,7 @@ public:
   /**
    * @brief If publishing operations should be processed on this layer or not
    */
-   virtual bool isPublishable() = 0;
+  virtual bool isPublishable() = 0;
 
   /**
    * @brief This is called by the LayeredCostmap to poll this plugin as to how
