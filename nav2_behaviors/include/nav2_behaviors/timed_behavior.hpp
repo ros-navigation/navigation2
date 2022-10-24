@@ -104,7 +104,9 @@ public:
   void configure(
     const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
     const std::string & name, std::shared_ptr<tf2_ros::Buffer> tf,
-    std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> collision_checker) override
+    std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> local_collision_checker,
+    std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> global_collision_checker)
+    override
   {
     node_ = parent;
     auto node = node_.lock();
@@ -125,7 +127,8 @@ public:
       node, behavior_name_,
       std::bind(&TimedBehavior::execute, this));
 
-    collision_checker_ = collision_checker;
+    collision_checker_ = local_collision_checker;
+    (void) global_collision_checker;
 
     vel_pub_ = node->template create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 1);
 
