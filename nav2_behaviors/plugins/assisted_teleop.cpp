@@ -120,7 +120,7 @@ Status AssistedTeleop::onCycleUpdate()
   {
     projected_pose = projectPose(projected_pose, teleop_twist_, simulation_time_step_);
 
-    if (!collision_checker_->isCollisionFree(projected_pose)) {
+    if (!local_collision_checker_->isCollisionFree(projected_pose)) {
       if (time == simulation_time_step_) {
         RCLCPP_DEBUG_STREAM_THROTTLE(
           logger_,

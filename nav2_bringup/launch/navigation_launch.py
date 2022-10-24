@@ -105,7 +105,7 @@ def generate_launch_description():
         description='log level')
 
     load_nodes = GroupAction(
-        condition=IfCondition(PythonExpression(['not ', use_composition])),
+        condition=IfCondition(PythonExpression(['not ', 'False'])),
         actions=[
             SetParameter("use_sim_time", use_sim_time),
             Node(
@@ -190,7 +190,7 @@ def generate_launch_description():
     )
 
     load_composable_nodes = GroupAction(
-        condition=IfCondition(use_composition),
+        condition=IfCondition('False'),
         actions=[
             SetParameter("use_sim_time", use_sim_time),
             LoadComposableNodes(

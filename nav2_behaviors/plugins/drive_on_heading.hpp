@@ -175,7 +175,7 @@ protected:
         break;
       }
 
-      if (!this->collision_checker_->isCollisionFree(pose2d, fetch_data)) {
+      if (!this->local_collision_checker_->isCollisionFree(pose2d, fetch_data)) {
         return false;
       }
       fetch_data = false;

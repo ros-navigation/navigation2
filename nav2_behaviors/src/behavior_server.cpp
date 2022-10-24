@@ -82,16 +82,18 @@ BehaviorServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     get_node_timers_interface());
   tf_->setCreateTimerInterface(timer_interface);
   transform_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_);
-  
+
+  // Get parameters for collision checkers
   std::string local_costmap_topic, global_costmap_topic; 
   std::string local_footprint_topic, global_footprint_topic;
   std::string robot_base_frame;
   double transform_tolerance;
   get_parameter("local_costmap_topic", local_costmap_topic);
+  get_parameter("global_costmap_topic", global_costmap_topic);
   get_parameter("local_footprint_topic", local_footprint_topic);
+  get_parameter("global_footprint_topic", global_footprint_topic);
   get_parameter("transform_tolerance", transform_tolerance);
   get_parameter("robot_base_frame", robot_base_frame);
-
 
   local_costmap_sub_ = std::make_unique<nav2_costmap_2d::CostmapSubscriber>(
     shared_from_this(), local_costmap_topic);
@@ -115,7 +117,6 @@ BehaviorServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
-
 
 bool
 BehaviorServer::loadBehaviorPlugins()

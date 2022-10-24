@@ -127,8 +127,8 @@ public:
       node, behavior_name_,
       std::bind(&TimedBehavior::execute, this));
 
-    collision_checker_ = local_collision_checker;
-    (void) global_collision_checker;
+    local_collision_checker_ = local_collision_checker;
+    global_collision_checker_ = global_collision_checker;
 
     vel_pub_ = node->template create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 1);
 
@@ -167,7 +167,8 @@ protected:
   std::string behavior_name_;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
   std::shared_ptr<ActionServer> action_server_;
-  std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> collision_checker_;
+  std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> local_collision_checker_;
+  std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> global_collision_checker_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
 
   double cycle_frequency_;

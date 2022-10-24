@@ -178,7 +178,7 @@ bool Spin::isCollisionFree(
       break;
     }
 
-    if (!collision_checker_->isCollisionFree(pose2d, fetch_data)) {
+    if (!local_collision_checker_->isCollisionFree(pose2d, fetch_data)) {
       return false;
     }
     fetch_data = false;
