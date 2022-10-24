@@ -34,15 +34,18 @@ BehaviorServer::BehaviorServer(const rclcpp::NodeOptions & options)
   declare_parameter(
     "local_costmap_topic",
     rclcpp::ParameterValue(std::string("local_costmap/costmap_raw")));
+
   declare_parameter(
-      "global_costmap_topic",
-      rclcpp::ParameterValue(std::string("global_costmap/costmap_raw")));
+    "global_costmap_topic",
+    rclcpp::ParameterValue(std::string("global_costmap/costmap_raw")));
+
   declare_parameter(
     "local_footprint_topic",
     rclcpp::ParameterValue(std::string("local_costmap/published_footprint")));
+
   declare_parameter(
-      "global_footprint_topic",
-      rclcpp::ParameterValue(std::string("global_costmap/published_footprint")));
+    "global_footprint_topic",
+    rclcpp::ParameterValue(std::string("global_costmap/published_footprint")));
 
   declare_parameter("cycle_frequency", rclcpp::ParameterValue(10.0));
   declare_parameter("behavior_plugins", default_ids_);
@@ -84,7 +87,7 @@ BehaviorServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   transform_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_);
 
   // Get parameters for collision checkers
-  std::string local_costmap_topic, global_costmap_topic; 
+  std::string local_costmap_topic, global_costmap_topic;
   std::string local_footprint_topic, global_footprint_topic;
   std::string robot_base_frame;
   double transform_tolerance;
@@ -98,17 +101,17 @@ BehaviorServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   local_costmap_sub_ = std::make_unique<nav2_costmap_2d::CostmapSubscriber>(
     shared_from_this(), local_costmap_topic);
   global_costmap_sub_ = std::make_unique<nav2_costmap_2d::CostmapSubscriber>(
-      shared_from_this(), global_costmap_topic);
+    shared_from_this(), global_costmap_topic);
 
   local_footprint_sub_ = std::make_unique<nav2_costmap_2d::FootprintSubscriber>(
     shared_from_this(), local_footprint_topic, *tf_, robot_base_frame, transform_tolerance);
   global_footprint_sub_ = std::make_unique<nav2_costmap_2d::FootprintSubscriber>(
-      shared_from_this(), global_footprint_topic, *tf_, robot_base_frame, transform_tolerance);
+    shared_from_this(), global_footprint_topic, *tf_, robot_base_frame, transform_tolerance);
 
   local_collision_checker_ = std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
     *local_costmap_sub_, *local_footprint_sub_, get_name());
   global_collision_checker_ = std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
-      *global_costmap_sub_, *global_footprint_sub_, get_name());
+    *global_costmap_sub_, *global_footprint_sub_, get_name());
 
   behavior_types_.resize(behavior_ids_.size());
   if (!loadBehaviorPlugins()) {
@@ -131,11 +134,11 @@ BehaviorServer::loadBehaviorPlugins()
         behavior_ids_[i].c_str(), behavior_types_[i].c_str());
       behaviors_.push_back(plugin_loader_.createUniqueInstance(behavior_types_[i]));
       behaviors_.back()->configure(
-          node,
-          behavior_ids_[i],
-          tf_,
-          local_collision_checker_,
-          global_collision_checker_);
+        node,
+        behavior_ids_[i],
+        tf_,
+        local_collision_checker_,
+        global_collision_checker_);
     } catch (const pluginlib::PluginlibException & ex) {
       RCLCPP_FATAL(
         get_logger(), "Failed to create behavior %s of type %s."

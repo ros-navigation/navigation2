@@ -125,19 +125,19 @@ protected:
 
     std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> local_costmap_sub_ =
       std::make_shared<nav2_costmap_2d::CostmapSubscriber>(
-      node_lifecycle_, local_costmap_topic);
+      node_lifecycle_, global_costmap_topic);
 
     std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> global_costmap_sub_ =
-        std::make_shared<nav2_costmap_2d::CostmapSubscriber>(
-            node_lifecycle_, global_costmap_topic);
+      std::make_shared<nav2_costmap_2d::CostmapSubscriber>(
+      node_lifecycle_, global_costmap_topic);
 
     std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> local_footprint_sub_ =
       std::make_shared<nav2_costmap_2d::FootprintSubscriber>(
       node_lifecycle_, local_footprint_topic, *tf_buffer_);
 
     std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> global_footprint_sub_ =
-        std::make_shared<nav2_costmap_2d::FootprintSubscriber>(
-            node_lifecycle_, global_footprint_topic, *tf_buffer_);
+      std::make_shared<nav2_costmap_2d::FootprintSubscriber>(
+      node_lifecycle_, global_footprint_topic, *tf_buffer_);
 
     std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> local_collision_checker_ =
       std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
@@ -145,17 +145,17 @@ protected:
       node_lifecycle_->get_name());
 
     std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> global_collision_checker_ =
-        std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
-            *global_costmap_sub_, *global_footprint_sub_,
-            node_lifecycle_->get_name());
+      std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
+      *global_costmap_sub_, *global_footprint_sub_,
+      node_lifecycle_->get_name());
 
     behavior_ = std::make_shared<DummyBehavior>();
     behavior_->configure(
-        node_lifecycle_,
-        "Behavior",
-        tf_buffer_,
-        local_collision_checker_,
-        global_collision_checker_);
+      node_lifecycle_,
+      "Behavior",
+      tf_buffer_,
+      local_collision_checker_,
+      global_collision_checker_);
     behavior_->activate();
 
     client_ = rclcpp_action::create_client<BehaviorAction>(
