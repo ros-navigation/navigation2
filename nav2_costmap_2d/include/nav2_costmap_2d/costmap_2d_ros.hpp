@@ -72,7 +72,6 @@ namespace nav2_costmap_2d
 class Costmap2DROS : public nav2_util::LifecycleNode
 {
 public:
-
   /**
    * @brief  Constructor for the wrapper, the node will
    * be placed in a namespace equal to the node's name
