@@ -219,7 +219,8 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
         std::make_unique<Costmap2DPublisher>(
           shared_from_this(),
           costmap_layer.get(), global_frame_,
-          layer->getName(), always_send_full_costmap_));
+          layer->getName(), always_send_full_costmap_)
+      );
     }
   }
 
