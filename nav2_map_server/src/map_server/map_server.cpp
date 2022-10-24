@@ -254,7 +254,7 @@ void MapServer::loadMapCallback(
   if (loadMapResponseFromYaml(request->map_url, response)) {
     auto occ_grid = std::make_unique<nav_msgs::msg::OccupancyGrid>(msg_);
     occ_pub_->publish(std::move(occ_grid));  // publish new map
-    
+
     tf_static_broadcaster_->sendTransform(map_to_grid_map_t_);
 
     auto grid_map_to_pub = std::make_unique<grid_map_msgs::msg::GridMap>(msg_grid_map_);
@@ -297,8 +297,6 @@ void MapServer::updateMsgHeader()
 
   msg_grid_map_.header.frame_id = grid_map_frame_id_;
   msg_grid_map_.header.stamp = now();
-
-  RCLCPP_INFO(get_logger(), "Gridmap header frame is %s\n", grid_map_frame_id_.c_str());
 }
 
 void MapServer::updateTransform()
@@ -313,7 +311,7 @@ void MapServer::updateTransform()
   map_to_grid_map_t_.transform.translation.z = msg_.info.origin.position.z;
 
   // therefore, the grid_map will have its position changed
-  //  position in grid_map_frame = pos_in_map_frame - pos_origin_map_frame  
+  //  position in grid_map_frame = pos_in_map_frame - pos_origin_map_frame
   msg_grid_map_.info.pose.position.x -= msg_.info.origin.position.x;
   msg_grid_map_.info.pose.position.y -= msg_.info.origin.position.y;
   msg_grid_map_.info.pose.position.z -= msg_.info.origin.position.z;
