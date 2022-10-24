@@ -216,15 +216,13 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
     if (layer->isPublishable()) {
       auto costmap_layer = std::static_pointer_cast<CostmapLayer>(layer);
       layer_publishers_.emplace_back(
-          std::make_unique<Costmap2DPublisher>(
-              shared_from_this(),
-              costmap_layer.get(), global_frame_,
-              layer->getName(), always_send_full_costmap_)
-          );
+        std::make_unique<Costmap2DPublisher>(
+          shared_from_this(),
+          costmap_layer.get(), global_frame_,
+          layer->getName(), always_send_full_costmap_)
+      );
     }
   }
-
-
 
   // Set the footprint
   if (use_radius_) {
@@ -252,8 +250,7 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
   footprint_pub_->on_activate();
   costmap_publisher_->on_activate();
 
-  for (auto& layer_pub : layer_publishers_)
-  {
+  for (auto & layer_pub : layer_publishers_) {
     layer_pub->on_activate();
   }
 
@@ -305,8 +302,7 @@ Costmap2DROS::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   footprint_pub_->on_deactivate();
   costmap_publisher_->on_deactivate();
 
-  for (auto& layer_pub : layer_publishers_)
-  {
+  for (auto & layer_pub : layer_publishers_) {
     layer_pub->on_deactivate();
   }
 
@@ -335,8 +331,7 @@ Costmap2DROS::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   costmap_publisher_.reset();
   clear_costmap_service_.reset();
 
-  for (auto& layer_pub : layer_publishers_)
-  {
+  for (auto & layer_pub : layer_publishers_) {
     layer_pub.reset();
   }
 
@@ -478,9 +473,8 @@ Costmap2DROS::mapUpdateLoop(double frequency)
       layered_costmap_->getBounds(&x0, &xn, &y0, &yn);
       costmap_publisher_->updateBounds(x0, xn, y0, yn);
 
-      //TODO (jwallace42): need bounds of each costmap layer?
-      for (auto& layer_pub : layer_publishers_)
-      {
+      // TODO(jwallace42): need bounds of each costmap layer?
+      for (auto & layer_pub : layer_publishers_) {
         layer_pub->updateBounds(x0, xn, y0, yn);
       }
 
@@ -491,8 +485,7 @@ Costmap2DROS::mapUpdateLoop(double frequency)
         RCLCPP_DEBUG(get_logger(), "Publish costmap at %s", name_.c_str());
         costmap_publisher_->publishCostmap();
 
-        for (auto& layer_pub : layer_publishers_)
-        {
+        for (auto & layer_pub : layer_publishers_) {
           layer_pub->publishCostmap();
         }
 
@@ -763,7 +756,5 @@ Costmap2DROS::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameter
   result.successful = true;
   return result;
 }
-
-
 
 }  // namespace nav2_costmap_2d

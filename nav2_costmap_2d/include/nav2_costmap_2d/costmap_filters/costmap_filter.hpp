@@ -40,6 +40,7 @@
 
 #include <string>
 #include <mutex>
+#include <memory>
 
 #include "geometry_msgs/msg/pose2_d.hpp"
 #include "std_srvs/srv/set_bool.hpp"
