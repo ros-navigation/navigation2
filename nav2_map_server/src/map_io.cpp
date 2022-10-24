@@ -719,7 +719,7 @@ void WriteMetadataToFile(
   grid_map::GridMapRosConverter::toOccupancyGrid(my_grid_map, "occupancy", 0.0, 254.0, occ_map);
 
   {
-    WriteMetadataOcc(occ_map, save_parameters, "occ_" + mapdatafile, mapmetadatafile);
+    WriteMetadataOcc(occ_map, save_parameters, mapdatafile, mapmetadatafile);
   }
 
   // occupancy data added
@@ -785,7 +785,7 @@ bool saveMapToFile(
   try {
     // Checking map parameters for consistency
     checkSaveParameters(save_parameters_loc);
-    save_parameters_loc.map_file_name = "occ_" + save_parameters_loc.map_file_name;
+    save_parameters_loc.map_file_name = save_parameters_loc.map_file_name;
 
     tryWriteMapToFile(occ_grid, save_parameters_loc);
   } catch (std::exception & e) {
