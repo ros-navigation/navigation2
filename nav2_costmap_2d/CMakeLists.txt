@@ -48,9 +48,6 @@ add_library(nav2_costmap_2d_core SHARED
   src/costmap_layer.cpp
   src/observation_buffer.cpp
   src/clear_costmap_service.cpp
-  src/costmap_subscriber.cpp
-  src/footprint_subscriber.cpp
-  src/costmap_topic_collision_checker.cpp
   src/footprint_collision_checker.cpp
   plugins/costmap_filters/costmap_filter.cpp
 )
