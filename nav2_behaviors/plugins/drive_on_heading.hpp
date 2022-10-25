@@ -118,22 +118,25 @@ public:
     feedback_->distance_traveled = distance;
     this->action_server_->publish_feedback(feedback_);
 
-    if (distance >= std::fabs(command_x_)) {
-      this->stopRobot();
+    if (distance >= abs(command_x_)) {
+      if (!free_goal_vel)
+      {
+        this->stopRobot();
+      }
       return Status::SUCCEEDED;
     }
 
     auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>();
     cmd_vel->linear.y = 0.0;
     cmd_vel->angular.z = 0.0;
-    cmd_vel->linear.x = command_speed_;
+    cmd_vel->linear.x = command_x_ < 0 ? -command_speed_ : command_speed_;
 
     geometry_msgs::msg::Pose2D pose2d;
     pose2d.x = current_pose.pose.position.x;
     pose2d.y = current_pose.pose.position.y;
     pose2d.theta = tf2::getYaw(current_pose.pose.orientation);
 
-    if (!isCollisionFree(distance, cmd_vel.get(), pose2d)) {
+    if (check_local_costmap && !isCollisionFree(distance, cmd_vel.get(), pose2d)) {
       this->stopRobot();
       RCLCPP_WARN(this->logger_, "Collision Ahead - Exiting DriveOnHeading");
       return Status::FAILED;
@@ -207,6 +210,8 @@ protected:
   rclcpp::Duration command_time_allowance_{0, 0};
   rclcpp::Time end_time_;
   double simulate_ahead_time_;
+  bool free_goal_vel;
+  bool check_local_costmap;
 };
 
 }  // namespace nav2_behaviors

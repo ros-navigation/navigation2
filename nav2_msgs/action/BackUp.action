@@ -2,6 +2,8 @@
 geometry_msgs/Point target
 float32 speed
 builtin_interfaces/Duration time_allowance
+bool free_goal_vel
+bool check_local_costmap
 ---
 #result definition
 builtin_interfaces/Duration total_elapsed_time
