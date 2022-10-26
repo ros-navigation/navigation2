@@ -473,7 +473,6 @@ Costmap2DROS::mapUpdateLoop(double frequency)
       layered_costmap_->getBounds(&x0, &xn, &y0, &yn);
       costmap_publisher_->updateBounds(x0, xn, y0, yn);
 
-      // TODO(jwallace42): need bounds of each costmap layer?
       for (auto & layer_pub : layer_publishers_) {
         layer_pub->updateBounds(x0, xn, y0, yn);
       }
