@@ -572,6 +572,17 @@ void checkSaveParameters(SaveParameters & save_parameters)
       save_parameters.image_format <<
       "' does not support it. Consider switching image format to 'png'." << std::endl;
   }
+
+  // Check heights
+  if (save_parameters.min_height > save_parameters.max_height)
+  {
+    std::cout <<
+      "[WARN] [map_io]: Grid Map min_height:" <<
+      save_parameters.min_height <<
+      "is greater than max_height:" << save_parameters.max_height << std::endl;
+  
+  }
+
 }
 
 /**
@@ -731,8 +742,8 @@ void WriteMetadataToFile(
   e << YAML::Comment(" elevation layer");
   e << YAML::BeginMap;
   e << YAML::Key << "elevation_image" << YAML::Value << "ele_" + mapdatafile;
-  e << YAML::Key << "min_height" << YAML::Value << -5.0;
-  e << YAML::Key << "max_height" << YAML::Value << 5.0;
+  e << YAML::Key << "min_height" << YAML::Value << save_parameters.min_height;
+  e << YAML::Key << "max_height" << YAML::Value << save_parameters.max_height;
 
   if (!e.good()) {
     std::cout <<
@@ -771,6 +782,8 @@ bool saveMapToFile(
 {
   // Local copy of SaveParameters that might be modified by checkSaveParameters()
   SaveParameters save_parameters_loc = save_parameters;
+  double min_h = save_parameters_loc.min_height;
+  double max_h = save_parameters_loc.max_height;
   checkSaveParameters(save_parameters_loc);
 
   grid_map::GridMap gridmap;
@@ -779,13 +792,20 @@ bool saveMapToFile(
   nav_msgs::msg::OccupancyGrid occ_grid;
   grid_map::GridMapRosConverter::toOccupancyGrid(gridmap, "occupancy", 0.0, 254.0, occ_grid);
   nav_msgs::msg::OccupancyGrid ele_grid;
-  // TO-DO: min_height max_height to be added
-  grid_map::GridMapRosConverter::toOccupancyGrid(gridmap, "elevation", -5.0, 5.0, ele_grid);
+  // grid_map::GridMapRosConverter::toOccupancyGrid(gridmap, "elevation", -5.0, 5.0, ele_grid);
+  if (save_parameters_loc.max_height == 0.0 && save_parameters_loc.min_height == 0.0){
+    // infer max and min elevation boundaries from the data
+    // change the params to print them in the yaml
+    min_h = gridmap["elevation"].minCoeff();
+    max_h = gridmap["elevation"].maxCoeff();
+    grid_map::GridMapRosConverter::toOccupancyGrid(gridmap, "elevation", min_h, max_h, ele_grid);
+  } else {
+    grid_map::GridMapRosConverter::toOccupancyGrid(gridmap, "elevation", save_parameters_loc.min_height, save_parameters_loc.max_height, ele_grid);
+  }
 
   try {
     // Checking map parameters for consistency
     checkSaveParameters(save_parameters_loc);
-    save_parameters_loc.map_file_name = save_parameters_loc.map_file_name;
 
     tryWriteMapToFile(occ_grid, save_parameters_loc);
   } catch (std::exception & e) {
@@ -800,6 +820,8 @@ bool saveMapToFile(
     save_parameters_loc.map_file_name = "ele_" + save_parameters_loc.map_file_name;
     // elevation must be read in scale mode
     save_parameters_loc.mode = nav2_map_server::MapMode::Scale;
+    save_parameters_loc.min_height = min_h;
+    save_parameters_loc.max_height = max_h;
     tryWriteMapToFile(ele_grid, save_parameters_loc);
   } catch (std::exception & e) {
     std::cout << "[ERROR] [map_io]: Failed to write map for reason: " << e.what() << std::endl;
@@ -808,6 +830,9 @@ bool saveMapToFile(
 
   save_parameters_loc = save_parameters;
   checkSaveParameters(save_parameters_loc);
+
+  save_parameters_loc.min_height = min_h;
+  save_parameters_loc.max_height = max_h;
   WriteMetadataToFile(map, save_parameters_loc);
 
   return true;

@@ -106,6 +106,9 @@ struct SaveParameters
   double free_thresh{0.0};
   double occupied_thresh{0.0};
   MapMode mode{MapMode::Trinary};
+
+  double max_height{0.0};
+  double min_height{0.0};
 };
 
 /**

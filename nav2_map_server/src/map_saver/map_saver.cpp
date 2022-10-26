@@ -129,6 +129,9 @@ void MapSaver::saveMapCallback(
   save_parameters.image_format = request->image_format;
   save_parameters.free_thresh = request->free_thresh;
   save_parameters.occupied_thresh = request->occupied_thresh;
+  // For grid_map config
+  save_parameters.max_height = request->max_height;
+  save_parameters.min_height = request->min_height;
   try {
     save_parameters.mode = map_mode_from_string(request->map_mode);
   } catch (std::invalid_argument &) {

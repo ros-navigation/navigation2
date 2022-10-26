@@ -10,5 +10,8 @@ string map_mode
 # Thresholds. Values in range of [0.0 .. 1.0]
 float32 free_thresh
 float32 occupied_thresh
+# Grid Map param
+float32 max_height
+float32 min_height
 ---
 bool result
