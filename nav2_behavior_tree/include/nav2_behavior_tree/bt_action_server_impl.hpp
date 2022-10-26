@@ -235,7 +235,7 @@ void BtActionServer<ActionT>::executeCallback()
   // 0-99 error codes for follow path
   error_codes.push_back(blackboard_->get<int>("follow_path_error_code"));
 
-  //100-199 error codes for compute path to pose
+  // 100-199 error codes for compute path to pose
   error_codes.push_back(blackboard_->get<int>("compute_path_to_pose_error_code") + 100);
 
   result->error_code = std::accumulate(error_codes.begin(), error_codes.end(), 0);
