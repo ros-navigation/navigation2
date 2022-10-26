@@ -229,16 +229,7 @@ void BtActionServer<ActionT>::executeCallback()
   // an indication that the action is complete.
   auto result = std::make_shared<typename ActionT::Result>();
 
-  // Grab error codes from blackboard
-  std::vector<int> error_codes;
-
-  // 0-99 error codes for follow path
-  error_codes.push_back(blackboard_->get<int>("follow_path_error_code"));
-
-  // 100-199 error codes for compute path to pose
-  error_codes.push_back(blackboard_->get<int>("compute_path_to_pose_error_code") + 100);
-
-  result->error_code = std::accumulate(error_codes.begin(), error_codes.end(), 0);
+  populateErrorCode(result);
 
   on_completion_callback_(result, rc);
 
@@ -258,6 +249,28 @@ void BtActionServer<ActionT>::executeCallback()
       action_server_->terminate_all(result);
       break;
   }
+}
+
+template<class ActionT>
+void BtActionServer<ActionT>::populateErrorCode(typename std::shared_ptr<typename
+    ActionT::Result> result)
+{
+    // Grab error codes from blackboard
+    std::vector<int> error_codes;
+
+    // 0-99 error codes for follow path
+    error_codes.push_back(blackboard_->get<int>("follow_path_error_code"));
+
+  // 100-199 error codes for compute path to pose or compute path through poses
+  int compute_path_error_code;
+  if (blackboard_->get<int>("compute_path_to_pose_error_code", compute_path_error_code)){
+    error_codes.push_back(compute_path_error_code + 100);
+  } else
+  {
+    error_codes.push_back(blackboard_->get<int>("compute_path_through_pose_error_code") + 100);
+  }
+
+  result->error_code = std::accumulate(error_codes.begin(), error_codes.end(), 0);
 }
 
 }  // namespace nav2_behavior_tree

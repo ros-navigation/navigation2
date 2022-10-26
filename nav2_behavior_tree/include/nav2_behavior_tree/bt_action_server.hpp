@@ -189,6 +189,9 @@ protected:
    */
   void executeCallback();
 
+
+  void populateErrorCode(typename std::shared_ptr<typename ActionT::Result> result);
+
   // Action name
   std::string action_name_;
 
