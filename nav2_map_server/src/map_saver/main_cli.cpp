@@ -37,8 +37,11 @@ const char * USAGE_STRING{
   "  --free <threshold_free>\n"
   "  --fmt <image_format>\n"
   "  --mode trinary(default)/scale/raw\n"
+  "  --min_h <min_height>\n"
+  "  --max_h <max_height>\n"
   "\n"
-  "NOTE: --ros-args should be passed at the end of command line"};
+  "NOTE: --ros-args should be passed at the end of command line"
+  "NOTE: --min_h and --max_h args for saving a grid_map"};
 
 typedef enum
 {
@@ -47,7 +50,9 @@ typedef enum
   COMMAND_IMAGE_FORMAT,
   COMMAND_OCCUPIED_THRESH,
   COMMAND_FREE_THRESH,
-  COMMAND_MODE
+  COMMAND_MODE,
+  COMMAND_MIN_H,
+  COMMAND_MAX_H
 } COMMAND_TYPE;
 
 struct cmd_struct
@@ -77,6 +82,8 @@ ARGUMENTS_STATUS parse_arguments(
     {"--free", COMMAND_FREE_THRESH},
     {"--mode", COMMAND_MODE},
     {"--fmt", COMMAND_IMAGE_FORMAT},
+    {"--min_h", COMMAND_MIN_H},
+    {"--max_h", COMMAND_MAX_H},
   };
 
   std::vector<std::string> arguments(argv + 1, argv + argc);
@@ -126,6 +133,12 @@ ARGUMENTS_STATUS parse_arguments(
                 "Map mode parameter not recognized: %s, using default value (trinary)",
                 it->c_str());
             }
+            break;
+          case COMMAND_MIN_H:
+            save_parameters.min_height = atof(it->c_str());
+            break;
+          case COMMAND_MAX_H:
+            save_parameters.max_height = atof(it->c_str());
             break;
         }
         break;
