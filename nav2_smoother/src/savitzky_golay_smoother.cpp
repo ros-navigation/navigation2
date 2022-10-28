@@ -153,7 +153,7 @@ bool SavitzkyGolaySmoother::smoothImpl(
         plan_pts[idx + 3].pose.position});
 
       // Apply nominal filter
-      for (idx = 3; idx != path_size - 3; idx++) {
+      for (idx = 3; idx < path_size - 4; idx++) {
         plan_pts[idx].pose.position = applyFilter({
           plan_pts[idx - 3].pose.position,
           plan_pts[idx - 2].pose.position,
