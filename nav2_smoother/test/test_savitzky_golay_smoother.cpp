@@ -78,18 +78,10 @@ TEST(SmootherTest, test_sg_smoother)
   // Make smoother
   std::shared_ptr<tf2_ros::Buffer> dummy_tf;
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> dummy_footprint;
+  node->declare_parameter("test.do_refinement", rclcpp::ParameterValue(false));
   auto smoother = std::make_unique<SmootherWrapper>();
   smoother->configure(parent, "test", dummy_tf, dummy_costmap, dummy_footprint);
   rclcpp::Duration max_time = rclcpp::Duration::from_seconds(1.0);  // 1 seconds
-
-  // Given nominal irregular path, test that the output is shorter and smoother
-
-  // Test with refinement, even shorter and smoother
-
-
-  // Test reversing / cusps segments
-
-
 
   // Test regular path, should see no effective change
   nav_msgs::msg::Path straight_regular_path, straight_regular_path_baseline;
@@ -97,39 +89,48 @@ TEST(SmootherTest, test_sg_smoother)
   straight_regular_path.header.stamp = node->now();
   straight_regular_path.poses.resize(11);
   straight_regular_path.poses[0].pose.position.x = 0.5;
-  straight_regular_path.poses[0].pose.position.y = 0.0;
+  straight_regular_path.poses[0].pose.position.y = 0.1;
   straight_regular_path.poses[1].pose.position.x = 0.5;
-  straight_regular_path.poses[1].pose.position.y = 0.1;
+  straight_regular_path.poses[1].pose.position.y = 0.2;
   straight_regular_path.poses[2].pose.position.x = 0.5;
-  straight_regular_path.poses[2].pose.position.y = 0.2;
+  straight_regular_path.poses[2].pose.position.y = 0.3;
   straight_regular_path.poses[3].pose.position.x = 0.5;
-  straight_regular_path.poses[3].pose.position.y = 0.3;
+  straight_regular_path.poses[3].pose.position.y = 0.4;
   straight_regular_path.poses[4].pose.position.x = 0.5;
-  straight_regular_path.poses[4].pose.position.y = 0.4;
+  straight_regular_path.poses[4].pose.position.y = 0.5;
   straight_regular_path.poses[5].pose.position.x = 0.5;
-  straight_regular_path.poses[5].pose.position.y = 0.5;
+  straight_regular_path.poses[5].pose.position.y = 0.6;
   straight_regular_path.poses[6].pose.position.x = 0.5;
-  straight_regular_path.poses[6].pose.position.y = 0.6;
+  straight_regular_path.poses[6].pose.position.y = 0.7;
   straight_regular_path.poses[7].pose.position.x = 0.5;
-  straight_regular_path.poses[7].pose.position.y = 0.7;
+  straight_regular_path.poses[7].pose.position.y = 0.8;
   straight_regular_path.poses[8].pose.position.x = 0.5;
-  straight_regular_path.poses[8].pose.position.y = 0.8;
+  straight_regular_path.poses[8].pose.position.y = 0.9;
   straight_regular_path.poses[9].pose.position.x = 0.5;
-  straight_regular_path.poses[9].pose.position.y = 0.9;
+  straight_regular_path.poses[9].pose.position.y = 1.0;
   straight_regular_path.poses[10].pose.position.x = 0.5;
-  straight_regular_path.poses[10].pose.position.y = 1.0;
+  straight_regular_path.poses[10].pose.position.y = 1.1;
   straight_regular_path_baseline = straight_regular_path;
 
   EXPECT_TRUE(smoother->smooth(straight_regular_path, max_time));
   for (uint i = 0; i != straight_regular_path.poses.size() - 1; i++) {
     // Check distances are still the same
+    std::cout << straight_regular_path.poses[i].pose.position.y << std::endl;
     EXPECT_NEAR(
       fabs(
         straight_regular_path.poses[i].pose.position.y -
-        straight_regular_path_baseline.poses[i].pose.position.y), 0.1, 0.001);
+        straight_regular_path_baseline.poses[i].pose.position.y), 0.0, 0.011);
   }
 
   // Attempt smoothing with no time given
-  rclcpp::Duration no_time = rclcpp::Duration::from_seconds(0.0);  // 0 seconds
+  rclcpp::Duration no_time = rclcpp::Duration::from_seconds(-1.0);  // 0 seconds
   EXPECT_FALSE(smoother->smooth(straight_regular_path, no_time));
+
+  // TODO(sm) Given nominal irregular/noisey path, test that the output is shorter and smoother
+
+  // TODO(sm) Test again with refinement, even shorter and smoother
+  // node->set_parameter("test.do_refinement", rclcpp::ParameterValue(true));
+  // smoother->configure(parent, "test", dummy_tf, dummy_costmap, dummy_footprint);
+
+  // TODO(sm) Test reversing / multiple segments via a cusp
 }

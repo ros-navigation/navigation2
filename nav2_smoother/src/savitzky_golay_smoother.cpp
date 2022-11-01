@@ -27,7 +27,7 @@ using nav2_util::declare_parameter_if_not_declared;
 void SavitzkyGolaySmoother::configure(
   const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
   std::string name, std::shared_ptr<tf2_ros::Buffer>/*tf*/,
-  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> /*costmap_sub*/,
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber>/*costmap_sub*/,
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber>/*footprint_sub*/)
 {
   auto node = parent.lock();
@@ -55,7 +55,7 @@ bool SavitzkyGolaySmoother::smooth(
   std::vector<PathSegment> path_segments = findDirectionalPathSegments(path);
 
   for (unsigned int i = 0; i != path_segments.size(); i++) {
-    if (path_segments[i].end - path_segments[i].start > 10) {
+    if (path_segments[i].end - path_segments[i].start > 9) {
       // Populate path segment
       curr_path_segment.poses.clear();
       std::copy(
@@ -67,7 +67,7 @@ bool SavitzkyGolaySmoother::smooth(
       steady_clock::time_point now = steady_clock::now();
       time_remaining = max_time.seconds() - duration_cast<duration<double>>(now - start).count();
 
-      if (time_remaining < 0.0) {
+      if (time_remaining <= 0.0) {
         RCLCPP_WARN(
           logger_,
           "Smoothing time exceeded allowed duration of %0.2f.", max_time.seconds());
@@ -92,10 +92,8 @@ bool SavitzkyGolaySmoother::smoothImpl(
   nav_msgs::msg::Path & path,
   bool & reversing_segment)
 {
+  // Must be at least 10 in length to enter function
   const unsigned int & path_size = path.poses.size();
-  if (path_size < 7u) {
-    return false;
-  }
 
   // 7-point SG filter
   const std::array<double, 7> filter = {
@@ -121,40 +119,33 @@ bool SavitzkyGolaySmoother::smoothImpl(
   auto applyFilterOverAxes =
     [&](std::vector<geometry_msgs::msg::PoseStamped> & plan_pts) -> void
     {
-      // Manually handle initial boundary conditions
-      unsigned int idx = 0;
-      plan_pts[idx].pose.position = applyFilter({
-        plan_pts[idx].pose.position,
-        plan_pts[idx].pose.position,
-        plan_pts[idx].pose.position,
-        plan_pts[idx].pose.position,
-        plan_pts[idx + 1].pose.position,
-        plan_pts[idx + 2].pose.position,
-        plan_pts[idx + 3].pose.position});
-
-      idx++;
-      plan_pts[idx].pose.position = applyFilter({
+      // Handle initial boundary conditions, first point is fixed
+      unsigned int idx = 1;
+      plan_pts[idx].pose.position = applyFilter(
+      {
+        plan_pts[idx - 1].pose.position,
+        plan_pts[idx - 1].pose.position,
         plan_pts[idx - 1].pose.position,
         plan_pts[idx].pose.position,
-        plan_pts[idx].pose.position,
-        plan_pts[idx].pose.position,
         plan_pts[idx + 1].pose.position,
         plan_pts[idx + 2].pose.position,
         plan_pts[idx + 3].pose.position});
 
       idx++;
-      plan_pts[idx].pose.position = applyFilter({
+      plan_pts[idx].pose.position = applyFilter(
+      {
+        plan_pts[idx - 2].pose.position,
         plan_pts[idx - 2].pose.position,
         plan_pts[idx - 1].pose.position,
-        plan_pts[idx].pose.position,
         plan_pts[idx].pose.position,
         plan_pts[idx + 1].pose.position,
         plan_pts[idx + 2].pose.position,
         plan_pts[idx + 3].pose.position});
 
       // Apply nominal filter
-      for (idx = 3; idx < path_size - 4; idx++) {
-        plan_pts[idx].pose.position = applyFilter({
+      for (idx = 3; idx < path_size - 4; ++idx) {
+        plan_pts[idx].pose.position = applyFilter(
+        {
           plan_pts[idx - 3].pose.position,
           plan_pts[idx - 2].pose.position,
           plan_pts[idx - 1].pose.position,
@@ -164,36 +155,28 @@ bool SavitzkyGolaySmoother::smoothImpl(
           plan_pts[idx + 3].pose.position});
       }
 
-      // Manually handle terminal boundary conditions
+      // Handle terminal boundary conditions, last point is fixed
       idx++;
-      plan_pts[idx].pose.position = applyFilter({
-          plan_pts[idx - 3].pose.position,
-          plan_pts[idx - 2].pose.position,
-          plan_pts[idx - 1].pose.position,
-          plan_pts[idx].pose.position,
-          plan_pts[idx].pose.position,
-          plan_pts[idx + 1].pose.position,
-          plan_pts[idx + 2].pose.position});
+      plan_pts[idx].pose.position = applyFilter(
+      {
+        plan_pts[idx - 3].pose.position,
+        plan_pts[idx - 2].pose.position,
+        plan_pts[idx - 1].pose.position,
+        plan_pts[idx].pose.position,
+        plan_pts[idx + 1].pose.position,
+        plan_pts[idx + 2].pose.position,
+        plan_pts[idx + 2].pose.position});
 
       idx++;
-      plan_pts[idx].pose.position = applyFilter({
-          plan_pts[idx - 3].pose.position,
-          plan_pts[idx - 2].pose.position,
-          plan_pts[idx - 1].pose.position,
-          plan_pts[idx].pose.position,
-          plan_pts[idx].pose.position,
-          plan_pts[idx].pose.position,
-          plan_pts[idx + 1].pose.position});
-
-      idx++;
-      plan_pts[idx].pose.position = applyFilter({
-          plan_pts[idx - 3].pose.position,
-          plan_pts[idx - 2].pose.position,
-          plan_pts[idx - 1].pose.position,
-          plan_pts[idx].pose.position,
-          plan_pts[idx].pose.position,
-          plan_pts[idx].pose.position,
-          plan_pts[idx].pose.position});
+      plan_pts[idx].pose.position = applyFilter(
+      {
+        plan_pts[idx - 3].pose.position,
+        plan_pts[idx - 2].pose.position,
+        plan_pts[idx - 1].pose.position,
+        plan_pts[idx].pose.position,
+        plan_pts[idx + 1].pose.position,
+        plan_pts[idx + 1].pose.position,
+        plan_pts[idx + 1].pose.position});
     };
 
   applyFilterOverAxes(path.poses);
