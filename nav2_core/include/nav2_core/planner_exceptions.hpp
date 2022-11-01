@@ -99,10 +99,10 @@ public:
   : PlannerException(description) {}
 };
 
-class NoWaypointsGiven : public PlannerException
+class NoViapointsGiven : public PlannerException
 {
 public:
-  explicit NoWaypointsGiven(const std::string & description)
+  explicit NoViapointsGiven(const std::string & description)
   : PlannerException(description) {}
 };
 

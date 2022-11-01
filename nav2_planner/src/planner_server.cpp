@@ -355,7 +355,8 @@ void PlannerServer::computePlanThroughPoses()
     if (goal->goals.empty()) {
       RCLCPP_WARN(
         get_logger(),
-        "Compute path through poses requested a plan with no waypoint poses, returning.");
+        "Compute path through poses requested a plan with no viapoint poses, returning.");
+      throw nav2_core::NoViapointsGiven("No viapoints given");
       action_server_poses_->terminate_current();
       return;
     }
@@ -437,9 +438,9 @@ void PlannerServer::computePlanThroughPoses()
     exceptionWarning(curr_start, curr_goal, goal->planner_id, ex);
     result->error_code = ActionThroughPosesGoal::TF_ERROR;
     action_server_poses_->terminate_current(result);
-  } catch (nav2_core::NoWaypointsGiven & ex) {
+  } catch (nav2_core::NoViapointsGiven & ex) {
     exceptionWarning(curr_start, curr_goal, goal->planner_id, ex);
-    result->error_code = ActionThroughPosesGoal::NO_WAYPOINTS_GIVEN;
+    result->error_code = ActionThroughPosesGoal::NO_VIAPOINTS_GIVEN;
     action_server_poses_->terminate_current(result);
   } catch (std::exception & ex) {
     exceptionWarning(curr_start, curr_goal, goal->planner_id, ex);
