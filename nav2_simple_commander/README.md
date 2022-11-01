@@ -92,7 +92,7 @@ This will bring up the robot in the AWS Warehouse in a reasonable position, laun
 
 ### Manually
 
-The main benefit of this is to be able to launch alternative robot models or different navigation configurations than the default for a specific technology demonstation. As long as Nav2 and the simulation (or physical robot) is running, the simple python commander examples / demos don't care what the robot is or how it got there. Since the examples / demos do contain hard-programmed item locations or routes, you should still utilize the AWS Warehouse. Obviously these are easy to update if you wish to adapt these examples / demos to another environment.
+The main benefit of this is to be able to launch alternative robot models or different navigation configurations than the default for a specific technology demonstration. As long as Nav2 and the simulation (or physical robot) is running, the simple python commander examples / demos don't care what the robot is or how it got there. Since the examples / demos do contain hard-programmed item locations or routes, you should still utilize the AWS Warehouse. Obviously these are easy to update if you wish to adapt these examples / demos to another environment.
 
 ``` bash
 # Terminal 1: launch your robot navigation and simulation (or physical robot). For example
