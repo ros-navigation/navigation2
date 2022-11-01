@@ -37,7 +37,7 @@ The `SmacPlannerHybrid` is designed to work with:
 
 The `SmacPlannerLattice` is designed to work with:
 - Arbitrary shaped, non-circular robots requiring kinematically feasible planning with SE2 collision checking using the full capabilities of the drivetrain
-- Flexibility to use other robot model types or with provided non-circular differental, ackermann, and omni support
+- Flexibility to use other robot model types or with provided non-circular differential, ackermann, and omni support
 
 The `SmacPlanner2D` is designed to work with:
 - Circular, differential or omnidirectional robots

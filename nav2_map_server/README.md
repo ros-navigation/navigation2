@@ -18,7 +18,7 @@ Currently map server divides into tree parts:
 - `map_io` library
 
 `map_server` is responsible for loading the map from a file through command-line interface
-or by using serice requests.
+or by using service requests.
 
 `map_saver` saves the map into a file. Like `map_server`, it has an ability to save the map from
 command-line or by calling a service.
@@ -27,7 +27,7 @@ command-line or by calling a service.
 in order to allow easily save/load map from external code just by calling necessary function.
 This library is also used by `map_loader` and `map_saver` to work. Currently it contains
 OccupancyGrid saving/loading functions moved from the rest part of map server code.
-It is designed to be replaceble for a new IO library (e.g. for library with new map encoding
+It is designed to be replaceable for a new IO library (e.g. for library with new map encoding
 method or any other library supporting costmaps, multifloor maps, etc...).
 
 ### CLI-usage
