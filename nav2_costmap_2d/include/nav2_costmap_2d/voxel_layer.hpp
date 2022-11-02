@@ -127,11 +127,6 @@ public:
    */
   virtual bool isClearable() {return true;}
 
-  /**
-   * @brief If this layer can be published or not
-   */
-  virtual bool isPublishable() {return true;}
-
 protected:
   /**
    * @brief Reset internal maps

@@ -124,11 +124,6 @@ public:
   virtual bool isClearable() {return true;}
 
   /**
-   * @brief If this layer can be published or not
-   */
-  virtual bool isPublishable() {return true;}
-
-  /**
    * @brief Handle an incoming Range message to populate into costmap
    */
   void bufferIncomingRangeMsg(const sensor_msgs::msg::Range::SharedPtr range_message);

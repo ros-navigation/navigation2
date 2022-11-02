@@ -134,11 +134,6 @@ public:
   virtual bool isClearable() {return false;}
 
   /**
-   * @brief If this layer can be published or not
-   */
-  virtual bool isPublishable() {return false;}
-
-  /**
    * @brief Reset this costmap
    */
   void reset() override

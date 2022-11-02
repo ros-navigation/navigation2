@@ -213,14 +213,13 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
   auto layers = layered_costmap_->getPlugins();
 
   for (auto & layer : *layers) {
-    if (layer->isPublishable()) {
-      auto costmap_layer = std::static_pointer_cast<CostmapLayer>(layer);
+    auto costmap_layer = std::dynamic_pointer_cast<CostmapLayer>(layer);
+    if (costmap_layer != nullptr) {
       layer_publishers_.emplace_back(
-        std::make_unique<Costmap2DPublisher>(
-          shared_from_this(),
-          costmap_layer.get(), global_frame_,
-          layer->getName(), always_send_full_costmap_)
-      );
+          std::make_unique<Costmap2DPublisher>(
+              shared_from_this(),
+              costmap_layer.get(), global_frame_,
+              layer->getName(), always_send_full_costmap_));
     }
   }
 
