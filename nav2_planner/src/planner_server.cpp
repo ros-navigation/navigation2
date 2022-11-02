@@ -353,12 +353,7 @@ void PlannerServer::computePlanThroughPoses()
     getPreemptedGoalIfRequested(action_server_poses_, goal);
 
     if (goal->goals.empty()) {
-      RCLCPP_WARN(
-        get_logger(),
-        "Compute path through poses requested a plan with no viapoint poses, returning.");
       throw nav2_core::NoViapointsGiven("No viapoints given");
-      action_server_poses_->terminate_current();
-      return;
     }
 
     // Use start pose if provided otherwise use current robot pose
