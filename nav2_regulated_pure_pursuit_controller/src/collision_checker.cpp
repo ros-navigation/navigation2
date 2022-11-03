@@ -162,7 +162,7 @@ double CollisionChecker::costAtPose(const double & x, const double & y)
       logger_,
       "The dimensions of the costmap is too small to fully include your robot's footprint, "
       "thusly the robot cannot proceed further");
-    throw nav2_core::PlannerException(
+    throw nav2_core::ControllerException(
             "RegulatedPurePursuitController: Dimensions of the costmap are too small "
             "to encapsulate the robot footprint at current speeds!");
   }
