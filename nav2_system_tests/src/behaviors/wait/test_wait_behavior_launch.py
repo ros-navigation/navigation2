@@ -78,6 +78,7 @@ def generate_launch_description():
                               'use_sim_time': 'True',
                               'params_file': configured_params,
                               'bt_xml_file': bt_navigator_xml,
+                              'use_composition': 'False',
                               'autostart': 'True'}.items()),
     ])
 
