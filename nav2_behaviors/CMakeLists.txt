@@ -75,6 +75,10 @@ add_library(nav2_back_up_behavior SHARED
   plugins/back_up.cpp
 )
 
+target_link_libraries(nav2_back_up_behavior
+  nav2_drive_on_heading_behavior
+)
+
 ament_target_dependencies(nav2_back_up_behavior
   ${dependencies}
 )
