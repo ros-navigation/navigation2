@@ -654,8 +654,6 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
     node->get_node_base_interface(),
     results2);
 
-  EXPECT_EQ(node->get_parameter("test.inflation_cost_scaling_factor").as_double(), 1.0);
-
   auto results3 = rec_param->set_parameters_atomically(
     {rclcpp::Parameter("test.use_rotate_to_heading", true)});
 
@@ -663,7 +661,14 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
     node->get_node_base_interface(),
     results3);
 
-  EXPECT_EQ(node->get_parameter("test.use_rotate_to_heading").as_bool(), false);
+ auto results4 = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.allow_reversing", false),
+     rclcpp::Parameter("test.use_rotate_to_heading", true),
+     rclcpp::Parameter("test.allow_reversing", true)});
+
+  rclcpp::spin_until_future_complete(
+    node->get_node_base_interface(),
+    results4);
 }
 
 class TransformGlobalPlanTest : public ::testing::Test
