@@ -271,12 +271,11 @@ void BtActionServer<ActionT>::populateErrorCode(
     int current_error_code = 0;
     try {
       current_error_code = blackboard_->get<int>(error_code_id_name);
-    } catch (const std::runtime_error & ex) {
+    } catch (...) {
       RCLCPP_ERROR(
         logger_,
-        "Failed to get %s from blackboard: \"%s\"",
-        error_code_id_name.c_str(),
-        ex.what());
+        "Failed to get %s from blackboard",
+        error_code_id_name.c_str());
     }
     if (current_error_code > highest_priority_error_code) {
       highest_priority_error_code = current_error_code;
