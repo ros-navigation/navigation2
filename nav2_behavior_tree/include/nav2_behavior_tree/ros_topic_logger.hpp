@@ -46,7 +46,7 @@ public:
     clock_ = node->get_clock();
     logger_ = node->get_logger();
     log_pub_ = node->create_publisher<nav2_msgs::msg::BehaviorTreeLog>(
-      "behavior_tree_log",
+      "~/behavior_tree_log",
       rclcpp::QoS(10));
   }
 
@@ -69,6 +69,7 @@ public:
     // before converting to a msg.
     event.timestamp = tf2_ros::toMsg(tf2::TimePoint(timestamp));
     event.node_name = node.name();
+    event.node_uid = node.UID();
     event.previous_status = toStr(prev_status, false);
     event.current_status = toStr(status, false);
     event_log_.push_back(std::move(event));

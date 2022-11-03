@@ -169,9 +169,9 @@ public:
    * @brief Getter function for the current BT tree
    * @return BT::Tree Current behavior tree
    */
-  const BT::Tree & getTree() const
+  const BT::Tree* getTree() const
   {
-    return *tree_;
+    return tree_;
   }
 
   /**
