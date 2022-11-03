@@ -66,6 +66,7 @@ TEST(SmootherTest, test_sg_smoother_basics)
   node->declare_parameter("test.do_refinement", rclcpp::ParameterValue(false));
   auto smoother = std::make_unique<nav2_smoother::SavitzkyGolaySmoother>();
   smoother->configure(parent, "test", dummy_tf, dummy_costmap, dummy_footprint);
+  smoother->activate();
   rclcpp::Duration max_time = rclcpp::Duration::from_seconds(1.0);  // 1 seconds
 
   // Test regular path, should see no effective change
@@ -109,6 +110,9 @@ TEST(SmootherTest, test_sg_smoother_basics)
   // Attempt smoothing with no time given, should fail
   rclcpp::Duration no_time = rclcpp::Duration::from_seconds(-1.0);  // 0 seconds
   EXPECT_FALSE(smoother->smooth(straight_regular_path, no_time));
+
+  smoother->deactivate();
+  smoother->cleanup();
 }
 
 TEST(SmootherTest, test_sg_smoother_noisey_path)
