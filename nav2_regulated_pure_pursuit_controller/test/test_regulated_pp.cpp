@@ -661,10 +661,10 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
     node->get_node_base_interface(),
     results3);
 
- auto results4 = rec_param->set_parameters_atomically(
+  auto results4 = rec_param->set_parameters_atomically(
     {rclcpp::Parameter("test.allow_reversing", false),
-     rclcpp::Parameter("test.use_rotate_to_heading", true),
-     rclcpp::Parameter("test.allow_reversing", true)});
+      rclcpp::Parameter("test.use_rotate_to_heading", true),
+      rclcpp::Parameter("test.allow_reversing", true)});
 
   rclcpp::spin_until_future_complete(
     node->get_node_base_interface(),
