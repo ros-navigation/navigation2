@@ -261,14 +261,14 @@ void BtActionServer<ActionT>::populateErrorCode(typename std::shared_ptr<typenam
     // 0-99 error codes for follow path
     error_codes.push_back(blackboard_->get<int>("follow_path_error_code"));
 
-  // 100-199 error codes for compute path to pose or compute path through poses
-  int compute_path_error_code;
-  if (blackboard_->get<int>("compute_path_to_pose_error_code", compute_path_error_code)){
-    error_codes.push_back(compute_path_error_code + 100);
-  } else
-  {
-    error_codes.push_back(blackboard_->get<int>("compute_path_through_pose_error_code") + 100);
-  }
+//  // 100-199 error codes for compute path to pose or compute path through poses
+//  int compute_path_error_code;
+//  if (blackboard_->get<int>("compute_path_to_pose_error_code", compute_path_error_code)){
+//    error_codes.push_back(compute_path_error_code + 100);
+//  } else
+//  {
+//    error_codes.push_back(blackboard_->get<int>("compute_path_through_pose_error_code") + 100);
+//  }
 
   result->error_code = std::accumulate(error_codes.begin(), error_codes.end(), 0);
 }
