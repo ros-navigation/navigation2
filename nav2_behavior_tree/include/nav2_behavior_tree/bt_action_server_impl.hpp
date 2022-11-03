@@ -63,8 +63,8 @@ BtActionServer<ActionT>::BtActionServer(
   }
 
   std::vector<std::string> error_code_id_names = {
-      "follow_path_error_code_id",
-      "compute_path_error_code_id"
+    "follow_path_error_code_id",
+    "compute_path_error_code_id"
   };
 
   if (!node->has_parameter("error_code_id_names")) {
@@ -263,15 +263,22 @@ void BtActionServer<ActionT>::executeCallback()
 }
 
 template<class ActionT>
-void BtActionServer<ActionT>::populateErrorCode(typename std::shared_ptr<typename
-    ActionT::Result> result)
+void BtActionServer<ActionT>::populateErrorCode(
+  typename std::shared_ptr<typename ActionT::Result> result)
 {
   int highest_prority_error_code = 0;
-  for(auto error_code_id_name : error_code_id_names_)
-  {
-    int current_error_code = blackboard_->get<int>(error_code_id_name);
-    if (current_error_code > highest_prority_error_code)
-    {
+  for (auto error_code_id_name : error_code_id_names_) {
+    int current_error_code = 0;
+    try {
+      current_error_code = blackboard_->get<int>(error_code_id_name);
+    } catch (const std::runtime_error & ex) {
+      RCLCPP_ERROR(
+        logger_,
+        "Failed to get %s from blackboard: \"%s\"",
+        error_code_id_name.c_str(),
+        ex.what());
+    }
+    if (current_error_code > highest_prority_error_code) {
       highest_prority_error_code = current_error_code;
     }
   }
