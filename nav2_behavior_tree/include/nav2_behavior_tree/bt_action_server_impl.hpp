@@ -61,6 +61,15 @@ BtActionServer<ActionT>::BtActionServer(
   if (!node->has_parameter("default_server_timeout")) {
     node->declare_parameter("default_server_timeout", 20);
   }
+
+  std::vector<std::string> error_code_id_names = {
+      "follow_path_error_code_id",
+      "compute_path_error_code_id"
+  };
+
+  if (!node->has_parameter("error_code_id_names")) {
+    node->declare_parameter("error_code_id_names", error_code_id_names);
+  }
 }
 
 template<class ActionT>
@@ -105,6 +114,8 @@ bool BtActionServer<ActionT>::on_configure()
   bt_loop_duration_ = std::chrono::milliseconds(timeout);
   node->get_parameter("default_server_timeout", timeout);
   default_server_timeout_ = std::chrono::milliseconds(timeout);
+
+  error_code_id_names_ = node->get_parameter("error_code_id_names").as_string_array();
 
   // Create the class that registers our custom nodes and executes the BT
   bt_ = std::make_unique<nav2_behavior_tree::BehaviorTreeEngine>(plugin_lib_names_);
@@ -255,22 +266,17 @@ template<class ActionT>
 void BtActionServer<ActionT>::populateErrorCode(typename std::shared_ptr<typename
     ActionT::Result> result)
 {
-    // Grab error codes from blackboard
-    std::vector<int> error_codes;
+  int highest_prority_error_code = 0;
+  for(auto error_code_id_name : error_code_id_names_)
+  {
+    int current_error_code = blackboard_->get<int>(error_code_id_name);
+    if (current_error_code > highest_prority_error_code)
+    {
+      highest_prority_error_code = current_error_code;
+    }
+  }
 
-    // 0-99 error codes for follow path
-    error_codes.push_back(blackboard_->get<int>("follow_path_error_code"));
-
-//  // 100-199 error codes for compute path to pose or compute path through poses
-//  int compute_path_error_code;
-//  if (blackboard_->get<int>("compute_path_to_pose_error_code", compute_path_error_code)){
-//    error_codes.push_back(compute_path_error_code + 100);
-//  } else
-//  {
-//    error_codes.push_back(blackboard_->get<int>("compute_path_through_pose_error_code") + 100);
-//  }
-
-  result->error_code = std::accumulate(error_codes.begin(), error_codes.end(), 0);
+  result->error_code = highest_prority_error_code;
 }
 
 }  // namespace nav2_behavior_tree
