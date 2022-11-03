@@ -20,7 +20,7 @@
 #include <utility>
 
 #include "nav2_regulated_pure_pursuit_controller/path_handler.hpp"
-#include "nav2_core/exceptions.hpp"
+#include "nav2_core/controller_exceptions.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 
