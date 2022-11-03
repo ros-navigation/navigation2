@@ -18,6 +18,7 @@
 #include <vector>
 #include <chrono>
 #include <limits>
+#include <random>
 
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
@@ -40,16 +41,7 @@ public:
 };
 RclCppFixture g_rclcppfixture;
 
-class SmootherWrapper : public nav2_smoother::SavitzkyGolaySmoother
-{
-public:
-  SmootherWrapper()
-  : nav2_smoother::SavitzkyGolaySmoother()
-  {
-  }
-};
-
-TEST(SmootherTest, test_sg_smoother)
+TEST(SmootherTest, test_sg_smoother_basics)
 {
   rclcpp_lifecycle::LifecycleNode::SharedPtr node =
     std::make_shared<rclcpp_lifecycle::LifecycleNode>("SmacSGSmootherTest");
@@ -63,13 +55,6 @@ TEST(SmootherTest, test_sg_smoother)
   costmap_msg->metadata.size_x = 100;
   costmap_msg->metadata.size_y = 100;
 
-  // island in the middle of lethal cost to cross
-  for (unsigned int i = 20; i <= 30; ++i) {
-    for (unsigned int j = 20; j <= 30; ++j) {
-      costmap_msg->data[j * 100 + i] = 254;
-    }
-  }
-
   std::weak_ptr<rclcpp_lifecycle::LifecycleNode> parent = node;
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> dummy_costmap;
   dummy_costmap = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(parent, "dummy_topic");
@@ -79,7 +64,7 @@ TEST(SmootherTest, test_sg_smoother)
   std::shared_ptr<tf2_ros::Buffer> dummy_tf;
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> dummy_footprint;
   node->declare_parameter("test.do_refinement", rclcpp::ParameterValue(false));
-  auto smoother = std::make_unique<SmootherWrapper>();
+  auto smoother = std::make_unique<nav2_smoother::SavitzkyGolaySmoother>();
   smoother->configure(parent, "test", dummy_tf, dummy_costmap, dummy_footprint);
   rclcpp::Duration max_time = rclcpp::Duration::from_seconds(1.0);  // 1 seconds
 
@@ -115,22 +100,229 @@ TEST(SmootherTest, test_sg_smoother)
   EXPECT_TRUE(smoother->smooth(straight_regular_path, max_time));
   for (uint i = 0; i != straight_regular_path.poses.size() - 1; i++) {
     // Check distances are still the same
-    std::cout << straight_regular_path.poses[i].pose.position.y << std::endl;
     EXPECT_NEAR(
       fabs(
         straight_regular_path.poses[i].pose.position.y -
         straight_regular_path_baseline.poses[i].pose.position.y), 0.0, 0.011);
   }
 
-  // Attempt smoothing with no time given
+  // Attempt smoothing with no time given, should fail
   rclcpp::Duration no_time = rclcpp::Duration::from_seconds(-1.0);  // 0 seconds
   EXPECT_FALSE(smoother->smooth(straight_regular_path, no_time));
+}
 
-  // TODO(sm) Given nominal irregular/noisey path, test that the output is shorter and smoother
+TEST(SmootherTest, test_sg_smoother_noisey_path)
+{
+  rclcpp_lifecycle::LifecycleNode::SharedPtr node =
+    std::make_shared<rclcpp_lifecycle::LifecycleNode>("SmacSGSmootherTest");
 
-  // TODO(sm) Test again with refinement, even shorter and smoother
-  // node->set_parameter("test.do_refinement", rclcpp::ParameterValue(true));
-  // smoother->configure(parent, "test", dummy_tf, dummy_costmap, dummy_footprint);
+  std::shared_ptr<nav2_msgs::msg::Costmap> costmap_msg =
+    std::make_shared<nav2_msgs::msg::Costmap>();
+  costmap_msg->header.stamp = node->now();
+  costmap_msg->header.frame_id = "map";
+  costmap_msg->data.resize(100 * 100);
+  costmap_msg->metadata.resolution = 0.05;
+  costmap_msg->metadata.size_x = 100;
+  costmap_msg->metadata.size_y = 100;
 
-  // TODO(sm) Test reversing / multiple segments via a cusp
+  std::weak_ptr<rclcpp_lifecycle::LifecycleNode> parent = node;
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> dummy_costmap;
+  dummy_costmap = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(parent, "dummy_topic");
+  dummy_costmap->costmapCallback(costmap_msg);
+
+  // Make smoother
+  std::shared_ptr<tf2_ros::Buffer> dummy_tf;
+  std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> dummy_footprint;
+  node->declare_parameter("test.do_refinement", rclcpp::ParameterValue(false));
+  auto smoother = std::make_unique<nav2_smoother::SavitzkyGolaySmoother>();
+  smoother->configure(parent, "test", dummy_tf, dummy_costmap, dummy_footprint);
+  rclcpp::Duration max_time = rclcpp::Duration::from_seconds(1.0);  // 1 seconds
+
+  // Given nominal irregular/noisey path, test that the output is shorter and smoother
+  nav_msgs::msg::Path noisey_path, noisey_path_baseline;
+  noisey_path.header.frame_id = "map";
+  noisey_path.header.stamp = node->now();
+  noisey_path.poses.resize(11);
+  noisey_path.poses[0].pose.position.x = 0.5;
+  noisey_path.poses[0].pose.position.y = 0.1;
+  noisey_path.poses[1].pose.position.x = 0.5;
+  noisey_path.poses[1].pose.position.y = 0.2;
+  noisey_path.poses[2].pose.position.x = 0.5;
+  noisey_path.poses[2].pose.position.y = 0.3;
+  noisey_path.poses[3].pose.position.x = 0.5;
+  noisey_path.poses[3].pose.position.y = 0.4;
+  noisey_path.poses[4].pose.position.x = 0.5;
+  noisey_path.poses[4].pose.position.y = 0.5;
+  noisey_path.poses[5].pose.position.x = 0.5;
+  noisey_path.poses[5].pose.position.y = 0.6;
+  noisey_path.poses[6].pose.position.x = 0.5;
+  noisey_path.poses[6].pose.position.y = 0.7;
+  noisey_path.poses[7].pose.position.x = 0.5;
+  noisey_path.poses[7].pose.position.y = 0.8;
+  noisey_path.poses[8].pose.position.x = 0.5;
+  noisey_path.poses[8].pose.position.y = 0.9;
+  noisey_path.poses[9].pose.position.x = 0.5;
+  noisey_path.poses[9].pose.position.y = 1.0;
+  noisey_path.poses[10].pose.position.x = 0.5;
+  noisey_path.poses[10].pose.position.y = 1.1;
+
+  // Add random but deterministic noises
+  std::random_device rd{};
+  std::mt19937 gen{rd()};
+  std::normal_distribution<> normal_distribution{0.0, 0.02};
+  for (unsigned int i = 0; i != noisey_path.poses.size(); i++) {
+    auto noise = normal_distribution(gen);
+    noisey_path.poses[i].pose.position.x += noise;
+  }
+
+  noisey_path_baseline = noisey_path;
+  EXPECT_TRUE(smoother->smooth(noisey_path, max_time));
+
+  // Compute metric, should be shorter if smoother
+  double length = 0;
+  double base_length = 0;
+  for (unsigned int i = 0; i != noisey_path.poses.size() - 1; i++) {
+    length += std::hypot(
+      noisey_path.poses[i + 1].pose.position.x - noisey_path.poses[i].pose.position.x,
+      noisey_path.poses[i + 1].pose.position.y - noisey_path.poses[i].pose.position.y);
+    base_length += std::hypot(
+      noisey_path_baseline.poses[i + 1].pose.position.x -
+      noisey_path_baseline.poses[i].pose.position.x,
+      noisey_path_baseline.poses[i + 1].pose.position.y -
+      noisey_path_baseline.poses[i].pose.position.y);
+  }
+
+  EXPECT_LT(length, base_length);
+
+  // Test again with refinement, even shorter and smoother
+  node->set_parameter(rclcpp::Parameter("test.do_refinement", rclcpp::ParameterValue(true)));
+  smoother->configure(parent, "test", dummy_tf, dummy_costmap, dummy_footprint);
+  nav_msgs::msg::Path noisey_path_refined = noisey_path_baseline;
+  EXPECT_TRUE(smoother->smooth(noisey_path_refined, max_time));
+
+  length = 0;
+  double non_refined_length = 0;
+  for (unsigned int i = 0; i != noisey_path.poses.size() - 1; i++) {
+    length += std::hypot(
+      noisey_path_refined.poses[i + 1].pose.position.x -
+      noisey_path_refined.poses[i].pose.position.x,
+      noisey_path_refined.poses[i + 1].pose.position.y -
+      noisey_path_refined.poses[i].pose.position.y);
+    non_refined_length += std::hypot(
+      noisey_path.poses[i + 1].pose.position.x - noisey_path_baseline.poses[i].pose.position.x,
+      noisey_path.poses[i + 1].pose.position.y - noisey_path_baseline.poses[i].pose.position.y);
+  }
+
+  EXPECT_LT(length, base_length);
+}
+
+TEST(SmootherTest, test_sg_smoother_reversing)
+{
+  rclcpp_lifecycle::LifecycleNode::SharedPtr node =
+    std::make_shared<rclcpp_lifecycle::LifecycleNode>("SmacSGSmootherTest");
+
+  std::shared_ptr<nav2_msgs::msg::Costmap> costmap_msg =
+    std::make_shared<nav2_msgs::msg::Costmap>();
+  costmap_msg->header.stamp = node->now();
+  costmap_msg->header.frame_id = "map";
+  costmap_msg->data.resize(100 * 100);
+  costmap_msg->metadata.resolution = 0.05;
+  costmap_msg->metadata.size_x = 100;
+  costmap_msg->metadata.size_y = 100;
+
+  std::weak_ptr<rclcpp_lifecycle::LifecycleNode> parent = node;
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> dummy_costmap;
+  dummy_costmap = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(parent, "dummy_topic");
+  dummy_costmap->costmapCallback(costmap_msg);
+
+  // Make smoother
+  std::shared_ptr<tf2_ros::Buffer> dummy_tf;
+  std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> dummy_footprint;
+  node->declare_parameter("test.do_refinement", rclcpp::ParameterValue(false));
+  auto smoother = std::make_unique<nav2_smoother::SavitzkyGolaySmoother>();
+  smoother->configure(parent, "test", dummy_tf, dummy_costmap, dummy_footprint);
+  rclcpp::Duration max_time = rclcpp::Duration::from_seconds(1.0);  // 1 seconds
+
+  // Test reversing / multiple segments via a cusp
+  nav_msgs::msg::Path cusp_path, cusp_path_baseline;
+  cusp_path.header.frame_id = "map";
+  cusp_path.header.stamp = node->now();
+  cusp_path.poses.resize(22);
+  cusp_path.poses[0].pose.position.x = 0.5;
+  cusp_path.poses[0].pose.position.y = 0.1;
+  cusp_path.poses[1].pose.position.x = 0.5;
+  cusp_path.poses[1].pose.position.y = 0.2;
+  cusp_path.poses[2].pose.position.x = 0.5;
+  cusp_path.poses[2].pose.position.y = 0.3;
+  cusp_path.poses[3].pose.position.x = 0.5;
+  cusp_path.poses[3].pose.position.y = 0.4;
+  cusp_path.poses[4].pose.position.x = 0.5;
+  cusp_path.poses[4].pose.position.y = 0.5;
+  cusp_path.poses[5].pose.position.x = 0.5;
+  cusp_path.poses[5].pose.position.y = 0.6;
+  cusp_path.poses[6].pose.position.x = 0.5;
+  cusp_path.poses[6].pose.position.y = 0.7;
+  cusp_path.poses[7].pose.position.x = 0.5;
+  cusp_path.poses[7].pose.position.y = 0.8;
+  cusp_path.poses[8].pose.position.x = 0.5;
+  cusp_path.poses[8].pose.position.y = 0.9;
+  cusp_path.poses[9].pose.position.x = 0.5;
+  cusp_path.poses[9].pose.position.y = 1.0;
+  cusp_path.poses[10].pose.position.x = 0.5;
+  cusp_path.poses[10].pose.position.y = 1.1;
+  cusp_path.poses[11].pose.position.x = 0.5;
+  cusp_path.poses[11].pose.position.y = 1.0;
+  cusp_path.poses[12].pose.position.x = 0.5;
+  cusp_path.poses[12].pose.position.y = 0.9;
+  cusp_path.poses[13].pose.position.x = 0.5;
+  cusp_path.poses[13].pose.position.y = 0.8;
+  cusp_path.poses[14].pose.position.x = 0.5;
+  cusp_path.poses[14].pose.position.y = 0.7;
+  cusp_path.poses[15].pose.position.x = 0.5;
+  cusp_path.poses[15].pose.position.y = 0.6;
+  cusp_path.poses[16].pose.position.x = 0.5;
+  cusp_path.poses[16].pose.position.y = 0.5;
+  cusp_path.poses[17].pose.position.x = 0.5;
+  cusp_path.poses[17].pose.position.y = 0.4;
+  cusp_path.poses[18].pose.position.x = 0.5;
+  cusp_path.poses[18].pose.position.y = 0.3;
+  cusp_path.poses[19].pose.position.x = 0.5;
+  cusp_path.poses[19].pose.position.y = 0.2;
+  cusp_path.poses[20].pose.position.x = 0.5;
+  cusp_path.poses[20].pose.position.y = 0.1;
+  cusp_path.poses[21].pose.position.x = 0.5;
+  cusp_path.poses[21].pose.position.y = 0.0;
+
+  // Add random but deterministic noises
+  std::random_device rd{};
+  std::mt19937 gen{rd()};
+  std::normal_distribution<> normal_distribution{0.0, 0.02};
+  for (unsigned int i = 0; i != cusp_path.poses.size(); i++) {
+    auto noise = normal_distribution(gen);
+    cusp_path.poses[i].pose.position.x += noise;
+  }
+
+  cusp_path_baseline = cusp_path;
+
+  EXPECT_TRUE(smoother->smooth(cusp_path, max_time));
+
+  // If it detected the cusp, the cusp point should be fixed
+  EXPECT_EQ(cusp_path.poses[10].pose.position.x, cusp_path_baseline.poses[10].pose.position.x);
+  EXPECT_EQ(cusp_path.poses[10].pose.position.y, cusp_path_baseline.poses[10].pose.position.y);
+
+  // But the path also should be smoother / shorter
+  double length = 0;
+  double base_length = 0;
+  for (unsigned int i = 0; i != cusp_path.poses.size() - 1; i++) {
+    length += std::hypot(
+      cusp_path.poses[i + 1].pose.position.x - cusp_path.poses[i].pose.position.x,
+      cusp_path.poses[i + 1].pose.position.y - cusp_path.poses[i].pose.position.y);
+    base_length += std::hypot(
+      cusp_path_baseline.poses[i + 1].pose.position.x -
+      cusp_path_baseline.poses[i].pose.position.x,
+      cusp_path_baseline.poses[i + 1].pose.position.y -
+      cusp_path_baseline.poses[i].pose.position.y);
+  }
+
+  EXPECT_LT(length, base_length);
 }
