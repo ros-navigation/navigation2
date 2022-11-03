@@ -26,7 +26,7 @@
 
 namespace nav2_behavior_tree
 {
-  
+
 using namespace std::chrono_literals;  // NOLINT
 
 /**
