@@ -266,7 +266,7 @@ template<class ActionT>
 void BtActionServer<ActionT>::populateErrorCode(
   typename std::shared_ptr<typename ActionT::Result> result)
 {
-  int highest_prority_error_code = 0;
+  int highest_priority_error_code = 0;
   for (auto error_code_id_name : error_code_id_names_) {
     int current_error_code = 0;
     try {
@@ -278,12 +278,12 @@ void BtActionServer<ActionT>::populateErrorCode(
         error_code_id_name.c_str(),
         ex.what());
     }
-    if (current_error_code > highest_prority_error_code) {
-      highest_prority_error_code = current_error_code;
+    if (current_error_code > highest_priority_error_code) {
+      highest_priority_error_code = current_error_code;
     }
   }
 
-  result->error_code = highest_prority_error_code;
+  result->error_code = highest_priority_error_code;
 }
 
 }  // namespace nav2_behavior_tree
