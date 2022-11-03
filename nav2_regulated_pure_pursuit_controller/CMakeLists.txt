@@ -35,7 +35,10 @@ set(dependencies
 set(library_name nav2_regulated_pure_pursuit_controller)
 
 add_library(${library_name} SHARED
-        src/regulated_pure_pursuit_controller.cpp)
+        src/regulated_pure_pursuit_controller.cpp
+        src/collision_checker.cpp
+        src/parameter_handler.cpp
+        src/path_handler.cpp)
 
 ament_target_dependencies(${library_name}
   ${dependencies}
