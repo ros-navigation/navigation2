@@ -162,6 +162,10 @@ bool DriveOnHeading<ActionT>::isCollisionFree(
   return true;
 }
 
+// Instantiate algorithm for the supported template types
+template class DriveOnHeading<nav2_msgs::action::DriveOnHeading>;
+template class DriveOnHeading<nav2_msgs::action::BackUp>;
+=
 }  // namespace nav2_behaviors
 
 #include "pluginlib/class_list_macros.hpp"
