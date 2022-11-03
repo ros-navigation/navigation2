@@ -99,6 +99,13 @@ public:
   : PlannerException(description) {}
 };
 
+class NoViapointsGiven : public PlannerException
+{
+public:
+  explicit NoViapointsGiven(const std::string & description)
+  : PlannerException(description) {}
+};
+
 }  // namespace nav2_core
 
 #endif  // NAV2_CORE__PLANNER_EXCEPTIONS_HPP_

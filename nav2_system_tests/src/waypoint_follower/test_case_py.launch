@@ -79,6 +79,7 @@ def generate_launch_description():
             launch_arguments={
                               'map': map_yaml_file,
                               'use_sim_time': 'True',
+                              'use_composition': 'False',
                               'params_file': new_yaml,
                               'bt_xml_file': bt_navigator_xml,
                               'autostart': 'True'}.items()),

@@ -29,6 +29,10 @@ namespace nav2_behavior_tree
  */
 class ComputePathToPoseAction : public BtActionNode<nav2_msgs::action::ComputePathToPose>
 {
+  using Action = nav2_msgs::action::ComputePathToPose;
+  using ActionResult = Action::Result;
+  using ActionGoal = Action::Goal;
+
 public:
   /**
    * @brief A constructor for nav2_behavior_tree::ComputePathToPoseAction
@@ -57,7 +61,7 @@ public:
   BT::NodeStatus on_aborted() override;
 
   /**
-   * @brief Function to perform some user-defined operation upon cancelation of the action
+   * @brief Function to perform some user-defined operation upon cancellation of the action
    */
   BT::NodeStatus on_cancelled() override;
 
@@ -81,6 +85,9 @@ public:
         BT::InputPort<std::string>(
           "planner_id", "",
           "Mapped name to the planner plugin type to use"),
+        BT::OutputPort<nav_msgs::msg::Path>("path", "Path created by ComputePathToPose node"),
+        BT::OutputPort<ActionResult::_error_code_type>(
+          "compute_path_to_pose_error_code", "The compute path to pose error code"),
       });
   }
 };

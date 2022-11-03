@@ -24,7 +24,7 @@ ComputePathToPoseAction::ComputePathToPoseAction(
   const std::string & xml_tag_name,
   const std::string & action_name,
   const BT::NodeConfiguration & conf)
-: BtActionNode<nav2_msgs::action::ComputePathToPose>(xml_tag_name, action_name, conf)
+: BtActionNode<Action>(xml_tag_name, action_name, conf)
 {
 }
 
@@ -41,8 +41,7 @@ BT::NodeStatus ComputePathToPoseAction::on_success()
 {
   setOutput("path", result_.result->path);
   // Set empty error code, action was successful
-  result_.result->error_code = nav2_msgs::action::ComputePathToPose::Goal::NONE;
-  config().blackboard->set<int>("compute_path_to_pose_error_code", result_.result->error_code);
+  setOutput("compute_path_to_pose_error_code", ActionGoal::NONE);
   return BT::NodeStatus::SUCCESS;
 }
 
@@ -59,8 +58,7 @@ BT::NodeStatus ComputePathToPoseAction::on_cancelled()
   nav_msgs::msg::Path empty_path;
   setOutput("path", empty_path);
   // Set empty error code, action was cancelled
-  result_.result->error_code = nav2_msgs::action::ComputePathToPose::Goal::NONE;
-  config().blackboard->set<int>("compute_path_to_pose_error_code", result_.result->error_code);
+  setOutput("compute_path_to_pose_error_code", ActionGoal::NONE);
   return BT::NodeStatus::SUCCESS;
 }
 
