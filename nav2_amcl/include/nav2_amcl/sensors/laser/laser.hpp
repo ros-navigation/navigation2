@@ -102,7 +102,12 @@ public:
 public:
   int range_count;
   double range_max;
-  double(*ranges)[2];
+
+  // 2-size pointer array to store laser scan data
+  // ranges[i][0] - range value
+  // ranges[i][1] - beam bearing
+  // i -> [0, range_count)
+  double(*ranges)[2]; 
 };
 
 /*
