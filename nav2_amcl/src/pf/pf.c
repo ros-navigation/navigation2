@@ -390,24 +390,19 @@ void pf_update_resample(pf_t * pf)
     double total_weight = 0;
     for(int i = 0; i < set_a->sample_count; i++)
     {
-      double distance = (pow(set_a->samples[i].pose.v[0]-pf->ext_x, 2)/pf->cov_matrix[0] + pow(set_a->samples[i].pose.v[1]-pf->ext_y, 2)/pf->cov_matrix[4] + pow(set_a->samples[i].pose.v[2]-pf->ext_yaw, 2)/pf->cov_matrix[8]);
-
-      double cov = (pf->cov_matrix[0] * pf->cov_matrix[4] * pf->cov_matrix[8]);
-      total_dist_prob += 1/sqrt(pow(2*M_PI, 3) * cov)*exp(-1*distance/2);
 
       // See Improved LiDAR Probabilistic Localization for Autonomous Vehicles Using GNSS, #3.2 for details
+      double distance = (pow(set_a->samples[i].pose.v[0]-pf->ext_x, 2)/pf->cov_matrix[0] + pow(set_a->samples[i].pose.v[1]-pf->ext_y, 2)/pf->cov_matrix[4] + pow(set_a->samples[i].pose.v[2]-pf->ext_yaw, 2)/pf->cov_matrix[8]);
+      double covariance_determinant = (pf->cov_matrix[0] * pf->cov_matrix[4] * pf->cov_matrix[8]);
+      double ext_pose_likelihood = 1/sqrt(pow(2*M_PI, 3) * covariance_determinant)*exp(-1*distance/2);
 
-      double mat[3] = {set_a->samples[i].pose.v[0]-pf->ext_x, set_a->samples[i].pose.v[1]-pf->ext_y, set_a->samples[i].pose.v[2]-pf->ext_yaw};
-      double result[3];
-      double inverse[9];
-      get_inverse(pf->cov_matrix, inverse);
-      mult_1_3_x_3_3(mat, inverse, result);
-      double temp = mult_1_3_x_3_1(result, mat);
-      double d = 1/(pow(3.14159 * 2, 1.5) * sqrt(get_determinant(pf->cov_matrix))) * exp(-0.5 * temp);
+      total_dist_prob += ext_pose_likelihood;
+
+      fprintf(stderr, "AMCL: distance - %f, covariance_determinant - %f\n", distance, covariance_determinant);
+      fprintf(stderr, "AMCL: laser weight - %f, ext pose likelihood - %f\n", set_a->samples[i].weight, ext_pose_likelihood);
 
       // See Improved LiDAR Probabilistic Localization for Autonomous Vehicles Using GNSS, #3.3 for details
-      set_a->samples[i].weight = set_a->samples[i].weight * pf->k_l + d;
-
+      set_a->samples[i].weight = set_a->samples[i].weight * pf->k_l + ext_pose_likelihood;
 
       total_weight += set_a->samples[i].weight;
     }
@@ -415,18 +410,19 @@ void pf_update_resample(pf_t * pf)
     /// Handle total weight of 0
     if(total_weight == 0)
     {
-      for(int i=0;i<set_a->sample_count;i++)
-      {
+      for(int i=0;i<set_a->sample_count;i++){
         set_a->samples[i].weight = 1;
         total_weight += set_a->samples[i].weight;
       }
+    } else 
+    {
+      /// Normalization
+      for(int i=0;i<set_a->sample_count;i++)
+      {
+        set_a->samples[i].weight = set_a->samples[i].weight / total_weight;
+      }
     }
 
-    /// Normalization
-    for(int i=0;i<set_a->sample_count;i++)
-    {
-      set_a->samples[i].weight = set_a->samples[i].weight / total_weight;
-    }
   }
 
 
@@ -449,11 +445,14 @@ void pf_update_resample(pf_t * pf)
 
 if(pf->ext_pose_is_valid){
 
-  // fprintf(stderr, "AMCL: w_diff - %f, k_l - %f\n", w_diff, pf->k_l);
-
   // See Improved LiDAR Probabilistic Localization for Autonomous Vehicles Using GNSS, #3.4 for details
   total_dist_prob = total_dist_prob/set_a->sample_count;
-  w_diff = 0.01 - total_dist_prob;
+  w_diff = 0.5 - total_dist_prob;
+
+  double w_diff_old = 1.0 - pf->w_fast / pf->w_slow;
+
+  fprintf(stderr, "AMCL: w_diff - %f, w_diff_old - %f\n", w_diff, w_diff_old);
+
   if(w_diff < 0.0)
     w_diff = 0.0;
   
