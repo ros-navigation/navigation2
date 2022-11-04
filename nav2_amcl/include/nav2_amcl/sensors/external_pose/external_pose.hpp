@@ -21,12 +21,6 @@ class ExternalPoseBuffer {
 
 public:
 
-// ExternalPoseBuffer():buffer_({}){
-
-// }
-
-// TODO: allocate memory for max_storage_size_ elements
-
 /* 
 * @brief Add new measurement to the storage (queue internally). If queue size grown larger than max_storage_size_, pop oldest measurement
 * @param measurement external pose measurement

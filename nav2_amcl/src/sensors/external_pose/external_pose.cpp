@@ -6,6 +6,8 @@
 namespace nav2_amcl 
 {
 
+    // TODO: allocate memory for max_storage_size_ elements
+
 void
 ExternalPoseBuffer::addMeasurement(const ExternalPoseMeasument measurement)
 {
