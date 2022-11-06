@@ -87,6 +87,8 @@
       <input_port name="server_timeout">Server timeout</input_port>
       <input_port name="planner_id">Mapped name to the planner plugin type to use</input_port>
       <output_port name="path">Path created by ComputePathToPose node</output_port>
+      <output_port name="compute_path_through_poses_error_code">"The compute path through poses
+        pose error code"</output_port>
     </Action>
 
     <Action ID="RemovePassedGoals">
