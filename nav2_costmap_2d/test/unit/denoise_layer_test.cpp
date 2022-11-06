@@ -33,30 +33,32 @@ namespace nav2_costmap_2d
 class DenoiseLayerTester : public ::testing::Test
 {
 public:
-  void SetUp() override
-  {
-    denoise_.no_information_is_obstacle_ = true;
-  }
-
-  void removeSinglePixels(Image<uint8_t> & image, ConnectivityType connectivity)
+  void removeSinglePixels(
+    Image<uint8_t> & image, ConnectivityType connectivity,
+    bool no_information_is_obstacle = true)
   {
     denoise_.group_connectivity_type_ = connectivity;
+    denoise_.no_information_is_obstacle_ = no_information_is_obstacle;
     denoise_.removeSinglePixels(image);
   }
 
   void removeGroups(
     Image<uint8_t> & image, ConnectivityType connectivity,
-    size_t minimal_group_size)
+    size_t minimal_group_size, bool no_information_is_obstacle = true)
   {
     denoise_.group_connectivity_type_ = connectivity;
     denoise_.minimal_group_size_ = minimal_group_size;
+    denoise_.no_information_is_obstacle_ = no_information_is_obstacle;
     denoise_.removeGroups(image);
   }
 
-  void denoise(Image<uint8_t> & image, ConnectivityType connectivity, size_t minimal_group_size)
+  void denoise(
+    Image<uint8_t> & image, ConnectivityType connectivity,
+    size_t minimal_group_size, bool no_information_is_obstacle = true)
   {
     denoise_.group_connectivity_type_ = connectivity;
     denoise_.minimal_group_size_ = minimal_group_size;
+    denoise_.no_information_is_obstacle_ = no_information_is_obstacle;
     denoise_.denoise(image);
   }
 
@@ -117,6 +119,27 @@ TEST_F(DenoiseLayerTester, removeSinglePixels4way) {
     "xx..", image_buffer_bytes2);
   auto out = clone(in, image_buffer_bytes3);
   removeSinglePixels(out, ConnectivityType::Way4);
+
+  ASSERT_TRUE(isEqual(out, exp)) <<
+    "input:" << std::endl << in << std::endl <<
+    "output:" << std::endl << out << std::endl <<
+    "expected:" << std::endl << exp;
+}
+
+TEST_F(DenoiseLayerTester, removeSinglePixels4wayNoInformationIsEmpty) {
+  const std::map<char, uint8_t> legend = {{'.', 0}, {'n', NO_INFORMATION}, {'x', LETHAL_OBSTACLE}};
+  const auto in = imageFromString<uint8_t>(
+    "x.x."
+    "xnnx"
+    "nxnn"
+    "xx.x", image_buffer_bytes, legend);
+  const auto exp = imageFromString<uint8_t>(
+    "x..."
+    "xnn."
+    "nxnn"
+    "xx..", image_buffer_bytes2, legend);
+  auto out = clone(in, image_buffer_bytes3);
+  removeSinglePixels(out, ConnectivityType::Way4, false);
 
   ASSERT_TRUE(isEqual(out, exp)) <<
     "input:" << std::endl << in << std::endl <<
@@ -224,6 +247,34 @@ TEST_F(DenoiseLayerTester, removePixelsGroup4way) {
 
   auto out = clone(in, image_buffer_bytes3);
   removeGroups(out, ConnectivityType::Way4, 3);
+
+  ASSERT_TRUE(isEqual(out, exp)) <<
+    "input:" << std::endl << in << std::endl <<
+    "output:" << std::endl << out << std::endl <<
+    "expected:" << std::endl << exp;
+}
+
+TEST_F(DenoiseLayerTester, removePixelsGroup4wayNoInformationIsEmpty) {
+  const std::map<char, uint8_t> legend = {{'.', 0}, {'n', NO_INFORMATION}, {'x', LETHAL_OBSTACLE}};
+  const auto in = imageFromString<uint8_t>(
+    ".xxnnxx"
+    "..xnx.."
+    "x..x..x"
+    "x......"
+    "nnnxnxx"
+    "xxx..xx"
+    "....xx.", image_buffer_bytes, legend);
+  const auto exp = imageFromString<uint8_t>(
+    ".xxnn.."
+    "..xn..."
+    "......."
+    "......."
+    "nnn.nxx"
+    "xxx..xx"
+    "....xx.", image_buffer_bytes2, legend);
+
+  auto out = clone(in, image_buffer_bytes3);
+  removeGroups(out, ConnectivityType::Way4, 3, false);
 
   ASSERT_TRUE(isEqual(out, exp)) <<
     "input:" << std::endl << in << std::endl <<
@@ -423,7 +474,7 @@ std::shared_ptr<nav2_costmap_2d::DenoiseLayer> constructLayer(
     };
   auto layer = std::shared_ptr<nav2_costmap_2d::DenoiseLayer>(
     new nav2_costmap_2d::DenoiseLayer, deleter);
-  layer->initialize(layers.get(), "test_layer", tf.get(), node, nullptr, nullptr);
+  layer->initialize(layers.get(), "test_layer", tf.get(), node, nullptr);
   return layer;
 }
 
