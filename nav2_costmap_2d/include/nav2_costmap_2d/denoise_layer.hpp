@@ -17,7 +17,6 @@
 
 #include "nav2_costmap_2d/layer.hpp"
 #include "nav2_costmap_2d/image_processing.hpp"
-#include <string>
 
 namespace nav2_costmap_2d
 {
@@ -125,7 +124,6 @@ private:
   imgproc_impl::GroupsRemover groups_remover_;
   // Interpret NO_INFORMATION code as obstacle
   bool no_information_is_obstacle_{};
-  std::string debug_directory{};
 };
 
 }  // namespace nav2_costmap_2d
