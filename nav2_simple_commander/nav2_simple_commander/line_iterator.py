@@ -79,21 +79,14 @@ class LineIterator():
             self.valid_ = True
             self.m_ = (y1-y0)/(x1-x0)
             self.b_ = y1 - (self.m_*x1)
-            if (self.b_ < 0):
-                self.equation_ = "y = " + str(self.m_) + "*x " + str(self.b_)
-            else:
-                self.equation_ = "y = " + str(self.m_) + "*x + " + str(self.b_)
         elif x1 == x0 and y1 != y0:
             self.valid_ = True
-            self.equation_ = "x = " + str(x1)
         elif y1 == y1 and x1 != x0:
             self.valid_ = True
             self.m_ = (y1-y0)/(x1-x0)
             self.b_ = y1 - (self.m_*x1)
-            self.equation_ = "y = " + str(y1)
         else:
             self.valid_ = False
-            self.equation_ = "Invalid"
             raise ValueError(
                 "Line has zero length (All 4 points have same coordinates)")
 
@@ -160,18 +153,6 @@ class LineIterator():
     def get_line_length(self):
         """Get the length of the line."""
         return sqrt(pow(self.x1_ - self.x0_, 2) + pow(self.y1_ - self.y0_, 2))
-
-    def get_line_equation(self):
-        """Get the equation of the line as a string."""
-        return self.equation_
-
-    def get_curr_point_str(self):
-        """Get the coordinates of the current point as string."""
-        return "X: " + str(self.x_) + "   Y: " + str(self.y_)
-
-    def get_curr_point(self):
-        """Get the coordinates of the current point as list [X,Y]."""
-        return [self.x_, self.y_]
 
     def clamp(self, n, min_n, max_n):
         """

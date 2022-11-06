@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from cmath import sqrt
 import unittest
 from nav2_simple_commander.line_iterator import LineIterator
 
@@ -28,13 +29,26 @@ class TestLineIterator(unittest.TestCase):
         # Test if a value error raised when passing zero length line
         self.assertRaises(ValueError, LineIterator, 2, 2, 2, 2, 1)
 
+    def test_get_xy(self):
+        # Test if the initial and final coordinates are returned correctly
+        lt = LineIterator(0, 0, 5, 5, 1)
+        self.assertEqual(lt.getX0(), 0)
+        self.assertEqual(lt.getY0(), 0)
+        self.assertEqual(lt.getX1(), 5)
+        self.assertEqual(lt.getY1(), 5)
+
+    def test_line_length(self):
+        # Test if the line length is calculated correctly
+        lt = LineIterator(0, 0, 5, 5, 1)
+        self.assertEqual(lt.get_line_length(), sqrt(pow(5, 2) + pow(5, 2)))
+
     def test_straight_line(self):
         # Test if the calculations are correct for y = x
         lt = LineIterator(0, 0, 5, 5, 1)
         i = 0
         while lt.isValid():
-            self.assertEqual(lt.getX(), lt.getX0()+i)
-            self.assertEqual(lt.getY(), lt.getY0()+i)
+            self.assertEqual(lt.getX(), lt.getX0() + i)
+            self.assertEqual(lt.getY(), lt.getY0() + i)
             lt.advance()
             i += 1
 
@@ -42,7 +56,7 @@ class TestLineIterator(unittest.TestCase):
         lt = LineIterator(0, 0, 5, 10, 1)
         i = 0
         while lt.isValid():
-            self.assertEqual(lt.getX(), lt.getX0()+i)
+            self.assertEqual(lt.getX(), lt.getX0() + i)
             self.assertEqual(lt.getY(), lt.getY0() + (i*2))
             lt.advance()
             i += 1
@@ -51,7 +65,7 @@ class TestLineIterator(unittest.TestCase):
         lt = LineIterator(0, 0, 5, -10, 1)
         i = 0
         while lt.isValid():
-            self.assertEqual(lt.getX(), lt.getX0()+i)
+            self.assertEqual(lt.getX(), lt.getX0() + i)
             self.assertEqual(lt.getY(), lt.getY0() + (-i*2))
             lt.advance()
             i += 1
