@@ -106,6 +106,7 @@ def generate_launch_description():
                                   'params_file': params_file,
                                   'bt_xml_file': bt_xml_file,
                                   'autostart': 'True',
+                                  'use_composition': 'False',
                                   'use_remappings': 'True'}.items())
         ])
         nav_instances_cmds.append(group)
