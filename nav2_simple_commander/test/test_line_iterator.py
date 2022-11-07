@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from cmath import sqrt
 import unittest
+from cmath import sqrt
 from nav2_simple_commander.line_iterator import LineIterator
 
 
