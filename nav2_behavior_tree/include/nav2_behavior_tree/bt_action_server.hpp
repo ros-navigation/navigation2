@@ -189,7 +189,11 @@ protected:
    */
   void executeCallback();
 
-
+  /**
+   * \brief updates the action server result to the highest priority error code posted on the
+   * blackboard
+   * \param result the action server result to be updated
+   */
   void populateErrorCode(typename std::shared_ptr<typename ActionT::Result> result);
 
   // Action name

@@ -21,12 +21,10 @@
 #include <set>
 #include <exception>
 #include <vector>
-#include <numeric>
 
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav2_behavior_tree/bt_action_server.hpp"
 #include "ament_index_cpp/get_package_share_directory.hpp"
-#include "std_msgs/msg/int16.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -115,6 +113,7 @@ bool BtActionServer<ActionT>::on_configure()
   node->get_parameter("default_server_timeout", timeout);
   default_server_timeout_ = std::chrono::milliseconds(timeout);
 
+  // Get error code id names to grab off of the blackboard
   error_code_id_names_ = node->get_parameter("error_code_id_names").as_string_array();
 
   // Create the class that registers our custom nodes and executes the BT
@@ -267,7 +266,7 @@ void BtActionServer<ActionT>::populateErrorCode(
   typename std::shared_ptr<typename ActionT::Result> result)
 {
   int highest_priority_error_code = 0;
-  for (auto error_code_id_name : error_code_id_names_) {
+  for (const auto &error_code_id_name : error_code_id_names_) {
     int current_error_code = 0;
     try {
       current_error_code = blackboard_->get<int>(error_code_id_name);
