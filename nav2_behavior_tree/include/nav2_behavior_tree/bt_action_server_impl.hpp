@@ -266,7 +266,7 @@ void BtActionServer<ActionT>::populateErrorCode(
   typename std::shared_ptr<typename ActionT::Result> result)
 {
   int highest_priority_error_code = 0;
-  for (const auto &error_code_id_name : error_code_id_names_) {
+  for (const auto & error_code_id_name : error_code_id_names_) {
     int current_error_code = 0;
     try {
       current_error_code = blackboard_->get<int>(error_code_id_name);
