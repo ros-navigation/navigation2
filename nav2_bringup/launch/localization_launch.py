@@ -155,7 +155,12 @@ def generate_launch_description():
     # yaml configuration file. They are separated since the conditions
     # currently only work on the LoadComposableNodes commands and not on the
     # ComposableNode node function itself
-    # See https://github.com/ros2/launch_ros/issues/328
+    # EqualsSubstitution and NotEqualsSubstitution susbsitutions was recently
+    # added to solve this problem but it has not been ported yet to
+    # ros-rolling. See https://github.com/ros2/launch_ros/issues/328.
+    # LaunchConfigurationEquals and LaunchConfigurationNotEquals are scheduled
+    # for deprecation once a Rolling sync is conducted. Switching to this new
+    # would be required for both ComposableNode and normal nodes.
     load_composable_nodes = GroupAction(
         condition=IfCondition(use_composition),
         actions=[
