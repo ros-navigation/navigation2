@@ -1,14 +1,14 @@
 # Error codes
 # Note: The expected priority order of the errors should match the message order
-int16 NONE=1000
-int16 UNKNOWN=1001
-int16 TF_ERROR=1002
-int16 START_OUTSIDE_MAP=1003
-int16 GOAL_OUTSIDE_MAP=1004
-int16 START_OCCUPIED=1005
-int16 GOAL_OCCUPIED=1006
-int16 TIMEOUT=1007
-int16 NO_VALID_PATH=1008
+int16 NONE=0
+int16 UNKNOWN=2000
+int16 TF_ERROR=2001
+int16 START_OUTSIDE_MAP=2002
+int16 GOAL_OUTSIDE_MAP=2003
+int16 START_OCCUPIED=2004
+int16 GOAL_OCCUPIED=2005
+int16 TIMEOUT=2006
+int16 NO_VALID_PATH=2007
 
 #goal definition
 geometry_msgs/PoseStamped goal

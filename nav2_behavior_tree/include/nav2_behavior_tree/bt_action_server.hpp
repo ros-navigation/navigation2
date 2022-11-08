@@ -219,7 +219,7 @@ protected:
   std::vector<std::string> plugin_lib_names_;
 
   // Error code id names
-  std::vector<std::string> error_code_id_names_;
+  std::vector<std::string> error_code_ids_;
 
   // A regular, non-spinning ROS node that we can use for calls to the action client
   rclcpp::Node::SharedPtr client_node_;

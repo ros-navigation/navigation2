@@ -220,6 +220,7 @@ WaypointFollower::followWaypoints()
           "list and stop on failure is enabled."
           " Terminating action.", goal_index);
         result->missed_waypoints = failed_ids_;
+        result->error_code = error_code_;
         action_server_->terminate_current(result);
         failed_ids_.clear();
         return;
@@ -245,6 +246,7 @@ WaypointFollower::followWaypoints()
           " stop on failure is enabled."
           " Terminating action.", goal_index);
         result->missed_waypoints = failed_ids_;
+        result->error_code = error_code_;
         action_server_->terminate_current(result);
         failed_ids_.clear();
         return;
@@ -303,6 +305,7 @@ WaypointFollower::resultCallback(
       return;
     case rclcpp_action::ResultCode::CANCELED:
       current_goal_status_ = ActionStatus::FAILED;
+      error_code_ = result.result->error_code;
       return;
     default:
       current_goal_status_ = ActionStatus::UNKNOWN;

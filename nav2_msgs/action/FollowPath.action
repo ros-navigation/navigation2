@@ -1,12 +1,12 @@
 # Error codes
 # Note: The expected priority order of the errors should match the message order
 int16 NONE=0
-int16 UNKNOWN=1
-int16 TF_ERROR=2
-int16 INVALID_PATH=3
-int16 PATIENCE_EXCEEDED=4
-int16 FAILED_TO_MAKE_PROGRESS=5
-int16 NO_VALID_CONTROL=6
+int16 UNKNOWN=1000
+int16 TF_ERROR=1001
+int16 INVALID_PATH=1002
+int16 PATIENCE_EXCEEDED=1003
+int16 FAILED_TO_MAKE_PROGRESS=1004
+int16 NO_VALID_CONTROL=1005
 
 #goal definition
 nav_msgs/Path path

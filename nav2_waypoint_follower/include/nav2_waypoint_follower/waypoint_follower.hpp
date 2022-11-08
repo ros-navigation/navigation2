@@ -133,6 +133,8 @@ protected:
   rclcpp::CallbackGroup::SharedPtr callback_group_;
   rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
   std::shared_future<rclcpp_action::ClientGoalHandle<ClientT>::SharedPtr> future_goal_handle_;
+  int error_code_;
+
   bool stop_on_failure_;
   ActionStatus current_goal_status_;
   int loop_rate_;

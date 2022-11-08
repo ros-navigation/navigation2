@@ -21,6 +21,7 @@
 #include <set>
 #include <exception>
 #include <vector>
+#include <numeric>
 
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav2_behavior_tree/bt_action_server.hpp"
@@ -66,6 +67,12 @@ BtActionServer<ActionT>::BtActionServer(
   };
 
   if (!node->has_parameter("error_code_id_names")) {
+    RCLCPP_INFO(logger_, "Error_code_ids parameter is not set. Using default values of: ");
+    for(auto const & error_code_id : error_code_id_names) {
+      RCLCPP_INFO(logger_, error_code_id.c_str());
+    }
+    RCLCPP_INFO(logger_, "Make sure these match your BT and there are not other sources of error"
+                         " codes you want reported to your application");
     node->declare_parameter("error_code_id_names", error_code_id_names);
   }
 }
@@ -114,7 +121,7 @@ bool BtActionServer<ActionT>::on_configure()
   default_server_timeout_ = std::chrono::milliseconds(timeout);
 
   // Get error code id names to grab off of the blackboard
-  error_code_id_names_ = node->get_parameter("error_code_id_names").as_string_array();
+  error_code_ids_ = node->get_parameter("error_code_id_names").as_string_array();
 
   // Create the class that registers our custom nodes and executes the BT
   bt_ = std::make_unique<nav2_behavior_tree::BehaviorTreeEngine>(plugin_lib_names_);
@@ -265,23 +272,28 @@ template<class ActionT>
 void BtActionServer<ActionT>::populateErrorCode(
   typename std::shared_ptr<typename ActionT::Result> result)
 {
-  int highest_priority_error_code = 0;
-  for (const auto & error_code_id_name : error_code_id_names_) {
-    int current_error_code = 0;
+  int highest_priority_error_code = std::numeric_limits<int>::max();
+  for (const auto & error_code_id_name : error_code_ids_) {
+    int current_error_code = std::numeric_limits<int>::max();
     try {
       current_error_code = blackboard_->get<int>(error_code_id_name);
+
+      if (current_error_code != 0 && current_error_code < highest_priority_error_code) {
+        highest_priority_error_code = current_error_code;
+      }
     } catch (...) {
       RCLCPP_ERROR(
         logger_,
         "Failed to get %s from blackboard",
         error_code_id_name.c_str());
     }
-    if (current_error_code > highest_priority_error_code) {
-      highest_priority_error_code = current_error_code;
-    }
   }
 
-  result->error_code = highest_priority_error_code;
+  if (highest_priority_error_code != std::numeric_limits<int>::max()) {
+    result->error_code = highest_priority_error_code;
+  } else {
+    result->error_code = 0;
+  }
 }
 
 }  // namespace nav2_behavior_tree
