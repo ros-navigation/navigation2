@@ -26,6 +26,7 @@
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav2_behavior_tree/bt_action_server.hpp"
 #include "ament_index_cpp/get_package_share_directory.hpp"
+//#include "nav2_util/print_utils.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -67,13 +68,15 @@ BtActionServer<ActionT>::BtActionServer(
   };
 
   if (!node->has_parameter("error_code_id_names")) {
-    RCLCPP_INFO(logger_, "Error_code_ids parameter is not set. Using default values of: ");
-    for (auto const & error_code_id : error_code_id_names) {
-      RCLCPP_INFO(logger_, error_code_id.c_str());
+    std::string error_code_ids_str;
+    for(const auto & error_code_id : error_code_id_names) {
+      error_code_ids_str += error_code_id + "\n";
     }
-    RCLCPP_INFO(
-      logger_, "Make sure these match your BT and there are not other sources of error"
-      " codes you want reported to your application");
+    RCLCPP_INFO_STREAM(
+      logger_, "Error_code_ids parameter is not set. Using default values of: "
+      << error_code_ids_str
+      << "Make sure these match your BT and there are not other sources of error codes you want "
+         "reported to your application");
     node->declare_parameter("error_code_id_names", error_code_id_names);
   }
 }
