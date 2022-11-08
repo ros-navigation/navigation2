@@ -292,8 +292,6 @@ void BtActionServer<ActionT>::populateErrorCode(
 
   if (highest_priority_error_code != std::numeric_limits<int>::max()) {
     result->error_code = highest_priority_error_code;
-  } else {
-    result->error_code = 0;
   }
 }
 
