@@ -37,7 +37,7 @@ The `SmacPlannerHybrid` is designed to work with:
 
 The `SmacPlannerLattice` is designed to work with:
 - Arbitrary shaped, non-circular robots requiring kinematically feasible planning with SE2 collision checking using the full capabilities of the drivetrain
-- Flexibility to use other robot model types or with provided non-circular differental, ackermann, and omni support
+- Flexibility to use other robot model types or with provided non-circular differential, ackermann, and omni support
 
 The `SmacPlanner2D` is designed to work with:
 - Circular, differential or omnidirectional robots
@@ -104,12 +104,12 @@ planner_server:
 
     GridBased:
       plugin: "nav2_smac_planner/SmacPlannerHybrid"
-      tolerance: 0.5                      # tolerance for planning if unable to reach exact pose, in meters, for 2D node
+      tolerance: 0.5                      # tolerance for planning if unable to reach exact pose, in meters
       downsample_costmap: false           # whether or not to downsample the map
       downsampling_factor: 1              # multiplier for the resolution of the costmap layer (e.g. 2 on a 5cm costmap would be 10cm)
       allow_unknown: false                # allow traveling in unknown space
       max_iterations: 1000000             # maximum total iterations to search for before failing (in case unreachable), set to -1 to disable
-      max_on_approach_iterations: 1000    # maximum number of iterations to attempt to reach goal once in tolerance, 2D only
+      max_on_approach_iterations: 1000    # maximum number of iterations to attempt to reach goal once in tolerance
       max_planning_time: 3.5              # max time in s for planner to plan, smooth, and upsample. Will scale maximum smoothing and upsampling times based on remaining time after planning.
       motion_model_for_search: "DUBIN"    # For Hybrid Dubin, Redds-Shepp
       cost_travel_multiplier: 2.0         # For 2D: Cost multiplier to apply to search to steer away from high cost areas. Larger values will place in the center of aisles more exactly (if non-`FREE` cost potential field exists) but take slightly longer to compute. To optimize for speed, a value of 1.0 is reasonable. A reasonable tradeoff value is 2.0. A value of 0.0 effective disables steering away from obstacles and acts like a naive binary search A*.

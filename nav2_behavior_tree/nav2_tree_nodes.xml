@@ -33,13 +33,18 @@
       <input_port name="server_timeout">Server timeout</input_port>
     </Action>
 
-    <Action ID="DriveOnHeadingCancel">
+    <Action ID="CancelDriveOnHeading">
       <input_port name="service_name">Service name to cancel the drive on heading behavior</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
     </Action>
 
     <Action ID="CancelSpin">
       <input_port name="service_name">Service name to cancel the spin behavior</input_port>
+      <input_port name="server_timeout">Server timeout</input_port>
+    </Action>
+
+    <Action ID="CancelAssistedTeleop">
+      <input_port name="service_name">Service name to cancel the assisted teleop behavior</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
     </Action>
 
@@ -51,6 +56,18 @@
     <Action ID="ClearEntireCostmap">
       <input_port name="service_name">Service name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
+    </Action>
+
+    <Action ID="ClearCostmapExceptRegion">
+      <input_port name="service_name">Service name</input_port>
+      <input_port name="server_timeout">Server timeout</input_port>
+      <input_port name="reset_distance">Distance from the robot above which obstacles are cleared</input_port>
+    </Action>
+
+    <Action ID="ClearCostmapAroundRobot">
+      <input_port name="service_name">Service name</input_port>
+      <input_port name="server_timeout">Server timeout</input_port>
+      <input_port name="reset_distance">Distance from the robot under which obstacles are cleared</input_port>
     </Action>
 
     <Action ID="ComputePathToPose">
@@ -160,6 +177,13 @@
 
     <Action ID="Wait">
       <input_port name="wait_duration">Wait time</input_port>
+      <input_port name="server_name">Service name</input_port>
+      <input_port name="server_timeout">Server timeout</input_port>
+    </Action>
+
+    <Action ID="AssistedTeleop">
+      <input_port name="time_allowance">Allowed time for spinning</input_port>
+      <input_port name="is_recovery">If true recovery count will be incremented</input_port>
       <input_port name="server_name">Service name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
     </Action>

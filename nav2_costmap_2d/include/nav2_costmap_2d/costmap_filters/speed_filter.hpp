@@ -43,7 +43,6 @@
 
 #include "nav2_costmap_2d/costmap_filters/costmap_filter.hpp"
 
-#include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav2_msgs/msg/costmap_filter_info.hpp"
 #include "nav2_msgs/msg/speed_limit.hpp"
 
@@ -86,37 +85,6 @@ public:
    * @brief If this filter is active
    */
   bool isActive();
-
-protected:
-  /**
-   * @brief:  Transforms robot pose from current layer frame to mask frame
-   * @param:  pose Robot pose in costmap frame
-   * @param:  mask_pose Robot pose in mask frame
-   * @return: True if the transformation was successful, false otherwise
-   */
-  bool transformPose(
-    const geometry_msgs::msg::Pose2D & pose,
-    geometry_msgs::msg::Pose2D & mask_pose) const;
-
-  /**
-   * @brief: Convert from world coordinates to mask coordinates.
-     Similar to Costmap2D::worldToMap() method but works directly with OccupancyGrid-s.
-   * @param  wx The x world coordinate
-   * @param  wy The y world coordinate
-   * @param  mx Will be set to the associated mask x coordinate
-   * @param  my Will be set to the associated mask y coordinate
-   * @return True if the conversion was successful (legal bounds) false otherwise
-   */
-  bool worldToMask(double wx, double wy, unsigned int & mx, unsigned int & my) const;
-
-  /**
-   * @brief  Get the data of a cell in the filter mask
-   * @param  mx The x coordinate of the cell
-   * @param  my The y coordinate of the cell
-   * @return The data of the selected cell
-   */
-  inline int8_t getMaskData(
-    const unsigned int mx, const unsigned int my) const;
 
 private:
   /**
