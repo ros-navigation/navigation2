@@ -105,7 +105,6 @@ class WaypointFollowerTest(Node):
             rclpy.spin_until_future_complete(self, get_result_future)
             status = get_result_future.result().status
             self.result = get_result_future.result().result
-            self.info_msg('Error code: {0}' .format(self.result.error_code))
         except Exception as e:  # noqa: B902
             self.error_msg(f'Service call failed {e!r}')
 

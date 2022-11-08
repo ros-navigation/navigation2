@@ -221,7 +221,6 @@ WaypointFollower::followWaypoints()
           " Terminating action.", goal_index);
         result->missed_waypoints = failed_ids_;
         result->error_code = error_code_;
-        RCLCPP_INFO_STREAM(get_logger(), "Way Error code" << error_code_);
         action_server_->terminate_current(result);
         failed_ids_.clear();
         error_code_ = 0;
@@ -249,7 +248,6 @@ WaypointFollower::followWaypoints()
           " Terminating action.", goal_index);
         result->missed_waypoints = failed_ids_;
         result->error_code = error_code_;
-        RCLCPP_INFO_STREAM(get_logger(), "Way Error code" << error_code_);
         action_server_->terminate_current(result);
         error_code_ = 0;
         failed_ids_.clear();
@@ -311,7 +309,6 @@ WaypointFollower::resultCallback(
       current_goal_status_ = ActionStatus::SUCCEEDED;
       return;
     case rclcpp_action::ResultCode::ABORTED:
-      RCLCPP_INFO(get_logger(), "ABORTED WAYPOINT RESULT");
       current_goal_status_ = ActionStatus::FAILED;
       error_code_ = result.result->error_code;
       return;
