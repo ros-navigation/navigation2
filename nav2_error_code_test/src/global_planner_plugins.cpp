@@ -13,7 +13,20 @@
 // limitations under the License.
 #include "global_planners/start_occupied_planner.hpp"
 #include "global_planners/goal_occupied_planner.hpp"
+#include "global_planners/start_outside_map_planner.hpp"
+#include "global_planners/goal_outside_map_planner.hpp"
+#include "global_planners/no_valid_path_planner.hpp"
+#include "global_planners/tf_error_planner.hpp"
+#include "global_planners/timed_out_planner.hpp"
+#include "global_planners/no_via_points_given_planner.hpp"
 
 #include "pluginlib/class_list_macros.hpp"
 PLUGINLIB_EXPORT_CLASS(nav2_error_code_test::StartOccupied, nav2_core::GlobalPlanner)
 PLUGINLIB_EXPORT_CLASS(nav2_error_code_test::GoalOccupied, nav2_core::GlobalPlanner)
+PLUGINLIB_EXPORT_CLASS(nav2_error_code_test::StartOutsideMapBounds, nav2_core::GlobalPlanner)
+PLUGINLIB_EXPORT_CLASS(nav2_error_code_test::GoalOccupied, nav2_core::GlobalPlanner)
+PLUGINLIB_EXPORT_CLASS(nav2_error_code_test::GoalOutsideMapBounds, nav2_core::GlobalPlanner)
+PLUGINLIB_EXPORT_CLASS(nav2_error_code_test::NoValidPathCouldBeFound, nav2_core::GlobalPlanner)
+PLUGINLIB_EXPORT_CLASS(nav2_error_code_test::PlannerTFError, nav2_core::GlobalPlanner)
+PLUGINLIB_EXPORT_CLASS(nav2_error_code_test::PlannerTimedOut, nav2_core::GlobalPlanner)
+PLUGINLIB_EXPORT_CLASS(nav2_error_code_test::NoViapointsGiven, nav2_core::GlobalPlanner)

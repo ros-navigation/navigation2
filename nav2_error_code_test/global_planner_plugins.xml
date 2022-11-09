@@ -6,4 +6,28 @@
 		   base_class_type="nav2_core::GlobalPlanner">
 		<description>This global planner produces a goal occupied exception.</description>
 	</class>
+	<class name="nav2_error_code_test/StartOutsideMapBounds" type="nav2_error_code_test::StartOutsideMapBounds"
+		   base_class_type="nav2_core::GlobalPlanner">
+		<description>This global planner produces a start outside map bounds exception.</description>
+	</class>
+	<class name="nav2_error_code_test/GoalOutsideMapBounds" type="nav2_error_code_test::GoalOutsideMapBounds"
+		   base_class_type="nav2_core::GlobalPlanner">
+		<description>This global planner produces a goal outside map bounds exception.</description>
+	</class>
+	<class name="nav2_error_code_test/NoValidPathCouldBeFound" type="nav2_error_code_test::NoValidPathCouldBeFound"
+		   base_class_type="nav2_core::GlobalPlanner">
+		<description>This global planner produces a goal outside map bounds exception.</description>
+	</class>
+	<class name="nav2_error_code_test/NoViapointsGiven" type="nav2_error_code_test::NoViapointsGiven"
+		   base_class_type="nav2_core::GlobalPlanner">
+		<description>This global planner produces a goal outside map bounds exception.</description>
+	</class>
+	<class name="nav2_error_code_test/PlannerTFError" type="nav2_error_code_test::PlannerTFError"
+		   base_class_type="nav2_core::GlobalPlanner">
+		<description>This global planner produces a goal outside map bounds exception.</description>
+	</class>
+	<class name="nav2_error_code_test/PlannerTimedOut" type="nav2_error_code_test::PlannerTimedOut"
+		   base_class_type="nav2_core::GlobalPlanner">
+		<description>This global planner produces a goal outside map bounds exception.</description>
+	</class>
 </library>
