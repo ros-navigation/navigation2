@@ -12,12 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_WS_TF_ERROR_CONTROLLER_HPP
-#define NAV2_WS_TF_ERROR_CONTROLLER_HPP
+#ifndef NAV2_ERROR_CODE_TEST__LOCAL_CONTROLLERS__TF_ERROR_CONTROLLER_HPP_
+#define NAV2_ERROR_CODE_TEST__LOCAL_CONTROLLERS__TF_ERROR_CONTROLLER_HPP_
+
+#include <memory>
+#include <string>
 
 #include "nav2_core/controller.hpp"
 #include "nav2_core/controller_exceptions.hpp"
-
 
 namespace nav2_error_code_test
 {
@@ -50,9 +52,7 @@ public:
   }
 
   void setSpeedLimit(const double & speed_limit, const bool & percentage) {}
-
 };
+}  // namespace nav2_error_code_test
 
-}  // nav2_error_code_test_controller
-
-#endif //NAV2_WS_TF_ERROR_CONTROLLER_HPP
+#endif  // NAV2_ERROR_CODE_TEST__LOCAL_CONTROLLERS__TF_ERROR_CONTROLLER_HPP_
