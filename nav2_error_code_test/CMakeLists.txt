@@ -30,7 +30,7 @@ include_directories(
   include/nav2_error_code_test/
 )
 
-set(library_name ${PROJECT_NAME}_plugin)
+set(start_occupied_lib start_occupied)
 
 set(dependencies
   rclcpp
@@ -49,20 +49,20 @@ set(dependencies
   pluginlib
 )
 
-add_library(${library_name} SHARED
-    src/global_planners/start_occupied_planner.cpp
+# Add start occupied planner
+add_library(${start_occupied_lib} SHARED
+    src/global_planner_plugins.cpp
 )
-
-ament_target_dependencies(${library_name}
+ament_target_dependencies(${start_occupied_lib}
   ${dependencies}
 )
 
-target_compile_definitions(${library_name} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+target_compile_definitions(${start_occupied_lib} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
 
-pluginlib_export_plugin_description_file(nav2_core global_planner_plugin.xml)
+pluginlib_export_plugin_description_file(nav2_core global_planner_plugins.xml)
 
-install(TARGETS ${library_name}
+install(TARGETS ${start_occupied_lib}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
@@ -72,7 +72,7 @@ install(DIRECTORY include/
   DESTINATION include/
 )
 
-install(FILES global_planner_plugin.xml
+install(FILES global_planner_plugins.xml
   DESTINATION share/${PROJECT_NAME}
 )
 
@@ -89,6 +89,6 @@ endif()
 
 
 ament_export_include_directories(include)
-ament_export_libraries(${library_name})
+ament_export_libraries(${start_occupied_lib})
 ament_export_dependencies(${dependencies})
 ament_package()

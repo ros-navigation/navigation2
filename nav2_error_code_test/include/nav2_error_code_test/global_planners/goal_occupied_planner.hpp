@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_STRAIGHTLINE_PLANNER__STRAIGHT_LINE_PLANNER_HPP_
-#define NAV2_STRAIGHTLINE_PLANNER__STRAIGHT_LINE_PLANNER_HPP_
+#ifndef GOAL_OCC_HPP_
+#define GOAL_OCC_HPP_
 
 #include <string>
 #include <memory>
@@ -32,11 +32,11 @@
 namespace nav2_error_code_test
 {
 
-class StartOccupied : public nav2_core::GlobalPlanner
+class GoalOccupied : public nav2_core::GlobalPlanner
 {
 public:
-  StartOccupied() = default;
-  ~StartOccupied() = default;
+  GoalOccupied() = default;
+  ~GoalOccupied() = default;
 
   // plugin configure
   void configure(
@@ -57,10 +57,10 @@ public:
   nav_msgs::msg::Path createPlan(
     const geometry_msgs::msg::PoseStamped & start,
     const geometry_msgs::msg::PoseStamped & goal) override {
-    throw nav2_core::StartOccupied("Start Occupied");
+    throw nav2_core::GoalOccupied("Goal Occupied");
   };
 };
 
 }  // namespace nav2_error_code_test
 
-#endif  // NAV2_STRAIGHTLINE_PLANNER__STRAIGHT_LINE_PLANNER_HPP_
+#endif  // GOAL_OCC_HPP_

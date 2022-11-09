@@ -1,0 +1,9 @@
+<library path="start_occupied">
+	<class name="nav2_error_code_test/StartOccupied" type="nav2_error_code_test::StartOccupied" base_class_type="nav2_core::GlobalPlanner">
+	  <description>This global planner produces a start occupied exception.</description>
+	</class>
+	<class name="nav2_error_code_test/GoalOccupied" type="nav2_error_code_test::GoalOccupied"
+		   base_class_type="nav2_core::GlobalPlanner">
+		<description>This global planner produces a goal occupied exception.</description>
+	</class>
+</library>
