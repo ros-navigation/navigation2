@@ -1,0 +1,6 @@
+<library path="local_controller">
+    <class type="nav2_error_code_test::ControllerTFError"
+           base_class_type="nav2_core::Controller">
+        <description>This global planner produces a start occupied exception.</description>
+    </class>
+</library>

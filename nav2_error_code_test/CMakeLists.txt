@@ -30,7 +30,8 @@ include_directories(
   include/nav2_error_code_test/
 )
 
-set(start_occupied_lib start_occupied)
+set(global_planner_plugin_lib start_occupied)
+set(local_controller_plugin_lib local_controller)
 
 set(dependencies
   rclcpp
@@ -49,31 +50,40 @@ set(dependencies
   pluginlib
 )
 
-# Add start occupied planner
-add_library(${start_occupied_lib} SHARED
-    src/global_planner_plugins.cpp
-)
-ament_target_dependencies(${start_occupied_lib}
-  ${dependencies}
-)
-
-target_compile_definitions(${start_occupied_lib} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
-
-
+# Add planners lib
+add_library(${global_planner_plugin_lib} SHARED src/global_planner_plugins.cpp)
+ament_target_dependencies(${global_planner_plugin_lib} ${dependencies})
+target_compile_definitions(${global_planner_plugin_lib} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 pluginlib_export_plugin_description_file(nav2_core global_planner_plugins.xml)
 
-install(TARGETS ${start_occupied_lib}
+# Add Controller lib
+add_library(${local_controller_plugin_lib} SHARED src/local_controller_plugins.cpp)
+ament_target_dependencies(${local_controller_plugin_lib} ${dependencies})
+target_compile_definitions(${local_controller_plugin_lib} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+pluginlib_export_plugin_description_file(nav2_core local_controller_plugins.xml)
+
+install(TARGETS ${global_planner_plugin_lib}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
-install(DIRECTORY include/
-  DESTINATION include/
-)
-
 install(FILES global_planner_plugins.xml
   DESTINATION share/${PROJECT_NAME}
+)
+
+install(TARGETS ${local_controller_plugin_lib}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
+
+install(FILES local_controller_plugins.xml
+  DESTINATION share/${PROJECT_NAME}
+)
+
+install(DIRECTORY include/
+  DESTINATION include/
 )
 
 if(BUILD_TESTING)
@@ -89,6 +99,7 @@ endif()
 
 
 ament_export_include_directories(include)
-ament_export_libraries(${start_occupied_lib})
+ament_export_libraries(${global_planner_plugin_lib})
+ament_export_libraries(${local_controller_plugin_lib})
 ament_export_dependencies(${dependencies})
 ament_package()

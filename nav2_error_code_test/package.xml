@@ -30,5 +30,6 @@
   <export>
     <build_type>ament_cmake</build_type>
     <nav2_core plugin="${prefix}/global_planner_plugins.xml" />
+    <nav2_core plugin="${prefix}/local_controller_plugins.xml" />
   </export>
 </package>
