@@ -215,8 +215,7 @@ def main(argv=sys.argv[1:]):
     result = test.run(True)
     assert not result
     result = not result
-    assert test.result.error_code == ComputePathToPose.Goal().GOAL_OUTSIDE_MAP
-
+    
     test.shutdown()
     test.info_msg('Done Shutting Down.')
 
