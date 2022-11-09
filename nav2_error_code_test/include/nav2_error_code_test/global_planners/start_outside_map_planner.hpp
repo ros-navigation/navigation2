@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef START_OUTSIDE_MAP_HPP_
-#define START_OUTSIDE_MAP_HPP_
+#ifndef NAV2_ERROR_CODE_TEST__GLOBAL_PLANNERS__START_OUTSIDE_MAP_PLANNER_HPP_
+#define NAV2_ERROR_CODE_TEST__GLOBAL_PLANNERS__START_OUTSIDE_MAP_PLANNER_HPP_
 
 #include <string>
 #include <memory>
@@ -38,29 +38,25 @@ public:
   StartOutsideMapBounds() = default;
   ~StartOutsideMapBounds() = default;
 
-  // plugin configure
   void configure(
     const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
     std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
-    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override {};
+    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override {}
 
-  // plugin cleanup
-  void cleanup() override {};
+  void cleanup() override {}
 
-  // plugin activate
-  void activate() override {};
+  void activate() override {}
 
-  // plugin deactivate
-  void deactivate() override {};
+  void deactivate() override {}
 
-  // This method creates path for given start and goal pose.
   nav_msgs::msg::Path createPlan(
     const geometry_msgs::msg::PoseStamped & start,
-    const geometry_msgs::msg::PoseStamped & goal) override {
+    const geometry_msgs::msg::PoseStamped & goal) override
+  {
     throw nav2_core::StartOutsideMapBounds("Start Outside Map");
-  };
+  }
 };
 
 }  // namespace nav2_error_code_test
 
-#endif  // START_OUTSIDE_MAP_HPP_
+#endif  // NAV2_ERROR_CODE_TEST__GLOBAL_PLANNERS__START_OUTSIDE_MAP_PLANNER_HPP_
