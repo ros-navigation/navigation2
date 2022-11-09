@@ -1,0 +1,5 @@
+<library path="nav2_error_code_test_plugin">
+	<class name="nav2_error_code_test/StartOccupied" type="nav2_error_code_test::StartOccupied" base_class_type="nav2_core::GlobalPlanner">
+	  <description>This is an example plugin which produces straight path.</description>
+	</class>
+</library>
