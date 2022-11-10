@@ -12,22 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "global_planners/start_occupied_planner.hpp"
-#include "global_planners/goal_occupied_planner.hpp"
-#include "global_planners/start_outside_map_planner.hpp"
-#include "global_planners/goal_outside_map_planner.hpp"
-#include "global_planners/no_valid_path_planner.hpp"
-#include "global_planners/tf_error_planner.hpp"
-#include "global_planners/timed_out_planner.hpp"
-#include "global_planners/no_via_points_given_planner.hpp"
+
+#include "global_planners/unknown_error_planner.hpp"
+#include "global_planners/planner_plugins.hpp"
 
 #include "pluginlib/class_list_macros.hpp"
-PLUGINLIB_EXPORT_CLASS(nav2_error_code_test::StartOccupied, nav2_core::GlobalPlanner)
-PLUGINLIB_EXPORT_CLASS(nav2_error_code_test::GoalOccupied, nav2_core::GlobalPlanner)
-PLUGINLIB_EXPORT_CLASS(nav2_error_code_test::StartOutsideMapBounds, nav2_core::GlobalPlanner)
-PLUGINLIB_EXPORT_CLASS(nav2_error_code_test::GoalOccupied, nav2_core::GlobalPlanner)
-PLUGINLIB_EXPORT_CLASS(nav2_error_code_test::GoalOutsideMapBounds, nav2_core::GlobalPlanner)
-PLUGINLIB_EXPORT_CLASS(nav2_error_code_test::NoValidPathCouldBeFound, nav2_core::GlobalPlanner)
-PLUGINLIB_EXPORT_CLASS(nav2_error_code_test::PlannerTFError, nav2_core::GlobalPlanner)
-PLUGINLIB_EXPORT_CLASS(nav2_error_code_test::PlannerTimedOut, nav2_core::GlobalPlanner)
-PLUGINLIB_EXPORT_CLASS(nav2_error_code_test::NoViapointsGiven, nav2_core::GlobalPlanner)
+PLUGINLIB_EXPORT_CLASS(nav2_error_code_test::UnknownErrorPlanner, nav2_core::GlobalPlanner)
+PLUGINLIB_EXPORT_CLASS(nav2_error_code_test::StartOccupiedErrorPlanner, nav2_core::GlobalPlanner)
+PLUGINLIB_EXPORT_CLASS(nav2_error_code_test::GoalOccupiedErrorPlanner, nav2_core::GlobalPlanner)
+PLUGINLIB_EXPORT_CLASS(nav2_error_code_test::StartOutsideMapErrorPlanner, nav2_core::GlobalPlanner)
+PLUGINLIB_EXPORT_CLASS(nav2_error_code_test::GoalOutsideMapErrorPlanner, nav2_core::GlobalPlanner)
+PLUGINLIB_EXPORT_CLASS(nav2_error_code_test::NoValidPathErrorPlanner, nav2_core::GlobalPlanner)
+PLUGINLIB_EXPORT_CLASS(nav2_error_code_test::TimedOutErrorPlanner, nav2_core::GlobalPlanner)
+PLUGINLIB_EXPORT_CLASS(nav2_error_code_test::TFErrorPlanner, nav2_core::GlobalPlanner)
+PLUGINLIB_EXPORT_CLASS(nav2_error_code_test::NoViapointsGivenErrorPlanner, nav2_core::GlobalPlanner)

@@ -126,7 +126,7 @@ controller_server:
       yaw_goal_tolerance: 0.25
     # DWB parameters
     FollowPath:
-      plugin: "dwb_core::DWBLocalPlanner"
+      plugin: "nav2_error_code_test::NoValidControlErrorController"
       debug_trajectory_details: True
       min_vel_x: 0.0
       min_vel_y: 0.0

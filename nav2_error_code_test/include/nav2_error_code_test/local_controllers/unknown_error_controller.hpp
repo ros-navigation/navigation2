@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_ERROR_CODE_TEST__LOCAL_CONTROLLERS__TF_ERROR_CONTROLLER_HPP_
-#define NAV2_ERROR_CODE_TEST__LOCAL_CONTROLLERS__TF_ERROR_CONTROLLER_HPP_
+#ifndef UNKNOWN_ERROR_CONTROLLER_HPP_
+#define UNKNOWN_ERROR_CONTROLLER_HPP_
 
 #include <memory>
 #include <string>
@@ -24,16 +24,16 @@
 namespace nav2_error_code_test
 {
 
-class ControllerTFError : public nav2_core::Controller
+class UnknownErrorController : public nav2_core::Controller
 {
 public:
-  ControllerTFError() = default;
-  ~ControllerTFError() = default;
+  UnknownErrorController() = default;
+  ~UnknownErrorController() = default;
 
   void configure(
-    const rclcpp_lifecycle::LifecycleNode::WeakPtr &,
-    std::string name, std::shared_ptr<tf2_ros::Buffer>,
-    std::shared_ptr<nav2_costmap_2d::Costmap2DROS>) override {}
+      const rclcpp_lifecycle::LifecycleNode::WeakPtr &,
+      std::string name, std::shared_ptr<tf2_ros::Buffer>,
+      std::shared_ptr<nav2_costmap_2d::Costmap2DROS>) override {}
 
   void cleanup() {}
 
@@ -44,15 +44,15 @@ public:
   void setPlan(const nav_msgs::msg::Path & path) {}
 
   virtual geometry_msgs::msg::TwistStamped computeVelocityCommands(
-    const geometry_msgs::msg::PoseStamped & pose,
-    const geometry_msgs::msg::Twist & velocity,
-    nav2_core::GoalChecker * goal_checker)
+      const geometry_msgs::msg::PoseStamped & pose,
+      const geometry_msgs::msg::Twist & velocity,
+      nav2_core::GoalChecker * goal_checker)
   {
-    throw nav2_core::ControllerTFError("TF ERROR");
+    throw nav2_core::ControllerException("TF ERROR");
   }
 
   void setSpeedLimit(const double & speed_limit, const bool & percentage) {}
 };
 }  // namespace nav2_error_code_test
 
-#endif  // NAV2_ERROR_CODE_TEST__LOCAL_CONTROLLERS__TF_ERROR_CONTROLLER_HPP_
+#endif  // UNKNOWN_ERROR_CONTROLLER_HPP_

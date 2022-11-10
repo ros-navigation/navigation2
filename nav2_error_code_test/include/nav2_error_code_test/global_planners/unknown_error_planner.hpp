@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_ERROR_CODE_TEST__GLOBAL_PLANNERS__GOAL_OUTSIDE_MAP_PLANNER_HPP_
-#define NAV2_ERROR_CODE_TEST__GLOBAL_PLANNERS__GOAL_OUTSIDE_MAP_PLANNER_HPP_
+#ifndef UNKNOW_ERROR_HPP_
+#define UNKNOW_ERROR_HPP_
 
 #include <string>
 #include <memory>
@@ -32,16 +32,16 @@
 namespace nav2_error_code_test
 {
 
-class GoalOutsideMapBounds : public nav2_core::GlobalPlanner
+class UnknownErrorPlanner : public nav2_core::GlobalPlanner
 {
 public:
-  GoalOutsideMapBounds() = default;
-  ~GoalOutsideMapBounds() = default;
+  UnknownErrorPlanner() = default;
+  ~UnknownErrorPlanner() = default;
 
   void configure(
-    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
-    std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
-    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override {}
+      const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+      std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
+      std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override {}
 
   void cleanup() override {}
 
@@ -50,13 +50,13 @@ public:
   void deactivate() override {}
 
   nav_msgs::msg::Path createPlan(
-    const geometry_msgs::msg::PoseStamped & start,
-    const geometry_msgs::msg::PoseStamped & goal) override
+      const geometry_msgs::msg::PoseStamped & start,
+      const geometry_msgs::msg::PoseStamped & goal) override
   {
-    throw nav2_core::GoalOutsideMapBounds("Goal Outside Map");
+    throw nav2_core::PlannerException("Unknown Error");
   }
 };
 
 }  // namespace nav2_error_code_test
 
-#endif  // NAV2_ERROR_CODE_TEST__GLOBAL_PLANNERS__GOAL_OUTSIDE_MAP_PLANNER_HPP_
+#endif  // UNKNOW_ERROR_HPP_
