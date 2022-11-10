@@ -345,9 +345,9 @@ class BasicNavigator(Node):
         self.result_future = self.goal_handle.get_result_async()
         rclpy.spin_until_future_complete(self, self.result_future)
         self.status = self.result_future.result().status
-        if self.status != GoalStatus.STATUS_SUCCEEDED:
-            self.warn(f'Getting path failed with status code: {self.status}')
-            return None
+        # if self.status != GoalStatus.STATUS_SUCCEEDED:
+        #     self.warn(f'Getting path failed with status code: {self.status}')
+        #     return None
 
         return self.result_future.result().result
 

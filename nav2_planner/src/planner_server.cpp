@@ -480,7 +480,7 @@ PlannerServer::computePlan()
     result->path = getPlan(start, goal_pose, goal->planner_id);
 
     if (!validatePath<ActionThroughPoses>(goal_pose, result->path, goal->planner_id)) {
-      throw nav2_core::NoValidPathCouldBeFound(goal->planner_id + "generated a empty path");
+      throw nav2_core::NoValidPathCouldBeFound(goal->planner_id + " generated a empty path");
     }
 
     // Publish the plan for visualization purposes
