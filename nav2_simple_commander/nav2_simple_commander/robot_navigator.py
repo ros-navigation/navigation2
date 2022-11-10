@@ -359,8 +359,12 @@ class BasicNavigator(Node):
         else:
             return rtn.path
 
-    def getPathThroughPoses(self, start, goals, planner_id='', use_start=False):
-        """Send a `ComputePathThroughPoses` action request."""
+    def _getPathThroughPosesImpl(self, start, goals, planner_id='', use_start=False):
+        """
+        Send a `ComputePathThroughPoses` action request.
+
+        Internal implementation to get the full result, not just the path.
+        """
         self.debug("Waiting for 'ComputePathThroughPoses' action server")
         while not self.compute_path_through_poses_client.wait_for_server(timeout_sec=1.0):
             self.info("'ComputePathThroughPoses' action server not available, waiting...")
@@ -383,11 +387,20 @@ class BasicNavigator(Node):
         self.result_future = self.goal_handle.get_result_async()
         rclpy.spin_until_future_complete(self, self.result_future)
         self.status = self.result_future.result().status
-        if self.status != GoalStatus.STATUS_SUCCEEDED:
-            self.warn(f'Getting path failed with status code: {self.status}')
-            return None
+        # if self.status != GoalStatus.STATUS_SUCCEEDED:
+        #     self.warn(f'Getting path failed with status code: {self.status}')
+        #     return None
 
-        return self.result_future.result().result.path
+        return self.result_future.result().result
+
+
+    def getPathThroughPoses(self, start, goals, planner_id='', use_start=False):
+        """Send a `ComputePathThroughPoses` action request."""
+        rtn = self.__getPathThroughPosesImpl(start, goals, planner_id='', use_start=False)
+        if not rtn:
+            return None
+        else:
+            return rtn.path
 
     def _smoothPathImpl(self, path, smoother_id='', max_duration=2.0, check_for_collision=False):
         """

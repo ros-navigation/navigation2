@@ -1,4 +1,8 @@
 <library path="local_controller">
+    <class type="nav2_error_code_test::UnknownErrorController"
+           base_class_type="nav2_core::Controller">
+        <description>This local planner produces a tf exception.</description>
+    </class>
     <class type="nav2_error_code_test::TFErrorController"
            base_class_type="nav2_core::Controller">
         <description>This local planner produces a tf exception.</description>
