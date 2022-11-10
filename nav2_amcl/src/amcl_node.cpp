@@ -809,7 +809,7 @@ bool AmclNode::updateFilter(
     angle_increment);
   
   // Check the validity of range_max, must > 0.0
-  if (laser_scan->range_max <= 0.0){
+  if (laser_scan->range_max <= 0.0) {
     RCLCPP_WARN(
       get_logger(), "wrong range_max of laser_scan data: %f. The message could be malformed."
       " Ignore this message and stop updating.",
