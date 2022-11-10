@@ -30,7 +30,7 @@ include_directories(
   include/nav2_error_code_test/
 )
 
-set(global_planner_plugin_lib start_occupied)
+set(global_planner_plugin_lib global_planner)
 set(local_controller_plugin_lib local_controller)
 
 set(dependencies

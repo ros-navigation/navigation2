@@ -1,4 +1,4 @@
-<library path="start_occupied">
+<library path="global_planner">
 	<class type="nav2_error_code_test::UnknownErrorPlanner"
 		   base_class_type="nav2_core::GlobalPlanner">
 		<description>This global planner produces a goal a timeout exception.</description>

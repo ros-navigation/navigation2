@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "local_controllers/tf_error_controller.hpp"
 #include "local_controllers/unknown_error_controller.hpp"
 #include "local_controllers/controller_plugins.hpp"
 
