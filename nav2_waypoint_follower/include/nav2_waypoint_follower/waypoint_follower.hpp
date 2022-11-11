@@ -43,6 +43,12 @@ enum class ActionStatus
   SUCCEEDED = 3
 };
 
+struct MissedWaypoint
+{
+  unsigned int index;
+  int error_code;
+};
+
 /**
  * @class nav2_waypoint_follower::WaypointFollower
  * @brief An action server that uses behavior tree for navigating a robot to its
@@ -138,7 +144,8 @@ protected:
   bool stop_on_failure_;
   ActionStatus current_goal_status_;
   int loop_rate_;
-  std::vector<int> failed_ids_;
+//  std::vector<int> failed_ids_;
+  std::vector<MissedWaypoint> missed_waypoints_;
 
   // Task Execution At Waypoint Plugin
   pluginlib::ClassLoader<nav2_core::WaypointTaskExecutor>

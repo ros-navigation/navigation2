@@ -212,17 +212,21 @@ WaypointFollower::followWaypoints()
     action_server_->publish_feedback(feedback);
 
     if (current_goal_status_ == ActionStatus::FAILED) {
-      failed_ids_.push_back(goal_index);
+      missed_waypoints_.emplace_back(MissedWaypoint{goal_index, error_code_});
 
       if (stop_on_failure_) {
         RCLCPP_WARN(
           get_logger(), "Failed to process waypoint %i in waypoint "
           "list and stop on failure is enabled."
           " Terminating action.", goal_index);
-        result->missed_waypoints = failed_ids_;
-        result->error_code = error_code_;
+
+        for (const auto missed_waypoint : missed_waypoints_) {
+          result->missed_waypoints.push_back(missed_waypoint.index);
+          result->error_code.push_back(missed_waypoint.error_code);
+        }
+
         action_server_->terminate_current(result);
-        failed_ids_.clear();
+        missed_waypoints_.clear();
         error_code_ = 0;
         return;
       } else {
@@ -239,18 +243,24 @@ WaypointFollower::followWaypoints()
       RCLCPP_INFO(
         get_logger(), "Task execution at waypoint %i %s", goal_index,
         is_task_executed ? "succeeded" : "failed!");
+      if (!is_task_executed) {
+        missed_waypoints_.emplace_back(MissedWaypoint{goal_index, error_code_});
+      }
       // if task execution was failed and stop_on_failure_ is on , terminate action
       if (!is_task_executed && stop_on_failure_) {
-        failed_ids_.push_back(goal_index);
         RCLCPP_WARN(
           get_logger(), "Failed to execute task at waypoint %i "
           " stop on failure is enabled."
           " Terminating action.", goal_index);
-        result->missed_waypoints = failed_ids_;
-        result->error_code = error_code_;
+
+        for (const auto missed_waypoint : missed_waypoints_) {
+          result->missed_waypoints.push_back(missed_waypoint.index);
+          result->error_code.push_back(missed_waypoint.error_code);
+        }
+
         action_server_->terminate_current(result);
+        missed_waypoints_.clear();
         error_code_ = 0;
-        failed_ids_.clear();
         return;
       } else {
         RCLCPP_INFO(
@@ -269,14 +279,14 @@ WaypointFollower::followWaypoints()
         RCLCPP_INFO(
           get_logger(), "Completed all %zu waypoints requested.",
           goal->poses.size());
-        result->missed_waypoints = failed_ids_;
-        if (error_code_ > 0) {
-          result->error_code = error_code_;
-          action_server_->terminate_current(result);
-        } else {
-          action_server_->succeeded_current(result);
+
+        for (const auto missed_waypoint : missed_waypoints_) {
+          result->missed_waypoints.push_back(missed_waypoint.index);
+          result->error_code.push_back(missed_waypoint.error_code);
         }
-        failed_ids_.clear();
+
+        action_server_->succeeded_current(result);
+        missed_waypoints_.clear();
         error_code_ = 0;
         return;
       }
