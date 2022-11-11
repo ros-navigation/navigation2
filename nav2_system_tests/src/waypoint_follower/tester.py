@@ -19,7 +19,6 @@ import time
 from action_msgs.msg import GoalStatus
 from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
 from nav2_msgs.action import FollowWaypoints
-from nav2_msgs.action import ComputePathToPose
 from nav2_msgs.srv import ManageLifecycleNodes
 
 import rclpy
@@ -215,7 +214,7 @@ def main(argv=sys.argv[1:]):
     result = test.run(True)
     assert not result
     result = not result
-    
+
     test.shutdown()
     test.info_msg('Done Shutting Down.')
 

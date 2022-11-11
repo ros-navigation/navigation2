@@ -26,7 +26,6 @@
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav2_behavior_tree/bt_action_server.hpp"
 #include "ament_index_cpp/get_package_share_directory.hpp"
-//#include "nav2_util/print_utils.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -278,18 +277,19 @@ void BtActionServer<ActionT>::populateErrorCode(
 {
   int highest_priority_error_code = std::numeric_limits<int>::max();
   for (const auto & error_code_id_name : error_code_ids_) {
-    int current_error_code = std::numeric_limits<int>::max();
-    try {
-      current_error_code = blackboard_->get<int>(error_code_id_name);
+    int current_error_code;
+    bool found_error_code = blackboard_->get<int>(error_code_id_name, current_error_code);
 
+    if (found_error_code) {
       if (current_error_code != 0 && current_error_code < highest_priority_error_code) {
         highest_priority_error_code = current_error_code;
       }
-    } catch (...) {
+    }
+    else {
       RCLCPP_ERROR(
-        logger_,
-        "Failed to get %s from blackboard",
-        error_code_id_name.c_str());
+          logger_,
+          "Failed to get error code: %s from blackboard",
+          error_code_id_name.c_str());
     }
   }
 
