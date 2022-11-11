@@ -345,15 +345,17 @@ class BasicNavigator(Node):
         self.result_future = self.goal_handle.get_result_async()
         rclpy.spin_until_future_complete(self, self.result_future)
         self.status = self.result_future.result().status
-        # if self.status != GoalStatus.STATUS_SUCCEEDED:
-        #     self.warn(f'Getting path failed with status code: {self.status}')
-        #     return None
 
         return self.result_future.result().result
 
     def getPath(self, start, goal, planner_id='', use_start=False):
         """Send a `ComputePathToPose` action request."""
         rtn = self._getPathImpl(start, goal, planner_id='', use_start=False)
+
+        if self.status != GoalStatus.STATUS_SUCCEEDED:
+            self.warn(f'Getting path failed with status code: {self.status}')
+            return None
+
         if not rtn:
             return None
         else:
@@ -387,9 +389,6 @@ class BasicNavigator(Node):
         self.result_future = self.goal_handle.get_result_async()
         rclpy.spin_until_future_complete(self, self.result_future)
         self.status = self.result_future.result().status
-        # if self.status != GoalStatus.STATUS_SUCCEEDED:
-        #     self.warn(f'Getting path failed with status code: {self.status}')
-        #     return None
 
         return self.result_future.result().result
 
@@ -397,6 +396,11 @@ class BasicNavigator(Node):
     def getPathThroughPoses(self, start, goals, planner_id='', use_start=False):
         """Send a `ComputePathThroughPoses` action request."""
         rtn = self.__getPathThroughPosesImpl(start, goals, planner_id='', use_start=False)
+
+        if self.status != GoalStatus.STATUS_SUCCEEDED:
+            self.warn(f'Getting path failed with status code: {self.status}')
+            return None
+
         if not rtn:
             return None
         else:
