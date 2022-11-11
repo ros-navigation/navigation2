@@ -68,14 +68,14 @@ BtActionServer<ActionT>::BtActionServer(
 
   if (!node->has_parameter("error_code_id_names")) {
     std::string error_code_ids_str;
-    for(const auto & error_code_id : error_code_id_names) {
+    for (const auto & error_code_id : error_code_id_names) {
       error_code_ids_str += error_code_id + "\n";
     }
     RCLCPP_INFO_STREAM(
       logger_, "Error_code_ids parameter is not set. Using default values of: "
-      << error_code_ids_str
-      << "Make sure these match your BT and there are not other sources of error codes you want "
-         "reported to your application");
+        << error_code_ids_str
+        << "Make sure these match your BT and there are not other sources of error codes you want "
+        "reported to your application");
     node->declare_parameter("error_code_id_names", error_code_id_names);
   }
 }
@@ -278,17 +278,16 @@ void BtActionServer<ActionT>::populateErrorCode(
   int highest_priority_error_code = std::numeric_limits<int>::max();
   for (const auto & error_code_id_name : error_code_ids_) {
     int current_error_code;
-    bool found_error_code = blackboard_->get<int>(error_code_id_name, current_error_code);
 
-    if (found_error_code) {
+    if (blackboard_->get<int>(error_code_id_name, current_error_code)) {
       if (current_error_code != 0 && current_error_code < highest_priority_error_code) {
         highest_priority_error_code = current_error_code;
       }
     } else {
       RCLCPP_ERROR(
-          logger_,
-          "Failed to get error code: %s from blackboard",
-          error_code_id_name.c_str());
+        logger_,
+        "Failed to get error code: %s from blackboard",
+        error_code_id_name.c_str());
     }
   }
 

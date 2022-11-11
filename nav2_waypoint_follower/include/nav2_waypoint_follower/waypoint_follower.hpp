@@ -49,6 +49,12 @@ struct MissedWaypoint
   int error_code;
 };
 
+struct GoalStatus
+{
+  ActionStatus status;
+  int error_code;
+};
+
 /**
  * @class nav2_waypoint_follower::WaypointFollower
  * @brief An action server that uses behavior tree for navigating a robot to its
@@ -138,13 +144,11 @@ protected:
   ActionClient::SharedPtr nav_to_pose_client_;
   rclcpp::CallbackGroup::SharedPtr callback_group_;
   rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
-  std::shared_future<rclcpp_action::ClientGoalHandle<ClientT>::SharedPtr> future_goal_handle_;
-  int error_code_;
+  std::shared_future<rclcpp_action::ClientGoalHandle<ClientT>::SharedPtr> future_goal_handle_;gi
 
   bool stop_on_failure_;
-  ActionStatus current_goal_status_;
   int loop_rate_;
-//  std::vector<int> failed_ids_;
+  GoalStatus current_goal_status_;
   std::vector<MissedWaypoint> missed_waypoints_;
 
   // Task Execution At Waypoint Plugin

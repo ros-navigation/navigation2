@@ -205,14 +205,14 @@ WaypointFollower::followWaypoints()
         std::bind(&WaypointFollower::goalResponseCallback, this, std::placeholders::_1);
       future_goal_handle_ =
         nav_to_pose_client_->async_send_goal(client_goal, send_goal_options);
-      current_goal_status_ = ActionStatus::PROCESSING;
+      current_goal_status_.status = ActionStatus::PROCESSING;
     }
 
     feedback->current_waypoint = goal_index;
     action_server_->publish_feedback(feedback);
 
-    if (current_goal_status_ == ActionStatus::FAILED) {
-      missed_waypoints_.emplace_back(MissedWaypoint{goal_index, error_code_});
+    if (current_goal_status_.status == ActionStatus::FAILED) {
+      missed_waypoints_.emplace_back(MissedWaypoint{goal_index, current_goal_status_.error_code});
 
       if (stop_on_failure_) {
         RCLCPP_WARN(
@@ -222,19 +222,19 @@ WaypointFollower::followWaypoints()
 
         for (const auto missed_waypoint : missed_waypoints_) {
           result->missed_waypoints.push_back(missed_waypoint.index);
-          result->error_code.push_back(missed_waypoint.error_code);
+          result->error_codes.push_back(missed_waypoint.error_code);
         }
 
         action_server_->terminate_current(result);
         missed_waypoints_.clear();
-        error_code_ = 0;
+        current_goal_status_.error_code = 0;
         return;
       } else {
         RCLCPP_INFO(
           get_logger(), "Failed to process waypoint %i,"
           " moving to next.", goal_index);
       }
-    } else if (current_goal_status_ == ActionStatus::SUCCEEDED) {
+    } else if (current_goal_status_.status == ActionStatus::SUCCEEDED) {
       RCLCPP_INFO(
         get_logger(), "Succeeded processing waypoint %i, processing waypoint task execution",
         goal_index);
@@ -243,9 +243,6 @@ WaypointFollower::followWaypoints()
       RCLCPP_INFO(
         get_logger(), "Task execution at waypoint %i %s", goal_index,
         is_task_executed ? "succeeded" : "failed!");
-      if (!is_task_executed) {
-        missed_waypoints_.emplace_back(MissedWaypoint{goal_index, error_code_});
-      }
       // if task execution was failed and stop_on_failure_ is on , terminate action
       if (!is_task_executed && stop_on_failure_) {
         RCLCPP_WARN(
@@ -255,12 +252,12 @@ WaypointFollower::followWaypoints()
 
         for (const auto missed_waypoint : missed_waypoints_) {
           result->missed_waypoints.push_back(missed_waypoint.index);
-          result->error_code.push_back(missed_waypoint.error_code);
+          result->error_codes.push_back(missed_waypoint.error_code);
         }
 
         action_server_->terminate_current(result);
         missed_waypoints_.clear();
-        error_code_ = 0;
+        current_goal_status_.error_code = 0;
         return;
       } else {
         RCLCPP_INFO(
@@ -269,8 +266,8 @@ WaypointFollower::followWaypoints()
       }
     }
 
-    if (current_goal_status_ != ActionStatus::PROCESSING &&
-      current_goal_status_ != ActionStatus::UNKNOWN)
+    if (current_goal_status_.status != ActionStatus::PROCESSING &&
+      current_goal_status_.status != ActionStatus::UNKNOWN)
     {
       // Update server state
       goal_index++;
@@ -282,12 +279,12 @@ WaypointFollower::followWaypoints()
 
         for (const auto missed_waypoint : missed_waypoints_) {
           result->missed_waypoints.push_back(missed_waypoint.index);
-          result->error_code.push_back(missed_waypoint.error_code);
+          result->error_codes.push_back(missed_waypoint.error_code);
         }
 
         action_server_->succeeded_current(result);
         missed_waypoints_.clear();
-        error_code_ = 0;
+        current_goal_status_.error_code = 0;
         return;
       }
     } else {
@@ -316,17 +313,17 @@ WaypointFollower::resultCallback(
 
   switch (result.code) {
     case rclcpp_action::ResultCode::SUCCEEDED:
-      current_goal_status_ = ActionStatus::SUCCEEDED;
+      current_goal_status_.status = ActionStatus::SUCCEEDED;
       return;
     case rclcpp_action::ResultCode::ABORTED:
-      current_goal_status_ = ActionStatus::FAILED;
-      error_code_ = result.result->error_code;
+      current_goal_status_.status = ActionStatus::FAILED;
+      current_goal_status_.error_code = result.result->error_code;
       return;
     case rclcpp_action::ResultCode::CANCELED:
-      current_goal_status_ = ActionStatus::FAILED;
+      current_goal_status_.status = ActionStatus::FAILED;
       return;
     default:
-      current_goal_status_ = ActionStatus::UNKNOWN;
+      current_goal_status_.status = ActionStatus::UNKNOWN;
       return;
   }
 }
@@ -339,7 +336,7 @@ WaypointFollower::goalResponseCallback(
     RCLCPP_ERROR(
       get_logger(),
       "navigate_to_pose action client failed to send goal to server.");
-    current_goal_status_ = ActionStatus::FAILED;
+    current_goal_status_.status = ActionStatus::FAILED;
   }
 }
 
