@@ -591,7 +591,8 @@ bool Nav2Panel::isLoopValueValid(std::string & loop_value)
   for (char & c : loop_value) {
     if (isalpha(c) || isspace(c) || ispunct(c)) {
       waypoint_status_indicator_->setText(
-        "<b> Note: </b> Set a valid value for the loop, check for alphabets and spaces");
+        "<b> Note: </b> Set a valid value for the loop");
+      std::cout << "Set a valid value for the loop, check for alphabets and spaces" << std::endl;
       navigation_mode_button_->setEnabled(false);
       return false;
     }
@@ -652,6 +653,7 @@ void Nav2Panel::handleGoalLoader()
     available_waypoints = YAML::LoadFile(file.toStdString());
   } catch (const std::exception & ex) {
     std::cout << ex.what() << ", please select a valid file" << std::endl;
+    updateWpNavigationMarkers();
     return;
   }
 
@@ -733,17 +735,18 @@ void Nav2Panel::handleGoalSaver()
     out << YAML::EndMap;
   }
 
+  // open dialog to save it in a file
   QString file = QFileDialog::getSaveFileName(
     this,
     tr("Open File"), "",
     tr("yaml(*.yaml);;All Files (*)"));
 
-  if (file.toStdString().empty()) {
-    std::ofstream fout(file.toStdString());
+  if (!file.toStdString().empty()) {
+    std::ofstream fout(file.toStdString() + ".yaml");
     fout << out.c_str();
+    std::cout << "Saving waypoints succeeded" << std::endl;
   } else {
-    std::ofstream fout(file.toStdString());
-    fout << out.c_str();
+    std::cout << "Saving waypoints aborted" << std::endl;
   }
 }
 
@@ -950,10 +953,11 @@ void Nav2Panel::onResumedWp()
       &Nav2Panel::onCancelButtonPressed,
       this));
   acummulated_poses_ = store_poses_;
-  loop_no_ = std::to_string(stoi(loop_no_) - loop_count_);
+  loop_no_ = std::to_string(
+    stoi(nr_of_loops_->displayText().toStdString()) -
+    loop_count_);
   waypoint_status_indicator_->setText(
-    QString(std::string("<b> Note: </b> Last cancelled waypoint is stored. ").c_str()) +
-    QString(std::string("Please press resume to continue the navigation.").c_str()));
+    QString(std::string("<b> Note: </b> Navigation is paused.").c_str()));
 }
 
 void
@@ -990,8 +994,7 @@ Nav2Panel::onNewGoal(double x, double y, double theta, QString frame)
     }
   } else {
     waypoint_status_indicator_->setText(
-      QString(std::string("<b> Note: </b> Cannot set goal in pause state, ").c_str()) +
-      QString(std::string("press resume to continue").c_str()));
+      QString(std::string("<b> Note: </b> Cannot set goal in pause state").c_str()));
   }
   updateWpNavigationMarkers();
 }
@@ -1089,6 +1092,9 @@ Nav2Panel::onAccumulatedWp()
       acummulated_poses_.insert(acummulated_poses_.begin(), initial_pose);
       updateWpNavigationMarkers();
       initial_pose_stored_ = true;
+      if (loop_count_ == 0) {
+        goal_index_ = 1;
+      }
     } else if (!store_initial_pose_ && initial_pose_stored_) {
       acummulated_poses_.erase(
         acummulated_poses_.begin(),
