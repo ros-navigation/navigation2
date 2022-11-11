@@ -17,8 +17,11 @@ import os
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, GroupAction, SetEnvironmentVariable
+from launch.actions import DeclareLaunchArgument, GroupAction
+from launch.actions import SetEnvironmentVariable
 from launch.conditions import IfCondition
+from launch.conditions import LaunchConfigurationEquals
+from launch.conditions import LaunchConfigurationNotEquals
 from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import LoadComposableNodes, SetParameter
 from launch_ros.actions import Node
@@ -51,14 +54,10 @@ def generate_launch_description():
     remappings = [('/tf', 'tf'),
                   ('/tf_static', 'tf_static')]
 
-    # Create our own temporary YAML files that include substitutions
-    param_substitutions = {
-        'yaml_filename': map_yaml_file}
-
     configured_params = RewrittenYaml(
         source_file=params_file,
         root_key=namespace,
-        param_rewrites=param_substitutions,
+        param_rewrites={},
         convert_types=True)
 
     stdout_linebuf_envvar = SetEnvironmentVariable(
@@ -71,6 +70,7 @@ def generate_launch_description():
 
     declare_map_yaml_cmd = DeclareLaunchArgument(
         'map',
+        default_value='',
         description='Full path to map yaml file to load')
 
     declare_use_sim_time_cmd = DeclareLaunchArgument(
@@ -108,6 +108,7 @@ def generate_launch_description():
         actions=[
             SetParameter("use_sim_time", use_sim_time),
             Node(
+                condition=LaunchConfigurationEquals('map', ''),
                 package='nav2_map_server',
                 executable='map_server',
                 name='map_server',
@@ -115,6 +116,18 @@ def generate_launch_description():
                 respawn=use_respawn,
                 respawn_delay=2.0,
                 parameters=[configured_params],
+                arguments=['--ros-args', '--log-level', log_level],
+                remappings=remappings),
+            Node(
+                condition=LaunchConfigurationNotEquals('map', ''),
+                package='nav2_map_server',
+                executable='map_server',
+                name='map_server',
+                output='screen',
+                respawn=use_respawn,
+                respawn_delay=2.0,
+                parameters=[configured_params,
+                            {'yaml_filename': map_yaml_file}],
                 arguments=['--ros-args', '--log-level', log_level],
                 remappings=remappings),
             Node(
@@ -137,13 +150,24 @@ def generate_launch_description():
                             {'node_names': lifecycle_nodes}])
         ]
     )
-
+    # LoadComposableNode for map server twice depending if we should use the
+    # value of map from a CLI or launch default or user defined value in the
+    # yaml configuration file. They are separated since the conditions
+    # currently only work on the LoadComposableNodes commands and not on the
+    # ComposableNode node function itself
+    # EqualsSubstitution and NotEqualsSubstitution susbsitutions was recently
+    # added to solve this problem but it has not been ported yet to
+    # ros-rolling. See https://github.com/ros2/launch_ros/issues/328.
+    # LaunchConfigurationEquals and LaunchConfigurationNotEquals are scheduled
+    # for deprecation once a Rolling sync is conducted. Switching to this new
+    # would be required for both ComposableNode and normal nodes.
     load_composable_nodes = GroupAction(
         condition=IfCondition(use_composition),
         actions=[
             SetParameter("use_sim_time", use_sim_time),
             LoadComposableNodes(
                 target_container=container_name,
+                condition=LaunchConfigurationEquals('map', ''),
                 composable_node_descriptions=[
                     ComposableNode(
                         package='nav2_map_server',
@@ -151,6 +175,24 @@ def generate_launch_description():
                         name='map_server',
                         parameters=[configured_params],
                         remappings=remappings),
+                ],
+            ),
+            LoadComposableNodes(
+                target_container=container_name,
+                condition=LaunchConfigurationNotEquals('map', ''),
+                composable_node_descriptions=[
+                    ComposableNode(
+                        package='nav2_map_server',
+                        plugin='nav2_map_server::MapServer',
+                        name='map_server',
+                        parameters=[configured_params,
+                                    {'yaml_filename': map_yaml_file}],
+                        remappings=remappings),
+                ],
+            ),
+            LoadComposableNodes(
+                target_container=container_name,
+                composable_node_descriptions=[
                     ComposableNode(
                         package='nav2_amcl',
                         plugin='nav2_amcl::AmclNode',

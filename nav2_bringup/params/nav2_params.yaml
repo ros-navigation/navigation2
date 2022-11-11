@@ -246,11 +246,12 @@ global_costmap:
         inflation_radius: 0.55
       always_send_full_costmap: True
 
-map_server:
-  ros__parameters:
-    # Overridden in launch by the "map" launch configuration or provided default value.
-    # To use in yaml, remove the default "map" value in the tb3_simulation_launch.py file & provide full path to map below.
-    yaml_filename: ""
+# The yaml_filename does not need to be specified since it going to be set by defaults in launch.
+# If you'd rather set it in the yaml, remove the default "map" value in the tb3_simulation_launch.py
+# file & provide full path to map below. If CLI map configuration or launch default is provided, that will be used.
+# map_server:
+#   ros__parameters:
+#     yaml_filename: ""
 
 map_saver:
   ros__parameters:

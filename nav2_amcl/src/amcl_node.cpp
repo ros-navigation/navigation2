@@ -808,6 +808,15 @@ bool AmclNode::updateFilter(
     get_logger(), "Laser %d angles in base frame: min: %.3f inc: %.3f", laser_index, angle_min,
     angle_increment);
 
+  // Check the validity of range_max, must > 0.0
+  if (laser_scan->range_max <= 0.0) {
+    RCLCPP_WARN(
+      get_logger(), "wrong range_max of laser_scan data: %f. The message could be malformed."
+      " Ignore this message and stop updating.",
+      laser_scan->range_max);
+    return false;
+  }
+
   // Apply range min/max thresholds, if the user supplied them
   if (laser_max_range_ > 0.0) {
     ldata.range_max = std::min(laser_scan->range_max, static_cast<float>(laser_max_range_));
