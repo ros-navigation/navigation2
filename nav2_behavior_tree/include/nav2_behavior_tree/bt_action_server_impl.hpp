@@ -284,8 +284,7 @@ void BtActionServer<ActionT>::populateErrorCode(
       if (current_error_code != 0 && current_error_code < highest_priority_error_code) {
         highest_priority_error_code = current_error_code;
       }
-    }
-    else {
+    } else {
       RCLCPP_ERROR(
           logger_,
           "Failed to get error code: %s from blackboard",
