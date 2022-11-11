@@ -25,55 +25,21 @@ from launch_ros.actions import Node
 def generate_launch_description():
     # warehouse_dir = get_package_share_directory('aws_robomaker_small_warehouse_world')
     nav2_bringup_dir = get_package_share_directory('nav2_bringup')
-    # python_commander_dir = get_package_share_directory('nav2_simple_commander')
-    #
-    # map_yaml_file = os.path.join(warehouse_dir, 'maps', '005', 'map.yaml')
-    # world = os.path.join(python_commander_dir, 'warehouse.world')
-    #
-    # # start the simulation
-    # start_gazebo_server_cmd = ExecuteProcess(
-    #     cmd=['gzserver', '-s', 'libgazebo_ros_factory.so', world],
-    #     cwd=[warehouse_dir], output='screen')
-    #
-    # start_gazebo_client_cmd = ExecuteProcess(
-    #     cmd=['gzclient'],
-    #     cwd=[warehouse_dir], output='screen')
-    #
-    # urdf = os.path.join(nav2_bringup_dir, 'urdf', 'turtlebot3_waffle.urdf')
-    # start_robot_state_publisher_cmd = Node(
-    #     package='robot_state_publisher',
-    #     executable='robot_state_publisher',
-    #     name='robot_state_publisher',
-    #     output='screen',
-    #     arguments=[urdf])
-    #
-    # # start the visualization
-    # rviz_cmd = IncludeLaunchDescription(
-    #     PythonLaunchDescriptionSource(
-    #         os.path.join(nav2_bringup_dir, 'launch', 'rviz_launch.py')),
-    #     launch_arguments={'namespace': '',
-    #                       'use_namespace': 'False'}.items())
 
     # start navigation
     bringup_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(nav2_bringup_dir, 'launch', 'tb3_simulation_launch.py')))
-    # launch_arguments={'map': map_yaml_file}.items())
+            os.path.join(nav2_bringup_dir, 'launch', 'tb3_simulation_launch.py')),
+        launch_arguments={'headless': 'True',
+                          'use_rviz': 'False'}.items())
 
-    # demo_cmd = Node(
-    #     package='nav2_simple_commander',
-    #     executable='example_assisted_teleop',
-    #     emulate_tty=True,
-    #     output='screen')
-
-    # start the demo autonomy task
-    # demo_cmd = Node(
-    #     package='nav2_simple_commander',
-    #     executable='example_follow_path',
-    #     emulate_tty=True,
-    #     output='screen')
+    test_error_code = Node(
+        package='nav2_simple_commander',
+        executable='test_error_codes',
+        emulate_tty=True,
+        output='screen')
 
     ld = LaunchDescription()
     ld.add_action(bringup_cmd)
-    # ld.add_action(demo_cmd)
+    ld.add_action(test_error_code)
     return ld
