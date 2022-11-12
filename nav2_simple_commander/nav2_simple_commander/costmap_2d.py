@@ -175,6 +175,26 @@ class PyCostmap2D:
         my = int((wy - self.origin_y) // self.resolution)
         return (mx, my)
 
+    def worldToMapCheck(self, wx: float, wy: float) -> bool:
+        """
+        Check wether the inputs/outputs of worldToMap are valid
+
+        Args
+        ----
+            wx (float) [m]: world coordinate X to get map coordinate
+            wy (float) [m]: world coordinate Y to get map coordinate
+
+        Returns
+        -------
+            bool
+        """
+        if wx < self.origin_x or wy < self.origin_y:
+            return False
+        mx, my = self.worldToMap(wx, wy)
+        if mx < self.size_x and my < self.size_y:
+            return True
+        return False
+
     def getIndex(self, mx: int, my: int) -> int:
         """
         Get the index of the cell using map coordinate XY.
