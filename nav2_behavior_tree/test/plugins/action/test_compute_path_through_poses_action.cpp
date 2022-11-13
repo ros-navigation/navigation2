@@ -14,9 +14,8 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
+
 #include <memory>
-#include <set>
-#include <string>
 #include <vector>
 
 #include "nav_msgs/msg/path.hpp"
@@ -30,6 +29,9 @@
 class ComputePathThroughPosesActionServer
   : public TestActionServer<nav2_msgs::action::ComputePathThroughPoses>
 {
+  using Action = nav2_msgs::action::ComputePathThroughPoses;
+  using ActionResult = Action::Result;
+
 public:
   ComputePathThroughPosesActionServer()
   : TestActionServer("compute_path_through_poses")
@@ -38,11 +40,11 @@ public:
 protected:
   void execute(
     const typename std::shared_ptr<
-      rclcpp_action::ServerGoalHandle<nav2_msgs::action::ComputePathThroughPoses>> goal_handle)
+      rclcpp_action::ServerGoalHandle<Action>> goal_handle)
   override
   {
     const auto goal = goal_handle->get_goal();
-    auto result = std::make_shared<nav2_msgs::action::ComputePathThroughPoses::Result>();
+    auto result = std::make_shared<ActionResult>();
     result->path.poses.resize(2);
     result->path.poses[1].pose.position.x = goal->goals[0].pose.position.x;
     if (goal->use_start) {
@@ -158,6 +160,11 @@ TEST_F(ComputePathThroughPosesActionTestFixture, test_tick)
   EXPECT_EQ(path.poses[0].pose.position.x, 0.0);
   EXPECT_EQ(path.poses[1].pose.position.x, 1.0);
 
+  // check if the returned error code is correct
+  int error_code;
+  config_->blackboard->get<int>("error_code_id", error_code);
+  EXPECT_EQ(error_code, nav2_msgs::action::ComputePathThroughPoses::Goal::NONE);
+
   // halt node so another goal can be sent
   tree_->rootNode()->halt();
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::IDLE);
@@ -223,6 +230,10 @@ TEST_F(ComputePathThroughPosesActionTestFixture, test_tick_use_start)
   EXPECT_EQ(path.poses.size(), 2u);
   EXPECT_EQ(path.poses[0].pose.position.x, 2.0);
   EXPECT_EQ(path.poses[1].pose.position.x, 1.0);
+
+  int error_code;
+  config_->blackboard->get<int>("error_code_id", error_code);
+  EXPECT_EQ(error_code, nav2_msgs::action::ComputePathThroughPoses::Goal::NONE);
 
   // halt node so another goal can be sent
   tree_->rootNode()->halt();
