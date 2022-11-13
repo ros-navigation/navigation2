@@ -17,6 +17,7 @@
 from math import cos, sin
 from line_iterator import LineIterator
 from costmap_2d import PyCostmap2D
+from geometry_msgs.msg import Point
 
 NO_INFORMATION = 255
 LETHAL_OBSTACLE = 254
@@ -29,7 +30,8 @@ class FootprintCollisionChecker():
     def __init__(self, costmap: PyCostmap2D):
         self.costmap_ = costmap
 
-    def footprintCost(self, footprint):
+    def footprintCost(self, footprint: list[Point]):
+        footprint_cost = 0.0
         if not self.costmap_.worldToMapCheck(footprint[0].x, footprint[0].y):
             return LETHAL_OBSTACLE
 
@@ -37,15 +39,15 @@ class FootprintCollisionChecker():
         xstart = x0
         ystart = y0
 
-        for i in range(footprint.size() - 1):
+        for i in range(len(footprint) - 1):
             if not self.costmap_.worldToMapCheck(
                     footprint[i + 1].x, footprint[i + 1].y):
                 return LETHAL_OBSTACLE
 
-            x1, y1 = self.costmap_.worldToMap(
+            x1, y1 = self.worldToMap(
                 footprint[i + 1].x, footprint[i + 1].y)
 
-            footprint_cost = self.lineCost(x0, x1, y0, y1)
+            footprint_cost = max(self.lineCost(x0, x1, y0, y1), footprint_cost)
             x0 = x1
             y0 = y1
 
@@ -60,7 +62,7 @@ class FootprintCollisionChecker():
         line_iterator = LineIterator(x0, y0, x1, y1, 0.1)
 
         while line_iterator.isValid():
-            point_cost = self.costmap_.getCostXY(
+            point_cost = self.pointCost(
                 line_iterator.getX(), line_iterator.getY())
 
             if point_cost == LETHAL_OBSTACLE:
@@ -71,6 +73,24 @@ class FootprintCollisionChecker():
 
         return line_cost
 
+    def worldToMap(self, wx: float, wy: float, mx: int, my: int):
+        return self.costmap_.worldToMap(wx, wy, mx, my)
+
+    def pointCost(self, x: int, y: int):
+        return self.costmap_.getCostXY(x, y)
+
     def setCostmap(self, costmap: PyCostmap2D):
         self.costmap_ = costmap
 
+    def footprintCostAtPose(self, x: float, y: float, theta: float, footprint: list[Point]):
+        cos_th = cos(theta)
+        sin_th = sin(theta)
+        oriented_footprint = []
+
+        for i in range(len(footprint)):
+            new_pt = Point()
+            new_pt.x = x + (footprint[i].x * cos_th - footprint[i].y * sin_th)
+            new_pt.y = y + (footprint[i].x * sin_th + footprint[i].y * cos_th)
+            oriented_footprint.append(new_pt)
+        
+        return self.footprintCost(oriented_footprint)
