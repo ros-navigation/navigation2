@@ -109,7 +109,20 @@ controller_server:
     failure_tolerance: 0.3
     progress_checker_plugin: "progress_checker"
     goal_checker_plugins: ["general_goal_checker"] # "precise_goal_checker"
-    controller_plugins: ["FollowPath"]
+    controller_plugins: [ "unknown", "tf_error", "invalid_path", "patience_exceeded","failed_to_make_progress", "no_valid_control"]
+    unknown:
+      plugin: "nav2_system_tests::UnknownErrorController"
+    tf_error:
+      plugin: "nav2_system_tests::TFErrorController"
+    invalid_path:
+      plugin: "nav2_system_tests::InvalidPathErrorController"
+    patience_exceeded:
+      plugin: "nav2_system_tests::PatienceExceededErrorController"
+    failed_to_make_progress:
+      plugin: "nav2_system_tests::FailedToMakeProgressErrorController"
+    no_valid_control:
+      plugin: "nav2_system_tests::NoValidControlErrorController"
+
 
     # Progress checker parameters
     progress_checker:

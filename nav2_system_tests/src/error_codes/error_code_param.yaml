@@ -1,0 +1,16 @@
+controller_server:
+  ros__parameters:
+    controller_plugins: [ "unknown", "tf_error", "invalid_path", "patience_exceeded",
+                          'failed_to_make_progress', 'no_valid_control']
+    unknown:
+      plugin: "nav2_error_code_test::UnknownErrorController"
+    tf_error:
+      plugin: "nav2_error_code_test::TFErrorController"
+    invalid_path:
+      plugin: "nav2_error_code_test::InvalidPathErrorController"
+    patience_exceeded:
+      plugin: "nav2_error_code_test::PatienceExceededErrorController"
+    failed_to_make_progress:
+      plugin: "nav2_error_code_test::FailedToMakeProgressErrorController"
+    no_valid_control:
+      plugin: "nav2_error_code_test::NoValidControlErrorController"
