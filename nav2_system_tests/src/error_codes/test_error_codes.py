@@ -139,6 +139,13 @@ def main(argv=sys.argv[1:]):
         assert navigator.result_future.result().result.error_code, \
             ComputePathToPose.Goal().INVALID_PLANNER
 
+    success = navigator.followWaypoints(goal_poses)
+    if success:
+        while not navigator.isTaskComplete():
+            time.sleep(0.5)
+        assert navigator.result_future.result().result.error_codes[0], \
+            ComputePathToPose.Goal().INVALID_PLANNER
+
     navigator.lifecycleShutdown()
     rclpy.shutdown()
     exit(0)
