@@ -32,6 +32,7 @@ class WaypointFollowerTest(Node):
 
     def __init__(self):
         super().__init__(node_name='nav2_waypoint_tester', namespace='')
+        self.waypoint_follower_ns = 'waypoint_follower'
         self.waypoints = None
         self.action_client = ActionClient(self, FollowWaypoints, 'follow_waypoints')
         self.initial_pose_pub = self.create_publisher(PoseWithCovarianceStamped,
@@ -120,6 +121,10 @@ class WaypointFollowerTest(Node):
 
     def publishInitialPose(self):
         self.initial_pose_pub.publish(self.init_pose)
+
+    def changeParamValue(self, param, value):
+        param_ns = self.waypoint_follower_ns + '.' + param
+        self.declare_paramter(param_ns, value)
 
     def shutdown(self):
         self.info_msg('Shutting down')
@@ -214,6 +219,17 @@ def main(argv=sys.argv[1:]):
     result = test.run(True)
     assert not result
     result = not result
+
+    # stop on failure test with bogous waypoint
+    # WIP
+    test.changeParamValue('stop_on_failure', True)
+    wps = [[-0.52, -0.54], [100.0, 100.0], [0.58, 0.52]]
+    starting_pose = [-2.0, -0.5]
+    test.setWaypoints(wps)
+    test.setInitialPose(starting_pose)
+    assert not result
+    result = not result
+    test.changeParamValue('stop_on_failure', False)
 
     test.shutdown()
     test.info_msg('Done Shutting Down.')
