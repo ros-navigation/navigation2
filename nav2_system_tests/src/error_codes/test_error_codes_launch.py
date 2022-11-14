@@ -30,8 +30,9 @@ from nav2_common.launch import RewrittenYaml
 
 def generate_launch_description():
     bringup_dir = get_package_share_directory('nav2_bringup')
-    # params_file = os.path.join(os.getenv('TEST_DIR'), 'error_code_param.yaml')
-    #
+    params_file = os.path.join(os.getenv('TEST_DIR'), 'error_code_param.yaml')
+    print(params_file)
+
     # configured_params = RewrittenYaml(
     #     source_file=params_file,
     #     root_key='',
@@ -47,7 +48,8 @@ def generate_launch_description():
                 os.path.join(bringup_dir, 'launch', 'tb3_simulation_launch.py')),
             launch_arguments={
                 'use_rviz': 'False',
-                'use_composition': 'False'}.items())
+                'use_composition': 'False',
+                'params_file': params_file}.items())
     ])
 
 def main(argv=sys.argv[1:]):

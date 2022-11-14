@@ -82,6 +82,7 @@ def main(argv=sys.argv[1:]):
 
 
     navigator.lifecycleShutdown()
+    rclpy.shutdown()
     exit(0)
 
 
