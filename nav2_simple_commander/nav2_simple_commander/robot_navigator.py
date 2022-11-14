@@ -360,6 +360,7 @@ class BasicNavigator(Node):
             return None
         else:
             return rtn.path
+
     def _getPathThroughPosesImpl(self, start, goals, planner_id='', use_start=False):
         """
         Send a `ComputePathThroughPoses` action request.
