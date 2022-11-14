@@ -208,7 +208,7 @@ def main(argv=sys.argv[1:]):
     time.sleep(2)
     test.cancel_goal()
 
-    # Set a waypoint outside the bounds of the map
+    # a failure case
     time.sleep(2)
     test.setWaypoints([[100.0, 100.0]])
     result = test.run(True)
