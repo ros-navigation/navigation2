@@ -250,6 +250,9 @@ AmclNode::AmclNode(const rclcpp::NodeOptions & options)
     add_parameter(
       "std_warn_level_yaw", rclcpp::ParameterValue(0.1),
       "Limit threshold of yaw value. Monitors the estimated standard deviation of the filter.");
+  add_parameter(
+    "max_particle_gen_prob_ext_pose", rclcpp::ParameterValue(0.01f),
+    "Maximum probability of generating a particle based on external pose source");
 }
 
 AmclNode::~AmclNode()
@@ -1240,6 +1243,7 @@ AmclNode::initParameters()
   get_parameter("std_warn_level_x", std_warn_level_x_);
   get_parameter("std_warn_level_y", std_warn_level_y_);
   get_parameter("std_warn_level_yaw", std_warn_level_yaw_);
+  get_parameter("max_particle_gen_prob_ext_pose", max_particle_gen_prob_ext_pose_);
   save_pose_period_ = tf2::durationFromSec(1.0 / save_pose_rate);
   transform_tolerance_ = tf2::durationFromSec(tmp_tol);
 
@@ -1746,7 +1750,7 @@ AmclNode::initParticleFilter()
   pf_ = pf_alloc(
     min_particles_, max_particles_, alpha_slow_, alpha_fast_,
     (pf_init_model_fn_t)AmclNode::uniformPoseGenerator,
-    reinterpret_cast<void *>(map_), k_l_);
+    reinterpret_cast<void *>(map_), k_l_, max_particle_gen_prob_ext_pose_);
   pf_->pop_err = pf_err_;
   pf_->pop_z = pf_z_;
 

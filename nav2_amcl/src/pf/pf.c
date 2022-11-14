@@ -48,7 +48,9 @@ static int pf_resample_limit(pf_t * pf, int k);
 pf_t * pf_alloc(
   int min_samples, int max_samples,
   double alpha_slow, double alpha_fast,
-  pf_init_model_fn_t random_pose_fn, void * random_pose_data, double k_l)
+  pf_init_model_fn_t random_pose_fn,
+  void * random_pose_data, double k_l,
+  double max_particle_gen_prob_ext_pose)
 {
   int i, j;
   pf_t * pf;
@@ -103,6 +105,7 @@ pf_t * pf_alloc(
   pf->w_slow = 0.0;
   pf->w_fast = 0.0;
   pf->k_l = k_l;
+  pf->max_particle_gen_prob_ext_pose = max_particle_gen_prob_ext_pose
 
   pf->alpha_slow = alpha_slow;
   pf->alpha_fast = alpha_fast;

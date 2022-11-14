@@ -427,7 +427,7 @@ protected:
   double z_short_;
   double z_rand_;
   double k_l_;
-  bool fuse_external_pose_;
+  double max_particle_gen_prob_ext_pose_;
   std::string scan_topic_{"scan"};
   std::string map_topic_{"map"};
 };
