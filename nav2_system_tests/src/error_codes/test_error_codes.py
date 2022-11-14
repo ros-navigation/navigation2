@@ -15,6 +15,7 @@
 
 import sys
 import time
+import os
 
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Path
@@ -22,6 +23,7 @@ from nav2_simple_commander.robot_navigator import BasicNavigator
 
 import rclpy
 from nav2_msgs.action import FollowPath, ComputePathToPose, ComputePathThroughPoses
+from ament_index_python.packages import get_package_share_directory
 
 
 def main(argv=sys.argv[1:]):
@@ -124,6 +126,18 @@ def main(argv=sys.argv[1:]):
     for planner, error_code in compute_path_through_poses.items():
         result = navigator._getPathThroughPosesImpl(initial_pose, goal_poses, planner)
         assert result.error_code == error_code, "Compute path through pose error does not match"
+
+    # Check that the error codes are piped up correctly
+    behavior_tree = os.path.join(get_package_share_directory('nav2_bt_navigator'),
+                                 'behavior_trees',
+                                 'navigate_w_replanning_time.xml')
+
+    success = navigator.goToPose(goal_pose, behavior_tree)
+    if success:
+        while not navigator.isTaskComplete():
+            time.sleep(0.5)
+        assert navigator.result_future.result().result.error_code, \
+            ComputePathToPose.Goal().INVALID_PLANNER
 
     navigator.lifecycleShutdown()
     rclpy.shutdown()

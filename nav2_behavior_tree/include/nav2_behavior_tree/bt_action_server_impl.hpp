@@ -276,18 +276,19 @@ void BtActionServer<ActionT>::populateErrorCode(
   typename std::shared_ptr<typename ActionT::Result> result)
 {
   int highest_priority_error_code = std::numeric_limits<int>::max();
-  for (const auto & error_code_id_name : error_code_ids_) {
-    int current_error_code;
-
-    if (blackboard_->get<int>(error_code_id_name, current_error_code)) {
+  for (const auto & error_code_id : error_code_ids_) {
+    // TODO(jwallace42): Using try catch due to
+    // https://github.com/BehaviorTree/BehaviorTree.CPP/issues/271
+    try {
+      int current_error_code = blackboard_->get<int>(error_code_id);
       if (current_error_code != 0 && current_error_code < highest_priority_error_code) {
         highest_priority_error_code = current_error_code;
       }
-    } else {
+    } catch (...) {
       RCLCPP_ERROR(
         logger_,
         "Failed to get error code: %s from blackboard",
-        error_code_id_name.c_str());
+        error_code_id.c_str());
     }
   }
 

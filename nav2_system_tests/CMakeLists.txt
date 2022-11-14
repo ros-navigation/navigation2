@@ -106,4 +106,6 @@ if(BUILD_TESTING)
 
 endif()
 
+ament_export_libraries(${local_controller_plugin_lib})
+ament_export_libraries(${global_planner_plugin_lib})
 ament_package()
