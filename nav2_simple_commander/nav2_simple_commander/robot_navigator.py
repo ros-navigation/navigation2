@@ -364,7 +364,7 @@ class BasicNavigator(Node):
     def _getPathThroughPosesImpl(self, start, goals, planner_id='', use_start=False):
         """
         Send a `ComputePathThroughPoses` action request.
-        
+
         Internal implementation to get the full result, not just the path.
         """
         self.debug("Waiting for 'ComputePathThroughPoses' action server")
