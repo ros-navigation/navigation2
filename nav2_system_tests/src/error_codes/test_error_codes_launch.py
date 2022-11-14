@@ -20,27 +20,14 @@ from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
 from launch import LaunchService
-from launch.actions import ExecuteProcess, IncludeLaunchDescription, SetEnvironmentVariable
-from launch.launch_context import LaunchContext
-from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch_ros.actions import Node
+from launch.actions import ExecuteProcess, IncludeLaunchDescription
 from launch_testing.legacy import LaunchTestService
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 
-from nav2_common.launch import RewrittenYaml
 
 def generate_launch_description():
     bringup_dir = get_package_share_directory('nav2_bringup')
     params_file = os.path.join(os.getenv('TEST_DIR'), 'error_code_param.yaml')
-    print(params_file)
-
-    # configured_params = RewrittenYaml(
-    #     source_file=params_file,
-    #     root_key='',
-    #     param_rewrites='',
-    #     convert_types=True)
-    #
-    # context = LaunchContext()
-    # new_yaml = configured_params.perform(context)
 
     return LaunchDescription([
         IncludeLaunchDescription(
@@ -51,6 +38,7 @@ def generate_launch_description():
                 'use_composition': 'False',
                 'params_file': params_file}.items())
     ])
+
 
 def main(argv=sys.argv[1:]):
     ld = generate_launch_description()

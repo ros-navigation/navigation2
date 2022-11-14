@@ -345,49 +345,59 @@ class BasicNavigator(Node):
         self.result_future = self.goal_handle.get_result_async()
         rclpy.spin_until_future_complete(self, self.result_future)
         self.status = self.result_future.result().status
-        if self.status != GoalStatus.STATUS_SUCCEEDED:
-            self.warn(f'Getting path failed with status code: {self.status}')
-            return None
 
         return self.result_future.result().result
 
     def getPath(self, start, goal, planner_id='', use_start=False):
         """Send a `ComputePathToPose` action request."""
         rtn = self._getPathImpl(start, goal, planner_id='', use_start=False)
+
+        if self.status != GoalStatus.STATUS_SUCCEEDED:
+            self.warn(f'Getting path failed with status code: {self.status}')
+            return None
+
         if not rtn:
             return None
         else:
             return rtn.path
-
-    def getPathThroughPoses(self, start, goals, planner_id='', use_start=False):
-        """Send a `ComputePathThroughPoses` action request."""
+    def _getPathThroughPosesImpl(self, start, goals, planner_id='', use_start=False):
+        """
+        Send a `ComputePathThroughPoses` action request.
+        Internal implementation to get the full result, not just the path.
+        """
         self.debug("Waiting for 'ComputePathThroughPoses' action server")
         while not self.compute_path_through_poses_client.wait_for_server(timeout_sec=1.0):
             self.info("'ComputePathThroughPoses' action server not available, waiting...")
-
         goal_msg = ComputePathThroughPoses.Goal()
         goal_msg.start = start
         goal_msg.goals = goals
         goal_msg.planner_id = planner_id
         goal_msg.use_start = use_start
-
         self.info('Getting path...')
         send_goal_future = self.compute_path_through_poses_client.send_goal_async(goal_msg)
         rclpy.spin_until_future_complete(self, send_goal_future)
         self.goal_handle = send_goal_future.result()
-
         if not self.goal_handle.accepted:
             self.error('Get path was rejected!')
             return None
-
         self.result_future = self.goal_handle.get_result_async()
         rclpy.spin_until_future_complete(self, self.result_future)
         self.status = self.result_future.result().status
+
+        return self.result_future.result().result
+
+    def getPathThroughPoses(self, start, goals, planner_id='', use_start=False):
+        """Send a `ComputePathThroughPoses` action request."""
+        rtn = self.__getPathThroughPosesImpl(start, goals, planner_id='', use_start=False)
+
         if self.status != GoalStatus.STATUS_SUCCEEDED:
             self.warn(f'Getting path failed with status code: {self.status}')
             return None
 
-        return self.result_future.result().result.path
+        if not rtn:
+            return None
+        else:
+            return rtn.path
 
     def _smoothPathImpl(self, path, smoother_id='', max_duration=2.0, check_for_collision=False):
         """

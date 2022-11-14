@@ -18,10 +18,10 @@ import time
 
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Path
-from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
+from nav2_simple_commander.robot_navigator import BasicNavigator
 
 import rclpy
-from nav2_msgs.action import FollowPath
+from nav2_msgs.action import FollowPath, ComputePathToPose, ComputePathThroughPoses
 
 
 def main(argv=sys.argv[1:]):
@@ -79,7 +79,48 @@ def main(argv=sys.argv[1:]):
         else:
             assert False, "Follow path was rejected"
 
+    goal_pose = PoseStamped()
+    goal_pose.header.frame_id = 'map'
+    goal_pose.header.stamp = navigator.get_clock().now().to_msg()
 
+    # Check compute path to pose error codes
+    goal_pose.pose.position.x = -1.00
+    goal_pose.pose.position.y = -0.50
+    goal_pose.pose.orientation.z = 0.0
+    goal_pose.pose.orientation.w = 1.0
+
+    compute_path_to_pose = {
+        'unknown': ComputePathToPose.Goal().UNKNOWN,
+        'tf_error': ComputePathToPose.Goal().TF_ERROR,
+        'start_outside_map': ComputePathToPose.Goal().START_OUTSIDE_MAP,
+        'goal_outside_map': ComputePathToPose.Goal().GOAL_OUTSIDE_MAP,
+        'start_occupied': ComputePathToPose.Goal().START_OCCUPIED,
+        'goal_occupied': ComputePathToPose.Goal().GOAL_OCCUPIED,
+        'timeout': ComputePathToPose.Goal().TIMEOUT,
+        'no_valid_path': ComputePathToPose.Goal().NO_VALID_PATH}
+
+    for planner, error_code in compute_path_to_pose.items():
+        result = navigator._getPathImpl(initial_pose, goal_pose, planner)
+        assert result.error_code == error_code, "Compute path to pose error does not match"
+
+    # Check compute path through error codes
+    goal_pose1 = goal_pose
+    goal_poses = [goal_pose, goal_pose1]
+
+    compute_path_through_poses = {
+        'unknown': ComputePathThroughPoses.Goal().UNKNOWN,
+        'tf_error': ComputePathThroughPoses.Goal().TF_ERROR,
+        'start_outside_map': ComputePathThroughPoses.Goal().START_OUTSIDE_MAP,
+        'goal_outside_map': ComputePathThroughPoses.Goal().GOAL_OUTSIDE_MAP,
+        'start_occupied': ComputePathThroughPoses.Goal().START_OCCUPIED,
+        'goal_occupied': ComputePathThroughPoses.Goal().GOAL_OCCUPIED,
+        'timeout': ComputePathThroughPoses.Goal().TIMEOUT,
+        'no_valid_path': ComputePathThroughPoses.Goal().NO_VALID_PATH,
+        'no_viapoints_given': ComputePathThroughPoses.Goal().NO_VIAPOINTS_GIVEN}
+
+    for planner, error_code in compute_path_through_poses.items():
+        result = navigator._getPathThroughPosesImpl(initial_pose, goal_poses, planner)
+        assert result.error_code == error_code, "Compute path through pose error does not match"
 
     navigator.lifecycleShutdown()
     rclpy.shutdown()

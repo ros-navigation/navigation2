@@ -276,12 +276,27 @@ map_saver:
 planner_server:
   ros__parameters:
     expected_planner_frequency: 20.0
-    planner_plugins: ["GridBased"]
-    GridBased:
-      plugin: "nav2_navfn_planner/NavfnPlanner"
-      tolerance: 0.5
-      use_astar: false
-      allow_unknown: true
+    planner_plugins: [ "unknown", "tf_error", "start_outside_map", "goal_outside_map",
+                       "start_occupied", "goal_occupied", "timeout","no_valid_path",
+                       "no_viapoints_given" ]
+    unknown:
+      plugin: "nav2_system_tests::UnknownErrorPlanner"
+    tf_error:
+      plugin: "nav2_system_tests::TFErrorPlanner"
+    start_outside_map:
+      plugin: "nav2_system_tests::StartOutsideMapErrorPlanner"
+    goal_outside_map:
+      plugin: "nav2_system_tests::GoalOutsideMapErrorPlanner"
+    start_occupied:
+      plugin: "nav2_system_tests::StartOccupiedErrorPlanner"
+    goal_occupied:
+      plugin: "nav2_system_tests::GoalOccupiedErrorPlanner"
+    timeout:
+      plugin: "nav2_system_tests::TimedOutErrorPlanner"
+    no_valid_path:
+      plugin: "nav2_system_tests::NoValidPathErrorPlanner"
+    no_viapoints_given:
+      plugin: "nav2_system_tests::NoViapointsGivenErrorPlanner"
 
 smoother_server:
   ros__parameters:

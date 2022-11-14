@@ -17,8 +17,9 @@
 #include "pluginlib/class_list_macros.hpp"
 PLUGINLIB_EXPORT_CLASS(nav2_system_tests::UnknownErrorController, nav2_core::Controller)
 PLUGINLIB_EXPORT_CLASS(nav2_system_tests::TFErrorController, nav2_core::Controller)
-PLUGINLIB_EXPORT_CLASS(nav2_system_tests::FailedToMakeProgressErrorController,
-                       nav2_core::Controller)
-PLUGINLIB_EXPORT_CLASS(nav2_system_tests::PatienceExceededErrorController,nav2_core::Controller)
-PLUGINLIB_EXPORT_CLASS(nav2_system_tests::InvalidPathErrorController,nav2_core::Controller)
-PLUGINLIB_EXPORT_CLASS(nav2_system_tests::NoValidControlErrorController,nav2_core::Controller)
+PLUGINLIB_EXPORT_CLASS(
+  nav2_system_tests::FailedToMakeProgressErrorController,
+  nav2_core::Controller)
+PLUGINLIB_EXPORT_CLASS(nav2_system_tests::PatienceExceededErrorController, nav2_core::Controller)
+PLUGINLIB_EXPORT_CLASS(nav2_system_tests::InvalidPathErrorController, nav2_core::Controller)
+PLUGINLIB_EXPORT_CLASS(nav2_system_tests::NoValidControlErrorController, nav2_core::Controller)
