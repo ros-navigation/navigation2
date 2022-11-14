@@ -27,6 +27,13 @@ public:
   : std::runtime_error(description) {}
 };
 
+class InvalidController : public ControllerException
+{
+public:
+  explicit InvalidController(const std::string & description)
+  : ControllerException(description) {}
+};
+
 class ControllerTFError : public ControllerException
 {
 public:

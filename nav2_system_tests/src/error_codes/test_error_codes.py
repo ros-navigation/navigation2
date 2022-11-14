@@ -59,6 +59,7 @@ def main(argv=sys.argv[1:]):
 
     follow_path = {
         'unknown': FollowPath.Goal().UNKNOWN,
+        'invalid_controller': FollowPath.Goal().INVALID_CONTROLLER,
         'tf_error': FollowPath.Goal().TF_ERROR,
         'invalid_path': FollowPath.Goal().INVALID_PATH,
         'patience_exceeded': FollowPath.Goal().PATIENCE_EXCEEDED,
@@ -91,6 +92,7 @@ def main(argv=sys.argv[1:]):
 
     compute_path_to_pose = {
         'unknown': ComputePathToPose.Goal().UNKNOWN,
+        'invalid_planner': ComputePathToPose.Goal().INVALID_PLANNER,
         'tf_error': ComputePathToPose.Goal().TF_ERROR,
         'start_outside_map': ComputePathToPose.Goal().START_OUTSIDE_MAP,
         'goal_outside_map': ComputePathToPose.Goal().GOAL_OUTSIDE_MAP,
@@ -109,6 +111,7 @@ def main(argv=sys.argv[1:]):
 
     compute_path_through_poses = {
         'unknown': ComputePathThroughPoses.Goal().UNKNOWN,
+        'invalid_planner': ComputePathToPose.Goal().INVALID_PLANNER,
         'tf_error': ComputePathThroughPoses.Goal().TF_ERROR,
         'start_outside_map': ComputePathThroughPoses.Goal().START_OUTSIDE_MAP,
         'goal_outside_map': ComputePathThroughPoses.Goal().GOAL_OUTSIDE_MAP,

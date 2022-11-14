@@ -57,7 +57,6 @@ public:
   }
 };
 
-
 class StartOccupiedErrorPlanner : public UnknownErrorPlanner
 {
   nav_msgs::msg::Path createPlan(
