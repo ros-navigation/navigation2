@@ -39,6 +39,7 @@ class WaypointFollowerTest(Node):
                                                       'initialpose', 10)
         self.initial_pose_received = False
         self.goal_handle = None
+        self.action_result = None
 
         pose_qos = QoSProfile(
           durability=QoSDurabilityPolicy.TRANSIENT_LOCAL,
@@ -105,6 +106,7 @@ class WaypointFollowerTest(Node):
             rclpy.spin_until_future_complete(self, get_result_future)
             status = get_result_future.result().status
             result = get_result_future.result().result
+            self.action_result = result
         except Exception as e:  # noqa: B902
             self.error_msg(f'Service call failed {e!r}')
 
@@ -221,7 +223,6 @@ def main(argv=sys.argv[1:]):
     result = not result
 
     # stop on failure test with bogous waypoint
-    # WIP
     test.changeParamValue('stop_on_failure', True)
     wps = [[-0.52, -0.54], [100.0, 100.0], [0.58, 0.52]]
     starting_pose = [-2.0, -0.5]
@@ -229,7 +230,11 @@ def main(argv=sys.argv[1:]):
     test.setInitialPose(starting_pose)
     assert not result
     result = not result
+    mwps = test.action_result.missed_waypoints
+    result = len(mwps) > 0
     test.changeParamValue('stop_on_failure', False)
+
+    #
 
     test.shutdown()
     test.info_msg('Done Shutting Down.')
