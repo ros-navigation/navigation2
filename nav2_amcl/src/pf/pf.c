@@ -386,6 +386,10 @@ void pf_update_resample(pf_t * pf)
   set_b = pf->sets + (pf->current_set + 1) % 2;
 
   double total_dist_prob = 0;
+
+  double covariance_determinant = (pf->cov_matrix[0] * pf->cov_matrix[4] * pf->cov_matrix[8]);
+  double max_particle_likelihood = 1/sqrt(pow(2*M_PI, 3) * covariance_determinant);
+
   if(pf->ext_pose_is_valid){
     double total_weight = 0;
     for(int i = 0; i < set_a->sample_count; i++)
@@ -393,8 +397,7 @@ void pf_update_resample(pf_t * pf)
 
       // See Improved LiDAR Probabilistic Localization for Autonomous Vehicles Using GNSS, #3.2 for details
       double distance = (pow(set_a->samples[i].pose.v[0]-pf->ext_x, 2)/pf->cov_matrix[0] + pow(set_a->samples[i].pose.v[1]-pf->ext_y, 2)/pf->cov_matrix[4] + pow(set_a->samples[i].pose.v[2]-pf->ext_yaw, 2)/pf->cov_matrix[8]);
-      double covariance_determinant = (pf->cov_matrix[0] * pf->cov_matrix[4] * pf->cov_matrix[8]);
-      double ext_pose_likelihood = 1/sqrt(pow(2*M_PI, 3) * covariance_determinant)*exp(-1*distance/2);
+      double ext_pose_likelihood = max_particle_likelihood*exp(-1*distance/2);
 
       total_dist_prob += ext_pose_likelihood;
 
@@ -447,7 +450,7 @@ if(pf->ext_pose_is_valid){
 
   // See Improved LiDAR Probabilistic Localization for Autonomous Vehicles Using GNSS, #3.4 for details
   total_dist_prob = total_dist_prob/set_a->sample_count;
-  w_diff = 0.5 - total_dist_prob;
+  w_diff = 0.01 * max_particle_likelihood - total_dist_prob;
 
   double w_diff_old = 1.0 - pf->w_fast / pf->w_slow;
 
