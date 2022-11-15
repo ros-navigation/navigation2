@@ -813,7 +813,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
         pf_->ext_pose_is_valid = 0;
       } else {
         ExternalPoseMeasument tmp;
-        if(ext_pose_buffer.findClosestMeasurement(last_laser_received_ts_.nanoseconds(), tmp)) {
+        if(ext_pose_buffer.findClosestMeasurement(last_laser_received_ts_.seconds(), tmp)) {
           pf_->ext_pose_is_valid = 1;
 
           pf_->ext_x = tmp.x;
