@@ -44,12 +44,15 @@ void SimpleSmoother::configure(
     node, name + ".w_smooth", rclcpp::ParameterValue(0.3));
   declare_parameter_if_not_declared(
     node, name + ".do_refinement", rclcpp::ParameterValue(true));
+  declare_parameter_if_not_declared(
+    node, name + ".refinement_num", rclcpp::ParameterValue(2));
 
   node->get_parameter(name + ".tolerance", tolerance_);
   node->get_parameter(name + ".max_its", max_its_);
   node->get_parameter(name + ".w_data", data_w_);
   node->get_parameter(name + ".w_smooth", smooth_w_);
   node->get_parameter(name + ".do_refinement", do_refinement_);
+  node->get_parameter(name + ".refinement_num", refinement_num_);
 }
 
 bool SimpleSmoother::smooth(
@@ -58,7 +61,6 @@ bool SimpleSmoother::smooth(
 {
   auto costmap = costmap_sub_->getCostmap();
 
-  refinement_ctr_ = 0;
   steady_clock::time_point start = steady_clock::now();
   double time_remaining = max_time.seconds();
 
@@ -80,6 +82,7 @@ bool SimpleSmoother::smooth(
       // Make sure we're still able to smooth with time remaining
       steady_clock::time_point now = steady_clock::now();
       time_remaining = max_time.seconds() - duration_cast<duration<double>>(now - start).count();
+      refinement_ctr_ = 0;
 
       // Smooth path segment naively
       success = success && smoothImpl(
@@ -180,7 +183,7 @@ bool SimpleSmoother::smoothImpl(
 
   // Lets do additional refinement, it shouldn't take more than a couple milliseconds
   // but really puts the path quality over the top.
-  if (do_refinement_ && refinement_ctr_ < 4) {
+  if (do_refinement_ && refinement_ctr_ < refinement_num_) {
     refinement_ctr_++;
     smoothImpl(new_path, reversing_segment, costmap, max_time);
   }
