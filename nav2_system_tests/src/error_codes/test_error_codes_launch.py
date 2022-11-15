@@ -16,28 +16,64 @@
 import os
 import sys
 
-from ament_index_python.packages import get_package_share_directory
-
 from launch import LaunchDescription
 from launch import LaunchService
-from launch.actions import ExecuteProcess, IncludeLaunchDescription
+from launch.actions import ExecuteProcess
 from launch_testing.legacy import LaunchTestService
-from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch_ros.actions import Node
+from launch.actions import GroupAction
 
 
 def generate_launch_description():
-    bringup_dir = get_package_share_directory('nav2_bringup')
     params_file = os.path.join(os.getenv('TEST_DIR'), 'error_code_param.yaml')
 
-    return LaunchDescription([
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                os.path.join(bringup_dir, 'launch', 'tb3_simulation_launch.py')),
-            launch_arguments={
-                'use_rviz': 'False',
-                'use_composition': 'False',
-                'params_file': params_file}.items())
-    ])
+    remappings = [('/tf', 'tf'),
+                  ('/tf_static', 'tf_static')]
+
+    lifecycle_nodes = ['controller_server',
+                       'planner_server']
+
+    load_nodes = GroupAction(
+        actions=[
+            # SetParameter("use_sim_time", 'True'),
+            Node(
+                package='tf2_ros',
+                executable='static_transform_publisher',
+                output='screen',
+                arguments=['0', '0', '0', '0', '0', '0', 'map', 'odom']),
+            Node(
+                package='tf2_ros',
+                executable='static_transform_publisher',
+                output='screen',
+                arguments=['0', '0', '0', '0', '0', '0', 'odom', 'base_link']),
+            Node(
+                package='nav2_controller',
+                executable='controller_server',
+                output='screen',
+                respawn_delay=2.0,
+                parameters=[params_file],
+                remappings=remappings + [('cmd_vel', 'cmd_vel_nav')]),
+            Node(
+                package='nav2_planner',
+                executable='planner_server',
+                name='planner_server',
+                output='screen',
+                respawn_delay=2.0,
+                parameters=[params_file],
+                remappings=remappings),
+            Node(
+                package='nav2_lifecycle_manager',
+                executable='lifecycle_manager',
+                name='lifecycle_manager_navigation',
+                output='screen',
+                parameters=[{'autostart': True},
+                            {'node_names': lifecycle_nodes}])
+        ])
+
+    ld = LaunchDescription()
+    ld.add_action(load_nodes)
+
+    return ld
 
 
 def main(argv=sys.argv[1:]):

@@ -15,7 +15,6 @@
 
 import sys
 import time
-import os
 
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Path
@@ -23,14 +22,13 @@ from nav2_simple_commander.robot_navigator import BasicNavigator
 
 import rclpy
 from nav2_msgs.action import FollowPath, ComputePathToPose, ComputePathThroughPoses
-from ament_index_python.packages import get_package_share_directory
 
 
 def main(argv=sys.argv[1:]):
     rclpy.init()
 
     navigator = BasicNavigator()
-
+    #
     # Set our demo's initial pose
     initial_pose = PoseStamped()
     initial_pose.header.frame_id = 'map'
@@ -41,10 +39,6 @@ def main(argv=sys.argv[1:]):
     initial_pose.pose.position.y = -0.50
     initial_pose.pose.orientation.z = 0.0
     initial_pose.pose.orientation.w = 1.0
-    navigator.setInitialPose(initial_pose)
-
-    # Wait for navigation to fully activate, since autostarting nav2
-    navigator.waitUntilNav2Active()
 
     # Follow path error codes
     path = Path()
@@ -66,7 +60,7 @@ def main(argv=sys.argv[1:]):
         'invalid_path': FollowPath.Goal().INVALID_PATH,
         'patience_exceeded': FollowPath.Goal().PATIENCE_EXCEEDED,
         'failed_to_make_progress': FollowPath.Goal().FAILED_TO_MAKE_PROGRESS,
-        'no_valid_control': FollowPath.Goal().PATIENCE_EXCEEDED
+        'no_valid_control': FollowPath.Goal().NO_VALID_CONTROL
     }
 
     for controller, error_code in follow_path.items():
@@ -126,25 +120,6 @@ def main(argv=sys.argv[1:]):
     for planner, error_code in compute_path_through_poses.items():
         result = navigator._getPathThroughPosesImpl(initial_pose, goal_poses, planner)
         assert result.error_code == error_code, "Compute path through pose error does not match"
-
-    # Check that the error codes are piped up correctly
-    behavior_tree = os.path.join(get_package_share_directory('nav2_bt_navigator'),
-                                 'behavior_trees',
-                                 'navigate_w_replanning_time.xml')
-
-    success = navigator.goToPose(goal_pose, behavior_tree)
-    if success:
-        while not navigator.isTaskComplete():
-            time.sleep(0.5)
-        assert navigator.result_future.result().result.error_code, \
-            ComputePathToPose.Goal().INVALID_PLANNER
-
-    success = navigator.followWaypoints(goal_poses)
-    if success:
-        while not navigator.isTaskComplete():
-            time.sleep(0.5)
-        assert navigator.result_future.result().result.error_codes[0], \
-            ComputePathToPose.Goal().INVALID_PLANNER
 
     navigator.lifecycleShutdown()
     rclpy.shutdown()
