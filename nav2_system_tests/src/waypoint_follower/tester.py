@@ -18,7 +18,7 @@ import time
 
 from action_msgs.msg import GoalStatus
 from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
-from nav2_msgs.action import FollowWaypoints
+from nav2_msgs.action import FollowWaypoints, ComputePathToPose
 from nav2_msgs.srv import ManageLifecycleNodes
 
 import rclpy
@@ -214,7 +214,8 @@ def main(argv=sys.argv[1:]):
     result = test.run(True)
     assert not result
     result = not result
-    assert len(test.result.error_codes) > 0
+    print("ERROR CODES: ", test.result.error_codes)
+    assert test.result.error_codes[0] == ComputePathToPose.Goal().GOAL_OUTSIDE_MAP
 
     test.shutdown()
     test.info_msg('Done Shutting Down.')
