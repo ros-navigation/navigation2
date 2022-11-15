@@ -128,7 +128,7 @@ TEST(SmootherTest, test_simple_smoother)
     EXPECT_LT(
       fabs(
         straight_irregular_path.poses[i].pose.position.y -
-        straight_irregular_path.poses[i + 1].pose.position.y), 0.38);
+        straight_irregular_path.poses[i + 1].pose.position.y), 0.50);
   }
 
   // Test regular path, should see no effective change
@@ -181,8 +181,8 @@ TEST(SmootherTest, test_simple_smoother)
   straight_regular_path.poses[10].pose.position.x = 0.95;
   straight_regular_path.poses[10].pose.position.y = 0.5;
   EXPECT_TRUE(smoother->smooth(straight_regular_path, max_time));
-  EXPECT_NEAR(straight_regular_path.poses[5].pose.position.x, 0.637, 0.01);
-  EXPECT_NEAR(straight_regular_path.poses[5].pose.position.y, 0.353, 0.01);
+  EXPECT_NEAR(straight_regular_path.poses[5].pose.position.x, 0.607, 0.01);
+  EXPECT_NEAR(straight_regular_path.poses[5].pose.position.y, 0.387, 0.01);
 
   // Test that collisions are rejected
   nav_msgs::msg::Path collision_path;
