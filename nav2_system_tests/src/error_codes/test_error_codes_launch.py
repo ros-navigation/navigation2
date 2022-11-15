@@ -35,7 +35,6 @@ def generate_launch_description():
 
     load_nodes = GroupAction(
         actions=[
-            # SetParameter("use_sim_time", 'True'),
             Node(
                 package='tf2_ros',
                 executable='static_transform_publisher',
