@@ -370,18 +370,22 @@ class BasicNavigator(Node):
         self.debug("Waiting for 'ComputePathThroughPoses' action server")
         while not self.compute_path_through_poses_client.wait_for_server(timeout_sec=1.0):
             self.info("'ComputePathThroughPoses' action server not available, waiting...")
+
         goal_msg = ComputePathThroughPoses.Goal()
         goal_msg.start = start
         goal_msg.goals = goals
         goal_msg.planner_id = planner_id
         goal_msg.use_start = use_start
+
         self.info('Getting path...')
         send_goal_future = self.compute_path_through_poses_client.send_goal_async(goal_msg)
         rclpy.spin_until_future_complete(self, send_goal_future)
         self.goal_handle = send_goal_future.result()
+
         if not self.goal_handle.accepted:
             self.error('Get path was rejected!')
             return None
+
         self.result_future = self.goal_handle.get_result_async()
         rclpy.spin_until_future_complete(self, self.result_future)
         self.status = self.result_future.result().status
