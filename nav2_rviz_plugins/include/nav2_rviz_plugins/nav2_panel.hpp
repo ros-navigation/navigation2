@@ -34,11 +34,9 @@
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav2_costmap_2d/costmap_subscriber.hpp"
-#include "nav2_costmap_2d/costmap_2d_ros.hpp"
-#include "nav2_costmap_2d/costmap_topic_collision_checker.hpp"
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/create_timer_ros.h"
+#include "tf2_ros/buffer.h"
 
 class QPushButton;
 
@@ -91,9 +89,7 @@ private:
   bool store_initial_pose_ = false;
   bool initial_pose_stored_ = false;
   bool loop_counter_stop_ = true;
-
   std::string loop_no_ = "0";
-  geometry_msgs::msg::PoseWithCovarianceStamped initial_pose_;
 
   // Call to send NavigateToPose action request for goal poses
   geometry_msgs::msg::PoseStamped convert_to_msg(
@@ -135,22 +131,8 @@ private:
   rclcpp::Subscription<nav2_msgs::action::NavigateThroughPoses::Impl::GoalStatusMessage>::SharedPtr
     nav_through_poses_goal_status_sub_;
 
-  // map_pose subscriber for initial pose
-  rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr
-    map_pose_sub_;
-
-  // global_costmap and footprint subscriber
-  std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
-  std::unique_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
-
-  // Collision checker
-  std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> collision_checker_;
-
-  // Parameter client for getting parameters from costmap
-  std::shared_ptr<rclcpp::SyncParametersClient> param_client_;
-
-  // Tf's for collision checker
-  std::shared_ptr<tf2_ros::Buffer> tf_;
+  // Tf's for initial pose
+  std::shared_ptr<tf2_ros::Buffer> tf2_buffer;
   std::shared_ptr<tf2_ros::TransformListener> transform_listener_;
 
   // Goal-related state
@@ -195,6 +177,9 @@ private:
   QState * paused_wp_{nullptr};
   QState * resumed_wp_{nullptr};
 
+  QImage * image_{nullptr};
+  QLabel * imgDisplayLabel{nullptr};
+
   // The following states are added to allow for the state of the button to only expose reset
   // while the NavigateToPoses action is not active. While running, the user will be allowed to
   // cancel the action. The ROSActionTransition allows for the state of the action to be detected
@@ -210,7 +195,6 @@ private:
   std::vector<geometry_msgs::msg::PoseStamped> acummulated_poses_;
   std::vector<geometry_msgs::msg::PoseStamped> store_poses_;
 
-  bool isWaypointValid(geometry_msgs::msg::Pose pose);
   // Publish the visual markers with the waypoints
   void updateWpNavigationMarkers();
 

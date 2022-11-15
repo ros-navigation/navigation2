@@ -13,7 +13,6 @@
   <depend>geometry_msgs</depend>
   <depend>nav2_util</depend>
   <depend>nav2_lifecycle_manager</depend>
-  <depend>nav2_costmap_2d</depend>
   <depend>nav2_msgs</depend>
   <depend>nav_msgs</depend>
   <depend>pluginlib</depend>
