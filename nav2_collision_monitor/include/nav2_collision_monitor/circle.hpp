@@ -66,6 +66,11 @@ public:
    */
   int getPointsInside(const std::vector<Point> & points) const override;
 
+  /**
+   * @brief Specifies that the shape is always set for a circle object
+   */
+  bool isShapeSet() override {return true;}
+
 protected:
   /**
    * @brief Supporting routine obtaining polygon-specific ROS-parameters

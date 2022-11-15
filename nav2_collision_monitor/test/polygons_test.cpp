@@ -211,11 +211,11 @@ protected:
   void setCommonParameters(const std::string & polygon_name, const std::string & action_type);
   void setPolygonParameters(
     const std::vector<double> & points,
-    const std::string polygon_sub_topic);
+    const bool is_static);
   void setCircleParameters(const double radius);
   bool checkUndeclaredParameter(const std::string & polygon_name, const std::string & param);
   // Creating routines
-  void createPolygon(const std::string & action_type, const std::string & polygon_sub_topic);
+  void createPolygon(const std::string & action_type, const bool is_static);
   void createCircle(const std::string & action_type);
 
   void sendTransforms();
@@ -299,23 +299,23 @@ void Tester::setCommonParameters(const std::string & polygon_name, const std::st
 }
 
 void Tester::setPolygonParameters(
-  const std::vector<double> & points, const std::string polygon_sub_topic)
+  const std::vector<double> & points, const bool is_static)
 {
-  test_node_->declare_parameter(
-    std::string(POLYGON_NAME) + ".footprint_topic", rclcpp::ParameterValue(FOOTPRINT_TOPIC));
-  test_node_->set_parameter(
-    rclcpp::Parameter(std::string(POLYGON_NAME) + ".footprint_topic", FOOTPRINT_TOPIC));
-
-  if (!polygon_sub_topic.empty()) {
-    test_node_->declare_parameter(
-      std::string(POLYGON_NAME) + ".polygon_sub_topic", rclcpp::ParameterValue(polygon_sub_topic));
-    test_node_->set_parameter(
-      rclcpp::Parameter(std::string(POLYGON_NAME) + ".polygon_sub_topic", polygon_sub_topic));
-  } else {
+  if (is_static) {
     test_node_->declare_parameter(
       std::string(POLYGON_NAME) + ".points", rclcpp::ParameterValue(points));
     test_node_->set_parameter(
       rclcpp::Parameter(std::string(POLYGON_NAME) + ".points", points));
+  } else {
+    test_node_->declare_parameter(
+      std::string(POLYGON_NAME) + ".polygon_sub_topic", rclcpp::ParameterValue(POLYGON_SUB_TOPIC));
+    test_node_->set_parameter(
+      rclcpp::Parameter(std::string(POLYGON_NAME) + ".polygon_sub_topic", POLYGON_SUB_TOPIC));
+
+    test_node_->declare_parameter(
+      std::string(POLYGON_NAME) + ".footprint_topic", rclcpp::ParameterValue(FOOTPRINT_TOPIC));
+    test_node_->set_parameter(
+      rclcpp::Parameter(std::string(POLYGON_NAME) + ".footprint_topic", FOOTPRINT_TOPIC));
   }
 }
 
@@ -345,10 +345,10 @@ bool Tester::checkUndeclaredParameter(const std::string & polygon_name, const st
   return ret;
 }
 
-void Tester::createPolygon(const std::string & action_type, const std::string & polygon_sub_topic)
+void Tester::createPolygon(const std::string & action_type, const bool is_static)
 {
   setCommonParameters(POLYGON_NAME, action_type);
-  setPolygonParameters(SQUARE_POLYGON, polygon_sub_topic);
+  setPolygonParameters(SQUARE_POLYGON, is_static);
 
   polygon_ = std::make_shared<PolygonWrapper>(
     test_node_, POLYGON_NAME,
@@ -427,7 +427,7 @@ bool Tester::waitFootprint(
 
 TEST_F(Tester, testPolygonGetStopParameters)
 {
-  createPolygon("stop", "");
+  createPolygon("stop", true);
 
   // Check that common parameters set correctly
   EXPECT_EQ(polygon_->getName(), POLYGON_NAME);
@@ -451,7 +451,7 @@ TEST_F(Tester, testPolygonGetStopParameters)
 
 TEST_F(Tester, testPolygonGetSlowdownParameters)
 {
-  createPolygon("slowdown", "");
+  createPolygon("slowdown", true);
 
   // Check that common parameters set correctly
   EXPECT_EQ(polygon_->getName(), POLYGON_NAME);
@@ -464,7 +464,7 @@ TEST_F(Tester, testPolygonGetSlowdownParameters)
 
 TEST_F(Tester, testPolygonGetApproachParameters)
 {
-  createPolygon("approach", "");
+  createPolygon("approach", true);
 
   // Check that common parameters set correctly
   EXPECT_EQ(polygon_->getName(), POLYGON_NAME);
@@ -519,7 +519,7 @@ TEST_F(Tester, testPolygonUndeclaredPoints)
 TEST_F(Tester, testPolygonIncorrectActionType)
 {
   setCommonParameters(POLYGON_NAME, "incorrect_action_type");
-  setPolygonParameters(SQUARE_POLYGON, "");
+  setPolygonParameters(SQUARE_POLYGON, true);
 
   polygon_ = std::make_shared<PolygonWrapper>(
     test_node_, POLYGON_NAME,
@@ -576,19 +576,22 @@ TEST_F(Tester, testCircleUndeclaredRadius)
 
 TEST_F(Tester, testPolygonTopicUpdate)
 {
-  createPolygon("stop", POLYGON_SUB_TOPIC);
+  createPolygon("stop", false);
 
   std::vector<nav2_collision_monitor::Point> poly;
   polygon_->getPolygon(poly);
+  ASSERT_FALSE(polygon_->isShapeSet());
   ASSERT_EQ(poly.size(), 0u);
 
   // Publish incorrect shape and check that polygon was not updated
   test_node_->publishPolygon(BASE_FRAME_ID, false);
   ASSERT_FALSE(waitPolygon(100ms, poly));
+  ASSERT_FALSE(polygon_->isShapeSet());
 
   // Publush correct polygon and make shure that it was set correctly
   test_node_->publishPolygon(BASE_FRAME_ID, true);
   ASSERT_TRUE(waitPolygon(500ms, poly));
+  ASSERT_TRUE(polygon_->isShapeSet());
   ASSERT_EQ(poly.size(), 4u);
   EXPECT_NEAR(poly[0].x, SQUARE_POLYGON[0], EPSILON);
   EXPECT_NEAR(poly[0].y, SQUARE_POLYGON[1], EPSILON);
@@ -602,7 +605,7 @@ TEST_F(Tester, testPolygonTopicUpdate)
 
 TEST_F(Tester, testPolygonTopicUpdateDifferentFrame)
 {
-  createPolygon("stop", POLYGON_SUB_TOPIC);
+  createPolygon("stop", false);
   sendTransforms();
 
   std::vector<nav2_collision_monitor::Point> poly;
@@ -625,7 +628,7 @@ TEST_F(Tester, testPolygonTopicUpdateDifferentFrame)
 
 TEST_F(Tester, testPolygonTopicUpdateIncorrectFrame)
 {
-  createPolygon("stop", POLYGON_SUB_TOPIC);
+  createPolygon("stop", false);
   sendTransforms();
 
   std::vector<nav2_collision_monitor::Point> poly;
@@ -639,10 +642,11 @@ TEST_F(Tester, testPolygonTopicUpdateIncorrectFrame)
 
 TEST_F(Tester, testPolygonFootprintUpdate)
 {
-  createPolygon("approach", "");
+  createPolygon("approach", false);
 
   std::vector<nav2_collision_monitor::Point> poly;
   polygon_->getPolygon(poly);
+  ASSERT_FALSE(polygon_->isShapeSet());
   ASSERT_EQ(poly.size(), 0u);
 
   test_node_->publishFootprint();
@@ -650,6 +654,7 @@ TEST_F(Tester, testPolygonFootprintUpdate)
   std::vector<nav2_collision_monitor::Point> footprint;
   ASSERT_TRUE(waitFootprint(500ms, footprint));
 
+  ASSERT_TRUE(polygon_->isShapeSet());
   ASSERT_EQ(footprint.size(), 4u);
   EXPECT_NEAR(footprint[0].x, SQUARE_POLYGON[0], EPSILON);
   EXPECT_NEAR(footprint[0].y, SQUARE_POLYGON[1], EPSILON);
@@ -663,7 +668,7 @@ TEST_F(Tester, testPolygonFootprintUpdate)
 
 TEST_F(Tester, testPolygonGetPointsInside)
 {
-  createPolygon("stop", "");
+  createPolygon("stop", true);
 
   std::vector<nav2_collision_monitor::Point> points;
 
@@ -684,7 +689,7 @@ TEST_F(Tester, testPolygonGetPointsInsideEdge)
   // Test for checking edge cases in raytracing algorithm.
   // All points are lie on the edge lines parallel to OX, where the raytracing takes place.
   setCommonParameters(POLYGON_NAME, "stop");
-  setPolygonParameters(ARBITRARY_POLYGON, "");
+  setPolygonParameters(ARBITRARY_POLYGON, true);
 
   polygon_ = std::make_shared<PolygonWrapper>(
     test_node_, POLYGON_NAME,
@@ -723,7 +728,7 @@ TEST_F(Tester, testCircleGetPointsInside)
 
 TEST_F(Tester, testPolygonGetCollisionTime)
 {
-  createPolygon("approach", "");
+  createPolygon("approach", false);
 
   // Set footprint for Polygon
   test_node_->publishFootprint();
@@ -791,7 +796,7 @@ TEST_F(Tester, testPolygonGetCollisionTime)
 
 TEST_F(Tester, testPolygonPublish)
 {
-  createPolygon("stop", "");
+  createPolygon("stop", true);
   polygon_->publish();
   geometry_msgs::msg::PolygonStamped::SharedPtr polygon_received =
     test_node_->waitPolygonReceived(500ms);
@@ -817,7 +822,7 @@ TEST_F(Tester, testPolygonDefaultVisualize)
     std::string(POLYGON_NAME) + ".action_type", rclcpp::ParameterValue("stop"));
   test_node_->set_parameter(
     rclcpp::Parameter(std::string(POLYGON_NAME) + ".action_type", "stop"));
-  setPolygonParameters(SQUARE_POLYGON, "");
+  setPolygonParameters(SQUARE_POLYGON, true);
 
   // Create new polygon
   polygon_ = std::make_shared<PolygonWrapper>(

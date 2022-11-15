@@ -148,6 +148,15 @@ void Polygon::getPolygon(std::vector<Point> & poly) const
   poly = poly_;
 }
 
+bool Polygon::isShapeSet()
+{
+  if (poly_.empty()) {
+    RCLCPP_WARN(logger_, "[%s]: Polygon shape is not set yet", polygon_name_.c_str());
+    return false;
+  }
+  return true;
+}
+
 void Polygon::updatePolygon()
 {
   if (footprint_sub_ != nullptr) {
@@ -225,7 +234,8 @@ void Polygon::publish()
 
   // Actualize the time to current and publish the polygon
   polygon_.header.stamp = node->now();
-  polygon_pub_->publish(polygon_);
+  auto msg = std::make_unique<geometry_msgs::msg::PolygonStamped>(polygon_);
+  polygon_pub_->publish(std::move(msg));
 }
 
 bool Polygon::getCommonParameters(std::string & polygon_pub_topic)
@@ -308,63 +318,62 @@ bool Polygon::getParameters(
     return false;
   }
 
+  // Clear the subscription topics. They will be set later, if necessary.
+  polygon_sub_topic.clear();
+  footprint_topic.clear();
+
   try {
-    if (action_type_ == APPROACH) {
+    try {
+      // Leave it uninitialized: it will throw an inner exception if the parameter is not set
+      nav2_util::declare_parameter_if_not_declared(
+        node, polygon_name_ + ".points", rclcpp::PARAMETER_DOUBLE_ARRAY);
+      std::vector<double> poly_row =
+        node->get_parameter(polygon_name_ + ".points").as_double_array();
+      // Check for points format correctness
+      if (poly_row.size() <= 6 || poly_row.size() % 2 != 0) {
+        RCLCPP_ERROR(
+          logger_,
+          "[%s]: Polygon has incorrect points description",
+          polygon_name_.c_str());
+        return false;
+      }
+
+      // Obtain polygon vertices
+      Point point;
+      bool first = true;
+      for (double val : poly_row) {
+        if (first) {
+          point.x = val;
+        } else {
+          point.y = val;
+          poly_.push_back(point);
+        }
+        first = !first;
+      }
+
+      // Do not need to proceed further, if "points" parameter is defined.
+      // Static polygon will be used.
+      return true;
+    } catch (const rclcpp::exceptions::ParameterUninitializedException &) {
+      RCLCPP_INFO(
+        logger_,
+        "[%s]: Polygon points are not defined. Using dynamic subscription instead.",
+        polygon_name_.c_str());
+    }
+
+    if (action_type_ == STOP || action_type_ == SLOWDOWN) {
+      // Dynamic polygon will be used
+      nav2_util::declare_parameter_if_not_declared(
+        node, polygon_name_ + ".polygon_sub_topic", rclcpp::PARAMETER_STRING);
+      polygon_sub_topic =
+        node->get_parameter(polygon_name_ + ".polygon_sub_topic").as_string();
+    } else if (action_type_ == APPROACH) {
       // Obtain the footprint topic to make a footprint subscription for approach polygon
       nav2_util::declare_parameter_if_not_declared(
         node, polygon_name_ + ".footprint_topic",
         rclcpp::ParameterValue("local_costmap/published_footprint"));
       footprint_topic =
         node->get_parameter(polygon_name_ + ".footprint_topic").as_string();
-
-      // This is robot footprint: do not need to get polygon points from ROS parameters or topic.
-      // It will be set dynamically later.
-      polygon_sub_topic.clear();
-      return true;
-    } else {
-      // Make it empty otherwise
-      footprint_topic.clear();
-    }
-
-    try {
-      nav2_util::declare_parameter_if_not_declared(
-        node, polygon_name_ + ".polygon_sub_topic", rclcpp::PARAMETER_STRING);
-      polygon_sub_topic =
-        node->get_parameter(polygon_name_ + ".polygon_sub_topic").as_string();
-      // Do not need to proceed further, if polygon_sub_topic parameter is defined.
-      // Dynamic polygon will be used.
-      return true;
-    } catch (const rclcpp::exceptions::ParameterUninitializedException & ex) {
-      // polygon_sub_topic parameter is not defined: initializing polygon with points.
-      // Static polygon will be used.
-      polygon_sub_topic.clear();
-    }
-
-    // Leave it not initialized: the will cause an error if it will not set
-    nav2_util::declare_parameter_if_not_declared(
-      node, polygon_name_ + ".points", rclcpp::PARAMETER_DOUBLE_ARRAY);
-    std::vector<double> poly_row =
-      node->get_parameter(polygon_name_ + ".points").as_double_array();
-    // Check for points format correctness
-    if (poly_row.size() <= 6 || poly_row.size() % 2 != 0) {
-      RCLCPP_ERROR(
-        logger_,
-        "[%s]: Polygon has incorrect points description",
-        polygon_name_.c_str());
-      return false;
-    }
-
-    // Obtain polygon vertices
-    Point point;
-    bool first = true;
-    for (double val : poly_row) {
-      if (first) {
-        point.x = val;
-      } else {
-        point.y = val;
-        poly_.push_back(point);
-      }
-      first = !first;
     }
   } catch (const std::exception & ex) {
     RCLCPP_ERROR(
