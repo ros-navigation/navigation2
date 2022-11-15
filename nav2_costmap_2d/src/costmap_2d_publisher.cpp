@@ -183,7 +183,6 @@ void Costmap2DPublisher::prepareCostmap()
 
 void Costmap2DPublisher::publishCostmap()
 {
-  RCLCPP_INFO(logger_, "RUNNNUNUNUNNUN");
   if (costmap_raw_pub_->get_subscription_count() > 0) {
     prepareCostmap();
     costmap_raw_pub_->publish(std::move(costmap_raw_));

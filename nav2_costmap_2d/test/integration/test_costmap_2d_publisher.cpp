@@ -1,7 +1,3 @@
-//
-// Created by josh on 11/7/22.
-//
-
 // Copyright (c) 2022 Joshua Wallace
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
