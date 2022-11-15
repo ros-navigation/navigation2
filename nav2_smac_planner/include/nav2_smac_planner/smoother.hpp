@@ -232,7 +232,7 @@ protected:
     bool & reversing_segment);
 
   double min_turning_rad_, tolerance_, data_w_, smooth_w_;
-  int max_its_, refinement_ctr_;
+  int max_its_, refinement_ctr_, refinement_num_;
   bool is_holonomic_, do_refinement_;
   MotionModel motion_model_;
   ompl::base::StateSpacePtr state_space_;
