@@ -395,7 +395,7 @@ void pf_update_resample(pf_t * pf)
 
   if(pf->ext_pose_is_valid){
     double total_weight = 0;
-    for(int i = 0; i < set_a->sample_count; i++)
+    for(i = 0; i < set_a->sample_count; i++)
     {
 
       // See Improved LiDAR Probabilistic Localization for Autonomous Vehicles Using GNSS, #3.2 for details
@@ -416,14 +416,14 @@ void pf_update_resample(pf_t * pf)
     /// Handle total weight of 0
     if(total_weight == 0)
     {
-      for(int i=0;i<set_a->sample_count;i++){
+      for(i=0;i<set_a->sample_count;i++){
         set_a->samples[i].weight = 1;
         total_weight += set_a->samples[i].weight;
       }
     } else 
     {
       /// Normalization
-      for(int i=0;i<set_a->sample_count;i++)
+      for(i=0;i<set_a->sample_count;i++)
       {
         set_a->samples[i].weight = set_a->samples[i].weight / total_weight;
       }
