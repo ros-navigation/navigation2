@@ -208,12 +208,13 @@ def main(argv=sys.argv[1:]):
     time.sleep(2)
     test.cancel_goal()
 
-    # a failure case
+    # set waypoint outside of map
     time.sleep(2)
     test.setWaypoints([[100.0, 100.0]])
     result = test.run(True)
     assert not result
     result = not result
+    assert len(test.result.error_codes) > 0
 
     test.shutdown()
     test.info_msg('Done Shutting Down.')

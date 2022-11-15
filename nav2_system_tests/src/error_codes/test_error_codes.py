@@ -28,7 +28,7 @@ def main(argv=sys.argv[1:]):
     rclpy.init()
 
     navigator = BasicNavigator()
-    #
+
     # Set our demo's initial pose
     initial_pose = PoseStamped()
     initial_pose.header.frame_id = 'map'
