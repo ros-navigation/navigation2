@@ -134,7 +134,7 @@ ament_add_test(test_costmap_publisher_exec
     TEST_MAP=${TEST_MAP_DIR}/TenByTen.yaml
     TEST_LAUNCH_DIR=${TEST_LAUNCH_DIR}
     TEST_EXECUTABLE=$<TARGET_FILE:test_costmap_publisher_exec>
-    )
+)
 
 ## TODO(bpwilcox): this test (I believe) is intended to be launched with the simple_driving_test.xml,
 ## which has a dependency on rosbag playback
