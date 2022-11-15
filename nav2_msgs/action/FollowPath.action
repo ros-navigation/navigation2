@@ -1,6 +1,7 @@
 #goal definition
 nav_msgs/Path path
 string controller_id
+bool free_goal_vel
 string goal_checker_id
 ---
 #result definition
