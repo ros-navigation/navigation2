@@ -214,7 +214,6 @@ def main(argv=sys.argv[1:]):
     result = test.run(True)
     assert not result
     result = not result
-    print("ERROR CODES: ", test.result.error_codes)
     assert test.result.error_codes[0] == ComputePathToPose.Goal().GOAL_OUTSIDE_MAP
 
     test.shutdown()

@@ -245,7 +245,7 @@ WaypointFollower::followWaypoints()
         is_task_executed ? "succeeded" : "failed!");
 
       if (!is_task_executed) {
-        missed_waypoints_.emplace_back(MissedWaypoint{goal_index, current_goal_status_.error_code});
+        missed_waypoints_.emplace_back(MissedWaypoint{goal_index, ActionT::Goal::TASK_EXECUTOR_FAILED});
       }
       // if task execution was failed and stop_on_failure_ is on , terminate action
       if (!is_task_executed && stop_on_failure_) {

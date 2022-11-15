@@ -103,7 +103,7 @@ class NoValidPathErrorPlanner : public UnknownErrorPlanner
     const geometry_msgs::msg::PoseStamped &,
     const geometry_msgs::msg::PoseStamped &) override
   {
-    throw nav2_core::NoValidPathCouldBeFound("No valid path could be found");
+    return nav_msgs::msg::Path();
   }
 };
 
