@@ -277,8 +277,6 @@ void BtActionServer<ActionT>::populateErrorCode(
 {
   int highest_priority_error_code = std::numeric_limits<int>::max();
   for (const auto & error_code_id : error_code_ids_) {
-    // Note: Using try catch due to
-    // https://github.com/BehaviorTree/BehaviorTree.CPP/issues/271
     try {
       int current_error_code = blackboard_->get<int>(error_code_id);
       if (current_error_code != 0 && current_error_code < highest_priority_error_code) {
