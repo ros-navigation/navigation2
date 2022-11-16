@@ -212,7 +212,8 @@ TEST(ThetaStarPlanner, test_theta_star_reconfigure)
     {rclcpp::Parameter("test.how_many_corners", 8),
       rclcpp::Parameter("test.w_euc_cost", 1.0),
       rclcpp::Parameter("test.w_traversal_cost", 2.0),
-      rclcpp::Parameter("test.use_final_approach_orientation", false)});
+      rclcpp::Parameter("test.use_final_approach_orientation", false)
+      rclcpp::Parameter("test.allow_unknown", false)});
 
   rclcpp::spin_until_future_complete(
     life_node->get_node_base_interface(),
@@ -224,6 +225,7 @@ TEST(ThetaStarPlanner, test_theta_star_reconfigure)
     1.0);
   EXPECT_EQ(life_node->get_parameter("test.w_traversal_cost").as_double(), 2.0);
   EXPECT_EQ(life_node->get_parameter("test.use_final_approach_orientation").as_bool(), false);
+  EXPECT_EQ(life_node->get_parameter("test.allow_unknown").as_bool(), false);
 
   rclcpp::spin_until_future_complete(
     life_node->get_node_base_interface(),
