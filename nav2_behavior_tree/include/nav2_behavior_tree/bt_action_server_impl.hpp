@@ -71,7 +71,7 @@ BtActionServer<ActionT>::BtActionServer(
     for (const auto & error_code_id : error_code_id_names) {
       error_code_ids_str += error_code_id + "\n";
     }
-    RCLCPP_INFO_STREAM(
+    RCLCPP_WARN_STREAM(
       logger_, "Error_code_ids parameter is not set. Using default values of: "
         << error_code_ids_str
         << "Make sure these match your BT and there are not other sources of error codes you want "
