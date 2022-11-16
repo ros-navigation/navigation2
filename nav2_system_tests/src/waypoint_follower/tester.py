@@ -193,7 +193,7 @@ def main(argv=sys.argv[1:]):
     rclpy.init()
 
     # wait a few seconds to make sure entire stacks are up
-    time.sleep(5)
+    time.sleep(10)
 
     wps = [[-0.52, -0.54], [0.58, -0.55], [0.58, 0.52]]
     starting_pose = [-2.0, -0.5]
