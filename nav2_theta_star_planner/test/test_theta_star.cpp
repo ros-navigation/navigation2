@@ -212,7 +212,7 @@ TEST(ThetaStarPlanner, test_theta_star_reconfigure)
     {rclcpp::Parameter("test.how_many_corners", 8),
       rclcpp::Parameter("test.w_euc_cost", 1.0),
       rclcpp::Parameter("test.w_traversal_cost", 2.0),
-      rclcpp::Parameter("test.use_final_approach_orientation", false)
+      rclcpp::Parameter("test.use_final_approach_orientation", false),
       rclcpp::Parameter("test.allow_unknown", false)});
 
   rclcpp::spin_until_future_complete(
