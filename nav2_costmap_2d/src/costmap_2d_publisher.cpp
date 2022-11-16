@@ -188,6 +188,7 @@ void Costmap2DPublisher::publishCostmap()
     costmap_raw_pub_->publish(std::move(costmap_raw_));
   }
   float resolution = costmap_->getResolution();
+  
   if (always_send_full_costmap_ || grid_resolution != resolution ||
     grid_width != costmap_->getSizeInCellsX() ||
     grid_height != costmap_->getSizeInCellsY() ||
