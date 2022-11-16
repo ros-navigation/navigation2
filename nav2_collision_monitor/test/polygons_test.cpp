@@ -503,7 +503,7 @@ TEST_F(Tester, testPolygonUndeclaredActionType)
 
 TEST_F(Tester, testPolygonUndeclaredPoints)
 {
-  // "points" parameter is not initialized
+  // "points" and "polygon_sub_topic" parameters are not initialized
   test_node_->declare_parameter(
     std::string(POLYGON_NAME) + ".action_type", rclcpp::ParameterValue("stop"));
   test_node_->set_parameter(
@@ -512,8 +512,9 @@ TEST_F(Tester, testPolygonUndeclaredPoints)
     test_node_, POLYGON_NAME,
     tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_FALSE(polygon_->configure());
-  // Check that "points" parameter is not set after configuring
+  // Check that "points" and "polygon_sub_topic" parameters are not set after configuring
   ASSERT_TRUE(checkUndeclaredParameter(POLYGON_NAME, "points"));
+  ASSERT_TRUE(checkUndeclaredParameter(POLYGON_NAME, "polygon_sub_topic"));
 }
 
 TEST_F(Tester, testPolygonIncorrectActionType)
