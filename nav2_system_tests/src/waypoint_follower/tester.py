@@ -40,6 +40,7 @@ class WaypointFollowerTest(Node):
                                                       'initialpose', 10)
         self.initial_pose_received = False
         self.goal_handle = None
+        self.action_result = None
 
         pose_qos = QoSProfile(
           durability=QoSDurabilityPolicy.TRANSIENT_LOCAL,
@@ -51,8 +52,6 @@ class WaypointFollowerTest(Node):
                                                        'amcl_pose', self.poseCallback, pose_qos)
         self.param_cli = self.create_client(SetParameters,
                                             '/waypoint_follower/set_parameters')
-        while not self.param_cli.wait_for_service(timeout_sec=3.0):
-            self.info_msg('/waypoint_follower/set_parameters service not available')
 
     def setInitialPose(self, pose):
         self.init_pose = PoseWithCovarianceStamped()
@@ -77,9 +76,9 @@ class WaypointFollowerTest(Node):
             self.waypoints.append(msg)
 
     def run(self, block, cancel):
-        if not self.waypoints:
-            rclpy.error_msg('Did not set valid waypoints before running test!')
-            return False
+        # if not self.waypoints:
+        #     rclpy.error_msg('Did not set valid waypoints before running test!')
+        #     return False
 
         while not self.action_client.wait_for_server(timeout_sec=1.0):
             self.info_msg("'follow_waypoints' action server not available, waiting...")
@@ -194,7 +193,7 @@ def main(argv=sys.argv[1:]):
     rclpy.init()
 
     # wait a few seconds to make sure entire stacks are up
-    time.sleep(10)
+    time.sleep(5)
 
     wps = [[-0.52, -0.54], [0.58, -0.55], [0.58, 0.52]]
     starting_pose = [-2.0, -0.5]
@@ -242,7 +241,7 @@ def main(argv=sys.argv[1:]):
     assert not result
     result = not result
     mwps = test.action_result.missed_waypoints
-    result = (len(mwps) == 1) & (int(mwps[0][0]) == 100) & (int(mwps[0][1]) == 100)
+    result = (len(mwps) == 1) & (mwps[0] == 1)
     test.setStopFailureParam(False)
 
     # Zero goal test
