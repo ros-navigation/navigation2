@@ -41,20 +41,20 @@ void NavigateThroughPosesAction::on_tick()
 
 BT::NodeStatus NavigateThroughPosesAction::on_success()
 {
-  setOutput("navigate_through_poses_error_code", ActionGoal::NONE);
+  setOutput("error_code_id", ActionGoal::NONE);
   return BT::NodeStatus::SUCCESS;
 }
 
 BT::NodeStatus NavigateThroughPosesAction::on_aborted()
 {
-  setOutput("navigate_through_poses_error_code", result_.result->error_code);
+  setOutput("error_code_id", result_.result->error_code);
   return BT::NodeStatus::FAILURE;
 }
 
 BT::NodeStatus NavigateThroughPosesAction::on_cancelled()
 {
   // Set empty error code, action was cancelled
-  setOutput("navigate_through_poses_error_code", ActionGoal::NONE);
+  setOutput("error_code_id", ActionGoal::NONE);
   return BT::NodeStatus::SUCCESS;
 }
 

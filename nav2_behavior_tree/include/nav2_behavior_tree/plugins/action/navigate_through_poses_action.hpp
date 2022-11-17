@@ -77,7 +77,7 @@ public:
         BT::InputPort<geometry_msgs::msg::PoseStamped>("goals", "Destinations to plan through"),
         BT::InputPort<std::string>("behavior_tree", "Behavior tree to run"),
         BT::OutputPort<ActionResult::_error_code_type>(
-            "navigate_through_poses_error_code", "The navigate through poses error code"),
+          "error_code_id", "The navigate through poses error code"),
       });
   }
 };
