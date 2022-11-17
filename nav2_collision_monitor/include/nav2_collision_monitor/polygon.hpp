@@ -21,7 +21,6 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/polygon_stamped.hpp"
-#include "geometry_msgs/msg/polygon.hpp"
 
 #include "tf2/time.h"
 #include "tf2_ros/buffer.h"
@@ -111,6 +110,12 @@ public:
   virtual void getPolygon(std::vector<Point> & poly) const;
 
   /**
+   * @brief Returns true if polygon points were set.
+   * Othewise, prints a warning and returns false.
+   */
+  virtual bool isShapeSet();
+
+  /**
    * @brief Updates polygon from footprint subscriber (if any)
    */
   void updatePolygon();
@@ -138,7 +143,7 @@ public:
   /**
    * @brief Publishes polygon message into a its own topic
    */
-  void publish() const;
+  void publish();
 
 protected:
   /**
@@ -150,11 +155,29 @@ protected:
 
   /**
    * @brief Supporting routine obtaining polygon-specific ROS-parameters
+   * @brief polygon_sub_topic Output name of polygon subscription topic.
+   * Empty, if no polygon subscription.
    * @param polygon_pub_topic Output name of polygon publishing topic
-   * @param footprint_topic Output name of footprint topic. Empty, if no footprint subscription
+   * @param footprint_topic Output name of footprint topic.
+   * Empty, if no footprint subscription.
    * @return True if all parameters were obtained or false in failure case
    */
-  virtual bool getParameters(std::string & polygon_pub_topic, std::string & footprint_topic);
+  virtual bool getParameters(
+    std::string & polygon_sub_topic,
+    std::string & polygon_pub_topic,
+    std::string & footprint_topic);
+
+  /**
+   * @brief Updates polygon from geometry_msgs::msg::PolygonStamped message
+   * @param msg Message to update polygon from
+   */
+  void updatePolygon(geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg);
+
+  /**
+   * @brief Dynamic polygon callback
+   * @param msg Shared pointer to the polygon message
+   */
+  void polygonCallback(geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg);
 
   /**
    * @brief Checks if point is inside polygon
@@ -183,6 +206,8 @@ protected:
   double time_before_collision_;
   /// @brief Time step for robot movement simulation
   double simulation_time_step_;
+  /// @brief Polygon subscription
+  rclcpp::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_sub_;
   /// @brief Footprint subscriber
   std::unique_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
 
@@ -197,8 +222,8 @@ protected:
   // Visualization
   /// @brief Whether to publish the polygon
   bool visualize_;
-  /// @brief Polygon points stored for later publishing
-  geometry_msgs::msg::Polygon polygon_;
+  /// @brief Polygon stored for later publishing
+  geometry_msgs::msg::PolygonStamped polygon_;
   /// @brief Polygon publisher for visualization purposes
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_pub_;
 
