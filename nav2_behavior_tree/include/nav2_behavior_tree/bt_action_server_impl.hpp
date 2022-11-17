@@ -61,22 +61,22 @@ BtActionServer<ActionT>::BtActionServer(
     node->declare_parameter("default_server_timeout", 20);
   }
 
-  std::vector<std::string> error_code_id_names = {
-    "follow_path_error_code_id",
-    "compute_path_error_code_id"
+  std::vector<std::string> error_code_names = {
+    "follow_path_error_code",
+    "compute_path_error_code"
   };
 
-  if (!node->has_parameter("error_code_id_names")) {
-    std::string error_code_ids_str;
-    for (const auto & error_code_id : error_code_id_names) {
-      error_code_ids_str += error_code_id + "\n";
+  if (!node->has_parameter("error_code_names")) {
+    std::string error_codes_str;
+    for (const auto & error_code : error_code_names) {
+      error_codes_str += error_code + "\n";
     }
     RCLCPP_WARN_STREAM(
-      logger_, "Error_code_ids parameter is not set. Using default values of: "
-        << error_code_ids_str
+      logger_, "Error_code parameters were not set. Using default values of: "
+        << error_codes_str
         << "Make sure these match your BT and there are not other sources of error codes you want "
         "reported to your application");
-    node->declare_parameter("error_code_id_names", error_code_id_names);
+    node->declare_parameter("error_code_names", error_code_names);
   }
 }
 
@@ -124,7 +124,7 @@ bool BtActionServer<ActionT>::on_configure()
   default_server_timeout_ = std::chrono::milliseconds(timeout);
 
   // Get error code id names to grab off of the blackboard
-  error_code_ids_ = node->get_parameter("error_code_id_names").as_string_array();
+  error_code_names_ = node->get_parameter("error_code_names").as_string_array();
 
   // Create the class that registers our custom nodes and executes the BT
   bt_ = std::make_unique<nav2_behavior_tree::BehaviorTreeEngine>(plugin_lib_names_);
@@ -276,9 +276,9 @@ void BtActionServer<ActionT>::populateErrorCode(
   typename std::shared_ptr<typename ActionT::Result> result)
 {
   int highest_priority_error_code = std::numeric_limits<int>::max();
-  for (const auto & error_code_id : error_code_ids_) {
+  for (const auto & error_code : error_code_names_) {
     try {
-      int current_error_code = blackboard_->get<int>(error_code_id);
+      int current_error_code = blackboard_->get<int>(error_code);
       if (current_error_code != 0 && current_error_code < highest_priority_error_code) {
         highest_priority_error_code = current_error_code;
       }
@@ -286,7 +286,7 @@ void BtActionServer<ActionT>::populateErrorCode(
       RCLCPP_ERROR(
         logger_,
         "Failed to get error code: %s from blackboard",
-        error_code_id.c_str());
+        error_code.c_str());
     }
   }
 
