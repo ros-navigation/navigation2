@@ -132,7 +132,7 @@ private:
     nav_through_poses_goal_status_sub_;
 
   // Tf's for initial pose
-  std::shared_ptr<tf2_ros::Buffer> tf2_buffer;
+  std::shared_ptr<tf2_ros::Buffer> tf2_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> transform_listener_;
 
   // Goal-related state
@@ -178,7 +178,7 @@ private:
   QState * resumed_wp_{nullptr};
 
   QImage * image_{nullptr};
-  QLabel * imgDisplayLabel{nullptr};
+  QLabel * imgDisplayLabel_{nullptr};
 
   // The following states are added to allow for the state of the button to only expose reset
   // while the NavigateToPoses action is not active. While running, the user will be allowed to

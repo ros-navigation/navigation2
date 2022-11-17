@@ -509,14 +509,14 @@ Nav2Panel::Nav2Panel(QWidget * parent)
 
   QGroupBox * groupBox = new QGroupBox(tr("Tools for WP-Following"));
   image_ = new QImage("src/navigation2/doc/nav2_logo_small.png");
-  imgDisplayLabel = new QLabel("");
-  imgDisplayLabel->setPixmap(QPixmap::fromImage(*image_));
+  imgDisplayLabel_ = new QLabel("");
+  imgDisplayLabel_->setPixmap(QPixmap::fromImage(*image_));
 
   status_layout->addWidget(navigation_status_indicator_);
   status_layout->addWidget(localization_status_indicator_);
   status_layout->addWidget(navigation_goal_status_indicator_);
 
-  logo_layout->addWidget(imgDisplayLabel, 5, Qt::AlignRight);
+  logo_layout->addWidget(imgDisplayLabel_, 5, Qt::AlignRight);
 
   side_layout->addLayout(status_layout);
   side_layout->addLayout(logo_layout);
@@ -562,12 +562,12 @@ Nav2Panel::Nav2Panel(QWidget * parent)
     "navigate_through_poses");
 
   // Setting up tf for initial pose
-  tf2_buffer = std::make_shared<tf2_ros::Buffer>(client_node_->get_clock());
+  tf2_buffer_ = std::make_shared<tf2_ros::Buffer>(client_node_->get_clock());
   auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
     client_node_->get_node_base_interface(),
     client_node_->get_node_timers_interface());
-  tf2_buffer->setCreateTimerInterface(timer_interface);
-  transform_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf2_buffer);
+  tf2_buffer_->setCreateTimerInterface(timer_interface);
+  transform_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf2_buffer_);
 
   navigation_goal_ = nav2_msgs::action::NavigateToPose::Goal();
   waypoint_follower_goal_ = nav2_msgs::action::FollowWaypoints::Goal();
@@ -1033,7 +1033,7 @@ Nav2Panel::onAccumulatedWp()
     // Looking up transform to get initial pose
     if (store_initial_pose_) {
       try {
-        init_transform = tf2_buffer->lookupTransform(
+        init_transform = tf2_buffer_->lookupTransform(
           "map", "base_footprint",
           tf2::TimePointZero);
       } catch (const tf2::TransformException & ex) {
@@ -1043,7 +1043,7 @@ Nav2Panel::onAccumulatedWp()
         return;
       }
 
-    // Converting TransformStamped to PoseStamped
+      // Converting TransformStamped to PoseStamped
       geometry_msgs::msg::PoseStamped initial_pose;
       initial_pose.header = init_transform.header;
       initial_pose.pose.position.x = init_transform.transform.translation.x;

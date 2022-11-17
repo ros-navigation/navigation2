@@ -277,7 +277,7 @@ WaypointFollower::followWaypoints()
       // Update server state
       goal_index++;
       new_goal = true;
-      if (goal_index == goal->poses.size()) {
+      if (goal_index >= goal->poses.size()) {
         if (current_loop_no == no_of_loops) {
           RCLCPP_INFO(
             get_logger(), "Completed all %zu waypoints requested.",
