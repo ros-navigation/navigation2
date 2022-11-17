@@ -121,7 +121,7 @@ protected:
     const double & value);
 
   double tolerance_, data_w_, smooth_w_;
-  int max_its_, refinement_ctr_;
+  int max_its_, refinement_ctr_, refinement_num_;
   bool do_refinement_;
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
   rclcpp::Logger logger_{rclcpp::get_logger("SimpleSmoother")};
