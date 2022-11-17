@@ -14,12 +14,14 @@ struct ExternalPoseMeasument {
     double cov_matrix[9];
     double eigen_matrix[9];
 
-    double time_ns; // time the measurement was made
+    double time_sec; // time the measurement was made
 };
 
 class ExternalPoseBuffer {
 
 public:
+
+ExternalPoseBuffer(double search_tolerance_sec): search_tolerance_sec_(search_tolerance_sec) {}
 
 /* 
 * @brief Add new measurement to the storage (queue internally). If queue size grown larger than max_storage_size_, pop oldest measurement
@@ -39,9 +41,9 @@ bool findClosestMeasurement(double query_time_ns, ExternalPoseMeasument& out_mea
 private:
 
 // how large can be the time difference between corresponding external pose measurement and laser scan
-const uint32_t search_tolerance_ns_ = 0.5 * 1e9;
+const double search_tolerance_sec_;
 
-const double max_buff_size_ = 30;
+const size_t max_buff_size_ = 10;
 std::vector<ExternalPoseMeasument> buffer_ = {};
 
 }; 
