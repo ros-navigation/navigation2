@@ -28,8 +28,8 @@ The following models of safety behaviors are employed by Collision Monitor:
 The zones around the robot can take the following shapes:
 
 * Arbitrary user-defined polygon relative to the robot base frame, which can be static in a configuration file or dynamically changing via a topic interface.
-* Circle: is made for the best performance and could be used in the cases where the zone or robot could be approximated by round shape.
-* Robot footprint polygon, which is used in the approach behavior model only. Will use the footprint topic to allow it to be dynamically adjusted over time.
+* Robot footprint polygon, which is used in the approach behavior model only. Will use the static user-defined polygon or the footprint topic to allow it to be dynamically adjusted over time.
+* Circle: is made for the best performance and could be used in the cases where the zone or robot footprint could be approximated by round shape.
 
 The data may be obtained from different data sources:
 
