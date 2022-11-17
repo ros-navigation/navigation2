@@ -574,15 +574,12 @@ void checkSaveParameters(SaveParameters & save_parameters)
   }
 
   // Check heights
-  if (save_parameters.min_height > save_parameters.max_height)
-  {
+  if (save_parameters.min_height > save_parameters.max_height) {
     std::cout <<
       "[WARN] [map_io]: Grid Map min_height:" <<
       save_parameters.min_height <<
       "is greater than max_height:" << save_parameters.max_height << std::endl;
-  
   }
-
 }
 
 /**
@@ -793,14 +790,17 @@ bool saveMapToFile(
   grid_map::GridMapRosConverter::toOccupancyGrid(gridmap, "occupancy", 0.0, 254.0, occ_grid);
   nav_msgs::msg::OccupancyGrid ele_grid;
   // grid_map::GridMapRosConverter::toOccupancyGrid(gridmap, "elevation", -5.0, 5.0, ele_grid);
-  if (save_parameters_loc.max_height == 0.0 && save_parameters_loc.min_height == 0.0){
+  if (save_parameters_loc.max_height == 0.0 && save_parameters_loc.min_height == 0.0) {
     // infer max and min elevation boundaries from the data
     // change the params to print them in the yaml
     min_h = gridmap["elevation"].minCoeff();
     max_h = gridmap["elevation"].maxCoeff();
     grid_map::GridMapRosConverter::toOccupancyGrid(gridmap, "elevation", min_h, max_h, ele_grid);
   } else {
-    grid_map::GridMapRosConverter::toOccupancyGrid(gridmap, "elevation", save_parameters_loc.min_height, save_parameters_loc.max_height, ele_grid);
+    grid_map::GridMapRosConverter::toOccupancyGrid(
+      gridmap, "elevation",
+      save_parameters_loc.min_height,
+      save_parameters_loc.max_height, ele_grid);
   }
 
   try {
