@@ -23,6 +23,7 @@
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav2_msgs/action/follow_waypoints.hpp"
+#include "nav2_msgs/msg/missed_waypoint.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_util/simple_action_server.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
@@ -41,12 +42,6 @@ enum class ActionStatus
   PROCESSING = 1,
   FAILED = 2,
   SUCCEEDED = 3
-};
-
-struct MissedWaypoint
-{
-  unsigned int index;
-  int error_code;
 };
 
 struct GoalStatus
@@ -149,7 +144,6 @@ protected:
   bool stop_on_failure_;
   int loop_rate_;
   GoalStatus current_goal_status_;
-  std::vector<MissedWaypoint> missed_waypoints_;
 
   // Task Execution At Waypoint Plugin
   pluginlib::ClassLoader<nav2_core::WaypointTaskExecutor>

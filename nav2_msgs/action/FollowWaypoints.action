@@ -8,8 +8,7 @@ uint16 TASK_EXECUTOR_FAILED=601
 geometry_msgs/PoseStamped[] poses
 ---
 #result definition
-int32[] missed_waypoints
-uint16[] error_codes
+MissedWaypoint[] missed_waypoints
 ---
 #feedback definition
 uint32 current_waypoint
