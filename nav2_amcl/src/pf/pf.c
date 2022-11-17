@@ -106,6 +106,7 @@ pf_t * pf_alloc(
   pf->w_fast = 0.0;
   pf->k_l = k_l;
   pf->max_particle_gen_prob_ext_pose = max_particle_gen_prob_ext_pose;
+  pf->ext_pose_is_valid = 0;
 
   pf->alpha_slow = alpha_slow;
   pf->alpha_fast = alpha_fast;
@@ -157,8 +158,6 @@ void pf_init(pf_t * pf, pf_vector_t mean, pf_matrix_t cov)
   }
 
   pf->w_slow = pf->w_fast = 0.0;
-
-  pf->ext_pose_is_valid = 0;
 
   pf_pdf_gaussian_free(pdf);
 
@@ -348,7 +347,7 @@ double norm_random()
 {
   double u = (double)rand()/RAND_MAX;
   double v = (double)rand()/RAND_MAX;
-  double x = sqrt(-2*log(u))*cos(2*3.14159*v); // Check this
+  double x = sqrt(-2*log(u))*cos(2*M_PI*v); // Check this
 
   return x;
 
@@ -368,6 +367,14 @@ int generate_random_particle(double x, double y, double yaw, double *cov_matrix,
     memcpy(pose_v, pose, 3*sizeof(double));
 
     return 0;
+}
+
+// Unconstrained (input args can be of any value, even more/less than 2*pi) angular distance in range [-pi, pi)
+// Source: https://stackoverflow.com/a/28037434/13167995
+double angular_difference(double angle1, double angle2){
+  double diff = fmod(angle2 - angle1 + M_PI_2, M_PI) - M_PI_2;
+  
+  return diff < -M_PI_2 ? diff + M_PI : diff;
 }
 
 // Resample the distribution
@@ -399,7 +406,10 @@ void pf_update_resample(pf_t * pf)
     {
 
       // See Improved LiDAR Probabilistic Localization for Autonomous Vehicles Using GNSS, #3.2 for details
-      double distance = (pow(set_a->samples[i].pose.v[0]-pf->ext_x, 2)/pf->cov_matrix[0] + pow(set_a->samples[i].pose.v[1]-pf->ext_y, 2)/pf->cov_matrix[4] + pow(set_a->samples[i].pose.v[2]-pf->ext_yaw, 2)/pf->cov_matrix[8]);
+      double distance = pow(set_a->samples[i].pose.v[0]-pf->ext_x, 2) / pf->cov_matrix[0] + 
+                        pow(set_a->samples[i].pose.v[1]-pf->ext_y, 2) / pf->cov_matrix[4] + 
+                        + pow(angular_difference(set_a->samples[i].pose.v[2], pf->ext_yaw), 2) / pf->cov_matrix[8];
+
       double ext_pose_likelihood = max_particle_likelihood*exp(-1*distance/2);
 
       total_dist_prob += ext_pose_likelihood;
