@@ -442,7 +442,7 @@ InflationLayer::dynamicParametersCallback(
         need_reinflation_ = true;
         need_cache_recompute = true;
       } else if (param_name == name_ + "." + "cost_scaling_factor" && // NOLINT
-        cost_scaling_factor_ != parameter.as_double())
+        getCostScalingFactor() != parameter.as_double())
       {
         cost_scaling_factor_ = parameter.as_double();
         need_reinflation_ = true;
