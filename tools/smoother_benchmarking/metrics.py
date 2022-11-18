@@ -111,7 +111,7 @@ def main():
     costmap.resize(costmap_msg.metadata.size_y, costmap_msg.metadata.size_x)
 
     planner = 'SmacHybrid'
-    smoothers = ['simple_smoother', 'constrained_smoother']
+    smoothers = ['simple_smoother', 'constrained_smoother', 'sg_smoother']
     max_cost = 210
     side_buffer = 10
     time_stamp = navigator.get_clock().now().to_msg()
