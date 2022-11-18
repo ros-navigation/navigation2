@@ -16,6 +16,8 @@
 #ifndef NAV2_MAP_SERVER__MAP_SAVER_HPP_
 #define NAV2_MAP_SERVER__MAP_SAVER_HPP_
 
+#include <octomap/octomap.h>
+
 #include <string>
 #include <memory>
 
@@ -24,6 +26,10 @@
 #include "nav2_msgs/srv/save_map.hpp"
 #include "grid_map_ros/grid_map_ros.hpp"
 #include "grid_map_msgs/msg/grid_map.hpp"
+
+#include <octomap_msgs/msg/octomap.hpp>
+#include "octomap_msgs/conversions.h"
+#include "octomap_ros/conversions.hpp"
 
 #include "map_io.hpp"
 
@@ -108,6 +114,10 @@ protected:
   bool saveGridmapTopicToFile(
     const std::string & map_topic,
     const SaveParameters & save_parameters);
+
+  bool saveOctomapTopicToFile(
+    const std::string & map_topic,
+    const std::string & file_name);
 
   // The timeout for saving the map in service
   std::shared_ptr<rclcpp::Duration> save_map_timeout_;

@@ -21,6 +21,9 @@ find_package(geometry_msgs REQUIRED)
 find_package(grid_map_ros REQUIRED)
 find_package(grid_map_msgs REQUIRED)
 find_package(grid_map_core REQUIRED)
+find_package(octomap REQUIRED)
+find_package(octomap_msgs REQUIRED)
+find_package(octomap_ros REQUIRED)
 
 nav2_package()
 
@@ -67,7 +70,10 @@ set(map_io_dependencies
   geometry_msgs
   grid_map_ros
   grid_map_msgs
-  grid_map_core)
+  grid_map_core
+  octomap_msgs
+  octomap_ros
+  octomap)
 
 set(map_server_dependencies
   rclcpp
@@ -83,7 +89,10 @@ set(map_server_dependencies
   tf2_ros
   grid_map_ros
   grid_map_msgs
-  grid_map_core)
+  grid_map_core
+  octomap_msgs
+  octomap_ros
+  octomap)
 
 set(map_saver_dependencies
   rclcpp
@@ -93,7 +102,10 @@ set(map_saver_dependencies
   nav2_util
   grid_map_ros
   grid_map_msgs
-  grid_map_core)
+  grid_map_core
+  octomap_msgs
+  octomap_ros
+  octomap)
 
 ament_target_dependencies(${map_server_executable}
   ${map_server_dependencies})

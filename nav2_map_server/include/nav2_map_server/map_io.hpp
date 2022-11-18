@@ -26,6 +26,9 @@
 #include "grid_map_ros/grid_map_ros.hpp"
 #include "grid_map_ros/GridMapRosConverter.hpp"
 #include "grid_map_msgs/msg/grid_map.hpp"
+#include <octomap_msgs/msg/octomap.hpp>
+#include "octomap_msgs/conversions.h"
+#include "octomap_ros/conversions.hpp"
 
 /* Map input part */
 
@@ -124,7 +127,9 @@ bool saveMapToFile(
 bool saveMapToFile(
   const grid_map_msgs::msg::GridMap & map,
   const SaveParameters & save_parameters);
-
+bool saveOctomapToFile(
+  const octomap_msgs::msg::Octomap & octomap_msg,
+  const std::string & map_name);
 
 }  // namespace nav2_map_server
 

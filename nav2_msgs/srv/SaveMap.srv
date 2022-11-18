@@ -13,5 +13,7 @@ float32 occupied_thresh
 # Grid Map param
 float32 max_height
 float32 min_height
+# Octomap topic
+string octomap_topic
 ---
 bool result

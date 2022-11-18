@@ -838,4 +838,48 @@ bool saveMapToFile(
   return true;
 }
 
+bool saveOctomapToFile(
+  const octomap_msgs::msg::Octomap & octomap_msg,
+  const std::string & map_name)
+{
+
+  // saving the file as in https://github.com/OctoMap/octomap_mapping/blob/ros2/octomap_server/src/octomap_saver.cpp#L84
+  std::unique_ptr<octomap::AbstractOcTree> tree{octomap_msgs::msgToMap(octomap_msg)};
+    std::unique_ptr<octomap::AbstractOccupancyOcTree> octree;
+    if (tree) {
+      octree =
+        std::unique_ptr<octomap::AbstractOccupancyOcTree>(
+        dynamic_cast<octomap::AbstractOccupancyOcTree *>(tree.
+        release()));
+    } else {
+      std::cerr << "Error creating octree from received message" << std::endl;
+      return false;
+    }
+
+    if (octree) {
+      std::cout <<
+        "Map received ("<< octree->size() <<" nodes, " << octree->getResolution() <<" m res), saving to"<< map_name.c_str() << std::endl;
+   
+      std::string suffix = map_name.substr(map_name.length() - 3, 3);
+      if (suffix == ".bt") {  // write to binary file:
+        if (!octree->writeBinary(map_name)) {
+          std::cerr << "Error writing to file " << map_name.c_str()<< std::endl;
+          return false;
+        }
+      } else if (suffix == ".ot") {  // write to full .ot file:
+        if (!octree->write(map_name)) {
+          std::cerr << "Error writing to file " << map_name.c_str()<< std::endl;
+          return false;
+        }
+      } else {
+        std::cerr << "Unknown file extension, must be either .bt or .ot"<< std::endl;
+          return false;
+      }
+    } else {
+      std::cerr << "Error reading OcTree from stream"<< std::endl;
+      return false;
+    }
+  return true;
+}
+
 }  // namespace nav2_map_server

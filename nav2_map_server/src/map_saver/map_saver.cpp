@@ -363,6 +363,73 @@ bool MapSaver::saveGridmapTopicToFile(
   return false;
 }
 
+bool MapSaver::saveOctomapTopicToFile(
+  const std::string & map_topic,
+  const std::string & file_name) {
+    std::cerr << "===> saveOctomapTopicToFile" << std::endl;
+
+    // Local copies of map_topic and save_parameters that could be changed
+    std::string map_topic_loc = map_topic;
+    std::string file_name_loc = file_name;
+
+    try {
+      std::promise<octomap_msgs::msg::Octomap::SharedPtr> prom;
+      std::future<octomap_msgs::msg::Octomap::SharedPtr> future_result = prom.get_future();
+      // A callback function that receives map message from subscribed topic
+      auto mapCallback = [&prom](
+        const octomap_msgs::msg::Octomap::SharedPtr msg) -> void {
+          prom.set_value(msg);
+        };
+
+      rclcpp::QoS map_qos(10);  // initialize to default
+      if (map_subscribe_transient_local_) {
+        map_qos.transient_local();
+        map_qos.reliable();
+        map_qos.keep_last(1);
+      }
+
+      // Create new CallbackGroup for map_sub
+      auto callback_group = create_callback_group(
+        rclcpp::CallbackGroupType::MutuallyExclusive,
+        false);
+
+      auto option = rclcpp::SubscriptionOptions();
+      option.callback_group = callback_group;
+
+      auto map_sub = create_subscription<octomap_msgs::msg::Octomap>(
+        map_topic_loc, map_qos, mapCallback, option);
+
+      // Create SingleThreadedExecutor to spin map_sub in callback_group
+      rclcpp::executors::SingleThreadedExecutor executor;
+      executor.add_callback_group(callback_group, get_node_base_interface());
+      // Spin until map message received
+      auto timeout = save_map_timeout_->to_chrono<std::chrono::nanoseconds>();
+      auto status = executor.spin_until_future_complete(future_result, timeout);
+      if (status != rclcpp::FutureReturnCode::SUCCESS) {
+        RCLCPP_ERROR(get_logger(), "Failed to spin map subscription");
+        return false;
+      }
+      // map_sub is no more needed
+      map_sub.reset();
+      // Map message received. Saving it to file
+      octomap_msgs::msg::Octomap::SharedPtr map_msg = future_result.get();
+
+
+      // TODO: Check extension, is octomap_url required in save_params?
+      if (saveOctomapToFile(*map_msg, "octo_" + file_name + ".ot")) {
+        RCLCPP_INFO(get_logger(), "Map saved successfully");
+        return true;
+      } else {
+        RCLCPP_ERROR(get_logger(), "Failed to save the map");
+        return false;
+      }
+    } catch (std::exception & e) {
+      RCLCPP_ERROR(get_logger(), "Failed to save the map: %s", e.what());
+      return false;
+    }
+
+  return false;
+}
 }  // namespace nav2_map_server
 
 #include "rclcpp_components/register_node_macro.hpp"
