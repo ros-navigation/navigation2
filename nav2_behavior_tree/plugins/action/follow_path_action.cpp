@@ -37,20 +37,20 @@ void FollowPathAction::on_tick()
 
 BT::NodeStatus FollowPathAction::on_success()
 {
-  setOutput("follow_path_error_code", ActionGoal::NONE);
+  setOutput("error_code_id", ActionGoal::NONE);
   return BT::NodeStatus::SUCCESS;
 }
 
 BT::NodeStatus FollowPathAction::on_aborted()
 {
-  setOutput("follow_path_error_code", result_.result->error_code);
+  setOutput("error_code_id", result_.result->error_code);
   return BT::NodeStatus::FAILURE;
 }
 
 BT::NodeStatus FollowPathAction::on_cancelled()
 {
   // Set empty error code, action was cancelled
-  setOutput("compute_path_to_pose_error_code", ActionGoal::NONE);
+  setOutput("error_code_id", ActionGoal::NONE);
   return BT::NodeStatus::SUCCESS;
 }
 

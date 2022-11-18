@@ -17,8 +17,6 @@
 #include <memory>
 #include <string>
 #include <utility>
-#include <set>
-#include <limits>
 #include <vector>
 
 #include "nav2_util/geometry_utils.hpp"

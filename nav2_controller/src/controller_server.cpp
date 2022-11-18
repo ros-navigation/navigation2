@@ -353,7 +353,7 @@ void ControllerServer::computeControl()
     if (findControllerId(c_name, current_controller)) {
       current_controller_ = current_controller;
     } else {
-      throw nav2_core::ControllerException("Failed to find controller name: " + c_name);
+      throw nav2_core::InvalidController("Failed to find controller name: " + c_name);
     }
 
     std::string gc_name = action_server_->get_current_goal()->goal_checker_id;
@@ -403,6 +403,13 @@ void ControllerServer::computeControl()
           controller_frequency_);
       }
     }
+  } catch (nav2_core::InvalidController & e) {
+    RCLCPP_ERROR(this->get_logger(), "%s", e.what());
+    publishZeroVelocity();
+    std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
+    result->error_code = Action::Goal::INVALID_CONTROLLER;
+    action_server_->terminate_current(result);
+    return;
   } catch (nav2_core::ControllerTFError & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
     publishZeroVelocity();
