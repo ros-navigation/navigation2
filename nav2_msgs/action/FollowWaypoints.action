@@ -1,8 +1,14 @@
+# Error codes
+# Note: The expected priority order of the errors should match the message order
+uint16 NONE=0
+uint16 UNKNOWN=600
+uint16 TASK_EXECUTOR_FAILED=601
+
 #goal definition
 geometry_msgs/PoseStamped[] poses
 ---
 #result definition
-int32[] missed_waypoints
+MissedWaypoint[] missed_waypoints
 ---
 #feedback definition
 uint32 current_waypoint
