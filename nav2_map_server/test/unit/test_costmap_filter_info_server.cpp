@@ -59,6 +59,16 @@ public:
     on_cleanup(get_current_state());
     on_shutdown(get_current_state());
   }
+
+  void deactivate()
+  {
+    on_deactivate(get_current_state());
+  }
+
+  void activate()
+  {
+    on_activate(get_current_state());
+  }
 };
 
 class InfoServerTester : public ::testing::Test
@@ -143,4 +153,10 @@ TEST_F(InfoServerTester, testCostmapFilterInfoPublish)
   EXPECT_EQ(info_->filter_mask_topic, MASK_TOPIC);
   EXPECT_NEAR(info_->base, BASE, EPSILON);
   EXPECT_NEAR(info_->multiplier, MULTIPLIER, EPSILON);
+}
+
+TEST_F(InfoServerTester, testCostmapFilterInfoDeactivateActivate)
+{
+  info_server_->deactivate();
+  info_server_->activate();
 }
