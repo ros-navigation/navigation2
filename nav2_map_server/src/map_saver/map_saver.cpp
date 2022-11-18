@@ -141,7 +141,7 @@ void MapSaver::saveMapCallback(
       request->map_mode.c_str());
   }
 
-  response->result = saveMapTopicToFile(request->map_topic, save_parameters);
+  response->result = saveMapTopicToFile(request->map_topic, save_parameters) && saveOctomapTopicToFile(request->octomap_topic, "octo_" + request->map_url + ".ot");
 }
 
 bool MapSaver::saveMapTopicToFile(
@@ -371,6 +371,29 @@ bool MapSaver::saveOctomapTopicToFile(
     // Local copies of map_topic and save_parameters that could be changed
     std::string map_topic_loc = map_topic;
     std::string file_name_loc = file_name;
+
+    if (map_topic_loc == "") {
+      RCLCPP_WARN(
+        get_logger(), "No octomap_topic given");
+      return true;
+    }
+
+    // check octomap type
+    auto topic_info = get_publishers_info_by_topic(map_topic_loc);
+
+    if (!topic_info.empty()) {
+      if (topic_info[0].topic_type() == "octomap_msg/msg/Octomap") {
+        RCLCPP_INFO(
+          get_logger(), "Saving map (occupancy) from \'%s\' topic to \'%s\' file",
+          map_topic_loc.c_str(), file_name_loc.c_str());
+      } else {
+        RCLCPP_ERROR(get_logger(), "Unsupported topic type [%s]", topic_info[0].topic_type().c_str());
+        return false;
+      }
+    } else {
+      RCLCPP_ERROR(get_logger(), "Map topic not found [%s]", map_topic_loc.c_str());
+      return false;
+    }
 
     try {
       std::promise<octomap_msgs::msg::Octomap::SharedPtr> prom;
