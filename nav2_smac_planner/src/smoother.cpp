@@ -31,6 +31,7 @@ Smoother::Smoother(const SmootherParams & params)
   smooth_w_ = params.w_smooth_;
   is_holonomic_ = params.holonomic_;
   do_refinement_ = params.do_refinement_;
+  refinement_num_ = params.refinement_num_;
 }
 
 void Smoother::initialize(const double & min_turning_radius)
@@ -49,7 +50,6 @@ bool Smoother::smooth(
     return false;
   }
 
-  refinement_ctr_ = 0;
   steady_clock::time_point start = steady_clock::now();
   double time_remaining = max_time;
   bool success = true, reversing_segment;
@@ -69,6 +69,7 @@ bool Smoother::smooth(
       // Make sure we're still able to smooth with time remaining
       steady_clock::time_point now = steady_clock::now();
       time_remaining = max_time - duration_cast<duration<double>>(now - start).count();
+      refinement_ctr_ = 0;
 
       // Smooth path segment naively
       const geometry_msgs::msg::Pose start_pose = curr_path_segment.poses.front().pose;
@@ -178,7 +179,7 @@ bool Smoother::smoothImpl(
 
   // Lets do additional refinement, it shouldn't take more than a couple milliseconds
   // but really puts the path quality over the top.
-  if (do_refinement_ && refinement_ctr_ < 4) {
+  if (do_refinement_ && refinement_ctr_ < refinement_num_) {
     refinement_ctr_++;
     smoothImpl(new_path, reversing_segment, costmap, max_time);
   }

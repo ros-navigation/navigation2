@@ -381,7 +381,7 @@ void PlannerServer::computePlanThroughPoses()
       nav_msgs::msg::Path curr_path = getPlan(curr_start, curr_goal, goal->planner_id);
 
       if (!validatePath<ActionThroughPoses>(curr_goal, curr_path, goal->planner_id)) {
-        throw nav2_core::NoValidPathCouldBeFound(goal->planner_id + "generated a empty path");
+        throw nav2_core::NoValidPathCouldBeFound(goal->planner_id + " generated a empty path");
       }
 
       // Concatenate paths together
@@ -405,6 +405,10 @@ void PlannerServer::computePlanThroughPoses()
     }
 
     action_server_poses_->succeeded_current(result);
+  } catch (nav2_core::InvalidPlanner & ex) {
+    exceptionWarning(curr_start, curr_goal, goal->planner_id, ex);
+    result->error_code = ActionToPoseGoal::INVALID_PLANNER;
+    action_server_poses_->terminate_current(result);
   } catch (nav2_core::StartOccupied & ex) {
     exceptionWarning(curr_start, curr_goal, goal->planner_id, ex);
     result->error_code = ActionThroughPosesGoal::START_OCCUPIED;
@@ -480,7 +484,7 @@ PlannerServer::computePlan()
     result->path = getPlan(start, goal_pose, goal->planner_id);
 
     if (!validatePath<ActionThroughPoses>(goal_pose, result->path, goal->planner_id)) {
-      throw nav2_core::NoValidPathCouldBeFound(goal->planner_id + "generated a empty path");
+      throw nav2_core::NoValidPathCouldBeFound(goal->planner_id + " generated a empty path");
     }
 
     // Publish the plan for visualization purposes
@@ -496,6 +500,10 @@ PlannerServer::computePlan()
         1 / max_planner_duration_, 1 / cycle_duration.seconds());
     }
     action_server_pose_->succeeded_current(result);
+  } catch (nav2_core::InvalidPlanner & ex) {
+    exceptionWarning(start, goal->goal, goal->planner_id, ex);
+    result->error_code = ActionToPoseGoal::INVALID_PLANNER;
+    action_server_pose_->terminate_current(result);
   } catch (nav2_core::StartOccupied & ex) {
     exceptionWarning(start, goal->goal, goal->planner_id, ex);
     result->error_code = ActionToPoseGoal::START_OCCUPIED;
@@ -556,6 +564,7 @@ PlannerServer::getPlan(
         get_logger(), "planner %s is not a valid planner. "
         "Planner names are: %s", planner_id.c_str(),
         planner_ids_concat_.c_str());
+      throw nav2_core::InvalidPlanner("Planner id " + planner_id + " is invalid");
     }
   }
 
