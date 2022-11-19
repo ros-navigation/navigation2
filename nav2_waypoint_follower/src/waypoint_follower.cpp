@@ -282,9 +282,8 @@ WaypointFollower::followWaypoints()
           RCLCPP_INFO(
             get_logger(), "Completed all %zu waypoints requested.",
             goal->poses.size());
-          result->missed_waypoints = failed_ids_;
           action_server_->succeeded_current(result);
-          failed_ids_.clear();
+          current_goal_status_.error_code = 0;
           return;
         }
         RCLCPP_INFO(
