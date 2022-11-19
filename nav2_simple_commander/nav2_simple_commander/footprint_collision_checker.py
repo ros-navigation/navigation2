@@ -14,10 +14,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+This is a Python3 API for a Footprint Collision Checker.
+
+It provides the needed methods to manipulate the coordinates
+and calculate the cost of a Footprint
+"""
+
 from math import cos, sin
 from line_iterator import LineIterator
 from costmap_2d import PyCostmap2D
-from geometry_msgs.msg import Point
+from geometry_msgs.msg import Polygon
+from geometry_msgs.msg import Point32
 
 NO_INFORMATION = 255
 LETHAL_OBSTACLE = 254
@@ -27,39 +35,84 @@ FREE_SPACE = 0
 
 
 class FootprintCollisionChecker():
-    def __init__(self, costmap: PyCostmap2D):
-        self.costmap_ = costmap
+    """
+    FootprintCollisionChecker.
 
-    def footprintCost(self, footprint: list[Point]):
+    FootprintCollisionChecker Class for getting the cost
+    and checking the collisions of a Footprint
+    """
+
+    def __init__(self):
+        """
+        Initialize the FootprintCollisionChecker Object.
+        """
+        pass
+
+    def footprintCost(self, footprint: Polygon):
+        """
+        Iterate over all the points in a footprint and check for collision.
+
+        Args
+        ----
+            footprint (Polygon): The footprint to calculate the collision cost for
+        
+        Returns
+        -------
+            LETHAL_OBSTACLE (int): If collision was found, 254 will be returned
+            footprint_cost (float): The maximum cost found in the footprint points
+
+        """
         footprint_cost = 0.0
-        if not self.costmap_.worldToMapCheck(footprint[0].x, footprint[0].y):
+        x1 = 0.0
+        y1 = 0.0
+
+        if not self.costmap_.isWorldCoordsValid(footprint.points[0].x, footprint.points[0].y):
             return LETHAL_OBSTACLE
 
-        x0, y0 = self.costmap_.worldToMap(footprint[0].x, footprint[0].y)
+        x0, y0 = self.costmap_.worldToMap(
+            footprint.points[0].x, footprint.points[0].y)
         xstart = x0
         ystart = y0
 
-        for i in range(len(footprint) - 1):
-            if not self.costmap_.worldToMapCheck(
-                    footprint[i + 1].x, footprint[i + 1].y):
+        for i in range(len(footprint.points) - 1):
+            if not self.costmap_.isWorldCoordsValid(
+                    footprint.points[i + 1].x, footprint.points[i + 1].y):
                 return LETHAL_OBSTACLE
 
             x1, y1 = self.worldToMap(
-                footprint[i + 1].x, footprint[i + 1].y)
+                footprint.points[i + 1].x, footprint.points[i + 1].y)
 
-            footprint_cost = max(self.lineCost(x0, x1, y0, y1), footprint_cost)
+            footprint_cost = max(
+                float(self.lineCost(x0, x1, y0, y1)), footprint_cost)
             x0 = x1
             y0 = y1
 
             if footprint_cost == LETHAL_OBSTACLE:
                 return footprint_cost
 
-        return max(self.lineCost(xstart, x1, ystart, y1), footprint_cost)
+        return max(float(self.lineCost(xstart, x1, ystart, y1)), footprint_cost)
 
-    def lineCost(self, x0, x1, y0, y1):
+    def lineCost(self, x0, x1, y0, y1, step_size = 0.1):
+        """
+        Iterate over all the points along a line and check for collision.
+
+        Args
+        ----
+            x0 (float): Abscissa of the initial point in map coordinates
+            y0 (float): Ordinate of the initial point in map coordinates
+            x1 (float): Abscissa of the final point in map coordinates
+            y1 (float): Ordinate of the final point in map coordinates
+            step_size (float): Optional, Increments' resolution, defaults to 0.1
+        
+        Returns
+        -------
+            LETHAL_OBSTACLE (int): If collision was found, 254 will be returned
+            line_cost (float): The maximum cost found in the line points
+
+        """
         line_cost = 0.0
         point_cost = -1.0
-        line_iterator = LineIterator(x0, y0, x1, y1, 0.1)
+        line_iterator = LineIterator(x0, y0, x1, y1, step_size)
 
         while line_iterator.isValid():
             point_cost = self.pointCost(
@@ -73,24 +126,80 @@ class FootprintCollisionChecker():
 
         return line_cost
 
-    def worldToMap(self, wx: float, wy: float, mx: int, my: int):
-        return self.costmap_.worldToMap(wx, wy, mx, my)
+    def worldToMap(self, wx: float, wy: float):
+        """
+        Get the map coordinate XY using world coordinate XY.
+
+        Args
+        ----
+            wx (float): world coordinate X
+            wy (float): world coordinate Y
+
+        Returns
+        -------
+            tuple of int: mx, my
+            mx (int): map coordinate X
+            my (int): map coordinate Y
+
+        """
+        return self.costmap_.worldToMap(wx, wy)
 
     def pointCost(self, x: int, y: int):
+        """
+        Get the cost of a point in the costmap using map coordinates XY.
+
+        Args
+        ----
+            mx (int): map coordinate X
+            my (int): map coordinate Y
+
+        Returns
+        -------
+            np.uint8: cost of a point
+
+        """
         return self.costmap_.getCostXY(x, y)
 
     def setCostmap(self, costmap: PyCostmap2D):
+        """
+        Specify which costmap to use.
+
+        Args
+        ----
+            costmap (PyCostmap2D): costmap to use in the object's methods
+
+        """
         self.costmap_ = costmap
 
-    def footprintCostAtPose(self, x: float, y: float, theta: float, footprint: list[Point]):
+    def footprintCostAtPose(self, x: float, y: float, theta: float, footprint: Polygon):
+        """
+        Get the cost of a footprint at a specific Pose in map coordinates.
+
+        Args
+        ----
+            x (float): map coordinate X
+            y (float): map coordinate Y
+            theta (float): absolute rotation angle of the footprint
+            footprint (Polygon): the footprint to calculate its cost at the given Pose
+
+        Returns
+        -------
+            LETHAL_OBSTACLE (int): If collision was found, 254 will be returned
+            footprint_cost (float): The maximum cost found in the footprint points
+
+        """
         cos_th = cos(theta)
         sin_th = sin(theta)
-        oriented_footprint = []
+        oriented_footprint = Polygon()
 
-        for i in range(len(footprint)):
-            new_pt = Point()
-            new_pt.x = x + (footprint[i].x * cos_th - footprint[i].y * sin_th)
-            new_pt.y = y + (footprint[i].x * sin_th + footprint[i].y * cos_th)
-            oriented_footprint.append(new_pt)
-        
+        for i in range(len(footprint.points)):
+            new_pt = Point32()
+            new_pt.x = x + \
+                (footprint.points[i].x * cos_th -
+                 footprint.points[i].y * sin_th)
+            new_pt.y = y + \
+                (footprint.points[i].x * sin_th +
+                 footprint.points[i].y * cos_th)
+            oriented_footprint.points.append(new_pt)
+
         return self.footprintCost(oriented_footprint)

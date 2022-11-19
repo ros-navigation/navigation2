@@ -175,18 +175,18 @@ class PyCostmap2D:
         my = int((wy - self.origin_y) // self.resolution)
         return (mx, my)
 
-    def worldToMapCheck(self, wx: float, wy: float) -> bool:
+    def isWorldCoordsValid(self, wx: float, wy: float) -> bool:
         """
-        Check wether the inputs/outputs of worldToMap are valid
+        Check wether the given world XY coords are valid
 
         Args
         ----
-            wx (float) [m]: world coordinate X to get map coordinate
-            wy (float) [m]: world coordinate Y to get map coordinate
+            wx (float): world coordinate X
+            wy (float): world coordinate Y
 
         Returns
         -------
-            bool
+            bool: True if valid, False otherwise
         """
         if wx < self.origin_x or wy < self.origin_y:
             return False
