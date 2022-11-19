@@ -90,6 +90,7 @@ private:
   bool initial_pose_stored_ = false;
   bool loop_counter_stop_ = true;
   std::string loop_no_ = "0";
+  std::string base_frame_;
 
   // Call to send NavigateToPose action request for goal poses
   geometry_msgs::msg::PoseStamped convert_to_msg(

@@ -763,6 +763,10 @@ Nav2Panel::onInitialize()
 {
   auto node = getDisplayContext()->getRosNodeAbstraction().lock()->get_raw_node();
 
+  // declaring parameter to get the base frame
+  node->declare_parameter("base_frame", rclcpp::ParameterValue(std::string("base_footprint")));
+  node->get_parameter("base_frame", base_frame_);
+
   // create action feedback subscribers
   navigation_feedback_sub_ =
     node->create_subscription<nav2_msgs::action::NavigateToPose::Impl::FeedbackMessage>(
@@ -1034,12 +1038,12 @@ Nav2Panel::onAccumulatedWp()
     if (store_initial_pose_) {
       try {
         init_transform = tf2_buffer_->lookupTransform(
-          "map", "base_footprint",
+          acummulated_poses_[0].header.frame_id, base_frame_,
           tf2::TimePointZero);
       } catch (const tf2::TransformException & ex) {
         RCLCPP_INFO(
           client_node_->get_logger(), "Could not transform %s to %s: %s",
-          "map", "base_footprint", ex.what());
+          acummulated_poses_[0].header.frame_id.c_str(), base_frame_.c_str(), ex.what());
         return;
       }
 
