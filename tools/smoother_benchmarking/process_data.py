@@ -82,7 +82,7 @@ def getSmoothness(pt_prev, pt, pt_next):
     d1 = pt - pt_prev
     d2 = pt_next - pt
     delta = d2 - d1
-    return np.dot(delta, delta)
+    return np.linalg.norm(delta)
 
 def getPathSmoothnesses(paths):
     smoothnesses = []
