@@ -94,9 +94,9 @@ protected:
    * @param max_time Maximum time to compute, stop early if over limit
    * @return If smoothing was successful
    */
-  bool smoothImpl(
+  void smoothImpl(
     nav_msgs::msg::Path & path,
-    bool & reversing_segment);
+    bool & reversing_segment) const;
 
   bool do_refinement_;
   int refinement_num_;

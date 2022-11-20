@@ -26,7 +26,7 @@
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_smoother/simple_smoother.hpp"
-#include "ament_index_cpp/get_package_share_directory.hpp"
+#include "nav2_core/smoother_exceptions.hpp"
 
 using namespace smoother_utils;  // NOLINT
 using namespace nav2_smoother;  // NOLINT
@@ -121,7 +121,16 @@ TEST(SmootherTest, test_simple_smoother)
 
   rclcpp::Duration no_time = rclcpp::Duration::from_seconds(0.0);  // 0 seconds
   rclcpp::Duration max_time = rclcpp::Duration::from_seconds(1);  // 1 second
-  EXPECT_FALSE(smoother->smooth(straight_irregular_path, no_time));
+
+  try {
+    smoother->smooth(straight_irregular_path, no_time);
+    FAIL() << "Failed to throw smoothing time exceeded allowed duration";
+  } catch (const nav2_core::SmootherException & ex) {
+    std::string error = ex.what();
+    std::cout << "Error code: " << error << std::endl;
+    EXPECT_TRUE(error.find("Smoothing time exceeded") != std::string::npos);
+  }
+
   EXPECT_TRUE(smoother->smooth(straight_irregular_path, max_time));
   for (uint i = 0; i != straight_irregular_path.poses.size() - 1; i++) {
     // Check distances are more evenly spaced out now
@@ -209,7 +218,13 @@ TEST(SmootherTest, test_simple_smoother)
   collision_path.poses[9].pose.position.y = 1.4;
   collision_path.poses[10].pose.position.x = 1.5;
   collision_path.poses[10].pose.position.y = 1.5;
-  EXPECT_FALSE(smoother->smooth(collision_path, max_time));
+
+  try {
+    smoother->smooth(collision_path, max_time);
+    FAIL() << "Failed to throw Smoothed Path in collision";
+  } catch (const nav2_core::SmootherException & ex) {
+    EXPECT_EQ(ex.what(), std::string("Smoothed Path in collision"));
+  }
 
   // test cusp / reversing segments
   nav_msgs::msg::Path reversing_path;
@@ -238,7 +253,7 @@ TEST(SmootherTest, test_simple_smoother)
   reversing_path.poses[10].pose.position.y = 0.0;
   EXPECT_TRUE(smoother->smooth(reversing_path, max_time));
 
-  // // test rotate in place
+  // test rotate in place
   tf2::Quaternion quat1, quat2;
   quat1.setRPY(0.0, 0.0, 0.0);
   quat2.setRPY(0.0, 0.0, 1.0);
@@ -276,5 +291,10 @@ TEST(SmootherTest, test_simple_smoother)
   max_its_path.poses[9].pose.position.y = 0.9;
   max_its_path.poses[10].pose.position.x = 0.5;
   max_its_path.poses[10].pose.position.y = 1.0;
-  EXPECT_FALSE(smoother->smooth(max_its_path, max_time));
+  try {
+    smoother->smooth(collision_path, max_time);
+    FAIL() << "Failed to throw smoothing time exceeded allowed duration";
+  } catch (const nav2_core::SmootherException & ex) {
+    EXPECT_EQ(ex.what(), std::string("Smoother exceeded iterations"));
+  }
 }

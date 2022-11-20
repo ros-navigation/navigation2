@@ -114,6 +114,7 @@ protected:
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
   using Action = nav2_msgs::action::SmoothPath;
+  using ActionGoal = Action::Goal;
   using ActionServer = nav2_util::SimpleActionServer<Action>;
 
   /**

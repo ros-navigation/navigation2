@@ -12,22 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#include <math.h>
+#include <cmath>
 #include <memory>
 #include <string>
 #include <vector>
-#include <chrono>
-#include <limits>
 #include <random>
 
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_smoother/savitzky_golay_smoother.hpp"
-#include "ament_index_cpp/get_package_share_directory.hpp"
+#include "nav2_core/smoother_exceptions.hpp"
 
 using namespace smoother_utils;  // NOLINT
 using namespace nav2_smoother;  // NOLINT
@@ -109,7 +106,14 @@ TEST(SmootherTest, test_sg_smoother_basics)
 
   // Attempt smoothing with no time given, should fail
   rclcpp::Duration no_time = rclcpp::Duration::from_seconds(-1.0);  // 0 seconds
-  EXPECT_FALSE(smoother->smooth(straight_regular_path, no_time));
+
+  try {
+    smoother->smooth(straight_regular_path, no_time);
+    FAIL() << "Failed to throw smoothing time exceeded allowed duration";
+  } catch (const nav2_core::SmootherException & ex) {
+    std::string error = ex.what();
+    EXPECT_TRUE(error.find("Smoothing time exceed") != std::string::npos);
+  }
 
   smoother->deactivate();
   smoother->cleanup();
