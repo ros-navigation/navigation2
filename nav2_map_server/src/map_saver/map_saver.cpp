@@ -382,7 +382,7 @@ bool MapSaver::saveOctomapTopicToFile(
     auto topic_info = get_publishers_info_by_topic(map_topic_loc);
 
     if (!topic_info.empty()) {
-      if (topic_info[0].topic_type() == "octomap_msg/msg/Octomap") {
+      if (topic_info[0].topic_type() == "octomap_msgs/msg/Octomap") {
         RCLCPP_INFO(
           get_logger(), "Saving map (occupancy) from \'%s\' topic to \'%s\' file",
           map_topic_loc.c_str(), file_name_loc.c_str());
