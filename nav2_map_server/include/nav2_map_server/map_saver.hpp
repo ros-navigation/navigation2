@@ -117,7 +117,7 @@ protected:
 
   bool saveOctomapTopicToFile(
     const std::string & map_topic,
-    const std::string & file_name);
+    const SaveParameters & save_parameters);
 
   // The timeout for saving the map in service
   std::shared_ptr<rclcpp::Duration> save_map_timeout_;

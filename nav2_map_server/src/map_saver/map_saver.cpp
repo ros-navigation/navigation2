@@ -141,7 +141,7 @@ void MapSaver::saveMapCallback(
       request->map_mode.c_str());
   }
 
-  response->result = saveMapTopicToFile(request->map_topic, save_parameters) && saveOctomapTopicToFile(request->octomap_topic, "octo_" + request->map_url + ".ot");
+  response->result = saveMapTopicToFile(request->map_topic, save_parameters) && saveOctomapTopicToFile(request->octomap_topic, save_parameters);
 }
 
 bool MapSaver::saveMapTopicToFile(
@@ -365,12 +365,13 @@ bool MapSaver::saveGridmapTopicToFile(
 
 bool MapSaver::saveOctomapTopicToFile(
   const std::string & map_topic,
-  const std::string & file_name) {
+    const SaveParameters & save_parameters) {
+
     std::cerr << "===> saveOctomapTopicToFile" << std::endl;
 
     // Local copies of map_topic and save_parameters that could be changed
     std::string map_topic_loc = map_topic;
-    std::string file_name_loc = file_name;
+    SaveParameters save_parameters_loc = save_parameters;
 
     if (map_topic_loc == "") {
       RCLCPP_WARN(
@@ -384,8 +385,8 @@ bool MapSaver::saveOctomapTopicToFile(
     if (!topic_info.empty()) {
       if (topic_info[0].topic_type() == "octomap_msgs/msg/Octomap") {
         RCLCPP_INFO(
-          get_logger(), "Saving map (occupancy) from \'%s\' topic to \'%s\' file",
-          map_topic_loc.c_str(), file_name_loc.c_str());
+          get_logger(), "Saving octomap (3D obstacles) from \'%s\' topic to \'%s\' file",
+          map_topic_loc.c_str(), save_parameters_loc.map_file_name.c_str());
       } else {
         RCLCPP_ERROR(get_logger(), "Unsupported topic type [%s]", topic_info[0].topic_type().c_str());
         return false;
@@ -437,9 +438,7 @@ bool MapSaver::saveOctomapTopicToFile(
       // Map message received. Saving it to file
       octomap_msgs::msg::Octomap::SharedPtr map_msg = future_result.get();
 
-
-      // TODO: Check extension, is octomap_url required in save_params?
-      if (saveOctomapToFile(*map_msg, "octo_" + file_name + ".ot")) {
+      if (saveOctomapToFile(*map_msg, save_parameters_loc)) {
         RCLCPP_INFO(get_logger(), "Map saved successfully");
         return true;
       } else {

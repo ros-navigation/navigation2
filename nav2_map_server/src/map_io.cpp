@@ -753,6 +753,32 @@ void WriteMetadataToFile(
   std::cout << "[INFO] [map_io]: Map saved" << std::endl;
 }
 
+void WriteMetadataToFile(
+  const octomap_msgs::msg::Octomap & map,
+  const SaveParameters & save_parameters)
+{
+  std::string mapdatafile = "octo_" + save_parameters.map_file_name + ".ot";
+  std::string mapmetadatafile = save_parameters.map_file_name + ".yaml";
+
+  // elevation
+  YAML::Emitter e;
+  e << YAML::Precision(3);
+  e << YAML::Newline;
+  e << YAML::Comment(" octomap");
+  e << YAML::BeginMap;
+  e << YAML::Key << "octomap_file" << YAML::Value << mapdatafile;
+  e << YAML::TrueFalseBool << "binary" << YAML::Value << map.binary;
+  if (!e.good()) {
+    std::cout <<
+      "[WARN] [map_io]: YAML writer failed with an error " << e.GetLastError() <<
+      ". The map metadata may be invalid." << std::endl;
+  }
+
+  std::cout << "[INFO] [map_io]: Writing octomap metadata to " << mapmetadatafile << std::endl;
+  std::ofstream(mapmetadatafile, std::ios_base::openmode::_S_app) << e.c_str();
+  std::cout << "[INFO] [map_io]: Octomap saved" << std::endl;
+}
+
 bool saveMapToFile(
   const nav_msgs::msg::OccupancyGrid & map,
   const SaveParameters & save_parameters)
@@ -840,8 +866,11 @@ bool saveMapToFile(
 
 bool saveOctomapToFile(
   const octomap_msgs::msg::Octomap & octomap_msg,
-  const std::string & map_name)
+  const SaveParameters & save_parameters)
 {
+  SaveParameters save_parameters_loc = save_parameters; 
+  checkSaveParameters(save_parameters_loc);
+  std::string  map_name = "octo_" + save_parameters_loc.map_file_name + ".ot";
 
   // saving the file as in https://github.com/OctoMap/octomap_mapping/blob/ros2/octomap_server/src/octomap_saver.cpp#L84
   std::unique_ptr<octomap::AbstractOcTree> tree{octomap_msgs::msgToMap(octomap_msg)};
@@ -879,6 +908,8 @@ bool saveOctomapToFile(
       std::cerr << "Error reading OcTree from stream"<< std::endl;
       return false;
     }
+  
+  WriteMetadataToFile(octomap_msg, save_parameters_loc);
   return true;
 }
 

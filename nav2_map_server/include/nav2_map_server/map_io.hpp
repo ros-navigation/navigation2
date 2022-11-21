@@ -129,7 +129,7 @@ bool saveMapToFile(
   const SaveParameters & save_parameters);
 bool saveOctomapToFile(
   const octomap_msgs::msg::Octomap & octomap_msg,
-  const std::string & map_name);
+  const SaveParameters & save_parameters);
 
 }  // namespace nav2_map_server
 
