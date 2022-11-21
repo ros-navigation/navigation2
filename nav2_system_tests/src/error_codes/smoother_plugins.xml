@@ -1,0 +1,14 @@
+<library path="smoother">
+    <class type="nav2_system_tests::UnknownErrorSmoother"
+           base_class_type="nav2_core::Smoother">
+        <description>This smoother produces a unknown exception.</description>
+    </class>
+    <class type="nav2_system_tests::TimeOutErrorSmoother"
+           base_class_type="nav2_core::Smoother">
+        <description>This smoother produces a TimedOut exception.</description>
+    </class>
+    <class type="nav2_system_tests::SmoothedPathInCollision"
+           base_class_type="nav2_core::Smoother">
+        <description>This smoother produces a path in collision exception.</description>
+    </class>
+</library>

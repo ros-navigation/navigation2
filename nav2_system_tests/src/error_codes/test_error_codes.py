@@ -142,7 +142,10 @@ def main(argv=sys.argv[1:]):
     a_path.poses.append(pose1)
 
     smoother = {
-        'invalid_smoother': SmoothPath.Goal().INVALID_SMOOTHER
+        'invalid_smoother': SmoothPath.Goal().INVALID_SMOOTHER,
+        'unknown': SmoothPath.Goal().UNKNOWN,
+        'timeout': SmoothPath.Goal().TIMEOUT,
+        'smoothed_path_in_collision': SmoothPath.Goal().SMOOTHED_PATH_IN_COLLISION
     }
 
     for smoother, error_code in smoother.items():
