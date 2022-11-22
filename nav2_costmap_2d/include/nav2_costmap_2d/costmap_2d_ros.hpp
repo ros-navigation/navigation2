@@ -302,6 +302,21 @@ public:
    */
   double getRobotRadius() {return robot_radius_;}
 
+  /**
+   * @brief Returns the value of the "update_on_request" parameter, 
+   * used to check if the costmap is to be updated on request or periodically.
+   * 
+   * @return true 
+   * @return false 
+   */
+  bool isUpdateOnRequest() {return update_on_request_;} 
+
+  /**
+   * @brief Update the and publish the costmap once.
+   * 
+   */
+  void updateMapOnRequest();
+
 protected:
   // Publishers and subscribers
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr
@@ -348,6 +363,7 @@ protected:
   int map_height_meters_{0};
   double map_publish_frequency_{0};
   double map_update_frequency_{0};
+  bool update_on_request_{false};
   int map_width_meters_{0};
   double origin_x_{0};
   double origin_y_{0};

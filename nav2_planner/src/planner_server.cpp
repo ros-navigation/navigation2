@@ -250,6 +250,11 @@ bool PlannerServer::isServerInactive(
 
 void PlannerServer::waitForCostmap()
 {
+  if (costmap_ros_->isUpdateOnRequest()){
+    RCLCPP_DEBUG(get_logger(), "Updating costmap on request!");
+    costmap_ros_->updateMapOnRequest();
+    return;
+  }
   // Don't compute a plan until costmap is valid (after clear costmap)
   rclcpp::Rate r(100);
   while (!costmap_ros_->isCurrent()) {
