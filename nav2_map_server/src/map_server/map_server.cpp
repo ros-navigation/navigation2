@@ -118,7 +118,7 @@ MapServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   grid_map_service_ = create_service<grid_map_msgs::srv::GetGridMap>(
     service_prefix + std::string(grid_map_service_name_),
     std::bind(&MapServer::getGridMapCallback, this, _1, _2, _3));
-
+  // TODO: implement GetOctomap
 
   // Create a publisher using the QoS settings to emulate a ROS1 latched topic
   occ_pub_ = create_publisher<nav_msgs::msg::OccupancyGrid>(
@@ -128,6 +128,11 @@ MapServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   // Create a publisher using the QoS settings to emulate a ROS1 latched topic
   grid_map_pub_ = create_publisher<grid_map_msgs::msg::GridMap>(
     std::string("grid_map_") + topic_name,
+    rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+
+  // Create a publisher using the QoS settings to emulate a ROS1 latched topic
+  octomap_pub_ = create_publisher<octomap_msgs::msg::Octomap>(
+    std::string("octomap_") + topic_name,
     rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
 
   // Create a service that loads the occupancy grid from a file
@@ -161,6 +166,12 @@ MapServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
     auto grid_map_to_pub = std::make_unique<grid_map_msgs::msg::GridMap>(msg_grid_map_);
     grid_map_pub_->publish(std::move(grid_map_to_pub));
   }
+
+  octomap_pub_->on_activate();
+  if (map_available_) {
+    auto octomap_to_pub = std::make_unique<octomap_msgs::msg::Octomap>(msg_octomap_);
+    octomap_pub_->publish(std::move(octomap_to_pub));
+  }
   // create bond connection
   createBond();
 
@@ -174,7 +185,7 @@ MapServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 
   occ_pub_->on_deactivate();
   grid_map_pub_->on_deactivate();
-
+  octomap_pub_->on_deactivate();
   // destroy bond connection
   destroyBond();
 
@@ -189,10 +200,13 @@ MapServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   occ_pub_.reset();
   occ_service_.reset();
   grid_map_pub_.reset();
+  octomap_pub_.reset();
   grid_map_service_.reset();
   load_map_service_.reset();
   map_available_ = false;
   msg_ = nav_msgs::msg::OccupancyGrid();
+  msg_grid_map_ =  grid_map_msgs::msg::GridMap();
+  msg_octomap_ =  octomap_msgs::msg::Octomap();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }

@@ -15,6 +15,8 @@
 #ifndef NAV2_MAP_SERVER__MAP_SERVER_HPP_
 #define NAV2_MAP_SERVER__MAP_SERVER_HPP_
 
+#include <octomap/octomap.h>
+
 #include <string>
 #include <memory>
 #include <functional>
@@ -26,6 +28,10 @@
 #include "nav2_msgs/srv/load_map.hpp"
 #include "grid_map_msgs/msg/grid_map.hpp"
 #include "grid_map_msgs/srv/get_grid_map.hpp"
+
+#include <octomap_msgs/msg/octomap.hpp>
+#include "octomap_msgs/conversions.h"
+#include "octomap_ros/conversions.hpp"
 
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "tf2/LinearMath/Quaternion.h"
@@ -163,6 +169,9 @@ protected:
   // A topic on which the grid_map will be published
   rclcpp_lifecycle::LifecyclePublisher<grid_map_msgs::msg::GridMap>::SharedPtr grid_map_pub_;
 
+  // A topic on which the grid_map will be published
+  rclcpp_lifecycle::LifecyclePublisher<octomap_msgs::msg::Octomap>::SharedPtr octomap_pub_;
+
   // The frame ID used in the returned OccupancyGrid message
   std::string frame_id_;
 
@@ -178,6 +187,9 @@ protected:
   std::string grid_map_frame_id_;
   geometry_msgs::msg::TransformStamped map_to_grid_map_t_;
   std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_static_broadcaster_;
+
+  // The message to publish on the octomap topic
+  octomap_msgs::msg::Octomap msg_octomap_;
 };
 
 }  // namespace nav2_map_server
