@@ -280,7 +280,7 @@ bool MapServer::loadMapResponseFromYaml(
   const std::string & yaml_file,
   std::shared_ptr<nav2_msgs::srv::LoadMap::Response> response)
 {
-  switch (loadMapFromYaml(yaml_file, msg_, msg_grid_map_)) {
+  switch (loadMapFromYaml(yaml_file, msg_, msg_grid_map_, msg_octomap_)) {
     case MAP_DOES_NOT_EXIST:
       response->result = nav2_msgs::srv::LoadMap::Response::RESULT_MAP_DOES_NOT_EXIST;
       return false;
@@ -297,6 +297,7 @@ bool MapServer::loadMapResponseFromYaml(
       map_available_ = true;
       response->map = msg_;
       response->grid_map = msg_grid_map_;
+      response->octomap = msg_octomap_;
       response->result = nav2_msgs::srv::LoadMap::Response::RESULT_SUCCESS;
   }
 

@@ -178,6 +178,26 @@ LoadParameters loadMapYaml(const std::string & yaml_filename)
     load_parameters.max_height = yaml_get_value<double>(doc, "max_height");
   }
 
+  auto octomap_file_name = doc["octomap_file"];
+  if (!octomap_file_name.IsDefined()) {
+    load_parameters.octomap_file_name = "";
+  } else {
+    auto octomap_file_name = yaml_get_value<std::string>(doc, "elevation_image");
+    if (octomap_file_name.empty()) {
+      throw YAML::Exception(doc["octomap_file"].Mark(), "The octomap tag was empty.");
+    }
+    if (octomap_file_name[0] != '/') {
+      // dirname takes a mutable char *, so we copy into a vector
+      std::vector<char> fname_copy(yaml_filename.begin(), yaml_filename.end());
+      fname_copy.push_back('\0');
+      octomap_file_name =
+        std::string(dirname(fname_copy.data())) + '/' + octomap_file_name;
+    }
+    load_parameters.octomap_file_name = octomap_file_name;
+
+    load_parameters.binary = yaml_get_value<bool>(doc, "binary");
+  }
+
   std::cout << "[DEBUG] [map_io]: resolution: " << load_parameters.resolution << std::endl;
   std::cout << "[DEBUG] [map_io]: origin[0]: " << load_parameters.origin[0] << std::endl;
   std::cout << "[DEBUG] [map_io]: origin[1]: " << load_parameters.origin[1] << std::endl;
@@ -193,6 +213,12 @@ LoadParameters loadMapYaml(const std::string & yaml_filename)
               << load_parameters.elevation_image_file_name << std::endl;
     std::cout << "[DEBUG] [map_io]: min_height: " << load_parameters.min_height << std::endl;
     std::cout << "[DEBUG] [map_io]: max_height: " << load_parameters.max_height << std::endl;
+  }
+
+  if (load_parameters.octomap_file_name != "") {
+    std::cout << "[DEBUG] [map_io]: octomap_file_name: "
+              << load_parameters.octomap_file_name << std::endl;
+    std::cout << "[DEBUG] [map_io]: binary: " << load_parameters.binary << std::endl;
   }
   return load_parameters;
 }
@@ -394,7 +420,8 @@ LOAD_MAP_STATUS loadMapFromYaml(
 
 LOAD_MAP_STATUS loadMapFromYaml(
   const std::string & yaml_file,
-  nav_msgs::msg::OccupancyGrid & map, grid_map_msgs::msg::GridMap & msg_grid_map)
+  nav_msgs::msg::OccupancyGrid & map, grid_map_msgs::msg::GridMap & msg_grid_map,
+  octomap_msgs::msg::Octomap msg_octomap)
 {
   if (yaml_file.empty()) {
     std::cerr << "[ERROR] [map_io]: YAML file name is empty, can't load!" << std::endl;
@@ -462,6 +489,9 @@ LOAD_MAP_STATUS loadMapFromYaml(
       " for reason: " << e.what() << std::endl;
     return INVALID_MAP_DATA;
   }
+
+  // TODO: octomap
+  // TODO: loadOctomap()
 
   return LOAD_MAP_SUCCESS;
 }

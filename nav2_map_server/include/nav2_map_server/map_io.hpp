@@ -47,6 +47,8 @@ struct LoadParameters
   std::string elevation_image_file_name;
   double min_height;
   double max_height;
+  std::string octomap_file_name;
+  bool binary;
 };
 
 typedef enum
@@ -93,12 +95,14 @@ LOAD_MAP_STATUS loadMapFromYaml(
  * @param yaml_file Name of input YAML file
  * @param map Output loaded map
  * @param msg_grid_map Output loaded grid_map
+ * @param msg_octomap Output loaded octomap
  * @return status of map loaded
  */
 LOAD_MAP_STATUS loadMapFromYaml(
   const std::string & yaml_file,
   nav_msgs::msg::OccupancyGrid & map,
-  grid_map_msgs::msg::GridMap & msg_grid_map);
+  grid_map_msgs::msg::GridMap & msg_grid_map,
+  octomap_msgs::msg::Octomap & msg_octomap);
 
 /* Map output part */
 
