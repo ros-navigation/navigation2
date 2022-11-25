@@ -164,7 +164,7 @@ public:
    * @brief Update the costmap and publish it once. 
    * 
    */
-  void updatePublishMap();
+  void updateAndPublishMap();
 
   /**
    * @brief Reset each individual layer
@@ -351,6 +351,14 @@ protected:
   std::string name_;
   std::string parent_namespace_;
 
+  /**
+   * @brief Shutdown and stop thread for map update loop
+   */
+  void mapUpdateThreadOn();
+  /**
+   * @brief Start thread for map update loop 
+   */
+  void mapUpdateThreadOff();
   /**
    * @brief Function on timer for costmap update
    */

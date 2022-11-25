@@ -262,10 +262,8 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
   // Create a thread to handle updating the map
   stopped_ = true;  // to active plugins
   stop_updates_ = false;
-  map_update_thread_shutdown_ = false;
   if (!update_on_request_){
-    map_update_thread_ = std::make_unique<std::thread>(
-      std::bind(&Costmap2DROS::mapUpdateLoop, this, map_update_frequency_));
+    mapUpdateThreadOn();
   }
   else {
     initialized_ = true;
@@ -292,9 +290,8 @@ Costmap2DROS::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   stop();
 
   // Map thread stuff
-  map_update_thread_shutdown_ = true;
   if (!update_on_request_){
-    map_update_thread_->join();
+    mapUpdateThreadOff();
   }
 
   return nav2_util::CallbackReturn::SUCCESS;
@@ -427,6 +424,24 @@ Costmap2DROS::getOrientedFootprint(std::vector<geometry_msgs::msg::Point> & orie
     padded_footprint_, oriented_footprint);
 }
 
+
+void 
+Costmap2DROS::mapUpdateThreadOn()
+{
+  map_update_thread_shutdown_ = false;
+  map_update_thread_ = std::make_unique<std::thread>(
+    std::bind(&Costmap2DROS::mapUpdateLoop, this, map_update_frequency_));
+}
+
+void 
+Costmap2DROS::mapUpdateThreadOff()
+{
+  map_update_thread_shutdown_ = true;
+  if (map_update_thread_){
+    map_update_thread_->join();
+  }
+}
+
 void
 Costmap2DROS::mapUpdateLoop(double frequency)
 {
@@ -442,7 +457,7 @@ Costmap2DROS::mapUpdateLoop(double frequency)
   rclcpp::WallRate r(frequency);    // 200ms by default
 
   while (rclcpp::ok() && !map_update_thread_shutdown_) {
-    updatePublishMap(); 
+    updateAndPublishMap(); 
 
     // Make sure to sleep for the remainder of our cycle time
     r.sleep();
@@ -485,7 +500,7 @@ Costmap2DROS::updateMap()
 }
 
 void 
-Costmap2DROS::updatePublishMap()
+Costmap2DROS::updateAndPublishMap()
 {
   nav2_util::ExecutionTimer timer;
 
@@ -726,12 +741,9 @@ Costmap2DROS::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameter
       if (name == "update_on_request") {
         update_on_request_ = parameter.as_bool();
         if (update_on_request_){
-          map_update_thread_.reset();
+          mapUpdateThreadOff();
         } else {
-          if (!map_update_thread_){
-            map_update_thread_ = std::make_unique<std::thread>(
-              std::bind(&Costmap2DROS::mapUpdateLoop, this, map_update_frequency_));
-          } 
+          mapUpdateThreadOn();
         }
       }
     }
