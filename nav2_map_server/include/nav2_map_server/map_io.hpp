@@ -17,6 +17,8 @@
 #ifndef NAV2_MAP_SERVER__MAP_IO_HPP_
 #define NAV2_MAP_SERVER__MAP_IO_HPP_
 
+#include <octomap/octomap.h>
+
 #include <string>
 #include <vector>
 

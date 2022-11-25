@@ -182,7 +182,7 @@ LoadParameters loadMapYaml(const std::string & yaml_filename)
   if (!octomap_file_name.IsDefined()) {
     load_parameters.octomap_file_name = "";
   } else {
-    auto octomap_file_name = yaml_get_value<std::string>(doc, "elevation_image");
+    auto octomap_file_name = yaml_get_value<std::string>(doc, "octomap_file");
     if (octomap_file_name.empty()) {
       throw YAML::Exception(doc["octomap_file"].Mark(), "The octomap tag was empty.");
     }
@@ -382,6 +382,39 @@ void loadGridMapFromFile(
     load_parameters.resolution << " m/cell" << std::endl;
 }
 
+void loadOctomapFromFile(
+  const LoadParameters & load_parameters,
+  std::unique_ptr<octomap::OcTree> & octree)
+{
+  std::string filename = load_parameters.octomap_file_name;
+
+  if (filename.length() <= 3) {
+    throw std::runtime_error("Invalid name for octomap: too short");
+  }
+
+  std::string suffix = filename.substr(filename.length() - 3, 3);
+  if (suffix == ".bt") {
+    if (!octree->readBinary(filename)) {
+      throw std::runtime_error("Could not open binary octomap");
+    }
+  } else if (suffix == ".ot") {
+    std::unique_ptr<octomap::AbstractOcTree> tree{octomap::AbstractOcTree::read(filename)};
+    if (!tree) {
+      throw std::runtime_error("Could not read octomap file");
+    }
+    octree = std::unique_ptr<octomap::OcTree>(dynamic_cast<octomap::OcTree *>(tree.release()));
+    if (!octree) {
+      throw std::runtime_error("Could not read file");
+    }
+
+  } else {
+    throw std::runtime_error("Extension not supported");
+  }
+
+  std::cout << "[DEBUG] [map_io]: Read Octomap file "<< load_parameters.octomap_file_name <<
+       " loaded ( " <<octree->size() <<" nodes)." << std::endl;
+}
+
 LOAD_MAP_STATUS loadMapFromYaml(
   const std::string & yaml_file,
   nav_msgs::msg::OccupancyGrid & map)
@@ -421,7 +454,7 @@ LOAD_MAP_STATUS loadMapFromYaml(
 LOAD_MAP_STATUS loadMapFromYaml(
   const std::string & yaml_file,
   nav_msgs::msg::OccupancyGrid & map, grid_map_msgs::msg::GridMap & msg_grid_map,
-  octomap_msgs::msg::Octomap msg_octomap)
+  octomap_msgs::msg::Octomap & msg_octomap)
 {
   if (yaml_file.empty()) {
     std::cerr << "[ERROR] [map_io]: YAML file name is empty, can't load!" << std::endl;
@@ -491,7 +524,25 @@ LOAD_MAP_STATUS loadMapFromYaml(
   }
 
   // TODO: octomap
-  // TODO: loadOctomap()
+  if (load_parameters.octomap_file_name != "") {
+    try {
+      std::unique_ptr<octomap::OcTree> octree = std::make_unique<octomap::OcTree>(load_parameters.resolution);
+      loadOctomapFromFile(load_parameters, octree);
+
+      if (!octomap_msgs::fullMapToMsg(*octree, msg_octomap)) {
+        
+        throw std::runtime_error("Error serializing Octomap");
+      }
+
+
+    } catch (std::exception & e) {
+    std::cerr <<
+      "[ERROR] [map_io]: Failed to load octomap image file " <<
+      load_parameters.elevation_image_file_name <<
+      " for reason: " << e.what() << std::endl;
+    return INVALID_MAP_DATA;
+  }
+  }
 
   return LOAD_MAP_SUCCESS;
 }

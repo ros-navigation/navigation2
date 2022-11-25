@@ -312,6 +312,9 @@ void MapServer::updateMsgHeader()
 
   msg_grid_map_.header.frame_id = grid_map_frame_id_;
   msg_grid_map_.header.stamp = now();
+
+  msg_octomap_.header.frame_id = frame_id_;
+  msg_octomap_.header.stamp = now();
 }
 
 void MapServer::updateTransform()
