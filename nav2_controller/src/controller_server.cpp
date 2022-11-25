@@ -384,7 +384,7 @@ void ControllerServer::computeControl()
 
       if (costmap_ros_->isUpdateOnRequest()){
         RCLCPP_DEBUG(get_logger(), "Updating costmap on request!");
-        costmap_ros_->updatePublishMap();
+        costmap_ros_->updateAndPublishMap();
       }
       // Don't compute a trajectory until costmap is valid (after clear costmap)
       rclcpp::Rate r(100);
