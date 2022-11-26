@@ -80,6 +80,56 @@ TEST_P(SpinBehaviorTestFixture, testSpinRecovery)
   }
 }
 
+
+TEST_F(SpinBehaviorTestFixture, testSpinPreemption)
+{
+  // Goal 
+  float target_yaw = 3.0 * M_PIf32;
+  float tolerance = 0.1;
+  bool wait_action = false; 
+  bool success = false;
+
+  //Send the first goal 
+  success = spin_recovery_tester->defaultSpinBehaviorTest(target_yaw, tolerance,wait_action);
+  if (std::getenv("MAKE_FAKE_COSTMAP") != NULL && abs(target_yaw) > M_PI_2f32) {
+    // if this variable is set, make a fake costmap
+    // in the fake spin test, we expect a collision for angles > M_PI_2
+    EXPECT_EQ(false, success);
+  } else {
+    EXPECT_EQ(true, success);
+  }
+
+  // Preempt goal 
+  sleep(2);
+  success = false;
+  float prempt_target_yaw = 4.0 * M_PIf32;
+  float preempt_tolerance = 0.1;
+  success = spin_recovery_tester->defaultSpinBehaviorTest(prempt_target_yaw, preempt_tolerance);
+  if (std::getenv("MAKE_FAKE_COSTMAP") != NULL && abs(prempt_target_yaw) > M_PI_2f32) {
+    // if this variable is set, make a fake costmap
+    // in the fake spin test, we expect a collision for angles > M_PI_2
+    EXPECT_EQ(false, success);
+  } else {
+    EXPECT_EQ(true, success);
+  }
+}
+
+TEST_F(SpinBehaviorTestFixture, testSpinCancel)
+{
+  // Goal
+  float target_yaw = 4.0 * M_PIf32;
+  float tolerance = 0.1; 
+  bool wait_action = true, cancel_action = true, success = false;
+  success = spin_recovery_tester->defaultSpinBehaviorTest(target_yaw, tolerance, wait_action, cancel_action);
+  if (std::getenv("MAKE_FAKE_COSTMAP") != NULL && abs(target_yaw) > M_PI_2f32) {
+    // if this variable is set, make a fake costmap
+    // in the fake spin test, we expect a collision for angles > M_PI_2
+    EXPECT_EQ(true, success);
+  } else {
+    EXPECT_EQ(false, success);
+  }
+}
+
 INSTANTIATE_TEST_SUITE_P(
   SpinRecoveryTests,
   SpinBehaviorTestFixture,
