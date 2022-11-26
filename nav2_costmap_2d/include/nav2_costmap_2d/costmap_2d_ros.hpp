@@ -161,8 +161,8 @@ public:
   void updateMap();
 
   /**
-   * @brief Update the costmap and publish it once. 
-   * 
+   * @brief Update the costmap and publish it once.
+   *
    */
   void updateAndPublishMap();
 
@@ -322,12 +322,12 @@ public:
   double getRobotRadius() {return robot_radius_;}
 
   /**
-   * @brief Returns the value of the "update_on_request" parameter, 
+   * @brief Returns the value of the "update_on_request" parameter,
    * used to check if the costmap is to be updated on request or periodically.
-   * 
+   *
    * @return update_on_request_
    */
-  bool isUpdateOnRequest() const {return update_on_request_;} 
+  bool isUpdateOnRequest() const {return update_on_request_;}
 
 protected:
   // Publishers and subscribers
@@ -356,7 +356,7 @@ protected:
    */
   void mapUpdateThreadOn();
   /**
-   * @brief Start thread for map update loop 
+   * @brief Start thread for map update loop
    */
   void mapUpdateThreadOff();
   /**

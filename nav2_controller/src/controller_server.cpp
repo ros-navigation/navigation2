@@ -382,7 +382,7 @@ void ControllerServer::computeControl()
         return;
       }
 
-      if (costmap_ros_->isUpdateOnRequest()){
+      if (costmap_ros_->isUpdateOnRequest()) {
         RCLCPP_DEBUG(get_logger(), "Updating costmap on request!");
         costmap_ros_->updateAndPublishMap();
       }
