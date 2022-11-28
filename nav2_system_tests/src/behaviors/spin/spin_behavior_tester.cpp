@@ -124,7 +124,7 @@ void SpinBehaviorTester::deactivate()
 bool SpinBehaviorTester::defaultSpinBehaviorTest(
   const float target_yaw,
   const double tolerance,
-  const bool wait_action,
+  const bool nonblocking_action,
   const bool cancel_action)
 {
   if (!is_active_) {
@@ -183,14 +183,12 @@ bool SpinBehaviorTester::defaultSpinBehaviorTest(
     return false;
   }
 
-  if (!wait_action)
-  {
+  if (!nonblocking_action) {
     return true;
   }
-  if (cancel_action)
-  {
+  if (cancel_action) {
     sleep(2);
-    // cancel the goal 
+    // cancel the goal
     auto cancel_response = client_ptr_->async_cancel_goal(goal_handle_future.get());
     rclcpp::spin_until_future_complete(node_, cancel_response);
   }

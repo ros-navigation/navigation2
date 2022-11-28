@@ -58,7 +58,7 @@ public:
   bool defaultSpinBehaviorTest(
     float target_yaw,
     double tolerance = 0.1,
-    bool wait_action = true,
+    bool nonblocking_action = true,
     bool cancel_action = false);
 
   void activate();
