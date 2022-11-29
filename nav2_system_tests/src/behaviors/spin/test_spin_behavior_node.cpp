@@ -80,6 +80,40 @@ TEST_P(SpinBehaviorTestFixture, testSpinRecovery)
   }
 }
 
+TEST_F(SpinBehaviorTestFixture, testSpinPreemption)
+{
+  // Goal
+  float target_yaw = 3.0 * M_PIf32;
+  float tolerance = 0.1;
+  bool nonblocking_action = false;
+  bool success = false;
+
+  // Send the first goal
+  success = spin_recovery_tester->defaultSpinBehaviorTest(
+    target_yaw, tolerance,
+    nonblocking_action);
+  EXPECT_EQ(true, success);
+  // Preempt goal
+  sleep(2);
+  success = false;
+  float prempt_target_yaw = 4.0 * M_PIf32;
+  float preempt_tolerance = 0.1;
+  success = spin_recovery_tester->defaultSpinBehaviorTest(prempt_target_yaw, preempt_tolerance);
+  EXPECT_EQ(false, success);
+}
+
+TEST_F(SpinBehaviorTestFixture, testSpinCancel)
+{
+  // Goal
+  float target_yaw = 4.0 * M_PIf32;
+  float tolerance = 0.1;
+  bool nonblocking_action = true, cancel_action = true, success = false;
+  success = spin_recovery_tester->defaultSpinBehaviorTest(
+    target_yaw, tolerance,
+    nonblocking_action, cancel_action);
+  EXPECT_EQ(false, success);
+}
+
 INSTANTIATE_TEST_SUITE_P(
   SpinRecoveryTests,
   SpinBehaviorTestFixture,

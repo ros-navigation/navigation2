@@ -123,7 +123,9 @@ void SpinBehaviorTester::deactivate()
 
 bool SpinBehaviorTester::defaultSpinBehaviorTest(
   const float target_yaw,
-  const double tolerance)
+  const double tolerance,
+  const bool nonblocking_action,
+  const bool cancel_action)
 {
   if (!is_active_) {
     RCLCPP_ERROR(node_->get_logger(), "Not activated");
@@ -179,6 +181,16 @@ bool SpinBehaviorTester::defaultSpinBehaviorTest(
   if (!goal_handle) {
     RCLCPP_ERROR(node_->get_logger(), "Goal was rejected by server");
     return false;
+  }
+
+  if (!nonblocking_action) {
+    return true;
+  }
+  if (cancel_action) {
+    sleep(2);
+    // cancel the goal
+    auto cancel_response = client_ptr_->async_cancel_goal(goal_handle_future.get());
+    rclcpp::spin_until_future_complete(node_, cancel_response);
   }
 
   // Wait for the server to be done with the goal
@@ -347,5 +359,4 @@ void SpinBehaviorTester::amclPoseCallback(
 {
   initial_pose_received_ = true;
 }
-
 }  // namespace nav2_system_tests
