@@ -57,7 +57,9 @@ public:
   // Runs a single test with given target yaw
   bool defaultSpinBehaviorTest(
     float target_yaw,
-    double tolerance = 0.1);
+    double tolerance = 0.1,
+    bool nonblocking_action = true,
+    bool cancel_action = false);
 
   void activate();
 
