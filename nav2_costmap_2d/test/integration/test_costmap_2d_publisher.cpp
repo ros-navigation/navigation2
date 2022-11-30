@@ -20,6 +20,8 @@
 #include "nav2_costmap_2d/costmap_2d_publisher.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
+#include "tf2_ros/transform_listener.h"
+#include "nav2_costmap_2d/costmap_2d_ros.hpp"
 
 class RclCppFixture
 {
@@ -62,7 +64,7 @@ public:
     rclcpp::SubscriptionOptions sub_option;
     sub_option.callback_group = callback_group_;
 
-    std::string topic_name = "dummy_costmap_raw";
+    std::string topic_name = "/dummy_costmap/static_layer_raw";
     costmap_sub_ = this->create_subscription<nav2_msgs::msg::Costmap>(
       topic_name,
       rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
@@ -73,6 +75,15 @@ public:
     executor_->add_callback_group(callback_group_, get_node_base_interface());
     executor_thread_ = std::make_unique<nav2_util::NodeThread>(executor_);
 
+    costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+      "dummy_costmap",
+      std::string{get_namespace()},
+      "dummy_costmap",
+      get_parameter("use_sim_time").as_bool());
+    costmap_thread_ = std::make_unique<nav2_util::NodeThread>(costmap_ros_);
+
+    costmap_ros_->configure();
+
     return nav2_util::CallbackReturn::SUCCESS;
   }
 
@@ -81,6 +92,7 @@ public:
   {
     RCLCPP_INFO(get_logger(), "Activating");
     costmap_pub_->on_activate();
+    costmap_ros_->activate();
     return nav2_util::CallbackReturn::SUCCESS;
   }
 
@@ -88,6 +100,7 @@ public:
   on_deactivate(const rclcpp_lifecycle::State &)
   {
     RCLCPP_INFO(get_logger(), "Deactivating");
+    costmap_ros_->deactivate();
     return nav2_util::CallbackReturn::SUCCESS;
   }
 
@@ -95,6 +108,8 @@ public:
   on_cleanup(const rclcpp_lifecycle::State &)
   {
     executor_thread_.reset();
+    costmap_thread_.reset();
+    costmap_ros_->deactivate();
     return nav2_util::CallbackReturn::SUCCESS;
   }
 
@@ -116,6 +131,9 @@ public:
   rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
   std::unique_ptr<nav2_util::NodeThread> executor_thread_;
   std::promise<nav2_msgs::msg::Costmap::SharedPtr> promise_;
+
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
+  std::unique_ptr<nav2_util::NodeThread> costmap_thread_;
 };
 
 class TestNode : public ::testing::Test
@@ -146,7 +164,9 @@ TEST_F(TestNode, costmap_pub_test)
   EXPECT_TRUE(status == std::future_status::ready);
 
   auto costmap_raw = future.get();
-  for (const auto cost : costmap_raw->data) {
-    EXPECT_TRUE(cost == nav2_costmap_2d::LETHAL_OBSTACLE);
+
+  // Check that the first row is free space
+  for (int i = 0; i < 10; ++i) {
+    EXPECT_EQ(costmap_raw->data[0], nav2_costmap_2d::FREE_SPACE);
   }
 }
