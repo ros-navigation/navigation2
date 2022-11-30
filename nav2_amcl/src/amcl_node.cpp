@@ -282,7 +282,7 @@ AmclNode::on_configure(const rclcpp_lifecycle::State & /*state*/)
   executor_->add_callback_group(callback_group_, get_node_base_interface());
   executor_thread_ = std::make_unique<nav2_util::NodeThread>(executor_);
 
-  ext_pose_buffer = std::make_unique<ExternalPoseBuffer>(ext_pose_search_tolerance_sec_);
+  ext_pose_buffer_ = std::make_unique<ExternalPoseBuffer>(ext_pose_search_tolerance_sec_);
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -671,7 +671,7 @@ AmclNode::externalPoseReceived(const geometry_msgs::msg::PoseWithCovarianceStamp
 
   memcpy(pose.eigen_matrix, temp_mat, 9*sizeof(double));
 
-  ext_pose_buffer->addMeasurement(pose);
+  ext_pose_buffer_->addMeasurement(pose);
 }
 
 void
@@ -820,7 +820,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
         pf_->ext_pose_is_valid = 0;
       } else {
         ExternalPoseMeasument tmp;
-        if(ext_pose_buffer->findClosestMeasurement(last_laser_received_ts_.seconds(), tmp)) {
+        if(ext_pose_buffer_->findClosestMeasurement(rclcpp::Time(laser_scan->header.stamp).seconds(), tmp)) {
           pf_->ext_pose_is_valid = 1;
 
           pf_->ext_x = tmp.x;

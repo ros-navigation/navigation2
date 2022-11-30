@@ -301,7 +301,7 @@ protected:
   double std_warn_level_y_;
   double std_warn_level_yaw_;
 
-  std::unique_ptr<ExternalPoseBuffer> ext_pose_buffer;
+  std::unique_ptr<ExternalPoseBuffer> ext_pose_buffer_;
 
   rclcpp::Time last_ext_pose_received_ts_;
   std::chrono::seconds ext_pose_check_interval_;
