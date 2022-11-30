@@ -185,5 +185,4 @@ void AssistedTeleop::preemptTeleopCallback(const std_msgs::msg::Empty::SharedPtr
 }  // namespace nav2_behaviors
 
 #include "pluginlib/class_list_macros.hpp"
-template class nav2_behaviors::TimedBehavior<nav2_msgs::action::AssistedTeleop>;
 PLUGINLIB_EXPORT_CLASS(nav2_behaviors::AssistedTeleop, nav2_core::Behavior)

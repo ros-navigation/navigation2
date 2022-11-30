@@ -76,7 +76,7 @@ TEST_P(DriveOnHeadingBehaviorTestFixture, testBackupBehavior)
   goal.target.x = test_params.x;
   goal.target.y = test_params.y;
   goal.speed = test_params.speed;
-  goal.time_allowance.sec = test_params.time_allowance;
+  // goal.time_allowance.sec = test_params.time_allowance;
   float tolerance = test_params.tolerance;
 
   if (!drive_on_heading_behavior_tester->isActive()) {
