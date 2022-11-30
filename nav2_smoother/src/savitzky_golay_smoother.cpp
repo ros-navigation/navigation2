@@ -14,7 +14,6 @@
 
 #include <vector>
 #include <memory>
-#include "nav2_core/smoother_exceptions.hpp"
 #include "nav2_smoother/savitzky_golay_smoother.hpp"
 
 namespace nav2_smoother
@@ -49,7 +48,7 @@ bool SavitzkyGolaySmoother::smooth(
   steady_clock::time_point start = steady_clock::now();
   double time_remaining = max_time.seconds();
 
-  bool reversing_segment = false;
+  bool success = true, reversing_segment;
   nav_msgs::msg::Path curr_path_segment;
   curr_path_segment.header = path.header;
 
@@ -72,13 +71,11 @@ bool SavitzkyGolaySmoother::smooth(
         RCLCPP_WARN(
           logger_,
           "Smoothing time exceeded allowed duration of %0.2f.", max_time.seconds());
-        throw nav2_core::SmootherTimedOut(
-                "Smoothing time exceed allowed duration of:" +
-                std::to_string(max_time.seconds()));
+        return false;
       }
 
       // Smooth path segment
-      smoothImpl(curr_path_segment, reversing_segment);
+      success = success && smoothImpl(curr_path_segment, reversing_segment);
 
       // Assemble the path changes to the main path
       std::copy(
@@ -88,12 +85,12 @@ bool SavitzkyGolaySmoother::smooth(
     }
   }
 
-  return true;
+  return success;
 }
 
-void SavitzkyGolaySmoother::smoothImpl(
+bool SavitzkyGolaySmoother::smoothImpl(
   nav_msgs::msg::Path & path,
-  bool & reversing_segment) const
+  bool & reversing_segment)
 {
   // Must be at least 10 in length to enter function
   const unsigned int & path_size = path.poses.size();
@@ -192,6 +189,7 @@ void SavitzkyGolaySmoother::smoothImpl(
   }
 
   updateApproximatePathOrientations(path, reversing_segment);
+  return true;
 }
 
 }  // namespace nav2_smoother

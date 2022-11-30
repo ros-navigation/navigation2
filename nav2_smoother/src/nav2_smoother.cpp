@@ -275,12 +275,12 @@ void SmootherServer::smoothPlan()
 
     if (!result->was_completed) {
       RCLCPP_INFO(
-          get_logger(),
-          "Smoother %s did not complete smoothing in specified time limit"
-          "(%lf seconds) and was interrupted after %lf seconds",
-          current_smoother_.c_str(),
-          rclcpp::Duration(goal->max_smoothing_duration).seconds(),
-          rclcpp::Duration(result->smoothing_duration).seconds());
+        get_logger(),
+        "Smoother %s did not complete smoothing in specified time limit"
+        "(%lf seconds) and was interrupted after %lf seconds",
+        current_smoother_.c_str(),
+        rclcpp::Duration(goal->max_smoothing_duration).seconds(),
+        rclcpp::Duration(result->smoothing_duration).seconds());
     }
 
     plan_publisher_->publish(result->path);
