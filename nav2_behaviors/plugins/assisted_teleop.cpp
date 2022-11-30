@@ -24,6 +24,8 @@ AssistedTeleop::AssistedTeleop()
   feedback_(std::make_shared<AssistedTeleopAction::Feedback>())
 {}
 
+AssistedTeleop::~AssistedTeleop() = default;
+
 void AssistedTeleop::onConfigure()
 {
   auto node = node_.lock();

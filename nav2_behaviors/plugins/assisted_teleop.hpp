@@ -36,6 +36,12 @@ class AssistedTeleop : public TimedBehavior<AssistedTeleopAction>
 {
 public:
   AssistedTeleop();
+  ~AssistedTeleop();
+
+  /**
+   * @brief Configuration of behavior action
+   */
+  void onConfigure() override;
 
   /**
    * @brief Initialization to run behavior
@@ -56,10 +62,6 @@ public:
   Status onCycleUpdate() override;
 
 protected:
-  /**
-   * @brief Configuration of behavior action
-   */
-  void onConfigure() override;
 
   /**
    * @brief project a position

@@ -48,7 +48,23 @@ public:
   {
   }
 
-  ~DriveOnHeading() = default;
+  ~DriveOnHeading();
+
+  /**
+   * @brief Configuration of behavior action
+   */
+  void onConfigure() override
+  {
+    auto node = this->node_.lock();
+    if (!node) {
+      throw std::runtime_error{"Failed to lock node"};
+    }
+
+    nav2_util::declare_parameter_if_not_declared(
+      node,
+      "simulate_ahead_time", rclcpp::ParameterValue(2.0));
+    node->get_parameter("simulate_ahead_time", simulate_ahead_time_);
+  }
 
   /**
    * @brief Initialization to run behavior
@@ -181,22 +197,6 @@ protected:
       fetch_data = false;
     }
     return true;
-  }
-
-  /**
-   * @brief Configuration of behavior action
-   */
-  void onConfigure() override
-  {
-    auto node = this->node_.lock();
-    if (!node) {
-      throw std::runtime_error{"Failed to lock node"};
-    }
-
-    nav2_util::declare_parameter_if_not_declared(
-      node,
-      "simulate_ahead_time", rclcpp::ParameterValue(2.0));
-    node->get_parameter("simulate_ahead_time", simulate_ahead_time_);
   }
 
   typename ActionT::Feedback::SharedPtr feedback_;
