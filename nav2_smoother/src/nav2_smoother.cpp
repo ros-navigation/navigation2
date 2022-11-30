@@ -329,6 +329,11 @@ void SmootherServer::smoothPlan()
     result->error_code = ActionGoal::SMOOTHED_PATH_IN_COLLISION;
     action_server_->terminate_current(result);
     return;
+  } catch (nav2_core::FailedToSmoothPath & ex) {
+    RCLCPP_ERROR(this->get_logger(), "%s", ex.what());
+    result->error_code = ActionGoal::FAILED_TO_SMOOTH_PATH;
+    action_server_->terminate_current(result);
+    return;
   } catch (nav2_core::SmootherException & ex) {
     RCLCPP_ERROR(this->get_logger(), "%s", ex.what());
     result->error_code = ActionGoal::UNKNOWN;

@@ -49,6 +49,15 @@ public:
   : SmootherException(description) {}
 };
 
+class FailedToSmoothPath : public SmootherException
+{
+public:
+  explicit FailedToSmoothPath(const std::string & description)
+  : SmootherException(description) {}
+};
+
+
+
 }  // namespace nav2_core
 #endif  // NAV2_CORE__SMOOTHER_EXCEPTION_HPP
 

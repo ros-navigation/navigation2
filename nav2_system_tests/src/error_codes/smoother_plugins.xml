@@ -11,4 +11,8 @@
            base_class_type="nav2_core::Smoother">
         <description>This smoother produces a path in collision exception.</description>
     </class>
+    <class type="nav2_system_tests::FailedToSmoothPath"
+           base_class_type="nav2_core::Smoother">
+        <description>This smoother produces a path in collision exception.</description>
+    </class>
 </library>
