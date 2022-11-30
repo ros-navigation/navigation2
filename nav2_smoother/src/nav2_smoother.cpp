@@ -282,6 +282,7 @@ void SmootherServer::smoothPlan()
           rclcpp::Duration(goal->max_smoothing_duration).seconds(),
           rclcpp::Duration(result->smoothing_duration).seconds());
     }
+
     plan_publisher_->publish(result->path);
 
     // Check for collisions

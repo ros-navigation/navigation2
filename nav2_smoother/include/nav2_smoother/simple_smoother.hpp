@@ -92,7 +92,7 @@ protected:
    * @param reversing_segment Return if this is a reversing segment
    * @param costmap Pointer to minimal costmap
    * @param max_time Maximum time to compute, stop early if over limit
-   * @return true if path was successfully smoothed
+   * @return If smoothing was successful
    */
   bool smoothImpl(
     nav_msgs::msg::Path & path,

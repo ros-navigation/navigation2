@@ -64,8 +64,7 @@ bool SimpleSmoother::smooth(
   steady_clock::time_point start = steady_clock::now();
   double time_remaining = max_time.seconds();
 
-  bool success = true;
-  bool reversing_segment = false;
+  bool success = true, reversing_segment;
   nav_msgs::msg::Path curr_path_segment;
   curr_path_segment.header = path.header;
 
@@ -86,8 +85,8 @@ bool SimpleSmoother::smooth(
       refinement_ctr_ = 0;
 
       // Smooth path segment naively
-      success = success && smoothImpl(curr_path_segment, reversing_segment, costmap.get(),
-                                time_remaining);
+      success = success && smoothImpl(
+        curr_path_segment, reversing_segment, costmap.get(), time_remaining);
 
       // Assemble the path changes to the main path
       std::copy(
