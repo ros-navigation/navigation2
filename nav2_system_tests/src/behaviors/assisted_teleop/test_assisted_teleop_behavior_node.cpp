@@ -58,7 +58,6 @@ public:
 
   static void TearDownTestCase()
   {
-    assisted_teleop_behavior_tester->deactivate();
     delete assisted_teleop_behavior_tester;
     assisted_teleop_behavior_tester = nullptr;
   }
