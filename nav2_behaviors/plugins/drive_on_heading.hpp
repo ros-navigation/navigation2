@@ -48,7 +48,7 @@ public:
   {
   }
 
-  ~DriveOnHeading();
+  ~DriveOnHeading() = default;
 
   /**
    * @brief Configuration of behavior action
