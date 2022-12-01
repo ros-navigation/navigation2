@@ -843,7 +843,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
     }
 
     pf_sample_set_t * set = pf_->sets + pf_->current_set;
-    RCLCPP_DEBUG(get_logger(), "Num samples: %d\n", set->sample_count);
+    RCLCPP_DEBUG(get_logger(), "Num samples: %d", set->sample_count);
 
     if (!force_update_) {
       publishParticleCloud(set);

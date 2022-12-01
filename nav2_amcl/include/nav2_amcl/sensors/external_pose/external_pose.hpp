@@ -21,22 +21,23 @@ class ExternalPoseBuffer {
 
 public:
 
+// TODO: allocate memory for max_storage_size_ elements
 ExternalPoseBuffer(double search_tolerance_sec): search_tolerance_sec_(search_tolerance_sec) {}
 
-/* 
-* @brief Add new measurement to the storage (queue internally). If queue size grown larger than max_storage_size_, pop oldest measurement
+/** 
+* @brief Add new measurement to the buffer. If buffer size grown larger than max_storage_size_, pop oldest measurement
 * @param measurement external pose measurement
 * @return
 */
 void addMeasurement(const ExternalPoseMeasument measurement);
 
-/* 
+/** 
 * @brief Find closest external pose measurement to the query time, but not further than threshold
-* @param query_time_ns query time, nanoseconds
+* @param query_time_sec time to look closest external pose for i.e. latest LaserScan reading time
 * @param out_measurement found closest measurement
-* @return True if closest measurement found
+* @return True, if closest measurement found, False othervise
 */
-bool findClosestMeasurement(double query_time_ns, ExternalPoseMeasument& out_measurement) const;
+bool findClosestMeasurement(double query_time_sec, ExternalPoseMeasument& out_measurement) const;
 
 private:
 
