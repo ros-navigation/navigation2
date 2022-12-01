@@ -62,7 +62,6 @@ public:
   Status onCycleUpdate() override;
 
 protected:
-
   /**
    * @brief project a position
    * @param pose initial pose to project
