@@ -275,7 +275,7 @@ protected:
   /*
    * @brief Deviation diagnostic flag
    */
-  void standardDeviationFlag();
+  void setStandardDeviationFlag();
 
   ExternalPoseBuffer ext_pose_buffer;
 
