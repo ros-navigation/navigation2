@@ -272,6 +272,10 @@ protected:
    * @brief Initialize external pose data source
    */
   void initExternalPose();
+  /*
+   * @brief Deviation diagnostic flag
+   */
+  void standardDeviationFlag();
 
   ExternalPoseBuffer ext_pose_buffer;
 
@@ -404,6 +408,9 @@ protected:
   double z_rand_;
   double k_l_;
   bool fuse_external_pose_;
+  double std_warn_level_x_;
+  double std_warn_level_y_;
+  double std_warn_level_yaw_;
   std::string scan_topic_{"scan"};
   std::string map_topic_{"map"};
 };
