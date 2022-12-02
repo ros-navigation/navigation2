@@ -841,7 +841,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
     int max_weight_hyp = -1;
     if (getMaxWeightHyp(hyps, max_weight_hyps, max_weight_hyp)) {
       publishAmclPose(laser_scan, hyps, max_weight_hyp);
-      standardDeviationFlag();
+      setStandardDeviationFlag();
       calculateMaptoOdomTransform(laser_scan, hyps, max_weight_hyp);
 
       if (tf_broadcast_ == true) {
@@ -1031,8 +1031,15 @@ AmclNode::getMaxWeightHyp(
     hyps[hyp_count].weight = weight;
     hyps[hyp_count].pf_pose_mean = pose_mean;
     hyps[hyp_count].pf_pose_cov = pose_cov;
+    RCLCPP_DEBUG(
+      get_logger(), "Hypotheses No %i:\t weight: %.3f",
+      hyp_count+1, hyps[hyp_count].weight);
 
     if (hyps[hyp_count].weight > max_weight) {
+      RCLCPP_DEBUG(get_logger(), "Max weight:\t %f", max_weight);
+      RCLCPP_DEBUG(get_logger(), "Hyp weight:\t %f", hyps[hyp_count].weight);
+      RCLCPP_DEBUG(get_logger(), "CHANGED MAX WEIGHT OR NO HAVING WEIGHT YET");
+
       max_weight = hyps[hyp_count].weight;
       max_weight_hyp = hyp_count;
     }
@@ -1767,7 +1774,7 @@ AmclNode::initExternalPose()
 }
 
 void
-AmclNode::standardDeviationFlag()
+AmclNode::setStandardDeviationFlag()
 {
   double std_x = sqrt(last_published_pose_.pose.covariance[6*0+0]);
   double std_y = sqrt(last_published_pose_.pose.covariance[6*1+1]);
