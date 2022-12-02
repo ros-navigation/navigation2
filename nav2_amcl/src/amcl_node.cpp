@@ -237,6 +237,18 @@ AmclNode::AmclNode(const rclcpp::NodeOptions & options)
   add_parameter(
     "k_l", rclcpp::ParameterValue(200.0f),
     "Constant to balance the importance of the external pose data");
+
+    add_parameter(
+      "std_warn_level_x", rclcpp::ParameterValue(0.2),
+      "Limit threshold of x value. Monitors the estimated standard deviation of the filter.");
+
+    add_parameter(
+      "std_warn_level_y", rclcpp::ParameterValue(0.2),
+      "Limit threshold of y value. Monitors the estimated standard deviation of the filter.");
+
+    add_parameter(
+      "std_warn_level_yaw", rclcpp::ParameterValue(0.1),
+      "Limit threshold of yaw value. Monitors the estimated standard deviation of the filter.");
 }
 
 AmclNode::~AmclNode()
@@ -829,6 +841,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
     int max_weight_hyp = -1;
     if (getMaxWeightHyp(hyps, max_weight_hyps, max_weight_hyp)) {
       publishAmclPose(laser_scan, hyps, max_weight_hyp);
+      standardDeviationFlag();
       calculateMaptoOdomTransform(laser_scan, hyps, max_weight_hyp);
 
       if (tf_broadcast_ == true) {
@@ -1080,7 +1093,7 @@ AmclNode::publishAmclPose(
   temp += p->pose.pose.position.x + p->pose.pose.position.y;
   if (!std::isnan(temp)) {
     RCLCPP_DEBUG(get_logger(), "Publishing pose");
-    last_published_pose_ = *p;
+    last_published_pose_ = *p; // Update last_published_pose_
     first_pose_sent_ = true;
     pose_pub_->publish(std::move(p));
   } else {
@@ -1214,6 +1227,9 @@ AmclNode::initParameters()
   get_parameter("scan_topic", scan_topic_);
   get_parameter("map_topic", map_topic_);
   get_parameter("k_l", k_l_);
+  get_parameter("std_warn_level_x", std_warn_level_x_);
+  get_parameter("std_warn_level_y", std_warn_level_y_);
+  get_parameter("std_warn_level_yaw", std_warn_level_yaw_);
   save_pose_period_ = tf2::durationFromSec(1.0 / save_pose_rate);
   transform_tolerance_ = tf2::durationFromSec(tmp_tol);
 
@@ -1748,6 +1764,23 @@ AmclNode::initExternalPose()
   last_laser_received_ts_ = rclcpp::Time(0);
   ext_pose_check_interval_ = std::chrono::seconds{1};
   ext_pose_active_ = false;
+}
+
+void
+AmclNode::standardDeviationFlag()
+{
+  double std_x = sqrt(last_published_pose_.pose.covariance[6*0+0]);
+  double std_y = sqrt(last_published_pose_.pose.covariance[6*1+1]);
+  double std_yaw = sqrt(last_published_pose_.pose.covariance[6*5+5]);
+
+  if (std_x > std_warn_level_x_ || std_y > std_warn_level_y_ || std_yaw > std_warn_level_yaw_)
+  {
+    RCLCPP_WARN(get_logger(), "Deviation too large");
+  }
+  else
+  {
+    RCLCPP_INFO(get_logger(), "OK");
+  }
 }
 
 }  // namespace nav2_amcl
