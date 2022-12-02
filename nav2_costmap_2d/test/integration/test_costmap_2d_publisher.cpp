@@ -33,7 +33,7 @@ RclCppFixture g_rclcppfixture;
 class TestCostmap2dPublisher : public nav2_util::LifecycleNode
 {
 public:
-  explicit TestCostmap2dPublisher(const std::string& name)
+  explicit TestCostmap2dPublisher(const std::string & name)
   : LifecycleNode(name)
   {
     RCLCPP_INFO(get_logger(), "Constructing");
