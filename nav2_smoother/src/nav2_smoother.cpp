@@ -269,6 +269,12 @@ void SmootherServer::smoothPlan()
     // Perform smoothing
     auto goal = action_server_->get_current_goal();
     result->path = goal->path;
+
+    if (!isPathValidForSmoothing(result->path))
+    {
+      throw nav2_core::InvalidPath("Requested path to smooth is invalid");
+    }
+
     result->was_completed = smoothers_[current_smoother_]->smooth(
       result->path, goal->max_smoothing_duration);
     result->smoothing_duration = steady_clock_.now() - start_time;
@@ -334,12 +340,28 @@ void SmootherServer::smoothPlan()
     result->error_code = ActionGoal::FAILED_TO_SMOOTH_PATH;
     action_server_->terminate_current(result);
     return;
+  } catch (nav2_core::InvalidPath & ex) {
+    RCLCPP_ERROR(this->get_logger(), "%s", ex.what());
+    result->error_code = ActionGoal::INVALID_PATH;
+    action_server_->terminate_current(result);
+    return;
   } catch (nav2_core::SmootherException & ex) {
     RCLCPP_ERROR(this->get_logger(), "%s", ex.what());
     result->error_code = ActionGoal::UNKNOWN;
     action_server_->terminate_current(result);
     return;
   }
+}
+
+bool SmootherServer::isPathValidForSmoothing(const nav_msgs::msg::Path &path) {
+  if (path.poses.empty())
+  {
+    RCLCPP_WARN(get_logger(), "Requested path to smooth is empty");
+    return false;
+  }
+
+  RCLCPP_DEBUG(get_logger(), "Requested path to smooth is valid");
+  return true;
 }
 
 }  // namespace nav2_smoother

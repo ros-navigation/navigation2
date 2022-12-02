@@ -136,6 +136,13 @@ protected:
    */
   bool findSmootherId(const std::string & c_name, std::string & name);
 
+  /**
+   * @brief Validate that the path contains a meaningful path for smoothing
+   * @param path current path
+   * return bool if the path is valid
+   */
+   bool isPathValidForSmoothing(const nav_msgs::msg::Path & path);
+
   // Our action server implements the SmoothPath action
   std::unique_ptr<ActionServer> action_server_;
 

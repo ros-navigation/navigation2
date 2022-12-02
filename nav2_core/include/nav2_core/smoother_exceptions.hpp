@@ -35,6 +35,13 @@ public:
   : SmootherException(description) {}
 };
 
+class InvalidPath : public SmootherException
+{
+public:
+  explicit InvalidPath(const std::string & description)
+  : SmootherException(description) {}
+};
+
 class SmootherTimedOut : public SmootherException
 {
 public:
