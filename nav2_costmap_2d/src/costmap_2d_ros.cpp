@@ -320,6 +320,13 @@ Costmap2DROS::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
+  costmap_publisher_.reset();
+  clear_costmap_service_.reset();
+
+  for (auto & layer_pub : layer_publishers_) {
+    layer_pub.reset();
+  }
+
   layered_costmap_.reset();
 
   tf_listener_.reset();
@@ -328,12 +335,6 @@ Costmap2DROS::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   footprint_sub_.reset();
   footprint_pub_.reset();
 
-  costmap_publisher_.reset();
-  clear_costmap_service_.reset();
-
-  for (auto & layer_pub : layer_publishers_) {
-    layer_pub.reset();
-  }
 
   executor_thread_.reset();
   return nav2_util::CallbackReturn::SUCCESS;

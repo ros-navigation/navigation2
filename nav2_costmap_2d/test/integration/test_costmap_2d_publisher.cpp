@@ -17,7 +17,6 @@
 #include <future>
 
 #include "nav2_costmap_2d/costmap_2d.hpp"
-#include "nav2_costmap_2d/costmap_2d_publisher.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
 #include "tf2_ros/transform_listener.h"
@@ -34,32 +33,21 @@ RclCppFixture g_rclcppfixture;
 class TestCostmap2dPublisher : public nav2_util::LifecycleNode
 {
 public:
-  explicit TestCostmap2dPublisher(std::string name)
+  explicit TestCostmap2dPublisher(const std::string& name)
   : LifecycleNode(name)
   {
     RCLCPP_INFO(get_logger(), "Constructing");
   }
 
-  ~TestCostmap2dPublisher() {}
+  ~TestCostmap2dPublisher() override = default;
 
   nav2_util::CallbackReturn
-  on_configure(const rclcpp_lifecycle::State &)
+  on_configure(const rclcpp_lifecycle::State &) override
   {
     RCLCPP_INFO(get_logger(), "Configuring");
 
     callback_group_ = create_callback_group(
       rclcpp::CallbackGroupType::MutuallyExclusive, false);
-
-    costmap_ = std::make_shared<nav2_costmap_2d::Costmap2D>(
-      100, 100, 0.05, 0, 0,
-      nav2_costmap_2d::LETHAL_OBSTACLE);
-
-    costmap_pub_ = std::make_shared<nav2_costmap_2d::Costmap2DPublisher>(
-      shared_from_this(),
-      costmap_.get(),
-      "map",
-      "dummy_costmap",
-      true);
 
     rclcpp::SubscriptionOptions sub_option;
     sub_option.callback_group = callback_group_;
@@ -88,16 +76,15 @@ public:
   }
 
   nav2_util::CallbackReturn
-  on_activate(const rclcpp_lifecycle::State &)
+  on_activate(const rclcpp_lifecycle::State &) override
   {
     RCLCPP_INFO(get_logger(), "Activating");
-    costmap_pub_->on_activate();
     costmap_ros_->activate();
     return nav2_util::CallbackReturn::SUCCESS;
   }
 
   nav2_util::CallbackReturn
-  on_deactivate(const rclcpp_lifecycle::State &)
+  on_deactivate(const rclcpp_lifecycle::State &) override
   {
     RCLCPP_INFO(get_logger(), "Deactivating");
     costmap_ros_->deactivate();
@@ -105,7 +92,7 @@ public:
   }
 
   nav2_util::CallbackReturn
-  on_cleanup(const rclcpp_lifecycle::State &)
+  on_cleanup(const rclcpp_lifecycle::State &) override
   {
     executor_thread_.reset();
     costmap_thread_.reset();
@@ -113,19 +100,12 @@ public:
     return nav2_util::CallbackReturn::SUCCESS;
   }
 
-  void publishCostmap()
-  {
-    costmap_pub_->publishCostmap();
-  }
-
   void costmapCallback(const nav2_msgs::msg::Costmap::SharedPtr costmap)
   {
     promise_.set_value(costmap);
   }
 
-  std::shared_ptr<nav2_costmap_2d::Costmap2DPublisher> costmap_pub_;
   rclcpp::Subscription<nav2_msgs::msg::Costmap>::SharedPtr costmap_sub_;
-  std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap_;
 
   rclcpp::CallbackGroup::SharedPtr callback_group_;
   rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
@@ -146,7 +126,7 @@ public:
     costmap_publisher_->on_activate(costmap_publisher_->get_current_state());
   }
 
-  ~TestNode()
+  ~TestNode() override
   {
     costmap_publisher_->on_deactivate(costmap_publisher_->get_current_state());
     costmap_publisher_->on_cleanup(costmap_publisher_->get_current_state());
@@ -158,7 +138,6 @@ protected:
 
 TEST_F(TestNode, costmap_pub_test)
 {
-  costmap_publisher_->publishCostmap();
   auto future = costmap_publisher_->promise_.get_future();
   auto status = future.wait_for(std::chrono::seconds(5));
   EXPECT_TRUE(status == std::future_status::ready);
