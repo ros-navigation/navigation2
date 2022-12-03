@@ -194,8 +194,7 @@ public:
       // user defined callback
       on_tick();
 
-      if(should_send_goal_)
-      {
+      if (should_send_goal_) {
         send_new_goal();
       }
     }
@@ -229,7 +228,8 @@ public:
         feedback_.reset();
 
         auto goal_status = goal_handle_->get_status();
-        if (goal_updated_ && should_send_goal_ && (goal_status == action_msgs::msg::GoalStatus::STATUS_EXECUTING ||
+        if (goal_updated_ &&
+          (goal_status == action_msgs::msg::GoalStatus::STATUS_EXECUTING ||
           goal_status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED))
         {
           goal_updated_ = false;
@@ -451,7 +451,7 @@ protected:
   future_goal_handle_;
   rclcpp::Time time_goal_sent_;
 
-  // Can be set in on_tick or on_wait_for_result to indicate if a goal should be sent. 
+  // Can be set in on_tick or on_wait_for_result to indicate if a goal should be sent.
   bool should_send_goal_;
 };
 
