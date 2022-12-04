@@ -18,6 +18,7 @@
 #include <memory>
 
 #include "rclcpp/rclcpp.hpp"
+#include "rclcpp/executors/events_executor/events_executor.hpp"
 
 namespace nav2_util
 {
@@ -38,7 +39,7 @@ public:
    * @brief A background thread to process executor's callbacks constructor
    * @param executor Interface to executor to spin in thread
    */
-  explicit NodeThread(rclcpp::executors::SingleThreadedExecutor::SharedPtr executor);
+  explicit NodeThread(rclcpp::executors::EventsExecutor::SharedPtr executor);
 
   /**
    * @brief A background thread to process node callbacks constructor

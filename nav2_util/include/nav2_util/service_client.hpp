@@ -18,6 +18,7 @@
 #include <string>
 
 #include "rclcpp/rclcpp.hpp"
+#include "rclcpp/executors/events_executor/events_executor.hpp"
 
 namespace nav2_util
 {
@@ -145,7 +146,7 @@ protected:
   std::string service_name_;
   rclcpp::Node::SharedPtr node_;
   rclcpp::CallbackGroup::SharedPtr callback_group_;
-  rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
+  rclcpp::executors::EventsExecutor callback_group_executor_;
   typename rclcpp::Client<ServiceT>::SharedPtr client_;
 };
 

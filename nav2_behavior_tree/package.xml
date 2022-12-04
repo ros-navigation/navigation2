@@ -14,6 +14,7 @@
   <build_export_depend>tf2_geometry_msgs</build_export_depend>
   <build_export_depend>std_srvs</build_export_depend>
 
+  <build_depend>irobot_events_executor</build_depend>
   <build_depend>rclcpp</build_depend>
   <build_depend>rclcpp_action</build_depend>
   <build_depend>rclcpp_lifecycle</build_depend>
