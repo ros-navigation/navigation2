@@ -3,7 +3,6 @@ project(nav2_behavior_tree CXX)
 
 find_package(ament_cmake REQUIRED)
 find_package(nav2_common REQUIRED)
-find_package(irobot_events_executor REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
@@ -30,7 +29,6 @@ set(library_name ${PROJECT_NAME})
 
 set(dependencies
   rclcpp
-  irobot_events_executor
   rclcpp_action
   rclcpp_lifecycle
   geometry_msgs

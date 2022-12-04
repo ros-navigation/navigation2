@@ -23,7 +23,6 @@
 #include <chrono>
 
 #include "rclcpp/rclcpp.hpp"
-#include "rclcpp/executors/events_executor/events_executor.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "nav2_util/node_thread.hpp"
 
@@ -123,7 +122,7 @@ public:
       options,
       callback_group_);
     if (spin_thread_) {
-      executor_ = std::make_shared<rclcpp::executors::EventsExecutor>();
+      executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
       executor_->add_callback_group(callback_group_, node_base_interface_);
       executor_thread_ = std::make_unique<nav2_util::NodeThread>(executor_);
     }
@@ -522,7 +521,7 @@ protected:
   typename rclcpp_action::Server<ActionT>::SharedPtr action_server_;
   bool spin_thread_;
   rclcpp::CallbackGroup::SharedPtr callback_group_{nullptr};
-  rclcpp::executors::EventsExecutor::SharedPtr executor_;
+  rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
   std::unique_ptr<nav2_util::NodeThread> executor_thread_;
 
   /**

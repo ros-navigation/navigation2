@@ -21,7 +21,6 @@
 #include <vector>
 
 #include "rclcpp/rclcpp.hpp"
-#include "rclcpp/executors/events_executor/events_executor.hpp"
 
 using namespace std::chrono_literals;
 using namespace std::placeholders;
@@ -100,7 +99,7 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
           },
           callback_group_);
       }
-      auto executor = std::make_shared<rclcpp::executors::EventsExecutor>();
+      auto executor = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
       executor->add_callback_group(callback_group_, get_node_base_interface());
       service_thread_ = std::make_unique<nav2_util::NodeThread>(executor);
     });

@@ -23,9 +23,6 @@
 #include "nav2_util/node_utils.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "nav2_behavior_tree/bt_conversions.hpp"
-#include "rclcpp/executors/events_executor/events_executor.hpp"
-#include "rclcpp/rclcpp.hpp"
-
 
 namespace nav2_behavior_tree
 {
@@ -434,7 +431,7 @@ protected:
   // The node that will be used for any ROS operations
   rclcpp::Node::SharedPtr node_;
   rclcpp::CallbackGroup::SharedPtr callback_group_;
-  rclcpp::executors::EventsExecutor callback_group_executor_;
+  rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
 
   // The timeout value while waiting for response from a server when a
   // new action goal is sent or canceled
