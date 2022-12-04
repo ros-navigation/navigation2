@@ -192,13 +192,9 @@ bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filena
     return false;
   }
 
-  auto xml_string = std::string(
-    std::istreambuf_iterator<char>(xml_file),
-    std::istreambuf_iterator<char>());
-
   // Create the Behavior Tree from the XML input
   try {
-    tree_ = bt_->createTreeFromText(xml_string, blackboard_);
+    tree_ = bt_->createTreeFromFile(filename, blackboard_);
   } catch (const std::exception & e) {
     RCLCPP_ERROR(logger_, "Exception when loading BT: %s", e.what());
     return false;
