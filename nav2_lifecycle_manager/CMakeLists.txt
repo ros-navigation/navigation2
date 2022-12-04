@@ -4,6 +4,7 @@ project(nav2_lifecycle_manager)
 find_package(ament_cmake REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(lifecycle_msgs REQUIRED)
+find_package(irobot_events_executor REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(nav2_util REQUIRED)
@@ -36,6 +37,7 @@ set(dependencies
   nav2_msgs
   nav2_util
   rclcpp
+  irobot_events_executor
   rclcpp_action
   rclcpp_lifecycle
   rclcpp_components

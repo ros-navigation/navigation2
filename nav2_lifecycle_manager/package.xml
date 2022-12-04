@@ -21,6 +21,7 @@
   <build_depend>bondcpp</build_depend>
   <build_depend>nav2_common</build_depend>
   <build_depend>diagnostic_updater</build_depend>
+  <build_depend>irobot_events_executor</build_depend>
 
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>lifecycle_msgs</exec_depend>

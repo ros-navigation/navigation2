@@ -18,6 +18,7 @@
 #include <memory>
 
 #include "rclcpp/rclcpp.hpp"
+#include "rclcpp/executors/events_executor/events_executor.hpp"
 
 namespace nav2_util
 {
