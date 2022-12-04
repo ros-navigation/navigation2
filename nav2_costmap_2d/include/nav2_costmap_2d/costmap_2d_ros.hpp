@@ -162,7 +162,6 @@ public:
 
   /**
    * @brief Update the costmap and publish it once.
-   *
    */
   void updateAndPublishMap();
 
@@ -324,7 +323,6 @@ public:
   /**
    * @brief Returns the value of the "update_on_request" parameter,
    * used to check if the costmap is to be updated on request or periodically.
-   *
    * @return update_on_request_
    */
   bool isUpdateOnRequest() const {return update_on_request_;}
@@ -352,11 +350,11 @@ protected:
   std::string parent_namespace_;
 
   /**
-   * @brief Shutdown and stop thread for map update loop
+   * @brief Start thread for map update loop
    */
   void mapUpdateThreadOn();
   /**
-   * @brief Start thread for map update loop
+   * @brief Shutdown and stop thread for map update loop
    */
   void mapUpdateThreadOff();
   /**

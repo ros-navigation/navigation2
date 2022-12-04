@@ -75,6 +75,7 @@ TEST(DynParamTestNode, testDynParamsSet)
       "footprint",
       "[[-0.325, -0.325], [-0.325, 0.325], [0.325, 0.325], [0.46, 0.0], [0.325, -0.325]]"),
     rclcpp::Parameter("robot_base_frame", "test_frame"),
+    rclcpp::Parameter("update_on_request", true),
   });
 
   // Try setting robot_base_frame to an invalid frame, should be rejected
@@ -98,6 +99,7 @@ TEST(DynParamTestNode, testDynParamsSet)
     costmap->get_parameter("footprint").as_string(),
     "[[-0.325, -0.325], [-0.325, 0.325], [0.325, 0.325], [0.46, 0.0], [0.325, -0.325]]");
   EXPECT_EQ(costmap->get_parameter("robot_base_frame").as_string(), "test_frame");
+  EXPECT_EQ(costmap->get_parameter("update_on_request").as_bool(), true);
 
   costmap->on_deactivate(rclcpp_lifecycle::State());
   costmap->on_cleanup(rclcpp_lifecycle::State());

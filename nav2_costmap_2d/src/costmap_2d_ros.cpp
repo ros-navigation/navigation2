@@ -262,14 +262,15 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
   // Create a thread to handle updating the map
   stopped_ = true;  // to active plugins
   stop_updates_ = false;
-  if (!update_on_request_){
+  if (!update_on_request_) {
     mapUpdateThreadOn();
-  }
-  else {
+  } else {
     initialized_ = true;
   }
-  
+
   start();
+
+  updateAndPublishMap();
 
   // Add callback for dynamic parameters
   dyn_params_handler = this->add_on_set_parameters_callback(
@@ -290,7 +291,7 @@ Costmap2DROS::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   stop();
 
   // Map thread stuff
-  if (!update_on_request_){
+  if (!update_on_request_) {
     mapUpdateThreadOff();
   }
 
@@ -425,7 +426,7 @@ Costmap2DROS::getOrientedFootprint(std::vector<geometry_msgs::msg::Point> & orie
 }
 
 
-void 
+void
 Costmap2DROS::mapUpdateThreadOn()
 {
   map_update_thread_shutdown_ = false;
@@ -433,11 +434,11 @@ Costmap2DROS::mapUpdateThreadOn()
     std::bind(&Costmap2DROS::mapUpdateLoop, this, map_update_frequency_));
 }
 
-void 
+void
 Costmap2DROS::mapUpdateThreadOff()
 {
   map_update_thread_shutdown_ = true;
-  if (map_update_thread_){
+  if (map_update_thread_) {
     map_update_thread_->join();
   }
 }
@@ -457,7 +458,7 @@ Costmap2DROS::mapUpdateLoop(double frequency)
   rclcpp::WallRate r(frequency);    // 200ms by default
 
   while (rclcpp::ok() && !map_update_thread_shutdown_) {
-    updateAndPublishMap(); 
+    updateAndPublishMap();
 
     // Make sure to sleep for the remainder of our cycle time
     r.sleep();
@@ -499,7 +500,7 @@ Costmap2DROS::updateMap()
   }
 }
 
-void 
+void
 Costmap2DROS::updateAndPublishMap()
 {
   nav2_util::ExecutionTimer timer;
@@ -740,7 +741,7 @@ Costmap2DROS::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameter
     } else if (type == ParameterType::PARAMETER_BOOL) {
       if (name == "update_on_request") {
         update_on_request_ = parameter.as_bool();
-        if (update_on_request_){
+        if (update_on_request_) {
           mapUpdateThreadOff();
         } else {
           mapUpdateThreadOn();
