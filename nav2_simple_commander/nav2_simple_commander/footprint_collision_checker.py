@@ -46,6 +46,7 @@ class FootprintCollisionChecker():
         """
         Initialize the FootprintCollisionChecker Object.
         """
+        self.costmap_ = None
         pass
 
     def footprintCost(self, footprint: Polygon):
@@ -66,20 +67,20 @@ class FootprintCollisionChecker():
         x1 = 0.0
         y1 = 0.0
 
-        if not self.costmap_.isWorldCoordsValid(footprint.points[0].x, footprint.points[0].y):
+        if self.worldToMapValidated(footprint.points[0].x, footprint.points[0].y) == None:
             return LETHAL_OBSTACLE
 
-        x0, y0 = self.costmap_.worldToMap(
+        x0, y0 = self.worldToMapValidated(
             footprint.points[0].x, footprint.points[0].y)
         xstart = x0
         ystart = y0
 
         for i in range(len(footprint.points) - 1):
-            if not self.costmap_.isWorldCoordsValid(
-                    footprint.points[i + 1].x, footprint.points[i + 1].y):
+            if self.worldToMapValidated(
+                    footprint.points[i + 1].x, footprint.points[i + 1].y) == None:
                 return LETHAL_OBSTACLE
 
-            x1, y1 = self.worldToMap(
+            x1, y1 = self.worldToMapValidated(
                 footprint.points[i + 1].x, footprint.points[i + 1].y)
 
             footprint_cost = max(
@@ -116,7 +117,7 @@ class FootprintCollisionChecker():
 
         while line_iterator.isValid():
             point_cost = self.pointCost(
-                line_iterator.getX(), line_iterator.getY())
+                int(line_iterator.getX()), int(line_iterator.getY()))
 
             if point_cost == LETHAL_OBSTACLE:
                 return point_cost
@@ -124,9 +125,11 @@ class FootprintCollisionChecker():
             if line_cost < point_cost:
                 line_cost = point_cost
 
+            line_iterator.advance()
+
         return line_cost
 
-    def worldToMap(self, wx: float, wy: float):
+    def worldToMapValidated(self, wx: float, wy: float):
         """
         Get the map coordinate XY using world coordinate XY.
 
@@ -137,12 +140,15 @@ class FootprintCollisionChecker():
 
         Returns
         -------
-            tuple of int: mx, my
+            None: if coordinates are invalid
+            tuple of int: mx, my (if coordinates are valid)
             mx (int): map coordinate X
             my (int): map coordinate Y
 
         """
-        return self.costmap_.worldToMap(wx, wy)
+        if self.costmap_ == None:
+            raise ValueError("Costmap not specified, use setCostmap to specify the costmap first")
+        return self.costmap_.worldToMapValidated(wx, wy)
 
     def pointCost(self, x: int, y: int):
         """
@@ -158,6 +164,8 @@ class FootprintCollisionChecker():
             np.uint8: cost of a point
 
         """
+        if self.costmap_ == None:
+            raise ValueError("Costmap not specified, use setCostmap to specify the costmap first")
         return self.costmap_.getCostXY(x, y)
 
     def setCostmap(self, costmap: PyCostmap2D):

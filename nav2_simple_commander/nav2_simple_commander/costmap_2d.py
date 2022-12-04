@@ -155,7 +155,7 @@ class PyCostmap2D:
         wy = self.origin_y + (my + 0.5) * self.resolution
         return (wx, wy)
 
-    def worldToMap(self, wx: float, wy: float) -> tuple[int, int]:
+    def worldToMapValidated(self, wx: float, wy: float):
         """
         Get the map coordinate XY using world coordinate XY.
 
@@ -166,34 +166,19 @@ class PyCostmap2D:
 
         Returns
         -------
-            tuple of int: mx, my
+            None: if coordinates are invalid
+            tuple of int: mx, my (if coordinates are valid)
             mx (int): map coordinate X
             my (int): map coordinate Y
 
         """
+        if wx < self.origin_x or wy < self.origin_y:
+            return None
         mx = int((wx - self.origin_x) // self.resolution)
         my = int((wy - self.origin_y) // self.resolution)
-        return (mx, my)
-
-    def isWorldCoordsValid(self, wx: float, wy: float) -> bool:
-        """
-        Check wether the given world XY coords are valid
-
-        Args
-        ----
-            wx (float): world coordinate X
-            wy (float): world coordinate Y
-
-        Returns
-        -------
-            bool: True if valid, False otherwise
-        """
-        if wx < self.origin_x or wy < self.origin_y:
-            return False
-        mx, my = self.worldToMap(wx, wy)
         if mx < self.size_x and my < self.size_y:
-            return True
-        return False
+            return (mx, my)
+        return None
 
     def getIndex(self, mx: int, my: int) -> int:
         """
