@@ -26,7 +26,7 @@ int main(int argc, char ** argv)
 
   auto executor = std::make_shared<rclcpp::executors::EventsExecutor>();
 
-  executor->add_node(node->get_node_base_interface());
+  executor->add_node(recoveries_node->get_node_base_interface());
   executor->spin();
   rclcpp::shutdown();
 

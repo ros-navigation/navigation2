@@ -18,6 +18,8 @@
 #include "gtest/gtest.h"
 #include "nav2_util/lifecycle_utils.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
+
+#include "rclcpp/executors/events_executor/events_executor.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 using nav2_util::startup_lifecycle_nodes;
@@ -35,7 +37,7 @@ void SpinNodesUntilDone(
   std::vector<rclcpp_lifecycle::LifecycleNode::SharedPtr> nodes,
   std::atomic<bool> * test_done)
 {
-  rclcpp::executors::SingleThreadedExecutor exec;
+  rclcpp::executors::EventsExecutor exec;
   for (const auto & node : nodes) {
     exec.add_node(node->get_node_base_interface());
   }
