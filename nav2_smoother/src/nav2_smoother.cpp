@@ -270,8 +270,7 @@ void SmootherServer::smoothPlan()
     auto goal = action_server_->get_current_goal();
     result->path = goal->path;
 
-    if (!isPathValidForSmoothing(result->path))
-    {
+    if (!validate(result->path)) {
       throw nav2_core::InvalidPath("Requested path to smooth is invalid");
     }
 
@@ -353,9 +352,9 @@ void SmootherServer::smoothPlan()
   }
 }
 
-bool SmootherServer::isPathValidForSmoothing(const nav_msgs::msg::Path &path) {
-  if (path.poses.empty())
-  {
+bool SmootherServer::validate(const nav_msgs::msg::Path & path)
+{
+  if (path.poses.empty()) {
     RCLCPP_WARN(get_logger(), "Requested path to smooth is empty");
     return false;
   }

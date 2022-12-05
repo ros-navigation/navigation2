@@ -141,7 +141,7 @@ protected:
    * @param path current path
    * return bool if the path is valid
    */
-   bool isPathValidForSmoothing(const nav_msgs::msg::Path & path);
+  bool validate(const nav_msgs::msg::Path & path);
 
   // Our action server implements the SmoothPath action
   std::unique_ptr<ActionServer> action_server_;
