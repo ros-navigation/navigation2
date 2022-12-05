@@ -117,7 +117,7 @@ TEST(SmootherTest, test_simple_smoother)
 
   rclcpp::Duration no_time = rclcpp::Duration::from_seconds(0.0);  // 0 seconds
   rclcpp::Duration max_time = rclcpp::Duration::from_seconds(1);  // 1 second
-  EXPECT_THROW(smoother->smooth(straight_irregular_path, no_time), nav2_core::FailedToSmoothPath);
+  EXPECT_THROW(smoother->smooth(straight_irregular_path, no_time), nav2_core::SmootherTimedOut);
   EXPECT_TRUE(smoother->smooth(straight_irregular_path, max_time));
   for (uint i = 0; i != straight_irregular_path.poses.size() - 1; i++) {
     // Check distances are more evenly spaced out now

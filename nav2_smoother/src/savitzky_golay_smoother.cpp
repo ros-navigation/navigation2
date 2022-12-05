@@ -77,7 +77,7 @@ bool SavitzkyGolaySmoother::smooth(
         RCLCPP_WARN(
           logger_,
           "Smoothing time exceeded allowed duration of %0.2f.", max_time.seconds());
-        return false;
+        throw nav2_core::SmootherTimedOut("Smoothing time exceed allowed duration");
       }
 
       bool segment_was_smoothed = smoothImpl(curr_path_segment, reversing_segment);

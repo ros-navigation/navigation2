@@ -17,6 +17,7 @@
 #include <vector>
 #include <memory>
 #include "nav2_smac_planner/smoother.hpp"
+#include "nav2_core/smoother_exceptions.hpp"
 
 namespace nav2_smac_planner
 {
@@ -136,7 +137,7 @@ bool Smoother::smoothImpl(
         "Smoothing time exceeded allowed duration of %0.2f.", max_time);
       path = last_path;
       updateApproximatePathOrientations(path, reversing_segment);
-      return false;
+      throw nav2_core::SmootherTimedOut("Smoothing time exceed allowed duration");
     }
 
     for (unsigned int i = 1; i != path_size - 1; i++) {

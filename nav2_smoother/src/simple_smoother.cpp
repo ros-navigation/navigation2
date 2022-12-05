@@ -151,7 +151,7 @@ bool SimpleSmoother::smoothImpl(
         "Smoothing time exceeded allowed duration of %0.2f.", max_time);
       path = last_path;
       updateApproximatePathOrientations(path, reversing_segment);
-      return false;
+      throw nav2_core::SmootherTimedOut("Smoothing time exceed allowed duration");
     }
 
     for (unsigned int i = 1; i != path_size - 1; i++) {
