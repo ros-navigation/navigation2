@@ -844,7 +844,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
     int max_weight_hyp = -1;
     if (getMaxWeightHyp(hyps, max_weight_hyps, max_weight_hyp)) {
       publishAmclPose(laser_scan, hyps, max_weight_hyp); // estimated_pose = pose(best_cluster.mean, filter.covariance)
-      setStandardDeviationFlag();
+      publishStandardDeviationFlag();
       calculateMaptoOdomTransform(laser_scan, hyps, max_weight_hyp);
 
       if (tf_broadcast_ == true) {
@@ -1780,8 +1780,11 @@ AmclNode::initExternalPose()
   ext_pose_active_ = false;
 }
 
+// Publish estimated standard deviation flag of the filter, coming from pose covariance
+// 'true' if exceeds any of threshold
+// Based on https://github.com/ros-planning/navigation/pull/807
 void
-AmclNode::setStandardDeviationFlag()
+AmclNode::publishStandardDeviationFlag()
 {
   double std_x = sqrt(last_published_pose_.pose.covariance[6*0+0]);
   double std_y = sqrt(last_published_pose_.pose.covariance[6*1+1]);
@@ -1796,7 +1799,6 @@ AmclNode::setStandardDeviationFlag()
   }
   else
   {
-    RCLCPP_INFO(get_logger(), "OK");
     msg.data = false;
     amcl_lost_flag_pub_->publish(msg);
   }
