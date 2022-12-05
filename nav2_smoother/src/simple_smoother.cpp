@@ -15,6 +15,7 @@
 #include <vector>
 #include <memory>
 #include "nav2_smoother/simple_smoother.hpp"
+#include "nav2_core/smoother_exceptions.hpp"
 
 namespace nav2_smoother
 {
@@ -65,6 +66,7 @@ bool SimpleSmoother::smooth(
   double time_remaining = max_time.seconds();
 
   bool success = true, reversing_segment;
+  unsigned int segments_smoothed = 0;
   nav_msgs::msg::Path curr_path_segment;
   curr_path_segment.header = path.header;
 
@@ -84,9 +86,14 @@ bool SimpleSmoother::smooth(
       time_remaining = max_time.seconds() - duration_cast<duration<double>>(now - start).count();
       refinement_ctr_ = 0;
 
-      // Smooth path segment naively
-      success = success && smoothImpl(
+      bool segment_was_smoothed = smoothImpl(
         curr_path_segment, reversing_segment, costmap.get(), time_remaining);
+      if (segment_was_smoothed) {
+        segments_smoothed++;
+      }
+
+      // Smooth path segment naively
+      success = success && segment_was_smoothed;
 
       // Assemble the path changes to the main path
       std::copy(
@@ -94,6 +101,10 @@ bool SimpleSmoother::smooth(
         curr_path_segment.poses.end(),
         path.poses.begin() + path_segments[i].start);
     }
+  }
+
+  if (segments_smoothed == 0) {
+    throw nav2_core::FailedToSmoothPath("No segments were smoothed");
   }
 
   return success;
