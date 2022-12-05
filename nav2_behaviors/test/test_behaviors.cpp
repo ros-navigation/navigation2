@@ -129,7 +129,7 @@ protected:
     node_lifecycle_->get_parameter("global_costmap_topic", global_costmap_topic);
     node_lifecycle_->get_parameter("local_footprint_topic", local_footprint_topic);
     node_lifecycle_->get_parameter("global_footprint_topic", global_footprint_topic);
-    
+
     std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> local_costmap_sub_ =
       std::make_shared<nav2_costmap_2d::CostmapSubscriber>(
       node_lifecycle_, global_costmap_topic);
