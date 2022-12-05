@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.5)
 project(nav2_util)
 
 find_package(ament_cmake REQUIRED)
-find_package(irobot_events_executor REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
@@ -22,7 +21,6 @@ find_package(action_msgs REQUIRED)
 set(dependencies
     nav2_msgs
     tf2_ros
-    irobot_events_executor
     tf2
     tf2_geometry_msgs
     geometry_msgs

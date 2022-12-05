@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.5)
 project(nav2_costmap_2d)
 
 find_package(ament_cmake REQUIRED)
-find_package(irobot_events_executor REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(laser_geometry REQUIRED)
 find_package(map_msgs REQUIRED)
@@ -55,7 +54,6 @@ add_library(nav2_costmap_2d_core SHARED
 
 set(dependencies
   geometry_msgs
-  irobot_events_executor
   laser_geometry
   map_msgs
   message_filters

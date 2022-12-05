@@ -202,7 +202,7 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
   // Add cleaning service
   clear_costmap_service_ = std::make_unique<ClearCostmapService>(shared_from_this(), *this);
 
-  executor_ = std::make_shared<rclcpp::executors::EventsExecutor>();
+  executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
   executor_->add_callback_group(callback_group_, get_node_base_interface());
   executor_thread_ = std::make_unique<nav2_util::NodeThread>(executor_);
   return nav2_util::CallbackReturn::SUCCESS;

@@ -22,7 +22,7 @@ namespace nav2_util
 NodeThread::NodeThread(rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base)
 : node_(node_base)
 {
-  executor_ = std::make_shared<rclcpp::executors::EventsExecutor>();
+  executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
   thread_ = std::make_unique<std::thread>(
     [&]()
     {
@@ -32,7 +32,7 @@ NodeThread::NodeThread(rclcpp::node_interfaces::NodeBaseInterface::SharedPtr nod
     });
 }
 
-NodeThread::NodeThread(rclcpp::executors::EventsExecutor::SharedPtr executor)
+NodeThread::NodeThread(rclcpp::executors::SingleThreadedExecutor::SharedPtr executor)
 : executor_(executor)
 {
   thread_ = std::make_unique<std::thread>([&]() {executor_->spin();});
