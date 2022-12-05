@@ -15,8 +15,6 @@
 #include <memory>
 
 #include "nav2_util/node_thread.hpp"
-#include "rclcpp/executors/events_executor/events_executor.hpp"
-#include "rclcpp/rclcpp.hpp"
 
 namespace nav2_util
 {
