@@ -58,7 +58,6 @@
 #include "tf2/time.h"
 #include "tf2/transform_datatypes.h"
 
-#include "rclcpp/rclcpp.hpp"
 #include "rclcpp/executors/events_executor/events_executor.hpp"
 
 #pragma GCC diagnostic push
