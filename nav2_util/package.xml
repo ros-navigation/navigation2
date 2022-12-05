@@ -28,7 +28,6 @@
   <depend>launch</depend>
   <depend>launch_testing_ament_cmake</depend>
   <depend>action_msgs</depend>
-  <depend>irobot_events_executor</depend>
 
   <exec_depend>libboost-program-options</exec_depend>
 

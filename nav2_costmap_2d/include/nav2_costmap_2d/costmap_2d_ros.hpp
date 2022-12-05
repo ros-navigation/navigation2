@@ -58,8 +58,6 @@
 #include "tf2/time.h"
 #include "tf2/transform_datatypes.h"
 
-#include "rclcpp/executors/events_executor/events_executor.hpp"
-
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
 #include "tf2/utils.h"
@@ -315,7 +313,7 @@ protected:
 
   // Dedicated callback group and executor for tf timer_interface and message fillter
   rclcpp::CallbackGroup::SharedPtr callback_group_;
-  rclcpp::executors::EventsExecutor::SharedPtr executor_;
+  rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
   std::unique_ptr<nav2_util::NodeThread> executor_thread_;
 
   // Transform listener
