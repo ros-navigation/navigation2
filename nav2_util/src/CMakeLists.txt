@@ -1,3 +1,6 @@
+
+find_package(irobot_events_executor REQUIRED)
+
 add_library(${library_name} SHARED
   costmap.cpp
   node_utils.cpp
@@ -12,6 +15,7 @@ add_library(${library_name} SHARED
 
 ament_target_dependencies(${library_name}
   rclcpp
+  irobot_events_executor
   nav2_msgs
   tf2
   tf2_ros

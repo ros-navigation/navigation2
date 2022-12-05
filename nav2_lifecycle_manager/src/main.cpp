@@ -15,13 +15,18 @@
 #include <memory>
 
 #include "nav2_lifecycle_manager/lifecycle_manager.hpp"
+#include "rclcpp/executors/events_executor/events_executor.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
   auto node = std::make_shared<nav2_lifecycle_manager::LifecycleManager>();
-  rclcpp::spin(node);
+  
+  auto executor = std::make_shared<rclcpp::executors::EventsExecutor>();
+
+  executor->add_node(node->get_node_base_interface());
+  executor->spin();
   rclcpp::shutdown();
 
   return 0;
