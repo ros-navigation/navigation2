@@ -283,6 +283,7 @@ AmclNode::on_activate(const rclcpp_lifecycle::State & /*state*/)
   // Lifecycle publishers must be explicitly activated
   pose_pub_->on_activate();
   particle_cloud_pub_->on_activate();
+  amcl_lost_flag_pub_->on_activate();
 
   first_pose_sent_ = false;
 
@@ -328,6 +329,7 @@ AmclNode::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   // Lifecycle publishers must be explicitly deactivated
   pose_pub_->on_deactivate();
   particle_cloud_pub_->on_deactivate();
+  amcl_lost_flag_pub_->on_deactivate();
 
   // reset dynamic parameter handler
   dyn_params_handler_.reset();
@@ -370,6 +372,7 @@ AmclNode::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   // PubSub
   pose_pub_.reset();
   particle_cloud_pub_.reset();
+  amcl_lost_flag_pub_.reset();
 
   // Odometry
   motion_model_.reset();
@@ -840,7 +843,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
     std::vector<amcl_hyp_t> hyps;
     int max_weight_hyp = -1;
     if (getMaxWeightHyp(hyps, max_weight_hyps, max_weight_hyp)) {
-      publishAmclPose(laser_scan, hyps, max_weight_hyp);
+      publishAmclPose(laser_scan, hyps, max_weight_hyp); // estimated_pose = pose(best_cluster.mean, filter.covariance)
       setStandardDeviationFlag();
       calculateMaptoOdomTransform(laser_scan, hyps, max_weight_hyp);
 
@@ -1671,6 +1674,10 @@ AmclNode::initPubSub()
     "amcl_pose",
     rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
 
+  amcl_lost_flag_pub_ = create_publisher<std_msgs::msg::Bool>(
+    "amcl_lost_flag",
+    rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+
   initial_pose_sub_ = create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "initialpose", rclcpp::SystemDefaultsQoS(),
     std::bind(&AmclNode::initialPoseReceived, this, std::placeholders::_1));
@@ -1780,13 +1787,18 @@ AmclNode::setStandardDeviationFlag()
   double std_y = sqrt(last_published_pose_.pose.covariance[6*1+1]);
   double std_yaw = sqrt(last_published_pose_.pose.covariance[6*5+5]);
 
+  std_msgs::msg::Bool msg;
   if (std_x > std_warn_level_x_ || std_y > std_warn_level_y_ || std_yaw > std_warn_level_yaw_)
   {
     RCLCPP_WARN(get_logger(), "Deviation too large");
+    msg.data = true;
+    amcl_lost_flag_pub_->publish(msg);
   }
   else
   {
     RCLCPP_INFO(get_logger(), "OK");
+    msg.data = false;
+    amcl_lost_flag_pub_->publish(msg);
   }
 }
 

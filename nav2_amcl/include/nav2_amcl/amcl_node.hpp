@@ -40,6 +40,7 @@
 #include "nav2_msgs/msg/particle_cloud.hpp"
 #include "nav_msgs/srv/set_map.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
+#include <std_msgs/msg/bool.hpp>
 #include "std_srvs/srv/empty.hpp"
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2_ros/transform_listener.h"
@@ -199,6 +200,8 @@ protected:
     pose_pub_;
   rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::ParticleCloud>::SharedPtr
     particle_cloud_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Bool>::SharedPtr
+    amcl_lost_flag_pub_;
   /*
    * @brief Handle with an initial pose estimate is received
    */
