@@ -336,10 +336,12 @@ void PlannerServer::computePlanThroughPoses()
 
   auto start_time = steady_clock_.now();
 
-  // Initialize the ComputePathToPose goal and result
+  // Initialize the ComputePathThroughPoses goal and result
   auto goal = action_server_poses_->get_current_goal();
   auto result = std::make_shared<ActionThroughPoses::Result>();
   nav_msgs::msg::Path concat_path;
+
+  geometry_msgs::msg::PoseStamped curr_start, curr_goal;
 
   try {
     if (isServerInactive(action_server_poses_) || isCancelRequested(action_server_poses_)) {
@@ -350,11 +352,8 @@ void PlannerServer::computePlanThroughPoses()
 
     getPreemptedGoalIfRequested(action_server_poses_, goal);
 
-    if (goal->goals.size() == 0) {
-      RCLCPP_WARN(
-        get_logger(),
-        "Compute path through poses requested a plan with no viapoint poses, returning.");
-      action_server_poses_->terminate_current();
+    if (goal->goals.empty()) {
+      throw nav2_core::NoViapointsGiven("No viapoints given");
     }
 
     // Use start pose if provided otherwise use current robot pose
@@ -364,8 +363,6 @@ void PlannerServer::computePlanThroughPoses()
     }
 
     // Get consecutive paths through these points
-    std::vector<geometry_msgs::msg::PoseStamped>::iterator goal_iter;
-    geometry_msgs::msg::PoseStamped curr_start, curr_goal;
     for (unsigned int i = 0; i != goal->goals.size(); i++) {
       // Get starting point
       if (i == 0) {
@@ -384,7 +381,7 @@ void PlannerServer::computePlanThroughPoses()
       nav_msgs::msg::Path curr_path = getPlan(curr_start, curr_goal, goal->planner_id);
 
       if (!validatePath<ActionThroughPoses>(curr_goal, curr_path, goal->planner_id)) {
-        throw nav2_core::NoValidPathCouldBeFound(goal->planner_id + "generated a empty path");
+        throw nav2_core::NoValidPathCouldBeFound(goal->planner_id + " generated a empty path");
       }
 
       // Concatenate paths together
@@ -408,13 +405,46 @@ void PlannerServer::computePlanThroughPoses()
     }
 
     action_server_poses_->succeeded_current(result);
+  } catch (nav2_core::InvalidPlanner & ex) {
+    exceptionWarning(curr_start, curr_goal, goal->planner_id, ex);
+    result->error_code = ActionToPoseGoal::INVALID_PLANNER;
+    action_server_poses_->terminate_current(result);
+  } catch (nav2_core::StartOccupied & ex) {
+    exceptionWarning(curr_start, curr_goal, goal->planner_id, ex);
+    result->error_code = ActionThroughPosesGoal::START_OCCUPIED;
+    action_server_poses_->terminate_current(result);
+  } catch (nav2_core::GoalOccupied & ex) {
+    exceptionWarning(curr_start, curr_goal, goal->planner_id, ex);
+    result->error_code = ActionThroughPosesGoal::GOAL_OCCUPIED;
+    action_server_poses_->terminate_current(result);
+  } catch (nav2_core::NoValidPathCouldBeFound & ex) {
+    exceptionWarning(curr_start, curr_goal, goal->planner_id, ex);
+    result->error_code = ActionThroughPosesGoal::NO_VALID_PATH;
+    action_server_poses_->terminate_current(result);
+  } catch (nav2_core::PlannerTimedOut & ex) {
+    exceptionWarning(curr_start, curr_goal, goal->planner_id, ex);
+    result->error_code = ActionThroughPosesGoal::TIMEOUT;
+    action_server_poses_->terminate_current(result);
+  } catch (nav2_core::StartOutsideMapBounds & ex) {
+    exceptionWarning(curr_start, curr_goal, goal->planner_id, ex);
+    result->error_code = ActionThroughPosesGoal::START_OUTSIDE_MAP;
+    action_server_poses_->terminate_current(result);
+  } catch (nav2_core::GoalOutsideMapBounds & ex) {
+    exceptionWarning(curr_start, curr_goal, goal->planner_id, ex);
+    result->error_code = ActionThroughPosesGoal::GOAL_OUTSIDE_MAP;
+    action_server_poses_->terminate_current(result);
+  } catch (nav2_core::PlannerTFError & ex) {
+    exceptionWarning(curr_start, curr_goal, goal->planner_id, ex);
+    result->error_code = ActionThroughPosesGoal::TF_ERROR;
+    action_server_poses_->terminate_current(result);
+  } catch (nav2_core::NoViapointsGiven & ex) {
+    exceptionWarning(curr_start, curr_goal, goal->planner_id, ex);
+    result->error_code = ActionThroughPosesGoal::NO_VIAPOINTS_GIVEN;
+    action_server_poses_->terminate_current(result);
   } catch (std::exception & ex) {
-    RCLCPP_WARN(
-      get_logger(),
-      "%s plugin failed to plan through %zu points with final goal (%.2f, %.2f): \"%s\"",
-      goal->planner_id.c_str(), goal->goals.size(), goal->goals.back().pose.position.x,
-      goal->goals.back().pose.position.y, ex.what());
-    action_server_poses_->terminate_current();
+    exceptionWarning(curr_start, curr_goal, goal->planner_id, ex);
+    result->error_code = ActionThroughPosesGoal::UNKNOWN;
+    action_server_poses_->terminate_current(result);
   }
 }
 
@@ -454,7 +484,7 @@ PlannerServer::computePlan()
     result->path = getPlan(start, goal_pose, goal->planner_id);
 
     if (!validatePath<ActionThroughPoses>(goal_pose, result->path, goal->planner_id)) {
-      throw nav2_core::NoValidPathCouldBeFound(goal->planner_id + "generated a empty path");
+      throw nav2_core::NoValidPathCouldBeFound(goal->planner_id + " generated a empty path");
     }
 
     // Publish the plan for visualization purposes
@@ -469,39 +499,42 @@ PlannerServer::computePlan()
         "Planner loop missed its desired rate of %.4f Hz. Current loop rate is %.4f Hz",
         1 / max_planner_duration_, 1 / cycle_duration.seconds());
     }
-
     action_server_pose_->succeeded_current(result);
+  } catch (nav2_core::InvalidPlanner & ex) {
+    exceptionWarning(start, goal->goal, goal->planner_id, ex);
+    result->error_code = ActionToPoseGoal::INVALID_PLANNER;
+    action_server_pose_->terminate_current(result);
   } catch (nav2_core::StartOccupied & ex) {
     exceptionWarning(start, goal->goal, goal->planner_id, ex);
-    result->error_code = nav2_msgs::action::ComputePathToPose::Goal::START_OCCUPIED;
+    result->error_code = ActionToPoseGoal::START_OCCUPIED;
     action_server_pose_->terminate_current(result);
   } catch (nav2_core::GoalOccupied & ex) {
     exceptionWarning(start, goal->goal, goal->planner_id, ex);
-    result->error_code = nav2_msgs::action::ComputePathToPose::Goal::GOAL_OCCUPIED;
+    result->error_code = ActionToPoseGoal::GOAL_OCCUPIED;
     action_server_pose_->terminate_current(result);
   } catch (nav2_core::NoValidPathCouldBeFound & ex) {
     exceptionWarning(start, goal->goal, goal->planner_id, ex);
-    result->error_code = nav2_msgs::action::ComputePathToPose::Goal::NO_VALID_PATH;
+    result->error_code = ActionToPoseGoal::NO_VALID_PATH;
     action_server_pose_->terminate_current(result);
   } catch (nav2_core::PlannerTimedOut & ex) {
     exceptionWarning(start, goal->goal, goal->planner_id, ex);
-    result->error_code = nav2_msgs::action::ComputePathToPose::Goal::TIMEOUT;
+    result->error_code = ActionToPoseGoal::TIMEOUT;
     action_server_pose_->terminate_current(result);
   } catch (nav2_core::StartOutsideMapBounds & ex) {
     exceptionWarning(start, goal->goal, goal->planner_id, ex);
-    result->error_code = nav2_msgs::action::ComputePathToPose::Goal::START_OUTSIDE_MAP;
+    result->error_code = ActionToPoseGoal::START_OUTSIDE_MAP;
     action_server_pose_->terminate_current(result);
   } catch (nav2_core::GoalOutsideMapBounds & ex) {
     exceptionWarning(start, goal->goal, goal->planner_id, ex);
-    result->error_code = nav2_msgs::action::ComputePathToPose::Goal::GOAL_OUTSIDE_MAP;
+    result->error_code = ActionToPoseGoal::GOAL_OUTSIDE_MAP;
     action_server_pose_->terminate_current(result);
   } catch (nav2_core::PlannerTFError & ex) {
     exceptionWarning(start, goal->goal, goal->planner_id, ex);
-    result->error_code = nav2_msgs::action::ComputePathToPose::Goal::TF_ERROR;
+    result->error_code = ActionToPoseGoal::TF_ERROR;
     action_server_pose_->terminate_current(result);
   } catch (std::exception & ex) {
     exceptionWarning(start, goal->goal, goal->planner_id, ex);
-    result->error_code = nav2_msgs::action::ComputePathToPose::Goal::UNKNOWN;
+    result->error_code = ActionToPoseGoal::UNKNOWN;
     action_server_pose_->terminate_current(result);
   }
 }
@@ -531,6 +564,7 @@ PlannerServer::getPlan(
         get_logger(), "planner %s is not a valid planner. "
         "Planner names are: %s", planner_id.c_str(),
         planner_ids_concat_.c_str());
+      throw nav2_core::InvalidPlanner("Planner id " + planner_id + " is invalid");
     }
   }
 

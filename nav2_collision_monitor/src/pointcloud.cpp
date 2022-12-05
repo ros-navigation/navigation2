@@ -19,6 +19,7 @@
 #include "sensor_msgs/point_cloud2_iterator.hpp"
 
 #include "nav2_util/node_utils.hpp"
+#include "nav2_util/robot_utils.hpp"
 
 namespace nav2_collision_monitor
 {
@@ -78,7 +79,12 @@ void PointCloud::getData(
   // Obtaining the transform to get data from source frame and time where it was received
   // to the base frame and current time
   tf2::Transform tf_transform;
-  if (!getTransform(data_->header.frame_id, data_->header.stamp, curr_time, tf_transform)) {
+  if (
+    !nav2_util::getTransform(
+      data_->header.frame_id, data_->header.stamp,
+      base_frame_id_, curr_time, global_frame_id_,
+      transform_tolerance_, tf_buffer_, tf_transform))
+  {
     return;
   }
 

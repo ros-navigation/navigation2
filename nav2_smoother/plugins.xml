@@ -4,4 +4,10 @@
       <description>Does a simple smoothing process with collision checking</description>
     </class>
   </library>
+
+  <library path="savitzky_golay_smoother">
+    <class type="nav2_smoother::SavitzkyGolaySmoother" base_class_type="nav2_core::Smoother">
+      <description>Does Savitzky-Golay smoothing</description>
+    </class>
+  </library>
 </class_libraries>

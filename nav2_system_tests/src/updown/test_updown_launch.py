@@ -61,6 +61,7 @@ def generate_launch_description():
             os.path.join(launch_dir, 'bringup_launch.py')),
         launch_arguments={'map': map_yaml_file,
                           'use_sim_time': 'True',
+                          'use_composition': 'False',
                           'autostart': 'False'}.items())
 
     start_test = launch.actions.ExecuteProcess(
