@@ -191,7 +191,7 @@ public:
       // reset the flag to send the goal or not, allowing the user the option to set it in on_tick
       should_send_goal_ = true;
 
-      // user defined callback
+      // user defined callback, may modify "should_send_goal_".
       on_tick();
 
       if (should_send_goal_) {
