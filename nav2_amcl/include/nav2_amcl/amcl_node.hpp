@@ -276,9 +276,11 @@ protected:
    */
   void initExternalPose();
   /*
-   * @brief Deviation diagnostic flag
+   * @brief Publish deviation diagnostic flag
+   * @ true if deviation gets large
+   *
    */
-  void setStandardDeviationFlag();
+  void publishStandardDeviationFlag();
 
   ExternalPoseBuffer ext_pose_buffer;
 
