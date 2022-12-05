@@ -13,6 +13,10 @@
     </class>
     <class type="nav2_system_tests::FailedToSmoothPath"
            base_class_type="nav2_core::Smoother">
-        <description>This smoother produces a path in collision exception.</description>
+        <description>This smoother produces a failed to smooth exception.</description>
+    </class>
+    <class type="nav2_system_tests::InvalidPath"
+           base_class_type="nav2_core::Smoother">
+        <description>This smoother produces an invalid path exception.</description>
     </class>
 </library>

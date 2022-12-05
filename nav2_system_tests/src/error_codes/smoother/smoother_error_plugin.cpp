@@ -19,3 +19,4 @@ PLUGINLIB_EXPORT_CLASS(nav2_system_tests::UnknownErrorSmoother, nav2_core::Smoot
 PLUGINLIB_EXPORT_CLASS(nav2_system_tests::TimeOutErrorSmoother, nav2_core::Smoother)
 PLUGINLIB_EXPORT_CLASS(nav2_system_tests::SmoothedPathInCollision, nav2_core::Smoother)
 PLUGINLIB_EXPORT_CLASS(nav2_system_tests::FailedToSmoothPath, nav2_core::Smoother)
+PLUGINLIB_EXPORT_CLASS(nav2_system_tests::InvalidPath, nav2_core::Smoother)

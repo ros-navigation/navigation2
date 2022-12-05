@@ -77,6 +77,16 @@ class FailedToSmoothPath : public UnknownErrorSmoother
   }
 };
 
+class InvalidPath : public UnknownErrorSmoother
+{
+  bool smooth(
+    nav_msgs::msg::Path &,
+    const rclcpp::Duration &)
+  {
+    throw nav2_core::InvalidPath("Invalid path");
+  }
+};
+
 }  // namespace nav2_system_tests
 
 #endif  // ERROR_CODES__SMOOTHER__SMOOTHER_ERROR_PLUGIN_HPP_

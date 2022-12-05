@@ -146,7 +146,8 @@ def main(argv=sys.argv[1:]):
         'unknown': SmoothPath.Goal().UNKNOWN,
         'timeout': SmoothPath.Goal().TIMEOUT,
         'smoothed_path_in_collision': SmoothPath.Goal().SMOOTHED_PATH_IN_COLLISION,
-        'failed_to_smooth_path': SmoothPath.Goal().FAILED_TO_SMOOTH_PATH
+        'failed_to_smooth_path': SmoothPath.Goal().FAILED_TO_SMOOTH_PATH,
+        'invalid_path': SmoothPath.Goal().INVALID_PATH
     }
 
     for smoother, error_code in smoother.items():
