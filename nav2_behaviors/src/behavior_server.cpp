@@ -61,8 +61,8 @@ BehaviorServer::BehaviorServer(const rclcpp::NodeOptions & options)
     "odom_frame",
     rclcpp::ParameterValue(std::string("odom")));
   declare_parameter(
-      "map_frame",
-      rclcpp::ParameterValue(std::string("map")));
+    "map_frame",
+    rclcpp::ParameterValue(std::string("map")));
   declare_parameter(
     "robot_base_frame",
     rclcpp::ParameterValue(std::string("base_link")));
