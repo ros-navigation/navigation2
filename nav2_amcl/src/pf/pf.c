@@ -47,7 +47,7 @@ static int pf_resample_limit(pf_t * pf, int k);
 pf_t * pf_alloc(
   int min_samples, int max_samples,
   double alpha_slow, double alpha_fast,
-  pf_init_model_fn_t random_pose_fn, void * random_pose_data)
+  pf_init_model_fn_t random_pose_fn)
 {
   int i, j;
   pf_t * pf;
@@ -59,7 +59,6 @@ pf_t * pf_alloc(
   pf = calloc(1, sizeof(pf_t));
 
   pf->random_pose_fn = random_pose_fn;
-  pf->random_pose_data = random_pose_data;
 
   pf->min_samples = min_samples;
   pf->max_samples = max_samples;
@@ -291,7 +290,7 @@ void pf_update_sensor(pf_t * pf, pf_sensor_model_fn_t sensor_fn, void * sensor_d
 
 
 // Resample the distribution
-void pf_update_resample(pf_t * pf)
+void pf_update_resample(pf_t * pf, void * random_pose_data)
 {
   int i;
   double total;
@@ -344,7 +343,7 @@ void pf_update_resample(pf_t * pf)
     sample_b = set_b->samples + set_b->sample_count++;
 
     if (drand48() < w_diff) {
-      sample_b->pose = (pf->random_pose_fn)(pf->random_pose_data);
+      sample_b->pose = (pf->random_pose_fn)(random_pose_data);
     } else {
       // Can't (easily) combine low-variance sampler with KLD adaptive
       // sampling, so we'll take the more traditional route.
