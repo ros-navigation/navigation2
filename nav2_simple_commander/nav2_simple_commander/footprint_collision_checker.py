@@ -22,8 +22,8 @@ and calculate the cost of a Footprint
 """
 
 from math import cos, sin
-from line_iterator import LineIterator
-from costmap_2d import PyCostmap2D
+from nav2_simple_commander.line_iterator import LineIterator
+from nav2_simple_commander.costmap_2d import PyCostmap2D
 from geometry_msgs.msg import Polygon
 from geometry_msgs.msg import Point32
 
