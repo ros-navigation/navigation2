@@ -88,6 +88,7 @@ bool SimpleSmoother::smooth(
 
       bool segment_was_smoothed = smoothImpl(
         curr_path_segment, reversing_segment, costmap.get(), time_remaining);
+
       if (segment_was_smoothed) {
         segments_smoothed++;
       }

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_CORE__SMOOTHER_EXCEPTION_HPP
-#define NAV2_CORE__SMOOTHER_EXCEPTION_HPP
+#ifndef NAV2_CORE__SMOOTHER_EXCEPTIONS_HPP_
+#define NAV2_CORE__SMOOTHER_EXCEPTIONS_HPP_
 
 #include <stdexcept>
 #include <string>
@@ -63,8 +63,5 @@ public:
   : SmootherException(description) {}
 };
 
-
-
 }  // namespace nav2_core
-#endif  // NAV2_CORE__SMOOTHER_EXCEPTION_HPP
-
+#endif  // NAV2_CORE__SMOOTHER_EXCEPTIONS_HPP_

@@ -50,15 +50,10 @@ bool SavitzkyGolaySmoother::smooth(
   double time_remaining = max_time.seconds();
 
   bool success = true, reversing_segment;
-  unsigned int segments_smoothed = 0;
   nav_msgs::msg::Path curr_path_segment;
   curr_path_segment.header = path.header;
 
   std::vector<PathSegment> path_segments = findDirectionalPathSegments(path);
-
-  if (path_segments.empty()) {
-    throw nav2_core::InvalidPath("No path segments to smooth");
-  }
 
   for (unsigned int i = 0; i != path_segments.size(); i++) {
     if (path_segments[i].end - path_segments[i].start > 9) {
@@ -80,13 +75,8 @@ bool SavitzkyGolaySmoother::smooth(
         throw nav2_core::SmootherTimedOut("Smoothing time exceed allowed duration");
       }
 
-      bool segment_was_smoothed = smoothImpl(curr_path_segment, reversing_segment);
-      if (segment_was_smoothed) {
-        segments_smoothed++;
-      }
-
       // Smooth path segment
-      success = success && segment_was_smoothed;
+      success = success && smoothImpl(curr_path_segment, reversing_segment);
 
       // Assemble the path changes to the main path
       std::copy(
@@ -94,10 +84,6 @@ bool SavitzkyGolaySmoother::smooth(
         curr_path_segment.poses.end(),
         path.poses.begin() + path_segments[i].start);
     }
-  }
-
-  if (segments_smoothed == 0) {
-    throw nav2_core::FailedToSmoothPath("No segments were smoothed");
   }
 
   return success;
