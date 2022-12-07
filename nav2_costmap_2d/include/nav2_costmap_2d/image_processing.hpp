@@ -308,7 +308,7 @@ public:
   inline T & b() {return border_.up(up_row_);}
   inline T & c() {return border_.up(up_row_ + 1);}
   inline T & d() {return border_.down(down_row_ - 1);}
-  inline T & e() {return border_.down(down_row_);}
+  inline T & e() {return *down_row_;}
   inline const T * anchor() const {return down_row_;}
 
   /// @brief Shifts the window to the right
