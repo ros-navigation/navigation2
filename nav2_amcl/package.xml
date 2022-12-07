@@ -23,13 +23,13 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
   <build_depend>nav2_common</build_depend>
   <depend>rclcpp</depend>
+  <depend>diagnostic_updater</depend>
   <depend>tf2_geometry_msgs</depend>
   <depend>geometry_msgs</depend>
   <depend>message_filters</depend>
   <depend>nav_msgs</depend>
   <depend>sensor_msgs</depend>
   <depend>std_srvs</depend>
-  <depend>std_msgs</depend>
   <depend>cmr_msgs</depend>
   <depend>tf2_ros</depend>
   <depend>tf2</depend>

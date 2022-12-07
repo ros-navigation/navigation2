@@ -40,12 +40,12 @@
 #include "nav2_msgs/msg/particle_cloud.hpp"
 #include "nav_msgs/srv/set_map.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
-#include <std_msgs/msg/bool.hpp>
 #include "std_srvs/srv/empty.hpp"
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2_ros/transform_listener.h"
 #include "pluginlib/class_loader.hpp"
 
+#include <diagnostic_updater/diagnostic_updater.hpp>
 #include "cmr_msgs/srv/get_status.hpp"
 
 #pragma GCC diagnostic push
@@ -200,8 +200,6 @@ protected:
     pose_pub_;
   rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::ParticleCloud>::SharedPtr
     particle_cloud_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Bool>::SharedPtr
-    amcl_lost_flag_pub_;
   /*
    * @brief Handle with an initial pose estimate is received
    */
@@ -293,11 +291,15 @@ protected:
    */
   void initExternalPose();
   /*
-   * @brief Publish deviation diagnostic flag
+   * @brief Diagnostic checking robot's covariance
    * @ true if deviation gets large
    *
    */
-  void publishStandardDeviationFlag();
+  diagnostic_updater::Updater diagnostic_updater_;
+  void standardDeviationDiagnostics(diagnostic_updater::DiagnosticStatusWrapper& stat);
+  double std_warn_level_x_;
+  double std_warn_level_y_;
+  double std_warn_level_yaw_;
 
   ExternalPoseBuffer ext_pose_buffer;
 
@@ -426,9 +428,6 @@ protected:
   double z_rand_;
   double k_l_;
   bool fuse_external_pose_;
-  double std_warn_level_x_;
-  double std_warn_level_y_;
-  double std_warn_level_yaw_;
   std::string scan_topic_{"scan"};
   std::string map_topic_{"map"};
 };
