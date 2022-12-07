@@ -463,16 +463,18 @@ Costmap2DROS::mapUpdateLoop(double frequency)
   while (rclcpp::ok() && !map_update_thread_shutdown_) {
     nav2_util::ExecutionTimer timer;
 
-    // Measure the execution time of the updateMap method
-    timer.start();
-    updateMap();
-    timer.end();
+    // Execute after start() will complete plugins activation
+    if (!stopped_) {
+      // Measure the execution time of the updateMap method
+      timer.start();
+      updateMap();
+      timer.end();
 
-    RCLCPP_DEBUG(get_logger(), "Map update time: %.9f", timer.elapsed_time_in_seconds());
-    if (publish_cycle_ > rclcpp::Duration(0s) && layered_costmap_->isInitialized()) {
-      unsigned int x0, y0, xn, yn;
-      layered_costmap_->getBounds(&x0, &xn, &y0, &yn);
-      costmap_publisher_->updateBounds(x0, xn, y0, yn);
+      RCLCPP_DEBUG(get_logger(), "Map update time: %.9f", timer.elapsed_time_in_seconds());
+      if (publish_cycle_ > rclcpp::Duration(0s) && layered_costmap_->isInitialized()) {
+        unsigned int x0, y0, xn, yn;
+        layered_costmap_->getBounds(&x0, &xn, &y0, &yn);
+        costmap_publisher_->updateBounds(x0, xn, y0, yn);
 
       for (auto & layer_pub : layer_publishers_) {
         layer_pub->updateBounds(x0, xn, y0, yn);
