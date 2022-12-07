@@ -476,22 +476,24 @@ Costmap2DROS::mapUpdateLoop(double frequency)
         layered_costmap_->getBounds(&x0, &xn, &y0, &yn);
         costmap_publisher_->updateBounds(x0, xn, y0, yn);
 
-      for (auto & layer_pub : layer_publishers_) {
-        layer_pub->updateBounds(x0, xn, y0, yn);
-      }
-
-      auto current_time = now();
-      if ((last_publish_ + publish_cycle_ < current_time) ||  // publish_cycle_ is due
-        (current_time < last_publish_))      // time has moved backwards, probably due to a switch to sim_time // NOLINT
-      {
-        RCLCPP_DEBUG(get_logger(), "Publish costmap at %s", name_.c_str());
-        costmap_publisher_->publishCostmap();
-
-        for (auto & layer_pub : layer_publishers_) {
-          layer_pub->publishCostmap();
+        for (auto &layer_pub: layer_publishers_) {
+          layer_pub->updateBounds(x0, xn, y0, yn);
         }
 
-        last_publish_ = current_time;
+        auto current_time = now();
+        if ((last_publish_ + publish_cycle_ < current_time) ||  // publish_cycle_ is due
+            (current_time <
+             last_publish_))      // time has moved backwards, probably due to a switch to sim_time // NOLINT
+        {
+          RCLCPP_DEBUG(get_logger(), "Publish costmap at %s", name_.c_str());
+          costmap_publisher_->publishCostmap();
+
+          for (auto &layer_pub: layer_publishers_) {
+            layer_pub->publishCostmap();
+          }
+
+          last_publish_ = current_time;
+        }
       }
     }
 
