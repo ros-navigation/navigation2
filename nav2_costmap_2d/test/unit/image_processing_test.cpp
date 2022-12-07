@@ -30,7 +30,7 @@ protected:
   std::vector<uint16_t> image_buffer_words_;
 };
 
-TEST(BorderConstant, outOfBoundsAccess) {
+TEST(OutOfBounds, outOfBoundsAccess) {
   // check access to nullptr row (up)
   {
     out_of_bounds_policy::ReplaceToZero<uint8_t> c(nullptr, nullptr, 2);
