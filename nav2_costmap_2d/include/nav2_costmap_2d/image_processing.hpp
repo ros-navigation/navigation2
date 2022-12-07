@@ -25,8 +25,11 @@
 namespace nav2_costmap_2d
 {
 
-/// Pixels connectivity type (is the way in which pixels in image relate to
-/// their neighbors)
+/**
+ * @enum nav2_costmap_2d::ConnectivityType
+ * @brief Describes the type of pixel connectivity (is the way in which
+ * pixels in image relate to their neighbors)
+ */
 enum class ConnectivityType : int
 {
   /// neighbors pixels are connected horizontally and vertically
