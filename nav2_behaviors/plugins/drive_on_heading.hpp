@@ -77,7 +77,7 @@ public:
     end_time_ = this->steady_clock_.now() + command_time_allowance_;
 
     if (!nav2_util::getCurrentPose(
-        initial_pose_, *this->tf_, this->odom_frame_, this->robot_base_frame_,
+        initial_pose_, *this->tf_, this->local_frame_, this->robot_base_frame_,
         this->transform_tolerance_))
     {
       RCLCPP_ERROR(this->logger_, "Initial robot pose is not available.");
@@ -104,7 +104,7 @@ public:
 
     geometry_msgs::msg::PoseStamped current_pose;
     if (!nav2_util::getCurrentPose(
-        current_pose, *this->tf_, this->odom_frame_, this->robot_base_frame_,
+        current_pose, *this->tf_, this->local_frame_, this->robot_base_frame_,
         this->transform_tolerance_))
     {
       RCLCPP_ERROR(this->logger_, "Current robot pose is not available.");

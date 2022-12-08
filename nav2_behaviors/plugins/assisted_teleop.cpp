@@ -100,7 +100,7 @@ Status AssistedTeleop::onCycleUpdate()
 
   geometry_msgs::msg::PoseStamped current_pose;
   if (!nav2_util::getCurrentPose(
-      current_pose, *tf_, odom_frame_, robot_base_frame_,
+      current_pose, *tf_, local_frame_, robot_base_frame_,
       transform_tolerance_))
   {
     RCLCPP_ERROR_STREAM(

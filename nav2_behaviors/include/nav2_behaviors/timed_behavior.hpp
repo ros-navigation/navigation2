@@ -119,8 +119,8 @@ public:
     tf_ = tf;
 
     node->get_parameter("cycle_frequency", cycle_frequency_);
-    node->get_parameter("odom_frame", odom_frame_);
-    node->get_parameter("map_frame", map_frame_);
+    node->get_parameter("local_frame", local_frame_);
+    node->get_parameter("global_frame", global_frame_);
     node->get_parameter("robot_base_frame", robot_base_frame_);
     node->get_parameter("transform_tolerance", transform_tolerance_);
 
@@ -174,8 +174,8 @@ protected:
 
   double cycle_frequency_;
   double enabled_;
-  std::string odom_frame_;
-  std::string map_frame_;
+  std::string local_frame_;
+  std::string global_frame_;
   std::string robot_base_frame_;
   double transform_tolerance_;
   rclcpp::Duration elasped_time_{0, 0};

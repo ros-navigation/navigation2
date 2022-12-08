@@ -100,7 +100,6 @@ bt_navigator:
       - compute_path_error_code
       - follow_path_error_code
 
-
 controller_server:
   ros__parameters:
     controller_frequency: 20.0
@@ -298,8 +297,8 @@ behavior_server:
       plugin: "nav2_behaviors/Wait"
     assisted_teleop:
       plugin: "nav2_behaviors/AssistedTeleop"
-    odom_frame: odom
-    map_frame: map
+    local_frame: odom
+    global_flame: map
     robot_base_frame: base_link
     transform_tolerance: 0.1
     simulate_ahead_time: 2.0
