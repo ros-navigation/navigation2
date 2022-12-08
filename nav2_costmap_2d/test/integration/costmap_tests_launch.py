@@ -30,20 +30,6 @@ def main(argv=sys.argv[1:]):
     launchFile = os.path.join(os.getenv('TEST_LAUNCH_DIR'), 'costmap_map_server.launch.py')
     testExecutable = os.getenv('TEST_EXECUTABLE')
 
-    map_to_odom = launch_ros.actions.Node(
-        package='tf2_ros',
-        executable='static_transform_publisher',
-        output='screen',
-        arguments=['0', '0', '0', '0', '0', '0', 'map', 'odom']
-    )
-
-    odom_to_base_link = launch_ros.actions.Node(
-        package='tf2_ros',
-        executable='static_transform_publisher',
-        output='screen',
-        arguments=['0', '0', '0', '0', '0', '0', 'odom', 'base_link']
-    )
-
     lifecycle_manager = launch_ros.actions.Node(
         package='nav2_lifecycle_manager',
         executable='lifecycle_manager',
@@ -53,8 +39,6 @@ def main(argv=sys.argv[1:]):
 
     ld = LaunchDescription([
         IncludeLaunchDescription(PythonLaunchDescriptionSource([launchFile])),
-        map_to_odom,
-        odom_to_base_link,
         lifecycle_manager
     ])
 
