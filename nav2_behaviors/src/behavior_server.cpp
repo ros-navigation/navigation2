@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <vector>
@@ -90,36 +91,38 @@ BehaviorServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   transform_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_);
 
   // Get parameters for collision checkers
-  std::string local_costmap_topic, global_costmap_topic;
-  std::string local_footprint_topic, global_footprint_topic;
-  std::string robot_base_frame;
-  double transform_tolerance;
-  get_parameter("local_costmap_topic", local_costmap_topic);
-  get_parameter("global_costmap_topic", global_costmap_topic);
-  get_parameter("local_footprint_topic", local_footprint_topic);
-  get_parameter("global_footprint_topic", global_footprint_topic);
-  get_parameter("transform_tolerance", transform_tolerance);
-  get_parameter("robot_base_frame", robot_base_frame);
-
-  local_costmap_sub_ = std::make_unique<nav2_costmap_2d::CostmapSubscriber>(
-    shared_from_this(), local_costmap_topic);
-  global_costmap_sub_ = std::make_unique<nav2_costmap_2d::CostmapSubscriber>(
-    shared_from_this(), global_costmap_topic);
-
-  local_footprint_sub_ = std::make_unique<nav2_costmap_2d::FootprintSubscriber>(
-    shared_from_this(), local_footprint_topic, *tf_, robot_base_frame, transform_tolerance);
-  global_footprint_sub_ = std::make_unique<nav2_costmap_2d::FootprintSubscriber>(
-    shared_from_this(), global_footprint_topic, *tf_, robot_base_frame, transform_tolerance);
-
-  local_collision_checker_ = std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
-    *local_costmap_sub_, *local_footprint_sub_, get_name());
-  global_collision_checker_ = std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
-    *global_costmap_sub_, *global_footprint_sub_, get_name());
+//  std::string local_costmap_topic, global_costmap_topic;
+//  std::string local_footprint_topic, global_footprint_topic;
+//  std::string robot_base_frame;
+//  double transform_tolerance;
+//  get_parameter("local_costmap_topic", local_costmap_topic);
+//  get_parameter("global_costmap_topic", global_costmap_topic);
+//  get_parameter("local_footprint_topic", local_footprint_topic);
+//  get_parameter("global_footprint_topic", global_footprint_topic);
+//  get_parameter("transform_tolerance", transform_tolerance);
+//  get_parameter("robot_base_frame", robot_base_frame);
+//
+//  local_costmap_sub_ = std::make_unique<nav2_costmap_2d::CostmapSubscriber>(
+//    shared_from_this(), local_costmap_topic);
+//  global_costmap_sub_ = std::make_unique<nav2_costmap_2d::CostmapSubscriber>(
+//    shared_from_this(), global_costmap_topic);
+//
+//  local_footprint_sub_ = std::make_unique<nav2_costmap_2d::FootprintSubscriber>(
+//    shared_from_this(), local_footprint_topic, *tf_, robot_base_frame, transform_tolerance);
+//  global_footprint_sub_ = std::make_unique<nav2_costmap_2d::FootprintSubscriber>(
+//    shared_from_this(), global_footprint_topic, *tf_, robot_base_frame, transform_tolerance);
+//
+//  local_collision_checker_ = std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
+//    *local_costmap_sub_, *local_footprint_sub_, get_name());
+//  global_collision_checker_ = std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
+//    *global_costmap_sub_, *global_footprint_sub_, get_name());
 
   behavior_types_.resize(behavior_ids_.size());
   if (!loadBehaviorPlugins()) {
     return nav2_util::CallbackReturn::FAILURE;
   }
+  setupResourcesForBehaviorPlugins();
+  configureBehaviorPlugins();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -136,12 +139,6 @@ BehaviorServer::loadBehaviorPlugins()
         get_logger(), "Creating behavior plugin %s of type %s",
         behavior_ids_[i].c_str(), behavior_types_[i].c_str());
       behaviors_.push_back(plugin_loader_.createUniqueInstance(behavior_types_[i]));
-      behaviors_.back()->configure(
-        node,
-        behavior_ids_[i],
-        tf_,
-        local_collision_checker_,
-        global_collision_checker_);
     } catch (const pluginlib::PluginlibException & ex) {
       RCLCPP_FATAL(
         get_logger(), "Failed to create behavior %s of type %s."
@@ -152,6 +149,74 @@ BehaviorServer::loadBehaviorPlugins()
   }
 
   return true;
+}
+
+void BehaviorServer::configureBehaviorPlugins()
+{
+  auto node = shared_from_this();
+
+  for (size_t i = 0; i != behavior_ids_.size(); i++) {
+    behaviors_[i]->configure(
+      node,
+      behavior_ids_[i],
+      tf_,
+      local_collision_checker_,
+      global_collision_checker_);
+  }
+}
+
+void BehaviorServer::setupResourcesForBehaviorPlugins()
+{
+  std::vector<nav2_core::CostmapInfoType> behaviors_info;
+
+  std::string local_costmap_topic, global_costmap_topic;
+  std::string local_footprint_topic, global_footprint_topic;
+  std::string robot_base_frame;
+  double transform_tolerance;
+  get_parameter("local_costmap_topic", local_costmap_topic);
+  get_parameter("global_costmap_topic", global_costmap_topic);
+  get_parameter("local_footprint_topic", local_footprint_topic);
+  get_parameter("global_footprint_topic", global_footprint_topic);
+  get_parameter("transform_tolerance", transform_tolerance);
+  get_parameter("robot_base_frame", robot_base_frame);
+
+  for (const auto & behavior : behaviors_) {
+    behaviors_info.push_back(behavior->getResourceInfo());
+  }
+
+  if ( (behaviors_info.end() != std::find(
+      behaviors_info.begin(), behaviors_info.end(),
+      nav2_core::CostmapInfoType::LOCAL)) ||
+    (behaviors_info.end() != std::find(
+      behaviors_info.begin(), behaviors_info.end(),
+      nav2_core::CostmapInfoType::BOTH)))
+  {
+    local_costmap_sub_ = std::make_unique<nav2_costmap_2d::CostmapSubscriber>(
+      shared_from_this(), local_costmap_topic);
+
+    local_footprint_sub_ = std::make_unique<nav2_costmap_2d::FootprintSubscriber>(
+      shared_from_this(), local_footprint_topic, *tf_, robot_base_frame, transform_tolerance);
+
+    local_collision_checker_ = std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
+      *local_costmap_sub_, *local_footprint_sub_, get_name());
+  }
+
+  if ( (behaviors_info.end() != std::find(
+      behaviors_info.begin(), behaviors_info.end(),
+      nav2_core::CostmapInfoType::GLOBAL)) ||
+    (behaviors_info.end() != std::find(
+      behaviors_info.begin(), behaviors_info.end(),
+      nav2_core::CostmapInfoType::BOTH)))
+  {
+    global_costmap_sub_ = std::make_unique<nav2_costmap_2d::CostmapSubscriber>(
+      shared_from_this(), global_costmap_topic);
+
+    global_footprint_sub_ = std::make_unique<nav2_costmap_2d::FootprintSubscriber>(
+      shared_from_this(), global_footprint_topic, *tf_, robot_base_frame, transform_tolerance);
+
+    global_collision_checker_ = std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
+      *global_costmap_sub_, *global_footprint_sub_, get_name());
+  }
 }
 
 nav2_util::CallbackReturn

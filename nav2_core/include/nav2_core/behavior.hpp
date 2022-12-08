@@ -26,6 +26,13 @@
 namespace nav2_core
 {
 
+enum class CostmapInfoType {
+  NONE = 0,
+  LOCAL = 1,
+  GLOBAL = 2,
+  BOTH = 3
+};
+
 /**
  * @class Behavior
  * @brief Abstract interface for behaviors to adhere to with pluginlib
@@ -66,6 +73,11 @@ public:
    * @brief Method to deactive Behavior and any threads involved in execution.
    */
   virtual void deactivate() = 0;
+
+  /**
+   * @brief Method to deterimen the required costmap info
+   */
+  CostmapInfoType getResourceInfo() {return CostmapInfoType::LOCAL;}
 };
 
 }  // namespace nav2_core

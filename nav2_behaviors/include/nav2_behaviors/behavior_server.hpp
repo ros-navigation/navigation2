@@ -45,13 +45,22 @@ public:
   explicit BehaviorServer(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
   ~BehaviorServer();
 
+protected:
   /**
    * @brief Loads behavior plugins from parameter file
    * @return bool if successfully loaded the plugins
    */
   bool loadBehaviorPlugins();
 
-protected:
+  /**
+   * @brief configures behavior plugins
+   */
+  void configureBehaviorPlugins();
+
+  /**
+   * @brief configures behavior plugins
+   */
+  void setupResourcesForBehaviorPlugins();
   /**
    * @brief Configure lifecycle server
    */
