@@ -87,7 +87,8 @@ inline Image<uint8_t> createShape(ShapeBuffer3x3 & buffer, ConnectivityType conn
  * @param input input image
  * @param output output image
  * @param connectivity selector for selecting structuring element (Way4-> cross, Way8-> rect)
- * @param max_function returns the greatest of the input values
+ * @param max_function takes as input std::initializer_list<uint8_t> with three elements.
+ * Returns the greatest value in list
  */
 template<class Max>
 inline void dilate(
