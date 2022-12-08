@@ -26,7 +26,7 @@ from nav2_msgs.action import FollowPath, ComputePathToPose, ComputePathThroughPo
 
 def main(argv=sys.argv[1:]):
     rclpy.init()
-    time.sleep(10)
+    time.sleep(5)
 
     navigator = BasicNavigator()
 
