@@ -26,7 +26,8 @@
 namespace nav2_core
 {
 
-enum class CostmapInfoType {
+enum class CostmapInfoType
+{
   NONE = 0,
   LOCAL = 1,
   GLOBAL = 2,
