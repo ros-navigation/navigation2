@@ -75,9 +75,10 @@ public:
   virtual void deactivate() = 0;
 
   /**
-   * @brief Method to deterimen the required costmap info
+   * @brief Method to determine the required costmap info
+   * @return costmap resources needed
    */
-  CostmapInfoType getResourceInfo() {return CostmapInfoType::LOCAL;}
+  virtual CostmapInfoType getResourceInfo() = 0;
 };
 
 }  // namespace nav2_core

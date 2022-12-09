@@ -35,6 +35,7 @@ namespace nav2_behaviors
 template<typename ActionT = nav2_msgs::action::DriveOnHeading>
 class DriveOnHeading : public TimedBehavior<ActionT>
 {
+  using CostmapInfoType = nav2_core::CostmapInfoType;
 public:
   /**
    * @brief A constructor for nav2_behaviors::DriveOnHeading
@@ -143,6 +144,12 @@ public:
 
     return Status::RUNNING;
   }
+
+  /**
+   * @brief Method to determine the required costmap info
+   * @return costmap resources needed
+   */
+  CostmapInfoType getResourceInfo() override {return CostmapInfoType::LOCAL;}
 
 protected:
   /**

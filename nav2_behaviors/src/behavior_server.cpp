@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#include <algorithm>
 #include <memory>
 #include <string>
 #include <vector>
@@ -90,33 +89,6 @@ BehaviorServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   tf_->setCreateTimerInterface(timer_interface);
   transform_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_);
 
-  // Get parameters for collision checkers
-//  std::string local_costmap_topic, global_costmap_topic;
-//  std::string local_footprint_topic, global_footprint_topic;
-//  std::string robot_base_frame;
-//  double transform_tolerance;
-//  get_parameter("local_costmap_topic", local_costmap_topic);
-//  get_parameter("global_costmap_topic", global_costmap_topic);
-//  get_parameter("local_footprint_topic", local_footprint_topic);
-//  get_parameter("global_footprint_topic", global_footprint_topic);
-//  get_parameter("transform_tolerance", transform_tolerance);
-//  get_parameter("robot_base_frame", robot_base_frame);
-//
-//  local_costmap_sub_ = std::make_unique<nav2_costmap_2d::CostmapSubscriber>(
-//    shared_from_this(), local_costmap_topic);
-//  global_costmap_sub_ = std::make_unique<nav2_costmap_2d::CostmapSubscriber>(
-//    shared_from_this(), global_costmap_topic);
-//
-//  local_footprint_sub_ = std::make_unique<nav2_costmap_2d::FootprintSubscriber>(
-//    shared_from_this(), local_footprint_topic, *tf_, robot_base_frame, transform_tolerance);
-//  global_footprint_sub_ = std::make_unique<nav2_costmap_2d::FootprintSubscriber>(
-//    shared_from_this(), global_footprint_topic, *tf_, robot_base_frame, transform_tolerance);
-//
-//  local_collision_checker_ = std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
-//    *local_costmap_sub_, *local_footprint_sub_, get_name());
-//  global_collision_checker_ = std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
-//    *global_costmap_sub_, *global_footprint_sub_, get_name());
-
   behavior_types_.resize(behavior_ids_.size());
   if (!loadBehaviorPlugins()) {
     return nav2_util::CallbackReturn::FAILURE;
@@ -167,8 +139,6 @@ void BehaviorServer::configureBehaviorPlugins()
 
 void BehaviorServer::setupResourcesForBehaviorPlugins()
 {
-  std::vector<nav2_core::CostmapInfoType> behaviors_info;
-
   std::string local_costmap_topic, global_costmap_topic;
   std::string local_footprint_topic, global_footprint_topic;
   std::string robot_base_frame;
@@ -180,17 +150,23 @@ void BehaviorServer::setupResourcesForBehaviorPlugins()
   get_parameter("transform_tolerance", transform_tolerance);
   get_parameter("robot_base_frame", robot_base_frame);
 
+  bool need_local_costmap = false;
+  bool need_global_costmap = false;
   for (const auto & behavior : behaviors_) {
-    behaviors_info.push_back(behavior->getResourceInfo());
+    if (behavior->getResourceInfo() == nav2_core::CostmapInfoType::BOTH) {
+      need_local_costmap = true;
+      need_global_costmap = true;
+      break;
+    }
+    if (behavior->getResourceInfo() == nav2_core::CostmapInfoType::LOCAL) {
+      need_local_costmap = true;
+    }
+    if (behavior->getResourceInfo() == nav2_core::CostmapInfoType::GLOBAL) {
+      need_global_costmap = true;
+    }
   }
 
-  if ( (behaviors_info.end() != std::find(
-      behaviors_info.begin(), behaviors_info.end(),
-      nav2_core::CostmapInfoType::LOCAL)) ||
-    (behaviors_info.end() != std::find(
-      behaviors_info.begin(), behaviors_info.end(),
-      nav2_core::CostmapInfoType::BOTH)))
-  {
+  if (need_local_costmap) {
     local_costmap_sub_ = std::make_unique<nav2_costmap_2d::CostmapSubscriber>(
       shared_from_this(), local_costmap_topic);
 
@@ -201,13 +177,7 @@ void BehaviorServer::setupResourcesForBehaviorPlugins()
       *local_costmap_sub_, *local_footprint_sub_, get_name());
   }
 
-  if ( (behaviors_info.end() != std::find(
-      behaviors_info.begin(), behaviors_info.end(),
-      nav2_core::CostmapInfoType::GLOBAL)) ||
-    (behaviors_info.end() != std::find(
-      behaviors_info.begin(), behaviors_info.end(),
-      nav2_core::CostmapInfoType::BOTH)))
-  {
+  if (need_global_costmap) {
     global_costmap_sub_ = std::make_unique<nav2_costmap_2d::CostmapSubscriber>(
       shared_from_this(), global_costmap_topic);
 

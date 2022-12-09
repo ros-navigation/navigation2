@@ -36,6 +36,7 @@ using namespace std::chrono_literals;
 
 class DummyBehavior : public TimedBehavior<BehaviorAction>
 {
+  using CostmapInfoType = nav2_core::CostmapInfoType;
 public:
   DummyBehavior()
   : TimedBehavior<BehaviorAction>(),
@@ -82,6 +83,12 @@ public:
 
     return Status::RUNNING;
   }
+
+  /**
+   * @brief Method to determine the required costmap info
+   * @return costmap resources needed
+   */
+  CostmapInfoType getResourceInfo() override {return CostmapInfoType::LOCAL;}
 
 private:
   bool initialized_;
