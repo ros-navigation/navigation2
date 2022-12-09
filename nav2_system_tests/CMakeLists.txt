@@ -81,6 +81,23 @@ install(FILES src/error_codes/planner_plugins.xml
     DESTINATION share/${PROJECT_NAME}
 )
 
+set(smoother_plugin_lib smoother)
+
+add_library(${smoother_plugin_lib} SHARED src/error_codes/smoother/smoother_error_plugin.cpp)
+ament_target_dependencies(${smoother_plugin_lib} ${dependencies})
+target_compile_definitions(${smoother_plugin_lib} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+pluginlib_export_plugin_description_file(nav2_core src/error_codes/smoother_plugins.xml)
+
+install(TARGETS ${smoother_plugin_lib}
+    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib
+    RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
+
+install(FILES src/error_codes/smoother_plugins.xml
+    DESTINATION share/${PROJECT_NAME}
+)
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
@@ -108,4 +125,5 @@ endif()
 
 ament_export_libraries(${local_controller_plugin_lib})
 ament_export_libraries(${global_planner_plugin_lib})
+ament_export_libraries(${smoother_plugin_lib})
 ament_package()
