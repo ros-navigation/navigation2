@@ -37,6 +37,7 @@ using namespace std::chrono_literals;
 class DummyBehavior : public TimedBehavior<BehaviorAction>
 {
   using CostmapInfoType = nav2_core::CostmapInfoType;
+
 public:
   DummyBehavior()
   : TimedBehavior<BehaviorAction>(),

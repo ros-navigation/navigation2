@@ -35,6 +35,7 @@ using AssistedTeleopAction = nav2_msgs::action::AssistedTeleop;
 class AssistedTeleop : public TimedBehavior<AssistedTeleopAction>
 {
   using CostmapInfoType = nav2_core::CostmapInfoType;
+
 public:
   AssistedTeleop();
 

@@ -34,6 +34,7 @@ using SpinAction = nav2_msgs::action::Spin;
 class Spin : public TimedBehavior<SpinAction>
 {
   using CostmapInfoType = nav2_core::CostmapInfoType;
+
 public:
   /**
    * @brief A constructor for nav2_behaviors::Spin

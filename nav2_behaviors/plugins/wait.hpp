@@ -33,6 +33,7 @@ using WaitAction = nav2_msgs::action::Wait;
 class Wait : public TimedBehavior<WaitAction>
 {
   using CostmapInfoType = nav2_core::CostmapInfoType;
+
 public:
   /**
    * @brief A constructor for nav2_behaviors::Wait
