@@ -153,15 +153,16 @@ void BehaviorServer::setupResourcesForBehaviorPlugins()
   bool need_local_costmap = false;
   bool need_global_costmap = false;
   for (const auto & behavior : behaviors_) {
-    if (behavior->getResourceInfo() == nav2_core::CostmapInfoType::BOTH) {
+    auto costmap_info = behavior->getResourceInfo();
+    if (costmap_info == nav2_core::CostmapInfoType::BOTH) {
       need_local_costmap = true;
       need_global_costmap = true;
       break;
     }
-    if (behavior->getResourceInfo() == nav2_core::CostmapInfoType::LOCAL) {
+    if (costmap_info == nav2_core::CostmapInfoType::LOCAL) {
       need_local_costmap = true;
     }
-    if (behavior->getResourceInfo() == nav2_core::CostmapInfoType::GLOBAL) {
+    if (costmap_info == nav2_core::CostmapInfoType::GLOBAL) {
       need_global_costmap = true;
     }
   }
