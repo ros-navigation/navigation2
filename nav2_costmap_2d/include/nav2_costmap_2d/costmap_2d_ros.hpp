@@ -320,7 +320,9 @@ protected:
   // Publishers and subscribers
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr
     footprint_pub_;
-  std::unique_ptr<Costmap2DPublisher> costmap_publisher_{nullptr};
+  std::unique_ptr<Costmap2DPublisher> costmap_publisher_;
+
+  std::vector<std::unique_ptr<Costmap2DPublisher>> layer_publishers_;
 
   rclcpp::Subscription<geometry_msgs::msg::Polygon>::SharedPtr footprint_sub_;
   rclcpp::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr parameter_sub_;
