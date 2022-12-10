@@ -26,10 +26,6 @@ from nav2_msgs.action import FollowPath, ComputePathToPose, ComputePathThroughPo
 
 def main(argv=sys.argv[1:]):
     rclpy.init()
-    time.sleep(5)
-
-    # Wait for lifecycle nodes to come up fully
-    time.sleep(10)
 
     navigator = BasicNavigator()
 
@@ -57,6 +53,7 @@ def main(argv=sys.argv[1:]):
     path.poses.append(goal_pose)
     path.poses.append(goal_pose1)
 
+    navigator._waitForNodeToActivate("controller_server")
     follow_path = {
         'unknown': FollowPath.Goal().UNKNOWN,
         'invalid_controller': FollowPath.Goal().INVALID_CONTROLLER,
@@ -90,6 +87,7 @@ def main(argv=sys.argv[1:]):
     goal_pose.pose.orientation.z = 0.0
     goal_pose.pose.orientation.w = 1.0
 
+    navigator._waitForNodeToActivate("planner_server")
     compute_path_to_pose = {
         'unknown': ComputePathToPose.Goal().UNKNOWN,
         'invalid_planner': ComputePathToPose.Goal().INVALID_PLANNER,
@@ -142,6 +140,7 @@ def main(argv=sys.argv[1:]):
     a_path.poses.append(pose)
     a_path.poses.append(pose1)
 
+    navigator._waitForNodeToActivate("smoother_server")
     smoother = {
         'invalid_smoother': SmoothPath.Goal().INVALID_SMOOTHER,
         'unknown': SmoothPath.Goal().UNKNOWN,
