@@ -43,9 +43,7 @@ class FootprintCollisionChecker():
     """
 
     def __init__(self):
-        """
-        Initialize the FootprintCollisionChecker Object.
-        """
+        """Initialize the FootprintCollisionChecker Object."""
         self.costmap_ = None
         pass
 
