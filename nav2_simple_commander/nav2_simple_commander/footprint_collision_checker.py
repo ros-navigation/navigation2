@@ -173,7 +173,7 @@ class FootprintCollisionChecker():
         Specify which costmap to use.
 
         Args:
-        -----
+        ----
             costmap (PyCostmap2D): costmap to use in the object's methods
 
         """
