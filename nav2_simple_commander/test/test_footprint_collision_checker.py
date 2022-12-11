@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import unittest
-from rclpy.node import Node
 from nav2_simple_commander.footprint_collision_checker import FootprintCollisionChecker
 from nav2_simple_commander.costmap_2d import PyCostmap2D
 from nav_msgs.msg import OccupancyGrid
@@ -27,7 +26,9 @@ class TestFootprintCollisionChecker(unittest.TestCase):
 
     def test_no_costmap(self):
         # Test if a type error raised when costmap is not specified yet
-        self.assertRaises(ValueError, FootprintCollisionChecker)
+        fcc_ = FootprintCollisionChecker()
+        self.assertRaises(ValueError, fcc_.worldToMapValidated, 0.0, 0.0)
+        self.assertRaises(ValueError, fcc_.pointCost, 0.0, 0.0)
 
     def test_pointCost(self):
         # Test if point cost is calculated correctly
@@ -41,12 +42,11 @@ class TestFootprintCollisionChecker(unittest.TestCase):
         occupancyGrid_.info.origin.position.y = 0.0
         map_data = [0] * 10 * 10
         occupancyGrid_.data = map_data
-
         costmap_ = PyCostmap2D(occupancyGrid_)
         fcc_ = FootprintCollisionChecker()
         fcc_.setCostmap(costmap_)
         self.assertEqual(fcc_.pointCost(1, 1), 0)
-        self.assertRaises(fcc_.pointCost(11, 11), IndexError)
+        self.assertRaises(IndexError, fcc_.pointCost, 11, 11)
 
     def test_worldToMapValidated(self):
         # Test if worldToMap conversion is calculated correctly
@@ -61,7 +61,6 @@ class TestFootprintCollisionChecker(unittest.TestCase):
         occupancyGrid_.info.origin.position.y = 5.0
         map_data = [0] * 10 * 10
         occupancyGrid_.data = map_data
-
         costmap_ = PyCostmap2D(occupancyGrid_)
         fcc_ = FootprintCollisionChecker()
         fcc_.setCostmap(costmap_)
@@ -83,12 +82,10 @@ class TestFootprintCollisionChecker(unittest.TestCase):
         occupancyGrid_.info.origin.position.y = 0.0
         map_data = [0] * 10 * 10
         occupancyGrid_.data = map_data
-
         costmap_ = PyCostmap2D(occupancyGrid_)
         fcc_ = FootprintCollisionChecker()
         fcc_.setCostmap(costmap_)
-
-        self.assertRaises(fcc_.lineCost(0, 15, 0, 9, 1), IndexError)
+        self.assertRaises(IndexError, fcc_.lineCost, 0, 15, 0, 9, 1)
         self.assertEqual(fcc_.lineCost(0, 9, 0, 9, 1), 0.0)
 
     def test_footprintCost(self):
@@ -103,12 +100,11 @@ class TestFootprintCollisionChecker(unittest.TestCase):
         occupancyGrid_.info.origin.position.y = 0.0
         map_data = [0] * 10 * 10
         occupancyGrid_.data = map_data
-
         costmap_ = PyCostmap2D(occupancyGrid_)
         fcc_ = FootprintCollisionChecker()
-        fcc_.setCostmap(costmap_)    
-
-        footprint = Polygon() # Create square footprint 1mx1m
+        fcc_.setCostmap(costmap_)
+        # Create square footprint 1m x 1m
+        footprint = Polygon()
         point = Point32()
         point.x = 0.0
         point.y = 0.0
@@ -128,15 +124,15 @@ class TestFootprintCollisionChecker(unittest.TestCase):
         point.x = 0.0
         point.y = 1.0
         point.z = 0.0
-        footprint.points.append(point) 
-        self.assertEqual(fcc_.footprintCost(footprint),0.0)
-
+        footprint.points.append(point)
+        self.assertEqual(fcc_.footprintCost(footprint), 0.0)
         point = Point32()
-        point.x = 30.0 #Append a point that is outside the map
+        # Append a point that is outside the map
+        point.x = 30.0
         point.y = 5.0
         point.z = 3.0
-        footprint.points.append(point)   
-        self.assertEqual(fcc_.footprintCost(footprint),LETHAL_OBSTACLE)
+        footprint.points.append(point)
+        self.assertEqual(fcc_.footprintCost(footprint), LETHAL_OBSTACLE)
 
 
 if __name__ == '__main__':
