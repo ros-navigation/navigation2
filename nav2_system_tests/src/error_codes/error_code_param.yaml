@@ -173,3 +173,18 @@ planner_server:
       plugin: "nav2_system_tests::NoValidPathErrorPlanner"
     no_viapoints_given:
       plugin: "nav2_system_tests::NoViapointsGivenErrorPlanner"
+
+smoother_server:
+  ros__parameters:
+    smoother_plugins: ["unknown", "timeout", "smoothed_path_in_collision",
+                       "failed_to_smooth_path", "invalid_path"]
+    unknown:
+      plugin: "nav2_system_tests::UnknownErrorSmoother"
+    timeout:
+      plugin: "nav2_system_tests::TimeOutErrorSmoother"
+    smoothed_path_in_collision:
+      plugin: "nav2_system_tests::SmoothedPathInCollision"
+    failed_to_smooth_path:
+      plugin: "nav2_system_tests::FailedToSmoothPath"
+    invalid_path:
+      plugin: "nav2_system_tests::InvalidPath"

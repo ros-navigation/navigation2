@@ -31,7 +31,8 @@ def generate_launch_description():
                   ('/tf_static', 'tf_static')]
 
     lifecycle_nodes = ['controller_server',
-                       'planner_server']
+                       'planner_server',
+                       'smoother_server']
 
     load_nodes = GroupAction(
         actions=[
@@ -56,6 +57,14 @@ def generate_launch_description():
                 package='nav2_planner',
                 executable='planner_server',
                 name='planner_server',
+                output='screen',
+                respawn_delay=2.0,
+                parameters=[params_file],
+                remappings=remappings),
+            Node(
+                package='nav2_smoother',
+                executable='smoother_server',
+                name='smoother_server',
                 output='screen',
                 respawn_delay=2.0,
                 parameters=[params_file],

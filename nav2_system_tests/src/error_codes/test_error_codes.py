@@ -21,7 +21,7 @@ from nav_msgs.msg import Path
 from nav2_simple_commander.robot_navigator import BasicNavigator
 
 import rclpy
-from nav2_msgs.action import FollowPath, ComputePathToPose, ComputePathThroughPoses
+from nav2_msgs.action import FollowPath, ComputePathToPose, ComputePathThroughPoses, SmoothPath
 
 
 def main(argv=sys.argv[1:]):
@@ -34,7 +34,7 @@ def main(argv=sys.argv[1:]):
     initial_pose.header.frame_id = 'map'
     initial_pose.header.stamp = navigator.get_clock().now().to_msg()
 
-    # Initial pose does not respect the orientation... not sure why
+    # Initial pose
     initial_pose.pose.position.x = -2.00
     initial_pose.pose.position.y = -0.50
     initial_pose.pose.orientation.z = 0.0
@@ -53,6 +53,7 @@ def main(argv=sys.argv[1:]):
     path.poses.append(goal_pose)
     path.poses.append(goal_pose1)
 
+    navigator._waitForNodeToActivate("controller_server")
     follow_path = {
         'unknown': FollowPath.Goal().UNKNOWN,
         'invalid_controller': FollowPath.Goal().INVALID_CONTROLLER,
@@ -86,6 +87,7 @@ def main(argv=sys.argv[1:]):
     goal_pose.pose.orientation.z = 0.0
     goal_pose.pose.orientation.w = 1.0
 
+    navigator._waitForNodeToActivate("planner_server")
     compute_path_to_pose = {
         'unknown': ComputePathToPose.Goal().UNKNOWN,
         'invalid_planner': ComputePathToPose.Goal().INVALID_PLANNER,
@@ -120,6 +122,37 @@ def main(argv=sys.argv[1:]):
     for planner, error_code in compute_path_through_poses.items():
         result = navigator._getPathThroughPosesImpl(initial_pose, goal_poses, planner)
         assert result.error_code == error_code, "Compute path through pose error does not match"
+
+    # Check compute path to pose error codes
+    pose = PoseStamped()
+    pose.header.frame_id = 'map'
+    pose.header.stamp = navigator.get_clock().now().to_msg()
+
+    pose.pose.position.x = -1.00
+    pose.pose.position.y = -0.50
+    pose.pose.orientation.z = 0.0
+    pose.pose.orientation.w = 1.0
+
+    pose1 = pose
+    pose1.pose.position.x = -0.5
+
+    a_path = Path()
+    a_path.poses.append(pose)
+    a_path.poses.append(pose1)
+
+    navigator._waitForNodeToActivate("smoother_server")
+    smoother = {
+        'invalid_smoother': SmoothPath.Goal().INVALID_SMOOTHER,
+        'unknown': SmoothPath.Goal().UNKNOWN,
+        'timeout': SmoothPath.Goal().TIMEOUT,
+        'smoothed_path_in_collision': SmoothPath.Goal().SMOOTHED_PATH_IN_COLLISION,
+        'failed_to_smooth_path': SmoothPath.Goal().FAILED_TO_SMOOTH_PATH,
+        'invalid_path': SmoothPath.Goal().INVALID_PATH
+    }
+
+    for smoother, error_code in smoother.items():
+        result = navigator._smoothPathImpl(a_path, smoother)
+        assert result.error_code == error_code, "Smoother error does not match"
 
     navigator.lifecycleShutdown()
     rclpy.shutdown()
