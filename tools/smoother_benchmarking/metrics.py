@@ -33,7 +33,11 @@ from transforms3d.euler import euler2quat
 # Note: Map origin is assumed to be (0,0)
 
 def getPlannerResults(navigator, initial_pose, goal_pose, planner):
-    return navigator._getPathImpl(initial_pose, goal_pose, planner, use_start=True)
+    result = navigator._getPathImpl(initial_pose, goal_pose, planner, use_start=True)
+    if result is None or result.error_code != 0:
+        print(planner, "planner failed to produce the path")
+        return None
+    return result
 
 def getSmootherResults(navigator, path, smoothers):
     smoothed_results = []
@@ -42,7 +46,7 @@ def getSmootherResults(navigator, path, smoothers):
         if smoothed_result is not None:
             smoothed_results.append(smoothed_result)
         else:
-            print(smoother, " failed to smooth the path")
+            print(smoother, "failed to smooth the path")
             return None
     return smoothed_results
 
@@ -134,8 +138,6 @@ def main():
               results.append(result)
               results.append(smoothed_results)
               i += 1
-        else:
-            print(planner, " planner failed to produce the path")
 
     print("Write Results...")
     benchmark_dir = os.getcwd()
