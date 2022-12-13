@@ -135,6 +135,9 @@ list(APPEND plugin_libs nav2_is_battery_low_condition_bt_node)
 add_library(nav2_error_code_condition_bt_node SHARED plugins/condition/error_code_condition.cpp)
 list(APPEND plugin_libs nav2_error_code_condition_bt_node)
 
+add_library(nav2_is_local_costmap_clear_needed_condition_bt_node SHARED plugins/condition/is_local_costmap_clear_needed.cpp)
+list(APPEND plugin_libs nav2_is_local_costmap_clear_needed_condition_bt_node)
+
 add_library(nav2_reinitialize_global_localization_service_bt_node SHARED plugins/action/reinitialize_global_localization_service.cpp)
 list(APPEND plugin_libs nav2_reinitialize_global_localization_service_bt_node)
 
