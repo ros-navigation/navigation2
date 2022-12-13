@@ -100,7 +100,7 @@ Status AssistedTeleop::onCycleUpdate()
 
   geometry_msgs::msg::PoseStamped current_pose;
   if (!nav2_util::getCurrentPose(
-      current_pose, *tf_, global_frame_, robot_base_frame_,
+      current_pose, *tf_, local_frame_, robot_base_frame_,
       transform_tolerance_))
   {
     RCLCPP_ERROR_STREAM(
@@ -120,7 +120,7 @@ Status AssistedTeleop::onCycleUpdate()
   {
     projected_pose = projectPose(projected_pose, teleop_twist_, simulation_time_step_);
 
-    if (!collision_checker_->isCollisionFree(projected_pose)) {
+    if (!local_collision_checker_->isCollisionFree(projected_pose)) {
       if (time == simulation_time_step_) {
         RCLCPP_DEBUG_STREAM_THROTTLE(
           logger_,
