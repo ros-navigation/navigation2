@@ -48,6 +48,7 @@ BtNavigator::BtNavigator(const rclcpp::NodeOptions & options)
     "nav2_goal_updated_condition_bt_node",
     "nav2_globally_updated_goal_condition_bt_node",
     "nav2_is_path_valid_condition_bt_node",
+    "nav2_error_code_condition_bt_node",
     "nav2_reinitialize_global_localization_service_bt_node",
     "nav2_rate_controller_bt_node",
     "nav2_distance_controller_bt_node",

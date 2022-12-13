@@ -13,9 +13,7 @@
 // limitations under the License.
 
 #include "nav2_behavior_tree/plugins/condition/error_code_condition.hpp"
-#include <chrono>
 #include <memory>
-#include <string>
 
 namespace nav2_behavior_tree
 {
@@ -30,7 +28,16 @@ ErrorCodeCondition::ErrorCodeCondition(
 
 BT::NodeStatus ErrorCodeCondition::tick()
 {
-  return BT::NodeStatus::SUCCESS;
+  getInput<int16_t>("error_code_id", error_code_id_);
+  getInput<std::vector<int16_t>>("error_codes_to_check", error_codes_to_check_);
+
+  for (const auto & error_code_to_check : error_codes_to_check_) {
+    if (error_code_to_check == error_code_id_) {
+      return BT::NodeStatus::SUCCESS;
+    }
+  }
+
+  return BT::NodeStatus::FAILURE;
 }
 
 }  // namespace nav2_behavior_tree
@@ -39,4 +46,4 @@ BT::NodeStatus ErrorCodeCondition::tick()
 BT_REGISTER_NODES(factory)
 {
   factory.registerNodeType<nav2_behavior_tree::ErrorCodeCondition>("ErrorCodeCheck");
-};
+}

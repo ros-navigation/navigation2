@@ -17,9 +17,25 @@
 
 #include <string>
 #include <memory>
+#include <vector>
 
 #include "rclcpp/rclcpp.hpp"
 #include "behaviortree_cpp_v3/condition_node.h"
+
+namespace BT
+{
+template<> inline std::vector<int16_t> convertFromString(StringView str)
+{
+  // We expect real numbers separated by semicolons
+  auto parts = splitString(str, ',');
+
+  std::vector<int16_t> vec_int;
+  for (const auto part : parts) {
+    vec_int.push_back(convertFromString<int16_t>(part));
+  }
+  return vec_int;
+}
+}  // end namespace BT
 
 namespace nav2_behavior_tree
 {
@@ -45,12 +61,20 @@ public:
    */
   static BT::PortsList providedPorts()
   {
-    return {};
+    return
+      {
+        BT::InputPort<int16_t>("error_code_id"),
+        BT::InputPort<std::vector<int16_t>>("error_codes_to_check")
+      };
   }
 
 private:
   rclcpp::Node::SharedPtr node_;
+
+  int16_t error_code_id_;
+  std::vector<int16_t> error_codes_to_check_;
 };
+
 }  // namespace nav2_behavior_tree
 
 #endif  // NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__ERROR_CODE_CONDITION_HPP_
