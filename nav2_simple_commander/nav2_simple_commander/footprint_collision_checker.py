@@ -172,12 +172,17 @@ class FootprintCollisionChecker():
         """
         Specify which costmap to use.
 
-        Args:
+        Args
         ----
             costmap (PyCostmap2D): costmap to use in the object's methods
 
+        Returns
+        -------
+            None
+
         """
         self.costmap_ = costmap
+        return None
 
     def footprintCostAtPose(self, x: float, y: float, theta: float, footprint: Polygon):
         """
