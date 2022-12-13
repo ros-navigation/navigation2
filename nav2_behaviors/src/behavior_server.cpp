@@ -32,11 +32,21 @@ BehaviorServer::BehaviorServer(const rclcpp::NodeOptions & options)
     "nav2_behaviors/Wait"}
 {
   declare_parameter(
-    "costmap_topic",
+    "local_costmap_topic",
     rclcpp::ParameterValue(std::string("local_costmap/costmap_raw")));
+
   declare_parameter(
-    "footprint_topic",
+    "global_costmap_topic",
+    rclcpp::ParameterValue(std::string("global_costmap/costmap_raw")));
+
+  declare_parameter(
+    "local_footprint_topic",
     rclcpp::ParameterValue(std::string("local_costmap/published_footprint")));
+
+  declare_parameter(
+    "global_footprint_topic",
+    rclcpp::ParameterValue(std::string("global_costmap/published_footprint")));
+
   declare_parameter("cycle_frequency", rclcpp::ParameterValue(10.0));
   declare_parameter("behavior_plugins", default_ids_);
 
@@ -48,8 +58,11 @@ BehaviorServer::BehaviorServer(const rclcpp::NodeOptions & options)
   }
 
   declare_parameter(
-    "global_frame",
+    "local_frame",
     rclcpp::ParameterValue(std::string("odom")));
+  declare_parameter(
+    "global_frame",
+    rclcpp::ParameterValue(std::string("map")));
   declare_parameter(
     "robot_base_frame",
     rclcpp::ParameterValue(std::string("base_link")));
@@ -76,28 +89,15 @@ BehaviorServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   tf_->setCreateTimerInterface(timer_interface);
   transform_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_);
 
-  std::string costmap_topic, footprint_topic, robot_base_frame;
-  double transform_tolerance;
-  this->get_parameter("costmap_topic", costmap_topic);
-  this->get_parameter("footprint_topic", footprint_topic);
-  this->get_parameter("transform_tolerance", transform_tolerance);
-  this->get_parameter("robot_base_frame", robot_base_frame);
-  costmap_sub_ = std::make_unique<nav2_costmap_2d::CostmapSubscriber>(
-    shared_from_this(), costmap_topic);
-  footprint_sub_ = std::make_unique<nav2_costmap_2d::FootprintSubscriber>(
-    shared_from_this(), footprint_topic, *tf_, robot_base_frame, transform_tolerance);
-
-  collision_checker_ = std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
-    *costmap_sub_, *footprint_sub_, this->get_name());
-
   behavior_types_.resize(behavior_ids_.size());
   if (!loadBehaviorPlugins()) {
     return nav2_util::CallbackReturn::FAILURE;
   }
+  setupResourcesForBehaviorPlugins();
+  configureBehaviorPlugins();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
-
 
 bool
 BehaviorServer::loadBehaviorPlugins()
@@ -111,7 +111,6 @@ BehaviorServer::loadBehaviorPlugins()
         get_logger(), "Creating behavior plugin %s of type %s",
         behavior_ids_[i].c_str(), behavior_types_[i].c_str());
       behaviors_.push_back(plugin_loader_.createUniqueInstance(behavior_types_[i]));
-      behaviors_.back()->configure(node, behavior_ids_[i], tf_, collision_checker_);
     } catch (const pluginlib::PluginlibException & ex) {
       RCLCPP_FATAL(
         get_logger(), "Failed to create behavior %s of type %s."
@@ -122,6 +121,73 @@ BehaviorServer::loadBehaviorPlugins()
   }
 
   return true;
+}
+
+void BehaviorServer::configureBehaviorPlugins()
+{
+  auto node = shared_from_this();
+
+  for (size_t i = 0; i != behavior_ids_.size(); i++) {
+    behaviors_[i]->configure(
+      node,
+      behavior_ids_[i],
+      tf_,
+      local_collision_checker_,
+      global_collision_checker_);
+  }
+}
+
+void BehaviorServer::setupResourcesForBehaviorPlugins()
+{
+  std::string local_costmap_topic, global_costmap_topic;
+  std::string local_footprint_topic, global_footprint_topic;
+  std::string robot_base_frame;
+  double transform_tolerance;
+  get_parameter("local_costmap_topic", local_costmap_topic);
+  get_parameter("global_costmap_topic", global_costmap_topic);
+  get_parameter("local_footprint_topic", local_footprint_topic);
+  get_parameter("global_footprint_topic", global_footprint_topic);
+  get_parameter("transform_tolerance", transform_tolerance);
+  get_parameter("robot_base_frame", robot_base_frame);
+
+  bool need_local_costmap = false;
+  bool need_global_costmap = false;
+  for (const auto & behavior : behaviors_) {
+    auto costmap_info = behavior->getResourceInfo();
+    if (costmap_info == nav2_core::CostmapInfoType::BOTH) {
+      need_local_costmap = true;
+      need_global_costmap = true;
+      break;
+    }
+    if (costmap_info == nav2_core::CostmapInfoType::LOCAL) {
+      need_local_costmap = true;
+    }
+    if (costmap_info == nav2_core::CostmapInfoType::GLOBAL) {
+      need_global_costmap = true;
+    }
+  }
+
+  if (need_local_costmap) {
+    local_costmap_sub_ = std::make_unique<nav2_costmap_2d::CostmapSubscriber>(
+      shared_from_this(), local_costmap_topic);
+
+    local_footprint_sub_ = std::make_unique<nav2_costmap_2d::FootprintSubscriber>(
+      shared_from_this(), local_footprint_topic, *tf_, robot_base_frame, transform_tolerance);
+
+    local_collision_checker_ = std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
+      *local_costmap_sub_, *local_footprint_sub_, get_name());
+  }
+
+  if (need_global_costmap) {
+    global_costmap_sub_ = std::make_unique<nav2_costmap_2d::CostmapSubscriber>(
+      shared_from_this(), global_costmap_topic);
+
+    global_footprint_sub_ = std::make_unique<nav2_costmap_2d::FootprintSubscriber>(
+      shared_from_this(), global_footprint_topic, *tf_, robot_base_frame, transform_tolerance);
+
+    global_collision_checker_ = std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
+      *global_costmap_sub_, *global_footprint_sub_, get_name());
+  }
 }
 
 nav2_util::CallbackReturn
@@ -168,9 +234,15 @@ BehaviorServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   behaviors_.clear();
   transform_listener_.reset();
   tf_.reset();
-  footprint_sub_.reset();
-  costmap_sub_.reset();
-  collision_checker_.reset();
+
+  local_costmap_sub_.reset();
+  global_costmap_sub_.reset();
+
+  local_footprint_sub_.reset();
+  global_footprint_sub_.reset();
+
+  local_collision_checker_.reset();
+  global_collision_checker_.reset();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }

@@ -35,6 +35,8 @@ namespace nav2_behaviors
 template<typename ActionT = nav2_msgs::action::DriveOnHeading>
 class DriveOnHeading : public TimedBehavior<ActionT>
 {
+  using CostmapInfoType = nav2_core::CostmapInfoType;
+
 public:
   /**
    * @brief A constructor for nav2_behaviors::DriveOnHeading
@@ -77,7 +79,7 @@ public:
     end_time_ = this->steady_clock_.now() + command_time_allowance_;
 
     if (!nav2_util::getCurrentPose(
-        initial_pose_, *this->tf_, this->global_frame_, this->robot_base_frame_,
+        initial_pose_, *this->tf_, this->local_frame_, this->robot_base_frame_,
         this->transform_tolerance_))
     {
       RCLCPP_ERROR(this->logger_, "Initial robot pose is not available.");
@@ -104,7 +106,7 @@ public:
 
     geometry_msgs::msg::PoseStamped current_pose;
     if (!nav2_util::getCurrentPose(
-        current_pose, *this->tf_, this->global_frame_, this->robot_base_frame_,
+        current_pose, *this->tf_, this->local_frame_, this->robot_base_frame_,
         this->transform_tolerance_))
     {
       RCLCPP_ERROR(this->logger_, "Current robot pose is not available.");
@@ -144,6 +146,12 @@ public:
     return Status::RUNNING;
   }
 
+  /**
+   * @brief Method to determine the required costmap info
+   * @return costmap resources needed
+   */
+  CostmapInfoType getResourceInfo() override {return CostmapInfoType::LOCAL;}
+
 protected:
   /**
    * @brief Check if pose is collision free
@@ -175,7 +183,7 @@ protected:
         break;
       }
 
-      if (!this->collision_checker_->isCollisionFree(pose2d, fetch_data)) {
+      if (!this->local_collision_checker_->isCollisionFree(pose2d, fetch_data)) {
         return false;
       }
       fetch_data = false;

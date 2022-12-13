@@ -45,13 +45,22 @@ public:
   explicit BehaviorServer(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
   ~BehaviorServer();
 
+protected:
   /**
    * @brief Loads behavior plugins from parameter file
    * @return bool if successfully loaded the plugins
    */
   bool loadBehaviorPlugins();
 
-protected:
+  /**
+   * @brief configures behavior plugins
+   */
+  void configureBehaviorPlugins();
+
+  /**
+   * @brief configures behavior plugins
+   */
+  void setupResourcesForBehaviorPlugins();
   /**
    * @brief Configure lifecycle server
    */
@@ -89,9 +98,13 @@ protected:
   std::vector<std::string> behavior_types_;
 
   // Utilities
-  std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
-  std::unique_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
-  std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> collision_checker_;
+  std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> local_costmap_sub_;
+  std::unique_ptr<nav2_costmap_2d::FootprintSubscriber> local_footprint_sub_;
+  std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> local_collision_checker_;
+
+  std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> global_costmap_sub_;
+  std::unique_ptr<nav2_costmap_2d::FootprintSubscriber> global_footprint_sub_;
+  std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> global_collision_checker_;
 };
 
 }  // namespace behavior_server

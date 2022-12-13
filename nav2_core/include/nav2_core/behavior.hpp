@@ -26,6 +26,14 @@
 namespace nav2_core
 {
 
+enum class CostmapInfoType
+{
+  NONE = 0,
+  LOCAL = 1,
+  GLOBAL = 2,
+  BOTH = 3
+};
+
 /**
  * @class Behavior
  * @brief Abstract interface for behaviors to adhere to with pluginlib
@@ -49,7 +57,8 @@ public:
   virtual void configure(
     const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
     const std::string & name, std::shared_ptr<tf2_ros::Buffer> tf,
-    std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> collision_checker) = 0;
+    std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> local_collision_checker,
+    std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> global_collision_checker) = 0;
 
   /**
    * @brief Method to cleanup resources used on shutdown.
@@ -65,6 +74,12 @@ public:
    * @brief Method to deactive Behavior and any threads involved in execution.
    */
   virtual void deactivate() = 0;
+
+  /**
+   * @brief Method to determine the required costmap info
+   * @return costmap resources needed
+   */
+  virtual CostmapInfoType getResourceInfo() = 0;
 };
 
 }  // namespace nav2_core
