@@ -28,8 +28,8 @@ ErrorCodeCondition::ErrorCodeCondition(
 
 BT::NodeStatus ErrorCodeCondition::tick()
 {
-  getInput<int16_t>("error_code_id", error_code_id_);
-  getInput<std::vector<int16_t>>("error_codes_to_check", error_codes_to_check_);
+  getInput<unsigned short>("error_code_id", error_code_id_); // NOLINT
+  getInput<std::vector<int>>("error_codes_to_check", error_codes_to_check_);
 
   for (const auto & error_code_to_check : error_codes_to_check_) {
     if (error_code_to_check == error_code_id_) {

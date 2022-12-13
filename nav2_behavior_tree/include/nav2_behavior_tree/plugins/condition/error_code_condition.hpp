@@ -24,14 +24,14 @@
 
 namespace BT
 {
-template<> inline std::vector<int16_t> convertFromString(StringView str)
+template<> inline std::vector<int> convertFromString(StringView str)
 {
   // We expect real numbers separated by semicolons
   auto parts = splitString(str, ',');
 
-  std::vector<int16_t> vec_int;
+  std::vector<int> vec_int;
   for (const auto part : parts) {
-    vec_int.push_back(convertFromString<int16_t>(part));
+    vec_int.push_back(convertFromString<int>(part));
   }
   return vec_int;
 }
@@ -63,16 +63,16 @@ public:
   {
     return
       {
-        BT::InputPort<int16_t>("error_code_id"),
-        BT::InputPort<std::vector<int16_t>>("error_codes_to_check")
+        BT::InputPort<unsigned short>("error_code_id"), // NOLINT
+        BT::InputPort<std::vector<int>>("error_codes_to_check")
       };
   }
 
 private:
   rclcpp::Node::SharedPtr node_;
 
-  int16_t error_code_id_;
-  std::vector<int16_t> error_codes_to_check_;
+  unsigned short error_code_id_; // NOLINT
+  std::vector<int> error_codes_to_check_;
 };
 
 }  // namespace nav2_behavior_tree
