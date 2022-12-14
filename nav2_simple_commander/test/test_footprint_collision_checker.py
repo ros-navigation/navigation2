@@ -130,10 +130,10 @@ class TestFootprintCollisionChecker(unittest.TestCase):
         # Create in the map center a full box of cost value 100
         for i in range(24, 28):
             map_data[i] = 100
-            map_data[i+10] = 100
-            map_data[i+20] = 100
-            map_data[i+30] = 100
-            map_data[i+40] = 100
+            map_data[i + 10] = 100
+            map_data[i + 20] = 100
+            map_data[i + 30] = 100
+            map_data[i + 40] = 100
         occupancyGrid_.data = map_data
         costmap_ = PyCostmap2D(occupancyGrid_)
         fcc_ = FootprintCollisionChecker()
