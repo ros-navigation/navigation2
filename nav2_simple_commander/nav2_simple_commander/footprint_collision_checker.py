@@ -67,7 +67,7 @@ class FootprintCollisionChecker():
 
         x0, y0 = self.worldToMapValidated(
             footprint.points[0].x, footprint.points[0].y)
-            
+
         if x0 is None or y0 is None:
             return LETHAL_OBSTACLE
 

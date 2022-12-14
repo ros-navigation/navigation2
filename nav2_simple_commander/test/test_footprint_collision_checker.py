@@ -64,11 +64,11 @@ class TestFootprintCollisionChecker(unittest.TestCase):
         costmap_ = PyCostmap2D(occupancyGrid_)
         fcc_ = FootprintCollisionChecker()
         fcc_.setCostmap(costmap_)
-        self.assertEqual(fcc_.worldToMapValidated(0, 5), None)
-        self.assertEqual(fcc_.worldToMapValidated(5, 0), None)
+        self.assertEqual(fcc_.worldToMapValidated(0, 5), (None, None))
+        self.assertEqual(fcc_.worldToMapValidated(5, 0), (None, None))
         self.assertEqual(fcc_.worldToMapValidated(5, 5), (0, 0))
         self.assertEqual(fcc_.worldToMapValidated(14, 14), (9, 9))
-        self.assertEqual(fcc_.worldToMapValidated(15, 14), None)
+        self.assertEqual(fcc_.worldToMapValidated(15, 14), (None, None))
 
     def test_lineCost(self):
         # Test if line cost is calculated correctly
@@ -126,8 +126,21 @@ class TestFootprintCollisionChecker(unittest.TestCase):
         point.z = 0.0
         footprint.points.append(point)
         self.assertEqual(fcc_.footprintCost(footprint), 0.0)
-        point = Point32()
+        # Test none-zero cost
+        # Create in the map center a full box of cost value 100
+        for i in range(24,28):
+            map_data[i]=100
+            map_data[i+10]=100
+            map_data[i+20]=100
+            map_data[i+30]=100
+            map_data[i+40]=100
+        occupancyGrid_.data = map_data
+        costmap_ = PyCostmap2D(occupancyGrid_)
+        fcc_ = FootprintCollisionChecker()
+        fcc_.setCostmap(costmap_)
+        self.assertEqual(fcc_.footprintCostAtPose(4.0, 4.0, 0.0, footprint), 100)
         # Append a point that is outside the map
+        point = Point32()
         point.x = 30.0
         point.y = 5.0
         point.z = 3.0
