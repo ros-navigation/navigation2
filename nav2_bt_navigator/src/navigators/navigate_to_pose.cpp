@@ -123,8 +123,8 @@ NavigateToPoseNavigator::onLoop()
 
   try {
     // Get current path points
-    nav_msgs::msg::Path current_path;
-    blackboard->get<nav_msgs::msg::Path>(path_blackboard_id_, current_path);
+    nav2_msgs::msg::PathWithCost current_path;
+    blackboard->get<nav2_msgs::msg::PathWithCost>(path_blackboard_id_, current_path);
 
     // Find the closest pose to current pose on global path
     auto find_closest_pose_idx =

@@ -18,7 +18,7 @@
 #include <set>
 #include <string>
 
-#include "nav_msgs/msg/path.hpp"
+#include "nav2_msgs/msg/path_with_cost.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
 #include "behaviortree_cpp_v3/bt_factory.h"
@@ -149,8 +149,8 @@ TEST_F(ComputePathToPoseActionTestFixture, test_tick)
   EXPECT_EQ(action_server_->getCurrentGoal()->planner_id, std::string("GridBased"));
 
   // check if returned path is correct
-  nav_msgs::msg::Path path;
-  config_->blackboard->get<nav_msgs::msg::Path>("path", path);
+  nav2_msgs::msg::PathWithCost path;
+  config_->blackboard->get<nav2_msgs::msg::PathWithCost>("path", path);
   EXPECT_EQ(path.poses.size(), 2u);
   EXPECT_EQ(path.poses[0].pose.position.x, 0.0);
   EXPECT_EQ(path.poses[1].pose.position.x, 1.0);
@@ -170,7 +170,7 @@ TEST_F(ComputePathToPoseActionTestFixture, test_tick)
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
   EXPECT_EQ(action_server_->getCurrentGoal()->goal.pose.position.x, -2.5);
 
-  config_->blackboard->get<nav_msgs::msg::Path>("path", path);
+  config_->blackboard->get<nav2_msgs::msg::PathWithCost>("path", path);
   EXPECT_EQ(path.poses.size(), 2u);
   EXPECT_EQ(path.poses[0].pose.position.x, 0.0);
   EXPECT_EQ(path.poses[1].pose.position.x, -2.5);
@@ -215,8 +215,8 @@ TEST_F(ComputePathToPoseActionTestFixture, test_tick_use_start)
   EXPECT_EQ(action_server_->getCurrentGoal()->planner_id, std::string("GridBased"));
 
   // check if returned path is correct
-  nav_msgs::msg::Path path;
-  config_->blackboard->get<nav_msgs::msg::Path>("path", path);
+  nav2_msgs::msg::PathWithCost path;
+  config_->blackboard->get<nav2_msgs::msg::PathWithCost>("path", path);
   EXPECT_EQ(path.poses.size(), 2u);
   EXPECT_EQ(path.poses[0].pose.position.x, 2.0);
   EXPECT_EQ(path.poses[1].pose.position.x, 1.0);
@@ -238,7 +238,7 @@ TEST_F(ComputePathToPoseActionTestFixture, test_tick_use_start)
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
   EXPECT_EQ(action_server_->getCurrentGoal()->goal.pose.position.x, -2.5);
 
-  config_->blackboard->get<nav_msgs::msg::Path>("path", path);
+  config_->blackboard->get<nav2_msgs::msg::PathWithCost>("path", path);
   EXPECT_EQ(path.poses.size(), 2u);
   EXPECT_EQ(path.poses[0].pose.position.x, -1.5);
   EXPECT_EQ(path.poses[1].pose.position.x, -2.5);

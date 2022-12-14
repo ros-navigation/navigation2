@@ -41,7 +41,7 @@ CollisionChecker::CollisionChecker(
       FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>(costmap_);
   footprint_collision_checker_->setCostmap(costmap_);
 
-  carrot_arc_pub_ = node->create_publisher<nav_msgs::msg::Path>("lookahead_collision_arc", 1);
+  carrot_arc_pub_ = node->create_publisher<nav2_msgs::msg::PathWithCost>("lookahead_collision_arc", 1);
   carrot_arc_pub_->on_activate();
 }
 
@@ -62,7 +62,7 @@ bool CollisionChecker::isCollisionImminent(
   }
 
   // visualization messages
-  nav_msgs::msg::Path arc_pts_msg;
+  nav2_msgs::msg::PathWithCost arc_pts_msg;
   arc_pts_msg.header.frame_id = costmap_ros_->getGlobalFrameID();
   arc_pts_msg.header.stamp = robot_pose.header.stamp;
   geometry_msgs::msg::PoseStamped pose_msg;

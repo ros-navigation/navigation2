@@ -41,7 +41,7 @@ void Smoother::initialize(const double & min_turning_radius)
 }
 
 bool Smoother::smooth(
-  nav_msgs::msg::Path & path,
+  nav2_msgs::msg::PathWithCost & path,
   const nav2_costmap_2d::Costmap2D * costmap,
   const double & max_time)
 {
@@ -53,7 +53,7 @@ bool Smoother::smooth(
   steady_clock::time_point start = steady_clock::now();
   double time_remaining = max_time;
   bool success = true, reversing_segment;
-  nav_msgs::msg::Path curr_path_segment;
+  nav2_msgs::msg::PathWithCost curr_path_segment;
   curr_path_segment.header = path.header;
   std::vector<PathSegment> path_segments = findDirectionalPathSegments(path);
 
@@ -96,7 +96,7 @@ bool Smoother::smooth(
 }
 
 bool Smoother::smoothImpl(
-  nav_msgs::msg::Path & path,
+  nav2_msgs::msg::PathWithCost & path,
   bool & reversing_segment,
   const nav2_costmap_2d::Costmap2D * costmap,
   const double & max_time)
@@ -110,8 +110,8 @@ bool Smoother::smoothImpl(
   double x_i, y_i, y_m1, y_ip1, y_i_org;
   unsigned int mx, my;
 
-  nav_msgs::msg::Path new_path = path;
-  nav_msgs::msg::Path last_path = path;
+  nav2_msgs::msg::PathWithCost new_path = path;
+  nav2_msgs::msg::PathWithCost last_path = path;
 
   while (change >= tolerance_) {
     its += 1;
@@ -214,7 +214,7 @@ void Smoother::setFieldByDim(
   }
 }
 
-std::vector<PathSegment> Smoother::findDirectionalPathSegments(const nav_msgs::msg::Path & path)
+std::vector<PathSegment> Smoother::findDirectionalPathSegments(const nav2_msgs::msg::PathWithCost & path)
 {
   std::vector<PathSegment> segments;
   PathSegment curr_segment;
@@ -265,7 +265,7 @@ std::vector<PathSegment> Smoother::findDirectionalPathSegments(const nav_msgs::m
 }
 
 void Smoother::updateApproximatePathOrientations(
-  nav_msgs::msg::Path & path,
+  nav2_msgs::msg::PathWithCost & path,
   bool & reversing_segment)
 {
   double dx, dy, theta, pt_yaw;
@@ -421,7 +421,7 @@ BoundaryExpansions Smoother::generateBoundaryExpansionPoints(IteratorT start, It
 
 void Smoother::enforceStartBoundaryConditions(
   const geometry_msgs::msg::Pose & start_pose,
-  nav_msgs::msg::Path & path,
+  nav2_msgs::msg::PathWithCost & path,
   const nav2_costmap_2d::Costmap2D * costmap,
   const bool & reversing_segment)
 {
@@ -467,7 +467,7 @@ void Smoother::enforceStartBoundaryConditions(
 
 void Smoother::enforceEndBoundaryConditions(
   const geometry_msgs::msg::Pose & end_pose,
-  nav_msgs::msg::Path & path,
+  nav2_msgs::msg::PathWithCost & path,
   const nav2_costmap_2d::Costmap2D * costmap,
   const bool & reversing_segment)
 {

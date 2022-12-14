@@ -146,7 +146,7 @@ protected:
    * @brief Assigns path to controller
    * @param path Path received from action server
    */
-  void setPlannerPath(const nav_msgs::msg::Path & path);
+  void setPlannerPath(const nav2_msgs::msg::PathWithCost & path);
   /**
    * @brief Calculates velocity and publishes to "cmd_vel" topic
    */
@@ -262,7 +262,7 @@ protected:
   rclcpp::Time last_valid_cmd_time_;
 
   // Current path container
-  nav_msgs::msg::Path current_path_;
+  nav2_msgs::msg::PathWithCost current_path_;
 
 private:
   /**

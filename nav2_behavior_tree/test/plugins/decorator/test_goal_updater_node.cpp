@@ -18,7 +18,7 @@
 #include <set>
 #include <string>
 
-#include "nav_msgs/msg/path.hpp"
+#include "nav2_msgs/msg/path_with_cost.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
 #include "behaviortree_cpp_v3/bt_factory.h"

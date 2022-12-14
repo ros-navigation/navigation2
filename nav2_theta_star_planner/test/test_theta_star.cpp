@@ -163,7 +163,7 @@ TEST(ThetaStarPlanner, test_theta_star_planner) {
   planner_2d->configure(life_node, "test", nullptr, costmap_ros);
   planner_2d->activate();
 
-  nav_msgs::msg::Path path = planner_2d->createPlan(start, goal);
+  nav2_msgs::msg::PathWithCost path = planner_2d->createPlan(start, goal);
   EXPECT_GT(static_cast<int>(path.poses.size()), 0);
 
   // test if the goal is unsafe

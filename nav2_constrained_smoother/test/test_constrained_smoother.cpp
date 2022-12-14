@@ -187,7 +187,7 @@ protected:
     const std::vector<Eigen::Vector3d> & input, std::vector<Eigen::Vector3d> & output,
     bool publish = false, bool cmp = false)
   {
-    nav_msgs::msg::Path path;
+    nav2_msgs::msg::PathWithCost path;
     path.poses.reserve(input.size());
     for (auto & xya : input) {
       geometry_msgs::msg::PoseStamped pose;

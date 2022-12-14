@@ -100,7 +100,7 @@ public:
    * @brief nav2_core setPlan - Sets the global plan
    * @param path The global plan
    */
-  void setPlan(const nav_msgs::msg::Path & path) override;
+  void setPlan(const nav2_msgs::msg::PathWithCost & path) override;
 
   /**
    * @brief Limits the maximum linear speed of the robot.
@@ -164,7 +164,7 @@ protected:
    */
   void applyConstraints(
     const double & curvature, const geometry_msgs::msg::Twist & speed,
-    const double & pose_cost, const nav_msgs::msg::Path & path,
+    const double & pose_cost, const nav2_msgs::msg::PathWithCost & path,
     double & linear_vel, double & sign);
 
   /**
@@ -187,14 +187,14 @@ protected:
    * @param path Current global path
    * @return Lookahead point
    */
-  geometry_msgs::msg::PoseStamped getLookAheadPoint(const double &, const nav_msgs::msg::Path &);
+  geometry_msgs::msg::PoseStamped getLookAheadPoint(const double &, const nav2_msgs::msg::PathWithCost &);
 
   /**
    * @brief checks for the cusp position
    * @param pose Pose input to determine the cusp position
    * @return robot distance from the cusp
    */
-  double findVelocitySignChange(const nav_msgs::msg::Path & transformed_plan);
+  double findVelocitySignChange(const nav2_msgs::msg::PathWithCost & transformed_plan);
 
   rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
@@ -207,10 +207,10 @@ protected:
   double goal_dist_tol_;
   double control_duration_;
 
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> global_path_pub_;
+  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::PathWithCost>> global_path_pub_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PointStamped>>
   carrot_pub_;
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> carrot_arc_pub_;
+  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::PathWithCost>> carrot_arc_pub_;
   std::unique_ptr<nav2_regulated_pure_pursuit_controller::PathHandler> path_handler_;
   std::unique_ptr<nav2_regulated_pure_pursuit_controller::ParameterHandler> param_handler_;
   std::unique_ptr<nav2_regulated_pure_pursuit_controller::CollisionChecker> collision_checker_;

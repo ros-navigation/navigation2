@@ -19,7 +19,7 @@
 #include <memory>
 #include <string>
 
-#include "nav_msgs/msg/path.hpp"
+#include "nav2_msgs/msg/path_with_cost.hpp"
 
 #include "behaviortree_cpp_v3/action_node.h"
 
@@ -48,8 +48,8 @@ public:
   static BT::PortsList providedPorts()
   {
     return {
-      BT::InputPort<nav_msgs::msg::Path>("input_path", "Original Path"),
-      BT::OutputPort<nav_msgs::msg::Path>("output_path", "Path truncated to a certain distance"),
+      BT::InputPort<nav2_msgs::msg::PathWithCost>("input_path", "Original Path"),
+      BT::OutputPort<nav2_msgs::msg::PathWithCost>("output_path", "Path truncated to a certain distance"),
       BT::InputPort<double>("distance", 1.0, "distance"),
     };
   }

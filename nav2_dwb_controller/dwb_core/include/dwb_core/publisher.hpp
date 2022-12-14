@@ -42,7 +42,7 @@
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "dwb_core/trajectory_critic.hpp"
 #include "dwb_msgs/msg/local_plan_evaluation.hpp"
-#include "nav_msgs/msg/path.hpp"
+#include "nav2_msgs/msg/path_with_cost.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
@@ -104,7 +104,7 @@ protected:
   // Helper function for publishing other plans
   void publishGenericPlan(
     const nav_2d_msgs::msg::Path2D plan,
-    rclcpp::Publisher<nav_msgs::msg::Path> & pub, bool flag);
+    rclcpp::Publisher<nav2_msgs::msg::PathWithCost> & pub, bool flag);
 
   // Flags for turning on/off publishing specific components
   bool publish_evaluation_;
@@ -120,9 +120,9 @@ protected:
 
   // Publisher Objects
   std::shared_ptr<LifecyclePublisher<dwb_msgs::msg::LocalPlanEvaluation>> eval_pub_;
-  std::shared_ptr<LifecyclePublisher<nav_msgs::msg::Path>> global_pub_;
-  std::shared_ptr<LifecyclePublisher<nav_msgs::msg::Path>> transformed_pub_;
-  std::shared_ptr<LifecyclePublisher<nav_msgs::msg::Path>> local_pub_;
+  std::shared_ptr<LifecyclePublisher<nav2_msgs::msg::PathWithCost>> global_pub_;
+  std::shared_ptr<LifecyclePublisher<nav2_msgs::msg::PathWithCost>> transformed_pub_;
+  std::shared_ptr<LifecyclePublisher<nav2_msgs::msg::PathWithCost>> local_pub_;
   std::shared_ptr<LifecyclePublisher<visualization_msgs::msg::MarkerArray>> marker_pub_;
   std::shared_ptr<LifecyclePublisher<sensor_msgs::msg::PointCloud2>> cost_grid_pc_pub_;
 

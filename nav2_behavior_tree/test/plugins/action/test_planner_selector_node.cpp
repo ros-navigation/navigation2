@@ -22,7 +22,7 @@
 #include "../../test_action_server.hpp"
 #include "behaviortree_cpp_v3/bt_factory.h"
 #include "nav2_behavior_tree/plugins/action/planner_selector_node.hpp"
-#include "nav_msgs/msg/path.hpp"
+#include "nav2_msgs/msg/path_with_cost.hpp"
 #include "std_msgs/msg/string.hpp"
 
 class PlannerSelectorTestFixture : public ::testing::Test

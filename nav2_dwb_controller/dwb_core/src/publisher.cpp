@@ -102,9 +102,9 @@ DWBPublisher::on_configure()
   node->get_parameter(plugin_name_ + ".publish_cost_grid_pc", publish_cost_grid_pc_);
 
   eval_pub_ = node->create_publisher<dwb_msgs::msg::LocalPlanEvaluation>("evaluation", 1);
-  global_pub_ = node->create_publisher<nav_msgs::msg::Path>("received_global_plan", 1);
-  transformed_pub_ = node->create_publisher<nav_msgs::msg::Path>("transformed_global_plan", 1);
-  local_pub_ = node->create_publisher<nav_msgs::msg::Path>("local_plan", 1);
+  global_pub_ = node->create_publisher<nav2_msgs::msg::PathWithCost>("received_global_plan", 1);
+  transformed_pub_ = node->create_publisher<nav2_msgs::msg::PathWithCost>("transformed_global_plan", 1);
+  local_pub_ = node->create_publisher<nav2_msgs::msg::PathWithCost>("local_plan", 1);
   marker_pub_ = node->create_publisher<visualization_msgs::msg::MarkerArray>("marker", 1);
   cost_grid_pc_pub_ = node->create_publisher<sensor_msgs::msg::PointCloud2>("cost_cloud", 1);
 
@@ -238,7 +238,7 @@ DWBPublisher::publishLocalPlan(
   if (!publish_local_plan_) {return;}
 
   auto path =
-    std::make_unique<nav_msgs::msg::Path>(
+    std::make_unique<nav2_msgs::msg::PathWithCost>(
     nav_2d_utils::poses2DToPath(
       traj.poses, header.frame_id,
       header.stamp));
@@ -358,11 +358,11 @@ DWBPublisher::publishLocalPlan(const nav_2d_msgs::msg::Path2D plan)
 void
 DWBPublisher::publishGenericPlan(
   const nav_2d_msgs::msg::Path2D plan,
-  rclcpp::Publisher<nav_msgs::msg::Path> & pub, bool flag)
+  rclcpp::Publisher<nav2_msgs::msg::PathWithCost> & pub, bool flag)
 {
   if (pub.get_subscription_count() < 1) {return;}
   if (!flag) {return;}
-  auto path = std::make_unique<nav_msgs::msg::Path>(nav_2d_utils::pathToPath(plan));
+  auto path = std::make_unique<nav2_msgs::msg::PathWithCost>(nav_2d_utils::pathToPath(plan));
   pub.publish(std::move(path));
 }
 

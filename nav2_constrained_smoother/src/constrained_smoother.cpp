@@ -86,7 +86,7 @@ void ConstrainedSmoother::deactivate()
     plugin_name_.c_str());
 }
 
-bool ConstrainedSmoother::smooth(nav_msgs::msg::Path & path, const rclcpp::Duration & max_time)
+bool ConstrainedSmoother::smooth(nav2_msgs::msg::PathWithCost & path, const rclcpp::Duration & max_time)
 {
   if (path.poses.size() < 2) {
     return true;

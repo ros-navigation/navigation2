@@ -29,7 +29,7 @@
 #include "nav2_costmap_2d/cost_values.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/node_utils.hpp"
-#include "nav_msgs/msg/path.hpp"
+#include "nav2_msgs/msg/path_with_cost.hpp"
 #include "angles/angles.h"
 #include "tf2/utils.h"
 
@@ -82,7 +82,7 @@ public:
    * @return If smoothing was completed (true) or interrupted by time limit (false)
    */
   bool smooth(
-    nav_msgs::msg::Path & path,
+    nav2_msgs::msg::PathWithCost & path,
     const rclcpp::Duration & max_time) override;
 
 protected:
@@ -95,7 +95,7 @@ protected:
    * @return If smoothing was successful
    */
   bool smoothImpl(
-    nav_msgs::msg::Path & path,
+    nav2_msgs::msg::PathWithCost & path,
     bool & reversing_segment);
 
   bool do_refinement_;

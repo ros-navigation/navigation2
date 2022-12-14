@@ -17,7 +17,7 @@
 #include <set>
 #include <string>
 
-#include "nav_msgs/msg/path.hpp"
+#include "nav2_msgs/msg/path_with_cost.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_util/geometry_utils.hpp"
 
@@ -64,9 +64,9 @@ public:
     return pose;
   }
 
-  nav_msgs::msg::Path createLoopCrossingTestPath()
+  nav2_msgs::msg::PathWithCost createLoopCrossingTestPath()
   {
-    nav_msgs::msg::Path path;
+    nav2_msgs::msg::PathWithCost path;
     path.header.stamp = node_->now();
     path.header.frame_id = "map";
 
@@ -125,7 +125,7 @@ TEST_F(TruncatePathLocalTestFixture, test_tick)
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
 
   // create path and set it on blackboard
-  nav_msgs::msg::Path path = createLoopCrossingTestPath();
+  nav2_msgs::msg::PathWithCost path = createLoopCrossingTestPath();
   EXPECT_EQ(path.poses.size(), 12u);
 
   config_->blackboard->set("path", path);
@@ -137,7 +137,7 @@ TEST_F(TruncatePathLocalTestFixture, test_tick)
     tree_->rootNode()->executeTick();
   }
 
-  nav_msgs::msg::Path truncated_path;
+  nav2_msgs::msg::PathWithCost truncated_path;
   config_->blackboard->get("truncated_path", truncated_path);
 
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
@@ -220,7 +220,7 @@ TEST_F(TruncatePathLocalTestFixture, test_success_on_empty_path)
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
 
   // create path and set it on blackboard
-  nav_msgs::msg::Path path;
+  nav2_msgs::msg::PathWithCost path;
   path.header.stamp = node_->now();
   path.header.frame_id = "map";
 
@@ -232,7 +232,7 @@ TEST_F(TruncatePathLocalTestFixture, test_success_on_empty_path)
   {
     tree_->rootNode()->executeTick();
   }
-  nav_msgs::msg::Path truncated_path;
+  nav2_msgs::msg::PathWithCost truncated_path;
   config_->blackboard->get("truncated_path", truncated_path);
 
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
@@ -263,7 +263,7 @@ TEST_F(TruncatePathLocalTestFixture, test_failure_on_no_pose)
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
 
   // create path and set it on blackboard
-  nav_msgs::msg::Path path;
+  nav2_msgs::msg::PathWithCost path;
   path.header.stamp = node_->now();
   path.header.frame_id = "map";
 
@@ -275,7 +275,7 @@ TEST_F(TruncatePathLocalTestFixture, test_failure_on_no_pose)
   {
     tree_->rootNode()->executeTick();
   }
-  nav_msgs::msg::Path truncated_path;
+  nav2_msgs::msg::PathWithCost truncated_path;
   config_->blackboard->get("truncated_path", truncated_path);
 
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::FAILURE);
@@ -305,7 +305,7 @@ TEST_F(TruncatePathLocalTestFixture, test_failure_on_invalid_robot_frame)
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
 
   // create new goal and set it on blackboard
-  nav_msgs::msg::Path path = createLoopCrossingTestPath();
+  nav2_msgs::msg::PathWithCost path = createLoopCrossingTestPath();
   EXPECT_EQ(path.poses.size(), 12u);
 
   config_->blackboard->set("path", path);
@@ -316,7 +316,7 @@ TEST_F(TruncatePathLocalTestFixture, test_failure_on_invalid_robot_frame)
   {
     tree_->rootNode()->executeTick();
   }
-  nav_msgs::msg::Path truncated_path;
+  nav2_msgs::msg::PathWithCost truncated_path;
   config_->blackboard->get("truncated_path", truncated_path);
 
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::FAILURE);
@@ -347,8 +347,8 @@ TEST_F(TruncatePathLocalTestFixture, test_path_pruning)
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
 
   // create path and set it on blackboard
-  nav_msgs::msg::Path path = createLoopCrossingTestPath();
-  nav_msgs::msg::Path truncated_path;
+  nav2_msgs::msg::PathWithCost path = createLoopCrossingTestPath();
+  nav2_msgs::msg::PathWithCost truncated_path;
 
   config_->blackboard->set("path", path);
 

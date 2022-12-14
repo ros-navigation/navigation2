@@ -42,7 +42,7 @@
 #include "nav_2d_msgs/msg/twist2_d.hpp"
 #include "nav_2d_msgs/msg/path2_d.hpp"
 #include "nav_2d_msgs/msg/pose2_d_stamped.hpp"
-#include "nav_msgs/msg/path.hpp"
+#include "nav2_msgs/msg/path_with_cost.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "tf2/convert.h"
 
@@ -59,12 +59,12 @@ geometry_msgs::msg::PoseStamped pose2DToPoseStamped(
 geometry_msgs::msg::PoseStamped pose2DToPoseStamped(
   const geometry_msgs::msg::Pose2D & pose2d,
   const std::string & frame, const rclcpp::Time & stamp);
-nav_msgs::msg::Path posesToPath(const std::vector<geometry_msgs::msg::PoseStamped> & poses);
-nav_2d_msgs::msg::Path2D pathToPath2D(const nav_msgs::msg::Path & path);
-nav_msgs::msg::Path poses2DToPath(
+nav2_msgs::msg::PathWithCost posesToPath(const std::vector<geometry_msgs::msg::PoseStamped> & poses);
+nav_2d_msgs::msg::Path2D pathToPath2D(const nav2_msgs::msg::PathWithCost & path);
+nav2_msgs::msg::PathWithCost poses2DToPath(
   const std::vector<geometry_msgs::msg::Pose2D> & poses,
   const std::string & frame, const rclcpp::Time & stamp);
-nav_msgs::msg::Path pathToPath(const nav_2d_msgs::msg::Path2D & path2d);
+nav2_msgs::msg::PathWithCost pathToPath(const nav_2d_msgs::msg::Path2D & path2d);
 
 }  // namespace nav_2d_utils
 

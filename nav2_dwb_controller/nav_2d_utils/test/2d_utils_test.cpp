@@ -47,7 +47,7 @@ using nav_2d_utils::pathToPath;
 TEST(nav_2d_utils, PosesToPathEmpty)
 {
   std::vector<geometry_msgs::msg::PoseStamped> poses;
-  nav_msgs::msg::Path path = posesToPath(poses);
+  nav2_msgs::msg::PathWithCost path = posesToPath(poses);
 
   EXPECT_EQ(path.poses.size(), 0ul);
 }
@@ -87,7 +87,7 @@ TEST(nav_2d_utils, PosesToPathNonEmpty)
   poses.push_back(pose1);
   poses.push_back(pose2);
 
-  nav_msgs::msg::Path path = posesToPath(poses);
+  nav2_msgs::msg::PathWithCost path = posesToPath(poses);
 
   EXPECT_EQ(path.poses.size(), 2ul);
   EXPECT_EQ(path.poses[0].pose.position.x, 1.0);
@@ -104,7 +104,7 @@ TEST(nav_2d_utils, PosesToPathNonEmpty)
 TEST(nav_2d_utils, PathToPathEmpty)
 {
   nav_2d_msgs::msg::Path2D path2d;
-  nav_msgs::msg::Path path = pathToPath(path2d);
+  nav2_msgs::msg::PathWithCost path = pathToPath(path2d);
   EXPECT_EQ(path.poses.size(), 0ul);
 }
 
@@ -125,7 +125,7 @@ TEST(nav_2d_utils, PathToPathNoNEmpty)
   path2d.poses.push_back(pose1);
   path2d.poses.push_back(pose2);
 
-  nav_msgs::msg::Path path = pathToPath(path2d);
+  nav2_msgs::msg::PathWithCost path = pathToPath(path2d);
   EXPECT_EQ(path.poses.size(), 2ul);
   EXPECT_EQ(path.poses[0].pose.position.x, 1.0);
   EXPECT_EQ(path.poses[0].pose.position.y, 2.0);

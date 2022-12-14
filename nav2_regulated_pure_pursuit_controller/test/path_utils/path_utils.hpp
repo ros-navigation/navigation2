@@ -21,7 +21,7 @@
 #include <initializer_list>
 #include <memory>
 
-#include "nav_msgs/msg/path.hpp"
+#include "nav2_msgs/msg/path_with_cost.hpp"
 
 namespace path_utils
 {
@@ -32,7 +32,7 @@ namespace path_utils
 class PathSegment
 {
 public:
-  virtual void append(nav_msgs::msg::Path & path, double spacing) const = 0;
+  virtual void append(nav2_msgs::msg::PathWithCost & path, double spacing) const = 0;
   virtual ~PathSegment() {}
 };
 
@@ -41,7 +41,7 @@ class Arc : public PathSegment
 public:
   explicit Arc(double radius, double radians)
   : radius_(radius), radians_(radians) {}
-  void append(nav_msgs::msg::Path & path, double spacing) const override;
+  void append(nav2_msgs::msg::PathWithCost & path, double spacing) const override;
 
 private:
   double radius_;
@@ -53,7 +53,7 @@ class Straight : public PathSegment
 public:
   explicit Straight(double length)
   : length_(length) {}
-  void append(nav_msgs::msg::Path & path, double spacing) const override;
+  void append(nav2_msgs::msg::PathWithCost & path, double spacing) const override;
 
 private:
   double length_;
@@ -101,7 +101,7 @@ public:
   : Arc(radius, -2.0 * M_PI) {}
 };
 
-nav_msgs::msg::Path generate_path(
+nav2_msgs::msg::PathWithCost generate_path(
   geometry_msgs::msg::PoseStamped start,
   double spacing,
   std::initializer_list<std::unique_ptr<PathSegment>> segments);

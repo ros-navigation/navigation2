@@ -71,7 +71,7 @@ TEST(SmootherTest, test_sg_smoother_basics)
   rclcpp::Duration max_time = rclcpp::Duration::from_seconds(1.0);  // 1 seconds
 
   // Test regular path, should see no effective change
-  nav_msgs::msg::Path straight_regular_path, straight_regular_path_baseline;
+  nav2_msgs::msg::PathWithCost straight_regular_path, straight_regular_path_baseline;
   straight_regular_path.header.frame_id = "map";
   straight_regular_path.header.stamp = node->now();
   straight_regular_path.poses.resize(11);
@@ -144,7 +144,7 @@ TEST(SmootherTest, test_sg_smoother_noisey_path)
   rclcpp::Duration max_time = rclcpp::Duration::from_seconds(1.0);  // 1 seconds
 
   // Given nominal irregular/noisey path, test that the output is shorter and smoother
-  nav_msgs::msg::Path noisey_path, noisey_path_baseline;
+  nav2_msgs::msg::PathWithCost noisey_path, noisey_path_baseline;
   noisey_path.header.frame_id = "map";
   noisey_path.header.stamp = node->now();
   noisey_path.poses.resize(11);
@@ -202,7 +202,7 @@ TEST(SmootherTest, test_sg_smoother_noisey_path)
   // Test again with refinement, even shorter and smoother
   node->set_parameter(rclcpp::Parameter("test.do_refinement", rclcpp::ParameterValue(true)));
   smoother->configure(parent, "test", dummy_tf, dummy_costmap, dummy_footprint);
-  nav_msgs::msg::Path noisey_path_refined = noisey_path_baseline;
+  nav2_msgs::msg::PathWithCost noisey_path_refined = noisey_path_baseline;
   EXPECT_TRUE(smoother->smooth(noisey_path_refined, max_time));
 
   length = 0;
@@ -249,7 +249,7 @@ TEST(SmootherTest, test_sg_smoother_reversing)
   rclcpp::Duration max_time = rclcpp::Duration::from_seconds(1.0);  // 1 seconds
 
   // Test reversing / multiple segments via a cusp
-  nav_msgs::msg::Path cusp_path, cusp_path_baseline;
+  nav2_msgs::msg::PathWithCost cusp_path, cusp_path_baseline;
   cusp_path.header.frame_id = "map";
   cusp_path.header.stamp = node->now();
   cusp_path.poses.resize(22);

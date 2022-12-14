@@ -26,7 +26,7 @@
 #include "nav2_smac_planner/costmap_downsampler.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav2_core/global_planner.hpp"
-#include "nav_msgs/msg/path.hpp"
+#include "nav2_msgs/msg/path_with_cost.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -84,7 +84,7 @@ public:
    * @param goal Goal pose
    * @return nav2_msgs::Path of the generated path
    */
-  nav_msgs::msg::Path createPlan(
+  nav2_msgs::msg::PathWithCost createPlan(
     const geometry_msgs::msg::PoseStamped & start,
     const geometry_msgs::msg::PoseStamped & goal) override;
 
@@ -107,7 +107,7 @@ protected:
   float _tolerance;
   int _downsampling_factor;
   bool _downsample_costmap;
-  rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr _raw_plan_publisher;
+  rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::PathWithCost>::SharedPtr _raw_plan_publisher;
   double _max_planning_time;
   bool _allow_unknown;
   int _max_iterations;

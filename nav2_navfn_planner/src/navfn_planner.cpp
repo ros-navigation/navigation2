@@ -127,7 +127,7 @@ NavfnPlanner::cleanup()
   planner_.reset();
 }
 
-nav_msgs::msg::Path NavfnPlanner::createPlan(
+nav2_msgs::msg::PathWithCost NavfnPlanner::createPlan(
   const geometry_msgs::msg::PoseStamped & start,
   const geometry_msgs::msg::PoseStamped & goal)
 {
@@ -166,7 +166,7 @@ nav_msgs::msg::Path NavfnPlanner::createPlan(
       costmap_->getSizeInCellsY());
   }
 
-  nav_msgs::msg::Path path;
+  nav2_msgs::msg::PathWithCost path;
 
   // Corner case of the start(x,y) = goal(x,y)
   if (start.pose.position.x == goal.pose.position.x &&
@@ -220,7 +220,7 @@ bool
 NavfnPlanner::makePlan(
   const geometry_msgs::msg::Pose & start,
   const geometry_msgs::msg::Pose & goal, double tolerance,
-  nav_msgs::msg::Path & plan)
+  nav2_msgs::msg::PathWithCost & plan)
 {
   // clear the plan, just in case
   plan.poses.clear();
@@ -354,7 +354,7 @@ NavfnPlanner::makePlan(
 void
 NavfnPlanner::smoothApproachToGoal(
   const geometry_msgs::msg::Pose & goal,
-  nav_msgs::msg::Path & plan)
+  nav2_msgs::msg::PathWithCost & plan)
 {
   // Replace the last pose of the computed path if it's actually further away
   // to the second to last pose than the goal pose.
@@ -377,7 +377,7 @@ NavfnPlanner::smoothApproachToGoal(
 bool
 NavfnPlanner::getPlanFromPotential(
   const geometry_msgs::msg::Pose & goal,
-  nav_msgs::msg::Path & plan)
+  nav2_msgs::msg::PathWithCost & plan)
 {
   // clear the plan, just in case
   plan.poses.clear();

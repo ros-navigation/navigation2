@@ -20,7 +20,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav_msgs/msg/path.hpp"
+#include "nav2_msgs/msg/path_with_cost.hpp"
 
 #include "../../test_behavior_tree_fixture.hpp"
 #include "../../test_dummy_tree_node.hpp"
@@ -100,13 +100,13 @@ TEST_F(PathLongerOnApproachTestFixture, test_tick)
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
 
   // set new path on blackboard
-  nav_msgs::msg::Path new_path;
+  nav2_msgs::msg::PathWithCost new_path;
   new_path.poses.resize(10);
   for (unsigned int i = 0; i < new_path.poses.size(); i++) {
     // Assuming distance between waypoints to be 1.5m
     new_path.poses[i].pose.position.x = 1.5 * i;
   }
-  config_->blackboard->set<nav_msgs::msg::Path>("path", new_path);
+  config_->blackboard->set<nav2_msgs::msg::PathWithCost>("path", new_path);
 
   tree_->rootNode()->executeTick();
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
@@ -126,13 +126,13 @@ TEST_F(PathLongerOnApproachTestFixture, test_tick)
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
 
   // set old path on blackboard
-  nav_msgs::msg::Path old_path;
+  nav2_msgs::msg::PathWithCost old_path;
   old_path.poses.resize(5);
   for (unsigned int i = 1; i <= old_path.poses.size(); i++) {
     // Assuming distance between waypoints to be 3.0m
     old_path.poses[i - 1].pose.position.x = 3.0 * i;
   }
-  config_->blackboard->set<nav_msgs::msg::Path>("path", old_path);
+  config_->blackboard->set<nav2_msgs::msg::PathWithCost>("path", old_path);
   tree_->rootNode()->executeTick();
 
   // set new path on blackboard
@@ -141,7 +141,7 @@ TEST_F(PathLongerOnApproachTestFixture, test_tick)
     // Assuming distance between waypoints to be 1.5m
     new_path.poses[i].pose.position.x = 1.5 * i;
   }
-  config_->blackboard->set<nav_msgs::msg::Path>("path", new_path);
+  config_->blackboard->set<nav2_msgs::msg::PathWithCost>("path", new_path);
   tree_->rootNode()->executeTick();
 
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::FAILURE);

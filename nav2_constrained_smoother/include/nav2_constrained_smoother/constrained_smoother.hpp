@@ -85,7 +85,7 @@ public:
    * @return Smoothed path
    */
   bool smooth(
-    nav_msgs::msg::Path & path,
+    nav2_msgs::msg::PathWithCost & path,
     const rclcpp::Duration & max_time) override;
 
 protected:

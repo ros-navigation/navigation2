@@ -15,9 +15,8 @@
 
 #include <string>
 #include <memory>
-#include <limits>
 
-#include "nav_msgs/msg/path.hpp"
+#include "nav2_msgs/msg/path_with_cost.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "behaviortree_cpp_v3/decorator_node.h"
@@ -40,7 +39,7 @@ inline BT::NodeStatus TruncatePath::tick()
 {
   setStatus(BT::NodeStatus::RUNNING);
 
-  nav_msgs::msg::Path input_path;
+  nav2_msgs::msg::PathWithCost input_path;
 
   getInput("input_path", input_path);
 

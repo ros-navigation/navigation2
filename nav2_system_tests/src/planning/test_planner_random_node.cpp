@@ -26,7 +26,7 @@ using nav2_system_tests::PlannerTester;
 using nav2_util::TestCostmap;
 
 using ComputePathToPoseCommand = geometry_msgs::msg::PoseStamped;
-using ComputePathToPoseResult = nav_msgs::msg::Path;
+using ComputePathToPoseResult = nav2_msgs::msg::PathWithCost;
 
 TEST(testWithHundredRandomEndPoints, testWithHundredRandomEndPoints)
 {

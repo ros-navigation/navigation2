@@ -57,7 +57,7 @@ public:
   static BT::PortsList providedPorts()
   {
     return {
-      BT::InputPort<nav_msgs::msg::Path>("path", "Path to Check"),
+      BT::InputPort<nav2_msgs::msg::PathWithCost>("path", "Path to Check"),
       BT::InputPort<std::chrono::milliseconds>("server_timeout"),
       BT::InputPort<bool>("consider_cost_change", true, "Consider cost changes")
     };

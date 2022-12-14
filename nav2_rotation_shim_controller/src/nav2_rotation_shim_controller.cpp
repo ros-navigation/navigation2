@@ -268,7 +268,7 @@ void RotationShimController::isCollisionFree(
   }
 }
 
-void RotationShimController::setPlan(const nav_msgs::msg::Path & path)
+void RotationShimController::setPlan(const nav2_msgs::msg::PathWithCost & path)
 {
   path_updated_ = true;
   current_path_ = path;

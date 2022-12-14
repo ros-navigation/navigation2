@@ -10,7 +10,7 @@ uint16 FAILED_TO_MAKE_PROGRESS=105
 uint16 NO_VALID_CONTROL=106
 
 #goal definition
-nav_msgs/Path path
+PathWithCost path
 string controller_id
 string goal_checker_id
 ---

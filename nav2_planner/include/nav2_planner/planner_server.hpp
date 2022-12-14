@@ -24,7 +24,7 @@
 
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav_msgs/msg/path.hpp"
+#include "nav2_msgs/msg/path_with_cost.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_msgs/action/compute_path_to_pose.hpp"
 #include "nav2_msgs/action/compute_path_through_poses.hpp"
@@ -69,7 +69,7 @@ public:
    * @param goal goal request
    * @return Path
    */
-  nav_msgs::msg::Path getPlan(
+  nav2_msgs::msg::PathWithCost getPlan(
     const geometry_msgs::msg::PoseStamped & start,
     const geometry_msgs::msg::PoseStamped & goal,
     const std::string & planner_id);
@@ -180,7 +180,7 @@ protected:
   template<typename T>
   bool validatePath(
     const geometry_msgs::msg::PoseStamped & curr_goal,
-    const nav_msgs::msg::Path & path,
+    const nav2_msgs::msg::PathWithCost & path,
     const std::string & planner_id);
 
   /**
@@ -208,7 +208,7 @@ protected:
    * @brief Publish a path for visualization purposes
    * @param path Reference to Global Path
    */
-  void publishPlan(const nav_msgs::msg::Path & path);
+  void publishPlan(const nav2_msgs::msg::PathWithCost & path);
 
   void exceptionWarning(
     const geometry_msgs::msg::PoseStamped & start,
@@ -254,7 +254,7 @@ protected:
   nav2_costmap_2d::Costmap2D * costmap_;
 
   // Publishers for the path
-  rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr plan_publisher_;
+  rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::PathWithCost>::SharedPtr plan_publisher_;
 
   // Service to determine if the path is valid
   rclcpp::Service<nav2_msgs::srv::IsPathValid>::SharedPtr is_path_valid_service_;

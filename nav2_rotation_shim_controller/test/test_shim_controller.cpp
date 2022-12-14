@@ -47,7 +47,7 @@ public:
     return primary_controller_;
   }
 
-  nav_msgs::msg::Path getPath()
+  nav2_msgs::msg::PathWithCost getPath()
   {
     return current_path_;
   }
@@ -135,7 +135,7 @@ TEST(RotationShimControllerTest, setPlanAndSampledPointsTests)
   controller->activate();
 
   // Test state update and path setting
-  nav_msgs::msg::Path path;
+  nav2_msgs::msg::PathWithCost path;
   path.header.frame_id = "hi mate!";
   path.poses.resize(10);
   path.poses[1].pose.position.x = 0.1;
@@ -155,11 +155,11 @@ TEST(RotationShimControllerTest, setPlanAndSampledPointsTests)
   EXPECT_EQ(pose.pose.position.x, 1.0);  // default forward sampling is 0.5
   EXPECT_EQ(pose.pose.position.y, 1.0);
 
-  nav_msgs::msg::Path path_invalid_leng;
+  nav2_msgs::msg::PathWithCost path_invalid_leng;
   controller->setPlan(path_invalid_leng);
   EXPECT_THROW(controller->getSampledPathPtWrapper(), std::runtime_error);
 
-  nav_msgs::msg::Path path_invalid_dists;
+  nav2_msgs::msg::PathWithCost path_invalid_dists;
   path.poses.resize(10);
   controller->setPlan(path_invalid_dists);
   EXPECT_THROW(controller->getSampledPathPtWrapper(), std::runtime_error);
@@ -185,7 +185,7 @@ TEST(RotationShimControllerTest, rotationAndTransformTests)
   controller->activate();
 
   // Test state update and path setting
-  nav_msgs::msg::Path path;
+  nav2_msgs::msg::PathWithCost path;
   path.header.frame_id = "fake_frame";
   path.poses.resize(10);
   path.poses[1].pose.position.x = 0.1;
@@ -255,7 +255,7 @@ TEST(RotationShimControllerTest, computeVelocityTests)
   controller->activate();
 
   // Test state update and path setting
-  nav_msgs::msg::Path path;
+  nav2_msgs::msg::PathWithCost path;
   path.header.frame_id = "fake_frame";
   path.poses.resize(10);
 

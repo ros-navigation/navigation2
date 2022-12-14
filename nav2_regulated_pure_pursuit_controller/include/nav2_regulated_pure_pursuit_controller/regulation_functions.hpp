@@ -89,7 +89,7 @@ inline double costConstraint(
  * @return A scale from 0.0-1.0 of the distance to goal scaled by minimum distance
  */
 inline double approachVelocityScalingFactor(
-  const nav_msgs::msg::Path & transformed_path,
+  const nav2_msgs::msg::PathWithCost & transformed_path,
   const double approach_velocity_scaling_dist)
 {
   using namespace nav2_util::geometry_utils;  // NOLINT
@@ -117,7 +117,7 @@ inline double approachVelocityScalingFactor(
  */
 inline double approachVelocityConstraint(
   const double constrained_linear_vel,
-  const nav_msgs::msg::Path & path,
+  const nav2_msgs::msg::PathWithCost & path,
   const double min_approach_velocity,
   const double approach_velocity_scaling_dist)
 {

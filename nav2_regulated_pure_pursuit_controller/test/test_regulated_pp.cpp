@@ -41,7 +41,7 @@ public:
   BasicAPIRPP()
   : nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController() {}
 
-  nav_msgs::msg::Path getPlan() {return path_handler_->getPlan();}
+  nav2_msgs::msg::PathWithCost getPlan() {return path_handler_->getPlan();}
 
   double getSpeed() {return params_->desired_linear_vel;}
 
@@ -69,7 +69,7 @@ public:
   }
 
   geometry_msgs::msg::PoseStamped getLookAheadPointWrapper(
-    const double & dist, const nav_msgs::msg::Path & path)
+    const double & dist, const nav2_msgs::msg::PathWithCost & path)
   {
     return getLookAheadPoint(dist, path);
   }
@@ -94,7 +94,7 @@ public:
 
   void applyConstraintsWrapper(
     const double & curvature, const geometry_msgs::msg::Twist & curr_speed,
-    const double & pose_cost, const nav_msgs::msg::Path & path, double & linear_vel, double & sign)
+    const double & pose_cost, const nav2_msgs::msg::PathWithCost & path, double & linear_vel, double & sign)
   {
     return applyConstraints(
       curvature, curr_speed, pose_cost, path,
@@ -102,12 +102,12 @@ public:
   }
 
   double findVelocitySignChangeWrapper(
-    const nav_msgs::msg::Path & transformed_plan)
+    const nav2_msgs::msg::PathWithCost & transformed_plan)
   {
     return findVelocitySignChange(transformed_plan);
   }
 
-  nav_msgs::msg::Path transformGlobalPlanWrapper(
+  nav2_msgs::msg::PathWithCost transformGlobalPlanWrapper(
     const geometry_msgs::msg::PoseStamped & pose)
   {
     return path_handler_->transformGlobalPlan(pose, params_->max_robot_pose_search_dist);
@@ -130,7 +130,7 @@ TEST(RegulatedPurePursuitTest, basicAPI)
   ctrl->cleanup();
 
   // setPlan and get plan
-  nav_msgs::msg::Path path;
+  nav2_msgs::msg::PathWithCost path;
   path.poses.resize(2);
   path.poses[0].header.frame_id = "fake_frame";
   ctrl->setPlan(path);
@@ -185,7 +185,7 @@ TEST(RegulatedPurePursuitTest, findVelocitySignChange)
   pose.pose.position.x = 1.0;
   pose.pose.position.y = 0.0;
 
-  nav_msgs::msg::Path path;
+  nav2_msgs::msg::PathWithCost path;
   path.poses.resize(3);
   path.header.frame_id = "smb";
   path.header.stamp = pose.header.stamp;
@@ -369,7 +369,7 @@ TEST(RegulatedPurePursuitTest, lookaheadAPI)
 
   // test getLookAheadPoint
   double dist = 1.0;
-  nav_msgs::msg::Path path;
+  nav2_msgs::msg::PathWithCost path;
   path.poses.resize(10);
   for (uint i = 0; i != path.poses.size(); i++) {
     path.poses[i].pose.position.x = static_cast<double>(i);

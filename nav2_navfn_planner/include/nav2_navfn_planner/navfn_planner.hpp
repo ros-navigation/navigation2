@@ -26,7 +26,7 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_core/global_planner.hpp"
 #include "nav2_core/planner_exceptions.hpp"
-#include "nav_msgs/msg/path.hpp"
+#include "nav2_msgs/msg/path_with_cost.hpp"
 #include "nav2_navfn_planner/navfn.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_util/lifecycle_node.hpp"
@@ -83,7 +83,7 @@ public:
    * @param goal Goal pose
    * @return nav_msgs::Path of the generated path
    */
-  nav_msgs::msg::Path createPlan(
+  nav2_msgs::msg::PathWithCost createPlan(
     const geometry_msgs::msg::PoseStamped & start,
     const geometry_msgs::msg::PoseStamped & goal) override;
 
@@ -99,7 +99,7 @@ protected:
   bool makePlan(
     const geometry_msgs::msg::Pose & start,
     const geometry_msgs::msg::Pose & goal, double tolerance,
-    nav_msgs::msg::Path & plan);
+    nav2_msgs::msg::PathWithCost & plan);
 
   /**
    * @brief Compute the navigation function given a seed point in the world to start from
@@ -116,7 +116,7 @@ protected:
    */
   bool getPlanFromPotential(
     const geometry_msgs::msg::Pose & goal,
-    nav_msgs::msg::Path & plan);
+    nav2_msgs::msg::PathWithCost & plan);
 
   /**
    * @brief Remove artifacts at the end of the path - originated from planning on a discretized world
@@ -125,7 +125,7 @@ protected:
    */
   void smoothApproachToGoal(
     const geometry_msgs::msg::Pose & goal,
-    nav_msgs::msg::Path & plan);
+    nav2_msgs::msg::PathWithCost & plan);
 
   /**
    * @brief Compute the potential, or navigation cost, at a given point in the world

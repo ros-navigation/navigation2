@@ -29,9 +29,9 @@ using nav2_system_tests::PlannerTester;
 using nav2_util::TestCostmap;
 
 using ComputePathToPoseCommand = geometry_msgs::msg::PoseStamped;
-using ComputePathToPoseResult = nav_msgs::msg::Path;
+using ComputePathToPoseResult = nav2_msgs::msg::PathWithCost;
 
-void callback(const nav_msgs::msg::Path::ConstSharedPtr /*grid*/)
+void callback(const nav2_msgs::msg::PathWithCost::ConstSharedPtr /*grid*/)
 {
 }
 
@@ -120,7 +120,7 @@ TEST(testPluginMap, Failures)
   rclcpp_lifecycle::State state;
   obj->set_parameter(rclcpp::Parameter("expected_planner_frequency", 100000.0));
   obj->onConfigure(state);
-  obj->create_subscription<nav_msgs::msg::Path>(
+  obj->create_subscription<nav2_msgs::msg::PathWithCost>(
     "plan", rclcpp::SystemDefaultsQoS(), callback);
 
   geometry_msgs::msg::PoseStamped start;

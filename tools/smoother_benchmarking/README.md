@@ -55,7 +55,7 @@ index c7a90bcb..6f93edbf 100644
  
        // Get plan from start -> goal
 +      auto planning_start = steady_clock_.now();
-       nav_msgs::msg::Path curr_path = getPlan(curr_start, curr_goal, goal->planner_id);
+       nav2_msgs::msg::PathWithCost curr_path = getPlan(curr_start, curr_goal, goal->planner_id);
 +      auto planning_duration = steady_clock_.now() - planning_start;
 +      result->planning_time = planning_duration;
  

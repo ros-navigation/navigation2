@@ -141,7 +141,7 @@ protected:
    * @param path current path
    * return bool if the path is valid
    */
-  bool validate(const nav_msgs::msg::Path & path);
+  bool validate(const nav2_msgs::msg::PathWithCost & path);
 
   // Our action server implements the SmoothPath action
   std::unique_ptr<ActionServer> action_server_;
@@ -151,7 +151,7 @@ protected:
   std::shared_ptr<tf2_ros::TransformListener> transform_listener_;
 
   // Publishers and subscribers
-  rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr plan_publisher_;
+  rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::PathWithCost>::SharedPtr plan_publisher_;
 
   // Smoother Plugins
   pluginlib::ClassLoader<nav2_core::Smoother> lp_loader_;

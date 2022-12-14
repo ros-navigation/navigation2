@@ -23,7 +23,7 @@
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
-#include "nav_msgs/msg/path.hpp"
+#include "nav2_msgs/msg/path_with_cost.hpp"
 
 namespace nav2_util
 {
@@ -167,7 +167,7 @@ inline Iter first_after_integrated_distance(Iter begin, Iter end, Getter getComp
  * subset of the path.
  * @return double Path length
  */
-inline double calculate_path_length(const nav_msgs::msg::Path & path, size_t start_index = 0)
+inline double calculate_path_length(const nav2_msgs::msg::PathWithCost & path, size_t start_index = 0)
 {
   if (start_index + 1 >= path.poses.size()) {
     return 0.0;

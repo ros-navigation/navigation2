@@ -102,7 +102,7 @@ SmootherServer::on_configure(const rclcpp_lifecycle::State &)
   }
 
   // Initialize pubs & subs
-  plan_publisher_ = create_publisher<nav_msgs::msg::Path>("plan_smoothed", 1);
+  plan_publisher_ = create_publisher<nav2_msgs::msg::PathWithCost>("plan_smoothed", 1);
 
   // Create the action server that we implement with our smoothPath method
   action_server_ = std::make_unique<ActionServer>(
@@ -352,7 +352,7 @@ void SmootherServer::smoothPlan()
   }
 }
 
-bool SmootherServer::validate(const nav_msgs::msg::Path & path)
+bool SmootherServer::validate(const nav2_msgs::msg::PathWithCost & path)
 {
   if (path.poses.empty()) {
     RCLCPP_WARN(get_logger(), "Requested path to smooth is empty");

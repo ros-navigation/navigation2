@@ -22,7 +22,7 @@ namespace path_utils
 {
 
 void append_transform_to_path(
-  nav_msgs::msg::Path & path,
+  nav2_msgs::msg::PathWithCost & path,
   tf2::Transform & relative_transform)
 {
   // Add a new empty pose
@@ -42,7 +42,7 @@ void append_transform_to_path(
   new_pose.header.frame_id = previous_pose.header.frame_id;
 }
 
-void Straight::append(nav_msgs::msg::Path & path, double spacing) const
+void Straight::append(nav2_msgs::msg::PathWithCost & path, double spacing) const
 {
   auto num_points = std::floor(length_ / spacing);
   path.poses.reserve(path.poses.size() + num_points);
@@ -57,7 +57,7 @@ double chord_length(double radius, double radians)
   return 2 * radius * sin(radians / 2);
 }
 
-void Arc::append(nav_msgs::msg::Path & path, double spacing) const
+void Arc::append(nav2_msgs::msg::PathWithCost & path, double spacing) const
 {
   double length = radius_ * std::abs(radians_);
   size_t num_points = std::floor(length / spacing);
@@ -71,12 +71,12 @@ void Arc::append(nav_msgs::msg::Path & path, double spacing) const
   }
 }
 
-nav_msgs::msg::Path generate_path(
+nav2_msgs::msg::PathWithCost generate_path(
   geometry_msgs::msg::PoseStamped start,
   double spacing,
   std::initializer_list<std::unique_ptr<PathSegment>> segments)
 {
-  nav_msgs::msg::Path path;
+  nav2_msgs::msg::PathWithCost path;
   path.header = start.header;
   path.poses.push_back(start);
   for (const auto & segment : segments) {

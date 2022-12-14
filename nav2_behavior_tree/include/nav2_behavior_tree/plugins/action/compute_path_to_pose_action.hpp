@@ -18,7 +18,7 @@
 #include <string>
 
 #include "nav2_msgs/action/compute_path_to_pose.hpp"
-#include "nav_msgs/msg/path.h"
+#include "nav2_msgs/msg/path_with_cost.hpp"
 #include "nav2_behavior_tree/bt_action_node.hpp"
 
 namespace nav2_behavior_tree
@@ -84,7 +84,7 @@ public:
         BT::InputPort<std::string>(
           "planner_id", "",
           "Mapped name to the planner plugin type to use"),
-        BT::OutputPort<nav_msgs::msg::Path>("path", "Path created by ComputePathToPose node"),
+        BT::OutputPort<nav2_msgs::msg::PathWithCost>("path", "Path created by ComputePathToPose node"),
         BT::OutputPort<ActionResult::_error_code_type>(
           "error_code_id", "The compute path to pose error code"),
       });

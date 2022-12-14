@@ -43,7 +43,7 @@ BT::NodeStatus PathExpiringTimerCondition::tick()
   }
 
   // Grab the new path
-  nav_msgs::msg::Path path;
+  nav2_msgs::msg::PathWithCost path;
   getInput("path", path);
 
   // Reset timer if the path has been updated

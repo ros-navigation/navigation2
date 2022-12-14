@@ -20,7 +20,7 @@
 #include <limits>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav_msgs/msg/path.hpp"
+#include "nav2_msgs/msg/path_with_cost.hpp"
 #include "behaviortree_cpp_v3/decorator_node.h"
 #include "rclcpp/rclcpp.hpp"
 
@@ -50,7 +50,7 @@ public:
   static BT::PortsList providedPorts()
   {
     return {
-      BT::InputPort<nav_msgs::msg::Path>("path", "Planned Path"),
+      BT::InputPort<nav2_msgs::msg::PathWithCost>("path", "Planned Path"),
       BT::InputPort<double>(
         "prox_len", 3.0,
         "Proximity length (m) for the path to be longer on approach"),
@@ -74,8 +74,8 @@ private:
    * @return whether the path is updated for the current goal
    */
   bool isPathUpdated(
-    nav_msgs::msg::Path & new_path,
-    nav_msgs::msg::Path & old_path);
+    nav2_msgs::msg::PathWithCost & new_path,
+    nav2_msgs::msg::PathWithCost & old_path);
 
   /**
    * @brief Checks if the robot is in the goal proximity
@@ -84,7 +84,7 @@ private:
    * @return whether the robot is in the goal proximity
    */
   bool isRobotInGoalProximity(
-    nav_msgs::msg::Path & old_path,
+    nav2_msgs::msg::PathWithCost & old_path,
     double & prox_leng);
 
   /**
@@ -95,13 +95,13 @@ private:
    * @return whether the new path is longer
    */
   bool isNewPathLonger(
-    nav_msgs::msg::Path & new_path,
-    nav_msgs::msg::Path & old_path,
+    nav2_msgs::msg::PathWithCost & new_path,
+    nav2_msgs::msg::PathWithCost & old_path,
     double & length_factor);
 
 private:
-  nav_msgs::msg::Path new_path_;
-  nav_msgs::msg::Path old_path_;
+  nav2_msgs::msg::PathWithCost new_path_;
+  nav2_msgs::msg::PathWithCost old_path_;
   double prox_len_ = std::numeric_limits<double>::max();
   double length_factor_ = std::numeric_limits<double>::max();
   rclcpp::Node::SharedPtr node_;

@@ -71,7 +71,7 @@ void RegulatedPurePursuitController::configure(
   node->get_parameter("controller_frequency", control_frequency);
   control_duration_ = 1.0 / control_frequency;
 
-  global_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("received_global_plan", 1);
+  global_path_pub_ = node->create_publisher<nav2_msgs::msg::PathWithCost>("received_global_plan", 1);
   carrot_pub_ = node->create_publisher<geometry_msgs::msg::PointStamped>("lookahead_point", 1);
 }
 
@@ -297,7 +297,7 @@ geometry_msgs::msg::Point RegulatedPurePursuitController::circleSegmentIntersect
 
 geometry_msgs::msg::PoseStamped RegulatedPurePursuitController::getLookAheadPoint(
   const double & lookahead_dist,
-  const nav_msgs::msg::Path & transformed_plan)
+  const nav2_msgs::msg::PathWithCost & transformed_plan)
 {
   // Find the first pose which is at a distance greater than the lookahead distance
   auto goal_pose_it = std::find_if(
@@ -330,7 +330,7 @@ geometry_msgs::msg::PoseStamped RegulatedPurePursuitController::getLookAheadPoin
 
 void RegulatedPurePursuitController::applyConstraints(
   const double & curvature, const geometry_msgs::msg::Twist & /*curr_speed*/,
-  const double & pose_cost, const nav_msgs::msg::Path & path, double & linear_vel, double & sign)
+  const double & pose_cost, const nav2_msgs::msg::PathWithCost & path, double & linear_vel, double & sign)
 {
   double curvature_vel = linear_vel, cost_vel = linear_vel;
 
@@ -359,7 +359,7 @@ void RegulatedPurePursuitController::applyConstraints(
   linear_vel = sign * linear_vel;
 }
 
-void RegulatedPurePursuitController::setPlan(const nav_msgs::msg::Path & path)
+void RegulatedPurePursuitController::setPlan(const nav2_msgs::msg::PathWithCost & path)
 {
   path_handler_->setPlan(path);
 }
@@ -385,7 +385,7 @@ void RegulatedPurePursuitController::setSpeedLimit(
 }
 
 double RegulatedPurePursuitController::findVelocitySignChange(
-  const nav_msgs::msg::Path & transformed_plan)
+  const nav2_msgs::msg::PathWithCost & transformed_plan)
 {
   // Iterating through the transformed global path to determine the position of the cusp
   for (unsigned int pose_id = 1; pose_id < transformed_plan.poses.size() - 1; ++pose_id) {

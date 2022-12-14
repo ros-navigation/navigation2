@@ -23,7 +23,7 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
 #include "nav2_core/global_planner.hpp"
-#include "nav_msgs/msg/path.hpp"
+#include "nav2_msgs/msg/path_with_cost.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
@@ -49,7 +49,7 @@ public:
 
   void deactivate() override {}
 
-  nav_msgs::msg::Path createPlan(
+  nav2_msgs::msg::PathWithCost createPlan(
     const geometry_msgs::msg::PoseStamped &,
     const geometry_msgs::msg::PoseStamped &) override
   {
@@ -59,7 +59,7 @@ public:
 
 class StartOccupiedErrorPlanner : public UnknownErrorPlanner
 {
-  nav_msgs::msg::Path createPlan(
+  nav2_msgs::msg::PathWithCost createPlan(
     const geometry_msgs::msg::PoseStamped &,
     const geometry_msgs::msg::PoseStamped &) override
   {
@@ -69,7 +69,7 @@ class StartOccupiedErrorPlanner : public UnknownErrorPlanner
 
 class GoalOccupiedErrorPlanner : public UnknownErrorPlanner
 {
-  nav_msgs::msg::Path createPlan(
+  nav2_msgs::msg::PathWithCost createPlan(
     const geometry_msgs::msg::PoseStamped &,
     const geometry_msgs::msg::PoseStamped &) override
   {
@@ -79,7 +79,7 @@ class GoalOccupiedErrorPlanner : public UnknownErrorPlanner
 
 class StartOutsideMapErrorPlanner : public UnknownErrorPlanner
 {
-  nav_msgs::msg::Path createPlan(
+  nav2_msgs::msg::PathWithCost createPlan(
     const geometry_msgs::msg::PoseStamped &,
     const geometry_msgs::msg::PoseStamped &) override
   {
@@ -89,7 +89,7 @@ class StartOutsideMapErrorPlanner : public UnknownErrorPlanner
 
 class GoalOutsideMapErrorPlanner : public UnknownErrorPlanner
 {
-  nav_msgs::msg::Path createPlan(
+  nav2_msgs::msg::PathWithCost createPlan(
     const geometry_msgs::msg::PoseStamped &,
     const geometry_msgs::msg::PoseStamped &) override
   {
@@ -99,18 +99,18 @@ class GoalOutsideMapErrorPlanner : public UnknownErrorPlanner
 
 class NoValidPathErrorPlanner : public UnknownErrorPlanner
 {
-  nav_msgs::msg::Path createPlan(
+  nav2_msgs::msg::PathWithCost createPlan(
     const geometry_msgs::msg::PoseStamped &,
     const geometry_msgs::msg::PoseStamped &) override
   {
-    return nav_msgs::msg::Path();
+    return nav2_msgs::msg::PathWithCost();
   }
 };
 
 
 class TimedOutErrorPlanner : public UnknownErrorPlanner
 {
-  nav_msgs::msg::Path createPlan(
+  nav2_msgs::msg::PathWithCost createPlan(
     const geometry_msgs::msg::PoseStamped &,
     const geometry_msgs::msg::PoseStamped &) override
   {
@@ -120,7 +120,7 @@ class TimedOutErrorPlanner : public UnknownErrorPlanner
 
 class TFErrorPlanner : public UnknownErrorPlanner
 {
-  nav_msgs::msg::Path createPlan(
+  nav2_msgs::msg::PathWithCost createPlan(
     const geometry_msgs::msg::PoseStamped &,
     const geometry_msgs::msg::PoseStamped &) override
   {
@@ -130,7 +130,7 @@ class TFErrorPlanner : public UnknownErrorPlanner
 
 class NoViapointsGivenErrorPlanner : public UnknownErrorPlanner
 {
-  nav_msgs::msg::Path createPlan(
+  nav2_msgs::msg::PathWithCost createPlan(
     const geometry_msgs::msg::PoseStamped &,
     const geometry_msgs::msg::PoseStamped &) override
   {

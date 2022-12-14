@@ -23,7 +23,7 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_bt_navigator/navigator.hpp"
 #include "nav2_msgs/action/navigate_through_poses.hpp"
-#include "nav_msgs/msg/path.hpp"
+#include "nav2_msgs/msg/path_with_cost.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/odometry_utils.hpp"

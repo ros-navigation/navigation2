@@ -84,11 +84,11 @@ void ThetaStarPlanner::deactivate()
   RCLCPP_INFO(logger_, "Deactivating plugin %s of type nav2_theta_star_planner", name_.c_str());
 }
 
-nav_msgs::msg::Path ThetaStarPlanner::createPlan(
+nav2_msgs::msg::PathWithCost ThetaStarPlanner::createPlan(
   const geometry_msgs::msg::PoseStamped & start,
   const geometry_msgs::msg::PoseStamped & goal)
 {
-  nav_msgs::msg::Path global_path;
+  nav2_msgs::msg::PathWithCost global_path;
   auto start_time = std::chrono::steady_clock::now();
 
   // Corner case of start and goal beeing on the same cell
@@ -176,7 +176,7 @@ nav_msgs::msg::Path ThetaStarPlanner::createPlan(
   return global_path;
 }
 
-void ThetaStarPlanner::getPlan(nav_msgs::msg::Path & global_path)
+void ThetaStarPlanner::getPlan(nav2_msgs::msg::PathWithCost & global_path)
 {
   std::vector<coordsW> path;
   if (planner_->isUnsafeToPlan()) {
@@ -192,11 +192,11 @@ void ThetaStarPlanner::getPlan(nav_msgs::msg::Path & global_path)
   global_path.header.frame_id = global_frame_;
 }
 
-nav_msgs::msg::Path ThetaStarPlanner::linearInterpolation(
+nav2_msgs::msg::PathWithCost ThetaStarPlanner::linearInterpolation(
   const std::vector<coordsW> & raw_path,
   const double & dist_bw_points)
 {
-  nav_msgs::msg::Path pa;
+  nav2_msgs::msg::PathWithCost pa;
 
   geometry_msgs::msg::PoseStamped p1;
   for (unsigned int j = 0; j < raw_path.size() - 1; j++) {

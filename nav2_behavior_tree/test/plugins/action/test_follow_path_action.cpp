@@ -18,7 +18,7 @@
 #include <set>
 #include <string>
 
-#include "nav_msgs/msg/path.hpp"
+#include "nav2_msgs/msg/path_with_cost.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
 #include "behaviortree_cpp_v3/bt_factory.h"
@@ -124,10 +124,10 @@ TEST_F(FollowPathActionTestFixture, test_tick)
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
 
   // set new path on blackboard
-  nav_msgs::msg::Path path;
+  nav2_msgs::msg::PathWithCost path;
   path.poses.resize(1);
   path.poses[0].pose.position.x = 1.0;
-  config_->blackboard->set<nav_msgs::msg::Path>("path", path);
+  config_->blackboard->set<nav2_msgs::msg::PathWithCost>("path", path);
 
   // tick until node succeeds
   while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS) {
@@ -147,7 +147,7 @@ TEST_F(FollowPathActionTestFixture, test_tick)
 
   // set new goal
   path.poses[0].pose.position.x = -2.5;
-  config_->blackboard->set<nav_msgs::msg::Path>("path", path);
+  config_->blackboard->set<nav2_msgs::msg::PathWithCost>("path", path);
 
   while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS) {
     tree_->rootNode()->executeTick();

@@ -28,7 +28,7 @@
 #include "nav2_costmap_2d/cost_values.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/node_utils.hpp"
-#include "nav_msgs/msg/path.hpp"
+#include "nav2_msgs/msg/path_with_cost.hpp"
 #include "angles/angles.h"
 #include "tf2/utils.h"
 
@@ -49,7 +49,7 @@ typedef std::vector<geometry_msgs::msg::PoseStamped>::iterator PathIterator;
 typedef std::vector<geometry_msgs::msg::PoseStamped>::reverse_iterator ReversePathIterator;
 
 inline std::vector<PathSegment> findDirectionalPathSegments(
-  const nav_msgs::msg::Path & path)
+  const nav2_msgs::msg::PathWithCost & path)
 {
   std::vector<PathSegment> segments;
   PathSegment curr_segment;
@@ -92,7 +92,7 @@ inline std::vector<PathSegment> findDirectionalPathSegments(
 }
 
 inline void updateApproximatePathOrientations(
-  nav_msgs::msg::Path & path,
+  nav2_msgs::msg::PathWithCost & path,
   bool & reversing_segment)
 {
   double dx, dy, theta, pt_yaw;

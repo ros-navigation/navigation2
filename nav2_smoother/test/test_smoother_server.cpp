@@ -56,7 +56,7 @@ public:
   virtual void deactivate() {}
 
   virtual bool smooth(
-    nav_msgs::msg::Path & path,
+    nav2_msgs::msg::PathWithCost & path,
     const rclcpp::Duration & max_time)
   {
     assert(path.poses.size() == 2);

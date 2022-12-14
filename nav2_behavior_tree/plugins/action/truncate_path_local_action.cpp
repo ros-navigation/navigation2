@@ -21,7 +21,7 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
-#include "nav_msgs/msg/path.hpp"
+#include "nav2_msgs/msg/path_with_cost.hpp"
 #include "tf2_ros/create_timer_ros.h"
 
 #include "nav2_behavior_tree/plugins/action/truncate_path_local_action.hpp"
@@ -54,7 +54,7 @@ inline BT::NodeStatus TruncatePathLocal::tick()
   getInput("max_robot_pose_search_dist", max_robot_pose_search_dist);
 
   bool path_pruning = std::isfinite(max_robot_pose_search_dist);
-  nav_msgs::msg::Path new_path;
+  nav2_msgs::msg::PathWithCost new_path;
   getInput("input_path", new_path);
   if (!path_pruning || new_path != path_) {
     path_ = new_path;
@@ -96,7 +96,7 @@ inline BT::NodeStatus TruncatePathLocal::tick()
   auto backward_pose_it = nav2_util::geometry_utils::first_after_integrated_distance(
     std::reverse_iterator(current_pose + 1), path_.poses.rend(), distance_backward);
 
-  nav_msgs::msg::Path output_path;
+  nav2_msgs::msg::PathWithCost output_path;
   output_path.header = path_.header;
   output_path.poses = std::vector<geometry_msgs::msg::PoseStamped>(
     backward_pose_it.base(), forward_pose_it);

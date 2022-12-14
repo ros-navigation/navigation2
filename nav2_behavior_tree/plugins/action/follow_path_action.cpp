@@ -58,7 +58,7 @@ void FollowPathAction::on_wait_for_result(
   std::shared_ptr<const Action::Feedback>/*feedback*/)
 {
   // Grab the new path
-  nav_msgs::msg::Path new_path;
+  nav2_msgs::msg::PathWithCost new_path;
   getInput("path", new_path);
 
   // Check if it is not same with the current one

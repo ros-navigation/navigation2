@@ -19,7 +19,7 @@
 #include <set>
 #include <string>
 
-#include "nav_msgs/msg/path.hpp"
+#include "nav2_msgs/msg/path_with_cost.hpp"
 
 #include "behaviortree_cpp_v3/bt_factory.h"
 
@@ -123,7 +123,7 @@ TEST_F(SmoothPathActionTestFixture, test_tick)
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
 
-  nav_msgs::msg::Path path;
+  nav2_msgs::msg::PathWithCost path;
 
   // tick until node succeeds
   while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS) {
@@ -143,13 +143,13 @@ TEST_F(SmoothPathActionTestFixture, test_tick)
   pose.pose.position.x = -2.5;
   pose.pose.orientation.x = 1.0;
   path.poses.push_back(pose);
-  config_->blackboard->set<nav_msgs::msg::Path>("unsmoothed_path", path);
+  config_->blackboard->set<nav2_msgs::msg::PathWithCost>("unsmoothed_path", path);
 
   while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS) {
     tree_->rootNode()->executeTick();
   }
 
-  nav_msgs::msg::Path path_empty;
+  nav2_msgs::msg::PathWithCost path_empty;
   EXPECT_NE(path_empty, path);
   EXPECT_EQ(action_server_->getCurrentGoal()->path, path);
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);

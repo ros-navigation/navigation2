@@ -132,9 +132,9 @@ geometry_msgs::msg::PoseStamped pose2DToPoseStamped(
   return pose;
 }
 
-nav_msgs::msg::Path posesToPath(const std::vector<geometry_msgs::msg::PoseStamped> & poses)
+nav2_msgs::msg::PathWithCost posesToPath(const std::vector<geometry_msgs::msg::PoseStamped> & poses)
 {
-  nav_msgs::msg::Path path;
+  nav2_msgs::msg::PathWithCost path;
   if (poses.empty()) {
     return path;
   }
@@ -147,7 +147,7 @@ nav_msgs::msg::Path posesToPath(const std::vector<geometry_msgs::msg::PoseStampe
   return path;
 }
 
-nav_2d_msgs::msg::Path2D pathToPath2D(const nav_msgs::msg::Path & path)
+nav_2d_msgs::msg::Path2D pathToPath2D(const nav2_msgs::msg::PathWithCost & path)
 {
   nav_2d_msgs::msg::Path2D path2d;
   path2d.header = path.header;
@@ -158,11 +158,11 @@ nav_2d_msgs::msg::Path2D pathToPath2D(const nav_msgs::msg::Path & path)
 }
 
 
-nav_msgs::msg::Path poses2DToPath(
+nav2_msgs::msg::PathWithCost poses2DToPath(
   const std::vector<geometry_msgs::msg::Pose2D> & poses,
   const std::string & frame, const rclcpp::Time & stamp)
 {
-  nav_msgs::msg::Path path;
+  nav2_msgs::msg::PathWithCost path;
   path.poses.resize(poses.size());
   path.header.frame_id = frame;
   path.header.stamp = stamp;
@@ -172,9 +172,9 @@ nav_msgs::msg::Path poses2DToPath(
   return path;
 }
 
-nav_msgs::msg::Path pathToPath(const nav_2d_msgs::msg::Path2D & path2d)
+nav2_msgs::msg::PathWithCost pathToPath(const nav_2d_msgs::msg::Path2D & path2d)
 {
-  nav_msgs::msg::Path path;
+  nav2_msgs::msg::PathWithCost path;
   path.header = path2d.header;
   path.poses.resize(path2d.poses.size());
   for (unsigned int i = 0; i < path.poses.size(); i++) {

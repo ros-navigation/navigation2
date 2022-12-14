@@ -46,7 +46,7 @@ public:
   : nav2_smac_planner::Smoother(params)
   {}
 
-  std::vector<PathSegment> findDirectionalPathSegmentsWrapper(nav_msgs::msg::Path path)
+  std::vector<PathSegment> findDirectionalPathSegmentsWrapper(nav2_msgs::msg::PathWithCost path)
   {
     return findDirectionalPathSegments(path);
   }
@@ -106,7 +106,7 @@ TEST(SmootherTest, test_full_smoother)
   EXPECT_TRUE(a_star.createPath(path, num_it, tolerance));
 
   // Convert to world coordinates and get length to compare to smoothed length
-  nav_msgs::msg::Path plan;
+  nav2_msgs::msg::PathWithCost plan;
   plan.header.stamp = node->now();
   plan.header.frame_id = "map";
   geometry_msgs::msg::PoseStamped pose;

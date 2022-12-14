@@ -26,7 +26,7 @@
 #include "nav2_smac_planner/types.hpp"
 #include "nav2_smac_planner/constants.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav_msgs/msg/path.hpp"
+#include "nav2_msgs/msg/path_with_cost.hpp"
 #include "angles/angles.h"
 #include "tf2/utils.h"
 #include "ompl/base/StateSpace.h"
@@ -113,7 +113,7 @@ public:
    * @return If smoothing was successful
    */
   bool smooth(
-    nav_msgs::msg::Path & path,
+    nav2_msgs::msg::PathWithCost & path,
     const nav2_costmap_2d::Costmap2D * costmap,
     const double & max_time);
 
@@ -127,7 +127,7 @@ protected:
    * @return If smoothing was successful
    */
   bool smoothImpl(
-    nav_msgs::msg::Path & path,
+    nav2_msgs::msg::PathWithCost & path,
     bool & reversing_segment,
     const nav2_costmap_2d::Costmap2D * costmap,
     const double & max_time);
@@ -158,7 +158,7 @@ protected:
    * @param path Path in which to look for cusps
    * @return Set of index pairs for each segment of the path in a given direction
    */
-  std::vector<PathSegment> findDirectionalPathSegments(const nav_msgs::msg::Path & path);
+  std::vector<PathSegment> findDirectionalPathSegments(const nav2_msgs::msg::PathWithCost & path);
 
   /**
    * @brief Enforced minimum curvature boundary conditions on plan output
@@ -170,7 +170,7 @@ protected:
    */
   void enforceStartBoundaryConditions(
     const geometry_msgs::msg::Pose & start_pose,
-    nav_msgs::msg::Path & path,
+    nav2_msgs::msg::PathWithCost & path,
     const nav2_costmap_2d::Costmap2D * costmap,
     const bool & reversing_segment);
 
@@ -184,7 +184,7 @@ protected:
    */
   void enforceEndBoundaryConditions(
     const geometry_msgs::msg::Pose & end_pose,
-    nav_msgs::msg::Path & path,
+    nav2_msgs::msg::PathWithCost & path,
     const nav2_costmap_2d::Costmap2D * costmap,
     const bool & reversing_segment);
 
@@ -228,7 +228,7 @@ protected:
    * @param reversing_segment Return if this is a reversing segment
    */
   inline void updateApproximatePathOrientations(
-    nav_msgs::msg::Path & path,
+    nav2_msgs::msg::PathWithCost & path,
     bool & reversing_segment);
 
   double min_turning_rad_, tolerance_, data_w_, smooth_w_;

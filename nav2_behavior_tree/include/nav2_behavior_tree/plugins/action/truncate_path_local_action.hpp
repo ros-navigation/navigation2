@@ -20,7 +20,7 @@
 #include <string>
 #include <limits>
 
-#include "nav_msgs/msg/path.hpp"
+#include "nav2_msgs/msg/path_with_cost.hpp"
 
 #include "behaviortree_cpp_v3/action_node.h"
 #include "tf2_ros/buffer.h"
@@ -50,8 +50,8 @@ public:
   static BT::PortsList providedPorts()
   {
     return {
-      BT::InputPort<nav_msgs::msg::Path>("input_path", "Original Path"),
-      BT::OutputPort<nav_msgs::msg::Path>(
+      BT::InputPort<nav2_msgs::msg::PathWithCost>("input_path", "Original Path"),
+      BT::OutputPort<nav2_msgs::msg::PathWithCost>(
         "output_path", "Path truncated to a certain distance around robot"),
       BT::InputPort<double>(
         "distance_forward", 8.0,
@@ -115,8 +115,8 @@ private:
 
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
 
-  nav_msgs::msg::Path path_;
-  nav_msgs::msg::Path::_poses_type::iterator closest_pose_detection_begin_;
+  nav2_msgs::msg::PathWithCost path_;
+  nav2_msgs::msg::PathWithCost::_poses_type::iterator closest_pose_detection_begin_;
 };
 
 }  // namespace nav2_behavior_tree

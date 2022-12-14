@@ -60,7 +60,7 @@ public:
    * @param max_robot_pose_search_dist Distance to search for matching nearest path point
    * @return Path in new frame
    */
-  nav_msgs::msg::Path transformGlobalPlan(
+  nav2_msgs::msg::PathWithCost transformGlobalPlan(
     const geometry_msgs::msg::PoseStamped & pose,
     double max_robot_pose_search_dist);
 
@@ -76,9 +76,9 @@ public:
     const geometry_msgs::msg::PoseStamped & in_pose,
     geometry_msgs::msg::PoseStamped & out_pose) const;
 
-  void setPlan(const nav_msgs::msg::Path & path) {global_plan_ = path;}
+  void setPlan(const nav2_msgs::msg::PathWithCost & path) {global_plan_ = path;}
 
-  nav_msgs::msg::Path getPlan() {return global_plan_;}
+  nav2_msgs::msg::PathWithCost getPlan() {return global_plan_;}
 
 protected:
   /**
@@ -91,7 +91,7 @@ protected:
   tf2::Duration transform_tolerance_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
-  nav_msgs::msg::Path global_plan_;
+  nav2_msgs::msg::PathWithCost global_plan_;
 };
 
 }  // namespace nav2_regulated_pure_pursuit_controller

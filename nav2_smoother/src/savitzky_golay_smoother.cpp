@@ -43,14 +43,14 @@ void SavitzkyGolaySmoother::configure(
 }
 
 bool SavitzkyGolaySmoother::smooth(
-  nav_msgs::msg::Path & path,
+  nav2_msgs::msg::PathWithCost & path,
   const rclcpp::Duration & max_time)
 {
   steady_clock::time_point start = steady_clock::now();
   double time_remaining = max_time.seconds();
 
   bool success = true, reversing_segment;
-  nav_msgs::msg::Path curr_path_segment;
+  nav2_msgs::msg::PathWithCost curr_path_segment;
   curr_path_segment.header = path.header;
 
   std::vector<PathSegment> path_segments = findDirectionalPathSegments(path);
@@ -90,7 +90,7 @@ bool SavitzkyGolaySmoother::smooth(
 }
 
 bool SavitzkyGolaySmoother::smoothImpl(
-  nav_msgs::msg::Path & path,
+  nav2_msgs::msg::PathWithCost & path,
   bool & reversing_segment)
 {
   // Must be at least 10 in length to enter function

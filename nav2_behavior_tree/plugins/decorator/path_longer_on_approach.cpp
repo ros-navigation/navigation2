@@ -31,8 +31,8 @@ PathLongerOnApproach::PathLongerOnApproach(
 }
 
 bool PathLongerOnApproach::isPathUpdated(
-  nav_msgs::msg::Path & new_path,
-  nav_msgs::msg::Path & old_path)
+  nav2_msgs::msg::PathWithCost & new_path,
+  nav2_msgs::msg::PathWithCost & old_path)
 {
   return new_path != old_path && old_path.poses.size() != 0 &&
          new_path.poses.size() != 0 &&
@@ -40,15 +40,15 @@ bool PathLongerOnApproach::isPathUpdated(
 }
 
 bool PathLongerOnApproach::isRobotInGoalProximity(
-  nav_msgs::msg::Path & old_path,
+  nav2_msgs::msg::PathWithCost & old_path,
   double & prox_leng)
 {
   return nav2_util::geometry_utils::calculate_path_length(old_path, 0) < prox_leng;
 }
 
 bool PathLongerOnApproach::isNewPathLonger(
-  nav_msgs::msg::Path & new_path,
-  nav_msgs::msg::Path & old_path,
+  nav2_msgs::msg::PathWithCost & new_path,
+  nav2_msgs::msg::PathWithCost & old_path,
   double & length_factor)
 {
   return nav2_util::geometry_utils::calculate_path_length(new_path, 0) >

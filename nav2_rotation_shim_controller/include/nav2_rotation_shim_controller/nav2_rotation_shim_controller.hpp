@@ -95,7 +95,7 @@ public:
    * @brief nav2_core setPlan - Sets the global plan
    * @param path The global plan
    */
-  void setPlan(const nav_msgs::msg::Path & path) override;
+  void setPlan(const nav2_msgs::msg::PathWithCost & path) override;
 
   /**
    * @brief Limits the maximum linear speed of the robot.
@@ -164,7 +164,7 @@ protected:
   pluginlib::ClassLoader<nav2_core::Controller> lp_loader_;
   nav2_core::Controller::Ptr primary_controller_;
   bool path_updated_;
-  nav_msgs::msg::Path current_path_;
+  nav2_msgs::msg::PathWithCost current_path_;
   double forward_sampling_distance_, angular_dist_threshold_;
   double rotate_to_heading_angular_vel_, max_angular_accel_;
   double control_duration_, simulate_ahead_time_;

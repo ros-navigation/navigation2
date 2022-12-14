@@ -19,7 +19,7 @@ string planner_id
 bool use_start # If false, use current robot pose as path start, if true, use start above instead
 ---
 #result definition
-nav_msgs/Path path
+PathWithCost path
 builtin_interfaces/Duration planning_time
 uint16 error_code
 ---

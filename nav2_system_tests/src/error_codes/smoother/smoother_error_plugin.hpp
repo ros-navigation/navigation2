@@ -40,7 +40,7 @@ public:
   void deactivate() override {}
 
   bool smooth(
-    nav_msgs::msg::Path &,
+    nav2_msgs::msg::PathWithCost &,
     const rclcpp::Duration &) override
   {
     throw nav2_core::SmootherException("Unknown Smoother exception");
@@ -50,7 +50,7 @@ public:
 class TimeOutErrorSmoother : public UnknownErrorSmoother
 {
   bool smooth(
-    nav_msgs::msg::Path &,
+    nav2_msgs::msg::PathWithCost &,
     const rclcpp::Duration &)
   {
     throw nav2_core::SmootherTimedOut("Smoother timedOut");
@@ -60,7 +60,7 @@ class TimeOutErrorSmoother : public UnknownErrorSmoother
 class SmoothedPathInCollision : public UnknownErrorSmoother
 {
   bool smooth(
-    nav_msgs::msg::Path &,
+    nav2_msgs::msg::PathWithCost &,
     const rclcpp::Duration &)
   {
     throw nav2_core::SmoothedPathInCollision("Smoother path in collision");
@@ -70,7 +70,7 @@ class SmoothedPathInCollision : public UnknownErrorSmoother
 class FailedToSmoothPath : public UnknownErrorSmoother
 {
   bool smooth(
-    nav_msgs::msg::Path &,
+    nav2_msgs::msg::PathWithCost &,
     const rclcpp::Duration &)
   {
     throw nav2_core::FailedToSmoothPath("Failed to smooth path");
@@ -80,7 +80,7 @@ class FailedToSmoothPath : public UnknownErrorSmoother
 class InvalidPath : public UnknownErrorSmoother
 {
   bool smooth(
-    nav_msgs::msg::Path &,
+    nav2_msgs::msg::PathWithCost &,
     const rclcpp::Duration &)
   {
     throw nav2_core::InvalidPath("Invalid path");

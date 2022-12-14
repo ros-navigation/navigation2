@@ -34,7 +34,7 @@ IsPathValidCondition::IsPathValidCondition(
 
 BT::NodeStatus IsPathValidCondition::tick()
 {
-  nav_msgs::msg::Path path;
+  nav2_msgs::msg::PathWithCost path;
   getInput("path", path);
   bool consider_cost_change;
   getInput("consider_cost_change", consider_cost_change);

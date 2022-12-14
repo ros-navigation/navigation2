@@ -46,7 +46,7 @@
 #include "pluginlib/class_loader.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
-#include "nav_msgs/msg/path.hpp"
+#include "nav2_msgs/msg/path_with_cost.hpp"
 #include "nav2_core/goal_checker.hpp"
 
 
@@ -96,7 +96,7 @@ public:
    * @brief local setPlan - Sets the global plan
    * @param path The global plan
    */
-  virtual void setPlan(const nav_msgs::msg::Path & path) = 0;
+  virtual void setPlan(const nav2_msgs::msg::PathWithCost & path) = 0;
 
   /**
    * @brief Controller computeVelocityCommands - calculates the best command given the current pose and velocity

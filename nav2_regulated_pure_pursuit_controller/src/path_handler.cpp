@@ -45,7 +45,7 @@ double PathHandler::getCostmapMaxExtent() const
   return max_costmap_dim_meters / 2.0;
 }
 
-nav_msgs::msg::Path PathHandler::transformGlobalPlan(
+nav2_msgs::msg::PathWithCost PathHandler::transformGlobalPlan(
   const geometry_msgs::msg::PoseStamped & pose,
   double max_robot_pose_search_dist)
 {
@@ -95,7 +95,7 @@ nav_msgs::msg::Path PathHandler::transformGlobalPlan(
     };
 
   // Transform the near part of the global plan into the robot's frame of reference.
-  nav_msgs::msg::Path transformed_plan;
+  nav2_msgs::msg::PathWithCost transformed_plan;
   std::transform(
     transformation_begin, transformation_end,
     std::back_inserter(transformed_plan.poses),

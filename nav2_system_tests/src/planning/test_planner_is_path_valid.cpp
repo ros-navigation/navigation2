@@ -30,7 +30,7 @@ TEST(testIsPathValid, testIsPathValid)
   planner_tester->activate();
   planner_tester->loadSimpleCostmap(TestCostmap::top_left_obstacle);
 
-  nav_msgs::msg::Path path;
+  nav2_msgs::msg::PathWithCost path;
 
   // empty path
   bool is_path_valid = planner_tester->isPathValid(path);

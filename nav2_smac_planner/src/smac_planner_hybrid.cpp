@@ -214,7 +214,7 @@ void SmacPlannerHybrid::configure(
       node, _global_frame, topic_name, _costmap, _downsampling_factor);
   }
 
-  _raw_plan_publisher = node->create_publisher<nav_msgs::msg::Path>("unsmoothed_plan", 1);
+  _raw_plan_publisher = node->create_publisher<nav2_msgs::msg::PathWithCost>("unsmoothed_plan", 1);
 
   RCLCPP_INFO(
     _logger, "Configured plugin %s of type SmacPlannerHybrid with "
@@ -266,7 +266,7 @@ void SmacPlannerHybrid::cleanup()
   _raw_plan_publisher.reset();
 }
 
-nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
+nav2_msgs::msg::PathWithCost SmacPlannerHybrid::createPlan(
   const geometry_msgs::msg::PoseStamped & start,
   const geometry_msgs::msg::PoseStamped & goal)
 {
@@ -322,7 +322,7 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   _a_star->setGoal(mx, my, orientation_bin_id);
 
   // Setup message
-  nav_msgs::msg::Path plan;
+  nav2_msgs::msg::PathWithCost plan;
   plan.header.stamp = _clock->now();
   plan.header.frame_id = _global_frame;
   geometry_msgs::msg::PoseStamped pose;

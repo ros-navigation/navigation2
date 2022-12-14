@@ -462,7 +462,7 @@ void ControllerServer::computeControl()
   action_server_->succeeded_current();
 }
 
-void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
+void ControllerServer::setPlannerPath(const nav2_msgs::msg::PathWithCost & path)
 {
   RCLCPP_DEBUG(
     get_logger(),
@@ -533,7 +533,7 @@ void ControllerServer::computeAndPublishVelocity()
   feedback->speed = std::hypot(cmd_vel_2d.twist.linear.x, cmd_vel_2d.twist.linear.y);
 
   // Find the closest pose to current pose on global path
-  nav_msgs::msg::Path & current_path = current_path_;
+  nav2_msgs::msg::PathWithCost & current_path = current_path_;
   auto find_closest_pose_idx =
     [&pose, &current_path]() {
       size_t closest_pose_idx = 0;

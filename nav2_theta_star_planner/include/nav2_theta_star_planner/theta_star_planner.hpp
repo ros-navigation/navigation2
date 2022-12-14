@@ -26,7 +26,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_core/global_planner.hpp"
 #include "nav2_core/planner_exceptions.hpp"
-#include "nav_msgs/msg/path.hpp"
+#include "nav2_msgs/msg/path_with_cost.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
@@ -54,7 +54,7 @@ public:
 
   void deactivate() override;
 
-  nav_msgs::msg::Path createPlan(
+  nav2_msgs::msg::PathWithCost createPlan(
     const geometry_msgs::msg::PoseStamped & start,
     const geometry_msgs::msg::PoseStamped & goal) override;
 
@@ -78,7 +78,7 @@ protected:
    * @brief the function responsible for calling the algorithm and retrieving a path from it
    * @return global_path is the planned path to be taken
    */
-  void getPlan(nav_msgs::msg::Path & global_path);
+  void getPlan(nav2_msgs::msg::PathWithCost & global_path);
 
   /**
    * @brief interpolates points between the consecutive waypoints of the path
@@ -86,7 +86,7 @@ protected:
    * @param dist_bw_points is used to send in the interpolation_resolution (which has been set as the costmap resolution)
    * @return the final path with waypoints at a distance of the value of interpolation_resolution of each other
    */
-  static nav_msgs::msg::Path linearInterpolation(
+  static nav2_msgs::msg::PathWithCost linearInterpolation(
     const std::vector<coordsW> & raw_path,
     const double & dist_bw_points);
 

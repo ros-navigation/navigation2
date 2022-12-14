@@ -44,7 +44,7 @@ public:
   {
   }
 
-  std::vector<PathSegment> findDirectionalPathSegmentsWrapper(nav_msgs::msg::Path path)
+  std::vector<PathSegment> findDirectionalPathSegmentsWrapper(nav2_msgs::msg::PathWithCost path)
   {
     return findDirectionalPathSegments(path);
   }
@@ -88,7 +88,7 @@ TEST(SmootherTest, test_simple_smoother)
   smoother->configure(parent, "test", dummy_tf, dummy_costmap, dummy_footprint);
 
   // Test that an irregular distributed path becomes more distributed
-  nav_msgs::msg::Path straight_irregular_path;
+  nav2_msgs::msg::PathWithCost straight_irregular_path;
   straight_irregular_path.header.frame_id = "map";
   straight_irregular_path.header.stamp = node->now();
   straight_irregular_path.poses.resize(11);
@@ -128,7 +128,7 @@ TEST(SmootherTest, test_simple_smoother)
   }
 
   // Test regular path, should see no effective change
-  nav_msgs::msg::Path straight_regular_path;
+  nav2_msgs::msg::PathWithCost straight_regular_path;
   straight_regular_path.header = straight_irregular_path.header;
   straight_regular_path.poses.resize(11);
   straight_regular_path.poses[0].pose.position.x = 0.5;
@@ -164,7 +164,7 @@ TEST(SmootherTest, test_simple_smoother)
   }
 
   // test shorter and curved if given a right angle
-  nav_msgs::msg::Path right_angle_path;
+  nav2_msgs::msg::PathWithCost right_angle_path;
   right_angle_path = straight_regular_path;
   straight_regular_path.poses[6].pose.position.x = 0.6;
   straight_regular_path.poses[6].pose.position.y = 0.5;
@@ -181,7 +181,7 @@ TEST(SmootherTest, test_simple_smoother)
   EXPECT_NEAR(straight_regular_path.poses[5].pose.position.y, 0.387, 0.01);
 
   // Test that collisions are rejected
-  nav_msgs::msg::Path collision_path;
+  nav2_msgs::msg::PathWithCost collision_path;
   collision_path.poses.resize(11);
   collision_path.poses[0].pose.position.x = 0.0;
   collision_path.poses[0].pose.position.y = 0.0;
@@ -208,7 +208,7 @@ TEST(SmootherTest, test_simple_smoother)
   EXPECT_THROW(smoother->smooth(collision_path, max_time), nav2_core::FailedToSmoothPath);
 
   // test cusp / reversing segments
-  nav_msgs::msg::Path reversing_path;
+  nav2_msgs::msg::PathWithCost reversing_path;
   reversing_path.poses.resize(11);
   reversing_path.poses[0].pose.position.x = 0.5;
   reversing_path.poses[0].pose.position.y = 0.0;
@@ -248,7 +248,7 @@ TEST(SmootherTest, test_simple_smoother)
 
   // test max iterations
   smoother->setMaxItsToInvalid();
-  nav_msgs::msg::Path max_its_path;
+  nav2_msgs::msg::PathWithCost max_its_path;
   max_its_path.poses.resize(11);
   max_its_path.poses[0].pose.position.x = 0.5;
   max_its_path.poses[0].pose.position.y = 0.0;

@@ -138,7 +138,7 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   }
 
   // Initialize pubs & subs
-  plan_publisher_ = create_publisher<nav_msgs::msg::Path>("plan", 1);
+  plan_publisher_ = create_publisher<nav2_msgs::msg::PathWithCost>("plan", 1);
 
   // Create the action servers for path planning to a pose and through poses
   action_server_pose_ = std::make_unique<ActionServerToPose>(
@@ -317,7 +317,7 @@ bool PlannerServer::transformPosesToGlobalFrame(
 template<typename T>
 bool PlannerServer::validatePath(
   const geometry_msgs::msg::PoseStamped & goal,
-  const nav_msgs::msg::Path & path,
+  const nav2_msgs::msg::PathWithCost & path,
   const std::string & planner_id)
 {
   if (path.poses.empty()) {
@@ -346,7 +346,7 @@ void PlannerServer::computePlanThroughPoses()
   // Initialize the ComputePathThroughPoses goal and result
   auto goal = action_server_poses_->get_current_goal();
   auto result = std::make_shared<ActionThroughPoses::Result>();
-  nav_msgs::msg::Path concat_path;
+  nav2_msgs::msg::PathWithCost concat_path;
 
   geometry_msgs::msg::PoseStamped curr_start, curr_goal;
 
@@ -385,7 +385,7 @@ void PlannerServer::computePlanThroughPoses()
       }
 
       // Get plan from start -> goal
-      nav_msgs::msg::Path curr_path = getPlan(curr_start, curr_goal, goal->planner_id);
+      nav2_msgs::msg::PathWithCost curr_path = getPlan(curr_start, curr_goal, goal->planner_id);
 
       if (!validatePath<ActionThroughPoses>(curr_goal, curr_path, goal->planner_id)) {
         throw nav2_core::NoValidPathCouldBeFound(goal->planner_id + " generated a empty path");
@@ -546,7 +546,7 @@ PlannerServer::computePlan()
   }
 }
 
-nav_msgs::msg::Path
+nav2_msgs::msg::PathWithCost
 PlannerServer::getPlan(
   const geometry_msgs::msg::PoseStamped & start,
   const geometry_msgs::msg::PoseStamped & goal,
@@ -575,13 +575,13 @@ PlannerServer::getPlan(
     }
   }
 
-  return nav_msgs::msg::Path();
+  return nav2_msgs::msg::PathWithCost();
 }
 
 void
-PlannerServer::publishPlan(const nav_msgs::msg::Path & path)
+PlannerServer::publishPlan(const nav2_msgs::msg::PathWithCost & path)
 {
-  auto msg = std::make_unique<nav_msgs::msg::Path>(path);
+  auto msg = std::make_unique<nav2_msgs::msg::PathWithCost>(path);
   if (plan_publisher_->is_activated() && plan_publisher_->get_subscription_count() > 0) {
     plan_publisher_->publish(std::move(msg));
   }
@@ -673,7 +673,7 @@ void PlannerServer::isPathValid(
   // come from the same distribution (e.g. there is not a statistically significant change)
   // Thus, the difference in population mean is 0 and the sample sizes are the same
   float z = (mean_current - mean_orginal) / std::sqrt((var_current + var_orginal) / current_costs.size());
-  
+
   // TODO try single tail or tune strictness? Parameterize?
   // 1.65 95% single tail; 2.55 for 99% dual, 2.33 99% single; 90% 1.65 dual, 90% 1.2 single.
   if (z > z_score_) {  // critical z score for 95% level

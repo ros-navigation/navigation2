@@ -25,7 +25,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "pluginlib/class_loader.hpp"
-#include "nav_msgs/msg/path.hpp"
+#include "nav2_msgs/msg/path_with_cost.hpp"
 
 
 namespace nav2_core
@@ -74,7 +74,7 @@ public:
    * @return If smoothing was completed (true) or interrupted by time limit (false)
    */
   virtual bool smooth(
-    nav_msgs::msg::Path & path,
+    nav2_msgs::msg::PathWithCost & path,
     const rclcpp::Duration & max_time) = 0;
 };
 
