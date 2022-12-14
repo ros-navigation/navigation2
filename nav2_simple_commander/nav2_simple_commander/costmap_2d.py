@@ -166,19 +166,19 @@ class PyCostmap2D:
 
         Returns
         -------
-            None: if coordinates are invalid
+            (None, None): if coordinates are invalid
             tuple of int: mx, my (if coordinates are valid)
             mx (int): map coordinate X
             my (int): map coordinate Y
 
         """
         if wx < self.origin_x or wy < self.origin_y:
-            return None
+            return (None, None)
         mx = int((wx - self.origin_x) // self.resolution)
         my = int((wy - self.origin_y) // self.resolution)
         if mx < self.size_x and my < self.size_y:
             return (mx, my)
-        return None
+        return (None, None)
 
     def getIndex(self, mx: int, my: int) -> int:
         """

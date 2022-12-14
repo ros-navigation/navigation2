@@ -65,21 +65,21 @@ class FootprintCollisionChecker():
         x1 = 0.0
         y1 = 0.0
 
-        if self.worldToMapValidated(footprint.points[0].x, footprint.points[0].y) is None:
-            return LETHAL_OBSTACLE
-
         x0, y0 = self.worldToMapValidated(
             footprint.points[0].x, footprint.points[0].y)
+            
+        if x0 is None or y0 is None:
+            return LETHAL_OBSTACLE
+
         xstart = x0
         ystart = y0
 
         for i in range(len(footprint.points) - 1):
-            if self.worldToMapValidated(
-                    footprint.points[i + 1].x, footprint.points[i + 1].y) is None:
-                return LETHAL_OBSTACLE
-
             x1, y1 = self.worldToMapValidated(
                 footprint.points[i + 1].x, footprint.points[i + 1].y)
+
+            if x1 is None or y1 is None:
+                return LETHAL_OBSTACLE
 
             footprint_cost = max(
                 float(self.lineCost(x0, x1, y0, y1)), footprint_cost)
