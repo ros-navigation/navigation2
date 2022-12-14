@@ -41,3 +41,7 @@ ament_target_dependencies(test_condition_is_battery_low ${dependencies})
 ament_add_gtest(test_condition_is_path_valid test_is_path_valid.cpp)
 target_link_libraries(test_condition_is_path_valid nav2_is_path_valid_condition_bt_node)
 ament_target_dependencies(test_condition_is_path_valid ${dependencies})
+
+ament_add_gtest(test_condition_error_code test_error_code_condition.cpp)
+target_link_libraries(test_condition_error_code nav2_error_code_condition_bt_node)
+ament_target_dependencies(test_condition_error_code ${dependencies})
