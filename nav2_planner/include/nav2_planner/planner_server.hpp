@@ -216,12 +216,6 @@ protected:
     const std::string & planner_id,
     const std::exception & ex);
 
-  void exceptionWarning(
-    const geometry_msgs::msg::PoseStamped & start,
-    const geometry_msgs::msg::PoseStamped & goal,
-    const std::string & planner_id,
-    const std::exception & ex);
-
   /**
    * @brief Callback executed when a parameter change is detected
    * @param event ParameterEvent message
