@@ -12,6 +12,21 @@
 #include "rclcpp/rclcpp.hpp"
 #include "behaviortree_cpp_v3/condition_node.h"
 
+namespace BT
+{
+template<> inline std::vector<int> convertFromString(StringView str)
+{
+  // We expect real numbers separated by commas
+  auto parts = splitString(str, ',');
+
+  std::vector<int> vec_int;
+  for (const auto part : parts) {
+    vec_int.push_back(convertFromString<int>(part));
+  }
+  return vec_int;
+}
+}  // end namespace BT
+
 namespace nav2_behavior_tree
 {
 
@@ -26,20 +41,9 @@ public:
 
   GenericErrorCodeCondition() = delete;
 
-  /**
-   * @brief overridable function that sets the current error codes
-   */
-  virtual void grabErrorCodesFromBT() = 0;
-
-  /**
-   * @brief overridable function that sets the error codes to check
-   */
-  virtual void setErrorCodesToCheck() = 0;
-
   BT::NodeStatus tick() override
   {
-    setErrorCodesToCheck();
-    grabErrorCodesFromBT();
+    getInput<std::vector<int>>("current_error_codes", current_error_codes_);
 
     for (const auto & current_error_code : current_error_codes_) {
       for (const auto error_code_to_check : error_codes_to_check_) {
@@ -53,12 +57,15 @@ public:
 
   static BT::PortsList providedPorts()
   {
-    return {};
+    return
+    {
+        BT::InputPort<std::vector<int>>("current_error_codes")
+    };
   }
 
 protected:
-  std::vector<unsigned int> current_error_codes_;
-  std::vector<unsigned int> error_codes_to_check_;
+  std::vector<int> current_error_codes_;
+  std::vector<int> error_codes_to_check_;
 };
 
 }

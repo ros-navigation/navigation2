@@ -7,6 +7,7 @@
 
 #include <string>
 
+#include "nav2_msgs/action/follow_path.hpp"
 #include "nav2_behavior_tree/plugins/condition/generic_error_code_condition.hpp"
 
 namespace nav2_behavior_tree
@@ -14,16 +15,14 @@ namespace nav2_behavior_tree
 
 class IsLocalCostmapClearNeeded : public GenericErrorCodeCondition
 {
+  using Action = nav2_msgs::action::FollowPath;
+  using ActionGoal = Action::Goal;
 public:
   IsLocalCostmapClearNeeded(
     const std::string & condition_name,
     const BT::NodeConfiguration & conf);
 
   IsLocalCostmapClearNeeded() = delete;
-
-  void grabErrorCodesFromBT() override;
-
-  void setErrorCodesToCheck() override;
 };
 
 }

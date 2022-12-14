@@ -13,16 +13,12 @@ IsLocalCostmapClearNeeded::IsLocalCostmapClearNeeded(
     const BT::NodeConfiguration & conf)
     : GenericErrorCodeCondition(condition_name, conf)
 {
-}
-
-void IsLocalCostmapClearNeeded::grabErrorCodesFromBT()
-{
-  current_error_codes_.push_back(100);
-}
-
-void IsLocalCostmapClearNeeded::setErrorCodesToCheck()
-{
-  error_codes_to_check_.push_back(100);
+  error_codes_to_check_ = {
+      ActionGoal::UNKNOWN,
+      ActionGoal::PATIENCE_EXCEEDED,
+      ActionGoal::FAILED_TO_MAKE_PROGRESS,
+      ActionGoal::NO_VALID_CONTROL
+    };
 }
 
 }  // namespace nav2_behavior_tree
