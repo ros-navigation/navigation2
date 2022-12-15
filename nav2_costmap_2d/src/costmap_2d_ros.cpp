@@ -43,6 +43,7 @@
 #include <string>
 #include <vector>
 #include <utility>
+#include <limits>
 
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_util/execution_timer.hpp"
@@ -279,9 +280,22 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
   // Create a thread to handle updating the map
   stopped_ = true;  // to active plugins
   stop_updates_ = false;
-  map_update_thread_shutdown_ = false;
-  map_update_thread_ = std::make_unique<std::thread>(
-    std::bind(&Costmap2DROS::mapUpdateLoop, this, map_update_frequency_));
+
+  if (map_update_timer_ == nullptr) {
+    RCLCPP_DEBUG(get_logger(), "mapUpdateLoop frequency: %lf", map_update_frequency_);
+    if (map_update_frequency_ > 0.) {
+      map_update_timer_ = rclcpp::create_timer(
+        this, get_clock(), rclcpp::Duration::from_seconds(1 / map_update_frequency_),
+        [this]() {mapUpdateLoop();});
+    } else {
+      RCLCPP_WARN(
+        get_logger(),
+        "Costmap won't be periodically updated as frequency  %lf should be greater than zero.",
+        map_update_frequency_);
+    }
+  } else {
+    map_update_timer_->reset();
+  }
 
   start();
 
@@ -309,8 +323,9 @@ Costmap2DROS::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   stop();
 
   // Map thread stuff
-  map_update_thread_shutdown_ = true;
-  map_update_thread_->join();
+  if (map_update_timer_ != nullptr) {
+    map_update_timer_->cancel();
+  }
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -447,68 +462,63 @@ Costmap2DROS::getOrientedFootprint(std::vector<geometry_msgs::msg::Point> & orie
 }
 
 void
-Costmap2DROS::mapUpdateLoop(double frequency)
+Costmap2DROS::mapUpdateLoop()
 {
-  RCLCPP_DEBUG(get_logger(), "mapUpdateLoop frequency: %lf", frequency);
+  static const double expected_period = map_update_frequency_ > 0. ?
+    1. / map_update_frequency_ :
+    std::numeric_limits<double>::infinity();
 
-  // the user might not want to run the loop every cycle
-  if (frequency == 0.0) {
+  RCLCPP_DEBUG(get_logger(), "Entering update timer callback");
+
+  if (stopped_) {
+    // Execute after start() will complete plugins activation
     return;
   }
 
-  RCLCPP_DEBUG(get_logger(), "Entering loop");
+  nav2_util::ExecutionTimer timer;
 
-  rclcpp::WallRate r(frequency);    // 200ms by default
+  // Measure the execution time of the updateMap method
+  timer.start();
+  updateMap();
+  timer.end();
 
-  while (rclcpp::ok() && !map_update_thread_shutdown_) {
-    nav2_util::ExecutionTimer timer;
+  auto execution_time = timer.elapsed_time_in_seconds();
+  RCLCPP_DEBUG(get_logger(), "Map update time: %.9f", execution_time);
 
-    // Execute after start() will complete plugins activation
-    if (!stopped_) {
-      // Measure the execution time of the updateMap method
-      timer.start();
-      updateMap();
-      timer.end();
+  timer.start();
+  if (publish_cycle_ > rclcpp::Duration(0s) && layered_costmap_->isInitialized()) {
+    unsigned int x0, y0, xn, yn;
+    layered_costmap_->getBounds(&x0, &xn, &y0, &yn);
+    costmap_publisher_->updateBounds(x0, xn, y0, yn);
 
-      RCLCPP_DEBUG(get_logger(), "Map update time: %.9f", timer.elapsed_time_in_seconds());
-      if (publish_cycle_ > rclcpp::Duration(0s) && layered_costmap_->isInitialized()) {
-        unsigned int x0, y0, xn, yn;
-        layered_costmap_->getBounds(&x0, &xn, &y0, &yn);
-        costmap_publisher_->updateBounds(x0, xn, y0, yn);
+    for (auto & layer_pub: layer_publishers_) {
+      layer_pub->updateBounds(x0, xn, y0, yn);
+    }
 
-        for (auto & layer_pub: layer_publishers_) {
-          layer_pub->updateBounds(x0, xn, y0, yn);
-        }
+    auto current_time = now();
 
-        auto current_time = now();
-        if ((last_publish_ + publish_cycle_ < current_time) ||  // publish_cycle_ is due
-          (current_time <
-          last_publish_))      // time has moved backwards, probably due to a switch to sim_time // NOLINT
-        {
-          RCLCPP_DEBUG(get_logger(), "Publish costmap at %s", name_.c_str());
-          costmap_publisher_->publishCostmap();
+    if ((last_publish_ + publish_cycle_ < current_time) ||  // publish_cycle_ is due
+      (current_time < last_publish_))      // time has moved backwards, probably due to a switch to sim_time // NOLINT
+    {
+      RCLCPP_DEBUG(get_logger(), "Publish costmap at %s", name_.c_str());
+      costmap_publisher_->publishCostmap();
 
-          for (auto & layer_pub: layer_publishers_) {
-            layer_pub->publishCostmap();
-          }
-
-          last_publish_ = current_time;
-        }
+      for (auto & layer_pub: layer_publishers_) {
+        layer_pub->publishCostmap();
       }
-    }
 
-    // Make sure to sleep for the remainder of our cycle time
-    r.sleep();
-
-#if 0
-    // TODO(bpwilcox): find ROS2 equivalent or port for r.cycletime()
-    if (r.period() > tf2::durationFromSec(1 / frequency)) {
-      RCLCPP_WARN(
-        get_logger(),
-        "Costmap2DROS: Map update loop missed its desired rate of %.4fHz... "
-        "the loop actually took %.4f seconds", frequency, r.period());
+      last_publish_ = current_time;
     }
-#endif
+  }
+  timer.end();
+
+  execution_time += timer.elapsed_time_in_seconds();
+
+  if (execution_time > expected_period) {
+    RCLCPP_WARN(
+      get_logger(),
+      "Costmap2DROS: Map update loop missed its desired rate of %.4fHz... "
+      "the loop actually took %.4f seconds", map_update_frequency_, execution_time);
   }
 }
 
@@ -532,7 +542,6 @@ Costmap2DROS::updateMap()
 
       RCLCPP_DEBUG(get_logger(), "Publishing footprint");
       footprint_pub_->publish(std::move(footprint));
-      initialized_ = true;
     }
   }
 }
@@ -563,12 +572,8 @@ Costmap2DROS::start()
   }
   stop_updates_ = false;
 
-  // block until the costmap is re-initialized.. meaning one update cycle has run
-  rclcpp::Rate r(20.0);
-  while (rclcpp::ok() && !initialized_) {
-    RCLCPP_DEBUG(get_logger(), "Sleeping, waiting for initialized_");
-    r.sleep();
-  }
+  // Re-initialize the cost map.
+  mapUpdateLoop();
 }
 
 void
@@ -588,7 +593,6 @@ Costmap2DROS::stop()
   {
     (*filter)->deactivate();
   }
-  initialized_ = false;
   stopped_ = true;
 }
 
@@ -596,7 +600,6 @@ void
 Costmap2DROS::pause()
 {
   stop_updates_ = true;
-  initialized_ = false;
 }
 
 void
@@ -604,11 +607,8 @@ Costmap2DROS::resume()
 {
   stop_updates_ = false;
 
-  // block until the costmap is re-initialized.. meaning one update cycle has run
-  rclcpp::Rate r(100.0);
-  while (!initialized_) {
-    r.sleep();
-  }
+  // Re-initialize the cost map.
+  mapUpdateLoop();
 }
 
 void

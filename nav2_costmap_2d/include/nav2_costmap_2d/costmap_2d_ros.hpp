@@ -343,12 +343,10 @@ protected:
   /**
    * @brief Function on timer for costmap update
    */
-  void mapUpdateLoop(double frequency);
-  bool map_update_thread_shutdown_{false};
+  void mapUpdateLoop();
   std::atomic<bool> stop_updates_{false};
-  std::atomic<bool> initialized_{false};
   std::atomic<bool> stopped_{true};
-  std::unique_ptr<std::thread> map_update_thread_;  ///< @brief A thread for updating the map
+  rclcpp::TimerBase::SharedPtr map_update_timer_;  ///< @brief A timer for periodic map update
   rclcpp::Time last_publish_{0, 0, RCL_ROS_TIME};
   rclcpp::Duration publish_cycle_{1, 0};
   pluginlib::ClassLoader<Layer> plugin_loader_{"nav2_costmap_2d", "nav2_costmap_2d::Layer"};
