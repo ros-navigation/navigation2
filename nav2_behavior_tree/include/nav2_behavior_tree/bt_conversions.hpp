@@ -16,6 +16,7 @@
 #define NAV2_BEHAVIOR_TREE__BT_CONVERSIONS_HPP_
 
 #include <string>
+#include <set>
 
 #include "rclcpp/time.hpp"
 #include "behaviortree_cpp_v3/behavior_tree.h"
@@ -109,6 +110,19 @@ template<>
 inline std::chrono::milliseconds convertFromString<std::chrono::milliseconds>(const StringView key)
 {
   return std::chrono::milliseconds(std::stoul(key.data()));
+}
+
+template<>
+inline std::set<int> convertFromString(StringView str)
+{
+  // We expect real numbers separated by commas
+  auto parts = splitString(str, ',');
+
+  std::set<int> vec_int;
+  for (const auto part : parts) {
+    vec_int.insert(convertFromString<int>(part));
+  }
+  return vec_int;
 }
 
 }  // namespace BT

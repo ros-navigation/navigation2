@@ -1,31 +1,27 @@
+// Copyright (c) 2022 Joshua Wallace
 //
-// Created by josh on 12/13/22.
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-#ifndef NAV2_WS_GENERIC_ERROR_CODE_CONDITION_HPP
-#define NAV2_WS_GENERIC_ERROR_CODE_CONDITION_HPP
+#ifndef NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__GENERIC_ERROR_CODE_CONDITION_HPP_
+#define NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__GENERIC_ERROR_CODE_CONDITION_HPP_
 
 #include <string>
 #include <memory>
 #include <vector>
+#include <set>
 
 #include "rclcpp/rclcpp.hpp"
 #include "behaviortree_cpp_v3/condition_node.h"
-
-namespace BT
-{
-template<> inline std::vector<int> convertFromString(StringView str)
-{
-  // We expect real numbers separated by commas
-  auto parts = splitString(str, ',');
-
-  std::vector<int> vec_int;
-  for (const auto part : parts) {
-    vec_int.push_back(convertFromString<int>(part));
-  }
-  return vec_int;
-}
-}  // end namespace BT
 
 namespace nav2_behavior_tree
 {
@@ -36,38 +32,37 @@ public:
   GenericErrorCodeCondition(
     const std::string & condition_name,
     const BT::NodeConfiguration & conf)
-    : BT::ConditionNode(condition_name, conf)
+  : BT::ConditionNode(condition_name, conf)
   {}
 
   GenericErrorCodeCondition() = delete;
 
   BT::NodeStatus tick() override
   {
-    getInput<std::vector<int>>("current_error_codes", current_error_codes_);
+    getInput<std::set<int>>("current_error_codes", current_error_codes_);
 
-    for (const auto & current_error_code : current_error_codes_) {
-      for (const auto error_code_to_check : error_codes_to_check_) {
-        if (current_error_code == error_code_to_check) {
-          return BT::NodeStatus::SUCCESS;
-        }
+    for (const auto & error_code_to_check : error_codes_to_check_) {
+      if (current_error_codes_.find(error_code_to_check) != current_error_codes_.end()) {
+        return BT::NodeStatus::SUCCESS;
       }
     }
+
     return BT::NodeStatus::FAILURE;
   }
 
   static BT::PortsList providedPorts()
   {
     return
-    {
-        BT::InputPort<std::vector<int>>("current_error_codes")
-    };
+      {
+        BT::InputPort<std::set<int>>("current_error_codes")
+      };
   }
 
 protected:
-  std::vector<int> current_error_codes_;
-  std::vector<int> error_codes_to_check_;
+  std::set<int> current_error_codes_;
+  std::set<int> error_codes_to_check_;
 };
 
-}
+}  // namespace nav2_behavior_tree
 
-#endif //NAV2_WS_GENERIC_ERROR_CODE_CONDITION_HPP
+#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__GENERIC_ERROR_CODE_CONDITION_HPP_
