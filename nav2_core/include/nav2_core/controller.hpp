@@ -124,6 +124,11 @@ public:
    * or in absolute values in false case.
    */
   virtual void setSpeedLimit(const double & speed_limit, const bool & percentage) = 0;
+
+  /**
+   * @brief Reset the state of the controller if necessary after task is exited
+   */
+  virtual void reset() {}
 };
 
 }  // namespace nav2_core
