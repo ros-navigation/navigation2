@@ -34,12 +34,13 @@ LikelihoodFieldModelProb::LikelihoodFieldModelProb(
   double beam_skip_distance,
   double beam_skip_threshold,
   double beam_skip_error_threshold,
-  size_t max_beams, map_t * map)
+  size_t max_beams, map_t * map, double importance_factor)
 : Laser(max_beams, map)
 {
   z_hit_ = z_hit;
   z_rand_ = z_rand;
   sigma_hit_ = sigma_hit;
+  importance_factor_ = importance_factor;
   do_beamskip_ = do_beamskip;
   beam_skip_distance_ = beam_skip_distance;
   beam_skip_threshold_ = beam_skip_threshold;
@@ -165,7 +166,7 @@ LikelihoodFieldModelProb::sensorFunction(LaserData * data, pf_sample_set_t * set
         if (z < beam_skip_distance) {
           obs_count[beam_ind] += 1;
         }
-        pz += self->z_hit_ * exp(-(z * z) / z_hit_denom);
+        pz += self->z_hit_ * (exp(-(z * z) / z_hit_denom * self->importance_factor_));
       }
 
       // Gaussian model

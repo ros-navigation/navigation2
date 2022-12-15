@@ -66,6 +66,7 @@ protected:
   double z_hit_;
   double z_rand_;
   double sigma_hit_;
+  double importance_factor_;
 
   /*
    * @brief Reallocate weights
@@ -122,7 +123,7 @@ public:
    */
   BeamModel(
     double z_hit, double z_short, double z_max, double z_rand, double sigma_hit,
-    double lambda_short, double chi_outlier, size_t max_beams, map_t * map);
+    double lambda_short, double chi_outlier, size_t max_beams, map_t * map, double laser_importance_factor);
 
   /*
    * @brief Run a sensor update on laser
@@ -152,7 +153,7 @@ public:
    */
   LikelihoodFieldModel(
     double z_hit, double z_rand, double sigma_hit, double max_occ_dist,
-    size_t max_beams, map_t * map);
+    size_t max_beams, map_t * map, double laser_importance_factor);
 
   /*
    * @brief Run a sensor update on laser
@@ -186,7 +187,7 @@ public:
     double z_hit, double z_rand, double sigma_hit, double max_occ_dist,
     bool do_beamskip, double beam_skip_distance,
     double beam_skip_threshold, double beam_skip_error_threshold,
-    size_t max_beams, map_t * map);
+    size_t max_beams, map_t * map, double laser_importance_factor);
 
   /*
    * @brief Run a sensor update on laser

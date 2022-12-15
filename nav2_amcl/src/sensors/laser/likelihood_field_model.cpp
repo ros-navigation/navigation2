@@ -29,12 +29,13 @@ namespace nav2_amcl
 
 LikelihoodFieldModel::LikelihoodFieldModel(
   double z_hit, double z_rand, double sigma_hit,
-  double max_occ_dist, size_t max_beams, map_t * map)
+  double max_occ_dist, size_t max_beams, map_t * map, double importance_factor)
 : Laser(max_beams, map)
 {
   z_hit_ = z_hit;
   z_rand_ = z_rand;
   sigma_hit_ = sigma_hit;
+  importance_factor_ = importance_factor;
   map_update_cspace(map, max_occ_dist);
 }
 
@@ -110,7 +111,7 @@ LikelihoodFieldModel::sensorFunction(LaserData * data, pf_sample_set_t * set)
       }
       // Gaussian model
       // NOTE: this should have a normalization of 1/(sqrt(2pi)*sigma)
-      pz += self->z_hit_ * exp(-(z * z) / z_hit_denom);
+      pz += self->z_hit_ * (exp(-(z * z) / z_hit_denom) * self->importance_factor_);
       // Part 2: random measurements
       pz += self->z_rand_ * z_rand_mult;
 
