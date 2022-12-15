@@ -1766,7 +1766,7 @@ AmclNode::initParticleFilter()
   pf_ = pf_alloc(
     min_particles_, max_particles_, alpha_slow_, alpha_fast_,
     (pf_init_model_fn_t)AmclNode::uniformPoseGenerator,
-    reinterpret_cast<void *>(map_), k_l_, max_particle_gen_prob_ext_pose_);
+    reinterpret_cast<void *>(map_), max_particle_gen_prob_ext_pose_);
   pf_->pop_err = pf_err_;
   pf_->pop_z = pf_z_;
 

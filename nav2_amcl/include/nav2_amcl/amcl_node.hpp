@@ -427,7 +427,7 @@ protected:
   double z_max_;
   double z_short_;
   double z_rand_;
-  double k_l_;
+  double laser_importance_factor_;
   double max_particle_gen_prob_ext_pose_;
   double ext_pose_search_tolerance_sec_;
   std::string scan_topic_{"scan"};

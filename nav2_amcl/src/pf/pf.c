@@ -49,7 +49,7 @@ pf_t * pf_alloc(
   int min_samples, int max_samples,
   double alpha_slow, double alpha_fast,
   pf_init_model_fn_t random_pose_fn,
-  void * random_pose_data, double k_l,
+  void * random_pose_data,
   double max_particle_gen_prob_ext_pose)
 {
   int i, j;
@@ -104,7 +104,6 @@ pf_t * pf_alloc(
 
   pf->w_slow = 0.0;
   pf->w_fast = 0.0;
-  pf->k_l = k_l;
   pf->max_particle_gen_prob_ext_pose = max_particle_gen_prob_ext_pose;
   pf->ext_pose_is_valid = 0;
 
@@ -417,7 +416,7 @@ void pf_update_resample(pf_t * pf)
       // fprintf(stderr, "AMCL: laser weight - %f, ext pose likelihood - %f\n", set_a->samples[i].weight, ext_pose_likelihood);
 
       // See Improved LiDAR Probabilistic Localization for Autonomous Vehicles Using GNSS, #3.3 for details
-      set_a->samples[i].weight = set_a->samples[i].weight * pf->k_l + ext_pose_likelihood;
+      set_a->samples[i].weight = set_a->samples[i].weight * LASER_TO_EXTERNAL_POSE_BALANCE_FACTOR + ext_pose_likelihood;
 
       total_weight += set_a->samples[i].weight;
     }

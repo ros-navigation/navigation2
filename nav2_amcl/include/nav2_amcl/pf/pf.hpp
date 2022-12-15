@@ -35,6 +35,12 @@
 extern "C" {
 #endif
 
+
+// laser and external pose based particle scores have different scales
+// so when external pose is used we need to multiply laser by the factor
+// to give it equal importance with external pose
+#define LASER_TO_EXTERNAL_POSE_BALANCE_FACTOR 250.0
+
 // Forward declarations
 struct _pf_t;
 struct _rtk_fig_t;
@@ -136,7 +142,6 @@ typedef struct _pf_t
 
   double ext_x, ext_y, ext_yaw;
   double cov_matrix[9], eigen_matrix[9];
-  double k_l; // constant, it is used as an data source importance factor
   double max_particle_gen_prob_ext_pose;
   int ext_pose_is_valid;
 } pf_t;
@@ -147,7 +152,7 @@ pf_t * pf_alloc(
   int min_samples, int max_samples,
   double alpha_slow, double alpha_fast,
   pf_init_model_fn_t random_pose_fn,
-  void * random_pose_data, double k_l,
+  void * random_pose_data,
   double max_particle_gen_prob_ext_pose);
 
 // Free an existing filter
