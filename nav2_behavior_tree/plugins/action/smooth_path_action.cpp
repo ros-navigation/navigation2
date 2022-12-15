@@ -44,6 +44,21 @@ BT::NodeStatus SmoothPathAction::on_success()
   setOutput("smoothed_path", result_.result->path);
   setOutput("smoothing_duration", rclcpp::Duration(result_.result->smoothing_duration).seconds());
   setOutput("was_completed", result_.result->was_completed);
+  // Set empty error code, action was successful
+  setOutput("error_code_id", ActionGoal::NONE);
+  return BT::NodeStatus::SUCCESS;
+}
+
+BT::NodeStatus SmoothPathAction::on_aborted()
+{
+  setOutput("error_code_id", result_.result->error_code);
+  return BT::NodeStatus::FAILURE;
+}
+
+BT::NodeStatus SmoothPathAction::on_cancelled()
+{
+  // Set empty error code, action was cancelled
+  setOutput("error_code_id", ActionGoal::NONE);
   return BT::NodeStatus::SUCCESS;
 }
 
