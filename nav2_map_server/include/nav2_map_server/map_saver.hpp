@@ -63,6 +63,10 @@ public:
   bool saveMapTopicToFile(
     const std::string & map_topic,
     const SaveParameters & save_parameters);
+  
+  bool saveOctomapTopicToFile(
+    const std::string & map_topic,
+    const SaveParameters & save_parameters);
 
   /**
    * @brief Sets up map saving service
@@ -112,10 +116,6 @@ protected:
     const SaveParameters & save_parameters);
 
   bool saveGridmapTopicToFile(
-    const std::string & map_topic,
-    const SaveParameters & save_parameters);
-
-  bool saveOctomapTopicToFile(
     const std::string & map_topic,
     const SaveParameters & save_parameters);
 

@@ -39,6 +39,8 @@ const char * USAGE_STRING{
   "  --mode trinary(default)/scale/raw\n"
   "  --min_h <min_height>\n"
   "  --max_h <max_height>\n"
+  "  --octo_t <octomap_topic>\n"
+  "  --binary true(default)/false\n"
   "\n"
   "NOTE: --ros-args should be passed at the end of command line"
   "NOTE: --min_h and --max_h args for saving a grid_map"};
@@ -52,7 +54,8 @@ typedef enum
   COMMAND_FREE_THRESH,
   COMMAND_MODE,
   COMMAND_MIN_H,
-  COMMAND_MAX_H
+  COMMAND_MAX_H,
+  COMMAND_OCTO_TOPIC
 } COMMAND_TYPE;
 
 struct cmd_struct
@@ -73,7 +76,7 @@ typedef enum
 // Output parameters: map_topic, save_parameters
 ARGUMENTS_STATUS parse_arguments(
   const rclcpp::Logger & logger, int argc, char ** argv,
-  std::string & map_topic, SaveParameters & save_parameters)
+  std::string & map_topic, std::string & octomap_topic, SaveParameters & save_parameters)
 {
   const struct cmd_struct commands[] = {
     {"-t", COMMAND_MAP_TOPIC},
@@ -84,6 +87,7 @@ ARGUMENTS_STATUS parse_arguments(
     {"--fmt", COMMAND_IMAGE_FORMAT},
     {"--min_h", COMMAND_MIN_H},
     {"--max_h", COMMAND_MAX_H},
+    {"--octo_t", COMMAND_OCTO_TOPIC}
   };
 
   std::vector<std::string> arguments(argv + 1, argv + argc);
@@ -140,6 +144,8 @@ ARGUMENTS_STATUS parse_arguments(
           case COMMAND_MAX_H:
             save_parameters.max_height = atof(it->c_str());
             break;
+          case COMMAND_OCTO_TOPIC:
+            octomap_topic = *it;
         }
         break;
       }
@@ -162,7 +168,8 @@ int main(int argc, char ** argv)
   // Parse CLI-arguments
   SaveParameters save_parameters;
   std::string map_topic = "map";
-  switch (parse_arguments(logger, argc, argv, map_topic, save_parameters)) {
+  std::string octomap_topic = "";
+  switch (parse_arguments(logger, argc, argv, map_topic, octomap_topic, save_parameters)) {
     case ARGUMENTS_INVALID:
       rclcpp::shutdown();
       return -1;
@@ -178,7 +185,7 @@ int main(int argc, char ** argv)
   try {
     auto map_saver = std::make_shared<nav2_map_server::MapSaver>();
     map_saver->on_configure(rclcpp_lifecycle::State());
-    if (map_saver->saveMapTopicToFile(map_topic, save_parameters)) {
+    if (map_saver->saveMapTopicToFile(map_topic, save_parameters) && map_saver->saveOctomapTopicToFile(octomap_topic, save_parameters)) {
       retcode = 0;
     } else {
       retcode = 1;

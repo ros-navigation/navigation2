@@ -523,7 +523,7 @@ LOAD_MAP_STATUS loadMapFromYaml(
     return INVALID_MAP_DATA;
   }
 
-  // TODO: octomap
+  // octomap
   if (load_parameters.octomap_file_name != "") {
     try {
       std::unique_ptr<octomap::OcTree> octree = std::make_unique<octomap::OcTree>(load_parameters.resolution);
