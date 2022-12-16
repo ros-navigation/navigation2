@@ -272,7 +272,7 @@ Visualization Manager:
           Value: true
         - Alpha: 1
           Buffer Length: 1
-          Class: rviz_default_plugins/Path
+          Class: nav2_rviz_plugins/PathWithCost
           Color: 255; 0; 0
           Enabled: true
           Head Diameter: 0.019999999552965164
@@ -372,7 +372,7 @@ Visualization Manager:
           Value: true
         - Alpha: 1
           Buffer Length: 1
-          Class: rviz_default_plugins/Path
+          Class: nav2_rviz_plugins/PathWithCost
           Color: 0; 12; 255
           Enabled: true
           Head Diameter: 0.30000001192092896

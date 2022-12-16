@@ -57,7 +57,7 @@ namespace displays
 {
 
 PathWithCostDisplay::PathWithCostDisplay(rviz_common::DisplayContext * context)
-    : PathWithCostDisplay()
+: PathWithCostDisplay()
 {
   context_ = context;
   scene_manager_ = context->getSceneManager();
@@ -68,85 +68,85 @@ PathWithCostDisplay::PathWithCostDisplay(rviz_common::DisplayContext * context)
 PathWithCostDisplay::PathWithCostDisplay()
 {
   style_property_ = new rviz_common::properties::EnumProperty(
-      "Line Style", "Lines",
-      "The rendering operation to use to draw the grid lines.",
-      this, SLOT(updateStyle()));
+    "Line Style", "Lines",
+    "The rendering operation to use to draw the grid lines.",
+    this, SLOT(updateStyle()));
 
   style_property_->addOption("Lines", LINES);
   style_property_->addOption("Billboards", BILLBOARDS);
 
   line_width_property_ = new rviz_common::properties::FloatProperty(
-      "Line Width", 0.03f,
-      "The width, in meters, of each path line."
-      "Only works with the 'Billboards' style.",
-      this, SLOT(updateLineWidth()), this);
+    "Line Width", 0.03f,
+    "The width, in meters, of each path line."
+    "Only works with the 'Billboards' style.",
+    this, SLOT(updateLineWidth()), this);
   line_width_property_->setMin(0.001f);
   line_width_property_->hide();
 
   color_property_ = new rviz_common::properties::ColorProperty(
-      "Color", QColor(25, 255, 0),
-      "Color to draw the path.", this);
+    "Color", QColor(25, 255, 0),
+    "Color to draw the path.", this);
 
   alpha_property_ = new rviz_common::properties::FloatProperty(
-      "Alpha", 1.0,
-      "Amount of transparency to apply to the path.", this);
+    "Alpha", 1.0,
+    "Amount of transparency to apply to the path.", this);
 
   buffer_length_property_ = new rviz_common::properties::IntProperty(
-      "Buffer Length", 1,
-      "Number of paths to display.",
-      this, SLOT(updateBufferLength()));
+    "Buffer Length", 1,
+    "Number of paths to display.",
+    this, SLOT(updateBufferLength()));
   buffer_length_property_->setMin(1);
 
   offset_property_ = new rviz_common::properties::VectorProperty(
-      "Offset", Ogre::Vector3::ZERO,
-      "Allows you to offset the path from the origin of the reference frame.  In meters.",
-      this, SLOT(updateOffset()));
+    "Offset", Ogre::Vector3::ZERO,
+    "Allows you to offset the path from the origin of the reference frame.  In meters.",
+    this, SLOT(updateOffset()));
 
   pose_style_property_ = new rviz_common::properties::EnumProperty(
-      "Pose Style", "None",
-      "Shape to display the pose as.",
-      this, SLOT(updatePoseStyle()));
+    "Pose Style", "None",
+    "Shape to display the pose as.",
+    this, SLOT(updatePoseStyle()));
   pose_style_property_->addOption("None", NONE);
   pose_style_property_->addOption("Axes", AXES);
   pose_style_property_->addOption("Arrows", ARROWS);
 
   pose_axes_length_property_ = new rviz_common::properties::FloatProperty(
-      "Length", 0.3f,
-      "Length of the axes.",
-      this, SLOT(updatePoseAxisGeometry()) );
+    "Length", 0.3f,
+    "Length of the axes.",
+    this, SLOT(updatePoseAxisGeometry()) );
   pose_axes_radius_property_ = new rviz_common::properties::FloatProperty(
-      "Radius", 0.03f,
-      "Radius of the axes.",
-      this, SLOT(updatePoseAxisGeometry()) );
+    "Radius", 0.03f,
+    "Radius of the axes.",
+    this, SLOT(updatePoseAxisGeometry()) );
 
   pose_arrow_color_property_ = new rviz_common::properties::ColorProperty(
-      "Pose Color",
-      QColor(255, 85, 255),
-      "Color to draw the poses.",
-      this, SLOT(updatePoseArrowColor()));
+    "Pose Color",
+    QColor(255, 85, 255),
+    "Color to draw the poses.",
+    this, SLOT(updatePoseArrowColor()));
   pose_arrow_shaft_length_property_ = new rviz_common::properties::FloatProperty(
-      "Shaft Length",
-      0.1f,
-      "Length of the arrow shaft.",
-      this,
-      SLOT(updatePoseArrowGeometry()));
+    "Shaft Length",
+    0.1f,
+    "Length of the arrow shaft.",
+    this,
+    SLOT(updatePoseArrowGeometry()));
   pose_arrow_head_length_property_ = new rviz_common::properties::FloatProperty(
-      "Head Length", 0.2f,
-      "Length of the arrow head.",
-      this,
-      SLOT(updatePoseArrowGeometry()));
+    "Head Length", 0.2f,
+    "Length of the arrow head.",
+    this,
+    SLOT(updatePoseArrowGeometry()));
   pose_arrow_shaft_diameter_property_ = new rviz_common::properties::FloatProperty(
-      "Shaft Diameter",
-      0.1f,
-      "Diameter of the arrow shaft.",
-      this,
-      SLOT(updatePoseArrowGeometry()));
+    "Shaft Diameter",
+    0.1f,
+    "Diameter of the arrow shaft.",
+    this,
+    SLOT(updatePoseArrowGeometry()));
   pose_arrow_head_diameter_property_ = new rviz_common::properties::FloatProperty(
-      "Head Diameter",
-      0.3f,
-      "Diameter of the arrow head.",
-      this,
-      SLOT(updatePoseArrowGeometry()));
+    "Head Diameter",
+    0.3f,
+    "Diameter of the arrow head.",
+    this,
+    SLOT(updatePoseArrowGeometry()));
   pose_axes_length_property_->hide();
   pose_axes_radius_property_->hide();
   pose_arrow_color_property_->hide();
@@ -156,7 +156,7 @@ PathWithCostDisplay::PathWithCostDisplay()
   pose_arrow_head_diameter_property_->hide();
 
   static int count = 0;
-  std::string material_name = "LinesMaterial" + std::to_string(count++);
+  std::string material_name = "LinesMaterialPathWithCost" + std::to_string(count++);
   lines_material_ = rviz_rendering::MaterialManager::createMaterialWithNoLighting(material_name);
 }
 
@@ -180,17 +180,19 @@ void PathWithCostDisplay::reset()
 }
 
 
-void PathWithCostDisplay::allocateAxesVector(std::vector<rviz_rendering::Axes *> & axes_vect, size_t num)
+void PathWithCostDisplay::allocateAxesVector(
+  std::vector<rviz_rendering::Axes *> & axes_vect,
+  size_t num)
 {
   auto vector_size = axes_vect.size();
   if (num > vector_size) {
     axes_vect.reserve(num);
     for (auto i = vector_size; i < num; ++i) {
       axes_vect.push_back(
-          new rviz_rendering::Axes(
-              scene_manager_, scene_node_,
-              pose_axes_length_property_->getFloat(),
-              pose_axes_radius_property_->getFloat()));
+        new rviz_rendering::Axes(
+          scene_manager_, scene_node_,
+          pose_axes_length_property_->getFloat(),
+          pose_axes_radius_property_->getFloat()));
     }
   } else if (num < vector_size) {
     for (auto i = num; i < vector_size; ++i) {
@@ -200,7 +202,9 @@ void PathWithCostDisplay::allocateAxesVector(std::vector<rviz_rendering::Axes *>
   }
 }
 
-void PathWithCostDisplay::allocateArrowVector(std::vector<rviz_rendering::Arrow *> & arrow_vect, size_t num)
+void PathWithCostDisplay::allocateArrowVector(
+  std::vector<rviz_rendering::Arrow *> & arrow_vect,
+  size_t num)
 {
   auto vector_size = arrow_vect.size();
   if (num > vector_size) {
@@ -305,8 +309,8 @@ void PathWithCostDisplay::updatePoseAxisGeometry()
   for (auto & axes_vect : axes_chain_) {
     for (auto & axes : axes_vect) {
       axes->set(
-          pose_axes_length_property_->getFloat(),
-          pose_axes_radius_property_->getFloat() );
+        pose_axes_length_property_->getFloat(),
+        pose_axes_radius_property_->getFloat() );
     }
   }
   context_->queueRender();
@@ -329,10 +333,10 @@ void PathWithCostDisplay::updatePoseArrowGeometry()
   for (auto & arrow_vect : arrow_chain_) {
     for (auto & arrow : arrow_vect) {
       arrow->set(
-          pose_arrow_shaft_length_property_->getFloat(),
-          pose_arrow_shaft_diameter_property_->getFloat(),
-          pose_arrow_head_length_property_->getFloat(),
-          pose_arrow_head_diameter_property_->getFloat());
+        pose_arrow_shaft_length_property_->getFloat(),
+        pose_arrow_shaft_diameter_property_->getFloat(),
+        pose_arrow_head_length_property_->getFloat(),
+        pose_arrow_head_diameter_property_->getFloat());
     }
   }
   context_->queueRender();
@@ -424,9 +428,9 @@ void PathWithCostDisplay::processMessage(nav2_msgs::msg::PathWithCost::ConstShar
   // Check if path contains invalid coordinate values
   if (!validateFloats(*msg)) {
     setStatus(
-        rviz_common::properties::StatusProperty::Error, "Topic", "Message contained invalid "
-                                                                 "floating point "
-                                                                 "values (nans or infs)");
+      rviz_common::properties::StatusProperty::Error, "Topic", "Message contained invalid "
+      "floating point "
+      "values (nans or infs)");
     return;
   }
 
@@ -457,15 +461,15 @@ void PathWithCostDisplay::processMessage(nav2_msgs::msg::PathWithCost::ConstShar
 }
 
 void PathWithCostDisplay::updateManualObject(
-    Ogre::ManualObject * manual_object, nav2_msgs::msg::PathWithCost::ConstSharedPtr msg,
-    const Ogre::Matrix4 & transform)
+  Ogre::ManualObject * manual_object, nav2_msgs::msg::PathWithCost::ConstSharedPtr msg,
+  const Ogre::Matrix4 & transform)
 {
   auto color = color_property_->getOgreColor();
   color.a = alpha_property_->getFloat();
 
   manual_object->estimateVertexCount(msg->poses.size());
   manual_object->begin(
-      lines_material_->getName(), Ogre::RenderOperation::OT_LINE_STRIP, "rviz_rendering");
+    lines_material_->getName(), Ogre::RenderOperation::OT_LINE_STRIP, "rviz_rendering");
 
   for (auto pose_stamped : msg->poses) {
     manual_object->position(transform * rviz_common::pointMsgToOgre(pose_stamped.pose.position));
@@ -477,8 +481,8 @@ void PathWithCostDisplay::updateManualObject(
 }
 
 void PathWithCostDisplay::updateBillBoardLine(
-    rviz_rendering::BillboardLine * billboard_line, nav2_msgs::msg::PathWithCost::ConstSharedPtr msg,
-    const Ogre::Matrix4 & transform)
+  rviz_rendering::BillboardLine * billboard_line, nav2_msgs::msg::PathWithCost::ConstSharedPtr msg,
+  const Ogre::Matrix4 & transform)
 {
   auto color = color_property_->getOgreColor();
   color.a = alpha_property_->getFloat();
@@ -494,7 +498,8 @@ void PathWithCostDisplay::updateBillBoardLine(
 }
 
 void PathWithCostDisplay::updatePoseMarkers(
-    size_t buffer_index, nav2_msgs::msg::PathWithCost::ConstSharedPtr msg, const Ogre::Matrix4 & transform)
+  size_t buffer_index,
+  nav2_msgs::msg::PathWithCost::ConstSharedPtr msg, const Ogre::Matrix4 & transform)
 {
   auto pose_style = static_cast<PoseStyle>(pose_style_property_->getOptionInt());
   auto & arrow_vect = arrow_chain_[buffer_index];
@@ -509,8 +514,9 @@ void PathWithCostDisplay::updatePoseMarkers(
 }
 
 void PathWithCostDisplay::updateAxesMarkers(
-    std::vector<rviz_rendering::Axes *> & axes_vect, nav2_msgs::msg::PathWithCost::ConstSharedPtr msg,
-    const Ogre::Matrix4 & transform)
+  std::vector<rviz_rendering::Axes *> & axes_vect,
+  nav2_msgs::msg::PathWithCost::ConstSharedPtr msg,
+  const Ogre::Matrix4 & transform)
 {
   auto num_points = msg->poses.size();
   allocateAxesVector(axes_vect, num_points);
@@ -527,8 +533,9 @@ void PathWithCostDisplay::updateAxesMarkers(
 }
 
 void PathWithCostDisplay::updateArrowMarkers(
-    std::vector<rviz_rendering::Arrow *> & arrow_vect, nav2_msgs::msg::PathWithCost::ConstSharedPtr msg,
-    const Ogre::Matrix4 & transform)
+  std::vector<rviz_rendering::Arrow *> & arrow_vect,
+  nav2_msgs::msg::PathWithCost::ConstSharedPtr msg,
+  const Ogre::Matrix4 & transform)
 {
   auto num_points = msg->poses.size();
   allocateArrowVector(arrow_vect, num_points);
@@ -537,10 +544,10 @@ void PathWithCostDisplay::updateArrowMarkers(
     arrow_vect[i]->setColor(color.redF(), color.greenF(), color.blueF(), 1.0f);
 
     arrow_vect[i]->set(
-        pose_arrow_shaft_length_property_->getFloat(),
-        pose_arrow_shaft_diameter_property_->getFloat(),
-        pose_arrow_head_length_property_->getFloat(),
-        pose_arrow_head_diameter_property_->getFloat());
+      pose_arrow_shaft_length_property_->getFloat(),
+      pose_arrow_shaft_diameter_property_->getFloat(),
+      pose_arrow_head_length_property_->getFloat(),
+      pose_arrow_head_diameter_property_->getFloat());
     const geometry_msgs::msg::Point & pos = msg->poses[i].pose.position;
     arrow_vect[i]->setPosition(transform * rviz_common::pointMsgToOgre(pos));
     Ogre::Quaternion orientation(rviz_common::quaternionMsgToOgre(msg->poses[i].pose.orientation));

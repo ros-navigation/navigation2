@@ -28,8 +28,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef RVIZ_DEFAULT_PLUGINS__DISPLAYS__PATH__PATH_DISPLAY_HPP_
-#define RVIZ_DEFAULT_PLUGINS__DISPLAYS__PATH__PATH_DISPLAY_HPP_
+#ifndef NAV2_RVIZ_PLUGINS__PATH_WITH_COST_DISPLAY_HPP_
+#define NAV2_RVIZ_PLUGINS__PATH_WITH_COST_DISPLAY_HPP_
 
 #include <vector>
 
@@ -69,11 +69,11 @@ namespace displays
  * \brief Displays a nav2_msgs::msg::PathWithCost message
  */
 class RVIZ_DEFAULT_PLUGINS_PUBLIC PathWithCostDisplay : public
-                                                rviz_common::MessageFilterDisplay<nav2_msgs::msg::PathWithCost>
+  rviz_common::MessageFilterDisplay<nav2_msgs::msg::PathWithCost>
 {
- Q_OBJECT
+  Q_OBJECT
 
- public:
+public:
   // TODO(Martin-Idel-SI): Constructor for testing, remove once ros_nodes can be mocked and call
   // initialize() instead
   explicit PathWithCostDisplay(rviz_common::DisplayContext * context);
@@ -86,11 +86,11 @@ class RVIZ_DEFAULT_PLUGINS_PUBLIC PathWithCostDisplay : public
   /** @brief Overridden from MessageFilterDisplay. */
   void processMessage(nav2_msgs::msg::PathWithCost::ConstSharedPtr msg) override;
 
- protected:
+protected:
   /** @brief Overridden from Display. */
   void onInitialize() override;
 
- private Q_SLOTS:
+private Q_SLOTS:
   void updateBufferLength();
   void updateStyle();
   void updateLineWidth();
@@ -100,26 +100,32 @@ class RVIZ_DEFAULT_PLUGINS_PUBLIC PathWithCostDisplay : public
   void updatePoseArrowColor();
   void updatePoseArrowGeometry();
 
- private:
+private:
   void destroyObjects();
   void allocateArrowVector(std::vector<rviz_rendering::Arrow *> & arrow_vect, size_t num);
   void allocateAxesVector(std::vector<rviz_rendering::Axes *> & axes_vect, size_t num);
   void destroyPoseAxesChain();
   void destroyPoseArrowChain();
   void updateManualObject(
-      Ogre::ManualObject * manual_object, nav2_msgs::msg::PathWithCost::ConstSharedPtr msg,
-      const Ogre::Matrix4 & transform);
+    Ogre::ManualObject * manual_object,
+    nav2_msgs::msg::PathWithCost::ConstSharedPtr msg,
+    const Ogre::Matrix4 & transform);
   void updateBillBoardLine(
-      rviz_rendering::BillboardLine * billboard_line, nav2_msgs::msg::PathWithCost::ConstSharedPtr msg,
-      const Ogre::Matrix4 & transform);
+    rviz_rendering::BillboardLine * billboard_line,
+    nav2_msgs::msg::PathWithCost::ConstSharedPtr msg,
+    const Ogre::Matrix4 & transform);
   void updatePoseMarkers(
-      size_t buffer_index, nav2_msgs::msg::PathWithCost::ConstSharedPtr msg, const Ogre::Matrix4 & transform);
+    size_t buffer_index,
+    nav2_msgs::msg::PathWithCost::ConstSharedPtr msg,
+    const Ogre::Matrix4 & transform);
   void updateAxesMarkers(
-      std::vector<rviz_rendering::Axes *> & axes_vect, nav2_msgs::msg::PathWithCost::ConstSharedPtr msg,
-      const Ogre::Matrix4 & transform);
+    std::vector<rviz_rendering::Axes *> & axes_vect,
+    nav2_msgs::msg::PathWithCost::ConstSharedPtr msg,
+    const Ogre::Matrix4 & transform);
   void updateArrowMarkers(
-      std::vector<rviz_rendering::Arrow *> & arrow_vect, nav2_msgs::msg::PathWithCost::ConstSharedPtr msg,
-      const Ogre::Matrix4 & transform);
+    std::vector<rviz_rendering::Arrow *> & arrow_vect,
+    nav2_msgs::msg::PathWithCost::ConstSharedPtr msg,
+    const Ogre::Matrix4 & transform);
 
   std::vector<Ogre::ManualObject *> manual_objects_;
   std::vector<rviz_rendering::BillboardLine *> billboard_lines_;
@@ -161,4 +167,4 @@ class RVIZ_DEFAULT_PLUGINS_PUBLIC PathWithCostDisplay : public
 }  // namespace displays
 }  // namespace rviz_default_plugins
 
-#endif  // RVIZ_DEFAULT_PLUGINS__DISPLAYS__PATH__PATH_DISPLAY_HPP_
+#endif  // NAV2_RVIZ_PLUGINS__PATH_WITH_COST_DISPLAY_HPP_
