@@ -45,3 +45,8 @@ ament_add_gtest(costmap_filter_service_test costmap_filter_service_test.cpp)
 target_link_libraries(costmap_filter_service_test
   nav2_costmap_2d_core
 )
+
+ament_add_gtest(costmap_update_on_request_test costmap_update_on_request_test.cpp)
+target_link_libraries(costmap_update_on_request_test
+  nav2_costmap_2d_core
+)
