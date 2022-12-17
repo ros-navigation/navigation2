@@ -288,7 +288,9 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
   start();
 
-  updateAndPublishMap();
+  if (update_on_request_) {
+    updateAndPublishMap();
+  }
 
   // Add callback for dynamic parameters
   dyn_params_handler = this->add_on_set_parameters_callback(
