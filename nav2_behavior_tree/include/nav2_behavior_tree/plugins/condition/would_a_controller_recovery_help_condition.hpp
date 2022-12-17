@@ -12,29 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__IS_LOCAL_COSTMAP_CLEAR_NEEDED_HPP_
-#define NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__IS_LOCAL_COSTMAP_CLEAR_NEEDED_HPP_
+#ifndef NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__WOULD_A_CONTROLLER_RECOVERY_HELP_CONDITION_HPP_
+#define NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__WOULD_A_CONTROLLER_RECOVERY_HELP_CONDITION_HPP_
 
 #include <string>
 
 #include "nav2_msgs/action/follow_path.hpp"
-#include "nav2_behavior_tree/plugins/condition/generic_error_code_condition.hpp"
+#include "nav2_behavior_tree/plugins/condition/is_error_code_active_condition.hpp"
 
 namespace nav2_behavior_tree
 {
 
-class IsLocalCostmapClearNeeded : public GenericErrorCodeCondition
+class WouldAControllerRecoveryHelp : public IsErrorCodeActive
 {
   using Action = nav2_msgs::action::FollowPath;
   using ActionGoal = Action::Goal;
 
 public:
-  IsLocalCostmapClearNeeded(
+  WouldAControllerRecoveryHelp(
     const std::string & condition_name,
     const BT::NodeConfiguration & conf);
 
-  IsLocalCostmapClearNeeded() = delete;
+  WouldAControllerRecoveryHelp() = delete;
 };
 
 }  // namespace nav2_behavior_tree
-#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__IS_LOCAL_COSTMAP_CLEAR_NEEDED_HPP_
+#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__WOULD_A_CONTROLLER_RECOVERY_HELP_CONDITION_HPP_

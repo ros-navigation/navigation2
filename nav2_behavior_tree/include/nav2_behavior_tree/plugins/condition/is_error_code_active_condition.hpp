@@ -31,11 +31,26 @@ class IsErrorCodeActive : public BT::ConditionNode
 public:
   IsErrorCodeActive(
     const std::string & condition_name,
-    const BT::NodeConfiguration & conf);
+    const BT::NodeConfiguration & conf)
+  : BT::ConditionNode(condition_name, conf)
+  {
+    getInput<std::set<int>>("error_codes_to_check", error_codes_to_check_);
+  }
 
   IsErrorCodeActive() = delete;
 
-  BT::NodeStatus tick() override;
+  BT::NodeStatus tick()
+  {
+    getInput<std::set<int>>("current_error_codes", current_error_codes_);
+
+    for (const auto & error_code_to_check : error_codes_to_check_) {
+      if (current_error_codes_.find(error_code_to_check) != current_error_codes_.end()) {
+        return BT::NodeStatus::SUCCESS;
+      }
+    }
+
+    return BT::NodeStatus::FAILURE;
+  }
 
   static BT::PortsList providedPorts()
   {

@@ -14,33 +14,6 @@
 
 #include "nav2_behavior_tree/plugins/condition/is_error_code_active_condition.hpp"
 
-
-namespace nav2_behavior_tree
-{
-
-IsErrorCodeActive::IsErrorCodeActive(
-  const std::string & condition_name,
-  const BT::NodeConfiguration & conf)
-: BT::ConditionNode(condition_name, conf)
-{
-  getInput<std::set<int>>("error_codes_to_check", error_codes_to_check_);
-}
-
-BT::NodeStatus IsErrorCodeActive::tick()
-{
-  getInput<std::set<int>>("current_error_codes", current_error_codes_);
-
-  for (const auto & error_code_to_check : error_codes_to_check_) {
-    if (current_error_codes_.find(error_code_to_check) != current_error_codes_.end()) {
-      return BT::NodeStatus::SUCCESS;
-    }
-  }
-
-  return BT::NodeStatus::FAILURE;
-}
-
-}  // namespace nav2_behavior_tree
-
 #include "behaviortree_cpp_v3/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {

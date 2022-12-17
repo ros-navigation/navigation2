@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_behavior_tree/plugins/condition/is_local_costmap_clear_needed.hpp"
+#include "nav2_behavior_tree/plugins/condition/would_a_controller_recovery_help_condition.hpp"
 #include <memory>
 
 namespace nav2_behavior_tree
 {
 
-IsLocalCostmapClearNeeded::IsLocalCostmapClearNeeded(
+WouldAControllerRecoveryHelp::WouldAControllerRecoveryHelp(
   const std::string & condition_name,
   const BT::NodeConfiguration & conf)
-: GenericErrorCodeCondition(condition_name, conf)
+: IsErrorCodeActive(condition_name, conf)
 {
   error_codes_to_check_ = {
     ActionGoal::UNKNOWN,
@@ -36,6 +36,6 @@ IsLocalCostmapClearNeeded::IsLocalCostmapClearNeeded(
 #include "behaviortree_cpp_v3/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
-  factory.registerNodeType<nav2_behavior_tree::IsLocalCostmapClearNeeded>(
-    "IsLocalCostmapClearNeeded");
+  factory.registerNodeType<nav2_behavior_tree::WouldAControllerRecoveryHelp>(
+    "WouldAControllerRecoveryHelp");
 }
