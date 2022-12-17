@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__GENERIC_ERROR_CODE_CONDITION_HPP_
-#define NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__GENERIC_ERROR_CODE_CONDITION_HPP_
+#ifndef NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__IS_ERROR_CODE_ACTIVE_CONDITION_HPP_
+#define NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__IS_ERROR_CODE_ACTIVE_CONDITION_HPP_
 
 #include <string>
 #include <memory>
@@ -26,35 +26,23 @@
 namespace nav2_behavior_tree
 {
 
-class GenericErrorCodeCondition : public BT::ConditionNode
+class IsErrorCodeActive : public BT::ConditionNode
 {
 public:
-  GenericErrorCodeCondition(
+  IsErrorCodeActive(
     const std::string & condition_name,
-    const BT::NodeConfiguration & conf)
-  : BT::ConditionNode(condition_name, conf)
-  {}
+    const BT::NodeConfiguration & conf);
 
-  GenericErrorCodeCondition() = delete;
+  IsErrorCodeActive() = delete;
 
-  BT::NodeStatus tick() override
-  {
-    getInput<std::set<int>>("current_error_codes", current_error_codes_);
-
-    for (const auto & error_code_to_check : error_codes_to_check_) {
-      if (current_error_codes_.find(error_code_to_check) != current_error_codes_.end()) {
-        return BT::NodeStatus::SUCCESS;
-      }
-    }
-
-    return BT::NodeStatus::FAILURE;
-  }
+  BT::NodeStatus tick() override;
 
   static BT::PortsList providedPorts()
   {
     return
       {
-        BT::InputPort<std::set<int>>("current_error_codes")
+        BT::InputPort<std::set<int>>("current_error_codes"),
+        BT::InputPort<std::set<int>>("error_codes_to_check")
       };
   }
 
@@ -65,4 +53,4 @@ protected:
 
 }  // namespace nav2_behavior_tree
 
-#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__GENERIC_ERROR_CODE_CONDITION_HPP_
+#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__IS_ERROR_CODE_ACTIVE_CONDITION_HPP_
