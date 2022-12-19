@@ -405,6 +405,8 @@ bool validateFloats(const nav2_msgs::msg::PathWithCost & msg)
 
 void PathWithCostDisplay::processMessage(nav2_msgs::msg::PathWithCost::ConstSharedPtr msg)
 {
+//  std::cout << "ProcessMessage: Costs Size: " << msg->costs.size() << " Path Size: " <<
+//  msg->poses.size() << std::endl;
   // Calculate index of oldest element in cyclic buffer
   size_t bufferIndex = messages_received_ % buffer_length_property_->getInt();
 
@@ -448,13 +450,15 @@ void PathWithCostDisplay::processMessage(nav2_msgs::msg::PathWithCost::ConstShar
 
   switch (style) {
     case LINES:
-      updateManualObject(manual_object, msg, transform);
+//      updateManualObject(manual_object, msg, transform);
       break;
 
     case BILLBOARDS:
       updateBillBoardLine(billboard_line, msg, transform);
       break;
   }
+
+//  updateManualObject(manual_object, msg, transform);
   updatePoseMarkers(bufferIndex, msg, transform);
 
   context_->queueRender();
@@ -464,15 +468,38 @@ void PathWithCostDisplay::updateManualObject(
   Ogre::ManualObject * manual_object, nav2_msgs::msg::PathWithCost::ConstSharedPtr msg,
   const Ogre::Matrix4 & transform)
 {
-  auto color = color_property_->getOgreColor();
-  color.a = alpha_property_->getFloat();
+//  auto color = color_property_->getOgreColor();
+//  color.a = alpha_property_->getFloat();
+//  std::cout << "Manual Object: Costs Size: " << msg->costs.size() << "Path Size: " << msg->poses
+//  .size()
+//  <<std::endl;
 
   manual_object->estimateVertexCount(msg->poses.size());
   manual_object->begin(
     lines_material_->getName(), Ogre::RenderOperation::OT_LINE_STRIP, "rviz_rendering");
 
-  for (auto pose_stamped : msg->poses) {
-    manual_object->position(transform * rviz_common::pointMsgToOgre(pose_stamped.pose.position));
+  for (size_t i = 0; i < (msg->poses.size() && msg->costs.size()); ++i) {
+    manual_object->position(transform * rviz_common::pointMsgToOgre(msg->poses[i].pose.position));
+
+//    int r = i * 5;
+//
+//    while ( r > 255) {
+//      r = 255 - r;
+//    }
+//
+//    Ogre::ColourValue color(r, 0, 0);
+
+    [[maybe_unused]] auto r = msg->costs[i];
+
+    if ( r > 255 ) {
+      r = 255;
+    }
+    if (r < 0 ) {
+      r = 0;
+    }
+
+    Ogre::ColourValue color(r, 255 - r, 0);
+//    Ogre::ColourValue color(10, 10, 10);
     rviz_rendering::MaterialManager::enableAlphaBlending(lines_material_, color.a);
     manual_object->colour(color);
   }
@@ -484,8 +511,8 @@ void PathWithCostDisplay::updateBillBoardLine(
   rviz_rendering::BillboardLine * billboard_line, nav2_msgs::msg::PathWithCost::ConstSharedPtr msg,
   const Ogre::Matrix4 & transform)
 {
-  auto color = color_property_->getOgreColor();
-  color.a = alpha_property_->getFloat();
+//  auto color = color_property_->getOgreColor();
+//  color.a = alpha_property_->getFloat();
 
   billboard_line->setNumLines(1);
   billboard_line->setMaxPointsPerLine(static_cast<uint32_t>(msg->poses.size()));
@@ -493,6 +520,7 @@ void PathWithCostDisplay::updateBillBoardLine(
 
   for (auto pose_stamped : msg->poses) {
     Ogre::Vector3 xpos = transform * rviz_common::pointMsgToOgre(pose_stamped.pose.position);
+    Ogre::ColourValue color(10, 10, 10);
     billboard_line->addPoint(xpos, color);
   }
 }
@@ -501,6 +529,8 @@ void PathWithCostDisplay::updatePoseMarkers(
   size_t buffer_index,
   nav2_msgs::msg::PathWithCost::ConstSharedPtr msg, const Ogre::Matrix4 & transform)
 {
+//  std::cout << "UpdatePoseMarkers: Costs Size: " << msg->costs.size() << " Path Size: " <<
+//            msg->poses.size() << std::endl;
   auto pose_style = static_cast<PoseStyle>(pose_style_property_->getOptionInt());
   auto & arrow_vect = arrow_chain_[buffer_index];
   auto & axes_vect = axes_chain_[buffer_index];
@@ -509,6 +539,8 @@ void PathWithCostDisplay::updatePoseMarkers(
     updateAxesMarkers(axes_vect, msg, transform);
   }
   if (pose_style == ARROWS) {
+//    std::cout << "UpdatePoseMarkersCase: Costs Size: " << msg->costs.size() << " Path Size: " <<
+//              msg->poses.size() << std::endl;
     updateArrowMarkers(arrow_vect, msg, transform);
   }
 }
@@ -537,10 +569,12 @@ void PathWithCostDisplay::updateArrowMarkers(
   nav2_msgs::msg::PathWithCost::ConstSharedPtr msg,
   const Ogre::Matrix4 & transform)
 {
+//  std::cout << "Arrow Markers: Costs Size: " << msg->costs.size() << "Path Size: " << msg->poses
+//  .size() << std::endl;
   auto num_points = msg->poses.size();
   allocateArrowVector(arrow_vect, num_points);
   for (size_t i = 0; i < num_points; ++i) {
-    QColor color = pose_arrow_color_property_->getColor();
+    QColor color(msg->costs[i], 255-msg->costs[i], 0);
     arrow_vect[i]->setColor(color.redF(), color.greenF(), color.blueF(), 1.0f);
 
     arrow_vect[i]->set(

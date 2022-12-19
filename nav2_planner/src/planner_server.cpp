@@ -598,6 +598,9 @@ void PlannerServer::isPathValid(
     return;
   }
 
+  RCLCPP_INFO_STREAM(get_logger(), "Path and cost" << request->path.poses.size() << " " <<
+  request->path.costs.size());
+
   // Find the closest point to the robot to evaluate from
   // TODO add orientation element like `truncate_path_local_action` BT node for looping paths
   geometry_msgs::msg::PoseStamped current_pose;

@@ -185,6 +185,7 @@ nav2_msgs::msg::PathWithCost NavfnPlanner::createPlan(
     if (start.pose.orientation != goal.pose.orientation && !use_final_approach_orientation_) {
       pose.pose.orientation = goal.pose.orientation;
     }
+    path.costs.push_back(costmap_->getCost(mx_start, my_start));
     path.poses.push_back(pose);
     return path;
   }
@@ -192,6 +193,23 @@ nav2_msgs::msg::PathWithCost NavfnPlanner::createPlan(
   if (!makePlan(start.pose, goal.pose, tolerance_, path)) {
     throw nav2_core::NoValidPathCouldBeFound(
             "Failed to create plan with tolerance of: " + std::to_string(tolerance_) );
+  }
+
+  for ([[maybe_unused]] const auto & pose : path.poses) {
+    unsigned int mx, my;
+    costmap_->worldToMap(pose.pose.position.x, pose.pose.position.y, mx, my);
+    auto cost = costmap_->getCost(mx, my);
+    path.costs.push_back(cost);
+//    if ([[maybe_unused]] auto cost = costmap_->getCost(mx, my)) {
+//      path.costs.push_back(50);
+//    } else {
+//      path.costs.push_back(0);
+//    }
+  }
+
+  if (path.poses.size() != path.costs.size())
+  {
+    RCLCPP_INFO_STREAM(logger_, "Poses and costs do not match!");
   }
 
 
