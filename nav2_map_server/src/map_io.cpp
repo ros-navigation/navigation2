@@ -411,8 +411,8 @@ void loadOctomapFromFile(
     throw std::runtime_error("Extension not supported");
   }
 
-  std::cout << "[DEBUG] [map_io]: Read Octomap file "<< load_parameters.octomap_file_name <<
-       " loaded ( " <<octree->size() <<" nodes)." << std::endl;
+  std::cout << "[DEBUG] [map_io]: Read Octomap file " << load_parameters.octomap_file_name <<
+    " loaded ( " << octree->size() << " nodes)." << std::endl;
 }
 
 LOAD_MAP_STATUS loadMapFromYaml(
@@ -526,22 +526,20 @@ LOAD_MAP_STATUS loadMapFromYaml(
   // octomap
   if (load_parameters.octomap_file_name != "") {
     try {
-      std::unique_ptr<octomap::OcTree> octree = std::make_unique<octomap::OcTree>(load_parameters.resolution);
+      std::unique_ptr<octomap::OcTree> octree =
+        std::make_unique<octomap::OcTree>(load_parameters.resolution);
       loadOctomapFromFile(load_parameters, octree);
 
       if (!octomap_msgs::fullMapToMsg(*octree, msg_octomap)) {
-        
         throw std::runtime_error("Error serializing Octomap");
       }
-
-
     } catch (std::exception & e) {
-    std::cerr <<
-      "[ERROR] [map_io]: Failed to load octomap image file " <<
-      load_parameters.elevation_image_file_name <<
-      " for reason: " << e.what() << std::endl;
-    return INVALID_MAP_DATA;
-  }
+      std::cerr <<
+        "[ERROR] [map_io]: Failed to load octomap image file " <<
+        load_parameters.elevation_image_file_name <<
+        " for reason: " << e.what() << std::endl;
+      return INVALID_MAP_DATA;
+    }
   }
 
   return LOAD_MAP_SUCCESS;
@@ -949,47 +947,48 @@ bool saveOctomapToFile(
   const octomap_msgs::msg::Octomap & octomap_msg,
   const SaveParameters & save_parameters)
 {
-  SaveParameters save_parameters_loc = save_parameters; 
+  SaveParameters save_parameters_loc = save_parameters;
   checkSaveParameters(save_parameters_loc);
-  std::string  map_name = "octo_" + save_parameters_loc.map_file_name + ".ot";
+  std::string map_name = "octo_" + save_parameters_loc.map_file_name + ".ot";
 
   // saving the file as in https://github.com/OctoMap/octomap_mapping/blob/ros2/octomap_server/src/octomap_saver.cpp#L84
   std::unique_ptr<octomap::AbstractOcTree> tree{octomap_msgs::msgToMap(octomap_msg)};
-    std::unique_ptr<octomap::AbstractOccupancyOcTree> octree;
-    if (tree) {
-      octree =
-        std::unique_ptr<octomap::AbstractOccupancyOcTree>(
-        dynamic_cast<octomap::AbstractOccupancyOcTree *>(tree.
-        release()));
-    } else {
-      std::cerr << "Error creating octree from received message" << std::endl;
-      return false;
-    }
+  std::unique_ptr<octomap::AbstractOccupancyOcTree> octree;
+  if (tree) {
+    octree =
+      std::unique_ptr<octomap::AbstractOccupancyOcTree>(
+      dynamic_cast<octomap::AbstractOccupancyOcTree *>(tree.
+      release()));
+  } else {
+    std::cerr << "Error creating octree from received message" << std::endl;
+    return false;
+  }
 
-    if (octree) {
-      std::cout <<
-        "Map received ("<< octree->size() <<" nodes, " << octree->getResolution() <<" m res), saving to"<< map_name.c_str() << std::endl;
-   
-      std::string suffix = map_name.substr(map_name.length() - 3, 3);
-      if (suffix == ".bt") {  // write to binary file:
-        if (!octree->writeBinary(map_name)) {
-          std::cerr << "Error writing to file " << map_name.c_str()<< std::endl;
-          return false;
-        }
-      } else if (suffix == ".ot") {  // write to full .ot file:
-        if (!octree->write(map_name)) {
-          std::cerr << "Error writing to file " << map_name.c_str()<< std::endl;
-          return false;
-        }
-      } else {
-        std::cerr << "Unknown file extension, must be either .bt or .ot"<< std::endl;
-          return false;
+  if (octree) {
+    std::cout <<
+      "Map received (" << octree->size() << " nodes, " << octree->getResolution()
+              << " m res), saving to" << map_name.c_str() << std::endl;
+
+    std::string suffix = map_name.substr(map_name.length() - 3, 3);
+    if (suffix == ".bt") {  // write to binary file:
+      if (!octree->writeBinary(map_name)) {
+        std::cerr << "Error writing to file " << map_name.c_str() << std::endl;
+        return false;
+      }
+    } else if (suffix == ".ot") {  // write to full .ot file:
+      if (!octree->write(map_name)) {
+        std::cerr << "Error writing to file " << map_name.c_str() << std::endl;
+        return false;
       }
     } else {
-      std::cerr << "Error reading OcTree from stream"<< std::endl;
+      std::cerr << "Unknown file extension, must be either .bt or .ot" << std::endl;
       return false;
     }
-  
+  } else {
+    std::cerr << "Error reading OcTree from stream" << std::endl;
+    return false;
+  }
+
   WriteMetadataToFile(octomap_msg, save_parameters_loc);
   return true;
 }

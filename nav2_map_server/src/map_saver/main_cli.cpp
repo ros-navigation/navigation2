@@ -185,7 +185,9 @@ int main(int argc, char ** argv)
   try {
     auto map_saver = std::make_shared<nav2_map_server::MapSaver>();
     map_saver->on_configure(rclcpp_lifecycle::State());
-    if (map_saver->saveMapTopicToFile(map_topic, save_parameters) && map_saver->saveOctomapTopicToFile(octomap_topic, save_parameters)) {
+    if (map_saver->saveMapTopicToFile(map_topic, save_parameters) &&
+      map_saver->saveOctomapTopicToFile(octomap_topic, save_parameters))
+    {
       retcode = 0;
     } else {
       retcode = 1;

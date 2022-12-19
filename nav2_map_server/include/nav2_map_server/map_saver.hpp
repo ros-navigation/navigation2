@@ -63,7 +63,7 @@ public:
   bool saveMapTopicToFile(
     const std::string & map_topic,
     const SaveParameters & save_parameters);
-  
+
   bool saveOctomapTopicToFile(
     const std::string & map_topic,
     const SaveParameters & save_parameters);
