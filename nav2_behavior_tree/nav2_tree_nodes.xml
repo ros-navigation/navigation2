@@ -245,6 +245,7 @@
     <Condition ID="IsPathValid">
       <input_port name="path"> Path to validate </input_port>
       <input_port name="server_timeout"> Server timeout </input_port>
+      <input_port name="consider_cost_change"> Check for significant cost change</input_port>
     </Condition>
 
     <!-- ############################### CONTROL NODES ################################ -->

@@ -54,10 +54,10 @@ PlannerServer::PlannerServer(const rclcpp::NodeOptions & options)
   declare_parameter("expected_planner_frequency", 1.0);
 
   nav2_util::declare_parameter_if_not_declared(
-    this, "z_score", rclcpp::ParameterValue(2.55));
+    this, "cost_change_z_score", rclcpp::ParameterValue(2.55));
 
 
-  get_parameter("z_score", z_score_);
+  get_parameter("cost_change_z_score", cost_change_z_score_);
 
   get_parameter("planner_plugins", planner_ids_);
   if (planner_ids_ == default_ids_) {
@@ -679,8 +679,8 @@ void PlannerServer::isPathValid(
 
   // TODO try single tail or tune strictness? Parameterize?
   // 1.65 95% single tail; 2.55 for 99% dual, 2.33 99% single; 90% 1.65 dual, 90% 1.2 single.
-  if (z > z_score_) {  // critical z score for 95% level
-    RCLCPP_DEBUG_STREAM(get_logger(), "Z-test triggered new global plan. The z score was: " << z << "and the threshold was" << z_score_);
+  if (z > cost_change_z_score_) {  // critical z score for 95% level
+    RCLCPP_DEBUG_STREAM(get_logger(), "Z-test triggered new global plan. The z score was: " << z << "and the threshold was" << cost_change_z_score_);
     response->is_valid = false;
   }
 }
