@@ -17,10 +17,10 @@
 #include <map>
 
 #include "../../test_behavior_tree_fixture.hpp"
-#include "nav2_behavior_tree/plugins/condition/is_error_code_active_condition.hpp"
+#include "nav2_behavior_tree/plugins/condition/are_error_codes_present_condition.hpp"
 #include "nav2_msgs/action/follow_path.hpp"
 
-class IsErrorCodeActiveFixture : public nav2_behavior_tree::BehaviorTreeTestFixture
+class AreErrorCodesPresentFixture : public nav2_behavior_tree::BehaviorTreeTestFixture
 {
 public:
   using Action = nav2_msgs::action::FollowPath;
@@ -36,12 +36,12 @@ public:
       R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-            <IsErrorCodeActive current_error_codes="{current_error_codes}" error_codes_to_check="{error_codes_to_check}"/>
+            <AreErrorCodesPresent current_error_codes="{current_error_codes}" error_codes_to_check="{error_codes_to_check}"/>
         </BehaviorTree>
       </root>)";
 
-    factory_->registerNodeType<nav2_behavior_tree::IsErrorCodeActive>(
-      "IsErrorCodeActive");
+    factory_->registerNodeType<nav2_behavior_tree::AreErrorCodesPresent>(
+      "AreErrorCodesPresent");
     tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
   }
 
@@ -54,9 +54,9 @@ protected:
   static std::shared_ptr<BT::Tree> tree_;
 };
 
-std::shared_ptr<BT::Tree> IsErrorCodeActiveFixture::tree_ = nullptr;
+std::shared_ptr<BT::Tree> AreErrorCodesPresentFixture::tree_ = nullptr;
 
-TEST_F(IsErrorCodeActiveFixture, test_condition)
+TEST_F(AreErrorCodesPresentFixture, test_condition)
 {
   std::map<int, BT::NodeStatus> error_to_status_map = {
     {ActionGoal::NONE, BT::NodeStatus::FAILURE},

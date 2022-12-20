@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__IS_ERROR_CODE_ACTIVE_CONDITION_HPP_
-#define NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__IS_ERROR_CODE_ACTIVE_CONDITION_HPP_
+#ifndef NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__ARE_ERROR_CODES_PRESENT_CONDITION_HPP_
+#define NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__ARE_ERROR_CODES_PRESENT_CONDITION_HPP_
 
 #include <string>
 #include <memory>
@@ -26,10 +26,10 @@
 namespace nav2_behavior_tree
 {
 
-class IsErrorCodeActive : public BT::ConditionNode
+class AreErrorCodesPresent : public BT::ConditionNode
 {
 public:
-  IsErrorCodeActive(
+  AreErrorCodesPresent(
     const std::string & condition_name,
     const BT::NodeConfiguration & conf)
   : BT::ConditionNode(condition_name, conf)
@@ -37,7 +37,7 @@ public:
     getInput<std::set<int>>("error_codes_to_check", error_codes_to_check_);
   }
 
-  IsErrorCodeActive() = delete;
+  AreErrorCodesPresent() = delete;
 
   BT::NodeStatus tick()
   {
@@ -56,8 +56,10 @@ public:
   {
     return
       {
-        BT::InputPort<std::set<int>>("current_error_codes"),
-        BT::InputPort<std::set<int>>("error_codes_to_check")
+        BT::InputPort<std::set<int>>("current_error_codes", "The active error codes"),
+        BT::InputPort<std::set<int>>(
+          "error_codes_to_check",
+          "The error codes to check against the active error codes")
       };
   }
 
@@ -68,4 +70,4 @@ protected:
 
 }  // namespace nav2_behavior_tree
 
-#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__IS_ERROR_CODE_ACTIVE_CONDITION_HPP_
+#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__ARE_ERROR_CODES_PRESENT_CONDITION_HPP_
