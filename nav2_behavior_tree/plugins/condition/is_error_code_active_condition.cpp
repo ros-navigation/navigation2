@@ -12,11 +12,11 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-#include "nav2_behavior_tree/plugins/condition/are_error_codes_present_condition.hpp"
+#include "nav2_behavior_tree/plugins/condition/is_error_code_active_condition.hpp"
 
 #include "behaviortree_cpp_v3/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
-  factory.registerNodeType<nav2_behavior_tree::AreErrorCodesPresent>(
-    "AreErrorCodesPresent");
+  factory.registerNodeType<nav2_behavior_tree::IsErrorCodeActive>(
+    "IsErrorCodeActive");
 }

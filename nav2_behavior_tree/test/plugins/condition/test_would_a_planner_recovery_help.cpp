@@ -27,14 +27,14 @@ public:
   using ActionGoal = Action::Goal;
   void SetUp()
   {
-    int current_error_codes = ActionGoal::NONE;
-    config_->blackboard->set("current_error_codes", current_error_codes);
+    int current_error_code = ActionGoal::NONE;
+    config_->blackboard->set("current_error_code", current_error_code);
 
     std::string xml_txt =
       R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-            <WouldAPlannerRecoveryHelp current_error_codes="{current_error_codes}"/>
+            <WouldAPlannerRecoveryHelp current_error_code="{current_error_code}"/>
         </BehaviorTree>
       </root>)";
 
@@ -63,7 +63,7 @@ TEST_F(WouldAPlannerRecoveryHelpFixture, test_condition)
   };
 
   for (const auto & error_to_status : error_to_status_map) {
-    config_->blackboard->set("current_error_codes", error_to_status.first);
+    config_->blackboard->set("current_error_code", error_to_status.first);
     EXPECT_EQ(tree_->tickRoot(), error_to_status.second);
   }
 }

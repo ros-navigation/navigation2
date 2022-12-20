@@ -18,12 +18,12 @@
 #include <string>
 
 #include "nav2_msgs/action/follow_path.hpp"
-#include "nav2_behavior_tree/plugins/condition/are_error_codes_present_condition.hpp"
+#include "nav2_behavior_tree/plugins/condition/is_error_code_active_condition.hpp"
 
 namespace nav2_behavior_tree
 {
 
-class WouldAControllerRecoveryHelp : public AreErrorCodesPresent
+class WouldAControllerRecoveryHelp : public IsErrorCodeActive
 {
   using Action = nav2_msgs::action::FollowPath;
   using ActionGoal = Action::Goal;

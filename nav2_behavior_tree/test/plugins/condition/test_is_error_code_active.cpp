@@ -17,31 +17,31 @@
 #include <map>
 
 #include "../../test_behavior_tree_fixture.hpp"
-#include "nav2_behavior_tree/plugins/condition/are_error_codes_present_condition.hpp"
+#include "nav2_behavior_tree/plugins/condition/is_error_code_active_condition.hpp"
 #include "nav2_msgs/action/follow_path.hpp"
 
-class AreErrorCodesPresentFixture : public nav2_behavior_tree::BehaviorTreeTestFixture
+class IsErrorCodeActiveFixture : public nav2_behavior_tree::BehaviorTreeTestFixture
 {
 public:
   using Action = nav2_msgs::action::FollowPath;
   using ActionGoal = Action::Goal;
   void SetUp()
   {
-    std::set<int> current_error_codes = {ActionGoal::NONE};
-    std::set<int> error_codes_to_check = {ActionGoal::UNKNOWN};
-    config_->blackboard->set("current_error_codes", current_error_codes);
+    int current_error_code = ActionGoal::NONE;
+    std::set<unsigned short> error_codes_to_check = {ActionGoal::UNKNOWN};
+    config_->blackboard->set("current_error_code", current_error_code);
     config_->blackboard->set("error_codes_to_check", error_codes_to_check);
 
     std::string xml_txt =
       R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-            <AreErrorCodesPresent current_error_codes="{current_error_codes}" error_codes_to_check="{error_codes_to_check}"/>
+            <IsErrorCodeActive current_error_code="{current_error_code}" error_codes_to_check="{error_codes_to_check}"/>
         </BehaviorTree>
       </root>)";
 
-    factory_->registerNodeType<nav2_behavior_tree::AreErrorCodesPresent>(
-      "AreErrorCodesPresent");
+    factory_->registerNodeType<nav2_behavior_tree::IsErrorCodeActive>(
+      "IsErrorCodeActive");
     tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
   }
 
@@ -54,9 +54,9 @@ protected:
   static std::shared_ptr<BT::Tree> tree_;
 };
 
-std::shared_ptr<BT::Tree> AreErrorCodesPresentFixture::tree_ = nullptr;
+std::shared_ptr<BT::Tree> IsErrorCodeActiveFixture::tree_ = nullptr;
 
-TEST_F(AreErrorCodesPresentFixture, test_condition)
+TEST_F(IsErrorCodeActiveFixture, test_condition)
 {
   std::map<int, BT::NodeStatus> error_to_status_map = {
     {ActionGoal::NONE, BT::NodeStatus::FAILURE},
@@ -64,8 +64,7 @@ TEST_F(AreErrorCodesPresentFixture, test_condition)
   };
 
   for (const auto & error_to_status : error_to_status_map) {
-    std::set<int> error = {error_to_status.first};
-    config_->blackboard->set("current_error_codes", error);
+    config_->blackboard->set("current_error_code", error_to_status.first);
     EXPECT_EQ(tree_->tickRoot(), error_to_status.second);
   }
 }

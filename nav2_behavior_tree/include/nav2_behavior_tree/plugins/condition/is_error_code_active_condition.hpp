@@ -26,10 +26,10 @@
 namespace nav2_behavior_tree
 {
 
-class AreErrorCodesPresent : public BT::ConditionNode
+class IsErrorCodeActive : public BT::ConditionNode
 {
 public:
-  AreErrorCodesPresent(
+  IsErrorCodeActive(
     const std::string & condition_name,
     const BT::NodeConfiguration & conf)
   : BT::ConditionNode(condition_name, conf)
@@ -37,13 +37,13 @@ public:
     getInput<std::set<unsigned short>>("error_codes_to_check", error_codes_to_check_);
   }
 
-  AreErrorCodesPresent() = delete;
+  IsErrorCodeActive() = delete;
 
   BT::NodeStatus tick()
   {
-    getInput<unsigned short>("current_error_codes", current_error_codes_);
+    getInput<unsigned short>("current_error_code", current_error_code_);
 
-    if (error_codes_to_check_.find(current_error_codes_) != error_codes_to_check_.end()) {
+    if (error_codes_to_check_.find(current_error_code_) != error_codes_to_check_.end()) {
       return BT::NodeStatus::SUCCESS;
     }
 
@@ -54,7 +54,7 @@ public:
   {
     return
       {
-        BT::InputPort<unsigned short>("current_error_codes", "The active error codes"),
+        BT::InputPort<unsigned short>("current_error_code", "The active error codes"),
         BT::InputPort<std::set<unsigned short>>(
           "error_codes_to_check",
           "The error codes to check against the active error codes")
@@ -62,7 +62,7 @@ public:
   }
 
 protected:
-  unsigned short current_error_codes_;
+  unsigned short current_error_code_;
   std::set<unsigned short> error_codes_to_check_;
 };
 

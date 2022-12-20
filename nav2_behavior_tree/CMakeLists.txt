@@ -132,6 +132,9 @@ list(APPEND plugin_libs nav2_initial_pose_received_condition_bt_node)
 add_library(nav2_is_battery_low_condition_bt_node SHARED plugins/condition/is_battery_low_condition.cpp)
 list(APPEND plugin_libs nav2_is_battery_low_condition_bt_node)
 
+add_library(nav2_is_error_code_active_condition_bt_node SHARED plugins/condition/is_error_code_active_condition.cpp)
+list(APPEND plugin_libs nav2_is_error_code_active_condition_bt_node)
+
 add_library(nav2_would_a_controller_recovery_help_condition_bt_node SHARED plugins/condition/would_a_controller_recovery_help_condition.cpp)
 list(APPEND plugin_libs nav2_would_a_controller_recovery_help_condition_bt_node)
 
