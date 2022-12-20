@@ -19,18 +19,13 @@ namespace nav2_behavior_tree
 {
 
 WouldAPlannerRecoveryHelp::WouldAPlannerRecoveryHelp(
-    const std::string & condition_name,
-    const BT::NodeConfiguration & conf)
-    : AreErrorCodesPresent(condition_name, conf)
+  const std::string & condition_name,
+  const BT::NodeConfiguration & conf)
+: AreErrorCodesPresent(condition_name, conf)
 {
   error_codes_to_check_ = {
-      ActionGoal::UNKNOWN,
-      ActionGoal::START_OUTSIDE_MAP,
-      ActionGoal::GOAL_OUTSIDE_MAP,
-      ActionGoal::START_OCCUPIED,
-      ActionGoal::GOAL_OCCUPIED,
-      ActionGoal::TIMEOUT,
-      ActionGoal::NO_VALID_PATH
+    ActionGoal::UNKNOWN,
+    ActionGoal::NO_VALID_PATH
   };
 }
 
@@ -38,7 +33,7 @@ WouldAPlannerRecoveryHelp::WouldAPlannerRecoveryHelp(
 
 #include "behaviortree_cpp_v3/bt_factory.h"
 BT_REGISTER_NODES(factory)
-  {
-    factory.registerNodeType<nav2_behavior_tree::WouldAPlannerRecoveryHelp>(
-        "WouldAPlannerRecoveryHelp");
-  }
+{
+  factory.registerNodeType<nav2_behavior_tree::WouldAPlannerRecoveryHelp>(
+    "WouldAPlannerRecoveryHelp");
+}

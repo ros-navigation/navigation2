@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_PLANNER_RECOVERY
-#define NAV2_PLANNER_RECOVERY
+#ifndef NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__WOULD_A_PLANNER_RECOVERY_HELP_CONDITION_HPP_
+#define NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__WOULD_A_PLANNER_RECOVERY_HELP_CONDITION_HPP_
 
 #include <string>
 
@@ -28,13 +28,13 @@ class WouldAPlannerRecoveryHelp : public AreErrorCodesPresent
   using Action = nav2_msgs::action::ComputePathToPose;
   using ActionGoal = Action::Goal;
 
- public:
+public:
   WouldAPlannerRecoveryHelp(
-      const std::string & condition_name,
-      const BT::NodeConfiguration & conf);
+    const std::string & condition_name,
+    const BT::NodeConfiguration & conf);
 
   WouldAPlannerRecoveryHelp() = delete;
 };
 
 }  // namespace nav2_behavior_tree
-#endif  // NAV2_PLANNER_RECOVERY
+#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__WOULD_A_PLANNER_RECOVERY_HELP_CONDITION_HPP_

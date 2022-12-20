@@ -113,14 +113,14 @@ inline std::chrono::milliseconds convertFromString<std::chrono::milliseconds>(co
 }
 
 template<>
-inline std::set<int> convertFromString(StringView str)
+inline std::set<int16_t> convertFromString(StringView str)
 {
   // We expect real numbers separated by commas
   auto parts = splitString(str, ',');
 
-  std::set<int> vec_int;
+  std::set<int16_t> vec_int;
   for (const auto part : parts) {
-    vec_int.insert(convertFromString<int>(part));
+    vec_int.insert(convertFromString<int16_t>(part));
   }
   return vec_int;
 }

@@ -17,13 +17,13 @@
 #include <map>
 
 #include "../../test_behavior_tree_fixture.hpp"
-#include "nav2_behavior_tree/plugins/condition/would_a_controller_recovery_help_condition.hpp"
-#include "nav2_msgs/action/follow_path.hpp"
+#include "nav2_behavior_tree/plugins/condition/would_a_planner_recovery_help_condition.hpp"
+#include "nav2_msgs/action/compute_path_to_pose.hpp"
 
-class WouldAControllerRecoveryHelpFixture : public nav2_behavior_tree::BehaviorTreeTestFixture
+class WouldAPlannerRecoveryHelpFixture : public nav2_behavior_tree::BehaviorTreeTestFixture
 {
 public:
-  using Action = nav2_msgs::action::FollowPath;
+  using Action = nav2_msgs::action::ComputePathToPose;
   using ActionGoal = Action::Goal;
   void SetUp()
   {
@@ -34,12 +34,12 @@ public:
       R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-            <WouldAControllerRecoveryHelp current_error_codes="{current_error_codes}"/>
+            <WouldAPlannerRecoveryHelp current_error_codes="{current_error_codes}"/>
         </BehaviorTree>
       </root>)";
 
-    factory_->registerNodeType<nav2_behavior_tree::WouldAControllerRecoveryHelp>(
-      "WouldAControllerRecoveryHelp");
+    factory_->registerNodeType<nav2_behavior_tree::WouldAPlannerRecoveryHelp>(
+      "WouldAPlannerRecoveryHelp");
     tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
   }
 
@@ -52,19 +52,14 @@ protected:
   static std::shared_ptr<BT::Tree> tree_;
 };
 
-std::shared_ptr<BT::Tree> WouldAControllerRecoveryHelpFixture::tree_ = nullptr;
+std::shared_ptr<BT::Tree> WouldAPlannerRecoveryHelpFixture::tree_ = nullptr;
 
-TEST_F(WouldAControllerRecoveryHelpFixture, test_condition)
+TEST_F(WouldAPlannerRecoveryHelpFixture, test_condition)
 {
   std::map<int, BT::NodeStatus> error_to_status_map = {
     {ActionGoal::NONE, BT::NodeStatus::FAILURE},
     {ActionGoal::UNKNOWN, BT::NodeStatus::SUCCESS},
-    {ActionGoal::INVALID_CONTROLLER, BT::NodeStatus::FAILURE},
-    {ActionGoal::TF_ERROR, BT::NodeStatus::FAILURE},
-    {ActionGoal::INVALID_PATH, BT::NodeStatus::FAILURE},
-    {ActionGoal::PATIENCE_EXCEEDED, BT::NodeStatus::SUCCESS},
-    {ActionGoal::FAILED_TO_MAKE_PROGRESS, BT::NodeStatus::SUCCESS},
-    {ActionGoal::NO_VALID_CONTROL, BT::NodeStatus::SUCCESS},
+    {ActionGoal::NO_VALID_PATH, BT::NodeStatus::SUCCESS},
   };
 
   for (const auto & error_to_status : error_to_status_map) {
