@@ -21,7 +21,7 @@ namespace nav2_behavior_tree
 WouldAPlannerRecoveryHelp::WouldAPlannerRecoveryHelp(
   const std::string & condition_name,
   const BT::NodeConfiguration & conf)
-: IsErrorCodeActive(condition_name, conf)
+: AreErrorCodesPresent(condition_name, conf)
 {
   error_codes_to_check_ = {
     ActionGoal::UNKNOWN,

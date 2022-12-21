@@ -120,7 +120,7 @@ inline std::chrono::milliseconds convertFromString<std::chrono::milliseconds>(co
 template<>
 inline std::set<int> convertFromString(StringView key)
 {
-  //Real numbers separated by semicolons
+  // Real numbers separated by semicolons
   auto parts = splitString(key, ';');
 
   std::set<int> set;

@@ -18,12 +18,12 @@
 #include <string>
 
 #include "nav2_msgs/action/compute_path_to_pose.hpp"
-#include "nav2_behavior_tree/plugins/condition/is_error_code_active_condition.hpp"
+#include "nav2_behavior_tree/plugins/condition/are_error_codes_present_condition.hpp"
 
 namespace nav2_behavior_tree
 {
 
-class WouldAPlannerRecoveryHelp : public IsErrorCodeActive
+class WouldAPlannerRecoveryHelp : public AreErrorCodesPresent
 {
   using Action = nav2_msgs::action::ComputePathToPose;
   using ActionGoal = Action::Goal;

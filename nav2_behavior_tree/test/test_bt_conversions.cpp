@@ -271,7 +271,7 @@ TEST(MillisecondsPortTest, test_correct_syntax)
 TEST(ErrorCodePortTest, test_correct_syntax)
 {
   std::string xml_txt =
-      R"(
+    R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
             <ErrorCodePort test="100;204;212"/>
