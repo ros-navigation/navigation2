@@ -27,6 +27,7 @@ include_directories(
 
 set(executable_name planner_server)
 set(library_name ${executable_name}_core)
+set(path_validator path_validator_lib)
 
 set(dependencies
   rclcpp
@@ -51,6 +52,13 @@ add_library(${library_name} SHARED
 )
 
 ament_target_dependencies(${library_name}
+  ${dependencies}
+)
+
+add_library(${path_validator} SHARED
+    src/path_validator.cpp)
+
+ament_target_dependencies(${path_validator}
   ${dependencies}
 )
 
