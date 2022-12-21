@@ -79,7 +79,6 @@ BtNavigator::BtNavigator(const rclcpp::NodeOptions & options)
     "nav2_spin_cancel_bt_node",
     "nav2_assisted_teleop_cancel_bt_node",
     "nav2_back_up_cancel_bt_node",
-    "nav2_back_up_cancel_bt_node",
     "nav2_drive_on_heading_cancel_bt_node"
   };
 

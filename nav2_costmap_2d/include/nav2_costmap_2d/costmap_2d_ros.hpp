@@ -38,6 +38,7 @@
 #ifndef NAV2_COSTMAP_2D__COSTMAP_2D_ROS_HPP_
 #define NAV2_COSTMAP_2D__COSTMAP_2D_ROS_HPP_
 
+#include <atomic>
 #include <memory>
 #include <string>
 #include <vector>
@@ -329,9 +330,9 @@ protected:
    */
   void mapUpdateLoop(double frequency);
   bool map_update_thread_shutdown_{false};
-  bool stop_updates_{false};
-  bool initialized_{false};
-  bool stopped_{true};
+  std::atomic<bool> stop_updates_{false};
+  std::atomic<bool> initialized_{false};
+  std::atomic<bool> stopped_{true};
   std::unique_ptr<std::thread> map_update_thread_;  ///< @brief A thread for updating the map
   rclcpp::Time last_publish_{0, 0, RCL_ROS_TIME};
   rclcpp::Duration publish_cycle_{1, 0};

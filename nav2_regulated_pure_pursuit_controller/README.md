@@ -111,7 +111,6 @@ controller_server:
       transform_tolerance: 0.1
       use_velocity_scaled_lookahead_dist: false
       min_approach_linear_velocity: 0.05
-      use_approach_linear_velocity_scaling: true
       approach_velocity_scaling_dist: 1.0
       use_collision_detection: true
       max_allowed_time_to_collision_up_to_carrot: 1.0

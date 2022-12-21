@@ -185,3 +185,49 @@ TEST(ThetaStarPlanner, test_theta_star_planner) {
   life_node.reset();
   costmap_ros.reset();
 }
+
+TEST(ThetaStarPlanner, test_theta_star_reconfigure)
+{
+  rclcpp_lifecycle::LifecycleNode::SharedPtr life_node =
+    std::make_shared<rclcpp_lifecycle::LifecycleNode>("ThetaStarPlannerTest");
+
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros =
+    std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+
+  auto planner = std::make_unique<nav2_theta_star_planner::ThetaStarPlanner>();
+  try {
+    // Expect to throw due to invalid prims file in param
+    planner->configure(life_node, "test", nullptr, costmap_ros);
+  } catch (...) {
+  }
+  planner->activate();
+
+  auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
+    life_node->get_node_base_interface(), life_node->get_node_topics_interface(),
+    life_node->get_node_graph_interface(),
+    life_node->get_node_services_interface());
+
+  auto results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.how_many_corners", 8),
+      rclcpp::Parameter("test.w_euc_cost", 1.0),
+      rclcpp::Parameter("test.w_traversal_cost", 2.0),
+      rclcpp::Parameter("test.use_final_approach_orientation", false),
+      rclcpp::Parameter("test.allow_unknown", false)});
+
+  rclcpp::spin_until_future_complete(
+    life_node->get_node_base_interface(),
+    results);
+
+  EXPECT_EQ(life_node->get_parameter("test.how_many_corners").as_int(), 8);
+  EXPECT_EQ(
+    life_node->get_parameter("test.w_euc_cost").as_double(),
+    1.0);
+  EXPECT_EQ(life_node->get_parameter("test.w_traversal_cost").as_double(), 2.0);
+  EXPECT_EQ(life_node->get_parameter("test.use_final_approach_orientation").as_bool(), false);
+  EXPECT_EQ(life_node->get_parameter("test.allow_unknown").as_bool(), false);
+
+  rclcpp::spin_until_future_complete(
+    life_node->get_node_base_interface(),
+    results);
+}

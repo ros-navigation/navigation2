@@ -59,6 +59,16 @@ public:
     on_cleanup(get_current_state());
     on_shutdown(get_current_state());
   }
+
+  void deactivate()
+  {
+    on_deactivate(get_current_state());
+  }
+
+  void activate()
+  {
+    on_activate(get_current_state());
+  }
 };
 
 class InfoServerTester : public ::testing::Test
@@ -130,6 +140,27 @@ private:
 
 TEST_F(InfoServerTester, testCostmapFilterInfoPublish)
 {
+  rclcpp::Time start_time = info_server_->now();
+  while (!isReceived()) {
+    rclcpp::spin_some(info_server_->get_node_base_interface());
+    std::this_thread::sleep_for(100ms);
+    // Waiting no more than 5 seconds
+    ASSERT_TRUE((info_server_->now() - start_time) <= rclcpp::Duration(5000ms));
+  }
+
+  // Checking received CostmapFilterInfo for consistency
+  EXPECT_EQ(info_->type, TYPE);
+  EXPECT_EQ(info_->filter_mask_topic, MASK_TOPIC);
+  EXPECT_NEAR(info_->base, BASE, EPSILON);
+  EXPECT_NEAR(info_->multiplier, MULTIPLIER, EPSILON);
+}
+
+TEST_F(InfoServerTester, testCostmapFilterInfoDeactivateActivate)
+{
+  info_server_->deactivate();
+  info_ = nullptr;
+  info_server_->activate();
+
   rclcpp::Time start_time = info_server_->now();
   while (!isReceived()) {
     rclcpp::spin_some(info_server_->get_node_base_interface());
