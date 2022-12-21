@@ -112,17 +112,22 @@ inline std::chrono::milliseconds convertFromString<std::chrono::milliseconds>(co
   return std::chrono::milliseconds(std::stoul(key.data()));
 }
 
+/**
+ * \brief Parse XML string to std::set<int>
+ * @param key XML string
+ * \return std::set<int>
+ */
 template<>
-inline std::set<int16_t> convertFromString(StringView str)
+inline std::set<int> convertFromString(StringView key)
 {
-  // We expect real numbers separated by commas
-  auto parts = splitString(str, ',');
+  //Real numbers separated by semicolons
+  auto parts = splitString(key, ';');
 
-  std::set<int16_t> vec_int;
+  std::set<int> set;
   for (const auto part : parts) {
-    vec_int.insert(convertFromString<int16_t>(part));
+    set.insert(convertFromString<int>(part));
   }
-  return vec_int;
+  return set;
 }
 
 }  // namespace BT
