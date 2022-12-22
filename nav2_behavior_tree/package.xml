@@ -36,6 +36,7 @@
   <exec_depend>rclcpp_action</exec_depend>
   <exec_depend>rclcpp_lifecycle</exec_depend>
   <exec_depend>std_msgs</exec_depend>
+  <exec_depend>behaviortree_cpp_v3</exec_depend>
   <exec_depend>builtin_interfaces</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>sensor_msgs</exec_depend>
