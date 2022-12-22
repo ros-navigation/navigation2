@@ -1,4 +1,4 @@
-// Copyright (c) 2022 Samsung R&D Institute Russia
+// Copyright (c) 2022 John Tan
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,62 +18,17 @@
 
 #include <gtest/gtest.h>
 
-#include <rclcpp/rclcpp.hpp>
-#include <nav_msgs/msg/occupancy_grid.hpp>
-#include <nav2_costmap_2d/cost_values.hpp>
-#include <nav2_costmap_2d/costmap_2d_ros.hpp>
-#include <nav2_util/occ_grid_values.hpp>
+#include "rclcpp/rclcpp.hpp"
+#include "nav_msgs/msg/occupancy_grid.hpp"
+#include "nav2_costmap_2d/cost_values.hpp"
+#include "nav2_costmap_2d/costmap_2d_ros.hpp"
+#include "nav2_util/occ_grid_values.hpp"
 
 using namespace std::chrono_literals;
 
 static constexpr double RESOLUTION = 0.05;
 static constexpr double ORIGIN_X = 0.1;
 static constexpr double ORIGIN_Y = 0.2;
-
-// Wrapper around Costmap2DROS to get access to protected member variables
-class Costmap2DROSWrapper : public nav2_costmap_2d::Costmap2DROS
-{
-public:
-  Costmap2DROSWrapper(const std::string & name)
-  : Costmap2DROS(name, "/", name, true) {}
-
-  void setup()
-  {
-    // Workaround to avoid setting base_link->map transform
-    this->set_parameter(rclcpp::Parameter("robot_base_frame", "map"));
-    this->set_parameter(rclcpp::Parameter("update_frequency", 10.0));
-
-    // Add static_layer plugin
-    std::vector<std::string> plugins_str{"static_layer"};
-    this->set_parameter(rclcpp::Parameter("plugins", plugins_str));
-    this->declare_parameter(
-      "static_layer.plugin",
-      rclcpp::ParameterValue(std::string("nav2_costmap_2d::StaticLayer")));
-
-    this->on_configure(this->get_current_state());
-    this->on_activate(this->get_current_state());
-  }
-
-  void setUpdateOnRequestParam(const bool & update_on_request)
-  {
-    this->set_parameter(rclcpp::Parameter("update_on_request", update_on_request));
-  }
-
-  void waitForMap()
-  {
-    while (!this->isCurrent()) {
-      rclcpp::spin_some(this->get_node_base_interface());
-    }
-  }
-
-  void teardown()
-  {
-    this->on_deactivate(this->get_current_state());
-    this->on_cleanup(this->get_current_state());
-    this->on_shutdown(this->get_current_state());
-  }
-
-};
 
 class OccGridPublisher : public rclcpp::Node
 {
@@ -105,12 +60,63 @@ public:
   TestNode()
   {
     node_ = std::make_shared<nav2_util::LifecycleNode>("test_node");
-    costmap_ros_wrapper_ = std::make_shared<Costmap2DROSWrapper>("costmap_ros");
+    costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("costmap_ros");
+  }
+
+  void setupCostmap()
+  {
+    // Workaround to avoid setting base_link->map transform
+    costmap_ros_->set_parameter(rclcpp::Parameter("robot_base_frame", "map"));
+    costmap_ros_->set_parameter(rclcpp::Parameter("update_frequency", 10.0));
+
+    // Add static_layer plugin
+    std::vector<std::string> plugins_str{"static_layer"};
+    costmap_ros_->set_parameter(rclcpp::Parameter("plugins", plugins_str));
+    costmap_ros_->declare_parameter(
+      "static_layer.plugin",
+      rclcpp::ParameterValue(std::string("nav2_costmap_2d::StaticLayer")));
+
+    configureAndActivateCostmap();
+  }
+
+  void configureAndActivateCostmap()
+  {
+    costmap_ros_->on_configure(costmap_ros_->get_current_state());
+    costmap_ros_->on_activate(costmap_ros_->get_current_state());
+  }
+
+  void deactivateAndCleanupCostmap()
+  {
+    costmap_ros_->on_deactivate(costmap_ros_->get_current_state());
+    costmap_ros_->on_cleanup(costmap_ros_->get_current_state());
+  }
+
+  void setUpdateOnRequestParam(const bool & update_on_request)
+  {
+    costmap_ros_->set_parameter(rclcpp::Parameter("update_on_request", update_on_request));
+  }
+
+  void waitForMap()
+  {
+    while (!costmap_ros_->isCurrent()) {
+      rclcpp::spin_some(costmap_ros_->get_node_base_interface());
+    }
+  }
+
+  void updateAndPublishMap()
+  {
+    costmap_ros_->updateAndPublishMap();
+  }
+
+  bool isUpdateOnRequest()
+  {
+    return costmap_ros_->isUpdateOnRequest();
   }
 
   ~TestNode()
   {
-    costmap_ros_wrapper_.reset();
+    costmap_ros_->on_shutdown(costmap_ros_->get_current_state());
+    costmap_ros_.reset();
     occ_grid_pub_.reset();
     occ_grid_.reset();
   }
@@ -126,10 +132,9 @@ protected:
 
   void waitSome(const std::chrono::nanoseconds & duration);
 
-  std::shared_ptr<Costmap2DROSWrapper> costmap_ros_wrapper_;
-
 private:
   nav2_util::LifecycleNode::SharedPtr node_;
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
 
   std::shared_ptr<OccGridPublisher> occ_grid_pub_;
   std::shared_ptr<nav_msgs::msg::OccupancyGrid> occ_grid_;
@@ -138,7 +143,7 @@ private:
 
 bool TestNode::checkCostmapValues(const unsigned char & value)
 {
-  nav2_costmap_2d::Costmap2D * costmap = costmap_ros_wrapper_->getCostmap();
+  nav2_costmap_2d::Costmap2D * costmap = costmap_ros_->getCostmap();
 
   for (unsigned int i = 0; i < costmap->getSizeInCellsX() * costmap->getSizeInCellsY(); i++) {
     if (costmap->getCost(i) != value) {
@@ -184,16 +189,16 @@ void TestNode::waitSome(const std::chrono::nanoseconds & duration)
   rclcpp::Time start_time = node_->now();
 
   while (rclcpp::ok() && node_->now() - start_time <= rclcpp::Duration(duration)) {
-    rclcpp::spin_some(costmap_ros_wrapper_->get_node_base_interface());
+    rclcpp::spin_some(costmap_ros_->get_node_base_interface());
     std::this_thread::sleep_for(50ms);
   }
 }
 
 TEST_F(TestNode, testUpdateOnRequestTrue)
 {
-  costmap_ros_wrapper_->setUpdateOnRequestParam(true);
-  costmap_ros_wrapper_->setup();
-  ASSERT_EQ(costmap_ros_wrapper_->isUpdateOnRequest(), true);
+  setUpdateOnRequestParam(true);
+  setupCostmap();
+  ASSERT_EQ(isUpdateOnRequest(), true);
 
   // Create and Publish fake occupancy grid
   createOccupancyGrid("map", 5, 5, nav2_util::OCC_GRID_OCCUPIED);
@@ -201,28 +206,27 @@ TEST_F(TestNode, testUpdateOnRequestTrue)
 
   // Spin to check that background thread does not update the costmap
   waitSome(200ms);
-  // rclcpp::spin_some(costmap_ros_wrapper_->get_node_base_interface());
 
   // Check that costmap has not been updated
   ASSERT_TRUE(checkCostmapValues(nav2_costmap_2d::FREE_SPACE));
 
   // Manually trigger updateAndPublishMap()
-  costmap_ros_wrapper_->updateAndPublishMap();
+  updateAndPublishMap();
   // Spin until the map is current
-  costmap_ros_wrapper_->waitForMap();
+  waitForMap();
 
   // Check that costmap has been updated with correct values
   ASSERT_TRUE(checkCostmapValues(nav2_costmap_2d::LETHAL_OBSTACLE));
 
   // Do cleanup
-  costmap_ros_wrapper_->teardown();
+  deactivateAndCleanupCostmap();
 }
 
 TEST_F(TestNode, testUpdateOnRequestFalse)
 {
-  costmap_ros_wrapper_->setUpdateOnRequestParam(false);
-  costmap_ros_wrapper_->setup();
-  ASSERT_EQ(costmap_ros_wrapper_->isUpdateOnRequest(), false);
+  setUpdateOnRequestParam(false);
+  setupCostmap();
+  ASSERT_EQ(isUpdateOnRequest(), false);
 
   // Create and Publish fake occupancy grid
   createOccupancyGrid("map", 4, 6, nav2_util::OCC_GRID_OCCUPIED);
@@ -232,13 +236,13 @@ TEST_F(TestNode, testUpdateOnRequestFalse)
   waitSome(200ms);
 
   // Spin until the map is current
-  costmap_ros_wrapper_->waitForMap();
+  waitForMap();
 
   // Check that costmap has been updated
   ASSERT_TRUE(checkCostmapValues(nav2_costmap_2d::LETHAL_OBSTACLE));
 
   // Do cleanup
-  costmap_ros_wrapper_->teardown();
+  deactivateAndCleanupCostmap();
 }
 
 int main(int argc, char ** argv)

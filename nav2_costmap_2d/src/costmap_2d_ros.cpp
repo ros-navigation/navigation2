@@ -532,41 +532,44 @@ Costmap2DROS::updateMap()
 void
 Costmap2DROS::updateAndPublishMap()
 {
+  if (stopped_) {
+    // Do not execute if start() did not complete plugins activation
+    return;
+  }
+
   nav2_util::ExecutionTimer timer;
 
-  // Execute after start() will complete plugins activation
-  if (!stopped_) {
-    // Measure the execution time of the updateMap method
-    timer.start();
-    updateMap();
-    timer.end();
+  // Measure the execution time of the updateMap method
+  timer.start();
+  updateMap();
+  timer.end();
 
-    RCLCPP_DEBUG(get_logger(), "Map update time: %.9f", timer.elapsed_time_in_seconds());
-    if (publish_cycle_ > rclcpp::Duration(0s) && layered_costmap_->isInitialized()) {
-      unsigned int x0, y0, xn, yn;
-      layered_costmap_->getBounds(&x0, &xn, &y0, &yn);
-      costmap_publisher_->updateBounds(x0, xn, y0, yn);
+  RCLCPP_DEBUG(get_logger(), "Map update time: %.9f", timer.elapsed_time_in_seconds());
+  if (publish_cycle_ > rclcpp::Duration(0s) && layered_costmap_->isInitialized()) {
+    unsigned int x0, y0, xn, yn;
+    layered_costmap_->getBounds(&x0, &xn, &y0, &yn);
+    costmap_publisher_->updateBounds(x0, xn, y0, yn);
+
+    for (auto & layer_pub: layer_publishers_) {
+      layer_pub->updateBounds(x0, xn, y0, yn);
+    }
+
+    auto current_time = now();
+    if ((last_publish_ + publish_cycle_ < current_time) ||  // publish_cycle_ is due
+      (current_time <
+      last_publish_))      // time has moved backwards, probably due to a switch to sim_time // NOLINT
+    {
+      RCLCPP_DEBUG(get_logger(), "Publish costmap at %s", name_.c_str());
+      costmap_publisher_->publishCostmap();
 
       for (auto & layer_pub: layer_publishers_) {
-        layer_pub->updateBounds(x0, xn, y0, yn);
+        layer_pub->publishCostmap();
       }
 
-      auto current_time = now();
-      if ((last_publish_ + publish_cycle_ < current_time) ||  // publish_cycle_ is due
-        (current_time <
-        last_publish_))      // time has moved backwards, probably due to a switch to sim_time // NOLINT
-      {
-        RCLCPP_DEBUG(get_logger(), "Publish costmap at %s", name_.c_str());
-        costmap_publisher_->publishCostmap();
-
-        for (auto & layer_pub: layer_publishers_) {
-          layer_pub->publishCostmap();
-        }
-
-        last_publish_ = current_time;
-      }
+      last_publish_ = current_time;
     }
   }
+
 }
 
 void
