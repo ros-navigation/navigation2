@@ -167,15 +167,15 @@ DenoiseLayer::removeSinglePixels(Image<uint8_t> & image) const
   // If NO_INFORMATION (=255) isn't obstacle, we can't use a simple max() to check
   // any obstacle nearby. In this case, we interpret NO_INFORMATION as an empty space.
   if (!no_information_is_obstacle_) {
-    auto replace_to_free = [] (uint8_t v) {
+    auto replace_to_free = [](uint8_t v) {
         return v == NO_INFORMATION ? FREE_SPACE : v;
       };
     auto max = [&](const std::initializer_list<uint8_t> lst) {
         std::array<uint8_t, 3> buf = {
-            replace_to_free(*lst.begin()),
-            replace_to_free(*(lst.begin() + 1)),
-            replace_to_free(*(lst.begin() + 2))
-          };
+          replace_to_free(*lst.begin()),
+          replace_to_free(*(lst.begin() + 1)),
+          replace_to_free(*(lst.begin() + 2))
+        };
         return *std::max_element(buf.begin(), buf.end());
       };
     dilate(image, max_neighbors_image, group_connectivity_type_, max);
