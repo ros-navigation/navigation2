@@ -2,6 +2,7 @@
 # Copyright 2021 Samsung Research America
 # Copyright 2022 Stevedan Ogochukwu Omodolor
 # Copyright 2022 Jaehun Jackson Kim
+# Copyright 2022 Afif Swaidan
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
