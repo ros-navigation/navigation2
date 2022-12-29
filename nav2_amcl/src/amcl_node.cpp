@@ -692,7 +692,7 @@ AmclNode::handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped & msg)
     // Check if the transform is available
     tx_odom = tf_buffer_->lookupTransform(
       base_frame_id_, tf2_ros::fromMsg(msg.header.stamp),
-      base_frame_id_, tf2_time, odom_frame_id_, extrapolation_into_past_tolerance_);
+      base_frame_id_, tf2_time, odom_frame_id_, transform_lookup_timeout_);
   } catch (tf2::TransformException & e) {
     // If we've never sent a transform, then this is normal, because the
     // global_frame_id_ frame doesn't exist.  We only care about in-time
