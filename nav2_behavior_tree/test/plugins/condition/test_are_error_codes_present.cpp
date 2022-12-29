@@ -27,16 +27,16 @@ public:
   using ActionGoal = Action::Goal;
   void SetUp()
   {
-    int current_error_code = ActionGoal::NONE;
+    int error_code = ActionGoal::NONE;
     std::set<unsigned short> error_codes_to_check = {ActionGoal::UNKNOWN}; //NOLINT
-    config_->blackboard->set("current_error_code", current_error_code);
+    config_->blackboard->set("error_code", error_code);
     config_->blackboard->set("error_codes_to_check", error_codes_to_check);
 
     std::string xml_txt =
       R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-            <AreErrorCodesPresent current_error_code="{current_error_code}" error_codes_to_check="{error_codes_to_check}"/>
+            <AreErrorCodesPresent error_code="{error_code}" error_codes_to_check="{error_codes_to_check}"/>
         </BehaviorTree>
       </root>)";
 
@@ -64,7 +64,7 @@ TEST_F(AreErrorCodesPresentFixture, test_condition)
   };
 
   for (const auto & error_to_status : error_to_status_map) {
-    config_->blackboard->set("current_error_code", error_to_status.first);
+    config_->blackboard->set("error_code", error_to_status.first);
     EXPECT_EQ(tree_->tickRoot(), error_to_status.second);
   }
 }

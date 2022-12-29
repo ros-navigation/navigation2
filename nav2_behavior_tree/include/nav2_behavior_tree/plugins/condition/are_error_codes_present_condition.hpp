@@ -41,9 +41,9 @@ public:
 
   BT::NodeStatus tick()
   {
-    getInput<unsigned short>("current_error_code", current_error_code_);  //NOLINT
+    getInput<unsigned short>("error_code", error_code_);  //NOLINT
 
-    if (error_codes_to_check_.find(current_error_code_) != error_codes_to_check_.end()) {
+    if (error_codes_to_check_.find(error_code_) != error_codes_to_check_.end()) {
       return BT::NodeStatus::SUCCESS;
     }
 
@@ -54,7 +54,7 @@ public:
   {
     return
       {
-        BT::InputPort<unsigned short>("current_error_code", "The active error codes"), //NOLINT
+        BT::InputPort<unsigned short>("error_code", "The active error codes"), //NOLINT
         BT::InputPort<std::set<unsigned short>>(
           "error_codes_to_check",
           "The error codes to check against the active error codes") //NOLINT
@@ -62,7 +62,7 @@ public:
   }
 
 protected:
-  unsigned short current_error_code_; //NOLINT
+  unsigned short error_code_; //NOLINT
   std::set<unsigned short> error_codes_to_check_; //NOLINT
 };
 

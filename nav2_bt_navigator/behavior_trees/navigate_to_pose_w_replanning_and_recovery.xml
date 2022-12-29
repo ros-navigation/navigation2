@@ -12,7 +12,7 @@
           <RecoveryNode number_of_retries="1" name="ComputePathToPose">
             <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased" error_code_id="{compute_path_error_code}"/>
             <Sequence>
-              <WouldAPlannerRecoveryHelp current_error_code="{compute_path_error_code}"/>
+              <WouldAPlannerRecoveryHelp error_code="{compute_path_error_code}"/>
               <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap"/>
             </Sequence>
           </RecoveryNode>
@@ -20,15 +20,14 @@
         <RecoveryNode number_of_retries="1" name="FollowPath">
           <FollowPath path="{path}" controller_id="FollowPath" error_code_id="{follow_path_error_code}"/>
           <Sequence>
-            <WouldAControllerRecoveryHelp current_error_code="{follow_path_error_code}"/>
+            <WouldAControllerRecoveryHelp error_code="{follow_path_error_code}"/>
             <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
           </Sequence>
         </RecoveryNode>
       </PipelineSequence>
       <Sequence>
         <ReactiveFallback>
-          <WouldAPlannerRecoveryHelp current_error_code="{compute_path_error_code}"/>
-          <WouldAControllerRecoveryHelp current_error_code="{follow_path_error_code}"/>
+          <WouldAControllerRecoveryHelp error_code="{follow_path_error_code}"/>
         </ReactiveFallback>
         <ReactiveFallback name="RecoveryFallback">
           <GoalUpdated/>
