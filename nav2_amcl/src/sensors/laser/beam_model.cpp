@@ -111,7 +111,7 @@ BeamModel::sensorFunction(LaserData * data, pf_sample_set_t * set)
       p += pz * pz * pz;
     }
 
-    sample->weight *= p;
+    sample->weight *= pow(p, self->importance_factor_); // Accroding to Probabilistic Robotics, 6.3.4
     total_weight += sample->weight;
   }
 

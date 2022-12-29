@@ -166,7 +166,7 @@ LikelihoodFieldModelProb::sensorFunction(LaserData * data, pf_sample_set_t * set
         if (z < beam_skip_distance) {
           obs_count[beam_ind] += 1;
         }
-        pz += self->z_hit_ * (exp(-(z * z) / z_hit_denom * self->importance_factor_));
+        pz += self->z_hit_ * exp(-(z * z) / z_hit_denom );
       }
 
       // Gaussian model
@@ -181,7 +181,7 @@ LikelihoodFieldModelProb::sensorFunction(LaserData * data, pf_sample_set_t * set
       // TODO(?): outlier rejection for short readings
 
       if (!do_beamskip) {
-        log_p += log(pz);
+        log_p += log(pz) * self->importance_factor_; // Accroding to Probabilistic Robotics, 6.3.4
       } else {
         self->temp_obs_[j][beam_ind] = pz;
       }
@@ -226,7 +226,7 @@ LikelihoodFieldModelProb::sensorFunction(LaserData * data, pf_sample_set_t * set
 
       for (beam_ind = 0; beam_ind < self->max_beams_; beam_ind++) {
         if (error || obs_mask[beam_ind]) {
-          log_p += log(self->temp_obs_[j][beam_ind]);
+          log_p += log(self->temp_obs_[j][beam_ind]) * self->importance_factor_; // Accroding to Probabilistic Robotics, 6.3.4
         }
       }
 

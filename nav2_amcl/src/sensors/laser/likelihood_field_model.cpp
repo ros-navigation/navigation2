@@ -111,7 +111,7 @@ LikelihoodFieldModel::sensorFunction(LaserData * data, pf_sample_set_t * set)
       }
       // Gaussian model
       // NOTE: this should have a normalization of 1/(sqrt(2pi)*sigma)
-      pz += self->z_hit_ * (exp(-(z * z) / z_hit_denom));
+      pz += self->z_hit_ * exp(-(z * z) / z_hit_denom);
       // Part 2: random measurements
       pz += self->z_rand_ * z_rand_mult;
 
@@ -125,7 +125,7 @@ LikelihoodFieldModel::sensorFunction(LaserData * data, pf_sample_set_t * set)
       p += pz * pz * pz;
     }
 
-    sample->weight *= pow(p, self->importance_factor_);
+    sample->weight *= pow(p, self->importance_factor_); // Accroding to Probabilistic Robotics, 6.3.4
     total_weight += sample->weight;
   }
 
