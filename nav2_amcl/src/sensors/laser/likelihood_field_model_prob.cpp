@@ -166,7 +166,7 @@ LikelihoodFieldModelProb::sensorFunction(LaserData * data, pf_sample_set_t * set
         if (z < beam_skip_distance) {
           obs_count[beam_ind] += 1;
         }
-        pz += self->z_hit_ * exp(-(z * z) / z_hit_denom );
+        pz += self->z_hit_ * exp(-(z * z) / z_hit_denom);
       }
 
       // Gaussian model
