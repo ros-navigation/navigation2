@@ -200,6 +200,10 @@ AmclNode::AmclNode(const rclcpp::NodeOptions & options)
     "is valid into the future");
 
   add_parameter(
+    "transform_lookup_timeout", rclcpp::ParameterValue(0.1f),
+    "Timeout value for transform lookup");
+
+  add_parameter(
     "update_min_a", rclcpp::ParameterValue(0.2),
     "Rotational movement required before performing a filter update");
 
@@ -688,7 +692,7 @@ AmclNode::handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped & msg)
     // Check if the transform is available
     tx_odom = tf_buffer_->lookupTransform(
       base_frame_id_, tf2_ros::fromMsg(msg.header.stamp),
-      base_frame_id_, tf2_time, odom_frame_id_);
+      base_frame_id_, tf2_time, odom_frame_id_, extrapolation_into_past_tolerance_);
   } catch (tf2::TransformException & e) {
     // If we've never sent a transform, then this is normal, because the
     // global_frame_id_ frame doesn't exist.  We only care about in-time
@@ -1201,6 +1205,7 @@ AmclNode::initParameters()
 {
   double save_pose_rate;
   double tmp_tol;
+  double lookup_timeout;
 
   get_parameter("alpha1", alpha1_);
   get_parameter("alpha2", alpha2_);
@@ -1237,6 +1242,7 @@ AmclNode::initParameters()
   get_parameter("sigma_hit", sigma_hit_);
   get_parameter("tf_broadcast", tf_broadcast_);
   get_parameter("transform_tolerance", tmp_tol);
+  get_parameter("transform_lookup_timeout", lookup_timeout);
   get_parameter("update_min_a", a_thresh_);
   get_parameter("update_min_d", d_thresh_);
   get_parameter("z_hit", z_hit_);
@@ -1255,6 +1261,7 @@ AmclNode::initParameters()
   get_parameter("ext_pose_search_tolerance_sec", ext_pose_search_tolerance_sec_);
   save_pose_period_ = tf2::durationFromSec(1.0 / save_pose_rate);
   transform_tolerance_ = tf2::durationFromSec(tmp_tol);
+  transform_lookup_timeout_ = tf2::durationFromSec(lookup_timeout);
 
   odom_frame_id_ = nav2_util::strip_leading_slash(odom_frame_id_);
   base_frame_id_ = nav2_util::strip_leading_slash(base_frame_id_);
