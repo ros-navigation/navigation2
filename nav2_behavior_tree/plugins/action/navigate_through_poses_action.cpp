@@ -39,6 +39,26 @@ void NavigateThroughPosesAction::on_tick()
   getInput("behavior_tree", goal_.behavior_tree);
 }
 
+BT::NodeStatus NavigateThroughPosesAction::on_success()
+{
+  setOutput("error_code_id", ActionGoal::NONE);
+  return BT::NodeStatus::SUCCESS;
+}
+
+BT::NodeStatus NavigateThroughPosesAction::on_aborted()
+{
+  setOutput("error_code_id", result_.result->error_code);
+  return BT::NodeStatus::FAILURE;
+}
+
+BT::NodeStatus NavigateThroughPosesAction::on_cancelled()
+{
+  // Set empty error code, action was cancelled
+  setOutput("error_code_id", ActionGoal::NONE);
+  return BT::NodeStatus::SUCCESS;
+}
+
+
 }  // namespace nav2_behavior_tree
 
 #include "behaviortree_cpp_v3/bt_factory.h"

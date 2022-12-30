@@ -23,6 +23,7 @@ ThetaStar::ThetaStar()
   w_euc_cost_(2.0),
   w_heuristic_cost_(1.0),
   how_many_corners_(8),
+  allow_unknown_(true),
   size_x_(0),
   size_y_(0),
   index_generated_(0)

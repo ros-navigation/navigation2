@@ -27,9 +27,9 @@ The following models of safety behaviors are employed by Collision Monitor:
 
 The zones around the robot can take the following shapes:
 
-* Arbitrary user-defined polygon relative to the robot base frame.
-* Circle: is made for the best performance and could be used in the cases where the zone or robot could be approximated by round shape.
-* Robot footprint polygon, which is used in the approach behavior model only. Will use the footprint topic to allow it to be dynamically adjusted over time.
+* Arbitrary user-defined polygon relative to the robot base frame, which can be static in a configuration file or dynamically changing via a topic interface.
+* Robot footprint polygon, which is used in the approach behavior model only. Will use the static user-defined polygon or the footprint topic to allow it to be dynamically adjusted over time.
+* Circle: is made for the best performance and could be used in the cases where the zone or robot footprint could be approximated by round shape.
 
 The data may be obtained from different data sources:
 
@@ -43,7 +43,7 @@ The Collision Monitor is designed to operate below Nav2 as an independent safety
 This acts as a filter on the `cmd_vel` topic coming out of the Controller Server. If no such zone is triggered, then the Controller's `cmd_vel` is used. Else, it is scaled or set to stop as appropriate.
 
 The following diagram is showing the high-level design of Collision Monitor module. All shapes (Polygons and Circles) are derived from base `Polygon` class, so without loss of generality we can call them as polygons. Subscribed footprint is also having the same properties as other polygons, but it is being obtained a footprint topic for the Approach Model.
-![HDL.png](doc/HLD.png)
+![HLD.png](doc/HLD.png)
 
 ## Configuration
 

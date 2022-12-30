@@ -65,5 +65,8 @@
 
   <export>
     <build_type>ament_cmake</build_type>
+    <nav2_core plugin="${prefix}/src/error_codes/controller_plugins.xml"/>
+    <nav2_core plugin="${prefix}/src/error_codes/planner_plugins.xml" />
+    <nav2_core plugin="${prefix}/src/error_codes/smoother_plugins.xml" />
   </export>
 </package>

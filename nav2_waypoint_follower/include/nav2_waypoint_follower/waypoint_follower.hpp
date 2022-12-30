@@ -27,6 +27,7 @@
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav2_msgs/action/follow_waypoints.hpp"
+#include "nav2_msgs/msg/missed_waypoint.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_util/simple_action_server.hpp"
 #include "nav2_util/node_utils.hpp"
@@ -49,6 +50,12 @@ enum class ActionStatus
   PROCESSING = 1,
   FAILED = 2,
   SUCCEEDED = 3
+};
+
+struct GoalStatus
+{
+  ActionStatus status;
+  int error_code;
 };
 
 /**
@@ -180,8 +187,6 @@ protected:
 
   // Common vars used for both GPS and cartesian point following
   std::vector<int> failed_ids_;
-  int loop_rate_;
-  bool stop_on_failure_;
   std::string global_frame_id_{"map"};
 
   /**
@@ -200,12 +205,15 @@ protected:
   rclcpp::CallbackGroup::SharedPtr callback_group_;
   rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
   std::shared_future<rclcpp_action::ClientGoalHandle<ClientT>::SharedPtr> future_goal_handle_;
-  ActionStatus current_goal_status_;
 
   // Our action server for GPS waypoint following
   std::unique_ptr<ActionServerGPS> gps_action_server_;
   std::unique_ptr<nav2_util::ServiceClient<robot_localization::srv::FromLL,
     std::shared_ptr<nav2_util::LifecycleNode>>> from_ll_to_map_client_;
+
+  bool stop_on_failure_;
+  int loop_rate_;
+  GoalStatus current_goal_status_;
 
   // Task Execution At Waypoint Plugin
   pluginlib::ClassLoader<nav2_core::WaypointTaskExecutor>

@@ -71,7 +71,7 @@ protected:
 private:
   rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::CostmapFilterInfo>::SharedPtr publisher_;
 
-  std::unique_ptr<nav2_msgs::msg::CostmapFilterInfo> msg_;
+  nav2_msgs::msg::CostmapFilterInfo msg_;
 };  // CostmapFilterInfoServer
 
 }  // namespace nav2_map_server

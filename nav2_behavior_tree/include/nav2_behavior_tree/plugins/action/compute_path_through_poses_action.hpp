@@ -86,7 +86,7 @@ public:
           "Mapped name to the planner plugin type to use"),
         BT::OutputPort<nav_msgs::msg::Path>("path", "Path created by ComputePathThroughPoses node"),
         BT::OutputPort<ActionResult::_error_code_type>(
-          "compute_path_through_poses_error_code", "The compute path through poses error code"),
+          "error_code_id", "The compute path through poses error code"),
       });
   }
 };
