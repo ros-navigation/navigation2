@@ -279,7 +279,7 @@ void WaypointFollower::followWaypointsHandler(
     if (current_goal_status_.status == ActionStatus::FAILED) {
       nav2_msgs::msg::MissedWaypoint missedWaypoint;
       missedWaypoint.index = goal_index;
-      missedWaypoint.goal = goal->poses[goal_index];
+      missedWaypoint.goal = poses[goal_index];
       missedWaypoint.error_code = current_goal_status_.error_code;
       result->missed_waypoints.push_back(missedWaypoint);
 
@@ -309,7 +309,7 @@ void WaypointFollower::followWaypointsHandler(
       if (!is_task_executed) {
         nav2_msgs::msg::MissedWaypoint missedWaypoint;
         missedWaypoint.index = goal_index;
-        missedWaypoint.goal = goal->poses[goal_index];
+        missedWaypoint.goal = poses[goal_index];
         missedWaypoint.error_code = nav2_msgs::action::FollowWaypoints::Goal::TASK_EXECUTOR_FAILED;
         result->missed_waypoints.push_back(missedWaypoint);
       }
@@ -339,7 +339,7 @@ void WaypointFollower::followWaypointsHandler(
       if (goal_index >= poses.size()) {
         RCLCPP_INFO(
           get_logger(), "Completed all %zu waypoints requested.",
-          goal->poses.size());
+          poses.size());
         action_server->succeeded_current(result);
         current_goal_status_.error_code = 0;
         return;
