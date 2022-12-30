@@ -228,7 +228,7 @@ void WaypointFollower::followWaypointsHandler(
       callback_group_executor_.spin_until_future_complete(cancel_future);
       // for result callback processing
       callback_group_executor_.spin_some();
-      action_server_->terminate_all();
+      action_server->terminate_all();
       return;
     }
 
