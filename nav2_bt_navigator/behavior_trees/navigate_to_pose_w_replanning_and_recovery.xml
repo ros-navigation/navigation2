@@ -26,9 +26,7 @@
         </RecoveryNode>
       </PipelineSequence>
       <Sequence>
-        <ReactiveFallback>
-          <WouldAControllerRecoveryHelp error_code="{follow_path_error_code}"/>
-        </ReactiveFallback>
+        <WouldAControllerRecoveryHelp error_code="{follow_path_error_code}"/>
         <ReactiveFallback name="RecoveryFallback">
           <GoalUpdated/>
           <RoundRobin name="RecoveryActions">
