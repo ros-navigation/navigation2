@@ -818,6 +818,7 @@ Nav2Panel::onInitialize()
         waypoint_status_indicator_->clear();
         loop_no_ = "0";
         loop_count_ = 0;
+        navigation_feedback_indicator_->setText(getNavToPoseFeedbackLabel());
       }
     });
   nav_through_poses_goal_status_sub_ = node->create_subscription<action_msgs::msg::GoalStatusArray>(
