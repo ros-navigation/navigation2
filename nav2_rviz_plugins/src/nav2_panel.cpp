@@ -1005,7 +1005,7 @@ Nav2Panel::onCancelButtonPressed()
 void
 Nav2Panel::onAccumulatedWp()
 {
-  if (acummulated_poses_.size() == 0) {
+  if (acummulated_poses_.empty()) {
     state_machine_.postEvent(new ROSActionQEvent(QActionState::INACTIVE));
     waypoint_status_indicator_->setText(
       "<b> Note: </b> Uh oh! Someone forgot to select the waypoints");
@@ -1025,10 +1025,11 @@ Nav2Panel::onAccumulatedWp()
   navigation_mode_button_->setEnabled(false);
   pause_resume_button_->setEnabled(false);
 
-  std::cout << "Start waypoint" << std::endl;
+  /** Making sure that the pose array does not get updated
+   *  between the process**/
+  if (store_poses_.empty()) {
+    std::cout << "Start waypoint" << std::endl;
 
-  // storing and removing the initial pose based on checkbox state
-  if (store_poses_.size() == 0) {
     // Setting the final loop value on the text box for sanity
     nr_of_loops_->setText(QString::fromStdString(loop_no_));
 
@@ -1071,6 +1072,8 @@ Nav2Panel::onAccumulatedWp()
         acummulated_poses_.begin(),
         acummulated_poses_.begin());
     }
+  } else {
+    std::cout << "Resuming waypoint" << std::endl;
   }
 
   startWaypointFollowing(acummulated_poses_);
