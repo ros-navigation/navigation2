@@ -194,7 +194,7 @@ WaypointFollower::followWaypoints()
     if (action_server_->is_preempt_requested()) {
       RCLCPP_INFO(get_logger(), "Preempting the goal pose.");
       goal = action_server_->accept_pending_goal();
-      goal_index = 0;
+      goal_index = goal->goal_index;
       new_goal = true;
     }
 

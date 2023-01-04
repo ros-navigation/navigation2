@@ -239,6 +239,18 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   accumulated_nav_through_poses_->setObjectName("accumulated_nav_through_poses");
   accumulated_nav_through_poses_->assignProperty(start_reset_button_, "text", "Cancel");
   accumulated_nav_through_poses_->assignProperty(start_reset_button_, "toolTip", cancel_msg);
+
+  accumulated_nav_through_poses_->assignProperty(save_waypoints_button_, "text", "Save WPs");
+  accumulated_nav_through_poses_->assignProperty(save_waypoints_button_, "enabled", false);
+
+  accumulated_nav_through_poses_->assignProperty(load_waypoints_button_, "text", "Load WPs");
+  accumulated_nav_through_poses_->assignProperty(load_waypoints_button_, "enabled", false);
+
+  accumulated_nav_through_poses_->assignProperty(pause_waypoint_button_, "text", "Pause WP");
+  accumulated_nav_through_poses_->assignProperty(pause_waypoint_button_, "enabled", false);
+
+  accumulated_nav_through_poses_->assignProperty(nr_of_loops_, "enabled", false);
+
   accumulated_nav_through_poses_->assignProperty(start_reset_button_, "enabled", true);
   accumulated_nav_through_poses_->assignProperty(store_initial_pose_checkbox_, "enabled", false);
 
@@ -317,6 +329,8 @@ Nav2Panel::Nav2Panel(QWidget * parent)
 
   paused_->assignProperty(pause_waypoint_button_, "text", "Pause WP");
   paused_->assignProperty(pause_waypoint_button_, "enabled", false);
+
+  paused_->assignProperty(nr_of_loops_, "enabled", false);
 
   paused_->assignProperty(store_initial_pose_checkbox_, "enabled", false);
 
