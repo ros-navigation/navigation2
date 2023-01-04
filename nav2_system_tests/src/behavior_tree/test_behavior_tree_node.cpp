@@ -451,70 +451,40 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateRecoverySimple)
 /**
  * Test Scenario:
  *
- * ComputePathToPose returns SUCCESS back to pipeline sequence
- * FollowPath returns FAILURE
- * WouldAControllerRecoveryHelp returns SUCCESS
- * ClearLocalCostmap-Context returns SUCCESS
- * FollowPath is triggered again by the recovery node and returns FAILURE
  * PipelineSequence returns FAILURE and triggers the Recovery subtree
- * WouldAControllerRecoveryHelp returns SUCCESS
+ * NavigateRecovery ticks the recovery subtree, WouldAControllerRecoveryHelp returns SUCCESS
  * GoalUpdated returns FAILURE, RoundRobin triggers ClearingActions Sequence which returns SUCCESS
  * RoundRobin returns SUCCESS and the recovery subtree returns SUCCESS
  *
  * RETRY 1
- * ComputePathToPose returns SUCCESS back to pipeline sequence
- * FollowPath returns FAILURE
- * WouldAControllerRecoveryHelp returns SUCCESS
- * ClearLocalCostmap-Context returns SUCCESS
- * FollowPath is triggered again by the recovery node and returns FAILURE
+ * PipelineSequence returns FAILURE and triggers the Recovery subtree
  * NavigateRecovery ticks the recovery subtree, WouldAControllerRecoveryHelp returns SUCCESS
- * GoalUpdated returns FAILURE
- * RoundRobin triggers Spin which returns FAILURE
+ * GoalUpdated returns FAILURE, RoundRobin triggers Spin which returns FAILURE
  * RoundRobin triggers Wait which returns SUCCESS
  * RoundRobin returns SUCCESS and RecoveryFallback returns SUCCESS
  *
  * RETRY 2
- * ComputePathToPose returns SUCCESS back to pipeline sequence
- * FollowPath returns FAILURE
- * WouldAControllerRecoveryHelp returns SUCCESS
- * ClearLocalCostmap-Context returns SUCCESS
- * FollowPath is triggered again by the recovery node and returns FAILURE
- * PipelineSequence returns FAILURE NavigateRecovery triggers the recovery subtree
- * WouldAControllerRecoveryHelp returns SUCCESS
+ * PipelineSequence returns FAILURE and triggers the Recovery subtree
+ * NavigateRecovery ticks the recovery subtree, WouldAControllerRecoveryHelp returns SUCCESS
  * GoalUpdated returns FAILURE and RoundRobin triggers BackUp which returns FAILURE
  * RoundRobin triggers ClearingActions Sequence which returns SUCCESS
  * RoundRobin returns SUCCESS and RecoveryFallback returns SUCCESS
  *
  * RETRY 3
- * ComputePathToPose returns SUCCESS back to pipeline sequence
- * FollowPath returns FAILURE
- * WouldAControllerRecoveryHelp returns SUCCESS
- * ClearLocalCostmap-Context returns SUCCESS
- * FollowPath is triggered again by the recovery node and returns FAILURE
- * PipelineSequence returns FAILURE NavigateRecovery triggers the recovery subtree
- * WouldAControllerRecoveryHelp returns SUCCESS
+ * PipelineSequence returns FAILURE and triggers the Recovery subtree
+ * NavigateRecovery ticks the recovery subtree, WouldAControllerRecoveryHelp returns SUCCESS
  * GoalUpdated returns FAILURE and RoundRobin triggers ClearingActions which returns SUCCESS
  * RoundRobin returns SUCCESS and RecoveryFallback returns SUCCESS
  *
  * RETRY 4
- * ComputePathToPose returns SUCCESS back to pipeline sequence
- * FollowPath returns FAILURE
- * WouldAControllerRecoveryHelp returns SUCCESS
- * ClearLocalCostmap-Context returns SUCCESS
- * FollowPath is triggered again by the recovery node and returns FAILURE
- * pipelineSequence returns FAILURE NavigateRecovery triggers the recovery subtree
+ * PipelineSequence returns FAILURE and triggers the Recovery subtree
+ * NavigateRecovery ticks the recovery subtree, WouldAControllerRecoveryHelp returns SUCCESS
  * WouldAControllerRecoveryHelp returns SUCCESS
  * GoalUpdated returns FAILURE and RoundRobin triggers Spin which returns SUCCESS
  *
- *
  * RETRY 5
- * ComputePathToPose returns SUCCESS back to pipeline sequence
- * FollowPath returns FAILURE
- * WouldAControllerRecoveryHelp returns SUCCESS
- * ClearLocalCostmap-Context returns SUCCESS
- * FollowPath is triggered again by the recovery node and returns FAILURE
- * pipelineSequence returns FAILURE NavigateRecovery triggers the recovery subtree
- * WouldAControllerRecoveryHelp returns SUCCESS
+ * PipelineSequence returns FAILURE and triggers the Recovery subtree
+ * NavigateRecovery ticks the recovery subtree, WouldAControllerRecoveryHelp returns SUCCESS
  * GoalUpdated returns FAILURE and RoundRobin triggers Wait which returns SUCCESS
  * RoundRobin triggers BackUp which returns SUCCESS
  *

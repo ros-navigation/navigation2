@@ -77,11 +77,6 @@ protected:
     result->error_code = nav2_msgs::action::ComputePathToPose::Goal::TIMEOUT;
   }
 
-//  void updateResultForSuccess(std::shared_ptr<nav2_msgs::action::ComputePathToPose::Result> &ptr)
-//  override {
-//    DummyActionServer::updateResultForFailure(ptr);
-//  }
-
 private:
   std::shared_ptr<nav2_msgs::action::ComputePathToPose::Result> result_;
 };
