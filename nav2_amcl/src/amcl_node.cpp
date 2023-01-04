@@ -1333,6 +1333,7 @@ AmclNode::dynamicParametersCallback(
   bool reinit_odom = false;
   bool reinit_laser = false;
   bool reinit_map = false;
+  bool reinit_ext_pose = false;
 
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
@@ -1448,6 +1449,21 @@ AmclNode::dynamicParametersCallback(
       } else if (param_name == "z_short") {
         z_short_ = parameter.as_double();
         reinit_laser = true;
+      } else if (param_name == "std_warn_level_x") {
+        std_warn_level_x_ = parameter.as_double();
+      } else if (param_name == "std_warn_level_y") {
+        std_warn_level_y_ = parameter.as_double();
+      } else if (param_name == "std_warn_level_yaw") {
+        std_warn_level_yaw_ = parameter.as_double();
+      } else if (param_name == "laser_importance_factor") {
+        laser_importance_factor_ = parameter.as_double();
+        reinit_laser = true;
+      } else if (param_name == "max_particle_gen_prob_ext_pose") {
+        max_particle_gen_prob_ext_pose_ = parameter.as_double();
+        reinit_pf = true;
+      } else if (param_name == "ext_pose_search_tolerance_sec") {
+        ext_pose_search_tolerance_sec_ = parameter.as_double();
+        reinit_ext_pose = true;
       }
     } else if (param_type == ParameterType::PARAMETER_STRING) {
       if (param_name == "base_frame_id") {
@@ -1551,6 +1567,10 @@ AmclNode::dynamicParametersCallback(
     map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
       map_topic_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
       std::bind(&AmclNode::mapReceived, this, std::placeholders::_1));
+  }
+
+  if(reinit_ext_pose) {
+    ext_pose_buffer_.reset(new ExternalPoseBuffer(ext_pose_search_tolerance_sec_));
   }
 
   result.successful = true;
