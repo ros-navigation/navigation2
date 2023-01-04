@@ -1516,6 +1516,15 @@ AmclNode::dynamicParametersCallback(
       pf_free(pf_);
       pf_ = NULL;
     }
+
+    init_pose_[0] = last_published_pose_.pose.pose.position.x;
+    init_pose_[1] = last_published_pose_.pose.pose.position.y;
+    init_pose_[2] = tf2::getYaw(last_published_pose_.pose.pose.orientation);
+
+    init_cov_[0] = last_published_pose_.pose.covariance[0];
+    init_cov_[1] = last_published_pose_.pose.covariance[7];
+    init_cov_[2] = last_published_pose_.pose.covariance[35];
+
     initParticleFilter();
   }
 
