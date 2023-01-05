@@ -177,7 +177,6 @@ public:
 public:
   BT::Blackboard::Ptr blackboard;
   BT::Tree tree;
-  std::unique_ptr<BT::FileLogger> logger_file;
 
 private:
   rclcpp::Node::SharedPtr node_;
@@ -568,10 +567,6 @@ TEST_F(BehaviorTreeTestFixture, TestRecoverySubtreeGoalUpdated)
   bt_file /= "navigate_to_pose_w_replanning_and_recovery.xml";
   EXPECT_EQ(bt_handler->loadBehaviorTree(bt_file.string()), true);
 
-  bt_handler->logger_file = std::make_unique<BT::FileLogger>(
-    bt_handler->tree,
-    bt_handler->generateBTLogFileName().c_str());
-
   // Set FollowPath action server to fail for the first 2 actions
   Ranges controllerFailureRange;
   controllerFailureRange.emplace_back(Range(0, 4));
@@ -625,8 +620,6 @@ TEST_F(BehaviorTreeTestFixture, TestRecoverySubtreeGoalUpdated)
   // All recovery action servers receive 0 goals
   EXPECT_EQ(server_handler->wait_server->getGoalCount(), 0);
   EXPECT_EQ(server_handler->backup_server->getGoalCount(), 0);
-
-  bt_handler->logger_file.reset();
 }
 
 }  // namespace nav2_system_tests
