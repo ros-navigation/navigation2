@@ -43,7 +43,7 @@ This process is then repeated a number of times and returns a converged solution
  | model_dt                   | double | Default: 0.05. Time interval (s) between two sampled points in trajectories.                              |
  | vx_std                     | double | Default 0.2. Sampling standart deviation for VX                                                          |
  | vy_std                     | double | Default 0.2. Sampling standart deviation for VY                                                          |
- | wx_std                     | double | Default 0.4. Sampling standart deviation for WX                                                          |
+ | wz_std                     | double | Default 0.4. Sampling standart deviation for Wz                                                          |
  | vx_max                     | double | Default 0.5. Max VX (m/s)                                                                                |
  | vy_max                     | double | Default 0.5. Max VY in either direction, if holonomic. (m/s)                                             |
  | vx_min                     | double | Default -0.35. Min VX (m/s)                                                                              |
