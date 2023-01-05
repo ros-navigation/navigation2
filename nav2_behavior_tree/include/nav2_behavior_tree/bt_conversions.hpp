@@ -113,9 +113,9 @@ inline std::chrono::milliseconds convertFromString<std::chrono::milliseconds>(co
 }
 
 /**
- * \brief Parse XML string to std::set<int>
+ * @brief Parse XML string to std::set<int>
  * @param key XML string
- * \return std::set<int>
+ * @return std::set<int>
  */
 template<>
 inline std::set<int> convertFromString(StringView key)
