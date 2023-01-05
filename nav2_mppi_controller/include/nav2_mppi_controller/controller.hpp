@@ -28,8 +28,10 @@
 #include "nav2_core/goal_checker.hpp"
 #include "rclcpp/rclcpp.hpp"
 
-namespace mppi
+namespace nav2_mppi_controller
 {
+
+using namespace mppi;  // NOLINT
 
 /**
  * @class mppi::MPPIController
@@ -120,6 +122,6 @@ protected:
   bool visualize_;
 };
 
-}  // namespace mppi
+}  // namespace nav2_mppi_controller
 
 #endif  // NAV2_MPPI_CONTROLLER__CONTROLLER_HPP_

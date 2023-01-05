@@ -43,7 +43,7 @@ void CriticManager::loadCritics()
 {
   if (!loader_) {
     loader_ = std::make_unique<pluginlib::ClassLoader<critics::CriticFunction>>(
-      "mppic", "mppi::critics::CriticFunction");
+      "nav2_mppi_controller", "mppi::critics::CriticFunction");
   }
 
   critics_.clear();

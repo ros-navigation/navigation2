@@ -13,7 +13,7 @@ foreach(name IN LISTS BENCHMARK_NAMES)
     ${dependencies_pkgs}
   )
   target_link_libraries(${name}
-    mppic critics benchmark
+    mppi_controller mppi_critics benchmark
   )
 
 target_include_directories(${name} PRIVATE

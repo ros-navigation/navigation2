@@ -19,7 +19,7 @@
 
 // #define BENCHMARK_TESTING
 
-namespace mppi
+namespace nav2_mppi_controller
 {
 
 void MPPIController::configure(
@@ -119,7 +119,7 @@ void MPPIController::setSpeedLimit(const double & speed_limit, const bool & perc
   optimizer_.setSpeedLimit(speed_limit, percentage);
 }
 
-}  // namespace mppi
+}  // namespace nav2_mppi_controller
 
 #include "pluginlib/class_list_macros.hpp"
-PLUGINLIB_EXPORT_CLASS(mppi::MPPIController, nav2_core::Controller)
+PLUGINLIB_EXPORT_CLASS(nav2_mppi_controller::MPPIController, nav2_core::Controller)
