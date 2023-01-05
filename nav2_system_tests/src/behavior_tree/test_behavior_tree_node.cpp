@@ -320,7 +320,7 @@ TEST_F(BehaviorTreeTestFixture, TestAllFailure)
   // The final result should be failure
   EXPECT_EQ(result, BT::NodeStatus::FAILURE);
 
-//  EXPECT_EQ(server_handler->clear_global_costmap_server->getRequestCount(), 2);
+  EXPECT_EQ(server_handler->clear_global_costmap_server->getRequestCount(), 1);
 
   // Goal count should be 2 since only two goals are sent to ComputePathToPose
   EXPECT_EQ(server_handler->compute_path_to_pose_server->getGoalCount(), 2);
