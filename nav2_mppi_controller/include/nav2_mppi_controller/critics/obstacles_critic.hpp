@@ -57,12 +57,6 @@ protected:
   bool inCollision(float cost) const;
 
   /**
-    * @brief Get max useful cost
-    * @return unsigned char Max cost
-    */
-  unsigned char maxCost();
-
-  /**
     * @brief cost at a robot pose
     * @param x X of pose
     * @param y Y of pose

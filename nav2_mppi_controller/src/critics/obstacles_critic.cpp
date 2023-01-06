@@ -192,12 +192,6 @@ CollisionCost ObstaclesCritic::costAtPose(float x, float y, float theta)
   return collision_cost;
 }
 
-unsigned char ObstaclesCritic::maxCost()
-{
-  return consider_footprint_ ? nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE :
-         nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE - 1;
-}
-
 }  // namespace mppi::critics
 
 #include <pluginlib/class_list_macros.hpp>
