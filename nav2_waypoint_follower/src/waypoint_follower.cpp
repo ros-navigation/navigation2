@@ -154,6 +154,10 @@ WaypointFollower::followWaypoints()
   auto feedback = std::make_shared<ActionT::Feedback>();
   auto result = std::make_shared<ActionT::Result>();
 
+  // handling loops
+  unsigned int current_loop_no = 0;
+  auto no_of_loops = goal->number_of_loops;
+
   // Check if request is valid
   if (!action_server_ || !action_server_->is_server_active()) {
     RCLCPP_DEBUG(get_logger(), "Action server inactive. Stopping.");
@@ -170,7 +174,9 @@ WaypointFollower::followWaypoints()
   }
 
   rclcpp::WallRate r(loop_rate_);
-  uint32_t goal_index = 0;
+
+  // get the goal index, by default, the first in the list of waypoints given.
+  uint32_t goal_index = goal->goal_index;
   bool new_goal = true;
 
   while (rclcpp::ok()) {
@@ -188,7 +194,7 @@ WaypointFollower::followWaypoints()
     if (action_server_->is_preempt_requested()) {
       RCLCPP_INFO(get_logger(), "Preempting the goal pose.");
       goal = action_server_->accept_pending_goal();
-      goal_index = 0;
+      goal_index = goal->goal_index;
       new_goal = true;
     }
 
@@ -272,18 +278,20 @@ WaypointFollower::followWaypoints()
       goal_index++;
       new_goal = true;
       if (goal_index >= goal->poses.size()) {
+        if (current_loop_no == no_of_loops) {
+          RCLCPP_INFO(
+            get_logger(), "Completed all %zu waypoints requested.",
+            goal->poses.size());
+          action_server_->succeeded_current(result);
+          current_goal_status_.error_code = 0;
+          return;
+        }
         RCLCPP_INFO(
-          get_logger(), "Completed all %zu waypoints requested.",
-          goal->poses.size());
-        action_server_->succeeded_current(result);
-        current_goal_status_.error_code = 0;
-        return;
+          get_logger(), "Starting a new loop, current loop count is %i",
+          current_loop_no);
+        goal_index = 0;
+        current_loop_no++;
       }
-    } else {
-      RCLCPP_INFO_EXPRESSION(
-        get_logger(),
-        (static_cast<int>(now().seconds()) % 30 == 0),
-        "Processing waypoint %i...", goal_index);
     }
 
     callback_group_executor_.spin_some();
