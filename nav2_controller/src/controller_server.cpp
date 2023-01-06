@@ -606,6 +606,12 @@ void ControllerServer::publishZeroVelocity()
   velocity.header.frame_id = costmap_ros_->getBaseFrameID();
   velocity.header.stamp = now();
   publishVelocity(velocity);
+
+  // Reset the state of the controllers after the task has ended
+  ControllerMap::iterator it;
+  for (it = controllers_.begin(); it != controllers_.end(); ++it) {
+    it->second->reset();
+  }
 }
 
 bool ControllerServer::isGoalReached()

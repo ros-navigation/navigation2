@@ -75,7 +75,7 @@ Status Spin::onRun(const std::shared_ptr<const SpinAction::Goal> command)
 {
   geometry_msgs::msg::PoseStamped current_pose;
   if (!nav2_util::getCurrentPose(
-      current_pose, *tf_, global_frame_, robot_base_frame_,
+      current_pose, *tf_, local_frame_, robot_base_frame_,
       transform_tolerance_))
   {
     RCLCPP_ERROR(logger_, "Current robot pose is not available.");
@@ -109,7 +109,7 @@ Status Spin::onCycleUpdate()
 
   geometry_msgs::msg::PoseStamped current_pose;
   if (!nav2_util::getCurrentPose(
-      current_pose, *tf_, global_frame_, robot_base_frame_,
+      current_pose, *tf_, local_frame_, robot_base_frame_,
       transform_tolerance_))
   {
     RCLCPP_ERROR(logger_, "Current robot pose is not available.");
@@ -178,7 +178,7 @@ bool Spin::isCollisionFree(
       break;
     }
 
-    if (!collision_checker_->isCollisionFree(pose2d, fetch_data)) {
+    if (!local_collision_checker_->isCollisionFree(pose2d, fetch_data)) {
       return false;
     }
     fetch_data = false;

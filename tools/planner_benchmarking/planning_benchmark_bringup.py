@@ -23,7 +23,7 @@ from ament_index_python.packages import get_package_share_directory
 def generate_launch_description():
     nav2_bringup_dir = get_package_share_directory('nav2_bringup')
     config = os.path.join(get_package_share_directory('nav2_bringup'), 'params', 'nav2_params.yaml')
-    map_file = os.path.join(nav2_bringup_dir, 'maps', 'map.yaml')
+    map_file = os.path.join(nav2_bringup_dir, 'maps', 'turtlebot3_world.yaml')
     lifecycle_nodes = ['map_server', 'planner_server']
 
     return LaunchDescription([

@@ -36,6 +36,8 @@ using namespace std::chrono_literals;
 
 class DummyBehavior : public TimedBehavior<BehaviorAction>
 {
+  using CostmapInfoType = nav2_core::CostmapInfoType;
+
 public:
   DummyBehavior()
   : TimedBehavior<BehaviorAction>(),
@@ -83,6 +85,12 @@ public:
     return Status::RUNNING;
   }
 
+  /**
+   * @brief Method to determine the required costmap info
+   * @return costmap resources needed
+   */
+  CostmapInfoType getResourceInfo() override {return CostmapInfoType::LOCAL;}
+
 private:
   bool initialized_;
   std::string command_;
@@ -103,11 +111,18 @@ protected:
       std::make_shared<rclcpp_lifecycle::LifecycleNode>(
       "LifecycleBehaviorTestNode", rclcpp::NodeOptions());
     node_lifecycle_->declare_parameter(
-      "costmap_topic",
+      "local_costmap_topic",
       rclcpp::ParameterValue(std::string("local_costmap/costmap_raw")));
     node_lifecycle_->declare_parameter(
-      "footprint_topic",
+      "local_footprint_topic",
       rclcpp::ParameterValue(std::string("local_costmap/published_footprint")));
+
+    node_lifecycle_->declare_parameter(
+      "global_costmap_topic",
+      rclcpp::ParameterValue(std::string("global_costmap/costmap_raw")));
+    node_lifecycle_->declare_parameter(
+      "global_footprint_topic",
+      rclcpp::ParameterValue(std::string("global_costmap/published_footprint")));
 
     tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_lifecycle_->get_clock());
     auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
@@ -116,22 +131,46 @@ protected:
     tf_buffer_->setCreateTimerInterface(timer_interface);
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
-    std::string costmap_topic, footprint_topic;
-    node_lifecycle_->get_parameter("costmap_topic", costmap_topic);
-    node_lifecycle_->get_parameter("footprint_topic", footprint_topic);
-    std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_ =
+    std::string local_costmap_topic, global_costmap_topic;
+    std::string local_footprint_topic, global_footprint_topic;
+    node_lifecycle_->get_parameter("local_costmap_topic", local_costmap_topic);
+    node_lifecycle_->get_parameter("global_costmap_topic", global_costmap_topic);
+    node_lifecycle_->get_parameter("local_footprint_topic", local_footprint_topic);
+    node_lifecycle_->get_parameter("global_footprint_topic", global_footprint_topic);
+
+    std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> local_costmap_sub_ =
       std::make_shared<nav2_costmap_2d::CostmapSubscriber>(
-      node_lifecycle_, costmap_topic);
-    std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_ =
+      node_lifecycle_, global_costmap_topic);
+
+    std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> global_costmap_sub_ =
+      std::make_shared<nav2_costmap_2d::CostmapSubscriber>(
+      node_lifecycle_, global_costmap_topic);
+
+    std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> local_footprint_sub_ =
       std::make_shared<nav2_costmap_2d::FootprintSubscriber>(
-      node_lifecycle_, footprint_topic, *tf_buffer_);
-    std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> collision_checker_ =
+      node_lifecycle_, local_footprint_topic, *tf_buffer_);
+
+    std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> global_footprint_sub_ =
+      std::make_shared<nav2_costmap_2d::FootprintSubscriber>(
+      node_lifecycle_, global_footprint_topic, *tf_buffer_);
+
+    std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> local_collision_checker_ =
       std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
-      *costmap_sub_, *footprint_sub_,
+      *local_costmap_sub_, *local_footprint_sub_,
+      node_lifecycle_->get_name());
+
+    std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> global_collision_checker_ =
+      std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
+      *global_costmap_sub_, *global_footprint_sub_,
       node_lifecycle_->get_name());
 
     behavior_ = std::make_shared<DummyBehavior>();
-    behavior_->configure(node_lifecycle_, "Behavior", tf_buffer_, collision_checker_);
+    behavior_->configure(
+      node_lifecycle_,
+      "Behavior",
+      tf_buffer_,
+      local_collision_checker_,
+      global_collision_checker_);
     behavior_->activate();
 
     client_ = rclcpp_action::create_client<BehaviorAction>(
