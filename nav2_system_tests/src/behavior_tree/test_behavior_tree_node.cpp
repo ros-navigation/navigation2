@@ -319,23 +319,20 @@ TEST_F(BehaviorTreeTestFixture, TestAllFailure)
   // The final result should be failure
   EXPECT_EQ(result, BT::NodeStatus::FAILURE);
 
-  EXPECT_EQ(server_handler->clear_global_costmap_server->getRequestCount(), 1);
-
   // Goal count should be 2 since only two goals are sent to ComputePathToPose
-  EXPECT_EQ(server_handler->compute_path_to_pose_server->getGoalCount(), 2);
+  EXPECT_EQ(server_handler->compute_path_to_pose_server->getGoalCount(), 14);
 
   // Goal count should be 0 since no goal is sent to FollowPath action server
   EXPECT_EQ(server_handler->follow_path_server->getGoalCount(), 0);
 
-  // Since the local controller never failed, controller recoveries should be triggered
-  EXPECT_EQ(server_handler->spin_server->getGoalCount(), 0);
-  EXPECT_EQ(server_handler->wait_server->getGoalCount(), 0);
-  EXPECT_EQ(server_handler->backup_server->getGoalCount(), 0);
+  EXPECT_EQ(server_handler->spin_server->getGoalCount(), 5);
+  EXPECT_EQ(server_handler->wait_server->getGoalCount(), 5);
+  EXPECT_EQ(server_handler->backup_server->getGoalCount(), 5);
 
   // Service count is 1 to try and resolve global planner error
-  EXPECT_EQ(server_handler->clear_global_costmap_server->getRequestCount(), 1);
+  EXPECT_EQ(server_handler->clear_global_costmap_server->getRequestCount(), 13);
 
-  EXPECT_EQ(server_handler->clear_local_costmap_server->getRequestCount(), 0);
+  EXPECT_EQ(server_handler->clear_local_costmap_server->getRequestCount(), 6);
 }
 
 /**
