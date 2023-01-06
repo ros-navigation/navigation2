@@ -56,7 +56,7 @@ void setUpOptimizerParams(
   const std::vector<std::string> & critics,
   std::vector<rclcpp::Parameter> & params_, std::string node_name = std::string("dummy"))
 {
-  constexpr double dummy_freq = 10.0;
+  constexpr double dummy_freq = 50.0;
   params_.emplace_back(rclcpp::Parameter(node_name + ".iteration_count", s.iteration_count));
   params_.emplace_back(rclcpp::Parameter(node_name + ".batch_size", s.batch_size));
   params_.emplace_back(rclcpp::Parameter(node_name + ".time_steps", s.time_steps));
@@ -70,7 +70,7 @@ void setUpControllerParams(
   bool visualize, std::vector<rclcpp::Parameter> & params_,
   std::string node_name = std::string("dummy"))
 {
-  double dummy_freq = 10.0;
+  double dummy_freq = 50.0;
   params_.emplace_back(rclcpp::Parameter(node_name + ".visualize", visualize));
   params_.emplace_back(rclcpp::Parameter("controller_frequency", dummy_freq));
 }
