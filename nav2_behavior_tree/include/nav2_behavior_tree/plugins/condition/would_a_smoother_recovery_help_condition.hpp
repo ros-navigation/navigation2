@@ -12,8 +12,8 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-#ifndef NAV2_WS_SRC_NAVIGATION2_NAV2_BEHAVIOR_TREE_INCLUDE_NAV2_BEHAVIOR_TREE_PLUGINS_CONDITION_WOULD_A_SMOOTHER_RECOVERY_HELP_HPP_
-#define NAV2_WS_SRC_NAVIGATION2_NAV2_BEHAVIOR_TREE_INCLUDE_NAV2_BEHAVIOR_TREE_PLUGINS_CONDITION_WOULD_A_SMOOTHER_RECOVERY_HELP_HPP_
+#ifndef NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__WOULD_A_SMOOTHER_RECOVERY_HELP_CONDITION_HPP_
+#define NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__WOULD_A_SMOOTHER_RECOVERY_HELP_CONDITION_HPP_
 
 
 #include <string>
@@ -31,12 +31,12 @@ class WouldASmootherRecoveryHelp : public AreErrorCodesPresent
 
 public:
   WouldASmootherRecoveryHelp(
-      const std::string & condition_name,
-      const BT::NodeConfiguration & conf);
+    const std::string & condition_name,
+    const BT::NodeConfiguration & conf);
 
   WouldASmootherRecoveryHelp() = delete;
 };
 
 }  // namespace nav2_behavior_tree
 
-#endif //NAV2_WS_SRC_NAVIGATION2_NAV2_BEHAVIOR_TREE_INCLUDE_NAV2_BEHAVIOR_TREE_PLUGINS_CONDITION_WOULD_A_SMOOTHER_RECOVERY_HELP_HPP_
+#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__WOULD_A_SMOOTHER_RECOVERY_HELP_CONDITION_HPP_

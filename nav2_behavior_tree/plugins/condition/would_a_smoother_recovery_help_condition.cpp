@@ -21,12 +21,12 @@ namespace nav2_behavior_tree
 WouldASmootherRecoveryHelp::WouldASmootherRecoveryHelp(
   const std::string & condition_name,
   const BT::NodeConfiguration & conf)
-  : AreErrorCodesPresent(condition_name, conf)
+: AreErrorCodesPresent(condition_name, conf)
 {
   error_codes_to_check_ = {
-      ActionGoal::UNKNOWN,
-      ActionGoal::TIMEOUT,
-      ActionGoal::FAILED_TO_SMOOTH_PATH
+    ActionGoal::UNKNOWN,
+    ActionGoal::TIMEOUT,
+    ActionGoal::FAILED_TO_SMOOTH_PATH
   };
 }
 
@@ -36,5 +36,5 @@ WouldASmootherRecoveryHelp::WouldASmootherRecoveryHelp(
 BT_REGISTER_NODES(factory)
 {
   factory.registerNodeType<nav2_behavior_tree::WouldASmootherRecoveryHelp>(
-      "WouldASmootherRecoveryHelp");
+    "WouldASmootherRecoveryHelp");
 }

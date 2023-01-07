@@ -55,9 +55,7 @@ public:
     return
       {
         BT::InputPort<unsigned short>("error_code", "The active error codes"), //NOLINT
-        BT::InputPort<std::set<unsigned short>>(
-          "error_codes_to_check",
-          "The error codes to check against the active error codes") //NOLINT
+        BT::InputPort<std::set<unsigned short>>("error_codes_to_check", "Error codes to check")//NOLINT
       };
   }
 
