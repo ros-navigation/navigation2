@@ -52,6 +52,7 @@ BtNavigator::BtNavigator(const rclcpp::NodeOptions & options)
     "nav2_are_error_codes_active_condition_bt_node",
     "nav2_would_a_controller_recovery_help_condition_bt_node",
     "nav2_would_a_planner_recovery_help_condition_bt_node",
+    "nav2_would_a_smoother_recovery_help_condition_bt_node",
     "nav2_reinitialize_global_localization_service_bt_node",
     "nav2_rate_controller_bt_node",
     "nav2_distance_controller_bt_node",
