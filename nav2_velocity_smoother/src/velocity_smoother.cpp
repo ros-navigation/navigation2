@@ -212,7 +212,8 @@ void VelocitySmoother::smootherTimer()
   auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>();
 
   // Check for velocity timeout. If nothing received, publish zeros to stop robot
-  if (now() - last_command_time_ > velocity_timeout_) {
+  // Fix for sim time. False here assumes that velocity command was received and leads to an error on startup
+  if ((now() - last_command_time_ > velocity_timeout_) or (last_command_time_.nanoseconds() == 0)) {
     last_cmd_ = geometry_msgs::msg::Twist();
     if (!stopped_) {
       smoothed_cmd_pub_->publish(std::move(cmd_vel));
