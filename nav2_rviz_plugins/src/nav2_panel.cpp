@@ -717,9 +717,9 @@ geometry_msgs::msg::PoseStamped Nav2Panel::convert_to_msg(
   msg.pose.position.z = pose[2];
 
   msg.pose.orientation.w = orientation[0];
-  msg.pose.orientation.w = orientation[1];
-  msg.pose.orientation.w = orientation[2];
-  msg.pose.orientation.w = orientation[3];
+  msg.pose.orientation.x = orientation[1];
+  msg.pose.orientation.y = orientation[2];
+  msg.pose.orientation.z = orientation[3];
 
   return msg;
 }
