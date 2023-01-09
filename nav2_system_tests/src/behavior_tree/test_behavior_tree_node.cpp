@@ -24,7 +24,6 @@
 #include "behaviortree_cpp_v3/behavior_tree.h"
 #include "behaviortree_cpp_v3/bt_factory.h"
 #include "behaviortree_cpp_v3/utils/shared_library.h"
-#include "behaviortree_cpp_v3/loggers/bt_file_logger.h"
 
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
