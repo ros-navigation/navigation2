@@ -290,7 +290,7 @@ TEST_F(BehaviorTreeTestFixture, TestAllSuccess)
  * RoundRobin triggers Spin, Wait, and BackUp which return FAILURE
  * RoundRobin returns FAILURE hence RecoveryCallbackk returns FAILURE
  * Finally NavigateRecovery returns FAILURE
- * The behavior tree should also return FAILURE
+ * The behavior tree should return FAILURE
  */
 TEST_F(BehaviorTreeTestFixture, TestAllFailure)
 {
