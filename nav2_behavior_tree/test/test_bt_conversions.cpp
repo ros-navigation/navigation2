@@ -16,7 +16,7 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include <chrono>
-#include <string>
+#include <set>
 
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
@@ -266,4 +266,27 @@ TEST(MillisecondsPortTest, test_correct_syntax)
   tree = factory.createTreeFromText(xml_txt);
   tree.rootNode()->getInput("test", value);
   EXPECT_EQ(value.count(), 123);
+}
+
+TEST(ErrorCodePortTest, test_correct_syntax)
+{
+  std::string xml_txt =
+    R"(
+      <root main_tree_to_execute = "MainTree" >
+        <BehaviorTree ID="MainTree">
+            <ErrorCodePort test="100;204;212"/>
+        </BehaviorTree>
+      </root>)";
+
+  BT::BehaviorTreeFactory factory;
+  factory.registerNodeType<TestNode<std::set<int>>>("ErrorCodePort");
+  auto tree = factory.createTreeFromText(xml_txt);
+
+  tree = factory.createTreeFromText(xml_txt);
+  std::set<int> value;
+  tree.rootNode()->getInput("test", value);
+
+  EXPECT_TRUE(value.find(100) != value.end());
+  EXPECT_TRUE(value.find(204) != value.end());
+  EXPECT_TRUE(value.find(212) != value.end());
 }
