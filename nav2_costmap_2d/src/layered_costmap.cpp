@@ -256,12 +256,12 @@ bool LayeredCostmap::isCurrent()
   for (vector<std::shared_ptr<Layer>>::iterator plugin = plugins_.begin();
     plugin != plugins_.end(); ++plugin)
   {
-    current_ = current_ && (*plugin)->isCurrent();
+    current_ = current_ && ((*plugin)->isCurrent() || !(*plugin)->isEnabled());
   }
   for (vector<std::shared_ptr<Layer>>::iterator filter = filters_.begin();
     filter != filters_.end(); ++filter)
   {
-    current_ = current_ && (*filter)->isCurrent();
+    current_ = current_ && ((*filter)->isCurrent() || !(*filter)->isEnabled());
   }
   return current_;
 }
