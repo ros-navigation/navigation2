@@ -22,6 +22,10 @@
 using namespace std::chrono_literals;  // NOLINT
 using namespace std::chrono;  // NOLINT
 
+namespace nav2_system_tests
+{
+
+
 ServerHandler::ServerHandler()
 : is_active_(false)
 {
@@ -31,9 +35,8 @@ ServerHandler::ServerHandler()
     node_, "local_costmap/clear_entirely_local_costmap");
   clear_global_costmap_server = std::make_unique<DummyService<nav2_msgs::srv::ClearEntireCostmap>>(
     node_, "global_costmap/clear_entirely_global_costmap");
-  compute_path_to_pose_server = std::make_unique<ComputePathToPoseActionServer>(node_);
-  follow_path_server = std::make_unique<DummyActionServer<nav2_msgs::action::FollowPath>>(
-    node_, "follow_path");
+  compute_path_to_pose_server = std::make_unique<DummyComputePathToPoseActionServer>(node_);
+  follow_path_server = std::make_unique<DummyFollowPathActionServer>(node_);
   spin_server = std::make_unique<DummyActionServer<nav2_msgs::action::Spin>>(
     node_, "spin");
   wait_server = std::make_unique<DummyActionServer<nav2_msgs::action::Wait>>(
@@ -94,3 +97,5 @@ void ServerHandler::spinThread()
 {
   rclcpp::spin(node_);
 }
+
+}  // namespace nav2_system_tests

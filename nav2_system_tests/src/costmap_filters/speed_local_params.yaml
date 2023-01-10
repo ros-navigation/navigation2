@@ -59,6 +59,9 @@ bt_navigator:
     - nav2_drive_on_heading_bt_node
     - nav2_clear_costmap_service_bt_node
     - nav2_is_stuck_condition_bt_node
+    - nav2_are_error_codes_active_condition_bt_node
+    - nav2_would_a_controller_recovery_help_condition_bt_node
+    - nav2_would_a_planner_recovery_help_condition_bt_node
     - nav2_goal_reached_condition_bt_node
     - nav2_goal_updated_condition_bt_node
     - nav2_globally_updated_goal_condition_bt_node
