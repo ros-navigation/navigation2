@@ -1,6 +1,3 @@
-
-
-
 // Copyright (c) 2023 Joshua Wallace
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -63,7 +60,8 @@ TEST_F(WouldASmootherRecoveryHelpFixture, test_condition)
     {ActionGoal::NONE, BT::NodeStatus::FAILURE},
     {ActionGoal::UNKNOWN, BT::NodeStatus::SUCCESS},
     {ActionGoal::TIMEOUT, BT::NodeStatus::SUCCESS},
-    {ActionGoal::FAILED_TO_SMOOTH_PATH, BT::NodeStatus::SUCCESS}
+    {ActionGoal::FAILED_TO_SMOOTH_PATH, BT::NodeStatus::SUCCESS},
+    {ActionGoal::SMOOTHED_PATH_IN_COLLISION, BT::NodeStatus::SUCCESS}
   };
 
   for (const auto & error_to_status : error_to_status_map) {
