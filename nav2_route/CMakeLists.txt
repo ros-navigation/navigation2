@@ -14,6 +14,7 @@ find_package(nav_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(nav_msgs REQUIRED)
+find_package(nanoflann REQUIRED)
 
 nav2_package()
 
@@ -31,6 +32,7 @@ set(dependencies
   visualization_msgs
   nav_msgs
   tf2_ros
+  nanoflann
 )
 
 include_directories(

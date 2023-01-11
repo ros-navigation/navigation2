@@ -63,6 +63,10 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     return nav2_util::CallbackReturn::FAILURE;
   }
 
+  // Precompute the graph's kd-tree
+  node_spatial_tree_ = std::make_shared<NodeSpatialTree>();
+  node_spatial_tree_->computeTree(graph_);
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -132,7 +136,7 @@ RouteServer::findStartandGoalNodeIDs(std::shared_ptr<const ActionBasicGoal> goal
   if (goal->use_start) {
     start_pose = goal->start;
   } else {
-    nav2_util::getCurrentPose(start_pose, *tf_, route_frame_, base_frame_);
+    nav2_util::getCurrentPose(start_pose, *tf_, route_frame_, base_frame_); // TODO exception?
   }
 
   // If start or goal not provided in route_frame, transform
@@ -141,7 +145,7 @@ RouteServer::findStartandGoalNodeIDs(std::shared_ptr<const ActionBasicGoal> goal
       get_logger(),
       "Request start pose not in %s frame. Converting %s to route server frame.",
       start_pose.header.frame_id.c_str(), route_frame_.c_str());
-    nav2_util::transformPoseInTargetFrame(start_pose, start_pose, *tf_, route_frame_);
+    nav2_util::transformPoseInTargetFrame(start_pose, start_pose, *tf_, route_frame_); // TODO exception?
   }
 
   if (goal_pose.header.frame_id != route_frame_) {
@@ -149,12 +153,18 @@ RouteServer::findStartandGoalNodeIDs(std::shared_ptr<const ActionBasicGoal> goal
       get_logger(),
       "Request goal pose not in %s frame. Converting %s to route server frame.",
       start_pose.header.frame_id.c_str(), route_frame_.c_str());
-    nav2_util::transformPoseInTargetFrame(goal_pose, goal_pose, *tf_, route_frame_);
+    nav2_util::transformPoseInTargetFrame(goal_pose, goal_pose, *tf_, route_frame_); // TODO exception?
   }
 
   // Find closest route nodes to start and goal to plan between
-  unsigned int start_route = 0, end_route = 5;
-  // node_spatial_quadtree_->findNearestNodesToPoses(start_pose, goal_pose, start_route, end_route);//TODO
+  unsigned int start_route = 0, end_route = 0;
+  if (!node_spatial_tree_->findNearestNodeToPose(start_pose, start_route) ||
+    !node_spatial_tree_->findNearestNodeToPose(goal_pose, end_route))
+  {
+    RCLCPP_ERROR(get_logger(), "Could not determine node closest to start or goal pose requested!");
+    //TODO throw exception
+  }
+  
   return {start_route, end_route};
 }
 
@@ -183,19 +193,25 @@ RouteServer::computeRoute()
     goal = action_server_->accept_pending_goal();
   }
 
-  // try {
-  //   // Find the search boundaries
-  //   unsigned int [start_route, end_route] = findStartandGoalNodeIDs(goal);
+  try {
+    // Find the search boundaries
+    auto [start_route, end_route] = findStartandGoalNodeIDs(goal);
+    if (start_route == end_route) {
+      RCLCPP_WARN(get_logger(), "The same start and end route nodes are the same!");
+      // TODO throw exception
+    }
+
+    std::cout << "start: " << start_route << " end: " << end_route << std::endl;
 
   //   // Compute the route via graph-search, returns a node-edge sequence
-  //   auto route = route_planner_->findRoute(start_route, end_route);//TODO
+  //   Route route = route_planner_->findRoute(start_route, end_route);//TODO
 
   //   // Create a dense path for use and debugging visualization
   //   result->route = utils::toMsg(route, route_frame_);//TODO
   //   result->path = path_converter_->densify(route);//TODO
-  // } catch (...) {
-  //   // contextual exceptions or logging?
-  // }
+  } catch (...) {
+    // contextual exceptions TODO
+  }
 
   auto cycle_duration = this->now() - start_time;
   result->planning_time = cycle_duration;

@@ -34,6 +34,7 @@
 #include "nav2_route/types.hpp"
 #include "nav2_route/utils.hpp"
 #include "nav2_route/graph_file_loader.hpp"
+#include "nav2_route/node_spatial_tree.hpp"
 
 namespace nav2_route
 {
@@ -135,6 +136,7 @@ protected:
 
   // Interal tools
   std::shared_ptr<GraphFileLoader> graph_loader_;
+  std::shared_ptr<NodeSpatialTree> node_spatial_tree_;
 
   // Navigation graph object and utils
   nav2_route::Graph graph_;

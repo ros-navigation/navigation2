@@ -19,6 +19,7 @@
   <depend>nav_msgs</depend>
   <depend>tf2_ros</depend>
   <depend>nav2_util</depend>
+  <depend>nanoflann</depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>

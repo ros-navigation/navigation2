@@ -1,0 +1,143 @@
+// Copyright (c) 2023, Samsung Research America
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#ifndef NAV2_ROUTE__NODE_SPATIAL_TREE_HPP_
+#define NAV2_ROUTE__NODE_SPATIAL_TREE_HPP_
+
+#include <string>
+#include <memory>
+#include <vector>
+#include <nanoflann.hpp>  // TODO rosdep keys
+
+#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_route/types.hpp"
+#include "nav2_route/utils.hpp"
+
+namespace nav2_route
+{
+
+// Search in XY dimension for nearest neighbors
+const size_t DIMENSION = 2;
+
+/**
+ * @class nav2_route::GraphAdaptor
+ * @brief An adaptor for Nanoflann to operate on our graph object without copying
+ */
+struct GraphAdaptor
+{
+  GraphAdaptor(const Graph & obj_) : obj(obj_) {}
+
+  inline size_t kdtree_get_point_count() const {return obj.size();}
+
+  inline double kdtree_get_pt(const size_t idx, const size_t dim) const
+  {
+    if (dim == 0) {
+      return obj[idx].coords.x;
+    }
+    return obj[idx].coords.y;
+  }
+
+  template <class BBOX> bool kdtree_get_bbox(BBOX & /*bb*/) const {return false;}
+
+  const Graph & obj;
+};
+
+typedef nanoflann::KDTreeSingleIndexAdaptor<
+  nanoflann::L2_Simple_Adaptor<double, GraphAdaptor>, GraphAdaptor, DIMENSION> kd_tree_t;
+
+/**
+ * @class nav2_route::NodeSpatialTree
+ * @brief An object to find kNNs of the graph to determining the start and end
+ * nodes to utilize for planning in a free-space-style request of start and goal poses.
+ * Since the graph does not change over time, we can precompute this quadtree and reuse it
+ * over many requests.
+ */
+class NodeSpatialTree
+{
+public:
+  /**
+   * @brief Constructor
+   */
+  NodeSpatialTree() = default;
+
+  /**
+   * @brief Destructor
+   */
+  ~NodeSpatialTree()
+  {
+    if (kdtree_) {
+      delete kdtree_;
+      kdtree_ = nullptr;
+    }
+
+    if (adaptor_) {
+      delete adaptor_;
+      adaptor_ = nullptr;
+    }
+  }
+
+  /**
+   * @brief Compute the kd-tree based on the graph node information
+   * @param graph The graph of nodes for the route
+   */
+  void computeTree(Graph & graph)
+  {
+    if (kdtree_) {
+      delete kdtree_;
+      kdtree_ = nullptr;
+    }
+
+    if (adaptor_) {
+      delete adaptor_;
+      adaptor_ = nullptr;
+    }
+
+    adaptor_ = new GraphAdaptor(graph);
+    kdtree_ = new kd_tree_t(DIMENSION, *adaptor_, nanoflann::KDTreeSingleIndexAdaptorParams(10));
+    kdtree_->buildIndex();
+    graph_ = &graph;
+  }
+
+  /**
+   * @brief Find the closest node to a given pose
+   * @param pose_in Pose to find node near
+   * @param node_id The return ID of the node
+   * @return if successfully found
+   */
+  bool findNearestNodeToPose(const geometry_msgs::msg::PoseStamped & pose_in, unsigned int & node_id)
+  {
+    size_t num_results = 1;
+    std::vector<unsigned int> ret_index(num_results);
+    std::vector<double> out_dist_sqr(num_results);
+    const double query_pt[2] = {pose_in.pose.position.x, pose_in.pose.position.y};
+    num_results = kdtree_->knnSearch(&query_pt[0], num_results, &ret_index[0], &out_dist_sqr[0]);
+
+    if (num_results == 0) {
+      std::cout << "No nearest neighbor results found!" << std::endl;
+      return false;
+    }
+
+    node_id = graph_->at(ret_index[0]).nodeid;
+    return true;
+  }
+
+protected:
+  kd_tree_t * kdtree_;
+  GraphAdaptor * adaptor_;
+  Graph * graph_;
+};
+
+}  // namespace nav2_route
+
+#endif  // NAV2_ROUTE__NODE_SPATIAL_TREE_HPP_
