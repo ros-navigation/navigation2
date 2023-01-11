@@ -158,7 +158,7 @@ if(BUILD_TESTING)
   add_subdirectory(test)
 endif()
 
-ament_export_include_directories(include)
+ament_export_include_directories(include ${OMPL_INCLUDE_DIRS})
 ament_export_libraries(${library_name} ${library_name}_2d ${library_name}_lattice)
 ament_export_dependencies(${dependencies})
 ament_package()
