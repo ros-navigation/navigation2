@@ -69,7 +69,7 @@ TEST(MapSaverCLI, CLITest)
   auto return_code = system(command.c_str());
   EXPECT_EQ(return_code, 0);
 
-  rclcpp::Rate(0.25).sleep();
+  rclcpp::Rate(0.5).sleep();
 
   RCLCPP_INFO(node->get_logger(), "Checking on file...");
 

@@ -45,6 +45,7 @@ extern const char * g_valid_bmp_file;
 extern const char * g_valid_pgm_file;
 extern const char * g_valid_yaml_file;
 extern const char * g_valid_grid_map_yaml_file;
+extern const char * g_valid_octomap_yaml_file;
 extern const char * g_tmp_dir;
 
 extern const double g_valid_image_res;

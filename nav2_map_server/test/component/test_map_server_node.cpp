@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
+#include <octomap/octomap.h>
 
 #include <string>
 #include <memory>
@@ -24,6 +25,12 @@
 #include "nav2_map_server/map_server.hpp"
 #include "nav2_util/lifecycle_service_client.hpp"
 #include "nav2_msgs/srv/load_map.hpp"
+
+#include <octomap_msgs/msg/octomap.hpp>
+#include "octomap_msgs/conversions.h"
+
+#include "octomap_ros/conversions.hpp"
+
 using namespace std::chrono_literals;
 using namespace rclcpp;  // NOLINT
 
@@ -110,6 +117,35 @@ protected:
       (grid_map_msg.info.resolution * grid_map_msg.info.resolution); i++)
     {
       ASSERT_FLOAT_EQ(grid_map_msg.data[0].data[i], g_valid_elevation_content[i]);
+    }
+  }
+
+  // Check that octomap_msg corresponds to reference pattern
+  // Input: octomap_msg
+  void verifyOctomapMsg(const octomap_msgs::msg::Octomap & octomap_msg)
+  {
+    ASSERT_FLOAT_EQ(octomap_msg.resolution, g_valid_image_res);
+
+    // right now, the test octomap is a cube with size 0.2
+    std::unique_ptr<octomap::AbstractOcTree> tree{octomap_msgs::msgToMap(octomap_msg)};
+    std::unique_ptr<octomap::OcTree> octree;
+    if (tree) {
+      octree =
+        std::unique_ptr<octomap::OcTree>(
+        dynamic_cast<octomap::OcTree *>(tree.
+        release()));
+    } else {
+      std::cerr << "Error creating octree from received message" << std::endl;
+      GTEST_FAIL();
+    }
+
+    if (octree) {
+      ASSERT_EQ(octree->getNumLeafNodes(), (size_t) 1);
+      ASSERT_FLOAT_EQ(octree->begin_leafs().getSize(), 0.2);
+      ASSERT_FLOAT_EQ(octree->begin_leafs()->getValue(), 0.847298);
+    } else {
+      std::cerr << "Error reading OcTree from stream" << std::endl;
+      GTEST_FAIL();
     }
   }
 
@@ -270,4 +306,22 @@ TEST_F(MapServerTestFixture, LoadGridMap)
 
   ASSERT_EQ(resp->result, nav2_msgs::srv::LoadMap::Response::RESULT_SUCCESS);
   verifyGridMapMsg(resp->grid_map);
+}
+
+// Send map loading service request and verify obtained grid_map
+TEST_F(MapServerTestFixture, LoadOctomap)
+{
+  RCLCPP_INFO(node_->get_logger(), "Testing LoadGridMap service");
+  auto req = std::make_shared<nav2_msgs::srv::LoadMap::Request>();
+  auto client = node_->create_client<nav2_msgs::srv::LoadMap>(
+    "/map_server/load_map");
+
+  RCLCPP_INFO(node_->get_logger(), "Waiting for load_map service");
+  ASSERT_TRUE(client->wait_for_service());
+
+  req->map_url = path(TEST_DIR) / path(g_valid_octomap_yaml_file);
+  auto resp = send_request<nav2_msgs::srv::LoadMap>(node_, client, req);
+
+  ASSERT_EQ(resp->result, nav2_msgs::srv::LoadMap::Response::RESULT_SUCCESS);
+  verifyOctomapMsg(resp->octomap);
 }

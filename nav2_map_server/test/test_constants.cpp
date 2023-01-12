@@ -80,6 +80,7 @@ const char * g_valid_bmp_file = "testmap.bmp";
 const char * g_valid_pgm_file = "testmap.pgm";
 const char * g_valid_yaml_file = "testmap.yaml";
 const char * g_valid_grid_map_yaml_file = "testmap_gridmap.yaml";
+const char * g_valid_octomap_yaml_file = "testmap_octomap.yaml";
 const char * g_tmp_dir = "/tmp";
 
 const double g_valid_image_res = 0.1;
