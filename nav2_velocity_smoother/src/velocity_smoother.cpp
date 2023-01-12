@@ -209,8 +209,12 @@ double VelocitySmoother::applyConstraints(
 
 void VelocitySmoother::smootherTimer()
 {
-  auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>();
+  // Wait until the first command is received
+  if (command_==nullptr) {
+    return;
+  }
 
+  auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>();
   // Check for velocity timeout. If nothing received, publish zeros to stop robot
   if (now() - last_command_time_ > velocity_timeout_) {
     last_cmd_ = geometry_msgs::msg::Twist();
