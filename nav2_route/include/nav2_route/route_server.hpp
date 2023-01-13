@@ -34,6 +34,7 @@
 #include "nav2_route/types.hpp"
 #include "nav2_route/utils.hpp"
 #include "nav2_route/graph_file_loader.hpp"
+#include "nav2_route/route_planner.hpp"
 #include "nav2_route/node_spatial_tree.hpp"
 
 namespace nav2_route
@@ -103,11 +104,11 @@ protected:
   void computeRoute();
 
   /**
-   * @brief Finds the start and goal Node IDs closest to the request
+   * @brief Finds the start and goal Node locations in the graph closest to the request
    * @param The request goal information
    * @return A pair of NodeIDs belonging to the start and goal nodes for route search
    */
-  NodeExtents findStartandGoalNodeIDs(std::shared_ptr<const ActionBasicGoal> goal);
+  NodeExtents findStartandGoalNodeLocations(std::shared_ptr<const ActionBasicGoal> goal);
 
   /**
    * @brief Callback executed when a parameter change is detected
@@ -130,19 +131,18 @@ protected:
   rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr graph_vis_publisher_;
 
   // Get, set or modify graph
-  // rclcpp::Service<nav2_msgs::srv::GetRouteGraph>::SharedPtr get_graph_service_;
-  // rclcpp::Service<nav2_msgs::srv::SetRouteGraph>::SharedPtr set_graph_service_;
-  // rclcpp::Service<nav2_msgs::srv::ModifyRouteGraph>::SharedPtr modify_graph_service_;
+  // rclcpp::Service<nav2_msgs::srv::GetRouteGraph>::SharedPtr get_graph_service_; // basics
+  // rclcpp::Service<nav2_msgs::srv::SetRouteGraph>::SharedPtr set_graph_service_; // file
 
   // Interal tools
   std::shared_ptr<GraphFileLoader> graph_loader_;
   std::shared_ptr<NodeSpatialTree> node_spatial_tree_;
+  std::shared_ptr<RoutePlanner> route_planner_;
 
   // Navigation graph object and utils
   nav2_route::Graph graph_;
   std::string route_frame_, base_frame_;
   double max_planning_time_;
-  // Plugin class loader + plugin to get it
 };
 
 }  // namespace nav2_route

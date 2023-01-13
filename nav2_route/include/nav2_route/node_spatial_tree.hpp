@@ -115,7 +115,7 @@ public:
    * @param node_id The return ID of the node
    * @return if successfully found
    */
-  bool findNearestNodeToPose(const geometry_msgs::msg::PoseStamped & pose_in, unsigned int & node_id)
+  bool findNearestGraphNodeToPose(const geometry_msgs::msg::PoseStamped & pose_in, unsigned int & node_id)
   {
     size_t num_results = 1;
     std::vector<unsigned int> ret_index(num_results);
@@ -128,7 +128,7 @@ public:
       return false;
     }
 
-    node_id = graph_->at(ret_index[0]).nodeid;
+    node_id = ret_index[0];
     return true;
   }
 

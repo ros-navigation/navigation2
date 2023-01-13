@@ -18,7 +18,7 @@ It is required that the file contains unique IDs for each node and edge (includi
 
 - [ ] Create basic file format for graph + parser to get started with something for demonstrations to have data to work with while developing
 
-- [ ] Implement MVP: Search, path densifier, Costmap block/cost edge scorer, L2+multiplier edge scorer, plugin headers
+- [ ] Implement MVP: path densifier, Costmap block/cost edge scorer, L2+multiplier edge scorer, plugin headers
 
 - [ ] Implement live: route analyzer, Speed limit parse/edge action, call ext server for action base class + demo plugin, pause parse/node action
 

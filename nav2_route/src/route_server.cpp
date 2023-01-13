@@ -67,6 +67,10 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   node_spatial_tree_ = std::make_shared<NodeSpatialTree>();
   node_spatial_tree_->computeTree(graph_);
 
+  // Create main planning algorithm
+  route_planner_ = std::make_shared<RoutePlanner>();
+  route_planner_->configure();
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -85,7 +89,6 @@ RouteServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
   // create bond connection
   createBond();
-
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -124,7 +127,7 @@ RouteServer::on_shutdown(const rclcpp_lifecycle::State &)
 }
 
 NodeExtents
-RouteServer::findStartandGoalNodeIDs(std::shared_ptr<const ActionBasicGoal> goal)
+RouteServer::findStartandGoalNodeLocations(std::shared_ptr<const ActionBasicGoal> goal)
 {
   // If not using the poses, then use the requests Node IDs to establish start and goal
   if (!goal->use_poses) {
@@ -156,15 +159,17 @@ RouteServer::findStartandGoalNodeIDs(std::shared_ptr<const ActionBasicGoal> goal
     nav2_util::transformPoseInTargetFrame(goal_pose, goal_pose, *tf_, route_frame_); // TODO exception?
   }
 
-  // Find closest route nodes to start and goal to plan between
+  // Find closest route graph nodes to start and goal to plan between.
+  // Note that these are the location indices in the graph, NOT the node IDs for easier starting
+  // lookups for search. The route planner will convert them to node ids for route reporting.
   unsigned int start_route = 0, end_route = 0;
-  if (!node_spatial_tree_->findNearestNodeToPose(start_pose, start_route) ||
-    !node_spatial_tree_->findNearestNodeToPose(goal_pose, end_route))
+  if (!node_spatial_tree_->findNearestGraphNodeToPose(start_pose, start_route) ||
+    !node_spatial_tree_->findNearestGraphNodeToPose(goal_pose, end_route))
   {
     RCLCPP_ERROR(get_logger(), "Could not determine node closest to start or goal pose requested!");
     //TODO throw exception
   }
-  
+
   return {start_route, end_route};
 }
 
@@ -195,20 +200,20 @@ RouteServer::computeRoute()
 
   try {
     // Find the search boundaries
-    auto [start_route, end_route] = findStartandGoalNodeIDs(goal);
+    auto [start_route, end_route] = findStartandGoalNodeLocations(goal);
     if (start_route == end_route) {
       RCLCPP_WARN(get_logger(), "The same start and end route nodes are the same!");
       // TODO throw exception
     }
 
-    std::cout << "start: " << start_route << " end: " << end_route << std::endl;
+    // Compute the route via graph-search, returns a node-edge sequence
+    Route route = route_planner_->findRoute(graph_, start_route, end_route);
 
-  //   // Compute the route via graph-search, returns a node-edge sequence
-  //   Route route = route_planner_->findRoute(start_route, end_route);//TODO
+    // Connect to start/goal outside of route?TODO or bt with planner server or interest?
 
-  //   // Create a dense path for use and debugging visualization
-  //   result->route = utils::toMsg(route, route_frame_);//TODO
-  //   result->path = path_converter_->densify(route);//TODO
+    // Create a dense path for use and debugging visualization
+    // result->route = utils::toMsg(route, route_frame_, this->now());
+    // result->path = path_converter_->densify(route);//TODO
   } catch (...) {
     // contextual exceptions TODO
   }

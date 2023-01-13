@@ -56,12 +56,35 @@ struct Metadata
  */
 struct Coordinates
 {
-  std::string frame_id;
-  float x, y, yaw;
+  std::string frame_id{"map"};
+  float x{0.0}, y{0.0}, yaw{0.0};
 };
 
+
+struct Node;
+typedef Node * NodePtr;
+typedef std::vector<Node> NodeVector;
+typedef NodeVector Graph;
+typedef std::vector<NodePtr> NodePtrVector;
+typedef std::pair<float, NodePtr> NodeElement;
+typedef std::pair<unsigned int, unsigned int> NodeExtents;
+
 /**
- * @struct nav2_route::NodeCost
+ * @struct nav2_route::NodeComparator
+ * @brief Node comparison for priority queue sorting
+ */
+struct NodeComparator
+{
+  bool operator()(const NodeElement & a, const NodeElement & b) const
+  {
+    return a.first > b.first;
+  }
+};
+
+typedef std::priority_queue<NodeElement, std::vector<NodeElement>, NodeComparator> NodeQueue;
+
+/**
+ * @struct nav2_route::EdgeCost
  * @brief An object to store edge cost or cost metadata for scoring
  */
 struct EdgeCost
@@ -70,19 +93,37 @@ struct EdgeCost
   bool overridable{true};  // If overridable, may use plugin edge cost scorers
 };
 
-struct Node;
-typedef Node * NodePtr;
-typedef std::vector<Node> NodeVector;
-typedef std::vector<NodePtr> NodePtrVector;
-
+/**
+ * @struct nav2_route::DirectionalEdge
+ * @brief An object representing edges between nodes
+ */
 struct DirectionalEdge
 {
-  EdgeCost cost;
-  NodePtr end{nullptr};
+  EdgeCost edge_cost;
+  NodePtr start{nullptr};
+  NodePtr end{nullptr}; 
   unsigned int edgeid;
 };
 
+typedef DirectionalEdge * EdgePtr;
 typedef std::vector<DirectionalEdge> EdgeVector;
+typedef std::vector<EdgePtr> EdgePtrVector;
+
+/**
+ * @struct nav2_route::SearchState
+ * @brief An object to store state related to graph searching of nodes
+ */
+struct SearchState
+{
+  EdgePtr parent_edge{nullptr};
+  float cost{0.0};
+
+  void reset()
+  {
+    cost = std::numeric_limits<float>::max();
+    parent_edge = nullptr;
+  }
+};
 
 /**
  * @struct nav2_route::Node
@@ -90,24 +131,28 @@ typedef std::vector<DirectionalEdge> EdgeVector;
  */
 struct Node
 {
-  unsigned int nodeid;      // Node identifier
-  Coordinates coords;       // Coordinates of node
-  EdgeVector neighbors;     // Directed neighbors and edges of the node
-  Metadata metadata;        // Any metadata stored in the graph file of interest
+  unsigned int nodeid;       // Node identifier
+  Coordinates coords;        // Coordinates of node
+  EdgeVector neighbors;      // Directed neighbors and edges of the node
+  Metadata metadata;         // Any metadata stored in the graph file of interest
+  SearchState search_state;  // State maintained by route search algorithm
 
-  // TODO down line, try to see if seperate edge vector is better for any reason & store ptr
-    // e.g. editing over time by edgeID (since now would have to ierate through every node to find it vs a edge map)
-    // but eges should know the node root/end so we can find via that and populate edge info that way. But node lookup still a problem
   void addEdge(EdgeCost & cost, NodePtr node, unsigned int edgeid)
   {
-    neighbors.push_back({cost, node, edgeid});
+    neighbors.push_back({cost, this, node, edgeid});
   }
 };
 
-// TODO populating edges on nodes might be better suited if can do lookups based on Ids (map, or Ids to position?) 
-typedef NodeVector Graph;
-
-typedef std::pair<unsigned int, unsigned int> NodeExtents;
+/**
+ * @struct nav2_route::Route
+ * @brief An ordered set of nodes and edges corresponding to the planned route
+ */
+struct Route
+{
+  NodePtr start_node;
+  EdgePtrVector edges;
+  float route_cost{0.0};
+};
 
 }  // namespace nav2_route
 
