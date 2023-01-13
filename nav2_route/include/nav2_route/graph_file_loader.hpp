@@ -43,6 +43,7 @@ public:
     const std::string frame)
   {
     // TODO plugin header + loader to use instead. THis will manage plugin get / load
+    // TODO logging
     tf_ = tf;
     route_frame_ = frame;
     (void)node;

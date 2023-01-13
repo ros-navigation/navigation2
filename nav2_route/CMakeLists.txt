@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(nav2_route)
+project(nav2_route CXX)
 
 find_package(ament_cmake REQUIRED)
 find_package(nav2_common REQUIRED)
@@ -39,7 +39,7 @@ include_directories(
   include
 )
 
-
+# Main library
 add_library(${library_name} SHARED
   src/route_server.cpp
 )
@@ -48,6 +48,7 @@ ament_target_dependencies(${library_name}
   ${dependencies}
 )
 
+# Main executable
 add_executable(${executable_name}
   src/main.cpp
 )
@@ -60,6 +61,17 @@ ament_target_dependencies(${executable_name}
 
 rclcpp_components_register_nodes(${library_name} "nav2_route::RouteServer")
 
+# Edge scoring plugins
+add_library(edge_scorers SHARED
+  src/plugins/edge_cost_functions/distance_scorer.cpp
+)
+
+ament_target_dependencies(edge_scorers
+  ${dependencies}
+)
+
+pluginlib_export_plugin_description_file(nav2_route plugins.xml)
+
 install(DIRECTORY include/
   DESTINATION include/
 )
@@ -68,7 +80,7 @@ install(TARGETS ${executable_name}
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
-install(TARGETS ${library_name}
+install(TARGETS ${library_name} edge_scorers
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -84,21 +96,5 @@ endif()
 
 ament_export_include_directories(include)
 ament_export_dependencies(${dependencies})
-ament_export_libraries(${library_name})
+ament_export_libraries(${library_name} edge_scorers)
 ament_package()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

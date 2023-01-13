@@ -11,30 +11,31 @@ In addition, actions may be performed when entering or leaving a particular edge
 
 It is required that the file contains unique IDs for each node and edge (including between nodes and edges).
 
+## Conventions
+
+`speed_tag` for scoring and others, use `speed_limit` represented as % of maximum for DistanceScorer use (and others).
+
+Requirements on file format // how things are parsed into the classes (metadata, actions, IDs) for use in plugins and analysis
+
+`Actions` stuff
+
+---
+
 # Steve's TODO list
 
+- [ ] move headers to source files
 - [ ] implement contextual error codes
-
 - [ ] Create basic file format for graph + parser
 
-- [ ] Implement MVP: Costmap block/cost edge scorer, L2+multiplier edge scorer, plugin headers
+
+- [ ] Implement additional plugins: costmap blockage, OSM format,
 
 - [ ] Implement live: route analyzer, Speed limit parse/edge action, call ext server for action base class + demo plugin, pause parse/node action
-
-- [ ] Implement collision monitor + replanning, off-grid search
-
-- [ ] BT plugin + BT XML replanning with it instead + python3 API support
-- [ ] docs / tests
+- [ ] Implement collision monitor + replanning
 
 
 # Questions
 
 - How to store/parse/process custom file format metadata/actions?
 - What file format to use as compact for graph?
-- How to do freespace planning? Here or in BT with Navfn?
-- GPS support: densification, free-space, collision monitoring
 - How / what runs to replanning other than when invalid due to collision? How can BT trigger again if its still feedback-pending?
-- Support for Open-RMF's clearance?
-- VDA5050 compatibility
-- Editor
-

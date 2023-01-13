@@ -1,0 +1,7 @@
+<class_libraries>
+  <library path="edge_scorers">
+    <class type="nav2_route::DistanceScorer" base_class_type="nav2_route::EdgeCostFunction">
+      <description>Cost function for penalizing edge distance proportionally to potential speed limits</description>
+    </class>
+  </library>
+</class_libraries>

@@ -29,6 +29,8 @@ namespace nav2_route
  */
 struct Metadata
 {
+  Metadata() {}
+
   // For retrieving metadata at run-time via plugins
   template <typename T>
   T getValue(const std::string & key, T & default_val) const
@@ -99,10 +101,11 @@ struct EdgeCost
  */
 struct DirectionalEdge
 {
-  EdgeCost edge_cost;
-  NodePtr start{nullptr};
-  NodePtr end{nullptr}; 
-  unsigned int edgeid;
+  unsigned int edgeid;     // Edge identifier
+  NodePtr start{nullptr};  // Ptr to starting node of edge
+  NodePtr end{nullptr};    // Ptr to ending node of edge
+  EdgeCost edge_cost;      // Cost information associated with edge
+  Metadata metadata;       // Any metadata stored in the graph file of interest
 };
 
 typedef DirectionalEdge * EdgePtr;
@@ -112,6 +115,7 @@ typedef std::vector<EdgePtr> EdgePtrVector;
 /**
  * @struct nav2_route::SearchState
  * @brief An object to store state related to graph searching of nodes
+ * This is an internal class users should not modify.
  */
 struct SearchState
 {
@@ -139,7 +143,7 @@ struct Node
 
   void addEdge(EdgeCost & cost, NodePtr node, unsigned int edgeid)
   {
-    neighbors.push_back({cost, this, node, edgeid});
+    neighbors.push_back({edgeid, this, node, cost, {}});
   }
 };
 

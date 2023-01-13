@@ -193,6 +193,8 @@ RouteServer::computeRoute()
   auto goal = action_server_->get_current_goal();
   auto result = std::make_shared<ActionBasicResult>();
 
+  RCLCPP_INFO(get_logger(), "Computing route to goal.");
+
   // Make sure request is valid
   if (!action_server_ || !action_server_->is_server_active()) {
     RCLCPP_DEBUG(get_logger(), "Action server unavailable or inactive. Stopping.");
@@ -244,7 +246,12 @@ void RouteServer::setRouteGraph(
   const std::shared_ptr<nav2_msgs::srv::SetRouteGraph::Request> request,
   std::shared_ptr<nav2_msgs::srv::SetRouteGraph::Response> response)
 {
+  RCLCPP_INFO(get_logger(), "Setting new route graph: %s.", request->graph_filepath.c_str());
+
   if (!graph_loader_->loadGraphFromFile(graph_, request->graph_filepath)) {
+    RCLCPP_WARN(
+      get_logger(),
+      "Failed to set new route graph: %s!", request->graph_filepath.c_str());
     response->success = false;
     return;
   }

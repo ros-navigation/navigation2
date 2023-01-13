@@ -24,6 +24,7 @@
 
 #include "nav2_route/types.hpp"
 #include "nav2_route/utils.hpp"
+#include "nav2_route/edge_scorer.hpp"
 
 namespace nav2_route
 {
@@ -46,8 +47,6 @@ public:
 
   void configure(nav2_util::LifecycleNode::SharedPtr node)
   {
-    // TODO create and initialze edge scorer object
-
     nav2_util::declare_parameter_if_not_declared(
       node, "max_iterations", rclcpp::ParameterValue(0));
     max_iterations_ = node->get_parameter("max_iterations").as_int();
@@ -55,6 +54,8 @@ public:
     if (max_iterations_ == 0) {
       max_iterations_ = std::numeric_limits<int>::max();
     }
+
+    edge_scorer_ = std::make_unique<EdgeScorer>(node);
   }
 
   Route findRoute(Graph & graph, unsigned int start, unsigned int goal)
@@ -150,14 +151,18 @@ protected:
 
   inline float getTraversalCost(const EdgePtr edge)
   {
-    if (!edge->edge_cost.overridable /*|| plugins.empty()*/) {
-      return edge->edge_cost.cost;
+    if (!edge->edge_cost.overridable || edge_scorer_->numPlugins() == 0) {
+      if (edge->edge_cost.cost != 0.0) {
+        return edge->edge_cost.cost;
+      } else {
+        // We need some non-zero value if users didn't populate their files properly
+        return hypotf(
+          edge->end->coords.x - edge->start->coords.x,
+          edge->end->coords.y - edge->start->coords.y);
+      }
     }
 
-    // TODO scoring plugins, for now, just distance
-    return hypotf(
-      edge->end->coords.x - edge->start->coords.x,
-      edge->end->coords.y - edge->start->coords.y);
+    return edge_scorer_->score(edge);    
   }
 
   inline NodeElement getNextNode()
@@ -192,6 +197,7 @@ protected:
   int max_iterations_{0};
   unsigned int goal_id_{0};
   NodeQueue queue_;
+  std::unique_ptr<EdgeScorer> edge_scorer_;
 };
 
 }  // namespace nav2_route
