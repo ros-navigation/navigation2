@@ -185,7 +185,7 @@ RouteServer::findStartandGoalNodeLocations(std::shared_ptr<const ActionBasicGoal
     !node_spatial_tree_->findNearestGraphNodeToPose(goal_pose, end_route))
   {
     throw nav2_core::IndeterminantNodesOnGraph(
-      "Could not determine node closest to start or goal pose requested!");
+            "Could not determine node closest to start or goal pose requested!");
   }
 
   return {start_route, end_route};
@@ -246,7 +246,6 @@ RouteServer::computeRoute()
     }
 
     action_server_->succeeded_current(result);
-
   } catch (nav2_core::NoValidRouteCouldBeFound & ex) {
     exceptionWarning(goal, ex);
     result->error_code = ActionBasicGoal::NO_VALID_ROUTE;
@@ -304,7 +303,7 @@ void RouteServer::exceptionWarning(
 {
   RCLCPP_WARN(
     get_logger(),
-    "Route server failed to route request: Start: [(%0.2f, %0.2f) / %i] Goal: [(%0.2f, %0.2f) / %i]:"
+    "Route server failed on request: Start: [(%0.2f, %0.2f) / %i] Goal: [(%0.2f, %0.2f) / %i]:"
     " \"%s\"", goal->start.pose.position.x, goal->start.pose.position.y, goal->start_id,
     goal->goal.pose.position.x, goal->goal.pose.position.y, goal->goal_id, ex.what());
 }

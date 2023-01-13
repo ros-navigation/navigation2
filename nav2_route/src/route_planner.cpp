@@ -62,7 +62,7 @@ Route RoutePlanner::findRoute(Graph & graph, unsigned int start, unsigned int go
     parent_edge = parent_edge->start->search_state.parent_edge;
   }
 
-  if (!parent_edge->start || parent_edge->start->nodeid != start_node->nodeid) {
+  if (!route.edges.back()->start || route.edges.back()->start->nodeid != start_node->nodeid) {
     throw nav2_core::NoValidRouteCouldBeFound("Could not find a valid route!");
   }
 

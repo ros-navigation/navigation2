@@ -39,7 +39,7 @@ public:
   /**
    * @brief A constructor for nav2_route::RoutePlanner
    */
-  explicit RoutePlanner() = default;
+  RoutePlanner() = default;
 
   /**
    * @brief A destructor for nav2_route::RoutePlanner
