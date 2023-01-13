@@ -210,7 +210,7 @@ double VelocitySmoother::applyConstraints(
 void VelocitySmoother::smootherTimer()
 {
   // Wait until the first command is received
-  if (command_==nullptr) {
+  if (!command_) {
     return;
   }
 
