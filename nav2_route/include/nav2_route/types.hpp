@@ -16,6 +16,9 @@
 #include <string>
 #include <any>
 #include <vector>
+#include <unordered_map>
+#include <utility>
+#include <limits>
 
 #ifndef NAV2_ROUTE__TYPES_HPP_
 #define NAV2_ROUTE__TYPES_HPP_
@@ -32,7 +35,7 @@ struct Metadata
   Metadata() {}
 
   // For retrieving metadata at run-time via plugins
-  template <typename T>
+  template<typename T>
   T getValue(const std::string & key, T & default_val) const
   {
     auto it = data.find(key);
@@ -43,7 +46,7 @@ struct Metadata
   }
 
   // For populating metadata from file
-  template <typename T>
+  template<typename T>
   void setValue(const std::string & key, T & value)
   {
     data.insert({key, value});

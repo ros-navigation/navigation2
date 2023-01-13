@@ -40,7 +40,7 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   auto node = shared_from_this();
   graph_vis_publisher_ =
     node->create_publisher<visualization_msgs::msg::MarkerArray>(
-      "route_graph", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+    "route_graph", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
 
   action_server_ = std::make_unique<ActionServerBasic>(
     node, "compute_route",
@@ -53,16 +53,16 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
       &RouteServer::setRouteGraph, this,
       std::placeholders::_1, std::placeholders::_2));
 
- declare_parameter_if_not_declared(
+  declare_parameter_if_not_declared(
     node, "route_frame", rclcpp::ParameterValue(std::string("map")));
   declare_parameter_if_not_declared(
     node, "base_frame", rclcpp::ParameterValue(std::string("base_link")));
   declare_parameter_if_not_declared(
     node, "max_planning_time", rclcpp::ParameterValue(2.0));
 
-  route_frame_ = node->get_parameter("route_frame").as_string(); 
-  base_frame_ = node->get_parameter("base_frame").as_string(); 
-  max_planning_time_ = node->get_parameter("max_planning_time").as_double(); 
+  route_frame_ = node->get_parameter("route_frame").as_string();
+  base_frame_ = node->get_parameter("base_frame").as_string();
+  max_planning_time_ = node->get_parameter("max_planning_time").as_double();
 
   // Load graph and convert poses to the route frame, if required
   graph_loader_ = std::make_shared<GraphFileLoader>(node, tf_, route_frame_);
@@ -151,7 +151,7 @@ RouteServer::findStartandGoalNodeLocations(std::shared_ptr<const ActionBasicGoal
   if (goal->use_start) {
     start_pose = goal->start;
   } else {
-    nav2_util::getCurrentPose(start_pose, *tf_, route_frame_, base_frame_); // TODO exception?
+    nav2_util::getCurrentPose(start_pose, *tf_, route_frame_, base_frame_);  // TODO exception?
   }
 
   // If start or goal not provided in route_frame, transform
@@ -160,7 +160,7 @@ RouteServer::findStartandGoalNodeLocations(std::shared_ptr<const ActionBasicGoal
       get_logger(),
       "Request start pose not in %s frame. Converting %s to route server frame.",
       start_pose.header.frame_id.c_str(), route_frame_.c_str());
-    nav2_util::transformPoseInTargetFrame(start_pose, start_pose, *tf_, route_frame_); // TODO exception?
+    nav2_util::transformPoseInTargetFrame(start_pose, start_pose, *tf_, route_frame_);  // TODO exception?
   }
 
   if (goal_pose.header.frame_id != route_frame_) {
@@ -168,7 +168,7 @@ RouteServer::findStartandGoalNodeLocations(std::shared_ptr<const ActionBasicGoal
       get_logger(),
       "Request goal pose not in %s frame. Converting %s to route server frame.",
       start_pose.header.frame_id.c_str(), route_frame_.c_str());
-    nav2_util::transformPoseInTargetFrame(goal_pose, goal_pose, *tf_, route_frame_); // TODO exception?
+    nav2_util::transformPoseInTargetFrame(goal_pose, goal_pose, *tf_, route_frame_);  // TODO exception?
   }
 
   // Find closest route graph nodes to start and goal to plan between.
@@ -179,7 +179,7 @@ RouteServer::findStartandGoalNodeLocations(std::shared_ptr<const ActionBasicGoal
     !node_spatial_tree_->findNearestGraphNodeToPose(goal_pose, end_route))
   {
     RCLCPP_ERROR(get_logger(), "Could not determine node closest to start or goal pose requested!");
-    //TODO throw exception
+    // TODO throw exception
   }
 
   return {start_route, end_route};
@@ -266,7 +266,7 @@ rcl_interfaces::msg::SetParametersResult
 RouteServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
 {
   std::lock_guard<std::mutex> lock(dynamic_params_lock_);
-  
+
   using rcl_interfaces::msg::ParameterType;
   rcl_interfaces::msg::SetParametersResult result;
   for (auto parameter : parameters) {

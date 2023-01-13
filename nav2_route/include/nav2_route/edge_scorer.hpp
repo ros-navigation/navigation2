@@ -47,7 +47,7 @@ public:
   /**
    * @brief Constructor
    */
-  EdgeScorer(nav2_util::LifecycleNode::SharedPtr node);
+  explicit EdgeScorer(nav2_util::LifecycleNode::SharedPtr node);
 
   /**
    * @brief Destructor

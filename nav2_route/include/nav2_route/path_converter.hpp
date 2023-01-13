@@ -39,7 +39,7 @@ public:
   /**
    * @brief A constructor for nav2_route::PathConverter
    */
-  explicit PathConverter() = default;
+  PathConverter() = default;
 
   /**
    * @brief A destructor for nav2_route::PathConverter
@@ -60,9 +60,9 @@ public:
    * @return Path of the route
    */
   nav_msgs::msg::Path densify(
-  const Route & route,
-  const std::string & frame,
-  const rclcpp::Time & now);
+    const Route & route,
+    const std::string & frame,
+    const rclcpp::Time & now);
 
   /**
    * @brief Convert an individual edge into a dense line

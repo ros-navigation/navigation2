@@ -82,7 +82,7 @@ bool GraphFileLoader::loadGraphFromFile(Graph & graph, std::string filepath)
   graph[0].addEdge(default_cost, &graph[3], ids++);
   graph[3].addEdge(default_cost, &graph[6], ids++);
   return true;
-};
+}
 
 bool GraphFileLoader::fileExists(const std::string & filepath)
 {

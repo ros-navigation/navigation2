@@ -43,8 +43,8 @@ float DistanceScorer::score(const EdgePtr edge)
   float speed_val = 1.0f;
   speed_val = edge->metadata.getValue<float>(speed_tag_, speed_val);
   return weight_ * hypotf(
-        edge->end->coords.x - edge->start->coords.x,
-        edge->end->coords.y - edge->start->coords.y) / speed_val;
+    edge->end->coords.x - edge->start->coords.x,
+    edge->end->coords.y - edge->start->coords.y) / speed_val;
 }
 
 std::string DistanceScorer::getName()

@@ -77,7 +77,9 @@ void RoutePlanner::resetSearchStates(Graph & graph)
   }
 }
 
-void RoutePlanner::findShortestGraphTraversal(Graph & graph, const NodePtr start, const NodePtr goal)
+void RoutePlanner::findShortestGraphTraversal(
+  Graph & graph, const NodePtr start,
+  const NodePtr goal)
 {
   // Setup the Dijkstra's search problem
   goal_id_ = goal->nodeid;
@@ -140,7 +142,7 @@ float RoutePlanner::getTraversalCost(const EdgePtr edge)
     }
   }
 
-  return edge_scorer_->score(edge);    
+  return edge_scorer_->score(edge);
 }
 
 NodeElement RoutePlanner::getNextNode()
@@ -152,7 +154,7 @@ NodeElement RoutePlanner::getNextNode()
 
 void RoutePlanner::addNode(const float cost, const NodePtr node)
 {
-   queue_.emplace(cost, node);
+  queue_.emplace(cost, node);
 }
 
 EdgeVector & RoutePlanner::getEdges(const NodePtr node)

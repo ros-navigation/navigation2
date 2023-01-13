@@ -36,7 +36,8 @@ const size_t DIMENSION = 2;
  */
 struct GraphAdaptor
 {
-  GraphAdaptor(const Graph & obj_) : obj(obj_) {}
+  explicit GraphAdaptor(const Graph & obj_)
+  : obj(obj_) {}
 
   inline size_t kdtree_get_point_count() const {return obj.size();}
 
@@ -48,13 +49,13 @@ struct GraphAdaptor
     return obj[idx].coords.y;
   }
 
-  template <class BBOX> bool kdtree_get_bbox(BBOX & /*bb*/) const {return false;}
+  template<class BBOX> bool kdtree_get_bbox(BBOX & /*bb*/) const {return false;}
 
   const Graph & obj;
 };
 
 typedef nanoflann::KDTreeSingleIndexAdaptor<
-  nanoflann::L2_Simple_Adaptor<double, GraphAdaptor>, GraphAdaptor, DIMENSION> kd_tree_t;
+    nanoflann::L2_Simple_Adaptor<double, GraphAdaptor>, GraphAdaptor, DIMENSION> kd_tree_t;
 
 /**
  * @class nav2_route::NodeSpatialTree
@@ -88,7 +89,9 @@ public:
    * @param node_id The return ID of the node
    * @return if successfully found
    */
-  bool findNearestGraphNodeToPose(const geometry_msgs::msg::PoseStamped & pose_in, unsigned int & node_id);
+  bool findNearestGraphNodeToPose(
+    const geometry_msgs::msg::PoseStamped & pose_in,
+    unsigned int & node_id);
 
 protected:
   kd_tree_t * kdtree_;

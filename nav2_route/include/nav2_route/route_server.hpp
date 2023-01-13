@@ -141,7 +141,8 @@ protected:
   std::shared_ptr<tf2_ros::TransformListener> transform_listener_;
 
   // Publish the route for visualization
-  rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr graph_vis_publisher_;
+  rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr
+    graph_vis_publisher_;
 
   // Set or modify graph
   rclcpp::Service<nav2_msgs::srv::SetRouteGraph>::SharedPtr set_graph_service_;

@@ -61,30 +61,30 @@ inline visualization_msgs::msg::MarkerArray toMsg(
   curr_marker.action = 0;
 
   auto getSphereSize = []() {
-    geometry_msgs::msg::Vector3 msg;
-    msg.x = 0.05;
-    msg.y = 0.05;
-    msg.z = 0.05;
-    return msg;
-  };
+      geometry_msgs::msg::Vector3 msg;
+      msg.x = 0.05;
+      msg.y = 0.05;
+      msg.z = 0.05;
+      return msg;
+    };
 
   auto getSphereColor = []() {
-    std_msgs::msg::ColorRGBA msg;
-    msg.r = 1.0;
-    msg.g = 0.0;
-    msg.b = 0.0;
-    msg.a = 1.0;
-    return msg;
-  };
+      std_msgs::msg::ColorRGBA msg;
+      msg.r = 1.0;
+      msg.g = 0.0;
+      msg.b = 0.0;
+      msg.a = 1.0;
+      return msg;
+    };
 
   auto getLineColor = []() {
-    std_msgs::msg::ColorRGBA msg;
-    msg.r = 0.0;
-    msg.g = 1.0;
-    msg.b = 0.0;
-    msg.a = 0.5;  // So bi-directional connections stand out overlapping
-    return msg;
-  };
+      std_msgs::msg::ColorRGBA msg;
+      msg.r = 0.0;
+      msg.g = 1.0;
+      msg.b = 0.0;
+      msg.a = 0.5;  // So bi-directional connections stand out overlapping
+      return msg;
+    };
 
   unsigned int marker_idx = 1;
   for (unsigned int i = 0; i != graph.size(); i++) {
@@ -128,8 +128,8 @@ inline visualization_msgs::msg::MarkerArray toMsg(
       curr_marker.id = marker_idx++;
       curr_marker.type = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
       curr_marker.pose.position.x =
-        graph[i].coords.x + ((graph[i].neighbors[j].end->coords.x - graph[i].coords.x) / 2.0)
-        + 0.07;
+        graph[i].coords.x + ((graph[i].neighbors[j].end->coords.x - graph[i].coords.x) / 2.0) +
+        0.07;
 
       // Deal with overlapping bi-directional text markers by offsetting locations
       float y_offset = 0.0;
@@ -140,8 +140,8 @@ inline visualization_msgs::msg::MarkerArray toMsg(
       }
 
       curr_marker.pose.position.y =
-        graph[i].coords.y + ((graph[i].neighbors[j].end->coords.y - graph[i].coords.y) / 2.0)
-        + y_offset;
+        graph[i].coords.y + ((graph[i].neighbors[j].end->coords.y - graph[i].coords.y) / 2.0) +
+        y_offset;
       curr_marker.text = std::to_string(graph[i].neighbors[j].edgeid);
       curr_marker.scale.z = 0.1;
       msg.markers.push_back(curr_marker);

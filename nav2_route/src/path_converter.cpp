@@ -35,9 +35,9 @@ void PathConverter::configure(nav2_util::LifecycleNode::SharedPtr node)
 }
 
 nav_msgs::msg::Path PathConverter::densify(
-const Route & route,
-const std::string & frame,
-const rclcpp::Time & now)
+  const Route & route,
+  const std::string & frame,
+  const rclcpp::Time & now)
 {
   nav_msgs::msg::Path path;
 
@@ -49,7 +49,7 @@ const rclcpp::Time & now)
   for (unsigned int i = 0; i != route.edges.size(); i++) {
     const EdgePtr edge = route.edges[i];
     const Coordinates & start = edge->start->coords;
-    const Coordinates & end = edge->end->coords; 
+    const Coordinates & end = edge->end->coords;
     interpolateEdge(start.x, start.y, end.x, end.y, path.poses);
   }
 
