@@ -62,10 +62,17 @@ public:
    * @param graph Graph to populate
    * @return bool If successful
    */
-  bool loadGraphFromFile(Graph & graph)
+  bool loadGraphFromFile(Graph & graph, std::string filepath = "")
   {
     // Check filepath exists TODO
-    // if (!fileExists(graph_filepath_)) {
+    std::string filepath_to_load;
+    if (filepath.empty()) {
+      filepath_to_load = graph_filepath_;
+    } else {
+      filepath_to_load = filepath;
+    }
+
+    // if (!fileExists(filepath_to_load)) {
     //   RCLCPP_ERROR(node->get_logger(), "Graph file %s does not exist!", graph_filename_);
     //   return false;
     // }

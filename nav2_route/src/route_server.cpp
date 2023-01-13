@@ -16,6 +16,7 @@
 
 using nav2_util::declare_parameter_if_not_declared;
 using std::placeholders::_1;
+using std::placeholders::_2;
 
 namespace nav2_route
 {
@@ -45,6 +46,12 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     node, "compute_route",
     std::bind(&RouteServer::computeRoute, this),
     nullptr, std::chrono::milliseconds(500), true);
+
+  set_graph_service_ = node->create_service<nav2_msgs::srv::SetRouteGraph>(
+    "set_route_graph",
+    std::bind(
+      &RouteServer::setRouteGraph, this,
+      std::placeholders::_1, std::placeholders::_2));
 
  declare_parameter_if_not_declared(
     node, "route_frame", rclcpp::ParameterValue(std::string("map")));
@@ -117,6 +124,7 @@ RouteServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Cleaning up");
   action_server_.reset();
   graph_vis_publisher_.reset();
+  set_graph_service_.reset();
   transform_listener_.reset();
   tf_.reset();
   graph_.clear();
@@ -213,8 +221,6 @@ RouteServer::computeRoute()
     // Compute the route via graph-search, returns a node-edge sequence
     Route route = route_planner_->findRoute(graph_, start_route, end_route);
 
-    // Connect to start/goal outside of route? TODO or bt with planner server or interest? (in interface?)
-
     // Create a dense path for use and debugging visualization
     result->route = utils::toMsg(route, route_frame_, this->now());
     result->path = path_converter_->densify(route, route_frame_, this->now());
@@ -232,6 +238,21 @@ RouteServer::computeRoute()
   }
 
   action_server_->succeeded_current(result);
+}
+
+void RouteServer::setRouteGraph(
+  const std::shared_ptr<nav2_msgs::srv::SetRouteGraph::Request> request,
+  std::shared_ptr<nav2_msgs::srv::SetRouteGraph::Response> response)
+{
+  if (!graph_loader_->loadGraphFromFile(graph_, request->graph_filepath)) {
+    response->success = false;
+    return;
+  }
+
+  // Re-compute the graph's kd-tree and publish new graph
+  node_spatial_tree_->computeTree(graph_);
+  graph_vis_publisher_->publish(utils::toMsg(graph_, route_frame_, this->now()));
+  response->success = true;
 }
 
 rcl_interfaces::msg::SetParametersResult

@@ -31,6 +31,7 @@
 #include "nav2_msgs/action/compute_route.hpp"
 #include "nav2_msgs/msg/route.hpp"
 #include "nav2_msgs/msg/route_node.hpp"
+#include "nav2_msgs/srv/set_route_graph.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 
 #include "nav2_route/types.hpp"
@@ -114,6 +115,15 @@ protected:
   NodeExtents findStartandGoalNodeLocations(std::shared_ptr<const ActionBasicGoal> goal);
 
   /**
+   * @brief The service callback to set a new route graph
+   * @param request to the service
+   * @param response from the service
+   */
+  void setRouteGraph(
+    const std::shared_ptr<nav2_msgs::srv::SetRouteGraph::Request> request,
+    std::shared_ptr<nav2_msgs::srv::SetRouteGraph::Response> response);
+
+  /**
    * @brief Callback executed when a parameter change is detected
    * @param event ParameterEvent message
    */
@@ -133,9 +143,8 @@ protected:
   // Publish the route for visualization
   rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr graph_vis_publisher_;
 
-  // Get, set or modify graph
-  // rclcpp::Service<nav2_msgs::srv::GetRouteGraph>::SharedPtr get_graph_service_; // basics
-  // rclcpp::Service<nav2_msgs::srv::SetRouteGraph>::SharedPtr set_graph_service_; // file
+  // Set or modify graph
+  rclcpp::Service<nav2_msgs::srv::SetRouteGraph>::SharedPtr set_graph_service_;
 
   // Interal tools
   std::shared_ptr<GraphFileLoader> graph_loader_;

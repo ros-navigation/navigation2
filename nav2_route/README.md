@@ -15,8 +15,6 @@ It is required that the file contains unique IDs for each node and edge (includi
 
 - [ ] implement contextual error codes
 
-- [ ] Create service interface definitions and callbacks to complete external API development
-
 - [ ] Create basic file format for graph + parser
 
 - [ ] Implement MVP: Costmap block/cost edge scorer, L2+multiplier edge scorer, plugin headers

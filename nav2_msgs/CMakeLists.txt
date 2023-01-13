@@ -31,6 +31,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/ClearCostmapAroundRobot.srv"
   "srv/ClearEntireCostmap.srv"
   "srv/ManageLifecycleNodes.srv"
+  "srv/SetRouteGraph.srv"
   "srv/LoadMap.srv"
   "srv/SaveMap.srv"
   "action/AssistedTeleop.action"
