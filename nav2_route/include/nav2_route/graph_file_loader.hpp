@@ -21,8 +21,10 @@
 #include <filesystem>
 
 #include "nav2_util/lifecycle_node.hpp"
+#include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
 #include "nav2_util/node_utils.hpp"
+#include "nav2_route/types.hpp"
 
 namespace nav2_route
 {
@@ -40,18 +42,7 @@ public:
   explicit GraphFileLoader(
     nav2_util::LifecycleNode::SharedPtr node,
     std::shared_ptr<tf2_ros::Buffer> tf,
-    const std::string frame)
-  {
-    // TODO plugin header + loader to use instead. THis will manage plugin get / load
-    // TODO logging
-    tf_ = tf;
-    route_frame_ = frame;
-    (void)node;
-    nav2_util::declare_parameter_if_not_declared(
-      node, "graph_filepath", rclcpp::ParameterValue(std::string("hi!")));
-    // TODO rclcpp::ParameterType::PARAMETER_STRING
-    graph_filepath_ = node->get_parameter("graph_filepath").as_string();
-  }
+    const std::string frame);
 
   /**
    * @brief A destructor for nav2_route::GraphFileLoader
@@ -63,61 +54,14 @@ public:
    * @param graph Graph to populate
    * @return bool If successful
    */
-  bool loadGraphFromFile(Graph & graph, std::string filepath = "")
-  {
-    // Check filepath exists TODO
-    std::string filepath_to_load;
-    if (filepath.empty()) {
-      filepath_to_load = graph_filepath_;
-    } else {
-      filepath_to_load = filepath;
-    }
-
-    // if (!fileExists(filepath_to_load)) {
-    //   RCLCPP_ERROR(node->get_logger(), "Graph file %s does not exist!", graph_filename_);
-    //   return false;
-    // }
-
-    // Validate file is legit using a plugin API TODO
-    // Load file using a plugin API
-    // Convert all coordinates to `frame` (in a new method) for standardization
-
-    // A test graph for visualization and prototyping
-    graph.resize(9);
-    unsigned int idx = 0;
-    unsigned int ids = 1;
-    for (unsigned int i = 0; i != 3; i++) {
-      for (unsigned int j = 0; j != 3; j++) {
-        graph[idx].nodeid = ids;
-        graph[idx].coords.x = i;
-        graph[idx].coords.y = j;
-        idx++;
-        ids++;
-      }
-    }
-
-    EdgeCost default_cost;
-    // Creates bidirectional routs from 0-1-4-5 & directional only route from 0-3-6
-    graph[0].addEdge(default_cost, &graph[1], ids++);
-    graph[1].addEdge(default_cost, &graph[0], ids++);
-    graph[4].addEdge(default_cost, &graph[1], ids++);
-    graph[1].addEdge(default_cost, &graph[4], ids++);
-    graph[5].addEdge(default_cost, &graph[4], ids++);
-    graph[4].addEdge(default_cost, &graph[5], ids++);
-    graph[0].addEdge(default_cost, &graph[3], ids++);
-    graph[3].addEdge(default_cost, &graph[6], ids++);
-    return true;
-  };
+  bool loadGraphFromFile(Graph & graph, std::string filepath = "");
 
   /**
    * @brief Checks if a file even exists on the filesystem
    * @param filepath file to check
    * @return bool If the file exists
    */
-  bool fileExists(const std::string & filepath)
-  {
-    return std::filesystem::exists(filepath);
-  }
+  inline bool fileExists(const std::string & filepath);
 
 protected:
   std::string route_frame_, graph_filepath_;

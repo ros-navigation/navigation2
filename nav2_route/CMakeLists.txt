@@ -42,6 +42,11 @@ include_directories(
 # Main library
 add_library(${library_name} SHARED
   src/route_server.cpp
+  src/route_planner.cpp
+  src/edge_scorer.cpp
+  src/node_spatial_tree.cpp
+  src/path_converter.cpp
+  src/graph_file_loader.cpp
 )
 
 ament_target_dependencies(${library_name}

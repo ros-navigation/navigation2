@@ -74,40 +74,13 @@ public:
   /**
    * @brief Destructor
    */
-  ~NodeSpatialTree()
-  {
-    if (kdtree_) {
-      delete kdtree_;
-      kdtree_ = nullptr;
-    }
-
-    if (adaptor_) {
-      delete adaptor_;
-      adaptor_ = nullptr;
-    }
-  }
+  ~NodeSpatialTree();
 
   /**
    * @brief Compute the kd-tree based on the graph node information
    * @param graph The graph of nodes for the route
    */
-  void computeTree(Graph & graph)
-  {
-    if (kdtree_) {
-      delete kdtree_;
-      kdtree_ = nullptr;
-    }
-
-    if (adaptor_) {
-      delete adaptor_;
-      adaptor_ = nullptr;
-    }
-
-    adaptor_ = new GraphAdaptor(graph);
-    kdtree_ = new kd_tree_t(DIMENSION, *adaptor_, nanoflann::KDTreeSingleIndexAdaptorParams(10));
-    kdtree_->buildIndex();
-    graph_ = &graph;
-  }
+  void computeTree(Graph & graph);
 
   /**
    * @brief Find the closest node to a given pose
@@ -115,22 +88,7 @@ public:
    * @param node_id The return ID of the node
    * @return if successfully found
    */
-  bool findNearestGraphNodeToPose(const geometry_msgs::msg::PoseStamped & pose_in, unsigned int & node_id)
-  {
-    size_t num_results = 1;
-    std::vector<unsigned int> ret_index(num_results);
-    std::vector<double> out_dist_sqr(num_results);
-    const double query_pt[2] = {pose_in.pose.position.x, pose_in.pose.position.y};
-    num_results = kdtree_->knnSearch(&query_pt[0], num_results, &ret_index[0], &out_dist_sqr[0]);
-
-    if (num_results == 0) {
-      std::cout << "No nearest neighbor results found!" << std::endl;
-      return false;
-    }
-
-    node_id = ret_index[0];
-    return true;
-  }
+  bool findNearestGraphNodeToPose(const geometry_msgs::msg::PoseStamped & pose_in, unsigned int & node_id);
 
 protected:
   kd_tree_t * kdtree_;

@@ -22,6 +22,8 @@
 #include <mutex>
 #include <algorithm>
 
+#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_util/node_utils.hpp"
 #include "nav2_route/types.hpp"
 #include "nav2_route/utils.hpp"
 
@@ -44,66 +46,35 @@ public:
    */
   ~PathConverter() = default;
 
-  void configure(nav2_util::LifecycleNode::SharedPtr node)
-  {
-    nav2_util::declare_parameter_if_not_declared(
-      node, "path_density", rclcpp::ParameterValue(0.05));
-    density_ = static_cast<float>(node->get_parameter("path_density").as_double());
+  /**
+   * @brief Configure the object
+   * @param node Node to use to get params and create interfaces
+   */
+  void configure(nav2_util::LifecycleNode::SharedPtr node);
 
-    path_pub_ = node->create_publisher<nav_msgs::msg::Path>("plan", 1);
-    path_pub_->on_activate();
-  }
-
+  /**
+   * @brief Convert a Route into a dense path
+   * @param route Route object
+   * @param frame Frame ID from planning
+   * @param now Time
+   * @return Path of the route
+   */
   nav_msgs::msg::Path densify(
   const Route & route,
   const std::string & frame,
-  const rclcpp::Time & now)
-  {
-    nav_msgs::msg::Path path;
+  const rclcpp::Time & now);
 
-    // Populate header
-    path.header.stamp = now;
-    path.header.frame_id = frame;
-
-    // Fill in path via route edges
-    for (unsigned int i = 0; i != route.edges.size(); i++) {
-      const EdgePtr edge = route.edges[i];
-      const Coordinates & start = edge->start->coords;
-      const Coordinates & end = edge->end->coords; 
-      interpolateEdge(start.x, start.y, end.x, end.y, path.poses);
-    }
-
-    // publish path similar to planner server
-    auto path_ptr = std::make_unique<nav_msgs::msg::Path>(path);
-    path_pub_->publish(std::move(path_ptr));
-
-    return path;
-  }
-
+  /**
+   * @brief Convert an individual edge into a dense line
+   * @param x0 X initial
+   * @param y0 Y initial
+   * @param x1 X final
+   * @param y1 Y final
+   * @param poses Pose vector reference to populate
+   */
   void interpolateEdge(
     float x0, float y0, float x1, float y1,
-    std::vector<geometry_msgs::msg::PoseStamped> & poses)
-  {
-    // Find number of points to populate by given density
-    const float mag = hypotf(x1 - x0, y1 - y0);
-    const unsigned int num_pts = ceil(mag / density_);
-    const float iterpolated_dist = mag / num_pts;
-
-    // Find unit vector direction
-    float ux = (x1 - x0) / mag;
-    float uy = (y1 - y0) / mag;
-
-    // March along it until dist
-    float x = x0;
-    float y = y0;
-    unsigned int pt_ctr = 0;
-    while (pt_ctr < num_pts) {
-      x += ux * iterpolated_dist;
-      y += uy * iterpolated_dist;
-      pt_ctr++;
-      poses.push_back(utils::toMsg(x, y));
-    }
-  }
+    std::vector<geometry_msgs::msg::PoseStamped> & poses);
 
 protected:
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr path_pub_;

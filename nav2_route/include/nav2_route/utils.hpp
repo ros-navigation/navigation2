@@ -19,6 +19,7 @@
 #include "visualization_msgs/msg/marker.hpp"
 #include "geometry_msgs/msg/vector3.hpp"
 #include "nav2_util/geometry_utils.hpp"
+#include "nav2_msgs/msg/route.hpp"
 
 #ifndef NAV2_ROUTE__UTILS_HPP_
 #define NAV2_ROUTE__UTILS_HPP_
@@ -35,7 +36,7 @@ namespace utils
  * @param y Y Coordinates
  * @return PoseStamped of the position
  */
-geometry_msgs::msg::PoseStamped toMsg(const float x, const float y)
+inline geometry_msgs::msg::PoseStamped toMsg(const float x, const float y)
 {
   geometry_msgs::msg::PoseStamped pose;
   pose.pose.position.x = x;
@@ -50,7 +51,7 @@ geometry_msgs::msg::PoseStamped toMsg(const float x, const float y)
  * @param now Current time to use
  * @return MarkerArray of the graph
  */
-visualization_msgs::msg::MarkerArray toMsg(
+inline visualization_msgs::msg::MarkerArray toMsg(
   const Graph & graph, const std::string & frame, const rclcpp::Time & now)
 {
   visualization_msgs::msg::MarkerArray msg;
@@ -157,7 +158,7 @@ visualization_msgs::msg::MarkerArray toMsg(
  * @param now Current time to use
  * @return Route message
  */
-nav2_msgs::msg::Route toMsg(
+inline nav2_msgs::msg::Route toMsg(
   const Route & route, const std::string & frame, const rclcpp::Time & now)
 {
   nav2_msgs::msg::Route msg;

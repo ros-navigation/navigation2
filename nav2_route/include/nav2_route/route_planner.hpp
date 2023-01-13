@@ -45,154 +45,74 @@ public:
    */
   ~RoutePlanner() = default;
 
-  void configure(nav2_util::LifecycleNode::SharedPtr node)
-  {
-    nav2_util::declare_parameter_if_not_declared(
-      node, "max_iterations", rclcpp::ParameterValue(0));
-    max_iterations_ = node->get_parameter("max_iterations").as_int();
+  /**
+   * @brief Configure the route planner, get parameters
+   * @param node Node object to get parametersfrom
+   */
+  void configure(nav2_util::LifecycleNode::SharedPtr node);
 
-    if (max_iterations_ == 0) {
-      max_iterations_ = std::numeric_limits<int>::max();
-    }
-
-    edge_scorer_ = std::make_unique<EdgeScorer>(node);
-  }
-
-  Route findRoute(Graph & graph, unsigned int start, unsigned int goal)
-  {
-    // Find the start and goal pointers, it is important in this function
-    // that these are the actual pointers, so that copied addresses are
-    // not lost in the route when this function goes out of scope.
-    const NodePtr & start_node = &graph.at(start);
-    const NodePtr & goal_node = &graph.at(goal);
-    findShortestGraphTraversal(graph, start_node, goal_node);
-
-    EdgePtr & parent_edge = goal_node->search_state.parent_edge;
-    if (!parent_edge) {
-      // TODO exception / log failed to find route from start to goal
-    }
-
-    // Convert graph traversal into a meaningful route
-    Route route;
-    while (parent_edge) {
-      route.edges.push_back(parent_edge);
-      parent_edge = parent_edge->start->search_state.parent_edge;
-    }
-
-    if (!parent_edge->start || parent_edge->start->nodeid != start_node->nodeid) {
-      // TODO excpetion failed to get path properly, log
-    }
-
-    std::reverse(route.edges.begin(), route.edges.end());
-    route.start_node = start_node;
-    route.route_cost = goal_node->search_state.cost;
-    return route;
-  }
+  /**
+   * @brief Find the route from start to goal on the graph
+   * @param graph Graph to search
+   * @param start Start index in the graph of the start node
+   * @param goal Goal index in the graph of the goal node
+   * @return Route object containing the navigation graph route
+   */
+  Route findRoute(Graph & graph, unsigned int start, unsigned int goal);
 
 protected:
-  inline void resetSearchStates(Graph & graph)
-  {
-    // For graphs < 75,000 nodes, iterating through one time on initialization to reset the state
-    // is neglibably different to allocating & deallocating the complimentary blocks of memory
-    for (unsigned int i = 0; i != graph.size(); i++) {
-      graph[i].search_state.reset();
-    }
-  }
+  /**
+   * @brief Reset the search state of the graph nodes
+   * @param graph Graph to reset
+   */
+  inline void resetSearchStates(Graph & graph);
 
-  void findShortestGraphTraversal(Graph & graph, const NodePtr start, const NodePtr goal)
-  {
-    // Setup the Dijkstra's search problem
-    goal_id_ = goal->nodeid;
-    resetSearchStates(graph);
-    start->search_state.cost = 0.0;
-    addNode(0.0, start);
+  /**
+   * @brief Dikstra's algorithm search on the graph
+   * @param graph Graph to search
+   * @param start Start Node pointer
+   * @param goal Goal node pointer
+   */
+  void findShortestGraphTraversal(Graph & graph, const NodePtr start, const NodePtr goal);
 
-    NodePtr neighbor{nullptr};
-    EdgePtr edge{nullptr};
-    float potential_cost = 0.0;
-    int iterations = 0;
-    while (!queue_.empty() && iterations < max_iterations_) {
-      iterations++;
+  /**
+   * @brief Gets the traversal cost for an edge using edge scorers
+   * @param edge Edge pointer to find traveral cost for
+   * @return travel cost
+   */
+  inline float getTraversalCost(const EdgePtr edge);
 
-      // Get the next lowest cost node
-      auto [curr_cost, node] = getNextNode();
+  /**
+   * @brief Gets the next node in the priority queue for search
+   * @return Next node pointer in queue with cost
+   */
+  inline NodeElement getNextNode();
 
-      // This has been visited, thus already lowest cost
-      if (curr_cost != node->search_state.cost) {
-        continue;
-      }
+  /**
+   * @brief Adds a node to the priority queue for search
+   * @param cost Priority level
+   * @param node Node pointer to insert
+   */
+  inline void addNode(const float cost, const NodePtr node);
 
-      // We have the shortest path
-      if (isGoal(node)) {
-        break;
-      }
+  /**
+   * @brief Gets the edges from a given node
+   * @param node Node pointer to check
+   * @return A vector of edges that the node contains
+   */
+  inline EdgeVector & getEdges(const NodePtr node);
 
-      // Expand to connected nodes
-      EdgeVector & edges = getEdges(node);
-      for (unsigned int edge_num = 0; edge_num != edges.size(); edge_num++) {
-        edge = &edges[edge_num];
-        neighbor = edge->end;
-        potential_cost = curr_cost + getTraversalCost(edge);
-        if (potential_cost < neighbor->search_state.cost) {
-          neighbor->search_state.parent_edge = edge;
-          neighbor->search_state.cost = potential_cost;
-          addNode(potential_cost, neighbor);
-        }
-      }
-    }
+  /**
+   * @brief Clears the priority queue
+   */
+  inline void clearQueue();
 
-    // Reset state
-    clearQueue();
-
-    if (iterations == max_iterations_) {
-      // TODO excetpion max its exceeded / log
-    }
-  }
-
-  inline float getTraversalCost(const EdgePtr edge)
-  {
-    if (!edge->edge_cost.overridable || edge_scorer_->numPlugins() == 0) {
-      if (edge->edge_cost.cost != 0.0) {
-        return edge->edge_cost.cost;
-      } else {
-        // We need some non-zero value if users didn't populate their files properly
-        return hypotf(
-          edge->end->coords.x - edge->start->coords.x,
-          edge->end->coords.y - edge->start->coords.y);
-      }
-    }
-
-    return edge_scorer_->score(edge);    
-  }
-
-  inline NodeElement getNextNode()
-  {
-    NodeElement data = queue_.top();
-    queue_.pop();
-    return data;
-  }
-
-  inline void addNode(const float cost, const NodePtr node)
-  {
-     queue_.emplace(cost, node);
-  }
-
-  inline EdgeVector & getEdges(const NodePtr node)
-  {
-    return node->neighbors;
-  }
-
-  inline void clearQueue()
-  {
-    // TODO test if just reconstructing each request, or while pop, or this is fastest
-    NodeQueue q;
-    std::swap(queue_, q);
-  }
-
-  inline bool isGoal(const NodePtr node)
-  {
-    return node->nodeid == goal_id_;
-  }
+  /**
+   * @brief Checks if a given node is the goal node
+   * @param node Node to check
+   * @return bool If this node is the goal
+   */
+  inline bool isGoal(const NodePtr node);
 
   int max_iterations_{0};
   unsigned int goal_id_{0};
