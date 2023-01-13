@@ -36,7 +36,6 @@ class RoutePlanner
 public:
   /**
    * @brief A constructor for nav2_route::RoutePlanner
-   * @param options Additional options to control creation of the node.
    */
   explicit RoutePlanner() = default;
 
@@ -45,7 +44,7 @@ public:
    */
   ~RoutePlanner() = default;
 
-  void configure()
+  void configure(nav2_util::LifecycleNode::SharedPtr /*node*/)
   {
     // TODO get params, create and initialze edge scorer object, max iterations
 

@@ -69,7 +69,11 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   // Create main planning algorithm
   route_planner_ = std::make_shared<RoutePlanner>();
-  route_planner_->configure();
+  route_planner_->configure(node);
+
+  // Create Route to path conversion utility
+  path_converter_ = std::make_shared<PathConverter>();
+  path_converter_->configure(node);
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -203,7 +207,7 @@ RouteServer::computeRoute()
     auto [start_route, end_route] = findStartandGoalNodeLocations(goal);
     if (start_route == end_route) {
       RCLCPP_WARN(get_logger(), "The same start and end route nodes are the same!");
-      // TODO throw exception
+      // TODO throw exception or immediate success with single point?
     }
 
     // Compute the route via graph-search, returns a node-edge sequence
@@ -212,8 +216,8 @@ RouteServer::computeRoute()
     // Connect to start/goal outside of route?TODO or bt with planner server or interest?
 
     // Create a dense path for use and debugging visualization
-    // result->route = utils::toMsg(route, route_frame_, this->now());
-    // result->path = path_converter_->densify(route);//TODO
+    // result->route = utils::toMsg(route, route_frame_, this->now());//TODO
+    result->path = path_converter_->densify(route, route_frame_, this->now());
   } catch (...) {
     // contextual exceptions TODO
   }

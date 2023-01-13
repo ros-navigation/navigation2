@@ -1,5 +1,113 @@
-// (check if same as before to pass, density param, route frame param for population, node to store, publish 'path' itself)
+// Copyright (c) 2023, Samsung Research America
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
+#ifndef NAV2_ROUTE__PATH_CONVERTER_HPP_
+#define NAV2_ROUTE__PATH_CONVERTER_HPP_
+
+#include <string>
+#include <limits>
+#include <memory>
+#include <vector>
+#include <mutex>
+#include <algorithm>
+
+#include "nav2_route/types.hpp"
+#include "nav2_route/utils.hpp"
+
+namespace nav2_route
+{
+/**
+ * @class nav2_route::PathConverter
+ * @brief An helper to convert the route into dense paths
+ */
+class PathConverter
+{
+public:
+  /**
+   * @brief A constructor for nav2_route::PathConverter
+   */
+  explicit PathConverter() = default;
+
+  /**
+   * @brief A destructor for nav2_route::PathConverter
+   */
+  ~PathConverter() = default;
+
+  void configure(nav2_util::LifecycleNode::SharedPtr node)
+  {
+    // TODO get parameters (density of points)
+    density_ = 0.05;
+    path_pub_ = node->create_publisher<nav_msgs::msg::Path>("plan", 1);
+    path_pub_->on_activate();
+  }
+
+  nav_msgs::msg::Path densify(
+  const Route & route,
+  const std::string & frame,
+  const rclcpp::Time & now)
+  {
     nav_msgs::msg::Path path;
-    path.header.stamp = this->now();
-    path.header.frame_id = route_frame_;
+
+    // Populate header
+    path.header.stamp = now;
+    path.header.frame_id = frame;
+
+    // Fill in path via route edges
+    for (unsigned int i = 0; i != route.edges.size(); i++) {
+      const EdgePtr edge = route.edges[i];
+      const Coordinates & start = edge->start->coords;
+      const Coordinates & end = edge->end->coords; 
+      interpolateEdge(start.x, start.y, end.x, end.y, path.poses);
+    }
+
+    // publish path similar to planner server
+    auto path_ptr = std::make_unique<nav_msgs::msg::Path>(path);
+    path_pub_->publish(std::move(path_ptr));
+
+    return path;
+  }
+
+  void interpolateEdge(
+    float x0, float y0, float x1, float y1,
+    std::vector<geometry_msgs::msg::PoseStamped> & poses)
+  {
+    // Find number of points to populate by given density
+    const float mag = hypotf(x1 - x0, y1 - y0);
+    const unsigned int num_pts = ceil(mag / density_);
+    const float iterpolated_dist = mag / num_pts;
+
+    // Find unit vector direction
+    float ux = (x1 - x0) / mag;
+    float uy = (y1 - y0) / mag;
+
+    // March along it until dist
+    float x = x0;
+    float y = y0;
+    unsigned int pt_ctr = 0;
+    while (pt_ctr < num_pts) {
+      x += ux * iterpolated_dist;
+      y += uy * iterpolated_dist;
+      pt_ctr++;
+      poses.push_back(utils::toMsg(x, y));
+    }
+  }
+
+protected:
+  rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr path_pub_;
+  float density_;
+};
+
+}  // namespace nav2_route
+
+#endif  // NAV2_ROUTE__PATH_CONVERTER_HPP_

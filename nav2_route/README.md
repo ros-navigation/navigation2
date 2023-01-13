@@ -13,7 +13,6 @@ It is required that the file contains unique IDs for each node and edge (includi
 
 # Steve's TODO list
 
-- [ ] Create generic API headers for major objects of interest to create system structure
 - [ ] Create interface definitions, service / topic interfaces and callbacks to complete external API development w.r.t. internal classes
 
 - [ ] Create basic file format for graph + parser to get started with something for demonstrations to have data to work with while developing

@@ -36,6 +36,7 @@
 #include "nav2_route/graph_file_loader.hpp"
 #include "nav2_route/route_planner.hpp"
 #include "nav2_route/node_spatial_tree.hpp"
+#include "nav2_route/path_converter.hpp"
 
 namespace nav2_route
 {
@@ -138,6 +139,7 @@ protected:
   std::shared_ptr<GraphFileLoader> graph_loader_;
   std::shared_ptr<NodeSpatialTree> node_spatial_tree_;
   std::shared_ptr<RoutePlanner> route_planner_;
+  std::shared_ptr<PathConverter> path_converter_;
 
   // Navigation graph object and utils
   nav2_route::Graph graph_;

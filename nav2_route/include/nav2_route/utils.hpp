@@ -30,6 +30,20 @@ namespace utils
 {
 
 /**
+ * @brief Convert the position into a pose
+ * @param x X Coordinates
+ * @param y Y Coordinates
+ * @return PoseStamped of the position
+ */
+geometry_msgs::msg::PoseStamped toMsg(const float x, const float y)
+{
+  geometry_msgs::msg::PoseStamped pose;
+  pose.pose.position.x = x;
+  pose.pose.position.y = y;
+  return pose;
+}
+
+/**
  * @brief Convert the route graph into a visualization marker array for visualization
  * @param graph Graph of nodes and edges
  * @param frame Frame ID to use
