@@ -46,8 +46,10 @@ public:
 
   void configure(nav2_util::LifecycleNode::SharedPtr node)
   {
-    // TODO get parameters (density of points)
-    density_ = 0.05;
+    nav2_util::declare_parameter_if_not_declared(
+      node, "path_density", rclcpp::ParameterValue(0.05));
+    density_ = static_cast<float>(node->get_parameter("path_density").as_double());
+
     path_pub_ = node->create_publisher<nav_msgs::msg::Path>("plan", 1);
     path_pub_->on_activate();
   }

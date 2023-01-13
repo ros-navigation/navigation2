@@ -29,6 +29,8 @@
 #include "nav2_util/node_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_msgs/action/compute_route.hpp"
+#include "nav2_msgs/msg/route.hpp"
+#include "nav2_msgs/msg/route_node.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 
 #include "nav2_route/types.hpp"

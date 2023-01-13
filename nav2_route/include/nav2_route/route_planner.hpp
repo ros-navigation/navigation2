@@ -44,9 +44,13 @@ public:
    */
   ~RoutePlanner() = default;
 
-  void configure(nav2_util::LifecycleNode::SharedPtr /*node*/)
+  void configure(nav2_util::LifecycleNode::SharedPtr node)
   {
-    // TODO get params, create and initialze edge scorer object, max iterations
+    // TODO create and initialze edge scorer object
+
+    nav2_util::declare_parameter_if_not_declared(
+      node, "max_iterations", rclcpp::ParameterValue(0));
+    max_iterations_ = node->get_parameter("max_iterations").as_int();
 
     if (max_iterations_ == 0) {
       max_iterations_ = std::numeric_limits<int>::max();

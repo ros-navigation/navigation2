@@ -13,11 +13,13 @@ It is required that the file contains unique IDs for each node and edge (includi
 
 # Steve's TODO list
 
-- [ ] Create interface definitions, service / topic interfaces and callbacks to complete external API development w.r.t. internal classes
+- [ ] implement contextual error codes
 
-- [ ] Create basic file format for graph + parser to get started with something for demonstrations to have data to work with while developing
+- [ ] Create service interface definitions and callbacks to complete external API development
 
-- [ ] Implement MVP: path densifier, Costmap block/cost edge scorer, L2+multiplier edge scorer, plugin headers
+- [ ] Create basic file format for graph + parser
+
+- [ ] Implement MVP: Costmap block/cost edge scorer, L2+multiplier edge scorer, plugin headers
 
 - [ ] Implement live: route analyzer, Speed limit parse/edge action, call ext server for action base class + demo plugin, pause parse/node action
 

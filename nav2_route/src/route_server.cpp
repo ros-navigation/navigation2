@@ -213,10 +213,10 @@ RouteServer::computeRoute()
     // Compute the route via graph-search, returns a node-edge sequence
     Route route = route_planner_->findRoute(graph_, start_route, end_route);
 
-    // Connect to start/goal outside of route?TODO or bt with planner server or interest?
+    // Connect to start/goal outside of route? TODO or bt with planner server or interest? (in interface?)
 
     // Create a dense path for use and debugging visualization
-    // result->route = utils::toMsg(route, route_frame_, this->now());//TODO
+    result->route = utils::toMsg(route, route_frame_, this->now());
     result->path = path_converter_->densify(route, route_frame_, this->now());
   } catch (...) {
     // contextual exceptions TODO

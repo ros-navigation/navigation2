@@ -150,6 +150,39 @@ visualization_msgs::msg::MarkerArray toMsg(
   return msg;
 }
 
+/**
+ * @brief Convert the route into a message
+ * @param route Route of nodes and edges
+ * @param frame Frame ID to use
+ * @param now Current time to use
+ * @return Route message
+ */
+nav2_msgs::msg::Route toMsg(
+  const Route & route, const std::string & frame, const rclcpp::Time & now)
+{
+  nav2_msgs::msg::Route msg;
+  msg.header.frame_id = frame;
+  msg.header.stamp = now;
+  msg.route_cost = route.route_cost;
+
+  nav2_msgs::msg::RouteNode route_node;
+  route_node.nodeid = route.start_node->nodeid;
+  route_node.position.x = route.start_node->coords.x;
+  route_node.position.y = route.start_node->coords.y;
+  msg.nodes.push_back(route_node);
+
+  // Provide the Node info and Edge IDs we're traversing through
+  for (unsigned int i = 0; i != route.edges.size(); i++) {
+    msg.edge_ids.push_back(route.edges[i]->edgeid);
+    route_node.nodeid = route.edges[i]->end->nodeid;
+    route_node.position.x = route.edges[i]->end->coords.x;
+    route_node.position.y = route.edges[i]->end->coords.y;
+    msg.nodes.push_back(route_node);
+  }
+
+  return msg;
+}
+
 }  // namespace utils
 
 }  // namespace nav2_route

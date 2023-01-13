@@ -6,14 +6,12 @@ geometry_msgs/PoseStamped goal
 
 bool use_start # Whether to use the start field or find the start pose in TF
 bool use_poses # Whether to use the poses or the IDs fields for request
-
-# TODO connect up via free-space planning to start/end
 ---
 #result definition
 
 builtin_interfaces/Duration planning_time
 nav_msgs/Path path
-# TODO route sparse message
+Route route
 uint16 error_code
 ---
 #feedback definition
