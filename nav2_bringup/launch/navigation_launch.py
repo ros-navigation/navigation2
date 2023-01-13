@@ -42,6 +42,7 @@ def generate_launch_description():
     lifecycle_nodes = ['controller_server',
                        'smoother_server',
                        'planner_server',
+                       'route_server',
                        'behavior_server',
                        'bt_navigator',
                        'waypoint_follower',
@@ -138,6 +139,16 @@ def generate_launch_description():
                 arguments=['--ros-args', '--log-level', log_level],
                 remappings=remappings),
             Node(
+                package='nav2_route',
+                executable='route_server',
+                name='route_server',
+                output='screen',
+                respawn=use_respawn,
+                respawn_delay=2.0,
+                parameters=[configured_params],
+                arguments=['--ros-args', '--log-level', log_level],
+                remappings=remappings),
+            Node(
                 package='nav2_behaviors',
                 executable='behavior_server',
                 name='behavior_server',
@@ -212,6 +223,12 @@ def generate_launch_description():
                         package='nav2_planner',
                         plugin='nav2_planner::PlannerServer',
                         name='planner_server',
+                        parameters=[configured_params],
+                        remappings=remappings),
+                    ComposableNode(
+                        package='nav2_route',
+                        plugin='nav2_route::RouteServer',
+                        name='route_server',
                         parameters=[configured_params],
                         remappings=remappings),
                     ComposableNode(

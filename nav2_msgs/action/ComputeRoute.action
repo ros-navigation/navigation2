@@ -1,3 +1,11 @@
+uint16 NONE=0
+uint16 UNKNOWN=400
+uint16 TF_ERROR=401
+uint16 NO_VALID_GRAPH=402
+uint16 INDETERMINANT_NODES_ON_GRAPH=403
+uint16 TIMEOUT=404
+uint16 NO_VALID_ROUTE=405
+
 #goal definition
 uint16 start_id
 geometry_msgs/PoseStamped start

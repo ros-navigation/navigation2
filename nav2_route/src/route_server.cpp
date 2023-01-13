@@ -151,7 +151,9 @@ RouteServer::findStartandGoalNodeLocations(std::shared_ptr<const ActionBasicGoal
   if (goal->use_start) {
     start_pose = goal->start;
   } else {
-    nav2_util::getCurrentPose(start_pose, *tf_, route_frame_, base_frame_);  // TODO exception?
+    if (!nav2_util::getCurrentPose(start_pose, *tf_, route_frame_, base_frame_)) {
+      throw nav2_core::RouteTFError("Failed to obtain starting pose in: " + route_frame_);
+    }
   }
 
   // If start or goal not provided in route_frame, transform
@@ -160,7 +162,9 @@ RouteServer::findStartandGoalNodeLocations(std::shared_ptr<const ActionBasicGoal
       get_logger(),
       "Request start pose not in %s frame. Converting %s to route server frame.",
       start_pose.header.frame_id.c_str(), route_frame_.c_str());
-    nav2_util::transformPoseInTargetFrame(start_pose, start_pose, *tf_, route_frame_);  // TODO exception?
+    if (!nav2_util::transformPoseInTargetFrame(start_pose, start_pose, *tf_, route_frame_)) {
+      throw nav2_core::RouteTFError("Failed to transform starting pose to: " + route_frame_);
+    }
   }
 
   if (goal_pose.header.frame_id != route_frame_) {
@@ -168,7 +172,9 @@ RouteServer::findStartandGoalNodeLocations(std::shared_ptr<const ActionBasicGoal
       get_logger(),
       "Request goal pose not in %s frame. Converting %s to route server frame.",
       start_pose.header.frame_id.c_str(), route_frame_.c_str());
-    nav2_util::transformPoseInTargetFrame(goal_pose, goal_pose, *tf_, route_frame_);  // TODO exception?
+    if (!nav2_util::transformPoseInTargetFrame(goal_pose, goal_pose, *tf_, route_frame_) ) {
+      throw nav2_core::RouteTFError("Failed to transform goal pose to: " + route_frame_);
+    }
   }
 
   // Find closest route graph nodes to start and goal to plan between.
@@ -178,8 +184,8 @@ RouteServer::findStartandGoalNodeLocations(std::shared_ptr<const ActionBasicGoal
   if (!node_spatial_tree_->findNearestGraphNodeToPose(start_pose, start_route) ||
     !node_spatial_tree_->findNearestGraphNodeToPose(goal_pose, end_route))
   {
-    RCLCPP_ERROR(get_logger(), "Could not determine node closest to start or goal pose requested!");
-    // TODO throw exception
+    throw nav2_core::IndeterminantNodesOnGraph(
+      "Could not determine node closest to start or goal pose requested!");
   }
 
   return {start_route, end_route};
@@ -215,31 +221,61 @@ RouteServer::computeRoute()
   try {
     // Find the search boundaries
     auto [start_route, end_route] = findStartandGoalNodeLocations(goal);
-    if (start_route == end_route) {
-      RCLCPP_WARN(get_logger(), "The same start and end route nodes are the same!");
-      // TODO throw exception or immediate success with single point?
-    }
 
-    // Compute the route via graph-search, returns a node-edge sequence
-    Route route = route_planner_->findRoute(graph_, start_route, end_route);
+    Route route;
+    if (start_route == end_route) {
+      // Succeed with a single-point route
+      route.route_cost = 0.0;
+      route.start_node = &graph_.at(start_route);
+    } else {
+      // Compute the route via graph-search, returns a node-edge sequence
+      route = route_planner_->findRoute(graph_, start_route, end_route);
+    }
 
     // Create a dense path for use and debugging visualization
     result->route = utils::toMsg(route, route_frame_, this->now());
     result->path = path_converter_->densify(route, route_frame_, this->now());
-  } catch (...) {
-    // contextual exceptions TODO
-  }
 
-  auto cycle_duration = this->now() - start_time;
-  result->planning_time = cycle_duration;
-  if (max_planning_time_ && cycle_duration.seconds() > max_planning_time_) {
-    RCLCPP_WARN(
-      get_logger(),
-      "Route planner missed its desired rate of %.4f Hz. Current loop rate is %.4f Hz",
-      1 / max_planning_time_, 1 / cycle_duration.seconds());
-  }
+    auto cycle_duration = this->now() - start_time;
+    result->planning_time = cycle_duration;
+    if (max_planning_time_ && cycle_duration.seconds() > max_planning_time_) {
+      RCLCPP_WARN(
+        get_logger(),
+        "Route planner missed its desired rate of %.4f Hz. Current loop rate is %.4f Hz",
+        1 / max_planning_time_, 1 / cycle_duration.seconds());
+    }
 
-  action_server_->succeeded_current(result);
+    action_server_->succeeded_current(result);
+
+  } catch (nav2_core::NoValidRouteCouldBeFound & ex) {
+    exceptionWarning(goal, ex);
+    result->error_code = ActionBasicGoal::NO_VALID_ROUTE;
+    action_server_->terminate_current(result);
+  } catch (nav2_core::TimedOut & ex) {
+    exceptionWarning(goal, ex);
+    result->error_code = ActionBasicGoal::TIMEOUT;
+    action_server_->terminate_current(result);
+  } catch (nav2_core::RouteTFError & ex) {
+    exceptionWarning(goal, ex);
+    result->error_code = ActionBasicGoal::TF_ERROR;
+    action_server_->terminate_current(result);
+  } catch (nav2_core::NoValidGraph & ex) {
+    exceptionWarning(goal, ex);
+    result->error_code = ActionBasicGoal::NO_VALID_GRAPH;
+    action_server_->terminate_current(result);
+  } catch (nav2_core::IndeterminantNodesOnGraph & ex) {
+    exceptionWarning(goal, ex);
+    result->error_code = ActionBasicGoal::INDETERMINANT_NODES_ON_GRAPH;
+    action_server_->terminate_current(result);
+  } catch (nav2_core::RouteException & ex) {
+    exceptionWarning(goal, ex);
+    result->error_code = ActionBasicGoal::UNKNOWN;
+    action_server_->terminate_current(result);
+  } catch (std::exception & ex) {
+    exceptionWarning(goal, ex);
+    result->error_code = ActionBasicGoal::UNKNOWN;
+    action_server_->terminate_current(result);
+  }
 }
 
 void RouteServer::setRouteGraph(
@@ -260,6 +296,17 @@ void RouteServer::setRouteGraph(
   node_spatial_tree_->computeTree(graph_);
   graph_vis_publisher_->publish(utils::toMsg(graph_, route_frame_, this->now()));
   response->success = true;
+}
+
+void RouteServer::exceptionWarning(
+  std::shared_ptr<const ActionBasicGoal> goal,
+  const std::exception & ex)
+{
+  RCLCPP_WARN(
+    get_logger(),
+    "Route server failed to route request: Start: [(%0.2f, %0.2f) / %i] Goal: [(%0.2f, %0.2f) / %i]:"
+    " \"%s\"", goal->start.pose.position.x, goal->start.pose.position.y, goal->start_id,
+    goal->goal.pose.position.x, goal->goal.pose.position.y, goal->goal_id, ex.what());
 }
 
 rcl_interfaces::msg::SetParametersResult

@@ -25,6 +25,7 @@
 #include "nav2_route/types.hpp"
 #include "nav2_route/utils.hpp"
 #include "nav2_route/edge_scorer.hpp"
+#include "nav2_core/route_exceptions.hpp"
 
 namespace nav2_route
 {

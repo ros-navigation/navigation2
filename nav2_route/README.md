@@ -23,7 +23,6 @@ Requirements on file format // how things are parsed into the classes (metadata,
 
 # Steve's TODO list
 
-- [ ] implement contextual error codes
 - [ ] GPS support
 - [ ] Create basic file format for graph + parser
 

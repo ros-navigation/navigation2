@@ -32,6 +32,7 @@
 #include "nav2_msgs/msg/route.hpp"
 #include "nav2_msgs/msg/route_node.hpp"
 #include "nav2_msgs/srv/set_route_graph.hpp"
+#include "nav2_core/route_exceptions.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 
 #include "nav2_route/types.hpp"
@@ -122,6 +123,13 @@ protected:
   void setRouteGraph(
     const std::shared_ptr<nav2_msgs::srv::SetRouteGraph::Request> request,
     std::shared_ptr<nav2_msgs::srv::SetRouteGraph::Response> response);
+
+  /**
+   * @brief Log exception warnings
+   * @param goal Goal that failed
+   * @param exception Exception message
+   */
+  void exceptionWarning(std::shared_ptr<const ActionBasicGoal> goal, const std::exception & ex);
 
   /**
    * @brief Callback executed when a parameter change is detected

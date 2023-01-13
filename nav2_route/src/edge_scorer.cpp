@@ -46,7 +46,7 @@ EdgeScorer::EdgeScorer(nav2_util::LifecycleNode::SharedPtr node)
       RCLCPP_INFO(
         node->get_logger(), "Created edge cost function plugin %s of type %s",
         edge_cost_function_ids[i].c_str(), type.c_str());
-      scorer->configure(node, edge_cost_function_ids[i]);  // TODO TF, costmap?
+      scorer->configure(node, edge_cost_function_ids[i]);
       plugins_.push_back(std::move(scorer));
     } catch (const pluginlib::PluginlibException & ex) {
       RCLCPP_FATAL(

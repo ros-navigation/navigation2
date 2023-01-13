@@ -53,6 +53,10 @@ nav_msgs::msg::Path PathConverter::densify(
     interpolateEdge(start.x, start.y, end.x, end.y, path.poses);
   }
 
+  if (route.edges.empty()) {
+    path.poses.push_back(utils::toMsg(route.start_node->coords.x, route.start_node->coords.y));
+  }
+
   // publish path similar to planner server
   auto path_ptr = std::make_unique<nav_msgs::msg::Path>(path);
   path_pub_->publish(std::move(path_ptr));

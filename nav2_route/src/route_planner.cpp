@@ -39,6 +39,10 @@ void RoutePlanner::configure(nav2_util::LifecycleNode::SharedPtr node)
 
 Route RoutePlanner::findRoute(Graph & graph, unsigned int start, unsigned int goal)
 {
+  if (graph.empty()) {
+    throw nav2_core::NoValidGraph("Graph is invalid for routing!");
+  }
+
   // Find the start and goal pointers, it is important in this function
   // that these are the actual pointers, so that copied addresses are
   // not lost in the route when this function goes out of scope.
@@ -48,7 +52,7 @@ Route RoutePlanner::findRoute(Graph & graph, unsigned int start, unsigned int go
 
   EdgePtr & parent_edge = goal_node->search_state.parent_edge;
   if (!parent_edge) {
-    // TODO exception / log failed to find route from start to goal
+    throw nav2_core::NoValidRouteCouldBeFound("Could not find a route to the requested goal!");
   }
 
   // Convert graph traversal into a meaningful route
@@ -59,7 +63,7 @@ Route RoutePlanner::findRoute(Graph & graph, unsigned int start, unsigned int go
   }
 
   if (!parent_edge->start || parent_edge->start->nodeid != start_node->nodeid) {
-    // TODO excpetion failed to get path properly, log
+    throw nav2_core::NoValidRouteCouldBeFound("Could not find a valid route!");
   }
 
   std::reverse(route.edges.begin(), route.edges.end());
@@ -125,7 +129,7 @@ void RoutePlanner::findShortestGraphTraversal(
   clearQueue();
 
   if (iterations == max_iterations_) {
-    // TODO excetpion max its exceeded / log
+    throw nav2_core::TimedOut("Maximum iterations was exceeded!");
   }
 }
 
