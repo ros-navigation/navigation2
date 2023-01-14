@@ -55,7 +55,11 @@ bool GraphFileLoader::loadGraphFromFile(Graph & graph, std::string filepath)
 
   // Validate file is legit using a plugin API TODO
   // Load file using a plugin API
+
+
   // Convert all coordinates to `frame` (in a new method) for standardization
+  // Including conversion of GPS coordinates, so we can populate it in some cartesian frame necessary for
+  // traversal cost estimation and densification (and so we don't need to propogate it through our structures)
 
   // A test graph for visualization and prototyping
   graph.resize(9);

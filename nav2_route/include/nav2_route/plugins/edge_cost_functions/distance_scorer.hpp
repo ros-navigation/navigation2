@@ -72,7 +72,4 @@ protected:
 
 }  // namespace nav2_route
 
-#include "pluginlib/class_list_macros.hpp"
-PLUGINLIB_EXPORT_CLASS(nav2_route::DistanceScorer, nav2_route::EdgeCostFunction)
-
 #endif  // NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__DISTANCE_SCORER_HPP_

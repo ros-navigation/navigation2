@@ -55,17 +55,6 @@ struct Metadata
   std::unordered_map<std::string, std::any> data;
 };
 
-/**
- * @struct nav2_route::Coordinates
- * @brief An object to store Node coordinates in different frames
- */
-struct Coordinates
-{
-  std::string frame_id{"map"};
-  float x{0.0}, y{0.0};
-};
-
-
 struct Node;
 typedef Node * NodePtr;
 typedef std::vector<Node> NodeVector;
@@ -130,6 +119,16 @@ struct SearchState
     cost = std::numeric_limits<float>::max();
     parent_edge = nullptr;
   }
+};
+
+/**
+ * @struct nav2_route::Coordinates
+ * @brief An object to store Node coordinates in different frames
+ */
+struct Coordinates
+{
+  std::string frame_id{"map"};
+  float x{0.0}, y{0.0};
 };
 
 /**
