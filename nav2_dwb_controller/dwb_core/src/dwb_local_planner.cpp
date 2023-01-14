@@ -89,6 +89,9 @@ void DWBLocalPlanner::configure(
     rclcpp::ParameterValue(true));
   declare_parameter_if_not_declared(
     node, dwb_plugin_name_ + ".prune_distance",
+    rclcpp::ParameterValue(1.0));
+  declare_parameter_if_not_declared(
+    node, dwb_plugin_name_ + ".shorten_distance",
     rclcpp::ParameterValue(2.0));
   declare_parameter_if_not_declared(
     node, dwb_plugin_name_ + ".debug_trajectory_details",
@@ -115,6 +118,7 @@ void DWBLocalPlanner::configure(
 
   node->get_parameter(dwb_plugin_name_ + ".prune_plan", prune_plan_);
   node->get_parameter(dwb_plugin_name_ + ".prune_distance", prune_distance_);
+  node->get_parameter(dwb_plugin_name_ + ".shorten_distance", shorten_distance_);
   node->get_parameter(dwb_plugin_name_ + ".debug_trajectory_details", debug_trajectory_details_);
   node->get_parameter(dwb_plugin_name_ + ".trajectory_generator_name", traj_generator_name);
   node->get_parameter(
@@ -474,7 +478,6 @@ DWBLocalPlanner::transformGlobalPlan(
   double dist_threshold = std::max(costmap->getSizeInCellsX(), costmap->getSizeInCellsY()) *
     costmap->getResolution() / 2.0;
 
-
   // If prune_plan is enabled (it is by default) then we want to restrict the
   // plan to distances within that range as well.
   double prune_dist = prune_distance_;
@@ -489,12 +492,13 @@ DWBLocalPlanner::transformGlobalPlan(
     transform_start_threshold = dist_threshold;
   }
 
-  // Set the maximum distance we'll include points after the part of the part of
-  // the plan near the robot (the end of the plan). This determines the amount
-  // of the plan passed on to the critics
+  // Set the maximum distance we'll include points after the part of the plan
+  // near the robot (the end of the plan). This determines the amount of the
+  // plan passed on to the critics
   double transform_end_threshold;
+  double shorten_dist = shorten_distance_;
   if (shorten_transformed_plan_) {
-    transform_end_threshold = std::min(dist_threshold, prune_dist);
+    transform_end_threshold = std::min(dist_threshold, shorten_dist);
   } else {
     transform_end_threshold = dist_threshold;
   }
