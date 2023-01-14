@@ -18,7 +18,7 @@
 #include <string>
 #include <memory>
 #include <vector>
-#include <nanoflann.hpp>  // TODO rosdep keys
+#include <nanoflann.hpp>
 
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_route/types.hpp"
