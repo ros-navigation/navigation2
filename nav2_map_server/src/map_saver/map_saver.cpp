@@ -393,7 +393,7 @@ bool MapSaver::saveOctomapTopicToFile(
       return false;
     }
   } else {
-    RCLCPP_ERROR(get_logger(), "Map topic not found [%s]", map_topic_loc.c_str());
+    RCLCPP_ERROR(get_logger(), "Octomap topic not found [%s]", map_topic_loc.c_str());
     return false;
   }
 

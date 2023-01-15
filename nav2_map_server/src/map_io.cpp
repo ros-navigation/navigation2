@@ -536,7 +536,7 @@ LOAD_MAP_STATUS loadMapFromYaml(
     } catch (std::exception & e) {
       std::cerr <<
         "[ERROR] [map_io]: Failed to load octomap image file " <<
-        load_parameters.elevation_image_file_name <<
+        load_parameters.octomap_file_name <<
         " for reason: " << e.what() << std::endl;
       return INVALID_MAP_DATA;
     }
