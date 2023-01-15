@@ -91,7 +91,7 @@ class FootprintCollisionChecker():
 
         return max(float(self.lineCost(xstart, x1, ystart, y1)), footprint_cost)
 
-    def lineCost(self, x0, x1, y0, y1, step_size=0.1):
+    def lineCost(self, x0, x1, y0, y1, step_size=0.5):
         """
         Iterate over all the points along a line and check for collision.
 
