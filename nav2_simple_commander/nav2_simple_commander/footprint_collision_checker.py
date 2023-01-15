@@ -101,7 +101,7 @@ class FootprintCollisionChecker():
             y0 (float): Ordinate of the initial point in map coordinates
             x1 (float): Abscissa of the final point in map coordinates
             y1 (float): Ordinate of the final point in map coordinates
-            step_size (float): Optional, Increments' resolution, defaults to 0.1
+            step_size (float): Optional, Increments' resolution, defaults to 0.5
 
         Returns
         -------
