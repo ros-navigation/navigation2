@@ -166,6 +166,11 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
     }
   }
 
+  get_navigator_srv_ = create_service<nav2_msgs::srv::GetString>(
+    std::string(get_name()) + "/get_current_navigator",
+    std::bind(&BtNavigator::get_navigator_callback, this,
+      std::placeholders::_1, std::placeholders::_2));
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -226,6 +231,14 @@ BtNavigator::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
   return nav2_util::CallbackReturn::SUCCESS;
+}
+
+void
+BtNavigator::get_navigator_callback(const nav2_msgs::srv::GetString::Request::SharedPtr,
+  const nav2_msgs::srv::GetString::Response::SharedPtr res)
+{
+    res->data = plugin_muxer_.getCurrentNavigator();
+    res->success = true;
 }
 
 }  // namespace nav2_bt_navigator

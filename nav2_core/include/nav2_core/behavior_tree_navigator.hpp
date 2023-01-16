@@ -57,6 +57,16 @@ public:
   : current_navigator_(std::string("")) {}
 
   /**
+   * @brief Get the name of the navigator currently in use
+   * @return string Name of the navigator, empty if not navigating
+   */
+  std::string getCurrentNavigator()
+  {
+    std::scoped_lock l(mutex_);
+    return current_navigator_;
+  }
+
+  /**
    * @brief Get the navigator muxer state
    * @return bool If a navigator is in progress
    */

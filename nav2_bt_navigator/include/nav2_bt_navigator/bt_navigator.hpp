@@ -27,6 +27,7 @@
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/create_timer_ros.h"
 #include "nav2_core/behavior_tree_navigator.hpp"
+#include "nav2_msgs/srv/get_string.hpp"
 #include "pluginlib/class_loader.hpp"
 
 namespace nav2_bt_navigator
@@ -85,6 +86,9 @@ protected:
    */
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
+  void get_navigator_callback(const nav2_msgs::srv::GetString::Request::SharedPtr req,
+    const nav2_msgs::srv::GetString::Response::SharedPtr res);
+
   // To handle all the BT related execution
   pluginlib::ClassLoader<nav2_core::NavigatorBase> class_loader_;
   std::vector<pluginlib::UniquePtr<nav2_core::NavigatorBase>> navigators_;
@@ -102,6 +106,9 @@ protected:
   // Spinning transform that can be used by the node
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+
+  // Service to query current navigator
+  rclcpp::Service<nav2_msgs::srv::GetString>::SharedPtr get_navigator_srv_;
 };
 
 }  // namespace nav2_bt_navigator
