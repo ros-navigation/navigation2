@@ -220,6 +220,14 @@ install(DIRECTORY include/
   DESTINATION include/
 )
 
+install(FILES test/test_action_server.hpp
+              test/test_behavior_tree_fixture.hpp
+              test/test_dummy_tree_node.hpp
+              test/test_service.hpp
+              test/test_transform_handler.hpp
+  DESTINATION test
+)
+
 install(FILES nav2_tree_nodes.xml DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)
@@ -231,7 +239,9 @@ endif()
 
 ament_export_include_directories(
   include
+  test
 )
+
 
 ament_export_libraries(
   ${library_name}
