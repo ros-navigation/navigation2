@@ -21,9 +21,9 @@
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_util/robot_utils.hpp"
-#include "../../test_service.hpp"
+#include "utils/test_service.hpp"
 
-#include "../../test_behavior_tree_fixture.hpp"
+#include "utils/test_behavior_tree_fixture.hpp"
 #include "nav2_behavior_tree/plugins/condition/is_path_valid_condition.hpp"
 
 using namespace std::chrono;  // NOLINT

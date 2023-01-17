@@ -20,7 +20,7 @@
 
 #include "behaviortree_cpp_v3/bt_factory.h"
 
-#include "../../test_action_server.hpp"
+#include "utils/test_action_server.hpp"
 #include "nav2_behavior_tree/plugins/action/spin_action.hpp"
 
 class SpinActionServer : public TestActionServer<nav2_msgs::action::Spin>

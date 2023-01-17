@@ -20,7 +20,7 @@
 
 #include "behaviortree_cpp_v3/bt_factory.h"
 
-#include "../../test_action_server.hpp"
+#include "utils/test_action_server.hpp"
 #include "nav2_behavior_tree/plugins/action/back_up_action.hpp"
 
 class BackUpActionServer : public TestActionServer<nav2_msgs::action::BackUp>

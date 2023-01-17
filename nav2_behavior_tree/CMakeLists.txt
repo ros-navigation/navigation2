@@ -222,14 +222,6 @@ install(DIRECTORY include/
 
 install(FILES nav2_tree_nodes.xml DESTINATION share/${PROJECT_NAME})
 
-install(FILES test/test_action_server.hpp
-    test/test_behavior_tree_fixture.hpp
-    test/test_dummy_tree_node.hpp
-    test/test_service.hpp
-    test/test_transform_handler.hpp
-    DESTINATION test
-)
-
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
@@ -239,7 +231,6 @@ endif()
 
 ament_export_include_directories(
   include
-  test
 )
 
 ament_export_libraries(
