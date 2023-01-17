@@ -473,56 +473,61 @@ DWBLocalPlanner::transformGlobalPlan(
           ControllerTFError("Unable to transform robot pose into global plan's frame");
   }
 
-  // we'll discard points on the plan that are outside the local costmap
+  // Discard points on the plan that are outside the local costmap
   nav2_costmap_2d::Costmap2D * costmap = costmap_ros_->getCostmap();
   double dist_threshold = std::max(costmap->getSizeInCellsX(), costmap->getSizeInCellsY()) *
     costmap->getResolution() / 2.0;
 
-  // If prune_plan is enabled (it is by default) then we want to restrict the
-  // plan to distances within that range as well.
-  double prune_dist = prune_distance_;
-
-  // Set the maximum distance we'll include points before getting to the part
-  // of the path where the robot is located (the start of the plan). Basically,
-  // these are the points the robot has already passed.
-  double transform_start_threshold;
-  if (prune_plan_) {
-    transform_start_threshold = std::min(dist_threshold, prune_dist);
-  } else {
-    transform_start_threshold = dist_threshold;
-  }
-
-  // Set the maximum distance we'll include points after the part of the plan
-  // near the robot (the end of the plan). This determines the amount of the
-  // plan passed on to the critics
-  double transform_end_threshold;
-  double shorten_dist = shorten_distance_;
-  if (shorten_transformed_plan_) {
-    transform_end_threshold = std::min(dist_threshold, shorten_dist);
-  } else {
-    transform_end_threshold = dist_threshold;
-  }
-
-  // Find the first pose in the global plan that's further than prune distance
-  // from the robot using integrated distance
-  auto prune_point = nav2_util::geometry_utils::first_after_integrated_distance(
-    global_plan_.poses.begin(), global_plan_.poses.end(), prune_dist);
-
-  // Find the first pose in the plan (upto prune_point) that's less than transform_start_threshold
-  // from the robot.
   auto transformation_begin = std::find_if(
-    begin(global_plan_.poses), prune_point,
-    [&](const auto & global_plan_pose) {
-      return euclidean_distance(robot_pose.pose, global_plan_pose) < transform_start_threshold;
+    global_plan_.poses.begin(), global_plan_.poses.end(),
+    [&](const auto & pose) {
+      return euclidean_distance(robot_pose.pose, pose) < dist_threshold;
     });
 
-  // Find the first pose in the end of the plan that's further than transform_end_threshold
-  // from the robot using integrated distance
   auto transformation_end = std::find_if(
     transformation_begin, global_plan_.poses.end(),
     [&](const auto & pose) {
-      return euclidean_distance(pose, robot_pose.pose) > transform_end_threshold;
+      return euclidean_distance(pose, robot_pose.pose) > dist_threshold;
     });
+
+  // Find the point closest to the robot position
+  double smallest_distance = dist_threshold;
+  auto closest_pose = transformation_end;
+  for (auto it = transformation_begin; it != transformation_end; ++it)
+  {
+    double distance = euclidean_distance(robot_pose.pose, *it);
+    if (distance < smallest_distance)
+    {
+      smallest_distance = distance;
+      closest_pose = it;
+    }
+  }
+
+  if (smallest_distance == dist_threshold)
+  {
+    throw nav2_core::ControllerException("The robot is too far from the path.");
+  }
+
+  if (prune_plan_)
+  {
+    // Find the first pose in the global plan that's further than prune distance
+    // from the closest point to the robot using integrated distance
+    // Note: closest_pose + 1 is used because reverse iterator points to a cell before it
+    auto transformation_begin_rev = nav2_util::geometry_utils::first_after_integrated_distance(
+        std::reverse_iterator(closest_pose + 1),
+        std::reverse_iterator(transformation_begin + 1),
+        prune_distance_
+    );
+    transformation_begin = (transformation_begin_rev + 1).base();
+  }
+
+  if (shorten_transformed_plan_)
+  {
+    // Find the first pose in the end of the plan that's further than shorten_dist
+    // from the closest point to the robot using integrated distance
+    transformation_end = nav2_util::geometry_utils::first_after_integrated_distance(
+        closest_pose, global_plan_.poses.end(), shorten_distance_);
+  }
 
   // Transform the near part of the global plan into the robot's frame of reference.
   nav_2d_msgs::msg::Path2D transformed_plan;
