@@ -198,6 +198,7 @@ protected:
   nav_2d_msgs::msg::Path2D global_plan_;  ///< Saved Global Plan
   bool prune_plan_;
   double prune_distance_;
+  double max_deviation_;
   bool debug_trajectory_details_;
   rclcpp::Duration transform_tolerance_{0, 0};
   bool shorten_transformed_plan_;

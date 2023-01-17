@@ -91,6 +91,9 @@ void DWBLocalPlanner::configure(
     node, dwb_plugin_name_ + ".prune_distance",
     rclcpp::ParameterValue(1.0));
   declare_parameter_if_not_declared(
+    node, dwb_plugin_name_ + ".max_deviation",
+    rclcpp::ParameterValue(1.0));
+  declare_parameter_if_not_declared(
     node, dwb_plugin_name_ + ".shorten_distance",
     rclcpp::ParameterValue(2.0));
   declare_parameter_if_not_declared(
@@ -118,6 +121,7 @@ void DWBLocalPlanner::configure(
 
   node->get_parameter(dwb_plugin_name_ + ".prune_plan", prune_plan_);
   node->get_parameter(dwb_plugin_name_ + ".prune_distance", prune_distance_);
+  node->get_parameter(dwb_plugin_name_ + ".max_deviation", max_deviation_);
   node->get_parameter(dwb_plugin_name_ + ".shorten_distance", shorten_distance_);
   node->get_parameter(dwb_plugin_name_ + ".debug_trajectory_details", debug_trajectory_details_);
   node->get_parameter(dwb_plugin_name_ + ".trajectory_generator_name", traj_generator_name);
@@ -503,7 +507,7 @@ DWBLocalPlanner::transformGlobalPlan(
     }
   }
 
-  if (smallest_distance == dist_threshold)
+  if (smallest_distance == dist_threshold || smallest_distance > max_deviation_)
   {
     throw nav2_core::ControllerException("The robot is too far from the path.");
   }
