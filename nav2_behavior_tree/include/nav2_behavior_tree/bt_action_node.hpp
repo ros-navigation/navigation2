@@ -338,6 +338,14 @@ protected:
   {
     goal_result_available_ = false;
     auto send_goal_options = typename rclcpp_action::Client<ActionT>::SendGoalOptions();
+
+    using GoalHandleT = typename rclcpp_action::ClientGoalHandle<ActionT>::SharedPtr;
+    using FeedbackT = const std::shared_ptr<const typename ActionT::Feedback>;
+
+    send_goal_options.feedback_callback =
+      [this](GoalHandleT, FeedbackT feedback) {
+        config().blackboard->template set<FeedbackT>(action_name_ + "/feedback", feedback);
+    };
     send_goal_options.result_callback =
       [this](const typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult & result) {
         if (future_goal_handle_) {
