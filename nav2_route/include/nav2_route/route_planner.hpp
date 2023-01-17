@@ -79,9 +79,10 @@ protected:
   /**
    * @brief Gets the traversal cost for an edge using edge scorers
    * @param edge Edge pointer to find traveral cost for
-   * @return travel cost
+   * @param travel cost
+   * @return if this edge is valid for search
    */
-  inline float getTraversalCost(const EdgePtr edge);
+  inline bool getTraversalCost(const EdgePtr edge, float & score);
 
   /**
    * @brief Gets the next node in the priority queue for search

@@ -57,9 +57,10 @@ public:
   /**
    * @brief Score the edge with the set of plugins
    * @param edge Ptr to edge for scoring
-   * @return score of edge
+   * @param score of edge
+   * @return If edge is valid
    */
-  float score(const EdgePtr edge);
+  bool score(const EdgePtr edge, float & score);
 
   /**
    * @brief Provide the number of plugisn in the scorer loaded

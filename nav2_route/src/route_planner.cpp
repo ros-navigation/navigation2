@@ -93,7 +93,7 @@ void RoutePlanner::findShortestGraphTraversal(
 
   NodePtr neighbor{nullptr};
   EdgePtr edge{nullptr};
-  float potential_cost = 0.0;
+  float potential_cost = 0.0, traversal_cost = 0.0;
   int iterations = 0;
   while (!queue_.empty() && iterations < max_iterations_) {
     iterations++;
@@ -116,7 +116,13 @@ void RoutePlanner::findShortestGraphTraversal(
     for (unsigned int edge_num = 0; edge_num != edges.size(); edge_num++) {
       edge = &edges[edge_num];
       neighbor = edge->end;
-      potential_cost = curr_cost + getTraversalCost(edge);
+
+      // If edge is invalid (lane closed, occupied, etc), don't expand
+      if (!getTraversalCost(edge, traversal_cost)) {
+        continue;
+      }
+
+      potential_cost = curr_cost + traversal_cost;
       if (potential_cost < neighbor->search_state.cost) {
         neighbor->search_state.parent_edge = edge;
         neighbor->search_state.cost = potential_cost;
@@ -133,20 +139,22 @@ void RoutePlanner::findShortestGraphTraversal(
   }
 }
 
-float RoutePlanner::getTraversalCost(const EdgePtr edge)
+bool RoutePlanner::getTraversalCost(const EdgePtr edge, float & score)
 {
   if (!edge->edge_cost.overridable || edge_scorer_->numPlugins() == 0) {
     if (edge->edge_cost.cost != 0.0) {
-      return edge->edge_cost.cost;
+      score = edge->edge_cost.cost;
+      return true;
     } else {
       // We need some non-zero value if users didn't populate their files properly
-      return hypotf(
+      score = hypotf(
         edge->end->coords.x - edge->start->coords.x,
         edge->end->coords.y - edge->start->coords.y);
+      return true;
     }
   }
 
-  return edge_scorer_->score(edge);
+  return edge_scorer_->score(edge, score);
 }
 
 NodeElement RoutePlanner::getNextNode()

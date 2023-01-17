@@ -12,37 +12,39 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__DISTANCE_SCORER_HPP_
-#define NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__DISTANCE_SCORER_HPP_
+#ifndef NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__CLOSED_EDGE_SCORER_HPP_
+#define NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__CLOSED_EDGE_SCORER_HPP_
 
 #include <memory>
 #include <string>
+#include <set>
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "nav2_route/interfaces/edge_cost_function.hpp"
+#include "nav2_msgs/srv/modify_closed_edges.hpp"
 #include "nav2_util/node_utils.hpp"
 
 namespace nav2_route
 {
 
 /**
- * @class DistanceScorer
- * @brief Scores edges by the distance traversed, weighted by speed limit metadata
- * to optimize for time to goal
+ * @class ClosedEdgeScorer
+ * @brief Rejects edges that are in the closed set of edges for navigation to prevent
+ * routes from containing paths blocked or otherwise deemed not currently traversable
  */
-class DistanceScorer : public EdgeCostFunction
+class ClosedEdgeScorer : public EdgeCostFunction
 {
 public:
   /**
    * @brief Constructor
    */
-  DistanceScorer() = default;
+  ClosedEdgeScorer() = default;
 
   /**
    * @brief destructor
    */
-  virtual ~DistanceScorer() = default;
+  virtual ~ClosedEdgeScorer() = default;
 
   /**
    * @brief Configure
@@ -66,12 +68,21 @@ public:
    */
   std::string getName() override;
 
+  /**
+   * @brief Service callback to process edge changes
+   * @param request Service request containing newly closed edges or opened edges
+   * @param response Response to service (empty)
+   */
+  void closedEdgesCb(
+    const std::shared_ptr<nav2_msgs::srv::ModifyClosedEdges::Request> request,
+    std::shared_ptr<nav2_msgs::srv::ModifyClosedEdges::Response> response);
+
 protected:
   std::string name_;
-  std::string speed_tag_;
-  float weight_;
+  std::set<unsigned int> closed_edges_;
+  rclcpp::Service<nav2_msgs::srv::ModifyClosedEdges>::SharedPtr service_;
 };
 
 }  // namespace nav2_route
 
-#endif  // NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__DISTANCE_SCORER_HPP_
+#endif  // NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__CLOSED_EDGE_SCORER_HPP_

@@ -57,14 +57,20 @@ EdgeScorer::EdgeScorer(nav2_util::LifecycleNode::SharedPtr node)
   }
 }
 
-float EdgeScorer::score(const EdgePtr edge)
+bool EdgeScorer::score(const EdgePtr edge, float & total_score)
 {
-  float score = 0.0;
+  total_score = 0.0;
+  float curr_score = 0.0;
   for (auto & plugin : plugins_) {
-    score += plugin->score(edge);
+    curr_score = 0.0;
+    if (plugin->score(edge, curr_score)) {
+      total_score += curr_score;
+    } else {
+      return false;
+    }
   }
 
-  return score;
+  return true;
 }
 
 int EdgeScorer::numPlugins() const

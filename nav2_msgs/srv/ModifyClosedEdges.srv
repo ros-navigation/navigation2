@@ -1,0 +1,4 @@
+uint16[] closed_edges
+uint16[] opened_edges
+---
+bool success

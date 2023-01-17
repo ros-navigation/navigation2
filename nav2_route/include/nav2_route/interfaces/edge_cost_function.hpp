@@ -61,7 +61,7 @@ public:
    * @param edge The edge pointer to score, which has access to the
    * start/end nodes and their associated metadata and actions
    */
-  virtual float score(const EdgePtr edge) = 0;
+  virtual bool score(const EdgePtr edge, float & cost) = 0;
 
   /**
    * @briefGet name of the plugin for parameter scope mapping
