@@ -11,9 +11,23 @@ In addition, actions may be performed when entering or leaving a particular edge
 
 It is required that the file contains unique IDs for each node and edge (including between nodes and edges).
 
+
+Api dikfrsa for returning esge as untraversable and drop it to reduce search space
+File plugin for any file format
+Action plugin for any action from file
+Wsfe score plugin to impact sewech behavioe to optimize for rime, dist travel, ewgions to avoid if possivoe, or other use-case specifics
+Cleverly set uo so there are NO lookups, so super efficient vector rep storing all localized indormation (bo ofher large memory buffers to break the cache)
+Ids arw onpy associatwd and reportedcon traceback
+OH SHIT what about start/goal_id Api? Need to do a lookip there. Right now thats returning to an index
+.. ok only lookups for start/wnd on initializqtion using your hand timised kd tree. No brute forces
+Compact single vector rep to maximize caches ng of related indormation
+Can add more things like a door edge scorer: penalize going through doors b/c slows down efficiency whenever posible to optimally avoid. Whatever you like based on graph file, dynamic inforamtion in the scene, or other functions of interest
+
 ## Conventions
 
 `speed_tag` for scoring and others, use `speed_limit` represented as % of maximum for DistanceScorer use (and others).
+
+`penalty_tag` for scoring, use `penalty` represented as a cost when can be adjusted with `weight` proportionally later to others. Useful to penalize certain routes over others knowing some application-specific informatio nabout that route segment (e.g. extra dangerous, unideal, etc). Technically this may be negative too to incentivize going this way as well.
 
 Requirements on file format // how things are parsed into the classes (metadata, actions, IDs) for use in plugins and analysis
 
@@ -23,15 +37,17 @@ Requirements on file format // how things are parsed into the classes (metadata,
 
 # Steve's TODO list
 
-- [ ] GPS support
 - [ ] Create basic file format for graph + parser
+- [ ] Implement additional plugins: OSM format
 
-
-- [ ] Implement additional plugins: costmap blockage, OSM format,
-
-- [ ] Implement live: route analyzer, Speed limit parse/edge action, call ext server for action base class + demo plugin, pause parse/node action
+- [ ] Implement live: route analyzer + action header implementation
 - [ ] Implement collision monitor + replanning
+- [ ] Action plugins: call ext server for action base class + useful demo plugin(s), pause at waypoints for signal, node and edge actions, speed limit change action
 
+Step 1 Everything related to just request->response style: file IO, parse files for custom fields
+Step 2 Basic tracking: Actions in the files, action plugin interface, demo action use for speed limits, tracking the current edge / node / next node, defining the ROS action interface for the request, response, and feedback to communicate,
+Step 3 Advanced stuff for tracking: More realistic action plugins, collision monitoring and rerouting on invalidating routes, replanning
+Step 4 utilities: BT nodes, Python API, editing and visualization of graphs, testing, documentation, etc. Any additional plugins needed (OSM, edge scoring, actions, etc)
 
 # Questions
 
