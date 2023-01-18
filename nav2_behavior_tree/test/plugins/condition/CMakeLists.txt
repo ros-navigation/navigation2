@@ -57,4 +57,3 @@ ament_target_dependencies(test_would_a_planner_recovery_help ${dependencies})
 ament_add_gtest(test_would_a_smoother_recovery_help test_would_a_smoother_recovery_help.cpp)
 target_link_libraries(test_would_a_smoother_recovery_help nav2_would_a_smoother_recovery_help_condition_bt_node)
 ament_target_dependencies(test_would_a_smoother_recovery_help ${dependencies})
-

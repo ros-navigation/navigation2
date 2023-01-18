@@ -16,7 +16,7 @@
 #include <memory>
 #include <map>
 
-#include "../../test_behavior_tree_fixture.hpp"
+#include "utils/test_behavior_tree_fixture.hpp"
 #include "nav2_behavior_tree/plugins/condition/would_a_controller_recovery_help_condition.hpp"
 #include "nav2_msgs/action/follow_path.hpp"
 

@@ -25,9 +25,9 @@
 
 #include "behaviortree_cpp_v3/bt_factory.h"
 
-#include "../../test_action_server.hpp"
+#include "utils/test_action_server.hpp"
 #include "nav2_behavior_tree/plugins/action/remove_passed_goals_action.hpp"
-#include "../../test_behavior_tree_fixture.hpp"
+#include "utils/test_behavior_tree_fixture.hpp"
 
 class RemovePassedGoalsTestFixture : public ::testing::Test
 {

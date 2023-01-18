@@ -23,7 +23,7 @@
 
 #include "behaviortree_cpp_v3/bt_factory.h"
 
-#include "../../test_action_server.hpp"
+#include "utils/test_action_server.hpp"
 #include "nav2_behavior_tree/plugins/decorator/goal_updater_node.hpp"
 
 
