@@ -73,6 +73,7 @@ add_library(edge_scorers SHARED
   src/plugins/edge_cost_functions/distance_scorer.cpp
   src/plugins/edge_cost_functions/closed_edge_scorer.cpp
   src/plugins/edge_cost_functions/penalty_scorer.cpp
+  src/plugins/edge_cost_functions/costmap_scorer.cpp
 )
 
 ament_target_dependencies(edge_scorers

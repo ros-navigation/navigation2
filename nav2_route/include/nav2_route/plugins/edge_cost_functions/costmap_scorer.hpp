@@ -12,70 +12,76 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_ROUTE__INTERFACES__EDGE_COST_FUNCTION_HPP_
-#define NAV2_ROUTE__INTERFACES__EDGE_COST_FUNCTION_HPP_
+#ifndef NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__COSTMAP_SCORER_HPP_
+#define NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__COSTMAP_SCORER_HPP_
 
 #include <memory>
 #include <string>
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
-#include "pluginlib/class_loader.hpp"
-#include "nav2_route/types.hpp"
+#include "nav2_route/interfaces/edge_cost_function.hpp"
+#include "nav2_util/line_iterator.hpp"
+#include "nav2_util/node_utils.hpp"
+#include "nav2_costmap_2d/costmap_subscriber.hpp"
 
 namespace nav2_route
 {
 
 /**
- * @class EdgeCostFunction
- * @brief A plugin interface to score edges during graph search to modify
- * the lowest cost path (e.g. by distance, maximum speed, regions prefer not to travel
- * blocked by occupancy, or using arbitrarily defined user metadata stored in the
- * edge and nodes of interest.)
+ * @class CostmapScorer
+ * @brief Scores edges by the average or maximum cost found while iterating over the
+ * edge's line segment in the global costmap
  */
-class EdgeCostFunction
+class CostmapScorer : public EdgeCostFunction
 {
 public:
-  using Ptr = std::shared_ptr<nav2_route::EdgeCostFunction>;
-
   /**
    * @brief Constructor
    */
-  EdgeCostFunction() = default;
+  CostmapScorer() = default;
 
   /**
-   * @brief Virtual destructor
+   * @brief destructor
    */
-  virtual ~EdgeCostFunction() = default;
+  virtual ~CostmapScorer() = default;
 
   /**
-   * @brief Configure the scorer, but do not store the node
-   * @param parent pointer to user's node
+   * @brief Configure
    */
-  virtual void configure(
+  void configure(
     const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
-    const std::string & name) = 0;
+    const std::string & name) override;
 
   /**
    * @brief Main scoring plugin API
    * @param edge The edge pointer to score, which has access to the
    * start/end nodes and their associated metadata and actions
+   * @param cost of the edge scored
+   * @return bool if this edge is open valid to traverse
    */
-  virtual bool score(const EdgePtr edge, float & cost) = 0;
+  bool score(const EdgePtr edge, float & cost) override;
 
   /**
    * @brief Get name of the plugin for parameter scope mapping
    * @return Name
    */
-  virtual std::string getName() = 0;
+  std::string getName() override;
 
   /**
    * @brief Prepare for a new cycle, by resetting state, grabbing data
    * to use for all immediate requests, or otherwise prepare for scoring
    */
-  virtual void prepare() {};
+  void prepare() override;
+
+protected:
+  std::string name_;
+  bool use_max_, invalid_on_collision_, invalid_off_map_;
+  float weight_;
+  std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber_;
+  std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap_{nullptr};
 };
 
 }  // namespace nav2_route
 
-#endif  // NAV2_ROUTE__INTERFACES__EDGE_COST_FUNCTION_HPP_
+#endif  // NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__COSTMAP_SCORER_HPP_

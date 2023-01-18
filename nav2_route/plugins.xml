@@ -14,4 +14,9 @@
       <description>Cost function for adding a cost based on metadata stored in the navigation graph</description>
     </class>
   </library>
+  <library path="edge_scorers">
+    <class type="nav2_route::CostmapScorer" base_class_type="nav2_route::EdgeCostFunction">
+      <description>Cost function for adding a cost based on the costmap values in the edge</description>
+    </class>
+  </library>
 </class_libraries>

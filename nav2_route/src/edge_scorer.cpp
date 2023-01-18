@@ -61,6 +61,11 @@ bool EdgeScorer::score(const EdgePtr edge, float & total_score)
 {
   total_score = 0.0;
   float curr_score = 0.0;
+
+  for (auto & plugin : plugins_) {
+    plugin->prepare();
+  }
+
   for (auto & plugin : plugins_) {
     curr_score = 0.0;
     if (plugin->score(edge, curr_score)) {
