@@ -62,7 +62,6 @@ bool NodeSpatialTree::findNearestGraphNodeToPose(
   num_results = kdtree_->knnSearch(&query_pt[0], num_results, &ret_index[0], &out_dist_sqr[0]);
 
   if (num_results == 0) {
-    std::cout << "No nearest neighbor results found!" << std::endl;
     return false;
   }
 

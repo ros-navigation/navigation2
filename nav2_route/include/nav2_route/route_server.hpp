@@ -161,8 +161,9 @@ protected:
   std::shared_ptr<RoutePlanner> route_planner_;
   std::shared_ptr<PathConverter> path_converter_;
 
-  // Navigation graph object and utils
-  nav2_route::Graph graph_;
+  // Data
+  Graph graph_;
+  GraphToIDMap id_to_graph_map_;
   std::string route_frame_, base_frame_;
   double max_planning_time_;
 };

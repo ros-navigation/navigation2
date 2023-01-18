@@ -38,7 +38,7 @@ GraphFileLoader::GraphFileLoader(
   graph_filepath_ = node->get_parameter("graph_filepath").as_string();
 }
 
-bool GraphFileLoader::loadGraphFromFile(Graph & graph, std::string filepath)
+bool GraphFileLoader::loadGraphFromFile(Graph & graph, GraphToIDMap & idx_map, std::string filepath)
 {
   // Check filepath exists TODO
   std::string filepath_to_load;
@@ -61,6 +61,9 @@ bool GraphFileLoader::loadGraphFromFile(Graph & graph, std::string filepath)
   // Including conversion of GPS coordinates, so we can populate it in some cartesian frame necessary for
   // traversal cost estimation and densification (and so we don't need to propogate it through our structures)
 
+  idx_map.clear();
+  graph.clear();
+
   // A test graph for visualization and prototyping
   graph.resize(9);
   unsigned int idx = 0;
@@ -70,6 +73,7 @@ bool GraphFileLoader::loadGraphFromFile(Graph & graph, std::string filepath)
       graph[idx].nodeid = ids;
       graph[idx].coords.x = i;
       graph[idx].coords.y = j;
+      idx_map[graph[idx].nodeid] = idx;  // for a nodeid key, provide the graph idx value 
       idx++;
       ids++;
     }

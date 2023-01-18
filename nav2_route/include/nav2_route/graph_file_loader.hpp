@@ -52,9 +52,12 @@ public:
   /**
    * @brief Loads a graph object with file information
    * @param graph Graph to populate
+   * @param idx_map A map translating nodeid's to graph idxs for use in graph modification
+   * services and idx-based route planning requests. This is much faster than using a
+   * map the full graph data structure.
    * @return bool If successful
    */
-  bool loadGraphFromFile(Graph & graph, std::string filepath = "");
+  bool loadGraphFromFile(Graph & graph, GraphToIDMap & idx_map, std::string filepath = "");
 
   /**
    * @brief Checks if a file even exists on the filesystem

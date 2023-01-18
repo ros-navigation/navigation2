@@ -66,7 +66,7 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   // Load graph and convert poses to the route frame, if required
   graph_loader_ = std::make_shared<GraphFileLoader>(node, tf_, route_frame_);
-  if (!graph_loader_->loadGraphFromFile(graph_)) {
+  if (!graph_loader_->loadGraphFromFile(graph_, id_to_graph_map_)) {
     return nav2_util::CallbackReturn::FAILURE;
   }
 
@@ -143,7 +143,7 @@ RouteServer::findStartandGoalNodeLocations(std::shared_ptr<const ActionBasicGoal
 {
   // If not using the poses, then use the requests Node IDs to establish start and goal
   if (!goal->use_poses) {
-    return {goal->start_id, goal->goal_id};
+    return {id_to_graph_map_.at(goal->start_id), id_to_graph_map_.at(goal->goal_id)};
   }
 
   // Find request start pose
@@ -283,7 +283,7 @@ void RouteServer::setRouteGraph(
 {
   RCLCPP_INFO(get_logger(), "Setting new route graph: %s.", request->graph_filepath.c_str());
 
-  if (!graph_loader_->loadGraphFromFile(graph_, request->graph_filepath)) {
+  if (!graph_loader_->loadGraphFromFile(graph_, id_to_graph_map_, request->graph_filepath)) {
     RCLCPP_WARN(
       get_logger(),
       "Failed to set new route graph: %s!", request->graph_filepath.c_str());
