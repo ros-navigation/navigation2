@@ -452,6 +452,13 @@ void ControllerServer::computeControl()
     result->error_code = Action::Goal::UNKNOWN;
     action_server_->terminate_current(result);
     return;
+  } catch (std::exception & e) {
+    RCLCPP_ERROR(this->get_logger(), "%s", e.what());
+    publishZeroVelocity();
+    std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
+    result->error_code = Action::Goal::UNKNOWN;
+    action_server_->terminate_current(result);
+    return;
   }
 
   RCLCPP_DEBUG(get_logger(), "Controller succeeded, setting result");
