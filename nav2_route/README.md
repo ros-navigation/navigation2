@@ -1,56 +1,115 @@
 # Nav2 Route Server
 
-This is a Nav2 Task server to compliment the Planner Server's free-space planning capabilities with a pre-defined Navigation Route Graph planning.
-This graph may be generated manually or automatically via AI, geometric, or probablistic techniques.
+TODO tutorial for plugins // using this in the BT instead of the planner server (last steps)
+
+The Route Server is a Nav2 Task server to compliment the Planner Server's free-space planning capabilities with pre-defined Navigation Route Graph planning, created by [Steve Macenski](https://www.linkedin.com/in/steve-macenski-41a985101/) while at [Samsung Research America](https://www.sra.samsung.com/).
+This graph has few rules associated with it and may be generated manually or automatically via AI, geometric, or probablistic techniques.
 This package then takes a planning request and uses this graph to find a valid route through the environment via an optimal search-based algorithm.
+It may also live monitor and analyze the route's process to execute custom behaviors on entering or leaving edges or achieving particular graph nodes.
 
-The graphs can be stored in one of the formats the parser plugins can understand, or implement your own parser for a particular format of your interest!
-The graph can be influenced via plugins for scoring edges between nodes live or using pre-defined values in your graph file.
-The graph edges may be directional or bidirectional (e.g. one way or two way traversal) and contain any metadata you like.
-In addition, actions may be performed when entering or leaving a particular edge segment or when achieving a particular node in the graph, also via plugins.
+There are plugin interfaces throughout the server to enable a great deal of application-specific customization:
+- Custom search-prioritization behavior with edge scoring plugins (e.g. minimize distance or time, mark blocked routes, enact static or dynamic penalties for danger and application-specific knowledge, etc)
+- Custom actions to perform during route execution, triggered when entering or leaving an edge or achieving a graph node on the path (e.g. open door, pause at node to wait for clearance, adjust maximum speed, etc)
+- Parsers of navigation graph files to use any type of format desirable (e.g. geoJSON, OpenStreetMap)
 
-It is required that the file contains unique IDs for each node and edge (including between nodes and edges).
+Additionally, the parsers store **additional arbitrary metadata** specified within the navigation graph files to store information such as speed limits, added costs, actions to perform.
+Thus, we do not restrict the data that can be embedded in the navigation route graph for an application and this metadata is communicated to the edge scoring and action plugins to adjust behavior.
+Note however that plugins may also use outside information from topics, services, and actions for dynamic behavior or centralized knowledge sharing as well. 
 
+## Features
 
-Api dikfrsa for returning esge as untraversable and drop it to reduce search space
-File plugin for any file format
-Action plugin for any action from file
-Wsfe score plugin to impact sewech behavioe to optimize for rime, dist travel, ewgions to avoid if possivoe, or other use-case specifics
-Cleverly set uo so there are NO lookups, so super efficient vector rep storing all localized indormation (bo ofher large memory buffers to break the cache)
-Ids arw onpy associatwd and reportedcon traceback
-OH SHIT what about start/goal_id Api? Need to do a lookip there. Right now thats returning to an index
-.. ok only lookups for start/wnd on initializqtion using your hand timised kd tree. No brute forces
-Compact single vector rep to maximize caches ng of related indormation
-Can add more things like a door edge scorer: penalize going through doors b/c slows down efficiency whenever posible to optimally avoid. Whatever you like based on graph file, dynamic inforamtion in the scene, or other functions of interest
+- Optimized Dikjstra's planning algorithm modeled off of the Smac Planner A* implementation
+- Cleverly designed for no run-time lookups on the graph during search (2 lookups to find the start and goal edges on request initialization)
+- Use of Kd-trees for finding the nearest node to arbitrary start and goal poses in the graph
+- Highly efficient graph representation to maximize caching in a single data structure containing both edges' and nodes' objects and relationships with localized information
+- All edges are directional
+- Data in files may be with respect to any frame in the TF tree and are transformed to a centralized frame automatically
+- Action interface response returns both a sparse route of nodes and edges for client applications with navigation graph knowledge and `nav_msgs/Path` dense paths minimicking freespace planning for drop-in behavior replacement of the Planner Server.  
+- Action interface request can process requests with start / goal node IDs or poses
+- Service interface to change navigation route graphs at run-time
+- Edge scoring dynamic plugins return a cost for traversing an edge and may mark an edge as invalid in current conditions
+- Common edge scoring plugins are provided for needs like optimizing for distance, time, cost, static or dynamic penalties
+- Graph file parsing dynamic plugins allow for use of custom or proprietary formats
+- Provided 2 file parsing plugins based on popular standards: OpenStreetMap and GeoJSON
+- Action dynamic plugins to perform arbitrary tasks at a given node or when entering or leaving an edge on the route (plan)
+- TODO action provided (needs actions implemented)
 
-## Conventions
+## Design
 
-`speed_tag` for scoring and others, use `speed_limit` represented as % of maximum for DistanceScorer use (and others).
+TODO architectural diagram (needs final architecture hashed out)
+TODO main elements of the package and their role (needs final architecture hashed out)
 
-`penalty_tag` for scoring, use `penalty` represented as a cost when can be adjusted with `weight` proportionally later to others. Useful to penalize certain routes over others knowing some application-specific informatio nabout that route segment (e.g. extra dangerous, unideal, etc). Technically this may be negative too to incentivize going this way as well.
+### Plugin Interfaces
 
-Requirements on file format // how things are parsed into the classes (metadata, actions, IDs) for use in plugins and analysis
+TODO provide specifications for plugins // what they do // links (needs plugin API stability)
 
-`Actions` stuff
+## Metrics
+
+TODO provide analysis (needs completion)
+
+## Parameters
+
+TODO provide full list (needs completion)
+
+## File Formats
+
+Parsers are provided for OpenStreetMap (OSM) and GeoJSON formats.
+The graphs may be stored in one of the formats the parser plugins can understand or implement your own parser for a particular format of your interest!
+
+The only required feature of the navigation graph is for the nodes and edges to have identifiers from each other to be unique for referencing.
+In the provided parsers, this should be given as `id` for both edges and nodes.
+While all other elements are optional, it is highly recommended to also provide the nodes' location and frame of reference of that information.
+These are used in the default edge scoring plugin to compute the distance between nodes as the traversal cost (though this can be replaced with others if you choose).
+In the provided parsers, these fields are TODO (needs Josh's parsers)
+
+Otherwise, the node and edge objects may contain other fields with key-value pairs.
+The keys are stored as strings in the `metadata` object within the nodes and edges which acts as a python3 dict (e.g. `std::unordered_map<std::string, std::any>`) with an accessor function `T getValue(const std::string & key, T & default_val)` to obtain the field's values within all plugins.
+
+TODO how actions  (needs actions prototype)
+TODO provide example files in both formats + links to them (needs Josh's parsers)
+
+### Conventions for Convenience (though not required)
+
+While other fields are not required nor necessarily highly recommended, there are some useful standards which may make your life easier and provide some inspiration for development of plugins in the Route Server framework.
+These are default fields and parameters which can make your life easier, but you're free to embed this information anyway you like (but may come at the cost of needing to implement some redundant capabilities as provided plugins).
+
+For edges with meaningful non-zero statically set costs, use the field `cost` in the edge to communicate this information in the form of a `float`.
+If not otherwise specified, this may be overridden by Edge Scoring plugins, if they are provided.
+If you would like this particular node to not to be overrided (e.g. this value is used, regardless of plugins), set a field `overridable` to `false` and this value will be used.
+
+The `DistanceScorer` edge scoring plugin will come the L2 norm between the poses of the nodes constituting the edge as its unweighted score.
+It contains a parameter `speed_tag` (Default: `speed_limit`) which will check `edge.metadata` if it contains an entry for speed limit information, represented as a percentage of the maximum speed.
+If so, it will adjust the score to instead be proportional to the time rather than distance.
+By convention, we say that `speed_limit` attribute of an edge should contain this information, but the parameter may be adjusted to use others.
+
+Similarly, the `penalty_tag` parameter (Default: `penalty`) in the `PenaltyScorer` can be used to represent a static unweighted cost to add to the sum total of the edge scoring plugins.
+This is useful to penalize certain routes over others knowing some application-specific information about that route segment. Technically this may be negative to incentivize rather than penalize.
+By convention, we say the `penalty` attribute of an edge should contain this information, but likewise may be adjusted to use other tags via the parameter.
+
+TODO `Actions` stuff (needs live monitoring prototype)
+
+## Etc. Notes
 
 ---
 
 # Steve's TODO list
 
-- [ ] Create basic file format for graph + parser
-- [ ] Implement additional plugins: OSM format
+- [ ] Unit testing and documentation
 
-- [ ] Implement live: route analyzer + action header implementation
-- [ ] Implement collision monitor + replanning
-- [ ] Action plugins: call ext server for action base class + useful demo plugin(s), pause at waypoints for signal, node and edge actions, speed limit change action
+- [ ] Create basic file format for graph + parser: OSM and geoJSON
 
-Step 1 Everything related to just request->response style: file IO, parse files for custom fields
-Step 2 Basic tracking: Actions in the files, action plugin interface, demo action use for speed limits, tracking the current edge / node / next node, defining the ROS action interface for the request, response, and feedback to communicate,
-Step 3 Advanced stuff for tracking: More realistic action plugins, collision monitoring and rerouting on invalidating routes, replanning
-Step 4 utilities: BT nodes, Python API, editing and visualization of graphs, testing, documentation, etc. Any additional plugins needed (OSM, edge scoring, actions, etc)
+STEVE: do actions need any kind of specialized fields or anything? could still just be generic metadata nad let the plugins idenifty themselves if theyr'e valid for a given node/edge metadata set. But could set standard for "action" field just to have some way to consistenyly communicate it. But s till in the metadata class
+
+STEVE: metadata class handle nested inforamtion?
+
+- [ ] Implement live: route analyzer: tracking the current edge / node / next node + action header(s) + actions in graph files + feedback action interface
+- [ ] Action plugins: call ext server for action base class + useful demo plugin(s) - realistic, pause at waypoints for signal, node and edge actions, speed limit change action
+- [ ] Implement collision monitor + replanning / rerouting on invalidation for other reasons (requested, time, plugin?)
+
+- [ ] Quality: BT nodes, Python API, editing and visualization of graphs, testing, documentation
 
 # Questions
 
-- How to store/parse/process custom file format metadata/actions?
-- What file format to use as compact for graph?
-- How / what runs to replanning other than when invalid due to collision? How can BT trigger again if its still feedback-pending?
+- How can BT trigger BT node again if its still feedback-pending?
+- service for closed edge // topic for costmaps come in during request?
+
