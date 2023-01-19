@@ -176,7 +176,6 @@ EdgeVector & RoutePlanner::getEdges(const NodePtr node)
 
 void RoutePlanner::clearQueue()
 {
-  // TODO test if just reconstructing each request, or while pop, or this is fastest
   NodeQueue q;
   std::swap(queue_, q);
 }

@@ -80,6 +80,8 @@ void PathConverter::interpolateEdge(
   // March along it until dist
   float x = x0;
   float y = y0;
+  poses.push_back(utils::toMsg(x, y));
+
   unsigned int pt_ctr = 0;
   while (pt_ctr < num_pts) {
     x += ux * iterpolated_dist;

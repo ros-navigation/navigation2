@@ -52,7 +52,7 @@ EdgeScorer::EdgeScorer(nav2_util::LifecycleNode::SharedPtr node)
       RCLCPP_FATAL(
         node->get_logger(),
         "Failed to create edge cost function. Exception: %s", ex.what());
-      exit(-1);
+      throw ex;
     }
   }
 }

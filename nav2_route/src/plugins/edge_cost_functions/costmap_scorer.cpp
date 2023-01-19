@@ -66,7 +66,8 @@ void CostmapScorer::prepare()
   }
 }
 
-// TODO does this critic make efficiency sense at a reasonable sized graph / node distance? Lower iterator density?
+// TODO(sm) does this critic make efficiency sense at a
+// reasonable sized graph / node distance? Lower iterator density?
 bool CostmapScorer::score(const EdgePtr edge, float & cost)
 {
   // If we don't have costmap information, all edges are invalid for safety

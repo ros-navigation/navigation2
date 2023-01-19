@@ -1,0 +1,170 @@
+// Copyright (c) 2023, Samsung Research America
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License. Reserved.
+
+#include <math.h>
+#include <memory>
+#include <string>
+#include <vector>
+
+#include "gtest/gtest.h"
+#include "rclcpp/rclcpp.hpp"
+#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_route/utils.hpp"
+#include "nav2_route/types.hpp"
+
+class RclCppFixture
+{
+public:
+  RclCppFixture() {rclcpp::init(0, nullptr);}
+  ~RclCppFixture() {rclcpp::shutdown();}
+};
+RclCppFixture g_rclcppfixture;
+
+using namespace nav2_route;  // NOLINT
+
+TEST(TypesTest, test_metadata)
+{
+  Metadata mdata;
+  float flt = 0.8f;
+  std::string str = "value";
+  unsigned int uintv = 17u;
+  mdata.setValue<std::string>("key", str);
+  mdata.setValue<float>("speed_limit", flt);
+  mdata.setValue<unsigned int>("graph_id", uintv);
+
+  float default_flt = 1.0f;
+  std::string default_str = "";
+  unsigned int default_uint = 0u;
+  EXPECT_EQ(mdata.getValue<std::string>("key", default_str), str);
+  EXPECT_EQ(mdata.getValue<float>("speed_limit", default_flt), flt);
+  EXPECT_EQ(mdata.getValue<unsigned int>("graph_id", default_uint), uintv);
+}
+
+TEST(TypesTest, test_search_state)
+{
+  DirectionalEdge edge;
+  SearchState state;
+  state.parent_edge = &edge;
+  state.cost = 25;
+
+  state.reset();
+  EXPECT_EQ(state.cost, std::numeric_limits<float>::max());
+  EXPECT_EQ(state.parent_edge, nullptr);
+}
+
+TEST(TypesTest, test_node)
+{
+  Node node1, node2;
+  node1.nodeid = 50u;
+  node2.nodeid = 51u;
+
+  EdgeCost cost;
+  cost.overridable = false;
+  cost.cost = 100.0;
+  EXPECT_EQ(node1.neighbors.size(), 0u);
+  node1.addEdge(cost, &node2, 52u);
+
+  EXPECT_EQ(node1.neighbors.size(), 1u);
+  EXPECT_EQ(node1.neighbors[0].edgeid, 52u);
+  EXPECT_EQ(node1.neighbors[0].start->nodeid, node1.nodeid);
+  EXPECT_EQ(node1.neighbors[0].end->nodeid, node2.nodeid);
+  EXPECT_EQ(node1.neighbors[0].edge_cost.cost, 100.0);
+  EXPECT_FALSE(node1.neighbors[0].edge_cost.overridable);
+}
+
+TEST(UtilsTest, test_to_msg_conversions)
+{
+  // Test conversion of PoseStamped
+  auto pose_msg = utils::toMsg(50.0, 20.0);
+  EXPECT_EQ(pose_msg.pose.position.x, 50.0);
+  EXPECT_EQ(pose_msg.pose.position.y, 20.0);
+
+  // Test conversion of Route
+  Node test_node1, test_node2, test_node3;
+  test_node1.nodeid = 10;
+  test_node2.nodeid = 11;
+  test_node3.nodeid = 12;
+
+  DirectionalEdge test_edge1, test_edge2;
+  test_edge1.edgeid = 13;
+  test_edge1.start = &test_node1;
+  test_edge1.end = &test_node2;
+  test_edge2.edgeid = 14;
+  test_edge2.start = &test_node2;
+  test_edge2.end = &test_node3;
+
+  Route route;
+  route.start_node = &test_node1;
+  route.route_cost = 50.0;
+  route.edges.push_back(&test_edge1);
+  route.edges.push_back(&test_edge2);
+
+  std::string frame = "fake_frame";
+  rclcpp::Time time(1000);
+  auto route_msg = utils::toMsg(route, frame, time);
+  EXPECT_EQ(route_msg.header.frame_id, frame);
+  EXPECT_EQ(route_msg.header.stamp.nanosec, time.nanoseconds());
+  EXPECT_EQ(route_msg.route_cost, 50.0);
+
+  EXPECT_EQ(route_msg.nodes.size(), 3u);
+  EXPECT_EQ(route_msg.edge_ids.size(), 2u);
+
+  EXPECT_EQ(route_msg.nodes[0].nodeid, test_node1.nodeid);
+  EXPECT_EQ(route_msg.nodes[1].nodeid, test_node2.nodeid);
+  EXPECT_EQ(route_msg.nodes[2].nodeid, test_node3.nodeid);
+  EXPECT_EQ(route_msg.edge_ids[0], test_edge1.edgeid);
+  EXPECT_EQ(route_msg.edge_ids[1], test_edge2.edgeid);
+}
+
+TEST(UtilsTest, test_to_visualization_msg_conversion)
+{
+  // Test conversion of Route Graph as MarkerArray
+  std::string frame = "fake_frame";
+  rclcpp::Time time(1000);
+  Graph graph;
+  graph.resize(9);
+  unsigned int idx = 0;
+  unsigned int ids = 1;
+  for (unsigned int i = 0; i != 3; i++) {
+    for (unsigned int j = 0; j != 3; j++) {
+      graph[idx].nodeid = ids;
+      graph[idx].coords.x = i;
+      graph[idx].coords.y = j;
+      idx++;
+      ids++;
+    }
+  }
+
+  EdgeCost default_cost;
+  graph[0].addEdge(default_cost, &graph[1], ids++);
+  graph[1].addEdge(default_cost, &graph[0], ids++);
+  graph[4].addEdge(default_cost, &graph[1], ids++);
+  graph[1].addEdge(default_cost, &graph[4], ids++);
+  graph[5].addEdge(default_cost, &graph[4], ids++);
+  graph[4].addEdge(default_cost, &graph[5], ids++);
+  graph[0].addEdge(default_cost, &graph[3], ids++);
+  graph[3].addEdge(default_cost, &graph[6], ids++);
+
+  auto graph_msg = utils::toMsg(graph, frame, time);
+  EXPECT_EQ(graph_msg.markers.size(), 34u);  // 9 nodes and 8 edges (with text markers)
+  for (auto & marker : graph_msg.markers) {
+    if (marker.ns == "route_graph_ids") {
+      EXPECT_EQ(marker.type, visualization_msgs::msg::Marker::TEXT_VIEW_FACING);
+    } else if (marker.ns == "route_graph") {
+      EXPECT_TRUE(
+        (marker.type == visualization_msgs::msg::Marker::LINE_LIST) ||
+        (marker.type == visualization_msgs::msg::Marker::SPHERE));
+    }
+  }
+}

@@ -27,7 +27,7 @@ void ClosedEdgeScorer::configure(
   name_ = name;
   service_ =
     node->create_service<nav2_msgs::srv::ModifyClosedEdges>(
-      "closed_edges", std::bind(
+    getName() + "/closed_edges", std::bind(
       &ClosedEdgeScorer::closedEdgesCb, this,
       std::placeholders::_1, std::placeholders::_2));
 }

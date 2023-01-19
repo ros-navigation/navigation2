@@ -73,7 +73,7 @@ public:
    * @brief Prepare for a new cycle, by resetting state, grabbing data
    * to use for all immediate requests, or otherwise prepare for scoring
    */
-  virtual void prepare() {};
+  virtual void prepare() {}
 };
 
 }  // namespace nav2_route

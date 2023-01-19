@@ -65,22 +65,27 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   max_planning_time_ = node->get_parameter("max_planning_time").as_double();
 
   // Load graph and convert poses to the route frame, if required
-  graph_loader_ = std::make_shared<GraphFileLoader>(node, tf_, route_frame_);
-  if (!graph_loader_->loadGraphFromFile(graph_, id_to_graph_map_)) {
+  try {
+    graph_loader_ = std::make_shared<GraphFileLoader>(node, tf_, route_frame_);
+    if (!graph_loader_->loadGraphFromFile(graph_, id_to_graph_map_)) {
+      return nav2_util::CallbackReturn::FAILURE;
+    }
+
+    // Precompute the graph's kd-tree
+    node_spatial_tree_ = std::make_shared<NodeSpatialTree>();
+    node_spatial_tree_->computeTree(graph_);
+
+    // Create main planning algorithm
+    route_planner_ = std::make_shared<RoutePlanner>();
+    route_planner_->configure(node);
+
+    // Create Route to path conversion utility
+    path_converter_ = std::make_shared<PathConverter>();
+    path_converter_->configure(node);
+  } catch (std::exception & e) {
+    RCLCPP_FATAL(get_logger(), "Failed to configure route server: %s", e.what());
     return nav2_util::CallbackReturn::FAILURE;
   }
-
-  // Precompute the graph's kd-tree
-  node_spatial_tree_ = std::make_shared<NodeSpatialTree>();
-  node_spatial_tree_->computeTree(graph_);
-
-  // Create main planning algorithm
-  route_planner_ = std::make_shared<RoutePlanner>();
-  route_planner_->configure(node);
-
-  // Create Route to path conversion utility
-  path_converter_ = std::make_shared<PathConverter>();
-  path_converter_->configure(node);
 
   return nav2_util::CallbackReturn::SUCCESS;
 }

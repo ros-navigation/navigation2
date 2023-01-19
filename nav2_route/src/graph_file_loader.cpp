@@ -27,20 +27,20 @@ GraphFileLoader::GraphFileLoader(
   std::shared_ptr<tf2_ros::Buffer> tf,
   const std::string frame)
 {
-  // TODO plugin header + loader to use instead. THis will manage plugin get / load
-  // TODO logging
+  // TODO(sm) plugin header + loader to use instead. THis will manage plugin get / load
+  // TODO(sm) logging
   tf_ = tf;
   route_frame_ = frame;
   (void)node;
   nav2_util::declare_parameter_if_not_declared(
     node, "graph_filepath", rclcpp::ParameterValue(std::string("hi!")));
-  // TODO rclcpp::ParameterType::PARAMETER_STRING
+  // TODO(sm) rclcpp::ParameterType::PARAMETER_STRING
   graph_filepath_ = node->get_parameter("graph_filepath").as_string();
 }
 
 bool GraphFileLoader::loadGraphFromFile(Graph & graph, GraphToIDMap & idx_map, std::string filepath)
 {
-  // Check filepath exists TODO
+  // Check filepath exists TODO(sm)
   std::string filepath_to_load;
   if (filepath.empty()) {
     filepath_to_load = graph_filepath_;
@@ -53,13 +53,14 @@ bool GraphFileLoader::loadGraphFromFile(Graph & graph, GraphToIDMap & idx_map, s
   //   return false;
   // }
 
-  // Validate file is legit using a plugin API TODO
+  // Validate file is legit using a plugin API TODO(sm)
   // Load file using a plugin API
 
 
   // Convert all coordinates to `frame` (in a new method) for standardization
-  // Including conversion of GPS coordinates, so we can populate it in some cartesian frame necessary for
-  // traversal cost estimation and densification (and so we don't need to propogate it through our structures)
+  // Including conversion of GPS coordinates, so we can populate it in some
+  // cartesian frame necessary for traversal cost estimation and densifying
+  // (and so we don't need to propogate it through our structures)
 
   idx_map.clear();
   graph.clear();
@@ -73,7 +74,7 @@ bool GraphFileLoader::loadGraphFromFile(Graph & graph, GraphToIDMap & idx_map, s
       graph[idx].nodeid = ids;
       graph[idx].coords.x = i;
       graph[idx].coords.y = j;
-      idx_map[graph[idx].nodeid] = idx;  // for a nodeid key, provide the graph idx value 
+      idx_map[graph[idx].nodeid] = idx;  // for a nodeid key, provide the graph idx value
       idx++;
       ids++;
     }

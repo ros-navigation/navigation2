@@ -20,6 +20,7 @@
 #include "geometry_msgs/msg/vector3.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_msgs/msg/route.hpp"
+#include "nav2_route/types.hpp"
 
 #ifndef NAV2_ROUTE__UTILS_HPP_
 #define NAV2_ROUTE__UTILS_HPP_
@@ -52,7 +53,7 @@ inline geometry_msgs::msg::PoseStamped toMsg(const float x, const float y)
  * @return MarkerArray of the graph
  */
 inline visualization_msgs::msg::MarkerArray toMsg(
-  const Graph & graph, const std::string & frame, const rclcpp::Time & now)
+  const nav2_route::Graph & graph, const std::string & frame, const rclcpp::Time & now)
 {
   visualization_msgs::msg::MarkerArray msg;
   visualization_msgs::msg::Marker curr_marker;
@@ -159,7 +160,7 @@ inline visualization_msgs::msg::MarkerArray toMsg(
  * @return Route message
  */
 inline nav2_msgs::msg::Route toMsg(
-  const Route & route, const std::string & frame, const rclcpp::Time & now)
+  const nav2_route::Route & route, const std::string & frame, const rclcpp::Time & now)
 {
   nav2_msgs::msg::Route msg;
   msg.header.frame_id = frame;
