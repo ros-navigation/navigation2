@@ -23,7 +23,7 @@
 #include "nav2_util/service_client.hpp"
 #include "nav2_util/node_thread.hpp"
 #include "nav2_route/edge_scorer.hpp"
-#include "nav2_msgs/srv/modify_closed_edges.hpp"
+#include "nav2_msgs/srv/adjust_edges.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_2d_publisher.hpp"
 
@@ -88,26 +88,29 @@ TEST(EdgeScorersTest, test_failed_api)
 TEST(EdgeScorersTest, test_invalid_edge_scoring)
 {
   // Test API for the edge scorer to maintain proper state when a plugin
-  // rejects and edge. Also covers the ClosedEdgeScorer plugin to demonstrate.
+  // rejects and edge. Also covers the AdjustEdgesScorer plugin to demonstrate.
   auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
   auto node_thread = std::make_unique<nav2_util::NodeThread>(node);
   auto node2 = std::make_shared<rclcpp::Node>("my_node2");
 
   node->declare_parameter(
-    "edge_cost_functions", rclcpp::ParameterValue(std::vector<std::string>{"ClosedEdgeScorer"}));
+    "edge_cost_functions", rclcpp::ParameterValue(std::vector<std::string>{"AdjustEdgesScorer"}));
   nav2_util::declare_parameter_if_not_declared(
-    node, "ClosedEdgeScorer.plugin",
-    rclcpp::ParameterValue(std::string{"nav2_route::ClosedEdgeScorer"}));
+    node, "AdjustEdgesScorer.plugin",
+    rclcpp::ParameterValue(std::string{"nav2_route::AdjustEdgesScorer"}));
 
   EdgeScorer scorer(node);
-  EXPECT_EQ(scorer.numPlugins(), 1);  // ClosedEdgeScorer
+  EXPECT_EQ(scorer.numPlugins(), 1);  // AdjustEdgesScorer
 
   // Send service to set an edge as invalid
   auto srv_client =
-    nav2_util::ServiceClient<nav2_msgs::srv::ModifyClosedEdges>(
-    "ClosedEdgeScorer/closed_edges", node2);
-  auto req = std::make_shared<nav2_msgs::srv::ModifyClosedEdges::Request>();
+    nav2_util::ServiceClient<nav2_msgs::srv::AdjustEdges>(
+    "AdjustEdgesScorer/adjust_edges", node2);
+  auto req = std::make_shared<nav2_msgs::srv::AdjustEdges::Request>();
   req->closed_edges.push_back(10u);
+  req->adjust_edges.resize(1);
+  req->adjust_edges[0].edgeid = 11u;
+  req->adjust_edges[0].cost = 42.0;
   auto resp = srv_client.invoke(req, std::chrono::nanoseconds(1000000000));
   EXPECT_TRUE(resp->success);
 
@@ -127,12 +130,14 @@ TEST(EdgeScorersTest, test_invalid_edge_scoring)
   EXPECT_FALSE(scorer.score(&edge, traversal_cost));
 
   // The score function should return true since no longer the problematic edge ID
+  // and edgeid 42 as the dynamic cost of 42 assigned to it
   traversal_cost = -1;
   edge.edgeid = 11;
   EXPECT_TRUE(scorer.score(&edge, traversal_cost));
+  EXPECT_EQ(traversal_cost, 42.0);
 
   // Try to re-open this edge
-  auto req2 = std::make_shared<nav2_msgs::srv::ModifyClosedEdges::Request>();
+  auto req2 = std::make_shared<nav2_msgs::srv::AdjustEdges::Request>();
   req2->opened_edges.push_back(10u);
   auto resp2 = srv_client.invoke(req2, std::chrono::nanoseconds(1000000000));
   EXPECT_TRUE(resp2->success);

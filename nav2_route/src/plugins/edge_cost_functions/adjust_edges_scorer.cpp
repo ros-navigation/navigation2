@@ -15,26 +15,29 @@
 #include <memory>
 #include <string>
 
-#include "nav2_route/plugins/edge_cost_functions/closed_edge_scorer.hpp"
+#include "nav2_route/plugins/edge_cost_functions/adjust_edges_scorer.hpp"
 
 namespace nav2_route
 {
 
-void ClosedEdgeScorer::configure(
+void AdjustEdgesScorer::configure(
   const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
   const std::string & name)
 {
   name_ = name;
   service_ =
-    node->create_service<nav2_msgs::srv::ModifyClosedEdges>(
-    getName() + "/closed_edges", std::bind(
-      &ClosedEdgeScorer::closedEdgesCb, this,
+    node->create_service<nav2_msgs::srv::AdjustEdges>(
+    getName() + "/adjust_edges", std::bind(
+      &AdjustEdgesScorer::closedEdgesCb, this,
       std::placeholders::_1, std::placeholders::_2));
+
+  dynamic_penalties_.clear();
+  closed_edges_.clear();
 }
 
-void ClosedEdgeScorer::closedEdgesCb(
-  const std::shared_ptr<nav2_msgs::srv::ModifyClosedEdges::Request> request,
-  std::shared_ptr<nav2_msgs::srv::ModifyClosedEdges::Response> response)
+void AdjustEdgesScorer::closedEdgesCb(
+  const std::shared_ptr<nav2_msgs::srv::AdjustEdges::Request> request,
+  std::shared_ptr<nav2_msgs::srv::AdjustEdges::Response> response)
 {
   // Add new closed edges
   for (unsigned int edge : request->closed_edges) {
@@ -48,20 +51,32 @@ void ClosedEdgeScorer::closedEdgesCb(
     }
   }
 
+  // Add dynamic costs from application system for edges
+  for (auto & edge : request->adjust_edges) {
+    dynamic_penalties_[edge.edgeid] = edge.cost;
+  }
+
   response->success = true;
 }
 
-bool ClosedEdgeScorer::score(const EdgePtr edge, float & /*cost*/)
+bool AdjustEdgesScorer::score(const EdgePtr edge, float & cost)
 {
   // Find if this edge is in the closed set of edges
   if (closed_edges_.find(edge->edgeid) != closed_edges_.end()) {
     return false;
   }
 
+  // TODO(sm) does this critic make efficiency sense at a
+  // reasonable sized graph? Maybe use robinhood stuff?
+  const auto & dyn_pen = dynamic_penalties_.find(edge->edgeid);
+  if (dyn_pen != dynamic_penalties_.end()) {
+    cost = dyn_pen->second;
+  }
+
   return true;
 }
 
-std::string ClosedEdgeScorer::getName()
+std::string AdjustEdgesScorer::getName()
 {
   return name_;
 }
@@ -69,4 +84,4 @@ std::string ClosedEdgeScorer::getName()
 }  // namespace nav2_route
 
 #include "pluginlib/class_list_macros.hpp"
-PLUGINLIB_EXPORT_CLASS(nav2_route::ClosedEdgeScorer, nav2_route::EdgeCostFunction)
+PLUGINLIB_EXPORT_CLASS(nav2_route::AdjustEdgesScorer, nav2_route::EdgeCostFunction)

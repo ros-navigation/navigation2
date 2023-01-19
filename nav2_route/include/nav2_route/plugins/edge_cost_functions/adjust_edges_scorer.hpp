@@ -12,39 +12,40 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__CLOSED_EDGE_SCORER_HPP_
-#define NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__CLOSED_EDGE_SCORER_HPP_
+#ifndef NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__ADJUST_EDGES_SCORER_HPP_
+#define NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__ADJUST_EDGES_SCORER_HPP_
 
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <set>
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "nav2_route/interfaces/edge_cost_function.hpp"
-#include "nav2_msgs/srv/modify_closed_edges.hpp"
+#include "nav2_msgs/srv/adjust_edges.hpp"
 #include "nav2_util/node_utils.hpp"
 
 namespace nav2_route
 {
 
 /**
- * @class ClosedEdgeScorer
+ * @class AdjustEdgesScorer
  * @brief Rejects edges that are in the closed set of edges for navigation to prevent
  * routes from containing paths blocked or otherwise deemed not currently traversable
  */
-class ClosedEdgeScorer : public EdgeCostFunction
+class AdjustEdgesScorer : public EdgeCostFunction
 {
 public:
   /**
    * @brief Constructor
    */
-  ClosedEdgeScorer() = default;
+  AdjustEdgesScorer() = default;
 
   /**
    * @brief destructor
    */
-  virtual ~ClosedEdgeScorer() = default;
+  virtual ~AdjustEdgesScorer() = default;
 
   /**
    * @brief Configure
@@ -74,15 +75,16 @@ public:
    * @param response Response to service (empty)
    */
   void closedEdgesCb(
-    const std::shared_ptr<nav2_msgs::srv::ModifyClosedEdges::Request> request,
-    std::shared_ptr<nav2_msgs::srv::ModifyClosedEdges::Response> response);
+    const std::shared_ptr<nav2_msgs::srv::AdjustEdges::Request> request,
+    std::shared_ptr<nav2_msgs::srv::AdjustEdges::Response> response);
 
 protected:
   std::string name_;
   std::set<unsigned int> closed_edges_;
-  rclcpp::Service<nav2_msgs::srv::ModifyClosedEdges>::SharedPtr service_;
+  std::unordered_map<unsigned int, float> dynamic_penalties_;
+  rclcpp::Service<nav2_msgs::srv::AdjustEdges>::SharedPtr service_;
 };
 
 }  // namespace nav2_route
 
-#endif  // NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__CLOSED_EDGE_SCORER_HPP_
+#endif  // NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__ADJUST_EDGES_SCORER_HPP_

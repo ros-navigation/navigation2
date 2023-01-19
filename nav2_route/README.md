@@ -18,7 +18,7 @@ Note however that plugins may also use outside information from topics, services
 
 - Optimized Dikjstra's planning algorithm modeled off of the Smac Planner A* implementation
 - Cleverly designed for no run-time lookups on the graph during search (2 lookups to find the start and goal edges on request initialization)
-- Use of Kd-trees for finding the nearest node to arbitrary start and goal poses in the graph, over 140x faster than brute force search
+- Use of Kd-trees for finding the nearest node to arbitrary start and goal poses in the graph
 - Highly efficient graph representation to maximize caching in a single data structure containing both edges' and nodes' objects and relationships with localized information
 - All edges are directional
 - Data in files may be with respect to any frame in the TF tree and are transformed to a centralized frame automatically
@@ -44,6 +44,8 @@ TODO provide specifications for plugins // what they do // links (needs plugin A
 ## Metrics
 
 TODO provide analysis (needs completion)
+
+The use of Kd-trees to find the nearest start and goal nodes in the graph to the request is over 140x faster than the brute force data-structure lookup (0.35 ms/1000 lookups vs 50 ms/1000 lookups).
 
 ## Parameters
 
@@ -92,9 +94,6 @@ TODO `Actions` stuff (needs live monitoring prototype)
 
 # Steve's TODO list
 
-- [ ] Unit testing: planner and server
-- [ ] Dynamic scoring in the closed edges scroer
-
 - [ ] Create basic file format for graph + parser: OSM and geoJSON
 
 STEVE: do actions need any kind of specialized fields or anything? could still just be generic metadata nad let the plugins idenifty themselves if theyr'e valid for a given node/edge metadata set. But could set standard for "action" field just to have some way to consistenyly communicate it. But s till in the metadata class
@@ -104,7 +103,7 @@ STEVE: metadata class handle nested inforamtion?
 - [ ] Action plugins: call ext server for action base class + useful demo plugin(s) - realistic, pause at waypoints for signal, node and edge actions, speed limit change action
 - [ ] Implement collision monitor + replanning / rerouting on invalidation for other reasons (requested, time, plugin?)
 
-- [ ] Quality: BT nodes, Python API, editing and visualization of graphs, testing, documentation, tutorial (bt change, plugin customize, file field examples)
+- [ ] Quality: BT nodes, Python API, editing and visualization of graphs, testing (plan planner + server + added live stuff), documentation, tutorial (bt change, plugin customize, file field examples)
 
 # Questions
 
