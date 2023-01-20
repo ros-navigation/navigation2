@@ -132,15 +132,12 @@ Thus, by convention, we say the `penalty` attribute of an edge should contain th
 
 - [ ] Create basic file format for graph + parser: OSM and geoJSON
 
-- [ ] feedback operation interface for monitoring
-
-
-
-
-
-- [ ] Implement live route analyzer: tracking the current edge / node / next node + operation plugin header(s) (file/plugin centric APIs) 
+- [ ] Implement live route analyzer: tracking the current edge / node / next node + operation plugin header(s) (file/plugin centric APIs) + contextual error codes
   - Both file and plugin centric (plugin IDs what it cares about, objects report what plugins it cares about)
   - operations have metadata for them, but also have access to edge/node info too
+
+  - Can an Operation trigger a reroute? That would let us put the collision monitor as an action
+
 
 - [ ] operations plugins: call ext server for operation base class + useful demo plugin(s) - realistic, pause at waypoints for signal, node and edge operations, speed limit change operation
 
