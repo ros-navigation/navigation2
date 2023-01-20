@@ -172,7 +172,7 @@ struct Node
 
   void addEdge(EdgeCost & cost, NodePtr node, unsigned int edgeid)
   {
-    neighbors.push_back({edgeid, this, node, cost, {}});
+    neighbors.push_back({edgeid, this, node, cost, {}, {}});
   }
 };
 

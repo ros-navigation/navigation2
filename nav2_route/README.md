@@ -22,8 +22,8 @@ Note however that plugins may also use outside information from topics, services
 - Highly efficient graph representation to maximize caching in a single data structure containing both edges' and nodes' objects and relationships with localized information
 - All edges are directional
 - Data in files may be with respect to any frame in the TF tree and are transformed to a centralized frame automatically
-- Operation interface response returns both a sparse route of nodes and edges for client applications with navigation graph knowledge and `nav_msgs/Path` dense paths minimicking freespace planning for drop-in behavior replacement of the Planner Server.  
-- Operation interface request can process requests with start / goal node IDs or poses
+- Action interface response returns both a sparse route of nodes and edges for client applications with navigation graph knowledge and `nav_msgs/Path` dense paths minimicking freespace planning for drop-in behavior replacement of the Planner Server.  
+- Action interface request can process requests with start / goal node IDs or poses
 - Service interface to change navigation route graphs at run-time
 - Edge scoring dynamic plugins return a cost for traversing an edge and may mark an edge as invalid in current conditions
 - Common edge scoring plugins are provided for needs like optimizing for distance, time, cost, static or dynamic penalties
@@ -56,9 +56,8 @@ TODO provide full list (needs completion)
 
 ## File Formats
 
-Parsers are provided for OpenStreetMap (OSM) and GeoJSON formats.
 The graphs may be stored in one of the formats the parser plugins can understand or implement your own parser for a particular format of your interest!
-
+Parsers are provided for OpenStreetMap (OSM) and GeoJSON formats.
 The only two required features of the navigation graph is for the nodes and edges to have identifiers from each other to be unique for referencing and for edges to have the IDs of the nodes belonging to the start and end of the edge.
 This is strictly required for the Route Server to operate properly in all of its features.
 
@@ -84,19 +83,19 @@ Example files in both formats can be found TODO LINKS TO EXAMPLE FILES
 ```
 example_graph.yaml
 
-Node1:                  // <-- If provided by format, store as name in metadata
+Node1:                  // <-- If provided by format, stored as name in metadata
   id: 1                 // <-- Required
   x: 0.32               // <-- Highly recommended
   y: 4.3                // <-- Highly recommended
   frame: "map"          // <-- Highly recommended
   location: "workshop"  // <-- Metadata for node (arbitrary)
   operation:
-    pause:              // <-- If provided by format, store as name in metadata
+    pause:              // <-- If provided by format, stored as name in metadata
       type: "stop"      // <-- Required
       trigger: ON_ENTER // <-- Required
       wait_for: 5.0     // <-- Metadata for operation (arbitrary)
 
-Edge1:                  // <-- If provided by format, store as name in metadata
+Edge1:                  // <-- If provided by format, stored as name in metadata
   id: 2                 // <-- Required
   startid: 1            // <-- Required
   endid: 3              // <-- Required
@@ -104,7 +103,7 @@ Edge1:                  // <-- If provided by format, store as name in metadata
   overridable: False    // <-- Recommended
   cost: 6.0             // <-- Recommended, if relevent
   operations:
-    open_door:          // <-- If provided by format, store as name in metadata
+    open_door:          // <-- If provided by format, stored as name in metadata
       type: "open_door" // <-- Required
       trigger: ON_EXIT  // <-- Required
       door_id: 54       // <-- metadata for operation (arbirary)
@@ -123,7 +122,7 @@ Thus, by convention, we say that `speed_limit` attribute of an edge should conta
 
 Similarly, the `penalty_tag` parameter (Default: `penalty`) in the `PenaltyScorer` can be used to represent a static unweighted cost to add to the sum total of the edge scoring plugins.
 This is useful to penalize certain routes over others knowing some application-specific information about that route segment. Technically this may be negative to incentivize rather than penalize.
-By convention, we say the `penalty` attribute of an edge should contain this information.
+Thus, by convention, we say the `penalty` attribute of an edge should contain this information.
 
 ## Etc. Notes
 
