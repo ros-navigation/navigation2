@@ -140,9 +140,9 @@ protected:
     }
 
     if (octree) {
-      ASSERT_EQ(octree->getNumLeafNodes(), (size_t) 1);
-      ASSERT_FLOAT_EQ(octree->begin_leafs().getSize(), 0.2);
-      ASSERT_FLOAT_EQ(octree->begin_leafs()->getValue(), 0.847298);
+      ASSERT_EQ(octree->getNumLeafNodes(), (size_t) g_valid_octo_num_leafs);
+      ASSERT_FLOAT_EQ(octree->begin_leafs().getSize(), g_valid_octo_size);
+      ASSERT_FLOAT_EQ(octree->begin_leafs()->getValue(), g_valid_octo_value);
     } else {
       std::cerr << "Error reading OcTree from stream" << std::endl;
       GTEST_FAIL();

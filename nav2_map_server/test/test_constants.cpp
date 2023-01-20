@@ -74,6 +74,10 @@ const double g_valid_elevation_content[] = {
   -0.992157
 };
 
+const int g_valid_octo_num_leafs = 1;
+const double g_valid_octo_size = 0.2;
+const double g_valid_octo_value = 0.847298;
+
 const char * g_valid_map_name = "testmap";
 const char * g_valid_png_file = "testmap.png";
 const char * g_valid_bmp_file = "testmap.bmp";
