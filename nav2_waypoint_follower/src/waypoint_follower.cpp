@@ -175,18 +175,23 @@ WaypointFollower::followWaypoints()
 
   rclcpp::WallRate r(loop_rate_);
 
+  auto start_time = steady_clock_.now();
+  rclcpp::Duration elapsed_time{0, 0};
+
   // get the goal index, by default, the first in the list of waypoints given.
   uint32_t goal_index = goal->goal_index;
   bool new_goal = true;
 
   while (rclcpp::ok()) {
+    elapsed_time = steady_clock_.now() - start_time;
     // Check if asked to stop processing action
     if (action_server_->is_cancel_requested()) {
       auto cancel_future = nav_to_pose_client_->async_cancel_all_goals();
       callback_group_executor_.spin_until_future_complete(cancel_future);
       // for result callback processing
+      result->total_elapsed_time = elapsed_time;
       callback_group_executor_.spin_some();
-      action_server_->terminate_all();
+      action_server_->terminate_all(result);
       return;
     }
 
@@ -229,6 +234,7 @@ WaypointFollower::followWaypoints()
           get_logger(), "Failed to process waypoint %i in waypoint "
           "list and stop on failure is enabled."
           " Terminating action.", goal_index);
+        result->total_elapsed_time = elapsed_time;
         action_server_->terminate_current(result);
         current_goal_status_.error_code = 0;
         return;
@@ -261,6 +267,7 @@ WaypointFollower::followWaypoints()
           " stop on failure is enabled."
           " Terminating action.", goal_index);
 
+        result->total_elapsed_time = elapsed_time;
         action_server_->terminate_current(result);
         current_goal_status_.error_code = 0;
         return;
@@ -280,8 +287,10 @@ WaypointFollower::followWaypoints()
       if (goal_index >= goal->poses.size()) {
         if (current_loop_no == no_of_loops) {
           RCLCPP_INFO(
-            get_logger(), "Completed all %zu waypoints requested.",
-            goal->poses.size());
+            get_logger(), "Completed all %zu waypoints requested in a time of %.2f seconds.",
+            goal->poses.size(),
+            elapsed_time.seconds());
+          result->total_elapsed_time = elapsed_time;
           action_server_->succeeded_current(result);
           current_goal_status_.error_code = 0;
           return;

@@ -178,7 +178,7 @@ protected:
   std::string global_frame_;
   std::string robot_base_frame_;
   double transform_tolerance_;
-  rclcpp::Duration elasped_time_{0, 0};
+  rclcpp::Duration elapsed_time_{0, 0};
 
   // Clock
   rclcpp::Clock steady_clock_{RCL_STEADY_TIME};
@@ -215,11 +215,11 @@ protected:
     rclcpp::WallRate loop_rate(cycle_frequency_);
 
     while (rclcpp::ok()) {
-      elasped_time_ = steady_clock_.now() - start_time;
+      elapsed_time_ = steady_clock_.now() - start_time;
       if (action_server_->is_cancel_requested()) {
         RCLCPP_INFO(logger_, "Canceling %s", behavior_name_.c_str());
         stopRobot();
-        result->total_elapsed_time = elasped_time_;
+        result->total_elapsed_time = elapsed_time_;
         action_server_->terminate_all(result);
         onActionCompletion();
         return;

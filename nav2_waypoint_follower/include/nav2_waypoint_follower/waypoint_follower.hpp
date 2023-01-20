@@ -141,6 +141,9 @@ protected:
   rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
   std::shared_future<rclcpp_action::ClientGoalHandle<ClientT>::SharedPtr> future_goal_handle_;
 
+  // Clock
+  rclcpp::Clock steady_clock_{RCL_STEADY_TIME};
+
   bool stop_on_failure_;
   int loop_rate_;
   GoalStatus current_goal_status_;
