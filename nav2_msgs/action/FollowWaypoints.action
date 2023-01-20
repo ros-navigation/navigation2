@@ -11,6 +11,7 @@ geometry_msgs/PoseStamped[] poses
 ---
 #result definition
 MissedWaypoint[] missed_waypoints
+builtin_interfaces/Duration total_elapsed_time
 ---
 #feedback definition
 uint32 current_waypoint
