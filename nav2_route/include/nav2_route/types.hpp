@@ -89,6 +89,30 @@ struct EdgeCost
 };
 
 /**
+ * @enum nav2_route::OperationTrigger
+ * @brief The triggering events for an operation
+ */
+enum class OperationTrigger
+{
+  NONE = 0,
+  ON_ENTER = 1,
+  ON_EXIT = 2
+};
+
+/**
+ * @struct nav2_route::Operation
+ * @brief An object to store operations to perform on events with types and metadata
+ */
+struct Operation
+{
+  std::string type;
+  OperationTrigger trigger;
+  Metadata info;
+};
+
+typedef std::vector<Operation> Operations;
+
+/**
  * @struct nav2_route::DirectionalEdge
  * @brief An object representing edges between nodes
  */
@@ -99,6 +123,7 @@ struct DirectionalEdge
   NodePtr end{nullptr};    // Ptr to ending node of edge
   EdgeCost edge_cost;      // Cost information associated with edge
   Metadata metadata;       // Any metadata stored in the graph file of interest
+  Operations operations;   // Operations to perform related to the edge
 };
 
 typedef DirectionalEdge * EdgePtr;
@@ -142,6 +167,7 @@ struct Node
   Coordinates coords;        // Coordinates of node
   EdgeVector neighbors;      // Directed neighbors and edges of the node
   Metadata metadata;         // Any metadata stored in the graph file of interest
+  Operations operations;     // Operations to perform related to the node
   SearchState search_state;  // State maintained by route search algorithm
 
   void addEdge(EdgeCost & cost, NodePtr node, unsigned int edgeid)

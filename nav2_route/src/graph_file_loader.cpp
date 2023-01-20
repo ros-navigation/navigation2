@@ -62,6 +62,7 @@ bool GraphFileLoader::loadGraphFromFile(Graph & graph, GraphToIDMap & idx_map, s
   // cartesian frame necessary for traversal cost estimation and densifying
   // (and so we don't need to propogate it through our structures)
 
+
   idx_map.clear();
   graph.clear();
 

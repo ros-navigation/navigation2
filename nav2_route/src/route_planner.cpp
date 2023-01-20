@@ -62,10 +62,6 @@ Route RoutePlanner::findRoute(Graph & graph, unsigned int start, unsigned int go
     parent_edge = parent_edge->start->search_state.parent_edge;
   }
 
-  if (!route.edges.back()->start || route.edges.back()->start->nodeid != start_node->nodeid) {
-    throw nav2_core::NoValidRouteCouldBeFound("Could not find a valid route!");
-  }
-
   std::reverse(route.edges.begin(), route.edges.end());
   route.start_node = start_node;
   route.route_cost = goal_node->search_state.cost;
