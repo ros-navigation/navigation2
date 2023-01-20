@@ -50,22 +50,22 @@ class LineIterator():
 
         """
         if type(x0) not in [int, float]:
-            raise TypeError("x0 must be a number (int or float)")
+            raise TypeError('x0 must be a number (int or float)')
 
         if type(y0) not in [int, float]:
-            raise TypeError("y0 must be a number (int or float)")
+            raise TypeError('y0 must be a number (int or float)')
 
         if type(x1) not in [int, float]:
-            raise TypeError("x1 must be a number (int or float)")
+            raise TypeError('x1 must be a number (int or float)')
 
         if type(y1) not in [int, float]:
-            raise TypeError("y1 must be a number (int or float)")
+            raise TypeError('y1 must be a number (int or float)')
 
         if type(step_size) not in [int, float]:
-            raise TypeError("step_size must be a number (int or float)")
+            raise TypeError('step_size must be a number (int or float)')
 
         if step_size <= 0:
-            raise ValueError("step_size must be a positive number")
+            raise ValueError('step_size must be a positive number')
 
         self.x0_ = x0
         self.y0_ = y0
@@ -88,7 +88,7 @@ class LineIterator():
         else:
             self.valid_ = False
             raise ValueError(
-                "Line has zero length (All 4 points have same coordinates)")
+                'Line has zero length (All 4 points have same coordinates)')
 
     def isValid(self):
         """Check if line is valid."""

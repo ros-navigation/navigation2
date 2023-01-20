@@ -18,7 +18,7 @@ import time
 
 from action_msgs.msg import GoalStatus
 from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
-from nav2_msgs.action import FollowWaypoints, ComputePathToPose
+from nav2_msgs.action import ComputePathToPose, FollowWaypoints
 from nav2_msgs.srv import ManageLifecycleNodes
 from rcl_interfaces.srv import SetParameters
 

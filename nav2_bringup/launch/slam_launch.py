@@ -17,7 +17,7 @@ import os
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, GroupAction
+from launch.actions import DeclareLaunchArgument, GroupAction, IncludeLaunchDescription
 from launch.conditions import IfCondition, UnlessCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
@@ -81,7 +81,7 @@ def generate_launch_description():
 
     start_map_server = GroupAction(
         actions=[
-            SetParameter("use_sim_time", use_sim_time),
+            SetParameter('use_sim_time', use_sim_time),
             Node(
                 package='nav2_map_server',
                 executable='map_saver_server',

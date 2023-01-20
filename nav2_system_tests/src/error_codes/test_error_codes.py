@@ -17,11 +17,10 @@ import sys
 import time
 
 from geometry_msgs.msg import PoseStamped
-from nav_msgs.msg import Path
+from nav2_msgs.action import ComputePathThroughPoses, ComputePathToPose, FollowPath, SmoothPath
 from nav2_simple_commander.robot_navigator import BasicNavigator
-
+from nav_msgs.msg import Path
 import rclpy
-from nav2_msgs.action import FollowPath, ComputePathToPose, ComputePathThroughPoses, SmoothPath
 
 
 def main(argv=sys.argv[1:]):
@@ -53,7 +52,7 @@ def main(argv=sys.argv[1:]):
     path.poses.append(goal_pose)
     path.poses.append(goal_pose1)
 
-    navigator._waitForNodeToActivate("controller_server")
+    navigator._waitForNodeToActivate('controller_server')
     follow_path = {
         'unknown': FollowPath.Goal().UNKNOWN,
         'invalid_controller': FollowPath.Goal().INVALID_CONTROLLER,
@@ -72,10 +71,10 @@ def main(argv=sys.argv[1:]):
                 time.sleep(0.5)
 
             assert navigator.result_future.result().result.error_code == error_code, \
-                "Follow path error code does not match"
+                'Follow path error code does not match'
 
         else:
-            assert False, "Follow path was rejected"
+            assert False, 'Follow path was rejected'
 
     goal_pose = PoseStamped()
     goal_pose.header.frame_id = 'map'
@@ -87,7 +86,7 @@ def main(argv=sys.argv[1:]):
     goal_pose.pose.orientation.z = 0.0
     goal_pose.pose.orientation.w = 1.0
 
-    navigator._waitForNodeToActivate("planner_server")
+    navigator._waitForNodeToActivate('planner_server')
     compute_path_to_pose = {
         'unknown': ComputePathToPose.Goal().UNKNOWN,
         'invalid_planner': ComputePathToPose.Goal().INVALID_PLANNER,
@@ -101,7 +100,7 @@ def main(argv=sys.argv[1:]):
 
     for planner, error_code in compute_path_to_pose.items():
         result = navigator._getPathImpl(initial_pose, goal_pose, planner)
-        assert result.error_code == error_code, "Compute path to pose error does not match"
+        assert result.error_code == error_code, 'Compute path to pose error does not match'
 
     # Check compute path through error codes
     goal_pose1 = goal_pose
@@ -121,7 +120,7 @@ def main(argv=sys.argv[1:]):
 
     for planner, error_code in compute_path_through_poses.items():
         result = navigator._getPathThroughPosesImpl(initial_pose, goal_poses, planner)
-        assert result.error_code == error_code, "Compute path through pose error does not match"
+        assert result.error_code == error_code, 'Compute path through pose error does not match'
 
     # Check compute path to pose error codes
     pose = PoseStamped()
@@ -140,7 +139,7 @@ def main(argv=sys.argv[1:]):
     a_path.poses.append(pose)
     a_path.poses.append(pose1)
 
-    navigator._waitForNodeToActivate("smoother_server")
+    navigator._waitForNodeToActivate('smoother_server')
     smoother = {
         'invalid_smoother': SmoothPath.Goal().INVALID_SMOOTHER,
         'unknown': SmoothPath.Goal().UNKNOWN,
@@ -152,7 +151,7 @@ def main(argv=sys.argv[1:]):
 
     for smoother, error_code in smoother.items():
         result = navigator._smoothPathImpl(a_path, smoother)
-        assert result.error_code == error_code, "Smoother error does not match"
+        assert result.error_code == error_code, 'Smoother error does not match'
 
     navigator.lifecycleShutdown()
     rclpy.shutdown()
