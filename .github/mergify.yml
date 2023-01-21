@@ -66,9 +66,10 @@ pull_request_rules:
 
   - name: Removed maintainer checklist
     conditions:
-      - "-body-raw~=^.*#### For Maintainers: <!-- DO NOT EDIT OR REMOVE -->.*$"
-      - author!=SteveMacenski
-      - author!=mergify
+      - and:
+        - "-body-raw~=^.*#### For Maintainers: <!-- DO NOT EDIT OR REMOVE -->.*$"
+        - author!=SteveMacenski
+        - author!=mergify
     actions:
         comment:
           message: |
