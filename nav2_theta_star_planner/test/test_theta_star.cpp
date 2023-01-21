@@ -130,6 +130,7 @@ TEST(ThetaStarTest, test_theta_star) {
   /// Check if the functions addIndex & getIndex work properly
   coordsM c = {20, 30};
   planner_->uaddToNodesData(0);
+  std::cout << "8.5" << std::endl;
   planner_->uaddIndex(c.x, c.y);
   std::cout << "9" << std::endl;
   tree_node * c_node = planner_->ugetIndex(c.x, c.y);
