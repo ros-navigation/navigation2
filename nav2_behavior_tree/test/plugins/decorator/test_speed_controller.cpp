@@ -34,6 +34,10 @@ class SpeedControllerTestFixture : public nav2_behavior_tree::BehaviorTreeTestFi
 public:
   void SetUp()
   {
+    odom_smoother_ = std::make_shared<nav2_util::OdomSmoother>(node_);
+    config_->blackboard->set<std::shared_ptr<nav2_util::OdomSmoother>>(
+      "odom_smoother", odom_smoother_);  // NOLINT
+
     geometry_msgs::msg::PoseStamped goal;
     goal.header.stamp = node_->now();
     config_->blackboard->set("goal", goal);
@@ -50,13 +54,17 @@ public:
   {
     dummy_node_.reset();
     bt_node_.reset();
+    odom_smoother_.reset();
   }
 
 protected:
+  static std::shared_ptr<nav2_util::OdomSmoother> odom_smoother_;
   static std::shared_ptr<nav2_behavior_tree::SpeedController> bt_node_;
   static std::shared_ptr<nav2_behavior_tree::DummyNode> dummy_node_;
 };
 
+std::shared_ptr<nav2_util::OdomSmoother>
+SpeedControllerTestFixture::odom_smoother_ = nullptr;
 std::shared_ptr<nav2_behavior_tree::SpeedController>
 SpeedControllerTestFixture::bt_node_ = nullptr;
 std::shared_ptr<nav2_behavior_tree::DummyNode>
