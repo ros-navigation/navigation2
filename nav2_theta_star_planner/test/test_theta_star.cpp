@@ -128,7 +128,7 @@ TEST(ThetaStarTest, test_theta_star) {
   std::cout << "8" << std::endl;
 
   /// Check if the functions addIndex & getIndex work properly
-  coordsM c = {20, 30};
+  coordsM c = {18, 18};
   planner_->uaddToNodesData(0);
   std::cout << "8.5" << std::endl;
   planner_->uaddIndex(c.x, c.y);
