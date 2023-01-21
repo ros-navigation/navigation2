@@ -29,6 +29,8 @@
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/create_timer_ros.h"
 
+#include "nav2_util/odometry_utils.hpp"
+
 #include "rclcpp/rclcpp.hpp"
 #include "ament_index_cpp/get_package_share_directory.hpp"
 
@@ -50,6 +52,8 @@ public:
     tf_->setCreateTimerInterface(timer_interface);
     tf_->setUsingDedicatedThread(true);
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_, node_, false);
+
+    odom_smoother_ = std::make_shared<nav2_util::OdomSmoother>(node_);
 
     const std::vector<std::string> plugin_libs = {
       "nav2_compute_path_to_pose_action_bt_node",
@@ -130,6 +134,7 @@ public:
     blackboard->set<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer", tf_);  // NOLINT
     blackboard->set<bool>("initial_pose_received", false);  // NOLINT
     blackboard->set<int>("number_recoveries", 0);  // NOLINT
+    blackboard->set<std::shared_ptr<nav2_util::OdomSmoother>>("odom_smoother", odom_smoother_);  // NOLINT
 
     // set dummy goal on blackboard
     geometry_msgs::msg::PoseStamped goal;
@@ -165,6 +170,8 @@ private:
 
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+
+  std::shared_ptr<nav2_util::OdomSmoother> odom_smoother_;
 
   BT::BehaviorTreeFactory factory_;
 };
