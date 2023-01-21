@@ -73,7 +73,6 @@ init_rclcpp node;
 
 // Tests meant to test the algorithm itself and its helper functions
 TEST(ThetaStarTest, test_theta_star) {
-  std::cout << "1" << std::endl;
   auto planner_ = std::make_unique<test_theta_star>();
   planner_->costmap_ = new nav2_costmap_2d::Costmap2D(50, 50, 1.0, 0.0, 0.0, 0);
   for (int i = 7; i <= 14; i++) {
@@ -81,7 +80,6 @@ TEST(ThetaStarTest, test_theta_star) {
       planner_->costmap_->setCost(i, j, 253);
     }
   }
-  std::cout << "2" << std::endl;
   coordsM s = {5, 5}, g = {18, 18};
   int size_x = 20, size_y = 20;
   planner_->size_x_ = size_x;
@@ -94,21 +92,16 @@ TEST(ThetaStarTest, test_theta_star) {
   goal.pose.position.y = g.y;
   goal.pose.orientation.w = 1.0;
   /// Check if the setStartAndGoal function works properly
-  std::cout << "3" << std::endl;
   planner_->setStartAndGoal(start, goal);
-  std::cout << "4" << std::endl;
   EXPECT_TRUE(planner_->src_.x == s.x && planner_->src_.y == s.y);
   EXPECT_TRUE(planner_->dst_.x == g.x && planner_->dst_.y == g.y);
-  std::cout << "5" << std::endl;
   /// Check if the initializePosn function works properly
   planner_->uinitializePosn(size_x * size_y);
   EXPECT_EQ(planner_->getSizeOfNodePosition(), (size_x * size_y));
-  std::cout << "6" << std::endl;
 
   /// Check if the withinLimits function works properly
   EXPECT_TRUE(planner_->uwithinLimits(18, 18));
   EXPECT_FALSE(planner_->uwithinLimits(120, 140));
-  std::cout << "7" << std::endl;
 
   tree_node n = {g.x, g.y, 120, 0, NULL, false, 20};
   n.parent_id = &n;
@@ -125,39 +118,30 @@ TEST(ThetaStarTest, test_theta_star) {
   /// Check if the isSafe functions work properly
   EXPECT_TRUE(planner_->isSafe(5, 5));         // cost at this point is 0
   EXPECT_FALSE(planner_->isSafe(10, 10));      // cost at this point is 253 (>LETHAL_COST)
-  std::cout << "8" << std::endl;
 
   /// Check if the functions addIndex & getIndex work properly
   coordsM c = {18, 18};
   planner_->uaddToNodesData(0);
-  std::cout << "8.5" << std::endl;
   planner_->uaddIndex(c.x, c.y);
-  std::cout << "9" << std::endl;
   tree_node * c_node = planner_->ugetIndex(c.x, c.y);
   EXPECT_EQ(c_node, planner_->test_getIndex());
-  std::cout << "10" << std::endl;
 
   double sl_cost = 0.0;
   /// Checking for the case where the losCheck should return the value as true
   EXPECT_TRUE(planner_->ulosCheck(2, 2, 7, 20, sl_cost));
   /// and as false
   EXPECT_FALSE(planner_->ulosCheck(2, 2, 18, 18, sl_cost));
-  std::cout << "11" << std::endl;
 
   planner_->uresetContainers();
-  std::cout << "12" << std::endl;
   std::vector<coordsW> path;
   /// Check if the planner returns a path for the case where a path exists
   EXPECT_TRUE(planner_->runAlgo(path));
-  std::cout << "13" << std::endl;
   EXPECT_GT(static_cast<int>(path.size()), 0);
   /// and where it doesn't exist
   path.clear();
   planner_->src_ = {10, 10};
-  std::cout << "14" << std::endl;
   EXPECT_FALSE(planner_->runAlgo(path));
   EXPECT_EQ(static_cast<int>(path.size()), 0);
-  std::cout << "15" << std::endl;
 }
 
 // Smoke tests meant to detect issues arising from the plugin part rather than the algorithm
