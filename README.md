@@ -18,7 +18,7 @@ For detailed instructions on how to:
 - [Container Images for Building Nav2](https://github.com/orgs/ros-planning/packages/container/package/navigation2)
 - [Contribute](https://navigation.ros.org/contribute/index.html)
 
-Please visit our [documentation site](https://navigation.ros.org/). [Please visit our community Slack here](https://join.slack.com/t/navigation2/shared_invite/zt-hu52lnnq-cKYjuhTY~sEMbZXL8p9tOw) (if this link does not work, please contact maintainers to reactivate).
+Please visit our [documentation site](https://navigation.ros.org/). [Please visit our community Slack here](https://join.slack.com/t/navigation2/shared_invite/zt-hu52lnnq-cKYjuhTY~sEMbZXL8p9tOw) (if this link does not work, please contact maintainers to reactivate). Happy Navigation!
 
 ## Citation
 
