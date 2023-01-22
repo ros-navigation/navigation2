@@ -34,6 +34,8 @@ using AssistedTeleopAction = nav2_msgs::action::AssistedTeleop;
  */
 class AssistedTeleop : public TimedBehavior<AssistedTeleopAction>
 {
+  using CostmapInfoType = nav2_core::CostmapInfoType;
+
 public:
   AssistedTeleop();
 
@@ -54,6 +56,12 @@ public:
    * @return Status of behavior
    */
   Status onCycleUpdate() override;
+
+  /**
+   * @brief Method to determine the required costmap info
+   * @return costmap resources needed
+   */
+  CostmapInfoType getResourceInfo() override {return CostmapInfoType::LOCAL;}
 
 protected:
   /**

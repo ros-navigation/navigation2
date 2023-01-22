@@ -34,7 +34,7 @@ Status BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
   end_time_ = steady_clock_.now() + command_time_allowance_;
 
   if (!nav2_util::getCurrentPose(
-      initial_pose_, *tf_, global_frame_, robot_base_frame_,
+      initial_pose_, *tf_, local_frame_, robot_base_frame_,
       transform_tolerance_))
   {
     RCLCPP_ERROR(logger_, "Initial robot pose is not available.");

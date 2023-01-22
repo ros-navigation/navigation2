@@ -16,8 +16,8 @@
 #include <gtest/gtest.h>
 #include <memory>
 
-#include "../../test_behavior_tree_fixture.hpp"
-#include "../../test_dummy_tree_node.hpp"
+#include "utils/test_behavior_tree_fixture.hpp"
+#include "utils/test_dummy_tree_node.hpp"
 #include "nav2_behavior_tree/plugins/control/round_robin_node.hpp"
 
 class RoundRobinNodeTestFixture : public nav2_behavior_tree::BehaviorTreeTestFixture

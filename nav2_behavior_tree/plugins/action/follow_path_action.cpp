@@ -24,7 +24,7 @@ FollowPathAction::FollowPathAction(
   const std::string & xml_tag_name,
   const std::string & action_name,
   const BT::NodeConfiguration & conf)
-: BtActionNode<nav2_msgs::action::FollowPath>(xml_tag_name, action_name, conf)
+: BtActionNode<Action>(xml_tag_name, action_name, conf)
 {
 }
 
@@ -35,8 +35,27 @@ void FollowPathAction::on_tick()
   getInput("goal_checker_id", goal_.goal_checker_id);
 }
 
+BT::NodeStatus FollowPathAction::on_success()
+{
+  setOutput("error_code_id", ActionGoal::NONE);
+  return BT::NodeStatus::SUCCESS;
+}
+
+BT::NodeStatus FollowPathAction::on_aborted()
+{
+  setOutput("error_code_id", result_.result->error_code);
+  return BT::NodeStatus::FAILURE;
+}
+
+BT::NodeStatus FollowPathAction::on_cancelled()
+{
+  // Set empty error code, action was cancelled
+  setOutput("error_code_id", ActionGoal::NONE);
+  return BT::NodeStatus::SUCCESS;
+}
+
 void FollowPathAction::on_wait_for_result(
-  std::shared_ptr<const nav2_msgs::action::FollowPath::Feedback>/*feedback*/)
+  std::shared_ptr<const Action::Feedback>/*feedback*/)
 {
   // Grab the new path
   nav_msgs::msg::Path new_path;

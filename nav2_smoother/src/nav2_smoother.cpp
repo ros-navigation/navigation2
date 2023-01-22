@@ -1,5 +1,6 @@
 // Copyright (c) 2019 RoboTech Vision
 // Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2022 Samsung Research America
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,15 +15,13 @@
 // limitations under the License.
 
 #include <chrono>
-#include <limits>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "nav2_core/exceptions.hpp"
+#include "nav2_core/smoother_exceptions.hpp"
 #include "nav2_smoother/nav2_smoother.hpp"
-#include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "nav_2d_utils/conversions.hpp"
 #include "nav_2d_utils/tf_help.hpp"
@@ -264,13 +263,17 @@ void SmootherServer::smoothPlan()
     if (findSmootherId(c_name, current_smoother)) {
       current_smoother_ = current_smoother;
     } else {
-      action_server_->terminate_current();
-      return;
+      throw nav2_core::InvalidSmoother("Invalid Smoother: " + c_name);
     }
 
     // Perform smoothing
     auto goal = action_server_->get_current_goal();
     result->path = goal->path;
+
+    if (!validate(result->path)) {
+      throw nav2_core::InvalidPath("Requested path to smooth is invalid");
+    }
+
     result->was_completed = smoothers_[current_smoother_]->smooth(
       result->path, goal->max_smoothing_duration);
     result->smoothing_duration = steady_clock_.now() - start_time;
@@ -284,6 +287,7 @@ void SmootherServer::smoothPlan()
         rclcpp::Duration(goal->max_smoothing_duration).seconds(),
         rclcpp::Duration(result->smoothing_duration).seconds());
     }
+
     plan_publisher_->publish(result->path);
 
     // Check for collisions
@@ -300,8 +304,11 @@ void SmootherServer::smoothPlan()
             get_logger(),
             "Smoothed path leads to a collision at x: %lf, y: %lf, theta: %lf",
             pose2d.x, pose2d.y, pose2d.theta);
-          action_server_->terminate_current(result);
-          return;
+          throw nav2_core::SmoothedPathInCollision(
+                  "Smoothed Path collided at"
+                  "X: " + std::to_string(pose2d.x) +
+                  "Y: " + std::to_string(pose2d.y) +
+                  "Theta: " + std::to_string(pose2d.theta));
         }
         fetch_data = false;
       }
@@ -312,11 +319,53 @@ void SmootherServer::smoothPlan()
       rclcpp::Duration(result->smoothing_duration).seconds());
 
     action_server_->succeeded_current(result);
-  } catch (nav2_core::PlannerException & e) {
-    RCLCPP_ERROR(this->get_logger(), e.what());
-    action_server_->terminate_current();
+  } catch (nav2_core::InvalidSmoother & ex) {
+    RCLCPP_ERROR(this->get_logger(), "%s", ex.what());
+    result->error_code = ActionGoal::INVALID_SMOOTHER;
+    action_server_->terminate_current(result);
+    return;
+  } catch (nav2_core::SmootherTimedOut & ex) {
+    RCLCPP_ERROR(this->get_logger(), "%s", ex.what());
+    result->error_code = ActionGoal::TIMEOUT;
+    action_server_->terminate_current(result);
+    return;
+  } catch (nav2_core::SmoothedPathInCollision & ex) {
+    RCLCPP_ERROR(this->get_logger(), "%s", ex.what());
+    result->error_code = ActionGoal::SMOOTHED_PATH_IN_COLLISION;
+    action_server_->terminate_current(result);
+    return;
+  } catch (nav2_core::FailedToSmoothPath & ex) {
+    RCLCPP_ERROR(this->get_logger(), "%s", ex.what());
+    result->error_code = ActionGoal::FAILED_TO_SMOOTH_PATH;
+    action_server_->terminate_current(result);
+    return;
+  } catch (nav2_core::InvalidPath & ex) {
+    RCLCPP_ERROR(this->get_logger(), "%s", ex.what());
+    result->error_code = ActionGoal::INVALID_PATH;
+    action_server_->terminate_current(result);
+    return;
+  } catch (nav2_core::SmootherException & ex) {
+    RCLCPP_ERROR(this->get_logger(), "%s", ex.what());
+    result->error_code = ActionGoal::UNKNOWN;
+    action_server_->terminate_current(result);
+    return;
+  } catch (std::exception & ex) {
+    RCLCPP_ERROR(this->get_logger(), "%s", ex.what());
+    result->error_code = ActionGoal::UNKNOWN;
+    action_server_->terminate_current(result);
     return;
   }
+}
+
+bool SmootherServer::validate(const nav_msgs::msg::Path & path)
+{
+  if (path.poses.empty()) {
+    RCLCPP_WARN(get_logger(), "Requested path to smooth is empty");
+    return false;
+  }
+
+  RCLCPP_DEBUG(get_logger(), "Requested path to smooth is valid");
+  return true;
 }
 
 }  // namespace nav2_smoother

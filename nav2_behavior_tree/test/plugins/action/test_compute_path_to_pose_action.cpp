@@ -23,7 +23,7 @@
 
 #include "behaviortree_cpp_v3/bt_factory.h"
 
-#include "../../test_action_server.hpp"
+#include "utils/test_action_server.hpp"
 #include "nav2_behavior_tree/plugins/action/compute_path_to_pose_action.hpp"
 
 class ComputePathToPoseActionServer : public TestActionServer<nav2_msgs::action::ComputePathToPose>

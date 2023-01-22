@@ -39,6 +39,9 @@
 
 #include <exception>
 
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+#include "geometry_msgs/msg/point_stamped.hpp"
+
 namespace nav2_costmap_2d
 {
 
@@ -72,6 +75,13 @@ void CostmapFilter::onInitialize()
     double transform_tolerance;
     node->get_parameter(name_ + "." + "transform_tolerance", transform_tolerance);
     transform_tolerance_ = tf2::durationFromSec(transform_tolerance);
+
+    // Costmap Filter enabling service
+    enable_service_ = node->create_service<std_srvs::srv::SetBool>(
+      name_ + "/toggle_filter",
+      std::bind(
+        &CostmapFilter::enableCallback, this,
+        std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
   } catch (const std::exception & ex) {
     RCLCPP_ERROR(logger_, "Parameter problem: %s", ex.what());
     throw ex;
@@ -118,6 +128,82 @@ void CostmapFilter::updateCosts(
 
   process(master_grid, min_i, min_j, max_i, max_j, latest_pose_);
   current_ = true;
+}
+
+void CostmapFilter::enableCallback(
+  const std::shared_ptr<rmw_request_id_t>/*request_header*/,
+  const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
+  std::shared_ptr<std_srvs::srv::SetBool::Response> response)
+{
+  enabled_ = request->data;
+  response->success = true;
+  if (enabled_) {
+    response->message = "Enabled";
+  } else {
+    response->message = "Disabled";
+  }
+}
+
+bool CostmapFilter::transformPose(
+  const std::string global_frame,
+  const geometry_msgs::msg::Pose2D & global_pose,
+  const std::string mask_frame,
+  geometry_msgs::msg::Pose2D & mask_pose) const
+{
+  if (mask_frame != global_frame) {
+    // Filter mask and current layer are in different frames:
+    // Transform (global_pose.x, global_pose.y) point from current layer frame (global_frame)
+    // to mask_pose point in mask_frame
+    geometry_msgs::msg::TransformStamped transform;
+    geometry_msgs::msg::PointStamped in, out;
+    in.header.stamp = clock_->now();
+    in.header.frame_id = global_frame;
+    in.point.x = global_pose.x;
+    in.point.y = global_pose.y;
+    in.point.z = 0;
+
+    try {
+      tf_->transform(in, out, mask_frame, transform_tolerance_);
+    } catch (tf2::TransformException & ex) {
+      RCLCPP_ERROR(
+        logger_,
+        "CostmapFilter: failed to get costmap frame (%s) "
+        "transformation to mask frame (%s) with error: %s",
+        global_frame.c_str(), mask_frame.c_str(), ex.what());
+      return false;
+    }
+    mask_pose.x = out.point.x;
+    mask_pose.y = out.point.y;
+  } else {
+    // Filter mask and current layer are in the same frame:
+    // Just use global_pose coordinates
+    mask_pose = global_pose;
+  }
+
+  return true;
+}
+
+bool CostmapFilter::worldToMask(
+  nav_msgs::msg::OccupancyGrid::ConstSharedPtr filter_mask,
+  double wx, double wy, unsigned int & mx, unsigned int & my) const
+{
+  double origin_x = filter_mask->info.origin.position.x;
+  double origin_y = filter_mask->info.origin.position.y;
+  double resolution = filter_mask->info.resolution;
+  unsigned int size_x = filter_mask->info.width;
+  unsigned int size_y = filter_mask->info.height;
+
+  if (wx < origin_x || wy < origin_y) {
+    return false;
+  }
+
+  mx = std::round((wx - origin_x) / resolution);
+  my = std::round((wy - origin_y) / resolution);
+  if (mx >= size_x || my >= size_y) {
+    return false;
+  }
+
+  return true;
 }
 
 }  // namespace nav2_costmap_2d

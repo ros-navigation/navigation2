@@ -24,6 +24,9 @@
     <class type="nav2_costmap_2d::SpeedFilter"     base_class_type="nav2_costmap_2d::Layer">
       <description>Restricts maximum speed of robot in speed-limit zones marked on map.</description>
     </class>
+    <class type="nav2_costmap_2d::BinaryFilter"    base_class_type="nav2_costmap_2d::Layer">
+      <description>Binary flip filter.</description>
+    </class>
   </library>
 </class_libraries>
 

@@ -389,6 +389,10 @@ bool CollisionMonitor::processStopSlowdown(
   const Velocity & velocity,
   Action & robot_action) const
 {
+  if (!polygon->isShapeSet()) {
+    return false;
+  }
+
   if (polygon->getPointsInside(collision_points) > polygon->getMaxPoints()) {
     if (polygon->getActionType() == STOP) {
       // Setting up zero velocity for STOP model
@@ -419,6 +423,10 @@ bool CollisionMonitor::processApproach(
   Action & robot_action) const
 {
   polygon->updatePolygon();
+
+  if (!polygon->isShapeSet()) {
+    return false;
+  }
 
   // Obtain time before a collision
   const double collision_time = polygon->getCollisionTime(collision_points, velocity);

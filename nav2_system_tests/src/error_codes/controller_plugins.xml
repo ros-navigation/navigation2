@@ -1,0 +1,26 @@
+<library path="local_controller">
+    <class type="nav2_system_tests::UnknownErrorController"
+           base_class_type="nav2_core::Controller">
+        <description>This local planner produces the general exception.</description>
+    </class>
+    <class type="nav2_system_tests::TFErrorController"
+           base_class_type="nav2_core::Controller">
+        <description>This local planner produces a tf exception.</description>
+    </class>
+    <class type="nav2_system_tests::FailedToMakeProgressErrorController"
+           base_class_type="nav2_core::Controller">
+        <description>This local planner produces a failed to make progress exception.</description>
+    </class>
+    <class type="nav2_system_tests::PatienceExceededErrorController"
+           base_class_type="nav2_core::Controller">
+        <description>This local planner produces a start patience exceeded exception.</description>
+    </class>
+    <class type="nav2_system_tests::InvalidPathErrorController"
+           base_class_type="nav2_core::Controller">
+        <description>This local planner produces an invalid path exception.</description>
+    </class>
+    <class type="nav2_system_tests::NoValidControlErrorController"
+           base_class_type="nav2_core::Controller">
+        <description>This local planner produces a no valid control exception.</description>
+    </class>
+</library>

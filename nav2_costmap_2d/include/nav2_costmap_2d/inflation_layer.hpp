@@ -172,6 +172,16 @@ public:
     return access_;
   }
 
+  double getCostScalingFactor()
+  {
+    return cost_scaling_factor_;
+  }
+
+  double getInflationRadius()
+  {
+    return inflation_radius_;
+  }
+
 protected:
   /**
    * @brief Process updates on footprint changes to the inflation layer

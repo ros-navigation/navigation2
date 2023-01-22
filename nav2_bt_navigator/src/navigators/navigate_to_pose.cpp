@@ -14,7 +14,6 @@
 
 #include <vector>
 #include <string>
-#include <set>
 #include <memory>
 #include <limits>
 #include "nav2_bt_navigator/navigators/navigate_to_pose.hpp"
@@ -226,3 +225,8 @@ NavigateToPoseNavigator::onGoalPoseReceived(const geometry_msgs::msg::PoseStampe
 }
 
 }  // namespace nav2_bt_navigator
+
+#include "pluginlib/class_list_macros.hpp"
+PLUGINLIB_EXPORT_CLASS(
+  nav2_bt_navigator::NavigateToPoseNavigator,
+  nav2_core::NavigatorBase)

@@ -88,21 +88,6 @@ protected:
     const rclcpp::Time & source_time,
     const rclcpp::Time & curr_time) const;
 
-  /**
-   * @brief Obtains a transform from source_frame_id at source_time ->
-   * to base_frame_id_ at curr_time time
-   * @param source_frame_id Source frame ID to convert data from
-   * @param source_time Source timestamp to convert data from
-   * @param curr_time Current node time to interpolate data to
-   * @param tf_transform Output source->base transform
-   * @return True if got correct transform, otherwise false
-   */
-  bool getTransform(
-    const std::string & source_frame_id,
-    const rclcpp::Time & source_time,
-    const rclcpp::Time & curr_time,
-    tf2::Transform & tf_transform) const;
-
   // ----- Variables -----
 
   /// @brief Collision Monitor node

@@ -72,7 +72,7 @@ struct SmootherParams
       node, local_name + "w_dist", rclcpp::ParameterValue(0.0));
     node->get_parameter(local_name + "w_dist", distance_weight);
     nav2_util::declare_parameter_if_not_declared(
-      node, local_name + "w_smooth", rclcpp::ParameterValue(15000.0));
+      node, local_name + "w_smooth", rclcpp::ParameterValue(2000000.0));
     node->get_parameter(local_name + "w_smooth", smooth_weight);
     nav2_util::declare_parameter_if_not_declared(
       node, local_name + "cost_check_points", rclcpp::ParameterValue(std::vector<double>()));
