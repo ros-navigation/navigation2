@@ -949,7 +949,7 @@ bool saveOctomapToFile(
 {
   SaveParameters save_parameters_loc = save_parameters;
   checkSaveParameters(save_parameters_loc);
-  std::string map_name = "octo_" + save_parameters_loc.map_file_name + ".ot";
+  std::string map_name = save_parameters_loc.map_file_name + "_octo.ot";
 
   // saving the file as in https://github.com/OctoMap/octomap_mapping/blob/ros2/octomap_server/src/octomap_saver.cpp#L84
   std::unique_ptr<octomap::AbstractOcTree> tree{octomap_msgs::msgToMap(octomap_msg)};
