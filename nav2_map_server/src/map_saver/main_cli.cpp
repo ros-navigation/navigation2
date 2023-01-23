@@ -42,7 +42,7 @@ const char * USAGE_STRING{
   "  --octo_t <octomap_topic>\n"
   "  --binary true(default)/false\n"
   "\n"
-  "NOTE: --ros-args should be passed at the end of command line"
+  "NOTE: --ros-args should be passed at the end of command line\n"
   "NOTE: --min_h and --max_h args for saving a grid_map"};
 
 typedef enum

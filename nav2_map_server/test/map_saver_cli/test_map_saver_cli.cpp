@@ -12,20 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <octomap/octomap.h>
+
 #include <gtest/gtest.h>
 #include <experimental/filesystem>
 #include <string>
 #include <memory>
 #include <utility>
+#include <grid_map_ros/grid_map_ros.hpp>
+#include <octomap_msgs/msg/octomap.hpp>
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
+#include "grid_map_msgs/msg/grid_map.hpp"
+
+#include "octomap_msgs/conversions.h"
+
+#include "octomap_ros/conversions.hpp"
 
 TEST(MapSaverCLI, CLITest)
 {
   std::string path = "/tmp/";
   std::string file = "test_map";
   std::string file_path = path + file;
+  std::string grid_map_file_path = path + "gridmap_" + file;
 
   rclcpp::init(0, nullptr);
 
@@ -82,6 +92,66 @@ TEST(MapSaverCLI, CLITest)
   if (std::experimental::filesystem::exists(file_path + ".pgm")) {
     std::experimental::filesystem::remove(file_path + ".pgm");
   }
+
+  auto publisher_gridmap = node->create_publisher<grid_map_msgs::msg::GridMap>(
+    "/grid_map",
+    rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+
+  grid_map::GridMap test_gridmap = grid_map::GridMap({"occupancy", "elevation"});
+
+  test_gridmap.setFrameId("map");
+  test_gridmap.setGeometry(grid_map::Length(3.0, 3.0), 0.05, grid_map::Position(0.0, 0.0));
+
+  test_gridmap.add("elevation", 0.0);
+  test_gridmap.add("occupancy", 1.0);
+
+  std::unique_ptr<grid_map_msgs::msg::GridMap> msg_gridmap =
+    grid_map::GridMapRosConverter::toMessage(test_gridmap);
+
+  msg_gridmap->header.frame_id = "map";
+  msg_gridmap->header.stamp = node->now();
+
+  publisher_gridmap->publish(std::move(msg_gridmap));
+
+  // auto octomap_pub = node->create_publisher<octomap_msgs::msg::Octomap>("/octomap",
+  //   rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+  // std::unique_ptr<octomap::OcTree> tree = std::make_unique<octomap::OcTree>(0.5);
+  // octomap_msgs::msg::Octomap octo_msg;
+
+  // octomap_msgs::fullMapToMsg(*tree, octo_msg);
+  // octo_msg.header.frame_id = "octomap_frame";
+  // octo_msg.header.stamp = node->now();
+  // octomap_pub->publish(octo_msg);
+
+  rclcpp::Rate(0.5).sleep();
+
+  // succeed on real map
+  RCLCPP_INFO(node->get_logger(), "Calling saver...");
+
+  EXPECT_FALSE(std::experimental::filesystem::exists(grid_map_file_path + ".yaml"));
+
+  command =
+    std::string(
+    "ros2 run nav2_map_server map_saver_cli -t /grid_map  -f ") + grid_map_file_path;
+  return_code = system(command.c_str());
+  EXPECT_EQ(return_code, 0);
+
+  RCLCPP_INFO(node->get_logger(), "Checking on file...");
+
+  EXPECT_TRUE(std::experimental::filesystem::exists(grid_map_file_path + ".pgm"));
+  EXPECT_TRUE(std::experimental::filesystem::exists(grid_map_file_path + "_ele.pgm"));
+
+  if (std::experimental::filesystem::exists(grid_map_file_path + ".yaml")) {
+    std::experimental::filesystem::remove(grid_map_file_path + ".yaml");
+  }
+  if (std::experimental::filesystem::exists(grid_map_file_path + ".pgm")) {
+    std::experimental::filesystem::remove(grid_map_file_path + ".pgm");
+  }
+  if (std::experimental::filesystem::exists(grid_map_file_path + "_ele.pgm")) {
+    std::experimental::filesystem::remove(grid_map_file_path + "_ele.pgm");
+  }
+
+  rclcpp::Rate(0.5).sleep();
 
   // fail on bogus map
   RCLCPP_INFO(node->get_logger(), "Calling saver...");

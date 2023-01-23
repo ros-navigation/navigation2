@@ -795,7 +795,7 @@ void WriteMetadataToFile(
   const grid_map_msgs::msg::GridMap & map,
   const SaveParameters & save_parameters)
 {
-  std::string mapdatafile = save_parameters.map_file_name + "." + save_parameters.image_format;
+  std::string mapdatafile = save_parameters.map_file_name + "_ele." + save_parameters.image_format;
   std::string mapmetadatafile = save_parameters.map_file_name + ".yaml";
 
   // occupancy
@@ -817,7 +817,7 @@ void WriteMetadataToFile(
   e << YAML::Newline;
   e << YAML::Comment(" elevation layer");
   e << YAML::BeginMap;
-  e << YAML::Key << "elevation_image" << YAML::Value << "ele_" + mapdatafile;
+  e << YAML::Key << "elevation_image" << YAML::Value << mapdatafile;
   e << YAML::Key << "min_height" << YAML::Value << save_parameters.min_height;
   e << YAML::Key << "max_height" << YAML::Value << save_parameters.max_height;
 
@@ -836,7 +836,7 @@ void WriteMetadataToFile(
   const octomap_msgs::msg::Octomap & map,
   const SaveParameters & save_parameters)
 {
-  std::string mapdatafile = "octo_" + save_parameters.map_file_name + ".ot";
+  std::string mapdatafile = save_parameters.map_file_name + "_octo.ot";
   std::string mapmetadatafile = save_parameters.map_file_name + ".yaml";
 
   // elevation
@@ -894,7 +894,7 @@ bool saveMapToFile(
   nav_msgs::msg::OccupancyGrid occ_grid;
   grid_map::GridMapRosConverter::toOccupancyGrid(gridmap, "occupancy", 0.0, 254.0, occ_grid);
   nav_msgs::msg::OccupancyGrid ele_grid;
-  // grid_map::GridMapRosConverter::toOccupancyGrid(gridmap, "elevation", -5.0, 5.0, ele_grid);
+
   if (save_parameters_loc.max_height == 0.0 && save_parameters_loc.min_height == 0.0) {
     // infer max and min elevation boundaries from the data
     // change the params to print them in the yaml
@@ -922,7 +922,7 @@ bool saveMapToFile(
     // Checking map parameters for consistency
     save_parameters_loc = save_parameters;
     checkSaveParameters(save_parameters_loc);
-    save_parameters_loc.map_file_name = "ele_" + save_parameters_loc.map_file_name;
+    save_parameters_loc.map_file_name = save_parameters_loc.map_file_name + "_ele";
     // elevation must be read in scale mode
     save_parameters_loc.mode = nav2_map_server::MapMode::Scale;
     save_parameters_loc.min_height = min_h;
