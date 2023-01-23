@@ -113,15 +113,15 @@ TEST(MapSaverCLI, CLITest)
 
   publisher_gridmap->publish(std::move(msg_gridmap));
 
-  // auto octomap_pub = node->create_publisher<octomap_msgs::msg::Octomap>("/octomap",
-  //   rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
-  // std::unique_ptr<octomap::OcTree> tree = std::make_unique<octomap::OcTree>(0.5);
-  // octomap_msgs::msg::Octomap octo_msg;
+  auto octomap_pub = node->create_publisher<octomap_msgs::msg::Octomap>(
+    "/octomap", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+  std::unique_ptr<octomap::OcTree> tree = std::make_unique<octomap::OcTree>(0.5);
+  octomap_msgs::msg::Octomap octo_msg;
 
-  // octomap_msgs::fullMapToMsg(*tree, octo_msg);
-  // octo_msg.header.frame_id = "octomap_frame";
-  // octo_msg.header.stamp = node->now();
-  // octomap_pub->publish(octo_msg);
+  octomap_msgs::fullMapToMsg(*tree, octo_msg);
+  octo_msg.header.frame_id = "octomap_frame";
+  octo_msg.header.stamp = node->now();
+  octomap_pub->publish(octo_msg);
 
   rclcpp::Rate(0.5).sleep();
 
@@ -132,7 +132,8 @@ TEST(MapSaverCLI, CLITest)
 
   command =
     std::string(
-    "ros2 run nav2_map_server map_saver_cli -t /grid_map  -f ") + grid_map_file_path;
+    "ros2 run nav2_map_server map_saver_cli -t /grid_map --octo_t /octomap -f ") +
+    grid_map_file_path;
   return_code = system(command.c_str());
   EXPECT_EQ(return_code, 0);
 
@@ -140,6 +141,7 @@ TEST(MapSaverCLI, CLITest)
 
   EXPECT_TRUE(std::experimental::filesystem::exists(grid_map_file_path + ".pgm"));
   EXPECT_TRUE(std::experimental::filesystem::exists(grid_map_file_path + "_ele.pgm"));
+  EXPECT_TRUE(std::experimental::filesystem::exists(grid_map_file_path + "_octo.ot"));
 
   if (std::experimental::filesystem::exists(grid_map_file_path + ".yaml")) {
     std::experimental::filesystem::remove(grid_map_file_path + ".yaml");
@@ -149,6 +151,9 @@ TEST(MapSaverCLI, CLITest)
   }
   if (std::experimental::filesystem::exists(grid_map_file_path + "_ele.pgm")) {
     std::experimental::filesystem::remove(grid_map_file_path + "_ele.pgm");
+  }
+  if (std::experimental::filesystem::exists(grid_map_file_path + "_octo.ot")) {
+    std::experimental::filesystem::remove(grid_map_file_path + "_octo.ot");
   }
 
   rclcpp::Rate(0.5).sleep();
