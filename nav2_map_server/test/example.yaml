@@ -1,0 +1,14 @@
+image: example_ele.pgm
+mode: trinary
+resolution: 0.2
+origin: [0, 0, 0]
+negate: 0
+occupied_thresh: 0.65
+free_thresh: 0.25
+#  elevation layer
+elevation_image: example_ele.pgm
+min_height: -1.16
+max_height: 1.88
+#  octomap
+octomap_file: example_octo.ot
+binary: false
