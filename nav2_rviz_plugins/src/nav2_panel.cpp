@@ -1519,7 +1519,7 @@ Nav2Panel::getFollowWaypointsFeedbackLabel(const nav2_msgs::action::FollowWaypoi
   return QString(
     std::string(
       "<table><tr><td width=200>Total Time Taken:</td><td>" +
-      toString(rclcpp::Duration(msg.elapsed_time).seconds(), 2) + " s"
+      toString(rclcpp::Duration(msg.elapsed_time).seconds(), 1) + " s"
       "</td></tr></table>").c_str());
 }
 
