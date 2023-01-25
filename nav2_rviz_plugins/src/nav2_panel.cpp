@@ -1522,7 +1522,7 @@ inline std::string Nav2Panel::toLabel(T & msg)
     toString(rclcpp::Duration(msg.estimated_time_remaining).seconds(), 0) + " s"
     "</td></tr><tr><td width=150>Distance remaining:</td><td>" +
     toString(msg.distance_remaining, 2) + " m"
-    "</td></tr><tr><td width=150>Time taken:</td><td>" +
+    "</td></tr><tr><td width=150>Time Taken for Current WP:</td><td>" +
     toString(rclcpp::Duration(msg.navigation_time).seconds(), 0) + " s"
     "</td></tr><tr><td width=150>Recoveries:</td><td>" +
     std::to_string(msg.number_of_recoveries) +
