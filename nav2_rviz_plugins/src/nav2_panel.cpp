@@ -825,8 +825,6 @@ Nav2Panel::onInitialize()
     "follow_waypoints/_action/feedback",
     rclcpp::SystemDefaultsQoS(),
     [this](const nav2_msgs::action::FollowWaypoints::Impl::FeedbackMessage::SharedPtr msg) {
-      RCLCPP_INFO(client_node_->get_logger(), "Follow waypoints feedback");
-      (void) msg;
       follow_waypoints_feedback_indicator_->setText(getFollowWaypointsFeedbackLabel(msg->feedback));
     });
 
@@ -1512,8 +1510,8 @@ Nav2Panel::getFollowWaypointsFeedbackLabel(nav2_msgs::action::FollowWaypoints::F
   return QString(
     std::string(
       "<table><tr><td width=150>Total Time Taken:</td><td>" +
-      std::to_string(rclcpp::Duration(msg.elapsed_time).seconds()) +
-      " s</td></tr></table>").c_str());
+      toString(rclcpp::Duration(msg.elapsed_time).seconds(), 2) + " s"
+      "</td></tr></table>").c_str());
 }
 
 template<typename T>
