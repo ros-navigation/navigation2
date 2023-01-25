@@ -760,6 +760,7 @@ void Nav2Panel::handleGoalSaver()
       acummulated_poses_[i].pose.orientation.y, acummulated_poses_[i].pose.orientation.z};
     out << YAML::Value << orientation;
     out << YAML::EndMap;
+    out << YAML::Newline;
   }
 
   // open dialog to save it in a file
