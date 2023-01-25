@@ -804,10 +804,10 @@ Nav2Panel::onInitialize()
         navigation_feedback_indicator_->setText(
           getNavToPoseFeedbackLabel(msg->feedback) + QString(
             std::string(
-              "</td></tr><tr><td width=150>Waypoint:</td><td>" +
+              "</td></tr><tr><td width=200>Waypoint:</td><td>" +
               toString(goal_index_ + 1)).c_str()) + QString(
             std::string(
-              "</td></tr><tr><td width=150>Loop:</td><td>" +
+              "</td></tr><tr><td width=200>Loop:</td><td>" +
               toString(loop_count_)).c_str()));
       } else {
         navigation_feedback_indicator_->setText(getNavToPoseFeedbackLabel(msg->feedback));
@@ -1500,7 +1500,7 @@ Nav2Panel::getNavThroughPosesFeedbackLabel(nav2_msgs::action::NavigateThroughPos
 {
   return QString(
     std::string(
-      "<table><tr><td width=150>Poses remaining:</td><td>" +
+      "<table><tr><td width=200>Poses remaining:</td><td>" +
       std::to_string(msg.number_of_poses_remaining) +
       "</td></tr>" + toLabel(msg) + "</table>").c_str());
 }
@@ -1510,7 +1510,7 @@ Nav2Panel::getFollowWaypointsFeedbackLabel(nav2_msgs::action::FollowWaypoints::F
 {
   return QString(
     std::string(
-      "<table><tr><td width=150>Total Time Taken:</td><td>" +
+      "<table><tr><td width=200>Total Time Taken:</td><td>" +
       toString(rclcpp::Duration(msg.elapsed_time).seconds(), 2) + " s"
       "</td></tr></table>").c_str());
 }
@@ -1519,13 +1519,13 @@ template<typename T>
 inline std::string Nav2Panel::toLabel(T & msg)
 {
   return std::string(
-    "<tr><td width=150>ETA:</td><td>" +
+    "<tr><td width=200>ETA:</td><td>" +
     toString(rclcpp::Duration(msg.estimated_time_remaining).seconds(), 0) + " s"
-    "</td></tr><tr><td width=150>Distance remaining:</td><td>" +
+    "</td></tr><tr><td width=200>Distance remaining:</td><td>" +
     toString(msg.distance_remaining, 2) + " m"
-    "</td></tr><tr><td width=150>Time Taken for Current WP:</td><td>" +
+    "</td></tr><tr><td width=200>Time Taken for Current WP:</td><td>" +
     toString(rclcpp::Duration(msg.navigation_time).seconds(), 0) + " s"
-    "</td></tr><tr><td width=150>Recoveries:</td><td>" +
+    "</td></tr><tr><td width=200>Recoveries:</td><td>" +
     std::to_string(msg.number_of_recoveries) +
     "</td></tr>");
 }
