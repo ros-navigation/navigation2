@@ -859,6 +859,14 @@ Nav2Panel::onInitialize()
         navigation_feedback_indicator_->setText(getNavThroughPosesFeedbackLabel());
       }
     });
+  follow_waypoints_goal_status_sub_ = node->create_subscription<action_msgs::msg::GoalStatusArray>(
+    "follow_waypoints/_action/status",
+    rclcpp::SystemDefaultsQoS(),
+    [this](const action_msgs::msg::GoalStatusArray::SharedPtr msg) {
+      if (msg->status_list.back().status != action_msgs::msg::GoalStatus::STATUS_EXECUTING) {
+        follow_waypoints_feedback_indicator_->setText(getFollowWaypointsFeedbackLabel());
+      }
+    });
 }
 
 void
