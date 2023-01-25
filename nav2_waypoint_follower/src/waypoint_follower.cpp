@@ -176,6 +176,7 @@ WaypointFollower::followWaypoints()
   rclcpp::WallRate r(loop_rate_);
 
   auto start_time = steady_clock_.now();
+  auto last_wp_time = start_time;
   rclcpp::Duration elapsed_time{0, 0};
 
   // get the goal index, by default, the first in the list of waypoints given.
@@ -183,13 +184,13 @@ WaypointFollower::followWaypoints()
   bool new_goal = true;
 
   while (rclcpp::ok()) {
-    elapsed_time = steady_clock_.now() - start_time;
+    const auto now_time = steady_clock_.now();
+    auto elapsed_time = now_time - start_time;
     // Check if asked to stop processing action
     if (action_server_->is_cancel_requested()) {
       auto cancel_future = nav_to_pose_client_->async_cancel_all_goals();
       callback_group_executor_.spin_until_future_complete(cancel_future);
       // for result callback processing
-      result->total_elapsed_time = elapsed_time;
       callback_group_executor_.spin_some();
       action_server_->terminate_all(result);
       return;
@@ -220,6 +221,7 @@ WaypointFollower::followWaypoints()
     }
 
     feedback->current_waypoint = goal_index;
+    feedback->elapsed_time = elapsed_time;
     action_server_->publish_feedback(feedback);
 
     if (current_goal_status_.status == ActionStatus::FAILED) {
@@ -234,7 +236,6 @@ WaypointFollower::followWaypoints()
           get_logger(), "Failed to process waypoint %i in waypoint "
           "list and stop on failure is enabled."
           " Terminating action.", goal_index);
-        result->total_elapsed_time = elapsed_time;
         action_server_->terminate_current(result);
         current_goal_status_.error_code = 0;
         return;
@@ -266,8 +267,6 @@ WaypointFollower::followWaypoints()
           get_logger(), "Failed to execute task at waypoint %i "
           " stop on failure is enabled."
           " Terminating action.", goal_index);
-
-        result->total_elapsed_time = elapsed_time;
         action_server_->terminate_current(result);
         current_goal_status_.error_code = 0;
         return;
@@ -284,13 +283,14 @@ WaypointFollower::followWaypoints()
       // Update server state
       goal_index++;
       new_goal = true;
+      result->wp_elapsed_time.push_back(now_time - last_wp_time);
+      last_wp_time = now_time;
       if (goal_index >= goal->poses.size()) {
         if (current_loop_no == no_of_loops) {
           RCLCPP_INFO(
             get_logger(), "Completed all %zu waypoints requested in a time of %.2f seconds.",
             goal->poses.size(),
             elapsed_time.seconds());
-          result->total_elapsed_time = elapsed_time;
           action_server_->succeeded_current(result);
           current_goal_status_.error_code = 0;
           return;

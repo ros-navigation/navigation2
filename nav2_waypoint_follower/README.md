@@ -5,7 +5,7 @@ The Nav2 waypoint follower is an example application of how to use the navigatio
 See its [Configuration Guide Page](https://navigation.ros.org/configuration/packages/configuring-waypoint-follower.html) for additional parameter descriptions.
 
 The package exposes the `follow_waypoints` action server of type `nav2_msgs/FollowWaypoints`.
- It is given an array of waypoints to visit, gives feedback about the current index of waypoint it is processing, and returns a list of waypoints it was unable to complete.
+ It is given an array of waypoints to visit, gives feedback about the current index of waypoint it is processing, and returns a list of waypoints it was unable to complete. The action also includes timing information for how long each waypoint took to complete as well as the total time to completion.
 
 It also hosts a waypoint task executor plugin which can be used to perform custom behavior at a waypoint like waiting for user instruction, taking a picture, or picking up a box.
 

@@ -58,6 +58,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   localization_status_indicator_ = new QLabel;
   navigation_goal_status_indicator_ = new QLabel;
   navigation_feedback_indicator_ = new QLabel;
+  follow_waypoints_feedback_indicator_ = new QLabel;
   waypoint_status_indicator_ = new QLabel;
   number_of_loops_ = new QLabel;
   nr_of_loops_ = new QLineEdit;
@@ -93,10 +94,12 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   navigation_goal_status_indicator_->setText(getGoalStatusLabel());
   number_of_loops_->setText("Num of loops");
   navigation_feedback_indicator_->setText(getNavThroughPosesFeedbackLabel());
+  follow_waypoints_feedback_indicator_->setText(getFollowWaypointsFeedbackLabel());
   navigation_status_indicator_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
   localization_status_indicator_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
   navigation_goal_status_indicator_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
   navigation_feedback_indicator_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+  follow_waypoints_feedback_indicator_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
   waypoint_status_indicator_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
   pre_initial_ = new QState();
@@ -483,6 +486,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
       navigation_status_indicator_->setText(navigation_inactive);
       navigation_goal_status_indicator_->setText(getGoalStatusLabel());
       navigation_feedback_indicator_->setText(getNavThroughPosesFeedbackLabel());
+      follow_waypoints_feedback_indicator_->setText(getFollowWaypointsFeedbackLabel());
     });
   QObject::connect(
     initial_thread_, &InitialThread::localizationActive,
@@ -537,6 +541,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
 
   main_layout->addLayout(side_layout);
   main_layout->addWidget(navigation_feedback_indicator_);
+  main_layout->addWidget(follow_waypoints_feedback_indicator_);
   main_layout->addWidget(waypoint_status_indicator_);
   main_layout->addWidget(pause_resume_button_);
   main_layout->addWidget(start_reset_button_);
@@ -813,6 +818,16 @@ Nav2Panel::onInitialize()
     rclcpp::SystemDefaultsQoS(),
     [this](const nav2_msgs::action::NavigateThroughPoses::Impl::FeedbackMessage::SharedPtr msg) {
       navigation_feedback_indicator_->setText(getNavThroughPosesFeedbackLabel(msg->feedback));
+    });
+
+  follow_waypoints_feedback_sub_ =
+    node->create_subscription<nav2_msgs::action::FollowWaypoints::Impl::FeedbackMessage>(
+    "follow_waypoints/_action/feedback",
+    rclcpp::SystemDefaultsQoS(),
+    [this](const nav2_msgs::action::FollowWaypoints::Impl::FeedbackMessage::SharedPtr msg) {
+      RCLCPP_INFO(client_node_->get_logger(), "Follow waypoints feedback");
+      (void) msg;
+      follow_waypoints_feedback_indicator_->setText(getFollowWaypointsFeedbackLabel(msg->feedback));
     });
 
   // create action goal status subscribers
@@ -1489,6 +1504,16 @@ Nav2Panel::getNavThroughPosesFeedbackLabel(nav2_msgs::action::NavigateThroughPos
       "<table><tr><td width=150>Poses remaining:</td><td>" +
       std::to_string(msg.number_of_poses_remaining) +
       "</td></tr>" + toLabel(msg) + "</table>").c_str());
+}
+
+inline QString
+Nav2Panel::getFollowWaypointsFeedbackLabel(nav2_msgs::action::FollowWaypoints::Feedback msg)
+{
+  return QString(
+    std::string(
+      "<table><tr><td width=150>Total Time Taken:</td><td>" +
+      std::to_string(rclcpp::Duration(msg.elapsed_time).seconds()) +
+      " s</td></tr></table>").c_str());
 }
 
 template<typename T>

@@ -127,10 +127,14 @@ private:
     navigation_feedback_sub_;
   rclcpp::Subscription<nav2_msgs::action::NavigateThroughPoses::Impl::FeedbackMessage>::SharedPtr
     nav_through_poses_feedback_sub_;
+  rclcpp::Subscription<nav2_msgs::action::FollowWaypoints::Impl::FeedbackMessage>::SharedPtr
+    follow_waypoints_feedback_sub_;
   rclcpp::Subscription<nav2_msgs::action::NavigateToPose::Impl::GoalStatusMessage>::SharedPtr
     navigation_goal_status_sub_;
   rclcpp::Subscription<nav2_msgs::action::NavigateThroughPoses::Impl::GoalStatusMessage>::SharedPtr
     nav_through_poses_goal_status_sub_;
+  rclcpp::Subscription<nav2_msgs::action::FollowWaypoints::Impl::GoalStatusMessage>::SharedPtr
+    follow_waypoints_goal_status_sub_;
 
   // Tf's for initial pose
   std::shared_ptr<tf2_ros::Buffer> tf2_buffer_;
@@ -161,6 +165,7 @@ private:
   QLabel * localization_status_indicator_{nullptr};
   QLabel * navigation_goal_status_indicator_{nullptr};
   QLabel * navigation_feedback_indicator_{nullptr};
+  QLabel * follow_waypoints_feedback_indicator_{nullptr};
   QLabel * waypoint_status_indicator_{nullptr};
   QLabel * number_of_loops_{nullptr};
 
@@ -215,6 +220,9 @@ private:
   static inline QString getNavThroughPosesFeedbackLabel(
     nav2_msgs::action::NavigateThroughPoses::Feedback =
     nav2_msgs::action::NavigateThroughPoses::Feedback());
+  static inline QString getFollowWaypointsFeedbackLabel(
+    nav2_msgs::action::FollowWaypoints::Feedback =
+    nav2_msgs::action::FollowWaypoints::Feedback());
   template<typename T>
   static inline std::string toLabel(T & msg);
 
