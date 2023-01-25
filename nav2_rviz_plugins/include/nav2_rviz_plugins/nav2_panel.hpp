@@ -211,23 +211,23 @@ private:
 
   // create label string from goal status msg
   static inline QString getGoalStatusLabel(
-    int8_t status = action_msgs::msg::GoalStatus::STATUS_UNKNOWN);
+    const int8_t status = action_msgs::msg::GoalStatus::STATUS_UNKNOWN);
 
   // create label string from feedback msg
   static inline QString getNavToPoseFeedbackLabel(
-    nav2_msgs::action::NavigateToPose::Feedback msg =
+    const nav2_msgs::action::NavigateToPose::Feedback msg =
     nav2_msgs::action::NavigateToPose::Feedback());
   static inline QString getNavThroughPosesFeedbackLabel(
-    nav2_msgs::action::NavigateThroughPoses::Feedback =
+    const nav2_msgs::action::NavigateThroughPoses::Feedback =
     nav2_msgs::action::NavigateThroughPoses::Feedback());
   static inline QString getFollowWaypointsFeedbackLabel(
-    nav2_msgs::action::FollowWaypoints::Feedback =
+    const nav2_msgs::action::FollowWaypoints::Feedback =
     nav2_msgs::action::FollowWaypoints::Feedback());
   template<typename T>
-  static inline std::string toLabel(T & msg);
+  static inline std::string toLabel(const T & msg);
 
   // round off double to the specified precision and convert to string
-  static inline std::string toString(double val, int precision = 0);
+  static inline std::string toString(const double val, const int precision = 0);
 
   // Waypoint navigation visual markers publisher
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr wp_navigation_markers_pub_;

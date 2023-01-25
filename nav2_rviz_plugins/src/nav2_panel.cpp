@@ -1463,7 +1463,7 @@ Nav2Panel::updateWpNavigationMarkers()
 }
 
 inline QString
-Nav2Panel::getGoalStatusLabel(int8_t status)
+Nav2Panel::getGoalStatusLabel(const int8_t status)
 {
   std::string status_str;
   switch (status) {
@@ -1498,13 +1498,13 @@ Nav2Panel::getGoalStatusLabel(int8_t status)
 }
 
 inline QString
-Nav2Panel::getNavToPoseFeedbackLabel(nav2_msgs::action::NavigateToPose::Feedback msg)
+Nav2Panel::getNavToPoseFeedbackLabel(const nav2_msgs::action::NavigateToPose::Feedback msg)
 {
   return QString(std::string("<table>" + toLabel(msg) + "</table>").c_str());
 }
 
 inline QString
-Nav2Panel::getNavThroughPosesFeedbackLabel(nav2_msgs::action::NavigateThroughPoses::Feedback msg)
+Nav2Panel::getNavThroughPosesFeedbackLabel(const nav2_msgs::action::NavigateThroughPoses::Feedback msg)
 {
   return QString(
     std::string(
@@ -1514,7 +1514,7 @@ Nav2Panel::getNavThroughPosesFeedbackLabel(nav2_msgs::action::NavigateThroughPos
 }
 
 inline QString
-Nav2Panel::getFollowWaypointsFeedbackLabel(nav2_msgs::action::FollowWaypoints::Feedback msg)
+Nav2Panel::getFollowWaypointsFeedbackLabel(const nav2_msgs::action::FollowWaypoints::Feedback msg)
 {
   return QString(
     std::string(
@@ -1524,7 +1524,7 @@ Nav2Panel::getFollowWaypointsFeedbackLabel(nav2_msgs::action::FollowWaypoints::F
 }
 
 template<typename T>
-inline std::string Nav2Panel::toLabel(T & msg)
+inline std::string Nav2Panel::toLabel(const T & msg)
 {
   return std::string(
     "<tr><td width=200>ETA:</td><td>" +
@@ -1539,7 +1539,7 @@ inline std::string Nav2Panel::toLabel(T & msg)
 }
 
 inline std::string
-Nav2Panel::toString(double val, int precision)
+Nav2Panel::toString(const double val, const int precision)
 {
   std::ostringstream out;
   out.precision(precision);
