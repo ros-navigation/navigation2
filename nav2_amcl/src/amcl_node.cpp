@@ -1430,9 +1430,7 @@ AmclNode::dynamicParametersCallback(
         sigma_hit_ = parameter.as_double();
         reinit_laser = true;
       } else if (param_name == "transform_tolerance") {
-        tmp_tol = parameter.as_double();
-        transform_tolerance_ = tf2::durationFromSec(tmp_tol);
-        reinit_laser = true;
+        RCLCPP_WARN(get_logger(), "Cannot change param [%s] due to issue with reinitialization of message filters (#28)", param_name.c_str());
       } else if (param_name == "update_min_a") {
         a_thresh_ = parameter.as_double();
       } else if (param_name == "update_min_d") {
@@ -1477,11 +1475,9 @@ AmclNode::dynamicParametersCallback(
         sensor_model_type_ = parameter.as_string();
         reinit_laser = true;
       } else if (param_name == "odom_frame_id") {
-        odom_frame_id_ = parameter.as_string();
-        reinit_laser = true;
+        RCLCPP_WARN(get_logger(), "Cannot change param [%s] due to issue with reinitialization of message filters (#28)", param_name.c_str());
       } else if (param_name == "scan_topic") {
-        scan_topic_ = parameter.as_string();
-        reinit_laser = true;
+        RCLCPP_WARN(get_logger(), "Cannot change param [%s] due to issue with reinitialization of message filters (#28)", param_name.c_str());
       } else if (param_name == "robot_model_type") {
         robot_model_type_ = parameter.as_string();
         reinit_odom = true;
