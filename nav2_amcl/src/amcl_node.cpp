@@ -1555,10 +1555,6 @@ AmclNode::dynamicParametersCallback(
     lasers_.clear();
     lasers_update_.clear();
     frame_to_laser_.clear();
-    laser_scan_connection_.disconnect();
-    laser_scan_sub_.reset();
-
-    initMessageFilters();
   }
 
   // Re-initialize the map
