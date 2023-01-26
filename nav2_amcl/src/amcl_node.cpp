@@ -1460,7 +1460,7 @@ AmclNode::dynamicParametersCallback(
         reinit_laser = true;
       } else if (param_name == "max_particle_gen_prob_ext_pose") {
         max_particle_gen_prob_ext_pose_ = parameter.as_double();
-        reinit_pf = true;
+        pf_->max_particle_gen_prob_ext_pose = max_particle_gen_prob_ext_pose_;
       } else if (param_name == "ext_pose_search_tolerance_sec") {
         ext_pose_search_tolerance_sec_ = parameter.as_double();
         reinit_ext_pose = true;
