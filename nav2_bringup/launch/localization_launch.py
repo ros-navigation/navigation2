@@ -40,6 +40,7 @@ def generate_launch_description():
     params_file = LaunchConfiguration('params_file')
     use_composition = LaunchConfiguration('use_composition')
     container_name = LaunchConfiguration('container_name')
+    container_name_full = (namespace, '/', container_name)
     use_respawn = LaunchConfiguration('use_respawn')
     log_level = LaunchConfiguration('log_level')
 
@@ -166,7 +167,7 @@ def generate_launch_description():
         actions=[
             SetParameter("use_sim_time", use_sim_time),
             LoadComposableNodes(
-                target_container=container_name,
+                target_container=container_name_full,
                 condition=LaunchConfigurationEquals('map', ''),
                 composable_node_descriptions=[
                     ComposableNode(
@@ -178,7 +179,7 @@ def generate_launch_description():
                 ],
             ),
             LoadComposableNodes(
-                target_container=container_name,
+                target_container=container_name_full,
                 condition=LaunchConfigurationNotEquals('map', ''),
                 composable_node_descriptions=[
                     ComposableNode(
@@ -191,7 +192,7 @@ def generate_launch_description():
                 ],
             ),
             LoadComposableNodes(
-                target_container=container_name,
+                target_container=container_name_full,
                 composable_node_descriptions=[
                     ComposableNode(
                         package='nav2_amcl',
