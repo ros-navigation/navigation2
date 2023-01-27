@@ -134,17 +134,15 @@ Thus, by convention, we say the `penalty` attribute of an edge should contain th
 
 
 - [ ] live route analyzer working + document in readme
+- [ ] test coverage (planner, tracker, operations plugins, manager)
 
 
-
-- [ ] operations plugins: call ext server for operation base class + useful/realistic demo plugin(s), pause at waypoints for signal, node and edge operations
-- [ ] Implement collision monitor + replanning / rerouting on invalidation for other reasons (requested, time) from up to last_node_passed. Or other than literal invalidations, have regularized replannings based on BT use?
-- [ ] other plugins: path manipulator, planners, replanning / rerouting triggerers (collision monitor, frequency, etc)
+- [ ] operations plugins: collision monitor replanning, replanning regular rate, replanning on service request. Call ext server / action base class + impls {openrmf door/elevator, event handler, ...}. pause at waypoints for signal.
 
 - [ ] Create basic file format for graph + parser: OSM and geoJSON. Vector types (regions), recursion namespaces, structured types?
 - [ ] QGIS demo + plugins for editing and visualizing graphs
 
-- [ ] Quality: BT nodes, Python API, testing (plan planner + server + added live stuff), documentation, tutorial (bt change, plugin customize, file field examples)
+- [ ] Quality: BT nodes, Python API, testing (server + plugins), documentation, tutorial (bt change, plugin customize, file field examples)
 
 - [ ] demos with route -> global -> local. outdoor non-planar. to waypoint follower (GPS?) of nodes.
 
@@ -152,3 +150,4 @@ Thus, by convention, we say the `penalty` attribute of an edge should contain th
 
 - How can BT trigger BT node again if its still feedback-pending? preemption! Make sure works
 - service for closed edge // topic for costmaps come in during request?
+- How to stop / pause robot in the server and/or the behavior tree? Clearance stuff
