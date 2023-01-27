@@ -45,7 +45,9 @@ include_directories(
 add_library(${library_name} SHARED
   src/route_server.cpp
   src/route_planner.cpp
+  src/route_tracker.cpp
   src/edge_scorer.cpp
+  src/operations_manager.cpp
   src/node_spatial_tree.cpp
   src/path_converter.cpp
   src/graph_file_loader.cpp
@@ -80,6 +82,15 @@ ament_target_dependencies(edge_scorers
   ${dependencies}
 )
 
+# Route operations plugins
+add_library(route_operations SHARED
+  src/plugins/route_operations/adjust_speed_limit.cpp
+)
+
+ament_target_dependencies(route_operations
+  ${dependencies}
+)
+
 pluginlib_export_plugin_description_file(nav2_route plugins.xml)
 
 install(DIRECTORY include/
@@ -90,7 +101,7 @@ install(TARGETS ${executable_name}
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
-install(TARGETS ${library_name} edge_scorers
+install(TARGETS ${library_name} edge_scorers route_operations
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -107,5 +118,5 @@ endif()
 
 ament_export_include_directories(include)
 ament_export_dependencies(${dependencies})
-ament_export_libraries(${library_name} edge_scorers)
+ament_export_libraries(${library_name} edge_scorers route_operations)
 ament_package()

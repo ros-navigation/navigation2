@@ -21,10 +21,11 @@ namespace nav2_route
 {
 
 void AdjustEdgesScorer::configure(
-  const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
+  const rclcpp_lifecycle::LifecycleNode::SharedPtr node,
   const std::string & name)
 {
   name_ = name;
+  logger_ = node->get_logger();
   service_ =
     node->create_service<nav2_msgs::srv::AdjustEdges>(
     getName() + "/adjust_edges", std::bind(
@@ -39,6 +40,8 @@ void AdjustEdgesScorer::closedEdgesCb(
   const std::shared_ptr<nav2_msgs::srv::AdjustEdges::Request> request,
   std::shared_ptr<nav2_msgs::srv::AdjustEdges::Response> response)
 {
+  RCLCPP_INFO(logger_, "Edge closure and cost adjustment in progress!");
+
   // Add new closed edges
   for (unsigned int edge : request->closed_edges) {
     closed_edges_.insert(edge);

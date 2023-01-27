@@ -25,5 +25,5 @@ uint16 next_node_id
 uint16 current_edge_id
 Route route
 nav_msgs/Path path
-string operation_triggered
+string[] operations_triggered
 bool rerouted

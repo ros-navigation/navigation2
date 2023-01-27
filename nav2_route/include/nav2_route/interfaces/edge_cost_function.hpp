@@ -53,7 +53,7 @@ public:
    * @param parent pointer to user's node
    */
   virtual void configure(
-    const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
+    const rclcpp_lifecycle::LifecycleNode::SharedPtr node,
     const std::string & name) = 0;
 
   /**

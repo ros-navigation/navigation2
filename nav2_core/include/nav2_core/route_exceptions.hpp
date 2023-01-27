@@ -29,6 +29,13 @@ public:
   : std::runtime_error(description) {}
 };
 
+class OperationFailed : public RouteException
+{
+public:
+  explicit OperationFailed(const std::string & description)
+  : RouteException(description) {}
+};
+
 class NoValidRouteCouldBeFound : public RouteException
 {
 public:

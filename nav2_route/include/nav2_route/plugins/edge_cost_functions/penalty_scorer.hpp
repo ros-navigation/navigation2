@@ -47,7 +47,7 @@ public:
    * @brief Configure
    */
   void configure(
-    const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
+    const rclcpp_lifecycle::LifecycleNode::SharedPtr node,
     const std::string & name) override;
 
   /**

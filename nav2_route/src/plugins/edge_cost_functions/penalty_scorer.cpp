@@ -21,7 +21,7 @@ namespace nav2_route
 {
 
 void PenaltyScorer::configure(
-  const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
+  const rclcpp_lifecycle::LifecycleNode::SharedPtr node,
   const std::string & name)
 {
   name_ = name;

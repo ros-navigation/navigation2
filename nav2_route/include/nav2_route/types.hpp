@@ -100,6 +100,17 @@ enum class OperationTrigger
 };
 
 /**
+ * @enum nav2_route::RouteOperationType
+ * @brief The type of operation plugin
+ */
+enum class RouteOperationType
+{
+  ON_GRAPH = 0,
+  ON_STATUS_CHANGE = 1,
+  ON_QUERY = 2
+};
+
+/**
  * @struct nav2_route::Operation
  * @brief An object to store operations to perform on events with types and metadata
  */
@@ -107,10 +118,21 @@ struct Operation
 {
   std::string type;
   OperationTrigger trigger;
-  Metadata info;
+  Metadata metadata;
 };
 
 typedef std::vector<Operation> Operations;
+typedef std::vector<Operation *> OperationsPtr;
+
+/**
+ * @struct nav2_route::OperationsResult
+ * @brief Result information from the operations manager
+ */
+struct OperationsResult
+{
+  std::vector<std::string> operations_triggered;
+  bool reroute{false};
+};
 
 /**
  * @struct nav2_route::DirectionalEdge
@@ -185,6 +207,29 @@ struct Route
   NodePtr start_node;
   EdgePtrVector edges;
   float route_cost{0.0};
+};
+
+/**
+ * @enum nav2_route::TrackerResult
+ * @brief Return result of the route tracker to the main server for processing
+ */
+enum class TrackerResult
+{
+  INTERRUPTED = 0,
+  REROUTE = 1,
+  COMPLETED = 2
+};
+
+/**
+ * @struct nav2_route::RouteTrackingState
+ * @brief Current state management of route tracking class
+ */
+struct RouteTrackingState
+{
+  NodePtr last_node{nullptr}, next_node{nullptr};
+  EdgePtr current_edge{nullptr};
+  int route_edges_idx{-1};
+  bool within_radius{false};
 };
 
 }  // namespace nav2_route

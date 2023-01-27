@@ -12,48 +12,54 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+
 #include <memory>
 #include <string>
 
-#include "nav2_route/plugins/edge_cost_functions/distance_scorer.hpp"
+#include "nav2_route/plugins/route_operations/adjust_speed_limit.hpp"
 
 namespace nav2_route
 {
 
-void DistanceScorer::configure(
+void AdjustSpeedLimit::configure(
   const rclcpp_lifecycle::LifecycleNode::SharedPtr node,
   const std::string & name)
 {
   name_ = name;
-
-  // Find the tag at high the speed limit information is stored
+  logger_ = node->get_logger();
   nav2_util::declare_parameter_if_not_declared(
     node, getName() + ".speed_tag", rclcpp::ParameterValue("speed_limit"));
   speed_tag_ = node->get_parameter(getName() + ".speed_tag").as_string();
 
-  // Find the proportional weight to apply, if multiple cost functions
+
   nav2_util::declare_parameter_if_not_declared(
-    node, getName() + ".weight", rclcpp::ParameterValue(1.0));
-  weight_ = static_cast<float>(node->get_parameter(getName() + ".weight").as_double());
+    node, getName() + ".speed_limit_topic", rclcpp::ParameterValue("speed_limit"));
+  std::string topic = node->get_parameter(getName() + ".speed_tag").as_string();
+
+  speed_limit_pub_ = node->create_publisher<nav2_msgs::msg::SpeedLimit>(topic, 1);
+  speed_limit_pub_->on_activate();
 }
 
-bool DistanceScorer::score(const EdgePtr edge, float & cost)
+bool AdjustSpeedLimit::perform(
+  NodePtr/*node_achieved*/,
+  EdgePtr edge_entered,
+  EdgePtr/*edge_exited*/,
+  const Route &/*route*/,
+  const geometry_msgs::msg::PoseStamped &/*curr_pose*/,
+  const Metadata */*mdata*/)
 {
-  // Get the speed limit, if set for an edge
-  float speed_val = 1.0f;
-  speed_val = edge->metadata.getValue<float>(speed_tag_, speed_val);
-  cost = weight_ * hypotf(
-    edge->end->coords.x - edge->start->coords.x,
-    edge->end->coords.y - edge->start->coords.y) / speed_val;
+  float speed_limit = 1.0;
+  edge_entered->metadata.getValue<float>(speed_tag_, speed_limit);
+  RCLCPP_DEBUG(logger_, "Setting speed limit to %.2f%% of maximum.", speed_limit * 100.0);
+
+  auto msg = std::make_unique<nav2_msgs::msg::SpeedLimit>();
+  msg->percentage = true;
+  msg->speed_limit = speed_limit;
+  speed_limit_pub_->publish(std::move(msg));
   return true;
-}
-
-std::string DistanceScorer::getName()
-{
-  return name_;
 }
 
 }  // namespace nav2_route
 
 #include "pluginlib/class_list_macros.hpp"
-PLUGINLIB_EXPORT_CLASS(nav2_route::DistanceScorer, nav2_route::EdgeCostFunction)
+PLUGINLIB_EXPORT_CLASS(nav2_route::AdjustSpeedLimit, nav2_route::RouteOperation)

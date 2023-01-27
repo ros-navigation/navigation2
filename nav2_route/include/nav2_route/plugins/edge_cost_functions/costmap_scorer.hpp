@@ -50,7 +50,7 @@ public:
    * @brief Configure
    */
   void configure(
-    const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
+    const rclcpp_lifecycle::LifecycleNode::SharedPtr node,
     const std::string & name) override;
 
   /**
@@ -75,6 +75,7 @@ public:
   void prepare() override;
 
 protected:
+  rclcpp::Logger logger_{rclcpp::get_logger("CostmapScorer")};
   std::string name_;
   bool use_max_, invalid_on_collision_, invalid_off_map_;
   float weight_;

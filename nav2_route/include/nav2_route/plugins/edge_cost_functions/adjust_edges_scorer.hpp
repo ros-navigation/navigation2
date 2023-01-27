@@ -51,7 +51,7 @@ public:
    * @brief Configure
    */
   void configure(
-    const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
+    const rclcpp_lifecycle::LifecycleNode::SharedPtr node,
     const std::string & name) override;
 
   /**
@@ -79,6 +79,7 @@ public:
     std::shared_ptr<nav2_msgs::srv::AdjustEdges::Response> response);
 
 protected:
+  rclcpp::Logger logger_{rclcpp::get_logger("AdjustEdgesScorer")};
   std::string name_;
   std::set<unsigned int> closed_edges_;
   std::unordered_map<unsigned int, float> dynamic_penalties_;

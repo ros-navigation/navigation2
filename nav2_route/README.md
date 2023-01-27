@@ -118,6 +118,8 @@ The `DistanceScorer` edge scoring plugin will come the L2 norm between the poses
 This uses the node's location information as "highly recommended" above.
 It contains a parameter `speed_tag` (Default: `speed_limit`) which will check `edge.metadata` if it contains an entry for speed limit information, represented as a percentage of the maximum speed.
 If so, it will adjust the score to instead be proportional to the time rather than distance.
+Further, the `AdjustSpeedLimit` Route Operation plugin will utilize the same parameter and default `speed_limit` value to check each edge entered for a set speed limit percentage.
+If present, it will request an adjusted speed limit by the controller server on each edge entered.
 Thus, by convention, we say that `speed_limit` attribute of an edge should contain this information.
 
 Similarly, the `penalty_tag` parameter (Default: `penalty`) in the `PenaltyScorer` can be used to represent a static unweighted cost to add to the sum total of the edge scoring plugins.
@@ -130,30 +132,23 @@ Thus, by convention, we say the `penalty` attribute of an edge should contain th
 
 # Steve's TODO list
 
-- [ ] Create basic file format for graph + parser: OSM and geoJSON
 
-- [ ] Implement live route analyzer: tracking the current edge / node / next node + operation plugin header(s) (file/plugin centric APIs) + contextual error codes
-  - Both file and plugin centric (plugin IDs what it cares about, objects report what plugins it cares about)
-  - operations have metadata for them, but also have access to edge/node info too
-
-  - Can an Operation trigger a reroute? That would let us put the collision monitor as an action
+- [ ] live route analyzer working + document in readme
 
 
-- [ ] operations plugins: call ext server for operation base class + useful demo plugin(s) - realistic, pause at waypoints for signal, node and edge operations, speed limit change operation
 
+- [ ] operations plugins: call ext server for operation base class + useful/realistic demo plugin(s), pause at waypoints for signal, node and edge operations
 - [ ] Implement collision monitor + replanning / rerouting on invalidation for other reasons (requested, time) from up to last_node_passed. Or other than literal invalidations, have regularized replannings based on BT use?
-
 - [ ] other plugins: path manipulator, planners, replanning / rerouting triggerers (collision monitor, frequency, etc)
 
-- [ ] metadata with nested items
+- [ ] Create basic file format for graph + parser: OSM and geoJSON. Vector types (regions), recursion namespaces, structured types?
+- [ ] QGIS demo + plugins for editing and visualizing graphs
 
-- [ ] Quality: BT nodes, Python API, editing and visualization of graphs, testing (plan planner + server + added live stuff), documentation, tutorial (bt change, plugin customize, file field examples)
+- [ ] Quality: BT nodes, Python API, testing (plan planner + server + added live stuff), documentation, tutorial (bt change, plugin customize, file field examples)
+
+- [ ] demos with route -> global -> local. outdoor non-planar. to waypoint follower (GPS?) of nodes.
 
 # Questions
 
 - How can BT trigger BT node again if its still feedback-pending? preemption! Make sure works
 - service for closed edge // topic for costmaps come in during request?
-
-Regions polygons vs nodes ??? 
-  locus on zones + local planning ehuristic to be within
-  for speed zones

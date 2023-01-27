@@ -21,10 +21,11 @@ namespace nav2_route
 {
 
 void CostmapScorer::configure(
-  const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
+  const rclcpp_lifecycle::LifecycleNode::SharedPtr node,
   const std::string & name)
 {
   name_ = name;
+  logger_ = node->get_logger();
 
   // Find whether to use average or maximum cost values
   nav2_util::declare_parameter_if_not_declared(
@@ -72,6 +73,7 @@ bool CostmapScorer::score(const EdgePtr edge, float & cost)
 {
   // If we don't have costmap information, all edges are invalid for safety
   if (!costmap_) {
+    RCLCPP_DEBUG(logger_, "No costmap yet received!");
     return false;
   }
 
@@ -84,6 +86,9 @@ bool CostmapScorer::score(const EdgePtr edge, float & cost)
   if (!costmap_->worldToMap(edge->start->coords.x, edge->start->coords.y, x0, y0) ||
     !costmap_->worldToMap(edge->end->coords.x, edge->end->coords.y, x1, y1))
   {
+    RCLCPP_DEBUG(
+      logger_,
+      "Either or both (%i, %i) nodes are off the map!", edge->start->nodeid, edge->end->nodeid);
     if (invalid_off_map_) {
       return false;
     }
@@ -95,6 +100,7 @@ bool CostmapScorer::score(const EdgePtr edge, float & cost)
 
     // if in collision, no need to continue
     if (point_cost == 254.0 && invalid_on_collision_) {
+      RCLCPP_INFO(logger_, "Edge %i is in collision!", edge->edgeid);
       return false;
     }
 

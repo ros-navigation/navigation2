@@ -29,6 +29,7 @@
 #include "nav2_util/node_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_msgs/action/compute_route.hpp"
+#include "nav2_msgs/action/compute_and_track_route.hpp"
 #include "nav2_msgs/msg/route.hpp"
 #include "nav2_msgs/msg/route_node.hpp"
 #include "nav2_msgs/srv/set_route_graph.hpp"
@@ -41,6 +42,7 @@
 #include "nav2_route/route_planner.hpp"
 #include "nav2_route/node_spatial_tree.hpp"
 #include "nav2_route/path_converter.hpp"
+#include "nav2_route/route_tracker.hpp"
 
 namespace nav2_route
 {
@@ -52,10 +54,16 @@ namespace nav2_route
 class RouteServer : public nav2_util::LifecycleNode
 {
 public:
-  using ActionBasic = nav2_msgs::action::ComputeRoute;
-  using ActionBasicGoal = ActionBasic::Goal;
-  using ActionBasicResult = ActionBasic::Result;
-  using ActionServerBasic = nav2_util::SimpleActionServer<ActionBasic>;
+  using ComputeRoute = nav2_msgs::action::ComputeRoute;
+  using ComputeRouteGoal = ComputeRoute::Goal;
+  using ComputeRouteResult = ComputeRoute::Result;
+  using ComputeRouteServer = nav2_util::SimpleActionServer<ComputeRoute>;
+
+  using ComputeAndTrackRoute = nav2_msgs::action::ComputeAndTrackRoute;
+  using ComputeAndTrackRouteGoal = ComputeAndTrackRoute::Goal;
+  using ComputeAndTrackRouteFeedback = ComputeAndTrackRoute::Feedback;
+  using ComputeAndTrackRouteResult = ComputeAndTrackRoute::Result;
+  using ComputeAndTrackRouteServer = nav2_util::SimpleActionServer<ComputeAndTrackRoute>;
 
   /**
    * @brief A constructor for nav2_route::RouteServer
@@ -104,16 +112,42 @@ protected:
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
   /**
-   * @brief Main route action server for computing a route and returning it to the requester
+   * @brief Main route action server callbacks for computing and tracking a route
    */
   void computeRoute();
+  void computeAndTrackRoute();
 
   /**
    * @brief Finds the start and goal Node locations in the graph closest to the request
    * @param The request goal information
    * @return A pair of NodeIDs belonging to the start and goal nodes for route search
    */
-  NodeExtents findStartandGoalNodeLocations(std::shared_ptr<const ActionBasicGoal> goal);
+  template<typename GoalT>
+  NodeExtents findStartandGoalNodeLocations(const std::shared_ptr<const GoalT> goal);
+
+  /**
+   * @brief Abstract method combining findStartandGoalNodeLocations and the route planner
+   * to find the Node locations of interest and route to the goal
+   * @param The request goal information
+   * @return A route of the request
+   */
+  template<typename GoalT>
+  Route findRoute(const std::shared_ptr<const GoalT> goal);
+
+  /**
+   * @brief Find the planning duration of the request and log warnings
+   * @param start_time Start of planning time
+   * @return Duration of planning time
+   */
+  rclcpp::Duration findPlanningDuration(const rclcpp::Time & start_time);
+
+  /**
+   * @brief Find the routing request is valid (action server OK and not cancelled)
+   * @param action_server Actions server to check
+   * @return if the request is valid
+   */
+  template<typename T>
+  bool isRequestValid(std::shared_ptr<nav2_util::SimpleActionServer<T>> & action_server);
 
   /**
    * @brief The service callback to set a new route graph
@@ -125,11 +159,12 @@ protected:
     std::shared_ptr<nav2_msgs::srv::SetRouteGraph::Response> response);
 
   /**
-   * @brief Log exception warnings
+   * @brief Log exception warnings, templated by action message type
    * @param goal Goal that failed
    * @param exception Exception message
    */
-  void exceptionWarning(std::shared_ptr<const ActionBasicGoal> goal, const std::exception & ex);
+  template<typename GoalT>
+  void exceptionWarning(const std::shared_ptr<const GoalT> goal, const std::exception & ex);
 
   /**
    * @brief Callback executed when a parameter change is detected
@@ -142,7 +177,8 @@ protected:
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
   std::mutex dynamic_params_lock_;
 
-  std::unique_ptr<ActionServerBasic> action_server_;
+  std::shared_ptr<ComputeRouteServer> compute_route_server_;
+  std::shared_ptr<ComputeAndTrackRouteServer> compute_and_track_route_server_;
 
   // TF
   std::shared_ptr<tf2_ros::Buffer> tf_;
@@ -159,6 +195,7 @@ protected:
   std::shared_ptr<GraphFileLoader> graph_loader_;
   std::shared_ptr<NodeSpatialTree> node_spatial_tree_;
   std::shared_ptr<RoutePlanner> route_planner_;
+  std::shared_ptr<RouteTracker> route_tracker_;
   std::shared_ptr<PathConverter> path_converter_;
 
   // Data
