@@ -148,7 +148,6 @@ void PointCloud::getParameters(std::string & source_topic)
     node, source_name_ + ".max_height", rclcpp::ParameterValue(0.5));
   max_height_ = node->get_parameter(source_name_ + ".max_height").as_double();
 }
-}
 
 void PointCloud::dataCallback(sensor_msgs::msg::PointCloud2::ConstSharedPtr msg)
 {
