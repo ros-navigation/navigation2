@@ -355,6 +355,7 @@ RouteServer::computeAndTrackRoute()
         feedback->next_node_id = feedback->last_node_id = route.start_node->nodeid;
         compute_and_track_route_server_->publish_feedback(std::move(feedback));
         compute_and_track_route_server_->succeeded_current(result);
+        return;
       }
 
       // blocks until re-route requested or task completion, publishes feedback
