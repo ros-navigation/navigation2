@@ -67,7 +67,7 @@ pull_request_rules:
   - name: Removed maintainer checklist
     conditions:
       - and:
-        - -body~=(?m)^For Maintainers:
+        - "-body~=(?m)^For Maintainers:"
         - author!=SteveMacenski
         - author!=mergify
     actions:
