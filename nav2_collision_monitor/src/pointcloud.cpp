@@ -20,6 +20,8 @@
 
 #include "nav2_util/node_utils.hpp"
 
+using rcl_interfaces::msg::ParameterType;
+
 namespace nav2_collision_monitor
 {
 
@@ -42,6 +44,7 @@ PointCloud::PointCloud(
 PointCloud::~PointCloud()
 {
   RCLCPP_INFO(logger_, "[%s]: Destroying PointCloud", source_name_.c_str());
+  dyn_params_handler_.reset();
   data_sub_.reset();
 }
 
@@ -55,11 +58,41 @@ void PointCloud::configure()
   std::string source_topic;
 
   getParameters(source_topic);
+    dyn_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(
+      &PointCloud::dynamicParametersCallback,
+      this,
+      std::placeholders::_1));
+
 
   rclcpp::QoS pointcloud_qos = rclcpp::SensorDataQoS();  // set to default
   data_sub_ = node->create_subscription<sensor_msgs::msg::PointCloud2>(
     source_topic, pointcloud_qos,
     std::bind(&PointCloud::dataCallback, this, std::placeholders::_1));
+}
+
+rcl_interfaces::msg::SetParametersResult
+PointCloud::dynamicParametersCallback(
+  std::vector<rclcpp::Parameter> parameters)
+{
+  // std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+  rcl_interfaces::msg::SetParametersResult result;
+
+  for (auto parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == source_name_ + "." + "min_height") {
+        min_height_ = parameter.as_double();
+      }
+      else if (param_name == source_name_ + "." + "max_height") {
+        max_height_ = parameter.as_double();
+      }
+    }
+  }
+  result.successful = true;
+  return result;
 }
 
 void PointCloud::getData(
@@ -110,10 +143,10 @@ void PointCloud::getParameters(std::string & source_topic)
 
   nav2_util::declare_parameter_if_not_declared(
     node, source_name_ + ".min_height", rclcpp::ParameterValue(0.05));
-  min_height_ = node->get_parameter(source_name_ + ".min_height").as_double();
+  node->get_parameter(source_name_ + ".min_height", min_height_);
   nav2_util::declare_parameter_if_not_declared(
     node, source_name_ + ".max_height", rclcpp::ParameterValue(0.5));
-  max_height_ = node->get_parameter(source_name_ + ".max_height").as_double();
+  node->get_parameter(source_name_ + ".max_height", max_height_);
 }
 
 void PointCloud::dataCallback(sensor_msgs::msg::PointCloud2::ConstSharedPtr msg)
