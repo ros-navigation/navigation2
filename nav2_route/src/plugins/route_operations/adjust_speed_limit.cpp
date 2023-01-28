@@ -48,6 +48,11 @@ bool AdjustSpeedLimit::perform(
   const geometry_msgs::msg::PoseStamped &/*curr_pose*/,
   const Metadata */*mdata*/)
 {
+  if (!edge_entered) {
+    return false;
+  }
+
+  // TODO test called when status change + publishes message + reads properly
   float speed_limit = 1.0;
   edge_entered->metadata.getValue<float>(speed_tag_, speed_limit);
   RCLCPP_DEBUG(logger_, "Setting speed limit to %.2f%% of maximum.", speed_limit * 100.0);
@@ -56,7 +61,7 @@ bool AdjustSpeedLimit::perform(
   msg->percentage = true;
   msg->speed_limit = speed_limit;
   speed_limit_pub_->publish(std::move(msg));
-  return true;
+  return false;
 }
 
 }  // namespace nav2_route

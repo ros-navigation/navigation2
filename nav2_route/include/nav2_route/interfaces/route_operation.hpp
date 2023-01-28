@@ -86,7 +86,7 @@ public:
 
   /**
    * @brief The main route operation API to perform an operation when triggered.
-   * The return value indicates if the route operation is requesting rerouting.
+   * The return value indicates if the route operation is requesting rerouting when returning true.
    * Could be if this operation is checking if a route is in collision or operation
    * failed (to open a door, for example) and thus this current route is now invalid.
    * @param mdata Metadata corresponding to the operation in the navigation graph.
@@ -96,7 +96,8 @@ public:
    * @param edge_exited Edge exited by node achievement, for additional context
    * @param route Current route being tracked in full, for additional context
    * @param curr_pose Current robot pose in the route frame, for additional context
-   * @return Whether to perform rerouting as a result of a problem or request by the operation
+   * @return Whether to the route is still valid (false) or needs rerouting as
+   * a result of a problem or request by the operation (true)
    */
   virtual bool perform(
     NodePtr node_achieved,

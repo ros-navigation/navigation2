@@ -345,19 +345,6 @@ RouteServer::computeAndTrackRoute()
       auto path = path_converter_->densify(route, route_frame_, this->now());
       findPlanningDuration(start_time);
 
-      // If route is trivial, don't track
-      if (route.edges.empty()) {
-        RCLCPP_INFO(get_logger(), "Route is a single node, no need to track progress.");
-        auto feedback = std::make_unique<ComputeAndTrackRouteFeedback>();
-        feedback->route = utils::toMsg(route, route_frame_, this->now());
-        feedback->path = path;
-        feedback->rerouted = true;
-        feedback->next_node_id = feedback->last_node_id = route.start_node->nodeid;
-        compute_and_track_route_server_->publish_feedback(std::move(feedback));
-        compute_and_track_route_server_->succeeded_current(result);
-        return;
-      }
-
       // blocks until re-route requested or task completion, publishes feedback
       switch (route_tracker_->trackRoute(route, path)) {
         case TrackerResult::COMPLETED:

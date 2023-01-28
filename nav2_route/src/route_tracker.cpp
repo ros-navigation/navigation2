@@ -50,6 +50,7 @@ geometry_msgs::msg::PoseStamped RouteTracker::getRobotPose()
   return pose;
 }
 
+// TODO test and visualize this with dot products and window
 bool RouteTracker::nodeAchieved(
   const geometry_msgs::msg::PoseStamped & pose,
   RouteTrackingState & state,
@@ -61,8 +62,8 @@ bool RouteTracker::nodeAchieved(
   const double dist_mag = std::sqrt(dx * dx + dy * dy);
   const bool in_radius = (dist_mag >= radius_threshold_);
 
-  // Within 1mm is achieved
-  if (dist_mag < 1e-3) {
+  // Within 0.1mm is achieved
+  if (dist_mag < 1e-4) {
     return true;
   }
 
@@ -95,7 +96,13 @@ bool RouteTracker::nodeAchieved(
     const double nx = future_next_node->coords.x - state.next_node->coords.x;
     const double ny = future_next_node->coords.y - state.next_node->coords.y;
     const double n_mag = std::sqrt(nx * nx + ny * ny);
-    return (dx / dist_mag) * (nx / n_mag) + (dy / dist_mag) * (ny / n_mag) > 0 ? true : false;
+    
+    // If nodes overlap so there is no vector, use radius check only (divide by zero)
+    if (n_mag < 1e-6) {
+      return true;
+    }
+
+    return (dx / dist_mag) * (nx / n_mag) + (dy / dist_mag) * (ny / n_mag) >= 0 ? true : false;
   }
 
   return false;
@@ -103,7 +110,7 @@ bool RouteTracker::nodeAchieved(
 
 bool RouteTracker::isEndNode(int idx)
 {
-  return idx == static_cast<int>(route_msg_.edge_ids.size() - 1);
+  return idx == static_cast<int>(route_msg_.edge_ids.size() - 1);  // TODO test this
 }
 
 void RouteTracker::publishFeedback(
@@ -152,7 +159,7 @@ TrackerResult RouteTracker::trackRoute(const Route & route, const nav_msgs::msg:
       status_change = true;
       state.within_radius = false;
       state.last_node = state.next_node;
-      if (state.route_edges_idx++ < static_cast<int>(route.edges.size())) {
+      if (++state.route_edges_idx < static_cast<int>(route.edges.size())) {
         state.current_edge = route.edges[state.route_edges_idx];
         state.next_node = state.current_edge->end;
       } else {  // At achieved the last node in the route
@@ -171,7 +178,8 @@ TrackerResult RouteTracker::trackRoute(const Route & route, const nav_msgs::msg:
       return TrackerResult::COMPLETED;
     }
 
-    if (status_change || !op_result.operations_triggered.empty()) {
+    // TODO test published at state changes or when operations are executed, contains proper information
+    if ((status_change || !op_result.operations_triggered.empty()) && state.current_edge) {
       publishFeedback(
         false,  // No rerouting occurred
         state.next_node->nodeid, state.last_node->nodeid,

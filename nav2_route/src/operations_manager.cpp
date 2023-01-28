@@ -74,19 +74,24 @@ OperationsManager::OperationsManager(nav2_util::LifecycleNode::SharedPtr node)
 OperationsPtr OperationsManager::findGraphOperationsToProcess(
   const NodePtr node, const EdgePtr edge_enter, const EdgePtr edge_exit)
 {
+  // TODO test this finding all the proper operations of all 3 types
   OperationsPtr operations;
   Operations::iterator it;
   for (it = node->operations.begin(); it != node->operations.end(); ++it) {
     operations.push_back(&(*it));
   }
-  for (it = edge_enter->operations.begin(); it != edge_enter->operations.end(); ++it) {
-    if (it->trigger == OperationTrigger::ON_ENTER) {
-      operations.push_back(&(*it));
+  if (edge_enter) {
+    for (it = edge_enter->operations.begin(); it != edge_enter->operations.end(); ++it) {
+      if (it->trigger == OperationTrigger::ON_ENTER) {
+        operations.push_back(&(*it));
+      }
     }
   }
-  for (it = edge_exit->operations.begin(); it != edge_exit->operations.end(); ++it) {
-    if (it->trigger == OperationTrigger::ON_EXIT) {
-      operations.push_back(&(*it));
+  if (edge_exit) {
+    for (it = edge_exit->operations.begin(); it != edge_exit->operations.end(); ++it) {
+      if (it->trigger == OperationTrigger::ON_EXIT) {
+        operations.push_back(&(*it));
+      }
     }
   }
   return operations;
@@ -98,14 +103,14 @@ OperationsResult OperationsManager::process(
   const Route & route,
   const geometry_msgs::msg::PoseStamped & pose)
 {
-  OperationsResult result;
-
   // Get important state information
+  OperationsResult result;
   NodePtr node = state.last_node;
   EdgePtr edge_entered = state.current_edge;
   EdgePtr edge_exited =
     state.route_edges_idx > 0 ? route.edges[state.route_edges_idx - 1] : nullptr;
 
+  // TODO test calls proper graph ones when should, calls status change all on status change only, calls all on all. Trigger and reroute feedback is correct
   if (status_change) {
     // Process operations defined in the navigation graph at node or edge
     OperationsPtr operations = findGraphOperationsToProcess(node, edge_entered, edge_exited);
@@ -116,7 +121,7 @@ OperationsResult OperationsManager::process(
         result.reroute = result.reroute ||
           plugin->perform(node, edge_entered, edge_exited, route, pose, &operations[i]->metadata);
         result.operations_triggered.push_back(plugin->getName());
-      } else {
+      } else {  // TODO test logging when operation not in server when in file
         if (use_feedback_operations_) {
           RCLCPP_INFO(
             logger_, "Operation %s should be called from feedback!",
