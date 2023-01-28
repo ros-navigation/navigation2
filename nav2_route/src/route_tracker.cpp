@@ -61,6 +61,11 @@ bool RouteTracker::nodeAchieved(
   const double dist_mag = std::sqrt(dx * dx + dy * dy);
   const bool in_radius = (dist_mag >= radius_threshold_);
 
+  // Within 1mm is achieved
+  if (dist_mag < 1e-3) {
+    return true;
+  }
+
   // If we were within radius and now not, consider node achieved in case we just barely kiss
   // the radial threshold set by the user coming in at an odd angle due to dynamic behavior
   if (!in_radius && state.within_radius) {

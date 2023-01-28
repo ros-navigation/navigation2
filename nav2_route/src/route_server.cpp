@@ -366,7 +366,6 @@ RouteServer::computeAndTrackRoute()
         case TrackerResult::REROUTE:
           break;
         case TrackerResult::INTERRUPTED:
-          throw nav2_core::RouteException("ROS shutdown!");
           return;
       }
     }
