@@ -1324,7 +1324,6 @@ AmclNode::dynamicParametersCallback(
   std::lock_guard<std::recursive_mutex> cfl(mutex_);
   rcl_interfaces::msg::SetParametersResult result;
   double save_pose_rate;
-  double tmp_tol;
 
   int max_particles = max_particles_;
   int min_particles = min_particles_;
