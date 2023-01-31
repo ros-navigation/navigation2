@@ -1,0 +1,66 @@
+// Copyright (c) 2023, Samsung Research America
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+
+#include <memory>
+#include <string>
+
+#include "nav2_route/plugins/route_operations/rerouting_service.hpp"
+
+namespace nav2_route
+{
+
+void ReroutingService::configure(
+  const rclcpp_lifecycle::LifecycleNode::SharedPtr node,
+  const std::string & name)
+{
+  name_ = name;
+  logger_ = node->get_logger();
+  reroute_.store(false);
+  service_ = node->create_service<std_srvs::srv::Trigger>(
+    getName() + "/reroute",
+    std::bind(
+      &ReroutingService::serviceCb, this,
+      std::placeholders::_1, std::placeholders::_2));
+}
+
+void ReroutingService::serviceCb(
+  const std::shared_ptr<std_srvs::srv::Trigger::Request>/*request*/,
+  std::shared_ptr<std_srvs::srv::Trigger::Response> response)
+{
+  RCLCPP_INFO(logger_, "A reroute has been requested!");
+  reroute_.store(true);
+  response->success = true;
+}
+
+bool ReroutingService::perform(
+  NodePtr /*node_achieved*/,
+  EdgePtr /*edge_entered*/,
+  EdgePtr /*edge_exited*/,
+  const Route & /*route*/,
+  const geometry_msgs::msg::PoseStamped & /*curr_pose*/,
+  const Metadata * /*mdata*/)
+{
+  if (reroute_.load()) {
+    reroute_.store(false);
+    return true;
+  }
+
+  return false;
+}
+
+}  // namespace nav2_route
+
+#include "pluginlib/class_list_macros.hpp"
+PLUGINLIB_EXPORT_CLASS(nav2_route::ReroutingService, nav2_route::RouteOperation)

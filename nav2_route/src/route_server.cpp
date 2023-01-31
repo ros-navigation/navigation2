@@ -341,7 +341,8 @@ RouteServer::computeAndTrackRoute()
 
       // Find the route
       auto start_time = this->now();
-      Route route = findRoute(goal);  // TODO(sm) prune passed objs in rerouting, provide optional start nodeid to override action?
+      // TODO(sm) prune passed objs in rerouting, provide optional start nodeid to override action?
+      Route route = findRoute(goal);
       auto path = path_converter_->densify(route, route_frame_, this->now());
       findPlanningDuration(start_time);
 

@@ -91,9 +91,12 @@ public:
    * failed (to open a door, for example) and thus this current route is now invalid.
    * @param mdata Metadata corresponding to the operation in the navigation graph.
    * If metadata is invalid or irrelevent, a nullptr is given
-   * @param node_achieved Node achieved, for additional context
-   * @param edge_entered Edge entered by node achievement, for additional context
-   * @param edge_exited Edge exited by node achievement, for additional context
+   * @param node_achieved Node achieved,
+   * for additional context (must check nullptr if at goal)
+   * @param edge_entered Edge entered by node achievement,
+   * for additional context (must check if nullptr if no future edge, at goal)
+   * @param edge_exited Edge exited by node achievement,
+   * for additional context (must check if nullptr if no last edge, starting)
    * @param route Current route being tracked in full, for additional context
    * @param curr_pose Current robot pose in the route frame, for additional context
    * @return Whether to the route is still valid (false) or needs rerouting as

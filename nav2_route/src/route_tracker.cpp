@@ -50,7 +50,7 @@ geometry_msgs::msg::PoseStamped RouteTracker::getRobotPose()
   return pose;
 }
 
-// TODO test and visualize this with dot products and window
+// TODO(sm) test and visualize this with dot products and window
 bool RouteTracker::nodeAchieved(
   const geometry_msgs::msg::PoseStamped & pose,
   RouteTrackingState & state,
@@ -60,7 +60,7 @@ bool RouteTracker::nodeAchieved(
   const double dx = state.next_node->coords.x - pose.pose.position.x;
   const double dy = state.next_node->coords.y - pose.pose.position.y;
   const double dist_mag = std::sqrt(dx * dx + dy * dy);
-  const bool in_radius = (dist_mag >= radius_threshold_);
+  const bool in_radius = (dist_mag <= radius_threshold_);
 
   // Within 0.1mm is achieved
   if (dist_mag < 1e-4) {
@@ -75,42 +75,51 @@ bool RouteTracker::nodeAchieved(
 
   state.within_radius = in_radius;
 
-  // If end node, use the radius check only since the final node may not formally pass
+  // If start or end node, use the radius check only since the final node may not formally pass
   // the vectorized threshold depending on the local trajectory / goal checker configurations.
-  // The operation at the goal pose is thus slightly preempting a more exact node achievement
-  // definition as used by other nodes, but that is a niche case & unlikely to cause a meaningful
-  // issue regardless. If this becomes an problem for any users, please file a ticket to discuss.
-  if (isEndNode(state.route_edges_idx) && state.within_radius) {
-    return true;
+  // The start node has no last_node for computing the vector bisector. If this is an issue
+  // for any users, please file a ticket to discuss.
+  if (isStartOrEndNode(state.route_edges_idx)) {
+    return state.within_radius;
   }
 
-  // If we're within the radius, we can evaluate the distance vector from the node w.r.t. the
-  // node axes with the X direction being the unit vector connecting the next node with its
-  // next node. If the dot product is positive, it means that there exists a projection between
-  // the vectors and that the robot position has passed an imaginary orthogonal line (Y axis).
+  // If we're within the radius, we can evaluate the unit distance vector from the node w.r.t. the
+  // unit vector bisecting the last and current edges to find the average whose orthogonal is an
+  // imaginery line representing the migration from one edge's spatial domain to the other.
+  // Thus, when the dot product is positive, it means that there exists a projection between
+  // the vectors and that the robot position has passed this imaginary orthogonal line.
   // This enables a more refined definition of when a node is considered achieved while enabling
   // the use of dynamic behavior local trajectory planners to deviate from the path non-trivially
   if (state.within_radius) {
-    // If not the next node is not the route's end, then there exists another edge
-    NodePtr future_next_node = route.edges[state.route_edges_idx + 1]->end;
-    const double nx = future_next_node->coords.x - state.next_node->coords.x;
-    const double ny = future_next_node->coords.y - state.next_node->coords.y;
+    NodePtr last_node = state.current_edge->start;
+    const double nx = state.next_node->coords.x - last_node->coords.x;
+    const double ny = state.next_node->coords.y - last_node->coords.y;
     const double n_mag = std::sqrt(nx * nx + ny * ny);
-    
+
+    // If not the next node is not the route's end, then there exist another edge
+    NodePtr future_next_node = route.edges[state.route_edges_idx + 1]->end;
+    const double mx = future_next_node->coords.x - state.next_node->coords.x;
+    const double my = future_next_node->coords.y - state.next_node->coords.y;
+    const double m_mag = std::sqrt(mx * mx + my * my);
+
     // If nodes overlap so there is no vector, use radius check only (divide by zero)
-    if (n_mag < 1e-6) {
+    if (n_mag < 1e-6 || m_mag < 1e-6) {
       return true;
     }
 
-    return (dx / dist_mag) * (nx / n_mag) + (dy / dist_mag) * (ny / n_mag) >= 0 ? true : false;
+    // Unnormalized Bisector = |n|*m + |m|*n
+    const double bx = nx * m_mag + mx * n_mag;
+    const double by = ny * m_mag + my * n_mag;
+    const double b_mag = std::sqrt(bx * bx + by * by);
+    return (dx / dist_mag) * (bx / b_mag) + (dy / dist_mag) * (by / b_mag) >= 0 ? true : false;
   }
 
   return false;
 }
 
-bool RouteTracker::isEndNode(int idx)
+bool RouteTracker::isStartOrEndNode(int idx)
 {
-  return idx == static_cast<int>(route_msg_.edge_ids.size() - 1);  // TODO test this
+  return idx == static_cast<int>(route_msg_.edge_ids.size() - 1) || idx == -1;
 }
 
 void RouteTracker::publishFeedback(
@@ -178,7 +187,6 @@ TrackerResult RouteTracker::trackRoute(const Route & route, const nav_msgs::msg:
       return TrackerResult::COMPLETED;
     }
 
-    // TODO test published at state changes or when operations are executed, contains proper information
     if ((status_change || !op_result.operations_triggered.empty()) && state.current_edge) {
       publishFeedback(
         false,  // No rerouting occurred

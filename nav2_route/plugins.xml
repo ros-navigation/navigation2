@@ -25,4 +25,9 @@
       <description>Route tracking operation to adjust speed limit based on graph metadata</description>
     </class>
   </library>
+  <library path="route_operations">
+    <class type="nav2_route::ReroutingService" base_class_type="nav2_route::RouteOperation">
+      <description>Exposes a route operation to replan upon external service request</description>
+    </class>
+  </library>
 </class_libraries>

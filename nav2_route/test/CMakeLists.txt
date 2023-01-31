@@ -41,3 +41,14 @@ ament_target_dependencies(test_spatial_tree
 target_link_libraries(test_spatial_tree
   ${library_name}
 )
+
+# Test operation manager + plugins
+ament_add_gtest(test_operations
+  test_operations.cpp
+)
+ament_target_dependencies(test_operations
+  ${dependencies}
+)
+target_link_libraries(test_operations
+  ${library_name} route_operations
+)

@@ -41,20 +41,19 @@ void AdjustSpeedLimit::configure(
 }
 
 bool AdjustSpeedLimit::perform(
-  NodePtr/*node_achieved*/,
+  NodePtr /*node_achieved*/,
   EdgePtr edge_entered,
-  EdgePtr/*edge_exited*/,
-  const Route &/*route*/,
-  const geometry_msgs::msg::PoseStamped &/*curr_pose*/,
-  const Metadata */*mdata*/)
+  EdgePtr /*edge_exited*/,
+  const Route & /*route*/,
+  const geometry_msgs::msg::PoseStamped & /*curr_pose*/,
+  const Metadata * /*mdata*/)
 {
   if (!edge_entered) {
     return false;
   }
 
-  // TODO test called when status change + publishes message + reads properly
   float speed_limit = 1.0;
-  edge_entered->metadata.getValue<float>(speed_tag_, speed_limit);
+  speed_limit = edge_entered->metadata.getValue<float>(speed_tag_, speed_limit);
   RCLCPP_DEBUG(logger_, "Setting speed limit to %.2f%% of maximum.", speed_limit * 100.0);
 
   auto msg = std::make_unique<nav2_msgs::msg::SpeedLimit>();

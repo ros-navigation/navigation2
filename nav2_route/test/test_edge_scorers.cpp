@@ -374,7 +374,7 @@ TEST(EdgeScorersTest, test_costmap_scoring_alt_profile)
   traversal_cost = -1;
   // Segment in lethal space, so score is maximum (1)
   EXPECT_TRUE(scorer.score(&edge, traversal_cost));
-  EXPECT_EQ(traversal_cost, 1.0);
+  EXPECT_NEAR(traversal_cost, 1.0, 0.01);
 
   n1.coords.x = 1.0;
   n1.coords.y = 1.0;

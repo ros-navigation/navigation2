@@ -113,9 +113,9 @@ bool CostmapScorer::score(const EdgePtr edge, float & cost)
 
 
   if (use_max_) {
-    cost = weight_ * largest_cost / 254.0 /*normalization*/;
+    cost = weight_ * largest_cost / 254.0f /*normalization*/;
   } else {
-    cost = weight_ * running_cost / (static_cast<float>(idx) * 254.0) /*normalization*/;
+    cost = weight_ * running_cost / (static_cast<float>(idx) * 254.0f) /*normalization*/;
   }
 
   return true;

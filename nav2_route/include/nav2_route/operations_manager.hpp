@@ -14,6 +14,7 @@
 
 #include <unordered_map>
 #include <vector>
+#include <string>
 
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"

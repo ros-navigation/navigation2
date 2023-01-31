@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_ROUTE__PLUGINS__ROUTE_OPERATIONS__ADJUST_SPEED_LIMIT_HPP_
-#define NAV2_ROUTE__PLUGINS__ROUTE_OPERATIONS__ADJUST_SPEED_LIMIT_HPP_
+#ifndef NAV2_ROUTE__PLUGINS__ROUTE_OPERATIONS__REROUTING_SERVICE_HPP_
+#define NAV2_ROUTE__PLUGINS__ROUTE_OPERATIONS__REROUTING_SERVICE_HPP_
 
 #include <memory>
 #include <string>
@@ -22,28 +22,27 @@
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "nav2_route/interfaces/route_operation.hpp"
 #include "nav2_util/node_utils.hpp"
-#include "nav2_msgs/msg/speed_limit.hpp"
+#include "std_srvs/srv/trigger.hpp"
 
 namespace nav2_route
 {
 
 /**
- * @class AdjustSpeedLimit
- * @brief A route operation to process on state changes to evaluate if speed limits
- * should be adjusted based on graph edge metadata
+ * @class ReroutingService
+ * @brief A route operation to process requests from an external server for rerouting
  */
-class AdjustSpeedLimit : public RouteOperation
+class ReroutingService : public RouteOperation
 {
 public:
   /**
    * @brief Constructor
    */
-  AdjustSpeedLimit() = default;
+  ReroutingService() = default;
 
   /**
    * @brief destructor
    */
-  virtual ~AdjustSpeedLimit() = default;
+  virtual ~ReroutingService() = default;
 
   /**
    * @brief Configure
@@ -63,7 +62,7 @@ public:
    * on all state changes
    * @return The type of operation (on graph call, on status changes, or constantly)
    */
-  RouteOperationType processType() override {return RouteOperationType::ON_STATUS_CHANGE;}
+  RouteOperationType processType() override {return RouteOperationType::ON_QUERY;}
 
   /**
    * @brief The main speed limit operation to adjust the maximum speed of the vehicle
@@ -84,13 +83,22 @@ public:
     const geometry_msgs::msg::PoseStamped & curr_pose,
     const Metadata * mdata = nullptr) override;
 
+  /**
+   * @brief Service callback to trigger a reroute externally
+   * @param request, empty
+   * @param response, returns success
+   */
+  void serviceCb(
+    const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
+    std::shared_ptr<std_srvs::srv::Trigger::Response> response);
+
 protected:
   std::string name_;
-  std::string speed_tag_;
-  rclcpp::Logger logger_{rclcpp::get_logger("AdjustSpeedLimit")};
-  rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::SpeedLimit>::SharedPtr speed_limit_pub_;
+  std::atomic_bool reroute_;
+  rclcpp::Logger logger_{rclcpp::get_logger("ReroutingService")};
+  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr service_;
 };
 
 }  // namespace nav2_route
 
-#endif  // NAV2_ROUTE__PLUGINS__ROUTE_OPERATIONS__ADJUST_SPEED_LIMIT_HPP_
+#endif  // NAV2_ROUTE__PLUGINS__ROUTE_OPERATIONS__REROUTING_SERVICE_HPP_

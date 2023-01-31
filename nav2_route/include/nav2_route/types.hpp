@@ -94,7 +94,7 @@ struct EdgeCost
  */
 enum class OperationTrigger
 {
-  NONE = 0,
+  NODE = 0,
   ON_ENTER = 1,
   ON_EXIT = 2
 };
