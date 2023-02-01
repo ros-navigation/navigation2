@@ -22,10 +22,10 @@ and calculate the cost of a Footprint
 """
 
 from math import cos, sin
-from nav2_simple_commander.line_iterator import LineIterator
+
+from geometry_msgs.msg import Point32, Polygon
 from nav2_simple_commander.costmap_2d import PyCostmap2D
-from geometry_msgs.msg import Polygon
-from geometry_msgs.msg import Point32
+from nav2_simple_commander.line_iterator import LineIterator
 
 NO_INFORMATION = 255
 LETHAL_OBSTACLE = 254
@@ -146,7 +146,7 @@ class FootprintCollisionChecker():
         """
         if self.costmap_ is None:
             raise ValueError(
-                "Costmap not specified, use setCostmap to specify the costmap first")
+                'Costmap not specified, use setCostmap to specify the costmap first')
         return self.costmap_.worldToMapValidated(wx, wy)
 
     def pointCost(self, x: int, y: int):
@@ -165,7 +165,7 @@ class FootprintCollisionChecker():
         """
         if self.costmap_ is None:
             raise ValueError(
-                "Costmap not specified, use setCostmap to specify the costmap first")
+                'Costmap not specified, use setCostmap to specify the costmap first')
         return self.costmap_.getCostXY(x, y)
 
     def setCostmap(self, costmap: PyCostmap2D):
