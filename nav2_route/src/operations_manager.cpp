@@ -29,7 +29,7 @@ OperationsManager::OperationsManager(nav2_util::LifecycleNode::SharedPtr node)
 {
   logger_ = node->get_logger();
   nav2_util::declare_parameter_if_not_declared(
-    node, "use_feedback_operations", rclcpp::ParameterValue(false));
+    node, "use_feedback_operations", rclcpp::ParameterValue(true));
   use_feedback_operations_ = node->get_parameter("use_feedback_operations").as_bool();
 
   // Have some default operations
@@ -119,17 +119,15 @@ OperationsResult OperationsManager::process(
         result.reroute = result.reroute ||
           plugin->perform(node, edge_entered, edge_exited, route, pose, &operations[i]->metadata);
         result.operations_triggered.push_back(plugin->getName());
+      } else if (use_feedback_operations_) {
+        RCLCPP_INFO(
+          logger_, "Operation '%s' should be called from action feedback!",
+          operations[i]->type.c_str());
+        result.operations_triggered.push_back(operations[i]->type);
       } else {
-        if (use_feedback_operations_) {
-          RCLCPP_INFO(
-            logger_, "Operation %s should be called from feedback!",
-            operations[i]->type.c_str());
-          result.operations_triggered.push_back(operations[i]->type);
-        } else {
-          RCLCPP_WARN(
-            logger_, "Operation %s does not exist in route operations loaded!",
-            operations[i]->type.c_str());
-        }
+        throw nav2_core::OperationFailed(
+                "Operation " + operations[i]->type +
+                " does not exist in route operations loaded!");
       }
     }
 

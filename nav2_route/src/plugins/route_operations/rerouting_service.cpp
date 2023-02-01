@@ -25,6 +25,7 @@ void ReroutingService::configure(
   const rclcpp_lifecycle::LifecycleNode::SharedPtr node,
   const std::string & name)
 {
+  RCLCPP_INFO(node->get_logger(), "Configuring Rerouting service operation.");
   name_ = name;
   logger_ = node->get_logger();
   reroute_.store(false);

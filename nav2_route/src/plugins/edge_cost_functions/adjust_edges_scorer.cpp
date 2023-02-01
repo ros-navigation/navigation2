@@ -24,6 +24,7 @@ void AdjustEdgesScorer::configure(
   const rclcpp_lifecycle::LifecycleNode::SharedPtr node,
   const std::string & name)
 {
+  RCLCPP_INFO(node->get_logger(), "Configuring adjust edges scorer.");
   name_ = name;
   logger_ = node->get_logger();
   service_ =

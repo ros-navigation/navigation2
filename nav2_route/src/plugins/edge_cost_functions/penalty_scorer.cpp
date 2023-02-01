@@ -24,6 +24,7 @@ void PenaltyScorer::configure(
   const rclcpp_lifecycle::LifecycleNode::SharedPtr node,
   const std::string & name)
 {
+  RCLCPP_INFO(node->get_logger(), "Configuring penalty scorer.");
   name_ = name;
 
   // Find the tag at high the speed limit information is stored

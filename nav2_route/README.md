@@ -132,24 +132,28 @@ Thus, by convention, we say the `penalty` attribute of an edge should contain th
 
 # Steve's TODO list
 
+- [ ] document generous window b/c only used as a pre-condition + want dynamic behavior. also in param description. Document feedback updates on event (new node/edge, triggered operation, rerouted). Document metadata can be used to communicate from the operations back to the planning algorithm (this is blocked, this is the new time/dist to use)
+- [ ] document conventions for trigger event (templated for any, or trigger by default, `service_name` in file to indicate if each node has a different service it should call of that trigger event type instead of a main type for all to be called from the parameter set globally)
+
 
 - [ ] live route analyzer working 
 - [ ] prune to new start in rerouting + document in readme
-- [ ] document generous window b/c only used as a pre-condition + want dynamic behavior. also in param description
-- [ ] test coverage (planner, tracker)
 
 
-- [ ] operations plugins: collision monitor replanning, replanning regular rate. Call ext server / action base class + impls {openrmf door/elevator, event handler, ...}. pause at waypoints for signal. MORE? Test coverage in manager/plugin for graph node/logging.
+- [ ] operations plugins: 
+  - collision monitor replanning (state change or query? query is alot, but state change stuck conditions or BT communicate to redo? add metadata that can be read on replanning to find another way optionally? Local costmap only?).
+  - Add info of some kind into the metdata of nodes and edge for future use (like say: this is invalid when triggering a re-route + edge scorer node to utilize! Add actual navigation time to use next time when rerouting over the edge to improve estimations + use in the distance scorer).
 
 - [ ] Create basic file format for graph + parser: OSM and geoJSON. Vector types (regions), recursion namespaces, structured types?
 - [ ] QGIS demo + plugins for editing and visualizing graphs
 
-- [ ] Quality: BT nodes, Python API, testing (server), documentation, tutorial (bt change, plugin customize, file field examples)
+- [ ] Quality: BT nodes, Python API, testing (server, tracker, planner), documentation, tutorial (bt change, plugin customize, file field examples)
+
+- [ ] centralized 1 costmap to pass aroun dfor use (if possible): edge score, operation, selecting start/goal nodes with infra
 
 - [ ] demos with route -> global -> local. outdoor non-planar. to waypoint follower (GPS?) of nodes.
 
 # Questions
 
-- How can BT trigger BT node again if its still feedback-pending? preemption! Make sure works
-- service for closed edge // service to reroute // topic for costmaps come in during request?
+- How can BT trigger BT node again if its still feedback-pending? preemption! Make sure works. + regular replanning and/or reroute BT node as a fallback to the controller server failing (add current edge to closed list?).
 - How to stop / pause robot in the server and/or the behavior tree? Clearance stuff

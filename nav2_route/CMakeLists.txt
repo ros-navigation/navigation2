@@ -85,6 +85,7 @@ ament_target_dependencies(edge_scorers
 # Route operations plugins
 add_library(route_operations SHARED
   src/plugins/route_operations/adjust_speed_limit.cpp
+  src/plugins/route_operations/trigger_event.cpp
   src/plugins/route_operations/rerouting_service.cpp
 )
 

@@ -26,6 +26,7 @@
 #include "std_srvs/srv/trigger.hpp"
 #include "nav2_route/operations_manager.hpp"
 #include "nav2_route/types.hpp"
+#include "nav2_core/route_exceptions.hpp"
 
 class RclCppFixture
 {
@@ -194,4 +195,227 @@ TEST(OperationsManagerTest, test_rerouting_service_on_query)
   result = manager.process(false, state, route, pose);
   EXPECT_EQ(result.operations_triggered.size(), 1u);
   EXPECT_FALSE(result.reroute);
+}
+
+TEST(OperationsManagerTest, test_trigger_event_on_graph)
+{
+  auto node = std::make_shared<nav2_util::LifecycleNode>("operations_manager_test");
+  auto node_thread = std::make_unique<nav2_util::NodeThread>(node);
+  auto node_int = std::make_shared<rclcpp::Node>("my_node2");
+  auto node_thread_int = std::make_unique<nav2_util::NodeThread>(node_int);
+
+  // Enable trigger event operation, which conducts on node or edge change
+  // when a graph object contains the request for opening a door only.
+  // This tests the trigger event plugin, ON_GRAPH actions in the
+  // Operations Manager as well as the route operations client.
+  node->declare_parameter(
+    "operations", rclcpp::ParameterValue(std::vector<std::string>{"OpenDoor"}));
+  node->declare_parameter(
+    "use_feedback_operations", rclcpp::ParameterValue(true));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "OpenDoor.plugin",
+    rclcpp::ParameterValue(std::string{"nav2_route::TriggerEvent"}));
+  OperationsManager manager(node);
+
+  Node node2;
+  DirectionalEdge enter;
+  RouteTrackingState state;
+  state.last_node = &node2;
+  state.next_node = &node2;
+  state.current_edge = &enter;
+  geometry_msgs::msg::PoseStamped pose;
+  Route route;
+  Metadata mdata;
+
+  // Setup some test operations
+  Operation op, op2, op3;
+  op.type = "test";
+  op.trigger = OperationTrigger::NODE;
+
+  op2.type = "OpenDoor";
+  op2.trigger = OperationTrigger::NODE;
+
+  op3.type = "OpenDoor";
+  op3.trigger = OperationTrigger::NODE;
+  std::string service_name = "open_door";
+  std::string key = "service_name";
+  op3.metadata.setValue<std::string>(key, service_name);
+
+  // Should do nothing in the operations manager
+  // use_feedback_operations is true so should just log that it can't find the operaiton
+  // never gets to plugin, so no throw of lack of server
+  node2.operations.push_back(op);
+  auto result = manager.process(true, state, route, pose);
+  EXPECT_EQ(result.operations_triggered.size(), 1u);
+  EXPECT_FALSE(result.reroute);
+
+  // Now, lets try a node that should make it through the operations manager but fail
+  // because the proper service_name was provided neither in the parameter nor operation
+  // metadata
+  node2.operations.clear();
+  node2.operations.push_back(op2);
+  EXPECT_THROW(manager.process(true, state, route, pose), nav2_core::OperationFailed);
+
+  // Now lets test what should actually work with a real service in the metadata
+  node2.operations.clear();
+  node2.operations.push_back(op3);
+
+  // This should throw because this service is not yet available on wait_for_service
+  EXPECT_THROW(manager.process(true, state, route, pose), nav2_core::OperationFailed);
+
+  // Now, lets test with a real server that is really available for use
+  bool got_srv = false;
+  auto callback =
+    [&](
+    const std::shared_ptr<rmw_request_id_t>/*request_header*/,
+    const std::shared_ptr<std_srvs::srv::Trigger::Request>/*request*/,
+    std::shared_ptr<std_srvs::srv::Trigger::Response> response
+    ) -> void
+    {
+      got_srv = true;
+      response->success = true;
+    };
+
+  auto service = node_int->create_service<std_srvs::srv::Trigger>(service_name, callback);
+
+  result = manager.process(true, state, route, pose);
+  EXPECT_EQ(result.operations_triggered.size(), 1u);
+  EXPECT_FALSE(result.reroute);
+  EXPECT_TRUE(got_srv);
+}
+
+TEST(OperationsManagerTest, test_trigger_event_on_graph_global_service)
+{
+  auto node = std::make_shared<nav2_util::LifecycleNode>("operations_manager_test");
+  auto node_thread = std::make_unique<nav2_util::NodeThread>(node);
+  auto node_int = std::make_shared<rclcpp::Node>("my_node2");
+  auto node_thread_int = std::make_unique<nav2_util::NodeThread>(node_int);
+
+  // Set the global service to use intead of file settings for conflict testing
+  node->declare_parameter(
+    "operations", rclcpp::ParameterValue(std::vector<std::string>{"OpenDoor"}));
+  node->declare_parameter(
+    "use_feedback_operations", rclcpp::ParameterValue(true));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "OpenDoor.plugin",
+    rclcpp::ParameterValue(std::string{"nav2_route::TriggerEvent"}));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "OpenDoor.service_name",
+    rclcpp::ParameterValue(std::string{"hello_world"}));
+  OperationsManager manager(node);
+
+  Node node2;
+  DirectionalEdge enter;
+  RouteTrackingState state;
+  state.last_node = &node2;
+  state.next_node = &node2;
+  state.current_edge = &enter;
+  geometry_msgs::msg::PoseStamped pose;
+  Route route;
+  Metadata mdata;
+
+  // Setup working case
+  Operation op3;
+  op3.type = "OpenDoor";
+  op3.trigger = OperationTrigger::NODE;
+  std::string service_name = "open_door";
+  std::string key = "service_name";
+  op3.metadata.setValue<std::string>(key, service_name);
+  node2.operations.push_back(op3);
+
+  // Setup a server for the node's metadata, to create conflict with the global setting
+  // If there's a conflict, the file version wins due to more specificity
+  bool got_srv = false;
+  auto callback =
+    [&](
+    const std::shared_ptr<rmw_request_id_t>/*request_header*/,
+    const std::shared_ptr<std_srvs::srv::Trigger::Request>/*request*/,
+    std::shared_ptr<std_srvs::srv::Trigger::Response> response
+    ) -> void
+    {
+      got_srv = true;
+      response->success = true;
+    };
+
+  auto service = node_int->create_service<std_srvs::srv::Trigger>(service_name, callback);
+
+  auto result = manager.process(true, state, route, pose);
+  EXPECT_EQ(result.operations_triggered.size(), 1u);
+  EXPECT_FALSE(result.reroute);
+  EXPECT_TRUE(got_srv);
+
+  // Now, lets reset without the metadata and see that the global version is now called
+  node2.operations.clear();
+  Operation op4;
+  op4.type = "OpenDoor";
+  op4.trigger = OperationTrigger::NODE;
+  node2.operations.push_back(op4);
+
+  bool got_srv2 = false;
+  auto callback2 =
+    [&](
+    const std::shared_ptr<rmw_request_id_t>/*request_header*/,
+    const std::shared_ptr<std_srvs::srv::Trigger::Request>/*request*/,
+    std::shared_ptr<std_srvs::srv::Trigger::Response> response
+    ) -> void
+    {
+      got_srv2 = true;
+      response->success = true;
+    };
+
+  auto service2 = node_int->create_service<std_srvs::srv::Trigger>("hello_world", callback2);
+
+  result = manager.process(true, state, route, pose);
+  EXPECT_EQ(result.operations_triggered.size(), 1u);
+  EXPECT_FALSE(result.reroute);
+  EXPECT_TRUE(got_srv2);
+}
+
+TEST(OperationsManagerTest, test_trigger_event_on_graph_failures)
+{
+  auto node = std::make_shared<nav2_util::LifecycleNode>("operations_manager_test");
+  auto node_thread = std::make_unique<nav2_util::NodeThread>(node);
+  auto node_int = std::make_shared<rclcpp::Node>("my_node2");
+
+  // Enable trigger event operation, which conducts on node or edge change
+  // when a graph object contains the request for opening a door only
+  node->declare_parameter(
+    "operations", rclcpp::ParameterValue(std::vector<std::string>{"OpenDoor"}));
+  node->declare_parameter(
+    "use_feedback_operations", rclcpp::ParameterValue(false));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "OpenDoor.plugin",
+    rclcpp::ParameterValue(std::string{"nav2_route::TriggerEvent"}));
+  OperationsManager manager(node);
+
+  Node node2;
+  DirectionalEdge enter;
+  RouteTrackingState state;
+  state.last_node = &node2;
+  state.next_node = &node2;
+  state.current_edge = &enter;
+  geometry_msgs::msg::PoseStamped pose;
+  Route route;
+
+  // No operations, nothing should trigger even though status changed
+  auto result = manager.process(true, state, route, pose);
+  EXPECT_EQ(result.operations_triggered.size(), 0u);
+  EXPECT_FALSE(result.reroute);
+
+  // Setup some test operations
+  Operation op, op2;
+  op.type = "test";
+  op2.type = "TriggerEvent";
+  op.trigger = OperationTrigger::NODE;
+  op2.trigger = OperationTrigger::NODE;
+
+  // Should also do nothing, this type isn't a plugin type supported
+  // and `use_feedback_operations` is false
+  node2.operations.push_back(op);
+  EXPECT_THROW(manager.process(true, state, route, pose), nav2_core::OperationFailed);
+
+  // Make sure its using the provided plugin name NOT its type
+  node2.operations.clear();
+  node2.operations.push_back(op2);
+  EXPECT_THROW(manager.process(true, state, route, pose), nav2_core::OperationFailed);
 }
