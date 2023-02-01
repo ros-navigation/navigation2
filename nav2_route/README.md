@@ -107,6 +107,7 @@ Edge1:                  // <-- If provided by format, stored as name in metadata
       type: "open_door" // <-- Required
       trigger: ON_EXIT  // <-- Required
       door_id: 54       // <-- metadata for operation (arbirary)
+      service_name "open-door"  // <-- metadata for operation (Recommended)
 ```
 
 ### Metadata Conventions for Convenience
@@ -126,6 +127,14 @@ Similarly, the `penalty_tag` parameter (Default: `penalty`) in the `PenaltyScore
 This is useful to penalize certain routes over others knowing some application-specific information about that route segment. Technically this may be negative to incentivize rather than penalize.
 Thus, by convention, we say the `penalty` attribute of an edge should contain this information.
 
+The Route Operation `TriggerEvent` and more broadly any operation plugins derived from `RouteOperationClient<SrvT>` (a service-typed template route operation base class to simplify adding in custom plugins based on service calls) relies on the parameter and matching operation key `service_name` to indicate the service name to call with the corresponding route operation. When set in the parameter file, this will be used for all instances when called in the navigation route graph. When `service_name` is set in the operation in the navigation route graph, it can be used to specify a particular service name of that service type to use at that particular node/edge, created on the fly (when a conflict exists, uses the navigation graph as the more specific entry). 
+That way both design patterns work for a Route Operation `OpenDoor` of service type `nav2_msgs/srv/OpenDoor`, for example:
+- A `open_door/door1` (and `door2` and so on) service specific to each node containing a door to open may be called contextually and correctly at each individual door in the graph file. This way you can have individual services (if desired) without having to have individual repetative operation plugin definitions. 
+- A `open_doors` general service specified in the parameter file to call to open a door specified in the service's `request` field, so that one service is called for all instances of doors in the graph file without repetition in the graph file and storing client resources (just adding info about which one from the node metadata).
+
+Thus, we say that `service_name` is a key to correspond to a string of the service's name to call in an operation to use `TriggerEvent` and `RouteOperationClient<SrvT>` plugins and base classes. 
+
+
 ## Etc. Notes
 
 ---
@@ -133,11 +142,10 @@ Thus, by convention, we say the `penalty` attribute of an edge should contain th
 # Steve's TODO list
 
 - [ ] document generous window b/c only used as a pre-condition + want dynamic behavior. also in param description. Document feedback updates on event (new node/edge, triggered operation, rerouted). Document metadata can be used to communicate from the operations back to the planning algorithm (this is blocked, this is the new time/dist to use)
-- [ ] document conventions for trigger event (templated for any, or trigger by default, `service_name` in file to indicate if each node has a different service it should call of that trigger event type instead of a main type for all to be called from the parameter set globally)
 
 
 - [ ] live route analyzer working 
-- [ ] prune to new start in rerouting + document in readme
+- [ ] prune to new start in rerouting
 
 
 - [ ] operations plugins: 
