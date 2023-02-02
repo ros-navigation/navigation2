@@ -36,6 +36,7 @@ def generate_launch_description():
     params_file = LaunchConfiguration('params_file')
     use_composition = LaunchConfiguration('use_composition')
     container_name = LaunchConfiguration('container_name')
+    container_name_full = (namespace, '/', container_name)
     use_respawn = LaunchConfiguration('use_respawn')
     log_level = LaunchConfiguration('log_level')
 
@@ -107,7 +108,7 @@ def generate_launch_description():
     load_nodes = GroupAction(
         condition=IfCondition(PythonExpression(['not ', use_composition])),
         actions=[
-            SetParameter("use_sim_time", use_sim_time),
+            SetParameter('use_sim_time', use_sim_time),
             Node(
                 package='nav2_controller',
                 executable='controller_server',
@@ -192,9 +193,9 @@ def generate_launch_description():
     load_composable_nodes = GroupAction(
         condition=IfCondition(use_composition),
         actions=[
-            SetParameter("use_sim_time", use_sim_time),
+            SetParameter('use_sim_time', use_sim_time),
             LoadComposableNodes(
-                target_container=container_name,
+                target_container=container_name_full,
                 composable_node_descriptions=[
                     ComposableNode(
                         package='nav2_controller',

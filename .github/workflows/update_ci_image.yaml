@@ -94,7 +94,7 @@ jobs:
       - name: Build and push
         if: steps.config.outputs.trigger == 'true'
         id: docker_build
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           pull: true
           push: true

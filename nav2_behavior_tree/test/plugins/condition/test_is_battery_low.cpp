@@ -21,7 +21,7 @@
 
 #include "sensor_msgs/msg/battery_state.hpp"
 
-#include "../../test_behavior_tree_fixture.hpp"
+#include "utils/test_behavior_tree_fixture.hpp"
 #include "nav2_behavior_tree/plugins/condition/is_battery_low_condition.hpp"
 
 class IsBatteryLowConditionTestFixture : public ::testing::Test

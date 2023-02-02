@@ -22,10 +22,10 @@ and calculate the cost of a Footprint
 """
 
 from math import cos, sin
-from nav2_simple_commander.line_iterator import LineIterator
+
+from geometry_msgs.msg import Point32, Polygon
 from nav2_simple_commander.costmap_2d import PyCostmap2D
-from geometry_msgs.msg import Polygon
-from geometry_msgs.msg import Point32
+from nav2_simple_commander.line_iterator import LineIterator
 
 NO_INFORMATION = 255
 LETHAL_OBSTACLE = 254
@@ -91,7 +91,7 @@ class FootprintCollisionChecker():
 
         return max(float(self.lineCost(xstart, x1, ystart, y1)), footprint_cost)
 
-    def lineCost(self, x0, x1, y0, y1, step_size=0.1):
+    def lineCost(self, x0, x1, y0, y1, step_size=0.5):
         """
         Iterate over all the points along a line and check for collision.
 
@@ -101,7 +101,7 @@ class FootprintCollisionChecker():
             y0 (float): Ordinate of the initial point in map coordinates
             x1 (float): Abscissa of the final point in map coordinates
             y1 (float): Ordinate of the final point in map coordinates
-            step_size (float): Optional, Increments' resolution, defaults to 0.1
+            step_size (float): Optional, Increments' resolution, defaults to 0.5
 
         Returns
         -------
@@ -146,7 +146,7 @@ class FootprintCollisionChecker():
         """
         if self.costmap_ is None:
             raise ValueError(
-                "Costmap not specified, use setCostmap to specify the costmap first")
+                'Costmap not specified, use setCostmap to specify the costmap first')
         return self.costmap_.worldToMapValidated(wx, wy)
 
     def pointCost(self, x: int, y: int):
@@ -165,7 +165,7 @@ class FootprintCollisionChecker():
         """
         if self.costmap_ is None:
             raise ValueError(
-                "Costmap not specified, use setCostmap to specify the costmap first")
+                'Costmap not specified, use setCostmap to specify the costmap first')
         return self.costmap_.getCostXY(x, y)
 
     def setCostmap(self, costmap: PyCostmap2D):

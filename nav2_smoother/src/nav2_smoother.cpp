@@ -349,6 +349,11 @@ void SmootherServer::smoothPlan()
     result->error_code = ActionGoal::UNKNOWN;
     action_server_->terminate_current(result);
     return;
+  } catch (std::exception & ex) {
+    RCLCPP_ERROR(this->get_logger(), "%s", ex.what());
+    result->error_code = ActionGoal::UNKNOWN;
+    action_server_->terminate_current(result);
+    return;
   }
 }
 

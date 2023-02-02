@@ -46,8 +46,8 @@ class TaskResult(Enum):
 
 class BasicNavigator(Node):
 
-    def __init__(self):
-        super().__init__(node_name='basic_navigator')
+    def __init__(self, node_name='basic_navigator'):
+        super().__init__(node_name=node_name)
         self.initial_pose = PoseStamped()
         self.initial_pose.header.frame_id = 'map'
         self.goal_handle = None

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#ifndef BEHAVIOR_TREE__DUMMY_SERVERS_HPP_
-#define BEHAVIOR_TREE__DUMMY_SERVERS_HPP_
+#ifndef BEHAVIOR_TREE__DUMMY_ACTION_SERVER_HPP_
+#define BEHAVIOR_TREE__DUMMY_ACTION_SERVER_HPP_
 
 #include <memory>
 #include <string>
@@ -24,75 +24,15 @@
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "rclcpp/rclcpp.hpp"
 
+namespace nav2_system_tests
+{
+
 using namespace std::chrono_literals;  // NOLINT
 using namespace std::chrono;  // NOLINT
 using namespace std::placeholders;  // NOLINT
 
-template<class ServiceT>
-class DummyService
-{
-public:
-  explicit DummyService(
-    const rclcpp::Node::SharedPtr & node,
-    std::string service_name)
-  : node_(node),
-    service_name_(service_name),
-    request_count_(0),
-    disabled_(false)
-  {
-    server_ = node->create_service<ServiceT>(
-      service_name,
-      std::bind(&DummyService::handle_service, this, _1, _2, _3));
-  }
-
-  void disable()
-  {
-    server_.reset();
-    disabled_ = true;
-  }
-
-  void enable()
-  {
-    if (disabled_) {
-      server_ = node_->create_service<ServiceT>(
-        service_name_,
-        std::bind(&DummyService::handle_service, this, _1, _2, _3));
-      disabled_ = false;
-    }
-  }
-
-  void reset()
-  {
-    enable();
-    request_count_ = 0;
-  }
-
-  int getRequestCount() const
-  {
-    return request_count_;
-  }
-
-protected:
-  virtual void fillResponse(
-    const std::shared_ptr<typename ServiceT::Request>/*request*/,
-    const std::shared_ptr<typename ServiceT::Response>/*response*/) {}
-
-  void handle_service(
-    const std::shared_ptr<rmw_request_id_t>/*request_header*/,
-    const std::shared_ptr<typename ServiceT::Request> request,
-    const std::shared_ptr<typename ServiceT::Response> response)
-  {
-    request_count_++;
-    fillResponse(request, response);
-  }
-
-private:
-  rclcpp::Node::SharedPtr node_;
-  typename rclcpp::Service<ServiceT>::SharedPtr server_;
-  std::string service_name_;
-  int request_count_;
-  bool disabled_;
-};
+using Range = std::pair<unsigned int, unsigned int>;
+using Ranges = std::vector<Range>;
 
 template<class ActionT>
 class DummyActionServer
@@ -104,7 +44,7 @@ public:
   : action_name_(action_name),
     goal_count_(0)
   {
-    this->action_server_ = rclcpp_action::create_server<ActionT>(
+    action_server_ = rclcpp_action::create_server<ActionT>(
       node->get_node_base_interface(),
       node->get_node_clock_interface(),
       node->get_node_logging_interface(),
@@ -115,12 +55,12 @@ public:
       std::bind(&DummyActionServer::handle_accepted, this, _1));
   }
 
-  void setFailureRanges(const std::vector<std::pair<int, int>> & failureRanges)
+  void setFailureRanges(const Ranges & failureRanges)
   {
     failure_ranges_ = failureRanges;
   }
 
-  void setRunningRanges(const std::vector<std::pair<int, int>> & runningRanges)
+  void setRunningRanges(const Ranges & runningRanges)
   {
     running_ranges_ = runningRanges;
   }
@@ -141,6 +81,14 @@ protected:
   virtual std::shared_ptr<typename ActionT::Result> fillResult()
   {
     return std::make_shared<typename ActionT::Result>();
+  }
+
+  virtual void updateResultForFailure(std::shared_ptr<typename ActionT::Result> &)
+  {
+  }
+
+  virtual void updateResultForSuccess(std::shared_ptr<typename ActionT::Result> &)
+  {
   }
 
   virtual rclcpp_action::GoalResponse handle_goal(
@@ -174,12 +122,14 @@ protected:
     // if current goal index exists in failure range, the goal will be aborted
     for (auto & index : failure_ranges_) {
       if (goal_count_ >= index.first && goal_count_ <= index.second) {
+        updateResultForFailure(result);
         goal_handle->abort(result);
         return;
       }
     }
 
     // goal succeeds for all other indices
+    updateResultForSuccess(result);
     goal_handle->succeed(result);
   }
 
@@ -198,10 +148,11 @@ protected:
   // contains pairs of indices which define a range for which the
   // requested action goal will return running for 1s or be aborted
   // for all other indices, the action server will return success
-  std::vector<std::pair<int, int>> failure_ranges_;
-  std::vector<std::pair<int, int>> running_ranges_;
+  Ranges failure_ranges_;
+  Ranges running_ranges_;
 
-  int goal_count_;
+  unsigned int goal_count_;
 };
+}  // namespace nav2_system_tests
 
-#endif  // BEHAVIOR_TREE__DUMMY_SERVERS_HPP_
+#endif  // BEHAVIOR_TREE__DUMMY_ACTION_SERVER_HPP_

@@ -25,6 +25,7 @@
 #include <utility>
 
 #include "builtin_interfaces/msg/duration.hpp"
+#include "lifecycle_msgs/msg/state.hpp"
 #include "nav2_util/costmap.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
@@ -69,6 +70,10 @@ PlannerServer::PlannerServer(const rclcpp::NodeOptions & options)
 
 PlannerServer::~PlannerServer()
 {
+  /*
+   * Backstop ensuring this state is destroyed, even if deactivate/cleanup are
+   * never called.
+   */
   planners_.clear();
   costmap_thread_.reset();
 }
@@ -194,7 +199,19 @@ PlannerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   action_server_pose_->deactivate();
   action_server_poses_->deactivate();
   plan_publisher_->on_deactivate();
-  costmap_ros_->deactivate();
+
+  /*
+   * The costmap is also a lifecycle node, so it may have already fired on_deactivate
+   * via rcl preshutdown cb. Despite the rclcpp docs saying on_shutdown callbacks fire
+   * in the order added, the preshutdown callbacks clearly don't per se, due to using an
+   * unordered_set iteration. Once this issue is resolved, we can maybe make a stronger
+   * ordering assumption: https://github.com/ros2/rclcpp/issues/2096
+   */
+  if (costmap_ros_->get_current_state().id() ==
+    lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+  {
+    costmap_ros_->deactivate();
+  }
 
   PlannerMap::iterator it;
   for (it = planners_.begin(); it != planners_.end(); ++it) {
@@ -218,13 +235,24 @@ PlannerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   action_server_poses_.reset();
   plan_publisher_.reset();
   tf_.reset();
-  costmap_ros_->cleanup();
+
+  /*
+   * Double check whether something else transitioned it to INACTIVE
+   * already, e.g. the rcl preshutdown callback.
+   */
+  if (costmap_ros_->get_current_state().id() ==
+    lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
+  {
+    costmap_ros_->cleanup();
+  }
 
   PlannerMap::iterator it;
   for (it = planners_.begin(); it != planners_.end(); ++it) {
     it->second->cleanup();
   }
+
   planners_.clear();
+  costmap_thread_.reset();
   costmap_ = nullptr;
   return nav2_util::CallbackReturn::SUCCESS;
 }

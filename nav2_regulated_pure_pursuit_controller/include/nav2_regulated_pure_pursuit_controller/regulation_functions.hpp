@@ -70,8 +70,10 @@ inline double costConstraint(
     pose_cost != static_cast<double>(FREE_SPACE))
   {
     const double & inscribed_radius = costmap_ros->getLayeredCostmap()->getInscribedRadius();
-    const double min_distance_to_obstacle = (-1.0 / params->inflation_cost_scaling_factor) *
-      std::log(pose_cost / (INSCRIBED_INFLATED_OBSTACLE - 1)) + inscribed_radius;
+
+    const double min_distance_to_obstacle =
+      (params->inflation_cost_scaling_factor * inscribed_radius - log(pose_cost) + log(253.0f)) /
+      params->inflation_cost_scaling_factor;
 
     if (min_distance_to_obstacle < params->cost_scaling_dist) {
       return raw_linear_vel *
