@@ -109,6 +109,8 @@ install(TARGETS ${library_name} edge_scorers route_operations
   RUNTIME DESTINATION bin
 )
 
+install(DIRECTORY graphs DESTINATION share/${PROJECT_NAME})
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights

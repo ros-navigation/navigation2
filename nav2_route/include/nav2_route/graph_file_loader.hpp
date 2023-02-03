@@ -19,6 +19,7 @@
 #include <memory>
 #include <vector>
 #include <filesystem>
+#include <nlohmann/json.hpp>
 
 #include "nav2_util/lifecycle_node.hpp"
 #include "tf2_ros/buffer.h"
@@ -28,6 +29,9 @@
 
 namespace nav2_route
 {
+
+using json = nlohmann::json;
+
 /**
  * @class nav2_route::GraphFileLoader
  * @brief An action server to load graph files into the graph object for search and processing
@@ -65,6 +69,17 @@ public:
    * @return bool If the file exists
    */
   inline bool fileExists(const std::string & filepath);
+
+  // TODO(jw) move into seperate file
+
+  void getNodes(const json & features, std::vector<json> & nodes);
+
+  void getEdges(const json & features, std::vector<json> & edges);
+
+  void addNodesToGraph(Graph & graph, std::vector<json> & nodes);
+
+  void addEdgesToGraph(nav2_route::Graph & graph, std::vector<json> & edges);
+
 
 protected:
   std::string route_frame_, graph_filepath_;

@@ -12,12 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <string>
 #include <memory>
-#include <vector>
 #include <filesystem>
 
 #include "nav2_route/graph_file_loader.hpp"
+
+// TODO(jw) move into plugin
+#include "ament_index_cpp/get_package_share_directory.hpp"
+#include <fstream>
 
 namespace nav2_route
 {
@@ -38,15 +40,15 @@ GraphFileLoader::GraphFileLoader(
   graph_filepath_ = node->get_parameter("graph_filepath").as_string();
 }
 
-bool GraphFileLoader::loadGraphFromFile(Graph & graph, GraphToIDMap & idx_map, std::string filepath)
+bool GraphFileLoader::loadGraphFromFile(Graph &graph, GraphToIDMap &, std::string)
 {
   // Check filepath exists TODO(sm)
-  std::string filepath_to_load;
-  if (filepath.empty()) {
-    filepath_to_load = graph_filepath_;
-  } else {
-    filepath_to_load = filepath;
-  }
+//  std::string filepath_to_load;
+//  if (filepath.empty()) {
+//    filepath_to_load = graph_filepath_;
+//  } else {
+//    filepath_to_load = filepath;
+//  }
 
   // if (!fileExists(filepath_to_load)) {
   //   RCLCPP_ERROR(node->get_logger(), "Graph file %s does not exist!", graph_filename_);
@@ -63,34 +65,54 @@ bool GraphFileLoader::loadGraphFromFile(Graph & graph, GraphToIDMap & idx_map, s
   // (and so we don't need to propogate it through our structures)
 
 
-  idx_map.clear();
-  graph.clear();
+//  idx_map.clear();
+//  graph.clear();
+//
+//  // A test graph for visualization and prototyping
+//  graph.resize(9);
+//  unsigned int idx = 0;
+//  unsigned int ids = 1;
+//  for (unsigned int i = 0; i != 3; i++) {
+//    for (unsigned int j = 0; j != 3; j++) {
+//      graph[idx].nodeid = ids;
+//      graph[idx].coords.x = i;
+//      graph[idx].coords.y = j;
+//      idx_map[graph[idx].nodeid] = idx;  // for a nodeid key, provide the graph idx value
+//      idx++;
+//      ids++;
+//    }
+//  }
+//
+//  EdgeCost default_cost;
+//  // Creates bidirectional routs from 0-1-4-5 & directional only route from 0-3-6
+//  graph[0].addEdge(default_cost, &graph[1], ids++);
+//  graph[1].addEdge(default_cost, &graph[0], ids++);
+//  graph[4].addEdge(default_cost, &graph[1], ids++);
+//  graph[1].addEdge(default_cost, &graph[4], ids++);
+//  graph[5].addEdge(default_cost, &graph[4], ids++);
+//  graph[4].addEdge(default_cost, &graph[5], ids++);
+//  graph[0].addEdge(default_cost, &graph[3], ids++);
+//  graph[3].addEdge(default_cost, &graph[6], ids++);
 
-  // A test graph for visualization and prototyping
-  graph.resize(9);
-  unsigned int idx = 0;
-  unsigned int ids = 1;
-  for (unsigned int i = 0; i != 3; i++) {
-    for (unsigned int j = 0; j != 3; j++) {
-      graph[idx].nodeid = ids;
-      graph[idx].coords.x = i;
-      graph[idx].coords.y = j;
-      idx_map[graph[idx].nodeid] = idx;  // for a nodeid key, provide the graph idx value
-      idx++;
-      ids++;
-    }
-  }
+  std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_route");
+  std::string file_path = pkg_share_dir + "/graphs/geojson/aws_graph.geojson";
 
-  EdgeCost default_cost;
-  // Creates bidirectional routs from 0-1-4-5 & directional only route from 0-3-6
-  graph[0].addEdge(default_cost, &graph[1], ids++);
-  graph[1].addEdge(default_cost, &graph[0], ids++);
-  graph[4].addEdge(default_cost, &graph[1], ids++);
-  graph[1].addEdge(default_cost, &graph[4], ids++);
-  graph[5].addEdge(default_cost, &graph[4], ids++);
-  graph[4].addEdge(default_cost, &graph[5], ids++);
-  graph[0].addEdge(default_cost, &graph[3], ids++);
-  graph[3].addEdge(default_cost, &graph[6], ids++);
+  std::ifstream graph_file(file_path);
+
+  json json;
+  graph_file >> json;
+
+  auto features = json.at("features");
+
+  std::vector<nlohmann::json> nodes;
+  std::vector<nlohmann::json> edges;
+  getNodes(features, nodes);
+  getEdges(features, edges);
+
+  graph.resize(nodes.size());
+  addNodesToGraph(graph, nodes);
+  addEdgesToGraph(graph, edges);
+
   return true;
 }
 
@@ -98,5 +120,63 @@ bool GraphFileLoader::fileExists(const std::string & filepath)
 {
   return std::filesystem::exists(filepath);
 }
+
+void GraphFileLoader::getNodes(const json & features, std::vector<json> & nodes)
+{
+  for (const auto & feature : features) {
+    if (feature["geometry"]["type"] == "Point") {
+      nodes.emplace_back(feature);
+    }
+  }
+}
+
+void GraphFileLoader::getEdges(const json & features, std::vector<json> & edges)
+{
+  for (const auto & feature : features) {
+    if (feature["geometry"]["type"] == "MultiLineString") {
+      edges.emplace_back(feature);
+    }
+  }
+}
+
+void GraphFileLoader::addNodesToGraph(nav2_route::Graph & graph, std::vector<json> & nodes)
+{
+  for (const auto & node : nodes) {
+    // Required data
+    unsigned int id = node["properties"]["id"];
+    float x = node["geometry"]["coordinates"][0];
+    float y = node["geometry"]["coordinates"][1];
+    graph[id].nodeid = id;
+    graph[id].coords.x = x;
+    graph[id].coords.y = y;
+    // graph[id].coords.frame_id = frame; // TODO(jw) use default for now
+  }
+}
+
+void GraphFileLoader::addEdgesToGraph(nav2_route::Graph & graph, std::vector<json> & edges)
+{
+  nav2_route::EdgeCost edge_cost;
+  for (const auto & edge : edges) {
+    // Required data
+    const auto edge_properties = edge["properties"];
+    unsigned int id = edge_properties["id"];
+    unsigned int start_id = edge_properties["startid"];
+    unsigned int end_id = edge_properties["endid"];
+
+    // Recommended data
+    if ( edge_properties.contains("cost"))
+    {
+      edge_cost.cost = edge_properties["cost"];
+    }
+
+    if ( edge_properties.contains("overridable"))
+    {
+      edge_cost.overridable = edge_properties["overridable"];
+    }
+
+    graph[start_id].addEdge(edge_cost, &graph[end_id], id);
+  }
+}
+
 
 }  // namespace nav2_route
