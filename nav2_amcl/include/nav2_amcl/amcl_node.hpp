@@ -358,22 +358,17 @@ protected:
   /*
    * @brief Get the current state estimat hypothesis from the particle cloud
    */
-  bool getMaxWeightHyp(
-    std::vector<amcl_hyp_t> & hyps, amcl_hyp_t & max_weight_hyps,
-    int & max_weight_hyp);
+  bool getMaxWeightHyp(amcl_hyp_t & max_weight_hyp);
   /*
    * @brief Publish robot pose in map frame from AMCL
    */
-  void publishAmclPose(
-    const sensor_msgs::msg::LaserScan::ConstSharedPtr & laser_scan,
-    const std::vector<amcl_hyp_t> & hyps, const int & max_weight_hyp);
+  void publishAmclPose(const amcl_hyp_t & best_hyp,
+    const builtin_interfaces::msg::Time & timestamp_msg);
   /*
    * @brief Determine TF transformation from map to odom
    */
-  void calculateMaptoOdomTransform(
-    const sensor_msgs::msg::LaserScan::ConstSharedPtr & laser_scan,
-    const std::vector<amcl_hyp_t> & hyps,
-    const int & max_weight_hyp);
+  void calculateMaptoOdomTransform(const amcl_hyp_t & best_hyp,
+    const builtin_interfaces::msg::Time & timestamp_msg);
   /*
    * @brief Publish TF transformation from map to odom
    */
@@ -437,6 +432,7 @@ protected:
   double ext_pose_search_tolerance_sec_;
   std::string scan_topic_{"scan"};
   std::string map_topic_{"map"};
+  bool use_cluster_averaging_;
 };
 
 }  // namespace nav2_amcl

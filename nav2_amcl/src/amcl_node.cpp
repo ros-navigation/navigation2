@@ -265,6 +265,11 @@ AmclNode::AmclNode(const rclcpp::NodeOptions & options)
   add_parameter(
     "ext_pose_search_tolerance_sec", rclcpp::ParameterValue(0.1f),
     "Time tolerance for corresponding external pose measurement search");
+
+  add_parameter(
+    "use_cluster_averaging", rclcpp::ParameterValue(false),
+    "Average (with weights) cluster centroid positions when calculating curren pose"
+  );
 }
 
 AmclNode::~AmclNode()
@@ -858,12 +863,18 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
     }
   }
   if (resampled || force_publication || !first_pose_sent_) {
-    amcl_hyp_t max_weight_hyps;
-    std::vector<amcl_hyp_t> hyps;
-    int max_weight_hyp = -1;
-    if (getMaxWeightHyp(hyps, max_weight_hyps, max_weight_hyp)) {
-      publishAmclPose(laser_scan, hyps, max_weight_hyp); // estimated_pose = pose(best_cluster.mean, filter.covariance)
-      calculateMaptoOdomTransform(laser_scan, hyps, max_weight_hyp);
+    amcl_hyp_t best_hyp;
+    bool ret = false;
+
+    if(use_cluster_averaging_){
+      ret = getWeightedMeanClustersCenroid(best_hyp);
+    } else {
+      ret = getMaxWeightHyp(best_hyp);
+    }
+
+    if (ret) {
+      publishAmclPose(best_hyp, laser_scan->header.stamp); // estimated_pose = pose(best_cluster.mean, filter.covariance)
+      calculateMaptoOdomTransform(best_hyp, laser_scan->header.stamp);
 
       if (tf_broadcast_ == true) {
         // We want to send a transform that is good up until a
@@ -1070,10 +1081,11 @@ AmclNode::getWeightedMeanClustersCenroid(amcl_hyp_t & mean_centroid){
     return true;
 }
 
+bool
+AmclNode::getMaxWeightHyp(amcl_hyp_t & max_weight_hyp)
 {
   // Read out the current hypotheses
   double max_weight = 0.0;
-  hyps.resize(pf_->sets[pf_->current_set].cluster_count);
   for (int hyp_count = 0;
     hyp_count < pf_->sets[pf_->current_set].cluster_count; hyp_count++)
   {
@@ -1085,31 +1097,34 @@ AmclNode::getWeightedMeanClustersCenroid(amcl_hyp_t & mean_centroid){
       return false;
     }
 
-    hyps[hyp_count].weight = weight;
-    hyps[hyp_count].pf_pose_mean = pose_mean;
-    hyps[hyp_count].pf_pose_cov = pose_cov;
     RCLCPP_DEBUG(
       get_logger(), "Hypotheses No %i:\t weight: %.3f",
-      hyp_count+1, hyps[hyp_count].weight);
+      hyp_count+1, weight);
+      RCLCPP_DEBUG(
+      get_logger(), "Pose: %.3f %.3f %.3f",
+      pose_mean.v[0],
+      pose_mean.v[1],
+      pose_mean.v[2]);
 
-    if (hyps[hyp_count].weight > max_weight) {
+    if (weight > max_weight) {
       RCLCPP_DEBUG(get_logger(), "Max weight:\t %f", max_weight);
-      RCLCPP_DEBUG(get_logger(), "Hyp weight:\t %f", hyps[hyp_count].weight);
+      RCLCPP_DEBUG(get_logger(), "Hyp weight:\t %f", weight);
       RCLCPP_DEBUG(get_logger(), "CHANGED MAX WEIGHT OR NO HAVING WEIGHT YET");
 
-      max_weight = hyps[hyp_count].weight;
-      max_weight_hyp = hyp_count;
+      max_weight = weight;
+
+      max_weight_hyp.weight = weight;
+      max_weight_hyp.pf_pose_mean = pose_mean;
+      max_weight_hyp.pf_pose_cov = pose_cov;
     }
   }
 
   if (max_weight > 0.0) {
     RCLCPP_DEBUG(
       get_logger(), "Max weight pose: %.3f %.3f %.3f",
-      hyps[max_weight_hyp].pf_pose_mean.v[0],
-      hyps[max_weight_hyp].pf_pose_mean.v[1],
-      hyps[max_weight_hyp].pf_pose_mean.v[2]);
-
-    max_weight_hyps = hyps[max_weight_hyp];
+      max_weight_hyp.pf_pose_mean.v[0],
+      max_weight_hyp.pf_pose_mean.v[1],
+      max_weight_hyp.pf_pose_mean.v[2]);
     return true;
   }
   return false;
@@ -1117,8 +1132,8 @@ AmclNode::getWeightedMeanClustersCenroid(amcl_hyp_t & mean_centroid){
 
 void
 AmclNode::publishAmclPose(
-  const sensor_msgs::msg::LaserScan::ConstSharedPtr & laser_scan,
-  const std::vector<amcl_hyp_t> & hyps, const int & max_weight_hyp)
+  const amcl_hyp_t & best_hyp,
+  const builtin_interfaces::msg::Time & timestamp_msg)
 {
   // If initial pose is not known, AMCL does not know the current pose
   if (!initial_pose_is_known_) {
@@ -1134,18 +1149,18 @@ AmclNode::publishAmclPose(
   auto p = std::make_unique<geometry_msgs::msg::PoseWithCovarianceStamped>();
   // Fill in the header
   p->header.frame_id = global_frame_id_;
-  p->header.stamp = laser_scan->header.stamp;
+  p->header.stamp = timestamp_msg;
   // Copy in the pose
-  p->pose.pose.position.x = hyps[max_weight_hyp].pf_pose_mean.v[0];
-  p->pose.pose.position.y = hyps[max_weight_hyp].pf_pose_mean.v[1];
-  p->pose.pose.orientation = orientationAroundZAxis(hyps[max_weight_hyp].pf_pose_mean.v[2]);
+  p->pose.pose.position.x = best_hyp.pf_pose_mean.v[0];
+  p->pose.pose.position.y = best_hyp.pf_pose_mean.v[1];
+  p->pose.pose.orientation = orientationAroundZAxis(best_hyp.pf_pose_mean.v[2]);
   // Copy in the covariance, converting from 3-D to 6-D
   pf_sample_set_t * set = pf_->sets + pf_->current_set;
   for (int i = 0; i < 2; i++) {
     for (int j = 0; j < 2; j++) {
       // Report the overall filter covariance, rather than the
       // covariance for the highest-weight cluster
-      // p->covariance[6*i+j] = hyps[max_weight_hyp].pf_pose_cov.m[i][j];
+      // p->covariance[6*i+j] = best_hyp.pf_pose_cov.m[i][j];
       p->pose.covariance[6 * i + j] = set->cov.m[i][j];
     }
   }
@@ -1168,29 +1183,29 @@ AmclNode::publishAmclPose(
 
   RCLCPP_DEBUG(
     get_logger(), "New pose: %6.3f %6.3f %6.3f",
-    hyps[max_weight_hyp].pf_pose_mean.v[0],
-    hyps[max_weight_hyp].pf_pose_mean.v[1],
-    hyps[max_weight_hyp].pf_pose_mean.v[2]);
+    best_hyp.pf_pose_mean.v[0],
+    best_hyp.pf_pose_mean.v[1],
+    best_hyp.pf_pose_mean.v[2]);
 }
 
 void
 AmclNode::calculateMaptoOdomTransform(
-  const sensor_msgs::msg::LaserScan::ConstSharedPtr & laser_scan,
-  const std::vector<amcl_hyp_t> & hyps, const int & max_weight_hyp)
+  const amcl_hyp_t & best_hyp,
+  const builtin_interfaces::msg::Time & timestamp_msg)
 {
   // subtracting base to odom from map to base and send map to odom instead
   geometry_msgs::msg::PoseStamped odom_to_map;
   try {
     tf2::Quaternion q;
-    q.setRPY(0, 0, hyps[max_weight_hyp].pf_pose_mean.v[2]);
+    q.setRPY(0, 0, best_hyp.pf_pose_mean.v[2]);
     tf2::Transform tmp_tf(q, tf2::Vector3(
-        hyps[max_weight_hyp].pf_pose_mean.v[0],
-        hyps[max_weight_hyp].pf_pose_mean.v[1],
+        best_hyp.pf_pose_mean.v[0],
+        best_hyp.pf_pose_mean.v[1],
         0.0));
 
     geometry_msgs::msg::PoseStamped tmp_tf_stamped;
     tmp_tf_stamped.header.frame_id = base_frame_id_;
-    tmp_tf_stamped.header.stamp = laser_scan->header.stamp;
+    tmp_tf_stamped.header.stamp = timestamp_msg;
     tf2::toMsg(tmp_tf.inverse(), tmp_tf_stamped.pose);
 
     tf_buffer_->transform(tmp_tf_stamped, odom_to_map, odom_frame_id_);
@@ -1298,6 +1313,8 @@ AmclNode::initParameters()
   get_parameter("std_warn_level_yaw", std_warn_level_yaw_);
   get_parameter("max_particle_gen_prob_ext_pose", max_particle_gen_prob_ext_pose_);
   get_parameter("ext_pose_search_tolerance_sec", ext_pose_search_tolerance_sec_);
+  get_parameter("use_cluster_averaging", use_cluster_averaging_);
+  
   save_pose_period_ = tf2::durationFromSec(1.0 / save_pose_rate);
   transform_tolerance_ = tf2::durationFromSec(tmp_tol);
   transform_lookup_timeout_ = tf2::durationFromSec(lookup_timeout);
