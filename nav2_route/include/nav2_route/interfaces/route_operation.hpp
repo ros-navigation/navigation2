@@ -17,6 +17,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
@@ -27,8 +28,26 @@
 namespace nav2_route
 {
 
+/**
+ * @struct OperationResult
+ * @brief a struct to hold return from an operation
+ */
+struct OperationResult
+{
+  bool reroute{false};
+  std::vector<unsigned int> blocked_ids;
+};
 
-// operations plugin throw nav2_core::OperationFailed
+/**
+ * @enum nav2_route::RouteOperationType
+ * @brief The type of operation plugin
+ */
+enum class RouteOperationType
+{
+  ON_GRAPH = 0,
+  ON_STATUS_CHANGE = 1,
+  ON_QUERY = 2
+};
 
 /**
  * @class RouteOperation
@@ -37,10 +56,11 @@ namespace nav2_route
  * edge is entered or exited. The API also supports triggering arbitrary operations
  * when a status has changed (e.g. any node is achieved) or at a regular frequency
  * on query set at a fixed rate of tracker_update_rate. Operations can request the
- * system to reroute. Example operations may be to: reroute when blocked or at a
- * required rate (though may want to use BTs instead), adjust speed limits, wait,
- * call an external service or action to perform a task such as calling an elevator
- * or opening an automatic door, etc.
+ * system to reroute and avoid certain edges. Example operations may be to:
+ * reroute when blocked or at a required rate (though may want to use BTs instead),
+ * adjust speed limits, wait, call an external service or action to perform a task
+ * such as calling an elevator or opening an automatic door, etc.
+ * Operations may throw nav2_core::OperationFailed exceptions in failure cases
  */
 class RouteOperation
 {
@@ -99,10 +119,9 @@ public:
    * for additional context (must check if nullptr if no last edge, starting)
    * @param route Current route being tracked in full, for additional context
    * @param curr_pose Current robot pose in the route frame, for additional context
-   * @return Whether to the route is still valid (false) or needs rerouting as
-   * a result of a problem or request by the operation (true)
+   * @return Whether to perform rerouting and report blocked edges in that case
    */
-  virtual bool perform(
+  virtual OperationResult perform(
     NodePtr node_achieved,
     EdgePtr edge_entered,
     EdgePtr edge_exited,

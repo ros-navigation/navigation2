@@ -37,6 +37,9 @@ void RouteTracker::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, "tracker_update_rate", rclcpp::ParameterValue(100.0));
   tracker_update_rate_ = node->get_parameter("tracker_update_rate").as_double();
+  nav2_util::declare_parameter_if_not_declared(
+    node, "aggregate_blocked_ids", rclcpp::ParameterValue(false));
+  aggregate_blocked_ids_ = node->get_parameter("aggregate_blocked_ids").as_bool();
 
   operations_manager_ = std::make_unique<OperationsManager>(node);
 }
@@ -140,7 +143,9 @@ void RouteTracker::publishFeedback(
   action_server_->publish_feedback(std::move(feedback));
 }
 
-TrackerResult RouteTracker::trackRoute(const Route & route, const nav_msgs::msg::Path & path)
+TrackerResult RouteTracker::trackRoute(
+  const Route & route, const nav_msgs::msg::Path & path,
+  std::vector<unsigned int> & blocked_ids)
 {
   // Manage important data
   route_msg_ = utils::toMsg(route, route_frame_, clock_->now());
@@ -179,7 +184,7 @@ TrackerResult RouteTracker::trackRoute(const Route & route, const nav_msgs::msg:
     }
 
     // Process any operations necessary
-    OperationsResult op_result =
+    OperationsResult ops_result =
       operations_manager_->process(status_change, state, route, robot_pose);
 
     if (completed) {
@@ -187,14 +192,20 @@ TrackerResult RouteTracker::trackRoute(const Route & route, const nav_msgs::msg:
       return TrackerResult::COMPLETED;
     }
 
-    if ((status_change || !op_result.operations_triggered.empty()) && state.current_edge) {
+    if ((status_change || !ops_result.operations_triggered.empty()) && state.current_edge) {
       publishFeedback(
         false,  // No rerouting occurred
         state.next_node->nodeid, state.last_node->nodeid,
-        state.current_edge->edgeid, op_result.operations_triggered);
+        state.current_edge->edgeid, ops_result.operations_triggered);
     }
 
-    if (op_result.reroute) {
+    if (ops_result.reroute) {
+      if (!aggregate_blocked_ids_) {
+        blocked_ids = ops_result.blocked_ids;
+      } else {
+        blocked_ids.insert(
+          blocked_ids.end(), ops_result.blocked_ids.begin(), ops_result.blocked_ids.end());
+      }
       RCLCPP_INFO(logger_, "Rerouting requested by route tracking operations!");
       return TrackerResult::REROUTE;
     }

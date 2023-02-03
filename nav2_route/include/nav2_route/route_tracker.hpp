@@ -107,9 +107,12 @@ public:
    * @brief Main function to track route, manage state, and trigger operations
    * @param route Route to track progress of
    * @param path Path that comprises this route for publication of feedback messages
+   * @param blocked_ids A set of blocked IDs to modify if rerouting is necessary
    * @return TrackerResult if the route is completed, should be rerouted, or was interrupted
    */
-  TrackerResult trackRoute(const Route & route, const nav_msgs::msg::Path & path);
+  TrackerResult trackRoute(
+    const Route & route, const nav_msgs::msg::Path & path,
+    std::vector<unsigned int> & blocked_ids);
 
 protected:
   nav2_msgs::msg::Route route_msg_;
@@ -118,6 +121,7 @@ protected:
   rclcpp::Clock::SharedPtr clock_;
   rclcpp::Logger logger_{rclcpp::get_logger("RouteTracker")};
   double radius_threshold_, tracker_update_rate_;
+  bool aggregate_blocked_ids_;
   std::shared_ptr<ActionServerTrack> action_server_;
   std::unique_ptr<OperationsManager> operations_manager_;
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;

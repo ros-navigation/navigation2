@@ -37,7 +37,9 @@ void RoutePlanner::configure(nav2_util::LifecycleNode::SharedPtr node)
   edge_scorer_ = std::make_unique<EdgeScorer>(node);
 }
 
-Route RoutePlanner::findRoute(Graph & graph, unsigned int start, unsigned int goal)
+Route RoutePlanner::findRoute(
+  Graph & graph, unsigned int start, unsigned int goal,
+  const std::vector<unsigned int> & blocked_ids)
 {
   if (graph.empty()) {
     throw nav2_core::NoValidGraph("Graph is invalid for routing!");
@@ -48,7 +50,7 @@ Route RoutePlanner::findRoute(Graph & graph, unsigned int start, unsigned int go
   // not lost in the route when this function goes out of scope.
   const NodePtr & start_node = &graph.at(start);
   const NodePtr & goal_node = &graph.at(goal);
-  findShortestGraphTraversal(graph, start_node, goal_node);
+  findShortestGraphTraversal(graph, start_node, goal_node, blocked_ids);
 
   EdgePtr & parent_edge = goal_node->search_state.parent_edge;
   if (!parent_edge) {
@@ -78,8 +80,8 @@ void RoutePlanner::resetSearchStates(Graph & graph)
 }
 
 void RoutePlanner::findShortestGraphTraversal(
-  Graph & graph, const NodePtr start,
-  const NodePtr goal)
+  Graph & graph, const NodePtr start, const NodePtr goal,
+  const std::vector<unsigned int> & blocked_ids)
 {
   // Setup the Dijkstra's search problem
   goal_id_ = goal->nodeid;
@@ -114,7 +116,7 @@ void RoutePlanner::findShortestGraphTraversal(
       neighbor = edge->end;
 
       // If edge is invalid (lane closed, occupied, etc), don't expand
-      if (!getTraversalCost(edge, traversal_cost)) {
+      if (!getTraversalCost(edge, traversal_cost, blocked_ids)) {
         continue;
       }
 
@@ -135,8 +137,16 @@ void RoutePlanner::findShortestGraphTraversal(
   }
 }
 
-bool RoutePlanner::getTraversalCost(const EdgePtr edge, float & score)
+bool RoutePlanner::getTraversalCost(
+  const EdgePtr edge, float & score, const std::vector<unsigned int> & blocked_ids)
 {
+  // If edge or node is in the blocked list, as long as its not blocking the goal itself
+  auto idBlocked = [&](unsigned int id) {return id == edge->edgeid || id == edge->end->nodeid;};
+  auto is_blocked = std::find_if(blocked_ids.begin(), blocked_ids.end(), idBlocked);
+  if (is_blocked != blocked_ids.end() && !isGoal(edge->end)) {
+    return false;
+  }
+
   if (!edge->edge_cost.overridable || edge_scorer_->numPlugins() == 0) {
     if (edge->edge_cost.cost != 0.0) {
       score = edge->edge_cost.cost;

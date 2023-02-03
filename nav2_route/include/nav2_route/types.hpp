@@ -100,17 +100,6 @@ enum class OperationTrigger
 };
 
 /**
- * @enum nav2_route::RouteOperationType
- * @brief The type of operation plugin
- */
-enum class RouteOperationType
-{
-  ON_GRAPH = 0,
-  ON_STATUS_CHANGE = 1,
-  ON_QUERY = 2
-};
-
-/**
  * @struct nav2_route::Operation
  * @brief An object to store operations to perform on events with types and metadata
  */
@@ -132,6 +121,7 @@ struct OperationsResult
 {
   std::vector<std::string> operations_triggered;
   bool reroute{false};
+  std::vector<unsigned int> blocked_ids;
 };
 
 /**

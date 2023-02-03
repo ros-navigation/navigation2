@@ -35,4 +35,9 @@
       <description>Route operation templated by service types to call arbitrary services on node or edge events</description>
     </class>
   </library>
+  <library path="route_operations">
+    <class type="nav2_route::CollisionMonitor" base_class_type="nav2_route::RouteOperation">
+      <description>Route operation to periodically check a costmap for localized viability of the route</description>
+    </class>
+  </library>
 </class_libraries>

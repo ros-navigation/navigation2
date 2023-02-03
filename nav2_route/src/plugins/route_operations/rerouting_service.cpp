@@ -45,20 +45,22 @@ void ReroutingService::serviceCb(
   response->success = true;
 }
 
-bool ReroutingService::perform(
-  NodePtr /*node_achieved*/,
+OperationResult ReroutingService::perform(
+  NodePtr /*node*/,
   EdgePtr /*edge_entered*/,
   EdgePtr /*edge_exited*/,
   const Route & /*route*/,
   const geometry_msgs::msg::PoseStamped & /*curr_pose*/,
   const Metadata * /*mdata*/)
 {
+  OperationResult result;
   if (reroute_.load()) {
     reroute_.store(false);
-    return true;
+    result.reroute = true;
+    return result;
   }
 
-  return false;
+  return result;
 }
 
 }  // namespace nav2_route

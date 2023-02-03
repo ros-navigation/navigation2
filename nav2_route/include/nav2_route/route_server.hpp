@@ -128,11 +128,13 @@ protected:
   /**
    * @brief Abstract method combining findStartandGoalNodeLocations and the route planner
    * to find the Node locations of interest and route to the goal
-   * @param The request goal information
+   * @param goal The request goal information
+   * @param blocked_ids The IDs of blocked graphs / edges
    * @return A route of the request
    */
   template<typename GoalT>
-  Route findRoute(const std::shared_ptr<const GoalT> goal);
+  Route findRoute(
+    const std::shared_ptr<const GoalT> goal, const std::vector<unsigned int> & blocked_ids = {});
 
   /**
    * @brief Find the planning duration of the request and log warnings

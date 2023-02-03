@@ -78,7 +78,7 @@ protected:
   rclcpp::Logger logger_{rclcpp::get_logger("CostmapScorer")};
   std::string name_;
   bool use_max_, invalid_on_collision_, invalid_off_map_;
-  float weight_;
+  float weight_, max_cost_;
   std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber_;
   std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap_{nullptr};
 };

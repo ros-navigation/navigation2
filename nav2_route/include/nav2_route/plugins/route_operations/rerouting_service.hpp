@@ -73,10 +73,10 @@ public:
    * @param edge_exited Edge exited by node achievement, for additional context
    * @param route Current route being tracked in full, for additional context
    * @param curr_pose Current robot pose in the route frame, for additional context
-   * @return Whether to perform rerouting as a result of a problem or request by the operation
+   * @return Whether to perform rerouting and report blocked edges in that case
    */
-  bool perform(
-    NodePtr node_achieved,
+  OperationResult perform(
+    NodePtr node,
     EdgePtr edge_entered,
     EdgePtr edge_exited,
     const Route & route,

@@ -32,6 +32,8 @@ Note however that plugins may also use outside information from topics, services
 - Operation dynamic plugins to perform arbitrary tasks at a given node or when entering or leaving an edge on the route (plan)
 - Operation may be graph-centric (e.g. graph file identifies operation to perform) or plugin-centric (e.g. plugins self-identify nodes and edges to act upon) 
 - TODO Operations provided (needs Operations implemented)
+- TODO arbitary metadata storage that can be communicated between plugins or even classes of plugins about nodes, edges.
+- TODO action feedback on updates (reroute, operaiton triggered, state change passing a node/edge)
 
 ## Design
 
@@ -41,8 +43,6 @@ TODO main elements of the package and their role (needs final architecture hashe
 ### Plugin Interfaces
 
 TODO provide specifications for plugins // what they do // links (needs plugin API stability)
-
-TODO Operations provide metadata but also provide metadata about nodes/edges as well
 
 ## Metrics
 
@@ -137,27 +137,44 @@ Thus, we say that `service_name` is a key to correspond to a string of the servi
 
 ## Etc. Notes
 
+TODO Document metadata can be used to communicate from the operations back to the planning algorithm (this is blocked, this is the new time/dist to use) to refine operations over time or just communicate information about the state of the graph to each other as choosing. This is due to pointers instead of copies of the graph around the system.
+
+TODO document generous window b/c only used as a pre-condition + want dynamic behavior // refinement to make pretty exact (show diagram of method). also in param description. 
+
 ---
 
 # Steve's TODO list
 
-- [ ] document generous window b/c only used as a pre-condition + want dynamic behavior. also in param description. Document feedback updates on event (new node/edge, triggered operation, rerouted). Document metadata can be used to communicate from the operations back to the planning algorithm (this is blocked, this is the new time/dist to use)
-
-
-- [ ] live route analyzer working 
+- [ ] live route analyzer working + plugins + rerouting
 - [ ] prune to new start in rerouting
 
 
+- [ ] Collision monitor tests
+
+
+
 - [ ] operations plugins: 
-  - collision monitor replanning (state change or query? query is alot, but state change stuck conditions or BT communicate to redo? add metadata that can be read on replanning to find another way optionally? Local costmap only?).
   - Add info of some kind into the metdata of nodes and edge for future use (like say: this is invalid when triggering a re-route + edge scorer node to utilize! Add actual navigation time to use next time when rerouting over the edge to improve estimations + use in the distance scorer).
+
+- [ ] edge scoring plugins
+  - Use semantic data from metadata for addtl costs (eg danger level adds a multiplier on a penalty or certain rooms have more or less cost)
+    - have semantic classes + costs to use for nodes/edges with metadata (factory cell 1: 50, living room 0)
+  - take in a topic of routes (next N seconds) from other robots to add penalties to going over the same regions (for next N seconds) -- or temporal ordering based on time to traverse (!!!!!)
+    - Time varying costs for multirobot, more better. Another reason for distance edge scorer to actually be time (default max speed so dist)
+    - distance actually do time instead so that can be adjusted with real times from operations
 
 - [ ] Create basic file format for graph + parser: OSM and geoJSON. Vector types (regions), recursion namespaces, structured types?
 - [ ] QGIS demo + plugins for editing and visualizing graphs
 
-- [ ] Quality: BT nodes, Python API, testing (server, tracker, planner), documentation, tutorial (bt change, plugin customize, file field examples)
+
+
+- [ ] Quality: BT nodes, Python API, testing (server, tracker, planner), documentation, tutorial (bt change, plugin customize, file field examples). BT XML for first/last mile, freq. replanning, navigation using it, WPF, de-stucking? 
+
+
 
 - [ ] centralized 1 costmap to pass aroun dfor use (if possible): edge score, operation, selecting start/goal nodes with infra
+- [ ] if start pose is between 2 nodes in the graph solution (prune first)
+- [ ] use map for checking start/goal nodes for infra blockages not just NN. Evaluate K 
 
 - [ ] demos with route -> global -> local. outdoor non-planar. to waypoint follower (GPS?) of nodes.
 

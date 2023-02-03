@@ -64,6 +64,7 @@ TEST(OperationsManagerTest, test_find_operations)
   op.type = "test";
   op.trigger = OperationTrigger::ON_ENTER;
   enter.operations.push_back(op);
+  op.trigger = OperationTrigger::NODE;
   node2.operations.push_back(op);
   op2.type = "test2";
   op2.trigger = OperationTrigger::ON_EXIT;
@@ -74,6 +75,10 @@ TEST(OperationsManagerTest, test_find_operations)
   enter.operations[0].trigger = OperationTrigger::ON_EXIT;
   exit2.operations[0].trigger = OperationTrigger::ON_ENTER;
   EXPECT_EQ(manager.findGraphOperationsToProcess(&node2, &enter, &exit2).size(), 1u);
+
+  // Now, should be empty
+  node2.operations[0].trigger = OperationTrigger::ON_ENTER;
+  EXPECT_EQ(manager.findGraphOperationsToProcess(&node2, &enter, &exit2).size(), 0u);
 }
 
 TEST(OperationsManagerTest, test_find_operations_failure2)

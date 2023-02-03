@@ -211,7 +211,9 @@ RouteServer::findStartandGoalNodeLocations(const std::shared_ptr<const GoalT> go
 }
 
 template<typename GoalT>
-Route RouteServer::findRoute(const std::shared_ptr<const GoalT> goal)
+Route RouteServer::findRoute(
+  const std::shared_ptr<const GoalT> goal,
+  const std::vector<unsigned int> & blocked_ids)
 {
   // Find the search boundaries
   auto [start_route, end_route] = findStartandGoalNodeLocations(goal);
@@ -223,7 +225,7 @@ Route RouteServer::findRoute(const std::shared_ptr<const GoalT> goal)
     route.start_node = &graph_.at(start_route);
   } else {
     // Compute the route via graph-search, returns a node-edge sequence
-    route = route_planner_->findRoute(graph_, start_route, end_route);
+    route = route_planner_->findRoute(graph_, start_route, end_route, blocked_ids);
   }
 
   return route;
@@ -324,6 +326,7 @@ RouteServer::computeAndTrackRoute()
 {
   auto goal = compute_and_track_route_server_->get_current_goal();
   auto result = std::make_shared<ComputeAndTrackRouteResult>();
+  std::vector<unsigned int> blocked_graph_ids;
   RCLCPP_INFO(get_logger(), "Computing and tracking route to goal.");
 
   try {
@@ -335,6 +338,7 @@ RouteServer::computeAndTrackRoute()
       if (compute_and_track_route_server_->is_preempt_requested()) {
         RCLCPP_INFO(get_logger(), "Computing new and tracking preempted route to goal.");
         goal = compute_and_track_route_server_->accept_pending_goal();
+        blocked_graph_ids.clear();
       }
 
       std::lock_guard<std::mutex> lock(dynamic_params_lock_);
@@ -342,12 +346,12 @@ RouteServer::computeAndTrackRoute()
       // Find the route
       auto start_time = this->now();
       // TODO(sm) prune passed objs in rerouting, provide optional start nodeid to override action?
-      Route route = findRoute(goal);
+      Route route = findRoute(goal, blocked_graph_ids);
       auto path = path_converter_->densify(route, route_frame_, this->now());
       findPlanningDuration(start_time);
 
       // blocks until re-route requested or task completion, publishes feedback
-      switch (route_tracker_->trackRoute(route, path)) {
+      switch (route_tracker_->trackRoute(route, path, blocked_graph_ids)) {
         case TrackerResult::COMPLETED:
           compute_and_track_route_server_->succeeded_current(result);
           return;

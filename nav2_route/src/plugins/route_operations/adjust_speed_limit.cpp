@@ -41,7 +41,7 @@ void AdjustSpeedLimit::configure(
   speed_limit_pub_->on_activate();
 }
 
-bool AdjustSpeedLimit::perform(
+OperationResult AdjustSpeedLimit::perform(
   NodePtr /*node_achieved*/,
   EdgePtr edge_entered,
   EdgePtr /*edge_exited*/,
@@ -49,8 +49,9 @@ bool AdjustSpeedLimit::perform(
   const geometry_msgs::msg::PoseStamped & /*curr_pose*/,
   const Metadata * /*mdata*/)
 {
+  OperationResult result;
   if (!edge_entered) {
-    return false;
+    return result;
   }
 
   float speed_limit = 1.0;
@@ -61,7 +62,7 @@ bool AdjustSpeedLimit::perform(
   msg->percentage = true;
   msg->speed_limit = speed_limit;
   speed_limit_pub_->publish(std::move(msg));
-  return false;
+  return result;
 }
 
 }  // namespace nav2_route
