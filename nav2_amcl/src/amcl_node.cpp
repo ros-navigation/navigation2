@@ -1032,9 +1032,44 @@ AmclNode::publishParticleCloud(const pf_sample_set_t * set)
 }
 
 bool
-AmclNode::getMaxWeightHyp(
-  std::vector<amcl_hyp_t> & hyps, amcl_hyp_t & max_weight_hyps,
-  int & max_weight_hyp)
+AmclNode::getWeightedMeanClustersCenroid(amcl_hyp_t & mean_centroid){
+    double weighted_x = 0.0;    
+    double weighted_y = 0.0;
+    double weighted_yaw = 0.0;
+    double mean_weight = 0.0;
+    for (int cluster_idx = 0; 
+      cluster_idx < pf_->sets[pf_->current_set].cluster_count; cluster_idx++)
+    {
+      double weight;
+      pf_vector_t pose_mean;
+      pf_matrix_t pose_cov;
+      if (!pf_get_cluster_stats(pf_, cluster_idx, &weight, &pose_mean, &pose_cov)) {
+        RCLCPP_ERROR(get_logger(), "Couldn't get stats on cluster %d", cluster_idx);
+        return false;
+      }
+
+      weighted_x += pose_mean.v[0] * weight;
+      weighted_y += pose_mean.v[1] * weight;
+      weighted_yaw += pose_mean.v[2] * weight;
+
+      mean_weight += weight;
+    }
+
+    if(mean_weight == 0.0) return false;
+
+    mean_weight /= pf_->sets[pf_->current_set].cluster_count;
+
+    mean_centroid.pf_pose_mean.v[0] = weighted_x;
+    mean_centroid.pf_pose_mean.v[1] = weighted_y;
+    mean_centroid.pf_pose_mean.v[2] = weighted_yaw;
+    mean_centroid.weight = mean_weight;
+
+    RCLCPP_DEBUG(get_logger(), "Mean centroid pose: [%f, %f, %f]", weighted_x, weighted_y, weighted_yaw);
+    RCLCPP_DEBUG(get_logger(), "Mean centroid weight: [%f]", mean_weight);
+
+    return true;
+}
+
 {
   // Read out the current hypotheses
   double max_weight = 0.0;
