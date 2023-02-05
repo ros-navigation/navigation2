@@ -13,32 +13,51 @@
 // limitations under the License.
 
 
-
 #include <memory>
 #include <string>
+#include <vector>
 #include <nlohmann/json.hpp>
 
-#include "nav2_route/interfaces/graph_parser.hpp"
+#include "nav2_route/interfaces/graph_file_loader.hpp"
 
-#ifndef NAV2_WS_SRC_NAVIGATION2_NAV2_ROUTE_INCLUDE_NAV2_ROUTE_PLUGINS_GRAPH_PARSERS_GEOJSON_GRAPH_PARSER_HPP_
-#define NAV2_WS_SRC_NAVIGATION2_NAV2_ROUTE_INCLUDE_NAV2_ROUTE_PLUGINS_GRAPH_PARSERS_GEOJSON_GRAPH_PARSER_HPP_
+#ifndef NAV2_ROUTE__PLUGINS__GRAPH_FILE_LOADERS__GEOJSON_GRAPH_FILE_LOADER_HPP_
+#define NAV2_ROUTE__PLUGINS__GRAPH_FILE_LOADERS__GEOJSON_GRAPH_FILE_LOADER_HPP_
 
 namespace nav2_route
 {
 
-class GeoJsonGraphParser : public GraphParser
+/**
+ * @class nav2_route::GeoJsonGraphFileLoader
+ * @brief A GraphFileLoader plugin to parse the geojson graph file
+ */
+class GeoJsonGraphFileLoader : public GraphFileLoader
 {
 public:
   using Json = nlohmann::json;
 
-  GeoJsonGraphParser() = default;
+  /**
+   * @brief Constructor
+   */
+  GeoJsonGraphFileLoader() = default;
 
-  ~GeoJsonGraphParser() = default;
+  /**
+   * @brief Destructor
+   */
+  ~GeoJsonGraphFileLoader() = default;
 
-  bool loadGraphFromFile(Graph &graph, const std::string filepath) override;
+  /**
+   * @brief Loads a graph object with file information
+   * @param graph Graph to populate
+   * @param graph_to_id_map A map of nodeid's to graph indexs
+   * @param filepath The file to load
+   * @return bool If successful
+   */
+  bool loadGraphFromFile(
+    Graph & graph,
+    GraphToIDMap & graph_to_id_map,
+    std::string filepath) override;
 
 private:
-
   /**
    * @brief Get all nodes from the features
    * @param features The features to grab the graph nodes from
@@ -56,9 +75,10 @@ private:
   /**
    * @brief Add all nodes into the graph
    * @param graph The graph in which the nodes are added into
+   * @param graph_to_id_map A map of node id to the graph id
    * @param nodes The nodes to be added into the graph
    */
-  void addNodesToGraph(Graph & graph, std::vector<Json> & nodes);
+  void addNodesToGraph(Graph & graph, GraphToIDMap & graph_to_id_map, std::vector<Json> & nodes);
 
   /**
    * @brief Add all edges into the graph
@@ -67,6 +87,6 @@ private:
    */
   void addEdgesToGraph(nav2_route::Graph & graph, std::vector<Json> & edges);
 };
-}
+}  // namespace nav2_route
 
-#endif //NAV2_WS_SRC_NAVIGATION2_NAV2_ROUTE_INCLUDE_NAV2_ROUTE_PLUGINS_GRAPH_PARSERS_GEOJSON_GRAPH_PARSER_HPP_
+#endif  // NAV2_ROUTE__PLUGINS__GRAPH_FILE_LOADERS__GEOJSON_GRAPH_FILE_LOADER_HPP_

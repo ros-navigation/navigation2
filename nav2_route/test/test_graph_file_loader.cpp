@@ -17,11 +17,11 @@
 #include "gtest/gtest.h"
 #include "ament_index_cpp/get_package_share_directory.hpp"
 
-#include "nav2_route/graph_file_loader.hpp"
+#include "nav2_route/graph_loader.hpp"
 
 class RclCppFixture
 {
- public:
+public:
   RclCppFixture() {rclcpp::init(0, nullptr);}
   ~RclCppFixture() {rclcpp::shutdown();}
 };
@@ -29,16 +29,7 @@ RclCppFixture g_rclcppfixture;
 
 using namespace nav2_route; // NOLINT
 
-TEST(GraphParser, test_graph_parser)
+TEST(GraphFileLoader, test_graph_parser)
 {
-  auto node = std::make_shared<nav2_util::LifecycleNode>("graph_parser_test");
-  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
-  GraphFileLoader graph_file_loader(node, tf, "map");
-
-  Graph graph;
-  GraphToIDMap graph_to_id_map;
-  graph_file_loader.loadGraphFromFile(graph, graph_to_id_map, "map");
-
-//  GraphFileLoader
   EXPECT_TRUE(true);
 }

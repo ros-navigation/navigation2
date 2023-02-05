@@ -17,12 +17,13 @@
 #include <vector>
 #include <fstream>
 
-#include "nav2_route/plugins/graph_parsers/geojson_graph_parser.hpp"
+#include "nav2_route/plugins/graph_file_loaders/geojson_graph_file_loader.hpp"
 
 namespace nav2_route
 {
 
-bool GeoJsonGraphParser::loadGraphFromFile(Graph &graph, const std::string filepath)
+bool GeoJsonGraphFileLoader::loadGraphFromFile(
+  Graph & graph, GraphToIDMap & graph_to_id_map, std::string filepath)
 {
   std::ifstream graph_file(filepath);
 
@@ -30,20 +31,19 @@ bool GeoJsonGraphParser::loadGraphFromFile(Graph &graph, const std::string filep
   graph_file >> json;
 
   auto features = json.at("features");
-
   std::vector<Json> nodes;
   std::vector<Json> edges;
   getNodes(features, nodes);
   getEdges(features, edges);
 
   graph.resize(nodes.size());
-  addNodesToGraph(graph, nodes);
+  addNodesToGraph(graph, graph_to_id_map, nodes);
   addEdgesToGraph(graph, edges);
 
   return true;
 }
 
-void GeoJsonGraphParser::getNodes(const Json & features, std::vector<Json> & nodes)
+void GeoJsonGraphFileLoader::getNodes(const Json & features, std::vector<Json> & nodes)
 {
   for (const auto & feature : features) {
     if (feature["geometry"]["type"] == "Point") {
@@ -52,7 +52,7 @@ void GeoJsonGraphParser::getNodes(const Json & features, std::vector<Json> & nod
   }
 }
 
-void GeoJsonGraphParser::getEdges(const Json & features, std::vector<Json> & edges)
+void GeoJsonGraphFileLoader::getEdges(const Json & features, std::vector<Json> & edges)
 {
   for (const auto & feature : features) {
     if (feature["geometry"]["type"] == "MultiLineString") {
@@ -61,8 +61,10 @@ void GeoJsonGraphParser::getEdges(const Json & features, std::vector<Json> & edg
   }
 }
 
-void GeoJsonGraphParser::addNodesToGraph(Graph & graph, std::vector<Json> & nodes)
+void GeoJsonGraphFileLoader::addNodesToGraph(
+  Graph & graph, GraphToIDMap & graph_to_id_map, std::vector<Json> & nodes)
 {
+  int idx = 0;
   for (const auto & node : nodes) {
     // Required data
     unsigned int id = node["properties"]["id"];
@@ -71,11 +73,12 @@ void GeoJsonGraphParser::addNodesToGraph(Graph & graph, std::vector<Json> & node
     graph[id].nodeid = id;
     graph[id].coords.x = x;
     graph[id].coords.y = y;
-    // graph[id].coords.frame_id = frame; // TODO(jw) use default for now
+    graph_to_id_map[graph[idx].nodeid] = idx;
+    idx++;
   }
 }
 
-void GeoJsonGraphParser::addEdgesToGraph(Graph & graph, std::vector<Json> & edges)
+void GeoJsonGraphFileLoader::addEdgesToGraph(Graph & graph, std::vector<Json> & edges)
 {
   nav2_route::EdgeCost edge_cost;
   for (const auto & edge : edges) {
@@ -86,13 +89,11 @@ void GeoJsonGraphParser::addEdgesToGraph(Graph & graph, std::vector<Json> & edge
     unsigned int end_id = edge_properties["endid"];
 
     // Recommended data
-    if ( edge_properties.contains("cost"))
-    {
+    if (edge_properties.contains("cost")) {
       edge_cost.cost = edge_properties["cost"];
     }
 
-    if ( edge_properties.contains("overridable"))
-    {
+    if (edge_properties.contains("overridable")) {
       edge_cost.overridable = edge_properties["overridable"];
     }
 
@@ -103,4 +104,4 @@ void GeoJsonGraphParser::addEdgesToGraph(Graph & graph, std::vector<Json> & edge
 }  // namespace nav2_route
 
 #include "pluginlib/class_list_macros.hpp"
-PLUGINLIB_EXPORT_CLASS(nav2_route::GeoJsonGraphParser, nav2_route::GraphParser)
+PLUGINLIB_EXPORT_CLASS(nav2_route::GeoJsonGraphFileLoader, nav2_route::GraphFileLoader)

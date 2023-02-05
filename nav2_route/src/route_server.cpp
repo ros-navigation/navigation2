@@ -66,20 +66,18 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     node, "max_planning_time", rclcpp::ParameterValue(2.0));
 
   nav2_util::declare_parameter_if_not_declared(
-      node, "graph_filepath", rclcpp::ParameterValue(
-          ament_index_cpp::get_package_share_directory("nav2_route") +
-          "/graphs/geojson/aws_graph.geojson"));
+    node, "graph_filepath", rclcpp::ParameterValue(
+      ament_index_cpp::get_package_share_directory("nav2_route") +
+      "/graphs/geojson/aws_graph.geojson"));
 
   route_frame_ = node->get_parameter("route_frame").as_string();
   base_frame_ = node->get_parameter("base_frame").as_string();
   max_planning_time_ = node->get_parameter("max_planning_time").as_double();
   graph_filepath_ = node->get_parameter("graph_filepath").as_string();
 
-  RCLCPP_ERROR_STREAM(node->get_logger(), "Graph file path" << graph_filepath_);
-
   // Load graph and convert poses to the route frame, if required
   try {
-    graph_loader_ = std::make_shared<GraphFileLoader>(node, tf_, route_frame_);
+    graph_loader_ = std::make_shared<GraphLoader>(node, tf_, route_frame_);
     if (!graph_loader_->loadGraphFromFile(graph_, id_to_graph_map_, graph_filepath_)) {
       return nav2_util::CallbackReturn::FAILURE;
     }

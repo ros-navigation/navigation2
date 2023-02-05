@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_ROUTE__GRAPH_FILE_LOADER_HPP_
-#define NAV2_ROUTE__GRAPH_FILE_LOADER_HPP_
+#ifndef NAV2_ROUTE__GRAPH_LOADER_HPP_
+#define NAV2_ROUTE__GRAPH_LOADER_HPP_
 
 #include <string>
 #include <memory>
@@ -28,35 +28,33 @@
 #include "tf2_ros/transform_listener.h"
 #include "nav2_util/node_utils.hpp"
 #include "nav2_route/types.hpp"
-#include "nav2_route/interfaces/graph_parser.hpp"
+#include "nav2_route/interfaces/graph_file_loader.hpp"
 
 namespace nav2_route
 {
 
-using json = nlohmann::json;
-
 /**
- * @class nav2_route::GraphFileLoader
+ * @class nav2_route::GraphLoader
  * @brief An action server to load graph files into the graph object for search and processing
  */
-class GraphFileLoader
+class GraphLoader
 {
 public:
   /**
-   * @brief A constructor for nav2_route::GraphFileLoader
+   * @brief A constructor for nav2_route::GraphLoader
    * @param options Additional options to control creation of the node.
    */
-  explicit GraphFileLoader(
+  explicit GraphLoader(
     nav2_util::LifecycleNode::SharedPtr node,
     std::shared_ptr<tf2_ros::Buffer> tf,
     const std::string frame);
 
   /**
-   * @brief A destructor for nav2_route::GraphFileLoader
+   * @brief A destructor for nav2_route::GraphLoader
    */
-  ~GraphFileLoader() = default;
+  ~GraphLoader() = default;
 
-  using GraphParserMap = std::unordered_map<std::string, GraphParser::Ptr>;
+  using GraphFileLoaderMap = std::unordered_map<std::string, GraphFileLoader::Ptr>;
 
   /**
    * @brief Loads a graph object with file information
@@ -64,12 +62,15 @@ public:
    * @param idx_map A map translating nodeid's to graph idxs for use in graph modification
    * services and idx-based route planning requests. This is much faster than using a
    * map the full graph data structure.
+   * @param filepath The filepath to the graph data
+   * @param graph_file_loader_id The id of the GraphFileLoader
    * @return bool If successful
    */
-  bool loadGraphFromFile(Graph & graph,
-                         GraphToIDMap & idx_map,
-                         const std::string& filepath = "",
-                         std::string parser_id = "");
+  bool loadGraphFromFile(
+    Graph & graph,
+    GraphToIDMap & idx_map,
+    const std::string & filepath = "",
+    std::string graph_file_loader_id = "");
 
   /**
    * @brief Checks if a file even exists on the filesystem
@@ -81,14 +82,14 @@ public:
 protected:
   std::string route_frame_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
-  rclcpp::Logger logger_{rclcpp::get_logger("GraphFileLoader")};
+  rclcpp::Logger logger_{rclcpp::get_logger("GraphLoader")};
 
   // Graph Parser
-  pluginlib::ClassLoader<GraphParser> plugin_loader_;
-  GraphParserMap graph_parsers_;
+  pluginlib::ClassLoader<GraphFileLoader> plugin_loader_;
+  GraphFileLoaderMap graph_parsers_;
   std::vector<std::string> default_plugin_id_;
 };
 
 }  // namespace nav2_route
 
-#endif  // NAV2_ROUTE__GRAPH_FILE_LOADER_HPP_
+#endif  // NAV2_ROUTE__GRAPH_LOADER_HPP_

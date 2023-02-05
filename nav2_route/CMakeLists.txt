@@ -50,7 +50,7 @@ add_library(${library_name} SHARED
   src/operations_manager.cpp
   src/node_spatial_tree.cpp
   src/path_converter.cpp
-  src/graph_file_loader.cpp
+  src/graph_loader.cpp
 )
 
 ament_target_dependencies(${library_name}
@@ -94,11 +94,11 @@ ament_target_dependencies(route_operations
 )
 
 # Graph Parser plugins
-add_library(graph_parsers SHARED
-    src/plugins/graph_parsers/geojson_graph_parser.cpp
+add_library(graph_file_loaders SHARED
+    src/plugins/graph_file_loaders/geojson_graph_file_loader.cpp
 )
 
-ament_target_dependencies(graph_parsers
+ament_target_dependencies(graph_file_loaders
     ${dependencies}
 )
 
@@ -112,7 +112,7 @@ install(TARGETS ${executable_name}
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
-install(TARGETS ${library_name} edge_scorers route_operations graph_parsers
+install(TARGETS ${library_name} edge_scorers route_operations graph_file_loaders
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -131,5 +131,5 @@ endif()
 
 ament_export_include_directories(include)
 ament_export_dependencies(${dependencies})
-ament_export_libraries(${library_name} edge_scorers route_operations graph_parsers)
+ament_export_libraries(${library_name} edge_scorers route_operations graph_file_loaders)
 ament_package()
