@@ -201,7 +201,7 @@ protected:
   // Data
   Graph graph_;
   GraphToIDMap id_to_graph_map_;
-  std::string route_frame_, base_frame_;
+  std::string route_frame_, base_frame_, graph_filepath_;
   double max_planning_time_;
 };
 

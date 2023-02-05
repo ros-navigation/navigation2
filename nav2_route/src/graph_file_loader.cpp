@@ -17,8 +17,9 @@
 
 #include "nav2_route/graph_file_loader.hpp"
 
-// TODO(jw) move into plugin
 #include "ament_index_cpp/get_package_share_directory.hpp"
+
+// TODO(jw): move into plugin
 #include <fstream>
 
 namespace nav2_route
@@ -28,155 +29,85 @@ GraphFileLoader::GraphFileLoader(
   nav2_util::LifecycleNode::SharedPtr node,
   std::shared_ptr<tf2_ros::Buffer> tf,
   const std::string frame)
+  : plugin_loader_("nav2_route", "nav2_route::GraphParser"),
+    default_plugin_id_({"GeoJsonGraphParser"})
 {
-  // TODO(sm) plugin header + loader to use instead. THis will manage plugin get / load
-  // TODO(sm) logging
+  logger_ = node->get_logger();
   tf_ = tf;
   route_frame_ = frame;
-  (void)node;
+
+  // Default Graph Parser
+  const std::string default_plugin_type = "nav2_route::GeoJsonGraphParser";
+
   nav2_util::declare_parameter_if_not_declared(
-    node, "graph_filepath", rclcpp::ParameterValue(std::string("hi!")));
-  // TODO(sm) rclcpp::ParameterType::PARAMETER_STRING
-  graph_filepath_ = node->get_parameter("graph_filepath").as_string();
+      node, "graph_parsers", rclcpp::ParameterValue(default_plugin_id_));
+  auto graph_parser_ids = node->get_parameter("graph_parsers").as_string_array();
+
+  if (graph_parser_ids == default_plugin_id_) {
+    nav2_util::declare_parameter_if_not_declared(
+        node, default_plugin_id_[0] + ".plugin", rclcpp::ParameterValue(default_plugin_type));
+  }
+
+  // Create plugins
+  for (size_t i = 0; i != graph_parser_ids.size(); ++i)
+  {
+    try {
+      std::string type = nav2_util::get_plugin_type_param(node, graph_parser_ids[i]);
+      GraphParser::Ptr graph_parser = plugin_loader_.createSharedInstance((type));
+      RCLCPP_INFO(
+          logger_, "Created route operation %s of type %s",
+          graph_parser_ids[i].c_str(), type.c_str());
+      graph_parsers_.insert({graph_parser_ids[i], std::move(graph_parser)});
+    }
+    catch ( pluginlib::PluginlibException & ex) {
+      RCLCPP_FATAL(
+          logger_,
+          "Failed to create graph parser. Exception: %s", ex.what());
+      throw ex;
+    }
+  }
 }
 
-bool GraphFileLoader::loadGraphFromFile(Graph &graph, GraphToIDMap &, std::string)
+bool GraphFileLoader::loadGraphFromFile(
+    Graph &graph,
+    GraphToIDMap &,
+    const std::string& filepath,
+    std::string parser_id)
 {
-  // Check filepath exists TODO(sm)
-//  std::string filepath_to_load;
-//  if (filepath.empty()) {
-//    filepath_to_load = graph_filepath_;
-//  } else {
-//    filepath_to_load = filepath;
-//  }
+   if (!fileExists(filepath)) {
+     RCLCPP_ERROR(logger_, "Graph file %s does not exist!", filepath.c_str());
+     return false;
+   }
 
-  // if (!fileExists(filepath_to_load)) {
-  //   RCLCPP_ERROR(node->get_logger(), "Graph file %s does not exist!", graph_filename_);
-  //   return false;
-  // }
+   if (parser_id.empty()) {
+     RCLCPP_WARN(logger_, "Parser id was unset, setting to %s", default_plugin_id_[0].c_str());
+     parser_id = default_plugin_id_[0];
+   }
+
+   bool result = false;
+   if ( graph_parsers_.find(parser_id) != graph_parsers_.end()) {
+     try {
+       result = graph_parsers_[parser_id]->loadGraphFromFile(graph, filepath);
+     } catch (std::exception &ex) {
+       throw ex;
+     }
+   }
+
+   return result;
 
   // Validate file is legit using a plugin API TODO(sm)
   // Load file using a plugin API
-
 
   // Convert all coordinates to `frame` (in a new method) for standardization
   // Including conversion of GPS coordinates, so we can populate it in some
   // cartesian frame necessary for traversal cost estimation and densifying
   // (and so we don't need to propogate it through our structures)
 
-
-//  idx_map.clear();
-//  graph.clear();
-//
-//  // A test graph for visualization and prototyping
-//  graph.resize(9);
-//  unsigned int idx = 0;
-//  unsigned int ids = 1;
-//  for (unsigned int i = 0; i != 3; i++) {
-//    for (unsigned int j = 0; j != 3; j++) {
-//      graph[idx].nodeid = ids;
-//      graph[idx].coords.x = i;
-//      graph[idx].coords.y = j;
-//      idx_map[graph[idx].nodeid] = idx;  // for a nodeid key, provide the graph idx value
-//      idx++;
-//      ids++;
-//    }
-//  }
-//
-//  EdgeCost default_cost;
-//  // Creates bidirectional routs from 0-1-4-5 & directional only route from 0-3-6
-//  graph[0].addEdge(default_cost, &graph[1], ids++);
-//  graph[1].addEdge(default_cost, &graph[0], ids++);
-//  graph[4].addEdge(default_cost, &graph[1], ids++);
-//  graph[1].addEdge(default_cost, &graph[4], ids++);
-//  graph[5].addEdge(default_cost, &graph[4], ids++);
-//  graph[4].addEdge(default_cost, &graph[5], ids++);
-//  graph[0].addEdge(default_cost, &graph[3], ids++);
-//  graph[3].addEdge(default_cost, &graph[6], ids++);
-
-  std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_route");
-  std::string file_path = pkg_share_dir + "/graphs/geojson/aws_graph.geojson";
-
-  std::ifstream graph_file(file_path);
-
-  json json;
-  graph_file >> json;
-
-  auto features = json.at("features");
-
-  std::vector<nlohmann::json> nodes;
-  std::vector<nlohmann::json> edges;
-  getNodes(features, nodes);
-  getEdges(features, edges);
-
-  graph.resize(nodes.size());
-  addNodesToGraph(graph, nodes);
-  addEdgesToGraph(graph, edges);
-
-  return true;
 }
 
 bool GraphFileLoader::fileExists(const std::string & filepath)
 {
   return std::filesystem::exists(filepath);
 }
-
-void GraphFileLoader::getNodes(const json & features, std::vector<json> & nodes)
-{
-  for (const auto & feature : features) {
-    if (feature["geometry"]["type"] == "Point") {
-      nodes.emplace_back(feature);
-    }
-  }
-}
-
-void GraphFileLoader::getEdges(const json & features, std::vector<json> & edges)
-{
-  for (const auto & feature : features) {
-    if (feature["geometry"]["type"] == "MultiLineString") {
-      edges.emplace_back(feature);
-    }
-  }
-}
-
-void GraphFileLoader::addNodesToGraph(nav2_route::Graph & graph, std::vector<json> & nodes)
-{
-  for (const auto & node : nodes) {
-    // Required data
-    unsigned int id = node["properties"]["id"];
-    float x = node["geometry"]["coordinates"][0];
-    float y = node["geometry"]["coordinates"][1];
-    graph[id].nodeid = id;
-    graph[id].coords.x = x;
-    graph[id].coords.y = y;
-    // graph[id].coords.frame_id = frame; // TODO(jw) use default for now
-  }
-}
-
-void GraphFileLoader::addEdgesToGraph(nav2_route::Graph & graph, std::vector<json> & edges)
-{
-  nav2_route::EdgeCost edge_cost;
-  for (const auto & edge : edges) {
-    // Required data
-    const auto edge_properties = edge["properties"];
-    unsigned int id = edge_properties["id"];
-    unsigned int start_id = edge_properties["startid"];
-    unsigned int end_id = edge_properties["endid"];
-
-    // Recommended data
-    if ( edge_properties.contains("cost"))
-    {
-      edge_cost.cost = edge_properties["cost"];
-    }
-
-    if ( edge_properties.contains("overridable"))
-    {
-      edge_cost.overridable = edge_properties["overridable"];
-    }
-
-    graph[start_id].addEdge(edge_cost, &graph[end_id], id);
-  }
-}
-
 
 }  // namespace nav2_route

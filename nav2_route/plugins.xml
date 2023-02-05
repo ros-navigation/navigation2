@@ -35,4 +35,10 @@
       <description>Route operation templated by service types to call arbitrary services on node or edge events</description>
     </class>
   </library>
+
+  <library path="graph_parsers">
+    <class type="nav2_route::GeoJsonGraphParser" base_class_type="nav2_route::GraphParser">
+      <description>Parse the geojson graph file into the graph data type</description>
+    </class>
+  </library>
 </class_libraries>

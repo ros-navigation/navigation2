@@ -18,14 +18,17 @@
 #include <string>
 #include <memory>
 #include <vector>
+#include <unordered_map>
 #include <filesystem>
 #include <nlohmann/json.hpp>
+#include <pluginlib/class_loader.hpp>
 
 #include "nav2_util/lifecycle_node.hpp"
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
 #include "nav2_util/node_utils.hpp"
 #include "nav2_route/types.hpp"
+#include "nav2_route/interfaces/graph_parser.hpp"
 
 namespace nav2_route
 {
@@ -53,6 +56,8 @@ public:
    */
   ~GraphFileLoader() = default;
 
+  using GraphParserMap = std::unordered_map<std::string, GraphParser::Ptr>;
+
   /**
    * @brief Loads a graph object with file information
    * @param graph Graph to populate
@@ -61,7 +66,10 @@ public:
    * map the full graph data structure.
    * @return bool If successful
    */
-  bool loadGraphFromFile(Graph & graph, GraphToIDMap & idx_map, std::string filepath = "");
+  bool loadGraphFromFile(Graph & graph,
+                         GraphToIDMap & idx_map,
+                         const std::string& filepath = "",
+                         std::string parser_id = "");
 
   /**
    * @brief Checks if a file even exists on the filesystem
@@ -70,20 +78,15 @@ public:
    */
   inline bool fileExists(const std::string & filepath);
 
-  // TODO(jw) move into seperate file
-
-  void getNodes(const json & features, std::vector<json> & nodes);
-
-  void getEdges(const json & features, std::vector<json> & edges);
-
-  void addNodesToGraph(Graph & graph, std::vector<json> & nodes);
-
-  void addEdgesToGraph(nav2_route::Graph & graph, std::vector<json> & edges);
-
-
 protected:
-  std::string route_frame_, graph_filepath_;
+  std::string route_frame_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
+  rclcpp::Logger logger_{rclcpp::get_logger("GraphFileLoader")};
+
+  // Graph Parser
+  pluginlib::ClassLoader<GraphParser> plugin_loader_;
+  GraphParserMap graph_parsers_;
+  std::vector<std::string> default_plugin_id_;
 };
 
 }  // namespace nav2_route

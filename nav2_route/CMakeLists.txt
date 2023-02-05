@@ -93,6 +93,15 @@ ament_target_dependencies(route_operations
   ${dependencies}
 )
 
+# Graph Parser plugins
+add_library(graph_parsers SHARED
+    src/plugins/graph_parsers/geojson_graph_parser.cpp
+)
+
+ament_target_dependencies(graph_parsers
+    ${dependencies}
+)
+
 pluginlib_export_plugin_description_file(nav2_route plugins.xml)
 
 install(DIRECTORY include/
@@ -103,7 +112,7 @@ install(TARGETS ${executable_name}
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
-install(TARGETS ${library_name} edge_scorers route_operations
+install(TARGETS ${library_name} edge_scorers route_operations graph_parsers
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -122,5 +131,5 @@ endif()
 
 ament_export_include_directories(include)
 ament_export_dependencies(${dependencies})
-ament_export_libraries(${library_name} edge_scorers route_operations)
+ament_export_libraries(${library_name} edge_scorers route_operations graph_parsers)
 ament_package()

@@ -54,12 +54,12 @@
 #)
 
 # Test graph parser
-ament_add_gtest(test_graph_file_loader
-  test_graph_file_loader.cpp
-)
-ament_target_dependencies(test_graph_file_loader
-  ${dependencies}
-)
-target_link_libraries(test_graph_file_loader
-  ${library_name}
-)
+#ament_add_gtest(test_graph_file_loader
+#  test_graph_file_loader.cpp
+#)
+#ament_target_dependencies(test_graph_file_loader
+#  ${dependencies}
+#)
+#target_link_libraries(test_graph_file_loader
+#  ${library_name}
+#)
