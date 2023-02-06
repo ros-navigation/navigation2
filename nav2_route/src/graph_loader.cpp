@@ -25,7 +25,7 @@ GraphLoader::GraphLoader(
   std::shared_ptr<tf2_ros::Buffer> tf,
   const std::string frame)
 : plugin_loader_("nav2_route", "nav2_route::GraphFileLoader"),
-  default_plugin_id_({"GeoJsonGraphFileLoader"})
+  default_plugin_id_("GeoJsonGraphFileLoader")
 {
   logger_ = node->get_logger();
   tf_ = tf;
@@ -43,29 +43,27 @@ GraphLoader::GraphLoader(
   const std::string default_plugin_type = "nav2_route::GeoJsonGraphFileLoader";
 
   nav2_util::declare_parameter_if_not_declared(
-    node, "graph_file_loaders", rclcpp::ParameterValue(default_plugin_id_));
-  auto graph_file_loader_ids = node->get_parameter("graph_file_loaders").as_string_array();
+    node, "graph_file_loader", rclcpp::ParameterValue(default_plugin_id_));
+  auto graph_file_loader_id = node->get_parameter("graph_file_loader").as_string();
 
-  if (graph_file_loader_ids == default_plugin_id_) {
+  if (graph_file_loader_id == default_plugin_id_) {
     nav2_util::declare_parameter_if_not_declared(
-      node, default_plugin_id_[0] + ".plugin", rclcpp::ParameterValue(default_plugin_type));
+      node, default_plugin_id_ + ".plugin", rclcpp::ParameterValue(default_plugin_type));
   }
 
-  // Create plugins
-  for (size_t i = 0; i != graph_file_loader_ids.size(); ++i) {
-    try {
-      std::string type = nav2_util::get_plugin_type_param(node, graph_file_loader_ids[i]);
-      GraphFileLoader::Ptr graph_parser = plugin_loader_.createSharedInstance((type));
-      RCLCPP_INFO(
-        logger_, "Created GraphFileLoader %s of type %s",
-        graph_file_loader_ids[i].c_str(), type.c_str());
-      graph_parsers_.insert({graph_file_loader_ids[i], std::move(graph_parser)});
-    } catch (pluginlib::PluginlibException & ex) {
-      RCLCPP_FATAL(
-        logger_,
-        "Failed to create graph parser. Exception: %s", ex.what());
-      throw ex;
-    }
+  // Create graph file loader plugin
+  try {
+    std::string type = nav2_util::get_plugin_type_param(node, graph_file_loader_id);
+    GraphFileLoader::Ptr graph_parser = plugin_loader_.createSharedInstance((type));
+    RCLCPP_INFO(
+      logger_, "Created GraphFileLoader %s of type %s",
+      graph_file_loader_id.c_str(), type.c_str());
+    graph_file_loader_.insert({graph_file_loader_id, std::move(graph_parser)});
+  } catch (pluginlib::PluginlibException & ex) {
+    RCLCPP_FATAL(
+      logger_,
+      "Failed to create GraphFileLoader. Exception: %s", ex.what());
+    throw ex;
   }
 }
 
@@ -83,17 +81,18 @@ bool GraphLoader::loadGraphFromFile(
   }
 
   if (parser_id.empty()) {
-    RCLCPP_WARN(logger_, "Parser id was unset, setting to %s", default_plugin_id_[0].c_str());
-    parser_id = default_plugin_id_[0];
+    RCLCPP_WARN(logger_, "Parser id was unset, setting to %s", default_plugin_id_.c_str());
+    parser_id = default_plugin_id_;
   }
 
   bool result = false;
-  if (graph_parsers_.find(parser_id) != graph_parsers_.end()) {
-    if ( !graph_parsers_[parser_id]->fileExists(filepath)) {
+  if (graph_file_loader_.find(parser_id) != graph_file_loader_.end()) {
+    if ( !graph_file_loader_[parser_id]->fileExists(filepath)) {
       RCLCPP_ERROR(logger_, "The filepath %s does not exist", filepath.c_str());
       return false;
     }
-    result = graph_parsers_[parser_id]->loadGraphFromFile(graph, graph_to_id_map, filepath);
+    // TODO(jw): Add debug log with the filepath and the parser used
+    result = graph_file_loader_[parser_id]->loadGraphFromFile(graph, graph_to_id_map, filepath);
   }
 
   return result;

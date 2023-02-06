@@ -79,8 +79,8 @@ protected:
 
   // Graph Parser
   pluginlib::ClassLoader<GraphFileLoader> plugin_loader_;
-  GraphFileLoaderMap graph_parsers_;
-  std::vector<std::string> default_plugin_id_;
+  GraphFileLoaderMap graph_file_loader_;
+  std::string default_plugin_id_;
 };
 
 }  // namespace nav2_route
