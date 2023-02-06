@@ -55,6 +55,13 @@ public:
     Graph & graph,
     GraphToIDMap & graph_to_id_map,
     std::string filepath) = 0;
+
+  /**
+   * @brief Checks if a file even exists on the filesystem
+   * @param filepath file to check
+   * @return bool If the file exists
+   */
+  virtual inline bool fileExists(const std::string & filepath) = 0;
 };
 }  // namespace nav2_route
 

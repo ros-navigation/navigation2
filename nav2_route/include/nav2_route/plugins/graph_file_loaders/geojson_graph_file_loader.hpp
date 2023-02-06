@@ -57,6 +57,13 @@ public:
     GraphToIDMap & graph_to_id_map,
     std::string filepath) override;
 
+  /**
+ * @brief Checks if a file even exists on the filesystem
+ * @param filepath file to check
+ * @return bool If the file exists
+ */
+  inline bool fileExists(const std::string & filepath) override;
+
 private:
   /**
    * @brief Get all nodes from the features

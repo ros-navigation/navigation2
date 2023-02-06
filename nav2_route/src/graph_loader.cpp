@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <filesystem>
 #include <memory>
 
 #include "nav2_route/graph_loader.hpp"
@@ -68,11 +67,6 @@ bool GraphLoader::loadGraphFromFile(
   const std::string & filepath,
   std::string parser_id)
 {
-  if (!fileExists(filepath)) {
-    RCLCPP_ERROR(logger_, "Graph file %s does not exist!", filepath.c_str());
-    return false;
-  }
-
   if (parser_id.empty()) {
     RCLCPP_WARN(logger_, "Parser id was unset, setting to %s", default_plugin_id_[0].c_str());
     parser_id = default_plugin_id_[0];
@@ -80,11 +74,12 @@ bool GraphLoader::loadGraphFromFile(
 
   bool result = false;
   if (graph_parsers_.find(parser_id) != graph_parsers_.end()) {
-    try {
-      result = graph_parsers_[parser_id]->loadGraphFromFile(graph, graph_to_id_map, filepath);
-    } catch (std::exception & ex) {
-      throw ex;
+    if ( !graph_parsers_[parser_id]->fileExists(filepath))
+    {
+      RCLCPP_ERROR(logger_, "The filepath %s does not exist", filepath.c_str());
+      return false;
     }
+    result = graph_parsers_[parser_id]->loadGraphFromFile(graph, graph_to_id_map, filepath);
   }
 
   return result;
@@ -97,10 +92,4 @@ bool GraphLoader::loadGraphFromFile(
   // cartesian frame necessary for traversal cost estimation and densifying
   // (and so we don't need to propogate it through our structures)
 }
-
-bool GraphLoader::fileExists(const std::string & filepath)
-{
-  return std::filesystem::exists(filepath);
-}
-
 }  // namespace nav2_route

@@ -72,13 +72,6 @@ public:
     const std::string & filepath = "",
     std::string graph_file_loader_id = "");
 
-  /**
-   * @brief Checks if a file even exists on the filesystem
-   * @param filepath file to check
-   * @return bool If the file exists
-   */
-  inline bool fileExists(const std::string & filepath);
-
 protected:
   std::string route_frame_;
   std::shared_ptr<tf2_ros::Buffer> tf_;

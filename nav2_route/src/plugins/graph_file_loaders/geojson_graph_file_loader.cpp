@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <filesystem>
 #include <memory>
 #include <string>
 #include <vector>
@@ -42,6 +43,12 @@ bool GeoJsonGraphFileLoader::loadGraphFromFile(
 
   return true;
 }
+
+bool GeoJsonGraphFileLoader::fileExists(const std::string & filepath)
+{
+  return std::filesystem::exists(filepath);
+}
+
 
 void GeoJsonGraphFileLoader::getNodes(const Json & features, std::vector<Json> & nodes)
 {
