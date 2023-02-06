@@ -78,6 +78,7 @@ protected:
   pluginlib::ClassLoader<GraphFileLoader> plugin_loader_;
   GraphFileLoader::Ptr graph_file_loader_;
   std::string default_plugin_id_;
+  std::string plugin_type_;
 };
 
 }  // namespace nav2_route
