@@ -31,6 +31,14 @@ GraphLoader::GraphLoader(
   tf_ = tf;
   route_frame_ = frame;
 
+  // TODO(jw): Don't set defult
+  nav2_util::declare_parameter_if_not_declared(
+      node, "graph_filepath", rclcpp::ParameterValue(
+      ament_index_cpp::get_package_share_directory("nav2_route") +
+      "/graphs/geojson/aws_graph.geojson"));
+
+  graph_filepath_ = node->get_parameter("graph_filepath").as_string();
+
   // Default Graph Parser
   const std::string default_plugin_type = "nav2_route::GeoJsonGraphFileLoader";
 
@@ -64,9 +72,16 @@ GraphLoader::GraphLoader(
 bool GraphLoader::loadGraphFromFile(
   Graph & graph,
   GraphToIDMap & graph_to_id_map,
-  const std::string & filepath,
+  std::string filepath,
   std::string parser_id)
 {
+  if ( filepath.empty())
+  {
+    RCLCPP_INFO(logger_, "The graph filepath was not provided. "
+                         "Setting to %s", graph_filepath_.c_str());
+    filepath = graph_filepath_;
+  }
+
   if (parser_id.empty()) {
     RCLCPP_WARN(logger_, "Parser id was unset, setting to %s", default_plugin_id_[0].c_str());
     parser_id = default_plugin_id_[0];
@@ -74,8 +89,7 @@ bool GraphLoader::loadGraphFromFile(
 
   bool result = false;
   if (graph_parsers_.find(parser_id) != graph_parsers_.end()) {
-    if ( !graph_parsers_[parser_id]->fileExists(filepath))
-    {
+    if ( !graph_parsers_[parser_id]->fileExists(filepath)) {
       RCLCPP_ERROR(logger_, "The filepath %s does not exist", filepath.c_str());
       return false;
     }

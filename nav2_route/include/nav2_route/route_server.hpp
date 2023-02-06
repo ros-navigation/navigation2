@@ -191,7 +191,7 @@ protected:
   // Set or modify graph
   rclcpp::Service<nav2_msgs::srv::SetRouteGraph>::SharedPtr set_graph_service_;
 
-  // Interal tools
+  // Internal tools
   std::shared_ptr<GraphLoader> graph_loader_;
   std::shared_ptr<NodeSpatialTree> node_spatial_tree_;
   std::shared_ptr<RoutePlanner> route_planner_;
@@ -201,7 +201,7 @@ protected:
   // Data
   Graph graph_;
   GraphToIDMap id_to_graph_map_;
-  std::string route_frame_, base_frame_, graph_filepath_;
+  std::string route_frame_, base_frame_;
   double max_planning_time_;
 };
 

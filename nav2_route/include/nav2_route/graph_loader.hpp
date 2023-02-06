@@ -69,11 +69,11 @@ public:
   bool loadGraphFromFile(
     Graph & graph,
     GraphToIDMap & idx_map,
-    const std::string & filepath = "",
+    std::string filepath = "",
     std::string graph_file_loader_id = "");
 
 protected:
-  std::string route_frame_;
+  std::string route_frame_, graph_filepath_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
   rclcpp::Logger logger_{rclcpp::get_logger("GraphLoader")};
 
