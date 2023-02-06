@@ -28,18 +28,17 @@ bool GeoJsonGraphFileLoader::loadGraphFromFile(
 {
   std::ifstream graph_file(filepath);
 
-  Json json;
-  graph_file >> json;
+  Json graph_geojson;
+  graph_file >> graph_geojson;
 
-  auto features = json.at("features");
+  auto features = graph_geojson["features"];
   std::vector<Json> nodes;
   std::vector<Json> edges;
-  getNodes(features, nodes);
-  getEdges(features, edges);
+  getGraphElements(features, nodes, edges);
 
   graph.resize(nodes.size());
   addNodesToGraph(graph, graph_to_id_map, nodes);
-  addEdgesToGraph(graph, edges);
+  addEdgesToGraph(graph, graph_to_id_map, edges);
 
   return true;
 }
@@ -50,18 +49,13 @@ bool GeoJsonGraphFileLoader::fileExists(const std::string & filepath)
 }
 
 
-void GeoJsonGraphFileLoader::getNodes(const Json & features, std::vector<Json> & nodes)
+void GeoJsonGraphFileLoader::getGraphElements(
+    const Json & features, std::vector<Json> & nodes, std::vector<Json> & edges)
 {
   for (const auto & feature : features) {
     if (feature["geometry"]["type"] == "Point") {
       nodes.emplace_back(feature);
     }
-  }
-}
-
-void GeoJsonGraphFileLoader::getEdges(const Json & features, std::vector<Json> & edges)
-{
-  for (const auto & feature : features) {
     if (feature["geometry"]["type"] == "MultiLineString") {
       edges.emplace_back(feature);
     }
@@ -75,6 +69,7 @@ void GeoJsonGraphFileLoader::addNodesToGraph(
   for (const auto & node : nodes) {
     // Required data
     unsigned int id = node["properties"]["id"];
+    std::string frame = node["properties"]["frame"];
     float x = node["geometry"]["coordinates"][0];
     float y = node["geometry"]["coordinates"][1];
     graph[id].nodeid = id;
@@ -85,7 +80,8 @@ void GeoJsonGraphFileLoader::addNodesToGraph(
   }
 }
 
-void GeoJsonGraphFileLoader::addEdgesToGraph(Graph & graph, std::vector<Json> & edges)
+void GeoJsonGraphFileLoader::addEdgesToGraph(
+    Graph & graph, GraphToIDMap & graph_to_id_map, std::vector<Json> & edges)
 {
   nav2_route::EdgeCost edge_cost;
   for (const auto & edge : edges) {
@@ -104,7 +100,7 @@ void GeoJsonGraphFileLoader::addEdgesToGraph(Graph & graph, std::vector<Json> & 
       edge_cost.overridable = edge_properties["overridable"];
     }
 
-    graph[start_id].addEdge(edge_cost, &graph[end_id], id);
+    graph[graph_to_id_map[start_id]].addEdge(edge_cost, &graph[graph_to_id_map[end_id]], id);
   }
 }
 

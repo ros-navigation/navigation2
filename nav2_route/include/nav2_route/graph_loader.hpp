@@ -54,8 +54,6 @@ public:
    */
   ~GraphLoader() = default;
 
-  using GraphFileLoaderMap = std::unordered_map<std::string, GraphFileLoader::Ptr>;
-
   /**
    * @brief Loads a graph object with file information
    * @param graph Graph to populate
@@ -69,8 +67,7 @@ public:
   bool loadGraphFromFile(
     Graph & graph,
     GraphToIDMap & idx_map,
-    std::string filepath = "",
-    std::string graph_file_loader_id = "");
+    std::string filepath = "");
 
 protected:
   std::string route_frame_, graph_filepath_;
@@ -79,7 +76,7 @@ protected:
 
   // Graph Parser
   pluginlib::ClassLoader<GraphFileLoader> plugin_loader_;
-  GraphFileLoaderMap graph_file_loader_;
+  GraphFileLoader::Ptr graph_file_loader_;
   std::string default_plugin_id_;
 };
 

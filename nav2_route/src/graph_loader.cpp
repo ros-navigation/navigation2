@@ -58,7 +58,7 @@ GraphLoader::GraphLoader(
     RCLCPP_INFO(
       logger_, "Created GraphFileLoader %s of type %s",
       graph_file_loader_id.c_str(), type.c_str());
-    graph_file_loader_.insert({graph_file_loader_id, std::move(graph_parser)});
+    graph_file_loader_ =  std::move(graph_parser);
   } catch (pluginlib::PluginlibException & ex) {
     RCLCPP_FATAL(
       logger_,
@@ -70,8 +70,7 @@ GraphLoader::GraphLoader(
 bool GraphLoader::loadGraphFromFile(
   Graph & graph,
   GraphToIDMap & graph_to_id_map,
-  std::string filepath,
-  std::string parser_id)
+  std::string filepath)
 {
   if ( filepath.empty())
   {
@@ -80,20 +79,13 @@ bool GraphLoader::loadGraphFromFile(
     filepath = graph_filepath_;
   }
 
-  if (parser_id.empty()) {
-    RCLCPP_WARN(logger_, "Parser id was unset, setting to %s", default_plugin_id_.c_str());
-    parser_id = default_plugin_id_;
-  }
-
   bool result = false;
-  if (graph_file_loader_.find(parser_id) != graph_file_loader_.end()) {
-    if ( !graph_file_loader_[parser_id]->fileExists(filepath)) {
-      RCLCPP_ERROR(logger_, "The filepath %s does not exist", filepath.c_str());
-      return false;
-    }
-    // TODO(jw): Add debug log with the filepath and the parser used
-    result = graph_file_loader_[parser_id]->loadGraphFromFile(graph, graph_to_id_map, filepath);
+  if ( !graph_file_loader_->fileExists(filepath)) {
+    RCLCPP_ERROR(logger_, "The filepath %s does not exist", filepath.c_str());
+    return false;
   }
+  // TODO(jw): Add debug log with the filepath and the parser used
+  result = graph_file_loader_->loadGraphFromFile(graph, graph_to_id_map, filepath);
 
   return result;
 

@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 #include <memory>
 #include <string>
 #include <vector>
@@ -66,33 +65,29 @@ public:
 
 private:
   /**
-   * @brief Get all nodes from the features
-   * @param features The features to grab the graph nodes from
+   * @brief Get the graph elements from the features
+   * @param[in] features The features to grab the graph nodes from
    * @param[out] nodes The nodes found within the features
+   * @param[out] edges The edges found within the features
    */
-  void getNodes(const Json & features, std::vector<Json> & nodes);
-
-  /**
-   * @brief Get all edges from the features
-   * @param features The features to grab the graph edges from
-   * @param edges The edges found with the features
-   */
-  void getEdges(const Json & features, std::vector<Json> & edges);
+  void getGraphElements(
+      const Json & features, std::vector<Json> & nodes, std::vector<Json> & edges);
 
   /**
    * @brief Add all nodes into the graph
-   * @param graph The graph in which the nodes are added into
-   * @param graph_to_id_map A map of node id to the graph id
-   * @param nodes The nodes to be added into the graph
+   * @param[out] graph The graph in which the nodes are added into
+   * @param[out] graph_to_id_map A map of node id to the graph id
+   * @param[in] nodes The nodes to be added into the graph
    */
   void addNodesToGraph(Graph & graph, GraphToIDMap & graph_to_id_map, std::vector<Json> & nodes);
 
   /**
    * @brief Add all edges into the graph
-   * @param graph The graph in which the edges are added into
-   * @param edges The edges to be added into the graph
+   * @param[out] graph The graph in which the edges are added into
+   * @param[in] graph_to_id_map A map of node id to the graph id
+   * @param[in] edges The edges to be added into the graph
    */
-  void addEdgesToGraph(nav2_route::Graph & graph, std::vector<Json> & edges);
+  void addEdgesToGraph(Graph & graph, GraphToIDMap & graph_to_id_map, std::vector<Json> & edges);
 };
 }  // namespace nav2_route
 
