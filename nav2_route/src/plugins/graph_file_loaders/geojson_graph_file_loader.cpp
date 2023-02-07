@@ -34,7 +34,7 @@ bool GeoJsonGraphFileLoader::loadGraphFromFile(
   Graph & graph, GraphToIDMap & graph_to_id_map, std::string filepath)
 {
   if (!fileExists(filepath)) {
-    RCLCPP_ERROR(logger_, "Failed to find at %s", filepath.c_str());
+    RCLCPP_ERROR(logger_, "Failed to find file at %s", filepath.c_str());
     return false;
   }
 
