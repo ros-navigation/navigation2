@@ -104,7 +104,7 @@ protected:
    * @param end End of line segment
    * @return Coordinates of point on the line closest to the pose
    */
-  inline Coordinates findClosestPoint(
+  Coordinates findClosestPoint(
     const geometry_msgs::msg::PoseStamped & pose,
     const Coordinates & start, const Coordinates & end);
 
@@ -115,7 +115,7 @@ protected:
    * @param dist Distance along line segment to find the new end point along
    * @return Coordinates of the new end point `dist` away from the start along the line
    */
-  inline Coordinates backoutValidEndPoint(
+  Coordinates backoutValidEndPoint(
     const Coordinates & start, const Coordinates & end, const float dist);
 
   /**
@@ -125,7 +125,7 @@ protected:
    * @param line LineSegment object to replace the x1/y1 values for along segment until invalid
    * @return If any part s of the segment requested is valid
    */
-  inline bool backoutValidEndPoint(const Coordinates & start, LineSegment & line);
+  bool backoutValidEndPoint(const Coordinates & start, LineSegment & line);
 
   /**
    * @brief Converts a line segment start-end into a LineSegment struct in costmap frame
@@ -134,21 +134,26 @@ protected:
    * @param line LineSegment object to populate
    * @return If line segment is valid (e.g. start and end both in costmap transforms)
    */
-  inline bool lineToMap(const Coordinates & start, const Coordinates & end, LineSegment & line);
+  bool lineToMap(const Coordinates & start, const Coordinates & end, LineSegment & line);
 
   /**
    * @brief Checks a line segment in costmap frame for validity
    * @param line LineSegment object to collision check in costmap set
    * @return If any part of the line segment is in collision
    */
-  inline bool isInCollision(const LineSegment & line);
+  bool isInCollision(const LineSegment & line);
+
+  /**
+   * @brief Gets the latest costmap from the costmap subscriber
+   */
+  void getCostmap();
 
   std::string name_, topic_;
   std::atomic_bool reroute_;
   rclcpp::Logger logger_{rclcpp::get_logger("CollisionMonitor")};
   rclcpp::Clock::SharedPtr clock_;
   rclcpp::Time last_check_time_;
-  rclcpp::Duration checking_rate_{0, 0};
+  rclcpp::Duration checking_duration_{0, 0};
   float max_collision_dist_, max_cost_;
   std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber_;
   std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap_{nullptr};

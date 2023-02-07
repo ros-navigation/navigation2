@@ -39,7 +39,7 @@ void CollisionMonitor::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, getName() + ".rate", rclcpp::ParameterValue(1.0));
   double checking_rate = node->get_parameter(getName() + ".rate").as_double();
-  checking_rate_ = rclcpp::Duration::from_seconds(checking_rate);
+  checking_duration_ = rclcpp::Duration::from_seconds(1.0 / checking_rate);
 
   nav2_util::declare_parameter_if_not_declared(
     node, getName() + ".max_cost", rclcpp::ParameterValue(253.0));
@@ -56,6 +56,16 @@ void CollisionMonitor::configure(
   }
 }
 
+void CollisionMonitor::getCostmap()
+{
+  try {
+    costmap_ = costmap_subscriber_->getCostmap();
+  } catch (...) {
+    throw nav2_core::OperationFailed(
+            "Collision Monitor could not obtain a costmap from topic: " + topic_);
+  }
+}
+
 OperationResult CollisionMonitor::perform(
   NodePtr /*node*/,
   EdgePtr curr_edge,
@@ -67,17 +77,11 @@ OperationResult CollisionMonitor::perform(
   OperationResult result;
   // Not time yet to check or before getting to first route edge
   auto now = clock_->now();
-  if (now - last_check_time_ < checking_rate_ || !curr_edge) {
+  if (now - last_check_time_ < checking_duration_ || !curr_edge) {
     return result;
   }
   last_check_time_ = now;
-
-  try {
-    costmap_ = costmap_subscriber_->getCostmap();
-  } catch (...) {
-    throw nav2_core::OperationFailed(
-            "Collision Monitor could not obtain a costmap from topic: " + topic_);
-  }
+  getCostmap();
 
   float dist_checked = 0.0;
   Coordinates start = findClosestPoint(
@@ -132,8 +136,6 @@ OperationResult CollisionMonitor::perform(
   return result;
 }
 
-// TODO(sm) reference: https://math.stackexchange.com/questions/2193720/
-// find-a-point-on-a-line-segment-which-is-the-closest-to-other-point-not-on-the-li
 Coordinates CollisionMonitor::findClosestPoint(
   const geometry_msgs::msg::PoseStamped & pose,
   const Coordinates & start, const Coordinates & end)
@@ -171,6 +173,9 @@ Coordinates CollisionMonitor::backoutValidEndPoint(
   const float dx = end.x - start.x;
   const float dy = end.y - start.y;
   const float mag = hypotf(dx, dy);
+  if (mag < 1e-6) {
+    return start;
+  }
   new_end.x = (dx / mag) * dist + start.x;
   new_end.y = (dy / mag) * dist + start.y;
   return new_end;
@@ -191,7 +196,7 @@ bool CollisionMonitor::backoutValidEndPoint(
   int size_x = static_cast<int>(costmap_->getSizeInCellsX());
   int size_y = static_cast<int>(costmap_->getSizeInCellsY());
   for (; iter.isValid(); iter.advance()) {
-    if (iter.getX() > size_x || iter.getY() > size_y) {
+    if (iter.getX() >= size_x || iter.getY() >= size_y) {
       line.x1 = last_end_x;
       line.y1 = last_end_y;
       return true;

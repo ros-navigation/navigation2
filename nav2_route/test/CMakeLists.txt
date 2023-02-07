@@ -52,3 +52,14 @@ ament_target_dependencies(test_operations
 target_link_libraries(test_operations
   ${library_name} route_operations
 )
+
+# Test collision monitor seperately due to relative complexity
+ament_add_gtest(test_collision_operation
+  test_collision_operation.cpp
+)
+ament_target_dependencies(test_collision_operation
+  ${dependencies}
+)
+target_link_libraries(test_collision_operation
+  ${library_name} route_operations
+)

@@ -154,7 +154,6 @@ TODO document generous window b/c only used as a pre-condition + want dynamic be
 
 
 - [ ] prune to new start in rerouting
-- [ ] Collision monitor tests
 
 
 - [ ] Create basic file format for graph + parser. Vector types (regions), recursion namespaces, structured types?

@@ -46,9 +46,7 @@ OperationResult TimeMarker::perform(
   rclcpp::Time now = clock_->now();
   if (!edge_exited || edge_exited->edgeid != curr_edge) {
     edge_start_time_ = now;
-    if (edge_entered) {
-      curr_edge = edge_entered->edgeid;
-    }
+    curr_edge = edge_entered ? edge_entered->edgeid : 0;
     return result;
   }
 
@@ -58,9 +56,7 @@ OperationResult TimeMarker::perform(
   }
 
   edge_start_time_ = now;
-  if (edge_entered) {
-    curr_edge = edge_entered->edgeid;
-  }
+  curr_edge = edge_entered ? edge_entered->edgeid : 0;
   return result;
 }
 
