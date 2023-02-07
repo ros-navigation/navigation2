@@ -35,7 +35,7 @@ void RouteTracker::configure(
     node, "radius_to_achieve_node", rclcpp::ParameterValue(1.0));
   radius_threshold_ = node->get_parameter("radius_to_achieve_node").as_double();
   nav2_util::declare_parameter_if_not_declared(
-    node, "tracker_update_rate", rclcpp::ParameterValue(100.0));
+    node, "tracker_update_rate", rclcpp::ParameterValue(50.0));
   tracker_update_rate_ = node->get_parameter("tracker_update_rate").as_double();
   nav2_util::declare_parameter_if_not_declared(
     node, "aggregate_blocked_ids", rclcpp::ParameterValue(false));

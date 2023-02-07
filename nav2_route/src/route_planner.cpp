@@ -84,8 +84,8 @@ void RoutePlanner::findShortestGraphTraversal(
   const std::vector<unsigned int> & blocked_ids)
 {
   // Setup the Dijkstra's search problem
-  goal_id_ = goal->nodeid;
   resetSearchStates(graph);
+  goal_id_ = goal->nodeid;
   start->search_state.cost = 0.0;
   addNode(0.0, start);
 
@@ -129,10 +129,10 @@ void RoutePlanner::findShortestGraphTraversal(
     }
   }
 
-  // Reset state
+  // Reset states
   clearQueue();
 
-  if (iterations == max_iterations_) {
+  if (iterations >= max_iterations_) {
     throw nav2_core::TimedOut("Maximum iterations was exceeded!");
   }
 }
@@ -148,16 +148,13 @@ bool RoutePlanner::getTraversalCost(
   }
 
   if (!edge->edge_cost.overridable || edge_scorer_->numPlugins() == 0) {
-    if (edge->edge_cost.cost != 0.0) {
-      score = edge->edge_cost.cost;
-      return true;
-    } else {
-      // We need some non-zero value if users didn't populate their files properly
-      score = hypotf(
-        edge->end->coords.x - edge->start->coords.x,
-        edge->end->coords.y - edge->start->coords.y);
-      return true;
+    if (edge->edge_cost.cost == 0.0) {
+      throw nav2_core::NoValidGraph(
+              "Edge " + std::to_string(edge->edgeid) +
+              " doesn't contain and cannot compute a valid edge cost!");
     }
+    score = edge->edge_cost.cost;
+    return true;
   }
 
   return edge_scorer_->score(edge, score);

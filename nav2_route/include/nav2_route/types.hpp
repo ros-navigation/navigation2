@@ -150,7 +150,7 @@ typedef std::vector<EdgePtr> EdgePtrVector;
 struct SearchState
 {
   EdgePtr parent_edge{nullptr};
-  float cost{0.0};
+  float cost{std::numeric_limits<float>::max()};
 
   void reset()
   {

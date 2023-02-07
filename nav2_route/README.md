@@ -154,17 +154,22 @@ TODO document generous window b/c only used as a pre-condition + want dynamic be
 
 
 - [ ] prune to new start in rerouting
+- [ ] if start pose is between 2 nodes in the graph solution (prune first)
+- [ ] way to clear aggrevated blocked routes other than preemption/new request?
 
 
-- [ ] Create basic file format for graph + parser. Vector types (regions), recursion namespaces, structured types?
+
+
+
+
+- [ ] Create basic file format for graph + parser. Vector types (regions), recursion namespaces, structured types? Operations/metadata.
 - [ ] QGIS demo + plugins for editing and visualizing graphs
 
 
 
-- [ ] Quality: BT nodes, Python API, testing (server, tracker, planner), documentation, tutorial (bt change, plugin customize, file field examples). BT XML for first/last mile, freq. replanning, navigation using it, WPF, de-stucking? 
+- [ ] Quality: BT nodes, Python API, testing (server, tracker), documentation, tutorial (bt change, plugin customize, file field examples). BT XML for first/last mile, freq. replanning, navigation using it, WPF, de-stucking? 
 
 - [ ] centralized 1 costmap to pass aroun dfor use (if possible): edge score, operation, selecting start/goal nodes with infra
-- [ ] if start pose is between 2 nodes in the graph solution (prune first)
 - [ ] use map for checking start/goal nodes for infra blockages not just NN. Evaluate K 
 - [ ] cleanup code where necessary (large functions, etc) and optimize performance (profile)
 
