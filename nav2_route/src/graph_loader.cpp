@@ -33,7 +33,7 @@ GraphLoader::GraphLoader(
 
   // TODO(jw): Don't set defult
   nav2_util::declare_parameter_if_not_declared(
-      node, "graph_filepath", rclcpp::ParameterValue(
+    node, "graph_filepath", rclcpp::ParameterValue(
       ament_index_cpp::get_package_share_directory("nav2_route") +
       "/graphs/geojson/aws_graph.geojson"));
 
@@ -58,7 +58,8 @@ GraphLoader::GraphLoader(
     RCLCPP_INFO(
       logger_, "Created GraphFileLoader %s of type %s",
       graph_file_loader_id.c_str(), plugin_type_.c_str());
-    graph_file_loader_ =  std::move(graph_parser);
+    graph_file_loader_ = std::move(graph_parser);
+    graph_file_loader_->configure(node);
   } catch (pluginlib::PluginlibException & ex) {
     RCLCPP_FATAL(
       logger_,
@@ -72,20 +73,21 @@ bool GraphLoader::loadGraphFromFile(
   GraphToIDMap & graph_to_id_map,
   std::string filepath)
 {
-  if ( filepath.empty())
-  {
-    RCLCPP_INFO(logger_, "The graph filepath was not provided. "
-                         "Setting to %s", graph_filepath_.c_str());
+  if (filepath.empty()) {
+    RCLCPP_INFO(
+      logger_, "The graph filepath was not provided. "
+      "Setting to %s", graph_filepath_.c_str());
     filepath = graph_filepath_;
   }
 
   bool result = false;
-  if ( !graph_file_loader_->fileExists(filepath)) {
+  if (!graph_file_loader_->fileExists(filepath)) {
     RCLCPP_ERROR(logger_, "The filepath %s does not exist", filepath.c_str());
     return false;
   }
-  RCLCPP_DEBUG(logger_,
-               "Loading graph file from %s, by parser %s", filepath.c_str(), plugin_type_.c_str());
+  RCLCPP_DEBUG(
+    logger_,
+    "Loading graph file from %s, by parser %s", filepath.c_str(), plugin_type_.c_str());
   result = graph_file_loader_->loadGraphFromFile(graph, graph_to_id_map, filepath);
 
   return result;

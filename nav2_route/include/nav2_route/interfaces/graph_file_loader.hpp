@@ -18,6 +18,9 @@
 #include <string>
 #include <memory>
 
+
+#include "rclcpp/rclcpp.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "nav2_route/types.hpp"
 
 namespace nav2_route
@@ -41,6 +44,13 @@ public:
    * @brief Virtual destructor
    */
   virtual ~GraphFileLoader() = default;
+
+  /**
+   * @brief Configure the scorer, but do not store the node
+   * @param parent pointer to user's node
+   */
+  virtual void configure(
+    const rclcpp_lifecycle::LifecycleNode::SharedPtr node) = 0;
 
   /**
    * @brief Method to load the graph from the filepath

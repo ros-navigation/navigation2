@@ -23,9 +23,21 @@
 namespace nav2_route
 {
 
+void GeoJsonGraphFileLoader::configure(
+  const rclcpp_lifecycle::LifecycleNode::SharedPtr node)
+{
+  RCLCPP_INFO(node->get_logger(), "Configuring geojson graph file loader");
+  logger_ = node->get_logger();
+}
+
 bool GeoJsonGraphFileLoader::loadGraphFromFile(
   Graph & graph, GraphToIDMap & graph_to_id_map, std::string filepath)
 {
+  if (!fileExists(filepath)) {
+    RCLCPP_ERROR(logger_, "Failed to find at %s", filepath.c_str());
+    return false;
+  }
+
   std::ifstream graph_file(filepath);
 
   Json graph_geojson;
@@ -35,6 +47,16 @@ bool GeoJsonGraphFileLoader::loadGraphFromFile(
   std::vector<Json> nodes;
   std::vector<Json> edges;
   getGraphElements(features, nodes, edges);
+
+  if (nodes.empty()) {
+    RCLCPP_ERROR(logger_, "No nodes were found in %s", filepath.c_str());
+    return false;
+  }
+
+  if (edges.empty()) {
+    RCLCPP_ERROR(logger_, "No edges were found in %s", filepath.c_str());
+    return false;
+  }
 
   graph.resize(nodes.size());
   addNodesToGraph(graph, graph_to_id_map, nodes);
@@ -50,7 +72,7 @@ bool GeoJsonGraphFileLoader::fileExists(const std::string & filepath)
 
 
 void GeoJsonGraphFileLoader::getGraphElements(
-    const Json & features, std::vector<Json> & nodes, std::vector<Json> & edges)
+  const Json & features, std::vector<Json> & nodes, std::vector<Json> & edges)
 {
   for (const auto & feature : features) {
     if (feature["geometry"]["type"] == "Point") {
@@ -81,7 +103,7 @@ void GeoJsonGraphFileLoader::addNodesToGraph(
 }
 
 void GeoJsonGraphFileLoader::addEdgesToGraph(
-    Graph & graph, GraphToIDMap & graph_to_id_map, std::vector<Json> & edges)
+  Graph & graph, GraphToIDMap & graph_to_id_map, std::vector<Json> & edges)
 {
   nav2_route::EdgeCost edge_cost;
   for (const auto & edge : edges) {

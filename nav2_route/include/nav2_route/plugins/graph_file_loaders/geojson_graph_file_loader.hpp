@@ -45,6 +45,13 @@ public:
   ~GeoJsonGraphFileLoader() = default;
 
   /**
+   * @brief Configure the scorer, but do not store the node
+   * @param parent pointer to user's node
+   */
+  void configure(
+    const rclcpp_lifecycle::LifecycleNode::SharedPtr node) override;
+
+  /**
    * @brief Loads a graph object with file information
    * @param graph Graph to populate
    * @param graph_to_id_map A map of nodeid's to graph indexs
@@ -63,7 +70,7 @@ public:
  */
   inline bool fileExists(const std::string & filepath) override;
 
-private:
+protected:
   /**
    * @brief Get the graph elements from the features
    * @param[in] features The features to grab the graph nodes from
@@ -71,7 +78,7 @@ private:
    * @param[out] edges The edges found within the features
    */
   void getGraphElements(
-      const Json & features, std::vector<Json> & nodes, std::vector<Json> & edges);
+    const Json & features, std::vector<Json> & nodes, std::vector<Json> & edges);
 
   /**
    * @brief Add all nodes into the graph
@@ -88,6 +95,8 @@ private:
    * @param[in] edges The edges to be added into the graph
    */
   void addEdgesToGraph(Graph & graph, GraphToIDMap & graph_to_id_map, std::vector<Json> & edges);
+
+  rclcpp::Logger logger_{rclcpp::get_logger("GeoJsonGraphFileLoader")};
 };
 }  // namespace nav2_route
 
