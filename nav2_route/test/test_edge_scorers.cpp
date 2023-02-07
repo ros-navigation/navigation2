@@ -387,3 +387,195 @@ TEST(EdgeScorersTest, test_costmap_scoring_alt_profile)
 
   node_thread.reset();
 }
+
+TEST(EdgeScorersTest, test_time_scoring)
+{
+  // Test Time scorer plugin loading
+  auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
+
+  node->declare_parameter(
+    "edge_cost_functions", rclcpp::ParameterValue(std::vector<std::string>{"TimeScorer"}));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "TimeScorer.plugin",
+    rclcpp::ParameterValue(std::string{"nav2_route::TimeScorer"}));
+
+  EdgeScorer scorer(node);
+  EXPECT_EQ(scorer.numPlugins(), 1);  // TimeScorer
+
+  // Create edge to score
+  Node n1, n2;
+  n1.nodeid = 1;
+  n2.nodeid = 2;
+  n1.coords.x = 1.0;
+
+  DirectionalEdge edge;
+  edge.edgeid = 10;
+  edge.start = &n1;
+  edge.end = &n2;
+  float time_taken = 10.0f;
+  edge.metadata.setValue<float>("abs_time_taken", time_taken);
+
+  // The score function should return 10.0 from time taken
+  float traversal_cost = -1;
+  EXPECT_TRUE(scorer.score(&edge, traversal_cost));
+  EXPECT_EQ(traversal_cost, 10.0);  // 10.0 * 1.0 weight
+
+  // Without time taken or abs speed limit set, uses default max speed of 0.5 m/s
+  edge.metadata.data.clear();
+  traversal_cost = -1;
+  EXPECT_TRUE(scorer.score(&edge, traversal_cost));
+  EXPECT_EQ(traversal_cost, 2.0);  // 1.0 m / 0.5 m/s * 1.0 weight
+
+  // Use speed limit if set
+  float speed_limit = 0.85;
+  edge.metadata.setValue<float>("abs_speed_limit", speed_limit);
+  traversal_cost = -1;
+  EXPECT_TRUE(scorer.score(&edge, traversal_cost));
+  EXPECT_NEAR(traversal_cost, 1.1764, 0.001);  // 1.0 m / 0.85 m/s * 1.0 weight
+
+  // Still use time taken measurements if given first
+  edge.metadata.setValue<float>("abs_time_taken", time_taken);
+  traversal_cost = -1;
+  EXPECT_TRUE(scorer.score(&edge, traversal_cost));
+  EXPECT_EQ(traversal_cost, 10.0);  // 10.0 * 1.0 weight
+}
+
+TEST(EdgeScorersTest, test_semantic_scoring_key)
+{
+  // Test Time scorer plugin loading
+  auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
+
+  node->declare_parameter(
+    "edge_cost_functions", rclcpp::ParameterValue(std::vector<std::string>{"SemanticScorer"}));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "SemanticScorer.plugin",
+    rclcpp::ParameterValue(std::string{"nav2_route::SemanticScorer"}));
+
+  std::vector<std::string> classes;
+  classes.push_back("Test");
+  classes.push_back("Test1");
+  classes.push_back("Test2");
+  nav2_util::declare_parameter_if_not_declared(
+    node, "SemanticScorer.semantic_classes",
+    rclcpp::ParameterValue(classes));
+
+  for (unsigned int i = 0; i != classes.size(); i++) {
+    nav2_util::declare_parameter_if_not_declared(
+      node, "SemanticScorer." + classes[i],
+      rclcpp::ParameterValue(static_cast<float>(i)));
+  }
+
+  EdgeScorer scorer(node);
+  EXPECT_EQ(scorer.numPlugins(), 1);  // SemanticScorer
+
+  // Create edge to score
+  Node n1, n2;
+  n1.nodeid = 1;
+  n2.nodeid = 2;
+  n1.coords.x = 1.0;
+
+  DirectionalEdge edge;
+  edge.edgeid = 10;
+  edge.start = &n1;
+  edge.end = &n2;
+
+  // Should fail, since both nothing under key `class` nor metadata set at all
+  float traversal_cost = -1;
+  EXPECT_TRUE(scorer.score(&edge, traversal_cost));
+  EXPECT_EQ(traversal_cost, 0.0);  // nothing is set in semantics
+
+  // Should be valid under the right key
+  std::string test_n = "Test1";
+  edge.metadata.setValue<std::string>("class", test_n);
+  traversal_cost = -1;
+  EXPECT_TRUE(scorer.score(&edge, traversal_cost));
+  EXPECT_EQ(traversal_cost, 1.0);  // 1.0 * 1.0 weight
+
+  test_n = "Test2";
+  edge.metadata.setValue<std::string>("class", test_n);
+  n2.metadata.setValue<std::string>("class", test_n);
+  traversal_cost = -1;
+  EXPECT_TRUE(scorer.score(&edge, traversal_cost));
+  EXPECT_EQ(traversal_cost, 4.0);  // (2.0 + 2.0) * 1.0 weight
+
+  // Cannot find, doesn't exist
+  test_n = "Test4";
+  edge.metadata.setValue<std::string>("class", test_n);
+  n2.metadata.setValue<std::string>("class", test_n);
+  traversal_cost = -1;
+  EXPECT_TRUE(scorer.score(&edge, traversal_cost));
+  EXPECT_EQ(traversal_cost, 0.0);  // 0.0 * 1.0 weight
+}
+
+TEST(EdgeScorersTest, test_semantic_scoring_keys)
+{
+  // Test Time scorer plugin loading
+  auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
+
+  node->declare_parameter(
+    "edge_cost_functions", rclcpp::ParameterValue(std::vector<std::string>{"SemanticScorer"}));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "SemanticScorer.plugin",
+    rclcpp::ParameterValue(std::string{"nav2_route::SemanticScorer"}));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "SemanticScorer.semantic_key",
+    rclcpp::ParameterValue(std::string{""}));
+
+  std::vector<std::string> classes;
+  classes.push_back("Test");
+  classes.push_back("Test1");
+  classes.push_back("Test2");
+  nav2_util::declare_parameter_if_not_declared(
+    node, "SemanticScorer.semantic_classes",
+    rclcpp::ParameterValue(classes));
+
+  for (unsigned int i = 0; i != classes.size(); i++) {
+    nav2_util::declare_parameter_if_not_declared(
+      node, "SemanticScorer." + classes[i],
+      rclcpp::ParameterValue(static_cast<float>(i)));
+  }
+
+  EdgeScorer scorer(node);
+  EXPECT_EQ(scorer.numPlugins(), 1);  // SemanticScorer
+
+  // Create edge to score
+  Node n1, n2;
+  n1.nodeid = 1;
+  n2.nodeid = 2;
+  n1.coords.x = 1.0;
+
+  DirectionalEdge edge;
+  edge.edgeid = 10;
+  edge.start = &n1;
+  edge.end = &n2;
+
+  // Should fail, since both nothing under key `class` nor metadata set at all
+  float traversal_cost = -1;
+  EXPECT_TRUE(scorer.score(&edge, traversal_cost));
+  EXPECT_EQ(traversal_cost, 0.0);  // nothing is set in semantics
+
+  // Should fail, since under the class key when the semantic key is empty string
+  // so it will look for the keys themselves
+  std::string test_n = "Test1";
+  edge.metadata.setValue<std::string>("class", test_n);
+  traversal_cost = -1;
+  EXPECT_TRUE(scorer.score(&edge, traversal_cost));
+  EXPECT_EQ(traversal_cost, 0.0);  // 0.0 * 1.0 weight
+
+  // Should succeed, since now actual class is a key, not a value of the `class` key
+  test_n = "Test2";
+  edge.metadata.setValue<std::string>(test_n, test_n);
+  n2.metadata.setValue<std::string>(test_n, test_n);
+  traversal_cost = -1;
+  EXPECT_TRUE(scorer.score(&edge, traversal_cost));
+  EXPECT_EQ(traversal_cost, 4.0);  // (2.0 + 2.0) * 1.0 weight
+
+  // Cannot find, doesn't exist
+  edge.metadata.data.clear();
+  n2.metadata.data.clear();
+  test_n = "Test4";
+  edge.metadata.setValue<std::string>(test_n, test_n);
+  traversal_cost = -1;
+  EXPECT_TRUE(scorer.score(&edge, traversal_cost));
+  EXPECT_EQ(traversal_cost, 0.0);  // 0.0 * 1.0 weight
+}

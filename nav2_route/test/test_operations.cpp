@@ -424,3 +424,103 @@ TEST(OperationsManagerTest, test_trigger_event_on_graph_failures)
   node2.operations.push_back(op2);
   EXPECT_THROW(manager.process(true, state, route, pose), nav2_core::OperationFailed);
 }
+
+
+TEST(OperationsManagerTest, test_time_marker)
+{
+  auto node = std::make_shared<nav2_util::LifecycleNode>("operations_manager_test");
+  auto node_thread = std::make_unique<nav2_util::NodeThread>(node);
+  node->declare_parameter(
+    "operations", rclcpp::ParameterValue(std::vector<std::string>{"TimeMarker"}));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "TimeMarker.plugin",
+    rclcpp::ParameterValue(std::string{"nav2_route::TimeMarker"}));
+  OperationsManager manager(node);
+
+  Node node1, node2, node3, node4;
+  DirectionalEdge exit, enter, last;
+  exit.start = &node1;
+  exit.end = &node2;
+  enter.start = &node2;
+  enter.end = &node3;
+  last.start = &node3;
+  last.end = &node4;
+  geometry_msgs::msg::PoseStamped pose;
+
+  Route route;
+  route.start_node = &node1;
+  route.edges.push_back(&exit);
+  route.edges.push_back(&enter);
+  route.edges.push_back(&last);
+
+  RouteTrackingState state;
+  state.last_node = &node1;
+  state.next_node = &node2;
+  state.current_edge = &exit;
+  state.route_edges_idx = 0;
+
+  // No status change, shouldn't do anything ... even after some time
+  OperationsResult result = manager.process(false, state, route, pose);
+  EXPECT_FALSE(result.reroute);
+  EXPECT_EQ(result.operations_triggered.size(), 0u);
+  rclcpp::Rate r(1);
+  r.sleep();
+  result = manager.process(false, state, route, pose);
+  EXPECT_FALSE(result.reroute);
+  EXPECT_EQ(result.operations_triggered.size(), 0u);
+
+  // Status change, may now trigger but state doesn't match
+  // (new edge) so it won't update times on the first call
+  result = manager.process(true, state, route, pose);
+  EXPECT_EQ(result.operations_triggered.size(), 1u);
+
+  float time = 0.0f;
+  time = enter.metadata.getValue<float>("abs_time_taken", time);
+  EXPECT_EQ(time, 0.0f);
+  time = 0.0f;
+  time = exit.metadata.getValue<float>("abs_time_taken", time);
+  EXPECT_EQ(time, 0.0f);
+
+  rclcpp::Rate r2(1);
+  r2.sleep();
+
+  // The second time around after switching edges, should update the last edge's time
+  state.last_node = &node2;
+  state.next_node = &node3;
+  state.current_edge = &enter;
+  state.route_edges_idx = 1;
+  result = manager.process(true, state, route, pose);
+  EXPECT_EQ(result.operations_triggered.size(), 1u);
+  time = 0.0f;
+  time = exit.metadata.getValue<float>("abs_time_taken", time);
+  EXPECT_GT(time, 0.5f);
+  time = 0.0f;
+  time = enter.metadata.getValue<float>("abs_time_taken", time);
+  EXPECT_EQ(time, 0.0f);
+
+  // Immediately call again on new edge, should also work with an edge change
+  // But the last edge not completed should still remain empty
+  state.last_node = &node3;
+  state.next_node = &node4;
+  state.current_edge = &last;
+  state.route_edges_idx = 2;
+  result = manager.process(true, state, route, pose);
+  time = 0.0f;
+  time = enter.metadata.getValue<float>("abs_time_taken", time);
+  EXPECT_GT(time, 1e-6f);
+  time = 0.0f;
+  time = last.metadata.getValue<float>("abs_time_taken", time);
+  EXPECT_EQ(time, 0.0f);
+
+  // Check on terminal conditions
+  rclcpp::Rate r3(1);
+  r3.sleep();
+  state.last_node = &node4;
+  state.next_node = nullptr;
+  state.current_edge = nullptr;
+  state.route_edges_idx = 3;
+  result = manager.process(true, state, route, pose);
+  time = 0.0f;
+  time = last.metadata.getValue<float>("abs_time_taken", time);
+  EXPECT_GT(time, 0.5f);
+}

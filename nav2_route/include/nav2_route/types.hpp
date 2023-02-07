@@ -49,7 +49,7 @@ struct Metadata
   template<typename T>
   void setValue(const std::string & key, T & value)
   {
-    data.insert({key, value});
+    data[key] = value;
   }
 
   std::unordered_map<std::string, std::any> data;

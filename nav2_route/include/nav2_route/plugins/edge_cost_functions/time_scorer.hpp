@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__DISTANCE_SCORER_HPP_
-#define NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__DISTANCE_SCORER_HPP_
+#ifndef NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__TIME_SCORER_HPP_
+#define NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__TIME_SCORER_HPP_
 
 #include <memory>
 #include <string>
@@ -27,22 +27,23 @@ namespace nav2_route
 {
 
 /**
- * @class DistanceScorer
- * @brief Scores edges by the distance traversed, weighted by speed limit metadata
- * to optimize for time to goal, when %-based speed limits are set
+ * @class TimeScorer
+ * @brief Scores edges by the time to traverse an edge.
+ * It uses previous times to navigate the edge primarily, then secondarily uses
+ * maximum speed and absolute speed limits to estimate with edge length.
  */
-class DistanceScorer : public EdgeCostFunction
+class TimeScorer : public EdgeCostFunction
 {
 public:
   /**
    * @brief Constructor
    */
-  DistanceScorer() = default;
+  TimeScorer() = default;
 
   /**
    * @brief destructor
    */
-  virtual ~DistanceScorer() = default;
+  virtual ~TimeScorer() = default;
 
   /**
    * @brief Configure
@@ -68,10 +69,10 @@ public:
 
 protected:
   std::string name_;
-  std::string speed_tag_;
-  float weight_;
+  std::string speed_tag_, prev_time_tag_;
+  float weight_, max_vel_;
 };
 
 }  // namespace nav2_route
 
-#endif  // NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__DISTANCE_SCORER_HPP_
+#endif  // NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__TIME_SCORER_HPP_

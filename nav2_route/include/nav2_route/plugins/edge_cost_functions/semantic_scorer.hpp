@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__DISTANCE_SCORER_HPP_
-#define NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__DISTANCE_SCORER_HPP_
+#ifndef NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__SEMANTIC_SCORER_HPP_
+#define NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__SEMANTIC_SCORER_HPP_
 
 #include <memory>
 #include <string>
+#include <unordered_map>
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
@@ -27,22 +28,22 @@ namespace nav2_route
 {
 
 /**
- * @class DistanceScorer
- * @brief Scores edges by the distance traversed, weighted by speed limit metadata
- * to optimize for time to goal, when %-based speed limits are set
+ * @class SemanticScorer
+ * @brief Scores an edge based on arbitrary graph semantic data such as set priority/danger
+ * levels or regional attributes (e.g. living room, bathroom, work cell 2)
  */
-class DistanceScorer : public EdgeCostFunction
+class SemanticScorer : public EdgeCostFunction
 {
 public:
   /**
    * @brief Constructor
    */
-  DistanceScorer() = default;
+  SemanticScorer() = default;
 
   /**
    * @brief destructor
    */
-  virtual ~DistanceScorer() = default;
+  virtual ~SemanticScorer() = default;
 
   /**
    * @brief Configure
@@ -67,11 +68,11 @@ public:
   std::string getName() override;
 
 protected:
-  std::string name_;
-  std::string speed_tag_;
+  std::string name_, key_;
+  std::unordered_map<std::string, float> semantic_info_;
   float weight_;
 };
 
 }  // namespace nav2_route
 
-#endif  // NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__DISTANCE_SCORER_HPP_
+#endif  // NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__SEMANTIC_SCORER_HPP_
