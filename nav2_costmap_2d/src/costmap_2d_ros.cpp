@@ -281,7 +281,7 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
   stopped_ = true;  // to active plugins
   stop_updates_ = false;
 
-  if (map_update_timer_ == nullptr) {
+  if (!map_update_timer_) {
     RCLCPP_DEBUG(get_logger(), "mapUpdateLoop frequency: %lf", map_update_frequency_);
     if (map_update_frequency_ > 0.) {
       map_update_timer_ = rclcpp::create_timer(
@@ -290,7 +290,7 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
     } else {
       RCLCPP_WARN(
         get_logger(),
-        "Costmap won't be periodically updated as frequency  %lf should be greater than zero.",
+        "Costmap won't be periodically updated as frequency %lf should be greater than zero.",
         map_update_frequency_);
     }
   } else {
@@ -316,7 +316,7 @@ Costmap2DROS::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   stop();
 
   // Map thread stuff
-  if (map_update_timer_ != nullptr) {
+  if (map_update_timer_) {
     map_update_timer_->cancel();
   }
 
@@ -471,7 +471,7 @@ Costmap2DROS::mapUpdateLoop()
   RCLCPP_DEBUG(get_logger(), "Entering update timer callback");
 
   if (stopped_) {
-    // Execute after start() will complete plugins activation
+    // Do not execute until start() will complete plugins activation
     return;
   }
 

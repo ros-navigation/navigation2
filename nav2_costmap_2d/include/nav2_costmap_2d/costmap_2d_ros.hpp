@@ -38,7 +38,6 @@
 #ifndef NAV2_COSTMAP_2D__COSTMAP_2D_ROS_HPP_
 #define NAV2_COSTMAP_2D__COSTMAP_2D_ROS_HPP_
 
-#include <atomic>
 #include <memory>
 #include <string>
 #include <vector>
@@ -344,8 +343,8 @@ protected:
    * @brief Function on timer for costmap update
    */
   void mapUpdateLoop();
-  std::atomic<bool> stop_updates_{false};
-  std::atomic<bool> stopped_{true};
+  bool stop_updates_{false};
+  bool stopped_{true};
   rclcpp::TimerBase::SharedPtr map_update_timer_;  ///< @brief A timer for periodic map update
   rclcpp::Time last_publish_{0, 0, RCL_ROS_TIME};
   rclcpp::Duration publish_cycle_{1, 0};
