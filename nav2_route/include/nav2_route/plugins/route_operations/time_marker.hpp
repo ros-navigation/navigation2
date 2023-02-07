@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_ROUTE__PLUGINS__ROUTE_OPERATIONS__REROUTING_SERVICE_HPP_
-#define NAV2_ROUTE__PLUGINS__ROUTE_OPERATIONS__REROUTING_SERVICE_HPP_
+#ifndef NAV2_ROUTE__PLUGINS__ROUTE_OPERATIONS__TIME_MARKER_HPP_
+#define NAV2_ROUTE__PLUGINS__ROUTE_OPERATIONS__TIME_MARKER_HPP_
 
 #include <memory>
 #include <string>
@@ -22,27 +22,28 @@
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "nav2_route/interfaces/route_operation.hpp"
 #include "nav2_util/node_utils.hpp"
-#include "std_srvs/srv/trigger.hpp"
+#include "nav2_msgs/msg/speed_limit.hpp"
 
 namespace nav2_route
 {
 
 /**
- * @class ReroutingService
- * @brief A route operation to process requests from an external server for rerouting
+ * @class TimeMarker
+ * @brief A route operation to add accurate times to the graph's edges after navigation
+ * to use in later iterations for a more refined estimate of actual travel time
  */
-class ReroutingService : public RouteOperation
+class TimeMarker : public RouteOperation
 {
 public:
   /**
    * @brief Constructor
    */
-  ReroutingService() = default;
+  TimeMarker() = default;
 
   /**
    * @brief destructor
    */
-  virtual ~ReroutingService() = default;
+  virtual ~TimeMarker() = default;
 
   /**
    * @brief Configure
@@ -62,7 +63,7 @@ public:
    * on all state changes
    * @return The type of operation (on graph call, on status changes, or constantly)
    */
-  RouteOperationType processType() override {return RouteOperationType::ON_QUERY;}
+  RouteOperationType processType() override {return RouteOperationType::ON_STATUS_CHANGE;}
 
   /**
    * @brief The main speed limit operation to adjust the maximum speed of the vehicle
@@ -76,29 +77,21 @@ public:
    * @return Whether to perform rerouting and report blocked edges in that case
    */
   OperationResult perform(
-    NodePtr node,
+    NodePtr node_achieved,
     EdgePtr edge_entered,
     EdgePtr edge_exited,
     const Route & route,
     const geometry_msgs::msg::PoseStamped & curr_pose,
     const Metadata * mdata = nullptr) override;
 
-  /**
-   * @brief Service callback to trigger a reroute externally
-   * @param request, empty
-   * @param response, returns success
-   */
-  void serviceCb(
-    const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
-    std::shared_ptr<std_srvs::srv::Trigger::Response> response);
-
 protected:
   std::string name_;
-  std::atomic_bool reroute_;
-  rclcpp::Logger logger_{rclcpp::get_logger("ReroutingService")};
-  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr service_;
+  std::string time_tag_;
+  rclcpp::Clock::SharedPtr clock_;
+  rclcpp::Time edge_start_time_;
+  unsigned int curr_edge;
 };
 
 }  // namespace nav2_route
 
-#endif  // NAV2_ROUTE__PLUGINS__ROUTE_OPERATIONS__REROUTING_SERVICE_HPP_
+#endif  // NAV2_ROUTE__PLUGINS__ROUTE_OPERATIONS__TIME_MARKER_HPP_

@@ -57,9 +57,12 @@ public:
    * @param graph Graph to search
    * @param start Start index in the graph of the start node
    * @param goal Goal index in the graph of the goal node
+   * @param blocked_ids A set of blocked node and edge IDs not to traverse
    * @return Route object containing the navigation graph route
    */
-  Route findRoute(Graph & graph, unsigned int start, unsigned int goal);
+  Route findRoute(
+    Graph & graph, unsigned int start, unsigned int goal,
+    const std::vector<unsigned int> & blocked_ids);
 
 protected:
   /**
@@ -73,16 +76,21 @@ protected:
    * @param graph Graph to search
    * @param start Start Node pointer
    * @param goal Goal node pointer
+   * @param blocked_ids A set of blocked node and edge IDs not to traverse
    */
-  void findShortestGraphTraversal(Graph & graph, const NodePtr start, const NodePtr goal);
+  void findShortestGraphTraversal(
+    Graph & graph, const NodePtr start, const NodePtr goal,
+    const std::vector<unsigned int> & blocked_ids);
 
   /**
    * @brief Gets the traversal cost for an edge using edge scorers
    * @param edge Edge pointer to find traveral cost for
    * @param travel cost
+   * @param blocked_ids A set of blocked node and edge IDs not to traverse
    * @return if this edge is valid for search
    */
-  inline bool getTraversalCost(const EdgePtr edge, float & score);
+  inline bool getTraversalCost(
+    const EdgePtr edge, float & score, const std::vector<unsigned int> & blocked_ids);
 
   /**
    * @brief Gets the next node in the priority queue for search

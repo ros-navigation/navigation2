@@ -63,4 +63,14 @@ ament_target_dependencies(test_geojson_graph_file_loader
 )
 target_link_libraries(test_geojson_graph_file_loader
   ${library_name}
+
+# Test collision monitor seperately due to relative complexity
+ament_add_gtest(test_collision_operation
+  test_collision_operation.cpp
+)
+ament_target_dependencies(test_collision_operation
+  ${dependencies}
+)
+target_link_libraries(test_collision_operation
+  ${library_name} route_operations
 )

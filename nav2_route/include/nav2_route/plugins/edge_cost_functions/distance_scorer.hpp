@@ -29,7 +29,7 @@ namespace nav2_route
 /**
  * @class DistanceScorer
  * @brief Scores edges by the distance traversed, weighted by speed limit metadata
- * to optimize for time to goal
+ * to optimize for time to goal, when %-based speed limits are set
  */
 class DistanceScorer : public EdgeCostFunction
 {

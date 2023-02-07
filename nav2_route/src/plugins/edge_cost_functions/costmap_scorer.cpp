@@ -45,6 +45,10 @@ void CostmapScorer::configure(
   invalid_off_map_ =
     static_cast<float>(node->get_parameter(getName() + ".invalid_off_map").as_bool());
 
+  nav2_util::declare_parameter_if_not_declared(
+    node, getName() + ".max_cost", rclcpp::ParameterValue(253.0));
+  max_cost_ = static_cast<float>(node->get_parameter(getName() + ".max_cost").as_double());
+
   // Create costmap subscriber
   nav2_util::declare_parameter_if_not_declared(
     node, getName() + ".costmap_topic",
@@ -100,23 +104,22 @@ bool CostmapScorer::score(const EdgePtr edge, float & cost)
     point_cost = static_cast<float>(costmap_->getCost(iter.getX(), iter.getY()));
 
     // if in collision, no need to continue
-    if (point_cost == 254.0 && invalid_on_collision_) {
-      RCLCPP_INFO(logger_, "Edge %i is in collision!", edge->edgeid);
+    if (point_cost >= max_cost_ && max_cost_ != 255.0 /*Unknown*/ && invalid_on_collision_) {
+      RCLCPP_DEBUG(logger_, "Edge %i is in collision!", edge->edgeid);
       return false;
     }
 
     idx++;
     running_cost += point_cost;
-    if (largest_cost < point_cost) {
+    if (largest_cost < point_cost && point_cost != 255.0) {
       largest_cost = point_cost;
     }
   }
 
-
   if (use_max_) {
-    cost = weight_ * largest_cost / 254.0f /*normalization*/;
+    cost = weight_ * largest_cost / max_cost_;
   } else {
-    cost = weight_ * running_cost / (static_cast<float>(idx) * 254.0f) /*normalization*/;
+    cost = weight_ * running_cost / (static_cast<float>(idx) * max_cost_);
   }
 
   return true;

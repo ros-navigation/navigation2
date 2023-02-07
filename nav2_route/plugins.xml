@@ -19,6 +19,16 @@
       <description>Cost function for adding a cost based on the costmap values in the edge</description>
     </class>
   </library>
+  <library path="edge_scorers">
+    <class type="nav2_route::SemanticScorer" base_class_type="nav2_route::EdgeCostFunction">
+      <description>Cost function for adding costs to edges based on arbitrary semantic data</description>
+    </class>
+  </library>
+  <library path="edge_scorers">
+    <class type="nav2_route::TimeScorer" base_class_type="nav2_route::EdgeCostFunction">
+      <description>Cost function for adding costs to edges time to complete the edge based on previous runs and/or estimation with absolute speed limits.</description>
+    </class>
+  </library>
 
   <library path="route_operations">
     <class type="nav2_route::AdjustSpeedLimit" base_class_type="nav2_route::RouteOperation">
@@ -39,6 +49,15 @@
   <library path="graph_file_loaders">
     <class type="nav2_route::GeoJsonGraphFileLoader" base_class_type="nav2_route::GraphFileLoader">
       <description>Parse the geojson graph file into the graph data type</description>
+  <library path="route_operations">
+
+    <class type="nav2_route::CollisionMonitor" base_class_type="nav2_route::RouteOperation">
+      <description>Route operation to periodically check a costmap for localized viability of the route</description>
+    </class>
+  </library>
+  <library path="route_operations">
+    <class type="nav2_route::TimeMarker" base_class_type="nav2_route::RouteOperation">
+      <description>Route operation to add actual times of traversal to edge's metdata for use in later more accurate planning by the TimeScorer</description>
     </class>
   </library>
 </class_libraries>

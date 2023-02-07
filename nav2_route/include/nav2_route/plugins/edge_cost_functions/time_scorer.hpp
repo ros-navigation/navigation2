@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__COSTMAP_SCORER_HPP_
-#define NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__COSTMAP_SCORER_HPP_
+#ifndef NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__TIME_SCORER_HPP_
+#define NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__TIME_SCORER_HPP_
 
 #include <memory>
 #include <string>
@@ -21,30 +21,29 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "nav2_route/interfaces/edge_cost_function.hpp"
-#include "nav2_util/line_iterator.hpp"
 #include "nav2_util/node_utils.hpp"
-#include "nav2_costmap_2d/costmap_subscriber.hpp"
 
 namespace nav2_route
 {
 
 /**
- * @class CostmapScorer
- * @brief Scores edges by the average or maximum cost found while iterating over the
- * edge's line segment in the global costmap
+ * @class TimeScorer
+ * @brief Scores edges by the time to traverse an edge.
+ * It uses previous times to navigate the edge primarily, then secondarily uses
+ * maximum speed and absolute speed limits to estimate with edge length.
  */
-class CostmapScorer : public EdgeCostFunction
+class TimeScorer : public EdgeCostFunction
 {
 public:
   /**
    * @brief Constructor
    */
-  CostmapScorer() = default;
+  TimeScorer() = default;
 
   /**
    * @brief destructor
    */
-  virtual ~CostmapScorer() = default;
+  virtual ~TimeScorer() = default;
 
   /**
    * @brief Configure
@@ -68,21 +67,12 @@ public:
    */
   std::string getName() override;
 
-  /**
-   * @brief Prepare for a new cycle, by resetting state, grabbing data
-   * to use for all immediate requests, or otherwise prepare for scoring
-   */
-  void prepare() override;
-
 protected:
-  rclcpp::Logger logger_{rclcpp::get_logger("CostmapScorer")};
   std::string name_;
-  bool use_max_, invalid_on_collision_, invalid_off_map_;
-  float weight_, max_cost_;
-  std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber_;
-  std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap_{nullptr};
+  std::string speed_tag_, prev_time_tag_;
+  float weight_, max_vel_;
 };
 
 }  // namespace nav2_route
 
-#endif  // NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__COSTMAP_SCORER_HPP_
+#endif  // NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__TIME_SCORER_HPP_

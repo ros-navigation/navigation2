@@ -12,39 +12,38 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__COSTMAP_SCORER_HPP_
-#define NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__COSTMAP_SCORER_HPP_
+#ifndef NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__SEMANTIC_SCORER_HPP_
+#define NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__SEMANTIC_SCORER_HPP_
 
 #include <memory>
 #include <string>
+#include <unordered_map>
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "nav2_route/interfaces/edge_cost_function.hpp"
-#include "nav2_util/line_iterator.hpp"
 #include "nav2_util/node_utils.hpp"
-#include "nav2_costmap_2d/costmap_subscriber.hpp"
 
 namespace nav2_route
 {
 
 /**
- * @class CostmapScorer
- * @brief Scores edges by the average or maximum cost found while iterating over the
- * edge's line segment in the global costmap
+ * @class SemanticScorer
+ * @brief Scores an edge based on arbitrary graph semantic data such as set priority/danger
+ * levels or regional attributes (e.g. living room, bathroom, work cell 2)
  */
-class CostmapScorer : public EdgeCostFunction
+class SemanticScorer : public EdgeCostFunction
 {
 public:
   /**
    * @brief Constructor
    */
-  CostmapScorer() = default;
+  SemanticScorer() = default;
 
   /**
    * @brief destructor
    */
-  virtual ~CostmapScorer() = default;
+  virtual ~SemanticScorer() = default;
 
   /**
    * @brief Configure
@@ -68,21 +67,12 @@ public:
    */
   std::string getName() override;
 
-  /**
-   * @brief Prepare for a new cycle, by resetting state, grabbing data
-   * to use for all immediate requests, or otherwise prepare for scoring
-   */
-  void prepare() override;
-
 protected:
-  rclcpp::Logger logger_{rclcpp::get_logger("CostmapScorer")};
-  std::string name_;
-  bool use_max_, invalid_on_collision_, invalid_off_map_;
-  float weight_, max_cost_;
-  std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber_;
-  std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap_{nullptr};
+  std::string name_, key_;
+  std::unordered_map<std::string, float> semantic_info_;
+  float weight_;
 };
 
 }  // namespace nav2_route
 
-#endif  // NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__COSTMAP_SCORER_HPP_
+#endif  // NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__SEMANTIC_SCORER_HPP_

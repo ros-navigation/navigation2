@@ -88,10 +88,11 @@ public:
     std::shared_ptr<typename SrvT::Request>/*request*/, const Metadata * /*mdata*/) {}
 
   /**
-   * @brief Process response from service, should it be necessary for another
-   * template type
+   * @brief Process response from service to populate a result, should it be necessary
+   * for another template type
    */
-  virtual bool processResponse(std::shared_ptr<typename SrvT::Response>/*response*/) {return false;}
+  virtual OperationResult processResponse(
+    std::shared_ptr<typename SrvT::Response>/*response*/) {return OperationResult();}
 
 protected:
   /**
@@ -134,9 +135,9 @@ protected:
    * @param edge_exited Edge exited by node achievement, for additional context
    * @param route Current route being tracked in full, for additional context
    * @param curr_pose Current robot pose in the route frame, for additional context
-   * @return Whether to perform rerouting as a result of a problem or request by the operation
+   * @return Whether to perform rerouting and report blocked edges in that case
    */
-  bool perform(
+  OperationResult perform(
     NodePtr node_achieved,
     EdgePtr /*edge_entered*/,
     EdgePtr /*edge_exited*/,
@@ -170,7 +171,6 @@ protected:
       logger_,
       "%s: Processed operation at Node %i with service %s.",
       name_.c_str(), node_achieved->nodeid, srv_name.c_str());
-
     return processResponse(response);
   }
 
