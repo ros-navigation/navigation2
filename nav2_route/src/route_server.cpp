@@ -398,18 +398,25 @@ void RouteServer::setRouteGraph(
 {
   RCLCPP_INFO(get_logger(), "Setting new route graph: %s.", request->graph_filepath.c_str());
 
-  if (!graph_loader_->loadGraphFromFile(graph_, id_to_graph_map_, request->graph_filepath)) {
+  try {
+    if (!graph_loader_->loadGraphFromFile(graph_, id_to_graph_map_, request->graph_filepath)) {
+      RCLCPP_WARN(
+        get_logger(),
+        "Failed to set new route graph: %s!", request->graph_filepath.c_str());
+      response->success = false;
+      return;
+    }
+
+    // Re-compute the graph's kd-tree and publish new graph
+    node_spatial_tree_->computeTree(graph_);
+    graph_vis_publisher_->publish(utils::toMsg(graph_, route_frame_, this->now()));
+    response->success = true;
+  } catch (std::exception & ex) {
     RCLCPP_WARN(
       get_logger(),
-      "Failed to set new route graph: %s!", request->graph_filepath.c_str());
+      "Failed to set new route graph due to %s!", ex.what());
     response->success = false;
-    return;
   }
-
-  // Re-compute the graph's kd-tree and publish new graph
-  node_spatial_tree_->computeTree(graph_);
-  graph_vis_publisher_->publish(utils::toMsg(graph_, route_frame_, this->now()));
-  response->success = true;
 }
 
 template<typename GoalT>
