@@ -49,7 +49,7 @@ jobs:
       - name: Build and push
         if: ${{ matrix.stage == 'build' }}
         id: docker_build_dev
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v4
         with:
           context: ./
           file: ./nav2_minimal.dockerfile
@@ -63,7 +63,7 @@ jobs:
       - name: Build and push
         if: ${{ matrix.stage == 'prod_stage' }}
         id: docker_build_prod
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v4
         with:
           context: ./
           file: ./nav2_minimal.dockerfile
