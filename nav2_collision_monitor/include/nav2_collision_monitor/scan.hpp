@@ -69,7 +69,7 @@ public:
    */
   void getData(
     const rclcpp::Time & curr_time,
-    std::vector<Point> & data) const;
+    std::vector<Point> & data);
 
 protected:
   /**
