@@ -130,11 +130,14 @@ protected:
    * to find the Node locations of interest and route to the goal
    * @param goal The request goal information
    * @param blocked_ids The IDs of blocked graphs / edges
+   * @param updated_start_id The nodeID of an updated starting point when tracking
+   * a route that corresponds to the next point to route to from to continue progress
    * @return A route of the request
    */
   template<typename GoalT>
   Route findRoute(
-    const std::shared_ptr<const GoalT> goal, const std::vector<unsigned int> & blocked_ids = {});
+    const std::shared_ptr<const GoalT> goal,
+    const ReroutingState & rerouting_info = ReroutingState());
 
   /**
    * @brief Find the planning duration of the request and log warnings
@@ -167,17 +170,6 @@ protected:
    */
   template<typename GoalT>
   void exceptionWarning(const std::shared_ptr<const GoalT> goal, const std::exception & ex);
-
-  /**
-   * @brief Callback executed when a parameter change is detected
-   * @param event ParameterEvent message
-   */
-  rcl_interfaces::msg::SetParametersResult
-  dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
-
-  // Dynamic parameters handler
-  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
-  std::mutex dynamic_params_lock_;
 
   std::shared_ptr<ComputeRouteServer> compute_route_server_;
   std::shared_ptr<ComputeAndTrackRouteServer> compute_and_track_route_server_;

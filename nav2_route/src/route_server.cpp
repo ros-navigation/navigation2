@@ -69,27 +69,22 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   base_frame_ = node->get_parameter("base_frame").as_string();
   max_planning_time_ = node->get_parameter("max_planning_time").as_double();
 
-  // Load graph and convert poses to the route frame, if required
   try {
     graph_loader_ = std::make_shared<GraphFileLoader>(node, tf_, route_frame_);
     if (!graph_loader_->loadGraphFromFile(graph_, id_to_graph_map_)) {
       return nav2_util::CallbackReturn::FAILURE;
     }
 
-    // Precompute the graph's kd-tree
     node_spatial_tree_ = std::make_shared<NodeSpatialTree>();
     node_spatial_tree_->computeTree(graph_);
 
-    // Create main planning algorithm
     route_planner_ = std::make_shared<RoutePlanner>();
     route_planner_->configure(node);
 
-    // Create route tracking system
     route_tracker_ = std::make_shared<RouteTracker>();
     route_tracker_->configure(
       node, tf_, compute_and_track_route_server_, route_frame_, base_frame_);
 
-    // Create Route to path conversion utility
     path_converter_ = std::make_shared<PathConverter>();
     path_converter_->configure(node);
   } catch (std::exception & e) {
@@ -110,11 +105,6 @@ RouteServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   graph_vis_publisher_->on_activate();
   graph_vis_publisher_->publish(utils::toMsg(graph_, route_frame_, this->now()));
 
-  // Add callback for dynamic parameters
-  dyn_params_handler_ = this->add_on_set_parameters_callback(
-    std::bind(&RouteServer::dynamicParametersCallback, this, _1));
-
-  // create bond connection
   createBond();
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -127,11 +117,8 @@ RouteServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   compute_route_server_->deactivate();
   compute_and_track_route_server_->deactivate();
   graph_vis_publisher_->on_deactivate();
-  dyn_params_handler_.reset();
 
-  // destroy bond connection
   destroyBond();
-
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -197,8 +184,7 @@ RouteServer::findStartandGoalNodeLocations(const std::shared_ptr<const GoalT> go
   }
 
   // Find closest route graph nodes to start and goal to plan between.
-  // Note that these are the location indices in the graph, NOT the node IDs for easier starting
-  // lookups for search. The route planner will convert them to node ids for route reporting.
+  // Note that these are the location indices in the graph
   unsigned int start_route = 0, end_route = 0;
   if (!node_spatial_tree_->findNearestGraphNodeToPose(start_pose, start_route) ||
     !node_spatial_tree_->findNearestGraphNodeToPose(goal_pose, end_route))
@@ -213,10 +199,14 @@ RouteServer::findStartandGoalNodeLocations(const std::shared_ptr<const GoalT> go
 template<typename GoalT>
 Route RouteServer::findRoute(
   const std::shared_ptr<const GoalT> goal,
-  const std::vector<unsigned int> & blocked_ids)
+  const ReroutingState & rerouting_info)
 {
   // Find the search boundaries
   auto [start_route, end_route] = findStartandGoalNodeLocations(goal);
+
+  if (rerouting_info.curr_start_id != std::numeric_limits<unsigned int>::max()) {
+    start_route = id_to_graph_map_.at(rerouting_info.curr_start_id);
+  }
 
   Route route;
   if (start_route == end_route) {
@@ -225,7 +215,7 @@ Route RouteServer::findRoute(
     route.start_node = &graph_.at(start_route);
   } else {
     // Compute the route via graph-search, returns a node-edge sequence
-    route = route_planner_->findRoute(graph_, start_route, end_route, blocked_ids);
+    route = route_planner_->findRoute(graph_, start_route, end_route, rerouting_info.blocked_ids);
   }
 
   return route;
@@ -267,7 +257,6 @@ RouteServer::isRequestValid(
 void
 RouteServer::computeRoute()
 {
-  std::lock_guard<std::mutex> lock(dynamic_params_lock_);
   auto goal = compute_route_server_->get_current_goal();
   auto result = std::make_shared<ComputeRouteResult>();
   RCLCPP_INFO(get_logger(), "Computing route to goal.");
@@ -321,12 +310,14 @@ RouteServer::computeRoute()
   }
 }
 
+// TODO combine these 2 functions to reduce duplication
+
 void
 RouteServer::computeAndTrackRoute()
 {
   auto goal = compute_and_track_route_server_->get_current_goal();
   auto result = std::make_shared<ComputeAndTrackRouteResult>();
-  std::vector<unsigned int> blocked_graph_ids;
+  ReroutingState rerouting_info;
   RCLCPP_INFO(get_logger(), "Computing and tracking route to goal.");
 
   try {
@@ -338,20 +329,18 @@ RouteServer::computeAndTrackRoute()
       if (compute_and_track_route_server_->is_preempt_requested()) {
         RCLCPP_INFO(get_logger(), "Computing new and tracking preempted route to goal.");
         goal = compute_and_track_route_server_->accept_pending_goal();
-        blocked_graph_ids.clear();
+        rerouting_info.reset();
       }
-
-      std::lock_guard<std::mutex> lock(dynamic_params_lock_);
 
       // Find the route
       auto start_time = this->now();
       // TODO(sm) prune passed objs in rerouting, provide optional start nodeid to override action?
-      Route route = findRoute(goal, blocked_graph_ids);
+      Route route = findRoute(goal, rerouting_info);
       auto path = path_converter_->densify(route, route_frame_, this->now());
       findPlanningDuration(start_time);
 
       // blocks until re-route requested or task completion, publishes feedback
-      switch (route_tracker_->trackRoute(route, path, blocked_graph_ids)) {
+      switch (route_tracker_->trackRoute(route, path, rerouting_info)) {
         case TrackerResult::COMPLETED:
           compute_and_track_route_server_->succeeded_current(result);
           return;
@@ -426,28 +415,6 @@ void RouteServer::exceptionWarning(
     "Route server failed on request: Start: [(%0.2f, %0.2f) / %i] Goal: [(%0.2f, %0.2f) / %i]:"
     " \"%s\"", goal->start.pose.position.x, goal->start.pose.position.y, goal->start_id,
     goal->goal.pose.position.x, goal->goal.pose.position.y, goal->goal_id, ex.what());
-}
-
-rcl_interfaces::msg::SetParametersResult
-RouteServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
-{
-  std::lock_guard<std::mutex> lock(dynamic_params_lock_);
-
-  using rcl_interfaces::msg::ParameterType;
-  rcl_interfaces::msg::SetParametersResult result;
-  for (auto parameter : parameters) {
-    const auto & type = parameter.get_type();
-    const auto & name = parameter.get_name();
-
-    if (type == ParameterType::PARAMETER_DOUBLE) {
-      if (name == "max_planning_time") {
-        max_planning_time_ = parameter.as_double();
-      }
-    }
-  }
-
-  result.successful = true;
-  return result;
 }
 
 }  // namespace nav2_route

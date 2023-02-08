@@ -112,7 +112,7 @@ public:
    */
   TrackerResult trackRoute(
     const Route & route, const nav_msgs::msg::Path & path,
-    std::vector<unsigned int> & blocked_ids);
+    ReroutingState & rerouting_info);
 
 protected:
   nav2_msgs::msg::Route route_msg_;

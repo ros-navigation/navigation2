@@ -145,7 +145,7 @@ void RouteTracker::publishFeedback(
 
 TrackerResult RouteTracker::trackRoute(
   const Route & route, const nav_msgs::msg::Path & path,
-  std::vector<unsigned int> & blocked_ids)
+  ReroutingState & rerouting_info)
 {
   // Manage important data
   route_msg_ = utils::toMsg(route, route_frame_, clock_->now());
@@ -201,11 +201,17 @@ TrackerResult RouteTracker::trackRoute(
 
     if (ops_result.reroute) {
       if (!aggregate_blocked_ids_) {
-        blocked_ids = ops_result.blocked_ids;
+        rerouting_info.blocked_ids = ops_result.blocked_ids;
       } else {
-        blocked_ids.insert(
-          blocked_ids.end(), ops_result.blocked_ids.begin(), ops_result.blocked_ids.end());
+        rerouting_info.blocked_ids.insert(
+          rerouting_info.blocked_ids.end(),
+          ops_result.blocked_ids.begin(), ops_result.blocked_ids.end());
       }
+
+      if (state.last_node) {
+        rerouting_info.curr_start_id = state.last_node->nodeid;
+      }
+
       RCLCPP_INFO(logger_, "Rerouting requested by route tracking operations!");
       return TrackerResult::REROUTE;
     }

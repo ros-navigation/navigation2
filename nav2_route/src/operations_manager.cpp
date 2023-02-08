@@ -132,7 +132,6 @@ OperationsResult OperationsManager::process(
 
   if (status_change) {
     // Process operations defined in the navigation graph at node or edge
-    // It is unfortunate we need metadata, so we cannot reuse processOperationsPluginVector
     OperationsPtr operations = findGraphOperationsToProcess(node, edge_entered, edge_exited);
     for (unsigned int i = 0; i != operations.size(); i++) {
       auto op = graph_operations_.find(operations[i]->type);

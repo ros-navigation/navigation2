@@ -222,6 +222,24 @@ struct RouteTrackingState
   bool within_radius{false};
 };
 
+/**
+ * @struct nav2_route::ReroutingState
+ * @brief Tracker's result state for rerouting needed by planning
+ * to avoid reported blocked edges and reroute from the current
+ * appropriate starting point along the route
+ */
+struct ReroutingState
+{
+  unsigned int curr_start_id{std::numeric_limits<unsigned int>::max()};
+  std::vector<unsigned int> blocked_ids;
+
+  void reset()
+  {
+    curr_start_id = std::numeric_limits<unsigned int>::max();
+    blocked_ids.clear();
+  }
+};
+
 }  // namespace nav2_route
 
 #endif  // NAV2_ROUTE__TYPES_HPP_

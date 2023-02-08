@@ -112,6 +112,8 @@ Edge1:                  // <-- If provided by format, stored as name in metadata
 
 ### Metadata Conventions for Convenience
 
+TODO have a tl;dr starting before explaining
+
 While other metadata fields are not required nor necessarily needed, there are some useful standards which may make your life easier within in the Route Server framework.
 These are default fields which if used can make your life easier with the provided plugins, but you're free to embed this information anyway you like (but may come at the cost of needing to re-implement provided capabilities).
 
@@ -150,12 +152,11 @@ TODO document generous window b/c only used as a pre-condition + want dynamic be
 
 # Steve's TODO list
 
-- [ ] live route analyzer working + plugins + rerouting
+- [ ] live route analyzer working + plugins + rerouting + pruning start at reroute
 
+- [ ] if start/ending pose is between 2 nodes in the graph solution (prune first) -- in server
 
-- [ ] prune to new start in rerouting
-- [ ] if start pose is between 2 nodes in the graph solution (prune first)
-- [ ] way to clear aggrevated blocked routes other than preemption/new request?
+- [ ] way to clear aggrevated blocked routes other than preemption/new request? As a fallback if route cnanot be found except current cycles'? Max retries? but what if still blocked? cause back and forth
 
 
 
@@ -171,7 +172,7 @@ TODO document generous window b/c only used as a pre-condition + want dynamic be
 
 - [ ] centralized 1 costmap to pass aroun dfor use (if possible): edge score, operation, selecting start/goal nodes with infra
 - [ ] use map for checking start/goal nodes for infra blockages not just NN. Evaluate K 
-- [ ] cleanup code where necessary (large functions, etc) and optimize performance (profile)
+- [ ] cleanup code where necessary (large functions, etc) and optimize performance (profile), lots of Result and State and Return objects of similar name and contents. Refine names / replace some?
 
 - [ ] demos with route -> global -> local. outdoor non-planar. to waypoint follower (GPS?) of nodes.
 
