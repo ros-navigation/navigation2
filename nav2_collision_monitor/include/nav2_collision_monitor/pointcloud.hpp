@@ -69,10 +69,7 @@ public:
    */
   void getData(
     const rclcpp::Time & curr_time,
-    std::vector<Point> & data);
-
-  tf2::Transform tf_transform;
-  bool tf_transform_received;
+    std::vector<Point> & data) const;
 
 protected:
   /**

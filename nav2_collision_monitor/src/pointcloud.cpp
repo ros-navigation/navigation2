@@ -36,7 +36,7 @@ PointCloud::PointCloud(
 : Source(
     node, source_name, tf_buffer, base_frame_id, global_frame_id,
     transform_tolerance, source_timeout),
-  tf_transform_received(false), data_(nullptr)
+  data_(nullptr)
 {
   RCLCPP_INFO(logger_, "[%s]: Creating PointCloud", source_name_.c_str());
 }
@@ -97,7 +97,7 @@ PointCloud::dynamicParametersCallback(
 
 void PointCloud::getData(
   const rclcpp::Time & curr_time,
-  std::vector<Point> & data)
+  std::vector<Point> & data) const
 {
   // Ignore data from the source if it is not being published yet or
   // not published for a long time
@@ -110,8 +110,9 @@ void PointCloud::getData(
 
   // Obtaining the transform to get data from source frame and time where it was received
   // to the base frame and current time
-  if (!tf_transform_received) {
-    tf_transform_received = getTransform(data_->header.frame_id, data_->header.stamp, curr_time, tf_transform);
+  tf2::Transform tf_transform;
+  if (!getTransform(data_->header.frame_id, data_->header.stamp, curr_time, tf_transform)) {
+    return;
   }
 
   sensor_msgs::PointCloud2ConstIterator<float> iter_x(*data_, "x");

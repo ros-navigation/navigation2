@@ -69,7 +69,7 @@ public:
    */
   virtual void getData(
     const rclcpp::Time & curr_time,
-    std::vector<Point> & data) = 0;
+    std::vector<Point> & data) const = 0;
 
 protected:
   /**
