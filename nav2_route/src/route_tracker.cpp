@@ -53,7 +53,6 @@ geometry_msgs::msg::PoseStamped RouteTracker::getRobotPose()
   return pose;
 }
 
-// TODO(sm) test and visualize this with dot products and window
 bool RouteTracker::nodeAchieved(
   const geometry_msgs::msg::PoseStamped & pose,
   RouteTrackingState & state,

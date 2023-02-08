@@ -99,12 +99,10 @@ nav2_util::CallbackReturn
 RouteServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
-
   compute_route_server_->activate();
   compute_and_track_route_server_->activate();
   graph_vis_publisher_->on_activate();
   graph_vis_publisher_->publish(utils::toMsg(graph_, route_frame_, this->now()));
-
   createBond();
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -113,11 +111,9 @@ nav2_util::CallbackReturn
 RouteServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
-
   compute_route_server_->deactivate();
   compute_and_track_route_server_->deactivate();
   graph_vis_publisher_->on_deactivate();
-
   destroyBond();
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -235,10 +231,10 @@ RouteServer::findPlanningDuration(const rclcpp::Time & start_time)
   return cycle_duration;
 }
 
-template<typename T>
+template<typename ActionT>
 bool
 RouteServer::isRequestValid(
-  std::shared_ptr<nav2_util::SimpleActionServer<T>> & action_server)
+  std::shared_ptr<nav2_util::SimpleActionServer<ActionT>> & action_server)
 {
   if (!action_server || !action_server->is_server_active()) {
     RCLCPP_DEBUG(get_logger(), "Action server unavailable or inactive. Stopping.");
@@ -254,135 +250,112 @@ RouteServer::isRequestValid(
   return true;
 }
 
-void
-RouteServer::computeRoute()
+void RouteServer::populateActionResult(
+  std::shared_ptr<ComputeRoute::Result> result,
+  const Route & route,
+  const nav_msgs::msg::Path & path,
+  const rclcpp::Duration & planning_duration)
 {
-  auto goal = compute_route_server_->get_current_goal();
-  auto result = std::make_shared<ComputeRouteResult>();
-  RCLCPP_INFO(get_logger(), "Computing route to goal.");
-
-  if (!isRequestValid(compute_route_server_)) {
-    return;
-  }
-
-  if (compute_route_server_->is_preempt_requested()) {
-    goal = compute_route_server_->accept_pending_goal();
-  }
-
-  try {
-    // Find the route
-    auto start_time = this->now();
-    Route route = findRoute(goal);
-
-    // Create a dense path for use and debugging visualization
-    result->route = utils::toMsg(route, route_frame_, this->now());
-    result->path = path_converter_->densify(route, route_frame_, this->now());
-    result->planning_time = findPlanningDuration(start_time);
-    compute_route_server_->succeeded_current(result);
-  } catch (nav2_core::NoValidRouteCouldBeFound & ex) {
-    exceptionWarning(goal, ex);
-    result->error_code = ComputeRouteGoal::NO_VALID_ROUTE;
-    compute_route_server_->terminate_current(result);
-  } catch (nav2_core::TimedOut & ex) {
-    exceptionWarning(goal, ex);
-    result->error_code = ComputeRouteGoal::TIMEOUT;
-    compute_route_server_->terminate_current(result);
-  } catch (nav2_core::RouteTFError & ex) {
-    exceptionWarning(goal, ex);
-    result->error_code = ComputeRouteGoal::TF_ERROR;
-    compute_route_server_->terminate_current(result);
-  } catch (nav2_core::NoValidGraph & ex) {
-    exceptionWarning(goal, ex);
-    result->error_code = ComputeRouteGoal::NO_VALID_GRAPH;
-    compute_route_server_->terminate_current(result);
-  } catch (nav2_core::IndeterminantNodesOnGraph & ex) {
-    exceptionWarning(goal, ex);
-    result->error_code = ComputeRouteGoal::INDETERMINANT_NODES_ON_GRAPH;
-    compute_route_server_->terminate_current(result);
-  } catch (nav2_core::RouteException & ex) {
-    exceptionWarning(goal, ex);
-    result->error_code = ComputeRouteGoal::UNKNOWN;
-    compute_route_server_->terminate_current(result);
-  } catch (std::exception & ex) {
-    exceptionWarning(goal, ex);
-    result->error_code = ComputeRouteGoal::UNKNOWN;
-    compute_route_server_->terminate_current(result);
-  }
+  result->route = utils::toMsg(route, route_frame_, this->now());
+  result->path = path;
+  result->planning_time = planning_duration;
 }
 
-// TODO combine these 2 functions to reduce duplication
-
+template<typename ActionT>
 void
-RouteServer::computeAndTrackRoute()
+RouteServer::processRouteRequest(
+  std::shared_ptr<nav2_util::SimpleActionServer<ActionT>> & action_server)
 {
-  auto goal = compute_and_track_route_server_->get_current_goal();
-  auto result = std::make_shared<ComputeAndTrackRouteResult>();
+  auto goal = action_server->get_current_goal();
+  auto result = std::make_shared<typename ActionT::Result>();
   ReroutingState rerouting_info;
-  RCLCPP_INFO(get_logger(), "Computing and tracking route to goal.");
 
   try {
     while (rclcpp::ok()) {
-      if (!isRequestValid(compute_and_track_route_server_)) {
+      if (!isRequestValid(action_server)) {
         return;
       }
 
-      if (compute_and_track_route_server_->is_preempt_requested()) {
-        RCLCPP_INFO(get_logger(), "Computing new and tracking preempted route to goal.");
-        goal = compute_and_track_route_server_->accept_pending_goal();
+      if (action_server->is_preempt_requested()) {
+        RCLCPP_INFO(get_logger(), "Computing new preempted route to goal.");
+        goal = action_server->accept_pending_goal();
         rerouting_info.reset();
       }
 
       // Find the route
       auto start_time = this->now();
-      // TODO(sm) prune passed objs in rerouting, provide optional start nodeid to override action?
       Route route = findRoute(goal, rerouting_info);
       auto path = path_converter_->densify(route, route_frame_, this->now());
-      findPlanningDuration(start_time);
+      auto planning_duration = findPlanningDuration(start_time);
 
-      // blocks until re-route requested or task completion, publishes feedback
-      switch (route_tracker_->trackRoute(route, path, rerouting_info)) {
-        case TrackerResult::COMPLETED:
-          compute_and_track_route_server_->succeeded_current(result);
-          return;
-        case TrackerResult::REROUTE:
-          break;
-        case TrackerResult::INTERRUPTED:
-          return;
+      if (std::is_same<ActionT, ComputeAndTrackRoute>::value) {
+        // blocks until re-route requested or task completion, publishes feedback
+        switch (route_tracker_->trackRoute(route, path, rerouting_info)) {
+          case TrackerResult::COMPLETED:
+            populateActionResult(result, route, path, planning_duration);
+            action_server->succeeded_current(result);
+            return;
+          case TrackerResult::REROUTE:
+            break;
+          case TrackerResult::INTERRUPTED:
+            return;
+        } 
+      } else {
+        // Return route if not tracking
+        populateActionResult(result, route, path, planning_duration);
+        action_server->succeeded_current(result);
+        return;
       }
     }
-  } catch (nav2_core::OperationFailed & ex) {
-    exceptionWarning(goal, ex);
-    result->error_code = ComputeAndTrackRouteGoal::OPERATION_FAILED;
-    compute_and_track_route_server_->terminate_current(result);
   } catch (nav2_core::NoValidRouteCouldBeFound & ex) {
     exceptionWarning(goal, ex);
-    result->error_code = ComputeAndTrackRouteGoal::NO_VALID_ROUTE;
-    compute_and_track_route_server_->terminate_current(result);
+    result->error_code = ActionT::Goal::NO_VALID_ROUTE;
+    action_server->terminate_current(result);
   } catch (nav2_core::TimedOut & ex) {
     exceptionWarning(goal, ex);
-    result->error_code = ComputeAndTrackRouteGoal::TIMEOUT;
-    compute_and_track_route_server_->terminate_current(result);
+    result->error_code = ActionT::Goal::TIMEOUT;
+    action_server->terminate_current(result);
   } catch (nav2_core::RouteTFError & ex) {
     exceptionWarning(goal, ex);
-    result->error_code = ComputeAndTrackRouteGoal::TF_ERROR;
-    compute_and_track_route_server_->terminate_current(result);
+    result->error_code = ActionT::Goal::TF_ERROR;
+    action_server->terminate_current(result);
   } catch (nav2_core::NoValidGraph & ex) {
     exceptionWarning(goal, ex);
-    result->error_code = ComputeAndTrackRouteGoal::NO_VALID_GRAPH;
-    compute_and_track_route_server_->terminate_current(result);
+    result->error_code = ActionT::Goal::NO_VALID_GRAPH;
+    action_server->terminate_current(result);
   } catch (nav2_core::IndeterminantNodesOnGraph & ex) {
     exceptionWarning(goal, ex);
-    result->error_code = ComputeAndTrackRouteGoal::INDETERMINANT_NODES_ON_GRAPH;
-    compute_and_track_route_server_->terminate_current(result);
+    result->error_code = ActionT::Goal::INDETERMINANT_NODES_ON_GRAPH;
+    action_server->terminate_current(result);
+  } catch (nav2_core::OperationFailed & ex) {
+    // A special case since Operation Failed is only in Compute & Track
+    // actions, specifying it to allow otherwise fully shared code
+    exceptionWarning(goal, ex);
+    result->error_code = ComputeAndTrackRoute::Goal::OPERATION_FAILED;
+    action_server->terminate_current(result);
   } catch (nav2_core::RouteException & ex) {
     exceptionWarning(goal, ex);
-    result->error_code = ComputeAndTrackRouteGoal::UNKNOWN;
-    compute_and_track_route_server_->terminate_current(result);
+    result->error_code = ActionT::Goal::UNKNOWN;
+    action_server->terminate_current(result);
   } catch (std::exception & ex) {
     exceptionWarning(goal, ex);
-    result->error_code = ComputeAndTrackRouteGoal::UNKNOWN;
-    compute_and_track_route_server_->terminate_current(result);
+    result->error_code = ActionT::Goal::UNKNOWN;
+    action_server->terminate_current(result);
   }
+}
+
+void
+RouteServer::computeRoute()
+{
+  RCLCPP_INFO(get_logger(), "Computing route to goal.");
+  processRouteRequest(compute_route_server_);
+}
+
+void
+RouteServer::computeAndTrackRoute()
+{
+  RCLCPP_INFO(get_logger(), "Computing and tracking route to goal.");
+  processRouteRequest(compute_and_track_route_server_);
 }
 
 void RouteServer::setRouteGraph(

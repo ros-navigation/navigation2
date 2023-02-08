@@ -140,6 +140,14 @@ protected:
     const ReroutingState & rerouting_info = ReroutingState());
 
   /**
+   * @brief Main processing called by both action server callbacks to centralize
+   * the great deal of shared code between them
+   */
+  template<typename ActionT>
+  void processRouteRequest(
+    std::shared_ptr<nav2_util::SimpleActionServer<ActionT>> & action_server);
+
+  /**
    * @brief Find the planning duration of the request and log warnings
    * @param start_time Start of planning time
    * @return Duration of planning time
@@ -151,8 +159,34 @@ protected:
    * @param action_server Actions server to check
    * @return if the request is valid
    */
-  template<typename T>
-  bool isRequestValid(std::shared_ptr<nav2_util::SimpleActionServer<T>> & action_server);
+  template<typename ActionT>
+  bool isRequestValid(std::shared_ptr<nav2_util::SimpleActionServer<ActionT>> & action_server);
+
+  /**
+   * @brief Populate result for compute route action
+   * @param result Result to populate
+   * @param route Route to use to populate result
+   * @param path Path to use to populate result
+   * @param planning_duration Time to create a valid route
+   */
+  void populateActionResult(
+    std::shared_ptr<ComputeRoute::Result> result,
+    const Route & route,
+    const nav_msgs::msg::Path & path,
+    const rclcpp::Duration & planning_duration);
+
+  /**
+   * @brief Populate result for compute and track route action
+   * @param result Result to populate
+   * @param route Route to use to populate result
+   * @param path Path to use to populate result
+   * @param planning_duration Time to create a valid route
+   */
+  void populateActionResult(
+    std::shared_ptr<ComputeAndTrackRoute::Result> /*result*/,
+    const Route & /*route*/,
+    const nav_msgs::msg::Path & /*path*/,
+    const rclcpp::Duration & /*planning_duration*/) {}
 
   /**
    * @brief The service callback to set a new route graph
