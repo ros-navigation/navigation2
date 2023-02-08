@@ -111,7 +111,10 @@ void PointCloud::getData(
   // Obtaining the transform to get data from source frame and time where it was received
   // to the base frame and current time
   if (!tf_transform_received) {
-    tf_transform_received = getTransform(data_->header.frame_id, data_->header.stamp, curr_time, tf_transform);
+    if (!getTransform(data_->header.frame_id, data_->header.stamp, curr_time, tf_transform)){
+      return;
+    }
+    tf_transform_received = true;
   }
 
   sensor_msgs::PointCloud2ConstIterator<float> iter_x(*data_, "x");

@@ -104,6 +104,8 @@ protected:
   sensor_msgs::msg::PointCloud2::ConstSharedPtr data_;
 
   // Transform from the data source frame to the robot base frame
+  // This TF is cached for performance considerations under the assumption
+  // that it is static
   tf2::Transform tf_transform;
   bool tf_transform_received;
 
