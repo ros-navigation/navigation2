@@ -36,7 +36,7 @@ PointCloud::PointCloud(
 : Source(
     node, source_name, tf_buffer, base_frame_id, global_frame_id,
     transform_tolerance, source_timeout),
-    data_(nullptr), tf_transform_received(false)
+  tf_transform_received(false), data_(nullptr)
 {
   RCLCPP_INFO(logger_, "[%s]: Creating PointCloud", source_name_.c_str());
 }

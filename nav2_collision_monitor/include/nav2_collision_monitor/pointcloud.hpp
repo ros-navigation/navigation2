@@ -71,6 +71,8 @@ public:
     const rclcpp::Time & curr_time,
     std::vector<Point> & data);
 
+  tf2::Transform tf_transform;
+  bool tf_transform_received;
 
 protected:
   /**
@@ -102,10 +104,6 @@ protected:
 
   /// @brief Latest data obtained from pointcloud
   sensor_msgs::msg::PointCloud2::ConstSharedPtr data_;
-
-  // Transform from the data source frame to the robot base frame
-  tf2::Transform tf_transform;
-  bool tf_transform_received;
 
   /// @brief Dynamic parameters handler
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
