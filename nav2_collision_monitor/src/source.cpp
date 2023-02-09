@@ -79,7 +79,6 @@ bool Source::sourceValid(
 bool Source::getTransform(
   const std::string & source_frame_id,
   const rclcpp::Time & source_time,
-  const rclcpp::Time & curr_time,
   tf2::Transform & tf2_transform) const
 {
   geometry_msgs::msg::TransformStamped transform;
@@ -88,10 +87,7 @@ bool Source::getTransform(
   try {
     // Obtaining the transform to get data from source to base frame.
     // This also considers the time shift between source and base.
-    transform = tf_buffer_->lookupTransform(
-      base_frame_id_, curr_time,
-      source_frame_id, source_time,
-      global_frame_id_, transform_tolerance_);
+    transform = tf_buffer_->lookupTransform(base_frame_id_, source_frame_id, source_time, transform_tolerance_);
   } catch (tf2::TransformException & e) {
     RCLCPP_ERROR(
       logger_,
