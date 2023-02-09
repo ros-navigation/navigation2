@@ -247,6 +247,14 @@
       <input_port name="server_timeout"> Server timeout </input_port>
     </Condition>
 
+    <Condition ID="WouldAControllerRecoveryHelp">
+      <input_port name="error_code">Error code</input_port>
+    </Condition>
+
+    <Condition ID="WouldAPlannerRecoveryHelp">
+      <input_port name="error_code">Error code</input_port>
+    </Condition>
+
     <!-- ############################### CONTROL NODES ################################ -->
     <Control ID="PipelineSequence"/>
 
