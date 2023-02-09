@@ -255,6 +255,15 @@
       <input_port name="error_code">Error code</input_port>
     </Condition>
 
+    <Condition ID="WouldASmootherRecoveryHelp">
+      <input_port name="error_code">Error code</input_port>
+    </Condition>
+
+    <Condition ID="AreErrorCodesPresent">
+      <input_port name="error_code">Error code</input_port>
+    </Condition>
+
+
     <!-- ############################### CONTROL NODES ################################ -->
     <Control ID="PipelineSequence"/>
 
