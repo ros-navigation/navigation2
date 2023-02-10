@@ -74,13 +74,14 @@ OperationResult CollisionMonitor::perform(
   const geometry_msgs::msg::PoseStamped & curr_pose,
   const Metadata * /*mdata*/)
 {
-  OperationResult result;
   // Not time yet to check or before getting to first route edge
   auto now = clock_->now();
   if (now - last_check_time_ < checking_duration_ || !curr_edge) {
-    return result;
+    return OperationResult();
   }
   last_check_time_ = now;
+
+  OperationResult result;
   getCostmap();
 
   float dist_checked = 0.0;

@@ -156,19 +156,21 @@ TODO document generous window b/c only used as a pre-condition + want dynamic be
 - [ ] test coverage: normlizd dot, goal intent, server, tracker
 
 
+- [ ] centralized 1 costmap to pass aroun dfor use (if possible): edge score, operation, selecting start/goal nodes with infra
+- [ ] use map for checking start/goal nodes for infra blockages not just NN. Evaluate K 
+
+
+
+
 - [ ] Create basic file format for graph + parser. Vector types (regions), recursion namespaces, structured types? Operations/metadata.
 - [ ] QGIS demo + plugins for editing and visualizing graphs
 
 
-- [ ] Quality: BT nodes, Python API, documentation, tutorial (bt change, plugin customize, file field examples). BT XML for first/last mile, freq. replanning, navigation using it, WPF, de-stucking? 
 
 
-- [ ] centralized 1 costmap to pass aroun dfor use (if possible): edge score, operation, selecting start/goal nodes with infra
-- [ ] use map for checking start/goal nodes for infra blockages not just NN. Evaluate K 
-
+- [ ] Quality: BT nodes, Python API, documentation, readme finish, tutorial (bt change, plugin customize, file field examples). BT XML for first/last mile, freq. replanning, navigation using it, WPF
 - [ ] demos with route -> global -> local. outdoor non-planar. to waypoint follower (GPS?) of nodes.
 
 # Questions
 
 - How can BT trigger BT node again if its still feedback-pending? preemption! Make sure works. + regular replanning and/or reroute BT node as a fallback to the controller server failing (add current edge to closed list?).
-- How to stop / pause robot in the server and/or the behavior tree? Clearance stuff
