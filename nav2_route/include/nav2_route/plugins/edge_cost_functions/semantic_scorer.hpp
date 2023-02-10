@@ -62,6 +62,20 @@ public:
   bool score(const EdgePtr edge, float & cost) override;
 
   /**
+   * @brief Scores graph object based on metadata's semantic value at key
+   * @param mdata Metadata
+   * @param score to add to
+   */
+  void metadataValueScorer(Metadata & mdata, float & score);
+
+  /**
+   * @brief Scores graph object based on metadata's key values
+   * @param mdata Metadata
+   * @param score to add to
+   */
+  void metadataKeyScorer(Metadata & mdata, float & score);
+
+  /**
    * @brief Get name of the plugin for parameter scope mapping
    * @return Name
    */

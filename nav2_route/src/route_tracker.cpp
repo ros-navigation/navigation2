@@ -69,36 +69,33 @@ bool RouteTracker::nodeAchieved(
     return true;
   }
 
-  // If we were within radius and now not, consider node achieved in case we just barely kiss
-  // the radial threshold set by the user coming in at an odd angle due to dynamic behavior
+  // If was within radius and now not, consider node achieved
   if (!in_radius && state.within_radius) {
     return true;
   }
 
   state.within_radius = in_radius;
 
-  // If start or end node, use the radius check only since the final node may not formally pass
-  // the vectorized threshold depending on the local trajectory / goal checker configurations.
-  // The start node has no last_node for computing the vector bisector. If this is an issue
-  // for any users, please file a ticket to discuss.
+  // If start or end node, use the radius check only since the final node may not pass
+  // threshold depending on the configurations. The start node has no last_node for
+  // computing the vector bisector. If this is an issue, please file a ticket to discuss.
   if (isStartOrEndNode(state.route_edges_idx)) {
     return state.within_radius;
   }
 
-  // If we're within the radius, we can evaluate the unit distance vector from the node w.r.t. the
-  // unit vector bisecting the last and current edges to find the average whose orthogonal is an
-  // imaginery line representing the migration from one edge's spatial domain to the other.
-  // Thus, when the dot product is positive, it means that there exists a projection between
+  // We can evaluate the unit distance vector from the node w.r.t. the unit vector bisecting
+  // the last and current edges to find the average whose orthogonal is an imaginery
+  // line representing the migration from one edge's spatial domain to the other.
+  // When the dot product is positive, it means that there exists a projection between
   // the vectors and that the robot position has passed this imaginary orthogonal line.
-  // This enables a more refined definition of when a node is considered achieved while enabling
-  // the use of dynamic behavior local trajectory planners to deviate from the path non-trivially
+  // This enables a more refined definition of when a node is considered achieved while
+  // enabling the use of dynamic behavior that may deviate from the path non-trivially
   if (state.within_radius) {
     NodePtr last_node = state.current_edge->start;
     const double nx = state.next_node->coords.x - last_node->coords.x;
     const double ny = state.next_node->coords.y - last_node->coords.y;
     const double n_mag = std::sqrt(nx * nx + ny * ny);
 
-    // If not the next node is not the route's end, then there exist another edge
     NodePtr future_next_node = route.edges[state.route_edges_idx + 1]->end;
     const double mx = future_next_node->coords.x - state.next_node->coords.x;
     const double my = future_next_node->coords.y - state.next_node->coords.y;
@@ -112,8 +109,7 @@ bool RouteTracker::nodeAchieved(
     // Unnormalized Bisector = |n|*m + |m|*n
     const double bx = nx * m_mag + mx * n_mag;
     const double by = ny * m_mag + my * n_mag;
-    const double b_mag = std::sqrt(bx * bx + by * by);
-    return (dx / dist_mag) * (bx / b_mag) + (dy / dist_mag) * (by / b_mag) >= 0 ? true : false;
+    return utils::normalizedDot(bx, by, dx, dy) >= 0 ? true : false;
   }
 
   return false;
@@ -208,9 +204,8 @@ TrackerResult RouteTracker::trackRoute(
       }
 
       if (state.last_node) {
-        rerouting_info.curr_start_id = state.last_node->nodeid;
+        rerouting_info.rerouting_start_id = state.last_node->nodeid;
       }
-
       RCLCPP_INFO(logger_, "Rerouting requested by route tracking operations!");
       return TrackerResult::REROUTE;
     }

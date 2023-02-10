@@ -55,10 +55,31 @@ public:
    * @param node Node to check
    * @param edge_entered Edge entered to check for ON_ENTER events
    * @param edge_exit Edge exite to check for ON_EXIT events
-   * @return OperationsPtr A vector of operation pointers to execute
+   * @return OperationPtrs A vector of operation pointers to execute
    */
-  OperationsPtr findGraphOperationsToProcess(
+  OperationPtrs findGraphOperations(
     const NodePtr node, const EdgePtr edge_enter, const EdgePtr edge_exit);
+
+  /**
+   * @brief Finds the set of operations stored in graph objects
+   * @param node op_vec Operations vector to check
+   * @param trigger Trigger for which operations in op_vec should be included
+   * @param operations Output vector populated with relavent operations
+   */
+  template<typename T>
+  void findGraphOperationsToProcess(
+    T & obj,
+    const OperationTrigger & trigger,
+    OperationPtrs & operations);
+
+  /**
+   * @brief Updates manager result state by an individual operation's result
+   * @param name Operations' name
+   * @param op_result Operations' result
+   * @param result Manager's result to update
+   */
+  void updateResult(
+    const std::string & name, const OperationResult & op_result, OperationsResult & result);
 
   /**
    * @brief Processes the operations at this tracker state

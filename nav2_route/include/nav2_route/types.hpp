@@ -111,7 +111,7 @@ struct Operation
 };
 
 typedef std::vector<Operation> Operations;
-typedef std::vector<Operation *> OperationsPtr;
+typedef std::vector<Operation *> OperationPtrs;
 
 /**
  * @struct nav2_route::OperationsResult
@@ -230,12 +230,12 @@ struct RouteTrackingState
  */
 struct ReroutingState
 {
-  unsigned int curr_start_id{std::numeric_limits<unsigned int>::max()};
+  unsigned int rerouting_start_id{std::numeric_limits<unsigned int>::max()};
   std::vector<unsigned int> blocked_ids;
 
   void reset()
   {
-    curr_start_id = std::numeric_limits<unsigned int>::max();
+    rerouting_start_id = std::numeric_limits<unsigned int>::max();
     blocked_ids.clear();
   }
 };

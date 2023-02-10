@@ -40,9 +40,9 @@
 #include "nav2_route/utils.hpp"
 #include "nav2_route/graph_file_loader.hpp"
 #include "nav2_route/route_planner.hpp"
-#include "nav2_route/node_spatial_tree.hpp"
 #include "nav2_route/path_converter.hpp"
 #include "nav2_route/route_tracker.hpp"
+#include "nav2_route/goal_intent_extractor.hpp"
 
 namespace nav2_route
 {
@@ -118,15 +118,7 @@ protected:
   void computeAndTrackRoute();
 
   /**
-   * @brief Finds the start and goal Node locations in the graph closest to the request
-   * @param The request goal information
-   * @return A pair of NodeIDs belonging to the start and goal nodes for route search
-   */
-  template<typename GoalT>
-  NodeExtents findStartandGoalNodeLocations(const std::shared_ptr<const GoalT> goal);
-
-  /**
-   * @brief Abstract method combining findStartandGoalNodeLocations and the route planner
+   * @brief Abstract method combining finding the starting/ending nodes and the route planner
    * to find the Node locations of interest and route to the goal
    * @param goal The request goal information
    * @param blocked_ids The IDs of blocked graphs / edges
@@ -183,7 +175,7 @@ protected:
    * @param planning_duration Time to create a valid route
    */
   void populateActionResult(
-    std::shared_ptr<ComputeAndTrackRoute::Result> /*result*/,
+    std::shared_ptr<ComputeAndTrackRoute::Result>/*result*/,
     const Route & /*route*/,
     const nav_msgs::msg::Path & /*path*/,
     const rclcpp::Duration & /*planning_duration*/) {}
@@ -221,10 +213,10 @@ protected:
 
   // Interal tools
   std::shared_ptr<GraphFileLoader> graph_loader_;
-  std::shared_ptr<NodeSpatialTree> node_spatial_tree_;
   std::shared_ptr<RoutePlanner> route_planner_;
   std::shared_ptr<RouteTracker> route_tracker_;
   std::shared_ptr<PathConverter> path_converter_;
+  std::shared_ptr<GoalIntentExtractor> goal_intent_extractor_;
 
   // Data
   Graph graph_;

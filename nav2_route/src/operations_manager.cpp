@@ -71,35 +71,44 @@ OperationsManager::OperationsManager(nav2_util::LifecycleNode::SharedPtr node)
   }
 }
 
-OperationsPtr OperationsManager::findGraphOperationsToProcess(
-  const NodePtr node, const EdgePtr edge_enter, const EdgePtr edge_exit)
+template<typename T>
+void OperationsManager::findGraphOperationsToProcess(
+  T & obj, const OperationTrigger & trigger,
+  OperationPtrs & operations)
 {
-  OperationsPtr operations;
-  Operations::iterator it;
-  for (it = node->operations.begin(); it != node->operations.end(); ++it) {
-    if (it->trigger == OperationTrigger::NODE) {
+  if (!obj) {
+    return;
+  }
+
+  Operations & op_vec = obj->operations;
+  for (Operations::iterator it = op_vec.begin(); it != op_vec.end(); ++it) {
+    if (it->trigger == trigger) {
       operations.push_back(&(*it));
     }
   }
-  if (edge_enter) {
-    for (it = edge_enter->operations.begin(); it != edge_enter->operations.end(); ++it) {
-      if (it->trigger == OperationTrigger::ON_ENTER) {
-        operations.push_back(&(*it));
-      }
-    }
-  }
-  if (edge_exit) {
-    for (it = edge_exit->operations.begin(); it != edge_exit->operations.end(); ++it) {
-      if (it->trigger == OperationTrigger::ON_EXIT) {
-        operations.push_back(&(*it));
-      }
-    }
-  }
-  return operations;
+}
+
+OperationPtrs OperationsManager::findGraphOperations(
+  const NodePtr node, const EdgePtr edge_enter, const EdgePtr edge_exit)
+{
+  OperationPtrs ops;
+  findGraphOperationsToProcess(node, OperationTrigger::NODE, ops);
+  findGraphOperationsToProcess(edge_enter, OperationTrigger::ON_ENTER, ops);
+  findGraphOperationsToProcess(edge_exit, OperationTrigger::ON_EXIT, ops);
+  return ops;
+}
+
+void OperationsManager::updateResult(
+  const std::string & name, const OperationResult & op_result, OperationsResult & result)
+{
+  result.reroute = result.reroute || op_result.reroute;
+  result.blocked_ids.insert(
+    result.blocked_ids.end(), op_result.blocked_ids.begin(), op_result.blocked_ids.end());
+  result.operations_triggered.push_back(name);
 }
 
 void OperationsManager::processOperationsPluginVector(
-  const std::vector<RouteOperation::Ptr> & operations,
+  const std::vector<RouteOperation::Ptr> & route_operations,
   OperationsResult & result,
   const NodePtr node,
   const EdgePtr edge_entered,
@@ -107,13 +116,10 @@ void OperationsManager::processOperationsPluginVector(
   const Route & route,
   const geometry_msgs::msg::PoseStamped & pose)
 {
-  for (OperationsIter it = operations.begin(); it != operations.end(); ++it) {
+  for (OperationsIter it = route_operations.begin(); it != route_operations.end(); ++it) {
     const RouteOperation::Ptr & plugin = *it;
     OperationResult op_result = plugin->perform(node, edge_entered, edge_exited, route, pose);
-    result.reroute = result.reroute || op_result.reroute;
-    result.blocked_ids.insert(
-      result.blocked_ids.end(), op_result.blocked_ids.begin(), op_result.blocked_ids.end());
-    result.operations_triggered.push_back(plugin->getName());
+    updateResult(plugin->getName(), op_result, result);
   }
 }
 
@@ -132,17 +138,13 @@ OperationsResult OperationsManager::process(
 
   if (status_change) {
     // Process operations defined in the navigation graph at node or edge
-    OperationsPtr operations = findGraphOperationsToProcess(node, edge_entered, edge_exited);
+    OperationPtrs operations = findGraphOperations(node, edge_entered, edge_exited);
     for (unsigned int i = 0; i != operations.size(); i++) {
       auto op = graph_operations_.find(operations[i]->type);
       if (op != graph_operations_.end()) {
-        RouteOperation::Ptr & plugin = op->second;
-        OperationResult op_result = plugin->perform(
+        OperationResult op_result = op->second->perform(
           node, edge_entered, edge_exited, route, pose, &operations[i]->metadata);
-        result.reroute = result.reroute || op_result.reroute;
-        result.blocked_ids.insert(
-          result.blocked_ids.end(), op_result.blocked_ids.begin(), op_result.blocked_ids.end());
-        result.operations_triggered.push_back(plugin->getName());
+        updateResult(op->second->getName(), op_result, result);
       } else if (use_feedback_operations_) {
         RCLCPP_INFO(
           logger_, "Operation '%s' should be called from action feedback!",
@@ -163,7 +165,6 @@ OperationsResult OperationsManager::process(
   // Process operations which trigger regardless of status change or nodes / edges
   processOperationsPluginVector(
     query_operations_, result, node, edge_entered, edge_exited, route, pose);
-
   return result;
 }
 

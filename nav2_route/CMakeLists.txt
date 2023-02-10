@@ -51,6 +51,7 @@ add_library(${library_name} SHARED
   src/node_spatial_tree.cpp
   src/path_converter.cpp
   src/graph_file_loader.cpp
+  src/goal_intent_extractor.cpp
 )
 
 ament_target_dependencies(${library_name}

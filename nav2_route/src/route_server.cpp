@@ -75,11 +75,12 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
       return nav2_util::CallbackReturn::FAILURE;
     }
 
-    node_spatial_tree_ = std::make_shared<NodeSpatialTree>();
-    node_spatial_tree_->computeTree(graph_);
-
     route_planner_ = std::make_shared<RoutePlanner>();
     route_planner_->configure(node);
+
+    goal_intent_extractor_ = std::make_shared<GoalIntentExtractor>();
+    goal_intent_extractor_->configure(
+      node, graph_, &id_to_graph_map_, tf_, route_frame_, base_frame_);
 
     route_tracker_ = std::make_shared<RouteTracker>();
     route_tracker_->configure(
@@ -124,8 +125,13 @@ RouteServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Cleaning up");
   compute_route_server_.reset();
   compute_and_track_route_server_.reset();
-  graph_vis_publisher_.reset();
   set_graph_service_.reset();
+  graph_loader_.reset();
+  route_planner_.reset();
+  route_tracker_.reset();
+  path_converter_.reset();
+  goal_intent_extractor_.reset();
+  graph_vis_publisher_.reset();
   transform_listener_.reset();
   tf_.reset();
   graph_.clear();
@@ -140,68 +146,15 @@ RouteServer::on_shutdown(const rclcpp_lifecycle::State &)
 }
 
 template<typename GoalT>
-NodeExtents
-RouteServer::findStartandGoalNodeLocations(const std::shared_ptr<const GoalT> goal)
-{
-  // If not using the poses, then use the requests Node IDs to establish start and goal
-  if (!goal->use_poses) {
-    return {id_to_graph_map_.at(goal->start_id), id_to_graph_map_.at(goal->goal_id)};
-  }
-
-  // Find request start pose
-  geometry_msgs::msg::PoseStamped start_pose, goal_pose = goal->goal;
-  if (goal->use_start) {
-    start_pose = goal->start;
-  } else {
-    if (!nav2_util::getCurrentPose(start_pose, *tf_, route_frame_, base_frame_)) {
-      throw nav2_core::RouteTFError("Failed to obtain starting pose in: " + route_frame_);
-    }
-  }
-
-  // If start or goal not provided in route_frame, transform
-  if (start_pose.header.frame_id != route_frame_) {
-    RCLCPP_INFO(
-      get_logger(),
-      "Request start pose not in %s frame. Converting %s to route server frame.",
-      start_pose.header.frame_id.c_str(), route_frame_.c_str());
-    if (!nav2_util::transformPoseInTargetFrame(start_pose, start_pose, *tf_, route_frame_)) {
-      throw nav2_core::RouteTFError("Failed to transform starting pose to: " + route_frame_);
-    }
-  }
-
-  if (goal_pose.header.frame_id != route_frame_) {
-    RCLCPP_INFO(
-      get_logger(),
-      "Request goal pose not in %s frame. Converting %s to route server frame.",
-      start_pose.header.frame_id.c_str(), route_frame_.c_str());
-    if (!nav2_util::transformPoseInTargetFrame(goal_pose, goal_pose, *tf_, route_frame_) ) {
-      throw nav2_core::RouteTFError("Failed to transform goal pose to: " + route_frame_);
-    }
-  }
-
-  // Find closest route graph nodes to start and goal to plan between.
-  // Note that these are the location indices in the graph
-  unsigned int start_route = 0, end_route = 0;
-  if (!node_spatial_tree_->findNearestGraphNodeToPose(start_pose, start_route) ||
-    !node_spatial_tree_->findNearestGraphNodeToPose(goal_pose, end_route))
-  {
-    throw nav2_core::IndeterminantNodesOnGraph(
-            "Could not determine node closest to start or goal pose requested!");
-  }
-
-  return {start_route, end_route};
-}
-
-template<typename GoalT>
 Route RouteServer::findRoute(
   const std::shared_ptr<const GoalT> goal,
   const ReroutingState & rerouting_info)
 {
   // Find the search boundaries
-  auto [start_route, end_route] = findStartandGoalNodeLocations(goal);
+  auto [start_route, end_route] = goal_intent_extractor_->findStartandGoal(goal);
 
-  if (rerouting_info.curr_start_id != std::numeric_limits<unsigned int>::max()) {
-    start_route = id_to_graph_map_.at(rerouting_info.curr_start_id);
+  if (rerouting_info.rerouting_start_id != std::numeric_limits<unsigned int>::max()) {
+    start_route = id_to_graph_map_.at(rerouting_info.rerouting_start_id);
   }
 
   Route route;
@@ -214,7 +167,7 @@ Route RouteServer::findRoute(
     route = route_planner_->findRoute(graph_, start_route, end_route, rerouting_info.blocked_ids);
   }
 
-  return route;
+  return goal_intent_extractor_->pruneStartandGoal(route, goal);
 }
 
 rclcpp::Duration
@@ -299,7 +252,7 @@ RouteServer::processRouteRequest(
             break;
           case TrackerResult::INTERRUPTED:
             return;
-        } 
+        }
       } else {
         // Return route if not tracking
         populateActionResult(result, route, path, planning_duration);
@@ -373,7 +326,7 @@ void RouteServer::setRouteGraph(
   }
 
   // Re-compute the graph's kd-tree and publish new graph
-  node_spatial_tree_->computeTree(graph_);
+  goal_intent_extractor_->setGraph(graph_);
   graph_vis_publisher_->publish(utils::toMsg(graph_, route_frame_, this->now()));
   response->success = true;
 }

@@ -53,11 +53,11 @@ TEST(OperationsManagerTest, test_find_operations)
   EdgePtr ent{nullptr}, exit{nullptr};
 
   // No valid nodes or edges, should fail to find anything but not crash
-  EXPECT_EQ(manager.findGraphOperationsToProcess(&node2, ent, exit).size(), 0u);
+  EXPECT_EQ(manager.findGraphOperations(&node2, ent, exit).size(), 0u);
 
   // Still shouldn't find anything, but without nullptrs so can evaluate
   DirectionalEdge enter, exit2;
-  EXPECT_EQ(manager.findGraphOperationsToProcess(&node2, &enter, &enter).size(), 0u);
+  EXPECT_EQ(manager.findGraphOperations(&node2, &enter, &enter).size(), 0u);
 
   // Try again with some operations in the node and edge (2x-ed)
   Operation op, op2;
@@ -69,16 +69,16 @@ TEST(OperationsManagerTest, test_find_operations)
   op2.type = "test2";
   op2.trigger = OperationTrigger::ON_EXIT;
   exit2.operations.push_back(op2);
-  EXPECT_EQ(manager.findGraphOperationsToProcess(&node2, &enter, &exit2).size(), 3u);
+  EXPECT_EQ(manager.findGraphOperations(&node2, &enter, &exit2).size(), 3u);
 
   // Again, but now the triggers are inverted, so shouldn't be returned except node2
   enter.operations[0].trigger = OperationTrigger::ON_EXIT;
   exit2.operations[0].trigger = OperationTrigger::ON_ENTER;
-  EXPECT_EQ(manager.findGraphOperationsToProcess(&node2, &enter, &exit2).size(), 1u);
+  EXPECT_EQ(manager.findGraphOperations(&node2, &enter, &exit2).size(), 1u);
 
   // Now, should be empty
   node2.operations[0].trigger = OperationTrigger::ON_ENTER;
-  EXPECT_EQ(manager.findGraphOperationsToProcess(&node2, &enter, &exit2).size(), 0u);
+  EXPECT_EQ(manager.findGraphOperations(&node2, &enter, &exit2).size(), 0u);
 }
 
 TEST(OperationsManagerTest, test_find_operations_failure2)
