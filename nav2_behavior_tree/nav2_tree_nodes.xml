@@ -261,6 +261,7 @@
 
     <Condition ID="AreErrorCodesPresent">
       <input_port name="error_code">Error code</input_port>
+      <input_port name="error_codes_to_check">Error codes to check, user defined</input_port>
     </Condition>
 
 
