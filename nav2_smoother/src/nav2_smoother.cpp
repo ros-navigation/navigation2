@@ -317,6 +317,10 @@ void SmootherServer::smoothPlan()
     RCLCPP_ERROR(this->get_logger(), e.what());
     action_server_->terminate_current();
     return;
+  } catch (std::exception & ex) {
+    RCLCPP_ERROR(this->get_logger(), "%s", ex.what());
+    action_server_->terminate_current(result);
+    return;
   }
 }
 

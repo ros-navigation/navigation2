@@ -23,7 +23,7 @@ smoother_server:
       minimum_turning_radius: 0.40  # minimum turning radius the robot can perform. Can be set to 0.0 (or w_curve can be set to 0.0 with the same effect) for diff-drive/holonomic robots
       w_curve: 30.0                 # weight to enforce minimum_turning_radius
       w_dist: 0.0                   # weight to bind path to original as optional replacement for cost weight
-      w_smooth: 15000.0             # weight to maximize smoothness of path
+      w_smooth: 2000000.0           # weight to maximize smoothness of path
       w_cost: 0.015                 # weight to steer robot away from collision and cost
 
       # Parameters used to improve obstacle avoidance near cusps (forward/reverse movement changes)
