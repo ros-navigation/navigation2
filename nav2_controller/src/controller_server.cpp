@@ -414,7 +414,6 @@ void ControllerServer::computeControl()
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
     publishZeroVelocity();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
-    result->error_code = Action::Goal::UNKNOWN;
     action_server_->terminate_current(result);
     return;
   }
