@@ -31,7 +31,7 @@ GraphLoader::GraphLoader(
   tf_ = tf;
   route_frame_ = frame;
 
-  // TODO(jw): Don't set defult
+  // TODO(jw): Don't set default
   nav2_util::declare_parameter_if_not_declared(
     node, "graph_filepath", rclcpp::ParameterValue(
       ament_index_cpp::get_package_share_directory("nav2_route") +
