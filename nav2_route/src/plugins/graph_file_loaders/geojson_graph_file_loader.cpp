@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <filesystem>
 #include <memory>
 #include <string>
 #include <vector>
@@ -33,19 +32,18 @@ void GeoJsonGraphFileLoader::configure(
 bool GeoJsonGraphFileLoader::loadGraphFromFile(
   Graph & graph, GraphToIDMap & graph_to_id_map, std::string filepath)
 {
-  if (!fileExists(filepath)) {
-    RCLCPP_ERROR(logger_, "Failed to find file at %s", filepath.c_str());
+  std::ifstream graph_file(filepath);
+  Json geojson_graph;
+
+  try {
+    geojson_graph = Json::parse(graph_file);
+  } catch (Json::parse_error & ex) {
+    RCLCPP_ERROR(logger_, "Failed to parse %s: %s", filepath.c_str(), ex.what());
     return false;
   }
 
-  std::ifstream graph_file(filepath);
-
-  Json graph_geojson;
-  graph_file >> graph_geojson;
-
-  auto features = graph_geojson["features"];
-  std::vector<Json> nodes;
-  std::vector<Json> edges;
+  auto features = geojson_graph["features"];
+  std::vector<Json> nodes, edges;
   getGraphElements(features, nodes, edges);
 
   if (nodes.empty()) {
@@ -77,8 +75,7 @@ void GeoJsonGraphFileLoader::getGraphElements(
   for (const auto & feature : features) {
     if (feature["geometry"]["type"] == "Point") {
       nodes.emplace_back(feature);
-    }
-    if (feature["geometry"]["type"] == "MultiLineString") {
+    } else if (feature["geometry"]["type"] == "MultiLineString") {
       edges.emplace_back(feature);
     }
   }
@@ -90,11 +87,18 @@ void GeoJsonGraphFileLoader::addNodesToGraph(
   int idx = 0;
   for (const auto & node : nodes) {
     // Required data
-    unsigned int id = node["properties"]["id"];
-    std::string frame = node["properties"]["frame"];
-    float x = node["geometry"]["coordinates"][0];
-    float y = node["geometry"]["coordinates"][1];
+    Json properties = node["properties"];
+    unsigned int id = properties["id"];
+
+    if (properties.contains("frame")) {
+      graph[id].coords.frame_id = properties["frame"];
+    }
     graph[id].nodeid = id;
+
+    Json geometry = node["geometry"];
+    float x = geometry["coordinates"][0];
+    float y = geometry["coordinates"][1];
+
     graph[id].coords.x = x;
     graph[id].coords.y = y;
     graph_to_id_map[graph[idx].nodeid] = idx;
@@ -105,7 +109,6 @@ void GeoJsonGraphFileLoader::addNodesToGraph(
 void GeoJsonGraphFileLoader::addEdgesToGraph(
   Graph & graph, GraphToIDMap & graph_to_id_map, std::vector<Json> & edges)
 {
-  nav2_route::EdgeCost edge_cost;
   for (const auto & edge : edges) {
     // Required data
     const auto edge_properties = edge["properties"];
@@ -113,7 +116,20 @@ void GeoJsonGraphFileLoader::addEdgesToGraph(
     unsigned int start_id = edge_properties["startid"];
     unsigned int end_id = edge_properties["endid"];
 
+    if (graph_to_id_map.find(start_id) == graph_to_id_map.end()) {
+      RCLCPP_ERROR(logger_, "Start id %u does not exist for edge id %u", start_id, id);
+      throw std::runtime_error("Start id does not exist");
+    }
+
+    if (graph_to_id_map.find(end_id) == graph_to_id_map.end()) {
+      RCLCPP_ERROR(logger_, "End id of %u does not exist for edge id %u", end_id, id);
+      throw std::runtime_error("End id does not exist");
+    }
+
     // Recommended data
+
+    // Edge Cost
+    nav2_route::EdgeCost edge_cost;
     if (edge_properties.contains("cost")) {
       edge_cost.cost = edge_properties["cost"];
     }

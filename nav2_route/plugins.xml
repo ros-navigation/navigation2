@@ -49,8 +49,10 @@
   <library path="graph_file_loaders">
     <class type="nav2_route::GeoJsonGraphFileLoader" base_class_type="nav2_route::GraphFileLoader">
       <description>Parse the geojson graph file into the graph data type</description>
-  <library path="route_operations">
+    </class>
+  </library>
 
+  <library path="route_operations">
     <class type="nav2_route::CollisionMonitor" base_class_type="nav2_route::RouteOperation">
       <description>Route operation to periodically check a costmap for localized viability of the route</description>
     </class>

@@ -71,7 +71,7 @@ public:
    * @param filepath file to check
    * @return bool If the file exists
    */
-  virtual inline bool fileExists(const std::string & filepath) = 0;
+  virtual bool fileExists(const std::string & filepath) = 0;
 };
 }  // namespace nav2_route
 

@@ -53,7 +53,7 @@ GraphLoader::GraphLoader(
 
   // Create graph file loader plugin
   try {
-    std::string plugin_type_ = nav2_util::get_plugin_type_param(node, graph_file_loader_id);
+    plugin_type_ = nav2_util::get_plugin_type_param(node, graph_file_loader_id);
     GraphFileLoader::Ptr graph_parser = plugin_loader_.createSharedInstance((plugin_type_));
     RCLCPP_INFO(
       logger_, "Created GraphFileLoader %s of type %s",
@@ -85,7 +85,7 @@ bool GraphLoader::loadGraphFromFile(
     RCLCPP_ERROR(logger_, "The filepath %s does not exist", filepath.c_str());
     return false;
   }
-  RCLCPP_DEBUG(
+  RCLCPP_INFO(
     logger_,
     "Loading graph file from %s, by parser %s", filepath.c_str(), plugin_type_.c_str());
   result = graph_file_loader_->loadGraphFromFile(graph, graph_to_id_map, filepath);

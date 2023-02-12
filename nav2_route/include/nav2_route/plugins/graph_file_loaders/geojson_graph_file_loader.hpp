@@ -68,7 +68,7 @@ public:
  * @param filepath file to check
  * @return bool If the file exists
  */
-  inline bool fileExists(const std::string & filepath) override;
+  bool fileExists(const std::string & filepath) override;
 
 protected:
   /**
