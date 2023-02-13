@@ -88,19 +88,15 @@ void GeoJsonGraphFileLoader::addNodesToGraph(
   for (const auto & node : nodes) {
     // Required data
     Json properties = node["properties"];
-    unsigned int id = properties["id"];
 
     if (properties.contains("frame")) {
-      graph[id].coords.frame_id = properties["frame"];
+      graph[idx].coords.frame_id = properties["frame"];
     }
-    graph[id].nodeid = id;
+    graph[idx].nodeid = properties["id"];
 
     Json geometry = node["geometry"];
-    float x = geometry["coordinates"][0];
-    float y = geometry["coordinates"][1];
-
-    graph[id].coords.x = x;
-    graph[id].coords.y = y;
+    graph[idx].coords.x = geometry["coordinates"][0];
+    graph[idx].coords.y = geometry["coordinates"][1];
     graph_to_id_map[graph[idx].nodeid] = idx;
     idx++;
   }
@@ -118,12 +114,12 @@ void GeoJsonGraphFileLoader::addEdgesToGraph(
 
     if (graph_to_id_map.find(start_id) == graph_to_id_map.end()) {
       RCLCPP_ERROR(logger_, "Start id %u does not exist for edge id %u", start_id, id);
-      throw std::runtime_error("Start id does not exist");
+      throw nav2_core::NoValidGraph("Start id does not exist");
     }
 
     if (graph_to_id_map.find(end_id) == graph_to_id_map.end()) {
       RCLCPP_ERROR(logger_, "End id of %u does not exist for edge id %u", end_id, id);
-      throw std::runtime_error("End id does not exist");
+      throw nav2_core::NoValidGraph("End id does not exist");
     }
 
     // Recommended data

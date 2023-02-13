@@ -74,7 +74,7 @@ bool GraphLoader::loadGraphFromFile(
   std::string filepath)
 {
   if (filepath.empty()) {
-    RCLCPP_INFO(
+    RCLCPP_DEBUG(
       logger_, "The graph filepath was not provided. "
       "Setting to %s", graph_filepath_.c_str());
     filepath = graph_filepath_;

@@ -17,6 +17,7 @@
 #include <vector>
 #include <nlohmann/json.hpp>
 
+#include "nav2_core/route_exceptions.hpp"
 #include "nav2_route/interfaces/graph_file_loader.hpp"
 
 #ifndef NAV2_ROUTE__PLUGINS__GRAPH_FILE_LOADERS__GEOJSON_GRAPH_FILE_LOADER_HPP_
