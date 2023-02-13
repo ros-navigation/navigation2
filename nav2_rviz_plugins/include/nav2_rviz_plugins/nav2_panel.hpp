@@ -187,10 +187,12 @@ private:
   QLabel * imgDisplayLabel_{nullptr};
 
   // The following states are added to allow for the state of the button to only expose reset
-  // while the NavigateToPoses action is not active. While running, the user will be allowed to
-  // cancel the action. The ROSActionTransition allows for the state of the action to be detected
+  // while neither the NavigateToPoses action nor FollowWaypoints are active. While running, 
+  // the user will be allowed to cancel the action. 
+  // The ROSActionTransition allows for the state of the action to be detected
   // and the button state to change automatically.
-  QState * running_{nullptr};
+  QState * running_nav_through_poses{nullptr};
+  QState * running_follow_waypoints{nullptr};
   QState * canceled_{nullptr};
   // The following states are added to allow to collect several poses to perform a waypoint-mode
   // navigation or navigate through poses mode.
