@@ -153,9 +153,9 @@ TODO document generous window b/c only used as a pre-condition + want dynamic be
 # Steve's TODO list
 
 - [ ] live route analyzer working + plugins + rerouting + pruning start at reroute
-- [ ] test coverage: normlizd dot, goal intent, server, tracker
 
 
+- [ ] test coverage: server, tracker
 - [ ] centralized 1 costmap to pass aroun dfor use (if possible): edge score, operation, selecting start/goal nodes with infra
 - [ ] use map for checking start/goal nodes for infra blockages not just NN. Evaluate K 
 
@@ -164,7 +164,6 @@ TODO document generous window b/c only used as a pre-condition + want dynamic be
 
 - [ ] Create basic file format for graph + parser. Vector types (regions), recursion namespaces, structured types? Operations/metadata.
 - [ ] QGIS demo + plugins for editing and visualizing graphs
-
 
 
 

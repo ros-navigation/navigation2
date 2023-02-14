@@ -326,7 +326,7 @@ void RouteServer::setRouteGraph(
   }
 
   // Re-compute the graph's kd-tree and publish new graph
-  goal_intent_extractor_->setGraph(graph_);
+  goal_intent_extractor_->setGraph(graph_, &id_to_graph_map_);
   graph_vis_publisher_->publish(utils::toMsg(graph_, route_frame_, this->now()));
   response->success = true;
 }

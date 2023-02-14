@@ -56,10 +56,12 @@ TEST(TypesTest, test_search_state)
   DirectionalEdge edge;
   SearchState state;
   state.parent_edge = &edge;
-  state.cost = 25;
+  state.integrated_cost = 25;
+  state.traversal_cost = 250;
 
   state.reset();
-  EXPECT_EQ(state.cost, std::numeric_limits<float>::max());
+  EXPECT_EQ(state.integrated_cost, std::numeric_limits<float>::max());
+  EXPECT_EQ(state.traversal_cost, std::numeric_limits<float>::max());
   EXPECT_EQ(state.parent_edge, nullptr);
 }
 
@@ -167,4 +169,49 @@ TEST(UtilsTest, test_to_visualization_msg_conversion)
         (marker.type == visualization_msgs::msg::Marker::SPHERE));
     }
   }
+}
+
+TEST(UtilsTest, test_normalized_dot)
+{
+  // Vectors are orthogonal
+  float v1x = 0;
+  float v1y = 1;
+  float v2x = 1;
+  float v2y = 0;
+  EXPECT_NEAR(utils::normalizedDot(v1x, v1y, v2x, v2y), 0.0, 1e-4);
+
+  // Vectors are identical
+  v2x = 0;
+  v2y = 1;
+  EXPECT_NEAR(utils::normalizedDot(v1x, v1y, v2x, v2y), 1.0, 1e-4);
+
+  // vectors are opposite direction
+  v2x = 0;
+  v2y = -1;
+  EXPECT_NEAR(utils::normalizedDot(v1x, v1y, v2x, v2y), -1.0, 1e-4);
+
+  // One vector is null
+  v2x = 0;
+  v2y = 0;
+  EXPECT_NEAR(utils::normalizedDot(v1x, v1y, v2x, v2y), 0.0, 1e-4);
+
+  // Both are null
+  v1x = 0;
+  v1y = 0;
+  EXPECT_NEAR(utils::normalizedDot(v1x, v1y, v2x, v2y), 0.0, 1e-4);
+
+  // Try un-normalized overlap / opposite / orthogonal
+  v1x = 10;
+  v1y = 0;
+  v2x = 0;
+  v2y = 6;
+  EXPECT_NEAR(utils::normalizedDot(v1x, v1y, v2x, v2y), 0.0, 1e-4);
+
+  v2x = 4.5;
+  v2y = 0;
+  EXPECT_NEAR(utils::normalizedDot(v1x, v1y, v2x, v2y), 1.0, 1e-4);
+
+  v2x = -4.5;
+  v2y = 0;
+  EXPECT_NEAR(utils::normalizedDot(v1x, v1y, v2x, v2y), -1.0, 1e-4);
 }

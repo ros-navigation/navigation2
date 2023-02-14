@@ -66,7 +66,7 @@ Route RoutePlanner::findRoute(
 
   std::reverse(route.edges.begin(), route.edges.end());
   route.start_node = start_node;
-  route.route_cost = goal_node->search_state.cost;
+  route.route_cost = goal_node->search_state.integrated_cost;
   return route;
 }
 
@@ -86,7 +86,7 @@ void RoutePlanner::findShortestGraphTraversal(
   // Setup the Dijkstra's search problem
   resetSearchStates(graph);
   goal_id_ = goal->nodeid;
-  start->search_state.cost = 0.0;
+  start->search_state.integrated_cost = 0.0;
   addNode(0.0, start);
 
   NodePtr neighbor{nullptr};
@@ -100,7 +100,7 @@ void RoutePlanner::findShortestGraphTraversal(
     auto [curr_cost, node] = getNextNode();
 
     // This has been visited, thus already lowest cost
-    if (curr_cost != node->search_state.cost) {
+    if (curr_cost != node->search_state.integrated_cost) {
       continue;
     }
 
@@ -121,9 +121,10 @@ void RoutePlanner::findShortestGraphTraversal(
       }
 
       potential_cost = curr_cost + traversal_cost;
-      if (potential_cost < neighbor->search_state.cost) {
+      if (potential_cost < neighbor->search_state.integrated_cost) {
         neighbor->search_state.parent_edge = edge;
-        neighbor->search_state.cost = potential_cost;
+        neighbor->search_state.integrated_cost = potential_cost;
+        neighbor->search_state.traversal_cost = traversal_cost;
         addNode(potential_cost, neighbor);
       }
     }
