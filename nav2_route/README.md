@@ -26,14 +26,15 @@ Note however that plugins may also use outside information from topics, services
 - Action interface request can process requests with start / goal node IDs or poses
 - Service interface to change navigation route graphs at run-time
 - Edge scoring dynamic plugins return a cost for traversing an edge and may mark an edge as invalid in current conditions
-- Common edge scoring plugins are provided for needs like optimizing for distance, time, cost, static or dynamic penalties
+- Common edge scoring plugins are provided for needs like optimizing for distance, time, cost, semantic information, static and dynamically changing penalties
 - Graph file parsing dynamic plugins allow for use of custom or proprietary formats
-- Provided 2 file parsing plugins based on popular standards: OpenStreetMap and GeoJSON
+- Provided file parsing plugins based on popular standards GeoJSON
 - Operation dynamic plugins to perform arbitrary tasks at a given node or when entering or leaving an edge on the route (plan)
 - Operation may be graph-centric (e.g. graph file identifies operation to perform) or plugin-centric (e.g. plugins self-identify nodes and edges to act upon) 
-- TODO Operations provided (needs Operations implemented)
-- TODO arbitary metadata storage that can be communicated between plugins or even classes of plugins about nodes, edges: Time taken
-- TODO action feedback on updates (reroute, operaiton triggered, state change passing a node/edge)
+- Operations provided include live adjusting of speed limits, checking for collision to trigger rerouting automatically, storing metadata about edge traversal for later use, triggering an event, and service to remotely trigger rerouting.
+- The nodes and edges metadata may be modified or used to communicate information across plugins including different types across runs (e.g. `TimeMarker` Route Operation stores the time to traverse an edge which `TimeScorer` edge scorer may use in later route requests for improved estimated traversal times)
+- The Route Tracking action returns regular feedback on important events or state updates (e.g. rerouting requests, passed a node, triggered an option, etc)
+- The Route Planning action computes a route and returns it in its action response.
 
 ## Design
 
@@ -57,7 +58,7 @@ TODO provide full list (needs completion)
 ## File Formats
 
 The graphs may be stored in one of the formats the parser plugins can understand or implement your own parser for a particular format of your interest!
-Parsers are provided for OpenStreetMap (OSM) and GeoJSON formats.
+Parsers are provided for GeoJSON formats.
 The only two required features of the navigation graph is for the nodes and edges to have identifiers from each other to be unique for referencing and for edges to have the IDs of the nodes belonging to the start and end of the edge.
 This is strictly required for the Route Server to operate properly in all of its features.
 
@@ -77,8 +78,8 @@ While optional, it is somewhat recommended to provide, if relevent:
 Otherwise, the Node, Edge, and Operations may contain other arbitrary application-specific fields with key-value pairs.
 The keys are stored as strings in `metadata` within the objects which acts as a python3 dict (e.g. `std::unordered_map<std::string, std::any>`) with an accessor function `T getValue(const std::string & key, T & default_val)` to obtain the field's values within all plugins.
 
-While neither OSM nor GeoJSON are YAML-based, the following YAML file is provided as a more human-readable example for illustration of the conventions above.
-Example files in both formats can be found TODO LINKS TO EXAMPLE FILES
+While GeoJSON is not are YAML-based, the following YAML file is provided as a more human-readable example for illustration of the conventions above.
+Usable real graph file demos can be found in the `graphs/` directory.
 
 ```
 example_graph.yaml
@@ -112,10 +113,19 @@ Edge1:                  // <-- If provided by format, stored as name in metadata
 
 ### Metadata Conventions for Convenience
 
-TODO have a tl;dr starting before explaining
-
 While other metadata fields are not required nor necessarily needed, there are some useful standards which may make your life easier within in the Route Server framework.
-These are default fields which if used can make your life easier with the provided plugins, but you're free to embed this information anyway you like (but may come at the cost of needing to re-implement provided capabilities).
+These are default fields for the provided plugins, but you're free to embed this information anyway you like (but may come at the cost of needing to re-implement provided capabilities).
+A set of conventions are shown in the table below. The details regarding the convention and where they are used within the codebase follows in more detail.
+
+| Graph File Key  | Information Stored |
+| --------------- | ------------- |
+| `speed_limit`    | Speed limit, represented in percentage 0.0-1.0.  |
+| `abs_speed_limit`    | Speed limit, represented in `m/s`.  |
+| `penalty`    | A cost penalty to apply to a node or edge. |
+| `class`    | The semanic class this node belongs to.  |
+| `service_name`    | Which service to call, if node or edge should trigger an event.  |
+| `abs_time_taken`    | Time taken to traverse an edge in `s`.  |
+
 
 The `DistanceScorer` edge scoring plugin will score the L2 norm between the poses of the nodes constituting the edge as its unweighted score.
 This uses the node's location information as "highly recommended" above.
@@ -144,18 +154,34 @@ By convention, we reserve the edge metadata field `abs_time_taken` for represent
 
 ## Etc. Notes
 
-TODO Document metadata can be used to communicate from the operations back to the planning algorithm (this is blocked, this is the new time/dist to use based on actual previous executions) to refine operations over time or just communicate information about the state of the graph to each other as choosing. This is due to pointers instead of copies of the graph around the system. Example use in the time scorer edge scoring plugin and the time marker route operation.
+### Metadata Communication
 
-TODO document generous window b/c only used as a pre-condition + want dynamic behavior // refinement to make pretty exact (show diagram of method). also in param description. 
+The metadata contained in the graph's nodes and edges can serve a secondary purpose to communicating arbitrary information from the graph file for use in routing behavior or operations. It may also be used to communicate or store information about a node or edge during run-time to query from a plugin in a future iteration, from another plugin in the system, or from another plugin type entirely.
+
+For example: 
+- If the collision monitor identifies an edge as being blocked on a regular basis, a counter can be used to track the number of times this edge is blocked and if exceeding a threshold, it adds additional costs to that edge to incentivize taking another direction. 
+- If we want to minimize the time to traverse the space, rather than estimating the times to traverse an edge, we can store actual times to navigate into the metadata of the edges. This can be stored as part of a route operation after completing an edge and retrieved at planning time by an edge scorer.
+
+All of this is made possible by the centralized graph representation and pointers back to its memory locations at each stage of the system. This allows Graph given to the planner and Routes given to the tracker to point to the same memory locations for exchanging information over the graph's metadata.
+
+### Node Achievement
+
+The Route Tracker will track the progress of a robot following a defined route over time. When we achieve a node, that is to say, we pass it, that triggers events based on reaching a node (Also: exiting an old edge, entering a new edge). Thus, the specification of node achievement is worth some discussion for users so they can best use this powerful feature. 
+
+The node achievement logic will first check if the robot is within a configurable radius of a node. This radius should be **generous** and not equatable to the goal tolerance. This should be sufficiently large that by the mechanics of your control, you can achieve a node when you pass it considering realistic deviations of path tracking by your trajectory planner. This may not need to be very large if using an exact path follower controller but may need to be relatively large for a dynamic obstacle avoidance planner. If in doubt, make it **larger** since this is merely the first stage for checking node achievement, not the metric itself.
+
+Once we're within the range of a node that we need to consider whether or not we've achieved the node, we evaluate a mathematical operation to see if the robot has moved from the regime of the previous edge into the next edge spatially. We do this by finding the bisecting vector of the two edge vectors of interest (e.g. last edge and next edge) and comparing that with the distance vector from the node. When the dot product is 0, that means the we're at the orthogonal vector to the bisector moving from one regime to the next. Thus, we can check the sign of this dot product to indicate when we transition from one edge to the next while allowing for significant deviation from the node itself due to path tracking error or dynamic behavior.
+
+For the edge cases where there is no last edge (e.g. starting) or next edge (e.g. finishing), we use the radius only. Recall that this only applies the routing part of the navigation request, the controller will still continue tracking the path until your goal achievement defined in your local trajectory planner's configurations. However, any Route Operations to be performed at the start or end nodes will be slightly preempted when compared to the others.
 
 ---
 
 # Steve's TODO list
 
 - [ ] live route analyzer working + plugins + rerouting + pruning start at reroute
-
-
 - [ ] test coverage: server, tracker
+
+
 - [ ] use map for checking start/goal nodes for infra blockages not just NN. Evaluate K. Share costmap?
 
 
