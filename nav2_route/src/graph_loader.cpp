@@ -111,7 +111,7 @@ bool GraphLoader::transformGraph(Graph &graph)
   std::string source_frame = graph[0].coords.frame_id;
   if (source_frame == route_frame_)
   {
-    RCLCPP_DEBUG(logger_, "Source Frame matches the the route frame");
+    RCLCPP_DEBUG(logger_, "Source frame matches the the route frame. No transformation needed.");
     return true;
   }
 
