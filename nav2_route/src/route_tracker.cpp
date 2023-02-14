@@ -79,14 +79,14 @@ bool RouteTracker::nodeAchieved(
   // If start or end node, use the radius check only since the final node may not pass
   // threshold depending on the configurations. The start node has no last_node for
   // computing the vector bisector. If this is an issue, please file a ticket to discuss.
-  if (isStartOrEndNode(state.route_edges_idx)) {
+  if (isStartOrEndNode(state.route_edges_idx, route)) {
     return state.within_radius;
   }
 
   // We can evaluate the unit distance vector from the node w.r.t. the unit vector bisecting
   // the last and current edges to find the average whose orthogonal is an imaginery
   // line representing the migration from one edge's spatial domain to the other.
-  // When the dot product is positive, it means that there exists a projection between
+  // When the dot product is negative, it means that there exists a projection between
   // the vectors and that the robot position has passed this imaginary orthogonal line.
   // This enables a more refined definition of when a node is considered achieved while
   // enabling the use of dynamic behavior that may deviate from the path non-trivially
@@ -109,15 +109,15 @@ bool RouteTracker::nodeAchieved(
     // Unnormalized Bisector = |n|*m + |m|*n
     const double bx = nx * m_mag + mx * n_mag;
     const double by = ny * m_mag + my * n_mag;
-    return utils::normalizedDot(bx, by, dx, dy) >= 0 ? true : false;
+    return utils::normalizedDot(bx, by, dx, dy) <= 0;
   }
 
   return false;
 }
 
-bool RouteTracker::isStartOrEndNode(int idx)
+bool RouteTracker::isStartOrEndNode(int idx, const Route & route)
 {
-  return idx == static_cast<int>(route_msg_.edge_ids.size() - 1) || idx == -1;
+  return idx == static_cast<int>(route.edges.size() - 1) || idx == -1;
 }
 
 void RouteTracker::publishFeedback(

@@ -89,7 +89,8 @@ Node1:                  // <-- If provided by format, stored as name in metadata
   x: 0.32               // <-- Highly recommended
   y: 4.3                // <-- Highly recommended
   frame: "map"          // <-- Highly recommended
-  class: "living_room"  // <-- Metadata for node (arbitrary)
+  metadata:
+    class: "living_room"// <-- Metadata for node (arbitrary)
   operation:
     pause:              // <-- If provided by format, stored as name in metadata
       type: "stop"      // <-- Required
@@ -100,9 +101,10 @@ Edge1:                  // <-- If provided by format, stored as name in metadata
   id: 2                 // <-- Required
   startid: 1            // <-- Required
   endid: 3              // <-- Required
-  speed_limit: 0.85     // <-- Metadata for edge (arbitrary). Use abs_speed_limit if not a percentage
   overridable: False    // <-- Recommended
   cost: 6.0             // <-- Recommended, if relevent
+  metadata:
+    speed_limit: 0.85   // <-- Metadata for edge (arbitrary). Use abs_speed_limit if not a percentage
   operations:
     open_door:          // <-- If provided by format, stored as name in metadata
       type: "open_door" // <-- Required
@@ -178,22 +180,26 @@ For the edge cases where there is no last edge (e.g. starting) or next edge (e.g
 
 # Steve's TODO list
 
+- [ ] goal intent extractor some min/max distance from the original or newly set one? Would there be cases pruning is bad?
+
+
 - [ ] live route analyzer working + plugins + rerouting + pruning start at reroute
-- [ ] test coverage: server, tracker
-
-
-- [ ] use map for checking start/goal nodes for infra blockages not just NN. Evaluate K. Share costmap?
+- [ ] Intregation coverage: tracking server + tracker state / feedback / operations correctness + completion + rerouting_start_id. Blocked ids?
 
 
 
 
-- [ ] Create basic file format for graph + parser. Vector types (regions), recursion namespaces, structured types? Operations/metadata.
+
+
+- [ ] Create basic file format for graph + parser. Vector types (regions), recursion namespaces, Operations/metadata.
+- [ ] Uncomment route server srv test for real files and implementation
 - [ ] QGIS demo + plugins for editing and visualizing graphs
 
 
 
-- [ ] Quality: BT nodes, Python API, documentation, readme finish, tutorial (bt change, plugin customize, file field examples). BT XML for first/last mile, freq. replanning, navigation using it, WPF
+- [ ] Quality: BT nodes, Python API, documentation, readme, tutorial (bt change, plugin customize, file field examples). BT XML for first/last mile, freq. replanning, navigation using it, WPF, metrics w/ real graph sized
 - [ ] demos with route -> global -> local. outdoor non-planar. to waypoint follower (GPS?) of nodes.
+- [ ] use map for checking start/goal nodes for infra blockages not just NN. Evaluate K. Share costmap?
 
 # Questions
 

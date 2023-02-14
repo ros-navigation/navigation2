@@ -78,9 +78,10 @@ public:
   /**
    * @brief Determine if a node is the start or last node in the route
    * @param idx Idx of the current edge being tracked
+   * @param route Route to check
    * @return bool if this node is the last node
    */
-  inline bool isStartOrEndNode(int idx);
+  bool isStartOrEndNode(int idx, const Route & route);
 
   /**
    * @brief Get the current robot's base_frame pose in route_frame
@@ -96,7 +97,7 @@ public:
    * @param edge_id Id of the current edge being processed
    * @param operations A set of operations which were performed this iteration
    */
-  inline void publishFeedback(
+  void publishFeedback(
     const bool rereouted,
     const unsigned int next_node_id,
     const unsigned int last_node_id,

@@ -85,3 +85,25 @@ ament_target_dependencies(test_goal_intent_extractor
 target_link_libraries(test_goal_intent_extractor
   ${library_name}
 )
+
+# Test route tracker
+ament_add_gtest(test_route_tracker
+  test_route_tracker.cpp
+)
+ament_target_dependencies(test_route_tracker
+  ${dependencies}
+)
+target_link_libraries(test_route_tracker
+  ${library_name}
+)
+
+# Test route server
+ament_add_gtest(test_route_server
+  test_route_server.cpp
+)
+ament_target_dependencies(test_route_server
+  ${dependencies}
+)
+target_link_libraries(test_route_server
+  ${library_name}
+)
