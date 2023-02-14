@@ -156,8 +156,7 @@ TODO document generous window b/c only used as a pre-condition + want dynamic be
 
 
 - [ ] test coverage: server, tracker
-- [ ] centralized 1 costmap to pass aroun dfor use (if possible): edge score, operation, selecting start/goal nodes with infra
-- [ ] use map for checking start/goal nodes for infra blockages not just NN. Evaluate K 
+- [ ] use map for checking start/goal nodes for infra blockages not just NN. Evaluate K. Share costmap?
 
 
 

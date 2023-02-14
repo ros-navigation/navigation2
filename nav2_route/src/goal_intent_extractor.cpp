@@ -44,7 +44,8 @@ void GoalIntentExtractor::setGraph(Graph & graph, GraphToIDMap * id_to_graph_map
   node_spatial_tree_->computeTree(graph);
 }
 
-void GoalIntentExtractor::transformPose(geometry_msgs::msg::PoseStamped & pose)
+geometry_msgs::msg::PoseStamped GoalIntentExtractor::transformPose(
+  geometry_msgs::msg::PoseStamped & pose)
 {
   if (pose.header.frame_id != route_frame_) {
     RCLCPP_INFO(
@@ -55,6 +56,7 @@ void GoalIntentExtractor::transformPose(geometry_msgs::msg::PoseStamped & pose)
       throw nav2_core::RouteTFError("Failed to transform starting pose to: " + route_frame_);
     }
   }
+  return pose;
 }
 
 template<typename GoalT>
@@ -76,17 +78,15 @@ GoalIntentExtractor::findStartandGoal(const std::shared_ptr<const GoalT> goal)
     }
   }
 
-  // transform start or goal to route_frame, store for pruning
-  transformPose(start_pose);
-  start_ = start_pose;
-  transformPose(goal_pose);
-  goal_ = goal_pose;
+  // transform start or goal to route_frame
+  start_ = transformPose(start_pose);
+  goal_ = transformPose(goal_pose);
 
   // Find closest route graph nodes to start and goal to plan between.
   // Note that these are the location indices in the graph
   unsigned int start_route = 0, end_route = 0;
-  if (!node_spatial_tree_->findNearestGraphNodeToPose(start_pose, start_route) ||
-    !node_spatial_tree_->findNearestGraphNodeToPose(goal_pose, end_route))
+  if (!node_spatial_tree_->findNearestGraphNodeToPose(start_, start_route) ||
+    !node_spatial_tree_->findNearestGraphNodeToPose(goal_, end_route))
   {
     throw nav2_core::IndeterminantNodesOnGraph(
             "Could not determine node closest to start or goal pose requested!");

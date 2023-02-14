@@ -79,7 +79,7 @@ public:
    * @brief Transforms a pose into the route frame
    * @param pose Pose to transform (e.g. start, goal)
    */
-  void transformPose(geometry_msgs::msg::PoseStamped & pose);
+  geometry_msgs::msg::PoseStamped transformPose(geometry_msgs::msg::PoseStamped & pose);
   /**
    * @brief Main API to find the start and goal graph IDX (not IDs) for routing
    * @param goal Action request goal
