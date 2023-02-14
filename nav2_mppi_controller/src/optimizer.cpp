@@ -108,7 +108,7 @@ void Optimizer::setOffset(double controller_frequency)
       "shifting is ON");
     settings_.shift_control_sequence = true;
   } else {
-    throw std::runtime_error(
+    throw nav2_core::ControllerException(
             "Controller period more then model dt, set it equal to model dt");
   }
 }
@@ -170,7 +170,7 @@ bool Optimizer::fallback(bool fail)
 
   if (++counter > settings_.retry_attempt_limit) {
     counter = 0;
-    throw std::runtime_error("Optimizer fail to compute path");
+    throw nav2_core::NoValidControl("Optimizer fail to compute path");
   }
 
   return true;
@@ -407,7 +407,7 @@ void Optimizer::setMotionModel(const std::string & model)
   } else if (model == "Ackermann") {
     motion_model_ = std::make_shared<AckermannMotionModel>(parameters_handler_);
   } else {
-    throw std::runtime_error(
+    throw nav2_core::ControllerException(
             std::string(
               "Model " + model + " is not valid! Valid options are DiffDrive, Omni, "
               "or Ackermann"));
