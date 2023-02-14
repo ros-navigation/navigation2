@@ -85,3 +85,25 @@ ament_target_dependencies(test_collision_operation
 target_link_libraries(test_collision_operation
   ${library_name} route_operations
 )
+
+# Test route planner
+ament_add_gtest(test_route_planner
+  test_route_planner.cpp
+)
+ament_target_dependencies(test_route_planner
+  ${dependencies}
+)
+target_link_libraries(test_route_planner
+  ${library_name} edge_scorers
+)
+
+# Test goal intent extractor
+ament_add_gtest(test_goal_intent_extractor
+  test_goal_intent_extractor.cpp
+)
+ament_target_dependencies(test_goal_intent_extractor
+  ${dependencies}
+)
+target_link_libraries(test_goal_intent_extractor
+  ${library_name}
+)

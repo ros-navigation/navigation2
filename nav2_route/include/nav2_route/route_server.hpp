@@ -40,9 +40,9 @@
 #include "nav2_route/utils.hpp"
 #include "nav2_route/graph_loader.hpp"
 #include "nav2_route/route_planner.hpp"
-#include "nav2_route/node_spatial_tree.hpp"
 #include "nav2_route/path_converter.hpp"
 #include "nav2_route/route_tracker.hpp"
+#include "nav2_route/goal_intent_extractor.hpp"
 
 namespace nav2_route
 {
@@ -118,23 +118,26 @@ protected:
   void computeAndTrackRoute();
 
   /**
-   * @brief Finds the start and goal Node locations in the graph closest to the request
-   * @param The request goal information
-   * @return A pair of NodeIDs belonging to the start and goal nodes for route search
-   */
-  template<typename GoalT>
-  NodeExtents findStartandGoalNodeLocations(const std::shared_ptr<const GoalT> goal);
-
-  /**
-   * @brief Abstract method combining findStartandGoalNodeLocations and the route planner
+   * @brief Abstract method combining finding the starting/ending nodes and the route planner
    * to find the Node locations of interest and route to the goal
    * @param goal The request goal information
    * @param blocked_ids The IDs of blocked graphs / edges
+   * @param updated_start_id The nodeID of an updated starting point when tracking
+   * a route that corresponds to the next point to route to from to continue progress
    * @return A route of the request
    */
   template<typename GoalT>
   Route findRoute(
-    const std::shared_ptr<const GoalT> goal, const std::vector<unsigned int> & blocked_ids = {});
+    const std::shared_ptr<const GoalT> goal,
+    const ReroutingState & rerouting_info = ReroutingState());
+
+  /**
+   * @brief Main processing called by both action server callbacks to centralize
+   * the great deal of shared code between them
+   */
+  template<typename ActionT>
+  void processRouteRequest(
+    std::shared_ptr<nav2_util::SimpleActionServer<ActionT>> & action_server);
 
   /**
    * @brief Find the planning duration of the request and log warnings
@@ -148,8 +151,34 @@ protected:
    * @param action_server Actions server to check
    * @return if the request is valid
    */
-  template<typename T>
-  bool isRequestValid(std::shared_ptr<nav2_util::SimpleActionServer<T>> & action_server);
+  template<typename ActionT>
+  bool isRequestValid(std::shared_ptr<nav2_util::SimpleActionServer<ActionT>> & action_server);
+
+  /**
+   * @brief Populate result for compute route action
+   * @param result Result to populate
+   * @param route Route to use to populate result
+   * @param path Path to use to populate result
+   * @param planning_duration Time to create a valid route
+   */
+  void populateActionResult(
+    std::shared_ptr<ComputeRoute::Result> result,
+    const Route & route,
+    const nav_msgs::msg::Path & path,
+    const rclcpp::Duration & planning_duration);
+
+  /**
+   * @brief Populate result for compute and track route action
+   * @param result Result to populate
+   * @param route Route to use to populate result
+   * @param path Path to use to populate result
+   * @param planning_duration Time to create a valid route
+   */
+  void populateActionResult(
+    std::shared_ptr<ComputeAndTrackRoute::Result>/*result*/,
+    const Route & /*route*/,
+    const nav_msgs::msg::Path & /*path*/,
+    const rclcpp::Duration & /*planning_duration*/) {}
 
   /**
    * @brief The service callback to set a new route graph
@@ -168,17 +197,6 @@ protected:
   template<typename GoalT>
   void exceptionWarning(const std::shared_ptr<const GoalT> goal, const std::exception & ex);
 
-  /**
-   * @brief Callback executed when a parameter change is detected
-   * @param event ParameterEvent message
-   */
-  rcl_interfaces::msg::SetParametersResult
-  dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
-
-  // Dynamic parameters handler
-  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
-  std::mutex dynamic_params_lock_;
-
   std::shared_ptr<ComputeRouteServer> compute_route_server_;
   std::shared_ptr<ComputeAndTrackRouteServer> compute_and_track_route_server_;
 
@@ -195,10 +213,10 @@ protected:
 
   // Internal tools
   std::shared_ptr<GraphLoader> graph_loader_;
-  std::shared_ptr<NodeSpatialTree> node_spatial_tree_;
   std::shared_ptr<RoutePlanner> route_planner_;
   std::shared_ptr<RouteTracker> route_tracker_;
   std::shared_ptr<PathConverter> path_converter_;
+  std::shared_ptr<GoalIntentExtractor> goal_intent_extractor_;
 
   // Data
   Graph graph_;

@@ -111,7 +111,7 @@ struct Operation
 };
 
 typedef std::vector<Operation> Operations;
-typedef std::vector<Operation *> OperationsPtr;
+typedef std::vector<Operation *> OperationPtrs;
 
 /**
  * @struct nav2_route::OperationsResult
@@ -150,11 +150,13 @@ typedef std::vector<EdgePtr> EdgePtrVector;
 struct SearchState
 {
   EdgePtr parent_edge{nullptr};
-  float cost{0.0};
+  float integrated_cost{std::numeric_limits<float>::max()};
+  float traversal_cost{std::numeric_limits<float>::max()};
 
   void reset()
   {
-    cost = std::numeric_limits<float>::max();
+    integrated_cost = std::numeric_limits<float>::max();
+    traversal_cost = std::numeric_limits<float>::max();
     parent_edge = nullptr;
   }
 };
@@ -220,6 +222,24 @@ struct RouteTrackingState
   EdgePtr current_edge{nullptr};
   int route_edges_idx{-1};
   bool within_radius{false};
+};
+
+/**
+ * @struct nav2_route::ReroutingState
+ * @brief Tracker's result state for rerouting needed by planning
+ * to avoid reported blocked edges and reroute from the current
+ * appropriate starting point along the route
+ */
+struct ReroutingState
+{
+  unsigned int rerouting_start_id{std::numeric_limits<unsigned int>::max()};
+  std::vector<unsigned int> blocked_ids;
+
+  void reset()
+  {
+    rerouting_start_id = std::numeric_limits<unsigned int>::max();
+    blocked_ids.clear();
+  }
 };
 
 }  // namespace nav2_route

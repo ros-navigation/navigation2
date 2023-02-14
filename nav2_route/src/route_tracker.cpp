@@ -35,7 +35,7 @@ void RouteTracker::configure(
     node, "radius_to_achieve_node", rclcpp::ParameterValue(1.0));
   radius_threshold_ = node->get_parameter("radius_to_achieve_node").as_double();
   nav2_util::declare_parameter_if_not_declared(
-    node, "tracker_update_rate", rclcpp::ParameterValue(100.0));
+    node, "tracker_update_rate", rclcpp::ParameterValue(50.0));
   tracker_update_rate_ = node->get_parameter("tracker_update_rate").as_double();
   nav2_util::declare_parameter_if_not_declared(
     node, "aggregate_blocked_ids", rclcpp::ParameterValue(false));
@@ -53,7 +53,6 @@ geometry_msgs::msg::PoseStamped RouteTracker::getRobotPose()
   return pose;
 }
 
-// TODO(sm) test and visualize this with dot products and window
 bool RouteTracker::nodeAchieved(
   const geometry_msgs::msg::PoseStamped & pose,
   RouteTrackingState & state,
@@ -70,36 +69,33 @@ bool RouteTracker::nodeAchieved(
     return true;
   }
 
-  // If we were within radius and now not, consider node achieved in case we just barely kiss
-  // the radial threshold set by the user coming in at an odd angle due to dynamic behavior
+  // If was within radius and now not, consider node achieved
   if (!in_radius && state.within_radius) {
     return true;
   }
 
   state.within_radius = in_radius;
 
-  // If start or end node, use the radius check only since the final node may not formally pass
-  // the vectorized threshold depending on the local trajectory / goal checker configurations.
-  // The start node has no last_node for computing the vector bisector. If this is an issue
-  // for any users, please file a ticket to discuss.
+  // If start or end node, use the radius check only since the final node may not pass
+  // threshold depending on the configurations. The start node has no last_node for
+  // computing the vector bisector. If this is an issue, please file a ticket to discuss.
   if (isStartOrEndNode(state.route_edges_idx)) {
     return state.within_radius;
   }
 
-  // If we're within the radius, we can evaluate the unit distance vector from the node w.r.t. the
-  // unit vector bisecting the last and current edges to find the average whose orthogonal is an
-  // imaginery line representing the migration from one edge's spatial domain to the other.
-  // Thus, when the dot product is positive, it means that there exists a projection between
+  // We can evaluate the unit distance vector from the node w.r.t. the unit vector bisecting
+  // the last and current edges to find the average whose orthogonal is an imaginery
+  // line representing the migration from one edge's spatial domain to the other.
+  // When the dot product is positive, it means that there exists a projection between
   // the vectors and that the robot position has passed this imaginary orthogonal line.
-  // This enables a more refined definition of when a node is considered achieved while enabling
-  // the use of dynamic behavior local trajectory planners to deviate from the path non-trivially
+  // This enables a more refined definition of when a node is considered achieved while
+  // enabling the use of dynamic behavior that may deviate from the path non-trivially
   if (state.within_radius) {
     NodePtr last_node = state.current_edge->start;
     const double nx = state.next_node->coords.x - last_node->coords.x;
     const double ny = state.next_node->coords.y - last_node->coords.y;
     const double n_mag = std::sqrt(nx * nx + ny * ny);
 
-    // If not the next node is not the route's end, then there exist another edge
     NodePtr future_next_node = route.edges[state.route_edges_idx + 1]->end;
     const double mx = future_next_node->coords.x - state.next_node->coords.x;
     const double my = future_next_node->coords.y - state.next_node->coords.y;
@@ -113,8 +109,7 @@ bool RouteTracker::nodeAchieved(
     // Unnormalized Bisector = |n|*m + |m|*n
     const double bx = nx * m_mag + mx * n_mag;
     const double by = ny * m_mag + my * n_mag;
-    const double b_mag = std::sqrt(bx * bx + by * by);
-    return (dx / dist_mag) * (bx / b_mag) + (dy / dist_mag) * (by / b_mag) >= 0 ? true : false;
+    return utils::normalizedDot(bx, by, dx, dy) >= 0 ? true : false;
   }
 
   return false;
@@ -145,7 +140,7 @@ void RouteTracker::publishFeedback(
 
 TrackerResult RouteTracker::trackRoute(
   const Route & route, const nav_msgs::msg::Path & path,
-  std::vector<unsigned int> & blocked_ids)
+  ReroutingState & rerouting_info)
 {
   // Manage important data
   route_msg_ = utils::toMsg(route, route_frame_, clock_->now());
@@ -201,10 +196,15 @@ TrackerResult RouteTracker::trackRoute(
 
     if (ops_result.reroute) {
       if (!aggregate_blocked_ids_) {
-        blocked_ids = ops_result.blocked_ids;
+        rerouting_info.blocked_ids = ops_result.blocked_ids;
       } else {
-        blocked_ids.insert(
-          blocked_ids.end(), ops_result.blocked_ids.begin(), ops_result.blocked_ids.end());
+        rerouting_info.blocked_ids.insert(
+          rerouting_info.blocked_ids.end(),
+          ops_result.blocked_ids.begin(), ops_result.blocked_ids.end());
+      }
+
+      if (state.last_node) {
+        rerouting_info.rerouting_start_id = state.last_node->nodeid;
       }
       RCLCPP_INFO(logger_, "Rerouting requested by route tracking operations!");
       return TrackerResult::REROUTE;

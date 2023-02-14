@@ -51,6 +51,24 @@ void SemanticScorer::configure(
   weight_ = static_cast<float>(node->get_parameter(getName() + ".weight").as_double());
 }
 
+void SemanticScorer::metadataKeyScorer(Metadata & mdata, float & score)
+{
+  for (auto it = mdata.data.cbegin(); it != mdata.data.cend(); ++it) {
+    if (auto sem = semantic_info_.find(it->first); sem != semantic_info_.end()) {
+      score += sem->second;
+    }
+  }
+}
+
+void SemanticScorer::metadataValueScorer(Metadata & mdata, float & score)
+{
+  std::string cl;
+  cl = mdata.getValue<std::string>(key_, cl);
+  if (auto sem = semantic_info_.find(cl); sem != semantic_info_.end()) {
+    score += sem->second;
+  }
+}
+
 bool SemanticScorer::score(const EdgePtr edge, float & cost)
 {
   float score = 0.0;
@@ -60,28 +78,11 @@ bool SemanticScorer::score(const EdgePtr edge, float & cost)
   // If a particular key is known to have semantic info, use it, else search
   // each metadata key field to see if it matches
   if (key_.empty()) {
-    for (auto it = node_mdata.data.cbegin(); it != node_mdata.data.cend(); ++it) {
-      if (auto sem = semantic_info_.find(it->first); sem != semantic_info_.end()) {
-        score += sem->second;
-      }
-    }
-
-    for (auto it = edge_mdata.data.cbegin(); it != edge_mdata.data.cend(); ++it) {
-      if (auto sem = semantic_info_.find(it->first); sem != semantic_info_.end()) {
-        score += sem->second;
-      }
-    }
+    metadataKeyScorer(node_mdata, score);
+    metadataKeyScorer(edge_mdata, score);
   } else {
-    std::string node_cl, edge_cl;
-    node_cl = node_mdata.getValue<std::string>(key_, node_cl);
-    if (auto sem = semantic_info_.find(node_cl); sem != semantic_info_.end()) {
-      score += sem->second;
-    }
-
-    edge_cl = edge_mdata.getValue<std::string>(key_, edge_cl);
-    if (auto sem = semantic_info_.find(edge_cl); sem != semantic_info_.end()) {
-      score += sem->second;
-    }
+    metadataValueScorer(node_mdata, score);
+    metadataValueScorer(edge_mdata, score);
   }
 
   cost = weight_ * score;

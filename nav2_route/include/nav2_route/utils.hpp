@@ -185,6 +185,26 @@ inline nav2_msgs::msg::Route toMsg(
   return msg;
 }
 
+/**
+ * @brief Finds the normalized dot product of 2 vectors
+ * @param v1x Vector 1's x component
+ * @param v1y Vector 1's y component
+ * @param v2x Vector 2's x component
+ * @param v2y Vector 2's y component
+ * @return Value of dot product
+ */
+inline float normalizedDot(
+  const float v1x, const float v1y,
+  const float v2x, const float v2y)
+{
+  const float mag1 = std::hypotf(v1x, v1y);
+  const float mag2 = std::hypotf(v2x, v2y);
+  if (mag1 < 1e-6 || mag2 < 1e-6) {
+    return 0.0;
+  }
+  return (v1x / mag1) * (v2x / mag2) + (v1y / mag1) * (v2y / mag2);
+}
+
 }  // namespace utils
 
 }  // namespace nav2_route

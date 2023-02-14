@@ -76,24 +76,16 @@ void CostmapScorer::prepare()
 // reasonable sized graph / node distance? Lower iterator density?
 bool CostmapScorer::score(const EdgePtr edge, float & cost)
 {
-  // If we don't have costmap information, all edges are invalid for safety
   if (!costmap_) {
-    RCLCPP_DEBUG(logger_, "No costmap yet received!");
+    RCLCPP_WARN(logger_, "No costmap yet received!");
     return false;
   }
 
-  float largest_cost = 0.0;
-  float running_cost = 0.0;
-  float point_cost = 0.0;
-  unsigned int idx = 0;
-
-  unsigned int x0, y0, x1, y1;
+  float largest_cost = 0.0, running_cost = 0.0, point_cost = 0.0;
+  unsigned int x0, y0, x1, y1, idx = 0;
   if (!costmap_->worldToMap(edge->start->coords.x, edge->start->coords.y, x0, y0) ||
     !costmap_->worldToMap(edge->end->coords.x, edge->end->coords.y, x1, y1))
   {
-    RCLCPP_DEBUG(
-      logger_,
-      "Either or both (%i, %i) nodes are off the map!", edge->start->nodeid, edge->end->nodeid);
     if (invalid_off_map_) {
       return false;
     }
@@ -102,10 +94,7 @@ bool CostmapScorer::score(const EdgePtr edge, float & cost)
 
   for (nav2_util::LineIterator iter(x0, y0, x1, y1); iter.isValid(); iter.advance()) {
     point_cost = static_cast<float>(costmap_->getCost(iter.getX(), iter.getY()));
-
-    // if in collision, no need to continue
     if (point_cost >= max_cost_ && max_cost_ != 255.0 /*Unknown*/ && invalid_on_collision_) {
-      RCLCPP_DEBUG(logger_, "Edge %i is in collision!", edge->edgeid);
       return false;
     }
 

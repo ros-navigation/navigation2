@@ -66,7 +66,7 @@ Route RoutePlanner::findRoute(
 
   std::reverse(route.edges.begin(), route.edges.end());
   route.start_node = start_node;
-  route.route_cost = goal_node->search_state.cost;
+  route.route_cost = goal_node->search_state.integrated_cost;
   return route;
 }
 
@@ -84,9 +84,9 @@ void RoutePlanner::findShortestGraphTraversal(
   const std::vector<unsigned int> & blocked_ids)
 {
   // Setup the Dijkstra's search problem
-  goal_id_ = goal->nodeid;
   resetSearchStates(graph);
-  start->search_state.cost = 0.0;
+  goal_id_ = goal->nodeid;
+  start->search_state.integrated_cost = 0.0;
   addNode(0.0, start);
 
   NodePtr neighbor{nullptr};
@@ -100,7 +100,7 @@ void RoutePlanner::findShortestGraphTraversal(
     auto [curr_cost, node] = getNextNode();
 
     // This has been visited, thus already lowest cost
-    if (curr_cost != node->search_state.cost) {
+    if (curr_cost != node->search_state.integrated_cost) {
       continue;
     }
 
@@ -121,18 +121,19 @@ void RoutePlanner::findShortestGraphTraversal(
       }
 
       potential_cost = curr_cost + traversal_cost;
-      if (potential_cost < neighbor->search_state.cost) {
+      if (potential_cost < neighbor->search_state.integrated_cost) {
         neighbor->search_state.parent_edge = edge;
-        neighbor->search_state.cost = potential_cost;
+        neighbor->search_state.integrated_cost = potential_cost;
+        neighbor->search_state.traversal_cost = traversal_cost;
         addNode(potential_cost, neighbor);
       }
     }
   }
 
-  // Reset state
+  // Reset states
   clearQueue();
 
-  if (iterations == max_iterations_) {
+  if (iterations >= max_iterations_) {
     throw nav2_core::TimedOut("Maximum iterations was exceeded!");
   }
 }
@@ -148,16 +149,13 @@ bool RoutePlanner::getTraversalCost(
   }
 
   if (!edge->edge_cost.overridable || edge_scorer_->numPlugins() == 0) {
-    if (edge->edge_cost.cost != 0.0) {
-      score = edge->edge_cost.cost;
-      return true;
-    } else {
-      // We need some non-zero value if users didn't populate their files properly
-      score = hypotf(
-        edge->end->coords.x - edge->start->coords.x,
-        edge->end->coords.y - edge->start->coords.y);
-      return true;
+    if (edge->edge_cost.cost == 0.0) {
+      throw nav2_core::NoValidGraph(
+              "Edge " + std::to_string(edge->edgeid) +
+              " doesn't contain and cannot compute a valid edge cost!");
     }
+    score = edge->edge_cost.cost;
+    return true;
   }
 
   return edge_scorer_->score(edge, score);
