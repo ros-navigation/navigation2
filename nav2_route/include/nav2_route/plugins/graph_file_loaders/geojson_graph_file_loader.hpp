@@ -97,6 +97,13 @@ protected:
    */
   void addEdgesToGraph(Graph & graph, GraphToIDMap & graph_to_id_map, std::vector<Json> & edges);
 
+  /**
+   * @brief Get metadata out of the properties tag
+   * @param properties The tag the hold the metadata key
+   * @return Metadata The converted metadata
+   */
+  Metadata getMetaData(const Json & properties);
+
   rclcpp::Logger logger_{rclcpp::get_logger("GeoJsonGraphFileLoader")};
 };
 }  // namespace nav2_route

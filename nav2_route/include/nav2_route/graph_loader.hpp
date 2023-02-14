@@ -70,13 +70,12 @@ public:
     std::string filepath = "");
 
 protected:
-
   /**
    * @brief Transform the graph coordinates to the route frame
    * @param[in/out] graph The graph to be transformed
    * @return True if transform was successful
    */
-  bool transformGraph(Graph &graph);
+  bool transformGraph(Graph & graph);
 
   std::string route_frame_, graph_filepath_;
   std::shared_ptr<tf2_ros::Buffer> tf_;

@@ -93,7 +93,7 @@ bool GraphLoader::loadGraphFromFile(
     return false;
   }
 
-  if (!transformGraph(graph)){
+  if (!transformGraph(graph)) {
     return false;
   }
 
@@ -105,30 +105,28 @@ bool GraphLoader::loadGraphFromFile(
   // (and so we don't need to propogate it through our structures)
 }
 
-bool GraphLoader::transformGraph(Graph &graph)
+bool GraphLoader::transformGraph(Graph & graph)
 {
-  //TODO(jw): Can we assume one frame for all?
+  // TODO(jw): Can we assume one frame for all?
   std::string source_frame = graph[0].coords.frame_id;
-  if (source_frame == route_frame_)
-  {
+  if (source_frame == route_frame_) {
     RCLCPP_DEBUG(logger_, "Source frame matches the the route frame. No transformation needed.");
     return true;
   }
 
   tf2::Transform tf_transform;
   bool got_transform = nav2_util::getTransform(
-      source_frame, route_frame_, tf2::durationFromSec(0.1), tf_, tf_transform);
+    source_frame, route_frame_, tf2::durationFromSec(0.1), tf_, tf_transform);
 
-  if (!got_transform) return false;
+  if (!got_transform) {return false;}
 
 
-  for (auto & node : graph)
-  {
+  for (auto & node : graph) {
     // Transform all graph coordinates from the source frame to route frame
     tf2::Vector3 graph_coord(
-        node.coords.x,
-        node.coords.y,
-        0.0);
+      node.coords.x,
+      node.coords.y,
+      0.0);
 
     tf2::Vector3 new_coord = tf_transform * graph_coord;
 

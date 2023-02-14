@@ -220,6 +220,103 @@ TEST(GeoJsonGraphFileLoader, start_id_does_not_exist)
     std::runtime_error);
 }
 
+TEST(GeoJsonGraphFileLoader, metadata) {
+  Json json_obj = nlohmann::json::parse(
+    R"(
+  {
+    "features": [
+    {
+      "type": "Feature",
+      "properties":
+      {
+        "id": 0,
+        "frame": "map",
+        "metadata":
+        {
+          "project": "nav2",
+          "fire": true,
+          "speed_limit": 0.85,
+          "retries": 10
+        }
+      },
+      "geometry":
+      {
+        "type": "Point",
+        "coordinates": [ 0.0, 0.0 ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties":
+      {
+        "id": 1,
+        "frame": "map"
+      },
+      "geometry":
+      {
+        "type":"Point",
+        "coordinates": [ 1.0, 0.0 ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties":
+      {
+        "id": 2,
+        "startid": 0,
+        "endid": 1,
+        "metadata":
+        {
+          "name": "nav2"
+        }
+      },
+      "geometry":
+      {
+        "type": "MultiLineString",
+        "coordinates": [ [ [ 0.0, 0.0 ], [ 1.0, 0.0 ] ] ]
+      }
+    }
+  ]
+  }
+  )");
+  std::string file_path = "metadata.geojson";
+
+  std::ofstream missing_id_file(file_path);
+  missing_id_file << json_obj;
+  missing_id_file.close();
+
+  Graph graph;
+  GraphToIDMap graph_to_id_map;
+  GeoJsonGraphFileLoader graph_file_loader;
+  bool result = graph_file_loader.loadGraphFromFile(graph, graph_to_id_map, file_path);
+  EXPECT_TRUE(result);
+
+  // Test all generic types
+  std::string project;
+  project = graph[0].metadata.getValue("project", project);
+  EXPECT_EQ(project, "nav2");
+
+  bool fire = false;
+  fire = graph[0].metadata.getValue("fire", fire);
+  EXPECT_TRUE(fire);
+
+  float speed_limit = 0.0;
+  speed_limit = graph[0].metadata.getValue("speed_limit", speed_limit);
+  EXPECT_NEAR(speed_limit, 0.85, 1e-6);
+
+  int retries = 0;
+  retries = graph[0].metadata.getValue("retries", retries);
+  EXPECT_EQ(retries, 10);
+
+  // Node 1 has no metadata
+  EXPECT_EQ(graph[1].metadata.data.size(), 0u);
+
+  // Check edge metadata
+  std::string name;
+  name = graph[0].neighbors[0].metadata.getValue("name", name);
+  EXPECT_EQ(name, "nav2");
+}
+
 TEST(GeoJsonGraphFileLoader, simple_graph)
 {
   Json json_obj = nlohmann::json::parse(

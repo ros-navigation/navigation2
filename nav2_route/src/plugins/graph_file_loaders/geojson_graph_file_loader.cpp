@@ -87,19 +87,22 @@ void GeoJsonGraphFileLoader::addNodesToGraph(
   int idx = 0;
   for (const auto & node : nodes) {
     // Required data
-    Json properties = node["properties"];
+    const auto properties = node["properties"];
 
     if (properties.contains("frame")) {
       graph[idx].coords.frame_id = properties["frame"];
     }
 
-    //TODO(jw): check for duplicate node ids
     graph[idx].nodeid = properties["id"];
 
     Json geometry = node["geometry"];
     graph[idx].coords.x = geometry["coordinates"][0];
     graph[idx].coords.y = geometry["coordinates"][1];
     graph_to_id_map[graph[idx].nodeid] = idx;
+
+    // MetaData
+    Metadata metadata = getMetaData(properties);
+    graph[idx].metadata = metadata;
     idx++;
   }
 }
@@ -109,10 +112,10 @@ void GeoJsonGraphFileLoader::addEdgesToGraph(
 {
   for (const auto & edge : edges) {
     // Required data
-    const auto edge_properties = edge["properties"];
-    unsigned int id = edge_properties["id"];
-    unsigned int start_id = edge_properties["startid"];
-    unsigned int end_id = edge_properties["endid"];
+    const auto properties = edge["properties"];
+    unsigned int id = properties["id"];
+    unsigned int start_id = properties["startid"];
+    unsigned int end_id = properties["endid"];
 
     if (graph_to_id_map.find(start_id) == graph_to_id_map.end()) {
       RCLCPP_ERROR(logger_, "Start id %u does not exist for edge id %u", start_id, id);
@@ -128,16 +131,64 @@ void GeoJsonGraphFileLoader::addEdgesToGraph(
 
     // Edge Cost
     nav2_route::EdgeCost edge_cost;
-    if (edge_properties.contains("cost")) {
-      edge_cost.cost = edge_properties["cost"];
+    if (properties.contains("cost")) {
+      edge_cost.cost = properties["cost"];
     }
 
-    if (edge_properties.contains("overridable")) {
-      edge_cost.overridable = edge_properties["overridable"];
+    if (properties.contains("overridable")) {
+      edge_cost.overridable = properties["overridable"];
     }
 
-    graph[graph_to_id_map[start_id]].addEdge(edge_cost, &graph[graph_to_id_map[end_id]], id);
+    // Metadata
+    Metadata metadata = getMetaData(properties);
+
+    graph[graph_to_id_map[start_id]].addEdge(
+      edge_cost, &graph[graph_to_id_map[end_id]], id,
+      metadata);
   }
+}
+
+Metadata GeoJsonGraphFileLoader::getMetaData(const Json & properties)
+{
+  Metadata metadata;
+  if (properties.contains("metadata")) {
+    for (const auto & data : properties["metadata"].items()) {
+      if (!data.value().is_primitive()) {continue;}
+
+      if (data.value().is_number()) {
+        if (data.value().is_number_integer()) {
+          int value = data.value();
+          metadata.setValue(data.key(), value);
+          continue;
+        } else if (data.value().is_number_float()) {
+          float value = data.value();
+          metadata.setValue(data.key(), value);
+          continue;
+        } else {
+          double value = data.value();
+          metadata.setValue(data.key(), value);
+          continue;
+        }
+      }
+
+      if (data.value().is_boolean()) {
+        bool value = data.value();
+        metadata.setValue(data.key(), value);
+        continue;
+      }
+
+      if (data.value().is_string()) {
+        std::string value = data.value();
+        metadata.setValue(data.key(), value);
+        continue;
+      }
+
+      RCLCPP_ERROR(
+        logger_, "Failed to convert the key: %s value", data.key().c_str());
+      throw std::runtime_error("Failed to convert");
+    }
+  }
+  return metadata;
 }
 
 }  // namespace nav2_route
