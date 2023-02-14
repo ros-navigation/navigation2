@@ -26,6 +26,7 @@
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
 #include "nav2_util/node_utils.hpp"
+#include "nav2_util/robot_utils.hpp"
 #include "nav2_route/types.hpp"
 #include "nav2_route/interfaces/graph_file_loader.hpp"
 
@@ -69,9 +70,18 @@ public:
     std::string filepath = "");
 
 protected:
+
+  /**
+   * @brief Transform the graph coordinates to the route frame
+   * @param[in/out] graph The graph to be transformed
+   * @return True if transform was successful
+   */
+  bool transformGraph(Graph &graph);
+
   std::string route_frame_, graph_filepath_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
   rclcpp::Logger logger_{rclcpp::get_logger("GraphLoader")};
+  nav2_util::LifecycleNode::SharedPtr node_;
 
   // Graph Parser
   pluginlib::ClassLoader<GraphFileLoader> plugin_loader_;

@@ -92,6 +92,8 @@ void GeoJsonGraphFileLoader::addNodesToGraph(
     if (properties.contains("frame")) {
       graph[idx].coords.frame_id = properties["frame"];
     }
+
+    //TODO(jw): check for duplicate node ids
     graph[idx].nodeid = properties["id"];
 
     Json geometry = node["geometry"];
