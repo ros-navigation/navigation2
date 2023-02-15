@@ -100,6 +100,17 @@ void GeoJsonGraphFileLoader::addNodesToGraph(
     graph[idx].coords.y = geometry["coordinates"][1];
     graph_to_id_map[graph[idx].nodeid] = idx;
 
+    // Operations
+    if (properties.contains("operations")) {
+      Operations operations;
+      for (const auto & operation : properties["operations"]) {
+        Operation operate;
+        fromJsonToOperation(operation, operate);
+        operations.push_back(operate);
+      }
+      graph[idx].operations = operations;
+    }
+
     // MetaData
     Metadata metadata = getMetaData(properties);
     graph[idx].metadata = metadata;
@@ -189,6 +200,15 @@ Metadata GeoJsonGraphFileLoader::getMetaData(const Json & properties)
     }
   }
   return metadata;
+}
+void GeoJsonGraphFileLoader::fromJsonToOperation(const Json &json,
+                                                 Operation &operation)
+{
+  json.at("type").get_to(operation.type);
+  Json trigger = json.at("trigger");
+  operation.trigger = trigger.get<OperationTrigger>();
+  Metadata metadata = getMetaData(json);
+  operation.metadata = metadata;
 }
 
 }  // namespace nav2_route

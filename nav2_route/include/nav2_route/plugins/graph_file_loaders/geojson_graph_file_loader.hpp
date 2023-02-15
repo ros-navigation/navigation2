@@ -26,6 +26,12 @@
 namespace nav2_route
 {
 
+NLOHMANN_JSON_SERIALIZE_ENUM( OperationTrigger, {
+  {OperationTrigger::NODE, "NODE"},
+  {OperationTrigger::ON_ENTER, "ON_ENTER"},
+  {OperationTrigger::ON_EXIT, "ON_EXIT"},
+})
+
 /**
  * @class nav2_route::GeoJsonGraphFileLoader
  * @brief A GraphFileLoader plugin to parse the geojson graph file
@@ -103,6 +109,8 @@ protected:
    * @return Metadata The converted metadata
    */
   Metadata getMetaData(const Json & properties);
+
+  void fromJsonToOperation(const Json & j, Operation &operation);
 
   rclcpp::Logger logger_{rclcpp::get_logger("GeoJsonGraphFileLoader")};
 };

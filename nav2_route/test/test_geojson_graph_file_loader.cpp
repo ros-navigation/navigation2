@@ -317,6 +317,91 @@ TEST(GeoJsonGraphFileLoader, metadata) {
   EXPECT_EQ(name, "nav2");
 }
 
+TEST(GeoJsonGraphFileLoader, operations)
+{
+  Json json_obj = nlohmann::json::parse(
+      R"(
+  {
+    "features": [
+    {
+      "type": "Feature",
+      "properties":
+      {
+        "id": 0,
+        "frame": "map",
+        "operations":
+        {
+          "open_door":
+          {
+              "type": "open_door",
+              "trigger": "ON_EXIT",
+              "metadata":
+              {
+                "color": "green"
+              }
+          }
+        }
+      },
+      "geometry":
+      { "type": "Point",
+        "coordinates": [ 0.0, 0.0 ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties":
+      {
+        "id": 1,
+        "frame": "map"
+      },
+      "geometry":
+      {
+        "type":"Point",
+        "coordinates": [ 1.0, 0.0 ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties":
+      {
+        "id": 2,
+        "startid": 0,
+        "endid": 1
+      },
+      "geometry":
+      {
+        "type": "MultiLineString",
+        "coordinates": [ [ [ 0.0, 0.0 ], [ 1.0, 0.0 ] ] ]
+      }
+    }
+  ]
+  }
+  )");
+  std::string file_path = "operations.geojson";
+
+  std::ofstream missing_id_file(file_path);
+  missing_id_file << json_obj;
+  missing_id_file.close();
+
+  Graph graph;
+  GraphToIDMap graph_to_id_map;
+  GeoJsonGraphFileLoader graph_file_loader;
+  bool result = graph_file_loader.loadGraphFromFile(graph, graph_to_id_map, file_path);
+  EXPECT_TRUE(result);
+
+  // Check operations
+  EXPECT_EQ(graph[0].operations.size(), 1u);
+
+  Operations operations = graph[0].operations;
+
+  EXPECT_EQ(operations[0].type, "open_door");
+  EXPECT_EQ(operations[0].trigger, OperationTrigger::ON_EXIT);
+
+  std::string color;
+  color = operations[0].metadata.getValue("color", color);
+  EXPECT_EQ(color, "green");
+}
+
 TEST(GeoJsonGraphFileLoader, simple_graph)
 {
   Json json_obj = nlohmann::json::parse(
