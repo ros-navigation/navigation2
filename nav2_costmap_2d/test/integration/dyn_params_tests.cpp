@@ -59,7 +59,7 @@ TEST(DynParamTestNode, testDynParamsSet)
   auto parameter_client = std::make_shared<rclcpp::AsyncParametersClient>(
     node->shared_from_this(),
     "/test_costmap/test_costmap",
-    rmw_qos_profile_parameters);
+    rclcpp::ParametersQoS());
   auto results1 = parameter_client->set_parameters_atomically(
   {
     rclcpp::Parameter("robot_radius", 1.234),
