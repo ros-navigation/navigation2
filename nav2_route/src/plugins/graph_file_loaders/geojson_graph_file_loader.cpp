@@ -86,34 +86,12 @@ void GeoJsonGraphFileLoader::addNodesToGraph(
 {
   int idx = 0;
   for (const auto & node : nodes) {
-    // Required data
     const auto properties = node["properties"];
-
-    if (properties.contains("frame")) {
-      graph[idx].coords.frame_id = properties["frame"];
-    }
-
     graph[idx].nodeid = properties["id"];
-
-    Json geometry = node["geometry"];
-    graph[idx].coords.x = geometry["coordinates"][0];
-    graph[idx].coords.y = geometry["coordinates"][1];
     graph_to_id_map[graph[idx].nodeid] = idx;
-
-    // Operations
-    if (properties.contains("operations")) {
-      Operations operations;
-      for (const auto & operation : properties["operations"]) {
-        Operation operate;
-        fromJsonToOperation(operation, operate);
-        operations.push_back(operate);
-      }
-      graph[idx].operations = operations;
-    }
-
-    // MetaData
-    Metadata metadata = getMetaData(properties);
-    graph[idx].metadata = metadata;
+    graph[idx].coords = getCoordinates(node);
+    graph[idx].operations = getOperations(properties);
+    graph[idx].metadata = getMetaData(properties);
     idx++;
   }
 }
@@ -138,77 +116,111 @@ void GeoJsonGraphFileLoader::addEdgesToGraph(
       throw nav2_core::NoValidGraph("End id does not exist");
     }
 
-    // Recommended data
-
-    // Edge Cost
-    nav2_route::EdgeCost edge_cost;
-    if (properties.contains("cost")) {
-      edge_cost.cost = properties["cost"];
-    }
-
-    if (properties.contains("overridable")) {
-      edge_cost.overridable = properties["overridable"];
-    }
-
-    // Metadata
+    EdgeCost edge_cost = getEdgeCost(properties);
+    Operations operations = getOperations(properties);
     Metadata metadata = getMetaData(properties);
 
     graph[graph_to_id_map[start_id]].addEdge(
       edge_cost, &graph[graph_to_id_map[end_id]], id,
-      metadata);
+      metadata, operations);
   }
+}
+
+Coordinates GeoJsonGraphFileLoader::getCoordinates(const Json & node)
+{
+  Coordinates coords;
+  const auto & properties = node["properties"];
+  if (properties.contains("frame")) {
+    coords.frame_id = properties["frame"];
+  }
+
+  const auto & coordinates = node["geometry"]["coordinates"];
+  coords.x = coordinates[0];
+  coords.y = coordinates[1];
+
+  return coords;
 }
 
 Metadata GeoJsonGraphFileLoader::getMetaData(const Json & properties)
 {
   Metadata metadata;
-  if (properties.contains("metadata")) {
-    for (const auto & data : properties["metadata"].items()) {
-      if (!data.value().is_primitive()) {continue;}
+  if (!properties.contains("metadata")) {return metadata;}
 
-      if (data.value().is_number()) {
-        if (data.value().is_number_integer()) {
-          int value = data.value();
-          metadata.setValue(data.key(), value);
-          continue;
-        } else if (data.value().is_number_float()) {
-          float value = data.value();
-          metadata.setValue(data.key(), value);
-          continue;
-        } else {
-          double value = data.value();
-          metadata.setValue(data.key(), value);
-          continue;
-        }
-      }
+  for (const auto & data : properties["metadata"].items()) {
+    if (!data.value().is_primitive()) {continue;}
 
-      if (data.value().is_boolean()) {
-        bool value = data.value();
+    if (data.value().is_number()) {
+      if (data.value().is_number_integer()) {
+        int value = data.value();
+        metadata.setValue(data.key(), value);
+        continue;
+      } else if (data.value().is_number_float()) {
+        float value = data.value();
+        metadata.setValue(data.key(), value);
+        continue;
+      } else {
+        double value = data.value();
         metadata.setValue(data.key(), value);
         continue;
       }
-
-      if (data.value().is_string()) {
-        std::string value = data.value();
-        metadata.setValue(data.key(), value);
-        continue;
-      }
-
-      RCLCPP_ERROR(
-        logger_, "Failed to convert the key: %s value", data.key().c_str());
-      throw std::runtime_error("Failed to convert");
     }
+
+    if (data.value().is_boolean()) {
+      bool value = data.value();
+      metadata.setValue(data.key(), value);
+      continue;
+    }
+
+    if (data.value().is_string()) {
+      std::string value = data.value();
+      metadata.setValue(data.key(), value);
+      continue;
+    }
+
+    RCLCPP_ERROR(
+      logger_, "Failed to convert the key: %s value", data.key().c_str());
+    throw std::runtime_error("Failed to convert");
   }
+
   return metadata;
 }
-void GeoJsonGraphFileLoader::fromJsonToOperation(const Json &json,
-                                                 Operation &operation)
+
+Operation GeoJsonGraphFileLoader::getOperation(const Json & json_operation)
 {
-  json.at("type").get_to(operation.type);
-  Json trigger = json.at("trigger");
+  Operation operation;
+  json_operation.at("type").get_to(operation.type);
+  Json trigger = json_operation.at("trigger");
   operation.trigger = trigger.get<OperationTrigger>();
-  Metadata metadata = getMetaData(json);
+  Metadata metadata = getMetaData(json_operation);
   operation.metadata = metadata;
+
+  return operation;
+}
+
+Operations GeoJsonGraphFileLoader::getOperations(const Json & properties)
+{
+  Operations operations;
+  if (properties.contains("operations")) {
+    for (const auto & json_operation : properties["operations"]) {
+      Operation operation;
+      operation = getOperation(json_operation);
+      operations.push_back(operation);
+    }
+  }
+  return operations;
+}
+
+EdgeCost GeoJsonGraphFileLoader::getEdgeCost(const Json & properties)
+{
+  EdgeCost edge_cost;
+  if (properties.contains("cost")) {
+    edge_cost.cost = properties["cost"];
+  }
+
+  if (properties.contains("overridable")) {
+    edge_cost.overridable = properties["overridable"];
+  }
+  return edge_cost;
 }
 
 }  // namespace nav2_route

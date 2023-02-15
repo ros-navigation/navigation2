@@ -320,7 +320,7 @@ TEST(GeoJsonGraphFileLoader, metadata) {
 TEST(GeoJsonGraphFileLoader, operations)
 {
   Json json_obj = nlohmann::json::parse(
-      R"(
+    R"(
   {
     "features": [
     {
@@ -366,7 +366,19 @@ TEST(GeoJsonGraphFileLoader, operations)
       {
         "id": 2,
         "startid": 0,
-        "endid": 1
+        "endid": 1,
+        "operations":
+        {
+          "open_door":
+          {
+              "type": "open_door",
+              "trigger": "ON_EXIT",
+              "metadata":
+              {
+                "name": "green"
+              }
+          }
+        }
       },
       "geometry":
       {
@@ -389,17 +401,28 @@ TEST(GeoJsonGraphFileLoader, operations)
   bool result = graph_file_loader.loadGraphFromFile(graph, graph_to_id_map, file_path);
   EXPECT_TRUE(result);
 
-  // Check operations
-  EXPECT_EQ(graph[0].operations.size(), 1u);
+  // Check node operations
+  Operations node_operations = graph[0].operations;
 
-  Operations operations = graph[0].operations;
+  EXPECT_EQ(node_operations.size(), 1u);
 
-  EXPECT_EQ(operations[0].type, "open_door");
-  EXPECT_EQ(operations[0].trigger, OperationTrigger::ON_EXIT);
+  EXPECT_EQ(node_operations[0].type, "open_door");
+  EXPECT_EQ(node_operations[0].trigger, OperationTrigger::ON_EXIT);
 
   std::string color;
-  color = operations[0].metadata.getValue("color", color);
+  color = node_operations[0].metadata.getValue("color", color);
   EXPECT_EQ(color, "green");
+
+  // Check edge operations
+  Operations edge_operations = graph[0].neighbors[0].operations;
+  EXPECT_EQ(edge_operations.size(), 1u);
+
+  EXPECT_EQ(edge_operations[0].type, "open_door");
+  EXPECT_EQ(edge_operations[0].trigger, OperationTrigger::ON_EXIT);
+
+  std::string name;
+  name = edge_operations[0].metadata.getValue("name", name);
+  EXPECT_EQ(name, "green");
 }
 
 TEST(GeoJsonGraphFileLoader, simple_graph)

@@ -184,9 +184,16 @@ struct Node
   Operations operations;     // Operations to perform related to the node
   SearchState search_state;  // State maintained by route search algorithm
 
-  void addEdge(EdgeCost & cost, NodePtr node, unsigned int edgeid, Metadata & meta_data)
+  void addEdge(
+    EdgeCost & cost, NodePtr node, unsigned int edgeid, Metadata & Metadata,
+    Operations & Operations)
   {
-    neighbors.push_back({edgeid, this, node, cost, meta_data, {}});
+    neighbors.push_back({edgeid, this, node, cost, Metadata, Operations});
+  }
+
+  void addEdge(EdgeCost & cost, NodePtr node, unsigned int edgeid)
+  {
+    neighbors.push_back({edgeid, this, node, cost, {}, {}});
   }
 };
 

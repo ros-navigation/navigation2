@@ -26,12 +26,6 @@
 namespace nav2_route
 {
 
-NLOHMANN_JSON_SERIALIZE_ENUM( OperationTrigger, {
-  {OperationTrigger::NODE, "NODE"},
-  {OperationTrigger::ON_ENTER, "ON_ENTER"},
-  {OperationTrigger::ON_EXIT, "ON_EXIT"},
-})
-
 /**
  * @class nav2_route::GeoJsonGraphFileLoader
  * @brief A GraphFileLoader plugin to parse the geojson graph file
@@ -104,16 +98,50 @@ protected:
   void addEdgesToGraph(Graph & graph, GraphToIDMap & graph_to_id_map, std::vector<Json> & edges);
 
   /**
-   * @brief Get metadata out of the properties tag
-   * @param properties The tag the hold the metadata key
+   * @brief Populates the coordinate data
+   * @param node The json object that holds the coordinate data
+   * @return Coordinates The converted coordinate data
+   */
+  Coordinates getCoordinates(const Json & node);
+
+  /**
+   * @brief Populated the mete data if present in the properties tag
+   * @param properties The json object that holds the metadata
    * @return Metadata The converted metadata
    */
   Metadata getMetaData(const Json & properties);
 
-  void fromJsonToOperation(const Json & j, Operation &operation);
+  /**
+   * @brief Populates the operation data
+   * @param json_operation The json object that holds the operation data
+   * @return Operation The converted operation data
+   */
+  Operation getOperation(const Json & json_operation);
+
+  /**
+   * @brief Populates the operations if present in the properties tag
+   * @param properties The json object that holds the operations data
+   * @return Operations The converted operations data
+   */
+  Operations getOperations(const Json & properties);
+
+  /**
+   * @brief Populates the edge cost if present in the properties tag
+   * @param properties The json object that holds the edge cost data
+   * @return EdgeCost The converted edge cost data
+   */
+  EdgeCost getEdgeCost(const Json & properties);
 
   rclcpp::Logger logger_{rclcpp::get_logger("GeoJsonGraphFileLoader")};
 };
+
+NLOHMANN_JSON_SERIALIZE_ENUM(
+  OperationTrigger, {
+    {OperationTrigger::NODE, "NODE"},
+    {OperationTrigger::ON_ENTER, "ON_ENTER"},
+    {OperationTrigger::ON_EXIT, "ON_EXIT"},
+  })
+
 }  // namespace nav2_route
 
 #endif  // NAV2_ROUTE__PLUGINS__GRAPH_FILE_LOADERS__GEOJSON_GRAPH_FILE_LOADER_HPP_
