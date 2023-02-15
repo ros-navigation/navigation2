@@ -76,6 +76,14 @@ ParameterHandler::ParameterHandler(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".regulated_linear_scaling_min_speed", rclcpp::ParameterValue(0.25));
   declare_parameter_if_not_declared(
+    node, plugin_name_ + ".use_fixed_turn_speed", rclcpp::ParameterValue(false));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".fixed_turn_speed", rclcpp::ParameterValue(0.25));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".use_fixed_curvature_lookahead", rclcpp::ParameterValue(false));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".curvature_lookahead_dist", rclcpp::ParameterValue(0.6));
+  declare_parameter_if_not_declared(
     node, plugin_name_ + ".use_rotate_to_heading", rclcpp::ParameterValue(true));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".rotate_to_heading_min_angle", rclcpp::ParameterValue(0.785));
@@ -137,6 +145,18 @@ ParameterHandler::ParameterHandler(
   node->get_parameter(
     plugin_name_ + ".regulated_linear_scaling_min_speed",
     params_.regulated_linear_scaling_min_speed);
+  node->get_parameter(
+    plugin_name_ + ".use_fixed_turn_speed",
+    params_.use_fixed_turn_speed);
+  node->get_parameter(
+    plugin_name_ + ".fixed_turn_speed",
+    params_.fixed_turn_speed);
+  node->get_parameter(
+    plugin_name_ + ".use_fixed_curvature_lookahead",
+    params_.use_fixed_curvature_lookahead);
+  node->get_parameter(
+    plugin_name_ + ".curvature_lookahead_dist",
+    params_.curvature_lookahead_dist);
   node->get_parameter(plugin_name_ + ".use_rotate_to_heading", params_.use_rotate_to_heading);
   node->get_parameter(
     plugin_name_ + ".rotate_to_heading_min_angle", params_.rotate_to_heading_min_angle);
@@ -210,6 +230,10 @@ ParameterHandler::dynamicParametersCallback(
         params_.rotate_to_heading_angular_vel = parameter.as_double();
       } else if (name == plugin_name_ + ".min_approach_linear_velocity") {
         params_.min_approach_linear_velocity = parameter.as_double();
+      } else if (name == plugin_name_ + ".fixed_turn_speed") {
+        params_.fixed_turn_speed = parameter.as_double();
+      } else if (name == plugin_name_ + ".curvature_lookahead_dist") {
+        params_.curvature_lookahead_dist = parameter.as_double();
       } else if (name == plugin_name_ + ".max_allowed_time_to_collision_up_to_carrot") {
         params_.max_allowed_time_to_collision_up_to_carrot = parameter.as_double();
       } else if (name == plugin_name_ + ".cost_scaling_dist") {
@@ -230,6 +254,10 @@ ParameterHandler::dynamicParametersCallback(
         params_.use_velocity_scaled_lookahead_dist = parameter.as_bool();
       } else if (name == plugin_name_ + ".use_regulated_linear_velocity_scaling") {
         params_.use_regulated_linear_velocity_scaling = parameter.as_bool();
+      } else if (name == plugin_name_ + ".use_fixed_turn_speed") {
+        params_.use_fixed_turn_speed = parameter.as_bool();
+      } else if (name == plugin_name_ + ".use_fixed_curvature_lookahead") {
+        params_.use_fixed_curvature_lookahead = parameter.as_bool();
       } else if (name == plugin_name_ + ".use_cost_regulated_linear_velocity_scaling") {
         params_.use_cost_regulated_linear_velocity_scaling = parameter.as_bool();
       } else if (name == plugin_name_ + ".use_collision_detection") {
