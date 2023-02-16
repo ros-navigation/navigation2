@@ -134,6 +134,22 @@ double RegulatedPurePursuitController::getLookAheadDistance(
   return lookahead_dist;
 }
 
+double calculateCurvature(geometry_msgs::msg::Point lookahead_point)
+{
+  // Find distance^2 to look ahead point (carrot) in robot base frame
+  // This is the chord length of the circle
+  const double carrot_dist2 =
+    (lookahead_point.x * lookahead_point.x) +
+    (lookahead_point.y * lookahead_point.y);
+
+  // Find curvature of circle (k = 1 / R)
+  if (carrot_dist2 > 0.001) {
+    return 2.0 * lookahead_point.y / carrot_dist2;
+  } else {
+    return 0.0;
+  }
+}
+
 geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocityCommands(
   const geometry_msgs::msg::PoseStamped & pose,
   const geometry_msgs::msg::Twist & speed,
@@ -175,17 +191,10 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
 
   double linear_vel, angular_vel;
 
-  // Find distance^2 to look ahead point (carrot) in robot base frame
-  // This is the chord length of the circle
-  const double carrot_dist2 =
-    (carrot_pose.pose.position.x * carrot_pose.pose.position.x) +
-    (carrot_pose.pose.position.y * carrot_pose.pose.position.y);
-
-  // Find curvature of circle (k = 1 / R)
-  double curvature = 0.0;
-  if (carrot_dist2 > 0.001) {
-    curvature = 2.0 * carrot_pose.pose.position.y / carrot_dist2;
-  }
+  auto curvature_lookahead_pose = params_->use_fixed_curvature_lookahead ?
+    getLookAheadPoint(params_->curvature_lookahead_dist, transformed_plan) :
+    carrot_pose;
+  double curvature = calculateCurvature(curvature_lookahead_pose.pose.position);
 
   // Setting the velocity direction
   double sign = 1.0;
