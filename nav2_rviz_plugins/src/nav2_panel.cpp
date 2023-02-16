@@ -65,6 +65,10 @@ enum class NavigationDataTableRows {
   kNRows,
 };
 
+std::uint8_t to_underlying(NavigationDataTableRows e) {
+  return static_cast<std::underlying_type<NavigationDataTableRows>::type>(e);
+}
+
 
 // Define global GoalPoseUpdater so that the nav2 GoalTool plugin can access to update goal pose
 GoalPoseUpdater GoalUpdater;
@@ -91,7 +95,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   nr_of_loops_ = new QLineEdit;
   const int kNNavigationTableColumns = 2;
   navigation_data_table_ = new QTableWidget(
-    static_cast<std::underlying_type<NavigationDataTableRows>::type>(NavigationDataTableRows::kNRows),
+    to_underlying(NavigationDataTableRows::kNRows),
     kNNavigationTableColumns);
   navigation_data_table_->setMinimumWidth(300);
   navigation_data_table_->setColumnWidth(0, 200);
@@ -1615,11 +1619,11 @@ inline std::string Nav2Panel::toLabel(const T & msg)
 void Nav2Panel::renderNavThroughWPFeedback(QTableWidget* table, const nav2_msgs::action::FollowWaypoints::Feedback msg)
 {
   table->setItem(
-    static_cast<std::underlying_type<NavigationDataTableRows>::type>(NavigationDataTableRows::kTotalTimeTaken),
+    to_underlying(NavigationDataTableRows::kTotalTimeTaken),
     0,
     new QTableWidgetItem(QString("Total Time Taken")));
   table->setItem(
-    static_cast<std::underlying_type<NavigationDataTableRows>::type>(NavigationDataTableRows::kTotalTimeTaken),
+    to_underlying(NavigationDataTableRows::kTotalTimeTaken),
     1,
     new QTableWidgetItem(QString::fromStdString(toString(rclcpp::Duration(msg.elapsed_time).seconds(), 1) + " s")));
 }
