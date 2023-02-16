@@ -107,9 +107,10 @@ protected:
   /**
    * @brief Populated the mete data if present in the properties tag
    * @param properties The json object that holds the metadata
+   * @param key The key for the metadata
    * @return Metadata The converted metadata
    */
-  Metadata getMetaData(const Json & properties);
+  Metadata getMetaData(const Json & properties, const std::string & key = "metadata");
 
   /**
    * @brief Populates the operation data

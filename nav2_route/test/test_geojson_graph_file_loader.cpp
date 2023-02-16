@@ -236,7 +236,12 @@ TEST(GeoJsonGraphFileLoader, metadata) {
           "project": "nav2",
           "fire": true,
           "speed_limit": 0.85,
-          "retries": 10
+          "retries": 10,
+          "recursion":
+          {
+            "duck": true,
+            "bird": "sparrow"
+          }
         }
       },
       "geometry":
@@ -307,6 +312,18 @@ TEST(GeoJsonGraphFileLoader, metadata) {
   int retries = 0;
   retries = graph[0].metadata.getValue("retries", retries);
   EXPECT_EQ(retries, 10);
+
+  Metadata metadata;
+  metadata = graph[0].metadata.getValue("recursion", metadata);
+  EXPECT_EQ(metadata.data.size(), 2u);
+
+  bool duck = false;
+  duck = metadata.getValue("duck", duck);
+  EXPECT_TRUE(duck);
+
+  std::string bird;
+  bird = metadata.getValue("bird", bird);
+  EXPECT_EQ(bird, "sparrow");
 
   // Node 1 has no metadata
   EXPECT_EQ(graph[1].metadata.data.size(), 0u);

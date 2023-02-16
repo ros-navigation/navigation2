@@ -141,12 +141,18 @@ Coordinates GeoJsonGraphFileLoader::getCoordinates(const Json & node)
   return coords;
 }
 
-Metadata GeoJsonGraphFileLoader::getMetaData(const Json & properties)
+Metadata GeoJsonGraphFileLoader::getMetaData(const Json & properties, const std::string & key)
 {
   Metadata metadata;
-  if (!properties.contains("metadata")) {return metadata;}
+  if (!properties.contains(key)) {return metadata;}
 
-  for (const auto & data : properties["metadata"].items()) {
+
+  for (const auto & data : properties[key].items()) {
+    if (data.value().is_object() ) {
+      Metadata new_metadata = getMetaData(properties[key], data.key());
+      metadata.setValue(data.key(), new_metadata);
+    }
+
     if (!data.value().is_primitive()) {continue;}
 
     if (data.value().is_number()) {
