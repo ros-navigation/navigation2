@@ -16,6 +16,7 @@
 #define NAV2_RVIZ_PLUGINS__NAV2_PANEL_HPP_
 
 #include <QtWidgets>
+#include <QTableWidget>
 #include <QBasicTimer>
 #undef NO_ERROR
 
@@ -165,9 +166,11 @@ private:
   QLabel * localization_status_indicator_{nullptr};
   QLabel * navigation_goal_status_indicator_{nullptr};
   QLabel * navigation_feedback_indicator_{nullptr};
-  QLabel * follow_waypoints_feedback_indicator_{nullptr};
+  // QLabel * follow_waypoints_feedback_indicator_{nullptr};
   QLabel * waypoint_status_indicator_{nullptr};
   QLabel * number_of_loops_{nullptr};
+
+  QTableWidget * navigation_data_table_{nullptr};
 
   QLineEdit * nr_of_loops_{nullptr};
 
@@ -187,8 +190,8 @@ private:
   QLabel * imgDisplayLabel_{nullptr};
 
   // The following states are added to allow for the state of the button to only expose reset
-  // while neither the NavigateToPoses action nor FollowWaypoints are active. While running, 
-  // the user will be allowed to cancel the action. 
+  // while neither the NavigateToPoses action nor FollowWaypoints are active. While running,
+  // the user will be allowed to cancel the action.
   // The ROSActionTransition allows for the state of the action to be detected
   // and the button state to change automatically.
   QState * running_nav_through_poses{nullptr};
@@ -222,11 +225,18 @@ private:
   static inline QString getNavThroughPosesFeedbackLabel(
     const nav2_msgs::action::NavigateThroughPoses::Feedback =
     nav2_msgs::action::NavigateThroughPoses::Feedback());
-  static inline QString getFollowWaypointsFeedbackLabel(
-    const nav2_msgs::action::FollowWaypoints::Feedback =
-    nav2_msgs::action::FollowWaypoints::Feedback());
+  // static inline QString getFollowWaypointsFeedbackLabel(
+  //   const nav2_msgs::action::FollowWaypoints::Feedback =
+  //   nav2_msgs::action::FollowWaypoints::Feedback());
   template<typename T>
   static inline std::string toLabel(const T & msg);
+
+  // Render the navigation data table
+  static void renderNavThroughWPFeedback(
+    QTableWidget* table,
+    const nav2_msgs::action::FollowWaypoints::Feedback msg =
+    nav2_msgs::action::FollowWaypoints::Feedback()
+    );
 
   // round off double to the specified precision and convert to string
   static inline std::string toString(const double val, const int precision = 0);
