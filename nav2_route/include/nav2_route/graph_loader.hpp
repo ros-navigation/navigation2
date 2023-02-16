@@ -80,13 +80,14 @@ protected:
   std::string route_frame_, graph_filepath_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
   rclcpp::Logger logger_{rclcpp::get_logger("GraphLoader")};
-  nav2_util::LifecycleNode::SharedPtr node_;
 
   // Graph Parser
   pluginlib::ClassLoader<GraphFileLoader> plugin_loader_;
   GraphFileLoader::Ptr graph_file_loader_;
   std::string default_plugin_id_;
   std::string plugin_type_;
+
+  std::unordered_map<std::string, tf2::Transform> cashed_transforms_;
 };
 
 }  // namespace nav2_route

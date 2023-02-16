@@ -30,37 +30,36 @@ GraphLoader::GraphLoader(
   logger_ = node->get_logger();
   tf_ = tf;
   route_frame_ = frame;
-  node_ = node;
 
   // TODO(jw): Don't set default
   nav2_util::declare_parameter_if_not_declared(
-    node_, "graph_filepath", rclcpp::ParameterValue(
+    node, "graph_filepath", rclcpp::ParameterValue(
       ament_index_cpp::get_package_share_directory("nav2_route") +
       "/graphs/geojson/aws_graph.geojson"));
 
-  graph_filepath_ = node_->get_parameter("graph_filepath").as_string();
+  graph_filepath_ = node->get_parameter("graph_filepath").as_string();
 
   // Default Graph Parser
   const std::string default_plugin_type = "nav2_route::GeoJsonGraphFileLoader";
 
   nav2_util::declare_parameter_if_not_declared(
-    node_, "graph_file_loader", rclcpp::ParameterValue(default_plugin_id_));
-  auto graph_file_loader_id = node_->get_parameter("graph_file_loader").as_string();
+    node, "graph_file_loader", rclcpp::ParameterValue(default_plugin_id_));
+  auto graph_file_loader_id = node->get_parameter("graph_file_loader").as_string();
 
   if (graph_file_loader_id == default_plugin_id_) {
     nav2_util::declare_parameter_if_not_declared(
-      node_, default_plugin_id_ + ".plugin", rclcpp::ParameterValue(default_plugin_type));
+      node, default_plugin_id_ + ".plugin", rclcpp::ParameterValue(default_plugin_type));
   }
 
   // Create graph file loader plugin
   try {
-    plugin_type_ = nav2_util::get_plugin_type_param(node_, graph_file_loader_id);
+    plugin_type_ = nav2_util::get_plugin_type_param(node, graph_file_loader_id);
     GraphFileLoader::Ptr graph_parser = plugin_loader_.createSharedInstance((plugin_type_));
     RCLCPP_INFO(
       logger_, "Created GraphFileLoader %s of type %s",
       graph_file_loader_id.c_str(), plugin_type_.c_str());
     graph_file_loader_ = std::move(graph_parser);
-    graph_file_loader_->configure(node_);
+    graph_file_loader_->configure(node);
   } catch (pluginlib::PluginlibException & ex) {
     RCLCPP_FATAL(
       logger_,
@@ -107,28 +106,26 @@ bool GraphLoader::loadGraphFromFile(
 
 bool GraphLoader::transformGraph(Graph & graph)
 {
-  // TODO(jw): Can we assume one frame for all?
-  std::string source_frame = graph[0].coords.frame_id;
-  if (source_frame == route_frame_) {
-    RCLCPP_DEBUG(logger_, "Source frame matches the the route frame. No transformation needed.");
-    return true;
-  }
-
-  tf2::Transform tf_transform;
-  bool got_transform = nav2_util::getTransform(
-    source_frame, route_frame_, tf2::durationFromSec(0.1), tf_, tf_transform);
-
-  if (!got_transform) {return false;}
-
-
   for (auto & node : graph) {
-    // Transform all graph coordinates from the source frame to route frame
+    std::string node_frame = node.coords.frame_id;
+    if (node_frame == route_frame_) {continue;}
+
+    if (cashed_transforms_.find(node_frame) == cashed_transforms_.end()) {
+      tf2::Transform tf_transform;
+      bool got_transform = nav2_util::getTransform(
+        node_frame, route_frame_, tf2::durationFromSec(0.1), tf_, tf_transform);
+
+      if (!got_transform) {return false;}
+
+      cashed_transforms_.insert({node_frame, tf_transform});
+    }
+
     tf2::Vector3 graph_coord(
       node.coords.x,
       node.coords.y,
       0.0);
 
-    tf2::Vector3 new_coord = tf_transform * graph_coord;
+    tf2::Vector3 new_coord = cashed_transforms_[node_frame] * graph_coord;
 
     node.coords.x = static_cast<float>(new_coord.x());
     node.coords.y = static_cast<float>(new_coord.y());
