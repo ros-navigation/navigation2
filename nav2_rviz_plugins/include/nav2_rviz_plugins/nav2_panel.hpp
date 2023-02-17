@@ -165,8 +165,6 @@ private:
   QLabel * navigation_status_indicator_{nullptr};
   QLabel * localization_status_indicator_{nullptr};
   QLabel * navigation_goal_status_indicator_{nullptr};
-  QLabel * navigation_feedback_indicator_{nullptr};
-  // QLabel * follow_waypoints_feedback_indicator_{nullptr};
   QLabel * waypoint_status_indicator_{nullptr};
   QLabel * number_of_loops_{nullptr};
 
@@ -218,25 +216,37 @@ private:
   static inline QString getGoalStatusLabel(
     const int8_t status = action_msgs::msg::GoalStatus::STATUS_UNKNOWN);
 
-  // create label string from feedback msg
-  static inline QString getNavToPoseFeedbackLabel(
+  // Render navigation to pose in the data table
+  static void renderNavToPoseFeedback(
+    QTableWidget* table,
     const nav2_msgs::action::NavigateToPose::Feedback msg =
-    nav2_msgs::action::NavigateToPose::Feedback());
-  static inline QString getNavThroughPosesFeedbackLabel(
-    const nav2_msgs::action::NavigateThroughPoses::Feedback =
-    nav2_msgs::action::NavigateThroughPoses::Feedback());
-  // static inline QString getFollowWaypointsFeedbackLabel(
-  //   const nav2_msgs::action::FollowWaypoints::Feedback =
-  //   nav2_msgs::action::FollowWaypoints::Feedback());
-  template<typename T>
-  static inline std::string toLabel(const T & msg);
+    nav2_msgs::action::NavigateToPose::Feedback()
+    );
 
-  // Render the navigation data table
+  // Render navigation through poses in the data table
+  static void renderNavThroughPosesFeedback(
+    QTableWidget* table,
+    const nav2_msgs::action::NavigateThroughPoses::Feedback msg =
+    nav2_msgs::action::NavigateThroughPoses::Feedback()
+    );
+
+  // Render navigation to waypoints in the data table
   static void renderNavThroughWPFeedback(
     QTableWidget* table,
     const nav2_msgs::action::FollowWaypoints::Feedback msg =
     nav2_msgs::action::FollowWaypoints::Feedback()
     );
+
+  // Render navigation loop count and goal index in the data table
+  static void renderWaypointLoopCount(
+    QTableWidget* table,
+    const int goal_index,
+    const int loop_count
+    );
+
+  //! Render the common members of NavigateToPose::Feedback or NavigateThroughPoses::Feedback in a table
+  template<typename T>
+  static inline void renderNavGenericPoseFeedback(QTableWidget* table, const T & msg);
 
   // round off double to the specified precision and convert to string
   static inline std::string toString(const double val, const int precision = 0);
