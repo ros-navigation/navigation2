@@ -216,6 +216,7 @@ Operations GeoJsonGraphFileLoader::getOperations(const Json & properties)
   Operations operations;
   if (properties.contains("operations")) {
     for (const auto & json_operation : properties["operations"]) {
+      std::cout << "getting operations" << std::endl;
       Operation operation;
       operation = getOperation(json_operation);
       operations.push_back(operation);

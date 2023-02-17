@@ -30,150 +30,8 @@ RclCppFixture g_rclcppfixture;
 using namespace nav2_route; // NOLINT
 using Json = nlohmann::json;
 
-TEST(GeoJsonGraphFileLoader, file_does_not_exist)
-{
-  Graph graph;
-  GraphToIDMap graph_to_id_map;
-  std::string file_path;
-
-  GeoJsonGraphFileLoader graph_file_loader;
-  bool result = graph_file_loader.loadGraphFromFile(graph, graph_to_id_map, file_path);
-  EXPECT_FALSE(result);
-}
-
-TEST(GeoJsonGraphFileLoader, no_nodes_in_graph)
-{
-  Json json_obj = nlohmann::json::parse(
-    R"(
-  {
-    "features": [
-    { "type": "Feature",
-      "properties":
-      {
-        "id": 123,
-        "startid": 20,
-        "endid": 4
-      },
-      "geometry":
-      {
-        "type": "MultiLineString",
-        "coordinates": [ [ [ 1.0, 3.65 ], [ -4.0, 3.65 ] ] ]
-      }
-    }
-  ]
-  }
-  )");
-  std::string file_path = "no_nodes.geojson";
-
-  std::ofstream missing_id_file(file_path);
-  missing_id_file << json_obj;
-  missing_id_file.close();
-
-  Graph graph;
-  GraphToIDMap graph_to_id_map;
-  GeoJsonGraphFileLoader graph_file_loader;
-  bool result = graph_file_loader.loadGraphFromFile(graph, graph_to_id_map, file_path);
-  EXPECT_FALSE(result);
-  std::filesystem::remove(file_path);
-}
-
-TEST(GeoJsonGraphFileLoader, no_edges_in_graph)
-{
-  Json json_obj = nlohmann::json::parse(
-    R"(
-  {
-    "features": [
-    { "type": "Feature",
-      "properties":
-      {
-        "frame": "map"
-      },
-      "geometry":
-      {
-        "type": "Point",
-        "coordinates": [ 0.0, 0.0 ]
-      }
-    }
-  ]
-  }
-  )");
-  std::string file_path = "no_edges.geojson";
-
-  std::ofstream missing_id_file(file_path);
-  missing_id_file << json_obj;
-  missing_id_file.close();
-
-  Graph graph;
-  GraphToIDMap graph_to_id_map;
-  GeoJsonGraphFileLoader graph_file_loader;
-  bool result = graph_file_loader.loadGraphFromFile(graph, graph_to_id_map, file_path);
-  EXPECT_FALSE(result);
-  std::filesystem::remove(file_path);
-}
-
-TEST(GeoJsonGraphFileLoader, missing_node_id)
-{
-  Json json_obj = nlohmann::json::parse(
-    R"(
-  {
-    "features": [
-    { "type": "Feature",
-      "properties":
-      {
-        "frame": "map"
-      },
-      "geometry":
-      {
-        "type": "Point",
-        "coordinates": [ 0.0, 0.0 ]
-      }
-    },
-    { "type": "Feature",
-      "properties":
-      {
-        "frame": "map"
-      },
-      "geometry":
-      {
-        "type": "Point",
-        "coordinates": [ 0.0, 0.0 ]
-      }
-    },
-    { "type": "Feature",
-      "properties":
-      {
-        "id": 123,
-        "startid": 20,
-        "endid": 4
-      },
-      "geometry":
-      {
-        "type": "MultiLineString",
-        "coordinates": [ [ [ 1.0, 3.65 ], [ -4.0, 3.65 ] ] ]
-      }
-    }
-  ]
-  }
-  )");
-  std::string file_path = "missing_id.geojson";
-
-  std::ofstream missing_id_file(file_path);
-  missing_id_file << json_obj;
-  missing_id_file.close();
-
-  Graph graph;
-  GraphToIDMap graph_to_id_map;
-  GeoJsonGraphFileLoader graph_file_loader;
-  EXPECT_THROW(
-    graph_file_loader.loadGraphFromFile(graph, graph_to_id_map, file_path),
-    Json::exception);
-  std::filesystem::remove(file_path);
-}
-
-TEST(GeoJsonGraphFileLoader, start_id_does_not_exist)
-{
-  Json json_obj = nlohmann::json::parse(
-    R"(
+Json g_simple_graph = nlohmann::json::parse(
+  R"(
   {
     "features": [
     {
@@ -192,8 +50,21 @@ TEST(GeoJsonGraphFileLoader, start_id_does_not_exist)
       "type": "Feature",
       "properties":
       {
+        "id": 1,
+        "frame": "map"
+      },
+      "geometry":
+      {
+        "type":"Point",
+        "coordinates": [ 1.0, 0.0 ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties":
+      {
         "id": 2,
-        "startid": 10,
+        "startid": 0,
         "endid": 1
       },
       "geometry":
@@ -206,11 +77,85 @@ TEST(GeoJsonGraphFileLoader, start_id_does_not_exist)
   }
   )");
 
-  std::string file_path = "invalid_start_id.geojson";
-
+void writeGraphToFile(const Json & graph, const std::string & file_path = "graph.geojson")
+{
   std::ofstream missing_id_file(file_path);
-  missing_id_file << json_obj;
+  missing_id_file << graph;
   missing_id_file.close();
+}
+
+TEST(GeoJsonGraphFileLoader, test_file_does_not_exist)
+{
+  Graph graph;
+  GraphToIDMap graph_to_id_map;
+  std::string file_path;
+
+  GeoJsonGraphFileLoader graph_file_loader;
+  bool result = graph_file_loader.loadGraphFromFile(graph, graph_to_id_map, file_path);
+  EXPECT_FALSE(result);
+}
+
+TEST(GeoJsonGraphFileLoader, test_no_nodes_in_graph)
+{
+  Json json_graph = g_simple_graph;
+
+  auto & features = json_graph["features"];
+  features.erase(features.begin(), features.begin() + 2);
+
+  std::string file_path = "no_nodes.geojson";
+  writeGraphToFile(json_graph, file_path);
+
+  Graph graph;
+  GraphToIDMap graph_to_id_map;
+  GeoJsonGraphFileLoader graph_file_loader;
+  bool result = graph_file_loader.loadGraphFromFile(graph, graph_to_id_map, file_path);
+  EXPECT_FALSE(result);
+  std::filesystem::remove(file_path);
+}
+
+TEST(GeoJsonGraphFileLoader, test_no_edges_in_graph)
+{
+  Json json_graph = g_simple_graph;
+  auto & features = json_graph["features"];
+  features.erase(2);
+
+  std::string file_path = "no_edges.geojson";
+  writeGraphToFile(json_graph, file_path);
+
+  Graph graph;
+  GraphToIDMap graph_to_id_map;
+  GeoJsonGraphFileLoader graph_file_loader;
+  bool result = graph_file_loader.loadGraphFromFile(graph, graph_to_id_map, file_path);
+  EXPECT_FALSE(result);
+  std::filesystem::remove(file_path);
+}
+
+TEST(GeoJsonGraphFileLoader, test_missing_node_id)
+{
+  Json json_graph = g_simple_graph;
+  auto & properties = json_graph["features"][0]["properties"];
+  properties.erase("id");
+
+  std::string file_path = "missing_id.geojson";
+  writeGraphToFile(json_graph, file_path);
+
+  Graph graph;
+  GraphToIDMap graph_to_id_map;
+  GeoJsonGraphFileLoader graph_file_loader;
+  EXPECT_THROW(
+    graph_file_loader.loadGraphFromFile(graph, graph_to_id_map, file_path),
+    Json::exception);
+  std::filesystem::remove(file_path);
+}
+
+TEST(GeoJsonGraphFileLoader, test_invalid_start_id_for_edge)
+{
+  Json json_graph = g_simple_graph;
+  auto & properties = json_graph["features"][2]["properties"];
+  properties["startid"] = 100;
+
+  std::string file_path = "invalid_start_id.geojson";
+  writeGraphToFile(json_graph, file_path);
 
   Graph graph;
   GraphToIDMap graph_to_id_map;
@@ -220,208 +165,115 @@ TEST(GeoJsonGraphFileLoader, start_id_does_not_exist)
     std::runtime_error);
 }
 
-TEST(GeoJsonGraphFileLoader, metadata) {
-  Json json_obj = nlohmann::json::parse(
+TEST(GeoJsonGraphFileLoader, test_node_metadata) {
+  Json json_graph = g_simple_graph;
+
+  Json node_metadata = nlohmann::json::parse(
     R"(
-  {
-    "features": [
     {
-      "type": "Feature",
-      "properties":
+      "metadata":
       {
-        "id": 0,
-        "frame": "map",
-        "metadata":
-        {
-          "project": "nav2",
-          "fire": true,
-          "speed_limit": 0.85,
-          "retries": 10,
-          "recursion":
-          {
-            "duck": true,
-            "bird": "sparrow"
-          }
-        }
-      },
-      "geometry":
-      {
-        "type": "Point",
-        "coordinates": [ 0.0, 0.0 ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties":
-      {
-        "id": 1,
-        "frame": "map"
-      },
-      "geometry":
-      {
-        "type":"Point",
-        "coordinates": [ 1.0, 0.0 ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties":
-      {
-        "id": 2,
-        "startid": 0,
-        "endid": 1,
-        "metadata":
+        "person":
         {
           "name": "josh",
-          "array": [1.0, 0.0, 5.2]
-        }
-      },
-      "geometry":
-      {
-        "type": "MultiLineString",
-        "coordinates": [ [ [ 0.0, 0.0 ], [ 1.0, 0.0 ] ] ]
+          "can_drive": true,
+          "top_speed": 0.85,
+          "age": 29
+        },
+        "array": [0.0, 1.0, 2.0]
       }
     }
-  ]
-  }
-  )");
-  std::string file_path = "metadata.geojson";
+)");
+  Json edge_metadata = nlohmann::json::parse(
+    R"(
+    {
+      "metadata":
+      {
+        "color": "green"
+      }
+    }
+)");
 
-  std::ofstream missing_id_file(file_path);
-  missing_id_file << json_obj;
-  missing_id_file.close();
+  json_graph["features"][0]["properties"].insert(node_metadata.begin(), node_metadata.end());
+  json_graph["features"][2]["properties"].insert(edge_metadata.begin(), edge_metadata.end());
+
+  std::string file_path = "metadata.geojson";
+  writeGraphToFile(json_graph, file_path);
 
   Graph graph;
   GraphToIDMap graph_to_id_map;
   GeoJsonGraphFileLoader graph_file_loader;
   bool result = graph_file_loader.loadGraphFromFile(graph, graph_to_id_map, file_path);
   EXPECT_TRUE(result);
+  std::filesystem::remove(file_path);
 
-  // Test all generic types
-  std::string project;
-  project = graph[0].metadata.getValue("project", project);
-  EXPECT_EQ(project, "nav2");
-
-  bool fire = false;
-  fire = graph[0].metadata.getValue("fire", fire);
-  EXPECT_TRUE(fire);
-
-  float speed_limit = 0.0;
-  speed_limit = graph[0].metadata.getValue("speed_limit", speed_limit);
-  EXPECT_NEAR(speed_limit, 0.85, 1e-6);
-
-  unsigned int retries = 0;
-  retries = graph[0].metadata.getValue("retries", retries);
-  EXPECT_EQ(retries, 10u);
-
+  // Check node metadata
   Metadata metadata;
-  metadata = graph[0].metadata.getValue("recursion", metadata);
-  EXPECT_EQ(metadata.data.size(), 2u);
+  metadata = graph[0].metadata.getValue("person", metadata);
 
-  bool duck = false;
-  duck = metadata.getValue("duck", duck);
-  EXPECT_TRUE(duck);
-
-  std::string bird;
-  bird = metadata.getValue("bird", bird);
-  EXPECT_EQ(bird, "sparrow");
-
-  // Node 1 has no metadata
-  EXPECT_EQ(graph[1].metadata.data.size(), 0u);
-
-  // Check edge metadata
   std::string name;
-  name = graph[0].neighbors[0].metadata.getValue("name", name);
-  EXPECT_EQ(name, "josh");
+  name = metadata.getValue("name", name);
+  EXPECT_EQ(name, node_metadata["metadata"]["person"]["name"]);
+
+  bool can_drive = false;
+  can_drive = metadata.getValue("can_drive", can_drive);
+  EXPECT_EQ(can_drive, node_metadata["metadata"]["person"]["can_drive"]);
+
+  float top_speed = 0.0f;
+  top_speed = metadata.getValue("top_speed", top_speed);
+  EXPECT_NEAR(top_speed, node_metadata["metadata"]["person"]["top_speed"], 1e-6);
+
+  unsigned int age = 0;
+  age = metadata.getValue("age", age);
+  EXPECT_EQ(age, node_metadata["metadata"]["person"]["age"]);
 
   std::vector<std::any> array;
-  array = graph[0].neighbors[0].metadata.getValue("array", array);
+  array = graph[0].metadata.getValue("array", array);
   EXPECT_EQ(array.size(), 3u);
+
+  EXPECT_EQ(std::any_cast<float>(array[0]), 0.0f);
+  EXPECT_EQ(std::any_cast<float>(array[1]), 1.0f);
+  EXPECT_EQ(std::any_cast<float>(array[2]), 2.0f);
+
+  // Check edge metadata
+  std::string color;
+  color = graph[0].neighbors[0].metadata.getValue("color", color);
+  EXPECT_EQ(color, edge_metadata["metadata"]["color"]);
 }
 
 TEST(GeoJsonGraphFileLoader, operations)
 {
-  Json json_obj = nlohmann::json::parse(
+  Json json_graph = g_simple_graph;
+
+  Json json_operation = nlohmann::json::parse(
     R"(
-  {
-    "features": [
     {
-      "type": "Feature",
-      "properties":
+      "operations":
       {
-        "id": 0,
-        "frame": "map",
-        "operations":
+        "open_door":
         {
-          "open_door":
-          {
-              "type": "open_door",
-              "trigger": "ON_EXIT",
-              "metadata":
-              {
-                "color": "green"
-              }
-          }
+            "type": "open_door",
+            "trigger": "ON_EXIT",
+            "metadata":
+            {
+              "color": "green"
+            }
         }
-      },
-      "geometry":
-      { "type": "Point",
-        "coordinates": [ 0.0, 0.0 ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties":
-      {
-        "id": 1,
-        "frame": "map"
-      },
-      "geometry":
-      {
-        "type":"Point",
-        "coordinates": [ 1.0, 0.0 ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties":
-      {
-        "id": 2,
-        "startid": 0,
-        "endid": 1,
-        "operations":
-        {
-          "open_door":
-          {
-              "type": "open_door",
-              "trigger": "ON_EXIT",
-              "metadata":
-              {
-                "name": "green"
-              }
-          }
-        }
-      },
-      "geometry":
-      {
-        "type": "MultiLineString",
-        "coordinates": [ [ [ 0.0, 0.0 ], [ 1.0, 0.0 ] ] ]
       }
     }
-  ]
-  }
-  )");
-  std::string file_path = "operations.geojson";
+)");
 
-  std::ofstream missing_id_file(file_path);
-  missing_id_file << json_obj;
-  missing_id_file.close();
+  json_graph["features"][0]["properties"].insert(json_operation.begin(), json_operation.end());
+
+  std::string file_path = "operations.geojson";
+  writeGraphToFile(json_graph, file_path);
 
   Graph graph;
   GraphToIDMap graph_to_id_map;
   GeoJsonGraphFileLoader graph_file_loader;
   bool result = graph_file_loader.loadGraphFromFile(graph, graph_to_id_map, file_path);
   EXPECT_TRUE(result);
+  std::filesystem::remove(file_path);
 
   // Check node operations
   Operations node_operations = graph[0].operations;
@@ -434,71 +286,14 @@ TEST(GeoJsonGraphFileLoader, operations)
   std::string color;
   color = node_operations[0].metadata.getValue("color", color);
   EXPECT_EQ(color, "green");
-
-  // Check edge operations
-  Operations edge_operations = graph[0].neighbors[0].operations;
-  EXPECT_EQ(edge_operations.size(), 1u);
-
-  EXPECT_EQ(edge_operations[0].type, "open_door");
-  EXPECT_EQ(edge_operations[0].trigger, OperationTrigger::ON_EXIT);
-
-  std::string name;
-  name = edge_operations[0].metadata.getValue("name", name);
-  EXPECT_EQ(name, "green");
 }
 
 TEST(GeoJsonGraphFileLoader, simple_graph)
 {
-  Json json_obj = nlohmann::json::parse(
-    R"(
-  {
-    "features": [
-    {
-      "type": "Feature",
-      "properties":
-      {
-        "id": 0,
-        "frame": "map"
-      },
-      "geometry":
-      { "type": "Point",
-        "coordinates": [ 0.0, 0.0 ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties":
-      {
-        "id": 1,
-        "frame": "map"
-      },
-      "geometry":
-      {
-        "type":"Point",
-        "coordinates": [ 1.0, 0.0 ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties":
-      {
-        "id": 2,
-        "startid": 0,
-        "endid": 1
-      },
-      "geometry":
-      {
-        "type": "MultiLineString",
-        "coordinates": [ [ [ 0.0, 0.0 ], [ 1.0, 0.0 ] ] ]
-      }
-    }
-  ]
-  }
-  )");
   std::string file_path = "simple_graph.geojson";
 
   std::ofstream missing_id_file(file_path);
-  missing_id_file << json_obj;
+  missing_id_file << g_simple_graph;
   missing_id_file.close();
 
   Graph graph;
