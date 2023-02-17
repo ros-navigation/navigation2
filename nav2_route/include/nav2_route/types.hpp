@@ -185,15 +185,10 @@ struct Node
   SearchState search_state;  // State maintained by route search algorithm
 
   void addEdge(
-    EdgeCost & cost, NodePtr node, unsigned int edgeid, Metadata & Metadata,
-    Operations & Operations)
+    EdgeCost & cost, NodePtr node, unsigned int edgeid, Metadata meta_data = {},
+    Operations operations_data = {})
   {
-    neighbors.push_back({edgeid, this, node, cost, Metadata, Operations});
-  }
-
-  void addEdge(EdgeCost & cost, NodePtr node, unsigned int edgeid)
-  {
-    neighbors.push_back({edgeid, this, node, cost, {}, {}});
+    neighbors.push_back({edgeid, this, node, cost, meta_data, operations_data});
   }
 };
 

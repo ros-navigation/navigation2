@@ -32,6 +32,11 @@ void GeoJsonGraphFileLoader::configure(
 bool GeoJsonGraphFileLoader::loadGraphFromFile(
   Graph & graph, GraphToIDMap & graph_to_id_map, std::string filepath)
 {
+  if (!fileExists(filepath)) {
+    RCLCPP_ERROR(logger_, "The filepath %s does not exist", filepath.c_str());
+    return false;
+  }
+
   std::ifstream graph_file(filepath);
   Json geojson_graph;
 
@@ -146,46 +151,49 @@ Metadata GeoJsonGraphFileLoader::getMetaData(const Json & properties, const std:
   Metadata metadata;
   if (!properties.contains(key)) {return metadata;}
 
-
   for (const auto & data : properties[key].items()) {
     if (data.value().is_object() ) {
       Metadata new_metadata = getMetaData(properties[key], data.key());
       metadata.setValue(data.key(), new_metadata);
+      continue;
     }
 
-    if (!data.value().is_primitive()) {continue;}
+    const auto setPrimitiveType = [&](const auto & value) -> std::any
+      {
+        if (value.is_number()) {
+          if (value.is_number_unsigned()) {
+            return static_cast<unsigned int>(value);
+          } else if (value.is_number_integer()) {
+            return static_cast<int>(value);
+          } else {
+            return static_cast<float>(value);
+          }
+        }
 
-    if (data.value().is_number()) {
-      if (data.value().is_number_integer()) {
-        int value = data.value();
-        metadata.setValue(data.key(), value);
-        continue;
-      } else if (data.value().is_number_float()) {
-        float value = data.value();
-        metadata.setValue(data.key(), value);
-        continue;
-      } else {
-        double value = data.value();
-        metadata.setValue(data.key(), value);
-        continue;
+        if (value.is_boolean()) {
+          return static_cast<bool>(value);
+        }
+
+        if (value.is_string()) {
+          return static_cast<std::string>(value);
+        }
+        RCLCPP_ERROR(
+          logger_, "Failed to convert the key: %s to a value", data.key().c_str());
+        throw std::runtime_error("Failed to convert");
+      };
+
+    if (data.value().is_array()) {
+      std::vector<std::any> array;
+      for (const auto & el : data.value()) {
+        auto value = setPrimitiveType(el);
+        array.push_back(value);
       }
-    }
-
-    if (data.value().is_boolean()) {
-      bool value = data.value();
-      metadata.setValue(data.key(), value);
+      metadata.setValue(data.key(), array);
       continue;
     }
 
-    if (data.value().is_string()) {
-      std::string value = data.value();
-      metadata.setValue(data.key(), value);
-      continue;
-    }
-
-    RCLCPP_ERROR(
-      logger_, "Failed to convert the key: %s value", data.key().c_str());
-    throw std::runtime_error("Failed to convert");
+    auto value = setPrimitiveType(data.value());
+    metadata.setValue(data.key(), value);
   }
 
   return metadata;

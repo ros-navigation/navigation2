@@ -46,7 +46,7 @@ public:
   virtual ~GraphFileLoader() = default;
 
   /**
-   * @brief Configure the scorer, but do not store the node
+   * @brief Configure the graph file loader, but do not store the node
    * @param parent pointer to user's node
    */
   virtual void configure(
@@ -65,13 +65,6 @@ public:
     Graph & graph,
     GraphToIDMap & graph_to_id_map,
     std::string filepath) = 0;
-
-  /**
-   * @brief Checks if a file even exists on the filesystem
-   * @param filepath file to check
-   * @return bool If the file exists
-   */
-  virtual bool fileExists(const std::string & filepath) = 0;
 };
 }  // namespace nav2_route
 

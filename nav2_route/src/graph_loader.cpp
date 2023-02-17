@@ -80,10 +80,6 @@ bool GraphLoader::loadGraphFromFile(
     filepath = graph_filepath_;
   }
 
-  if (!graph_file_loader_->fileExists(filepath)) {
-    RCLCPP_ERROR(logger_, "The filepath %s does not exist", filepath.c_str());
-    return false;
-  }
   RCLCPP_INFO(
     logger_,
     "Loading graph file from %s, by parser %s", filepath.c_str(), plugin_type_.c_str());
@@ -108,7 +104,7 @@ bool GraphLoader::transformGraph(Graph & graph)
 {
   for (auto & node : graph) {
     std::string node_frame = node.coords.frame_id;
-    if (node_frame == route_frame_) {continue;}
+    if (node_frame.empty() || node_frame == route_frame_) {continue;}
 
     if (cashed_transforms_.find(node_frame) == cashed_transforms_.end()) {
       tf2::Transform tf_transform;

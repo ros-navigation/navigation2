@@ -34,10 +34,10 @@ TEST(GeoJsonGraphFileLoader, file_does_not_exist)
 {
   Graph graph;
   GraphToIDMap graph_to_id_map;
-  std::string file_path = "graph.geojson";
+  std::string file_path;
 
   GeoJsonGraphFileLoader graph_file_loader;
-  bool result = graph_file_loader.fileExists(file_path);
+  bool result = graph_file_loader.loadGraphFromFile(graph, graph_to_id_map, file_path);
   EXPECT_FALSE(result);
 }
 
@@ -272,7 +272,8 @@ TEST(GeoJsonGraphFileLoader, metadata) {
         "endid": 1,
         "metadata":
         {
-          "name": "nav2"
+          "name": "josh",
+          "array": [1.0, 0.0, 5.2]
         }
       },
       "geometry":
@@ -309,9 +310,9 @@ TEST(GeoJsonGraphFileLoader, metadata) {
   speed_limit = graph[0].metadata.getValue("speed_limit", speed_limit);
   EXPECT_NEAR(speed_limit, 0.85, 1e-6);
 
-  int retries = 0;
+  unsigned int retries = 0;
   retries = graph[0].metadata.getValue("retries", retries);
-  EXPECT_EQ(retries, 10);
+  EXPECT_EQ(retries, 10u);
 
   Metadata metadata;
   metadata = graph[0].metadata.getValue("recursion", metadata);
@@ -331,7 +332,11 @@ TEST(GeoJsonGraphFileLoader, metadata) {
   // Check edge metadata
   std::string name;
   name = graph[0].neighbors[0].metadata.getValue("name", name);
-  EXPECT_EQ(name, "nav2");
+  EXPECT_EQ(name, "josh");
+
+  std::vector<std::any> array;
+  array = graph[0].neighbors[0].metadata.getValue("array", array);
+  EXPECT_EQ(array.size(), 3u);
 }
 
 TEST(GeoJsonGraphFileLoader, operations)

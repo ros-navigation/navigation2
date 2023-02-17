@@ -64,14 +64,14 @@ public:
     GraphToIDMap & graph_to_id_map,
     std::string filepath) override;
 
-  /**
- * @brief Checks if a file even exists on the filesystem
- * @param filepath file to check
- * @return bool If the file exists
- */
-  bool fileExists(const std::string & filepath) override;
-
 protected:
+  /**
+   * @brief Checks if a file even exists on the filesystem
+   * @param filepath file to check
+   * @return bool If the file exists
+   */
+  bool fileExists(const std::string & filepath);
+
   /**
    * @brief Get the graph elements from the features
    * @param[in] features The features to grab the graph nodes from
