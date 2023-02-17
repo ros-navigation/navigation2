@@ -1047,6 +1047,7 @@ AmclNode::getMeanWeightedClustersCentroid(amcl_hyp_t & mean_centroid){
     double weighted_x = 0.0;    
     double weighted_y = 0.0;
     double weighted_yaw = 0.0;
+    double weighted_w = 0.0;
     for (int cluster_idx = 0;
       cluster_idx < pf_->sets[pf_->current_set].cluster_count; cluster_idx++)
     {
@@ -1062,17 +1063,18 @@ AmclNode::getMeanWeightedClustersCentroid(amcl_hyp_t & mean_centroid){
       weighted_y += pose_mean.v[1] * weight;
       weighted_yaw += pose_mean.v[2] * weight;
 
+      weighted_w += weight * weight;
     }
 
     mean_centroid.pf_pose_mean.v[0] = weighted_x;
     mean_centroid.pf_pose_mean.v[1] = weighted_y;
     mean_centroid.pf_pose_mean.v[2] = weighted_yaw;
 
-    // As we take information from all clusters (whose total weight is 1)
-    // we assign weight of that cluster also to 1
-    mean_centroid.weight = 1.0;
+    mean_centroid.weight = weighted_w;
+;
 
     RCLCPP_DEBUG(get_logger(), "Mean centroid pose: [%f, %f, %f]", weighted_x, weighted_y, weighted_yaw);
+    RCLCPP_DEBUG(get_logger(), "Mean centroid weight: [%f]", weighted_w);
 
     return true;
 }
