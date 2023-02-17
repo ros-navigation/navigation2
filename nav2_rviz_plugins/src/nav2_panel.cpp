@@ -65,9 +65,11 @@ enum class NavigationDataTableRows {
   kNRows,
 };
 
-std::uint8_t to_underlying(NavigationDataTableRows e) {
+constexpr std::uint8_t to_underlying(NavigationDataTableRows e) {
   return static_cast<std::underlying_type<NavigationDataTableRows>::type>(e);
 }
+
+static constexpr uint8_t kNumNavTableRows = to_underlying(NavigationDataTableRows::kNRows);
 
 
 // Define global GoalPoseUpdater so that the nav2 GoalTool plugin can access to update goal pose
@@ -93,19 +95,21 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   nr_of_loops_ = new QLineEdit;
   const int kNNavigationTableColumns = 2;
   navigation_data_table_ = new QTableWidget(
-    to_underlying(NavigationDataTableRows::kNRows),
+    kNumNavTableRows,
     kNNavigationTableColumns);
   navigation_data_table_->verticalHeader()->setVisible(false);
   navigation_data_table_->horizontalHeader()->setVisible(false);
   //! @todo determine how to size table automatically
-  //! @todo determine how to set table background transparent
   //! @todo determine how to remove table scroll bars always
   navigation_data_table_->setMinimumWidth(300);
   navigation_data_table_->setColumnWidth(0, 200);
-  navigation_data_table_->setMinimumHeight(200);
-  // navigation_data_table_->setColumnWidth(1, navigation_data_table_->width()/2);
+  navigation_data_table_->setMinimumHeight(250); // adjusted manually
   navigation_data_table_->horizontalHeader()->setStretchLastSection(true);
   store_initial_pose_checkbox_ = new QCheckBox("Store initial_pose");
+  navigation_data_table_->setStyleSheet("QTableWidget {background-color: transparent;}");
+  for (int r = 0; r < kNumNavTableRows; r++){
+    navigation_data_table_->hideRow(r);
+  }
 
   // Create the state machine used to present the proper control button states in the UI
 
@@ -1133,6 +1137,9 @@ Nav2Panel::onAccumulatedWp()
   // Disable navigation modes
   navigation_mode_button_->setEnabled(false);
   pause_resume_button_->setEnabled(false);
+
+  // Make visible the feedback
+  navigation_data_table_->showRow(0);
 
   /** Making sure that the pose array does not get updated
    *  between the process**/
