@@ -86,8 +86,6 @@ void Range::getData(
     return;
   }
 
-  // Obtaining the transform to get data from source frame and time where it was received
-  // to the base frame and current time
   tf2::Transform tf_transform;
   if (base_shift_correction_) {
     // Obtaining the transform to get data from source frame and time where it was received
@@ -102,7 +100,8 @@ void Range::getData(
     }
   } else {
     // Obtaining the transform to get data from source frame to base frame without time shift
-    // considered. Less accurate but much more faster option.
+    // considered. Less accurate but much more faster option not dependent on state estimation
+    // frames.
     if (
       !nav2_util::getTransform(
         data_->header.frame_id, base_frame_id_,
