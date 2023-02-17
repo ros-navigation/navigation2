@@ -292,15 +292,14 @@ TEST(GeoJsonGraphFileLoader, simple_graph)
 {
   std::string file_path = "simple_graph.geojson";
 
-  std::ofstream missing_id_file(file_path);
-  missing_id_file << g_simple_graph;
-  missing_id_file.close();
+  writeGraphToFile(g_simple_graph, file_path);
 
   Graph graph;
   GraphToIDMap graph_to_id_map;
   GeoJsonGraphFileLoader graph_file_loader;
   bool result = graph_file_loader.loadGraphFromFile(graph, graph_to_id_map, file_path);
   EXPECT_TRUE(result);
+  std::filesystem::remove(file_path);
 
   EXPECT_EQ(graph.size(), 2u);
 
@@ -326,6 +325,4 @@ TEST(GeoJsonGraphFileLoader, simple_graph)
   EXPECT_EQ(graph[0].neighbors[0].end, &graph[1]);
   EXPECT_TRUE(graph[0].neighbors[0].edge_cost.overridable);
   EXPECT_EQ(graph[0].neighbors[0].edge_cost.cost, 0.0f);
-
-  std::filesystem::remove(file_path);
 }
