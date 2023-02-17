@@ -81,7 +81,7 @@ public:
    * @param route Route to check
    * @return bool if this node is the last node
    */
-  bool isStartOrEndNode(int idx, const Route & route);
+  bool isStartOrEndNode(RouteTrackingState & state, const Route & route);
 
   /**
    * @brief Get the current robot's base_frame pose in route_frame

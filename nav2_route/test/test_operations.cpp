@@ -105,9 +105,10 @@ TEST(OperationsManagerTest, test_processing_fail)
   state.current_edge = &enter;
   geometry_msgs::msg::PoseStamped pose;
   Route route;
+  ReroutingState info;
 
   // Should trigger nothing
-  auto result = manager.process(true, state, route, pose);
+  auto result = manager.process(true, state, route, pose, info);
   EXPECT_EQ(result.operations_triggered.size(), 0u);
 }
 
@@ -134,14 +135,15 @@ TEST(OperationsManagerTest, test_processing_speed_on_status)
   state.last_node = &node2;
   state.next_node = &node2;
   state.current_edge = &enter;
+  ReroutingState info;
 
   // No status change, shouldn't do anything
-  OperationsResult result = manager.process(false, state, route, pose);
+  OperationsResult result = manager.process(false, state, route, pose, info);
   EXPECT_FALSE(result.reroute);
   EXPECT_EQ(result.operations_triggered.size(), 0u);
 
   // Status change, may now trigger the only plugin
-  result = manager.process(true, state, route, pose);
+  result = manager.process(true, state, route, pose, info);
   EXPECT_EQ(result.operations_triggered.size(), 1u);
   EXPECT_EQ(result.operations_triggered[0], std::string("AdjustSpeedLimit"));
   rclcpp::Rate r(10);
@@ -175,12 +177,13 @@ TEST(OperationsManagerTest, test_rerouting_service_on_query)
   state.current_edge = &enter;
   geometry_msgs::msg::PoseStamped pose;
   Route route;
+  ReroutingState info;
 
   // Should trigger, either way!
-  auto result = manager.process(false, state, route, pose);
+  auto result = manager.process(false, state, route, pose, info);
   EXPECT_EQ(result.operations_triggered.size(), 1u);
   EXPECT_FALSE(result.reroute);
-  result = manager.process(true, state, route, pose);
+  result = manager.process(true, state, route, pose, info);
   EXPECT_EQ(result.operations_triggered.size(), 1u);
   EXPECT_FALSE(result.reroute);
 
@@ -192,12 +195,12 @@ TEST(OperationsManagerTest, test_rerouting_service_on_query)
   EXPECT_TRUE(resp->success);
 
   // Check values are correct after service call
-  result = manager.process(true, state, route, pose);
+  result = manager.process(true, state, route, pose, info);
   EXPECT_EQ(result.operations_triggered.size(), 1u);
   EXPECT_TRUE(result.reroute);
 
   // and resets
-  result = manager.process(false, state, route, pose);
+  result = manager.process(false, state, route, pose, info);
   EXPECT_EQ(result.operations_triggered.size(), 1u);
   EXPECT_FALSE(result.reroute);
 }
@@ -231,6 +234,7 @@ TEST(OperationsManagerTest, test_trigger_event_on_graph)
   geometry_msgs::msg::PoseStamped pose;
   Route route;
   Metadata mdata;
+  ReroutingState info;
 
   // Setup some test operations
   Operation op, op2, op3;
@@ -250,7 +254,7 @@ TEST(OperationsManagerTest, test_trigger_event_on_graph)
   // use_feedback_operations is true so should just log that it can't find the operaiton
   // never gets to plugin, so no throw of lack of server
   node2.operations.push_back(op);
-  auto result = manager.process(true, state, route, pose);
+  auto result = manager.process(true, state, route, pose, info);
   EXPECT_EQ(result.operations_triggered.size(), 1u);
   EXPECT_FALSE(result.reroute);
 
@@ -259,14 +263,14 @@ TEST(OperationsManagerTest, test_trigger_event_on_graph)
   // metadata
   node2.operations.clear();
   node2.operations.push_back(op2);
-  EXPECT_THROW(manager.process(true, state, route, pose), nav2_core::OperationFailed);
+  EXPECT_THROW(manager.process(true, state, route, pose, info), nav2_core::OperationFailed);
 
   // Now lets test what should actually work with a real service in the metadata
   node2.operations.clear();
   node2.operations.push_back(op3);
 
   // This should throw because this service is not yet available on wait_for_service
-  EXPECT_THROW(manager.process(true, state, route, pose), nav2_core::OperationFailed);
+  EXPECT_THROW(manager.process(true, state, route, pose, info), nav2_core::OperationFailed);
 
   // Now, lets test with a real server that is really available for use
   bool got_srv = false;
@@ -283,7 +287,7 @@ TEST(OperationsManagerTest, test_trigger_event_on_graph)
 
   auto service = node_int->create_service<std_srvs::srv::Trigger>(service_name, callback);
 
-  result = manager.process(true, state, route, pose);
+  result = manager.process(true, state, route, pose, info);
   EXPECT_EQ(result.operations_triggered.size(), 1u);
   EXPECT_FALSE(result.reroute);
   EXPECT_TRUE(got_srv);
@@ -318,6 +322,7 @@ TEST(OperationsManagerTest, test_trigger_event_on_graph_global_service)
   geometry_msgs::msg::PoseStamped pose;
   Route route;
   Metadata mdata;
+  ReroutingState info;
 
   // Setup working case
   Operation op3;
@@ -344,7 +349,7 @@ TEST(OperationsManagerTest, test_trigger_event_on_graph_global_service)
 
   auto service = node_int->create_service<std_srvs::srv::Trigger>(service_name, callback);
 
-  auto result = manager.process(true, state, route, pose);
+  auto result = manager.process(true, state, route, pose, info);
   EXPECT_EQ(result.operations_triggered.size(), 1u);
   EXPECT_FALSE(result.reroute);
   EXPECT_TRUE(got_srv);
@@ -370,7 +375,7 @@ TEST(OperationsManagerTest, test_trigger_event_on_graph_global_service)
 
   auto service2 = node_int->create_service<std_srvs::srv::Trigger>("hello_world", callback2);
 
-  result = manager.process(true, state, route, pose);
+  result = manager.process(true, state, route, pose, info);
   EXPECT_EQ(result.operations_triggered.size(), 1u);
   EXPECT_FALSE(result.reroute);
   EXPECT_TRUE(got_srv2);
@@ -401,9 +406,10 @@ TEST(OperationsManagerTest, test_trigger_event_on_graph_failures)
   state.current_edge = &enter;
   geometry_msgs::msg::PoseStamped pose;
   Route route;
+  ReroutingState info;
 
   // No operations, nothing should trigger even though status changed
-  auto result = manager.process(true, state, route, pose);
+  auto result = manager.process(true, state, route, pose, info);
   EXPECT_EQ(result.operations_triggered.size(), 0u);
   EXPECT_FALSE(result.reroute);
 
@@ -417,12 +423,12 @@ TEST(OperationsManagerTest, test_trigger_event_on_graph_failures)
   // Should also do nothing, this type isn't a plugin type supported
   // and `use_feedback_operations` is false
   node2.operations.push_back(op);
-  EXPECT_THROW(manager.process(true, state, route, pose), nav2_core::OperationFailed);
+  EXPECT_THROW(manager.process(true, state, route, pose, info), nav2_core::OperationFailed);
 
   // Make sure its using the provided plugin name NOT its type
   node2.operations.clear();
   node2.operations.push_back(op2);
-  EXPECT_THROW(manager.process(true, state, route, pose), nav2_core::OperationFailed);
+  EXPECT_THROW(manager.process(true, state, route, pose, info), nav2_core::OperationFailed);
 }
 
 
@@ -453,6 +459,7 @@ TEST(OperationsManagerTest, test_time_marker)
   route.edges.push_back(&enter);
   route.edges.push_back(&last);
 
+  ReroutingState info;
   RouteTrackingState state;
   state.last_node = &node1;
   state.next_node = &node2;
@@ -460,18 +467,18 @@ TEST(OperationsManagerTest, test_time_marker)
   state.route_edges_idx = 0;
 
   // No status change, shouldn't do anything ... even after some time
-  OperationsResult result = manager.process(false, state, route, pose);
+  OperationsResult result = manager.process(false, state, route, pose, info);
   EXPECT_FALSE(result.reroute);
   EXPECT_EQ(result.operations_triggered.size(), 0u);
   rclcpp::Rate r(1);
   r.sleep();
-  result = manager.process(false, state, route, pose);
+  result = manager.process(false, state, route, pose, info);
   EXPECT_FALSE(result.reroute);
   EXPECT_EQ(result.operations_triggered.size(), 0u);
 
   // Status change, may now trigger but state doesn't match
   // (new edge) so it won't update times on the first call
-  result = manager.process(true, state, route, pose);
+  result = manager.process(true, state, route, pose, info);
   EXPECT_EQ(result.operations_triggered.size(), 1u);
 
   float time = 0.0f;
@@ -489,7 +496,7 @@ TEST(OperationsManagerTest, test_time_marker)
   state.next_node = &node3;
   state.current_edge = &enter;
   state.route_edges_idx = 1;
-  result = manager.process(true, state, route, pose);
+  result = manager.process(true, state, route, pose, info);
   EXPECT_EQ(result.operations_triggered.size(), 1u);
   time = 0.0f;
   time = exit.metadata.getValue<float>("abs_time_taken", time);
@@ -504,7 +511,7 @@ TEST(OperationsManagerTest, test_time_marker)
   state.next_node = &node4;
   state.current_edge = &last;
   state.route_edges_idx = 2;
-  result = manager.process(true, state, route, pose);
+  result = manager.process(true, state, route, pose, info);
   time = 0.0f;
   time = enter.metadata.getValue<float>("abs_time_taken", time);
   EXPECT_GT(time, 1e-6f);
@@ -519,7 +526,7 @@ TEST(OperationsManagerTest, test_time_marker)
   state.next_node = nullptr;
   state.current_edge = nullptr;
   state.route_edges_idx = 3;
-  result = manager.process(true, state, route, pose);
+  result = manager.process(true, state, route, pose, info);
   time = 0.0f;
   time = last.metadata.getValue<float>("abs_time_taken", time);
   EXPECT_GT(time, 0.5f);

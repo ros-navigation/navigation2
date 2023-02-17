@@ -127,7 +127,8 @@ OperationsResult OperationsManager::process(
   const bool status_change,
   const RouteTrackingState & state,
   const Route & route,
-  const geometry_msgs::msg::PoseStamped & pose)
+  const geometry_msgs::msg::PoseStamped & pose,
+  const ReroutingState & rerouting_info)
 {
   // Get important state information
   OperationsResult result;
@@ -135,6 +136,12 @@ OperationsResult OperationsManager::process(
   EdgePtr edge_entered = state.current_edge;
   EdgePtr edge_exited =
     state.route_edges_idx > 0 ? route.edges[state.route_edges_idx - 1] : nullptr;
+
+  // If we have rerouting info curr_edge, then after the first node is achieved,
+  // the robot is exiting the partial previous edge.
+  if (state.route_edges_idx == 0 && rerouting_info.curr_edge) {
+    edge_exited = rerouting_info.curr_edge;
+  }
 
   if (status_change) {
     // Process operations defined in the navigation graph at node or edge
@@ -164,7 +171,7 @@ OperationsResult OperationsManager::process(
 
   // Process operations which trigger regardless of status change or nodes / edges
   processOperationsPluginVector(
-    query_operations_, result, node, edge_entered, edge_exited, route, pose);
+    query_operations_, result, node, edge_entered /*edge_curr*/, edge_exited, route, pose);
   return result;
 }
 

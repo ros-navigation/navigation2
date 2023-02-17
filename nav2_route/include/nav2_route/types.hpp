@@ -226,19 +226,26 @@ struct RouteTrackingState
 
 /**
  * @struct nav2_route::ReroutingState
- * @brief Tracker's result state for rerouting needed by planning
- * to avoid reported blocked edges and reroute from the current
- * appropriate starting point along the route
+ * @brief State shared to objects to communicate important rerouting data
+ * to avoid rerouting over blocked edges, ensure reroute from the current
+ * appropriate starting point along the route, and state of edges if pruned
+ * for seeding the Tracker's state.
  */
 struct ReroutingState
 {
   unsigned int rerouting_start_id{std::numeric_limits<unsigned int>::max()};
   std::vector<unsigned int> blocked_ids;
+  bool first_time{true};
+  EdgePtr curr_edge{nullptr};
+  Coordinates closest_pt_on_edge;
 
   void reset()
   {
     rerouting_start_id = std::numeric_limits<unsigned int>::max();
     blocked_ids.clear();
+    first_time = true;
+    curr_edge = nullptr;
+    closest_pt_on_edge = Coordinates();
   }
 };
 

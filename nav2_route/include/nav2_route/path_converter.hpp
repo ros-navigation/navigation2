@@ -55,12 +55,14 @@ public:
   /**
    * @brief Convert a Route into a dense path
    * @param route Route object
+   * @param rerouting_info Re-Route info in case partial path to be populated
    * @param frame Frame ID from planning
    * @param now Time
    * @return Path of the route
    */
   nav_msgs::msg::Path densify(
     const Route & route,
+    const ReroutingState & rerouting_info,
     const std::string & frame,
     const rclcpp::Time & now);
 

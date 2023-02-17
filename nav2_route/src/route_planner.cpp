@@ -83,7 +83,7 @@ void RoutePlanner::findShortestGraphTraversal(
   Graph & graph, const NodePtr start, const NodePtr goal,
   const std::vector<unsigned int> & blocked_ids)
 {
-  // Setup the Dijkstra's search problem
+  // Setup the Dijkstra's search
   resetSearchStates(graph);
   goal_id_ = goal->nodeid;
   start->search_state.integrated_cost = 0.0;

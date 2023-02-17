@@ -70,8 +70,9 @@ TEST(PathConverterTest, test_path_converter_api)
   route.route_cost = 50.0;
   route.edges.push_back(&test_edge1);
   route.edges.push_back(&test_edge2);
+  ReroutingState info;
 
-  auto path = converter.densify(route, frame, time);
+  auto path = converter.densify(route, info, frame, time);
   EXPECT_EQ(path.header.frame_id, frame);
   EXPECT_EQ(path.header.stamp.nanosec, time.nanoseconds());
 
@@ -106,8 +107,9 @@ TEST(PathConverterTest, test_path_single_pt_path)
 
   Route route;
   route.start_node = &test_node;
+  ReroutingState info;
 
-  auto path = converter.densify(route, frame, time);
+  auto path = converter.densify(route, info, frame, time);
   EXPECT_EQ(path.poses.size(), 1u);
   EXPECT_NEAR(path.poses[0].pose.position.x, 10.0, 0.01);
   EXPECT_NEAR(path.poses[0].pose.position.y, 40.0, 0.01);

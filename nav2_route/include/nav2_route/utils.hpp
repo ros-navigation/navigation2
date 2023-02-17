@@ -205,6 +205,48 @@ inline float normalizedDot(
   return (v1x / mag1) * (v2x / mag2) + (v1y / mag1) * (v2y / mag2);
 }
 
+/**
+ * @brief Finds the closest point on the line segment made up of start-end to pose
+ * @param pose Pose to find point closest on the line with respect to
+ * @param start Start of line segment
+ * @param end End of line segment
+ * @return Coordinates of point on the line closest to the pose
+ */
+inline Coordinates findClosestPoint(
+  const geometry_msgs::msg::PoseStamped & pose,
+  const Coordinates & start, const Coordinates & end)
+{
+  Coordinates pt;
+  const float vx = end.x - start.x;
+  const float vy = end.y - start.y;
+  const float ux = start.x - pose.pose.position.x;
+  const float uy = start.y - pose.pose.position.y;
+  const float uv = vx * ux + vy * uy;
+  const float vv = vx * vx + vy * vy;
+
+  // They are the same point, so only one option
+  if (vv < 1e-6) {
+    return start;
+  }
+
+  const float t = -uv / vv;
+  if (t > 0.0 && t < 1.0) {
+    pt.x = (1.0 - t) * start.x + t * end.x;
+    pt.y = (1.0 - t) * start.y + t * end.y;
+  } else if (t <= 0.0) {
+    pt = start;
+  } else {
+    pt = end;
+  }
+
+  return pt;
+}
+
+inline float distance(const Coordinates & coords, const geometry_msgs::msg::PoseStamped & pose)
+{
+  return hypotf(coords.x - pose.pose.position.x, coords.y - pose.pose.position.y);
+}
+
 }  // namespace utils
 
 }  // namespace nav2_route

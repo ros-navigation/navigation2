@@ -185,9 +185,11 @@ TEST(GoalIntentExtractorTest, test_pruning)
   // Test that we return identical things if not using poses or route is empty of edges
   Route routeA;
   routeA.edges.resize(10);
-  EXPECT_EQ(extractor.pruneStartandGoal(routeA, no_poses_goal).edges.size(), 10u);
+  ReroutingState rerouting_info;
+  rerouting_info.first_time = true;
+  EXPECT_EQ(extractor.pruneStartandGoal(routeA, no_poses_goal, rerouting_info).edges.size(), 10u);
   routeA.edges.clear();
-  EXPECT_EQ(extractor.pruneStartandGoal(routeA, poses_goal).edges.size(), 0u);
+  EXPECT_EQ(extractor.pruneStartandGoal(routeA, poses_goal, rerouting_info).edges.size(), 0u);
 
   // Create a sample route to test pruning upon with different start/goal pose requests
   Node node1, node2, node3, node4;
@@ -230,13 +232,13 @@ TEST(GoalIntentExtractorTest, test_pruning)
   geometry_msgs::msg::PoseStamped start, goal;
   goal.pose.position.x = 3.0;
   extractor.setStartAndGoal(start, goal);
-  EXPECT_EQ(extractor.pruneStartandGoal(route, poses_goal).edges.size(), 3u);
+  EXPECT_EQ(extractor.pruneStartandGoal(route, poses_goal, rerouting_info).edges.size(), 3u);
 
   // Test orthogonally misaligned, so should still have all the same points
   start.pose.position.y = -10.0;
   goal.pose.position.y = 10.0;
   extractor.setStartAndGoal(start, goal);
-  EXPECT_EQ(extractor.pruneStartandGoal(route, poses_goal).edges.size(), 3u);
+  EXPECT_EQ(extractor.pruneStartandGoal(route, poses_goal, rerouting_info).edges.size(), 3u);
 
   // Test start node before start pose and end node before end pose (no pruning)
   start.pose.position.x = -1.0;
@@ -244,13 +246,13 @@ TEST(GoalIntentExtractorTest, test_pruning)
   start.pose.position.y = 0.0;
   goal.pose.position.y = 0.0;
   extractor.setStartAndGoal(start, goal);
-  auto rtn = extractor.pruneStartandGoal(route, poses_goal);
+  auto rtn = extractor.pruneStartandGoal(route, poses_goal, rerouting_info);
   EXPECT_EQ(rtn.edges.size(), 3u);
 
   // Test start, and only start is after the start node along edge1, should be pruned
   start.pose.position.x = 0.1;
   extractor.setStartAndGoal(start, goal);
-  rtn = extractor.pruneStartandGoal(route, poses_goal);
+  rtn = extractor.pruneStartandGoal(route, poses_goal, rerouting_info);
   EXPECT_EQ(rtn.edges.size(), 2u);
   EXPECT_EQ(rtn.edges[0]->edgeid, 6u);
   EXPECT_EQ(rtn.start_node->nodeid, 2u);
@@ -260,7 +262,7 @@ TEST(GoalIntentExtractorTest, test_pruning)
   start.pose.position.x = 0.0;
   goal.pose.position.x = 2.5;
   extractor.setStartAndGoal(start, goal);
-  rtn = extractor.pruneStartandGoal(route, poses_goal);
+  rtn = extractor.pruneStartandGoal(route, poses_goal, rerouting_info);
   EXPECT_EQ(rtn.edges.size(), 2u);
   EXPECT_EQ(rtn.edges.back()->edgeid, 6u);
   EXPECT_EQ(rtn.edges.back()->end->nodeid, 3u);
@@ -272,7 +274,7 @@ TEST(GoalIntentExtractorTest, test_pruning)
   goal.pose.position.x = 2.6;
   goal.pose.position.y = -0.4;
   extractor.setStartAndGoal(start, goal);
-  rtn = extractor.pruneStartandGoal(route, poses_goal);
+  rtn = extractor.pruneStartandGoal(route, poses_goal, rerouting_info);
   EXPECT_EQ(rtn.edges.size(), 1u);
   EXPECT_EQ(rtn.edges[0]->edgeid, 6u);
   EXPECT_EQ(rtn.edges.back()->start->nodeid, 2u);

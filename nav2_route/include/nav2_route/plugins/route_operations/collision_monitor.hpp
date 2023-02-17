@@ -22,6 +22,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "nav2_route/interfaces/route_operation.hpp"
+#include "nav2_route/utils.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "nav2_util/line_iterator.hpp"
 #include "nav2_util/node_utils.hpp"
@@ -97,17 +98,6 @@ public:
     const Metadata * /*mdata*/) override;
 
 protected:
-  /**
-   * @brief Finds the closest point on the line segment made up of start-end to pose
-   * @param pose Pose to find point closest on the line with respect to
-   * @param start Start of line segment
-   * @param end End of line segment
-   * @return Coordinates of point on the line closest to the pose
-   */
-  Coordinates findClosestPoint(
-    const geometry_msgs::msg::PoseStamped & pose,
-    const Coordinates & start, const Coordinates & end);
-
   /**
    * @brief Backs out the end coordinate along the line segment start-end to length dist
    * @param start Start of line segment

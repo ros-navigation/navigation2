@@ -85,7 +85,7 @@ OperationResult CollisionMonitor::perform(
   getCostmap();
 
   float dist_checked = 0.0;
-  Coordinates start = findClosestPoint(
+  Coordinates start = utils::findClosestPoint(
     curr_pose, curr_edge->start->coords, curr_edge->end->coords);
   Coordinates end = curr_edge->end->coords;
   unsigned int curr_edge_id = curr_edge->edgeid;
@@ -135,36 +135,6 @@ OperationResult CollisionMonitor::perform(
   }
 
   return result;
-}
-
-Coordinates CollisionMonitor::findClosestPoint(
-  const geometry_msgs::msg::PoseStamped & pose,
-  const Coordinates & start, const Coordinates & end)
-{
-  Coordinates pt;
-  const float vx = end.x - start.x;
-  const float vy = end.y - start.y;
-  const float ux = start.x - pose.pose.position.x;
-  const float uy = start.y - pose.pose.position.y;
-  const float uv = vx * ux + vy * uy;
-  const float vv = vx * vx + vy * vy;
-
-  // They are the same point, so only one option
-  if (vv < 1e-6) {
-    return start;
-  }
-
-  const float t = -uv / vv;
-  if (t > 0.0 && t < 1.0) {
-    pt.x = (1.0 - t) * start.x + t * end.x;
-    pt.y = (1.0 - t) * start.y + t * end.y;
-  } else if (t <= 0.0) {
-    pt = start;
-  } else {
-    pt = end;
-  }
-
-  return pt;
 }
 
 Coordinates CollisionMonitor::backoutValidEndPoint(

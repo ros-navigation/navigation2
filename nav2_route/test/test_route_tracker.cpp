@@ -91,13 +91,25 @@ TEST(RouteTrackerTest, test_route_start_end)
   tracker.configure(node, nullptr, nullptr, "map", "base_link");
   Route route;
   route.edges.resize(7);
+  RouteTrackingState state;
 
-  EXPECT_TRUE(tracker.isStartOrEndNode(-1, route));  // Attempting to get to first node
-  EXPECT_FALSE(tracker.isStartOrEndNode(0, route));
-  EXPECT_FALSE(tracker.isStartOrEndNode(1, route));
-  EXPECT_FALSE(tracker.isStartOrEndNode(3, route));
-  EXPECT_FALSE(tracker.isStartOrEndNode(5, route));
-  EXPECT_TRUE(tracker.isStartOrEndNode(6, route));  // Approaching final node
+  state.route_edges_idx = -1;
+  EXPECT_TRUE(tracker.isStartOrEndNode(state, route));  // Attempting to get to first node
+
+  state.route_edges_idx = 0;
+  EXPECT_FALSE(tracker.isStartOrEndNode(state, route));
+
+  state.route_edges_idx = 1;
+  EXPECT_FALSE(tracker.isStartOrEndNode(state, route));
+
+  state.route_edges_idx = 3;
+  EXPECT_FALSE(tracker.isStartOrEndNode(state, route));
+
+  state.route_edges_idx = 5;
+  EXPECT_FALSE(tracker.isStartOrEndNode(state, route));
+
+  state.route_edges_idx = 6;
+  EXPECT_TRUE(tracker.isStartOrEndNode(state, route));  // Approaching final node
 }
 
 TEST(RouteTrackerTest, test_feedback)
@@ -115,7 +127,6 @@ TEST(RouteTrackerTest, test_feedback)
   ASSERT_EXIT(
     tracker.publishFeedback(false, 0u, 1u, 2u, ops), ::testing::KilledBySignal(SIGSEGV), ".*");
 }
-
 
 TEST(RouteTrackerTest, test_node_achievement_simple)
 {
@@ -200,7 +211,7 @@ TEST(RouteTrackerTest, test_node_achievement)
 {
   auto node = std::make_shared<nav2_util::LifecycleNode>("router_test");
 
-  // Minimum threshold is 1m by default
+  // Minimum threshold is 2m by default
   RouteTrackerWrapper tracker;
   tracker.configure(node, nullptr, nullptr, "map", "base_link");
 
@@ -246,8 +257,8 @@ TEST(RouteTrackerTest, test_node_achievement)
   geometry_msgs::msg::PoseStamped pose;
 
   // Test radius for start
-  pose.pose.position.x = -0.8;
-  pose.pose.position.y = 0.8;
+  pose.pose.position.x = -1.5;
+  pose.pose.position.y = 1.5;
   EXPECT_FALSE(tracker.nodeAchieved(pose, state, route));
   pose.pose.position.x = -0.7;
   pose.pose.position.y = 0.7;

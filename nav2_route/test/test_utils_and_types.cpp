@@ -215,3 +215,116 @@ TEST(UtilsTest, test_normalized_dot)
   v2y = 0;
   EXPECT_NEAR(utils::normalizedDot(v1x, v1y, v2x, v2y), -1.0, 1e-4);
 }
+
+TEST(UtilsTest, test_find_closest_point)
+{
+  geometry_msgs::msg::PoseStamped pose;
+  Coordinates start, end;
+  start.x = 0.0;
+  start.y = 0.0;
+  end.x = 10.0;
+  end.y = 0.0;
+  pose.pose.position.x = 0.0;
+  pose.pose.position.y = 0.0;
+
+  // Test at, far from, and away from initial point
+  Coordinates rtn = utils::findClosestPoint(pose, start, end);
+  EXPECT_NEAR(rtn.x, 0.0, 0.01);
+  EXPECT_NEAR(rtn.y, 0.0, 0.01);
+
+  pose.pose.position.x = -10.0;
+  pose.pose.position.y = 0.0;
+  rtn = utils::findClosestPoint(pose, start, end);
+  EXPECT_NEAR(rtn.x, 0.0, 0.01);
+  EXPECT_NEAR(rtn.y, 0.0, 0.01);
+
+  pose.pose.position.x = -10.0;
+  pose.pose.position.y = 100.0;
+  rtn = utils::findClosestPoint(pose, start, end);
+  EXPECT_NEAR(rtn.x, 0.0, 0.01);
+  EXPECT_NEAR(rtn.y, 0.0, 0.01);
+
+  // Test at, far from, and away from final point
+  pose.pose.position.x = 10.0;
+  pose.pose.position.y = 0.0;
+  rtn = utils::findClosestPoint(pose, start, end);
+  EXPECT_NEAR(rtn.x, 10.0, 0.01);
+  EXPECT_NEAR(rtn.y, 0.0, 0.01);
+
+  pose.pose.position.x = 100.0;
+  pose.pose.position.y = 0.0;
+  rtn = utils::findClosestPoint(pose, start, end);
+  EXPECT_NEAR(rtn.x, 10.0, 0.01);
+  EXPECT_NEAR(rtn.y, 0.0, 0.01);
+
+  pose.pose.position.x = 100.0;
+  pose.pose.position.y = -10000.0;
+  rtn = utils::findClosestPoint(pose, start, end);
+  EXPECT_NEAR(rtn.x, 10.0, 0.01);
+  EXPECT_NEAR(rtn.y, 0.0, 0.01);
+
+  pose.pose.position.x = 1000.0;
+  pose.pose.position.y = 1000.0;
+  rtn = utils::findClosestPoint(pose, start, end);
+  EXPECT_NEAR(rtn.x, 10.0, 0.01);
+  EXPECT_NEAR(rtn.y, 0.0, 0.01);
+
+  // Test along length of the line
+  pose.pose.position.x = 5.0;
+  pose.pose.position.y = 1000.0;
+  rtn = utils::findClosestPoint(pose, start, end);
+  EXPECT_NEAR(rtn.x, 5.0, 0.01);
+  EXPECT_NEAR(rtn.y, 0.0, 0.01);
+
+  pose.pose.position.x = 0.1;
+  pose.pose.position.y = -10.0;
+  rtn = utils::findClosestPoint(pose, start, end);
+  EXPECT_NEAR(rtn.x, 0.1, 0.01);
+  EXPECT_NEAR(rtn.y, 0.0, 0.01);
+
+  // Lets try a more legit line now that we know the basics work OK
+  start.x = 0.0;
+  start.y = 0.0;
+  end.x = 10.0;
+  end.y = 10.0;
+  pose.pose.position.x = 5.0;
+  pose.pose.position.y = 5.0;
+  rtn = utils::findClosestPoint(pose, start, end);
+  EXPECT_NEAR(rtn.x, 5.0, 0.01);
+  EXPECT_NEAR(rtn.y, 5.0, 0.01);
+
+  pose.pose.position.x = 0.0;
+  pose.pose.position.y = 10.0;
+  rtn = utils::findClosestPoint(pose, start, end);
+  EXPECT_NEAR(rtn.x, 5.0, 0.01);
+  EXPECT_NEAR(rtn.y, 5.0, 0.01);
+
+  pose.pose.position.x = 10.0;
+  pose.pose.position.y = 0.0;
+  rtn = utils::findClosestPoint(pose, start, end);
+  EXPECT_NEAR(rtn.x, 5.0, 0.01);
+  EXPECT_NEAR(rtn.y, 5.0, 0.01);
+
+  pose.pose.position.x = 2.0;
+  pose.pose.position.y = 4.0;
+  rtn = utils::findClosestPoint(pose, start, end);
+  EXPECT_NEAR(rtn.x, 3.0, 0.01);
+  EXPECT_NEAR(rtn.y, 3.0, 0.01);
+
+  pose.pose.position.x = 4.0;
+  pose.pose.position.y = 10.0;
+  rtn = utils::findClosestPoint(pose, start, end);
+  EXPECT_NEAR(rtn.x, 7.0, 0.01);
+  EXPECT_NEAR(rtn.y, 7.0, 0.01);
+
+  // Try identity to make sure no nan issues
+  start.x = 0.0;
+  start.y = 0.0;
+  end.x = 0.0;
+  end.y = 0.0;
+  pose.pose.position.x = 4.0;
+  pose.pose.position.y = 10.0;
+  rtn = utils::findClosestPoint(pose, start, end);
+  EXPECT_NEAR(rtn.x, 0.0, 0.01);
+  EXPECT_NEAR(rtn.y, 0.0, 0.01);
+}

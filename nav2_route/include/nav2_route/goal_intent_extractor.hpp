@@ -22,6 +22,7 @@
 #include "tf2_ros/transform_listener.h"
 #include "nav2_core/route_exceptions.hpp"
 #include "nav2_util/robot_utils.hpp"
+#include "nav2_util/node_utils.hpp"
 #include "nav2_msgs/action/compute_route.hpp"
 #include "nav2_msgs/action/compute_and_track_route.hpp"
 
@@ -92,20 +93,34 @@ public:
   /**
    * @brief Prune the start and end nodes in a route if the start or goal poses,
    * respectively, are already along the route to avoid backtracking
+   * @param inpute_route Route to prune
    * @param goal Action request goal
+   * @param first_time If this is the first time routing
+   * @return Pruned route
    */
   template<typename GoalT>
   Route pruneStartandGoal(
-    const Route & input_route, const std::shared_ptr<const GoalT> goal);
+    const Route & input_route,
+    const std::shared_ptr<const GoalT> goal,
+    ReroutingState & rerouting_info);
+
+  /**
+   * @brief Set the start id's start pose for use in pruning if it is externally overridden
+   * @param start_id Id of starting node to prune using
+   */
+  void setStartIdx(const unsigned int start_id);
 
 protected:
   rclcpp::Logger logger_{rclcpp::get_logger("GoalIntentExtractor")};
   std::shared_ptr<NodeSpatialTree> node_spatial_tree_;
   GraphToIDMap * id_to_graph_map_;
+  Graph * graph_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::string route_frame_;
   std::string base_frame_;
   geometry_msgs::msg::PoseStamped start_, goal_;
+  bool prune_goal_;
+  float max_dist_from_edge_;
 };
 
 }  // namespace nav2_route

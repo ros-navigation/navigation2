@@ -87,13 +87,15 @@ public:
    * @param state The route tracking state to check for state info
    * @param route The raw route being tracked
    * @param pose robot pose
+   * @param rerouting_info Rerouting information regarding previous partial state
    * @return A result vector whether the operations are requesting something to occur
    */
   OperationsResult process(
     const bool status_change,
     const RouteTrackingState & state,
     const Route & route,
-    const geometry_msgs::msg::PoseStamped & pose);
+    const geometry_msgs::msg::PoseStamped & pose,
+    const ReroutingState & rerouting_info);
 
 protected:
   /**

@@ -26,15 +26,12 @@ Note however that plugins may also use outside information from topics, services
 - Action interface request can process requests with start / goal node IDs or poses
 - Service interface to change navigation route graphs at run-time
 - Edge scoring dynamic plugins return a cost for traversing an edge and may mark an edge as invalid in current conditions
-- Common edge scoring plugins are provided for needs like optimizing for distance, time, cost, semantic information, static and dynamically changing penalties
 - Graph file parsing dynamic plugins allow for use of custom or proprietary formats
-- Provided file parsing plugins based on popular standards GeoJSON
-- Operation dynamic plugins to perform arbitrary tasks at a given node or when entering or leaving an edge on the route (plan)
+- Operation dynamic plugins to perform arbitrary tasks at a given node or when entering or leaving an edge on the route
 - Operation may be graph-centric (e.g. graph file identifies operation to perform) or plugin-centric (e.g. plugins self-identify nodes and edges to act upon) 
-- Operations provided include live adjusting of speed limits, checking for collision to trigger rerouting automatically, storing metadata about edge traversal for later use, triggering an event, and service to remotely trigger rerouting.
-- The nodes and edges metadata may be modified or used to communicate information across plugins including different types across runs (e.g. `TimeMarker` Route Operation stores the time to traverse an edge which `TimeScorer` edge scorer may use in later route requests for improved estimated traversal times)
+- The nodes and edges metadata may be modified or used to communicate information across plugins including different types across different runs
 - The Route Tracking action returns regular feedback on important events or state updates (e.g. rerouting requests, passed a node, triggered an option, etc)
-- The Route Planning action computes a route and returns it in its action response.
+- If rerouting occurs during Route Tracking along the previous current edge, that state will be retained for improved behavior and provide an interpolated nav_msgs/Path from the closest point on the edge to the edge's end (or rerouting's starting node) to minimize free-space planning connections where a known edge exists and is continued.
 
 ## Design
 
@@ -44,6 +41,7 @@ TODO main elements of the package and their role (needs final architecture hashe
 ### Plugin Interfaces
 
 TODO provide specifications for plugins // what they do // links (needs plugin API stability)
+TODO plugins list
 
 ## Metrics
 
@@ -58,59 +56,58 @@ TODO provide full list (needs completion)
 ## File Formats
 
 The graphs may be stored in one of the formats the parser plugins can understand or implement your own parser for a particular format of your interest!
-Parsers are provided for GeoJSON formats.
-The only two required features of the navigation graph is for the nodes and edges to have identifiers from each other to be unique for referencing and for edges to have the IDs of the nodes belonging to the start and end of the edge.
+A parser is provided for GeoJSON formats.
+The only three required features of the navigation graph is (1) for the nodes and edges to have identifiers from each other to be unique for referencing and (2) for edges to have the IDs of the nodes belonging to the start and end of the edge and (3) nodes contain coordinates.
 This is strictly required for the Route Server to operate properly in all of its features.
 
-Besides this, we establish some requirements and conventions for route graph files _for the provided parsers_ to standardize this information.
-These conventions are utilized by the provided parsers to offer consistent and documented behavior. 
-These are also special values stored in the graph nodes and edges outside of the arbitrarily defined metadata.
+Besides this, we establish some requirements and conventions for route graph files to standardize this information to offer consistent and documented behavior:
 
-In the provided parsers, the unique identifier for each node and edge should be given as `id`. The edge's nodes are `startid` and `endid`.
+The unique identifier for each node and edge should be given as `id`. The edge's nodes are `startid` and `endid`. The coordinates are given in an array called `coordinates`.
 While technically optional, it is highly recommended to also provide:
-- The node's location and frame of reference (`x`, `y`, `frame`)
-- The Operation's `trigger` (e.g. enter, exit edge, node achieved) and `type` (e.g. action to perform)
+- The node's frame of reference (`frame`)
+- The Operation's `trigger` (e.g. enter, exit edge, node achieved) and `type` (e.g. action to perform), as relevent
 
 While optional, it is somewhat recommended to provide, if relevent:
 - The edge's `cost`, if it is fixed or edge scoring plugins are not used
 - Whether the edge's cost is `overridable` with edge scoring plugins, if provided
 
-Otherwise, the Node, Edge, and Operations may contain other arbitrary application-specific fields with key-value pairs.
-The keys are stored as strings in `metadata` within the objects which acts as a python3 dict (e.g. `std::unordered_map<std::string, std::any>`) with an accessor function `T getValue(const std::string & key, T & default_val)` to obtain the field's values within all plugins.
+Otherwise, the Node, Edge, and Operations may contain other arbitrary application-specific fields with key-value pairs under the `metadata` namespace.
+These can be primitive types (float, int, string, etc), vector types (e.g. a polygon or other vector of information), or even contain information nested under namespaces - whereas a metadata object may exist as a key's value within `metadata`.
 
-While GeoJSON is not are YAML-based, the following YAML file is provided as a more human-readable example for illustration of the conventions above.
+While GeoJSON is not YAML-based, the following YAML file is provided as a more human-readable example for illustration of the conventions above.
 Usable real graph file demos can be found in the `graphs/` directory.
 
 ```
 example_graph.yaml
 
-Node1:                  // <-- If provided by format, stored as name in metadata
-  id: 1                 // <-- Required
-  x: 0.32               // <-- Highly recommended
-  y: 4.3                // <-- Highly recommended
-  frame: "map"          // <-- Highly recommended
+Node1:                     // <-- If provided by format, stored as name in metadata
+  id: 1                    // <-- Required
+  coordinates: [0.32, 4.0] // <-- Required
+  frame: "map"             // <-- Highly recommended
   metadata:
-    class: "living_room"// <-- Metadata for node (arbitrary)
+    class: "living_room"   // <-- Metadata for node (arbitrary)
   operation:
-    pause:              // <-- If provided by format, stored as name in metadata
-      type: "stop"      // <-- Required
-      trigger: ON_ENTER // <-- Required
-      wait_for: 5.0     // <-- Metadata for operation (arbitrary)
+    pause:                 // <-- If provided by format, stored as name in metadata
+      type: "stop"         // <-- Required
+      trigger: ON_ENTER    // <-- Required
+      metadata:
+        wait_for: 5.0      // <-- Metadata for operation (arbitrary)
 
-Edge1:                  // <-- If provided by format, stored as name in metadata
-  id: 2                 // <-- Required
-  startid: 1            // <-- Required
-  endid: 3              // <-- Required
-  overridable: False    // <-- Recommended
-  cost: 6.0             // <-- Recommended, if relevent
+Edge1:                     // <-- If provided by format, stored as name in metadata
+  id: 2                    // <-- Required
+  startid: 1               // <-- Required
+  endid: 3                 // <-- Required
+  overridable: False       // <-- Recommended
+  cost: 6.0                // <-- Recommended, if relevent
   metadata:
-    speed_limit: 0.85   // <-- Metadata for edge (arbitrary). Use abs_speed_limit if not a percentage
+    speed_limit: 0.85      // <-- Metadata for edge (arbitrary). Use abs_speed_limit if not a percentage
   operations:
-    open_door:          // <-- If provided by format, stored as name in metadata
-      type: "open_door" // <-- Required
-      trigger: ON_EXIT  // <-- Required
-      door_id: 54       // <-- metadata for operation (arbirary)
-      service_name "open-door"  // <-- metadata for operation (Recommended)
+    open_door:             // <-- If provided by format, stored as name in metadata
+      type: "open_door"    // <-- Required
+      trigger: ON_EXIT     // <-- Required
+      metadata:
+        door_id: 54        // <-- metadata for operation (arbirary)
+        service_name "open-door"  // <-- metadata for operation (Recommended)
 ```
 
 ### Metadata Conventions for Convenience
@@ -130,8 +127,7 @@ A set of conventions are shown in the table below. The details regarding the con
 
 
 The `DistanceScorer` edge scoring plugin will score the L2 norm between the poses of the nodes constituting the edge as its unweighted score.
-This uses the node's location information as "highly recommended" above.
-It contains a parameter `speed_tag` (Default: `speed_limit`) which will check `edge.metadata` if it contains an entry for speed limit information, represented as a percentage of the maximum speed.
+It contains a parameter `speed_tag` (Default: `speed_limit`) which will check the edge's metadata if it contains an entry for speed limit information, represented as a percentage of the maximum speed.
 If so, it will adjust the score to instead be proportional to the time rather than distance.
 Further, the `AdjustSpeedLimit` Route Operation plugin will utilize the same parameter and default `speed_limit` value to check each edge entered for a set speed limit percentage.
 If present, it will request an adjusted speed limit by the controller server on each edge entered.
@@ -143,11 +139,11 @@ Similarly, the `penalty_tag` parameter (Default: `penalty`) in the `PenaltyScore
 This is useful to penalize certain routes over others knowing some application-specific information about that route segment. Technically this may be negative to incentivize rather than penalize.
 Thus, by convention, we say the `penalty` attribute of an edge should contain this information.
 
-By convention, to use the `SemanticScorer` edge scoring plugin, we expect the semantic class of a node or edge to be stored in the `class` metadata key (though is reconfigurable to look at any). This can be used to store arbitrary semantic metadata about a node or edge such as `living_room`, `bathroom`, `work cell 2`, `aisle45`, etc which is then correlated to a set of additional class costs in the `SemanticScorer` configuration to add additional costs to different types of distinct areas as semantically relevent to an application. However, if the `semantic_key` parameter is set to empty string, then instead it checks **all keys** in the metadata of a node or edge if they match any names  of the semantic classes. This way, semantic information may be embedded as keys with other values (for another application) or as values themselves to the `class` key if only needing to specify its membership.
+By convention, to use the `SemanticScorer` edge scoring plugin, we expect the semantic class of a node or edge to be stored in the `class` metadata key (though is reconfigurable to look at any using the `semantic_key` parameter). This can be used to store arbitrary semantic metadata about a node or edge such as `living_room`, `bathroom`, `work cell 2`, `aisle45`, etc which is then correlated to a set of additional class costs in the plugin's configuration. However, if the `semantic_key` parameter is set to empty string, then instead it checks **all keys** in the metadata of a node or edge if they match any names  of the semantic classes. This way, semantic information may be embedded as keys with other values (for another application) or as values themselves to the `class` key if only needing to specify its membership.
 
-The Route Operation `TriggerEvent` and more broadly any operation plugins derived from `RouteOperationClient<SrvT>` (a service-typed template route operation base class to simplify adding in custom plugins based on service calls) relies on the parameter and matching operation key `service_name` to indicate the service name to call with the corresponding route operation. When set in the parameter file, this will be used for all instances when called in the navigation route graph. When `service_name` is set in the operation in the navigation route graph, it can be used to specify a particular service name of that service type to use at that particular node/edge, created on the fly (when a conflict exists, uses the navigation graph as the more specific entry). 
+The Route Operation `TriggerEvent` and more broadly any operation plugins derived from `RouteOperationClient<SrvT>` (a service-typed template route operation base class to simplify adding in custom plugins based on service calls) relies on the parameter and matching metadata key `service_name` to indicate the service name to call with the corresponding route operation. When set in the parameter file, this will be used for all instances when called in the navigation route graph. When `service_name` is set in the operation metadata in the route graph, it can be used to specify a particular service name of that service type to use at that particular node/edge, created on the fly (when a conflict exists, uses the navigation graph as the more specific entry). 
 That way both design patterns work for a Route Operation `OpenDoor` of service type `nav2_msgs/srv/OpenDoor`, for example:
-- A `open_door/door1` (and `door2` and so on) service specific to each node containing a door to open may be called contextually and correctly at each individual door in the graph file. This way you can have individual services (if desired) without having to have individual repetative operation plugin definitions. 
+- A `open_door/door1` (and `door2` and so on) service specific to each node containing a door to open may be called contextually and correctly at each individual door in the graph file metadata. This way you can have individual services (if desired) without having to have individual repetative operation plugin definitions. 
 - A `open_doors` general service specified in the parameter file to call to open a door specified in the service's `request` field, so that one service is called for all instances of doors in the graph file without repetition in the graph file and storing client resources (just adding info about which one from the node metadata).
 
 Thus, we say that `service_name` is a key to correspond to a string of the service's name to call in an operation to use `TriggerEvent` and `RouteOperationClient<SrvT>` plugins and base classes.
@@ -161,10 +157,10 @@ By convention, we reserve the edge metadata field `abs_time_taken` for represent
 The metadata contained in the graph's nodes and edges can serve a secondary purpose to communicating arbitrary information from the graph file for use in routing behavior or operations. It may also be used to communicate or store information about a node or edge during run-time to query from a plugin in a future iteration, from another plugin in the system, or from another plugin type entirely.
 
 For example: 
-- If the collision monitor identifies an edge as being blocked on a regular basis, a counter can be used to track the number of times this edge is blocked and if exceeding a threshold, it adds additional costs to that edge to incentivize taking another direction. 
+- If the collision monitor Route Operation identifies an edge as being blocked on a regular basis, a counter can be used to track the number of times this edge is blocked and if exceeding a threshold, it adds additional costs to that edge to incentivize taking another direction in an Edge Scorer. 
 - If we want to minimize the time to traverse the space, rather than estimating the times to traverse an edge, we can store actual times to navigate into the metadata of the edges. This can be stored as part of a route operation after completing an edge and retrieved at planning time by an edge scorer.
 
-All of this is made possible by the centralized graph representation and pointers back to its memory locations at each stage of the system. This allows Graph given to the planner and Routes given to the tracker to point to the same memory locations for exchanging information over the graph's metadata.
+All of this is made possible by the centralized graph representation and pointers back to its memory locations at each stage of the system.
 
 ### Node Achievement
 
@@ -176,30 +172,23 @@ Once we're within the range of a node that we need to consider whether or not we
 
 For the edge cases where there is no last edge (e.g. starting) or next edge (e.g. finishing), we use the radius only. Recall that this only applies the routing part of the navigation request, the controller will still continue tracking the path until your goal achievement defined in your local trajectory planner's configurations. However, any Route Operations to be performed at the start or end nodes will be slightly preempted when compared to the others.
 
+A special case exists for rerouting, where as if we reroute along the same edge as we were previously routing through, the tracker state will be reloaded. While the current edge is not reported in the route message (because the last node is passed), that information is still in the tracker to perform edge exit route operations and refined bisector-based node achievement criteria. 
+
 ---
 
 # Steve's TODO list
 
-- [ ] goal intent extractor some min/max distance from the original or newly set one? Would there be cases pruning is bad?
+- [ ] Test working full system + plugins + rerouting + pruning + operations + feedback / states proper
+- [ ] Integration tests: tracking server + tracker state / feedback / operations correctness + completion. rerouting_start_id + Blocked ids?
 
-
-- [ ] live route analyzer working + plugins + rerouting + pruning start at reroute
-- [ ] Intregation coverage: tracking server + tracker state / feedback / operations correctness + completion + rerouting_start_id. Blocked ids?
-
-
-
-
-
-
-- [ ] Create basic file format for graph + parser. Vector types (regions), recursion namespaces, Operations/metadata.
+- [ ] Vector types (regions) + example file AWS + simple minimal file with metadata/operations demos + simple minimal file recursion/vectors/API demos.
 - [ ] Uncomment route server srv test for real files and implementation
 - [ ] QGIS demo + plugins for editing and visualizing graphs
-
-
-
-- [ ] Quality: BT nodes, Python API, documentation, readme, tutorial (bt change, plugin customize, file field examples). BT XML for first/last mile, freq. replanning, navigation using it, WPF, metrics w/ real graph sized
-- [ ] demos with route -> global -> local. outdoor non-planar. to waypoint follower (GPS?) of nodes.
 - [ ] use map for checking start/goal nodes for infra blockages not just NN. Evaluate K. Share costmap?
+
+- [ ] Quality: BT nodes, Python API, web documentation, readme, tutorial (bt change, plugin customize, file field examples). BT XML for first/last mile, freq. replanning, navigation using it, WPF, metrics w/ real graph sized
+- [ ] demos with route -> global -> local. outdoor non-planar. to waypoint follower (GPS?) of nodes.
+- [ ] break up start/goal logic from goal intent extractor + cache goal id/idx in rerouting_info to grab after pruning. Reduces a kD-tree or graph lookup
 
 # Questions
 

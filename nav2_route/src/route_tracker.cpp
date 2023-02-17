@@ -32,7 +32,7 @@ void RouteTracker::configure(
   tf_buffer_ = tf_buffer;
 
   nav2_util::declare_parameter_if_not_declared(
-    node, "radius_to_achieve_node", rclcpp::ParameterValue(1.0));
+    node, "radius_to_achieve_node", rclcpp::ParameterValue(2.0));
   radius_threshold_ = node->get_parameter("radius_to_achieve_node").as_double();
   nav2_util::declare_parameter_if_not_declared(
     node, "tracker_update_rate", rclcpp::ParameterValue(50.0));
@@ -79,7 +79,7 @@ bool RouteTracker::nodeAchieved(
   // If start or end node, use the radius check only since the final node may not pass
   // threshold depending on the configurations. The start node has no last_node for
   // computing the vector bisector. If this is an issue, please file a ticket to discuss.
-  if (isStartOrEndNode(state.route_edges_idx, route)) {
+  if (isStartOrEndNode(state, route)) {
     return state.within_radius;
   }
 
@@ -115,9 +115,13 @@ bool RouteTracker::nodeAchieved(
   return false;
 }
 
-bool RouteTracker::isStartOrEndNode(int idx, const Route & route)
+bool RouteTracker::isStartOrEndNode(RouteTrackingState & state, const Route & route)
 {
-  return idx == static_cast<int>(route.edges.size() - 1) || idx == -1;
+  // Check if current_edge is nullptr in case we have a rerouted previous
+  // edge to use for the refined node achievement vectorized estimate
+  return
+    (state.route_edges_idx == static_cast<int>(route.edges.size() - 1)) ||
+    (state.route_edges_idx == -1 && !state.current_edge);
 }
 
 void RouteTracker::publishFeedback(
@@ -142,20 +146,27 @@ TrackerResult RouteTracker::trackRoute(
   const Route & route, const nav_msgs::msg::Path & path,
   ReroutingState & rerouting_info)
 {
-  // Manage important data
   route_msg_ = utils::toMsg(route, route_frame_, clock_->now());
   path_ = path;
   RouteTrackingState state;
   state.next_node = route.start_node;
 
-  // Publish initial feedback after routing or rerouting
+  // If we're rerouted but still covering the same previous edge to
+  // start, retain the state so we can continue as previously set with
+  // refined node achievement logic and performing edge operations on exit
+  if (rerouting_info.curr_edge) {
+    state.current_edge = rerouting_info.curr_edge;
+    state.last_node = state.current_edge->start;
+  }
+
+  // Publish initial feedback after routing
   publishFeedback(true, route.start_node->nodeid, 0, 0, {});
 
   rclcpp::Rate r(tracker_update_rate_);
   while (rclcpp::ok()) {
     bool status_change = false, completed = false;
 
-    // Check action server state is still OK to keep processing
+    // Check if OK to keep processing
     if (action_server_->is_cancel_requested()) {
       return TrackerResult::REROUTE;
     } else if (action_server_->is_preempt_requested()) {
@@ -180,7 +191,7 @@ TrackerResult RouteTracker::trackRoute(
 
     // Process any operations necessary
     OperationsResult ops_result =
-      operations_manager_->process(status_change, state, route, robot_pose);
+      operations_manager_->process(status_change, state, route, robot_pose, rerouting_info);
 
     if (completed) {
       RCLCPP_INFO(logger_, "Routing to goal completed!");
@@ -206,6 +217,9 @@ TrackerResult RouteTracker::trackRoute(
       if (state.last_node) {
         rerouting_info.rerouting_start_id = state.last_node->nodeid;
       }
+
+      // Update so during rerouting we can check if we are continuing on the same edge
+      rerouting_info.curr_edge = state.current_edge;
       RCLCPP_INFO(logger_, "Rerouting requested by route tracking operations!");
       return TrackerResult::REROUTE;
     }

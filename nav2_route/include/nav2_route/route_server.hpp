@@ -129,7 +129,7 @@ protected:
   template<typename GoalT>
   Route findRoute(
     const std::shared_ptr<const GoalT> goal,
-    const ReroutingState & rerouting_info = ReroutingState());
+    ReroutingState & rerouting_info = ReroutingState());
 
   /**
    * @brief Main processing called by both action server callbacks to centralize

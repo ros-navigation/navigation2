@@ -36,14 +36,22 @@ void PathConverter::configure(nav2_util::LifecycleNode::SharedPtr node)
 
 nav_msgs::msg::Path PathConverter::densify(
   const Route & route,
+  const ReroutingState & rerouting_info,
   const std::string & frame,
   const rclcpp::Time & now)
 {
   nav_msgs::msg::Path path;
-
-  // Populate header
   path.header.stamp = now;
   path.header.frame_id = frame;
+
+  // If we're rerouting and covering the same previous edge to start,
+  // the path should contain the relevent partial information along edge
+  // to avoid unnecessary free-space planning where state is retained
+  if (rerouting_info.curr_edge) {
+    const Coordinates & start = rerouting_info.closest_pt_on_edge;
+    const Coordinates & end = rerouting_info.curr_edge->end->coords;
+    interpolateEdge(start.x, start.y, end.x, end.y, path.poses);
+  }
 
   // Fill in path via route edges
   for (unsigned int i = 0; i != route.edges.size(); i++) {

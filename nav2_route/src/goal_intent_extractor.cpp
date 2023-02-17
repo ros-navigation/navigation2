@@ -21,6 +21,8 @@
 namespace nav2_route
 {
 
+static float EPSILON = 1e-6;
+
 void GoalIntentExtractor::configure(
   nav2_util::LifecycleNode::SharedPtr node,
   Graph & graph,
@@ -31,11 +33,20 @@ void GoalIntentExtractor::configure(
 {
   logger_ = node->get_logger();
   id_to_graph_map_ = id_to_graph_map;
+  graph_ = &graph;
   tf_ = tf;
   route_frame_ = route_frame;
   base_frame_ = base_frame;
   node_spatial_tree_ = std::make_shared<NodeSpatialTree>();
   node_spatial_tree_->computeTree(graph);
+
+  nav2_util::declare_parameter_if_not_declared(
+    node, "prune_goal", rclcpp::ParameterValue(true));
+  prune_goal_ = node->get_parameter("prune_goal").as_bool();
+
+  nav2_util::declare_parameter_if_not_declared(
+    node, "max_dist_from_edge", rclcpp::ParameterValue(8.0));
+  max_dist_from_edge_ = static_cast<float>(node->get_parameter("max_dist_from_edge").as_double());
 }
 
 void GoalIntentExtractor::setGraph(Graph & graph, GraphToIDMap * id_to_graph_map)
@@ -59,13 +70,28 @@ geometry_msgs::msg::PoseStamped GoalIntentExtractor::transformPose(
   return pose;
 }
 
+void GoalIntentExtractor::setStartIdx(const unsigned int start_idx)
+{
+  const Coordinates & start_coords = graph_->at(start_idx).coords;
+  start_.pose.position.x = start_coords.x;
+  start_.pose.position.y = start_coords.y;
+}
+
 template<typename GoalT>
 NodeExtents
 GoalIntentExtractor::findStartandGoal(const std::shared_ptr<const GoalT> goal)
 {
   // If not using the poses, then use the requests Node IDs to establish start and goal
   if (!goal->use_poses) {
-    return {id_to_graph_map_->at(goal->start_id), id_to_graph_map_->at(goal->goal_id)};
+    unsigned int start_idx = id_to_graph_map_->at(goal->start_id);
+    unsigned int goal_idx = id_to_graph_map_->at(goal->goal_id);
+    const Coordinates & start_coords = graph_->at(start_idx).coords;
+    const Coordinates & goal_coords = graph_->at(goal_idx).coords;
+    start_.pose.position.x = start_coords.x;
+    start_.pose.position.y = start_coords.y;
+    goal_.pose.position.x = goal_coords.x;
+    goal_.pose.position.y = goal_coords.y;
+    return {start_idx, goal_idx};
   }
 
   // Find request start pose
@@ -78,7 +104,7 @@ GoalIntentExtractor::findStartandGoal(const std::shared_ptr<const GoalT> goal)
     }
   }
 
-  // transform start or goal to route_frame
+  // transform to route_frame
   start_ = transformPose(start_pose);
   goal_ = transformPose(goal_pose);
 
@@ -97,10 +123,20 @@ GoalIntentExtractor::findStartandGoal(const std::shared_ptr<const GoalT> goal)
 
 template<typename GoalT>
 Route GoalIntentExtractor::pruneStartandGoal(
-  const Route & input_route, const std::shared_ptr<const GoalT> goal)
+  const Route & input_route,
+  const std::shared_ptr<const GoalT> goal,
+  ReroutingState & rerouting_info)
 {
   Route pruned_route = input_route;
-  if (input_route.edges.empty() || !goal->use_poses) {
+
+  // Grab and update the rerouting state
+  EdgePtr last_curr_edge = rerouting_info.curr_edge;
+  rerouting_info.curr_edge = nullptr;
+  bool first_time = rerouting_info.first_time;
+  rerouting_info.first_time = false;
+
+  // Cannot prune if no edges to prune or if using nodeIDs (no effect)
+  if (input_route.edges.empty() || (!goal->use_poses && first_time)) {
     return pruned_route;
   }
 
@@ -110,10 +146,24 @@ Route GoalIntentExtractor::pruneStartandGoal(
   float vry = next->coords.y - first->coords.y;
   float vpx = start_.pose.position.x - first->coords.x;
   float vpy = start_.pose.position.y - first->coords.y;
-  if (utils::normalizedDot(vrx, vry, vpx, vpy) > 0.0) {
+  float dot_prod = utils::normalizedDot(vrx, vry, vpx, vpy);
+  Coordinates closest_pt_on_edge = utils::findClosestPoint(start_, first->coords, next->coords);
+  if (dot_prod > EPSILON && utils::distance(closest_pt_on_edge, start_) <= max_dist_from_edge_) {
+    // Record the pruned edge information if its the same edge as previously routed so that
+    // the tracker can seed this information into its state to proceed with its task losslessly
+    if (last_curr_edge && last_curr_edge->edgeid == pruned_route.edges.front()->edgeid) {
+      rerouting_info.closest_pt_on_edge = closest_pt_on_edge;
+      rerouting_info.curr_edge = pruned_route.edges.front();
+    }
+
     pruned_route.start_node = next;
     pruned_route.route_cost -= pruned_route.edges.front()->end->search_state.traversal_cost;
     pruned_route.edges.erase(pruned_route.edges.begin());
+  }
+
+  // Don't prune the goal if requested or if given a known goal_id (no effect)
+  if (!prune_goal_ || !goal->use_poses) {
+    return pruned_route;
   }
 
   next = pruned_route.edges.back()->start;
@@ -122,7 +172,9 @@ Route GoalIntentExtractor::pruneStartandGoal(
   vry = last->coords.y - next->coords.y;
   vpx = goal_.pose.position.x - last->coords.x;
   vpy = goal_.pose.position.y - last->coords.y;
-  if (utils::normalizedDot(vrx, vry, vpx, vpy) < 0.0) {
+  dot_prod = utils::normalizedDot(vrx, vry, vpx, vpy);
+  closest_pt_on_edge = utils::findClosestPoint(goal_, next->coords, last->coords);
+  if (dot_prod < -EPSILON && utils::distance(closest_pt_on_edge, goal_) <= max_dist_from_edge_) {
     pruned_route.route_cost -= pruned_route.edges.back()->end->search_state.traversal_cost;
     pruned_route.edges.pop_back();
   }
@@ -132,11 +184,13 @@ Route GoalIntentExtractor::pruneStartandGoal(
 
 template Route GoalIntentExtractor::pruneStartandGoal<nav2_msgs::action::ComputeRoute::Goal>(
   const Route & input_route,
-  const std::shared_ptr<const nav2_msgs::action::ComputeRoute::Goal> goal);
+  const std::shared_ptr<const nav2_msgs::action::ComputeRoute::Goal> goal,
+  ReroutingState & rerouting_info);
 template
 Route GoalIntentExtractor::pruneStartandGoal<nav2_msgs::action::ComputeAndTrackRoute::Goal>(
   const Route & input_route,
-  const std::shared_ptr<const nav2_msgs::action::ComputeAndTrackRoute::Goal> goal);
+  const std::shared_ptr<const nav2_msgs::action::ComputeAndTrackRoute::Goal> goal,
+  ReroutingState & rerouting_info);
 template NodeExtents GoalIntentExtractor::findStartandGoal<nav2_msgs::action::ComputeRoute::Goal>(
   const std::shared_ptr<const nav2_msgs::action::ComputeRoute::Goal> goal);
 template

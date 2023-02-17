@@ -45,13 +45,6 @@ class CollisionMonitorWrapper : public CollisionMonitor
 public:
   CollisionMonitorWrapper() = default;
 
-  Coordinates findClosestPointWrapper(
-    const geometry_msgs::msg::PoseStamped & pose,
-    const Coordinates & start, const Coordinates & end)
-  {
-    return findClosestPoint(pose, start, end);
-  }
-
   Coordinates backoutValidEndPointWrapper(
     const Coordinates & start, const Coordinates & end, const float dist)
   {
@@ -88,123 +81,6 @@ TEST(TestCollisionMonitor, test_lifecycle)
   monitor.configure(node, "name");
   EXPECT_EQ(monitor.getName(), std::string("name"));
   EXPECT_EQ(monitor.processType(), RouteOperationType::ON_QUERY);
-}
-
-TEST(TestCollisionMonitor, test_geometric_closest_pt_line)
-{
-  auto node = std::make_shared<nav2_util::LifecycleNode>("test");
-  CollisionMonitorWrapper monitor;
-  monitor.configure(node, "name");
-
-  geometry_msgs::msg::PoseStamped pose;
-  Coordinates start, end;
-  start.x = 0.0;
-  start.y = 0.0;
-  end.x = 10.0;
-  end.y = 0.0;
-  pose.pose.position.x = 0.0;
-  pose.pose.position.y = 0.0;
-
-  // Test at, far from, and away from initial point
-  Coordinates rtn = monitor.findClosestPointWrapper(pose, start, end);
-  EXPECT_NEAR(rtn.x, 0.0, 0.01);
-  EXPECT_NEAR(rtn.y, 0.0, 0.01);
-
-  pose.pose.position.x = -10.0;
-  pose.pose.position.y = 0.0;
-  rtn = monitor.findClosestPointWrapper(pose, start, end);
-  EXPECT_NEAR(rtn.x, 0.0, 0.01);
-  EXPECT_NEAR(rtn.y, 0.0, 0.01);
-
-  pose.pose.position.x = -10.0;
-  pose.pose.position.y = 100.0;
-  rtn = monitor.findClosestPointWrapper(pose, start, end);
-  EXPECT_NEAR(rtn.x, 0.0, 0.01);
-  EXPECT_NEAR(rtn.y, 0.0, 0.01);
-
-  // Test at, far from, and away from final point
-  pose.pose.position.x = 10.0;
-  pose.pose.position.y = 0.0;
-  rtn = monitor.findClosestPointWrapper(pose, start, end);
-  EXPECT_NEAR(rtn.x, 10.0, 0.01);
-  EXPECT_NEAR(rtn.y, 0.0, 0.01);
-
-  pose.pose.position.x = 100.0;
-  pose.pose.position.y = 0.0;
-  rtn = monitor.findClosestPointWrapper(pose, start, end);
-  EXPECT_NEAR(rtn.x, 10.0, 0.01);
-  EXPECT_NEAR(rtn.y, 0.0, 0.01);
-
-  pose.pose.position.x = 100.0;
-  pose.pose.position.y = -10000.0;
-  rtn = monitor.findClosestPointWrapper(pose, start, end);
-  EXPECT_NEAR(rtn.x, 10.0, 0.01);
-  EXPECT_NEAR(rtn.y, 0.0, 0.01);
-
-  pose.pose.position.x = 1000.0;
-  pose.pose.position.y = 1000.0;
-  rtn = monitor.findClosestPointWrapper(pose, start, end);
-  EXPECT_NEAR(rtn.x, 10.0, 0.01);
-  EXPECT_NEAR(rtn.y, 0.0, 0.01);
-
-  // Test along length of the line
-  pose.pose.position.x = 5.0;
-  pose.pose.position.y = 1000.0;
-  rtn = monitor.findClosestPointWrapper(pose, start, end);
-  EXPECT_NEAR(rtn.x, 5.0, 0.01);
-  EXPECT_NEAR(rtn.y, 0.0, 0.01);
-
-  pose.pose.position.x = 0.1;
-  pose.pose.position.y = -10.0;
-  rtn = monitor.findClosestPointWrapper(pose, start, end);
-  EXPECT_NEAR(rtn.x, 0.1, 0.01);
-  EXPECT_NEAR(rtn.y, 0.0, 0.01);
-
-  // Lets try a more legit line now that we know the basics work OK
-  start.x = 0.0;
-  start.y = 0.0;
-  end.x = 10.0;
-  end.y = 10.0;
-  pose.pose.position.x = 5.0;
-  pose.pose.position.y = 5.0;
-  rtn = monitor.findClosestPointWrapper(pose, start, end);
-  EXPECT_NEAR(rtn.x, 5.0, 0.01);
-  EXPECT_NEAR(rtn.y, 5.0, 0.01);
-
-  pose.pose.position.x = 0.0;
-  pose.pose.position.y = 10.0;
-  rtn = monitor.findClosestPointWrapper(pose, start, end);
-  EXPECT_NEAR(rtn.x, 5.0, 0.01);
-  EXPECT_NEAR(rtn.y, 5.0, 0.01);
-
-  pose.pose.position.x = 10.0;
-  pose.pose.position.y = 0.0;
-  rtn = monitor.findClosestPointWrapper(pose, start, end);
-  EXPECT_NEAR(rtn.x, 5.0, 0.01);
-  EXPECT_NEAR(rtn.y, 5.0, 0.01);
-
-  pose.pose.position.x = 2.0;
-  pose.pose.position.y = 4.0;
-  rtn = monitor.findClosestPointWrapper(pose, start, end);
-  EXPECT_NEAR(rtn.x, 3.0, 0.01);
-  EXPECT_NEAR(rtn.y, 3.0, 0.01);
-
-  pose.pose.position.x = 4.0;
-  pose.pose.position.y = 10.0;
-  rtn = monitor.findClosestPointWrapper(pose, start, end);
-  EXPECT_NEAR(rtn.x, 7.0, 0.01);
-  EXPECT_NEAR(rtn.y, 7.0, 0.01);
-
-  // Try identity to make sure no nan issues
-  start.x = 0.0;
-  start.y = 0.0;
-  end.x = 0.0;
-  end.y = 0.0;
-  pose.pose.position.x = 4.0;
-  pose.pose.position.y = 10.0;
-  rtn = monitor.findClosestPointWrapper(pose, start, end);
-  EXPECT_NEAR(rtn.x, 0.0, 0.01);
-  EXPECT_NEAR(rtn.y, 0.0, 0.01);
 }
 
 TEST(TestCollisionMonitor, test_geometric_backout_vector)
