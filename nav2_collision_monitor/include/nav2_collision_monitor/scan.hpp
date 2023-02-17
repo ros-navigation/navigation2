@@ -41,6 +41,8 @@ public:
    * @param global_frame_id Global frame ID for correct transform calculation
    * @param transform_tolerance Transform tolerance
    * @param source_timeout Maximum time interval in which data is considered valid
+   * @param base_shift_correction Whether to correct source data towards to base frame movement,
+   * considering the difference between current time and latest source time
    */
   Scan(
     const nav2_util::LifecycleNode::WeakPtr & node,
@@ -49,7 +51,8 @@ public:
     const std::string & base_frame_id,
     const std::string & global_frame_id,
     const tf2::Duration & transform_tolerance,
-    const rclcpp::Duration & source_timeout);
+    const rclcpp::Duration & source_timeout,
+    const bool base_shift_correction);
   /**
    * @brief Scan destructor
    */
