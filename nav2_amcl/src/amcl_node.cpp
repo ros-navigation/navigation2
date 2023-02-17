@@ -867,7 +867,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
     bool ret = false;
 
     if(use_cluster_averaging_){
-      ret = getWeightedMeanClustersCenroid(best_hyp);
+      ret = getMeanWeightedClustersCentroid(best_hyp);
     } else {
       ret = getMaxWeightHyp(best_hyp);
     }
@@ -1043,12 +1043,12 @@ AmclNode::publishParticleCloud(const pf_sample_set_t * set)
 }
 
 bool
-AmclNode::getWeightedMeanClustersCenroid(amcl_hyp_t & mean_centroid){
+AmclNode::getMeanWeightedClustersCentroid(amcl_hyp_t & mean_centroid){
     double weighted_x = 0.0;    
     double weighted_y = 0.0;
     double weighted_yaw = 0.0;
     double mean_weight = 0.0;
-    for (int cluster_idx = 0; 
+    for (int cluster_idx = 0;
       cluster_idx < pf_->sets[pf_->current_set].cluster_count; cluster_idx++)
     {
       double weight;

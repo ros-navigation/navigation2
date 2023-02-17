@@ -354,7 +354,7 @@ protected:
   * @brief Get the current state estimate hypothesis from the particle cloud
   * by calculating mean weighted centroid among cluster centroids
   */
-  bool getWeightedMeanClustersCenroid(amcl_hyp_t & mean_centroid_hyp);
+  bool getMeanWeightedClustersCentroid(amcl_hyp_t & mean_centroid_hyp);
   /*
    * @brief Get the current state estimat hypothesis from the particle cloud
    */
