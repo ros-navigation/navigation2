@@ -15,6 +15,7 @@
 #ifndef NAV2_RVIZ_PLUGINS__NAV2_PANEL_HPP_
 #define NAV2_RVIZ_PLUGINS__NAV2_PANEL_HPP_
 
+#include <QString>
 #include <QtWidgets>
 #include <QTableWidget>
 #include <QBasicTimer>
@@ -248,9 +249,6 @@ private:
   //! Render the common members of NavigateToPose::Feedback or NavigateThroughPoses::Feedback in a table
   template<typename T>
   static inline void renderNavGenericPoseFeedback(QTableWidget* table, const T & msg);
-
-  // round off double to the specified precision and convert to string
-  static inline std::string toString(const double val, const int precision = 0);
 
   // Waypoint navigation visual markers publisher
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr wp_navigation_markers_pub_;
