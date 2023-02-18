@@ -446,6 +446,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   QObject::connect(accumulating_, SIGNAL(entered()), this, SLOT(onAccumulating()));
   QObject::connect(accumulated_wp_, SIGNAL(entered()), this, SLOT(onAccumulatedWp()));
   QObject::connect(resumed_wp_, SIGNAL(entered()), this, SLOT(onResumedWp()));
+  QObject::connect(initial_, SIGNAL(entered()), this, SLOT(onInitial()));
   QObject::connect(
     accumulated_nav_through_poses_, SIGNAL(entered()), this,
     SLOT(onAccumulatedNTP()));
@@ -1021,10 +1022,15 @@ Nav2Panel::onShutdown()
     std::bind(
       &nav2_lifecycle_manager::LifecycleManagerClient::reset,
       client_loc_.get(), std::placeholders::_1), server_timeout_);
+  timer_.stop();
+}
+
+void
+Nav2Panel::onInitial()
+{
   for (int r = 0; r < kNumNavTableRows; r++){
     navigation_data_table_->hideRow(r);
   }
-  timer_.stop();
 }
 
 void

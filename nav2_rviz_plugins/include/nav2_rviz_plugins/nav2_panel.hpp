@@ -65,6 +65,7 @@ private Q_SLOTS:
   void startThread();
   void onStartup();
   void onShutdown();
+  void onInitial();
   void onCancel();
   void onPause();
   void onResume();
