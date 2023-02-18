@@ -97,6 +97,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   navigation_data_table_ = new QTableWidget(
     kNumNavTableRows,
     kNNavigationTableColumns);
+  initializeNavTable(navigation_data_table_);
   navigation_data_table_->verticalHeader()->setVisible(false);
   navigation_data_table_->horizontalHeader()->setVisible(false);
   //! @todo determine how to size table automatically
@@ -1091,6 +1092,83 @@ Nav2Panel::onNewGoal(double x, double y, double theta, QString frame)
 }
 
 void
+Nav2Panel::initializeNavTable(QTableWidget * table)
+{
+
+  table->setItem(
+    to_underlying(NavigationDataTableRows::kPosesRemaining),
+    0,
+    new QTableWidgetItem(QString("Poses remaining")));
+  table->setItem(
+    to_underlying(NavigationDataTableRows::kPosesRemaining),
+    1,
+    new QTableWidgetItem(QString::number(0)));
+
+  table->setItem(
+    to_underlying(NavigationDataTableRows::kTotalTimeTaken),
+    0,
+    new QTableWidgetItem(QString("Total Time Taken")));
+  table->setItem(
+    to_underlying(NavigationDataTableRows::kTotalTimeTaken),
+    1,
+    new QTableWidgetItem(QString::number(0.0, 'f', 1) + " s"));
+
+  table->setItem(
+    to_underlying(NavigationDataTableRows::kWaypoint),
+    0,
+    new QTableWidgetItem(QString("Waypoint")));
+  table->setItem(
+    to_underlying(NavigationDataTableRows::kWaypoint),
+    1,
+    new QTableWidgetItem(QString::number(0)));
+
+  table->setItem(
+    to_underlying(NavigationDataTableRows::kLoop),
+    0,
+    new QTableWidgetItem(QString("Loop")));
+  table->setItem(
+    to_underlying(NavigationDataTableRows::kLoop),
+    1,
+    new QTableWidgetItem(QString::number(0)));
+
+  table->setItem(
+    to_underlying(NavigationDataTableRows::kEstimatedTimeRemaining),
+    0,
+    new QTableWidgetItem(QString("ETA")));
+  table->setItem(
+    to_underlying(NavigationDataTableRows::kEstimatedTimeRemaining),
+    1,
+    new QTableWidgetItem(QString::number(0.0, 'f', 0) + " s"));
+
+  table->setItem(
+    to_underlying(NavigationDataTableRows::kDistanceRemaining),
+    0,
+    new QTableWidgetItem(QString("Distance remaining")));
+  table->setItem(
+    to_underlying(NavigationDataTableRows::kDistanceRemaining),
+    1,
+    new QTableWidgetItem(QString::number(0.0, 'f', 2) + " m"));
+
+  table->setItem(
+    to_underlying(NavigationDataTableRows::kTimeTakenCurrentWP),
+    0,
+    new QTableWidgetItem(QString("Time Taken for Current WP")));
+  table->setItem(
+    to_underlying(NavigationDataTableRows::kTimeTakenCurrentWP),
+    1,
+    new QTableWidgetItem(QString::number(0.0, 'f', 0) + " s"));
+
+  table->setItem(
+    to_underlying(NavigationDataTableRows::kNumRecoveries),
+    0,
+    new QTableWidgetItem(QString("Recoveries")));
+  table->setItem(
+    to_underlying(NavigationDataTableRows::kNumRecoveries),
+    1,
+    new QTableWidgetItem(QString::number(0.0)));
+}
+
+void
 Nav2Panel::onCancelButtonPressed()
 {
   if (navigation_goal_handle_) {
@@ -1647,89 +1725,45 @@ void Nav2Panel::renderNavToPoseFeedback(QTableWidget* table, const nav2_msgs::ac
 
 void Nav2Panel::renderNavThroughPosesFeedback(QTableWidget* table, const nav2_msgs::action::NavigateThroughPoses::Feedback msg)
 {
-  table->setItem(
+  table->item(
     to_underlying(NavigationDataTableRows::kPosesRemaining),
-    0,
-    new QTableWidgetItem(QString("Poses remaining")));
-  table->setItem(
-    to_underlying(NavigationDataTableRows::kPosesRemaining),
-    1,
-    new QTableWidgetItem(QString::number(msg.number_of_poses_remaining)));
+    1)->setText(QString::number(msg.number_of_poses_remaining));
 
   renderNavGenericPoseFeedback(table, msg);
 }
 
 void Nav2Panel::renderNavThroughWPFeedback(QTableWidget* table, const nav2_msgs::action::FollowWaypoints::Feedback msg)
 {
-  table->setItem(
+  table->item(
     to_underlying(NavigationDataTableRows::kTotalTimeTaken),
-    0,
-    new QTableWidgetItem(QString("Total Time Taken")));
-  table->setItem(
-    to_underlying(NavigationDataTableRows::kTotalTimeTaken),
-    1,
-    new QTableWidgetItem(QString::number(rclcpp::Duration(msg.elapsed_time).seconds(), 'f', 1) + " s"));
+    1)->setText(QString::number(rclcpp::Duration(msg.elapsed_time).seconds(), 'f', 1) + " s");
 }
 
 void Nav2Panel::renderWaypointLoopCount(QTableWidget* table, const int goal_index, const int loop_count)
 {
-  table->setItem(
+  table->item(
     to_underlying(NavigationDataTableRows::kWaypoint),
-    0,
-    new QTableWidgetItem(QString("Waypoint")));
-  table->setItem(
-    to_underlying(NavigationDataTableRows::kWaypoint),
-    1,
-    new QTableWidgetItem(QString::number(goal_index)));
-
-  table->setItem(
+    1)->setText(QString::number(goal_index));
+  table->item(
     to_underlying(NavigationDataTableRows::kLoop),
-    0,
-    new QTableWidgetItem(QString("Loop")));
-  table->setItem(
-    to_underlying(NavigationDataTableRows::kLoop),
-    1,
-    new QTableWidgetItem(QString::number(loop_count)));
+    1)->setText(QString::number(loop_count));
 }
 
 template<typename T>
 inline void Nav2Panel::renderNavGenericPoseFeedback(QTableWidget* table, const T & msg)
 {
-  table->setItem(
+  table->item(
     to_underlying(NavigationDataTableRows::kEstimatedTimeRemaining),
-    0,
-    new QTableWidgetItem(QString("ETA")));
-  table->setItem(
-    to_underlying(NavigationDataTableRows::kEstimatedTimeRemaining),
-    1,
-    new QTableWidgetItem(QString::number(rclcpp::Duration(msg.estimated_time_remaining).seconds(), 'f', 0) + " s"));
-
-  table->setItem(
+    1)->setText(QString::number(rclcpp::Duration(msg.estimated_time_remaining).seconds(), 'f', 0) + " s");
+  table->item(
     to_underlying(NavigationDataTableRows::kDistanceRemaining),
-    0,
-    new QTableWidgetItem(QString("Distance remaining")));
-  table->setItem(
-    to_underlying(NavigationDataTableRows::kDistanceRemaining),
-    1,
-    new QTableWidgetItem(QString::number(msg.distance_remaining, 'f', 2) + " m"));
-
-  table->setItem(
+    1)->setText(QString::number(msg.distance_remaining, 'f', 2) + " m");
+  table->item(
     to_underlying(NavigationDataTableRows::kTimeTakenCurrentWP),
-    0,
-    new QTableWidgetItem(QString("Time Taken for Current WP")));
-  table->setItem(
-    to_underlying(NavigationDataTableRows::kTimeTakenCurrentWP),
-    1,
-    new QTableWidgetItem(QString::number(rclcpp::Duration(msg.navigation_time).seconds(), 'f', 0) + " s"));
-
-  table->setItem(
+    1)->setText(QString::number(rclcpp::Duration(msg.navigation_time).seconds(), 'f', 0) + " s");
+  table->item(
     to_underlying(NavigationDataTableRows::kNumRecoveries),
-    0,
-    new QTableWidgetItem(QString("Recoveries")));
-  table->setItem(
-    to_underlying(NavigationDataTableRows::kNumRecoveries),
-    1,
-    new QTableWidgetItem(QString::number(msg.number_of_recoveries)));
+    1)->setText(QString::number(msg.number_of_recoveries));
 }
 
 }  // namespace nav2_rviz_plugins

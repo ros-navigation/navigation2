@@ -81,7 +81,7 @@ private Q_SLOTS:
   void initialStateHandler();
 
 private:
-  void loadLogFiles();
+  void initializeNavTable(QTableWidget * table);
   void onCancelButtonPressed();
   void timerEvent(QTimerEvent * event) override;
   bool isLoopValueValid(std::string & loop);
