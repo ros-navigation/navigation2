@@ -22,6 +22,7 @@
 #include <QCheckBox>
 
 
+#include <array>
 #include <ctype.h>
 #include <memory>
 #include <vector>
@@ -49,8 +50,6 @@ enum class NavigationDataTableRows {
   kLoop,
   // Number of poses left
   kPosesRemaining,
-  // Total time taken for waypoint(s)
-  kTotalTimeTaken,
   // ETA for current WP
   kEstimatedTimeRemaining,
   // Distance remaining current WP
@@ -59,7 +58,8 @@ enum class NavigationDataTableRows {
   kTimeTakenCurrentWP,
   // Number of recoveries
   kNumRecoveries,
-
+  // Total time taken for waypoint(s)
+  kTotalTimeTaken,
 
   // Private value use for count, leave this last
   kNRows,
@@ -923,7 +923,14 @@ Nav2Panel::onInitialize()
         waypoint_status_indicator_->clear();
         loop_no_ = "0";
         loop_count_ = 0;
-        renderNavToPoseFeedback(navigation_data_table_);
+        navigation_data_table_->item(to_underlying(NavigationDataTableRows::kEstimatedTimeRemaining), 1)->setText("0 s");
+        navigation_data_table_->item(to_underlying(NavigationDataTableRows::kDistanceRemaining), 1)->setText("0.00 m");
+        navigation_data_table_->item(to_underlying(NavigationDataTableRows::kTimeTakenCurrentWP), 1)->setText("0 s");
+      } else {
+        RCLCPP_INFO_STREAM(client_node_->get_logger(), "navigation_goal_status_sub_ not done. " << std::endl \
+          << "LC:" << +loop_count_ << "/" << nr_of_loops_->displayText().toStdString() << std::endl \
+          << "GI: " << +goal_index_ << "/" << +(static_cast<int>(store_poses_.size()) - 1)  << std::endl \
+          << "GS: " << +msg->status_list.back().status);
       }
     });
   nav_through_poses_goal_status_sub_ = node->create_subscription<action_msgs::msg::GoalStatusArray>(
@@ -933,7 +940,10 @@ Nav2Panel::onInitialize()
       navigation_goal_status_indicator_->setText(
         getGoalStatusLabel(msg->status_list.back().status));
       if (msg->status_list.back().status != action_msgs::msg::GoalStatus::STATUS_EXECUTING) {
-        renderNavThroughPosesFeedback(navigation_data_table_);
+
+        navigation_data_table_->item(to_underlying(NavigationDataTableRows::kPosesRemaining), 1)->setText("0");
+        navigation_data_table_->item(to_underlying(NavigationDataTableRows::kLoop), 1)->setText("0");
+        navigation_data_table_->item(to_underlying(NavigationDataTableRows::kWaypoint), 1)->setText("0");
       }
     });
   follow_waypoints_goal_status_sub_ = node->create_subscription<action_msgs::msg::GoalStatusArray>(
@@ -941,7 +951,7 @@ Nav2Panel::onInitialize()
     rclcpp::SystemDefaultsQoS(),
     [this](const action_msgs::msg::GoalStatusArray::SharedPtr msg) {
       if (msg->status_list.back().status != action_msgs::msg::GoalStatus::STATUS_EXECUTING) {
-        renderNavThroughWPFeedback(navigation_data_table_);
+        navigation_data_table_->item(to_underlying(NavigationDataTableRows::kEstimatedTimeRemaining), 1)->setText("0 s");
       }
     });
 }
@@ -1011,6 +1021,9 @@ Nav2Panel::onShutdown()
     std::bind(
       &nav2_lifecycle_manager::LifecycleManagerClient::reset,
       client_loc_.get(), std::placeholders::_1), server_timeout_);
+  for (int r = 0; r < kNumNavTableRows; r++){
+    navigation_data_table_->hideRow(r);
+  }
   timer_.stop();
 }
 
@@ -1138,8 +1151,20 @@ Nav2Panel::onAccumulatedWp()
   navigation_mode_button_->setEnabled(false);
   pause_resume_button_->setEnabled(false);
 
-  // Make visible the feedback
-  navigation_data_table_->showRow(0);
+  // Show the feedback
+  const std::array visibleRows{
+    NavigationDataTableRows::kWaypoint,
+    NavigationDataTableRows::kLoop,
+    NavigationDataTableRows::kPosesRemaining,
+    NavigationDataTableRows::kEstimatedTimeRemaining,
+    NavigationDataTableRows::kDistanceRemaining,
+    NavigationDataTableRows::kTimeTakenCurrentWP,
+    NavigationDataTableRows::kNumRecoveries,
+    NavigationDataTableRows::kTotalTimeTaken,
+    };
+  for (const auto& row: visibleRows) {
+    navigation_data_table_->showRow(to_underlying(row));
+  }
 
   /** Making sure that the pose array does not get updated
    *  between the process**/
@@ -1393,6 +1418,27 @@ Nav2Panel::startNavThroughPoses(std::vector<geometry_msgs::msg::PoseStamped> pos
     return;
   }
 
+  // Show the feedback
+  const std::array visibleRows{
+    NavigationDataTableRows::kWaypoint,
+    NavigationDataTableRows::kLoop,
+    NavigationDataTableRows::kPosesRemaining,
+    NavigationDataTableRows::kEstimatedTimeRemaining,
+    NavigationDataTableRows::kDistanceRemaining,
+    NavigationDataTableRows::kTimeTakenCurrentWP,
+    NavigationDataTableRows::kNumRecoveries,
+    };
+  for (const auto& row: visibleRows) {
+    navigation_data_table_->showRow(to_underlying(row));
+  }
+  // Hide feedback not part of this method
+  const std::array hiddenRows{
+    NavigationDataTableRows::kTotalTimeTaken,
+    };
+  for (const auto& row: hiddenRows) {
+    navigation_data_table_->hideRow(to_underlying(row));
+  }
+
   timer_.start(200, this);
 }
 
@@ -1437,6 +1483,17 @@ Nav2Panel::startNavigation(geometry_msgs::msg::PoseStamped pose)
   if (!navigation_goal_handle_) {
     RCLCPP_ERROR(client_node_->get_logger(), "Goal was rejected by server");
     return;
+  }
+
+  // Show the feedback
+  const std::array visibleRows{
+    NavigationDataTableRows::kEstimatedTimeRemaining,
+    NavigationDataTableRows::kDistanceRemaining,
+    NavigationDataTableRows::kTimeTakenCurrentWP,
+    NavigationDataTableRows::kNumRecoveries
+    };
+  for (const auto& row: visibleRows) {
+    navigation_data_table_->showRow(to_underlying(row));
   }
 
   timer_.start(200, this);
