@@ -28,7 +28,7 @@ namespace nav2_route
 
 /**
  * @class nav2_route::GeoJsonGraphFileLoader
- * @brief A GraphFileLoader plugin to parse the geojson graph file
+ * @brief A GraphFileLoader plugin to load a geojson graph representation
  */
 class GeoJsonGraphFileLoader : public GraphFileLoader
 {
@@ -46,18 +46,18 @@ public:
   ~GeoJsonGraphFileLoader() = default;
 
   /**
-   * @brief Configure the scorer, but do not store the node
+   * @brief Configure, but do not store the node
    * @param parent pointer to user's node
    */
   void configure(
     const rclcpp_lifecycle::LifecycleNode::SharedPtr node) override;
 
   /**
-   * @brief Loads a graph object with file information
-   * @param graph Graph to populate
-   * @param graph_to_id_map A map of nodeid's to graph indexs
-   * @param filepath The file to load
-   * @return bool If successful
+   * @brief Loads the geojson file into the graph
+   * @param graph The graph to be populated by the geojson file
+   * @param graph_to_id_map A map of node id's to the graph index
+   * @param filepath The path of the file to load
+   * @return True if the graph was successfully loaded
    */
   bool loadGraphFromFile(
     Graph & graph,
@@ -67,14 +67,14 @@ public:
 protected:
   /**
    * @brief Checks if a file even exists on the filesystem
-   * @param filepath file to check
-   * @return bool If the file exists
+   * @param filepath The filepath to be checked
+   * @return True if the file path provided exists
    */
-  bool fileExists(const std::string & filepath);
+  bool doesFileExist(const std::string & filepath);
 
   /**
-   * @brief Get the graph elements from the features
-   * @param[in] features The features to grab the graph nodes from
+   * @brief Get the nodes and edges from features
+   * @param[in] features The features that contain the nodes and edges
    * @param[out] nodes The nodes found within the features
    * @param[out] edges The edges found within the features
    */
@@ -82,56 +82,56 @@ protected:
     const Json & features, std::vector<Json> & nodes, std::vector<Json> & edges);
 
   /**
-   * @brief Add all nodes into the graph
-   * @param[out] graph The graph in which the nodes are added into
-   * @param[out] graph_to_id_map A map of node id to the graph id
+   * @brief Add nodes into the graph
+   * @param[out] graph The graph that will contain the new nodes
+   * @param[out] graph_to_id_map A map of node id to the graph index
    * @param[in] nodes The nodes to be added into the graph
    */
   void addNodesToGraph(Graph & graph, GraphToIDMap & graph_to_id_map, std::vector<Json> & nodes);
 
   /**
-   * @brief Add all edges into the graph
-   * @param[out] graph The graph in which the edges are added into
+   * @brief Add edges into the graph
+   * @param[out] graph The graph that will contain the new edges
    * @param[in] graph_to_id_map A map of node id to the graph id
    * @param[in] edges The edges to be added into the graph
    */
   void addEdgesToGraph(Graph & graph, GraphToIDMap & graph_to_id_map, std::vector<Json> & edges);
 
   /**
-   * @brief Populates the coordinate data
+   * @brief Converts the coordinates from the json object into the Coordinates type
    * @param node The json object that holds the coordinate data
-   * @return Coordinates The converted coordinate data
+   * @return The coordinates found in the json object
    */
-  Coordinates getCoordinates(const Json & node);
+  Coordinates convertCoordinatesFromJson(const Json & node);
 
   /**
-   * @brief Populated the mete data if present in the properties tag
+   * @brief Converts the metadata from the json object into the metadata type
    * @param properties The json object that holds the metadata
    * @param key The key for the metadata
-   * @return Metadata The converted metadata
+   * @return The converted metadata
    */
-  Metadata getMetaData(const Json & properties, const std::string & key = "metadata");
+  Metadata convertMetaDataFromJson(const Json & properties, const std::string & key = "metadata");
 
   /**
-   * @brief Populates the operation data
+   * @brief Converts the operation from the json object into the operation type
    * @param json_operation The json object that holds the operation data
-   * @return Operation The converted operation data
+   * @return The converted operation data
    */
-  Operation getOperation(const Json & json_operation);
+  Operation convertOperationFromJson(const Json & json_operation);
 
   /**
-   * @brief Populates the operations if present in the properties tag
+   * @brief Converts the operations data from the json object into the operations type if present
    * @param properties The json object that holds the operations data
    * @return Operations The converted operations data
    */
-  Operations getOperations(const Json & properties);
+  Operations convertOperationsFromJson(const Json & properties);
 
   /**
-   * @brief Populates the edge cost if present in the properties tag
+   * @brief Converts the edge cost data from the json object into the edge cost type
    * @param properties The json object that holds the edge cost data
    * @return EdgeCost The converted edge cost data
    */
-  EdgeCost getEdgeCost(const Json & properties);
+  EdgeCost convertEdgeCostFromJson(const Json & properties);
 
   rclcpp::Logger logger_{rclcpp::get_logger("GeoJsonGraphFileLoader")};
 };

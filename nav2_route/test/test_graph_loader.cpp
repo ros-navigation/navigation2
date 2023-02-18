@@ -37,6 +37,11 @@ TEST(GraphLoader, test_invalid_plugin)
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   std::string frame = "map";
 
+  nav2_util::declare_parameter_if_not_declared(
+    node, "graph_filepath", rclcpp::ParameterValue(
+      ament_index_cpp::get_package_share_directory("nav2_route") +
+      "/graphs/geojson/aws_graph.geojson"));
+
   // Set dummy parameter
   std::string default_plugin = "nav2_route::Dummy";
   nav2_util::declare_parameter_if_not_declared(
@@ -50,6 +55,12 @@ TEST(GraphLoader, test_api)
   auto node = std::make_shared<nav2_util::LifecycleNode>("graph_loader_test");
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   std::string frame = "map";
+
+  nav2_util::declare_parameter_if_not_declared(
+    node, "graph_filepath", rclcpp::ParameterValue(
+      ament_index_cpp::get_package_share_directory("nav2_route") +
+      "/graphs/geojson/aws_graph.geojson"));
+
   GraphLoader graph_loader(node, tf, frame);
 
   Graph graph;

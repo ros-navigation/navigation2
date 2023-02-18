@@ -71,9 +71,9 @@ public:
 
 protected:
   /**
-   * @brief Transform the graph coordinates to the route frame
+   * @brief Transform the coordinates in the graph to the route frame
    * @param[in/out] graph The graph to be transformed
-   * @return True if transform was successful
+   * @return True if transformation was successful
    */
   bool transformGraph(Graph & graph);
 

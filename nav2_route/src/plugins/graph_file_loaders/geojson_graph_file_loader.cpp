@@ -32,43 +32,39 @@ void GeoJsonGraphFileLoader::configure(
 bool GeoJsonGraphFileLoader::loadGraphFromFile(
   Graph & graph, GraphToIDMap & graph_to_id_map, std::string filepath)
 {
-  if (!fileExists(filepath)) {
+  if (!doesFileExist(filepath)) {
     RCLCPP_ERROR(logger_, "The filepath %s does not exist", filepath.c_str());
     return false;
   }
 
   std::ifstream graph_file(filepath);
-  Json geojson_graph;
+  Json json_graph;
 
   try {
-    geojson_graph = Json::parse(graph_file);
+    json_graph = Json::parse(graph_file);
   } catch (Json::parse_error & ex) {
     RCLCPP_ERROR(logger_, "Failed to parse %s: %s", filepath.c_str(), ex.what());
     return false;
   }
 
-  auto features = geojson_graph["features"];
+  auto features = json_graph["features"];
   std::vector<Json> nodes, edges;
   getGraphElements(features, nodes, edges);
 
-  if (nodes.empty()) {
-    RCLCPP_ERROR(logger_, "No nodes were found in %s", filepath.c_str());
-    return false;
-  }
-
-  if (edges.empty()) {
-    RCLCPP_ERROR(logger_, "No edges were found in %s", filepath.c_str());
+  if (nodes.empty() || edges.empty()) {
+    RCLCPP_ERROR(
+      logger_, "The graph is malformed. Is does not contain nodes or edges. Please check %s",
+      filepath.c_str());
     return false;
   }
 
   graph.resize(nodes.size());
   addNodesToGraph(graph, graph_to_id_map, nodes);
   addEdgesToGraph(graph, graph_to_id_map, edges);
-
   return true;
 }
 
-bool GeoJsonGraphFileLoader::fileExists(const std::string & filepath)
+bool GeoJsonGraphFileLoader::doesFileExist(const std::string & filepath)
 {
   return std::filesystem::exists(filepath);
 }
@@ -94,9 +90,9 @@ void GeoJsonGraphFileLoader::addNodesToGraph(
     const auto properties = node["properties"];
     graph[idx].nodeid = properties["id"];
     graph_to_id_map[graph[idx].nodeid] = idx;
-    graph[idx].coords = getCoordinates(node);
-    graph[idx].operations = getOperations(properties);
-    graph[idx].metadata = getMetaData(properties);
+    graph[idx].coords = convertCoordinatesFromJson(node);
+    graph[idx].operations = convertOperationsFromJson(properties);
+    graph[idx].metadata = convertMetaDataFromJson(properties);
     idx++;
   }
 }
@@ -121,9 +117,9 @@ void GeoJsonGraphFileLoader::addEdgesToGraph(
       throw nav2_core::NoValidGraph("End id does not exist");
     }
 
-    EdgeCost edge_cost = getEdgeCost(properties);
-    Operations operations = getOperations(properties);
-    Metadata metadata = getMetaData(properties);
+    EdgeCost edge_cost = convertEdgeCostFromJson(properties);
+    Operations operations = convertOperationsFromJson(properties);
+    Metadata metadata = convertMetaDataFromJson(properties);
 
     graph[graph_to_id_map[start_id]].addEdge(
       edge_cost, &graph[graph_to_id_map[end_id]], id,
@@ -131,7 +127,7 @@ void GeoJsonGraphFileLoader::addEdgesToGraph(
   }
 }
 
-Coordinates GeoJsonGraphFileLoader::getCoordinates(const Json & node)
+Coordinates GeoJsonGraphFileLoader::convertCoordinatesFromJson(const Json & node)
 {
   Coordinates coords;
   const auto & properties = node["properties"];
@@ -146,14 +142,16 @@ Coordinates GeoJsonGraphFileLoader::getCoordinates(const Json & node)
   return coords;
 }
 
-Metadata GeoJsonGraphFileLoader::getMetaData(const Json & properties, const std::string & key)
+Metadata GeoJsonGraphFileLoader::convertMetaDataFromJson(
+  const Json & properties,
+  const std::string & key)
 {
   Metadata metadata;
   if (!properties.contains(key)) {return metadata;}
 
   for (const auto & data : properties[key].items()) {
     if (data.value().is_object() ) {
-      Metadata new_metadata = getMetaData(properties[key], data.key());
+      Metadata new_metadata = convertMetaDataFromJson(properties[key], data.key());
       metadata.setValue(data.key(), new_metadata);
       continue;
     }
@@ -199,33 +197,33 @@ Metadata GeoJsonGraphFileLoader::getMetaData(const Json & properties, const std:
   return metadata;
 }
 
-Operation GeoJsonGraphFileLoader::getOperation(const Json & json_operation)
+Operation GeoJsonGraphFileLoader::convertOperationFromJson(const Json & json_operation)
 {
   Operation operation;
   json_operation.at("type").get_to(operation.type);
   Json trigger = json_operation.at("trigger");
   operation.trigger = trigger.get<OperationTrigger>();
-  Metadata metadata = getMetaData(json_operation);
+  Metadata metadata = convertMetaDataFromJson(json_operation);
   operation.metadata = metadata;
 
   return operation;
 }
 
-Operations GeoJsonGraphFileLoader::getOperations(const Json & properties)
+Operations GeoJsonGraphFileLoader::convertOperationsFromJson(const Json & properties)
 {
   Operations operations;
   if (properties.contains("operations")) {
     for (const auto & json_operation : properties["operations"]) {
       std::cout << "getting operations" << std::endl;
       Operation operation;
-      operation = getOperation(json_operation);
+      operation = convertOperationFromJson(json_operation);
       operations.push_back(operation);
     }
   }
   return operations;
 }
 
-EdgeCost GeoJsonGraphFileLoader::getEdgeCost(const Json & properties)
+EdgeCost GeoJsonGraphFileLoader::convertEdgeCostFromJson(const Json & properties)
 {
   EdgeCost edge_cost;
   if (properties.contains("cost")) {

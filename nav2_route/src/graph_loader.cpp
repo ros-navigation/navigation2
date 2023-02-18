@@ -31,11 +31,9 @@ GraphLoader::GraphLoader(
   tf_ = tf;
   route_frame_ = frame;
 
-  // TODO(jw): Don't set default
-  nav2_util::declare_parameter_if_not_declared(
-    node, "graph_filepath", rclcpp::ParameterValue(
-      ament_index_cpp::get_package_share_directory("nav2_route") +
-      "/graphs/geojson/aws_graph.geojson"));
+  if (!node->has_parameter("graph_filepath")) {
+    throw std::runtime_error("The parameter graph_filepath was not defined");
+  }
 
   graph_filepath_ = node->get_parameter("graph_filepath").as_string();
 
@@ -93,11 +91,6 @@ bool GraphLoader::loadGraphFromFile(
   }
 
   return true;
-
-  // Convert all coordinates to `frame` (in a new method) for standardization
-  // Including conversion of GPS coordinates, so we can populate it in some
-  // cartesian frame necessary for traversal cost estimation and densifying
-  // (and so we don't need to propogate it through our structures)
 }
 
 bool GraphLoader::transformGraph(Graph & graph)
