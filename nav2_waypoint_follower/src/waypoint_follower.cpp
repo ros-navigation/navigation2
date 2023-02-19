@@ -177,7 +177,6 @@ WaypointFollower::followWaypoints()
 
   auto start_time = this->now();
   auto last_wp_time = start_time;
-  rclcpp::Duration elapsed_time{0, 0};
 
   // get the goal index, by default, the first in the list of waypoints given.
   uint32_t goal_index = goal->goal_index;
