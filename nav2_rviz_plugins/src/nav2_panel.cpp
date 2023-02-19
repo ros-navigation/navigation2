@@ -888,8 +888,16 @@ Nav2Panel::onInitialize()
           renderWaypointLoopCount(navigation_data_table_, goal_index_ + 1, loop_count_);
           renderNavToPoseFeedback(navigation_data_table_, msg->feedback);
       } else {
+        // Hide the feedback that is disabled when loop count == 0
+        const std::array hiddenRows{
+          NavigationDataTableRows::kWaypoint,
+          NavigationDataTableRows::kLoop,
+          };
+        for (const auto& row: hiddenRows) {
+          navigation_data_table_->hideRow(to_underlying(row));
+        }
         renderNavToPoseFeedback(navigation_data_table_, msg->feedback);
-        // TODO hide goal index and loop count
+
       }
     });
   nav_through_poses_feedback_sub_ =
@@ -1235,10 +1243,24 @@ Nav2Panel::onAccumulatedWp()
   navigation_mode_button_->setEnabled(false);
   pause_resume_button_->setEnabled(false);
 
-  // Show the feedback
-  const std::array visibleRows{
+  // Hide loop and waypoint count only if requested number of loops
+  const std::array optionalRows{
     NavigationDataTableRows::kWaypoint,
     NavigationDataTableRows::kLoop,
+    NavigationDataTableRows::kPosesRemaining,
+    };
+
+  const bool bShowOptionalRows = (stoi(nr_of_loops_->displayText().toStdString()) > 0);
+  for (const auto& row: optionalRows) {
+    if (bShowOptionalRows) {
+      navigation_data_table_->showRow(to_underlying(row));
+    } else {
+      navigation_data_table_->hideRow(to_underlying(row));
+    }
+  }
+
+  // Always show this feedback
+  const std::array visibleRows{
     NavigationDataTableRows::kPosesRemaining,
     NavigationDataTableRows::kEstimatedTimeRemaining,
     NavigationDataTableRows::kDistanceRemaining,
@@ -1502,11 +1524,23 @@ Nav2Panel::startNavThroughPoses(std::vector<geometry_msgs::msg::PoseStamped> pos
     return;
   }
 
-  // Show the feedback
-  const std::array visibleRows{
+  const std::array optionalRows{
     NavigationDataTableRows::kWaypoint,
     NavigationDataTableRows::kLoop,
     NavigationDataTableRows::kPosesRemaining,
+    };
+
+  const bool bShowOptionalRows = (stoi(nr_of_loops_->displayText().toStdString()) > 0);
+  for (const auto& row: optionalRows) {
+    if (bShowOptionalRows) {
+      navigation_data_table_->showRow(to_underlying(row));
+    } else {
+      navigation_data_table_->hideRow(to_underlying(row));
+    }
+  }
+
+  // Always show this feedback
+  const std::array visibleRows{
     NavigationDataTableRows::kEstimatedTimeRemaining,
     NavigationDataTableRows::kDistanceRemaining,
     NavigationDataTableRows::kTimeTakenCurrentWP,
