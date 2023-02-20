@@ -275,12 +275,13 @@ void VoxelLayer::raytraceFreespace(
   if (!worldToMap3DFloat(ox, oy, oz, sensor_x, sensor_y, sensor_z)) {
     RCLCPP_WARN(
       logger_,
-      "Sensor origin at (%.2f, %.2f %.2f) is out of map bounds"
+      "Sensor origin at (%.2f, %.2f %.2f) is out of map bounds "
       "(%.2f, %.2f, %.2f) to (%.2f, %.2f, %.2f). "
       "The costmap cannot raytrace for it.",
       ox, oy, oz,
-      ox + getSizeInMetersX(), oy + getSizeInMetersY(), oz + getSizeInMetersZ(),
-      origin_x_, origin_y_, origin_z_);
+      origin_x_, origin_y_, origin_z_,
+      origin_x_ + getSizeInMetersX(), origin_y_ + getSizeInMetersY(),
+      origin_z_ + getSizeInMetersZ());
 
     return;
   }
