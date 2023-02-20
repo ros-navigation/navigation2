@@ -280,7 +280,8 @@ void VoxelLayer::raytraceFreespace(
       "The costmap cannot raytrace for it.",
       ox, oy, oz,
       origin_x_, origin_y_, origin_z_,
-      origin_x_ + getSizeInMetersX(), origin_y_ + getSizeInMetersY(), origin_z_ + getSizeInMetersZ());
+      origin_x_ + getSizeInMetersX(), origin_y_ + getSizeInMetersY(),
+      origin_z_ + getSizeInMetersZ());
 
     return;
   }
