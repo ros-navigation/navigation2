@@ -50,7 +50,7 @@ namespace nav2_costmap_2d
 
 BinaryFilter::BinaryFilter()
 : filter_info_sub_(nullptr), mask_sub_(nullptr),
-  binary_state_pub_(nullptr), filter_mask_(nullptr), mask_frame_(""), global_frame_(""),
+  binary_state_pub_(nullptr), filter_mask_(nullptr), global_frame_(""),
   default_state_(false), binary_state_(default_state_)
 {
 }
@@ -162,7 +162,6 @@ void BinaryFilter::maskCallback(
   }
 
   filter_mask_ = msg;
-  mask_frame_ = msg->header.frame_id;
 }
 
 void BinaryFilter::process(
@@ -183,7 +182,7 @@ void BinaryFilter::process(
   geometry_msgs::msg::Pose2D mask_pose;  // robot coordinates in mask frame
 
   // Transforming robot pose from current layer frame to mask frame
-  if (!transformPose(global_frame_, pose, mask_frame_, mask_pose)) {
+  if (!transformPose(global_frame_, pose, filter_mask_->header.frame_id, mask_pose)) {
     return;
   }
 

@@ -49,7 +49,7 @@ namespace nav2_costmap_2d
 
 SpeedFilter::SpeedFilter()
 : filter_info_sub_(nullptr), mask_sub_(nullptr),
-  speed_limit_pub_(nullptr), filter_mask_(nullptr), mask_frame_(""), global_frame_(""),
+  speed_limit_pub_(nullptr), filter_mask_(nullptr), global_frame_(""),
   speed_limit_(NO_SPEED_LIMIT), speed_limit_prev_(NO_SPEED_LIMIT)
 {
 }
@@ -169,7 +169,6 @@ void SpeedFilter::maskCallback(
   }
 
   filter_mask_ = msg;
-  mask_frame_ = msg->header.frame_id;
 }
 
 void SpeedFilter::process(
@@ -190,7 +189,7 @@ void SpeedFilter::process(
   geometry_msgs::msg::Pose2D mask_pose;  // robot coordinates in mask frame
 
   // Transforming robot pose from current layer frame to mask frame
-  if (!transformPose(global_frame_, pose, mask_frame_, mask_pose)) {
+  if (!transformPose(global_frame_, pose, filter_mask_->header.frame_id, mask_pose)) {
     return;
   }
 

@@ -42,6 +42,9 @@
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "geometry_msgs/msg/point_stamped.hpp"
 
+#include "nav2_costmap_2d/cost_values.hpp"
+#include "nav2_util/occ_grid_values.hpp"
+
 namespace nav2_costmap_2d
 {
 
@@ -204,6 +207,24 @@ bool CostmapFilter::worldToMask(
   }
 
   return true;
+}
+
+unsigned char CostmapFilter::getMaskCost(
+  nav_msgs::msg::OccupancyGrid::ConstSharedPtr filter_mask,
+  const unsigned int mx, const unsigned int & my) const
+{
+  const unsigned int index = my * filter_mask->info.width + mx;
+
+  const char data = filter_mask->data[index];
+  if (data == nav2_util::OCC_GRID_UNKNOWN) {
+    return NO_INFORMATION;
+  } else {
+    // Linear conversion from OccupancyGrid data range [OCC_GRID_FREE..OCC_GRID_OCCUPIED]
+    // to costmap data range [FREE_SPACE..LETHAL_OBSTACLE]
+    return std::round(
+      static_cast<double>(data) * (LETHAL_OBSTACLE - FREE_SPACE) /
+      (nav2_util::OCC_GRID_OCCUPIED - nav2_util::OCC_GRID_FREE));
+  }
 }
 
 }  // namespace nav2_costmap_2d
