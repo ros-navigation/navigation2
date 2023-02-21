@@ -44,7 +44,7 @@
     </Action>
 
     <Action ID="CancelAssistedTeleop">
-      <input_port name="service_name">Service name to cancel the assisted teleop behavior</input_port>
+      <input_port name="server_name">Server name to cancel the assisted teleop behavior</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
     </Action>
 
