@@ -119,6 +119,12 @@ void DWBLocalPlanner::configure(
   node->get_parameter(dwb_plugin_name_ + ".prune_plan", prune_plan_);
   node->get_parameter(dwb_plugin_name_ + ".prune_distance", prune_distance_);
   node->get_parameter(dwb_plugin_name_ + ".forward_prune_distance", forward_prune_distance_);
+  if (forward_prune_distance_ < 0.0) {
+    RCLCPP_WARN(
+      logger_, "Forward prune distance is negative, setting to max to search"
+      " every point on path for the closest value.");
+    forward_prune_distance_ = std::numeric_limits<double>::max();
+  }
   node->get_parameter(dwb_plugin_name_ + ".debug_trajectory_details", debug_trajectory_details_);
   node->get_parameter(dwb_plugin_name_ + ".trajectory_generator_name", traj_generator_name);
   node->get_parameter(
@@ -503,10 +509,10 @@ DWBLocalPlanner::transformGlobalPlan(
     transform_end_threshold = dist_threshold;
   }
 
-  // Find the first pose in the global plan that's further than prune distance
+  // Find the first pose in the global plan that's further than forward prune distance
   // from the robot using integrated distance
   auto prune_point = nav2_util::geometry_utils::first_after_integrated_distance(
-    global_plan_.poses.begin(), global_plan_.poses.end(), prune_dist);
+    global_plan_.poses.begin(), global_plan_.poses.end(), forward_prune_distance_);
 
   // Find the first pose in the plan (upto prune_point) that's less than transform_start_threshold
   // from the robot.

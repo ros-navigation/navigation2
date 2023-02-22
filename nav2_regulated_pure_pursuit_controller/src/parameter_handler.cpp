@@ -145,6 +145,13 @@ ParameterHandler::ParameterHandler(
   node->get_parameter(
     plugin_name_ + ".max_robot_pose_search_dist",
     params_.max_robot_pose_search_dist);
+  if (params_.max_robot_pose_search_dist < 0.0) {
+    RCLCPP_WARN(
+      logger_, "Max robot search distance is negative, setting to max to search"
+      " every point on path for the closest value.");
+    params_.max_robot_pose_search_dist = std::numeric_limits<double>::max();
+  }
+
   node->get_parameter(
     plugin_name_ + ".use_interpolation",
     params_.use_interpolation);
