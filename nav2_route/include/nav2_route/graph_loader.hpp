@@ -29,6 +29,7 @@
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_route/types.hpp"
 #include "nav2_route/interfaces/graph_file_loader.hpp"
+#include "rclcpp/node_interfaces/node_parameters_interface.hpp"
 
 namespace nav2_route
 {
@@ -86,8 +87,6 @@ protected:
   GraphFileLoader::Ptr graph_file_loader_;
   std::string default_plugin_id_;
   std::string plugin_type_;
-
-  std::unordered_map<std::string, tf2::Transform> cashed_transforms_;
 };
 
 }  // namespace nav2_route

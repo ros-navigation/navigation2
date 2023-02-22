@@ -31,9 +31,8 @@ GraphLoader::GraphLoader(
   tf_ = tf;
   route_frame_ = frame;
 
-  if (!node->has_parameter("graph_filepath")) {
-    throw std::runtime_error("The parameter graph_filepath was not defined");
-  }
+  nav2_util::declare_parameter_if_not_declared(
+    node, "graph_filepath", rclcpp::ParameterType::PARAMETER_STRING);
 
   graph_filepath_ = node->get_parameter("graph_filepath").as_string();
 
@@ -95,18 +94,19 @@ bool GraphLoader::loadGraphFromFile(
 
 bool GraphLoader::transformGraph(Graph & graph)
 {
+  std::unordered_map<std::string, tf2::Transform> cached_transforms;
   for (auto & node : graph) {
     std::string node_frame = node.coords.frame_id;
     if (node_frame.empty() || node_frame == route_frame_) {continue;}
 
-    if (cashed_transforms_.find(node_frame) == cashed_transforms_.end()) {
+    if (cached_transforms.find(node_frame) == cached_transforms.end()) {
       tf2::Transform tf_transform;
       bool got_transform = nav2_util::getTransform(
         node_frame, route_frame_, tf2::durationFromSec(0.1), tf_, tf_transform);
 
       if (!got_transform) {return false;}
 
-      cashed_transforms_.insert({node_frame, tf_transform});
+      cached_transforms.insert({node_frame, tf_transform});
     }
 
     tf2::Vector3 graph_coord(
@@ -114,7 +114,7 @@ bool GraphLoader::transformGraph(Graph & graph)
       node.coords.y,
       0.0);
 
-    tf2::Vector3 new_coord = cashed_transforms_[node_frame] * graph_coord;
+    tf2::Vector3 new_coord = cached_transforms[node_frame] * graph_coord;
 
     node.coords.x = static_cast<float>(new_coord.x());
     node.coords.y = static_cast<float>(new_coord.y());

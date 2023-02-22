@@ -69,7 +69,6 @@ bool GeoJsonGraphFileLoader::doesFileExist(const std::string & filepath)
   return std::filesystem::exists(filepath);
 }
 
-
 void GeoJsonGraphFileLoader::getGraphElements(
   const Json & features, std::vector<Json> & nodes, std::vector<Json> & edges)
 {
@@ -214,10 +213,7 @@ Operations GeoJsonGraphFileLoader::convertOperationsFromJson(const Json & proper
   Operations operations;
   if (properties.contains("operations")) {
     for (const auto & json_operation : properties["operations"]) {
-      std::cout << "getting operations" << std::endl;
-      Operation operation;
-      operation = convertOperationFromJson(json_operation);
-      operations.push_back(operation);
+      operations.push_back(convertOperationFromJson(json_operation));
     }
   }
   return operations;
