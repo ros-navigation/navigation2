@@ -22,6 +22,7 @@
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "geometry_msgs/msg/pose2_d.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
+#include "nav2_costmap_2d/cost_values.hpp"
 #include "nav2_costmap_2d/costmap_filters/costmap_filter.hpp"
 
 class CostmapFilterWrapper : public nav2_costmap_2d::CostmapFilter
@@ -34,6 +35,13 @@ public:
     double wx, double wy, unsigned int & mx, unsigned int & my) const
   {
     return nav2_costmap_2d::CostmapFilter::worldToMask(filter_mask, wx, wy, mx, my);
+  }
+
+  unsigned char getMaskCost(
+    nav_msgs::msg::OccupancyGrid::ConstSharedPtr filter_mask,
+    const unsigned int mx, const unsigned int & my) const
+  {
+    return nav2_costmap_2d::CostmapFilter::getMaskCost(filter_mask, mx, my);
   }
 
   // API coverage
@@ -87,6 +95,38 @@ TEST(CostmapFilter, testWorldToMask)
   // Point outside mask
   ASSERT_FALSE(cf.worldToMask(mask, 2.9, 2.9, mx, my));
   ASSERT_FALSE(cf.worldToMask(mask, 6.0, 6.0, mx, my));
+}
+
+TEST(CostmapFilter, testGetMaskCost)
+{
+  // Create occupancy grid for test as follows:
+  // [-1, 0,
+  //  50, 100]
+
+  const unsigned int width = 2;
+  const unsigned int height = 2;
+
+  auto mask = std::make_shared<nav_msgs::msg::OccupancyGrid>();
+  mask->header.frame_id = "map";
+  mask->info.resolution = 1.0;
+  mask->info.width = width;
+  mask->info.height = height;
+  mask->info.origin.position.x = 0.0;
+  mask->info.origin.position.y = 0.0;
+
+  mask->data.resize(width * height);
+  mask->data[0] = nav2_util::OCC_GRID_UNKNOWN;
+  mask->data[1] = nav2_util::OCC_GRID_FREE;
+  mask->data[2] = nav2_util::OCC_GRID_OCCUPIED / 2;
+  mask->data[3] = nav2_util::OCC_GRID_OCCUPIED;
+
+  CostmapFilterWrapper cf;
+
+  // Test all value cases
+  ASSERT_EQ(cf.getMaskCost(mask, 0, 0), nav2_costmap_2d::NO_INFORMATION);
+  ASSERT_EQ(cf.getMaskCost(mask, 1, 0), nav2_costmap_2d::FREE_SPACE);
+  ASSERT_EQ(cf.getMaskCost(mask, 0, 1), nav2_costmap_2d::LETHAL_OBSTACLE / 2);
+  ASSERT_EQ(cf.getMaskCost(mask, 1, 1), nav2_costmap_2d::LETHAL_OBSTACLE);
 }
 
 int main(int argc, char ** argv)
