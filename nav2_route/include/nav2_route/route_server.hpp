@@ -38,7 +38,7 @@
 
 #include "nav2_route/types.hpp"
 #include "nav2_route/utils.hpp"
-#include "nav2_route/graph_file_loader.hpp"
+#include "nav2_route/graph_loader.hpp"
 #include "nav2_route/route_planner.hpp"
 #include "nav2_route/path_converter.hpp"
 #include "nav2_route/route_tracker.hpp"
@@ -211,8 +211,8 @@ protected:
   // Set or modify graph
   rclcpp::Service<nav2_msgs::srv::SetRouteGraph>::SharedPtr set_graph_service_;
 
-  // Interal tools
-  std::shared_ptr<GraphFileLoader> graph_loader_;
+  // Internal tools
+  std::shared_ptr<GraphLoader> graph_loader_;
   std::shared_ptr<RoutePlanner> route_planner_;
   std::shared_ptr<RouteTracker> route_tracker_;
   std::shared_ptr<PathConverter> path_converter_;

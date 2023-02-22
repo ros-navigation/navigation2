@@ -21,6 +21,7 @@ ament_target_dependencies(${library_name}
   rclcpp_lifecycle
   tf2_geometry_msgs
   bondcpp
+  pluginlib
 )
 
 add_executable(lifecycle_bringup

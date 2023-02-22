@@ -16,6 +16,7 @@ find_package(tf2_ros REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(nanoflann REQUIRED)
+find_package(nlohmann_json REQUIRED)
 
 nav2_package()
 
@@ -35,6 +36,7 @@ set(dependencies
   tf2_ros
   nav2_core
   nanoflann
+  nlohmann_json
 )
 
 include_directories(
@@ -50,7 +52,7 @@ add_library(${library_name} SHARED
   src/operations_manager.cpp
   src/node_spatial_tree.cpp
   src/path_converter.cpp
-  src/graph_file_loader.cpp
+  src/graph_loader.cpp
   src/goal_intent_extractor.cpp
 )
 
@@ -98,6 +100,15 @@ ament_target_dependencies(route_operations
   ${dependencies}
 )
 
+# Graph Parser plugins
+add_library(graph_file_loaders SHARED
+    src/plugins/graph_file_loaders/geojson_graph_file_loader.cpp
+)
+
+ament_target_dependencies(graph_file_loaders
+    ${dependencies}
+)
+
 pluginlib_export_plugin_description_file(nav2_route plugins.xml)
 
 install(DIRECTORY include/
@@ -108,11 +119,13 @@ install(TARGETS ${executable_name}
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
-install(TARGETS ${library_name} edge_scorers route_operations
+install(TARGETS ${library_name} edge_scorers route_operations graph_file_loaders
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
 )
+
+install(DIRECTORY graphs DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -125,5 +138,5 @@ endif()
 
 ament_export_include_directories(include)
 ament_export_dependencies(${dependencies})
-ament_export_libraries(${library_name} edge_scorers route_operations)
+ament_export_libraries(${library_name} edge_scorers route_operations graph_file_loaders)
 ament_package()

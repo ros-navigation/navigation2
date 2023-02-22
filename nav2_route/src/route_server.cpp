@@ -70,7 +70,7 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   max_planning_time_ = node->get_parameter("max_planning_time").as_double();
 
   try {
-    graph_loader_ = std::make_shared<GraphFileLoader>(node, tf_, route_frame_);
+    graph_loader_ = std::make_shared<GraphLoader>(node, tf_, route_frame_);
     if (!graph_loader_->loadGraphFromFile(graph_, id_to_graph_map_)) {
       return nav2_util::CallbackReturn::FAILURE;
     }
@@ -318,12 +318,19 @@ void RouteServer::setRouteGraph(
 {
   RCLCPP_INFO(get_logger(), "Setting new route graph: %s.", request->graph_filepath.c_str());
 
-  if (!graph_loader_->loadGraphFromFile(graph_, id_to_graph_map_, request->graph_filepath)) {
+  try {
+    if (!graph_loader_->loadGraphFromFile(graph_, id_to_graph_map_, request->graph_filepath)) {
+      RCLCPP_WARN(
+        get_logger(),
+        "Failed to set new route graph: %s!", request->graph_filepath.c_str());
+      response->success = false;
+      return;
+    }
+  } catch (std::exception & ex) {
     RCLCPP_WARN(
       get_logger(),
-      "Failed to set new route graph: %s!", request->graph_filepath.c_str());
+      "Failed to set new route graph due to %s!", ex.what());
     response->success = false;
-    return;
   }
 
   goal_intent_extractor_->setGraph(graph_, &id_to_graph_map_);

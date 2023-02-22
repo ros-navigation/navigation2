@@ -53,6 +53,28 @@ target_link_libraries(test_operations
   ${library_name} route_operations
 )
 
+# Test graph loader
+ament_add_gtest(test_graph_loader
+    test_graph_loader.cpp
+)
+ament_target_dependencies(test_graph_loader
+    ${dependencies}
+)
+target_link_libraries(test_graph_loader
+    ${library_name}
+)
+
+# Test geojson parser
+ament_add_gtest(test_geojson_graph_file_loader
+    test_geojson_graph_file_loader.cpp
+)
+ament_target_dependencies(test_geojson_graph_file_loader
+  ${dependencies}
+)
+target_link_libraries(test_geojson_graph_file_loader
+  ${library_name} graph_file_loaders
+)
+
 # Test collision monitor seperately due to relative complexity
 ament_add_gtest(test_collision_operation
   test_collision_operation.cpp

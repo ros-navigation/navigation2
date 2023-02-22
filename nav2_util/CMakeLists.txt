@@ -17,6 +17,7 @@ find_package(tf2_geometry_msgs REQUIRED)
 find_package(bondcpp REQUIRED)
 find_package(bond REQUIRED)
 find_package(action_msgs REQUIRED)
+find_package(pluginlib REQUIRED)
 
 set(dependencies
     nav2_msgs
@@ -32,6 +33,7 @@ set(dependencies
     bondcpp
     bond
     action_msgs
+    pluginlib
 )
 
 nav2_package()
