@@ -47,9 +47,10 @@ public:
     return getMaxCostmapDist();
   }
 
-  PathRange getGlobalPlanConsideringBoundsWrapper(const geometry_msgs::msg::PoseStamped & pose)
+  std::pair<nav_msgs::msg::Path, PathIterator>
+  getGlobalPlanConsideringBoundsInCostmapFrameWrapper(const geometry_msgs::msg::PoseStamped & pose)
   {
-    return getGlobalPlanConsideringBounds(pose);
+    return getGlobalPlanConsideringBoundsInCostmapFrame(pose);
   }
 
   bool transformPoseWrapper(
@@ -57,12 +58,6 @@ public:
     geometry_msgs::msg::PoseStamped & out_pose) const
   {
     return transformPose(frame, in_pose, out_pose);
-  }
-
-  nav_msgs::msg::Path transformPlanPosesToCostmapFrameWrapper(
-    PathIterator begin, PathIterator end, const builtin_interfaces::msg::Time & stamp)
-  {
-    return transformPlanPosesToCostmapFrame(begin, end, stamp);
   }
 
   geometry_msgs::msg::PoseStamped transformToGlobalPlanFrameWrapper(
@@ -118,10 +113,10 @@ TEST(PathHandlerTests, TestBounds)
   robot_pose.pose.position.x = 25.0;
 
   handler.setPath(path);
-  auto [closest, furthest] = handler.getGlobalPlanConsideringBoundsWrapper(robot_pose);
+  auto [transformed_plan, closest] =
+    handler.getGlobalPlanConsideringBoundsInCostmapFrameWrapper(robot_pose);
   auto & path_in = handler.getPath();
   EXPECT_EQ(closest - path_in.poses.begin(), 25);
-  EXPECT_EQ(furthest - path_in.poses.begin(), 25);
   handler.pruneGlobalPlanWrapper(closest);
   auto & path_pruned = handler.getPath();
   EXPECT_EQ(path_pruned.poses.size(), 75u);
@@ -159,10 +154,8 @@ TEST(PathHandlerTests, TestTransforms)
   handler.setPath(path);
   EXPECT_NO_THROW(handler.transformToGlobalPlanFrameWrapper(robot_pose));
 
-  auto [closest, furthest] = handler.getGlobalPlanConsideringBoundsWrapper(robot_pose);
-
-  builtin_interfaces::msg::Time stamp;
-  auto path_out = handler.transformPlanPosesToCostmapFrameWrapper(closest, furthest, stamp);
+  auto [path_out, closest] =
+    handler.getGlobalPlanConsideringBoundsInCostmapFrameWrapper(robot_pose);
 
   // Put it all together
   auto final_path = handler.transformPath(robot_pose);

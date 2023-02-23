@@ -115,23 +115,13 @@ protected:
   transformToGlobalPlanFrame(const geometry_msgs::msg::PoseStamped & pose);
 
   /**
-    * @brief Transform a plan to the costmap reference frame
-    * @param begin Start of path to transform
-    * @param end End of path to transform
-    * @param stamp Timestamp to use for transformation
-    * @return output path in costmap reference frame
-    */
-  nav_msgs::msg::Path
-  transformPlanPosesToCostmapFrame(
-    PathIterator begin, PathIterator end,
-    const builtin_interfaces::msg::Time & stamp);
-
-  /**
     * @brief Get global plan within window of the local costmap size
     * @param global_pose Robot pose
-    * @return Range of path iterators belonging to the path within costmap window
+    * @return plan transformed in the costmap frame and iterator to the first pose of the global
+    * plan (for pruning)
     */
-  PathRange getGlobalPlanConsideringBounds(const geometry_msgs::msg::PoseStamped & global_pose);
+  std::pair<nav_msgs::msg::Path, PathIterator> getGlobalPlanConsideringBoundsInCostmapFrame(
+    const geometry_msgs::msg::PoseStamped & global_pose);
 
   /**
     * @brief Prune global path to only interesting portions
