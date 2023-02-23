@@ -57,9 +57,9 @@ PathHandler::getGlobalPlanConsideringBoundsInCostmapFrame(
       return euclidean_distance(global_pose, ps);
     });
 
-  nav_msgs::msg::Path transformedPlan;
-  transformedPlan.header.frame_id = costmap_->getGlobalFrameID();
-  transformedPlan.header.stamp = global_pose.header.stamp;
+  nav_msgs::msg::Path transformed_plan;
+  transformed_plan.header.frame_id = costmap_->getGlobalFrameID();
+  transformed_plan.header.stamp = global_pose.header.stamp;
 
   unsigned int mx, my;
   // Find the furthest relevent pose on the path to consider within costmap
@@ -69,7 +69,7 @@ PathHandler::getGlobalPlanConsideringBoundsInCostmapFrame(
     // Distance relative to robot pose check
     auto distance = euclidean_distance(global_pose, *global_plan_pose);
     if (distance >= prune_distance_) {
-      return {transformedPlan, closest_point};
+      return {transformed_plan, closest_point};
     }
 
     // Transform from global plan frame to costmap frame
@@ -81,14 +81,14 @@ PathHandler::getGlobalPlanConsideringBoundsInCostmapFrame(
     if (!costmap_->getCostmap()->worldToMap(
         costmap_plan_pose.pose.position.x, costmap_plan_pose.pose.position.y, mx, my))
     {
-      return {transformedPlan, closest_point};
+      return {transformed_plan, closest_point};
     }
 
     // Filling the transformed plan to return with the transformed pose
-    transformedPlan.poses.push_back(costmap_plan_pose);
+    transformed_plan.poses.push_back(costmap_plan_pose);
   }
 
-  return {transformedPlan, closest_point};
+  return {transformed_plan, closest_point};
 }
 
 geometry_msgs::msg::PoseStamped PathHandler::transformToGlobalPlanFrame(
