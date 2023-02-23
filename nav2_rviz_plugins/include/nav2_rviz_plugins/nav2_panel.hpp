@@ -86,7 +86,7 @@ private:
   void timerEvent(QTimerEvent * event) override;
   bool isLoopValueValid(std::string & loop);
 
-  int unique_id {0};
+  int unique_id_ {0};
   int goal_index_ = 0;
   int loop_count_ = 0;
   bool store_initial_pose_ = false;
@@ -194,8 +194,8 @@ private:
   // the user will be allowed to cancel the action.
   // The ROSActionTransition allows for the state of the action to be detected
   // and the button state to change automatically.
-  QState * running_nav_through_poses{nullptr};
-  QState * running_follow_waypoints{nullptr};
+  QState * running_nav_through_poses_{nullptr};
+  QState * running_follow_waypoints_{nullptr};
   QState * canceled_{nullptr};
   // The following states are added to allow to collect several poses to perform a waypoint-mode
   // navigation or navigate through poses mode.
