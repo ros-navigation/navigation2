@@ -193,14 +193,12 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
 
   double desired_curvature = calculateCurvature(carrot_pose.pose.position);
 
-  double regulation_curvature;
+  double regulation_curvature = desired_curvature;
   if (params_->use_fixed_curvature_lookahead) {
     auto curvature_lookahead_pose = getLookAheadPoint(
       params_->curvature_lookahead_dist,
       transformed_plan);
     regulation_curvature = calculateCurvature(curvature_lookahead_pose.pose.position);
-  } else {
-    regulation_curvature = desired_curvature;
   }
 
   // Setting the velocity direction
