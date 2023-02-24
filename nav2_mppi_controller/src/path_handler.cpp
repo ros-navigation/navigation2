@@ -37,10 +37,12 @@ void PathHandler::initialize(
   getParam(transform_tolerance_, "transform_tolerance", 0.1);
 }
 
-PathRange PathHandler::getGlobalPlanConsideringBounds(
+std::pair<nav_msgs::msg::Path, PathIterator>
+PathHandler::getGlobalPlanConsideringBoundsInCostmapFrame(
   const geometry_msgs::msg::PoseStamped & global_pose)
 {
   using nav2_util::geometry_utils::euclidean_distance;
+
   auto begin = global_plan_.poses.begin();
   auto end = global_plan_.poses.end();
 
@@ -55,19 +57,38 @@ PathRange PathHandler::getGlobalPlanConsideringBounds(
       return euclidean_distance(global_pose, ps);
     });
 
-  // Find the furthest relevent point on the path to consider within costmap
-  // bounds
-  const auto * costmap = costmap_->getCostmap();
-  unsigned int mx, my;
-  auto last_point =
-    std::find_if(
-    closest_point, end, [&](const geometry_msgs::msg::PoseStamped & global_plan_pose) {
-      auto distance = euclidean_distance(global_pose, global_plan_pose);
-      return distance >= prune_distance_ || !costmap->worldToMap(
-        global_plan_pose.pose.position.x, global_plan_pose.pose.position.y, mx, my);
-    });
+  nav_msgs::msg::Path transformed_plan;
+  transformed_plan.header.frame_id = costmap_->getGlobalFrameID();
+  transformed_plan.header.stamp = global_pose.header.stamp;
 
-  return {closest_point, last_point};
+  unsigned int mx, my;
+  // Find the furthest relevent pose on the path to consider within costmap
+  // bounds
+  // Transforming it to the costmap frame in the same loop
+  for (auto global_plan_pose = closest_point; global_plan_pose != end; ++global_plan_pose) {
+    // Distance relative to robot pose check
+    auto distance = euclidean_distance(global_pose, *global_plan_pose);
+    if (distance >= prune_distance_) {
+      return {transformed_plan, closest_point};
+    }
+
+    // Transform from global plan frame to costmap frame
+    geometry_msgs::msg::PoseStamped costmap_plan_pose;
+    global_plan_pose->header.stamp = global_pose.header.stamp;
+    transformPose(costmap_->getGlobalFrameID(), *global_plan_pose, costmap_plan_pose);
+
+    // Check if pose is inside the costmap
+    if (!costmap_->getCostmap()->worldToMap(
+        costmap_plan_pose.pose.position.x, costmap_plan_pose.pose.position.y, mx, my))
+    {
+      return {transformed_plan, closest_point};
+    }
+
+    // Filling the transformed plan to return with the transformed pose
+    transformed_plan.poses.push_back(costmap_plan_pose);
+  }
+
+  return {transformed_plan, closest_point};
 }
 
 geometry_msgs::msg::PoseStamped PathHandler::transformToGlobalPlanFrame(
@@ -92,12 +113,7 @@ nav_msgs::msg::Path PathHandler::transformPath(
   // Find relevent bounds of path to use
   geometry_msgs::msg::PoseStamped global_pose =
     transformToGlobalPlanFrame(robot_pose);
-  auto [lower_bound, upper_bound] = getGlobalPlanConsideringBounds(global_pose);
-
-  // Transform these bounds into the local costmap frame and prune older points
-  const auto & stamp = global_pose.header.stamp;
-  nav_msgs::msg::Path transformed_plan =
-    transformPlanPosesToCostmapFrame(lower_bound, upper_bound, stamp);
+  auto [transformed_plan, lower_bound] = getGlobalPlanConsideringBoundsInCostmapFrame(global_pose);
 
   pruneGlobalPlan(lower_bound);
 
@@ -134,31 +150,6 @@ double PathHandler::getMaxCostmapDist()
   const auto & costmap = costmap_->getCostmap();
   return std::max(costmap->getSizeInCellsX(), costmap->getSizeInCellsY()) *
          costmap->getResolution() / 2.0;
-}
-
-nav_msgs::msg::Path PathHandler::transformPlanPosesToCostmapFrame(
-  PathIterator begin, PathIterator end, const builtin_interfaces::msg::Time & stamp)
-{
-  std::string frame = costmap_->getGlobalFrameID();
-  auto transformToFrame = [&](const auto & global_plan_pose) {
-      geometry_msgs::msg::PoseStamped from_pose;
-      geometry_msgs::msg::PoseStamped to_pose;
-
-      from_pose.header.frame_id = global_plan_.header.frame_id;
-      from_pose.header.stamp = stamp;
-      from_pose.pose = global_plan_pose.pose;
-
-      transformPose(frame, from_pose, to_pose);
-      return to_pose;
-    };
-
-  nav_msgs::msg::Path plan;
-  plan.header.frame_id = frame;
-  plan.header.stamp = stamp;
-
-  std::transform(begin, end, std::back_inserter(plan.poses), transformToFrame);
-
-  return plan;
 }
 
 void PathHandler::setPath(const nav_msgs::msg::Path & plan)
