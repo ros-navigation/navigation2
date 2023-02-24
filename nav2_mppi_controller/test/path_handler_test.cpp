@@ -18,6 +18,7 @@
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_mppi_controller/tools/path_handler.hpp"
+#include "tf2_ros/transform_broadcaster.h"
 
 // Tests path handling
 
@@ -93,6 +94,9 @@ TEST(PathHandlerTests, TestBounds)
   node->declare_parameter("dummy.max_robot_pose_search_dist", rclcpp::ParameterValue(99999.9));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", "dummy_costmap", true);
+  auto results = costmap_ros->set_parameters_atomically(
+    {rclcpp::Parameter("global_frame", "odom"),
+      rclcpp::Parameter("robot_base_frame", "base_link")});
   ParametersHandler param_handler(node);
   rclcpp_lifecycle::State state;
   costmap_ros->on_configure(state);
@@ -101,12 +105,25 @@ TEST(PathHandlerTests, TestBounds)
   handler.initialize(node, "dummy", costmap_ros, costmap_ros->getTfBuffer(), &param_handler);
   EXPECT_EQ(handler.getMaxCostmapDistWrapper(), 2.5);
 
+  // Set tf between map odom and base_link
+  std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_ =
+    std::make_unique<tf2_ros::TransformBroadcaster>(node);
+  geometry_msgs::msg::TransformStamped t;
+  //t.header.stamp = node->get_clock()->now();
+  t.header.frame_id = "map";
+  t.child_frame_id = "base_link";
+  tf_broadcaster_->sendTransform(t);
+  t.header.frame_id = "map";
+  t.child_frame_id = "odom";
+  tf_broadcaster_->sendTransform(t);
+
   // Test getting the global plans within a bounds window
   nav_msgs::msg::Path path;
-  path.header.frame_id = "odom";
+  path.header.frame_id = "map";
   path.poses.resize(100);
   for (unsigned int i = 0; i != path.poses.size(); i++) {
     path.poses[i].pose.position.x = i;
+    path.poses[i].header.frame_id = "map";
   }
   geometry_msgs::msg::PoseStamped robot_pose;
   robot_pose.header.frame_id = "odom";
@@ -136,15 +153,28 @@ TEST(PathHandlerTests, TestTransforms)
   // Test basic transformations and path handling
   handler.initialize(node, "dummy", costmap_ros, costmap_ros->getTfBuffer(), &param_handler);
 
+  // Set tf between map odom and base_link
+  std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_ =
+    std::make_unique<tf2_ros::TransformBroadcaster>(node);
+  geometry_msgs::msg::TransformStamped t;
+  //t.header.stamp = node->get_clock()->now();
+  t.header.frame_id = "map";
+  t.child_frame_id = "base_link";
+  tf_broadcaster_->sendTransform(t);
+  t.header.frame_id = "map";
+  t.child_frame_id = "odom";
+  tf_broadcaster_->sendTransform(t);
+
   nav_msgs::msg::Path path;
   path.header.frame_id = "map";
   path.poses.resize(100);
   for (unsigned int i = 0; i != path.poses.size(); i++) {
     path.poses[i].pose.position.x = i;
+    path.poses[i].header.frame_id = "map";
   }
 
   geometry_msgs::msg::PoseStamped robot_pose, output_pose;
-  robot_pose.header.frame_id = "map";
+  robot_pose.header.frame_id = "odom";
   robot_pose.pose.position.x = 2.5;
 
   EXPECT_TRUE(handler.transformPoseWrapper("map", robot_pose, output_pose));
