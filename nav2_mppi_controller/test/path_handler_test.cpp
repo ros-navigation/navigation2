@@ -109,7 +109,6 @@ TEST(PathHandlerTests, TestBounds)
   std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_ =
     std::make_unique<tf2_ros::TransformBroadcaster>(node);
   geometry_msgs::msg::TransformStamped t;
-  //t.header.stamp = node->get_clock()->now();
   t.header.frame_id = "map";
   t.child_frame_id = "base_link";
   tf_broadcaster_->sendTransform(t);
@@ -157,7 +156,6 @@ TEST(PathHandlerTests, TestTransforms)
   std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_ =
     std::make_unique<tf2_ros::TransformBroadcaster>(node);
   geometry_msgs::msg::TransformStamped t;
-  //t.header.stamp = node->get_clock()->now();
   t.header.frame_id = "map";
   t.child_frame_id = "base_link";
   tf_broadcaster_->sendTransform(t);
