@@ -191,9 +191,9 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
 
   double linear_vel, angular_vel;
 
-  double desired_curvature = calculateCurvature(carrot_pose.pose.position);
+  double lookahead_curvature = calculateCurvature(carrot_pose.pose.position);
 
-  double regulation_curvature = desired_curvature;
+  double regulation_curvature = lookahead_curvature;
   if (params_->use_fixed_curvature_lookahead) {
     auto curvature_lookahead_pose = getLookAheadPoint(
       params_->curvature_lookahead_dist,
@@ -223,7 +223,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
       linear_vel, sign);
 
     // Apply curvature to angular velocity after constraining linear velocity
-    angular_vel = linear_vel * desired_curvature;
+    angular_vel = linear_vel * lookahead_curvature;
   }
 
   // Collision checking on this velocity heading
