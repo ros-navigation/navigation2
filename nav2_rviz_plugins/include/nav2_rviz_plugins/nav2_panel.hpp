@@ -221,35 +221,36 @@ private:
 
   // Render navigation to pose in the data table
   static void renderNavToPoseFeedback(
-    QTableWidget* table,
+    QTableWidget * table,
     const nav2_msgs::action::NavigateToPose::Feedback msg =
     nav2_msgs::action::NavigateToPose::Feedback()
-    );
+  );
 
   // Render navigation through poses in the data table
   static void renderNavThroughPosesFeedback(
-    QTableWidget* table,
+    QTableWidget * table,
     const nav2_msgs::action::NavigateThroughPoses::Feedback msg =
     nav2_msgs::action::NavigateThroughPoses::Feedback()
-    );
+  );
 
   // Render navigation to waypoints in the data table
   static void renderNavThroughWPFeedback(
-    QTableWidget* table,
+    QTableWidget * table,
     const nav2_msgs::action::FollowWaypoints::Feedback msg =
     nav2_msgs::action::FollowWaypoints::Feedback()
-    );
+  );
 
   // Render navigation loop count and goal index in the data table
   static void renderWaypointLoopCount(
-    QTableWidget* table,
+    QTableWidget * table,
     const int goal_index,
     const int loop_count
-    );
+  );
 
-  //! Render the common members of NavigateToPose::Feedback or NavigateThroughPoses::Feedback in a table
+  // Render the common members of NavigateToPose::Feedback or
+  // NavigateThroughPoses::Feedback in a table
   template<typename T>
-  static inline void renderNavGenericPoseFeedback(QTableWidget* table, const T & msg);
+  static inline void renderNavGenericPoseFeedback(QTableWidget * table, const T & msg);
 
   // Waypoint navigation visual markers publisher
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr wp_navigation_markers_pub_;

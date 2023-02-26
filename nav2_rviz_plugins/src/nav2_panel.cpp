@@ -22,8 +22,8 @@
 #include <QCheckBox>
 
 
-#include <array>
 #include <ctype.h>
+#include <array>
 #include <memory>
 #include <vector>
 #include <utility>
@@ -43,7 +43,8 @@ namespace nav2_rviz_plugins
 using nav2_util::geometry_utils::orientationAroundZAxis;
 
 // Define the row numbers for navigation_data_table_
-enum class NavigationDataTableRows {
+enum class NavigationDataTableRows
+{
   // Waypoint number
   kWaypoint,
   // Loop number
@@ -65,7 +66,8 @@ enum class NavigationDataTableRows {
   kNRows,
 };
 
-constexpr std::uint8_t to_underlying(NavigationDataTableRows e) {
+constexpr std::uint8_t to_underlying(NavigationDataTableRows e)
+{
   return static_cast<std::underlying_type<NavigationDataTableRows>::type>(e);
 }
 
@@ -104,11 +106,11 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   //! @todo determine how to remove table scroll bars always
   navigation_data_table_->setMinimumWidth(300);
   navigation_data_table_->setColumnWidth(0, 200);
-  navigation_data_table_->setMinimumHeight(250); // adjusted manually
+  navigation_data_table_->setMinimumHeight(250);  // adjusted manually
   navigation_data_table_->horizontalHeader()->setStretchLastSection(true);
   store_initial_pose_checkbox_ = new QCheckBox("Store initial_pose");
   navigation_data_table_->setStyleSheet("QTableWidget {background-color: transparent;}");
-  for (int r = 0; r < kNumNavTableRows; r++){
+  for (int r = 0; r < kNumNavTableRows; r++) {
     navigation_data_table_->hideRow(r);
   }
 
@@ -481,7 +483,8 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   idle_->addTransition(idleTransition);
   //! @todo add a transition for follow WP here?
 
-  ROSActionQTransition * runningNavThroughPosesTransition = new ROSActionQTransition(QActionState::ACTIVE);
+  ROSActionQTransition * runningNavThroughPosesTransition = new ROSActionQTransition(
+    QActionState::ACTIVE);
   runningNavThroughPosesTransition->setTargetState(idle_);
   running_nav_to_pose_->addTransition(runningNavThroughPosesTransition);
 
@@ -529,7 +532,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
     initial_thread_, &InitialThread::navigationActive,
     [this, navigation_active] {
       navigation_status_indicator_->setText(navigation_active);
-      RCLCPP_INFO( client_node_->get_logger(), "Nav is active");
+      RCLCPP_INFO(client_node_->get_logger(), "Nav is active");
     });
   QObject::connect(
     initial_thread_, &InitialThread::navigationInactive,
@@ -650,7 +653,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
     rclcpp::QoS(1).transient_local());
 
   QObject::connect(
-    &GoalUpdater, SIGNAL(updateGoal(double,double,double,QString)),                 // NOLINT
+    &GoalUpdater, SIGNAL(updateGoal(double,double,double,QString)),  // NOLINT
     this, SLOT(onNewGoal(double,double,double,QString)));  // NOLINT
 }
 
@@ -853,19 +856,18 @@ Nav2Panel::onInitialize()
         if (goal_index_ != 0) {
           loop_counter_stop_ = false;
         }
-          renderWaypointLoopCount(navigation_data_table_, goal_index_ + 1, loop_count_);
-          renderNavToPoseFeedback(navigation_data_table_, msg->feedback);
+        renderWaypointLoopCount(navigation_data_table_, goal_index_ + 1, loop_count_);
+        renderNavToPoseFeedback(navigation_data_table_, msg->feedback);
       } else {
         // Hide the feedback that is disabled when loop count == 0
         const std::array hiddenRows{
           NavigationDataTableRows::kWaypoint,
           NavigationDataTableRows::kLoop,
-          };
-        for (const auto& row: hiddenRows) {
+        };
+        for (const auto & row : hiddenRows) {
           navigation_data_table_->hideRow(to_underlying(row));
         }
         renderNavToPoseFeedback(navigation_data_table_, msg->feedback);
-
       }
     });
   nav_through_poses_feedback_sub_ =
@@ -901,14 +903,24 @@ Nav2Panel::onInitialize()
         waypoint_status_indicator_->clear();
         loop_no_ = "0";
         loop_count_ = 0;
-        navigation_data_table_->item(to_underlying(NavigationDataTableRows::kEstimatedTimeRemaining), 1)->setText("0 s");
-        navigation_data_table_->item(to_underlying(NavigationDataTableRows::kDistanceRemaining), 1)->setText("0.00 m");
-        navigation_data_table_->item(to_underlying(NavigationDataTableRows::kTimeTakenCurrentWP), 1)->setText("0 s");
+        navigation_data_table_->item(
+          to_underlying(NavigationDataTableRows::kEstimatedTimeRemaining),
+          1)->setText("0 s");
+        navigation_data_table_->item(
+          to_underlying(
+            NavigationDataTableRows::kDistanceRemaining), 1)->setText("0.00 m");
+        navigation_data_table_->item(
+          to_underlying(
+            NavigationDataTableRows::kTimeTakenCurrentWP), 1)->setText("0 s");
       } else {
-        RCLCPP_INFO_STREAM(client_node_->get_logger(), "navigation_goal_status_sub_ not done. " << std::endl \
-          << "LC:" << +loop_count_ << "/" << nr_of_loops_->displayText().toStdString() << std::endl \
-          << "GI: " << +goal_index_ << "/" << +(static_cast<int>(store_poses_.size()) - 1)  << std::endl \
-          << "GS: " << +msg->status_list.back().status);
+        RCLCPP_INFO_STREAM(
+          client_node_->get_logger(), "navigation_goal_status_sub_ not done. " << std::endl \
+                                                                               << "LC:" <<
+            +loop_count_ << "/" << nr_of_loops_->displayText().toStdString() << std::endl \
+                                                                               << "GI: " <<
+            +goal_index_ << "/" << +(static_cast<int>(store_poses_.size()) - 1) << std::endl \
+                                                                               << "GS: " <<
+            +msg->status_list.back().status);
       }
     });
   nav_through_poses_goal_status_sub_ = node->create_subscription<action_msgs::msg::GoalStatusArray>(
@@ -918,10 +930,14 @@ Nav2Panel::onInitialize()
       navigation_goal_status_indicator_->setText(
         getGoalStatusLabel(msg->status_list.back().status));
       if (msg->status_list.back().status != action_msgs::msg::GoalStatus::STATUS_EXECUTING) {
-
-        navigation_data_table_->item(to_underlying(NavigationDataTableRows::kPosesRemaining), 1)->setText("0");
-        navigation_data_table_->item(to_underlying(NavigationDataTableRows::kLoop), 1)->setText("0");
-        navigation_data_table_->item(to_underlying(NavigationDataTableRows::kWaypoint), 1)->setText("0");
+        navigation_data_table_->item(
+          to_underlying(
+            NavigationDataTableRows::kPosesRemaining), 1)->setText("0");
+        navigation_data_table_->item(to_underlying(NavigationDataTableRows::kLoop), 1)->setText(
+          "0");
+        navigation_data_table_->item(
+          to_underlying(NavigationDataTableRows::kWaypoint),
+          1)->setText("0");
       }
     });
   follow_waypoints_goal_status_sub_ = node->create_subscription<action_msgs::msg::GoalStatusArray>(
@@ -929,7 +945,9 @@ Nav2Panel::onInitialize()
     rclcpp::SystemDefaultsQoS(),
     [this](const action_msgs::msg::GoalStatusArray::SharedPtr msg) {
       if (msg->status_list.back().status != action_msgs::msg::GoalStatus::STATUS_EXECUTING) {
-        navigation_data_table_->item(to_underlying(NavigationDataTableRows::kEstimatedTimeRemaining), 1)->setText("0 s");
+        navigation_data_table_->item(
+          to_underlying(NavigationDataTableRows::kEstimatedTimeRemaining),
+          1)->setText("0 s");
       }
     });
 }
@@ -1005,7 +1023,7 @@ Nav2Panel::onShutdown()
 void
 Nav2Panel::onInitial()
 {
-  for (int r = 0; r < kNumNavTableRows; r++){
+  for (int r = 0; r < kNumNavTableRows; r++) {
     navigation_data_table_->hideRow(r);
   }
 }
@@ -1070,7 +1088,6 @@ Nav2Panel::onNewGoal(double x, double y, double theta, QString frame)
 void
 Nav2Panel::initializeNavTable(QTableWidget * table)
 {
-
   table->setItem(
     to_underlying(NavigationDataTableRows::kPosesRemaining),
     0,
@@ -1216,10 +1233,10 @@ Nav2Panel::onAccumulatedWp()
     NavigationDataTableRows::kWaypoint,
     NavigationDataTableRows::kLoop,
     NavigationDataTableRows::kPosesRemaining,
-    };
+  };
 
   const bool bShowOptionalRows = (stoi(nr_of_loops_->displayText().toStdString()) > 0);
-  for (const auto& row: optionalRows) {
+  for (const auto & row : optionalRows) {
     if (bShowOptionalRows) {
       navigation_data_table_->showRow(to_underlying(row));
     } else {
@@ -1235,8 +1252,8 @@ Nav2Panel::onAccumulatedWp()
     NavigationDataTableRows::kTimeTakenCurrentWP,
     NavigationDataTableRows::kNumRecoveries,
     NavigationDataTableRows::kTotalTimeTaken,
-    };
-  for (const auto& row: visibleRows) {
+  };
+  for (const auto & row : visibleRows) {
     navigation_data_table_->showRow(to_underlying(row));
   }
 
@@ -1496,10 +1513,10 @@ Nav2Panel::startNavThroughPoses(std::vector<geometry_msgs::msg::PoseStamped> pos
     NavigationDataTableRows::kWaypoint,
     NavigationDataTableRows::kLoop,
     NavigationDataTableRows::kPosesRemaining,
-    };
+  };
 
   const bool bShowOptionalRows = (stoi(nr_of_loops_->displayText().toStdString()) > 0);
-  for (const auto& row: optionalRows) {
+  for (const auto & row : optionalRows) {
     if (bShowOptionalRows) {
       navigation_data_table_->showRow(to_underlying(row));
     } else {
@@ -1513,15 +1530,15 @@ Nav2Panel::startNavThroughPoses(std::vector<geometry_msgs::msg::PoseStamped> pos
     NavigationDataTableRows::kDistanceRemaining,
     NavigationDataTableRows::kTimeTakenCurrentWP,
     NavigationDataTableRows::kNumRecoveries,
-    };
-  for (const auto& row: visibleRows) {
+  };
+  for (const auto & row : visibleRows) {
     navigation_data_table_->showRow(to_underlying(row));
   }
   // Hide feedback not part of this method
   const std::array hiddenRows{
     NavigationDataTableRows::kTotalTimeTaken,
-    };
-  for (const auto& row: hiddenRows) {
+  };
+  for (const auto & row : hiddenRows) {
     navigation_data_table_->hideRow(to_underlying(row));
   }
 
@@ -1577,8 +1594,8 @@ Nav2Panel::startNavigation(geometry_msgs::msg::PoseStamped pose)
     NavigationDataTableRows::kDistanceRemaining,
     NavigationDataTableRows::kTimeTakenCurrentWP,
     NavigationDataTableRows::kNumRecoveries
-    };
-  for (const auto& row: visibleRows) {
+  };
+  for (const auto & row : visibleRows) {
     navigation_data_table_->showRow(to_underlying(row));
   }
 
@@ -1720,12 +1737,16 @@ Nav2Panel::getGoalStatusLabel(const int8_t status)
       status_str + "</td></tr></table>").c_str());
 }
 
-void Nav2Panel::renderNavToPoseFeedback(QTableWidget* table, const nav2_msgs::action::NavigateToPose::Feedback msg)
+void Nav2Panel::renderNavToPoseFeedback(
+  QTableWidget * table,
+  const nav2_msgs::action::NavigateToPose::Feedback msg)
 {
   renderNavGenericPoseFeedback(table, msg);
 }
 
-void Nav2Panel::renderNavThroughPosesFeedback(QTableWidget* table, const nav2_msgs::action::NavigateThroughPoses::Feedback msg)
+void Nav2Panel::renderNavThroughPosesFeedback(
+  QTableWidget * table,
+  const nav2_msgs::action::NavigateThroughPoses::Feedback msg)
 {
   table->item(
     to_underlying(NavigationDataTableRows::kPosesRemaining),
@@ -1734,14 +1755,18 @@ void Nav2Panel::renderNavThroughPosesFeedback(QTableWidget* table, const nav2_ms
   renderNavGenericPoseFeedback(table, msg);
 }
 
-void Nav2Panel::renderNavThroughWPFeedback(QTableWidget* table, const nav2_msgs::action::FollowWaypoints::Feedback msg)
+void Nav2Panel::renderNavThroughWPFeedback(
+  QTableWidget * table,
+  const nav2_msgs::action::FollowWaypoints::Feedback msg)
 {
   table->item(
     to_underlying(NavigationDataTableRows::kTotalTimeTaken),
     1)->setText(QString::number(rclcpp::Duration(msg.elapsed_time).seconds(), 'f', 1) + " s");
 }
 
-void Nav2Panel::renderWaypointLoopCount(QTableWidget* table, const int goal_index, const int loop_count)
+void Nav2Panel::renderWaypointLoopCount(
+  QTableWidget * table, const int goal_index,
+  const int loop_count)
 {
   table->item(
     to_underlying(NavigationDataTableRows::kWaypoint),
@@ -1752,11 +1777,14 @@ void Nav2Panel::renderWaypointLoopCount(QTableWidget* table, const int goal_inde
 }
 
 template<typename T>
-inline void Nav2Panel::renderNavGenericPoseFeedback(QTableWidget* table, const T & msg)
+inline void Nav2Panel::renderNavGenericPoseFeedback(QTableWidget * table, const T & msg)
 {
   table->item(
     to_underlying(NavigationDataTableRows::kEstimatedTimeRemaining),
-    1)->setText(QString::number(rclcpp::Duration(msg.estimated_time_remaining).seconds(), 'f', 0) + " s");
+    1)->setText(
+    QString::number(
+      rclcpp::Duration(
+        msg.estimated_time_remaining).seconds(), 'f', 0) + " s");
   table->item(
     to_underlying(NavigationDataTableRows::kDistanceRemaining),
     1)->setText(QString::number(msg.distance_remaining, 'f', 2) + " m");
