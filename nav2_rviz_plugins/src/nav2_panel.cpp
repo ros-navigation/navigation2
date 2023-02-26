@@ -912,15 +912,6 @@ Nav2Panel::onInitialize()
         navigation_data_table_->item(
           to_underlying(
             NavigationDataTableRows::kTimeTakenCurrentWP), 1)->setText("0 s");
-      } else {
-        RCLCPP_INFO_STREAM(
-          client_node_->get_logger(), "navigation_goal_status_sub_ not done. " << std::endl \
-                                                                               << "LC:" <<
-            +loop_count_ << "/" << nr_of_loops_->displayText().toStdString() << std::endl \
-                                                                               << "GI: " <<
-            +goal_index_ << "/" << +(static_cast<int>(store_poses_.size()) - 1) << std::endl \
-                                                                               << "GS: " <<
-            +msg->status_list.back().status);
       }
     });
   nav_through_poses_goal_status_sub_ = node->create_subscription<action_msgs::msg::GoalStatusArray>(
