@@ -219,7 +219,7 @@ WaypointFollower::followWaypoints()
 
     feedback->current_waypoint = goal_index;
     const auto current_time = this->now();
-    feedback->elapsed_time = current_time - start_time;;
+    feedback->elapsed_time = current_time - start_time;
     action_server_->publish_feedback(feedback);
 
     if (current_goal_status_.status == ActionStatus::FAILED) {
