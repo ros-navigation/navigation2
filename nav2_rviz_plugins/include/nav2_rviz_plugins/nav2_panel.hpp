@@ -194,14 +194,15 @@ private:
   // the user will be allowed to cancel the action.
   // The ROSActionTransition allows for the state of the action to be detected
   // and the button state to change automatically.
-  QState * running_nav_through_poses_{nullptr};
-  QState * running_follow_waypoints_{nullptr};
+  QState * running_nav_to_pose_{nullptr};
   QState * canceled_{nullptr};
   // The following states are added to allow to collect several poses to perform a waypoint-mode
   // navigation or navigate through poses mode.
   QState * accumulating_{nullptr};
-  QState * accumulated_wp_{nullptr};
-  QState * accumulated_nav_through_poses_{nullptr};
+  // This state occurs when FollowWaypoints action is in progress
+  QState * running_wp_{nullptr};
+  // This state occurs when NavigateThroughPoses action is in progress
+  QState * running_nav_through_poses_{nullptr};
 
   std::vector<geometry_msgs::msg::PoseStamped> acummulated_poses_;
   std::vector<geometry_msgs::msg::PoseStamped> store_poses_;
