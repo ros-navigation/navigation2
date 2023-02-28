@@ -45,7 +45,7 @@ public:
   BtServiceNode(
     const std::string & service_node_name,
     const BT::NodeConfiguration & conf)
-  : BT::ActionNodeBase(service_node_name, conf), service_node_name_(service_node_name)
+  : BT::ActionNodeBase(service_node_name, conf), service_node_name_(service_node_name), should_send_request_(true)
   {
     node_ = config().blackboard->template get<rclcpp::Node::SharedPtr>("node");
     callback_group_ = node_->create_callback_group(
@@ -128,10 +128,17 @@ public:
   BT::NodeStatus tick() override
   {
     if (!request_sent_) {
+      // reset the flag to send the goal or not, allowing the user the option to set it in on_tick
+      should_send_request_ = true;
+
+      // user defined callback, may modify "should_send_request_".
       on_tick();
-      future_result_ = service_client_->async_send_request(request_).share();
-      sent_time_ = node_->now();
-      request_sent_ = true;
+
+      if (should_send_request_) {
+        future_result_ = service_client_->async_send_request(request_).share();
+        sent_time_ = node_->now();
+        request_sent_ = true;
+      }
     }
     return check_future();
   }
@@ -240,6 +247,9 @@ protected:
   std::shared_future<typename ServiceT::Response::SharedPtr> future_result_;
   bool request_sent_{false};
   rclcpp::Time sent_time_;
+
+  // Can be set in on_tick or on_wait_for_result to indicate if a goal should be sent.
+  bool should_send_request_;
 };
 
 }  // namespace nav2_behavior_tree
