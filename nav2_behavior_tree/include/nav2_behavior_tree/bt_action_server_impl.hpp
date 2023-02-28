@@ -96,7 +96,8 @@ bool BtActionServer<ActionT>::on_configure()
   std::string client_node_name = action_name_;
   std::replace(client_node_name.begin(), client_node_name.end(), '/', '_');
   // Use suffix '_rclcpp_node' to keep parameter file consistency #1773
-  auto options = rclcpp::NodeOptions().arguments(
+  auto options = rclcpp::NodeOptions().allow_undeclared_parameters(true
+    ).automatically_declare_parameters_from_overrides(true).arguments(
     {"--ros-args",
       "-r",
       std::string("__node:=") +
