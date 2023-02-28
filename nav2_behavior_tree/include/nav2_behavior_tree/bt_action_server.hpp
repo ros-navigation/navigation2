@@ -183,6 +183,7 @@ public:
     tree_->rootNode()->halt();
   }
 
+  void resetBlackboard();
   std::map<std::size_t, BT::Tree> cached_trees;
   std::vector<std::size_t> cached_tree_hashes;
 protected:
