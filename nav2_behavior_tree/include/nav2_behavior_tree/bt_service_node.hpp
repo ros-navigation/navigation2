@@ -128,7 +128,7 @@ public:
   BT::NodeStatus tick() override
   {
     if (!request_sent_) {
-      // reset the flag to send the goal or not, allowing the user the option to set it in on_tick
+      // reset the flag to send the request or not, allowing the user the option to set it in on_tick
       should_send_request_ = true;
 
       // user defined callback, may modify "should_send_request_".
@@ -248,7 +248,7 @@ protected:
   bool request_sent_{false};
   rclcpp::Time sent_time_;
 
-  // Can be set in on_tick or on_wait_for_result to indicate if a goal should be sent.
+  // Can be set in on_tick or on_wait_for_result to indicate if a request should be sent.
   bool should_send_request_;
 };
 
