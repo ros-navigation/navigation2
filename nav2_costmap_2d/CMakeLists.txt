@@ -17,6 +17,7 @@ find_package(rclcpp_lifecycle REQUIRED)
 find_package(rmw REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
@@ -66,6 +67,7 @@ set(dependencies
   rclcpp_lifecycle
   sensor_msgs
   std_msgs
+  std_srvs
   tf2
   tf2_geometry_msgs
   tf2_ros
@@ -96,6 +98,7 @@ target_link_libraries(layers
 add_library(filters SHARED
   plugins/costmap_filters/keepout_filter.cpp
   plugins/costmap_filters/speed_filter.cpp
+  plugins/costmap_filters/binary_filter.cpp
 )
 ament_target_dependencies(filters
   ${dependencies}
@@ -177,6 +180,7 @@ if(BUILD_TESTING)
 
   find_package(ament_cmake_gtest REQUIRED)
   add_subdirectory(test)
+  pluginlib_export_plugin_description_file(nav2_costmap_2d test/regression/order_layer.xml)
 endif()
 
 ament_export_include_directories(include)
