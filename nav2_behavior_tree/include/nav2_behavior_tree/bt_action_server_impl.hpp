@@ -206,6 +206,15 @@ bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filena
 }
 
 template<class ActionT>
+void BtActionServer<ActionT>::resetBlackboard()
+{
+  blackboard_->clear();
+  blackboard_->set<rclcpp::Node::SharedPtr>("node", client_node_);  // NOLINT
+  blackboard_->set<std::chrono::milliseconds>("server_timeout", default_server_timeout_);  // NOLINT
+  blackboard_->set<std::chrono::milliseconds>("bt_loop_duration", bt_loop_duration_);  // NOLINT
+}
+
+template<class ActionT>
 void BtActionServer<ActionT>::executeCallback()
 {
   if (!on_goal_received_callback_(action_server_->get_current_goal())) {
