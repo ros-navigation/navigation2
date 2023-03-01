@@ -7,3 +7,7 @@ ignore:
   - "*/test/**/*" # ignore package  test directories, e.g. nav2_costmap_2d/tests
   - "**/test_*.*" # ignore files starting with test_ e.g.  nav2_map_server/test/test_constants.cpp
   - "**/*_tests.*" # ignore files ending with _tests e.g. nav2_voxel_grid/test/voxel_grid_tests.cpp
+  - "*/**/benchmark/*"  # ignore package test directories, e.g. nav2_dwb_controller/costmap_queue/tests
+  - "*/benchmark/**/*" # ignore package  test directories, e.g. nav2_costmap_2d/tests
+  - "**/benchmark_*.*" # ignore files starting with test_ e.g.  nav2_map_server/test/test_constants.cpp
+  - "**/*_benchmark.*" # ignore files ending with _tests e.g. nav2_voxel_grid/test/voxel_grid_tests.cpp
