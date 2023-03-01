@@ -180,15 +180,14 @@ A special case exists for rerouting, where as if we reroute along the same edge 
 
 - [ ] Test working full system + plugins + rerouting + pruning + operations + feedback / states proper
 - [ ] Integration tests: tracking server + tracker state / feedback / operations correctness + completion. rerouting_start_id + Blocked ids?
+  - Cases: reroute often OK. Reroute in same direction + path partial. Reroute off different direction + no path partial. Start route along first edge. edge exit event occurs at exit of partial + refined estimate.
 
-- [ ] Vector types (regions) + example file AWS + simple minimal file with metadata/operations demos + simple minimal file recursion/vectors/API demos.
-- [ ] Uncomment route server srv test for real files and implementation
+- [ ] Sample files: AWS final + file with metadata/operations demos, recursion/vectors/API demos, Vector types (regions).
 - [ ] QGIS demo + plugins for editing and visualizing graphs
 - [ ] use map for checking start/goal nodes for infra blockages not just NN. Evaluate K. Share costmap?
 
 - [ ] Quality: BT nodes, Python API, web documentation, readme, tutorial (bt change, plugin customize, file field examples). BT XML for first/last mile, freq. replanning, navigation using it, WPF, metrics w/ real graph sized
 - [ ] demos with route -> global -> local. outdoor non-planar. to waypoint follower (GPS?) of nodes.
-- [ ] break up start/goal logic from goal intent extractor + cache goal id/idx in rerouting_info to grab after pruning. Reduces a kD-tree or graph lookup
 
 # Questions
 

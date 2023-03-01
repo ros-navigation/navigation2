@@ -33,16 +33,13 @@ GraphLoader::GraphLoader(
 
   nav2_util::declare_parameter_if_not_declared(
     node, "graph_filepath", rclcpp::ParameterType::PARAMETER_STRING);
-
   graph_filepath_ = node->get_parameter("graph_filepath").as_string();
 
   // Default Graph Parser
   const std::string default_plugin_type = "nav2_route::GeoJsonGraphFileLoader";
-
   nav2_util::declare_parameter_if_not_declared(
     node, "graph_file_loader", rclcpp::ParameterValue(default_plugin_id_));
   auto graph_file_loader_id = node->get_parameter("graph_file_loader").as_string();
-
   if (graph_file_loader_id == default_plugin_id_) {
     nav2_util::declare_parameter_if_not_declared(
       node, default_plugin_id_ + ".plugin", rclcpp::ParameterValue(default_plugin_type));
@@ -86,6 +83,9 @@ bool GraphLoader::loadGraphFromFile(
   }
 
   if (!transformGraph(graph)) {
+    RCLCPP_WARN(
+      logger_,
+      "Failed to transform nodes graph file (%s) to %s!", filepath.c_str(), route_frame_.c_str());
     return false;
   }
 
@@ -97,14 +97,18 @@ bool GraphLoader::transformGraph(Graph & graph)
   std::unordered_map<std::string, tf2::Transform> cached_transforms;
   for (auto & node : graph) {
     std::string node_frame = node.coords.frame_id;
-    if (node_frame.empty() || node_frame == route_frame_) {continue;}
+    if (node_frame.empty() || node_frame == route_frame_) {
+      continue;
+    }
 
     if (cached_transforms.find(node_frame) == cached_transforms.end()) {
       tf2::Transform tf_transform;
       bool got_transform = nav2_util::getTransform(
         node_frame, route_frame_, tf2::durationFromSec(0.1), tf_, tf_transform);
 
-      if (!got_transform) {return false;}
+      if (!got_transform) {
+        return false;
+      }
 
       cached_transforms.insert({node_frame, tf_transform});
     }

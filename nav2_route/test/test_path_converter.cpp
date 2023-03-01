@@ -76,8 +76,8 @@ TEST(PathConverterTest, test_path_converter_api)
   EXPECT_EQ(path.header.frame_id, frame);
   EXPECT_EQ(path.header.stamp.nanosec, time.nanoseconds());
 
-  // 2 * sqrt(200) * 20 (0.05 density/m) + 2 (for starting nodes)
-  EXPECT_EQ(path.poses.size(), 568u);
+  // 2 * sqrt(200) * 20 (0.05 density/m) + 1 (for starting node)
+  EXPECT_EQ(path.poses.size(), 567u);
   EXPECT_NEAR(path.poses[0].pose.position.x, 0.0, 0.01);
   EXPECT_NEAR(path.poses[0].pose.position.y, 0.0, 0.01);
   EXPECT_NEAR(path.poses.back().pose.position.x, 20.0, 0.01);
@@ -115,6 +115,35 @@ TEST(PathConverterTest, test_path_single_pt_path)
   EXPECT_NEAR(path.poses[0].pose.position.y, 40.0, 0.01);
 }
 
+TEST(PathConverterTest, test_prev_info_path)
+{
+  auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
+  PathConverter converter;
+  converter.configure(node);
+
+  std::string frame = "fake_frame";
+  rclcpp::Time time(1000);
+
+  Node test_node;
+  test_node.nodeid = 17;
+  test_node.coords.x = 1.0;
+  test_node.coords.y = 0.0;
+
+  Route route;
+  route.start_node = &test_node;
+
+  DirectionalEdge edge;
+  edge.end = &test_node;
+
+  ReroutingState info;
+  info.closest_pt_on_edge.x = 0.0;
+  info.closest_pt_on_edge.y = 0.0;
+  info.curr_edge = &edge;
+
+  auto path = converter.densify(route, info, frame, time);
+  EXPECT_EQ(path.poses.size(), 21u);  // 20 for density + 1 for single node point
+}
+
 TEST(PathConverterTest, test_path_converter_interpolation)
 {
   auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
@@ -125,7 +154,7 @@ TEST(PathConverterTest, test_path_converter_interpolation)
   std::vector<geometry_msgs::msg::PoseStamped> poses;
   converter.interpolateEdge(x0, y0, x1, y1, poses);
 
-  EXPECT_EQ(poses.size(), 284u);  // regular density + edges
+  EXPECT_EQ(poses.size(), 283u);  // regular density + edges
   for (unsigned int i = 0; i != poses.size() - 1; i++) {
     // Check its always closer than the requested density
     EXPECT_LT(
