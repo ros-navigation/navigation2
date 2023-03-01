@@ -87,7 +87,7 @@ void Range::getData(
   // Obtaining the transform to get data from source frame and time where it was received
   // to the base frame and current time
   tf2::Transform tf_transform;
-  if (!getTransform(data_->header.frame_id, data_->header.stamp, curr_time, tf_transform)) {
+  if (!getTransform(data_->header.frame_id, data_->header.stamp, tf_transform)) {
     return;
   }
 
