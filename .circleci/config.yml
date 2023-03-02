@@ -297,7 +297,10 @@ _commands:
         - run:
             name: Copy Test Logs
             working_directory: << parameters.workspace >>
-            command: cp -rH log/latest_test log/test
+            command: |
+              cp -rH log/latest_test log/test
+              find . -wholename "./log/test/**/Test.xml" -exec \
+                sh -c 'mv "$1" "${1%.xml}.txt"' _ {} \;
             when: always
         - store_artifacts:
             path: << parameters.workspace >>/log/test
