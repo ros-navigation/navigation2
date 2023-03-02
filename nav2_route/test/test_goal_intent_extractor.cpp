@@ -53,6 +53,11 @@ public:
     start_ = start;
     goal_ = goal;
   }
+
+  geometry_msgs::msg::PoseStamped getStart()
+  {
+    return start_;
+  }
 };
 
 TEST(GoalIntentExtractorTest, test_obj_lifecycle)
@@ -102,7 +107,7 @@ TEST(GoalIntentExtractorTest, test_start_goal_finder)
 {
   auto node = std::make_shared<nav2_util::LifecycleNode>("goal_intent_extractor_test");
   auto node_thread = std::make_unique<nav2_util::NodeThread>(node);
-  GoalIntentExtractor extractor;
+  GoalIntentExtractorWrapper extractor;
   Graph graph;
   GraphToIDMap id_map;
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
@@ -136,6 +141,15 @@ TEST(GoalIntentExtractorTest, test_start_goal_finder)
   auto [start1, goal1] = extractor.findStartandGoal(goal);
   EXPECT_EQ(start1, 0u);
   EXPECT_EQ(goal1, 8u);
+
+  // Set and check reset
+  auto start = extractor.getStart();
+  EXPECT_EQ(start.pose.position.x, 0.0);
+  EXPECT_EQ(start.pose.position.y, 0.0);
+  extractor.setStartIdx(goal1);
+  start = extractor.getStart();
+  EXPECT_EQ(start.pose.position.x, 2.0);
+  EXPECT_EQ(start.pose.position.y, 2.0);
 
   // Test sending a goal with start/goal poses to find closest nodes to
   raw_goal.start.header.frame_id = "map";
@@ -190,6 +204,7 @@ TEST(GoalIntentExtractorTest, test_pruning)
   EXPECT_EQ(extractor.pruneStartandGoal(routeA, no_poses_goal, rerouting_info).edges.size(), 10u);
   routeA.edges.clear();
   EXPECT_EQ(extractor.pruneStartandGoal(routeA, poses_goal, rerouting_info).edges.size(), 0u);
+  EXPECT_EQ(extractor.pruneStartandGoal(routeA, no_poses_goal, rerouting_info).edges.size(), 0u);
 
   // Create a sample route to test pruning upon with different start/goal pose requests
   Node node1, node2, node3, node4;
@@ -258,6 +273,20 @@ TEST(GoalIntentExtractorTest, test_pruning)
   EXPECT_EQ(rtn.start_node->nodeid, 2u);
   EXPECT_EQ(rtn.route_cost, 2.0);
 
+  // Test but now with no_poses_goal to test if we trigger with !first_time condition
+  // when we should be able to prune due to a secondary trigger as the result of rerouting
+  start.pose.position.x = 0.1;
+  extractor.setStartAndGoal(start, goal);
+  rtn = extractor.pruneStartandGoal(route, no_poses_goal, rerouting_info);
+  EXPECT_EQ(rtn.edges.size(), 2u);
+  EXPECT_EQ(rtn.edges[0]->edgeid, 6u);
+  EXPECT_EQ(rtn.start_node->nodeid, 2u);
+  EXPECT_EQ(rtn.route_cost, 2.0);
+  // But now if we have first_time, doesn't prune!
+  rerouting_info.first_time = true;
+  rtn = extractor.pruneStartandGoal(route, no_poses_goal, rerouting_info);
+  EXPECT_EQ(rtn.edges.size(), 3u);
+
   // Test end, and only end is before the end node along edge3, should be pruned
   start.pose.position.x = 0.0;
   goal.pose.position.x = 2.5;
@@ -269,10 +298,12 @@ TEST(GoalIntentExtractorTest, test_pruning)
   EXPECT_EQ(rtn.route_cost, 2.0);
 
   // Test both together can be pruned with realistic tracking offsets from route
+  // Also, Check route info for resetting to nullptrs since not the same last edge
   start.pose.position.x = 0.6;
   start.pose.position.y = 0.4;
   goal.pose.position.x = 2.6;
   goal.pose.position.y = -0.4;
+  rerouting_info.curr_edge = &edge3;
   extractor.setStartAndGoal(start, goal);
   rtn = extractor.pruneStartandGoal(route, poses_goal, rerouting_info);
   EXPECT_EQ(rtn.edges.size(), 1u);
@@ -280,4 +311,43 @@ TEST(GoalIntentExtractorTest, test_pruning)
   EXPECT_EQ(rtn.edges.back()->start->nodeid, 2u);
   EXPECT_EQ(rtn.edges.back()->end->nodeid, 3u);
   EXPECT_EQ(rtn.route_cost, 1.0);
+  EXPECT_EQ(rerouting_info.curr_edge, nullptr);
+
+  // Test pruning with route information with same situation as above
+  // But now check route info is retained because it IS the same edge as last time
+  // & stores closest point to use
+  rerouting_info.curr_edge = &edge1;
+  extractor.setStartAndGoal(start, goal);
+  rtn = extractor.pruneStartandGoal(route, poses_goal, rerouting_info);
+  EXPECT_EQ(rtn.edges.size(), 1u);
+  EXPECT_EQ(rtn.edges[0]->edgeid, 6u);
+  EXPECT_EQ(rtn.edges.back()->start->nodeid, 2u);
+  EXPECT_EQ(rtn.edges.back()->end->nodeid, 3u);
+  EXPECT_EQ(rtn.route_cost, 1.0);
+  EXPECT_EQ(rerouting_info.curr_edge->edgeid, 5u);
+  EXPECT_NEAR(rerouting_info.closest_pt_on_edge.x, 0.6, 0.01);
+  EXPECT_NEAR(rerouting_info.closest_pt_on_edge.y, 0.0, 0.01);
+
+  // Test both together can be pruned but won't be due to huge offsets > max_dist_from_edge (8m)
+  start.pose.position.x = 0.6;
+  start.pose.position.y = 8.1;
+  goal.pose.position.x = 2.6;
+  goal.pose.position.y = -8.1;
+  extractor.setStartAndGoal(start, goal);
+  rtn = extractor.pruneStartandGoal(route, poses_goal, rerouting_info);
+  EXPECT_EQ(rtn.edges[0]->start->nodeid, 1u);
+  EXPECT_EQ(rtn.edges.back()->end->nodeid, 4u);
+  EXPECT_EQ(rtn.edges.size(), 3u);
+
+  // Test the both pruned condition but goal is not pruned because prune_goal = false
+  node->set_parameter(rclcpp::Parameter("prune_goal", rclcpp::ParameterValue(false)));
+  start.pose.position.x = 0.6;
+  start.pose.position.y = 0.4;
+  goal.pose.position.x = 2.6;
+  goal.pose.position.y = -0.4;
+  GoalIntentExtractorWrapper extractor2;
+  extractor2.configure(node, graph, &id_map, nullptr, "map", "base_link");
+  extractor2.setStartAndGoal(start, goal);
+  rtn = extractor2.pruneStartandGoal(route, poses_goal, rerouting_info);
+  EXPECT_EQ(rtn.edges.size(), 2u);
 }

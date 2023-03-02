@@ -91,10 +91,14 @@ TEST(RouteTrackerTest, test_route_start_end)
   tracker.configure(node, nullptr, nullptr, "map", "base_link");
   Route route;
   route.edges.resize(7);
+  DirectionalEdge edge;
   RouteTrackingState state;
 
   state.route_edges_idx = -1;
   EXPECT_TRUE(tracker.isStartOrEndNode(state, route));  // Attempting to get to first node
+
+  state.current_edge = &edge;
+  EXPECT_FALSE(tracker.isStartOrEndNode(state, route));  // with tracking continued
 
   state.route_edges_idx = 0;
   EXPECT_FALSE(tracker.isStartOrEndNode(state, route));

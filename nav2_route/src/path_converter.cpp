@@ -63,6 +63,9 @@ nav_msgs::msg::Path PathConverter::densify(
 
   if (route.edges.empty()) {
     path.poses.push_back(utils::toMsg(route.start_node->coords.x, route.start_node->coords.y));
+  } else {
+    path.poses.push_back(
+      utils::toMsg(route.edges.back()->end->coords.x, route.edges.back()->end->coords.y));
   }
 
   // publish path similar to planner server
@@ -91,7 +94,7 @@ void PathConverter::interpolateEdge(
   poses.push_back(utils::toMsg(x, y));
 
   unsigned int pt_ctr = 0;
-  while (pt_ctr < num_pts) {
+  while (pt_ctr < num_pts - 1) {
     x += ux * iterpolated_dist;
     y += uy * iterpolated_dist;
     pt_ctr++;

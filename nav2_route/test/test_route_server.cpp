@@ -112,31 +112,35 @@ TEST(RouteServerTest, test_lifecycle)
   server.reset();
 }
 
-// TEST(RouteServerTest, test_set_srv)
-// {
-//   rclcpp::NodeOptions options;
-//   auto server = std::make_shared<RouteServerWrapper>(options);
-//   auto node_thread = std::make_unique<nav2_util::NodeThread>(server);
-//   auto node2 = std::make_shared<rclcpp::Node>("my_node2");
+TEST(RouteServerTest, test_set_srv)
+{
+  std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_route");
+  std::string real_filepath = pkg_share_dir + "/graphs/aws_graph.geojson";
 
-//   server->startup();
-//   auto srv_client =
-//     nav2_util::ServiceClient<nav2_msgs::srv::SetRouteGraph>(
-//     "set_route_graph", node2);
-//   auto req = std::make_shared<nav2_msgs::srv::SetRouteGraph::Request>();
-//   req->graph_filepath = "non/existent/path.json";
-//   auto resp = srv_client.invoke(req, std::chrono::nanoseconds(1000000000));
-//   EXPECT_FALSE(resp->success);
+  rclcpp::NodeOptions options;
+  auto server = std::make_shared<RouteServerWrapper>(options);
+  server->declare_parameter("graph_filepath", rclcpp::ParameterValue(real_filepath));
+  auto node_thread = std::make_unique<nav2_util::NodeThread>(server);
+  auto node2 = std::make_shared<rclcpp::Node>("my_node2");
 
-//   auto req2 = std::make_shared<nav2_msgs::srv::SetRouteGraph::Request>();
-//   std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_route");
-//   req2->graph_filepath = pkg_share_dir + "/graphs/aws_graph.geojson";
-//   auto resp2 = srv_client.invoke(req2, std::chrono::nanoseconds(1000000000));
-//   EXPECT_TRUE(resp2->success);
+  server->startup();
+  auto srv_client =
+    nav2_util::ServiceClient<nav2_msgs::srv::SetRouteGraph>(
+    "set_route_graph", node2);
+  auto req = std::make_shared<nav2_msgs::srv::SetRouteGraph::Request>();
+  req->graph_filepath = "non/existent/path.json";
+  auto resp = srv_client.invoke(req, std::chrono::nanoseconds(1000000000));
+  EXPECT_FALSE(resp->success);
 
-//   server->shutdown();
-//   server.reset();
-// }
+  auto req2 = std::make_shared<nav2_msgs::srv::SetRouteGraph::Request>();
+  req2->graph_filepath = real_filepath;
+  auto resp2 = srv_client.invoke(req2, std::chrono::nanoseconds(1000000000));
+  EXPECT_TRUE(resp2->success);
+
+  server->shutdown();
+  node_thread.reset();
+  server.reset();
+}
 
 inline Route getRoute()
 {
@@ -215,8 +219,12 @@ TEST(RouteServerTest, test_request_valid)
 
 TEST(RouteServerTest, test_complete_action_api)
 {
+  std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_route");
+  std::string real_file = pkg_share_dir + "/graphs/aws_graph.geojson";
+
   rclcpp::NodeOptions options;
   auto server = std::make_shared<RouteServerWrapper>(options);
+  server->declare_parameter("graph_filepath", rclcpp::ParameterValue(real_file));
   auto node_thread = std::make_unique<nav2_util::NodeThread>(server);
   server->startup();
 

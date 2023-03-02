@@ -157,10 +157,11 @@ TrackerResult RouteTracker::trackRoute(
   if (rerouting_info.curr_edge) {
     state.current_edge = rerouting_info.curr_edge;
     state.last_node = state.current_edge->start;
+    publishFeedback(
+      true, route.start_node->nodeid, state.last_node->nodeid, state.current_edge->edgeid, {});
+  } else {
+    publishFeedback(true, route.start_node->nodeid, 0, 0, {});
   }
-
-  // Publish initial feedback after routing
-  publishFeedback(true, route.start_node->nodeid, 0, 0, {});
 
   rclcpp::Rate r(tracker_update_rate_);
   while (rclcpp::ok()) {
