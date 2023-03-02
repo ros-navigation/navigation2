@@ -32,7 +32,7 @@ GraphLoader::GraphLoader(
   route_frame_ = frame;
 
   nav2_util::declare_parameter_if_not_declared(
-    node, "graph_filepath", rclcpp::ParameterType::PARAMETER_STRING);
+    node, "graph_filepath", rclcpp::ParameterValue(std::string("")));
   graph_filepath_ = node->get_parameter("graph_filepath").as_string();
 
   // Default Graph Parser
@@ -67,11 +67,14 @@ bool GraphLoader::loadGraphFromFile(
   GraphToIDMap & graph_to_id_map,
   std::string filepath)
 {
-  if (filepath.empty()) {
+  if (filepath.empty() && !graph_filepath_.empty()) {
     RCLCPP_DEBUG(
       logger_, "The graph filepath was not provided. "
       "Setting to %s", graph_filepath_.c_str());
     filepath = graph_filepath_;
+  } else if (filepath.empty() && graph_filepath_.empty()) {
+    // No graph to try to load
+    return true;
   }
 
   RCLCPP_INFO(

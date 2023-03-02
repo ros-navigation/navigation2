@@ -175,6 +175,12 @@ RouteServer::isRequestValid(
     return false;
   }
 
+  if (graph_.empty()) {
+    RCLCPP_INFO(get_logger(), "No graph set! Aborting request.");
+    action_server->terminate_all();
+    return false;
+  }
+
   return true;
 }
 

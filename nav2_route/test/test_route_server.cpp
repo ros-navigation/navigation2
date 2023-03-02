@@ -102,6 +102,11 @@ public:
   {
     return isRequestValid(compute_and_track_route_server_);
   }
+
+  void setNontrivialGraph()
+  {
+    graph_.resize(1);
+  }
 };
 
 TEST(RouteServerTest, test_lifecycle)
@@ -210,8 +215,12 @@ TEST(RouteServerTest, test_request_valid)
   server->configure();
   EXPECT_FALSE(server->isRequestValidWrapper());
 
-  // Should be active
+  // Should be active, but graph is empty
   server->activate();
+  EXPECT_FALSE(server->isRequestValidWrapper());
+
+  // Should be valid now
+  server->setNontrivialGraph();
   EXPECT_TRUE(server->isRequestValidWrapper());
 
   server.reset();

@@ -177,8 +177,6 @@ A special case exists for rerouting, where as if we reroute along the same edge 
 
 # Steve's TODO list
 
-- [ ] default bringup with server without a default graph file, empty file, or sandbox graph?
-
 - [ ] Test working full system + plugins + rerouting + pruning + operations + feedback / states proper
 - [ ] Integration tests: tracking server + tracker state / feedback / operations correctness + completion. rerouting_start_id + Blocked ids?
   - Cases: reroute often OK. Reroute in same direction + path partial. Reroute off different direction + no path partial. Start route along first edge. edge exit event occurs at exit of partial + refined estimate.
@@ -191,10 +189,14 @@ A special case exists for rerouting, where as if we reroute along the same edge 
   - BT nodes for 2x route APIs + cancel nodes (+ groot xml + add to BT navlist + add to default yaml list),
   - web documentation (BT node configuration page, package configuration page),
   - readme complete,
+  - Keep graph visualization in rviz but turn off by default
+  - Default graph sandbox + launch configuration to set (and get filepath + mirror `map` comments). 
 
   - Tutorials (bt change, plugin customize, file field examples)
   - BT XMLs (first/last mile, freq. replanning, navigation using it, WPF using it, clearance)
   - Demos (route -> global -> local. outdoor non-planar. waypoint follower (GPS?) of route nodes. controller server of dense path)
+
+- [ ] Testing by users
 
 # Questions
 
