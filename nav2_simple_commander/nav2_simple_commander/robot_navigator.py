@@ -26,7 +26,7 @@ from lifecycle_msgs.srv import GetState
 from nav2_msgs.action import AssistedTeleop, BackUp, Spin
 from nav2_msgs.action import ComputePathThroughPoses, ComputePathToPose
 from nav2_msgs.action import FollowPath, FollowWaypoints, NavigateThroughPoses, NavigateToPose
-from nav2_msgs.action import SmoothPath
+from nav2_msgs.action import SmoothPath, ComputeAndTrackRoute, ComputeRoute
 from nav2_msgs.srv import ClearEntireCostmap, GetCostmap, LoadMap, ManageLifecycleNodes
 
 import rclpy
@@ -55,6 +55,14 @@ class BasicNavigator(Node):
         self.feedback = None
         self.status = None
 
+        # Since the route server's compute and track action server is likely
+        # to be running simultaneously with another (e.g. controller, WPF) server,
+        # we must track its futures and feedback separately. Additionally, the
+        # route tracking feedback is uniquely important to be complete and ordered
+        self.route_goal_handle = None
+        self.route_result_future = None
+        self.route_feedback = []
+
         amcl_pose_qos = QoSProfile(
           durability=QoSDurabilityPolicy.TRANSIENT_LOCAL,
           reliability=QoSReliabilityPolicy.RELIABLE,
@@ -73,6 +81,12 @@ class BasicNavigator(Node):
         self.compute_path_through_poses_client = ActionClient(self, ComputePathThroughPoses,
                                                               'compute_path_through_poses')
         self.smoother_client = ActionClient(self, SmoothPath, 'smooth_path')
+
+        self.compute_route_client = ActionClient(self, ComputeRoute, 'compute_route')
+        self.compute_and_track_route_client = ActionClient(self, ComputeAndTrackRoute,
+                                                           'compute_and_track_route')
+
+
         self.spin_client = ActionClient(self, Spin, 'spin')
         self.backup_client = ActionClient(self, BackUp, 'backup')
         self.assisted_teleop_client = ActionClient(self, AssistedTeleop, 'assisted_teleop')
@@ -101,6 +115,8 @@ class BasicNavigator(Node):
         self.follow_path_client.destroy()
         self.compute_path_to_pose_client.destroy()
         self.compute_path_through_poses_client.destroy()
+        self.compute_and_track_route_client.destroy()
+        self.compute_route_client.destroy()
         self.smoother_client.destroy()
         self.spin_client.destroy()
         self.backup_client.destroy()
@@ -273,16 +289,24 @@ class BasicNavigator(Node):
         if self.result_future:
             future = self.goal_handle.cancel_goal_async()
             rclpy.spin_until_future_complete(self, future)
+        if self.route_result_future:
+            future = self.route_goal_handle.cancel_goal_async()
+            rclpy.spin_until_future_complete(self, future)
         return
 
-    def isTaskComplete(self):
+    def isTaskComplete(self, trackingRoute=False):
         """Check if the task request of any type is complete yet."""
-        if not self.result_future:
+        if trackingRoute:
+            result_future = self.route_result_future
+        else:
+            result_future = self.result_future
+
+        if not result_future:
             # task was cancelled or completed
             return True
-        rclpy.spin_until_future_complete(self, self.result_future, timeout_sec=0.10)
-        if self.result_future.result():
-            self.status = self.result_future.result().status
+        rclpy.spin_until_future_complete(self, result_future, timeout_sec=0.10)
+        if result_future.result():
+            self.status = result_future.result().status
             if self.status != GoalStatus.STATUS_SUCCEEDED:
                 self.debug(f'Task with failed with status code: {self.status}')
                 return True
@@ -293,9 +317,15 @@ class BasicNavigator(Node):
         self.debug('Task succeeded!')
         return True
 
-    def getFeedback(self):
+    def getFeedback(self, trackingRoute=False):
         """Get the pending action feedback message."""
-        return self.feedback
+        if not trackingRoute:
+            return self.feedback
+
+        if len(self.route_feedback) > 0:
+            return self.route_feedback.pop(0)
+
+        return None
 
     def getResult(self):
         """Get the pending action result message."""
@@ -360,6 +390,90 @@ class BasicNavigator(Node):
             return None
         else:
             return rtn.path
+
+    def _getRouteImpl(self, start, goal, use_start=False):
+        """
+        Send a `ComputeRoute` action request.
+
+        Internal implementation to get the full result, not just the sparse route and dense path.
+        """
+        self.debug("Waiting for 'ComputeRoute' action server")
+        while not self.compute_route_client.wait_for_server(timeout_sec=1.0):
+            self.info("'ComputeRoute' action server not available, waiting...")
+
+        goal_msg = ComputeRoute.Goal()
+        goal_msg.use_start = use_start
+
+        # Support both ID based requests and PoseStamped based requests
+        if type(start) == int and type(goal) == int:
+            goal_msg.start_id = start
+            goal_msg.goal_id = goal
+            goal_msg.use_poses = False
+        elif type(start) != int and type(goal) != int:
+            goal_msg.start = start
+            goal_msg.goal = goal
+            goal_msg.use_poses = True
+
+        self.info('Getting route...')
+        send_goal_future = self.compute_route_client.send_goal_async(goal_msg)
+        rclpy.spin_until_future_complete(self, send_goal_future)
+        self.goal_handle = send_goal_future.result()
+
+        if not self.goal_handle.accepted:
+            self.error('Get route was rejected!')
+            return None
+
+        self.result_future = self.goal_handle.get_result_async()
+        rclpy.spin_until_future_complete(self, self.result_future)
+        self.status = self.result_future.result().status
+
+        return self.result_future.result().result
+
+    def getRoute(self, start, goal, use_start=False):
+        """Send a `ComputeRoute` action request."""
+        rtn = self._getRouteImpl(start, goal, use_start=False)
+
+        if self.status != GoalStatus.STATUS_SUCCEEDED:
+            self.warn(f'Getting path failed with status code: {self.status}')
+            return None
+
+        if not rtn:
+            return None
+        else:
+            return [rtn.path, rtn.route]
+
+
+    def getAndTrackRoute(self, start, goal, use_start=False):
+        """Send a `ComputeAndTrackRoute` action request."""
+        self.debug("Waiting for 'ComputeAndTrackRoute' action server")
+        while not self.compute_and_track_route_client.wait_for_server(timeout_sec=1.0):
+            self.info("'ComputeAndTrackRoute' action server not available, waiting...")
+
+        goal_msg = ComputeAndTrackRoute.Goal()
+        goal_msg.use_start = use_start
+
+        # Support both ID based requests and PoseStamped based requests
+        if type(start) == int and type(goal) == int:
+            goal_msg.start_id = start
+            goal_msg.goal_id = goal
+            goal_msg.use_poses = False
+        elif type(start) != int and type(goal) != int:
+            goal_msg.start = start
+            goal_msg.goal = goal
+            goal_msg.use_poses = True
+
+        self.info('Computing and tracking route...')
+        send_goal_future = self.compute_and_track_route_client.send_goal_async(goal_msg,
+                                                                   self._routeFeedbackCallback)
+        rclpy.spin_until_future_complete(self, send_goal_future)
+        self.route_goal_handle = send_goal_future.result()
+
+        if not self.route_goal_handle.accepted:
+            self.error('Compute and track route was rejected!')
+            return False
+
+        self.route_result_future = self.route_goal_handle.get_result_async()
+        return True
 
     def _getPathThroughPosesImpl(self, start, goals, planner_id='', use_start=False):
         """
@@ -583,6 +697,11 @@ class BasicNavigator(Node):
     def _feedbackCallback(self, msg):
         self.debug('Received action feedback message')
         self.feedback = msg.feedback
+        return
+
+    def _routeFeedbackCallback(self, msg):
+        self.debug('Received action feedback message')
+        self.route_feedback.append(msg.feedback)
         return
 
     def _setInitialPose(self):

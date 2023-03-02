@@ -40,7 +40,7 @@ TEST(GraphLoader, test_invalid_plugin)
   nav2_util::declare_parameter_if_not_declared(
     node, "graph_filepath", rclcpp::ParameterValue(
       ament_index_cpp::get_package_share_directory("nav2_route") +
-      "/graphs/geojson/aws_graph.geojson"));
+      "/graphs/aws_graph.geojson"));
 
   // Set dummy parameter
   std::string default_plugin = "nav2_route::Dummy";
@@ -59,7 +59,7 @@ TEST(GraphLoader, test_api)
   nav2_util::declare_parameter_if_not_declared(
     node, "graph_filepath", rclcpp::ParameterValue(
       ament_index_cpp::get_package_share_directory("nav2_route") +
-      "/graphs/geojson/aws_graph.geojson"));
+      "/graphs/aws_graph.geojson"));
 
   GraphLoader graph_loader(node, tf, frame);
 

@@ -1,0 +1,123 @@
+#! /usr/bin/env python3
+# Copyright 2021 Samsung Research America
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+from geometry_msgs.msg import PoseStamped
+from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
+import rclpy
+from rclpy.duration import Duration
+
+"""
+Basic navigation demo to using the route server.
+"""
+
+def toPoseStamped(pt, header):
+    pose = PoseStamped()
+    pose.pose.position.x = pt.x
+    pose.pose.position.y = pt.y
+    pose.header = header
+    return pose
+
+def main():
+    rclpy.init()
+
+    navigator = BasicNavigator()
+
+    # Set our demo's initial pose
+    initial_pose = PoseStamped()
+    initial_pose.header.frame_id = 'map'
+    initial_pose.header.stamp = navigator.get_clock().now().to_msg()
+    initial_pose.pose.position.x = 3.45
+    initial_pose.pose.position.y = 2.15
+    initial_pose.pose.orientation.z = 1.0
+    initial_pose.pose.orientation.w = 0.0
+    navigator.setInitialPose(initial_pose)
+
+    # Activate navigation, if not autostarted. This should be called after setInitialPose()
+    # or this will initialize at the origin of the map and update the costmap with bogus readings.
+    # If autostart, you should `waitUntilNav2Active()` instead.
+    # navigator.lifecycleStartup()
+
+    # Wait for navigation to fully activate, since autostarting nav2
+    navigator.waitUntilNav2Active()
+
+    # If desired, you can change or load the map as well
+    # navigator.changeMap('/path/to/map.yaml')
+
+    # You may use the navigator to clear or obtain costmaps
+    # navigator.clearAllCostmaps()  # also have clearLocalCostmap() and clearGlobalCostmap()
+    # global_costmap = navigator.getGlobalCostmap()
+    # local_costmap = navigator.getLocalCostmap()
+
+    # Go to our demos first goal pose
+    goal_pose = PoseStamped()
+    goal_pose.header.frame_id = 'map'
+    goal_pose.header.stamp = navigator.get_clock().now().to_msg()
+    goal_pose.pose.position.x = -2.0
+    goal_pose.pose.position.y = -0.5
+    goal_pose.pose.orientation.w = 1.0
+
+    # Sanity check a valid route exists using PoseStamped.
+    # May also use NodeIDs on the graph if they are known by passing them instead as `int`
+    # [path, route] = navigator.getRoute(initial_pose, goal_pose)
+
+    # May also use NodeIDs on the graph if they are known by passing them instead as `int`
+    navigator.getAndTrackRoute(initial_pose, goal_pose)
+
+    # Note for the route server, we have a special route argument in the API b/c it may be
+    # providing feedback messages simultaneously to others (e.g. controller or WPF as below)
+    isTrackingRoute = True
+    while not navigator.isTaskComplete(trackingRoute=isTrackingRoute):
+        ################################################
+        #
+        # Implement some code here for your application!
+        #
+        ################################################
+
+        # Do something with the feedback, which contains the route / path if tracking
+        feedback = navigator.getFeedback(trackingRoute=isTrackingRoute)
+        if feedback:
+            if feedback.rerouted:
+                # Follow the path from the route server using the controller server
+                print("Passing route to controller!")
+                navigator.followPath(feedback.path)
+
+                # May instead use the waypoint follower and use the route's sparse nodes!
+                # print("Passing route to waypoint follower!")
+                # nodes = [toPoseStamped(x.position, feedback.route.header) for x in feedback.route.nodes]
+                # navigator.followWaypoints(nodes)
+
+        # Check if followPath or WPF task is done (or failed), will cancel all current tasks, including route
+        if navigator.isTaskComplete():
+            print("Controller or waypoint follower server completed its task!")
+            navigator.cancelTask()
+
+    # Do something depending on the return code
+    result = navigator.getResult()
+    if result == TaskResult.SUCCEEDED:
+        print('Goal succeeded!')
+    elif result == TaskResult.CANCELED:
+        print('Goal was canceled!')
+    elif result == TaskResult.FAILED:
+        print('Goal failed!')
+    else:
+        print('Goal has an invalid return status!')
+
+    navigator.lifecycleShutdown()
+
+    exit(0)
+
+
+if __name__ == '__main__':
+    main()

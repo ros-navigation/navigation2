@@ -35,6 +35,9 @@ void RouteTracker::configure(
     node, "radius_to_achieve_node", rclcpp::ParameterValue(2.0));
   radius_threshold_ = node->get_parameter("radius_to_achieve_node").as_double();
   nav2_util::declare_parameter_if_not_declared(
+    node, "boundary_radius_to_achieve_node", rclcpp::ParameterValue(1.0));
+  boundary_radius_threshold_ = node->get_parameter("boundary_radius_to_achieve_node").as_double();
+  nav2_util::declare_parameter_if_not_declared(
     node, "tracker_update_rate", rclcpp::ParameterValue(50.0));
   tracker_update_rate_ = node->get_parameter("tracker_update_rate").as_double();
   nav2_util::declare_parameter_if_not_declared(
@@ -62,7 +65,9 @@ bool RouteTracker::nodeAchieved(
   const double dx = state.next_node->coords.x - pose.pose.position.x;
   const double dy = state.next_node->coords.y - pose.pose.position.y;
   const double dist_mag = std::sqrt(dx * dx + dy * dy);
-  const bool in_radius = (dist_mag <= radius_threshold_);
+  const bool is_boundary_node = isStartOrEndNode(state, route);
+  const bool in_radius =
+    (dist_mag <= (is_boundary_node ? boundary_radius_threshold_ : radius_threshold_));
 
   // Within 0.1mm is achieved
   if (dist_mag < 1e-4) {
@@ -79,7 +84,7 @@ bool RouteTracker::nodeAchieved(
   // If start or end node, use the radius check only since the final node may not pass
   // threshold depending on the configurations. The start node has no last_node for
   // computing the vector bisector. If this is an issue, please file a ticket to discuss.
-  if (isStartOrEndNode(state, route)) {
+  if (is_boundary_node) {
     return state.within_radius;
   }
 

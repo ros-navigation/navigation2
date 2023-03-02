@@ -121,7 +121,7 @@ protected:
   std::string route_frame_, base_frame_;
   rclcpp::Clock::SharedPtr clock_;
   rclcpp::Logger logger_{rclcpp::get_logger("RouteTracker")};
-  double radius_threshold_, tracker_update_rate_;
+  double radius_threshold_, boundary_radius_threshold_, tracker_update_rate_;
   bool aggregate_blocked_ids_;
   std::shared_ptr<ActionServerTrack> action_server_;
   std::unique_ptr<OperationsManager> operations_manager_;

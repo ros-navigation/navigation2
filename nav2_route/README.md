@@ -1,6 +1,6 @@
 # Nav2 Route Server
 
-The Route Server is a Nav2 Task server to compliment the Planner Server's free-space planning capabilities with pre-defined Navigation Route Graph planning, created by [Steve Macenski](https://www.linkedin.com/in/steve-macenski-41a985101/) while at [Samsung Research America](https://www.sra.samsung.com/).
+The Route Server is a Nav2 Task server to compliment the Planner Server's free-space planning capabilities with pre-defined Navigation Route Graph planning, created by [Steve Macenski](https://www.linkedin.com/in/steve-macenski-41a985101/) while at [Samsung Research America](https://www.sra.samsung.com/) with assistence from [Josh Wallace](https://www.linkedin.com/in/joshua-wallace-b4848a113/) at Locus Robotics.
 This graph has few rules associated with it and may be generated manually or automatically via AI, geometric, or probablistic techniques.
 This package then takes a planning request and uses this graph to find a valid route through the environment via an optimal search-based algorithm.
 It may also live monitor and analyze the route's process to execute custom behaviors on entering or leaving edges or achieving particular graph nodes.
@@ -23,7 +23,7 @@ Note however that plugins may also use outside information from topics, services
 - All edges are directional
 - Data in files may be with respect to any frame in the TF tree and are transformed to a centralized frame automatically
 - Action interface response returns both a sparse route of nodes and edges for client applications with navigation graph knowledge and `nav_msgs/Path` dense paths minimicking freespace planning for drop-in behavior replacement of the Planner Server.  
-- Action interface request can process requests with start / goal node IDs or poses
+- Action interface request can process requests with start / goal node IDs or euclidean poses
 - Service interface to change navigation route graphs at run-time
 - Edge scoring dynamic plugins return a cost for traversing an edge and may mark an edge as invalid in current conditions
 - Graph file parsing dynamic plugins allow for use of custom or proprietary formats
@@ -31,7 +31,7 @@ Note however that plugins may also use outside information from topics, services
 - Operation may be graph-centric (e.g. graph file identifies operation to perform) or plugin-centric (e.g. plugins self-identify nodes and edges to act upon) 
 - The nodes and edges metadata may be modified or used to communicate information across plugins including different types across different runs
 - The Route Tracking action returns regular feedback on important events or state updates (e.g. rerouting requests, passed a node, triggered an option, etc)
-- If rerouting occurs during Route Tracking along the previous current edge, that state will be retained for improved behavior and provide an interpolated nav_msgs/Path from the closest point on the edge to the edge's end (or rerouting's starting node) to minimize free-space planning connections where a known edge exists and is continued.
+- If rerouting occurs during Route Tracking along the previous current edge, that state will be retained for improved behavior and provide an interpolated nav_msgs/Path from the closest point on the edge to the edge's end (or rerouting's starting node) to minimize free-space planning connections where a known edge exists and is being continued.
 
 ## Design
 
@@ -45,9 +45,9 @@ TODO plugins list
 
 ## Metrics
 
-TODO provide analysis (needs completion)
+TODO provide analysis (needs completion + benchmark testing)
 
-The use of Kd-trees to find the nearest start and goal nodes in the graph to the request is over 140x faster than the brute force data-structure lookup (0.35 ms/1000 lookups vs 50 ms/1000 lookups).
+The use of Kd-trees to find the nearest start and goal nodes in the graph to the request is over 140x faster than data-structure lookups (0.35 ms/1000 lookups vs 50 ms/1000 lookups).
 
 ## Parameters
 
@@ -60,18 +60,17 @@ A parser is provided for GeoJSON formats.
 The only three required features of the navigation graph is (1) for the nodes and edges to have identifiers from each other to be unique for referencing and (2) for edges to have the IDs of the nodes belonging to the start and end of the edge and (3) nodes contain coordinates.
 This is strictly required for the Route Server to operate properly in all of its features.
 
-Besides this, we establish some requirements and conventions for route graph files to standardize this information to offer consistent and documented behavior:
-
+Besides this, we establish some requirements and conventions for route graph files to standardize this information to offer consistent and documented behavior.
 The unique identifier for each node and edge should be given as `id`. The edge's nodes are `startid` and `endid`. The coordinates are given in an array called `coordinates`.
 While technically optional, it is highly recommended to also provide:
-- The node's frame of reference (`frame`)
+- The node's frame of reference (`frame`), if not the global frame and you want it transformed
 - The Operation's `trigger` (e.g. enter, exit edge, node achieved) and `type` (e.g. action to perform), as relevent
 
 While optional, it is somewhat recommended to provide, if relevent:
 - The edge's `cost`, if it is fixed or edge scoring plugins are not used
 - Whether the edge's cost is `overridable` with edge scoring plugins, if provided
 
-Otherwise, the Node, Edge, and Operations may contain other arbitrary application-specific fields with key-value pairs under the `metadata` namespace.
+Otherwise, the Node, Edge, and Operations may contain other arbitrary application-specific fields with key-value pairs under the `metadata` key-name.
 These can be primitive types (float, int, string, etc), vector types (e.g. a polygon or other vector of information), or even contain information nested under namespaces - whereas a metadata object may exist as a key's value within `metadata`.
 
 While GeoJSON is not YAML-based, the following YAML file is provided as a more human-readable example for illustration of the conventions above.
@@ -170,24 +169,32 @@ The node achievement logic will first check if the robot is within a configurabl
 
 Once we're within the range of a node that we need to consider whether or not we've achieved the node, we evaluate a mathematical operation to see if the robot has moved from the regime of the previous edge into the next edge spatially. We do this by finding the bisecting vector of the two edge vectors of interest (e.g. last edge and next edge) and comparing that with the distance vector from the node. When the dot product is 0, that means the we're at the orthogonal vector to the bisector moving from one regime to the next. Thus, we can check the sign of this dot product to indicate when we transition from one edge to the next while allowing for significant deviation from the node itself due to path tracking error or dynamic behavior.
 
-For the edge cases where there is no last edge (e.g. starting) or next edge (e.g. finishing), we use the radius only. Recall that this only applies the routing part of the navigation request, the controller will still continue tracking the path until your goal achievement defined in your local trajectory planner's configurations. However, any Route Operations to be performed at the start or end nodes will be slightly preempted when compared to the others.
+For the edge boundary cases where there is no last edge (e.g. starting) or next edge (e.g. finishing), we use the boundary radius only (separate param from otherwise used radius). Recall that this only applies the routing part of the navigation request, the controller will still continue tracking the path until your goal achievement defined in your local trajectory planner's configurations. However, any Route Operations to be performed at the start or end nodes will be slightly preempted when compared to the others, by the choice of this radius.
 
-A special case exists for rerouting, where as if we reroute along the same edge as we were previously routing through, the tracker state will be reloaded. While the current edge is not reported in the route message (because the last node is passed), that information is still in the tracker to perform edge exit route operations and refined bisector-based node achievement criteria. 
+A special case exists for rerouting, where as if we reroute along the same edge as we were previously routing through, the tracker state will be reloaded. While the current edge is not reported in the route message (because the last node is passed), that information is inserted back in the tracker to perform edge exit route operations -- and most importantly, the refined bisector-based node achievement criteria (which is why Steve went through the sheer pain to make it possible). 
 
 ---
 
 # Steve's TODO list
 
+- [ ] default bringup with server without a default graph file, empty file, or sandbox graph?
+
 - [ ] Test working full system + plugins + rerouting + pruning + operations + feedback / states proper
 - [ ] Integration tests: tracking server + tracker state / feedback / operations correctness + completion. rerouting_start_id + Blocked ids?
   - Cases: reroute often OK. Reroute in same direction + path partial. Reroute off different direction + no path partial. Start route along first edge. edge exit event occurs at exit of partial + refined estimate.
 
-- [ ] Sample files: AWS final + file with metadata/operations demos, recursion/vectors/API demos, Vector types (regions).
+- [ ] Sample files: AWS final
 - [ ] QGIS demo + plugins for editing and visualizing graphs
 - [ ] use map for checking start/goal nodes for infra blockages not just NN. Evaluate K. Share costmap?
 
-- [ ] Quality: BT nodes, Python API, web documentation, readme, tutorial (bt change, plugin customize, file field examples). BT XML for first/last mile, freq. replanning, navigation using it, WPF, metrics w/ real graph sized
-- [ ] demos with route -> global -> local. outdoor non-planar. to waypoint follower (GPS?) of nodes.
+- [ ] Quality: 
+  - BT nodes for 2x route APIs + cancel nodes (+ groot xml + add to BT navlist + add to default yaml list),
+  - web documentation (BT node configuration page, package configuration page),
+  - readme complete,
+
+  - Tutorials (bt change, plugin customize, file field examples)
+  - BT XMLs (first/last mile, freq. replanning, navigation using it, WPF using it, clearance)
+  - Demos (route -> global -> local. outdoor non-planar. waypoint follower (GPS?) of route nodes. controller server of dense path)
 
 # Questions
 
