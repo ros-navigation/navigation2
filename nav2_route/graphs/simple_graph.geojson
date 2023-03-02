@@ -12,20 +12,10 @@
                 "frame": "map", 
                 "metadata": 
                 {
-                    "polygon_feature":
+                    "region":
                     {
-                        "type": "Feature",
-                        "geometry": {
-                            "type": "Polygon",
-                            "coordinates": [
-                                [
-                                    [0.5, 0.5],
-                                    [-0.5, 0.5],
-                                    [-0.5, -0.5],
-                                    [0.5, -0.5]
-                                ]
-                            ]
-                        },
+                        "x_values": [1.0, -1.0, -1.0, 1.0],
+                        "y_values": [1.0, 1.0, -1.0, -1.0],
                         "properties": {
                             "class_type": "living_room",
                             "number_of_lights": 10
