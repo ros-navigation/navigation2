@@ -299,8 +299,9 @@ _commands:
             working_directory: << parameters.workspace >>
             command: |
               cp -rH log/latest_test log/test
-              find . -wholename "./test_results/**/Test.xml" -exec \
-                sh -c 'mv "$1" "${1%.xml}.txt"' _ {} \;
+
+              find . -name "Test.xml" -type f | while read filename
+                do mv "$filename" "${filename%.xml}.txt"; done
             when: always
         - store_artifacts:
             path: << parameters.workspace >>/log/test
