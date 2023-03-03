@@ -446,7 +446,7 @@ inline void savitskyGolayFilter(
   const unsigned int num_sequences = control_sequence.vx.shape(0) - 1;
 
   // Too short to smooth meaningfully
-  if (num_sequences < 10) {
+  if (num_sequences < 20) {
     return;
   }
 
