@@ -35,6 +35,7 @@ void MPPIController::configure(
 
   auto node = parent_.lock();
   clock_ = node->get_clock();
+  last_time_called_ = clock_->now();
   // Get high-level controller parameters
   auto getParam = parameters_handler_->getParamGetter(name_);
   getParam(visualize_, "visualize", false);
