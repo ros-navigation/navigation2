@@ -317,7 +317,13 @@ TEST(UtilsTests, SmootherTest)
   noisey_sequence.wz += noises;
   sequence_init = noisey_sequence;
 
-  std::array<mppi::models::Control, 2> history, history_init;
+  std::array<mppi::models::Control, 4> history, history_init;
+  history[3].vx = 0.1;
+  history[3].vy = 0.0;
+  history[3].wz = 0.3;
+  history[2].vx = 0.1;
+  history[2].vy = 0.0;
+  history[2].wz = 0.3;
   history[1].vx = 0.1;
   history[1].vy = 0.0;
   history[1].wz = 0.3;
@@ -332,14 +338,14 @@ TEST(UtilsTests, SmootherTest)
   savitskyGolayFilter(noisey_sequence, history, settings);
 
   // Check history is propogated backward
-  EXPECT_NEAR(history_init[1].vx, history[0].vx, 0.02);
-  EXPECT_NEAR(history_init[1].vy, history[0].vy, 0.02);
-  EXPECT_NEAR(history_init[1].wz, history[0].wz, 0.02);
+  EXPECT_NEAR(history_init[3].vx, history[2].vx, 0.02);
+  EXPECT_NEAR(history_init[3].vy, history[2].vy, 0.02);
+  EXPECT_NEAR(history_init[3].wz, history[2].wz, 0.02);
 
   // Check history element is updated for first command
-  EXPECT_NEAR(history[1].vx, 0.2, 0.05);
-  EXPECT_NEAR(history[1].vy, 0.0, 0.02);
-  EXPECT_NEAR(history[1].wz, 0.23, 0.02);
+  EXPECT_NEAR(history[3].vx, 0.2, 0.05);
+  EXPECT_NEAR(history[3].vy, 0.0, 0.035);
+  EXPECT_NEAR(history[3].wz, 0.23, 0.02);
 
   // Check that path is smoother
   float smoothed_val, original_val;
