@@ -93,7 +93,7 @@ TEST(PathHandlerTests, TestBounds)
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
   node->declare_parameter("dummy.max_robot_pose_search_dist", rclcpp::ParameterValue(99999.9));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
-    "dummy_costmap", "", "dummy_costmap", true);
+    "dummy_costmap", "", "dummy_costmap");
   auto results = costmap_ros->set_parameters_atomically(
     {rclcpp::Parameter("global_frame", "odom"),
       rclcpp::Parameter("robot_base_frame", "base_link")});
@@ -144,7 +144,7 @@ TEST(PathHandlerTests, TestTransforms)
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
   node->declare_parameter("dummy.max_robot_pose_search_dist", rclcpp::ParameterValue(99999.9));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
-    "dummy_costmap", "", "dummy_costmap", true);
+    "dummy_costmap", "", "dummy_costmap");
   ParametersHandler param_handler(node);
   rclcpp_lifecycle::State state;
   costmap_ros->on_configure(state);

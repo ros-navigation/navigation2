@@ -223,7 +223,7 @@ TEST(OptimizerTests, BasicInitializedFunctions)
   node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(50));
   node->declare_parameter("controller_frequency", rclcpp::ParameterValue(30.0));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
-    "dummy_costmap", "", "dummy_costmap", true);
+    "dummy_costmap", "", "dummy_costmap");
   ParametersHandler param_handler(node);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
@@ -255,7 +255,7 @@ TEST(OptimizerTests, TestOptimizerMotionModels)
   OptimizerTester optimizer_tester;
   node->declare_parameter("controller_frequency", rclcpp::ParameterValue(30.0));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
-    "dummy_costmap", "", "dummy_costmap", true);
+    "dummy_costmap", "", "dummy_costmap");
   ParametersHandler param_handler(node);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
@@ -287,7 +287,7 @@ TEST(OptimizerTests, setOffsetTests)
   node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(1000));
   node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(50));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
-    "dummy_costmap", "", "dummy_costmap", true);
+    "dummy_costmap", "", "dummy_costmap");
   ParametersHandler param_handler(node);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
@@ -310,7 +310,7 @@ TEST(OptimizerTests, resetTests)
   node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(1000));
   node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(50));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
-    "dummy_costmap", "", "dummy_costmap", true);
+    "dummy_costmap", "", "dummy_costmap");
   ParametersHandler param_handler(node);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
@@ -330,7 +330,7 @@ TEST(OptimizerTests, FallbackTests)
   node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(50));
   node->declare_parameter("mppic.retry_attempt_limit", rclcpp::ParameterValue(2));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
-    "dummy_costmap", "", "dummy_costmap", true);
+    "dummy_costmap", "", "dummy_costmap");
   ParametersHandler param_handler(node);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
@@ -354,7 +354,7 @@ TEST(OptimizerTests, PrepareTests)
   node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(50));
   node->declare_parameter("mppic.retry_attempt_limit", rclcpp::ParameterValue(2));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
-    "dummy_costmap", "", "dummy_costmap", true);
+    "dummy_costmap", "", "dummy_costmap");
   ParametersHandler param_handler(node);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
@@ -381,7 +381,7 @@ TEST(OptimizerTests, shiftControlSequenceTests)
   node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(50));
   node->declare_parameter("mppic.retry_attempt_limit", rclcpp::ParameterValue(2));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
-    "dummy_costmap", "", "dummy_costmap", true);
+    "dummy_costmap", "", "dummy_costmap");
   ParametersHandler param_handler(node);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
@@ -424,7 +424,7 @@ TEST(OptimizerTests, SpeedLimitTests)
   node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(50));
   node->declare_parameter("mppic.retry_attempt_limit", rclcpp::ParameterValue(2));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
-    "dummy_costmap", "", "dummy_costmap", true);
+    "dummy_costmap", "", "dummy_costmap");
   ParametersHandler param_handler(node);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
@@ -464,7 +464,7 @@ TEST(OptimizerTests, applyControlSequenceConstraintsTests)
   node->declare_parameter("mppic.vy_max", rclcpp::ParameterValue(0.75));
   node->declare_parameter("mppic.wz_max", rclcpp::ParameterValue(2.0));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
-    "dummy_costmap", "", "dummy_costmap", true);
+    "dummy_costmap", "", "dummy_costmap");
   ParametersHandler param_handler(node);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
@@ -520,7 +520,7 @@ TEST(OptimizerTests, updateStateVelocitiesTests)
   node->declare_parameter("mppic.vy_max", rclcpp::ParameterValue(0.60));
   node->declare_parameter("mppic.wz_max", rclcpp::ParameterValue(2.0));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
-    "dummy_costmap", "", "dummy_costmap", true);
+    "dummy_costmap", "", "dummy_costmap");
   ParametersHandler param_handler(node);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
@@ -545,7 +545,7 @@ TEST(OptimizerTests, getControlFromSequenceAsTwistTests)
   node->declare_parameter("mppic.vy_max", rclcpp::ParameterValue(0.60));
   node->declare_parameter("mppic.wz_max", rclcpp::ParameterValue(2.0));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
-    "dummy_costmap", "", "dummy_costmap", true);
+    "dummy_costmap", "", "dummy_costmap");
   ParametersHandler param_handler(node);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
@@ -580,7 +580,7 @@ TEST(OptimizerTests, integrateStateVelocitiesTests)
   node->declare_parameter("mppic.model_dt", rclcpp::ParameterValue(0.1));
   node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(50));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
-    "dummy_costmap", "", "dummy_costmap", true);
+    "dummy_costmap", "", "dummy_costmap");
   ParametersHandler param_handler(node);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
