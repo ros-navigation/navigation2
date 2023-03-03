@@ -75,7 +75,7 @@ public:
   /**
     * @brief Reset the controller state between tasks
     */
-  void reset() override;
+  void reset();
 
   /**
     * @brief Main method to compute velocities using the optimizer
@@ -110,6 +110,7 @@ protected:
 
   std::string name_;
   rclcpp_lifecycle::LifecycleNode::WeakPtr parent_;
+  rclcpp::Clock::SharedPtr clock_;
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
@@ -120,6 +121,11 @@ protected:
   TrajectoryVisualizer trajectory_visualizer_;
 
   bool visualize_;
+
+  double reset_period_;
+  // Last time computeVelocityCommands was called
+  rclcpp::Time last_time_called_;
+
 };
 
 }  // namespace nav2_mppi_controller

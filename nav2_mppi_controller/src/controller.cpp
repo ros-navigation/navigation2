@@ -34,9 +34,11 @@ void MPPIController::configure(
   parameters_handler_ = std::make_unique<ParametersHandler>(parent);
 
   auto node = parent_.lock();
+  clock_ = node->get_clock();
   // Get high-level controller parameters
   auto getParam = parameters_handler_->getParamGetter(name_);
   getParam(visualize_, "visualize", false);
+  getParam(reset_period_, "reset_period", 1.0);
 
   // Configure composed objects
   optimizer_.initialize(parent_, name_, costmap_ros_, parameters_handler_.get());
@@ -82,6 +84,11 @@ geometry_msgs::msg::TwistStamped MPPIController::computeVelocityCommands(
 #ifdef BENCHMARK_TESTING
   auto start = std::chrono::system_clock::now();
 #endif
+
+  if ((clock_->now() - last_time_called_).seconds() > reset_period_) {
+    reset();
+  }
+  last_time_called_ = clock_->now();
 
   std::lock_guard<std::mutex> lock(*parameters_handler_->getLock());
   nav_msgs::msg::Path transformed_plan = path_handler_.transformPath(robot_pose);
