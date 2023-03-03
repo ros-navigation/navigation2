@@ -58,8 +58,9 @@ double ObstaclesCritic::findCircumscribedCost(
     const double circum_radius = costmap->getLayeredCostmap()->getCircumscribedRadius();
     const double resolution = costmap->getCostmap()->getResolution();
     result = inflation_layer->computeCost(circum_radius / resolution);
-    inflation_scale_factor_ = static_cast<float>(inflation_layer->getCostScalingFactor());
-    inflation_radius_ = static_cast<float>(inflation_layer->getInflationRadius());
+    auto getParam = parameters_handler_->getParamGetter(name_);
+    getParam(inflation_scale_factor_, "cost_scaling_factor", 10.0);
+    getParam(inflation_radius_, "inflation_radius", 0.55);
   }
 
   if (!inflation_layer_found) {
