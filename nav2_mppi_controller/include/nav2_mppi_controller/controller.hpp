@@ -125,7 +125,6 @@ protected:
   double reset_period_;
   // Last time computeVelocityCommands was called
   rclcpp::Time last_time_called_;
-
 };
 
 }  // namespace nav2_mppi_controller
