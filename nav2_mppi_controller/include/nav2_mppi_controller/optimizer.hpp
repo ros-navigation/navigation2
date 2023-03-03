@@ -25,7 +25,6 @@
 
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_core/goal_checker.hpp"
-#include "nav2_core/controller_exceptions.hpp"
 
 #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
