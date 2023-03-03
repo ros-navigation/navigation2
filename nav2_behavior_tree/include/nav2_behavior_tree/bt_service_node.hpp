@@ -17,6 +17,7 @@
 
 #include <string>
 #include <memory>
+#include <chrono>
 
 #include "behaviortree_cpp_v3/action_node.h"
 #include "nav2_util/node_utils.hpp"
@@ -25,6 +26,8 @@
 
 namespace nav2_behavior_tree
 {
+
+using namespace std::chrono_literals;  // NOLINT
 
 /**
  * @brief Abstract class representing a service based BT node
@@ -71,7 +74,15 @@ public:
     RCLCPP_DEBUG(
       node_->get_logger(), "Waiting for \"%s\" service",
       service_name_.c_str());
-    service_client_->wait_for_service(std::chrono::seconds(10));
+    if (!service_client_->wait_for_service(10s)) {
+      RCLCPP_ERROR(
+        node_->get_logger(), "\"%s\" service server not available after waiting for 10 s",
+        service_name_.c_str());
+      throw std::runtime_error(
+              std::string(
+                "Service server %s not available",
+                service_name_.c_str()));
+    }
 
     RCLCPP_DEBUG(
       node_->get_logger(), "\"%s\" BtServiceNode initialized",

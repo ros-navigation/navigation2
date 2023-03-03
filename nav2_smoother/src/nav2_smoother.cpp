@@ -1,5 +1,6 @@
 // Copyright (c) 2019 RoboTech Vision
 // Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2022 Samsung Research America
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -315,6 +316,10 @@ void SmootherServer::smoothPlan()
   } catch (nav2_core::PlannerException & e) {
     RCLCPP_ERROR(this->get_logger(), e.what());
     action_server_->terminate_current();
+    return;
+  } catch (std::exception & ex) {
+    RCLCPP_ERROR(this->get_logger(), "%s", ex.what());
+    action_server_->terminate_current(result);
     return;
   }
 }

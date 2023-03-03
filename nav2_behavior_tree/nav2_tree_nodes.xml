@@ -11,7 +11,7 @@
       <input_port name="backup_dist">Distance to backup</input_port>
       <input_port name="backup_speed">Speed at which to backup</input_port>
       <input_port name="time_allowance">Allowed time for reversing</input_port>
-      <input_port name="server_name">Service name</input_port>
+      <input_port name="server_name">Server name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
       <input_port name="free_goal_vel" default="false">Don't stop when goal reached</input_port>
       <input_port name="check_local_costmap" default="true">Check if there is an obstacle on path</input_port>
@@ -21,32 +21,37 @@
       <input_port name="dist_to_travel">Distance to travel</input_port>
       <input_port name="speed">Speed at which to travel</input_port>
       <input_port name="time_allowance">Allowed time for reversing</input_port>
-      <input_port name="server_name">Service name</input_port>
+      <input_port name="server_name">Server name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
     </Action>
 
     <Action ID="CancelControl">
-      <input_port name="service_name">Service name to cancel the controller server</input_port>
+      <input_port name="server_name">Server name to cancel the controller server</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
     </Action>
 
     <Action ID="CancelBackUp">
-      <input_port name="service_name">Service name to cancel the backup behavior</input_port>
+      <input_port name="server_name">Server name to cancel the backup behavior</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
     </Action>
 
-    <Action ID="DriveOnHeadingCancel">
-      <input_port name="service_name">Service name to cancel the drive on heading behavior</input_port>
+    <Action ID="CancelDriveOnHeading">
+      <input_port name="server_name">Service name to cancel the drive on heading behavior</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
     </Action>
 
     <Action ID="CancelSpin">
-      <input_port name="service_name">Service name to cancel the spin behavior</input_port>
+      <input_port name="server_name">Server name to cancel the spin behavior</input_port>
+      <input_port name="server_timeout">Server timeout</input_port>
+    </Action>
+
+    <Action ID="CancelAssistedTeleop">
+      <input_port name="service_name">Service name to cancel the assisted teleop behavior</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
     </Action>
 
     <Action ID="CancelWait">
-      <input_port name="service_name">Service name to cancel the wait behavior</input_port>
+      <input_port name="server_name">Server name to cancel the wait behavior</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
     </Action>
 
@@ -55,11 +60,23 @@
       <input_port name="server_timeout">Server timeout</input_port>
     </Action>
 
+    <Action ID="ClearCostmapExceptRegion">
+      <input_port name="service_name">Service name</input_port>
+      <input_port name="server_timeout">Server timeout</input_port>
+      <input_port name="reset_distance">Distance from the robot above which obstacles are cleared</input_port>
+    </Action>
+
+    <Action ID="ClearCostmapAroundRobot">
+      <input_port name="service_name">Service name</input_port>
+      <input_port name="server_timeout">Server timeout</input_port>
+      <input_port name="reset_distance">Distance from the robot under which obstacles are cleared</input_port>
+    </Action>
+
     <Action ID="ComputePathToPose">
       <input_port name="goal">Destination to plan to</input_port>
       <input_port name="start">Start pose of the path if overriding current robot pose</input_port>
       <input_port name="planner_id">Mapped name to the planner plugin type to use</input_port>
-      <input_port name="service_name">Service name</input_port>
+      <input_port name="server_name">Server name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
       <output_port name="path">Path created by ComputePathToPose node</output_port>
     </Action>
@@ -67,7 +84,7 @@
     <Action ID="ComputePathThroughPoses">
       <input_port name="goals">Destinations to plan through</input_port>
       <input_port name="start">Start pose of the path if overriding current robot pose</input_port>
-      <input_port name="service_name">Service name</input_port>
+      <input_port name="server_name">Server name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
       <input_port name="planner_id">Mapped name to the planner plugin type to use</input_port>
       <output_port name="path">Path created by ComputePathToPose node</output_port>
@@ -95,20 +112,20 @@
       <input_port name="controller_id" default="FollowPath"/>
       <input_port name="path">Path to follow</input_port>
       <input_port name="goal_checker_id" default="GoalChecker">Goal checker</input_port>
-      <input_port name="service_name">Service name</input_port>
+      <input_port name="server_name">Server name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
     </Action>
 
     <Action ID="NavigateToPose">
         <input_port name="goal">Goal</input_port>
-        <input_port name="service_name">Service name</input_port>
+        <input_port name="server_name">Server name</input_port>
         <input_port name="server_timeout">Server timeout</input_port>
         <input_port name="behavior_tree">Behavior tree to run</input_port>
     </Action>
 
     <Action ID="NavigateThroughPoses">
         <input_port name="goals">Goals</input_port>
-        <input_port name="service_name">Service name</input_port>
+        <input_port name="server_name">Server name</input_port>
         <input_port name="server_timeout">Server timeout</input_port>
         <input_port name="behavior_tree">Behavior tree to run</input_port>
     </Action>
@@ -147,6 +164,12 @@
         <output_port name="selected_controller">Name of the selected controller received from the topic subcription</output_port>
     </Action>
 
+    <Action ID="SmootherSelector">
+        <input_port name="topic_name">Name of the topic to receive smoother selection commands</input_port>
+        <input_port name="default_smoother">Default smoother of the smoother selector</input_port>
+        <output_port name="selected_smoother">Name of the selected smoother received from the topic subcription</output_port>
+    </Action>
+
     <Action ID="GoalCheckerSelector">
         <input_port name="topic_name">Name of the topic to receive goal checker selection commands</input_port>
         <input_port name="default_goal_checker">Default goal checker of the controller selector</input_port>
@@ -156,12 +179,19 @@
     <Action ID="Spin">
       <input_port name="spin_dist">Spin distance</input_port>
       <input_port name="time_allowance">Allowed time for spinning</input_port>
-      <input_port name="server_name">Service name</input_port>
+      <input_port name="server_name">Server name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
     </Action>
 
     <Action ID="Wait">
       <input_port name="wait_duration">Wait time</input_port>
+      <input_port name="server_name">Server name</input_port>
+      <input_port name="server_timeout">Server timeout</input_port>
+    </Action>
+
+    <Action ID="AssistedTeleop">
+      <input_port name="time_allowance">Allowed time for spinning</input_port>
+      <input_port name="is_recovery">If true recovery count will be incremented</input_port>
       <input_port name="server_name">Service name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
     </Action>
@@ -216,6 +246,24 @@
       <input_port name="server_timeout"> Server timeout </input_port>
     </Condition>
 
+    <Condition ID="WouldAControllerRecoveryHelp">
+      <input_port name="error_code">Error code</input_port>
+    </Condition>
+
+    <Condition ID="WouldAPlannerRecoveryHelp">
+      <input_port name="error_code">Error code</input_port>
+    </Condition>
+
+    <Condition ID="WouldASmootherRecoveryHelp">
+      <input_port name="error_code">Error code</input_port>
+    </Condition>
+
+    <Condition ID="AreErrorCodesPresent">
+      <input_port name="error_code">Error code</input_port>
+      <input_port name="error_codes_to_check">Error codes to check, user defined</input_port>
+    </Condition>
+
+
     <!-- ############################### CONTROL NODES ################################ -->
     <Control ID="PipelineSequence"/>
 
@@ -249,7 +297,6 @@
       <input_port name="max_rate">Maximum rate</input_port>
       <input_port name="min_speed">Minimum speed</input_port>
       <input_port name="max_speed">Maximum speed</input_port>
-      <input_port name="filter_duration">Duration (secs) for velocity smoothing filter</input_port>
     </Decorator>
 
     <Decorator ID="PathLongerOnApproach">

@@ -41,8 +41,6 @@
 #include <utility>
 #include <memory>
 #include <string>
-#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
-#include "geometry_msgs/msg/point_stamped.hpp"
 
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 
@@ -174,70 +172,6 @@ void SpeedFilter::maskCallback(
   mask_frame_ = msg->header.frame_id;
 }
 
-bool SpeedFilter::transformPose(
-  const geometry_msgs::msg::Pose2D & pose,
-  geometry_msgs::msg::Pose2D & mask_pose) const
-{
-  if (mask_frame_ != global_frame_) {
-    // Filter mask and current layer are in different frames:
-    // Transform (pose.x, pose.y) point from current layer frame (global_frame_)
-    // to mask_pose point in mask_frame_
-    geometry_msgs::msg::TransformStamped transform;
-    geometry_msgs::msg::PointStamped in, out;
-    in.header.stamp = clock_->now();
-    in.header.frame_id = global_frame_;
-    in.point.x = pose.x;
-    in.point.y = pose.y;
-    in.point.z = 0;
-
-    try {
-      tf_->transform(in, out, mask_frame_, transform_tolerance_);
-    } catch (tf2::TransformException & ex) {
-      RCLCPP_ERROR(
-        logger_,
-        "SpeedFilter: failed to get costmap frame (%s) "
-        "transformation to mask frame (%s) with error: %s",
-        global_frame_.c_str(), mask_frame_.c_str(), ex.what());
-      return false;
-    }
-    mask_pose.x = out.point.x;
-    mask_pose.y = out.point.y;
-  } else {
-    // Filter mask and current layer are in the same frame:
-    // Just use pose coordinates
-    mask_pose = pose;
-  }
-
-  return true;
-}
-
-bool SpeedFilter::worldToMask(double wx, double wy, unsigned int & mx, unsigned int & my) const
-{
-  double origin_x = filter_mask_->info.origin.position.x;
-  double origin_y = filter_mask_->info.origin.position.y;
-  double resolution = filter_mask_->info.resolution;
-  unsigned int size_x = filter_mask_->info.width;
-  unsigned int size_y = filter_mask_->info.height;
-
-  if (wx < origin_x || wy < origin_y) {
-    return false;
-  }
-
-  mx = std::round((wx - origin_x) / resolution);
-  my = std::round((wy - origin_y) / resolution);
-  if (mx >= size_x || my >= size_y) {
-    return false;
-  }
-
-  return true;
-}
-
-inline int8_t SpeedFilter::getMaskData(
-  const unsigned int mx, const unsigned int my) const
-{
-  return filter_mask_->data[my * filter_mask_->info.width + mx];
-}
-
 void SpeedFilter::process(
   nav2_costmap_2d::Costmap2D & /*master_grid*/,
   int /*min_i*/, int /*min_j*/, int /*max_i*/, int /*max_j*/,
@@ -256,19 +190,19 @@ void SpeedFilter::process(
   geometry_msgs::msg::Pose2D mask_pose;  // robot coordinates in mask frame
 
   // Transforming robot pose from current layer frame to mask frame
-  if (!transformPose(pose, mask_pose)) {
+  if (!transformPose(global_frame_, pose, mask_frame_, mask_pose)) {
     return;
   }
 
   // Converting mask_pose robot position to filter_mask_ indexes (mask_robot_i, mask_robot_j)
   unsigned int mask_robot_i, mask_robot_j;
-  if (!worldToMask(mask_pose.x, mask_pose.y, mask_robot_i, mask_robot_j)) {
+  if (!worldToMask(filter_mask_, mask_pose.x, mask_pose.y, mask_robot_i, mask_robot_j)) {
     return;
   }
 
   // Getting filter_mask data from cell where the robot placed and
   // calculating speed limit value
-  int8_t speed_mask_data = getMaskData(mask_robot_i, mask_robot_j);
+  int8_t speed_mask_data = getMaskData(filter_mask_, mask_robot_i, mask_robot_j);
   if (speed_mask_data == SPEED_MASK_NO_LIMIT) {
     // Corresponding filter mask cell is free.
     // Setting no speed limit there.

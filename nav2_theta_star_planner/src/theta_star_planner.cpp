@@ -46,6 +46,10 @@ void ThetaStarPlanner::configure(
   }
 
   nav2_util::declare_parameter_if_not_declared(
+    node, name_ + ".allow_unknown", rclcpp::ParameterValue(true));
+  node->get_parameter(name_ + ".allow_unknown", planner_->allow_unknown_);
+
+  nav2_util::declare_parameter_if_not_declared(
     node, name_ + ".w_euc_cost", rclcpp::ParameterValue(1.0));
   node->get_parameter(name_ + ".w_euc_cost", planner_->w_euc_cost_);
 
@@ -215,6 +219,8 @@ ThetaStarPlanner::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
     } else if (type == ParameterType::PARAMETER_BOOL) {
       if (name == name_ + ".use_final_approach_orientation") {
         use_final_approach_orientation_ = parameter.as_bool();
+      } else if (name == name_ + ".allow_unknown") {
+        planner_->allow_unknown_ = parameter.as_bool();
       }
     }
   }

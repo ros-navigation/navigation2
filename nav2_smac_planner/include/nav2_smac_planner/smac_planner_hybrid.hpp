@@ -111,6 +111,7 @@ protected:
   unsigned int _angle_quantizations;
   bool _allow_unknown;
   int _max_iterations;
+  int _max_on_approach_iterations;
   SearchInfo _search_info;
   double _max_planning_time;
   double _lookup_table_size;

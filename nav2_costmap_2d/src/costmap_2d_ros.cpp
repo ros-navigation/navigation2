@@ -415,24 +415,27 @@ Costmap2DROS::mapUpdateLoop(double frequency)
   while (rclcpp::ok() && !map_update_thread_shutdown_) {
     nav2_util::ExecutionTimer timer;
 
-    // Measure the execution time of the updateMap method
-    timer.start();
-    updateMap();
-    timer.end();
+    // Execute after start() will complete plugins activation
+    if (!stopped_) {
+      // Measure the execution time of the updateMap method
+      timer.start();
+      updateMap();
+      timer.end();
 
-    RCLCPP_DEBUG(get_logger(), "Map update time: %.9f", timer.elapsed_time_in_seconds());
-    if (publish_cycle_ > rclcpp::Duration(0s) && layered_costmap_->isInitialized()) {
-      unsigned int x0, y0, xn, yn;
-      layered_costmap_->getBounds(&x0, &xn, &y0, &yn);
-      costmap_publisher_->updateBounds(x0, xn, y0, yn);
+      RCLCPP_DEBUG(get_logger(), "Map update time: %.9f", timer.elapsed_time_in_seconds());
+      if (publish_cycle_ > rclcpp::Duration(0s) && layered_costmap_->isInitialized()) {
+        unsigned int x0, y0, xn, yn;
+        layered_costmap_->getBounds(&x0, &xn, &y0, &yn);
+        costmap_publisher_->updateBounds(x0, xn, y0, yn);
 
-      auto current_time = now();
-      if ((last_publish_ + publish_cycle_ < current_time) ||  // publish_cycle_ is due
-        (current_time < last_publish_))      // time has moved backwards, probably due to a switch to sim_time // NOLINT
-      {
-        RCLCPP_DEBUG(get_logger(), "Publish costmap at %s", name_.c_str());
-        costmap_publisher_->publishCostmap();
-        last_publish_ = current_time;
+        auto current_time = now();
+        if ((last_publish_ + publish_cycle_ < current_time) ||  // publish_cycle_ is due
+          (current_time < last_publish_))      // time has moved backwards, probably due to a switch to sim_time // NOLINT
+        {
+          RCLCPP_DEBUG(get_logger(), "Publish costmap at %s", name_.c_str());
+          costmap_publisher_->publishCostmap();
+          last_publish_ = current_time;
+        }
       }
     }
 
@@ -637,11 +640,27 @@ Costmap2DROS::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameter
       }
     } else if (type == ParameterType::PARAMETER_INTEGER) {
       if (name == "width") {
-        resize_map = true;
-        map_width_meters_ = parameter.as_int();
+        if (parameter.as_int() > 0) {
+          resize_map = true;
+          map_width_meters_ = parameter.as_int();
+        } else {
+          RCLCPP_ERROR(
+            get_logger(), "You try to set width of map to be negative or zero,"
+            " this isn't allowed, please give a positive value.");
+          result.successful = false;
+          return result;
+        }
       } else if (name == "height") {
-        resize_map = true;
-        map_height_meters_ = parameter.as_int();
+        if (parameter.as_int() > 0) {
+          resize_map = true;
+          map_height_meters_ = parameter.as_int();
+        } else {
+          RCLCPP_ERROR(
+            get_logger(), "You try to set height of map to be negative or zero,"
+            " this isn't allowed, please give a positive value.");
+          result.successful = false;
+          return result;
+        }
       }
     } else if (type == ParameterType::PARAMETER_STRING) {
       if (name == "footprint") {

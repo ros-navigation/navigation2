@@ -28,6 +28,7 @@
 #include "nav2_smoother/simple_smoother.hpp"
 #include "ament_index_cpp/get_package_share_directory.hpp"
 
+using namespace smoother_utils;  // NOLINT
 using namespace nav2_smoother;  // NOLINT
 using namespace std::chrono_literals;  // NOLINT
 
