@@ -302,6 +302,10 @@ _commands:
 
               find . -name "Test.xml" -type f | while read filename
                 do mv "$filename" "${filename%.xml}.txt"; done
+
+              cd build
+              find . -name "ctest.junit.xml" \
+                | xargs cp --parents -t ../test_results
             when: always
         - store_artifacts:
             path: << parameters.workspace >>/log/test
