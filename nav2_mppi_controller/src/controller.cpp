@@ -86,7 +86,7 @@ geometry_msgs::msg::TwistStamped MPPIController::computeVelocityCommands(
   auto start = std::chrono::system_clock::now();
 #endif
 
-  if ((clock_->now() - last_time_called_).seconds() > reset_period_) {
+  if (clock_->now() - last_time_called_ > rclcpp::Duration::from_seconds(reset_period_)) {
     reset();
   }
   last_time_called_ = clock_->now();
