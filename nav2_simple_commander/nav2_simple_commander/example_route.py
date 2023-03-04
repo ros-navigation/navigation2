@@ -89,7 +89,7 @@ def main():
         # Do something with the feedback, which contains the route / path if tracking
         feedback = navigator.getFeedback(trackingRoute=isTrackingRoute)
         if feedback:
-            print('Got feedback: passed node ' + str(feedback.last_node_id) +
+            print('Passed node ' + str(feedback.last_node_id) +
                   ' to next node ' + str(feedback.next_node_id) + ' along edge ' + str(feedback.current_edge_id) + '.')
 
             if feedback.rerouted:

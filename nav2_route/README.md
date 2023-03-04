@@ -177,9 +177,31 @@ A special case exists for rerouting, where as if we reroute along the same edge 
 
 # Steve's TODO list
 
-- [ ] Test working full system + plugins + rerouting + pruning + operations + feedback / states proper
-- [ ] Integration tests: tracking server + tracker state / feedback / operations correctness + completion. rerouting_start_id + Blocked ids?
-  - Cases: reroute often OK. Reroute in same direction + path partial. Reroute off different direction + no path partial. Start route along first edge. edge exit event occurs at exit of partial + refined estimate.
+- [ ] Testing
+  - Obtuse and acute angle passing logic
+  - Verify terminal passing logic start/end
+  - Check published feedback state (1) coming in when it should (2) containing the correct information and (3) after rerouting as well in both conditions (a) re-along previous route and (b) in another direction
+  - Test rerouting: 
+      (1) regularity OK
+      (2) reroute in same direction and contain partial path and previous state information with operations triggered at exit
+      (3) reroute in another direction and no partial path or state information.
+  - Test each of the operaitons plugins
+      (1) adjust speed,
+      (2) collision monitor
+      (3) rerouting service
+      (4) trigger event
+      (5) storage of time marker
+  - Test each of the edge scorers
+      (1) distance
+      (2) time
+      (3) penalty
+      (4) semantic
+      (5) costmap
+      (6) adjust edges
+  - Test path pruning of nodes when partially along, when too far away, with nodeIDs starting -> prune rerouting while tracking, prune goal off, 
+  - Test blocked IDs 
+
+- [ ] Integration system tests
 
 - [ ] Sample files: AWS final
 - [ ] QGIS demo + plugins for editing and visualizing graphs
