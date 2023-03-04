@@ -99,7 +99,7 @@ Edge1:                     // <-- If provided by format, stored as name in metad
   overridable: False       // <-- Recommended
   cost: 6.0                // <-- Recommended, if relevent
   metadata:
-    speed_limit: 0.85      // <-- Metadata for edge (arbitrary). Use abs_speed_limit if not a percentage
+    speed_limit: 85        // <-- Metadata for edge (arbitrary). Use abs_speed_limit if not a percentage
   operations:
     open_door:             // <-- If provided by format, stored as name in metadata
       type: "open_door"    // <-- Required
@@ -117,7 +117,7 @@ A set of conventions are shown in the table below. The details regarding the con
 
 | Graph File Key  | Information Stored |
 | --------------- | ------------- |
-| `speed_limit`    | Speed limit, represented in percentage 0.0-1.0.  |
+| `speed_limit`    | Speed limit, represented in percentage 0.0-100.0.  |
 | `abs_speed_limit`    | Speed limit, represented in `m/s`.  |
 | `penalty`    | A cost penalty to apply to a node or edge. |
 | `class`    | The semanic class this node belongs to.  |

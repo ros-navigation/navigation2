@@ -54,9 +54,9 @@ OperationResult AdjustSpeedLimit::perform(
     return result;
   }
 
-  float speed_limit = 1.0;
+  float speed_limit = 100.0;
   speed_limit = edge_entered->metadata.getValue<float>(speed_tag_, speed_limit);
-  RCLCPP_DEBUG(logger_, "Setting speed limit to %.2f%% of maximum.", speed_limit * 100.0);
+  RCLCPP_DEBUG(logger_, "Setting speed limit to %.2f%% of maximum.", speed_limit);
 
   auto msg = std::make_unique<nav2_msgs::msg::SpeedLimit>();
   msg->percentage = true;

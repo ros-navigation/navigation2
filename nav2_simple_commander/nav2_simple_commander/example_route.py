@@ -78,6 +78,7 @@ def main():
     # Note for the route server, we have a special route argument in the API b/c it may be
     # providing feedback messages simultaneously to others (e.g. controller or WPF as below)
     isTrackingRoute = True
+    task_canceled = False
     while not navigator.isTaskComplete(trackingRoute=isTrackingRoute):
         ################################################
         #
@@ -88,9 +89,12 @@ def main():
         # Do something with the feedback, which contains the route / path if tracking
         feedback = navigator.getFeedback(trackingRoute=isTrackingRoute)
         if feedback:
+            print('Got feedback: passed node ' + str(feedback.last_node_id) +
+                  ' to next node ' + str(feedback.next_node_id) + ' along edge ' + str(feedback.current_edge_id) + '.')
+
             if feedback.rerouted:
                 # Follow the path from the route server using the controller server
-                print("Passing route to controller!")
+                print('Passing new route to controller!')
                 navigator.followPath(feedback.path)
 
                 # May instead use the waypoint follower and use the route's sparse nodes!
@@ -102,6 +106,12 @@ def main():
         if navigator.isTaskComplete():
             print("Controller or waypoint follower server completed its task!")
             navigator.cancelTask()
+            task_canceled = True
+
+    # Route server will return completed status before the controller / WPF server
+    # so wait for the actual robot task processing server to complete
+    while not navigator.isTaskComplete() and not task_canceled:
+        pass
 
     # Do something depending on the return code
     result = navigator.getResult()
