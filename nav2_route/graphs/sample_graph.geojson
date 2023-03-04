@@ -60,7 +60,8 @@
                 "cost": 10.0,
                 "metadata": 
                 {
-                    "speed_limit": 0.85 
+                    "speed_limit": 0.85,
+                    "aisle_number": 14
                 },
                 "operations":
                 {
