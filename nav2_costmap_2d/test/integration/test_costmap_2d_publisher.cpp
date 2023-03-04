@@ -88,7 +88,7 @@ public:
   explicit LayerSubscriber(const nav2_util::LifecycleNode::WeakPtr & parent)
   {
     auto node = parent.lock();
-
+    logger_ = node->get_logger();
     callback_group_ = node->create_callback_group(
       rclcpp::CallbackGroupType::MutuallyExclusive, false);
 
@@ -123,6 +123,7 @@ protected:
     }
   }
 
+  rclcpp::Logger logger_{rclcpp::get_logger("layer_subscriber")};
   rclcpp::Subscription<nav2_msgs::msg::Costmap>::SharedPtr layer_sub_;
   rclcpp::CallbackGroup::SharedPtr callback_group_;
   rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
@@ -140,9 +141,10 @@ public:
       costmap_lifecycle_node_->shared_from_this());
     costmap_lifecycle_node_->on_configure(costmap_lifecycle_node_->get_current_state());
     costmap_lifecycle_node_->on_activate(costmap_lifecycle_node_->get_current_state());
+    RCLCPP_INFO(costmap_lifecycle_node_->get_logger(), "Constructor Test fixture");
   }
 
-  ~CostmapRosTestFixture() override
+  ~CostmapRosTestFixture()
   {
     costmap_lifecycle_node_->on_deactivate(costmap_lifecycle_node_->get_current_state());
     costmap_lifecycle_node_->on_cleanup(costmap_lifecycle_node_->get_current_state());
@@ -155,10 +157,15 @@ protected:
 
 TEST_F(CostmapRosTestFixture, costmap_pub_test)
 {
+  RCLCPP_INFO(costmap_lifecycle_node_->get_logger(), "Starting costmap_pub_test");
   auto future = layer_subscriber_->layer_promise_.get_future();
+  RCLCPP_INFO(costmap_lifecycle_node_->get_logger(), "Got future");
   auto status = future.wait_for(std::chrono::seconds(5));
+  RCLCPP_INFO(costmap_lifecycle_node_->get_logger(), "Getting status");
+
   EXPECT_TRUE(status == std::future_status::ready);
 
+  RCLCPP_INFO(costmap_lifecycle_node_->get_logger(), "Checking costmap cells");
   auto costmap_raw = future.get();
 
   // Check first 20 cells of the 10by10 map
