@@ -75,7 +75,9 @@ Otherwise, the Node, Edge, and Operations may contain other arbitrary applicatio
 These can be primitive types (float, int, string, etc), vector types (e.g. a polygon or other vector of information), or even contain information nested under namespaces - whereas a metadata object may exist as a key's value within `metadata`.
 
 While GeoJSON is not YAML-based, the following YAML file is provided as a more human-readable example for illustration of the conventions above.
-Usable real graph file demos can be found in the `graphs/` directory.
+Usable real graph file demos can be found in the `graphs/` directory. However, the 
+`sample_graph.geojson` in the `graph/` directory exists to show the different API for options 
+for operations, metadata, recursive metadata and vectors.  
 
 ```
 example_graph.yaml
