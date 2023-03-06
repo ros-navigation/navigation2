@@ -19,7 +19,7 @@
 
 #include "pluginlib/class_list_macros.hpp"
 
-#include "nav2_util/node_utils.hpp"
+#include "nav2_util/node_utils.h"
 
 namespace nav2_waypoint_follower
 {
