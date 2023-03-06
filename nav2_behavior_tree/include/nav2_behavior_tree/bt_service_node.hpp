@@ -39,8 +39,9 @@ class BtServiceNode : public BT::ActionNodeBase
 public:
   /**
    * @brief A nav2_behavior_tree::BtServiceNode constructor
-   * @param service_node_name Service name this node creates a client for
+   * @param service_node_name BT node name
    * @param conf BT node configuration
+   * @param service_name Service name this node creates a client for
    */
   BtServiceNode(
     const std::string & service_node_name,
