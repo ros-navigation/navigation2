@@ -194,13 +194,10 @@ Note that there are parameters like `prune_goal`, `min_distance_from_start` and 
 # Steve's TODO list
 
 - [ ] Testing
-  - Test blocked IDs 
-  - Test each of the operaitons plugins
-      (2) collision monitor --> doesn't seem to work?
-      (3) rerouting service --> see logging but not the changes in route in rviz
-
+  - collision monitor --> doesn't seem to work + blocked IDs given to planner?
+  - rerouting service --> see logging but not the changes in route in rviz
   - Test path pruning of nodes when partially along, when too far away, with nodeIDs starting -> prune rerouting while tracking, prune_goal = false
-  - Check published feedback state (1) coming in when it should (2) containing the correct information and (3) after rerouting as well in both conditions (a) re-along previous route and (b) in another direction
+  - Check published feedback state after rerouting as well in both conditions (a) re-along previous route and (b) in another direction
   - Test rerouting: 
       (1) regularity OK
       (2) reroute in same direction and contain partial path and previous state information with operations triggered at exit
