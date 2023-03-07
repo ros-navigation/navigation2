@@ -44,8 +44,8 @@ PathHandler::getGlobalPlanConsideringBoundsInCostmapFrame(
   using nav2_util::geometry_utils::euclidean_distance;
 
   auto begin = global_plan_.poses.begin();
-  auto end = global_plan_.poses.end();
 
+  // Limit the search for the closest pose up to max_robot_pose_search_dist on the path
   auto closest_pose_upper_bound =
     nav2_util::geometry_utils::first_after_integrated_distance(
     global_plan_.poses.begin(), global_plan_.poses.end(), max_robot_pose_search_dist_);
@@ -61,17 +61,17 @@ PathHandler::getGlobalPlanConsideringBoundsInCostmapFrame(
   transformed_plan.header.frame_id = costmap_->getGlobalFrameID();
   transformed_plan.header.stamp = global_pose.header.stamp;
 
+  auto pruned_plan_end =
+    nav2_util::geometry_utils::first_after_integrated_distance(
+    closest_point, global_plan_.poses.end(), prune_distance_);
+
   unsigned int mx, my;
   // Find the furthest relevent pose on the path to consider within costmap
   // bounds
   // Transforming it to the costmap frame in the same loop
-  for (auto global_plan_pose = closest_point; global_plan_pose != end; ++global_plan_pose) {
-    // Distance relative to robot pose check
-    auto distance = euclidean_distance(global_pose, *global_plan_pose);
-    if (distance >= prune_distance_) {
-      return {transformed_plan, closest_point};
-    }
-
+  for (auto global_plan_pose = closest_point; global_plan_pose != pruned_plan_end;
+    ++global_plan_pose)
+  {
     // Transform from global plan frame to costmap frame
     geometry_msgs::msg::PoseStamped costmap_plan_pose;
     global_plan_pose->header.stamp = global_pose.header.stamp;
