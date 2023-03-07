@@ -58,17 +58,26 @@ void PathAngleCritic::score(CriticData & data)
   const float goal_x = xt::view(data.path.x, offseted_idx);
   const float goal_y = xt::view(data.path.y, offseted_idx);
 
-  if (utils::posePointAngle(data.state.pose.pose, goal_x, goal_y) < max_angle_to_furthest_) {
+  double forward_angle = utils::posePointAngle(data.state.pose.pose, goal_x, goal_y);
+  double backward_angle = angles::normalize_angle(forward_angle + M_PI);
+
+  if (forward_angle < max_angle_to_furthest_ ||
+    backward_angle < max_angle_to_furthest_)
+  {
     return;
   }
 
   const auto yaws_between_points = xt::atan2(
     goal_y - data.trajectories.y,
     goal_x - data.trajectories.x);
+  const auto yaws_plus_pi_between_points = utils::normalize_angles(yaws_between_points + M_PI);
   const auto yaws =
     xt::abs(utils::shortest_angular_distance(data.trajectories.yaws, yaws_between_points));
+  const auto yaws_plus_pi =
+    xt::abs(utils::shortest_angular_distance(data.trajectories.yaws, yaws_plus_pi_between_points));
+  const auto min_yaws = xt::minimum(yaws, yaws_plus_pi);
 
-  data.costs += xt::pow(xt::mean(yaws, {1}, immediate) * weight_, power_);
+  data.costs += xt::pow(xt::mean(min_yaws, {1}, immediate) * weight_, power_);
 }
 
 }  // namespace mppi::critics
