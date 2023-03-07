@@ -131,7 +131,7 @@ TEST(RouteServerTest, test_set_srv)
   server->startup();
   auto srv_client =
     nav2_util::ServiceClient<nav2_msgs::srv::SetRouteGraph>(
-    "set_route_graph", node2);
+    "route_server/set_route_graph", node2);
   auto req = std::make_shared<nav2_msgs::srv::SetRouteGraph::Request>();
   req->graph_filepath = "non/existent/path.json";
   auto resp = srv_client.invoke(req, std::chrono::nanoseconds(1000000000));

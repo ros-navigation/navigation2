@@ -177,7 +177,7 @@ protected:
   std::shared_ptr<typename SrvT::Response> callService(
     typename rclcpp::Client<SrvT>::SharedPtr client,
     std::shared_ptr<typename SrvT::Request> req,
-    const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(5e8))
+    const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(500ms))
   {
     auto node = node_.lock();
     if (!client->wait_for_service(1s)) {

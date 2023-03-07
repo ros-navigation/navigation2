@@ -105,10 +105,10 @@ public:
     ReroutingState & rerouting_info);
 
   /**
-   * @brief Set the start id's start pose for use in pruning if it is externally overridden
-   * @param start_id Id of starting node to prune using
+   * @brief Set the start pose for use in pruning if it is externally overridden
+   * @param start_pose Starting pose of robot to prune using
    */
-  void setStartIdx(const unsigned int start_id);
+  void setStart(const geometry_msgs::msg::PoseStamped & start_pose);
 
 protected:
   rclcpp::Logger logger_{rclcpp::get_logger("GoalIntentExtractor")};

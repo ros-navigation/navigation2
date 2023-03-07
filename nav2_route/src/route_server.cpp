@@ -53,7 +53,7 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     nullptr, std::chrono::milliseconds(500), true);
 
   set_graph_service_ = node->create_service<nav2_msgs::srv::SetRouteGraph>(
-    "set_route_graph",
+    std::string(node->get_name()) + "/set_route_graph",
     std::bind(
       &RouteServer::setRouteGraph, this,
       std::placeholders::_1, std::placeholders::_2));
@@ -205,7 +205,7 @@ Route RouteServer::findRoute(
 
   if (rerouting_info.rerouting_start_id != std::numeric_limits<unsigned int>::max()) {
     start_route = id_to_graph_map_.at(rerouting_info.rerouting_start_id);
-    goal_intent_extractor_->setStartIdx(start_route);
+    goal_intent_extractor_->setStart(rerouting_info.rerouting_start_pose);
   }
 
   Route route;

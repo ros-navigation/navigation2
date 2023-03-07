@@ -30,7 +30,7 @@ void ReroutingService::configure(
   logger_ = node->get_logger();
   reroute_.store(false);
   service_ = node->create_service<std_srvs::srv::Trigger>(
-    getName() + "/reroute",
+    std::string(node->get_name()) + "/" + getName() + "/reroute",
     std::bind(
       &ReroutingService::serviceCb, this,
       std::placeholders::_1, std::placeholders::_2));

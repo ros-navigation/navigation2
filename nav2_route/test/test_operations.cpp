@@ -157,7 +157,7 @@ TEST(OperationsManagerTest, test_processing_speed_on_status)
 
 TEST(OperationsManagerTest, test_rerouting_service_on_query)
 {
-  auto node = std::make_shared<nav2_util::LifecycleNode>("operations_manager_test");
+  auto node = std::make_shared<nav2_util::LifecycleNode>("route_server");
   auto node_thread = std::make_unique<nav2_util::NodeThread>(node);
   auto node_int = std::make_shared<rclcpp::Node>("my_node2");
 
@@ -189,7 +189,7 @@ TEST(OperationsManagerTest, test_rerouting_service_on_query)
 
   auto srv_client =
     nav2_util::ServiceClient<std_srvs::srv::Trigger>(
-    "ReroutingService/reroute", node_int);
+    "route_server/ReroutingService/reroute", node_int);
   auto req = std::make_shared<std_srvs::srv::Trigger::Request>();
   auto resp = srv_client.invoke(req, std::chrono::nanoseconds(1000000000));
   EXPECT_TRUE(resp->success);

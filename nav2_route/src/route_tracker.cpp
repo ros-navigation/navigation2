@@ -222,6 +222,7 @@ TrackerResult RouteTracker::trackRoute(
 
       if (state.last_node) {
         rerouting_info.rerouting_start_id = state.last_node->nodeid;
+        rerouting_info.rerouting_start_pose = robot_pose;
       }
 
       // Update so during rerouting we can check if we are continuing on the same edge

@@ -76,11 +76,9 @@ geometry_msgs::msg::PoseStamped GoalIntentExtractor::transformPose(
   return pose;
 }
 
-void GoalIntentExtractor::setStartIdx(const unsigned int start_idx)
+void GoalIntentExtractor::setStart(const geometry_msgs::msg::PoseStamped & start_pose)
 {
-  const Coordinates & start_coords = graph_->at(start_idx).coords;
-  start_.pose.position.x = start_coords.x;
-  start_.pose.position.y = start_coords.y;
+  start_ = start_pose;
 }
 
 template<typename GoalT>

@@ -19,6 +19,7 @@
 #include <unordered_map>
 #include <utility>
 #include <limits>
+#include <geometry_msgs/msg/pose_stamped.hpp>
 
 #ifndef NAV2_ROUTE__TYPES_HPP_
 #define NAV2_ROUTE__TYPES_HPP_
@@ -240,6 +241,7 @@ struct ReroutingState
   bool first_time{true};
   EdgePtr curr_edge{nullptr};
   Coordinates closest_pt_on_edge;
+  geometry_msgs::msg::PoseStamped rerouting_start_pose;
 
   void reset()
   {
@@ -248,6 +250,7 @@ struct ReroutingState
     first_time = true;
     curr_edge = nullptr;
     closest_pt_on_edge = Coordinates();
+    rerouting_start_pose = geometry_msgs::msg::PoseStamped();
   }
 };
 

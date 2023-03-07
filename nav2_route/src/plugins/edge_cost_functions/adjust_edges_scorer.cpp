@@ -29,7 +29,7 @@ void AdjustEdgesScorer::configure(
   logger_ = node->get_logger();
   service_ =
     node->create_service<nav2_msgs::srv::AdjustEdges>(
-    getName() + "/adjust_edges", std::bind(
+    std::string(node->get_name()) + "/" + getName() + "/adjust_edges", std::bind(
       &AdjustEdgesScorer::closedEdgesCb, this,
       std::placeholders::_1, std::placeholders::_2));
 

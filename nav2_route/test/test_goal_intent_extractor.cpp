@@ -143,13 +143,14 @@ TEST(GoalIntentExtractorTest, test_start_goal_finder)
   EXPECT_EQ(goal1, 8u);
 
   // Set and check reset
+  geometry_msgs::msg::PoseStamped p1;
+  p1.pose.position.x = 45.0;
   auto start = extractor.getStart();
   EXPECT_EQ(start.pose.position.x, 0.0);
   EXPECT_EQ(start.pose.position.y, 0.0);
-  extractor.setStartIdx(goal1);
+  extractor.setStart(p1);
   start = extractor.getStart();
-  EXPECT_EQ(start.pose.position.x, 2.0);
-  EXPECT_EQ(start.pose.position.y, 2.0);
+  EXPECT_EQ(start.pose.position.x, 45.0);
 
   // Test sending a goal with start/goal poses to find closest nodes to
   raw_goal.start.header.frame_id = "map";

@@ -89,7 +89,7 @@ TEST(EdgeScorersTest, test_invalid_edge_scoring)
 {
   // Test API for the edge scorer to maintain proper state when a plugin
   // rejects and edge. Also covers the AdjustEdgesScorer plugin to demonstrate.
-  auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
+  auto node = std::make_shared<nav2_util::LifecycleNode>("route_server");
   auto node_thread = std::make_unique<nav2_util::NodeThread>(node);
   auto node2 = std::make_shared<rclcpp::Node>("my_node2");
 
@@ -105,7 +105,7 @@ TEST(EdgeScorersTest, test_invalid_edge_scoring)
   // Send service to set an edge as invalid
   auto srv_client =
     nav2_util::ServiceClient<nav2_msgs::srv::AdjustEdges>(
-    "AdjustEdgesScorer/adjust_edges", node2);
+    "route_server/AdjustEdgesScorer/adjust_edges", node2);
   auto req = std::make_shared<nav2_msgs::srv::AdjustEdges::Request>();
   req->closed_edges.push_back(10u);
   req->adjust_edges.resize(1);

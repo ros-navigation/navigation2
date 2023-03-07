@@ -192,22 +192,24 @@ Note that there are parameters like `prune_goal`, `min_distance_from_start` and 
 ---
 
 # Steve's TODO list
+- [ ] default plugins to have setup
 
 - [ ] Testing
-  - collision monitor --> doesn't seem to work + blocked IDs given to planner?
-  - rerouting service --> see logging but not the changes in route in rviz
   - Test path pruning of nodes when partially along, when too far away, with nodeIDs starting -> prune rerouting while tracking, prune_goal = false
-  - Check published feedback state after rerouting as well in both conditions (a) re-along previous route and (b) in another direction
   - Test rerouting: 
-      (1) regularity OK
-      (2) reroute in same direction and contain partial path and previous state information with operations triggered at exit
       (3) reroute in another direction and no partial path or state information.
 
+
+
 - [ ] Integration system tests (AWS world?): check initial route is fine, navigate, check feedback state, check operations called, check terminal condition when all stopped in tolerances. Preempt part way through after a particular feedback msg to be deterministic (could use for exit trigger test on partial cont. of edge).
+
+
 
 - [ ] Sample files: AWS final
 - [ ] QGIS demo + plugins for editing and visualizing graphs
 - [ ] use map for checking start/goal nodes for infra blockages not just NN. Evaluate K. Share costmap?
+
+
 
 - [ ] Quality: 
   - BT nodes for 2x route APIs + cancel nodes (+ groot xml + add to BT navlist + add to default yaml list),
