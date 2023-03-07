@@ -33,16 +33,20 @@ OperationsManager::OperationsManager(nav2_util::LifecycleNode::SharedPtr node)
   use_feedback_operations_ = node->get_parameter("use_feedback_operations").as_bool();
 
   // Have some default operations
-  const std::vector<std::string> default_plugin_id({"AdjustSpeedLimit"});
-  const std::string default_plugin_type = "nav2_route::AdjustSpeedLimit";
+  const std::vector<std::string> default_plugin_ids(
+    {"AdjustSpeedLimit", "CollisionMonitor", "ReroutingService"});
+  const std::vector<std::string> default_plugin_types(
+    {"nav2_route::AdjustSpeedLimit", "nav2_route::CollisionMonitor", "nav2_route::ReroutingService"});
 
   nav2_util::declare_parameter_if_not_declared(
-    node, "operations", rclcpp::ParameterValue(default_plugin_id));
+    node, "operations", rclcpp::ParameterValue(default_plugin_ids));
   auto operation_ids = node->get_parameter("operations").as_string_array();
 
-  if (operation_ids == default_plugin_id) {
-    nav2_util::declare_parameter_if_not_declared(
-      node, default_plugin_id[0] + ".plugin", rclcpp::ParameterValue(default_plugin_type));
+  if (operation_ids == default_plugin_ids) {
+    for (unsigned int i = 0; i != operation_ids.size(); i++) {
+      nav2_util::declare_parameter_if_not_declared(
+        node, default_plugin_ids[0] + ".plugin", rclcpp::ParameterValue(default_plugin_types[i]));
+    }
   }
 
   // Create plugins and sort them into On Query, Status Change, and Graph-calling Operations

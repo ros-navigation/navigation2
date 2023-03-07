@@ -90,23 +90,22 @@ def main():
         # Do something with the feedback, which contains the route / path if tracking
         feedback = navigator.getFeedback(trackingRoute=isTrackingRoute)
         while feedback:
-            if feedback:
-                if not last_feedback or
-                    (feedback.last_node_id != last_feedback.last_node_id or
-                        feedback.next_node_id != last_feedback.next_node_id):
-                    print('Passed node ' + str(feedback.last_node_id) +
-                          ' to next node ' + str(feedback.next_node_id) +
-                          ' along edge ' + str(feedback.current_edge_id) + '.')
+            if not last_feedback or \
+                (feedback.last_node_id != last_feedback.last_node_id or \
+                    feedback.next_node_id != last_feedback.next_node_id):
+                print('Passed node ' + str(feedback.last_node_id) +
+                      ' to next node ' + str(feedback.next_node_id) +
+                      ' along edge ' + str(feedback.current_edge_id) + '.')
 
-                if feedback.rerouted:
-                    # Follow the path from the route server using the controller server
-                    print('Passing new route to controller!')
-                    navigator.followPath(feedback.path)
+            if feedback.rerouted:
+                # Follow the path from the route server using the controller server
+                print('Passing new route to controller!')
+                navigator.followPath(feedback.path)
 
-                    # May instead use the waypoint follower (or nav through poses) and use the route's sparse nodes!
-                    # print("Passing route to waypoint follower!")
-                    # nodes = [toPoseStamped(x.position, feedback.route.header) for x in feedback.route.nodes]
-                    # navigator.followWaypoints(nodes)
+                # May instead use the waypoint follower (or nav through poses) and use the route's sparse nodes!
+                # print("Passing route to waypoint follower!")
+                # nodes = [toPoseStamped(x.position, feedback.route.header) for x in feedback.route.nodes]
+                # navigator.followWaypoints(nodes)
 
                 last_feedback = feedback
 

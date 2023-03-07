@@ -192,12 +192,10 @@ Note that there are parameters like `prune_goal`, `min_distance_from_start` and 
 ---
 
 # Steve's TODO list
-- [ ] default plugins to have setup
 
 - [ ] Testing
   - Test path pruning of nodes when partially along, when too far away, with nodeIDs starting -> prune rerouting while tracking, prune_goal = false
-  - Test rerouting: 
-      (3) reroute in another direction and no partial path or state information.
+  - Test rerouting: in another direction and no partial path or state information.
 
 
 

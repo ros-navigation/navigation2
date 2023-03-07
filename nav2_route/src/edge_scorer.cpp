@@ -26,16 +26,19 @@ EdgeScorer::EdgeScorer(nav2_util::LifecycleNode::SharedPtr node)
 : plugin_loader_("nav2_route", "nav2_route::EdgeCostFunction")
 {
   // load plugins with a default of the DistanceScorer
-  const std::vector<std::string> default_plugin_id({"DistanceScorer"});
-  const std::string default_plugin_type = "nav2_route::DistanceScorer";
+  const std::vector<std::string> default_plugin_ids({"DistanceScorer", "AdjustEdgesScorer"});
+  const std::vector<std::string> default_plugin_types(
+    {"nav2_route::DistanceScorer", "nav2_route::AdjustEdgesScorer"});
 
   nav2_util::declare_parameter_if_not_declared(
-    node, "edge_cost_functions", rclcpp::ParameterValue(default_plugin_id));
+    node, "edge_cost_functions", rclcpp::ParameterValue(default_plugin_ids));
   auto edge_cost_function_ids = node->get_parameter("edge_cost_functions").as_string_array();
 
-  if (edge_cost_function_ids == default_plugin_id) {
-    nav2_util::declare_parameter_if_not_declared(
-      node, default_plugin_id[0] + ".plugin", rclcpp::ParameterValue(default_plugin_type));
+  if (edge_cost_function_ids == default_plugin_ids) {
+    for (unsigned int i = 0; i != edge_cost_function_ids.size(); i++) {
+      nav2_util::declare_parameter_if_not_declared(
+        node, default_plugin_ids[i] + ".plugin", rclcpp::ParameterValue(default_plugin_types[i]));
+    }
   }
 
   for (size_t i = 0; i != edge_cost_function_ids.size(); i++) {
