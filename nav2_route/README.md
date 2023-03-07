@@ -193,12 +193,6 @@ Note that there are parameters like `prune_goal`, `min_distance_from_start` and 
 
 # Steve's TODO list
 
-- [ ] Testing
-  - Test path pruning of nodes when partially along, when too far away, with nodeIDs starting -> prune rerouting while tracking, prune_goal = false
-  - Test rerouting: in another direction and no partial path or state information.
-
-
-
 - [ ] Integration system tests (AWS world?): check initial route is fine, navigate, check feedback state, check operations called, check terminal condition when all stopped in tolerances. Preempt part way through after a particular feedback msg to be deterministic (could use for exit trigger test on partial cont. of edge).
 
 

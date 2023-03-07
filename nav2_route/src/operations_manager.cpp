@@ -34,9 +34,9 @@ OperationsManager::OperationsManager(nav2_util::LifecycleNode::SharedPtr node)
 
   // Have some default operations
   const std::vector<std::string> default_plugin_ids(
-    {"AdjustSpeedLimit", "CollisionMonitor", "ReroutingService"});
+    {"AdjustSpeedLimit", "ReroutingService"});
   const std::vector<std::string> default_plugin_types(
-    {"nav2_route::AdjustSpeedLimit", "nav2_route::CollisionMonitor", "nav2_route::ReroutingService"});
+    {"nav2_route::AdjustSpeedLimit", "nav2_route::ReroutingService"});
 
   nav2_util::declare_parameter_if_not_declared(
     node, "operations", rclcpp::ParameterValue(default_plugin_ids));

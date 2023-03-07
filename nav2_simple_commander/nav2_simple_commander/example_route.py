@@ -89,13 +89,15 @@ def main():
 
         # Do something with the feedback, which contains the route / path if tracking
         feedback = navigator.getFeedback(trackingRoute=isTrackingRoute)
-        while feedback:
+        while feedback is not None:
             if not last_feedback or \
                 (feedback.last_node_id != last_feedback.last_node_id or \
                     feedback.next_node_id != last_feedback.next_node_id):
                 print('Passed node ' + str(feedback.last_node_id) +
                       ' to next node ' + str(feedback.next_node_id) +
                       ' along edge ' + str(feedback.current_edge_id) + '.')
+
+            last_feedback = feedback
 
             if feedback.rerouted:
                 # Follow the path from the route server using the controller server
@@ -106,8 +108,6 @@ def main():
                 # print("Passing route to waypoint follower!")
                 # nodes = [toPoseStamped(x.position, feedback.route.header) for x in feedback.route.nodes]
                 # navigator.followWaypoints(nodes)
-
-                last_feedback = feedback
 
             feedback = navigator.getFeedback(trackingRoute=isTrackingRoute)
 
