@@ -120,7 +120,7 @@ protected:
   std::string base_frame_;
   geometry_msgs::msg::PoseStamped start_, goal_;
   bool prune_goal_;
-  float max_dist_from_edge_;
+  float max_dist_from_edge_, min_dist_from_goal_, min_dist_from_start_;
 };
 
 }  // namespace nav2_route

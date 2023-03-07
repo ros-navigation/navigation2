@@ -173,35 +173,38 @@ For the edge boundary cases where there is no last edge (e.g. starting) or next 
 
 A special case exists for rerouting, where as if we reroute along the same edge as we were previously routing through, the tracker state will be reloaded. While the current edge is not reported in the route message (because the last node is passed), that information is inserted back in the tracker to perform edge exit route operations -- and most importantly, the refined bisector-based node achievement criteria (which is why Steve went through the sheer pain to make it possible). 
 
+### Gap and Trivial Routing
+
+If a routing or rerouting request is made using poses which are not known to be nodes in the graph, there may be a gap between the robot's pose and the start of the route (as well as the end of the route and the goal pose) -- or a "last-mile" problem. This gap may be trivial to overcome with denser graphs and small distances beetween nodes that a local trajectory planner can overcome. However, with sparser graphs, some kind of augmentation would likely be required. For example: 
+- (A) Using a behavior tree which uses free-space planning to connect the robot and goal poses with the start / end of the route
+- (B) Using the waypoint follower (or navigate through poses or otherwise) that takes the nodes and uses them as waypoints terminating with the goal pose for freespace navigation using the route as a general prior
+- (C) some other solution which will get the robot from its pose, through the route, to the goal
+- (D) The trajectory planner can handle these gaps itself
+
+A special condition of this when a routing or rerouting request is made up of only 1-2 edges, whereas both the start and the goal are not 'on or near' the terminal nodes (e.g. they're already along an edge meaningfully), the edges may be pruned away leaving only a single node as the route. This is since we have already passed the starting node of the initial edge and/or the goal is along the edge before the ending node of the final edge. This is not different than the other conditions, but is a useful edge case to consider while developing your application solution.
+
+This is an application problem which can be addressed by A, B, C, D but may have other creative solutions for your application. It is on you as an application developer to determine if this is a problem for you and what the most appropriate solution is, since different applications will have different levels of flexibility of deviating from the route or extremely strict route interpretations.
+
+Note that there are parameters like `prune_goal`, `min_distance_from_start` and `min_distance_from_goal` which impact the pruning behavior while tracking a route using poses. There is also the option to request routes using NodeIDs instead of poses, which obviously would never have this issue since they are definitionally on the route graph at all times. 
+
 ---
 
 # Steve's TODO list
 
 - [ ] Testing
-  - Obtuse and acute angle passing logic
-  - Verify terminal passing logic start/end
+  - Test blocked IDs 
+  - Test each of the operaitons plugins
+      (2) collision monitor --> doesn't seem to work?
+      (3) rerouting service --> see logging but not the changes in route in rviz
+
+  - Test path pruning of nodes when partially along, when too far away, with nodeIDs starting -> prune rerouting while tracking, prune_goal = false
   - Check published feedback state (1) coming in when it should (2) containing the correct information and (3) after rerouting as well in both conditions (a) re-along previous route and (b) in another direction
   - Test rerouting: 
       (1) regularity OK
       (2) reroute in same direction and contain partial path and previous state information with operations triggered at exit
       (3) reroute in another direction and no partial path or state information.
-  - Test each of the operaitons plugins
-      (1) adjust speed,
-      (2) collision monitor
-      (3) rerouting service
-      (4) trigger event
-      (5) storage of time marker
-  - Test each of the edge scorers
-      (1) distance
-      (2) time
-      (3) penalty
-      (4) semantic
-      (5) costmap
-      (6) adjust edges
-  - Test path pruning of nodes when partially along, when too far away, with nodeIDs starting -> prune rerouting while tracking, prune goal off, 
-  - Test blocked IDs 
 
-- [ ] Integration system tests
+- [ ] Integration system tests (AWS world?): check initial route is fine, navigate, check feedback state, check operations called, check terminal condition when all stopped in tolerances. Preempt part way through after a particular feedback msg to be deterministic (could use for exit trigger test on partial cont. of edge).
 
 - [ ] Sample files: AWS final
 - [ ] QGIS demo + plugins for editing and visualizing graphs

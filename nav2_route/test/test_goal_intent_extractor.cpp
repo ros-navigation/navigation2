@@ -265,7 +265,7 @@ TEST(GoalIntentExtractorTest, test_pruning)
   EXPECT_EQ(rtn.edges.size(), 3u);
 
   // Test start, and only start is after the start node along edge1, should be pruned
-  start.pose.position.x = 0.1;
+  start.pose.position.x = 0.2;
   extractor.setStartAndGoal(start, goal);
   rtn = extractor.pruneStartandGoal(route, poses_goal, rerouting_info);
   EXPECT_EQ(rtn.edges.size(), 2u);
@@ -273,9 +273,19 @@ TEST(GoalIntentExtractorTest, test_pruning)
   EXPECT_EQ(rtn.start_node->nodeid, 2u);
   EXPECT_EQ(rtn.route_cost, 2.0);
 
+  // Test start, and only start is after the start node along edge1
+  // should not be pruned, within min ditance
+  start.pose.position.x = 0.09;
+  extractor.setStartAndGoal(start, goal);
+  rtn = extractor.pruneStartandGoal(route, poses_goal, rerouting_info);
+  EXPECT_EQ(rtn.edges.size(), 3u);
+  EXPECT_EQ(rtn.edges[0]->edgeid, 5u);
+  EXPECT_EQ(rtn.start_node->nodeid, 1u);
+  EXPECT_EQ(rtn.route_cost, 3.0);
+
   // Test but now with no_poses_goal to test if we trigger with !first_time condition
   // when we should be able to prune due to a secondary trigger as the result of rerouting
-  start.pose.position.x = 0.1;
+  start.pose.position.x = 0.2;
   extractor.setStartAndGoal(start, goal);
   rtn = extractor.pruneStartandGoal(route, no_poses_goal, rerouting_info);
   EXPECT_EQ(rtn.edges.size(), 2u);
@@ -296,6 +306,17 @@ TEST(GoalIntentExtractorTest, test_pruning)
   EXPECT_EQ(rtn.edges.back()->edgeid, 6u);
   EXPECT_EQ(rtn.edges.back()->end->nodeid, 3u);
   EXPECT_EQ(rtn.route_cost, 2.0);
+
+  // Test end, and only end is before the end node along edge3, should not be pruned
+  // As within the min distance
+  start.pose.position.x = 0.0;
+  goal.pose.position.x = 2.9;
+  extractor.setStartAndGoal(start, goal);
+  rtn = extractor.pruneStartandGoal(route, poses_goal, rerouting_info);
+  EXPECT_EQ(rtn.edges.size(), 3u);
+  EXPECT_EQ(rtn.edges.back()->edgeid, 7u);
+  EXPECT_EQ(rtn.edges.back()->end->nodeid, 4u);
+  EXPECT_EQ(rtn.route_cost, 3.0);
 
   // Test both together can be pruned with realistic tracking offsets from route
   // Also, Check route info for resetting to nullptrs since not the same last edge

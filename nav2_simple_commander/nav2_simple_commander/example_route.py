@@ -64,8 +64,8 @@ def main():
     goal_pose = PoseStamped()
     goal_pose.header.frame_id = 'map'
     goal_pose.header.stamp = navigator.get_clock().now().to_msg()
-    goal_pose.pose.position.x = -2.0
-    goal_pose.pose.position.y = -0.5
+    goal_pose.pose.position.x = -4.11
+    goal_pose.pose.position.y = -5.42
     goal_pose.pose.orientation.w = 1.0
 
     # Sanity check a valid route exists using PoseStamped.

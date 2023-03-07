@@ -47,6 +47,12 @@ void GoalIntentExtractor::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, "max_dist_from_edge", rclcpp::ParameterValue(8.0));
   max_dist_from_edge_ = static_cast<float>(node->get_parameter("max_dist_from_edge").as_double());
+  nav2_util::declare_parameter_if_not_declared(
+    node, "min_dist_from_goal", rclcpp::ParameterValue(0.15));
+  min_dist_from_goal_ = static_cast<float>(node->get_parameter("min_dist_from_goal").as_double());
+  nav2_util::declare_parameter_if_not_declared(
+    node, "min_dist_from_start", rclcpp::ParameterValue(0.10));
+  min_dist_from_start_ = static_cast<float>(node->get_parameter("min_dist_from_start").as_double());
 }
 
 void GoalIntentExtractor::setGraph(Graph & graph, GraphToIDMap * id_to_graph_map)
@@ -148,7 +154,10 @@ Route GoalIntentExtractor::pruneStartandGoal(
   float vpy = start_.pose.position.y - first->coords.y;
   float dot_prod = utils::normalizedDot(vrx, vry, vpx, vpy);
   Coordinates closest_pt_on_edge = utils::findClosestPoint(start_, first->coords, next->coords);
-  if (dot_prod > EPSILON && utils::distance(closest_pt_on_edge, start_) <= max_dist_from_edge_) {
+  if (dot_prod > EPSILON &&  // A projection exists
+    hypotf(vpx, vpy) > min_dist_from_start_ &&  // We're not on the node to prune entire edge
+    utils::distance(closest_pt_on_edge, start_) <= max_dist_from_edge_)  // Close enough to edge
+  {
     // Record the pruned edge information if its the same edge as previously routed so that
     // the tracker can seed this information into its state to proceed with its task losslessly
     if (last_curr_edge && last_curr_edge->edgeid == pruned_route.edges.front()->edgeid) {
@@ -161,8 +170,8 @@ Route GoalIntentExtractor::pruneStartandGoal(
     pruned_route.edges.erase(pruned_route.edges.begin());
   }
 
-  // Don't prune the goal if requested or if given a known goal_id (no effect)
-  if (!prune_goal_ || !goal->use_poses) {
+  // Don't prune the goal if requested, if given a known goal_id (no effect), or now empty
+  if (!prune_goal_ || !goal->use_poses || pruned_route.edges.empty()) {
     return pruned_route;
   }
 
@@ -172,9 +181,13 @@ Route GoalIntentExtractor::pruneStartandGoal(
   vry = last->coords.y - next->coords.y;
   vpx = goal_.pose.position.x - last->coords.x;
   vpy = goal_.pose.position.y - last->coords.y;
+
   dot_prod = utils::normalizedDot(vrx, vry, vpx, vpy);
   closest_pt_on_edge = utils::findClosestPoint(goal_, next->coords, last->coords);
-  if (dot_prod < -EPSILON && utils::distance(closest_pt_on_edge, goal_) <= max_dist_from_edge_) {
+  if (dot_prod < -EPSILON &&  // A projection exists
+    hypotf(vpx, vpy) > min_dist_from_goal_ &&  // We're not on the node to prune entire edge
+    utils::distance(closest_pt_on_edge, goal_) <= max_dist_from_edge_)  // Close enough to edge
+  {
     pruned_route.route_cost -= pruned_route.edges.back()->end->search_state.traversal_cost;
     pruned_route.edges.pop_back();
   }
