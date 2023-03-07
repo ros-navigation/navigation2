@@ -16,7 +16,9 @@
 #include <fstream>
 #include <string>
 #include <nlohmann/json.hpp>
+#include <ament_index_cpp/get_package_share_directory.hpp>
 
+#include "nav2_util/node_utils.hpp"
 #include "nav2_route/plugins/graph_file_loaders/geojson_graph_file_loader.hpp"
 
 class RclCppFixture
@@ -325,4 +327,35 @@ TEST(GeoJsonGraphFileLoader, simple_graph)
   EXPECT_EQ(graph[0].neighbors[0].end, &graph[1]);
   EXPECT_TRUE(graph[0].neighbors[0].edge_cost.overridable);
   EXPECT_EQ(graph[0].neighbors[0].edge_cost.cost, 0.0f);
+}
+
+TEST(GeoJsonGraphFileLoader, sample_graph)
+{
+  auto file_path = ament_index_cpp::get_package_share_directory("nav2_route") +
+    "/graphs/sample_graph.geojson";
+
+  Graph graph;
+  GraphToIDMap graph_to_id_map;
+  GeoJsonGraphFileLoader graph_file_loader;
+  bool result = graph_file_loader.loadGraphFromFile(graph, graph_to_id_map, file_path);
+  EXPECT_TRUE(result);
+
+  Metadata region;
+  region = graph[0].metadata.getValue("region", region);
+  EXPECT_EQ(region.data.size(), 3u);
+
+  std::vector<std::any> x_values;
+  x_values = region.getValue("x_values", x_values);
+  EXPECT_EQ(x_values.size(), 4u);
+
+  EXPECT_EQ(graph[0].neighbors[0].edge_cost.cost, 10.0f);
+  EXPECT_EQ(graph[0].neighbors[0].edge_cost.overridable, false);
+
+  auto & operations = graph[0].neighbors[0].operations;
+
+  EXPECT_EQ(operations[0].type, "open_door");
+
+  std::string type;
+  type = operations[1].metadata.getValue("type", type);
+  EXPECT_EQ(type, "jpg");
 }
