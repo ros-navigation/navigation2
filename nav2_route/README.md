@@ -40,12 +40,31 @@ TODO main elements of the package and their role (needs final architecture hashe
 
 ### Plugin Interfaces
 
-TODO provide specifications for plugins // what they do // links (needs plugin API stability)
-TODO plugins list
+Several plugin interfaces are provided to enable customizable behavior in the route search, route operation, and route graph file formatting. This allows for a great deal of customization for any number of applications which might want to (1) prioritize time, distance, or other application-specific criteria in routing; (2) perform custom operations or rerouting mechanics at run-time while progressing along the route such as adjusting speed or opening doors; (3) be able to integrate your own custom file format or another format of your interest.
+
+The interface definitions can be found in the `include/nav2_route/interfaces` directory and are mostly self explanatory via their method names and provided doxygen documentation. The only notable API to mention is regarding `RouteOperation`, where a processing type needs to be specified. This is whether we should evaluate a particular route operation at every iteration, when meaningful statuses have changed, or when the graph's nodes or edges call for it in a particular state change (e.g. entering / exiting an edge or achieving a node).
+
+Provided File Loaders:
+- GeoJsonGraphFileLoader
+
+Provided Edge Cost Function plugins:
+- AdjustEdgesScorer
+- CostmapScorer
+- DistanceScorer
+- PenaltyScorer
+- SemanticScorer
+- TimeScorer
+
+Provided Route Operation plugins:
+- AdjustSpeedLimit
+- CollisionMonitor
+- ReroutingService
+- TimeMarker
+- TriggerEvent (and `RouteOperationClient<SrvT>` base class)
 
 ## Metrics
 
-TODO provide analysis (needs completion + benchmark testing)
+TODO provide analysis (needs benchmark testing)
 
 The use of Kd-trees to find the nearest start and goal nodes in the graph to the request is over 140x faster than data-structure lookups (0.35 ms/1000 lookups vs 50 ms/1000 lookups).
 
