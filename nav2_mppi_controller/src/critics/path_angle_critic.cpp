@@ -59,7 +59,7 @@ void PathAngleCritic::score(CriticData & data)
   const float goal_y = xt::view(data.path.y, offseted_idx);
 
   double forward_angle = utils::posePointAngle(data.state.pose.pose, goal_x, goal_y);
-  double backward_angle = angles::normalize_angle(forward_angle + M_PI);
+  double backward_angle = abs(angles::normalize_angle(forward_angle + M_PI));
 
   if (forward_angle < max_angle_to_furthest_ ||
     backward_angle < max_angle_to_furthest_)
