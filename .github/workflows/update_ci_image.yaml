@@ -91,7 +91,7 @@ jobs:
             trigger=true
           fi
           echo "::set-output name=trigger::${trigger}"
-      - name: Build and push ${{ github.ref_name }}
+      - name: Build and push ${{ github.ref_name }}-dev
         if: steps.config.outputs.trigger == 'true'
         id: docker_build
         uses: docker/build-push-action@v4
@@ -99,16 +99,16 @@ jobs:
           pull: true
           push: true
           no-cache: ${{ steps.config.outputs.no_cache }}
-          cache-from: type=registry,ref=ghcr.io/ros-planning/navigation2:${{ github.ref_name }}
+          cache-from: type=registry,ref=ghcr.io/ros-planning/navigation2:${{ github.ref_name }}-dev
           cache-to: type=inline
-          target: builder
+          target: tester
           tags: |
-            ghcr.io/ros-planning/navigation2:${{ github.ref_name }}
-            ghcr.io/ros-planning/navigation2:${{ github.ref_name }}-${{ steps.config.outputs.timestamp }}
+            ghcr.io/ros-planning/navigation2:${{ github.ref_name }}-dev
+            ghcr.io/ros-planning/navigation2:${{ github.ref_name }}-dev-${{ steps.config.outputs.timestamp }}
       - name: Image digest
         if: steps.config.outputs.trigger == 'true'
         run: echo ${{ steps.docker_build.outputs.digest }}
-      - name: Build and push ${{ github.ref_name }}-dev
+      - name: Build and push ${{ github.ref_name }}
         if: steps.config.outputs.trigger == 'true'
         id: docker_build
         uses: docker/build-push-action@v4
@@ -117,10 +117,10 @@ jobs:
           push: true
           cache-from: type=registry,ref=ghcr.io/ros-planning/navigation2:${{ github.ref_name }}-dev
           cache-to: type=inline
-          target: tester
+          target: builder
           tags: |
-            ghcr.io/ros-planning/navigation2:${{ github.ref_name }}-dev
-            ghcr.io/ros-planning/navigation2:${{ github.ref_name }}-dev-${{ steps.config.outputs.timestamp }}
+            ghcr.io/ros-planning/navigation2:${{ github.ref_name }}
+            ghcr.io/ros-planning/navigation2:${{ github.ref_name }}-${{ steps.config.outputs.timestamp }}
       - name: Image digest
         if: steps.config.outputs.trigger == 'true'
         run: echo ${{ steps.docker_build.outputs.digest }}
