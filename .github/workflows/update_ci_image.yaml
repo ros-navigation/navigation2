@@ -115,7 +115,9 @@ jobs:
         with:
           pull: true
           push: true
-          cache-from: type=registry,ref=ghcr.io/ros-planning/navigation2:${{ github.ref_name }}-dev
+          cache-from: |
+            type=registry,ref=ghcr.io/ros-planning/navigation2:${{ github.ref_name }}
+            type=registry,ref=ghcr.io/ros-planning/navigation2:${{ github.ref_name }}-dev
           cache-to: type=inline
           target: tester
           tags: |
