@@ -51,7 +51,154 @@ The use of Kd-trees to find the nearest start and goal nodes in the graph to the
 
 ## Parameters
 
-TODO provide full list (needs completion)
+```
+route_server:
+  ros__parameters:
+
+    base_frame: "base_link"                       # Robot's base frame
+    route_frame: "map"                            # Global reference frame
+    path_density: 0.05                            # Density of points for generating the dense nav_msgs/Path from route (m)
+    max_iterations: 0                             # Maximum number of search iterations, if 0, uses maximum possible
+    max_planning_time: 2.0                        # Maximum planning time (seconds)
+
+    graph_file_loader: "GeoJsonGraphFileLoader"   # Name of default file loader
+      plugin: nav2_route::GeoJsonGraphFileLoader  # file loader plugin to use 
+    graph_filepath: ""                            # file path to graph to use
+
+    edge_cost_functions: ["DistanceScorer", "AdjustEdgesScorer"]  # Edge scoring cost functions to use
+    <ScorerName>:
+      plugin: "nav2_route::DistanceScorer"        # plugin to use 
+    ...
+
+    operations: ["AdjustSpeedLimit", "ReroutingService"] # Route operations plugins to use
+    <OperationName>:
+      plugin: "nav2_route::AdjustSpeedLimit"      # plugin to use
+    ...
+    use_feedback_operations: True                 # Whether operations may be triggered on feedback message publication rather than in the server itself. This allows operations in the graph that don't exist as plugins to not throw an error. 
+
+    tracker_update_rate: 50.0                     # Rate at which to check the status of path tracking
+    aggregate_blocked_ids: false                  # Whether to aggregate the blocked IDs reported by route operations over the lifespan of the navigation request or only use the currently blocked IDs.
+    boundary_radius_to_achieve_node: 1.0          # Radius (m) near boundary nodes (e.g. start/end) to enable evaluation of achievement metric
+    radius_to_achieve_node: 2.0                   # Radius (m) near route nodes as preliminary condition for evaluation of achievement metric
+
+    max_dist_from_edge: 8.0                       # Max distance from an edge to consider pruning it as in-progress (e.g. if we're too far away from the edge, its nonsensical to prune it)
+    min_dist_from_goal: 0.15                      # Min distance from goal node away from goal pose to consider goal node pruning as considering it as being passed (in case goal pose is very close to a goal node, but not exact)
+    min_dist_from_start: 0.10                     # Min distance from start node away from start pose to consider start node pruning as considering it as being passed (in case start pose is very close to a start node, but not exact)
+    prune_goal: true                              # Whether pruning the goal node from the route due to being past the goal pose requested is possible (pose requests only)
+```
+
+### `CostmapScorer`
+
+This edge scoring plugin will score based on the costmap values of the edge (e.g. using either maximum cost on the edge or average cost)
+
+| Parameter             | Description                                                         |
+|-----------------------|---------------------------------------------------------------------|
+| weight                | Relative scoring weight (1.0)                                       |
+| costmap_topic         | Costmap topic for collision checking (`local_costmap/costmap_raw`)  |
+| max_cost              | Maximum cost to consider an route blocked (253.0)                   |
+| use_maximum           | Whether to score based on single maximum or average (true)          |
+| invalid_on_collision  | Whether to consider collision status as a terminal condition (true) |
+| invalid_off_map       | Whether to consider route going off the map invalid (false)         |
+
+### `DistanceScorer`
+
+This edge scoring plugin will score based on the distance length of the edge, weighted proportionally to percentage-based speed limits (if set in the graph)
+
+| Parameter             | Description                                                         |
+|-----------------------|---------------------------------------------------------------------|
+| weight                | Relative scoring weight (1.0)                                       |
+| speed_tag             | Graph metadata key to look for % speed limits (speed_limit)         |
+
+### `TimeScorer`
+
+This edge scoring plugin will score based on the time to traverse the length of the edge. This will use the distance of the edge weighted in proportion to the absolute speed limits of the robot over an edge. If none is set in the graph, a parameterized maximum speed will be used. If an actual, measured time of a previous traversal is in the edge's metadata, this will be used.
+
+| Parameter             | Description                                                         |
+|-----------------------|---------------------------------------------------------------------|
+| weight                | Relative scoring weight (1.0)                                       |
+| speed_tag             | Graph metadata key to look for abs speed limits (abs_speed_limit)   |
+| time_tag              | Graph metadata key to look for abs traversal times (abs_time_taken) |
+| max_vel               | Maximum velocity to use if speed limit or time taken is not set     |
+
+### `PenaltyScorer`
+
+This edge scoring plugin will score based on a statically set penalty in the graph file for a particular edge. This can be based on application known logic to weight preferences of navigation tactics in a space.
+
+| Parameter             | Description                                                         |
+|-----------------------|---------------------------------------------------------------------|
+| weight                | Relative scoring weight (1.0)                                       |
+| penalty_tag           | Graph metadata key to look for penalty value (penalty)              |
+
+### `SemanticScorer`
+
+This edge scoring plugin will score based on semantic information provided in the graph file. It can either check for the edge's semantic class via a parameterized key's value **or** search all key names to match known semantic classes to apply weight (e.g. `class: highway` or `highway: <some other application info>`).
+
+| Parameter             | Description                                                         |
+|-----------------------|---------------------------------------------------------------------|
+| weight                | Relative scoring weight (1.0)                                       |
+| semantic_classes      | A list of semantic classes possible in your graph                   |
+| `<for each class>`    | The cost to apply for a class (e.g. `highway: 8.4`)                 |
+| semantic_key          | Key to search edges for for semantic data (class). If empty string, will look at key names instead. |
+
+### `AdjustEdgesScorer`
+
+This edge scoring plugin will score based on the requested values from a 3rd party application via a service interface. It can set dynamically any cost for any edge and also be used to close and reopen particular edges if they are blocked or otherwise temporarily non-traversible.
+
+### `AdjustSpeedLimit`
+
+This route operation will check the graph at each state change (e.g. node passed) if the new edge entered contains speed limit restrictions. If so, it will publish those to the speed limit topic to be received by the controller server.
+
+| Parameter             | Description                                                         |
+|-----------------------|---------------------------------------------------------------------|
+| speed_limit_topic     | Topic to publish new speed limits to (speed_limit)                  |
+| speed_tag             | Graph metadata key to look for % speed limits (speed_limit)         |
+
+### `CollisionMonitor`
+
+This route operation will evalulate a future-looking portion of the route for validity w.r.t. collision in the costmap. If it is blocked, it sets the edge blocked as blocked for rerouting around the blocked edge.
+
+| Parameter             | Description                                                         |
+|-----------------------|---------------------------------------------------------------------|
+| costmap_topic         | Costmap topic (global_costmap/costmap_raw)                          |
+| rate                  | Throttled rate to evaluate collision at, rather than `tracker_update_rate` which might be excessively expensive for forward looking non-control collision checking (1.0 hz)             |
+| max_cost              | Max cost to be considered invalid (253.0)                           |
+| max_collision_dist    | How far ahead to evaluate the route's validity (5.0 m)              |
+
+### `ReroutingService`
+
+This route operation will receive service requests from a 3rd party application to cause a rerouting request.
+
+### `TimeMarker`
+
+This route operation will track times taken to traverse particular edges to write times to for later improved navigation time estimation.
+
+| Parameter             | Description                                                         |
+|-----------------------|---------------------------------------------------------------------|
+| time_tag              | Graph edge metadata key to write to (abs_time_taken)                |
+
+### `TriggerEvent`
+
+This route operation will trigger an external service when a graph node or edge contains a route operation of this name. It uses a `std_srvs/Trigger` interface and is a demonstration of the `RouteOperationClient<SrvT>` base class which can be used to trigger other events of other types of other names as desired (opening doors, calling elevators, etc).
+
+## ROS Interfaces
+
+
+| Topic           | Type                                |
+|-----------------|-------------------------------------|
+| plan            | nav_msgs/msg/Path                   |
+| speed_limit     | nav2_msgs/msg/SpeedLimit            |
+| route_graph     | visualization_msgs/msg/MarkerArray  |
+
+| Service                                         | Description                                                    |
+|-------------------------------------------------|----------------------------------------------------------------|
+| `route_server/set_route_graph`                  | Sets new route graph to use                                    |
+| `route_server/<AdjustEdgesScorer>/adjust_edges` | Sets adjust edge values and closure from 3rd party application |
+| `route_server/<ReroutingService>/reroute`       | Trigger a reroute from a 3rd party                             |
+
+| Action                           | Description                                                           |
+|----------------------------------|-----------------------------------------------------------------------|
+| `compute_route`                  | Computes and returns a sparse graph route and dense interpolated path |
+| `compute_and_track_route`        | Computes and tracks a route for route operations and progress, returns route and path via process feedback also containing current state and operations triggered |
 
 ## File Formats
 
