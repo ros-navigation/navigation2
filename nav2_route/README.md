@@ -109,7 +109,7 @@ route_server:
     prune_goal: true                              # Whether pruning the goal node from the route due to being past the goal pose requested is possible (pose requests only)
 ```
 
-### `CostmapScorer`
+#### `CostmapScorer`
 
 This edge scoring plugin will score based on the costmap values of the edge (e.g. using either maximum cost on the edge or average cost)
 
@@ -122,7 +122,7 @@ This edge scoring plugin will score based on the costmap values of the edge (e.g
 | invalid_on_collision  | Whether to consider collision status as a terminal condition (true) |
 | invalid_off_map       | Whether to consider route going off the map invalid (false)         |
 
-### `DistanceScorer`
+#### `DistanceScorer`
 
 This edge scoring plugin will score based on the distance length of the edge, weighted proportionally to percentage-based speed limits (if set in the graph)
 
@@ -131,7 +131,7 @@ This edge scoring plugin will score based on the distance length of the edge, we
 | weight                | Relative scoring weight (1.0)                                       |
 | speed_tag             | Graph metadata key to look for % speed limits (speed_limit)         |
 
-### `TimeScorer`
+#### `TimeScorer`
 
 This edge scoring plugin will score based on the time to traverse the length of the edge. This will use the distance of the edge weighted in proportion to the absolute speed limits of the robot over an edge. If none is set in the graph, a parameterized maximum speed will be used. If an actual, measured time of a previous traversal is in the edge's metadata, this will be used.
 
@@ -142,7 +142,7 @@ This edge scoring plugin will score based on the time to traverse the length of 
 | time_tag              | Graph metadata key to look for abs traversal times (abs_time_taken) |
 | max_vel               | Maximum velocity to use if speed limit or time taken is not set     |
 
-### `PenaltyScorer`
+#### `PenaltyScorer`
 
 This edge scoring plugin will score based on a statically set penalty in the graph file for a particular edge. This can be based on application known logic to weight preferences of navigation tactics in a space.
 
@@ -151,7 +151,7 @@ This edge scoring plugin will score based on a statically set penalty in the gra
 | weight                | Relative scoring weight (1.0)                                       |
 | penalty_tag           | Graph metadata key to look for penalty value (penalty)              |
 
-### `SemanticScorer`
+#### `SemanticScorer`
 
 This edge scoring plugin will score based on semantic information provided in the graph file. It can either check for the edge's semantic class via a parameterized key's value **or** search all key names to match known semantic classes to apply weight (e.g. `class: highway` or `highway: <some other application info>`).
 
@@ -162,11 +162,11 @@ This edge scoring plugin will score based on semantic information provided in th
 | `<for each class>`    | The cost to apply for a class (e.g. `highway: 8.4`)                 |
 | semantic_key          | Key to search edges for for semantic data (class). If empty string, will look at key names instead. |
 
-### `AdjustEdgesScorer`
+#### `AdjustEdgesScorer`
 
 This edge scoring plugin will score based on the requested values from a 3rd party application via a service interface. It can set dynamically any cost for any edge and also be used to close and reopen particular edges if they are blocked or otherwise temporarily non-traversible.
 
-### `AdjustSpeedLimit`
+#### `AdjustSpeedLimit`
 
 This route operation will check the graph at each state change (e.g. node passed) if the new edge entered contains speed limit restrictions. If so, it will publish those to the speed limit topic to be received by the controller server.
 
@@ -175,7 +175,7 @@ This route operation will check the graph at each state change (e.g. node passed
 | speed_limit_topic     | Topic to publish new speed limits to (speed_limit)                  |
 | speed_tag             | Graph metadata key to look for % speed limits (speed_limit)         |
 
-### `CollisionMonitor`
+#### `CollisionMonitor`
 
 This route operation will evalulate a future-looking portion of the route for validity w.r.t. collision in the costmap. If it is blocked, it sets the edge blocked as blocked for rerouting around the blocked edge.
 
@@ -186,11 +186,11 @@ This route operation will evalulate a future-looking portion of the route for va
 | max_cost              | Max cost to be considered invalid (253.0)                           |
 | max_collision_dist    | How far ahead to evaluate the route's validity (5.0 m)              |
 
-### `ReroutingService`
+#### `ReroutingService`
 
 This route operation will receive service requests from a 3rd party application to cause a rerouting request.
 
-### `TimeMarker`
+#### `TimeMarker`
 
 This route operation will track times taken to traverse particular edges to write times to for later improved navigation time estimation.
 
@@ -198,7 +198,7 @@ This route operation will track times taken to traverse particular edges to writ
 |-----------------------|---------------------------------------------------------------------|
 | time_tag              | Graph edge metadata key to write to (abs_time_taken)                |
 
-### `TriggerEvent`
+#### `TriggerEvent`
 
 This route operation will trigger an external service when a graph node or edge contains a route operation of this name. It uses a `std_srvs/Trigger` interface and is a demonstration of the `RouteOperationClient<SrvT>` base class which can be used to trigger other events of other types of other names as desired (opening doors, calling elevators, etc).
 
@@ -379,7 +379,7 @@ Note that there are parameters like `prune_goal`, `min_distance_from_start` and 
 
 - [ ] Quality: 
   - BT nodes for 2x route APIs + cancel nodes (+ groot xml + add to BT navlist + add to default yaml list),
-  - web documentation (BT node configuration page, package configuration page),
+  - web documentation (BT node configuration page, package configuration page, migration),
   - readme complete,
   - Keep graph visualization in rviz but turn off by default
   - Default graph sandbox + launch configuration to set (and get filepath + mirror `map` comments). 
