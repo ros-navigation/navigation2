@@ -2,6 +2,7 @@
 # Repo
 
 .circleci/
+.devcontainer/
 .github/
 .git/
 .github/
