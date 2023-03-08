@@ -418,13 +418,20 @@ inline void setPathCostsIfNotSet(
  * @param point_y Point to find angle relative to Y axis
  * @return Angle between two points
  */
-inline double posePointAngle(const geometry_msgs::msg::Pose & pose, double point_x, double point_y)
+inline double posePointAngle(
+  const geometry_msgs::msg::Pose & pose, double point_x, double point_y,
+  double point_yaw)
 {
   double pose_x = pose.position.x;
   double pose_y = pose.position.y;
   double pose_yaw = tf2::getYaw(pose.orientation);
 
   double yaw = atan2(point_y - pose_y, point_x - pose_x);
+
+  if (abs(angles::shortest_angular_distance(yaw, point_yaw)) > M_PI_2) {
+    yaw = angles::normalize_angle(yaw + M_PI);
+  }
+
   return abs(angles::shortest_angular_distance(yaw, pose_yaw));
 }
 
