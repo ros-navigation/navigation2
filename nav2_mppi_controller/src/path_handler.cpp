@@ -75,6 +75,7 @@ PathHandler::getGlobalPlanConsideringBoundsInCostmapFrame(
     // Transform from global plan frame to costmap frame
     geometry_msgs::msg::PoseStamped costmap_plan_pose;
     global_plan_pose->header.stamp = global_pose.header.stamp;
+    global_plan_pose->header.frame_id = global_plan_.header.frame_id;
     transformPose(costmap_->getGlobalFrameID(), *global_plan_pose, costmap_plan_pose);
 
     // Check if pose is inside the costmap
