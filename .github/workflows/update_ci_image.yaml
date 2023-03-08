@@ -108,3 +108,20 @@ jobs:
       - name: Image digest
         if: steps.config.outputs.trigger == 'true'
         run: echo ${{ steps.docker_build.outputs.digest }}
+      - name: Build and push
+        if: steps.config.outputs.trigger == 'true'
+        id: docker_build
+        uses: docker/build-push-action@v4
+        with:
+          pull: true
+          push: true
+          no-cache: ${{ steps.config.outputs.no_cache }}
+          cache-from: type=registry,ref=ghcr.io/ros-planning/navigation2:${{ github.ref_name }}
+          cache-to: type=inline
+          target: builder
+          tags: |
+            ghcr.io/ros-planning/navigation2:${{ github.ref_name }}
+            ghcr.io/ros-planning/navigation2:${{ github.ref_name }}-${{ steps.config.outputs.timestamp }}
+      - name: Image digest
+        if: steps.config.outputs.trigger == 'true'
+        run: echo ${{ steps.docker_build.outputs.digest }}
