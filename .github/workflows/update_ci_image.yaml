@@ -119,6 +119,9 @@ jobs:
             type=registry,ref=ghcr.io/ros-planning/navigation2:${{ github.ref_name }}
             type=registry,ref=ghcr.io/ros-planning/navigation2:${{ github.ref_name }}-dev
           cache-to: type=inline
+          build-args: |
+            RUN_TESTS=True
+            FAIL_ON_TEST_FAILURE=''
           target: tester
           tags: |
             ghcr.io/ros-planning/navigation2:${{ github.ref_name }}-dev
