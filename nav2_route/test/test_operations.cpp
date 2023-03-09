@@ -140,12 +140,14 @@ TEST(OperationsManagerTest, test_processing_speed_on_status)
   // No status change, shouldn't do anything
   OperationsResult result = manager.process(false, state, route, pose, info);
   EXPECT_FALSE(result.reroute);
-  EXPECT_EQ(result.operations_triggered.size(), 0u);
+  EXPECT_EQ(result.operations_triggered.size(), 1u);  // ReroutingService
+  EXPECT_EQ(result.operations_triggered[0], std::string("ReroutingService"));
 
   // Status change, may now trigger the only plugin
   result = manager.process(true, state, route, pose, info);
-  EXPECT_EQ(result.operations_triggered.size(), 1u);
+  EXPECT_EQ(result.operations_triggered.size(), 2u);
   EXPECT_EQ(result.operations_triggered[0], std::string("AdjustSpeedLimit"));
+  EXPECT_EQ(result.operations_triggered[1], std::string("ReroutingService"));
   rclcpp::Rate r(10);
   r.sleep();
 

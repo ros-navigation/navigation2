@@ -367,26 +367,26 @@ Note that there are parameters like `prune_goal`, `min_distance_from_start` and 
 
 # Steve's TODO list
 
-- [ ] Integration system tests (AWS world?): check initial route is fine, navigate, check feedback state, check operations called, check terminal condition when all stopped in tolerances. Preempt part way through after a particular feedback msg to be deterministic (could use for exit trigger test on partial cont. of edge).
+
+- [ ] readme complete
 
 
-
-- [ ] Sample files: AWS final
+- [ ] Sample files: AWS final + TB3 sandbox world
 - [ ] QGIS demo + plugins for editing and visualizing graphs
 - [ ] use map for checking start/goal nodes for infra blockages not just NN. Evaluate K. Share costmap?
-
 
 
 - [ ] Quality: 
   - BT nodes for 2x route APIs + cancel nodes (+ groot xml + add to BT navlist + add to default yaml list),
   - web documentation (BT node configuration page, package configuration page, migration),
-  - readme complete,
   - Keep graph visualization in rviz but turn off by default
   - Default graph sandbox + launch configuration to set (and get filepath + mirror `map` comments). 
 
   - Tutorials (bt change, plugin customize, file field examples)
   - BT XMLs (first/last mile, freq. replanning, navigation using it, WPF using it, clearance)
   - Demos (route -> global -> local. outdoor non-planar. waypoint follower (GPS?) of route nodes. controller server of dense path)
+
+  - Finish system test with route file + evaluation
 
 - [ ] Testing by users
 

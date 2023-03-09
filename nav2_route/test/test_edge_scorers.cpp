@@ -48,7 +48,7 @@ TEST(EdgeScorersTest, test_api)
   // Tests basic API and default behavior. Also covers the DistanceScorer plugin.
   auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
   EdgeScorer scorer(node);
-  EXPECT_EQ(scorer.numPlugins(), 1);  // default DistanceScorer
+  EXPECT_EQ(scorer.numPlugins(), 2);  // default DistanceScorer, AdjustEdgesScorer
 
   Node n1, n2;
   n1.nodeid = 1;

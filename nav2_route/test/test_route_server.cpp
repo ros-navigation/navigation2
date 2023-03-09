@@ -23,6 +23,7 @@
 #include "tf2_ros/create_timer_ros.h"
 #include "tf2_ros/transform_listener.h"
 #include "nav2_util/lifecycle_node.hpp"
+#include "std_srvs/srv/trigger.hpp"
 #include "nav2_util/service_client.hpp"
 #include "nav2_core/route_exceptions.hpp"
 #include "nav2_route/route_tracker.hpp"
@@ -277,6 +278,15 @@ TEST(RouteServerTest, test_complete_action_api)
   auto future_goal3 = track_client->async_send_goal(goal2);
   rclcpp::spin_until_future_complete(node2, future_goal3);
   auto goal_handle3 = future_goal3.get();
+
+  // Request a reroute
+  auto node_int = std::make_shared<rclcpp::Node>("my_node2");
+  auto srv_client =
+    nav2_util::ServiceClient<std_srvs::srv::Trigger>(
+    "route_server/ReroutingService/reroute", node_int);
+  auto req = std::make_shared<std_srvs::srv::Trigger::Request>();
+  auto resp = srv_client.invoke(req, std::chrono::nanoseconds(1000000000));
+  EXPECT_TRUE(resp->success);
 
   // Cancel them all
   track_client->async_cancel_all_goals();

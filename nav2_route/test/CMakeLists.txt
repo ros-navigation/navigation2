@@ -1,3 +1,16 @@
+# Route planner benchmarking script
+add_executable(performance_benchmarking performance_benchmarking.cpp)
+target_link_libraries(performance_benchmarking
+  ${library_name}
+)
+ament_target_dependencies(performance_benchmarking
+  ${dependencies}
+)
+install(TARGETS
+  performance_benchmarking
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
+
 # Test utilities and basic types
 ament_add_gtest(test_utils_and_types
   test_utils_and_types.cpp

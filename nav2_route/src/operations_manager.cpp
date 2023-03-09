@@ -45,7 +45,7 @@ OperationsManager::OperationsManager(nav2_util::LifecycleNode::SharedPtr node)
   if (operation_ids == default_plugin_ids) {
     for (unsigned int i = 0; i != operation_ids.size(); i++) {
       nav2_util::declare_parameter_if_not_declared(
-        node, default_plugin_ids[0] + ".plugin", rclcpp::ParameterValue(default_plugin_types[i]));
+        node, default_plugin_ids[i] + ".plugin", rclcpp::ParameterValue(default_plugin_types[i]));
     }
   }
 
