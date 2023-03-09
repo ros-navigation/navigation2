@@ -370,7 +370,7 @@ inline void findPathCosts(
   auto * costmap = costmap_ros->getCostmap();
   unsigned int map_x, map_y;
   const size_t path_segments_count = data.path.x.shape(0) - 1;
-  data.path_pts_valid = std::vector<bool>(path_segments_count - 1, false);
+  data.path_pts_valid = std::vector<bool>(path_segments_count, false);
   for (unsigned int idx = 0; idx < path_segments_count; idx++) {
     const auto path_x = data.path.x(idx);
     const auto path_y = data.path.y(idx);
