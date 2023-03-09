@@ -38,11 +38,15 @@ Note however that plugins may also use outside information from topics, services
 
 ## Design
 
+The Nav2 Route Server is designed of several composed objects to make the system easy to understand and easily unit testable. The breakdown exists between different classes of capabilities like ROS 2 Interfaces (e.g. actions, services, debugging topics), the core search algorithm, scoring factory, route progress tracking, operations factory, file parsing, and action request 'intent' extraction. This distinction makes a relatively complex system easier to grasp, as there are quite a large number of moving pieces. Luckily, few of these pieces (tracker is the exception) don't need to know much about each other so they can be isolated.
+
+The diagram below provides context for how the package is structured from the consititutent files you'll find in this project. 
+
 <p align="center">
   <img width="800" src="media/architecture.png">
 </p>
 
-TODO  main elements of the package and their role
+Each have their own complete unit testing files named similarly in the `test/` directory. As the diagram suggests, plugin interfaces exist in the file loader, edge scorer, and operations manager to enable customizable behavior for different applications.
 
 ### Plugin Interfaces
 
