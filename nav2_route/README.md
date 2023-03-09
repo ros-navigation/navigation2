@@ -14,7 +14,7 @@ Additionally, the parsers store **additional arbitrary metadata** specified with
 Thus, we do not restrict the data that can be embedded in the navigation route graph for an application and this metadata is communicated to the edge scoring and operations plugins to adjust behavior.
 Note however that plugins may also use outside information from topics, services, and actions for dynamic behavior or centralized knowledge sharing as well. 
 
-TODO GIF
+[A demo of the basic features can be seen here](https://www.youtube.com/watch?v=T57pac6q4RU) using the `route_example_launch.py` provided in `nav2_simple_commander`.
 
 ## Features
 
@@ -31,37 +31,24 @@ TODO GIF
 - Graph file parsing dynamic plugins allow for use of custom or proprietary formats
 - Operation dynamic plugins to perform arbitrary tasks at a given node or when entering or leaving an edge on the route
 - Operation may be graph-centric (e.g. graph file identifies operation to perform) or plugin-centric (e.g. plugins self-identify nodes and edges to act upon) 
+- Operations may trigger rerouting if necessary (e.g. due to new information, blockages, etc)
 - The nodes and edges metadata may be modified or used to communicate information across plugins including different types across different runs
 - The Route Tracking action returns regular feedback on important events or state updates (e.g. rerouting requests, passed a node, triggered an option, etc)
 - If rerouting occurs during Route Tracking along the previous current edge, that state will be retained for improved behavior and provide an interpolated nav_msgs/Path from the closest point on the edge to the edge's end (or rerouting's starting node) to minimize free-space planning connections where a known edge exists and is being continued.
 
 ## Design
 
-TODO architectural diagram + main elements of the package and their role
+<p align="center">
+  <img width="460" height="300" src="media/architecture.png">
+</p>
+
+TODO  main elements of the package and their role
 
 ### Plugin Interfaces
 
 Several plugin interfaces are provided to enable customizable behavior in the route search, route operation, and route graph file formatting. This allows for a great deal of customization for any number of applications which might want to (1) prioritize time, distance, or other application-specific criteria in routing; (2) perform custom operations or rerouting mechanics at run-time while progressing along the route such as adjusting speed or opening doors; (3) be able to integrate your own custom file format or another format of your interest.
 
 The interface definitions can be found in the `include/nav2_route/interfaces` directory and are mostly self explanatory via their method names and provided doxygen documentation. 
-
-Provided File Loaders:
-- GeoJsonGraphFileLoader
-
-Provided Edge Cost Function plugins:
-- AdjustEdgesScorer
-- CostmapScorer
-- DistanceScorer
-- PenaltyScorer
-- SemanticScorer
-- TimeScorer
-
-Provided Route Operation plugins:
-- AdjustSpeedLimit
-- CollisionMonitor
-- ReroutingService
-- TimeMarker
-- TriggerEvent (and `RouteOperationClient<SrvT>` base class)
 
 ## Metrics
 
@@ -405,14 +392,9 @@ Note that there are parameters like `prune_goal`, `min_distance_from_start` and 
 
 # Steve's TODO list
 
-
-- [ ] readme complete
-
-
 - [ ] Sample files: AWS final + TB3 sandbox world
 - [ ] QGIS demo + plugins for editing and visualizing graphs
 - [ ] use map for checking start/goal nodes for infra blockages not just NN. Evaluate K. Share costmap?
-
 
 - [ ] Quality: 
   - BT nodes for 2x route APIs + cancel nodes (+ groot xml + add to BT navlist + add to default yaml list),
