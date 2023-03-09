@@ -39,7 +39,7 @@ Note however that plugins may also use outside information from topics, services
 ## Design
 
 <p align="center">
-  <img width="460" height="300" src="media/architecture.png">
+  <img width="600" height="480" src="media/architecture.png">
 </p>
 
 TODO  main elements of the package and their role
