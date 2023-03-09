@@ -65,9 +65,47 @@ Provided Route Operation plugins:
 
 ## Metrics
 
-TODO provide analysis (needs benchmark testing)
+The script used for this analysis can be found in `test/performance_benchmarking.cpp`.
 
-The use of Kd-trees to find the nearest start and goal nodes in the graph to the request is over 140x faster than data-structure lookups (0.35 ms/1000 lookups vs 50 ms/1000 lookups).
+### Typical Performance
+
+A set of 1,000 experiments were run with the route planner with randomly selected start and goal poses, with various sized graphs. These metrics provide some reasonable benchmarking for performance of how the route server will perform in your application with various sized graphs that represent your environment:
+
+| Graph size  | Ave. Search Time    |
+| ----------- | ------------------- |
+| 100         | 0.0031 ms           |
+| 10,000      | 0.232 ms            |
+| 90,000      | 3.75 ms             |
+| 250,000     | 11.36 ms            |
+| 1,000,000   | 44.07 ms            |
+
+This is in comparison with typical run-times of free-space global planners between 20 ms - 240 ms (depending on environment size and structure). Thus, the typical performance of using the route planner - even in truly massive environments to need hundreds of thousands of nodes of interest or importance - is well in excess of freespace planning. This enables Nav2 to operate in much larger spaces and still perform global routing.
+
+### Worse-Case Performance
+
+Its useful to repeat these 1,000 experiments but now instead of using random start and goal poses, we utilize the known corners of the a graph to provide "worst case" metrics if the route planner needs to plan clear across an entire space.
+
+| Graph size  | Ave. Search Time    |
+| ----------- | ------------------- |
+| 100         | 0.024 ms            |
+| 10,000      | 1.81 ms             |
+| 90,000      | 21.62 ms            |
+| 250,000     | 65.30 ms            |
+| 1,000,000   | 263.9 ms            |
+
+Comparing with the run-times of free-space global planners, it is well within the ballpark for drop-in level replacement without needing to think too much about its performance relative to previous planning options - even in the worst case! 
+
+### Kd Tree Lookups
+
+Besides the route planning itself, the second most expensive operation (beyond the overhead of ROS) is correlating the requested start and goal poses with nodes in the graph for search. The use of Kd-trees to find the nearest start and goal nodes is over 140x faster than data-structure lookups. Experiments show this is sufficiently fast for even remarkably massive graphs to be inconsequential in terms of compute time utilized:
+
+| Graph size  | Kd Tree Lookup      |
+| ----------- | ------------------- |
+| 100         | 0.00020 ms          |
+| 10,000      | 0.00027 ms          |
+| 90,000      | 0.00061 ms          |
+| 250,000     | 0.00076 ms          |
+| 1,000,000   | 0.00103 ms          |
 
 ## Parameters
 
