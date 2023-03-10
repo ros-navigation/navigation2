@@ -3,10 +3,10 @@
 
 .circleci/
 .devcontainer/
-.github/
+.dockerignore
 .git/
 .github/
-.dockerignore
 .gitignore
-**Dockerfile
 **.Dockerfile
+**Dockerfile
+doc/
