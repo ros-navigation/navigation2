@@ -26,8 +26,8 @@ jobs:
         id: check
         if: github.event_name == 'push'
         run: |
-          echo "::set-output name=trigger::true"
-          echo "::set-output name=no_cache::false"
+          echo "trigger=true" >> $GITHUB_OUTPUT
+          echo "no_cache=false" >> $GITHUB_OUTPUT
   check_ci_image:
     name: Check CI Image
     if: github.event_name == 'schedule'
@@ -52,9 +52,9 @@ jobs:
           cat upgrade.log
           cat upgrade.log \
             | grep "^0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.$" \
-            && echo "::set-output name=trigger::false" \
-            || echo "::set-output name=trigger::true"
-          echo "::set-output name=no_cache::true"
+            && echo "trigger=false" >> $GITHUB_OUTPUT \
+            || echo "trigger=true" >> $GITHUB_OUTPUT
+          echo "no_cache=true" >> $GITHUB_OUTPUT
   rebuild_ci_image:
     name: Rebuild CI Image
     if: always()
@@ -75,7 +75,7 @@ jobs:
         id: config
         run: |
           timestamp=$(date --utc +%Y%m%d%H%M%S)
-          echo "::set-output name=timestamp::${timestamp}"
+          echo "timestamp=${timestamp}" >> $GITHUB_OUTPUT
 
           no_cache=false
           if  [ "${{needs.check_ci_files.outputs.no_cache}}" == 'true' ] || \
@@ -83,7 +83,7 @@ jobs:
           then
             no_cache=true
           fi
-          echo "::set-output name=no_cache::${no_cache}"
+          echo "no_cache=${no_cache}" >> $GITHUB_OUTPUT
 
           trigger=false
           if  [ "${{needs.check_ci_files.outputs.trigger}}" == 'true' ] || \
@@ -91,7 +91,7 @@ jobs:
           then
             trigger=true
           fi
-          echo "::set-output name=trigger::${trigger}"
+          echo "trigger=${trigger}" >> $GITHUB_OUTPUT
       - name: Build and push ${{ github.ref_name }}
         if: steps.config.outputs.trigger == 'true'
         id: docker_build
