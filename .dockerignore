@@ -2,10 +2,11 @@
 # Repo
 
 .circleci/
-.github/
+.devcontainer/
+.dockerignore
 .git/
 .github/
-.dockerignore
 .gitignore
-**Dockerfile
 **.Dockerfile
+**Dockerfile
+doc/

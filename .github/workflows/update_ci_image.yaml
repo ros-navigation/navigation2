@@ -36,7 +36,7 @@ jobs:
       trigger: ${{ steps.check.outputs.trigger }}
       no_cache: ${{ steps.check.outputs.no_cache }}
     container:
-      image: ghcr.io/ros-planning/navigation2:main
+      image: ghcr.io/ros-planning/navigation2:${{ github.ref_name }}
     steps:
       - name: "Check apt updates"
         id: check
@@ -91,7 +91,7 @@ jobs:
             trigger=true
           fi
           echo "::set-output name=trigger::${trigger}"
-      - name: Build and push
+      - name: Build and push ${{ github.ref_name }}
         if: steps.config.outputs.trigger == 'true'
         id: docker_build
         uses: docker/build-push-action@v3
@@ -99,12 +99,33 @@ jobs:
           pull: true
           push: true
           no-cache: ${{ steps.config.outputs.no_cache }}
-          cache-from: type=registry,ref=ghcr.io/ros-planning/navigation2:main
+          cache-from: type=registry,ref=ghcr.io/ros-planning/navigation2:${{ github.ref_name }}
           cache-to: type=inline
           target: builder
           tags: |
-            ghcr.io/ros-planning/navigation2:main
-            ghcr.io/ros-planning/navigation2:main-${{ steps.config.outputs.timestamp }}
+            ghcr.io/ros-planning/navigation2:${{ github.ref_name }}
+            ghcr.io/ros-planning/navigation2:${{ github.ref_name }}-${{ steps.config.outputs.timestamp }}
+      - name: Image digest
+        if: steps.config.outputs.trigger == 'true'
+        run: echo ${{ steps.docker_build.outputs.digest }}
+      - name: Build and push ${{ github.ref_name }}-dev
+        if: steps.config.outputs.trigger == 'true'
+        id: docker_build
+        uses: docker/build-push-action@v4
+        with:
+          pull: true
+          push: true
+          cache-from: |
+            type=registry,ref=ghcr.io/ros-planning/navigation2:${{ github.ref_name }}
+            type=registry,ref=ghcr.io/ros-planning/navigation2:${{ github.ref_name }}-dev
+          cache-to: type=inline
+          build-args: |
+            RUN_TESTS=True
+            FAIL_ON_TEST_FAILURE=''
+          target: tester
+          tags: |
+            ghcr.io/ros-planning/navigation2:${{ github.ref_name }}-dev
+            ghcr.io/ros-planning/navigation2:${{ github.ref_name }}-dev-${{ steps.config.outputs.timestamp }}
       - name: Image digest
         if: steps.config.outputs.trigger == 'true'
         run: echo ${{ steps.docker_build.outputs.digest }}
