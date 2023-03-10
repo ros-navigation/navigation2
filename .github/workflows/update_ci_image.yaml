@@ -12,6 +12,7 @@ on:
       - '**/package.xml'
       - '**/*.repos'
       - 'Dockerfile'
+      - '.github/workflows/update_ci_image.yaml'
 
 jobs:
   check_ci_files:
@@ -110,7 +111,7 @@ jobs:
         run: echo ${{ steps.docker_build.outputs.digest }}
       - name: Build and push ${{ github.ref_name }}-dev
         if: steps.config.outputs.trigger == 'true'
-        id: docker_build
+        id: docker_build_dev
         uses: docker/build-push-action@v4
         with:
           pull: true
