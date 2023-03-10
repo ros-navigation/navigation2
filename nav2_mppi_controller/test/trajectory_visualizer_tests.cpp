@@ -81,7 +81,7 @@ TEST(TrajectoryVisualizerTests, VisOptimalTrajectory)
   TrajectoryVisualizer vis;
   vis.on_configure(node, "my_name", "fkmap", parameters_handler.get());
   vis.on_activate();
-  vis.add(optimal_trajectory, "Optimimal Trajectory");
+  vis.add(optimal_trajectory, "Optimal Trajectory");
   nav_msgs::msg::Path bogus_path;
   vis.visualize(bogus_path);
 
@@ -90,7 +90,7 @@ TEST(TrajectoryVisualizerTests, VisOptimalTrajectory)
 
   // Now populated with content, should publish
   optimal_trajectory = xt::ones<float>({20, 2});
-  vis.add(optimal_trajectory, "Optimimal Trajectory");
+  vis.add(optimal_trajectory, "Optimal Trajectory");
   vis.visualize(bogus_path);
 
   rclcpp::spin_some(node->get_node_base_interface());
