@@ -73,13 +73,13 @@ public:
     * @brief Add an optimal trajectory to visualize
     * @param trajectory Optimal trajectory
     */
-  void add(const xt::xtensor<float, 2> & trajectory);
+  void add(const xt::xtensor<float, 2> & trajectory, const std::string & marker_namespace);
 
   /**
     * @brief Add candidate trajectories to visualize
     * @param trajectories Candidate trajectories
     */
-  void add(const models::Trajectories & trajectories);
+  void add(const models::Trajectories & trajectories, const std::string & marker_namespace);
 
   /**
     * @brief Visualize the plan
