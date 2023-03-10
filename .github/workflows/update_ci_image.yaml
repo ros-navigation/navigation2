@@ -122,7 +122,6 @@ jobs:
           cache-to: type=inline
           build-args: |
             RUN_TESTS=True
-            FAIL_ON_TEST_FAILURE=''
           target: tester
           tags: |
             ghcr.io/ros-planning/navigation2:${{ github.ref_name }}-dev
