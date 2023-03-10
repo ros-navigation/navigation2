@@ -13,9 +13,9 @@
     },
     "customizations": {
         "codespaces": {
-            // "openFiles": [
-            //     "doc/development/codespaces.md"
-            // ]
+            "openFiles": [
+                "doc/development/codespaces.md"
+            ]
         },
         "vscode": {
             "settings": {},
