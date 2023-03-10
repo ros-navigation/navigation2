@@ -20,7 +20,12 @@
         "vscode": {
             "settings": {},
             "extensions": [
-                "streetsidesoftware.code-spell-checker"
+                "eamodio.gitlens",
+                "esbenp.prettier-vscode",
+                "GitHub.copilot",
+                "ms-iot.vscode-ros",
+                "streetsidesoftware.code-spell-checker",
+                "twxs.cmake"
             ]
         }
     }
