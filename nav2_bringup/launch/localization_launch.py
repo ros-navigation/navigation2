@@ -20,8 +20,8 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, GroupAction
 from launch.actions import SetEnvironmentVariable
 from launch.conditions import IfCondition
-from launch.conditions import LaunchConfigurationEquals
-from launch.conditions import LaunchConfigurationNotEquals
+from launch.substitutions import EqualsSubstitution
+from launch.substitutions import NotEqualsSubstitution
 from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import LoadComposableNodes, SetParameter
 from launch_ros.actions import Node
@@ -109,7 +109,7 @@ def generate_launch_description():
         actions=[
             SetParameter('use_sim_time', use_sim_time),
             Node(
-                condition=LaunchConfigurationEquals('map', ''),
+                condition=IfCondition(EqualsSubstitution(LaunchConfiguration('map'), '')),
                 package='nav2_map_server',
                 executable='map_server',
                 name='map_server',
@@ -120,7 +120,7 @@ def generate_launch_description():
                 arguments=['--ros-args', '--log-level', log_level],
                 remappings=remappings),
             Node(
-                condition=LaunchConfigurationNotEquals('map', ''),
+                condition=IfCondition(NotEqualsSubstitution(LaunchConfiguration('map'), '')),
                 package='nav2_map_server',
                 executable='map_server',
                 name='map_server',
@@ -156,19 +156,13 @@ def generate_launch_description():
     # yaml configuration file. They are separated since the conditions
     # currently only work on the LoadComposableNodes commands and not on the
     # ComposableNode node function itself
-    # EqualsSubstitution and NotEqualsSubstitution susbsitutions was recently
-    # added to solve this problem but it has not been ported yet to
-    # ros-rolling. See https://github.com/ros2/launch_ros/issues/328.
-    # LaunchConfigurationEquals and LaunchConfigurationNotEquals are scheduled
-    # for deprecation once a Rolling sync is conducted. Switching to this new
-    # would be required for both ComposableNode and normal nodes.
     load_composable_nodes = GroupAction(
         condition=IfCondition(use_composition),
         actions=[
             SetParameter('use_sim_time', use_sim_time),
             LoadComposableNodes(
                 target_container=container_name_full,
-                condition=LaunchConfigurationEquals('map', ''),
+                condition=IfCondition(EqualsSubstitution(LaunchConfiguration('map'), '')),
                 composable_node_descriptions=[
                     ComposableNode(
                         package='nav2_map_server',
@@ -180,7 +174,7 @@ def generate_launch_description():
             ),
             LoadComposableNodes(
                 target_container=container_name_full,
-                condition=LaunchConfigurationNotEquals('map', ''),
+                condition=IfCondition(NotEqualsSubstitution(LaunchConfiguration('map'), '')),
                 composable_node_descriptions=[
                     ComposableNode(
                         package='nav2_map_server',
