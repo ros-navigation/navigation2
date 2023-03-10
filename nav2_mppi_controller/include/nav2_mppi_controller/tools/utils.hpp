@@ -117,13 +117,13 @@ inline std_msgs::msg::ColorRGBA createColor(float r, float g, float b, float a)
  */
 inline visualization_msgs::msg::Marker createMarker(
   int id, const geometry_msgs::msg::Pose & pose, const geometry_msgs::msg::Vector3 & scale,
-  const std_msgs::msg::ColorRGBA & color, const std::string & frame_id)
+  const std_msgs::msg::ColorRGBA & color, const std::string & frame_id, const std::string & ns)
 {
   using visualization_msgs::msg::Marker;
   Marker marker;
   marker.header.frame_id = frame_id;
   marker.header.stamp = rclcpp::Time(0, 0);
-  marker.ns = "MarkerNS";
+  marker.ns = ns;
   marker.id = id;
   marker.type = Marker::SPHERE;
   marker.action = Marker::ADD;
