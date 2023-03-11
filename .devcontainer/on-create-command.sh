@@ -2,8 +2,6 @@
 
 set -exo pipefail
 
-export OVERLAY_MIXINS="release ccache lld"
-export CCACHE_DIR="$OVERLAY_WS/.ccache"
 env
 
 cd $OVERLAY_WS
