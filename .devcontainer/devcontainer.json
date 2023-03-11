@@ -1,6 +1,6 @@
 {
     "name": "Nav2",
-    "image": "ghcr.io/ros-planning/navigation2:main-dev",
+    "image": "ghcr.io/ros-planning/navigation2:main",
     "runArgs": [
         "--privileged",
         "--network=host"
