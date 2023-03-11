@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -euxo pipefail
+set -exo pipefail
 
 export OVERLAY_MIXINS="release ccache lld"
 export CCACHE_DIR="$OVERLAY_WS/.ccache"
