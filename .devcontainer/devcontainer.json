@@ -7,6 +7,8 @@
     ],
     "workspaceMount": "source=${localWorkspaceFolder},target=/opt/overlay_ws/src/navigation2,type=bind",
     "workspaceFolder": "/opt/overlay_ws/src",
+	"onCreateCommand": "navigation2/.devcontainer/on-create-command.sh",
+	"updateContentCommand": "navigation2/.devcontainer/update-content-command.sh",
     "features": {
         // "ghcr.io/devcontainers/features/desktop-lite:1": {},
         "ghcr.io/devcontainers/features/github-cli:1": {}
