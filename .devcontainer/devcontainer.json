@@ -1,12 +1,18 @@
 {
     "name": "Nav2",
-    "image": "ghcr.io/ros-planning/navigation2:main-dev",
+    "image": "ghcr.io/ros-planning/navigation2:main",
     "runArgs": [
         "--privileged",
         "--network=host"
     ],
     "workspaceMount": "source=${localWorkspaceFolder},target=/opt/overlay_ws/src/navigation2,type=bind",
     "workspaceFolder": "/opt/overlay_ws/src",
+    "onCreateCommand": "navigation2/.devcontainer/on-create-command.sh",
+    "updateContentCommand": "navigation2/.devcontainer/update-content-command.sh",
+    "remoteEnv": {
+        "OVERLAY_MIXINS": "release ccache lld",
+        "CCACHE_DIR": "${containerEnv:OVERLAY_WS}/.ccache"
+    },
     "features": {
         // "ghcr.io/devcontainers/features/desktop-lite:1": {},
         "ghcr.io/devcontainers/features/github-cli:1": {}
