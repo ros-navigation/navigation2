@@ -76,6 +76,8 @@ jobs:
         run: |
           timestamp=$(date --utc +%Y%m%d%H%M%S)
           echo "timestamp=${timestamp}" >> $GITHUB_OUTPUT
+          datestamp=$(date --utc +%Y%m)
+          echo "datestamp=${datestamp}" >> $GITHUB_OUTPUT
 
           no_cache=false
           if  [ "${{needs.check_ci_files.outputs.no_cache}}" == 'true' ] || \
@@ -109,6 +111,16 @@ jobs:
       - name: Image digest
         if: steps.config.outputs.trigger == 'true'
         run: echo ${{ steps.docker_build.outputs.digest }}
+      - name: Delete '${{ github.ref_name }}' images newer than a month
+        uses: snok/container-retention-policy@v2
+        with:
+          image-names: ${{ github.event.repository.name }}
+          filter-tags: ${{ github.ref_name }}-${{ steps.config.outputs.datestamp }}*
+          cut-off: now UTC
+          account-type: org
+          org-name: ${{ github.repository_owner }}
+          keep-at-least: 1
+          token: ${{ secrets.GHCR_PAT }}
       - name: Delete '${{ github.ref_name }}' images older than a month
         uses: snok/container-retention-policy@v2
         with:
