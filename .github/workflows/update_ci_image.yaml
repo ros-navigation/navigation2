@@ -109,3 +109,13 @@ jobs:
       - name: Image digest
         if: steps.config.outputs.trigger == 'true'
         run: echo ${{ steps.docker_build.outputs.digest }}
+      - name: Delete '${{ github.ref_name }}' images older than a month
+        uses: snok/container-retention-policy@v2
+        with:
+          image-names: ${{ github.event.repository.name }}
+          filter-tags: ${{ github.ref_name }}-*
+          cut-off: A month ago UTC
+          account-type: org
+          org-name: ${{ github.repository_owner }}
+          keep-at-least: 12
+          token: ${{ secrets.GHCR_PAT }}
