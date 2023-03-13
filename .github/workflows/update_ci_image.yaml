@@ -37,7 +37,7 @@ jobs:
       trigger: ${{ steps.check.outputs.trigger }}
       no_cache: ${{ steps.check.outputs.no_cache }}
     container:
-      image: ghcr.io/ros-planning/navigation2:${{ github.ref_name }}
+      image: ghcr.io/${{ github.repository }}:${{ github.ref_name }}
     steps:
       - name: "Check apt updates"
         id: check
@@ -100,12 +100,12 @@ jobs:
           pull: true
           push: true
           no-cache: ${{ steps.config.outputs.no_cache }}
-          cache-from: type=registry,ref=ghcr.io/ros-planning/navigation2:${{ github.ref_name }}
+          cache-from: type=registry,ref=ghcr.io/${{ github.repository }}:${{ github.ref_name }}
           cache-to: type=inline
           target: builder
           tags: |
-            ghcr.io/ros-planning/navigation2:${{ github.ref_name }}
-            ghcr.io/ros-planning/navigation2:${{ github.ref_name }}-${{ steps.config.outputs.timestamp }}
+            ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+            ghcr.io/${{ github.repository }}:${{ github.ref_name }}-${{ steps.config.outputs.timestamp }}
       - name: Image digest
         if: steps.config.outputs.trigger == 'true'
         run: echo ${{ steps.docker_build.outputs.digest }}
