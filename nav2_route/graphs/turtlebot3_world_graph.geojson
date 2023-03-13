@@ -89,5 +89,4 @@
     { "type": "Feature", "properties": { "edge_id": 84, "start_node": 7, "end_node": 19 }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ -1.6, -0.3446 ], [ -2.0, 0.2554 ] ] ] } },
     { "type": "Feature", "properties": { "edge_id": 85, "start_node": 19, "end_node": 8 }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ -2.0, 0.2554 ], [ -1.6, 0.8554 ] ] ] } }
     ]
-    }
-    
+}
