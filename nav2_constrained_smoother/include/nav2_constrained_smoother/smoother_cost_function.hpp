@@ -159,7 +159,7 @@ protected:
     Eigen::Matrix<T, 2, 1> center = arcCenter(
       pt_prev, pt, pt_next,
       next_to_last_length_ratio_ < 0);
-    if (ceres::isinf(center[0])) {
+    if (CERES_ISINF(center[0])) {
       return;
     }
     T turning_rad = (pt - center).norm();

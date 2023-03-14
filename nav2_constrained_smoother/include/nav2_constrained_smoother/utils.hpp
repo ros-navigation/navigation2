@@ -20,6 +20,16 @@
 
 #define EPSILON 0.0001
 
+/**
+ * Compatibility with different ceres::isinf() and ceres::IsInfinite() API
+ * used in Ceres Solver 2.1.0+ and 2.0.0- versions respectively
+ */
+#if defined(USE_OLD_CERES_API)
+  #define CERES_ISINF(x) ceres::IsInfinite(x)
+#else
+  #define CERES_ISINF(x) ceres::isinf(x)
+#endif
+
 namespace nav2_constrained_smoother
 {
 
@@ -86,7 +96,7 @@ inline Eigen::Matrix<T, 2, 1> tangentDir(
   bool is_cusp)
 {
   Eigen::Matrix<T, 2, 1> center = arcCenter(pt_prev, pt, pt_next, is_cusp);
-  if (ceres::isinf(center[0])) {  // straight line
+  if (CERES_ISINF(center[0])) {  // straight line
     Eigen::Matrix<T, 2, 1> d1 = pt - pt_prev;
     Eigen::Matrix<T, 2, 1> d2 = pt_next - pt;
 
