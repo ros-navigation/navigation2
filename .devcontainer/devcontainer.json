@@ -17,12 +17,12 @@
     "postCreateCommand": ".devcontainer/post-create-command.sh",
     "remoteEnv": {
         "OVERLAY_MIXINS": "release ccache lld",
-        "CCACHE_DIR": "${containerEnv:OVERLAY_WS}/.ccache"
+        "CCACHE_DIR": "/tmp/.ccache"
     },
     "mounts": [
 		{
 			"source": "ccache",
-			"target": "${containerEnv:OVERLAY_WS}/.ccache",
+			"target": "/tmp/.ccache",
 			"type": "volume"
 		}
 	],
