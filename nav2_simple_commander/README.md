@@ -85,7 +85,7 @@ The main benefit of this is automatically showing the above demonstrations in a 
 
 ``` bash
 # Launch the launch file for the demo / example
-ros2 launch nav2_simple_commander demo_security_launch.py
+ros2 launch nav2_simple_commander  security_demo_launch.py
 ```
 
 This will bring up the robot in the AWS Warehouse in a reasonable position, launch the autonomy script, and complete some task to demonstrate the `nav2_simple_commander` API.
