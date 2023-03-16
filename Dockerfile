@@ -105,6 +105,9 @@ RUN . $UNDERLAY_WS/install/setup.sh && \
       --ignore-src \
     && rm -rf /var/lib/apt/lists/*
 
+# multi-stage for developing
+FROM builder AS dever
+
 # multi-stage for testing
 FROM builder AS tester
 
