@@ -108,6 +108,11 @@ RUN . $UNDERLAY_WS/install/setup.sh && \
 # multi-stage for developing
 FROM builder AS dever
 
+# install developer dependencies
+RUN apt-get update && \
+    apt-get install -y \
+      bash-completion
+
 # multi-stage for testing
 FROM builder AS tester
 

@@ -21,11 +21,6 @@ sed --in-place \
 # edit apt for autocomplete
 mv /etc/apt/apt.conf.d/docker-clean /etc/apt/
 
-# install autocomplete for bash
-apt-get update
-apt-get install -y \
-    bash-completion
-
 # enable autocomplete for user
 cp /etc/skel/.bashrc ~/
 
