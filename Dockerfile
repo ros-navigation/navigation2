@@ -108,6 +108,9 @@ RUN . $UNDERLAY_WS/install/setup.sh && \
 # multi-stage for developing
 FROM builder AS dever
 
+# edit apt for caching
+RUN cp /etc/apt/apt.conf.d/docker-clean /etc/apt/
+
 # install developer dependencies
 RUN apt-get update && \
     apt-get install -y \
