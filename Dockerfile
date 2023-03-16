@@ -116,6 +116,9 @@ RUN apt-get update && \
     apt-get install -y \
       bash-completion
 
+# source underlay for shell
+RUN echo 'source "$UNDERLAY_WS/install/setup.bash"' >> /etc/bash.bashrc
+
 # multi-stage for testing
 FROM builder AS tester
 
