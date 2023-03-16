@@ -17,6 +17,3 @@ colcon build \
 sed --in-place \
     's|^source .*|source "$OVERLAY_WS/install/setup.bash"|' \
     /ros_entrypoint.sh
-
-# enable autocomplete for user
-cp /etc/skel/.bashrc ~/

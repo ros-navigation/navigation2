@@ -14,6 +14,7 @@
     "workspaceFolder": "/opt/overlay_ws/src",
     "onCreateCommand": "navigation2/.devcontainer/on-create-command.sh",
     "updateContentCommand": "navigation2/.devcontainer/update-content-command.sh",
+    "postCreateCommand": "navigation2/.devcontainer/post-create-command.sh",
     "remoteEnv": {
         "OVERLAY_MIXINS": "release ccache lld",
         "CCACHE_DIR": "${containerEnv:OVERLAY_WS}/.ccache"
