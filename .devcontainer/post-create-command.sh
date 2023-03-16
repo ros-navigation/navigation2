@@ -7,5 +7,5 @@ set -eo pipefail
 # set -x
 # env
 
-# enable autocomplete for user
+# Enable autocomplete for user
 cp /etc/skel/.bashrc ~/
