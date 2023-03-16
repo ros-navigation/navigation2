@@ -19,6 +19,13 @@
         "OVERLAY_MIXINS": "release ccache lld",
         "CCACHE_DIR": "${containerEnv:OVERLAY_WS}/.ccache"
     },
+    "mounts": [
+		{
+			"source": "ccache",
+			"target": "${containerEnv:OVERLAY_WS}/.ccache",
+			"type": "volume"
+		}
+	],
     "features": {
         // "ghcr.io/devcontainers/features/desktop-lite:1": {},
         "ghcr.io/devcontainers/features/github-cli:1": {}
