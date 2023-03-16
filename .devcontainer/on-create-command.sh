@@ -13,7 +13,3 @@ colcon cache lock
 colcon build \
     --symlink-install \
     --mixin $OVERLAY_MIXINS
-
-sed --in-place \
-    's|^source .*|source "$OVERLAY_WS/install/setup.bash"|' \
-    /ros_entrypoint.sh
