@@ -26,6 +26,7 @@
         "vscode": {
             "settings": {},
             "extensions": [
+                "althack.ament-task-provider",
                 "eamodio.gitlens",
                 "esbenp.prettier-vscode",
                 "GitHub.copilot",
