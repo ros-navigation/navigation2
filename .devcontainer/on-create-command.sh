@@ -28,3 +28,6 @@ apt-get install -y \
 
 # enable autocomplete for user
 cp /etc/skel/.bashrc ~/
+
+# source underlay for extentions
+echo 'source "$UNDERLAY_WS/install/setup.bash"' >> ~/.bashrc
