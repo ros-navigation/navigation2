@@ -18,6 +18,9 @@ sed --in-place \
     's|^source .*|source "$OVERLAY_WS/install/setup.bash"|' \
     /ros_entrypoint.sh
 
+# edit apt for autocomplete
+mv /etc/apt/apt.conf.d/docker-clean /etc/apt/
+
 # install autocomplete for bash
 apt-get update
 apt-get install -y \
