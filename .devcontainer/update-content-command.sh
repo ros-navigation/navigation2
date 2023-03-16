@@ -1,8 +1,11 @@
 #!/bin/bash
 
-set -exo pipefail
+# Immediately catch all errors
+set -eo pipefail
 
-env
+# Uncomment for debugging
+# set -x
+# env
 
 cd $OVERLAY_WS
 
