@@ -136,12 +136,15 @@ public:
 
       // user defined callback, may modify "should_send_request_".
       on_tick();
-
-      if (should_send_request_) {
-        future_result_ = service_client_->async_send_request(request_).share();
-        sent_time_ = node_->now();
-        request_sent_ = true;
+      
+      if(!should_send_request_){
+        return BT::NodeStatus::FAILURE;
       }
+
+      future_result_ = service_client_->async_send_request(request_).share();
+      sent_time_ = node_->now();
+      request_sent_ = true;
+
     }
     return check_future();
   }
