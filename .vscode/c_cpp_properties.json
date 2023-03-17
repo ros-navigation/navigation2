@@ -6,10 +6,11 @@
         "limitSymbolsToIncludedHeaders": false
       },
       "includePath": [
+        "/opt/ros/rolling/include/**",
+        "/usr/include/**",
         "${workspaceFolder}/../../install/dwb_msgs/include/**",
         "${workspaceFolder}/../../install/nav_2d_msgs/include/**",
         "${workspaceFolder}/../../install/nav2_msgs/include/**",
-        "/opt/ros/rolling/include/**",
         "${workspaceFolder}/nav2_amcl/include/**",
         "${workspaceFolder}/nav2_behavior_tree/include/**",
         "${workspaceFolder}/nav2_behaviors/include/**",
@@ -38,8 +39,7 @@
         "${workspaceFolder}/nav2_util/include/**",
         "${workspaceFolder}/nav2_velocity_smoother/include/**",
         "${workspaceFolder}/nav2_voxel_grid/include/**",
-        "${workspaceFolder}/nav2_waypoint_follower/include/**",
-        "/usr/include/**"
+        "${workspaceFolder}/nav2_waypoint_follower/include/**"
       ],
       "name": "ROS",
       "intelliSenseMode": "gcc-x64",
