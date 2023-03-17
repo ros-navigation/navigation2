@@ -39,13 +39,16 @@ class BtServiceNode : public BT::ActionNodeBase
 public:
   /**
    * @brief A nav2_behavior_tree::BtServiceNode constructor
-   * @param service_node_name Service name this node creates a client for
+   * @param service_node_name BT node name
    * @param conf BT node configuration
+   * @param service_name Optional service name this node creates a client for instead of from input port
    */
   BtServiceNode(
     const std::string & service_node_name,
-    const BT::NodeConfiguration & conf)
-  : BT::ActionNodeBase(service_node_name, conf), service_node_name_(service_node_name), should_send_request_(true)
+    const BT::NodeConfiguration & conf,
+    const std::string & service_name = "")
+  : BT::ActionNodeBase(service_node_name, conf), service_name_(service_name), service_node_name_(
+      service_node_name), should_send_request_(true)
   {
     node_ = config().blackboard->template get<rclcpp::Node::SharedPtr>("node");
     callback_group_ = node_->create_callback_group(

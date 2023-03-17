@@ -146,11 +146,11 @@ AmclNode::AmclNode(const rclcpp::NodeOptions & options)
 
   add_parameter(
     "max_particles", rclcpp::ParameterValue(2000),
-    "Minimum allowed number of particles");
+    "Maximum allowed number of particles");
 
   add_parameter(
     "min_particles", rclcpp::ParameterValue(500),
-    "Maximum allowed number of particles");
+    "Minimum allowed number of particles");
 
   add_parameter(
     "odom_frame_id", rclcpp::ParameterValue(std::string("odom")),
