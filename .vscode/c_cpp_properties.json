@@ -6,9 +6,9 @@
         "limitSymbolsToIncludedHeaders": false
       },
       "includePath": [
-        "/opt/overlay_ws/install/dwb_msgs/include/**",
-        "/opt/overlay_ws/install/nav_2d_msgs/include/**",
-        "/opt/overlay_ws/install/nav2_msgs/include/**",
+        "${workspaceFolder}/../../install/dwb_msgs/include/**",
+        "${workspaceFolder}/../../install/nav_2d_msgs/include/**",
+        "${workspaceFolder}/../../install/nav2_msgs/include/**",
         "/opt/ros/rolling/include/**",
         "${workspaceFolder}/nav2_amcl/include/**",
         "${workspaceFolder}/nav2_behavior_tree/include/**",
