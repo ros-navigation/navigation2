@@ -12,6 +12,5 @@ _common: &common
   <<: *common
   "executor": "parallel"
   "parallel-workers": 1
-  "ctest-args": ["--output-junit", "ctest.junit.xml"]
 "test-result":
   <<: *common

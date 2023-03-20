@@ -201,7 +201,7 @@ _commands:
                   workspace: << parameters.workspace >>
                   when: always
               - run:
-                  name: Prepare Build Logs
+                  name: Copy Build Logs
                   working_directory: << parameters.workspace >>
                   command: cp -rH log/latest_build log/build
                   when: always
@@ -295,17 +295,9 @@ _commands:
                   workspace: << parameters.workspace >>
                   when: always
         - run:
-            name: Prepare Test Logs
+            name: Copy Test Logs
             working_directory: << parameters.workspace >>
-            command: |
-              cp -rH log/latest_test log/test
-
-              find . -name "Test.xml" -type f | while read filename
-                do mv "$filename" "${filename%.xml}.txt"; done
-
-              cd build
-              find . -name "ctest.junit.xml" \
-                | xargs cp --parents -t ../test_results
+            command: cp -rH log/latest_test log/test
             when: always
         - store_artifacts:
             path: << parameters.workspace >>/log/test
