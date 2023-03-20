@@ -28,11 +28,11 @@ jobs:
         id: check
         if: github.event_name == 'push'
         run: |
-          nav2_version=$(grep -oP '(?<=<version>).*?(?=</version>)' navigation2/package.xml)
+          version=$(grep -oP '(?<=<version>).*?(?=</version>)' navigation2/package.xml)
           pwd
           ls -alh
-          echo $nav2_version
-          echo "nav2_version=${nav2_version}" >> $GITHUB_OUTPUT
+          echo $version
+          echo "version=${version}" >> $GITHUB_OUTPUT
           echo "trigger=true" >> $GITHUB_OUTPUT
           echo "no_cache=false" >> $GITHUB_OUTPUT
   check_ci_image:
@@ -110,7 +110,7 @@ jobs:
           target: builder
           tags: |
             ghcr.io/${{ github.repository }}:${{ github.ref_name }}
-            ghcr.io/${{ github.repository }}:${{ github.ref_name }}-${{ steps.config.outputs.nav2_version }}
+            ghcr.io/${{ github.repository }}:${{ github.ref_name }}-${{ steps.config.outputs.version }}
       - name: Image digest
         if: steps.config.outputs.trigger == 'true'
         run: echo ${{ steps.docker_build.outputs.digest }}
