@@ -199,7 +199,7 @@ public:
       if (!should_send_goal_) {
         return BT::NodeStatus::FAILURE;
       }
-      send_new_goal();      
+      send_new_goal();
     }
 
     try {

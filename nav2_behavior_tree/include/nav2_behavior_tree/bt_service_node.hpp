@@ -131,12 +131,13 @@ public:
   BT::NodeStatus tick() override
   {
     if (!request_sent_) {
-      // reset the flag to send the request or not, allowing the user the option to set it in on_tick
+      // reset the flag to send the request or not,
+      // allowing the user the option to set it in on_tick
       should_send_request_ = true;
 
       // user defined callback, may modify "should_send_request_".
       on_tick();
-      
+
       if (!should_send_request_) {
         return BT::NodeStatus::FAILURE;
       }
