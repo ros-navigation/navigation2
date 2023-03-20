@@ -74,8 +74,8 @@ jobs:
       - name: Set build config
         id: config
         run: |
-          timestamp=$(date --utc +%Y%m%d%H%M%S)
-          echo "timestamp=${timestamp}" >> $GITHUB_OUTPUT
+          version=$(grep -oP '(?<=<version>).*?(?=</version>)' navigation2/package.xml)
+          echo "version=${version}" >> $GITHUB_OUTPUT
 
           no_cache=false
           if  [ "${{needs.check_ci_files.outputs.no_cache}}" == 'true' ] || \
@@ -105,7 +105,7 @@ jobs:
           target: builder
           tags: |
             ghcr.io/${{ github.repository }}:${{ github.ref_name }}
-            ghcr.io/${{ github.repository }}:${{ github.ref_name }}-${{ steps.config.outputs.timestamp }}
+            ghcr.io/${{ github.repository }}:${{ github.ref_name }}-${{ steps.config.outputs.version }}
       - name: Image digest
         if: steps.config.outputs.trigger == 'true'
         run: echo ${{ steps.docker_build.outputs.digest }}
