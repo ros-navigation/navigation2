@@ -42,7 +42,6 @@ jobs:
     needs: check_ci_files
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.check.outputs.version }}
       trigger: ${{ steps.check.outputs.trigger }}
       no_cache: ${{ steps.check.outputs.no_cache }}
     container:
@@ -112,7 +111,7 @@ jobs:
           target: builder
           tags: |
             ghcr.io/${{ github.repository }}:${{ github.ref_name }}
-            ghcr.io/${{ github.repository }}:${{ github.ref_name }}-${{ steps.config.outputs.version }}
+            ghcr.io/${{ github.repository }}:${{ github.ref_name }}-${{ steps.check.outputs.version }}
       - name: Image digest
         if: steps.config.outputs.trigger == 'true'
         run: echo ${{ steps.docker_build.outputs.digest }}
