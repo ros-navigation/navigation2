@@ -56,7 +56,8 @@ void TrajectoryVisualizer::on_deactivate()
   transformed_path_pub_->on_deactivate();
 }
 
-void TrajectoryVisualizer::add(const xt::xtensor<float, 2> & trajectory, const std::string & marker_namespace)
+void TrajectoryVisualizer::add(
+  const xt::xtensor<float, 2> & trajectory, const std::string & marker_namespace)
 {
   auto & size = trajectory.shape()[0];
   if (!size) {
@@ -72,7 +73,8 @@ void TrajectoryVisualizer::add(const xt::xtensor<float, 2> & trajectory, const s
         utils::createScale(0.03, 0.03, 0.07) :
         utils::createScale(0.07, 0.07, 0.09);
       auto color = utils::createColor(0, component, component, 1);
-      auto marker = utils::createMarker(marker_id_++, pose, scale, color, frame_id_, marker_namespace);
+      auto marker = utils::createMarker(
+        marker_id_++, pose, scale, color, frame_id_, marker_namespace);
       points_->markers.push_back(marker);
     };
 
@@ -97,7 +99,8 @@ void TrajectoryVisualizer::add(
       auto pose = utils::createPose(trajectories.x(i, j), trajectories.y(i, j), 0.03);
       auto scale = utils::createScale(0.03, 0.03, 0.03);
       auto color = utils::createColor(0, green_component, blue_component, 1);
-      auto marker = utils::createMarker(marker_id_++, pose, scale, color, frame_id_, marker_namespace);
+      auto marker = utils::createMarker(
+        marker_id_++, pose, scale, color, frame_id_, marker_namespace);
 
       points_->markers.push_back(marker);
     }
