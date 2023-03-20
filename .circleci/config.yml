@@ -301,6 +301,11 @@ _commands:
             when: always
         - store_artifacts:
             path: << parameters.workspace >>/log/test
+        - run:
+            name: Prepare Test Results
+            working_directory: << parameters.workspace >>
+            command: rm ./test_results/**/Test.xml
+            when: always
         - store_test_results:
             path: << parameters.workspace >>/test_results
         - store_artifacts:
