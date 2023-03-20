@@ -301,9 +301,14 @@ _commands:
             when: always
         - store_artifacts:
             path: << parameters.workspace >>/log/test
-        - store_test_results:
-            path: << parameters.workspace >>/test_results
         - store_artifacts:
+            path: << parameters.workspace >>/test_results
+        - run:
+            name: Prepare Test Results
+            working_directory: << parameters.workspace >>
+            command: find test_results -name "Test.xml" -type f -delete
+            when: always
+        - store_test_results:
             path: << parameters.workspace >>/test_results
 
 _steps:
