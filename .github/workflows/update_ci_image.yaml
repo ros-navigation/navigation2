@@ -22,10 +22,13 @@ jobs:
       trigger: ${{ steps.check.outputs.trigger }}
       no_cache: ${{ steps.check.outputs.no_cache }}
     steps:
+      - uses: actions/checkout@v3
       - name: "Check package updates"
         id: check
         if: github.event_name == 'push'
         run: |
+          version=$(grep -oP '(?<=<version>).*?(?=</version>)' navigation2/package.xml)
+          echo "version=${version}" >> $GITHUB_OUTPUT
           echo "trigger=true" >> $GITHUB_OUTPUT
           echo "no_cache=false" >> $GITHUB_OUTPUT
   check_ci_image:
@@ -74,9 +77,6 @@ jobs:
       - name: Set build config
         id: config
         run: |
-          version=$(grep -oP '(?<=<version>).*?(?=</version>)' navigation2/package.xml)
-          echo "version=${version}" >> $GITHUB_OUTPUT
-
           no_cache=false
           if  [ "${{needs.check_ci_files.outputs.no_cache}}" == 'true' ] || \
               [ "${{needs.check_ci_image.outputs.no_cache}}" == 'true' ]
