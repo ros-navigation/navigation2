@@ -48,7 +48,7 @@ public:
     const BT::NodeConfiguration & conf,
     const std::string & service_name = "")
   : BT::ActionNodeBase(service_node_name, conf), service_name_(service_name), service_node_name_(
-      service_node_name), should_send_request_(true)
+      service_node_name)
   {
     node_ = config().blackboard->template get<rclcpp::Node::SharedPtr>("node");
     callback_group_ = node_->create_callback_group(
