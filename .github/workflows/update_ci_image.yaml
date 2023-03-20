@@ -29,6 +29,9 @@ jobs:
         if: github.event_name == 'push'
         run: |
           version=$(grep -oP '(?<=<version>).*?(?=</version>)' navigation2/package.xml)
+          pwd
+          ls -alh
+          echo $version
           echo "version=${version}" >> $GITHUB_OUTPUT
           echo "trigger=true" >> $GITHUB_OUTPUT
           echo "no_cache=false" >> $GITHUB_OUTPUT
