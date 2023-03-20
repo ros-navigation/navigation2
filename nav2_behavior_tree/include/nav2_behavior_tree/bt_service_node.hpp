@@ -131,7 +131,17 @@ public:
   BT::NodeStatus tick() override
   {
     if (!request_sent_) {
+      // reset the flag to send the request or not,
+      // allowing the user the option to set it in on_tick
+      should_send_request_ = true;
+
+      // user defined callback, may modify "should_send_request_".
       on_tick();
+
+      if (!should_send_request_) {
+        return BT::NodeStatus::FAILURE;
+      }
+
       future_result_ = service_client_->async_send_request(request_).share();
       sent_time_ = node_->now();
       request_sent_ = true;
@@ -243,6 +253,9 @@ protected:
   std::shared_future<typename ServiceT::Response::SharedPtr> future_result_;
   bool request_sent_{false};
   rclcpp::Time sent_time_;
+
+  // Can be set in on_tick or on_wait_for_result to indicate if a request should be sent.
+  bool should_send_request_;
 };
 
 }  // namespace nav2_behavior_tree
