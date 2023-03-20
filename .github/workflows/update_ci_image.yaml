@@ -19,6 +19,7 @@ jobs:
     name: Check CI Files
     runs-on: ubuntu-latest
     outputs:
+      version: ${{ steps.check.outputs.version }}
       trigger: ${{ steps.check.outputs.trigger }}
       no_cache: ${{ steps.check.outputs.no_cache }}
     steps:
@@ -27,7 +28,6 @@ jobs:
         id: check
         if: github.event_name == 'push'
         run: |
-          cd navigation2
           version=$(grep -oP '(?<=<version>).*?(?=</version>)' navigation2/package.xml)
           echo "version=${version}" >> $GITHUB_OUTPUT
           echo "trigger=true" >> $GITHUB_OUTPUT
@@ -107,7 +107,7 @@ jobs:
           target: builder
           tags: |
             ghcr.io/${{ github.repository }}:${{ github.ref_name }}
-            ghcr.io/${{ github.repository }}:${{ github.ref_name }}-${{ steps.config.outputs.version }}
+            ghcr.io/${{ github.repository }}:${{ github.ref_name }}-${{ needs.check_ci_files.outputs.version }}
       - name: Image digest
         if: steps.config.outputs.trigger == 'true'
         run: echo ${{ steps.docker_build.outputs.digest }}
