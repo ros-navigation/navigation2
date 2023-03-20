@@ -137,7 +137,7 @@ public:
       // user defined callback, may modify "should_send_request_".
       on_tick();
       
-      if(!should_send_request_){
+      if (!should_send_request_) {
         return BT::NodeStatus::FAILURE;
       }
 
