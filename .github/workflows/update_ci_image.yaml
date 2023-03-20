@@ -27,7 +27,6 @@ jobs:
         id: check
         if: github.event_name == 'push'
         run: |
-          cd navigation2
           version=$(grep -oP '(?<=<version>).*?(?=</version>)' navigation2/package.xml)
           echo "version=${version}" >> $GITHUB_OUTPUT
           echo "trigger=true" >> $GITHUB_OUTPUT
