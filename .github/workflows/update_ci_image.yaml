@@ -111,7 +111,7 @@ jobs:
           target: builder
           tags: |
             ghcr.io/${{ github.repository }}:${{ github.ref_name }}
-            ghcr.io/${{ github.repository }}:${{ github.ref_name }}-${{ steps.check.outputs.version }}
+            ghcr.io/${{ github.repository }}:${{ github.ref_name }}-${{ needs.check_ci_files.outputs.version }}
       - name: Image digest
         if: steps.config.outputs.trigger == 'true'
         run: echo ${{ steps.docker_build.outputs.digest }}
