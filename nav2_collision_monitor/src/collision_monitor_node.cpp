@@ -366,6 +366,11 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in)
       if (processApproach(polygon, collision_points, cmd_vel_in, robot_action)) {
         action_polygon = polygon;
       }
+    } else if (at == PUBLISH) {
+      // Process PUBLISH for the selected polygon
+      if (processPublish(polygon, collision_points)) {
+        action_polygon = polygon;
+      }
     }
   }
 
@@ -436,6 +441,13 @@ bool CollisionMonitor::processApproach(
   }
 
   return false;
+}
+
+bool CollisionMonitor::processPublish(
+  const std::shared_ptr<Polygon> polygon,
+  const std::vector<Point> & collision_points) const
+{
+  return polygon->publish_detection(collision_points);
 }
 
 void CollisionMonitor::printAction(
