@@ -142,6 +142,11 @@ protected:
   void process(const Velocity & cmd_vel_in);
 
   /**
+   * @brief Timer callback for actions not requiring vel
+   */
+  void process_without_vel();
+
+  /**
    * @brief Processes the polygon of STOP and SLOWDOWN action type
    * @param polygon Polygon to process
    * @param collision_points Array of 2D obstacle points
@@ -212,6 +217,8 @@ protected:
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_in_sub_;
   /// @brief Output cmd_vel publisher
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_out_pub_;
+  rclcpp::TimerBase::SharedPtr timer_;
+
 
   /// @brief Whether main routine is active
   bool process_active_;
