@@ -66,12 +66,13 @@ void ConstraintCritic::score(CriticData & data)
         std::move(out_of_turning_rad_motion)) *
         data.model_dt, {1}, immediate) * weight_, power_);
   }
-
-  data.costs += xt::pow(
-    xt::sum(
-      (std::move(out_of_max_bounds_motion) +
-      std::move(out_of_min_bounds_motion)) *
-      data.model_dt, {1}, immediate) * weight_, power_);
+  else {
+    data.costs += xt::pow(
+      xt::sum(
+        (std::move(out_of_max_bounds_motion) +
+        std::move(out_of_min_bounds_motion)) *
+        data.model_dt, {1}, immediate) * weight_, power_);
+  }
 }
 
 }  // namespace mppi::critics
