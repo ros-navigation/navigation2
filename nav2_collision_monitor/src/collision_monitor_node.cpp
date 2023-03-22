@@ -24,6 +24,8 @@
 
 #include "nav2_collision_monitor/kinematics.hpp"
 
+using namespace std::chrono_literals;
+
 namespace nav2_collision_monitor
 {
 
@@ -66,6 +68,15 @@ CollisionMonitor::on_configure(const rclcpp_lifecycle::State & /*state*/)
     std::bind(&CollisionMonitor::cmdVelInCallback, this, std::placeholders::_1));
   cmd_vel_out_pub_ = this->create_publisher<geometry_msgs::msg::Twist>(
     cmd_vel_out_topic, 1);
+
+  for (std::shared_ptr<Polygon> polygon : polygons_) {
+    if (polygon->getActionType() == PUBLISH) {
+      timer_ = this->create_wall_timer(
+        100ms,
+        std::bind(&CollisionMonitor::process_without_vel, this));
+      break;
+    }
+  }
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -383,6 +394,34 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in)
   robot_action_prev_ = robot_action;
 }
 
+void CollisionMonitor::process_without_vel()
+{
+  // Current timestamp for all inner routines prolongation
+  rclcpp::Time curr_time = this->now();
+
+  // Do nothing if main worker in non-active state
+  if (!process_active_) {
+    return;
+  }
+
+  // Points array collected from different data sources in a robot base frame
+  std::vector<Point> collision_points;
+
+  // Fill collision_points array from different data sources
+  for (std::shared_ptr<Source> source : sources_) {
+    source->getData(curr_time, collision_points);
+  }
+
+  for (std::shared_ptr<Polygon> polygon : polygons_) {
+    const ActionType at = polygon->getActionType();
+    if (at == PUBLISH) {
+      // Process PUBLISH for the selected polygon
+      processPublish(polygon, collision_points);
+    }
+  }
+  publishPolygons();
+}
+
 bool CollisionMonitor::processStopSlowdown(
   const std::shared_ptr<Polygon> polygon,
   const std::vector<Point> & collision_points,
@@ -438,6 +477,13 @@ bool CollisionMonitor::processApproach(
   return false;
 }
 
+bool CollisionMonitor::processPublish(
+  const std::shared_ptr<Polygon> polygon,
+  const std::vector<Point> & collision_points) const
+{
+  return polygon->publish_detection(collision_points);
+}
+
 void CollisionMonitor::printAction(
   const Action & robot_action, const std::shared_ptr<Polygon> action_polygon) const
 {
@@ -457,6 +503,10 @@ void CollisionMonitor::printAction(
       get_logger(),
       "Robot to approach for %f seconds away from collision",
       action_polygon->getTimeBeforeCollision());
+  } else if (robot_action.action_type == PUBLISH) {
+    RCLCPP_INFO(
+      get_logger(),
+      "Robot to publish to configured topic collision detection");
   } else {  // robot_action.action_type == DO_NOTHING
     RCLCPP_INFO(
       get_logger(),
