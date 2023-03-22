@@ -69,9 +69,14 @@ CollisionMonitor::on_configure(const rclcpp_lifecycle::State & /*state*/)
   cmd_vel_out_pub_ = this->create_publisher<geometry_msgs::msg::Twist>(
     cmd_vel_out_topic, 1);
 
-  timer_ = this->create_wall_timer(
-    100ms,
-    std::bind(&CollisionMonitor::publish_action, this));
+  for (std::shared_ptr<Polygon> polygon : polygons_) {
+    if (polygon->getActionType() == PUBLISH) {
+      timer_ = this->create_wall_timer(
+        100ms,
+        std::bind(&CollisionMonitor::process_without_vel, this));
+      break;
+    }
+  }
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -407,18 +412,13 @@ void CollisionMonitor::process_without_vel()
     source->getData(curr_time, collision_points);
   }
 
-  // Polygon causing robot action (if any)
-  std::shared_ptr<Polygon> action_polygon;
-
   for (std::shared_ptr<Polygon> polygon : polygons_) {
-
     const ActionType at = polygon->getActionType();
     if (at == PUBLISH) {
       // Process PUBLISH for the selected polygon
       processPublish(polygon, collision_points);
     }
   }
-
   publishPolygons();
 }
 
