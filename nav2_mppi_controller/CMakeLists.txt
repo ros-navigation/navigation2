@@ -32,7 +32,21 @@ foreach(pkg IN LISTS dependencies_pkgs)
 endforeach()
 
 nav2_package()
-add_compile_options(-O3 -mavx2 -mfma -finline-limit=1000000 -ffp-contract=fast -ffast-math)
+
+include(CheckCXXCompilerFlag)
+
+check_cxx_compiler_flag("-mavx2" COMPILER_SUPPORTS_AVX2)
+check_cxx_compiler_flag("-mfma" COMPILER_SUPPORTS_FMA)
+
+if(COMPILER_SUPPORTS_AVX2)
+  add_compile_options(-mavx2)
+endif()
+
+if(COMPILER_SUPPORTS_FMA)
+  add_compile_options(-mfma)
+endif()
+
+add_compile_options(-O3 -finline-limit=1000000 -ffp-contract=fast -ffast-math)
 
 add_library(mppi_controller SHARED
   src/controller.cpp

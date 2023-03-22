@@ -196,9 +196,10 @@ public:
       // user defined callback, may modify "should_send_goal_".
       on_tick();
 
-      if (should_send_goal_) {
-        send_new_goal();
+      if (!should_send_goal_) {
+        return BT::NodeStatus::FAILURE;
       }
+      send_new_goal();
     }
 
     try {

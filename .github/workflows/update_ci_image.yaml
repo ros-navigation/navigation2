@@ -12,21 +12,26 @@ on:
       - '**/package.xml'
       - '**/*.repos'
       - 'Dockerfile'
+      - '.github/workflows/update_ci_image.yaml'
 
 jobs:
   check_ci_files:
     name: Check CI Files
     runs-on: ubuntu-latest
     outputs:
+      version: ${{ steps.check.outputs.version }}
       trigger: ${{ steps.check.outputs.trigger }}
       no_cache: ${{ steps.check.outputs.no_cache }}
     steps:
+      - uses: actions/checkout@v3
       - name: "Check package updates"
         id: check
         if: github.event_name == 'push'
         run: |
-          echo "::set-output name=trigger::true"
-          echo "::set-output name=no_cache::false"
+          version=$(grep -oP '(?<=<version>).*?(?=</version>)' navigation2/package.xml)
+          echo "version=${version}" >> $GITHUB_OUTPUT
+          echo "trigger=true" >> $GITHUB_OUTPUT
+          echo "no_cache=false" >> $GITHUB_OUTPUT
   check_ci_image:
     name: Check CI Image
     if: github.event_name == 'schedule'
@@ -36,7 +41,7 @@ jobs:
       trigger: ${{ steps.check.outputs.trigger }}
       no_cache: ${{ steps.check.outputs.no_cache }}
     container:
-      image: ghcr.io/ros-planning/navigation2:main
+      image: ghcr.io/${{ github.repository }}:${{ github.ref_name }}
     steps:
       - name: "Check apt updates"
         id: check
@@ -51,9 +56,9 @@ jobs:
           cat upgrade.log
           cat upgrade.log \
             | grep "^0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.$" \
-            && echo "::set-output name=trigger::false" \
-            || echo "::set-output name=trigger::true"
-          echo "::set-output name=no_cache::true"
+            && echo "trigger=false" >> $GITHUB_OUTPUT \
+            || echo "trigger=true" >> $GITHUB_OUTPUT
+          echo "no_cache=true" >> $GITHUB_OUTPUT
   rebuild_ci_image:
     name: Rebuild CI Image
     if: always()
@@ -73,16 +78,13 @@ jobs:
       - name: Set build config
         id: config
         run: |
-          timestamp=$(date --utc +%Y%m%d%H%M%S)
-          echo "::set-output name=timestamp::${timestamp}"
-
           no_cache=false
           if  [ "${{needs.check_ci_files.outputs.no_cache}}" == 'true' ] || \
               [ "${{needs.check_ci_image.outputs.no_cache}}" == 'true' ]
           then
             no_cache=true
           fi
-          echo "::set-output name=no_cache::${no_cache}"
+          echo "no_cache=${no_cache}" >> $GITHUB_OUTPUT
 
           trigger=false
           if  [ "${{needs.check_ci_files.outputs.trigger}}" == 'true' ] || \
@@ -90,21 +92,22 @@ jobs:
           then
             trigger=true
           fi
-          echo "::set-output name=trigger::${trigger}"
-      - name: Build and push
+          echo "trigger=${trigger}" >> $GITHUB_OUTPUT
+      - name: Build and push ${{ github.ref_name }}
         if: steps.config.outputs.trigger == 'true'
         id: docker_build
         uses: docker/build-push-action@v4
         with:
+          provenance: false
           pull: true
           push: true
           no-cache: ${{ steps.config.outputs.no_cache }}
-          cache-from: type=registry,ref=ghcr.io/ros-planning/navigation2:main
+          cache-from: type=registry,ref=ghcr.io/${{ github.repository }}:${{ github.ref_name }}
           cache-to: type=inline
           target: builder
           tags: |
-            ghcr.io/ros-planning/navigation2:main
-            ghcr.io/ros-planning/navigation2:main-${{ steps.config.outputs.timestamp }}
+            ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+            ghcr.io/${{ github.repository }}:${{ github.ref_name }}-${{ needs.check_ci_files.outputs.version }}
       - name: Image digest
         if: steps.config.outputs.trigger == 'true'
         run: echo ${{ steps.docker_build.outputs.digest }}

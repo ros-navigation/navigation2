@@ -80,12 +80,13 @@ TEST(UtilsTests, MarkerPopulationUtils)
   EXPECT_EQ(color.b, 3.0);
   EXPECT_EQ(color.a, 0.0);
 
-  auto marker = createMarker(999, pose, scale, color, "map");
+  auto marker = createMarker(999, pose, scale, color, "map", "ns");
   EXPECT_EQ(marker.header.frame_id, "map");
   EXPECT_EQ(marker.id, 999);
   EXPECT_EQ(marker.pose, pose);
   EXPECT_EQ(marker.scale, scale);
   EXPECT_EQ(marker.color, color);
+  EXPECT_EQ(marker.ns, "ns");
 }
 
 TEST(UtilsTests, ConversionTests)
