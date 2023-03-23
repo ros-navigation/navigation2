@@ -111,7 +111,8 @@ protected:
    */
   bool getParameters(
     std::string & cmd_vel_in_topic,
-    std::string & cmd_vel_out_topic);
+    std::string & cmd_vel_out_topic,
+    std::string & collision_monitor_state_topic);
   /**
    * @brief Supporting routine creating and configuring all polygons
    * @param base_frame_id Robot base frame ID

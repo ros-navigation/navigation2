@@ -237,6 +237,10 @@ void Tester::setCommonParameters()
     "cmd_vel_out_topic", rclcpp::ParameterValue(CMD_VEL_OUT_TOPIC));
   cm_->set_parameter(
     rclcpp::Parameter("cmd_vel_out_topic", CMD_VEL_OUT_TOPIC));
+  cm_->declare_parameter(
+    "collision_monitor_state_topic", rclcpp::ParameterValue(COLLISION_MONITOR_STATE_TOPIC));
+  cm_->set_parameter(
+    rclcpp::Parameter("collision_monitor_state_topic", COLLISION_MONITOR_STATE_TOPIC));
 
   cm_->declare_parameter(
     "base_frame_id", rclcpp::ParameterValue(BASE_FRAME_ID));
