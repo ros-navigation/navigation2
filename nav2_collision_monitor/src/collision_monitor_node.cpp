@@ -57,9 +57,10 @@ CollisionMonitor::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   std::string cmd_vel_in_topic;
   std::string cmd_vel_out_topic;
+  double frequency;
 
   // Obtaining ROS parameters
-  if (!getParameters(cmd_vel_in_topic, cmd_vel_out_topic)) {
+  if (!getParameters(cmd_vel_in_topic, cmd_vel_out_topic, frequency)) {
     return nav2_util::CallbackReturn::FAILURE;
   }
 
@@ -72,7 +73,7 @@ CollisionMonitor::on_configure(const rclcpp_lifecycle::State & /*state*/)
   for (std::shared_ptr<Polygon> polygon : polygons_) {
     if (polygon->getActionType() == PUBLISH) {
       timer_ = this->create_wall_timer(
-        100ms,
+        std::chrono::duration<double>{1.0 / frequency},
         std::bind(&CollisionMonitor::process_without_vel, this));
       break;
     }
@@ -187,7 +188,8 @@ void CollisionMonitor::publishVelocity(const Action & robot_action)
 
 bool CollisionMonitor::getParameters(
   std::string & cmd_vel_in_topic,
-  std::string & cmd_vel_out_topic)
+  std::string & cmd_vel_out_topic,
+  double & frequency)
 {
   std::string base_frame_id, odom_frame_id;
   tf2::Duration transform_tolerance;
@@ -201,6 +203,10 @@ bool CollisionMonitor::getParameters(
   nav2_util::declare_parameter_if_not_declared(
     node, "cmd_vel_out_topic", rclcpp::ParameterValue("cmd_vel"));
   cmd_vel_out_topic = get_parameter("cmd_vel_out_topic").as_string();
+
+  nav2_util::declare_parameter_if_not_declared(
+    node, "frequency", rclcpp::ParameterValue(10.0));
+  frequency = get_parameter("frequency").as_double();
 
   nav2_util::declare_parameter_if_not_declared(
     node, "base_frame_id", rclcpp::ParameterValue("base_footprint"));
