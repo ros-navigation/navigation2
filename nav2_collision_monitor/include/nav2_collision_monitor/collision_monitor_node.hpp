@@ -105,12 +105,14 @@ protected:
    * @brief Supporting routine obtaining all ROS-parameters
    * @param cmd_vel_in_topic Output name of cmd_vel_in topic
    * @param cmd_vel_out_topic Output name of cmd_vel_out topic
+   * @param frequency Frequency of the loop running process_without_vel
    * is required.
    * @return True if all parameters were obtained or false in failure case
    */
   bool getParameters(
     std::string & cmd_vel_in_topic,
-    std::string & cmd_vel_out_topic);
+    std::string & cmd_vel_out_topic,
+    double & frequency);
   /**
    * @brief Supporting routine creating and configuring all polygons
    * @param base_frame_id Robot base frame ID
