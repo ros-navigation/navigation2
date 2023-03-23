@@ -77,11 +77,11 @@ enum SourceType
 
 enum ActionType
 {
-  DO_NOTHING = 0,
-  STOP = 1,
-  SLOWDOWN = 2,
-  APPROACH = 3,
-  ACTION_UNKNOWN = 4
+  ACTION_UNKNOWN = 0,
+  DO_NOTHING = 1,
+  STOP = 2,
+  SLOWDOWN = 3,
+  APPROACH = 4
 };
 
 class CollisionMonitorWrapper : public nav2_collision_monitor::CollisionMonitor

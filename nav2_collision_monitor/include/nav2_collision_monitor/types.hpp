@@ -64,11 +64,11 @@ struct Pose
 /// @brief Action type for robot
 enum ActionType
 {
-  DO_NOTHING = 0,  // No action
-  STOP = 1,  // Stop the robot
-  SLOWDOWN = 2,  // Slowdown in percentage from current operating speed
-  APPROACH = 3,  // Keep constant time interval before collision
-  ACTION_UNKNOWN = 4 // Default for initializing action type
+  ACTION_UNKNOWN = 0, // Default for initializing action type
+  DO_NOTHING = 1,  // No action
+  STOP = 2,  // Stop the robot
+  SLOWDOWN = 3,  // Slowdown in percentage from current operating speed
+  APPROACH = 4  // Keep constant time interval before collision
 };
 
 /// @brief Action for robot
