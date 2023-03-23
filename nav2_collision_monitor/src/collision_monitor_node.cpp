@@ -67,6 +67,9 @@ CollisionMonitor::on_configure(const rclcpp_lifecycle::State & /*state*/)
   cmd_vel_out_pub_ = this->create_publisher<geometry_msgs::msg::Twist>(
     cmd_vel_out_topic, 1);
 
+  state_pub_ = this->create_publisher<std_msgs::msg::String>(
+    "~/state", rclcpp::SystemDefaultsQoS());
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -75,8 +78,9 @@ CollisionMonitor::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
-  // Activating lifecycle publisher
+  // Activating lifecycle publishers
   cmd_vel_out_pub_->on_activate();
+  state_pub_->on_activate();
 
   // Activating polygons
   for (std::shared_ptr<Polygon> polygon : polygons_) {
@@ -114,6 +118,7 @@ CollisionMonitor::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 
   // Deactivating lifecycle publishers
   cmd_vel_out_pub_->on_deactivate();
+  state_pub_->on_deactivate();
 
   // Destroying bond connection
   destroyBond();
@@ -128,6 +133,7 @@ CollisionMonitor::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 
   cmd_vel_in_sub_.reset();
   cmd_vel_out_pub_.reset();
+  state_pub_.reset();
 
   polygons_.clear();
   sources_.clear();
@@ -374,6 +380,11 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in)
       if (processApproach(polygon, collision_points, cmd_vel_in, robot_action)) {
         action_polygon = polygon;
       }
+    } else if (at == DO_NOTHING) {
+      // Process DO_NOTHING for the selected polygon
+      if (processDoNothing(polygon, collision_points, robot_action)) {
+        action_polygon = polygon;
+      }
     }
   }
 
@@ -389,6 +400,18 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in)
   publishPolygons();
 
   robot_action_prev_ = robot_action;
+}
+
+bool CollisionMonitor::processDoNothing(
+  const std::shared_ptr<Polygon> polygon,
+  const std::vector<Point> & collision_points,
+  Action & robot_action) const
+{
+  if (polygon->getPointsInside(collision_points) > polygon->getMaxPoints()) {
+    robot_action.action_type = DO_NOTHING;
+  }
+
+  return false;
 }
 
 bool CollisionMonitor::processStopSlowdown(
@@ -457,27 +480,36 @@ bool CollisionMonitor::processApproach(
 void CollisionMonitor::printAction(
   const Action & robot_action, const std::shared_ptr<Polygon> action_polygon) const
 {
+  std::unique_ptr<std_msgs::msg::String> state_msg =
+    std::make_unique<std_msgs::msg::String>();
   if (robot_action.action_type == STOP) {
     RCLCPP_INFO(
       get_logger(),
       "Robot to stop due to %s polygon",
       action_polygon->getName().c_str());
+    state_msg->data = "stop";
+
   } else if (robot_action.action_type == SLOWDOWN) {
     RCLCPP_INFO(
       get_logger(),
       "Robot to slowdown for %f percents due to %s polygon",
       action_polygon->getSlowdownRatio() * 100,
       action_polygon->getName().c_str());
+    state_msg->data = "slowdown";
   } else if (robot_action.action_type == APPROACH) {
     RCLCPP_INFO(
       get_logger(),
       "Robot to approach for %f seconds away from collision",
       action_polygon->getTimeBeforeCollision());
-  } else {  // robot_action.action_type == DO_NOTHING
+    state_msg->data = "approach";
+
+  } else if (robot_action.action_type == DO_NOTHING) {
     RCLCPP_INFO(
       get_logger(),
       "Robot to continue normal operation");
+    state_msg->data = "Do nothing";
   }
+  state_pub_->publish(std::move(state_msg));
 }
 
 void CollisionMonitor::publishPolygons() const

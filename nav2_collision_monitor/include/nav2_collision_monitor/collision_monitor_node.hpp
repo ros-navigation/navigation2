@@ -21,6 +21,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/twist.hpp"
+#include "std_msgs/msg/string.hpp"
 
 #include "tf2/time.h"
 #include "tf2_ros/buffer.h"
@@ -173,6 +174,18 @@ protected:
     Action & robot_action) const;
 
   /**
+   * @brief Processes DoNothing action type
+   * @param polygon Polygon to process
+   * @param collision_points Array of 2D obstacle points
+   * @param robot_action Output processed robot action
+   * @return True if returned action is caused by current polygon, otherwise false
+   */
+  bool processDoNothing(
+    const std::shared_ptr<Polygon> polygon,
+    const std::vector<Point> & collision_points,
+    Action & robot_action) const;
+
+  /**
    * @brief Prints robot action and polygon caused it (if it was)
    * @param robot_action Robot action to print
    * @param action_polygon Pointer to a polygon causing a selected action
@@ -203,6 +216,8 @@ protected:
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_in_sub_;
   /// @brief Output cmd_vel publisher
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_out_pub_;
+  /// @brief collision monitor state publisher
+  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::String>::SharedPtr state_pub_;
 
   /// @brief Whether main routine is active
   bool process_active_;
