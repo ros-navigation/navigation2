@@ -27,6 +27,7 @@
 #include "tf2_ros/transform_listener.h"
 
 #include "nav2_util/lifecycle_node.hpp"
+#include "nav2_msgs/msg/collision_monitor_state.hpp"
 
 #include "nav2_collision_monitor/types.hpp"
 #include "nav2_collision_monitor/polygon.hpp"
@@ -181,6 +182,12 @@ protected:
     const Action & robot_action, const std::shared_ptr<Polygon> action_polygon) const;
 
   /**
+   * @brief Publish current robot action and polygon name
+   * @param robot_action Robot action to publish
+   */
+  void publishActionState(const Action & robot_action) const;
+
+  /**
    * @brief Polygons publishing routine. Made for visualization.
    */
   void publishPolygons() const;
@@ -203,6 +210,10 @@ protected:
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_in_sub_;
   /// @brief Output cmd_vel publisher
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_out_pub_;
+
+  /// @brief CollisionMonitor state publisher
+  rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::CollisionMonitorState>::SharedPtr
+    collision_monitor_state_pub_;
 
   /// @brief Whether main routine is active
   bool process_active_;

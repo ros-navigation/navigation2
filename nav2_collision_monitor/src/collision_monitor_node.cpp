@@ -66,6 +66,8 @@ CollisionMonitor::on_configure(const rclcpp_lifecycle::State & /*state*/)
     std::bind(&CollisionMonitor::cmdVelInCallback, this, std::placeholders::_1));
   cmd_vel_out_pub_ = this->create_publisher<geometry_msgs::msg::Twist>(
     cmd_vel_out_topic, 1);
+  collision_monitor_state_pub_ = this->create_publisher<nav2_msgs::msg::CollisionMonitorState>(
+    "collision_monitor_state", 1);
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -77,6 +79,7 @@ CollisionMonitor::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
   // Activating lifecycle publisher
   cmd_vel_out_pub_->on_activate();
+  collision_monitor_state_pub_->on_activate();
 
   // Activating polygons
   for (std::shared_ptr<Polygon> polygon : polygons_) {
@@ -128,6 +131,7 @@ CollisionMonitor::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 
   cmd_vel_in_sub_.reset();
   cmd_vel_out_pub_.reset();
+  collision_monitor_state_pub_.reset();
 
   polygons_.clear();
   sources_.clear();
@@ -380,6 +384,7 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in)
   if (robot_action.action_type != robot_action_prev_.action_type) {
     // Report changed robot behavior
     printAction(robot_action, action_polygon);
+    publishActionState(robot_action);
   }
 
   // Publish requred robot velocity
@@ -481,6 +486,16 @@ void CollisionMonitor::printAction(
       get_logger(),
       "Robot to continue normal operation");
   }
+}
+
+void CollisionMonitor::publishActionState(const Action & robot_action) const
+{
+  std::unique_ptr<nav2_msgs::msg::CollisionMonitorState> collision_monitor_state_msg =
+    std::make_unique<nav2_msgs::msg::CollisionMonitorState>();
+  collision_monitor_state_msg->polygon_name = robot_action.polygon_name;
+  collision_monitor_state_msg->action_type = robot_action.action_type;
+
+  collision_monitor_state_pub_->publish(std::move(collision_monitor_state_msg));
 }
 
 void CollisionMonitor::publishPolygons() const
