@@ -391,8 +391,7 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in)
     robot_action.polygon_name != robot_action_prev_.polygon_name)
   {
     // Report changed robot behavior
-    printAction(robot_action, action_polygon);
-    publishActionState(robot_action);
+    notifyActionState(robot_action, action_polygon);
   }
 
   // Publish requred robot velocity
@@ -470,7 +469,7 @@ bool CollisionMonitor::processApproach(
   return false;
 }
 
-void CollisionMonitor::printAction(
+void CollisionMonitor::notifyActionState(
   const Action & robot_action, const std::shared_ptr<Polygon> action_polygon) const
 {
   if (robot_action.action_type == STOP) {
@@ -494,10 +493,7 @@ void CollisionMonitor::printAction(
       get_logger(),
       "Robot to continue normal operation");
   }
-}
 
-void CollisionMonitor::publishActionState(const Action & robot_action) const
-{
   std::unique_ptr<nav2_msgs::msg::CollisionMonitorState> collision_monitor_state_msg =
     std::make_unique<nav2_msgs::msg::CollisionMonitorState>();
   collision_monitor_state_msg->polygon_name = robot_action.polygon_name;

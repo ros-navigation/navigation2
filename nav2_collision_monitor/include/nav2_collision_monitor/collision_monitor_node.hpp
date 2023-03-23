@@ -175,18 +175,12 @@ protected:
     Action & robot_action) const;
 
   /**
-   * @brief Prints robot action and polygon caused it (if it was)
-   * @param robot_action Robot action to print
+   * @brief Log and publish current robot action and polygon
+   * @param robot_action Robot action to notify
    * @param action_polygon Pointer to a polygon causing a selected action
    */
-  void printAction(
+  void notifyActionState(
     const Action & robot_action, const std::shared_ptr<Polygon> action_polygon) const;
-
-  /**
-   * @brief Publish current robot action and polygon name
-   * @param robot_action Robot action to publish
-   */
-  void publishActionState(const Action & robot_action) const;
 
   /**
    * @brief Polygons publishing routine. Made for visualization.
