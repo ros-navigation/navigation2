@@ -118,6 +118,7 @@ CollisionMonitor::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 
   // Deactivating lifecycle publishers
   cmd_vel_out_pub_->on_deactivate();
+  collision_monitor_state_pub_->on_deactivate();
 
   // Destroying bond connection
   destroyBond();
