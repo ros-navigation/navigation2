@@ -75,6 +75,9 @@ jobs:
       - name: Set build config
         id: config
         run: |
+          created=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+          echo "created=${created}" >> $GITHUB_OUTPUT
+
           version=$(grep -oP '(?<=<version>).*?(?=</version>)' navigation2/package.xml)
           echo "version=${version}" >> $GITHUB_OUTPUT
 
@@ -109,6 +112,19 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository }}:${{ github.ref_name }}
             ghcr.io/${{ github.repository }}:${{ github.ref_name }}-${{ steps.config.outputs.version }}
+          labels: |
+            org.opencontainers.image.authors=${{ github.event.repository.owner.html_url }}
+            org.opencontainers.image.created=${{ steps.config.outputs.created }}
+            org.opencontainers.image.description=${{ github.event.repository.description }}
+            org.opencontainers.image.documentation=${{ github.event.repository.homepage }}
+            org.opencontainers.image.licenses=${{ github.event.repository.license.spdx_id }}
+            org.opencontainers.image.ref.name=${{ github.ref }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=${{ github.event.repository.clone_url }}
+            org.opencontainers.image.title=${{ github.event.repository.name }}
+            org.opencontainers.image.url=${{ github.event.repository.html_url }}
+            org.opencontainers.image.vendor=${{ github.event.repository.owner.login }}
+            org.opencontainers.image.version=${{ steps.config.outputs.version }}
       - name: Image digest
         if: steps.config.outputs.trigger == 'true'
         run: echo ${{ steps.docker_build.outputs.digest }}
