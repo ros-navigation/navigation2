@@ -68,7 +68,6 @@ enum ActionType
   STOP = 1,  // Stop the robot
   SLOWDOWN = 2,  // Slowdown in percentage from current operating speed
   APPROACH = 3,  // Keep constant time interval before collision
-  ACTION_UNKNOWN = 4 // Default for initializing action type
 };
 
 /// @brief Action for robot

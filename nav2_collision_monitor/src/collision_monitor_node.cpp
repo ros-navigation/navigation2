@@ -29,7 +29,7 @@ namespace nav2_collision_monitor
 
 CollisionMonitor::CollisionMonitor(const rclcpp::NodeOptions & options)
 : nav2_util::LifecycleNode("collision_monitor", "", options),
-  process_active_(false), robot_action_prev_{ACTION_UNKNOWN, {-1.0, -1.0, -1.0}, ""},
+  process_active_(false), robot_action_prev_{DO_NOTHING, {-1.0, -1.0, -1.0}, ""},
   stop_stamp_{0, 0, get_clock()->get_clock_type()}, stop_pub_timeout_(1.0, 0.0)
 {
 }
@@ -109,7 +109,7 @@ CollisionMonitor::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   process_active_ = false;
 
   // Reset action type to default after worker deactivating
-  robot_action_prev_ = {ACTION_UNKNOWN, {-1.0, -1.0, -1.0}, ""};
+  robot_action_prev_ = {DO_NOTHING, {-1.0, -1.0, -1.0}, ""};
 
   // Deactivating polygons
   for (std::shared_ptr<Polygon> polygon : polygons_) {
@@ -387,9 +387,7 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in)
     }
   }
 
-  if (robot_action_prev_.action_type == ACTION_UNKNOWN ||
-    robot_action.polygon_name != robot_action_prev_.polygon_name)
-  {
+  if (robot_action.polygon_name != robot_action_prev_.polygon_name) {
     // Report changed robot behavior
     notifyActionState(robot_action, action_polygon);
   }

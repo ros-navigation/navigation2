@@ -81,7 +81,6 @@ enum ActionType
   STOP = 1,
   SLOWDOWN = 2,
   APPROACH = 3,
-  ACTION_UNKNOWN = 4
 };
 
 class CollisionMonitorWrapper : public nav2_collision_monitor::CollisionMonitor
@@ -602,8 +601,6 @@ TEST_F(Tester, testProcessStopSlowdown)
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.2, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.1, EPSILON);
-  ASSERT_EQ(action_state_->action_type, DO_NOTHING);
-  ASSERT_EQ(action_state_->polygon_name, "");
 
   // 2. Obstacle is in slowdown robot zone
   publishScan(1.5, curr_time);
@@ -667,8 +664,6 @@ TEST_F(Tester, testProcessApproach)
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.2, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
-  ASSERT_EQ(action_state_->action_type, DO_NOTHING);
-  ASSERT_EQ(action_state_->polygon_name, "");
 
   // 2. Approaching obstacle (0.2 m ahead from robot footprint)
   publishScan(1.2, curr_time);
@@ -740,8 +735,6 @@ TEST_F(Tester, testProcessApproachRotation)
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.0, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->angular.z, M_PI / 4, EPSILON);
-  ASSERT_EQ(action_state_->action_type, DO_NOTHING);
-  ASSERT_EQ(action_state_->polygon_name, "");
 
   // 2. Approaching rotation to obstacle ( M_PI / 4 - M_PI / 20 ahead from robot)
   publishRange(1.4, curr_time);
