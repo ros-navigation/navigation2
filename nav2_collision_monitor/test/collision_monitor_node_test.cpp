@@ -157,6 +157,7 @@ public:
     const std::chrono::nanoseconds & timeout,
     const rclcpp::Time & stamp);
   bool waitCmdVel(const std::chrono::nanoseconds & timeout);
+  bool waitActionState(const std::chrono::nanoseconds & timeout);
 
 protected:
   void cmdVelOutCallback(geometry_msgs::msg::Twist::SharedPtr msg);
@@ -525,6 +526,7 @@ void Tester::publishCmdVel(const double x, const double y, const double tw)
 {
   // Reset cmd_vel_out_ before calling CollisionMonitor::process()
   cmd_vel_out_ = nullptr;
+  action_state_ = nullptr;
 
   std::unique_ptr<geometry_msgs::msg::Twist> msg =
     std::make_unique<geometry_msgs::msg::Twist>();
@@ -557,6 +559,19 @@ bool Tester::waitCmdVel(const std::chrono::nanoseconds & timeout)
   rclcpp::Time start_time = cm_->now();
   while (rclcpp::ok() && cm_->now() - start_time <= rclcpp::Duration(timeout)) {
     if (cmd_vel_out_) {
+      return true;
+    }
+    rclcpp::spin_some(cm_->get_node_base_interface());
+    std::this_thread::sleep_for(10ms);
+  }
+  return false;
+}
+
+bool Tester::waitActionState(const std::chrono::nanoseconds & timeout)
+{
+  rclcpp::Time start_time = cm_->now();
+  while (rclcpp::ok() && cm_->now() - start_time <= rclcpp::Duration(timeout)) {
+    if (action_state_) {
       return true;
     }
     rclcpp::spin_some(cm_->get_node_base_interface());
@@ -610,6 +625,7 @@ TEST_F(Tester, testProcessStopSlowdown)
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5 * SLOWDOWN_RATIO, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.2 * SLOWDOWN_RATIO, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.1 * SLOWDOWN_RATIO, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
   ASSERT_EQ(action_state_->action_type, SLOWDOWN);
   ASSERT_EQ(action_state_->polygon_name, "SlowDown");
 
@@ -621,6 +637,7 @@ TEST_F(Tester, testProcessStopSlowdown)
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.0, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
   ASSERT_EQ(action_state_->action_type, STOP);
   ASSERT_EQ(action_state_->polygon_name, "Stop");
 
@@ -632,6 +649,7 @@ TEST_F(Tester, testProcessStopSlowdown)
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.2, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.1, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
   ASSERT_EQ(action_state_->action_type, DO_NOTHING);
   ASSERT_EQ(action_state_->polygon_name, "");
 
@@ -678,6 +696,7 @@ TEST_F(Tester, testProcessApproach)
   ASSERT_NEAR(
     cmd_vel_out_->linear.y, 0.2 * change_ratio, 0.2 * SIMULATION_TIME_STEP / TIME_BEFORE_COLLISION);
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
   ASSERT_EQ(action_state_->action_type, APPROACH);
   ASSERT_EQ(action_state_->polygon_name, "Approach");
 
@@ -689,8 +708,6 @@ TEST_F(Tester, testProcessApproach)
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.0, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
-  ASSERT_EQ(action_state_->action_type, APPROACH);
-  ASSERT_EQ(action_state_->polygon_name, "Approach");
 
   // 4. Restoring back normal operation
   publishScan(3.0, curr_time);
@@ -700,6 +717,7 @@ TEST_F(Tester, testProcessApproach)
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.2, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
   ASSERT_EQ(action_state_->action_type, DO_NOTHING);
   ASSERT_EQ(action_state_->polygon_name, "");
 
@@ -749,6 +767,7 @@ TEST_F(Tester, testProcessApproachRotation)
     cmd_vel_out_->angular.z,
     M_PI / 5,
     (M_PI / 4) * (SIMULATION_TIME_STEP / TIME_BEFORE_COLLISION));
+  ASSERT_TRUE(waitActionState(500ms));
   ASSERT_EQ(action_state_->action_type, APPROACH);
   ASSERT_EQ(action_state_->polygon_name, "Approach");
 
@@ -760,8 +779,6 @@ TEST_F(Tester, testProcessApproachRotation)
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.0, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
-  ASSERT_EQ(action_state_->action_type, APPROACH);
-  ASSERT_EQ(action_state_->polygon_name, "Approach");
 
   // 4. Restoring back normal operation
   publishRange(2.5, curr_time);
@@ -771,6 +788,7 @@ TEST_F(Tester, testProcessApproachRotation)
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.0, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->angular.z, M_PI / 4, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
   ASSERT_EQ(action_state_->action_type, DO_NOTHING);
   ASSERT_EQ(action_state_->polygon_name, "");
 
@@ -810,6 +828,7 @@ TEST_F(Tester, testCrossOver)
     cmd_vel_out_->linear.x, 3.0 * change_ratio, 3.0 * SIMULATION_TIME_STEP / TIME_BEFORE_COLLISION);
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
   ASSERT_EQ(action_state_->action_type, APPROACH);
   ASSERT_EQ(action_state_->polygon_name, "Approach");
 
@@ -821,6 +840,7 @@ TEST_F(Tester, testCrossOver)
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.1 * SLOWDOWN_RATIO, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
   ASSERT_EQ(action_state_->action_type, SLOWDOWN);
   ASSERT_EQ(action_state_->polygon_name, "SlowDown");
 
@@ -835,6 +855,7 @@ TEST_F(Tester, testCrossOver)
     cmd_vel_out_->linear.x, 1.0 * change_ratio, 1.0 * SIMULATION_TIME_STEP / TIME_BEFORE_COLLISION);
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
   ASSERT_EQ(action_state_->action_type, APPROACH);
   ASSERT_EQ(action_state_->polygon_name, "Approach");
 
@@ -867,6 +888,7 @@ TEST_F(Tester, testCeasePublishZeroVel)
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.0, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
   ASSERT_EQ(action_state_->action_type, APPROACH);
   ASSERT_EQ(action_state_->polygon_name, "Approach");
 
@@ -885,6 +907,7 @@ TEST_F(Tester, testCeasePublishZeroVel)
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.2, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.1, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
   ASSERT_EQ(action_state_->action_type, DO_NOTHING);
   ASSERT_EQ(action_state_->polygon_name, "");
 
@@ -896,6 +919,7 @@ TEST_F(Tester, testCeasePublishZeroVel)
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.0, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
   ASSERT_EQ(action_state_->action_type, STOP);
   ASSERT_EQ(action_state_->polygon_name, "Stop");
 
