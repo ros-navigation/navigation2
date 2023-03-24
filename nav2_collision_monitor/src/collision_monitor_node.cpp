@@ -67,8 +67,10 @@ CollisionMonitor::on_configure(const rclcpp_lifecycle::State & /*state*/)
     std::bind(&CollisionMonitor::cmdVelInCallback, this, std::placeholders::_1));
   cmd_vel_out_pub_ = this->create_publisher<geometry_msgs::msg::Twist>(
     cmd_vel_out_topic, 1);
-  state_pub_ = this->create_publisher<nav2_msgs::msg::CollisionMonitorState>(
-    state_topic, 1);
+  if (!state_topic.empty()) {
+    state_pub_ = this->create_publisher<nav2_msgs::msg::CollisionMonitorState>(
+      state_topic, 1);
+  }
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -80,7 +82,9 @@ CollisionMonitor::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
   // Activating lifecycle publisher
   cmd_vel_out_pub_->on_activate();
-  state_pub_->on_activate();
+  if (state_pub_ != nullptr) {
+    state_pub_->on_activate();
+  }
 
   // Activating polygons
   for (std::shared_ptr<Polygon> polygon : polygons_) {
@@ -118,7 +122,9 @@ CollisionMonitor::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 
   // Deactivating lifecycle publishers
   cmd_vel_out_pub_->on_deactivate();
-  state_pub_->on_deactivate();
+  if (state_pub_ != nullptr) {
+    state_pub_->on_deactivate();
+  }
 
   // Destroying bond connection
   destroyBond();
@@ -198,7 +204,7 @@ bool CollisionMonitor::getParameters(
     node, "cmd_vel_out_topic", rclcpp::ParameterValue("cmd_vel"));
   cmd_vel_out_topic = get_parameter("cmd_vel_out_topic").as_string();
   nav2_util::declare_parameter_if_not_declared(
-    node, "state_topic", rclcpp::ParameterValue("collision_monitor_state"));
+    node, "state_topic", rclcpp::ParameterValue(""));
   state_topic = get_parameter("state_topic").as_string();
 
   nav2_util::declare_parameter_if_not_declared(
@@ -492,12 +498,14 @@ void CollisionMonitor::notifyActionState(
       "Robot to continue normal operation");
   }
 
-  std::unique_ptr<nav2_msgs::msg::CollisionMonitorState> state_msg =
-    std::make_unique<nav2_msgs::msg::CollisionMonitorState>();
-  state_msg->polygon_name = robot_action.polygon_name;
-  state_msg->action_type = robot_action.action_type;
+  if (state_pub_ != nullptr) {
+    std::unique_ptr<nav2_msgs::msg::CollisionMonitorState> state_msg =
+      std::make_unique<nav2_msgs::msg::CollisionMonitorState>();
+    state_msg->polygon_name = robot_action.polygon_name;
+    state_msg->action_type = robot_action.action_type;
 
-  state_pub_->publish(std::move(state_msg));
+    state_pub_->publish(std::move(state_msg));
+  }
 }
 
 void CollisionMonitor::publishPolygons() const
