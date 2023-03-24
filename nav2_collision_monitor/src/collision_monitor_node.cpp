@@ -82,7 +82,7 @@ CollisionMonitor::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
   // Activating lifecycle publisher
   cmd_vel_out_pub_->on_activate();
-  if (state_pub_ != nullptr) {
+  if (state_pub_) {
     state_pub_->on_activate();
   }
 
@@ -122,7 +122,7 @@ CollisionMonitor::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 
   // Deactivating lifecycle publishers
   cmd_vel_out_pub_->on_deactivate();
-  if (state_pub_ != nullptr) {
+  if (state_pub_) {
     state_pub_->on_deactivate();
   }
 
@@ -498,7 +498,7 @@ void CollisionMonitor::notifyActionState(
       "Robot to continue normal operation");
   }
 
-  if (state_pub_ != nullptr) {
+  if (state_pub_) {
     std::unique_ptr<nav2_msgs::msg::CollisionMonitorState> state_msg =
       std::make_unique<nav2_msgs::msg::CollisionMonitorState>();
     state_msg->polygon_name = robot_action.polygon_name;
