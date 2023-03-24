@@ -112,7 +112,7 @@ protected:
   bool getParameters(
     std::string & cmd_vel_in_topic,
     std::string & cmd_vel_out_topic,
-    std::string & collision_monitor_state_topic);
+    std::string & state_topic);
   /**
    * @brief Supporting routine creating and configuring all polygons
    * @param base_frame_id Robot base frame ID
@@ -208,7 +208,7 @@ protected:
 
   /// @brief CollisionMonitor state publisher
   rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::CollisionMonitorState>::SharedPtr
-    collision_monitor_state_pub_;
+    state_pub_;
 
   /// @brief Whether main routine is active
   bool process_active_;

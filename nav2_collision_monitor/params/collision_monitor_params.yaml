@@ -4,7 +4,7 @@ collision_monitor:
     odom_frame_id: "odom"
     cmd_vel_in_topic: "cmd_vel_raw"
     cmd_vel_out_topic: "cmd_vel"
-    collision_monitor_state_topic: "collision_monitor_state"
+    state_topic: "collision_monitor_state"
     transform_tolerance: 0.5
     source_timeout: 5.0
     base_shift_correction: True

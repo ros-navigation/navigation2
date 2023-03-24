@@ -47,7 +47,7 @@ static const char SOURCE_FRAME_ID[]{"base_source"};
 static const char ODOM_FRAME_ID[]{"odom"};
 static const char CMD_VEL_IN_TOPIC[]{"cmd_vel_in"};
 static const char CMD_VEL_OUT_TOPIC[]{"cmd_vel_out"};
-static const char COLLISION_MONITOR_STATE_TOPIC[]{"collision_monitor_state"};
+static const char STATE_TOPIC[]{"collision_monitor_state"};
 static const char FOOTPRINT_TOPIC[]{"footprint"};
 static const char SCAN_NAME[]{"Scan"};
 static const char POINTCLOUD_NAME[]{"PointCloud"};
@@ -206,7 +206,7 @@ Tester::Tester()
     std::bind(&Tester::cmdVelOutCallback, this, std::placeholders::_1));
 
   action_state_sub_ = cm_->create_subscription<nav2_msgs::msg::CollisionMonitorState>(
-    COLLISION_MONITOR_STATE_TOPIC, rclcpp::SystemDefaultsQoS(),
+    STATE_TOPIC, rclcpp::SystemDefaultsQoS(),
     std::bind(&Tester::actionStateCallback, this, std::placeholders::_1));
 }
 
@@ -237,9 +237,9 @@ void Tester::setCommonParameters()
   cm_->set_parameter(
     rclcpp::Parameter("cmd_vel_out_topic", CMD_VEL_OUT_TOPIC));
   cm_->declare_parameter(
-    "collision_monitor_state_topic", rclcpp::ParameterValue(COLLISION_MONITOR_STATE_TOPIC));
+    "state_topic", rclcpp::ParameterValue(STATE_TOPIC));
   cm_->set_parameter(
-    rclcpp::Parameter("collision_monitor_state_topic", COLLISION_MONITOR_STATE_TOPIC));
+    rclcpp::Parameter("state_topic", STATE_TOPIC));
 
   cm_->declare_parameter(
     "base_frame_id", rclcpp::ParameterValue(BASE_FRAME_ID));
