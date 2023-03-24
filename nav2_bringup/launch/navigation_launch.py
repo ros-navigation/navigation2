@@ -35,19 +35,22 @@ def generate_launch_description():
     autostart = LaunchConfiguration('autostart')
     params_file = LaunchConfiguration('params_file')
     use_composition = LaunchConfiguration('use_composition')
+    use_smoother_server = LaunchConfiguration('use_smoother_server')
     container_name = LaunchConfiguration('container_name')
     container_name_full = (namespace, '/', container_name)
     use_respawn = LaunchConfiguration('use_respawn')
     log_level = LaunchConfiguration('log_level')
 
-    lifecycle_nodes = ['controller_server',
-                       'smoother_server',
+    lifecycle_nodes = PythonExpression(["""['controller_server',
                        'planner_server',
                        'behavior_server',
                        'bt_navigator',
                        'waypoint_follower',
-                       'velocity_smoother']
-
+                       'velocity_smoother'] + (
+                        ['smoother_server'] if '""",
+                        use_smoother_server,
+                        "'.lower()=='true' else [])"])
+    
     # Map fully qualified names to relative ones so the node's namespace can be prepended.
     # In case of the transforms (tf), currently, there doesn't seem to be a better alternative
     # https://github.com/ros/geometry2/issues/32
@@ -93,6 +96,10 @@ def generate_launch_description():
         'use_composition', default_value='False',
         description='Use composed bringup if True')
 
+    declare_use_smoother_server_cmd = DeclareLaunchArgument(
+        'use_smoother_server', default_value='True',
+        description='Launch smoother server if True')
+
     declare_container_name_cmd = DeclareLaunchArgument(
         'container_name', default_value='nav2_container',
         description='the name of conatiner that nodes will load in if use composition')
@@ -119,6 +126,7 @@ def generate_launch_description():
                 arguments=['--ros-args', '--log-level', log_level],
                 remappings=remappings + [('cmd_vel', 'cmd_vel_nav')]),
             Node(
+                condition=IfCondition(use_smoother_server),
                 package='nav2_smoother',
                 executable='smoother_server',
                 name='smoother_server',
@@ -263,6 +271,7 @@ def generate_launch_description():
     ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_autostart_cmd)
     ld.add_action(declare_use_composition_cmd)
+    ld.add_action(declare_use_smoother_server_cmd)
     ld.add_action(declare_container_name_cmd)
     ld.add_action(declare_use_respawn_cmd)
     ld.add_action(declare_log_level_cmd)
