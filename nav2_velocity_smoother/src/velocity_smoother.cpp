@@ -213,7 +213,7 @@ void VelocitySmoother::smootherTimer()
   if (!command_) {
     return;
   }
-  
+
   auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>();
 
   // Check for velocity timeout. If nothing received, publish zeros to apply deceleration
@@ -275,16 +275,12 @@ void VelocitySmoother::smootherTimer()
   cmd_vel->angular.z = applyConstraints(
     current_.angular.z, command_->angular.z, max_accels_[2], max_decels_[2], eta);
 
-  // If open loop, assume we achieved it
-  if (open_loop_) {
-    last_cmd_ = *cmd_vel;
-  }
-
   // Apply deadband restrictions & publish
   cmd_vel->linear.x = fabs(cmd_vel->linear.x) < deadband_velocities_[0] ? 0.0 : cmd_vel->linear.x;
   cmd_vel->linear.y = fabs(cmd_vel->linear.y) < deadband_velocities_[1] ? 0.0 : cmd_vel->linear.y;
   cmd_vel->angular.z = fabs(cmd_vel->angular.z) <
     deadband_velocities_[2] ? 0.0 : cmd_vel->angular.z;
+  last_cmd_ = *cmd_vel;
   smoothed_cmd_pub_->publish(std::move(cmd_vel));
 }
 
