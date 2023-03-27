@@ -122,6 +122,7 @@ TEST(VelocitySmootherTest, approxClosedLoopTestTimer)
     1,
     [&](geometry_msgs::msg::Twist::SharedPtr msg) {
       linear_vels.push_back(msg->linear.x);
+      std::cout << msg->linear.x << std::endl;
     });
 
   auto odom_pub = smoother->create_publisher<nav_msgs::msg::Odometry>("odom", 1);
@@ -143,7 +144,7 @@ TEST(VelocitySmootherTest, approxClosedLoopTestTimer)
 
   // Process velocity smoothing and send updated odometry based on commands
   auto start = smoother->now();
-  while (smoother->now() - start < 2.0s) {
+  while (smoother->now() - start < 1.5s) {
     odom_msg.header.stamp = smoother->now();
     if (linear_vels.size() > 0) {
       odom_msg.twist.twist.linear.x = linear_vels.back();
@@ -153,11 +154,12 @@ TEST(VelocitySmootherTest, approxClosedLoopTestTimer)
   }
 
   // Sanity check we have the approximately right number of messages for the timespan and timeout
-  EXPECT_GT(linear_vels.size(), 29u);
-  EXPECT_LT(linear_vels.size(), 40u);
+  EXPECT_GT(linear_vels.size(), 19u);
+  EXPECT_LT(linear_vels.size(), 30u);
 
   // Should have last command be a stop since we timed out the command stream
   EXPECT_EQ(linear_vels.back(), 0.0);
+  EXPECT_EQ(linear_vels.back(), 1.0);
 
   // Process to make sure stops at limit in velocity,
   // doesn't exceed acceleration
