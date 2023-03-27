@@ -17,6 +17,7 @@
 #include <exception>
 #include <utility>
 #include <functional>
+#include <algorithm>
 
 #include "tf2_ros/create_timer_ros.h"
 
@@ -69,14 +70,17 @@ CollisionMonitor::on_configure(const rclcpp_lifecycle::State & /*state*/)
   cmd_vel_out_pub_ = this->create_publisher<geometry_msgs::msg::Twist>(
     cmd_vel_out_topic, 1);
 
-  for (std::shared_ptr<Polygon> polygon : polygons_) {
-    if (polygon->getActionType() == DO_NOTHING) {
-      timer_ = this->create_wall_timer(
-        100ms,
-        std::bind(&CollisionMonitor::timer_callback, this));
-      break;
-    }
+
+  bool any_do_nothing = std::any_of(polygons_.begin(), polygons_.end(),
+  [](const std::shared_ptr<Polygon> polygon) {
+    return polygon->getActionType() == DO_NOTHING; });
+
+  if (any_do_nothing) {
+    timer_ = this->create_wall_timer(
+      100ms,
+      std::bind(&CollisionMonitor::timer_callback, this));
   }
+  
 
   trigger_pub_ = this->create_publisher<std_msgs::msg::Bool>(
     "~/state", rclcpp::SystemDefaultsQoS());
