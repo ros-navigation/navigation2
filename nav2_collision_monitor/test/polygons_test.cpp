@@ -51,7 +51,7 @@ static const std::vector<double> SQUARE_POLYGON {
 static const std::vector<double> ARBITRARY_POLYGON {
   1.0, 1.0, 1.0, 0.0, 2.0, 0.0, 2.0, -1.0, -1.0, -1.0, -1.0, 1.0};
 static const double CIRCLE_RADIUS{0.5};
-static const int MAX_POINTS{1};
+static const int MIN_POINTS{2};
 static const double SLOWDOWN_RATIO{0.7};
 static const double TIME_BEFORE_COLLISION{1.0};
 static const double SIMULATION_TIME_STEP{0.01};
@@ -267,9 +267,9 @@ void Tester::setCommonParameters(const std::string & polygon_name, const std::st
     rclcpp::Parameter(polygon_name + ".action_type", action_type));
 
   test_node_->declare_parameter(
-    polygon_name + ".max_points", rclcpp::ParameterValue(MAX_POINTS));
+    polygon_name + ".min_points", rclcpp::ParameterValue(MIN_POINTS));
   test_node_->set_parameter(
-    rclcpp::Parameter(polygon_name + ".max_points", MAX_POINTS));
+    rclcpp::Parameter(polygon_name + ".min_points", MIN_POINTS));
 
   test_node_->declare_parameter(
     polygon_name + ".slowdown_ratio", rclcpp::ParameterValue(SLOWDOWN_RATIO));
@@ -432,7 +432,7 @@ TEST_F(Tester, testPolygonGetStopParameters)
   // Check that common parameters set correctly
   EXPECT_EQ(polygon_->getName(), POLYGON_NAME);
   EXPECT_EQ(polygon_->getActionType(), nav2_collision_monitor::STOP);
-  EXPECT_EQ(polygon_->getMaxPoints(), MAX_POINTS);
+  EXPECT_EQ(polygon_->getMinPoints(), MIN_POINTS);
   EXPECT_EQ(polygon_->isVisualize(), true);
 
   // Check that polygon set correctly
@@ -456,7 +456,7 @@ TEST_F(Tester, testPolygonGetSlowdownParameters)
   // Check that common parameters set correctly
   EXPECT_EQ(polygon_->getName(), POLYGON_NAME);
   EXPECT_EQ(polygon_->getActionType(), nav2_collision_monitor::SLOWDOWN);
-  EXPECT_EQ(polygon_->getMaxPoints(), MAX_POINTS);
+  EXPECT_EQ(polygon_->getMinPoints(), MIN_POINTS);
   EXPECT_EQ(polygon_->isVisualize(), true);
   // Check that slowdown_ratio is correct
   EXPECT_NEAR(polygon_->getSlowdownRatio(), SLOWDOWN_RATIO, EPSILON);
@@ -469,7 +469,7 @@ TEST_F(Tester, testPolygonGetApproachParameters)
   // Check that common parameters set correctly
   EXPECT_EQ(polygon_->getName(), POLYGON_NAME);
   EXPECT_EQ(polygon_->getActionType(), nav2_collision_monitor::APPROACH);
-  EXPECT_EQ(polygon_->getMaxPoints(), MAX_POINTS);
+  EXPECT_EQ(polygon_->getMinPoints(), MIN_POINTS);
   EXPECT_EQ(polygon_->isVisualize(), true);
   // Check that time_before_collision and simulation_time_step are correct
   EXPECT_NEAR(polygon_->getTimeBeforeCollision(), TIME_BEFORE_COLLISION, EPSILON);
@@ -483,7 +483,7 @@ TEST_F(Tester, testCircleGetParameters)
   // Check that common parameters set correctly
   EXPECT_EQ(circle_->getName(), CIRCLE_NAME);
   EXPECT_EQ(circle_->getActionType(), nav2_collision_monitor::APPROACH);
-  EXPECT_EQ(circle_->getMaxPoints(), MAX_POINTS);
+  EXPECT_EQ(circle_->getMinPoints(), MIN_POINTS);
 
   // Check that Circle-specific parameters were set correctly
   EXPECT_NEAR(circle_->getRadius(), CIRCLE_RADIUS, EPSILON);
@@ -560,6 +560,25 @@ TEST_F(Tester, testPolygonIncorrectPoints2)
     test_node_, POLYGON_NAME,
     tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_FALSE(polygon_->configure());
+}
+
+// Testcase for deprecated "max_points" parameter
+TEST_F(Tester, testPolygonMaxPoints)
+{
+  setCommonParameters(POLYGON_NAME, "stop");
+  setPolygonParameters(SQUARE_POLYGON, true);
+
+  const int max_points = 5;
+  test_node_->declare_parameter(
+    std::string(POLYGON_NAME) + ".max_points", rclcpp::ParameterValue(max_points));
+  test_node_->set_parameter(
+    rclcpp::Parameter(std::string(POLYGON_NAME) + ".max_points", max_points));
+
+  polygon_ = std::make_shared<PolygonWrapper>(
+    test_node_, POLYGON_NAME,
+    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
+  ASSERT_TRUE(polygon_->configure());
+  EXPECT_EQ(polygon_->getMinPoints(), max_points + 1);
 }
 
 TEST_F(Tester, testCircleUndeclaredRadius)

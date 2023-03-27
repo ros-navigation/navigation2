@@ -50,7 +50,7 @@ static const char FOOTPRINT_TOPIC[]{"footprint"};
 static const char SCAN_NAME[]{"Scan"};
 static const char POINTCLOUD_NAME[]{"PointCloud"};
 static const char RANGE_NAME[]{"Range"};
-static const int MAX_POINTS{1};
+static const int MIN_POINTS{2};
 static const double SLOWDOWN_RATIO{0.7};
 static const double TIME_BEFORE_COLLISION{1.0};
 static const double SIMULATION_TIME_STEP{0.01};
@@ -285,9 +285,9 @@ void Tester::addPolygon(
     rclcpp::Parameter(polygon_name + ".action_type", at));
 
   cm_->declare_parameter(
-    polygon_name + ".max_points", rclcpp::ParameterValue(MAX_POINTS));
+    polygon_name + ".min_points", rclcpp::ParameterValue(MIN_POINTS));
   cm_->set_parameter(
-    rclcpp::Parameter(polygon_name + ".max_points", MAX_POINTS));
+    rclcpp::Parameter(polygon_name + ".min_points", MIN_POINTS));
 
   cm_->declare_parameter(
     polygon_name + ".slowdown_ratio", rclcpp::ParameterValue(SLOWDOWN_RATIO));
