@@ -529,7 +529,10 @@ void CollisionMonitor::printAction(
       get_logger(),
       "Robot to approach for %f seconds away from collision",
       action_polygon->getTimeBeforeCollision());
-  }
+  } else {  // robot_action.action_type == DO_NOTHING
+    RCLCPP_INFO(
+      get_logger(),
+      "Robot to continue normal operation");
 }
 
 void CollisionMonitor::publishPolygons() const
