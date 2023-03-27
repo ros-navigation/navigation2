@@ -173,18 +173,6 @@ protected:
     Action & robot_action) const;
 
   /**
-   * @brief Processes Publish action type
-   * @param polygon Polygon to process
-   * @param collision_points Array of 2D obstacle points
-   * @param velocity Desired robot velocity
-   * @param robot_action Output processed robot action
-   * @return True if returned action is caused by current polygon, otherwise false
-   */
-  bool processPublish(
-    const std::shared_ptr<Polygon> polygon,
-    const std::vector<Point> & collision_points) const;
-
-  /**
    * @brief Prints robot action and polygon caused it (if it was)
    * @param robot_action Robot action to print
    * @param action_polygon Pointer to a polygon causing a selected action

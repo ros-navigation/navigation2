@@ -21,7 +21,6 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/polygon_stamped.hpp"
-#include "std_msgs/msg/bool.hpp"
 
 #include "tf2/time.h"
 #include "tf2_ros/buffer.h"
@@ -142,11 +141,6 @@ public:
     const Velocity & velocity) const;
 
   /**
-   * @brief Publishes detection message
-   */
-  bool publish_detection(std::vector<Point> collision_points) const;
-
-  /**
    * @brief Publishes polygon message into a its own topic
    */
   void publish();
@@ -216,10 +210,6 @@ protected:
   rclcpp::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_sub_;
   /// @brief Footprint subscriber
   std::unique_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
-  /// @brief Detection topic
-  std::string detection_topic_;
-  /// @brief Detection publisher
-  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Bool>::SharedPtr detection_pub_;
 
   // Global variables
   /// @brief TF buffer

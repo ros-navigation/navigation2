@@ -83,11 +83,6 @@ bool Polygon::configure()
       base_frame_id_, tf2::durationToSec(transform_tolerance_));
   }
 
-  if (!detection_topic_.empty()) {
-    detection_pub_ = node->create_publisher<std_msgs::msg::Bool>(
-    detection_topic_, rclcpp::SystemDefaultsQoS());
-  }
-
   if (visualize_) {
     // Fill polygon_ for future usage
     polygon_.header.frame_id = base_frame_id_;
@@ -114,18 +109,12 @@ void Polygon::activate()
   if (visualize_) {
     polygon_pub_->on_activate();
   }
-  if (!detection_topic_.empty()) {
-    detection_pub_->on_activate();
-  }
 }
 
 void Polygon::deactivate()
 {
   if (visualize_) {
     polygon_pub_->on_deactivate();
-  }
-  if (!detection_topic_.empty()) {
-    detection_pub_->on_deactivate();
   }
 }
 
@@ -249,27 +238,6 @@ void Polygon::publish()
   polygon_pub_->publish(std::move(msg));
 }
 
-bool Polygon::publish_detection(std::vector<Point> collision_points) const
-{
-  if (detection_topic_.empty()) {
-    return false;
-  }
-
-  auto node = node_.lock();
-  if (!node) {
-    throw std::runtime_error{"Failed to lock node"};
-  }
-  bool detected = getPointsInside(collision_points) > getMaxPoints();
-
-  std::unique_ptr<std_msgs::msg::Bool> detection =
-    std::make_unique<std_msgs::msg::Bool>();
-  detection->data = detected;
-  // Publish polygon
-
-  detection_pub_->publish(std::move(detection));
-  return detected;
-}
-
 bool Polygon::getCommonParameters(std::string & polygon_pub_topic)
 {
   auto node = node_.lock();
@@ -290,8 +258,6 @@ bool Polygon::getCommonParameters(std::string & polygon_pub_topic)
       action_type_ = SLOWDOWN;
     } else if (at_str == "approach") {
       action_type_ = APPROACH;
-    } else if (at_str == "publish") {
-      action_type_ = PUBLISH;
     } else {  // Error if something else
       RCLCPP_ERROR(logger_, "[%s]: Unknown action type: %s", polygon_name_.c_str(), at_str.c_str());
       return false;
@@ -408,13 +374,6 @@ bool Polygon::getParameters(
         rclcpp::ParameterValue("local_costmap/published_footprint"));
       footprint_topic =
         node->get_parameter(polygon_name_ + ".footprint_topic").as_string();
-    } else if (action_type_ == PUBLISH) {
-      nav2_util::declare_parameter_if_not_declared(
-        node, polygon_name_ + ".detection_topic", rclcpp::ParameterValue(polygon_name_));
-      detection_topic_ =
-        node->get_parameter(polygon_name_ + ".detection_topic").as_string();
-    } else {
-      detection_topic_.clear();
     }
   } catch (const std::exception & ex) {
     RCLCPP_ERROR(
