@@ -151,5 +151,5 @@ ament_target_dependencies(test_node
     ${dependencies}
 )
 target_link_libraries(test_node
-    ${library_name}
+    ${library_name} breadth_first_search
 )

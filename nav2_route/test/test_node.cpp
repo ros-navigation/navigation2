@@ -15,6 +15,9 @@
 #include <gtest/gtest.h>
 
 #include <rclcpp/rclcpp.hpp>
+#include <nav2_costmap_2d/costmap_2d.hpp>
+
+
 #include "nav2_route/node.hpp"
 
 class RclCppFixture
@@ -25,8 +28,33 @@ public:
 };
 RclCppFixture g_rclcppfixture;
 
-
-TEST(test_node, node_test)
+namespace nav2_route
 {
+
+TEST(test_node, node_test) {
+  Node::initMotionModel(10);
+
+  // Check State visiting
+  Node node(10);
+
+  EXPECT_FALSE(node.wasVisited());
+  EXPECT_FALSE(node.isQueued());
+
+  node.queue();
+  EXPECT_TRUE(node.isQueued());
+  EXPECT_FALSE(node.wasVisited());
+
+  node.visit();
+  EXPECT_TRUE(node.wasVisited());
+  EXPECT_FALSE(node.isQueued());
+
+  // Check static index functions
+  EXPECT_EQ(Node::getIndex(1u, 1u, 10u), 11u);
+  EXPECT_EQ(Node::getIndex(6u, 42, 10u), 426u);
+  EXPECT_EQ(Node::getCoords(10u).x, 0.0);
+  EXPECT_EQ(Node::getCoords(10u).y, 1.0);
+
   EXPECT_TRUE(true);
 }
+
+}  // namespace nav2_route

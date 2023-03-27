@@ -81,7 +81,7 @@ public:
   }
 
 
-  void initMotionModel(int x_size);
+  static void initMotionModel(int x_size);
 
   bool isNodeValid();
 
