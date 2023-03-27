@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_COLLISION_MONITOR__COLLISION_MONITOR_NODE_HPP_
-#define NAV2_COLLISION_MONITOR__COLLISION_MONITOR_NODE_HPP_
+#ifndef NAV2_COLLISION_MONITOR__DETECTOR_NODE_HPP_
+#define NAV2_COLLISION_MONITOR__DETECTOR_NODE_HPP_
 
 #include <string>
 #include <vector>
 #include <memory>
 
 #include "rclcpp/rclcpp.hpp"
-#include "geometry_msgs/msg/twist.hpp"
+#include "std_msgs/msg/bool.hpp"
 
 #include "tf2/time.h"
 #include "tf2_ros/buffer.h"
@@ -42,18 +42,18 @@ namespace nav2_collision_monitor
 /**
  * @brief Collision Monitor ROS2 node
  */
-class CollisionMonitor : public nav2_util::LifecycleNode
+class Detector : public nav2_util::LifecycleNode
 {
 public:
   /**
-   * @brief Constructor for the nav2_collision_monitor::CollisionMonitor
+   * @brief Constructor for the nav2_collision_monitor::Detector
    * @param options Additional options to control creation of the node.
    */
-  explicit CollisionMonitor(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
+  explicit Detector(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
   /**
-   * @brief Destructor for the nav2_collision_monitor::CollisionMonitor
+   * @brief Destructor for the nav2_collision_monitor::Detector
    */
-  ~CollisionMonitor();
+  ~Detector();
 
 protected:
   /**
@@ -90,27 +90,10 @@ protected:
 
 protected:
   /**
-   * @brief Callback for input cmd_vel
-   * @param msg Input cmd_vel message
-   */
-  void cmdVelInCallback(geometry_msgs::msg::Twist::ConstSharedPtr msg);
-  /**
-   * @brief Publishes output cmd_vel. If robot was stopped more than stop_pub_timeout_ seconds,
-   * quit to publish 0-velocity.
-   * @param robot_action Robot action to publish
-   */
-  void publishVelocity(const Action & robot_action);
-
-  /**
    * @brief Supporting routine obtaining all ROS-parameters
-   * @param cmd_vel_in_topic Output name of cmd_vel_in topic
-   * @param cmd_vel_out_topic Output name of cmd_vel_out topic
-   * is required.
    * @return True if all parameters were obtained or false in failure case
    */
-  bool getParameters(
-    std::string & cmd_vel_in_topic,
-    std::string & cmd_vel_out_topic);
+  bool getParameters();
   /**
    * @brief Supporting routine creating and configuring all polygons
    * @param base_frame_id Robot base frame ID
@@ -127,58 +110,18 @@ protected:
    * source->base time inerpolated transform.
    * @param transform_tolerance Transform tolerance
    * @param source_timeout Maximum time interval in which data is considered valid
-   * @param base_shift_correction Whether to correct source data towards to base frame movement,
-   * considering the difference between current time and latest source time
    * @return True if all sources were configured successfully or false in failure case
    */
   bool configureSources(
     const std::string & base_frame_id,
     const std::string & odom_frame_id,
     const tf2::Duration & transform_tolerance,
-    const rclcpp::Duration & source_timeout,
-    const bool base_shift_correction);
+    const rclcpp::Duration & source_timeout);
 
   /**
    * @brief Main processing routine
-   * @param cmd_vel_in Input desired robot velocity
    */
-  void process(const Velocity & cmd_vel_in);
-
-  /**
-   * @brief Processes the polygon of STOP and SLOWDOWN action type
-   * @param polygon Polygon to process
-   * @param collision_points Array of 2D obstacle points
-   * @param velocity Desired robot velocity
-   * @param robot_action Output processed robot action
-   * @return True if returned action is caused by current polygon, otherwise false
-   */
-  bool processStopSlowdown(
-    const std::shared_ptr<Polygon> polygon,
-    const std::vector<Point> & collision_points,
-    const Velocity & velocity,
-    Action & robot_action) const;
-
-  /**
-   * @brief Processes APPROACH action type
-   * @param polygon Polygon to process
-   * @param collision_points Array of 2D obstacle points
-   * @param velocity Desired robot velocity
-   * @param robot_action Output processed robot action
-   * @return True if returned action is caused by current polygon, otherwise false
-   */
-  bool processApproach(
-    const std::shared_ptr<Polygon> polygon,
-    const std::vector<Point> & collision_points,
-    const Velocity & velocity,
-    Action & robot_action) const;
-
-  /**
-   * @brief Prints robot action and polygon caused it (if it was)
-   * @param robot_action Robot action to print
-   * @param action_polygon Pointer to a polygon causing a selected action
-   */
-  void printAction(
-    const Action & robot_action, const std::shared_ptr<Polygon> action_polygon) const;
+  void process();
 
   /**
    * @brief Polygons publishing routine. Made for visualization.
@@ -198,23 +141,16 @@ protected:
   /// @brief Data sources array
   std::vector<std::shared_ptr<Source>> sources_;
 
-  // Input/output speed controls
-  /// @beirf Input cmd_vel subscriber
-  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_in_sub_;
-  /// @brief Output cmd_vel publisher
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_out_pub_;
-
   /// @brief Whether main routine is active
   bool process_active_;
+  
+  /// @brief collision monitor state publisher
+  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Bool>::SharedPtr trigger_pub_;
+  /// @brief timer that runs actions
+  rclcpp::TimerBase::SharedPtr timer_;
 
-  /// @brief Previous robot action
-  Action robot_action_prev_;
-  /// @brief Latest timestamp when robot has 0-velocity
-  rclcpp::Time stop_stamp_;
-  /// @brief Timeout after which 0-velocity ceases to be published
-  rclcpp::Duration stop_pub_timeout_;
-};  // class CollisionMonitor
+};  // class Detector
 
 }  // namespace nav2_collision_monitor
 
-#endif  // NAV2_COLLISION_MONITOR__COLLISION_MONITOR_NODE_HPP_
+#endif  // NAV2_COLLISION_MONITOR__DETECTOR_NODE_HPP_
