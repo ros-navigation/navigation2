@@ -258,8 +258,6 @@ bool Polygon::getCommonParameters(std::string & polygon_pub_topic)
       action_type_ = SLOWDOWN;
     } else if (at_str == "approach") {
       action_type_ = APPROACH;
-    } else if (at_str == "do_nothing") {
-      action_type_ = DO_NOTHING;
     } else {  // Error if something else
       RCLCPP_ERROR(logger_, "[%s]: Unknown action type: %s", polygon_name_.c_str(), at_str.c_str());
       return false;

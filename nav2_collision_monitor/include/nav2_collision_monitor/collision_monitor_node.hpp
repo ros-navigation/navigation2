@@ -21,7 +21,6 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/twist.hpp"
-#include "std_msgs/msg/bool.hpp"
 
 #include "tf2/time.h"
 #include "tf2_ros/buffer.h"
@@ -146,11 +145,6 @@ protected:
   void process(const Velocity & cmd_vel_in);
 
   /**
-   * @brief Timer callback for actions not requiring vel
-   */
-  void timer_callback();
-
-  /**
    * @brief Processes the polygon of STOP and SLOWDOWN action type
    * @param polygon Polygon to process
    * @param collision_points Array of 2D obstacle points
@@ -177,16 +171,6 @@ protected:
     const std::vector<Point> & collision_points,
     const Velocity & velocity,
     Action & robot_action) const;
-
-  /**
-   * @brief Processes DoNothing action type
-   * @param polygon Polygon to process
-   * @param collision_points Array of 2D obstacle points
-   * @return True if returned action is caused by current polygon, otherwise false
-   */
-  void processDoNothing(
-    const std::shared_ptr<Polygon> polygon,
-    const std::vector<Point> & collision_points) const;
 
   /**
    * @brief Prints robot action and polygon caused it (if it was)
@@ -219,11 +203,6 @@ protected:
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_in_sub_;
   /// @brief Output cmd_vel publisher
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_out_pub_;
-  /// @brief collision monitor state publisher
-  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Bool>::SharedPtr trigger_pub_;
-  /// @brief timer that runs actions not dependent on cmd_vel
-  rclcpp::TimerBase::SharedPtr timer_;
-
 
   /// @brief Whether main routine is active
   bool process_active_;

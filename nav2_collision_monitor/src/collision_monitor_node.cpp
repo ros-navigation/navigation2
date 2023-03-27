@@ -17,15 +17,12 @@
 #include <exception>
 #include <utility>
 #include <functional>
-#include <algorithm>
 
 #include "tf2_ros/create_timer_ros.h"
 
 #include "nav2_util/node_utils.hpp"
 
 #include "nav2_collision_monitor/kinematics.hpp"
-
-using namespace std::chrono_literals;
 
 namespace nav2_collision_monitor
 {
@@ -70,21 +67,6 @@ CollisionMonitor::on_configure(const rclcpp_lifecycle::State & /*state*/)
   cmd_vel_out_pub_ = this->create_publisher<geometry_msgs::msg::Twist>(
     cmd_vel_out_topic, 1);
 
-
-  bool any_do_nothing = std::any_of(polygons_.begin(), polygons_.end(),
-  [](const std::shared_ptr<Polygon> polygon) {
-    return polygon->getActionType() == DO_NOTHING; });
-
-  if (any_do_nothing) {
-    timer_ = this->create_wall_timer(
-      100ms,
-      std::bind(&CollisionMonitor::timer_callback, this));
-  }
-  
-
-  trigger_pub_ = this->create_publisher<std_msgs::msg::Bool>(
-    "~/state", rclcpp::SystemDefaultsQoS());
-
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -93,9 +75,8 @@ CollisionMonitor::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
-  // Activating lifecycle publishers
+  // Activating lifecycle publisher
   cmd_vel_out_pub_->on_activate();
-  trigger_pub_->on_activate();
 
   // Activating polygons
   for (std::shared_ptr<Polygon> polygon : polygons_) {
@@ -133,7 +114,6 @@ CollisionMonitor::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 
   // Deactivating lifecycle publishers
   cmd_vel_out_pub_->on_deactivate();
-  trigger_pub_->on_deactivate();
 
   // Destroying bond connection
   destroyBond();
@@ -148,7 +128,6 @@ CollisionMonitor::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 
   cmd_vel_in_sub_.reset();
   cmd_vel_out_pub_.reset();
-  trigger_pub_.reset();
 
   polygons_.clear();
   sources_.clear();
@@ -410,45 +389,6 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in)
   publishPolygons();
 
   robot_action_prev_ = robot_action;
-}
-
-void CollisionMonitor::timer_callback()
-{
-  // Current timestamp for all inner routines prolongation
-  rclcpp::Time curr_time = this->now();
-
-  // Do nothing if main worker in non-active state
-  if (!process_active_) {
-    return;
-  }
-
-  // Points array collected from different data sources in a robot base frame
-  std::vector<Point> collision_points;
-
-  // Fill collision_points array from different data sources
-  for (std::shared_ptr<Source> source : sources_) {
-    source->getData(curr_time, collision_points);
-  }
-
-  for (std::shared_ptr<Polygon> polygon : polygons_) {
-    const ActionType at = polygon->getActionType();
-    if (at == DO_NOTHING) {
-      // Process PUBLISH for the selected polygon
-      processDoNothing(polygon, collision_points);
-    }
-  }
-  publishPolygons();
-}
-
-
-void CollisionMonitor::processDoNothing(
-  const std::shared_ptr<Polygon> polygon,
-  const std::vector<Point> & collision_points) const
-{
-  std::unique_ptr<std_msgs::msg::Bool> trigger_msg =
-    std::make_unique<std_msgs::msg::Bool>();
-  trigger_msg->data = polygon->getPointsInside(collision_points) > polygon->getMaxPoints();
-  trigger_pub_->publish(std::move(trigger_msg));
 }
 
 bool CollisionMonitor::processStopSlowdown(
