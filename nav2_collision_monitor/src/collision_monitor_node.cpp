@@ -537,6 +537,7 @@ void CollisionMonitor::printAction(
     RCLCPP_INFO(
       get_logger(),
       "Robot to continue normal operation");
+  }
 }
 
 void CollisionMonitor::publishPolygons() const
