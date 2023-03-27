@@ -211,7 +211,7 @@ void VelocitySmoother::smootherTimer()
 {
   auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>();
 
-  // Check for velocity timeout. If nothing received, publish zeros to apply deceleration and stop robot
+  // Check for velocity timeout. If nothing received, publish zeros to apply deceleration
   if (now() - last_command_time_ > velocity_timeout_) {
     if (last_cmd_ == geometry_msgs::msg::Twist() || stopped_) {
       stopped_ = true;
