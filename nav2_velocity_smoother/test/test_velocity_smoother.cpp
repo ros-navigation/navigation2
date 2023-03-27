@@ -143,7 +143,7 @@ TEST(VelocitySmootherTest, approxClosedLoopTestTimer)
 
   // Process velocity smoothing and send updated odometry based on commands
   auto start = smoother->now();
-  while (smoother->now() - start < 1.5s) {
+  while (smoother->now() - start < 2.0s) {
     odom_msg.header.stamp = smoother->now();
     if (linear_vels.size() > 0) {
       odom_msg.twist.twist.linear.x = linear_vels.back();
@@ -153,8 +153,8 @@ TEST(VelocitySmootherTest, approxClosedLoopTestTimer)
   }
 
   // Sanity check we have the approximately right number of messages for the timespan and timeout
-  EXPECT_GT(linear_vels.size(), 19u);
-  EXPECT_LT(linear_vels.size(), 30u);
+  EXPECT_GT(linear_vels.size(), 29u);
+  EXPECT_LT(linear_vels.size(), 40u);
 
   // Should have last command be a stop since we timed out the command stream
   EXPECT_EQ(linear_vels.back(), 0.0);
