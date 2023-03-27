@@ -54,8 +54,8 @@ inline Graph createGraph()
       }
       if (j > 0) {
         // (i, j - 1)
-        node.addEdge(e_cost, &graph[curr_graph_idx - DIM], curr_edge_idx++);        
-        graph[curr_graph_idx - DIM].addEdge(e_cost, &node, curr_edge_idx++);        
+        node.addEdge(e_cost, &graph[curr_graph_idx - DIM], curr_edge_idx++);
+        graph[curr_graph_idx - DIM].addEdge(e_cost, &node, curr_edge_idx++);
       }
 
       curr_graph_idx++;
@@ -118,7 +118,8 @@ int main(int argc, char const * argv[])
   //   node->get_logger(),
   //   "Averaged route size: %f", static_cast<double>(route_legs) / static_cast<double>(NUM_TESTS));
 
-  // Third test: Check how much time it takes to do random lookups in the Kd-tree of various graph sizes
+  // Third test:
+  // Check how much time it takes to do random lookups in the Kd-tree of various graph sizes
   std::shared_ptr<NodeSpatialTree> kd_tree = std::make_shared<NodeSpatialTree>();
   kd_tree->computeTree(graph);
 
@@ -126,8 +127,8 @@ int main(int argc, char const * argv[])
   for (unsigned int i = 0; i != NUM_TESTS; i++) {
     unsigned int kd_tree_idx;
     geometry_msgs::msg::PoseStamped pose;
-    pose.pose.position.x = static_cast<float>(rand() % DIM);
-    pose.pose.position.y = static_cast<float>(rand() % DIM);
+    pose.pose.position.x = static_cast<float>(rand_r() % DIM);
+    pose.pose.position.y = static_cast<float>(rand_r() % DIM);
     kd_tree->findNearestGraphNodeToPose(pose, kd_tree_idx);
   }
   auto end = node->now();

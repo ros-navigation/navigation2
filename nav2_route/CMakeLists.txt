@@ -111,6 +111,15 @@ ament_target_dependencies(graph_file_loaders
 
 pluginlib_export_plugin_description_file(nav2_route plugins.xml)
 
+# Breadth first search library
+add_library(breadth_first_search SHARED
+    src/breadth_first_search.cpp
+    src/node.cpp)
+
+ament_target_dependencies(breadth_first_search
+    ${dependencies}
+)
+
 install(DIRECTORY include/
   DESTINATION include/
 )
@@ -119,7 +128,11 @@ install(TARGETS ${executable_name}
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
-install(TARGETS ${library_name} edge_scorers route_operations graph_file_loaders
+install(TARGETS ${library_name}
+    edge_scorers
+    route_operations
+    graph_file_loaders
+    breadth_first_search
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -138,5 +151,9 @@ endif()
 
 ament_export_include_directories(include)
 ament_export_dependencies(${dependencies})
-ament_export_libraries(${library_name} edge_scorers route_operations graph_file_loaders)
+ament_export_libraries(${library_name}
+    edge_scorers
+    route_operations
+    graph_file_loaders
+    breadth_first_search)
 ament_package()
