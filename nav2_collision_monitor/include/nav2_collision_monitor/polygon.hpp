@@ -86,10 +86,10 @@ public:
    */
   ActionType getActionType() const;
   /**
-   * @brief Obtains polygon maximum points to enter inside polygon causing no action
-   * @return Maximum points to enter to current polygon and take no action
+   * @brief Obtains polygon minimum points to enter inside polygon causing the action
+   * @return Minimum number of data readings within a zone to trigger the action
    */
-  int getMaxPoints() const;
+  int getMinPoints() const;
   /**
    * @brief Obtains speed slowdown ratio for current polygon.
    * Applicable for SLOWDOWN model.
@@ -198,8 +198,8 @@ protected:
   std::string polygon_name_;
   /// @brief Action type for the polygon
   ActionType action_type_;
-  /// @brief Maximum number of data readings within a zone to not trigger the action
-  int max_points_;
+  /// @brief Minimum number of data readings within a zone to trigger the action
+  int min_points_;
   /// @brief Robot slowdown (share of its actual speed)
   double slowdown_ratio_;
   /// @brief Time before collision in seconds

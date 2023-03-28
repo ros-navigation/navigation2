@@ -128,9 +128,9 @@ ActionType Polygon::getActionType() const
   return action_type_;
 }
 
-int Polygon::getMaxPoints() const
+int Polygon::getMinPoints() const
 {
-  return max_points_;
+  return min_points_;
 }
 
 double Polygon::getSlowdownRatio() const
@@ -212,7 +212,7 @@ double Polygon::getCollisionTime(
     transformPoints(pose, points_transformed);
     // If the collision occurred on this stage, return the actual time before a collision
     // as if robot was moved with given velocity
-    if (getPointsInside(points_transformed) > max_points_) {
+    if (getPointsInside(points_transformed) >= min_points_) {
       return time;
     }
   }
@@ -264,8 +264,21 @@ bool Polygon::getCommonParameters(std::string & polygon_pub_topic)
     }
 
     nav2_util::declare_parameter_if_not_declared(
-      node, polygon_name_ + ".max_points", rclcpp::ParameterValue(3));
-    max_points_ = node->get_parameter(polygon_name_ + ".max_points").as_int();
+      node, polygon_name_ + ".min_points", rclcpp::ParameterValue(4));
+    min_points_ = node->get_parameter(polygon_name_ + ".min_points").as_int();
+
+    try {
+      nav2_util::declare_parameter_if_not_declared(
+        node, polygon_name_ + ".max_points", rclcpp::PARAMETER_INTEGER);
+      min_points_ = node->get_parameter(polygon_name_ + ".max_points").as_int() + 1;
+      RCLCPP_WARN(
+        logger_,
+        "[%s]: \"max_points\" parameter was deprecated. Use \"min_points\" instead to specify "
+        "the minimum number of data readings within a zone to trigger the action",
+        polygon_name_.c_str());
+    } catch (const std::exception &) {
+      // This is normal situation: max_points parameter should not being declared
+    }
 
     if (action_type_ == SLOWDOWN) {
       nav2_util::declare_parameter_if_not_declared(
