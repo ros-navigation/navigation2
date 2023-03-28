@@ -137,7 +137,6 @@ protected:
 
   /// @brief Polygons array
   std::vector<std::shared_ptr<Polygon>> polygons_;
-
   /// @brief Data sources array
   std::vector<std::shared_ptr<Source>> sources_;
   
@@ -145,6 +144,9 @@ protected:
   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Bool>::SharedPtr detections_pub_;
   /// @brief timer that runs actions
   rclcpp::TimerBase::SharedPtr timer_;
+
+  /// @brief main loop frequency
+  double frequency_;
 
 };  // class CollisionDetector
 

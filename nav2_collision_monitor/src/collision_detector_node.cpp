@@ -77,7 +77,7 @@ CollisionDetector::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
   // Creating timer
   timer_ = this->create_wall_timer(
-      100ms,
+      std::chrono::duration<double>{1.0 / frequency_},
       std::bind(&CollisionDetector::process, this));
 
   // Creating bond connection
@@ -140,6 +140,9 @@ bool CollisionDetector::getParameters()
 
   auto node = shared_from_this();
 
+  nav2_util::declare_parameter_if_not_declared(
+    node, "frequency", rclcpp::ParameterValue(10.0));
+  frequency_ = get_parameter("frequency").as_double();
   nav2_util::declare_parameter_if_not_declared(
     node, "base_frame_id", rclcpp::ParameterValue("base_footprint"));
   base_frame_id = get_parameter("base_frame_id").as_string();
