@@ -42,18 +42,18 @@ namespace nav2_collision_monitor
 /**
  * @brief Collision Monitor ROS2 node
  */
-class Detector : public nav2_util::LifecycleNode
+class CollisionDetector : public nav2_util::LifecycleNode
 {
 public:
   /**
-   * @brief Constructor for the nav2_collision_monitor::Detector
+   * @brief Constructor for the nav2_collision_monitor::CollisionDetector
    * @param options Additional options to control creation of the node.
    */
-  explicit Detector(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
+  explicit CollisionDetector(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
   /**
-   * @brief Destructor for the nav2_collision_monitor::Detector
+   * @brief Destructor for the nav2_collision_monitor::CollisionDetector
    */
-  ~Detector();
+  ~CollisionDetector();
 
 protected:
   /**
@@ -146,7 +146,7 @@ protected:
   /// @brief timer that runs actions
   rclcpp::TimerBase::SharedPtr timer_;
 
-};  // class Detector
+};  // class CollisionDetector
 
 }  // namespace nav2_collision_monitor
 

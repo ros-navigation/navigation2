@@ -27,19 +27,19 @@ using namespace std::chrono_literals;
 namespace nav2_collision_monitor
 {
 
-Detector::Detector(const rclcpp::NodeOptions & options)
+CollisionDetector::CollisionDetector(const rclcpp::NodeOptions & options)
 : nav2_util::LifecycleNode("collision_detector", "", options)
 {
 }
 
-Detector::~Detector()
+CollisionDetector::~CollisionDetector()
 {
   polygons_.clear();
   sources_.clear();
 }
 
 nav2_util::CallbackReturn
-Detector::on_configure(const rclcpp_lifecycle::State & /*state*/)
+CollisionDetector::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
 
@@ -54,10 +54,8 @@ Detector::on_configure(const rclcpp_lifecycle::State & /*state*/)
   detections_pub_ = this->create_publisher<std_msgs::msg::Bool>(
     "~/state", rclcpp::SystemDefaultsQoS());
 
-  std::string cmd_vel_in_topic;
-  std::string cmd_vel_out_topic;
   // Obtaining ROS parameters
-  if (!getParameters(cmd_vel_in_topic, cmd_vel_out_topic)) {
+  if (!getParameters()) {
     return nav2_util::CallbackReturn::FAILURE;
   }
 
@@ -65,7 +63,7 @@ Detector::on_configure(const rclcpp_lifecycle::State & /*state*/)
 }
 
 nav2_util::CallbackReturn
-Detector::on_activate(const rclcpp_lifecycle::State & /*state*/)
+CollisionDetector::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
@@ -80,7 +78,7 @@ Detector::on_activate(const rclcpp_lifecycle::State & /*state*/)
   // Creating timer
   timer_ = this->create_wall_timer(
       100ms,
-      std::bind(&Detector::process, this));
+      std::bind(&CollisionDetector::process, this));
 
   // Creating bond connection
   createBond();
@@ -89,7 +87,7 @@ Detector::on_activate(const rclcpp_lifecycle::State & /*state*/)
 }
 
 nav2_util::CallbackReturn
-Detector::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
+CollisionDetector::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
@@ -111,7 +109,7 @@ Detector::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 }
 
 nav2_util::CallbackReturn
-Detector::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
+CollisionDetector::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
@@ -127,14 +125,14 @@ Detector::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 }
 
 nav2_util::CallbackReturn
-Detector::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
+CollisionDetector::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
-bool Detector::getParameters()
+bool CollisionDetector::getParameters()
 {
   std::string base_frame_id, odom_frame_id;
   tf2::Duration transform_tolerance;
@@ -168,7 +166,7 @@ bool Detector::getParameters()
   return true;
 }
 
-bool Detector::configurePolygons(
+bool CollisionDetector::configurePolygons(
   const std::string & base_frame_id,
   const tf2::Duration & transform_tolerance)
 {
@@ -213,7 +211,7 @@ bool Detector::configurePolygons(
   return true;
 }
 
-bool Detector::configureSources(
+bool CollisionDetector::configureSources(
   const std::string & base_frame_id,
   const std::string & odom_frame_id,
   const tf2::Duration & transform_tolerance,
@@ -272,7 +270,7 @@ bool Detector::configureSources(
   return true;
 }
 
-void Detector::process()
+void CollisionDetector::process()
 {
   // Current timestamp for all inner routines prolongation
   rclcpp::Time curr_time = this->now();
@@ -297,7 +295,7 @@ void Detector::process()
   publishPolygons();
 }
 
-void Detector::publishPolygons() const
+void CollisionDetector::publishPolygons() const
 {
   for (std::shared_ptr<Polygon> polygon : polygons_) {
     polygon->publish();
@@ -311,4 +309,4 @@ void Detector::publishPolygons() const
 // Register the component with class_loader.
 // This acts as a sort of entry point, allowing the component to be discoverable when its library
 // is being loaded into a running process.
-RCLCPP_COMPONENTS_REGISTER_NODE(nav2_collision_monitor::Detector)
+RCLCPP_COMPONENTS_REGISTER_NODE(nav2_collision_monitor::CollisionDetector)

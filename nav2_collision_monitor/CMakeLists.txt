@@ -37,12 +37,12 @@ set(dependencies
   nav2_costmap_2d
 )
 
-set(executable_name collision_monitor)
-set(executable_name_detector collision_detector)
-set(library_name ${executable_name}_core)
-set(library_name_detector ${executable_name_detector}_core)
+set(monitor_executable_name collision_monitor)
+set(detector_executable_name collision_detector)
+set(monitor_library_name ${monitor_executable_name}_core)
+set(detector_library_name ${detector_executable_name}_core)
 
-add_library(${library_name} SHARED
+add_library(${monitor_library_name} SHARED
   src/collision_monitor_node.cpp
   src/polygon.cpp
   src/circle.cpp
@@ -52,7 +52,7 @@ add_library(${library_name} SHARED
   src/range.cpp
   src/kinematics.cpp
 )
-add_library(${library_name_detector} SHARED
+add_library(${detector_library_name} SHARED
   src/collision_detector_node.cpp
   src/polygon.cpp
   src/circle.cpp
@@ -63,42 +63,42 @@ add_library(${library_name_detector} SHARED
   src/kinematics.cpp
 )
 
-add_executable(${executable_name}
+add_executable(${monitor_executable_name}
   src/main.cpp
 )
-add_executable(${executable_name_detector}
+add_executable(${detector_executable_name}
   src/collision_detector_main.cpp
 )
 
-ament_target_dependencies(${library_name}
+ament_target_dependencies(${monitor_library_name}
   ${dependencies}
 )
-ament_target_dependencies(${library_name_detector}
-  ${dependencies}
-)
-
-target_link_libraries(${executable_name}
-  ${library_name}
-)
-target_link_libraries(${executable_name_detector}
-  ${library_name_detector}
-)
-
-ament_target_dependencies(${executable_name}
+ament_target_dependencies(${detector_library_name}
   ${dependencies}
 )
 
-rclcpp_components_register_nodes(${library_name} "nav2_collision_monitor::CollisionMonitor")
+target_link_libraries(${monitor_executable_name}
+  ${monitor_library_name}
+)
+target_link_libraries(${detector_executable_name}
+  ${detector_library_name}
+)
+
+ament_target_dependencies(${monitor_executable_name}
+  ${dependencies}
+)
+
+rclcpp_components_register_nodes(${monitor_library_name} "nav2_collision_monitor::CollisionMonitor")
 
 ### Install ###
 
-install(TARGETS ${library_name}
+install(TARGETS ${monitor_library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
 )
 
-install(TARGETS ${executable_name} ${executable_name_detector}
+install(TARGETS ${monitor_executable_name} ${detector_executable_name}
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
@@ -125,7 +125,7 @@ endif()
 ### Ament stuff ###
 
 ament_export_include_directories(include)
-ament_export_libraries(${library_name} ${library_name_detector})
+ament_export_libraries(${monitor_library_name} ${detector_library_name})
 ament_export_dependencies(${dependencies})
 
 ament_package()
