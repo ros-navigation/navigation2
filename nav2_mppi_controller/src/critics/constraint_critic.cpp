@@ -65,6 +65,7 @@ void ConstraintCritic::score(CriticData & data)
         std::move(out_of_min_bounds_motion) +
         std::move(out_of_turning_rad_motion)) *
         data.model_dt, {1}, immediate) * weight_, power_);
+    return;
   }
 
   data.costs += xt::pow(

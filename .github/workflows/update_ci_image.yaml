@@ -19,17 +19,13 @@ jobs:
     name: Check CI Files
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.check.outputs.version }}
       trigger: ${{ steps.check.outputs.trigger }}
       no_cache: ${{ steps.check.outputs.no_cache }}
     steps:
-      - uses: actions/checkout@v3
       - name: "Check package updates"
         id: check
         if: github.event_name == 'push'
         run: |
-          version=$(grep -oP '(?<=<version>).*?(?=</version>)' navigation2/package.xml)
-          echo "version=${version}" >> $GITHUB_OUTPUT
           echo "trigger=true" >> $GITHUB_OUTPUT
           echo "no_cache=false" >> $GITHUB_OUTPUT
   check_ci_image:
@@ -67,6 +63,7 @@ jobs:
       - check_ci_image
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Login to Docker Hub
@@ -78,6 +75,12 @@ jobs:
       - name: Set build config
         id: config
         run: |
+          created=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+          echo "created=${created}" >> $GITHUB_OUTPUT
+
+          version=$(grep -oP '(?<=<version>).*?(?=</version>)' navigation2/package.xml)
+          echo "version=${version}" >> $GITHUB_OUTPUT
+
           no_cache=false
           if  [ "${{needs.check_ci_files.outputs.no_cache}}" == 'true' ] || \
               [ "${{needs.check_ci_image.outputs.no_cache}}" == 'true' ]
@@ -98,16 +101,30 @@ jobs:
         id: docker_build
         uses: docker/build-push-action@v4
         with:
-          provenance: false
+          context: .
           pull: true
           push: true
+          provenance: false
           no-cache: ${{ steps.config.outputs.no_cache }}
           cache-from: type=registry,ref=ghcr.io/${{ github.repository }}:${{ github.ref_name }}
           cache-to: type=inline
           target: builder
           tags: |
             ghcr.io/${{ github.repository }}:${{ github.ref_name }}
-            ghcr.io/${{ github.repository }}:${{ github.ref_name }}-${{ needs.check_ci_files.outputs.version }}
+            ghcr.io/${{ github.repository }}:${{ github.ref_name }}-${{ steps.config.outputs.version }}
+          labels: |
+            org.opencontainers.image.authors=${{ github.event.repository.owner.html_url }}
+            org.opencontainers.image.created=${{ steps.config.outputs.created }}
+            org.opencontainers.image.description=${{ github.event.repository.description }}
+            org.opencontainers.image.documentation=${{ github.event.repository.homepage }}
+            org.opencontainers.image.licenses=${{ github.event.repository.license.spdx_id }}
+            org.opencontainers.image.ref.name=${{ github.ref }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=${{ github.event.repository.clone_url }}
+            org.opencontainers.image.title=${{ github.event.repository.name }}
+            org.opencontainers.image.url=${{ github.event.repository.html_url }}
+            org.opencontainers.image.vendor=${{ github.event.repository.owner.login }}
+            org.opencontainers.image.version=${{ steps.config.outputs.version }}
       - name: Image digest
         if: steps.config.outputs.trigger == 'true'
         run: echo ${{ steps.docker_build.outputs.digest }}
