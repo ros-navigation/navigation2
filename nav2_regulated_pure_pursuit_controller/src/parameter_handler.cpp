@@ -96,6 +96,11 @@ ParameterHandler::ParameterHandler(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".use_collision_detection",
     rclcpp::ParameterValue(true));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".use_dubins_min_lookahead_dist",
+    rclcpp::ParameterValue(false));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".dubins_min_turning_radius", rclcpp::ParameterValue(1.0));
 
   node->get_parameter(plugin_name_ + ".desired_linear_vel", params_.desired_linear_vel);
   params_.base_desired_linear_vel = params_.desired_linear_vel;
@@ -161,6 +166,11 @@ ParameterHandler::ParameterHandler(
       " every point on path for the closest value.");
     params_.max_robot_pose_search_dist = std::numeric_limits<double>::max();
   }
+  node->get_parameter(plugin_name_ + ".use_dubins_min_lookahead_dist",
+    params_.use_dubins_min_lookahead_dist);
+  node->get_parameter(
+    plugin_name_ + ".dubins_min_turning_radius",
+    params_.dubins_min_turning_radius);
 
   node->get_parameter(
     plugin_name_ + ".use_interpolation",
@@ -243,6 +253,8 @@ ParameterHandler::dynamicParametersCallback(
         params_.max_angular_accel = parameter.as_double();
       } else if (name == plugin_name_ + ".rotate_to_heading_min_angle") {
         params_.rotate_to_heading_min_angle = parameter.as_double();
+      } else if (name == plugin_name_ + ".dubins_min_turning_radius") {
+        params_.dubins_min_turning_radius = parameter.as_double();
       }
     } else if (type == ParameterType::PARAMETER_BOOL) {
       if (name == plugin_name_ + ".use_velocity_scaled_lookahead_dist") {
@@ -271,6 +283,8 @@ ParameterHandler::dynamicParametersCallback(
           continue;
         }
         params_.allow_reversing = parameter.as_bool();
+      } else if (name == plugin_name_ + ".use_dubins_min_lookahead_dist") {
+        params_.use_dubins_min_lookahead_dist = parameter.as_bool();
       }
     }
   }

@@ -59,6 +59,8 @@ struct Parameters
   bool use_interpolation;
   bool use_collision_detection;
   double transform_tolerance;
+  bool use_dubins_min_lookahead_dist;
+  double dubins_min_turning_radius;
 };
 
 /**
