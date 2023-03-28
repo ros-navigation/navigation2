@@ -76,12 +76,18 @@ public:
     const geometry_msgs::msg::PoseStamped & in_pose,
     geometry_msgs::msg::PoseStamped & out_pose) const;
 
-  void setPlan(const nav_msgs::msg::Path & path) {
+  void setPlan(const nav_msgs::msg::Path & path)
+  {
     global_plan_ = path;
     path_progress_cursor_ = global_plan_.poses.begin();
   }
 
   nav_msgs::msg::Path getPlan() {return global_plan_;}
+
+  std::vector<geometry_msgs::msg::PoseStamped>::iterator getCurrentPose()
+  {
+    return path_progress_cursor_;
+  }
 
 protected:
   /**

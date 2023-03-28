@@ -75,7 +75,8 @@ void RegulatedPurePursuitController::configure(
   node->get_parameter(
     plugin_name_ + ".use_interpolation",
     use_interpolation_);
-  node->get_parameter(plugin_name_ + ".use_dubins_min_lookahead_dist",
+  node->get_parameter(
+    plugin_name_ + ".use_dubins_min_lookahead_dist",
     use_dubins_min_lookahead_dist_);
   node->get_parameter(
     plugin_name_ + ".dubins_min_turning_radius",
@@ -212,7 +213,7 @@ nav2_msgs::msg::CrossTrackError RegulatedPurePursuitController::getCrossTrackErr
   geometry_msgs::msg::PoseStamped previous_pose, transformed_previous_pose;
   previous_pose.header.frame_id = global_plan_.header.frame_id;
   previous_pose.header.stamp = transformed_plan.header.stamp;
-  previous_pose.pose = std::prev(path_progress_cursor_)->pose;
+  previous_pose.pose = std::prev(path_handler_->getCurrentPose())->pose;
   transformPose(costmap_ros_->getBaseFrameID(), previous_pose, transformed_previous_pose);
   smooth_path.poses.insert(smooth_path.poses.begin(), transformed_previous_pose);
 

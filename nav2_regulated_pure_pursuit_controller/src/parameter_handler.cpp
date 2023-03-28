@@ -166,7 +166,8 @@ ParameterHandler::ParameterHandler(
       " every point on path for the closest value.");
     params_.max_robot_pose_search_dist = std::numeric_limits<double>::max();
   }
-  node->get_parameter(plugin_name_ + ".use_dubins_min_lookahead_dist",
+  node->get_parameter(
+    plugin_name_ + ".use_dubins_min_lookahead_dist",
     params_.use_dubins_min_lookahead_dist);
   node->get_parameter(
     plugin_name_ + ".dubins_min_turning_radius",
