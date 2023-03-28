@@ -401,7 +401,7 @@ bool CollisionMonitor::processStopSlowdown(
     return false;
   }
 
-  if (polygon->getPointsInside(collision_points) > polygon->getMinPoints()) {
+  if (polygon->getPointsInside(collision_points) >= polygon->getMinPoints()) {
     if (polygon->getActionType() == STOP) {
       // Setting up zero velocity for STOP model
       robot_action.action_type = STOP;
