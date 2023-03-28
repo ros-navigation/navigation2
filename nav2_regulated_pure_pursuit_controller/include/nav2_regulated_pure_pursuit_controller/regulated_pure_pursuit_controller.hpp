@@ -117,7 +117,9 @@ protected:
    * @param cmd the current speed to use to compute lookahead point
    * @return lookahead distance
    */
-  double getLookAheadDistance(const geometry_msgs::msg::Twist &);
+  double getLookAheadDistance(const geometry_msgs::msg::Twist &,
+    const nav_msgs::msg::Path & path,
+    const geometry_msgs::msg::PoseStamped & pose);
 
   /**
    * @brief Creates a PointStamped message for visualization
@@ -195,6 +197,10 @@ protected:
    * @return robot distance from the cusp
    */
   double findVelocitySignChange(const nav_msgs::msg::Path & transformed_plan);
+
+  double getDubinsMinLookAheadDistance(
+    const nav_msgs::msg::Path & path,
+    const geometry_msgs::msg::PoseStamped & pose);
 
   rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
