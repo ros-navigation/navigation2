@@ -28,6 +28,7 @@
 
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_util/robot_utils.hpp"
+#include "nav2_msgs/msg/collision_monitor_state.hpp"
 
 #include "nav2_collision_monitor/types.hpp"
 #include "nav2_collision_monitor/polygon.hpp"
@@ -111,7 +112,8 @@ protected:
    */
   bool getParameters(
     std::string & cmd_vel_in_topic,
-    std::string & cmd_vel_out_topic);
+    std::string & cmd_vel_out_topic,
+    std::string & state_topic);
   /**
    * @brief Supporting routine creating and configuring all polygons
    * @param base_frame_id Robot base frame ID
@@ -174,11 +176,11 @@ protected:
     Action & robot_action) const;
 
   /**
-   * @brief Prints robot action and polygon caused it (if it was)
-   * @param robot_action Robot action to print
+   * @brief Log and publish current robot action and polygon
+   * @param robot_action Robot action to notify
    * @param action_polygon Pointer to a polygon causing a selected action
    */
-  void printAction(
+  void notifyActionState(
     const Action & robot_action, const std::shared_ptr<Polygon> action_polygon) const;
 
   /**
@@ -204,6 +206,10 @@ protected:
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_in_sub_;
   /// @brief Output cmd_vel publisher
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_out_pub_;
+
+  /// @brief CollisionMonitor state publisher
+  rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::CollisionMonitorState>::SharedPtr
+    state_pub_;
 
   /// @brief Whether main routine is active
   bool process_active_;
