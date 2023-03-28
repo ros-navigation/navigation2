@@ -207,7 +207,16 @@ double RegulatedPurePursuitController::getDubinsMinLookAheadDistance(
 nav2_msgs::msg::CrossTrackError RegulatedPurePursuitController::getCrossTrackError(
   const nav_msgs::msg::Path & transformed_plan)
 {
-  auto projected_pose = nav2_util::geometry_utils::project_robot_onto_path(transformed_plan);
+  // Add the previous pose to the path so that the cross-track error is smoother
+  nav_msgs::msg::Path smooth_path = transformed_plan;  // copy
+  geometry_msgs::msg::PoseStamped previous_pose, transformed_previous_pose;
+  previous_pose.header.frame_id = global_plan_.header.frame_id;
+  previous_pose.header.stamp = transformed_plan.header.stamp;
+  previous_pose.pose = std::prev(path_progress_cursor_)->pose;
+  transformPose(costmap_ros_->getBaseFrameID(), previous_pose, transformed_previous_pose);
+  smooth_path.poses.insert(smooth_path.poses.begin(), transformed_previous_pose);
+
+  auto projected_pose = nav2_util::geometry_utils::project_robot_onto_path(smooth_path);
 
   projected_pose_pub_->publish(projected_pose);
 
