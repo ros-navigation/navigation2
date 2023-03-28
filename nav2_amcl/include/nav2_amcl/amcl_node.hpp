@@ -257,6 +257,12 @@ protected:
   double init_cov_[3];
   pluginlib::ClassLoader<nav2_amcl::MotionModel> plugin_loader_{"nav2_amcl",
     "nav2_amcl::MotionModel"};
+  
+  /*
+   * @brief Initialize Diagnostic
+   */
+  void initDiagnostic();
+  
   /*
    * @brief Get robot pose in odom frame using TF
    */
@@ -295,7 +301,7 @@ protected:
    * @ true if deviation gets large
    *
    */
-  diagnostic_updater::Updater diagnostic_updater_;
+  std::shared_ptr<diagnostic_updater::Updater> diagnostic_updater_;
   void standardDeviationDiagnostics(diagnostic_updater::DiagnosticStatusWrapper& stat);
   double std_warn_level_x_;
   double std_warn_level_y_;

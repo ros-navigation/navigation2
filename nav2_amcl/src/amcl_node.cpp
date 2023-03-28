@@ -237,7 +237,7 @@ AmclNode::AmclNode(const rclcpp::NodeOptions & options)
   add_parameter(
     "fuse_external_pose", rclcpp::ParameterValue(false),
     "Fuse pose from external source"
-  )
+  );
 
   add_parameter(
     "k_l", rclcpp::ParameterValue(200.0f),
@@ -270,6 +270,8 @@ AmclNode::AmclNode(const rclcpp::NodeOptions & options)
     "use_cluster_averaging", rclcpp::ParameterValue(false),
     "Average (with weights) cluster centroid positions when calculating curren pose"
   );
+
+  diagnostic_updater_ = std::make_shared<diagnostic_updater::Updater>(this);
 }
 
 AmclNode::~AmclNode()
@@ -456,26 +458,6 @@ AmclNode::isExtPoseActive()
   }
 
   return true;
-}
-
-void
-AmclNode::checkLaserReceived()
-{
-  if (last_laser_received_ts_.nanoseconds() == 0) {
-    RCLCPP_WARN(
-      get_logger(), "Laser scan has not been received"
-      " (and thus no pose updates have been published)."
-      " Verify that data is being published on the %s topic.", scan_topic_.c_str());
-    return;
-  }
-
-  rclcpp::Duration d = now() - last_laser_received_ts_;
-  if (d.seconds() > laser_check_interval_.count()) {
-    RCLCPP_WARN(
-      get_logger(), "No laser scan received (and thus no pose updates have been published) for %f"
-      " seconds.  Verify that data is being published on the %s topic.",
-      d.seconds(), scan_topic_.c_str());
-  }
 }
 
 bool
@@ -896,7 +878,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
       sendMapToOdomTransform(transform_expiration);
     }
   }
-  diagnostic_updater_.force_update();
+  diagnostic_updater_->force_update();
 }
 
 bool AmclNode::addNewScanner(
@@ -1802,8 +1784,8 @@ AmclNode::initServices()
 void
 AmclNode::initDiagnostic()
 {
-  diagnostic_updater_.setHardwareID("none");
-  diagnostic_updater_.add("Standard deviation", this, &AmclNode::standardDeviationDiagnostics);
+  diagnostic_updater_->setHardwareID("none");
+  diagnostic_updater_->add("Standard deviation", this, &AmclNode::standardDeviationDiagnostics);
 }
 
 void
