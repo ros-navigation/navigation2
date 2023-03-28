@@ -23,7 +23,9 @@
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+#include "tf2/utils.h"
 #include "nav_msgs/msg/path.hpp"
+#include "nav2_msgs/msg/cross_track_error.hpp"
 
 namespace nav2_util
 {
@@ -218,7 +220,9 @@ inline double calculate_path_length(const nav_msgs::msg::Path & path, size_t sta
 }
 
 std::pair<geometry_msgs::msg::PoseStamped, geometry_msgs::msg::PoseStamped>
-find_closest_path_segment(const nav_msgs::msg::Path & path, const geometry_msgs::msg::PoseStamped & pose)
+find_closest_path_segment(
+  const nav_msgs::msg::Path & path,
+  const geometry_msgs::msg::PoseStamped & pose)
 {
   std::vector<double> distances(path.poses.size());
   std::transform(
@@ -252,26 +256,60 @@ find_closest_path_segment(const nav_msgs::msg::Path & path, const geometry_msgs:
   return std::make_pair(path.poses.at(closest_pose_index), path.poses.at(next_closest_pose_index));
 }
 
-double cross_track_error(const nav_msgs::msg::Path & path, const geometry_msgs::msg::PoseStamped & pose)
+/**
+ * Assuming the robot is at the origin of the frame the path is in,
+ * find the closest pose on the path to the robot, interpolated in both position and orientation.
+*/
+geometry_msgs::msg::PoseStamped project_robot_onto_path(const nav_msgs::msg::Path & path)
 {
   // http://paulbourke.net/geometry/pointlineplane/
 
   // Even if the target pose is "off the end" of this line segment, the projected point
   // exists as if the segment was extended out.
-  const auto & [pose1, pose2] = find_closest_path_segment(path, pose);
+  geometry_msgs::msg::PoseStamped robot_pose;
+  robot_pose.pose.position.x = 0.0;
+  robot_pose.pose.position.y = 0.0;
+  const auto & [pose1, pose2] = find_closest_path_segment(path, robot_pose);
   const double x1 = pose1.pose.position.x;
   const double y1 = pose1.pose.position.y;
   const double x2 = pose2.pose.position.x;
   const double y2 = pose2.pose.position.y;
-  const double x3 = pose.pose.position.x;
-  const double y3 = pose.pose.position.y;
+  const double x3 = robot_pose.pose.position.x;
+  const double y3 = robot_pose.pose.position.y;
 
-  const double u = ((x3 - x1) * (x2 - x1) + (y3 - y1) * (y2 - y1)) / ((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+  const double u = ((x3 - x1) * (x2 - x1) + (y3 - y1) * (y2 - y1)) /
+    ((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
 
   const double x = x1 + u * (x2 - x1);
   const double y = y1 + u * (y2 - y1);
 
-  return std::sqrt((x - x3) * (x - x3) + (y - y3) * (y - y3));
+  tf2::Quaternion q1;
+  tf2::Quaternion q2;
+  tf2::fromMsg(pose1.pose.orientation, q1);
+  tf2::fromMsg(pose2.pose.orientation, q2);
+
+  // u is the ratio of p1 to p2, which works perfectly for slerp
+  tf2::Quaternion q = tf2::slerp(q1, q2, u);
+
+  geometry_msgs::msg::PoseStamped projected_pose;
+  projected_pose.header.frame_id = pose1.header.frame_id;
+  projected_pose.pose.position.x = x;
+  projected_pose.pose.position.y = y;
+  projected_pose.pose.position.z = pose1.pose.position.z;
+  projected_pose.pose.orientation = tf2::toMsg(q);
+
+  return projected_pose;
+}
+
+nav2_msgs::msg::CrossTrackError calculate_cross_track_error(
+  geometry_msgs::msg::PoseStamped projected_pose)
+{
+  nav2_msgs::msg::CrossTrackError error;
+  error.position_error = std::hypot(projected_pose.pose.position.x, projected_pose.pose.position.y);
+  tf2::Quaternion error_orientation;
+  tf2::fromMsg(projected_pose.pose.orientation, error_orientation);
+  error.heading_error = tf2::getYaw(error_orientation);
+  return error;
 }
 
 }  // namespace geometry_utils

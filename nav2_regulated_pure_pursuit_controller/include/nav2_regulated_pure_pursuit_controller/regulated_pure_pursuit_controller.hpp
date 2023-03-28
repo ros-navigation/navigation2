@@ -23,6 +23,7 @@
 #include <mutex>
 
 #include "nav2_core/controller.hpp"
+#include "nav2_msgs/msg/cross_track_error.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
@@ -117,9 +118,9 @@ protected:
    * @param cmd the current speed to use to compute lookahead point
    * @return lookahead distance
    */
-  double getLookAheadDistance(const geometry_msgs::msg::Twist &,
-    const nav_msgs::msg::Path & path,
-    const geometry_msgs::msg::PoseStamped & pose);
+  double getLookAheadDistance(
+    const geometry_msgs::msg::Twist &,
+    const nav2_msgs::msg::CrossTrackError & cross_track_error);
 
   /**
    * @brief Creates a PointStamped message for visualization
@@ -198,9 +199,10 @@ protected:
    */
   double findVelocitySignChange(const nav_msgs::msg::Path & transformed_plan);
 
-  double getDubinsMinLookAheadDistance(
-    const nav_msgs::msg::Path & path,
-    const geometry_msgs::msg::PoseStamped & pose);
+  double getDubinsMinLookAheadDistance(const nav2_msgs::msg::CrossTrackError & cross_track_error);
+
+  nav2_msgs::msg::CrossTrackError getCrossTrackError(
+    const nav_msgs::msg::Path & transformed_plan);
 
   rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
@@ -217,6 +219,11 @@ protected:
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PointStamped>>
   carrot_pub_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> carrot_arc_pub_;
+  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseStamped>>
+  projected_pose_pub_;
+  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::CrossTrackError>>
+  cross_track_error_pub_;
+
   std::unique_ptr<nav2_regulated_pure_pursuit_controller::PathHandler> path_handler_;
   std::unique_ptr<nav2_regulated_pure_pursuit_controller::ParameterHandler> param_handler_;
   std::unique_ptr<nav2_regulated_pure_pursuit_controller::CollisionChecker> collision_checker_;
