@@ -104,7 +104,6 @@ void RegulatedPurePursuitController::cleanup()
     plugin_name_.c_str());
   global_path_pub_.reset();
   carrot_pub_.reset();
-  carrot_arc_pub_.reset();
 }
 
 void RegulatedPurePursuitController::activate()
@@ -116,13 +115,6 @@ void RegulatedPurePursuitController::activate()
     plugin_name_.c_str());
   global_path_pub_->on_activate();
   carrot_pub_->on_activate();
-  carrot_arc_pub_->on_activate();
-  // Add callback for dynamic parameters
-  auto node = node_.lock();
-  dyn_params_handler_ = node->add_on_set_parameters_callback(
-    std::bind(
-      &RegulatedPurePursuitController::dynamicParametersCallback,
-      this, std::placeholders::_1));
 }
 
 void RegulatedPurePursuitController::deactivate()
@@ -134,8 +126,6 @@ void RegulatedPurePursuitController::deactivate()
     plugin_name_.c_str());
   global_path_pub_->on_deactivate();
   carrot_pub_->on_deactivate();
-  carrot_arc_pub_->on_deactivate();
-  dyn_params_handler_.reset();
 }
 
 std::unique_ptr<geometry_msgs::msg::PointStamped> RegulatedPurePursuitController::createCarrotMsg(
@@ -169,7 +159,7 @@ double RegulatedPurePursuitController::getLookAheadDistance(
     }
   }
 
-  lookahead_dist = std::clamp(lookahead_dist, min_lookahead_dist_, max_lookahead_dist_);
+  lookahead_dist = std::clamp(lookahead_dist,  params_->min_lookahead_dist, params_->max_lookahead_dist);
 
   return lookahead_dist;
 }
@@ -200,9 +190,8 @@ double RegulatedPurePursuitController::getDubinsMinLookAheadDistance(
   // symmetrical arcs of `arc_length` radians to reach the path.
   // These serve to give us a reasonable bound on the lookahead
   // without generating full dubins curves
-  double error = nav2_util::geometry_utils::cross_track_error(path, pose);
-  double arc_length = std::acos(1.0 - error / (2.0 * dubins_min_turning_radius_));
-  return 2 * dubins_min_turning_radius_ * std::sin(arc_length);
+  double arc_length = std::acos(1.0 - cross_track_error.position_error / (2.0 * params_->dubins_min_turning_radius));
+  return 2 * params_->dubins_min_turning_radius * std::sin(arc_length);
 }
 
 nav2_msgs::msg::CrossTrackError RegulatedPurePursuitController::getCrossTrackError(
@@ -211,10 +200,18 @@ nav2_msgs::msg::CrossTrackError RegulatedPurePursuitController::getCrossTrackErr
   // Add the previous pose to the path so that the cross-track error is smoother
   nav_msgs::msg::Path smooth_path = transformed_plan;  // copy
   geometry_msgs::msg::PoseStamped previous_pose, transformed_previous_pose;
-  previous_pose.header.frame_id = global_plan_.header.frame_id;
+  previous_pose.header.frame_id = path_handler_->getPlan().header.frame_id;
   previous_pose.header.stamp = transformed_plan.header.stamp;
   previous_pose.pose = std::prev(path_handler_->getCurrentPose())->pose;
-  transformPose(costmap_ros_->getBaseFrameID(), previous_pose, transformed_previous_pose);
+  if (!path_handler_->transformPose(
+      costmap_ros_->getBaseFrameID(),
+      previous_pose,
+      transformed_previous_pose))
+  {
+    throw nav2_core::ControllerTFError(
+            "Unable to transform map pose into the robot base frame");
+  }
+
   smooth_path.poses.insert(smooth_path.poses.begin(), transformed_previous_pose);
 
   auto projected_pose = nav2_util::geometry_utils::project_robot_onto_path(smooth_path);
@@ -244,7 +241,11 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   }
 
   // Transform path to robot base frame
-  auto transformed_plan = transformGlobalPlan(pose);
+  auto transformed_plan = path_handler_->transformGlobalPlan(
+    pose, params_->max_robot_pose_search_dist);
+  global_path_pub_->publish(transformed_plan);
+
+  auto cross_track_error = getCrossTrackError(transformed_plan);
 
   // Find look ahead distance and point on path and publish
   double lookahead_dist = getLookAheadDistance(speed, cross_track_error);

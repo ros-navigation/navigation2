@@ -84,6 +84,8 @@ public:
 
   nav_msgs::msg::Path getPlan() {return global_plan_;}
 
+  nav_msgs::msg::Path & getPlan() {return global_plan_;}
+
   std::vector<geometry_msgs::msg::PoseStamped>::iterator getCurrentPose()
   {
     return path_progress_cursor_;
