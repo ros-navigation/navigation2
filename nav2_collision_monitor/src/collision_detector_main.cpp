@@ -16,7 +16,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 
-#include "nav2_collision_monitor/detector_node.hpp"
+#include "nav2_collision_monitor/collision_detector_node.hpp"
 
 int main(int argc, char * argv[])
 {

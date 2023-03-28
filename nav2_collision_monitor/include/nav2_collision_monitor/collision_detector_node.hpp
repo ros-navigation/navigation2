@@ -140,12 +140,9 @@ protected:
 
   /// @brief Data sources array
   std::vector<std::shared_ptr<Source>> sources_;
-
-  /// @brief Whether main routine is active
-  bool process_active_;
   
   /// @brief collision monitor state publisher
-  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Bool>::SharedPtr trigger_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Bool>::SharedPtr detections_pub_;
   /// @brief timer that runs actions
   rclcpp::TimerBase::SharedPtr timer_;
 

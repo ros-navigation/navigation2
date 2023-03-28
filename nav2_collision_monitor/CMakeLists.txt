@@ -38,7 +38,7 @@ set(dependencies
 )
 
 set(executable_name collision_monitor)
-set(executable_name_detector detector)
+set(executable_name_detector collision_detector)
 set(library_name ${executable_name}_core)
 set(library_name_detector ${executable_name_detector}_core)
 
@@ -53,7 +53,7 @@ add_library(${library_name} SHARED
   src/kinematics.cpp
 )
 add_library(${library_name_detector} SHARED
-  src/detector_node.cpp
+  src/collision_detector_node.cpp
   src/polygon.cpp
   src/circle.cpp
   src/source.cpp
@@ -67,7 +67,7 @@ add_executable(${executable_name}
   src/main.cpp
 )
 add_executable(${executable_name_detector}
-  src/main_detector_node.cpp
+  src/collision_detector_main.cpp
 )
 
 ament_target_dependencies(${library_name}
@@ -125,8 +125,7 @@ endif()
 ### Ament stuff ###
 
 ament_export_include_directories(include)
-ament_export_libraries(${library_name})
-ament_export_libraries(${library_name_detector})
+ament_export_libraries(${library_name} ${library_name_detector})
 ament_export_dependencies(${dependencies})
 
 ament_package()

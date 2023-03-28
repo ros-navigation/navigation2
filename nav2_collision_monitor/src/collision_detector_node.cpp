@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_collision_monitor/detector_node.hpp"
+#include "nav2_collision_monitor/collision_detector_node.hpp"
 
 #include <exception>
 #include <utility>
@@ -22,16 +22,13 @@
 
 #include "nav2_util/node_utils.hpp"
 
-#include "nav2_collision_monitor/kinematics.hpp"
-
 using namespace std::chrono_literals;
 
 namespace nav2_collision_monitor
 {
 
 Detector::Detector(const rclcpp::NodeOptions & options)
-: nav2_util::LifecycleNode("detector", "", options),
-  process_active_(false)
+: nav2_util::LifecycleNode("collision_detector", "", options)
 {
 }
 
@@ -54,16 +51,13 @@ Detector::on_configure(const rclcpp_lifecycle::State & /*state*/)
   tf_buffer_->setCreateTimerInterface(timer_interface);
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
-  // Creating timer
-  timer_ = this->create_wall_timer(
-      100ms,
-      std::bind(&Detector::process, this));
-
-  trigger_pub_ = this->create_publisher<std_msgs::msg::Bool>(
+  detections_pub_ = this->create_publisher<std_msgs::msg::Bool>(
     "~/state", rclcpp::SystemDefaultsQoS());
 
+  std::string cmd_vel_in_topic;
+  std::string cmd_vel_out_topic;
   // Obtaining ROS parameters
-  if (!getParameters()) {
+  if (!getParameters(cmd_vel_in_topic, cmd_vel_out_topic)) {
     return nav2_util::CallbackReturn::FAILURE;
   }
 
@@ -76,15 +70,17 @@ Detector::on_activate(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Activating");
 
   // Activating lifecycle publisher
-  trigger_pub_->on_activate();
+  detections_pub_->on_activate();
 
   // Activating polygons
   for (std::shared_ptr<Polygon> polygon : polygons_) {
     polygon->activate();
   }
 
-  // Activating main worker
-  process_active_ = true;
+  // Creating timer
+  timer_ = this->create_wall_timer(
+      100ms,
+      std::bind(&Detector::process, this));
 
   // Creating bond connection
   createBond();
@@ -98,15 +94,15 @@ Detector::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Deactivating");
 
   // Deactivating lifecycle publishers
-  trigger_pub_->on_deactivate();
-
-  // Deactivating main worker
-  process_active_ = false;
+  detections_pub_->on_deactivate();
 
   // Deactivating polygons
   for (std::shared_ptr<Polygon> polygon : polygons_) {
     polygon->deactivate();
   }
+
+  // Resetting timer
+  timer_.reset();
 
   // Destroying bond connection
   destroyBond();
@@ -119,7 +115,7 @@ Detector::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
-  trigger_pub_.reset();
+  detections_pub_.reset();
 
   polygons_.clear();
   sources_.clear();
@@ -137,7 +133,6 @@ Detector::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
-
 
 bool Detector::getParameters()
 {
@@ -282,11 +277,6 @@ void Detector::process()
   // Current timestamp for all inner routines prolongation
   rclcpp::Time curr_time = this->now();
 
-  // Do nothing if main worker in non-active state
-  if (!process_active_) {
-    return;
-  }
-
   // Points array collected from different data sources in a robot base frame
   std::vector<Point> collision_points;
 
@@ -295,13 +285,13 @@ void Detector::process()
     source->getData(curr_time, collision_points);
   }
 
-  std::unique_ptr<std_msgs::msg::Bool> trigger_msg =
+  std::unique_ptr<std_msgs::msg::Bool> detections_msg =
     std::make_unique<std_msgs::msg::Bool>();
   for (std::shared_ptr<Polygon> polygon : polygons_) {
-    trigger_msg->data = polygon->getPointsInside(collision_points) > polygon->getMaxPoints();
+    detections_msg->data = polygon->getPointsInside(collision_points) > polygon->getMaxPoints();
   }
 
-  trigger_pub_->publish(std::move(trigger_msg));
+  detections_pub_->publish(std::move(detections_msg));
 
   // Publish polygons for better visualization
   publishPolygons();
