@@ -224,6 +224,14 @@ find_closest_path_segment(
   const nav_msgs::msg::Path & path,
   const geometry_msgs::msg::PoseStamped & pose)
 {
+  if (path.poses.empty()) {
+    throw std::invalid_argument("No poses on path to project onto");
+  }
+
+  if (path.poses.size() == 1u) {
+    return std::make_pair(*path.poses.begin(), *path.poses.begin());
+  }
+
   std::vector<double> distances(path.poses.size());
   std::transform(
     path.poses.begin(),
@@ -233,24 +241,32 @@ find_closest_path_segment(
       return squared_euclidean_distance(path_pose, pose);
     }
   );
-  auto closest_distance_it = std::min_element(
-    distances.begin(),
-    distances.end()
-  );
+  // We want to find the first local minima,
+  // so we don't loop around and get something from later
+  // if we start out by increasing distance away,
+  // then we will accept the beginning
+  auto distance_it = distances.begin();
+  for (; distance_it != std::prev(distances.end()); ++distance_it) {
+    double delta = *std::next(distance_it) - *distance_it;
+    if (delta > 0.0) {
+      break;
+    }
+  }
+  auto first_minimum_it = distance_it;
 
   auto next_closest_distance_it = distances.end();
 
-  if (std::next(closest_distance_it) == distances.end()) {
-    next_closest_distance_it = std::prev(closest_distance_it);
-  } else if (closest_distance_it == distances.begin()) {
-    next_closest_distance_it = std::next(closest_distance_it);
-  } else if (*std::prev(closest_distance_it) < *std::next(closest_distance_it)) {
-    next_closest_distance_it = std::prev(closest_distance_it);
+  if (std::next(first_minimum_it) == distances.end()) {
+    next_closest_distance_it = std::prev(first_minimum_it);
+  } else if (first_minimum_it == distances.begin()) {
+    next_closest_distance_it = std::next(first_minimum_it);
+  } else if (*std::prev(first_minimum_it) < *std::next(first_minimum_it)) {
+    next_closest_distance_it = std::prev(first_minimum_it);
   } else {
-    next_closest_distance_it = std::next(closest_distance_it);
+    next_closest_distance_it = std::next(first_minimum_it);
   }
 
-  size_t closest_pose_index = std::distance(distances.begin(), closest_distance_it);
+  size_t closest_pose_index = std::distance(distances.begin(), first_minimum_it);
   size_t next_closest_pose_index = std::distance(distances.begin(), next_closest_distance_it);
 
   return std::make_pair(path.poses.at(closest_pose_index), path.poses.at(next_closest_pose_index));
@@ -277,8 +293,13 @@ geometry_msgs::msg::PoseStamped project_robot_onto_path(const nav_msgs::msg::Pat
   const double x3 = robot_pose.pose.position.x;
   const double y3 = robot_pose.pose.position.y;
 
-  const double u = ((x3 - x1) * (x2 - x1) + (y3 - y1) * (y2 - y1)) /
-    ((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+  const double segment_length_squared = ((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+  double u;
+  if (segment_length_squared == 0.0) {
+    u = 1.0;  // We can just pick p2 as the projection point since they are the same
+  } else {
+    u = ((x3 - x1) * (x2 - x1) + (y3 - y1) * (y2 - y1)) / segment_length_squared;
+  }
 
   const double x = x1 + u * (x2 - x1);
   const double y = y1 + u * (y2 - y1);
