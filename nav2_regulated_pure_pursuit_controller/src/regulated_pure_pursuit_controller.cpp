@@ -88,6 +88,11 @@ void RegulatedPurePursuitController::configure(
   global_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("received_global_plan", 1);
   carrot_pub_ = node->create_publisher<geometry_msgs::msg::PointStamped>("lookahead_point", 1);
   carrot_arc_pub_ = node->create_publisher<nav_msgs::msg::Path>("lookahead_collision_arc", 1);
+  projected_pose_pub_ =
+    node->create_publisher<geometry_msgs::msg::PoseStamped>("projected_pose", 1);
+  cross_track_error_pub_ = node->create_publisher<nav2_msgs::msg::CrossTrackError>(
+    "cross_track_error", 1);
+
 
   // initialize collision checker and set costmap
   collision_checker_ = std::make_unique<nav2_costmap_2d::
@@ -104,6 +109,8 @@ void RegulatedPurePursuitController::cleanup()
     plugin_name_.c_str());
   global_path_pub_.reset();
   carrot_pub_.reset();
+  projected_pose_pub_.reset();
+  cross_track_error_pub_.reset();
 }
 
 void RegulatedPurePursuitController::activate()
@@ -115,6 +122,8 @@ void RegulatedPurePursuitController::activate()
     plugin_name_.c_str());
   global_path_pub_->on_activate();
   carrot_pub_->on_activate();
+  projected_pose_pub_->on_activate();
+  cross_track_error_pub_->on_activate();
 }
 
 void RegulatedPurePursuitController::deactivate()
@@ -126,6 +135,8 @@ void RegulatedPurePursuitController::deactivate()
     plugin_name_.c_str());
   global_path_pub_->on_deactivate();
   carrot_pub_->on_deactivate();
+  projected_pose_pub_->on_deactivate();
+  cross_track_error_pub_->on_deactivate();
 }
 
 std::unique_ptr<geometry_msgs::msg::PointStamped> RegulatedPurePursuitController::createCarrotMsg(
