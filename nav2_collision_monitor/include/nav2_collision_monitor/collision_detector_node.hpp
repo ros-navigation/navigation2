@@ -20,13 +20,13 @@
 #include <memory>
 
 #include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/bool.hpp"
 
 #include "tf2/time.h"
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
 
 #include "nav2_util/lifecycle_node.hpp"
+#include "nav2_msgs/msg/collision_detector_state.hpp"
 
 #include "nav2_collision_monitor/types.hpp"
 #include "nav2_collision_monitor/polygon.hpp"
@@ -141,7 +141,7 @@ protected:
   std::vector<std::shared_ptr<Source>> sources_;
   
   /// @brief collision monitor state publisher
-  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Bool>::SharedPtr detections_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::CollisionDetectorState>::SharedPtr state_pub_;
   /// @brief timer that runs actions
   rclcpp::TimerBase::SharedPtr timer_;
 

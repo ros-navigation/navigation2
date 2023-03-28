@@ -51,7 +51,7 @@ CollisionDetector::on_configure(const rclcpp_lifecycle::State & /*state*/)
   tf_buffer_->setCreateTimerInterface(timer_interface);
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
-  detections_pub_ = this->create_publisher<std_msgs::msg::Bool>(
+  state_pub_ = this->create_publisher<nav2_msgs::msg::CollisionDetectorState>(
     "~/state", rclcpp::SystemDefaultsQoS());
 
   // Obtaining ROS parameters
@@ -68,7 +68,7 @@ CollisionDetector::on_activate(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Activating");
 
   // Activating lifecycle publisher
-  detections_pub_->on_activate();
+  state_pub_->on_activate();
 
   // Activating polygons
   for (std::shared_ptr<Polygon> polygon : polygons_) {
@@ -76,7 +76,7 @@ CollisionDetector::on_activate(const rclcpp_lifecycle::State & /*state*/)
   }
 
   // Creating timer
-  timer_ = this->create_wall_timer(
+  timer_ = this->create_timer(
       std::chrono::duration<double>{1.0 / frequency_},
       std::bind(&CollisionDetector::process, this));
 
@@ -92,7 +92,7 @@ CollisionDetector::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Deactivating");
 
   // Deactivating lifecycle publishers
-  detections_pub_->on_deactivate();
+  state_pub_->on_deactivate();
 
   // Deactivating polygons
   for (std::shared_ptr<Polygon> polygon : polygons_) {
@@ -113,7 +113,7 @@ CollisionDetector::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
-  detections_pub_.reset();
+  state_pub_.reset();
 
   polygons_.clear();
   sources_.clear();
@@ -286,13 +286,15 @@ void CollisionDetector::process()
     source->getData(curr_time, collision_points);
   }
 
-  std::unique_ptr<std_msgs::msg::Bool> detections_msg =
-    std::make_unique<std_msgs::msg::Bool>();
+  std::unique_ptr<nav2_msgs::msg::CollisionDetectorState> state_msg =
+    std::make_unique<nav2_msgs::msg::CollisionDetectorState>();
+
   for (std::shared_ptr<Polygon> polygon : polygons_) {
-    detections_msg->data = polygon->getPointsInside(collision_points) > polygon->getMaxPoints();
+    state_msg->polygons.push_back(polygon->getName());
+    state_msg->detections.push_back(polygon->getPointsInside(collision_points) > polygon->getMaxPoints());
   }
 
-  detections_pub_->publish(std::move(detections_msg));
+  state_pub_->publish(std::move(state_msg));
 
   // Publish polygons for better visualization
   publishPolygons();
