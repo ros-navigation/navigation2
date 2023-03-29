@@ -49,12 +49,8 @@ nav_msgs::msg::Path PathHandler::transformGlobalPlan(
   const geometry_msgs::msg::PoseStamped & pose,
   double max_robot_pose_search_dist)
 {
-  if (global_plan_.poses.empty()) {
+  if (global_plan_.poses.empty() || path_progress_cursor_ == global_plan_.poses.end()) {
     throw nav2_core::InvalidPath("Received plan with zero length");
-  }
-
-  if (path_progress_cursor_ == global_plan_.poses.end()) {
-    throw nav2_core::PlannerException("No more poses to transform");
   }
 
   // let's get the pose of the robot in the frame of the plan

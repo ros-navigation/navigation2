@@ -143,7 +143,9 @@ double RegulatedPurePursuitController::getLookAheadDistance(
   }
 
   if (params_->use_dubins_min_lookahead_dist) {
-    double dubins_min_lookahead_dist = std::min(getDubinsMinLookAheadDistance(cross_track_error), params_->max_lookahead_dist);
+    double dubins_min_lookahead_dist = std::min(
+      getDubinsMinLookAheadDistance(
+        cross_track_error), params_->max_lookahead_dist);
     lookahead_dist = std::max(lookahead_dist, dubins_min_lookahead_dist);
   }
 
@@ -176,7 +178,10 @@ double RegulatedPurePursuitController::getDubinsMinLookAheadDistance(
   // symmetrical arcs of `arc_length` radians to reach the path.
   // These serve to give us a reasonable bound on the lookahead
   // without generating full dubins curves
-  double arc_length = std::acos(1.0 - cross_track_error.position_error / (2.0 * params_->dubins_min_turning_radius));
+  double arc_length =
+    std::acos(
+    1.0 - cross_track_error.position_error /
+    (2.0 * params_->dubins_min_turning_radius));
   return 2 * params_->dubins_min_turning_radius * std::sin(arc_length);
 }
 
