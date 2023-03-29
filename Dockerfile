@@ -105,6 +105,20 @@ RUN . $UNDERLAY_WS/install/setup.sh && \
       --ignore-src \
     && rm -rf /var/lib/apt/lists/*
 
+# multi-stage for developing
+FROM builder AS dever
+
+# edit apt for caching
+RUN mv /etc/apt/apt.conf.d/docker-clean /etc/apt/
+
+# install developer dependencies
+RUN apt-get update && \
+    apt-get install -y \
+      bash-completion
+
+# source underlay for shell
+RUN echo 'source "$UNDERLAY_WS/install/setup.bash"' >> /etc/bash.bashrc
+
 # multi-stage for testing
 FROM builder AS tester
 
