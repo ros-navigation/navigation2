@@ -69,35 +69,14 @@ void RegulatedPurePursuitController::configure(
   goal_dist_tol_ = 0.25;  // reasonable default before first update
 
   node->get_parameter("controller_frequency", control_frequency);
-  node->get_parameter(
-    plugin_name_ + ".max_robot_pose_search_dist",
-    max_robot_pose_search_dist_);
-  node->get_parameter(
-    plugin_name_ + ".use_interpolation",
-    use_interpolation_);
-  node->get_parameter(
-    plugin_name_ + ".use_dubins_min_lookahead_dist",
-    use_dubins_min_lookahead_dist_);
-  node->get_parameter(
-    plugin_name_ + ".dubins_min_turning_radius",
-    dubins_min_turning_radius_);
-
-  transform_tolerance_ = tf2::durationFromSec(transform_tolerance);
   control_duration_ = 1.0 / control_frequency;
 
   global_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("received_global_plan", 1);
   carrot_pub_ = node->create_publisher<geometry_msgs::msg::PointStamped>("lookahead_point", 1);
-  carrot_arc_pub_ = node->create_publisher<nav_msgs::msg::Path>("lookahead_collision_arc", 1);
   projected_pose_pub_ =
     node->create_publisher<geometry_msgs::msg::PoseStamped>("projected_pose", 1);
   cross_track_error_pub_ = node->create_publisher<nav2_msgs::msg::CrossTrackError>(
     "cross_track_error", 1);
-
-
-  // initialize collision checker and set costmap
-  collision_checker_ = std::make_unique<nav2_costmap_2d::
-      FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>(costmap_);
-  collision_checker_->setCostmap(costmap_);
 }
 
 void RegulatedPurePursuitController::cleanup()
@@ -164,13 +143,9 @@ double RegulatedPurePursuitController::getLookAheadDistance(
   }
 
   if (params_->use_dubins_min_lookahead_dist) {
-    double dubins_min_lookahead_dist = getDubinsMinLookAheadDistance(cross_track_error);
-    if (lookahead_dist < dubins_min_lookahead_dist) {
-      lookahead_dist = dubins_min_lookahead_dist;
-    }
+    double dubins_min_lookahead_dist = std::min(getDubinsMinLookAheadDistance(cross_track_error), params_->max_lookahead_dist);
+    lookahead_dist = std::max(lookahead_dist, dubins_min_lookahead_dist);
   }
-
-  lookahead_dist = std::clamp(lookahead_dist,  params_->min_lookahead_dist, params_->max_lookahead_dist);
 
   return lookahead_dist;
 }
