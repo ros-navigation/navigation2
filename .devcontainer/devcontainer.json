@@ -1,18 +1,31 @@
 {
     "name": "Nav2",
-    "image": "ghcr.io/ros-planning/navigation2:main",
+	"build": {
+		"dockerfile": "../Dockerfile",
+        "context": "..",
+        "target": "dever",
+        "cacheFrom": "ghcr.io/ros-planning/navigation2:main"
+	},
     "runArgs": [
         "--privileged",
         "--network=host"
     ],
     "workspaceMount": "source=${localWorkspaceFolder},target=/opt/overlay_ws/src/navigation2,type=bind",
-    "workspaceFolder": "/opt/overlay_ws/src",
-    "onCreateCommand": "navigation2/.devcontainer/on-create-command.sh",
-    "updateContentCommand": "navigation2/.devcontainer/update-content-command.sh",
+    "workspaceFolder": "/opt/overlay_ws/src/navigation2",
+    "onCreateCommand": ".devcontainer/on-create-command.sh",
+    "updateContentCommand": ".devcontainer/update-content-command.sh",
+    "postCreateCommand": ".devcontainer/post-create-command.sh",
     "remoteEnv": {
         "OVERLAY_MIXINS": "release ccache lld",
-        "CCACHE_DIR": "${containerEnv:OVERLAY_WS}/.ccache"
+        "CCACHE_DIR": "/tmp/.ccache"
     },
+    "mounts": [
+		{
+			"source": "ccache",
+			"target": "/tmp/.ccache",
+			"type": "volume"
+		}
+	],
     "features": {
         // "ghcr.io/devcontainers/features/desktop-lite:1": {},
         "ghcr.io/devcontainers/features/github-cli:1": {}
@@ -26,6 +39,7 @@
         "vscode": {
             "settings": {},
             "extensions": [
+                "althack.ament-task-provider",
                 "eamodio.gitlens",
                 "esbenp.prettier-vscode",
                 "GitHub.copilot",
