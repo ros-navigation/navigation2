@@ -219,7 +219,7 @@ inline double calculate_path_length(const nav_msgs::msg::Path & path, size_t sta
   return path_length;
 }
 
-std::pair<geometry_msgs::msg::PoseStamped, geometry_msgs::msg::PoseStamped>
+inline std::pair<geometry_msgs::msg::PoseStamped, geometry_msgs::msg::PoseStamped>
 find_closest_path_segment(
   const nav_msgs::msg::Path & path,
   const geometry_msgs::msg::PoseStamped & pose)
@@ -276,7 +276,7 @@ find_closest_path_segment(
  * Assuming the robot is at the origin of the frame the path is in,
  * find the closest pose on the path to the robot, interpolated in both position and orientation.
 */
-geometry_msgs::msg::PoseStamped project_robot_onto_path(const nav_msgs::msg::Path & path)
+inline geometry_msgs::msg::PoseStamped project_robot_onto_path(const nav_msgs::msg::Path & path)
 {
   // http://paulbourke.net/geometry/pointlineplane/
 
@@ -322,7 +322,7 @@ geometry_msgs::msg::PoseStamped project_robot_onto_path(const nav_msgs::msg::Pat
   return projected_pose;
 }
 
-nav2_msgs::msg::CrossTrackError calculate_cross_track_error(
+inline nav2_msgs::msg::CrossTrackError calculate_cross_track_error(
   geometry_msgs::msg::PoseStamped projected_pose)
 {
   nav2_msgs::msg::CrossTrackError error;
