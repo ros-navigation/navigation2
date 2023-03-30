@@ -53,6 +53,9 @@ static const std::vector<double> ARBITRARY_POLYGON {
 static const double CIRCLE_RADIUS{0.5};
 static const int MIN_POINTS{2};
 static const double SLOWDOWN_RATIO{0.7};
+static const double LIMIT_X{0.4};
+static const double LIMIT_Y{0.2};
+static const double LIMIT_TW{0.09};
 static const double TIME_BEFORE_COLLISION{1.0};
 static const double SIMULATION_TIME_STEP{0.01};
 static const tf2::Duration TRANSFORM_TOLERANCE{tf2::durationFromSec(0.1)};
@@ -277,6 +280,21 @@ void Tester::setCommonParameters(const std::string & polygon_name, const std::st
     rclcpp::Parameter(polygon_name + ".slowdown_ratio", SLOWDOWN_RATIO));
 
   test_node_->declare_parameter(
+    polygon_name + ".limit_x", rclcpp::ParameterValue(LIMIT_X));
+  test_node_->set_parameter(
+    rclcpp::Parameter(polygon_name + ".limit_x", LIMIT_X));
+
+  test_node_->declare_parameter(
+    polygon_name + ".limit_y", rclcpp::ParameterValue(LIMIT_Y));
+  test_node_->set_parameter(
+    rclcpp::Parameter(polygon_name + ".limit_y", LIMIT_Y));
+
+  test_node_->declare_parameter(
+    polygon_name + ".limit_tw", rclcpp::ParameterValue(LIMIT_TW));
+  test_node_->set_parameter(
+    rclcpp::Parameter(polygon_name + ".limit_tw", LIMIT_TW));
+
+  test_node_->declare_parameter(
     polygon_name + ".time_before_collision",
     rclcpp::ParameterValue(TIME_BEFORE_COLLISION));
   test_node_->set_parameter(
@@ -460,6 +478,21 @@ TEST_F(Tester, testPolygonGetSlowdownParameters)
   EXPECT_EQ(polygon_->isVisualize(), true);
   // Check that slowdown_ratio is correct
   EXPECT_NEAR(polygon_->getSlowdownRatio(), SLOWDOWN_RATIO, EPSILON);
+}
+
+TEST_F(Tester, testPolygonGetLimitParameters)
+{
+  createPolygon("limit", true);
+
+  // Check that common parameters set correctly
+  EXPECT_EQ(polygon_->getName(), POLYGON_NAME);
+  EXPECT_EQ(polygon_->getActionType(), nav2_collision_monitor::LIMIT);
+  EXPECT_EQ(polygon_->getMaxPoints(), MAX_POINTS);
+  EXPECT_EQ(polygon_->isVisualize(), true);
+  // Check that limit params are correct
+  EXPECT_NEAR(polygon_->getLimitX(), LIMIT_X, EPSILON);
+  EXPECT_NEAR(polygon_->getLimitY(), LIMIT_Y, EPSILON);
+  EXPECT_NEAR(polygon_->getLimitTW(), LIMIT_TW, EPSILON);
 }
 
 TEST_F(Tester, testPolygonGetApproachParameters)

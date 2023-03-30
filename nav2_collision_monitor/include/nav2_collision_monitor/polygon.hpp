@@ -35,7 +35,7 @@ namespace nav2_collision_monitor
 
 /**
  * @brief Basic polygon shape class.
- * For STOP/SLOWDOWN model it represents zone around the robot
+ * For STOP/SLOWDOWN/LIMIT model it represents zone around the robot
  * while for APPROACH model it represents robot footprint.
  */
 class Polygon
@@ -96,6 +96,24 @@ public:
    * @return Speed slowdown ratio
    */
   double getSlowdownRatio() const;
+  /**
+   * @brief Obtains speed linear x limit for current polygon.
+   * Applicable for LIMIT model.
+   * @return Speed limit x
+   */
+  double getLimitX() const;
+  /**
+   * @brief Obtains speed linear y limit for current polygon.
+   * Applicable for LIMIT model.
+   * @return Speed limit y
+   */
+  double getLimitY() const;
+  /**
+   * @brief Obtains speed angular z limit for current polygon.
+   * Applicable for LIMIT model.
+   * @return Speed limit tw
+   */
+  double getLimitTW() const;
   /**
    * @brief Obtains required time before collision for current polygon.
    * Applicable for APPROACH model.
@@ -202,6 +220,12 @@ protected:
   int min_points_;
   /// @brief Robot slowdown (share of its actual speed)
   double slowdown_ratio_;
+  /// @brief Robot linear x limit
+  double limit_x_;
+  /// @brief Robot linear y limit
+  double limit_y_;
+  /// @brief Robot angular tw limit
+  double limit_tw_;
   /// @brief Time before collision in seconds
   double time_before_collision_;
   /// @brief Time step for robot movement simulation
