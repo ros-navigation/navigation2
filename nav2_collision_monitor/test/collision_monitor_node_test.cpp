@@ -644,6 +644,9 @@ TEST_F(Tester, testProcessStopSlowdownLimit)
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.4, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.15, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.09, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, LIMIT);
+  ASSERT_EQ(action_state_->polygon_name, "Limit");
 
   // 3. Obstacle is in slowdown robot zone
   publishScan(1.5, curr_time);
@@ -653,6 +656,9 @@ TEST_F(Tester, testProcessStopSlowdownLimit)
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5 * SLOWDOWN_RATIO, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.2 * SLOWDOWN_RATIO, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.1 * SLOWDOWN_RATIO, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, SLOWDOWN);
+  ASSERT_EQ(action_state_->polygon_name, "SlowDown");
 
   // 4. Obstacle is inside stop zone
   publishScan(0.5, curr_time);
@@ -662,6 +668,9 @@ TEST_F(Tester, testProcessStopSlowdownLimit)
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.0, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, STOP);
+  ASSERT_EQ(action_state_->polygon_name, "Stop");
 
   // 5. Restoring back normal operation
   publishScan(3.5, curr_time);
@@ -671,6 +680,9 @@ TEST_F(Tester, testProcessStopSlowdownLimit)
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.2, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.1, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, DO_NOTHING);
+  ASSERT_EQ(action_state_->polygon_name, "");
 
   // Stop Collision Monitor node
   cm_->stop();
