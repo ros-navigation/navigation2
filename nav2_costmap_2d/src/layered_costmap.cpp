@@ -95,6 +95,12 @@ void LayeredCostmap::addPlugin(std::shared_ptr<Layer> plugin)
   plugins_.push_back(plugin);
 }
 
+void LayeredCostmap::addFilter(std::shared_ptr<Layer> filter)
+{
+  std::unique_lock<Costmap2D::mutex_t> lock(*(combined_costmap_.getMutex()));
+  filters_.push_back(filter);
+}
+
 void LayeredCostmap::resizeMap(
   unsigned int size_x, unsigned int size_y, double resolution,
   double origin_x,
