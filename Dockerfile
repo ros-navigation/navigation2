@@ -119,6 +119,15 @@ RUN apt-get update && \
 # source underlay for shell
 RUN echo 'source "$UNDERLAY_WS/install/setup.bash"' >> /etc/bash.bashrc
 
+# multi-stage for visualizing
+FROM dever AS visualizer
+
+# install demo dependencies
+RUN apt-get update && apt-get install -y \
+      ros-$ROS_DISTRO-aws-robomaker-small-warehouse-world \
+      ros-$ROS_DISTRO-rviz2 \
+      ros-$ROS_DISTRO-turtlebot3-simulations
+
 # multi-stage for testing
 FROM builder AS tester
 
