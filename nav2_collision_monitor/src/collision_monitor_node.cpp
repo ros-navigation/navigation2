@@ -439,8 +439,8 @@ bool CollisionMonitor::processStopSlowdownLimit(
     } else {  // Limit
       Velocity safe_vel;
       safe_vel.x = std::clamp(velocity.x, -polygon->getLimitX(), polygon->getLimitX());
-      safe_vel.y = std::clamp(velocity.x, -polygon->getLimitY(), polygon->getLimitY());
-      safe_vel.tw = std::clamp(velocity.x, -polygon->getLimitTW(), polygon->getLimitTW());
+      safe_vel.y = std::clamp(velocity.y, -polygon->getLimitY(), polygon->getLimitY());
+      safe_vel.tw = std::clamp(velocity.tw, -polygon->getLimitTW(), polygon->getLimitTW());
       // Check that currently calculated velocity is safer than
       // chosen for previous shapes one
       if (safe_vel < robot_action.req_vel) {
