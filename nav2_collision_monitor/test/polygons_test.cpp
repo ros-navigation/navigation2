@@ -487,7 +487,7 @@ TEST_F(Tester, testPolygonGetLimitParameters)
   // Check that common parameters set correctly
   EXPECT_EQ(polygon_->getName(), POLYGON_NAME);
   EXPECT_EQ(polygon_->getActionType(), nav2_collision_monitor::LIMIT);
-  EXPECT_EQ(polygon_->getMaxPoints(), MAX_POINTS);
+  EXPECT_EQ(polygon_->getMinPoints(), MIN_POINTS);
   EXPECT_EQ(polygon_->isVisualize(), true);
   // Check that limit params are correct
   EXPECT_NEAR(polygon_->getLimitX(), LIMIT_X, EPSILON);
