@@ -84,6 +84,7 @@ enum ActionType
   STOP = 1,
   SLOWDOWN = 2,
   APPROACH = 3,
+  LIMIT = 4,
 };
 
 class CollisionMonitorWrapper : public nav2_collision_monitor::CollisionMonitor
