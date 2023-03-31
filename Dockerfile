@@ -122,11 +122,24 @@ RUN echo 'source "$UNDERLAY_WS/install/setup.bash"' >> /etc/bash.bashrc
 # multi-stage for visualizing
 FROM dever AS visualizer
 
+# install foxglove dependacies
+RUN echo "deb https://dl.cloudsmith.io/public/caddy/stable/deb/debian any-version main" > /etc/apt/sources.list.d/caddy-stable.list
+RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 65760c51edea2017cea2ca15155b6d79ca56ea34
+
 # install demo dependencies
 RUN apt-get update && apt-get install -y \
       ros-$ROS_DISTRO-aws-robomaker-small-warehouse-world \
       ros-$ROS_DISTRO-rviz2 \
       ros-$ROS_DISTRO-turtlebot3-simulations
+
+# install foxglove dependacies
+RUN apt-get install -y --no-install-recommends \
+      caddy \
+      ros-$ROS_DISTRO-foxglove-bridge
+
+# copy foxglove
+ENV FOXGLOVE_WS /opt/foxglove
+COPY --from=ghcr.io/foxglove/studio /src $FOXGLOVE_WS
 
 # multi-stage for testing
 FROM builder AS tester
