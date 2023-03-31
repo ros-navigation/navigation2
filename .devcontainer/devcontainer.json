@@ -3,7 +3,7 @@
     "build": {
         "dockerfile": "../Dockerfile",
         "context": "..",
-        "target": "dever",
+        "target": "visualizer",
         "cacheFrom": "ghcr.io/ros-planning/navigation2:main"
     },
     "runArgs": [
