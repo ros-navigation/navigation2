@@ -24,7 +24,12 @@
 			"source": "ccache",
 			"target": "/tmp/.ccache",
 			"type": "volume"
-		}
+		},
+        {
+            "source": "overlay",
+            "target": "/opt/overlay_ws",
+            "type": "volume"
+        }
 	],
     "features": {
         // "ghcr.io/devcontainers/features/desktop-lite:1": {},
