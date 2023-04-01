@@ -21,12 +21,12 @@
     },
     "mounts": [
 		{
-			"source": "ccache",
+			"source": "ccache-${devcontainerId}",
 			"target": "/tmp/.ccache",
 			"type": "volume"
 		},
         {
-            "source": "overlay",
+            "source": "overlay-${devcontainerId}",
             "target": "/opt/overlay_ws",
             "type": "volume"
         }
