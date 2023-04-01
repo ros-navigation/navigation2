@@ -1,11 +1,11 @@
 {
     "name": "Nav2",
-	"build": {
-		"dockerfile": "../Dockerfile",
+    "build": {
+        "dockerfile": "../Dockerfile",
         "context": "..",
         "target": "dever",
         "cacheFrom": "ghcr.io/ros-planning/navigation2:main"
-	},
+    },
     "runArgs": [
         "--privileged",
         "--network=host"
@@ -20,17 +20,17 @@
         "CCACHE_DIR": "/tmp/.ccache"
     },
     "mounts": [
-		{
-			"source": "ccache-${devcontainerId}",
-			"target": "/tmp/.ccache",
-			"type": "volume"
-		},
+        {
+            "source": "ccache-${devcontainerId}",
+            "target": "/tmp/.ccache",
+            "type": "volume"
+        },
         {
             "source": "overlay-${devcontainerId}",
             "target": "/opt/overlay_ws",
             "type": "volume"
         }
-	],
+    ],
     "features": {
         // "ghcr.io/devcontainers/features/desktop-lite:1": {},
         "ghcr.io/devcontainers/features/github-cli:1": {}
