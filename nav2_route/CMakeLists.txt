@@ -113,6 +113,7 @@ pluginlib_export_plugin_description_file(nav2_route plugins.xml)
 
 # Breadth first search library
 add_library(breadth_first_search SHARED
+    src/collision_checker.cpp
     src/breadth_first_search.cpp
     src/node.cpp)
 

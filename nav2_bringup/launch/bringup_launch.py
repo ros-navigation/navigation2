@@ -113,9 +113,9 @@ def generate_launch_description():
         PushRosNamespace(
             condition=IfCondition(use_namespace),
             namespace=namespace),
-
+        PushNodeRemapping
         Node(
-            condition=IfCondition(use_composition),
+            condition=IfCondition(use_composition),:
             name='nav2_container',
             package='rclcpp_components',
             executable='component_container_isolated',

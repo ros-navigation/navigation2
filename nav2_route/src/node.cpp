@@ -42,13 +42,40 @@ void Node::initMotionModel(int x_size)
     +x_size - 1, +x_size + 1};
 }
 
-bool Node::isNodeValid()
+void Node::getNeighbors(
+  NodeGetter & node_getter, 
+  CollisionChecker* collision_checker, 
+  const bool & traverse_unknown, 
+  NodeVector & neighbors)
 {
-  return true;
+  int index;
+  NodePtr neighbor; 
+  int node_i = this->getIndex();  
+  const Coordinates parent = getCoords(node_i);
+  Coordinates child; 
+
+  for(unsigned int i = 0; i != neighbors_grid_offsets.size(); ++i)
+  {
+    index = node_i + i; 
+    child = getCoords(index);
+
+    // Check for wrap around conditions 
+    if (fabs(parent.x - child.x) > 1 || fabs(parent.y - child.y) > 1)
+      continue;
+
+    if (node_getter(index, neighbor)) {
+      if (neighbor->isNodeValid(collision_checker, traverse_unknown) && !neighbor->wasVisited()) {
+        neighbors.push_back(neighbor);
+      }
+    }
+  }
 }
 
-void Node::getNeighbors(nav2_route::Node::NodeVector &)
-{}
+
+bool Node::isNodeValid(CollisionChecker * collision_checker, const bool &traverse_unknown)
+{
+  return collision_checker->inCollision(getIndex(), traverse_unknown);
+}
 
 bool Node::backtracePath(nav2_route::Node::CoordinateVector & path)
 {
@@ -68,4 +95,4 @@ bool Node::backtracePath(nav2_route::Node::CoordinateVector & path)
   return true;
 }
 
-}  // namespace nav2_route
+} 
