@@ -49,9 +49,9 @@ then
 fi
 echo BUILD_PACKAGES: $BUILD_PACKAGES
 
-colcon clean packages --yes \
-    --packages-select ${BUILD_PACKAGES} \
-    --base-select install
+# colcon clean packages --yes \
+#     --packages-select ${BUILD_PACKAGES} \
+#     --base-select install
 
 . $UNDERLAY_WS/install/setup.sh
 colcon build \
