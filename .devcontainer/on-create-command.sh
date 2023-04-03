@@ -7,12 +7,6 @@ set -eo pipefail
 # set -x
 # env
 
-cd $OVERLAY_WS
-
 git config --global --add safe.directory "*"
-colcon cache lock
 
-. $UNDERLAY_WS/install/setup.sh
-colcon build \
-    --symlink-install \
-    --mixin $OVERLAY_MIXINS
+.devcontainer/update-content-command.sh
