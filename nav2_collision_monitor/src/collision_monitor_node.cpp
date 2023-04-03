@@ -444,6 +444,7 @@ bool CollisionMonitor::processStopSlowdownLimit(
       // Check that currently calculated velocity is safer than
       // chosen for previous shapes one
       if (safe_vel < robot_action.req_vel) {
+        robot_action.polygon_name = polygon->getName();
         robot_action.action_type = LIMIT;
         robot_action.req_vel = safe_vel;
         return true;
