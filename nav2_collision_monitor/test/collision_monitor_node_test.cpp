@@ -629,8 +629,8 @@ TEST_F(Tester, testProcessStopSlowdownLimit)
   sendTransforms(curr_time);
 
   // 1. Obstacle is far away from robot
-  publishScan(3.5, curr_time);
-  ASSERT_TRUE(waitData(3.5, 500ms, curr_time));
+  publishScan(4.5, curr_time);
+  ASSERT_TRUE(waitData(4.5, 500ms, curr_time));
   publishCmdVel(0.5, 0.2, 0.1);
   ASSERT_TRUE(waitCmdVel(500ms));
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
@@ -674,8 +674,8 @@ TEST_F(Tester, testProcessStopSlowdownLimit)
   ASSERT_EQ(action_state_->polygon_name, "Stop");
 
   // 5. Restoring back normal operation
-  publishScan(3.5, curr_time);
-  ASSERT_TRUE(waitData(3.5, 500ms, curr_time));
+  publishScan(4.5, curr_time);
+  ASSERT_TRUE(waitData(4.5, 500ms, curr_time));
   publishCmdVel(0.5, 0.2, 0.1);
   ASSERT_TRUE(waitCmdVel(500ms));
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
