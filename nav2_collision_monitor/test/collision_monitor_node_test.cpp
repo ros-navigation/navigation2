@@ -638,8 +638,8 @@ TEST_F(Tester, testProcessStopSlowdownLimit)
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.1, EPSILON);
 
   // 2. Obstacle is in limit robot zone
-  publishScan(2.5, curr_time);
-  ASSERT_TRUE(waitData(2.5, 500ms, curr_time));
+  publishScan(3.0, curr_time);
+  ASSERT_TRUE(waitData(3.0, 500ms, curr_time));
   publishCmdVel(0.5, 0.2, 0.1);
   ASSERT_TRUE(waitCmdVel(500ms));
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.4, EPSILON);
