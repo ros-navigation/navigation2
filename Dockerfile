@@ -183,9 +183,7 @@ RUN cd $GZWEB_WS && . /usr/share/gazebo/setup.sh && \
     GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/opt/ros/$ROS_DISTRO/share/turtlebot3_gazebo/models && \
     GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/opt/ros/$ROS_DISTRO/share/aws_robomaker_small_warehouse_world/models && \
     xvfb-run -s "-screen 0 1280x1024x24" ./deploy.sh -m local && \
-    cd http/client/assets && mkdir models && \
-    find . -maxdepth 1 -type d -name "aws_*" \
-      | xargs cp -r -t models/
+    ln -s $GZWEB_WS/http/client/assets http/client/assets/models
 
 # install foxglove dependacies
 RUN apt-get install -y --no-install-recommends \
