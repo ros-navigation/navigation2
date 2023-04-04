@@ -3,5 +3,19 @@
     // for the documentation about the tasks.json format
     "version": "2.0.0",
     "tasks": [
+        {
+            "label": "Start Gzweb",
+            "type": "process",
+            "command": "npm",
+            "args": [
+                "start"
+            ],
+            "options": {
+                "cwd": "/opt/gzweb",
+                "env": {
+                    "npm_config_port": "9090"
+                }
+            },
+        },
     ]
 }
