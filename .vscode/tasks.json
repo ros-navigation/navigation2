@@ -21,12 +21,10 @@
         {
             "label": "Start Foxglove Bridge",
             "type": "shell",
-            "command": "ros2",
-            "args": [
-                "run",
-                "foxglove_bridge",
-                "foxglove_bridge"
-            ],
+            "command": "source ./install/setup.bash && ros2 run foxglove_bridge foxglove_bridge",
+            "options": {
+                "cwd": "/opt/overlay_ws",
+            },
             "problemMatcher": []
         },
         {
