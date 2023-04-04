@@ -142,7 +142,8 @@ RUN mv /etc/apt/apt.conf.d/docker-clean /etc/apt/
 # install developer dependencies
 RUN apt-get update && \
     apt-get install -y \
-      bash-completion
+      bash-completion \
+      gdb
 
 # source underlay for shell
 RUN echo 'source "$UNDERLAY_WS/install/setup.bash"' >> /etc/bash.bashrc
