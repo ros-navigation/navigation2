@@ -180,8 +180,8 @@ RUN git clone --branch python3 https://github.com/ruffsl/gzweb.git $GZWEB_WS
 
 # build gzweb
 RUN cd $GZWEB_WS && . /usr/share/gazebo/setup.sh && \
-    GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/opt/ros/$ROS_DISTRO/share/turtlebot3_gazebo/models && \
-    GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/opt/ros/$ROS_DISTRO/share/aws_robomaker_small_warehouse_world/models && \
+    GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:$(find /opt/ros/$ROS_DISTRO/share \
+      -mindepth 1 -maxdepth 2 -type d -name "models" | paste -s -d: -) && \
     xvfb-run -s "-screen 0 1280x1024x24" ./deploy.sh -m local && \
     ln -s $GZWEB_WS/http/client/assets http/client/assets/models
 
