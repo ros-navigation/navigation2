@@ -40,5 +40,12 @@
                 "cwd": "/opt/foxglove",
             },
         },
+        {
+            "label": "Start Foxglove",
+            "dependsOn": [
+                "Start Foxglove Bridge",
+                "Start Foxglove Studio"
+            ],
+        }
     ]
 }
