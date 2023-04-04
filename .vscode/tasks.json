@@ -17,5 +17,28 @@
                 }
             },
         },
+        {
+            "label": "Start Foxglove Bridge",
+            "type": "shell",
+            "command": "ros2",
+            "args": [
+                "run",
+                "foxglove_bridge",
+                "foxglove_bridge"
+            ],
+        },
+        {
+            "label": "Start Foxglove Studio",
+            "type": "process",
+            "command": "caddy",
+            "args": [
+                "file-server",
+                "--listen",
+                ":8080"
+            ],
+            "options": {
+                "cwd": "/opt/foxglove",
+            },
+        },
     ]
 }
