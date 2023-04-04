@@ -185,6 +185,13 @@ RUN cd $GZWEB_WS && . /usr/share/gazebo/setup.sh && \
     xvfb-run -s "-screen 0 1280x1024x24" ./deploy.sh -m local && \
     ln -s $GZWEB_WS/http/client/assets http/client/assets/models
 
+# patch gzsever
+RUN GZSERVER=$(which gzserver) && \
+    mv $GZSERVER $GZSERVER.orig && \
+    echo '#!/bin/bash' > $GZSERVER && \
+    echo 'xvfb-run -s "-screen 0 1280x1024x24" gzserver.orig "$@"' >> $GZSERVER && \
+    chmod +x $GZSERVER
+
 # install foxglove dependacies
 RUN apt-get install -y --no-install-recommends \
       caddy \
