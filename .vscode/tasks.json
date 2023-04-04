@@ -16,6 +16,7 @@
                     "npm_config_port": "9090"
                 }
             },
+            "problemMatcher": []
         },
         {
             "label": "Start Foxglove Bridge",
@@ -26,6 +27,7 @@
                 "foxglove_bridge",
                 "foxglove_bridge"
             ],
+            "problemMatcher": []
         },
         {
             "label": "Start Foxglove Studio",
@@ -39,6 +41,7 @@
             "options": {
                 "cwd": "/opt/foxglove",
             },
+            "problemMatcher": []
         },
         {
             "label": "Start Foxglove",
@@ -46,6 +49,7 @@
                 "Start Foxglove Bridge",
                 "Start Foxglove Studio"
             ],
+            "problemMatcher": []
         }
     ]
 }
