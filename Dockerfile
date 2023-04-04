@@ -105,6 +105,34 @@ RUN . $UNDERLAY_WS/install/setup.sh && \
       --ignore-src \
     && rm -rf /var/lib/apt/lists/*
 
+# multi-stage for testing
+FROM builder AS tester
+
+# build overlay source
+COPY --from=cacher $OVERLAY_WS ./
+ARG OVERLAY_MIXINS="release ccache lld"
+ARG CCACHE_DIR="$OVERLAY_WS/.ccache"
+RUN . $UNDERLAY_WS/install/setup.sh && \
+    colcon cache lock && \
+    colcon build \
+      --symlink-install \
+      --mixin $OVERLAY_MIXINS
+
+# source overlay from entrypoint
+RUN sed --in-place \
+      's|^source .*|source "$OVERLAY_WS/install/setup.bash"|' \
+      /ros_entrypoint.sh
+
+# test overlay build
+ARG RUN_TESTS
+ARG FAIL_ON_TEST_FAILURE
+RUN if [ -n "$RUN_TESTS" ]; then \
+        . install/setup.sh && \
+        colcon test && \
+        colcon test-result \
+          || ([ -z "$FAIL_ON_TEST_FAILURE" ] || exit 1) \
+    fi
+
 # multi-stage for developing
 FROM builder AS dever
 
@@ -167,30 +195,5 @@ RUN apt-get install -y --no-install-recommends \
 ENV FOXGLOVE_WS /opt/foxglove
 COPY --from=ghcr.io/foxglove/studio /src $FOXGLOVE_WS
 
-# multi-stage for testing
-FROM builder AS tester
-
-# build overlay source
-COPY --from=cacher $OVERLAY_WS ./
-ARG OVERLAY_MIXINS="release ccache lld"
-ARG CCACHE_DIR="$OVERLAY_WS/.ccache"
-RUN . $UNDERLAY_WS/install/setup.sh && \
-    colcon cache lock && \
-    colcon build \
-      --symlink-install \
-      --mixin $OVERLAY_MIXINS
-
-# source overlay from entrypoint
-RUN sed --in-place \
-      's|^source .*|source "$OVERLAY_WS/install/setup.bash"|' \
-      /ros_entrypoint.sh
-
-# test overlay build
-ARG RUN_TESTS
-ARG FAIL_ON_TEST_FAILURE
-RUN if [ -n "$RUN_TESTS" ]; then \
-        . install/setup.sh && \
-        colcon test && \
-        colcon test-result \
-          || ([ -z "$FAIL_ON_TEST_FAILURE" ] || exit 1) \
-    fi
+# multi-stage for exporting
+FROM tester AS exporter
