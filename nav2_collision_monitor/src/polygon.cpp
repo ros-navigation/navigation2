@@ -35,7 +35,7 @@ Polygon::Polygon(
   const std::string & base_frame_id,
   const tf2::Duration & transform_tolerance)
 : node_(node), polygon_name_(polygon_name), action_type_(DO_NOTHING),
-  slowdown_ratio_(0.0), limit_x_(0.0), limit_y_(0.0), limit_tw_(0.0),
+  slowdown_ratio_(0.0), linear_limit_(0.0), angular_limit_(0.0),
   footprint_sub_(nullptr), tf_buffer_(tf_buffer),
   base_frame_id_(base_frame_id), transform_tolerance_(transform_tolerance)
 {
@@ -139,19 +139,14 @@ double Polygon::getSlowdownRatio() const
   return slowdown_ratio_;
 }
 
-double Polygon::getLimitX() const
+double Polygon::getLinearLimit() const
 {
-  return limit_x_;
+  return linear_limit_;
 }
 
-double Polygon::getLimitY() const
+double Polygon::getAngularLimit() const
 {
-  return limit_y_;
-}
-
-double Polygon::getLimitTW() const
-{
-  return limit_tw_;
+  return angular_limit_;
 }
 
 double Polygon::getTimeBeforeCollision() const
@@ -306,14 +301,11 @@ bool Polygon::getCommonParameters(std::string & polygon_pub_topic)
 
     if (action_type_ == LIMIT) {
       nav2_util::declare_parameter_if_not_declared(
-        node, polygon_name_ + ".limit_x", rclcpp::ParameterValue(0.5));
-      limit_x_ = node->get_parameter(polygon_name_ + ".limit_x").as_double();
+        node, polygon_name_ + ".linear_limit", rclcpp::ParameterValue(0.5));
+      linear_limit_ = node->get_parameter(polygon_name_ + ".linear_limit").as_double();
       nav2_util::declare_parameter_if_not_declared(
-        node, polygon_name_ + ".limit_y", rclcpp::ParameterValue(0.5));
-      limit_y_ = node->get_parameter(polygon_name_ + ".limit_y").as_double();
-      nav2_util::declare_parameter_if_not_declared(
-        node, polygon_name_ + ".limit_tw", rclcpp::ParameterValue(0.5));
-      limit_tw_ = node->get_parameter(polygon_name_ + ".limit_tw").as_double();
+        node, polygon_name_ + ".angular_limit", rclcpp::ParameterValue(0.5));
+      angular_limit_ = node->get_parameter(polygon_name_ + ".angular_limit").as_double();
     }
 
     if (action_type_ == APPROACH) {
