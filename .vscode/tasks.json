@@ -5,6 +5,7 @@
     "tasks": [
         {
             "label": "Start Gzweb",
+            "icon": {"id": "debug-start"},
             "type": "process",
             "command": "npm",
             "args": [
@@ -21,12 +22,14 @@
         },
         {
             "label": "Stop Gzweb",
+            "icon": {"id": "debug-stop"},
             "type": "shell",
             "command": "pkill -SIGTERM -f 'npm start' || true",
             "problemMatcher": []
         },
         {
             "label": "Start Foxglove Bridge",
+            "icon": {"id": "debug-start"},
             "type": "shell",
             "command": "source ./install/setup.bash && ros2 run foxglove_bridge foxglove_bridge",
             "options": {
@@ -37,12 +40,14 @@
         },
         {
             "label": "Stop Foxglove Bridge",
+            "icon": {"id": "debug-stop"},
             "type": "shell",
             "command": "pkill -SIGTERM -f 'ros2 run foxglove_bridge foxglove_bridge' || true",
             "problemMatcher": []
         },
         {
             "label": "Start Foxglove Studio",
+            "icon": {"id": "debug-start"},
             "type": "process",
             "command": "caddy",
             "args": [
@@ -58,12 +63,14 @@
         },
         {
             "label": "Stop Foxglove Studio",
+            "icon": {"id": "debug-stop"},
             "type": "shell",
             "command": "pkill -SIGTERM -f 'caddy file-server --listen :8080' || true",
             "problemMatcher": []
         },
         {
             "label": "Start Foxglove",
+            "icon": {"id": "debug-start"},
             "dependsOn": [
                 "Start Foxglove Bridge",
                 "Start Foxglove Studio"
@@ -72,6 +79,7 @@
         },
         {
             "label": "Stop Foxglove",
+            "icon": {"id": "debug-stop"},
             "dependsOn": [
                 "Stop Foxglove Bridge",
                 "Stop Foxglove Studio"
@@ -80,6 +88,7 @@
         },
         {
             "label": "Restart Foxglove",
+            "icon": {"id": "debug-restart"},
             "dependsOn": [
                 "Stop Foxglove",
                 "Start Foxglove"
