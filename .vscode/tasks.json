@@ -19,6 +19,7 @@
                     "npm_config_port": "9090"
                 }
             },
+            "hide": true,
             "isBackground": true,
             "problemMatcher": []
         },
@@ -29,6 +30,7 @@
             },
             "type": "shell",
             "command": "pkill -SIGTERM -f 'npm start' || true",
+            "hide": true,
             "problemMatcher": []
         },
         {
@@ -54,6 +56,7 @@
                 "cwd": "/opt/overlay_ws",
             },
             "isBackground": true,
+            "hide": true,
             "problemMatcher": []
         },
         {
@@ -63,6 +66,7 @@
             },
             "type": "shell",
             "command": "pkill -SIGTERM -f 'ros2 run foxglove_bridge foxglove_bridge' || true",
+            "hide": true,
             "problemMatcher": []
         },
         {
@@ -81,6 +85,7 @@
                 "cwd": "/opt/foxglove",
             },
             "isBackground": true,
+            "hide": true,
             "problemMatcher": []
         },
         {
@@ -90,6 +95,7 @@
             },
             "type": "shell",
             "command": "pkill -SIGTERM -f 'caddy file-server --listen :8080' || true",
+            "hide": true,
             "problemMatcher": []
         },
         {
@@ -101,6 +107,7 @@
                 "Start Foxglove Bridge",
                 "Start Foxglove Studio"
             ],
+            "hide": true,
             "problemMatcher": []
         },
         {
@@ -112,6 +119,7 @@
                 "Stop Foxglove Bridge",
                 "Stop Foxglove Studio"
             ],
+            "hide": true,
             "problemMatcher": []
         },
         {
@@ -135,6 +143,7 @@
                 "Start Gzweb",
                 "Start Foxglove"
             ],
+            "hide": true,
             "problemMatcher": []
         },
         {
@@ -146,6 +155,7 @@
                 "Stop Gzweb",
                 "Stop Foxglove"
             ],
+            "hide": true,
             "problemMatcher": []
         },
         {
