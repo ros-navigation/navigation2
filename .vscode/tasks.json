@@ -92,6 +92,15 @@
                 "Stop Foxglove Studio"
             ],
             "problemMatcher": []
+        },
+        {
+            "label": "Restart Foxglove",
+            "dependsOn": [
+                "Stop Foxglove",
+                "Start Foxglove"
+            ],
+            "dependsOrder": "sequence",
+            "problemMatcher": []
         }
     ]
 }
