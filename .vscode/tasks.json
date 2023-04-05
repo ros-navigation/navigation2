@@ -105,6 +105,34 @@
             ],
             "dependsOrder": "sequence",
             "problemMatcher": []
+        },
+        {
+            "label": "Start Visualizations",
+            "icon": {"id": "debug-start"},
+            "dependsOn": [
+                "Start Gzweb",
+                "Start Foxglove"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "Stop Visualizations",
+            "icon": {"id": "debug-stop"},
+            "dependsOn": [
+                "Stop Gzweb",
+                "Stop Foxglove"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "Restart Visualizations",
+            "icon": {"id": "debug-restart"},
+            "dependsOn": [
+                "Stop Visualizations",
+                "Start Visualizations"
+            ],
+            "dependsOrder": "sequence",
+            "problemMatcher": []
         }
     ]
 }
