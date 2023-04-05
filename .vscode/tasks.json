@@ -21,13 +21,8 @@
         },
         {
             "label": "Stop Gzweb",
-            "type": "process",
-            "command": "pkill",
-            "args": [
-                "-SIGTERM",
-                "-f",
-                "npm start"
-            ],
+            "type": "shell",
+            "command": "pkill -SIGTERM -f 'npm start' || true",
             "problemMatcher": []
         },
         {
@@ -42,13 +37,8 @@
         },
         {
             "label": "Stop Foxglove Bridge",
-            "type": "process",
-            "command": "pkill",
-            "args": [
-                "-SIGTERM",
-                "-f",
-                "ros2 run foxglove_bridge foxglove_bridge"
-            ],
+            "type": "shell",
+            "command": "pkill -SIGTERM -f 'ros2 run foxglove_bridge foxglove_bridge' || true",
             "problemMatcher": []
         },
         {
@@ -68,13 +58,8 @@
         },
         {
             "label": "Stop Foxglove Studio",
-            "type": "process",
-            "command": "pkill",
-            "args": [
-                "-SIGTERM",
-                "-f",
-                "caddy file-server --listen :8080"
-            ],
+            "type": "shell",
+            "command": "pkill -SIGTERM -f 'caddy file-server --listen :8080' || true",
             "problemMatcher": []
         },
         {
