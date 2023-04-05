@@ -28,6 +28,16 @@
             "problemMatcher": []
         },
         {
+            "label": "Restart Gzweb",
+            "icon": {"id": "debug-restart"},
+            "dependsOn": [
+                "Stop Gzweb",
+                "Start Gzweb"
+            ],
+            "dependsOrder": "sequence",
+            "problemMatcher": []
+        },
+        {
             "label": "Start Foxglove Bridge",
             "icon": {"id": "debug-start"},
             "type": "shell",
