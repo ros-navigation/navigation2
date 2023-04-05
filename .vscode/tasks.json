@@ -20,6 +20,17 @@
             "problemMatcher": []
         },
         {
+            "label": "Stop Gzweb",
+            "type": "process",
+            "command": "pkill",
+            "args": [
+                "-SIGTERM",
+                "-f",
+                "npm start"
+            ],
+            "problemMatcher": []
+        },
+        {
             "label": "Start Foxglove Bridge",
             "type": "shell",
             "command": "source ./install/setup.bash && ros2 run foxglove_bridge foxglove_bridge",
@@ -27,6 +38,17 @@
                 "cwd": "/opt/overlay_ws",
             },
             "isBackground": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "Stop Foxglove Bridge",
+            "type": "process",
+            "command": "pkill",
+            "args": [
+                "-SIGTERM",
+                "-f",
+                "ros2 run foxglove_bridge foxglove_bridge"
+            ],
             "problemMatcher": []
         },
         {
@@ -45,10 +67,29 @@
             "problemMatcher": []
         },
         {
+            "label": "Stop Foxglove Studio",
+            "type": "process",
+            "command": "pkill",
+            "args": [
+                "-SIGTERM",
+                "-f",
+                "caddy file-server --listen :8080"
+            ],
+            "problemMatcher": []
+        },
+        {
             "label": "Start Foxglove",
             "dependsOn": [
                 "Start Foxglove Bridge",
                 "Start Foxglove Studio"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "Stop Foxglove",
+            "dependsOn": [
+                "Stop Foxglove Bridge",
+                "Stop Foxglove Studio"
             ],
             "problemMatcher": []
         }
