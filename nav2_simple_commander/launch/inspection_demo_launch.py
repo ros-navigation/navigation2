@@ -20,7 +20,7 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node
 
 
@@ -44,7 +44,7 @@ def generate_launch_description():
 
     declare_simulator_cmd = DeclareLaunchArgument(
         'headless',
-        default_value='True',
+        default_value='False',
         description='Whether to execute gzclient)')
 
     # start the simulation
@@ -53,7 +53,7 @@ def generate_launch_description():
         cwd=[warehouse_dir], output='screen')
 
     start_gazebo_client_cmd = ExecuteProcess(
-        condition=IfCondition(headless),
+        condition=IfCondition(PythonExpression(['not ', headless])),
         cmd=['gzclient'],
         cwd=[warehouse_dir], output='screen')
 
