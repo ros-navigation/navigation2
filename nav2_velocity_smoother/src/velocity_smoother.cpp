@@ -202,8 +202,18 @@ double VelocitySmoother::applyConstraints(
   const double accel, const double decel, const double eta)
 {
   double dv = v_cmd - v_curr;
-  const double v_component_max = accel / smoothing_frequency_;
-  const double v_component_min = decel / smoothing_frequency_;
+
+  double v_component_max;
+  double v_component_min;
+
+  if (abs(v_cmd) >= abs(v_curr)) {
+    v_component_max = accel / smoothing_frequency_;
+    v_component_min = -accel / smoothing_frequency_;
+  } else {
+    v_component_max = -decel / smoothing_frequency_;
+    v_component_min = decel / smoothing_frequency_;
+  }
+
   return v_curr + std::clamp(eta * dv, v_component_min, v_component_max);
 }
 
