@@ -20,9 +20,6 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_controller/plugins/simple_progress_checker.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
-#include "nav2_core/progress_checker.hpp"
-#include "geometry_msgs/msg/pose_stamped.hpp"
-#include "geometry_msgs/msg/pose2_d.hpp"
 
 namespace nav2_controller
 {
