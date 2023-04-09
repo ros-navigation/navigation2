@@ -37,10 +37,13 @@
 
 #include "gtest/gtest.h"
 #include "nav2_controller/plugins/simple_progress_checker.hpp"
+#include "nav2_controller/plugins/rotation_progress_checker.hpp"
 #include "nav_2d_utils/conversions.hpp"
 #include "nav2_util/lifecycle_node.hpp"
+#include "nav2_util/geometry_utils.hpp"
 
 using nav2_controller::SimpleProgressChecker;
+using nav2_controller::RotationProgressChecker;
 
 class TestLifecycleNode : public nav2_util::LifecycleNode
 {
@@ -83,8 +86,8 @@ public:
 
 void checkMacro(
   nav2_core::ProgressChecker & pc,
-  double x0, double y0,
-  double x1, double y1,
+  double x0, double y0, double theta0,
+  double x1, double y1, double theta1,
   int delay,
   bool expected_result)
 {
@@ -92,8 +95,10 @@ void checkMacro(
   geometry_msgs::msg::PoseStamped pose0, pose1;
   pose0.pose.position.x = x0;
   pose0.pose.position.y = y0;
+  pose0.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(theta0);
   pose1.pose.position.x = x1;
   pose1.pose.position.y = y1;
+  pose1.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(theta1);
   EXPECT_TRUE(pc.check(pose0));
   rclcpp::sleep_for(std::chrono::seconds(delay));
   if (expected_result) {
@@ -119,12 +124,49 @@ TEST(SimpleProgressChecker, unit_tests)
 
   SimpleProgressChecker pc;
   pc.initialize(x, "nav2_controller");
-  checkMacro(pc, 0, 0, 0, 0, 1, true);
-  checkMacro(pc, 0, 0, 1, 0, 1, true);
-  checkMacro(pc, 0, 0, 0, 1, 1, true);
-  checkMacro(pc, 0, 0, 1, 0, 11, true);
-  checkMacro(pc, 0, 0, 0, 1, 11, true);
-  checkMacro(pc, 0, 0, 0, 0, 11, false);
+  checkMacro(pc, 0, 0, 0, 0, 0, 0, 1, true);
+  checkMacro(pc, 0, 0, 0, 1, 0, 0, 1, true);
+  checkMacro(pc, 0, 0, 0, 0, 1, 0, 1, true);
+  checkMacro(pc, 0, 0, 0, 1, 0, 0, 11, true);
+  checkMacro(pc, 0, 0, 0, 0, 1, 0, 11, true);
+  checkMacro(pc, 0, 0, 0, 0, 0, 0, 11, false);
+}
+
+TEST(RotationProgressChecker, rotation_progress_checker_reset)
+{
+  auto x = std::make_shared<TestLifecycleNode>("rotation_progress_checker");
+
+  RotationProgressChecker * rpc = new RotationProgressChecker;
+  rpc->reset();
+  delete rpc;
+  EXPECT_TRUE(true);
+}
+
+TEST(RotationProgressChecker, unit_tests)
+{
+  auto x = std::make_shared<TestLifecycleNode>("rotation_progress_checker");
+
+  RotationProgressChecker rpc;
+  rpc.initialize(x, "nav2_controller");
+
+  // 1s no movement
+  checkMacro(rpc, 0, 0, 0, 0, 0, 0, 1, true);
+  // 1s translation
+  checkMacro(rpc, 0, 0, 0, 1, 0, 0, 1, true);
+  checkMacro(rpc, 0, 0, 0, 0, 1, 0, 1, true);
+  // 1s rotation
+  checkMacro(rpc, 0, 0, 0, 0, 0, 1, 11, true);
+  checkMacro(rpc, 0, 0, 0, 0, 0, -1, 11, true);
+  // 11s translation
+  checkMacro(rpc, 0, 0, 0, 1, 0, 0, 11, true);
+  checkMacro(rpc, 0, 0, 0, 0, 1, 0, 11, true);
+  // 11s rotation
+  checkMacro(rpc, 0, 0, 0, 0, 0, 1, 11, true);
+  checkMacro(rpc, 0, 0, 0, 0, 0, -1, 11, true);
+  // 11s no movement
+  checkMacro(rpc, 0, 0, 0, 0, 0, 0, 11, false);
+
+
 }
 
 int main(int argc, char ** argv)
