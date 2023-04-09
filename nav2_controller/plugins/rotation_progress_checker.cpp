@@ -71,7 +71,7 @@ double RotationProgressChecker::pose_angle_distance(
   const geometry_msgs::msg::Pose2D & pose1,
   const geometry_msgs::msg::Pose2D & pose2)
 {
-  return abs(angles::shortest_angular_distance(pose1.theta,pose2.theta));
+  return abs(angles::shortest_angular_distance(pose1.theta, pose2.theta));
 }
 
 rcl_interfaces::msg::SetParametersResult

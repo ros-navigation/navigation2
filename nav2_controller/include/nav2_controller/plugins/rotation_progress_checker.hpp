@@ -45,7 +45,9 @@ protected:
    */
   bool is_robot_moved_enough(const geometry_msgs::msg::Pose2D & pose);
 
-  static double pose_angle_distance(const geometry_msgs::msg::Pose2D &, const geometry_msgs::msg::Pose2D &);
+  static double pose_angle_distance(
+    const geometry_msgs::msg::Pose2D &,
+    const geometry_msgs::msg::Pose2D &);
 
   double required_movement_angle_;
 
