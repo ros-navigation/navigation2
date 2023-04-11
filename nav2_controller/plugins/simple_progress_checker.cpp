@@ -59,8 +59,8 @@ bool SimpleProgressChecker::check(geometry_msgs::msg::PoseStamped & current_pose
   geometry_msgs::msg::Pose2D current_pose2d;
   current_pose2d = nav_2d_utils::poseToPose2D(current_pose.pose);
 
-  if ((!baseline_pose_set_) || (is_robot_moved_enough(current_pose2d))) {
-    reset_baseline_pose(current_pose2d);
+  if ((!baseline_pose_set_) || (isRobotMovedEnough(current_pose2d))) {
+      resetBaselinePose(current_pose2d);
     return true;
   }
   return !((clock_->now() - baseline_time_) > time_allowance_);
@@ -71,14 +71,14 @@ void SimpleProgressChecker::reset()
   baseline_pose_set_ = false;
 }
 
-void SimpleProgressChecker::reset_baseline_pose(const geometry_msgs::msg::Pose2D & pose)
+void SimpleProgressChecker::resetBaselinePose(const geometry_msgs::msg::Pose2D & pose)
 {
   baseline_pose_ = pose;
   baseline_time_ = clock_->now();
   baseline_pose_set_ = true;
 }
 
-bool SimpleProgressChecker::is_robot_moved_enough(const geometry_msgs::msg::Pose2D & pose)
+bool SimpleProgressChecker::isRobotMovedEnough(const geometry_msgs::msg::Pose2D & pose)
 {
   return pose_distance(pose, baseline_pose_) > radius_;
 }
