@@ -132,9 +132,9 @@ TEST(SimpleProgressChecker, unit_tests)
   checkMacro(pc, 0, 0, 0, 0, 0, 0, 11, false);
 }
 
-TEST(PoseProgressChecker, rotation_progress_checker_reset)
+TEST(PoseProgressChecker, pose_progress_checker_reset)
 {
-  auto x = std::make_shared<TestLifecycleNode>("rotation_progress_checker");
+  auto x = std::make_shared<TestLifecycleNode>("pose_progress_checker");
 
   PoseProgressChecker * rpc = new PoseProgressChecker;
   rpc->reset();
@@ -144,7 +144,7 @@ TEST(PoseProgressChecker, rotation_progress_checker_reset)
 
 TEST(PoseProgressChecker, unit_tests)
 {
-  auto x = std::make_shared<TestLifecycleNode>("rotation_progress_checker");
+  auto x = std::make_shared<TestLifecycleNode>("pose_progress_checker");
 
   PoseProgressChecker rpc;
   rpc.initialize(x, "nav2_controller");
