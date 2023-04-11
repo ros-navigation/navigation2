@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_CONTROLLER__PLUGINS__ROTATION_PROGRESS_CHECKER_HPP_
-#define NAV2_CONTROLLER__PLUGINS__ROTATION_PROGRESS_CHECKER_HPP_
+#ifndef NAV2_CONTROLLER__PLUGINS__POSE_PROGRESS_CHECKER_HPP_
+#define NAV2_CONTROLLER__PLUGINS__POSE_PROGRESS_CHECKER_HPP_
 
 #include <string>
 #include <vector>
@@ -24,12 +24,12 @@
 namespace nav2_controller
 {
 /**
-* @class RotationProgressChecker
+* @class PoseProgressChecker
 * @brief This plugin is used to check the position and the angle of the robot to make sure
 * that it is actually progressing or rotating towards a goal.
 */
 
-class RotationProgressChecker : public SimpleProgressChecker
+class PoseProgressChecker : public SimpleProgressChecker
 {
 public:
   void initialize(
@@ -64,4 +64,4 @@ protected:
 };
 }  // namespace nav2_controller
 
-#endif  // NAV2_CONTROLLER__PLUGINS__ROTATION_PROGRESS_CHECKER_HPP_
+#endif  // NAV2_CONTROLLER__PLUGINS__POSE_PROGRESS_CHECKER_HPP_

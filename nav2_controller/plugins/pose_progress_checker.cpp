@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_controller/plugins/rotation_progress_checker.hpp"
+#include "nav2_controller/plugins/pose_progress_checker.hpp"
 #include <cmath>
 #include <string>
 #include <memory>
@@ -30,7 +30,7 @@ using std::placeholders::_1;
 namespace nav2_controller
 {
 
-void RotationProgressChecker::initialize(
+void PoseProgressChecker::initialize(
   const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
   const std::string & plugin_name)
 {
@@ -44,30 +44,30 @@ void RotationProgressChecker::initialize(
 
   // Add callback for dynamic parameters
   dyn_params_handler_ = node->add_on_set_parameters_callback(
-    std::bind(&RotationProgressChecker::dynamicParametersCallback, this, _1));
+    std::bind(&PoseProgressChecker::dynamicParametersCallback, this, _1));
 }
 
-bool RotationProgressChecker::check(geometry_msgs::msg::PoseStamped & current_pose)
+bool PoseProgressChecker::check(geometry_msgs::msg::PoseStamped & current_pose)
 {
   // relies on short circuit evaluation to not call is_robot_moved_enough if
   // baseline_pose is not set.
   geometry_msgs::msg::Pose2D current_pose2d;
   current_pose2d = nav_2d_utils::poseToPose2D(current_pose.pose);
 
-  if ((!baseline_pose_set_) || (RotationProgressChecker::is_robot_moved_enough(current_pose2d))) {
+  if ((!baseline_pose_set_) || (PoseProgressChecker::is_robot_moved_enough(current_pose2d))) {
     reset_baseline_pose(current_pose2d);
     return true;
   }
   return !((clock_->now() - baseline_time_) > time_allowance_);
 }
 
-bool RotationProgressChecker::is_robot_moved_enough(const geometry_msgs::msg::Pose2D & pose)
+bool PoseProgressChecker::is_robot_moved_enough(const geometry_msgs::msg::Pose2D & pose)
 {
   return pose_distance(pose, baseline_pose_) > radius_ ||
          pose_angle_distance(pose, baseline_pose_) > required_movement_angle_;
 }
 
-double RotationProgressChecker::pose_angle_distance(
+double PoseProgressChecker::pose_angle_distance(
   const geometry_msgs::msg::Pose2D & pose1,
   const geometry_msgs::msg::Pose2D & pose2)
 {
@@ -75,7 +75,7 @@ double RotationProgressChecker::pose_angle_distance(
 }
 
 rcl_interfaces::msg::SetParametersResult
-RotationProgressChecker::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
+PoseProgressChecker::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
   for (auto parameter : parameters) {
@@ -94,4 +94,4 @@ RotationProgressChecker::dynamicParametersCallback(std::vector<rclcpp::Parameter
 
 }  // namespace nav2_controller
 
-PLUGINLIB_EXPORT_CLASS(nav2_controller::RotationProgressChecker, nav2_core::ProgressChecker)
+PLUGINLIB_EXPORT_CLASS(nav2_controller::PoseProgressChecker, nav2_core::ProgressChecker)
