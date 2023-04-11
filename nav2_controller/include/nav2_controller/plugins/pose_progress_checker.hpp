@@ -43,12 +43,11 @@ protected:
    * @param pose Current pose of the robot
    * @return true, if movement is greater than radius_, or false
    */
-    bool isRobotMovedEnough(const geometry_msgs::msg::Pose2D & pose);
+  bool isRobotMovedEnough(const geometry_msgs::msg::Pose2D & pose);
 
-  static double pose_angle_distance(
+  static double poseAngleDistance(
     const geometry_msgs::msg::Pose2D &,
     const geometry_msgs::msg::Pose2D &);
-    static double poseAngleDistance(const geometry_msgs::msg::Pose2D &, const geometry_msgs::msg::Pose2D &);
 
   double required_movement_angle_;
 

@@ -46,12 +46,12 @@ protected:
    * @param pose Current pose of the robot
    * @return true, if movement is greater than radius_, or false
    */
-    bool isRobotMovedEnough(const geometry_msgs::msg::Pose2D & pose);
+  bool isRobotMovedEnough(const geometry_msgs::msg::Pose2D & pose);
   /**
    * @brief Resets baseline pose with the current pose of the robot
    * @param pose Current pose of the robot
    */
-    void resetBaselinePose(const geometry_msgs::msg::Pose2D & pose);
+  void resetBaselinePose(const geometry_msgs::msg::Pose2D & pose);
 
   static double pose_distance(
     const geometry_msgs::msg::Pose2D &,
