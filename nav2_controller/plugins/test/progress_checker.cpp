@@ -37,13 +37,13 @@
 
 #include "gtest/gtest.h"
 #include "nav2_controller/plugins/simple_progress_checker.hpp"
-#include "nav2_controller/plugins/rotation_progress_checker.hpp"
+#include "nav2_controller/plugins/pose_progress_checker.hpp"
 #include "nav_2d_utils/conversions.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_util/geometry_utils.hpp"
 
 using nav2_controller::SimpleProgressChecker;
-using nav2_controller::RotationProgressChecker;
+using nav2_controller::PoseProgressChecker;
 
 class TestLifecycleNode : public nav2_util::LifecycleNode
 {
@@ -132,21 +132,21 @@ TEST(SimpleProgressChecker, unit_tests)
   checkMacro(pc, 0, 0, 0, 0, 0, 0, 11, false);
 }
 
-TEST(RotationProgressChecker, rotation_progress_checker_reset)
+TEST(PoseProgressChecker, rotation_progress_checker_reset)
 {
   auto x = std::make_shared<TestLifecycleNode>("rotation_progress_checker");
 
-  RotationProgressChecker * rpc = new RotationProgressChecker;
+  PoseProgressChecker * rpc = new PoseProgressChecker;
   rpc->reset();
   delete rpc;
   EXPECT_TRUE(true);
 }
 
-TEST(RotationProgressChecker, unit_tests)
+TEST(PoseProgressChecker, unit_tests)
 {
   auto x = std::make_shared<TestLifecycleNode>("rotation_progress_checker");
 
-  RotationProgressChecker rpc;
+  PoseProgressChecker rpc;
   rpc.initialize(x, "nav2_controller");
 
   // 1s no movement
@@ -165,8 +165,6 @@ TEST(RotationProgressChecker, unit_tests)
   checkMacro(rpc, 0, 0, 0, 0, 0, -1, 11, true);
   // 11s no movement
   checkMacro(rpc, 0, 0, 0, 0, 0, 0, 11, false);
-
-
 }
 
 int main(int argc, char ** argv)
