@@ -340,11 +340,11 @@ TEST(NodeLatticeTest, test_node_lattice_custom_footprint)
   footprint.push_back(p);
   checker->setFootprint(footprint, false, 0.0);
 
-  // Test that the node is valid though all motion primitives poses for custom footprint
   // Setting initial robot pose to (1.0, 1.0, 0.0)
   node.pose.x = 20;
   node.pose.y = 20;
   node.pose.theta = 0;
+  // Test that the node is valid though all motion primitives poses for custom footprint
   nav2_smac_planner::MotionPrimitivePtrs motion_primitives =
     nav2_smac_planner::NodeLattice::motion_table.getMotionPrimitives(&node);
   EXPECT_GT(motion_primitives.size(), 0);
