@@ -9,6 +9,7 @@
     "runArgs": [
         "--ipc=host",
         "--network=host",
+        "--pid=host",
         "--privileged"
     ],
     "workspaceMount": "source=${localWorkspaceFolder},target=/opt/overlay_ws/src/navigation2,type=bind",
