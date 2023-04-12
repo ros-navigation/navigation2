@@ -7,10 +7,12 @@
         "cacheFrom": "ghcr.io/ros-planning/navigation2:main"
     },
     "runArgs": [
+        "--cap-add=SYS_PTRACE",
         "--ipc=host",
         "--network=host",
         "--pid=host",
-        "--privileged"
+        "--privileged",
+        "--security-opt=seccomp=unconfined",
     ],
     "workspaceMount": "source=${localWorkspaceFolder},target=/opt/overlay_ws/src/navigation2,type=bind",
     "workspaceFolder": "/opt/overlay_ws/src/navigation2",
