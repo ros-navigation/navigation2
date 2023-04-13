@@ -54,11 +54,11 @@ bool PoseProgressChecker::check(geometry_msgs::msg::PoseStamped & current_pose)
   geometry_msgs::msg::Pose2D current_pose2d;
   current_pose2d = nav_2d_utils::poseToPose2D(current_pose.pose);
 
-  if ((!baseline_pose_set_) || (PoseProgressChecker::isRobotMovedEnough(current_pose2d))) {
+  if (!baseline_pose_set_ || PoseProgressChecker::isRobotMovedEnough(current_pose2d)) {
     resetBaselinePose(current_pose2d);
     return true;
   }
-  return !((clock_->now() - baseline_time_) > time_allowance_);
+  return clock_->now() - baseline_time_ <= time_allowance_;
 }
 
 bool PoseProgressChecker::isRobotMovedEnough(const geometry_msgs::msg::Pose2D & pose)
