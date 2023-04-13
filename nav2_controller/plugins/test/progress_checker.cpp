@@ -37,10 +37,13 @@
 
 #include "gtest/gtest.h"
 #include "nav2_controller/plugins/simple_progress_checker.hpp"
+#include "nav2_controller/plugins/pose_progress_checker.hpp"
 #include "nav_2d_utils/conversions.hpp"
 #include "nav2_util/lifecycle_node.hpp"
+#include "nav2_util/geometry_utils.hpp"
 
 using nav2_controller::SimpleProgressChecker;
+using nav2_controller::PoseProgressChecker;
 
 class TestLifecycleNode : public nav2_util::LifecycleNode
 {
@@ -83,8 +86,8 @@ public:
 
 void checkMacro(
   nav2_core::ProgressChecker & pc,
-  double x0, double y0,
-  double x1, double y1,
+  double x0, double y0, double theta0,
+  double x1, double y1, double theta1,
   int delay,
   bool expected_result)
 {
@@ -92,10 +95,12 @@ void checkMacro(
   geometry_msgs::msg::PoseStamped pose0, pose1;
   pose0.pose.position.x = x0;
   pose0.pose.position.y = y0;
+  pose0.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(theta0);
   pose1.pose.position.x = x1;
   pose1.pose.position.y = y1;
+  pose1.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(theta1);
   EXPECT_TRUE(pc.check(pose0));
-  rclcpp::sleep_for(std::chrono::seconds(delay));
+  rclcpp::sleep_for(std::chrono::milliseconds(delay));
   if (expected_result) {
     EXPECT_TRUE(pc.check(pose1));
   } else {
@@ -119,12 +124,116 @@ TEST(SimpleProgressChecker, unit_tests)
 
   SimpleProgressChecker pc;
   pc.initialize(x, "nav2_controller");
-  checkMacro(pc, 0, 0, 0, 0, 1, true);
-  checkMacro(pc, 0, 0, 1, 0, 1, true);
-  checkMacro(pc, 0, 0, 0, 1, 1, true);
-  checkMacro(pc, 0, 0, 1, 0, 11, true);
-  checkMacro(pc, 0, 0, 0, 1, 11, true);
-  checkMacro(pc, 0, 0, 0, 0, 11, false);
+
+  double time_allowance = 0.5;
+  int half_time_allowance_ms = static_cast<int>(time_allowance * 0.5 * 1000);
+  int twice_time_allowance_ms = static_cast<int>(time_allowance * 2.0 * 1000);
+
+  auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
+    x->get_node_base_interface(), x->get_node_topics_interface(),
+    x->get_node_graph_interface(),
+    x->get_node_services_interface());
+
+  auto results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("nav2_controller.movement_time_allowance", time_allowance)});
+
+  rclcpp::spin_until_future_complete(
+    x->get_node_base_interface(),
+    results);
+
+  EXPECT_EQ(
+    x->get_parameter("nav2_controller.movement_time_allowance").as_double(),
+    time_allowance);
+
+  // BELOW time allowance (set to time_allowance)
+  // no movement
+  checkMacro(pc, 0, 0, 0, 0, 0, 0, half_time_allowance_ms, true);
+  // translation below required_movement_radius (default 0.5)
+  checkMacro(pc, 0, 0, 0, 0.25, 0, 0, half_time_allowance_ms, true);
+  checkMacro(pc, 0, 0, 0, 0, 0.25, 0, half_time_allowance_ms, true);
+  // translation above required_movement_radius (default 0.5)
+  checkMacro(pc, 0, 0, 0, 1, 0, 0, half_time_allowance_ms, true);
+  checkMacro(pc, 0, 0, 0, 0, 1, 0, half_time_allowance_ms, true);
+
+  // ABOVE time allowance (set to time_allowance)
+  // no movement
+  checkMacro(pc, 0, 0, 0, 0, 0, 0, twice_time_allowance_ms, false);
+  // translation below required_movement_radius (default 0.5)
+  checkMacro(pc, 0, 0, 0, 0.25, 0, 0, twice_time_allowance_ms, false);
+  checkMacro(pc, 0, 0, 0, 0, 0.25, 0, twice_time_allowance_ms, false);
+  // translation above required_movement_radius (default 0.5)
+  checkMacro(pc, 0, 0, 0, 1, 0, 0, twice_time_allowance_ms, true);
+  checkMacro(pc, 0, 0, 0, 0, 1, 0, twice_time_allowance_ms, true);
+}
+
+TEST(PoseProgressChecker, pose_progress_checker_reset)
+{
+  auto x = std::make_shared<TestLifecycleNode>("pose_progress_checker");
+
+  PoseProgressChecker * rpc = new PoseProgressChecker;
+  rpc->reset();
+  delete rpc;
+  EXPECT_TRUE(true);
+}
+
+TEST(PoseProgressChecker, unit_tests)
+{
+  auto x = std::make_shared<TestLifecycleNode>("pose_progress_checker");
+
+  PoseProgressChecker rpc;
+  rpc.initialize(x, "nav2_controller");
+
+  double time_allowance = 0.5;
+  int half_time_allowance_ms = static_cast<int>(time_allowance * 0.5 * 1000);
+  int twice_time_allowance_ms = static_cast<int>(time_allowance * 2.0 * 1000);
+
+  auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
+    x->get_node_base_interface(), x->get_node_topics_interface(),
+    x->get_node_graph_interface(),
+    x->get_node_services_interface());
+
+  auto results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("nav2_controller.movement_time_allowance", time_allowance)});
+
+  rclcpp::spin_until_future_complete(
+    x->get_node_base_interface(),
+    results);
+
+  EXPECT_EQ(
+    x->get_parameter("nav2_controller.movement_time_allowance").as_double(),
+    time_allowance);
+
+  // BELOW time allowance (set to time_allowance)
+  // no movement
+  checkMacro(rpc, 0, 0, 0, 0, 0, 0, half_time_allowance_ms, true);
+  // translation below required_movement_radius (default 0.5)
+  checkMacro(rpc, 0, 0, 0, 0.25, 0, 0, half_time_allowance_ms, true);
+  checkMacro(rpc, 0, 0, 0, 0, 0.25, 0, half_time_allowance_ms, true);
+  // rotation below required_movement_angle (default 0.5)
+  checkMacro(rpc, 0, 0, 0, 0, 0, 0.25, half_time_allowance_ms, true);
+  checkMacro(rpc, 0, 0, 0, 0, 0, -0.25, half_time_allowance_ms, true);
+  // translation above required_movement_radius (default 0.5)
+  checkMacro(rpc, 0, 0, 0, 1, 0, 0, half_time_allowance_ms, true);
+  checkMacro(rpc, 0, 0, 0, 0, 1, 0, half_time_allowance_ms, true);
+  // rotation above required_movement_angle (default 0.5)
+  checkMacro(rpc, 0, 0, 0, 0, 0, 1, half_time_allowance_ms, true);
+  checkMacro(rpc, 0, 0, 0, 0, 0, -1, half_time_allowance_ms, true);
+
+  // ABOVE time allowance (set to time_allowance)
+  // no movement
+  checkMacro(rpc, 0, 0, 0, 0, 0, 0, twice_time_allowance_ms, false);
+  // translation below required_movement_radius (default 0.5)
+  checkMacro(rpc, 0, 0, 0, 0.25, 0, 0, twice_time_allowance_ms, false);
+  checkMacro(rpc, 0, 0, 0, 0, 0.25, 0, twice_time_allowance_ms, false);
+  // rotation below required_movement_angle (default 0.5)
+  checkMacro(rpc, 0, 0, 0, 0, 0, 0.25, twice_time_allowance_ms, false);
+  checkMacro(rpc, 0, 0, 0, 0, 0, -0.25, twice_time_allowance_ms, false);
+  // translation above required_movement_radius (default 0.5)
+  checkMacro(rpc, 0, 0, 0, 1, 0, 0, twice_time_allowance_ms, true);
+  checkMacro(rpc, 0, 0, 0, 0, 1, 0, twice_time_allowance_ms, true);
+  // rotation above required_movement_angle (default 0.5)
+  checkMacro(rpc, 0, 0, 0, 0, 0, 1, twice_time_allowance_ms, true);
+  checkMacro(rpc, 0, 0, 0, 0, 0, -1, twice_time_allowance_ms, true);
 }
 
 int main(int argc, char ** argv)
