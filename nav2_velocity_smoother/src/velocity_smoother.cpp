@@ -190,7 +190,7 @@ double VelocitySmoother::findEtaConstraint(
   // Accelerating if magnitude of v_cmd is above magnitude of v_curr
   // and if v_cmd and v_curr have the same sign (i.e. speed is NOT passing through 0.0)
   // Deccelerating otherwise
-  if ((abs(v_cmd) >= abs(v_curr)) && (v_curr * v_cmd >= 0.0)) {
+  if (abs(v_cmd) >= abs(v_curr) && v_curr * v_cmd >= 0.0) {
     v_component_max = accel / smoothing_frequency_;
     v_component_min = -accel / smoothing_frequency_;
   } else {
