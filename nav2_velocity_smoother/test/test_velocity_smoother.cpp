@@ -179,8 +179,8 @@ TEST(VelocitySmootherTest, testfindEtaConstraint)
   // default frequency is 20.0
   smoother->configure(state);
 
-  double accel = 0.1; // dv 0.005
-  double deccel = -1.0; // dv 0.05
+  double accel = 0.1;    // dv 0.005
+  double deccel = -1.0;  // dv 0.05
 
   // In range
   // Constant positive
