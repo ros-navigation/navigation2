@@ -550,7 +550,6 @@ TEST(VelocitySmootherTest, testapplyConstraintsNegativeToZeroDeccel)
   EXPECT_NEAR(v_curr, target_vel, 0.001);
 }
 
-
 TEST(VelocitySmootherTest, testCommandCallback)
 {
   auto smoother =
