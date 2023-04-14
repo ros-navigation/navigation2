@@ -179,17 +179,56 @@ TEST(VelocitySmootherTest, testfindEtaConstraint)
   // default frequency is 20.0
   smoother->configure(state);
 
-  // In range
-  EXPECT_EQ(smoother->findEtaConstraint(1.0, 1.0, 1.5, -2.0), -1);
-  EXPECT_EQ(smoother->findEtaConstraint(0.5, 0.55, 1.5, -2.0), -1);
-  EXPECT_EQ(smoother->findEtaConstraint(0.5, 0.45, 1.5, -2.0), -1);
-  // Too high
-  EXPECT_EQ(smoother->findEtaConstraint(1.0, 2.0, 1.5, -2.0), 0.075);
-  // Too low
-  EXPECT_EQ(smoother->findEtaConstraint(1.0, 0.0, 1.5, -2.0), 0.1);
+  double accel = 0.1; // dv 0.005
+  double deccel = -1.0; // dv 0.05
 
-  // In a more realistic situation accelerating linear axis
-  EXPECT_NEAR(smoother->findEtaConstraint(0.40, 0.50, 1.5, -2.0), 0.75, 0.001);
+  // In range
+  // Constant positive
+  EXPECT_EQ(smoother->findEtaConstraint(1.0, 1.0, accel, deccel), -1);
+  // Constant negative
+  EXPECT_EQ(smoother->findEtaConstraint(1.0, 1.0, accel, deccel), -1);
+  // Positive To Positive Accel
+  EXPECT_EQ(smoother->findEtaConstraint(0.5, 0.504, accel, deccel), -1);
+  // Positive To Positive Deccel
+  EXPECT_EQ(smoother->findEtaConstraint(0.5, 0.46, accel, deccel), -1);
+  // 0 To Positive Accel
+  EXPECT_EQ(smoother->findEtaConstraint(0.0, 0.004, accel, deccel), -1);
+  // Positive To 0 Deccel
+  EXPECT_EQ(smoother->findEtaConstraint(0.04, 0.0, accel, deccel), -1);
+  // Negative To Negative Accel
+  EXPECT_EQ(smoother->findEtaConstraint(-0.5, -0.504, accel, deccel), -1);
+  // Negative To Negative Deccel
+  EXPECT_EQ(smoother->findEtaConstraint(-0.5, -0.46, accel, deccel), -1);
+  // 0 To Negative Accel
+  EXPECT_EQ(smoother->findEtaConstraint(0.0, -0.004, accel, deccel), -1);
+  // Negative To 0 Deccel
+  EXPECT_EQ(smoother->findEtaConstraint(-0.04, 0.0, accel, deccel), -1);
+  // Negative to Positive
+  EXPECT_EQ(smoother->findEtaConstraint(-0.02, 0.02, accel, deccel), -1);
+  // Positive to Negative
+  EXPECT_EQ(smoother->findEtaConstraint(0.02, -0.02, accel, deccel), -1);
+
+  // Faster than limit
+  // Positive To Positive Accel
+  EXPECT_EQ(smoother->findEtaConstraint(0.5, 1.5, accel, deccel), 0.005);
+  // Positive To Positive Deccel
+  EXPECT_EQ(smoother->findEtaConstraint(1.5, 0.5, accel, deccel), 0.05);
+  // 0 To Positive Accel
+  EXPECT_EQ(smoother->findEtaConstraint(0.0, 1.0, accel, deccel), 0.005);
+  // Positive To 0 Deccel
+  EXPECT_EQ(smoother->findEtaConstraint(1.0, 0.0, accel, deccel), 0.05);
+  // Negative To Negative Accel
+  EXPECT_EQ(smoother->findEtaConstraint(-0.5, -1.5, accel, deccel), 0.005);
+  // Negative To Negative Deccel
+  EXPECT_EQ(smoother->findEtaConstraint(-1.5, -0.5, accel, deccel), 0.05);
+  // 0 To Negative Accel
+  EXPECT_EQ(smoother->findEtaConstraint(0.0, -1.0, accel, deccel), 0.005);
+  // Negative To 0 Deccel
+  EXPECT_EQ(smoother->findEtaConstraint(-1.0, 0.0, accel, deccel), 0.05);
+  // Negative to Positive
+  EXPECT_EQ(smoother->findEtaConstraint(-0.2, 0.8, accel, deccel), 0.05);
+  // Positive to Negative
+  EXPECT_EQ(smoother->findEtaConstraint(0.2, -0.8, accel, deccel), 0.05);
 }
 
 TEST(VelocitySmootherTest, testapplyConstraints)
