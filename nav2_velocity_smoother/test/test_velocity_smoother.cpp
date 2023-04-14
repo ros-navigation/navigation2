@@ -387,7 +387,7 @@ TEST(VelocitySmootherTest, testapplyConstraintsPositiveToNegativeDeccelAccel)
   for (size_t i = 1; i < steps_below_zero + steps_above_zero + 1; i++) {
     v_curr = smoother->applyConstraints(v_curr, target_vel, accel, deccel, no_eta);
     if (v_curr < 0) {
-      EXPECT_NEAR(v_curr, -int(i - steps_above_zero) * dv_accel, 0.001);
+      EXPECT_NEAR(v_curr, -static_cast<int>(i - steps_above_zero) * dv_accel, 0.001);
     } else {
       EXPECT_NEAR(v_curr, init_vel - i * dv_deccel, 0.001);
     }
@@ -406,7 +406,7 @@ TEST(VelocitySmootherTest, testapplyConstraintsPositiveToPositiveDeccel)
   smoother->configure(state);
   double no_eta = 1.0;
 
-  //Test asymetric accel/deccel use cases
+  // Test asymetric accel/deccel use cases
   double accel = 0.1;
   double deccel = -1.0;
   double dv_deccel = -deccel / 20.0;
