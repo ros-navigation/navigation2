@@ -180,55 +180,55 @@ TEST(VelocitySmootherTest, testfindEtaConstraint)
   smoother->configure(state);
 
   double accel = 0.1;    // dv 0.005
-  double deccel = -1.0;  // dv 0.05
+  double decel = -1.0;  // dv 0.05
 
   // In range
   // Constant positive
-  EXPECT_EQ(smoother->findEtaConstraint(1.0, 1.0, accel, deccel), -1);
+  EXPECT_EQ(smoother->findEtaConstraint(1.0, 1.0, accel, decel), -1);
   // Constant negative
-  EXPECT_EQ(smoother->findEtaConstraint(1.0, 1.0, accel, deccel), -1);
+  EXPECT_EQ(smoother->findEtaConstraint(-1.0, -1.0, accel, decel), -1);
   // Positive To Positive Accel
-  EXPECT_EQ(smoother->findEtaConstraint(0.5, 0.504, accel, deccel), -1);
-  // Positive To Positive Deccel
-  EXPECT_EQ(smoother->findEtaConstraint(0.5, 0.46, accel, deccel), -1);
+  EXPECT_EQ(smoother->findEtaConstraint(0.5, 0.504, accel, decel), -1);
+  // Positive To Positive Decel
+  EXPECT_EQ(smoother->findEtaConstraint(0.5, 0.46, accel, decel), -1);
   // 0 To Positive Accel
-  EXPECT_EQ(smoother->findEtaConstraint(0.0, 0.004, accel, deccel), -1);
-  // Positive To 0 Deccel
-  EXPECT_EQ(smoother->findEtaConstraint(0.04, 0.0, accel, deccel), -1);
+  EXPECT_EQ(smoother->findEtaConstraint(0.0, 0.004, accel, decel), -1);
+  // Positive To 0 Decel
+  EXPECT_EQ(smoother->findEtaConstraint(0.04, 0.0, accel, decel), -1);
   // Negative To Negative Accel
-  EXPECT_EQ(smoother->findEtaConstraint(-0.5, -0.504, accel, deccel), -1);
-  // Negative To Negative Deccel
-  EXPECT_EQ(smoother->findEtaConstraint(-0.5, -0.46, accel, deccel), -1);
+  EXPECT_EQ(smoother->findEtaConstraint(-0.5, -0.504, accel, decel), -1);
+  // Negative To Negative Decel
+  EXPECT_EQ(smoother->findEtaConstraint(-0.5, -0.46, accel, decel), -1);
   // 0 To Negative Accel
-  EXPECT_EQ(smoother->findEtaConstraint(0.0, -0.004, accel, deccel), -1);
-  // Negative To 0 Deccel
-  EXPECT_EQ(smoother->findEtaConstraint(-0.04, 0.0, accel, deccel), -1);
+  EXPECT_EQ(smoother->findEtaConstraint(0.0, -0.004, accel, decel), -1);
+  // Negative To 0 Decel
+  EXPECT_EQ(smoother->findEtaConstraint(-0.04, 0.0, accel, decel), -1);
   // Negative to Positive
-  EXPECT_EQ(smoother->findEtaConstraint(-0.02, 0.02, accel, deccel), -1);
+  EXPECT_EQ(smoother->findEtaConstraint(-0.02, 0.02, accel, decel), -1);
   // Positive to Negative
-  EXPECT_EQ(smoother->findEtaConstraint(0.02, -0.02, accel, deccel), -1);
+  EXPECT_EQ(smoother->findEtaConstraint(0.02, -0.02, accel, decel), -1);
 
   // Faster than limit
   // Positive To Positive Accel
-  EXPECT_EQ(smoother->findEtaConstraint(0.5, 1.5, accel, deccel), 0.005);
-  // Positive To Positive Deccel
-  EXPECT_EQ(smoother->findEtaConstraint(1.5, 0.5, accel, deccel), 0.05);
+  EXPECT_EQ(smoother->findEtaConstraint(0.5, 1.5, accel, decel), 0.005);
+  // Positive To Positive Decel
+  EXPECT_EQ(smoother->findEtaConstraint(1.5, 0.5, accel, decel), 0.05);
   // 0 To Positive Accel
-  EXPECT_EQ(smoother->findEtaConstraint(0.0, 1.0, accel, deccel), 0.005);
-  // Positive To 0 Deccel
-  EXPECT_EQ(smoother->findEtaConstraint(1.0, 0.0, accel, deccel), 0.05);
+  EXPECT_EQ(smoother->findEtaConstraint(0.0, 1.0, accel, decel), 0.005);
+  // Positive To 0 Decel
+  EXPECT_EQ(smoother->findEtaConstraint(1.0, 0.0, accel, decel), 0.05);
   // Negative To Negative Accel
-  EXPECT_EQ(smoother->findEtaConstraint(-0.5, -1.5, accel, deccel), 0.005);
-  // Negative To Negative Deccel
-  EXPECT_EQ(smoother->findEtaConstraint(-1.5, -0.5, accel, deccel), 0.05);
+  EXPECT_EQ(smoother->findEtaConstraint(-0.5, -1.5, accel, decel), 0.005);
+  // Negative To Negative Decel
+  EXPECT_EQ(smoother->findEtaConstraint(-1.5, -0.5, accel, decel), 0.05);
   // 0 To Negative Accel
-  EXPECT_EQ(smoother->findEtaConstraint(0.0, -1.0, accel, deccel), 0.005);
-  // Negative To 0 Deccel
-  EXPECT_EQ(smoother->findEtaConstraint(-1.0, 0.0, accel, deccel), 0.05);
+  EXPECT_EQ(smoother->findEtaConstraint(0.0, -1.0, accel, decel), 0.005);
+  // Negative To 0 Decel
+  EXPECT_EQ(smoother->findEtaConstraint(-1.0, 0.0, accel, decel), 0.05);
   // Negative to Positive
-  EXPECT_EQ(smoother->findEtaConstraint(-0.2, 0.8, accel, deccel), 0.05);
+  EXPECT_EQ(smoother->findEtaConstraint(-0.2, 0.8, accel, decel), 0.05);
   // Positive to Negative
-  EXPECT_EQ(smoother->findEtaConstraint(0.2, -0.8, accel, deccel), 0.05);
+  EXPECT_EQ(smoother->findEtaConstraint(0.2, -0.8, accel, decel), 0.05);
 }
 
 TEST(VelocitySmootherTest, testapplyConstraints)
@@ -265,7 +265,7 @@ TEST(VelocitySmootherTest, testapplyConstraintsPositiveToPositiveAccel)
   smoother->configure(state);
   double no_eta = 1.0;
   double accel = 0.1;
-  double deccel = -1.0;
+  double decel = -1.0;
   double dv_accel = accel / 20.0;
   double init_vel, target_vel, v_curr;
   uint steps_to_target;
@@ -276,11 +276,11 @@ TEST(VelocitySmootherTest, testapplyConstraintsPositiveToPositiveAccel)
 
   v_curr = init_vel;
   for (size_t i = 1; i < steps_to_target + 1; i++) {
-    v_curr = smoother->applyConstraints(v_curr, target_vel, accel, deccel, no_eta);
+    v_curr = smoother->applyConstraints(v_curr, target_vel, accel, decel, no_eta);
     EXPECT_NEAR(v_curr, init_vel + i * dv_accel, 0.001);
   }
   EXPECT_NEAR(v_curr, target_vel, 0.001);
-  v_curr = smoother->applyConstraints(v_curr, target_vel, accel, deccel, no_eta);
+  v_curr = smoother->applyConstraints(v_curr, target_vel, accel, decel, no_eta);
   EXPECT_NEAR(v_curr, target_vel, 0.001);
 }
 
@@ -293,7 +293,7 @@ TEST(VelocitySmootherTest, testapplyConstraintsZeroToPositiveAccel)
   smoother->configure(state);
   double no_eta = 1.0;
   double accel = 0.1;
-  double deccel = -1.0;
+  double decel = -1.0;
   double dv_accel = accel / 20.0;
   double init_vel, target_vel, v_curr;
   uint steps_to_target;
@@ -304,15 +304,15 @@ TEST(VelocitySmootherTest, testapplyConstraintsZeroToPositiveAccel)
 
   v_curr = init_vel;
   for (size_t i = 1; i < steps_to_target + 1; i++) {
-    v_curr = smoother->applyConstraints(v_curr, target_vel, accel, deccel, no_eta);
+    v_curr = smoother->applyConstraints(v_curr, target_vel, accel, decel, no_eta);
     EXPECT_NEAR(v_curr, init_vel + i * dv_accel, 0.001);
   }
   EXPECT_NEAR(v_curr, target_vel, 0.001);
-  v_curr = smoother->applyConstraints(v_curr, target_vel, accel, deccel, no_eta);
+  v_curr = smoother->applyConstraints(v_curr, target_vel, accel, decel, no_eta);
   EXPECT_NEAR(v_curr, target_vel, 0.001);
 }
 
-TEST(VelocitySmootherTest, testapplyConstraintsNegativeToPositiveDeccelAccel)
+TEST(VelocitySmootherTest, testapplyConstraintsNegativeToPositiveDecelAccel)
 {
   auto smoother =
     std::make_shared<VelSmootherShim>();
@@ -321,28 +321,28 @@ TEST(VelocitySmootherTest, testapplyConstraintsNegativeToPositiveDeccelAccel)
   smoother->configure(state);
   double no_eta = 1.0;
   double accel = 0.1;
-  double deccel = -1.0;
+  double decel = -1.0;
   double dv_accel = accel / 20.0;
-  double dv_deccel = -deccel / 20.0;
+  double dv_decel = -decel / 20.0;
   double init_vel, target_vel, v_curr;
   uint steps_below_zero, steps_above_zero;
 
   init_vel = -1.0;
   target_vel = 2.0;
-  steps_below_zero = -init_vel / dv_deccel;
+  steps_below_zero = -init_vel / dv_decel;
   steps_above_zero = target_vel / dv_accel;
 
   v_curr = init_vel;
   for (size_t i = 1; i < steps_below_zero + steps_above_zero + 1; i++) {
-    v_curr = smoother->applyConstraints(v_curr, target_vel, accel, deccel, no_eta);
+    v_curr = smoother->applyConstraints(v_curr, target_vel, accel, decel, no_eta);
     if (v_curr > 0) {
       EXPECT_NEAR(v_curr, (i - steps_below_zero) * dv_accel, 0.001);
     } else {
-      EXPECT_NEAR(v_curr, init_vel + i * dv_deccel, 0.001);
+      EXPECT_NEAR(v_curr, init_vel + i * dv_decel, 0.001);
     }
   }
   EXPECT_NEAR(v_curr, target_vel, 0.001);
-  v_curr = smoother->applyConstraints(v_curr, target_vel, accel, deccel, no_eta);
+  v_curr = smoother->applyConstraints(v_curr, target_vel, accel, decel, no_eta);
   EXPECT_NEAR(v_curr, target_vel, 0.001);
 }
 
@@ -355,7 +355,7 @@ TEST(VelocitySmootherTest, testapplyConstraintsNegativeToNegativeAccel)
   smoother->configure(state);
   double no_eta = 1.0;
   double accel = 0.1;
-  double deccel = -1.0;
+  double decel = -1.0;
   double dv_accel = accel / 20.0;
   double init_vel, target_vel, v_curr;
   uint steps_to_target;
@@ -366,11 +366,11 @@ TEST(VelocitySmootherTest, testapplyConstraintsNegativeToNegativeAccel)
 
   v_curr = init_vel;
   for (size_t i = 1; i < steps_to_target + 1; i++) {
-    v_curr = smoother->applyConstraints(v_curr, target_vel, accel, deccel, no_eta);
+    v_curr = smoother->applyConstraints(v_curr, target_vel, accel, decel, no_eta);
     EXPECT_NEAR(v_curr, init_vel - i * dv_accel, 0.001);
   }
   EXPECT_NEAR(v_curr, target_vel, 0.001);
-  v_curr = smoother->applyConstraints(v_curr, target_vel, accel, deccel, no_eta);
+  v_curr = smoother->applyConstraints(v_curr, target_vel, accel, decel, no_eta);
   EXPECT_NEAR(v_curr, target_vel, 0.001);
 }
 
@@ -383,7 +383,7 @@ TEST(VelocitySmootherTest, testapplyConstraintsZeroToNegativeAccel)
   smoother->configure(state);
   double no_eta = 1.0;
   double accel = 0.1;
-  double deccel = -1.0;
+  double decel = -1.0;
   double dv_accel = accel / 20.0;
   double init_vel, target_vel, v_curr;
   uint steps_to_target;
@@ -394,15 +394,15 @@ TEST(VelocitySmootherTest, testapplyConstraintsZeroToNegativeAccel)
 
   v_curr = init_vel;
   for (size_t i = 1; i < steps_to_target + 1; i++) {
-    v_curr = smoother->applyConstraints(v_curr, target_vel, accel, deccel, no_eta);
+    v_curr = smoother->applyConstraints(v_curr, target_vel, accel, decel, no_eta);
     EXPECT_NEAR(v_curr, init_vel - i * dv_accel, 0.001);
   }
   EXPECT_NEAR(v_curr, target_vel, 0.001);
-  v_curr = smoother->applyConstraints(v_curr, target_vel, accel, deccel, no_eta);
+  v_curr = smoother->applyConstraints(v_curr, target_vel, accel, decel, no_eta);
   EXPECT_NEAR(v_curr, target_vel, 0.001);
 }
 
-TEST(VelocitySmootherTest, testapplyConstraintsPositiveToNegativeDeccelAccel)
+TEST(VelocitySmootherTest, testapplyConstraintsPositiveToNegativeDecelAccel)
 {
   auto smoother =
     std::make_shared<VelSmootherShim>();
@@ -411,32 +411,32 @@ TEST(VelocitySmootherTest, testapplyConstraintsPositiveToNegativeDeccelAccel)
   smoother->configure(state);
   double no_eta = 1.0;
   double accel = 0.1;
-  double deccel = -1.0;
+  double decel = -1.0;
   double dv_accel = accel / 20.0;
-  double dv_deccel = -deccel / 20.0;
+  double dv_decel = -decel / 20.0;
   double init_vel, target_vel, v_curr;
   uint steps_below_zero, steps_above_zero;
 
   init_vel = 1.0;
   target_vel = -2.0;
-  steps_above_zero = init_vel / dv_deccel;
+  steps_above_zero = init_vel / dv_decel;
   steps_below_zero = -target_vel / dv_accel;
 
   v_curr = init_vel;
   for (size_t i = 1; i < steps_below_zero + steps_above_zero + 1; i++) {
-    v_curr = smoother->applyConstraints(v_curr, target_vel, accel, deccel, no_eta);
+    v_curr = smoother->applyConstraints(v_curr, target_vel, accel, decel, no_eta);
     if (v_curr < 0) {
       EXPECT_NEAR(v_curr, -static_cast<int>(i - steps_above_zero) * dv_accel, 0.001);
     } else {
-      EXPECT_NEAR(v_curr, init_vel - i * dv_deccel, 0.001);
+      EXPECT_NEAR(v_curr, init_vel - i * dv_decel, 0.001);
     }
   }
   EXPECT_NEAR(v_curr, target_vel, 0.001);
-  v_curr = smoother->applyConstraints(v_curr, target_vel, accel, deccel, no_eta);
+  v_curr = smoother->applyConstraints(v_curr, target_vel, accel, decel, no_eta);
   EXPECT_NEAR(v_curr, target_vel, 0.001);
 }
 
-TEST(VelocitySmootherTest, testapplyConstraintsPositiveToPositiveDeccel)
+TEST(VelocitySmootherTest, testapplyConstraintsPositiveToPositiveDecel)
 {
   auto smoother =
     std::make_shared<VelSmootherShim>();
@@ -445,28 +445,28 @@ TEST(VelocitySmootherTest, testapplyConstraintsPositiveToPositiveDeccel)
   smoother->configure(state);
   double no_eta = 1.0;
 
-  // Test asymetric accel/deccel use cases
+  // Test asymetric accel/decel use cases
   double accel = 0.1;
-  double deccel = -1.0;
-  double dv_deccel = -deccel / 20.0;
+  double decel = -1.0;
+  double dv_decel = -decel / 20.0;
   double init_vel, target_vel, v_curr;
   uint steps_to_target;
 
   init_vel = 2.0;
   target_vel = 1.0;
-  steps_to_target = abs(target_vel - init_vel) / dv_deccel;
+  steps_to_target = abs(target_vel - init_vel) / dv_decel;
 
   v_curr = init_vel;
   for (size_t i = 1; i < steps_to_target + 1; i++) {
-    v_curr = smoother->applyConstraints(v_curr, target_vel, accel, deccel, no_eta);
-    EXPECT_NEAR(v_curr, init_vel - i * dv_deccel, 0.001);
+    v_curr = smoother->applyConstraints(v_curr, target_vel, accel, decel, no_eta);
+    EXPECT_NEAR(v_curr, init_vel - i * dv_decel, 0.001);
   }
   EXPECT_NEAR(v_curr, target_vel, 0.001);
-  v_curr = smoother->applyConstraints(v_curr, target_vel, accel, deccel, no_eta);
+  v_curr = smoother->applyConstraints(v_curr, target_vel, accel, decel, no_eta);
   EXPECT_NEAR(v_curr, target_vel, 0.001);
 }
 
-TEST(VelocitySmootherTest, testapplyConstraintsPositiveToZeroDeccel)
+TEST(VelocitySmootherTest, testapplyConstraintsPositiveToZeroDecel)
 {
   auto smoother =
     std::make_shared<VelSmootherShim>();
@@ -475,26 +475,26 @@ TEST(VelocitySmootherTest, testapplyConstraintsPositiveToZeroDeccel)
   smoother->configure(state);
   double no_eta = 1.0;
   double accel = 0.1;
-  double deccel = -1.0;
-  double dv_deccel = -deccel / 20.0;
+  double decel = -1.0;
+  double dv_decel = -decel / 20.0;
   double init_vel, target_vel, v_curr;
   uint steps_to_target;
 
   init_vel = 2.0;
   target_vel = 0.0;
-  steps_to_target = abs(target_vel - init_vel) / dv_deccel;
+  steps_to_target = abs(target_vel - init_vel) / dv_decel;
 
   v_curr = init_vel;
   for (size_t i = 1; i < steps_to_target + 1; i++) {
-    v_curr = smoother->applyConstraints(v_curr, target_vel, accel, deccel, no_eta);
-    EXPECT_NEAR(v_curr, init_vel - i * dv_deccel, 0.001);
+    v_curr = smoother->applyConstraints(v_curr, target_vel, accel, decel, no_eta);
+    EXPECT_NEAR(v_curr, init_vel - i * dv_decel, 0.001);
   }
   EXPECT_NEAR(v_curr, target_vel, 0.001);
-  v_curr = smoother->applyConstraints(v_curr, target_vel, accel, deccel, no_eta);
+  v_curr = smoother->applyConstraints(v_curr, target_vel, accel, decel, no_eta);
   EXPECT_NEAR(v_curr, target_vel, 0.001);
 }
 
-TEST(VelocitySmootherTest, testapplyConstraintsNegativeToNegativeDeccel)
+TEST(VelocitySmootherTest, testapplyConstraintsNegativeToNegativeDecel)
 {
   auto smoother =
     std::make_shared<VelSmootherShim>();
@@ -503,26 +503,26 @@ TEST(VelocitySmootherTest, testapplyConstraintsNegativeToNegativeDeccel)
   smoother->configure(state);
   double no_eta = 1.0;
   double accel = 0.1;
-  double deccel = -1.0;
-  double dv_deccel = -deccel / 20.0;
+  double decel = -1.0;
+  double dv_decel = -decel / 20.0;
   double init_vel, target_vel, v_curr;
   uint steps_to_target;
 
   init_vel = -2.0;
   target_vel = -1.0;
-  steps_to_target = abs(target_vel - init_vel) / dv_deccel;
+  steps_to_target = abs(target_vel - init_vel) / dv_decel;
 
   v_curr = init_vel;
   for (size_t i = 1; i < steps_to_target + 1; i++) {
-    v_curr = smoother->applyConstraints(v_curr, target_vel, accel, deccel, no_eta);
-    EXPECT_NEAR(v_curr, init_vel + i * dv_deccel, 0.001);
+    v_curr = smoother->applyConstraints(v_curr, target_vel, accel, decel, no_eta);
+    EXPECT_NEAR(v_curr, init_vel + i * dv_decel, 0.001);
   }
   EXPECT_NEAR(v_curr, target_vel, 0.001);
-  v_curr = smoother->applyConstraints(v_curr, target_vel, accel, deccel, no_eta);
+  v_curr = smoother->applyConstraints(v_curr, target_vel, accel, decel, no_eta);
   EXPECT_NEAR(v_curr, target_vel, 0.001);
 }
 
-TEST(VelocitySmootherTest, testapplyConstraintsNegativeToZeroDeccel)
+TEST(VelocitySmootherTest, testapplyConstraintsNegativeToZeroDecel)
 {
   auto smoother =
     std::make_shared<VelSmootherShim>();
@@ -531,22 +531,22 @@ TEST(VelocitySmootherTest, testapplyConstraintsNegativeToZeroDeccel)
   smoother->configure(state);
   double no_eta = 1.0;
   double accel = 0.1;
-  double deccel = -1.0;
-  double dv_deccel = -deccel / 20.0;
+  double decel = -1.0;
+  double dv_decel = -decel / 20.0;
   double init_vel, target_vel, v_curr;
   uint steps_to_target;
 
   init_vel = -2.0;
   target_vel = 0.0;
-  steps_to_target = abs(target_vel - init_vel) / dv_deccel;
+  steps_to_target = abs(target_vel - init_vel) / dv_decel;
 
   v_curr = init_vel;
   for (size_t i = 1; i < steps_to_target + 1; i++) {
-    v_curr = smoother->applyConstraints(v_curr, target_vel, accel, deccel, no_eta);
-    EXPECT_NEAR(v_curr, init_vel + i * dv_deccel, 0.001);
+    v_curr = smoother->applyConstraints(v_curr, target_vel, accel, decel, no_eta);
+    EXPECT_NEAR(v_curr, init_vel + i * dv_decel, 0.001);
   }
   EXPECT_NEAR(v_curr, target_vel, 0.001);
-  v_curr = smoother->applyConstraints(v_curr, target_vel, accel, deccel, no_eta);
+  v_curr = smoother->applyConstraints(v_curr, target_vel, accel, decel, no_eta);
   EXPECT_NEAR(v_curr, target_vel, 0.001);
 }
 
