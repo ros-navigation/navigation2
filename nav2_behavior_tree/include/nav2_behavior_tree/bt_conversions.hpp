@@ -22,6 +22,7 @@
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "geometry_msgs/msg/transform_stamped.hpp"
 
 namespace BT
 {
@@ -97,6 +98,34 @@ inline geometry_msgs::msg::PoseStamped convertFromString(const StringView key)
     pose_stamped.pose.orientation.z = BT::convertFromString<double>(parts[7]);
     pose_stamped.pose.orientation.w = BT::convertFromString<double>(parts[8]);
     return pose_stamped;
+  }
+}
+
+/**
+ * @brief Parse XML string to geometry_msgs::msg::TransformStamped
+ * @param key XML string
+ * @return geometry_msgs::msg::TransformStamped
+ */
+template<>
+inline geometry_msgs::msg::TransformStamped convertFromString(const StringView key)
+{
+  // 7 real numbers separated by semicolons
+  auto parts = BT::splitString(key, ';');
+  if (parts.size() != 10) {
+    throw std::runtime_error("invalid number of fields for TransformStamped attribute)");
+  } else {
+    geometry_msgs::msg::TransformStamped transform_stamped;
+    transform_stamped.header.stamp = rclcpp::Time(BT::convertFromString<int64_t>(parts[0]));
+    transform_stamped.header.frame_id = BT::convertFromString<std::string>(parts[1]);
+    transform_stamped.child_frame_id = BT::convertFromString<std::string>(parts[2]);
+    transform_stamped.transform.translation.x = BT::convertFromString<double>(parts[3]);
+    transform_stamped.transform.translation.y = BT::convertFromString<double>(parts[4]);
+    transform_stamped.transform.translation.z = BT::convertFromString<double>(parts[5]);
+    transform_stamped.transform.rotation.x = BT::convertFromString<double>(parts[6]);
+    transform_stamped.transform.rotation.y = BT::convertFromString<double>(parts[7]);
+    transform_stamped.transform.rotation.z = BT::convertFromString<double>(parts[8]);
+    transform_stamped.transform.rotation.w = BT::convertFromString<double>(parts[9]);
+    return transform_stamped;
   }
 }
 
