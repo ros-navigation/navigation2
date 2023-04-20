@@ -29,7 +29,7 @@ namespace nav2_amcl
 
 BeamModel::BeamModel(
   double z_hit, double z_short, double z_max, double z_rand, double sigma_hit,
-  double lambda_short, double chi_outlier, size_t max_beams, map_t * map)
+  double lambda_short, double chi_outlier, size_t max_beams, map_t * map, double importance_factor)
 : Laser(max_beams, map)
 {
   z_hit_ = z_hit;
@@ -37,8 +37,10 @@ BeamModel::BeamModel(
   sigma_hit_ = sigma_hit;
   z_short_ = z_short;
   z_max_ = z_max;
+  importance_factor_ = importance_factor;
   lambda_short_ = lambda_short;
   chi_outlier_ = chi_outlier;
+
 }
 
 // Determine the probability for the given pose
@@ -109,7 +111,7 @@ BeamModel::sensorFunction(LaserData * data, pf_sample_set_t * set)
       p += pz * pz * pz;
     }
 
-    sample->weight *= p;
+    sample->weight *= pow(p, self->importance_factor_); // Accroding to Probabilistic Robotics, 6.3.4
     total_weight += sample->weight;
   }
 

@@ -29,10 +29,13 @@
 #include <vector>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
+#include "nav_msgs/msg/odometry.hpp"
 #include "message_filters/subscriber.h"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_amcl/motion_model/motion_model.hpp"
 #include "nav2_amcl/sensors/laser/laser.hpp"
+#include "nav2_amcl/sensors/external_pose/external_pose.hpp"
 #include "nav2_msgs/msg/particle.hpp"
 #include "nav2_msgs/msg/particle_cloud.hpp"
 #include "nav_msgs/srv/set_map.hpp"
@@ -41,6 +44,9 @@
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2_ros/transform_listener.h"
 #include "pluginlib/class_loader.hpp"
+
+#include <diagnostic_updater/diagnostic_updater.hpp>
+#include "cmr_msgs/srv/get_status.hpp"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -135,6 +141,11 @@ protected:
    */
   void createFreeSpaceVector();
   /*
+   * @brief Handle a new external pose message
+   * @param msg External pose message
+   */
+  void externalPoseReceived(const geometry_msgs::msg::PoseWithCovarianceStamped& msg);
+  /*
    * @brief Frees allocated map related memory
    */
   void freeMapDependentMemory();
@@ -183,6 +194,8 @@ protected:
   void initPubSub();
   rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::ConstSharedPtr
     initial_pose_sub_;
+  rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::ConstSharedPtr
+    external_pose_sub_;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr
     pose_pub_;
   rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::ParticleCloud>::SharedPtr
@@ -220,6 +233,15 @@ protected:
     const std::shared_ptr<std_srvs::srv::Empty::Request> request,
     std::shared_ptr<std_srvs::srv::Empty::Response> response);
 
+  // Report whether initial pose set or not
+  rclcpp::Service<cmr_msgs::srv::GetStatus>::SharedPtr get_initial_pose_status_srv_;
+  /*
+   * @brief Service callback for sending intial pose status
+   */
+  void getInitialPoseStatusCallback(
+    const std::shared_ptr<cmr_msgs::srv::GetStatus::Request>,
+    std::shared_ptr<cmr_msgs::srv::GetStatus::Response> response);
+
   // Nomotion update control. Used to temporarily let amcl update samples even when no motion occurs
   std::atomic<bool> force_update_{false};
 
@@ -235,6 +257,12 @@ protected:
   double init_cov_[3];
   pluginlib::ClassLoader<nav2_amcl::MotionModel> plugin_loader_{"nav2_amcl",
     "nav2_amcl::MotionModel"};
+  
+  /*
+   * @brief Initialize Diagnostic
+   */
+  void initDiagnostic();
+  
   /*
    * @brief Get robot pose in odom frame using TF
    */
@@ -258,6 +286,32 @@ protected:
   bool pf_init_;
   pf_vector_t pf_odom_pose_;
   int resample_count_{0};
+
+  // External pose fusion related
+  /*
+   * @brief Check if external pose has been received
+   */
+  bool isExtPoseActive();
+  /*
+   * @brief Initialize external pose data source
+   */
+  void initExternalPose();
+  /*
+   * @brief Diagnostic checking robot's covariance
+   * @ true if deviation gets large
+   *
+   */
+  std::shared_ptr<diagnostic_updater::Updater> diagnostic_updater_;
+  void standardDeviationDiagnostics(diagnostic_updater::DiagnosticStatusWrapper& stat);
+  double std_warn_level_x_;
+  double std_warn_level_y_;
+  double std_warn_level_yaw_;
+
+  std::unique_ptr<ExternalPoseBuffer> ext_pose_buffer_;
+
+  rclcpp::Time last_ext_pose_received_ts_;
+  std::chrono::seconds ext_pose_check_interval_;
+  bool ext_pose_active_;
 
   // Laser scan related
   /*
@@ -303,24 +357,24 @@ protected:
    */
   void publishParticleCloud(const pf_sample_set_t * set);
   /*
+  * @brief Get the current state estimate hypothesis from the particle cloud
+  * by calculating mean weighted centroid among cluster centroids
+  */
+  bool getMeanWeightedClustersCentroid(amcl_hyp_t & mean_centroid_hyp);
+  /*
    * @brief Get the current state estimat hypothesis from the particle cloud
    */
-  bool getMaxWeightHyp(
-    std::vector<amcl_hyp_t> & hyps, amcl_hyp_t & max_weight_hyps,
-    int & max_weight_hyp);
+  bool getMaxWeightHyp(amcl_hyp_t & max_weight_hyp);
   /*
    * @brief Publish robot pose in map frame from AMCL
    */
-  void publishAmclPose(
-    const sensor_msgs::msg::LaserScan::ConstSharedPtr & laser_scan,
-    const std::vector<amcl_hyp_t> & hyps, const int & max_weight_hyp);
+  void publishAmclPose(const amcl_hyp_t & best_hyp,
+    const builtin_interfaces::msg::Time & timestamp_msg);
   /*
    * @brief Determine TF transformation from map to odom
    */
-  void calculateMaptoOdomTransform(
-    const sensor_msgs::msg::LaserScan::ConstSharedPtr & laser_scan,
-    const std::vector<amcl_hyp_t> & hyps,
-    const int & max_weight_hyp);
+  void calculateMaptoOdomTransform(const amcl_hyp_t & best_hyp,
+    const builtin_interfaces::msg::Time & timestamp_msg);
   /*
    * @brief Publish TF transformation from map to odom
    */
@@ -372,14 +426,19 @@ protected:
   double sigma_hit_;
   bool tf_broadcast_;
   tf2::Duration transform_tolerance_;
+  tf2::Duration transform_lookup_timeout_;
   double a_thresh_;
   double d_thresh_;
   double z_hit_;
   double z_max_;
   double z_short_;
   double z_rand_;
+  double laser_importance_factor_;
+  double max_particle_gen_prob_ext_pose_;
+  double ext_pose_search_tolerance_sec_;
   std::string scan_topic_{"scan"};
   std::string map_topic_{"map"};
+  bool use_cluster_averaging_;
 };
 
 }  // namespace nav2_amcl

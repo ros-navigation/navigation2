@@ -29,12 +29,13 @@ namespace nav2_amcl
 
 LikelihoodFieldModel::LikelihoodFieldModel(
   double z_hit, double z_rand, double sigma_hit,
-  double max_occ_dist, size_t max_beams, map_t * map)
+  double max_occ_dist, size_t max_beams, map_t * map, double importance_factor)
 : Laser(max_beams, map)
 {
   z_hit_ = z_hit;
   z_rand_ = z_rand;
   sigma_hit_ = sigma_hit;
+  importance_factor_ = importance_factor;
   map_update_cspace(map, max_occ_dist);
 }
 
@@ -124,7 +125,7 @@ LikelihoodFieldModel::sensorFunction(LaserData * data, pf_sample_set_t * set)
       p += pz * pz * pz;
     }
 
-    sample->weight *= p;
+    sample->weight *= pow(p, self->importance_factor_); // Accroding to Probabilistic Robotics, 6.3.4
     total_weight += sample->weight;
   }
 

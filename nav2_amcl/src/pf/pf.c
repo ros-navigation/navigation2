@@ -30,6 +30,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <time.h>
+#include <string.h>
 
 #include "nav2_amcl/pf/pf.hpp"
 #include "nav2_amcl/pf/pf_pdf.hpp"
@@ -47,7 +48,9 @@ static int pf_resample_limit(pf_t * pf, int k);
 pf_t * pf_alloc(
   int min_samples, int max_samples,
   double alpha_slow, double alpha_fast,
-  pf_init_model_fn_t random_pose_fn, void * random_pose_data)
+  pf_init_model_fn_t random_pose_fn,
+  void * random_pose_data,
+  double max_particle_gen_prob_ext_pose)
 {
   int i, j;
   pf_t * pf;
@@ -101,6 +104,8 @@ pf_t * pf_alloc(
 
   pf->w_slow = 0.0;
   pf->w_fast = 0.0;
+  pf->max_particle_gen_prob_ext_pose = max_particle_gen_prob_ext_pose;
+  pf->ext_pose_is_valid = 0;
 
   pf->alpha_slow = alpha_slow;
   pf->alpha_fast = alpha_fast;
@@ -289,6 +294,87 @@ void pf_update_sensor(pf_t * pf, pf_sensor_model_fn_t sensor_fn, void * sensor_d
   }
 }
 
+double get_determinant(double *cov_matrix)
+{
+  double det = cov_matrix[0] * cov_matrix[4] * cov_matrix[8] + 
+              cov_matrix[1] * cov_matrix[5] * cov_matrix[6] + 
+              cov_matrix[3] * cov_matrix[7] * cov_matrix[2] -
+              cov_matrix[2] * cov_matrix[4] * cov_matrix[6] - 
+              cov_matrix[1] * cov_matrix[3] * cov_matrix[8] - 
+              cov_matrix[0] * cov_matrix[5] * cov_matrix[7];
+
+  return det;
+}
+
+int get_inverse(double *cov_matrix, double *result)
+{
+  double det = get_determinant(cov_matrix);
+  double inv[9] = {   1 * (cov_matrix[4] * cov_matrix[8] - cov_matrix[5] * cov_matrix[7]) / det,
+                        -1 * (cov_matrix[3] * cov_matrix[8] - cov_matrix[5] * cov_matrix[6]) / det,
+                         1 * (cov_matrix[3] * cov_matrix[7] - cov_matrix[4] * cov_matrix[6]) / det,
+                        -1 * (cov_matrix[1] * cov_matrix[8] - cov_matrix[2] * cov_matrix[7]) / det,
+                         1 * (cov_matrix[0] * cov_matrix[8] - cov_matrix[2] * cov_matrix[6]) / det,
+                        -1 * (cov_matrix[0] * cov_matrix[7] - cov_matrix[1] * cov_matrix[6]) / det,
+                         1 * (cov_matrix[1] * cov_matrix[5] - cov_matrix[2] * cov_matrix[4]) / det,
+                        -1 * (cov_matrix[0] * cov_matrix[5] - cov_matrix[2] * cov_matrix[3]) / det,
+                         1 * (cov_matrix[0] * cov_matrix[4] - cov_matrix[1] * cov_matrix[3]) / det};
+
+  memcpy(result, inv, 9*sizeof(double));
+
+  return 0;
+}
+
+int mult_1_3_x_3_3(double *mat_1_3, double *mat_3_3, double *result)
+{
+  double r[3] = { mat_1_3[0] * mat_3_3[0] + mat_1_3[1] * mat_3_3[3] + mat_1_3[2] * mat_3_3[6],
+                      mat_1_3[0] * mat_3_3[1] + mat_1_3[1] * mat_3_3[4] + mat_1_3[2] * mat_3_3[7],
+                      mat_1_3[0] * mat_3_3[2] + mat_1_3[1] * mat_3_3[5] + mat_1_3[2] * mat_3_3[8]};
+
+  memcpy(result, r, 3*sizeof(double));
+
+  return 0;
+}
+
+double mult_1_3_x_3_1(double *mat_1_3, double *mat_3_1)
+{
+  double result = mat_1_3[0] * mat_3_1[0] + mat_1_3[1] * mat_3_1[1] + mat_1_3[2] * mat_3_1[2];
+  return result;
+}
+
+// Return random std mean number
+double norm_random()
+{
+  double u = (double)rand()/RAND_MAX;
+  double v = (double)rand()/RAND_MAX;
+  double x = sqrt(-2*log(u))*cos(2*M_PI*v); // Check this
+
+  return x;
+
+}
+
+int generate_random_particle(double x, double y, double yaw, double *cov_matrix, double *pose_v)
+{
+    // See Improved LiDAR Probabilistic Localization for Autonomous Vehicles Using GNSS, #3.4 for details
+
+    double pose[3] = {norm_random(), norm_random(), norm_random()};
+  
+    mult_1_3_x_3_3(pose, cov_matrix, pose);
+    pose[0] = pose[0] + x;
+    pose[1] = pose[1] + y;
+    pose[2] = pose[2] + yaw;
+
+    memcpy(pose_v, pose, 3*sizeof(double));
+
+    return 0;
+}
+
+// Unconstrained (input args can be of any value, even more/less than 2*pi) angular distance in range [-pi, pi)
+// Source: https://stackoverflow.com/a/28037434/13167995
+double angular_difference(double angle1, double angle2){
+  double diff = fmod(angle2 - angle1 + M_PI_2, M_PI) - M_PI_2;
+  
+  return diff < -M_PI_2 ? diff + M_PI : diff;
+}
 
 // Resample the distribution
 void pf_update_resample(pf_t * pf)
@@ -308,6 +394,51 @@ void pf_update_resample(pf_t * pf)
   set_a = pf->sets + pf->current_set;
   set_b = pf->sets + (pf->current_set + 1) % 2;
 
+  double total_dist_prob = 0;
+
+  double covariance_determinant = (pf->cov_matrix[0] * pf->cov_matrix[4] * pf->cov_matrix[8]);
+  double max_particle_likelihood = 1/sqrt(pow(2*M_PI, 3) * covariance_determinant);
+
+  if(pf->ext_pose_is_valid){
+    double total_weight = 0;
+    for(i = 0; i < set_a->sample_count; i++)
+    {
+
+      // See Improved LiDAR Probabilistic Localization for Autonomous Vehicles Using GNSS, #3.2 for details
+      double distance = pow(set_a->samples[i].pose.v[0]-pf->ext_x, 2) / pf->cov_matrix[0] + 
+                        pow(set_a->samples[i].pose.v[1]-pf->ext_y, 2) / pf->cov_matrix[4] + 
+                        + pow(angular_difference(set_a->samples[i].pose.v[2], pf->ext_yaw), 2) / pf->cov_matrix[8];
+
+      double ext_pose_likelihood = max_particle_likelihood*exp(-1*distance/2);
+
+      total_dist_prob += ext_pose_likelihood;
+
+      // fprintf(stderr, "AMCL: laser weight - %f, ext pose likelihood - %f\n", set_a->samples[i].weight, ext_pose_likelihood);
+
+      // See Improved LiDAR Probabilistic Localization for Autonomous Vehicles Using GNSS, #3.3 for details
+      set_a->samples[i].weight = set_a->samples[i].weight * LASER_TO_EXTERNAL_POSE_BALANCE_FACTOR + ext_pose_likelihood;
+
+      total_weight += set_a->samples[i].weight;
+    }
+
+    /// Handle total weight of 0
+    if(total_weight == 0)
+    {
+      for(i=0;i<set_a->sample_count;i++){
+        set_a->samples[i].weight = 1;
+        total_weight += set_a->samples[i].weight;
+      }
+    } else 
+    {
+      /// Normalization
+      for(i=0;i<set_a->sample_count;i++)
+      {
+        set_a->samples[i].weight = set_a->samples[i].weight / total_weight;
+      }
+    }
+  }
+
+
   // Build up cumulative probability table for resampling.
   // TODO(?): Replace this with a more efficient procedure
   // (e.g., http://www.network-theory.co.uk/docs/gslref/GeneralDiscreteDistributions.html)
@@ -324,11 +455,24 @@ void pf_update_resample(pf_t * pf)
   total = 0;
   set_b->sample_count = 0;
 
-  w_diff = 1.0 - pf->w_fast / pf->w_slow;
-  if (w_diff < 0.0) {
+
+if(pf->ext_pose_is_valid){
+
+  // See Improved LiDAR Probabilistic Localization for Autonomous Vehicles Using GNSS, #3.4 for details
+  total_dist_prob = total_dist_prob/set_a->sample_count;
+  w_diff = (pf->max_particle_gen_prob_ext_pose * max_particle_likelihood - total_dist_prob) / max_particle_likelihood;
+
+  if(w_diff < 0.0)
     w_diff = 0.0;
-  }
-  // printf("w_diff: %9.6f\n", w_diff);
+  
+} else {
+
+  w_diff = 1.0 - pf->w_fast / pf->w_slow;
+  if(w_diff < 0.0)
+    w_diff = 0.0;
+}
+
+  
 
   // Can't (easily) combine low-variance sampler with KLD adaptive
   // sampling, so we'll take the more traditional route.
@@ -343,9 +487,15 @@ void pf_update_resample(pf_t * pf)
   while (set_b->sample_count < pf->max_samples) {
     sample_b = set_b->samples + set_b->sample_count++;
 
-    if (drand48() < w_diff) {
-      sample_b->pose = (pf->random_pose_fn)(pf->random_pose_data);
-    } else {
+    if(drand48() < w_diff)
+    {
+      if(pf->ext_pose_is_valid){
+        generate_random_particle(pf->ext_x, pf->ext_y, pf->ext_yaw, pf->eigen_matrix, sample_b->pose.v);
+      } else {
+        sample_b->pose = (pf->random_pose_fn)(pf->random_pose_data);
+      }
+    } else
+    {
       // Can't (easily) combine low-variance sampler with KLD adaptive
       // sampling, so we'll take the more traditional route.
       /*
@@ -571,7 +721,8 @@ void pf_cluster_stats(pf_t * pf, pf_sample_set_t * set)
     cluster->cov.m[2][2] = -2 * log(
       sqrt(
         cluster->m[2] * cluster->m[2] +
-        cluster->m[3] * cluster->m[3]));
+        // AMCL miscalculates orientation covariance for clusters https://github.com/ros-planning/navigation/issues/1160
+        cluster->m[3] * cluster->m[3]) / cluster->weight);
 
     // printf("cluster %d %d %f (%f %f %f)\n", i, cluster->count, cluster->weight,
     // cluster->mean.v[0], cluster->mean.v[1], cluster->mean.v[2]);

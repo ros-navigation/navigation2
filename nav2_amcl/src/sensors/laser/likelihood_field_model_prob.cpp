@@ -34,12 +34,13 @@ LikelihoodFieldModelProb::LikelihoodFieldModelProb(
   double beam_skip_distance,
   double beam_skip_threshold,
   double beam_skip_error_threshold,
-  size_t max_beams, map_t * map)
+  size_t max_beams, map_t * map, double importance_factor)
 : Laser(max_beams, map)
 {
   z_hit_ = z_hit;
   z_rand_ = z_rand;
   sigma_hit_ = sigma_hit;
+  importance_factor_ = importance_factor;
   do_beamskip_ = do_beamskip;
   beam_skip_distance_ = beam_skip_distance;
   beam_skip_threshold_ = beam_skip_threshold;
@@ -180,7 +181,7 @@ LikelihoodFieldModelProb::sensorFunction(LaserData * data, pf_sample_set_t * set
       // TODO(?): outlier rejection for short readings
 
       if (!do_beamskip) {
-        log_p += log(pz);
+        log_p += log(pz) * self->importance_factor_; // Accroding to Probabilistic Robotics, 6.3.4
       } else {
         self->temp_obs_[j][beam_ind] = pz;
       }
@@ -225,7 +226,7 @@ LikelihoodFieldModelProb::sensorFunction(LaserData * data, pf_sample_set_t * set
 
       for (beam_ind = 0; beam_ind < self->max_beams_; beam_ind++) {
         if (error || obs_mask[beam_ind]) {
-          log_p += log(self->temp_obs_[j][beam_ind]);
+          log_p += log(self->temp_obs_[j][beam_ind]) * self->importance_factor_; // Accroding to Probabilistic Robotics, 6.3.4
         }
       }
 

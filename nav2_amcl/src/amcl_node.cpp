@@ -43,6 +43,9 @@
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/create_timer_ros.h"
 
+#include <diagnostic_updater/diagnostic_updater.hpp>
+#include <eigen3/Eigen/Eigenvalues>
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
 #include "tf2/utils.h"
@@ -197,6 +200,10 @@ AmclNode::AmclNode(const rclcpp::NodeOptions & options)
     "is valid into the future");
 
   add_parameter(
+    "transform_lookup_timeout", rclcpp::ParameterValue(0.1f),
+    "Timeout value for transform lookup");
+
+  add_parameter(
     "update_min_a", rclcpp::ParameterValue(0.2),
     "Rotational movement required before performing a filter update");
 
@@ -226,6 +233,45 @@ AmclNode::AmclNode(const rclcpp::NodeOptions & options)
   add_parameter(
     "first_map_only", rclcpp::ParameterValue(false),
     "Set this to true, when you want to load a new map published from the map_server");
+  
+  add_parameter(
+    "fuse_external_pose", rclcpp::ParameterValue(false),
+    "Fuse pose from external source"
+  );
+
+  add_parameter(
+    "k_l", rclcpp::ParameterValue(200.0f),
+    "Constant to balance the importance of the external pose data");
+  
+  add_parameter(
+    "laser_importance_factor", rclcpp::ParameterValue(1.0f),
+    "Importance factor for laser scan, [0.0, 1.0]");
+
+    add_parameter(
+      "std_warn_level_x", rclcpp::ParameterValue(0.2),
+      "Limit threshold of x value. Monitors the estimated standard deviation of the filter.");
+
+    add_parameter(
+      "std_warn_level_y", rclcpp::ParameterValue(0.2),
+      "Limit threshold of y value. Monitors the estimated standard deviation of the filter.");
+
+    add_parameter(
+      "std_warn_level_yaw", rclcpp::ParameterValue(0.1),
+      "Limit threshold of yaw value. Monitors the estimated standard deviation of the filter.");
+  add_parameter(
+    "max_particle_gen_prob_ext_pose", rclcpp::ParameterValue(0.01f),
+    "Maximum probability of generating a particle based on external pose source");
+
+  add_parameter(
+    "ext_pose_search_tolerance_sec", rclcpp::ParameterValue(0.1f),
+    "Time tolerance for corresponding external pose measurement search");
+
+  add_parameter(
+    "use_cluster_averaging", rclcpp::ParameterValue(false),
+    "Average (with weights) cluster centroid positions when calculating curren pose"
+  );
+
+  diagnostic_updater_ = std::make_shared<diagnostic_updater::Updater>(this);
 }
 
 AmclNode::~AmclNode()
@@ -245,10 +291,14 @@ AmclNode::on_configure(const rclcpp_lifecycle::State & /*state*/)
   initMessageFilters();
   initPubSub();
   initServices();
+  initDiagnostic();
   initOdometry();
   executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
   executor_->add_callback_group(callback_group_, get_node_base_interface());
   executor_thread_ = std::make_unique<nav2_util::NodeThread>(executor_);
+
+  ext_pose_buffer_ = std::make_unique<ExternalPoseBuffer>(ext_pose_search_tolerance_sec_);
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -391,10 +441,30 @@ AmclNode::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 }
 
 bool
+AmclNode::isExtPoseActive()
+{
+  if (last_ext_pose_received_ts_.nanoseconds() == 0) {
+    RCLCPP_DEBUG(
+      get_logger(), "External pose has not been received yet");
+    return false;
+  }
+
+  rclcpp::Duration d = now() - last_ext_pose_received_ts_;
+  if (d.seconds() > ext_pose_check_interval_.count()) {
+    RCLCPP_WARN(
+      get_logger(), "No external pose received for %f"
+      " seconds. Swithing it to inactive state", d.seconds());
+      return false;
+  }
+
+  return true;
+}
+
+bool
 AmclNode::checkElapsedTime(std::chrono::seconds check_interval, rclcpp::Time last_time)
 {
   rclcpp::Duration elapsed_time = now() - last_time;
-  if (elapsed_time.nanoseconds() * 1e-9 > check_interval.count()) {
+  if (elapsed_time.seconds() > check_interval.count()) {
     return true;
   }
   return false;
@@ -505,6 +575,16 @@ AmclNode::nomotionUpdateCallback(
 }
 
 void
+AmclNode::getInitialPoseStatusCallback(
+  const std::shared_ptr<cmr_msgs::srv::GetStatus::Request>,
+  std::shared_ptr<cmr_msgs::srv::GetStatus::Response> response)
+{
+  response->status = response->STATUS_NOT_READY;
+
+  if(initial_pose_is_known_) response->status = response->STATUS_OK;
+}
+
+void
 AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
 {
   std::lock_guard<std::recursive_mutex> cfl(mutex_);
@@ -540,6 +620,56 @@ AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::Sha
 }
 
 void
+AmclNode::externalPoseReceived(const geometry_msgs::msg::PoseWithCovarianceStamped& msg) 
+{
+  if (msg.header.frame_id != "map"){
+    RCLCPP_WARN(get_logger(), "Received pose in %s frame, but pose in map frame is required.", msg.header.frame_id.c_str());
+    return;
+  }
+  
+  last_ext_pose_received_ts_ = now();
+
+  ExternalPoseMeasument pose;
+  pose.time_sec = rclcpp::Time(msg.header.stamp).seconds();
+
+  double yaw = tf2::getYaw(msg.pose.pose.orientation);
+
+  double cov_matrix[9] = {msg.pose.covariance[0], msg.pose.covariance[1] ,msg.pose.covariance[5] ,msg.pose.covariance[6] ,msg.pose.covariance[7] ,msg.pose.covariance[11] ,msg.pose.covariance[30] ,msg.pose.covariance[31] ,msg.pose.covariance[35] };
+  memcpy(pose.cov_matrix, cov_matrix, 9*sizeof(double));
+
+  auto& clk = *this->get_clock();
+
+  RCLCPP_DEBUG_THROTTLE(get_logger(), clk, 5000, "Received external pose");
+
+  pose.x = msg.pose.pose.position.x;
+  pose.y = msg.pose.pose.position.y;
+  pose.yaw = yaw;
+
+  Eigen::Matrix3f cov;
+  Eigen::Matrix<float, 3, 1> eigenvalues;
+  Eigen::Matrix3f eigenvalues2;
+  Eigen::Matrix3f eigen_mat;
+  cov << msg.pose.covariance[0] ,msg.pose.covariance[1] ,msg.pose.covariance[5] ,msg.pose.covariance[6] ,msg.pose.covariance[7] ,msg.pose.covariance[11] ,msg.pose.covariance[30] ,msg.pose.covariance[31] ,msg.pose.covariance[35];
+
+  Eigen::SelfAdjointEigenSolver<Eigen::Matrix3f> eigensolver(cov);
+  
+  if (eigensolver.info() != Eigen::Success) 
+    abort();
+
+  eigenvalues = eigensolver.eigenvalues();
+
+  eigenvalues2 << eigenvalues(0,0), 0, 0, 0, eigenvalues(1,0), 0, 0, 0, eigenvalues(2,0);
+
+  eigen_mat = eigenvalues2 * eigensolver.eigenvectors();
+
+  double temp_mat[9] = {eigen_mat(0,0), eigen_mat(0,1), eigen_mat(0,2), eigen_mat(1,0), eigen_mat(1,1), eigen_mat(1,2), eigen_mat(2,0), eigen_mat(2,1), eigen_mat(2,2)};
+
+  memcpy(pose.eigen_matrix, temp_mat, 9*sizeof(double));
+
+  ext_pose_buffer_->addMeasurement(pose);
+}
+
+void
 AmclNode::handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped & msg)
 {
   std::lock_guard<std::recursive_mutex> cfl(mutex_);
@@ -553,7 +683,7 @@ AmclNode::handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped & msg)
     // Check if the transform is available
     tx_odom = tf_buffer_->lookupTransform(
       base_frame_id_, tf2_ros::fromMsg(msg.header.stamp),
-      base_frame_id_, tf2_time, odom_frame_id_);
+      base_frame_id_, tf2_time, odom_frame_id_, transform_lookup_timeout_);
   } catch (tf2::TransformException & e) {
     // If we've never sent a transform, then this is normal, because the
     // global_frame_id_ frame doesn't exist.  We only care about in-time
@@ -577,7 +707,7 @@ AmclNode::handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped & msg)
 
   RCLCPP_INFO(
     get_logger(), "Setting pose (%.6f): %.3f %.3f %.3f",
-    now().nanoseconds() * 1e-9,
+    now().seconds(),
     pose_new.getOrigin().x(),
     pose_new.getOrigin().y(),
     tf2::getYaw(pose_new.getRotation()));
@@ -679,24 +809,54 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
 
     // Resample the particles
     if (!(++resample_count_ % resample_interval_)) {
+      
+      if(!isExtPoseActive()){
+        // if external position source is inactive, it considered invalid
+        pf_->ext_pose_is_valid = 0;
+      } else {
+        ExternalPoseMeasument tmp;
+        if(ext_pose_buffer_->findClosestMeasurement(rclcpp::Time(laser_scan->header.stamp).seconds(), tmp)) {
+          pf_->ext_pose_is_valid = 1;
+
+          pf_->ext_x = tmp.x;
+          pf_->ext_y = tmp.y;
+          pf_->ext_yaw = tmp.yaw;
+
+          memcpy(pf_->cov_matrix, tmp.cov_matrix, 9*sizeof(double));
+          memcpy(pf_->eigen_matrix, tmp.eigen_matrix, 9*sizeof(double));
+        } else {
+          pf_->ext_pose_is_valid = 0;
+          RCLCPP_WARN(get_logger(), "No close measurement exists");
+        }
+      }
+
+      // TODO:
+      // overload checkElapsedTime to be able to take start time as arguement
+
       pf_update_resample(pf_);
       resampled = true;
     }
 
     pf_sample_set_t * set = pf_->sets + pf_->current_set;
-    RCLCPP_DEBUG(get_logger(), "Num samples: %d\n", set->sample_count);
+    RCLCPP_DEBUG(get_logger(), "Num samples: %d", set->sample_count);
 
     if (!force_update_) {
       publishParticleCloud(set);
     }
   }
   if (resampled || force_publication || !first_pose_sent_) {
-    amcl_hyp_t max_weight_hyps;
-    std::vector<amcl_hyp_t> hyps;
-    int max_weight_hyp = -1;
-    if (getMaxWeightHyp(hyps, max_weight_hyps, max_weight_hyp)) {
-      publishAmclPose(laser_scan, hyps, max_weight_hyp);
-      calculateMaptoOdomTransform(laser_scan, hyps, max_weight_hyp);
+    amcl_hyp_t best_hyp;
+    bool ret = false;
+
+    if(use_cluster_averaging_){
+      ret = getMeanWeightedClustersCentroid(best_hyp);
+    } else {
+      ret = getMaxWeightHyp(best_hyp);
+    }
+
+    if (ret) {
+      publishAmclPose(best_hyp, laser_scan->header.stamp); // estimated_pose = pose(best_cluster.mean, filter.covariance)
+      calculateMaptoOdomTransform(best_hyp, laser_scan->header.stamp);
 
       if (tf_broadcast_ == true) {
         // We want to send a transform that is good up until a
@@ -718,6 +878,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
       sendMapToOdomTransform(transform_expiration);
     }
   }
+  diagnostic_updater_->force_update();
 }
 
 bool AmclNode::addNewScanner(
@@ -864,13 +1025,47 @@ AmclNode::publishParticleCloud(const pf_sample_set_t * set)
 }
 
 bool
-AmclNode::getMaxWeightHyp(
-  std::vector<amcl_hyp_t> & hyps, amcl_hyp_t & max_weight_hyps,
-  int & max_weight_hyp)
+AmclNode::getMeanWeightedClustersCentroid(amcl_hyp_t & mean_centroid){
+    double weighted_x = 0.0;    
+    double weighted_y = 0.0;
+    double weighted_yaw = 0.0;
+    double weighted_w = 0.0;
+    for (int cluster_idx = 0;
+      cluster_idx < pf_->sets[pf_->current_set].cluster_count; cluster_idx++)
+    {
+      double weight;
+      pf_vector_t pose_mean;
+      pf_matrix_t pose_cov;
+      if (!pf_get_cluster_stats(pf_, cluster_idx, &weight, &pose_mean, &pose_cov)) {
+        RCLCPP_ERROR(get_logger(), "Couldn't get stats on cluster %d", cluster_idx);
+        return false;
+      }
+
+      weighted_x += pose_mean.v[0] * weight;
+      weighted_y += pose_mean.v[1] * weight;
+      weighted_yaw += pose_mean.v[2] * weight;
+
+      weighted_w += weight * weight;
+    }
+
+    mean_centroid.pf_pose_mean.v[0] = weighted_x;
+    mean_centroid.pf_pose_mean.v[1] = weighted_y;
+    mean_centroid.pf_pose_mean.v[2] = weighted_yaw;
+
+    mean_centroid.weight = weighted_w;
+;
+
+    RCLCPP_DEBUG(get_logger(), "Mean centroid pose: [%f, %f, %f]", weighted_x, weighted_y, weighted_yaw);
+    RCLCPP_DEBUG(get_logger(), "Mean centroid weight: [%f]", weighted_w);
+
+    return true;
+}
+
+bool
+AmclNode::getMaxWeightHyp(amcl_hyp_t & max_weight_hyp)
 {
   // Read out the current hypotheses
   double max_weight = 0.0;
-  hyps.resize(pf_->sets[pf_->current_set].cluster_count);
   for (int hyp_count = 0;
     hyp_count < pf_->sets[pf_->current_set].cluster_count; hyp_count++)
   {
@@ -882,24 +1077,34 @@ AmclNode::getMaxWeightHyp(
       return false;
     }
 
-    hyps[hyp_count].weight = weight;
-    hyps[hyp_count].pf_pose_mean = pose_mean;
-    hyps[hyp_count].pf_pose_cov = pose_cov;
+    RCLCPP_DEBUG(
+      get_logger(), "Hypotheses No %i:\t weight: %.3f",
+      hyp_count+1, weight);
+      RCLCPP_DEBUG(
+      get_logger(), "Pose: %.3f %.3f %.3f",
+      pose_mean.v[0],
+      pose_mean.v[1],
+      pose_mean.v[2]);
 
-    if (hyps[hyp_count].weight > max_weight) {
-      max_weight = hyps[hyp_count].weight;
-      max_weight_hyp = hyp_count;
+    if (weight > max_weight) {
+      RCLCPP_DEBUG(get_logger(), "Max weight:\t %f", max_weight);
+      RCLCPP_DEBUG(get_logger(), "Hyp weight:\t %f", weight);
+      RCLCPP_DEBUG(get_logger(), "CHANGED MAX WEIGHT OR NO HAVING WEIGHT YET");
+
+      max_weight = weight;
+
+      max_weight_hyp.weight = weight;
+      max_weight_hyp.pf_pose_mean = pose_mean;
+      max_weight_hyp.pf_pose_cov = pose_cov;
     }
   }
 
   if (max_weight > 0.0) {
     RCLCPP_DEBUG(
       get_logger(), "Max weight pose: %.3f %.3f %.3f",
-      hyps[max_weight_hyp].pf_pose_mean.v[0],
-      hyps[max_weight_hyp].pf_pose_mean.v[1],
-      hyps[max_weight_hyp].pf_pose_mean.v[2]);
-
-    max_weight_hyps = hyps[max_weight_hyp];
+      max_weight_hyp.pf_pose_mean.v[0],
+      max_weight_hyp.pf_pose_mean.v[1],
+      max_weight_hyp.pf_pose_mean.v[2]);
     return true;
   }
   return false;
@@ -907,8 +1112,8 @@ AmclNode::getMaxWeightHyp(
 
 void
 AmclNode::publishAmclPose(
-  const sensor_msgs::msg::LaserScan::ConstSharedPtr & laser_scan,
-  const std::vector<amcl_hyp_t> & hyps, const int & max_weight_hyp)
+  const amcl_hyp_t & best_hyp,
+  const builtin_interfaces::msg::Time & timestamp_msg)
 {
   // If initial pose is not known, AMCL does not know the current pose
   if (!initial_pose_is_known_) {
@@ -924,18 +1129,18 @@ AmclNode::publishAmclPose(
   auto p = std::make_unique<geometry_msgs::msg::PoseWithCovarianceStamped>();
   // Fill in the header
   p->header.frame_id = global_frame_id_;
-  p->header.stamp = laser_scan->header.stamp;
+  p->header.stamp = timestamp_msg;
   // Copy in the pose
-  p->pose.pose.position.x = hyps[max_weight_hyp].pf_pose_mean.v[0];
-  p->pose.pose.position.y = hyps[max_weight_hyp].pf_pose_mean.v[1];
-  p->pose.pose.orientation = orientationAroundZAxis(hyps[max_weight_hyp].pf_pose_mean.v[2]);
+  p->pose.pose.position.x = best_hyp.pf_pose_mean.v[0];
+  p->pose.pose.position.y = best_hyp.pf_pose_mean.v[1];
+  p->pose.pose.orientation = orientationAroundZAxis(best_hyp.pf_pose_mean.v[2]);
   // Copy in the covariance, converting from 3-D to 6-D
   pf_sample_set_t * set = pf_->sets + pf_->current_set;
   for (int i = 0; i < 2; i++) {
     for (int j = 0; j < 2; j++) {
       // Report the overall filter covariance, rather than the
       // covariance for the highest-weight cluster
-      // p->covariance[6*i+j] = hyps[max_weight_hyp].pf_pose_cov.m[i][j];
+      // p->covariance[6*i+j] = best_hyp.pf_pose_cov.m[i][j];
       p->pose.covariance[6 * i + j] = set->cov.m[i][j];
     }
   }
@@ -947,7 +1152,7 @@ AmclNode::publishAmclPose(
   temp += p->pose.pose.position.x + p->pose.pose.position.y;
   if (!std::isnan(temp)) {
     RCLCPP_DEBUG(get_logger(), "Publishing pose");
-    last_published_pose_ = *p;
+    last_published_pose_ = *p; // Update last_published_pose_
     first_pose_sent_ = true;
     pose_pub_->publish(std::move(p));
   } else {
@@ -958,29 +1163,29 @@ AmclNode::publishAmclPose(
 
   RCLCPP_DEBUG(
     get_logger(), "New pose: %6.3f %6.3f %6.3f",
-    hyps[max_weight_hyp].pf_pose_mean.v[0],
-    hyps[max_weight_hyp].pf_pose_mean.v[1],
-    hyps[max_weight_hyp].pf_pose_mean.v[2]);
+    best_hyp.pf_pose_mean.v[0],
+    best_hyp.pf_pose_mean.v[1],
+    best_hyp.pf_pose_mean.v[2]);
 }
 
 void
 AmclNode::calculateMaptoOdomTransform(
-  const sensor_msgs::msg::LaserScan::ConstSharedPtr & laser_scan,
-  const std::vector<amcl_hyp_t> & hyps, const int & max_weight_hyp)
+  const amcl_hyp_t & best_hyp,
+  const builtin_interfaces::msg::Time & timestamp_msg)
 {
   // subtracting base to odom from map to base and send map to odom instead
   geometry_msgs::msg::PoseStamped odom_to_map;
   try {
     tf2::Quaternion q;
-    q.setRPY(0, 0, hyps[max_weight_hyp].pf_pose_mean.v[2]);
+    q.setRPY(0, 0, best_hyp.pf_pose_mean.v[2]);
     tf2::Transform tmp_tf(q, tf2::Vector3(
-        hyps[max_weight_hyp].pf_pose_mean.v[0],
-        hyps[max_weight_hyp].pf_pose_mean.v[1],
+        best_hyp.pf_pose_mean.v[0],
+        best_hyp.pf_pose_mean.v[1],
         0.0));
 
     geometry_msgs::msg::PoseStamped tmp_tf_stamped;
     tmp_tf_stamped.header.frame_id = base_frame_id_;
-    tmp_tf_stamped.header.stamp = laser_scan->header.stamp;
+    tmp_tf_stamped.header.stamp = timestamp_msg;
     tf2::toMsg(tmp_tf.inverse(), tmp_tf_stamped.pose);
 
     tf_buffer_->transform(tmp_tf_stamped, odom_to_map, odom_frame_id_);
@@ -1014,19 +1219,19 @@ AmclNode::createLaserObject()
   if (sensor_model_type_ == "beam") {
     return new nav2_amcl::BeamModel(
       z_hit_, z_short_, z_max_, z_rand_, sigma_hit_, lambda_short_,
-      0.0, max_beams_, map_);
+      0.0, max_beams_, map_, laser_importance_factor_);
   }
 
   if (sensor_model_type_ == "likelihood_field_prob") {
     return new nav2_amcl::LikelihoodFieldModelProb(
       z_hit_, z_rand_, sigma_hit_,
       laser_likelihood_max_dist_, do_beamskip_, beam_skip_distance_, beam_skip_threshold_,
-      beam_skip_error_threshold_, max_beams_, map_);
+      beam_skip_error_threshold_, max_beams_, map_, laser_importance_factor_);
   }
 
   return new nav2_amcl::LikelihoodFieldModel(
     z_hit_, z_rand_, sigma_hit_,
-    laser_likelihood_max_dist_, max_beams_, map_);
+    laser_likelihood_max_dist_, max_beams_, map_, laser_importance_factor_);
 }
 
 void
@@ -1034,6 +1239,7 @@ AmclNode::initParameters()
 {
   double save_pose_rate;
   double tmp_tol;
+  double lookup_timeout;
 
   get_parameter("alpha1", alpha1_);
   get_parameter("alpha2", alpha2_);
@@ -1070,6 +1276,7 @@ AmclNode::initParameters()
   get_parameter("sigma_hit", sigma_hit_);
   get_parameter("tf_broadcast", tf_broadcast_);
   get_parameter("transform_tolerance", tmp_tol);
+  get_parameter("transform_lookup_timeout", lookup_timeout);
   get_parameter("update_min_a", a_thresh_);
   get_parameter("update_min_d", d_thresh_);
   get_parameter("z_hit", z_hit_);
@@ -1080,9 +1287,17 @@ AmclNode::initParameters()
   get_parameter("always_reset_initial_pose", always_reset_initial_pose_);
   get_parameter("scan_topic", scan_topic_);
   get_parameter("map_topic", map_topic_);
-
+  get_parameter("laser_importance_factor", laser_importance_factor_);
+  get_parameter("std_warn_level_x", std_warn_level_x_);
+  get_parameter("std_warn_level_y", std_warn_level_y_);
+  get_parameter("std_warn_level_yaw", std_warn_level_yaw_);
+  get_parameter("max_particle_gen_prob_ext_pose", max_particle_gen_prob_ext_pose_);
+  get_parameter("ext_pose_search_tolerance_sec", ext_pose_search_tolerance_sec_);
+  get_parameter("use_cluster_averaging", use_cluster_averaging_);
+  
   save_pose_period_ = tf2::durationFromSec(1.0 / save_pose_rate);
   transform_tolerance_ = tf2::durationFromSec(tmp_tol);
+  transform_lookup_timeout_ = tf2::durationFromSec(lookup_timeout);
 
   odom_frame_id_ = nav2_util::strip_leading_slash(odom_frame_id_);
   base_frame_id_ = nav2_util::strip_leading_slash(base_frame_id_);
@@ -1141,7 +1356,6 @@ AmclNode::dynamicParametersCallback(
   std::lock_guard<std::recursive_mutex> cfl(mutex_);
   rcl_interfaces::msg::SetParametersResult result;
   double save_pose_rate;
-  double tmp_tol;
 
   int max_particles = max_particles_;
   int min_particles = min_particles_;
@@ -1150,6 +1364,7 @@ AmclNode::dynamicParametersCallback(
   bool reinit_odom = false;
   bool reinit_laser = false;
   bool reinit_map = false;
+  bool reinit_ext_pose = false;
 
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
@@ -1246,9 +1461,7 @@ AmclNode::dynamicParametersCallback(
         sigma_hit_ = parameter.as_double();
         reinit_laser = true;
       } else if (param_name == "transform_tolerance") {
-        tmp_tol = parameter.as_double();
-        transform_tolerance_ = tf2::durationFromSec(tmp_tol);
-        reinit_laser = true;
+        RCLCPP_WARN(get_logger(), "Cannot change param [%s] due to issue with reinitialization of message filters (#28)", param_name.c_str());
       } else if (param_name == "update_min_a") {
         a_thresh_ = parameter.as_double();
       } else if (param_name == "update_min_d") {
@@ -1265,6 +1478,21 @@ AmclNode::dynamicParametersCallback(
       } else if (param_name == "z_short") {
         z_short_ = parameter.as_double();
         reinit_laser = true;
+      } else if (param_name == "std_warn_level_x") {
+        std_warn_level_x_ = parameter.as_double();
+      } else if (param_name == "std_warn_level_y") {
+        std_warn_level_y_ = parameter.as_double();
+      } else if (param_name == "std_warn_level_yaw") {
+        std_warn_level_yaw_ = parameter.as_double();
+      } else if (param_name == "laser_importance_factor") {
+        laser_importance_factor_ = parameter.as_double();
+        reinit_laser = true;
+      } else if (param_name == "max_particle_gen_prob_ext_pose") {
+        max_particle_gen_prob_ext_pose_ = parameter.as_double();
+        pf_->max_particle_gen_prob_ext_pose = max_particle_gen_prob_ext_pose_;
+      } else if (param_name == "ext_pose_search_tolerance_sec") {
+        ext_pose_search_tolerance_sec_ = parameter.as_double();
+        reinit_ext_pose = true;
       }
     } else if (param_type == ParameterType::PARAMETER_STRING) {
       if (param_name == "base_frame_id") {
@@ -1278,11 +1506,9 @@ AmclNode::dynamicParametersCallback(
         sensor_model_type_ = parameter.as_string();
         reinit_laser = true;
       } else if (param_name == "odom_frame_id") {
-        odom_frame_id_ = parameter.as_string();
-        reinit_laser = true;
+        RCLCPP_WARN(get_logger(), "Cannot change param [%s] due to issue with reinitialization of message filters (#28)", param_name.c_str());
       } else if (param_name == "scan_topic") {
-        scan_topic_ = parameter.as_string();
-        reinit_laser = true;
+        RCLCPP_WARN(get_logger(), "Cannot change param [%s] due to issue with reinitialization of message filters (#28)", param_name.c_str());
       } else if (param_name == "robot_model_type") {
         robot_model_type_ = parameter.as_string();
         reinit_odom = true;
@@ -1333,6 +1559,15 @@ AmclNode::dynamicParametersCallback(
       pf_free(pf_);
       pf_ = NULL;
     }
+
+    init_pose_[0] = last_published_pose_.pose.pose.position.x;
+    init_pose_[1] = last_published_pose_.pose.pose.position.y;
+    init_pose_[2] = tf2::getYaw(last_published_pose_.pose.pose.orientation);
+
+    init_cov_[0] = last_published_pose_.pose.covariance[0];
+    init_cov_[1] = last_published_pose_.pose.covariance[7];
+    init_cov_[2] = last_published_pose_.pose.covariance[35];
+
     initParticleFilter();
   }
 
@@ -1347,10 +1582,6 @@ AmclNode::dynamicParametersCallback(
     lasers_.clear();
     lasers_update_.clear();
     frame_to_laser_.clear();
-    laser_scan_connection_.disconnect();
-    laser_scan_sub_.reset();
-
-    initMessageFilters();
   }
 
   // Re-initialize the map
@@ -1359,6 +1590,10 @@ AmclNode::dynamicParametersCallback(
     map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
       map_topic_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
       std::bind(&AmclNode::mapReceived, this, std::placeholders::_1));
+  }
+
+  if(reinit_ext_pose) {
+    ext_pose_buffer_.reset(new ExternalPoseBuffer(ext_pose_search_tolerance_sec_));
   }
 
   result.successful = true;
@@ -1523,6 +1758,10 @@ AmclNode::initPubSub()
     map_topic_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
     std::bind(&AmclNode::mapReceived, this, std::placeholders::_1));
 
+  external_pose_sub_ = create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
+    "externalpose", rclcpp::SystemDefaultsQoS(),
+    std::bind(&AmclNode::externalPoseReceived, this, std::placeholders::_1));
+
   RCLCPP_INFO(get_logger(), "Subscribed to map topic.");
 }
 
@@ -1536,6 +1775,17 @@ AmclNode::initServices()
   nomotion_update_srv_ = create_service<std_srvs::srv::Empty>(
     "request_nomotion_update",
     std::bind(&AmclNode::nomotionUpdateCallback, this, _1, _2, _3));
+
+  get_initial_pose_status_srv_ = this->create_service<cmr_msgs::srv::GetStatus>(
+    "get_initial_pose_status",
+    std::bind(&AmclNode::getInitialPoseStatusCallback, this, _1, _2));
+}
+
+void
+AmclNode::initDiagnostic()
+{
+  diagnostic_updater_->setHardwareID("none");
+  diagnostic_updater_->add("Standard deviation", this, &AmclNode::standardDeviationDiagnostics);
 }
 
 void
@@ -1572,7 +1822,7 @@ AmclNode::initParticleFilter()
   pf_ = pf_alloc(
     min_particles_, max_particles_, alpha_slow_, alpha_fast_,
     (pf_init_model_fn_t)AmclNode::uniformPoseGenerator,
-    reinterpret_cast<void *>(map_));
+    reinterpret_cast<void *>(map_), max_particle_gen_prob_ext_pose_);
   pf_->pop_err = pf_err_;
   pf_->pop_z = pf_z_;
 
@@ -1599,6 +1849,40 @@ AmclNode::initLaserScan()
 {
   scan_error_count_ = 0;
   last_laser_received_ts_ = rclcpp::Time(0);
+}
+
+void
+AmclNode::initExternalPose()
+{
+  last_laser_received_ts_ = rclcpp::Time(0);
+  ext_pose_check_interval_ = std::chrono::seconds{1};
+  ext_pose_active_ = false;
+}
+
+// Publish estimated standard deviation flag of the filter, coming from pose covariance
+// 'true' if exceeds any of threshold
+// Based on https://github.com/ros-planning/navigation/pull/807
+void
+AmclNode::standardDeviationDiagnostics(diagnostic_updater::DiagnosticStatusWrapper& stat)
+{
+  using DiagStatus = diagnostic_msgs::msg::DiagnosticStatus;
+
+  double std_x = sqrt(last_published_pose_.pose.covariance[6*0+0]);
+  double std_y = sqrt(last_published_pose_.pose.covariance[6*1+1]);
+  double std_yaw = sqrt(last_published_pose_.pose.covariance[6*5+5]);
+
+  stat.add("std_x", std_x);
+  stat.add("std_y", std_y);
+  stat.add("std_yaw", std_yaw);
+  stat.add("std_warn_level_x", std_warn_level_x_);
+  stat.add("std_warn_level_y", std_warn_level_y_);
+  stat.add("std_warn_level_yaw", std_warn_level_yaw_);
+
+  if (std_x > std_warn_level_x_ || std_y > std_warn_level_y_ || std_yaw > std_warn_level_yaw_) {
+    stat.summary(DiagStatus::WARN, "Deviation too large");
+  } else {
+    stat.summary(DiagStatus::OK, "OK");
+  }
 }
 
 }  // namespace nav2_amcl

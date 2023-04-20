@@ -74,7 +74,8 @@ public:
     return {
       BT::InputPort<geometry_msgs::msg::PoseStamped>("goal", "Destination"),
       BT::InputPort<std::string>("global_frame", std::string("map"), "Global frame"),
-      BT::InputPort<std::string>("robot_base_frame", std::string("base_link"), "Robot base frame")
+      BT::InputPort<std::string>("robot_base_frame", std::string("base_link"), "Robot base frame"),
+      BT::InputPort<double>("distance_tolerance", 1.0,"Distance Tolerance")
     };
   }
 
@@ -90,10 +91,10 @@ private:
   std::shared_ptr<tf2_ros::Buffer> tf_;
 
   bool initialized_;
-  double goal_reached_tol_;
   std::string global_frame_;
   std::string robot_base_frame_;
   double transform_tolerance_;
+  double goal_reached_tol_;
 };
 
 }  // namespace nav2_behavior_tree
