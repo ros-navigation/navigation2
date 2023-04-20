@@ -30,38 +30,94 @@ class BreadthFirstSearch
 public:
   typedef std::unordered_map<unsigned int, Node> Graph;
   typedef Node::NodePtr NodePtr;
+  typedef Node::NodeVector NodeVector;
+  typedef Node::NodeVector::iterator NeighborIterator;
   typedef Node::Coordinates Coordinates;
   typedef Node::CoordinateVector CoordinateVector;
+  typedef Node::NodeGetter NodeGetter;
   typedef std::queue<NodePtr> NodeQueue;
 
-  BreadthFirstSearch();
+  /**
+   * @brief A constructor for nav2_route::BreadthFirstSearch
+   */
+  BreadthFirstSearch() = default;
 
+  /**
+   * @brief Set the starting pose for the search
+   * @param mx The node X index of the start
+   * @param my The node Y index of the start
+   */
   void setStart(
     const unsigned int & mx,
     const unsigned int & my);
 
-  // TODO(jwallace): should pass a list of goals
+ /**
+  * @brief Set the goal for the search
+  * @param mx The node X index of the start
+  * @param my The node Y index of the start
+  */
   void setGoal(
     const unsigned int & mx,
     const unsigned int & my);
 
-
-  Coordinates search(const Coordinates & start, const Coordinates & goal);
+  /**
+   * @brief Create a path from the given costmap, start and goal
+   * @param path The output path if the search was successful
+   * @return True if a plan was successfully calculated
+   */
+  bool search(CoordinateVector & path);
 
   void initialize(unsigned int x_size, unsigned int y_size);
 
+  void setCollisionChecker(CollisionChecker * collision_checker);
+
 private:
+
+  /**
+   * @brief Checks if node is the goal node
+   * @param node The node to check
+   * @return True if the node is the goal node
+   */
   inline bool isGoal(NodePtr & node);
 
+  /**
+   * @brief Adds a node to the graph
+   * @param index The index of the node to add
+   * @return The node added to the graph
+   */
+  NodePtr addToGraph(const unsigned int & index);
+
+  /**
+   * @brief Adds a node to the queue
+   * @param node The node to add
+   */
+  void addToQueue(NodePtr & node);
+
+  /**
+   * @brief Gets the next node in the queue
+   * @return The next node in the queue
+   */
+  NodePtr getNextNode();
+
+  /**
+   * @brief Clear the queue
+   */
+  void clearQueue();
+
+  /**
+   * @brief Clear the graph
+   */
+  void clearGraph();
+
   Graph graph_;
-  NodePtr start_;
-  NodePtr goal_;
+  NodePtr start_{nullptr};
+  NodePtr goal_{nullptr};
   NodeQueue queue_;
 
-  unsigned int x_size_;
-  unsigned int y_size_;
+  unsigned int x_size_{0};
+  unsigned int y_size_{0};
 
-  NodePtr addToGraph(const unsigned int & index);
+  CollisionChecker *collision_checker_{nullptr};
 };
 }  // namespace nav2_route
 

@@ -26,7 +26,7 @@ class Node {
  public:
   typedef Node *NodePtr;
   typedef std::vector<NodePtr> NodeVector;
-  typedef std::function<bool(const unsigned int &, Node *&)> NodeGetter;
+  typedef std::function<void(const unsigned int &, Node *&)> NodeGetter;
 
   struct Coordinates {
     Coordinates() {}
@@ -75,11 +75,11 @@ class Node {
   static inline Coordinates getCoords(
       const unsigned int &index) {
     // Unsigned and sign ints... bad. Get andrew to take a look
-    const unsigned int &width = neighbors_grid_offsets[3];
+    const unsigned int &width = x_size_;
     return {static_cast<float>(index % width), static_cast<float>(index / width)};
   }
 
-  static void initMotionModel(int x_size);
+  static void initMotionModel(int x_size, int y_size);
 
   bool isNodeValid(CollisionChecker *collision_checker, const bool &traverse_unknown);
 
@@ -91,13 +91,16 @@ class Node {
 
   bool backtracePath(CoordinateVector &path);
 
-  NodePtr parent;
+  NodePtr parent{nullptr};
   static std::vector<int> neighbors_grid_offsets;
 
  private:
   unsigned int index_;
-  bool visited_;
-  bool queued_;
+  bool visited_{false};
+  bool queued_{false};
+
+  static unsigned int x_size_;
+  static unsigned int max_index_;
 };
 
 } // namespace nav2_route
