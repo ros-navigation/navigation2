@@ -71,8 +71,6 @@ TEST(test_node, test_node_neighbors)
 
   std::unordered_map<unsigned int, Node> graph;
 
-  //Add start to graph
-
   graph.emplace(0, Node(0));
 
   Node::NodeGetter neighbor_getter =
@@ -80,8 +78,7 @@ TEST(test_node, test_node_neighbors)
     {
       auto iter = graph.find(index);
 
-      if (iter != graph.end())
-      {
+      if (iter != graph.end()) {
         neighbor_rtn = &(iter->second);
       }
 

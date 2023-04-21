@@ -19,6 +19,7 @@
 #include <queue>
 #include <memory>
 #include <unordered_map>
+#include <vector>
 
 #include "nav2_route/node.hpp"
 
@@ -51,14 +52,14 @@ public:
     const unsigned int & mx,
     const unsigned int & my);
 
- /**
-  * @brief Set the goal for the search
-  * @param mx The node X index of the start
-  * @param my The node Y index of the start
-  */
-  void setGoal(
-    const unsigned int & mx,
-    const unsigned int & my);
+  /**
+   * @brief Set the goal for the search
+   * @param mx The node X index of the start
+   * @param my The node Y index of the start
+   */
+  void setGoals(
+    const std::vector<unsigned int> & mxs,
+    const std::vector<unsigned int> & mys);
 
   /**
    * @brief Create a path from the given costmap, start and goal
@@ -72,7 +73,6 @@ public:
   void setCollisionChecker(CollisionChecker * collision_checker);
 
 private:
-
   /**
    * @brief Checks if node is the goal node
    * @param node The node to check
@@ -111,13 +111,13 @@ private:
 
   Graph graph_;
   NodePtr start_{nullptr};
-  NodePtr goal_{nullptr};
+  NodeVector goals_{nullptr};
   NodeQueue queue_;
 
   unsigned int x_size_{0};
   unsigned int y_size_{0};
 
-  CollisionChecker *collision_checker_{nullptr};
+  CollisionChecker * collision_checker_{nullptr};
 };
 }  // namespace nav2_route
 

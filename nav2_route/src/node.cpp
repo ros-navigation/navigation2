@@ -47,58 +47,54 @@ void Node::initMotionModel(int x_size, int y_size)
 }
 
 void Node::getNeighbors(
-  NodeGetter & node_getter, 
-  CollisionChecker* collision_checker, 
-  const bool & traverse_unknown, 
+  NodeGetter & node_getter,
+  CollisionChecker * collision_checker,
+  const bool & traverse_unknown,
   NodeVector & neighbors)
 {
   unsigned int index;
-  NodePtr neighbor; 
+  NodePtr neighbor;
   int node_i = static_cast<int>(getIndex());
   const Coordinates p_coord = getCoords(node_i);
   Coordinates c_coord;
 
-  for(const int & neighbors_grid_offset : neighbors_grid_offsets)
-  {
+  for (const int & neighbors_grid_offset : neighbors_grid_offsets) {
     index = node_i + neighbors_grid_offset;
-    std::cout << "Index" << index << std::endl;
+    // std::cout << "Index" << index << std::endl;
     c_coord = getCoords(index);
 
-    // Check for wrap around conditions 
+    // Check for wrap around conditions
     if (std::fabs(p_coord.x - c_coord.x) > 1 || std::fabs(p_coord.y - c_coord.y) > 1) {
-      std::cout << "Index wraps" << std::endl;
+//      std::cout << "Index wraps" << std::endl;
       continue;
     }
 
     // Check for out of bounds
     if (index >= max_index_) {
-      std::cout << "Max index hit" << std::endl;
+      // std::cout << "Max index hit" << std::endl;
       continue;
     }
 
     node_getter(index, neighbor);
 
-    if(neighbor->isNodeValid(collision_checker, traverse_unknown) ) {
+    if (neighbor->isNodeValid(collision_checker, traverse_unknown) ) {
       neighbors.push_back(neighbor);
     }
   }
 }
 
-bool Node::isNodeValid(CollisionChecker * collision_checker, const bool &traverse_unknown)
+bool Node::isNodeValid(CollisionChecker * collision_checker, const bool & traverse_unknown)
 {
   return !collision_checker->inCollision(getIndex(), traverse_unknown);
 }
 
 bool Node::backtracePath(nav2_route::Node::CoordinateVector & path)
 {
-  if (!this->parent) {
-    return false;
-  }
-
   NodePtr current_node = this;
 
   while (current_node->parent) {
     path.push_back(Node::getCoords(current_node->getIndex()));
+    current_node = current_node->parent;
   }
 
   // add the start pose
@@ -107,4 +103,4 @@ bool Node::backtracePath(nav2_route::Node::CoordinateVector & path)
   return true;
 }
 
-} 
+}  // namespace nav2_route
