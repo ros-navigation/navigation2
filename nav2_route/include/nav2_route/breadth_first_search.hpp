@@ -68,8 +68,12 @@ public:
    */
   bool search(CoordinateVector & path);
 
-  void initialize(unsigned int x_size, unsigned int y_size);
+  void initialize(int max_iterations);
 
+  /**
+   * @brief Set the collision checker
+   * @param collision_checker
+   */
   void setCollisionChecker(CollisionChecker * collision_checker);
 
 private:
@@ -118,6 +122,8 @@ private:
   unsigned int y_size_{0};
 
   CollisionChecker * collision_checker_{nullptr};
+  
+  int max_iterations_{0};
 };
 }  // namespace nav2_route
 

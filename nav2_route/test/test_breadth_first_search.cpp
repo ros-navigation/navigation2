@@ -15,36 +15,68 @@
 #include <gtest/gtest.h>
 
 #include "nav2_costmap_2d/costmap_2d.hpp"
+#include "nav2_costmap_2d/cost_values.hpp"
 #include "nav2_route/collision_checker.hpp"
 #include "nav2_route/breadth_first_search.hpp"
 
 using namespace nav2_costmap_2d; //NOLINT
 using namespace nav2_route; //NOLINT
 
-TEST(test_breadth_first_search, bfs_test)
+class BFSTestFixture : public ::testing::Test
 {
-  unsigned int x_size = 10;
-  unsigned int y_size = 10;
+public:
+  void initialize(unsigned int x_size, unsigned int y_size)
+  {
+    costmap = std::make_unique<Costmap2D>(x_size, y_size, 0.0, 0.0, 1);
+    collision_checker = std::make_unique<CollisionChecker>(costmap.get());
 
-  Costmap2D costmap(x_size, y_size, 0.0, 0.0, 1);
-  CollisionChecker collision_checker(&costmap);
+    bfs.initialize(1000);
+    bfs.setCollisionChecker(collision_checker.get());
+  }
 
   BreadthFirstSearch bfs;
+  std::unique_ptr<Costmap2D> costmap;
+  std::unique_ptr<CollisionChecker> collision_checker;
+  BreadthFirstSearch::CoordinateVector path;
+};
 
-  bfs.setCollisionChecker(&collision_checker);
+TEST_F(BFSTestFixture, free_space)
+{
+  initialize(10u, 10u);
 
   bfs.setStart(0u, 0u);
   std::vector<unsigned int> mxs = {2u, 5u};
   std::vector<unsigned int> mys = {3u, 5u};
 
   bfs.setGoals(mxs, mys);
-
-  BreadthFirstSearch::CoordinateVector path;
   bool result = bfs.search(path);
 
   EXPECT_TRUE(result);
+  EXPECT_EQ(path.begin()->x, 2);
+  EXPECT_EQ(path.begin()->y, 3);
+  path.clear();
+}
 
-  for (const auto pose : path) {
-    std::cout << pose.x << " " << pose.y << std::endl;
+TEST_F(BFSTestFixture, wall)
+{
+  initialize(10u, 10u);
+
+  unsigned int mx = 3;
+  for(unsigned int my=0; my < costmap->getSizeInCellsY() -1; ++my) {
+    costmap->setCost(mx, my, LETHAL_OBSTACLE);
   }
+
+  bfs.setStart(0u, 0u);
+
+  std::vector<unsigned int> mxs = {2u, 5u};
+  std::vector<unsigned int> mys = {8u, 0u};
+
+  bfs.setGoals(mxs, mys);
+
+  bool result = bfs.search(path);
+  EXPECT_TRUE(result);
+
+  EXPECT_EQ(path.begin()->x, 2);
+  EXPECT_EQ(path.begin()->y, 8);
+  path.clear();
 }

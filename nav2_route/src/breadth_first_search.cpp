@@ -45,11 +45,10 @@ BreadthFirstSearch::NodePtr BreadthFirstSearch::addToGraph(const unsigned int & 
   return &(graph_.emplace(index, Node(index)).first->second);
 }
 
-void BreadthFirstSearch::initialize(unsigned int x_size, unsigned int y_size)
+void BreadthFirstSearch::initialize(int max_iterations)
 {
   // TODO(jwallace42): Add in iterations and max time parameters, needs to be completed
-  x_size_ = x_size;
-  y_size_ = y_size;
+  max_iterations_ = max_iterations;
 }
 
 void BreadthFirstSearch::setCollisionChecker(nav2_route::CollisionChecker * collision_checker)
@@ -75,6 +74,7 @@ bool BreadthFirstSearch::search(CoordinateVector & path)
   NodePtr neighbor = nullptr;
   NeighborIterator neighbor_iterator;
   NodeVector neighbors;
+  int iterations = 0;
 
   const unsigned int max_index = x_size_ * y_size_;
   NodeGetter node_getter =
@@ -90,7 +90,8 @@ bool BreadthFirstSearch::search(CoordinateVector & path)
 
   addToQueue(start_);
   std::cout << "Start: " << start_ << std::endl;
-  while (!queue_.empty()) {
+  while (iterations < max_iterations_ && !queue_.empty()) {
+    iterations++;
     current_node = getNextNode();
 
     std::cout << "Graph Size: " << graph_.size() << std::endl;
