@@ -36,6 +36,8 @@ class Spin : public TimedBehavior<SpinAction>
   using CostmapInfoType = nav2_core::CostmapInfoType;
 
 public:
+  using SpinActionGoal = SpinAction::Goal;
+
   /**
    * @brief A constructor for nav2_behaviors::Spin
    */
@@ -47,7 +49,7 @@ public:
    * @param command Goal to execute
    * @return Status of behavior
    */
-  ResultStatus onRun(const std::shared_ptr<const SpinAction::Goal> command) override;
+  ResultStatus onRun(const std::shared_ptr<const SpinActionGoal> command) override;
 
   /**
    * @brief Configuration of behavior action
@@ -78,8 +80,6 @@ protected:
     const double & distance,
     geometry_msgs::msg::Twist * cmd_vel,
     geometry_msgs::msg::Pose2D & pose2d);
-
-  using SpinActionGoal = SpinAction::Goal;
 
   SpinAction::Feedback::SharedPtr feedback_;
 

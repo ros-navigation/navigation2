@@ -38,7 +38,6 @@ class DriveOnHeading : public TimedBehavior<ActionT>
   using CostmapInfoType = nav2_core::CostmapInfoType;
 
 public:
-
   /**
    * @brief A constructor for nav2_behaviors::DriveOnHeading
    */

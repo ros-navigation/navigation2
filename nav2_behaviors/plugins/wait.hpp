@@ -35,6 +35,8 @@ class Wait : public TimedBehavior<WaitAction>
   using CostmapInfoType = nav2_core::CostmapInfoType;
 
 public:
+  using WaitActionGoal = WaitAction::Goal;
+
   /**
    * @brief A constructor for nav2_behaviors::Wait
    */
@@ -46,7 +48,7 @@ public:
    * @param command Goal to execute
    * @return Status of behavior
    */
-  ResultStatus onRun(const std::shared_ptr<const WaitAction::Goal> command) override;
+  ResultStatus onRun(const std::shared_ptr<const WaitActionGoal> command) override;
 
   /**
    * @brief Loop function to run behavior
@@ -61,7 +63,6 @@ public:
   CostmapInfoType getResourceInfo() override {return CostmapInfoType::LOCAL;}
 
 protected:
-  using WaitActionGoal = WaitAction::Goal;
   std::chrono::time_point<std::chrono::steady_clock> wait_end_;
   WaitAction::Feedback::SharedPtr feedback_;
 };

@@ -103,7 +103,7 @@ private:
 class BehaviorTest : public ::testing::Test
 {
 protected:
-  BehaviorTest() {SetUp();}
+  BehaviorTest() = default;
   ~BehaviorTest() = default;
 
   void SetUp() override

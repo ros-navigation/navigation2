@@ -48,7 +48,7 @@ enum class Status : int8_t
 struct ResultStatus
 {
   Status status;
-  unsigned short error_code;
+  unsigned short error_code;  //NOLINT
 };
 
 using namespace std::chrono_literals;  //NOLINT
