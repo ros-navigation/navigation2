@@ -37,6 +37,7 @@ class AssistedTeleop : public TimedBehavior<AssistedTeleopAction>
   using CostmapInfoType = nav2_core::CostmapInfoType;
 
 public:
+  using AssistedTeleopActionGoal = AssistedTeleopAction::Goal;
   AssistedTeleop();
 
   /**
@@ -44,7 +45,7 @@ public:
    * @param command Goal to execute
    * @return Status of behavior
    */
-  ResultStatus onRun(const std::shared_ptr<const AssistedTeleopAction::Goal> command) override;
+  ResultStatus onRun(const std::shared_ptr<const AssistedTeleopActionGoal> command) override;
 
   /**
    * @brief func to run at the completion of the action
