@@ -38,6 +38,7 @@ class DriveOnHeading : public TimedBehavior<ActionT>
   using CostmapInfoType = nav2_core::CostmapInfoType;
 
 public:
+
   /**
    * @brief A constructor for nav2_behaviors::DriveOnHeading
    */
@@ -63,13 +64,13 @@ public:
       RCLCPP_INFO(
         this->logger_,
         "DrivingOnHeading in Y and Z not supported, will only move in X.");
-      return ResultStatus{Status::FAILED, 0};
+      return ResultStatus{Status::FAILED, ActionT::Goal::INVALID_INPUT};
     }
 
     // Ensure that both the speed and direction have the same sign
     if (!((command->target.x > 0.0) == (command->speed > 0.0)) ) {
       RCLCPP_ERROR(this->logger_, "Speed and command sign did not match");
-      return ResultStatus{Status::FAILED, 0};
+      return ResultStatus{Status::FAILED, ActionT::Goal::INVALID_INPUT};
     }
 
     command_x_ = command->target.x;
@@ -83,10 +84,10 @@ public:
         this->transform_tolerance_))
     {
       RCLCPP_ERROR(this->logger_, "Initial robot pose is not available.");
-      return ResultStatus{Status::FAILED, 0};
+      return ResultStatus{Status::FAILED, ActionT::Goal::TF_ERROR};
     }
 
-    return ResultStatus{Status::SUCCEEDED, 0};
+    return ResultStatus{Status::SUCCEEDED, ActionT::Goal::NONE};
   }
 
   /**
@@ -110,7 +111,7 @@ public:
         this->transform_tolerance_))
     {
       RCLCPP_ERROR(this->logger_, "Current robot pose is not available.");
-      return ResultStatus{Status::FAILED, 0};
+      return ResultStatus{Status::FAILED, ActionT::Goal::TF_ERROR};
     }
 
     double diff_x = initial_pose_.pose.position.x - current_pose.pose.position.x;
@@ -122,7 +123,7 @@ public:
 
     if (distance >= std::fabs(command_x_)) {
       this->stopRobot();
-      return ResultStatus{Status::SUCCEEDED, 0};
+      return ResultStatus{Status::SUCCEEDED, ActionT::Goal::NONE};
     }
 
     auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>();
@@ -138,12 +139,12 @@ public:
     if (!isCollisionFree(distance, cmd_vel.get(), pose2d)) {
       this->stopRobot();
       RCLCPP_WARN(this->logger_, "Collision Ahead - Exiting DriveOnHeading");
-      return ResultStatus{Status::FAILED, 0};
+      return ResultStatus{Status::FAILED, ActionT::Goal::COLLISION_AHEAD};
     }
 
     this->vel_pub_->publish(std::move(cmd_vel));
 
-    return ResultStatus{Status::RUNNING, 0};
+    return ResultStatus{Status::RUNNING, ActionT::Goal::NONE};
   }
 
   /**

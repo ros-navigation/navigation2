@@ -61,6 +61,7 @@ public:
   CostmapInfoType getResourceInfo() override {return CostmapInfoType::LOCAL;}
 
 protected:
+  using WaitActionGoal = WaitAction::Goal;
   std::chrono::time_point<std::chrono::steady_clock> wait_end_;
   WaitAction::Feedback::SharedPtr feedback_;
 };

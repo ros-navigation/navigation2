@@ -79,6 +79,8 @@ protected:
     geometry_msgs::msg::Twist * cmd_vel,
     geometry_msgs::msg::Pose2D & pose2d);
 
+  using SpinActionGoal = SpinAction::Goal;
+
   SpinAction::Feedback::SharedPtr feedback_;
 
   double min_rotational_vel_;
