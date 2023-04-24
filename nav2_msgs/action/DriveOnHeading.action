@@ -1,3 +1,7 @@
+# Error codes
+# Note: The expected priority order of the error should match the message order
+uint16 NONE=0
+
 #goal definition
 geometry_msgs/Point target
 float32 speed
@@ -5,6 +9,7 @@ builtin_interfaces/Duration time_allowance
 ---
 #result definition
 builtin_interfaces/Duration total_elapsed_time
+uint16 error_code
 ---
 #feedback definition
 float32 distance_traveled

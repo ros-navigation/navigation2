@@ -44,7 +44,7 @@ public:
    * @param command Goal to execute
    * @return Status of behavior
    */
-  Status onRun(const std::shared_ptr<const AssistedTeleopAction::Goal> command) override;
+  ResultStatus onRun(const std::shared_ptr<const AssistedTeleopAction::Goal> command) override;
 
   /**
    * @brief func to run at the completion of the action
@@ -55,7 +55,7 @@ public:
    * @brief Loop function to run behavior
    * @return Status of behavior
    */
-  Status onCycleUpdate() override;
+  ResultStatus onCycleUpdate() override;
 
   /**
    * @brief Method to determine the required costmap info
