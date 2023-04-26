@@ -125,15 +125,21 @@ _commands:
           type: string
         skip:
           type: string
+        restore:
+          default: true
+          type: boolean
         build:
           default: true
           type: boolean
       steps:
         - store_artifacts:
             path: << parameters.workspace >>/lockfile.txt
-        - restore_from_cache:
-            key: << parameters.key >>
-            workspace: << parameters.workspace >>
+        - when:
+            condition: << parameters.restore >>
+            steps:
+              - restore_from_cache:
+                  key: << parameters.key >>
+                  workspace: << parameters.workspace >>
         - when:
             condition: << parameters.build >>
             steps:
@@ -380,6 +386,7 @@ _steps:
       underlay: /opt/underlay_ws
       workspace: /opt/overlay_ws
       mixins: ${OVERLAY_MIXINS}
+      restore: false
   restore_overlay_workspace: &restore_overlay_workspace
     setup_workspace:
       <<: *setup_workspace_overlay
