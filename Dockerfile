@@ -105,20 +105,6 @@ RUN . $UNDERLAY_WS/install/setup.sh && \
       --ignore-src \
     && rm -rf /var/lib/apt/lists/*
 
-# multi-stage for developing
-FROM builder AS dever
-
-# edit apt for caching
-RUN mv /etc/apt/apt.conf.d/docker-clean /etc/apt/
-
-# install developer dependencies
-RUN apt-get update && \
-    apt-get install -y \
-      bash-completion
-
-# source underlay for shell
-RUN echo 'source "$UNDERLAY_WS/install/setup.bash"' >> /etc/bash.bashrc
-
 # multi-stage for testing
 FROM builder AS tester
 
@@ -146,3 +132,74 @@ RUN if [ -n "$RUN_TESTS" ]; then \
         colcon test-result \
           || ([ -z "$FAIL_ON_TEST_FAILURE" ] || exit 1) \
     fi
+
+# multi-stage for developing
+FROM builder AS dever
+
+# edit apt for caching
+RUN mv /etc/apt/apt.conf.d/docker-clean /etc/apt/
+
+# install developer dependencies
+RUN apt-get update && \
+    apt-get install -y \
+      bash-completion \
+      gdb
+
+# source underlay for shell
+RUN echo 'source "$UNDERLAY_WS/install/setup.bash"' >> /etc/bash.bashrc
+
+# multi-stage for visualizing
+FROM dever AS visualizer
+
+# install foxglove dependacies
+RUN echo "deb https://dl.cloudsmith.io/public/caddy/stable/deb/debian any-version main" > /etc/apt/sources.list.d/caddy-stable.list
+RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 65760c51edea2017cea2ca15155b6d79ca56ea34
+
+# install demo dependencies
+RUN apt-get update && apt-get install -y \
+      ros-$ROS_DISTRO-aws-robomaker-small-warehouse-world \
+      ros-$ROS_DISTRO-rviz2 \
+      ros-$ROS_DISTRO-turtlebot3-simulations
+
+# install gzweb dependacies
+RUN apt-get install -y --no-install-recommends \
+      imagemagick \
+      libboost-all-dev \
+      libgazebo-dev \
+      libgts-dev \
+      libjansson-dev \
+      libtinyxml-dev \
+      nodejs \
+      npm \
+      psmisc \
+      xvfb
+
+# clone gzweb
+ENV GZWEB_WS /opt/gzweb
+RUN git clone --branch python3 https://github.com/ruffsl/gzweb.git $GZWEB_WS
+
+# build gzweb
+RUN cd $GZWEB_WS && . /usr/share/gazebo/setup.sh && \
+    GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:$(find /opt/ros/$ROS_DISTRO/share \
+      -mindepth 1 -maxdepth 2 -type d -name "models" | paste -s -d: -) && \
+    xvfb-run -s "-screen 0 1280x1024x24" ./deploy.sh -m local && \
+    ln -s $GZWEB_WS/http/client/assets http/client/assets/models
+
+# patch gzsever
+RUN GZSERVER=$(which gzserver) && \
+    mv $GZSERVER $GZSERVER.orig && \
+    echo '#!/bin/bash' > $GZSERVER && \
+    echo 'xvfb-run -s "-screen 0 1280x1024x24" gzserver.orig "$@"' >> $GZSERVER && \
+    chmod +x $GZSERVER
+
+# install foxglove dependacies
+RUN apt-get install -y --no-install-recommends \
+      caddy \
+      ros-$ROS_DISTRO-foxglove-bridge
+
+# copy foxglove
+ENV FOXGLOVE_WS /opt/foxglove
+COPY --from=ghcr.io/foxglove/studio /src $FOXGLOVE_WS
+
+# multi-stage for exporting
+FROM tester AS exporter
