@@ -200,7 +200,7 @@ _commands:
                     . << parameters.underlay >>/install/setup.sh
                     colcon build \
                       --packages-select ${BUILD_PACKAGES} \
-                      --packages-skip < parameters.skip > \
+                      --packages-skip << parameters.skip >> \
                       --mixin << parameters.mixins >>
               - ccache_stats:
                   workspace: << parameters.workspace >>
