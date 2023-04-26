@@ -374,19 +374,19 @@ _steps:
     install_dependencies:
       underlay: /opt/underlay_ws
       workspace: /opt/overlay_ws
-  prep_overlay_workspace: &prep_overlay_workspace
-    setup_workspace: &setup_workspace_overlay
-      key: overlay_ws
-      underlay: /opt/underlay_ws
-      workspace: /opt/overlay_ws
-      mixins: ${OVERLAY_MIXINS}
-      skip: nav2_system_tests
   setup_overlay_workspace: &setup_overlay_workspace
     setup_workspace: &setup_workspace_overlay
       key: overlay_ws
       underlay: /opt/underlay_ws
       workspace: /opt/overlay_ws
       mixins: ${OVERLAY_MIXINS}
+  setup_workspace_overlay_1: &setup_workspace_overlay_1
+    setup_workspace:
+      <<: *setup_workspace_overlay
+      skip: nav2_system_tests
+  setup_workspace_overlay_2: &setup_workspace_overlay_2
+    setup_workspace:
+      <<: *setup_workspace_overlay
       restore: false
   restore_overlay_workspace: &restore_overlay_workspace
     setup_workspace:
@@ -435,8 +435,8 @@ commands:
   build_source:
     description: "Build Source"
     steps:
-      - *prep_overlay_workspace
-      - *setup_overlay_workspace
+      - *setup_workspace_overlay_1
+      - *setup_workspace_overlay_2
   restore_build:
     description: "Restore Build"
     steps:
