@@ -124,6 +124,7 @@ _commands:
         mixins:
           type: string
         skip:
+          default: ""
           type: string
         restore:
           default: true
