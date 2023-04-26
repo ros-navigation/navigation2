@@ -476,7 +476,7 @@ executors:
   release_exec:
     docker:
       - image: ghcr.io/ros-planning/navigation2:main
-    resource_class: large
+    resource_class: medium
     working_directory: /opt/overlay_ws
     environment:
       <<: *common_environment
