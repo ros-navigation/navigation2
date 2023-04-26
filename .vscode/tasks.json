@@ -1,0 +1,174 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Gzweb",
+            "icon": {
+                "id": "debug-start"
+            },
+            "type": "process",
+            "command": "npm",
+            "args": [
+                "start"
+            ],
+            "options": {
+                "cwd": "/opt/gzweb",
+                "env": {
+                    "npm_config_port": "9090"
+                }
+            },
+            "hide": true,
+            "isBackground": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "Stop Gzweb",
+            "icon": {
+                "id": "debug-stop"
+            },
+            "type": "shell",
+            "command": "pkill -SIGTERM -f 'npm start' || true",
+            "hide": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "Restart Gzweb",
+            "icon": {
+                "id": "debug-restart"
+            },
+            "dependsOn": [
+                "Stop Gzweb",
+                "Gzweb"
+            ],
+            "dependsOrder": "sequence",
+            "problemMatcher": []
+        },
+        {
+            "label": "Foxglove Bridge",
+            "icon": {
+                "id": "debug-start"
+            },
+            "type": "shell",
+            "command": "source ./install/setup.bash && ros2 run foxglove_bridge foxglove_bridge",
+            "options": {
+                "cwd": "/opt/overlay_ws",
+            },
+            "isBackground": true,
+            "hide": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "Stop Foxglove Bridge",
+            "icon": {
+                "id": "debug-stop"
+            },
+            "type": "shell",
+            "command": "pkill -SIGTERM -f 'ros2 run foxglove_bridge foxglove_bridge' || true",
+            "hide": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "Foxglove Studio",
+            "icon": {
+                "id": "debug-start"
+            },
+            "type": "process",
+            "command": "caddy",
+            "args": [
+                "file-server",
+                "--listen",
+                ":8080"
+            ],
+            "options": {
+                "cwd": "/opt/foxglove",
+            },
+            "isBackground": true,
+            "hide": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "Stop Foxglove Studio",
+            "icon": {
+                "id": "debug-stop"
+            },
+            "type": "shell",
+            "command": "pkill -SIGTERM -f 'caddy file-server --listen :8080' || true",
+            "hide": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "Foxglove",
+            "icon": {
+                "id": "debug-start"
+            },
+            "dependsOn": [
+                "Foxglove Bridge",
+                "Foxglove Studio"
+            ],
+            "hide": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "Stop Foxglove",
+            "icon": {
+                "id": "debug-stop"
+            },
+            "dependsOn": [
+                "Stop Foxglove Bridge",
+                "Stop Foxglove Studio"
+            ],
+            "hide": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "Restart Foxglove",
+            "icon": {
+                "id": "debug-restart"
+            },
+            "dependsOn": [
+                "Stop Foxglove",
+                "Foxglove"
+            ],
+            "dependsOrder": "sequence",
+            "problemMatcher": []
+        },
+        {
+            "label": "Start Visualizations",
+            "icon": {
+                "id": "debug-start"
+            },
+            "dependsOn": [
+                "Gzweb",
+                "Foxglove"
+            ],
+            // "hide": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "Stop Visualizations",
+            "icon": {
+                "id": "debug-stop"
+            },
+            "dependsOn": [
+                "Stop Gzweb",
+                "Stop Foxglove"
+            ],
+            // "hide": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "Restart Visualizations",
+            "icon": {
+                "id": "debug-restart"
+            },
+            "dependsOn": [
+                "Stop Visualizations",
+                "Start Visualizations"
+            ],
+            "dependsOrder": "sequence",
+            "problemMatcher": []
+        }
+    ]
+}
