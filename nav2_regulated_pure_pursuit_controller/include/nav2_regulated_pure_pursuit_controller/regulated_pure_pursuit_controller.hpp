@@ -255,7 +255,6 @@ protected:
   double regulated_linear_scaling_min_radius_;
   double regulated_linear_scaling_min_speed_;
   bool use_rotate_to_heading_;
-  bool use_rotate_to_path_;
   double max_angular_accel_;
   double rotate_to_heading_min_angle_;
   double goal_dist_tol_;

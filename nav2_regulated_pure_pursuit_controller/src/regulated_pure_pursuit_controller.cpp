@@ -115,8 +115,6 @@ void RegulatedPurePursuitController::configure(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".use_rotate_to_heading", rclcpp::ParameterValue(true));
   declare_parameter_if_not_declared(
-    node, plugin_name_ + ".use_rotate_to_path", rclcpp::ParameterValue(false));
-  declare_parameter_if_not_declared(
     node, plugin_name_ + ".rotate_to_heading_min_angle", rclcpp::ParameterValue(0.785));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".max_angular_accel", rclcpp::ParameterValue(3.2));
@@ -163,7 +161,6 @@ void RegulatedPurePursuitController::configure(
     plugin_name_ + ".regulated_linear_scaling_min_speed",
     regulated_linear_scaling_min_speed_);
   node->get_parameter(plugin_name_ + ".use_rotate_to_heading", use_rotate_to_heading_);
-  node->get_parameter(plugin_name_ + ".use_rotate_to_path", use_rotate_to_path_);
   node->get_parameter(plugin_name_ + ".rotate_to_heading_min_angle", rotate_to_heading_min_angle_);
   node->get_parameter(plugin_name_ + ".max_angular_accel", max_angular_accel_);
   node->get_parameter(plugin_name_ + ".allow_reversing", allow_reversing_);
@@ -180,9 +177,9 @@ void RegulatedPurePursuitController::configure(
   }
 
   /** Possible to drive in reverse direction if and only if
-   "use_rotate_to_path" parameter is set to false **/
+   "use_rotate_to_heading" parameter is set to false **/
 
-  if (use_rotate_to_path_ && allow_reversing_) {
+  if (use_rotate_to_heading_ && allow_reversing_) {
     RCLCPP_WARN(
       logger_, "Disabling reversing. Both use_rotate_to_heading and allow_reversing "
       "parameter cannot be set to true. By default setting use_rotate_to_heading true");
@@ -336,7 +333,7 @@ bool RegulatedPurePursuitController::shouldRotateToPath(
 {
   // Whether we should rotate robot to rough path heading
   angle_to_path = atan2(carrot_pose.pose.position.y, carrot_pose.pose.position.x);
-  return use_rotate_to_path_ && fabs(angle_to_path) > rotate_to_heading_min_angle_;
+  return use_rotate_to_heading_ && fabs(angle_to_path) > rotate_to_heading_min_angle_;
 }
 
 bool RegulatedPurePursuitController::shouldRotateToGoalHeading(
