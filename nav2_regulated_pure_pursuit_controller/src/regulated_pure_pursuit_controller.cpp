@@ -124,19 +124,19 @@ void RegulatedPurePursuitController::configure(
   node->get_parameter(plugin_name_ + ".min_lookahead_dist", min_lookahead_dist_);
   node->get_parameter(plugin_name_ + ".max_lookahead_dist", max_lookahead_dist_);
   node->get_parameter(plugin_name_ + ".lookahead_time", lookahead_time_);
-  node->get_parameter( plugin_name_ + ".rotate_to_heading_angular_vel", rotate_to_heading_angular_vel_);
+  node->get_parameter(plugin_name_ + ".rotate_to_heading_angular_vel", rotate_to_heading_angular_vel_);
   node->get_parameter(plugin_name_ + ".transform_tolerance", transform_tolerance);
-  node->get_parameter( plugin_name_ + ".use_velocity_scaled_lookahead_dist", use_velocity_scaled_lookahead_dist_);
-  node->get_parameter( plugin_name_ + ".min_approach_linear_velocity", min_approach_linear_velocity_);
-  node->get_parameter( plugin_name_ + ".use_approach_linear_velocity_scaling", use_approach_vel_scaling_);
-  node->get_parameter( plugin_name_ + ".max_allowed_time_to_collision", max_allowed_time_to_collision_);
-  node->get_parameter( plugin_name_ + ".use_regulated_linear_velocity_scaling", use_regulated_linear_velocity_scaling_);
-  node->get_parameter( plugin_name_ + ".use_cost_regulated_linear_velocity_scaling", use_cost_regulated_linear_velocity_scaling_);
+  node->get_parameter(plugin_name_ + ".use_velocity_scaled_lookahead_dist", use_velocity_scaled_lookahead_dist_);
+  node->get_parameter(plugin_name_ + ".min_approach_linear_velocity", min_approach_linear_velocity_);
+  node->get_parameter(plugin_name_ + ".use_approach_linear_velocity_scaling", use_approach_vel_scaling_);
+  node->get_parameter(plugin_name_ + ".max_allowed_time_to_collision", max_allowed_time_to_collision_);
+  node->get_parameter(plugin_name_ + ".use_regulated_linear_velocity_scaling", use_regulated_linear_velocity_scaling_);
+  node->get_parameter(plugin_name_ + ".use_cost_regulated_linear_velocity_scaling", use_cost_regulated_linear_velocity_scaling_);
   node->get_parameter(plugin_name_ + ".cost_scaling_dist", cost_scaling_dist_);
   node->get_parameter(plugin_name_ + ".cost_scaling_gain", cost_scaling_gain_);
-  node->get_parameter( plugin_name_ + ".inflation_cost_scaling_factor", inflation_cost_scaling_factor_);
-  node->get_parameter( plugin_name_ + ".regulated_linear_scaling_min_radius", regulated_linear_scaling_min_radius_);
-  node->get_parameter( plugin_name_ + ".regulated_linear_scaling_min_speed", regulated_linear_scaling_min_speed_);
+  node->get_parameter(plugin_name_ + ".inflation_cost_scaling_factor", inflation_cost_scaling_factor_);
+  node->get_parameter(plugin_name_ + ".regulated_linear_scaling_min_radius", regulated_linear_scaling_min_radius_);
+  node->get_parameter(plugin_name_ + ".regulated_linear_scaling_min_speed", regulated_linear_scaling_min_speed_);
   node->get_parameter(plugin_name_ + ".use_rotate_to_heading", use_rotate_to_heading_);
   node->get_parameter(plugin_name_ + ".rotate_to_heading_min_angle", rotate_to_heading_min_angle_);
   node->get_parameter(plugin_name_ + ".max_angular_accel", max_angular_accel_);
@@ -148,7 +148,7 @@ void RegulatedPurePursuitController::configure(
   control_duration_ = 1.0 / control_frequency;
 
   if (inflation_cost_scaling_factor_ <= 0.0) {
-    RCLCPP_WARN( logger_, "The value inflation_cost_scaling_factor is incorrectly set, "
+    RCLCPP_WARN(logger_, "The value inflation_cost_scaling_factor is incorrectly set, "
     "it should be >0. Disabling cost regulated linear velocity scaling.");
     use_cost_regulated_linear_velocity_scaling_ = false;
   }
