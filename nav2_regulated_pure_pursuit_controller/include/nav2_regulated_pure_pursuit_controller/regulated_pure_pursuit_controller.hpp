@@ -85,28 +85,17 @@ public:
    *
    * @param pose      Current robot pose
    * @param velocity  Current robot velocity
-   * @param goal_checker   Ptr to the goal checker for this task in case useful in computing commands
    * @return          Best command
    */
   geometry_msgs::msg::TwistStamped computeVelocityCommands(
     const geometry_msgs::msg::PoseStamped & pose,
-    const geometry_msgs::msg::Twist & velocity);
-    //nav2_core::GoalChecker * [>goal_checker<]) override;
+    const geometry_msgs::msg::Twist & velocity) override;
 
   /**
    * @brief nav2_core setPlan - Sets the global plan
    * @param path The global plan
    */
   void setPlan(const nav_msgs::msg::Path & path) override;
-
-  /**
-   * @brief Limits the maximum linear speed of the robot.
-   * @param speed_limit expressed in absolute value (in m/s)
-   * or in percentage from maximum robot speed.
-   * @param percentage Setting speed limit in percentage if true
-   * or in absolute values in false case.
-   */
-  //void setSpeedLimit(const double & speed_limit, const bool & percentage) override;
 
 protected:
   /**
@@ -166,8 +155,7 @@ protected:
    * @param angle_to_path Angle of robot output relatie to carrot marker
    * @param curr_speed the current robot speed
    */
-  void rotateToHeading(
-    double & linear_vel, double & angular_vel,
+  void rotateToHeading(double & linear_vel, double & angular_vel,
     const double & angle_to_path, const geometry_msgs::msg::Twist & curr_speed);
 
   /**
@@ -186,7 +174,6 @@ protected:
    * @brief Whether point is in collision
    * @param x Pose of pose x
    * @param y Pose of pose y
-   * @param theta orientation of Yaw
    * @return Whether in collision
    */
   bool inCollision(const double & x, const double & y);
@@ -235,7 +222,7 @@ protected:
   rclcpp::Logger logger_ {rclcpp::get_logger("RegulatedPurePursuitController")};
   rclcpp::Clock::SharedPtr clock_;
 
-  double desired_linear_vel_, base_desired_linear_vel_;
+  double desired_linear_vel_;
   double lookahead_dist_;
   double rotate_to_heading_angular_vel_;
   double max_lookahead_dist_;
@@ -262,8 +249,7 @@ protected:
 
   nav_msgs::msg::Path global_plan_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> global_path_pub_;
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PointStamped>>
-  carrot_pub_;
+  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PointStamped>> carrot_pub_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> carrot_arc_pub_;
 };
 

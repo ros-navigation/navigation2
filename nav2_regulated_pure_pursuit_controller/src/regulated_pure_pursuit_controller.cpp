@@ -23,7 +23,6 @@
 #include "nav2_core/exceptions.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
-//#include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 
 using std::hypot;
 using std::min;
@@ -62,7 +61,6 @@ void RegulatedPurePursuitController::configure(
   std::string name, const std::shared_ptr<tf2_ros::Buffer> & tf,
   const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> & costmap_ros)
 {
-
   costmap_ros_ = costmap_ros;
   costmap_ = costmap_ros_->getCostmap();
   tf_ = tf;
@@ -72,7 +70,6 @@ void RegulatedPurePursuitController::configure(
 
   double transform_tolerance = 0.1;
   double control_frequency = 20.0;
-  goal_dist_tol_ = 0.3;  // reasonable default before first update
 
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".desired_linear_vel", rclcpp::ParameterValue(0.5));
@@ -100,8 +97,7 @@ void RegulatedPurePursuitController::configure(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".use_regulated_linear_velocity_scaling", rclcpp::ParameterValue(true));
   declare_parameter_if_not_declared(
-    node, plugin_name_ + ".use_cost_regulated_linear_velocity_scaling",
-    rclcpp::ParameterValue(true));
+    node, plugin_name_ + ".use_cost_regulated_linear_velocity_scaling", rclcpp::ParameterValue(true));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".cost_scaling_dist", rclcpp::ParameterValue(0.6));
   declare_parameter_if_not_declared(
@@ -119,50 +115,32 @@ void RegulatedPurePursuitController::configure(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".max_angular_accel", rclcpp::ParameterValue(3.2));
   declare_parameter_if_not_declared(
+    node, plugin_name_ + ".goal_dist_tol", rclcpp::ParameterValue(0.25));
+  declare_parameter_if_not_declared(
     node, plugin_name_ + ".allow_reversing", rclcpp::ParameterValue(false));
 
   node->get_parameter(plugin_name_ + ".desired_linear_vel", desired_linear_vel_);
-  base_desired_linear_vel_ = desired_linear_vel_;
   node->get_parameter(plugin_name_ + ".lookahead_dist", lookahead_dist_);
   node->get_parameter(plugin_name_ + ".min_lookahead_dist", min_lookahead_dist_);
   node->get_parameter(plugin_name_ + ".max_lookahead_dist", max_lookahead_dist_);
   node->get_parameter(plugin_name_ + ".lookahead_time", lookahead_time_);
-  node->get_parameter(
-    plugin_name_ + ".rotate_to_heading_angular_vel",
-    rotate_to_heading_angular_vel_);
+  node->get_parameter( plugin_name_ + ".rotate_to_heading_angular_vel", rotate_to_heading_angular_vel_);
   node->get_parameter(plugin_name_ + ".transform_tolerance", transform_tolerance);
-  node->get_parameter(
-    plugin_name_ + ".use_velocity_scaled_lookahead_dist",
-    use_velocity_scaled_lookahead_dist_);
-  node->get_parameter(
-    plugin_name_ + ".min_approach_linear_velocity",
-    min_approach_linear_velocity_);
-  node->get_parameter(
-    plugin_name_ + ".use_approach_linear_velocity_scaling",
-    use_approach_vel_scaling_);
-  node->get_parameter(
-    plugin_name_ + ".max_allowed_time_to_collision",
-    max_allowed_time_to_collision_);
-  node->get_parameter(
-    plugin_name_ + ".use_regulated_linear_velocity_scaling",
-    use_regulated_linear_velocity_scaling_);
-  node->get_parameter(
-    plugin_name_ + ".use_cost_regulated_linear_velocity_scaling",
-    use_cost_regulated_linear_velocity_scaling_);
+  node->get_parameter( plugin_name_ + ".use_velocity_scaled_lookahead_dist", use_velocity_scaled_lookahead_dist_);
+  node->get_parameter( plugin_name_ + ".min_approach_linear_velocity", min_approach_linear_velocity_);
+  node->get_parameter( plugin_name_ + ".use_approach_linear_velocity_scaling", use_approach_vel_scaling_);
+  node->get_parameter( plugin_name_ + ".max_allowed_time_to_collision", max_allowed_time_to_collision_);
+  node->get_parameter( plugin_name_ + ".use_regulated_linear_velocity_scaling", use_regulated_linear_velocity_scaling_);
+  node->get_parameter( plugin_name_ + ".use_cost_regulated_linear_velocity_scaling", use_cost_regulated_linear_velocity_scaling_);
   node->get_parameter(plugin_name_ + ".cost_scaling_dist", cost_scaling_dist_);
   node->get_parameter(plugin_name_ + ".cost_scaling_gain", cost_scaling_gain_);
-  node->get_parameter(
-    plugin_name_ + ".inflation_cost_scaling_factor",
-    inflation_cost_scaling_factor_);
-  node->get_parameter(
-    plugin_name_ + ".regulated_linear_scaling_min_radius",
-    regulated_linear_scaling_min_radius_);
-  node->get_parameter(
-    plugin_name_ + ".regulated_linear_scaling_min_speed",
-    regulated_linear_scaling_min_speed_);
+  node->get_parameter( plugin_name_ + ".inflation_cost_scaling_factor", inflation_cost_scaling_factor_);
+  node->get_parameter( plugin_name_ + ".regulated_linear_scaling_min_radius", regulated_linear_scaling_min_radius_);
+  node->get_parameter( plugin_name_ + ".regulated_linear_scaling_min_speed", regulated_linear_scaling_min_speed_);
   node->get_parameter(plugin_name_ + ".use_rotate_to_heading", use_rotate_to_heading_);
   node->get_parameter(plugin_name_ + ".rotate_to_heading_min_angle", rotate_to_heading_min_angle_);
   node->get_parameter(plugin_name_ + ".max_angular_accel", max_angular_accel_);
+  node->get_parameter(plugin_name_ + ".goal_dist_tol", goal_dist_tol_);
   node->get_parameter(plugin_name_ + ".allow_reversing", allow_reversing_);
   node->get_parameter("controller_frequency", control_frequency);
 
@@ -170,9 +148,8 @@ void RegulatedPurePursuitController::configure(
   control_duration_ = 1.0 / control_frequency;
 
   if (inflation_cost_scaling_factor_ <= 0.0) {
-    RCLCPP_WARN(
-      logger_, "The value inflation_cost_scaling_factor is incorrectly set, "
-      "it should be >0. Disabling cost regulated linear velocity scaling.");
+    RCLCPP_WARN( logger_, "The value inflation_cost_scaling_factor is incorrectly set, "
+    "it should be >0. Disabling cost regulated linear velocity scaling.");
     use_cost_regulated_linear_velocity_scaling_ = false;
   }
 
@@ -255,7 +232,6 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   const geometry_msgs::msg::PoseStamped & pose,
   const geometry_msgs::msg::Twist & speed)
 {
-
   // Transform path to robot base frame
   auto transformed_plan = transformGlobalPlan(pose);
 
