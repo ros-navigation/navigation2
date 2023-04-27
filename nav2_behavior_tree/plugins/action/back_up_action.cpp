@@ -60,7 +60,7 @@ BT::NodeStatus BackUpAction::on_aborted()
 
 BT::NodeStatus BackUpAction::on_cancelled()
 {
-  setOutput("error_code_id", result_.result->error_code);
+  setOutput("error_code_id", ActionGoal::NONE);
   return BT::NodeStatus::SUCCESS;
 }
 

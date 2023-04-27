@@ -1,7 +1,3 @@
-# Error codes
-# Note: The expected priority order of the error should match the message order
-uint16 NONE=0
-
 #goal definition
 builtin_interfaces/Duration time
 ---
