@@ -123,15 +123,24 @@ _commands:
           type: string
         mixins:
           type: string
+        skip:
+          default: ""
+          type: string
+        restore:
+          default: true
+          type: boolean
         build:
           default: true
           type: boolean
       steps:
         - store_artifacts:
             path: << parameters.workspace >>/lockfile.txt
-        - restore_from_cache:
-            key: << parameters.key >>
-            workspace: << parameters.workspace >>
+        - when:
+            condition: << parameters.restore >>
+            steps:
+              - restore_from_cache:
+                  key: << parameters.key >>
+                  workspace: << parameters.workspace >>
         - when:
             condition: << parameters.build >>
             steps:
@@ -191,6 +200,7 @@ _commands:
                     . << parameters.underlay >>/install/setup.sh
                     colcon build \
                       --packages-select ${BUILD_PACKAGES} \
+                      --packages-skip << parameters.skip >> \
                       --mixin << parameters.mixins >>
               - ccache_stats:
                   workspace: << parameters.workspace >>
@@ -370,6 +380,14 @@ _steps:
       underlay: /opt/underlay_ws
       workspace: /opt/overlay_ws
       mixins: ${OVERLAY_MIXINS}
+  setup_workspace_overlay_1: &setup_workspace_overlay_1
+    setup_workspace:
+      <<: *setup_workspace_overlay
+      skip: nav2_system_tests
+  setup_workspace_overlay_2: &setup_workspace_overlay_2
+    setup_workspace:
+      <<: *setup_workspace_overlay
+      restore: false
   restore_overlay_workspace: &restore_overlay_workspace
     setup_workspace:
       <<: *setup_workspace_overlay
@@ -417,7 +435,8 @@ commands:
   build_source:
     description: "Build Source"
     steps:
-      - *setup_overlay_workspace
+      - *setup_workspace_overlay_1
+      - *setup_workspace_overlay_2
   restore_build:
     description: "Restore Build"
     steps:
