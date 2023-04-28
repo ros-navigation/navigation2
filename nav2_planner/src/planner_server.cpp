@@ -252,7 +252,6 @@ PlannerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   }
 
   planners_.clear();
-  costmap_thread_.reset();
   costmap_ = nullptr;
   return nav2_util::CallbackReturn::SUCCESS;
 }
