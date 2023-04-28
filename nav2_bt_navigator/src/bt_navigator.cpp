@@ -90,6 +90,13 @@ BtNavigator::BtNavigator(const rclcpp::NodeOptions & options)
   declare_parameter("global_frame", std::string("map"));
   declare_parameter("robot_base_frame", std::string("base_link"));
   declare_parameter("odom_topic", std::string("odom"));
+    
+  // Navigator defaults
+  const std::vector<std::string> default_navigator_ids = {
+    "navigate_to_pose",
+    "navigate_through_poses"
+  };    
+  declare_parameter("navigators", default_navigator_ids);
 }
 
 BtNavigator::~BtNavigator()
@@ -126,26 +133,9 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   auto node = shared_from_this();
   odom_smoother_ = std::make_shared<nav2_util::OdomSmoother>(node, 0.3, odom_topic_);
 
-  // Navigator defaults
-  const std::vector<std::string> default_navigator_ids = {
-    "navigate_to_pose",
-    "navigate_through_poses"
-  };
-  const std::vector<std::string> default_navigator_types = {
-    "nav2_bt_navigator/NavigateToPoseNavigator",
-    "nav2_bt_navigator/NavigateThroughPosesNavigator"
-  };
-
-  std::vector<std::string> navigator_ids;
-  declare_parameter("navigators", default_navigator_ids);
-  get_parameter("navigators", navigator_ids);
-  if (navigator_ids == default_navigator_ids) {
-    for (size_t i = 0; i < default_navigator_ids.size(); ++i) {
-      declare_parameter(default_navigator_ids[i] + ".plugin", default_navigator_types[i]);
-    }
-  }
-
   // Load navigator plugins
+  std::vector<std::string> navigator_ids;
+  get_parameter("navigators", navigator_ids);
   for (size_t i = 0; i != navigator_ids.size(); i++) {
     std::string navigator_type = nav2_util::get_plugin_type_param(node, navigator_ids[i]);
     try {
