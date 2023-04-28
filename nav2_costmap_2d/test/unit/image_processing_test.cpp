@@ -15,7 +15,7 @@
 #include <gtest/gtest.h>
 #include <cmath>
 
-#include "nav2_costmap_2d/image_processing.hpp"
+#include "nav2_costmap_2d/denoise/image_processing.hpp"
 #include "image_tests_helper.hpp"
 
 using namespace nav2_costmap_2d;

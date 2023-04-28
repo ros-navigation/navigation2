@@ -15,7 +15,7 @@
 #ifndef NAV2_COSTMAP_2D__IMAGE_TESTS_HELPER_HPP_
 #define NAV2_COSTMAP_2D__IMAGE_TESTS_HELPER_HPP_
 
-#include "nav2_costmap_2d/image.hpp"
+#include "nav2_costmap_2d/denoise/image.hpp"
 #include <cmath>
 #include <string>
 #include <vector>

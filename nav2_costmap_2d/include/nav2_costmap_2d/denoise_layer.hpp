@@ -16,7 +16,7 @@
 #define NAV2_COSTMAP_2D__DENOISE_LAYER_HPP_
 
 #include "nav2_costmap_2d/layer.hpp"
-#include "nav2_costmap_2d/image_processing.hpp"
+#include "nav2_costmap_2d/denoise/image_processing.hpp"
 
 namespace nav2_costmap_2d
 {
