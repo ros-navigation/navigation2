@@ -126,7 +126,8 @@ void RegulatedPurePursuitController::configure(
   node->get_parameter(plugin_name_ + ".lookahead_time", lookahead_time_);
   node->get_parameter(plugin_name_ + ".rotate_to_heading_angular_vel", rotate_to_heading_angular_vel_);
   node->get_parameter(plugin_name_ + ".transform_tolerance", transform_tolerance);
-  node->get_parameter(plugin_name_ + ".use_velocity_scaled_lookahead_dist", use_velocity_scaled_lookahead_dist_);
+  node->get_parameter(plugin_name_ + ".use_velocity_scaled_lookahead_dist",
+    use_velocity_scaled_lookahead_dist_);
   node->get_parameter(plugin_name_ + ".min_approach_linear_velocity", min_approach_linear_velocity_);
   node->get_parameter(plugin_name_ + ".use_approach_linear_velocity_scaling", use_approach_vel_scaling_);
   node->get_parameter(plugin_name_ + ".max_allowed_time_to_collision", max_allowed_time_to_collision_);
