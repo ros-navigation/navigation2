@@ -90,12 +90,12 @@ BtNavigator::BtNavigator(const rclcpp::NodeOptions & options)
   declare_parameter("global_frame", std::string("map"));
   declare_parameter("robot_base_frame", std::string("base_link"));
   declare_parameter("odom_topic", std::string("odom"));
-    
+
   // Navigator defaults
   const std::vector<std::string> default_navigator_ids = {
     "navigate_to_pose",
     "navigate_through_poses"
-  };    
+  };
   declare_parameter("navigators", default_navigator_ids);
 }
 
