@@ -7,3 +7,7 @@ file_server
 	header Upgrade websocket
 }
 reverse_proxy @websockets localhost:8765
+
+# log {
+# 	output file /var/log/caddy/foxglove.log
+# }
