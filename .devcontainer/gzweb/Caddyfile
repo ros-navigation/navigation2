@@ -1,0 +1,9 @@
+:9090
+
+file_server
+
+@websockets {
+	header Connection *Upgrade*
+	header Upgrade websocket
+}
+reverse_proxy @websockets localhost:9091
