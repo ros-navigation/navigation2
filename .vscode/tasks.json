@@ -77,9 +77,8 @@
             "type": "process",
             "command": "caddy",
             "args": [
-                "file-server",
-                "--listen",
-                ":8080"
+                "run",
+                "--watch"
             ],
             "options": {
                 "cwd": "/opt/foxglove",
@@ -93,8 +92,14 @@
             "icon": {
                 "id": "debug-stop"
             },
-            "type": "shell",
-            "command": "pkill -SIGTERM -f 'caddy file-server --listen :8080' || true",
+            "type": "process",
+            "command": "caddy",
+            "args": [
+                "stop"
+            ],
+            "options": {
+                "cwd": "/opt/foxglove",
+            },
             "hide": true,
             "problemMatcher": []
         },
