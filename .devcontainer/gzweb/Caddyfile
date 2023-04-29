@@ -3,7 +3,7 @@
 file_server
 
 @websockets {
-	header Connection *Upgrade*
+	header Connection upgrade
 	header Upgrade websocket
 }
 reverse_proxy @websockets localhost:9091
