@@ -34,12 +34,47 @@
             "problemMatcher": []
         },
         {
+            "label": "Gzweb Client",
+            "icon": {
+                "id": "debug-start"
+            },
+            "type": "process",
+            "command": "caddy",
+            "args": [
+                "run",
+                "--watch"
+            ],
+            "options": {
+                "cwd": "/opt/gzweb/http/client",
+            },
+            "isBackground": true,
+            "hide": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "Stop Gzweb Client",
+            "icon": {
+                "id": "debug-stop"
+            },
+            "type": "process",
+            "command": "caddy",
+            "args": [
+                "stop"
+            ],
+            "options": {
+                "cwd": "/opt/gzweb/http/client",
+            },
+            "hide": true,
+            "problemMatcher": []
+        },
+        {
             "label": "Gzweb",
             "icon": {
                 "id": "debug-start"
             },
             "dependsOn": [
-                "Gzweb Bridge"
+                "Gzweb Bridge",
+                "Gzweb Client"
             ],
             "hide": true,
             "problemMatcher": []
@@ -50,7 +85,8 @@
                 "id": "debug-stop"
             },
             "dependsOn": [
-                "Stop Gzweb Bridge"
+                "Stop Gzweb Bridge",
+                "Stop Gzweb Client"
             ],
             "hide": true,
             "problemMatcher": []
