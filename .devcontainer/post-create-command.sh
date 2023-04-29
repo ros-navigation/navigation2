@@ -9,3 +9,6 @@ set -eo pipefail
 
 # Enable autocomplete for user
 cp /etc/skel/.bashrc ~/
+
+# Link Caddyfiles for web apps
+ln -s $PWD/.devcontainer/foxglove/Caddyfile /opt/foxglove/Caddyfile
