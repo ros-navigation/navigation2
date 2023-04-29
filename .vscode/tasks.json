@@ -42,7 +42,8 @@
             "command": "caddy",
             "args": [
                 "run",
-                "--watch"
+                "--watch",
+                "--config=./Caddyfile"
             ],
             "options": {
                 "cwd": "/opt/gzweb/http/client",
@@ -59,7 +60,8 @@
             "type": "process",
             "command": "caddy",
             "args": [
-                "stop"
+                "stop",
+                "--config=./Caddyfile"
             ],
             "options": {
                 "cwd": "/opt/gzweb/http/client",
@@ -136,7 +138,8 @@
             "command": "caddy",
             "args": [
                 "run",
-                "--watch"
+                "--watch",
+                "--config=./Caddyfile"
             ],
             "options": {
                 "cwd": "/opt/foxglove",
@@ -153,7 +156,8 @@
             "type": "process",
             "command": "caddy",
             "args": [
-                "stop"
+                "stop",
+                "--config=./Caddyfile"
             ],
             "options": {
                 "cwd": "/opt/foxglove",
