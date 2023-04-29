@@ -4,7 +4,7 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Gzweb",
+            "label": "Gzweb Bridge",
             "icon": {
                 "id": "debug-start"
             },
@@ -24,12 +24,34 @@
             "problemMatcher": []
         },
         {
-            "label": "Stop Gzweb",
+            "label": "Stop Gzweb Bridge",
             "icon": {
                 "id": "debug-stop"
             },
             "type": "shell",
             "command": "pkill -SIGTERM -f 'npm start' || true",
+            "hide": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "Gzweb",
+            "icon": {
+                "id": "debug-start"
+            },
+            "dependsOn": [
+                "Gzweb Bridge"
+            ],
+            "hide": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "Stop Gzweb",
+            "icon": {
+                "id": "debug-stop"
+            },
+            "dependsOn": [
+                "Stop Gzweb Bridge"
+            ],
             "hide": true,
             "problemMatcher": []
         },
