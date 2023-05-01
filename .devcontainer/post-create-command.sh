@@ -11,5 +11,5 @@ set -eo pipefail
 cp /etc/skel/.bashrc ~/
 
 # Link Caddyfiles for web apps
-ln -s $PWD/.devcontainer/foxglove/Caddyfile /opt/foxglove/Caddyfile
-ln -s $PWD/.devcontainer/gzweb/Caddyfile /opt/gzweb/http/client/Caddyfile
+ln -s $PWD/.devcontainer/caddy/index.html /srv/index.html
+ln -s $PWD/.devcontainer/caddy/index.md /srv/index.md

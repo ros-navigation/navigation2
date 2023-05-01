@@ -10,7 +10,10 @@
 
 :8080 {
 	root * /srv
+
 	file_server
+	templates
+	encode gzip
 
 	import websockets "foxglove" "localhost:8765"
 	import websockets "gzweb" "localhost:9090"
