@@ -10,9 +10,13 @@
 
 :8080 {
 	root * /srv
-
 	file_server
-	templates
+
+	@help_index {
+		path /
+		file index.html
+	}
+	templates @help_index
 	encode gzip
 
 	import websockets "foxglove" "localhost:8765"
