@@ -1,27 +1,50 @@
+# Snippet for reverse proxying websockets
+# to simplify remote development with web apps
+# E.g reuse cookies authentication for CodeSpaces
 (websockets) {
+	# Avoid path issues from trailing slashes
+	# E.g. whenever user types or copies "ws://" URL
 	rewrite /{args.0}/ /{args.0}
+	# Matcher for websocket connection upgrade requests
 	@{args.0}_websockets {
+		# Filter matcher by differentiating via path
+		# so web apps can be proxied to different backends
 		path /{args.0}
+		# Avoid case sensitivity issues when matching field values
+		# E.g. when values are rewritten by Codespace port forwarding
 		header_regexp  Connection (?i)(Upgrade)
 		header Upgrade websocket
 	}
+	# Configure reverse proxy for web app to given backend address
 	reverse_proxy @{args.0}_websockets {args.1}
 }
 
+# Listen for http requests on port 8080
+# regardless of hostname or domain address
+# E.g. whatever Codespaces assigns to host
 :8080 {
+	# Sets the root path of the site to /srv directory
+	# where all installed web apps are nested
 	root * /srv
+	# Serve static files from root path
 	file_server
-
+	# Matcher for helper index web page
 	@help_index {
+		# Avoid clobbering other index.html files
+		# by filter matcher to only root index.html
 		path /
 		file index.html
 	}
+	# Configure template to serve markdown files
 	templates @help_index
+	# Encodes responses for compression
 	encode gzip
 
+	# Reverse proxy websockets for each web app
 	import websockets "foxglove" "localhost:8765"
 	import websockets "gzweb" "localhost:9090"
 
+	# For debugging
 	# log {
 	# 	output file /var/log/caddy/server.log
 	# }
