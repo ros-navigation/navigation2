@@ -7,6 +7,7 @@
 ## Web Apps
 
 - [Foxglove Studio](foxglove)
+  - [Foxglove Studio](foxglove/nav2)
 - [Gzweb Client](gzweb)
 
 [Nav2 Documentation](https://navigation.ros.org)

@@ -44,6 +44,16 @@
 	import websockets "foxglove" "localhost:8765"
 	import websockets "gzweb" "localhost:9090"
 
+
+	@https_scheme {
+        expression {http.request.scheme}=="https"
+    }
+    vars @https_scheme isHttps "wss"
+    vars isHttps "ws"
+	# http://localhost:8080/foxglove/?ds=foxglove-websocket&ds.url={vars.isHttps}%3A%2F%2Flocalhost%3A8080%2Ffoxglove
+	redir /foxglove/nav2 /foxglove/?ds=foxglove-websocket&ds.url={vars.isHttps}%3A%2F%2F{http.request.host}%3A8080%2Ffoxglove
+
+
 	# For debugging
 	# log {
 	# 	output file /var/log/caddy/server.log
