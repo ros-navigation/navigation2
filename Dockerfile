@@ -178,12 +178,13 @@ RUN apt-get install -y --no-install-recommends \
 ENV GZWEB_WS /opt/gzweb
 RUN git clone --branch python3 https://github.com/ruffsl/gzweb.git $GZWEB_WS
 
-# build gzweb
+# setup gzweb
 RUN cd $GZWEB_WS && . /usr/share/gazebo/setup.sh && \
     GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:$(find /opt/ros/$ROS_DISTRO/share \
       -mindepth 1 -maxdepth 2 -type d -name "models" | paste -s -d: -) && \
     xvfb-run -s "-screen 0 1280x1024x24" ./deploy.sh -m local && \
-    ln -s $GZWEB_WS/http/client/assets http/client/assets/models
+    ln -s $GZWEB_WS/http/client/assets http/client/assets/models && \
+    ln -s $GZWEB_WS/http/client /srv/gzweb
 
 # patch gzsever
 RUN GZSERVER=$(which gzserver) && \
@@ -197,9 +198,10 @@ RUN apt-get install -y --no-install-recommends \
       caddy \
       ros-$ROS_DISTRO-foxglove-bridge
 
-# copy foxglove
+# setup foxglove
 ENV FOXGLOVE_WS /opt/foxglove
 COPY --from=ghcr.io/foxglove/studio /src $FOXGLOVE_WS
+RUN ln -s $FOXGLOVE_WS /srv/foxglove
 
 # multi-stage for exporting
 FROM tester AS exporter

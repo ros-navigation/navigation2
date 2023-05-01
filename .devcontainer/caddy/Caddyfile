@@ -1,5 +1,6 @@
 :8080
 
+root * /srv
 file_server
 
 @websockets {
