@@ -19,6 +19,23 @@
 	reverse_proxy @{args.0}_websockets {args.1}
 }
 
+# Snippet for redirect with appropriate URL queries values
+# to simplify remote development with web apps
+# E.g auto redirect websocket URL to match request scheme
+(redirect) {
+	# Matcher for http request scheme
+	# E.g. "http://" or "https://""
+	@http_scheme {
+        expression {http.request.scheme}=="http"
+    }
+	# If http scheme is "http://" then "ws://"
+    vars @http_scheme WsScheme "ws"
+	# Else then default to "wss://"
+    vars WsScheme "wss"
+	# Configure redirect to match request scheme
+	redir /{args.0}/nav2 /{args.0}/?ds=foxglove-websocket&ds.url={vars.WsScheme}%3A%2F%2F{http.request.host}%3A8080%2F{args.0}
+}
+
 # Listen for http requests on port 8080
 # regardless of hostname or domain address
 # E.g. whatever Codespaces assigns to host
@@ -44,15 +61,8 @@
 	import websockets "foxglove" "localhost:8765"
 	import websockets "gzweb" "localhost:9090"
 
-
-	@https_scheme {
-        expression {http.request.scheme}=="https"
-    }
-    vars @https_scheme isHttps "wss"
-    vars isHttps "ws"
-	# http://localhost:8080/foxglove/?ds=foxglove-websocket&ds.url={vars.isHttps}%3A%2F%2Flocalhost%3A8080%2Ffoxglove
-	redir /foxglove/nav2 /foxglove/?ds=foxglove-websocket&ds.url={vars.isHttps}%3A%2F%2F{http.request.host}%3A8080%2Ffoxglove
-
+	# Redirect query values for each web app
+	import redirect "foxglove"
 
 	# For debugging
 	# log {
