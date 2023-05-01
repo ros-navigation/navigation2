@@ -33,7 +33,7 @@
 	# Else then default to "wss://"
     vars WsScheme "wss"
 	# Configure redirect to match request scheme
-	redir /{args.0}/nav2 /{args.0}/?ds=foxglove-websocket&ds.url={vars.WsScheme}%3A%2F%2F{http.request.host}%3A8080%2F{args.0}
+	redir /{args.0}/nav2 /{args.0}/?ds=foxglove-websocket&ds.url={vars.WsScheme}%3A%2F%2F{http.request.hostport}{http.request.orig_uri.path.dir}
 }
 
 # Listen for http requests on port 8080
