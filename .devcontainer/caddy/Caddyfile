@@ -2,7 +2,7 @@
 	rewrite /{args.0}/ /{args.0}
 	@{args.0}_websockets {
 		path /{args.0}
-		header Connection *Upgrade*
+		header_regexp  Connection (?i)(Upgrade)
 		header Upgrade websocket
 	}
 	reverse_proxy @{args.0}_websockets {args.1}
