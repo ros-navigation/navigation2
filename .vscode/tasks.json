@@ -29,7 +29,7 @@
                 "id": "debug-stop"
             },
             "type": "shell",
-            "command": "pkill -SIGTERM -f 'npm start' || true",
+            "command": "echo ${input:Terminate Gzweb Bridge}",
             "hide": true,
             "problemMatcher": []
         },
@@ -53,7 +53,7 @@
                 "id": "debug-stop"
             },
             "type": "shell",
-            "command": "pkill -SIGTERM -f 'ros2 run foxglove_bridge foxglove_bridge' || true",
+            "command": "echo ${input:Terminate Foxglove Bridge}",
             "hide": true,
             "problemMatcher": []
         },
@@ -93,5 +93,19 @@
             "dependsOrder": "sequence",
             "problemMatcher": []
         }
+    ],
+    "inputs": [
+        {
+            "id": "Terminate Gzweb Bridge",
+            "type": "command",
+            "command": "workbench.action.tasks.terminate",
+            "args": "Gzweb Bridge"
+        },
+        {
+            "id": "Terminate Foxglove Bridge",
+            "type": "command",
+            "command": "workbench.action.tasks.terminate",
+            "args": "Foxglove Bridge"
+        },
     ]
 }
