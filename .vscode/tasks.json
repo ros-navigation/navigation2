@@ -4,6 +4,32 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "Web Server",
+            "icon": {
+                "id": "debug-start"
+            },
+            "type": "process",
+            "command": "caddy",
+            "args": [
+                "run",
+                "--watch",
+                "--config=${workspaceFolder}/.devcontainer/Caddyfile"
+            ],
+            "isBackground": true,
+            "hide": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "Stop Web Server",
+            "icon": {
+                "id": "debug-stop"
+            },
+            "type": "shell",
+            "command": "echo ${input:Terminate Web Server}",
+            "hide": true,
+            "problemMatcher": []
+        },
+        {
             "label": "Gzweb Bridge",
             "icon": {
                 "id": "debug-start"
@@ -63,6 +89,7 @@
                 "id": "debug-start"
             },
             "dependsOn": [
+                "Web Server",
                 "Gzweb Bridge",
                 "Foxglove Bridge"
             ],
@@ -75,6 +102,7 @@
                 "id": "debug-stop"
             },
             "dependsOn": [
+                "Stop Web Server",
                 "Stop Gzweb Bridge",
                 "Stop Foxglove Bridge"
             ],
@@ -95,6 +123,12 @@
         }
     ],
     "inputs": [
+        {
+            "id": "Terminate Web Server",
+            "type": "command",
+            "command": "workbench.action.tasks.terminate",
+            "args": "Web Server"
+        },
         {
             "id": "Terminate Gzweb Bridge",
             "type": "command",
