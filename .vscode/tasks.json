@@ -34,78 +34,6 @@
             "problemMatcher": []
         },
         {
-            "label": "Gzweb Client",
-            "icon": {
-                "id": "debug-start"
-            },
-            "type": "process",
-            "command": "caddy",
-            "args": [
-                "run",
-                "--watch",
-                "--config=./Caddyfile"
-            ],
-            "options": {
-                "cwd": "/opt/gzweb/http/client",
-            },
-            "isBackground": true,
-            "hide": true,
-            "problemMatcher": []
-        },
-        {
-            "label": "Stop Gzweb Client",
-            "icon": {
-                "id": "debug-stop"
-            },
-            "type": "process",
-            "command": "caddy",
-            "args": [
-                "stop",
-                "--config=./Caddyfile"
-            ],
-            "options": {
-                "cwd": "/opt/gzweb/http/client",
-            },
-            "hide": true,
-            "problemMatcher": []
-        },
-        {
-            "label": "Gzweb",
-            "icon": {
-                "id": "debug-start"
-            },
-            "dependsOn": [
-                "Gzweb Bridge",
-                "Gzweb Client"
-            ],
-            "hide": true,
-            "problemMatcher": []
-        },
-        {
-            "label": "Stop Gzweb",
-            "icon": {
-                "id": "debug-stop"
-            },
-            "dependsOn": [
-                "Stop Gzweb Bridge",
-                "Stop Gzweb Client"
-            ],
-            "hide": true,
-            "problemMatcher": []
-        },
-        {
-            "label": "Restart Gzweb",
-            "icon": {
-                "id": "debug-restart"
-            },
-            "dependsOn": [
-                "Stop Gzweb",
-                "Gzweb"
-            ],
-            "dependsOrder": "sequence",
-            "problemMatcher": []
-        },
-        {
             "label": "Foxglove Bridge",
             "icon": {
                 "id": "debug-start"
@@ -130,85 +58,13 @@
             "problemMatcher": []
         },
         {
-            "label": "Foxglove Studio",
-            "icon": {
-                "id": "debug-start"
-            },
-            "type": "process",
-            "command": "caddy",
-            "args": [
-                "run",
-                "--watch",
-                "--config=./Caddyfile"
-            ],
-            "options": {
-                "cwd": "/opt/foxglove",
-            },
-            "isBackground": true,
-            "hide": true,
-            "problemMatcher": []
-        },
-        {
-            "label": "Stop Foxglove Studio",
-            "icon": {
-                "id": "debug-stop"
-            },
-            "type": "process",
-            "command": "caddy",
-            "args": [
-                "stop",
-                "--config=./Caddyfile"
-            ],
-            "options": {
-                "cwd": "/opt/foxglove",
-            },
-            "hide": true,
-            "problemMatcher": []
-        },
-        {
-            "label": "Foxglove",
-            "icon": {
-                "id": "debug-start"
-            },
-            "dependsOn": [
-                "Foxglove Bridge",
-                "Foxglove Studio"
-            ],
-            "hide": true,
-            "problemMatcher": []
-        },
-        {
-            "label": "Stop Foxglove",
-            "icon": {
-                "id": "debug-stop"
-            },
-            "dependsOn": [
-                "Stop Foxglove Bridge",
-                "Stop Foxglove Studio"
-            ],
-            "hide": true,
-            "problemMatcher": []
-        },
-        {
-            "label": "Restart Foxglove",
-            "icon": {
-                "id": "debug-restart"
-            },
-            "dependsOn": [
-                "Stop Foxglove",
-                "Foxglove"
-            ],
-            "dependsOrder": "sequence",
-            "problemMatcher": []
-        },
-        {
             "label": "Start Visualizations",
             "icon": {
                 "id": "debug-start"
             },
             "dependsOn": [
-                "Gzweb",
-                "Foxglove"
+                "Gzweb Bridge",
+                "Foxglove Bridge"
             ],
             // "hide": true,
             "problemMatcher": []
@@ -219,8 +75,8 @@
                 "id": "debug-stop"
             },
             "dependsOn": [
-                "Stop Gzweb",
-                "Stop Foxglove"
+                "Stop Gzweb Bridge",
+                "Stop Foxglove Bridge"
             ],
             // "hide": true,
             "problemMatcher": []
