@@ -11,14 +11,7 @@
 	</head>
 	<body>
 		<main>
-			<div class="article-container">
-				<div class="paper" id="paper1"></div>
-				<div class="paper" id="paper2"></div>
-				<div class="paper paper3">
-					<article>{{markdown $markdownFile.Body}}</article>
-				</div>
-			</div>
-			<div class="sidebar"></div>
+			<article>{{markdown $markdownFile.Body}}</article>
 		</main>
 	</body>
 </html>
