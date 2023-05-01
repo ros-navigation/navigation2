@@ -42,7 +42,7 @@
             "options": {
                 "cwd": "/opt/gzweb",
                 "env": {
-                    "npm_config_port": "9091"
+                    "npm_config_port": "9090"
                 }
             },
             "hide": true,

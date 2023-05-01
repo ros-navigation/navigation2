@@ -3,11 +3,19 @@
 root * /srv
 file_server
 
-@websockets {
-	header Connection upgrade
+@foxglove_websockets {
+	path /foxglove/
+	header Connection *Upgrade*
 	header Upgrade websocket
 }
-reverse_proxy @websockets localhost:8765
+reverse_proxy @foxglove_websockets localhost:8765
+
+@gzweb_websockets {
+	path /gzweb/
+	header Connection *Upgrade*
+	header Upgrade websocket
+}
+reverse_proxy @gzweb_websockets localhost:9090
 
 # log {
 # 	output file /var/log/caddy/server.log
