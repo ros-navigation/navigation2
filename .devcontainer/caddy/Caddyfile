@@ -1,25 +1,19 @@
 (websockets) {
-	header Connection *Upgrade*
-	header Upgrade websocket
+	rewrite /{args.0}/ /{args.0}
+	@{args.0}_websockets {
+		path /{args.0}
+		header Connection *Upgrade*
+		header Upgrade websocket
+	}
+	reverse_proxy @{args.0}_websockets {args.1}
 }
 
 :8080 {
 	root * /srv
 	file_server
 
-	rewrite /foxglove/ /foxglove
-	@foxglove_websockets {
-		path /foxglove
-		import websockets
-	}
-	reverse_proxy @foxglove_websockets localhost:8765
-
-	rewrite /gzweb/ /gzweb
-	@gzweb_websockets {
-		path /gzweb
-		import websockets
-	}
-	reverse_proxy @gzweb_websockets localhost:9090
+	import websockets "foxglove" "localhost:8765"
+	import websockets "gzweb" "localhost:9090"
 
 	# log {
 	# 	output file /var/log/caddy/server.log
