@@ -1,22 +1,25 @@
-:8080
-
-root * /srv
-file_server
-
-@foxglove_websockets {
-	path /foxglove/
+(websockets) {
 	header Connection *Upgrade*
 	header Upgrade websocket
 }
-reverse_proxy @foxglove_websockets localhost:8765
 
-@gzweb_websockets {
-	path /gzweb/
-	header Connection *Upgrade*
-	header Upgrade websocket
+:8080 {
+	root * /srv
+	file_server
+
+	@foxglove_websockets {
+		path /foxglove/
+		import websockets
+	}
+	reverse_proxy @foxglove_websockets localhost:8765
+
+	@gzweb_websockets {
+		path /gzweb/
+		import websockets
+	}
+	reverse_proxy @gzweb_websockets localhost:9090
+
+	# log {
+	# 	output file /var/log/caddy/server.log
+	# }
 }
-reverse_proxy @gzweb_websockets localhost:9090
-
-# log {
-# 	output file /var/log/caddy/server.log
-# }
