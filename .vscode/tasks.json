@@ -13,7 +13,7 @@
             "args": [
                 "run",
                 "--watch",
-                "--config=${workspaceFolder}/.devcontainer/Caddyfile"
+                "--config=${workspaceFolder}/.devcontainer/caddy/Caddyfile"
             ],
             "isBackground": true,
             "hide": true,
