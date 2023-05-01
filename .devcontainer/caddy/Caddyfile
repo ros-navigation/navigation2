@@ -9,5 +9,5 @@ file_server
 reverse_proxy @websockets localhost:8765
 
 # log {
-# 	output file /var/log/caddy/foxglove.log
+# 	output file /var/log/caddy/server.log
 # }
