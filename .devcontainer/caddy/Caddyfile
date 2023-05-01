@@ -24,13 +24,13 @@
 # E.g auto redirect websocket URL to match request scheme
 (redirect) {
 	# Matcher for http request scheme
-	# E.g. "http://" or "https://""
+	# E.g. "http" or "https""
 	@http_scheme {
         expression {http.request.scheme}=="http"
     }
-	# If http scheme is "http://" then "ws://"
+	# If http scheme is "http" then "ws"
     vars @http_scheme WsScheme "ws"
-	# Else then default to "wss://"
+	# Else then default to "wss"
     vars WsScheme "wss"
 	# Configure redirect to match request scheme
 	redir /{args.0}/nav2 /{args.0}/?ds=foxglove-websocket&ds.url={vars.WsScheme}%3A%2F%2F{http.request.hostport}{http.request.orig_uri.path.dir}
