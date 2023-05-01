@@ -7,14 +7,16 @@
 	root * /srv
 	file_server
 
+	rewrite /foxglove/ /foxglove
 	@foxglove_websockets {
-		path /foxglove/
+		path /foxglove
 		import websockets
 	}
 	reverse_proxy @foxglove_websockets localhost:8765
 
+	rewrite /gzweb/ /gzweb
 	@gzweb_websockets {
-		path /gzweb/
+		path /gzweb
 		import websockets
 	}
 	reverse_proxy @gzweb_websockets localhost:9090
