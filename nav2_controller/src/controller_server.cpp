@@ -65,8 +65,6 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "local_costmap", std::string{get_namespace()}, "local_costmap",
     get_parameter("use_sim_time").as_bool());
-  // Launch a thread to run the costmap node
-  costmap_thread_ = std::make_unique<nav2_util::NodeThread>(costmap_ros_);
 }
 
 ControllerServer::~ControllerServer()
@@ -124,6 +122,8 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   get_parameter("failure_tolerance", failure_tolerance_);
 
   costmap_ros_->configure();
+  // Launch a thread to run the costmap node
+  costmap_thread_ = std::make_unique<nav2_util::NodeThread>(costmap_ros_);
 
   try {
     progress_checker_type_ = nav2_util::get_plugin_type_param(node, progress_checker_id_);
