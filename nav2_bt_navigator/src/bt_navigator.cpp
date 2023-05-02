@@ -20,8 +20,11 @@
 #include <vector>
 
 #include "nav2_util/geometry_utils.hpp"
+#include "nav2_util/node_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_behavior_tree/bt_conversions.hpp"
+
+using nav2_util::declare_parameter_if_not_declared;
 
 namespace nav2_bt_navigator
 {
@@ -137,11 +140,15 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   };
 
   std::vector<std::string> navigator_ids;
-  declare_parameter("navigators", default_navigator_ids);
+  declare_parameter_if_not_declared(
+    node, "navigators",
+    rclcpp::ParameterValue(default_navigator_ids));
   get_parameter("navigators", navigator_ids);
   if (navigator_ids == default_navigator_ids) {
     for (size_t i = 0; i < default_navigator_ids.size(); ++i) {
-      declare_parameter(default_navigator_ids[i] + ".plugin", default_navigator_types[i]);
+      declare_parameter_if_not_declared(
+        node, default_navigator_ids[i] + ".plugin",
+        rclcpp::ParameterValue(default_navigator_types[i]));
     }
   }
 
