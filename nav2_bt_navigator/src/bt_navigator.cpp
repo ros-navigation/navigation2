@@ -20,8 +20,11 @@
 #include <vector>
 
 #include "nav2_util/geometry_utils.hpp"
+#include "nav2_util/node_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_behavior_tree/bt_conversions.hpp"
+
+using nav2_util::declare_parameter_if_not_declared;
 
 namespace nav2_bt_navigator
 {
@@ -90,13 +93,6 @@ BtNavigator::BtNavigator(const rclcpp::NodeOptions & options)
   declare_parameter("global_frame", std::string("map"));
   declare_parameter("robot_base_frame", std::string("base_link"));
   declare_parameter("odom_topic", std::string("odom"));
-
-  // Navigator defaults
-  const std::vector<std::string> default_navigator_ids = {
-    "navigate_to_pose",
-    "navigate_through_poses"
-  };
-  declare_parameter("navigators", default_navigator_ids);
 }
 
 BtNavigator::~BtNavigator()
@@ -133,9 +129,30 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   auto node = shared_from_this();
   odom_smoother_ = std::make_shared<nav2_util::OdomSmoother>(node, 0.3, odom_topic_);
 
-  // Load navigator plugins
+  // Navigator defaults
+  const std::vector<std::string> default_navigator_ids = {
+    "navigate_to_pose",
+    "navigate_through_poses"
+  };
+  const std::vector<std::string> default_navigator_types = {
+    "nav2_bt_navigator/NavigateToPoseNavigator",
+    "nav2_bt_navigator/NavigateThroughPosesNavigator"
+  };
+
   std::vector<std::string> navigator_ids;
+  declare_parameter_if_not_declared(
+    node, "navigators",
+    rclcpp::ParameterValue(default_navigator_ids));
   get_parameter("navigators", navigator_ids);
+  if (navigator_ids == default_navigator_ids) {
+    for (size_t i = 0; i < default_navigator_ids.size(); ++i) {
+      declare_parameter_if_not_declared(
+        node, default_navigator_ids[i] + ".plugin",
+        rclcpp::ParameterValue(default_navigator_types[i]));
+    }
+  }
+
+  // Load navigator plugins
   for (size_t i = 0; i != navigator_ids.size(); i++) {
     std::string navigator_type = nav2_util::get_plugin_type_param(node, navigator_ids[i]);
     try {
