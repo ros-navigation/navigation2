@@ -243,8 +243,11 @@ void BtActionServer<ActionT>::executeCallback()
     };
 
   // Execute the BT that was previously created in the configure step
-  nav2_behavior_tree::BtStatus rc = bt_->run(tree_, on_loop, is_canceling, bt_loop_duration_);
+  nav2_behavior_tree::BtStatus rc = bt_->run(tree_, on_loop, is_canceling, logger_, bt_loop_duration_);
 
+  // send remaining logs
+  topic_logger_->flush();
+  
   // Make sure that the Bt is not in a running state from a previous execution
   // note: if all the ControlNodes are implemented correctly, this is not needed.
   bt_->haltAllActions(tree_->rootNode());
