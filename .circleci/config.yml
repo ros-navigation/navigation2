@@ -556,6 +556,7 @@ workflows:
       - release_test:
           requires:
             - release_build
+          cache_test: true
           packages_skip: "nav2_system_tests"
           matrix:
             parameters:
