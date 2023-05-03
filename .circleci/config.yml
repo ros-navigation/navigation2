@@ -123,6 +123,9 @@ _commands:
           type: string
         mixins:
           type: string
+        packages_select:
+          default: "*"
+          type: string
         packages_skip:
           default: ""
           type: string
@@ -185,6 +188,8 @@ _commands:
                       BUILD_PACKAGES=$(
                         colcon list \
                           --names-only \
+                          --packages-select-regex << parameters.packages_select >> \
+                          --packages-skip-regex << parameters.packages_skip >> \
                           --packages-above \
                             $BUILD_UNFINISHED \
                             $BUILD_FAILED \
@@ -200,7 +205,6 @@ _commands:
                     . << parameters.underlay >>/install/setup.sh
                     colcon build \
                       --packages-select ${BUILD_PACKAGES} \
-                      --packages-skip << parameters.packages_skip >> \
                       --mixin << parameters.mixins >>
               - ccache_stats:
                   workspace: << parameters.workspace >>
@@ -226,6 +230,9 @@ _commands:
           type: string
         cache_test:
           type: boolean
+        packages_select:
+          default: "*"
+          type: string
         packages_skip:
           type: string
           default: ""
@@ -264,6 +271,8 @@ _commands:
                 TEST_PACKAGES=$(
                   colcon list \
                     --names-only \
+                    --packages-select-regex << parameters.packages_select >> \
+                    --packages-skip-regex << parameters.packages_skip >> \
                     --packages-above \
                       $TEST_UNPASSED \
                       $TEST_FAILURES \
@@ -273,7 +282,9 @@ _commands:
               then
                 TEST_PACKAGES=$(
                   colcon list \
-                    --names-only)
+                    --names-only) \
+                    --packages-select-regex << parameters.packages_select >> \
+                    --packages-skip-regex << parameters.packages_skip >>
               fi
               TEST_PACKAGES=$(
                 echo $TEST_PACKAGES \
@@ -297,7 +308,6 @@ _commands:
               set -o xtrace
               colcon test \
                 --packages-select ${TEST_PACKAGES}
-                --packages-skip << parameters.packages_skip >>
               colcon test-result \
                 --verbose
         - when:
@@ -387,6 +397,7 @@ _steps:
   build_workspace_overlay: &build_workspace_overlay
     setup_workspace:
       <<: *setup_workspace_overlay
+      packages_select: << parameters.packages_select >>
       packages_skip: << parameters.packages_skip >>
   restore_overlay_workspace: &restore_overlay_workspace
     setup_workspace:
@@ -397,6 +408,7 @@ _steps:
       key: overlay_ws
       workspace: /opt/overlay_ws
       cache_test: << parameters.cache_test >>
+      packages_select: << parameters.packages_select >>
       packages_skip: << parameters.packages_skip >>
   collect_overlay_coverage: &collect_overlay_coverage
     run:
@@ -436,6 +448,8 @@ commands:
   build_source:
     description: "Build Source"
     parameters:
+      packages_select:
+        type: string
       packages_skip:
         type: string
     steps:
@@ -453,6 +467,8 @@ commands:
     parameters:
       cache_test:
         type: boolean
+      packages_select:
+        type: string
       packages_skip:
         type: string
     steps:
@@ -492,6 +508,9 @@ executors:
 _jobs:
   job_build: &job_build
     parameters: &job_build_parameters
+      packages_select:
+        type: string
+        default: "*"
       packages_skip:
         type: string
         default: ""
@@ -516,6 +535,7 @@ jobs:
       - checkout_source
       - setup_dependencies
       - build_source:
+          packages_select: << parameters.packages_select >>
           packages_skip: << parameters.packages_skip >>
   system_build: &system_build
     <<: *release_build
@@ -526,6 +546,7 @@ jobs:
       - restore_build
       - test_build:
           cache_test: << parameters.cache_test >>
+          packages_select: << parameters.packages_select >>
           packages_skip: << parameters.packages_skip >>
       - report_coverage
   system_test: &system_test
@@ -544,11 +565,12 @@ workflows:
           packages_skip: "nav2_system_tests"
       - system_build:
           requires:
-            - release_test
+            - release_build
+          packages_select: "nav2_system_tests"
       - system_test:
           requires:
             - system_build
-          cache_test: true
+          packages_select: "nav2_system_tests"
   nightly:
     jobs:
       - release_build:
@@ -556,7 +578,6 @@ workflows:
       - release_test:
           requires:
             - release_build
-          cache_test: true
           packages_skip: "nav2_system_tests"
           matrix:
             alias: release_test
@@ -567,10 +588,12 @@ workflows:
                 - rmw_fastrtps_cpp
       - system_build:
           requires:
-            - release_test
+            - release_build
+          packages_select: "nav2_system_tests"
       - system_test:
           requires:
             - system_build
+          packages_select: "nav2_system_tests"
           matrix:
             parameters:
               rmw:
