@@ -301,12 +301,12 @@ ControllerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   controllers_.clear();
 
   goal_checkers_.clear();
+  progress_checkers_.clear();
   if (costmap_ros_->get_current_state().id() ==
     lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
   {
     costmap_ros_->cleanup();
   }
-  progress_checkers_.clear();
 
   // Release any allocated resources
   action_server_.reset();
