@@ -123,10 +123,10 @@ _commands:
           type: string
         mixins:
           type: string
-        packages_select:
+        packages_select_regex:
           default: "*"
           type: string
-        packages_skip:
+        packages_skip_regex:
           default: ""
           type: string
         restore:
@@ -188,8 +188,8 @@ _commands:
                       BUILD_PACKAGES=$(
                         colcon list \
                           --names-only \
-                          --packages-select-regex << parameters.packages_select >> \
-                          --packages-skip-regex << parameters.packages_skip >> \
+                          --packages-select-regex << parameters.packages_select_regex >> \
+                          --packages-skip-regex << parameters.packages_skip_regex >> \
                           --packages-above \
                             $BUILD_UNFINISHED \
                             $BUILD_FAILED \
@@ -230,10 +230,10 @@ _commands:
           type: string
         cache_test:
           type: boolean
-        packages_select:
+        packages_select_regex:
           default: "*"
           type: string
-        packages_skip:
+        packages_skip_regex:
           type: string
           default: ""
       steps:
@@ -271,8 +271,8 @@ _commands:
                 TEST_PACKAGES=$(
                   colcon list \
                     --names-only \
-                    --packages-select-regex << parameters.packages_select >> \
-                    --packages-skip-regex << parameters.packages_skip >> \
+                    --packages-select-regex << parameters.packages_select_regex >> \
+                    --packages-skip-regex << parameters.packages_skip_regex >> \
                     --packages-above \
                       $TEST_UNPASSED \
                       $TEST_FAILURES \
@@ -283,8 +283,8 @@ _commands:
                 TEST_PACKAGES=$(
                   colcon list \
                     --names-only) \
-                    --packages-select-regex << parameters.packages_select >> \
-                    --packages-skip-regex << parameters.packages_skip >>
+                    --packages-select-regex << parameters.packages_select_regex >> \
+                    --packages-skip-regex << parameters.packages_skip_regex >>
               fi
               TEST_PACKAGES=$(
                 echo $TEST_PACKAGES \
@@ -397,8 +397,8 @@ _steps:
   build_workspace_overlay: &build_workspace_overlay
     setup_workspace:
       <<: *setup_workspace_overlay
-      packages_select: << parameters.packages_select >>
-      packages_skip: << parameters.packages_skip >>
+      packages_select_regex: << parameters.packages_select_regex >>
+      packages_skip_regex: << parameters.packages_skip_regex >>
   restore_overlay_workspace: &restore_overlay_workspace
     setup_workspace:
       <<: *setup_workspace_overlay
@@ -408,8 +408,8 @@ _steps:
       key: overlay_ws
       workspace: /opt/overlay_ws
       cache_test: << parameters.cache_test >>
-      packages_select: << parameters.packages_select >>
-      packages_skip: << parameters.packages_skip >>
+      packages_select_regex: << parameters.packages_select_regex >>
+      packages_skip_regex: << parameters.packages_skip_regex >>
   collect_overlay_coverage: &collect_overlay_coverage
     run:
       name: Collect Code Coverage
@@ -448,9 +448,9 @@ commands:
   build_source:
     description: "Build Source"
     parameters:
-      packages_select:
+      packages_select_regex:
         type: string
-      packages_skip:
+      packages_skip_regex:
         type: string
     steps:
       - *build_workspace_overlay
@@ -467,9 +467,9 @@ commands:
     parameters:
       cache_test:
         type: boolean
-      packages_select:
+      packages_select_regex:
         type: string
-      packages_skip:
+      packages_skip_regex:
         type: string
     steps:
       - *test_overlay_workspace
@@ -508,10 +508,10 @@ executors:
 _jobs:
   job_build: &job_build
     parameters: &job_build_parameters
-      packages_select:
+      packages_select_regex:
         type: string
         default: "*"
-      packages_skip:
+      packages_skip_regex:
         type: string
         default: ""
   job_test: &job_test
@@ -535,8 +535,8 @@ jobs:
       - checkout_source
       - setup_dependencies
       - build_source:
-          packages_select: << parameters.packages_select >>
-          packages_skip: << parameters.packages_skip >>
+          packages_select_regex: << parameters.packages_select_regex >>
+          packages_skip_regex: << parameters.packages_skip_regex >>
   system_build: &system_build
     <<: *release_build
   release_test: &release_test
@@ -546,17 +546,17 @@ jobs:
       - restore_build
       - test_build:
           cache_test: << parameters.cache_test >>
-          packages_select: << parameters.packages_select >>
-          packages_skip: << parameters.packages_skip >>
+          packages_select_regex: << parameters.packages_select_regex >>
+          packages_skip_regex: << parameters.packages_skip_regex >>
       - report_coverage
   system_test: &system_test
     <<: *release_test
 
 _parameters:
   release_parameters: &release_parameters
-    packages_skip: "nav2_system_tests"
+    packages_skip_regex: "nav2_system_tests"
   system_parameters: &system_parameters
-    packages_select: "nav2_system_tests"
+    packages_select_regex: "nav2_system_tests"
 
 workflows:
   version: 2
