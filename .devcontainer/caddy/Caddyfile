@@ -12,7 +12,7 @@
 		path /{args.0}
 		# Avoid case sensitivity issues when matching field values
 		# E.g. when values are rewritten by Codespace port forwarding
-		header_regexp  Connection (?i)(Upgrade)
+		header_regexp Connection (?i)(Upgrade)
 		header Upgrade websocket
 	}
 	# Configure reverse proxy for web app to given backend address
@@ -27,11 +27,11 @@
 	# E.g. "http" or "https""
 	@http_scheme {
 		expression {header.X-Forwarded-Scheme}=="http"
-    }
+	}
 	# If http scheme is "http" then "ws"
-    vars @http_scheme WsScheme "ws"
+	vars @http_scheme WsScheme "ws"
 	# Else then default to "wss"
-    vars WsScheme "wss"
+	vars WsScheme "wss"
 	# Configure redirect to match request scheme
 	redir /{args.0}/nav2 /{args.0}/?ds=foxglove-websocket&ds.url={vars.WsScheme}%3A%2F%2F{header.X-Forwarded-Host}{http.request.orig_uri.path.dir}
 }
