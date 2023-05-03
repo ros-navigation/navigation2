@@ -35,6 +35,8 @@
 #include "tf2/utils.h"
 #pragma GCC diagnostic pop
 
+#include <cstdint>
+
 namespace nav2_behaviors
 {
 
@@ -48,7 +50,7 @@ enum class Status : int8_t
 struct ResultStatus
 {
   Status status;
-  unsigned short error_code{0};  //NOLINT
+  uint16_t error_code{0};
 };
 
 using namespace std::chrono_literals;  //NOLINT
