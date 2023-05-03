@@ -544,7 +544,7 @@ workflows:
           packages_skip: "nav2_system_tests"
       - system_build:
           requires:
-            - release_build
+            - release_test
       - system_test:
           requires:
             - system_build
@@ -565,7 +565,7 @@ workflows:
                 - rmw_fastrtps_cpp
       - system_build:
           requires:
-            - release_build
+            - release_test
       - system_test:
           requires:
             - system_build
