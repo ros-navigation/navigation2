@@ -552,33 +552,39 @@ jobs:
   system_test: &system_test
     <<: *release_test
 
+_parameters:
+  release_parameters: &release_parameters
+    packages_skip: "nav2_system_tests"
+  system_parameters: &system_parameters
+    packages_select: "nav2_system_tests"
+
 workflows:
   version: 2
   build_and_test:
     jobs:
       - release_build:
-          packages_skip: "nav2_system_tests"
+          <<: *release_parameters
       - release_test:
           requires:
             - release_build
           cache_test: true
-          packages_skip: "nav2_system_tests"
+          <<: *release_parameters
       - system_build:
           requires:
             - release_build
-          packages_select: "nav2_system_tests"
+          <<: *system_parameters
       - system_test:
           requires:
             - system_build
-          packages_select: "nav2_system_tests"
+          <<: *system_parameters
   nightly:
     jobs:
       - release_build:
-          packages_skip: "nav2_system_tests"
+          <<: *release_parameters
       - release_test:
           requires:
             - release_build
-          packages_skip: "nav2_system_tests"
+          <<: *release_parameters
           matrix:
             alias: release_test
             parameters:
@@ -589,11 +595,11 @@ workflows:
       - system_build:
           requires:
             - release_build
-          packages_select: "nav2_system_tests"
+          <<: *system_parameters
       - system_test:
           requires:
             - system_build
-          packages_select: "nav2_system_tests"
+          <<: *system_parameters
           matrix:
             parameters:
               rmw:
