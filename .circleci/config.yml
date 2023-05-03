@@ -571,11 +571,12 @@ workflows:
           <<: *release_parameters
       - system_build:
           requires:
-            - release_build
+            - release_test
           <<: *system_parameters
       - system_test:
           requires:
             - system_build
+          cache_test: true
           <<: *system_parameters
   nightly:
     jobs:
