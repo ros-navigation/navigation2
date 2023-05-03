@@ -26,14 +26,14 @@
 	# Matcher for http request scheme
 	# E.g. "http" or "https""
 	@http_scheme {
-		expression {http.request.header.X-Forwarded-Scheme}=="http"
+		expression {header.X-Forwarded-Scheme}=="http"
     }
 	# If http scheme is "http" then "ws"
     vars @http_scheme WsScheme "ws"
 	# Else then default to "wss"
     vars WsScheme "wss"
 	# Configure redirect to match request scheme
-	redir /{args.0}/nav2 /{args.0}/?ds=foxglove-websocket&ds.url={vars.WsScheme}%3A%2F%2F{http.request.header.X-Forwarded-Host}{http.request.orig_uri.path.dir}
+	redir /{args.0}/nav2 /{args.0}/?ds=foxglove-websocket&ds.url={vars.WsScheme}%3A%2F%2F{header.X-Forwarded-Host}{http.request.orig_uri.path.dir}
 }
 
 # Listen for http requests on port 8080
