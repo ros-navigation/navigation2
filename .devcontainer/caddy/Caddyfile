@@ -19,10 +19,8 @@
 	reverse_proxy @{args.0}_websockets {args.1}
 }
 
-# Snippet for redirect with appropriate URL queries values
-# to simplify remote development with web apps
-# E.g auto redirect websocket URL to match request scheme
-(redirect) {
+# Snippet for global matchers and variables
+(globals) {
 	# Matcher for http request scheme. E.g. "http" or "https"
 	@http_scheme {
 		expression {http.request.scheme}=="https" || {header.X-Forwarded-Scheme}=="https"
@@ -40,7 +38,12 @@
 	vars @host_forwarded WsHost {header.X-Forwarded-Host}
 	# Else default to host in request
 	vars WsHost {http.request.hostport}
+}
 
+# Snippet for redirect with appropriate URL queries values
+# to simplify remote development with web apps
+# E.g auto redirect websocket URL to match request scheme
+(redirect) {
 	# Configure redirect to match request scheme
 	redir /{args.0}/nav2 /{args.0}/?ds=foxglove-websocket&ds.url={vars.WsScheme}{vars.WsHost}{path.dir}
 }
@@ -49,6 +52,8 @@
 # regardless of hostname or domain address
 # E.g. whatever Codespaces assigns to host
 :8080 {
+	# Include global matchers and variables
+	import globals
 	# Sets the root path of the site to /srv directory
 	# where all installed web apps are nested
 	root * /srv
