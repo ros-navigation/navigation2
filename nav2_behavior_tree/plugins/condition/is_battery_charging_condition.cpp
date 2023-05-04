@@ -1,4 +1,4 @@
-// Copyright (c) 2022 Alberto J. Tudela Roldán
+// Copyright (c) 2023 Alberto J. Tudela Roldán
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,15 +27,15 @@ IsBatteryChargingCondition::IsBatteryChargingCondition(
   is_battery_charging_(false)
 {
   getInput("battery_topic", battery_topic_);
-  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
-  callback_group_ = node_->create_callback_group(
+  auto node = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+  callback_group_ = node->create_callback_group(
     rclcpp::CallbackGroupType::MutuallyExclusive,
     false);
-  callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
+  callback_group_executor_.add_callback_group(callback_group_, node->get_node_base_interface());
 
   rclcpp::SubscriptionOptions sub_option;
   sub_option.callback_group = callback_group_;
-  battery_sub_ = node_->create_subscription<sensor_msgs::msg::BatteryState>(
+  battery_sub_ = node->create_subscription<sensor_msgs::msg::BatteryState>(
     battery_topic_,
     rclcpp::SystemDefaultsQoS(),
     std::bind(&IsBatteryChargingCondition::batteryCallback, this, std::placeholders::_1),

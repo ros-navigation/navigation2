@@ -1,4 +1,4 @@
-// Copyright (c) 2022 Alberto J. Tudela Roldán
+// Copyright (c) 2023 Alberto J. Tudela Roldán
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -69,7 +69,6 @@ private:
    */
   void batteryCallback(sensor_msgs::msg::BatteryState::SharedPtr msg);
 
-  rclcpp::Node::SharedPtr node_;
   rclcpp::CallbackGroup::SharedPtr callback_group_;
   rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
   rclcpp::Subscription<sensor_msgs::msg::BatteryState>::SharedPtr battery_sub_;
