@@ -4,12 +4,12 @@
 (websockets) {
 	# Avoid path issues from trailing slashes
 	# E.g. whenever user types or copies "ws://" URL
-	rewrite /{args.0}/ /{args.0}
+	rewrite /{args.0} /{args.0}/
 	# Matcher for websocket connection upgrade requests
 	@{args.0}_websockets {
 		# Filter matcher by differentiating via path
 		# so web apps can be proxied to different backends
-		path /{args.0}
+		path /{args.0}/
 		# Avoid case sensitivity issues when matching field values
 		# E.g. when values are rewritten by Codespace port forwarding
 		header_regexp Connection (?i)(Upgrade)
