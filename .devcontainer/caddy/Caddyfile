@@ -1,9 +1,9 @@
-# Snippet for reverse proxying websockets
-# to simplify remote development with web apps
-# E.g reuse cookies authentication for CodeSpaces
+# Snippet to reverse proxy websocket connections
+# to direct backend traffic while hosting frontend
+# E.g Use web apps from a forwarded port via CodeSpaces
 (websockets) {
 	# Avoid path issues from trailing slashes
-	# E.g. whenever user types or copies "ws://" URL
+	# E.g. whenever user types or copies URLs
 	rewrite /{args.0} /{args.0}/
 	# Matcher for websocket connection upgrade requests
 	@{args.0}_websockets {
@@ -20,6 +20,8 @@
 }
 
 # Snippet for global matchers and variables
+# to logically expression request conditions
+# E.g. for conditionally changing redirects
 (globals) {
 	# Matcher for http request scheme. E.g. "http" or "https"
 	@http_scheme {
@@ -40,7 +42,7 @@
 	vars WsHost {http.request.hostport}
 }
 
-# Snippet for redirect with appropriate URL queries values
+# Snippet for redirect with given URL queries values
 # to simplify remote development with web apps
 # E.g auto redirect websocket URL to match request scheme
 (redirect) {
