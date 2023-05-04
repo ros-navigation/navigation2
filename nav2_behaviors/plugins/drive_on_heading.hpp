@@ -219,40 +219,6 @@ protected:
   bool check_local_costmap;
 };
 
-
-template<> Status DriveOnHeading<BackUpAction>::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
-{
- if (command->target.y != 0.0 || command->target.z != 0.0) {
-      RCLCPP_INFO(
-        this->logger_,
-        "DrivingOnHeading in Y and Z not supported, will only move in X.");
-      return Status::FAILED;
-    }
-
-    // Ensure that both the speed and direction have the same sign
-    if (!((command->target.x > 0.0) == (command->speed > 0.0)) ) {
-      RCLCPP_ERROR(this->logger_, "Speed and command sign did not match");
-      return Status::FAILED;
-    }
-
-    command_x_ = command->target.x;
-    command_speed_ = command->speed;
-    command_time_allowance_ = command->time_allowance;
-
-
-    end_time_ = this->steady_clock_.now() + command_time_allowance_;
-
-    if (!nav2_util::getCurrentPose(
-        initial_pose_, *this->tf_, this->global_frame_, this->robot_base_frame_,
-        this->transform_tolerance_))
-    {
-      RCLCPP_ERROR(this->logger_, "Initial robot pose is not available.");
-      return Status::FAILED;
-    }
-
-    return Status::SUCCEEDED;
-}
-
 }  // namespace nav2_behaviors
 
 #endif  // NAV2_BEHAVIORS__PLUGINS__DRIVE_ON_HEADING_HPP_
