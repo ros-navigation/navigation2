@@ -659,6 +659,23 @@ void ControllerServer::updateGlobalPath()
       action_server_->terminate_current();
       return;
     }
+    std::string current_progress_checker;
+    if (findProgressCheckerId(goal->progress_checker_id, current_progress_checker)) {
+      if (current_progress_checker_ != current_progress_checker) {
+        RCLCPP_INFO(
+            get_logger(), "Terminating action, change od progress checker %s requested in preempt.",
+            goal->progress_checker_id.c_str());
+        action_server_->terminate_current();
+        return;
+      }
+      current_progress_checker_ = current_progress_checker;
+    } else {
+      RCLCPP_INFO(
+          get_logger(), "Terminating action, invalid progress checker %s requested.",
+          goal->progress_checker_id.c_str());
+      action_server_->terminate_current();
+      return;
+    }
     setPlannerPath(goal->path);
   }
 }
