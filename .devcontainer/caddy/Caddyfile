@@ -23,17 +23,26 @@
 # to simplify remote development with web apps
 # E.g auto redirect websocket URL to match request scheme
 (redirect) {
-	# Matcher for http request scheme
-	# E.g. "http" or "https""
+	# Matcher for http request scheme. E.g. "http" or "https"
 	@http_scheme {
-		expression {header.X-Forwarded-Scheme}=="http"
+		expression {http.request.scheme}=="https" || {header.X-Forwarded-Scheme}=="https"
 	}
-	# If http scheme is "http" then "ws"
-	vars @http_scheme WsScheme "ws"
-	# Else then default to "wss"
-	vars WsScheme "wss"
+	# If any http scheme is "https", then use "wss"
+	vars @http_scheme WsScheme "wss://"
+	# Else default to "ws"
+	vars WsScheme "ws://"
+
+	# Matcher for forwarded request headers
+	@host_forwarded {
+		header X-Forwarded-Host *
+	}
+	# If http headers exists, then use them
+	vars @host_forwarded WsHost {header.X-Forwarded-Host}
+	# Else default to host in request
+	vars WsHost {http.request.hostport}
+
 	# Configure redirect to match request scheme
-	redir /{args.0}/nav2 /{args.0}/?ds=foxglove-websocket&ds.url={vars.WsScheme}%3A%2F%2F{header.X-Forwarded-Host}{http.request.orig_uri.path.dir}
+	redir /{args.0}/nav2 /{args.0}/?ds=foxglove-websocket&ds.url={vars.WsScheme}{vars.WsHost}{path.dir}
 }
 
 # Listen for http requests on port 8080
