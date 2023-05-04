@@ -24,9 +24,7 @@
 #include "nav2_msgs/action/drive_on_heading.hpp"
 #include "nav2_msgs/action/back_up.hpp"
 #include "nav2_util/node_utils.hpp"
-#include "nav2_msgs/action/back_up.hpp"
 
-using BackUpAction = nav2_msgs::action::BackUp;
 namespace nav2_behaviors
 {
 
