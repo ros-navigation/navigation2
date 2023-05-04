@@ -47,11 +47,6 @@ DriveOnHeadingAction::DriveOnHeadingAction(
   goal_.check_local_costmap = check_local_costmap;
 }
 
-void DriveOnHeadingAction::on_tick()
-{
-  increment_recovery_count();
-}
-
 }  // namespace nav2_behavior_tree
 
 #include "behaviortree_cpp_v3/bt_factory.h"
