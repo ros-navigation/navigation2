@@ -663,10 +663,9 @@ void ControllerServer::updateGlobalPath()
     if (findProgressCheckerId(goal->progress_checker_id, current_progress_checker)) {
       if (current_progress_checker_ != current_progress_checker) {
         RCLCPP_INFO(
-            get_logger(), "Terminating action, change od progress checker %s requested in preempt.",
+            get_logger(), "Change of progress checker %s requested, resetting it",
             goal->progress_checker_id.c_str());
-        action_server_->terminate_current();
-        return;
+            progress_checkers_[current_progress_checker]->reset();
       }
       current_progress_checker_ = current_progress_checker;
     } else {
