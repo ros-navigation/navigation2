@@ -3,7 +3,11 @@
 }
 # Web Server
 
-## Web Apps
+One-stop shop for all web tools!
+
+## Hosted Apps
+
+Redirects for available web apps:
 
 | App | Links |
 |-|-|
@@ -13,11 +17,15 @@
 
 ## External Resources
 
-| Site | Links |
-|-|-|
-[![Nav2](https://navigation.ros.org/_static/nav2_48x48.png)](https://navigation.ros.org) | [Nav2 Documentation](https://navigation.ros.org)
+For more related documentation:
 
-## Server Info
+- [Nav2 Documentation](https://navigation.ros.org)
+  - [Development Guides](https://navigation.ros.org/development_guides)
+    - [Dev Containers](https://navigation.ros.org/development_guides/devcontainer_docs)
+
+## Session Info
+
+Useful information about host server and remote client:
 
 |Key | Value |
 |-|-|
@@ -29,6 +37,8 @@
 
 <details>
 <summary>Websocket Debug</summary>
+
+For troubleshooting websocket connections:
 
 |Key | Value |
 |-|-|
