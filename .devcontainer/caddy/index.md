@@ -34,5 +34,5 @@
 | `header.X-Forwarded-Scheme` | `{{placeholder "header.X-Forwarded-Scheme"}}` |
 | `http.request.hostport` | `{{placeholder "http.request.hostport"}}` |
 | `http.request.scheme` | `{{placeholder "http.request.scheme"}}` |
-| `http.vars.WsHost` | `{{placeholder "http.vars.WsHost"}}` |
-| `http.vars.WsScheme` | `{{placeholder "http.vars.WsScheme"}}` |
+| `http.vars.ws.host` | `{{placeholder "http.vars.ws.host"}}` |
+| `http.vars.ws.scheme` | `{{placeholder "http.vars.ws.scheme"}}` |
