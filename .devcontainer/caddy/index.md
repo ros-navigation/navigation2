@@ -1,16 +1,20 @@
 {
-    "title": "Web Server",
-    "sitename": "Nav2 Dev Container"
+    "title": "Web Server"
 }
-# Nav2 Dev Container Web Server
+# Web Server
 
 ## Web Apps
 
-- [Foxglove Studio](foxglove)
-  - [Foxglove Studio](foxglove/nav2)
-- [Gzweb Client](gzweb)
+| Apps | Links |
+|-|-|
+| [![Foxglove](foxglove/favicon.ico)](foxglove/nav2) | [**Foxglove Studio**](foxglove/nav2) |
+| [![Gzweb](gzweb/favicon.ico)](gzweb) | [**Gzweb Client**](gzweb) |
 
-[Nav2 Documentation](https://navigation.ros.org)
+## Resources
+
+| Resources | Links |
+|-|-|
+[![Nav2](https://navigation.ros.org/_static/nav2_48x48.png)](https://navigation.ros.org) | [Nav2 Documentation](https://navigation.ros.org)
 
 ## Status Info
 
