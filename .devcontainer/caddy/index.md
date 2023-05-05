@@ -9,6 +9,7 @@
 |-|-|
 | [![Foxglove](foxglove/favicon.ico)](foxglove/nav2) | [**Foxglove Studio**](foxglove/nav2) |
 | [![Gzweb](gzweb/favicon.ico)](gzweb) | [**Gzweb Client**](gzweb) |
+| [![Glances](https://nicolargo.github.io/glances/favicon.ico)](glances) | [**System Monitor**](glances) |
 
 ## Resources
 

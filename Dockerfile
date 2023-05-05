@@ -143,7 +143,10 @@ RUN mv /etc/apt/apt.conf.d/docker-clean /etc/apt/
 RUN apt-get update && \
     apt-get install -y \
       bash-completion \
-      gdb
+      gdb && \
+    pip3 install \
+      bottle \
+      glances
 
 # source underlay for shell
 RUN echo 'source "$UNDERLAY_WS/install/setup.bash"' >> /etc/bash.bashrc

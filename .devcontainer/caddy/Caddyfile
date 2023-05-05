@@ -80,6 +80,11 @@
 	# Redirect query values for each web app
 	import redirect "foxglove"
 
+	redir /glances /glances/
+	handle_path /glances/* {
+		reverse_proxy * "localhost:61208"
+	}
+
 	# For debugging
 	# log {
 	# 	output file /var/log/caddy/server.log

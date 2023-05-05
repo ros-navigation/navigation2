@@ -30,6 +30,30 @@
             "problemMatcher": []
         },
         {
+            "label": "System Monitor",
+            "icon": {
+                "id": "debug-start"
+            },
+            "type": "process",
+            "command": "glances",
+            "args": [
+                "-w"
+            ],
+            "isBackground": true,
+            "hide": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "Stop System Monitor",
+            "icon": {
+                "id": "debug-stop"
+            },
+            "type": "shell",
+            "command": "echo ${input:Terminate System Monitor}",
+            "hide": true,
+            "problemMatcher": []
+        },
+        {
             "label": "Gzweb Bridge",
             "icon": {
                 "id": "debug-start"
@@ -90,6 +114,7 @@
             },
             "dependsOn": [
                 "Web Server",
+                "System Monitor",
                 "Gzweb Bridge",
                 "Foxglove Bridge"
             ],
@@ -103,6 +128,7 @@
             },
             "dependsOn": [
                 "Stop Web Server",
+                "Stop System Monitor",
                 "Stop Gzweb Bridge",
                 "Stop Foxglove Bridge"
             ],
@@ -128,6 +154,12 @@
             "type": "command",
             "command": "workbench.action.tasks.terminate",
             "args": "Web Server"
+        },
+        {
+            "id": "Terminate System Monitor",
+            "type": "command",
+            "command": "workbench.action.tasks.terminate",
+            "args": "System Monitor"
         },
         {
             "id": "Terminate Gzweb Bridge",
