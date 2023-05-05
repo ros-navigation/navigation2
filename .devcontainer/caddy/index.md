@@ -1,10 +1,6 @@
 {
     "title": "Web Server"
 }
-# Web Server
-
-One-stop shop for all web tools!
-
 ## Hosted Apps
 
 Redirects for available web apps:
