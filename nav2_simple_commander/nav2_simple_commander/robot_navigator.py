@@ -350,7 +350,7 @@ class BasicNavigator(Node):
 
     def getPath(self, start, goal, planner_id='', use_start=False):
         """Send a `ComputePathToPose` action request."""
-        rtn = self._getPathImpl(start, goal, planner_id='', use_start=False)
+        rtn = self._getPathImpl(start, goal, planner_id, use_start)
 
         if self.status != GoalStatus.STATUS_SUCCEEDED:
             self.warn(f'Getting path failed with status code: {self.status}')
@@ -394,7 +394,7 @@ class BasicNavigator(Node):
 
     def getPathThroughPoses(self, start, goals, planner_id='', use_start=False):
         """Send a `ComputePathThroughPoses` action request."""
-        rtn = self.__getPathThroughPosesImpl(start, goals, planner_id='', use_start=False)
+        rtn = self.__getPathThroughPosesImpl(start, goals, planner_id, use_start)
 
         if self.status != GoalStatus.STATUS_SUCCEEDED:
             self.warn(f'Getting path failed with status code: {self.status}')
@@ -439,7 +439,7 @@ class BasicNavigator(Node):
     def smoothPath(self, path, smoother_id='', max_duration=2.0, check_for_collision=False):
         """Send a `SmoothPath` action request."""
         rtn = self._smoothPathImpl(
-            path, smoother_id='', max_duration=2.0, check_for_collision=False)
+            path, smoother_id, max_duration, check_for_collision)
 
         if self.status != GoalStatus.STATUS_SUCCEEDED:
             self.warn(f'Getting path failed with status code: {self.status}')
