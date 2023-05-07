@@ -48,7 +48,8 @@
 (redirect) {
 	# Configure redirect to match request scheme
 	vars LayoutUrl "/assets/nav2_foxglove_layout.json"
-	redir /{args.0}/nav2 /{args.0}/?ds=foxglove-websocket&ds.url={vars.WsScheme}://{vars.WsHost}{path.dir}&layoutUrl={vars.LayoutUrl}
+	vars DataSourceUrl "{vars.WsScheme}://{vars.WsHost}{path.dir}"
+	redir /{args.0}/nav2 /{args.0}/?ds=foxglove-websocket&ds.url={vars.DataSourceUrl}&layoutUrl={vars.LayoutUrl}
 }
 
 # Listen for http requests on port 8080
