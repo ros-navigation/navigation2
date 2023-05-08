@@ -30,6 +30,8 @@ def generate_launch_description():
     # Get the launch directory
     bringup_dir = get_package_share_directory('nav2_bringup')
     launch_dir = os.path.join(bringup_dir, 'launch')
+    # This checks that tb3 exists needed for the URDF. If not using TB3, its safe to remove.
+    _ = get_package_share_directory('turtlebot3_gazebo')
 
     # Create the launch configuration variables
     slam = LaunchConfiguration('slam')
