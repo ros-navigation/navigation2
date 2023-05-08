@@ -42,6 +42,12 @@ NavigateThroughPosesNavigator::configure(
 
   path_blackboard_id_ = node->get_parameter("path_blackboard_id").as_string();
 
+  if (!node->has_parameter("default_planner_id")) {
+    node->declare_parameter("default_planner_id", std::string("GridBased"));
+  }
+
+  default_planner_id_ = node->get_parameter("default_planner_id").as_string();
+
   // Odometry smoother object for getting current speed
   odom_smoother_ = odom_smoother;
 
@@ -214,6 +220,7 @@ NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr
 
   // Update the goal pose on the blackboard
   blackboard->set<Goals>(goals_blackboard_id_, goal->poses);
+  blackboard->set<std::string>("planner_id", goal->planner_id.empty() ? default_planner_id_ : goal->planner_id);
 }
 
 }  // namespace nav2_bt_navigator

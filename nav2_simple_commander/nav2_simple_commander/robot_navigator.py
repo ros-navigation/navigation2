@@ -111,7 +111,7 @@ class BasicNavigator(Node):
         self.initial_pose = initial_pose
         self._setInitialPose()
 
-    def goThroughPoses(self, poses, behavior_tree=''):
+    def goThroughPoses(self, poses, behavior_tree='', planner_id=''):
         """Send a `NavThroughPoses` action request."""
         self.debug("Waiting for 'NavigateThroughPoses' action server")
         while not self.nav_through_poses_client.wait_for_server(timeout_sec=1.0):
@@ -120,6 +120,7 @@ class BasicNavigator(Node):
         goal_msg = NavigateThroughPoses.Goal()
         goal_msg.poses = poses
         goal_msg.behavior_tree = behavior_tree
+        goal_msg.planner_id = planner_id
 
         self.info(f'Navigating with {len(goal_msg.poses)} goals....')
         send_goal_future = self.nav_through_poses_client.send_goal_async(goal_msg,
@@ -134,7 +135,7 @@ class BasicNavigator(Node):
         self.result_future = self.goal_handle.get_result_async()
         return True
 
-    def goToPose(self, pose, behavior_tree=''):
+    def goToPose(self, pose, behavior_tree='', planner_id =''):
         """Send a `NavToPose` action request."""
         self.debug("Waiting for 'NavigateToPose' action server")
         while not self.nav_to_pose_client.wait_for_server(timeout_sec=1.0):
@@ -143,6 +144,7 @@ class BasicNavigator(Node):
         goal_msg = NavigateToPose.Goal()
         goal_msg.pose = pose
         goal_msg.behavior_tree = behavior_tree
+        goal_msg.planner_id = planner_id
 
         self.info('Navigating to goal: ' + str(pose.pose.position.x) + ' ' +
                   str(pose.pose.position.y) + '...')

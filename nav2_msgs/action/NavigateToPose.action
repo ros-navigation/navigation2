@@ -1,6 +1,7 @@
 #goal definition
 geometry_msgs/PoseStamped pose
 string behavior_tree
+string planner_id
 ---
 #result definition
 std_msgs/Empty result
