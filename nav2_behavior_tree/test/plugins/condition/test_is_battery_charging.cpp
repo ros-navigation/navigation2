@@ -100,12 +100,13 @@ TEST_F(IsBatteryChargingConditionTestFixture, test_behavior_power_supply_status)
   rclcpp::spin_some(node_);
   EXPECT_EQ(tree.tickRoot(), BT::NodeStatus::FAILURE);
 
-  battery_msg.power_supply_status = sensor_msgs::msg::BatteryState::POWER_SUPPLY_STATUS_NOT_CHARGING;
+  battery_msg.power_supply_status =
+    sensor_msgs::msg::BatteryState::POWER_SUPPLY_STATUS_NOT_CHARGING;
   battery_pub_->publish(battery_msg);
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
   rclcpp::spin_some(node_);
   EXPECT_EQ(tree.tickRoot(), BT::NodeStatus::FAILURE);
-  
+
   battery_msg.power_supply_status = sensor_msgs::msg::BatteryState::POWER_SUPPLY_STATUS_FULL;
   battery_pub_->publish(battery_msg);
   std::this_thread::sleep_for(std::chrono::milliseconds(100));

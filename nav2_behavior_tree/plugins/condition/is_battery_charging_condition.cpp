@@ -53,7 +53,8 @@ BT::NodeStatus IsBatteryChargingCondition::tick()
 
 void IsBatteryChargingCondition::batteryCallback(sensor_msgs::msg::BatteryState::SharedPtr msg)
 {
-  is_battery_charging_ = (msg->power_supply_status == sensor_msgs::msg::BatteryState::POWER_SUPPLY_STATUS_CHARGING);
+  is_battery_charging_ =
+    (msg->power_supply_status == sensor_msgs::msg::BatteryState::POWER_SUPPLY_STATUS_CHARGING);
 }
 
 }  // namespace nav2_behavior_tree
