@@ -40,6 +40,7 @@ public:
     const std::string & action_name,
     const BT::NodeConfiguration & conf);
 
+  void on_tick() override;
   /**
    * @brief Creates list of BT ports
    * @return BT::PortsList Containing basic ports along with node-specific ports
@@ -50,7 +51,9 @@ public:
       {
         BT::InputPort<double>("dist_to_travel", 0.15, "Distance to travel"),
         BT::InputPort<double>("speed", 0.025, "Speed at which to travel"),
-        BT::InputPort<double>("time_allowance", 10.0, "Allowed time for driving on heading")
+        BT::InputPort<double>("time_allowance", 10.0, "Allowed time for driving on heading"),
+        BT::InputPort<bool>("free_goal_vel", false, "Don't stop when goal reached"),
+        BT::InputPort<bool>("check_local_costmap", true, "Check local costmap for collisions")
       });
   }
 };

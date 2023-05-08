@@ -74,6 +74,9 @@ public:
     command_speed_ = command->speed;
     command_time_allowance_ = command->time_allowance;
 
+    free_goal_vel = command->free_goal_vel;
+    check_local_costmap = command->check_local_costmap;
+
     end_time_ = this->steady_clock_.now() + command_time_allowance_;
 
     if (!nav2_util::getCurrentPose(
