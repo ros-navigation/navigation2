@@ -15,6 +15,8 @@
 #ifndef NAV2_BEHAVIORS__TIMED_BEHAVIOR_HPP_
 #define NAV2_BEHAVIORS__TIMED_BEHAVIOR_HPP_
 
+
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <cmath>
@@ -35,7 +37,6 @@
 #include "tf2/utils.h"
 #pragma GCC diagnostic pop
 
-#include <cstdint>
 
 namespace nav2_behaviors
 {
