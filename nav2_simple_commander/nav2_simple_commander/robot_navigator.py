@@ -353,7 +353,7 @@ class BasicNavigator(Node):
 
     def getPath(self, start, goal, planner_id='', use_start=False):
         """Send a `ComputePathToPose` action request."""
-        rtn = self._getPathImpl(start, goal, planner_id='', use_start=False)
+        rtn = self._getPathImpl(start, goal, planner_id, use_start)
         if not rtn:
             return None
         else:
@@ -426,7 +426,7 @@ class BasicNavigator(Node):
     def smoothPath(self, path, smoother_id='', max_duration=2.0, check_for_collision=False):
         """Send a `SmoothPath` action request."""
         rtn = self._smoothPathImpl(
-            self, path, smoother_id='', max_duration=2.0, check_for_collision=False)
+            self, path, smoother_id, max_duration, check_for_collision)
         if not rtn:
             return None
         else:
