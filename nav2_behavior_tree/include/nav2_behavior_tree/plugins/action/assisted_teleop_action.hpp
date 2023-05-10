@@ -29,6 +29,10 @@ namespace nav2_behavior_tree
  */
 class AssistedTeleopAction : public BtActionNode<nav2_msgs::action::AssistedTeleop>
 {
+  using Action = nav2_msgs::action::AssistedTeleop;
+  using ActionGoal = Action::Goal;
+  using ActionResult = Action::Result;
+
 public:
   /**
    * @brief A constructor for nav2_behavior_tree::nav2_msgs::action::AssistedTeleop
@@ -46,7 +50,20 @@ public:
    */
   void on_tick() override;
 
+  /**
+   * @brief Function to perform some user-defined operation upon successful completion of the action
+   */
+  BT::NodeStatus on_success() override;
+
+  /**
+   * @brief Function to perform some user-defined operation upon abortion of the action
+   */
   BT::NodeStatus on_aborted() override;
+
+  /**
+   * @brief Function to perform some user-defined operation upon cancellation of the action
+   */
+  BT::NodeStatus on_cancelled() override;
 
   /**
    * @brief Creates list of BT ports
@@ -57,7 +74,9 @@ public:
     return providedBasicPorts(
       {
         BT::InputPort<double>("time_allowance", 10.0, "Allowed time for running assisted teleop"),
-        BT::InputPort<bool>("is_recovery", false, "If true the recovery count will be incremented")
+        BT::InputPort<bool>("is_recovery", false, "If true the recovery count will be incremented"),
+        BT::OutputPort<ActionResult::_error_code_type>(
+          "error_code_id", "The assisted teleop behavior server error code")
       });
   }
 
