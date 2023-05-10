@@ -203,7 +203,10 @@ RUN apt-get install -y --no-install-recommends \
 
 # setup foxglove
 ENV FOXGLOVE_WS /opt/foxglove
-COPY --from=ghcr.io/foxglove/studio /src $FOXGLOVE_WS
+# Use custom fork until PR is merged:
+# https://github.com/foxglove/studio/pull/5987
+# COPY --from=ghcr.io/foxglove/studio /src $FOXGLOVE_WS
+COPY --from=ghcr.io/ruffsl/foxglove_studio@sha256:8a2f2be0a95f24b76b0d7aa536f1c34f3e224022eed607cbf7a164928488332e /src $FOXGLOVE_WS
 RUN ln -s $FOXGLOVE_WS /srv/foxglove
 
 # multi-stage for exporting
