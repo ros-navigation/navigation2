@@ -84,11 +84,25 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   RCLCPP_INFO(get_logger(), "getting progress checker plugins..");
   get_parameter("progress_checker_plugins", progress_checker_ids_);
+  try {
+    nav2_util::declare_parameter_if_not_declared(
+      node, "progress_checker_plugin", rclcpp::PARAMETER_STRING);
+    std::string progress_checker_plugin;
+    progress_checker_plugin = node->get_parameter("progress_checker_plugin").as_string();
+    progress_checker_ids_.clear();
+    progress_checker_ids_.push_back(progress_checker_plugin);
+    RCLCPP_WARN(
+      get_logger(),
+      "\"progress_checker_plugin\" parameter was deprecated. Use "
+      "\"progress_checker_plugins\" instead to specify a list of plugins");
+  } catch (const std::exception &) {
+    // This is normal situation: progress_checker_plugin parameter should not being declared
+  }
   if (progress_checker_ids_ == default_progress_checker_ids_) {
     for (size_t i = 0; i < default_progress_checker_ids_.size(); ++i) {
       nav2_util::declare_parameter_if_not_declared(
         node, default_progress_checker_ids_[i] + ".plugin",
-            rclcpp::ParameterValue(default_progress_checker_types_[i]));
+        rclcpp::ParameterValue(default_progress_checker_types_[i]));
     }
   }
 
@@ -663,15 +677,15 @@ void ControllerServer::updateGlobalPath()
     if (findProgressCheckerId(goal->progress_checker_id, current_progress_checker)) {
       if (current_progress_checker_ != current_progress_checker) {
         RCLCPP_INFO(
-            get_logger(), "Change of progress checker %s requested, resetting it",
-            goal->progress_checker_id.c_str());
-            progress_checkers_[current_progress_checker]->reset();
+          get_logger(), "Change of progress checker %s requested, resetting it",
+          goal->progress_checker_id.c_str());
+        progress_checkers_[current_progress_checker]->reset();
       }
       current_progress_checker_ = current_progress_checker;
     } else {
       RCLCPP_INFO(
-          get_logger(), "Terminating action, invalid progress checker %s requested.",
-          goal->progress_checker_id.c_str());
+        get_logger(), "Terminating action, invalid progress checker %s requested.",
+        goal->progress_checker_id.c_str());
       action_server_->terminate_current();
       return;
     }
