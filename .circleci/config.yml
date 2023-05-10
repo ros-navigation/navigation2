@@ -274,8 +274,8 @@ _commands:
               then
                 TEST_PACKAGES=$(
                   colcon list \
-                    --names-only) \
-                    --packages-skip-regex << parameters.packages_skip_regex >>
+                    --names-only \
+                    --packages-skip-regex << parameters.packages_skip_regex >> )
               fi
               TEST_PACKAGES=$(
                 echo $TEST_PACKAGES \
