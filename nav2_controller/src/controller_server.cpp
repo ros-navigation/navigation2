@@ -88,7 +88,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     for (size_t i = 0; i < default_progress_checker_ids_.size(); ++i) {
       nav2_util::declare_parameter_if_not_declared(
         node, default_progress_checker_ids_[i] + ".plugin",
-        rclcpp::ParameterValue(default_progress_checker_types_));
+            rclcpp::ParameterValue(default_progress_checker_types_[i]));
     }
   }
 
