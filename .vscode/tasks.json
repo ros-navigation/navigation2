@@ -66,7 +66,7 @@
                 "start"
             ],
             "options": {
-                "cwd": "/opt/gzweb",
+                "cwd": "${env:GZWEB_WS}",
                 "env": {
                     "npm_config_port": "9090"
                 }
@@ -93,7 +93,7 @@
             "type": "shell",
             "command": "source ./install/setup.bash && ros2 run foxglove_bridge foxglove_bridge",
             "options": {
-                "cwd": "/opt/overlay_ws",
+                "cwd": "${env:OVERLAY_WS}",
             },
             "isBackground": true,
             "hide": true,
