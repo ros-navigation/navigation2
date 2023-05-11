@@ -43,20 +43,32 @@
 }
 
 # Snippet for enabling mobile web app features
+# to improve user experience on small screen devices
+# E.g. for enabling fullscreen mode on iOS and Android
 (mobile) {
-	# Matcher for index.html files
+	# Match for directory redirects to index.html
 	route / {
+		# Inject additional <meta> tags just after <head>
+		# https://web.dev/fullscreen/
 		replace `<head>` `<head><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">`
 	}
 }
 
-# Snippet for web app using websockets
+# Snippet for hosted web app using websockets
+# to serve static files and reverse proxying connections
+# E.g. for serving GzWeb and Foxglove web apps
 (app) {
+	# Redirect implicit directory requests twards index.html
 	redir {args.0} {args.0}/
+	# handle and strip path prefix from redirect
 	handle_path {args.0}/* {
+		# Set root directory for static files
 		root * {args.1}
+		# Serve static files
 		file_server
+		# Enable mobile web app features
 		import mobile
+		# Reverse proxy websockets to backend address
 		reverse_proxy @websockets {args.2}
 	}
 }
@@ -68,20 +80,28 @@
 	# Include global matchers and variables
 	import globals
 
+	# Handle main landing page
 	handle /* {
+		# Use relative path for root directory
 		root * srv
 		file_server
 		import mobile
+		# Render markdown files as html
 		templates
 	}
 
+	# Import app snippets for web apps
 	import app "/gzweb" "{$GZWEB_WS}/http/client" "localhost:9090"
 	import app "/foxglove" "{$FOXGLOVE_WS}" "localhost:8765"
+
+	# Add custom redirects for web apps
 	import redirect "/foxglove"
 
+	# Handle glances web app
 	redir /glances /glances/
 	handle_path /glances/* {
 		import mobile
+		# Reverse proxy to glances backend
 		reverse_proxy * "localhost:61208"
 	}
 
