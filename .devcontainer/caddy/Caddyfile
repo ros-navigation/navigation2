@@ -2,6 +2,9 @@
 # to logically expression request conditions
 # E.g. for conditionally changing redirects
 (globals) {
+	# Use gzip compression for all responses
+	encode gzip
+
 	# Matcher for http request scheme. E.g. "http" or "https"
 	@http_scheme {
 		expression {http.request.scheme}=="https" || {header.X-Forwarded-Scheme}=="https"
@@ -64,7 +67,6 @@
 :8080 {
 	# Include global matchers and variables
 	import globals
-	encode gzip
 
 	handle /* {
 		root * srv
