@@ -272,6 +272,9 @@
       <input_port name="error_codes_to_check">Error codes to check, user defined</input_port>
     </Condition>
 
+    <Condition ID="IsDocked">
+      <input_port name="dock_state_topic">Dock state topic</input_port>
+    </Condition>
 
     <!-- ############################### CONTROL NODES ################################ -->
     <Control ID="PipelineSequence"/>
