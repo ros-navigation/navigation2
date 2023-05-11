@@ -54,6 +54,17 @@
 	}
 }
 
+# Snippet for web app using websockets
+(app) {
+	redir /{args.0} /{args.0}/
+	handle_path /{args.0}/* {
+		root * {args.1}
+		file_server
+		import mobile
+		import websockets {args.0} {args.2}
+	}
+}
+
 # Listen for http requests on port 8080
 # regardless of hostname or domain address
 # E.g. whatever Codespaces assigns to host
@@ -65,25 +76,12 @@
 	handle /* {
 		root * srv
 		file_server
+		import mobile
 		templates
-		import mobile
 	}
 
-	redir /gzweb /gzweb/
-	handle_path /gzweb/* {
-		root * /srv/gzweb
-		file_server
-		import mobile
-		import websockets "gzweb" "localhost:9090"
-	}
-
-	redir /foxglove /foxglove/
-	handle_path /foxglove/* {
-		root * /srv/foxglove
-		file_server
-		import mobile
-		import websockets "foxglove" "localhost:8765"
-	}
+	import app "gzweb" "{$GZWEB_WS}/http/client" "localhost:9090"
+	import app "foxglove" "{$FOXGLOVE_WS}" "localhost:8765"
 	import redirect "foxglove"
 
 	redir /glances /glances/
