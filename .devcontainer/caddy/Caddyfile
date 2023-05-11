@@ -51,6 +51,13 @@
 	redir /{args.0}/nav2 /{args.0}/?ds=foxglove-websocket&ds.url={vars.DataSourceUrl}&layoutUrl={vars.LayoutUrl}
 }
 
+# Snippet for enabling mobile web app features
+(mobile) {
+	route @index_files {
+		replace `<head>` `<head><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">`
+	}
+}
+
 # Listen for http requests on port 8080
 # regardless of hostname or domain address
 # E.g. whatever Codespaces assigns to host
@@ -63,12 +70,14 @@
 		root * srv
 		file_server
 		templates
+		import mobile
 	}
 
 	redir /gzweb /gzweb/
 	handle_path /gzweb/* {
 		root * /srv/gzweb
 		file_server
+		import mobile
 		import websockets "gzweb" "localhost:9090"
 	}
 
@@ -76,12 +85,14 @@
 	handle_path /foxglove/* {
 		root * /srv/foxglove
 		file_server
+		import mobile
 		import websockets "foxglove" "localhost:8765"
 	}
 	import redirect "foxglove"
 
 	redir /glances /glances/
 	handle_path /glances/* {
+		import mobile
 		reverse_proxy * "localhost:61208"
 	}
 
