@@ -17,11 +17,6 @@
 # to logically expression request conditions
 # E.g. for conditionally changing redirects
 (globals) {
-	# Matcher for index.html files
-	@index_files {
-		path /
-	}
-
 	# Matcher for http request scheme. E.g. "http" or "https"
 	@http_scheme {
 		expression {http.request.scheme}=="https" || {header.X-Forwarded-Scheme}=="https"
@@ -53,7 +48,8 @@
 
 # Snippet for enabling mobile web app features
 (mobile) {
-	route @index_files {
+	# Matcher for index.html files
+	route / {
 		replace `<head>` `<head><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">`
 	}
 }
