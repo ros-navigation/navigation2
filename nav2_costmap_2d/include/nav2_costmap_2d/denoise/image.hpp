@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_COSTMAP_2D__IMAGE_HPP_
-#define NAV2_COSTMAP_2D__IMAGE_HPP_
+#ifndef NAV2_COSTMAP_2D__DENOISE__IMAGE_HPP_
+#define NAV2_COSTMAP_2D__DENOISE__IMAGE_HPP_
 
 #include <cstddef>
 #include <stdexcept>
@@ -204,4 +204,4 @@ void Image<T>::convert(Image<TargetElement> & target, Converter && converter) co
 
 }  // namespace nav2_costmap_2d
 
-#endif  // NAV2_COSTMAP_2D__IMAGE_HPP_
+#endif  // NAV2_COSTMAP_2D__DENOISE__IMAGE_HPP_

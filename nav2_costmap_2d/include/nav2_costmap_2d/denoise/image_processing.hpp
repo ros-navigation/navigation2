@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_COSTMAP_2D__IMAGE_PROCESSING_HPP_
-#define NAV2_COSTMAP_2D__IMAGE_PROCESSING_HPP_
+#ifndef NAV2_COSTMAP_2D__DENOISE__IMAGE_PROCESSING_HPP_
+#define NAV2_COSTMAP_2D__DENOISE__IMAGE_PROCESSING_HPP_
 
 #include "image.hpp"
 #include <algorithm>
@@ -1048,4 +1048,4 @@ std::pair<Image<Label>, Label> connectedComponents(
 
 }  // namespace nav2_costmap_2d
 
-#endif  // NAV2_COSTMAP_2D__IMAGE_PROCESSING_HPP_
+#endif  // NAV2_COSTMAP_2D__DENOISE__IMAGE_PROCESSING_HPP_
