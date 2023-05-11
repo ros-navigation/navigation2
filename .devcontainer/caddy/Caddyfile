@@ -1,18 +1,3 @@
-# Snippet to reverse proxy websocket connections
-# to direct backend traffic while hosting frontend
-# E.g Use web apps from a forwarded port via CodeSpaces
-(websockets) {
-	# Matcher for websocket connection upgrade requests
-	@{args.0}_websockets {
-		# Avoid case sensitivity issues when matching field values
-		# E.g. when values are rewritten by Codespace port forwarding
-		header_regexp Connection (?i)(Upgrade)
-		header Upgrade websocket
-	}
-	# Configure reverse proxy for web app to given backend address
-	reverse_proxy @{args.0}_websockets {args.1}
-}
-
 # Snippet for global matchers and variables
 # to logically expression request conditions
 # E.g. for conditionally changing redirects
@@ -34,6 +19,14 @@
 	vars @host_forwarded WsHost {header.X-Forwarded-Host}
 	# Else default to host in request
 	vars WsHost {http.request.hostport}
+
+	# Matcher for websocket connection upgrade requests
+	@websockets {
+		# Avoid case sensitivity issues when matching field values
+		# E.g. when values are rewritten by Codespace port forwarding
+		header_regexp Connection (?i)(Upgrade)
+		header Upgrade websocket
+	}
 }
 
 # Snippet for redirect with given URL queries values
@@ -43,7 +36,7 @@
 	# Configure redirect to match request scheme
 	vars LayoutUrl "/assets/nav2_foxglove_layout.json"
 	vars DataSourceUrl "{vars.WsScheme}://{vars.WsHost}{path.dir}"
-	redir /{args.0}/nav2 /{args.0}/?ds=foxglove-websocket&ds.url={vars.DataSourceUrl}&layoutUrl={vars.LayoutUrl}
+	redir {args.0}/nav2 {args.0}/?ds=foxglove-websocket&ds.url={vars.DataSourceUrl}&layoutUrl={vars.LayoutUrl}
 }
 
 # Snippet for enabling mobile web app features
@@ -56,12 +49,12 @@
 
 # Snippet for web app using websockets
 (app) {
-	redir /{args.0} /{args.0}/
-	handle_path /{args.0}/* {
+	redir {args.0} {args.0}/
+	handle_path {args.0}/* {
 		root * {args.1}
 		file_server
 		import mobile
-		import websockets {args.0} {args.2}
+		reverse_proxy @websockets {args.2}
 	}
 }
 
@@ -80,9 +73,9 @@
 		templates
 	}
 
-	import app "gzweb" "{$GZWEB_WS}/http/client" "localhost:9090"
-	import app "foxglove" "{$FOXGLOVE_WS}" "localhost:8765"
-	import redirect "foxglove"
+	import app "/gzweb" "{$GZWEB_WS}/http/client" "localhost:9090"
+	import app "/foxglove" "{$FOXGLOVE_WS}" "localhost:8765"
+	import redirect "/foxglove"
 
 	redir /glances /glances/
 	handle_path /glances/* {
