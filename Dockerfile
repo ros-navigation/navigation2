@@ -153,12 +153,15 @@ RUN apt-get update && \
 # source underlay for shell
 RUN echo 'source "$UNDERLAY_WS/install/setup.bash"' >> /etc/bash.bashrc
 
+# multi-stage for caddy
+FROM caddy:builder AS caddyer
+
+# build custom modules
+RUN xcaddy build \
+    --with github.com/caddyserver/replace-response
+
 # multi-stage for visualizing
 FROM dever AS visualizer
-
-# install foxglove dependacies
-RUN echo "deb https://dl.cloudsmith.io/public/caddy/stable/deb/debian any-version main" > /etc/apt/sources.list.d/caddy-stable.list
-RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 65760c51edea2017cea2ca15155b6d79ca56ea34
 
 # install demo dependencies
 RUN apt-get update && apt-get install -y \
@@ -200,7 +203,6 @@ RUN GZSERVER=$(which gzserver) && \
 
 # install foxglove dependacies
 RUN apt-get install -y --no-install-recommends \
-      caddy \
       ros-$ROS_DISTRO-foxglove-bridge
 
 # setup foxglove
