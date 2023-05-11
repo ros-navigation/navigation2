@@ -12,9 +12,11 @@
             "command": "caddy",
             "args": [
                 "run",
-                "--watch",
-                "--config=${workspaceFolder}/.devcontainer/caddy/Caddyfile"
+                "--watch"
             ],
+            "options": {
+                "cwd": "${workspaceFolder}/.devcontainer/caddy"
+            },
             "isBackground": true,
             "hide": true,
             "problemMatcher": []

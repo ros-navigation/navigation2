@@ -37,6 +37,8 @@ RUN find . -name "src" -type d \
 # multi-stage for building
 FROM $FROM_IMAGE AS builder
 
+RUN echo foo
+
 # config dependencies install
 ARG DEBIAN_FRONTEND=noninteractive
 RUN echo '\
