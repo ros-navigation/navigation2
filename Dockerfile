@@ -191,8 +191,7 @@ RUN cd $GZWEB_WS && . /usr/share/gazebo/setup.sh && \
     GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:$(find /opt/ros/$ROS_DISTRO/share \
       -mindepth 1 -maxdepth 2 -type d -name "models" | paste -s -d: -) && \
     xvfb-run -s "-screen 0 1280x1024x24" ./deploy.sh -m local && \
-    ln -s $GZWEB_WS/http/client/assets http/client/assets/models && \
-    ln -s $GZWEB_WS/http/client /srv/gzweb
+    ln -s $GZWEB_WS/http/client/assets http/client/assets/models
 
 # patch gzsever
 RUN GZSERVER=$(which gzserver) && \
@@ -211,7 +210,9 @@ ENV FOXGLOVE_WS /opt/foxglove
 # https://github.com/foxglove/studio/pull/5987
 # COPY --from=ghcr.io/foxglove/studio /src $FOXGLOVE_WS
 COPY --from=ghcr.io/ruffsl/foxglove_studio@sha256:8a2f2be0a95f24b76b0d7aa536f1c34f3e224022eed607cbf7a164928488332e /src $FOXGLOVE_WS
-RUN ln -s $FOXGLOVE_WS /srv/foxglove
+
+# install web server
+COPY --from=caddyer /usr/bin/caddy /usr/bin/caddy
 
 # multi-stage for exporting
 FROM tester AS exporter
