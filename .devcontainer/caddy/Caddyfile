@@ -97,6 +97,9 @@
 		import mobile
 		# Render markdown files as html
 		templates
+		templates */manifest.json {
+			mime application/json
+		}
 	}
 
 	# Import app snippets for web apps
