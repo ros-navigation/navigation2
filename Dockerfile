@@ -184,7 +184,7 @@ RUN apt-get install -y --no-install-recommends \
 
 # clone gzweb
 ENV GZWEB_WS /opt/gzweb
-RUN git clone --branch python3 https://github.com/ruffsl/gzweb.git $GZWEB_WS
+RUN git clone https://github.com/osrf/gzweb.git $GZWEB_WS
 
 # setup gzweb
 RUN cd $GZWEB_WS && . /usr/share/gazebo/setup.sh && \
