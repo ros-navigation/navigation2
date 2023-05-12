@@ -197,7 +197,7 @@ RUN cd $GZWEB_WS && . /usr/share/gazebo/setup.sh && \
 RUN GZSERVER=$(which gzserver) && \
     mv $GZSERVER $GZSERVER.orig && \
     echo '#!/bin/bash' > $GZSERVER && \
-    echo 'xvfb-run -s "-screen 0 1280x1024x24" gzserver.orig "$@"' >> $GZSERVER && \
+    echo 'exec xvfb-run -s "-screen 0 1280x1024x24" gzserver.orig "$@"' >> $GZSERVER && \
     chmod +x $GZSERVER
 
 # install foxglove dependacies
