@@ -53,11 +53,11 @@
 (mobile) {
 	# Match for directory redirects to index.html
 	route / {
-		# Inject additional <meta> tags just after <head>
-		# https://web.dev/fullscreen/
+		# Inject link to manifest just after <head> tag
+		# https://developer.mozilla.org/docs/Web/Manifest
 		replace `<head>` `<head><link rel="manifest" href="manifest.json" />`
 	}
-	# try_files {path} /manifest.json
+	# Redirect relative handle_path'ed manifest.json to /manifests directory
 	redir /manifest.json /manifests{http.request.orig_uri.path.dir}manifest.json
 }
 
@@ -97,6 +97,7 @@
 		import mobile
 		# Render markdown files as html
 		templates
+		# Template manifest.json files
 		templates */manifest.json {
 			mime application/json
 		}
