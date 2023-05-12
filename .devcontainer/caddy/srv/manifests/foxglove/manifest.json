@@ -1,0 +1,15 @@
+{
+    "name": "Foxglove: {{placeholder "http.request.hostport"}}",
+    "short_name": "Foxglove: {{placeholder "http.request.hostport"}}",
+    "icons": [
+        {
+            "src": "/foxglove/apple-touch-icon.png",
+            "sizes": "180x180",
+            "type": "image/png"
+        }
+    ],
+    "start_url": "/foxglove/autoconnect",
+    "theme_color": "#ffffff",
+    "background_color": "#ffffff",
+    "display": "standalone",
+}
