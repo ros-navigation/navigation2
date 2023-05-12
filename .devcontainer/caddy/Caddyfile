@@ -55,8 +55,10 @@
 	route / {
 		# Inject additional <meta> tags just after <head>
 		# https://web.dev/fullscreen/
-		replace `<head>` `<head><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">`
+		replace `<head>` `<head><link rel="manifest" href="manifest.json" />`
 	}
+	# try_files {path} /manifest.json
+	redir /manifest.json /manifests{http.request.orig_uri.path.dir}manifest.json
 }
 
 # Snippet for hosted web app using websockets
