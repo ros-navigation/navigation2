@@ -39,8 +39,11 @@
 	# Configure redirect to match request scheme
 	vars LayoutUrl "/assets/nav2_foxglove_layout.json"
 	vars DataSourceUrl "{vars.WsScheme}://{vars.WsHost}{args.0}/"
-	vars FoxgloveUrl "{args.0}/?ds=foxglove-websocket&ds.url={vars.DataSourceUrl}&layoutUrl={vars.LayoutUrl}"
-	redir {args.0}/nav2 {vars.FoxgloveUrl}
+	redir /autolayout "{args.0}/?ds=foxglove-websocket&ds.url={vars.DataSourceUrl}&layoutUrl={vars.LayoutUrl}"
+}
+
+# Snippet for dummy imports
+(dummy) {
 }
 
 # Snippet for enabling mobile web app features
@@ -71,6 +74,8 @@
 		import mobile
 		# Reverse proxy websockets to backend address
 		reverse_proxy @websockets {args.2}
+		# Import custom snippets
+		import {args.3} {args.0}
 	}
 }
 
@@ -92,11 +97,8 @@
 	}
 
 	# Import app snippets for web apps
-	import app "/gzweb" "{$GZWEB_WS}/http/client" "localhost:9090"
-	import app "/foxglove" "{$FOXGLOVE_WS}" "localhost:8765"
-
-	# Add custom redirects for web apps
-	import redirect "/foxglove"
+	import app "/gzweb" "{$GZWEB_WS}/http/client" "localhost:9090" "dummy"
+	import app "/foxglove" "{$FOXGLOVE_WS}" "localhost:8765" "redirect"
 
 	# Handle glances web app
 	redir /glances /glances/
