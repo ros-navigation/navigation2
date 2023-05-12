@@ -38,7 +38,7 @@
 (redirect) {
 	# Configure redirect to match request scheme
 	vars LayoutUrl "/assets/nav2_foxglove_layout.json"
-	vars DataSourceUrl "{vars.WsScheme}://{vars.WsHost}{args.0}"
+	vars DataSourceUrl "{vars.WsScheme}://{vars.WsHost}{args.0}/"
 	vars FoxgloveUrl "{args.0}/?ds=foxglove-websocket&ds.url={vars.DataSourceUrl}&layoutUrl={vars.LayoutUrl}"
 	redir {args.0}/nav2 {vars.FoxgloveUrl}
 }
