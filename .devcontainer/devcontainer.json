@@ -14,8 +14,8 @@
         // "--privileged", // device access to host peripherals, e.g. USB
         // "--security-opt=seccomp=unconfined", // enable debugging, e.g. gdb
     ],
-    "workspaceMount": "source=${localWorkspaceFolder},target=/opt/overlay_ws/src/navigation2,type=bind",
     "workspaceFolder": "/opt/overlay_ws/src/navigation2",
+    "workspaceMount": "source=${localWorkspaceFolder},target=${containerWorkspaceFolder},type=bind",
     "onCreateCommand": ".devcontainer/on-create-command.sh",
     "updateContentCommand": ".devcontainer/update-content-command.sh",
     "postCreateCommand": ".devcontainer/post-create-command.sh",
