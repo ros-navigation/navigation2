@@ -4,7 +4,59 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Gzweb",
+            "label": "Web Server",
+            "icon": {
+                "id": "debug-start"
+            },
+            "type": "process",
+            "command": "caddy",
+            "args": [
+                "run",
+                "--watch"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/.devcontainer/caddy"
+            },
+            "isBackground": true,
+            "hide": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "Stop Web Server",
+            "icon": {
+                "id": "debug-stop"
+            },
+            "type": "shell",
+            "command": "echo ${input:Terminate Web Server}",
+            "hide": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "System Monitor",
+            "icon": {
+                "id": "debug-start"
+            },
+            "type": "process",
+            "command": "glances",
+            "args": [
+                "-w"
+            ],
+            "isBackground": true,
+            "hide": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "Stop System Monitor",
+            "icon": {
+                "id": "debug-stop"
+            },
+            "type": "shell",
+            "command": "echo ${input:Terminate System Monitor}",
+            "hide": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "Gzweb Bridge",
             "icon": {
                 "id": "debug-start"
             },
@@ -14,7 +66,7 @@
                 "start"
             ],
             "options": {
-                "cwd": "/opt/gzweb",
+                "cwd": "${env:GZWEB_WS}",
                 "env": {
                     "npm_config_port": "9090"
                 }
@@ -24,25 +76,13 @@
             "problemMatcher": []
         },
         {
-            "label": "Stop Gzweb",
+            "label": "Stop Gzweb Bridge",
             "icon": {
                 "id": "debug-stop"
             },
             "type": "shell",
-            "command": "pkill -SIGTERM -f 'npm start' || true",
+            "command": "echo ${input:Terminate Gzweb Bridge}",
             "hide": true,
-            "problemMatcher": []
-        },
-        {
-            "label": "Restart Gzweb",
-            "icon": {
-                "id": "debug-restart"
-            },
-            "dependsOn": [
-                "Stop Gzweb",
-                "Gzweb"
-            ],
-            "dependsOrder": "sequence",
             "problemMatcher": []
         },
         {
@@ -53,7 +93,7 @@
             "type": "shell",
             "command": "source ./install/setup.bash && ros2 run foxglove_bridge foxglove_bridge",
             "options": {
-                "cwd": "/opt/overlay_ws",
+                "cwd": "${env:OVERLAY_WS}",
             },
             "isBackground": true,
             "hide": true,
@@ -65,73 +105,8 @@
                 "id": "debug-stop"
             },
             "type": "shell",
-            "command": "pkill -SIGTERM -f 'ros2 run foxglove_bridge foxglove_bridge' || true",
+            "command": "echo ${input:Terminate Foxglove Bridge}",
             "hide": true,
-            "problemMatcher": []
-        },
-        {
-            "label": "Foxglove Studio",
-            "icon": {
-                "id": "debug-start"
-            },
-            "type": "process",
-            "command": "caddy",
-            "args": [
-                "file-server",
-                "--listen",
-                ":8080"
-            ],
-            "options": {
-                "cwd": "/opt/foxglove",
-            },
-            "isBackground": true,
-            "hide": true,
-            "problemMatcher": []
-        },
-        {
-            "label": "Stop Foxglove Studio",
-            "icon": {
-                "id": "debug-stop"
-            },
-            "type": "shell",
-            "command": "pkill -SIGTERM -f 'caddy file-server --listen :8080' || true",
-            "hide": true,
-            "problemMatcher": []
-        },
-        {
-            "label": "Foxglove",
-            "icon": {
-                "id": "debug-start"
-            },
-            "dependsOn": [
-                "Foxglove Bridge",
-                "Foxglove Studio"
-            ],
-            "hide": true,
-            "problemMatcher": []
-        },
-        {
-            "label": "Stop Foxglove",
-            "icon": {
-                "id": "debug-stop"
-            },
-            "dependsOn": [
-                "Stop Foxglove Bridge",
-                "Stop Foxglove Studio"
-            ],
-            "hide": true,
-            "problemMatcher": []
-        },
-        {
-            "label": "Restart Foxglove",
-            "icon": {
-                "id": "debug-restart"
-            },
-            "dependsOn": [
-                "Stop Foxglove",
-                "Foxglove"
-            ],
-            "dependsOrder": "sequence",
             "problemMatcher": []
         },
         {
@@ -140,8 +115,10 @@
                 "id": "debug-start"
             },
             "dependsOn": [
-                "Gzweb",
-                "Foxglove"
+                "Web Server",
+                "System Monitor",
+                "Gzweb Bridge",
+                "Foxglove Bridge"
             ],
             // "hide": true,
             "problemMatcher": []
@@ -152,8 +129,10 @@
                 "id": "debug-stop"
             },
             "dependsOn": [
-                "Stop Gzweb",
-                "Stop Foxglove"
+                "Stop Web Server",
+                "Stop System Monitor",
+                "Stop Gzweb Bridge",
+                "Stop Foxglove Bridge"
             ],
             // "hide": true,
             "problemMatcher": []
@@ -170,5 +149,31 @@
             "dependsOrder": "sequence",
             "problemMatcher": []
         }
+    ],
+    "inputs": [
+        {
+            "id": "Terminate Web Server",
+            "type": "command",
+            "command": "workbench.action.tasks.terminate",
+            "args": "Web Server"
+        },
+        {
+            "id": "Terminate System Monitor",
+            "type": "command",
+            "command": "workbench.action.tasks.terminate",
+            "args": "System Monitor"
+        },
+        {
+            "id": "Terminate Gzweb Bridge",
+            "type": "command",
+            "command": "workbench.action.tasks.terminate",
+            "args": "Gzweb Bridge"
+        },
+        {
+            "id": "Terminate Foxglove Bridge",
+            "type": "command",
+            "command": "workbench.action.tasks.terminate",
+            "args": "Foxglove Bridge"
+        },
     ]
 }

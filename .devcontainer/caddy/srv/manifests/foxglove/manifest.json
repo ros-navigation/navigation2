@@ -1,0 +1,32 @@
+{
+    "name": "Foxglove: {{placeholder "http.request.hostport"}}",
+    "short_name": "Foxglove: {{placeholder "http.request.hostport"}}",
+    "icons": [
+        {
+            "src": "/foxglove/apple-touch-icon.png",
+            "sizes": "180x180",
+            "type": "image/png"
+        }
+    ],
+    "start_url": "/foxglove/autoconnect",
+    "theme_color": "#ffffff",
+    "background_color": "#ffffff",
+    "display": "standalone",
+    "shortcuts" : [
+        {
+          "name": "Auto Connect",
+          "url": "/foxglove/autoconnect",
+          "description": "Auto connect to default data source"
+        },
+        {
+          "name": "Auto Layout",
+          "url": "/foxglove/autolayout",
+          "description": "Auto connect using default layout"
+        },
+        {
+          "name": "Manual Connect",
+          "url": "/foxglove/",
+          "description": "Manually connect to data source"
+        }
+      ]
+}
