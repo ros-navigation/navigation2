@@ -143,17 +143,23 @@ RUN mv /etc/apt/apt.conf.d/docker-clean /etc/apt/
 RUN apt-get update && \
     apt-get install -y \
       bash-completion \
-      gdb
+      gdb && \
+    pip3 install \
+      bottle \
+      glances
 
 # source underlay for shell
 RUN echo 'source "$UNDERLAY_WS/install/setup.bash"' >> /etc/bash.bashrc
 
+# multi-stage for caddy
+FROM caddy:builder AS caddyer
+
+# build custom modules
+RUN xcaddy build \
+    --with github.com/caddyserver/replace-response
+
 # multi-stage for visualizing
 FROM dever AS visualizer
-
-# install foxglove dependacies
-RUN echo "deb https://dl.cloudsmith.io/public/caddy/stable/deb/debian any-version main" > /etc/apt/sources.list.d/caddy-stable.list
-RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 65760c51edea2017cea2ca15155b6d79ca56ea34
 
 # install demo dependencies
 RUN apt-get update && apt-get install -y \
@@ -176,9 +182,9 @@ RUN apt-get install -y --no-install-recommends \
 
 # clone gzweb
 ENV GZWEB_WS /opt/gzweb
-RUN git clone --branch python3 https://github.com/ruffsl/gzweb.git $GZWEB_WS
+RUN git clone https://github.com/osrf/gzweb.git $GZWEB_WS
 
-# build gzweb
+# setup gzweb
 RUN cd $GZWEB_WS && . /usr/share/gazebo/setup.sh && \
     GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:$(find /opt/ros/$ROS_DISTRO/share \
       -mindepth 1 -maxdepth 2 -type d -name "models" | paste -s -d: -) && \
@@ -189,17 +195,22 @@ RUN cd $GZWEB_WS && . /usr/share/gazebo/setup.sh && \
 RUN GZSERVER=$(which gzserver) && \
     mv $GZSERVER $GZSERVER.orig && \
     echo '#!/bin/bash' > $GZSERVER && \
-    echo 'xvfb-run -s "-screen 0 1280x1024x24" gzserver.orig "$@"' >> $GZSERVER && \
+    echo 'exec xvfb-run -s "-screen 0 1280x1024x24" gzserver.orig "$@"' >> $GZSERVER && \
     chmod +x $GZSERVER
 
 # install foxglove dependacies
 RUN apt-get install -y --no-install-recommends \
-      caddy \
       ros-$ROS_DISTRO-foxglove-bridge
 
-# copy foxglove
+# setup foxglove
 ENV FOXGLOVE_WS /opt/foxglove
-COPY --from=ghcr.io/foxglove/studio /src $FOXGLOVE_WS
+# Use custom fork until PR is merged:
+# https://github.com/foxglove/studio/pull/5987
+# COPY --from=ghcr.io/foxglove/studio /src $FOXGLOVE_WS
+COPY --from=ghcr.io/ruffsl/foxglove_studio@sha256:8a2f2be0a95f24b76b0d7aa536f1c34f3e224022eed607cbf7a164928488332e /src $FOXGLOVE_WS
+
+# install web server
+COPY --from=caddyer /usr/bin/caddy /usr/bin/caddy
 
 # multi-stage for exporting
 FROM tester AS exporter
