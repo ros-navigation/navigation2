@@ -1,6 +1,6 @@
 {
-    "name": "Glances: {{placeholder "http.request.hostport"}}",
-    "short_name": "Glances: {{placeholder "http.request.hostport"}}",
+    "name": "",
+    "short_name": "",
     "icons": [
         {
             "src": "/manifests/glances/android-chrome-192x192.png",
@@ -13,7 +13,6 @@
             "type": "image/png"
         }
     ],
-    "start_url": "/glances",
     "theme_color": "#ffffff",
     "background_color": "#ffffff",
     "display": "standalone"
