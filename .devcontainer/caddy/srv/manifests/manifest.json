@@ -1,6 +1,6 @@
 {
-    "name": "Nav2: {{placeholder "http.request.hostport"}}",
-    "short_name": "Nav2: {{placeholder "http.request.hostport"}}",
+    "name": "Nav2: {{placeholder "http.vars.ReqHost"}}",
+    "short_name": "Nav2: {{placeholder "http.vars.ReqHost"}}",
     "icons": [
         {
             "src": "/manifests/android-chrome-192x192.png",

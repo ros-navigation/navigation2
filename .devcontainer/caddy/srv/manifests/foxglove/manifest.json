@@ -1,6 +1,6 @@
 {
-    "name": "Foxglove: {{placeholder "http.request.hostport"}}",
-    "short_name": "Foxglove: {{placeholder "http.request.hostport"}}",
+    "name": "Foxglove: {{placeholder "http.vars.ReqHost"}}",
+    "short_name": "Foxglove: {{placeholder "http.vars.ReqHost"}}",
     "icons": [
         {
             "src": "/foxglove/apple-touch-icon.png",

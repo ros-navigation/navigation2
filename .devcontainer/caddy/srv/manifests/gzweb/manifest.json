@@ -1,6 +1,6 @@
 {
-    "name": "Gzweb: {{placeholder "http.request.hostport"}}",
-    "short_name": "Gzweb: {{placeholder "http.request.hostport"}}",
+    "name": "Gzweb: {{placeholder "http.vars.ReqHost"}}",
+    "short_name": "Gzweb: {{placeholder "http.vars.ReqHost"}}",
     "icons": [
         {
             "src": "/manifests/gzweb/android-chrome-192x192.png",

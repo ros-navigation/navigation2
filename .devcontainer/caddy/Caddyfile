@@ -19,9 +19,9 @@
 		header X-Forwarded-Host *
 	}
 	# If http headers exists, then use them
-	vars @host_forwarded WsHost {header.X-Forwarded-Host}
+	vars @host_forwarded ReqHost {header.X-Forwarded-Host}
 	# Else default to host in request
-	vars WsHost {http.request.hostport}
+	vars ReqHost {http.request.hostport}
 
 	# Matcher for websocket connection upgrade requests
 	@websockets {
@@ -38,7 +38,7 @@
 (redirect) {
 	# Configure redirect to match request scheme
 	vars LayoutUrl "/assets/nav2_foxglove_layout.json"
-	vars DataSourceUrl "{vars.WsScheme}://{vars.WsHost}{args.0}/"
+	vars DataSourceUrl "{vars.WsScheme}://{vars.ReqHost}{args.0}/"
 	redir /autoconnect "{args.0}/?ds=foxglove-websocket&ds.url={vars.DataSourceUrl}"
 	redir /autolayout "{args.0}/?ds=foxglove-websocket&ds.url={vars.DataSourceUrl}&layoutUrl={vars.LayoutUrl}"
 }

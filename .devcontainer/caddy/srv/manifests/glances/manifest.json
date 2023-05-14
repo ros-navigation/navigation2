@@ -1,6 +1,6 @@
 {
-    "name": "Glances: {{placeholder "http.request.hostport"}}",
-    "short_name": "Glances: {{placeholder "http.request.hostport"}}",
+    "name": "Glances: {{placeholder "http.vars.ReqHost"}}",
+    "short_name": "Glances: {{placeholder "http.vars.ReqHost"}}",
     "icons": [
         {
             "src": "/manifests/glances/android-chrome-192x192.png",
