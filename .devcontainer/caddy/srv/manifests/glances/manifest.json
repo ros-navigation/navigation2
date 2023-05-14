@@ -13,6 +13,7 @@
             "type": "image/png"
         }
     ],
+    "id": "/glances",
     "start_url": "/glances",
     "theme_color": "#ffffff",
     "background_color": "#ffffff",
