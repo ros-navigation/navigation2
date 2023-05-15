@@ -8,7 +8,7 @@
             "type": "image/png"
         }
     ],
-    "id": "/foxglove",
+    "id": "/foxglove/",
     "start_url": "/foxglove/autoconnect",
     "theme_color": "#ffffff",
     "background_color": "#ffffff",
