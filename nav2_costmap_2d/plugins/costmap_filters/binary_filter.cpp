@@ -324,7 +324,7 @@ void BinaryFilter::changeParameters(const bool state){
       rclcpp::Client<rcl_interfaces::srv::SetParameters>::SharedFuture;
     auto response_received_callback = [this, bool_param](ServiceResponseFuture future) {
         auto result = future.get();
-        if (result->results.at(0).successful) {
+        if (!result->results.at(0).successful) {
           RCLCPP_ERROR(logger_, "Failed to change parameter %s", bool_param.name.c_str());
         }
         else {
