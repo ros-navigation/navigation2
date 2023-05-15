@@ -107,10 +107,8 @@ void BinaryFilter::initializeFilter(
 
   // Create clients for changing parameters
 
-  // 
-
   for (auto param : binary_parameters_info_) {
-    RCLCPP_INFO(
+    RCLCPP_DEBUG(
       logger_,
       "BinaryFilter: Creating client for changing parameter \"%s\" of node \"%s\"...",
       param.param_name.c_str(), param.node_name.c_str());
@@ -334,7 +332,7 @@ void BinaryFilter::changeParameters(const bool state){
         }
       };
 
-    RCLCPP_INFO(logger_, "Sending request to set parameter  %s to %s",
+    RCLCPP_DEBUG(logger_, "Sending request to set parameter  %s to %s",
       binary_parameters_info_.at(param_index).param_name.c_str(), bool_param.value.bool_value ? "true" : "false");
     auto future_result = change_parameters_clients_.at(param_index)->async_send_request(
       request, response_received_callback);
