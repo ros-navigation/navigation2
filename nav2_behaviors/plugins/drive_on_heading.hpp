@@ -121,7 +121,7 @@ public:
     feedback_->distance_traveled = distance;
     this->action_server_->publish_feedback(feedback_);
 
-    if (distance >= abs(command_x_)) {
+    if (distance >= std::fabs(command_x_)) {
       if (!free_goal_vel)
       {
         this->stopRobot();
