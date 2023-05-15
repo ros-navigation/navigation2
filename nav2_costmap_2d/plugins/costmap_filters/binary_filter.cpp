@@ -51,7 +51,9 @@ namespace nav2_costmap_2d
 BinaryFilter::BinaryFilter()
 : filter_info_sub_(nullptr), mask_sub_(nullptr),
   binary_state_pub_(nullptr), filter_mask_(nullptr), global_frame_(""),
-  default_state_(false), binary_state_(default_state_)
+  default_state_(false), binary_state_(default_state_),
+  binary_parameters_{""}, binary_parameters_info_{},
+  change_parameters_clients_{}
 {
 }
 
@@ -90,7 +92,7 @@ void BinaryFilter::initializeFilter(
     node->get_parameter(name_ + "." + param + "." + "default_state", param_struct.default_state);
 
 
-    binary_parameters_info.push_back(param_struct);
+    binary_parameters_info_.push_back(param_struct);
   }   
 
   filter_info_topic_ = filter_info_topic;
@@ -103,16 +105,15 @@ void BinaryFilter::initializeFilter(
     filter_info_topic_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
     std::bind(&BinaryFilter::filterInfoCallback, this, std::placeholders::_1));
 
-
   // Create clients for changing parameters
-  for (auto param : binary_parameters_info) {
+
+  // 
+
+  for (auto param : binary_parameters_info_) {
     RCLCPP_INFO(
       logger_,
       "BinaryFilter: Creating client for changing parameter \"%s\" of node \"%s\"...",
       param.param_name.c_str(), param.node_name.c_str());
-
-
-
 
     auto change_parameters_client_ = node->create_client<rcl_interfaces::srv::SetParameters>(
       "/"+param.node_name+"/set_parameters");
@@ -298,7 +299,7 @@ void BinaryFilter::changeState(const bool state)
 }
 
 void BinaryFilter::changeParameters(const bool state){
-  for (size_t param_index = 0; param_index < binary_parameters_info.size(); ++param_index) {
+  for (size_t param_index = 0; param_index < binary_parameters_info_.size(); ++param_index) {
     while (!change_parameters_clients_.at(param_index)->wait_for_service(std::chrono::seconds(1))) {
         if (!rclcpp::ok()) {
           RCLCPP_ERROR(logger_, "Interrupted while waiting for the service. Exiting.");
@@ -312,9 +313,9 @@ void BinaryFilter::changeParameters(const bool state){
     
     // Set parameters for BinaryFilter
     rcl_interfaces::msg::Parameter bool_param;
-    bool_param.name = binary_parameters_info.at(param_index).param_name;
+    bool_param.name = binary_parameters_info_.at(param_index).param_name;
     bool_param.value.type = rcl_interfaces::msg::ParameterType::PARAMETER_BOOL;
-    if (binary_parameters_info.at(param_index).default_state != default_state_){
+    if (binary_parameters_info_.at(param_index).default_state != default_state_){
       bool_param.value.bool_value = !state;
     } else {
       bool_param.value.bool_value = state;
@@ -323,10 +324,10 @@ void BinaryFilter::changeParameters(const bool state){
 
     using ServiceResponseFuture =
       rclcpp::Client<rcl_interfaces::srv::SetParameters>::SharedFuture;
-    auto response_received_callback = [this](ServiceResponseFuture future) {
+    auto response_received_callback = [this, bool_param](ServiceResponseFuture future) {
         auto result = future.get();
         if (result->results.at(0).successful) {
-          RCLCPP_ERROR(logger_, "Failed to change parameter ");
+          RCLCPP_ERROR(logger_, "Failed to change parameter %s", bool_param.name.c_str());
         }
         else {
         RCLCPP_DEBUG(logger_, "Successfully changed parameter");
@@ -334,7 +335,7 @@ void BinaryFilter::changeParameters(const bool state){
       };
 
     RCLCPP_INFO(logger_, "Sending request to set parameter  %s to %s",
-      binary_parameters_info.at(param_index).param_name.c_str(), bool_param.value.bool_value ? "true" : "false");
+      binary_parameters_info_.at(param_index).param_name.c_str(), bool_param.value.bool_value ? "true" : "false");
     auto future_result = change_parameters_clients_.at(param_index)->async_send_request(
       request, response_received_callback);
   } 
