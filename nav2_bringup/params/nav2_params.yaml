@@ -232,36 +232,6 @@ global_costmap:
       resolution: 0.05
       track_unknown_space: true
       plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
-      filters: ["binary_filter"]
-      # binary_filter:
-      #   # param_node: "global_costmap/global_costmap"
-      #   param_node: "set_parameters_callback"
-      #   # param_name: "static_layer.enabled"
-      #   param_name: "use_sim_time"
-      #   plugin: "nav2_costmap_2d::BinaryFilter"
-      #   enabled: True
-      #   filter_info_topic: "/costmap_filter_info"
-      #   transform_tolerance: 0.1
-      #   default_state: False
-      #   binary_state_topic: "/binary_state"
-      #   flip_threshold: 50.0
-      binary_filter:
-        plugin: "nav2_costmap_2d::BinaryFilter"
-        enabled: True
-        filter_info_topic: "/costmap_filter_info"
-        transform_tolerance: 0.1
-        default_state: False
-        binary_state_topic: "/binary_state"
-        flip_threshold: 50.0
-        binary_parameters: ["static_layer", "inflation_layer"]
-        static_layer:
-          node_name: "global_costmap/global_costmap"
-          param_name: "static_layer.enabled"
-          default_state: True  # Optional parameter. If not set - using BF's default_state
-        inflation_layer:
-          node_name: "global_costmap/global_costmap"
-          param_name: "inflation_layer.enabled"
-
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: True
