@@ -121,7 +121,7 @@ public:
     feedback_->distance_traveled = distance;
     this->action_server_->publish_feedback(feedback_);
 
-    if (distance >= abs(command_x_)) {
+    if (distance >= std::fabs(command_x_)) {
       if (!free_goal_vel)
       {
         this->stopRobot();
@@ -132,7 +132,7 @@ public:
     auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>();
     cmd_vel->linear.y = 0.0;
     cmd_vel->angular.z = 0.0;
-    cmd_vel->linear.x = command_x_ < 0 ? -command_speed_ : command_speed_;
+    cmd_vel->linear.x = command_x_;
 
     geometry_msgs::msg::Pose2D pose2d;
     pose2d.x = current_pose.pose.position.x;
