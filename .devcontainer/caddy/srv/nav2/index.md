@@ -7,9 +7,9 @@ Redirects for available web apps:
 
 | App | Links |
 |-|-|
-| [![Foxglove](foxglove/favicon.ico)](foxglove/autolayout) | [**Foxglove Studio**](foxglove/autolayout) |
-| [![Gzweb](gzweb/favicon.ico)](gzweb) | [**Gzweb Client**](gzweb) |
-| [![Glances](https://nicolargo.github.io/glances/favicon.ico)](glances) | [**System Monitor**](glances) |
+| [![Foxglove](/foxglove/favicon.ico)](/foxglove/autolayout) | [**Foxglove Studio**](/foxglove/autolayout) |
+| [![Gzweb](/gzweb/favicon.ico)](/gzweb/) | [**Gzweb Client**](/gzweb/) |
+| [![Glances](/glances/favicon.ico)](/glances/) | [**System Monitor**](/glances/) |
 
 ## External Resources
 

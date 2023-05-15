@@ -94,13 +94,19 @@
 		# Use relative path for root directory
 		root * srv
 		file_server
-		import mobile
-		# Render markdown files as html
-		templates
 		# Template manifest.json files
 		templates */manifest.json {
 			mime application/json
 		}
+	}
+
+	redir / /nav2/
+	handle_path /nav2/* {
+		root * srv/nav2
+		file_server
+		import mobile
+		# Render markdown files as html
+		templates
 	}
 
 	# Import app snippets for web apps
