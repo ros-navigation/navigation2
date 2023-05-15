@@ -7,7 +7,7 @@
 
 	# Matcher for http request scheme. E.g. "http" or "https"
 	@http_scheme {
-		expression {http.request.scheme}=="https" || {header.X-Forwarded-Scheme}=="https"
+		expression {http.request.scheme}=="https" || {header.X-Forwarded-Scheme}=="https" || {header.X-Forwarded-Proto}=="https"
 	}
 	# If any http scheme is "https", then use "wss"
 	vars @http_scheme WsScheme "wss"
