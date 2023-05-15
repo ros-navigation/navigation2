@@ -73,6 +73,25 @@ void BinaryFilter::initializeFilter(
   node->get_parameter(name_ + "." + "binary_state_topic", binary_state_topic);
   declareParameter("flip_threshold", rclcpp::ParameterValue(50.0));
   node->get_parameter(name_ + "." + "flip_threshold", flip_threshold_);
+  declareParameter("binary_parameters", rclcpp::ParameterValue(std::vector<std::string>()));
+  node->get_parameter(name_ + "." + "binary_parameters", binary_parameters_);
+
+  for (std::string param : binary_parameters_) {
+    binary_parameter_t param_struct;  
+
+    declareParameter(param + "." + "node_name", rclcpp::ParameterValue(""));
+    node->get_parameter(name_ + "." + param + "." + "node_name", param_struct.node_name);
+    
+    declareParameter(param + "." + "param_name", rclcpp::ParameterValue(""));
+    node->get_parameter(name_ + "." + param + "." + "param_name", param_struct.param_name);
+
+    // Take default value from parameter server if not specified
+    declareParameter(param + "." + "default_state", rclcpp::ParameterValue(default_state_));
+    node->get_parameter(name_ + "." + param + "." + "default_state", param_struct.default_state);
+
+
+    binary_parameters_info.push_back(param_struct);
+  }   
 
   filter_info_topic_ = filter_info_topic;
   // Setting new costmap filter info subscriber
@@ -83,6 +102,22 @@ void BinaryFilter::initializeFilter(
   filter_info_sub_ = node->create_subscription<nav2_msgs::msg::CostmapFilterInfo>(
     filter_info_topic_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
     std::bind(&BinaryFilter::filterInfoCallback, this, std::placeholders::_1));
+
+
+  // Create clients for changing parameters
+  for (auto param : binary_parameters_info) {
+    RCLCPP_INFO(
+      logger_,
+      "BinaryFilter: Creating client for changing parameter \"%s\" of node \"%s\"...",
+      param.param_name.c_str(), param.node_name.c_str());
+
+
+
+
+    auto change_parameters_client_ = node->create_client<rcl_interfaces::srv::SetParameters>(
+      "/"+param.node_name+"/set_parameters");
+    change_parameters_clients_.push_back(change_parameters_client_);
+  }
 
   // Get global frame required for binary state publisher
   global_frame_ = layered_costmap_->getGlobalFrameID();
@@ -259,6 +294,50 @@ void BinaryFilter::changeState(const bool state)
     std::make_unique<std_msgs::msg::Bool>();
   msg->data = state;
   binary_state_pub_->publish(std::move(msg));
+  changeParameters(state);
+}
+
+void BinaryFilter::changeParameters(const bool state){
+  for (size_t param_index = 0; param_index < binary_parameters_info.size(); ++param_index) {
+    while (!change_parameters_clients_.at(param_index)->wait_for_service(std::chrono::seconds(1))) {
+        if (!rclcpp::ok()) {
+          RCLCPP_ERROR(logger_, "Interrupted while waiting for the service. Exiting.");
+          return;
+        }
+        RCLCPP_INFO(logger_, "service not available, waiting again...");
+      }
+
+    // Create a rcl_interfaces::msg::SetParameters client for changing parameters
+    auto request = std::make_shared<rcl_interfaces::srv::SetParameters::Request>();
+    
+    // Set parameters for BinaryFilter
+    rcl_interfaces::msg::Parameter bool_param;
+    bool_param.name = binary_parameters_info.at(param_index).param_name;
+    bool_param.value.type = rcl_interfaces::msg::ParameterType::PARAMETER_BOOL;
+    if (binary_parameters_info.at(param_index).default_state != default_state_){
+      bool_param.value.bool_value = !state;
+    } else {
+      bool_param.value.bool_value = state;
+    }
+    request->parameters.push_back(bool_param);
+
+    using ServiceResponseFuture =
+      rclcpp::Client<rcl_interfaces::srv::SetParameters>::SharedFuture;
+    auto response_received_callback = [this](ServiceResponseFuture future) {
+        auto result = future.get();
+        if (result->results.at(0).successful) {
+          RCLCPP_ERROR(logger_, "Failed to change parameter ");
+        }
+        else {
+        RCLCPP_DEBUG(logger_, "Successfully changed parameter");
+        }
+      };
+
+    RCLCPP_INFO(logger_, "Sending request to set parameter  %s to %s",
+      binary_parameters_info.at(param_index).param_name.c_str(), bool_param.value.bool_value ? "true" : "false");
+    auto future_result = change_parameters_clients_.at(param_index)->async_send_request(
+      request, response_received_callback);
+  } 
 }
 
 }  // namespace nav2_costmap_2d

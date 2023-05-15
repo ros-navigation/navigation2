@@ -45,6 +45,7 @@
 
 #include "std_msgs/msg/bool.hpp"
 #include "nav2_msgs/msg/costmap_filter_info.hpp"
+#include "rcl_interfaces/srv/set_parameters.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -101,6 +102,12 @@ private:
    */
   void changeState(const bool state);
 
+  /**
+   * @brief Changes binary parameters of filter. Call async service for each parameter.
+   * @param state New binary state
+   */
+  void changeParameters(const bool state);
+
   // Working with filter info and mask
   rclcpp::Subscription<nav2_msgs::msg::CostmapFilterInfo>::SharedPtr filter_info_sub_;
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr mask_sub_;
@@ -118,6 +125,22 @@ private:
 
   bool default_state_;  // Default Binary Filter state
   bool binary_state_;  // Current Binary Filter state
+
+  // List of binary params to be changed
+  std::vector<std::string> binary_parameters_{}; 
+
+  // Parameter information
+  typedef struct
+  {
+    std::string node_name;    // Node to which the parameter belongs
+    std::string param_name;   // Name of parameter
+    bool default_state;       // Parameter default state
+  } binary_parameter_t;
+
+  // List of params with info 
+  std::vector<binary_parameter_t> binary_parameters_info{};
+  // List of clients for changing parameters
+  std::vector<rclcpp::Client<rcl_interfaces::srv::SetParameters>::SharedPtr> change_parameters_clients_{};
 };
 
 }  // namespace nav2_costmap_2d
