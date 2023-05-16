@@ -1,5 +1,5 @@
 {
-    "title": "Web Server"
+    "title": "Nav2 App"
 }
 ## Hosted Apps
 
@@ -10,6 +10,7 @@ Redirects for available web apps:
 | [![Foxglove](/foxglove/favicon.ico)](/foxglove/autolayout) | [**Foxglove Studio**](/foxglove/autolayout) |
 | [![Gzweb](/gzweb/favicon.ico)](/gzweb/) | [**Gzweb Client**](/gzweb/) |
 | [![Glances](/glances/favicon.ico)](/glances/) | [**System Monitor**](/glances/) |
+| [![Nav2](/nav2/favicon.ico)](/glances/) | [**Nav2 App**](/nav2/) |
 
 ## External Resources
 
