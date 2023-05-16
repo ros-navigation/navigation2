@@ -351,7 +351,7 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   NodeHybrid::CoordinateVector path;
   int num_iterations = 0;
 
-   std::shared_ptr<std::vector<std::tuple<float, float>>> expansions = nullptr;
+  std::shared_ptr<std::vector<std::tuple<float, float>>> expansions = nullptr;
   if (_viz_expansions) {
     expansions = std::make_shared<std::vector<std::tuple<float, float>>>();
   }
