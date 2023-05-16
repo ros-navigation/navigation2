@@ -3,11 +3,6 @@
     "short_name": "Glances: {{placeholder "http.vars.ReqHost"}}",
     "icons": [
         {
-            "src": "/manifests/glances/android-chrome-192x192.png",
-            "sizes": "192x192",
-            "type": "image/png"
-        },
-        {
             "src": "/manifests/glances/android-chrome-512x512.png",
             "sizes": "512x512",
             "type": "image/png"
