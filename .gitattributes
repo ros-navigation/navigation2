@@ -1,0 +1,2 @@
+.devcontainer/caddy/srv/*.png filter=lfs diff=lfs merge=lfs -text
+.devcontainer/caddy/srv/*.ico filter=lfs diff=lfs merge=lfs -text
