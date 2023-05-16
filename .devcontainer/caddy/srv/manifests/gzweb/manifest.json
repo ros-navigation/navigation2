@@ -3,7 +3,7 @@
     "short_name": "Gzweb: {{placeholder "http.vars.ReqHost"}}",
     "icons": [
         {
-            "src": "/manifests/gzweb/android-chrome-512x512.png",
+            "src": "/manifests/gzweb/icon-512x512.png",
             "sizes": "512x512",
             "type": "image/png"
         }

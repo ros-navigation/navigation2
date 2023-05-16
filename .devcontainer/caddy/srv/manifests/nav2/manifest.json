@@ -3,7 +3,7 @@
     "short_name": "Nav2: {{placeholder "http.vars.ReqHost"}}",
     "icons": [
         {
-            "src": "/manifests/nav2/android-chrome-384x384.png",
+            "src": "/manifests/nav2/icon-384x384.png",
             "sizes": "384x384",
             "type": "image/png"
         }
