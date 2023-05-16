@@ -3,7 +3,7 @@
     "short_name": "Gzweb: {{placeholder "http.vars.ReqHost"}}",
     "icons": [
         {
-            "src": "/manifests/gzweb/icon-512x512.png",
+            "src": "https://upload.wikimedia.org/wikipedia/en/thumb/5/5e/Gazebo_logo_without_text.svg/512px-Gazebo_logo_without_text.svg.png",
             "sizes": "512x512",
             "type": "image/png"
         }

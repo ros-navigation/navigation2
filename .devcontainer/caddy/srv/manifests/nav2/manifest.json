@@ -3,8 +3,8 @@
     "short_name": "Nav2: {{placeholder "http.vars.ReqHost"}}",
     "icons": [
         {
-            "src": "/manifests/nav2/icon-384x384.png",
-            "sizes": "384x384",
+            "src": "https://github.com/ros-planning/navigation.ros.org/blob/master/images/nav2_48x48.png?raw=true",
+            "sizes": "48x48",
             "type": "image/png"
         }
     ],

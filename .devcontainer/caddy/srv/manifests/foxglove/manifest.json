@@ -3,7 +3,7 @@
     "short_name": "Foxglove: {{placeholder "http.vars.ReqHost"}}",
     "icons": [
         {
-          "src": "/manifests/foxglove/icon-512x512.png",
+          "src": "https://foxglove.dev/images/logo-icon-round.png",
           "sizes": "512x512",
           "type": "image/png"
         }
