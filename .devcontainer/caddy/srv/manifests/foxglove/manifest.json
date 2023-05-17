@@ -17,8 +17,8 @@
     ],
     "id": "/foxglove/",
     "start_url": "/foxglove/autoconnect",
-    "theme_color": "#ffffff",
-    "background_color": "#ffffff",
+    "theme_color": "#6F3BE8",
+    "background_color": "#6F3BE8",
     "display": "standalone",
     "shortcuts" : [
         {

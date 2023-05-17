@@ -17,7 +17,7 @@
     ],
     "id": "/glances/",
     "start_url": "/glances/",
-    "theme_color": "#ffffff",
-    "background_color": "#ffffff",
+    "theme_color": "#2C363F",
+    "background_color": "#2C363F",
     "display": "standalone"
 }
