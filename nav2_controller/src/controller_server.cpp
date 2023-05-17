@@ -93,7 +93,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     progress_checker_ids_.push_back(progress_checker_plugin);
     RCLCPP_WARN(
       get_logger(),
-      "\"progress_checker_plugin\" parameter was deprecated. Use "
+      "\"progress_checker_plugin\" parameter was deprecated and will be removed soon. Use "
       "\"progress_checker_plugins\" instead to specify a list of plugins");
   } catch (const std::exception &) {
     // This is normal situation: progress_checker_plugin parameter should not being declared
