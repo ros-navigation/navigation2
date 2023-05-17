@@ -3,9 +3,16 @@
     "short_name": "Gzweb: {{placeholder "http.vars.ReqHost"}}",
     "icons": [
         {
-            "src": "https://upload.wikimedia.org/wikipedia/en/thumb/5/5e/Gazebo_logo_without_text.svg/512px-Gazebo_logo_without_text.svg.png",
-            "sizes": "512x512",
-            "type": "image/png"
+          "src": "/media/gzweb/any_icon_x512.png",
+          "sizes": "512x512",
+          "type": "image/png",
+          "purpose": "any"
+        },
+        {
+          "src": "/media/gzweb/maskable_icon_x512.png",
+          "sizes": "512x512",
+          "type": "image/png",
+          "purpose": "maskable"
         }
     ],
     "id": "/gzweb/",

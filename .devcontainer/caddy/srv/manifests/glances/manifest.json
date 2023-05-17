@@ -3,9 +3,16 @@
     "short_name": "Glances: {{placeholder "http.vars.ReqHost"}}",
     "icons": [
         {
-            "src": "https://github.com/nicolargo/glances/blob/develop/glances/outputs/static/images/glances.png?raw=true",
-            "sizes": "512x512",
-            "type": "image/png"
+          "src": "/media/glances/any_icon_x512.png",
+          "sizes": "512x512",
+          "type": "image/png",
+          "purpose": "any"
+        },
+        {
+          "src": "/media/glances/maskable_icon_x512.png",
+          "sizes": "512x512",
+          "type": "image/png",
+          "purpose": "maskable"
         }
     ],
     "id": "/glances/",

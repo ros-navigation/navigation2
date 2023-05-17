@@ -2,11 +2,18 @@
     "name": "Foxglove: {{placeholder "http.vars.ReqHost"}}",
     "short_name": "Foxglove: {{placeholder "http.vars.ReqHost"}}",
     "icons": [
-        {
-          "src": "https://foxglove.dev/images/logo-icon-round.png",
-          "sizes": "512x512",
-          "type": "image/png"
-        }
+      {
+        "src": "/media/foxglove/any_icon_x512.png",
+        "sizes": "512x512",
+        "type": "image/png",
+        "purpose": "any"
+      },
+      {
+        "src": "/media/foxglove/maskable_icon_x512.png",
+        "sizes": "512x512",
+        "type": "image/png",
+        "purpose": "maskable"
+      }
     ],
     "id": "/foxglove/",
     "start_url": "/foxglove/autoconnect",

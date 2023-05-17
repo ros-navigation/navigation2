@@ -7,10 +7,10 @@ Redirects for available web apps:
 
 | App | Links |
 |-|-|
-| [![Foxglove](/foxglove/favicon.ico)](/foxglove/autolayout) | [**Foxglove Studio**](/foxglove/autolayout) |
-| [![Gzweb](/gzweb/favicon.ico)](/gzweb/) | [**Gzweb Client**](/gzweb/) |
-| [![Glances](/glances/favicon.ico)](/glances/) | [**System Monitor**](/glances/) |
-| [![Nav2](/nav2/nav2_logo_small.png)](/nav2/) | [**Nav2 App**](/nav2/) |
+| [<img src="/media/foxglove/any_icon_x512.png" height="64">](/foxglove/autolayout) | [**Foxglove Studio**](/foxglove/autolayout) |
+| [<img src="/media/gzweb/any_icon_x512.png" height="64">](/gzweb/) | [**Gzweb Client**](/gzweb/) |
+| [<img src="/media/glances/any_icon_x512.png" height="64">](/glances/) | [**System Monitor**](/glances/) |
+| [<img src="/media/nav2/any_icon_x512.png" height="64">](/nav2/) | [**Nav2 App**](/nav2/) |
 
 ## External Resources
 
