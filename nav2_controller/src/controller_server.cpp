@@ -679,9 +679,9 @@ void ControllerServer::updateGlobalPath()
         RCLCPP_INFO(
           get_logger(), "Change of progress checker %s requested, resetting it",
           goal->progress_checker_id.c_str());
-        progress_checkers_[current_progress_checker]->reset();
+        current_progress_checker_ = current_progress_checker;
+        progress_checkers_[current_progress_checker_]->reset();
       }
-      current_progress_checker_ = current_progress_checker;
     } else {
       RCLCPP_INFO(
         get_logger(), "Terminating action, invalid progress checker %s requested.",
