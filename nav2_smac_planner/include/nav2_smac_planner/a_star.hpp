@@ -110,7 +110,7 @@ public:
    */
   bool createPath(
     CoordinateVector & path, int & num_iterations, const float & tolerance,
-    std::shared_ptr<std::vector<std::tuple<float, float>>> expansions_log = nullptr);
+    std::vector<std::tuple<float, float>> * expansions_log = nullptr);
 
   /**
    * @brief Sets the collision checker to use

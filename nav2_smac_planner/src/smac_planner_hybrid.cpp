@@ -350,13 +350,13 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   // Compute plan
   NodeHybrid::CoordinateVector path;
   int num_iterations = 0;
-
-  std::shared_ptr<std::vector<std::tuple<float, float>>> expansions = nullptr;
+  std::string error;
+  std::unique_ptr<std::vector<std::tuple<float, float>>> expansions = nullptr;
   if (_viz_expansions) {
-    expansions = std::make_shared<std::vector<std::tuple<float, float>>>();
+    expansions = std::make_unique<std::vector<std::tuple<float, float>>>();
   }
   // Note: All exceptions thrown are handled by the planner server and returned to the action
-  if (!_a_star->createPath(path, num_iterations, 0)) {
+  if (!_a_star->createPath(path, num_iterations, 0, expansions.get())) {
     if (num_iterations < _a_star->getMaxIterations()) {
       throw nav2_core::NoValidPathCouldBeFound("no valid path found");
     } else {

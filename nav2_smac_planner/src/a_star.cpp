@@ -222,7 +222,7 @@ template<typename NodeT>
 bool AStarAlgorithm<NodeT>::createPath(
   CoordinateVector & path, int & iterations,
   const float & tolerance,
-  std::shared_ptr<std::vector<std::tuple<float, float>>> expansions_log)
+  std::vector<std::tuple<float, float>> * expansions_log)
 {
   steady_clock::time_point start_time = steady_clock::now();
   _tolerance = tolerance;
