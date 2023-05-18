@@ -3,15 +3,15 @@
     "short_name": "Gzweb: {{placeholder "http.vars.ReqHost"}}",
     "icons": [
         {
-          "src": "/media/gzweb/any_icon_x512.png",
+          "src": "/media/gzweb/any_icon_x512.webp",
           "sizes": "512x512",
-          "type": "image/png",
+          "type": "image/webp",
           "purpose": "any"
         },
         {
-          "src": "/media/gzweb/maskable_icon_x512.png",
+          "src": "/media/gzweb/maskable_icon_x512.webp",
           "sizes": "512x512",
-          "type": "image/png",
+          "type": "image/webp",
           "purpose": "maskable"
         }
     ],

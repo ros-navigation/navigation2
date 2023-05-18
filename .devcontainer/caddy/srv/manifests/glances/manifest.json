@@ -3,15 +3,15 @@
     "short_name": "Glances: {{placeholder "http.vars.ReqHost"}}",
     "icons": [
         {
-          "src": "/media/glances/any_icon_x512.png",
+          "src": "/media/glances/any_icon_x512.webp",
           "sizes": "512x512",
-          "type": "image/png",
+          "type": "image/webp",
           "purpose": "any"
         },
         {
-          "src": "/media/glances/maskable_icon_x512.png",
+          "src": "/media/glances/maskable_icon_x512.webp",
           "sizes": "512x512",
-          "type": "image/png",
+          "type": "image/webp",
           "purpose": "maskable"
         }
     ],
