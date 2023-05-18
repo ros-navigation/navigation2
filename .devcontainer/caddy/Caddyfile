@@ -93,7 +93,7 @@
 	handle /* {
 		# Use relative path for root directory
 		root * srv
-		file_server
+		file_server browse
 		# Template manifest.json files
 		templates */manifest.json {
 			mime application/json
@@ -105,7 +105,7 @@
 	redir /media /media/
 	handle_path /media/* {
 		root * {$MEDIA_SRV}
-		file_server
+		file_server browse
 	}
 
 	# Handle nav2 web app
