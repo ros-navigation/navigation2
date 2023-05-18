@@ -33,6 +33,18 @@ Useful information about host server and remote client:
 ### Server Diagnostics
 
 <details>
+<summary>File Browser</summary>
+
+For troubleshooting file server:
+
+- [Assets](/assets/)
+  - Assets internal to workspace
+- [Media](/media/)
+  - Media external to workspace
+
+</details>
+
+<details>
 <summary>Websocket Debug</summary>
 
 For troubleshooting websocket connections:
