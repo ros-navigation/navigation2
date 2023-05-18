@@ -3,13 +3,13 @@
     "short_name": "Foxglove: {{placeholder "http.vars.ReqHost"}}",
     "icons": [
       {
-        "src": "/media/foxglove/any_icon_x512.webp",
+        "src": "/media/icons/foxglove/any_icon_x512.webp",
         "sizes": "512x512",
         "type": "image/webp",
         "purpose": "any"
       },
       {
-        "src": "/media/foxglove/maskable_icon_x512.webp",
+        "src": "/media/icons/foxglove/maskable_icon_x512.webp",
         "sizes": "512x512",
         "type": "image/webp",
         "purpose": "maskable"

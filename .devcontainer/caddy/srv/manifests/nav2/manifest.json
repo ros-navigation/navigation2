@@ -3,13 +3,13 @@
     "short_name": "Nav2: {{placeholder "http.vars.ReqHost"}}",
     "icons": [
         {
-          "src": "/media/nav2/any_icon_x512.webp",
+          "src": "/media/icons/nav2/any_icon_x512.webp",
           "sizes": "512x512",
           "type": "image/webp",
           "purpose": "any"
         },
         {
-          "src": "/media/nav2/maskable_icon_x512.webp",
+          "src": "/media/icons/nav2/maskable_icon_x512.webp",
           "sizes": "512x512",
           "type": "image/webp",
           "purpose": "maskable"
