@@ -100,12 +100,16 @@
 		}
 	}
 
+	# Handle media file content
+	# I.e. expernal from workspace
 	redir /media /media/
 	handle_path /media/* {
 		root * {$MEDIA_SRV}
 		file_server
 	}
 
+	# Handle nav2 web app
+	# I.e. main landing page
 	redir / /nav2/
 	handle_path /nav2/* {
 		root * srv/nav2
