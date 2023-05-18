@@ -110,8 +110,8 @@
 	}
 
 	# Import app snippets for web apps
-	import app "/gzweb" "{$GZWEB_WS}/http/client" "localhost:9090" "dummy"
-	import app "/foxglove" "{$FOXGLOVE_WS}" "localhost:8765" "redirect"
+	import app "/gzweb" "{$GZWEB_SRV}" "localhost:9090" "dummy"
+	import app "/foxglove" "{$FOXGLOVE_SRV}" "localhost:8765" "redirect"
 
 	# Handle glances web app
 	redir /glances /glances/
