@@ -190,6 +190,7 @@ ENV GZWEB_SRV /srv/gzweb
 RUN cd $GZWEB_WS && . /usr/share/gazebo/setup.sh && \
     GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:$(find /opt/ros/$ROS_DISTRO/share \
       -mindepth 1 -maxdepth 2 -type d -name "models" | paste -s -d: -) && \
+    sed -i "s|var modelList =|var modelList = []; var oldModelList =|g" gz3d/src/gzgui.js && \
     xvfb-run -s "-screen 0 1280x1024x24" ./deploy.sh -m local && \
     ln -s http/client/assets http/client/assets/models && \
     ln -s $GZWEB_WS/http/client $GZWEB_SRV
