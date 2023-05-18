@@ -143,7 +143,8 @@ RUN mv /etc/apt/apt.conf.d/docker-clean /etc/apt/
 RUN apt-get update && \
     apt-get install -y \
       bash-completion \
-      gdb && \
+      gdb \
+      wget && \
     pip3 install \
       bottle \
       glances
@@ -213,6 +214,12 @@ COPY --from=ghcr.io/ruffsl/foxglove_studio@sha256:8a2f2be0a95f24b76b0d7aa536f1c3
 
 # install web server
 COPY --from=caddyer /usr/bin/caddy /usr/bin/caddy
+
+# download media files
+ENV MEDIA_SRV /srv/media
+RUN mkdir -p $MEDIA_SRV && \
+    wget -qO- https://github.com/ros-planning/navigation2/files/11506823/icons.tar.gz \
+    | tar xvz -C $MEDIA_SRV
 
 # multi-stage for exporting
 FROM tester AS exporter

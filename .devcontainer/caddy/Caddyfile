@@ -100,6 +100,12 @@
 		}
 	}
 
+	redir /media /media/
+	handle_path /media/* {
+		root * {$MEDIA_SRV}
+		file_server
+	}
+
 	redir / /nav2/
 	handle_path /nav2/* {
 		root * srv/nav2
