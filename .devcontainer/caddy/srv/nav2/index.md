@@ -5,9 +5,9 @@
 
 Redirects for available web apps:
 
-| App | Links |
+| App | Shortcuts |
 |-|-|
-| [<img src="/media/icons/foxglove/any_icon_x512.webp" height="64">](/foxglove/autolayout) | [**Foxglove Studio**](/foxglove/autolayout) |
+| [<img src="/media/icons/foxglove/any_icon_x512.webp" height="64">](/foxglove/autoconnect) | [**Auto Connect**](/foxglove/autoconnect)<br>[**Auto Layout**](/foxglove/autolayout)<br>[**Manual**](/foxglove/) |
 | [<img src="/media/icons/gzweb/any_icon_x512.webp" height="64">](/gzweb/) | [**Gzweb Client**](/gzweb/) |
 | [<img src="/media/icons/glances/any_icon_x512.webp" height="64">](/glances/) | [**System Monitor**](/glances/) |
 | [<img src="/media/icons/nav2/any_icon_x512.webp" height="64">](/nav2/) | [**Nav2 App**](/nav2/) |
