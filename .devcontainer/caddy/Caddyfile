@@ -37,7 +37,7 @@
 # E.g auto redirect websocket URL to match request scheme
 (redirect) {
 	# Configure redirect to match request scheme
-	vars LayoutUrl "/assets/nav2_foxglove_layout.json"
+	vars LayoutUrl "/assets/foxglove/nav2_layout.json"
 	vars DataSourceUrl "{vars.WsScheme}://{vars.ReqHost}{args.0}/"
 	redir /autoconnect "{args.0}/?ds=foxglove-websocket&ds.url={vars.DataSourceUrl}"
 	redir /autolayout "{args.0}/?ds=foxglove-websocket&ds.url={vars.DataSourceUrl}&layoutUrl={vars.LayoutUrl}"
@@ -58,7 +58,7 @@
 		replace `<head>` `<head><link rel="manifest" href="manifest.json" crossorigin="use-credentials"/>`
 	}
 	# Redirect relative handle_path'ed manifest.json to /manifests directory
-	redir /manifest.json /manifests{http.request.orig_uri.path.dir}manifest.json
+	redir /manifest.json /assets{http.request.orig_uri.path.dir}manifest.json
 }
 
 # Snippet for hosted web app using websockets
