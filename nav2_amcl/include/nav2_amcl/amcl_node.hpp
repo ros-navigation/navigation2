@@ -301,8 +301,8 @@ protected:
    * @ true if deviation gets large
    *
    */
-  std::shared_ptr<diagnostic_updater::Updater> diagnostic_updater_;
-  void standardDeviationDiagnostics(diagnostic_updater::DiagnosticStatusWrapper& stat);
+  diagnostic_updater::Updater diagnostic_updater_;
+  void amclDiagnostics(diagnostic_updater::DiagnosticStatusWrapper& stat);
   double std_warn_level_x_;
   double std_warn_level_y_;
   double std_warn_level_yaw_;
@@ -439,6 +439,7 @@ protected:
   std::string scan_topic_{"scan"};
   std::string map_topic_{"map"};
   bool use_cluster_averaging_;
+  bool use_augmented_mcl_;
 };
 
 }  // namespace nav2_amcl

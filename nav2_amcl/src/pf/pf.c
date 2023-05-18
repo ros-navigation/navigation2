@@ -50,7 +50,8 @@ pf_t * pf_alloc(
   double alpha_slow, double alpha_fast,
   pf_init_model_fn_t random_pose_fn,
   void * random_pose_data,
-  double max_particle_gen_prob_ext_pose)
+  double max_particle_gen_prob_ext_pose,
+  int use_augmented_mcl)
 {
   int i, j;
   pf_t * pf;
@@ -109,6 +110,8 @@ pf_t * pf_alloc(
 
   pf->alpha_slow = alpha_slow;
   pf->alpha_fast = alpha_fast;
+
+  pf->use_augmented_mcl = use_augmented_mcl;
 
   // set converged to 0
   pf_init_converged(pf);
@@ -456,6 +459,7 @@ void pf_update_resample(pf_t * pf)
   set_b->sample_count = 0;
 
 
+w_diff = 0.0;
 if(pf->ext_pose_is_valid){
 
   // See Improved LiDAR Probabilistic Localization for Autonomous Vehicles Using GNSS, #3.4 for details
@@ -465,7 +469,7 @@ if(pf->ext_pose_is_valid){
   if(w_diff < 0.0)
     w_diff = 0.0;
   
-} else {
+} else if (pf->use_augmented_mcl) {
 
   w_diff = 1.0 - pf->w_fast / pf->w_slow;
   if(w_diff < 0.0)
@@ -491,7 +495,7 @@ if(pf->ext_pose_is_valid){
     {
       if(pf->ext_pose_is_valid){
         generate_random_particle(pf->ext_x, pf->ext_y, pf->ext_yaw, pf->eigen_matrix, sample_b->pose.v);
-      } else {
+      } else if (pf->use_augmented_mcl) {
         sample_b->pose = (pf->random_pose_fn)(pf->random_pose_data);
       }
     } else

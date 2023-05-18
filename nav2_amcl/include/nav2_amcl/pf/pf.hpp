@@ -144,6 +144,8 @@ typedef struct _pf_t
   double cov_matrix[9], eigen_matrix[9];
   double max_particle_gen_prob_ext_pose;
   int ext_pose_is_valid;
+
+  double use_augmented_mcl;
 } pf_t;
 
 
@@ -153,7 +155,8 @@ pf_t * pf_alloc(
   double alpha_slow, double alpha_fast,
   pf_init_model_fn_t random_pose_fn,
   void * random_pose_data,
-  double max_particle_gen_prob_ext_pose);
+  double max_particle_gen_prob_ext_pose,
+  int use_augmented_mcl);
 
 // Free an existing filter
 void pf_free(pf_t * pf);

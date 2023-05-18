@@ -271,6 +271,11 @@ AmclNode::AmclNode(const rclcpp::NodeOptions & options)
     "Average (with weights) cluster centroid positions when calculating curren pose"
   );
 
+  add_parameter(
+    "use_augmented_mcl", rclcpp::ParameterValue(false),
+    "Use Augmented MCL approach for resampling"
+  );
+
   diagnostic_updater_ = std::make_shared<diagnostic_updater::Updater>(this);
 }
 
@@ -1294,6 +1299,7 @@ AmclNode::initParameters()
   get_parameter("max_particle_gen_prob_ext_pose", max_particle_gen_prob_ext_pose_);
   get_parameter("ext_pose_search_tolerance_sec", ext_pose_search_tolerance_sec_);
   get_parameter("use_cluster_averaging", use_cluster_averaging_);
+  get_parameter("use_augmented_mcl", use_augmented_mcl_);
   
   save_pose_period_ = tf2::durationFromSec(1.0 / save_pose_rate);
   transform_tolerance_ = tf2::durationFromSec(tmp_tol);
@@ -1784,8 +1790,8 @@ AmclNode::initServices()
 void
 AmclNode::initDiagnostic()
 {
-  diagnostic_updater_->setHardwareID("none");
-  diagnostic_updater_->add("Standard deviation", this, &AmclNode::standardDeviationDiagnostics);
+  diagnostic_updater_.setHardwareID("none");
+  diagnostic_updater_.add("AMCL Diagnostics", this, &AmclNode::amclDiagnostics);
 }
 
 void
@@ -1822,7 +1828,7 @@ AmclNode::initParticleFilter()
   pf_ = pf_alloc(
     min_particles_, max_particles_, alpha_slow_, alpha_fast_,
     (pf_init_model_fn_t)AmclNode::uniformPoseGenerator,
-    reinterpret_cast<void *>(map_), max_particle_gen_prob_ext_pose_);
+    reinterpret_cast<void *>(map_), max_particle_gen_prob_ext_pose_, use_augmented_mcl_);
   pf_->pop_err = pf_err_;
   pf_->pop_z = pf_z_;
 
@@ -1859,17 +1865,20 @@ AmclNode::initExternalPose()
   ext_pose_active_ = false;
 }
 
-// Publish estimated standard deviation flag of the filter, coming from pose covariance
-// 'true' if exceeds any of threshold
-// Based on https://github.com/ros-planning/navigation/pull/807
 void
-AmclNode::standardDeviationDiagnostics(diagnostic_updater::DiagnosticStatusWrapper& stat)
+AmclNode::amclDiagnostics(diagnostic_updater::DiagnosticStatusWrapper& stat)
 {
   using DiagStatus = diagnostic_msgs::msg::DiagnosticStatus;
 
+  // Publish estimated standard deviation flag of the filter, coming from pose covariance
+  // Based on https://github.com/ros-planning/navigation/pull/807
   double std_x = sqrt(last_published_pose_.pose.covariance[6*0+0]);
   double std_y = sqrt(last_published_pose_.pose.covariance[6*1+1]);
   double std_yaw = sqrt(last_published_pose_.pose.covariance[6*5+5]);
+  
+  // That score proposed in Probabilistic Robotics as a way to decide when to create new particles.
+  // More on that at Probabilistic Robotics, ch 8.3.3
+  double aug_mcl_score = 1.0 - pf_->w_fast / pf_->w_slow;
 
   stat.add("std_x", std_x);
   stat.add("std_y", std_y);
@@ -1877,6 +1886,7 @@ AmclNode::standardDeviationDiagnostics(diagnostic_updater::DiagnosticStatusWrapp
   stat.add("std_warn_level_x", std_warn_level_x_);
   stat.add("std_warn_level_y", std_warn_level_y_);
   stat.add("std_warn_level_yaw", std_warn_level_yaw_);
+  stat.add("aug_mcl_score", aug_mcl_score);
 
   if (std_x > std_warn_level_x_ || std_y > std_warn_level_y_ || std_yaw > std_warn_level_yaw_) {
     stat.summary(DiagStatus::WARN, "Deviation too large");
