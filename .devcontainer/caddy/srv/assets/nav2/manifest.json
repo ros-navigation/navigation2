@@ -19,5 +19,12 @@
     "start_url": "/nav2/",
     "theme_color": "#ffffff",
     "background_color": "#ffffff",
-    "display": "standalone"
+    "display": "standalone",
+    "shortcuts" : [
+        {
+          "name": "File Browser",
+          "url": "/?browse=true",
+          "description": "Bowse files on the server"
+        }
+    ]
 }
