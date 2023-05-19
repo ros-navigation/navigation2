@@ -17,6 +17,7 @@
     ],
     "id": "/nav2/",
     "start_url": "/nav2/",
+    "scope": "/",
     "theme_color": "#ffffff",
     "background_color": "#ffffff",
     "display": "standalone",
