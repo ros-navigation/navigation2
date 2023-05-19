@@ -10,7 +10,7 @@ Redirects for available web apps:
 | [<img src="/media/icons/foxglove/any_icon_x512.webp" height="64">](/foxglove/autoconnect) | [**Auto Connect**](/foxglove/autoconnect)<br>[**Auto Layout**](/foxglove/autolayout)<br>[**Manual**](/foxglove/) |
 | [<img src="/media/icons/gzweb/any_icon_x512.webp" height="64">](/gzweb/) | [**Gzweb Client**](/gzweb/) |
 | [<img src="/media/icons/glances/any_icon_x512.webp" height="64">](/glances/) | [**System Monitor**](/glances/) |
-| [<img src="/media/icons/nav2/any_icon_x512.webp" height="64">](/nav2/) | [**Nav2 App**](/nav2/) |
+| [<img src="/media/icons/nav2/any_icon_x512.webp" height="64">](/nav2/) | [**Nav2 App**](/nav2/)<br>[**File Browser**](/?browse=true) |
 
 ## External Resources
 
@@ -31,16 +31,6 @@ Useful information about host server and remote client:
 | Date | `{{now}}` |
 
 ### Server Diagnostics
-
-<details>
-<summary>File Browser</summary>
-
-For troubleshooting file server:
-
-- [Root](/?browse=true)
-  - Root level site index
-
-</details>
 
 <details>
 <summary>Websocket Debug</summary>
