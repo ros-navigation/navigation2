@@ -37,11 +37,15 @@ For troubleshooting websocket connections:
 
 |Key | Value |
 |-|-|
-| `header.X-Forwarded-Host` | `{{placeholder "header.X-Forwarded-Host"}}` |
-| `header.X-Forwarded-Scheme` | `{{placeholder "header.X-Forwarded-Scheme"}}` |
+| `header.X-Forwarded-Host` | `{{placeholder "http.request.header.X-Forwarded-Host"}}` |
 | `http.request.hostport` | `{{placeholder "http.request.hostport"}}` |
+| `http.vars.ReqHost` | `{{placeholder "http.vars.ReqHost"}}` |
+
+|Key | Value |
+|-|-|
 | `http.request.scheme` | `{{placeholder "http.request.scheme"}}` |
-| `http.vars.WsHost` | `{{placeholder "http.vars.WsHost"}}` |
+| `header.X-Forwarded-Scheme` | `{{placeholder "http.request.header.X-Forwarded-Scheme"}}` |
+| `header.X-Forwarded-Proto` | `{{placeholder "http.request.header.X-Forwarded-Proto"}}` |
 | `http.vars.WsScheme` | `{{placeholder "http.vars.WsScheme"}}` |
 
 </details>
