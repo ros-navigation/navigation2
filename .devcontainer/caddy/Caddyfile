@@ -68,7 +68,7 @@
 	# handle and strip path prefix from redirect
 	handle_path {args.0}/* {
 		# Set root directory for static files
-		root * {$ROOT_SRV:/srv}{args.0}
+		root * {http.vars.root}{args.0}
 		# Enable mobile web app features
 		import mobile
 		# Reverse proxy websockets to backend address
@@ -99,7 +99,7 @@
 	# Handle nav2 web app
 	# I.e. main landing page
 	handle_path /nav2/* {
-		root * {$ROOT_SRV:/srv}/nav2
+		root * {http.vars.root}/nav2
 		import mobile
 		# Render markdown files as html
 		templates
