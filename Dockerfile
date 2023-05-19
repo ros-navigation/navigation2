@@ -211,14 +211,14 @@ RUN apt-get install -y --no-install-recommends \
 # setup foxglove
 # Use custom fork until PR is merged:
 # https://github.com/foxglove/studio/pull/5987
-# COPY --from=ghcr.io/foxglove/studio /src $FOXGLOVE_SRV
+# COPY --from=ghcr.io/foxglove/studio /src $ROOT_SRV/foxglove
 COPY --from=ghcr.io/ruffsl/foxglove_studio@sha256:8a2f2be0a95f24b76b0d7aa536f1c34f3e224022eed607cbf7a164928488332e /src $ROOT_SRV/foxglove
 
 # install web server
 COPY --from=caddyer /usr/bin/caddy /usr/bin/caddy
 
 # download media files
-RUN mkdir -p $MEDIA_SRV && \
+RUN mkdir -p $ROOT_SRV/media && \
     wget -qO- https://github.com/ros-planning/navigation2/files/11506823/icons.tar.gz \
     | tar xvz -C $ROOT_SRV/media
 
