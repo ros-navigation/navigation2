@@ -65,20 +65,16 @@
 # to serve static files and reverse proxying connections
 # E.g. for serving GzWeb and Foxglove web apps
 (app) {
-	# Redirect implicit directory requests twards index.html
-	redir {args.0} {args.0}/
 	# handle and strip path prefix from redirect
 	handle_path {args.0}/* {
 		# Set root directory for static files
-		root * {args.1}
-		# Serve static files
-		file_server
+		root * {$ROOT_SRV:/srv}{args.0}
 		# Enable mobile web app features
 		import mobile
 		# Reverse proxy websockets to backend address
-		reverse_proxy @websockets {args.2}
+		reverse_proxy @websockets {args.1}
 		# Import custom snippets
-		import {args.3} {args.0}
+		import {args.2} {args.0}
 	}
 }
 
@@ -88,41 +84,30 @@
 :8080 {
 	# Include global matchers and variables
 	import globals
+	root * {$ROOT_SRV:/srv}
+	file_server browse
 
 	# Handle root content
 	# I.e. assets internal to workspace
 	handle /* {
-		# Use relative path for root directory
-		root * srv
-		file_server browse
 		# Template manifest.json files
 		templates */manifest.json {
 			mime application/json
 		}
 	}
 
-	# Handle media content
-	# I.e. files external of workspace
-	redir /media /media/
-	handle_path /media/* {
-		root * {$MEDIA_SRV}
-		file_server browse
-	}
-
 	# Handle nav2 web app
 	# I.e. main landing page
-	redir / /nav2/
 	handle_path /nav2/* {
-		root * srv/nav2
-		file_server
+		root * {$ROOT_SRV:/srv}/nav2
 		import mobile
 		# Render markdown files as html
 		templates
 	}
 
 	# Import app snippets for web apps
-	import app "/gzweb" "{$GZWEB_SRV}" "localhost:9090" "dummy"
-	import app "/foxglove" "{$FOXGLOVE_SRV}" "localhost:8765" "redirect"
+	import app "/gzweb" "localhost:9090" "dummy"
+	import app "/foxglove" "localhost:8765" "redirect"
 
 	# Handle glances web app
 	redir /glances /glances/

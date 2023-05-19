@@ -162,6 +162,9 @@ RUN xcaddy build \
 # multi-stage for visualizing
 FROM dever AS visualizer
 
+ENV ROOT_SRV /srv
+RUN mkdir -p $ROOT_SRV
+
 # install demo dependencies
 RUN apt-get update && apt-get install -y \
       ros-$ROS_DISTRO-aws-robomaker-small-warehouse-world \
@@ -186,14 +189,13 @@ ENV GZWEB_WS /opt/gzweb
 RUN git clone https://github.com/osrf/gzweb.git $GZWEB_WS
 
 # setup gzweb
-ENV GZWEB_SRV /srv/gzweb
 RUN cd $GZWEB_WS && . /usr/share/gazebo/setup.sh && \
     GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:$(find /opt/ros/$ROS_DISTRO/share \
       -mindepth 1 -maxdepth 2 -type d -name "models" | paste -s -d: -) && \
     sed -i "s|var modelList =|var modelList = []; var oldModelList =|g" gz3d/src/gzgui.js && \
     xvfb-run -s "-screen 0 1280x1024x24" ./deploy.sh -m local && \
     ln -s http/client/assets http/client/assets/models && \
-    ln -s $GZWEB_WS/http/client $GZWEB_SRV
+    ln -s $GZWEB_WS/http/client $ROOT_SRV/gzweb
 
 # patch gzsever
 RUN GZSERVER=$(which gzserver) && \
@@ -207,20 +209,22 @@ RUN apt-get install -y --no-install-recommends \
       ros-$ROS_DISTRO-foxglove-bridge
 
 # setup foxglove
-ENV FOXGLOVE_SRV /srv/foxglove
 # Use custom fork until PR is merged:
 # https://github.com/foxglove/studio/pull/5987
 # COPY --from=ghcr.io/foxglove/studio /src $FOXGLOVE_SRV
-COPY --from=ghcr.io/ruffsl/foxglove_studio@sha256:8a2f2be0a95f24b76b0d7aa536f1c34f3e224022eed607cbf7a164928488332e /src $FOXGLOVE_SRV
+COPY --from=ghcr.io/ruffsl/foxglove_studio@sha256:8a2f2be0a95f24b76b0d7aa536f1c34f3e224022eed607cbf7a164928488332e /src $ROOT_SRV/foxglove
 
 # install web server
 COPY --from=caddyer /usr/bin/caddy /usr/bin/caddy
 
 # download media files
-ENV MEDIA_SRV /srv/media
 RUN mkdir -p $MEDIA_SRV && \
     wget -qO- https://github.com/ros-planning/navigation2/files/11506823/icons.tar.gz \
-    | tar xvz -C $MEDIA_SRV
+    | tar xvz -C $ROOT_SRV/media
+
+# setup nav2 app
+RUN ln -s $OVERLAY_WS/src/navigation2/.devcontainer/caddy/srv/nav2 $ROOT_SRV/nav2 && \
+    ln -s $OVERLAY_WS/src/navigation2/.devcontainer/caddy/srv/assets $ROOT_SRV/assets
 
 # multi-stage for exporting
 FROM tester AS exporter
