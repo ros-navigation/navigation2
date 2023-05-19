@@ -223,8 +223,8 @@ RUN mkdir -p $MEDIA_SRV && \
     | tar xvz -C $ROOT_SRV/media
 
 # setup nav2 app
-RUN ln -s $OVERLAY_WS/src/navigation2/.devcontainer/caddy/srv/nav2 $ROOT_SRV/nav2 && \
-    ln -s $OVERLAY_WS/src/navigation2/.devcontainer/caddy/srv/assets $ROOT_SRV/assets
+RUN for dir in $OVERLAY_WS/src/navigation2/.devcontainer/caddy/srv/*; \
+      do if [ -d "$dir" ]; then ln -s "$dir" $ROOT_SRV; fi done
 
 # multi-stage for exporting
 FROM tester AS exporter
