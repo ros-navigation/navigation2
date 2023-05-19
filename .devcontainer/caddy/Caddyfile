@@ -89,7 +89,8 @@
 	# Include global matchers and variables
 	import globals
 
-	# Handle main landing page
+	# Handle root content
+	# I.e. assets internal to workspace
 	handle /* {
 		# Use relative path for root directory
 		root * srv
@@ -100,8 +101,8 @@
 		}
 	}
 
-	# Handle media file content
-	# I.e. expernal from workspace
+	# Handle media content
+	# I.e. files external of workspace
 	redir /media /media/
 	handle_path /media/* {
 		root * {$MEDIA_SRV}
