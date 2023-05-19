@@ -22,17 +22,17 @@
     "display": "fullscreen",
     "shortcuts" : [
         {
-          "name": "Refresh rate: 1sec",
+          "name": "Refresh 1sec",
           "url": "/glances/1",
           "description": "Refresh page every 1 second"
         },
         {
-          "name": "Refresh rate: 5sec",
+          "name": "Refresh 5sec",
           "url": "/glances/5",
           "description": "Refresh page every 5 seconds"
         },
         {
-          "name": "Refresh rate: 5sec",
+          "name": "Refresh 10sec",
           "url": "/glances/10",
           "description": "Refresh page every 10 seconds"
         }
