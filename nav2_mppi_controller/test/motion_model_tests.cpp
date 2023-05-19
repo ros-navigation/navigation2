@@ -168,7 +168,7 @@ TEST(MotionModelTests, AckermannTest)
   // Now, check the specifics of the minimum curvature constraint
   EXPECT_NEAR(model->getMinTurningRadius(), 0.2, 1e-6);
   for (unsigned int i = 1; i != control_sequence.vx.shape(0); i++) {
-    EXPECT_TRUE(fabs(control_sequence.vx(i)) / fabs(control_sequence.wz(i)) <= 0.2);
+    EXPECT_TRUE(fabs(control_sequence.vx(i)) / fabs(control_sequence.wz(i)) >= 0.2);
   }
 
   // Check that Ackermann Drive is properly non-holonomic and parameterized
