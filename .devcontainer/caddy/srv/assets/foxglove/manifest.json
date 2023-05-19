@@ -19,7 +19,7 @@
     "start_url": "/foxglove/autoconnect",
     "theme_color": "#6F3BE8",
     "background_color": "#6F3BE8",
-    "display": "standalone",
+    "display": "fullscreen",
     "shortcuts" : [
         {
           "name": "Auto Connect",

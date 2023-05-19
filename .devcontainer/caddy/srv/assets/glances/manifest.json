@@ -19,7 +19,7 @@
     "start_url": "/glances/",
     "theme_color": "#2C363F",
     "background_color": "#2C363F",
-    "display": "standalone",
+    "display": "fullscreen",
     "shortcuts" : [
         {
           "name": "Refresh rate: 1sec",
