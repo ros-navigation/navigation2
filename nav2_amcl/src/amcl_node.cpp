@@ -1790,8 +1790,8 @@ AmclNode::initServices()
 void
 AmclNode::initDiagnostic()
 {
-  diagnostic_updater_.setHardwareID("none");
-  diagnostic_updater_.add("AMCL Diagnostics", this, &AmclNode::amclDiagnostics);
+  diagnostic_updater_->setHardwareID("none");
+  diagnostic_updater_->add("AMCL Diagnostics", this, &AmclNode::amclDiagnostics);
 }
 
 void

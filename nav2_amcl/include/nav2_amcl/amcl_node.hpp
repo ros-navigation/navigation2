@@ -301,7 +301,7 @@ protected:
    * @ true if deviation gets large
    *
    */
-  diagnostic_updater::Updater diagnostic_updater_;
+  std::shared_ptr<diagnostic_updater::Updater> diagnostic_updater_;
   void amclDiagnostics(diagnostic_updater::DiagnosticStatusWrapper& stat);
   double std_warn_level_x_;
   double std_warn_level_y_;
