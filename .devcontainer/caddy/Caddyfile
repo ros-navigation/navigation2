@@ -105,6 +105,14 @@
 		templates
 	}
 
+	# Matcher for requests without browse query
+	@no_browse {
+		path /
+		not query browse=true
+	}
+	# Redirect to nav2 web app by default
+	redir @no_browse /nav2/
+
 	# Import app snippets for web apps
 	import app "/gzweb" "localhost:9090" "dummy"
 	import app "/foxglove" "localhost:8765" "redirect"

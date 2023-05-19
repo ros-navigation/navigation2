@@ -37,10 +37,8 @@ Useful information about host server and remote client:
 
 For troubleshooting file server:
 
-- [Assets](/assets/)
-  - Assets internal to workspace
-- [Media](/media/)
-  - Media external to workspace
+- [Root](/?browse=true)
+  - Root level site index
 
 </details>
 
