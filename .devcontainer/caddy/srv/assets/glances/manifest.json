@@ -19,5 +19,22 @@
     "start_url": "/glances/",
     "theme_color": "#2C363F",
     "background_color": "#2C363F",
-    "display": "standalone"
+    "display": "standalone",
+    "shortcuts" : [
+        {
+          "name": "Refresh rate: 1sec",
+          "url": "/glances/1",
+          "description": "Refresh page every 1 second"
+        },
+        {
+          "name": "Refresh rate: 5sec",
+          "url": "/glances/5",
+          "description": "Refresh page every 5 seconds"
+        },
+        {
+          "name": "Refresh rate: 5sec",
+          "url": "/glances/10",
+          "description": "Refresh page every 10 seconds"
+        }
+      ]
 }
