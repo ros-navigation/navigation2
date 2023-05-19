@@ -222,9 +222,5 @@ RUN mkdir -p $ROOT_SRV/media && \
     wget -qO- https://github.com/ros-planning/navigation2/files/11506823/icons.tar.gz \
     | tar xvz -C $ROOT_SRV/media
 
-# setup nav2 app
-RUN for dir in $OVERLAY_WS/src/navigation2/.devcontainer/caddy/srv/*; \
-      do if [ -d "$dir" ]; then ln -s "$dir" $ROOT_SRV; fi done
-
 # multi-stage for exporting
 FROM tester AS exporter
