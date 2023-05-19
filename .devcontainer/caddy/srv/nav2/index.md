@@ -10,13 +10,6 @@
 | [<img src="/media/icons/glances/any_icon_x512.webp" height="64">](/glances/)<br>**Glances** | [**System Monitor**](/glances/)<br>[Refresh 1sec](/glances/1)<br>[Refresh 10sec](/glances/10) |
 | [<img src="/media/icons/nav2/any_icon_x512.webp" height="64">](/nav2/)<br>**Nav2** | [**App Launcher**](/nav2/)<br>[File Browser](/?browse=true) |
 
-- Note: Install Nav2 PWA last to install other apps from browser!
-  - as PWA launcher is scoped to entire root path `/` by default
-- Or: install only Nav2 PWA to launch all apps inside launcher
-  - launcher is displayed in standalone mode by default
-- Or: don't install Nav2 PWA to launch all other apps externally
-  - All other apps are displayed in fullscreen mode by default
-
 ## External Resources
 
 For more related documentation:
