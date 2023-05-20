@@ -189,6 +189,13 @@ protected:
     const double &, const double &,
     const double &);
 
+
+  /**
+   * @brief Checks point cost along the global plan upto a max_extended_collision_check_dist_
+   * @return Whether collision is imminent
+   */
+  bool isCollisionImminentExtendedSearch();
+
   /**
    * @brief checks for collision at projected pose
    * @param x Pose of pose x
@@ -306,10 +313,12 @@ protected:
   double goal_dist_tol_;
   bool allow_reversing_;
   double max_robot_pose_search_dist_;
+  double max_extended_collision_check_dist_;
   bool use_interpolation_;
 
   nav_msgs::msg::Path global_plan_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> global_path_pub_;
+  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> extended_collision_check_path_pub_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PointStamped>>
   carrot_pub_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> carrot_arc_pub_;
