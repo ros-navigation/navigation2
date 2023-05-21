@@ -218,9 +218,10 @@ COPY --from=ghcr.io/ruffsl/foxglove_studio@sha256:8a2f2be0a95f24b76b0d7aa536f1c3
 COPY --from=caddyer /usr/bin/caddy /usr/bin/caddy
 
 # download media files
-RUN mkdir -p $ROOT_SRV/media && \
-    wget -qO- https://github.com/ros-planning/navigation2/files/11506823/icons.tar.gz \
-    | tar xvz -C $ROOT_SRV/media
+RUN mkdir -p $ROOT_SRV/media && cd /tmp && \
+    export ICONS="icons.tar.gz" && wget https://github.com/ros-planning/navigation2/files/11506823/$ICONS && \
+    echo "cae5e2a5230f87b004c8232b579781edb4a72a7431405381403c6f9e9f5f7d41 $ICONS" | sha256sum -c && \
+    tar xvz -C $ROOT_SRV/media -f $ICONS && rm $ICONS
 
 # multi-stage for exporting
 FROM tester AS exporter
