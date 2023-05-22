@@ -126,6 +126,7 @@ planner_server:
       cache_obstacle_heuristic: True      # For Hybrid nodes: Cache the obstacle map dynamic programming distance expansion heuristic between subsiquent replannings of the same goal location. Dramatically speeds up replanning performance (40x) if costmap is largely static.  
       allow_reverse_expansion: False      # For Lattice nodes: Whether to expand state lattice graph in forward primitives or reverse as well, will double the branching factor at each step.   
       smooth_path: True                   # For Lattice/Hybrid nodes: Whether or not to smooth the path, always true for 2D nodes.
+      viz_expansions: True                # For Hybrid nodes: Whether to publish expansions on the /expansions topic as an array of poses (the orientation has no meaning). WARNING: heavy to compute and to display, for debug only as it degrades the performance. 
       smoother:
         max_iterations: 1000
         w_smooth: 0.3
@@ -206,26 +207,4 @@ As such, it is recommended if you have sparse SLAM maps, gaps or holes in your m
 
 One interesting thing to note from the second figure is that you see a number of expansions in open space. This is due to travel / heuristic values being so similar, tuning values of the penalty weights can have a decent impact there. The defaults are set as a good middle ground between large open spaces and confined aisles (environment specific tuning could be done to reduce the number of expansions for a specific map, speeding up the planner). The planner actually runs substantially faster the more confined the areas of search / environments are -- but still plenty fast for even wide open areas!
 
-Sometimes visualizing the expansions is very useful to debug potential concerns (why does this goal take longer to compute, why can't I find a path, etc), should you on rare occasion run into an issue. The following snippet is what I used to visualize the expansion in the images above which may help you in future endevours.
-
-``` cpp
-// In createPath()
-static auto node = std::make_shared<rclcpp::Node>("test");
-static auto pub = node->create_publisher<geometry_msgs::msg::PoseArray>("expansions", 1);
-geometry_msgs::msg::PoseArray msg;
-geometry_msgs::msg::Pose msg_pose;
-msg.header.stamp = node->now();
-msg.header.frame_id = "map";
-
-...
-
-// Each time we expand a new node 
-msg_pose.position.x = _costmap->getOriginX() + (current_node->pose.x * _costmap->getResolution());
-msg_pose.position.y = _costmap->getOriginY() + (current_node->pose.y * _costmap->getResolution());
-msg.poses.push_back(msg_pose);
-
-... 
-
-// On backtrace or failure
-pub->publish(msg);
-```
+Sometimes visualizing the expansions is very useful to debug potential concerns (why does this goal take longer to compute, why can't I find a path, etc), should you on rare occasion run into an issue. You can enable the publication of the expansions on the `/expansions` topic for SmacHybrid with the parameter `viz_expansions: True`, beware that it should be used only for debug as it increases a lot the CPU usage.
