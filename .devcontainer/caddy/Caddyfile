@@ -7,7 +7,7 @@
 
 	# Matcher for http request scheme. E.g. "http" or "https"
 	@http_scheme {
-		expression {http.request.scheme}=="https" || {header.X-Forwarded-Scheme}=="https"
+		expression {http.request.scheme}=="https" || {header.X-Forwarded-Scheme}=="https" || {header.X-Forwarded-Proto}=="https"
 	}
 	# If any http scheme is "https", then use "wss"
 	vars @http_scheme WsScheme "wss"
@@ -19,9 +19,9 @@
 		header X-Forwarded-Host *
 	}
 	# If http headers exists, then use them
-	vars @host_forwarded WsHost {header.X-Forwarded-Host}
+	vars @host_forwarded ReqHost {header.X-Forwarded-Host}
 	# Else default to host in request
-	vars WsHost {http.request.hostport}
+	vars ReqHost {http.request.hostport}
 
 	# Matcher for websocket connection upgrade requests
 	@websockets {
@@ -37,8 +37,8 @@
 # E.g auto redirect websocket URL to match request scheme
 (redirect) {
 	# Configure redirect to match request scheme
-	vars LayoutUrl "/assets/nav2_foxglove_layout.json"
-	vars DataSourceUrl "{vars.WsScheme}://{vars.WsHost}{args.0}/"
+	vars LayoutUrl "/assets/foxglove/nav2_layout.json"
+	vars DataSourceUrl "{vars.WsScheme}://{vars.ReqHost}{args.0}/"
 	redir /autoconnect "{args.0}/?ds=foxglove-websocket&ds.url={vars.DataSourceUrl}"
 	redir /autolayout "{args.0}/?ds=foxglove-websocket&ds.url={vars.DataSourceUrl}&layoutUrl={vars.LayoutUrl}"
 }
@@ -55,30 +55,26 @@
 	route / {
 		# Inject link to manifest just after <head> tag
 		# https://developer.mozilla.org/docs/Web/Manifest
-		replace `<head>` `<head><link rel="manifest" href="manifest.json" />`
+		replace `<head>` `<head><link rel="manifest" href="manifest.json" crossorigin="use-credentials"/>`
 	}
 	# Redirect relative handle_path'ed manifest.json to /manifests directory
-	redir /manifest.json /manifests{http.request.orig_uri.path.dir}manifest.json
+	redir /manifest.json /assets{http.request.orig_uri.path.dir}manifest.json
 }
 
 # Snippet for hosted web app using websockets
 # to serve static files and reverse proxying connections
 # E.g. for serving GzWeb and Foxglove web apps
 (app) {
-	# Redirect implicit directory requests twards index.html
-	redir {args.0} {args.0}/
 	# handle and strip path prefix from redirect
 	handle_path {args.0}/* {
 		# Set root directory for static files
-		root * {args.1}
-		# Serve static files
-		file_server
+		root * {http.vars.root}{args.0}
 		# Enable mobile web app features
 		import mobile
 		# Reverse proxy websockets to backend address
-		reverse_proxy @websockets {args.2}
+		reverse_proxy @websockets {args.1}
 		# Import custom snippets
-		import {args.3} {args.0}
+		import {args.2} {args.0}
 	}
 }
 
@@ -88,24 +84,38 @@
 :8080 {
 	# Include global matchers and variables
 	import globals
+	root * {$ROOT_SRV:/srv}
+	file_server browse
 
-	# Handle main landing page
+	# Handle root content
+	# I.e. assets internal to workspace
 	handle /* {
-		# Use relative path for root directory
-		root * srv
-		file_server
-		import mobile
-		# Render markdown files as html
-		templates
 		# Template manifest.json files
 		templates */manifest.json {
 			mime application/json
 		}
 	}
 
+	# Handle nav2 web app
+	# I.e. main landing page
+	handle_path /nav2/* {
+		root * {http.vars.root}/nav2
+		import mobile
+		# Render markdown files as html
+		templates
+	}
+
+	# Matcher for requests without browse query
+	@no_browse {
+		path /
+		not query browse=true
+	}
+	# Redirect to nav2 web app by default
+	redir @no_browse /nav2/
+
 	# Import app snippets for web apps
-	import app "/gzweb" "{$GZWEB_WS}/http/client" "localhost:9090" "dummy"
-	import app "/foxglove" "{$FOXGLOVE_WS}" "localhost:8765" "redirect"
+	import app "/gzweb" "localhost:9090" "dummy"
+	import app "/foxglove" "localhost:8765" "redirect"
 
 	# Handle glances web app
 	redir /glances /glances/
