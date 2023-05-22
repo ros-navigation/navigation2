@@ -156,7 +156,7 @@ TEST(MotionModelTests, AckermannTest)
   // Check that application of constraints are non-empty for Ackermann Drive
   for (unsigned int i = 0; i != control_sequence.vx.shape(0); i++) {
     control_sequence.vx(i) = i * i * i;
-    control_sequence.wz(i) = i * i * i;
+    control_sequence.wz(i) = i * i * i * i;
   }
 
   models::ControlSequence initial_control_sequence = control_sequence;
