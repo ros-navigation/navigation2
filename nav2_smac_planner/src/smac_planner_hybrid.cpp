@@ -253,6 +253,9 @@ void SmacPlannerHybrid::configure(
   }
 
   _raw_plan_publisher = node->create_publisher<nav_msgs::msg::Path>("unsmoothed_plan", 1);
+  if (_viz_expansions) {
+    _expansions_publisher = node->create_publisher<geometry_msgs::msg::PoseArray>("expansions", 1);
+  }
 
   if (_debug_visualizations) {
     _expansions_publisher = node->create_publisher<geometry_msgs::msg::PoseArray>("expansions", 1);
@@ -446,6 +449,20 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
     } else {
       throw nav2_core::PlannerTimedOut("exceeded maximum iterations");
     }
+  }
+
+  // Publish expansions for debug
+  if (_viz_expansions) {
+    geometry_msgs::msg::PoseArray msg;
+    geometry_msgs::msg::Pose msg_pose;
+    msg.header.stamp = _clock->now();
+    msg.header.frame_id = _global_frame;
+    for (auto & e : *expansions) {
+      msg_pose.position.x = std::get<0>(e);
+      msg_pose.position.y = std::get<1>(e);
+      msg.poses.push_back(msg_pose);
+    }
+    _expansions_publisher->publish(msg);
   }
 
   // Convert to world coordinates
