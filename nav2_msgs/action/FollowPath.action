@@ -13,6 +13,7 @@ uint16 NO_VALID_CONTROL=106
 nav_msgs/Path path
 string controller_id
 string goal_checker_id
+string progress_checker_id
 ---
 #result definition
 std_msgs/Empty result

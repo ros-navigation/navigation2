@@ -182,9 +182,21 @@ double VelocitySmoother::findEtaConstraint(
   const double v_curr, const double v_cmd, const double accel, const double decel)
 {
   // Exploiting vector scaling properties
-  const double v_component_max = accel / smoothing_frequency_;
-  const double v_component_min = decel / smoothing_frequency_;
-  const double dv = v_cmd - v_curr;
+  double dv = v_cmd - v_curr;
+
+  double v_component_max;
+  double v_component_min;
+
+  // Accelerating if magnitude of v_cmd is above magnitude of v_curr
+  // and if v_cmd and v_curr have the same sign (i.e. speed is NOT passing through 0.0)
+  // Decelerating otherwise
+  if (abs(v_cmd) >= abs(v_curr) && v_curr * v_cmd >= 0.0) {
+    v_component_max = accel / smoothing_frequency_;
+    v_component_min = -accel / smoothing_frequency_;
+  } else {
+    v_component_max = -decel / smoothing_frequency_;
+    v_component_min = decel / smoothing_frequency_;
+  }
 
   if (dv > v_component_max) {
     return v_component_max / dv;
@@ -202,8 +214,21 @@ double VelocitySmoother::applyConstraints(
   const double accel, const double decel, const double eta)
 {
   double dv = v_cmd - v_curr;
-  const double v_component_max = accel / smoothing_frequency_;
-  const double v_component_min = decel / smoothing_frequency_;
+
+  double v_component_max;
+  double v_component_min;
+
+  // Accelerating if magnitude of v_cmd is above magnitude of v_curr
+  // and if v_cmd and v_curr have the same sign (i.e. speed is NOT passing through 0.0)
+  // Decelerating otherwise
+  if (abs(v_cmd) >= abs(v_curr) && v_curr * v_cmd >= 0.0) {
+    v_component_max = accel / smoothing_frequency_;
+    v_component_min = -accel / smoothing_frequency_;
+  } else {
+    v_component_max = -decel / smoothing_frequency_;
+    v_component_min = decel / smoothing_frequency_;
+  }
+
   return v_curr + std::clamp(eta * dv, v_component_min, v_component_max);
 }
 

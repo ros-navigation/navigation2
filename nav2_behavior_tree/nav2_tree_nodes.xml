@@ -13,6 +13,7 @@
       <input_port name="time_allowance">Allowed time for reversing</input_port>
       <input_port name="server_name">Server name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
+      <output_port name="error_code_id">"Back up error code"</output_port>
     </Action>
 
     <Action ID="DriveOnHeading">
@@ -21,6 +22,7 @@
       <input_port name="time_allowance">Allowed time for reversing</input_port>
       <input_port name="server_name">Server name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
+      <output_port name="error_code_id">"Drive on heading error code"</output_port>
     </Action>
 
     <Action ID="CancelControl">
@@ -112,7 +114,8 @@
       <input_port name="controller_id" default="FollowPath"/>
       <input_port name="path">Path to follow</input_port>
       <input_port name="goal_checker_id">Goal checker</input_port>
-      <input_port name="server_name">Server name</input_port>
+      <input_port name="progress_checker_id">Progress checker</input_port>
+      <input_port name="service_name">Service name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
       <output_port name="error_code_id">Follow Path error code</output_port>
     </Action>
@@ -184,6 +187,7 @@
       <input_port name="time_allowance">Allowed time for spinning</input_port>
       <input_port name="server_name">Server name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
+      <output_port name="error_code_id">Spin error code</output_port>
     </Action>
 
     <Action ID="Wait">
@@ -197,6 +201,7 @@
       <input_port name="is_recovery">If true recovery count will be incremented</input_port>
       <input_port name="server_name">Service name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
+      <output_port name="error_code_id">Assisted teleop error code</output_port>
     </Action>
 
     <!-- ############################### CONDITION NODES ############################## -->
@@ -221,6 +226,10 @@
       <input_port name="min_battery">Min battery % or voltage before triggering</input_port>
       <input_port name="battery_topic">Topic for battery info</input_port>
       <input_port name="is_voltage">Bool if check based on voltage or total %</input_port>
+    </Condition>
+
+    <Condition ID="IsBatteryCharging">
+      <input_port name="battery_topic">Topic for battery info</input_port>
     </Condition>
 
     <Condition ID="DistanceTraveled">
