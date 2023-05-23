@@ -210,6 +210,9 @@ protected:
   bool autostart_;
   bool attempt_respawn_reconnection_;
 
+  std::string nodes_in_error_state = "";
+  size_t active_nodes_count = 0;
+
   bool system_active_{false};
   diagnostic_updater::Updater diagnostics_updater_;
 
