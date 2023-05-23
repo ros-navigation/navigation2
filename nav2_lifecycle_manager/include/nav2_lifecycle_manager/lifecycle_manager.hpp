@@ -210,6 +210,9 @@ protected:
   bool autostart_;
   bool attempt_respawn_reconnection_;
 
+  std::string active_nodes;
+  std::string nodes_in_error_state;
+
   bool system_active_{false};
   diagnostic_updater::Updater diagnostics_updater_;
 
