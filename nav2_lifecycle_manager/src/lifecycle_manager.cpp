@@ -156,6 +156,22 @@ LifecycleManager::CreateActiveDiagnostic(diagnostic_updater::DiagnosticStatusWra
     stat.summary(diagnostic_msgs::msg::DiagnosticStatus::ERROR, "Nav2 is inactive");
   }
 
+  std::string delimiter(", ");
+  std::string nodes_in_error_state = "";
+  size_t active_nodes_count = 0;
+
+  if (system_active_ && !bond_map_.empty() && rclcpp::ok()) {
+      for (auto & node_name : node_names_) {
+        if (bond_map_[node_name]->isBroken()) {
+            nodes_in_error_state += node_name + delimiter;
+        } else {
+            ++active_nodes_count;
+        }
+      }
+  }
+  if (active_nodes_count == node_names_.size()) {
+    active_nodes = "All managed nodes are up";
+  }
   stat.add("Active nodes", active_nodes);
   stat.add("Nodes in error state", nodes_in_error_state);
 }
@@ -387,9 +403,6 @@ LifecycleManager::checkBondConnections()
   if (!system_active_ || !rclcpp::ok() || bond_map_.empty()) {
     return;
   }
-  std::string delimiter(", ");
-  nodes_in_error_state = "";
-  active_nodes = "";
 
   for (auto & node_name : node_names_) {
     if (!rclcpp::ok()) {
@@ -407,24 +420,19 @@ LifecycleManager::checkBondConnections()
         "CRITICAL FAILURE: SERVER %s IS DOWN after not receiving a heartbeat for %i ms."
         " Shutting down related nodes.",
         node_name.c_str(), static_cast<int>(bond_timeout_.count()));
-      nodes_in_error_state += node_name + delimiter;
-    }
-    else {
-      active_nodes += node_name + delimiter;
-    }
-  }
-  if (nodes_in_error_state.length() > 0) {
-    reset(true);  // hard reset to transition all still active down
-    // if a server crashed, it won't get cleared due to failed transition, clear manually
-    bond_map_.clear();
+      reset(true);  // hard reset to transition all still active down
+      // if a server crashed, it won't get cleared due to failed transition, clear manually
+      bond_map_.clear();
 
-    // Initialize the bond respawn timer to check if server comes back online
-    // after a failure, within a maximum timeout period.
-    if (attempt_respawn_reconnection_) {
-      bond_respawn_timer_ = this->create_wall_timer(
-        1s,
-        std::bind(&LifecycleManager::checkBondRespawnConnection, this),
-        callback_group_);
+      // Initialize the bond respawn timer to check if server comes back online
+      // after a failure, within a maximum timeout period.
+      if (attempt_respawn_reconnection_) {
+        bond_respawn_timer_ = this->create_wall_timer(
+          1s,
+          std::bind(&LifecycleManager::checkBondRespawnConnection, this),
+          callback_group_);
+      }
+      return;
     }
   }
 }
