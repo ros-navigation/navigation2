@@ -68,7 +68,7 @@ enum ActionType
   STOP = 1,  // Stop the robot
   SLOWDOWN = 2,  // Slowdown in percentage from current operating speed
   APPROACH = 3,  // Keep constant time interval before collision
-  LIMIT = 4  // Limit current operating speed
+  LIMIT = 4  // Limit absolute velocity from current operating speed
 };
 
 /// @brief Action for robot
