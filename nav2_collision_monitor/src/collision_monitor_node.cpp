@@ -380,9 +380,9 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in)
     }
 
     const ActionType at = polygon->getActionType();
-    if (at == STOP || at == SLOWDOWN) {
+    if (at == STOP || at == SLOWDOWN || at == LIMIT) {
       // Process STOP/SLOWDOWN for the selected polygon
-      if (processStopSlowdown(polygon, collision_points, cmd_vel_in, robot_action)) {
+      if (processStopSlowdownLimit(polygon, collision_points, cmd_vel_in, robot_action)) {
         action_polygon = polygon;
       }
     } else if (at == APPROACH) {
@@ -407,7 +407,7 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in)
   robot_action_prev_ = robot_action;
 }
 
-bool CollisionMonitor::processStopSlowdown(
+bool CollisionMonitor::processStopSlowdownLimit(
   const std::shared_ptr<Polygon> polygon,
   const std::vector<Point> & collision_points,
   const Velocity & velocity,
@@ -426,13 +426,33 @@ bool CollisionMonitor::processStopSlowdown(
       robot_action.req_vel.y = 0.0;
       robot_action.req_vel.tw = 0.0;
       return true;
-    } else {  // SLOWDOWN
+    } else if (polygon->getActionType() == SLOWDOWN) {
       const Velocity safe_vel = velocity * polygon->getSlowdownRatio();
       // Check that currently calculated velocity is safer than
       // chosen for previous shapes one
       if (safe_vel < robot_action.req_vel) {
         robot_action.polygon_name = polygon->getName();
         robot_action.action_type = SLOWDOWN;
+        robot_action.req_vel = safe_vel;
+        return true;
+      }
+    } else {  // Limit
+      // Compute linear velocity
+      const double linear_vel = std::hypot(velocity.x, velocity.y); // absolute
+      Velocity safe_vel;
+      double ratio = 1.0;
+      if (linear_vel != 0.0) {
+        ratio = std::clamp(polygon->getLinearLimit() / linear_vel, 0.0, 1.0);
+      }
+      safe_vel.x = velocity.x * ratio;
+      safe_vel.y = velocity.y * ratio;
+      safe_vel.tw = std::clamp(
+        velocity.tw, -polygon->getAngularLimit(), polygon->getAngularLimit());
+      // Check that currently calculated velocity is safer than
+      // chosen for previous shapes one
+      if (safe_vel < robot_action.req_vel) {
+        robot_action.polygon_name = polygon->getName();
+        robot_action.action_type = LIMIT;
         robot_action.req_vel = safe_vel;
         return true;
       }
@@ -486,6 +506,11 @@ void CollisionMonitor::notifyActionState(
       get_logger(),
       "Robot to slowdown for %f percents due to %s polygon",
       action_polygon->getSlowdownRatio() * 100,
+      action_polygon->getName().c_str());
+  } else if (robot_action.action_type == LIMIT) {
+    RCLCPP_INFO(
+      get_logger(),
+      "Robot to limit speed due to %s polygon",
       action_polygon->getName().c_str());
   } else if (robot_action.action_type == APPROACH) {
     RCLCPP_INFO(
