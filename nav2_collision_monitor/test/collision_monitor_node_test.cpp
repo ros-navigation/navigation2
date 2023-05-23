@@ -54,6 +54,8 @@ static const char POINTCLOUD_NAME[]{"PointCloud"};
 static const char RANGE_NAME[]{"Range"};
 static const int MIN_POINTS{2};
 static const double SLOWDOWN_RATIO{0.7};
+static const double LINEAR_LIMIT{0.4};
+static const double ANGULAR_LIMIT{0.09};
 static const double TIME_BEFORE_COLLISION{1.0};
 static const double SIMULATION_TIME_STEP{0.01};
 static const double TRANSFORM_TOLERANCE{0.5};
@@ -81,6 +83,7 @@ enum ActionType
   STOP = 1,
   SLOWDOWN = 2,
   APPROACH = 3,
+  LIMIT = 4,
 };
 
 class CollisionMonitorWrapper : public nav2_collision_monitor::CollisionMonitor
@@ -320,6 +323,16 @@ void Tester::addPolygon(
     polygon_name + ".slowdown_ratio", rclcpp::ParameterValue(SLOWDOWN_RATIO));
   cm_->set_parameter(
     rclcpp::Parameter(polygon_name + ".slowdown_ratio", SLOWDOWN_RATIO));
+
+  cm_->declare_parameter(
+    polygon_name + ".linear_limit", rclcpp::ParameterValue(LINEAR_LIMIT));
+  cm_->set_parameter(
+    rclcpp::Parameter(polygon_name + ".linear_limit", LINEAR_LIMIT));
+
+  cm_->declare_parameter(
+    polygon_name + ".angular_limit", rclcpp::ParameterValue(ANGULAR_LIMIT));
+  cm_->set_parameter(
+    rclcpp::Parameter(polygon_name + ".angular_limit", ANGULAR_LIMIT));
 
   cm_->declare_parameter(
     polygon_name + ".time_before_collision", rclcpp::ParameterValue(TIME_BEFORE_COLLISION));
@@ -590,17 +603,18 @@ void Tester::actionStateCallback(nav2_msgs::msg::CollisionMonitorState::SharedPt
   action_state_ = msg;
 }
 
-TEST_F(Tester, testProcessStopSlowdown)
+TEST_F(Tester, testProcessStopSlowdownLimit)
 {
   rclcpp::Time curr_time = cm_->now();
 
   // Set Collision Monitor parameters.
   // Making two polygons: outer polygon for slowdown and inner for robot stop.
   setCommonParameters();
+  addPolygon("Limit", POLYGON, 3.0, "limit");
   addPolygon("SlowDown", POLYGON, 2.0, "slowdown");
   addPolygon("Stop", POLYGON, 1.0, "stop");
   addSource(SCAN_NAME, SCAN);
-  setVectors({"SlowDown", "Stop"}, {SCAN_NAME});
+  setVectors({"Limit", "SlowDown", "Stop"}, {SCAN_NAME});
 
   // Start Collision Monitor node
   cm_->start();
@@ -609,15 +623,29 @@ TEST_F(Tester, testProcessStopSlowdown)
   sendTransforms(curr_time);
 
   // 1. Obstacle is far away from robot
-  publishScan(3.0, curr_time);
-  ASSERT_TRUE(waitData(3.0, 500ms, curr_time));
+  publishScan(4.5, curr_time);
+  ASSERT_TRUE(waitData(4.5, 500ms, curr_time));
   publishCmdVel(0.5, 0.2, 0.1);
   ASSERT_TRUE(waitCmdVel(500ms));
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.2, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.1, EPSILON);
 
-  // 2. Obstacle is in slowdown robot zone
+  // 2. Obstacle is in limit robot zone
+  publishScan(3.0, curr_time);
+  ASSERT_TRUE(waitData(3.0, 500ms, curr_time));
+  publishCmdVel(0.5, 0.2, 0.1);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  const double speed = std::sqrt(0.5 * 0.5 + 0.2 * 0.2);
+  const double ratio = LINEAR_LIMIT / speed;
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5 * ratio, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->linear.y, 0.2 * ratio, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->angular.z, 0.09, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, LIMIT);
+  ASSERT_EQ(action_state_->polygon_name, "Limit");
+
+  // 3. Obstacle is in slowdown robot zone
   publishScan(1.5, curr_time);
   ASSERT_TRUE(waitData(1.5, 500ms, curr_time));
   publishCmdVel(0.5, 0.2, 0.1);
@@ -629,7 +657,7 @@ TEST_F(Tester, testProcessStopSlowdown)
   ASSERT_EQ(action_state_->action_type, SLOWDOWN);
   ASSERT_EQ(action_state_->polygon_name, "SlowDown");
 
-  // 3. Obstacle is inside stop zone
+  // 4. Obstacle is inside stop zone
   publishScan(0.5, curr_time);
   ASSERT_TRUE(waitData(0.5, 500ms, curr_time));
   publishCmdVel(0.5, 0.2, 0.1);
@@ -641,9 +669,9 @@ TEST_F(Tester, testProcessStopSlowdown)
   ASSERT_EQ(action_state_->action_type, STOP);
   ASSERT_EQ(action_state_->polygon_name, "Stop");
 
-  // 4. Restoring back normal operation
-  publishScan(3.0, curr_time);
-  ASSERT_TRUE(waitData(3.0, 500ms, curr_time));
+  // 5. Restoring back normal operation
+  publishScan(4.5, curr_time);
+  ASSERT_TRUE(waitData(4.5, 500ms, curr_time));
   publishCmdVel(0.5, 0.2, 0.1);
   ASSERT_TRUE(waitCmdVel(500ms));
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
