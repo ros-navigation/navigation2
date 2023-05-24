@@ -210,6 +210,8 @@ protected:
   bool autostart_;
   bool attempt_respawn_reconnection_;
 
+  std::string inactive_nodes = "";
+  std::string unconfigured_nodes = "";
   std::string nodes_in_error_state = "";
   size_t active_nodes_count = 0;
 

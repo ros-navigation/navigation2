@@ -163,6 +163,12 @@ LifecycleManager::CreateActiveDiagnostic(diagnostic_updater::DiagnosticStatusWra
   if (nodes_in_error_state.length() > 0){
     stat.add("Nodes in error state", nodes_in_error_state);
   }
+  if (inactive_nodes.length() > 0){
+    stat.add("Inactive nodes", inactive_nodes);
+  }
+  if (unconfigured_nodes.length() > 0){
+    stat.add("Unconfigured nodes", unconfigured_nodes);
+  }
 }
 
 void
@@ -240,6 +246,8 @@ LifecycleManager::changeStateForAllNodes(std::uint8_t transition, bool hard_chan
 {
   active_nodes_count = 0;
   nodes_in_error_state = "";
+  unconfigured_nodes = "";
+  inactive_nodes = "";
   std::string delimiter(", ");
   // Hard change will continue even if a node fails
   if (transition == Transition::TRANSITION_CONFIGURE ||
@@ -248,7 +256,13 @@ LifecycleManager::changeStateForAllNodes(std::uint8_t transition, bool hard_chan
     for (auto & node_name : node_names_) {
       try {
         if (!changeStateForNode(node_name, transition) && !hard_change) {
-          nodes_in_error_state += node_name + delimiter;
+          uint8_t state = node_map_[node_name]->get_state();
+          if (!strcmp((char *)&state, "Inactive")){
+            inactive_nodes += node_name + delimiter;
+          }
+          else{
+            unconfigured_nodes += node_name + delimiter;
+          }
         }
         else {
           ++active_nodes_count;
@@ -264,7 +278,13 @@ LifecycleManager::changeStateForAllNodes(std::uint8_t transition, bool hard_chan
     for (rit = node_names_.rbegin(); rit != node_names_.rend(); ++rit) {
       try {
         if (!changeStateForNode(*rit, transition) && !hard_change) {
-          nodes_in_error_state += *rit + delimiter;
+          uint8_t state = node_map_[*rit]->get_state();
+          if (!strcmp((char *)&state, "Inactive")){
+            inactive_nodes += *rit + delimiter;
+          }
+          else{
+            unconfigured_nodes += *rit + delimiter;
+          }
         }
         else {
           ++active_nodes_count;
