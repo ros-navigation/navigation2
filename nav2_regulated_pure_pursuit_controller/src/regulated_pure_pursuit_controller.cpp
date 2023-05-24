@@ -117,6 +117,9 @@ void RegulatedPurePursuitController::configure(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".use_interpolation",
     rclcpp::ParameterValue(true));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".max_extended_collision_check_dist",
+    rclcpp::ParameterValue(1.0));
 
   node->get_parameter(plugin_name_ + ".desired_linear_vel", desired_linear_vel_);
   base_desired_linear_vel_ = desired_linear_vel_;
@@ -176,6 +179,9 @@ void RegulatedPurePursuitController::configure(
   node->get_parameter(
     plugin_name_ + ".use_interpolation",
     use_interpolation_);
+  node->get_parameter(
+    plugin_name_ + ".max_extended_collision_check_dist",
+    max_extended_collision_check_dist_);
 
   transform_tolerance_ = tf2::durationFromSec(transform_tolerance);
   control_duration_ = 1.0 / control_frequency;
@@ -200,6 +206,7 @@ void RegulatedPurePursuitController::configure(
   global_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("received_global_plan", 1);
   carrot_pub_ = node->create_publisher<geometry_msgs::msg::PointStamped>("lookahead_point", 1);
   carrot_arc_pub_ = node->create_publisher<nav_msgs::msg::Path>("lookahead_collision_arc", 1);
+  extended_collision_check_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("extended_collision_check_path", 1);
 
   // initialize collision checker and set costmap
   collision_checker_ = std::make_unique<nav2_costmap_2d::
@@ -217,6 +224,7 @@ void RegulatedPurePursuitController::cleanup()
   global_path_pub_.reset();
   carrot_pub_.reset();
   carrot_arc_pub_.reset();
+  extended_collision_check_path_pub_.reset();
 }
 
 void RegulatedPurePursuitController::activate()
@@ -229,6 +237,7 @@ void RegulatedPurePursuitController::activate()
   global_path_pub_->on_activate();
   carrot_pub_->on_activate();
   carrot_arc_pub_->on_activate();
+  extended_collision_check_path_pub_->on_activate();
   // Add callback for dynamic parameters
   auto node = node_.lock();
   dyn_params_handler_ = node->add_on_set_parameters_callback(
@@ -247,6 +256,7 @@ void RegulatedPurePursuitController::deactivate()
   global_path_pub_->on_deactivate();
   carrot_pub_->on_deactivate();
   carrot_arc_pub_->on_deactivate();
+  extended_collision_check_path_pub_->on_deactivate();
   dyn_params_handler_.reset();
 }
 
@@ -356,6 +366,10 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
     throw nav2_core::PlannerException("RegulatedPurePursuitController detected collision ahead!");
   }
 
+  if (isCollisionImminentExtendedSearch()){
+    throw nav2_core::PlannerException("RegulatedPurePursuitController detected collision along global plan up ahead!");
+  }
+
   // populate and return message
   geometry_msgs::msg::TwistStamped cmd_vel;
   cmd_vel.header = pose.header;
@@ -463,6 +477,64 @@ geometry_msgs::msg::PoseStamped RegulatedPurePursuitController::getLookAheadPoin
   return *goal_pose_it;
 }
 
+bool RegulatedPurePursuitController::isCollisionImminentExtendedSearch()
+{
+  if(global_plan_.poses.size() < 2)
+    return false;
+
+  nav_msgs::msg::Path extended_collision_check_path;
+
+  auto last_pose_it =
+    nav2_util::geometry_utils::first_after_integrated_distance(
+    global_plan_.poses.begin(), global_plan_.poses.end(), max_extended_collision_check_dist_);
+
+  // Copy poses into extended_collision_check_path upto max dist
+  // transformGlobalPlan has already erased the part of global_plan_ the robot has traversed so far 
+  std::transform(
+    global_plan_.poses.begin(), 
+    last_pose_it,
+    std::back_inserter(extended_collision_check_path.poses),
+    [](geometry_msgs::msg::PoseStamped& poseStamped) {
+      // Modify Z For visualization in rviz so it is drawn between global plan and collision arc
+      poseStamped.pose.position.z = 0.005; 
+      return poseStamped;
+    }
+  );
+  extended_collision_check_path.header = global_plan_.header;
+  extended_collision_check_path_pub_->publish(extended_collision_check_path);
+
+  unsigned int mx, my;
+  double point_cost;
+
+  auto is_pose_in_collision = [&](const auto& pose) {
+    if (!costmap_->worldToMap(pose.pose.position.x, pose.pose.position.y, mx, my))
+    {
+      RCLCPP_WARN_THROTTLE(
+        logger_, *(clock_), 5000,
+        "The dimensions of the costmap are too small for extended collision checking."
+        " Ignoring..");
+      return false;
+    }
+    point_cost = collision_checker_->pointCost(mx, my);
+
+    // Allow robot exploration in unknown if trackingUnkown 
+    if (costmap_ros_->getLayeredCostmap()->isTrackingUnknown() &&
+      point_cost == static_cast<double>(NO_INFORMATION))
+    {
+      return false;
+    }
+
+    // if incribed_inflated(253) or lethal(254) or unknown(255)
+    return point_cost >= static_cast<double>(INSCRIBED_INFLATED_OBSTACLE);
+  };
+
+  return std::any_of(
+    extended_collision_check_path.poses.begin(),
+    extended_collision_check_path.poses.end(),
+    is_pose_in_collision
+  );
+}
+
 bool RegulatedPurePursuitController::isCollisionImminent(
   const geometry_msgs::msg::PoseStamped & robot_pose,
   const double & linear_vel, const double & angular_vel,
@@ -560,8 +632,8 @@ bool RegulatedPurePursuitController::inCollision(
 
   double footprint_cost = collision_checker_->footprintCostAtPose(
     x, y, theta, costmap_ros_->getRobotFootprint());
-  if (footprint_cost == static_cast<double>(NO_INFORMATION) &&
-    costmap_ros_->getLayeredCostmap()->isTrackingUnknown())
+  if (costmap_ros_->getLayeredCostmap()->isTrackingUnknown() &&
+    footprint_cost == static_cast<double>(NO_INFORMATION))
   {
     return false;
   }
