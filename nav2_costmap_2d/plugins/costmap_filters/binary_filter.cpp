@@ -298,12 +298,14 @@ void BinaryFilter::changeState(const bool state)
 
 void BinaryFilter::changeParameters(const bool state){
   for (size_t param_index = 0; param_index < binary_parameters_info_.size(); ++param_index) {
-    while (!change_parameters_clients_.at(param_index)->wait_for_service(std::chrono::seconds(1))) {
-        if (!rclcpp::ok()) {
-          RCLCPP_ERROR(logger_, "Interrupted while waiting for the service. Exiting.");
-          return;
-        }
-        RCLCPP_INFO(logger_, "service not available, waiting again...");
+    if(!change_parameters_clients_.at(param_index)->wait_for_service(std::chrono::seconds(1))) {
+        RCLCPP_WARN(logger_, "service %s not available. Skipping ...", 
+          change_parameters_clients_.at(param_index)->get_service_name());
+          continue;
+      }
+      else {
+        RCLCPP_INFO(logger_, "service %s available.", 
+          change_parameters_clients_.at(param_index)->get_service_name());
       }
 
     // Create a rcl_interfaces::msg::SetParameters client for changing parameters
