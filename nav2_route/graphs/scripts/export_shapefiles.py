@@ -3,11 +3,11 @@ import pandas as pd
 import sys
 from datetime import datetime
 
-try:
-    file_prefix = sys.argv[1]
+try: 
+    file_prefix  = sys.argv[1] 
     edges = gpd.read_file(sys.argv[2])
     nodes = gpd.read_file(sys.argv[3])
-except IndexError:
+except: 
     raise Exception("Incorrect arguements provided")
 
 now = datetime.now()
