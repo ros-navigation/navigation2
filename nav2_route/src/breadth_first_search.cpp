@@ -15,154 +15,156 @@
 #include "nav2_route/breadth_first_search.hpp"
 
 #include <iostream>
-#include "nav2_route/node.hpp"
 
 namespace nav2_route
 {
 
-void BreadthFirstSearch::setStart(const unsigned int & mx, const unsigned int & my)
+void BreadthFirstSearch::initMotionModel(int x_size, int y_size)
 {
-  start_ = addToGraph(Node::getIndex(mx, my, x_size_));
+  max_index_ = x_size * y_size;
+  x_size_ = x_size;
+
+  neighbors_grid_offsets = {-1, +1,
+                            -x_size, +x_size,
+                            -x_size - 1, -x_size + 1,
+                            +x_size - 1, +x_size + 1};
+
+  std::cout << "offset size " << neighbors_grid_offsets.size() << std::endl;
 }
 
-void BreadthFirstSearch::setGoals(
-  const std::vector<unsigned int> & mxs,
-  const std::vector<unsigned int> & mys)
+void BreadthFirstSearch::setCostmap(nav2_costmap_2d::Costmap2D *costmap)
 {
-  for (unsigned int i = 0; i < mxs.size(); ++i) {
-    goals_.push_back(addToGraph(Node::getIndex(mxs[i], mys[i], x_size_)));
+  std::cout << "Set costmap " << std::endl;
+  costmap_ = costmap;
+
+  unsigned int x_size = costmap_->getSizeInCellsX();
+  unsigned int y_size = costmap_->getSizeInCellsY();
+
+  initMotionModel(static_cast<int>(x_size), static_cast<int>(y_size));
+}
+
+void BreadthFirstSearch::setStart(unsigned int mx, unsigned int my) {
+  start_ = getIndex(mx, my, x_size_);
+  states_.insert(std::make_pair(start_, State()));
+}
+
+void BreadthFirstSearch::setGoals(std::vector<unsigned int> mxs, std::vector<unsigned int> mys)
+{
+  goals_.clear();
+  for(unsigned int i = 0; i < (mxs.size() && mys.size()); ++i) {
+    unsigned int index = getIndex(mxs[i], mys[i], x_size_);
+    goals_.push_back(index);
+    states_.insert(std::make_pair(index, State()));
   }
 }
 
-BreadthFirstSearch::NodePtr BreadthFirstSearch::addToGraph(const unsigned int & index)
+bool BreadthFirstSearch::search(Coordinates & closest_goal)
 {
-  auto iter = graph_.find(index);
+  std::cout << "Start " << std::endl;
+  states_.clear();
 
-  if (iter != graph_.end()) {
-    return &(iter->second);
-  }
+  // clear the queue
+  std::queue<unsigned int> empty_queue;
+  queue_.swap(empty_queue);
 
-  return &(graph_.emplace(index, Node(index)).first->second);
-}
+  //Add start to queue
+  queue_.push(start_);
 
-void BreadthFirstSearch::initialize(int max_iterations)
-{
-  // TODO(jwallace42): Add in iterations and max time parameters, needs to be completed
-  max_iterations_ = max_iterations;
-}
+  std::cout << "Added start " << std::endl;
 
-void BreadthFirstSearch::setCollisionChecker(nav2_route::CollisionChecker * collision_checker)
-{
-  collision_checker_ = collision_checker;
-  unsigned int x_size = collision_checker_->getCostmap()->getSizeInCellsX();
-  unsigned int y_size = collision_checker->getCostmap()->getSizeInCellsY();
+  while (!queue_.empty()) {
 
-  clearGraph();
-
-  if (x_size_ != x_size || y_size_ != y_size) {
-    x_size_ = x_size;
-    y_size_ = y_size;
-    Node::initMotionModel(static_cast<int>(x_size_), static_cast<int>(y_size_));
-  }
-}
-
-bool BreadthFirstSearch::search(CoordinateVector & path)
-{
-  clearQueue();
-
-  NodePtr current_node = nullptr;
-  NodePtr neighbor = nullptr;
-  NeighborIterator neighbor_iterator;
-  NodeVector neighbors;
-  int iterations = 0;
-
-  const unsigned int max_index = x_size_ * y_size_;
-  NodeGetter node_getter =
-    [&, this](const unsigned int & index, NodePtr & neighbor_rtn) -> bool
-    {
-      if (index >= max_index) {
-        return false;
-      }
-
-      neighbor_rtn = addToGraph(index);
-      return true;
-    };
-
-  addToQueue(start_);
-  std::cout << "Start: " << start_ << std::endl;
-  while (iterations < max_iterations_ && !queue_.empty()) {
-    iterations++;
-    current_node = getNextNode();
-
-    std::cout << "Graph Size: " << graph_.size() << std::endl;
     std::cout << "Queue Size: " << queue_.size() << std::endl;
 
-    current_node->visit();
-    std::cout << "Current node: " << current_node << " with index " << current_node->getIndex() <<
-      std::endl;
+    unsigned int current = queue_.front();
+    std::cout << "grab front" << std::endl;
 
-    if (isGoal(current_node)) {
-      std::cout << "Found Goal " << std::endl;
-      return current_node->backtracePath(path);
+    Coordinates current_coord = getCoords(current);
+    std::cout << "Current Node: " << current_coord.x << " " << current_coord.y << std::endl;
+
+    queue_.pop();
+    states_[current].visited = true;
+    states_[current].queued = false;
+
+    // Check goals
+    for(const auto &goal : goals_) {
+      if (current == goal) {
+        std::cout << "Found goal" << std::endl;
+        closest_goal = getCoords(current);
+        return true;
+      }
+    }
+    std::cout << "Checked goals" << std::endl;
+
+    std::vector<unsigned int> neighbors;
+    getNeighbors(current, neighbors);
+    std::cout << "Got neigbors" << std::endl;
+
+    for(const auto neighbor : neighbors)
+    {
+      if(!states_[neighbor].queued && !states_[neighbor].visited) {
+        states_[neighbor].queued = true;
+        queue_.push(neighbor);
+
+        std::cout << "Added neighbor: " << neighbor << std::endl;
+      }
+    }
+ }
+  return false;
+}
+
+bool BreadthFirstSearch::getNeighbors(unsigned int current, std::vector<unsigned int> & neighbors)
+{
+  const Coordinates p_coord = getCoords(current);
+
+  unsigned int index;
+  Coordinates c_coord{0, 0};
+
+  std::cout << "grid offset size " << neighbors_grid_offsets.size() << std::endl;
+  for (const int & neighbors_grid_offset : neighbors_grid_offsets)
+  {
+    std::cout << "Getting neighbors" << std::endl;
+    index = current + neighbors_grid_offset;
+
+    c_coord = getCoords(index);
+
+    // Check for wrap around conditions
+    if (std::fabs(p_coord.x - c_coord.x) > 1 || std::fabs(p_coord.y - c_coord.y) > 1) {
+      std::cout << "Index wraps" << std::endl;
+      continue;
     }
 
-    neighbors.clear();
-    neighbor = nullptr;
+    // Check for out of bounds
+    if (index >= max_index_) {
+      std::cout << "Max index hit" << std::endl;
+      continue;
+    }
 
-    current_node->getNeighbors(node_getter, collision_checker_, false, neighbors);
+    if(inCollision(index)) {
+      std::cout << "In collision" << std::endl;
+      continue;
+    }
 
-    for (neighbor_iterator = neighbors.begin();
-      neighbor_iterator != neighbors.end(); ++neighbor_iterator)
-    {
-      neighbor = *neighbor_iterator;
-      std::cout << "neighbor: " << neighbor << " with index: " << neighbor->getIndex()
-                << " and parent " << current_node << std::endl;
+    neighbors.push_back(index);
 
-      std::cout << "Was vistited " << neighbor->wasVisited() << " " << "was queued " <<
-        neighbor->isQueued() << std::endl;
-
-      if (!neighbor->wasVisited() && !neighbor->isQueued()) {
-        std::cout << "Adding to queue" << std::endl;
-        neighbor->parent = current_node;
-        addToQueue(neighbor);
-      }
+    auto it = states_.find(index);
+    if (it == states_.end()) {
+      states_.insert(std::make_pair(index, State()));
     }
   }
   return false;
 }
 
-void BreadthFirstSearch::addToQueue(NodePtr & node)
-{
-  if (node->isQueued()) {
-    return;
+bool BreadthFirstSearch::inCollision(unsigned int index) {
+  unsigned char cost = costmap_->getCost(index);
+
+  if (cost == nav2_costmap_2d::LETHAL_OBSTACLE ||
+      cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE)
+  {
+    std::cout << "In collision" << std::endl;
+    return true;
   }
-
-  node->queue();
-  queue_.emplace(node);
+  return false;
 }
 
-BreadthFirstSearch::NodePtr BreadthFirstSearch::getNextNode()
-{
-  NodePtr next = queue_.front();
-  queue_.pop();
-  return next;
-}
-
-bool BreadthFirstSearch::isGoal(NodePtr & node)
-{
-  return std::any_of(goals_.begin(), goals_.end(), [&node](NodePtr & goal) {return goal == node;});
-}
-
-void BreadthFirstSearch::clearQueue()
-{
-  NodeQueue q;
-  std::swap(queue_, q);
-}
-
-void BreadthFirstSearch::clearGraph()
-{
-  Graph g;
-  std::swap(graph_, g);
-}
-
-}  // namespace nav2_route
+} // namespace nav2_route

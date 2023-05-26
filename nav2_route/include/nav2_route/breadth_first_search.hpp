@@ -21,109 +21,74 @@
 #include <unordered_map>
 #include <vector>
 
-#include "nav2_route/node.hpp"
+#include "nav2_costmap_2d/cost_values.hpp"
+#include "nav2_costmap_2d/costmap_2d.hpp"
 
 namespace nav2_route
 {
 
+struct Coordinates
+{
+  Coordinates() = default;
+
+  Coordinates(const float & x_in, const float & y_in)
+      : x(x_in), y(y_in) {}
+
+  float x, y;
+};
+
+struct State
+{
+  bool visited{false};
+  bool queued{false};
+};
+
 class BreadthFirstSearch
 {
-public:
-  typedef std::unordered_map<unsigned int, Node> Graph;
-  typedef Node::NodePtr NodePtr;
-  typedef Node::NodeVector NodeVector;
-  typedef Node::NodeVector::iterator NeighborIterator;
-  typedef Node::Coordinates Coordinates;
-  typedef Node::CoordinateVector CoordinateVector;
-  typedef Node::NodeGetter NodeGetter;
-  typedef std::queue<NodePtr> NodeQueue;
+ public:
 
-  /**
-   * @brief A constructor for nav2_route::BreadthFirstSearch
-   */
-  BreadthFirstSearch() = default;
+  void initMotionModel(int x_size, int y_size);
 
-  /**
-   * @brief Set the starting pose for the search
-   * @param mx The node X index of the start
-   * @param my The node Y index of the start
-   */
-  void setStart(
-    const unsigned int & mx,
-    const unsigned int & my);
+  void setCostmap(nav2_costmap_2d::Costmap2D *costmap);
 
-  /**
-   * @brief Set the goal for the search
-   * @param mx The node X index of the start
-   * @param my The node Y index of the start
-   */
-  void setGoals(
-    const std::vector<unsigned int> & mxs,
-    const std::vector<unsigned int> & mys);
+  void setStart(unsigned int mx, unsigned int my);
 
-  /**
-   * @brief Create a path from the given costmap, start and goal
-   * @param path The output path if the search was successful
-   * @return True if a plan was successfully calculated
-   */
-  bool search(CoordinateVector & path);
+  void setGoals(std::vector<unsigned int> mxs, std::vector<unsigned int> mys);
 
-  void initialize(int max_iterations);
+  bool search(Coordinates & closest_goal);
 
-  /**
-   * @brief Set the collision checker
-   * @param collision_checker
-   */
-  void setCollisionChecker(CollisionChecker * collision_checker);
+ private:
 
-private:
-  /**
-   * @brief Checks if node is the goal node
-   * @param node The node to check
-   * @return True if the node is the goal node
-   */
-  inline bool isGoal(NodePtr & node);
+  inline Coordinates getCoords(
+      const unsigned int & index) const
+  {
+    const unsigned int & width = x_size_;
+    return {static_cast<float>(index % width), static_cast<float>(index / width)};
+  }
 
-  /**
-   * @brief Adds a node to the graph
-   * @param index The index of the node to add
-   * @return The node added to the graph
-   */
-  NodePtr addToGraph(const unsigned int & index);
+  static inline unsigned int getIndex(
+      const unsigned int & x, const unsigned int & y, const unsigned int & width)
+  {
+    return x + y * width;
+  }
 
-  /**
-   * @brief Adds a node to the queue
-   * @param node The node to add
-   */
-  void addToQueue(NodePtr & node);
+  bool getNeighbors(unsigned int current, std::vector<unsigned int> & neighbors);
 
-  /**
-   * @brief Gets the next node in the queue
-   * @return The next node in the queue
-   */
-  NodePtr getNextNode();
+  bool inCollision(unsigned int index);
 
-  /**
-   * @brief Clear the queue
-   */
-  void clearQueue();
+  std::unordered_map<unsigned int, State> states_;
+  std::queue<unsigned int> queue_;
 
-  /**
-   * @brief Clear the graph
-   */
-  void clearGraph();
+  unsigned int start_;
+  std::vector<unsigned int> goals_;
 
-  Graph graph_;
-  NodePtr start_{nullptr};
-  NodeVector goals_{nullptr};
-  NodeQueue queue_;
+  unsigned int x_size_;
+  unsigned int y_size_;
+  unsigned int max_index_;
+  std::vector<int> neighbors_grid_offsets;
 
-  unsigned int x_size_{0};
-  unsigned int y_size_{0};
+  nav2_costmap_2d::Costmap2D * costmap_;
 
-  CollisionChecker * collision_checker_{nullptr};
-  
-  int max_iterations_{0};
 };
 }  // namespace nav2_route
 

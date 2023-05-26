@@ -143,17 +143,6 @@
 #  ${library_name}
 #)
 
-# Test breadth first search node
-ament_add_gtest(test_node
-    test_node.cpp
-)
-ament_target_dependencies(test_node
-    ${dependencies}
-)
-target_link_libraries(test_node
-    ${library_name} breadth_first_search
-)
-
 # Test breadth first search
 ament_add_gtest(test_bfs
     test_breadth_first_search.cpp

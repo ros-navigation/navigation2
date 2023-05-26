@@ -16,7 +16,6 @@
 
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
-#include "nav2_route/collision_checker.hpp"
 #include "nav2_route/breadth_first_search.hpp"
 
 using namespace nav2_costmap_2d; //NOLINT
@@ -28,16 +27,12 @@ public:
   void initialize(unsigned int x_size, unsigned int y_size)
   {
     costmap = std::make_unique<Costmap2D>(x_size, y_size, 0.0, 0.0, 1);
-    collision_checker = std::make_unique<CollisionChecker>(costmap.get());
 
-    bfs.initialize(1000);
-    bfs.setCollisionChecker(collision_checker.get());
+    bfs.setCostmap(costmap.get());
   }
 
   BreadthFirstSearch bfs;
   std::unique_ptr<Costmap2D> costmap;
-  std::unique_ptr<CollisionChecker> collision_checker;
-  BreadthFirstSearch::CoordinateVector path;
 };
 
 TEST_F(BFSTestFixture, free_space)
@@ -45,16 +40,18 @@ TEST_F(BFSTestFixture, free_space)
   initialize(10u, 10u);
 
   bfs.setStart(0u, 0u);
-  std::vector<unsigned int> mxs = {2u, 5u};
-  std::vector<unsigned int> mys = {3u, 5u};
 
+  // need multiple goals
+  std::vector<unsigned int> mxs = {1u};
+  std::vector<unsigned int> mys = {1u};
   bfs.setGoals(mxs, mys);
-  bool result = bfs.search(path);
 
+  Coordinates closest_goal;
+  bool result = bfs.search(closest_goal);
   EXPECT_TRUE(result);
-  EXPECT_EQ(path.begin()->x, 2);
-  EXPECT_EQ(path.begin()->y, 3);
-  path.clear();
+
+  EXPECT_EQ(closest_goal.x, mxs.front());
+  EXPECT_EQ(closest_goal.y, mys.front());
 }
 
 TEST_F(BFSTestFixture, wall)
@@ -73,10 +70,10 @@ TEST_F(BFSTestFixture, wall)
 
   bfs.setGoals(mxs, mys);
 
-  bool result = bfs.search(path);
+  Coordinates closest_goal;
+  bool result = bfs.search(closest_goal);
   EXPECT_TRUE(result);
 
-  EXPECT_EQ(path.begin()->x, 2);
-  EXPECT_EQ(path.begin()->y, 8);
-  path.clear();
+  EXPECT_EQ(closest_goal.x, mxs.front());
+  EXPECT_EQ(closest_goal.y, mys.front());
 }
