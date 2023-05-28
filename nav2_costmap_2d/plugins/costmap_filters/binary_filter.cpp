@@ -298,13 +298,14 @@ void BinaryFilter::changeState(const bool state)
 
 void BinaryFilter::changeParameters(const bool state){
   for (size_t param_index = 0; param_index < binary_parameters_info_.size(); ++param_index) {
-    if(!change_parameters_clients_.at(param_index)->wait_for_service(std::chrono::seconds(1))) {
-        RCLCPP_WARN(logger_, "service %s not available. Skipping ...", 
+    // TODO (@enricosutera) timeout as parameter
+    if(!change_parameters_clients_.at(param_index)->wait_for_service(std::chrono::microseconds(100))) {
+        RCLCPP_WARN(logger_, "BinaryFilter:  service %s not available. Skipping ...", 
           change_parameters_clients_.at(param_index)->get_service_name());
           continue;
       }
       else {
-        RCLCPP_INFO(logger_, "service %s available.", 
+        RCLCPP_INFO(logger_, "BinaryFilter:  service %s available.", 
           change_parameters_clients_.at(param_index)->get_service_name());
       }
 
@@ -327,14 +328,14 @@ void BinaryFilter::changeParameters(const bool state){
     auto response_received_callback = [this, bool_param](ServiceResponseFuture future) {
         auto result = future.get();
         if (!result->results.at(0).successful) {
-          RCLCPP_ERROR(logger_, "Failed to change parameter %s", bool_param.name.c_str());
+          RCLCPP_ERROR(logger_, "BinaryFilter: Failed to change parameter %s", bool_param.name.c_str());
         }
         else {
-        RCLCPP_DEBUG(logger_, "Successfully changed parameter");
+        RCLCPP_DEBUG(logger_, "BinaryFilter: Successfully changed parameter");
         }
       };
 
-    RCLCPP_DEBUG(logger_, "Sending request to set parameter  %s to %s",
+    RCLCPP_DEBUG(logger_, "BinaryFilter: Sending request to set parameter  %s to %s",
       binary_parameters_info_.at(param_index).param_name.c_str(), bool_param.value.bool_value ? "true" : "false");
     auto future_result = change_parameters_clients_.at(param_index)->async_send_request(
       request, response_received_callback);
