@@ -15,105 +15,114 @@
 #include "nav2_route/breadth_first_search.hpp"
 
 #include <iostream>
+#include <queue>
+#include <unordered_map>
 
 namespace nav2_route
 {
 
-void BreadthFirstSearch::initMotionModel(int x_size, int y_size)
-{
-  max_index_ = x_size * y_size;
-  x_size_ = x_size;
-
-  neighbors_grid_offsets = {-1, +1,
-                            -x_size, +x_size,
-                            -x_size - 1, -x_size + 1,
-                            +x_size - 1, +x_size + 1};
-
-  std::cout << "offset size " << neighbors_grid_offsets.size() << std::endl;
-}
-
-void BreadthFirstSearch::setCostmap(nav2_costmap_2d::Costmap2D *costmap)
+void BreadthFirstSearch::setCostmap(nav2_costmap_2d::Costmap2D * costmap)
 {
   std::cout << "Set costmap " << std::endl;
   costmap_ = costmap;
 
-  unsigned int x_size = costmap_->getSizeInCellsX();
-  unsigned int y_size = costmap_->getSizeInCellsY();
+  int x_size = static_cast<int>(costmap_->getSizeInCellsX());
+  int y_size = static_cast<int>(costmap_->getSizeInCellsY());
 
-  initMotionModel(static_cast<int>(x_size), static_cast<int>(y_size));
+
+  max_index_ = x_size * y_size;
+  x_size_ = x_size;
+
+  neighbors_grid_offsets = {-1, +1,
+    -x_size, +x_size,
+    -x_size - 1, -x_size + 1,
+    +x_size - 1, +x_size + 1};
+
+  std::cout << "offset size " << neighbors_grid_offsets.size() << std::endl;
 }
 
-void BreadthFirstSearch::setStart(unsigned int mx, unsigned int my) {
-  start_ = getIndex(mx, my, x_size_);
-  states_.insert(std::make_pair(start_, State()));
+BreadthFirstSearch::NodePtr BreadthFirstSearch::addToGraph(const unsigned int index)
+{
+  auto iter = graph_.find(index);
+  if (iter != graph_.end()) {
+    return &(iter->second);
+  }
+
+  return &(graph_.emplace(index, Node{index, false}).first->second);
+}
+
+void BreadthFirstSearch::setStart(unsigned int mx, unsigned int my)
+{
+  start_ = addToGraph(costmap_->getIndex(mx, my));
 }
 
 void BreadthFirstSearch::setGoals(std::vector<unsigned int> mxs, std::vector<unsigned int> mys)
 {
   goals_.clear();
-  for(unsigned int i = 0; i < (mxs.size() && mys.size()); ++i) {
-    unsigned int index = getIndex(mxs[i], mys[i], x_size_);
-    goals_.push_back(index);
-    states_.insert(std::make_pair(index, State()));
+  for (unsigned int i = 0; i < (mxs.size() && mys.size()); ++i) {
+    goals_.emplace_back(addToGraph(costmap_->getIndex(mxs[i], mys[i])));
   }
 }
 
 bool BreadthFirstSearch::search(Coordinates & closest_goal)
 {
-  std::cout << "Start " << std::endl;
-  states_.clear();
+  // clear the graph
+  std::unordered_map<unsigned int, Node> empty_graph;
+  std::swap(graph_, empty_graph);
 
-  // clear the queue
-  std::queue<unsigned int> empty_queue;
-  queue_.swap(empty_queue);
+  std::queue<NodePtr> queue;
 
-  //Add start to queue
-  queue_.push(start_);
+  start_->visited = true;
+  queue.push(start_);
 
-  std::cout << "Added start " << std::endl;
+  std::cout << "Start index " << start_->index << std::endl;
+  std::cout << "Goal index " << goals_[0]->index << std::endl;
 
-  while (!queue_.empty()) {
+  int iter = 0;
+  while (!queue.empty()) {
+    iter += 1;
+    std::cout << "Iteration " << iter << std::endl;
+    std::cout << "Queue Size: " << queue.size() << std::endl;
 
-    std::cout << "Queue Size: " << queue_.size() << std::endl;
+    auto & current = queue.front();
 
-    unsigned int current = queue_.front();
     std::cout << "grab front" << std::endl;
+    std::cout << std::endl;
 
-    Coordinates current_coord = getCoords(current);
-    std::cout << "Current Node: " << current_coord.x << " " << current_coord.y << std::endl;
+    Coordinates current_coord = getCoords(current->index);
+    std::cout << "CURRENT NODE: " << current_coord.x << " " << current_coord.y << std::endl;
 
-    queue_.pop();
-    states_[current].visited = true;
-    states_[current].queued = false;
+    queue.pop();
 
     // Check goals
-    for(const auto &goal : goals_) {
-      if (current == goal) {
+    for (const auto & goal : goals_) {
+      std::cout << "Goal index " << goal->index << std::endl;
+      std::cout << "current index " << current->index << std::endl;
+      if (current->index == goal->index) {
         std::cout << "Found goal" << std::endl;
-        closest_goal = getCoords(current);
+        closest_goal = getCoords(current->index);
         return true;
       }
     }
     std::cout << "Checked goals" << std::endl;
 
-    std::vector<unsigned int> neighbors;
-    getNeighbors(current, neighbors);
+    NodeVector neighbors;
+    getNeighbors(current->index, neighbors);
     std::cout << "Got neigbors" << std::endl;
 
-    for(const auto neighbor : neighbors)
-    {
-      if(!states_[neighbor].queued && !states_[neighbor].visited) {
-        states_[neighbor].queued = true;
-        queue_.push(neighbor);
+    for (const auto neighbor : neighbors) {
+      if (!neighbor->visited) {
+        neighbor->visited = true;
+        queue.push(neighbor);
 
-        std::cout << "Added neighbor: " << neighbor << std::endl;
+        std::cout << "Added node: " << neighbor->index << std::endl;
       }
     }
- }
+  }
   return false;
 }
 
-bool BreadthFirstSearch::getNeighbors(unsigned int current, std::vector<unsigned int> & neighbors)
+bool BreadthFirstSearch::getNeighbors(unsigned int current, NodeVector & neighbors)
 {
   const Coordinates p_coord = getCoords(current);
 
@@ -121,8 +130,7 @@ bool BreadthFirstSearch::getNeighbors(unsigned int current, std::vector<unsigned
   Coordinates c_coord{0, 0};
 
   std::cout << "grid offset size " << neighbors_grid_offsets.size() << std::endl;
-  for (const int & neighbors_grid_offset : neighbors_grid_offsets)
-  {
+  for (const int & neighbors_grid_offset : neighbors_grid_offsets) {
     std::cout << "Getting neighbors" << std::endl;
     index = current + neighbors_grid_offset;
 
@@ -140,26 +148,24 @@ bool BreadthFirstSearch::getNeighbors(unsigned int current, std::vector<unsigned
       continue;
     }
 
-    if(inCollision(index)) {
+    if (inCollision(index)) {
       std::cout << "In collision" << std::endl;
       continue;
     }
 
-    neighbors.push_back(index);
-
-    auto it = states_.find(index);
-    if (it == states_.end()) {
-      states_.insert(std::make_pair(index, State()));
-    }
+    std::cout << "Adding neighbor to vector" << std::endl;
+    auto neighbor = addToGraph(index);
+    neighbors.push_back(neighbor);
   }
   return false;
 }
 
-bool BreadthFirstSearch::inCollision(unsigned int index) {
+bool BreadthFirstSearch::inCollision(unsigned int index)
+{
   unsigned char cost = costmap_->getCost(index);
 
   if (cost == nav2_costmap_2d::LETHAL_OBSTACLE ||
-      cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE)
+    cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE)
   {
     std::cout << "In collision" << std::endl;
     return true;
@@ -167,4 +173,4 @@ bool BreadthFirstSearch::inCollision(unsigned int index) {
   return false;
 }
 
-} // namespace nav2_route
+}  // namespace nav2_route

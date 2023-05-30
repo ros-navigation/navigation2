@@ -32,24 +32,24 @@ struct Coordinates
   Coordinates() = default;
 
   Coordinates(const float & x_in, const float & y_in)
-      : x(x_in), y(y_in) {}
+  : x(x_in), y(y_in) {}
 
   float x, y;
 };
 
-struct State
+struct Node
 {
+  unsigned int index;
   bool visited{false};
-  bool queued{false};
 };
 
 class BreadthFirstSearch
 {
- public:
+public:
+  typedef Node * NodePtr;
+  typedef std::vector<NodePtr> NodeVector;
 
-  void initMotionModel(int x_size, int y_size);
-
-  void setCostmap(nav2_costmap_2d::Costmap2D *costmap);
+  void setCostmap(nav2_costmap_2d::Costmap2D * costmap);
 
   void setStart(unsigned int mx, unsigned int my);
 
@@ -57,38 +57,30 @@ class BreadthFirstSearch
 
   bool search(Coordinates & closest_goal);
 
- private:
-
+private:
   inline Coordinates getCoords(
-      const unsigned int & index) const
+    const unsigned int & index) const
   {
     const unsigned int & width = x_size_;
     return {static_cast<float>(index % width), static_cast<float>(index / width)};
   }
 
-  static inline unsigned int getIndex(
-      const unsigned int & x, const unsigned int & y, const unsigned int & width)
-  {
-    return x + y * width;
-  }
+  NodePtr addToGraph(const unsigned int index);
 
-  bool getNeighbors(unsigned int current, std::vector<unsigned int> & neighbors);
+  bool getNeighbors(unsigned int current, NodeVector & neighbors);
 
   bool inCollision(unsigned int index);
 
-  std::unordered_map<unsigned int, State> states_;
-  std::queue<unsigned int> queue_;
+  std::unordered_map<unsigned int, Node> graph_;
 
-  unsigned int start_;
-  std::vector<unsigned int> goals_;
+  NodePtr start_;
+  NodeVector goals_;
 
   unsigned int x_size_;
   unsigned int y_size_;
   unsigned int max_index_;
   std::vector<int> neighbors_grid_offsets;
-
   nav2_costmap_2d::Costmap2D * costmap_;
-
 };
 }  // namespace nav2_route
 
