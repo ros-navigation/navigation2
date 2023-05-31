@@ -206,7 +206,8 @@ void RegulatedPurePursuitController::configure(
   global_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("received_global_plan", 1);
   carrot_pub_ = node->create_publisher<geometry_msgs::msg::PointStamped>("lookahead_point", 1);
   carrot_arc_pub_ = node->create_publisher<nav_msgs::msg::Path>("lookahead_collision_arc", 1);
-  extended_collision_check_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("extended_collision_check_path", 1);
+  extended_collision_check_path_pub_ = node->create_publisher<nav_msgs::msg::Path>(
+    "extended_collision_check_path", 1);
 
   // initialize collision checker and set costmap
   collision_checker_ = std::make_unique<nav2_costmap_2d::
@@ -366,8 +367,9 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
     throw nav2_core::PlannerException("RegulatedPurePursuitController detected collision ahead!");
   }
 
-  if (isCollisionImminentExtendedSearch()){
-    throw nav2_core::PlannerException("RegulatedPurePursuitController detected collision along global plan up ahead!");
+  if (isCollisionImminentExtendedSearch()) {
+    throw nav2_core::PlannerException(
+            "RegulatedPurePursuitController detected collision along global plan up ahead!");
   }
 
   // populate and return message
@@ -479,8 +481,9 @@ geometry_msgs::msg::PoseStamped RegulatedPurePursuitController::getLookAheadPoin
 
 bool RegulatedPurePursuitController::isCollisionImminentExtendedSearch()
 {
-  if(global_plan_.poses.size() < 2)
+  if (global_plan_.poses.size() < 2) {
     return false;
+  }
 
   nav_msgs::msg::Path extended_collision_check_path;
 
@@ -489,14 +492,14 @@ bool RegulatedPurePursuitController::isCollisionImminentExtendedSearch()
     global_plan_.poses.begin(), global_plan_.poses.end(), max_extended_collision_check_dist_);
 
   // Copy poses into extended_collision_check_path upto max dist
-  // transformGlobalPlan has already erased the part of global_plan_ the robot has traversed so far 
+  // transformGlobalPlan has already erased the part of global_plan_ the robot has traversed so far
   std::transform(
-    global_plan_.poses.begin(), 
+    global_plan_.poses.begin(),
     last_pose_it,
     std::back_inserter(extended_collision_check_path.poses),
-    [](geometry_msgs::msg::PoseStamped& poseStamped) {
+    [](geometry_msgs::msg::PoseStamped & poseStamped) {
       // Modify Z For visualization in rviz so it is drawn between global plan and collision arc
-      poseStamped.pose.position.z = 0.005; 
+      poseStamped.pose.position.z = 0.005;
       return poseStamped;
     }
   );
@@ -505,28 +508,26 @@ bool RegulatedPurePursuitController::isCollisionImminentExtendedSearch()
 
   unsigned int mx, my;
   double point_cost;
+  auto is_pose_in_collision = [&](const auto & pose) {
+      if (!costmap_->worldToMap(pose.pose.position.x, pose.pose.position.y, mx, my)) {
+        RCLCPP_WARN_THROTTLE(
+          logger_, *(clock_), 5000,
+          "The dimensions of the costmap are too small for extended collision checking."
+          " Ignoring..");
+        return false;
+      }
+      point_cost = collision_checker_->pointCost(mx, my);
 
-  auto is_pose_in_collision = [&](const auto& pose) {
-    if (!costmap_->worldToMap(pose.pose.position.x, pose.pose.position.y, mx, my))
-    {
-      RCLCPP_WARN_THROTTLE(
-        logger_, *(clock_), 5000,
-        "The dimensions of the costmap are too small for extended collision checking."
-        " Ignoring..");
-      return false;
-    }
-    point_cost = collision_checker_->pointCost(mx, my);
+      // Allow robot exploration in unknown if trackingUnkown
+      if (costmap_ros_->getLayeredCostmap()->isTrackingUnknown() &&
+        point_cost == static_cast<double>(NO_INFORMATION))
+      {
+        return false;
+      }
 
-    // Allow robot exploration in unknown if trackingUnkown 
-    if (costmap_ros_->getLayeredCostmap()->isTrackingUnknown() &&
-      point_cost == static_cast<double>(NO_INFORMATION))
-    {
-      return false;
-    }
-
-    // if incribed_inflated(253) or lethal(254) or unknown(255)
-    return point_cost >= static_cast<double>(INSCRIBED_INFLATED_OBSTACLE);
-  };
+      // if incribed_inflated(253) or lethal(254) or unknown(255)
+      return point_cost >= static_cast<double>(INSCRIBED_INFLATED_OBSTACLE);
+    };
 
   return std::any_of(
     extended_collision_check_path.poses.begin(),

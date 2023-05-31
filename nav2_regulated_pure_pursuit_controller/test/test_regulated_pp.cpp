@@ -112,6 +112,11 @@ public:
   {
     return transformGlobalPlan(pose);
   }
+
+  bool isCollisionImminentExtendedSearchWrapper()
+  {
+    return isCollisionImminentExtendedSearch();
+  }
 };
 
 TEST(RegulatedPurePursuitTest, basicAPI)
@@ -635,6 +640,57 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
       "test.use_cost_regulated_linear_velocity_scaling").as_bool(), false);
   EXPECT_EQ(node->get_parameter("test.allow_reversing").as_bool(), false);
   EXPECT_EQ(node->get_parameter("test.use_rotate_to_heading").as_bool(), false);
+}
+
+TEST(RegulatedPurePursuitTest, extended_collision_check)
+{
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testRPP");
+  std::string name = "PathFollower";
+  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
+
+  // instantiate
+  auto ctrl = std::make_shared<BasicAPIRPP>();
+  costmap->on_configure(rclcpp_lifecycle::State());
+  ctrl->configure(node, name, tf, costmap);
+  ctrl->activate();
+
+  constexpr double spacing = 0.1;
+  constexpr double path_length = 2.0;
+
+  // Set up test path;
+  geometry_msgs::msg::PoseStamped start_of_path;
+  start_of_path.header.frame_id = "test_path_frame";
+  start_of_path.header.stamp = node->get_clock()->now();
+  start_of_path.pose.position.x = 0.0;
+  start_of_path.pose.position.y = 0.0;
+  start_of_path.pose.position.z = 0.0;
+
+  auto global_plan = path_utils::generate_path(
+    start_of_path, spacing, {
+    std::make_unique<path_utils::Straight>(path_length)
+  });
+
+  ctrl->setPlan(global_plan);
+
+  // collision should be imminent for inscribed_inflated and lethal but not for free space
+  costmap->getLayeredCostmap()->getCostmap()->setCost(
+    5, 0,
+    nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE);
+  EXPECT_TRUE(ctrl->isCollisionImminentExtendedSearchWrapper());
+
+  costmap->getLayeredCostmap()->getCostmap()->setCost(
+    5, 0,
+    nav2_costmap_2d::FREE_SPACE);
+  EXPECT_FALSE(ctrl->isCollisionImminentExtendedSearchWrapper());
+
+  costmap->getLayeredCostmap()->getCostmap()->setCost(
+    5, 0,
+    nav2_costmap_2d::LETHAL_OBSTACLE);
+  EXPECT_TRUE(ctrl->isCollisionImminentExtendedSearchWrapper());
+
+  ctrl->deactivate();
+  ctrl->cleanup();
 }
 
 class TransformGlobalPlanTest : public ::testing::Test
