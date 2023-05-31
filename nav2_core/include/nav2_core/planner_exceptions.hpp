@@ -50,6 +50,13 @@ public:
   : std::runtime_error(description) {}
 };
 
+class InvalidPlanner : public PlannerException
+{
+public:
+  explicit InvalidPlanner(const std::string & description)
+  : PlannerException(description) {}
+};
+
 class StartOccupied : public PlannerException
 {
 public:

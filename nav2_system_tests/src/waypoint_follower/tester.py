@@ -18,7 +18,7 @@ import time
 
 from action_msgs.msg import GoalStatus
 from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
-from nav2_msgs.action import FollowWaypoints
+from nav2_msgs.action import FollowWaypoints, ComputePathToPose
 from nav2_msgs.srv import ManageLifecycleNodes
 
 import rclpy
@@ -110,9 +110,9 @@ class WaypointFollowerTest(Node):
         if status != GoalStatus.STATUS_SUCCEEDED:
             self.info_msg(f'Goal failed with status code: {status}')
             return False
-        if len(result.missed_waypoints) > 0:
+        if len(self.action_result.missed_waypoints) > 0:
             self.info_msg('Goal failed to process all waypoints,'
-                          ' missed {0} wps.'.format(len(result.missed_waypoints)))
+                          ' missed {0} wps.'.format(len(self.action_result.missed_waypoints)))
             return False
 
         self.info_msg('Goal succeeded!')
@@ -208,12 +208,14 @@ def main(argv=sys.argv[1:]):
     time.sleep(2)
     test.cancel_goal()
 
-    # a failure case
+    # set waypoint outside of map
     time.sleep(2)
     test.setWaypoints([[100.0, 100.0]])
     result = test.run(True)
     assert not result
     result = not result
+    assert test.action_result.missed_waypoints[0].error_code == \
+           ComputePathToPose.Goal().GOAL_OUTSIDE_MAP
 
     test.shutdown()
     test.info_msg('Done Shutting Down.')
