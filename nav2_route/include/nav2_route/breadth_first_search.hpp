@@ -40,7 +40,7 @@ struct Coordinates
 struct Node
 {
   unsigned int index;
-  bool visited{false};
+  bool explored{false};
 };
 
 class BreadthFirstSearch
@@ -79,7 +79,7 @@ private:
   unsigned int x_size_;
   unsigned int y_size_;
   unsigned int max_index_;
-  std::vector<int> neighbors_grid_offsets;
+  std::vector<int> neighbors_grid_offsets_;
   nav2_costmap_2d::Costmap2D * costmap_;
 };
 }  // namespace nav2_route
