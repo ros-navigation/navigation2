@@ -19,6 +19,7 @@
 #include <vector>
 #include <string>
 
+#include "visualization_msgs/msg/marker_array.hpp"
 #include "nav2_smac_planner/a_star.hpp"
 #include "nav2_smac_planner/smoother.hpp"
 #include "nav2_smac_planner/utils.hpp"
@@ -29,7 +30,6 @@
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "geometry_msgs/msg/pose_array.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "tf2/utils.h"
@@ -86,6 +86,11 @@ public:
   nav_msgs::msg::Path createPlan(
     const geometry_msgs::msg::PoseStamped & start,
     const geometry_msgs::msg::PoseStamped & goal) override;
+  
+  void transformFootprintToEdges(
+    const double x, const double y, const double yaw,
+    const std::vector<geometry_msgs::msg::Point>& footprint,
+    std::vector<geometry_msgs::msg::Point>& out_footprint);
 
 protected:
   /**
@@ -104,6 +109,8 @@ protected:
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> _costmap_ros;
   std::unique_ptr<CostmapDownsampler> _costmap_downsampler;
   std::string _global_frame, _name;
+  std::vector<geometry_msgs::msg::Point> _footprint_spec;
+
   float _lookup_table_dim;
   float _tolerance;
   bool _downsample_costmap;
@@ -117,12 +124,10 @@ protected:
   double _max_planning_time;
   double _lookup_table_size;
   double _minimum_turning_radius_global_coords;
-  bool _viz_expansions;
   std::string _motion_model_for_search;
   MotionModel _motion_model;
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr _raw_plan_publisher;
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseArray>::SharedPtr
-    _expansions_publisher;
+  rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr _footprint_list_publisher;
   std::mutex _mutex;
   rclcpp_lifecycle::LifecycleNode::WeakPtr _node;
 
