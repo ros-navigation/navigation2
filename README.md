@@ -42,6 +42,23 @@ Please thank our amazing sponsors for their generous support of Nav2 on behalf o
 ### Confidential is just happy to support Nav2's mission!
 
 
+## Our Sponsors
+
+Please thank our amazing sponsors for their generous support of Nav2 on behalf of the community to allow the project to continue to be professionally maintained, developed, and supported for the long-haul! [Open Navigation LLC](https://www.opennav.org/) provides project leadership, maintenance, development, and support services to the Nav2 & ROS community. 
+
+<p align="center">
+  <img src="doc/sponsors_may_2023.png" />
+</p>
+
+### [Dexory](https://www.dexory.com/) develops robotics and AI logistics solutions to drive better business decisions using a digital twin of warehouses to provide inventory insights.
+
+### [Polymath Robotics](https://www.polymathrobotics.com/) creates safety-critical navigation systems for industrial vehicles that are radically simple to enable and deploy.
+
+### [Stereolabs](https://www.stereolabs.com/) produces the high-quality ZED stereo cameras with a complete vision pipeline from neural depth to SLAM, 3D object tracking, AI and more.
+
+### Confidential is just happy to support Nav2's mission!
+
+
 ## Citation
 
 If you use the navigation framework, an algorithm from this repository, or ideas from it
