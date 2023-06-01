@@ -28,11 +28,11 @@ Please thank our amazing sponsors for their generous support of Nav2 on behalf o
   <img src="doc/sponsors_may_2023.png" />
 </p>
 
-### [Dexory](https://www.dexory.com/)
+### [Dexory](https://www.dexory.com/) develops robotics and AI logistics solutions to drive better business decisions in warehouses.
 
-### [Polymath Robotics](https://www.polymathrobotics.com/)
+### [Polymath Robotics](https://www.polymathrobotics.com/) creates safety-critical navigation systems for industrial vehicles that are radically simple to enable and deploy.
 
-### [Stereolabs](https://www.stereolabs.com/) 
+### [Stereolabs](https://www.stereolabs.com/) produces the high-quality ZED stereo cameras with a complete vision pipeline from neural depth to SLAM, 3D object tracking, AI and more.
 
 
 ## Citation
