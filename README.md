@@ -22,7 +22,7 @@ Please visit our [documentation site](https://navigation.ros.org/). [Please visi
 
 ## Our Sponsors
 
-Please thank our amazing sponsors for their generous support of Nav2 on behalf of the community to allow the project to continue to be professionally maintained, developed, and supported for the long-haul!
+Please thank our amazing sponsors for their generous support of Nav2 on behalf of the community to allow the project to continue to be professionally maintained, developed, and supported for the long-haul! [Open Navigation LLC](https://www.opennav.org/) provides project leadership, maintenance, development, and support services to the Nav2 & ROS community. 
 
 <p align="center">
   <img src="doc/sponsors_may_2023.png" />
