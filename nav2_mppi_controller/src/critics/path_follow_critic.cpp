@@ -34,16 +34,15 @@ void PathFollowCritic::initialize()
 
 void PathFollowCritic::score(CriticData & data)
 {
-  const size_t path_size = data.path.x.shape(0) - 1;
-
-  if (!enabled_ || path_size == 0 ||
-    utils::withinPositionGoalTolerance(threshold_to_consider_, data.state.pose.pose, data.path))
+  if (!enabled_ || data.path.x.shape(0) < 2 ||
+      utils::withinPositionGoalTolerance(threshold_to_consider_, data.state.pose.pose, data.path))
   {
-    return;
+      return;
   }
 
   utils::setPathFurthestPointIfNotSet(data);
   utils::setPathCostsIfNotSet(data, costmap_ros_);
+  const size_t path_size = data.path.x.shape(0) - 1;
 
   auto offseted_idx = std::min(
     *data.furthest_reached_path_point + offset_from_furthest_, path_size);
