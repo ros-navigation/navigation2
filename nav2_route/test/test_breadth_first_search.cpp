@@ -46,12 +46,13 @@ TEST_F(BFSTestFixture, free_space)
   std::vector<unsigned int> mys = {1u};
   bfs.setGoals(mxs, mys);
 
-  Coordinates closest_goal;
+  unsigned int closest_goal;
   bool result = bfs.search(closest_goal);
   EXPECT_TRUE(result);
 
-  EXPECT_EQ(closest_goal.x, mxs.front());
-  EXPECT_EQ(closest_goal.y, mys.front());
+  auto index = costmap->getIndex(mxs.front(), mys.front());
+
+  EXPECT_EQ(closest_goal, index);
 }
 
 TEST_F(BFSTestFixture, wall)
@@ -70,10 +71,11 @@ TEST_F(BFSTestFixture, wall)
 
   bfs.setGoals(mxs, mys);
 
-  Coordinates closest_goal;
+  unsigned int closest_goal;
   bool result = bfs.search(closest_goal);
   EXPECT_TRUE(result);
 
-  EXPECT_EQ(closest_goal.x, mxs.front());
-  EXPECT_EQ(closest_goal.y, mys.front());
+  auto index = costmap->getIndex(mxs.front(), mys.front());
+
+  EXPECT_EQ(closest_goal, index);
 }

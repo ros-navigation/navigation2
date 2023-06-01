@@ -1,3 +1,4 @@
+// Copyright (c) 2020, Samsung Research America
 // Copyright (c) 2023 Joshua Wallace
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +16,6 @@
 #ifndef NAV2_ROUTE__BREADTH_FIRST_SEARCH_HPP_
 #define NAV2_ROUTE__BREADTH_FIRST_SEARCH_HPP_
 
-
 #include <queue>
 #include <memory>
 #include <unordered_map>
@@ -27,51 +27,78 @@
 namespace nav2_route
 {
 
-struct Coordinates
+/**
+ * @struct nav2_route::SimpleNode 
+ * @brief A Node implementation for the breadth first search
+ */
+struct SimpleNode
 {
-  Coordinates() = default;
+  SimpleNode(unsigned int index)
+  : index(index), 
+    explored(false) {}
 
-  Coordinates(const float & x_in, const float & y_in)
-  : x(x_in), y(y_in) {}
-
-  float x, y;
-};
-
-struct Node
-{
   unsigned int index;
-  bool explored{false};
+  bool explored;
 };
 
+/** 
+ * @class nav2_route::BreadthFirstSearch
+ * @brief Preforms a breadth first search between the start and goal
+ */ 
 class BreadthFirstSearch
 {
 public:
-  typedef Node * NodePtr;
+  typedef SimpleNode * NodePtr;
   typedef std::vector<NodePtr> NodeVector;
 
+  /**
+   * @brief Set the costmap to use 
+   * @param costmap Costmap to use to check for state validity
+   */
   void setCostmap(nav2_costmap_2d::Costmap2D * costmap);
 
+  /**
+   * @brief Set the start of the breadth first search
+   * @param mx The x map coordinate of the start
+   * @param my The y map coordinate of the start 
+   */ 
   void setStart(unsigned int mx, unsigned int my);
 
+  /**
+   * @brief Set the goal of the breadth first search
+   * @param mxs The array x map coordinate of the goals
+   * @param my The array y map coordinate of the goals
+   */ 
   void setGoals(std::vector<unsigned int> mxs, std::vector<unsigned int> mys);
 
-  bool search(Coordinates & closest_goal);
+  /**
+   * @brief Find the closest goal to the start given a costmap, start and goal
+   * @param closest_goal The coordinates of the closest goal
+   * @return True if the search was successful
+   */ 
+  bool search(unsigned int & closest_goal_index);
 
 private:
-  inline Coordinates getCoords(
-    const unsigned int & index) const
-  {
-    const unsigned int & width = x_size_;
-    return {static_cast<float>(index % width), static_cast<float>(index / width)};
-  }
-
+  /**
+   * @brief Adds the node associated with the index to the graph
+   * @param index The index of the node 
+   * @return node A pointer to the node added into the graph
+   */
   NodePtr addToGraph(const unsigned int index);
 
-  bool getNeighbors(unsigned int current, NodeVector & neighbors);
+  /**
+   * @brief Retrieve all valid neighbors of a node
+   * @param parent_index The index to the parent node of the neighbors
+   */ 
+  void getNeighbors(unsigned int parent_index, NodeVector & neighbors);
 
+  /**
+   * @brief Checks if the index is in collision
+   * @param index The index to check
+   */ 
   bool inCollision(unsigned int index);
 
-  std::unordered_map<unsigned int, Node> graph_;
+  std::unordered_map<unsigned int, SimpleNode> graph_;
 
   NodePtr start_;
   NodeVector goals_;
