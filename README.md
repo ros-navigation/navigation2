@@ -22,11 +22,17 @@ Please visit our [documentation site](https://navigation.ros.org/). [Please visi
 
 ## Our Sponsors
 
-Please thank our amazing sponsors for their generous support of Nav2 on behalf of the community to allow the project to continue to be professionally maintained, developed, and supported for the long-haul! 
+Please thank our amazing sponsors for their generous support of Nav2 on behalf of the community to allow the project to continue to be professionally maintained, developed, and supported for the long-haul!
 
 <p align="center">
-  <img height="500" src="doc/sponsors_may_2023.png" />
+  <img src="doc/sponsors_may_2023.png" />
 </p>
+
+### [Dexory](https://www.dexory.com/)
+
+### [Polymath Robotics](https://www.polymathrobotics.com/)
+
+### [Stereolabs](https://www.stereolabs.com/) 
 
 
 ## Citation
