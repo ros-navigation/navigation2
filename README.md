@@ -20,6 +20,13 @@ For detailed instructions on how to:
 
 Please visit our [documentation site](https://navigation.ros.org/). [Please visit our community Slack here](https://join.slack.com/t/navigation2/shared_invite/zt-hu52lnnq-cKYjuhTY~sEMbZXL8p9tOw) (if this link does not work, please contact maintainers to reactivate).
 
+## Our Sponsors
+
+<p align="center">
+  <img height="500" src="doc/sponsors_may_2023.png" />
+</p>
+
+
 ## Citation
 
 If you use the navigation framework, an algorithm from this repository, or ideas from it
