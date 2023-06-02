@@ -238,12 +238,12 @@ protected:
   // Visualization
   /// @brief Whether to publish the polygon
   bool visualize_;
-  /// @brief Polygon stored for later publishing
+  /// @brief Polygon, used for: 1. visualization; 2. storing latest dynamic polygon message
   geometry_msgs::msg::PolygonStamped polygon_;
   /// @brief Polygon publisher for visualization purposes
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_pub_;
 
-  /// @brief Polygon points (vertices)
+  /// @brief Polygon points (vertices) in a base_frame_id_
   std::vector<Point> poly_;
 };  // class Polygon
 
