@@ -23,6 +23,7 @@
 
 #include "nav2_costmap_2d/cost_values.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
+#include "nav2_util/line_iterator.hpp"
 
 namespace nav2_route
 {
@@ -66,17 +67,27 @@ public:
 
   /**
    * @brief Set the goal of the breadth first search
-   * @param mxs The array x map coordinate of the goals
-   * @param my The array y map coordinate of the goals
+   * @param mx The x map coordinate of the goal
+   * @param my The y map coordinate of the goal
    */ 
-  void setGoals(std::vector<unsigned int> mxs, std::vector<unsigned int> mys);
+  void setGoal(unsigned int mx, unsigned int my);
 
   /**
    * @brief Find the closest goal to the start given a costmap, start and goal
-   * @param closest_goal The coordinates of the closest goal
    * @return True if the search was successful
    */ 
-  bool search(unsigned int & closest_goal_index);
+  bool search();
+
+  /**
+   * @brief Preform a ray trace check to see if the node is directly visable
+   * @param True if the node is visable
+   */
+  bool isNodeVisible(); 
+
+  /**
+   * @brief clear the graph 
+   */
+  void clearGraph();
 
 private:
   /**
@@ -101,7 +112,7 @@ private:
   std::unordered_map<unsigned int, SimpleNode> graph_;
 
   NodePtr start_;
-  NodeVector goals_;
+  NodePtr goal_;
 
   unsigned int x_size_;
   unsigned int y_size_;

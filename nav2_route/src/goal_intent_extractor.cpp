@@ -12,11 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <boost/concept/detail/has_constraints.hpp>
+#include <geometry_msgs/msg/detail/pose_stamped__struct.hpp>
+#include <rclcpp/logging.hpp>
 #include <string>
 #include <memory>
 #include <vector>
 
+#include "nav2_costmap_2d/costmap_subscriber.hpp"
+#include "nav2_route/breadth_first_search.hpp"
 #include "nav2_route/goal_intent_extractor.hpp"
+#include "nav2_util/node_utils.hpp"
 
 namespace nav2_route
 {
@@ -53,6 +59,15 @@ void GoalIntentExtractor::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, "min_dist_from_start", rclcpp::ParameterValue(0.10));
   min_dist_from_start_ = static_cast<float>(node->get_parameter("min_dist_from_start").as_double());
+
+  std::string global_costmap_topic;
+  nav2_util::declare_parameter_if_not_declared(
+    node, "global_costmap_topic", rclcpp::ParameterValue(std::string("global_costmap/costmap_raw")));
+  node->get_parameter("global_costmap_topic", global_costmap_topic);
+
+  costmap_sub_ = std::make_unique<nav2_costmap_2d::CostmapSubscriber>(node, global_costmap_topic);
+  bfs_ = std::make_unique<BreadthFirstSearch>();
+  bfs_->setCostmap(costmap_sub_->getCostmap().get());
 }
 
 void GoalIntentExtractor::setGraph(Graph & graph, GraphToIDMap * id_to_graph_map)
@@ -122,6 +137,10 @@ GoalIntentExtractor::findStartandGoal(const std::shared_ptr<const GoalT> goal)
             "Could not determine node closest to start or goal pose requested!");
   }
 
+  if (!isNodeValid(start_route, start_))
+  {
+    RCLCPP_INFO(logger_, "Invalid Starting Route index");
+  }
   return {start_route, end_route};
 }
 
@@ -191,6 +210,32 @@ Route GoalIntentExtractor::pruneStartandGoal(
   }
 
   return pruned_route;
+}
+
+bool GoalIntentExtractor::isNodeValid(unsigned int node_index, 
+                                      const geometry_msgs::msg::PoseStamped & pose)
+{
+  unsigned int s_mx, s_my, g_mx, g_my; 
+  costmap_sub_->getCostmap()->worldToMap(pose.pose.position.x, pose.pose.position.y, 
+                                         s_mx, s_my);
+
+  // double check the frames, probably need to move into the map frame...
+  float goal_x = (*graph_)[node_index].coords.x;
+  float goal_y = (*graph_)[node_index].coords.y;
+  costmap_sub_->getCostmap()->worldToMap(goal_x, goal_y, g_mx, g_my);
+
+  bfs_->setStart(s_mx, s_my);
+  bfs_->setGoal(g_mx, g_my);
+  if (bfs_->isNodeVisible()) {
+    bfs_->clearGraph();
+    return true;
+  }
+
+  if (bfs_->search()) {
+    bfs_->clearGraph();
+    return true;
+  }
+  return false;
 }
 
 template Route GoalIntentExtractor::pruneStartandGoal<nav2_msgs::action::ComputeRoute::Goal>(

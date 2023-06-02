@@ -15,9 +15,13 @@
 #ifndef NAV2_ROUTE__GOAL_INTENT_EXTRACTOR_HPP_
 #define NAV2_ROUTE__GOAL_INTENT_EXTRACTOR_HPP_
 
+#include <algorithm>
+#include <geometry_msgs/msg/detail/pose_stamped__struct.hpp>
 #include <string>
 #include <memory>
 #include <vector>
+
+#include "nav2_costmap_2d/costmap_subscriber.hpp"
 
 #include "tf2_ros/transform_listener.h"
 #include "nav2_core/route_exceptions.hpp"
@@ -29,6 +33,7 @@
 #include "nav2_route/types.hpp"
 #include "nav2_route/utils.hpp"
 #include "nav2_route/node_spatial_tree.hpp"
+#include "nav2_route/breadth_first_search.hpp"
 
 namespace nav2_route
 {
@@ -110,6 +115,15 @@ public:
    */
   void setStart(const geometry_msgs::msg::PoseStamped & start_pose);
 
+
+  /**
+   * @brief Checks if there is connection between a node and a given pose 
+   * @param node_index The index of the node 
+   * @param pose The pose 
+   * @return True If there is a connection between a node and the pose 
+   */
+  bool isNodeValid(unsigned int node_index, const geometry_msgs::msg::PoseStamped & pose);
+
 protected:
   rclcpp::Logger logger_{rclcpp::get_logger("GoalIntentExtractor")};
   std::shared_ptr<NodeSpatialTree> node_spatial_tree_;
@@ -121,6 +135,9 @@ protected:
   geometry_msgs::msg::PoseStamped start_, goal_;
   bool prune_goal_;
   float max_dist_from_edge_, min_dist_from_goal_, min_dist_from_start_;
+
+  std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
+  std::unique_ptr<BreadthFirstSearch> bfs_;
 };
 
 }  // namespace nav2_route

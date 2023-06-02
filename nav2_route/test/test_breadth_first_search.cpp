@@ -41,41 +41,49 @@ TEST_F(BFSTestFixture, free_space)
 
   bfs.setStart(0u, 0u);
 
-  // need multiple goals
-  std::vector<unsigned int> mxs = {1u};
-  std::vector<unsigned int> mys = {1u};
-  bfs.setGoals(mxs, mys);
+  unsigned int mx = 1u;
+  unsigned int my = 1u;
+  bfs.setGoal(mx, my);
 
-  unsigned int closest_goal;
-  bool result = bfs.search(closest_goal);
+  bool result = bfs.search();
   EXPECT_TRUE(result);
-
-  auto index = costmap->getIndex(mxs.front(), mys.front());
-
-  EXPECT_EQ(closest_goal, index);
+  bfs.clearGraph();
 }
 
 TEST_F(BFSTestFixture, wall)
 {
   initialize(10u, 10u);
 
-  unsigned int mx = 3;
-  for(unsigned int my=0; my < costmap->getSizeInCellsY() -1; ++my) {
-    costmap->setCost(mx, my, LETHAL_OBSTACLE);
+  unsigned int mx_obs = 3;
+  for(unsigned int my_obs=0; my_obs < costmap->getSizeInCellsY(); ++my_obs) {
+    costmap->setCost(mx_obs, my_obs, LETHAL_OBSTACLE);
   }
 
   bfs.setStart(0u, 0u);
 
-  std::vector<unsigned int> mxs = {2u, 5u};
-  std::vector<unsigned int> mys = {8u, 0u};
+  unsigned int mx = 5u;
+  unsigned int my = 0u;
 
-  bfs.setGoals(mxs, mys);
+  bfs.setGoal(mx, my);
 
-  unsigned int closest_goal;
-  bool result = bfs.search(closest_goal);
+  bool result = bfs.search();
+  EXPECT_FALSE(result);
+  bfs.clearGraph();
+}
+
+TEST_F(BFSTestFixture, ray_trace)
+{
+  initialize(10u, 10u);
+
+  bfs.setStart(0u, 0u);
+  bfs.setGoal(5u, 5u);
+
+  bool result = bfs.isNodeVisible();
   EXPECT_TRUE(result);
 
-  auto index = costmap->getIndex(mxs.front(), mys.front());
+  costmap->setCost(2u, 2u, LETHAL_OBSTACLE);
+  result = bfs.isNodeVisible();
+  EXPECT_FALSE(result);
 
-  EXPECT_EQ(closest_goal, index);
+  bfs.clearGraph();
 }
