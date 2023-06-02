@@ -379,6 +379,9 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in)
       break;
     }
 
+    // Update polygon coordinates
+    polygon->updatePolygon();
+
     const ActionType at = polygon->getActionType();
     if (at == STOP || at == SLOWDOWN || at == LIMIT) {
       // Process STOP/SLOWDOWN for the selected polygon
@@ -468,8 +471,6 @@ bool CollisionMonitor::processApproach(
   const Velocity & velocity,
   Action & robot_action) const
 {
-  polygon->updatePolygon();
-
   if (!polygon->isShapeSet()) {
     return false;
   }
