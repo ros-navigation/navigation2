@@ -379,7 +379,7 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in)
       break;
     }
 
-    // Update polygon coordinates, when it necessary
+    // Update polygon coordinates
     polygon->updatePolygon();
 
     const ActionType at = polygon->getActionType();
