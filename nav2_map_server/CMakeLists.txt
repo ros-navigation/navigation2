@@ -125,6 +125,7 @@ if(WIN32)
     YAML_CPP_DLL)
 endif()
 
+rclcpp_components_register_nodes(${library_name} "nav2_map_server::CostmapFilterInfoServer")
 rclcpp_components_register_nodes(${library_name} "nav2_map_server::MapSaver")
 rclcpp_components_register_nodes(${library_name} "nav2_map_server::MapServer")
 
