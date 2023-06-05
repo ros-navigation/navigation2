@@ -29,8 +29,10 @@ class CostmapFilterInfoServer : public nav2_util::LifecycleNode
 public:
   /**
    * @brief Constructor for the nav2_map_server::CostmapFilterInfoServer
+   * @param options Additional options to control creation of the node.
    */
-  CostmapFilterInfoServer();
+  explicit CostmapFilterInfoServer(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
+
   /**
    * @brief Destructor for the nav2_map_server::CostmapFilterInfoServer
    */
