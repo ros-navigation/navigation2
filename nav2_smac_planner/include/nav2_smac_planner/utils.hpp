@@ -24,6 +24,8 @@
 #include "tf2/utils.h"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_costmap_2d/inflation_layer.hpp"
+#include "visualization_msgs/msg/marker_array.hpp"
+#include <rclcpp/rclcpp.hpp>
 
 namespace nav2_smac_planner
 {
@@ -153,6 +155,68 @@ inline void fromJsonToMotionPrimitive(
     motion_primitive.poses.push_back(pose);
   }
 }
+
+/**
+ * @brief transform footprint into edges
+ * @param[in] robot position , orientation and  footprint
+ * @param[out] robot footprint edges
+ */
+inline void transformFootprintToEdges(
+    const double x, const double y, const double yaw,
+    const std::vector<geometry_msgs::msg::Point>& footprint,
+    std::vector<geometry_msgs::msg::Point>& out_footprint)
+{
+  out_footprint.resize(2 * footprint.size());
+  for (unsigned int i = 0; i < footprint.size(); i++) {
+    out_footprint[2 * i].x = x + cos(yaw) * footprint[i].x - sin(yaw) * footprint[i].y;
+    out_footprint[2 * i].y = y + sin(yaw) * footprint[i].x + cos(yaw) * footprint[i].y;
+    if (i == 0) {
+      out_footprint.back().x = out_footprint[i].x;
+      out_footprint.back().y = out_footprint[i].y;
+    } else {
+      out_footprint[2 * i - 1].x = out_footprint[2 * i].x;
+      out_footprint[2 * i - 1].y = out_footprint[2 * i].y;
+    }
+  }
+}
+
+/**
+ * [initLineStringMarker initializes marker to visualize shape of linestring]
+ * @param marker     [output marker message]
+ * @param frame_id   [frame id of the marker]
+ * @param ns         [namespace of the marker]
+ * @param c          [color of the marker]
+ */
+void initLineStringMarker(
+  visualization_msgs::msg::Marker * marker, const std::string & frame_id, const std::string & ns,
+  const std_msgs::msg::ColorRGBA & c)
+{
+  if (marker == nullptr) {
+    RCLCPP_ERROR_STREAM(
+      rclcpp::get_logger("initLineStringMarker"),
+      __FUNCTION__ << ": marker is null pointer!");
+    return;
+  }
+
+  marker->header.frame_id = frame_id;
+  marker->header.stamp = rclcpp::Time();
+  marker->frame_locked = false;
+  marker->ns = ns;
+  marker->action = visualization_msgs::msg::Marker::ADD;
+  marker->type = visualization_msgs::msg::Marker::LINE_LIST;
+  marker->lifetime = rclcpp::Duration(0s);
+
+  marker->id = 0;
+  marker->pose.orientation.x = 0.0;
+  marker->pose.orientation.y = 0.0;
+  marker->pose.orientation.z = 0.0;
+  marker->pose.orientation.w = 1.0;
+  marker->scale.x = 1.0;
+  marker->scale.y = 1.0;
+  marker->scale.z = 1.0;
+  marker->color = c;
+}
+
 
 }  // namespace nav2_smac_planner
 

@@ -138,6 +138,10 @@ void SmacPlannerHybrid::configure(
   node->get_parameter(name + ".viz_expansions", _viz_expansions);
 
   nav2_util::declare_parameter_if_not_declared(
+    node, name + ".debug_visualizations", rclcpp::ParameterValue(false));
+  node->get_parameter(name + ".debug_visualizations", _debug_visualizations);
+
+  nav2_util::declare_parameter_if_not_declared(
     node, name + ".motion_model_for_search", rclcpp::ParameterValue(std::string("DUBIN")));
   node->get_parameter(name + ".motion_model_for_search", _motion_model_for_search);
   _motion_model = fromString(_motion_model_for_search);
@@ -187,7 +191,6 @@ void SmacPlannerHybrid::configure(
 
   // Initialize collision checker
   _collision_checker = GridCollisionChecker(_costmap, _angle_quantizations);
-  _footprint_spec = _costmap_ros->getRobotFootprint();
   _collision_checker.setFootprint(
     _costmap_ros->getRobotFootprint(),
     _costmap_ros->getUseRadius(),
@@ -222,7 +225,10 @@ void SmacPlannerHybrid::configure(
   _raw_plan_publisher = node->create_publisher<nav_msgs::msg::Path>("unsmoothed_plan", 1);
   if (_viz_expansions) {
     _expansions_publisher = node->create_publisher<geometry_msgs::msg::PoseArray>("expansions", 1);
-    _footprint_list_publisher = node->create_publisher<visualization_msgs::msg::MarkerArray>("/footprint_list", 1);
+  }
+
+  if (_debug_visualizations) {
+    _planned_footprints_publisher = node->create_publisher<visualization_msgs::msg::MarkerArray>("planned_footprints", 1);
   }
 
   RCLCPP_INFO(
@@ -242,7 +248,9 @@ void SmacPlannerHybrid::activate()
   _raw_plan_publisher->on_activate();
   if (_viz_expansions) {
     _expansions_publisher->on_activate();
-    _footprint_list_publisher->on_activate();
+  }
+  if (_debug_visualizations) {
+    _planned_footprints_publisher->on_activate();
   }
   if (_costmap_downsampler) {
     _costmap_downsampler->on_activate();
@@ -261,7 +269,9 @@ void SmacPlannerHybrid::deactivate()
   _raw_plan_publisher->on_deactivate();
   if (_viz_expansions) {
     _expansions_publisher->on_deactivate();
-    _footprint_list_publisher->on_deactivate();
+  }
+  if (_debug_visualizations) {
+    _planned_footprints_publisher->on_activate();
   }
   if (_costmap_downsampler) {
     _costmap_downsampler->on_deactivate();
@@ -282,7 +292,7 @@ void SmacPlannerHybrid::cleanup()
   }
   _raw_plan_publisher.reset();
   _expansions_publisher.reset();
-  _footprint_list_publisher.reset();
+  _planned_footprints_publisher.reset();
 }
 
 nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
@@ -391,27 +401,17 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
     plan.poses.push_back(pose);
   }
 
-
-  // Publish expansions for debug
-  if (_viz_expansions) {
+  // plot footprint path planned
+  if (_debug_visualizations) {
     auto marker_array = std::make_unique<visualization_msgs::msg::MarkerArray>();
     visualization_msgs::msg::Marker m;
-    m.header.frame_id = _global_frame;
-    m.header.stamp = _clock->now();
-    m.ns = "smach_hybrid_footprint";
-    m.type = visualization_msgs::msg::Marker::LINE_LIST;
-    m.action = visualization_msgs::msg::Marker::ADD;
-    m.scale.x = 0.05;
-    m.scale.y = 0.05;
-    m.scale.z = 0.05;
-    m.color.a = 1.0;
-    m.color.r = 0;
-    m.color.g = 0.0;
-    m.color.b = 1.0;
-    m.lifetime = rclcpp::Duration(0s);
-    m.frame_locked = false;
+    std_msgs::msg::ColorRGBA color;
+    color.r = 0.0f;
+    color.g = 0.0f;
+    color.b = 1.0f;
+    color.a = 1.3f;
+    initLineStringMarker(&m, _global_frame, "planned_footprint", color);
 
-    unsigned int id = 0;
     for (size_t i = 0; i < plan.poses.size(); i ++)
     {
       const double& x = plan.poses[i].pose.position.x;
@@ -419,14 +419,13 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
       const double& yaw = tf2::getYaw(plan.poses[i].pose.orientation);
 
       std::vector<geometry_msgs::msg::Point> footprint;
-      transformFootprintToEdges(x, y, yaw, _footprint_spec, footprint);
+      transformFootprintToEdges(x, y, yaw, _costmap_ros->getRobotFootprint(), footprint);
 
       m.points.clear();
       for (auto& point : footprint) {
         m.points.push_back(point);
       }
-      m.id = id;
-      id++;
+      m.id = i;
       marker_array->markers.push_back(m);
     }
 
@@ -435,10 +434,10 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
       clear_all_marker.action = visualization_msgs::msg::Marker::DELETEALL;
       marker_array->markers.push_back(clear_all_marker);
     }
-    
+
     // publish footprint for debug
-    if (_footprint_list_publisher->get_subscription_count() > 0) {
-      _footprint_list_publisher->publish(std::move(marker_array));
+    if (_planned_footprints_publisher->get_subscription_count() > 0) {
+      _planned_footprints_publisher->publish(std::move(marker_array));
     }
 }
   // Publish raw path for debug
@@ -470,31 +469,6 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
 
   return plan;
 }
-
-
-void SmacPlannerHybrid::transformFootprintToEdges(
-    const double x, const double y, const double yaw,
-    const std::vector<geometry_msgs::msg::Point>& footprint,
-    std::vector<geometry_msgs::msg::Point>& out_footprint)
-{
-  out_footprint.resize(2 * footprint.size());
-  for (unsigned int i = 0; i < footprint.size(); i++)
-  {
-    out_footprint[2 * i].x = x + cos(yaw) * footprint[i].x - sin(yaw) * footprint[i].y;
-    out_footprint[2 * i].y = y + sin(yaw) * footprint[i].x + cos(yaw) * footprint[i].y;
-    if (i == 0)
-    {
-      out_footprint.back().x = out_footprint[i].x;
-      out_footprint.back().y = out_footprint[i].y;
-    }
-    else
-    {
-      out_footprint[2 * i - 1].x = out_footprint[2 * i].x;
-      out_footprint[2 * i - 1].y = out_footprint[2 * i].y;
-    }
-  }
-}
-
 
 rcl_interfaces::msg::SetParametersResult
 SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
