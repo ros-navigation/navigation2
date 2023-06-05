@@ -187,7 +187,7 @@ inline void transformFootprintToEdges(
  * @param ns         [namespace of the marker]
  * @param c          [color of the marker]
  */
-void initLineStringMarker(
+inline void initLineStringMarker(
   visualization_msgs::msg::Marker * marker, const std::string & frame_id, const std::string & ns,
   const std_msgs::msg::ColorRGBA & c)
 {
