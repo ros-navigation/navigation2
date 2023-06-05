@@ -204,16 +204,16 @@ void initLineStringMarker(
   marker->ns = ns;
   marker->action = visualization_msgs::msg::Marker::ADD;
   marker->type = visualization_msgs::msg::Marker::LINE_LIST;
-  marker->lifetime = rclcpp::Duration(0s);
+  marker->lifetime = rclcpp::Duration(0, 0);
 
   marker->id = 0;
   marker->pose.orientation.x = 0.0;
   marker->pose.orientation.y = 0.0;
   marker->pose.orientation.z = 0.0;
   marker->pose.orientation.w = 1.0;
-  marker->scale.x = 1.0;
-  marker->scale.y = 1.0;
-  marker->scale.z = 1.0;
+  marker->scale.x = 0.05;
+  marker->scale.y = 0.05;
+  marker->scale.z = 0.05;
   marker->color = c;
 }
 
