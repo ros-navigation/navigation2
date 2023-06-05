@@ -29,6 +29,19 @@ If you use the Regulated Pure Pursuit Controller algorithm or software from this
 }
 ```
 
+If you use the Regulated Pure Pursuit Controller algorithm or software from this repository, please cite this work in your papers!
+
+- S. Macenski, S. Singh, F. Martin, J. Gines, [**Regulated Pure Pursuit for Robot Path Tracking**](https://arxiv.org/abs/2305.20026). Autonomous Robots, 2023.
+
+```bibtex
+@article{macenski2023regulated,
+      title={Regulated Pure Pursuit for Robot Path Tracking}, 
+      author={Steve Macenski and Shrijit Singh and Francisco Martin and Jonatan Gines},
+      year={2023},
+      journal = {Autonomous Robots}
+}
+```
+
 ## Pure Pursuit Basics
 
 The Pure Pursuit algorithm has been in use for over 30 years. You can read more about the details of the pure pursuit controller in its [introduction paper](http://www.enseignement.polytechnique.fr/profs/informatique/Eric.Goubault/MRIS/coulter_r_craig_1992_1.pdf). The core idea is to find a point on the path in front of the robot and find the linear and angular velocity to help drive towards it. Once it moves forward, a new point is selected, and the process repeats until the end of the path. The distance used to find the point to drive towards is the `lookahead` distance. 
