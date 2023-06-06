@@ -188,8 +188,11 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     }
   }
 
-  for (size_t i = 0; i != goal_checker_ids_.size(); i++) {
-    goal_checker_ids_concat_ += goal_checker_ids_[i] + std::string(" ");
+  for (size_t i = 0; i < goal_checker_ids_.size(); i++) {
+    goal_checker_ids_concat_ += goal_checker_ids_[i];
+    if (i < goal_checker_ids_.size() - 1) {
+      goal_checker_ids_concat_ += std::string(" ");
+    }
   }
 
   RCLCPP_INFO(
@@ -216,8 +219,11 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     }
   }
 
-  for (size_t i = 0; i != controller_ids_.size(); i++) {
-    controller_ids_concat_ += controller_ids_[i] + std::string(" ");
+  for (size_t i = 0; i < controller_ids_.size(); i++) {
+    controller_ids_concat_ += controller_ids_[i];
+    if (i < controller_ids_.size() - 1) {
+      controller_ids_concat_ += std::string(" ");
+    }
   }
 
   RCLCPP_INFO(
@@ -344,15 +350,15 @@ bool ControllerServer::findControllerId(
   std::string & current_controller)
 {
   if (controllers_.find(c_name) == controllers_.end()) {
-    if (controllers_.size() == 1 && c_name.empty()) {
-      RCLCPP_WARN_ONCE(
-        get_logger(), "No controller was specified in action call."
-        " Server will use only plugin loaded %s. "
-        "This warning will appear once.", controller_ids_concat_.c_str());
-      current_controller = controllers_.begin()->first;
+    if (c_name.empty()) {
+      current_controller = controller_ids_[0];
+      RCLCPP_INFO_ONCE(
+        get_logger(), "No controller_id specified in action goal. "
+        "Selected first available controller: %s. "
+        "This message will appear once.", current_controller.c_str());
     } else {
       RCLCPP_ERROR(
-        get_logger(), "FollowPath called with controller name %s, "
+        get_logger(), "Server called with controller name %s, "
         "which does not exist. Available controllers are: %s.",
         c_name.c_str(), controller_ids_concat_.c_str());
       return false;
@@ -370,16 +376,16 @@ bool ControllerServer::findGoalCheckerId(
   std::string & current_goal_checker)
 {
   if (goal_checkers_.find(c_name) == goal_checkers_.end()) {
-    if (goal_checkers_.size() == 1 && c_name.empty()) {
-      RCLCPP_WARN_ONCE(
-        get_logger(), "No goal checker was specified in parameter 'current_goal_checker'."
-        " Server will use only plugin loaded %s. "
-        "This warning will appear once.", goal_checker_ids_concat_.c_str());
-      current_goal_checker = goal_checkers_.begin()->first;
+    if (c_name.empty()) {
+      current_goal_checker = goal_checker_ids_[0];
+      RCLCPP_INFO_ONCE(
+        get_logger(), "No goal_checker_id specified in action goal. "
+        "Selected first available goal checker: %s. "
+        "This message will appear once.", current_goal_checker.c_str());
     } else {
       RCLCPP_ERROR(
-        get_logger(), "FollowPath called with goal_checker name %s in parameter"
-        " 'current_goal_checker', which does not exist. Available goal checkers are: %s.",
+        get_logger(), "Server called with goal checker name %s, "
+        "which does not exist. Available goal checkers are: %s.",
         c_name.c_str(), goal_checker_ids_concat_.c_str());
       return false;
     }
