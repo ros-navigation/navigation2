@@ -146,5 +146,5 @@ ament_export_libraries(${library_name}
     edge_scorers
     route_operations
     graph_file_loaders
-    breadth_first_search)
+)
 ament_package()

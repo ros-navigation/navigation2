@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
+#include <vector>
 
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
@@ -41,12 +42,15 @@ TEST_F(BFSTestFixture, free_space)
 
   bfs.setStart(0u, 0u);
 
-  unsigned int mx = 1u;
-  unsigned int my = 1u;
-  bfs.setGoal(mx, my);
+  std::vector<nav2_costmap_2d::MapLocation> goals; 
+  goals.push_back({1u, 1u});
+  bfs.setGoals(goals);
 
-  bool result = bfs.search();
+  unsigned int goal;
+  bool result = bfs.search(goal);
   EXPECT_TRUE(result);
+
+  EXPECT_EQ(costmap->getIndex(goals[goal].x, goals[goal].y), costmap->getIndex(1u, 1u));
   bfs.clearGraph();
 }
 
@@ -61,13 +65,16 @@ TEST_F(BFSTestFixture, wall)
 
   bfs.setStart(0u, 0u);
 
-  unsigned int mx = 5u;
-  unsigned int my = 0u;
+  std::vector<nav2_costmap_2d::MapLocation> goals;
+  goals.push_back({5u, 0u});
+  goals.push_back({0u, 4u});
+  bfs.setGoals(goals);
 
-  bfs.setGoal(mx, my);
+  unsigned int goal;
+  bool result = bfs.search(goal);
+  EXPECT_TRUE(result);
 
-  bool result = bfs.search();
-  EXPECT_FALSE(result);
+  EXPECT_EQ(costmap->getIndex(goals[goal].x, goals[goal].y), costmap->getIndex(0u, 4u));
   bfs.clearGraph();
 }
 
@@ -76,7 +83,10 @@ TEST_F(BFSTestFixture, ray_trace)
   initialize(10u, 10u);
 
   bfs.setStart(0u, 0u);
-  bfs.setGoal(5u, 5u);
+
+  std::vector<nav2_costmap_2d::MapLocation> goals;
+  goals.push_back({5u, 5u});
+  bfs.setGoals(goals);
 
   bool result = bfs.isNodeVisible();
   EXPECT_TRUE(result);

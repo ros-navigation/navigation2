@@ -19,6 +19,7 @@
 #include <memory>
 #include <vector>
 
+#include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "nav2_route/breadth_first_search.hpp"
 #include "nav2_route/goal_intent_extractor.hpp"
@@ -223,18 +224,22 @@ bool GoalIntentExtractor::isNodeValid(unsigned int node_index,
   float goal_x = (*graph_)[node_index].coords.x;
   float goal_y = (*graph_)[node_index].coords.y;
   costmap_sub_->getCostmap()->worldToMap(goal_x, goal_y, g_mx, g_my);
+  std::vector<nav2_costmap_2d::MapLocation> goals; 
+  goals.push_back({g_mx, g_my});
 
   bfs_->setStart(s_mx, s_my);
-  bfs_->setGoal(g_mx, g_my);
+  bfs_->setGoals(goals);
   if (bfs_->isNodeVisible()) {
     bfs_->clearGraph();
     return true;
   }
 
-  if (bfs_->search()) {
+  unsigned int goal;
+  if (bfs_->search(goal)) {
     bfs_->clearGraph();
     return true;
   }
+  RCLCPP_INFO_STREAM(logger_, "goal index" << goal);
   return false;
 }
 

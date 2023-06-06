@@ -67,16 +67,16 @@ public:
 
   /**
    * @brief Set the goal of the breadth first search
-   * @param mx The x map coordinate of the goal
-   * @param my The y map coordinate of the goal
+   * @param goals The array of goals to search for
    */ 
-  void setGoal(unsigned int mx, unsigned int my);
+  void setGoals(std::vector<nav2_costmap_2d::MapLocation> & goals);
 
   /**
    * @brief Find the closest goal to the start given a costmap, start and goal
+   * @param goal The index of the goal that was found by the search
    * @return True if the search was successful
    */ 
-  bool search();
+  bool search(unsigned int & goal);
 
   /**
    * @brief Preform a ray trace check to see if the node is directly visable
@@ -112,7 +112,7 @@ private:
   std::unordered_map<unsigned int, SimpleNode> graph_;
 
   NodePtr start_;
-  NodePtr goal_;
+  NodeVector goals_;
 
   unsigned int x_size_;
   unsigned int y_size_;

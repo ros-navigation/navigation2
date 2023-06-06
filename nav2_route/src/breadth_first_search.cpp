@@ -18,7 +18,9 @@
 #include <iostream>
 #include <queue>
 #include <unordered_map>
+#include <vector>
 #include "nav2_costmap_2d/cost_values.hpp"
+#include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_util/line_iterator.hpp"
 
 namespace nav2_route
@@ -56,12 +58,15 @@ void BreadthFirstSearch::setStart(unsigned int mx, unsigned int my)
   start_ = addToGraph(costmap_->getIndex(mx, my));
 }
 
-void BreadthFirstSearch::setGoal(unsigned int mx, unsigned int my)
+void BreadthFirstSearch::setGoals(std::vector<nav2_costmap_2d::MapLocation> & goals)
 {
-  goal_ = addToGraph(costmap_->getIndex(mx, my));
+  goals_.clear();
+  for (const auto & goal : goals) {
+    goals_.push_back(addToGraph(costmap_->getIndex(goal.x, goal.y)));
+  }
 }
 
-bool BreadthFirstSearch::search()
+bool BreadthFirstSearch::search(unsigned int & goal)
 {
   std::queue<NodePtr> queue;
 
@@ -75,8 +80,11 @@ bool BreadthFirstSearch::search()
     std::cout << "Current index: " << current->index << std::endl;
 
     // Check goals
-    if (current->index == goal_->index) {
-      return true;
+    for (unsigned int index = 0; index < goals_.size(); ++index) {
+      if (current->index == goals_[index]->index) {
+        goal = index;
+        return true;
+      }
     }
 
     NodeVector neighbors;
@@ -98,7 +106,7 @@ void BreadthFirstSearch::getNeighbors(unsigned int parent_index, NodeVector & ne
   unsigned int p_mx, p_my; 
   costmap_->indexToCells(parent_index, p_mx, p_my);
 
-  unsigned int neigbhor_index;
+  unsigned int neighbor_index;
   for (const int & neighbors_grid_offset : neighbors_grid_offsets_) {
     // Check if index is negative
     int index = parent_index + neighbors_grid_offset;
@@ -108,10 +116,10 @@ void BreadthFirstSearch::getNeighbors(unsigned int parent_index, NodeVector & ne
       continue;
     }
 
-    neigbhor_index = static_cast<unsigned int>(index);
+    neighbor_index = static_cast<unsigned int>(index);
 
     unsigned int n_mx, n_my; 
-    costmap_->indexToCells(neigbhor_index, n_mx, n_my);
+    costmap_->indexToCells(neighbor_index, n_mx, n_my);
 
     // Check for wrap around conditions
     if (std::fabs(static_cast<float>(p_mx) - static_cast<float>(n_mx)) > 1 || 
@@ -121,16 +129,15 @@ void BreadthFirstSearch::getNeighbors(unsigned int parent_index, NodeVector & ne
     }
 
     // Check for out of bounds
-    if (neigbhor_index >= max_index_) {
+    if (neighbor_index >= max_index_) {
       continue;
     }
 
-    if (inCollision(neigbhor_index)) {
+    if (inCollision(neighbor_index)) {
       continue;
     }
 
-    auto neighbor = addToGraph(neigbhor_index);
-    neighbors.push_back(neighbor);
+    neighbors.push_back(addToGraph(neighbor_index));
   }
 }
 
@@ -138,7 +145,7 @@ bool BreadthFirstSearch::isNodeVisible()
 {
   unsigned int s_mx, s_my, g_mx, g_my; 
   costmap_->indexToCells(start_->index, s_mx, s_my);
-  costmap_->indexToCells(goal_->index, g_mx, g_my);
+  costmap_->indexToCells(goals_.front()->index, g_mx, g_my);
 
   for (nav2_util::LineIterator line(s_mx, s_my, g_mx, g_my); line.isValid(); line.advance()) {
     double cost = costmap_->getCost(line.getX(), line.getX()); 
