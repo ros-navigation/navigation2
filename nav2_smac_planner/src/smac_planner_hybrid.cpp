@@ -228,7 +228,8 @@ void SmacPlannerHybrid::configure(
   }
 
   if (_debug_visualizations) {
-    _planned_footprints_publisher = node->create_publisher<visualization_msgs::msg::MarkerArray>("planned_footprints", 1);
+    _planned_footprints_publisher = node->create_publisher<visualization_msgs::msg::MarkerArray>(
+      "planned_footprints", 1);
   }
 
   RCLCPP_INFO(
@@ -412,8 +413,7 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
     color.a = 1.3f;
     initLineStringMarker(&m, _global_frame, "planned_footprint", color);
 
-    for (size_t i = 0; i < plan.poses.size(); i ++)
-    {
+    for (size_t i = 0; i < plan.poses.size(); i ++) {
       const double& x = plan.poses[i].pose.position.x;
       const double& y = plan.poses[i].pose.position.y;
       const double& yaw = tf2::getYaw(plan.poses[i].pose.orientation);
@@ -422,7 +422,7 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
       transformFootprintToEdges(x, y, yaw, _costmap_ros->getRobotFootprint(), footprint);
 
       m.points.clear();
-      for (auto& point : footprint) {
+      for (auto & point : footprint) {
         m.points.push_back(point);
       }
       m.id = i;

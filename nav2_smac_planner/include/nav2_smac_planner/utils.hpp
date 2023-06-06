@@ -162,9 +162,9 @@ inline void fromJsonToMotionPrimitive(
  * @param[out] robot footprint edges
  */
 inline void transformFootprintToEdges(
-    const double x, const double y, const double yaw,
-    const std::vector<geometry_msgs::msg::Point>& footprint,
-    std::vector<geometry_msgs::msg::Point>& out_footprint)
+  const double x, const double y, const double yaw,
+  const std::vector<geometry_msgs::msg::Point>& footprint,
+  std::vector<geometry_msgs::msg::Point>& out_footprint)
 {
   out_footprint.resize(2 * footprint.size());
   for (unsigned int i = 0; i < footprint.size(); i++) {
