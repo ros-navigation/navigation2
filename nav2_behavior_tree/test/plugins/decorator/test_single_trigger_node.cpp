@@ -28,8 +28,9 @@ using namespace std::chrono_literals;  // NOLINT
 class ShimNode : public nav2_behavior_tree::SingleTrigger
 {
 public:
-  ShimNode(const std::string & name,
-  const BT::NodeConfiguration & confi)
+  ShimNode(
+    const std::string & name,
+    const BT::NodeConfiguration & confi)
   : SingleTrigger(name, confi)
   {}
   ~ShimNode() {}
