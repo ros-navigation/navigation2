@@ -104,7 +104,6 @@ protected:
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> _costmap_ros;
   std::unique_ptr<CostmapDownsampler> _costmap_downsampler;
   std::string _global_frame, _name;
-
   float _lookup_table_dim;
   float _tolerance;
   bool _downsample_costmap;
@@ -118,15 +117,14 @@ protected:
   double _max_planning_time;
   double _lookup_table_size;
   double _minimum_turning_radius_global_coords;
-  bool _viz_expansions;
   bool _debug_visualizations;
   std::string _motion_model_for_search;
   MotionModel _motion_model;
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr _raw_plan_publisher;
   rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr 
-     _planned_footprints_publisher;
+    _planned_footprints_publisher;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseArray>::SharedPtr
-     _expansions_publisher;
+    _expansions_publisher;
   std::mutex _mutex;
   rclcpp_lifecycle::LifecycleNode::WeakPtr _node;
 
