@@ -167,12 +167,14 @@ TEST_F(CostmapRosTestFixture, costmap_pub_test)
     EXPECT_EQ(costmap_raw->data[i], nav2_costmap_2d::FREE_SPACE);
   }
   for (; i < 10; ++i) {
-    EXPECT_EQ(costmap_raw->data[i++], nav2_costmap_2d::LETHAL_OBSTACLE);
+    EXPECT_EQ(costmap_raw->data[i], nav2_costmap_2d::LETHAL_OBSTACLE);
   }
   for (; i < 17; ++i) {
     EXPECT_EQ(costmap_raw->data[i], nav2_costmap_2d::FREE_SPACE);
   }
   for (; i < 20; ++i) {
-    EXPECT_EQ(costmap_raw->data[i++], nav2_costmap_2d::LETHAL_OBSTACLE);
+    EXPECT_EQ(costmap_raw->data[i], nav2_costmap_2d::LETHAL_OBSTACLE);
   }
+
+  SUCCEED();
 }
