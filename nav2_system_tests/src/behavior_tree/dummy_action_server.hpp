@@ -55,6 +55,7 @@ public:
       std::bind(&DummyActionServer::handle_accepted, this, _1));
   }
 
+  virtual ~DummyActionServer() = default;
   void setFailureRanges(const Ranges & failureRanges)
   {
     failure_ranges_ = failureRanges;
