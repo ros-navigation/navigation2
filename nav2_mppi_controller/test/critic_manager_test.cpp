@@ -80,7 +80,7 @@ public:
   CriticManagerWrapperEnum()
   : CriticManager() {}
 
-  // virtual ~CriticManagerWrapperEnum() = default;
+  virtual ~CriticManagerWrapperEnum() = default;
 
   unsigned int getCriticNum()
   {
