@@ -212,6 +212,7 @@ inline visualization_msgs::msg::Marker createMarker(
   marker.color.g = 0.0f;
   marker.color.b = 1.0f;
   marker.color.a = 1.3f;
+  return marker;
 }
 
 
