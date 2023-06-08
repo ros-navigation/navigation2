@@ -162,19 +162,18 @@ TEST_F(CostmapRosTestFixture, costmap_pub_test)
   auto costmap_raw = future.get();
 
   // Check first 20 cells of the 10by10 map
-  std::cout << costmap_raw->data[0] << std::endl;
   unsigned int i = 0;
   for (; i < 7; ++i) {
     EXPECT_EQ(costmap_raw->data[i], nav2_costmap_2d::FREE_SPACE);
   }
   for (; i < 10; ++i) {
-    EXPECT_EQ(costmap_raw->data[i++], nav2_costmap_2d::LETHAL_OBSTACLE);
+    EXPECT_EQ(costmap_raw->data[i], nav2_costmap_2d::LETHAL_OBSTACLE);
   }
   for (; i < 17; ++i) {
     EXPECT_EQ(costmap_raw->data[i], nav2_costmap_2d::FREE_SPACE);
   }
   for (; i < 20; ++i) {
-    EXPECT_EQ(costmap_raw->data[i++], nav2_costmap_2d::LETHAL_OBSTACLE);
+    EXPECT_EQ(costmap_raw->data[i], nav2_costmap_2d::LETHAL_OBSTACLE);
   }
 
   SUCCEED();
