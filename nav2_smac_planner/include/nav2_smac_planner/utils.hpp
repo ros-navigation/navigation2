@@ -161,11 +161,11 @@ inline void fromJsonToMotionPrimitive(
  * @param[in] robot position , orientation and  footprint
  * @param[out] robot footprint edges
  */
-inline void transformFootprintToEdges(
+inline std::vector<geometry_msgs::msg::Point> transformFootprintToEdges(
   const double x, const double y, const double yaw,
-  const std::vector<geometry_msgs::msg::Point>& footprint,
-  std::vector<geometry_msgs::msg::Point>& out_footprint)
+  const std::vector<geometry_msgs::msg::Point> & footprint)
 {
+  std::vector<geometry_msgs::msg::Point> out_footprint;
   out_footprint.resize(2 * footprint.size());
   for (unsigned int i = 0; i < footprint.size(); i++) {
     out_footprint[2 * i].x = x + cos(yaw) * footprint[i].x - sin(yaw) * footprint[i].y;
@@ -178,6 +178,7 @@ inline void transformFootprintToEdges(
       out_footprint[2 * i - 1].y = out_footprint[2 * i].y;
     }
   }
+  return out_footprint;
 }
 
 /**
@@ -187,34 +188,30 @@ inline void transformFootprintToEdges(
  * @param ns         [namespace of the marker]
  * @param c          [color of the marker]
  */
-inline void initLineStringMarker(
-  visualization_msgs::msg::Marker * marker, const std::string & frame_id, const std::string & ns,
-  const std_msgs::msg::ColorRGBA & c)
+inline visualization_msgs::msg::Marker createMarker(
+  const std::string & frame_id, rclcpp::Time timestamp)
 {
-  if (marker == nullptr) {
-    RCLCPP_ERROR_STREAM(
-      rclcpp::get_logger("initLineStringMarker"),
-      __FUNCTION__ << ": marker is null pointer!");
-    return;
-  }
+  visualization_msgs::msg::Marker marker;
+  marker.header.frame_id = frame_id;
+  marker.header.stamp = timestamp;
+  marker.frame_locked = false;
+  marker.ns = "planned_footprint";
+  marker.action = visualization_msgs::msg::Marker::ADD;
+  marker.type = visualization_msgs::msg::Marker::LINE_LIST;
+  marker.lifetime = rclcpp::Duration(0, 0);
 
-  marker->header.frame_id = frame_id;
-  marker->header.stamp = rclcpp::Time();
-  marker->frame_locked = false;
-  marker->ns = ns;
-  marker->action = visualization_msgs::msg::Marker::ADD;
-  marker->type = visualization_msgs::msg::Marker::LINE_LIST;
-  marker->lifetime = rclcpp::Duration(0, 0);
-
-  marker->id = 0;
-  marker->pose.orientation.x = 0.0;
-  marker->pose.orientation.y = 0.0;
-  marker->pose.orientation.z = 0.0;
-  marker->pose.orientation.w = 1.0;
-  marker->scale.x = 0.05;
-  marker->scale.y = 0.05;
-  marker->scale.z = 0.05;
-  marker->color = c;
+  marker.id = 0;
+  marker.pose.orientation.x = 0.0;
+  marker.pose.orientation.y = 0.0;
+  marker.pose.orientation.z = 0.0;
+  marker.pose.orientation.w = 1.0;
+  marker.scale.x = 0.05;
+  marker.scale.y = 0.05;
+  marker.scale.z = 0.05;
+  marker.color.r = 0.0f;
+  marker.color.g = 0.0f;
+  marker.color.b = 1.0f;
+  marker.color.a = 1.3f;
 }
 
 
