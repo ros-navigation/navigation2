@@ -47,6 +47,8 @@ public:
     */
   CriticManager() = default;
 
+  virtual ~CriticManager() = default;
+
   /**
     * @brief Configure critic manager on bringup and load plugins
     * @param parent WeakPtr to node
@@ -73,14 +75,13 @@ protected:
   /**
     * @brief Load the critic plugins
     */
-  virtual void loadCritics();
+  void loadCritics();
 
   /**
     * @brief Get full-name namespaced critic IDs
     */
   std::string getFullName(const std::string & name);
 
-protected:
   rclcpp_lifecycle::LifecycleNode::WeakPtr parent_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   std::string name_;

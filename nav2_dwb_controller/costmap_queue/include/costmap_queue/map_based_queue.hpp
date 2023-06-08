@@ -69,6 +69,11 @@ public:
   {
     reset();
   }
+  
+  /**
+   * @brief Default virtual Destructor
+   */
+  virtual ~MapBasedQueue() = default;
 
   /**
    * @brief Clear the queue
