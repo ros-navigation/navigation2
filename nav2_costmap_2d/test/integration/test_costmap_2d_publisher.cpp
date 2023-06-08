@@ -155,25 +155,32 @@ protected:
 
 TEST_F(CostmapRosTestFixture, costmap_pub_test)
 {
-  // auto future = layer_subscriber_->layer_promise_.get_future();
-  // auto status = future.wait_for(std::chrono::seconds(5));
-  // EXPECT_TRUE(status == std::future_status::ready);
+  std::cout << "1" << std::endl;
+  auto future = layer_subscriber_->layer_promise_.get_future();
+  std::cout << "2" << std::endl;
+  auto status = future.wait_for(std::chrono::seconds(5));
+  std::cout << "3" << std::endl;
+  EXPECT_TRUE(status == std::future_status::ready);
+  std::cout << "4" << std::endl;
 
-  // auto costmap_raw = future.get();
+  auto costmap_raw = future.get();
+  std::cout << "5" << std::endl;
 
-  // // Check first 20 cells of the 10by10 map
-  // unsigned int i = 0;
-  // for (; i < 7; ++i) {
-  //   EXPECT_EQ(costmap_raw->data[i], nav2_costmap_2d::FREE_SPACE);
-  // }
-  // for (; i < 10; ++i) {
-  //   EXPECT_EQ(costmap_raw->data[i++], nav2_costmap_2d::LETHAL_OBSTACLE);
-  // }
-  // for (; i < 17; ++i) {
-  //   EXPECT_EQ(costmap_raw->data[i], nav2_costmap_2d::FREE_SPACE);
-  // }
-  // for (; i < 20; ++i) {
-  //   EXPECT_EQ(costmap_raw->data[i++], nav2_costmap_2d::LETHAL_OBSTACLE);
-  // }
+  // Check first 20 cells of the 10by10 map
+  unsigned int i = 0;
+  for (; i < 7; ++i) {
+    EXPECT_EQ(costmap_raw->data[i], nav2_costmap_2d::FREE_SPACE);
+  }
+  for (; i < 10; ++i) {
+    EXPECT_EQ(costmap_raw->data[i++], nav2_costmap_2d::LETHAL_OBSTACLE);
+  }
+  for (; i < 17; ++i) {
+    EXPECT_EQ(costmap_raw->data[i], nav2_costmap_2d::FREE_SPACE);
+  }
+  for (; i < 20; ++i) {
+    EXPECT_EQ(costmap_raw->data[i++], nav2_costmap_2d::LETHAL_OBSTACLE);
+  }
+  std::cout << "6" << std::endl;
+
   SUCCEED();
 }
