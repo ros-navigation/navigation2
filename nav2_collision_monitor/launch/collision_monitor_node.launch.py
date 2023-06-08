@@ -79,7 +79,7 @@ def generate_launch_description():
         param_rewrites={},
         convert_types=True)
 
-    # Declare launch commands
+    # Declare node launching commands
     load_nodes = GroupAction(
         condition=IfCondition(PythonExpression(['not ', use_composition])),
         actions=[
