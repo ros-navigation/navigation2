@@ -50,7 +50,7 @@ collision_monitor:
     observation_sources: ["scan"]
     scan:
       type: "scan"
-      topic: "/scan"
+      topic: "scan"
     pointcloud:
       type: "pointcloud"
       topic: "/intel_realsense_r200_depth/points"
