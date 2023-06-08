@@ -22,9 +22,12 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, GroupAction
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration, PythonExpression
+from launch.substitutions import NotEqualsSubstitution
 from launch_ros.actions import LoadComposableNodes, SetParameter
 from launch_ros.actions import Node
+from launch_ros.actions import PushRosNamespace
 from launch_ros.descriptions import ComposableNode
+from nav2_common.launch import RewrittenYaml
 
 
 def generate_launch_description():
@@ -34,6 +37,8 @@ def generate_launch_description():
     # Constant parameters
     lifecycle_nodes = ['collision_monitor']
     autostart = True
+    remappings = [('/tf', 'tf'),
+                  ('/tf_static', 'tf_static')]
 
     # Launch arguments
     # 1. Create the launch configuration variables
@@ -68,10 +73,20 @@ def generate_launch_description():
         'container_name', default_value='nav2_container',
         description='the name of conatiner that nodes will load in if use composition')
 
+    configured_params = RewrittenYaml(
+        source_file=params_file,
+        root_key=namespace,
+        param_rewrites={},
+        convert_types=True)
+
+    # Declare launch commands
     load_nodes = GroupAction(
         condition=IfCondition(PythonExpression(['not ', use_composition])),
         actions=[
             SetParameter('use_sim_time', use_sim_time),
+            PushRosNamespace(
+                condition=IfCondition(NotEqualsSubstitution(LaunchConfiguration('namespace'), '')),
+                namespace=namespace),
             Node(
                 package='nav2_lifecycle_manager',
                 executable='lifecycle_manager',
@@ -79,13 +94,15 @@ def generate_launch_description():
                 output='screen',
                 emulate_tty=True,  # https://github.com/ros2/launch/issues/188
                 parameters=[{'autostart': autostart},
-                            {'node_names': lifecycle_nodes}]),
+                            {'node_names': lifecycle_nodes}],
+                remappings=remappings),
             Node(
                 package='nav2_collision_monitor',
                 executable='collision_monitor',
                 output='screen',
                 emulate_tty=True,  # https://github.com/ros2/launch/issues/188
-                parameters=[params_file])
+                parameters=[configured_params],
+                remappings=remappings)
         ]
     )
 
@@ -93,6 +110,9 @@ def generate_launch_description():
         condition=IfCondition(use_composition),
         actions=[
             SetParameter('use_sim_time', use_sim_time),
+            PushRosNamespace(
+                condition=IfCondition(NotEqualsSubstitution(LaunchConfiguration('namespace'), '')),
+                namespace=namespace),
             LoadComposableNodes(
                 target_container=container_name_full,
                 composable_node_descriptions=[
@@ -101,12 +121,14 @@ def generate_launch_description():
                         plugin='nav2_lifecycle_manager::LifecycleManager',
                         name='lifecycle_manager_collision_monitor',
                         parameters=[{'autostart': autostart},
-                                    {'node_names': lifecycle_nodes}]),
+                                    {'node_names': lifecycle_nodes}],
+                        remappings=remappings),
                     ComposableNode(
                         package='nav2_collision_monitor',
                         plugin='nav2_collision_monitor::CollisionMonitor',
                         name='collision_monitor',
-                        parameters=[params_file]),
+                        parameters=[configured_params],
+                        remappings=remappings)
                 ],
             )
         ]
