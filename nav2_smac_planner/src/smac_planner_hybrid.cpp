@@ -134,10 +134,6 @@ void SmacPlannerHybrid::configure(
   node->get_parameter(name + ".lookup_table_size", _lookup_table_size);
 
   nav2_util::declare_parameter_if_not_declared(
-    node, name + ".viz_expansions", rclcpp::ParameterValue(false));
-  node->get_parameter(name + ".viz_expansions", _viz_expansions);
-
-  nav2_util::declare_parameter_if_not_declared(
     node, name + ".debug_visualizations", rclcpp::ParameterValue(false));
   node->get_parameter(name + ".debug_visualizations", _debug_visualizations);
 
@@ -223,11 +219,9 @@ void SmacPlannerHybrid::configure(
   }
 
   _raw_plan_publisher = node->create_publisher<nav_msgs::msg::Path>("unsmoothed_plan", 1);
-  if (_viz_expansions) {
-    _expansions_publisher = node->create_publisher<geometry_msgs::msg::PoseArray>("expansions", 1);
-  }
 
   if (_debug_visualizations) {
+    _expansions_publisher = node->create_publisher<geometry_msgs::msg::PoseArray>("expansions", 1);
     _planned_footprints_publisher = node->create_publisher<visualization_msgs::msg::MarkerArray>(
       "planned_footprints", 1);
   }
@@ -247,10 +241,8 @@ void SmacPlannerHybrid::activate()
     _logger, "Activating plugin %s of type SmacPlannerHybrid",
     _name.c_str());
   _raw_plan_publisher->on_activate();
-  if (_viz_expansions) {
-    _expansions_publisher->on_activate();
-  }
   if (_debug_visualizations) {
+    _expansions_publisher->on_activate();
     _planned_footprints_publisher->on_activate();
   }
   if (_costmap_downsampler) {
@@ -268,10 +260,8 @@ void SmacPlannerHybrid::deactivate()
     _logger, "Deactivating plugin %s of type SmacPlannerHybrid",
     _name.c_str());
   _raw_plan_publisher->on_deactivate();
-  if (_viz_expansions) {
-    _expansions_publisher->on_deactivate();
-  }
   if (_debug_visualizations) {
+    _expansions_publisher->on_deactivate();
     _planned_footprints_publisher->on_activate();
   }
   if (_costmap_downsampler) {
@@ -368,7 +358,7 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   int num_iterations = 0;
   std::string error;
   std::unique_ptr<std::vector<std::tuple<float, float>>> expansions = nullptr;
-  if (_viz_expansions) {
+  if (_debug_visualizations) {
     expansions = std::make_unique<std::vector<std::tuple<float, float>>>();
   }
   // Note: All exceptions thrown are handled by the planner server and returned to the action
@@ -381,7 +371,7 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   }
 
   // Publish expansions for debug
-  if (_viz_expansions) {
+  if (_debug_visualizations) {
     geometry_msgs::msg::PoseArray msg;
     geometry_msgs::msg::Pose msg_pose;
     msg.header.stamp = _clock->now();
@@ -405,21 +395,15 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   // plot footprint path planned
   if (_debug_visualizations) {
     auto marker_array = std::make_unique<visualization_msgs::msg::MarkerArray>();
-    visualization_msgs::msg::Marker m;
-    std_msgs::msg::ColorRGBA color;
-    color.r = 0.0f;
-    color.g = 0.0f;
-    color.b = 1.0f;
-    color.a = 1.3f;
-    initLineStringMarker(&m, _global_frame, "planned_footprint", color);
+    visualization_msgs::msg::Marker m = createMarker(_global_frame, _clock->now());
 
-    for (size_t i = 0; i < plan.poses.size(); i ++) {
-      const double& x = plan.poses[i].pose.position.x;
-      const double& y = plan.poses[i].pose.position.y;
-      const double& yaw = tf2::getYaw(plan.poses[i].pose.orientation);
+    for (size_t i = 0; i < plan.poses.size(); i++) {
+      const double & x = plan.poses[i].pose.position.x;
+      const double & y = plan.poses[i].pose.position.y;
+      const double & yaw = tf2::getYaw(plan.poses[i].pose.orientation);
 
-      std::vector<geometry_msgs::msg::Point> footprint;
-      transformFootprintToEdges(x, y, yaw, _costmap_ros->getRobotFootprint(), footprint);
+      std::vector<geometry_msgs::msg::Point> footprint = 
+        transformFootprintToEdges(x, y, yaw, _costmap_ros->getRobotFootprint());
 
       m.points.clear();
       for (auto & point : footprint) {
@@ -439,7 +423,7 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
     if (_planned_footprints_publisher->get_subscription_count() > 0) {
       _planned_footprints_publisher->publish(std::move(marker_array));
     }
-}
+  }
   // Publish raw path for debug
   if (_raw_plan_publisher->get_subscription_count() > 0) {
     _raw_plan_publisher->publish(plan);
