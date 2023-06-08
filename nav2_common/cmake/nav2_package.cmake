@@ -39,12 +39,6 @@ macro(nav2_package)
   if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Wall -Wextra -Wpedantic -Werror -Wdeprecated -fPIC -Woverloaded-virtual -Wnon-virtual-dtor -Wcast-align -Wunused -Wmisleading-indentation -Wduplicated-cond -Wduplicated-branches)
   endif()
-  # Wold-style-cast used in Throttle
-  # Wconversion breaks alot of things
-  # Wuseless cast
-  # double promotation
-  # Wnull-dereference denosie layer
-
 
   option(COVERAGE_ENABLED "Enable code coverage" FALSE)
   if(COVERAGE_ENABLED)
