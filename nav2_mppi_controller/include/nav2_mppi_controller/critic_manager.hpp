@@ -47,6 +47,10 @@ public:
     */
   CriticManager() = default;
 
+
+  /**
+    * @brief Virtual Destructor for mppi::CriticManager
+    */
   virtual ~CriticManager() = default;
 
   /**
@@ -75,13 +79,14 @@ protected:
   /**
     * @brief Load the critic plugins
     */
-  void loadCritics();
+  virtual void loadCritics();
 
   /**
     * @brief Get full-name namespaced critic IDs
     */
   std::string getFullName(const std::string & name);
 
+protected:
   rclcpp_lifecycle::LifecycleNode::WeakPtr parent_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   std::string name_;
