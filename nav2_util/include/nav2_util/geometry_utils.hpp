@@ -314,6 +314,7 @@ inline geometry_msgs::msg::PoseStamped project_robot_onto_path(const nav_msgs::m
 
   geometry_msgs::msg::PoseStamped projected_pose;
   projected_pose.header.frame_id = pose1.header.frame_id;
+  projected_pose.header.stamp = pose1.header.stamp;
   projected_pose.pose.position.x = x;
   projected_pose.pose.position.y = y;
   projected_pose.pose.position.z = pose1.pose.position.z;
@@ -326,6 +327,8 @@ inline nav2_msgs::msg::CrossTrackError calculate_cross_track_error(
   geometry_msgs::msg::PoseStamped projected_pose)
 {
   nav2_msgs::msg::CrossTrackError error;
+  error.header.frame_id = projected_pose.frame_id;
+  error.header.stamp = projected_pose.stamp;
   error.position_error = std::hypot(projected_pose.pose.position.x, projected_pose.pose.position.y);
   tf2::Quaternion error_orientation;
   tf2::fromMsg(projected_pose.pose.orientation, error_orientation);
