@@ -69,7 +69,7 @@ public:
   {
     reset();
   }
-  
+
   /**
    * @brief Default virtual Destructor
    */
