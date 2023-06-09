@@ -47,7 +47,7 @@ public:
     const std::string & xml_tag_name,
     const std::string & action_name,
     const BT::NodeConfiguration & conf)
-  : BT::ActionNodeBase(xml_tag_name, conf), action_name_(action_name)
+  : BT::ActionNodeBase(xml_tag_name, conf), action_name_(action_name), should_send_goal_(true)
   {
     node_ = config().blackboard->template get<rclcpp::Node::SharedPtr>("node");
     callback_group_ = node_->create_callback_group(
@@ -190,7 +190,10 @@ public:
       // setting the status to RUNNING to notify the BT Loggers (if any)
       setStatus(BT::NodeStatus::RUNNING);
 
-      // user defined callback
+      // reset the flag to send the goal or not, allowing the user the option to set it in on_tick
+      should_send_goal_ = true;
+
+      // user defined callback, may modify "should_send_goal_".
       on_tick();
 
       if (!should_send_goal_) {
@@ -449,6 +452,9 @@ protected:
   std::shared_ptr<std::shared_future<typename rclcpp_action::ClientGoalHandle<ActionT>::SharedPtr>>
   future_goal_handle_;
   rclcpp::Time time_goal_sent_;
+  
+  // Can be set in on_tick or on_wait_for_result to indicate if a goal should be sent.
+  bool should_send_goal_;
 };
 
 }  // namespace nav2_behavior_tree
