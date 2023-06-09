@@ -2,6 +2,7 @@
  *
  * Software License Agreement (BSD License)
  *
+ *  Copyright (c) 2008, 2013, Willow Garage, Inc.
  *  Copyright (c) 2020 Samsung Research Russia
  *  All rights reserved.
  *
@@ -32,7 +33,9 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *
- * Author: Alexey Merzlyakov
+ * Author: Eitan Marder-Eppstein
+ *         David V. Lu!!
+ *         Alexey Merzlyakov
  *********************************************************************/
 
 #ifndef NAV2_COSTMAP_2D__COSTMAP_FILTERS__COSTMAP_FILTER_HPP_

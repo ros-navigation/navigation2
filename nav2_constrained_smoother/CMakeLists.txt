@@ -17,6 +17,10 @@ find_package(Ceres REQUIRED COMPONENTS SuiteSparse)
 
 set(CMAKE_CXX_STANDARD 17)
 
+if(${CERES_VERSION} VERSION_LESS_EQUAL 2.0.0)
+  add_definitions(-DUSE_OLD_CERES_API)
+endif()
+
 nav2_package()
 
 set(library_name nav2_constrained_smoother)

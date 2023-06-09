@@ -7,6 +7,7 @@ collision_monitor:
     cmd_vel_out_topic: "cmd_vel"
     transform_tolerance: 0.5
     source_timeout: 5.0
+    base_shift_correction: True
     stop_pub_timeout: 2.0
     # Polygons represent zone around the robot for "stop" and "slowdown" action types,
     # and robot footprint for "approach" action type.

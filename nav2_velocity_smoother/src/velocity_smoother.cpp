@@ -182,9 +182,21 @@ double VelocitySmoother::findEtaConstraint(
   const double v_curr, const double v_cmd, const double accel, const double decel)
 {
   // Exploiting vector scaling properties
-  const double v_component_max = accel / smoothing_frequency_;
-  const double v_component_min = decel / smoothing_frequency_;
-  const double dv = v_cmd - v_curr;
+  double dv = v_cmd - v_curr;
+
+  double v_component_max;
+  double v_component_min;
+
+  // Accelerating if magnitude of v_cmd is above magnitude of v_curr
+  // and if v_cmd and v_curr have the same sign (i.e. speed is NOT passing through 0.0)
+  // Decelerating otherwise
+  if (abs(v_cmd) >= abs(v_curr) && v_curr * v_cmd >= 0.0) {
+    v_component_max = accel / smoothing_frequency_;
+    v_component_min = -accel / smoothing_frequency_;
+  } else {
+    v_component_max = -decel / smoothing_frequency_;
+    v_component_min = decel / smoothing_frequency_;
+  }
 
   if (dv > v_component_max) {
     return v_component_max / dv;
@@ -202,8 +214,21 @@ double VelocitySmoother::applyConstraints(
   const double accel, const double decel, const double eta)
 {
   double dv = v_cmd - v_curr;
-  const double v_component_max = accel / smoothing_frequency_;
-  const double v_component_min = decel / smoothing_frequency_;
+
+  double v_component_max;
+  double v_component_min;
+
+  // Accelerating if magnitude of v_cmd is above magnitude of v_curr
+  // and if v_cmd and v_curr have the same sign (i.e. speed is NOT passing through 0.0)
+  // Decelerating otherwise
+  if (abs(v_cmd) >= abs(v_curr) && v_curr * v_cmd >= 0.0) {
+    v_component_max = accel / smoothing_frequency_;
+    v_component_min = -accel / smoothing_frequency_;
+  } else {
+    v_component_max = -decel / smoothing_frequency_;
+    v_component_min = decel / smoothing_frequency_;
+  }
+
   return v_curr + std::clamp(eta * dv, v_component_min, v_component_max);
 }
 
@@ -216,14 +241,13 @@ void VelocitySmoother::smootherTimer()
 
   auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>();
 
-  // Check for velocity timeout. If nothing received, publish zeros to stop robot
+  // Check for velocity timeout. If nothing received, publish zeros to apply deceleration
   if (now() - last_command_time_ > velocity_timeout_) {
-    last_cmd_ = geometry_msgs::msg::Twist();
-    if (!stopped_) {
-      smoothed_cmd_pub_->publish(std::move(cmd_vel));
+    if (last_cmd_ == geometry_msgs::msg::Twist() || stopped_) {
+      stopped_ = true;
+      return;
     }
-    stopped_ = true;
-    return;
+    *command_ = geometry_msgs::msg::Twist();
   }
 
   stopped_ = false;
@@ -276,16 +300,12 @@ void VelocitySmoother::smootherTimer()
   cmd_vel->angular.z = applyConstraints(
     current_.angular.z, command_->angular.z, max_accels_[2], max_decels_[2], eta);
 
-  // If open loop, assume we achieved it
-  if (open_loop_) {
-    last_cmd_ = *cmd_vel;
-  }
-
   // Apply deadband restrictions & publish
   cmd_vel->linear.x = fabs(cmd_vel->linear.x) < deadband_velocities_[0] ? 0.0 : cmd_vel->linear.x;
   cmd_vel->linear.y = fabs(cmd_vel->linear.y) < deadband_velocities_[1] ? 0.0 : cmd_vel->linear.y;
   cmd_vel->angular.z = fabs(cmd_vel->angular.z) <
     deadband_velocities_[2] ? 0.0 : cmd_vel->angular.z;
+  last_cmd_ = *cmd_vel;
   smoothed_cmd_pub_->publish(std::move(cmd_vel));
 }
 
