@@ -44,6 +44,8 @@ public:
       std::bind(&DummyService::handle_service, this, _1, _2, _3));
   }
 
+  virtual ~DummyService() = default;
+
   void disable()
   {
     service_.reset();

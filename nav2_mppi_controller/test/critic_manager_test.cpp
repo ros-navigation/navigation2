@@ -46,6 +46,8 @@ public:
   CriticManagerWrapper()
   : CriticManager() {}
 
+  virtual ~CriticManagerWrapper() = default;
+
   virtual void loadCritics()
   {
     critics_.clear();
@@ -77,6 +79,8 @@ class CriticManagerWrapperEnum : public CriticManager
 public:
   CriticManagerWrapperEnum()
   : CriticManager() {}
+
+  virtual ~CriticManagerWrapperEnum() = default;
 
   unsigned int getCriticNum()
   {
