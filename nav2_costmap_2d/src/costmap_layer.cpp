@@ -157,7 +157,7 @@ void CostmapLayer::updateWithMaxWithoutUnknownOverride(
       }
 
       unsigned char old_cost = master_array[it];
-      if (old_cost < costmap_[it]) {
+      if (old_cost != NO_INFORMATION && old_cost < costmap_[it]) {
         master_array[it] = costmap_[it];
       }
       it++;
