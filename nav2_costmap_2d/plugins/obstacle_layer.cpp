@@ -546,6 +546,8 @@ ObstacleLayer::updateCosts(
     case 1:  // Maximum
       updateWithMax(master_grid, min_i, min_j, max_i, max_j);
       break;
+    case 2: // Maximum without overwrite if unknown
+      updateWithMaxWithoutUnknownOverride(master_grid, min_i, min_j, max_i, max_j);
     default:  // Nothing
       break;
   }
