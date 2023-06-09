@@ -143,7 +143,8 @@ RUN mv /etc/apt/apt.conf.d/docker-clean /etc/apt/
 RUN apt-get update && \
     apt-get install -y \
       bash-completion \
-      gdb && \
+      gdb \
+      wget && \
     pip3 install \
       bottle \
       glances
@@ -160,6 +161,9 @@ RUN xcaddy build \
 
 # multi-stage for visualizing
 FROM dever AS visualizer
+
+ENV ROOT_SRV /srv
+RUN mkdir -p $ROOT_SRV
 
 # install demo dependencies
 RUN apt-get update && apt-get install -y \
@@ -188,8 +192,10 @@ RUN git clone https://github.com/osrf/gzweb.git $GZWEB_WS
 RUN cd $GZWEB_WS && . /usr/share/gazebo/setup.sh && \
     GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:$(find /opt/ros/$ROS_DISTRO/share \
       -mindepth 1 -maxdepth 2 -type d -name "models" | paste -s -d: -) && \
+    sed -i "s|var modelList =|var modelList = []; var oldModelList =|g" gz3d/src/gzgui.js && \
     xvfb-run -s "-screen 0 1280x1024x24" ./deploy.sh -m local && \
-    ln -s $GZWEB_WS/http/client/assets http/client/assets/models
+    ln -s $GZWEB_WS/http/client/assets http/client/assets/models && \
+    ln -s $GZWEB_WS/http/client $ROOT_SRV/gzweb
 
 # patch gzsever
 RUN GZSERVER=$(which gzserver) && \
@@ -203,14 +209,19 @@ RUN apt-get install -y --no-install-recommends \
       ros-$ROS_DISTRO-foxglove-bridge
 
 # setup foxglove
-ENV FOXGLOVE_WS /opt/foxglove
 # Use custom fork until PR is merged:
 # https://github.com/foxglove/studio/pull/5987
-# COPY --from=ghcr.io/foxglove/studio /src $FOXGLOVE_WS
-COPY --from=ghcr.io/ruffsl/foxglove_studio@sha256:8a2f2be0a95f24b76b0d7aa536f1c34f3e224022eed607cbf7a164928488332e /src $FOXGLOVE_WS
+# COPY --from=ghcr.io/foxglove/studio /src $ROOT_SRV/foxglove
+COPY --from=ghcr.io/ruffsl/foxglove_studio@sha256:8a2f2be0a95f24b76b0d7aa536f1c34f3e224022eed607cbf7a164928488332e /src $ROOT_SRV/foxglove
 
 # install web server
 COPY --from=caddyer /usr/bin/caddy /usr/bin/caddy
+
+# download media files
+RUN mkdir -p $ROOT_SRV/media && cd /tmp && \
+    export ICONS="icons.tar.gz" && wget https://github.com/ros-planning/navigation2/files/11506823/$ICONS && \
+    echo "cae5e2a5230f87b004c8232b579781edb4a72a7431405381403c6f9e9f5f7d41 $ICONS" | sha256sum -c && \
+    tar xvz -C $ROOT_SRV/media -f $ICONS && rm $ICONS
 
 # multi-stage for exporting
 FROM tester AS exporter

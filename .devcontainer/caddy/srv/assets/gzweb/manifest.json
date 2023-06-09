@@ -1,0 +1,23 @@
+{
+    "name": "Gzweb: {{placeholder "http.vars.ReqHost"}}",
+    "short_name": "Gzweb: {{placeholder "http.vars.ReqHost"}}",
+    "icons": [
+        {
+          "src": "/media/icons/gzweb/any_icon_x512.webp",
+          "sizes": "512x512",
+          "type": "image/webp",
+          "purpose": "any"
+        },
+        {
+          "src": "/media/icons/gzweb/maskable_icon_x512.webp",
+          "sizes": "512x512",
+          "type": "image/webp",
+          "purpose": "maskable"
+        }
+    ],
+    "id": "/gzweb/",
+    "start_url": "/gzweb/",
+    "theme_color": "#ffffff",
+    "background_color": "#ffffff",
+    "display": "fullscreen"
+}

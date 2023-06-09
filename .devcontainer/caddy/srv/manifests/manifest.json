@@ -1,8 +1,0 @@
-{
-    "name": "Nav2: {{placeholder "http.request.hostport"}}",
-    "short_name": "Nav2: {{placeholder "http.request.hostport"}}",
-    "start_url": "/",
-    "theme_color": "#ffffff",
-    "background_color": "#ffffff",
-    "display": "standalone"
-}

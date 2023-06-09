@@ -53,6 +53,8 @@ static const std::vector<double> ARBITRARY_POLYGON {
 static const double CIRCLE_RADIUS{0.5};
 static const int MIN_POINTS{2};
 static const double SLOWDOWN_RATIO{0.7};
+static const double LINEAR_LIMIT{0.4};
+static const double ANGULAR_LIMIT{0.09};
 static const double TIME_BEFORE_COLLISION{1.0};
 static const double SIMULATION_TIME_STEP{0.01};
 static const tf2::Duration TRANSFORM_TOLERANCE{tf2::durationFromSec(0.1)};
@@ -218,7 +220,7 @@ protected:
   void createPolygon(const std::string & action_type, const bool is_static);
   void createCircle(const std::string & action_type);
 
-  void sendTransforms();
+  void sendTransforms(double shift);
 
   // Wait until polygon will be received
   bool waitPolygon(
@@ -275,6 +277,16 @@ void Tester::setCommonParameters(const std::string & polygon_name, const std::st
     polygon_name + ".slowdown_ratio", rclcpp::ParameterValue(SLOWDOWN_RATIO));
   test_node_->set_parameter(
     rclcpp::Parameter(polygon_name + ".slowdown_ratio", SLOWDOWN_RATIO));
+
+  test_node_->declare_parameter(
+    polygon_name + ".linear_limit", rclcpp::ParameterValue(LINEAR_LIMIT));
+  test_node_->set_parameter(
+    rclcpp::Parameter(polygon_name + ".linear_limit", LINEAR_LIMIT));
+
+  test_node_->declare_parameter(
+    polygon_name + ".angular_limit", rclcpp::ParameterValue(ANGULAR_LIMIT));
+  test_node_->set_parameter(
+    rclcpp::Parameter(polygon_name + ".angular_limit", ANGULAR_LIMIT));
 
   test_node_->declare_parameter(
     polygon_name + ".time_before_collision",
@@ -369,7 +381,7 @@ void Tester::createCircle(const std::string & action_type)
   circle_->activate();
 }
 
-void Tester::sendTransforms()
+void Tester::sendTransforms(double shift)
 {
   std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster =
     std::make_shared<tf2_ros::TransformBroadcaster>(test_node_);
@@ -381,8 +393,8 @@ void Tester::sendTransforms()
   transform.child_frame_id = BASE2_FRAME_ID;
 
   transform.header.stamp = test_node_->now();
-  transform.transform.translation.x = 0.1;
-  transform.transform.translation.y = 0.1;
+  transform.transform.translation.x = shift;
+  transform.transform.translation.y = shift;
   transform.transform.translation.z = 0.0;
   transform.transform.rotation.x = 0.0;
   transform.transform.rotation.y = 0.0;
@@ -460,6 +472,20 @@ TEST_F(Tester, testPolygonGetSlowdownParameters)
   EXPECT_EQ(polygon_->isVisualize(), true);
   // Check that slowdown_ratio is correct
   EXPECT_NEAR(polygon_->getSlowdownRatio(), SLOWDOWN_RATIO, EPSILON);
+}
+
+TEST_F(Tester, testPolygonGetLimitParameters)
+{
+  createPolygon("limit", true);
+
+  // Check that common parameters set correctly
+  EXPECT_EQ(polygon_->getName(), POLYGON_NAME);
+  EXPECT_EQ(polygon_->getActionType(), nav2_collision_monitor::LIMIT);
+  EXPECT_EQ(polygon_->getMinPoints(), MIN_POINTS);
+  EXPECT_EQ(polygon_->isVisualize(), true);
+  // Check that limit params are correct
+  EXPECT_NEAR(polygon_->getLinearLimit(), LINEAR_LIMIT, EPSILON);
+  EXPECT_NEAR(polygon_->getAngularLimit(), ANGULAR_LIMIT, EPSILON);
 }
 
 TEST_F(Tester, testPolygonGetApproachParameters)
@@ -626,7 +652,7 @@ TEST_F(Tester, testPolygonTopicUpdate)
 TEST_F(Tester, testPolygonTopicUpdateDifferentFrame)
 {
   createPolygon("stop", false);
-  sendTransforms();
+  sendTransforms(0.1);
 
   std::vector<nav2_collision_monitor::Point> poly;
   polygon_->getPolygon(poly);
@@ -644,12 +670,28 @@ TEST_F(Tester, testPolygonTopicUpdateDifferentFrame)
   EXPECT_NEAR(poly[2].y, SQUARE_POLYGON[5] + 0.1, EPSILON);
   EXPECT_NEAR(poly[3].x, SQUARE_POLYGON[6] + 0.1, EPSILON);
   EXPECT_NEAR(poly[3].y, SQUARE_POLYGON[7] + 0.1, EPSILON);
+
+  // Move BASE2_FRAME_ID to 0.2 m away from BASE_FRAME_ID
+  sendTransforms(0.2);
+  // updatePolygon() should update poly coordinates to correct ones in BASE_FRAME_ID
+  polygon_->updatePolygon();
+  // Check that polygon coordinates were updated correctly
+  ASSERT_TRUE(waitPolygon(500ms, poly));
+  ASSERT_EQ(poly.size(), 4u);
+  EXPECT_NEAR(poly[0].x, SQUARE_POLYGON[0] + 0.2, EPSILON);
+  EXPECT_NEAR(poly[0].y, SQUARE_POLYGON[1] + 0.2, EPSILON);
+  EXPECT_NEAR(poly[1].x, SQUARE_POLYGON[2] + 0.2, EPSILON);
+  EXPECT_NEAR(poly[1].y, SQUARE_POLYGON[3] + 0.2, EPSILON);
+  EXPECT_NEAR(poly[2].x, SQUARE_POLYGON[4] + 0.2, EPSILON);
+  EXPECT_NEAR(poly[2].y, SQUARE_POLYGON[5] + 0.2, EPSILON);
+  EXPECT_NEAR(poly[3].x, SQUARE_POLYGON[6] + 0.2, EPSILON);
+  EXPECT_NEAR(poly[3].y, SQUARE_POLYGON[7] + 0.2, EPSILON);
 }
 
 TEST_F(Tester, testPolygonTopicUpdateIncorrectFrame)
 {
   createPolygon("stop", false);
-  sendTransforms();
+  sendTransforms(0.1);
 
   std::vector<nav2_collision_monitor::Point> poly;
   polygon_->getPolygon(poly);

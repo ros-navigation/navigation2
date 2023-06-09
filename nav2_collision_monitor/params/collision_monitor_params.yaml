@@ -9,7 +9,7 @@ collision_monitor:
     source_timeout: 5.0
     base_shift_correction: True
     stop_pub_timeout: 2.0
-    # Polygons represent zone around the robot for "stop" and "slowdown" action types,
+    # Polygons represent zone around the robot for "stop", "slowdown" and "limit" action types,
     # and robot footprint for "approach" action type.
     # Footprint could be "polygon" type with dynamically set footprint from footprint_topic
     # or "circle" type with static footprint set by radius. "footprint_topic" parameter
@@ -30,6 +30,15 @@ collision_monitor:
       slowdown_ratio: 0.3
       visualize: True
       polygon_pub_topic: "polygon_slowdown"
+    PolygonLimit:
+      type: "polygon"
+      points: [0.5, 0.5, 0.5, -0.5, -0.5, -0.5, -0.5, 0.5]
+      action_type: "limit"
+      max_points: 3
+      linear_limit: 0.4
+      angular_limit: 0.5
+      visualize: True
+      polygon_pub_topic: "polygon_limit"
     FootprintApproach:
       type: "polygon"
       action_type: "approach"
@@ -41,7 +50,7 @@ collision_monitor:
     observation_sources: ["scan"]
     scan:
       type: "scan"
-      topic: "/scan"
+      topic: "scan"
     pointcloud:
       type: "pointcloud"
       topic: "/intel_realsense_r200_depth/points"
