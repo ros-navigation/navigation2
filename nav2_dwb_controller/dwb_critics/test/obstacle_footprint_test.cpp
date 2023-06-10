@@ -105,8 +105,7 @@ TEST(ObstacleFootprint, GetOrientedFootprint)
   pose.theta = theta;
   footprint_after = dwb_critics::getOrientedFootprint(pose, footprint_before);
 
-  uint i;
-  for (i = 0; i < footprint_before.size(); i++) {
+  for (uint i = 0; i < footprint_before.size(); i++) {
     ASSERT_EQ(rotate_origin(footprint_before[i], theta), footprint_after[i]);
   }
 
