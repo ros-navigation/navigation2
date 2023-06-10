@@ -78,33 +78,4 @@ bool Source::sourceValid(
   return true;
 }
 
-bool Source::getTransform(
-  const std::string & source_frame_id,
-  const rclcpp::Time & source_time,
-  const rclcpp::Time & curr_time,
-  tf2::Transform & tf2_transform) const
-{
-  geometry_msgs::msg::TransformStamped transform;
-  tf2_transform.setIdentity();  // initialize by identical transform
-
-  try {
-    // Obtaining the transform to get data from source to base frame.
-    // This also considers the time shift between source and base.
-    transform = tf_buffer_->lookupTransform(
-      base_frame_id_, curr_time,
-      source_frame_id, source_time,
-      global_frame_id_, transform_tolerance_);
-  } catch (tf2::TransformException & e) {
-    RCLCPP_ERROR(
-      logger_,
-      "[%s]: Failed to get \"%s\"->\"%s\" frame transform: %s",
-      source_name_.c_str(), source_frame_id.c_str(), base_frame_id_.c_str(), e.what());
-    return false;
-  }
-
-  // Convert TransformStamped to TF2 transform
-  tf2::fromMsg(transform.transform, tf2_transform);
-  return true;
-}
-
 }  // namespace nav2_collision_monitor
