@@ -20,7 +20,7 @@
 
 #include "sensor_msgs/msg/battery_state.hpp"
 
-#include "utils/test_behavior_tree_fixture.hpp"
+#include "../../test_behavior_tree_fixture.hpp"
 #include "nav2_behavior_tree/plugins/condition/is_battery_charging_condition.hpp"
 
 class IsBatteryChargingConditionTestFixture : public ::testing::Test
