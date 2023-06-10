@@ -49,13 +49,6 @@ set(dependencies
   pluginlib
 )
 
-# pluginlib is a special case since it has Wshadow warnings
-# https://gitlab.kitware.com/cmake/cmake/-/issues/21211
-# https://discourse.cmake.org/t/disable-warning-on-fetched-projects/1978/8
-# This treats it as a SYSTEM library, so nav2 can still enable Wshadow
-get_target_property(_pluginlib_include_dirs pluginlib::pluginlib INTERFACE_INCLUDE_DIRECTORIES)
-set_target_properties(pluginlib::pluginlib PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${_pluginlib_include_dirs}")
-
 set(local_controller_plugin_lib local_controller)
 
 add_library(${local_controller_plugin_lib} SHARED src/error_codes/controller/controller_error_plugins.cpp)
