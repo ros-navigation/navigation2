@@ -56,6 +56,57 @@ bool transformPoseInTargetFrame(
   tf2_ros::Buffer & tf_buffer, const std::string target_frame,
   const double transform_timeout = 0.1);
 
+/**
+ * @brief Obtains a transform from source_frame_id at source_time ->
+ * to target_frame_id at target_time time
+ * @param source_frame_id Source frame ID to convert from
+ * @param source_time Source timestamp to convert from
+ * @param target_frame_id Target frame ID to convert to
+ * @param target_time Target time to interpolate to
+ * @param transform_tolerance Transform tolerance
+ * @param tf_transform Output source->target transform
+ * @return True if got correct transform, otherwise false
+ */
+
+/**
+ * @brief Obtains a transform from source_frame_id -> to target_frame_id
+ * @param source_frame_id Source frame ID to convert from
+ * @param target_frame_id Target frame ID to convert to
+ * @param transform_tolerance Transform tolerance
+ * @param tf_buffer TF buffer to use for the transformation
+ * @param tf_transform Output source->target transform
+ * @return True if got correct transform, otherwise false
+ */
+bool getTransform(
+  const std::string & source_frame_id,
+  const std::string & target_frame_id,
+  const tf2::Duration & transform_tolerance,
+  const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+  tf2::Transform & tf2_transform);
+
+/**
+ * @brief Obtains a transform from source_frame_id at source_time ->
+ * to target_frame_id at target_time time
+ * @param source_frame_id Source frame ID to convert from
+ * @param source_time Source timestamp to convert from
+ * @param target_frame_id Target frame ID to convert to
+ * @param target_time Current node time to interpolate to
+ * @param fixed_frame_id The frame in which to assume the transform is constant in time
+ * @param transform_tolerance Transform tolerance
+ * @param tf_buffer TF buffer to use for the transformation
+ * @param tf_transform Output source->target transform
+ * @return True if got correct transform, otherwise false
+ */
+bool getTransform(
+  const std::string & source_frame_id,
+  const rclcpp::Time & source_time,
+  const std::string & target_frame_id,
+  const rclcpp::Time & target_time,
+  const std::string & fixed_frame_id,
+  const tf2::Duration & transform_tolerance,
+  const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+  tf2::Transform & tf2_transform);
+
 }  // end namespace nav2_util
 
 #endif  // NAV2_UTIL__ROBOT_UTILS_HPP_
