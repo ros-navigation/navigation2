@@ -75,15 +75,15 @@ TEST(CostmapFilter, testWorldToMask)
   unsigned int mx, my;
   // Point inside mask
   ASSERT_TRUE(cf.worldToMask(mask, 4.0, 5.0, mx, my));
-  ASSERT_EQ(mx, 1);
-  ASSERT_EQ(my, 2);
+  ASSERT_EQ(mx, 1u);
+  ASSERT_EQ(my, 2u);
   // Corner cases
   ASSERT_TRUE(cf.worldToMask(mask, 3.0, 3.0, mx, my));
-  ASSERT_EQ(mx, 0);
-  ASSERT_EQ(my, 0);
+  ASSERT_EQ(mx, 0u);
+  ASSERT_EQ(my, 0u);
   ASSERT_TRUE(cf.worldToMask(mask, 5.9, 5.9, mx, my));
-  ASSERT_EQ(mx, 2);
-  ASSERT_EQ(my, 2);
+  ASSERT_EQ(mx, 2u);
+  ASSERT_EQ(my, 2u);
   // Point outside mask
   ASSERT_FALSE(cf.worldToMask(mask, 2.9, 2.9, mx, my));
   ASSERT_FALSE(cf.worldToMask(mask, 6.0, 6.0, mx, my));
