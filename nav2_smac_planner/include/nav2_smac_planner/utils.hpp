@@ -189,7 +189,7 @@ inline std::vector<geometry_msgs::msg::Point> transformFootprintToEdges(
  * @param c          [color of the marker]
  */
 inline visualization_msgs::msg::Marker createMarker(
-  const std::string & frame_id, rclcpp::Time timestamp)
+  const std::string & frame_id, const rclcpp::Time & timestamp)
 {
   visualization_msgs::msg::Marker marker;
   marker.header.frame_id = frame_id;
