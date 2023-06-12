@@ -85,7 +85,7 @@ enum class CombinationMethod : int
    * it is NOT overwritten. If the layer's value is NO_INFORMATION,
    * the master value does not change.
    */
-  MaxWithoutUnknownOverride = 2
+  MaxWithoutUnknownOverwrite = 2
 };
   /**
    * @brief Converts an integer to a CombinationMethod enum and logs on failure

@@ -551,8 +551,8 @@ ObstacleLayer::updateCosts(
     case CombinationMethod::Max:
       updateWithMax(master_grid, min_i, min_j, max_i, max_j);
       break;
-    case CombinationMethod::MaxWithoutUnknownOverride:
-      updateWithMaxWithoutUnknownOverride(master_grid, min_i, min_j, max_i, max_j);
+    case CombinationMethod::MaxWithoutUnknownOverwrite:
+      updateWithMaxWithoutUnknownOverwrite(master_grid, min_i, min_j, max_i, max_j);
       break;
     default:  // Nothing
       break;
@@ -775,7 +775,7 @@ CombinationMethod combination_method_from_int (const int value, const std::strin
     case 1:
       return CombinationMethod::Max;
     case 2:
-      return CombinationMethod::MaxWithoutUnknownOverride;
+      return CombinationMethod::MaxWithoutUnknownOverwrite;
     default:
       RCLCPP_WARN(
         rclcpp::get_logger("nav2_costmap_2d"),
