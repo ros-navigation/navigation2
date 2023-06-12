@@ -92,10 +92,14 @@ void ObstacleLayer::onInitialize()
   node->get_parameter(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_);
   node->get_parameter(name_ + "." + "min_obstacle_height", min_obstacle_height_);
   node->get_parameter(name_ + "." + "max_obstacle_height", max_obstacle_height_);
-  node->get_parameter(name_ + "." + "combination_method", combination_method_);
   node->get_parameter("track_unknown_space", track_unknown_space);
   node->get_parameter("transform_tolerance", transform_tolerance);
   node->get_parameter(name_ + "." + "observation_sources", topics_string);
+
+  int combination_method_param{};
+  node->get_parameter(name_ + "." + "combination_method", combination_method_param);
+  combination_method_ = combination_method_from_int(combination_method_param,
+    "ObstacleLayer::onInitialize()");
 
   dyn_params_handler_ = node->add_on_set_parameters_callback(
     std::bind(
@@ -311,7 +315,8 @@ ObstacleLayer::dynamicParametersCallback(
       }
     } else if (param_type == ParameterType::PARAMETER_INTEGER) {
       if (param_name == name_ + "." + "combination_method") {
-        combination_method_ = parameter.as_int();
+        combination_method_ = combination_method_from_int(parameter.as_int(), "ObstacleLayer::"
+          "dynamicParametersCallback()");
       }
     }
   }
@@ -540,13 +545,13 @@ ObstacleLayer::updateCosts(
   }
 
   switch (combination_method_) {
-    case 0:  // Overwrite
+    case CombinationMethod::Overwrite:
       updateWithOverwrite(master_grid, min_i, min_j, max_i, max_j);
       break;
-    case 1:  // Maximum
+    case CombinationMethod::Max:
       updateWithMax(master_grid, min_i, min_j, max_i, max_j);
       break;
-    case 2: // Maximum without overwrite if unknown
+    case CombinationMethod::MaxWithoutUnknownOverride:
       updateWithMaxWithoutUnknownOverride(master_grid, min_i, min_j, max_i, max_j);
       break;
     default:  // Nothing
@@ -760,6 +765,24 @@ ObstacleLayer::resetBuffersLastUpdated()
     if (observation_buffers_[i]) {
       observation_buffers_[i]->resetLastUpdated();
     }
+  }
+}
+
+CombinationMethod combination_method_from_int (const int value, const std::string function_name){
+    switch(value){
+    case 0:
+      return CombinationMethod::Overwrite;
+    case 1:
+      return CombinationMethod::Max;
+    case 2:
+      return CombinationMethod::MaxWithoutUnknownOverride;
+    default:
+      RCLCPP_WARN(
+        rclcpp::get_logger("nav2_costmap_2d"),
+        (function_name + ": param combination_method: %i. Possible values are  0 (Overwrite) or 1 (Maximum) or "
+        "2 (Maximum without overwriting the master's NO_INFORMATION values)."
+        "The default value 1 will be used").c_str(), value);
+      return CombinationMethod::Max;
   }
 }
 
