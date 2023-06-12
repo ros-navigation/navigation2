@@ -89,6 +89,8 @@ enum class CombinationMethod : int
 };
   /**
    * @brief Converts an integer to a CombinationMethod enum and logs on failure
+   * @param value The integer to convert
+   * @param function_name The name of the function calling this conversion (for logging)
    */
 CombinationMethod combination_method_from_int (const int value, const std::string function_name);
 
