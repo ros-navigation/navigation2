@@ -224,6 +224,7 @@ controller_server:
         offset_from_furthest: 4
         threshold_to_consider: 0.40
         max_angle_to_furthest: 1.0
+        forward_preference: true
       # TwirlingCritic:
       #   enabled: true
       #   twirling_cost_power: 1
