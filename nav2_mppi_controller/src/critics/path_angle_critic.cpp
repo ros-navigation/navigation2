@@ -1,4 +1,5 @@
 // Copyright (c) 2022 Samsung Research America, @artofnothingness Alexey Budyakov
+// Copyright (c) 2023 Open Navigation LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,6 +22,15 @@ namespace mppi::critics
 
 void PathAngleCritic::initialize()
 {
+  auto getParentParam = parameters_handler_->getParamGetter(parent_name_);
+  float vx_min;
+  getParentParam(vx_min, "vx_min", -0.35);
+  if (fabs(vx_min) < 1e-6) {  // zero
+    reversing_allowed_ = false;
+  } else if (vx_min < 0.0) {   // reversing possible
+    reversing_allowed_ = true;
+  }
+
   auto getParam = parameters_handler_->getParamGetter(name_);
   getParam(offset_from_furthest_, "offset_from_furthest", 4);
   getParam(power_, "cost_power", 1);
@@ -31,12 +41,18 @@ void PathAngleCritic::initialize()
   getParam(
     max_angle_to_furthest_,
     "max_angle_to_furthest", 1.2);
+  getParam(
+    forward_preference_,
+    "forward_preference", true);
 
+  if (!reversing_allowed_) {
+    forward_preference_ = true;
+  }
 
   RCLCPP_INFO(
     logger_,
-    "PathAngleCritic instantiated with %d power and %f weight.",
-    power_, weight_);
+    "PathAngleCritic instantiated with %d power and %f weight. Reversing %s",
+    power_, weight_, reversing_allowed_ ? "allowed." : "not allowed.");
 }
 
 void PathAngleCritic::score(CriticData & data)
@@ -58,17 +74,27 @@ void PathAngleCritic::score(CriticData & data)
   const float goal_x = xt::view(data.path.x, offseted_idx);
   const float goal_y = xt::view(data.path.y, offseted_idx);
 
-  if (utils::posePointAngle(data.state.pose.pose, goal_x, goal_y) < max_angle_to_furthest_) {
+  if (utils::posePointAngle(
+      data.state.pose.pose, goal_x, goal_y, forward_preference_) < max_angle_to_furthest_)
+  {
     return;
   }
 
-  const auto yaws_between_points = xt::atan2(
+  auto yaws_between_points = xt::atan2(
     goal_y - data.trajectories.y,
     goal_x - data.trajectories.x);
-  const auto yaws =
+
+  auto yaws =
     xt::abs(utils::shortest_angular_distance(data.trajectories.yaws, yaws_between_points));
 
-  data.costs += xt::pow(xt::mean(yaws, {1}, immediate) * weight_, power_);
+  if (reversing_allowed_ && !forward_preference_) {
+    data.costs += xt::pow(
+      xt::mean(
+        xt::where(yaws < M_PI_2, yaws, utils::normalize_angles(yaws + M_PI)),
+        {1}, immediate) * weight_, power_);
+  } else {
+    data.costs += xt::pow(xt::mean(yaws, {1}, immediate) * weight_, power_);
+  }
 }
 
 }  // namespace mppi::critics
