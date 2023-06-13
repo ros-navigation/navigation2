@@ -98,8 +98,7 @@ void ObstacleLayer::onInitialize()
 
   int combination_method_param{};
   node->get_parameter(name_ + "." + "combination_method", combination_method_param);
-  combination_method_ = combination_method_from_int(combination_method_param,
-    "ObstacleLayer::onInitialize()");
+  combination_method_ = combination_method_from_int(combination_method_param);
 
   dyn_params_handler_ = node->add_on_set_parameters_callback(
     std::bind(
@@ -315,8 +314,7 @@ ObstacleLayer::dynamicParametersCallback(
       }
     } else if (param_type == ParameterType::PARAMETER_INTEGER) {
       if (param_name == name_ + "." + "combination_method") {
-        combination_method_ = combination_method_from_int(parameter.as_int(), "ObstacleLayer::"
-          "dynamicParametersCallback()");
+        combination_method_ = combination_method_from_int(parameter.as_int());
       }
     }
   }
@@ -765,24 +763,6 @@ ObstacleLayer::resetBuffersLastUpdated()
     if (observation_buffers_[i]) {
       observation_buffers_[i]->resetLastUpdated();
     }
-  }
-}
-
-CombinationMethod combination_method_from_int (const int value, const std::string function_name){
-    switch(value){
-    case 0:
-      return CombinationMethod::Overwrite;
-    case 1:
-      return CombinationMethod::Max;
-    case 2:
-      return CombinationMethod::MaxWithoutUnknownOverwrite;
-    default:
-      RCLCPP_WARN(
-        rclcpp::get_logger("nav2_costmap_2d"),
-        (function_name + ": param combination_method: %i. Possible values are  0 (Overwrite) or 1 (Maximum) or "
-        "2 (Maximum without overwriting the master's NO_INFORMATION values)."
-        "The default value 1 will be used").c_str(), value);
-      return CombinationMethod::Max;
   }
 }
 

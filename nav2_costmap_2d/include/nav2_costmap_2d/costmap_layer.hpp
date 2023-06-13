@@ -185,6 +185,13 @@ protected:
   void useExtraBounds(double * min_x, double * min_y, double * max_x, double * max_y);
   bool has_extra_bounds_;
 
+    /**
+   * @brief Converts an integer to a CombinationMethod enum and logs on failure
+   * @param value The integer to convert
+   * @param function_name The name of the function calling this conversion (for logging)
+   */
+  CombinationMethod combination_method_from_int (const int value);
+
 private:
   double extra_min_x_, extra_max_x_, extra_min_y_, extra_max_y_;
 };

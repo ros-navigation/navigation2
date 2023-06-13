@@ -62,39 +62,6 @@ namespace nav2_costmap_2d
 {
 
 /**
- * @enum nav2_costmap_2d::CombinationMethod
- * @brief Describes the method used to add data to master costmap, default to maximum.
- */
-enum class CombinationMethod : int
-{
-  /**
-   * Overwrite means every valid value from this layer
-   * is written into the master grid (does not copy NO_INFORMATION)
-   */
-  Overwrite = 0,
-  /**
-   * Sets the new value to the maximum of the master_grid's value
-   * and this layer's value. If the master value is NO_INFORMATION,
-   * it is overwritten. If the layer's value is NO_INFORMATION,
-   * the master value does not change
-   */
-  Max = 1,
-  /**
-   * Sets the new value to the maximum of the master_grid's value
-   * and this layer's value. If the master value is NO_INFORMATION,
-   * it is NOT overwritten. If the layer's value is NO_INFORMATION,
-   * the master value does not change.
-   */
-  MaxWithoutUnknownOverwrite = 2
-};
-  /**
-   * @brief Converts an integer to a CombinationMethod enum and logs on failure
-   * @param value The integer to convert
-   * @param function_name The name of the function calling this conversion (for logging)
-   */
-CombinationMethod combination_method_from_int (const int value, const std::string function_name);
-
-/**
  * @class ObstacleLayer
  * @brief Takes in laser and pointcloud data to populate into 2D costmap
  */

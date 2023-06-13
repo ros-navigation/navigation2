@@ -245,4 +245,22 @@ void CostmapLayer::updateWithAddition(
     }
   }
 }
+
+CombinationMethod CostmapLayer::combination_method_from_int (const int value){
+    switch(value){
+    case 0:
+      return CombinationMethod::Overwrite;
+    case 1:
+      return CombinationMethod::Max;
+    case 2:
+      return CombinationMethod::MaxWithoutUnknownOverwrite;
+    default:
+      RCLCPP_WARN(
+        rclcpp::get_logger("nav2_costmap_2d"),
+        "Param combination_method: %i. Possible values are  0 (Overwrite) or 1 (Maximum) or "
+        "2 (Maximum without overwriting the master's NO_INFORMATION values)."
+        "The default value 1 will be used", value);
+      return CombinationMethod::Max;
+  }
+}
 }  // namespace nav2_costmap_2d
