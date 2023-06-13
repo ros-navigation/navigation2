@@ -195,7 +195,14 @@ TEST(UtilsTests, AnglesTests)
   pose.position.y = 0.0;
   pose.orientation.w = 1.0;
   double point_x = 1.0, point_y = 0.0;
-  EXPECT_NEAR(posePointAngle(pose, point_x, point_y), 0.0, 1e-6);
+  bool forward_preference = true;
+  EXPECT_NEAR(posePointAngle(pose, point_x, point_y, forward_preference), 0.0, 1e-6);
+  forward_preference = false;
+  EXPECT_NEAR(posePointAngle(pose, point_x, point_y, forward_preference), 0.0, 1e-6);
+  point_x = -1.0;
+  EXPECT_NEAR(posePointAngle(pose, point_x, point_y, forward_preference), 0.0, 1e-6);
+  forward_preference = true;
+  EXPECT_NEAR(posePointAngle(pose, point_x, point_y, forward_preference), M_PI, 1e-6);
 }
 
 TEST(UtilsTests, FurthestAndClosestReachedPoint)
