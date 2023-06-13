@@ -246,8 +246,9 @@ void CostmapLayer::updateWithAddition(
   }
 }
 
-CombinationMethod CostmapLayer::combination_method_from_int (const int value){
-    switch(value){
+CombinationMethod CostmapLayer::combination_method_from_int(const int value)
+{
+  switch (value) {
     case 0:
       return CombinationMethod::Overwrite;
     case 1:
