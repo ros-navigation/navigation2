@@ -402,7 +402,7 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
       const double & y = plan.poses[i].pose.position.y;
       const double & yaw = tf2::getYaw(plan.poses[i].pose.orientation);
 
-      std::vector<geometry_msgs::msg::Point> footprint = 
+      std::vector<geometry_msgs::msg::Point> footprint =
         transformFootprintToEdges(x, y, yaw, _costmap_ros->getRobotFootprint());
 
       m.points.clear();
