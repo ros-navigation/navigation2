@@ -416,15 +416,25 @@ inline void setPathCostsIfNotSet(
  * @param pose pose
  * @param point_x Point to find angle relative to X axis
  * @param point_y Point to find angle relative to Y axis
+ * @param forward_preference If reversing direction is valid
  * @return Angle between two points
  */
-inline double posePointAngle(const geometry_msgs::msg::Pose & pose, double point_x, double point_y)
+inline double posePointAngle(
+  const geometry_msgs::msg::Pose & pose, double point_x, double point_y, bool forward_preference)
 {
   double pose_x = pose.position.x;
   double pose_y = pose.position.y;
   double pose_yaw = tf2::getYaw(pose.orientation);
 
   double yaw = atan2(point_y - pose_y, point_x - pose_x);
+
+  // If no preference for forward, return smallest angle either in heading or 180 of heading
+  if (!forward_preference) {
+    return std::min(
+      abs(angles::shortest_angular_distance(yaw, pose_yaw)),
+      abs(angles::shortest_angular_distance(yaw, pose_yaw + M_PI)));
+  }
+
   return abs(angles::shortest_angular_distance(yaw, pose_yaw));
 }
 

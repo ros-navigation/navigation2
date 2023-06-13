@@ -112,7 +112,6 @@ This process is then repeated a number of times and returns a converged solution
  | trajectory_point_step      | double | Default 4. Step of trajectory points to evaluate for path distance to reduce compute time. Between 1-10 is typically reasonable.   |
  | max_path_occupancy_ratio   | double | Default 0.07 (7%). Maximum proportion of the path that can be occupied before this critic is not considered to allow the obstacle and path follow critics to avoid obstacles while following the path's intent in presence of dynamic objects in the scene.  |
 
-
 #### Path Angle Critic
  | Parameter                 | Type   | Definition                                                                                                  |
  | ---------------           | ------ | ----------------------------------------------------------------------------------------------------------- |
@@ -121,6 +120,8 @@ This process is then repeated a number of times and returns a converged solution
  | threshold_to_consider     | double | Default 0.4. Distance between robot and goal above which path angle cost stops being considered             |
  | offset_from_furthest      | int    | Default 4. Number of path points after furthest one any trajectory achieves to compute path angle relative to.  |
  | max_angle_to_furthest     | double | Default 1.2. Angular distance between robot and goal above which path angle cost starts being considered           |
+ | forward_preference     | bool | Default true. Whether or not your robot has a preference for which way is forward in motion. Different from if reversing is generally allowed, but if you robot contains *no* particular preference one way or another.           |
+
 
 #### Path Follow Critic
  | Parameter             | Type   | Definition                                                                                                  |
@@ -223,6 +224,7 @@ controller_server:
         offset_from_furthest: 4
         threshold_to_consider: 0.40
         max_angle_to_furthest: 1.0
+        forward_preference: true
       # TwirlingCritic:
       #   enabled: true
       #   twirling_cost_power: 1
