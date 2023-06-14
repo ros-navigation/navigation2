@@ -155,6 +155,20 @@ LifecycleManager::CreateActiveDiagnostic(diagnostic_updater::DiagnosticStatusWra
   } else {
     stat.summary(diagnostic_msgs::msg::DiagnosticStatus::ERROR, "Nav2 is inactive");
   }
+
+  if (active_nodes_count == node_names_.size()) {
+    std::string msg = "All managed nodes are up";
+    stat.add("Active nodes", msg);
+  }
+  if (nodes_in_error_state.length() > 0){
+    stat.add("Nodes in error state", nodes_in_error_state);
+  }
+  if (inactive_nodes.length() > 0){
+    stat.add("Inactive nodes", inactive_nodes);
+  }
+  if (unconfigured_nodes.length() > 0){
+    stat.add("Unconfigured nodes", unconfigured_nodes);
+  }
 }
 
 void
@@ -230,6 +244,11 @@ LifecycleManager::changeStateForNode(const std::string & node_name, std::uint8_t
 bool
 LifecycleManager::changeStateForAllNodes(std::uint8_t transition, bool hard_change)
 {
+  active_nodes_count = 0;
+  nodes_in_error_state = "";
+  unconfigured_nodes = "";
+  inactive_nodes = "";
+  std::string delimiter(", ");
   // Hard change will continue even if a node fails
   if (transition == Transition::TRANSITION_CONFIGURE ||
     transition == Transition::TRANSITION_ACTIVATE)
@@ -237,13 +256,21 @@ LifecycleManager::changeStateForAllNodes(std::uint8_t transition, bool hard_chan
     for (auto & node_name : node_names_) {
       try {
         if (!changeStateForNode(node_name, transition) && !hard_change) {
-          return false;
+          uint8_t state = node_map_[node_name]->get_state();
+          if (!strcmp((char *)&state, "Inactive")){
+            inactive_nodes += node_name + delimiter;
+          }
+          else{
+            unconfigured_nodes += node_name + delimiter;
+          }
+        }
+        else {
+          ++active_nodes_count;
         }
       } catch (const std::runtime_error & e) {
         RCLCPP_ERROR(
           get_logger(),
           "Failed to change state for node: %s. Exception: %s.", node_name.c_str(), e.what());
-        return false;
       }
     }
   } else {
@@ -251,15 +278,26 @@ LifecycleManager::changeStateForAllNodes(std::uint8_t transition, bool hard_chan
     for (rit = node_names_.rbegin(); rit != node_names_.rend(); ++rit) {
       try {
         if (!changeStateForNode(*rit, transition) && !hard_change) {
-          return false;
+          uint8_t state = node_map_[*rit]->get_state();
+          if (!strcmp((char *)&state, "Inactive")){
+            inactive_nodes += *rit + delimiter;
+          }
+          else{
+            unconfigured_nodes += *rit + delimiter;
+          }
+        }
+        else {
+          ++active_nodes_count;
         }
       } catch (const std::runtime_error & e) {
         RCLCPP_ERROR(
           get_logger(),
           "Failed to change state for node: %s. Exception: %s.", (*rit).c_str(), e.what());
-        return false;
       }
     }
+  }
+  if (active_nodes_count != node_names_.size()) {
+    return false;
   }
   return true;
 }
@@ -384,6 +422,9 @@ LifecycleManager::checkBondConnections()
   if (!system_active_ || !rclcpp::ok() || bond_map_.empty()) {
     return;
   }
+  std::string delimiter(", ");
+  nodes_in_error_state = "";
+  active_nodes_count = 0;
 
   for (auto & node_name : node_names_) {
     if (!rclcpp::ok()) {
@@ -401,19 +442,24 @@ LifecycleManager::checkBondConnections()
         "CRITICAL FAILURE: SERVER %s IS DOWN after not receiving a heartbeat for %i ms."
         " Shutting down related nodes.",
         node_name.c_str(), static_cast<int>(bond_timeout_.count()));
-      reset(true);  // hard reset to transition all still active down
-      // if a server crashed, it won't get cleared due to failed transition, clear manually
-      bond_map_.clear();
+      nodes_in_error_state += node_name + delimiter;
+    }
+    else{
+      ++active_nodes_count;
+    }
+  }
+  if (active_nodes_count != node_names_.size()) {
+    reset(true);  // hard reset to transition all still active down
+    // if a server crashed, it won't get cleared due to failed transition, clear manually
+    bond_map_.clear();
 
-      // Initialize the bond respawn timer to check if server comes back online
-      // after a failure, within a maximum timeout period.
-      if (attempt_respawn_reconnection_) {
-        bond_respawn_timer_ = this->create_wall_timer(
-          1s,
-          std::bind(&LifecycleManager::checkBondRespawnConnection, this),
-          callback_group_);
-      }
-      return;
+    // Initialize the bond respawn timer to check if server comes back online
+    // after a failure, within a maximum timeout period.
+    if (attempt_respawn_reconnection_) {
+      bond_respawn_timer_ = this->create_wall_timer(
+        1s,
+        std::bind(&LifecycleManager::checkBondRespawnConnection, this),
+        callback_group_);
     }
   }
 }
