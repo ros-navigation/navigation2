@@ -19,11 +19,14 @@ import os
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, ExecuteProcess, GroupAction
+from launch.actions import IncludeLaunchDescription, SetEnvironmentVariable
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration, PythonExpression
+from launch.substitutions import Command, LaunchConfiguration, PathJoinSubstitution
+from launch.substitutions import PythonExpression
 from launch_ros.actions import Node
+from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
@@ -134,6 +137,11 @@ def generate_launch_description():
         default_value='True',
         description='Whether to start RVIZ')
 
+    declare_use_gz_cmd = DeclareLaunchArgument(
+        'use_gz',
+        default_value='False',
+        description='Use Gazebo (gz) or Gazebo classic')
+
     declare_simulator_cmd = DeclareLaunchArgument(
         'headless',
         default_value='True',
@@ -145,7 +153,7 @@ def generate_launch_description():
         #              https://github.com/ROBOTIS-GIT/turtlebot3_simulations/issues/91
         # default_value=os.path.join(get_package_share_directory('turtlebot3_gazebo'),
         # worlds/turtlebot3_worlds/waffle.model')
-        default_value=os.path.join(bringup_dir, 'worlds', 'world_only.model'),
+        default_value=os.path.join(bringup_dir, 'worlds', 'gz_world_only.model'),
         description='Full path to world model file to load')
 
     declare_robot_name_cmd = DeclareLaunchArgument(
@@ -155,25 +163,8 @@ def generate_launch_description():
 
     declare_robot_sdf_cmd = DeclareLaunchArgument(
         'robot_sdf',
-        default_value=os.path.join(bringup_dir, 'worlds', 'waffle.model'),
+        default_value=os.path.join(bringup_dir, 'urdf', 'gz_turtlebot3_waffle.urdf'),
         description='Full path to robot sdf file to spawn the robot in gazebo')
-
-    # Specify the actions
-    start_gazebo_server_cmd = ExecuteProcess(
-        condition=IfCondition(use_simulator),
-        cmd=['gzserver', '-s', 'libgazebo_ros_init.so',
-             '-s', 'libgazebo_ros_factory.so', world],
-        cwd=[launch_dir], output='screen')
-
-    start_gazebo_client_cmd = ExecuteProcess(
-        condition=IfCondition(PythonExpression(
-            [use_simulator, ' and not ', headless])),
-        cmd=['gzclient'],
-        cwd=[launch_dir], output='screen')
-
-    urdf = os.path.join(bringup_dir, 'urdf', 'turtlebot3_waffle.urdf')
-    with open(urdf, 'r') as infp:
-        robot_description = infp.read()
 
     start_robot_state_publisher_cmd = Node(
         condition=IfCondition(use_robot_state_pub),
@@ -183,19 +174,8 @@ def generate_launch_description():
         namespace=namespace,
         output='screen',
         parameters=[{'use_sim_time': use_sim_time,
-                     'robot_description': robot_description}],
+                     'robot_description': Command(['xacro', ' ', robot_sdf])}],
         remappings=remappings)
-
-    start_gazebo_spawner_cmd = Node(
-        package='gazebo_ros',
-        executable='spawn_entity.py',
-        output='screen',
-        arguments=[
-            '-entity', robot_name,
-            '-file', robot_sdf,
-            '-robot_namespace', namespace,
-            '-x', pose['x'], '-y', pose['y'], '-z', pose['z'],
-            '-R', pose['R'], '-P', pose['P'], '-Y', pose['Y']])
 
     rviz_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -217,6 +197,64 @@ def generate_launch_description():
                           'autostart': autostart,
                           'use_composition': use_composition,
                           'use_respawn': use_respawn}.items())
+
+    env_vars = os.path.join(get_package_share_directory('turtlebot3_gazebo'), 'models') + ':' + \
+        os.path.join(get_package_share_directory(
+            'aws_robomaker_small_warehouse_world'), 'models') + ':' + \
+        os.path.join(get_package_share_directory(
+            'turtlebot3_gazebo'), '..')
+
+    set_env_vars_resources = SetEnvironmentVariable('IGN_GAZEBO_RESOURCE_PATH', env_vars)
+    clock_bridge = Node(
+        package='ros_gz_bridge', executable='parameter_bridge',
+        name='clock_bridge',
+        output='screen',
+        parameters=[{
+            'use_sim_time': True
+        }],
+        arguments=['/clock' + '@rosgraph_msgs/msg/Clock' + '[ignition.msgs.Clock']
+    )
+    lidar_bridge = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        name='lidar_bridge',
+        output='screen',
+        parameters=[{
+            'use_sim_time': True
+        }],
+        arguments=[['/scan' + '@sensor_msgs/msg/LaserScan[ignition.msgs.LaserScan']],
+    )
+    load_joint_state_broadcaster = ExecuteProcess(
+        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
+             'joint_state_broadcaster'],
+        output='screen'
+    )
+    load_diffdrive_controller = ExecuteProcess(
+        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
+             'diffdrive_controller'],
+        output='screen'
+    )
+    spawn_model = Node(
+        package='ros_gz_sim',
+        executable='create',
+        output='screen',
+        arguments=[
+            '-entity', robot_name,
+            '-string', Command(['xacro', ' ', robot_sdf]),
+            '-robot_namespace', namespace,
+            '-x', pose['x'], '-y', pose['y'], '-z', pose['z'],
+            '-R', pose['R'], '-P', pose['P'], '-Y', pose['Y']]
+    )
+    gazebo = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            PathJoinSubstitution([
+                FindPackageShare('ros_gz_sim'),
+                'launch',
+                'gz_sim.launch.py'
+            ])
+        ),
+        launch_arguments={'gz_args': ['-r -v 4 ', world]}.items(),
+    )
 
     # Create the launch description and populate
     ld = LaunchDescription()
@@ -240,11 +278,16 @@ def generate_launch_description():
     ld.add_action(declare_robot_name_cmd)
     ld.add_action(declare_robot_sdf_cmd)
     ld.add_action(declare_use_respawn_cmd)
+    ld.add_action(declare_use_gz_cmd)
 
     # Add any conditioned actions
-    ld.add_action(start_gazebo_server_cmd)
-    ld.add_action(start_gazebo_client_cmd)
-    ld.add_action(start_gazebo_spawner_cmd)
+    ld.add_action(set_env_vars_resources)
+    ld.add_action(clock_bridge)
+    ld.add_action(lidar_bridge)
+    ld.add_action(load_joint_state_broadcaster)
+    ld.add_action(load_diffdrive_controller)
+    ld.add_action(spawn_model)
+    ld.add_action(gazebo)
 
     # Add the actions to launch all of the navigation nodes
     ld.add_action(start_robot_state_publisher_cmd)

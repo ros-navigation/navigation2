@@ -1,12 +1,5 @@
 <?xml version="1.0" ?>
 <robot name="turtlebot3_waffle" xmlns:xacro="http://ros.org/wiki/xacro">
-  <!-- <xacro:include filename="$(find turtlebot3_description)/urdf/common_properties.urdf"/>
-
-  <xacro:property name="r200_cam_rgb_px" value="0.005"/>
-  <xacro:property name="r200_cam_rgb_py" value="0.018"/>
-  <xacro:property name="r200_cam_rgb_pz" value="0.013"/>
-  <xacro:property name="r200_cam_depth_offset" value="0.01"/> -->
-
   <!-- Init colour -->
   <material name="black">
       <color rgba="0.0 0.0 0.0 1.0"/>
@@ -397,7 +390,7 @@
 
   <gazebo>
     <plugin filename="ign_ros2_control-system" name="ign_ros2_control::IgnitionROS2ControlPlugin">
-      <parameters>$(find nav2_bringup)/config/control.yaml</parameters>
+      <parameters>$(find nav2_bringup)/params/control.yaml</parameters>
       <ros>
         <remapping>~/odom:=odom</remapping>
         <remapping>/tf:=tf</remapping>
