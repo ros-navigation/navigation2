@@ -19,6 +19,7 @@
 #include <queue>
 #include <unordered_map>
 #include <vector>
+#include "nav2_core/planner_exceptions.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_util/line_iterator.hpp"
@@ -26,7 +27,7 @@
 namespace nav2_route
 {
 
-void BreadthFirstSearch::setCostmap(nav2_costmap_2d::Costmap2D * costmap)
+void BreadthFirstSearch::initialize(nav2_costmap_2d::Costmap2D * costmap, int max_iterations)
 {
   std::cout << "Set costmap " << std::endl;
   costmap_ = costmap;
@@ -41,6 +42,8 @@ void BreadthFirstSearch::setCostmap(nav2_costmap_2d::Costmap2D * costmap)
     -x_size, +x_size,
     -x_size - 1, -x_size + 1,
     +x_size - 1, +x_size + 1};
+
+  max_iterations_ = max_iterations;
 }
 
 BreadthFirstSearch::NodePtr BreadthFirstSearch::addToGraph(const unsigned int index)
@@ -66,16 +69,22 @@ void BreadthFirstSearch::setGoals(std::vector<nav2_costmap_2d::MapLocation> & go
   }
 }
 
-bool BreadthFirstSearch::search(unsigned int & goal)
+void BreadthFirstSearch::search(unsigned int & goal)
 {
   std::queue<NodePtr> queue;
 
   start_->explored = true;
   queue.push(start_);
 
+  int iteration = 0; 
   while (!queue.empty()) {
     auto & current = queue.front();
     queue.pop();
+
+    if (iteration > max_iterations_) {
+      graph_.clear();
+      throw nav2_core::PlannerTimedOut("Exceeded maximum iterations");
+    }
 
     std::cout << "Current index: " << current->index << std::endl;
 
@@ -83,7 +92,8 @@ bool BreadthFirstSearch::search(unsigned int & goal)
     for (unsigned int index = 0; index < goals_.size(); ++index) {
       if (current->index == goals_[index]->index) {
         goal = index;
-        return true;
+        graph_.clear();
+        return;
       }
     }
 
@@ -98,7 +108,8 @@ bool BreadthFirstSearch::search(unsigned int & goal)
     }
   }
 
-  return false;
+  graph_.clear();
+  throw nav2_core::NoValidPathCouldBeFound("No valid path found");
 }
 
 void BreadthFirstSearch::getNeighbors(unsigned int parent_index, NodeVector & neighbors)
@@ -157,6 +168,7 @@ bool BreadthFirstSearch::isNodeVisible()
       return false;
     }
   }
+  graph_.clear();
   return true;
 }
 

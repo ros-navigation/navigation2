@@ -53,10 +53,10 @@ public:
   typedef std::vector<NodePtr> NodeVector;
 
   /**
-   * @brief Set the costmap to use 
+   * @brief Initialize the search algorithm 
    * @param costmap Costmap to use to check for state validity
    */
-  void setCostmap(nav2_costmap_2d::Costmap2D * costmap);
+  void initialize(nav2_costmap_2d::Costmap2D * costmap, int max_iterations);
 
   /**
    * @brief Set the start of the breadth first search
@@ -73,10 +73,11 @@ public:
 
   /**
    * @brief Find the closest goal to the start given a costmap, start and goal
-   * @param goal The index of the goal that was found by the search
-   * @return True if the search was successful
+   * @param goal The index of the goal array provided to the search
+   * @throws nav2_core::PlannerTimedOut If the max iterations were reached
+   * @throws nav2_core::NoValidPathCouldBeFound If no valid path could be found by the search
    */ 
-  bool search(unsigned int & goal);
+  void search(unsigned int & goal);
 
   /**
    * @brief Preform a ray trace check to see if the node is directly visable
@@ -119,6 +120,7 @@ private:
   unsigned int max_index_;
   std::vector<int> neighbors_grid_offsets_;
   nav2_costmap_2d::Costmap2D * costmap_;
+  int max_iterations_;
 };
 }  // namespace nav2_route
 

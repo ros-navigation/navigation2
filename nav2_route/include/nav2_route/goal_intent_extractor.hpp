@@ -120,9 +120,12 @@ public:
    * @brief Checks if there is connection between a node and a given pose 
    * @param node_index The index of the node 
    * @param pose The pose 
-   * @return True If there is a connection between a node and the pose 
+   * @throws nav2_core::StartOutsideMapBounds If the start index is not in the costmap
+   * @throws nav2_core::StartOccupied If the start is in lethal cost
    */
-  bool isNodeValid(unsigned int node_index, const geometry_msgs::msg::PoseStamped & pose);
+  void findValidGraphNode(std::vector<unsigned int> node_indices,
+                          const geometry_msgs::msg::PoseStamped & pose,
+                          unsigned int & best_node_index);
 
 protected:
   rclcpp::Logger logger_{rclcpp::get_logger("GoalIntentExtractor")};
@@ -138,6 +141,7 @@ protected:
 
   std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
   std::unique_ptr<BreadthFirstSearch> bfs_;
+  bool enable_search_;
 };
 
 }  // namespace nav2_route

@@ -26,6 +26,7 @@ using namespace nav2_route;  // NOLINT
 
 TEST(NodeSpatialTreeTest, test_kd_tree)
 {
+  std::cout << "HELLO" << std::endl;
   // Create a large graph of random nodes
   unsigned int seed = time(NULL);
   Graph graph;
@@ -37,22 +38,30 @@ TEST(NodeSpatialTreeTest, test_kd_tree)
     graph[i].coords.y = static_cast<float>((rand_r(&seed) % 6000000) + 1);
   }
 
+  std::cout << "Compute Kd tree" << std::endl;
   // Compute our kd tree for this graph
-  std::shared_ptr<NodeSpatialTree> kd_tree = std::make_shared<NodeSpatialTree>();
+  int num_of_nearest_nodes = 1;
+  std::shared_ptr<NodeSpatialTree> kd_tree = 
+    std::make_shared<NodeSpatialTree>(num_of_nearest_nodes);
+  std::cout << "Constructor" << std::endl;
+
   kd_tree->computeTree(graph);
+  std::cout << "Completed tree" << std::endl;
 
   // Test a bunch of times to find the nearest neighbor to this node
   // By checking for the idx in the Kd-tree and then brute force searching
   unsigned int num_tests = 50;
   for (unsigned int i = 0; i != num_tests; i++) {
-    unsigned int kd_tree_idx;
+    std::vector<unsigned int> kd_tree_idx;
     geometry_msgs::msg::PoseStamped pose;
     pose.pose.position.x = static_cast<float>((rand_r(&seed) % 6000000) + 1);
     pose.pose.position.y = static_cast<float>((rand_r(&seed) % 6000000) + 1);
 
-    if (!kd_tree->findNearestGraphNodeToPose(pose, kd_tree_idx)) {
+    std::cout << "Ran" << std::endl;
+    if (!kd_tree->findNearestGraphNodesToPose(pose, kd_tree_idx)) {
       EXPECT_TRUE(false);  // Unable to find nearest neighbor!
     }
+    std::cout << "Worked" << std::endl;
 
     unsigned int closest_via_brute_force;
     float closest_dist = std::numeric_limits<float>::max();
@@ -66,6 +75,6 @@ TEST(NodeSpatialTreeTest, test_kd_tree)
       }
     }
 
-    EXPECT_EQ(kd_tree_idx, closest_via_brute_force);
+    EXPECT_EQ(kd_tree_idx.front(), closest_via_brute_force);
   }
 }

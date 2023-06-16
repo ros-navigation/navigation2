@@ -119,16 +119,17 @@ int main(int argc, char const * argv[])
   //   "Averaged route size: %f", static_cast<double>(route_legs) / static_cast<double>(NUM_TESTS));
 
   // Third test: Check how much time it takes to do random lookups in the Kd-tree of various graph sizes
-  std::shared_ptr<NodeSpatialTree> kd_tree = std::make_shared<NodeSpatialTree>();
+  int num_of_nearest_nodes = 1; 
+  std::shared_ptr<NodeSpatialTree> kd_tree = std::make_shared<NodeSpatialTree>(num_of_nearest_nodes);
   kd_tree->computeTree(graph);
 
   auto start = node->now();
   for (unsigned int i = 0; i != NUM_TESTS; i++) {
-    unsigned int kd_tree_idx;
+    std::vector<unsigned int> kd_tree_idx;
     geometry_msgs::msg::PoseStamped pose;
     pose.pose.position.x = static_cast<float>(rand() % DIM);
     pose.pose.position.y = static_cast<float>(rand() % DIM);
-    kd_tree->findNearestGraphNodeToPose(pose, kd_tree_idx);
+    kd_tree->findNearestGraphNodesToPose(pose, kd_tree_idx);
   }
   auto end = node->now();
   RCLCPP_INFO(

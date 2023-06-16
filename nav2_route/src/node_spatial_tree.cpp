@@ -21,6 +21,11 @@
 namespace nav2_route
 {
 
+NodeSpatialTree::NodeSpatialTree(int num_of_nearest_nodes)
+{
+  num_of_nearest_nodes_ = num_of_nearest_nodes;
+}
+
 NodeSpatialTree::~NodeSpatialTree()
 {
   if (kdtree_) {
@@ -36,26 +41,31 @@ NodeSpatialTree::~NodeSpatialTree()
 
 void NodeSpatialTree::computeTree(Graph & graph)
 {
-  if (kdtree_) {
+  std::cout << "Starting" << std::endl;
+  if (kdtree_ != nullptr) {
+    std::cout << "if statement" << std::endl;
     delete kdtree_;
+    std::cout << "delete kdtree_" << std::endl;
     kdtree_ = nullptr;
   }
 
+  std::cout << "adaptor" << std::endl;
   if (adaptor_) {
     delete adaptor_;
     adaptor_ = nullptr;
   }
 
+  std::cout << " Creating " << std::endl;
   adaptor_ = new GraphAdaptor(graph);
   kdtree_ = new kd_tree_t(DIMENSION, *adaptor_, nanoflann::KDTreeSingleIndexAdaptorParams(10));
   kdtree_->buildIndex();
   graph_ = &graph;
 }
 
-bool NodeSpatialTree::findNearestGraphNodeToPose(
-  const geometry_msgs::msg::PoseStamped & pose_in, unsigned int & node_id)
+bool NodeSpatialTree::findNearestGraphNodesToPose(
+  const geometry_msgs::msg::PoseStamped & pose_in, std::vector<unsigned int> & node_ids)
 {
-  size_t num_results = 1;
+  size_t num_results = 0;
   std::vector<unsigned int> ret_index(num_results);
   std::vector<double> out_dist_sqr(num_results);
   const double query_pt[2] = {pose_in.pose.position.x, pose_in.pose.position.y};
@@ -65,7 +75,10 @@ bool NodeSpatialTree::findNearestGraphNodeToPose(
     return false;
   }
 
-  node_id = ret_index[0];
+  for (int i = 0; i < num_of_nearest_nodes_ && i < static_cast<int>(ret_index.size()); ++i) {
+    node_ids.push_back(ret_index[i]); 
+  }
+
   return true;
 }
 

@@ -70,7 +70,9 @@ public:
   /**
    * @brief Constructor
    */
-  NodeSpatialTree() = default;
+  NodeSpatialTree(int num_of_nearest_nodes);
+
+  NodeSpatialTree() = delete;
 
   /**
    * @brief Destructor
@@ -86,17 +88,18 @@ public:
   /**
    * @brief Find the closest node to a given pose
    * @param pose_in Pose to find node near
-   * @param node_id The return ID of the node
+   * @param node_ids The return ID of the nodes
    * @return if successfully found
    */
-  bool findNearestGraphNodeToPose(
+  bool findNearestGraphNodesToPose(
     const geometry_msgs::msg::PoseStamped & pose_in,
-    unsigned int & node_id);
+    std::vector<unsigned int> & node_ids);
 
 protected:
-  kd_tree_t * kdtree_;
+  kd_tree_t * kdtree_{nullptr};
   GraphAdaptor * adaptor_;
   Graph * graph_;
+  int num_of_nearest_nodes_;
 };
 
 }  // namespace nav2_route

@@ -19,6 +19,8 @@
 #include <memory>
 #include <vector>
 
+#include "nav2_core/planner_exceptions.hpp"
+#include "nav2_costmap_2d/cost_values.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "nav2_route/breadth_first_search.hpp"
@@ -44,8 +46,6 @@ void GoalIntentExtractor::configure(
   tf_ = tf;
   route_frame_ = route_frame;
   base_frame_ = base_frame;
-  node_spatial_tree_ = std::make_shared<NodeSpatialTree>();
-  node_spatial_tree_->computeTree(graph);
 
   nav2_util::declare_parameter_if_not_declared(
     node, "prune_goal", rclcpp::ParameterValue(true));
@@ -61,14 +61,34 @@ void GoalIntentExtractor::configure(
     node, "min_dist_from_start", rclcpp::ParameterValue(0.10));
   min_dist_from_start_ = static_cast<float>(node->get_parameter("min_dist_from_start").as_double());
 
-  std::string global_costmap_topic;
   nav2_util::declare_parameter_if_not_declared(
-    node, "global_costmap_topic", rclcpp::ParameterValue(std::string("global_costmap/costmap_raw")));
-  node->get_parameter("global_costmap_topic", global_costmap_topic);
+    node, "num_of_nearest_nodes", rclcpp::ParameterValue(3)); 
+  int num_of_nearest_nodes = node->get_parameter("num_of_nearest_nodes").as_int();
 
-  costmap_sub_ = std::make_unique<nav2_costmap_2d::CostmapSubscriber>(node, global_costmap_topic);
-  bfs_ = std::make_unique<BreadthFirstSearch>();
-  bfs_->setCostmap(costmap_sub_->getCostmap().get());
+  node_spatial_tree_ = std::make_shared<NodeSpatialTree>(num_of_nearest_nodes);
+  node_spatial_tree_->computeTree(graph);
+
+  nav2_util::declare_parameter_if_not_declared(
+    node, "enable_search", rclcpp::ParameterValue(false));
+  enable_search_ = node->get_parameter("enable_search").as_bool(); 
+
+  if (enable_search_) {
+    std::string global_costmap_topic;
+    nav2_util::declare_parameter_if_not_declared(
+      node, "global_costmap_topic", 
+        rclcpp::ParameterValue(std::string("global_costmap/costmap_raw")));
+    node->get_parameter("global_costmap_topic", global_costmap_topic);
+
+    int max_iterations;
+    nav2_util::declare_parameter_if_not_declared(
+      node, "max_iterations", rclcpp::ParameterValue(500));
+    max_iterations = node->get_parameter("max_iterations").as_int();
+
+    costmap_sub_ = 
+      std::make_unique<nav2_costmap_2d::CostmapSubscriber>(node, global_costmap_topic);
+    bfs_ = std::make_unique<BreadthFirstSearch>();
+    bfs_->initialize(costmap_sub_->getCostmap().get(), max_iterations);
+  }
 }
 
 void GoalIntentExtractor::setGraph(Graph & graph, GraphToIDMap * id_to_graph_map)
@@ -130,19 +150,22 @@ GoalIntentExtractor::findStartandGoal(const std::shared_ptr<const GoalT> goal)
 
   // Find closest route graph nodes to start and goal to plan between.
   // Note that these are the location indices in the graph
-  unsigned int start_route = 0, end_route = 0;
-  if (!node_spatial_tree_->findNearestGraphNodeToPose(start_, start_route) ||
-    !node_spatial_tree_->findNearestGraphNodeToPose(goal_, end_route))
+  std::vector<unsigned int> start_route_ids, end_route_ids;
+  if (!node_spatial_tree_->findNearestGraphNodesToPose(start_, start_route_ids) ||
+    !node_spatial_tree_->findNearestGraphNodesToPose(goal_, end_route_ids))
   {
     throw nav2_core::IndeterminantNodesOnGraph(
             "Could not determine node closest to start or goal pose requested!");
   }
 
-  if (!isNodeValid(start_route, start_))
-  {
-    RCLCPP_INFO(logger_, "Invalid Starting Route index");
+  if (enable_search_) {
+    unsigned int valid_start_route_id, valid_end_route_id;
+    findValidGraphNode(start_route_ids, start_, valid_start_route_id);
+    findValidGraphNode(end_route_ids, goal_, valid_end_route_id);
+    return {valid_end_route_id, valid_end_route_id};
   }
-  return {start_route, end_route};
+
+  return {start_route_ids.front(), start_route_ids.front()};
 }
 
 template<typename GoalT>
@@ -213,34 +236,57 @@ Route GoalIntentExtractor::pruneStartandGoal(
   return pruned_route;
 }
 
-bool GoalIntentExtractor::isNodeValid(unsigned int node_index, 
-                                      const geometry_msgs::msg::PoseStamped & pose)
+void GoalIntentExtractor::findValidGraphNode(std::vector<unsigned int> node_indices, 
+                                             const geometry_msgs::msg::PoseStamped & pose,
+                                             unsigned int & best_node_index)
 {
   unsigned int s_mx, s_my, g_mx, g_my; 
-  costmap_sub_->getCostmap()->worldToMap(pose.pose.position.x, pose.pose.position.y, 
-                                         s_mx, s_my);
+  if(!costmap_sub_->getCostmap()->worldToMap(pose.pose.position.x, pose.pose.position.y, 
+                                         s_mx, s_my)) {
+    throw nav2_core::StartOutsideMapBounds(
+      "Start Coordinates of(" + std::to_string(pose.pose.position.x) + ", " + 
+      std::to_string(pose.pose.position.y) + ") was outside bounds");
+  }
+
+  if (costmap_sub_->getCostmap()->getCost(s_mx, s_my) == nav2_costmap_2d::LETHAL_OBSTACLE) {
+    throw nav2_core::StartOccupied("Start was in lethal cost");
+  }
 
   // double check the frames, probably need to move into the map frame...
-  float goal_x = (*graph_)[node_index].coords.x;
-  float goal_y = (*graph_)[node_index].coords.y;
-  costmap_sub_->getCostmap()->worldToMap(goal_x, goal_y, g_mx, g_my);
+  std::vector<unsigned int> valid_node_indices;
   std::vector<nav2_costmap_2d::MapLocation> goals; 
-  goals.push_back({g_mx, g_my});
+  for (const auto & node_index : node_indices) {
+    float goal_x = (*graph_)[node_index].coords.x;
+    float goal_y = (*graph_)[node_index].coords.y;
+    if (!costmap_sub_->getCostmap()->worldToMap(goal_x, goal_y, g_mx, g_my)) {
+      RCLCPP_WARN_STREAM(logger_, "Goal coordinate of(" + std::to_string(goal_x) + ", " + 
+                  std::to_string(goal_y) + ") was outside bounds. Removing from goal list");
+      continue;
+    }
+
+    if (costmap_sub_->getCostmap()->getCost(g_mx, g_my) == nav2_costmap_2d::LETHAL_OBSTACLE) {
+      RCLCPP_WARN_STREAM(logger_, "Goal corrdinate of(" + std::to_string(goal_x) + ", " + 
+                        std::to_string(goal_y) + ") was in lethal cost. Removing from goal list.");continue;
+    }
+    valid_node_indices.push_back(node_index);
+    goals.push_back({g_mx, g_my});
+  }
+
+  if (goals.empty()) {
+    throw nav2_core::PlannerException("All goals were invalid");
+  }
 
   bfs_->setStart(s_mx, s_my);
   bfs_->setGoals(goals);
   if (bfs_->isNodeVisible()) {
-    bfs_->clearGraph();
-    return true;
+    // The visiblity check only validates the first node in goal array
+    best_node_index = valid_node_indices.front();
+    return;
   }
 
   unsigned int goal;
-  if (bfs_->search(goal)) {
-    bfs_->clearGraph();
-    return true;
-  }
-  RCLCPP_INFO_STREAM(logger_, "goal index" << goal);
-  return false;
+  bfs_->search(goal);
+  best_node_index = goal;
 }
 
 template Route GoalIntentExtractor::pruneStartandGoal<nav2_msgs::action::ComputeRoute::Goal>(

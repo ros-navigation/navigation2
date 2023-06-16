@@ -29,7 +29,7 @@ public:
   {
     costmap = std::make_unique<Costmap2D>(x_size, y_size, 0.0, 0.0, 1);
 
-    bfs.setCostmap(costmap.get());
+    bfs.initialize(costmap.get(), 200);
   }
 
   BreadthFirstSearch bfs;
@@ -46,9 +46,8 @@ TEST_F(BFSTestFixture, free_space)
   goals.push_back({1u, 1u});
   bfs.setGoals(goals);
 
-  unsigned int goal;
-  bool result = bfs.search(goal);
-  EXPECT_TRUE(result);
+  unsigned int goal = 0;
+  ASSERT_NO_THROW(bfs.search(goal));
 
   EXPECT_EQ(costmap->getIndex(goals[goal].x, goals[goal].y), costmap->getIndex(1u, 1u));
   bfs.clearGraph();
@@ -70,9 +69,8 @@ TEST_F(BFSTestFixture, wall)
   goals.push_back({0u, 4u});
   bfs.setGoals(goals);
 
-  unsigned int goal;
-  bool result = bfs.search(goal);
-  EXPECT_TRUE(result);
+  unsigned int goal = 0;
+  EXPECT_NO_THROW(bfs.search(goal));
 
   EXPECT_EQ(costmap->getIndex(goals[goal].x, goals[goal].y), costmap->getIndex(0u, 4u));
   bfs.clearGraph();
