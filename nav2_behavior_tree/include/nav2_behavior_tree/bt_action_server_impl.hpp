@@ -16,6 +16,7 @@
 #define NAV2_BEHAVIOR_TREE__BT_ACTION_SERVER_IMPL_HPP_
 
 #include <memory>
+#include <rclcpp/parameter.hpp>
 #include <rclcpp/parameter_value.hpp>
 #include <string>
 #include <fstream>
@@ -68,9 +69,8 @@ BtActionServer<ActionT>::BtActionServer(
   };
 
   if (!node->has_parameter("error_code_names")) {
-
     const rclcpp::ParameterValue value = node->declare_parameter(
-      "error_code_names", 
+      "error_code_names",
       rclcpp::PARAMETER_STRING_ARRAY);
     if (value.get_type() == rclcpp::PARAMETER_NOT_SET) {
       std::string error_codes_str;
@@ -78,11 +78,12 @@ BtActionServer<ActionT>::BtActionServer(
         error_codes_str += "\n" + error_code;
       }
       RCLCPP_WARN_STREAM(
-          logger_, "Error_code parameters were not set. Using default values of: "
+        logger_, "Error_code parameters were not set. Using default values of: "
           << error_codes_str + "\n"
           << "Make sure these match your BT and there are not other sources of error codes you"
           "reported to your application");
-    node->declare_parameter("error_code_names", error_code_names);
+      rclcpp::Parameter error_code_names_param("error_code_names", error_code_names);
+      node->set_parameter(error_code_names_param);
     }
   }
 }
