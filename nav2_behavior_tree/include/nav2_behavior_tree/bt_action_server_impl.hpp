@@ -16,8 +16,6 @@
 #define NAV2_BEHAVIOR_TREE__BT_ACTION_SERVER_IMPL_HPP_
 
 #include <memory>
-#include <rclcpp/parameter.hpp>
-#include <rclcpp/parameter_value.hpp>
 #include <string>
 #include <fstream>
 #include <set>
