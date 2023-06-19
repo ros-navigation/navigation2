@@ -67,16 +67,22 @@ BtActionServer<ActionT>::BtActionServer(
   };
 
   if (!node->has_parameter("error_code_names")) {
-    std::string error_codes_str;
-    for (const auto & error_code : error_code_names) {
-      error_codes_str += error_code + "\n";
+    const rclcpp::ParameterValue value = node->declare_parameter(
+      "error_code_names",
+      rclcpp::PARAMETER_STRING_ARRAY);
+    if (value.get_type() == rclcpp::PARAMETER_NOT_SET) {
+      std::string error_codes_str;
+      for (const auto & error_code : error_code_names) {
+        error_codes_str += "\n" + error_code;
+      }
+      RCLCPP_WARN_STREAM(
+        logger_, "Error_code parameters were not set. Using default values of: "
+          << error_codes_str + "\n"
+          << "Make sure these match your BT and there are not other sources of error codes you"
+          "reported to your application");
+      rclcpp::Parameter error_code_names_param("error_code_names", error_code_names);
+      node->set_parameter(error_code_names_param);
     }
-    RCLCPP_WARN_STREAM(
-      logger_, "Error_code parameters were not set. Using default values of: "
-        << error_codes_str
-        << "Make sure these match your BT and there are not other sources of error codes you want "
-        "reported to your application");
-    node->declare_parameter("error_code_names", error_code_names);
   }
 }
 
