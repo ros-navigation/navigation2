@@ -99,9 +99,6 @@ bt_navigator:
       - nav2_assisted_teleop_cancel_bt_node
       - nav2_drive_on_heading_cancel_bt_node
       - nav2_is_battery_charging_condition_bt_node
-    error_code_names:
-      - compute_path_error_code
-      - follow_path_error_code
 
 bt_navigator_navigate_through_poses_rclcpp_node:
   ros__parameters:
