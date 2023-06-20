@@ -305,7 +305,7 @@
           </vertical>
         </scan>
         <range>
-          <min>0.08</min>
+          <min>0.0</min>
           <max>20.0</max>
           <resolution>0.015000</resolution>
         </range>
