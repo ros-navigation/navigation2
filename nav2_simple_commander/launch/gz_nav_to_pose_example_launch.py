@@ -73,7 +73,7 @@ def generate_launch_description():
         condition=IfCondition(PythonExpression(['not ', headless])),
     )
 
-    urdf = os.path.join(nav2_bringup_dir, 'urdf', 'gz_turtlebot3_waffle.urdf')
+    urdf = os.path.join(python_commander_dir, 'gz_tb3_waffle.urdf')
 
     doc = xacro.parse(open(urdf))
     xacro.process_doc(doc)
@@ -95,7 +95,8 @@ def generate_launch_description():
             os.path.join(nav2_bringup_dir, 'launch', 'rviz_launch.py')),
         condition=IfCondition(use_rviz),
         launch_arguments={'namespace': '',
-                          'use_namespace': 'False'}.items())
+                          'use_namespace': 'False',
+                          'use_sim_time': 'true'}.items())
 
     os.environ['IGN_GAZEBO_RESOURCE_PATH'] = os.path.join(
         get_package_share_directory('turtlebot3_gazebo'), 'models')
@@ -152,7 +153,7 @@ def generate_launch_description():
         executable='create',
         output='screen',
         arguments=[
-            '-entity', 'tb3',
+            '-entity', 'turtlebot3_waffle',
             '-string', doc.toxml(),
             '-x', '3.45', '-y', '2.15', '-z', '0.01',
             '-R', '0', '-P', '0', '-Y', '3.14'
@@ -175,6 +176,9 @@ def generate_launch_description():
         package='nav2_simple_commander',
         executable='example_nav_to_pose',
         emulate_tty=True,
+        parameters=[{
+            'use_sim_time': True
+        }],
         output='screen')
 
     ld = LaunchDescription()
