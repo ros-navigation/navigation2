@@ -1,11 +1,11 @@
-# Copyright (C) 2023 Open Source Robotics Foundation
-
-# Licensed under the Apache License, Version 2.0 (the "License")
+# Copyright 2023 Open Source Robotics Foundation, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-
-#       http://www.apache.org/licenses/LICENSE-2.0
-
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,11 +18,13 @@ from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription
+from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, PythonExpression
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 import xacro
+
 
 def generate_launch_description():
     warehouse_dir = get_package_share_directory('aws_robomaker_small_warehouse_world')
@@ -31,6 +33,21 @@ def generate_launch_description():
 
     map_yaml_file = os.path.join(warehouse_dir, 'maps', '005', 'map.yaml')
     world = os.path.join(python_commander_dir, 'gz_warehouse.world')
+
+    # Launch configuration variables
+    use_rviz = LaunchConfiguration('use_rviz')
+    headless = LaunchConfiguration('headless')
+
+    # Declare the launch arguments
+    declare_use_rviz_cmd = DeclareLaunchArgument(
+        'use_rviz',
+        default_value='True',
+        description='Whether to start RVIZ')
+
+    declare_simulator_cmd = DeclareLaunchArgument(
+        'headless',
+        default_value='False',
+        description='Whether to execute gzclient)')
 
     # Launch gazebo environment
     start_gazebo_server_cmd = IncludeLaunchDescription(
@@ -41,14 +58,25 @@ def generate_launch_description():
                 'gz_sim.launch.py'
             ])
         ),
-        launch_arguments={'gz_args': ['-r -v 4 ' + world]}.items(),
+        launch_arguments={'gz_args': ['-r -s ' + world]}.items(),
+    )
+
+    start_gazebo_client_cmd = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            PathJoinSubstitution([
+                FindPackageShare('ros_gz_sim'),
+                'launch',
+                'gz_sim.launch.py'
+            ])
+        ),
+        launch_arguments={'gz_args': ['-g ' + world]}.items(),
+        condition=IfCondition(PythonExpression(['not ', headless])),
     )
 
     urdf = os.path.join(nav2_bringup_dir, 'urdf', 'gz_turtlebot3_waffle.urdf')
 
     doc = xacro.parse(open(urdf))
     xacro.process_doc(doc)
-    params = {'robot_description': doc.toxml()}
 
     start_robot_state_publisher_cmd = Node(
         package='robot_state_publisher',
@@ -58,29 +86,35 @@ def generate_launch_description():
         parameters=[{
             'use_sim_time': True,
             'robot_description': doc.toxml()
-        }])
+        }]
+    )
 
     # start the visualization
     rviz_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(nav2_bringup_dir, 'launch', 'rviz_launch.py')),
+        condition=IfCondition(use_rviz),
         launch_arguments={'namespace': '',
                           'use_namespace': 'False'}.items())
 
-    os.environ['IGN_GAZEBO_RESOURCE_PATH'] = os.path.join(get_package_share_directory('turtlebot3_gazebo'), 'models')
-    os.environ['IGN_GAZEBO_RESOURCE_PATH'] += ':' + os.path.join(get_package_share_directory('aws_robomaker_small_warehouse_world'), 'models')
-    os.environ['IGN_GAZEBO_RESOURCE_PATH'] += ':' + os.path.join(get_package_share_directory('turtlebot3_gazebo'), '..')
+    os.environ['IGN_GAZEBO_RESOURCE_PATH'] = os.path.join(
+        get_package_share_directory('turtlebot3_gazebo'), 'models')
+    os.environ['IGN_GAZEBO_RESOURCE_PATH'] += ':' + os.path.join(
+        get_package_share_directory('aws_robomaker_small_warehouse_world'), 'models')
+    os.environ['IGN_GAZEBO_RESOURCE_PATH'] += ':' + os.path.join(
+        get_package_share_directory('turtlebot3_gazebo'), '..')
 
     # Clock bridge
-    clock_bridge = Node(package='ros_gz_bridge', executable='parameter_bridge',
+    clock_bridge = Node(
+        package='ros_gz_bridge', executable='parameter_bridge',
         name='clock_bridge',
         output='screen',
         parameters=[{
             'use_sim_time': True
         }],
         arguments=[
-            '/clock' + '@rosgraph_msgs/msg/Clock' + '[ignition.msgs.Clock'
-    ])
+            '/clock' + '@rosgraph_msgs/msg/Clock' + '[ignition.msgs.Clock']
+    )
 
     # lidar bridge
     lidar_bridge = Node(
@@ -94,6 +128,17 @@ def generate_launch_description():
         arguments=[
             ['/scan' + '@sensor_msgs/msg/LaserScan[ignition.msgs.LaserScan']
         ]
+    )
+
+    imu_bridge = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        name='imu_bridge',
+        output='screen',
+        parameters=[{
+            'use_sim_time': True
+        }],
+        arguments=[['/imu' + '@sensor_msgs/msg/Imu[ignition.msgs.IMU']],
     )
 
     # start navigation
@@ -133,10 +178,14 @@ def generate_launch_description():
         output='screen')
 
     ld = LaunchDescription()
+    ld.add_action(declare_use_rviz_cmd)
+    ld.add_action(declare_simulator_cmd)
     ld.add_action(start_gazebo_server_cmd)
+    ld.add_action(start_gazebo_client_cmd)
     ld.add_action(start_gazebo_spawner_cmd)
     ld.add_action(clock_bridge)
     ld.add_action(lidar_bridge)
+    ld.add_action(imu_bridge)
     ld.add_action(load_joint_state_controller)
     ld.add_action(load_diffdrive_controller)
     ld.add_action(start_robot_state_publisher_cmd)
