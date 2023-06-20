@@ -93,7 +93,6 @@
             <sor>1.400000</sor>
             <use_dynamic_moi_rescaling>1</use_dynamic_moi_rescaling>
           </solver>
-          </solver>
         </ode>
     </physics>
 
