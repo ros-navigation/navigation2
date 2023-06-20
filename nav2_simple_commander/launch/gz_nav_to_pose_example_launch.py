@@ -29,7 +29,7 @@ import xacro
 def generate_launch_description():
     warehouse_dir = get_package_share_directory('aws_robomaker_small_warehouse_world')
     nav2_bringup_dir = get_package_share_directory('nav2_bringup')
-    python_commander_dir = get_package_share_directory('nav2_gz_simple_commander')
+    python_commander_dir = get_package_share_directory('nav2_simple_commander')
 
     map_yaml_file = os.path.join(warehouse_dir, 'maps', '005', 'map.yaml')
     world = os.path.join(python_commander_dir, 'gz_warehouse.world')
