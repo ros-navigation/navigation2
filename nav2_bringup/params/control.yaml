@@ -30,8 +30,8 @@
       publish_rate: 62.0
       odom_frame_id: odom
       base_frame_id: base_footprint
-      pose_covariance_diagonal : [0.001, 0.001, 0.001, 0.001, 0.001, 0.01]
-      twist_covariance_diagonal: [0.001, 0.001, 0.001, 0.001, 0.001, 0.01]
+      pose_covariance_diagonal : [1.0e-05, 1.0e-05, 1000000000000.0, 1000000000000.0, 1000000000000.0, 0.001]
+      twist_covariance_diagonal: [1.0e-05, 1.0e-05, 1000000000000.0, 1000000000000.0, 1000000000000.0, 0.001]
 
       open_loop: false
       enable_odom_tf: true

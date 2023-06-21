@@ -1,46 +1,5 @@
 <?xml version="1.0" ?>
 <robot name="turtlebot3_waffle" xmlns:xacro="http://ros.org/wiki/xacro">
-  <!-- Init colour -->
-  <material name="black">
-      <color rgba="0.0 0.0 0.0 1.0"/>
-  </material>
-
-  <material name="dark">
-    <color rgba="0.3 0.3 0.3 1.0"/>
-  </material>
-
-  <material name="light_black">
-    <color rgba="0.4 0.4 0.4 1.0"/>
-  </material>
-
-  <material name="blue">
-    <color rgba="0.0 0.0 0.8 1.0"/>
-  </material>
-
-  <material name="green">
-    <color rgba="0.0 0.8 0.0 1.0"/>
-  </material>
-
-  <material name="grey">
-    <color rgba="0.5 0.5 0.5 1.0"/>
-  </material>
-
-  <material name="orange">
-    <color rgba="1.0 0.4235 0.0392 1.0"/>
-  </material>
-
-  <material name="brown">
-    <color rgba="0.8706 0.8118 0.7647 1.0"/>
-  </material>
-
-  <material name="red">
-    <color rgba="0.8 0.0 0.0 1.0"/>
-  </material>
-
-  <material name="white">
-    <color rgba="1.0 1.0 1.0 1.0"/>
-  </material>
-
   <link name="base_footprint"/>
 
   <joint name="base_joint" type="fixed">
@@ -376,18 +335,12 @@
       <plugin>ign_ros2_control/IgnitionSystem</plugin>
     </hardware>
     <joint name="wheel_left_joint">
-      <command_interface name="velocity">
-        <param name="min">-1</param>
-        <param name="max">1</param>
-      </command_interface>
+      <command_interface name="velocity"/>
       <state_interface name="position"/>
       <state_interface name="velocity"/>
     </joint>
     <joint name="wheel_right_joint">
-      <command_interface name="velocity">
-        <param name="min">-1</param>
-        <param name="max">1</param>
-      </command_interface>
+      <command_interface name="velocity"/>
       <state_interface name="position"/>
       <state_interface name="velocity"/>
     </joint>

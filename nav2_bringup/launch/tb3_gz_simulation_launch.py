@@ -305,19 +305,21 @@ def generate_launch_description():
     ld.add_action(declare_robot_sdf_cmd)
     ld.add_action(declare_use_respawn_cmd)
 
-    # Add any conditioned actions
+    ld.add_action(start_robot_state_publisher_cmd)
+
     ld.add_action(set_env_vars_resources)
-    ld.add_action(clock_bridge)
-    ld.add_action(lidar_bridge)
-    ld.add_action(imu_bridge)
-    ld.add_action(load_joint_state_broadcaster)
-    ld.add_action(load_diffdrive_controller)
-    ld.add_action(spawn_model)
     ld.add_action(gazebo_server)
     ld.add_action(gazebo_client)
 
+    # Add any conditioned actions
+    ld.add_action(clock_bridge)
+    ld.add_action(lidar_bridge)
+    ld.add_action(imu_bridge)
+    ld.add_action(spawn_model)
+    ld.add_action(load_joint_state_broadcaster)
+    ld.add_action(load_diffdrive_controller)
+
     # Add the actions to launch all of the navigation nodes
-    ld.add_action(start_robot_state_publisher_cmd)
     ld.add_action(rviz_cmd)
     ld.add_action(bringup_cmd)
 
