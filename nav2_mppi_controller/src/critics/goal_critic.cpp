@@ -17,6 +17,8 @@
 namespace mppi::critics
 {
 
+using xt::evaluation_strategy::immediate;
+
 void GoalCritic::initialize()
 {
   auto getParam = parameters_handler_->getParamGetter(name_);
@@ -47,14 +49,14 @@ void GoalCritic::score(CriticData & data)
   const auto goal_x = data.path.x(goal_idx);
   const auto goal_y = data.path.y(goal_idx);
 
-  const auto last_x = xt::view(data.trajectories.x, xt::all(), -1);
-  const auto last_y = xt::view(data.trajectories.y, xt::all(), -1);
+  const auto traj_x = xt::view(data.trajectories.x, xt::all(), xt::all());
+  const auto traj_y = xt::view(data.trajectories.y, xt::all(), xt::all());
 
   auto dists = xt::sqrt(
-    xt::pow(last_x - goal_x, 2) +
-    xt::pow(last_y - goal_y, 2));
+    xt::pow(traj_x - goal_x, 2) +
+    xt::pow(traj_y - goal_y, 2));
 
-  data.costs += xt::pow(std::move(dists) * weight_, power_);
+  data.costs += xt::pow(xt::mean(dists, {1}) * weight_, power_);
 }
 
 }  // namespace mppi::critics
