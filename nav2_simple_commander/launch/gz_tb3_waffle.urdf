@@ -1,45 +1,5 @@
 <?xml version="1.0" ?>
 <robot name="turtlebot3_waffle" xmlns:xacro="http://ros.org/wiki/xacro">
-  <!-- Init colour -->
-  <material name="black">
-      <color rgba="0.0 0.0 0.0 1.0"/>
-  </material>
-
-  <material name="dark">
-    <color rgba="0.3 0.3 0.3 1.0"/>
-  </material>
-
-  <material name="light_black">
-    <color rgba="0.4 0.4 0.4 1.0"/>
-  </material>
-
-  <material name="blue">
-    <color rgba="0.0 0.0 0.8 1.0"/>
-  </material>
-
-  <material name="green">
-    <color rgba="0.0 0.8 0.0 1.0"/>
-  </material>
-
-  <material name="grey">
-    <color rgba="0.5 0.5 0.5 1.0"/>
-  </material>
-
-  <material name="orange">
-    <color rgba="1.0 0.4235 0.0392 1.0"/>
-  </material>
-
-  <material name="brown">
-    <color rgba="0.8706 0.8118 0.7647 1.0"/>
-  </material>
-
-  <material name="red">
-    <color rgba="0.8 0.0 0.0 1.0"/>
-  </material>
-
-  <material name="white">
-    <color rgba="1.0 1.0 1.0 1.0"/>
-  </material>
 
   <link name="base_footprint"/>
 
@@ -49,13 +9,22 @@
     <origin xyz="0 0 0.010" rpy="0 0 0"/>
   </joint>
 
+  <gazebo reference="base_link">
+    <visual>
+      <material>
+        <ambient>0.4 0.4 0.4 1</ambient>
+        <diffuse>0.4 0.4 0.4 1</diffuse>
+        <specular>0.0 0.0 1.0 1</specular>
+      </material>
+    </visual>
+  </gazebo>
+
   <link name="base_link">
     <visual>
       <origin xyz="-0.064 0 0.0" rpy="0 0 0"/>
       <geometry>
         <mesh filename="package://turtlebot3_gazebo/models/turtlebot3_common/meshes/waffle_base.dae" scale="0.001 0.001 0.001"/>
       </geometry>
-      <material name="light_black"/>
     </visual>
 
     <collision>
@@ -67,10 +36,10 @@
 
     <inertial>
       <origin xyz="0 0 0" rpy="0 0 0"/>
-      <mass value="1.3729096e+00"/>
-      <inertia ixx="8.7002718e-03" ixy="-4.7576583e-05" ixz="1.1160499e-04"
-               iyy="8.6195418e-03" iyz="-3.5422299e-06"
-               izz="1.4612727e-02" />
+      <mass value="1.0"/>
+      <inertia ixx="0.001" ixy="0.0" ixz="0.0"
+               iyy="0.001" iyz="0.0"
+               izz="0.001" />
     </inertial>
   </link>
 
@@ -81,13 +50,21 @@
     <axis xyz="0 0 1"/>
   </joint>
 
+  <gazebo reference="wheel_left_link">
+    <visual>
+      <material>
+        <ambient>0.3 0.3 0.3 1</ambient>
+        <diffuse>0.3 0.3 0.3 1</diffuse>
+        <specular>0.0 0.0 1.0 1</specular>
+      </material>
+    </visual>
+  </gazebo>
   <link name="wheel_left_link">
     <visual>
       <origin xyz="0 0 0" rpy="1.57 0 0"/>
       <geometry>
         <mesh filename="package://turtlebot3_gazebo/models/turtlebot3_common/meshes/tire.dae" scale="0.001 0.001 0.001"/>
       </geometry>
-      <material name="dark"/>
     </visual>
 
     <collision>
@@ -95,15 +72,36 @@
       <geometry>
         <cylinder length="0.018" radius="0.033"/>
       </geometry>
+      <surface>
+        <friction>
+          <ode>
+            <mu>100000.0</mu>
+            <mu2>100000.0</mu2>
+            <fdir1>0 0 0</fdir1>
+            <slip1>0.0</slip1>
+            <slip2>0.0</slip2>
+          </ode>
+        </friction>
+        <contact>
+          <ode>
+            <soft_cfm>0</soft_cfm>
+            <soft_erp>0.2</soft_erp>
+            <kp>1e+5</kp>
+            <kd>1</kd>
+            <max_vel>0.01</max_vel>
+            <min_depth>0.001</min_depth>
+          </ode>
+        </contact>
+      </surface>
     </collision>
 
     <inertial>
       <origin xyz="0 0 0" />
-      <mass value="2.8498940e-02" />
-      <inertia ixx="1.1175580e-05" ixy="-4.2369783e-11" ixz="-5.9381719e-09"
-               iyy="1.1192413e-05" iyz="-1.4400107e-11"
-               izz="2.0712558e-05" />
-      </inertial>
+      <mass value="0.1" />
+      <inertia ixx="0.001" ixy="0.0" ixz="0.0"
+               iyy="0.001" iyz="0.0"
+               izz="0.001" />
+   </inertial>
   </link>
 
   <joint name="wheel_right_joint" type="continuous">
@@ -113,13 +111,22 @@
     <axis xyz="0 0 1"/>
   </joint>
 
+  <gazebo reference="wheel_right_link">
+    <visual>
+      <material>
+        <ambient>0.3 0.3 0.3 1</ambient>
+        <diffuse>0.3 0.3 0.3 1</diffuse>
+        <specular>0.0 0.0 1.0 1</specular>
+      </material>
+    </visual>
+  </gazebo>
+
   <link name="wheel_right_link">
     <visual>
       <origin xyz="0 0 0" rpy="1.57 0 0"/>
       <geometry>
         <mesh filename="package://turtlebot3_gazebo/models/turtlebot3_common/meshes/tire.dae" scale="0.001 0.001 0.001"/>
       </geometry>
-      <material name="dark"/>
     </visual>
 
     <collision>
@@ -127,15 +134,37 @@
       <geometry>
         <cylinder length="0.018" radius="0.033"/>
       </geometry>
+      <surface>
+        <!-- This friction pamareter don't contain reliable data!! -->
+        <friction>
+          <ode>
+            <mu>100000.0</mu>
+            <mu2>100000.0</mu2>
+            <fdir1>0 0 0</fdir1>
+            <slip1>0.0</slip1>
+            <slip2>0.0</slip2>
+          </ode>
+        </friction>
+        <contact>
+          <ode>
+            <soft_cfm>0</soft_cfm>
+            <soft_erp>0.2</soft_erp>
+            <kp>1e+5</kp>
+            <kd>1</kd>
+            <max_vel>0.01</max_vel>
+            <min_depth>0.001</min_depth>
+          </ode>
+        </contact>
+      </surface>
     </collision>
 
     <inertial>
       <origin xyz="0 0 0" />
-      <mass value="2.8498940e-02" />
-      <inertia ixx="1.1175580e-05" ixy="-4.2369783e-11" ixz="-5.9381719e-09"
-               iyy="1.1192413e-05" iyz="-1.4400107e-11"
-               izz="2.0712558e-05" />
-      </inertial>
+      <mass value="0.1" />
+      <inertia ixx="0.001" ixy="0.0" ixz="0.0"
+               iyy="0.001" iyz="0.0"
+               izz="0.001" />
+    </inertial>
   </link>
 
   <joint name="caster_back_right_joint" type="fixed">
@@ -148,16 +177,35 @@
     <collision>
       <origin xyz="0 0.001 0" rpy="0 0 0"/>
       <geometry>
-        <box size="0.030 0.009 0.020"/>
+        <sphere radius="0.005000"/>
       </geometry>
+      <surface>
+        <contact>
+          <ode>
+            <soft_cfm>0</soft_cfm>
+            <soft_erp>0.2</soft_erp>
+            <kp>1e+5</kp>
+            <kd>1</kd>
+            <max_vel>0.01</max_vel>
+            <min_depth>0.001</min_depth>
+          </ode>
+        </contact>
+      </surface>
     </collision>
+
+    <visual>
+      <origin xyz="0 0.001 0" rpy="0 0 0"/>
+      <geometry>
+        <sphere radius="0.005000"/>
+      </geometry>
+    </visual>
 
     <inertial>
       <origin xyz="0 0 0" />
-      <mass value="0.005" />
-      <inertia ixx="0.001" ixy="0.0" ixz="0.0"
-               iyy="0.001" iyz="0.0"
-               izz="0.001" />
+      <mass value="0.001" />
+      <inertia ixx="0.00001" ixy="0.0" ixz="0.0"
+               iyy="0.00001" iyz="0.0"
+               izz="0.00001" />
     </inertial>
   </link>
 
@@ -171,16 +219,35 @@
     <collision>
       <origin xyz="0 0.001 0" rpy="0 0 0"/>
       <geometry>
-        <box size="0.030 0.009 0.020"/>
+        <sphere radius="0.005000"/>
       </geometry>
+      <surface>
+        <contact>
+          <ode>
+            <soft_cfm>0</soft_cfm>
+            <soft_erp>0.2</soft_erp>
+            <kp>1e+5</kp>
+            <kd>1</kd>
+            <max_vel>0.01</max_vel>
+            <min_depth>0.001</min_depth>
+          </ode>
+        </contact>
+      </surface>
     </collision>
+
+    <visual>
+      <origin xyz="0 0.001 0" rpy="0 0 0"/>
+      <geometry>
+        <sphere radius="0.005000"/>
+      </geometry>
+    </visual>
 
     <inertial>
       <origin xyz="0 0 0" />
-      <mass value="0.005" />
-      <inertia ixx="0.001" ixy="0.0" ixz="0.0"
-               iyy="0.001" iyz="0.0"
-               izz="0.001" />
+      <mass value="0.00001" />
+      <inertia ixx="0.00001" ixy="0.0" ixz="0.0"
+               iyy="0.00001" iyz="0.0"
+               izz="0.00001" />
     </inertial>
   </link>
 
@@ -199,13 +266,22 @@
     <axis xyz="0 0 1"/>
   </joint>
 
+  <gazebo reference="base_scan">
+    <visual>
+      <material>
+        <ambient>0.3 0.3 0.3 1</ambient>
+        <diffuse>0.3 0.3 0.3 1</diffuse>
+        <specular>0.0 0.0 1.0 1</specular>
+      </material>
+    </visual>
+  </gazebo>
+
   <link name="base_scan">
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
         <mesh filename="package://turtlebot3_gazebo/models/turtlebot3_common/meshes/lds.dae" scale="0.001 0.001 0.001"/>
       </geometry>
-      <material name="dark"/>
     </visual>
 
     <collision>
@@ -216,8 +292,8 @@
     </collision>
 
     <inertial>
-      <mass value="0.114" />
       <origin xyz="0 0 0" />
+      <mass value="0.125" />
       <inertia ixx="0.001" ixy="0.0" ixz="0.0"
                iyy="0.001" iyz="0.0"
                izz="0.001" />
@@ -371,14 +447,12 @@
       <plugin>ign_ros2_control/IgnitionSystem</plugin>
     </hardware>
     <joint name="wheel_left_joint">
-      <command_interface name="velocity">
-      </command_interface>
+      <command_interface name="velocity"/>
       <state_interface name="position"/>
       <state_interface name="velocity"/>
     </joint>
     <joint name="wheel_right_joint">
-      <command_interface name="velocity">
-      </command_interface>
+      <command_interface name="velocity"/>
       <state_interface name="position"/>
       <state_interface name="velocity"/>
     </joint>

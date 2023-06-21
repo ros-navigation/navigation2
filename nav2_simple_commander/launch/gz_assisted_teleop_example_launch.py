@@ -1,4 +1,5 @@
-# Copyright 2023 Open Source Robotics Foundation, Inc.
+# Copyright (c) 2021 Samsung Research America
+# Copyright (c) 2022 Joshua Wallace
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -46,6 +47,7 @@ def generate_launch_description():
     #              https://github.com/ros2/launch_ros/issues/56
     remappings = [('/tf', 'tf'),
                   ('/tf_static', 'tf_static')]
+
 
     # Declare the launch arguments
     declare_use_rviz_cmd = DeclareLaunchArgument(
@@ -108,6 +110,7 @@ def generate_launch_description():
                           'use_namespace': 'False',
                           'use_sim_time': 'true'}.items())
 
+
     os.environ['IGN_GAZEBO_RESOURCE_PATH'] = os.path.join(
         get_package_share_directory('turtlebot3_gazebo'), 'models')
     os.environ['IGN_GAZEBO_RESOURCE_PATH'] += ':' + os.path.join(
@@ -156,7 +159,7 @@ def generate_launch_description():
     bringup_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(nav2_bringup_dir, 'launch', 'bringup_launch.py')),
-        launch_arguments={'map': map_yaml_file, 'use_sim_time': 'true'}.items())
+        launch_arguments={'map': map_yaml_file}.items())
 
     start_gazebo_spawner_cmd = Node(
         package='ros_gz_sim',
@@ -184,11 +187,8 @@ def generate_launch_description():
     # start the demo autonomy task
     demo_cmd = Node(
         package='nav2_simple_commander',
-        executable='example_nav_to_pose',
+        executable='example_assisted_teleop',
         emulate_tty=True,
-        parameters=[{
-            'use_sim_time': True
-        }],
         output='screen')
 
     ld = LaunchDescription()
@@ -206,5 +206,4 @@ def generate_launch_description():
     ld.add_action(rviz_cmd)
     ld.add_action(bringup_cmd)
     ld.add_action(demo_cmd)
-
     return ld

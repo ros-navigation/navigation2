@@ -1,4 +1,4 @@
-# Copyright 2023 Open Source Robotics Foundation, Inc.
+# Copyright (c) 2021 Samsung Research America
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -38,15 +38,6 @@ def generate_launch_description():
     use_rviz = LaunchConfiguration('use_rviz')
     headless = LaunchConfiguration('headless')
 
-    # Map fully qualified names to relative ones so the node's namespace can be prepended.
-    # In case of the transforms (tf), currently, there doesn't seem to be a better alternative
-    # https://github.com/ros/geometry2/issues/32
-    # https://github.com/ros/robot_state_publisher/pull/30
-    # TODO(orduno) Substitute with `PushNodeRemapping`
-    #              https://github.com/ros2/launch_ros/issues/56
-    remappings = [('/tf', 'tf'),
-                  ('/tf_static', 'tf_static')]
-
     # Declare the launch arguments
     declare_use_rviz_cmd = DeclareLaunchArgument(
         'use_rviz',
@@ -57,6 +48,15 @@ def generate_launch_description():
         'headless',
         default_value='False',
         description='Whether to execute gzclient)')
+
+    # Map fully qualified names to relative ones so the node's namespace can be prepended.
+    # In case of the transforms (tf), currently, there doesn't seem to be a better alternative
+    # https://github.com/ros/geometry2/issues/32
+    # https://github.com/ros/robot_state_publisher/pull/30
+    # TODO(orduno) Substitute with `PushNodeRemapping`
+    #              https://github.com/ros2/launch_ros/issues/56
+    remappings = [('/tf', 'tf'),
+                  ('/tf_static', 'tf_static')]
 
     # Launch gazebo environment
     start_gazebo_server_cmd = IncludeLaunchDescription(
@@ -96,8 +96,7 @@ def generate_launch_description():
             'use_sim_time': True,
             'robot_description': doc.toxml()
         }],
-        remappings=remappings
-    )
+        remappings=remappings)
 
     # start the visualization
     rviz_cmd = IncludeLaunchDescription(
@@ -114,6 +113,12 @@ def generate_launch_description():
         get_package_share_directory('aws_robomaker_small_warehouse_world'), 'models')
     os.environ['IGN_GAZEBO_RESOURCE_PATH'] += ':' + os.path.join(
         get_package_share_directory('turtlebot3_gazebo'), '..')
+
+    # start navigation
+    bringup_cmd = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(nav2_bringup_dir, 'launch', 'bringup_launch.py')),
+        launch_arguments={'map': map_yaml_file}.items())
 
     # Clock bridge
     clock_bridge = Node(
@@ -152,12 +157,6 @@ def generate_launch_description():
         arguments=[['/imu' + '@sensor_msgs/msg/Imu[ignition.msgs.IMU']],
     )
 
-    # start navigation
-    bringup_cmd = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(nav2_bringup_dir, 'launch', 'bringup_launch.py')),
-        launch_arguments={'map': map_yaml_file, 'use_sim_time': 'true'}.items())
-
     start_gazebo_spawner_cmd = Node(
         package='ros_gz_sim',
         executable='create',
@@ -184,11 +183,8 @@ def generate_launch_description():
     # start the demo autonomy task
     demo_cmd = Node(
         package='nav2_simple_commander',
-        executable='example_nav_to_pose',
+        executable='demo_recoveries',
         emulate_tty=True,
-        parameters=[{
-            'use_sim_time': True
-        }],
         output='screen')
 
     ld = LaunchDescription()
@@ -206,5 +202,4 @@ def generate_launch_description():
     ld.add_action(rviz_cmd)
     ld.add_action(bringup_cmd)
     ld.add_action(demo_cmd)
-
     return ld

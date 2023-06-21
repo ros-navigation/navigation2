@@ -1,4 +1,4 @@
-# Copyright 2023 Open Source Robotics Foundation, Inc.
+# Copyright (c) 2021 Samsung Research America
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -184,11 +184,8 @@ def generate_launch_description():
     # start the demo autonomy task
     demo_cmd = Node(
         package='nav2_simple_commander',
-        executable='example_nav_to_pose',
+        executable='demo_inspection',
         emulate_tty=True,
-        parameters=[{
-            'use_sim_time': True
-        }],
         output='screen')
 
     ld = LaunchDescription()
@@ -206,5 +203,4 @@ def generate_launch_description():
     ld.add_action(rviz_cmd)
     ld.add_action(bringup_cmd)
     ld.add_action(demo_cmd)
-
     return ld
