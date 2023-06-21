@@ -82,6 +82,15 @@ BtActionServer<ActionT>::BtActionServer(
           "reported to your application");
       rclcpp::Parameter error_code_names_param("error_code_names", error_code_names);
       node->set_parameter(error_code_names_param);
+    } else {
+      error_code_names = value.get<std::vector<std::string>>();
+      std::string error_codes_str;
+      for (const auto & error_code : error_code_names) {
+        error_codes_str += "\n" + error_code;
+      }
+      RCLCPP_INFO_STREAM(
+        logger_, "Error_code parameters were set to: "
+          << error_codes_str);
     }
   }
 }
