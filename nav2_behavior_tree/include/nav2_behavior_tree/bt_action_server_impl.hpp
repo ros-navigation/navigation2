@@ -285,7 +285,7 @@ void BtActionServer<ActionT>::populateErrorCode(
         highest_priority_error_code = current_error_code;
       }
     } catch (...) {
-      RCLCPP_ERROR(
+      RCLCPP_DEBUG(
         logger_,
         "Failed to get error code: %s from blackboard",
         error_code.c_str());
