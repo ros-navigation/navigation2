@@ -556,6 +556,30 @@ TEST_F(TestNode, testDynParamsSetStatic)
 }
 
 
+/**
+ * Test CombinationMethod::Max overwrites unknown value in ObstacleLayer.
+ */
+TEST_F(TestNode, testMaxCombinationMethod) {
+  tf2_ros::Buffer tf(node_->get_clock());
+
+  // Create a costmap with full unknown space
+  nav2_costmap_2d::LayeredCostmap layers("frame", false, true);
+  layers.resizeMap(10, 10, 1, 0, 0);
+
+  std::shared_ptr<nav2_costmap_2d::ObstacleLayer> olayer = nullptr;
+  addObstacleLayer(layers, tf, node_, olayer);
+
+  addObservation(olayer, 0.0, 0.0, MAX_Z / 2, 0, 0, MAX_Z / 2);
+
+  // The observation sets the cost of the cell to 254
+  layers.updateMap(0, 0, 0);  // 0, 0, 0 is robot pose
+  // printMap(*(layers.getCostmap()));
+
+  int unknown_count = countValues(*(layers.getCostmap()), nav2_costmap_2d::NO_INFORMATION);
+
+  ASSERT_EQ(unknown_count, 99);
+}
+
 class TestNodeWithoutUnknownOverwrite : public ::testing::Test
 {
 public:
