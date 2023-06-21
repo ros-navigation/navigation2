@@ -432,7 +432,7 @@ inline double posePointAngle(
   if (!forward_preference) {
     return std::min(
       abs(angles::shortest_angular_distance(yaw, pose_yaw)),
-      abs(angles::shortest_angular_distance(yaw, pose_yaw + M_PI)));
+      abs(angles::shortest_angular_distance(yaw, angles::normalize_angle(pose_yaw + M_PI))));
   }
 
   return abs(angles::shortest_angular_distance(yaw, pose_yaw));
