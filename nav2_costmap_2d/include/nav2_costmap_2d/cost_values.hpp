@@ -39,6 +39,34 @@
 /** Provides a mapping for often used cost values */
 namespace nav2_costmap_2d
 {
+
+/**
+ * @enum nav2_costmap_2d::CombinationMethod
+ * @brief Describes the method used to add data to master costmap, default to maximum.
+ */
+enum class CombinationMethod : int
+{
+  /**
+   * Overwrite means every valid value from this layer
+   * is written into the master grid (does not copy NO_INFORMATION)
+   */
+  Overwrite = 0,
+  /**
+   * Sets the new value to the maximum of the master_grid's value
+   * and this layer's value. If the master value is NO_INFORMATION,
+   * it is overwritten. If the layer's value is NO_INFORMATION,
+   * the master value does not change
+   */
+  Max = 1,
+  /**
+   * Sets the new value to the maximum of the master_grid's value
+   * and this layer's value. If the master value is NO_INFORMATION,
+   * it is NOT overwritten. If the layer's value is NO_INFORMATION,
+   * the master value does not change.
+   */
+  MaxWithoutUnknownOverwrite = 2
+};
+
 static constexpr unsigned char NO_INFORMATION = 255;
 static constexpr unsigned char LETHAL_OBSTACLE = 254;
 static constexpr unsigned char INSCRIBED_INFLATED_OBSTACLE = 253;
