@@ -88,9 +88,7 @@ BtActionServer<ActionT>::BtActionServer(
       for (const auto & error_code : error_code_names) {
         error_codes_str += "\n" + error_code;
       }
-      RCLCPP_INFO_STREAM(
-        logger_, "Error_code parameters were set to: "
-          << error_codes_str);
+      RCLCPP_INFO_STREAM(logger_, "Error_code parameters were set to: " << error_codes_str);
     }
   }
 }
