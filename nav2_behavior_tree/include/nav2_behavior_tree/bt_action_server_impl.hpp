@@ -73,15 +73,22 @@ BtActionServer<ActionT>::BtActionServer(
     if (value.get_type() == rclcpp::PARAMETER_NOT_SET) {
       std::string error_codes_str;
       for (const auto & error_code : error_code_names) {
-        error_codes_str += "\n" + error_code;
+        error_codes_str += " " + error_code;
       }
       RCLCPP_WARN_STREAM(
-        logger_, "Error_code parameters were not set. Using default values of: "
+        logger_, "Error_code parameters were not set. Using default values of:"
           << error_codes_str + "\n"
           << "Make sure these match your BT and there are not other sources of error codes you"
           "reported to your application");
       rclcpp::Parameter error_code_names_param("error_code_names", error_code_names);
       node->set_parameter(error_code_names_param);
+    } else {
+      error_code_names = value.get<std::vector<std::string>>();
+      std::string error_codes_str;
+      for (const auto & error_code : error_code_names) {
+        error_codes_str += " " + error_code;
+      }
+      RCLCPP_INFO_STREAM(logger_, "Error_code parameters were set to:" << error_codes_str);
     }
   }
 }
@@ -285,7 +292,7 @@ void BtActionServer<ActionT>::populateErrorCode(
         highest_priority_error_code = current_error_code;
       }
     } catch (...) {
-      RCLCPP_ERROR(
+      RCLCPP_DEBUG(
         logger_,
         "Failed to get error code: %s from blackboard",
         error_code.c_str());
