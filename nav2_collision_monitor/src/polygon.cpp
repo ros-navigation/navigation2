@@ -23,6 +23,7 @@
 #include "nav2_util/node_utils.hpp"
 
 #include "nav2_collision_monitor/kinematics.hpp"
+using rcl_interfaces::msg::ParameterType;
 
 namespace nav2_collision_monitor
 {
@@ -44,6 +45,7 @@ Polygon::~Polygon()
 {
   RCLCPP_INFO(logger_, "[%s]: Destroying Polygon", polygon_name_.c_str());
   poly_.clear();
+  dyn_params_handler_.reset();
 }
 
 bool Polygon::configure()
@@ -58,6 +60,12 @@ bool Polygon::configure()
   if (!getParameters(polygon_pub_topic, footprint_topic)) {
     return false;
   }
+  dyn_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(
+    &Polygon::dynamicParametersCallback,
+    this,
+    std::placeholders::_1)
+  );
 
   if (!footprint_topic.empty()) {
     footprint_sub_ = std::make_unique<nav2_costmap_2d::FootprintSubscriber>(
@@ -275,7 +283,7 @@ bool Polygon::getCommonParameters(std::string & polygon_pub_topic)
 
     nav2_util::declare_parameter_if_not_declared(
       node, polygon_name_ + ".max_points", rclcpp::ParameterValue(3));
-    max_points_ = node->get_parameter(polygon_name_ + ".max_points").as_int();
+    node->get_parameter(polygon_name_ + ".max_points", max_points_);
 
     if (action_type_ == SLOWDOWN) {
       nav2_util::declare_parameter_if_not_declared(
@@ -386,6 +394,28 @@ bool Polygon::getParameters(std::string & polygon_pub_topic, std::string & footp
   }
 
   return true;
+}
+
+rcl_interfaces::msg::SetParametersResult
+Polygon::dynamicParametersCallback(
+  std::vector<rclcpp::Parameter> parameters)
+{
+  // std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+  rcl_interfaces::msg::SetParametersResult result;
+
+  for (auto parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+
+    if (param_type == ParameterType::PARAMETER_INTEGER) {
+      if (param_name == polygon_name_ + "." + "max_points") {
+        max_points_ = parameter.as_int();
+        RCLCPP_INFO(logger_, "SET MAX POINTS TO %i", max_points_);
+      }
+    }
+  }
+  result.successful = true;
+  return result;
 }
 
 inline bool Polygon::isPointInside(const Point & point) const
