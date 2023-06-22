@@ -62,7 +62,7 @@ def generate_launch_description():
     start_rviz_cmd = Node(
         condition=UnlessCondition(use_namespace),
         parameters=[{
-            'use_sim_time': True,
+            'use_sim_time': use_sim_time,
         }],
         package='rviz2',
         executable='rviz2',
@@ -76,7 +76,7 @@ def generate_launch_description():
     start_namespaced_rviz_cmd = Node(
         condition=IfCondition(use_namespace),
         parameters=[{
-            'use_sim_time': True,
+            'use_sim_time': use_sim_time,
         }],
         package='rviz2',
         executable='rviz2',
