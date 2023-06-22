@@ -48,7 +48,6 @@ def generate_launch_description():
     remappings = [('/tf', 'tf'),
                   ('/tf_static', 'tf_static')]
 
-
     # Declare the launch arguments
     declare_use_rviz_cmd = DeclareLaunchArgument(
         'use_rviz',
@@ -109,7 +108,6 @@ def generate_launch_description():
         launch_arguments={'namespace': '',
                           'use_namespace': 'False',
                           'use_sim_time': 'true'}.items())
-
 
     os.environ['IGN_GAZEBO_RESOURCE_PATH'] = os.path.join(
         get_package_share_directory('turtlebot3_gazebo'), 'models')

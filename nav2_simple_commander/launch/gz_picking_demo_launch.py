@@ -34,10 +34,6 @@ def generate_launch_description():
     map_yaml_file = os.path.join(warehouse_dir, 'maps', '005', 'map.yaml')
     world = os.path.join(python_commander_dir, 'gz_warehouse.world')
 
-    # Launch configuration variables
-    use_rviz = LaunchConfiguration('use_rviz')
-    headless = LaunchConfiguration('headless')
-
     # Map fully qualified names to relative ones so the node's namespace can be prepended.
     # In case of the transforms (tf), currently, there doesn't seem to be a better alternative
     # https://github.com/ros/geometry2/issues/32
@@ -46,6 +42,10 @@ def generate_launch_description():
     #              https://github.com/ros2/launch_ros/issues/56
     remappings = [('/tf', 'tf'),
                   ('/tf_static', 'tf_static')]
+
+    # Launch configuration variables
+    use_rviz = LaunchConfiguration('use_rviz')
+    headless = LaunchConfiguration('headless')
 
     # Declare the launch arguments
     declare_use_rviz_cmd = DeclareLaunchArgument(
@@ -99,6 +99,15 @@ def generate_launch_description():
         remappings=remappings
     )
 
+    # start the visualization
+    rviz_cmd = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(nav2_bringup_dir, 'launch', 'rviz_launch.py')),
+        condition=IfCondition(use_rviz),
+        launch_arguments={'namespace': '',
+                          'use_namespace': 'False',
+                          'use_sim_time': 'true'}.items())
+
     os.environ['IGN_GAZEBO_RESOURCE_PATH'] = os.path.join(
         get_package_share_directory('turtlebot3_gazebo'), 'models')
     os.environ['IGN_GAZEBO_RESOURCE_PATH'] += ':' + os.path.join(
@@ -143,6 +152,12 @@ def generate_launch_description():
         arguments=[['/imu' + '@sensor_msgs/msg/Imu[ignition.msgs.IMU']],
     )
 
+    # start navigation
+    bringup_cmd = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(nav2_bringup_dir, 'launch', 'bringup_launch.py')),
+        launch_arguments={'map': map_yaml_file}.items())
+
     start_gazebo_spawner_cmd = Node(
         package='ros_gz_sim',
         executable='create',
@@ -166,24 +181,10 @@ def generate_launch_description():
         output='screen'
     )
 
-    # start the visualization
-    rviz_cmd = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(nav2_bringup_dir, 'launch', 'rviz_launch.py')),
-        condition=IfCondition(use_rviz),
-        launch_arguments={'namespace': '',
-                          'use_namespace': 'False'}.items())
-
-    # start navigation
-    bringup_cmd = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(nav2_bringup_dir, 'launch', 'bringup_launch.py')),
-        launch_arguments={'map': map_yaml_file}.items())
-
     # start the demo autonomy task
     demo_cmd = Node(
         package='nav2_simple_commander',
-        executable='example_follow_path',
+        executable='demo_picking',
         emulate_tty=True,
         output='screen')
 

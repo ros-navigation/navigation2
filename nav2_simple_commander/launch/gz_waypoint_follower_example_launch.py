@@ -1,4 +1,4 @@
-# Copyright (c) 2021 Samsung Research America
+# Copyright 2023 Open Source Robotics Foundation, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -99,6 +99,15 @@ def generate_launch_description():
         remappings=remappings
     )
 
+    # start the visualization
+    rviz_cmd = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(nav2_bringup_dir, 'launch', 'rviz_launch.py')),
+        condition=IfCondition(use_rviz),
+        launch_arguments={'namespace': '',
+                          'use_namespace': 'False',
+                          'use_sim_time': 'true'}.items())
+
     os.environ['IGN_GAZEBO_RESOURCE_PATH'] = os.path.join(
         get_package_share_directory('turtlebot3_gazebo'), 'models')
     os.environ['IGN_GAZEBO_RESOURCE_PATH'] += ':' + os.path.join(
@@ -143,6 +152,12 @@ def generate_launch_description():
         arguments=[['/imu' + '@sensor_msgs/msg/Imu[ignition.msgs.IMU']],
     )
 
+    # start navigation
+    bringup_cmd = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(nav2_bringup_dir, 'launch', 'bringup_launch.py')),
+        launch_arguments={'map': map_yaml_file, 'use_sim_time': 'true'}.items())
+
     start_gazebo_spawner_cmd = Node(
         package='ros_gz_sim',
         executable='create',
@@ -166,25 +181,14 @@ def generate_launch_description():
         output='screen'
     )
 
-    # start the visualization
-    rviz_cmd = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(nav2_bringup_dir, 'launch', 'rviz_launch.py')),
-        condition=IfCondition(use_rviz),
-        launch_arguments={'namespace': '',
-                          'use_namespace': 'False'}.items())
-
-    # start navigation
-    bringup_cmd = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(nav2_bringup_dir, 'launch', 'bringup_launch.py')),
-        launch_arguments={'map': map_yaml_file}.items())
-
     # start the demo autonomy task
     demo_cmd = Node(
         package='nav2_simple_commander',
-        executable='example_follow_path',
+        executable='example_waypoint_follower',
         emulate_tty=True,
+        parameters=[{
+            'use_sim_time': True
+        }],
         output='screen')
 
     ld = LaunchDescription()
@@ -202,4 +206,5 @@ def generate_launch_description():
     ld.add_action(rviz_cmd)
     ld.add_action(bringup_cmd)
     ld.add_action(demo_cmd)
+
     return ld
