@@ -73,10 +73,10 @@ BtActionServer<ActionT>::BtActionServer(
     if (value.get_type() == rclcpp::PARAMETER_NOT_SET) {
       std::string error_codes_str;
       for (const auto & error_code : error_code_names) {
-        error_codes_str += "\n" + error_code;
+        error_codes_str += " " + error_code;
       }
       RCLCPP_WARN_STREAM(
-        logger_, "Error_code parameters were not set. Using default values of: "
+        logger_, "Error_code parameters were not set. Using default values of:"
           << error_codes_str + "\n"
           << "Make sure these match your BT and there are not other sources of error codes you"
           "reported to your application");
@@ -86,9 +86,9 @@ BtActionServer<ActionT>::BtActionServer(
       error_code_names = value.get<std::vector<std::string>>();
       std::string error_codes_str;
       for (const auto & error_code : error_code_names) {
-        error_codes_str += "\n" + error_code;
+        error_codes_str += " " + error_code;
       }
-      RCLCPP_INFO_STREAM(logger_, "Error_code parameters were set to: " << error_codes_str);
+      RCLCPP_INFO_STREAM(logger_, "Error_code parameters were set to:" << error_codes_str);
     }
   }
 }
