@@ -410,7 +410,6 @@ Polygon::dynamicParametersCallback(
     if (param_type == ParameterType::PARAMETER_INTEGER) {
       if (param_name == polygon_name_ + "." + "max_points") {
         max_points_ = parameter.as_int();
-        RCLCPP_INFO(logger_, "SET MAX POINTS TO %i", max_points_);
       }
     }
   }
