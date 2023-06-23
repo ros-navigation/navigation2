@@ -1,4 +1,5 @@
 // Copyright (c) 2022 Samsung Research America, @artofnothingness Alexey Budyakov
+// Copyright (c) 2023 Open Navigation LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,13 +18,15 @@
 namespace mppi::critics
 {
 
+using xt::evaluation_strategy::immediate;
+
 void GoalCritic::initialize()
 {
   auto getParam = parameters_handler_->getParamGetter(name_);
 
   getParam(power_, "cost_power", 1);
   getParam(weight_, "cost_weight", 5.0);
-  getParam(threshold_to_consider_, "threshold_to_consider", 1.0);
+  getParam(threshold_to_consider_, "threshold_to_consider", 1.4);
 
   RCLCPP_INFO(
     logger_, "GoalCritic instantiated with %d power and %f weight.",
@@ -47,14 +50,14 @@ void GoalCritic::score(CriticData & data)
   const auto goal_x = data.path.x(goal_idx);
   const auto goal_y = data.path.y(goal_idx);
 
-  const auto last_x = xt::view(data.trajectories.x, xt::all(), -1);
-  const auto last_y = xt::view(data.trajectories.y, xt::all(), -1);
+  const auto traj_x = xt::view(data.trajectories.x, xt::all(), xt::all());
+  const auto traj_y = xt::view(data.trajectories.y, xt::all(), xt::all());
 
   auto dists = xt::sqrt(
-    xt::pow(last_x - goal_x, 2) +
-    xt::pow(last_y - goal_y, 2));
+    xt::pow(traj_x - goal_x, 2) +
+    xt::pow(traj_y - goal_y, 2));
 
-  data.costs += xt::pow(std::move(dists) * weight_, power_);
+  data.costs += xt::pow(xt::mean(dists, {1}) * weight_, power_);
 }
 
 }  // namespace mppi::critics

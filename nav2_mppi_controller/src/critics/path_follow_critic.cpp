@@ -26,7 +26,7 @@ void PathFollowCritic::initialize()
 
   getParam(
     threshold_to_consider_,
-    "threshold_to_consider", 0.40f);
+    "threshold_to_consider", 1.4);
   getParam(offset_from_furthest_, "offset_from_furthest", 6);
   getParam(power_, "cost_power", 1);
   getParam(weight_, "cost_weight", 5.0);
