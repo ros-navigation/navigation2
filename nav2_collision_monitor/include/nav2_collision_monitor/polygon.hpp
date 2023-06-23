@@ -162,6 +162,12 @@ protected:
    */
   virtual bool getParameters(std::string & polygon_pub_topic, std::string & footprint_topic);
 
+    /**
+   * @brief Callback executed when a parameter change is detected
+   * @param event ParameterEvent message
+   */
+  rcl_interfaces::msg::SetParametersResult dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
+
   /**
    * @brief Checks if point is inside polygon
    * @param point Given point to check
@@ -175,6 +181,8 @@ protected:
   nav2_util::LifecycleNode::WeakPtr node_;
   /// @brief Collision monitor node logger stored for further usage
   rclcpp::Logger logger_{rclcpp::get_logger("collision_monitor")};
+  /// @brief Dynamic parameters handler
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
 
   // Basic parameters
   /// @brief Name of polygon
