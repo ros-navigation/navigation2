@@ -183,17 +183,17 @@ controller_server:
         enabled: true
         cost_power: 1
         cost_weight: 5.0
-        threshold_to_consider: 1.0
+        threshold_to_consider: 1.4
       GoalAngleCritic:
         enabled: true
         cost_power: 1
         cost_weight: 3.0
-        threshold_to_consider: 0.4
+        threshold_to_consider: 0.5
       PreferForwardCritic:
         enabled: true
         cost_power: 1
         cost_weight: 5.0
-        threshold_to_consider: 0.4
+        threshold_to_consider: 0.5
       ObstaclesCritic:
         enabled: true
         cost_power: 1
@@ -209,20 +209,20 @@ controller_server:
         cost_weight: 14.0
         max_path_occupancy_ratio: 0.05
         trajectory_point_step: 3
-        threshold_to_consider: 0.40
+        threshold_to_consider: 0.5
         offset_from_furthest: 20
       PathFollowCritic:
         enabled: true
         cost_power: 1
         cost_weight: 5.0
         offset_from_furthest: 5
-        threshold_to_consider: 0.6
+        threshold_to_consider: 1.4
       PathAngleCritic:
         enabled: true
         cost_power: 1
         cost_weight: 2.0
         offset_from_furthest: 4
-        threshold_to_consider: 0.40
+        threshold_to_consider: 0.5
         max_angle_to_furthest: 1.0
         forward_preference: true
       # TwirlingCritic:

@@ -37,7 +37,7 @@ void PathAngleCritic::initialize()
   getParam(weight_, "cost_weight", 2.0);
   getParam(
     threshold_to_consider_,
-    "threshold_to_consider", 0.40f);
+    "threshold_to_consider", 0.5);
   getParam(
     max_angle_to_furthest_,
     "max_angle_to_furthest", 1.2);
