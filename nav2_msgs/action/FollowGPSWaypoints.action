@@ -1,3 +1,9 @@
+# Error codes
+# Note: The expected priority order of the errors should match the message order
+uint16 NONE=0
+uint16 UNKNOWN=600
+uint16 TASK_EXECUTOR_FAILED=601
+
 #goal definition
 geographic_msgs/GeoPose[] gps_poses
 ---
