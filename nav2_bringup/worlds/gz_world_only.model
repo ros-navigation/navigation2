@@ -1,7 +1,6 @@
 <?xml version="1.0"?>
 <sdf version="1.6">
   <world name="default">
-
     <plugin
       filename="ignition-gazebo-physics-system"
       name="ignition::gazebo::systems::Physics">
@@ -72,19 +71,10 @@
       <shadows>false</shadows>
     </scene>
 
-    <gui fullscreen='0'>
-      <camera name='user_camera'>
-        <pose frame=''>0.319654 -0.235002 9.29441 0 1.5138 0.009599</pose>
-        <view_controller>orbit</view_controller>
-        <projection_type>perspective</projection_type>
-      </camera>
-    </gui>
-
     <physics name='1ms' type='ode'>
         <max_step_size>0.001</max_step_size>
         <real_time_factor>1</real_time_factor>
         <real_time_update_rate>1000.0</real_time_update_rate>
-
         <ode>
           <solver>
             <type>quick</type>

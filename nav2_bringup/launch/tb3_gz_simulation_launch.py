@@ -19,7 +19,7 @@ import os
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, ExecuteProcess
+from launch.actions import DeclareLaunchArgument
 from launch.actions import IncludeLaunchDescription, SetEnvironmentVariable
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
@@ -200,63 +200,7 @@ def generate_launch_description():
             'turtlebot3_gazebo'), '..')
 
     set_env_vars_resources = SetEnvironmentVariable('IGN_GAZEBO_RESOURCE_PATH', env_vars)
-    clock_bridge = Node(
-        condition=IfCondition(use_simulator),
-        package='ros_gz_bridge', executable='parameter_bridge',
-        name='clock_bridge',
-        output='screen',
-        parameters=[{
-            'use_sim_time': True
-        }],
-        arguments=['/clock' + '@rosgraph_msgs/msg/Clock' + '[ignition.msgs.Clock']
-    )
 
-    lidar_bridge = Node(
-        condition=IfCondition(use_simulator),
-        package='ros_gz_bridge',
-        executable='parameter_bridge',
-        name='lidar_bridge',
-        output='screen',
-        parameters=[{
-            'use_sim_time': True
-        }],
-        arguments=[['/scan' + '@sensor_msgs/msg/LaserScan[ignition.msgs.LaserScan']],
-    )
-    imu_bridge = Node(
-        condition=IfCondition(use_simulator),
-        package='ros_gz_bridge',
-        executable='parameter_bridge',
-        name='imu_bridge',
-        output='screen',
-        parameters=[{
-            'use_sim_time': True
-        }],
-        arguments=[['/imu' + '@sensor_msgs/msg/Imu[ignition.msgs.IMU']],
-    )
-    load_joint_state_broadcaster = ExecuteProcess(
-        condition=IfCondition(use_simulator),
-        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
-             'joint_state_broadcaster'],
-        output='screen'
-    )
-    load_diffdrive_controller = ExecuteProcess(
-        condition=IfCondition(use_simulator),
-        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
-             'diffdrive_controller'],
-        output='screen'
-    )
-    spawn_model = Node(
-        condition=IfCondition(use_simulator),
-        package='ros_gz_sim',
-        executable='create',
-        output='screen',
-        arguments=[
-            '-entity', robot_name,
-            '-string', Command(['xacro', ' ', robot_sdf]),
-            '-robot_namespace', namespace,
-            '-x', pose['x'], '-y', pose['y'], '-z', pose['z'],
-            '-R', pose['R'], '-P', pose['P'], '-Y', pose['Y']]
-    )
     gazebo_server = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             PathJoinSubstitution([
@@ -281,6 +225,21 @@ def generate_launch_description():
             [use_simulator, ' and not ', headless])),
         launch_arguments={'gz_args': ['-g ']}.items(),
     )
+
+    gz_robot = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(launch_dir, 'gz_robot_launch.py')),
+        launch_arguments={'namespace': namespace,
+                          'use_simulator': use_simulator,
+                          'use_sim_time': use_sim_time,
+                          'robot_name': robot_name,
+                          'robot_sdf': robot_sdf,
+                          'x_pose': pose['x'],
+                          'y_pose': pose['y'],
+                          'z_pose': pose['z'],
+                          'roll': pose['R'],
+                          'pitch': pose['P'],
+                          'yaw': pose['Y']}.items())
 
     # Create the launch description and populate
     ld = LaunchDescription()
@@ -310,14 +269,7 @@ def generate_launch_description():
     ld.add_action(set_env_vars_resources)
     ld.add_action(gazebo_server)
     ld.add_action(gazebo_client)
-
-    # Add any conditioned actions
-    ld.add_action(clock_bridge)
-    ld.add_action(lidar_bridge)
-    ld.add_action(imu_bridge)
-    ld.add_action(spawn_model)
-    ld.add_action(load_joint_state_broadcaster)
-    ld.add_action(load_diffdrive_controller)
+    ld.add_action(gz_robot)
 
     # Add the actions to launch all of the navigation nodes
     ld.add_action(rviz_cmd)
