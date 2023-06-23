@@ -62,6 +62,7 @@ public:
   /**
    * @brief  Constructs an observation buffer
    * @param  topic_name The topic of the observations, used as an identifier for error and warning messages
+   * @param  source_name The name of the source as declared in the parameters, used to change source specific params
    * @param  observation_keep_time Defines the persistence of observations in seconds, 0 means only keep the latest
    * @param  expected_update_rate How often this buffer is expected to be updated, 0 means there is no limit
    * @param  min_obstacle_height The minimum height of a hitpoint to be considered legal
@@ -78,6 +79,7 @@ public:
   ObservationBuffer(
     const nav2_util::LifecycleNode::WeakPtr & parent,
     std::string topic_name,
+    std::string source_name,
     double observation_keep_time,
     double expected_update_rate,
     double min_obstacle_height, double max_obstacle_height, double obstacle_max_range,
@@ -132,6 +134,22 @@ public:
    */
   void resetLastUpdated();
 
+  /**
+   * @brief Set max obstacle distance
+   */
+  void setMaxObstacleDistance(double max_obstacle_distance)
+  {
+    obstacle_max_range_ = max_obstacle_distance;
+  }
+
+  /**
+   * @brief Get source name
+   */
+  std::string getSourceName()
+  {
+    return source_name_;
+  }
+
 private:
   /**
    * @brief  Removes any stale observations from the buffer list
@@ -148,6 +166,7 @@ private:
   std::string sensor_frame_;
   std::list<Observation> observation_list_;
   std::string topic_name_;
+  std::string source_name_;
   double min_obstacle_height_, max_obstacle_height_;
   std::recursive_mutex lock_;  ///< @brief A lock for accessing data in callbacks safely
   double obstacle_max_range_, obstacle_min_range_, raytrace_max_range_, raytrace_min_range_;

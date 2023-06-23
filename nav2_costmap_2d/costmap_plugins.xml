@@ -18,6 +18,9 @@
     <class type="nav2_costmap_2d::DenoiseLayer" base_class_type="nav2_costmap_2d::Layer">
       <description>Filters noise-induced freestanding obstacles or small obstacles groups</description>
     </class>
+    <class type="nav2_costmap_2d::SemanticSegmentationLayer" base_class_type="nav2_costmap_2d::Layer">
+      <description>A plugin for semantic segmentation data produced by RGBD cameras</description>
+    </class>
   </library>
 
   <library path="filters">

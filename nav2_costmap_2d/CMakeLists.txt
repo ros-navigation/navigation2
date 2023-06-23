@@ -17,6 +17,7 @@ find_package(rclcpp_lifecycle REQUIRED)
 find_package(rmw REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(vision_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(tf2 REQUIRED)
@@ -48,6 +49,7 @@ add_library(nav2_costmap_2d_core SHARED
   src/footprint.cpp
   src/costmap_layer.cpp
   src/observation_buffer.cpp
+  src/segmentation_buffer.cpp
   src/clear_costmap_service.cpp
   src/footprint_collision_checker.cpp
   plugins/costmap_filters/costmap_filter.cpp
@@ -67,6 +69,7 @@ set(dependencies
   rclcpp_lifecycle
   sensor_msgs
   std_msgs
+  vision_msgs
   std_srvs
   tf2
   tf2_geometry_msgs
@@ -88,6 +91,7 @@ add_library(layers SHARED
   plugins/voxel_layer.cpp
   plugins/range_sensor_layer.cpp
   plugins/denoise_layer.cpp
+  plugins/semantic_segmentation_layer.cpp
 )
 ament_target_dependencies(layers
   ${dependencies}

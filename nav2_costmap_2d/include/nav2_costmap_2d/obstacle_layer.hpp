@@ -253,6 +253,7 @@ protected:
   bool rolling_window_;
   bool was_reset_;
   int combination_method_;
+  std::string _topics_string;
 };
 
 }  // namespace nav2_costmap_2d

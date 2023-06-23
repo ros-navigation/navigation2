@@ -73,9 +73,6 @@ void ObstacleLayer::onInitialize()
   bool track_unknown_space;
   double transform_tolerance;
 
-  // The topics that we'll subscribe to from the parameter server
-  std::string topics_string;
-
   declareParameter("enabled", rclcpp::ParameterValue(true));
   declareParameter("footprint_clearing_enabled", rclcpp::ParameterValue(true));
   declareParameter("min_obstacle_height", rclcpp::ParameterValue(0.0));
@@ -95,7 +92,7 @@ void ObstacleLayer::onInitialize()
   node->get_parameter(name_ + "." + "combination_method", combination_method_);
   node->get_parameter("track_unknown_space", track_unknown_space);
   node->get_parameter("transform_tolerance", transform_tolerance);
-  node->get_parameter(name_ + "." + "observation_sources", topics_string);
+  node->get_parameter(name_ + "." + "observation_sources", _topics_string);
 
   dyn_params_handler_ = node->add_on_set_parameters_callback(
     std::bind(
@@ -105,7 +102,7 @@ void ObstacleLayer::onInitialize()
 
   RCLCPP_INFO(
     logger_,
-    "Subscribed to Topics: %s", topics_string.c_str());
+    "Subscribed to Topics: %s", _topics_string.c_str());
 
   rolling_window_ = layered_costmap_->isRolling();
 
@@ -125,7 +122,7 @@ void ObstacleLayer::onInitialize()
   sub_opt.callback_group = callback_group_;
 
   // now we need to split the topics based on whitespace which we can use a stringstream for
-  std::stringstream ss(topics_string);
+  std::stringstream ss(_topics_string);
 
   std::string source;
   while (ss >> source) {
@@ -194,7 +191,7 @@ void ObstacleLayer::onInitialize()
       std::shared_ptr<ObservationBuffer
       >(
         new ObservationBuffer(
-          node, topic, observation_keep_time, expected_update_rate,
+          node, topic, source, observation_keep_time, expected_update_rate,
           min_obstacle_height,
           max_obstacle_height, obstacle_max_range, obstacle_min_range, raytrace_max_range,
           raytrace_min_range, *tf_,
@@ -312,6 +309,22 @@ ObstacleLayer::dynamicParametersCallback(
     } else if (param_type == ParameterType::PARAMETER_INTEGER) {
       if (param_name == name_ + "." + "combination_method") {
         combination_method_ = parameter.as_int();
+      }
+    }
+    std::stringstream ss(_topics_string);
+    std::string source;
+    while (ss >> source)
+    {
+      if (param_type == ParameterType::PARAMETER_DOUBLE) {
+        if (param_name == name_ + "." + source + "." + "obstacle_max_range") {
+          for (auto & buffer : observation_buffers_) {
+            if (buffer->getSourceName() == source) {
+              buffer->lock();
+              buffer->setMaxObstacleDistance(parameter.as_double());
+              buffer->unlock();
+            }
+          }
+        }
       }
     }
   }

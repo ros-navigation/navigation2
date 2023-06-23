@@ -51,6 +51,7 @@ namespace nav2_costmap_2d
 ObservationBuffer::ObservationBuffer(
   const nav2_util::LifecycleNode::WeakPtr & parent,
   std::string topic_name,
+  std::string source_name,
   double observation_keep_time,
   double expected_update_rate,
   double min_obstacle_height, double max_obstacle_height, double obstacle_max_range,
@@ -65,6 +66,7 @@ ObservationBuffer::ObservationBuffer(
   global_frame_(global_frame),
   sensor_frame_(sensor_frame),
   topic_name_(topic_name),
+  source_name_(source_name),
   min_obstacle_height_(min_obstacle_height), max_obstacle_height_(max_obstacle_height),
   obstacle_max_range_(obstacle_max_range), obstacle_min_range_(obstacle_min_range),
   raytrace_max_range_(raytrace_max_range), raytrace_min_range_(
