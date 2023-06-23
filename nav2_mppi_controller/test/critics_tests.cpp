@@ -267,6 +267,16 @@ TEST(CriticTests, PathAngleCritic)
   critic.score(data);
   EXPECT_GT(xt::sum(costs, immediate)(), 0.0);
   EXPECT_NEAR(costs(0), 3.6315, 1e-2);  // atan2(4,-1) [1.81] * 2.0 weight
+
+  PathAngleMode mode;
+  mode = PathAngleMode::FORWARD_PREFERENCE;
+  EXPECT_EQ(modeToStr(mode), std::string("Forward Preference"));
+  mode = PathAngleMode::CONSIDER_FEASIBLE_PATH_ORIENTATIONS;
+  EXPECT_EQ(modeToStr(mode), std::string("Consider Feasible Path Orientations"));
+  mode = PathAngleMode::NO_DIRECTIONAL_PREFERENCE;
+  EXPECT_EQ(modeToStr(mode), std::string("No Directional Preference"));
+  mode = static_cast<PathAngleMode>(4);
+  EXPECT_EQ(modeToStr(mode), std::string("Invalid mode!"));
 }
 
 TEST(CriticTests, PreferForwardCritic)
