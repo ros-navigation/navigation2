@@ -417,9 +417,9 @@ TEST(CriticTests, PathFollowCritic)
   // Scoring testing
 
   // provide state poses and path close within positional tolerances
-  state.pose.pose.position.x = 1.0;
+  state.pose.pose.position.x = 2.0;
   path.reset(6);
-  path.x(5) = 0.85;
+  path.x(5) = 1.7;
   critic.score(data);
   EXPECT_NEAR(xt::sum(costs, immediate)(), 0.0, 1e-6);
 
