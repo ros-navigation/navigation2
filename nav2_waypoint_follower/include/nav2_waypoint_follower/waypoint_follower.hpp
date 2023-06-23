@@ -181,7 +181,7 @@ protected:
 
   // Common vars used for both GPS and cartesian point following
   rclcpp::Node::SharedPtr client_node_;
-  std::vector<int> failed_ids_;
+  std::vector<nav2_msgs::msg::MissedWaypoint> failed_ids_;
   int loop_rate_;
   bool stop_on_failure_;
   std::string global_frame_id_{"map"};
@@ -203,7 +203,7 @@ protected:
   rclcpp::CallbackGroup::SharedPtr callback_group_;
   rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
   std::shared_future<rclcpp_action::ClientGoalHandle<ClientT>::SharedPtr> future_goal_handle_;
-  ActionStatus current_goal_status_;
+  GoalStatus current_goal_status_;
 
   // Our action server for GPS waypoint following
   std::unique_ptr<ActionServerGPS> gps_action_server_;

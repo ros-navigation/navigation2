@@ -8,7 +8,7 @@ uint16 TASK_EXECUTOR_FAILED=601
 geographic_msgs/GeoPose[] gps_poses
 ---
 #result definition
-int32[] missed_waypoints
+MissedWaypoint[] missed_waypoints
 ---
 #feedback
 uint32 current_waypoint
