@@ -86,8 +86,11 @@ void VoxelLayer::onInitialize()
   node->get_parameter(name_ + "." + "z_resolution", z_resolution_);
   node->get_parameter(name_ + "." + "unknown_threshold", unknown_threshold_);
   node->get_parameter(name_ + "." + "mark_threshold", mark_threshold_);
-  node->get_parameter(name_ + "." + "combination_method", combination_method_);
   node->get_parameter(name_ + "." + "publish_voxel_map", publish_voxel_);
+
+  int combination_method_param{};
+  node->get_parameter(name_ + "." + "combination_method", combination_method_param);
+  combination_method_ = combination_method_from_int(combination_method_param);
 
   auto custom_qos = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable();
 
@@ -522,7 +525,7 @@ VoxelLayer::dynamicParametersCallback(
       } else if (param_name == name_ + "." + "mark_threshold") {
         mark_threshold_ = parameter.as_int();
       } else if (param_name == name_ + "." + "combination_method") {
-        combination_method_ = parameter.as_int();
+        combination_method_ = combination_method_from_int(parameter.as_int());
       }
     }
   }

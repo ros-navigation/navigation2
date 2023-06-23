@@ -136,6 +136,35 @@ void CostmapLayer::updateWithMax(
   }
 }
 
+void CostmapLayer::updateWithMaxWithoutUnknownOverwrite(
+  nav2_costmap_2d::Costmap2D & master_grid, int min_i, int min_j,
+  int max_i,
+  int max_j)
+{
+  if (!enabled_) {
+    return;
+  }
+
+  unsigned char * master_array = master_grid.getCharMap();
+  unsigned int span = master_grid.getSizeInCellsX();
+
+  for (int j = min_j; j < max_j; j++) {
+    unsigned int it = j * span + min_i;
+    for (int i = min_i; i < max_i; i++) {
+      if (costmap_[it] == NO_INFORMATION) {
+        it++;
+        continue;
+      }
+
+      unsigned char old_cost = master_array[it];
+      if (old_cost != NO_INFORMATION && old_cost < costmap_[it]) {
+        master_array[it] = costmap_[it];
+      }
+      it++;
+    }
+  }
+}
+
 void CostmapLayer::updateWithTrueOverwrite(
   nav2_costmap_2d::Costmap2D & master_grid, int min_i,
   int min_j,
@@ -214,6 +243,25 @@ void CostmapLayer::updateWithAddition(
       }
       it++;
     }
+  }
+}
+
+CombinationMethod CostmapLayer::combination_method_from_int(const int value)
+{
+  switch (value) {
+    case 0:
+      return CombinationMethod::Overwrite;
+    case 1:
+      return CombinationMethod::Max;
+    case 2:
+      return CombinationMethod::MaxWithoutUnknownOverwrite;
+    default:
+      RCLCPP_WARN(
+        logger_,
+        "Param combination_method: %i. Possible values are  0 (Overwrite) or 1 (Maximum) or "
+        "2 (Maximum without overwriting the master's NO_INFORMATION values)."
+        "The default value 1 will be used", value);
+      return CombinationMethod::Max;
   }
 }
 }  // namespace nav2_costmap_2d
