@@ -120,7 +120,7 @@ This process is then repeated a number of times and returns a converged solution
  | threshold_to_consider     | double | Default 0.4. Distance between robot and goal above which path angle cost stops being considered             |
  | offset_from_furthest      | int    | Default 4. Number of path points after furthest one any trajectory achieves to compute path angle relative to.  |
  | max_angle_to_furthest     | double | Default 1.2. Angular distance between robot and goal above which path angle cost starts being considered           |
- | forward_preference     | bool | Default true. Whether or not your robot has a preference for which way is forward in motion. Different from if reversing is generally allowed, but if you robot contains *no* particular preference one way or another.           |
+ | mode     | int | Default 0 (Forward Preference). Enum type for mode of operations for the path angle critic depending on path input types and behavioral desires. 0: Forward Preference, penalizes high path angles relative to the robot's orientation to incentivize turning towards the path. 1: No directional preference, penalizes high path angles relative to the robot's orientation or mirrored orientation (e.g. reverse), which ever is less, when a particular direction of travel is not preferable. 2: Consider feasible path orientation, when using a feasible path whereas the path points have orientation information (e.g. Smac Planners), consider the path's requested direction of travel to penalize path angles such that the robot will follow the path in the requested direction. |
 
 
 #### Path Follow Critic
