@@ -24,25 +24,31 @@ using namespace nav2_smac_planner;
 
 TEST(transform_footprint_to_edges, test_basic)
 {
-    geometry_msgs::msg::Point p1;
-    p1.x = 1.0;
-    p1.y = 1.0;
+  geometry_msgs::msg::Point p1;
+  p1.x = 1.0;
+  p1.y = 1.0;
 
-    geometry_msgs::msg::Point p2;
-    p2.x = 1.0;
-    p2.y = -1.0;
+  geometry_msgs::msg::Point p2;
+  p2.x = 1.0;
+  p2.y = -1.0;
 
-    geometry_msgs::msg::Point p3;
-    p3.x = -1.0;
-    p3.y = -1.0;
+  geometry_msgs::msg::Point p3;
+  p3.x = -1.0;
+  p3.y = -1.0;
 
-    geometry_msgs::msg::Point p4;
-    p4.x = -1.0;
-    p4.y = 1.0;
+  geometry_msgs::msg::Point p4;
+  p4.x = -1.0;
+  p4.y = 1.0;
 
-    std::vector<geometry_msgs::msg::Point> footprint{p1, p2, p3, p4};
+  std::vector<geometry_msgs::msg::Point> footprint{p1, p2, p3, p4};
+  std::vector<geometry_msgs::msg::Point> footprint_edges{p1, p2, p2, p3, p3, p4, p4, p1};
 
-    auto result = transformFootprintToEdges(0.0, 0.0, 0.0, footprint);
+  auto result = transformFootprintToEdges(0.0, 0.0, 0.0, footprint);
+  EXPECT_EQ(result.size(), 8u);
 
-    EXPECT_EQ(result.size(), 8u);
+  for (size_t i = 0; i < result.size(); i++) {
+    auto & p = result[i];
+    auto & q = footprint_edges[i];
+    EXPECT_EQ(p, q);
+  }
 }
