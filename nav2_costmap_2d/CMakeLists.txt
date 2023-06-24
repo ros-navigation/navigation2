@@ -32,10 +32,9 @@ nav2_package()
 
 include_directories(
   include
-  ${EIGEN3_INCLUDE_DIRS}
 )
 
-add_definitions(${EIGEN3_DEFINITIONS})
+add_definitions(${EIGEN3_DEFINITIONS}) # TODO this might not be needed...
 
 add_library(nav2_costmap_2d_core SHARED
   src/array_parser.cpp
@@ -52,6 +51,7 @@ add_library(nav2_costmap_2d_core SHARED
   src/footprint_collision_checker.cpp
   plugins/costmap_filters/costmap_filter.cpp
 )
+target_link_libraries(nav2_costmap_2d_core Eigen3::Eigen)
 
 set(dependencies
   geometry_msgs

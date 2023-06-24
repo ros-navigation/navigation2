@@ -33,10 +33,10 @@ repositories:
     type: git
     url: https://github.com/Ryanf55/vision_opencv.git
     version: ubuntu-lunar-build-errors
-  ompl/ompl:
+  Ryanf55/ompl:
     type: git
-    url: https://github.com/ompl/ompl.git
-    version: 1.5.2
+    url: https://github.com/Ryanf55/ompl.git
+    version: exported-namespace-targets
   nlohmann/json:
     type: git
     url: https://github.com/nlohmann/json.git
