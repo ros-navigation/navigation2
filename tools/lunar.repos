@@ -1,0 +1,57 @@
+# Use this underlay if building on Ubuntu 23.04.
+# https://github.com/ros/rosdistro/blob/master/rolling/distribution.yaml
+# Versions are manually synced with what rolling has.
+# 
+repositories:
+  ros/bond_core:
+    type: git
+    url: https://github.com/ros/bond_core.git
+    version: 4.0.0
+  BehaviorTree/BehaviorTree.CPP:
+    type: git
+    url: https://github.com/BehaviorTree/BehaviorTree.CPP.git
+    version: 3.8.3
+  ros/diagnostics:
+    type: git
+    url: https://github.com/ros/diagnostics.git
+    version: 3.1.2
+  ros/angles:
+    type: git
+    url: https://github.com/ros/angles.git
+    version: 1.16.0
+  xtensor-stack/xtensor:
+    type: git
+    url: https://github.com/xtensor-stack/xtensor.git
+    # Not clear what to set here, used latest available
+    version: 0.24.6
+  xtensor-stack/xtl:
+    type: git
+    url: https://github.com/xtensor-stack/xtl.git
+    # Not clear what to set here, used latest available
+    version: 0.7.5
+  Ryanf55/vision_opencv:
+    type: git
+    url: https://github.com/Ryanf55/vision_opencv.git
+    version: ubuntu-lunar-build-errors
+  ompl/ompl:
+    type: git
+    url: https://github.com/ompl/ompl.git
+    version: 1.5.2
+  nlohmann/json:
+    type: git
+    url: https://github.com/nlohmann/json.git
+    version: 3.11.2
+  # ros-simulation/gazebo_ros_pkgs:
+  #   type: git
+  #   url: https://github.com/ros-simulation/gazebo_ros_pkgs.git
+  #   version: ros2
+
+
+  # ros-simulation/gazebo_ros_pkgs:
+  #   type: git
+  #   url: https://github.com/ros-simulation/gazebo_ros_pkgs.git
+  #   version: ros2
+  #ros2/geometry2:
+  #  type: git
+  #  url: https://github.com/ros2/geometry2.git
+  #  version: rolling

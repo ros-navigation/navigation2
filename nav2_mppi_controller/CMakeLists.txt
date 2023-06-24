@@ -10,6 +10,9 @@ set(XTENSOR_USE_OPENMP 0)
 
 find_package(ament_cmake REQUIRED)
 find_package(xtensor REQUIRED)
+if(NOT TARGET xtensor::xtensor)
+  add_library(xtensor::xtensor ALIAS xtensor)
+endif()
 
 set(dependencies_pkgs
   rclcpp
@@ -72,10 +75,25 @@ add_library(mppi_critics SHARED
 
 set(libraries mppi_controller mppi_critics)
 
+# This is a temporary hack:
+# 1) xtensor has compiler warnings in gcc12 -Wmaybe-unitialized
+# 2) It doesn't set its includes as system dependency properly
+# 3) Nav2 treats unitialialized variables as errors
+# It can be removed when a new xtensor versions get into ubuntu mainline
+# https://discourse.cmake.org/t/declare-imported-targets-as-system-to-suppress-warnings/555
+get_target_property(xtensor_interface_include_dirs xtensor::xtensor INTERFACE_INCLUDE_DIRECTORIES)
+get_target_property(xtensor_system_include_dirs xtensor::xtensor INTERFACE_SYSTEM_INCLUDE_DIRECTORIES)
+# set_target_property()
+message(WARNING ${xtensor_interface_include_dirs})
+message(WARNING ${xtensor_system_include_dirs})
+
+# message(FATAL_ERROR "X:${xtensor_include_dirs}")
+# target_include_directories(xtensor::use_xsimd SYSTEM INTERFACE ${xtensor_include_dirs})
+
 foreach(lib IN LISTS libraries)
   target_compile_options(${lib} PUBLIC -fconcepts)
   target_include_directories(${lib} PUBLIC include ${xsimd_INCLUDE_DIRS} ${OpenMP_INCLUDE_DIRS})
-  target_link_libraries(${lib} xtensor xtensor::optimize xtensor::use_xsimd)
+  target_link_libraries(${lib} xtensor::xtensor xtensor::optimize xtensor::use_xsimd)
   ament_target_dependencies(${lib} ${dependencies_pkgs})
 endforeach()
 

@@ -24,6 +24,7 @@ find_package(Eigen3 REQUIRED)
 find_package(angles REQUIRED)
 find_package(ompl REQUIRED)
 find_package(OpenMP REQUIRED)
+find_package(nlohmann_json REQUIRED)
 
 if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
@@ -69,6 +70,7 @@ set(dependencies
   pluginlib
   angles
   eigen3_cmake_module
+  nlohmann_json
 )
 
 # Hybrid plugin

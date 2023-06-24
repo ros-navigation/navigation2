@@ -142,7 +142,7 @@ void BehaviorServer::setupResourcesForBehaviorPlugins()
   std::string local_costmap_topic, global_costmap_topic;
   std::string local_footprint_topic, global_footprint_topic;
   std::string robot_base_frame;
-  double transform_tolerance;
+  double transform_tolerance {};
   get_parameter("local_costmap_topic", local_costmap_topic);
   get_parameter("global_costmap_topic", global_costmap_topic);
   get_parameter("local_footprint_topic", local_footprint_topic);

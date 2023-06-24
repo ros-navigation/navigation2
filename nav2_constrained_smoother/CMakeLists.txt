@@ -23,18 +23,6 @@ endif()
 
 nav2_package()
 
-set(library_name nav2_constrained_smoother)
-
-include_directories(
-  include
-)
-
-target_include_directories(
-  ${library_name}
-  PUBLIC SYSTEM
-  ${CERES_INCLUDES}
-)
-
 set(dependencies
   angles
   rclcpp
@@ -46,11 +34,25 @@ set(dependencies
   pluginlib
 )
 
-add_library(${library_name} SHARED src/constrained_smoother.cpp)
-target_link_libraries(${library_name} ${CERES_LIBRARIES})
+add_library(nav2_constrained_smoother SHARED src/constrained_smoother.cpp)
+add_library(nav2_constrained_smoother::nav2_constrained_smoother ALIAS nav2_constrained_smoother)
+target_link_libraries(nav2_constrained_smoother PUBLIC Ceres::ceres)
+# This is a temporary hack:
+# 1) Eigen 3.4.0 has compiler warnings in gcc12 -Wmaybe-unitialized
+# 2) Ceres doesn't set EIGEN as a system dependency properly
+# 3) Nav2 treats unitialialized variables as errors
+# It can be removed when a new Eigen+Ceres versions get into ubuntu mainline
+# https://discourse.cmake.org/t/declare-imported-targets-as-system-to-suppress-warnings/555
+get_target_property(ceres_include_dirs Ceres::ceres INTERFACE_INCLUDE_DIRECTORIES)
+target_include_directories(Ceres::ceres SYSTEM INTERFACE ${ceres_include_dirs})
+
 # prevent pluginlib from using boost
-target_compile_definitions(${library_name} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
-ament_target_dependencies(${library_name} ${dependencies})
+target_compile_definitions(nav2_constrained_smoother PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+ament_target_dependencies(nav2_constrained_smoother PUBLIC ${dependencies})
+target_include_directories(nav2_constrained_smoother
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -64,7 +66,7 @@ endif()
 
 install(
   TARGETS
-    ${library_name}
+  nav2_constrained_smoother
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -79,8 +81,7 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-ament_export_include_directories(include)
-ament_export_libraries(${library_name})
+ament_export_libraries(nav2_constrained_smoother)
 ament_export_dependencies(${dependencies})
 
 pluginlib_export_plugin_description_file(nav2_core nav2_constrained_smoother.xml)
