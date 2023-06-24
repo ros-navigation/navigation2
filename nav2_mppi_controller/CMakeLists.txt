@@ -73,7 +73,7 @@ add_library(mppi_critics SHARED
   src/critics/constraint_critic.cpp
 )
 
-set(libraries mppi_controller mppi_critics)
+list(APPEND libraries mppi_controller mppi_critics)
 
 # This is a temporary hack:
 # 1) xtensor has compiler warnings in gcc12 -Wmaybe-unitialized
@@ -81,23 +81,23 @@ set(libraries mppi_controller mppi_critics)
 # 3) Nav2 treats unitialialized variables as errors
 # It can be removed when a new xtensor versions get into ubuntu mainline
 # https://discourse.cmake.org/t/declare-imported-targets-as-system-to-suppress-warnings/555
-get_target_property(xtensor_interface_include_dirs xtensor::xtensor INTERFACE_INCLUDE_DIRECTORIES)
-get_target_property(xtensor_system_include_dirs xtensor::xtensor INTERFACE_SYSTEM_INCLUDE_DIRECTORIES)
-# set_target_property()
-message(WARNING ${xtensor_interface_include_dirs})
-message(WARNING ${xtensor_system_include_dirs})
+get_target_property(xt_interface_include_dirs xtensor::xtensor INTERFACE_INCLUDE_DIRECTORIES)
+set_target_properties(xtensor PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES ${xt_interface_include_dirs})
 
-# message(FATAL_ERROR "X:${xtensor_include_dirs}")
-# target_include_directories(xtensor::use_xsimd SYSTEM INTERFACE ${xtensor_include_dirs})
-
-foreach(lib IN LISTS libraries)
+foreach(lib IN ITEMS ${libraries})
+  message(STATUS ${lib})
   target_compile_options(${lib} PUBLIC -fconcepts)
-  target_include_directories(${lib} PUBLIC include ${xsimd_INCLUDE_DIRS} ${OpenMP_INCLUDE_DIRS})
-  target_link_libraries(${lib} xtensor::xtensor xtensor::optimize xtensor::use_xsimd)
+  target_include_directories(${lib}
+    PUBLIC
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+      $<INSTALL_INTERFACE:include>
+  )
+  target_link_libraries(${lib} xtensor::xtensor)
   ament_target_dependencies(${lib} ${dependencies_pkgs})
 endforeach()
 
 install(TARGETS mppi_controller mppi_critics
+  EXPORT mppi_controller_targets
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -116,9 +116,8 @@ if(BUILD_TESTING)
   # add_subdirectory(benchmark)
 endif()
 
-ament_export_libraries(${libraries})
-ament_export_dependencies(${dependencies_pkgs})
-ament_export_include_directories(include)
+ament_export_targets(mppi_controller_targets HAS_LIBRARY_TARGET)
+ament_export_dependencies(${dependencies_pkgs} xtensor::xtensor)
 pluginlib_export_plugin_description_file(nav2_core mppic.xml)
 pluginlib_export_plugin_description_file(nav2_mppi_controller critics.xml)
 
