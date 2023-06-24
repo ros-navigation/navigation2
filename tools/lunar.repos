@@ -1,7 +1,7 @@
 # Use this underlay if building on Ubuntu 23.04.
 # https://github.com/ros/rosdistro/blob/master/rolling/distribution.yaml
-# Versions are manually synced with what rolling has.
-# 
+# Versions are usually manually synced with what rolling has, unless otherwise noted for some patches
+
 repositories:
   ros/bond_core:
     type: git
@@ -32,26 +32,18 @@ repositories:
   Ryanf55/vision_opencv:
     type: git
     url: https://github.com/Ryanf55/vision_opencv.git
+    # This is a patch for lunar, update this when merged and synced to rolling
     version: ubuntu-lunar-build-errors
   Ryanf55/ompl:
     type: git
     url: https://github.com/Ryanf55/ompl.git
+    # This is a (large) patch for lunar, update this when merged and synced to rolling
     version: exported-namespace-targets
   nlohmann/json:
     type: git
     url: https://github.com/nlohmann/json.git
-    version: 3.11.2
-  # ros-simulation/gazebo_ros_pkgs:
-  #   type: git
-  #   url: https://github.com/ros-simulation/gazebo_ros_pkgs.git
-  #   version: ros2
-
-
-  # ros-simulation/gazebo_ros_pkgs:
-  #   type: git
-  #   url: https://github.com/ros-simulation/gazebo_ros_pkgs.git
-  #   version: ros2
-  #ros2/geometry2:
-  #  type: git
-  #  url: https://github.com/ros2/geometry2.git
-  #  version: rolling
+    version: v3.11.2
+  ros-simulation/gazebo_ros_pkgs:
+    type: git
+    url: https://github.com/ros-simulation/gazebo_ros_pkgs.git
+    version: ros2
