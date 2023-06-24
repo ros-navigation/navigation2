@@ -51,8 +51,8 @@ public:
   {
     return {
       BT::InputPort<double>("distance", 1.0, "Distance"),
-      BT::InputPort<std::string>("global_frame", std::string("map"), "Global frame"),
-      BT::InputPort<std::string>("robot_base_frame", std::string("base_link"), "Robot base frame")
+      BT::InputPort<std::string>("global_frame", "Global frame"),
+      BT::InputPort<std::string>("robot_base_frame", "Robot base frame")
     };
   }
 
