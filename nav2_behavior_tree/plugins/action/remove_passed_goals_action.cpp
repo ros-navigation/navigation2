@@ -31,12 +31,44 @@ RemovePassedGoals::RemovePassedGoals(
   viapoint_achieved_radius_(0.5)
 {
   getInput("radius", viapoint_achieved_radius_);
-
-  getInput("global_frame", global_frame_);
-  getInput("robot_base_frame", robot_base_frame_);
+  
   tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
   auto node = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
   node->get_parameter("transform_tolerance", transform_tolerance_);
+
+  if(!getInput("global_frame", global_frame_)) {
+    RCLCPP_INFO(node->get_logger(), "Parameter 'global_frame' not provided by behavior tree xml file, trying to get it from ros2 parameter file");
+    if(!node->get_parameter("global_frame", global_frame_)){
+      global_frame_ = "map";
+      RCLCPP_INFO(node->get_logger(), "Parameter 'global_frame' not provided by ros2 parameter file, using default value '%s'",
+        global_frame_.c_str());
+    }
+    else{
+      RCLCPP_INFO(node->get_logger(), "Parameter 'global_frame' provided by ros2 parameter file, using value '%s'",
+        global_frame_.c_str());
+    }
+  }
+  else{
+    RCLCPP_INFO(node->get_logger(), "Parameter 'global_frame' provided by behavior tree xml file, using value '%s'",
+      global_frame_.c_str());
+  }
+
+  if(!getInput("robot_base_frame", robot_base_frame_)) {
+    RCLCPP_INFO(node->get_logger(), "Parameter 'robot_base_frame' not provided by behavior tree xml file, trying to get it from ros2 parameter file");
+    if(!node->get_parameter("robot_base_frame", robot_base_frame_)){
+      robot_base_frame_ = "base_link";
+      RCLCPP_INFO(node->get_logger(), "Parameter 'robot_base_frame' not provided by ros2 parameter file, using default value '%s'",
+        robot_base_frame_.c_str());
+    }
+    else{
+      RCLCPP_INFO(node->get_logger(), "Parameter 'robot_base_frame' provided by ros2 parameter file, using value '%s'",
+        robot_base_frame_.c_str());
+    }
+  }
+  else{
+    RCLCPP_INFO(node->get_logger(), "Parameter 'robot_base_frame' provided by behavior tree xml file, using value '%s'",
+      robot_base_frame_.c_str());
+  }
 }
 
 inline BT::NodeStatus RemovePassedGoals::tick()
