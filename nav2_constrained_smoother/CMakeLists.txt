@@ -27,6 +27,11 @@ set(library_name nav2_constrained_smoother)
 
 include_directories(
   include
+)
+
+target_include_directories(
+  ${library_name}
+  PUBLIC SYSTEM
   ${CERES_INCLUDES}
 )
 
