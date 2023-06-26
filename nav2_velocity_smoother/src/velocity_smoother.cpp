@@ -174,6 +174,12 @@ VelocitySmoother::on_shutdown(const rclcpp_lifecycle::State &)
 
 void VelocitySmoother::inputCommandCallback(const geometry_msgs::msg::Twist::SharedPtr msg)
 {
+  // If message contains NaN or Inf, ignore
+  if (!nav2_util::validateTwist(msg)) {
+    RCLCPP_ERROR(get_logger(), "Velocity message contains NaNs or Infs! Ignoring as invalid!");
+    return;
+  }
+
   command_ = msg;
   last_command_time_ = now();
 }
