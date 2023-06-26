@@ -18,6 +18,7 @@ from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, ExecuteProcess
+from launch.actions import SetEnvironmentVariable
 from launch.conditions import IfCondition
 from launch.substitutions import Command, LaunchConfiguration
 from launch_ros.actions import Node
@@ -86,6 +87,7 @@ def generate_launch_description():
         }],
         arguments=[['/scan' + '@sensor_msgs/msg/LaserScan[ignition.msgs.LaserScan']],
     )
+
     imu_bridge = Node(
         condition=IfCondition(use_simulator),
         package='ros_gz_bridge',
@@ -125,6 +127,16 @@ def generate_launch_description():
             '-R', pose['R'], '-P', pose['P'], '-Y', pose['Y']]
     )
 
+    env_vars = os.getenv('IGN_GAZEBO_RESOURCE_PATH')
+    env_vars += ':' + \
+        os.path.join(get_package_share_directory('turtlebot3_gazebo'), 'models') \
+        + ':' + \
+        os.path.join(get_package_share_directory(
+            'turtlebot3_gazebo'), '..')
+    print('tb3_gz_robot_launch', env_vars)
+
+    set_env_vars_resources = SetEnvironmentVariable('IGN_GAZEBO_RESOURCE_PATH', env_vars)
+
     # Create the launch description and populate
     ld = LaunchDescription()
     ld.add_action(declare_namespace_cmd)
@@ -132,6 +144,8 @@ def generate_launch_description():
     ld.add_action(declare_robot_sdf_cmd)
     ld.add_action(declare_use_simulator_cmd)
     ld.add_action(declare_use_sim_time_cmd)
+
+    ld.add_action(set_env_vars_resources)
 
     ld.add_action(clock_bridge)
     ld.add_action(lidar_bridge)

@@ -20,7 +20,7 @@ from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
-from launch.actions import IncludeLaunchDescription, SetEnvironmentVariable
+from launch.actions import IncludeLaunchDescription
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import Command, LaunchConfiguration, PathJoinSubstitution
@@ -193,14 +193,6 @@ def generate_launch_description():
                           'use_composition': use_composition,
                           'use_respawn': use_respawn}.items())
 
-    env_vars = os.path.join(get_package_share_directory('turtlebot3_gazebo'), 'models') + ':' + \
-        os.path.join(get_package_share_directory(
-            'aws_robomaker_small_warehouse_world'), 'models') + ':' + \
-        os.path.join(get_package_share_directory(
-            'turtlebot3_gazebo'), '..')
-
-    set_env_vars_resources = SetEnvironmentVariable('IGN_GAZEBO_RESOURCE_PATH', env_vars)
-
     gazebo_server = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             PathJoinSubstitution([
@@ -228,7 +220,7 @@ def generate_launch_description():
 
     gz_robot = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(launch_dir, 'gz_robot_launch.py')),
+            os.path.join(launch_dir, 'tb3_gz_robot_launch.py')),
         launch_arguments={'namespace': namespace,
                           'use_simulator': use_simulator,
                           'use_sim_time': use_sim_time,
@@ -266,10 +258,9 @@ def generate_launch_description():
 
     ld.add_action(start_robot_state_publisher_cmd)
 
-    ld.add_action(set_env_vars_resources)
+    ld.add_action(gz_robot)
     ld.add_action(gazebo_server)
     ld.add_action(gazebo_client)
-    ld.add_action(gz_robot)
 
     # Add the actions to launch all of the navigation nodes
     ld.add_action(rviz_cmd)
