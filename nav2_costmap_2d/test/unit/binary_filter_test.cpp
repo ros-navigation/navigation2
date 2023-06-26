@@ -916,9 +916,12 @@ void TestNode::resetBinaryParams()
 }
 
 void TestNode::verifyBinaryParams(
-  bool param1_expected_value, bool param2_expected_value){
+  bool param0_expected_value, bool param1_expected_value){
 
+  // Give some time for the params to be updated
   waitSome(100ms);
+  ASSERT_EQ(params_node_0_->getParameter(), param0_expected_value);
+  ASSERT_EQ(params_node_1_->getParameter(), param1_expected_value);
 }
 
 TEST_F(TestNode, testBinaryState)
