@@ -335,8 +335,8 @@ private:
   std::shared_ptr<BinaryStateSubscriber> binary_state_subscriber_;
   std::shared_ptr<ParamsNode> params_node_0_;
   std::shared_ptr<ParamsNode> params_node_1_;
-  std::shared_ptr<std::thread> params_thread_0_;
-  std::shared_ptr<std::thread> params_thread_1_;
+  std::shared_ptr<nav2_util::NodeThread> params_node_thread_0_;
+  std::shared_ptr<nav2_util::NodeThread> params_node_thread_1_;
   std::shared_ptr<rclcpp::executors::SingleThreadedExecutor> params_executor_0_;
   std::shared_ptr<rclcpp::executors::SingleThreadedExecutor> params_executor_1_;
 };
@@ -523,14 +523,8 @@ void TestNode::createNodeWithParams()
   ASSERT_EQ(params_node_0_->getParameter(), DEFAULT_PARAM_VALUE_0);
   ASSERT_EQ(params_node_1_->getParameter(), DEFAULT_PARAM_VALUE_1);
 
-  params_executor_0_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
-  params_executor_1_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
-
-  params_executor_0_->add_node(params_node_0_);
-  params_executor_1_->add_node(params_node_1_);
-
-  params_thread_0_ = std::make_shared<std::thread>([&]() {params_executor_0_->spin();});
-  params_thread_1_ = std::make_shared<std::thread>([&]() {params_executor_1_->spin();});
+  params_node_thread_0_ = std::make_shared<nav2_util::NodeThread>(params_node_0_);
+  params_node_thread_1_ = std::make_shared<nav2_util::NodeThread>(params_node_1_);
 }
 
 void TestNode::createTFBroadcaster(const std::string & mask_frame, const std::string & global_frame)
@@ -830,65 +824,16 @@ void TestNode::reset()
   mask_publisher_.reset();
   binary_state_subscriber_.reset();
   binary_filter_.reset();
-  // node_.reset();
+  node_.reset();
   tf_listener_.reset();
   tf_broadcaster_.reset();
   tf_buffer_.reset();
 
-  // These are set only if params tests are used
-  if (params_executor_0_ != nullptr) {
-    // RCLCPP_INFO(node_->get_logger(), "cancelling params_executor_0_");
-    params_executor_0_->cancel();
-    // RCLCPP_INFO(node_->get_logger(), "waiting some");
 
-    // RCLCPP_INFO(node_->get_logger(), "removing params_node_0_");
-    params_executor_0_->remove_node(params_node_0_);
-  }
-  if (params_executor_1_ != nullptr) {
-    // RCLCPP_INFO(node_->get_logger(), "cancelling params_executor_1_");
-    params_executor_1_->cancel();
-    params_executor_1_->remove_node(params_node_1_);
-  }
-
-  if (params_node_0_ != nullptr) {
-    // RCLCPP_INFO(node_->get_logger(), "resetting params_node_0_");
     params_node_0_.reset();
-  }
-  if (params_node_1_ != nullptr) {
-    // RCLCPP_INFO(node_->get_logger(), "resetting params_node_1_");
     params_node_1_.reset();
-  }
-
-  if (params_executor_0_ != nullptr) {
-    // RCLCPP_INFO(node_->get_logger(), "resetting params_executor_0_");
-    // TODO (@enricosutera) here probably rclcpp need some time to clean up
-    params_executor_0_.reset();
-    // RCLCPP_INFO(node_->get_logger(), "resetting done");
-  }
-  if (params_executor_1_ != nullptr) {
-    // RCLCPP_INFO(node_->get_logger(), "resetting params_executor_1_");
-    params_executor_1_.reset();
-  }
-
-  if (params_thread_0_ != nullptr) {
-    // RCLCPP_INFO(node_->get_logger(), "resetting params_thread_0_");
-    params_thread_0_->join();
-  }
-  if (params_thread_1_ != nullptr) {
-    // RCLCPP_INFO(node_->get_logger(), "resetting params_thread_1_");
-    params_thread_1_->join();
-  }
-
-  if (params_thread_0_ != nullptr) {
-    // RCLCPP_INFO(node_->get_logger(), "resetting params_thread_0_");
-    params_thread_0_.reset();
-  }
-  if (params_thread_1_ != nullptr) {
-    // RCLCPP_INFO(node_->get_logger(), "resetting params_thread_1_");
-    params_thread_1_.reset();
-  }
-
-  node_.reset();
+  params_node_thread_0_.reset();
+  params_node_thread_1_.reset();
 }
 
 /**
