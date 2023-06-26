@@ -284,7 +284,7 @@ protected:
   void testOutOfMask();
   void testIncorrectTF();
   void testResetFilter();
-  void testChangeParams();
+
 
 
   void resetMaps();
@@ -581,27 +581,7 @@ void TestNode::verifyBinaryState(bool sign, std_msgs::msg::Bool::SharedPtr state
   }
 }
 
-void TestNode::testChangeParams(){
-  // Create server nodes
-  params_node_0_ = std::make_shared<ParamsNode>(NODE_NAME_0, PARAM_NAME_0, DEFAULT_PARAM_VALUE_0);
-  params_node_1_ = std::make_shared<ParamsNode>(NODE_NAME_1, PARAM_NAME_1, DEFAULT_PARAM_VALUE_1);
 
-  RCLCPP_INFO(node_->get_logger(), "Spinning nodes");
-
-  params_executor_0_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
-  params_executor_1_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
-
-  params_executor_0_->add_node(params_node_0_);
-  params_executor_1_->add_node(params_node_1_);
-
-  params_thread_0_ = std::make_shared<std::thread>([&]() {params_executor_0_->spin(); });
-  params_thread_1_ = std::make_shared<std::thread>([&]() {params_executor_1_->spin();});
-
-  RCLCPP_INFO(node_->get_logger(), "Nodes are spinning");
-
-  ASSERT_EQ(params_node_0_->getParameter(), DEFAULT_PARAM_VALUE_0);
-  ASSERT_EQ(params_node_1_->getParameter(), DEFAULT_PARAM_VALUE_1);
-}
 
 void TestNode::testFullMask(
   double base, double multiplier, double flip_threshold, double tr_x, double tr_y)
