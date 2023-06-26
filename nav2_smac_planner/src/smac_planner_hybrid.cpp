@@ -398,9 +398,9 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
     visualization_msgs::msg::Marker m = createMarker(_global_frame, _clock->now());
 
     for (size_t i = 0; i < plan.poses.size(); i++) {
-      const double & x = plan.poses[i].pose.position.x;
-      const double & y = plan.poses[i].pose.position.y;
-      const double & yaw = tf2::getYaw(plan.poses[i].pose.orientation);
+      const double x = plan.poses[i].pose.position.x;
+      const double y = plan.poses[i].pose.position.y;
+      const double yaw = tf2::getYaw(plan.poses[i].pose.orientation);
 
       std::vector<geometry_msgs::msg::Point> footprint =
         transformFootprintToEdges(x, y, yaw, _costmap_ros->getRobotFootprint());
