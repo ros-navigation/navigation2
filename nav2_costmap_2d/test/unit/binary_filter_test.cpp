@@ -281,6 +281,7 @@ protected:
     double base, double multiplier, double flip_threshold, double tr_x, double tr_y);
   void testSimpleMask(
     double base, double multiplier, double flip_threshold, double tr_x, double tr_y);
+  void testSimpleFlip(bool flip);
   void testOutOfMask();
   void testIncorrectTF();
   void testResetFilter();
@@ -724,6 +725,57 @@ void TestNode::testSimpleMask(
   ASSERT_EQ(binary_state->data, prev_state);  // Binary state won't be updated
 }
 
+void TestNode::testSimpleFlip(bool flip){
+
+  const double base = 0.0;
+  const double multiplier = 1.0;
+  const double flip_threshold = 10.0;
+  const int min_i = 0;
+  const int min_j = 0;
+  const int max_i = width_ + 4;
+  const int max_j = height_ + 4;
+
+  geometry_msgs::msg::Pose2D pose;
+  std_msgs::msg::Bool::SharedPtr binary_state;
+
+  unsigned int x, y;
+  bool prev_sign = false;
+  bool sign;
+
+  RCLCPP_INFO(node_->get_logger(), "Flip: %d", flip);
+  RCLCPP_INFO(node_->get_logger(), "Binary filter state: %d", getBinaryState()->data);
+  RCLCPP_INFO(node_->get_logger(), "Binary default state: %d", getDefaultState());
+
+  if (flip){
+    // data = <some_middle_value>
+    x = width_ / 2 - 1;
+    y = height_ / 2 - 1;
+  }
+  else{
+    // data = 0
+    x = 1;
+    y = 0;
+  }
+  pose.x = x;
+  pose.y = y;
+  publishTransform();
+  binary_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
+
+  sign = getSign(x, y, base, multiplier, flip_threshold);
+  if (prev_sign != sign) {
+    // Binary filter just flipped
+    RCLCPP_INFO(
+      node_->get_logger(), "Binary filter just flipped from %d to %d", prev_sign, sign);
+    binary_state = waitBinaryState();
+    prev_sign = sign;
+  } else {
+    RCLCPP_INFO(
+      node_->get_logger(), "Binary filter unchanged: %d", getBinaryState()->data);
+    // Binary filter state should not be changed
+    binary_state = getBinaryState();
+  }
+  verifyBinaryState(sign, binary_state);
+}
 void TestNode::testOutOfMask()
 {
   // base, multiplier and flip_threshold should have values as below for this test
@@ -911,7 +963,7 @@ TEST_F(TestNode, testUnchangedBinaryParams)
   ASSERT_TRUE(createBinaryFilter("map", 10.0));
 
   // Basic flow with no changes
-  testSimpleMask(0.0, 1.0, 10.0, NO_TRANSLATION, NO_TRANSLATION);
+  testSimpleFlip(false);
   verifyBinaryParams(true, false);
 
   // Clean-up
@@ -930,7 +982,7 @@ TEST_F(TestNode, testChangedBinaryParams)
   setDefaultState(true);
   ASSERT_TRUE(createBinaryFilter("map", 10.0));
 
-  testSimpleMask(0.0, 1.0, 10.0, NO_TRANSLATION, NO_TRANSLATION);
+  testSimpleFlip(true);
   verifyBinaryParams(false, true);
 
   // Clean-up
