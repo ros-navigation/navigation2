@@ -114,6 +114,7 @@ This process is then repeated a number of times and returns a converged solution
  | offset_from_furthest      | double | Default 20. Checks that the candidate trajectories are sufficiently far along their way tracking the path to apply the alignment critic. This ensures that path alignment is only considered when actually tracking the path, preventing awkward initialization motions preventing the robot from leaving the path to achieve the appropriate heading.  |
  | trajectory_point_step      | double | Default 4. Step of trajectory points to evaluate for path distance to reduce compute time. Between 1-10 is typically reasonable.   |
  | max_path_occupancy_ratio   | double | Default 0.07 (7%). Maximum proportion of the path that can be occupied before this critic is not considered to allow the obstacle and path follow critics to avoid obstacles while following the path's intent in presence of dynamic objects in the scene.  |
+ | use_path_orientations   | bool | Default false. Whether to consider path's orientations in path alignment, which can be useful when paired with feasible smac planners to incentivize directional changes only where/when the smac planner requests them. If you want the robot to deviate and invert directions where the controller sees fit, keep as false. If your plans do not contain orientation information (e.g. navfn), keep as false.  |
 
 #### Path Angle Critic
  | Parameter                 | Type   | Definition                                                                                                  |
@@ -214,6 +215,7 @@ controller_server:
         trajectory_point_step: 3
         threshold_to_consider: 0.40
         offset_from_furthest: 20
+        use_path_orientations: false
       PathFollowCritic:
         enabled: true
         cost_power: 1
