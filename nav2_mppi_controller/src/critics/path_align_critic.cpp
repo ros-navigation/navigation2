@@ -34,9 +34,8 @@ void PathAlignCritic::initialize()
   getParam(trajectory_point_step_, "trajectory_point_step", 4);
   getParam(
     threshold_to_consider_,
-    "threshold_to_consider", 0.40f);
+    "threshold_to_consider", 0.5);
   getParam(use_path_orientations_, "use_path_orientations", false);
-
 
   RCLCPP_INFO(
     logger_,

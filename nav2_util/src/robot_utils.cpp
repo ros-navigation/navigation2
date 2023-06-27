@@ -15,6 +15,7 @@
 // limitations under the License.
 
 #include <string>
+#include <cmath>
 #include <memory>
 
 #include "tf2/convert.h"
@@ -139,6 +140,35 @@ bool getTransform(
 
   // Convert TransformStamped to TF2 transform
   tf2::fromMsg(transform.transform, tf2_transform);
+  return true;
+}
+
+bool validateTwist(const geometry_msgs::msg::Twist & msg)
+{
+  if (std::isinf(msg.linear.x) || std::isnan(msg.linear.x)) {
+    return false;
+  }
+
+  if (std::isinf(msg.linear.y) || std::isnan(msg.linear.y)) {
+    return false;
+  }
+
+  if (std::isinf(msg.linear.z) || std::isnan(msg.linear.z)) {
+    return false;
+  }
+
+  if (std::isinf(msg.angular.x) || std::isnan(msg.angular.x)) {
+    return false;
+  }
+
+  if (std::isinf(msg.angular.y) || std::isnan(msg.angular.y)) {
+    return false;
+  }
+
+  if (std::isinf(msg.angular.z) || std::isnan(msg.angular.z)) {
+    return false;
+  }
+
   return true;
 }
 

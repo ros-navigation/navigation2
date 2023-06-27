@@ -37,7 +37,7 @@ void PathAngleCritic::initialize()
   getParam(weight_, "cost_weight", 2.0);
   getParam(
     threshold_to_consider_,
-    "threshold_to_consider", 0.40f);
+    "threshold_to_consider", 0.5);
   getParam(
     max_angle_to_furthest_,
     "max_angle_to_furthest", 1.2);
@@ -88,10 +88,11 @@ void PathAngleCritic::score(CriticData & data)
     xt::abs(utils::shortest_angular_distance(data.trajectories.yaws, yaws_between_points));
 
   if (reversing_allowed_ && !forward_preference_) {
-    data.costs += xt::pow(
-      xt::mean(
-        xt::where(yaws < M_PI_2, yaws, utils::normalize_angles(yaws + M_PI)),
-        {1}, immediate) * weight_, power_);
+    const auto yaws_between_points_corrected = xt::where(
+      yaws < M_PI_2, yaws_between_points, utils::normalize_angles(yaws_between_points + M_PI));
+    const auto corrected_yaws = xt::abs(
+      utils::shortest_angular_distance(data.trajectories.yaws, yaws_between_points_corrected));
+    data.costs += xt::pow(xt::mean(corrected_yaws, {1}, immediate) * weight_, power_);
   } else {
     data.costs += xt::pow(xt::mean(yaws, {1}, immediate) * weight_, power_);
   }
