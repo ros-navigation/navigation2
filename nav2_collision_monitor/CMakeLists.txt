@@ -90,11 +90,17 @@ ament_target_dependencies(${monitor_executable_name}
   ${dependencies}
 )
 
+ament_target_dependencies(${detector_executable_name}
+  ${dependencies}
+)
+
 rclcpp_components_register_nodes(${monitor_library_name} "nav2_collision_monitor::CollisionMonitor")
+
+rclcpp_components_register_nodes(${detector_library_name} "nav2_collision_monitor::CollisionDetector")
 
 ### Install ###
 
-install(TARGETS ${monitor_library_name}
+install(TARGETS ${monitor_library_name} ${detector_library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
