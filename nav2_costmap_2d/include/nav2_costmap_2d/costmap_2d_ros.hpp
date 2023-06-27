@@ -378,7 +378,7 @@ protected:
   double robot_radius_;
   bool rolling_window_{false};     ///< Whether to use a rolling window version of the costmap
   bool track_unknown_space_{false};
-  double transform_tolerance_{0};  ///< The timeout before transform errors
+  double transform_tolerance_{0.0};  ///< The timeout before transform errors
 
   // Derived parameters
   bool use_radius_{false};

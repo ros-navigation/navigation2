@@ -124,7 +124,7 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     get_logger(),
     "Planner Server has %s planners available.", planner_ids_concat_.c_str());
 
-  double expected_planner_frequency {};
+  double expected_planner_frequency {0.0};
   get_parameter("expected_planner_frequency", expected_planner_frequency);
   if (expected_planner_frequency > 0) {
     max_planner_duration_ = 1 / expected_planner_frequency;
