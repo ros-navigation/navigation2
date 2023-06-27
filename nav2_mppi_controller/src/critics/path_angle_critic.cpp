@@ -43,9 +43,6 @@ void PathAngleCritic::initialize()
   getParam(
     max_angle_to_furthest_,
     "max_angle_to_furthest", 1.2);
-  getParam(
-    forward_preference_,
-    "forward_preference", true);
 
   int mode = 0;
   getParam(mode, "mode", mode);

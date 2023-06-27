@@ -468,6 +468,31 @@ inline float posePointAngle(
 }
 
 /**
+ * @brief evaluate angle from pose (have angle) to point (no angle)
+ * @param pose pose
+ * @param point_x Point to find angle relative to X axis
+ * @param point_y Point to find angle relative to Y axis
+ * @param point_yaw Yaw of the point to consider along Z axis
+ * @return Angle between two points
+ */
+inline double posePointAngle(
+  const geometry_msgs::msg::Pose & pose,
+  double point_x, double point_y, double point_yaw)
+{
+  double pose_x = pose.position.x;
+  double pose_y = pose.position.y;
+  double pose_yaw = tf2::getYaw(pose.orientation);
+
+  double yaw = atan2(point_y - pose_y, point_x - pose_x);
+
+  if (abs(angles::shortest_angular_distance(yaw, point_yaw)) > M_PI_2) {
+    yaw = angles::normalize_angle(yaw + M_PI);
+  }
+
+  return abs(angles::shortest_angular_distance(yaw, pose_yaw));
+}
+
+/**
  * @brief Apply Savisky-Golay filter to optimal trajectory
  * @param control_sequence Sequence to apply filter to
  * @param control_history Recent set of controls for edge-case handling
