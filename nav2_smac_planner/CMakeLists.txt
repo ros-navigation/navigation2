@@ -83,10 +83,6 @@ add_library(${library_name} SHARED
   src/node_basic.cpp
 )
 
-include(CMakePrintHelpers)
-cmake_print_properties(TARGETS ompl::ompl  PROPERTIES
-                       LOCATION INTERFACE_INCLUDE_DIRECTORIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES)
-
 target_link_libraries(${library_name} Eigen3::Eigen ompl::ompl ${OpenMP_LIBRARIES}  OpenMP::OpenMP_CXX)
 
 ament_target_dependencies(${library_name}

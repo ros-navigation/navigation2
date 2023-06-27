@@ -85,7 +85,6 @@ get_target_property(xt_interface_include_dirs xtensor::xtensor INTERFACE_INCLUDE
 set_target_properties(xtensor PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES ${xt_interface_include_dirs})
 
 foreach(lib IN ITEMS ${libraries})
-  message(STATUS ${lib})
   target_compile_options(${lib} PUBLIC -fconcepts)
   target_include_directories(${lib}
     PUBLIC

@@ -65,9 +65,6 @@ ament_target_dependencies(${library_name}
 
 target_link_libraries(${executable_name} PRIVATE ${library_name})
 
-include(CMakePrintHelpers)
-cmake_print_properties(TARGETS ${library_name} cv_bridge::cv_bridge PROPERTIES INTERFACE_INCLUDE_DIRECTORIES)
-
 add_library(wait_at_waypoint SHARED plugins/wait_at_waypoint.cpp)
 ament_target_dependencies(wait_at_waypoint ${dependencies})
 
