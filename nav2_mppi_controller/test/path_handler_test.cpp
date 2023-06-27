@@ -38,9 +38,9 @@ public:
   PathHandlerWrapper()
   : PathHandler() {}
 
-  void pruneGlobalPlanWrapper(const PathIterator end)
+  void pruneGlobalPlanWrapper(nav_msgs::msg::Path & path, const PathIterator end)
   {
-    return pruneGlobalPlan(end);
+    return prunePlan(path, end);
   }
 
   double getMaxCostmapDistWrapper()
@@ -66,6 +66,21 @@ public:
   {
     return transformToGlobalPlanFrame(pose);
   }
+
+  void setGlobalPlanUpToInversion(const nav_msgs::msg::Path & path)
+  {
+    global_plan_up_to_inversion_ = path;
+  }
+
+  bool isWithinInversionTolerancesWrapper(const geometry_msgs::msg::PoseStamped & robot_pose)
+  {
+    return isWithinInversionTolerances(robot_pose);
+  }
+
+  nav_msgs::msg::Path & getInvertedPath()
+  {
+    return global_plan_up_to_inversion_;
+  }
 };
 
 TEST(PathHandlerTests, GetAndPrunePath)
@@ -82,7 +97,7 @@ TEST(PathHandlerTests, GetAndPrunePath)
   EXPECT_EQ(path.poses.size(), rtn_path.poses.size());
 
   PathIterator it = rtn_path.poses.begin() + 5;
-  handler.pruneGlobalPlanWrapper(it);
+  handler.pruneGlobalPlanWrapper(rtn_path, it);
   auto rtn2_path = handler.getPath();
   EXPECT_EQ(rtn2_path.poses.size(), 6u);
 }
@@ -131,10 +146,10 @@ TEST(PathHandlerTests, TestBounds)
   handler.setPath(path);
   auto [transformed_plan, closest] =
     handler.getGlobalPlanConsideringBoundsInCostmapFrameWrapper(robot_pose);
-  auto & path_in = handler.getPath();
-  EXPECT_EQ(closest - path_in.poses.begin(), 25);
-  handler.pruneGlobalPlanWrapper(closest);
-  auto & path_pruned = handler.getPath();
+  auto & path_inverted = handler.getInvertedPath();
+  EXPECT_EQ(closest - path_inverted.poses.begin(), 25);
+  handler.pruneGlobalPlanWrapper(path_inverted, closest);
+  auto & path_pruned = handler.getInvertedPath();
   EXPECT_EQ(path_pruned.poses.size(), 75u);
 }
 
@@ -188,4 +203,47 @@ TEST(PathHandlerTests, TestTransforms)
   // Put it all together
   auto final_path = handler.transformPath(robot_pose);
   EXPECT_EQ(final_path.poses.size(), path_out.poses.size());
+}
+
+TEST(PathHandlerTests, TestInversionToleranceChecks)
+{
+  nav_msgs::msg::Path path;
+  for (unsigned int i = 0; i != 10; i++) {
+    geometry_msgs::msg::PoseStamped pose;
+    pose.pose.position.x = static_cast<double>(i);
+    path.poses.push_back(pose);
+  }
+  path.poses.back().pose.orientation.w = 1;
+
+  PathHandlerWrapper handler;
+  handler.setGlobalPlanUpToInversion(path);
+
+  // Not near (0,0)
+  geometry_msgs::msg::PoseStamped robot_pose;
+  EXPECT_FALSE(handler.isWithinInversionTolerancesWrapper(robot_pose));
+
+  // Exactly on top of it
+  robot_pose.pose.position.x = 9;
+  robot_pose.pose.orientation.w = 1.0;
+  EXPECT_TRUE(handler.isWithinInversionTolerancesWrapper(robot_pose));
+
+  // Laterally of it
+  robot_pose.pose.position.y = 9;
+  EXPECT_FALSE(handler.isWithinInversionTolerancesWrapper(robot_pose));
+
+  // On top but off angled
+  robot_pose.pose.position.y = 0;
+  robot_pose.pose.orientation.z = 0.8509035;
+  robot_pose.pose.orientation.w = 0.525322;
+  EXPECT_FALSE(handler.isWithinInversionTolerancesWrapper(robot_pose));
+
+  // On top but off angled within tolerances
+  robot_pose.pose.position.y = 0;
+  robot_pose.pose.orientation.w = 0.9961947;
+  robot_pose.pose.orientation.z = 0.0871558;
+  EXPECT_TRUE(handler.isWithinInversionTolerancesWrapper(robot_pose));
+
+  // Offset spatially + off angled but both within tolerances
+  robot_pose.pose.position.x = 9.10;
+  EXPECT_TRUE(handler.isWithinInversionTolerancesWrapper(robot_pose));
 }
