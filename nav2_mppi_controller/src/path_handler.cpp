@@ -174,7 +174,9 @@ void PathHandler::setPath(const nav_msgs::msg::Path & plan)
 {
   global_plan_ = plan;
   global_plan_up_to_inversion_ = global_plan_;
-  inversion_locale_ = utils::removePosesAfterFirstInversion(global_plan_up_to_inversion_);
+  if (enforce_path_inversion_) {
+    inversion_locale_ = utils::removePosesAfterFirstInversion(global_plan_up_to_inversion_);
+  }
 }
 
 nav_msgs::msg::Path & PathHandler::getPath() {return global_plan_;}
