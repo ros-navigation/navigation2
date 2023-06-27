@@ -203,6 +203,17 @@ TEST(UtilsTests, AnglesTests)
   EXPECT_NEAR(posePointAngle(pose, point_x, point_y, forward_preference), 0.0, 1e-6);
   forward_preference = true;
   EXPECT_NEAR(posePointAngle(pose, point_x, point_y, forward_preference), M_PI, 1e-6);
+
+  // Test point-pose angle with goal yaws
+  point_x = 1.0;
+  double point_yaw = 0.0;
+  EXPECT_NEAR(posePointAngle(pose, point_x, point_y, point_yaw), 0.0, 1e-6);
+  point_yaw = M_PI;
+  EXPECT_NEAR(posePointAngle(pose, point_x, point_y, point_yaw), M_PI, 1e-6);
+  point_yaw = 0.1;
+  EXPECT_NEAR(posePointAngle(pose, point_x, point_y, point_yaw), 0.0, 1e-3);
+  point_yaw = 3.04159;
+  EXPECT_NEAR(posePointAngle(pose, point_x, point_y, point_yaw), M_PI, 1e-3);
 }
 
 TEST(UtilsTests, FurthestAndClosestReachedPoint)
