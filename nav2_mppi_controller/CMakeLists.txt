@@ -75,6 +75,7 @@ add_library(mppi_critics SHARED
 set(libraries mppi_controller mppi_critics)
 
 foreach(lib IN LISTS libraries)
+  target_compile_options(${lib} PUBLIC -fconcepts)
   target_include_directories(${lib} PUBLIC include ${xsimd_INCLUDE_DIRS} ${OpenMP_INCLUDE_DIRS})
   target_link_libraries(${lib} xtensor xtensor::optimize xtensor::use_xsimd)
   ament_target_dependencies(${lib} ${dependencies_pkgs})
