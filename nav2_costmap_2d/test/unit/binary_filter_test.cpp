@@ -217,28 +217,12 @@ public:
     parameter_name_ = parameter_name;
     this->declare_parameter(parameter_name_, rclcpp::ParameterValue(default_parameter_value_));
     this->set_parameter(rclcpp::Parameter(parameter_name_, default_parameter_value_));
-    auto params_callback_handle_ = this->add_on_set_parameters_callback(std::bind(&ParamsNode::parametersCallback, this, std::placeholders::_1));
     RCLCPP_INFO(this->get_logger(), " [%s] Initialized params node", node_name);
   }
 
   bool getParameter()
   {
-    return parameter_value_;
-  }
-
-  rcl_interfaces::msg::SetParametersResult parametersCallback(const std::vector<rclcpp::Parameter> &parameters){
-    RCLCPP_INFO(this->get_logger(), "Parameters callback");
-    for (const auto &parameter : parameters)
-    {
-      if (parameter.get_name() == parameter_name_ && parameter.get_type_name() == "bool")
-      {
-        RCLCPP_INFO(this->get_logger(), "Setting parameter: %s", parameter.get_name().c_str());
-        parameter_value_ = parameter.as_bool();
-      }
-    }
-    rcl_interfaces::msg::SetParametersResult result;
-    result.successful = true;
-    return result;
+    return this->get_parameter(parameter_name_).as_bool();
   }
 
   ~ParamsNode()
@@ -249,7 +233,6 @@ public:
   bool parameter_value_{false};
   std::string parameter_name_{""};
 private:
-
 };  // ParamsNode
 
 class TestNode : public ::testing::Test
