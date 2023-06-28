@@ -981,15 +981,14 @@ TEST_F(TestNode, testUnsetDefaultBinaryParams)
   createMaps("map");
   publishMaps(nav2_costmap_2d::BINARY_FILTER, MASK_TOPIC, 0.0, 1.0);
 
-  // Defaut value is not set
+  // Defaut value is not set                          (false)
   addBinaryParams("Param1", NODE_NAME_0, PARAM_NAME_0, false, true);
   addBinaryParams("Param2", NODE_NAME_1, PARAM_NAME_1, false, false);
   createNodeWithParams();
-  setDefaultState(true);
   ASSERT_TRUE(createBinaryFilter("map", 10.0));
   
   // Basic flow with changes
-  testSimpleMask(0.0, 1.0, 10.0, NO_TRANSLATION, NO_TRANSLATION);
+  testSimpleFlip(true);
 
   verifyBinaryParams(!getDefaultState(), !getDefaultState());
 
@@ -1008,11 +1007,10 @@ TEST_F(TestNode, testWrongBinaryParam)
   addBinaryParams("Param1", "wrong_name", PARAM_NAME_0, true, true);
   addBinaryParams("Param2", NODE_NAME_1, PARAM_NAME_1, true, false);
   createNodeWithParams();
-  setDefaultState(true);
   ASSERT_TRUE(createBinaryFilter("map", 10.0));
 
   // Basic flow with changes
-  testSimpleMask(0.0, 1.0, 10.0, NO_TRANSLATION, NO_TRANSLATION);
+  testSimpleFlip(true);
 
   verifyBinaryParams(DEFAULT_PARAM_VALUE_0, !getDefaultState());
 
