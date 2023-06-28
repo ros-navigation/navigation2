@@ -759,6 +759,7 @@ void TestNode::testSimpleFlip(bool flip){
   }
   verifyBinaryState(sign, binary_state);
 }
+
 void TestNode::testOutOfMask()
 {
   // base, multiplier and flip_threshold should have values as below for this test
@@ -964,7 +965,6 @@ TEST_F(TestNode, testChangedBinaryParams)
   addBinaryParams("Param1", NODE_NAME_0, PARAM_NAME_0, true, true);
   addBinaryParams("Param2", NODE_NAME_1, PARAM_NAME_1, true, false);
   createNodeWithParams();
-  setDefaultState(true);
   ASSERT_TRUE(createBinaryFilter("map", 10.0));
 
   testSimpleFlip(true);
