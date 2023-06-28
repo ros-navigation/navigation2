@@ -331,7 +331,7 @@ void BinaryFilter::changeParameters(const bool state){
           RCLCPP_ERROR(logger_, "BinaryFilter: Failed to change parameter %s", bool_param.name.c_str());
         }
         else {
-        RCLCPP_DEBUG(logger_, "BinaryFilter: Successfully changed parameter");
+        RCLCPP_DEBUG(logger_, "BinaryFilter: Successfully changed parameter to %s", bool_param.value.bool_value ? "true" : "false");
         }
       };
 
