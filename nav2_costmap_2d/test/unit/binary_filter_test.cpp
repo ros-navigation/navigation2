@@ -217,7 +217,6 @@ public:
     parameter_name_ = parameter_name;
     this->declare_parameter(parameter_name_, rclcpp::ParameterValue(default_parameter_value_));
     this->set_parameter(rclcpp::Parameter(parameter_name_, default_parameter_value_));
-    RCLCPP_INFO(this->get_logger(), " [%s] Initialized params node", node_name);
   }
 
   bool getParameter()
