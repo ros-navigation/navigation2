@@ -997,7 +997,7 @@ TEST_F(TestNode, testUnsetDefaultBinaryParams)
   reset();
 }
 
-TEST_F(TestNode, testWrongBinaryParam)
+TEST_F(TestNode, testWrongBinaryParamNode)
 {
   // Initilize test system
   createMaps("map");
@@ -1005,6 +1005,28 @@ TEST_F(TestNode, testWrongBinaryParam)
 
   // Set woring Param1 node name
   addBinaryParams("Param1", "wrong_name", PARAM_NAME_0, true, true);
+  addBinaryParams("Param2", NODE_NAME_1, PARAM_NAME_1, true, false);
+  createNodeWithParams();
+  ASSERT_TRUE(createBinaryFilter("map", 10.0));
+
+  // Basic flow with changes
+  testSimpleFlip(true);
+
+  verifyBinaryParams(DEFAULT_PARAM_VALUE_0, !getDefaultState());
+
+  // Clean-up
+  binary_filter_->resetFilter();
+  reset();
+}
+
+TEST_F(TestNode, testWrongBinaryParamName)
+{
+  // Initilize test system
+  createMaps("map");
+  publishMaps(nav2_costmap_2d::BINARY_FILTER, MASK_TOPIC, 0.0, 1.0);
+
+  // Set woring Param1 node name
+  addBinaryParams("Param1", NODE_NAME_0, "wrong_param_name", true, true);
   addBinaryParams("Param2", NODE_NAME_1, PARAM_NAME_1, true, false);
   createNodeWithParams();
   ASSERT_TRUE(createBinaryFilter("map", 10.0));
