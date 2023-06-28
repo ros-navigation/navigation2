@@ -127,13 +127,12 @@ def generate_launch_description():
             '-R', pose['R'], '-P', pose['P'], '-Y', pose['Y']]
     )
 
-    env_vars = os.getenv('IGN_GAZEBO_RESOURCE_PATH')
+    env_vars = os.getenv('IGN_GAZEBO_RESOURCE_PATH', default="")
     env_vars += ':' + \
         os.path.join(get_package_share_directory('turtlebot3_gazebo'), 'models') \
         + ':' + \
         os.path.join(get_package_share_directory(
             'turtlebot3_gazebo'), '..')
-    print('tb3_gz_robot_launch', env_vars)
 
     set_env_vars_resources = SetEnvironmentVariable('IGN_GAZEBO_RESOURCE_PATH', env_vars)
 
