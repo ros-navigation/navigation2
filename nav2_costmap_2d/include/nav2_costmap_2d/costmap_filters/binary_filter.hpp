@@ -141,6 +141,9 @@ private:
   std::vector<binary_parameter_t> binary_parameters_info_;
   // List of clients for changing parameters
   std::vector<rclcpp::Client<rcl_interfaces::srv::SetParameters>::SharedPtr> change_parameters_clients_;
+
+  // Timeout for waiting set_parameters service in ms
+  int64_t change_parameter_timeout_;
 };
 
 }  // namespace nav2_costmap_2d

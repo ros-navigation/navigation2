@@ -53,7 +53,7 @@ BinaryFilter::BinaryFilter()
   binary_state_pub_(nullptr), filter_mask_(nullptr), global_frame_(""),
   default_state_(false), binary_state_(default_state_),
   binary_parameters_{""}, binary_parameters_info_{},
-  change_parameters_clients_{}
+  change_parameters_clients_{}, change_parameter_timeout_()
 {
 }
 
@@ -77,6 +77,8 @@ void BinaryFilter::initializeFilter(
   node->get_parameter(name_ + "." + "flip_threshold", flip_threshold_);
   declareParameter("binary_parameters", rclcpp::ParameterValue(std::vector<std::string>()));
   node->get_parameter(name_ + "." + "binary_parameters", binary_parameters_);
+  declareParameter("change_parameter_timeout", rclcpp::ParameterValue(10));
+  node->get_parameter(name_ + "." + "change_parameter_timeout", change_parameter_timeout_);
 
   for (std::string param : binary_parameters_) {
     binary_parameter_t param_struct;  
@@ -298,8 +300,7 @@ void BinaryFilter::changeState(const bool state)
 
 void BinaryFilter::changeParameters(const bool state){
   for (size_t param_index = 0; param_index < binary_parameters_info_.size(); ++param_index) {
-    // TODO (@enricosutera) timeout as parameter
-    if(!change_parameters_clients_.at(param_index)->wait_for_service(std::chrono::microseconds(100))) {
+    if(!change_parameters_clients_.at(param_index)->wait_for_service(std::chrono::milliseconds(change_parameter_timeout_))) {
         RCLCPP_WARN(logger_, "BinaryFilter:  service %s not available. Skipping ...", 
           change_parameters_clients_.at(param_index)->get_service_name());
           continue;
