@@ -41,9 +41,22 @@ void AssistedTeleopAction::on_tick()
   }
 }
 
+BT::NodeStatus AssistedTeleopAction::on_success()
+{
+  setOutput("error_code_id", ActionGoal::NONE);
+  return BT::NodeStatus::SUCCESS;
+}
+
 BT::NodeStatus AssistedTeleopAction::on_aborted()
 {
+  setOutput("error_code_id", result_.result->error_code);
   return is_recovery_ ? BT::NodeStatus::FAILURE : BT::NodeStatus::SUCCESS;
+}
+
+BT::NodeStatus AssistedTeleopAction::on_cancelled()
+{
+  setOutput("error_code_id", ActionGoal::NONE);
+  return BT::NodeStatus::SUCCESS;
 }
 
 }  // namespace nav2_behavior_tree

@@ -1,0 +1,36 @@
+{{$pathParts := splitList "/" .OriginalReq.URL.Path}}
+{{$markdownFilename := default "index" (slice $pathParts 2 | join "/")}}
+{{$markdownFilePath := printf "/%s.md" $markdownFilename}}
+{{if not (fileExists $markdownFilePath)}}{{httpError 404}}{{end}}
+{{$markdownFile := (include $markdownFilePath | splitFrontMatter)}}
+{{$title := default $markdownFilename $markdownFile.Meta.title}}
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1, minimal-ui">
+		<title>{{$title}}</title>
+		<meta name="color-scheme" content="light dark">
+		<link rel="stylesheet" href="github-markdown.css">
+		<link rel="icon" type="image/webp" href="/media/icons/nav2/any_icon_x512.webp">
+
+		<style>
+			body {
+				box-sizing: border-box;
+				min-width: 200px;
+				max-width: 980px;
+				margin: 0 auto;
+				padding: 45px;
+			}
+
+			@media (prefers-color-scheme: dark) {
+				body {
+					background-color: #0d1117;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<article class="markdown-body">{{markdown $markdownFile.Body}}</article>
+	</body>
+</html>

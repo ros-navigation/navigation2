@@ -28,15 +28,14 @@ void ConstraintCritic::initialize()
     logger_, "ConstraintCritic instantiated with %d power and %f weight.",
     power_, weight_);
 
-  float vx_max, vy_max, vx_min, vy_min;
+  float vx_max, vy_max, vx_min;
   getParentParam(vx_max, "vx_max", 0.5);
   getParentParam(vy_max, "vy_max", 0.0);
   getParentParam(vx_min, "vx_min", -0.35);
-  getParentParam(vy_min, "vy_min", 0.0);
 
   const float min_sgn = vx_min > 0.0 ? 1.0 : -1.0;
   max_vel_ = std::sqrt(vx_max * vx_max + vy_max * vy_max);
-  min_vel_ = min_sgn * std::sqrt(vx_min * vx_min + vy_min * vy_min);
+  min_vel_ = min_sgn * std::sqrt(vx_min * vx_min + vy_max * vy_max);
 }
 
 void ConstraintCritic::score(CriticData & data)

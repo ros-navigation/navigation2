@@ -63,12 +63,12 @@ void AssistedTeleop::onConfigure()
       this, std::placeholders::_1));
 }
 
-Status AssistedTeleop::onRun(const std::shared_ptr<const AssistedTeleopAction::Goal> command)
+ResultStatus AssistedTeleop::onRun(const std::shared_ptr<const AssistedTeleopAction::Goal> command)
 {
   preempt_teleop_ = false;
   command_time_allowance_ = command->time_allowance;
   end_time_ = steady_clock_.now() + command_time_allowance_;
-  return Status::SUCCEEDED;
+  return ResultStatus{Status::SUCCEEDED, AssistedTeleopActionGoal::NONE};
 }
 
 void AssistedTeleop::onActionCompletion()
@@ -77,7 +77,7 @@ void AssistedTeleop::onActionCompletion()
   preempt_teleop_ = false;
 }
 
-Status AssistedTeleop::onCycleUpdate()
+ResultStatus AssistedTeleop::onCycleUpdate()
 {
   feedback_->current_teleop_duration = elasped_time_;
   action_server_->publish_feedback(feedback_);
@@ -89,13 +89,13 @@ Status AssistedTeleop::onCycleUpdate()
       logger_,
       "Exceeded time allowance before reaching the " << behavior_name_.c_str() <<
         "goal - Exiting " << behavior_name_.c_str());
-    return Status::FAILED;
+    return ResultStatus{Status::FAILED, AssistedTeleopActionGoal::TIMEOUT};
   }
 
   // user states that teleop was successful
   if (preempt_teleop_) {
     stopRobot();
-    return Status::SUCCEEDED;
+    return ResultStatus{Status::SUCCEEDED, AssistedTeleopActionGoal::NONE};
   }
 
   geometry_msgs::msg::PoseStamped current_pose;
@@ -107,8 +107,9 @@ Status AssistedTeleop::onCycleUpdate()
       logger_,
       "Current robot pose is not available for " <<
         behavior_name_.c_str());
-    return Status::FAILED;
+    return ResultStatus{Status::FAILED, AssistedTeleopActionGoal::TF_ERROR};
   }
+
   geometry_msgs::msg::Pose2D projected_pose;
   projected_pose.x = current_pose.pose.position.x;
   projected_pose.y = current_pose.pose.position.y;
@@ -147,7 +148,7 @@ Status AssistedTeleop::onCycleUpdate()
   }
   vel_pub_->publish(std::move(scaled_twist));
 
-  return Status::RUNNING;
+  return ResultStatus{Status::RUNNING, AssistedTeleopActionGoal::NONE};
 }
 
 geometry_msgs::msg::Pose2D AssistedTeleop::projectPose(

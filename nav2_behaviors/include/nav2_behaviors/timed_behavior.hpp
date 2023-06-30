@@ -15,6 +15,8 @@
 #ifndef NAV2_BEHAVIORS__TIMED_BEHAVIOR_HPP_
 #define NAV2_BEHAVIORS__TIMED_BEHAVIOR_HPP_
 
+
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <cmath>
@@ -35,6 +37,7 @@
 #include "tf2/utils.h"
 #pragma GCC diagnostic pop
 
+
 namespace nav2_behaviors
 {
 
@@ -43,6 +46,12 @@ enum class Status : int8_t
   SUCCEEDED = 1,
   FAILED = 2,
   RUNNING = 3,
+};
+
+struct ResultStatus
+{
+  Status status;
+  uint16_t error_code{0};
 };
 
 using namespace std::chrono_literals;  //NOLINT
@@ -73,7 +82,7 @@ public:
   // Derived classes can override this method to catch the command and perform some checks
   // before getting into the main loop. The method will only be called
   // once and should return SUCCEEDED otherwise behavior will return FAILED.
-  virtual Status onRun(const std::shared_ptr<const typename ActionT::Goal> command) = 0;
+  virtual ResultStatus onRun(const std::shared_ptr<const typename ActionT::Goal> command) = 0;
 
 
   // This is the method derived classes should mainly implement
@@ -81,7 +90,7 @@ public:
   // Implement the behavior such that it runs some unit of work on each call
   // and provides a status. The Behavior will finish once SUCCEEDED is returned
   // It's up to the derived class to define the final commanded velocity.
-  virtual Status onCycleUpdate() = 0;
+  virtual ResultStatus onCycleUpdate() = 0;
 
   // an opportunity for derived classes to do something on configuration
   // if they chose
@@ -199,19 +208,20 @@ protected:
       return;
     }
 
-    if (onRun(action_server_->get_current_goal()) != Status::SUCCEEDED) {
+    // Initialize the ActionT result
+    auto result = std::make_shared<typename ActionT::Result>();
+
+    ResultStatus on_run_result = onRun(action_server_->get_current_goal());
+    if (on_run_result.status != Status::SUCCEEDED) {
       RCLCPP_INFO(
         logger_,
         "Initial checks failed for %s", behavior_name_.c_str());
-      action_server_->terminate_current();
+      result->error_code = on_run_result.error_code;
+      action_server_->terminate_current(result);
       return;
     }
 
     auto start_time = steady_clock_.now();
-
-    // Initialize the ActionT result
-    auto result = std::make_shared<typename ActionT::Result>();
-
     rclcpp::WallRate loop_rate(cycle_frequency_);
 
     while (rclcpp::ok()) {
@@ -238,7 +248,8 @@ protected:
         return;
       }
 
-      switch (onCycleUpdate()) {
+      ResultStatus on_cycle_update_result = onCycleUpdate();
+      switch (on_cycle_update_result.status) {
         case Status::SUCCEEDED:
           RCLCPP_INFO(
             logger_,
@@ -251,6 +262,7 @@ protected:
         case Status::FAILED:
           RCLCPP_WARN(logger_, "%s failed", behavior_name_.c_str());
           result->total_elapsed_time = steady_clock_.now() - start_time;
+          result->error_code = on_cycle_update_result.error_code;
           action_server_->terminate_current(result);
           onActionCompletion();
           return;

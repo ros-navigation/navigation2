@@ -145,6 +145,16 @@ TEST(VelocityIterator, goal_checker_reset)
   EXPECT_TRUE(true);
 }
 
+TEST(VelocityIterator, stopped_goal_checker_reset)
+{
+  auto x = std::make_shared<TestLifecycleNode>("stopped_goal_checker");
+
+  nav2_core::GoalChecker * sgc = new StoppedGoalChecker;
+  sgc->reset();
+  delete sgc;
+  EXPECT_TRUE(true);
+}
+
 TEST(VelocityIterator, two_checks)
 {
   auto x = std::make_shared<TestLifecycleNode>("goal_checker");

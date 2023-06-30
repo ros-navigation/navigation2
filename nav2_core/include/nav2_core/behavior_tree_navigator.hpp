@@ -117,7 +117,7 @@ class NavigatorBase
 {
 public:
   NavigatorBase() = default;
-  ~NavigatorBase() = default;
+  virtual ~NavigatorBase() = default;
 
   /**
    * @brief Configuration of the navigator's backend BT and actions

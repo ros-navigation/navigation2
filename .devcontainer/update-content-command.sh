@@ -1,8 +1,11 @@
 #!/bin/bash
 
-set -exo pipefail
+# Immediately catch all errors
+set -eo pipefail
 
-env
+# Uncomment for debugging
+# set -x
+# env
 
 cd $OVERLAY_WS
 
@@ -46,9 +49,9 @@ then
 fi
 echo BUILD_PACKAGES: $BUILD_PACKAGES
 
-colcon clean packages --yes \
-    --packages-select ${BUILD_PACKAGES} \
-    --base-select install
+# colcon clean packages --yes \
+#     --packages-select ${BUILD_PACKAGES} \
+#     --base-select install
 
 . $UNDERLAY_WS/install/setup.sh
 colcon build \

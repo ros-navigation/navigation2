@@ -46,6 +46,24 @@ void BackUpAction::on_tick()
   increment_recovery_count();
 }
 
+BT::NodeStatus BackUpAction::on_success()
+{
+  setOutput("error_code_id", ActionGoal::NONE);
+  return BT::NodeStatus::SUCCESS;
+}
+
+BT::NodeStatus BackUpAction::on_aborted()
+{
+  setOutput("error_code_id", result_.result->error_code);
+  return BT::NodeStatus::FAILURE;
+}
+
+BT::NodeStatus BackUpAction::on_cancelled()
+{
+  setOutput("error_code_id", ActionGoal::NONE);
+  return BT::NodeStatus::SUCCESS;
+}
+
 }  // namespace nav2_behavior_tree
 
 #include "behaviortree_cpp_v3/bt_factory.h"

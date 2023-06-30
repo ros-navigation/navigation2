@@ -1,4 +1,13 @@
 pull_request_rules:
+  - name: backport to iron at reviewers discretion
+    conditions:
+      - base=main
+      - "label=backport-iron"
+    actions:
+      backport:
+        branches:
+          - iron
+  
   - name: backport to humble at reviewers discretion
     conditions:
       - base=main

@@ -27,6 +27,7 @@
 #include "tf2_ros/transform_listener.h"
 
 #include "nav2_util/lifecycle_node.hpp"
+#include "nav2_util/robot_utils.hpp"
 #include "nav2_msgs/msg/collision_monitor_state.hpp"
 
 #include "nav2_collision_monitor/types.hpp"
@@ -147,14 +148,14 @@ protected:
   void process(const Velocity & cmd_vel_in);
 
   /**
-   * @brief Processes the polygon of STOP and SLOWDOWN action type
+   * @brief Processes the polygon of STOP, SLOWDOWN and LIMIT action type
    * @param polygon Polygon to process
    * @param collision_points Array of 2D obstacle points
    * @param velocity Desired robot velocity
    * @param robot_action Output processed robot action
    * @return True if returned action is caused by current polygon, otherwise false
    */
-  bool processStopSlowdown(
+  bool processStopSlowdownLimit(
     const std::shared_ptr<Polygon> polygon,
     const std::vector<Point> & collision_points,
     const Velocity & velocity,

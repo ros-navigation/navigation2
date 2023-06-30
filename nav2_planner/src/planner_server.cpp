@@ -64,8 +64,6 @@ PlannerServer::PlannerServer(const rclcpp::NodeOptions & options)
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "global_costmap", std::string{get_namespace()}, "global_costmap",
     get_parameter("use_sim_time").as_bool());
-  // Launch a thread to run the costmap node
-  costmap_thread_ = std::make_unique<nav2_util::NodeThread>(costmap_ros_);
 }
 
 PlannerServer::~PlannerServer()
@@ -85,6 +83,9 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   costmap_ros_->configure();
   costmap_ = costmap_ros_->getCostmap();
+
+  // Launch a thread to run the costmap node
+  costmap_thread_ = std::make_unique<nav2_util::NodeThread>(costmap_ros_);
 
   RCLCPP_DEBUG(
     get_logger(), "Costmap size: %d,%d",
