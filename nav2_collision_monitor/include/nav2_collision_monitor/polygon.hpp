@@ -21,7 +21,6 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/polygon_stamped.hpp"
-#include "geometry_msgs/msg/polygon.hpp"
 
 #include "tf2/time.h"
 #include "tf2_ros/buffer.h"
@@ -36,7 +35,7 @@ namespace nav2_collision_monitor
 
 /**
  * @brief Basic polygon shape class.
- * For STOP/SLOWDOWN model it represents zone around the robot
+ * For STOP/SLOWDOWN/LIMIT model it represents zone around the robot
  * while for APPROACH model it represents robot footprint.
  */
 class Polygon
@@ -87,16 +86,28 @@ public:
    */
   ActionType getActionType() const;
   /**
-   * @brief Obtains polygon maximum points to enter inside polygon causing no action
-   * @return Maximum points to enter to current polygon and take no action
+   * @brief Obtains polygon minimum points to enter inside polygon causing the action
+   * @return Minimum number of data readings within a zone to trigger the action
    */
-  int getMaxPoints() const;
+  int getMinPoints() const;
   /**
    * @brief Obtains speed slowdown ratio for current polygon.
    * Applicable for SLOWDOWN model.
    * @return Speed slowdown ratio
    */
   double getSlowdownRatio() const;
+  /**
+   * @brief Obtains speed linear limit for current polygon.
+   * Applicable for LIMIT model.
+   * @return Speed linear limit
+   */
+  double getLinearLimit() const;
+  /**
+   * @brief Obtains speed angular z limit for current polygon.
+   * Applicable for LIMIT model.
+   * @return Speed angular limit
+   */
+  double getAngularLimit() const;
   /**
    * @brief Obtains required time before collision for current polygon.
    * Applicable for APPROACH model.
@@ -109,6 +120,12 @@ public:
    * @param poly Output polygon points (vertices)
    */
   virtual void getPolygon(std::vector<Point> & poly) const;
+
+  /**
+   * @brief Returns true if polygon points were set.
+   * Othewise, prints a warning and returns false.
+   */
+  virtual bool isShapeSet();
 
   /**
    * @brief Updates polygon from footprint subscriber (if any)
@@ -138,7 +155,7 @@ public:
   /**
    * @brief Publishes polygon message into a its own topic
    */
-  void publish() const;
+  void publish();
 
 protected:
   /**
@@ -150,11 +167,29 @@ protected:
 
   /**
    * @brief Supporting routine obtaining polygon-specific ROS-parameters
+   * @brief polygon_sub_topic Output name of polygon subscription topic.
+   * Empty, if no polygon subscription.
    * @param polygon_pub_topic Output name of polygon publishing topic
-   * @param footprint_topic Output name of footprint topic. Empty, if no footprint subscription
+   * @param footprint_topic Output name of footprint topic.
+   * Empty, if no footprint subscription.
    * @return True if all parameters were obtained or false in failure case
    */
-  virtual bool getParameters(std::string & polygon_pub_topic, std::string & footprint_topic);
+  virtual bool getParameters(
+    std::string & polygon_sub_topic,
+    std::string & polygon_pub_topic,
+    std::string & footprint_topic);
+
+  /**
+   * @brief Updates polygon from geometry_msgs::msg::PolygonStamped message
+   * @param msg Message to update polygon from
+   */
+  void updatePolygon(geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg);
+
+  /**
+   * @brief Dynamic polygon callback
+   * @param msg Shared pointer to the polygon message
+   */
+  void polygonCallback(geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg);
 
   /**
    * @brief Checks if point is inside polygon
@@ -175,14 +210,20 @@ protected:
   std::string polygon_name_;
   /// @brief Action type for the polygon
   ActionType action_type_;
-  /// @brief Maximum number of data readings within a zone to not trigger the action
-  int max_points_;
+  /// @brief Minimum number of data readings within a zone to trigger the action
+  int min_points_;
   /// @brief Robot slowdown (share of its actual speed)
   double slowdown_ratio_;
+  /// @brief Robot linear limit
+  double linear_limit_;
+  /// @brief Robot angular limit
+  double angular_limit_;
   /// @brief Time before collision in seconds
   double time_before_collision_;
   /// @brief Time step for robot movement simulation
   double simulation_time_step_;
+  /// @brief Polygon subscription
+  rclcpp::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_sub_;
   /// @brief Footprint subscriber
   std::unique_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
 
@@ -197,12 +238,12 @@ protected:
   // Visualization
   /// @brief Whether to publish the polygon
   bool visualize_;
-  /// @brief Polygon points stored for later publishing
-  geometry_msgs::msg::Polygon polygon_;
+  /// @brief Polygon, used for: 1. visualization; 2. storing latest dynamic polygon message
+  geometry_msgs::msg::PolygonStamped polygon_;
   /// @brief Polygon publisher for visualization purposes
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_pub_;
 
-  /// @brief Polygon points (vertices)
+  /// @brief Polygon points (vertices) in a base_frame_id_
   std::vector<Point> poly_;
 };  // class Polygon
 

@@ -24,8 +24,8 @@
 namespace nav2_map_server
 {
 
-CostmapFilterInfoServer::CostmapFilterInfoServer()
-: nav2_util::LifecycleNode("costmap_filter_info_server")
+CostmapFilterInfoServer::CostmapFilterInfoServer(const rclcpp::NodeOptions & options)
+: nav2_util::LifecycleNode("costmap_filter_info_server", "", options)
 {
   declare_parameter("filter_info_topic", "costmap_filter_info");
   declare_parameter("type", 0);
@@ -48,13 +48,13 @@ CostmapFilterInfoServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   publisher_ = this->create_publisher<nav2_msgs::msg::CostmapFilterInfo>(
     filter_info_topic, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
 
-  msg_ = std::make_unique<nav2_msgs::msg::CostmapFilterInfo>();
-  msg_->header.frame_id = "";
-  msg_->header.stamp = now();
-  msg_->type = get_parameter("type").as_int();
-  msg_->filter_mask_topic = get_parameter("mask_topic").as_string();
-  msg_->base = static_cast<float>(get_parameter("base").as_double());
-  msg_->multiplier = static_cast<float>(get_parameter("multiplier").as_double());
+  msg_ = nav2_msgs::msg::CostmapFilterInfo();
+  msg_.header.frame_id = "";
+  msg_.header.stamp = now();
+  msg_.type = get_parameter("type").as_int();
+  msg_.filter_mask_topic = get_parameter("mask_topic").as_string();
+  msg_.base = static_cast<float>(get_parameter("base").as_double());
+  msg_.multiplier = static_cast<float>(get_parameter("multiplier").as_double());
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -65,7 +65,8 @@ CostmapFilterInfoServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Activating");
 
   publisher_->on_activate();
-  publisher_->publish(std::move(msg_));
+  auto costmap_filter_info = std::make_unique<nav2_msgs::msg::CostmapFilterInfo>(msg_);
+  publisher_->publish(std::move(costmap_filter_info));
 
   // create bond connection
   createBond();
@@ -105,3 +106,10 @@ CostmapFilterInfoServer::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 }
 
 }  // namespace nav2_map_server
+
+#include "rclcpp_components/register_node_macro.hpp"
+
+// Register the component with class_loader.
+// This acts as a sort of entry point, allowing the component to be discoverable when its library
+// is being loaded into a running process.
+RCLCPP_COMPONENTS_REGISTER_NODE(nav2_map_server::CostmapFilterInfoServer)

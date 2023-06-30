@@ -139,6 +139,12 @@ public:
     return current_;
   }
 
+  /**@brief Gets whether the layer is enabled. */
+  bool isEnabled() const
+  {
+    return enabled_;
+  }
+
   /** @brief Convenience function for layered_costmap_->getFootprint(). */
   const std::vector<geometry_msgs::msg::Point> & getFootprint() const;
 

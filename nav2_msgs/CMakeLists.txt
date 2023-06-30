@@ -12,7 +12,11 @@ find_package(action_msgs REQUIRED)
 
 nav2_package()
 
+# TODO(jwallace42): This is a work around for https://github.com/ros2/rosidl_typesupport_fastrtps/issues/28
+add_compile_options(-Wno-error=deprecated)
+
 rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/CollisionMonitorState.msg"
   "msg/Costmap.msg"
   "msg/CostmapMetaData.msg"
   "msg/CostmapFilterInfo.msg"
@@ -22,6 +26,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/BehaviorTreeLog.msg"
   "msg/Particle.msg"
   "msg/ParticleCloud.msg"
+  "msg/MissedWaypoint.msg"
   "srv/GetCostmap.srv"
   "srv/IsPathValid.srv"
   "srv/ClearCostmapExceptRegion.srv"

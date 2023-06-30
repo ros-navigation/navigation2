@@ -35,6 +35,8 @@ namespace nav2_behaviors
 template<typename ActionT = nav2_msgs::action::DriveOnHeading>
 class DriveOnHeading : public TimedBehavior<ActionT>
 {
+  using CostmapInfoType = nav2_core::CostmapInfoType;
+
 public:
   /**
    * @brief A constructor for nav2_behaviors::DriveOnHeading
@@ -55,19 +57,19 @@ public:
    * @param command Goal to execute
    * @return Status of behavior
    */
-  Status onRun(const std::shared_ptr<const typename ActionT::Goal> command) override
+  ResultStatus onRun(const std::shared_ptr<const typename ActionT::Goal> command) override
   {
     if (command->target.y != 0.0 || command->target.z != 0.0) {
       RCLCPP_INFO(
         this->logger_,
         "DrivingOnHeading in Y and Z not supported, will only move in X.");
-      return Status::FAILED;
+      return ResultStatus{Status::FAILED, ActionT::Goal::INVALID_INPUT};
     }
 
     // Ensure that both the speed and direction have the same sign
     if (!((command->target.x > 0.0) == (command->speed > 0.0)) ) {
       RCLCPP_ERROR(this->logger_, "Speed and command sign did not match");
-      return Status::FAILED;
+      return ResultStatus{Status::FAILED, ActionT::Goal::INVALID_INPUT};
     }
 
     command_x_ = command->target.x;
@@ -77,21 +79,21 @@ public:
     end_time_ = this->steady_clock_.now() + command_time_allowance_;
 
     if (!nav2_util::getCurrentPose(
-        initial_pose_, *this->tf_, this->global_frame_, this->robot_base_frame_,
+        initial_pose_, *this->tf_, this->local_frame_, this->robot_base_frame_,
         this->transform_tolerance_))
     {
       RCLCPP_ERROR(this->logger_, "Initial robot pose is not available.");
-      return Status::FAILED;
+      return ResultStatus{Status::FAILED, ActionT::Goal::TF_ERROR};
     }
 
-    return Status::SUCCEEDED;
+    return ResultStatus{Status::SUCCEEDED, ActionT::Goal::NONE};
   }
 
   /**
    * @brief Loop function to run behavior
    * @return Status of behavior
    */
-  Status onCycleUpdate()
+  ResultStatus onCycleUpdate()
   {
     rclcpp::Duration time_remaining = end_time_ - this->steady_clock_.now();
     if (time_remaining.seconds() < 0.0 && command_time_allowance_.seconds() > 0.0) {
@@ -99,16 +101,16 @@ public:
       RCLCPP_WARN(
         this->logger_,
         "Exceeded time allowance before reaching the DriveOnHeading goal - Exiting DriveOnHeading");
-      return Status::FAILED;
+      return ResultStatus{Status::FAILED, ActionT::Goal::NONE};
     }
 
     geometry_msgs::msg::PoseStamped current_pose;
     if (!nav2_util::getCurrentPose(
-        current_pose, *this->tf_, this->global_frame_, this->robot_base_frame_,
+        current_pose, *this->tf_, this->local_frame_, this->robot_base_frame_,
         this->transform_tolerance_))
     {
       RCLCPP_ERROR(this->logger_, "Current robot pose is not available.");
-      return Status::FAILED;
+      return ResultStatus{Status::FAILED, ActionT::Goal::TF_ERROR};
     }
 
     double diff_x = initial_pose_.pose.position.x - current_pose.pose.position.x;
@@ -120,7 +122,7 @@ public:
 
     if (distance >= std::fabs(command_x_)) {
       this->stopRobot();
-      return Status::SUCCEEDED;
+      return ResultStatus{Status::SUCCEEDED, ActionT::Goal::NONE};
     }
 
     auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>();
@@ -136,13 +138,19 @@ public:
     if (!isCollisionFree(distance, cmd_vel.get(), pose2d)) {
       this->stopRobot();
       RCLCPP_WARN(this->logger_, "Collision Ahead - Exiting DriveOnHeading");
-      return Status::FAILED;
+      return ResultStatus{Status::FAILED, ActionT::Goal::COLLISION_AHEAD};
     }
 
     this->vel_pub_->publish(std::move(cmd_vel));
 
-    return Status::RUNNING;
+    return ResultStatus{Status::RUNNING, ActionT::Goal::NONE};
   }
+
+  /**
+   * @brief Method to determine the required costmap info
+   * @return costmap resources needed
+   */
+  CostmapInfoType getResourceInfo() override {return CostmapInfoType::LOCAL;}
 
 protected:
   /**
@@ -175,7 +183,7 @@ protected:
         break;
       }
 
-      if (!this->collision_checker_->isCollisionFree(pose2d, fetch_data)) {
+      if (!this->local_collision_checker_->isCollisionFree(pose2d, fetch_data)) {
         return false;
       }
       fetch_data = false;

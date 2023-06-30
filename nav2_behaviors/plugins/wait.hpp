@@ -32,7 +32,11 @@ using WaitAction = nav2_msgs::action::Wait;
  */
 class Wait : public TimedBehavior<WaitAction>
 {
+  using CostmapInfoType = nav2_core::CostmapInfoType;
+
 public:
+  using WaitActionGoal = WaitAction::Goal;
+
   /**
    * @brief A constructor for nav2_behaviors::Wait
    */
@@ -44,13 +48,19 @@ public:
    * @param command Goal to execute
    * @return Status of behavior
    */
-  Status onRun(const std::shared_ptr<const WaitAction::Goal> command) override;
+  ResultStatus onRun(const std::shared_ptr<const WaitActionGoal> command) override;
 
   /**
    * @brief Loop function to run behavior
    * @return Status of behavior
    */
-  Status onCycleUpdate() override;
+  ResultStatus onCycleUpdate() override;
+
+  /**
+   * @brief Method to determine the required costmap info
+   * @return costmap resources needed
+   */
+  CostmapInfoType getResourceInfo() override {return CostmapInfoType::LOCAL;}
 
 protected:
   std::chrono::time_point<std::chrono::steady_clock> wait_end_;

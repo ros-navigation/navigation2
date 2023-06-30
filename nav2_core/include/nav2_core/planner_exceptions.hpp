@@ -50,6 +50,13 @@ public:
   : std::runtime_error(description) {}
 };
 
+class InvalidPlanner : public PlannerException
+{
+public:
+  explicit InvalidPlanner(const std::string & description)
+  : PlannerException(description) {}
+};
+
 class StartOccupied : public PlannerException
 {
 public:
@@ -96,6 +103,13 @@ class PlannerTFError : public PlannerException
 {
 public:
   explicit PlannerTFError(const std::string & description)
+  : PlannerException(description) {}
+};
+
+class NoViapointsGiven : public PlannerException
+{
+public:
+  explicit NoViapointsGiven(const std::string & description)
   : PlannerException(description) {}
 };
 

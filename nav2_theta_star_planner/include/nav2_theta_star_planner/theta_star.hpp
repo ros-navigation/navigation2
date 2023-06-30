@@ -24,6 +24,8 @@
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 
 const double INF_COST = DBL_MAX;
+const int UNKNOWN_COST = 255;
+const int OBS_COST = 254;
 const int LETHAL_COST = 252;
 
 struct coordsM
@@ -70,6 +72,8 @@ public:
   double w_heuristic_cost_;
   /// parameter to set the number of adjacent nodes to be searched on
   int how_many_corners_;
+  /// parameter to set weather the planner can plan through unknown space
+  bool allow_unknown_;
   /// the x-directional and y-directional lengths of the map respectively
   int size_x_, size_y_;
 
@@ -91,7 +95,9 @@ public:
    */
   inline bool isSafe(const int & cx, const int & cy) const
   {
-    return costmap_->getCost(cx, cy) < LETHAL_COST;
+    return (costmap_->getCost(
+             cx,
+             cy) == UNKNOWN_COST && allow_unknown_) || costmap_->getCost(cx, cy) < LETHAL_COST;
   }
 
   /**
@@ -185,7 +191,10 @@ protected:
   bool isSafe(const int & cx, const int & cy, double & cost) const
   {
     double curr_cost = getCost(cx, cy);
-    if (curr_cost < LETHAL_COST) {
+    if ((costmap_->getCost(cx, cy) == UNKNOWN_COST && allow_unknown_) || curr_cost < LETHAL_COST) {
+      if (costmap_->getCost(cx, cy) == UNKNOWN_COST) {
+        curr_cost = OBS_COST - 1;
+      }
       cost += w_traversal_cost_ * curr_cost * curr_cost / LETHAL_COST / LETHAL_COST;
       return true;
     } else {

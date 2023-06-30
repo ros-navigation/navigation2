@@ -87,6 +87,7 @@ add_library(layers SHARED
   src/observation_buffer.cpp
   plugins/voxel_layer.cpp
   plugins/range_sensor_layer.cpp
+  plugins/denoise_layer.cpp
 )
 ament_target_dependencies(layers
   ${dependencies}
@@ -180,6 +181,7 @@ if(BUILD_TESTING)
 
   find_package(ament_cmake_gtest REQUIRED)
   add_subdirectory(test)
+  pluginlib_export_plugin_description_file(nav2_costmap_2d test/regression/order_layer.xml)
 endif()
 
 ament_export_include_directories(include)

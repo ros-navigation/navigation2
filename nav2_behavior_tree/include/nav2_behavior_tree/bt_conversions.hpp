@@ -16,6 +16,7 @@
 #define NAV2_BEHAVIOR_TREE__BT_CONVERSIONS_HPP_
 
 #include <string>
+#include <set>
 
 #include "rclcpp/time.hpp"
 #include "behaviortree_cpp_v3/behavior_tree.h"
@@ -109,6 +110,24 @@ template<>
 inline std::chrono::milliseconds convertFromString<std::chrono::milliseconds>(const StringView key)
 {
   return std::chrono::milliseconds(std::stoul(key.data()));
+}
+
+/**
+ * @brief Parse XML string to std::set<int>
+ * @param key XML string
+ * @return std::set<int>
+ */
+template<>
+inline std::set<int> convertFromString(StringView key)
+{
+  // Real numbers separated by semicolons
+  auto parts = splitString(key, ';');
+
+  std::set<int> set;
+  for (const auto part : parts) {
+    set.insert(convertFromString<int>(part));
+  }
+  return set;
 }
 
 }  // namespace BT

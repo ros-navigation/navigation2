@@ -18,8 +18,10 @@ import os
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
-from launch.actions import ExecuteProcess, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription
+from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node
 
 
@@ -31,12 +33,28 @@ def generate_launch_description():
     map_yaml_file = os.path.join(warehouse_dir, 'maps', '005', 'map.yaml')
     world = os.path.join(python_commander_dir, 'warehouse.world')
 
+    # Launch configuration variables
+    use_rviz = LaunchConfiguration('use_rviz')
+    headless = LaunchConfiguration('headless')
+
+    # Declare the launch arguments
+    declare_use_rviz_cmd = DeclareLaunchArgument(
+        'use_rviz',
+        default_value='True',
+        description='Whether to start RVIZ')
+
+    declare_simulator_cmd = DeclareLaunchArgument(
+        'headless',
+        default_value='False',
+        description='Whether to execute gzclient)')
+
     # start the simulation
     start_gazebo_server_cmd = ExecuteProcess(
         cmd=['gzserver', '-s', 'libgazebo_ros_factory.so', world],
         cwd=[warehouse_dir], output='screen')
 
     start_gazebo_client_cmd = ExecuteProcess(
+        condition=IfCondition(PythonExpression(['not ', headless])),
         cmd=['gzclient'],
         cwd=[warehouse_dir], output='screen')
 
@@ -52,6 +70,7 @@ def generate_launch_description():
     rviz_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(nav2_bringup_dir, 'launch', 'rviz_launch.py')),
+        condition=IfCondition(use_rviz),
         launch_arguments={'namespace': '',
                           'use_namespace': 'False'}.items())
 
@@ -69,6 +88,8 @@ def generate_launch_description():
         output='screen')
 
     ld = LaunchDescription()
+    ld.add_action(declare_use_rviz_cmd)
+    ld.add_action(declare_simulator_cmd)
     ld.add_action(start_gazebo_server_cmd)
     ld.add_action(start_gazebo_client_cmd)
     ld.add_action(start_robot_state_publisher_cmd)

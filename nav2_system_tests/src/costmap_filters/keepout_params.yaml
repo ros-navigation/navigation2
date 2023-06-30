@@ -59,6 +59,9 @@ bt_navigator:
     - nav2_drive_on_heading_bt_node
     - nav2_clear_costmap_service_bt_node
     - nav2_is_stuck_condition_bt_node
+    - nav2_are_error_codes_active_condition_bt_node
+    - nav2_would_a_controller_recovery_help_condition_bt_node
+    - nav2_would_a_planner_recovery_help_condition_bt_node
     - nav2_goal_reached_condition_bt_node
     - nav2_goal_updated_condition_bt_node
     - nav2_is_path_valid_condition_bt_node
@@ -96,7 +99,7 @@ controller_server:
     min_x_velocity_threshold: 0.001
     min_y_velocity_threshold: 0.5
     min_theta_velocity_threshold: 0.001
-    progress_checker_plugin: "progress_checker"
+    progress_checker_plugins: ["progress_checker"]
     goal_checker_plugins: ["goal_checker"]
     controller_plugins: ["FollowPath"]
 

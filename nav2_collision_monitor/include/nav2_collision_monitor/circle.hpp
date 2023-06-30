@@ -26,7 +26,7 @@ namespace nav2_collision_monitor
 
 /**
  * @brief Circle shape implementaiton.
- * For STOP/SLOWDOWN model it represents zone around the robot
+ * For STOP/SLOWDOWN/LIMIT model it represents zone around the robot
  * while for APPROACH model it represents robot footprint.
  */
 class Circle : public Polygon
@@ -66,15 +66,24 @@ public:
    */
   int getPointsInside(const std::vector<Point> & points) const override;
 
+  /**
+   * @brief Specifies that the shape is always set for a circle object
+   */
+  bool isShapeSet() override {return true;}
+
 protected:
   /**
    * @brief Supporting routine obtaining polygon-specific ROS-parameters
+   * @brief polygon_sub_topic Input name of polygon subscription topic
    * @param polygon_pub_topic Output name of polygon publishing topic
    * @param footprint_topic Output name of footprint topic. For Circle returns empty string,
    * there is no footprint subscription in this class.
    * @return True if all parameters were obtained or false in failure case
    */
-  bool getParameters(std::string & polygon_pub_topic, std::string & footprint_topic) override;
+  bool getParameters(
+    std::string & polygon_sub_topic,
+    std::string & polygon_pub_topic,
+    std::string & footprint_topic) override;
 
   // ----- Variables -----
 

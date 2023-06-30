@@ -16,6 +16,19 @@ This controller has been measured to run at well over 1 kHz on a modern intel pr
 
 See its [Configuration Guide Page](https://navigation.ros.org/configuration/packages/configuring-regulated-pp.html) for additional parameter descriptions.
 
+If you use the Regulated Pure Pursuit Controller algorithm or software from this repository, please cite this work in your papers!
+
+- S. Macenski, S. Singh, F. Martin, J. Gines, [**Regulated Pure Pursuit for Robot Path Tracking**](https://arxiv.org/abs/2305.20026). Autonomous Robots, 2023.
+
+```bibtex
+@article{macenski2023regulated,
+      title={Regulated Pure Pursuit for Robot Path Tracking}, 
+      author={Steve Macenski and Shrijit Singh and Francisco Martin and Jonatan Gines},
+      year={2023},
+      journal = {Autonomous Robots}
+}
+```
+
 ## Pure Pursuit Basics
 
 The Pure Pursuit algorithm has been in use for over 30 years. You can read more about the details of the pure pursuit controller in its [introduction paper](http://www.enseignement.polytechnique.fr/profs/informatique/Eric.Goubault/MRIS/coulter_r_craig_1992_1.pdf). The core idea is to find a point on the path in front of the robot and find the linear and angular velocity to help drive towards it. Once it moves forward, a new point is selected, and the process repeats until the end of the path. The distance used to find the point to drive towards is the `lookahead` distance. 
@@ -71,6 +84,8 @@ Note: The maximum allowed time to collision is thresholded by the lookahead poin
 | `inflation_cost_scaling_factor` | The value of `cost_scaling_factor` set for the inflation layer in the local costmap. The value should be exactly the same for accurately computing distance from obstacles using the inflated cell values | 
 | `regulated_linear_scaling_min_radius` | The turning radius for which the regulation features are triggered. Remember, sharper turns have smaller radii | 
 | `regulated_linear_scaling_min_speed` | The minimum speed for which the regulated features can send, to ensure process is still achievable even in high cost spaces with high curvature. | 
+| `use_fixed_curvature_lookahead` | Enable fixed lookahead for curvature detection. Useful for systems with long lookahead. | 
+| `curvature_lookahead_dist` | Distance to lookahead to determine curvature for velocity regulation purposes. Only used if `use_fixed_curvature_lookahead` is enabled. | 
 | `use_rotate_to_heading` | Whether to enable rotating to rough heading and goal orientation when using holonomic planners. Recommended on for all robot types except ackermann, which cannot rotate in place. | 
 | `rotate_to_heading_min_angle` | The difference in the path orientation and the starting robot orientation to trigger a rotate in place, if `use_rotate_to_heading` is enabled. | 
 | `max_angular_accel` | Maximum allowable angular acceleration while rotating to heading, if enabled | 
@@ -86,7 +101,7 @@ controller_server:
     min_x_velocity_threshold: 0.001
     min_y_velocity_threshold: 0.5
     min_theta_velocity_threshold: 0.001
-    progress_checker_plugin: "progress_checker"
+    progress_checker_plugins: ["progress_checker"]
     goal_checker_plugins: "goal_checker"
     controller_plugins: ["FollowPath"]
 
@@ -110,7 +125,6 @@ controller_server:
       transform_tolerance: 0.1
       use_velocity_scaled_lookahead_dist: false
       min_approach_linear_velocity: 0.05
-      use_approach_linear_velocity_scaling: true
       approach_velocity_scaling_dist: 1.0
       use_collision_detection: true
       max_allowed_time_to_collision_up_to_carrot: 1.0
@@ -118,6 +132,8 @@ controller_server:
       use_cost_regulated_linear_velocity_scaling: false
       regulated_linear_scaling_min_radius: 0.9
       regulated_linear_scaling_min_speed: 0.25
+      use_fixed_curvature_lookahead: false
+      curvature_lookahead_dist: 1.0
       use_rotate_to_heading: true
       rotate_to_heading_min_angle: 0.785
       max_angular_accel: 3.2

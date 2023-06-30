@@ -46,6 +46,8 @@ public:
    * @param global_frame_id Global frame ID for correct transform calculation
    * @param transform_tolerance Transform tolerance
    * @param source_timeout Maximum time interval in which data is considered valid
+   * @param base_shift_correction Whether to correct source data towards to base frame movement,
+   * considering the difference between current time and latest source time
    */
   Source(
     const nav2_util::LifecycleNode::WeakPtr & node,
@@ -54,7 +56,8 @@ public:
     const std::string & base_frame_id,
     const std::string & global_frame_id,
     const tf2::Duration & transform_tolerance,
-    const rclcpp::Duration & source_timeout);
+    const rclcpp::Duration & source_timeout,
+    const bool base_shift_correction);
   /**
    * @brief Source destructor
    */
@@ -88,21 +91,6 @@ protected:
     const rclcpp::Time & source_time,
     const rclcpp::Time & curr_time) const;
 
-  /**
-   * @brief Obtains a transform from source_frame_id at source_time ->
-   * to base_frame_id_ at curr_time time
-   * @param source_frame_id Source frame ID to convert data from
-   * @param source_time Source timestamp to convert data from
-   * @param curr_time Current node time to interpolate data to
-   * @param tf_transform Output source->base transform
-   * @return True if got correct transform, otherwise false
-   */
-  bool getTransform(
-    const std::string & source_frame_id,
-    const rclcpp::Time & source_time,
-    const rclcpp::Time & curr_time,
-    tf2::Transform & tf_transform) const;
-
   // ----- Variables -----
 
   /// @brief Collision Monitor node
@@ -125,6 +113,9 @@ protected:
   tf2::Duration transform_tolerance_;
   /// @brief Maximum time interval in which data is considered valid
   rclcpp::Duration source_timeout_;
+  /// @brief Whether to correct source data towards to base frame movement,
+  /// considering the difference between current time and latest source time
+  bool base_shift_correction_;
 };  // class Source
 
 }  // namespace nav2_collision_monitor

@@ -21,8 +21,8 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_util/robot_utils.hpp"
 
-#include "../../test_behavior_tree_fixture.hpp"
-#include "../../test_dummy_tree_node.hpp"
+#include "utils/test_behavior_tree_fixture.hpp"
+#include "utils/test_dummy_tree_node.hpp"
 #include "nav2_behavior_tree/plugins/decorator/distance_controller.hpp"
 
 class DistanceControllerTestFixture : public nav2_behavior_tree::BehaviorTreeTestFixture

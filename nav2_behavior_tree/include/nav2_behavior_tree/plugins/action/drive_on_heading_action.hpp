@@ -28,6 +28,10 @@ namespace nav2_behavior_tree
  */
 class DriveOnHeadingAction : public BtActionNode<nav2_msgs::action::DriveOnHeading>
 {
+  using Action = nav2_msgs::action::DriveOnHeading;
+  using ActionGoal = Action::Goal;
+  using ActionResult = Action::Goal;
+
 public:
   /**
    * @brief A constructor for nav2_behavior_tree::DriveOnHeadingAction
@@ -50,11 +54,27 @@ public:
       {
         BT::InputPort<double>("dist_to_travel", 0.15, "Distance to travel"),
         BT::InputPort<double>("speed", 0.025, "Speed at which to travel"),
-        BT::InputPort<double>("time_allowance", 10.0, "Allowed time for driving on heading")
+        BT::InputPort<double>("time_allowance", 10.0, "Allowed time for driving on heading"),
+        BT::OutputPort<Action::Result::_error_code_type>(
+          "error_code_id", "The drive on heading behavior server error code")
       });
   }
+
+  /**
+ * @brief Function to perform some user-defined operation upon successful completion of the action
+ */
+  BT::NodeStatus on_success() override;
+
+  /**
+   * @brief Function to perform some user-defined operation upon abortion of the action
+   */
+  BT::NodeStatus on_aborted() override;
+
+  /**
+   * @brief Function to perform some user-defined operation upon cancellation of the action
+   */
+  BT::NodeStatus on_cancelled() override;
 };
 
 }  // namespace nav2_behavior_tree
-
 #endif  // NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__DRIVE_ON_HEADING_ACTION_HPP_

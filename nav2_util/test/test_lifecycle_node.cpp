@@ -47,3 +47,39 @@ TEST(LifecycleNode, MultipleRclcppNodesExitCleanly)
   std::this_thread::sleep_for(std::chrono::seconds(1));
   SUCCEED();
 }
+
+TEST(LifecycleNode, OnPreshutdownCbFires)
+{
+  // Ensure the on_rcl_preshutdown_cb fires
+
+  class MyNodeType : public nav2_util::LifecycleNode
+  {
+public:
+    MyNodeType(
+      const std::string & node_name)
+    : nav2_util::LifecycleNode(node_name) {}
+
+    bool fired = false;
+
+protected:
+    void on_rcl_preshutdown() override
+    {
+      fired = true;
+
+      nav2_util::LifecycleNode::on_rcl_preshutdown();
+    }
+  };
+
+  auto node = std::make_shared<MyNodeType>("test_node");
+
+  ASSERT_EQ(node->fired, false);
+
+  rclcpp::shutdown();
+
+  ASSERT_EQ(node->fired, true);
+
+  // Fire dtor to ensure nothing insane happens, e.g. exceptions.
+  node.reset();
+
+  SUCCEED();
+}

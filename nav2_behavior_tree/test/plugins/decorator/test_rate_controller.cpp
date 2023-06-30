@@ -18,7 +18,7 @@
 #include <memory>
 #include <set>
 
-#include "../../test_behavior_tree_fixture.hpp"
+#include "utils/test_behavior_tree_fixture.hpp"
 #include "nav2_behavior_tree/plugins/decorator/rate_controller.hpp"
 
 using namespace std::chrono;  // NOLINT

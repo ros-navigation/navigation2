@@ -14,20 +14,17 @@
 
 #include <math.h>
 #include <memory>
-#include <string>
 #include <vector>
-#include <chrono>
-#include <limits>
 
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_smoother/simple_smoother.hpp"
-#include "ament_index_cpp/get_package_share_directory.hpp"
+#include "nav2_core/smoother_exceptions.hpp"
 
+using namespace smoother_utils;  // NOLINT
 using namespace nav2_smoother;  // NOLINT
 using namespace std::chrono_literals;  // NOLINT
 
@@ -120,14 +117,14 @@ TEST(SmootherTest, test_simple_smoother)
 
   rclcpp::Duration no_time = rclcpp::Duration::from_seconds(0.0);  // 0 seconds
   rclcpp::Duration max_time = rclcpp::Duration::from_seconds(1);  // 1 second
-  EXPECT_FALSE(smoother->smooth(straight_irregular_path, no_time));
+  EXPECT_THROW(smoother->smooth(straight_irregular_path, no_time), nav2_core::SmootherTimedOut);
   EXPECT_TRUE(smoother->smooth(straight_irregular_path, max_time));
   for (uint i = 0; i != straight_irregular_path.poses.size() - 1; i++) {
     // Check distances are more evenly spaced out now
     EXPECT_LT(
       fabs(
         straight_irregular_path.poses[i].pose.position.y -
-        straight_irregular_path.poses[i + 1].pose.position.y), 0.38);
+        straight_irregular_path.poses[i + 1].pose.position.y), 0.50);
   }
 
   // Test regular path, should see no effective change
@@ -180,8 +177,8 @@ TEST(SmootherTest, test_simple_smoother)
   straight_regular_path.poses[10].pose.position.x = 0.95;
   straight_regular_path.poses[10].pose.position.y = 0.5;
   EXPECT_TRUE(smoother->smooth(straight_regular_path, max_time));
-  EXPECT_NEAR(straight_regular_path.poses[5].pose.position.x, 0.637, 0.01);
-  EXPECT_NEAR(straight_regular_path.poses[5].pose.position.y, 0.353, 0.01);
+  EXPECT_NEAR(straight_regular_path.poses[5].pose.position.x, 0.607, 0.01);
+  EXPECT_NEAR(straight_regular_path.poses[5].pose.position.y, 0.387, 0.01);
 
   // Test that collisions are rejected
   nav_msgs::msg::Path collision_path;
@@ -208,7 +205,7 @@ TEST(SmootherTest, test_simple_smoother)
   collision_path.poses[9].pose.position.y = 1.4;
   collision_path.poses[10].pose.position.x = 1.5;
   collision_path.poses[10].pose.position.y = 1.5;
-  EXPECT_FALSE(smoother->smooth(collision_path, max_time));
+  EXPECT_THROW(smoother->smooth(collision_path, max_time), nav2_core::FailedToSmoothPath);
 
   // test cusp / reversing segments
   nav_msgs::msg::Path reversing_path;
@@ -235,9 +232,9 @@ TEST(SmootherTest, test_simple_smoother)
   reversing_path.poses[9].pose.position.y = 0.1;
   reversing_path.poses[10].pose.position.x = 0.5;
   reversing_path.poses[10].pose.position.y = 0.0;
-  EXPECT_TRUE(smoother->smooth(reversing_path, max_time));
+  EXPECT_THROW(smoother->smooth(reversing_path, max_time), nav2_core::FailedToSmoothPath);
 
-  // // test rotate in place
+  // test rotate in place
   tf2::Quaternion quat1, quat2;
   quat1.setRPY(0.0, 0.0, 0.0);
   quat2.setRPY(0.0, 0.0, 1.0);
@@ -247,7 +244,7 @@ TEST(SmootherTest, test_simple_smoother)
   straight_irregular_path.poses[6].pose.position.x = 0.5;
   straight_irregular_path.poses[6].pose.position.y = 0.5;
   straight_irregular_path.poses[6].pose.orientation = tf2::toMsg(quat2);
-  EXPECT_TRUE(smoother->smooth(straight_irregular_path, max_time));
+  EXPECT_THROW(smoother->smooth(straight_irregular_path, max_time), nav2_core::FailedToSmoothPath);
 
   // test max iterations
   smoother->setMaxItsToInvalid();
@@ -275,5 +272,5 @@ TEST(SmootherTest, test_simple_smoother)
   max_its_path.poses[9].pose.position.y = 0.9;
   max_its_path.poses[10].pose.position.x = 0.5;
   max_its_path.poses[10].pose.position.y = 1.0;
-  EXPECT_FALSE(smoother->smooth(max_its_path, max_time));
+  EXPECT_THROW(smoother->smooth(max_its_path, max_time), nav2_core::FailedToSmoothPath);
 }

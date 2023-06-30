@@ -47,7 +47,7 @@ public:
     const std::string & xml_tag_name,
     const std::string & action_name,
     const BT::NodeConfiguration & conf)
-  : BT::ActionNodeBase(xml_tag_name, conf), action_name_(action_name)
+  : BT::ActionNodeBase(xml_tag_name, conf), action_name_(action_name), should_send_goal_(true)
   {
     node_ = config().blackboard->template get<rclcpp::Node::SharedPtr>("node");
     callback_group_ = node_->create_callback_group(
@@ -97,7 +97,9 @@ public:
       RCLCPP_ERROR(
         node_->get_logger(), "\"%s\" action server not available after waiting for 1 s",
         action_name.c_str());
-      throw std::runtime_error(std::string("Action server %s not available", action_name.c_str()));
+      throw std::runtime_error(
+              std::string("Action server ") + action_name +
+              std::string(" not available"));
     }
   }
 
@@ -188,9 +190,15 @@ public:
       // setting the status to RUNNING to notify the BT Loggers (if any)
       setStatus(BT::NodeStatus::RUNNING);
 
-      // user defined callback
+      // reset the flag to send the goal or not, allowing the user the option to set it in on_tick
+      should_send_goal_ = true;
+
+      // user defined callback, may modify "should_send_goal_".
       on_tick();
 
+      if (!should_send_goal_) {
+        return BT::NodeStatus::FAILURE;
+      }
       send_new_goal();
     }
 
@@ -223,7 +231,8 @@ public:
         feedback_.reset();
 
         auto goal_status = goal_handle_->get_status();
-        if (goal_updated_ && (goal_status == action_msgs::msg::GoalStatus::STATUS_EXECUTING ||
+        if (goal_updated_ &&
+          (goal_status == action_msgs::msg::GoalStatus::STATUS_EXECUTING ||
           goal_status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED))
         {
           goal_updated_ = false;
@@ -444,6 +453,9 @@ protected:
   std::shared_ptr<std::shared_future<typename rclcpp_action::ClientGoalHandle<ActionT>::SharedPtr>>
   future_goal_handle_;
   rclcpp::Time time_goal_sent_;
+
+  // Can be set in on_tick or on_wait_for_result to indicate if a goal should be sent.
+  bool should_send_goal_;
 };
 
 }  // namespace nav2_behavior_tree

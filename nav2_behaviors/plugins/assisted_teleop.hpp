@@ -34,7 +34,10 @@ using AssistedTeleopAction = nav2_msgs::action::AssistedTeleop;
  */
 class AssistedTeleop : public TimedBehavior<AssistedTeleopAction>
 {
+  using CostmapInfoType = nav2_core::CostmapInfoType;
+
 public:
+  using AssistedTeleopActionGoal = AssistedTeleopAction::Goal;
   AssistedTeleop();
 
   /**
@@ -42,7 +45,7 @@ public:
    * @param command Goal to execute
    * @return Status of behavior
    */
-  Status onRun(const std::shared_ptr<const AssistedTeleopAction::Goal> command) override;
+  ResultStatus onRun(const std::shared_ptr<const AssistedTeleopActionGoal> command) override;
 
   /**
    * @brief func to run at the completion of the action
@@ -53,7 +56,13 @@ public:
    * @brief Loop function to run behavior
    * @return Status of behavior
    */
-  Status onCycleUpdate() override;
+  ResultStatus onCycleUpdate() override;
+
+  /**
+   * @brief Method to determine the required costmap info
+   * @return costmap resources needed
+   */
+  CostmapInfoType getResourceInfo() override {return CostmapInfoType::LOCAL;}
 
 protected:
   /**
