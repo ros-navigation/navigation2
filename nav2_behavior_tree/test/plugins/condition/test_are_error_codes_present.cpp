@@ -27,8 +27,8 @@ public:
   using ActionGoal = Action::Goal;
   void SetUp()
   {
-    int error_code = ActionGoal::NONE;
-    std::set<unsigned short> error_codes_to_check = {ActionGoal::UNKNOWN}; //NOLINT
+    unsigned int error_code = ActionGoal::NONE;
+    std::set<unsigned int> error_codes_to_check = {ActionGoal::UNKNOWN}; //NOLINT
     config_->blackboard->set("error_code", error_code);
     config_->blackboard->set("error_codes_to_check", error_codes_to_check);
 

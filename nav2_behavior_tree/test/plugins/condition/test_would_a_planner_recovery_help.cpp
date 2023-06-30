@@ -27,7 +27,7 @@ public:
   using ActionGoal = Action::Goal;
   void SetUp()
   {
-    int error_code = ActionGoal::NONE;
+    unsigned int error_code = ActionGoal::NONE;
     config_->blackboard->set("error_code", error_code);
 
     std::string xml_txt =
