@@ -66,7 +66,7 @@ add_library(${detector_library_name} SHARED
 )
 
 add_executable(${monitor_executable_name}
-  src/main.cpp
+  src/collision_monitor_main.cpp
 )
 add_executable(${detector_executable_name}
   src/collision_detector_main.cpp
