@@ -56,7 +56,7 @@ std::shared_ptr<BT::Tree> WouldASmootherRecoveryHelpFixture::tree_ = nullptr;
 
 TEST_F(WouldASmootherRecoveryHelpFixture, test_condition)
 {
-  std::map<int, BT::NodeStatus> error_to_status_map = {
+  std::map<unsigned int, BT::NodeStatus> error_to_status_map = {
     {ActionGoal::NONE, BT::NodeStatus::FAILURE},
     {ActionGoal::UNKNOWN, BT::NodeStatus::SUCCESS},
     {ActionGoal::TIMEOUT, BT::NodeStatus::SUCCESS},
