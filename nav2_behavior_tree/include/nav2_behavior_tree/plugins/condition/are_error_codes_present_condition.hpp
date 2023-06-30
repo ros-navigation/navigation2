@@ -34,14 +34,14 @@ public:
     const BT::NodeConfiguration & conf)
   : BT::ConditionNode(condition_name, conf)
   {
-    getInput<std::set<unsigned int>>("error_codes_to_check", error_codes_to_check_); //NOLINT
+    getInput<std::set<unsigned short>>("error_codes_to_check", error_codes_to_check_); //NOLINT
   }
 
   AreErrorCodesPresent() = delete;
 
   BT::NodeStatus tick()
   {
-    getInput<unsigned int>("error_code", error_code_);  //NOLINT
+    getInput<unsigned short>("error_code", error_code_);  //NOLINT
 
     if (error_codes_to_check_.find(error_code_) != error_codes_to_check_.end()) {
       return BT::NodeStatus::SUCCESS;
@@ -54,14 +54,14 @@ public:
   {
     return
       {
-        BT::InputPort<unsigned int>("error_code", "The active error codes"), //NOLINT
-        BT::InputPort<std::set<unsigned int>>("error_codes_to_check", "Error codes to check")//NOLINT
+        BT::InputPort<unsigned short>("error_code", "The active error codes"), //NOLINT
+        BT::InputPort<std::set<unsigned short>>("error_codes_to_check", "Error codes to check")//NOLINT
       };
   }
 
 protected:
-  unsigned int error_code_; //NOLINT
-  std::set<unsigned int> error_codes_to_check_; //NOLINT
+  unsigned short error_code_; //NOLINT
+  std::set<unsigned short> error_codes_to_check_; //NOLINT
 };
 
 }  // namespace nav2_behavior_tree

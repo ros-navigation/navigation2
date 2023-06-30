@@ -27,8 +27,8 @@ public:
   using ActionGoal = Action::Goal;
   void SetUp()
   {
-    unsigned int error_code = ActionGoal::NONE;
-    std::set<unsigned int> error_codes_to_check = {ActionGoal::UNKNOWN}; //NOLINT
+    unsigned short error_code = ActionGoal::NONE;
+    std::set<unsigned short> error_codes_to_check = {ActionGoal::UNKNOWN}; //NOLINT
     config_->blackboard->set("error_code", error_code);
     config_->blackboard->set("error_codes_to_check", error_codes_to_check);
 
@@ -58,7 +58,7 @@ std::shared_ptr<BT::Tree> AreErrorCodesPresentFixture::tree_ = nullptr;
 
 TEST_F(AreErrorCodesPresentFixture, test_condition)
 {
-  std::map<unsigned int, BT::NodeStatus> error_to_status_map = {
+  std::map<unsigned short, BT::NodeStatus> error_to_status_map = {
     {ActionGoal::NONE, BT::NodeStatus::FAILURE},
     {ActionGoal::UNKNOWN, BT::NodeStatus::SUCCESS},
   };

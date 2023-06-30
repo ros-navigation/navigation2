@@ -27,7 +27,7 @@ public:
   using ActionGoal = Action::Goal;
   void SetUp()
   {
-    unsigned int error_code = ActionGoal::NONE;
+    unsigned short error_code = ActionGoal::NONE;
     config_->blackboard->set("error_code", error_code);
 
     std::string xml_txt =
@@ -56,7 +56,7 @@ std::shared_ptr<BT::Tree> WouldAControllerRecoveryHelpFixture::tree_ = nullptr;
 
 TEST_F(WouldAControllerRecoveryHelpFixture, test_condition)
 {
-  std::map<unsigned int, BT::NodeStatus> error_to_status_map = {
+  std::map<unsigned short, BT::NodeStatus> error_to_status_map = {
     {ActionGoal::NONE, BT::NodeStatus::FAILURE},
     {ActionGoal::UNKNOWN, BT::NodeStatus::SUCCESS},
     {ActionGoal::INVALID_CONTROLLER, BT::NodeStatus::FAILURE},
