@@ -1,4 +1,5 @@
-// Copyright (c) 2022 Samsung R&D Institute Russia
+// Copyright (c) 2023 Samsung R&D Institute Russia
+// Copyright (c) 2023 Pixel Robotics GmbH
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -52,7 +53,7 @@ CollisionDetector::on_configure(const rclcpp_lifecycle::State & /*state*/)
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
   state_pub_ = this->create_publisher<nav2_msgs::msg::CollisionDetectorState>(
-    "~/state", rclcpp::SystemDefaultsQoS());
+    "collision_detector_state", rclcpp::SystemDefaultsQoS());
 
   // Obtaining ROS parameters
   if (!getParameters()) {
@@ -76,7 +77,7 @@ CollisionDetector::on_activate(const rclcpp_lifecycle::State & /*state*/)
   }
 
   // Creating timer
-  timer_ = this->create_wall_timer(
+  timer_ = this->create_timer(
     std::chrono::duration<double>{1.0 / frequency_},
     std::bind(&CollisionDetector::process, this));
 
@@ -206,6 +207,16 @@ bool CollisionDetector::configurePolygons(
           "[%s]: Unknown polygon type: %s",
           polygon_name.c_str(), polygon_type.c_str());
         return false;
+      }
+
+      // warn if the added polygon's action_type_ is not different than "none"
+      auto action_type = polygons_.back()->getActionType();
+      if (action_type != DO_NOTHING) {
+        RCLCPP_WARN(
+          get_logger(),
+          "[%s]: The action_type of the polygon is different than \"none\" which is \
+          not supported in the collision detector; it will be considered as \"none\".",
+          polygon_name.c_str());
       }
 
       // Configure last added polygon
