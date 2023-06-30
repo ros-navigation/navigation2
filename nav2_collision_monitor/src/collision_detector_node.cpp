@@ -157,12 +157,19 @@ bool CollisionDetector::getParameters()
     node, "source_timeout", rclcpp::ParameterValue(2.0));
   source_timeout =
     rclcpp::Duration::from_seconds(get_parameter("source_timeout").as_double());
+  nav2_util::declare_parameter_if_not_declared(
+    node, "base_shift_correction", rclcpp::ParameterValue(true));
+  const bool base_shift_correction =
+    get_parameter("base_shift_correction").as_bool();
 
   if (!configurePolygons(base_frame_id, transform_tolerance)) {
     return false;
   }
 
-  if (!configureSources(base_frame_id, odom_frame_id, transform_tolerance, source_timeout)) {
+  if (!configureSources(
+      base_frame_id, odom_frame_id, transform_tolerance, source_timeout,
+      base_shift_correction))
+  {
     return false;
   }
 
@@ -218,7 +225,8 @@ bool CollisionDetector::configureSources(
   const std::string & base_frame_id,
   const std::string & odom_frame_id,
   const tf2::Duration & transform_tolerance,
-  const rclcpp::Duration & source_timeout)
+  const rclcpp::Duration & source_timeout,
+  const bool base_shift_correction)
 {
   try {
     auto node = shared_from_this();
@@ -236,7 +244,7 @@ bool CollisionDetector::configureSources(
       if (source_type == "scan") {
         std::shared_ptr<Scan> s = std::make_shared<Scan>(
           node, source_name, tf_buffer_, base_frame_id, odom_frame_id,
-          transform_tolerance, source_timeout);
+          transform_tolerance, source_timeout, base_shift_correction);
 
         s->configure();
 
@@ -244,7 +252,7 @@ bool CollisionDetector::configureSources(
       } else if (source_type == "pointcloud") {
         std::shared_ptr<PointCloud> p = std::make_shared<PointCloud>(
           node, source_name, tf_buffer_, base_frame_id, odom_frame_id,
-          transform_tolerance, source_timeout);
+          transform_tolerance, source_timeout, base_shift_correction);
 
         p->configure();
 
@@ -252,7 +260,7 @@ bool CollisionDetector::configureSources(
       } else if (source_type == "range") {
         std::shared_ptr<Range> r = std::make_shared<Range>(
           node, source_name, tf_buffer_, base_frame_id, odom_frame_id,
-          transform_tolerance, source_timeout);
+          transform_tolerance, source_timeout, base_shift_correction);
 
         r->configure();
 
@@ -293,7 +301,7 @@ void CollisionDetector::process()
     state_msg->polygons.push_back(polygon->getName());
     state_msg->detections.push_back(
       polygon->getPointsInside(
-        collision_points) > polygon->getMaxPoints());
+        collision_points) > polygon->getMinPoints());
   }
 
   state_pub_->publish(std::move(state_msg));
