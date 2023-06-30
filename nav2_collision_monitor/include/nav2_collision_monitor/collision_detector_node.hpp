@@ -139,7 +139,7 @@ protected:
   std::vector<std::shared_ptr<Polygon>> polygons_;
   /// @brief Data sources array
   std::vector<std::shared_ptr<Source>> sources_;
-  
+
   /// @brief collision monitor state publisher
   rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::CollisionDetectorState>::SharedPtr state_pub_;
   /// @brief timer that runs actions
