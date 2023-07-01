@@ -417,7 +417,7 @@ NavfnPlanner::getPlanFromPotential(
   for (int i = len - 1; i >= 0; --i) {
     // convert the plan to world coordinates
     double world_x, world_y;
-    mapToWorld(x[i], y[i], world_x, world_y);
+    this->costmap_->mapToWorld(x[i], y[i], world_x, world_y);
 
     geometry_msgs::msg::PoseStamped pose;
     pose.pose.position.x = world_x;
@@ -504,13 +504,6 @@ NavfnPlanner::worldToMap(double wx, double wy, unsigned int & mx, unsigned int &
     costmap_->getSizeInCellsX(), costmap_->getSizeInCellsY());
 
   return false;
-}
-
-void
-NavfnPlanner::mapToWorld(double mx, double my, double & wx, double & wy)
-{
-  wx = costmap_->getOriginX() + mx * costmap_->getResolution();
-  wy = costmap_->getOriginY() + my * costmap_->getResolution();
 }
 
 void
