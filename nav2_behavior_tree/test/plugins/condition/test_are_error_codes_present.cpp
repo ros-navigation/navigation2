@@ -58,7 +58,7 @@ std::shared_ptr<BT::Tree> AreErrorCodesPresentFixture::tree_ = nullptr;
 
 TEST_F(AreErrorCodesPresentFixture, test_condition)
 {
-  std::map<unsigned short, BT::NodeStatus> error_to_status_map = {
+  std::map<uint16_t, BT::NodeStatus> error_to_status_map = {
     {ActionGoal::NONE, BT::NodeStatus::FAILURE},
     {ActionGoal::UNKNOWN, BT::NodeStatus::SUCCESS},
   };
