@@ -27,7 +27,7 @@ public:
   using ActionGoal = Action::Goal;
   void SetUp()
   {
-    unsigned short error_code = ActionGoal::NONE;
+    uint16_t error_code = ActionGoal::NONE;
     config_->blackboard->set("error_code", error_code);
 
     std::string xml_txt =
@@ -56,7 +56,7 @@ std::shared_ptr<BT::Tree> WouldAPlannerRecoveryHelpFixture::tree_ = nullptr;
 
 TEST_F(WouldAPlannerRecoveryHelpFixture, test_condition)
 {
-  std::map<unsigned short, BT::NodeStatus> error_to_status_map = {
+  std::map<uint16_t, BT::NodeStatus> error_to_status_map = {
     {ActionGoal::NONE, BT::NodeStatus::FAILURE},
     {ActionGoal::UNKNOWN, BT::NodeStatus::SUCCESS},
     {ActionGoal::NO_VALID_PATH, BT::NodeStatus::SUCCESS},
