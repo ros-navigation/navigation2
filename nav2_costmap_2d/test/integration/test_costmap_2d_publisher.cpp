@@ -15,6 +15,7 @@
 #include <gtest/gtest.h>
 
 #include <future>
+#include <rclcpp/logging.hpp>
 
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
@@ -156,24 +157,32 @@ protected:
 TEST_F(CostmapRosTestFixture, costmap_pub_test)
 {
   auto future = layer_subscriber_->layer_promise_.get_future();
+  std::cout << "Get future" << std::endl;
   auto status = future.wait_for(std::chrono::seconds(5));
-  EXPECT_TRUE(status == std::future_status::ready);
+  std::cout << "Waited for future" << std::endl;
+  ASSERT_TRUE(status == std::future_status::ready);
 
   auto costmap_raw = future.get();
+  std::cout << "Got future" << std::endl;
 
   // Check first 20 cells of the 10by10 map
+  std::cout << costmap_raw->data.size() << std::endl;
   unsigned int i = 0;
   for (; i < 7; ++i) {
-    EXPECT_EQ(costmap_raw->data[i], nav2_costmap_2d::FREE_SPACE);
+    std::cout << "i: " << i << std::endl;
+    EXPECT_EQ(costmap_raw->data.at(i), nav2_costmap_2d::FREE_SPACE);
   }
   for (; i < 10; ++i) {
-    EXPECT_EQ(costmap_raw->data[i], nav2_costmap_2d::LETHAL_OBSTACLE);
+    std::cout << "i: " << i << std::endl;
+    EXPECT_EQ(costmap_raw->data.at(i), nav2_costmap_2d::LETHAL_OBSTACLE);
   }
   for (; i < 17; ++i) {
-    EXPECT_EQ(costmap_raw->data[i], nav2_costmap_2d::FREE_SPACE);
+    std::cout << "i: " << i << std::endl;
+    EXPECT_EQ(costmap_raw->data.at(i), nav2_costmap_2d::FREE_SPACE);
   }
   for (; i < 20; ++i) {
-    EXPECT_EQ(costmap_raw->data[i], nav2_costmap_2d::LETHAL_OBSTACLE);
+    std::cout << "i: " << i << std::endl;
+    EXPECT_EQ(costmap_raw->data.at(i), nav2_costmap_2d::LETHAL_OBSTACLE);
   }
 
   SUCCEED();
