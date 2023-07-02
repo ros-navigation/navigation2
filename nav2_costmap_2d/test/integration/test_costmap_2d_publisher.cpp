@@ -118,7 +118,7 @@ public:
 protected:
   void layerCallback(const nav2_msgs::msg::Costmap::SharedPtr layer)
   {
-    if (!callback_hit_) {
+    if (!callback_hit_ && (layer->data.size() == 100)) {
       layer_promise_.set_value(layer);
       callback_hit_ = true;
     }
@@ -157,31 +157,23 @@ protected:
 TEST_F(CostmapRosTestFixture, costmap_pub_test)
 {
   auto future = layer_subscriber_->layer_promise_.get_future();
-  std::cout << "Get future" << std::endl;
   auto status = future.wait_for(std::chrono::seconds(5));
-  std::cout << "Waited for future" << std::endl;
   ASSERT_TRUE(status == std::future_status::ready);
 
   auto costmap_raw = future.get();
-  std::cout << "Got future" << std::endl;
 
   // Check first 20 cells of the 10by10 map
-  std::cout << costmap_raw->data.size() << std::endl;
-  unsigned int i = 0;
+  ASSERT_TRUE(costmap_raw->data.size() == 100); unsigned int i = 0;
   for (; i < 7; ++i) {
-    std::cout << "i: " << i << std::endl;
     EXPECT_EQ(costmap_raw->data.at(i), nav2_costmap_2d::FREE_SPACE);
   }
   for (; i < 10; ++i) {
-    std::cout << "i: " << i << std::endl;
     EXPECT_EQ(costmap_raw->data.at(i), nav2_costmap_2d::LETHAL_OBSTACLE);
   }
   for (; i < 17; ++i) {
-    std::cout << "i: " << i << std::endl;
     EXPECT_EQ(costmap_raw->data.at(i), nav2_costmap_2d::FREE_SPACE);
   }
   for (; i < 20; ++i) {
-    std::cout << "i: " << i << std::endl;
     EXPECT_EQ(costmap_raw->data.at(i), nav2_costmap_2d::LETHAL_OBSTACLE);
   }
 
