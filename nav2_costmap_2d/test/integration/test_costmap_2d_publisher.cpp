@@ -15,7 +15,6 @@
 #include <gtest/gtest.h>
 
 #include <future>
-#include <rclcpp/logging.hpp>
 
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
@@ -163,7 +162,8 @@ TEST_F(CostmapRosTestFixture, costmap_pub_test)
   auto costmap_raw = future.get();
 
   // Check first 20 cells of the 10by10 map
-  ASSERT_TRUE(costmap_raw->data.size() == 100); unsigned int i = 0;
+  ASSERT_TRUE(costmap_raw->data.size() == 100); 
+  unsigned int i = 0;
   for (; i < 7; ++i) {
     EXPECT_EQ(costmap_raw->data.at(i), nav2_costmap_2d::FREE_SPACE);
   }
