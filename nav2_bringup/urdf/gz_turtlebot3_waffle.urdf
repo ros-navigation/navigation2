@@ -191,7 +191,7 @@
       </material>
     </visual>
   </gazebo>
-  
+
   <link name="base_scan">
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -248,7 +248,6 @@
 
   <joint name="camera_rgb_joint" type="fixed">
     <origin xyz="0.005 0.018 0.013" rpy="0 0 0"/>
-    <!-- <origin xyz="${r200_cam_rgb_px} ${r200_cam_rgb_py} ${r200_cam_rgb_pz}" rpy="0 0 0"/> -->
     <parent link="camera_link"/>
     <child link="camera_rgb_frame"/>
   </joint>
@@ -263,7 +262,6 @@
 
   <joint name="camera_depth_joint" type="fixed">
     <origin xyz="0.005 0.028 0.013" rpy="-1.57 0 -1.57"/>
-    <!-- <origin xyz="${r200_cam_rgb_px} ${r200_cam_rgb_py + r200_cam_depth_offset} ${r200_cam_rgb_pz}" rpy="0 0 0"/> -->
     <parent link="camera_link"/>
     <child link="camera_depth_frame"/>
   </joint>
@@ -402,6 +400,8 @@
       <publish_nested_model_pose>true</publish_nested_model_pose>
       <static_publisher>true</static_publisher>
       <use_pose_vector_msg>true</use_pose_vector_msg>
+      <update_frequency>50</update_frequency>
+      <static_update_frequency>50</static_update_frequency>
     </plugin>
   </gazebo>
 

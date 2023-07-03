@@ -27,6 +27,145 @@
       name="ignition::gazebo::systems::Imu">
     </plugin>
 
+  <gui>
+    <!-- 3D scene -->
+    <plugin filename="MinimalScene" name="3D View">
+      <ignition-gui>
+        <title>3D View</title>
+        <property type="bool" key="showTitleBar">false</property>
+        <property type="string" key="state">docked</property>
+      </ignition-gui>
+
+      <engine>ogre2</engine>
+      <scene>scene</scene>
+      <ambient_light>0.4 0.4 0.4</ambient_light>
+      <background_color>0.8 0.8 0.8</background_color>
+      <camera_pose>0.319654 -0.235002 9.29441 0 1.5138 0.009599</camera_pose>
+      <camera_clip>
+        <near>0.25</near>
+        <far>25000</far>
+      </camera_clip>
+    </plugin>
+
+    <!-- Plugins that add functionality to the scene -->
+    <plugin filename="EntityContextMenuPlugin" name="Entity context menu">
+      <ignition-gui>
+        <property key="state" type="string">floating</property>
+        <property key="width" type="double">5</property>
+        <property key="height" type="double">5</property>
+        <property key="showTitleBar" type="bool">false</property>
+      </ignition-gui>
+    </plugin>
+    <plugin filename="GzSceneManager" name="Scene Manager">
+      <ignition-gui>
+        <property key="resizable" type="bool">false</property>
+        <property key="width" type="double">5</property>
+        <property key="height" type="double">5</property>
+        <property key="state" type="string">floating</property>
+        <property key="showTitleBar" type="bool">false</property>
+      </ignition-gui>
+    </plugin>
+    <plugin filename="InteractiveViewControl" name="Interactive view control">
+      <ignition-gui>
+        <property key="resizable" type="bool">false</property>
+        <property key="width" type="double">5</property>
+        <property key="height" type="double">5</property>
+        <property key="state" type="string">floating</property>
+        <property key="showTitleBar" type="bool">false</property>
+      </ignition-gui>
+    </plugin>
+    <plugin filename="CameraTracking" name="Camera Tracking">
+      <ignition-gui>
+        <property key="resizable" type="bool">false</property>
+        <property key="width" type="double">5</property>
+        <property key="height" type="double">5</property>
+        <property key="state" type="string">floating</property>
+        <property key="showTitleBar" type="bool">false</property>
+      </ignition-gui>
+    </plugin>
+    <plugin filename="Spawn" name="Spawn Entities">
+      <ignition-gui>
+        <anchors target="Select entities">
+          <line own="right" target="right"/>
+          <line own="top" target="top"/>
+        </anchors>
+        <property key="resizable" type="bool">false</property>
+        <property key="width" type="double">5</property>
+        <property key="height" type="double">5</property>
+        <property key="state" type="string">floating</property>
+        <property key="showTitleBar" type="bool">false</property>
+      </ignition-gui>
+    </plugin>
+    <plugin filename="SelectEntities" name="Select Entities">
+      <ignition-gui>
+        <anchors target="Select entities">
+          <line own="right" target="right"/>
+          <line own="top" target="top"/>
+        </anchors>
+        <property key="resizable" type="bool">false</property>
+        <property key="width" type="double">5</property>
+        <property key="height" type="double">5</property>
+        <property key="state" type="string">floating</property>
+        <property key="showTitleBar" type="bool">false</property>
+      </ignition-gui>
+    </plugin>
+    <plugin filename="VisualizationCapabilities" name="Visualization Capabilities">
+      <ignition-gui>
+        <property key="resizable" type="bool">false</property>
+        <property key="width" type="double">5</property>
+        <property key="height" type="double">5</property>
+        <property key="state" type="string">floating</property>
+        <property key="showTitleBar" type="bool">false</property>
+      </ignition-gui>
+    </plugin>
+
+    <!-- World control -->
+    <plugin filename="WorldControl" name="World control">
+      <ignition-gui>
+        <title>World control</title>
+        <property type="bool" key="showTitleBar">false</property>
+        <property type="bool" key="resizable">false</property>
+        <property type="double" key="height">72</property>
+        <property type="double" key="width">121</property>
+        <property type="double" key="z">1</property>
+
+        <property type="string" key="state">floating</property>
+        <anchors target="3D View">
+          <line own="left" target="left"/>
+          <line own="bottom" target="bottom"/>
+        </anchors>
+      </ignition-gui>
+
+      <play_pause>true</play_pause>
+      <step>true</step>
+      <start_paused>true</start_paused>
+      <use_event>true</use_event>
+
+    </plugin>
+
+    <!-- World statistics -->
+    <plugin filename="WorldStats" name="World stats">
+      <ignition-gui>
+        <title>World stats</title>
+        <property type="bool" key="showTitleBar">false</property>
+        <property type="bool" key="resizable">false</property>
+        <property type="double" key="height">110</property>
+        <property type="double" key="width">290</property>
+        <property type="double" key="z">1</property>
+
+        <property type="string" key="state">floating</property>
+        <anchors target="3D View">
+          <line own="right" target="right"/>
+          <line own="bottom" target="bottom"/>
+        </anchors>
+      </ignition-gui>
+
+      <sim_time>true</sim_time>
+      <real_time>true</real_time>
+      <real_time_factor>true</real_time_factor>
+      <iterations>true</iterations>
+    </plugin>
+  </gui>
     <light name='sun' type='directional'>
         <cast_shadows>1</cast_shadows>
         <pose>0 0 10 0 0 0</pose>
@@ -75,15 +214,6 @@
         <max_step_size>0.001</max_step_size>
         <real_time_factor>1</real_time_factor>
         <real_time_update_rate>1000.0</real_time_update_rate>
-        <ode>
-          <solver>
-            <type>quick</type>
-            <iters>150</iters>
-            <precon_iters>0</precon_iters>
-            <sor>1.400000</sor>
-            <use_dynamic_moi_rescaling>1</use_dynamic_moi_rescaling>
-          </solver>
-        </ode>
     </physics>
 
     <model name="turtlebot3_world">
