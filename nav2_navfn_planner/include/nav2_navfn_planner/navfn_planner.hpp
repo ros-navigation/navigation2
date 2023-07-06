@@ -157,16 +157,6 @@ protected:
   }
 
   /**
-   * @brief Transform a point from world to map frame
-   * @param wx double of world X coordinate
-   * @param wy double of world Y coordinate
-   * @param mx int of map X coordinate
-   * @param my int of map Y coordinate
-   * @return true if can transform
-   */
-  bool worldToMap(double wx, double wy, unsigned int & mx, unsigned int & my);
-
-  /**
    * @brief Set the corresponding cell cost to be free space
    * @param mx int of map X coordinate
    * @param my int of map Y coordinate

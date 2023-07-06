@@ -238,7 +238,13 @@ NavfnPlanner::makePlan(
     start.position.x, start.position.y, goal.position.x, goal.position.y);
 
   unsigned int mx, my;
-  worldToMap(wx, wy, mx, my);
+  if(!costmap_->worldToMap(wx, wy, mx, my)){
+    RCLCPP_ERROR(
+      logger_,
+      "worldToMap failed: mx,my: %d,%d, size_x,size_y: %d,%d", mx, my,
+      costmap_->getSizeInCellsX(), costmap_->getSizeInCellsY());
+  }
+
 
   // clear the starting cell within the costmap because we know it can't be an obstacle
   clearRobotCell(mx, my);
@@ -261,7 +267,12 @@ NavfnPlanner::makePlan(
   wx = goal.position.x;
   wy = goal.position.y;
 
-  worldToMap(wx, wy, mx, my);
+  if(!costmap_->worldToMap(wx, wy, mx, my)){
+    RCLCPP_ERROR(
+      logger_,
+      "worldToMap failed: mx,my: %d,%d, size_x,size_y: %d,%d", mx, my,
+      costmap_->getSizeInCellsX(), costmap_->getSizeInCellsY());
+  }
   int map_goal[2];
   map_goal[0] = mx;
   map_goal[1] = my;
@@ -388,7 +399,12 @@ NavfnPlanner::getPlanFromPotential(
 
   // the potential has already been computed, so we won't update our copy of the costmap
   unsigned int mx, my;
-  worldToMap(wx, wy, mx, my);
+  if(!costmap_->worldToMap(wx, wy, mx, my)){
+    RCLCPP_ERROR(
+      logger_,
+      "worldToMap failed: mx,my: %d,%d, size_x,size_y: %d,%d", mx, my,
+      costmap_->getSizeInCellsX(), costmap_->getSizeInCellsY());
+  }
 
   int map_goal[2];
   map_goal[0] = mx;
@@ -437,7 +453,7 @@ double
 NavfnPlanner::getPointPotential(const geometry_msgs::msg::Point & world_point)
 {
   unsigned int mx, my;
-  if (!worldToMap(world_point.x, world_point.y, mx, my)) {
+  if (!costmap_->worldToMap(world_point.x, world_point.y, mx, my)) {
     return std::numeric_limits<double>::max();
   }
 
@@ -481,30 +497,6 @@ NavfnPlanner::getPointPotential(const geometry_msgs::msg::Point & world_point)
 
 //   return false;
 // }
-
-bool
-NavfnPlanner::worldToMap(double wx, double wy, unsigned int & mx, unsigned int & my)
-{
-  if (wx < costmap_->getOriginX() || wy < costmap_->getOriginY()) {
-    return false;
-  }
-
-  mx = static_cast<int>(
-    std::round((wx - costmap_->getOriginX()) / costmap_->getResolution()));
-  my = static_cast<int>(
-    std::round((wy - costmap_->getOriginY()) / costmap_->getResolution()));
-
-  if (mx < costmap_->getSizeInCellsX() && my < costmap_->getSizeInCellsY()) {
-    return true;
-  }
-
-  RCLCPP_ERROR(
-    logger_,
-    "worldToMap failed: mx,my: %d,%d, size_x,size_y: %d,%d", mx, my,
-    costmap_->getSizeInCellsX(), costmap_->getSizeInCellsY());
-
-  return false;
-}
 
 void
 NavfnPlanner::clearRobotCell(unsigned int mx, unsigned int my)
