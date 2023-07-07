@@ -259,6 +259,8 @@ AmclNode::AmclNode(const rclcpp::NodeOptions & options)
       "std_warn_level_yaw", rclcpp::ParameterValue(0.1),
       "Limit threshold of yaw value. Monitors the estimated standard deviation of the filter.");
   add_parameter(
+    "aug_mcl_score_threshold", rclcpp::ParameterValue(0.5));
+  add_parameter(
     "max_particle_gen_prob_ext_pose", rclcpp::ParameterValue(0.01f),
     "Maximum probability of generating a particle based on external pose source");
 
@@ -276,6 +278,9 @@ AmclNode::AmclNode(const rclcpp::NodeOptions & options)
     "Use Augmented MCL approach for resampling"
   );
 
+  localization_mode_ = "laser";
+  last_mode_switch_ts_ = now();
+  
   diagnostic_updater_ = std::make_shared<diagnostic_updater::Updater>(this);
 }
 
@@ -883,6 +888,8 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
       sendMapToOdomTransform(transform_expiration);
     }
   }
+
+  healthCheck();
   diagnostic_updater_->force_update();
 }
 
@@ -1296,6 +1303,7 @@ AmclNode::initParameters()
   get_parameter("std_warn_level_x", std_warn_level_x_);
   get_parameter("std_warn_level_y", std_warn_level_y_);
   get_parameter("std_warn_level_yaw", std_warn_level_yaw_);
+  get_parameter("aug_mcl_score_threshold", aug_mcl_score_threshold_);
   get_parameter("max_particle_gen_prob_ext_pose", max_particle_gen_prob_ext_pose_);
   get_parameter("ext_pose_search_tolerance_sec", ext_pose_search_tolerance_sec_);
   get_parameter("use_cluster_averaging", use_cluster_averaging_);
@@ -1490,6 +1498,8 @@ AmclNode::dynamicParametersCallback(
         std_warn_level_y_ = parameter.as_double();
       } else if (param_name == "std_warn_level_yaw") {
         std_warn_level_yaw_ = parameter.as_double();
+      } else if (param_name == "aug_mcl_score_threshold"){
+        aug_mcl_score_threshold_ = parameter.as_double();
       } else if (param_name == "laser_importance_factor") {
         laser_importance_factor_ = parameter.as_double();
         reinit_laser = true;
@@ -1870,6 +1880,23 @@ AmclNode::amclDiagnostics(diagnostic_updater::DiagnosticStatusWrapper& stat)
 {
   using DiagStatus = diagnostic_msgs::msg::DiagnosticStatus;
 
+
+  stat.add("std_x", metrics_["std_x"]);
+  stat.add("std_y", metrics_["std_y"]);
+  stat.add("std_yaw", metrics_["std_yaw"]);
+  stat.add("std_warn_level_x", std_warn_level_x_);
+  stat.add("std_warn_level_y", std_warn_level_y_);
+  stat.add("std_warn_level_yaw", std_warn_level_yaw_);
+  stat.add("aug_mcl_score", metrics_["aug_mcl_score"]);
+
+  if (metrics_["std_x"] > std_warn_level_x_ || metrics_["std_y"] > std_warn_level_y_ || metrics_["std_yaw"] > std_warn_level_yaw_) {
+    stat.summary(DiagStatus::WARN, "Deviation too large");
+  } else {
+    stat.summary(DiagStatus::OK, "OK");
+  }
+}
+
+void AmclNode::updateMetrics(){
   // Publish estimated standard deviation flag of the filter, coming from pose covariance
   // Based on https://github.com/ros-planning/navigation/pull/807
   double std_x = sqrt(last_published_pose_.pose.covariance[6*0+0]);
@@ -1880,18 +1907,70 @@ AmclNode::amclDiagnostics(diagnostic_updater::DiagnosticStatusWrapper& stat)
   // More on that at Probabilistic Robotics, ch 8.3.3
   double aug_mcl_score = 1.0 - pf_->w_fast / pf_->w_slow;
 
-  stat.add("std_x", std_x);
-  stat.add("std_y", std_y);
-  stat.add("std_yaw", std_yaw);
-  stat.add("std_warn_level_x", std_warn_level_x_);
-  stat.add("std_warn_level_y", std_warn_level_y_);
-  stat.add("std_warn_level_yaw", std_warn_level_yaw_);
-  stat.add("aug_mcl_score", aug_mcl_score);
+  metrics_["std_x"] = std_x;
+  metrics_["std_y"] = std_y;
+  metrics_["std_yaw"] = std_yaw;
+  metrics_["aug_mcl_score"] = aug_mcl_score;
+}
 
-  if (std_x > std_warn_level_x_ || std_y > std_warn_level_y_ || std_yaw > std_warn_level_yaw_) {
-    stat.summary(DiagStatus::WARN, "Deviation too large");
+bool AmclNode::switchLocalizationMode(std::string mode){
+  size_t laser_index;
+  if(frame_to_laser_.size() > 0){
+    laser_index = frame_to_laser_.size() - 1;
   } else {
-    stat.summary(DiagStatus::OK, "OK");
+    RCLCPP_ERROR(get_logger(), "switchLocalizationMode: multiple laser instances are not supported");
+    return false;
+  }
+  
+  if(mode == "odometry"){
+    localization_mode_ = mode;
+    last_mode_switch_ts_ = now();
+
+    lasers_[laser_index]->setLaserImportanceFactor(0.3);
+
+    RCLCPP_INFO(get_logger(), "odometry mode - ON");
+    return true;
+  } else if(mode == "laser"){
+    localization_mode_ = mode;
+    last_mode_switch_ts_ = now();
+
+    // get back to the original value
+    lasers_[laser_index]->setLaserImportanceFactor(laser_importance_factor_);
+
+    RCLCPP_INFO(get_logger(), "laser mode - ON");
+    return true;
+  } else {
+    RCLCPP_ERROR(get_logger(), "Unknown localization mode: %s", mode.c_str());
+    return false;
+  }
+}
+
+void AmclNode::healthCheck(){
+  updateMetrics();
+
+  if(metrics_["aug_mcl_score"] > aug_mcl_score_threshold_){
+    if(localization_mode_ == "odometry") return;
+  
+    // protect from cases when metric value just at the edge of threshold to prevent frequent mode switching
+    if(now() - last_mode_switch_ts_ < rclcpp::Duration::from_seconds(5.0)){
+      RCLCPP_WARN(get_logger(), "Mode was switched recently, not switching now");
+      return;
+    }
+
+    RCLCPP_INFO(get_logger(), "Augmented MCL score is too high: %f. Switching to odometry mode", metrics_["aug_mcl_score"]);
+
+    switchLocalizationMode(std::string("odometry"));
+  } else {
+    if(localization_mode_ == "laser") return;
+
+    if(now() - last_mode_switch_ts_ < rclcpp::Duration::from_seconds(5.0)){
+      RCLCPP_WARN(get_logger(), "Mode was switched recently, not switching now");
+      return;
+    }
+
+    RCLCPP_INFO(get_logger(), "Augmented MCL score is OK: %f. Switching back to laser mode.", metrics_["aug_mcl_score"]);
+
+    switchLocalizationMode(std::string("laser"));
   }
 }
 

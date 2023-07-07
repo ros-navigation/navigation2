@@ -27,6 +27,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <unordered_map>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
@@ -306,6 +307,20 @@ protected:
   double std_warn_level_x_;
   double std_warn_level_y_;
   double std_warn_level_yaw_;
+  double aug_mcl_score_threshold_;
+
+  std::string localization_mode_ = "";
+  rclcpp::Time last_mode_switch_ts_;
+
+  /*
+    * @brief Check localization health
+  */
+  void healthCheck();
+
+  void updateMetrics();
+  bool switchLocalizationMode(std::string mode);
+
+  std::unordered_map<std::string, double> metrics_;
 
   std::unique_ptr<ExternalPoseBuffer> ext_pose_buffer_;
 
