@@ -205,6 +205,8 @@ protected:
   /// @brief Time step for robot movement simulation
   double simulation_time_step_;
   /// @brief Minimum velocity before we fully stop
+  /// This value is to be compared against x * x + y * y + tw * tw of the output velocity
+  /// and is therefore an experimental value that needs to be tuned
   double min_vel_before_stop_;
   /// @brief Footprint subscriber
   std::unique_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
