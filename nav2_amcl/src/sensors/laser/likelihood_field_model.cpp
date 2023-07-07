@@ -125,7 +125,8 @@ LikelihoodFieldModel::sensorFunction(LaserData * data, pf_sample_set_t * set)
       p += pz * pz * pz;
     }
 
-    sample->weight *= pow(p, self->importance_factor_); // Accroding to Probabilistic Robotics, 6.3.4
+    sample->raw_weight *= p;
+    sample->weight *= pow(p, self->importance_factor_); // According to Probabilistic Robotics, 6.3.4
     total_weight += sample->weight;
   }
 

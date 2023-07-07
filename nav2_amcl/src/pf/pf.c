@@ -90,6 +90,7 @@ pf_t * pf_alloc(
       sample->pose.v[1] = 0.0;
       sample->pose.v[2] = 0.0;
       sample->weight = 1.0 / max_samples;
+      sample->raw_weight = 1.0 / max_samples;
     }
 
     // HACK: is 3 times max_samples enough?
@@ -262,6 +263,7 @@ void pf_update_sensor(pf_t * pf, pf_sensor_model_fn_t sensor_fn, void * sensor_d
   pf_sample_set_t * set;
   pf_sample_t * sample;
   double total;
+  double total_raw = 0.0;
 
   set = pf->sets + pf->current_set;
 
@@ -273,9 +275,18 @@ void pf_update_sensor(pf_t * pf, pf_sensor_model_fn_t sensor_fn, void * sensor_d
     double w_avg = 0.0;
     for (i = 0; i < set->sample_count; i++) {
       sample = set->samples + i;
-      w_avg += sample->weight;
       sample->weight /= total;
+
+      total_raw += sample->raw_weight;
     }
+
+    // Normalize raw weights
+    for(i = 0; i < set->sample_count; i++) {
+      sample = set->samples + i;
+      w_avg += sample->raw_weight;
+      sample->raw_weight /= total_raw;
+    }
+
     // Update running averages of likelihood of samples (Prob Rob p258)
     w_avg /= set->sample_count;
     if (pf->w_slow == 0.0) {
