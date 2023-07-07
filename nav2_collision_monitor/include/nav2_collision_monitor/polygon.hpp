@@ -99,14 +99,14 @@ public:
    */
   double getSlowdownRatio() const;
   /**
-   * @brief Obtains minimum velocity before completly stopping.
+   * @brief Obtains required time before collision for current polygon.
    * Applicable for APPROACH model.
    * @return Time before collision in seconds
    */
   double getTimeBeforeCollision() const;
 
   /**
-   * @brief Obtains required time before collision for current polygon.
+   * @brief Obtains minimum velocity before completly stopping.
    * Applicable for APPROACH model.
    * @return Time before collision in seconds
    */
