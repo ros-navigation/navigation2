@@ -106,6 +106,13 @@ public:
   double getTimeBeforeCollision() const;
 
   /**
+   * @brief Obtains minimum velocity before completly stopping.
+   * Applicable for APPROACH model.
+   * @return Time before collision in seconds
+   */
+  double getMinVelBeforeStop() const;
+
+  /**
    * @brief Gets polygon points
    * @param poly Output polygon points (vertices)
    */
@@ -197,6 +204,10 @@ protected:
   double time_before_collision_;
   /// @brief Time step for robot movement simulation
   double simulation_time_step_;
+  /// @brief Minimum velocity before we fully stop
+  /// This value is to be compared against x * x + y * y + tw * tw of the output velocity
+  /// and is therefore an experimental value that needs to be tuned
+  double min_vel_before_stop_;
   /// @brief Footprint subscriber
   std::unique_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
   /// @brief Detection topic

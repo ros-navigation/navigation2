@@ -33,6 +33,12 @@ struct Velocity
     return first_vel < second_vel;
   }
 
+  inline bool operator<(const double & second) const
+  {
+    const double first_vel = x * x + y * y + tw * tw;
+    return first_vel < second;
+  }
+
   inline Velocity operator*(const double & mul) const
   {
     return {x * mul, y * mul, tw * mul};
