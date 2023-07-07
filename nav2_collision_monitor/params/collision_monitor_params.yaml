@@ -35,6 +35,7 @@ collision_monitor:
       footprint_topic: "/local_costmap/published_footprint"
       time_before_collision: 2.0
       simulation_time_step: 0.1
+      min_vel_before_stop: 0.04
       max_points: 5
       visualize: False
     observation_sources: ["scan"]
