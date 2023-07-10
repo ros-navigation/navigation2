@@ -23,7 +23,7 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
 #include "behaviortree_cpp_v3/bt_factory.h"
-#include "nav2_behavior_tree/bt_conversions.hpp"
+#include "nav2_behavior_tree/bt_utils.hpp"
 
 template<typename T>
 class TestNode : public BT::SyncActionNode

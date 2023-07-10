@@ -41,13 +41,6 @@ NavigateToPoseNavigator::configure(
 
   path_blackboard_id_ = node->get_parameter("path_blackboard_id").as_string();
 
-  // Get the action server client node
-  rclcpp::Node::SharedPtr client_node = bt_action_server_->getBlackboard()->get<rclcpp::Node::SharedPtr>("node");
-
-  // Set the robot base frame and global frame parameters in the client node
-  client_node->declare_parameter("robot_base_frame", node->get_parameter("robot_base_frame").as_string());
-  client_node->declare_parameter("global_frame", node->get_parameter("global_frame").as_string());
-
   // Odometry smoother object for getting current speed
   odom_smoother_ = odom_smoother;
 

@@ -122,6 +122,12 @@ bool BtActionServer<ActionT>::on_configure()
   // Support for handling the topic-based goal pose from rviz
   client_node_ = std::make_shared<rclcpp::Node>("_", options);
 
+  // Declare parameters for client node
+  client_node_->declare_parameter(
+    "robot_base_frame", node->get_parameter("robot_base_frame").as_string());
+  client_node_->declare_parameter(
+    "global_frame", node->get_parameter("global_frame").as_string());
+
   action_server_ = std::make_shared<ActionServer>(
     node->get_node_base_interface(),
     node->get_node_clock_interface(),

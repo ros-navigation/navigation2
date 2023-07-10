@@ -26,6 +26,7 @@
 #include "behaviortree_cpp_v3/decorator_node.h"
 
 #include "nav2_behavior_tree/plugins/decorator/distance_controller.hpp"
+#include "nav2_behavior_tree/bt_utils.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -37,46 +38,15 @@ DistanceController::DistanceController(
   distance_(1.0),
   first_time_(false)
 {
-  auto node = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
-  if(!getInput("global_frame", global_frame_)) {
-    RCLCPP_INFO(node->get_logger(), "Parameter 'global_frame' not provided by behavior tree xml file, trying to get it from ros2 parameter file");
-    if(!node->get_parameter("global_frame", global_frame_)){
-      global_frame_ = "map";
-      RCLCPP_INFO(node->get_logger(), "Parameter 'global_frame' not provided by ros2 parameter file, using default value '%s'",
-        global_frame_.c_str());
-    }
-    else{
-      RCLCPP_INFO(node->get_logger(), "Parameter 'global_frame' provided by ros2 parameter file, using value '%s'",
-        global_frame_.c_str());
-    }
-  }
-  else{
-    RCLCPP_INFO(node->get_logger(), "Parameter 'global_frame' provided by behavior tree xml file, using value '%s'",
-      global_frame_.c_str());
-  }
-
-  if(!getInput("robot_base_frame", robot_base_frame_)) {
-    RCLCPP_INFO(node->get_logger(), "Parameter 'robot_base_frame' not provided by behavior tree xml file, trying to get it from ros2 parameter file");
-    if(!node->get_parameter("robot_base_frame", robot_base_frame_)){
-      robot_base_frame_ = "base_link";
-      RCLCPP_INFO(node->get_logger(), "Parameter 'robot_base_frame' not provided by ros2 parameter file, using default value '%s'",
-        robot_base_frame_.c_str());
-    }
-    else{
-      RCLCPP_INFO(node->get_logger(), "Parameter 'robot_base_frame' provided by ros2 parameter file, using value '%s'",
-        robot_base_frame_.c_str());
-    }
-  }
-  else{
-    RCLCPP_INFO(node->get_logger(), "Parameter 'robot_base_frame' provided by behavior tree xml file, using value '%s'",
-      robot_base_frame_.c_str());
-  }
-
   getInput("robot_base_frame", robot_base_frame_);
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
   tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
-
   node_->get_parameter("transform_tolerance", transform_tolerance_);
+
+  global_frame_ = BT::deconflictPortAndParamFrame<std::string, DistanceController>(
+    node_, "global_frame", this);
+  robot_base_frame_ = BT::deconflictPortAndParamFrame<std::string, DistanceController>(
+    node_, "robot_base_frame", this);
 }
 
 inline BT::NodeStatus DistanceController::tick()
