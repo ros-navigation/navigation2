@@ -238,7 +238,7 @@ NavfnPlanner::makePlan(
     start.position.x, start.position.y, goal.position.x, goal.position.y);
 
   unsigned int mx, my;
-  if(!costmap_->worldToMap(wx, wy, mx, my)){
+  if (!costmap_->worldToMap(wx, wy, mx, my)){
     RCLCPP_ERROR(
       logger_,
       "worldToMap failed: mx,my: %d,%d, size_x,size_y: %d,%d", mx, my,
@@ -267,7 +267,7 @@ NavfnPlanner::makePlan(
   wx = goal.position.x;
   wy = goal.position.y;
 
-  if(!costmap_->worldToMap(wx, wy, mx, my)){
+  if (!costmap_->worldToMap(wx, wy, mx, my)){
     RCLCPP_ERROR(
       logger_,
       "worldToMap failed: mx,my: %d,%d, size_x,size_y: %d,%d", mx, my,
@@ -399,7 +399,7 @@ NavfnPlanner::getPlanFromPotential(
 
   // the potential has already been computed, so we won't update our copy of the costmap
   unsigned int mx, my;
-  if(!costmap_->worldToMap(wx, wy, mx, my)){
+  if (!costmap_->worldToMap(wx, wy, mx, my)){
     RCLCPP_ERROR(
       logger_,
       "worldToMap failed: mx,my: %d,%d, size_x,size_y: %d,%d", mx, my,
