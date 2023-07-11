@@ -24,7 +24,7 @@ class WouldASmootherRecoveryHelpFixture : public nav2_behavior_tree::BehaviorTre
 {
 public:
   using Action = nav2_msgs::action::SmoothPath;
-  using ActionGoal = Action::Goal;
+  using ActionGoal = Action::Result;
   void SetUp()
   {
     uint16_t error_code = ActionGoal::NONE;
