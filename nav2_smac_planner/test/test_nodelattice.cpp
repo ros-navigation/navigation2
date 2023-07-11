@@ -347,7 +347,7 @@ TEST(NodeLatticeTest, test_node_lattice_custom_footprint)
   // Test that the node is valid though all motion primitives poses for custom footprint
   nav2_smac_planner::MotionPrimitivePtrs motion_primitives =
     nav2_smac_planner::NodeLattice::motion_table.getMotionPrimitives(&node);
-  EXPECT_GT(motion_primitives.size(), 0);
+  EXPECT_GT(motion_primitives.size(), 0u);
   for (unsigned int i = 0; i < motion_primitives.size(); i++) {
     EXPECT_EQ(node.isNodeValid(true, checker.get(), motion_primitives[i], false), true);
     EXPECT_EQ(node.isNodeValid(true, checker.get(), motion_primitives[i], true), true);
