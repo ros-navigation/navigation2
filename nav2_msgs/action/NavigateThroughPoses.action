@@ -7,7 +7,6 @@ geometry_msgs/PoseStamped[] poses
 string behavior_tree
 ---
 #result definition
-std_msgs/Empty result
 uint16 error_code
 ---
 #feedback definition
