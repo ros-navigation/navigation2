@@ -33,6 +33,7 @@ public:
 
   ResultStatus onRun(const std::shared_ptr<const BackUpActionGoal> command) override;
 };
-}
+
+}  // namespace nav2_behaviors
 
 #endif  // NAV2_BEHAVIORS__PLUGINS__BACK_UP_HPP_
