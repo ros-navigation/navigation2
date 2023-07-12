@@ -44,6 +44,7 @@ class RewrittenYaml(launch.Substitution):
     def __init__(self,
         source_file: launch.SomeSubstitutionsType,
         param_rewrites: Dict,
+        string_subsitutions: Optional[Dict],
         root_key: Optional[launch.SomeSubstitutionsType] = None,
         key_rewrites: Optional[Dict] = None,
         convert_types = False) -> None:
@@ -61,11 +62,14 @@ class RewrittenYaml(launch.Substitution):
         from launch.utilities import normalize_to_list_of_substitutions  # import here to avoid loop
         self.__source_file = normalize_to_list_of_substitutions(source_file)
         self.__param_rewrites = {}
+        self.__string_subsitutions = {}
         self.__key_rewrites = {}
         self.__convert_types = convert_types
         self.__root_key = None
         for key in param_rewrites:
             self.__param_rewrites[key] = normalize_to_list_of_substitutions(param_rewrites[key])
+        if string_subsitutions is not None:
+            self.__string_subsitutions = string_subsitutions
         if key_rewrites is not None:
             for key in key_rewrites:
                 self.__key_rewrites[key] = normalize_to_list_of_substitutions(key_rewrites[key])
@@ -86,6 +90,12 @@ class RewrittenYaml(launch.Substitution):
         rewritten_yaml = tempfile.NamedTemporaryFile(mode='w', delete=False)
         param_rewrites, keys_rewrites = self.resolve_rewrites(context)
         data = yaml.safe_load(open(yaml_filename, 'r'))
+        # string_subsitutions = dict([
+        #     ('robot_name', 'sim_001'),
+        #     ('josh', 'sucks'),
+        # ])
+
+        self.replace_strings(data, self.__string_subsitutions)
         self.substitute_params(data, param_rewrites)
         self.substitute_keys(data, keys_rewrites)
         if self.__root_key is not None:
@@ -182,5 +192,22 @@ class RewrittenYaml(launch.Substitution):
         if text_value.lower() == "false":
             return False
 
-        # nothing else worked so fall through and return text
-        return text_value
+        # nothing else worked so fall through and return text return text_value
+
+    def replace_strings(self, yaml, string_subsitutions):
+        if string_subsitutions is None: 
+            return
+        if isinstance(yaml, dict):
+            for key, value in yaml.items():
+                if isinstance(value, str):
+                    for original, new in string_subsitutions.items():
+                        if original in value:
+                            new_key = value.replace(original, new)
+                            print("Orginal: ", original, "New: ", new, "prev key: ", value, "new key: ", new_key)
+                            yaml[key] = new_key
+                else:
+                    self.replace_strings(value, string_subsitutions)
+        elif isinstance(yaml, list):
+            for item in yaml:
+                self.replace_strings(item, string_subsitutions)
+
