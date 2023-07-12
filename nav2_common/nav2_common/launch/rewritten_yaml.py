@@ -54,6 +54,7 @@ class RewrittenYaml(launch.Substitution):
 
         :param: source_file the original YAML file to modify
         :param: param_rewrites mappings to replace
+        :param: string_subsitutions
         :param: root_key if provided, the contents are placed under this key
         :param: key_rewrites keys of mappings to replace
         :param: convert_types whether to attempt converting the string to a number or boolean
@@ -90,10 +91,6 @@ class RewrittenYaml(launch.Substitution):
         rewritten_yaml = tempfile.NamedTemporaryFile(mode='w', delete=False)
         param_rewrites, keys_rewrites = self.resolve_rewrites(context)
         data = yaml.safe_load(open(yaml_filename, 'r'))
-        # string_subsitutions = dict([
-        #     ('robot_name', 'sim_001'),
-        #     ('josh', 'sucks'),
-        # ])
 
         self.replace_strings(data, self.__string_subsitutions)
         self.substitute_params(data, param_rewrites)
@@ -192,7 +189,8 @@ class RewrittenYaml(launch.Substitution):
         if text_value.lower() == "false":
             return False
 
-        # nothing else worked so fall through and return text return text_value
+        # nothing else worked so fall through and return text
+        return text_value
 
     def replace_strings(self, yaml, string_subsitutions):
         if string_subsitutions is None: 
