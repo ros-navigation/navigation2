@@ -5,8 +5,9 @@ string planner_id
 bool use_start # If false, use current robot pose as path start, if true, use start above instead
 ---
 #result definition
-#error codes
-#note: The expected priority order of the errors should match the message order
+
+# Error codes
+# Note: The expected priority order of the errors should match the message order
 uint16 NONE=0
 uint16 UNKNOWN=200
 uint16 INVALID_PLANNER=201

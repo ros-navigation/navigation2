@@ -5,8 +5,9 @@ builtin_interfaces/Duration max_smoothing_duration
 bool check_for_collisions
 ---
 #result definition
-#error codes
-#note: The expected priority order of the errors should match the message order
+
+# Error codes
+# Note: The expected priority order of the errors should match the message order
 uint16 NONE=0
 uint16 UNKNOWN=500
 uint16 INVALID_SMOOTHER=501
