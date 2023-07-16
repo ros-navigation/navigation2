@@ -23,7 +23,7 @@ ResultStatus BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> comma
     RCLCPP_INFO(
       logger_,
       "Backing up in Y and Z not supported, will only move in X.");
-    return ResultStatus{Status::FAILED, BackUpActionGoal::INVALID_INPUT};
+    return ResultStatus{Status::FAILED, BackUpActionResult::INVALID_INPUT};
   }
 
   // Silently ensure that both the speed and direction are negative.
@@ -38,10 +38,10 @@ ResultStatus BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> comma
       transform_tolerance_))
   {
     RCLCPP_ERROR(logger_, "Initial robot pose is not available.");
-    return ResultStatus{Status::FAILED, BackUpActionGoal::TF_ERROR};
+    return ResultStatus{Status::FAILED, BackUpActionResult::TF_ERROR};
   }
 
-  return ResultStatus{Status::SUCCEEDED, BackUpActionGoal::NONE};
+  return ResultStatus{Status::SUCCEEDED, BackUpActionResult::NONE};
 }
 
 }  // namespace nav2_behaviors

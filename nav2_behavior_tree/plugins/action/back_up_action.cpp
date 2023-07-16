@@ -48,7 +48,7 @@ void BackUpAction::on_tick()
 
 BT::NodeStatus BackUpAction::on_success()
 {
-  setOutput("error_code_id", ActionGoal::NONE);
+  setOutput("error_code_id", ActionResult::NONE);
   return BT::NodeStatus::SUCCESS;
 }
 
@@ -60,7 +60,7 @@ BT::NodeStatus BackUpAction::on_aborted()
 
 BT::NodeStatus BackUpAction::on_cancelled()
 {
-  setOutput("error_code_id", ActionGoal::NONE);
+  setOutput("error_code_id", ActionResult::NONE);
   return BT::NodeStatus::SUCCESS;
 }
 

@@ -38,6 +38,7 @@ class AssistedTeleop : public TimedBehavior<AssistedTeleopAction>
 
 public:
   using AssistedTeleopActionGoal = AssistedTeleopAction::Goal;
+  using AssistedTeleopActionResult = AssistedTeleopAction::Result;
   AssistedTeleop();
 
   /**

@@ -33,7 +33,6 @@ class NavigateThroughPosesAction : public BtActionNode<nav2_msgs::action::Naviga
 {
   using Action = nav2_msgs::action::NavigateThroughPoses;
   using ActionResult = Action::Result;
-  using ActionGoal = Action::Goal;
 
 public:
   /**
