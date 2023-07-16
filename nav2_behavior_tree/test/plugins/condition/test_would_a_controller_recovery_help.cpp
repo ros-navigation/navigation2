@@ -24,10 +24,10 @@ class WouldAControllerRecoveryHelpFixture : public nav2_behavior_tree::BehaviorT
 {
 public:
   using Action = nav2_msgs::action::FollowPath;
-  using ActionGoal = Action::Goal;
+  using ActionResult = Action::Result;
   void SetUp()
   {
-    uint16_t error_code = ActionGoal::NONE;
+    uint16_t error_code = ActionResult::NONE;
     config_->blackboard->set("error_code", error_code);
 
     std::string xml_txt =
@@ -57,14 +57,14 @@ std::shared_ptr<BT::Tree> WouldAControllerRecoveryHelpFixture::tree_ = nullptr;
 TEST_F(WouldAControllerRecoveryHelpFixture, test_condition)
 {
   std::map<uint16_t, BT::NodeStatus> error_to_status_map = {
-    {ActionGoal::NONE, BT::NodeStatus::FAILURE},
-    {ActionGoal::UNKNOWN, BT::NodeStatus::SUCCESS},
-    {ActionGoal::INVALID_CONTROLLER, BT::NodeStatus::FAILURE},
-    {ActionGoal::TF_ERROR, BT::NodeStatus::FAILURE},
-    {ActionGoal::INVALID_PATH, BT::NodeStatus::FAILURE},
-    {ActionGoal::PATIENCE_EXCEEDED, BT::NodeStatus::SUCCESS},
-    {ActionGoal::FAILED_TO_MAKE_PROGRESS, BT::NodeStatus::SUCCESS},
-    {ActionGoal::NO_VALID_CONTROL, BT::NodeStatus::SUCCESS},
+    {ActionResult::NONE, BT::NodeStatus::FAILURE},
+    {ActionResult::UNKNOWN, BT::NodeStatus::SUCCESS},
+    {ActionResult::INVALID_CONTROLLER, BT::NodeStatus::FAILURE},
+    {ActionResult::TF_ERROR, BT::NodeStatus::FAILURE},
+    {ActionResult::INVALID_PATH, BT::NodeStatus::FAILURE},
+    {ActionResult::PATIENCE_EXCEEDED, BT::NodeStatus::SUCCESS},
+    {ActionResult::FAILED_TO_MAKE_PROGRESS, BT::NodeStatus::SUCCESS},
+    {ActionResult::NO_VALID_CONTROL, BT::NodeStatus::SUCCESS},
   };
 
   for (const auto & error_to_status : error_to_status_map) {

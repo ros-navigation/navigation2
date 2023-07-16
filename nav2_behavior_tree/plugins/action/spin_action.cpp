@@ -43,7 +43,7 @@ void SpinAction::on_tick()
 
 BT::NodeStatus SpinAction::on_success()
 {
-  setOutput("error_code_id", ActionGoal::NONE);
+  setOutput("error_code_id", ActionResult::NONE);
   return BT::NodeStatus::SUCCESS;
 }
 
@@ -55,7 +55,7 @@ BT::NodeStatus SpinAction::on_aborted()
 
 BT::NodeStatus SpinAction::on_cancelled()
 {
-  setOutput("error_code_id", ActionGoal::NONE);
+  setOutput("error_code_id", ActionResult::NONE);
   return BT::NodeStatus::SUCCESS;
 }
 

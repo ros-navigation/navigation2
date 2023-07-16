@@ -24,10 +24,10 @@ WouldASmootherRecoveryHelp::WouldASmootherRecoveryHelp(
 : AreErrorCodesPresent(condition_name, conf)
 {
   error_codes_to_check_ = {
-    ActionGoal::UNKNOWN,
-    ActionGoal::TIMEOUT,
-    ActionGoal::FAILED_TO_SMOOTH_PATH,
-    ActionGoal::SMOOTHED_PATH_IN_COLLISION
+    ActionResult::UNKNOWN,
+    ActionResult::TIMEOUT,
+    ActionResult::FAILED_TO_SMOOTH_PATH,
+    ActionResult::SMOOTHED_PATH_IN_COLLISION
   };
 }
 

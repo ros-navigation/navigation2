@@ -328,37 +328,37 @@ void SmootherServer::smoothPlan()
     action_server_->succeeded_current(result);
   } catch (nav2_core::InvalidSmoother & ex) {
     RCLCPP_ERROR(this->get_logger(), "%s", ex.what());
-    result->error_code = ActionGoal::INVALID_SMOOTHER;
+    result->error_code = ActionResult::INVALID_SMOOTHER;
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::SmootherTimedOut & ex) {
     RCLCPP_ERROR(this->get_logger(), "%s", ex.what());
-    result->error_code = ActionGoal::TIMEOUT;
+    result->error_code = ActionResult::TIMEOUT;
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::SmoothedPathInCollision & ex) {
     RCLCPP_ERROR(this->get_logger(), "%s", ex.what());
-    result->error_code = ActionGoal::SMOOTHED_PATH_IN_COLLISION;
+    result->error_code = ActionResult::SMOOTHED_PATH_IN_COLLISION;
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::FailedToSmoothPath & ex) {
     RCLCPP_ERROR(this->get_logger(), "%s", ex.what());
-    result->error_code = ActionGoal::FAILED_TO_SMOOTH_PATH;
+    result->error_code = ActionResult::FAILED_TO_SMOOTH_PATH;
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::InvalidPath & ex) {
     RCLCPP_ERROR(this->get_logger(), "%s", ex.what());
-    result->error_code = ActionGoal::INVALID_PATH;
+    result->error_code = ActionResult::INVALID_PATH;
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::SmootherException & ex) {
     RCLCPP_ERROR(this->get_logger(), "%s", ex.what());
-    result->error_code = ActionGoal::UNKNOWN;
+    result->error_code = ActionResult::UNKNOWN;
     action_server_->terminate_current(result);
     return;
   } catch (std::exception & ex) {
     RCLCPP_ERROR(this->get_logger(), "%s", ex.what());
-    result->error_code = ActionGoal::UNKNOWN;
+    result->error_code = ActionResult::UNKNOWN;
     action_server_->terminate_current(result);
     return;
   }

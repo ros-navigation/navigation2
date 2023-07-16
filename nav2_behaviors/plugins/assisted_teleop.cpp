@@ -68,7 +68,7 @@ ResultStatus AssistedTeleop::onRun(const std::shared_ptr<const AssistedTeleopAct
   preempt_teleop_ = false;
   command_time_allowance_ = command->time_allowance;
   end_time_ = steady_clock_.now() + command_time_allowance_;
-  return ResultStatus{Status::SUCCEEDED, AssistedTeleopActionGoal::NONE};
+  return ResultStatus{Status::SUCCEEDED, AssistedTeleopActionResult::NONE};
 }
 
 void AssistedTeleop::onActionCompletion()
@@ -89,13 +89,13 @@ ResultStatus AssistedTeleop::onCycleUpdate()
       logger_,
       "Exceeded time allowance before reaching the " << behavior_name_.c_str() <<
         "goal - Exiting " << behavior_name_.c_str());
-    return ResultStatus{Status::FAILED, AssistedTeleopActionGoal::TIMEOUT};
+    return ResultStatus{Status::FAILED, AssistedTeleopActionResult::TIMEOUT};
   }
 
   // user states that teleop was successful
   if (preempt_teleop_) {
     stopRobot();
-    return ResultStatus{Status::SUCCEEDED, AssistedTeleopActionGoal::NONE};
+    return ResultStatus{Status::SUCCEEDED, AssistedTeleopActionResult::NONE};
   }
 
   geometry_msgs::msg::PoseStamped current_pose;
@@ -107,7 +107,7 @@ ResultStatus AssistedTeleop::onCycleUpdate()
       logger_,
       "Current robot pose is not available for " <<
         behavior_name_.c_str());
-    return ResultStatus{Status::FAILED, AssistedTeleopActionGoal::TF_ERROR};
+    return ResultStatus{Status::FAILED, AssistedTeleopActionResult::TF_ERROR};
   }
 
   geometry_msgs::msg::Pose2D projected_pose;
@@ -148,7 +148,7 @@ ResultStatus AssistedTeleop::onCycleUpdate()
   }
   vel_pub_->publish(std::move(scaled_twist));
 
-  return ResultStatus{Status::RUNNING, AssistedTeleopActionGoal::NONE};
+  return ResultStatus{Status::RUNNING, AssistedTeleopActionResult::NONE};
 }
 
 geometry_msgs::msg::Pose2D AssistedTeleop::projectPose(

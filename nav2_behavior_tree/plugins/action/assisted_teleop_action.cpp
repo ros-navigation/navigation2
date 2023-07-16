@@ -43,7 +43,7 @@ void AssistedTeleopAction::on_tick()
 
 BT::NodeStatus AssistedTeleopAction::on_success()
 {
-  setOutput("error_code_id", ActionGoal::NONE);
+  setOutput("error_code_id", ActionResult::NONE);
   return BT::NodeStatus::SUCCESS;
 }
 
@@ -55,7 +55,7 @@ BT::NodeStatus AssistedTeleopAction::on_aborted()
 
 BT::NodeStatus AssistedTeleopAction::on_cancelled()
 {
-  setOutput("error_code_id", ActionGoal::NONE);
+  setOutput("error_code_id", ActionResult::NONE);
   return BT::NodeStatus::SUCCESS;
 }
 

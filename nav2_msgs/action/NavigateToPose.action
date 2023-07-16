@@ -1,12 +1,13 @@
-# Error codes
-# Note: The expected priority order of the errors should match the message order
-uint16 NONE=0
-
 #goal definition
 geometry_msgs/PoseStamped pose
 string behavior_tree
 ---
 #result definition
+
+# Error codes
+# Note: The expected priority order of the errors should match the message order
+uint16 NONE=0
+
 uint16 error_code
 ---
 #feedback definition

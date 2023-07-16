@@ -26,7 +26,7 @@ namespace nav2_behavior_tree
 class WouldAPlannerRecoveryHelp : public AreErrorCodesPresent
 {
   using Action = nav2_msgs::action::ComputePathToPose;
-  using ActionGoal = Action::Goal;
+  using ActionResult = Action::Result;
 
 public:
   WouldAPlannerRecoveryHelp(

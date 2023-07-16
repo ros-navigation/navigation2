@@ -30,7 +30,6 @@ class SpinAction : public BtActionNode<nav2_msgs::action::Spin>
 {
   using Action = nav2_msgs::action::Spin;
   using ActionResult = Action::Result;
-  using ActionGoal = Action::Goal;
 
 public:
   /**

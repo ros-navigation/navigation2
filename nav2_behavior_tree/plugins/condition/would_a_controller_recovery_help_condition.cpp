@@ -24,10 +24,10 @@ WouldAControllerRecoveryHelp::WouldAControllerRecoveryHelp(
 : AreErrorCodesPresent(condition_name, conf)
 {
   error_codes_to_check_ = {
-    ActionGoal::UNKNOWN,
-    ActionGoal::PATIENCE_EXCEEDED,
-    ActionGoal::FAILED_TO_MAKE_PROGRESS,
-    ActionGoal::NO_VALID_CONTROL
+    ActionResult::UNKNOWN,
+    ActionResult::PATIENCE_EXCEEDED,
+    ActionResult::FAILED_TO_MAKE_PROGRESS,
+    ActionResult::NO_VALID_CONTROL
   };
 }
 

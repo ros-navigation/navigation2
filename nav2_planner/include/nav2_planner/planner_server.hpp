@@ -108,9 +108,9 @@ protected:
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
   using ActionToPose = nav2_msgs::action::ComputePathToPose;
-  using ActionToPoseGoal = ActionToPose::Goal;
+  using ActionToPoseResult = ActionToPose::Result;
   using ActionThroughPoses = nav2_msgs::action::ComputePathThroughPoses;
-  using ActionThroughPosesGoal = ActionThroughPoses::Goal;
+  using ActionThroughPosesResult = ActionThroughPoses::Result;
   using ActionServerToPose = nav2_util::SimpleActionServer<ActionToPose>;
   using ActionServerThroughPoses = nav2_util::SimpleActionServer<ActionThroughPoses>;
 

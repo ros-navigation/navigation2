@@ -37,6 +37,7 @@ class Spin : public TimedBehavior<SpinAction>
 
 public:
   using SpinActionGoal = SpinAction::Goal;
+  using SpinActionResult = SpinAction::Result;
 
   /**
    * @brief A constructor for nav2_behaviors::Spin

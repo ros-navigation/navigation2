@@ -31,7 +31,6 @@ class ComputePathToPoseAction : public BtActionNode<nav2_msgs::action::ComputePa
 {
   using Action = nav2_msgs::action::ComputePathToPose;
   using ActionResult = Action::Result;
-  using ActionGoal = Action::Goal;
 
 public:
   /**

@@ -507,56 +507,56 @@ void ControllerServer::computeControl()
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
     publishZeroVelocity();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
-    result->error_code = Action::Goal::INVALID_CONTROLLER;
+    result->error_code = Action::Result::INVALID_CONTROLLER;
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::ControllerTFError & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
     publishZeroVelocity();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
-    result->error_code = Action::Goal::TF_ERROR;
+    result->error_code = Action::Result::TF_ERROR;
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::NoValidControl & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
     publishZeroVelocity();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
-    result->error_code = Action::Goal::NO_VALID_CONTROL;
+    result->error_code = Action::Result::NO_VALID_CONTROL;
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::FailedToMakeProgress & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
     publishZeroVelocity();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
-    result->error_code = Action::Goal::FAILED_TO_MAKE_PROGRESS;
+    result->error_code = Action::Result::FAILED_TO_MAKE_PROGRESS;
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::PatienceExceeded & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
     publishZeroVelocity();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
-    result->error_code = Action::Goal::PATIENCE_EXCEEDED;
+    result->error_code = Action::Result::PATIENCE_EXCEEDED;
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::InvalidPath & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
     publishZeroVelocity();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
-    result->error_code = Action::Goal::INVALID_PATH;
+    result->error_code = Action::Result::INVALID_PATH;
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::ControllerException & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
     publishZeroVelocity();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
-    result->error_code = Action::Goal::UNKNOWN;
+    result->error_code = Action::Result::UNKNOWN;
     action_server_->terminate_current(result);
     return;
   } catch (std::exception & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
     publishZeroVelocity();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
-    result->error_code = Action::Goal::UNKNOWN;
+    result->error_code = Action::Result::UNKNOWN;
     action_server_->terminate_current(result);
     return;
   }

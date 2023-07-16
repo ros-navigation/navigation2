@@ -26,7 +26,7 @@ namespace nav2_behavior_tree
 class WouldAControllerRecoveryHelp : public AreErrorCodesPresent
 {
   using Action = nav2_msgs::action::FollowPath;
-  using ActionGoal = Action::Goal;
+  using ActionResult = Action::Result;
 
 public:
   WouldAControllerRecoveryHelp(
