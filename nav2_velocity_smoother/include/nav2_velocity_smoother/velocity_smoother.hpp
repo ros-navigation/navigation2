@@ -150,6 +150,7 @@ protected:
   std::vector<double> max_accels_;
   std::vector<double> max_decels_;
   std::vector<double> deadband_velocities_;
+  std::vector<double> natural_deadband_velocities_;
   rclcpp::Duration velocity_timeout_{0, 0};
   rclcpp::Time last_command_time_;
 

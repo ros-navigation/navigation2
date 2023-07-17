@@ -87,15 +87,19 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State &)
   declare_parameter_if_not_declared(node, "odom_duration", rclcpp::ParameterValue(0.1));
   declare_parameter_if_not_declared(
     node, "deadband_velocity", rclcpp::ParameterValue(std::vector<double>{0.0, 0.0, 0.0}));
+  declare_parameter_if_not_declared(
+    node, "natural_deadband_velocity", rclcpp::ParameterValue(std::vector<double>{0.0, 0.0, 0.0}));
   declare_parameter_if_not_declared(node, "velocity_timeout", rclcpp::ParameterValue(1.0));
   node->get_parameter("odom_topic", odom_topic_);
   node->get_parameter("odom_duration", odom_duration_);
   node->get_parameter("deadband_velocity", deadband_velocities_);
+  node->get_parameter("natural_deadband_velocity", natural_deadband_velocities_);
   node->get_parameter("velocity_timeout", velocity_timeout_dbl);
   velocity_timeout_ = rclcpp::Duration::from_seconds(velocity_timeout_dbl);
 
   if (max_velocities_.size() != 3 || min_velocities_.size() != 3 ||
-    max_accels_.size() != 3 || max_decels_.size() != 3 || deadband_velocities_.size() != 3)
+    max_accels_.size() != 3 || max_decels_.size() != 3 || deadband_velocities_.size() != 3 ||
+    natural_deadband_velocities_.size() != 3)
   {
     throw std::runtime_error(
             "Invalid setting of kinematic and/or deadband limits!"
@@ -238,6 +242,17 @@ double VelocitySmoother::applyConstraints(
   return v_curr + std::clamp(eta * dv, v_component_min, v_component_max);
 }
 
+double applyDeadBand(double input, double deadband, double natural_deadband)
+{
+  if (std::fabs(input) < deadband) {
+    return 0.0;
+  } else if (std::fabs(input) < natural_deadband) {
+    return std::copysign(natural_deadband, input);
+  } else {
+    return input;
+  }
+}
+
 void VelocitySmoother::smootherTimer()
 {
   // Wait until the first command is received
@@ -306,12 +321,18 @@ void VelocitySmoother::smootherTimer()
   cmd_vel->angular.z = applyConstraints(
     current_.angular.z, command_->angular.z, max_accels_[2], max_decels_[2], eta);
 
-  // Apply deadband restrictions & publish
-  cmd_vel->linear.x = fabs(cmd_vel->linear.x) < deadband_velocities_[0] ? 0.0 : cmd_vel->linear.x;
-  cmd_vel->linear.y = fabs(cmd_vel->linear.y) < deadband_velocities_[1] ? 0.0 : cmd_vel->linear.y;
-  cmd_vel->angular.z = fabs(cmd_vel->angular.z) <
-    deadband_velocities_[2] ? 0.0 : cmd_vel->angular.z;
+  // Register last command before clamping to deadband
+  // to avoid getting stuck in open loop mode (but the continuous constraints are ok)
   last_cmd_ = *cmd_vel;
+
+  // Apply deadband restrictions & publish
+  cmd_vel->linear.x = applyDeadBand(
+    cmd_vel->linear.x, deadband_velocities_[0], natural_deadband_velocities_[0]);
+  cmd_vel->linear.y = applyDeadBand(
+    cmd_vel->linear.y, deadband_velocities_[1], natural_deadband_velocities_[1]);
+  cmd_vel->angular.z = applyDeadBand(
+    cmd_vel->angular.z, deadband_velocities_[2], natural_deadband_velocities_[2]);
+
   smoothed_cmd_pub_->publish(std::move(cmd_vel));
 }
 
@@ -362,6 +383,8 @@ VelocitySmoother::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
         max_decels_ = parameter.as_double_array();
       } else if (name == "deadband_velocity") {
         deadband_velocities_ = parameter.as_double_array();
+      } else if (name == "natural_deadband_velocity") {
+        natural_deadband_velocities_ = parameter.as_double_array();
       }
     } else if (type == ParameterType::PARAMETER_STRING) {
       if (name == "feedback") {

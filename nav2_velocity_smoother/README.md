@@ -54,6 +54,7 @@ velocity_smoother:
   	max_velocity: [0.5, 0.0, 2.5]  # Maximum velocities, ordered [Vx, Vy, Vw]
    	min_velocity: [-0.5, 0.0, -2.5]  # Minimum velocities, ordered [Vx, Vy, Vw]
    	deadband_velocity: [0.0, 0.0, 0.0]  # A deadband of velocities below which they should be zero-ed out for sending to the robot base controller, ordered [Vx, Vy, Vw]
+		natural_deadband_velocity: [0.0, 0.0, 0.0] # existing deadbands of the robot base controller, for intelligent closed loop smoothing
    	velocity_timeout: 1.0  # Time (s) after which if no new velocity commands are received to zero out and stop
    	max_accel: [2.5, 0.0, 3.2]  # Maximum acceleration, ordered [Ax, Ay, Aw]
    	max_decel: [-2.5, 0.0, -3.2]  # Maximum deceleration, ordered [Ax, Ay, Aw]
@@ -85,3 +86,5 @@ When in doubt, open-loop is a reasonable choice for most users.
 The minimum and maximum velocities for rotation (e.g. ``Vw``) represent left and right turns. While we make it possible to specify these separately, most users would be wise to set these values the same (but signed) for rotation. Additionally, the parameters are signed, so it is important to specify maximum deceleration with negative signs to represent deceleration. Minimum velocities with negatives when moving backward, so backward movement can be restricted by setting this to ``0``.
 
 Deadband velocities are minimum thresholds, below which we set its value to `0`. This can be useful when your robot's breaking torque from stand still is non-trivial so sending very small values will pull high amounts of current.
+
+The natural deadband velocities are to specify the minimum magnitude of velocity commands that will actually move the system. This is useful for closed loop control in systems that have inherent deadbands and will not move in response to small commands.

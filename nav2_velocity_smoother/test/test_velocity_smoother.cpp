@@ -612,6 +612,7 @@ TEST(VelocitySmootherTest, testDynamicParameter)
   std::vector<double> max_accel{10.0, 10.0, 10.0};
   std::vector<double> min_accel{0.0, 0.0, 0.0};
   std::vector<double> deadband{0.0, 0.0, 0.0};
+  std::vector<double> natural_deadband{0.0, 0.0, 0.0};
   std::vector<double> bad_test{0.0, 0.0};
 
   auto results = rec_param->set_parameters_atomically(
@@ -625,7 +626,8 @@ TEST(VelocitySmootherTest, testDynamicParameter)
       rclcpp::Parameter("odom_topic", std::string("TEST")),
       rclcpp::Parameter("odom_duration", 2.0),
       rclcpp::Parameter("velocity_timeout", 4.0),
-      rclcpp::Parameter("deadband_velocity", deadband)});
+      rclcpp::Parameter("deadband_velocity", deadband),
+      rclcpp::Parameter("natural_deadband_velocity", deadband)});
 
   rclcpp::spin_until_future_complete(
     smoother->get_node_base_interface(),
@@ -642,6 +644,7 @@ TEST(VelocitySmootherTest, testDynamicParameter)
   EXPECT_EQ(smoother->get_parameter("odom_duration").as_double(), 2.0);
   EXPECT_EQ(smoother->get_parameter("velocity_timeout").as_double(), 4.0);
   EXPECT_EQ(smoother->get_parameter("deadband_velocity").as_double_array(), deadband);
+  EXPECT_EQ(smoother->get_parameter("natural_deadband_velocity").as_double_array(), natural_deadband);
 
   // Test reverting
   results = rec_param->set_parameters_atomically(
