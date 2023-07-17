@@ -306,8 +306,6 @@
           <stddev>0.01</stddev>
         </noise>
       </ray>
-      <alwaysOn>1</alwaysOn>
-      <visualize>true</visualize>
     </sensor>
   </gazebo>
 

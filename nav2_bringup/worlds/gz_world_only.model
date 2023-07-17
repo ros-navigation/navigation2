@@ -14,10 +14,6 @@
       name="ignition::gazebo::systems::SceneBroadcaster">
     </plugin>
     <plugin
-      filename="ignition-gazebo-contact-system"
-      name="ignition::gazebo::systems::Contact">
-    </plugin>
-    <plugin
       filename="ignition-gazebo-sensors-system"
       name="ignition::gazebo::systems::Sensors">
       <render_engine>ogre2</render_engine>
@@ -43,7 +39,7 @@
       <camera_pose>0.319654 -0.235002 9.29441 0 1.5138 0.009599</camera_pose>
       <camera_clip>
         <near>0.25</near>
-        <far>25000</far>
+        <far>50</far>
       </camera_clip>
     </plugin>
 
@@ -167,7 +163,7 @@
     </plugin>
   </gui>
     <light name='sun' type='directional'>
-        <cast_shadows>1</cast_shadows>
+        <cast_shadows>0</cast_shadows>
         <pose>0 0 10 0 0 0</pose>
         <diffuse>0.8 0.8 0.8 1</diffuse>
         <specular>0.8 0.8 0.8 1</specular>
@@ -207,7 +203,9 @@
     </model>
 
     <scene>
-      <shadows>false</shadows>
+      <shadows>0</shadows>
+      <grid>false</grid>
+      <origin_visual>false</origin_visual>
     </scene>
 
     <physics name='1ms' type='ode'>
