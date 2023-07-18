@@ -46,7 +46,7 @@ class TaskResult(Enum):
 
 class BasicNavigator(Node):
 
-    def __init__(self, node_name='basic_navigator'):
+    def __init__(self, node_name='basic_navigator', namespace=''):
         super().__init__(node_name=node_name)
         self.initial_pose = PoseStamped()
         self.initial_pose.header.frame_id = 'map'
@@ -54,42 +54,55 @@ class BasicNavigator(Node):
         self.result_future = None
         self.feedback = None
         self.status = None
+        self.namespace = namespace
 
         amcl_pose_qos = QoSProfile(
-          durability=QoSDurabilityPolicy.TRANSIENT_LOCAL,
-          reliability=QoSReliabilityPolicy.RELIABLE,
-          history=QoSHistoryPolicy.KEEP_LAST,
-          depth=1)
+            durability=QoSDurabilityPolicy.TRANSIENT_LOCAL,
+            reliability=QoSReliabilityPolicy.RELIABLE,
+            history=QoSHistoryPolicy.KEEP_LAST,
+            depth=1)
 
         self.initial_pose_received = False
         self.nav_through_poses_client = ActionClient(self,
                                                      NavigateThroughPoses,
-                                                     'navigate_through_poses')
-        self.nav_to_pose_client = ActionClient(self, NavigateToPose, 'navigate_to_pose')
-        self.follow_waypoints_client = ActionClient(self, FollowWaypoints, 'follow_waypoints')
-        self.follow_path_client = ActionClient(self, FollowPath, 'follow_path')
-        self.compute_path_to_pose_client = ActionClient(self, ComputePathToPose,
-                                                        'compute_path_to_pose')
-        self.compute_path_through_poses_client = ActionClient(self, ComputePathThroughPoses,
-                                                              'compute_path_through_poses')
+                                                     f'/{self.namespace}/navigate_through_poses')
+        self.nav_to_pose_client = ActionClient(self,
+                                               NavigateToPose,
+                                               f'/{self.namespace}/navigate_to_pose')
+        self.follow_waypoints_client = ActionClient(self,
+                                                    FollowWaypoints,
+                                                    f'/{self.namespace}/follow_waypoints')
+        self.follow_path_client = ActionClient(self,
+                                               FollowPath,
+                                               f'/{self.namespace}/follow_path')
+        self.compute_path_to_pose_client = ActionClient(self,
+                                                        ComputePathToPose,
+                                                        f'/{self.namespace}/compute_path_to_pose')
+        self.compute_path_through_poses_client = ActionClient(self,
+                                                              ComputePathThroughPoses,
+                                                              f'/{self.namespace}/compute_path_through_poses')
         self.smoother_client = ActionClient(self, SmoothPath, 'smooth_path')
         self.spin_client = ActionClient(self, Spin, 'spin')
         self.backup_client = ActionClient(self, BackUp, 'backup')
-        self.assisted_teleop_client = ActionClient(self, AssistedTeleop, 'assisted_teleop')
+        self.assisted_teleop_client = ActionClient(
+            self, AssistedTeleop, 'assisted_teleop')
         self.localization_pose_sub = self.create_subscription(PoseWithCovarianceStamped,
-                                                              'amcl_pose',
+                                                              f'/{self.namespace}/amcl_pose',
                                                               self._amclPoseCallback,
                                                               amcl_pose_qos)
         self.initial_pose_pub = self.create_publisher(PoseWithCovarianceStamped,
-                                                      'initialpose',
+                                                      f'/{self.namespace}/initialpose',
                                                       10)
-        self.change_maps_srv = self.create_client(LoadMap, '/map_server/load_map')
-        self.clear_costmap_global_srv = self.create_client(
-            ClearEntireCostmap, '/global_costmap/clear_entirely_global_costmap')
-        self.clear_costmap_local_srv = self.create_client(
-            ClearEntireCostmap, '/local_costmap/clear_entirely_local_costmap')
-        self.get_costmap_global_srv = self.create_client(GetCostmap, '/global_costmap/get_costmap')
-        self.get_costmap_local_srv = self.create_client(GetCostmap, '/local_costmap/get_costmap')
+        self.change_maps_srv = self.create_client(LoadMap,
+                                                  '/map_server/load_map')
+        self.clear_costmap_global_srv = self.create_client(ClearEntireCostmap,
+                                                           f'/{self.namespace}/global_costmap/clear_entirely_global_costmap')
+        self.clear_costmap_local_srv = self.create_client(ClearEntireCostmap,
+                                                          f'/{self.namespace}/local_costmap/clear_entirely_local_costmap')
+        self.get_costmap_global_srv = self.create_client(GetCostmap,
+                                                         f'/{self.namespace}/global_costmap/get_costmap')
+        self.get_costmap_local_srv = self.create_client(GetCostmap,
+                                                        f'/{self.namespace}/local_costmap/get_costmap')
 
     def destroyNode(self):
         self.destroy_node()
@@ -116,7 +129,8 @@ class BasicNavigator(Node):
         """Send a `NavThroughPoses` action request."""
         self.debug("Waiting for 'NavigateThroughPoses' action server")
         while not self.nav_through_poses_client.wait_for_server(timeout_sec=1.0):
-            self.info("'NavigateThroughPoses' action server not available, waiting...")
+            self.info(
+                "'NavigateThroughPoses' action server not available, waiting...")
 
         goal_msg = NavigateThroughPoses.Goal()
         goal_msg.poses = poses
@@ -176,7 +190,8 @@ class BasicNavigator(Node):
         self.goal_handle = send_goal_future.result()
 
         if not self.goal_handle.accepted:
-            self.error(f'Following {len(poses)} waypoints request was rejected!')
+            self.error(
+                f'Following {len(poses)} waypoints request was rejected!')
             return False
 
         self.result_future = self.goal_handle.get_result_async()
@@ -191,7 +206,8 @@ class BasicNavigator(Node):
         goal_msg.time_allowance = Duration(sec=time_allowance)
 
         self.info(f'Spinning to angle {goal_msg.target_yaw}....')
-        send_goal_future = self.spin_client.send_goal_async(goal_msg, self._feedbackCallback)
+        send_goal_future = self.spin_client.send_goal_async(
+            goal_msg, self._feedbackCallback)
         rclpy.spin_until_future_complete(self, send_goal_future)
         self.goal_handle = send_goal_future.result()
 
@@ -211,8 +227,10 @@ class BasicNavigator(Node):
         goal_msg.speed = backup_speed
         goal_msg.time_allowance = Duration(sec=time_allowance)
 
-        self.info(f'Backing up {goal_msg.target.x} m at {goal_msg.speed} m/s....')
-        send_goal_future = self.backup_client.send_goal_async(goal_msg, self._feedbackCallback)
+        self.info(
+            f'Backing up {goal_msg.target.x} m at {goal_msg.speed} m/s....')
+        send_goal_future = self.backup_client.send_goal_async(
+            goal_msg, self._feedbackCallback)
         rclpy.spin_until_future_complete(self, send_goal_future)
         self.goal_handle = send_goal_future.result()
 
@@ -232,7 +250,8 @@ class BasicNavigator(Node):
 
         self.info("Running 'assisted_teleop'....")
         send_goal_future = \
-            self.assisted_teleop_client.send_goal_async(goal_msg, self._feedbackCallback)
+            self.assisted_teleop_client.send_goal_async(
+                goal_msg, self._feedbackCallback)
         rclpy.spin_until_future_complete(self, send_goal_future)
         self.goal_handle = send_goal_future.result()
 
@@ -280,7 +299,8 @@ class BasicNavigator(Node):
         if not self.result_future:
             # task was cancelled or completed
             return True
-        rclpy.spin_until_future_complete(self, self.result_future, timeout_sec=0.10)
+        rclpy.spin_until_future_complete(
+            self, self.result_future, timeout_sec=0.10)
         if self.result_future.result():
             self.status = self.result_future.result().status
             if self.status != GoalStatus.STATUS_SUCCEEDED:
@@ -307,11 +327,13 @@ class BasicNavigator(Node):
             return TaskResult.CANCELED
         else:
             return TaskResult.UNKNOWN
-
-    def waitUntilNav2Active(self, navigator='bt_navigator', localizer='amcl'):
+    
+    def waitUntilNav2Active(self, navigator='', localizer=''):
         """Block until the full navigation system is up and running."""
+        navigator = f'/{self.namespace}/bt_navigator'
+        localizer = f'/{self.namespace}/amcl'
         self._waitForNodeToActivate(localizer)
-        if localizer == 'amcl':
+        if localizer == f'/{self.namespace}/amcl':
             self._waitForInitialPose()
         self._waitForNodeToActivate(navigator)
         self.info('Nav2 is ready for use!')
@@ -325,7 +347,8 @@ class BasicNavigator(Node):
         """
         self.debug("Waiting for 'ComputePathToPose' action server")
         while not self.compute_path_to_pose_client.wait_for_server(timeout_sec=1.0):
-            self.info("'ComputePathToPose' action server not available, waiting...")
+            self.info(
+                "'ComputePathToPose' action server not available, waiting...")
 
         goal_msg = ComputePathToPose.Goal()
         goal_msg.start = start
@@ -334,7 +357,8 @@ class BasicNavigator(Node):
         goal_msg.use_start = use_start
 
         self.info('Getting path...')
-        send_goal_future = self.compute_path_to_pose_client.send_goal_async(goal_msg)
+        send_goal_future = self.compute_path_to_pose_client.send_goal_async(
+            goal_msg)
         rclpy.spin_until_future_complete(self, send_goal_future)
         self.goal_handle = send_goal_future.result()
 
@@ -369,7 +393,8 @@ class BasicNavigator(Node):
         """
         self.debug("Waiting for 'ComputePathThroughPoses' action server")
         while not self.compute_path_through_poses_client.wait_for_server(timeout_sec=1.0):
-            self.info("'ComputePathThroughPoses' action server not available, waiting...")
+            self.info(
+                "'ComputePathThroughPoses' action server not available, waiting...")
 
         goal_msg = ComputePathThroughPoses.Goal()
         goal_msg.start = start
@@ -378,7 +403,8 @@ class BasicNavigator(Node):
         goal_msg.use_start = use_start
 
         self.info('Getting path...')
-        send_goal_future = self.compute_path_through_poses_client.send_goal_async(goal_msg)
+        send_goal_future = self.compute_path_through_poses_client.send_goal_async(
+            goal_msg)
         rclpy.spin_until_future_complete(self, send_goal_future)
         self.goal_handle = send_goal_future.result()
 
@@ -394,7 +420,8 @@ class BasicNavigator(Node):
 
     def getPathThroughPoses(self, start, goals, planner_id='', use_start=False):
         """Send a `ComputePathThroughPoses` action request."""
-        rtn = self.__getPathThroughPosesImpl(start, goals, planner_id, use_start)
+        rtn = self.__getPathThroughPosesImpl(
+            start, goals, planner_id, use_start)
 
         if self.status != GoalStatus.STATUS_SUCCEEDED:
             self.warn(f'Getting path failed with status code: {self.status}')
@@ -417,7 +444,8 @@ class BasicNavigator(Node):
 
         goal_msg = SmoothPath.Goal()
         goal_msg.path = path
-        goal_msg.max_smoothing_duration = rclpyDuration(seconds=max_duration).to_msg()
+        goal_msg.max_smoothing_duration = rclpyDuration(
+            seconds=max_duration).to_msg()
         goal_msg.smoother_id = smoother_id
         goal_msg.check_for_collisions = check_for_collision
 
@@ -523,7 +551,8 @@ class BasicNavigator(Node):
                 # starting up requires a full map->odom->base_link TF tree
                 # so if we're not successful, try forwarding the initial pose
                 while True:
-                    rclpy.spin_until_future_complete(self, future, timeout_sec=0.10)
+                    rclpy.spin_until_future_complete(
+                        self, future, timeout_sec=0.10)
                     if not future:
                         self._waitForInitialPose()
                     else:
