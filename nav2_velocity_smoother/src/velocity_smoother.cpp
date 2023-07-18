@@ -242,14 +242,16 @@ double VelocitySmoother::applyConstraints(
   return v_curr + std::clamp(eta * dv, v_component_min, v_component_max);
 }
 
-double applyDeadBand(double input, double deadband, double natural_deadband)
+bool applyDeadBand(double & input, double deadband, double natural_deadband)
 {
   if (std::fabs(input) < deadband) {
-    return 0.0;
+    input = 0.0;
+    return true;
   } else if (std::fabs(input) < natural_deadband) {
-    return std::copysign(natural_deadband, input);
+    input = std::copysign(natural_deadband, input);
+    return true;
   } else {
-    return input;
+    return false;
   }
 }
 
@@ -314,25 +316,29 @@ void VelocitySmoother::smootherTimer()
     }
   }
 
-  cmd_vel->linear.x = applyConstraints(
-    current_.linear.x, command_->linear.x, max_accels_[0], max_decels_[0], eta);
-  cmd_vel->linear.y = applyConstraints(
-    current_.linear.y, command_->linear.y, max_accels_[1], max_decels_[1], eta);
-  cmd_vel->angular.z = applyConstraints(
-    current_.angular.z, command_->angular.z, max_accels_[2], max_decels_[2], eta);
-
-  // Register last command before clamping to deadband
-  // to avoid getting stuck in open loop mode (but the continuous constraints are ok)
-  last_cmd_ = *cmd_vel;
-
   // Apply deadband restrictions & publish
-  cmd_vel->linear.x = applyDeadBand(
-    cmd_vel->linear.x, deadband_velocities_[0], natural_deadband_velocities_[0]);
-  cmd_vel->linear.y = applyDeadBand(
-    cmd_vel->linear.y, deadband_velocities_[1], natural_deadband_velocities_[1]);
-  cmd_vel->angular.z = applyDeadBand(
-    cmd_vel->angular.z, deadband_velocities_[2], natural_deadband_velocities_[2]);
+  if (!applyDeadBand(
+      cmd_vel->linear.x, deadband_velocities_[0], natural_deadband_velocities_[0]))
+  {
+    cmd_vel->linear.x = applyConstraints(
+      current_.linear.x, command_->linear.x, max_accels_[0], max_decels_[0], eta);
+    last_cmd_.linear.x = cmd_vel->linear.x;
+  }
+  if (!applyDeadBand(
+      cmd_vel->linear.y, deadband_velocities_[1], natural_deadband_velocities_[1]))
+  {
+    cmd_vel->linear.y = applyConstraints(
+      current_.linear.y, command_->linear.y, max_accels_[1], max_decels_[1], eta);
+    last_cmd_.linear.y = cmd_vel->linear.y;
+  }
 
+  if (!applyDeadBand(
+      cmd_vel->angular.z, deadband_velocities_[2], natural_deadband_velocities_[2]))
+  {
+    cmd_vel->angular.z = applyConstraints(
+      current_.angular.z, command_->angular.z, max_accels_[2], max_decels_[2], eta);
+    last_cmd_.angular.z = cmd_vel->angular.z;
+  }
   smoothed_cmd_pub_->publish(std::move(cmd_vel));
 }
 
