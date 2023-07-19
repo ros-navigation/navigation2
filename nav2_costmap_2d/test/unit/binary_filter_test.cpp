@@ -210,8 +210,11 @@ private:
 class ParamsNode : public rclcpp::Node
 {
 public:
-  ParamsNode(const char * node_name, const char * parameter_name, const bool default_parameter_value)
-  : Node(node_name){
+  ParamsNode(
+    const char * node_name, const char * parameter_name,
+    const bool default_parameter_value)
+  : Node(node_name)
+  {
     default_parameter_value_ = default_parameter_value;
     parameter_value_ = default_parameter_value;
     parameter_name_ = parameter_name;
@@ -231,6 +234,7 @@ public:
   bool default_parameter_value_{false};
   bool parameter_value_{false};
   std::string parameter_name_{""};
+
 private:
 };  // ParamsNode
 
@@ -253,8 +257,9 @@ protected:
   void createTFBroadcaster(const std::string & mask_frame, const std::string & global_frame);
   void publishTransform();
   void createNodeWithParams();
-  void addBinaryParams(std::string param_namespace, std::string param_node_name, std::string param_name, 
-                        bool default_value_set, bool default_param_value);
+  void addBinaryParams(
+    std::string param_namespace, std::string param_node_name,
+    std::string param_name, bool default_value_set, bool default_param_value);
   void resetBinaryParams();
   void verifyBinaryParams(bool param1_expected_value, bool param2_expected_value);
 
@@ -267,9 +272,6 @@ protected:
   void testOutOfMask();
   void testIncorrectTF();
   void testResetFilter();
-
-
-
   void resetMaps();
   void reset();
 
@@ -299,7 +301,7 @@ private:
   } BinaryParam;
 
   std::vector<BinaryParam> binary_params_{};
-  
+
   const unsigned int width_ = 10;
   const unsigned int height_ = 11;
   const double resolution_ = 1.0;
@@ -461,19 +463,27 @@ bool TestNode::createBinaryFilter(const std::string & global_frame, double flip_
 
   for (auto param : binary_params_) {
     node_->declare_parameter(
-      std::string(FILTER_NAME) + "." + param.namespace_ + ".node_name", rclcpp::ParameterValue(param.node_name));
+      std::string(FILTER_NAME) + "." + param.namespace_ + ".node_name",
+      rclcpp::ParameterValue(param.node_name));
     node_->set_parameter(
-      rclcpp::Parameter(std::string(FILTER_NAME) + "." + param.namespace_ + ".node_name", param.node_name));
+      rclcpp::Parameter(
+        std::string(FILTER_NAME) + "." + param.namespace_ + ".node_name",
+        param.node_name));
     node_->declare_parameter(
-      std::string(FILTER_NAME) + "." + param.namespace_ + ".param_name", rclcpp::ParameterValue(param.name));
+      std::string(FILTER_NAME) + "." + param.namespace_ + ".param_name",
+      rclcpp::ParameterValue(param.name));
     node_->set_parameter(
-      rclcpp::Parameter(std::string(FILTER_NAME) + "." + param.namespace_ + ".param_name", param.name));
-    if (param.default_value_set)
-    {
+      rclcpp::Parameter(
+        std::string(FILTER_NAME) + "." + param.namespace_ + ".param_name",
+        param.name));
+    if (param.default_value_set) {
       node_->declare_parameter(
-        std::string(FILTER_NAME) + "." + param.namespace_ + ".default_state", rclcpp::ParameterValue(param.default_value));
+        std::string(FILTER_NAME) + "." + param.namespace_ + ".default_state", rclcpp::ParameterValue(
+          param.default_value));
       node_->set_parameter(
-        rclcpp::Parameter(std::string(FILTER_NAME) + "." + param.namespace_ + ".default_state", param.default_value));
+        rclcpp::Parameter(
+          std::string(FILTER_NAME) + "." + param.namespace_ + ".default_state",
+          param.default_value));
     }
   }
 
@@ -557,8 +567,6 @@ void TestNode::verifyBinaryState(bool sign, std_msgs::msg::Bool::SharedPtr state
     EXPECT_TRUE(state->data == default_state_);
   }
 }
-
-
 
 void TestNode::testFullMask(
   double base, double multiplier, double flip_threshold, double tr_x, double tr_y)
@@ -707,8 +715,8 @@ void TestNode::testSimpleMask(
   ASSERT_EQ(binary_state->data, prev_state);  // Binary state won't be updated
 }
 
-void TestNode::testSimpleFlip(bool flip){
-
+void TestNode::testSimpleFlip(bool flip)
+{
   const double base = 0.0;
   const double multiplier = 1.0;
   const double flip_threshold = 10.0;
@@ -728,12 +736,11 @@ void TestNode::testSimpleFlip(bool flip){
   RCLCPP_INFO(node_->get_logger(), "Binary filter state: %d", getBinaryState()->data);
   RCLCPP_INFO(node_->get_logger(), "Binary default state: %d", getDefaultState());
 
-  if (flip){
+  if (flip) {
     // data = <some_middle_value>
     x = width_ / 2 - 1;
     y = height_ / 2 - 1;
-  }
-  else{
+  } else {
     // data = 0
     x = 1;
     y = 0;
@@ -863,28 +870,26 @@ void TestNode::reset()
   tf_listener_.reset();
   tf_broadcaster_.reset();
   tf_buffer_.reset();
-
-
-    params_node_0_.reset();
-    params_node_1_.reset();
+  params_node_0_.reset();
+  params_node_1_.reset();
   params_node_thread_0_.reset();
   params_node_thread_1_.reset();
 }
 
 /**
  * @brief Adds a new binary param to the list of params to be tested
- * 
- * @param param_namespace 
- * @param param_node_name 
- * @param param_name 
+ *
+ * @param param_namespace
+ * @param param_node_name
+ * @param param_name
  * @param default_value_set whether default value is set or not
  * @param default_param_value default value of the param (ignored if default_value_set is false)
  */
 void TestNode::addBinaryParams(
-  std::string param_namespace, std::string param_node_name, std::string param_name, 
+  std::string param_namespace, std::string param_node_name, std::string param_name,
   bool default_value_set, bool default_param_value)
 {
-  BinaryParam  param;
+  BinaryParam param;
   param.namespace_ = param_namespace;
   param.node_name = param_node_name;
   param.name = param_name;
@@ -899,7 +904,8 @@ void TestNode::resetBinaryParams()
 }
 
 void TestNode::verifyBinaryParams(
-  bool param0_expected_value, bool param1_expected_value){
+  bool param0_expected_value, bool param1_expected_value)
+{
 
   // Give some time for the params to be updated
   waitSome(100ms);
@@ -985,7 +991,7 @@ TEST_F(TestNode, testUnsetDefaultBinaryParams)
   addBinaryParams("Param2", NODE_NAME_1, PARAM_NAME_1, false, false);
   createNodeWithParams();
   ASSERT_TRUE(createBinaryFilter("map", 10.0));
-  
+
   // Basic flow with changes
   testSimpleFlip(true);
 

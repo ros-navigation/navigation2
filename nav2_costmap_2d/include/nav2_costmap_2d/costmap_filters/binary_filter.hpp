@@ -127,7 +127,7 @@ private:
   bool binary_state_;  // Current Binary Filter state
 
   // List of binary params to be changed
-  std::vector<std::string> binary_parameters_; 
+  std::vector<std::string> binary_parameters_;
 
   // Parameter information
   typedef struct
@@ -137,10 +137,11 @@ private:
     bool default_state;       // Parameter default state
   } binary_parameter_t;
 
-  // List of params with info 
+  // List of params with info
   std::vector<binary_parameter_t> binary_parameters_info_;
   // List of clients for changing parameters
-  std::vector<rclcpp::Client<rcl_interfaces::srv::SetParameters>::SharedPtr> change_parameters_clients_;
+  std::vector<rclcpp::Client<rcl_interfaces::srv::SetParameters>::SharedPtr>
+  change_parameters_clients_;
 
   // Timeout for waiting set_parameters service in ms
   int64_t change_parameter_timeout_;
