@@ -70,9 +70,7 @@ private:
 
   geometry_msgs::msg::PoseStamped start_pose_;
   double distance_;
-
-  std::string global_frame_;
-  std::string robot_base_frame_;
+  std::string global_frame_, robot_base_frame_;
 
   bool first_time_;
 };

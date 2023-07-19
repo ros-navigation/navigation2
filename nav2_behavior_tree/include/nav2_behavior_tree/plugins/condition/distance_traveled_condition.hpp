@@ -73,8 +73,7 @@ private:
 
   double distance_;
   double transform_tolerance_;
-  std::string global_frame_;
-  std::string robot_base_frame_;
+  std::string global_frame_, robot_base_frame_;
 };
 
 }  // namespace nav2_behavior_tree

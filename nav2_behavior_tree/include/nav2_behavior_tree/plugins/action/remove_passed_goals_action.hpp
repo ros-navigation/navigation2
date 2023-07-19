@@ -53,9 +53,9 @@ private:
   BT::NodeStatus tick() override;
 
   double viapoint_achieved_radius_;
-  std::string robot_base_frame_, global_frame_;
   double transform_tolerance_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
+  std::string global_frame_, robot_base_frame_;
 };
 
 }  // namespace nav2_behavior_tree
