@@ -213,7 +213,7 @@ bool CollisionDetector::configurePolygons(
       if (action_type != DO_NOTHING) {
         RCLCPP_WARN(
           get_logger(),
-          "[%s]: The action_type of the polygon is different than \"none\" which is " +
+          "[%s]: The action_type of the polygon is different than \"none\" which is "
           "not supported in the collision detector; it will be considered as \"none\".",
           polygon_name.c_str());
       }
