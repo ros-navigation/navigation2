@@ -562,7 +562,6 @@ workflows:
             alias: release_test
             parameters:
               rmw:
-                - rmw_connextdds
                 - rmw_cyclonedds_cpp
                 - rmw_fastrtps_cpp
     triggers:

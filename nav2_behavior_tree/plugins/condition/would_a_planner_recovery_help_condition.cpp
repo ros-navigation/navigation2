@@ -24,9 +24,9 @@ WouldAPlannerRecoveryHelp::WouldAPlannerRecoveryHelp(
 : AreErrorCodesPresent(condition_name, conf)
 {
   error_codes_to_check_ = {
-    ActionGoal::UNKNOWN,
-    ActionGoal::NO_VALID_PATH,
-    ActionGoal::TIMEOUT
+    ActionResult::UNKNOWN,
+    ActionResult::NO_VALID_PATH,
+    ActionResult::TIMEOUT
   };
 }
 

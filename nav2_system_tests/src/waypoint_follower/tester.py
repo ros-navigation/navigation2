@@ -231,7 +231,7 @@ def main(argv=sys.argv[1:]):
     assert not result
     result = not result
     assert test.action_result.missed_waypoints[0].error_code == \
-           ComputePathToPose.Goal().GOAL_OUTSIDE_MAP
+           ComputePathToPose.Result().GOAL_OUTSIDE_MAP
 
     # stop on failure test with bogous waypoint
     test.setStopFailureParam(True)

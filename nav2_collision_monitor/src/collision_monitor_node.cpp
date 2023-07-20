@@ -21,6 +21,7 @@
 #include "tf2_ros/create_timer_ros.h"
 
 #include "nav2_util/node_utils.hpp"
+#include "nav2_util/robot_utils.hpp"
 
 #include "nav2_collision_monitor/kinematics.hpp"
 

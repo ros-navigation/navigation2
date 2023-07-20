@@ -43,7 +43,7 @@ DriveOnHeadingAction::DriveOnHeadingAction(
 
 BT::NodeStatus DriveOnHeadingAction::on_success()
 {
-  setOutput("error_code_id", ActionGoal::NONE);
+  setOutput("error_code_id", ActionResult::NONE);
   return BT::NodeStatus::SUCCESS;
 }
 
@@ -55,7 +55,7 @@ BT::NodeStatus DriveOnHeadingAction::on_aborted()
 
 BT::NodeStatus DriveOnHeadingAction::on_cancelled()
 {
-  setOutput("error_code_id", ActionGoal::NONE);
+  setOutput("error_code_id", ActionResult::NONE);
   return BT::NodeStatus::SUCCESS;
 }
 
