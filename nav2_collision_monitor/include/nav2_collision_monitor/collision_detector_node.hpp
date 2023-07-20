@@ -152,7 +152,6 @@ protected:
 
   /// @brief main loop frequency
   double frequency_;
-
 };  // class CollisionDetector
 
 }  // namespace nav2_collision_monitor
