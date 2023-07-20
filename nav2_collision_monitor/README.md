@@ -1,5 +1,7 @@
 # Nav2 Collision Monitor
 
+## Collision Monitor
+
 The Collision Monitor is a node providing an additional level of robot safety.
 It performs several collision avoidance related tasks using incoming data from the sensors, bypassing the costmap and trajectory planners, to monitor for and prevent potential collisions at the emergency-stop level.
 
@@ -12,7 +14,7 @@ The costmaps / trajectory planners will handle most situations, but this is to h
 
 ![polygons.png](doc/polygons.png)
 
-## Features
+### Features
 
 The Collision Monitor uses polygons relative the robot's base frame origin to define "zones".
 Data that fall into these zones trigger an operation depending on the model being used.
@@ -23,14 +25,13 @@ The following models of safety behaviors are employed by Collision Monitor:
 
 * **Stop model**: Define a zone and a point threshold. If more that `N` obstacle points appear inside this area, stop the robot until the obstacles will disappear.
 * **Slowdown model**: Define a zone around the robot and slow the maximum speed for a `%S` percent, if more than `N` points will appear inside the area.
-* **Limit model**: Define a zone around the robot and clamp the maximum speed below a fixed value, if more than `N` points will appear inside the area.
 * **Approach model**: Using the current robot speed, estimate the time to collision to sensor data. If the time is less than `M` seconds (0.5, 2, 5, etc...), the robot will slow such that it is now at least `M` seconds to collision. The effect here would be to keep the robot always `M` seconds from any collision.
 
 The zones around the robot can take the following shapes:
 
-* Arbitrary user-defined polygon relative to the robot base frame, which can be static in a configuration file or dynamically changing via a topic interface.
-* Robot footprint polygon, which is used in the approach behavior model only. Will use the static user-defined polygon or the footprint topic to allow it to be dynamically adjusted over time.
-* Circle: is made for the best performance and could be used in the cases where the zone or robot footprint could be approximated by round shape.
+* Arbitrary user-defined polygon relative to the robot base frame.
+* Circle: is made for the best performance and could be used in the cases where the zone or robot could be approximated by round shape.
+* Robot footprint polygon, which is used in the approach behavior model only. Will use the footprint topic to allow it to be dynamically adjusted over time.
 
 The data may be obtained from different data sources:
 
@@ -38,26 +39,26 @@ The data may be obtained from different data sources:
 * PointClouds (`sensor_msgs::msg::PointCloud2` messages)
 * IR/Sonars (`sensor_msgs::msg::Range` messages)
 
-## Design
+### Design
 
 The Collision Monitor is designed to operate below Nav2 as an independent safety node.
 This acts as a filter on the `cmd_vel` topic coming out of the Controller Server. If no such zone is triggered, then the Controller's `cmd_vel` is used. Else, it is scaled or set to stop as appropriate.
 
 The following diagram is showing the high-level design of Collision Monitor module. All shapes (Polygons and Circles) are derived from base `Polygon` class, so without loss of generality we can call them as polygons. Subscribed footprint is also having the same properties as other polygons, but it is being obtained a footprint topic for the Approach Model.
-![HLD.png](doc/HLD.png)
+![HDL.png](doc/HLD.png)
 
-## Configuration
+### Configuration
 
 Detailed configuration parameters, their description and how to setup a Collision Monitor could be found at its [Configuration Guide](https://navigation.ros.org/configuration/packages/configuring-collision-monitor.html) and [Using Collision Monitor tutorial](https://navigation.ros.org/tutorials/docs/using_collision_monitor.html) pages.
 
 
-## Metrics
+### Metrics
 
 Designed to be used in wide variety of robots (incl. moving fast) and have a high level of reliability, Collision Monitor node should operate at fast rates.
 Typical one frame processing time is ~4-5ms for laser scanner (with 360 points) and ~4-20ms for PointClouds (having 24K points).
 The table below represents the details of operating times for different behavior models and shapes:
 
-| | Stop/Slowdown/Limit model, Polygon area | Stop/Slowdown/Limit model, Circle area | Approach model, Polygon footprint | Approach model, Circle footprint |
+| | Stop/Slowdown model, Polygon area | Stop/Slowdown model, Circle area | Approach model, Polygon footprint | Approach model, Circle footprint |
 |-|-----------------------------------|----------------------------------|-----------------------------------|----------------------------------|
 | LaserScan (360 points) processing time, ms  | 4.45 | 4.45 | 4.93  | 4.86  |
 | PointCloud (24K points) processing time, ms | 4.94 | 4.06 | 20.67 | 10.87 |
@@ -66,3 +67,9 @@ The following notes could be made:
 
  * Due to sheer speed, circle shapes are preferred for the approach behavior models if you can approximately model your robot as circular.
  * More points mean lower performance. Pointclouds could be culled or filtered before the Collision Monitor to improve performance.
+
+
+## Collision Detector
+
+Another node exists in the nav2_collision_monitor package called the Collision Detector. This node works similarly to the collision monitor
+except that it does not affect the robot's velocity. It will only inform that data from the confirgured sources has been detected within the configured polygons via message to the `/collision_detector_state` topic. 

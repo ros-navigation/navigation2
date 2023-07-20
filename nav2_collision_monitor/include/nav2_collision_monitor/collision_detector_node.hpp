@@ -13,8 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_COLLISION_MONITOR__DETECTOR_NODE_HPP_
-#define NAV2_COLLISION_MONITOR__DETECTOR_NODE_HPP_
+#ifndef NAV2_COLLISION_MONITOR__COLLISION_DETECTOR_NODE_HPP_
+#define NAV2_COLLISION_MONITOR__COLLISION_DETECTOR_NODE_HPP_
 
 #include <string>
 #include <vector>
@@ -145,8 +145,8 @@ protected:
   std::vector<std::shared_ptr<Source>> sources_;
 
   /// @brief collision monitor state publisher
-  rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::CollisionDetectorState>::SharedPtr state_pub_;
-  /// @brief timer that runs actions
+  rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::CollisionDetectorState>::SharedPtr \
+  state_pub_;  /// @brief timer that runs actions
   rclcpp::TimerBase::SharedPtr timer_;
 
   /// @brief main loop frequency
@@ -156,4 +156,4 @@ protected:
 
 }  // namespace nav2_collision_monitor
 
-#endif  // NAV2_COLLISION_MONITOR__DETECTOR_NODE_HPP_
+#endif  // NAV2_COLLISION_MONITOR__COLLISION_DETECTOR_NODE_HPP_

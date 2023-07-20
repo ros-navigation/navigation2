@@ -92,6 +92,9 @@ CollisionDetector::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
+  // Resetting timer
+  timer_.reset();
+
   // Deactivating lifecycle publishers
   state_pub_->on_deactivate();
 
@@ -99,9 +102,6 @@ CollisionDetector::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   for (std::shared_ptr<Polygon> polygon : polygons_) {
     polygon->deactivate();
   }
-
-  // Resetting timer
-  timer_.reset();
 
   // Destroying bond connection
   destroyBond();
@@ -129,7 +129,6 @@ nav2_util::CallbackReturn
 CollisionDetector::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
-
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
