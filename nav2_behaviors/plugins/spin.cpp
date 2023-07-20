@@ -79,7 +79,7 @@ ResultStatus Spin::onRun(const std::shared_ptr<const SpinActionGoal> command)
       transform_tolerance_))
   {
     RCLCPP_ERROR(logger_, "Current robot pose is not available.");
-    return ResultStatus{Status::FAILED, SpinActionGoal::TF_ERROR};
+    return ResultStatus{Status::FAILED, SpinActionResult::TF_ERROR};
   }
 
   prev_yaw_ = tf2::getYaw(current_pose.pose.orientation);
@@ -93,7 +93,7 @@ ResultStatus Spin::onRun(const std::shared_ptr<const SpinActionGoal> command)
   command_time_allowance_ = command->time_allowance;
   end_time_ = steady_clock_.now() + command_time_allowance_;
 
-  return ResultStatus{Status::SUCCEEDED, SpinActionGoal::NONE};
+  return ResultStatus{Status::SUCCEEDED, SpinActionResult::NONE};
 }
 
 ResultStatus Spin::onCycleUpdate()
@@ -104,7 +104,7 @@ ResultStatus Spin::onCycleUpdate()
     RCLCPP_WARN(
       logger_,
       "Exceeded time allowance before reaching the Spin goal - Exiting Spin");
-    return ResultStatus{Status::FAILED, SpinActionGoal::TIMEOUT};
+    return ResultStatus{Status::FAILED, SpinActionResult::TIMEOUT};
   }
 
   geometry_msgs::msg::PoseStamped current_pose;
@@ -113,7 +113,7 @@ ResultStatus Spin::onCycleUpdate()
       transform_tolerance_))
   {
     RCLCPP_ERROR(logger_, "Current robot pose is not available.");
-    return ResultStatus{Status::FAILED, SpinActionGoal::TF_ERROR};
+    return ResultStatus{Status::FAILED, SpinActionResult::TF_ERROR};
   }
 
   const double current_yaw = tf2::getYaw(current_pose.pose.orientation);
@@ -132,7 +132,7 @@ ResultStatus Spin::onCycleUpdate()
   double remaining_yaw = abs(cmd_yaw_) - abs(relative_yaw_);
   if (remaining_yaw < 1e-6) {
     stopRobot();
-    return ResultStatus{Status::SUCCEEDED, SpinActionGoal::NONE};
+    return ResultStatus{Status::SUCCEEDED, SpinActionResult::NONE};
   }
 
   double vel = sqrt(2 * rotational_acc_lim_ * remaining_yaw);
@@ -149,12 +149,12 @@ ResultStatus Spin::onCycleUpdate()
   if (!isCollisionFree(relative_yaw_, cmd_vel.get(), pose2d)) {
     stopRobot();
     RCLCPP_WARN(logger_, "Collision Ahead - Exiting Spin");
-    return ResultStatus{Status::FAILED, SpinActionGoal::COLLISION_AHEAD};
+    return ResultStatus{Status::FAILED, SpinActionResult::COLLISION_AHEAD};
   }
 
   vel_pub_->publish(std::move(cmd_vel));
 
-  return ResultStatus{Status::RUNNING, SpinActionGoal::NONE};
+  return ResultStatus{Status::RUNNING, SpinActionResult::NONE};
 }
 
 bool Spin::isCollisionFree(

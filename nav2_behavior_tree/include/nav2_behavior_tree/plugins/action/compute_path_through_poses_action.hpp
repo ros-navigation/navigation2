@@ -34,7 +34,6 @@ class ComputePathThroughPosesAction
 {
   using Action = nav2_msgs::action::ComputePathThroughPoses;
   using ActionResult = Action::Result;
-  using ActionGoal = Action::Goal;
 
 public:
   /**
