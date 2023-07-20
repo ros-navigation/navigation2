@@ -27,6 +27,8 @@ class DistanceTraveledConditionTestFixture : public nav2_behavior_tree::Behavior
 public:
   void SetUp()
   {
+    config_->input_ports["global_frame"] = "map";
+    config_->input_ports["robot_base_frame"] = "base_link";
     bt_node_ = std::make_shared<nav2_behavior_tree::DistanceTraveledCondition>(
       "distance_traveled", *config_);
   }

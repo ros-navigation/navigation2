@@ -290,3 +290,33 @@ TEST(ErrorCodePortTest, test_correct_syntax)
   EXPECT_TRUE(value.find(204) != value.end());
   EXPECT_TRUE(value.find(212) != value.end());
 }
+
+TEST(deconflictPortAndParamFrameTest, test_correct_syntax)
+{
+  std::string xml_txt =
+  R"(
+    <root main_tree_to_execute = "MainTree" >
+      <BehaviorTree ID="MainTree">
+          <ParamPort test="1"/>
+      </BehaviorTree>
+    </root>)";
+
+  BT::BehaviorTreeFactory factory;
+  factory.registerNodeType<TestNode<int>>("ParamPort");
+  auto tree = factory.createTreeFromText(xml_txt);
+
+  rclcpp::init(0, nullptr);
+  std::shared_ptr<rclcpp::Node> node = std::make_shared<rclcpp::Node>("test_node");
+  node->declare_parameter<int>("test", 2);
+  node->declare_parameter<int>("test_alternative", 3);
+
+  int value = BT::deconflictPortAndParamFrame<int, BT::TreeNode>(
+    node, "test_alternative", tree.rootNode());
+
+  EXPECT_EQ(value, 3);
+
+  value = BT::deconflictPortAndParamFrame<int, BT::TreeNode>(
+    node, "test", tree.rootNode());
+
+  EXPECT_EQ(value, 1);
+}

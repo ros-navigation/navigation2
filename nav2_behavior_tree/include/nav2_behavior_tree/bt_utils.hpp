@@ -148,14 +148,16 @@ T1 deconflictPortAndParamFrame(
   if (!behavior_tree_node->getInput(param_name, param_value)) {
     RCLCPP_DEBUG(
       node->get_logger(),
-      "Parameter 'global_frame' not provided by behavior tree xml file, "
-      "accessing ros2 parameter");
+      "Parameter '%s' not provided by behavior tree xml file, "
+      "using parameter from ros2 parameter file",
+      param_name.c_str());
     node->get_parameter(param_name, param_value);
     return param_value;
   } else {
     RCLCPP_DEBUG(
       node->get_logger(),
-      "Parameter 'global_frame' provided by behavior tree xml file)");
+      "Parameter '%s' provided by behavior tree xml file",
+      param_name.c_str());
     return param_value;
   }
 }
