@@ -61,7 +61,7 @@ public:
    * @brief Loop function to run behavior
    * @return Status of behavior
    */
-  ResultStatus onCycleUpdate() override;
+  ResultStatus onCycleUpdate(std::shared_ptr<SpinActionResult> ) override;
 
   /**
    * @brief Method to determine the required costmap info

@@ -35,7 +35,7 @@ ResultStatus Wait::onRun(const std::shared_ptr<const WaitAction::Goal> command)
   return ResultStatus{Status::SUCCEEDED};
 }
 
-ResultStatus Wait::onCycleUpdate()
+ResultStatus Wait::onCycleUpdate(std::shared_ptr<WaitAction::Result> )
 {
   auto current_point = std::chrono::steady_clock::now();
   auto time_left =

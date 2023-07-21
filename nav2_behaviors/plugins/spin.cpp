@@ -58,7 +58,7 @@ void Spin::onConfigure()
   nav2_util::declare_parameter_if_not_declared(
     node,
     "max_rotational_vel", rclcpp::ParameterValue(1.0));
-  node->get_parameter("max_rotational_vel", max_rotational_vel_);
+
 
   nav2_util::declare_parameter_if_not_declared(
     node,
@@ -96,7 +96,7 @@ ResultStatus Spin::onRun(const std::shared_ptr<const SpinActionGoal> command)
   return ResultStatus{Status::SUCCEEDED, SpinActionResult::NONE};
 }
 
-ResultStatus Spin::onCycleUpdate()
+ResultStatus Spin::onCycleUpdate(std::shared_ptr<SpinActionResult> )
 {
   rclcpp::Duration time_remaining = end_time_ - steady_clock_.now();
   if (time_remaining.seconds() < 0.0 && command_time_allowance_.seconds() > 0.0) {

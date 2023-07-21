@@ -63,7 +63,7 @@ public:
     return ResultStatus{Status::FAILED, 0};
   }
 
-  ResultStatus onCycleUpdate() override
+  ResultStatus onCycleUpdate(std::shared_ptr<BehaviorAction::Result>) override
   {
     // A normal behavior would set the robot in motion in the first call
     // and check for robot states on subsequent calls to check if the movement

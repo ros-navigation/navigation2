@@ -90,7 +90,7 @@ public:
   // Implement the behavior such that it runs some unit of work on each call
   // and provides a status. The Behavior will finish once SUCCEEDED is returned
   // It's up to the derived class to define the final commanded velocity.
-  virtual ResultStatus onCycleUpdate() = 0;
+  virtual ResultStatus onCycleUpdate(std::shared_ptr<typename ActionT::Result> result) = 0;
 
   // an opportunity for derived classes to do something on configuration
   // if they chose
@@ -248,7 +248,7 @@ protected:
         return;
       }
 
-      ResultStatus on_cycle_update_result = onCycleUpdate();
+      ResultStatus on_cycle_update_result = onCycleUpdate(result);
       switch (on_cycle_update_result.status) {
         case Status::SUCCEEDED:
           RCLCPP_INFO(

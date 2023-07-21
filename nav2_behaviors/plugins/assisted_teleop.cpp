@@ -77,7 +77,7 @@ void AssistedTeleop::onActionCompletion()
   preempt_teleop_ = false;
 }
 
-ResultStatus AssistedTeleop::onCycleUpdate()
+ResultStatus AssistedTeleop::onCycleUpdate(std::shared_ptr<AssistedTeleopActionResult>)
 {
   feedback_->current_teleop_duration = elasped_time_;
   action_server_->publish_feedback(feedback_);
