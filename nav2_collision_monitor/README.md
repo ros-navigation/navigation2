@@ -72,4 +72,4 @@ The following notes could be made:
 ## Collision Detector
 
 Another node exists in the nav2_collision_monitor package called the Collision Detector. This node works similarly to the collision monitor
-except that it does not affect the robot's velocity. It will only inform that data from the confirgured sources has been detected within the configured polygons via message to the `/collision_detector_state` topic. 
+except that it does not affect the robot's velocity. It will only inform that data from the configured sources has been detected within the configured polygons via message to the `/collision_detector_state` topic. 
