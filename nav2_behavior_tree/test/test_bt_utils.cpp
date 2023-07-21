@@ -294,12 +294,12 @@ TEST(ErrorCodePortTest, test_correct_syntax)
 TEST(deconflictPortAndParamFrameTest, test_correct_syntax)
 {
   std::string xml_txt =
-  R"(
-    <root main_tree_to_execute = "MainTree" >
-      <BehaviorTree ID="MainTree">
-          <ParamPort test="1"/>
-      </BehaviorTree>
-    </root>)";
+    R"(
+      <root main_tree_to_execute = "MainTree" >
+        <BehaviorTree ID="MainTree">
+            <ParamPort test="1"/>
+        </BehaviorTree>
+      </root>)";
 
   BT::BehaviorTreeFactory factory;
   factory.registerNodeType<TestNode<int>>("ParamPort");
