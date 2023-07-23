@@ -26,7 +26,7 @@ from launch.substitutions import NotEqualsSubstitution
 from launch_ros.actions import LoadComposableNodes, SetParameter
 from launch_ros.actions import Node
 from launch_ros.actions import PushRosNamespace
-from launch_ros.descriptions import ComposableNode
+from launch_ros.descriptions import ComposableNode, ParameterFile
 from nav2_common.launch import RewrittenYaml
 
 
@@ -73,11 +73,13 @@ def generate_launch_description():
         'container_name', default_value='nav2_container',
         description='the name of conatiner that nodes will load in if use composition')
 
-    configured_params = RewrittenYaml(
-        source_file=params_file,
-        root_key=namespace,
-        param_rewrites={},
-        convert_types=True)
+    configured_params = ParameterFile(
+        RewrittenYaml(
+            source_file=params_file,
+            root_key=namespace,
+            param_rewrites={},
+            convert_types=True),
+        allow_substs=True)
 
     # Declare node launching commands
     load_nodes = GroupAction(
