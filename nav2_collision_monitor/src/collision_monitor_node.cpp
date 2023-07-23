@@ -423,6 +423,10 @@ bool CollisionMonitor::processStopSlowdownLimit(
   const Velocity & velocity,
   Action & robot_action) const
 {
+  if (polygon->isUsingPolygonVelocitySelector()) {
+    polygon->updatePolygonByVelocity(velocity);
+  }
+
   if (!polygon->isShapeSet()) {
     return false;
   }
@@ -478,6 +482,10 @@ bool CollisionMonitor::processApproach(
   const Velocity & velocity,
   Action & robot_action) const
 {
+  if (polygon->isUsingPolygonVelocitySelector()) {
+    polygon->updatePolygonByVelocity(velocity);
+  }
+
   if (!polygon->isShapeSet()) {
     return false;
   }

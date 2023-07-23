@@ -45,6 +45,7 @@ set(library_name ${executable_name}_core)
 add_library(${library_name} SHARED
   src/collision_monitor_node.cpp
   src/polygon.cpp
+  src/polygon_velocity.cpp
   src/circle.cpp
   src/source.cpp
   src/scan.cpp

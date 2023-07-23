@@ -168,6 +168,34 @@ bool Polygon::isShapeSet()
   return true;
 }
 
+bool Polygon::isUsingPolygonVelocitySelector()
+{
+  return !polygon_velocity_.empty();
+}
+
+void Polygon::updatePolygonByVelocity(const Velocity & cmd_vel_in)
+{
+  for (auto & polygon : polygon_velocity_) {
+
+    if (polygon->isInRange(cmd_vel_in)) {
+      // Set the polygon that is within the speed range
+      poly_ = polygon->getPolygon();
+
+      // Update visualization polygon
+      polygon_.polygon.points.clear();
+      for (const Point & p : poly_) {
+        geometry_msgs::msg::Point32 p_s;
+        p_s.x = p.x;
+        p_s.y = p.y;
+        // p_s.z will remain 0.0
+        polygon_.polygon.points.push_back(p_s);
+      }
+
+      return;
+    }
+  }
+}
+
 void Polygon::updatePolygon()
 {
   if (footprint_sub_ != nullptr) {
@@ -420,19 +448,121 @@ bool Polygon::getParameters(
         polygon_name_.c_str());
     }
 
-    if (action_type_ == STOP || action_type_ == SLOWDOWN || action_type_ == LIMIT) {
-      // Dynamic polygon will be used
+    try {
+      if (action_type_ == STOP || action_type_ == SLOWDOWN || action_type_ == LIMIT) {
+        // Dynamic polygon will be used
+        nav2_util::declare_parameter_if_not_declared(
+          node, polygon_name_ + ".polygon_sub_topic", rclcpp::PARAMETER_STRING);
+        polygon_sub_topic =
+          node->get_parameter(polygon_name_ + ".polygon_sub_topic").as_string();
+        return true;
+      } else if (action_type_ == APPROACH) {
+        // Obtain the footprint topic to make a footprint subscription for approach polygon
+        nav2_util::declare_parameter_if_not_declared(
+          node, polygon_name_ + ".footprint_topic", rclcpp::PARAMETER_STRING);
+        footprint_topic =
+          node->get_parameter(polygon_name_ + ".footprint_topic").as_string();
+        return true;
+      }
+    } catch (const rclcpp::exceptions::ParameterUninitializedException &) {
+      RCLCPP_INFO(
+        logger_,
+        "[%s]: Polygon topic are not defined. Using polygon velocity instead.",
+        polygon_name_.c_str());
+    }
+
+    // Polygon velocity will be used
+    nav2_util::declare_parameter_if_not_declared(
+      node, polygon_name_ + ".polygon_velocity", rclcpp::PARAMETER_STRING_ARRAY);
+    std::vector<std::string> polygon_velocity_array = node->get_parameter(
+      polygon_name_ + ".polygon_velocity").as_string_array();
+
+    for (std::string polygon_velocity_name : polygon_velocity_array) {
+
+      std::string polygon_name = polygon_velocity_name;
+
       nav2_util::declare_parameter_if_not_declared(
-        node, polygon_name_ + ".polygon_sub_topic", rclcpp::PARAMETER_STRING);
-      polygon_sub_topic =
-        node->get_parameter(polygon_name_ + ".polygon_sub_topic").as_string();
-    } else if (action_type_ == APPROACH) {
-      // Obtain the footprint topic to make a footprint subscription for approach polygon
+        node, polygon_name_ + "." + polygon_velocity_name + ".points",
+        rclcpp::PARAMETER_DOUBLE_ARRAY);
+      std::vector<double> polygon_points = node->get_parameter(
+        polygon_name_ + "." + polygon_velocity_name + ".points").as_double_array();
+
+      // Check for points format correctness
+      if (polygon_points.size() <= 6 || polygon_points.size() % 2 != 0) {
+        RCLCPP_ERROR(
+          logger_,
+          "[%s]: Polygon has incorrect points description", polygon_name_.c_str());
+        return false;
+      }
+
+      // Obtain polygon vertices
+      Point point;
+      std::vector<nav2_collision_monitor::Point> poly;
+      bool first = true;
+      for (double val : polygon_points) {
+        if (first) {
+          point.x = val;
+        } else {
+          point.y = val;
+          poly.push_back(point);
+        }
+        first = !first;
+      }
+
+      // linear_max param
       nav2_util::declare_parameter_if_not_declared(
-        node, polygon_name_ + ".footprint_topic",
-        rclcpp::ParameterValue("local_costmap/published_footprint"));
-      footprint_topic =
-        node->get_parameter(polygon_name_ + ".footprint_topic").as_string();
+        node, polygon_name_ + "." + polygon_velocity_name + ".linear_max",
+        rclcpp::ParameterValue(0.0));
+      double linear_max =
+        node->get_parameter(
+        polygon_name_ + "." + polygon_velocity_name +
+        ".linear_max").as_double();
+
+      // linear_min param
+      nav2_util::declare_parameter_if_not_declared(
+        node, polygon_name_ + "." + polygon_velocity_name + ".linear_min",
+        rclcpp::ParameterValue(0.0));
+      double linear_min =
+        node->get_parameter(
+        polygon_name_ + "." + polygon_velocity_name +
+        ".linear_min").as_double();
+
+      // direction_max param
+      nav2_util::declare_parameter_if_not_declared(
+        node, polygon_name_ + "." + polygon_velocity_name + ".direction_max",
+        rclcpp::ParameterValue(0.0));
+      double direction_max =
+        node->get_parameter(
+        polygon_name_ + "." + polygon_velocity_name +
+        ".direction_max").as_double();
+
+      // direction_min param
+      nav2_util::declare_parameter_if_not_declared(
+        node, polygon_name_ + "." + polygon_velocity_name + ".direction_min",
+        rclcpp::ParameterValue(0.0));
+      double direction_min =
+        node->get_parameter(
+        polygon_name_ + "." + polygon_velocity_name +
+        ".direction_min").as_double();
+
+      // theta_max param
+      nav2_util::declare_parameter_if_not_declared(
+        node, polygon_name_ + "." + polygon_velocity_name + ".theta_max", rclcpp::ParameterValue(
+          0.0));
+      double theta_max =
+        node->get_parameter(polygon_name_ + "." + polygon_velocity_name + ".theta_max").as_double();
+
+      // theta_min param
+      nav2_util::declare_parameter_if_not_declared(
+        node, polygon_name_ + "." + polygon_velocity_name + ".theta_min", rclcpp::ParameterValue(
+          0.0));
+      double theta_min =
+        node->get_parameter(polygon_name_ + "." + polygon_velocity_name + ".theta_min").as_double();
+
+      polygon_velocity_.push_back(
+        std::make_shared<PolygonVelocity>(
+          poly, polygon_name, linear_max, linear_min, direction_max,
+          direction_min, theta_max, theta_min));
     }
   } catch (const std::exception & ex) {
     RCLCPP_ERROR(
