@@ -1,4 +1,4 @@
-// Copyright (c) 2022 Samsung R&D Institute Russia
+// Copyright (c) 2022 Dexory
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,9 +13,6 @@
 // limitations under the License.
 
 #include "nav2_collision_monitor/polygon_velocity.hpp"
-
-#include "nav2_util/node_utils.hpp"
-#include "nav2_util/robot_utils.hpp"
 
 
 namespace nav2_collision_monitor

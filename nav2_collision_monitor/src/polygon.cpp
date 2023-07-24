@@ -14,6 +14,7 @@
 
 #include "nav2_collision_monitor/polygon.hpp"
 
+#include <memory>
 #include <exception>
 #include <utility>
 
@@ -170,16 +171,16 @@ bool Polygon::isShapeSet()
 
 bool Polygon::isUsingPolygonVelocitySelector()
 {
-  return !polygon_velocity_.empty();
+  return !polygons_velocity_.empty();
 }
 
 void Polygon::updatePolygonByVelocity(const Velocity & cmd_vel_in)
 {
-  for (auto & polygon : polygon_velocity_) {
+  for (auto & polygon_velocity : polygons_velocity_) {
 
-    if (polygon->isInRange(cmd_vel_in)) {
+    if (polygon_velocity->isInRange(cmd_vel_in)) {
       // Set the polygon that is within the speed range
-      poly_ = polygon->getPolygon();
+      poly_ = polygon_velocity->getPolygon();
 
       // Update visualization polygon
       polygon_.polygon.points.clear();
@@ -559,7 +560,7 @@ bool Polygon::getParameters(
       double theta_min =
         node->get_parameter(polygon_name_ + "." + polygon_velocity_name + ".theta_min").as_double();
 
-      polygon_velocity_.push_back(
+      polygons_velocity_.push_back(
         std::make_shared<PolygonVelocity>(
           poly, polygon_name, linear_max, linear_min, direction_max,
           direction_min, theta_max, theta_min));

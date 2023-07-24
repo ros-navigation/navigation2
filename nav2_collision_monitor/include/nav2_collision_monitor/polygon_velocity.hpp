@@ -1,4 +1,4 @@
-// Copyright (c) 2022 Samsung R&D Institute Russia
+// Copyright (c) 2022 Dexory
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
 #ifndef NAV2_COLLISION_MONITOR__POLYGON_VELOCITY_HPP_
 #define NAV2_COLLISION_MONITOR__POLYGON_VELOCITY_HPP_
 
-#include <memory>
 #include <string>
 #include <vector>
 
