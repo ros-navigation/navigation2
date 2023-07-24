@@ -209,6 +209,14 @@ protected:
    */
   bool isPointInside(const Point & point) const;
 
+  /**
+   * @brief Set the polygon shape based on the polygon points
+   * @param poly_points Polygon points in the format of x1, y1, x2, y2 ...
+   * @param poly Output polygon points (vertices)
+   * @return True if successfully set the polygon shape
+   */
+  bool setPolygonShape(std::vector<double> & poly_points, std::vector<Point> & poly);
+
   // ----- Variables -----
 
   /// @brief Collision Monitor node

@@ -417,31 +417,9 @@ bool Polygon::getParameters(
         node, polygon_name_ + ".points", rclcpp::PARAMETER_DOUBLE_ARRAY);
       std::vector<double> poly_row =
         node->get_parameter(polygon_name_ + ".points").as_double_array();
-      // Check for points format correctness
-      if (poly_row.size() <= 6 || poly_row.size() % 2 != 0) {
-        RCLCPP_ERROR(
-          logger_,
-          "[%s]: Polygon has incorrect points description",
-          polygon_name_.c_str());
-        return false;
-      }
-
-      // Obtain polygon vertices
-      Point point;
-      bool first = true;
-      for (double val : poly_row) {
-        if (first) {
-          point.x = val;
-        } else {
-          point.y = val;
-          poly_.push_back(point);
-        }
-        first = !first;
-      }
-
       // Do not need to proceed further, if "points" parameter is defined.
       // Static polygon will be used.
-      return true;
+      return setPolygonShape(poly_row, poly_);
     } catch (const rclcpp::exceptions::ParameterUninitializedException &) {
       RCLCPP_INFO(
         logger_,
@@ -488,26 +466,9 @@ bool Polygon::getParameters(
       std::vector<double> polygon_points = node->get_parameter(
         polygon_name_ + "." + polygon_velocity_name + ".points").as_double_array();
 
-      // Check for points format correctness
-      if (polygon_points.size() <= 6 || polygon_points.size() % 2 != 0) {
-        RCLCPP_ERROR(
-          logger_,
-          "[%s]: Polygon has incorrect points description", polygon_name_.c_str());
+      std::vector<Point> poly;
+      if (!setPolygonShape(polygon_points, poly)) {
         return false;
-      }
-
-      // Obtain polygon vertices
-      Point point;
-      std::vector<nav2_collision_monitor::Point> poly;
-      bool first = true;
-      for (double val : polygon_points) {
-        if (first) {
-          point.x = val;
-        } else {
-          point.y = val;
-          poly.push_back(point);
-        }
-        first = !first;
       }
 
       // linear_max param
@@ -653,6 +614,32 @@ inline bool Polygon::isPointInside(const Point & point) const
     i = j;
   }
   return res;
+}
+
+bool Polygon::setPolygonShape(std::vector<double> & poly_points, std::vector<Point> & poly)
+{
+  // Check for points format correctness
+  if (poly_points.size() <= 6 || poly_points.size() % 2 != 0) {
+    RCLCPP_ERROR(
+      logger_,
+      "[%s]: Polygon has incorrect points description",
+      polygon_name_.c_str());
+    return false;
+  }
+
+  // Obtain polygon vertices
+  Point point;
+  bool first = true;
+  for (double val : poly_points) {
+    if (first) {
+      point.x = val;
+    } else {
+      point.y = val;
+      poly.push_back(point);
+    }
+    first = !first;
+  }
+  return true;
 }
 
 }  // namespace nav2_collision_monitor
