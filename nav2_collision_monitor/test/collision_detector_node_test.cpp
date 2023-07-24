@@ -1,4 +1,5 @@
 // Copyright (c) 2022 Samsung R&D Institute Russia
+// Copyright (c) 2023 Pixel Robotics GmbH
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -49,10 +50,11 @@ static const char SCAN_NAME[]{"Scan"};
 static const char POINTCLOUD_NAME[]{"PointCloud"};
 static const char RANGE_NAME[]{"Range"};
 static const char STATE_TOPIC[]{"collision_detector_state"};
-static const int MAX_POINTS{1};
+static const int MIN_POINTS{2};
 static const double SIMULATION_TIME_STEP{0.01};
 static const double TRANSFORM_TOLERANCE{0.5};
 static const double SOURCE_TIMEOUT{5.0};
+static const double FREQUENCY{10.0};
 
 enum PolygonType
 {
@@ -145,7 +147,7 @@ public:
   void stateCallback(nav2_msgs::msg::CollisionDetectorState::SharedPtr msg);
 
 protected:
-  // CollisionMonitor node
+  // CollisionDetector node
   std::shared_ptr<CollisionDetectorWrapper> cd_;
 
   // Data source publishers
@@ -155,8 +157,6 @@ protected:
 
   rclcpp::Subscription<nav2_msgs::msg::CollisionDetectorState>::SharedPtr state_sub_;
   nav2_msgs::msg::CollisionDetectorState::SharedPtr state_msg_;
-
-
 };  // Tester
 
 Tester::Tester()
@@ -222,6 +222,10 @@ void Tester::setCommonParameters()
     "source_timeout", rclcpp::ParameterValue(SOURCE_TIMEOUT));
   cd_->set_parameter(
     rclcpp::Parameter("source_timeout", SOURCE_TIMEOUT));
+  cd_->declare_parameter(
+    "frequency", rclcpp::ParameterValue(FREQUENCY));
+  cd_->set_parameter(
+    rclcpp::Parameter("frequency", FREQUENCY));
 }
 
 void Tester::addPolygon(
@@ -270,9 +274,9 @@ void Tester::addPolygon(
     rclcpp::Parameter(polygon_name + ".action_type", at));
 
   cd_->declare_parameter(
-    polygon_name + ".max_points", rclcpp::ParameterValue(MAX_POINTS));
+    polygon_name + ".min_points", rclcpp::ParameterValue(MIN_POINTS));
   cd_->set_parameter(
-    rclcpp::Parameter(polygon_name + ".max_points", MAX_POINTS));
+    rclcpp::Parameter(polygon_name + ".min_points", MIN_POINTS));
 
   cd_->declare_parameter(
     polygon_name + ".simulation_time_step", rclcpp::ParameterValue(SIMULATION_TIME_STEP));
@@ -357,8 +361,8 @@ void Tester::sendTransforms(const rclcpp::Time & stamp)
   transform.transform.rotation.z = 0.0;
   transform.transform.rotation.w = 1.0;
 
-  // Fill TF buffer ahead for future transform usage in CollisionMonitor::process()
-  const rclcpp::Duration ahead = 1000ms;
+  // Fill TF buffer ahead for future transform usage in CollisionDetector::process()
+  const rclcpp::Duration ahead = 300ms;
   for (rclcpp::Time t = stamp; t <= stamp + ahead; t += rclcpp::Duration(50ms)) {
     transform.header.stamp = t;
 
@@ -469,7 +473,7 @@ TEST_F(Tester, testIncorrectPolygonType)
   addSource(SCAN_NAME, SCAN);
   setVectors({"UnknownShape"}, {SCAN_NAME});
 
-  // Check that Collision Monitor node can not be configured for this parameters set
+  // Check that Collision Detector node can not be configured for this parameters set
   cd_->cant_configure();
 }
 
@@ -480,7 +484,7 @@ TEST_F(Tester, testIncorrectSourceType)
   addSource("UnknownSource", SOURCE_UNKNOWN);
   setVectors({"DetectionRegion"}, {"UnknownSource"});
 
-  // Check that Collision Monitor node can not be configured for this parameters set
+  // Check that Collision Detector node can not be configured for this parameters set
   cd_->cant_configure();
 }
 
@@ -490,7 +494,7 @@ TEST_F(Tester, testPolygonsNotSet)
   addPolygon("DetectionRegion", POLYGON, 1.0, "none");
   addSource(SCAN_NAME, SCAN);
 
-  // Check that Collision Monitor node can not be configured for this parameters set
+  // Check that Collision Detector node can not be configured for this parameters set
   cd_->cant_configure();
 }
 
@@ -502,7 +506,7 @@ TEST_F(Tester, testSourcesNotSet)
   cd_->declare_parameter("polygons", rclcpp::ParameterValue(std::vector<std::string>{"DetectionRegion"}));
   cd_->set_parameter(rclcpp::Parameter("polygons", std::vector<std::string>{"DetectionRegion"}));
 
-  // Check that Collision Monitor node can not be configured for this parameters set
+  // Check that Collision Detector node can not be configured for this parameters set
   cd_->cant_configure();
 }
 
@@ -513,7 +517,7 @@ TEST_F(Tester, testSuccessfulConfigure)
   addSource(SCAN_NAME, SCAN);
   setVectors({"DetectionRegion"}, {SCAN_NAME});
 
-  // Check that Collision Monitor node can not be configured for this parameters set
+  // Check that Collision Detector node can be configured successfully for this parameters set
   cd_->configure();
 }
 
@@ -530,9 +534,9 @@ TEST_F(Tester, testProcessNonActive)
   cd_->configure();
 
   // ... and check that the detector state was not published
-  ASSERT_FALSE(waitState(1000ms));
+  ASSERT_FALSE(waitState(300ms));
 
-  // Stop Collision Monitor node
+  // Stop Collision Detector node
   cd_->stop();
 }
 
@@ -545,40 +549,40 @@ TEST_F(Tester, testProcessActive)
   addSource(SCAN_NAME, SCAN);
   setVectors({"DetectionRegion"}, {SCAN_NAME});
 
-  // Configure Collision Detector node, but not activate
+  // Configure and activate Collision Detector node
   cd_->start();
   // ... and check that state is published
-  ASSERT_TRUE(waitState(1000ms));
+  ASSERT_TRUE(waitState(300ms));
 
-  // Stop Collision Monitor node
+  // Stop Collision Detector node
   cd_->stop();
 }
 
-TEST_F(Tester, testdetection)
+TEST_F(Tester, testDetection)
 {
   rclcpp::Time curr_time = cd_->now();
 
-  // Set Collision Monitor parameters.
-  // Making two polygons: outer polygon for slowdown and inner for robot stop.
+  // Set Collision Detector parameters.
   setCommonParameters();
+  // Create polygon
   addPolygon("DetectionRegion", POLYGON, 2.0, "none");
   addSource(SCAN_NAME, SCAN);
   setVectors({"DetectionRegion"}, {SCAN_NAME});
 
-  // Start Collision Monitor node
+  // Start Collision Detector node
   cd_->start();
 
   // Share TF
   sendTransforms(curr_time);
   
-  // Obstacle is in slowdown robot zone
+  // Obstacle is in DetectionRegion
   publishScan(1.5, curr_time);
   
   ASSERT_TRUE(waitData(1.5, 500ms, curr_time));
-  ASSERT_TRUE(waitState(1000ms));
+  ASSERT_TRUE(waitState(300ms));
   ASSERT_EQ(state_msg_->detections[0], true);
 
-  // Stop Collision Monitor node
+  // Stop Collision Detector node
   cd_->stop();
 }
 

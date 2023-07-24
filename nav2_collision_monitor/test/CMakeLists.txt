@@ -26,7 +26,13 @@ target_link_libraries(polygons_test
 )
 
 # Collision Monitor node test
-
+ament_add_gtest(collision_monitor_node_test collision_monitor_node_test.cpp)
+ament_target_dependencies(collision_monitor_node_test
+  ${dependencies}
+)
+target_link_libraries(collision_monitor_node_test
+  ${library_name}
+)
 # Collision Detector node test
 ament_add_gtest(collision_detector_node_test collision_detector_node_test.cpp)
 ament_target_dependencies(collision_detector_node_test

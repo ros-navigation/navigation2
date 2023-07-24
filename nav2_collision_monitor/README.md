@@ -71,5 +71,6 @@ The following notes could be made:
 
 ## Collision Detector
 
-Another node exists in the nav2_collision_monitor package called the Collision Detector. This node works similarly to the collision monitor
-except that it does not affect the robot's velocity. It will only inform that data from the configured sources has been detected within the configured polygons via message to the `/collision_detector_state` topic. 
+Another node exists in the nav2_collision_monitor package called the Collision Detector. This node works similarly to the collision monitor except that it does not affect the robot's velocity. It will only inform that data from the configured sources has been detected within the configured polygons via message to the `collision_detector_state` topic. It is important to note that unlike the Collision Monitor that uses different behavior models, the Collision Detector does not use any of them and therefore the `action_type` should always be set to `none`.
+
+The Collision Detector was introduced for the use cases where the robot's velocity should not be affected by the collision monitor, but the user still wants to be informed about the detected obstacles and act upon it in different ways; e.g. blink LEDs or sound an alarm when the robot is close to an obstacle.
