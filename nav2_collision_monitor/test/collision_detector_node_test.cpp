@@ -558,7 +558,7 @@ TEST_F(Tester, testProcessActive)
   cd_->stop();
 }
 
-TEST_F(Tester, testDetection)
+TEST_F(Tester, testPolygonDetection)
 {
   rclcpp::Time curr_time = cd_->now();
 
@@ -566,8 +566,36 @@ TEST_F(Tester, testDetection)
   setCommonParameters();
   // Create polygon
   addPolygon("DetectionRegion", POLYGON, 2.0, "none");
-  addSource(SCAN_NAME, SCAN);
-  setVectors({"DetectionRegion"}, {SCAN_NAME});
+  addSource(RANGE_NAME, RANGE);
+  setVectors({"DetectionRegion"}, {RANGE_NAME});
+
+  // Start Collision Detector node
+  cd_->start();
+
+  // Share TF
+  sendTransforms(curr_time);
+  
+  // Obstacle is in DetectionRegion
+  publishScan(1.5, curr_time);
+  
+  ASSERT_TRUE(waitData(1.5, 500ms, curr_time));
+  ASSERT_TRUE(waitState(300ms));
+  ASSERT_EQ(state_msg_->detections[0], true);
+
+  // Stop Collision Detector node
+  cd_->stop();
+}
+
+TEST_F(Tester, testCircleDetection)
+{
+  rclcpp::Time curr_time = cd_->now();
+
+  // Set Collision Detector parameters.
+  setCommonParameters();
+  // Create polygon
+  addPolygon("DetectionRegion", CIRCLE, 3.0, "none");
+  addSource(POINTCLOUD_NAME, POINTCLOUD);
+  setVectors({"DetectionRegion"}, {POINTCLOUD_NAME});
 
   // Start Collision Detector node
   cd_->start();
