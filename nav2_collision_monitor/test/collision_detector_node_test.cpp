@@ -578,7 +578,7 @@ TEST_F(Tester, testPolygonDetection)
   sendTransforms(curr_time);
 
   // Obstacle is in DetectionRegion
-  publishScan(1.5, curr_time);
+  publishRange(1.5, curr_time);
 
   ASSERT_TRUE(waitData(1.5, 300ms, curr_time));
   ASSERT_TRUE(waitState(300ms));
@@ -607,7 +607,7 @@ TEST_F(Tester, testCircleDetection)
   sendTransforms(curr_time);
 
   // Obstacle is in DetectionRegion
-  publishScan(1.5, curr_time);
+  publishPointCloud(1.5, curr_time);
 
   ASSERT_TRUE(waitData(std::hypot(1.5, 0.01), 300ms, curr_time));
   ASSERT_TRUE(waitState(300ms));
