@@ -360,9 +360,9 @@
     </sensor>
   </gazebo>
 
-  <ros2_control name="GazeboSimSystem" type="system">
+  <!-- <ros2_control name="GazeboSimSystem" type="system">
     <hardware>
-      <plugin>ign_ros2_control/IgnitionSystem</plugin>
+      <plugin>gz_ros2_control/GazeboSimSystem</plugin>
     </hardware>
     <joint name="wheel_left_joint">
       <command_interface name="velocity"/>
@@ -374,10 +374,10 @@
       <state_interface name="position"/>
       <state_interface name="velocity"/>
     </joint>
-  </ros2_control>
+  </ros2_control> -->
 
   <gazebo>
-    <plugin filename="ign_ros2_control-system" name="ign_ros2_control::IgnitionROS2ControlPlugin">
+    <!-- <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
       <parameters>$(find nav2_bringup)/params/control.yaml</parameters>
       <ros>
         <remapping>~/odom:=odom</remapping>
@@ -386,6 +386,29 @@
         <remapping>/diagnostics:=diagnostics</remapping>
         <remapping>/diffdrive_controller/cmd_vel_unstamped:=cmd_vel</remapping>
       </ros>
+    </plugin> -->
+
+    <plugin
+      filename="ignition-gazebo-diff-drive-system"
+      name="gz::sim::systems::DiffDrive">
+      <left_joint>wheel_left_joint</left_joint>
+      <right_joint>wheel_right_joint</right_joint>
+      <wheel_separation>0.287</wheel_separation>
+      <wheel_radius>0.033</wheel_radius>
+      <max_linear_acceleration>1</max_linear_acceleration>
+      <min_linear_acceleration>-1</min_linear_acceleration>
+      <max_angular_acceleration>2</max_angular_acceleration>
+      <min_angular_acceleration>-2</min_angular_acceleration>
+      <max_linear_velocity>0.46</max_linear_velocity>
+      <min_linear_velocity>-0.46</min_linear_velocity>
+      <max_angular_velocity>1.9</max_angular_velocity>
+      <min_angular_velocity>-1.9</min_angular_velocity>
+      <topic>/cmd_vel</topic>
+      <odom_topic>/odom</odom_topic>
+      <tf_topic>tf</tf_topic>
+      <frame_id>odom</frame_id>
+      <child_frame_id>base_footprint</child_frame_id>
+      <odom_publish_frequency>25</odom_publish_frequency>
     </plugin>
 
     <plugin

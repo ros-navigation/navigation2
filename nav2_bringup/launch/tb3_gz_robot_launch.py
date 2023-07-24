@@ -100,19 +100,55 @@ def generate_launch_description():
         arguments=[['/imu' + '@sensor_msgs/msg/Imu[ignition.msgs.IMU']],
     )
 
-    load_joint_state_broadcaster = ExecuteProcess(
+    odom_bridge = Node(
         condition=IfCondition(use_simulator),
-        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
-             'joint_state_broadcaster'],
-        output='screen'
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        name='odom_bridge',
+        output='screen',
+        parameters=[{
+            'use_sim_time': use_sim_time
+        }],
+        arguments=[['/odom' + '@nav_msgs/msg/Odometry[ignition.msgs.Odometry']],
     )
 
-    load_diffdrive_controller = ExecuteProcess(
+    odom_tf_bridge = Node(
         condition=IfCondition(use_simulator),
-        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
-             'diffdrive_controller'],
-        output='screen'
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        name='odom_tf_bridge',
+        output='screen',
+        parameters=[{
+            'use_sim_time': use_sim_time
+        }],
+        arguments=[['/tf' + '@tf2_msgs/msg/TFMessage[ignition.msgs.Pose_V']],
     )
+
+    cm_vel_bridge = Node(
+        condition=IfCondition(use_simulator),
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        name='cm_vel_bridge',
+        output='screen',
+        parameters=[{
+            'use_sim_time': use_sim_time
+        }],
+        arguments=[['/cmd_vel' + '@geometry_msgs/msg/Twist]ignition.msgs.Twist']],
+    )
+
+    # load_joint_state_broadcaster = ExecuteProcess(
+    #     condition=IfCondition(use_simulator),
+    #     cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
+    #          'joint_state_broadcaster'],
+    #     output='screen'
+    # )
+    #
+    # load_diffdrive_controller = ExecuteProcess(
+    #     condition=IfCondition(use_simulator),
+    #     cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
+    #          'diffdrive_controller'],
+    #     output='screen'
+    # )
 
     spawn_model = Node(
         condition=IfCondition(use_simulator),
@@ -150,6 +186,9 @@ def generate_launch_description():
     ld.add_action(lidar_bridge)
     ld.add_action(imu_bridge)
     ld.add_action(spawn_model)
-    ld.add_action(load_joint_state_broadcaster)
-    ld.add_action(load_diffdrive_controller)
+    ld.add_action(odom_bridge)
+    ld.add_action(odom_tf_bridge)
+    ld.add_action(cm_vel_bridge)
+    # ld.add_action(load_joint_state_broadcaster)
+    # ld.add_action(load_diffdrive_controller)
     return ld
