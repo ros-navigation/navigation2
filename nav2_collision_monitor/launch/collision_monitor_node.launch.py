@@ -22,6 +22,7 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+from launch_ros.descriptions import ParameterFile
 from nav2_common.launch import RewrittenYaml
 
 
@@ -59,11 +60,13 @@ def generate_launch_description():
     param_substitutions = {
         'use_sim_time': use_sim_time}
 
-    configured_params = RewrittenYaml(
-        source_file=params_file,
-        root_key=namespace,
-        param_rewrites=param_substitutions,
-        convert_types=True)
+    configured_params = ParameterFile(
+        RewrittenYaml(
+            source_file=params_file,
+            root_key=namespace,
+            param_rewrites=param_substitutions,
+            convert_types=True),
+        allow_substs=True)
 
     # Nodes launching commands
     start_lifecycle_manager_cmd = Node(
