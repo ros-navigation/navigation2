@@ -16,7 +16,7 @@
   <build_depend>launch_ros</build_depend>
 
   <exec_depend>diff_drive_controller</exec_depend>
-  <exec_depend>ign_ros2_control</exec_depend>
+  <exec_depend>gz_ros2_control</exec_depend>
   <exec_depend>joint_state_broadcaster</exec_depend>
   <exec_depend>launch_ros</exec_depend>
   <exec_depend>navigation2</exec_depend>
