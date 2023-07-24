@@ -582,6 +582,7 @@ TEST_F(Tester, testPolygonDetection)
 
   ASSERT_TRUE(waitData(1.5, 300ms, curr_time));
   ASSERT_TRUE(waitState(300ms));
+  ASSERT_GT(static_cast<int>(state_msg_->detections.size()), 0);
   ASSERT_EQ(state_msg_->detections[0], true);
 
   // Stop Collision Detector node
@@ -638,6 +639,7 @@ TEST_F(Tester, testScanDetection)
 
   ASSERT_TRUE(waitData(1.5, 300ms, curr_time));
   ASSERT_TRUE(waitState(300ms));
+  ASSERT_GT(static_cast<int>(state_msg_->detections.size()), 0);
   ASSERT_EQ(state_msg_->detections[0], true);
 
   // Stop Collision Detector node
