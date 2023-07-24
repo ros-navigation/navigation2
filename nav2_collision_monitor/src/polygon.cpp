@@ -195,6 +195,9 @@ void Polygon::updatePolygonByVelocity(const Velocity & cmd_vel_in)
       return;
     }
   }
+  RCLCPP_WARN(
+    logger_, "Velocity is not covered by any of the speed polygons. x: %.3f y: %.3f tw: %.3f ",
+    cmd_vel_in.x, cmd_vel_in.y, cmd_vel_in.tw);
 }
 
 void Polygon::updatePolygon()
