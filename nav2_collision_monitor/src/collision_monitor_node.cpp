@@ -386,8 +386,13 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in)
       break;
     }
 
-    // Update polygon coordinates
-    polygon->updatePolygon();
+    if (polygon->isUsingPolygonVelocitySelector()) {
+      // Update polygon using its velocity ranges
+      polygon->updatePolygonByVelocity(cmd_vel_in);
+    } else {
+      // Otherwise, dynamically update polygon coordinates when it necessary
+      polygon->updatePolygon();
+    }
 
     const ActionType at = polygon->getActionType();
     if (at == STOP || at == SLOWDOWN || at == LIMIT) {
@@ -423,10 +428,6 @@ bool CollisionMonitor::processStopSlowdownLimit(
   const Velocity & velocity,
   Action & robot_action) const
 {
-  if (polygon->isUsingPolygonVelocitySelector()) {
-    polygon->updatePolygonByVelocity(velocity);
-  }
-
   if (!polygon->isShapeSet()) {
     return false;
   }
@@ -482,10 +483,6 @@ bool CollisionMonitor::processApproach(
   const Velocity & velocity,
   Action & robot_action) const
 {
-  if (polygon->isUsingPolygonVelocitySelector()) {
-    polygon->updatePolygonByVelocity(velocity);
-  }
-
   if (!polygon->isShapeSet()) {
     return false;
   }
