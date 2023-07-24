@@ -503,7 +503,9 @@ TEST_F(Tester, testSourcesNotSet)
   setCommonParameters();
   addPolygon("DetectionRegion", POLYGON, 1.0, "none");
   addSource(SCAN_NAME, SCAN);
-  cd_->declare_parameter("polygons", rclcpp::ParameterValue(std::vector<std::string>{"DetectionRegion"}));
+  cd_->declare_parameter(
+    "polygons",
+    rclcpp::ParameterValue(std::vector<std::string>{"DetectionRegion"}));
   cd_->set_parameter(rclcpp::Parameter("polygons", std::vector<std::string>{"DetectionRegion"}));
 
   // Check that Collision Detector node can not be configured for this parameters set
@@ -574,10 +576,10 @@ TEST_F(Tester, testPolygonDetection)
 
   // Share TF
   sendTransforms(curr_time);
-  
+
   // Obstacle is in DetectionRegion
   publishScan(1.5, curr_time);
-  
+
   ASSERT_TRUE(waitData(1.5, 500ms, curr_time));
   ASSERT_TRUE(waitState(300ms));
   ASSERT_EQ(state_msg_->detections[0], true);
@@ -602,10 +604,10 @@ TEST_F(Tester, testCircleDetection)
 
   // Share TF
   sendTransforms(curr_time);
-  
+
   // Obstacle is in DetectionRegion
   publishScan(1.5, curr_time);
-  
+
   ASSERT_TRUE(waitData(1.5, 500ms, curr_time));
   ASSERT_TRUE(waitState(300ms));
   ASSERT_EQ(state_msg_->detections[0], true);

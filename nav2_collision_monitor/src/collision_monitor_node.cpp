@@ -449,7 +449,7 @@ bool CollisionMonitor::processStopSlowdownLimit(
       }
     } else {  // Limit
       // Compute linear velocity
-      const double linear_vel = std::hypot(velocity.x, velocity.y); // absolute
+      const double linear_vel = std::hypot(velocity.x, velocity.y);  // absolute
       Velocity safe_vel;
       double ratio = 1.0;
       if (linear_vel != 0.0) {
