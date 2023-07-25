@@ -71,13 +71,13 @@ ResultStatus AssistedTeleop::onRun(const std::shared_ptr<const AssistedTeleopAct
   return ResultStatus{Status::SUCCEEDED, AssistedTeleopActionResult::NONE};
 }
 
-void AssistedTeleop::onActionCompletion()
+void AssistedTeleop::onActionCompletion(std::shared_ptr<AssistedTeleopActionResult>/*result*/)
 {
   teleop_twist_ = geometry_msgs::msg::Twist();
   preempt_teleop_ = false;
 }
 
-ResultStatus AssistedTeleop::onCycleUpdate(std::shared_ptr<AssistedTeleopActionResult>)
+ResultStatus AssistedTeleop::onCycleUpdate()
 {
   feedback_->current_teleop_duration = elasped_time_;
   action_server_->publish_feedback(feedback_);

@@ -54,7 +54,7 @@ public:
    * @brief Loop function to run behavior
    * @return Status of behavior
    */
-  ResultStatus onCycleUpdate(std::shared_ptr<WaitAction::Result> ) override;
+  ResultStatus onCycleUpdate() override;
 
   /**
    * @brief Method to determine the required costmap info

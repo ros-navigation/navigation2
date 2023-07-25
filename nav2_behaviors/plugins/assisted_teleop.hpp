@@ -51,13 +51,13 @@ public:
   /**
    * @brief func to run at the completion of the action
    */
-  void onActionCompletion() override;
+  void onActionCompletion(std::shared_ptr<AssistedTeleopActionResult>/*result*/) override;
 
   /**
    * @brief Loop function to run behavior
    * @return Status of behavior
    */
-  ResultStatus onCycleUpdate(std::shared_ptr<AssistedTeleopActionResult>) override;
+  ResultStatus onCycleUpdate() override;
 
   /**
    * @brief Method to determine the required costmap info
