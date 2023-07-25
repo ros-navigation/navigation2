@@ -63,6 +63,16 @@ void calculateMinAndMaxDistances(
   double & min_dist, double & max_dist);
 
 /**
+ * @brief Calculate the max width of the footprint (sideways, along Y)
+ *
+ * @param footprint The footprint to examine
+ * @param max_dist_along_y Output parameter of the max width of the robot
+ */
+void calculateMaxAlongY(
+  const std::vector<geometry_msgs::msg::Point> & footprint,
+  double & max_dist_along_y);
+
+/**
  * @brief Convert Point32 to Point
  */
 geometry_msgs::msg::Point toPoint(geometry_msgs::msg::Point32 pt);

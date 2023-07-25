@@ -70,6 +70,17 @@ void calculateMinAndMaxDistances(
   max_dist = std::max(max_dist, std::max(vertex_dist, edge_dist));
 }
 
+void calculateMaxAlongY(
+  const std::vector<geometry_msgs::msg::Point> & footprint,
+  double & max_dist_along_y)
+{
+  max_dist_along_y = std::numeric_limits<double>::min();
+
+  for (unsigned int i = 0; i < footprint.size(); ++i) {
+    max_dist_along_y = std::max(max_dist_along_y, std::fabs(footprint[i].y));
+  }
+}
+
 geometry_msgs::msg::Point32 toPoint32(geometry_msgs::msg::Point pt)
 {
   geometry_msgs::msg::Point32 point32;
