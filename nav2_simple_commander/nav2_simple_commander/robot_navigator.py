@@ -85,7 +85,7 @@ class BasicNavigator(Node):
         self.spin_client = ActionClient(self, Spin, 'spin')
         self.backup_client = ActionClient(self, BackUp, 'backup')
         self.assisted_teleop_client = ActionClient(
-            self, AssistedTeleop, 'assisted_teleop')
+            self, AssistedTeleop, f'/{self.namespace}assisted_teleop')
         self.localization_pose_sub = self.create_subscription(PoseWithCovarianceStamped,
                                                               f'/{self.namespace}/amcl_pose',
                                                               self._amclPoseCallback,
@@ -94,7 +94,7 @@ class BasicNavigator(Node):
                                                       f'/{self.namespace}/initialpose',
                                                       10)
         self.change_maps_srv = self.create_client(LoadMap,
-                                                  '/map_server/load_map')
+                                                  f'/{self.namespace}/map_server/load_map')
         self.clear_costmap_global_srv = self.create_client(ClearEntireCostmap,
                                                            f'/{self.namespace}/global_costmap/clear_entirely_global_costmap')
         self.clear_costmap_local_srv = self.create_client(ClearEntireCostmap,
@@ -129,8 +129,7 @@ class BasicNavigator(Node):
         """Send a `NavThroughPoses` action request."""
         self.debug("Waiting for 'NavigateThroughPoses' action server")
         while not self.nav_through_poses_client.wait_for_server(timeout_sec=1.0):
-            self.info(
-                "'NavigateThroughPoses' action server not available, waiting...")
+            self.info("'NavigateThroughPoses' action server not available, waiting...")
 
         goal_msg = NavigateThroughPoses.Goal()
         goal_msg.poses = poses
@@ -190,8 +189,7 @@ class BasicNavigator(Node):
         self.goal_handle = send_goal_future.result()
 
         if not self.goal_handle.accepted:
-            self.error(
-                f'Following {len(poses)} waypoints request was rejected!')
+            self.error(f'Following {len(poses)} waypoints request was rejected!')
             return False
 
         self.result_future = self.goal_handle.get_result_async()
@@ -206,8 +204,7 @@ class BasicNavigator(Node):
         goal_msg.time_allowance = Duration(sec=time_allowance)
 
         self.info(f'Spinning to angle {goal_msg.target_yaw}....')
-        send_goal_future = self.spin_client.send_goal_async(
-            goal_msg, self._feedbackCallback)
+        send_goal_future = self.spin_client.send_goal_async(goal_msg, self._feedbackCallback)
         rclpy.spin_until_future_complete(self, send_goal_future)
         self.goal_handle = send_goal_future.result()
 
@@ -242,7 +239,7 @@ class BasicNavigator(Node):
         return True
 
     def assistedTeleop(self, time_allowance=30):
-        self.debug("Wainting for 'assisted_teleop' action server")
+        self.debug("Waiting for 'assisted_teleop' action server")
         while not self.assisted_teleop_client.wait_for_server(timeout_sec=1.0):
             self.info("'assisted_teleop' action server not available, waiting...")
         goal_msg = AssistedTeleop.Goal()
@@ -299,8 +296,7 @@ class BasicNavigator(Node):
         if not self.result_future:
             # task was cancelled or completed
             return True
-        rclpy.spin_until_future_complete(
-            self, self.result_future, timeout_sec=0.10)
+        rclpy.spin_until_future_complete(self, self.result_future, timeout_sec=0.10)
         if self.result_future.result():
             self.status = self.result_future.result().status
             if self.status != GoalStatus.STATUS_SUCCEEDED:
@@ -328,9 +324,8 @@ class BasicNavigator(Node):
         else:
             return TaskResult.UNKNOWN
     
-    def waitUntilNav2Active(self, navigator='', localizer=''):
+    def waitUntilNav2Active(self, navigator='bt_navigator', localizer='amcl'):
         """Block until the full navigation system is up and running."""
-        navigator = f'/{self.namespace}/bt_navigator'
         localizer = f'/{self.namespace}/amcl'
         self._waitForNodeToActivate(localizer)
         if localizer == f'/{self.namespace}/amcl':
