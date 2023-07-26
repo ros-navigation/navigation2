@@ -312,7 +312,7 @@ void VelocitySmoother::smootherTimer()
   cmd_vel->linear.y = fabs(cmd_vel->linear.y) < deadband_velocities_[1] ? 0.0 : cmd_vel->linear.y;
   cmd_vel->angular.z = fabs(cmd_vel->angular.z) <
     deadband_velocities_[2] ? 0.0 : cmd_vel->angular.z;
-  
+
   smoothed_cmd_pub_->publish(std::move(cmd_vel));
 }
 
