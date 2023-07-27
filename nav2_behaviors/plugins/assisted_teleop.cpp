@@ -71,7 +71,7 @@ ResultStatus AssistedTeleop::onRun(const std::shared_ptr<const AssistedTeleopAct
   return ResultStatus{Status::SUCCEEDED, AssistedTeleopActionResult::NONE};
 }
 
-void AssistedTeleop::onActionCompletion()
+void AssistedTeleop::onActionCompletion(std::shared_ptr<AssistedTeleopActionResult>/*result*/)
 {
   teleop_twist_ = geometry_msgs::msg::Twist();
   preempt_teleop_ = false;
