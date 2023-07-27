@@ -105,7 +105,7 @@ public:
   }
 
   // an opportunity for a derived class to do something on action completion
-  virtual void onActionCompletion()
+  virtual void onActionCompletion(std::shared_ptr<typename ActionT::Result>/*result*/)
   {
   }
 
@@ -240,8 +240,8 @@ protected:
         RCLCPP_INFO(logger_, "Canceling %s", behavior_name_.c_str());
         stopRobot();
         result->total_elapsed_time = elasped_time_;
+        onActionCompletion(result);
         action_server_->terminate_all(result);
-        onActionCompletion();
         return;
       }
 
@@ -253,8 +253,8 @@ protected:
           behavior_name_.c_str());
         stopRobot();
         result->total_elapsed_time = steady_clock_.now() - start_time;
+        onActionCompletion(result);
         action_server_->terminate_current(result);
-        onActionCompletion();
         return;
       }
 
@@ -265,16 +265,16 @@ protected:
             logger_,
             "%s completed successfully", behavior_name_.c_str());
           result->total_elapsed_time = steady_clock_.now() - start_time;
+          onActionCompletion(result);
           action_server_->succeeded_current(result);
-          onActionCompletion();
           return;
 
         case Status::FAILED:
           RCLCPP_WARN(logger_, "%s failed", behavior_name_.c_str());
           result->total_elapsed_time = steady_clock_.now() - start_time;
           result->error_code = on_cycle_update_result.error_code;
+          onActionCompletion(result);
           action_server_->terminate_current(result);
-          onActionCompletion();
           return;
 
         case Status::RUNNING:
