@@ -1328,7 +1328,7 @@ AmclNode::initParameters()
   }
   if (max_particles_ < 0) {
     RCLCPP_WARN(
-      get_logger(), "You've set max_particles to be negtive,"
+      get_logger(), "You've set max_particles to be negative,"
       " this isn't allowed so it will be set to default value 2000.");
     max_particles_ = 2000;
   }
