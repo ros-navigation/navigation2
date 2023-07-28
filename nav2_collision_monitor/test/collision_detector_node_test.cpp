@@ -202,7 +202,6 @@ void Tester::stateCallback(nav2_msgs::msg::CollisionDetectorState::SharedPtr msg
   state_msg_ = msg;
 }
 
-
 void Tester::setCommonParameters()
 {
   cd_->declare_parameter(
@@ -582,7 +581,7 @@ TEST_F(Tester, testPolygonDetection)
 
   ASSERT_TRUE(waitData(1.5, 300ms, curr_time));
   ASSERT_TRUE(waitState(300ms));
-  ASSERT_GT(static_cast<int>(state_msg_->detections.size()), 0);
+  ASSERT_NE(state_msg_->detections.size(), 0u);
   ASSERT_EQ(state_msg_->detections[0], true);
 
   // Stop Collision Detector node
@@ -639,7 +638,7 @@ TEST_F(Tester, testScanDetection)
 
   ASSERT_TRUE(waitData(1.5, 300ms, curr_time));
   ASSERT_TRUE(waitState(300ms));
-  ASSERT_GT(static_cast<int>(state_msg_->detections.size()), 0);
+  ASSERT_NE(state_msg_->detections.size(), 0u);
   ASSERT_EQ(state_msg_->detections[0], true);
 
   // Stop Collision Detector node

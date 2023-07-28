@@ -29,9 +29,9 @@ The following models of safety behaviors are employed by Collision Monitor:
 
 The zones around the robot can take the following shapes:
 
-* Arbitrary user-defined polygon relative to the robot base frame.
-* Circle: is made for the best performance and could be used in the cases where the zone or robot could be approximated by round shape.
-* Robot footprint polygon, which is used in the approach behavior model only. Will use the footprint topic to allow it to be dynamically adjusted over time.
+* Arbitrary user-defined polygon relative to the robot base frame, which can be static in a configuration file or dynamically changing via a topic interface.
+* Robot footprint polygon, which is used in the approach behavior model only. Will use the static user-defined polygon or the footprint topic to allow it to be dynamically adjusted over time.
+* Circle: is made for the best performance and could be used in the cases where the zone or robot footprint could be approximated by round shape.
 
 The data may be obtained from different data sources:
 
@@ -58,7 +58,7 @@ Designed to be used in wide variety of robots (incl. moving fast) and have a hig
 Typical one frame processing time is ~4-5ms for laser scanner (with 360 points) and ~4-20ms for PointClouds (having 24K points).
 The table below represents the details of operating times for different behavior models and shapes:
 
-| | Stop/Slowdown model, Polygon area | Stop/Slowdown model, Circle area | Approach model, Polygon footprint | Approach model, Circle footprint |
+| | Stop/Slowdown/Limit model, Polygon area | Stop/Slowdown/Limit model, Circle area | Approach model, Polygon footprint | Approach model, Circle footprint |
 |-|-----------------------------------|----------------------------------|-----------------------------------|----------------------------------|
 | LaserScan (360 points) processing time, ms  | 4.45 | 4.45 | 4.93  | 4.86  |
 | PointCloud (24K points) processing time, ms | 4.94 | 4.06 | 20.67 | 10.87 |
