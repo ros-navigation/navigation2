@@ -277,6 +277,10 @@ AmclNode::AmclNode(const rclcpp::NodeOptions & options)
     "use_augmented_mcl", rclcpp::ParameterValue(false),
     "Use Augmented MCL approach for resampling"
   );
+  add_parameter(
+    "dynamic_laser_importance", rclcpp::ParameterValue(false),
+    "Use dynamic laser importance based on augmented MCL score"
+  );
 
   localization_mode_ = "laser";
   last_mode_switch_ts_ = now();
@@ -1308,6 +1312,7 @@ AmclNode::initParameters()
   get_parameter("ext_pose_search_tolerance_sec", ext_pose_search_tolerance_sec_);
   get_parameter("use_cluster_averaging", use_cluster_averaging_);
   get_parameter("use_augmented_mcl", use_augmented_mcl_);
+  get_parameter("dynamic_laser_importance", dynamic_laser_importance_);
   
   save_pose_period_ = tf2::durationFromSec(1.0 / save_pose_rate);
   transform_tolerance_ = tf2::durationFromSec(tmp_tol);
@@ -1888,6 +1893,7 @@ AmclNode::amclDiagnostics(diagnostic_updater::DiagnosticStatusWrapper& stat)
   stat.add("std_warn_level_y", std_warn_level_y_);
   stat.add("std_warn_level_yaw", std_warn_level_yaw_);
   stat.add("aug_mcl_score", metrics_["aug_mcl_score"]);
+  stat.add("cluster_count", metrics_["cluster_count"]);
 
   if (metrics_["std_x"] > std_warn_level_x_ || metrics_["std_y"] > std_warn_level_y_ || metrics_["std_yaw"] > std_warn_level_yaw_) {
     stat.summary(DiagStatus::WARN, "Deviation too large");
@@ -1911,66 +1917,31 @@ void AmclNode::updateMetrics(){
   metrics_["std_y"] = std_y;
   metrics_["std_yaw"] = std_yaw;
   metrics_["aug_mcl_score"] = aug_mcl_score;
+  metrics_["cluster_count"] = pf_->sets[pf_->current_set].cluster_count;
 }
 
-bool AmclNode::switchLocalizationMode(std::string mode){
+void AmclNode::updateLaserImportance(double correction_factor){
   size_t laser_index;
   if(frame_to_laser_.size() > 0){
     laser_index = frame_to_laser_.size() - 1;
   } else {
-    RCLCPP_ERROR(get_logger(), "switchLocalizationMode: multiple laser instances are not supported");
-    return false;
+    RCLCPP_ERROR(get_logger(), "updateLaserImportance: multiple laser instances are not supported");
   }
-  
-  if(mode == "odometry"){
-    localization_mode_ = mode;
-    last_mode_switch_ts_ = now();
 
-    lasers_[laser_index]->setLaserImportanceFactor(0.3);
+  double new_laser_importance = laser_importance_factor_ - correction_factor*laser_importance_factor_;
+  lasers_[laser_index]->setLaserImportanceFactor(new_laser_importance);
 
-    RCLCPP_INFO(get_logger(), "odometry mode - ON");
-    return true;
-  } else if(mode == "laser"){
-    localization_mode_ = mode;
-    last_mode_switch_ts_ = now();
-
-    // get back to the original value
-    lasers_[laser_index]->setLaserImportanceFactor(laser_importance_factor_);
-
-    RCLCPP_INFO(get_logger(), "laser mode - ON");
-    return true;
-  } else {
-    RCLCPP_ERROR(get_logger(), "Unknown localization mode: %s", mode.c_str());
-    return false;
-  }
+  RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1000, "updateLaserImportance: laser importance factor changed to %f", new_laser_importance); 
 }
 
 void AmclNode::healthCheck(){
   updateMetrics();
 
-  if(metrics_["aug_mcl_score"] > aug_mcl_score_threshold_){
-    if(localization_mode_ == "odometry") return;
-  
-    // protect from cases when metric value just at the edge of threshold to prevent frequent mode switching
-    if(now() - last_mode_switch_ts_ < rclcpp::Duration::from_seconds(5.0)){
-      RCLCPP_WARN(get_logger(), "Mode was switched recently, not switching now");
-      return;
-    }
+  if(!dynamic_laser_importance_) return;
 
-    RCLCPP_INFO(get_logger(), "Augmented MCL score is too high: %f. Switching to odometry mode", metrics_["aug_mcl_score"]);
-
-    switchLocalizationMode(std::string("odometry"));
-  } else {
-    if(localization_mode_ == "laser") return;
-
-    if(now() - last_mode_switch_ts_ < rclcpp::Duration::from_seconds(5.0)){
-      RCLCPP_WARN(get_logger(), "Mode was switched recently, not switching now");
-      return;
-    }
-
-    RCLCPP_INFO(get_logger(), "Augmented MCL score is OK: %f. Switching back to laser mode.", metrics_["aug_mcl_score"]);
-
-    switchLocalizationMode(std::string("laser"));
+  // change laser importance factor based on the value of Augmented MCL score
+  if(metrics_["aug_mcl_score"] > 0){
+    updateLaserImportance(metrics_["aug_mcl_score"]);
   }
 }
 

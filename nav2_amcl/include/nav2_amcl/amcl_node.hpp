@@ -318,7 +318,7 @@ protected:
   void healthCheck();
 
   void updateMetrics();
-  bool switchLocalizationMode(std::string mode);
+  void updateLaserImportance(double correction_factor);
 
   std::unordered_map<std::string, double> metrics_;
 
@@ -455,6 +455,7 @@ protected:
   std::string map_topic_{"map"};
   bool use_cluster_averaging_;
   bool use_augmented_mcl_;
+  bool dynamic_laser_importance_;
 };
 
 }  // namespace nav2_amcl
