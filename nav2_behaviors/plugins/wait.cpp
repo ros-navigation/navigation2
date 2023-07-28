@@ -15,7 +15,7 @@
 #include <chrono>
 #include <memory>
 
-#include "wait.hpp"
+#include "nav2_behaviors/plugins/wait.hpp"
 
 namespace nav2_behaviors
 {
