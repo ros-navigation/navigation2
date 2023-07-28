@@ -273,6 +273,10 @@ void LayeredCostmap::setFootprint(const std::vector<geometry_msgs::msg::Point> &
     footprint_spec,
     inscribed_radius_, circumscribed_radius_);
 
+  nav2_costmap_2d::calculateMaxAlongY(
+    footprint_spec,
+    inscribed_radius_);
+
   for (vector<std::shared_ptr<Layer>>::iterator plugin = plugins_.begin();
     plugin != plugins_.end();
     ++plugin)
