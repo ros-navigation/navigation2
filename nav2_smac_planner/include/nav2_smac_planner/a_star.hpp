@@ -22,6 +22,7 @@
 #include <memory>
 #include <queue>
 #include <utility>
+#include <tuple>
 #include "Eigen/Core"
 
 #include "nav2_costmap_2d/costmap_2d.hpp"
@@ -104,9 +105,12 @@ public:
    * @param path Reference to a vector of indicies of generated path
    * @param num_iterations Reference to number of iterations to create plan
    * @param tolerance Reference to tolerance in costmap nodes
+   * @param expansions_log Optional expansions logged for debug
    * @return if plan was successful
    */
-  bool createPath(CoordinateVector & path, int & num_iterations, const float & tolerance);
+  bool createPath(
+    CoordinateVector & path, int & num_iterations, const float & tolerance,
+    std::vector<std::tuple<float, float>> * expansions_log = nullptr);
 
   /**
    * @brief Sets the collision checker to use

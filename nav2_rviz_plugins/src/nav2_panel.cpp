@@ -451,7 +451,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   accumulated_nav_through_poses_->addTransition(accumulatedNTPTransition);
 
   auto options = rclcpp::NodeOptions().arguments(
-    {"--ros-args --remap __node:=navigation_dialog_action_client"});
+    {"--ros-args", "--remap", "__node:=rviz_navigation_dialog_action_client", "--"});
   client_node_ = std::make_shared<rclcpp::Node>("_", options);
 
   client_nav_ = std::make_shared<nav2_lifecycle_manager::LifecycleManagerClient>(
@@ -710,7 +710,7 @@ geometry_msgs::msg::PoseStamped Nav2Panel::convert_to_msg(
   auto msg = geometry_msgs::msg::PoseStamped();
 
   msg.header.frame_id = "map";
-  msg.header.stamp = rclcpp::Clock().now();
+  // msg.header.stamp = client_node_->now();  // client node doesn't respect sim time yet
 
   msg.pose.position.x = pose[0];
   msg.pose.position.y = pose[1];
@@ -948,7 +948,7 @@ Nav2Panel::onNewGoal(double x, double y, double theta, QString frame)
 {
   auto pose = geometry_msgs::msg::PoseStamped();
 
-  pose.header.stamp = rclcpp::Clock().now();
+  // pose.header.stamp = client_node_->now();  // client node doesn't respect sim time yet
   pose.header.frame_id = frame.toStdString();
   pose.pose.position.x = x;
   pose.pose.position.y = y;

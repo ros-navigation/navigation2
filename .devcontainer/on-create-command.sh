@@ -1,19 +1,12 @@
 #!/bin/bash
 
-set -exo pipefail
+# Immediately catch all errors
+set -eo pipefail
 
-env
-
-cd $OVERLAY_WS
-. $UNDERLAY_WS/install/setup.sh
+# Uncomment for debugging
+# set -x
+# env
 
 git config --global --add safe.directory "*"
-colcon cache lock
 
-colcon build \
-    --symlink-install \
-    --mixin $OVERLAY_MIXINS
-
-sed --in-place \
-    's|^source .*|source "$OVERLAY_WS/install/setup.bash"|' \
-    /ros_entrypoint.sh
+.devcontainer/update-content-command.sh

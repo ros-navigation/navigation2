@@ -4,6 +4,11 @@
       <description>Checks if distance between current and previous pose is above a threshold</description>
     </class>
   </library>
+  <library path="pose_progress_checker">
+    <class type="nav2_controller::PoseProgressChecker" base_class_type="nav2_core::ProgressChecker">
+      <description>Checks if distance and angle between current and previous pose is above a threshold</description>
+    </class>
+  </library>
   <library path="simple_goal_checker">
     <class type="nav2_controller::SimpleGoalChecker" base_class_type="nav2_core::GoalChecker">
       <description>Checks if current pose is within goal window for x,y and yaw</description>

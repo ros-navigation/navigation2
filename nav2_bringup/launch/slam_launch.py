@@ -22,6 +22,7 @@ from launch.conditions import IfCondition, UnlessCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node, SetParameter
+from launch_ros.descriptions import ParameterFile
 from nav2_common.launch import HasNodeParams, RewrittenYaml
 
 
@@ -43,11 +44,13 @@ def generate_launch_description():
     slam_launch_file = os.path.join(slam_toolbox_dir, 'launch', 'online_sync_launch.py')
 
     # Create our own temporary YAML files that include substitutions
-    configured_params = RewrittenYaml(
-        source_file=params_file,
-        root_key=namespace,
-        param_rewrites={},
-        convert_types=True)
+    configured_params = ParameterFile(
+        RewrittenYaml(
+            source_file=params_file,
+            root_key=namespace,
+            param_rewrites={},
+            convert_types=True),
+        allow_substs=True)
 
     # Declare the launch arguments
     declare_namespace_cmd = DeclareLaunchArgument(

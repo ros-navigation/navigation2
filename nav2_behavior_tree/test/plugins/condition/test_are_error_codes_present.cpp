@@ -24,11 +24,11 @@ class AreErrorCodesPresentFixture : public nav2_behavior_tree::BehaviorTreeTestF
 {
 public:
   using Action = nav2_msgs::action::FollowPath;
-  using ActionGoal = Action::Goal;
+  using ActionResult = Action::Result;
   void SetUp()
   {
-    int error_code = ActionGoal::NONE;
-    std::set<unsigned short> error_codes_to_check = {ActionGoal::UNKNOWN}; //NOLINT
+    uint16_t error_code = ActionResult::NONE;
+    std::set<uint16_t> error_codes_to_check = {ActionResult::UNKNOWN}; //NOLINT
     config_->blackboard->set("error_code", error_code);
     config_->blackboard->set("error_codes_to_check", error_codes_to_check);
 
@@ -58,9 +58,9 @@ std::shared_ptr<BT::Tree> AreErrorCodesPresentFixture::tree_ = nullptr;
 
 TEST_F(AreErrorCodesPresentFixture, test_condition)
 {
-  std::map<int, BT::NodeStatus> error_to_status_map = {
-    {ActionGoal::NONE, BT::NodeStatus::FAILURE},
-    {ActionGoal::UNKNOWN, BT::NodeStatus::SUCCESS},
+  std::map<uint16_t, BT::NodeStatus> error_to_status_map = {
+    {ActionResult::NONE, BT::NodeStatus::FAILURE},
+    {ActionResult::UNKNOWN, BT::NodeStatus::SUCCESS},
   };
 
   for (const auto & error_to_status : error_to_status_map) {

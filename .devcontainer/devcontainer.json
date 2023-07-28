@@ -1,18 +1,40 @@
 {
     "name": "Nav2",
-    "image": "ghcr.io/ros-planning/navigation2:main",
+    "build": {
+        "dockerfile": "../Dockerfile",
+        "context": "..",
+        "target": "visualizer",
+        "cacheFrom": "ghcr.io/ros-planning/navigation2:main"
+    },
     "runArgs": [
-        "--privileged",
-        "--network=host"
+        // "--cap-add=SYS_PTRACE", // enable debugging, e.g. gdb
+        // "--ipc=host", // shared memory transport with host, e.g. rviz GUIs
+        // "--network=host", // network access to host interfaces, e.g. eth0
+        // "--pid=host", // DDS discovery with host, without --network=host
+        // "--privileged", // device access to host peripherals, e.g. USB
+        // "--security-opt=seccomp=unconfined", // enable debugging, e.g. gdb
     ],
-    "workspaceMount": "source=${localWorkspaceFolder},target=/opt/overlay_ws/src/navigation2,type=bind",
-    "workspaceFolder": "/opt/overlay_ws/src",
-    "onCreateCommand": "navigation2/.devcontainer/on-create-command.sh",
-    "updateContentCommand": "navigation2/.devcontainer/update-content-command.sh",
+    "workspaceFolder": "/opt/overlay_ws/src/navigation2",
+    "workspaceMount": "source=${localWorkspaceFolder},target=${containerWorkspaceFolder},type=bind",
+    "onCreateCommand": ".devcontainer/on-create-command.sh",
+    "updateContentCommand": ".devcontainer/update-content-command.sh",
+    "postCreateCommand": ".devcontainer/post-create-command.sh",
     "remoteEnv": {
         "OVERLAY_MIXINS": "release ccache lld",
-        "CCACHE_DIR": "${containerEnv:OVERLAY_WS}/.ccache"
+        "CCACHE_DIR": "/tmp/.ccache"
     },
+    "mounts": [
+        {
+            "source": "ccache-${devcontainerId}",
+            "target": "/tmp/.ccache",
+            "type": "volume"
+        },
+        {
+            "source": "overlay-${devcontainerId}",
+            "target": "/opt/overlay_ws",
+            "type": "volume"
+        }
+    ],
     "features": {
         // "ghcr.io/devcontainers/features/desktop-lite:1": {},
         "ghcr.io/devcontainers/features/github-cli:1": {}
@@ -26,6 +48,7 @@
         "vscode": {
             "settings": {},
             "extensions": [
+                "althack.ament-task-provider",
                 "eamodio.gitlens",
                 "esbenp.prettier-vscode",
                 "GitHub.copilot",

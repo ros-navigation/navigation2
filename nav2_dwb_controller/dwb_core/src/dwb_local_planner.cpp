@@ -526,8 +526,8 @@ DWBLocalPlanner::transformGlobalPlan(
   // from the robot using integrated distance
   auto transformation_end = std::find_if(
     transformation_begin, global_plan_.poses.end(),
-    [&](const auto & pose) {
-      return euclidean_distance(pose, robot_pose.pose) > transform_end_threshold;
+    [&](const auto & global_plan_pose) {
+      return euclidean_distance(global_plan_pose, robot_pose.pose) > transform_end_threshold;
     });
 
   // Transform the near part of the global plan into the robot's frame of reference.
