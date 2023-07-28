@@ -338,9 +338,7 @@ Costmap2DROS::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   costmap_publisher_.reset();
   clear_costmap_service_.reset();
 
-  for (auto & layer_pub : layer_publishers_) {
-    layer_pub.reset();
-  }
+  layer_publishers_.clear();
 
   layered_costmap_.reset();
 
