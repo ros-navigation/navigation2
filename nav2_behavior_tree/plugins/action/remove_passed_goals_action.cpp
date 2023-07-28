@@ -20,6 +20,7 @@
 #include "nav2_util/geometry_utils.hpp"
 
 #include "nav2_behavior_tree/plugins/action/remove_passed_goals_action.hpp"
+#include "nav2_behavior_tree/bt_utils.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -32,11 +33,14 @@ RemovePassedGoals::RemovePassedGoals(
 {
   getInput("radius", viapoint_achieved_radius_);
 
-  getInput("global_frame", global_frame_);
-  getInput("robot_base_frame", robot_base_frame_);
   tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
   auto node = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
   node->get_parameter("transform_tolerance", transform_tolerance_);
+
+  global_frame_ = BT::deconflictPortAndParamFrame<std::string, RemovePassedGoals>(
+    node, "global_frame", this);
+  robot_base_frame_ = BT::deconflictPortAndParamFrame<std::string, RemovePassedGoals>(
+    node, "robot_base_frame", this);
 }
 
 inline BT::NodeStatus RemovePassedGoals::tick()

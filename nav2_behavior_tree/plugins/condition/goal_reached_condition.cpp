@@ -20,6 +20,7 @@
 #include "nav2_util/node_utils.hpp"
 
 #include "nav2_behavior_tree/plugins/condition/goal_reached_condition.hpp"
+#include "nav2_behavior_tree/bt_utils.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -28,12 +29,14 @@ GoalReachedCondition::GoalReachedCondition(
   const std::string & condition_name,
   const BT::NodeConfiguration & conf)
 : BT::ConditionNode(condition_name, conf),
-  initialized_(false),
-  global_frame_("map"),
-  robot_base_frame_("base_link")
+  initialized_(false)
 {
-  getInput("global_frame", global_frame_);
-  getInput("robot_base_frame", robot_base_frame_);
+  auto node = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+
+  global_frame_ = BT::deconflictPortAndParamFrame<std::string, GoalReachedCondition>(
+    node, "global_frame", this);
+  robot_base_frame_ = BT::deconflictPortAndParamFrame<std::string, GoalReachedCondition>(
+    node, "robot_base_frame", this);
 }
 
 GoalReachedCondition::~GoalReachedCondition()
