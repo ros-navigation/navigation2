@@ -19,9 +19,15 @@ namespace nav2_smac_planner
 
 GridCollisionChecker::GridCollisionChecker(
   nav2_costmap_2d::Costmap2D * costmap,
-  unsigned int num_quantizations)
+  unsigned int num_quantizations,
+  rclcpp_lifecycle::LifecycleNode::SharedPtr node)
 : FootprintCollisionChecker(costmap)
 {
+  if (node) {
+    clock_ = node->get_clock();
+    logger_ = node->get_logger();
+  }
+
   // Convert number of regular bins into angles
   float bin_size = 2 * M_PI / static_cast<float>(num_quantizations);
   angles_.reserve(num_quantizations);
@@ -104,7 +110,17 @@ bool GridCollisionChecker::inCollision(
       static_cast<unsigned int>(x), static_cast<unsigned int>(y));
 
     if (footprint_cost_ < possible_inscribed_cost_) {
-      return false;
+      if (possible_inscribed_cost_ > 0) {
+        return false;
+      } else {
+        RCLCPP_ERROR_THROTTLE(
+          logger_, *clock_, 1000,
+          "Inflation layer either not found or inflation is not set sufficiently for "
+          "optimized non-circular collision checking capabilities. It is HIGHLY recommended to set"
+          " the inflation radius to be at MINIMUM half of the robot's largest cross-section. See "
+          "github.com/ros-planning/navigation2/tree/main/nav2_smac_planner#potential-fields"
+          " for full instructions. This will substantially impact run-time performance.");
+      }
     }
 
     // If its inscribed, in collision, or unknown in the middle,
