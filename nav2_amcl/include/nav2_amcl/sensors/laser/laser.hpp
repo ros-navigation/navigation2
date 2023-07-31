@@ -62,6 +62,14 @@ public:
    */
   void SetLaserPose(pf_vector_t & laser_pose);
 
+  /*
+  * @brief Set laser importance factor
+  * @param importance_factor Importance factor
+  */
+  void setLaserImportanceFactor(double importance_factor){
+    importance_factor_ = importance_factor; 
+  };
+
 protected:
   double z_hit_;
   double z_rand_;
@@ -168,7 +176,7 @@ private:
    * @brief Perform the update function
    * @param data Laser data to use
    * @param pf Particle filter to use
-   * @return if it was succesful
+   * @return total weight of the particle set
    */
   static double sensorFunction(LaserData * data, pf_sample_set_t * set);
 };
@@ -202,7 +210,7 @@ private:
    * @brief Perform the update function
    * @param data Laser data to use
    * @param pf Particle filter to use
-   * @return if it was succesful
+   * @return total weight of the particle set
    */
   static double sensorFunction(LaserData * data, pf_sample_set_t * set);
   bool do_beamskip_;

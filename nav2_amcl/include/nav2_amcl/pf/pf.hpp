@@ -71,6 +71,11 @@ typedef struct
 
   // Weight for this pose
   double weight;
+
+  // Weight for this pose, not influenced by the laser importance factor
+  // used for calculating running averages 
+  // as we want them to represent a real picture not the one skewed but importance factor
+  double raw_weight;
 } pf_sample_t;
 
 

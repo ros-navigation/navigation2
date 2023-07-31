@@ -1,46 +1,30 @@
-<!-- Please fill out the following pull request template for non-trivial changes to help us process your PR faster and more efficiently.-->
+## Purpose
+_Describe the problem or feature in addition to a link to the issues._
 
----
+## Approach
+_How does this change address the problem?_
 
-## Basic Info
+### Open Questions and Pre-Merge TODOs
+- [ ] Use github checklists. When solved, check the box and explain the answer.
 
-| Info | Please fill out this column |
-| ------ | ----------- |
-| Ticket(s) this addresses   | (add tickets here #1) |
-| Primary OS tested on | (Ubuntu, MacOS, Windows) |
-| Robotic platform tested on | (Steve's Robot, gazebo simulation of Tally, hardware turtlebot) |
+## Dependencies
+If this PR depends on changes introduced by other PRs, please list all the dependencies.
 
----
+ - `#xy` (use this syntax if the PR belongs to the same repo).
+ - `#package/xy` (use this syntax if the PR belongs to another repo).
 
-## Description of contribution in a few bullet points
+## Disclaimers
+Include here disclaimers that should be taken into consideration when considering your PR. Disclaimers
+could be, but are not limited to,
 
-<!--
-* I added this neat new feature
-* Also fixed a typo in a parameter name in nav2_costmap_2d
--->
+ - incorrect behaviors that are known and not addressed by this PR,
+ - limitations of the feature introduced by this PR, or
+ - assumptions made when solving an issue or developing a feature.
+ 
+## Learning
+_Describe the research stage_
 
-## Description of documentation updates required from your changes
+_Links to blog posts, patterns, libraries or addons used to solve this problem_
 
-<!--
-* Added new parameter, so need to add that to default configs and documentation page
-* I added some capabilities, need to document them
--->
-
----
-
-## Future work that may be required in bullet points
-
-<!--
-* I think there might be some optimizations to be made from STL vector
-* I see alot of redundancy in this package, we might want to add a function `bool XYZ()` to reduce clutter
-* I tested on a differential drive robot, but there might be issues turning near corners on an omnidirectional platform
--->
-
-#### For Maintainers: <!-- DO NOT EDIT OR REMOVE -->
-- [ ] Check that any new parameters added are updated in navigation.ros.org
-- [ ] Check that any significant change is added to the migration guide
-- [ ] Check that any new features **OR** changes to existing behaviors are reflected in the tuning guide
-- [ ] Check that any new functions have Doxygen added
-- [ ] Check that any new features have test coverage
-- [ ] Check that any new plugins is added to the plugins page
-- [ ] If BT Node, Additionally: add to BT's XML index of nodes for groot, BT package's readme table, and BT library lists
+### Blog Posts
+- [How to Pull Request](https://github.com/flexyford/pull-request) Github Repo with Learning focused Pull Request Template.

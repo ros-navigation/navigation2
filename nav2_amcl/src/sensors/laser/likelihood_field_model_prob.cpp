@@ -56,6 +56,7 @@ LikelihoodFieldModelProb::sensorFunction(LaserData * data, pf_sample_set_t * set
   int i, j, step;
   double z, pz;
   double log_p;
+  double log_p_raw;
   double obs_range, obs_bearing;
   double total_weight;
   pf_sample_t * sample;
@@ -128,6 +129,7 @@ LikelihoodFieldModelProb::sensorFunction(LaserData * data, pf_sample_set_t * set
     pose = pf_vector_coord_add(self->laser_pose_, pose);
 
     log_p = 0;
+    log_p_raw = 0;
 
     beam_ind = 0;
 
@@ -181,13 +183,16 @@ LikelihoodFieldModelProb::sensorFunction(LaserData * data, pf_sample_set_t * set
       // TODO(?): outlier rejection for short readings
 
       if (!do_beamskip) {
-        log_p += log(pz) * self->importance_factor_; // Accroding to Probabilistic Robotics, 6.3.4
+        log_p_raw += log(pz);
+        log_p += log(pz) * self->importance_factor_; // According to Probabilistic Robotics, 6.3.4
       } else {
         self->temp_obs_[j][beam_ind] = pz;
       }
     }
     if (!do_beamskip) {
+      sample->raw_weight = exp(log_p_raw);
       sample->weight *= exp(log_p);
+
       total_weight += sample->weight;
     }
   }
@@ -223,13 +228,16 @@ LikelihoodFieldModelProb::sensorFunction(LaserData * data, pf_sample_set_t * set
       pose = sample->pose;
 
       log_p = 0;
+      log_p_raw = 0;
 
       for (beam_ind = 0; beam_ind < self->max_beams_; beam_ind++) {
         if (error || obs_mask[beam_ind]) {
-          log_p += log(self->temp_obs_[j][beam_ind]) * self->importance_factor_; // Accroding to Probabilistic Robotics, 6.3.4
+          log_p_raw += log(self->temp_obs_[j][beam_ind]);
+          log_p += log(self->temp_obs_[j][beam_ind]) * self->importance_factor_; // According to Probabilistic Robotics, 6.3.4
         }
       }
 
+      sample->raw_weight = exp(log_p_raw);
       sample->weight *= exp(log_p);
 
       total_weight += sample->weight;
