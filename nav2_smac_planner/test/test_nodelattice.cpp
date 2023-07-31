@@ -164,6 +164,7 @@ TEST(NodeLatticeTest, test_node_lattice_conversions)
 
 TEST(NodeLatticeTest, test_node_lattice)
 {
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
   std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_smac_planner");
   std::string filePath =
     pkg_share_dir +
@@ -207,7 +208,7 @@ TEST(NodeLatticeTest, test_node_lattice)
   nav2_costmap_2d::Costmap2D * costmapA = new nav2_costmap_2d::Costmap2D(
     10, 10, 0.05, 0.0, 0.0, 0);
   std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
-    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmapA, 72);
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmapA, 72, node);
   checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
 
   // test node valid and cost
@@ -241,6 +242,7 @@ TEST(NodeLatticeTest, test_node_lattice)
 
 TEST(NodeLatticeTest, test_get_neighbors)
 {
+  auto lnode = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
   std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_smac_planner");
   std::string filePath =
     pkg_share_dir +
@@ -271,7 +273,7 @@ TEST(NodeLatticeTest, test_get_neighbors)
   nav2_costmap_2d::Costmap2D * costmapA = new nav2_costmap_2d::Costmap2D(
     10, 10, 0.05, 0.0, 0.0, 0);
   std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
-    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmapA, 72);
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmapA, 72, lnode);
   checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
 
   std::function<bool(const unsigned int &, nav2_smac_planner::NodeLattice * &)> neighborGetter =
@@ -291,6 +293,7 @@ TEST(NodeLatticeTest, test_get_neighbors)
 
 TEST(NodeLatticeTest, test_node_lattice_custom_footprint)
 {
+  auto lnode = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
   std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_smac_planner");
   std::string filePath =
     pkg_share_dir +
@@ -321,7 +324,7 @@ TEST(NodeLatticeTest, test_node_lattice_custom_footprint)
   nav2_costmap_2d::Costmap2D * costmap = new nav2_costmap_2d::Costmap2D(
     40, 40, 0.05, 0.0, 0.0, 0);
   std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
-    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap, 72);
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap, 72, lnode);
 
   // Make some custom asymmetrical footprint
   nav2_costmap_2d::Footprint footprint;
