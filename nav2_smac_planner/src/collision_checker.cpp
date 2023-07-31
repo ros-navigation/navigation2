@@ -23,8 +23,10 @@ GridCollisionChecker::GridCollisionChecker(
   rclcpp_lifecycle::LifecycleNode::SharedPtr node)
 : FootprintCollisionChecker(costmap)
 {
-  _clock = node->get_clock();
-  _logger = node->get_logger();
+  if (node) {
+    clock_ = node->get_clock();
+    logger_ = node->get_logger();
+  }
 
   // Convert number of regular bins into angles
   float bin_size = 2 * M_PI / static_cast<float>(num_quantizations);
@@ -112,7 +114,7 @@ bool GridCollisionChecker::inCollision(
         return false;
       } else {
         RCLCPP_ERROR_THROTTLE(
-          _logger, *_clock, 1000,
+          logger_, *clock_, 1000,
           "Inflation layer either not found or inflation is not set sufficiently for "
           "optimized non-circular collision checking capabilities. It is HIGHLY recommended to set"
           " the inflation radius to be at MINIMUM half of the robot's largest cross-section. See "

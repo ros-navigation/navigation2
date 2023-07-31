@@ -19,8 +19,17 @@
 
 #include "gtest/gtest.h"
 #include "nav2_smac_planner/collision_checker.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 
 using namespace nav2_costmap_2d;  // NOLINT
+
+class RclCppFixture
+{
+public:
+  RclCppFixture() {rclcpp::init(0, nullptr);}
+  ~RclCppFixture() {rclcpp::shutdown();}
+};
+RclCppFixture g_rclcppfixture;
 
 TEST(collision_footprint, test_basic)
 {

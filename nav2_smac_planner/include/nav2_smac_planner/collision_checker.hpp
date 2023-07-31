@@ -120,8 +120,8 @@ protected:
   bool footprint_is_radius_;
   std::vector<float> angles_;
   double possible_inscribed_cost_{-1};
-  rclcpp::Logger _logger{rclcpp::get_logger("SmacPlannerCollisionChecker")};
-  rclcpp::Clock::SharedPtr _clock;
+  rclcpp::Logger logger_{rclcpp::get_logger("SmacPlannerCollisionChecker")};
+  rclcpp::Clock::SharedPtr clock_;
 };
 
 }  // namespace nav2_smac_planner
