@@ -134,11 +134,13 @@ class RewrittenYaml(launch.Substitution):
 
     def substitute_keys(self, yaml, key_rewrites):
         if len(key_rewrites) != 0:
-            for key, val in yaml.items():
-                if isinstance(val, dict) and key in key_rewrites:
+            for key in list(yaml.keys()):
+                val = yaml[key]
+                if key in key_rewrites:
                     new_key = key_rewrites[key]
                     yaml[new_key] = yaml[key]
                     del yaml[key]
+                if isinstance(val, dict):
                     self.substitute_keys(val, key_rewrites)
 
     def getYamlLeafKeys(self, yamlData):
