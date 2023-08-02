@@ -46,6 +46,8 @@ public:
   CriticManagerWrapper()
   : CriticManager() {}
 
+  virtual ~CriticManagerWrapper() = default;
+
   virtual void loadCritics()
   {
     critics_.clear();
@@ -63,12 +65,22 @@ public:
 
   bool getDummyCriticInitialized()
   {
-    return dynamic_cast<DummyCritic *>(critics_[0].get())->initialized_;
+    const auto critic = critics_[0].get();
+    if (critic == nullptr) {
+      return false;
+    }
+    const auto dummy_critic = dynamic_cast<DummyCritic *>(critic);
+    return dummy_critic == nullptr ? false : dummy_critic->initialized_;
   }
 
   bool getDummyCriticScored()
   {
-    return dynamic_cast<DummyCritic *>(critics_[0].get())->scored_;
+    const auto critic = critics_[0].get();
+    if (critic == nullptr) {
+      return false;
+    }
+    const auto dummy_critic = dynamic_cast<DummyCritic *>(critic);
+    return dummy_critic == nullptr ? false : dummy_critic->scored_;
   }
 };
 
@@ -77,6 +89,8 @@ class CriticManagerWrapperEnum : public CriticManager
 public:
   CriticManagerWrapperEnum()
   : CriticManager() {}
+
+  virtual ~CriticManagerWrapperEnum() = default;
 
   unsigned int getCriticNum()
   {

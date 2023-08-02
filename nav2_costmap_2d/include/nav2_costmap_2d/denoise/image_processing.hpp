@@ -999,7 +999,10 @@ private:
     // The group of pixels labeled 0 corresponds to empty map cells.
     // Zero bin of the histogram is equal to the number of pixels in this group.
     // Because the values of empty map cells should not be changed, we will reset this bin
-    groups_sizes.front() = 0;  // don't change image background value
+    if (!groups_sizes.empty()) {
+      groups_sizes.front() = 0;  // don't change image background value
+    }
+
 
     // noise_labels_table[i] = true if group with label i is noise
     std::vector<bool> noise_labels_table(groups_sizes.size());

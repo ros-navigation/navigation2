@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BEHAVIOR_TREE__BT_CONVERSIONS_HPP_
-#define NAV2_BEHAVIOR_TREE__BT_CONVERSIONS_HPP_
+#ifndef NAV2_BEHAVIOR_TREE__BT_UTILS_HPP_
+#define NAV2_BEHAVIOR_TREE__BT_UTILS_HPP_
 
 #include <string>
 #include <set>
 
 #include "rclcpp/time.hpp"
+#include "rclcpp/node.hpp"
 #include "behaviortree_cpp_v3/behavior_tree.h"
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
@@ -130,6 +131,37 @@ inline std::set<int> convertFromString(StringView key)
   return set;
 }
 
+/**
+ * @brief Return parameter value from behavior tree node or ros2 parameter file
+ * @param node rclcpp::Node::SharedPtr
+ * @param param_name std::string
+ * @param behavior_tree_node T2
+ * @return <T1>
+ */
+template<typename T1, typename T2>
+T1 deconflictPortAndParamFrame(
+  rclcpp::Node::SharedPtr node,
+  std::string param_name,
+  T2 * behavior_tree_node)
+{
+  T1 param_value;
+  if (!behavior_tree_node->getInput(param_name, param_value)) {
+    RCLCPP_DEBUG(
+      node->get_logger(),
+      "Parameter '%s' not provided by behavior tree xml file, "
+      "using parameter from ros2 parameter file",
+      param_name.c_str());
+    node->get_parameter(param_name, param_value);
+    return param_value;
+  } else {
+    RCLCPP_DEBUG(
+      node->get_logger(),
+      "Parameter '%s' provided by behavior tree xml file",
+      param_name.c_str());
+    return param_value;
+  }
+}
+
 }  // namespace BT
 
-#endif  // NAV2_BEHAVIOR_TREE__BT_CONVERSIONS_HPP_
+#endif  // NAV2_BEHAVIOR_TREE__BT_UTILS_HPP_

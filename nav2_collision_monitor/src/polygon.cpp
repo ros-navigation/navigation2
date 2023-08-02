@@ -188,6 +188,30 @@ void Polygon::updatePolygon()
       p_s.y = footprint_vec[i].y;
       polygon_.polygon.points[i] = p_s;
     }
+  } else if (!polygon_.header.frame_id.empty() && polygon_.header.frame_id != base_frame_id_) {
+    // Polygon is published in another frame: correct poly_ vertices to the latest frame state
+    std::size_t new_size = polygon_.polygon.points.size();
+
+    // Get the transform from PolygonStamped frame to base_frame_id_
+    tf2::Transform tf_transform;
+    if (
+      !nav2_util::getTransform(
+        polygon_.header.frame_id, base_frame_id_,
+        transform_tolerance_, tf_buffer_, tf_transform))
+    {
+      return;
+    }
+
+    // Correct main poly_ vertices
+    poly_.resize(new_size);
+    for (std::size_t i = 0; i < new_size; i++) {
+      // Transform point coordinates from PolygonStamped frame -> to base frame
+      tf2::Vector3 p_v3_s(polygon_.polygon.points[i].x, polygon_.polygon.points[i].y, 0.0);
+      tf2::Vector3 p_v3_b = tf_transform * p_v3_s;
+
+      // Fill poly_ array
+      poly_[i] = {p_v3_b.x(), p_v3_b.y()};
+    }
   }
 }
 
@@ -443,7 +467,7 @@ void Polygon::updatePolygon(geometry_msgs::msg::PolygonStamped::ConstSharedPtr m
     return;
   }
 
-  // Set main polygon vertices
+  // Set main poly_ vertices first time
   poly_.resize(new_size);
   for (std::size_t i = 0; i < new_size; i++) {
     // Transform point coordinates from PolygonStamped frame -> to base frame
@@ -454,10 +478,9 @@ void Polygon::updatePolygon(geometry_msgs::msg::PolygonStamped::ConstSharedPtr m
     poly_[i] = {p_v3_b.x(), p_v3_b.y()};
   }
 
-  if (visualize_) {
-    // Store polygon_ for visualization
-    polygon_ = *msg;
-  }
+  // Store incoming polygon for further (possible) poly_ vertices corrections
+  // from PolygonStamped frame -> to base frame
+  polygon_ = *msg;
 }
 
 void Polygon::polygonCallback(geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg)

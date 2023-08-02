@@ -38,6 +38,7 @@ class AssistedTeleop : public TimedBehavior<AssistedTeleopAction>
 
 public:
   using AssistedTeleopActionGoal = AssistedTeleopAction::Goal;
+  using AssistedTeleopActionResult = AssistedTeleopAction::Result;
   AssistedTeleop();
 
   /**
@@ -50,7 +51,7 @@ public:
   /**
    * @brief func to run at the completion of the action
    */
-  void onActionCompletion() override;
+  void onActionCompletion(std::shared_ptr<AssistedTeleopActionResult>/*result*/) override;
 
   /**
    * @brief Loop function to run behavior

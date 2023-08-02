@@ -67,16 +67,29 @@ BtActionServer<ActionT>::BtActionServer(
   };
 
   if (!node->has_parameter("error_code_names")) {
-    std::string error_codes_str;
-    for (const auto & error_code : error_code_names) {
-      error_codes_str += error_code + "\n";
+    const rclcpp::ParameterValue value = node->declare_parameter(
+      "error_code_names",
+      rclcpp::PARAMETER_STRING_ARRAY);
+    if (value.get_type() == rclcpp::PARAMETER_NOT_SET) {
+      std::string error_codes_str;
+      for (const auto & error_code : error_code_names) {
+        error_codes_str += " " + error_code;
+      }
+      RCLCPP_WARN_STREAM(
+        logger_, "Error_code parameters were not set. Using default values of:"
+          << error_codes_str + "\n"
+          << "Make sure these match your BT and there are not other sources of error codes you"
+          "reported to your application");
+      rclcpp::Parameter error_code_names_param("error_code_names", error_code_names);
+      node->set_parameter(error_code_names_param);
+    } else {
+      error_code_names = value.get<std::vector<std::string>>();
+      std::string error_codes_str;
+      for (const auto & error_code : error_code_names) {
+        error_codes_str += " " + error_code;
+      }
+      RCLCPP_INFO_STREAM(logger_, "Error_code parameters were set to:" << error_codes_str);
     }
-    RCLCPP_WARN_STREAM(
-      logger_, "Error_code parameters were not set. Using default values of: "
-        << error_codes_str
-        << "Make sure these match your BT and there are not other sources of error codes you want "
-        "reported to your application");
-    node->declare_parameter("error_code_names", error_code_names);
   }
 }
 
@@ -108,6 +121,12 @@ bool BtActionServer<ActionT>::on_configure()
 
   // Support for handling the topic-based goal pose from rviz
   client_node_ = std::make_shared<rclcpp::Node>("_", options);
+
+  // Declare parameters for client node
+  client_node_->declare_parameter(
+    "robot_base_frame", node->get_parameter("robot_base_frame").as_string());
+  client_node_->declare_parameter(
+    "global_frame", node->get_parameter("global_frame").as_string());
 
   action_server_ = std::make_shared<ActionServer>(
     node->get_node_base_interface(),
@@ -279,7 +298,7 @@ void BtActionServer<ActionT>::populateErrorCode(
         highest_priority_error_code = current_error_code;
       }
     } catch (...) {
-      RCLCPP_ERROR(
+      RCLCPP_DEBUG(
         logger_,
         "Failed to get error code: %s from blackboard",
         error_code.c_str());

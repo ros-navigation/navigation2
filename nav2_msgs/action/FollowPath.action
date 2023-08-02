@@ -1,3 +1,11 @@
+#goal definition
+nav_msgs/Path path
+string controller_id
+string goal_checker_id
+string progress_checker_id
+---
+#result definition
+
 # Error codes
 # Note: The expected priority order of the errors should match the message order
 uint16 NONE=0
@@ -9,13 +17,6 @@ uint16 PATIENCE_EXCEEDED=104
 uint16 FAILED_TO_MAKE_PROGRESS=105
 uint16 NO_VALID_CONTROL=106
 
-#goal definition
-nav_msgs/Path path
-string controller_id
-string goal_checker_id
-string progress_checker_id
----
-#result definition
 std_msgs/Empty result
 uint16 error_code
 ---

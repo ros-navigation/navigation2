@@ -220,7 +220,7 @@ protected:
   void createPolygon(const std::string & action_type, const bool is_static);
   void createCircle(const std::string & action_type);
 
-  void sendTransforms();
+  void sendTransforms(double shift);
 
   // Wait until polygon will be received
   bool waitPolygon(
@@ -381,7 +381,7 @@ void Tester::createCircle(const std::string & action_type)
   circle_->activate();
 }
 
-void Tester::sendTransforms()
+void Tester::sendTransforms(double shift)
 {
   std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster =
     std::make_shared<tf2_ros::TransformBroadcaster>(test_node_);
@@ -393,8 +393,8 @@ void Tester::sendTransforms()
   transform.child_frame_id = BASE2_FRAME_ID;
 
   transform.header.stamp = test_node_->now();
-  transform.transform.translation.x = 0.1;
-  transform.transform.translation.y = 0.1;
+  transform.transform.translation.x = shift;
+  transform.transform.translation.y = shift;
   transform.transform.translation.z = 0.0;
   transform.transform.rotation.x = 0.0;
   transform.transform.rotation.y = 0.0;
@@ -652,7 +652,7 @@ TEST_F(Tester, testPolygonTopicUpdate)
 TEST_F(Tester, testPolygonTopicUpdateDifferentFrame)
 {
   createPolygon("stop", false);
-  sendTransforms();
+  sendTransforms(0.1);
 
   std::vector<nav2_collision_monitor::Point> poly;
   polygon_->getPolygon(poly);
@@ -670,12 +670,28 @@ TEST_F(Tester, testPolygonTopicUpdateDifferentFrame)
   EXPECT_NEAR(poly[2].y, SQUARE_POLYGON[5] + 0.1, EPSILON);
   EXPECT_NEAR(poly[3].x, SQUARE_POLYGON[6] + 0.1, EPSILON);
   EXPECT_NEAR(poly[3].y, SQUARE_POLYGON[7] + 0.1, EPSILON);
+
+  // Move BASE2_FRAME_ID to 0.2 m away from BASE_FRAME_ID
+  sendTransforms(0.2);
+  // updatePolygon() should update poly coordinates to correct ones in BASE_FRAME_ID
+  polygon_->updatePolygon();
+  // Check that polygon coordinates were updated correctly
+  ASSERT_TRUE(waitPolygon(500ms, poly));
+  ASSERT_EQ(poly.size(), 4u);
+  EXPECT_NEAR(poly[0].x, SQUARE_POLYGON[0] + 0.2, EPSILON);
+  EXPECT_NEAR(poly[0].y, SQUARE_POLYGON[1] + 0.2, EPSILON);
+  EXPECT_NEAR(poly[1].x, SQUARE_POLYGON[2] + 0.2, EPSILON);
+  EXPECT_NEAR(poly[1].y, SQUARE_POLYGON[3] + 0.2, EPSILON);
+  EXPECT_NEAR(poly[2].x, SQUARE_POLYGON[4] + 0.2, EPSILON);
+  EXPECT_NEAR(poly[2].y, SQUARE_POLYGON[5] + 0.2, EPSILON);
+  EXPECT_NEAR(poly[3].x, SQUARE_POLYGON[6] + 0.2, EPSILON);
+  EXPECT_NEAR(poly[3].y, SQUARE_POLYGON[7] + 0.2, EPSILON);
 }
 
 TEST_F(Tester, testPolygonTopicUpdateIncorrectFrame)
 {
   createPolygon("stop", false);
-  sendTransforms();
+  sendTransforms(0.1);
 
   std::vector<nav2_collision_monitor::Point> poly;
   polygon_->getPolygon(poly);
