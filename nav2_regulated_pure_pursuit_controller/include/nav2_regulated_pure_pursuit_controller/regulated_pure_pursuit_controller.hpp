@@ -314,6 +314,7 @@ protected:
   bool allow_reversing_;
   double max_robot_pose_search_dist_;
   double max_extended_collision_check_dist_;
+  double extended_collision_check_path_end_leniency_;
   bool use_interpolation_;
 
   nav_msgs::msg::Path global_plan_;
