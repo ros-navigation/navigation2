@@ -593,6 +593,28 @@ TEST(VelocitySmootherTest, testInvalidParams)
   EXPECT_THROW(smoother->configure(state), std::runtime_error);
 }
 
+TEST(VelocitySmootherTest, testInvalidParamsAccelDecel)
+{
+  auto smoother =
+    std::make_shared<VelSmootherShim>();
+
+  std::vector<double> bad_test_accel{-10.0, -10.0, -10.0};
+  std::vector<double> bad_test_decel{10.0, 10.0, 10.0};
+  std::vector<double> bad_test_min_vel{10.0, 10.0, 10.0};
+  std::vector<double> bad_test_max_vel{-10.0, -10.0, -10.0};
+
+  smoother->declare_parameter("max_velocity", rclcpp::ParameterValue(bad_test_max_vel));
+  smoother->declare_parameter("min_velocity", rclcpp::ParameterValue(bad_test_min_vel));
+  rclcpp_lifecycle::State state;
+  EXPECT_THROW(smoother->configure(state), std::runtime_error);
+
+  smoother->set_parameter(rclcpp::Parameter("max_accel", rclcpp::ParameterValue(bad_test_accel)));
+  EXPECT_THROW(smoother->configure(state), std::runtime_error);
+
+  smoother->set_parameter(rclcpp::Parameter("max_decel", rclcpp::ParameterValue(bad_test_decel)));
+  EXPECT_THROW(smoother->configure(state), std::runtime_error);
+}
+
 TEST(VelocitySmootherTest, testDynamicParameter)
 {
   auto smoother =
@@ -613,6 +635,8 @@ TEST(VelocitySmootherTest, testDynamicParameter)
   std::vector<double> min_accel{0.0, 0.0, 0.0};
   std::vector<double> deadband{0.0, 0.0, 0.0};
   std::vector<double> bad_test{0.0, 0.0};
+  std::vector<double> bad_test_accel{-10.0, -10.0, -10.0};
+  std::vector<double> bad_test_decel{10.0, 10.0, 10.0};
 
   auto results = rec_param->set_parameters_atomically(
     {rclcpp::Parameter("smoothing_frequency", 100.0),
@@ -659,6 +683,16 @@ TEST(VelocitySmootherTest, testDynamicParameter)
   // Test invalid size
   results = rec_param->set_parameters_atomically(
     {rclcpp::Parameter("max_velocity", bad_test)});
+  rclcpp::spin_until_future_complete(smoother->get_node_base_interface(), results);
+  EXPECT_FALSE(results.get().successful);
+
+  // Test invalid accel / decel
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("max_accel", bad_test_accel)});
+  rclcpp::spin_until_future_complete(smoother->get_node_base_interface(), results);
+  EXPECT_FALSE(results.get().successful);
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("max_decel", bad_test_decel)});
   rclcpp::spin_until_future_complete(smoother->get_node_base_interface(), results);
   EXPECT_FALSE(results.get().successful);
 
