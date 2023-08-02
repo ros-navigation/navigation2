@@ -60,11 +60,15 @@ inline BT::NodeStatus GoalUpdater::tick()
   callback_group_executor_.spin_some();
 
   if (last_goal_received_.header.stamp != rclcpp::Time(0)) {
-    if (rclcpp::Time(last_goal_received_.header.stamp) > rclcpp::Time(goal.header.stamp)) {
+    auto last_goal_received_time = rclcpp::Time(last_goal_received_.header.stamp);
+    auto goal_time = rclcpp::Time(goal.header.stamp);
+    if (last_goal_received_time > goal_time) {
       goal = last_goal_received_;
-    }
-    else {
-      RCLCPP_WARN(node_->get_logger(), "Goal is older than the current one. Not updating");
+    } else {
+      RCLCPP_WARN(
+        node_->get_logger(), "The timestamp of the received goal (%f) is older than the "
+        "current goal (%f). Ignoring the received goal.",
+        last_goal_received_time.seconds(), goal_time.seconds());
     }
   }
 

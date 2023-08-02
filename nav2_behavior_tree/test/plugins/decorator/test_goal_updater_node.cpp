@@ -137,7 +137,7 @@ TEST_F(GoalUpdaterTestFixture, test_older_goal_update)
   geometry_msgs::msg::PoseStamped goal_to_update;
   goal_to_update.header.stamp = rclcpp::Time(goal.header.stamp) - rclcpp::Duration(1, 0);
   goal_to_update.pose.position.x = 2.0;
-  
+
   goal_updater_pub->publish(goal_to_update);
   tree_->rootNode()->executeTick();
   geometry_msgs::msg::PoseStamped updated_goal;
@@ -179,7 +179,7 @@ TEST_F(GoalUpdaterTestFixture, test_get_latest_goal_update)
   geometry_msgs::msg::PoseStamped goal_to_update_2;
   goal_to_update_2.header.stamp = node_->now();
   goal_to_update_2.pose.position.x = 3.0;
-  
+
   goal_updater_pub->publish(goal_to_update_1);
   goal_updater_pub->publish(goal_to_update_2);
   tree_->rootNode()->executeTick();
