@@ -1,4 +1,5 @@
 // Copyright (c) 2021, Samsung Research America
+// Copyright (c) 2023, Open Navigation LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,6 +20,7 @@
 #include <memory>
 #include <string>
 
+#include "nlohmann/json.hpp"
 #include "Eigen/Core"
 #include "geometry_msgs/msg/quaternion.hpp"
 #include "geometry_msgs/msg/pose.hpp"
@@ -26,6 +28,7 @@
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_costmap_2d/inflation_layer.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
+#include "nav2_smac_planner/types.hpp"
 #include <rclcpp/rclcpp.hpp>
 
 namespace nav2_smac_planner
@@ -163,9 +166,13 @@ inline void fromJsonToMotionPrimitive(
  * @param[out] robot footprint edges
  */
 inline std::vector<geometry_msgs::msg::Point> transformFootprintToEdges(
-  const double x, const double y, const double yaw,
+  const geometry_msgs::msg::Pose & pose,
   const std::vector<geometry_msgs::msg::Point> & footprint)
 {
+  const double & x = pose.position.x;
+  const double & y = pose.position.y;
+  const double & yaw = tf2::getYaw(pose.orientation);
+
   std::vector<geometry_msgs::msg::Point> out_footprint;
   out_footprint.resize(2 * footprint.size());
   for (unsigned int i = 0; i < footprint.size(); i++) {
@@ -183,14 +190,16 @@ inline std::vector<geometry_msgs::msg::Point> transformFootprintToEdges(
 }
 
 /**
- * [initLineStringMarker initializes marker to visualize shape of linestring]
- * @param marker     [output marker message]
- * @param frame_id   [frame id of the marker]
- * @param ns         [namespace of the marker]
- * @param c          [color of the marker]
+ * @brief initializes marker to visualize shape of linestring
+ * @param edge       edge to mark of footprint
+ * @param i          marker ID
+ * @param frame_id   frame of the marker
+ * @param timestamp  timestamp of the marker
+ * @return marker populated
  */
 inline visualization_msgs::msg::Marker createMarker(
-  const std::string & frame_id, const rclcpp::Time & timestamp)
+  const std::vector<geometry_msgs::msg::Point> edge,
+  unsigned int i, const std::string & frame_id, const rclcpp::Time & timestamp)
 {
   visualization_msgs::msg::Marker marker;
   marker.header.frame_id = frame_id;
@@ -201,7 +210,11 @@ inline visualization_msgs::msg::Marker createMarker(
   marker.type = visualization_msgs::msg::Marker::LINE_LIST;
   marker.lifetime = rclcpp::Duration(0, 0);
 
-  marker.id = 0;
+  marker.id = i;
+  for (auto & point : edge) {
+    marker.points.push_back(point);
+  }
+
   marker.pose.orientation.x = 0.0;
   marker.pose.orientation.y = 0.0;
   marker.pose.orientation.z = 0.0;

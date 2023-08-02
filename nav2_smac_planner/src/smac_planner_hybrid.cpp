@@ -1,4 +1,5 @@
 // Copyright (c) 2020, Samsung Research America
+// Copyright (c) 2023, Open Navigation LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -370,8 +371,21 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
     }
   }
 
-  // Publish expansions for debug
+  // Convert to world coordinates
+  plan.poses.reserve(path.size());
+  for (int i = path.size() - 1; i >= 0; --i) {
+    pose.pose = getWorldCoords(path[i].x, path[i].y, costmap);
+    pose.pose.orientation = getWorldOrientation(path[i].theta);
+    plan.poses.push_back(pose);
+  }
+
+  // Publish raw path for debug
+  if (_raw_plan_publisher->get_subscription_count() > 0) {
+    _raw_plan_publisher->publish(plan);
+  }
+
   if (_debug_visualizations) {
+    // Publish expansions for debug
     geometry_msgs::msg::PoseArray msg;
     geometry_msgs::msg::Pose msg_pose;
     msg.header.stamp = _clock->now();
@@ -382,51 +396,23 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
       msg.poses.push_back(msg_pose);
     }
     _expansions_publisher->publish(msg);
-  }
 
-  // Convert to world coordinates
-  plan.poses.reserve(path.size());
-  for (int i = path.size() - 1; i >= 0; --i) {
-    pose.pose = getWorldCoords(path[i].x, path[i].y, costmap);
-    pose.pose.orientation = getWorldOrientation(path[i].theta);
-    plan.poses.push_back(pose);
-  }
-
-  // plot footprint path planned
-  if (_debug_visualizations) {
-    auto marker_array = std::make_unique<visualization_msgs::msg::MarkerArray>();
-    visualization_msgs::msg::Marker m = createMarker(_global_frame, _clock->now());
-
-    for (size_t i = 0; i < plan.poses.size(); i++) {
-      const double x = plan.poses[i].pose.position.x;
-      const double y = plan.poses[i].pose.position.y;
-      const double yaw = tf2::getYaw(plan.poses[i].pose.orientation);
-
-      std::vector<geometry_msgs::msg::Point> footprint =
-        transformFootprintToEdges(x, y, yaw, _costmap_ros->getRobotFootprint());
-
-      m.points.clear();
-      for (auto & point : footprint) {
-        m.points.push_back(point);
-      }
-      m.id = i;
-      marker_array->markers.push_back(m);
-    }
-
-    if (marker_array->markers.empty()) {
-      visualization_msgs::msg::Marker clear_all_marker;
-      clear_all_marker.action = visualization_msgs::msg::Marker::DELETEALL;
-      marker_array->markers.push_back(clear_all_marker);
-    }
-
-    // publish footprint for debug
+    // plot footprint path planned for debug
     if (_planned_footprints_publisher->get_subscription_count() > 0) {
+      auto marker_array = std::make_unique<visualization_msgs::msg::MarkerArray>();
+      for (size_t i = 0; i < plan.poses.size(); i++) {
+        const std::vector<geometry_msgs::msg::Point> edge =
+          transformFootprintToEdges(plan.poses[i].pose, _costmap_ros->getRobotFootprint());
+        marker_array->markers.push_back(createMarker(edge, i, _global_frame, _clock->now()));
+      }
+
+      if (marker_array->markers.empty()) {
+        visualization_msgs::msg::Marker clear_all_marker;
+        clear_all_marker.action = visualization_msgs::msg::Marker::DELETEALL;
+        marker_array->markers.push_back(clear_all_marker);
+      }
       _planned_footprints_publisher->publish(std::move(marker_array));
     }
-  }
-  // Publish raw path for debug
-  if (_raw_plan_publisher->get_subscription_count() > 0) {
-    _raw_plan_publisher->publish(plan);
   }
 
   // Find how much time we have left to do smoothing
