@@ -284,7 +284,9 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
   std::string error;
 
   // Note: All exceptions thrown are handled by the planner server and returned to the action
-  if (!_a_star->createPath(path, num_iterations, 0 /*no tolerance*/)) {
+  if (!_a_star->createPath(
+      path, num_iterations, _tolerance / static_cast<float>(_costmap->getResolution())))
+  {
     if (num_iterations < _a_star->getMaxIterations()) {
       throw nav2_core::NoValidPathCouldBeFound("no valid path found");
     } else {
