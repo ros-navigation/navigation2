@@ -1,4 +1,5 @@
 // Copyright (c) 2020, Samsung Research America
+// Copyright (c) 2023, Open Navigation LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -134,8 +135,8 @@ void SmacPlannerHybrid::configure(
   node->get_parameter(name + ".lookup_table_size", _lookup_table_size);
 
   nav2_util::declare_parameter_if_not_declared(
-    node, name + ".viz_expansions", rclcpp::ParameterValue(false));
-  node->get_parameter(name + ".viz_expansions", _viz_expansions);
+    node, name + ".debug_visualizations", rclcpp::ParameterValue(false));
+  node->get_parameter(name + ".debug_visualizations", _debug_visualizations);
 
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".motion_model_for_search", rclcpp::ParameterValue(std::string("DUBIN")));
@@ -219,8 +220,11 @@ void SmacPlannerHybrid::configure(
   }
 
   _raw_plan_publisher = node->create_publisher<nav_msgs::msg::Path>("unsmoothed_plan", 1);
-  if (_viz_expansions) {
+
+  if (_debug_visualizations) {
     _expansions_publisher = node->create_publisher<geometry_msgs::msg::PoseArray>("expansions", 1);
+    _planned_footprints_publisher = node->create_publisher<visualization_msgs::msg::MarkerArray>(
+      "planned_footprints", 1);
   }
 
   RCLCPP_INFO(
@@ -238,8 +242,9 @@ void SmacPlannerHybrid::activate()
     _logger, "Activating plugin %s of type SmacPlannerHybrid",
     _name.c_str());
   _raw_plan_publisher->on_activate();
-  if (_viz_expansions) {
+  if (_debug_visualizations) {
     _expansions_publisher->on_activate();
+    _planned_footprints_publisher->on_activate();
   }
   if (_costmap_downsampler) {
     _costmap_downsampler->on_activate();
@@ -256,8 +261,9 @@ void SmacPlannerHybrid::deactivate()
     _logger, "Deactivating plugin %s of type SmacPlannerHybrid",
     _name.c_str());
   _raw_plan_publisher->on_deactivate();
-  if (_viz_expansions) {
+  if (_debug_visualizations) {
     _expansions_publisher->on_deactivate();
+    _planned_footprints_publisher->on_activate();
   }
   if (_costmap_downsampler) {
     _costmap_downsampler->on_deactivate();
@@ -278,6 +284,7 @@ void SmacPlannerHybrid::cleanup()
   }
   _raw_plan_publisher.reset();
   _expansions_publisher.reset();
+  _planned_footprints_publisher.reset();
 }
 
 nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
@@ -352,7 +359,7 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   int num_iterations = 0;
   std::string error;
   std::unique_ptr<std::vector<std::tuple<float, float>>> expansions = nullptr;
-  if (_viz_expansions) {
+  if (_debug_visualizations) {
     expansions = std::make_unique<std::vector<std::tuple<float, float>>>();
   }
   // Note: All exceptions thrown are handled by the planner server and returned to the action
@@ -367,20 +374,6 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
     }
   }
 
-  // Publish expansions for debug
-  if (_viz_expansions) {
-    geometry_msgs::msg::PoseArray msg;
-    geometry_msgs::msg::Pose msg_pose;
-    msg.header.stamp = _clock->now();
-    msg.header.frame_id = _global_frame;
-    for (auto & e : *expansions) {
-      msg_pose.position.x = std::get<0>(e);
-      msg_pose.position.y = std::get<1>(e);
-      msg.poses.push_back(msg_pose);
-    }
-    _expansions_publisher->publish(msg);
-  }
-
   // Convert to world coordinates
   plan.poses.reserve(path.size());
   for (int i = path.size() - 1; i >= 0; --i) {
@@ -392,6 +385,37 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   // Publish raw path for debug
   if (_raw_plan_publisher->get_subscription_count() > 0) {
     _raw_plan_publisher->publish(plan);
+  }
+
+  if (_debug_visualizations) {
+    // Publish expansions for debug
+    geometry_msgs::msg::PoseArray msg;
+    geometry_msgs::msg::Pose msg_pose;
+    msg.header.stamp = _clock->now();
+    msg.header.frame_id = _global_frame;
+    for (auto & e : *expansions) {
+      msg_pose.position.x = std::get<0>(e);
+      msg_pose.position.y = std::get<1>(e);
+      msg.poses.push_back(msg_pose);
+    }
+    _expansions_publisher->publish(msg);
+
+    // plot footprint path planned for debug
+    if (_planned_footprints_publisher->get_subscription_count() > 0) {
+      auto marker_array = std::make_unique<visualization_msgs::msg::MarkerArray>();
+      for (size_t i = 0; i < plan.poses.size(); i++) {
+        const std::vector<geometry_msgs::msg::Point> edge =
+          transformFootprintToEdges(plan.poses[i].pose, _costmap_ros->getRobotFootprint());
+        marker_array->markers.push_back(createMarker(edge, i, _global_frame, _clock->now()));
+      }
+
+      if (marker_array->markers.empty()) {
+        visualization_msgs::msg::Marker clear_all_marker;
+        clear_all_marker.action = visualization_msgs::msg::Marker::DELETEALL;
+        marker_array->markers.push_back(clear_all_marker);
+      }
+      _planned_footprints_publisher->publish(std::move(marker_array));
+    }
   }
 
   // Find how much time we have left to do smoothing
