@@ -1,5 +1,6 @@
 collision_detector:
   ros__parameters:
+    frequency: 10.0
     base_frame_id: "base_footprint"
     odom_frame_id: "odom"
     transform_tolerance: 0.5

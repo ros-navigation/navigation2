@@ -610,6 +610,7 @@ TEST_F(Tester, testCircleDetection)
 
   ASSERT_TRUE(waitData(std::hypot(1.5, 0.01), 300ms, curr_time));
   ASSERT_TRUE(waitState(300ms));
+  ASSERT_NE(state_msg_->detections.size(), 0u);
   ASSERT_EQ(state_msg_->detections[0], true);
 
   // Stop Collision Detector node

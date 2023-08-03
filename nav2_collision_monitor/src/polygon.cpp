@@ -422,7 +422,9 @@ bool Polygon::getParameters(
         polygon_name_.c_str());
     }
 
-    if (action_type_ == STOP || action_type_ == SLOWDOWN || action_type_ == LIMIT) {
+    if (action_type_ == STOP || action_type_ == SLOWDOWN || action_type_ == LIMIT ||
+      action_type_ == DO_NOTHING)
+    {
       // Dynamic polygon will be used
       nav2_util::declare_parameter_if_not_declared(
         node, polygon_name_ + ".polygon_sub_topic", rclcpp::PARAMETER_STRING);
