@@ -57,7 +57,7 @@ please cite this work in your papers!
 
 If you use **any** of the algorithms in Nav2 or the analysis of the algorithms in your work, please cite this work in your papers!
 
-S. Macenski, T. Moore, DV Lu, A. Merzlyakov, M. Ferguson, [**From the desks of ROS maintainers: A survey of modern & capable mobile robotics algorithms in the robot operating system 2**](https://arxiv.org/pdf/2307.15236.pdf), Robotics and Autonomous Systems, 2023.
+- S. Macenski, T. Moore, DV Lu, A. Merzlyakov, M. Ferguson, [**From the desks of ROS maintainers: A survey of modern & capable mobile robotics algorithms in the robot operating system 2**](https://arxiv.org/pdf/2307.15236.pdf), Robotics and Autonomous Systems, 2023.
 
 ```bibtex
   @article{macenski2023survey,
