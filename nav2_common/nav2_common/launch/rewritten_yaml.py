@@ -128,17 +128,21 @@ class RewrittenYaml(launch.Substitution):
                 yaml[key] = rewrite_val
                 break
             key = yaml_key_list.pop(0)
-            yaml[key] = self.updateYamlPathVals(yaml.get(key, {}), yaml_key_list, rewrite_val)
-
+            if isinstance(yaml, list):
+                yaml[int(key)] = self.updateYamlPathVals(yaml[int(key)], yaml_key_list, rewrite_val)
+            else:
+                yaml[key] = self.updateYamlPathVals(yaml.get(key, {}), yaml_key_list, rewrite_val)
         return yaml
 
     def substitute_keys(self, yaml, key_rewrites):
         if len(key_rewrites) != 0:
-            for key, val in yaml.items():
-                if isinstance(val, dict) and key in key_rewrites:
+            for key in list(yaml.keys()):
+                val = yaml[key]
+                if key in key_rewrites:
                     new_key = key_rewrites[key]
                     yaml[new_key] = yaml[key]
                     del yaml[key]
+                if isinstance(val, dict):
                     self.substitute_keys(val, key_rewrites)
 
     def getYamlLeafKeys(self, yamlData):
