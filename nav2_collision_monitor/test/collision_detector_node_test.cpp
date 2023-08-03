@@ -594,10 +594,10 @@ TEST_F(Tester, testCircleDetection)
 
   // Set Collision Detector parameters.
   setCommonParameters();
-  // Create polygon
+  // Create Circle
   addPolygon("DetectionRegion", CIRCLE, 3.0, "none");
-  addSource(POINTCLOUD_NAME, POINTCLOUD);
-  setVectors({"DetectionRegion"}, {POINTCLOUD_NAME});
+  addSource(RANGE_NAME, RANGE);
+  setVectors({"DetectionRegion"}, {RANGE_NAME});
 
   // Start Collision Detector node
   cd_->start();
@@ -606,9 +606,9 @@ TEST_F(Tester, testCircleDetection)
   sendTransforms(curr_time);
 
   // Obstacle is in DetectionRegion
-  publishPointCloud(1.5, curr_time);
+  publishRange(1.5, curr_time);
 
-  ASSERT_TRUE(waitData(std::hypot(1.5, 0.01), 300ms, curr_time));
+  ASSERT_TRUE(waitData(1.5, 300ms, curr_time));
   ASSERT_TRUE(waitState(300ms));
   ASSERT_NE(state_msg_->detections.size(), 0u);
   ASSERT_EQ(state_msg_->detections[0], true);
