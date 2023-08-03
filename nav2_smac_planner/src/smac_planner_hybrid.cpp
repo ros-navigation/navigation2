@@ -356,7 +356,10 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
     expansions = std::make_unique<std::vector<std::tuple<float, float>>>();
   }
   // Note: All exceptions thrown are handled by the planner server and returned to the action
-  if (!_a_star->createPath(path, num_iterations, 0, expansions.get())) {
+  if (!_a_star->createPath(
+      path, num_iterations,
+      _tolerance / static_cast<float>(costmap->getResolution()), expansions.get()))
+  {
     if (num_iterations < _a_star->getMaxIterations()) {
       throw nav2_core::NoValidPathCouldBeFound("no valid path found");
     } else {
