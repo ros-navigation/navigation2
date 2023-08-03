@@ -45,7 +45,7 @@ public:
       R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-            <GoalReached goal="{goal}" />
+            <GoalReached goal="{goal}" global_frame="map" robot_base_frame="base_link"/>
         </BehaviorTree>
       </root>)";
 
