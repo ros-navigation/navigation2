@@ -70,6 +70,17 @@ The following notes could be made:
 
 ## Collision Detector
 
-Another node exists in the nav2_collision_monitor package called the Collision Detector. This node works similarly to the collision monitor except that it does not affect the robot's velocity. It will only inform that data from the configured sources has been detected within the configured polygons via message to the `collision_detector_state` topic. It is important to note that unlike the Collision Monitor that uses different behavior models, the Collision Detector does not use any of them and therefore the `action_type` should always be set to `none`.
+In some cases, the user may want to be informed about the detected obstacles without affecting the robot's velocity and instead take a different action within an external node. For example, the user may want to blink LEDs or sound an alarm when the robot is close to an obstacle. Another use case could be to detect data points in particular regions (e.g within the robot's footprint or extremely close to the sensor) and warn of malfunctioning sensors. For this purpose, the Collision Detector node was introduced.
 
-The Collision Detector was introduced for the use cases where the robot's velocity should not be affected by the collision monitor, but the user still wants to be informed about the detected obstacles and act upon it in different ways; e.g. blink LEDs or sound an alarm when the robot is close to an obstacle.
+It works similarly to the Collision Monitor, but does not affect the robot's velocity. It will only inform that data from the configured sources has been detected within the configured polygons via message to the `collision_detector_state` topic.
+
+### Features
+
+Similarly to the Collision Monitor, the Collision Detector uses polygons relative the robot's base frame origin to define "zones".
+However, unlike the Collision Monitor that uses different behavior models, the Collision Detector does not use any of them and therefore the `action_type` should always be set to `none`. If set to anything else, it will implicitly be set to `none` and yield a warning.
+
+The zones around the robot and the data sources are the same as for the Collision Monitor, with the exception of the footprint polygon, which is not supported by the Collision Detector.
+
+### Configuration
+
+Detailed configuration parameters, their description and how to setup a Collision Detector could be found at its [Configuration Guide](https://navigation.ros.org/configuration/packages/configuring-collision-detector.html).
