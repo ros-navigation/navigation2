@@ -242,7 +242,7 @@ bool CollisionDetector::configureSources(
   try {
     auto node = shared_from_this();
 
-    // Leave it to be not initialized: to intentionally cause an error if it will not set
+    // Leave it to be not initialized to intentionally cause an error if it will not set
     nav2_util::declare_parameter_if_not_declared(
       node, "observation_sources", rclcpp::PARAMETER_STRING_ARRAY);
     std::vector<std::string> source_names = get_parameter("observation_sources").as_string_array();
