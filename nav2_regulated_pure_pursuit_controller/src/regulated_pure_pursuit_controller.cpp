@@ -120,6 +120,9 @@ void RegulatedPurePursuitController::configure(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".max_extended_collision_check_dist",
     rclcpp::ParameterValue(1.0));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".extended_collision_check_path_end_leniency",
+    rclcpp::ParameterValue(0.2));
 
   node->get_parameter(plugin_name_ + ".desired_linear_vel", desired_linear_vel_);
   base_desired_linear_vel_ = desired_linear_vel_;
@@ -182,6 +185,9 @@ void RegulatedPurePursuitController::configure(
   node->get_parameter(
     plugin_name_ + ".max_extended_collision_check_dist",
     max_extended_collision_check_dist_);
+  node->get_parameter(
+    plugin_name_ + ".extended_collision_check_path_end_leniency",
+    extended_collision_check_path_end_leniency_);
 
   transform_tolerance_ = tf2::durationFromSec(transform_tolerance);
   control_duration_ = 1.0 / control_frequency;
@@ -487,9 +493,12 @@ bool RegulatedPurePursuitController::isCollisionImminentExtendedSearch()
 
   nav_msgs::msg::Path extended_collision_check_path;
 
+  double remaining_distance = nav2_util::geometry_utils::calculate_path_length(global_plan_);
+  double extended_collision_check_path_length = std::min(max_extended_collision_check_dist_, remaining_distance - extended_collision_check_path_end_leniency_);
+
   auto last_pose_it =
     nav2_util::geometry_utils::first_after_integrated_distance(
-    global_plan_.poses.begin(), global_plan_.poses.end(), max_extended_collision_check_dist_);
+    global_plan_.poses.begin(), global_plan_.poses.end(), extended_collision_check_path_length);
 
   // Copy poses into extended_collision_check_path upto max dist
   // transformGlobalPlan has already erased the part of global_plan_ the robot has traversed so far
