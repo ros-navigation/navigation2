@@ -24,7 +24,7 @@ void PreferForwardCritic::initialize()
   getParam(weight_, "cost_weight", 5.0);
   getParam(
     threshold_to_consider_,
-    "threshold_to_consider", 0.40f);
+    "threshold_to_consider", 0.5);
 
   RCLCPP_INFO(
     logger_, "PreferForwardCritic instantiated with %d power and %f weight.", power_, weight_);

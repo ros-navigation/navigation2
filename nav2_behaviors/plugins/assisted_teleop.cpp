@@ -14,7 +14,7 @@
 
 #include <utility>
 
-#include "assisted_teleop.hpp"
+#include "nav2_behaviors/plugins/assisted_teleop.hpp"
 #include "nav2_util/node_utils.hpp"
 
 namespace nav2_behaviors

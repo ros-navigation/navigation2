@@ -34,9 +34,10 @@ RclCppFixture g_rclcppfixture;
 
 TEST(Node2DTest, test_node_2d)
 {
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
   nav2_costmap_2d::Costmap2D costmapA(10, 10, 0.05, 0.0, 0.0, 0);
   std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
-    std::make_unique<nav2_smac_planner::GridCollisionChecker>(&costmapA, 72);
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(&costmapA, 72, node);
   checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
 
   // test construction
@@ -101,6 +102,7 @@ TEST(Node2DTest, test_node_2d)
 
 TEST(Node2DTest, test_node_2d_neighbors)
 {
+  auto lnode = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
   nav2_smac_planner::SearchInfo info;
   unsigned int size_x = 10u;
   unsigned int size_y = 10u;
@@ -122,7 +124,7 @@ TEST(Node2DTest, test_node_2d_neighbors)
 
   nav2_costmap_2d::Costmap2D costmapA(10, 10, 0.05, 0.0, 0.0, 0);
   std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
-    std::make_unique<nav2_smac_planner::GridCollisionChecker>(&costmapA, 72);
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(&costmapA, 72, lnode);
   unsigned char cost = static_cast<unsigned int>(1);
   nav2_smac_planner::Node2D * node = new nav2_smac_planner::Node2D(1);
   node->setCost(cost);

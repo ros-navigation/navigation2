@@ -178,7 +178,6 @@ protected:
    */
   void onFootprintChanged() override;
 
-private:
   /**
    * @brief  Lookup pre-computed distances
    * @param mx The x coordinate of the current cell
