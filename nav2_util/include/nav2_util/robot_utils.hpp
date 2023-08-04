@@ -21,6 +21,7 @@
 #include <memory>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "geometry_msgs/msg/twist.hpp"
 #include "tf2/time.h"
 #include "tf2_ros/buffer.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
@@ -57,18 +58,6 @@ bool transformPoseInTargetFrame(
   geometry_msgs::msg::PoseStamped & transformed_pose,
   tf2_ros::Buffer & tf_buffer, const std::string target_frame,
   const double transform_timeout = 0.1);
-
-/**
- * @brief Obtains a transform from source_frame_id at source_time ->
- * to target_frame_id at target_time time
- * @param source_frame_id Source frame ID to convert from
- * @param source_time Source timestamp to convert from
- * @param target_frame_id Target frame ID to convert to
- * @param target_time Target time to interpolate to
- * @param transform_tolerance Transform tolerance
- * @param tf_transform Output source->target transform
- * @return True if got correct transform, otherwise false
- */
 
 /**
  * @brief Obtains a transform from source_frame_id -> to target_frame_id
@@ -108,6 +97,13 @@ bool getTransform(
   const tf2::Duration & transform_tolerance,
   const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
   tf2::Transform & tf2_transform);
+
+/**
+ * @brief Validates a twist message contains no nans or infs
+ * @param msg Twist message to validate
+ * @return True if valid, false if contains unactionable values
+ */
+bool validateTwist(const geometry_msgs::msg::Twist & msg);
 
 }  // end namespace nav2_util
 

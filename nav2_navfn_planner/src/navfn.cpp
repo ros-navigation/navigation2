@@ -421,11 +421,10 @@ inline void
 NavFn::updateCell(int n)
 {
   // get neighbors
-  float u, d, l, r;
-  l = potarr[n - 1];
-  r = potarr[n + 1];
-  u = potarr[n - nx];
-  d = potarr[n + nx];
+  const float l = potarr[n - 1];
+  const float r = potarr[n + 1];
+  const float u = potarr[n - nx];
+  const float d = potarr[n + nx];
   // ROS_INFO("[Update] c: %0.1f  l: %0.1f  r: %0.1f  u: %0.1f  d: %0.1f\n",
   //  potarr[n], l, r, u, d);
   // ROS_INFO("[Update] cost: %d\n", costarr[n]);
@@ -452,8 +451,8 @@ NavFn::updateCell(int n)
       // use quadratic approximation
       // might speed this up through table lookup, but still have to
       //   do the divide
-      float d = dc / hf;
-      float v = -0.2301 * d * d + 0.5307 * d + 0.7040;
+      const float div = dc / hf;
+      const float v = -0.2301 * div * div + 0.5307 * div + 0.7040;
       pot = ta + hf * v;
     }
 
@@ -496,11 +495,10 @@ inline void
 NavFn::updateCellAstar(int n)
 {
   // get neighbors
-  float u, d, l, r;
-  l = potarr[n - 1];
-  r = potarr[n + 1];
-  u = potarr[n - nx];
-  d = potarr[n + nx];
+  float l = potarr[n - 1];
+  float r = potarr[n + 1];
+  float u = potarr[n - nx];
+  float d = potarr[n + nx];
   // ROS_INFO("[Update] c: %0.1f  l: %0.1f  r: %0.1f  u: %0.1f  d: %0.1f\n",
   // potarr[n], l, r, u, d);
   // ROS_INFO("[Update] cost of %d: %d\n", n, costarr[n]);
@@ -527,8 +525,8 @@ NavFn::updateCellAstar(int n)
       // use quadratic approximation
       // might speed this up through table lookup, but still have to
       //   do the divide
-      float d = dc / hf;
-      float v = -0.2301 * d * d + 0.5307 * d + 0.7040;
+      const float div = dc / hf;
+      const float v = -0.2301 * div * div + 0.5307 * div + 0.7040;
       pot = ta + hf * v;
     }
 
@@ -834,22 +832,22 @@ NavFn::calcPath(int n, int * st)
       // check eight neighbors to find the lowest
       int minc = stc;
       int minp = potarr[stc];
-      int st = stcpx - 1;
-      if (potarr[st] < minp) {minp = potarr[st]; minc = st;}
-      st++;
-      if (potarr[st] < minp) {minp = potarr[st]; minc = st;}
-      st++;
-      if (potarr[st] < minp) {minp = potarr[st]; minc = st;}
-      st = stc - 1;
-      if (potarr[st] < minp) {minp = potarr[st]; minc = st;}
-      st = stc + 1;
-      if (potarr[st] < minp) {minp = potarr[st]; minc = st;}
-      st = stcnx - 1;
-      if (potarr[st] < minp) {minp = potarr[st]; minc = st;}
-      st++;
-      if (potarr[st] < minp) {minp = potarr[st]; minc = st;}
-      st++;
-      if (potarr[st] < minp) {minp = potarr[st]; minc = st;}
+      int sti = stcpx - 1;
+      if (potarr[sti] < minp) {minp = potarr[sti]; minc = sti;}
+      sti++;
+      if (potarr[sti] < minp) {minp = potarr[sti]; minc = sti;}
+      sti++;
+      if (potarr[sti] < minp) {minp = potarr[sti]; minc = sti;}
+      sti = stc - 1;
+      if (potarr[sti] < minp) {minp = potarr[sti]; minc = sti;}
+      sti = stc + 1;
+      if (potarr[sti] < minp) {minp = potarr[sti]; minc = sti;}
+      sti = stcnx - 1;
+      if (potarr[sti] < minp) {minp = potarr[sti]; minc = sti;}
+      sti++;
+      if (potarr[sti] < minp) {minp = potarr[sti]; minc = sti;}
+      sti++;
+      if (potarr[sti] < minp) {minp = potarr[sti]; minc = sti;}
       stc = minc;
       dx = 0;
       dy = 0;

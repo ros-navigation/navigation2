@@ -117,10 +117,12 @@ protected:
   double _max_planning_time;
   double _lookup_table_size;
   double _minimum_turning_radius_global_coords;
-  bool _viz_expansions;
+  bool _debug_visualizations;
   std::string _motion_model_for_search;
   MotionModel _motion_model;
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr _raw_plan_publisher;
+  rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr
+    _planned_footprints_publisher;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseArray>::SharedPtr
     _expansions_publisher;
   std::mutex _mutex;

@@ -1,3 +1,14 @@
+# Test utils
+ament_add_gtest(test_utils
+  test_utils.cpp
+)
+ament_target_dependencies(test_utils
+  ${dependencies}
+)
+target_link_libraries(test_utils
+  ${library_name}
+)
+
 # Test costmap downsampler
 ament_add_gtest(test_costmap_downsampler
   test_costmap_downsampler.cpp
