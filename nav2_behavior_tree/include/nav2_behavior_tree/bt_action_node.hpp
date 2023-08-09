@@ -97,9 +97,6 @@ public:
       RCLCPP_ERROR(
         node_->get_logger(), "\"%s\" action server not available after waiting for 1 s",
         action_name.c_str());
-      throw std::runtime_error(
-              std::string("Action server ") + action_name +
-              std::string(" not available"));
     }
   }
 
