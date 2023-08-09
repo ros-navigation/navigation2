@@ -46,6 +46,7 @@ struct SearchInfo
   std::string lattice_filepath;
   bool cache_obstacle_heuristic;
   bool allow_reverse_expansion;
+  bool allow_primitive_interpolation;
 };
 
 /**

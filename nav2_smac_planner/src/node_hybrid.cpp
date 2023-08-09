@@ -50,6 +50,12 @@ ObstacleHeuristicQueue NodeHybrid::obstacle_heuristic_queue;
 // cell. Though this could be later modified to project a certain
 // amount of time or particular distance forward.
 
+// TODO i
+  // Document: new change, reduce resolution, 72 no longer needed. new param guide + migration
+  // Visualize to validate correct
+  // test preformance
+
+
 // http://planning.cs.uiuc.edu/node821.html
 // Model for ackermann style vehicle with minimum radius restriction
 void HybridMotionTable::initDubin(
@@ -116,6 +122,21 @@ void HybridMotionTable::initDubin(
   projections.emplace_back(hypotf(delta_x, delta_y), 0.0, 0.0);  // Forward
   projections.emplace_back(delta_x, delta_y, increments);  // Left
   projections.emplace_back(delta_x, -delta_y, -increments);  // Right
+
+  if (search_info.allow_primitive_interpolation && increments != 1.0f) {
+    // Create primitives that are +/- N to fill in search space to use all set angular quantizations
+    // Allows us to create N many primitives so that each search iteration can expand into any angle
+    // bin possible with the minimum turning radius constraint, not just the most extreme turns.
+    projections.reserve(3 + (2 * (increments - 1)));
+    for (unsigned int i = 1; i < static_cast<unsigned int>(increments); i++) {
+      const float angle_n = static_cast<float>(i) * bin_size;
+      const float turning_rad_n = sqrt(2.0f) / (2.0f * sin(angle_n / 2.0f));
+      const float delta_x_n = turning_rad_n * sin(angle_n);
+      const float delta_y_n = turning_rad_n - (turning_rad_n * cos(angle_n));
+      projections.emplace_back(delta_x_n, delta_y_n, i);  // Left
+      projections.emplace_back(delta_x_n, -delta_y_n, -i);  // Right
+    }
+  }
 
   // Create the correct OMPL state space
   state_space = std::make_unique<ompl::base::DubinsStateSpace>(min_turning_radius);
@@ -193,6 +214,23 @@ void HybridMotionTable::initReedsShepp(
   projections.emplace_back(-hypotf(delta_x, delta_y), 0.0, 0.0);  // Backward
   projections.emplace_back(-delta_x, delta_y, -increments);  // Backward + Left
   projections.emplace_back(-delta_x, -delta_y, increments);  // Backward + Right
+
+  if (search_info.allow_primitive_interpolation && increments != 1.0f) {
+    // Create primitives that are +/- N to fill in search space to use all set angular quantizations
+    // Allows us to create N many primitives so that each search iteration can expand into any angle
+    // bin possible with the minimum turning radius constraint, not just the most extreme turns.
+    projections.reserve(6 + (4 * (increments - 1)));
+    for (unsigned int i = 1; i < static_cast<unsigned int>(increments); i++) {
+      const float angle_n = static_cast<float>(i) * bin_size;
+      const float turning_rad_n = sqrt(2.0f) / (2.0f * sin(angle_n / 2.0f));
+      const float delta_x_n = turning_rad_n * sin(angle_n);
+      const float delta_y_n = turning_rad_n - (turning_rad_n * cos(angle_n));
+      projections.emplace_back(delta_x_n, delta_y_n, i);  // Forward + Left
+      projections.emplace_back(delta_x_n, -delta_y_n, -i);  // Forward + Right
+      projections.emplace_back(-delta_x_n, delta_y_n, -i);  // Backward + Left
+      projections.emplace_back(-delta_x_n, -delta_y_n, i);  // Backward + Right
+    }
+  }
 
   // Create the correct OMPL state space
   state_space = std::make_unique<ompl::base::ReedsSheppStateSpace>(min_turning_radius);
