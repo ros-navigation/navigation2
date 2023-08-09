@@ -71,6 +71,11 @@ public:
   }
 
   /**
+   * @brief Default virtual Destructor
+   */
+  virtual ~MapBasedQueue() = default;
+
+  /**
    * @brief Clear the queue
    */
   virtual void reset()

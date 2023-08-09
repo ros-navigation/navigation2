@@ -27,6 +27,7 @@
 #include "tf2_ros/transform_listener.h"
 
 #include "nav2_util/lifecycle_node.hpp"
+#include "nav2_msgs/msg/collision_monitor_state.hpp"
 
 #include "nav2_collision_monitor/types.hpp"
 #include "nav2_collision_monitor/polygon.hpp"
@@ -110,7 +111,8 @@ protected:
    */
   bool getParameters(
     std::string & cmd_vel_in_topic,
-    std::string & cmd_vel_out_topic);
+    std::string & cmd_vel_out_topic,
+    std::string & state_topic);
   /**
    * @brief Supporting routine creating and configuring all polygons
    * @param base_frame_id Robot base frame ID
@@ -127,13 +129,16 @@ protected:
    * source->base time inerpolated transform.
    * @param transform_tolerance Transform tolerance
    * @param source_timeout Maximum time interval in which data is considered valid
+   * @param base_shift_correction Whether to correct source data towards to base frame movement,
+   * considering the difference between current time and latest source time
    * @return True if all sources were configured successfully or false in failure case
    */
   bool configureSources(
     const std::string & base_frame_id,
     const std::string & odom_frame_id,
     const tf2::Duration & transform_tolerance,
-    const rclcpp::Duration & source_timeout);
+    const rclcpp::Duration & source_timeout,
+    const bool base_shift_correction);
 
   /**
    * @brief Main processing routine
@@ -142,14 +147,14 @@ protected:
   void process(const Velocity & cmd_vel_in);
 
   /**
-   * @brief Processes the polygon of STOP and SLOWDOWN action type
+   * @brief Processes the polygon of STOP, SLOWDOWN and LIMIT action type
    * @param polygon Polygon to process
    * @param collision_points Array of 2D obstacle points
    * @param velocity Desired robot velocity
    * @param robot_action Output processed robot action
    * @return True if returned action is caused by current polygon, otherwise false
    */
-  bool processStopSlowdown(
+  bool processStopSlowdownLimit(
     const std::shared_ptr<Polygon> polygon,
     const std::vector<Point> & collision_points,
     const Velocity & velocity,
@@ -170,11 +175,11 @@ protected:
     Action & robot_action) const;
 
   /**
-   * @brief Prints robot action and polygon caused it (if it was)
-   * @param robot_action Robot action to print
+   * @brief Log and publish current robot action and polygon
+   * @param robot_action Robot action to notify
    * @param action_polygon Pointer to a polygon causing a selected action
    */
-  void printAction(
+  void notifyActionState(
     const Action & robot_action, const std::shared_ptr<Polygon> action_polygon) const;
 
   /**
@@ -200,6 +205,10 @@ protected:
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_in_sub_;
   /// @brief Output cmd_vel publisher
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_out_pub_;
+
+  /// @brief CollisionMonitor state publisher
+  rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::CollisionMonitorState>::SharedPtr
+    state_pub_;
 
   /// @brief Whether main routine is active
   bool process_active_;

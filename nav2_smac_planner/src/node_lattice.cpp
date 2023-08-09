@@ -223,7 +223,6 @@ bool NodeLattice::isNodeValid(
 
   // If valid motion primitives are set, check intermediary poses > 1 cell apart
   if (motion_primitive) {
-    const float pi_2 = 2.0 * M_PI;
     const float & grid_resolution = motion_table.lattice_metadata.grid_resolution;
     const float & resolution_diag_sq = 2.0 * grid_resolution * grid_resolution;
     MotionPose last_pose(1e9, 1e9, 1e9), pose_dist(0.0, 0.0, 0.0);
@@ -246,7 +245,7 @@ bool NodeLattice::isNodeValid(
         // If reversing, invert the angle because the robot is backing into the primitive
         // not driving forward with it
         if (is_backwards) {
-          prim_pose._theta = std::fmod(it->_theta + M_PI, pi_2);
+          prim_pose._theta = std::fmod(it->_theta + M_PI, 2.0 * M_PI);
         } else {
           prim_pose._theta = it->_theta;
         }
@@ -561,7 +560,6 @@ void NodeLattice::addNodeToPath(
   Coordinates initial_pose, prim_pose;
   MotionPrimitive * prim = nullptr;
   const float & grid_resolution = NodeLattice::motion_table.lattice_metadata.grid_resolution;
-  const float pi_2 = 2.0 * M_PI;
   prim = current_node->getMotionPrimitive();
   // if motion primitive is valid, then was searched (rather than analytically expanded),
   // include dense path of subpoints making up the primitive at grid resolution
@@ -577,7 +575,7 @@ void NodeLattice::addNodeToPath(
       // If reversing, invert the angle because the robot is backing into the primitive
       // not driving forward with it
       if (current_node->isBackward()) {
-        prim_pose.theta = std::fmod(it->_theta + M_PI, pi_2);
+        prim_pose.theta = std::fmod(it->_theta + M_PI, 2.0 * M_PI);
       } else {
         prim_pose.theta = it->_theta;
       }

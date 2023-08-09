@@ -14,6 +14,7 @@
 #include <vector>
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
 #include "nav2_smac_planner/constants.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
 
 #ifndef NAV2_SMAC_PLANNER__COLLISION_CHECKER_HPP_
 #define NAV2_SMAC_PLANNER__COLLISION_CHECKER_HPP_
@@ -34,11 +35,13 @@ public:
    * for use when regular bin intervals are appropriate
    * @param costmap The costmap to collision check against
    * @param num_quantizations The number of quantizations to precompute footprint
+   * @param node Node to extract clock and logger from
    * orientations for to speed up collision checking
    */
   GridCollisionChecker(
     nav2_costmap_2d::Costmap2D * costmap,
-    unsigned int num_quantizations);
+    unsigned int num_quantizations,
+    rclcpp_lifecycle::LifecycleNode::SharedPtr node);
 
   /**
    * @brief A constructor for nav2_smac_planner::GridCollisionChecker
@@ -117,6 +120,8 @@ protected:
   bool footprint_is_radius_;
   std::vector<float> angles_;
   double possible_inscribed_cost_{-1};
+  rclcpp::Logger logger_{rclcpp::get_logger("SmacPlannerCollisionChecker")};
+  rclcpp::Clock::SharedPtr clock_;
 };
 
 }  // namespace nav2_smac_planner

@@ -22,7 +22,7 @@
 #include "behaviortree_cpp_v3/action_node.h"
 #include "nav2_util/node_utils.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
-#include "nav2_behavior_tree/bt_conversions.hpp"
+#include "nav2_behavior_tree/bt_utils.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -196,9 +196,10 @@ public:
       // user defined callback, may modify "should_send_goal_".
       on_tick();
 
-      if (should_send_goal_) {
-        send_new_goal();
+      if (!should_send_goal_) {
+        return BT::NodeStatus::FAILURE;
       }
+      send_new_goal();
     }
 
     try {

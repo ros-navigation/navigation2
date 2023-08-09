@@ -17,13 +17,16 @@ find_package(Ceres REQUIRED COMPONENTS SuiteSparse)
 
 set(CMAKE_CXX_STANDARD 17)
 
+if(${CERES_VERSION} VERSION_LESS_EQUAL 2.0.0)
+  add_definitions(-DUSE_OLD_CERES_API)
+endif()
+
 nav2_package()
 
 set(library_name nav2_constrained_smoother)
 
 include_directories(
   include
-  ${CERES_INCLUDES}
 )
 
 set(dependencies
@@ -38,7 +41,7 @@ set(dependencies
 )
 
 add_library(${library_name} SHARED src/constrained_smoother.cpp)
-target_link_libraries(${library_name} ${CERES_LIBRARIES})
+target_link_libraries(${library_name} Ceres::ceres)
 # prevent pluginlib from using boost
 target_compile_definitions(${library_name} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 ament_target_dependencies(${library_name} ${dependencies})

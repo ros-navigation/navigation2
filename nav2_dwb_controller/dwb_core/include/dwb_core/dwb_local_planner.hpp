@@ -201,6 +201,7 @@ protected:
   bool debug_trajectory_details_;
   rclcpp::Duration transform_tolerance_{0, 0};
   bool shorten_transformed_plan_;
+  double forward_prune_distance_;
 
   /**
    * @brief try to resolve a possibly shortened critic name with the default namespaces and the suffix "Critic"

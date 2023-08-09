@@ -35,7 +35,8 @@ Polygon::Polygon(
   const std::string & base_frame_id,
   const tf2::Duration & transform_tolerance)
 : node_(node), polygon_name_(polygon_name), action_type_(DO_NOTHING),
-  slowdown_ratio_(0.0), footprint_sub_(nullptr), tf_buffer_(tf_buffer),
+  slowdown_ratio_(0.0), linear_limit_(0.0), angular_limit_(0.0),
+  footprint_sub_(nullptr), tf_buffer_(tf_buffer),
   base_frame_id_(base_frame_id), transform_tolerance_(transform_tolerance)
 {
   RCLCPP_INFO(logger_, "[%s]: Creating Polygon", polygon_name_.c_str());
@@ -128,14 +129,24 @@ ActionType Polygon::getActionType() const
   return action_type_;
 }
 
-int Polygon::getMaxPoints() const
+int Polygon::getMinPoints() const
 {
-  return max_points_;
+  return min_points_;
 }
 
 double Polygon::getSlowdownRatio() const
 {
   return slowdown_ratio_;
+}
+
+double Polygon::getLinearLimit() const
+{
+  return linear_limit_;
+}
+
+double Polygon::getAngularLimit() const
+{
+  return angular_limit_;
 }
 
 double Polygon::getTimeBeforeCollision() const
@@ -177,6 +188,30 @@ void Polygon::updatePolygon()
       p_s.y = footprint_vec[i].y;
       polygon_.polygon.points[i] = p_s;
     }
+  } else if (!polygon_.header.frame_id.empty() && polygon_.header.frame_id != base_frame_id_) {
+    // Polygon is published in another frame: correct poly_ vertices to the latest frame state
+    std::size_t new_size = polygon_.polygon.points.size();
+
+    // Get the transform from PolygonStamped frame to base_frame_id_
+    tf2::Transform tf_transform;
+    if (
+      !nav2_util::getTransform(
+        polygon_.header.frame_id, base_frame_id_,
+        transform_tolerance_, tf_buffer_, tf_transform))
+    {
+      return;
+    }
+
+    // Correct main poly_ vertices
+    poly_.resize(new_size);
+    for (std::size_t i = 0; i < new_size; i++) {
+      // Transform point coordinates from PolygonStamped frame -> to base frame
+      tf2::Vector3 p_v3_s(polygon_.polygon.points[i].x, polygon_.polygon.points[i].y, 0.0);
+      tf2::Vector3 p_v3_b = tf_transform * p_v3_s;
+
+      // Fill poly_ array
+      poly_[i] = {p_v3_b.x(), p_v3_b.y()};
+    }
   }
 }
 
@@ -212,7 +247,7 @@ double Polygon::getCollisionTime(
     transformPoints(pose, points_transformed);
     // If the collision occurred on this stage, return the actual time before a collision
     // as if robot was moved with given velocity
-    if (getPointsInside(points_transformed) > max_points_) {
+    if (getPointsInside(points_transformed) >= min_points_) {
       return time;
     }
   }
@@ -256,6 +291,8 @@ bool Polygon::getCommonParameters(std::string & polygon_pub_topic)
       action_type_ = STOP;
     } else if (at_str == "slowdown") {
       action_type_ = SLOWDOWN;
+    } else if (at_str == "limit") {
+      action_type_ = LIMIT;
     } else if (at_str == "approach") {
       action_type_ = APPROACH;
     } else {  // Error if something else
@@ -264,13 +301,35 @@ bool Polygon::getCommonParameters(std::string & polygon_pub_topic)
     }
 
     nav2_util::declare_parameter_if_not_declared(
-      node, polygon_name_ + ".max_points", rclcpp::ParameterValue(3));
-    max_points_ = node->get_parameter(polygon_name_ + ".max_points").as_int();
+      node, polygon_name_ + ".min_points", rclcpp::ParameterValue(4));
+    min_points_ = node->get_parameter(polygon_name_ + ".min_points").as_int();
+
+    try {
+      nav2_util::declare_parameter_if_not_declared(
+        node, polygon_name_ + ".max_points", rclcpp::PARAMETER_INTEGER);
+      min_points_ = node->get_parameter(polygon_name_ + ".max_points").as_int() + 1;
+      RCLCPP_WARN(
+        logger_,
+        "[%s]: \"max_points\" parameter was deprecated. Use \"min_points\" instead to specify "
+        "the minimum number of data readings within a zone to trigger the action",
+        polygon_name_.c_str());
+    } catch (const std::exception &) {
+      // This is normal situation: max_points parameter should not being declared
+    }
 
     if (action_type_ == SLOWDOWN) {
       nav2_util::declare_parameter_if_not_declared(
         node, polygon_name_ + ".slowdown_ratio", rclcpp::ParameterValue(0.5));
       slowdown_ratio_ = node->get_parameter(polygon_name_ + ".slowdown_ratio").as_double();
+    }
+
+    if (action_type_ == LIMIT) {
+      nav2_util::declare_parameter_if_not_declared(
+        node, polygon_name_ + ".linear_limit", rclcpp::ParameterValue(0.5));
+      linear_limit_ = node->get_parameter(polygon_name_ + ".linear_limit").as_double();
+      nav2_util::declare_parameter_if_not_declared(
+        node, polygon_name_ + ".angular_limit", rclcpp::ParameterValue(0.5));
+      angular_limit_ = node->get_parameter(polygon_name_ + ".angular_limit").as_double();
     }
 
     if (action_type_ == APPROACH) {
@@ -361,7 +420,7 @@ bool Polygon::getParameters(
         polygon_name_.c_str());
     }
 
-    if (action_type_ == STOP || action_type_ == SLOWDOWN) {
+    if (action_type_ == STOP || action_type_ == SLOWDOWN || action_type_ == LIMIT) {
       // Dynamic polygon will be used
       nav2_util::declare_parameter_if_not_declared(
         node, polygon_name_ + ".polygon_sub_topic", rclcpp::PARAMETER_STRING);
@@ -408,7 +467,7 @@ void Polygon::updatePolygon(geometry_msgs::msg::PolygonStamped::ConstSharedPtr m
     return;
   }
 
-  // Set main polygon vertices
+  // Set main poly_ vertices first time
   poly_.resize(new_size);
   for (std::size_t i = 0; i < new_size; i++) {
     // Transform point coordinates from PolygonStamped frame -> to base frame
@@ -419,10 +478,9 @@ void Polygon::updatePolygon(geometry_msgs::msg::PolygonStamped::ConstSharedPtr m
     poly_[i] = {p_v3_b.x(), p_v3_b.y()};
   }
 
-  if (visualize_) {
-    // Store polygon_ for visualization
-    polygon_ = *msg;
-  }
+  // Store incoming polygon for further (possible) poly_ vertices corrections
+  // from PolygonStamped frame -> to base frame
+  polygon_ = *msg;
 }
 
 void Polygon::polygonCallback(geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg)

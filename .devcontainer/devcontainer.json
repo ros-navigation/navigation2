@@ -1,0 +1,61 @@
+{
+    "name": "Nav2",
+    "build": {
+        "dockerfile": "../Dockerfile",
+        "context": "..",
+        "target": "visualizer",
+        "cacheFrom": "ghcr.io/ros-planning/navigation2:main"
+    },
+    "runArgs": [
+        // "--cap-add=SYS_PTRACE", // enable debugging, e.g. gdb
+        // "--ipc=host", // shared memory transport with host, e.g. rviz GUIs
+        // "--network=host", // network access to host interfaces, e.g. eth0
+        // "--pid=host", // DDS discovery with host, without --network=host
+        // "--privileged", // device access to host peripherals, e.g. USB
+        // "--security-opt=seccomp=unconfined", // enable debugging, e.g. gdb
+    ],
+    "workspaceFolder": "/opt/overlay_ws/src/navigation2",
+    "workspaceMount": "source=${localWorkspaceFolder},target=${containerWorkspaceFolder},type=bind",
+    "onCreateCommand": ".devcontainer/on-create-command.sh",
+    "updateContentCommand": ".devcontainer/update-content-command.sh",
+    "postCreateCommand": ".devcontainer/post-create-command.sh",
+    "remoteEnv": {
+        "OVERLAY_MIXINS": "release ccache lld",
+        "CCACHE_DIR": "/tmp/.ccache"
+    },
+    "mounts": [
+        {
+            "source": "ccache-${devcontainerId}",
+            "target": "/tmp/.ccache",
+            "type": "volume"
+        },
+        {
+            "source": "overlay-${devcontainerId}",
+            "target": "/opt/overlay_ws",
+            "type": "volume"
+        }
+    ],
+    "features": {
+        // "ghcr.io/devcontainers/features/desktop-lite:1": {},
+        "ghcr.io/devcontainers/features/github-cli:1": {}
+    },
+    "customizations": {
+        "codespaces": {
+            "openFiles": [
+                "doc/development/codespaces.md"
+            ]
+        },
+        "vscode": {
+            "settings": {},
+            "extensions": [
+                "althack.ament-task-provider",
+                "eamodio.gitlens",
+                "esbenp.prettier-vscode",
+                "GitHub.copilot",
+                "ms-iot.vscode-ros",
+                "streetsidesoftware.code-spell-checker",
+                "twxs.cmake"
+            ]
+        }
+    }
+}

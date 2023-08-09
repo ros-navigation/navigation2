@@ -49,6 +49,8 @@ struct Parameters
   double inflation_cost_scaling_factor;
   double regulated_linear_scaling_min_radius;
   double regulated_linear_scaling_min_speed;
+  bool use_fixed_curvature_lookahead;
+  double curvature_lookahead_dist;
   bool use_rotate_to_heading;
   double max_angular_accel;
   double rotate_to_heading_min_angle;
