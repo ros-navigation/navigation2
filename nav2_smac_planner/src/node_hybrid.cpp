@@ -106,14 +106,15 @@ void HybridMotionTable::initDubin(
   // find deflections
   // If we make a right triangle out of the chord in circle of radius
   // min turning angle, we can see that delta X = R * sin (angle)
-  float delta_x = min_turning_radius * sin(angle);
+  const float delta_x = min_turning_radius * sin(angle);
   // Using that same right triangle, we can see that the complement
   // to delta Y is R * cos (angle). If we subtract R, we get the actual value
-  float delta_y = min_turning_radius - (min_turning_radius * cos(angle));
+  const float delta_y = min_turning_radius - (min_turning_radius * cos(angle));
+  const float delta_dist = hypotf(delta_x, delta_y);
 
   projections.clear();
   projections.reserve(3);
-  projections.emplace_back(hypotf(delta_x, delta_y), 0.0, 0.0);  // Forward
+  projections.emplace_back(delta_dist, 0.0, 0.0);  // Forward
   projections.emplace_back(delta_x, delta_y, increments);  // Left
   projections.emplace_back(delta_x, -delta_y, -increments);  // Right
 
@@ -124,7 +125,7 @@ void HybridMotionTable::initDubin(
     projections.reserve(3 + (2 * (increments - 1)));
     for (unsigned int i = 1; i < static_cast<unsigned int>(increments); i++) {
       const float angle_n = static_cast<float>(i) * bin_size;
-      const float turning_rad_n = sqrt(2.0f) / (2.0f * sin(angle_n / 2.0f));
+      const float turning_rad_n = delta_dist / (2.0f * sin(angle_n / 2.0f));
       const float delta_x_n = turning_rad_n * sin(angle_n);
       const float delta_y_n = turning_rad_n - (turning_rad_n * cos(angle_n));
       projections.emplace_back(delta_x_n, delta_y_n, static_cast<float>(i));  // Left
@@ -197,15 +198,16 @@ void HybridMotionTable::initReedsShepp(
   }
   angle = increments * bin_size;
 
-  float delta_x = min_turning_radius * sin(angle);
-  float delta_y = min_turning_radius - (min_turning_radius * cos(angle));
+  const float delta_x = min_turning_radius * sin(angle);
+  const float delta_y = min_turning_radius - (min_turning_radius * cos(angle));
+  const float delta_dist = hypotf(delta_x, delta_y);
 
   projections.clear();
   projections.reserve(6);
-  projections.emplace_back(hypotf(delta_x, delta_y), 0.0, 0.0);  // Forward
+  projections.emplace_back(delta_dist, 0.0, 0.0);  // Forward
   projections.emplace_back(delta_x, delta_y, increments);  // Forward + Left
   projections.emplace_back(delta_x, -delta_y, -increments);  // Forward + Right
-  projections.emplace_back(-hypotf(delta_x, delta_y), 0.0, 0.0);  // Backward
+  projections.emplace_back(-delta_dist, 0.0, 0.0);  // Backward
   projections.emplace_back(-delta_x, delta_y, -increments);  // Backward + Left
   projections.emplace_back(-delta_x, -delta_y, increments);  // Backward + Right
 
@@ -216,7 +218,7 @@ void HybridMotionTable::initReedsShepp(
     projections.reserve(6 + (4 * (increments - 1)));
     for (unsigned int i = 1; i < static_cast<unsigned int>(increments); i++) {
       const float angle_n = static_cast<float>(i) * bin_size;
-      const float turning_rad_n = sqrt(2.0f) / (2.0f * sin(angle_n / 2.0f));
+      const float turning_rad_n = delta_dist / (2.0f * sin(angle_n / 2.0f));
       const float delta_x_n = turning_rad_n * sin(angle_n);
       const float delta_y_n = turning_rad_n - (turning_rad_n * cos(angle_n));
       projections.emplace_back(delta_x_n, delta_y_n, static_cast<float>(i));  // Forward + Left
