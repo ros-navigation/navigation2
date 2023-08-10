@@ -209,6 +209,11 @@ bool CollisionDetector::configurePolygons(
         return false;
       }
 
+      // Configure last added polygon
+      if (!polygons_.back()->configure()) {
+        return false;
+      }
+
       // warn if the added polygon's action_type_ is not different than "none"
       auto action_type = polygons_.back()->getActionType();
       if (action_type != DO_NOTHING) {
@@ -220,10 +225,6 @@ bool CollisionDetector::configurePolygons(
         return false;
       }
 
-      // Configure last added polygon
-      if (!polygons_.back()->configure()) {
-        return false;
-      }
     }
   } catch (const std::exception & ex) {
     RCLCPP_ERROR(get_logger(), "Error while getting parameters: %s", ex.what());

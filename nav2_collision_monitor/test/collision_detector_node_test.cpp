@@ -50,7 +50,7 @@ static const char SCAN_NAME[]{"Scan"};
 static const char POINTCLOUD_NAME[]{"PointCloud"};
 static const char RANGE_NAME[]{"Range"};
 static const char STATE_TOPIC[]{"collision_detector_state"};
-static const int MIN_POINTS{2};
+static const int MIN_POINTS{1};
 static const double SIMULATION_TIME_STEP{0.01};
 static const double TRANSFORM_TOLERANCE{0.5};
 static const double SOURCE_TIMEOUT{5.0};
@@ -237,19 +237,12 @@ void Tester::addPolygon(
     cd_->set_parameter(
       rclcpp::Parameter(polygon_name + ".type", "polygon"));
 
-    if (at != "approach") {
-      const std::vector<double> points {
-        size, size, size, -size, -size, -size, -size, size};
-      cd_->declare_parameter(
-        polygon_name + ".points", rclcpp::ParameterValue(points));
-      cd_->set_parameter(
-        rclcpp::Parameter(polygon_name + ".points", points));
-    } else {  // at == "approach"
-      cd_->declare_parameter(
-        polygon_name + ".footprint_topic", rclcpp::ParameterValue(FOOTPRINT_TOPIC));
-      cd_->set_parameter(
-        rclcpp::Parameter(polygon_name + ".footprint_topic", FOOTPRINT_TOPIC));
-    }
+    const std::vector<double> points {
+      size, size, size, -size, -size, -size, -size, size};
+    cd_->declare_parameter(
+      polygon_name + ".points", rclcpp::ParameterValue(points));
+    cd_->set_parameter(
+      rclcpp::Parameter(polygon_name + ".points", points));
   } else if (type == CIRCLE) {
     cd_->declare_parameter(
       polygon_name + ".type", rclcpp::ParameterValue("circle"));
