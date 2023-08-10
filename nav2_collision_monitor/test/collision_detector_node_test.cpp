@@ -476,6 +476,17 @@ TEST_F(Tester, testIncorrectPolygonType)
   cd_->cant_configure();
 }
 
+TEST_F(Tester, testIncorrectActionType)
+{
+  setCommonParameters();
+  addPolygon("DetectionRegion", POLYGON, 1.0, "approach");
+  addSource(SCAN_NAME, SCAN);
+  setVectors({"DetectionRegion"}, {SCAN_NAME});
+
+  // Check that Collision Detector node can not be configured for this action type
+  cd_->cant_configure();
+}
+
 TEST_F(Tester, testIncorrectSourceType)
 {
   setCommonParameters();
@@ -638,6 +649,35 @@ TEST_F(Tester, testScanDetection)
   publishScan(1.5, curr_time);
 
   ASSERT_TRUE(waitData(1.5, 300ms, curr_time));
+  ASSERT_TRUE(waitState(300ms));
+  ASSERT_NE(state_msg_->detections.size(), 0u);
+  ASSERT_EQ(state_msg_->detections[0], true);
+
+  // Stop Collision Detector node
+  cd_->stop();
+}
+
+TEST_F(Tester, testPointcloudDetection)
+{
+  rclcpp::Time curr_time = cd_->now();
+
+  // Set Collision Detector parameters.
+  setCommonParameters();
+  // Create polygon
+  addPolygon("DetectionRegion", CIRCLE, 3.0, "none");
+  addSource(POINTCLOUD_NAME, POINTCLOUD);
+  setVectors({"DetectionRegion"}, {POINTCLOUD_NAME});
+
+  // Start Collision Detector node
+  cd_->start();
+
+  // Share TF
+  sendTransforms(curr_time);
+
+  // Obstacle is in DetectionRegion
+  publishPointCloud(2.5, curr_time);
+
+  ASSERT_TRUE(waitData(std::hypot(2.5, 0.01), 500ms, curr_time));
   ASSERT_TRUE(waitState(300ms));
   ASSERT_NE(state_msg_->detections.size(), 0u);
   ASSERT_EQ(state_msg_->detections[0], true);

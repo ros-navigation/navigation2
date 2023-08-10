@@ -212,11 +212,12 @@ bool CollisionDetector::configurePolygons(
       // warn if the added polygon's action_type_ is not different than "none"
       auto action_type = polygons_.back()->getActionType();
       if (action_type != DO_NOTHING) {
-        RCLCPP_WARN(
+        RCLCPP_ERROR(
           get_logger(),
           "[%s]: The action_type of the polygon is different than \"none\" which is "
-          "not supported in the collision detector; it will be considered as \"none\".",
+          "not supported in the collision detector.",
           polygon_name.c_str());
+        return false;
       }
 
       // Configure last added polygon
