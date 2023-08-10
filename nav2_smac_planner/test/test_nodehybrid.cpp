@@ -231,7 +231,7 @@ TEST(NodeHybridTest, test_node_debin_neighbors)
     nav2_smac_planner::MotionModel::DUBIN, size_x, size_y, size_theta, info);
 
   // test neighborhood computation
-  EXPECT_EQ(nav2_smac_planner::NodeHybrid::motion_table.projections.size(), 3u);
+  EXPECT_EQ(nav2_smac_planner::NodeHybrid::motion_table.projections.size(), 11u);
   EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[0]._x, 1.731517, 0.01);
   EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[0]._y, 0, 0.01);
   EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[0]._theta, 0, 0.01);

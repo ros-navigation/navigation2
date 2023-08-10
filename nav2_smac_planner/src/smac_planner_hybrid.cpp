@@ -102,7 +102,8 @@ void SmacPlannerHybrid::configure(
   node->get_parameter(name + ".minimum_turning_radius", _minimum_turning_radius_global_coords);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".allow_primitive_interpolation", rclcpp::ParameterValue(false));
-  node->get_parameter(name + ".allow_primitive_interpolation", _search_info.allow_primitive_interpolation);
+  node->get_parameter(
+    name + ".allow_primitive_interpolation", _search_info.allow_primitive_interpolation);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".cache_obstacle_heuristic", rclcpp::ParameterValue(false));
   node->get_parameter(name + ".cache_obstacle_heuristic", _search_info.cache_obstacle_heuristic);

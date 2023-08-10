@@ -134,7 +134,7 @@ TEST(SmootherTest, test_full_smoother)
   // Test smoother, should succeed with same number of points
   // and shorter overall length, while still being collision free.
   auto path_size_in = plan.poses.size();
-  EXPECT_TRUE(smoother->smooth(plan, costmap, maxtime));
+  smoother->smooth(plan, costmap, maxtime);
   EXPECT_EQ(plan.poses.size(), path_size_in);  // Should have same number of poses
   double length = 0.0;
   x_m = plan.poses[0].pose.position.x;

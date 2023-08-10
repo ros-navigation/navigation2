@@ -245,8 +245,8 @@ protected:
    * @param node Node expanded
    * @param expansions_log Log to add not expanded to
    */
-  inline void populateExpansionsLog(const NodePtr & node,
-  std::vector<std::tuple<float, float, float>> * expansions_log);
+  inline void populateExpansionsLog(
+    const NodePtr & node, std::vector<std::tuple<float, float, float>> * expansions_log);
 
   int _timing_interval = 5000;
 
