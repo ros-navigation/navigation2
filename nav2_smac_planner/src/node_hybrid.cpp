@@ -50,12 +50,6 @@ ObstacleHeuristicQueue NodeHybrid::obstacle_heuristic_queue;
 // cell. Though this could be later modified to project a certain
 // amount of time or particular distance forward.
 
-// TODO i
-  // Document: new change, reduce resolution, 72 no longer needed. new param guide + migration
-  // Visualize to validate correct
-  // test preformance
-
-
 // http://planning.cs.uiuc.edu/node821.html
 // Model for ackermann style vehicle with minimum radius restriction
 void HybridMotionTable::initDubin(

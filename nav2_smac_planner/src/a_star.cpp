@@ -152,6 +152,26 @@ void AStarAlgorithm<NodeT>::setStart(
 }
 
 template<>
+void AStarAlgorithm<NodeHybrid>::populateExpansionsLog(
+  const NodePtr & node,
+  std::vector<std::tuple<float, float, float>> * expansions_log)
+{
+  NodeHybrid::Coordinates coords = node->pose;
+  expansions_log->emplace_back(
+    _costmap->getOriginX() + ((coords.x + 0.5) * _costmap->getResolution()),
+    _costmap->getOriginY() + ((coords.y + 0.5) * _costmap->getResolution()),
+    coords.theta);
+}
+
+template<typename NodeT>
+void AStarAlgorithm<NodeT>::populateExpansionsLog(
+  const NodePtr & node,
+  std::vector<std::tuple<float, float, float>> * expansions_log)
+{
+  return;
+}
+
+template<>
 void AStarAlgorithm<Node2D>::setGoal(
   const unsigned int & mx,
   const unsigned int & my,
@@ -222,7 +242,7 @@ template<typename NodeT>
 bool AStarAlgorithm<NodeT>::createPath(
   CoordinateVector & path, int & iterations,
   const float & tolerance,
-  std::vector<std::tuple<float, float>> * expansions_log)
+  std::vector<std::tuple<float, float, float>> * expansions_log)
 {
   steady_clock::time_point start_time = steady_clock::now();
   _tolerance = tolerance;
@@ -276,13 +296,7 @@ bool AStarAlgorithm<NodeT>::createPath(
 
     // Save current node coordinates for debug
     if (expansions_log) {
-      Coordinates coords = current_node->getCoords(
-        current_node->getIndex(), getSizeX(), getSizeDim3());
-      expansions_log->push_back(
-        std::make_tuple<float, float>(
-          _costmap->getOriginX() + (coords.x * _costmap->getResolution()),
-          _costmap->getOriginY() + (coords.y * _costmap->getResolution()))
-      );
+      populateExpansionsLog(current_node, expansions_log);
     }
 
     // We allow for nodes to be queued multiple times in case

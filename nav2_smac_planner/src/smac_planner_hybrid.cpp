@@ -361,15 +361,29 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   NodeHybrid::CoordinateVector path;
   int num_iterations = 0;
   std::string error;
-  std::unique_ptr<std::vector<std::tuple<float, float>>> expansions = nullptr;
+  std::unique_ptr<std::vector<std::tuple<float, float, float>>> expansions = nullptr;
   if (_debug_visualizations) {
-    expansions = std::make_unique<std::vector<std::tuple<float, float>>>();
+    expansions = std::make_unique<std::vector<std::tuple<float, float, float>>>();
   }
   // Note: All exceptions thrown are handled by the planner server and returned to the action
   if (!_a_star->createPath(
       path, num_iterations,
       _tolerance / static_cast<float>(costmap->getResolution()), expansions.get()))
   {
+    if (_debug_visualizations) {
+      geometry_msgs::msg::PoseArray msg;
+      geometry_msgs::msg::Pose msg_pose;
+      msg.header.stamp = _clock->now();
+      msg.header.frame_id = _global_frame;
+      for (auto & e : *expansions) {
+        msg_pose.position.x = std::get<0>(e);
+        msg_pose.position.y = std::get<1>(e);
+        msg_pose.orientation = getWorldOrientation(
+          NodeHybrid::motion_table.getAngleFromBin(std::get<2>(e)));
+        msg.poses.push_back(msg_pose);
+      }
+      _expansions_publisher->publish(msg);
+    }
     if (num_iterations < _a_star->getMaxIterations()) {
       throw nav2_core::NoValidPathCouldBeFound("no valid path found");
     } else {
@@ -399,6 +413,8 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
     for (auto & e : *expansions) {
       msg_pose.position.x = std::get<0>(e);
       msg_pose.position.y = std::get<1>(e);
+      msg_pose.orientation = getWorldOrientation(
+        NodeHybrid::motion_table.getAngleFromBin(std::get<2>(e)));
       msg.poses.push_back(msg_pose);
     }
     _expansions_publisher->publish(msg);
