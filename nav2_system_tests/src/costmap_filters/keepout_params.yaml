@@ -127,6 +127,7 @@ controller_server:
       plugin: "dwb_core::DWBLocalPlanner"
       debug_trajectory_details: True
       prune_distance: 1.0
+      forward_prune_distance: 1.0
       min_vel_x: 0.0
       min_vel_y: 0.0
       max_vel_x: 0.26
