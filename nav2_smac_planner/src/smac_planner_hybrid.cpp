@@ -155,17 +155,23 @@ void SmacPlannerHybrid::configure(
   }
 
   if (_max_on_approach_iterations <= 0) {
-    RCLCPP_INFO(
+    RCLCPP_WARN(
       _logger, "On approach iteration selected as <= 0, "
       "disabling tolerance and on approach iterations.");
     _max_on_approach_iterations = std::numeric_limits<int>::max();
   }
 
   if (_max_iterations <= 0) {
-    RCLCPP_INFO(
+    RCLCPP_WARN(
       _logger, "maximum iteration selected as <= 0, "
       "disabling maximum iterations.");
     _max_iterations = std::numeric_limits<int>::max();
+  }
+
+  if (_minimum_turning_radius_global_coords < _costmap->getResolution() * _downsampling_factor) {
+    RCLCPP_WARN(
+      _logger, "Min turning radius cannot be less than the search grid cell resolution!");
+    _minimum_turning_radius_global_coords = _costmap->getResolution() * _downsampling_factor;
   }
 
   // convert to grid coordinates
