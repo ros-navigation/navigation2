@@ -195,6 +195,10 @@ void WaypointFollower::followWaypointsHandler(
 {
   auto goal = action_server->get_current_goal();
 
+  // handling loops
+  unsigned int current_loop_no = 0;
+  auto no_of_loops = goal->number_of_loops;
+
   std::vector<geometry_msgs::msg::PoseStamped> poses;
   poses = getLatestGoalPoses<T>(action_server);
 
@@ -344,7 +348,7 @@ void WaypointFollower::followWaypointsHandler(
           RCLCPP_INFO(
             get_logger(), "Completed all %zu waypoints requested.",
             poses.size());
-          action_server_->succeeded_current(result);
+          action_server->succeeded_current(result);
           current_goal_status_.error_code = 0;
           return;
         }
