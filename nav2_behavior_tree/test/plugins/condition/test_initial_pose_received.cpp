@@ -18,7 +18,7 @@
 #include <set>
 #include <string>
 
-#include "../../test_behavior_tree_fixture.hpp"
+#include "utils/test_behavior_tree_fixture.hpp"
 #include "nav2_behavior_tree/plugins/condition/initial_pose_received_condition.hpp"
 
 class TestNode : public BT::SyncActionNode

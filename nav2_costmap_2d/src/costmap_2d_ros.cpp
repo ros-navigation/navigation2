@@ -173,12 +173,18 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
     RCLCPP_INFO(get_logger(), "Using plugin \"%s\"", plugin_names_[i].c_str());
 
     std::shared_ptr<Layer> plugin = plugin_loader_.createSharedInstance(plugin_types_[i]);
+
+    // lock the costmap because no update is allowed until the plugin is initialized
+    std::unique_lock<Costmap2D::mutex_t> lock(*(layered_costmap_->getCostmap()->getMutex()));
+
     layered_costmap_->addPlugin(plugin);
 
     // TODO(mjeronimo): instead of get(), use a shared ptr
     plugin->initialize(
       layered_costmap_.get(), plugin_names_[i], tf_buffer_.get(),
       shared_from_this(), callback_group_);
+
+    lock.unlock();
 
     RCLCPP_INFO(get_logger(), "Initialized plugin \"%s\"", plugin_names_[i].c_str());
   }
@@ -187,11 +193,17 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
     RCLCPP_INFO(get_logger(), "Using costmap filter \"%s\"", filter_names_[i].c_str());
 
     std::shared_ptr<Layer> filter = plugin_loader_.createSharedInstance(filter_types_[i]);
+
+    // lock the costmap because no update is allowed until the filter is initialized
+    std::unique_lock<Costmap2D::mutex_t> lock(*(layered_costmap_->getCostmap()->getMutex()));
+
     layered_costmap_->addFilter(filter);
 
     filter->initialize(
       layered_costmap_.get(), filter_names_[i], tf_buffer_.get(),
       shared_from_this(), callback_group_);
+
+    lock.unlock();
 
     RCLCPP_INFO(get_logger(), "Initialized costmap filter \"%s\"", filter_names_[i].c_str());
   }
@@ -299,18 +311,21 @@ Costmap2DROS::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 
   dyn_params_handler.reset();
 
+  stop();
+
+  // Map thread stuff
+  map_update_thread_shutdown_ = true;
+
+  if (map_update_thread_->joinable()) {
+    map_update_thread_->join();
+  }
+
   footprint_pub_->on_deactivate();
   costmap_publisher_->on_deactivate();
 
   for (auto & layer_pub : layer_publishers_) {
     layer_pub->on_deactivate();
   }
-
-  stop();
-
-  // Map thread stuff
-  map_update_thread_shutdown_ = true;
-  map_update_thread_->join();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -323,9 +338,7 @@ Costmap2DROS::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   costmap_publisher_.reset();
   clear_costmap_service_.reset();
 
-  for (auto & layer_pub : layer_publishers_) {
-    layer_pub.reset();
-  }
+  layer_publishers_.clear();
 
   layered_costmap_.reset();
 
@@ -575,18 +588,23 @@ void
 Costmap2DROS::stop()
 {
   stop_updates_ = true;
-  std::vector<std::shared_ptr<Layer>> * plugins = layered_costmap_->getPlugins();
-  std::vector<std::shared_ptr<Layer>> * filters = layered_costmap_->getFilters();
-  // unsubscribe from topics
-  for (std::vector<std::shared_ptr<Layer>>::iterator plugin = plugins->begin();
-    plugin != plugins->end(); ++plugin)
-  {
-    (*plugin)->deactivate();
-  }
-  for (std::vector<std::shared_ptr<Layer>>::iterator filter = filters->begin();
-    filter != filters->end(); ++filter)
-  {
-    (*filter)->deactivate();
+
+  // layered_costmap_ is set only if on_configure has been called
+  if (layered_costmap_) {
+    std::vector<std::shared_ptr<Layer>> * plugins = layered_costmap_->getPlugins();
+    std::vector<std::shared_ptr<Layer>> * filters = layered_costmap_->getFilters();
+
+    // unsubscribe from topics
+    for (std::vector<std::shared_ptr<Layer>>::iterator plugin = plugins->begin();
+      plugin != plugins->end(); ++plugin)
+    {
+      (*plugin)->deactivate();
+    }
+    for (std::vector<std::shared_ptr<Layer>>::iterator filter = filters->begin();
+      filter != filters->end(); ++filter)
+    {
+      (*filter)->deactivate();
+    }
   }
   initialized_ = false;
   stopped_ = true;

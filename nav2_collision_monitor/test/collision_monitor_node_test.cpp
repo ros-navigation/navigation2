@@ -25,6 +25,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/lifecycle_node.hpp"
+#include "nav2_msgs/msg/collision_monitor_state.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "sensor_msgs/msg/range.hpp"
@@ -46,12 +47,15 @@ static const char SOURCE_FRAME_ID[]{"base_source"};
 static const char ODOM_FRAME_ID[]{"odom"};
 static const char CMD_VEL_IN_TOPIC[]{"cmd_vel_in"};
 static const char CMD_VEL_OUT_TOPIC[]{"cmd_vel_out"};
+static const char STATE_TOPIC[]{"collision_monitor_state"};
 static const char FOOTPRINT_TOPIC[]{"footprint"};
 static const char SCAN_NAME[]{"Scan"};
 static const char POINTCLOUD_NAME[]{"PointCloud"};
 static const char RANGE_NAME[]{"Range"};
-static const int MAX_POINTS{1};
+static const int MIN_POINTS{2};
 static const double SLOWDOWN_RATIO{0.7};
+static const double LINEAR_LIMIT{0.4};
+static const double ANGULAR_LIMIT{0.09};
 static const double TIME_BEFORE_COLLISION{1.0};
 static const double SIMULATION_TIME_STEP{0.01};
 static const double TRANSFORM_TOLERANCE{0.5};
@@ -71,6 +75,15 @@ enum SourceType
   SCAN = 1,
   POINTCLOUD = 2,
   RANGE = 3
+};
+
+enum ActionType
+{
+  DO_NOTHING = 0,
+  STOP = 1,
+  SLOWDOWN = 2,
+  APPROACH = 3,
+  LIMIT = 4,
 };
 
 class CollisionMonitorWrapper : public nav2_collision_monitor::CollisionMonitor
@@ -147,9 +160,11 @@ public:
     const std::chrono::nanoseconds & timeout,
     const rclcpp::Time & stamp);
   bool waitCmdVel(const std::chrono::nanoseconds & timeout);
+  bool waitActionState(const std::chrono::nanoseconds & timeout);
 
 protected:
   void cmdVelOutCallback(geometry_msgs::msg::Twist::SharedPtr msg);
+  void actionStateCallback(nav2_msgs::msg::CollisionMonitorState::SharedPtr msg);
 
   // CollisionMonitor node
   std::shared_ptr<CollisionMonitorWrapper> cm_;
@@ -167,6 +182,11 @@ protected:
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_out_sub_;
 
   geometry_msgs::msg::Twist::SharedPtr cmd_vel_out_;
+
+  // CollisionMonitor Action state
+  rclcpp::Subscription<nav2_msgs::msg::CollisionMonitorState>::SharedPtr action_state_sub_;
+  nav2_msgs::msg::CollisionMonitorState::SharedPtr action_state_;
+
 };  // Tester
 
 Tester::Tester()
@@ -188,6 +208,10 @@ Tester::Tester()
   cmd_vel_out_sub_ = cm_->create_subscription<geometry_msgs::msg::Twist>(
     CMD_VEL_OUT_TOPIC, rclcpp::SystemDefaultsQoS(),
     std::bind(&Tester::cmdVelOutCallback, this, std::placeholders::_1));
+
+  action_state_sub_ = cm_->create_subscription<nav2_msgs::msg::CollisionMonitorState>(
+    STATE_TOPIC, rclcpp::SystemDefaultsQoS(),
+    std::bind(&Tester::actionStateCallback, this, std::placeholders::_1));
 }
 
 Tester::~Tester()
@@ -200,6 +224,8 @@ Tester::~Tester()
 
   cmd_vel_in_pub_.reset();
   cmd_vel_out_sub_.reset();
+
+  action_state_sub_.reset();
 
   cm_.reset();
 }
@@ -214,6 +240,10 @@ void Tester::setCommonParameters()
     "cmd_vel_out_topic", rclcpp::ParameterValue(CMD_VEL_OUT_TOPIC));
   cm_->set_parameter(
     rclcpp::Parameter("cmd_vel_out_topic", CMD_VEL_OUT_TOPIC));
+  cm_->declare_parameter(
+    "state_topic", rclcpp::ParameterValue(STATE_TOPIC));
+  cm_->set_parameter(
+    rclcpp::Parameter("state_topic", STATE_TOPIC));
 
   cm_->declare_parameter(
     "base_frame_id", rclcpp::ParameterValue(BASE_FRAME_ID));
@@ -285,14 +315,24 @@ void Tester::addPolygon(
     rclcpp::Parameter(polygon_name + ".action_type", at));
 
   cm_->declare_parameter(
-    polygon_name + ".max_points", rclcpp::ParameterValue(MAX_POINTS));
+    polygon_name + ".min_points", rclcpp::ParameterValue(MIN_POINTS));
   cm_->set_parameter(
-    rclcpp::Parameter(polygon_name + ".max_points", MAX_POINTS));
+    rclcpp::Parameter(polygon_name + ".min_points", MIN_POINTS));
 
   cm_->declare_parameter(
     polygon_name + ".slowdown_ratio", rclcpp::ParameterValue(SLOWDOWN_RATIO));
   cm_->set_parameter(
     rclcpp::Parameter(polygon_name + ".slowdown_ratio", SLOWDOWN_RATIO));
+
+  cm_->declare_parameter(
+    polygon_name + ".linear_limit", rclcpp::ParameterValue(LINEAR_LIMIT));
+  cm_->set_parameter(
+    rclcpp::Parameter(polygon_name + ".linear_limit", LINEAR_LIMIT));
+
+  cm_->declare_parameter(
+    polygon_name + ".angular_limit", rclcpp::ParameterValue(ANGULAR_LIMIT));
+  cm_->set_parameter(
+    rclcpp::Parameter(polygon_name + ".angular_limit", ANGULAR_LIMIT));
 
   cm_->declare_parameter(
     polygon_name + ".time_before_collision", rclcpp::ParameterValue(TIME_BEFORE_COLLISION));
@@ -499,6 +539,7 @@ void Tester::publishCmdVel(const double x, const double y, const double tw)
 {
   // Reset cmd_vel_out_ before calling CollisionMonitor::process()
   cmd_vel_out_ = nullptr;
+  action_state_ = nullptr;
 
   std::unique_ptr<geometry_msgs::msg::Twist> msg =
     std::make_unique<geometry_msgs::msg::Twist>();
@@ -539,22 +580,41 @@ bool Tester::waitCmdVel(const std::chrono::nanoseconds & timeout)
   return false;
 }
 
+bool Tester::waitActionState(const std::chrono::nanoseconds & timeout)
+{
+  rclcpp::Time start_time = cm_->now();
+  while (rclcpp::ok() && cm_->now() - start_time <= rclcpp::Duration(timeout)) {
+    if (action_state_) {
+      return true;
+    }
+    rclcpp::spin_some(cm_->get_node_base_interface());
+    std::this_thread::sleep_for(10ms);
+  }
+  return false;
+}
+
 void Tester::cmdVelOutCallback(geometry_msgs::msg::Twist::SharedPtr msg)
 {
   cmd_vel_out_ = msg;
 }
 
-TEST_F(Tester, testProcessStopSlowdown)
+void Tester::actionStateCallback(nav2_msgs::msg::CollisionMonitorState::SharedPtr msg)
+{
+  action_state_ = msg;
+}
+
+TEST_F(Tester, testProcessStopSlowdownLimit)
 {
   rclcpp::Time curr_time = cm_->now();
 
   // Set Collision Monitor parameters.
   // Making two polygons: outer polygon for slowdown and inner for robot stop.
   setCommonParameters();
+  addPolygon("Limit", POLYGON, 3.0, "limit");
   addPolygon("SlowDown", POLYGON, 2.0, "slowdown");
   addPolygon("Stop", POLYGON, 1.0, "stop");
   addSource(SCAN_NAME, SCAN);
-  setVectors({"SlowDown", "Stop"}, {SCAN_NAME});
+  setVectors({"Limit", "SlowDown", "Stop"}, {SCAN_NAME});
 
   // Start Collision Monitor node
   cm_->start();
@@ -563,15 +623,29 @@ TEST_F(Tester, testProcessStopSlowdown)
   sendTransforms(curr_time);
 
   // 1. Obstacle is far away from robot
-  publishScan(3.0, curr_time);
-  ASSERT_TRUE(waitData(3.0, 500ms, curr_time));
+  publishScan(4.5, curr_time);
+  ASSERT_TRUE(waitData(4.5, 500ms, curr_time));
   publishCmdVel(0.5, 0.2, 0.1);
   ASSERT_TRUE(waitCmdVel(500ms));
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.2, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.1, EPSILON);
 
-  // 2. Obstacle is in slowdown robot zone
+  // 2. Obstacle is in limit robot zone
+  publishScan(3.0, curr_time);
+  ASSERT_TRUE(waitData(3.0, 500ms, curr_time));
+  publishCmdVel(0.5, 0.2, 0.1);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  const double speed = std::sqrt(0.5 * 0.5 + 0.2 * 0.2);
+  const double ratio = LINEAR_LIMIT / speed;
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5 * ratio, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->linear.y, 0.2 * ratio, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->angular.z, 0.09, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, LIMIT);
+  ASSERT_EQ(action_state_->polygon_name, "Limit");
+
+  // 3. Obstacle is in slowdown robot zone
   publishScan(1.5, curr_time);
   ASSERT_TRUE(waitData(1.5, 500ms, curr_time));
   publishCmdVel(0.5, 0.2, 0.1);
@@ -579,8 +653,11 @@ TEST_F(Tester, testProcessStopSlowdown)
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5 * SLOWDOWN_RATIO, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.2 * SLOWDOWN_RATIO, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.1 * SLOWDOWN_RATIO, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, SLOWDOWN);
+  ASSERT_EQ(action_state_->polygon_name, "SlowDown");
 
-  // 3. Obstacle is inside stop zone
+  // 4. Obstacle is inside stop zone
   publishScan(0.5, curr_time);
   ASSERT_TRUE(waitData(0.5, 500ms, curr_time));
   publishCmdVel(0.5, 0.2, 0.1);
@@ -588,15 +665,21 @@ TEST_F(Tester, testProcessStopSlowdown)
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.0, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, STOP);
+  ASSERT_EQ(action_state_->polygon_name, "Stop");
 
-  // 4. Restoring back normal operation
-  publishScan(3.0, curr_time);
-  ASSERT_TRUE(waitData(3.0, 500ms, curr_time));
+  // 5. Restoring back normal operation
+  publishScan(4.5, curr_time);
+  ASSERT_TRUE(waitData(4.5, 500ms, curr_time));
   publishCmdVel(0.5, 0.2, 0.1);
   ASSERT_TRUE(waitCmdVel(500ms));
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.2, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.1, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, DO_NOTHING);
+  ASSERT_EQ(action_state_->polygon_name, "");
 
   // Stop Collision Monitor node
   cm_->stop();
@@ -641,6 +724,9 @@ TEST_F(Tester, testProcessApproach)
   ASSERT_NEAR(
     cmd_vel_out_->linear.y, 0.2 * change_ratio, 0.2 * SIMULATION_TIME_STEP / TIME_BEFORE_COLLISION);
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, APPROACH);
+  ASSERT_EQ(action_state_->polygon_name, "Approach");
 
   // 3. Obstacle is inside robot footprint
   publishScan(0.5, curr_time);
@@ -659,6 +745,9 @@ TEST_F(Tester, testProcessApproach)
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.2, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, DO_NOTHING);
+  ASSERT_EQ(action_state_->polygon_name, "");
 
   // Stop Collision Monitor node
   cm_->stop();
@@ -706,6 +795,9 @@ TEST_F(Tester, testProcessApproachRotation)
     cmd_vel_out_->angular.z,
     M_PI / 5,
     (M_PI / 4) * (SIMULATION_TIME_STEP / TIME_BEFORE_COLLISION));
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, APPROACH);
+  ASSERT_EQ(action_state_->polygon_name, "Approach");
 
   // 3. Obstacle is inside robot footprint
   publishRange(0.5, curr_time);
@@ -724,6 +816,9 @@ TEST_F(Tester, testProcessApproachRotation)
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.0, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->angular.z, M_PI / 4, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, DO_NOTHING);
+  ASSERT_EQ(action_state_->polygon_name, "");
 
   // Stop Collision Monitor node
   cm_->stop();
@@ -761,6 +856,9 @@ TEST_F(Tester, testCrossOver)
     cmd_vel_out_->linear.x, 3.0 * change_ratio, 3.0 * SIMULATION_TIME_STEP / TIME_BEFORE_COLLISION);
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, APPROACH);
+  ASSERT_EQ(action_state_->polygon_name, "Approach");
 
   // 2. Obstacle is inside slowdown zone, but speed is too slow for approach
   publishRange(1.5, curr_time);
@@ -770,6 +868,9 @@ TEST_F(Tester, testCrossOver)
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.1 * SLOWDOWN_RATIO, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, SLOWDOWN);
+  ASSERT_EQ(action_state_->polygon_name, "SlowDown");
 
   // 3. Increase robot speed to return again into approach mode.
   // The speed should be safer for approach mode, so robot will go to the approach (ahead in 0.5 m)
@@ -782,6 +883,9 @@ TEST_F(Tester, testCrossOver)
     cmd_vel_out_->linear.x, 1.0 * change_ratio, 1.0 * SIMULATION_TIME_STEP / TIME_BEFORE_COLLISION);
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, APPROACH);
+  ASSERT_EQ(action_state_->polygon_name, "Approach");
 
   // Stop Collision Monitor node
   cm_->stop();
@@ -812,6 +916,9 @@ TEST_F(Tester, testCeasePublishZeroVel)
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.0, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, APPROACH);
+  ASSERT_EQ(action_state_->polygon_name, "Approach");
 
   // Wait more than STOP_PUB_TIMEOUT time
   std::this_thread::sleep_for(std::chrono::duration<double>(STOP_PUB_TIMEOUT + 0.01));
@@ -828,6 +935,9 @@ TEST_F(Tester, testCeasePublishZeroVel)
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.2, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.1, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, DO_NOTHING);
+  ASSERT_EQ(action_state_->polygon_name, "");
 
   // 4. Obstacle is inside stop zone
   publishScan(0.5, curr_time);
@@ -837,6 +947,9 @@ TEST_F(Tester, testCeasePublishZeroVel)
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.0, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, STOP);
+  ASSERT_EQ(action_state_->polygon_name, "Stop");
 
   // Wait more than STOP_PUB_TIMEOUT time
   std::this_thread::sleep_for(std::chrono::duration<double>(STOP_PUB_TIMEOUT + 0.01));

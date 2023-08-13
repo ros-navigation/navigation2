@@ -21,7 +21,7 @@
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
-#include "../../test_behavior_tree_fixture.hpp"
+#include "utils/test_behavior_tree_fixture.hpp"
 #include "nav2_behavior_tree/plugins/condition/goal_reached_condition.hpp"
 
 using namespace std::chrono;  // NOLINT
@@ -45,7 +45,7 @@ public:
       R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-            <GoalReached goal="{goal}" />
+            <GoalReached goal="{goal}" global_frame="map" robot_base_frame="base_link"/>
         </BehaviorTree>
       </root>)";
 

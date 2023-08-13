@@ -25,6 +25,7 @@
 #include <utility>
 
 #include "builtin_interfaces/msg/duration.hpp"
+#include "lifecycle_msgs/msg/state.hpp"
 #include "nav2_util/costmap.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
@@ -63,12 +64,14 @@ PlannerServer::PlannerServer(const rclcpp::NodeOptions & options)
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "global_costmap", std::string{get_namespace()}, "global_costmap",
     get_parameter("use_sim_time").as_bool());
-  // Launch a thread to run the costmap node
-  costmap_thread_ = std::make_unique<nav2_util::NodeThread>(costmap_ros_);
 }
 
 PlannerServer::~PlannerServer()
 {
+  /*
+   * Backstop ensuring this state is destroyed, even if deactivate/cleanup are
+   * never called.
+   */
   planners_.clear();
   costmap_thread_.reset();
 }
@@ -80,6 +83,9 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   costmap_ros_->configure();
   costmap_ = costmap_ros_->getCostmap();
+
+  // Launch a thread to run the costmap node
+  costmap_thread_ = std::make_unique<nav2_util::NodeThread>(costmap_ros_);
 
   RCLCPP_DEBUG(
     get_logger(), "Costmap size: %d,%d",
@@ -194,7 +200,19 @@ PlannerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   action_server_pose_->deactivate();
   action_server_poses_->deactivate();
   plan_publisher_->on_deactivate();
-  costmap_ros_->deactivate();
+
+  /*
+   * The costmap is also a lifecycle node, so it may have already fired on_deactivate
+   * via rcl preshutdown cb. Despite the rclcpp docs saying on_shutdown callbacks fire
+   * in the order added, the preshutdown callbacks clearly don't per se, due to using an
+   * unordered_set iteration. Once this issue is resolved, we can maybe make a stronger
+   * ordering assumption: https://github.com/ros2/rclcpp/issues/2096
+   */
+  if (costmap_ros_->get_current_state().id() ==
+    lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+  {
+    costmap_ros_->deactivate();
+  }
 
   PlannerMap::iterator it;
   for (it = planners_.begin(); it != planners_.end(); ++it) {
@@ -218,13 +236,24 @@ PlannerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   action_server_poses_.reset();
   plan_publisher_.reset();
   tf_.reset();
-  costmap_ros_->cleanup();
+
+  /*
+   * Double check whether something else transitioned it to INACTIVE
+   * already, e.g. the rcl preshutdown callback.
+   */
+  if (costmap_ros_->get_current_state().id() ==
+    lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
+  {
+    costmap_ros_->cleanup();
+  }
 
   PlannerMap::iterator it;
   for (it = planners_.begin(); it != planners_.end(); ++it) {
     it->second->cleanup();
   }
+
   planners_.clear();
+  costmap_thread_.reset();
   costmap_ = nullptr;
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -407,43 +436,43 @@ void PlannerServer::computePlanThroughPoses()
     action_server_poses_->succeeded_current(result);
   } catch (nav2_core::InvalidPlanner & ex) {
     exceptionWarning(curr_start, curr_goal, goal->planner_id, ex);
-    result->error_code = ActionToPoseGoal::INVALID_PLANNER;
+    result->error_code = ActionThroughPosesResult::INVALID_PLANNER;
     action_server_poses_->terminate_current(result);
   } catch (nav2_core::StartOccupied & ex) {
     exceptionWarning(curr_start, curr_goal, goal->planner_id, ex);
-    result->error_code = ActionThroughPosesGoal::START_OCCUPIED;
+    result->error_code = ActionThroughPosesResult::START_OCCUPIED;
     action_server_poses_->terminate_current(result);
   } catch (nav2_core::GoalOccupied & ex) {
     exceptionWarning(curr_start, curr_goal, goal->planner_id, ex);
-    result->error_code = ActionThroughPosesGoal::GOAL_OCCUPIED;
+    result->error_code = ActionThroughPosesResult::GOAL_OCCUPIED;
     action_server_poses_->terminate_current(result);
   } catch (nav2_core::NoValidPathCouldBeFound & ex) {
     exceptionWarning(curr_start, curr_goal, goal->planner_id, ex);
-    result->error_code = ActionThroughPosesGoal::NO_VALID_PATH;
+    result->error_code = ActionThroughPosesResult::NO_VALID_PATH;
     action_server_poses_->terminate_current(result);
   } catch (nav2_core::PlannerTimedOut & ex) {
     exceptionWarning(curr_start, curr_goal, goal->planner_id, ex);
-    result->error_code = ActionThroughPosesGoal::TIMEOUT;
+    result->error_code = ActionThroughPosesResult::TIMEOUT;
     action_server_poses_->terminate_current(result);
   } catch (nav2_core::StartOutsideMapBounds & ex) {
     exceptionWarning(curr_start, curr_goal, goal->planner_id, ex);
-    result->error_code = ActionThroughPosesGoal::START_OUTSIDE_MAP;
+    result->error_code = ActionThroughPosesResult::START_OUTSIDE_MAP;
     action_server_poses_->terminate_current(result);
   } catch (nav2_core::GoalOutsideMapBounds & ex) {
     exceptionWarning(curr_start, curr_goal, goal->planner_id, ex);
-    result->error_code = ActionThroughPosesGoal::GOAL_OUTSIDE_MAP;
+    result->error_code = ActionThroughPosesResult::GOAL_OUTSIDE_MAP;
     action_server_poses_->terminate_current(result);
   } catch (nav2_core::PlannerTFError & ex) {
     exceptionWarning(curr_start, curr_goal, goal->planner_id, ex);
-    result->error_code = ActionThroughPosesGoal::TF_ERROR;
+    result->error_code = ActionThroughPosesResult::TF_ERROR;
     action_server_poses_->terminate_current(result);
   } catch (nav2_core::NoViapointsGiven & ex) {
     exceptionWarning(curr_start, curr_goal, goal->planner_id, ex);
-    result->error_code = ActionThroughPosesGoal::NO_VIAPOINTS_GIVEN;
+    result->error_code = ActionThroughPosesResult::NO_VIAPOINTS_GIVEN;
     action_server_poses_->terminate_current(result);
   } catch (std::exception & ex) {
     exceptionWarning(curr_start, curr_goal, goal->planner_id, ex);
-    result->error_code = ActionThroughPosesGoal::UNKNOWN;
+    result->error_code = ActionThroughPosesResult::UNKNOWN;
     action_server_poses_->terminate_current(result);
   }
 }
@@ -502,39 +531,39 @@ PlannerServer::computePlan()
     action_server_pose_->succeeded_current(result);
   } catch (nav2_core::InvalidPlanner & ex) {
     exceptionWarning(start, goal->goal, goal->planner_id, ex);
-    result->error_code = ActionToPoseGoal::INVALID_PLANNER;
+    result->error_code = ActionToPoseResult::INVALID_PLANNER;
     action_server_pose_->terminate_current(result);
   } catch (nav2_core::StartOccupied & ex) {
     exceptionWarning(start, goal->goal, goal->planner_id, ex);
-    result->error_code = ActionToPoseGoal::START_OCCUPIED;
+    result->error_code = ActionToPoseResult::START_OCCUPIED;
     action_server_pose_->terminate_current(result);
   } catch (nav2_core::GoalOccupied & ex) {
     exceptionWarning(start, goal->goal, goal->planner_id, ex);
-    result->error_code = ActionToPoseGoal::GOAL_OCCUPIED;
+    result->error_code = ActionToPoseResult::GOAL_OCCUPIED;
     action_server_pose_->terminate_current(result);
   } catch (nav2_core::NoValidPathCouldBeFound & ex) {
     exceptionWarning(start, goal->goal, goal->planner_id, ex);
-    result->error_code = ActionToPoseGoal::NO_VALID_PATH;
+    result->error_code = ActionToPoseResult::NO_VALID_PATH;
     action_server_pose_->terminate_current(result);
   } catch (nav2_core::PlannerTimedOut & ex) {
     exceptionWarning(start, goal->goal, goal->planner_id, ex);
-    result->error_code = ActionToPoseGoal::TIMEOUT;
+    result->error_code = ActionToPoseResult::TIMEOUT;
     action_server_pose_->terminate_current(result);
   } catch (nav2_core::StartOutsideMapBounds & ex) {
     exceptionWarning(start, goal->goal, goal->planner_id, ex);
-    result->error_code = ActionToPoseGoal::START_OUTSIDE_MAP;
+    result->error_code = ActionToPoseResult::START_OUTSIDE_MAP;
     action_server_pose_->terminate_current(result);
   } catch (nav2_core::GoalOutsideMapBounds & ex) {
     exceptionWarning(start, goal->goal, goal->planner_id, ex);
-    result->error_code = ActionToPoseGoal::GOAL_OUTSIDE_MAP;
+    result->error_code = ActionToPoseResult::GOAL_OUTSIDE_MAP;
     action_server_pose_->terminate_current(result);
   } catch (nav2_core::PlannerTFError & ex) {
     exceptionWarning(start, goal->goal, goal->planner_id, ex);
-    result->error_code = ActionToPoseGoal::TF_ERROR;
+    result->error_code = ActionToPoseResult::TF_ERROR;
     action_server_pose_->terminate_current(result);
   } catch (std::exception & ex) {
     exceptionWarning(start, goal->goal, goal->planner_id, ex);
-    result->error_code = ActionToPoseGoal::UNKNOWN;
+    result->error_code = ActionToPoseResult::UNKNOWN;
     action_server_pose_->terminate_current(result);
   }
 }

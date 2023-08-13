@@ -19,9 +19,9 @@ import sys
 from launch import LaunchDescription
 from launch import LaunchService
 from launch.actions import ExecuteProcess
-from launch_testing.legacy import LaunchTestService
-from launch_ros.actions import Node
 from launch.actions import GroupAction
+from launch_ros.actions import Node
+from launch_testing.legacy import LaunchTestService
 
 
 def generate_launch_description():

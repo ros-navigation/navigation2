@@ -32,7 +32,6 @@ class SmoothPathAction : public nav2_behavior_tree::BtActionNode<nav2_msgs::acti
 {
   using Action = nav2_msgs::action::SmoothPath;
   using ActionResult = Action::Result;
-  using ActionGoal = Action::Goal;
 
 public:
   /**

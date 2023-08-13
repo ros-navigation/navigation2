@@ -172,10 +172,11 @@ public:
     const std::string & base_frame_id,
     const std::string & global_frame_id,
     const tf2::Duration & transform_tolerance,
-    const rclcpp::Duration & data_timeout)
+    const rclcpp::Duration & data_timeout,
+    const bool base_shift_correction)
   : nav2_collision_monitor::Scan(
       node, source_name, tf_buffer, base_frame_id, global_frame_id,
-      transform_tolerance, data_timeout)
+      transform_tolerance, data_timeout, base_shift_correction)
   {}
 
   bool dataReceived() const
@@ -194,10 +195,11 @@ public:
     const std::string & base_frame_id,
     const std::string & global_frame_id,
     const tf2::Duration & transform_tolerance,
-    const rclcpp::Duration & data_timeout)
+    const rclcpp::Duration & data_timeout,
+    const bool base_shift_correction)
   : nav2_collision_monitor::PointCloud(
       node, source_name, tf_buffer, base_frame_id, global_frame_id,
-      transform_tolerance, data_timeout)
+      transform_tolerance, data_timeout, base_shift_correction)
   {}
 
   bool dataReceived() const
@@ -216,10 +218,11 @@ public:
     const std::string & base_frame_id,
     const std::string & global_frame_id,
     const tf2::Duration & transform_tolerance,
-    const rclcpp::Duration & data_timeout)
+    const rclcpp::Duration & data_timeout,
+    const bool base_shift_correction)
   : nav2_collision_monitor::Range(
       node, source_name, tf_buffer, base_frame_id, global_frame_id,
-      transform_tolerance, data_timeout)
+      transform_tolerance, data_timeout, base_shift_correction)
   {}
 
   bool dataReceived() const
@@ -235,6 +238,9 @@ public:
   ~Tester();
 
 protected:
+  // Data sources creation routine
+  void createSources(const bool base_shift_correction = true);
+
   // Setting TF chains
   void sendTransforms(const rclcpp::Time & stamp);
 
@@ -263,7 +269,22 @@ Tester::Tester()
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(test_node_->get_clock());
   tf_buffer_->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+}
 
+Tester::~Tester()
+{
+  scan_.reset();
+  pointcloud_.reset();
+  range_.reset();
+
+  test_node_.reset();
+
+  tf_listener_.reset();
+  tf_buffer_.reset();
+}
+
+void Tester::createSources(const bool base_shift_correction)
+{
   // Create Scan object
   test_node_->declare_parameter(
     std::string(SCAN_NAME) + ".topic", rclcpp::ParameterValue(SCAN_TOPIC));
@@ -273,7 +294,7 @@ Tester::Tester()
   scan_ = std::make_shared<ScanWrapper>(
     test_node_, SCAN_NAME, tf_buffer_,
     BASE_FRAME_ID, GLOBAL_FRAME_ID,
-    TRANSFORM_TOLERANCE, DATA_TIMEOUT);
+    TRANSFORM_TOLERANCE, DATA_TIMEOUT, base_shift_correction);
   scan_->configure();
 
   // Create PointCloud object
@@ -293,7 +314,7 @@ Tester::Tester()
   pointcloud_ = std::make_shared<PointCloudWrapper>(
     test_node_, POINTCLOUD_NAME, tf_buffer_,
     BASE_FRAME_ID, GLOBAL_FRAME_ID,
-    TRANSFORM_TOLERANCE, DATA_TIMEOUT);
+    TRANSFORM_TOLERANCE, DATA_TIMEOUT, base_shift_correction);
   pointcloud_->configure();
 
   // Create Range object
@@ -308,20 +329,8 @@ Tester::Tester()
   range_ = std::make_shared<RangeWrapper>(
     test_node_, RANGE_NAME, tf_buffer_,
     BASE_FRAME_ID, GLOBAL_FRAME_ID,
-    TRANSFORM_TOLERANCE, DATA_TIMEOUT);
+    TRANSFORM_TOLERANCE, DATA_TIMEOUT, base_shift_correction);
   range_->configure();
-}
-
-Tester::~Tester()
-{
-  scan_.reset();
-  pointcloud_.reset();
-  range_.reset();
-
-  test_node_.reset();
-
-  tf_listener_.reset();
-  tf_buffer_.reset();
 }
 
 void Tester::sendTransforms(const rclcpp::Time & stamp)
@@ -453,6 +462,8 @@ TEST_F(Tester, testGetData)
 {
   rclcpp::Time curr_time = test_node_->now();
 
+  createSources();
+
   sendTransforms(curr_time);
 
   // Publish data for sources
@@ -485,6 +496,8 @@ TEST_F(Tester, testGetOutdatedData)
 {
   rclcpp::Time curr_time = test_node_->now();
 
+  createSources();
+
   sendTransforms(curr_time);
 
   // Publish outdated data for sources
@@ -514,6 +527,8 @@ TEST_F(Tester, testGetOutdatedData)
 TEST_F(Tester, testIncorrectFrameData)
 {
   rclcpp::Time curr_time = test_node_->now();
+
+  createSources();
 
   // Send incorrect transform
   sendTransforms(curr_time - 1s);
@@ -546,6 +561,8 @@ TEST_F(Tester, testIncorrectData)
 {
   rclcpp::Time curr_time = test_node_->now();
 
+  createSources();
+
   sendTransforms(curr_time);
 
   // Publish data for sources
@@ -565,6 +582,41 @@ TEST_F(Tester, testIncorrectData)
   // Range data should be empty
   range_->getData(curr_time, data);
   ASSERT_EQ(data.size(), 0u);
+}
+
+TEST_F(Tester, testIgnoreTimeShift)
+{
+  rclcpp::Time curr_time = test_node_->now();
+
+  createSources(false);
+
+  // Send incorrect transform
+  sendTransforms(curr_time - 1s);
+
+  // Publish data for sources
+  test_node_->publishScan(curr_time, 1.0);
+  test_node_->publishPointCloud(curr_time);
+  test_node_->publishRange(curr_time, 1.0);
+
+  // Wait until all sources will receive the data
+  ASSERT_TRUE(waitScan(500ms));
+  ASSERT_TRUE(waitPointCloud(500ms));
+  ASSERT_TRUE(waitRange(500ms));
+
+  // Scan data should be consistent
+  std::vector<nav2_collision_monitor::Point> data;
+  scan_->getData(curr_time, data);
+  checkScan(data);
+
+  // Pointcloud data should be consistent
+  data.clear();
+  pointcloud_->getData(curr_time, data);
+  checkPointCloud(data);
+
+  // Range data should be consistent
+  data.clear();
+  range_->getData(curr_time, data);
+  checkRange(data);
 }
 
 int main(int argc, char ** argv)

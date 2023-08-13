@@ -36,13 +36,17 @@
 
 #include "rclcpp/rclcpp.hpp"
 
-#include "dummy_servers.hpp"
+#include "dummy_action_server.hpp"
+#include "dummy_service.hpp"
 
-class ComputePathToPoseActionServer
+namespace nav2_system_tests
+{
+
+class DummyComputePathToPoseActionServer
   : public DummyActionServer<nav2_msgs::action::ComputePathToPose>
 {
 public:
-  explicit ComputePathToPoseActionServer(const rclcpp::Node::SharedPtr & node)
+  explicit DummyComputePathToPoseActionServer(const rclcpp::Node::SharedPtr & node)
   : DummyActionServer(node, "compute_path_to_pose")
   {
     result_ = std::make_shared<nav2_msgs::action::ComputePathToPose::Result>();
@@ -65,9 +69,33 @@ public:
     return result_;
   }
 
+protected:
+  void updateResultForFailure(
+    std::shared_ptr<nav2_msgs::action::ComputePathToPose::Result>
+    & result) override
+  {
+    result->error_code = nav2_msgs::action::ComputePathToPose::Result::TIMEOUT;
+  }
+
 private:
   std::shared_ptr<nav2_msgs::action::ComputePathToPose::Result> result_;
 };
+
+class DummyFollowPathActionServer : public DummyActionServer<nav2_msgs::action::FollowPath>
+{
+public:
+  explicit DummyFollowPathActionServer(const rclcpp::Node::SharedPtr & node)
+  : DummyActionServer(node, "follow_path") {}
+
+protected:
+  void updateResultForFailure(
+    std::shared_ptr<nav2_msgs::action::FollowPath::Result>
+    & result) override
+  {
+    result->error_code = nav2_msgs::action::FollowPath::Result::NO_VALID_CONTROL;
+  }
+};
+
 
 class ServerHandler
 {
@@ -89,8 +117,8 @@ public:
 public:
   std::unique_ptr<DummyService<nav2_msgs::srv::ClearEntireCostmap>> clear_local_costmap_server;
   std::unique_ptr<DummyService<nav2_msgs::srv::ClearEntireCostmap>> clear_global_costmap_server;
-  std::unique_ptr<ComputePathToPoseActionServer> compute_path_to_pose_server;
-  std::unique_ptr<DummyActionServer<nav2_msgs::action::FollowPath>> follow_path_server;
+  std::unique_ptr<DummyComputePathToPoseActionServer> compute_path_to_pose_server;
+  std::unique_ptr<DummyFollowPathActionServer> follow_path_server;
   std::unique_ptr<DummyActionServer<nav2_msgs::action::Spin>> spin_server;
   std::unique_ptr<DummyActionServer<nav2_msgs::action::Wait>> wait_server;
   std::unique_ptr<DummyActionServer<nav2_msgs::action::BackUp>> backup_server;
@@ -104,5 +132,7 @@ private:
   rclcpp::Node::SharedPtr node_;
   std::shared_ptr<std::thread> server_thread_;
 };
+
+}  // namespace nav2_system_tests
 
 #endif  //  BEHAVIOR_TREE__SERVER_HANDLER_HPP_

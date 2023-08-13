@@ -17,11 +17,10 @@ import sys
 import time
 
 from geometry_msgs.msg import PoseStamped
-from nav_msgs.msg import Path
+from nav2_msgs.action import ComputePathThroughPoses, ComputePathToPose, FollowPath, SmoothPath
 from nav2_simple_commander.robot_navigator import BasicNavigator
-
+from nav_msgs.msg import Path
 import rclpy
-from nav2_msgs.action import FollowPath, ComputePathToPose, ComputePathThroughPoses, SmoothPath
 
 
 def main(argv=sys.argv[1:]):
@@ -53,15 +52,15 @@ def main(argv=sys.argv[1:]):
     path.poses.append(goal_pose)
     path.poses.append(goal_pose1)
 
-    navigator._waitForNodeToActivate("controller_server")
+    navigator._waitForNodeToActivate('controller_server')
     follow_path = {
-        'unknown': FollowPath.Goal().UNKNOWN,
-        'invalid_controller': FollowPath.Goal().INVALID_CONTROLLER,
-        'tf_error': FollowPath.Goal().TF_ERROR,
-        'invalid_path': FollowPath.Goal().INVALID_PATH,
-        'patience_exceeded': FollowPath.Goal().PATIENCE_EXCEEDED,
-        'failed_to_make_progress': FollowPath.Goal().FAILED_TO_MAKE_PROGRESS,
-        'no_valid_control': FollowPath.Goal().NO_VALID_CONTROL
+        'unknown': FollowPath.Result().UNKNOWN,
+        'invalid_controller': FollowPath.Result().INVALID_CONTROLLER,
+        'tf_error': FollowPath.Result().TF_ERROR,
+        'invalid_path': FollowPath.Result().INVALID_PATH,
+        'patience_exceeded': FollowPath.Result().PATIENCE_EXCEEDED,
+        'failed_to_make_progress': FollowPath.Result().FAILED_TO_MAKE_PROGRESS,
+        'no_valid_control': FollowPath.Result().NO_VALID_CONTROL
     }
 
     for controller, error_code in follow_path.items():
@@ -72,10 +71,10 @@ def main(argv=sys.argv[1:]):
                 time.sleep(0.5)
 
             assert navigator.result_future.result().result.error_code == error_code, \
-                "Follow path error code does not match"
+                'Follow path error code does not match'
 
         else:
-            assert False, "Follow path was rejected"
+            assert False, 'Follow path was rejected'
 
     goal_pose = PoseStamped()
     goal_pose.header.frame_id = 'map'
@@ -87,41 +86,41 @@ def main(argv=sys.argv[1:]):
     goal_pose.pose.orientation.z = 0.0
     goal_pose.pose.orientation.w = 1.0
 
-    navigator._waitForNodeToActivate("planner_server")
+    navigator._waitForNodeToActivate('planner_server')
     compute_path_to_pose = {
-        'unknown': ComputePathToPose.Goal().UNKNOWN,
-        'invalid_planner': ComputePathToPose.Goal().INVALID_PLANNER,
-        'tf_error': ComputePathToPose.Goal().TF_ERROR,
-        'start_outside_map': ComputePathToPose.Goal().START_OUTSIDE_MAP,
-        'goal_outside_map': ComputePathToPose.Goal().GOAL_OUTSIDE_MAP,
-        'start_occupied': ComputePathToPose.Goal().START_OCCUPIED,
-        'goal_occupied': ComputePathToPose.Goal().GOAL_OCCUPIED,
-        'timeout': ComputePathToPose.Goal().TIMEOUT,
-        'no_valid_path': ComputePathToPose.Goal().NO_VALID_PATH}
+        'unknown': ComputePathToPose.Result().UNKNOWN,
+        'invalid_planner': ComputePathToPose.Result().INVALID_PLANNER,
+        'tf_error': ComputePathToPose.Result().TF_ERROR,
+        'start_outside_map': ComputePathToPose.Result().START_OUTSIDE_MAP,
+        'goal_outside_map': ComputePathToPose.Result().GOAL_OUTSIDE_MAP,
+        'start_occupied': ComputePathToPose.Result().START_OCCUPIED,
+        'goal_occupied': ComputePathToPose.Result().GOAL_OCCUPIED,
+        'timeout': ComputePathToPose.Result().TIMEOUT,
+        'no_valid_path': ComputePathToPose.Result().NO_VALID_PATH}
 
     for planner, error_code in compute_path_to_pose.items():
         result = navigator._getPathImpl(initial_pose, goal_pose, planner)
-        assert result.error_code == error_code, "Compute path to pose error does not match"
+        assert result.error_code == error_code, 'Compute path to pose error does not match'
 
     # Check compute path through error codes
     goal_pose1 = goal_pose
     goal_poses = [goal_pose, goal_pose1]
 
     compute_path_through_poses = {
-        'unknown': ComputePathThroughPoses.Goal().UNKNOWN,
-        'invalid_planner': ComputePathToPose.Goal().INVALID_PLANNER,
-        'tf_error': ComputePathThroughPoses.Goal().TF_ERROR,
-        'start_outside_map': ComputePathThroughPoses.Goal().START_OUTSIDE_MAP,
-        'goal_outside_map': ComputePathThroughPoses.Goal().GOAL_OUTSIDE_MAP,
-        'start_occupied': ComputePathThroughPoses.Goal().START_OCCUPIED,
-        'goal_occupied': ComputePathThroughPoses.Goal().GOAL_OCCUPIED,
-        'timeout': ComputePathThroughPoses.Goal().TIMEOUT,
-        'no_valid_path': ComputePathThroughPoses.Goal().NO_VALID_PATH,
-        'no_viapoints_given': ComputePathThroughPoses.Goal().NO_VIAPOINTS_GIVEN}
+        'unknown': ComputePathThroughPoses.Result().UNKNOWN,
+        'invalid_planner': ComputePathThroughPoses.Result().INVALID_PLANNER,
+        'tf_error': ComputePathThroughPoses.Result().TF_ERROR,
+        'start_outside_map': ComputePathThroughPoses.Result().START_OUTSIDE_MAP,
+        'goal_outside_map': ComputePathThroughPoses.Result().GOAL_OUTSIDE_MAP,
+        'start_occupied': ComputePathThroughPoses.Result().START_OCCUPIED,
+        'goal_occupied': ComputePathThroughPoses.Result().GOAL_OCCUPIED,
+        'timeout': ComputePathThroughPoses.Result().TIMEOUT,
+        'no_valid_path': ComputePathThroughPoses.Result().NO_VALID_PATH,
+        'no_viapoints_given': ComputePathThroughPoses.Result().NO_VIAPOINTS_GIVEN}
 
     for planner, error_code in compute_path_through_poses.items():
         result = navigator._getPathThroughPosesImpl(initial_pose, goal_poses, planner)
-        assert result.error_code == error_code, "Compute path through pose error does not match"
+        assert result.error_code == error_code, 'Compute path through pose error does not match'
 
     # Check compute path to pose error codes
     pose = PoseStamped()
@@ -140,19 +139,19 @@ def main(argv=sys.argv[1:]):
     a_path.poses.append(pose)
     a_path.poses.append(pose1)
 
-    navigator._waitForNodeToActivate("smoother_server")
+    navigator._waitForNodeToActivate('smoother_server')
     smoother = {
-        'invalid_smoother': SmoothPath.Goal().INVALID_SMOOTHER,
-        'unknown': SmoothPath.Goal().UNKNOWN,
-        'timeout': SmoothPath.Goal().TIMEOUT,
-        'smoothed_path_in_collision': SmoothPath.Goal().SMOOTHED_PATH_IN_COLLISION,
-        'failed_to_smooth_path': SmoothPath.Goal().FAILED_TO_SMOOTH_PATH,
-        'invalid_path': SmoothPath.Goal().INVALID_PATH
+        'invalid_smoother': SmoothPath.Result().INVALID_SMOOTHER,
+        'unknown': SmoothPath.Result().UNKNOWN,
+        'timeout': SmoothPath.Result().TIMEOUT,
+        'smoothed_path_in_collision': SmoothPath.Result().SMOOTHED_PATH_IN_COLLISION,
+        'failed_to_smooth_path': SmoothPath.Result().FAILED_TO_SMOOTH_PATH,
+        'invalid_path': SmoothPath.Result().INVALID_PATH
     }
 
     for smoother, error_code in smoother.items():
         result = navigator._smoothPathImpl(a_path, smoother)
-        assert result.error_code == error_code, "Smoother error does not match"
+        assert result.error_code == error_code, 'Smoother error does not match'
 
     navigator.lifecycleShutdown()
     rclpy.shutdown()

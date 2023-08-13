@@ -81,6 +81,8 @@ public:
     if (callback_group_executor_.spin_until_future_complete(future_result, timeout) !=
       rclcpp::FutureReturnCode::SUCCESS)
     {
+      // Pending request must be manually cleaned up if execution is interrupted or timed out
+      client_->remove_pending_request(future_result);
       throw std::runtime_error(service_name_ + " service client: async_send_request failed");
     }
 
@@ -115,6 +117,8 @@ public:
     if (callback_group_executor_.spin_until_future_complete(future_result) !=
       rclcpp::FutureReturnCode::SUCCESS)
     {
+      // Pending request must be manually cleaned up if execution is interrupted or timed out
+      client_->remove_pending_request(future_result);
       return false;
     }
 

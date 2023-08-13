@@ -95,6 +95,12 @@ void LayeredCostmap::addPlugin(std::shared_ptr<Layer> plugin)
   plugins_.push_back(plugin);
 }
 
+void LayeredCostmap::addFilter(std::shared_ptr<Layer> filter)
+{
+  std::unique_lock<Costmap2D::mutex_t> lock(*(combined_costmap_.getMutex()));
+  filters_.push_back(filter);
+}
+
 void LayeredCostmap::resizeMap(
   unsigned int size_x, unsigned int size_y, double resolution,
   double origin_x,
@@ -256,12 +262,12 @@ bool LayeredCostmap::isCurrent()
   for (vector<std::shared_ptr<Layer>>::iterator plugin = plugins_.begin();
     plugin != plugins_.end(); ++plugin)
   {
-    current_ = current_ && (*plugin)->isCurrent();
+    current_ = current_ && ((*plugin)->isCurrent() || !(*plugin)->isEnabled());
   }
   for (vector<std::shared_ptr<Layer>>::iterator filter = filters_.begin();
     filter != filters_.end(); ++filter)
   {
-    current_ = current_ && (*filter)->isCurrent();
+    current_ = current_ && ((*filter)->isCurrent() || !(*filter)->isEnabled());
   }
   return current_;
 }

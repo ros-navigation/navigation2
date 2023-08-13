@@ -21,8 +21,8 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_util/robot_utils.hpp"
 
-#include "../../test_behavior_tree_fixture.hpp"
-#include "../../test_dummy_tree_node.hpp"
+#include "utils/test_behavior_tree_fixture.hpp"
+#include "utils/test_dummy_tree_node.hpp"
 #include "nav2_behavior_tree/plugins/decorator/distance_controller.hpp"
 
 class DistanceControllerTestFixture : public nav2_behavior_tree::BehaviorTreeTestFixture
@@ -30,6 +30,8 @@ class DistanceControllerTestFixture : public nav2_behavior_tree::BehaviorTreeTes
 public:
   void SetUp()
   {
+    config_->input_ports["global_frame"] = "map";
+    config_->input_ports["robot_base_frame"] = "base_link";
     bt_node_ = std::make_shared<nav2_behavior_tree::DistanceController>(
       "distance_controller", *config_);
     dummy_node_ = std::make_shared<nav2_behavior_tree::DummyNode>();

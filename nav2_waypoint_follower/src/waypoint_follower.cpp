@@ -218,7 +218,9 @@ void WaypointFollower::followWaypointsHandler(
   }
 
   rclcpp::WallRate r(loop_rate_);
-  uint32_t goal_index = 0;
+
+  // get the goal index, by default, the first in the list of waypoints given.
+  uint32_t goal_index = goal->goal_index;
   bool new_goal = true;
 
   while (rclcpp::ok()) {
@@ -310,7 +312,8 @@ void WaypointFollower::followWaypointsHandler(
         nav2_msgs::msg::MissedWaypoint missedWaypoint;
         missedWaypoint.index = goal_index;
         missedWaypoint.goal = poses[goal_index];
-        missedWaypoint.error_code = nav2_msgs::action::FollowWaypoints::Goal::TASK_EXECUTOR_FAILED;
+        missedWaypoint.error_code =
+          nav2_msgs::action::FollowWaypoints::Result::TASK_EXECUTOR_FAILED;
         result->missed_waypoints.push_back(missedWaypoint);
       }
       // if task execution was failed and stop_on_failure_ is on , terminate action
@@ -337,18 +340,20 @@ void WaypointFollower::followWaypointsHandler(
       goal_index++;
       new_goal = true;
       if (goal_index >= poses.size()) {
+        if (current_loop_no == no_of_loops) {
+          RCLCPP_INFO(
+            get_logger(), "Completed all %zu waypoints requested.",
+            poses.size());
+          action_server_->succeeded_current(result);
+          current_goal_status_.error_code = 0;
+          return;
+        }
         RCLCPP_INFO(
-          get_logger(), "Completed all %zu waypoints requested.",
-          poses.size());
-        action_server->succeeded_current(result);
-        current_goal_status_.error_code = 0;
-        return;
+          get_logger(), "Starting a new loop, current loop count is %i",
+          current_loop_no);
+        goal_index = 0;
+        current_loop_no++;
       }
-    } else {
-      RCLCPP_INFO_EXPRESSION(
-        get_logger(),
-        (static_cast<int>(now().seconds()) % 30 == 0),
-        "Processing waypoint %i...", goal_index);
     }
 
     callback_group_executor_.spin_some();

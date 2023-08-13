@@ -18,7 +18,7 @@ import time
 
 from action_msgs.msg import GoalStatus
 from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
-from nav2_msgs.action import FollowWaypoints, ComputePathToPose
+from nav2_msgs.action import ComputePathToPose, FollowWaypoints
 from nav2_msgs.srv import ManageLifecycleNodes
 from rcl_interfaces.srv import SetParameters
 
@@ -231,7 +231,7 @@ def main(argv=sys.argv[1:]):
     assert not result
     result = not result
     assert test.action_result.missed_waypoints[0].error_code == \
-           ComputePathToPose.Goal().GOAL_OUTSIDE_MAP
+           ComputePathToPose.Result().GOAL_OUTSIDE_MAP
 
     # stop on failure test with bogous waypoint
     test.setStopFailureParam(True)

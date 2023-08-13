@@ -20,12 +20,12 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, GroupAction
 from launch.actions import SetEnvironmentVariable
 from launch.conditions import IfCondition
-from launch.conditions import LaunchConfigurationEquals
-from launch.conditions import LaunchConfigurationNotEquals
+from launch.substitutions import EqualsSubstitution
 from launch.substitutions import LaunchConfiguration, PythonExpression
+from launch.substitutions import NotEqualsSubstitution
 from launch_ros.actions import LoadComposableNodes, SetParameter
 from launch_ros.actions import Node
-from launch_ros.descriptions import ComposableNode
+from launch_ros.descriptions import ComposableNode, ParameterFile
 from nav2_common.launch import RewrittenYaml
 
 
@@ -40,6 +40,7 @@ def generate_launch_description():
     params_file = LaunchConfiguration('params_file')
     use_composition = LaunchConfiguration('use_composition')
     container_name = LaunchConfiguration('container_name')
+    container_name_full = (namespace, '/', container_name)
     use_respawn = LaunchConfiguration('use_respawn')
     log_level = LaunchConfiguration('log_level')
 
@@ -54,11 +55,13 @@ def generate_launch_description():
     remappings = [('/tf', 'tf'),
                   ('/tf_static', 'tf_static')]
 
-    configured_params = RewrittenYaml(
-        source_file=params_file,
-        root_key=namespace,
-        param_rewrites={},
-        convert_types=True)
+    configured_params = ParameterFile(
+        RewrittenYaml(
+            source_file=params_file,
+            root_key=namespace,
+            param_rewrites={},
+            convert_types=True),
+        allow_substs=True)
 
     stdout_linebuf_envvar = SetEnvironmentVariable(
         'RCUTILS_LOGGING_BUFFERED_STREAM', '1')
@@ -106,9 +109,9 @@ def generate_launch_description():
     load_nodes = GroupAction(
         condition=IfCondition(PythonExpression(['not ', use_composition])),
         actions=[
-            SetParameter("use_sim_time", use_sim_time),
+            SetParameter('use_sim_time', use_sim_time),
             Node(
-                condition=LaunchConfigurationEquals('map', ''),
+                condition=IfCondition(EqualsSubstitution(LaunchConfiguration('map'), '')),
                 package='nav2_map_server',
                 executable='map_server',
                 name='map_server',
@@ -119,7 +122,7 @@ def generate_launch_description():
                 arguments=['--ros-args', '--log-level', log_level],
                 remappings=remappings),
             Node(
-                condition=LaunchConfigurationNotEquals('map', ''),
+                condition=IfCondition(NotEqualsSubstitution(LaunchConfiguration('map'), '')),
                 package='nav2_map_server',
                 executable='map_server',
                 name='map_server',
@@ -155,19 +158,13 @@ def generate_launch_description():
     # yaml configuration file. They are separated since the conditions
     # currently only work on the LoadComposableNodes commands and not on the
     # ComposableNode node function itself
-    # EqualsSubstitution and NotEqualsSubstitution susbsitutions was recently
-    # added to solve this problem but it has not been ported yet to
-    # ros-rolling. See https://github.com/ros2/launch_ros/issues/328.
-    # LaunchConfigurationEquals and LaunchConfigurationNotEquals are scheduled
-    # for deprecation once a Rolling sync is conducted. Switching to this new
-    # would be required for both ComposableNode and normal nodes.
     load_composable_nodes = GroupAction(
         condition=IfCondition(use_composition),
         actions=[
-            SetParameter("use_sim_time", use_sim_time),
+            SetParameter('use_sim_time', use_sim_time),
             LoadComposableNodes(
-                target_container=container_name,
-                condition=LaunchConfigurationEquals('map', ''),
+                target_container=container_name_full,
+                condition=IfCondition(EqualsSubstitution(LaunchConfiguration('map'), '')),
                 composable_node_descriptions=[
                     ComposableNode(
                         package='nav2_map_server',
@@ -178,8 +175,8 @@ def generate_launch_description():
                 ],
             ),
             LoadComposableNodes(
-                target_container=container_name,
-                condition=LaunchConfigurationNotEquals('map', ''),
+                target_container=container_name_full,
+                condition=IfCondition(NotEqualsSubstitution(LaunchConfiguration('map'), '')),
                 composable_node_descriptions=[
                     ComposableNode(
                         package='nav2_map_server',
@@ -191,7 +188,7 @@ def generate_launch_description():
                 ],
             ),
             LoadComposableNodes(
-                target_container=container_name,
+                target_container=container_name_full,
                 composable_node_descriptions=[
                     ComposableNode(
                         package='nav2_amcl',

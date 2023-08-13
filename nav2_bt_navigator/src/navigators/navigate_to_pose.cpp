@@ -203,8 +203,15 @@ NavigateToPoseNavigator::onPreempt(ActionT::Goal::ConstSharedPtr goal)
 void
 NavigateToPoseNavigator::initializeGoalPose(ActionT::Goal::ConstSharedPtr goal)
 {
+  geometry_msgs::msg::PoseStamped current_pose;
+  nav2_util::getCurrentPose(
+    current_pose, *feedback_utils_.tf,
+    feedback_utils_.global_frame, feedback_utils_.robot_frame,
+    feedback_utils_.transform_tolerance);
+
   RCLCPP_INFO(
-    logger_, "Begin navigating from current location to (%.2f, %.2f)",
+    logger_, "Begin navigating from current location (%.2f, %.2f) to (%.2f, %.2f)",
+    current_pose.pose.position.x, current_pose.pose.position.y,
     goal->pose.pose.position.x, goal->pose.pose.position.y);
 
   // Reset state for new action feedback
@@ -225,3 +232,8 @@ NavigateToPoseNavigator::onGoalPoseReceived(const geometry_msgs::msg::PoseStampe
 }
 
 }  // namespace nav2_bt_navigator
+
+#include "pluginlib/class_list_macros.hpp"
+PLUGINLIB_EXPORT_CLASS(
+  nav2_bt_navigator::NavigateToPoseNavigator,
+  nav2_core::NavigatorBase)

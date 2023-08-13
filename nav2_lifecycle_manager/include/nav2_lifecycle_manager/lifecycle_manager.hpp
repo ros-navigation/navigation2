@@ -114,6 +114,13 @@ protected:
    */
   bool resume();
 
+  /**
+   * @brief Perform preshutdown activities before our Context is shutdown.
+   * Note that this is related to our Context's shutdown sequence, not the
+   * lifecycle node state machine or shutdown().
+   */
+  void onRclPreshutdown();
+
   // Support function for creating service clients
   /**
    * @brief Support function for creating service clients
@@ -185,6 +192,14 @@ protected:
    * @brief function to check if the Nav2 system is active
    */
   void CreateActiveDiagnostic(diagnostic_updater::DiagnosticStatusWrapper & stat);
+
+  /**
+   * Register our preshutdown callback for this Node's rcl Context.
+   * The callback fires before this Node's Context is shutdown.
+   * Note this is not directly related to the lifecycle state machine or the
+   * shutdown() instance function.
+   */
+  void registerRclPreshutdownCallback();
 
   // Timer thread to look at bond connections
   rclcpp::TimerBase::SharedPtr init_timer_;
