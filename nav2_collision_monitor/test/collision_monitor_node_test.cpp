@@ -186,7 +186,6 @@ protected:
   // CollisionMonitor Action state
   rclcpp::Subscription<nav2_msgs::msg::CollisionMonitorState>::SharedPtr action_state_sub_;
   nav2_msgs::msg::CollisionMonitorState::SharedPtr action_state_;
-
 };  // Tester
 
 Tester::Tester()
