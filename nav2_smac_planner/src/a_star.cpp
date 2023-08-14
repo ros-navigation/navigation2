@@ -160,7 +160,7 @@ void AStarAlgorithm<NodeHybrid>::populateExpansionsLog(
   expansions_log->emplace_back(
     _costmap->getOriginX() + ((coords.x + 0.5) * _costmap->getResolution()),
     _costmap->getOriginY() + ((coords.y + 0.5) * _costmap->getResolution()),
-    coords.theta);
+    NodeHybrid::motion_table.getAngleFromBin(coords.theta));
 }
 
 template<typename NodeT>

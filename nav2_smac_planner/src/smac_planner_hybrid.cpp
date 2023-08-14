@@ -385,8 +385,7 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
       for (auto & e : *expansions) {
         msg_pose.position.x = std::get<0>(e);
         msg_pose.position.y = std::get<1>(e);
-        msg_pose.orientation = getWorldOrientation(
-          NodeHybrid::motion_table.getAngleFromBin(std::get<2>(e)));
+        msg_pose.orientation = getWorldOrientation(std::get<2>(e));
         msg.poses.push_back(msg_pose);
       }
       _expansions_publisher->publish(msg);
@@ -420,8 +419,7 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
     for (auto & e : *expansions) {
       msg_pose.position.x = std::get<0>(e);
       msg_pose.position.y = std::get<1>(e);
-      msg_pose.orientation = getWorldOrientation(
-        NodeHybrid::motion_table.getAngleFromBin(std::get<2>(e)));
+      msg_pose.orientation = getWorldOrientation(std::get<2>(e));
       msg.poses.push_back(msg_pose);
     }
     _expansions_publisher->publish(msg);
