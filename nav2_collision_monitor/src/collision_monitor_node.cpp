@@ -280,8 +280,9 @@ bool CollisionMonitor::configurePolygons(
   try {
     auto node = shared_from_this();
 
+    // Leave it to be not initialized: to intentionally cause an error if it will not set
     nav2_util::declare_parameter_if_not_declared(
-      node, "polygons", rclcpp::ParameterValue(std::vector<std::string>()));
+      node, "polygons", rclcpp::PARAMETER_STRING_ARRAY);
     std::vector<std::string> polygon_names = get_parameter("polygons").as_string_array();
     for (std::string polygon_name : polygon_names) {
       // Leave it not initialized: the will cause an error if it will not set
