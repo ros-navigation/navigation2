@@ -114,9 +114,9 @@ void HybridMotionTable::initDubin(
 
   projections.clear();
   projections.reserve(3);
-  projections.emplace_back(delta_dist, 0.0, 0.0);  // Forward
-  projections.emplace_back(delta_x, delta_y, increments);  // Left
-  projections.emplace_back(delta_x, -delta_y, -increments);  // Right
+  projections.emplace_back(delta_dist, 0.0, 0.0, TurnDirection::FORWARD);  // Forward
+  projections.emplace_back(delta_x, delta_y, increments, TurnDirection::LEFT);  // Left
+  projections.emplace_back(delta_x, -delta_y, -increments, TurnDirection::RIGHT);  // Right
 
   if (search_info.allow_primitive_interpolation && increments > 1.0f) {
     // Create primitives that are +/- N to fill in search space to use all set angular quantizations
@@ -128,8 +128,10 @@ void HybridMotionTable::initDubin(
       const float turning_rad_n = delta_dist / (2.0f * sin(angle_n / 2.0f));
       const float delta_x_n = turning_rad_n * sin(angle_n);
       const float delta_y_n = turning_rad_n - (turning_rad_n * cos(angle_n));
-      projections.emplace_back(delta_x_n, delta_y_n, static_cast<float>(i));  // Left
-      projections.emplace_back(delta_x_n, -delta_y_n, -static_cast<float>(i));  // Right
+      projections.emplace_back(
+        delta_x_n, delta_y_n, static_cast<float>(i), TurnDirection::LEFT);  // Left
+      projections.emplace_back(
+        delta_x_n, -delta_y_n, -static_cast<float>(i), TurnDirection::RIGHT);  // Right
     }
   }
 
@@ -204,12 +206,16 @@ void HybridMotionTable::initReedsShepp(
 
   projections.clear();
   projections.reserve(6);
-  projections.emplace_back(delta_dist, 0.0, 0.0);  // Forward
-  projections.emplace_back(delta_x, delta_y, increments);  // Forward + Left
-  projections.emplace_back(delta_x, -delta_y, -increments);  // Forward + Right
-  projections.emplace_back(-delta_dist, 0.0, 0.0);  // Backward
-  projections.emplace_back(-delta_x, delta_y, -increments);  // Backward + Left
-  projections.emplace_back(-delta_x, -delta_y, increments);  // Backward + Right
+  projections.emplace_back(delta_dist, 0.0, 0.0, TurnDirection::FORWARD);  // Forward
+  projections.emplace_back(
+    delta_x, delta_y, increments, TurnDirection::LEFT);  // Forward + Left
+  projections.emplace_back(
+    delta_x, -delta_y, -increments, TurnDirection::RIGHT);  // Forward + Right
+  projections.emplace_back(-delta_dist, 0.0, 0.0, TurnDirection::REVERSE);  // Backward
+  projections.emplace_back(
+    -delta_x, delta_y, -increments, TurnDirection::REV_LEFT);  // Backward + Left
+  projections.emplace_back(
+    -delta_x, -delta_y, increments, TurnDirection::REV_RIGHT);  // Backward + Right
 
   if (search_info.allow_primitive_interpolation && increments > 1.0f) {
     // Create primitives that are +/- N to fill in search space to use all set angular quantizations
@@ -221,10 +227,16 @@ void HybridMotionTable::initReedsShepp(
       const float turning_rad_n = delta_dist / (2.0f * sin(angle_n / 2.0f));
       const float delta_x_n = turning_rad_n * sin(angle_n);
       const float delta_y_n = turning_rad_n - (turning_rad_n * cos(angle_n));
-      projections.emplace_back(delta_x_n, delta_y_n, static_cast<float>(i));  // Forward + Left
-      projections.emplace_back(delta_x_n, -delta_y_n, -static_cast<float>(i));  // Forward + Right
-      projections.emplace_back(-delta_x_n, delta_y_n, -static_cast<float>(i));  // Backward + Left
-      projections.emplace_back(-delta_x_n, -delta_y_n, static_cast<float>(i));  // Backward + Right
+      projections.emplace_back(
+        delta_x_n, delta_y_n, static_cast<float>(i), TurnDirection::LEFT);  // Forward + Left
+      projections.emplace_back(
+        delta_x_n, -delta_y_n, -static_cast<float>(i), TurnDirection::RIGHT);  // Forward + Right
+      projections.emplace_back(
+        -delta_x_n, delta_y_n, -static_cast<float>(i),
+        TurnDirection::REV_LEFT);  // Backward + Left
+      projections.emplace_back(
+        -delta_x_n, -delta_y_n, static_cast<float>(i),
+        TurnDirection::REV_RIGHT);  // Backward + Right
     }
   }
 
@@ -276,7 +288,7 @@ MotionPoses HybridMotionTable::getProjections(const NodeHybrid * node)
     projection_list.emplace_back(
       delta_xs[i][node_heading] + node->pose.x,
       delta_ys[i][node_heading] + node->pose.y,
-      new_heading);
+      new_heading, motion_model._turn_dir);
   }
 
   return projection_list;
@@ -348,16 +360,18 @@ float NodeHybrid::getTraversalCost(const NodePtr & child)
     return NodeHybrid::travel_distance_cost;
   }
 
+  const TurnDirection & child_turn_dir = child->getTurnDirection();
+  const unsigned int & child_motion_prim = child->getMotionPrimitiveIndex();
   float travel_cost = 0.0;
   float travel_cost_raw =
     NodeHybrid::travel_distance_cost *
     (motion_table.travel_distance_reward + motion_table.cost_penalty * normalized_cost);
 
-  if (child->getMotionPrimitiveIndex() == 0 || child->getMotionPrimitiveIndex() == 3) {
+  if (child_turn_dir == TurnDirection::FORWARD || child_turn_dir == TurnDirection::REVERSE) {
     // New motion is a straight motion, no additional costs to be applied
     travel_cost = travel_cost_raw;
   } else {
-    if (getMotionPrimitiveIndex() == child->getMotionPrimitiveIndex()) {
+    if (getTurnDirection() == child_turn_dir) {
       // Turning motion but keeps in same direction: encourages to commit to turning if starting it
       travel_cost = travel_cost_raw * motion_table.non_straight_penalty;
     } else {
@@ -367,7 +381,10 @@ float NodeHybrid::getTraversalCost(const NodePtr & child)
     }
   }
 
-  if (child->getMotionPrimitiveIndex() > 2) {
+  if (child_turn_dir == TurnDirection::REV_RIGHT ||
+    child_turn_dir == TurnDirection::REV_LEFT ||
+    child_turn_dir == TurnDirection::REVERSE)
+  {
     // reverse direction
     travel_cost *= motion_table.reverse_penalty;
   }
@@ -722,7 +739,7 @@ void NodeHybrid::getNeighbors(
           motion_projections[i]._y,
           motion_projections[i]._theta));
       if (neighbor->isNodeValid(traverse_unknown, collision_checker)) {
-        neighbor->setMotionPrimitiveIndex(i);
+        neighbor->setMotionPrimitiveIndex(i, motion_projections[i]._turn_dir);
         neighbors.push_back(neighbor);
       } else {
         neighbor->setPose(initial_node_coords);

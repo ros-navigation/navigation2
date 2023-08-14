@@ -232,9 +232,10 @@ public:
    * @brief Sets the motion primitive index used to achieve node in search
    * @param reference to motion primitive idx
    */
-  inline void setMotionPrimitiveIndex(const unsigned int & idx)
+  inline void setMotionPrimitiveIndex(const unsigned int & idx, const TurnDirection & turn_dir)
   {
     _motion_primitive_index = idx;
+    _turn_dir = turn_dir;
   }
 
   /**
@@ -244,6 +245,15 @@ public:
   inline unsigned int & getMotionPrimitiveIndex()
   {
     return _motion_primitive_index;
+  }
+
+  /**
+   * @brief Gets the motion primitive turning direction used to achieve node in search
+   * @return reference to motion primitive turning direction
+   */
+  inline TurnDirection & getTurnDirection()
+  {
+    return _turn_dir;
   }
 
   /**
@@ -460,6 +470,7 @@ private:
   unsigned int _index;
   bool _was_visited;
   unsigned int _motion_primitive_index;
+  TurnDirection _turn_dir;
 };
 
 }  // namespace nav2_smac_planner

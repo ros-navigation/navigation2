@@ -168,8 +168,8 @@ TEST(AStarTest, test_a_star_se2)
   EXPECT_TRUE(a_star.createPath(path, num_it, tolerance, expansions.get()));
 
   // check path is the right size and collision free
-  EXPECT_EQ(num_it, 7413);
-  EXPECT_EQ(path.size(), 63u);
+  EXPECT_EQ(num_it, 8427);
+  EXPECT_EQ(path.size(), 62u);
   for (unsigned int i = 0; i != path.size(); i++) {
     EXPECT_EQ(costmapA->getCost(path[i].x, path[i].y), 0);
   }

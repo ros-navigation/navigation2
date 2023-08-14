@@ -24,6 +24,7 @@
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_smac_planner/node_hybrid.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
+#include "nav2_smac_planner/types.hpp"
 
 class RclCppFixture
 {
@@ -87,21 +88,27 @@ TEST(NodeHybridTest, test_node_hybrid)
   EXPECT_NEAR(testB.getTraversalCost(&testA), 2.088, 0.1);
   // now with straight motion, cost is 0, so will be neutral as well
   // but now reduced by retrospective penalty (10%)
-  testB.setMotionPrimitiveIndex(1);
-  testA.setMotionPrimitiveIndex(0);
+  testB.setMotionPrimitiveIndex(1, nav2_smac_planner::TurnDirection::LEFT);
+  testA.setMotionPrimitiveIndex(0, nav2_smac_planner::TurnDirection::FORWARD);
   EXPECT_NEAR(testB.getTraversalCost(&testA), 2.088 * 0.9, 0.1);
   // same direction as parent, testB
-  testA.setMotionPrimitiveIndex(1);
+  testA.setMotionPrimitiveIndex(1, nav2_smac_planner::TurnDirection::LEFT);
   EXPECT_NEAR(testB.getTraversalCost(&testA), 2.297f * 0.9, 0.01);
   // opposite direction as parent, testB
-  testA.setMotionPrimitiveIndex(2);
+  testA.setMotionPrimitiveIndex(2, nav2_smac_planner::TurnDirection::RIGHT);
   EXPECT_NEAR(testB.getTraversalCost(&testA), 2.506f * 0.9, 0.01);
+  // reverse direction as parent, testB
+  testA.setMotionPrimitiveIndex(3, nav2_smac_planner::TurnDirection::REV_RIGHT);
+  EXPECT_NEAR(testB.getTraversalCost(&testA), 2.506f * 0.9 * 2.0, 0.01);
+  // reverse direction as parent, testB
+  testA.setMotionPrimitiveIndex(4, nav2_smac_planner::TurnDirection::REV_LEFT);
+  EXPECT_NEAR(testB.getTraversalCost(&testA), 2.506f * 0.9 * 2.0, 0.01);
 
   // will throw because never collision checked testB
   EXPECT_THROW(testA.getTraversalCost(&testB), std::runtime_error);
 
   // check motion primitives
-  EXPECT_EQ(testA.getMotionPrimitiveIndex(), 2u);
+  EXPECT_EQ(testA.getMotionPrimitiveIndex(), 4u);
 
   // check operator== works on index
   nav2_smac_planner::NodeHybrid testC(49);
