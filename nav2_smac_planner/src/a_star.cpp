@@ -152,15 +152,15 @@ void AStarAlgorithm<NodeT>::setStart(
 }
 
 template<>
-void AStarAlgorithm<NodeHybrid>::populateExpansionsLog(
+void AStarAlgorithm<Node2D>::populateExpansionsLog(
   const NodePtr & node,
   std::vector<std::tuple<float, float, float>> * expansions_log)
 {
-  NodeHybrid::Coordinates coords = node->pose;
+  Node2D::Coordinates coords = node->getCoords(node->getIndex());
   expansions_log->emplace_back(
     _costmap->getOriginX() + ((coords.x + 0.5) * _costmap->getResolution()),
     _costmap->getOriginY() + ((coords.y + 0.5) * _costmap->getResolution()),
-    NodeHybrid::motion_table.getAngleFromBin(coords.theta));
+    0.0);
 }
 
 template<typename NodeT>
@@ -168,7 +168,11 @@ void AStarAlgorithm<NodeT>::populateExpansionsLog(
   const NodePtr & node,
   std::vector<std::tuple<float, float, float>> * expansions_log)
 {
-  return;
+  typename NodeT::Coordinates coords = node->pose;
+  expansions_log->emplace_back(
+    _costmap->getOriginX() + ((coords.x + 0.5) * _costmap->getResolution()),
+    _costmap->getOriginY() + ((coords.y + 0.5) * _costmap->getResolution()),
+    NodeT::motion_table.getAngleFromBin(coords.theta));
 }
 
 template<>
