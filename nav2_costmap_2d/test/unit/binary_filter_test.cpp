@@ -253,10 +253,10 @@ protected:
   bool createBinaryFilter(const std::string & global_frame, double flip_threshold);
   void createTFBroadcaster(const std::string & mask_frame, const std::string & global_frame);
   void publishTransform();
-  void createNodeWithParams();
-  void addBinaryParams(
+  void createNodesWithParams();
+  void addBinaryParam(
     std::string param_namespace, std::string param_node_name,
-    std::string param_name, bool default_value_set, bool default_param_value);
+    std::string param_name, bool default_value_set, bool default_param_value);  
   void resetBinaryParams();
   void verifyBinaryParams(bool param1_expected_value, bool param2_expected_value);
 
@@ -499,7 +499,7 @@ bool TestNode::createBinaryFilter(const std::string & global_frame, double flip_
   return true;
 }
 
-void TestNode::createNodeWithParams()
+void TestNode::createNodesWithParams()
 {
   // Create server nodes
   params_node_0_ = std::make_shared<ParamsNode>(NODE_NAME_0, PARAM_NAME_0, DEFAULT_PARAM_VALUE_0);
@@ -877,7 +877,7 @@ void TestNode::reset()
  * @param default_value_set whether default value is set or not
  * @param default_param_value default value of the param (ignored if default_value_set is false)
  */
-void TestNode::addBinaryParams(
+void TestNode::addBinaryParam(
   std::string param_namespace, std::string param_node_name, std::string param_name,
   bool default_value_set, bool default_param_value)
 {
@@ -940,9 +940,9 @@ TEST_F(TestNode, testUnchangedBinaryParams)
   // Initilize test system
   createMaps("map");
   publishMaps(nav2_costmap_2d::BINARY_FILTER, MASK_TOPIC, 0.0, 1.0);
-  addBinaryParams("Param1", NODE_NAME_0, PARAM_NAME_0, true, true);
-  addBinaryParams("Param2", NODE_NAME_1, PARAM_NAME_1, true, false);
-  createNodeWithParams();
+  addBinaryParam("Param1", NODE_NAME_0, PARAM_NAME_0, true, true);
+  addBinaryParam("Param2", NODE_NAME_1, PARAM_NAME_1, true, false);
+  createNodesWithParams();
   ASSERT_TRUE(createBinaryFilter("map", 10.0));
 
   // Basic flow with no changes
@@ -959,9 +959,9 @@ TEST_F(TestNode, testChangedBinaryParams)
   // Initilize test system
   createMaps("map");
   publishMaps(nav2_costmap_2d::BINARY_FILTER, MASK_TOPIC, 0.0, 1.0);
-  addBinaryParams("Param1", NODE_NAME_0, PARAM_NAME_0, true, true);
-  addBinaryParams("Param2", NODE_NAME_1, PARAM_NAME_1, true, false);
-  createNodeWithParams();
+  addBinaryParam("Param1", NODE_NAME_0, PARAM_NAME_0, true, true);
+  addBinaryParam("Param2", NODE_NAME_1, PARAM_NAME_1, true, false);
+  createNodesWithParams();
   ASSERT_TRUE(createBinaryFilter("map", 10.0));
 
   testSimpleFlip(true);
@@ -979,9 +979,9 @@ TEST_F(TestNode, testUnsetDefaultBinaryParams)
   publishMaps(nav2_costmap_2d::BINARY_FILTER, MASK_TOPIC, 0.0, 1.0);
 
   // Defaut value is not set                          (false)
-  addBinaryParams("Param1", NODE_NAME_0, PARAM_NAME_0, false, true);
-  addBinaryParams("Param2", NODE_NAME_1, PARAM_NAME_1, false, false);
-  createNodeWithParams();
+  addBinaryParam("Param1", NODE_NAME_0, PARAM_NAME_0, false, true);
+  addBinaryParam("Param2", NODE_NAME_1, PARAM_NAME_1, false, false);
+  createNodesWithParams();
   ASSERT_TRUE(createBinaryFilter("map", 10.0));
 
   // Basic flow with changes
@@ -1001,9 +1001,9 @@ TEST_F(TestNode, testWrongBinaryParamNode)
   publishMaps(nav2_costmap_2d::BINARY_FILTER, MASK_TOPIC, 0.0, 1.0);
 
   // Set woring Param1 node name
-  addBinaryParams("Param1", "wrong_name", PARAM_NAME_0, true, true);
-  addBinaryParams("Param2", NODE_NAME_1, PARAM_NAME_1, true, false);
-  createNodeWithParams();
+  addBinaryParam("Param1", "wrong_name", PARAM_NAME_0, true, true);
+  addBinaryParam("Param2", NODE_NAME_1, PARAM_NAME_1, true, false);
+  createNodesWithParams();
   ASSERT_TRUE(createBinaryFilter("map", 10.0));
 
   // Basic flow with changes
@@ -1023,9 +1023,9 @@ TEST_F(TestNode, testWrongBinaryParamName)
   publishMaps(nav2_costmap_2d::BINARY_FILTER, MASK_TOPIC, 0.0, 1.0);
 
   // Set woring Param1 node name
-  addBinaryParams("Param1", NODE_NAME_0, "wrong_param_name", true, true);
-  addBinaryParams("Param2", NODE_NAME_1, PARAM_NAME_1, true, false);
-  createNodeWithParams();
+  addBinaryParam("Param1", NODE_NAME_0, "wrong_param_name", true, true);
+  addBinaryParam("Param2", NODE_NAME_1, PARAM_NAME_1, true, false);
+  createNodesWithParams();
   ASSERT_TRUE(createBinaryFilter("map", 10.0));
 
   // Basic flow with changes
