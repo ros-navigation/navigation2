@@ -1003,7 +1003,7 @@ TEST_F(TestNode, testWrongBinaryParamNode)
   publishMaps(nav2_costmap_2d::BINARY_FILTER, MASK_TOPIC, 0.0, 1.0);
 
   // Set woring Param1 node name
-  addBinaryParam("wrong_name",PARAM_NAMESPACE_0, PARAM_NAME_0, true, true);
+  addBinaryParam("wrong_node_name",PARAM_NAMESPACE_0, PARAM_NAME_0, true, true);
   addBinaryParam(NODE_NAME_1, PARAM_NAMESPACE_1, PARAM_NAME_1, true, false);
   createNodesWithParams();
   ASSERT_TRUE(createBinaryFilter("map", 10.0));
