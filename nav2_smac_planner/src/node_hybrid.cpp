@@ -361,7 +361,6 @@ float NodeHybrid::getTraversalCost(const NodePtr & child)
   }
 
   const TurnDirection & child_turn_dir = child->getTurnDirection();
-  const unsigned int & child_motion_prim = child->getMotionPrimitiveIndex();
   float travel_cost = 0.0;
   float travel_cost_raw =
     NodeHybrid::travel_distance_cost *
