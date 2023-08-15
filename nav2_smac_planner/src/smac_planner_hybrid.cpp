@@ -496,6 +496,13 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
         if (_smoother) {
           reinit_smoother = true;
         }
+
+        if (parameter.as_double() < _costmap->getResolution() * _downsampling_factor) {
+          RCLCPP_ERROR(
+            _logger, "Min turning radius cannot be less than the search grid cell resolution!");
+          result.successful = false;
+        }
+
         _minimum_turning_radius_global_coords = static_cast<float>(parameter.as_double());
       } else if (name == _name + ".reverse_penalty") {
         reinit_a_star = true;
@@ -527,6 +534,9 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
       } else if (name == _name + ".cache_obstacle_heuristic") {
         reinit_a_star = true;
         _search_info.cache_obstacle_heuristic = parameter.as_bool();
+      } else if (name == _name + ".allow_primitive_interpolation") {
+        _search_info.allow_primitive_interpolation = parameter.as_bool();
+        reinit_a_star = true;
       } else if (name == _name + ".smooth_path") {
         if (parameter.as_bool()) {
           reinit_smoother = true;
