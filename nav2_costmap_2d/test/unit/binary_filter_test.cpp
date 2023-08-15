@@ -258,7 +258,7 @@ protected:
   void createNodesWithParams();
   void addBinaryParam(
     std::string param_node_name, std::string param_namespace,
-    std::string param_name, bool default_value_set, bool default_param_value);  
+    std::string param_name, bool default_value_set, bool default_param_value);
   void resetBinaryParams();
   void verifyBinaryParams(bool param1_expected_value, bool param2_expected_value);
 
@@ -942,8 +942,8 @@ TEST_F(TestNode, testUnchangedBinaryParams)
   // Initilize test system
   createMaps("map");
   publishMaps(nav2_costmap_2d::BINARY_FILTER, MASK_TOPIC, 0.0, 1.0);
-  addBinaryParam(NODE_NAME_0,PARAM_NAMESPACE_0, PARAM_NAME_0, true, true);
-  addBinaryParam(NODE_NAME_1,PARAM_NAMESPACE_1, PARAM_NAME_1, true, false);
+  addBinaryParam(NODE_NAME_0, PARAM_NAMESPACE_0, PARAM_NAME_0, true, true);
+  addBinaryParam(NODE_NAME_1, PARAM_NAMESPACE_1, PARAM_NAME_1, true, false);
   createNodesWithParams();
   ASSERT_TRUE(createBinaryFilter("map", 10.0));
 
@@ -1003,7 +1003,7 @@ TEST_F(TestNode, testWrongBinaryParamNode)
   publishMaps(nav2_costmap_2d::BINARY_FILTER, MASK_TOPIC, 0.0, 1.0);
 
   // Set woring Param1 node name
-  addBinaryParam("wrong_node_name",PARAM_NAMESPACE_0, PARAM_NAME_0, true, true);
+  addBinaryParam("wrong_node_name", PARAM_NAMESPACE_0, PARAM_NAME_0, true, true);
   addBinaryParam(NODE_NAME_1, PARAM_NAMESPACE_1, PARAM_NAME_1, true, false);
   createNodesWithParams();
   ASSERT_TRUE(createBinaryFilter("map", 10.0));
