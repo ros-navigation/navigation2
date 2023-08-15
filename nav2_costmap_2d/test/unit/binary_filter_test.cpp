@@ -44,7 +44,6 @@ static const char MASK_TOPIC[]{"mask"};
 static const char BINARY_STATE_TOPIC[]{"binary_state"};
 static const char NODE_NAME_0[]{"node_name_0"};
 static const char NODE_NAME_1[]{"node_name_1"};
-static const std::vector<std::string> BINARY_PARAMETERS{"Param1", "Param2"};
 static const char PARAM_NAME_0[]{"test_param"};
 static const char PARAM_NAME_1[]{"test_param"};
 static const bool DEFAULT_PARAM_VALUE_0 = true;
@@ -234,8 +233,6 @@ public:
   bool default_parameter_value_{false};
   bool parameter_value_{false};
   std::string parameter_name_{""};
-
-private:
 };  // ParamsNode
 
 class TestNode : public ::testing::Test
@@ -288,9 +285,6 @@ private:
     unsigned int x, unsigned int y, double base, double multiplier, double flip_threshold);
   void verifyBinaryState(bool sign, std_msgs::msg::Bool::SharedPtr state);
 
-  /// @brief Whether to use binary parameters or not (empty array)
-  bool use_parameters_{false};
-
   typedef struct
   {
     std::string namespace_;
@@ -322,8 +316,6 @@ private:
   std::shared_ptr<ParamsNode> params_node_1_;
   std::shared_ptr<nav2_util::NodeThread> params_node_thread_0_;
   std::shared_ptr<nav2_util::NodeThread> params_node_thread_1_;
-  std::shared_ptr<rclcpp::executors::SingleThreadedExecutor> params_executor_0_;
-  std::shared_ptr<rclcpp::executors::SingleThreadedExecutor> params_executor_1_;
 };
 
 void TestNode::createMaps(const std::string & mask_frame)
