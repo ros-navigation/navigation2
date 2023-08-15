@@ -55,7 +55,7 @@ class GpsWaypointFollowerTest(Node):
         #     return False
 
         while not self.action_client.wait_for_server(timeout_sec=1.0):
-            self.info_msg("'follow_waypoints' action server not available, waiting...")
+            self.info_msg("'follow_gps_waypoints' action server not available, waiting...")
 
         action_request = FollowGPSWaypoints.Goal()
         action_request.gps_poses = self.waypoints
@@ -81,7 +81,7 @@ class GpsWaypointFollowerTest(Node):
             time.sleep(2)
             self.cancel_goal()
 
-        self.info_msg("Waiting for 'follow_waypoints' action to complete")
+        self.info_msg("Waiting for 'follow_gps_waypoints' action to complete")
         try:
             rclpy.spin_until_future_complete(self, get_result_future)
             status = get_result_future.result().status
@@ -113,7 +113,7 @@ class GpsWaypointFollowerTest(Node):
         self.info_msg("Shutting down")
 
         self.action_client.destroy()
-        self.info_msg("Destroyed follow_waypoints action client")
+        self.info_msg("Destroyed follow_gps_waypoints action client")
 
         transition_service = "lifecycle_manager_navigation/manage_nodes"
         mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
@@ -184,6 +184,7 @@ def main(argv=sys.argv[1:]):
     # stop on failure test with bogous waypoint
     test.setStopFailureParam(True)
     bwps = [[55.944831, -3.186998], [35.0, -118.0], [55.944782, -3.187060]]
+    test.setWaypoints(bwps)
     result = test.run(True, False)
     assert not result
     result = not result

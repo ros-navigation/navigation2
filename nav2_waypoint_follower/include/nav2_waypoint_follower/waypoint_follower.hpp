@@ -153,15 +153,13 @@ protected:
  * @brief Action client result callback
  * @param result Result of action server updated asynchronously
  */
-  template<typename T>
-  void resultCallback(const T & result);
+  void resultCallback(const rclcpp_action::ClientGoalHandle<ClientT>::WrappedResult & result);
 
   /**
    * @brief Action client goal response callback
    * @param goal Response of action server updated asynchronously
    */
-  template<typename T>
-  void goalResponseCallback(const T & goal);
+  void goalResponseCallback(const rclcpp_action::ClientGoalHandle<ClientT>::SharedPtr & goal);
 
   /**
    * @brief given some gps_poses, converts them to map frame using robot_localization's service `fromLL`.

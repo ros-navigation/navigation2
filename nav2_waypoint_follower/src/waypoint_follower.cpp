@@ -263,16 +263,12 @@ void WaypointFollower::followWaypointsHandler(
       client_goal.pose.header.stamp = this->now();
 
       auto send_goal_options = rclcpp_action::Client<ClientT>::SendGoalOptions();
-      send_goal_options.result_callback =
-        std::bind(
-        &WaypointFollower::resultCallback<rclcpp_action::ClientGoalHandle<ClientT>::WrappedResult>,
-        this,
+      send_goal_options.result_callback = std::bind(
+        &WaypointFollower::resultCallback, this,
         std::placeholders::_1);
-      send_goal_options.goal_response_callback =
-        std::bind(
-        &WaypointFollower::goalResponseCallback
-        <rclcpp_action::ClientGoalHandle<ClientT>::SharedPtr>, this,
-        std::placeholders::_1);
+      send_goal_options.goal_response_callback = std::bind(
+        &WaypointFollower::goalResponseCallback,
+        this, std::placeholders::_1);
 
       future_goal_handle_ =
         nav_to_pose_client_->async_send_goal(client_goal, send_goal_options);
@@ -389,9 +385,9 @@ void WaypointFollower::followGPSWaypointsCallback()
     feedback, result);
 }
 
-template<typename T>
-void WaypointFollower::resultCallback(
-  const T & result)
+void
+WaypointFollower::resultCallback(
+  const rclcpp_action::ClientGoalHandle<ClientT>::WrappedResult & result)
 {
   if (result.goal_id != future_goal_handle_.get()->get_goal_id()) {
     RCLCPP_DEBUG(
@@ -418,9 +414,9 @@ void WaypointFollower::resultCallback(
   }
 }
 
-template<typename T>
-void WaypointFollower::goalResponseCallback(
-  const T & goal)
+void
+WaypointFollower::goalResponseCallback(
+  const rclcpp_action::ClientGoalHandle<ClientT>::SharedPtr & goal)
 {
   if (!goal) {
     RCLCPP_ERROR(
