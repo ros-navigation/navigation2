@@ -10,6 +10,7 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend>rclcpp</depend>
+  <depend>irobot_events_executor</depend>
   <depend>rclcpp_action</depend>
   <depend>rclcpp_lifecycle</depend>
   <depend>visualization_msgs</depend>

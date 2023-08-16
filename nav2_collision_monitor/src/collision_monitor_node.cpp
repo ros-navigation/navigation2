@@ -491,6 +491,18 @@ bool CollisionMonitor::processApproach(
     const Velocity safe_vel = velocity * change_ratio;
     // Check that currently calculated velocity is safer than
     // chosen for previous shapes one
+
+    double min_vel = polygon->getMinVelBeforeStop();
+    if (min_vel != -1.0){
+      if (safe_vel < min_vel) {
+        robot_action.action_type = APPROACH;
+        robot_action.req_vel.x = 0.0;
+        robot_action.req_vel.y = 0.0;
+        robot_action.req_vel.tw = 0.0;
+        return true;
+      }
+    }
+
     if (safe_vel < robot_action.req_vel) {
       robot_action.polygon_name = polygon->getName();
       robot_action.action_type = APPROACH;

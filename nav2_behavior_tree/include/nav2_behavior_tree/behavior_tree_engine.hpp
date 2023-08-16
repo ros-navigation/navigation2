@@ -19,6 +19,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "rclcpp/rclcpp.hpp"
 
 #include "behaviortree_cpp_v3/behavior_tree.h"
 #include "behaviortree_cpp_v3/bt_factory.h"
@@ -61,6 +62,7 @@ public:
     BT::Tree * tree,
     std::function<void()> onLoop,
     std::function<bool()> cancelRequested,
+    rclcpp::Logger logger,
     std::chrono::milliseconds loopTimeout = std::chrono::milliseconds(10));
 
   /**

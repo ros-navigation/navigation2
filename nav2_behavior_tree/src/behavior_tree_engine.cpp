@@ -38,6 +38,7 @@ BehaviorTreeEngine::run(
   BT::Tree * tree,
   std::function<void()> onLoop,
   std::function<bool()> cancelRequested,
+  rclcpp::Logger logger,
   std::chrono::milliseconds loopTimeout)
 {
   rclcpp::WallRate loopRate(loopTimeout);
@@ -59,7 +60,7 @@ BehaviorTreeEngine::run(
     }
   } catch (const std::exception & ex) {
     RCLCPP_ERROR(
-      rclcpp::get_logger("BehaviorTreeEngine"),
+      logger,
       "Behavior tree threw exception: %s. Exiting with failure.", ex.what());
     return BtStatus::FAILED;
   }

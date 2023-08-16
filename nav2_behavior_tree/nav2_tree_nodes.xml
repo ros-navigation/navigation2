@@ -13,6 +13,8 @@
       <input_port name="time_allowance">Allowed time for reversing</input_port>
       <input_port name="server_name">Server name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
+      <input_port name="free_goal_vel" default="false">Don't stop when goal reached</input_port>
+      <input_port name="check_local_costmap" default="true">Check if there is an obstacle on path</input_port>
       <output_port name="error_code_id">"Back up error code"</output_port>
     </Action>
 
@@ -209,6 +211,8 @@
         <input_port name="goal">Destination</input_port>
         <input_port name="global_frame">Reference frame</input_port>
         <input_port name="robot_base_frame">Robot base frame</input_port>
+        <input_port name="xy_goal_tolerance">xy goal tolerance</input_port>
+        <input_port name="yaw_goal_tolerance">yaw goal tolerance</input_port>
     </Condition>
 
     <Condition ID="IsStuck"/>

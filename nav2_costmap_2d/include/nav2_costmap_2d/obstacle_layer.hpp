@@ -216,6 +216,7 @@ protected:
 
   std::vector<geometry_msgs::msg::Point> transformed_footprint_;
   bool footprint_clearing_enabled_;
+  bool clear_after_master_grid_update_;
   /**
    * @brief Clear costmap layer info below the robot's footprint
    */

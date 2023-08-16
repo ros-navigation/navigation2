@@ -77,14 +77,14 @@ public:
     RCLCPP_DEBUG(
       node_->get_logger(), "Waiting for \"%s\" service",
       service_name_.c_str());
-    if (!service_client_->wait_for_service(1s)) {
+    if (!service_client_->wait_for_service(10s)) {
       RCLCPP_ERROR(
-        node_->get_logger(), "\"%s\" service server not available after waiting for 1 s",
-        service_node_name.c_str());
+        node_->get_logger(), "\"%s\" service server not available after waiting for 10 s",
+        service_name_.c_str());
       throw std::runtime_error(
               std::string(
                 "Service server %s not available",
-                service_node_name.c_str()));
+                service_name_.c_str()));
     }
 
     RCLCPP_DEBUG(
@@ -134,12 +134,17 @@ public:
       // reset the flag to send the request or not,
       // allowing the user the option to set it in on_tick
       should_send_request_ = true;
+      should_fail_not_sent_request_ = true;
 
       // user defined callback, may modify "should_send_request_".
       on_tick();
 
       if (!should_send_request_) {
-        return BT::NodeStatus::FAILURE;
+        if (should_fail_not_sent_request_) {
+            return BT::NodeStatus::FAILURE;
+        } else {
+            return BT::NodeStatus::SUCCESS;
+        }
       }
 
       future_result_ = service_client_->async_send_request(request_).share();
@@ -256,6 +261,7 @@ protected:
 
   // Can be set in on_tick or on_wait_for_result to indicate if a request should be sent.
   bool should_send_request_;
+  bool should_fail_not_sent_request_;
 };
 
 }  // namespace nav2_behavior_tree

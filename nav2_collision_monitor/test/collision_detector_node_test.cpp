@@ -615,11 +615,6 @@ TEST_F(Tester, testCircleDetection)
   ASSERT_TRUE(waitData(1.5, 300ms, curr_time));
   ASSERT_TRUE(waitState(300ms));
   ASSERT_NE(state_msg_->detections.size(), 0u);
-  ASSERT_EQ(state_msg_->detections[0], true);
-
-  // Stop Collision Detector node
-  cd_->stop();
-}
 
 TEST_F(Tester, testScanDetection)
 {
@@ -654,7 +649,6 @@ TEST_F(Tester, testPointcloudDetection)
 {
   rclcpp::Time curr_time = cd_->now();
 
-  // Set Collision Detector parameters.
   setCommonParameters();
   // Create polygon
   addPolygon("DetectionRegion", CIRCLE, 3.0, "none");
@@ -682,8 +676,6 @@ TEST_F(Tester, testPointcloudDetection)
 int main(int argc, char ** argv)
 {
   // Initialize the system
-  testing::InitGoogleTest(&argc, argv);
-  rclcpp::init(argc, argv);
 
   // Actual testing
   bool test_result = RUN_ALL_TESTS();

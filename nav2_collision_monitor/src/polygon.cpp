@@ -24,6 +24,7 @@
 #include "nav2_util/robot_utils.hpp"
 
 #include "nav2_collision_monitor/kinematics.hpp"
+using rcl_interfaces::msg::ParameterType;
 
 namespace nav2_collision_monitor
 {
@@ -48,6 +49,7 @@ Polygon::~Polygon()
   polygon_sub_.reset();
   polygon_pub_.reset();
   poly_.clear();
+  dyn_params_handler_.reset();
 }
 
 bool Polygon::configure()
@@ -62,6 +64,12 @@ bool Polygon::configure()
   if (!getParameters(polygon_sub_topic, polygon_pub_topic, footprint_topic)) {
     return false;
   }
+  dyn_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(
+    &Polygon::dynamicParametersCallback,
+    this,
+    std::placeholders::_1)
+  );
 
   if (!polygon_sub_topic.empty()) {
     RCLCPP_INFO(
@@ -152,6 +160,11 @@ double Polygon::getAngularLimit() const
 double Polygon::getTimeBeforeCollision() const
 {
   return time_before_collision_;
+}
+
+double Polygon::getMinVelBeforeStop() const
+{
+  return min_vel_before_stop_;
 }
 
 void Polygon::getPolygon(std::vector<Point> & poly) const
@@ -343,6 +356,10 @@ bool Polygon::getCommonParameters(std::string & polygon_pub_topic)
         node, polygon_name_ + ".simulation_time_step", rclcpp::ParameterValue(0.1));
       simulation_time_step_ =
         node->get_parameter(polygon_name_ + ".simulation_time_step").as_double();
+      nav2_util::declare_parameter_if_not_declared(
+        node, polygon_name_ + ".min_vel_before_stop", rclcpp::ParameterValue(-1.0));
+      min_vel_before_stop_ =
+        node->get_parameter(polygon_name_ + ".min_vel_before_stop").as_double();
     }
 
     nav2_util::declare_parameter_if_not_declared(

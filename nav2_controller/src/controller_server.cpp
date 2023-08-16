@@ -427,6 +427,7 @@ void ControllerServer::computeControl()
     std::string c_name = action_server_->get_current_goal()->controller_id;
     std::string current_controller;
     if (findControllerId(c_name, current_controller)) {
+      RCLCPP_INFO(get_logger(), "Selected controller: %s.", c_name.c_str());
       current_controller_ = current_controller;
     } else {
       throw nav2_core::InvalidController("Failed to find controller name: " + c_name);
@@ -453,6 +454,8 @@ void ControllerServer::computeControl()
 
     last_valid_cmd_time_ = now();
     rclcpp::WallRate loop_rate(controller_frequency_);
+    auto begin = std::chrono::steady_clock::now();
+    double real_frequency = controller_frequency_;
     while (rclcpp::ok()) {
       if (action_server_ == nullptr || !action_server_->is_server_active()) {
         RCLCPP_DEBUG(get_logger(), "Action server unavailable or inactive. Stopping.");
@@ -460,9 +463,15 @@ void ControllerServer::computeControl()
       }
 
       if (action_server_->is_cancel_requested()) {
-        RCLCPP_INFO(get_logger(), "Goal was canceled. Stopping the robot.");
+        bool free_goal_vel = action_server_->get_current_goal()->free_goal_vel;
         action_server_->terminate_all();
-        publishZeroVelocity();
+        if (!free_goal_vel){
+          RCLCPP_INFO(get_logger(), "Goal was canceled. Stopping the robot.");
+          publishZeroVelocity();
+        }
+        else {
+          RCLCPP_INFO(get_logger(), "Goal was canceled.");
+        }
         return;
       }
 
@@ -482,9 +491,13 @@ void ControllerServer::computeControl()
       }
 
       if (!loop_rate.sleep()) {
+        auto end = std::chrono::steady_clock::now();
+        double period = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
+        begin = end;
+        real_frequency = 1.0e6 / period;
         RCLCPP_WARN(
-          get_logger(), "Control loop missed its desired rate of %.4fHz",
-          controller_frequency_);
+          get_logger(), "Control loop missed its desired rate of %.4fHz. Achieved rate: %.4fHz",
+          controller_frequency_, real_frequency);
       }
     }
   } catch (nav2_core::InvalidController & e) {
@@ -546,8 +559,10 @@ void ControllerServer::computeControl()
   }
 
   RCLCPP_DEBUG(get_logger(), "Controller succeeded, setting result");
-
-  publishZeroVelocity();
+  bool free_goal_vel = action_server_->get_current_goal()->free_goal_vel;
+  if (!free_goal_vel){
+    publishZeroVelocity();
+  }
 
   // TODO(orduno) #861 Handle a pending preemption and set controller name
   action_server_->succeeded_current();

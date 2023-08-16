@@ -116,6 +116,13 @@ public:
   double getTimeBeforeCollision() const;
 
   /**
+   * @brief Obtains minimum velocity before completly stopping.
+   * Applicable for APPROACH model.
+   * @return Time before collision in seconds
+   */
+  double getMinVelBeforeStop() const;
+
+  /**
    * @brief Gets polygon points
    * @param poly Output polygon points (vertices)
    */
@@ -191,6 +198,12 @@ protected:
    */
   void polygonCallback(geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg);
 
+    /**
+   * @brief Callback executed when a parameter change is detected
+   * @param event ParameterEvent message
+   */
+  rcl_interfaces::msg::SetParametersResult dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
+
   /**
    * @brief Checks if point is inside polygon
    * @param point Given point to check
@@ -204,6 +217,8 @@ protected:
   nav2_util::LifecycleNode::WeakPtr node_;
   /// @brief Collision monitor node logger stored for further usage
   rclcpp::Logger logger_{rclcpp::get_logger("collision_monitor")};
+  /// @brief Dynamic parameters handler
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
 
   // Basic parameters
   /// @brief Name of polygon
@@ -224,6 +239,10 @@ protected:
   double simulation_time_step_;
   /// @brief Polygon subscription
   rclcpp::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_sub_;
+  /// @brief Minimum velocity before we fully stop
+  /// This value is to be compared against x * x + y * y + tw * tw of the output velocity
+  /// and is therefore an experimental value that needs to be tuned
+  double min_vel_before_stop_;
   /// @brief Footprint subscriber
   std::unique_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
 
