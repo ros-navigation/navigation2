@@ -615,6 +615,7 @@ TEST_F(Tester, testCircleDetection)
   ASSERT_TRUE(waitData(1.5, 300ms, curr_time));
   ASSERT_TRUE(waitState(300ms));
   ASSERT_NE(state_msg_->detections.size(), 0u);
+}
 
 TEST_F(Tester, testScanDetection)
 {
