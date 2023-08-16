@@ -16,15 +16,17 @@
 #include <memory>
 
 #include "nav2_behaviors/behavior_server.hpp"
-#include "rclcpp/executors/events_executor/events_executor.hpp"
+#include <rclcpp/experimental/executors/events_executor/events_executor.hpp>
 #include "rclcpp/rclcpp.hpp"
+
+using rclcpp::experimental::executors::EventsExecutor;
 
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
   auto recoveries_node = std::make_shared<behavior_server::BehaviorServer>();
 
-  auto executor = std::make_shared<rclcpp::executors::EventsExecutor>();
+  auto executor = std::make_shared<EventsExecutor>();
 
   executor->add_node(recoveries_node->get_node_base_interface());
   executor->spin();

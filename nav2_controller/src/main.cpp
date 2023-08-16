@@ -16,15 +16,17 @@
 
 #include "nav2_controller/controller_server.hpp"
 
-#include "rclcpp/executors/events_executor/events_executor.hpp"
+#include <rclcpp/experimental/executors/events_executor/events_executor.hpp>
 #include "rclcpp/rclcpp.hpp"
+
+using rclcpp::experimental::executors::EventsExecutor;
 
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
   auto node = std::make_shared<nav2_controller::ControllerServer>();
   
-  auto executor = std::make_shared<rclcpp::executors::EventsExecutor>();
+  auto executor = std::make_shared<EventsExecutor>();
 
   executor->add_node(node->get_node_base_interface());
   executor->spin();

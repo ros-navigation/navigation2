@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.5)
 project(nav2_controller)
 
 find_package(ament_cmake REQUIRED)
-find_package(irobot_events_executor REQUIRED)
 find_package(nav2_core REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(angles REQUIRED)
@@ -37,7 +36,6 @@ add_library(${library_name} SHARED
 set(dependencies
   angles
   rclcpp
-  irobot_events_executor
   rclcpp_action
   rclcpp_components
   std_msgs

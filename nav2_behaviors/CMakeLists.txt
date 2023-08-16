@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.5)
 project(nav2_behaviors)
 
 find_package(ament_cmake REQUIRED)
-find_package(irobot_events_executor REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
@@ -31,7 +30,6 @@ set(executable_name behavior_server)
 
 set(dependencies
   rclcpp
-  irobot_events_executor
   rclcpp_action
   rclcpp_lifecycle
   rclcpp_components

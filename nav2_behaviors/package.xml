@@ -12,7 +12,6 @@
   <build_depend>nav2_common</build_depend>
 
   <build_depend>rclcpp</build_depend>
-  <build_depend>irobot_events_executor</build_depend>
   <build_depend>rclcpp_action</build_depend>
   <build_depend>rclcpp_lifecycle</build_depend>
   <build_depend>nav2_behavior_tree</build_depend>
