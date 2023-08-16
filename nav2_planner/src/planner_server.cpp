@@ -643,6 +643,7 @@ void PlannerServer::isPathValid(
      * The lethal check starts at the closest point to avoid points that have already been passed
      * and may have become occupied
      */
+    std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
     unsigned int mx = 0;
     unsigned int my = 0;
     for (unsigned int i = closest_point_index; i < request->path.poses.size(); ++i) {
