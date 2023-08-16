@@ -504,6 +504,35 @@ void Polygon::updatePolygon(geometry_msgs::msg::PolygonStamped::ConstSharedPtr m
   polygon_ = *msg;
 }
 
+rcl_interfaces::msg::SetParametersResult
+Polygon::dynamicParametersCallback(
+  std::vector<rclcpp::Parameter> parameters)
+{
+  // std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+  rcl_interfaces::msg::SetParametersResult result;
+
+  for (auto parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+
+    if (param_type == ParameterType::PARAMETER_INTEGER) {
+      if (param_name == polygon_name_ + "." + "min_points") {
+        min_points_ = parameter.as_int();
+      }
+    }
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == polygon_name_ + "." + "min_vel_before_stop") {
+        min_vel_before_stop_ = parameter.as_double();
+      }
+      else if (param_name == polygon_name_ + "." + "time_before_collision") {
+        time_before_collision_ = parameter.as_double();
+      }
+    }
+  }
+  result.successful = true;
+  return result;
+}
+
 void Polygon::polygonCallback(geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg)
 {
   RCLCPP_INFO(
