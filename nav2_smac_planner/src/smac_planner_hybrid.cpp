@@ -291,6 +291,11 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   const geometry_msgs::msg::PoseStamped & start,
   const geometry_msgs::msg::PoseStamped & goal)
 {
+  RCLCPP_INFO(
+    _logger, "Computing plan from (%.2f, %.2f) to (%.2f, %.2f)",
+    start.pose.position.x, start.pose.position.y,
+    goal.pose.position.x, goal.pose.position.y);
+
   std::lock_guard<std::mutex> lock_reinit(_mutex);
   steady_clock::time_point a = steady_clock::now();
 
