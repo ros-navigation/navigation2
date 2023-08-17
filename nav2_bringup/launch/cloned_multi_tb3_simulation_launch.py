@@ -25,15 +25,15 @@ from nav2_common.launch import ParseMultiRobotPose
 
 
 def generate_launch_description():
-    '''
-    To bringup multi-robot, give arguments robot name(which is namespace)
-    and pose for initialization.
-    Keep general yaml format.
+    """
+    Bring up the multi-robots with given launch arguments.
+
+    Launch arguments consist of robot name(which is namespace) and pose for initialization.
+    Keep general yaml format for pose information.
     ex) robots:="robot1={x: 1.0, y: 1.0, yaw: 1.5707}; robot2={x: 1.0, y: 1.0, yaw: 1.5707}"
     ex) robots:="robot3={x: 1.0, y: 1.0, z: 1.0, roll: 0.0, pitch: 1.5707, yaw: 1.5707};
                  robot4={x: 1.0, y: 1.0, z: 1.0, roll: 0.0, pitch: 1.5707, yaw: 1.5707}"
-    '''
-
+    """
     # Get the launch directory
     bringup_dir = get_package_share_directory('nav2_bringup')
     launch_dir = os.path.join(bringup_dir, 'launch')
