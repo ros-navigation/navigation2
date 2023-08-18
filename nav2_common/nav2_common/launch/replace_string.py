@@ -15,6 +15,7 @@
 from typing import Dict
 from typing import List
 from typing import Text
+from typing import Optional
 import tempfile
 import launch
 
@@ -27,7 +28,8 @@ class ReplaceString(launch.Substitution):
 
   def __init__(self,
     source_file: launch.SomeSubstitutionsType,
-    replacements: Dict) -> None:
+    replacements: Dict,
+    condition: Optional[launch.Condition] = None) -> None:
     super().__init__()
 
     from launch.utilities import normalize_to_list_of_substitutions  # import here to avoid loop
@@ -35,28 +37,38 @@ class ReplaceString(launch.Substitution):
     self.__replacements = {}
     for key in replacements:
         self.__replacements[key] = normalize_to_list_of_substitutions(replacements[key])
+    self.__condition = condition
 
   @property
   def name(self) -> List[launch.Substitution]:
     """Getter for name."""
     return self.__source_file
 
+  @property
+  def condition(self) -> Optional[launch.Condition]:
+    """Getter for condition."""
+    return self.__condition
+
   def describe(self) -> Text:
     """Return a description of this substitution as a string."""
     return ''
 
   def perform(self, context: launch.LaunchContext) -> Text:
-    output_file = tempfile.NamedTemporaryFile(mode='w', delete=False)
-    replacements = self.resolve_replacements(context)
-    try:
-      input_file = open(launch.utilities.perform_substitutions(context, self.name), 'r')
-      self.replace(input_file, output_file, replacements)
-    except Exception as err:  # noqa: B902
-      print('ReplaceString substitution error: ', err)
-    finally:
-      input_file.close()
-      output_file.close()
-    return output_file.name
+    yaml_filename = launch.utilities.perform_substitutions(context, self.name)
+    if self.__condition is None or self.__condition.evaluate(context):
+      output_file = tempfile.NamedTemporaryFile(mode='w', delete=False)
+      replacements = self.resolve_replacements(context)
+      try:
+        input_file = open(yaml_filename, 'r')
+        self.replace(input_file, output_file, replacements)
+      except Exception as err:  # noqa: B902
+        print('ReplaceString substitution error: ', err)
+      finally:
+        input_file.close()
+        output_file.close()
+      return output_file.name
+    else:
+      return yaml_filename
 
   def resolve_replacements(self, context):
     resolved_replacements = {}

@@ -25,7 +25,7 @@ from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node
 from launch_ros.actions import PushROSNamespace
 from launch_ros.descriptions import ParameterFile
-from nav2_common.launch import RewrittenYaml
+from nav2_common.launch import RewrittenYaml, ReplaceString
 
 
 def generate_launch_description():
@@ -53,6 +53,15 @@ def generate_launch_description():
     #              https://github.com/ros2/launch_ros/issues/56
     remappings = [('/tf', 'tf'),
                   ('/tf_static', 'tf_static')]
+
+    # Only it applys when `use_namespace` is True.
+    # '<robot_namespace>' keyword shall be replaced by 'namespace' launch argument
+    # in config file 'nav2_multirobot_params.yaml' as a default & example.
+    # User defined config file should contain '<robot_namespace>' keyword for the replacements.
+    params_file = ReplaceString(
+        source_file=params_file,
+        replacements={'<robot_namespace>': ('/', namespace)},
+        condition=IfCondition(use_namespace))
 
     configured_params = ParameterFile(
         RewrittenYaml(
