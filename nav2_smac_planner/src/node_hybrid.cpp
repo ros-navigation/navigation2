@@ -1,5 +1,6 @@
 // Copyright (c) 2020, Samsung Research America
 // Copyright (c) 2020, Applied Electric Vehicles Pty Ltd
+// Copyright (c) 2023, Open Navigation LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -494,7 +495,7 @@ float NodeHybrid::getObstacleHeuristic(
   const float & requested_node_cost = obstacle_heuristic_lookup_table[start_index];
   if (requested_node_cost > 0.0f) {
     // costs are doubled due to downsampling
-    return 2.0 * requested_node_cost;
+    return 2.0f * requested_node_cost;
   }
 
   // If not, expand until it is included. This dynamic programming ensures that
@@ -589,7 +590,7 @@ float NodeHybrid::getObstacleHeuristic(
 
   // return requested_node_cost which has been updated by the search
   // costs are doubled due to downsampling
-  return 2.0 * requested_node_cost;
+  return 2.0f * requested_node_cost;
 }
 
 float NodeHybrid::getDistanceHeuristic(
