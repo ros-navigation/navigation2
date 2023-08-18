@@ -67,6 +67,15 @@ def generate_launch_description():
         condition=IfCondition(use_namespace),
     )
 
+    # Only it applys when `use_namespace` is True.
+    # '<robot_namespace>' keyword shall be replaced by 'namespace' launch argument
+    # in config file 'nav2_multirobot_params.yaml' as a default & example.
+    # User defined config file should contain '<robot_namespace>' keyword for the replacements.
+    params_file = ReplaceString(
+        source_file=params_file,
+        replacements={'<robot_namespace>': ('/', namespace)},
+        condition=IfCondition(use_namespace))
+
     configured_params = ParameterFile(
         RewrittenYaml(
             source_file=params_file,
