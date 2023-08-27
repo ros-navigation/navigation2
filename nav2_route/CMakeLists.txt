@@ -17,6 +17,7 @@ find_package(nav2_util REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(nanoflann REQUIRED)
 find_package(nlohmann_json REQUIRED)
+add_compile_options(-g)
 
 nav2_package()
 

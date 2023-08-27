@@ -75,6 +75,11 @@ public:
     const std::string & base_frame);
 
   /**
+   * @brief Activate extractor
+   */
+  void activate();
+
+  /**
    * @brief Sets a new graph when updated
    * @param graph Graph to populate kD tree using
    * @param graph id_to_graph_map to get graph IDX for node IDs

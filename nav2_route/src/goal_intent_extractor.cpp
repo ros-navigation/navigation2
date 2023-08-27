@@ -12,9 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <boost/concept/detail/has_constraints.hpp>
-#include <geometry_msgs/msg/detail/pose_stamped__struct.hpp>
-#include <rclcpp/logging.hpp>
 #include <string>
 #include <memory>
 #include <vector>
@@ -69,7 +66,7 @@ void GoalIntentExtractor::configure(
   node_spatial_tree_->computeTree(graph);
 
   nav2_util::declare_parameter_if_not_declared(
-    node, "enable_search", rclcpp::ParameterValue(false));
+    node, "enable_search", rclcpp::ParameterValue(true));
   enable_search_ = node->get_parameter("enable_search").as_bool(); 
 
   if (enable_search_) {
@@ -79,15 +76,21 @@ void GoalIntentExtractor::configure(
         rclcpp::ParameterValue(std::string("global_costmap/costmap_raw")));
     node->get_parameter("global_costmap_topic", global_costmap_topic);
 
-    int max_iterations;
-    nav2_util::declare_parameter_if_not_declared(
-      node, "max_iterations", rclcpp::ParameterValue(500));
-    max_iterations = node->get_parameter("max_iterations").as_int();
+    // int max_iterations;
+    // nav2_util::declare_parameter_if_not_declared(
+    //   node, "max_iterations", rclcpp::ParameterValue(500));
+    // max_iterations = node->get_parameter("max_iterations").as_int();
 
     costmap_sub_ = 
       std::make_unique<nav2_costmap_2d::CostmapSubscriber>(node, global_costmap_topic);
     bfs_ = std::make_unique<BreadthFirstSearch>();
-    bfs_->initialize(costmap_sub_->getCostmap().get(), max_iterations);
+  }
+}
+
+void GoalIntentExtractor::activate()
+{
+  if(enable_search_) {
+    bfs_->initialize(costmap_sub_->getCostmap().get(), 500);
   }
 }
 
@@ -162,10 +165,10 @@ GoalIntentExtractor::findStartandGoal(const std::shared_ptr<const GoalT> goal)
     unsigned int valid_start_route_id, valid_end_route_id;
     findValidGraphNode(start_route_ids, start_, valid_start_route_id);
     findValidGraphNode(end_route_ids, goal_, valid_end_route_id);
-    return {valid_end_route_id, valid_end_route_id};
+    return {valid_start_route_id, valid_end_route_id};
   }
 
-  return {start_route_ids.front(), start_route_ids.front()};
+  return {start_route_ids.front(), end_route_ids.front()};
 }
 
 template<typename GoalT>

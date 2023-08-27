@@ -41,21 +41,16 @@ NodeSpatialTree::~NodeSpatialTree()
 
 void NodeSpatialTree::computeTree(Graph & graph)
 {
-  std::cout << "Starting" << std::endl;
   if (kdtree_ != nullptr) {
-    std::cout << "if statement" << std::endl;
     delete kdtree_;
-    std::cout << "delete kdtree_" << std::endl;
     kdtree_ = nullptr;
   }
 
-  std::cout << "adaptor" << std::endl;
   if (adaptor_) {
     delete adaptor_;
     adaptor_ = nullptr;
   }
 
-  std::cout << " Creating " << std::endl;
   adaptor_ = new GraphAdaptor(graph);
   kdtree_ = new kd_tree_t(DIMENSION, *adaptor_, nanoflann::KDTreeSingleIndexAdaptorParams(10));
   kdtree_->buildIndex();
@@ -65,7 +60,7 @@ void NodeSpatialTree::computeTree(Graph & graph)
 bool NodeSpatialTree::findNearestGraphNodesToPose(
   const geometry_msgs::msg::PoseStamped & pose_in, std::vector<unsigned int> & node_ids)
 {
-  size_t num_results = 0;
+  size_t num_results = num_of_nearest_nodes_;
   std::vector<unsigned int> ret_index(num_results);
   std::vector<double> out_dist_sqr(num_results);
   const double query_pt[2] = {pose_in.pose.position.x, pose_in.pose.position.y};

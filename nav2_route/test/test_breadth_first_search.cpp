@@ -89,6 +89,8 @@ TEST_F(BFSTestFixture, ray_trace)
   bool result = bfs.isNodeVisible();
   EXPECT_TRUE(result);
 
+  bfs.setStart(0u, 0u);
+  bfs.setGoals(goals);
   costmap->setCost(2u, 2u, LETHAL_OBSTACLE);
   result = bfs.isNodeVisible();
   EXPECT_FALSE(result);

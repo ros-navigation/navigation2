@@ -97,8 +97,8 @@ public:
 
 protected:
   kd_tree_t * kdtree_{nullptr};
-  GraphAdaptor * adaptor_;
-  Graph * graph_;
+  GraphAdaptor * adaptor_{nullptr};
+  Graph * graph_{nullptr};
   int num_of_nearest_nodes_;
 };
 
