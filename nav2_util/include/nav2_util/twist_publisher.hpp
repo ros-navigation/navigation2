@@ -42,8 +42,9 @@ class TwistPublisher
 public:
   /**
   * @brief A constructor
-  * @param service_name name of the service to call
-  * @param provided_node Node to create the service client off of
+  * @param nh The node
+  * @param topic publisher topic name
+  * @param qos publisher quality of service
   */
   explicit TwistPublisher(
     nav2_util::LifecycleNode::SharedPtr nh,
@@ -99,8 +100,6 @@ public:
     if (is_stamped_) {
       twist_stamped_pub_->publish(velocity);
     } else {
-      [[maybe_unused]] const auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>(
-        velocity.twist);
       twist_pub_->publish(velocity.twist);
     }
   }
