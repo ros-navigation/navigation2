@@ -195,7 +195,15 @@ AmclNode::AmclNode(const rclcpp::NodeOptions & options)
     "the odometry frame");
 
   add_parameter(
-    "transform_tolerance", rclcpp::ParameterValue(1.0),
+    "transform_tol_scan_odom_sec", rclcpp::ParameterValue(1.0),
+    "Time between laser scan and odom that is considered acceptable");
+
+  add_parameter(
+    "transform_tol_scan_robot_sec", rclcpp::ParameterValue(1.0),
+    "Time between laser scan and base footprint that is considered acceptable");
+
+  add_parameter(
+    "pose_valid_in_future_sec", rclcpp::ParameterValue(1.0),
     "Time with which to post-date the transform that is published, to indicate that this transform "
     "is valid into the future");
 
@@ -876,7 +884,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
         // We want to send a transform that is good up until a
         // tolerance time so that odom can be used
         auto stamp = tf2_ros::fromMsg(laser_scan->header.stamp);
-        tf2::TimePoint transform_expiration = stamp + transform_tolerance_;
+        tf2::TimePoint transform_expiration = stamp + pose_valid_in_future_sec_;
         sendMapToOdomTransform(transform_expiration);
         sent_first_transform_ = true;
       }
@@ -888,7 +896,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
       // Nothing changed, so we'll just republish the last transform, to keep
       // everybody happy.
       tf2::TimePoint transform_expiration = tf2_ros::fromMsg(laser_scan->header.stamp) +
-        transform_tolerance_;
+        pose_valid_in_future_sec_;
       sendMapToOdomTransform(transform_expiration);
     }
   }
@@ -912,7 +920,7 @@ bool AmclNode::addNewScanner(
   ident.header.stamp = rclcpp::Time();
   tf2::toMsg(tf2::Transform::getIdentity(), ident.pose);
   try {
-    tf_buffer_->transform(ident, laser_pose, base_frame_id_, transform_tolerance_);
+    tf_buffer_->transform(ident, laser_pose, base_frame_id_, transform_tol_scan_robot_sec_);
   } catch (tf2::TransformException & e) {
     RCLCPP_ERROR(
       get_logger(), "Couldn't transform from %s to %s, "
@@ -1254,7 +1262,9 @@ void
 AmclNode::initParameters()
 {
   double save_pose_rate;
-  double tmp_tol;
+  double tmp_tol_odom;
+  double tmp_tol_robot;
+  double tmp_pose_valid;
   double lookup_timeout;
 
   get_parameter("alpha1", alpha1_);
@@ -1291,7 +1301,9 @@ AmclNode::initParameters()
   get_parameter("save_pose_rate", save_pose_rate);
   get_parameter("sigma_hit", sigma_hit_);
   get_parameter("tf_broadcast", tf_broadcast_);
-  get_parameter("transform_tolerance", tmp_tol);
+  get_parameter("transform_tol_scan_odom_sec", tmp_tol_odom);
+  get_parameter("transform_tol_scan_robot_sec", tmp_tol_robot);
+  get_parameter("pose_valid_in_future_sec", tmp_pose_valid);
   get_parameter("transform_lookup_timeout", lookup_timeout);
   get_parameter("update_min_a", a_thresh_);
   get_parameter("update_min_d", d_thresh_);
@@ -1315,7 +1327,9 @@ AmclNode::initParameters()
   get_parameter("dynamic_laser_importance", dynamic_laser_importance_);
   
   save_pose_period_ = tf2::durationFromSec(1.0 / save_pose_rate);
-  transform_tolerance_ = tf2::durationFromSec(tmp_tol);
+  transform_tol_scan_odom_sec_ = tf2::durationFromSec(tmp_tol_odom);
+  transform_tol_scan_robot_sec_ = tf2::durationFromSec(tmp_tol_robot);
+  pose_valid_in_future_sec_ = tf2::durationFromSec(tmp_pose_valid);
   transform_lookup_timeout_ = tf2::durationFromSec(lookup_timeout);
 
   odom_frame_id_ = nav2_util::strip_leading_slash(odom_frame_id_);
@@ -1479,7 +1493,7 @@ AmclNode::dynamicParametersCallback(
       } else if (param_name == "sigma_hit") {
         sigma_hit_ = parameter.as_double();
         reinit_laser = true;
-      } else if (param_name == "transform_tolerance") {
+      } else if (param_name == "transform_tol_scan_odom_sec" || param_name == "transform_tol_scan_robot_sec" || param_name == "pose_valid_in_future_sec") {
         RCLCPP_WARN(get_logger(), "Cannot change param [%s] due to issue with reinitialization of message filters (#28)", param_name.c_str());
       } else if (param_name == "update_min_a") {
         a_thresh_ = parameter.as_double();
@@ -1749,7 +1763,7 @@ AmclNode::initMessageFilters()
     *laser_scan_sub_, *tf_buffer_, odom_frame_id_, 10,
     get_node_logging_interface(),
     get_node_clock_interface(),
-    transform_tolerance_);
+    transform_tol_scan_odom_sec_);
 
 
   laser_scan_connection_ = laser_scan_filter_->registerCallback(

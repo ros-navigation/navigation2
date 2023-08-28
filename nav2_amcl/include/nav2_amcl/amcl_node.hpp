@@ -440,7 +440,9 @@ protected:
   tf2::Duration save_pose_period_;
   double sigma_hit_;
   bool tf_broadcast_;
-  tf2::Duration transform_tolerance_;
+  tf2::Duration transform_tol_scan_odom_sec_;
+  tf2::Duration transform_tol_scan_robot_sec_;
+  tf2::Duration pose_valid_in_future_sec_;
   tf2::Duration transform_lookup_timeout_;
   double a_thresh_;
   double d_thresh_;
