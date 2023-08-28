@@ -122,10 +122,13 @@ struct HybridMotionTable
   float cost_penalty;
   float reverse_penalty;
   float travel_distance_reward;
+  bool downsample_obstacle_heuristic;
+  bool use_quadratic_cost_penalty;
   ompl::base::StateSpacePtr state_space;
   std::vector<std::vector<double>> delta_xs;
   std::vector<std::vector<double>> delta_ys;
   std::vector<TrigValues> trig_values;
+  std::vector<float> travel_costs;
 };
 
 /**
