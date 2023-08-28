@@ -132,6 +132,7 @@ StaticLayer::getParameters()
   declareParameter("map_subscribe_transient_local", rclcpp::ParameterValue(true));
   declareParameter("transform_tolerance", rclcpp::ParameterValue(0.0));
   declareParameter("map_topic", rclcpp::ParameterValue(""));
+  declareParameter("use_maximum", rclcpp::ParameterValue(true));
 
   auto node = node_.lock();
   if (!node) {
