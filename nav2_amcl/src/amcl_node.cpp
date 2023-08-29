@@ -601,10 +601,6 @@ AmclNode::getInitialPoseStatusCallback(
 void
 AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
 {
-  std::lock_guard<std::recursive_mutex> cfl(mutex_);
-
-  RCLCPP_INFO(get_logger(), "initialPoseReceived");
-
   if (msg->header.frame_id == "") {
     // This should be removed at some point
     RCLCPP_WARN(
@@ -620,6 +616,10 @@ AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::Sha
       global_frame_id_.c_str());
     return;
   }
+
+  {
+    std::lock_guard<std::recursive_mutex> cfl(mutex_);
+  
   // Overriding last published pose to initial pose
   last_published_pose_ = *msg;
 
@@ -630,6 +630,8 @@ AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::Sha
       "but AMCL is not yet in the active state");
     return;
   }
+  }
+  
   handleInitialPose(*msg);
 }
 
@@ -686,7 +688,6 @@ AmclNode::externalPoseReceived(const geometry_msgs::msg::PoseWithCovarianceStamp
 void
 AmclNode::handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped & msg)
 {
-  std::lock_guard<std::recursive_mutex> cfl(mutex_);
   // In case the client sent us a pose estimate in the past, integrate the
   // intervening odometric change.
   geometry_msgs::msg::TransformStamped tx_odom;
@@ -742,6 +743,7 @@ AmclNode::handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped & msg)
 
   pf_init_pose_cov.m[2][2] = msg.pose.covariance[6 * 5 + 5];
 
+  std::lock_guard<std::recursive_mutex> cfl(mutex_);
   pf_init(pf_, pf_init_pose_mean, pf_init_pose_cov);
   pf_init_ = false;
   init_pose_received_on_inactive = false;
