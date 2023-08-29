@@ -47,21 +47,20 @@ public:
   * @param qos publisher quality of service
   */
   explicit TwistPublisher(
-    nav2_util::LifecycleNode::SharedPtr nh,
+    nav2_util::LifecycleNode::SharedPtr node,
     const std::string & topic,
     const rclcpp::QoS & qos
   )
-  : topic_(topic), node_(nh)
+  : topic_(topic)
   {
-    assert(nh != nullptr);
-    node_->declare_parameter("enable_stamped_cmd_vel", false);
-    node_->get_parameter("enable_stamped_cmd_vel", is_stamped_);
+    node->declare_parameter("enable_stamped_cmd_vel", false);
+    node->get_parameter("enable_stamped_cmd_vel", is_stamped_);
     if (is_stamped_) {
-      twist_stamped_pub_ = node_->create_publisher<geometry_msgs::msg::TwistStamped>(
+      twist_stamped_pub_ = node->create_publisher<geometry_msgs::msg::TwistStamped>(
         topic_,
         qos);
     } else {
-      twist_pub_ = node_->create_publisher<geometry_msgs::msg::Twist>(
+      twist_pub_ = node->create_publisher<geometry_msgs::msg::Twist>(
         topic_,
         qos);
     }
@@ -115,7 +114,6 @@ public:
 
 protected:
   std::string topic_;
-  nav2_util::LifecycleNode::SharedPtr node_;
   bool is_stamped_;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr twist_pub_;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::TwistStamped>::SharedPtr
