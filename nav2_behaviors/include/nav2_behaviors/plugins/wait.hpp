@@ -53,7 +53,7 @@ public:
   Status onCycleUpdate() override;
 
 protected:
-  std::chrono::time_point<std::chrono::steady_clock> wait_end_;
+  rclcpp::Time wait_end_;
   WaitAction::Feedback::SharedPtr feedback_;
 };
 
