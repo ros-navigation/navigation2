@@ -29,7 +29,6 @@ namespace nav2_route
 
 void BreadthFirstSearch::initialize(nav2_costmap_2d::Costmap2D * costmap, int max_iterations)
 {
-  std::cout << "Set costmap " << std::endl;
   costmap_ = costmap;
 
   int x_size = static_cast<int>(costmap_->getSizeInCellsX());
@@ -76,23 +75,20 @@ void BreadthFirstSearch::search(unsigned int & goal)
   start_->explored = true;
   queue.push(start_);
 
-  int iteration = 0; 
+  int iteration = 0;
   while (!queue.empty()) {
     auto & current = queue.front();
     queue.pop();
 
     if (iteration > max_iterations_) {
-      graph_.clear();
       throw nav2_core::PlannerTimedOut("Exceeded maximum iterations");
     }
 
-    std::cout << "Current index: " << current->index << std::endl;
 
     // Check goals
     for (unsigned int index = 0; index < goals_.size(); ++index) {
       if (current->index == goals_[index]->index) {
         goal = index;
-        graph_.clear();
         return;
       }
     }
@@ -108,34 +104,31 @@ void BreadthFirstSearch::search(unsigned int & goal)
     }
   }
 
-  graph_.clear();
   throw nav2_core::NoValidPathCouldBeFound("No valid path found");
 }
 
 void BreadthFirstSearch::getNeighbors(unsigned int parent_index, NodeVector & neighbors)
 {
-  unsigned int p_mx, p_my; 
+  unsigned int p_mx, p_my;
   costmap_->indexToCells(parent_index, p_mx, p_my);
 
   unsigned int neighbor_index;
   for (const int & neighbors_grid_offset : neighbors_grid_offsets_) {
     // Check if index is negative
     int index = parent_index + neighbors_grid_offset;
-    std::cout << "Neighbor index: " << index << std::endl;
-    if(index < 0){
-      std::cout << "Index is negative" << std::endl;
+    if (index < 0) {
       continue;
     }
 
     neighbor_index = static_cast<unsigned int>(index);
 
-    unsigned int n_mx, n_my; 
+    unsigned int n_mx, n_my;
     costmap_->indexToCells(neighbor_index, n_mx, n_my);
 
     // Check for wrap around conditions
-    if (std::fabs(static_cast<float>(p_mx) - static_cast<float>(n_mx)) > 1 || 
-        std::fabs(static_cast<float>(p_my) - static_cast<float>(n_my)) > 1) {
-      std::cout << "Wraps " << std::endl; 
+    if (std::fabs(static_cast<float>(p_mx) - static_cast<float>(n_mx)) > 1 ||
+      std::fabs(static_cast<float>(p_my) - static_cast<float>(n_my)) > 1)
+    {
       continue;
     }
 
@@ -154,16 +147,14 @@ void BreadthFirstSearch::getNeighbors(unsigned int parent_index, NodeVector & ne
 
 bool BreadthFirstSearch::isNodeVisible()
 {
-  unsigned int s_mx, s_my, g_mx, g_my; 
+  unsigned int s_mx, s_my, g_mx, g_my;
   costmap_->indexToCells(start_->index, s_mx, s_my);
   costmap_->indexToCells(goals_.front()->index, g_mx, g_my);
 
   for (nav2_util::LineIterator line(s_mx, s_my, g_mx, g_my); line.isValid(); line.advance()) {
-    double cost = costmap_->getCost(line.getX(), line.getX()); 
-    std::cout << "cost: " << cost << std::endl;
-
+    double cost = costmap_->getCost(line.getX(), line.getX());
     if (cost == nav2_costmap_2d::LETHAL_OBSTACLE ||
-        cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE)
+      cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE)
     {
       return false;
     }
@@ -186,7 +177,12 @@ bool BreadthFirstSearch::inCollision(unsigned int index)
 
 void BreadthFirstSearch::clearGraph()
 {
-    graph_.clear();
+  graph_.clear();
+}
+
+std::unordered_map<unsigned int, SimpleNode> * BreadthFirstSearch::getGraph()
+{
+  return &graph_;
 }
 
 }  // namespace nav2_route

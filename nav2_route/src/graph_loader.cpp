@@ -33,8 +33,8 @@ GraphLoader::GraphLoader(
 
   nav2_util::declare_parameter_if_not_declared(
     node, "graph_filepath", rclcpp::ParameterValue(
-    ament_index_cpp::get_package_share_directory("nav2_route") + 
-    "/graphs/aws_graph.geojson"));
+      ament_index_cpp::get_package_share_directory("nav2_route") +
+      "/graphs/aws_graph.geojson"));
   graph_filepath_ = node->get_parameter("graph_filepath").as_string();
 
   // Default Graph Parser
@@ -59,7 +59,7 @@ GraphLoader::GraphLoader(
   } catch (pluginlib::PluginlibException & ex) {
     RCLCPP_FATAL(
       logger_,
-      "Failed to create GraphFileLoader. Exception: %s", ex.what()); 
+      "Failed to create GraphFileLoader. Exception: %s", ex.what());
     throw ex;
   }
 }

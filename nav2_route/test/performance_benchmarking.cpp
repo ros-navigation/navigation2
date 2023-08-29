@@ -54,8 +54,8 @@ inline Graph createGraph()
       }
       if (j > 0) {
         // (i, j - 1)
-        node.addEdge(e_cost, &graph[curr_graph_idx - DIM], curr_edge_idx++);        
-        graph[curr_graph_idx - DIM].addEdge(e_cost, &node, curr_edge_idx++);        
+        node.addEdge(e_cost, &graph[curr_graph_idx - DIM], curr_edge_idx++);
+        graph[curr_graph_idx - DIM].addEdge(e_cost, &node, curr_edge_idx++);
       }
 
       curr_graph_idx++;
@@ -119,8 +119,9 @@ int main(int argc, char const * argv[])
   //   "Averaged route size: %f", static_cast<double>(route_legs) / static_cast<double>(NUM_TESTS));
 
   // Third test: Check how much time it takes to do random lookups in the Kd-tree of various graph sizes
-  int num_of_nearest_nodes = 1; 
-  std::shared_ptr<NodeSpatialTree> kd_tree = std::make_shared<NodeSpatialTree>(num_of_nearest_nodes);
+  int num_of_nearest_nodes = 1;
+  std::shared_ptr<NodeSpatialTree> kd_tree =
+    std::make_shared<NodeSpatialTree>(num_of_nearest_nodes);
   kd_tree->computeTree(graph);
 
   auto start = node->now();

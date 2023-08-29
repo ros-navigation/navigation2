@@ -57,6 +57,7 @@ add_library(${library_name} SHARED
   src/goal_intent_extractor.cpp
   src/breadth_first_search.cpp
 )
+target_compile_options(${library_name} PRIVATE -g)
 
 ament_target_dependencies(${library_name}
   ${dependencies}

@@ -39,7 +39,7 @@ TEST(NodeSpatialTreeTest, test_kd_tree)
 
   // Compute our kd tree for this graph
   int num_of_nearest_nodes = 1;
-  std::shared_ptr<NodeSpatialTree> kd_tree = 
+  std::shared_ptr<NodeSpatialTree> kd_tree =
     std::make_shared<NodeSpatialTree>(num_of_nearest_nodes);
 
   kd_tree->computeTree(graph);

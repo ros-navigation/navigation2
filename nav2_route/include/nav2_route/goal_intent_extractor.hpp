@@ -17,6 +17,7 @@
 
 #include <algorithm>
 #include <geometry_msgs/msg/detail/pose_stamped__struct.hpp>
+#include <rclcpp/publisher.hpp>
 #include <string>
 #include <memory>
 #include <vector>
@@ -29,6 +30,7 @@
 #include "nav2_util/node_utils.hpp"
 #include "nav2_msgs/action/compute_route.hpp"
 #include "nav2_msgs/action/compute_and_track_route.hpp"
+#include "nav_msgs/msg/occupancy_grid.hpp"
 
 #include "nav2_route/types.hpp"
 #include "nav2_route/utils.hpp"
@@ -91,6 +93,7 @@ public:
    * @param pose Pose to transform (e.g. start, goal)
    */
   geometry_msgs::msg::PoseStamped transformPose(geometry_msgs::msg::PoseStamped & pose);
+
   /**
    * @brief Main API to find the start and goal graph IDX (not IDs) for routing
    * @param goal Action request goal
@@ -120,19 +123,26 @@ public:
    */
   void setStart(const geometry_msgs::msg::PoseStamped & start_pose);
 
-
   /**
-   * @brief Checks if there is connection between a node and a given pose 
-   * @param node_index The index of the node 
-   * @param pose The pose 
+   * @brief Checks if there is connection between a node and a given pose
+   * @param node_index The index of the node
+   * @param pose The pose
    * @throws nav2_core::StartOutsideMapBounds If the start index is not in the costmap
    * @throws nav2_core::StartOccupied If the start is in lethal cost
    */
-  void findValidGraphNode(std::vector<unsigned int> node_indices,
-                          const geometry_msgs::msg::PoseStamped & pose,
-                          unsigned int & best_node_index);
+  void findValidGraphNode(
+    std::vector<unsigned int> node_indices,
+    const geometry_msgs::msg::PoseStamped & pose,
+    unsigned int & best_node_index);
 
 protected:
+  /**
+   * @brief Visualize the bfs search expansions
+   * @param occ_grid_pub a occupancy grid publisher to view the expansions
+   */
+  void visualizeExpansions(
+    rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr occ_grid_pub);
+
   rclcpp::Logger logger_{rclcpp::get_logger("GoalIntentExtractor")};
   std::shared_ptr<NodeSpatialTree> node_spatial_tree_;
   GraphToIDMap * id_to_graph_map_;
@@ -144,9 +154,13 @@ protected:
   bool prune_goal_;
   float max_dist_from_edge_, min_dist_from_goal_, min_dist_from_start_;
 
+  bool enable_search_;
+  bool enable_search_viz_;
+  int max_iterations_;
   std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
   std::unique_ptr<BreadthFirstSearch> bfs_;
-  bool enable_search_;
+  rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr start_expansion_viz_;
+  rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr goal_expansion_viz_;
 };
 
 }  // namespace nav2_route

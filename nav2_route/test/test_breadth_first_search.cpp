@@ -42,7 +42,7 @@ TEST_F(BFSTestFixture, free_space)
 
   bfs.setStart(0u, 0u);
 
-  std::vector<nav2_costmap_2d::MapLocation> goals; 
+  std::vector<nav2_costmap_2d::MapLocation> goals;
   goals.push_back({1u, 1u});
   bfs.setGoals(goals);
 
@@ -58,7 +58,7 @@ TEST_F(BFSTestFixture, wall)
   initialize(10u, 10u);
 
   unsigned int mx_obs = 3;
-  for(unsigned int my_obs=0; my_obs < costmap->getSizeInCellsY(); ++my_obs) {
+  for (unsigned int my_obs = 0; my_obs < costmap->getSizeInCellsY(); ++my_obs) {
     costmap->setCost(mx_obs, my_obs, LETHAL_OBSTACLE);
   }
 
@@ -88,6 +88,7 @@ TEST_F(BFSTestFixture, ray_trace)
 
   bool result = bfs.isNodeVisible();
   EXPECT_TRUE(result);
+  bfs.clearGraph();
 
   bfs.setStart(0u, 0u);
   bfs.setGoals(goals);

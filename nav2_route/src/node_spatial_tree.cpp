@@ -71,7 +71,7 @@ bool NodeSpatialTree::findNearestGraphNodesToPose(
   }
 
   for (int i = 0; i < num_of_nearest_nodes_ && i < static_cast<int>(ret_index.size()); ++i) {
-    node_ids.push_back(ret_index[i]); 
+    node_ids.push_back(ret_index[i]);
   }
 
   return true;
