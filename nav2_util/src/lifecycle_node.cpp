@@ -36,17 +36,20 @@ LifecycleNode::LifecycleNode(
       bond::msg::Constants::DISABLE_HEARTBEAT_TIMEOUT_PARAM, true));
 
   printLifecycleNodeNotification();
+
+  register_rcl_preshutdown_callback();
 }
 
 LifecycleNode::~LifecycleNode()
 {
   RCLCPP_INFO(get_logger(), "Destroying");
-  // In case this lifecycle node wasn't properly shut down, do it here
-  if (get_current_state().id() ==
-    lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
-  {
-    on_deactivate(get_current_state());
-    on_cleanup(get_current_state());
+
+  runCleanups();
+
+  if (rcl_preshutdown_cb_handle_) {
+    rclcpp::Context::SharedPtr context = get_node_base_interface()->get_context();
+    context->remove_pre_shutdown_callback(*(rcl_preshutdown_cb_handle_.get()));
+    rcl_preshutdown_cb_handle_.reset();
   }
 }
 
@@ -62,6 +65,47 @@ void LifecycleNode::createBond()
   bond_->setHeartbeatPeriod(0.10);
   bond_->setHeartbeatTimeout(4.0);
   bond_->start();
+}
+
+void LifecycleNode::runCleanups()
+{
+  /*
+   * In case this lifecycle node wasn't properly shut down, do it here.
+   * We will give the user some ability to clean up properly here, but it's
+   * best effort; i.e. we aren't trying to account for all possible states.
+   */
+  if (get_current_state().id() ==
+    lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+  {
+    this->deactivate();
+  }
+
+  if (get_current_state().id() ==
+    lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
+  {
+    this->cleanup();
+  }
+}
+
+void LifecycleNode::on_rcl_preshutdown()
+{
+  RCLCPP_INFO(
+    get_logger(), "Running Nav2 LifecycleNode rcl preshutdown (%s)",
+    this->get_name());
+
+  runCleanups();
+
+  destroyBond();
+}
+
+void LifecycleNode::register_rcl_preshutdown_callback()
+{
+  rclcpp::Context::SharedPtr context = get_node_base_interface()->get_context();
+
+  rcl_preshutdown_cb_handle_ = std::make_unique<rclcpp::PreShutdownCallbackHandle>(
+    context->add_pre_shutdown_callback(
+      std::bind(&LifecycleNode::on_rcl_preshutdown, this))
+  );
 }
 
 void LifecycleNode::destroyBond()
