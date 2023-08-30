@@ -400,7 +400,7 @@ float NodeHybrid::getTraversalCost(const NodePtr & child)
   if (motion_table.use_quadratic_cost_penalty) {
     travel_cost_raw *=
       (motion_table.travel_distance_reward +
-        (motion_table.cost_penalty * normalized_cost * normalized_cost));
+      (motion_table.cost_penalty * normalized_cost * normalized_cost));
   } else {
     travel_cost_raw *=
       (motion_table.travel_distance_reward + motion_table.cost_penalty * normalized_cost);
