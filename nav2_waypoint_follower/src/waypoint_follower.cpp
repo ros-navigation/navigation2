@@ -217,7 +217,10 @@ WaypointFollower::followWaypoints()
     feedback->current_waypoint = goal_index;
     action_server_->publish_feedback(feedback);
 
-    if (current_goal_status_.status == ActionStatus::FAILED) {
+    if (
+      current_goal_status_.status == ActionStatus::FAILED ||
+      current_goal_status_.status == ActionStatus::UNKNOWN)
+    {
       nav2_msgs::msg::MissedWaypoint missedWaypoint;
       missedWaypoint.index = goal_index;
       missedWaypoint.goal = goal->poses[goal_index];
@@ -324,6 +327,7 @@ WaypointFollower::resultCallback(
       current_goal_status_.status = ActionStatus::FAILED;
       return;
     default:
+      RCLCPP_ERROR(get_logger(), "Got unknown result from BT");
       current_goal_status_.status = ActionStatus::UNKNOWN;
       return;
   }
