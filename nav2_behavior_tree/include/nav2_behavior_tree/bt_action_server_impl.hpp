@@ -91,6 +91,16 @@ BtActionServer<ActionT>::BtActionServer(
       RCLCPP_INFO_STREAM(logger_, "Error_code parameters were set to:" << error_codes_str);
     }
   }
+
+  // Result timeout for the action server.
+  // In https://github.com/ros2/rcl/pull/1012 a change was introduced
+  // which makes action servers discard a goal handle if the result is not produced
+  // within 10 seconds. Since this may not be the case for all actions in
+  // Nav2, this timeout is exposed as a parameter and default to the previous
+  // expiration value of 15 minutes.
+  if (!node->has_parameter("action_server_result_timeout")) {
+    node->declare_parameter("action_server_result_timeout", 15 * 60);
+  }
 }
 
 template<class ActionT>
@@ -128,15 +138,21 @@ bool BtActionServer<ActionT>::on_configure()
   client_node_->declare_parameter(
     "global_frame", node->get_parameter("global_frame").as_string());
 
+  // set the timeout in seconds for the action server to discard goal handles
+  int timeout;
+  node->get_parameter("action_server_result_timeout", timeout);
+  rcl_action_server_options_t server_options = rcl_action_server_get_default_options();
+  server_options.result_timeout.nanoseconds = RCL_S_TO_NS(timeout);
+
   action_server_ = std::make_shared<ActionServer>(
     node->get_node_base_interface(),
     node->get_node_clock_interface(),
     node->get_node_logging_interface(),
     node->get_node_waitables_interface(),
-    action_name_, std::bind(&BtActionServer<ActionT>::executeCallback, this));
+    action_name_, std::bind(&BtActionServer<ActionT>::executeCallback, this),
+    nullptr, std::chrono::milliseconds(500), false, server_options);
 
   // Get parameters for BT timeouts
-  int timeout;
   node->get_parameter("bt_loop_duration", timeout);
   bt_loop_duration_ = std::chrono::milliseconds(timeout);
   node->get_parameter("default_server_timeout", timeout);
