@@ -16,7 +16,6 @@
 #define NAV2_ROUTE__GOAL_INTENT_EXTRACTOR_HPP_
 
 #include <algorithm>
-#include <geometry_msgs/msg/detail/pose_stamped__struct.hpp>
 #include <rclcpp/publisher.hpp>
 #include <string>
 #include <memory>
@@ -123,19 +122,19 @@ public:
    */
   void setStart(const geometry_msgs::msg::PoseStamped & start_pose);
 
+protected:
   /**
    * @brief Checks if there is connection between a node and a given pose
-   * @param node_index The index of the node
+   * @param node_indices A list of graph node indices
    * @param pose The pose
+   * @return The best node 
    * @throws nav2_core::StartOutsideMapBounds If the start index is not in the costmap
    * @throws nav2_core::StartOccupied If the start is in lethal cost
    */
-  void findValidGraphNode(
+  unsigned int associatePoseWithGraphNode(
     std::vector<unsigned int> node_indices,
-    const geometry_msgs::msg::PoseStamped & pose,
-    unsigned int & best_node_index);
+    const geometry_msgs::msg::PoseStamped & pose);
 
-protected:
   /**
    * @brief Visualize the bfs search expansions
    * @param occ_grid_pub a occupancy grid publisher to view the expansions

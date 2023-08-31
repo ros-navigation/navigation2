@@ -171,13 +171,11 @@ GoalIntentExtractor::findStartandGoal(const std::shared_ptr<const GoalT> goal)
   }
 
   if (enable_search_) {
-    unsigned int valid_start_route_id, valid_end_route_id;
-
-    findValidGraphNode(start_route_ids, start_, valid_start_route_id);
+    unsigned int valid_start_route_id = associatePoseWithGraphNode(start_route_ids, start_);
     visualizeExpansions(start_expansion_viz_);
     bfs_->clearGraph();
 
-    findValidGraphNode(end_route_ids, goal_, valid_end_route_id);
+    unsigned int valid_end_route_id = associatePoseWithGraphNode(end_route_ids, goal_);
     visualizeExpansions(goal_expansion_viz_);
     bfs_->clearGraph();
 
@@ -255,10 +253,9 @@ Route GoalIntentExtractor::pruneStartandGoal(
   return pruned_route;
 }
 
-void GoalIntentExtractor::findValidGraphNode(
+unsigned int GoalIntentExtractor::associatePoseWithGraphNode(
   std::vector<unsigned int> node_indices,
-  const geometry_msgs::msg::PoseStamped & pose,
-  unsigned int & best_node_index)
+  const geometry_msgs::msg::PoseStamped & pose)
 {
   unsigned int s_mx, s_my, g_mx, g_my;
   if (!costmap_sub_->getCostmap()->worldToMap(
@@ -305,14 +302,13 @@ void GoalIntentExtractor::findValidGraphNode(
   bfs_->setGoals(goals);
   if (bfs_->isNodeVisible()) {
     // The visiblity check only validates the first node in goal array
-    best_node_index = valid_node_indices.front();
-    return;
+    return valid_node_indices.front();
   }
 
   unsigned int goal;
   bfs_->search(goal);
 
-  best_node_index = valid_node_indices[goal];
+  return valid_node_indices[goal];
 }
 
 void GoalIntentExtractor::visualizeExpansions(

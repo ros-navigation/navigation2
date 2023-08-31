@@ -17,7 +17,6 @@ find_package(nav2_util REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(nanoflann REQUIRED)
 find_package(nlohmann_json REQUIRED)
-add_compile_options(-g)
 
 nav2_package()
 
@@ -57,7 +56,6 @@ add_library(${library_name} SHARED
   src/goal_intent_extractor.cpp
   src/breadth_first_search.cpp
 )
-target_compile_options(${library_name} PRIVATE -g)
 
 ament_target_dependencies(${library_name}
   ${dependencies}
