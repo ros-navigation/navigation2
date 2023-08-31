@@ -15,14 +15,11 @@
 #ifndef NAV2_ROUTE__GOAL_INTENT_EXTRACTOR_HPP_
 #define NAV2_ROUTE__GOAL_INTENT_EXTRACTOR_HPP_
 
-#include <algorithm>
-#include <rclcpp/publisher.hpp>
 #include <string>
 #include <memory>
 #include <vector>
 
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
-
 #include "tf2_ros/transform_listener.h"
 #include "nav2_core/route_exceptions.hpp"
 #include "nav2_util/robot_utils.hpp"
@@ -124,10 +121,11 @@ public:
 
 protected:
   /**
-   * @brief Checks if there is connection between a node and a given pose
-   * @param node_indices A list of graph node indices
-   * @param pose The pose
-   * @return The best node 
+   * @brief Checks if there is a valid connection between a graph node and a pose by 
+   * preforming a breadth first search through the costmap
+   * @param node_indices A list of graph node indices to check
+   * @param pose The pose that needs to be associated with a graph node
+   * @return The index of the closest graph node found in the search 
    * @throws nav2_core::StartOutsideMapBounds If the start index is not in the costmap
    * @throws nav2_core::StartOccupied If the start is in lethal cost
    */
@@ -136,8 +134,8 @@ protected:
     const geometry_msgs::msg::PoseStamped & pose);
 
   /**
-   * @brief Visualize the bfs search expansions
-   * @param occ_grid_pub a occupancy grid publisher to view the expansions
+   * @brief Visualize the search expansions
+   * @param occ_grid_pub A occupancy grid publisher to view the expansions
    */
   void visualizeExpansions(
     rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr occ_grid_pub);
