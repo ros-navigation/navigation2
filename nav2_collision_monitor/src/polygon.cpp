@@ -295,6 +295,8 @@ bool Polygon::getCommonParameters(std::string & polygon_pub_topic)
       action_type_ = LIMIT;
     } else if (at_str == "approach") {
       action_type_ = APPROACH;
+    } else if (at_str == "none") {
+      action_type_ = DO_NOTHING;
     } else {  // Error if something else
       RCLCPP_ERROR(logger_, "[%s]: Unknown action type: %s", polygon_name_.c_str(), at_str.c_str());
       return false;
@@ -420,7 +422,9 @@ bool Polygon::getParameters(
         polygon_name_.c_str());
     }
 
-    if (action_type_ == STOP || action_type_ == SLOWDOWN || action_type_ == LIMIT) {
+    if (action_type_ == STOP || action_type_ == SLOWDOWN || action_type_ == LIMIT ||
+      action_type_ == DO_NOTHING)
+    {
       // Dynamic polygon will be used
       nav2_util::declare_parameter_if_not_declared(
         node, polygon_name_ + ".polygon_sub_topic", rclcpp::PARAMETER_STRING);
