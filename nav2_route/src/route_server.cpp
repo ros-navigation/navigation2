@@ -220,7 +220,6 @@ Route RouteServer::findRoute(
     route = route_planner_->findRoute(graph_, start_route, end_route, rerouting_info.blocked_ids);
   }
 
-  std::cout << "exiting" << std::endl;
   return goal_intent_extractor_->pruneStartandGoal(route, goal, rerouting_info);
 }
 
