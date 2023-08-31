@@ -96,7 +96,7 @@ BtActionServer<ActionT>::BtActionServer(
   // In https://github.com/ros2/rcl/pull/1012 a change was introduced
   // which makes action servers discard a goal handle if the result is not produced
   // within 10 seconds. Since this may not be the case for all actions in
-  // Nav2, this timeout is exposed as a parameter and default to the previous
+  // Nav2, this timeout is exposed as a parameter and defaults to the previous
   // expiration value of 15 minutes.
   if (!node->has_parameter("action_server_result_timeout")) {
     node->declare_parameter("action_server_result_timeout", 15 * 60);
@@ -138,7 +138,7 @@ bool BtActionServer<ActionT>::on_configure()
   client_node_->declare_parameter(
     "global_frame", node->get_parameter("global_frame").as_string());
 
-  // set the timeout in seconds for the action server to discard goal handles
+  // set the timeout in seconds for the action server to discard goal handles if not finished
   int timeout;
   node->get_parameter("action_server_result_timeout", timeout);
   rcl_action_server_options_t server_options = rcl_action_server_get_default_options();
