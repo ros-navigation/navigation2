@@ -47,7 +47,7 @@ bt_navigator:
     default_server_timeout: 20
     # timeout [s] for action servers to discard goal handles if not completed, 
     # 15 minutes previous default, see https://github.com/ros2/rcl/pull/1012
-    action_server_result_timeout: 900              # timeout for action servers to discard goal handles if not completed, 15 minutes previous de, see https://github.com/ros2/rcl/pull/1012
+    action_server_result_timeout: 900
     navigators: ["navigate_to_pose", "navigate_through_poses"]
     navigate_to_pose:
       plugin: "nav2_bt_navigator/NavigateToPoseNavigator"
