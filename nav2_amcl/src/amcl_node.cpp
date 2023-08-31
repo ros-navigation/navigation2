@@ -595,12 +595,14 @@ AmclNode::getInitialPoseStatusCallback(
 {
   response->status = response->STATUS_NOT_READY;
 
-  if(initial_pose_is_known_) response->status = response->STATUS_OK;
+  if(initial_pose_is_ready_) response->status = response->STATUS_OK;
 }
 
 void
 AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
 {
+  RCLCPP_INFO(get_logger(), "initialPoseReceived");
+
   if (msg->header.frame_id == "") {
     // This should be removed at some point
     RCLCPP_WARN(
@@ -620,16 +622,18 @@ AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::Sha
   {
     std::lock_guard<std::recursive_mutex> cfl(mutex_);
   
-  // Overriding last published pose to initial pose
-  last_published_pose_ = *msg;
+    // Overriding last published pose to initial pose
+    last_published_pose_ = *msg;
 
-  if (!active_) {
-    init_pose_received_on_inactive = true;
-    RCLCPP_WARN(
-      get_logger(), "Received initial pose request, "
-      "but AMCL is not yet in the active state");
-    return;
-  }
+    if (!active_) {
+      init_pose_received_on_inactive = true;
+      RCLCPP_WARN(
+        get_logger(), "Received initial pose request, "
+        "but AMCL is not yet in the active state");
+      return;
+    }
+
+    initial_pose_is_ready_ = true;
   }
   
   handleInitialPose(*msg);
