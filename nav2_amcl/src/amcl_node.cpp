@@ -295,6 +295,8 @@ AmclNode::~AmclNode()
 nav2_util::CallbackReturn
 AmclNode::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
+  std::lock_guard<std::recursive_mutex> cfl(mutex_);
+
   RCLCPP_INFO(get_logger(), "Configuring");
   callback_group_ = create_callback_group(
     rclcpp::CallbackGroupType::MutuallyExclusive, false);
@@ -603,25 +605,25 @@ AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::Sha
 {
   RCLCPP_INFO(get_logger(), "initialPoseReceived");
 
-  if (msg->header.frame_id == "") {
-    // This should be removed at some point
-    RCLCPP_WARN(
-      get_logger(),
-      "Received initial pose with empty frame_id. You should always supply a frame_id.");
-    return;
-  }
-  if (nav2_util::strip_leading_slash(msg->header.frame_id) != global_frame_id_) {
-    RCLCPP_WARN(
-      get_logger(),
-      "Ignoring initial pose in frame \"%s\"; initial poses must be in the global frame, \"%s\"",
-      nav2_util::strip_leading_slash(msg->header.frame_id).c_str(),
-      global_frame_id_.c_str());
-    return;
-  }
-
   {
     std::lock_guard<std::recursive_mutex> cfl(mutex_);
   
+    if (msg->header.frame_id == "") {
+      // This should be removed at some point
+      RCLCPP_WARN(
+        get_logger(),
+        "Received initial pose with empty frame_id. You should always supply a frame_id.");
+      return;
+    }
+    if (nav2_util::strip_leading_slash(msg->header.frame_id) != global_frame_id_) {
+      RCLCPP_WARN(
+        get_logger(),
+        "Ignoring initial pose in frame \"%s\"; initial poses must be in the global frame, \"%s\"",
+        nav2_util::strip_leading_slash(msg->header.frame_id).c_str(),
+        global_frame_id_.c_str());
+      return;
+    }
+
     // Overriding last published pose to initial pose
     last_published_pose_ = *msg;
 
@@ -692,6 +694,19 @@ AmclNode::externalPoseReceived(const geometry_msgs::msg::PoseWithCovarianceStamp
 void
 AmclNode::handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped & msg)
 {
+  std::string base_frame_id, odom_frame_id;
+  tf2::Duration transform_lookup_timeout;
+  bool sent_first_transform;
+  {
+    std::lock_guard<std::recursive_mutex> cfl(mutex_);
+
+    base_frame_id = base_frame_id_;
+    odom_frame_id = odom_frame_id_;
+    transform_lookup_timeout = transform_lookup_timeout_;
+    sent_first_transform = sent_first_transform_;
+  }
+
+
   // In case the client sent us a pose estimate in the past, integrate the
   // intervening odometric change.
   geometry_msgs::msg::TransformStamped tx_odom;
@@ -701,14 +716,14 @@ AmclNode::handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped & msg)
 
     // Check if the transform is available
     tx_odom = tf_buffer_->lookupTransform(
-      base_frame_id_, tf2_ros::fromMsg(msg.header.stamp),
-      base_frame_id_, tf2_time, odom_frame_id_, transform_lookup_timeout_);
+      base_frame_id, tf2_ros::fromMsg(msg.header.stamp),
+      base_frame_id, tf2_time, odom_frame_id, transform_lookup_timeout);
   } catch (tf2::TransformException & e) {
     // If we've never sent a transform, then this is normal, because the
     // global_frame_id_ frame doesn't exist.  We only care about in-time
     // transformation for on-the-move pose-setting, so ignoring this
     // startup condition doesn't really cost us anything.
-    if (sent_first_transform_) {
+    if (sent_first_transform) {
       RCLCPP_WARN(get_logger(), "Failed to transform initial pose in time (%s)", e.what());
     }
     tf2::impl::Converter<false, true>::convert(tf2::Transform::getIdentity(), tx_odom.transform);
