@@ -230,6 +230,7 @@ void BtActionServer<ActionT>::executeCallback()
 {
   if (!on_goal_received_callback_(action_server_->get_current_goal())) {
     action_server_->terminate_current();
+    cleanErrorCodes();
     return;
   }
 
