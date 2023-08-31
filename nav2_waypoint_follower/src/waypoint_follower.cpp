@@ -327,7 +327,7 @@ WaypointFollower::resultCallback(
       current_goal_status_.status = ActionStatus::FAILED;
       return;
     default:
-      RCLCPP_ERROR(get_logger(), "Got unknown result from BT");
+      RCLCPP_ERROR(get_logger(), "Received an UNKNOWN result code from navigation action!");
       current_goal_status_.status = ActionStatus::UNKNOWN;
       return;
   }
