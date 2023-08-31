@@ -86,9 +86,9 @@ void BreadthFirstSearch::search(unsigned int & goal)
 
 
     // Check goals
-    for (unsigned int index = 0; index < goals_.size(); ++index) {
-      if (current->index == goals_[index]->index) {
-        goal = index;
+    for (unsigned int i = 0; i < goals_.size(); ++i) {
+      if (current->index == goals_[i]->index) {
+        goal = i;
         return;
       }
     }

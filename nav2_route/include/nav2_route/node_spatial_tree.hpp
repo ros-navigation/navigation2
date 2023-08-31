@@ -69,9 +69,14 @@ class NodeSpatialTree
 public:
   /**
    * @brief Constructor
+   * @param num_of_nearest_nodes The number of nearest node to return when preforming a
+   * search in the kd tree
    */
   NodeSpatialTree(int num_of_nearest_nodes);
 
+  /**
+   * @brief Delete the default constructor
+   */
   NodeSpatialTree() = delete;
 
   /**

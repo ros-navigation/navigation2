@@ -204,7 +204,6 @@ Route RouteServer::findRoute(
 {
   // Find the search boundaries
   auto [start_route, end_route] = goal_intent_extractor_->findStartandGoal(goal);
-  std::cout << "found start and goal: " << start_route << " " << end_route << std::endl;
 
   if (rerouting_info.rerouting_start_id != std::numeric_limits<unsigned int>::max()) {
     start_route = id_to_graph_map_.at(rerouting_info.rerouting_start_id);
