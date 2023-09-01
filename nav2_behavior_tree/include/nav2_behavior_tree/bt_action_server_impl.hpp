@@ -124,7 +124,7 @@ bool BtActionServer<ActionT>::on_configure()
   client_node_ = std::make_shared<rclcpp::Node>("_", options);
 
   // Declare parameters for client node to share with BT nodes
-  // Declare if not declared in case being used an an external application
+  // Declare if not declared in case being used an external application
   nav2_util::declare_parameter_if_not_declared(
     node, "global_frame", rclcpp::ParameterValue(std::string("map")));
   nav2_util::declare_parameter_if_not_declared(
