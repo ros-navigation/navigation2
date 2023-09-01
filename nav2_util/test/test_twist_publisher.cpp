@@ -47,6 +47,7 @@ TEST(TwistPublisher, Unstamped)
 
   const geometry_msgs::msg::TwistStamped twist_stamped {};
   vel_publisher->publish(twist_stamped);
+  rclcpp::spin_some(node->get_node_base_interface());
   node->deactivate();
   SUCCEED();
 }
