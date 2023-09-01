@@ -1,0 +1,28 @@
+services:
+  rolling:
+    build:
+      args:
+        FROM_IMAGE: ros:rolling
+      context: ..
+      cache_from: 
+        - ghcr.io/ros-planning/navigation2:main
+      target: visualizer
+    container_name: nav2-rolling
+  iron:
+    build:
+      args:
+        FROM_IMAGE: ros:iron
+      context: ..
+      cache_from: 
+        - ghcr.io/ros-planning/navigation2:iron
+      target: visualizer
+    container_name: nav2-iron
+  humble:
+    build:
+      args:
+        FROM_IMAGE: ros:humble
+      context: ..
+      cache_from: 
+        - ghcr.io/ros-planning/navigation2:humble
+      target: visualizer
+    container_name: nav2-humble

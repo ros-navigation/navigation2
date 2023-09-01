@@ -1,24 +1,17 @@
 {
     "name": "Nav2",
-    "build": {
-        "dockerfile": "../Dockerfile",
-        "context": "..",
-        "target": "visualizer",
-        "cacheFrom": "ghcr.io/ros-planning/navigation2:main"
-    },
-    "runArgs": [
-        // "--cap-add=SYS_PTRACE", // enable debugging, e.g. gdb
-        // "--ipc=host", // shared memory transport with host, e.g. rviz GUIs
-        // "--network=host", // network access to host interfaces, e.g. eth0
-        // "--pid=host", // DDS discovery with host, without --network=host
-        // "--privileged", // device access to host peripherals, e.g. USB
-        // "--security-opt=seccomp=unconfined", // enable debugging, e.g. gdb
+    "dockerComposeFile": [
+        "docker-compose.yaml"
     ],
+    "service": "rolling",
+    // Only run the desired, otherwise VSCode builds all of them.
+    // https://stackoverflow.com/questions/64069256/building-only-required-docker-compose-yaml-services-with-vs-code-dev-container
+    "runServices": ["rolling"],
     "workspaceFolder": "/opt/overlay_ws/src/navigation2",
-    "workspaceMount": "source=${localWorkspaceFolder},target=${containerWorkspaceFolder},type=bind",
-    "onCreateCommand": ".devcontainer/on-create-command.sh",
-    "updateContentCommand": ".devcontainer/update-content-command.sh",
-    "postCreateCommand": ".devcontainer/post-create-command.sh",
+    // "workspaceMount": "source=${localWorkspaceFolder},target=${containerWorkspaceFolder},type=bind",
+    // "onCreateCommand": ".devcontainer/on-create-command.sh",
+    // "updateContentCommand": ".devcontainer/update-content-command.sh",
+    // "postCreateCommand": ".devcontainer/post-create-command.sh",
     "remoteEnv": {
         "OVERLAY_MIXINS": "release ccache lld",
         "CCACHE_DIR": "/tmp/.ccache"
