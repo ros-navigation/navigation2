@@ -21,9 +21,14 @@
 #include <string>
 
 #include "geometry_msgs/msg/twist.hpp"
+#include "geometry_msgs/msg/twist_stamped.hpp"
+#include "rclcpp/parameter_service.hpp"
 #include "rclcpp/rclcpp.hpp"
-#include "rclcpp_lifecycle/lifecycle_publisher.hpp"
 #include "rclcpp/qos.hpp"
+#include "rclcpp_lifecycle/lifecycle_publisher.hpp"
+
+#include "lifecycle_node.hpp"
+#include "node_utils.hpp"
 
 namespace nav2_util
 {
@@ -53,7 +58,10 @@ public:
   )
   : topic_(topic)
   {
-    node->declare_parameter("enable_stamped_cmd_vel", false);
+    using nav2_util::declare_parameter_if_not_declared;
+    declare_parameter_if_not_declared(
+      node, "enable_stamped_cmd_vel",
+      rclcpp::ParameterValue{false});
     node->get_parameter("enable_stamped_cmd_vel", is_stamped_);
     if (is_stamped_) {
       twist_stamped_pub_ = node->create_publisher<geometry_msgs::msg::TwistStamped>(
@@ -65,7 +73,6 @@ public:
         qos);
     }
   }
-
 
   void on_activate()
   {

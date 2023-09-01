@@ -41,3 +41,7 @@ target_link_libraries(test_odometry_utils ${library_name})
 ament_add_gtest(test_robot_utils test_robot_utils.cpp)
 ament_target_dependencies(test_robot_utils geometry_msgs)
 target_link_libraries(test_robot_utils ${library_name})
+
+ament_add_gtest(test_twist_publisher test_twist_publisher.cpp)
+ament_target_dependencies(test_twist_publisher rclcpp_lifecycle)
+target_link_libraries(test_twist_publisher ${library_name})
