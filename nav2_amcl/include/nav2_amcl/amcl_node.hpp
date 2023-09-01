@@ -399,7 +399,12 @@ protected:
    */
   void handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped & msg);
   bool init_pose_received_on_inactive{false};
+  
+  // Flag signaling that the initial pose has been set
   bool initial_pose_is_known_{false};
+
+  // Flag signaling that the initial pose has been received
+  bool initial_pose_is_ready_{false};
   bool set_initial_pose_{false};
   bool always_reset_initial_pose_;
   double initial_pose_x_;
