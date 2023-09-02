@@ -24,14 +24,6 @@
 using nav2_util::startup_lifecycle_nodes;
 using nav2_util::reset_lifecycle_nodes;
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {}
-  ~RclCppFixture() {}
-};
-RclCppFixture g_rclcppfixture;
-
 TEST(TwistPublisher, Unstamped)
 {
   rclcpp::init(0, nullptr);
