@@ -99,7 +99,7 @@ BtActionServer<ActionT>::BtActionServer(
   // Nav2, this timeout is exposed as a parameter and defaults to the previous
   // expiration value of 15 minutes.
   if (!node->has_parameter("action_server_result_timeout")) {
-    node->declare_parameter("action_server_result_timeout", 15 * 60);
+    node->declare_parameter("action_server_result_timeout", 900.0);
   }
 }
 
@@ -139,10 +139,10 @@ bool BtActionServer<ActionT>::on_configure()
     "global_frame", node->get_parameter("global_frame").as_string());
 
   // set the timeout in seconds for the action server to discard goal handles if not finished
-  int timeout;
-  node->get_parameter("action_server_result_timeout", timeout);
+  double action_server_result_timeout;
+  node->get_parameter("action_server_result_timeout", action_server_result_timeout);
   rcl_action_server_options_t server_options = rcl_action_server_get_default_options();
-  server_options.result_timeout.nanoseconds = RCL_S_TO_NS(timeout);
+  server_options.result_timeout.nanoseconds = RCL_S_TO_NS(action_server_result_timeout);
 
   action_server_ = std::make_shared<ActionServer>(
     node->get_node_base_interface(),
@@ -153,10 +153,12 @@ bool BtActionServer<ActionT>::on_configure()
     nullptr, std::chrono::milliseconds(500), false, server_options);
 
   // Get parameters for BT timeouts
-  node->get_parameter("bt_loop_duration", timeout);
+  int bt_loop_duration;
+  node->get_parameter("bt_loop_duration", bt_loop_duration);
   bt_loop_duration_ = std::chrono::milliseconds(timeout);
-  node->get_parameter("default_server_timeout", timeout);
-  default_server_timeout_ = std::chrono::milliseconds(timeout);
+  int default_server_timeout;
+  node->get_parameter("default_server_timeout", default_server_timeout);
+  default_server_timeout_ = std::chrono::milliseconds(default_server_timeout);
 
   // Get error code id names to grab off of the blackboard
   error_code_names_ = node->get_parameter("error_code_names").as_string_array();

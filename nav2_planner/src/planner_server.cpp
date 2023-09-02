@@ -53,6 +53,14 @@ PlannerServer::PlannerServer(const rclcpp::NodeOptions & options)
   declare_parameter("planner_plugins", default_ids_);
   declare_parameter("expected_planner_frequency", 1.0);
 
+  // Result timeout for the action server.
+  // In https://github.com/ros2/rcl/pull/1012 a change was introduced
+  // which makes action servers discard a goal handle if the result is not produced
+  // within 10 seconds. Since this may not be the case for all actions in
+  // Nav2, this timeout is exposed as a parameter and defaults to the previous
+  // expiration value of 15 minutes.
+  declare_parameter("action_server_result_timeout", 900.0);
+
   get_parameter("planner_plugins", planner_ids_);
   if (planner_ids_ == default_ids_) {
     for (size_t i = 0; i < default_ids_.size(); ++i) {
@@ -139,6 +147,11 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   // Initialize pubs & subs
   plan_publisher_ = create_publisher<nav_msgs::msg::Path>("plan", 1);
 
+  double action_server_result_timeout;
+  get_parameter("action_server_result_timeout", action_server_result_timeout);
+  rcl_action_server_options_t server_options = rcl_action_server_get_default_options();
+  server_options.result_timeout.nanoseconds = RCL_S_TO_NS(action_server_result_timeout);
+
   // Create the action servers for path planning to a pose and through poses
   action_server_pose_ = std::make_unique<ActionServerToPose>(
     shared_from_this(),
@@ -146,7 +159,7 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     std::bind(&PlannerServer::computePlan, this),
     nullptr,
     std::chrono::milliseconds(500),
-    true);
+    true, server_options);
 
   action_server_poses_ = std::make_unique<ActionServerThroughPoses>(
     shared_from_this(),
@@ -154,7 +167,7 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     std::bind(&PlannerServer::computePlanThroughPoses, this),
     nullptr,
     std::chrono::milliseconds(500),
-    true);
+    true, server_options);
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
