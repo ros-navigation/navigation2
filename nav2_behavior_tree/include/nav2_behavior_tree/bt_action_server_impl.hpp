@@ -161,7 +161,7 @@ bool BtActionServer<ActionT>::on_configure()
   // Get parameters for BT timeouts
   int bt_loop_duration;
   node->get_parameter("bt_loop_duration", bt_loop_duration);
-  bt_loop_duration_ = std::chrono::milliseconds(timeout);
+  bt_loop_duration_ = std::chrono::milliseconds(bt_loop_duration);
   int default_server_timeout;
   node->get_parameter("default_server_timeout", default_server_timeout);
   default_server_timeout_ = std::chrono::milliseconds(default_server_timeout);
