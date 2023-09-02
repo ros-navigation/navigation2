@@ -27,27 +27,81 @@ using nav2_util::reset_lifecycle_nodes;
 class RclCppFixture
 {
 public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
+  RclCppFixture() {}
+  ~RclCppFixture() {}
 };
 RclCppFixture g_rclcppfixture;
 
 TEST(TwistPublisher, Unstamped)
 {
-  auto node = std::make_shared<nav2_util::LifecycleNode>("test_node", "");
-  node->declare_parameter("enable_stamped_cmd_vel", false);
-
-  node->configure();
-  node->activate();
-
-  auto vel_publisher = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel", 1);
+  rclcpp::init(0, nullptr);
+  auto pub_node = std::make_shared<nav2_util::LifecycleNode>("pub_node", "");
+  pub_node->configure();
+  auto vel_publisher = std::make_unique<nav2_util::TwistPublisher>(pub_node, "cmd_vel", 1);
   ASSERT_EQ(vel_publisher->get_subscription_count(), 0);
-
+  EXPECT_FALSE(vel_publisher->is_activated());
+  pub_node->activate();
+  EXPECT_TRUE(vel_publisher->is_activated());
   vel_publisher->on_activate();
+  auto pub_thread = std::thread([&]() {rclcpp::spin(pub_node->get_node_base_interface());});
 
-  const geometry_msgs::msg::TwistStamped twist_stamped {};
-  vel_publisher->publish(twist_stamped);
-  rclcpp::spin_some(node->get_node_base_interface());
-  node->deactivate();
-  SUCCEED();
+  auto sub_node = std::make_shared<nav2_util::LifecycleNode>("sub_node", "");
+  sub_node->configure();
+  sub_node->activate();
+
+  geometry_msgs::msg::TwistStamped pub_msg {};
+  pub_msg.twist.linear.x = 42.0;
+
+  geometry_msgs::msg::Twist sub_msg {};
+  auto my_sub = sub_node->create_subscription<geometry_msgs::msg::Twist>(
+    "cmd_vel", 10,
+    [&](const geometry_msgs::msg::Twist msg) {sub_msg = msg;});
+
+  vel_publisher->publish(pub_msg);
+  rclcpp::spin_some(sub_node->get_node_base_interface());
+
+  EXPECT_EQ(pub_msg.twist.linear.x, sub_msg.linear.x);
+  ASSERT_EQ(vel_publisher->get_subscription_count(), 1);
+  pub_node->deactivate();
+  sub_node->deactivate();
+  rclcpp::shutdown();
+  // Have to join thread after rclcpp is shut down otherwise test hangs.
+  pub_thread.join();
+}
+
+TEST(TwistPublisher, Stamped)
+{
+  rclcpp::init(0, nullptr);
+  auto pub_node = std::make_shared<nav2_util::LifecycleNode>("pub_node", "");
+  pub_node->declare_parameter("enable_stamped_cmd_vel", true);
+  pub_node->configure();
+  auto vel_publisher = std::make_unique<nav2_util::TwistPublisher>(pub_node, "cmd_vel", 1);
+  ASSERT_EQ(vel_publisher->get_subscription_count(), 0);
+  EXPECT_FALSE(vel_publisher->is_activated());
+  pub_node->activate();
+  EXPECT_TRUE(vel_publisher->is_activated());
+  auto pub_thread = std::thread([&]() {rclcpp::spin(pub_node->get_node_base_interface());});
+
+  auto sub_node = std::make_shared<nav2_util::LifecycleNode>("sub_node", "");
+  sub_node->configure();
+  sub_node->activate();
+
+  geometry_msgs::msg::TwistStamped pub_msg {};
+  pub_msg.twist.linear.x = 42.0;
+  pub_msg.header.frame_id = "foo";
+
+  geometry_msgs::msg::TwistStamped sub_msg {};
+  auto my_sub = sub_node->create_subscription<geometry_msgs::msg::TwistStamped>(
+    "cmd_vel", 10,
+    [&](const geometry_msgs::msg::TwistStamped msg) {sub_msg = msg;});
+
+  vel_publisher->publish(pub_msg);
+  rclcpp::spin_some(sub_node->get_node_base_interface());
+  ASSERT_EQ(vel_publisher->get_subscription_count(), 1);
+  EXPECT_EQ(pub_msg, sub_msg);
+  pub_node->deactivate();
+  sub_node->deactivate();
+  rclcpp::shutdown();
+  // Have to join thread after rclcpp is shut down otherwise test hangs.
+  pub_thread.join();
 }
