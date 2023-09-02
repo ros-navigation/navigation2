@@ -1,5 +1,4 @@
-// Copyright (c) 2018 Intel Corporation
-// Copyright (c) 2022 Joshua Wallace
+// Copyright (c) 2023 Pixel Robotics GmbH
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,7 +13,17 @@
 // limitations under the License.
 
 #include <memory>
-#include "nav2_behaviors/plugins/drive_on_heading.hpp"
 
-#include "pluginlib/class_list_macros.hpp"
-PLUGINLIB_EXPORT_CLASS(nav2_behaviors::DriveOnHeading<>, nav2_core::Behavior)
+#include "rclcpp/rclcpp.hpp"
+
+#include "nav2_collision_monitor/collision_detector_node.hpp"
+
+int main(int argc, char * argv[])
+{
+  rclcpp::init(argc, argv);
+  auto node = std::make_shared<nav2_collision_monitor::CollisionDetector>();
+  rclcpp::spin(node->get_node_base_interface());
+  rclcpp::shutdown();
+
+  return 0;
+}

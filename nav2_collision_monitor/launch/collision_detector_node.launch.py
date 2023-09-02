@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2022 Samsung R&D Institute Russia
+# Copyright (c) 2023 Pixel Robotics GmbH
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ from launch.substitutions import NotEqualsSubstitution
 from launch_ros.actions import LoadComposableNodes, SetParameter
 from launch_ros.actions import Node
 from launch_ros.actions import PushROSNamespace
-from launch_ros.descriptions import ComposableNode, ParameterFile
+from launch_ros.descriptions import ComposableNode
 from nav2_common.launch import RewrittenYaml
 
 
@@ -35,7 +35,7 @@ def generate_launch_description():
     package_dir = get_package_share_directory('nav2_collision_monitor')
 
     # Constant parameters
-    lifecycle_nodes = ['collision_monitor']
+    lifecycle_nodes = ['collision_detector']
     autostart = True
     remappings = [('/tf', 'tf'),
                   ('/tf_static', 'tf_static')]
@@ -73,13 +73,11 @@ def generate_launch_description():
         'container_name', default_value='nav2_container',
         description='the name of conatiner that nodes will load in if use composition')
 
-    configured_params = ParameterFile(
-        RewrittenYaml(
-            source_file=params_file,
-            root_key=namespace,
-            param_rewrites={},
-            convert_types=True),
-        allow_substs=True)
+    configured_params = RewrittenYaml(
+        source_file=params_file,
+        root_key=namespace,
+        param_rewrites={},
+        convert_types=True)
 
     # Declare node launching commands
     load_nodes = GroupAction(
@@ -92,7 +90,7 @@ def generate_launch_description():
             Node(
                 package='nav2_lifecycle_manager',
                 executable='lifecycle_manager',
-                name='lifecycle_manager_collision_monitor',
+                name='lifecycle_manager_collision_detector',
                 output='screen',
                 emulate_tty=True,  # https://github.com/ros2/launch/issues/188
                 parameters=[{'autostart': autostart},
@@ -100,7 +98,7 @@ def generate_launch_description():
                 remappings=remappings),
             Node(
                 package='nav2_collision_monitor',
-                executable='collision_monitor',
+                executable='collision_detector',
                 output='screen',
                 emulate_tty=True,  # https://github.com/ros2/launch/issues/188
                 parameters=[configured_params],
@@ -121,14 +119,14 @@ def generate_launch_description():
                     ComposableNode(
                         package='nav2_lifecycle_manager',
                         plugin='nav2_lifecycle_manager::LifecycleManager',
-                        name='lifecycle_manager_collision_monitor',
+                        name='lifecycle_manager_collision_detector',
                         parameters=[{'autostart': autostart},
                                     {'node_names': lifecycle_nodes}],
                         remappings=remappings),
                     ComposableNode(
                         package='nav2_collision_monitor',
-                        plugin='nav2_collision_monitor::CollisionMonitor',
-                        name='collision_monitor',
+                        plugin='nav2_collision_monitor::CollisionDetector',
+                        name='collision_detector',
                         parameters=[configured_params],
                         remappings=remappings)
                 ],

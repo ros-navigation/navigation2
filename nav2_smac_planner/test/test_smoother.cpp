@@ -95,7 +95,7 @@ TEST(SmootherTest, test_full_smoother)
   a_star.initialize(
     false, max_iterations, std::numeric_limits<int>::max(), max_planning_time, 401, size_theta);
   std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
-    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap, size_theta);
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap, size_theta, node);
   checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
 
   // Create A* search to smooth

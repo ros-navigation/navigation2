@@ -74,11 +74,18 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State &)
   node->get_parameter("max_accel", max_accels_);
   node->get_parameter("max_decel", max_decels_);
 
-  for (unsigned int i = 0; i != max_decels_.size(); i++) {
+  for (unsigned int i = 0; i != 3; i++) {
     if (max_decels_[i] > 0.0) {
-      RCLCPP_WARN(
-        get_logger(),
-        "Positive values set of deceleration! These should be negative to slow down!");
+      throw std::runtime_error(
+              "Positive values set of deceleration! These should be negative to slow down!");
+    }
+    if (max_accels_[i] < 0.0) {
+      throw std::runtime_error(
+              "Negative values set of acceleration! These should be positive to speed up!");
+    }
+    if (min_velocities_[i] > max_velocities_[i]) {
+      throw std::runtime_error(
+              "Min velocities are higher than max velocities!");
     }
   }
 
@@ -305,13 +312,14 @@ void VelocitySmoother::smootherTimer()
     current_.linear.y, command_->linear.y, max_accels_[1], max_decels_[1], eta);
   cmd_vel->angular.z = applyConstraints(
     current_.angular.z, command_->angular.z, max_accels_[2], max_decels_[2], eta);
+  last_cmd_ = *cmd_vel;
 
   // Apply deadband restrictions & publish
   cmd_vel->linear.x = fabs(cmd_vel->linear.x) < deadband_velocities_[0] ? 0.0 : cmd_vel->linear.x;
   cmd_vel->linear.y = fabs(cmd_vel->linear.y) < deadband_velocities_[1] ? 0.0 : cmd_vel->linear.y;
   cmd_vel->angular.z = fabs(cmd_vel->angular.z) <
     deadband_velocities_[2] ? 0.0 : cmd_vel->angular.z;
-  last_cmd_ = *cmd_vel;
+
   smoothed_cmd_pub_->publish(std::move(cmd_vel));
 }
 
@@ -357,8 +365,24 @@ VelocitySmoother::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
       } else if (name == "min_velocity") {
         min_velocities_ = parameter.as_double_array();
       } else if (name == "max_accel") {
+        for (unsigned int i = 0; i != 3; i++) {
+          if (parameter.as_double_array()[i] < 0.0) {
+            RCLCPP_WARN(
+              get_logger(),
+              "Negative values set of acceleration! These should be positive to speed up!");
+            result.successful = false;
+          }
+        }
         max_accels_ = parameter.as_double_array();
       } else if (name == "max_decel") {
+        for (unsigned int i = 0; i != 3; i++) {
+          if (parameter.as_double_array()[i] > 0.0) {
+            RCLCPP_WARN(
+              get_logger(),
+              "Positive values set of deceleration! These should be negative to slow down!");
+            result.successful = false;
+          }
+        }
         max_decels_ = parameter.as_double_array();
       } else if (name == "deadband_velocity") {
         deadband_velocities_ = parameter.as_double_array();

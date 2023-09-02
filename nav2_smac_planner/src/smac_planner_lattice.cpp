@@ -31,7 +31,7 @@ using rcl_interfaces::msg::ParameterType;
 
 SmacPlannerLattice::SmacPlannerLattice()
 : _a_star(nullptr),
-  _collision_checker(nullptr, 1),
+  _collision_checker(nullptr, 1, nullptr),
   _smoother(nullptr),
   _costmap(nullptr)
 {
@@ -169,7 +169,7 @@ void SmacPlannerLattice::configure(
   // increments causing "wobbly" checks that could cause larger robots to virtually show collisions
   // in valid configurations. This approximation helps to bound orientation error for all checks
   // in exchange for slight inaccuracies in the collision headings in terminal search states.
-  _collision_checker = GridCollisionChecker(_costmap, 72u);
+  _collision_checker = GridCollisionChecker(_costmap, 72u, node);
   _collision_checker.setFootprint(
     costmap_ros->getRobotFootprint(),
     costmap_ros->getUseRadius(),
@@ -284,7 +284,9 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
   std::string error;
 
   // Note: All exceptions thrown are handled by the planner server and returned to the action
-  if (!_a_star->createPath(path, num_iterations, 0 /*no tolerance*/)) {
+  if (!_a_star->createPath(
+      path, num_iterations, _tolerance / static_cast<float>(_costmap->getResolution())))
+  {
     if (num_iterations < _a_star->getMaxIterations()) {
       throw nav2_core::NoValidPathCouldBeFound("no valid path found");
     } else {

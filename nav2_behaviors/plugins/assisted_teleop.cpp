@@ -14,7 +14,7 @@
 
 #include <utility>
 
-#include "assisted_teleop.hpp"
+#include "nav2_behaviors/plugins/assisted_teleop.hpp"
 #include "nav2_util/node_utils.hpp"
 
 namespace nav2_behaviors
@@ -71,7 +71,7 @@ ResultStatus AssistedTeleop::onRun(const std::shared_ptr<const AssistedTeleopAct
   return ResultStatus{Status::SUCCEEDED, AssistedTeleopActionResult::NONE};
 }
 
-void AssistedTeleop::onActionCompletion()
+void AssistedTeleop::onActionCompletion(std::shared_ptr<AssistedTeleopActionResult>/*result*/)
 {
   teleop_twist_ = geometry_msgs::msg::Twist();
   preempt_teleop_ = false;
