@@ -45,7 +45,6 @@ bool VelocityPolygon::getParameters()
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  // do some try catch?
   nav2_util::declare_parameter_if_not_declared(
     node, polygon_name_ + "." + velocity_polygon_name_ + ".points",
     rclcpp::PARAMETER_DOUBLE_ARRAY);
