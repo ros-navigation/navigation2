@@ -171,13 +171,13 @@ bool Polygon::isShapeSet()
 
 bool Polygon::isUsingVelocityPolygonSelector()
 {
-  return !velocuty_polygons_.empty();
+  return !velocity_polygons_.empty();
 }
 
 void Polygon::updatePolygon(const Velocity & cmd_vel_in)
 {
   if (isUsingVelocityPolygonSelector()) {
-    for (auto & velocity_polygon : velocuty_polygons_) {
+    for (auto & velocity_polygon : velocity_polygons_) {
 
       if (velocity_polygon->isInRange(cmd_vel_in)) {
         // Set the polygon that is within the speed range
@@ -483,7 +483,7 @@ bool Polygon::getParameters(
         node_, polygon_name_,
         velocity_polygon_name);
       if (velocity_polygon->getParameters()) {
-        velocuty_polygons_.emplace_back(velocity_polygon);
+        velocity_polygons_.emplace_back(velocity_polygon);
       }
 
     }

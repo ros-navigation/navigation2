@@ -258,7 +258,7 @@ protected:
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_pub_;
 
   /// @brief Velocity polygon (if any)
-  std::vector<std::shared_ptr<VelocityPolygon>> velocuty_polygons_;
+  std::vector<std::shared_ptr<VelocityPolygon>> velocity_polygons_;
 
   /// @brief Polygon points (vertices) in a base_frame_id_
   std::vector<Point> poly_;
