@@ -58,6 +58,7 @@ add_library(${monitor_library_name} SHARED
 add_library(${detector_library_name} SHARED
   src/collision_detector_node.cpp
   src/polygon.cpp
+  src/polygon_velocity.cpp
   src/circle.cpp
   src/source.cpp
   src/scan.cpp

@@ -134,14 +134,9 @@ public:
   bool isUsingPolygonVelocitySelector();
 
   /**
-   * @brief Updates polygon by velocity (if any)
-   */
-  void updatePolygonByVelocity(const Velocity & cmd_vel_in);
-
-  /**
    * @brief Updates polygon from footprint subscriber (if any)
    */
-  void updatePolygon();
+  void updatePolygon(const Velocity & cmd_vel_in);
 
   /**
    * @brief Gets number of points inside given polygon
@@ -167,6 +162,14 @@ public:
    * @brief Publishes polygon message into a its own topic
    */
   void publish();
+
+  /**
+   * @brief Set the polygon shape based on the polygon points
+   * @param poly_points Polygon points in the format of x1, y1, x2, y2 ...
+   * @param poly Output polygon points (vertices)
+   * @return True if successfully set the polygon shape
+   */
+  static bool setPolygonShape(std::vector<double> & poly_points, std::vector<Point> & poly);
 
 protected:
   /**
@@ -208,14 +211,6 @@ protected:
    * @return True if given point is inside polygon, otherwise false
    */
   bool isPointInside(const Point & point) const;
-
-  /**
-   * @brief Set the polygon shape based on the polygon points
-   * @param poly_points Polygon points in the format of x1, y1, x2, y2 ...
-   * @param poly Output polygon points (vertices)
-   * @return True if successfully set the polygon shape
-   */
-  bool setPolygonShape(std::vector<double> & poly_points, std::vector<Point> & poly);
 
   // ----- Variables -----
 

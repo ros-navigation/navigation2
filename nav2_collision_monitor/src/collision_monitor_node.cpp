@@ -387,13 +387,8 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in)
       break;
     }
 
-    if (polygon->isUsingPolygonVelocitySelector()) {
-      // Update polygon using its velocity ranges
-      polygon->updatePolygonByVelocity(cmd_vel_in);
-    } else {
-      // Otherwise, dynamically update polygon coordinates when it necessary
-      polygon->updatePolygon();
-    }
+    // Update polygon coordinates
+    polygon->updatePolygon(cmd_vel_in);
 
     const ActionType at = polygon->getActionType();
     if (at == STOP || at == SLOWDOWN || at == LIMIT) {

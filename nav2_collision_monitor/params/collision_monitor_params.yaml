@@ -2,8 +2,8 @@ collision_monitor:
   ros__parameters:
     base_frame_id: "base_footprint"
     odom_frame_id: "odom"
-    cmd_vel_in_topic: "cmd_vel_raw"
-    cmd_vel_out_topic: "cmd_vel"
+    cmd_vel_in_topic: "cmd_vel_nav"
+    cmd_vel_out_topic: "cmd_vel_cm"
     state_topic: "collision_monitor_state"
     transform_tolerance: 0.5
     source_timeout: 5.0
@@ -14,7 +14,7 @@ collision_monitor:
     # Footprint could be "polygon" type with dynamically set footprint from footprint_topic
     # or "circle" type with static footprint set by radius. "footprint_topic" parameter
     # to be ignored in circular case.
-    polygons: ["PolygonStop"]
+    polygons: ["PolygonStop" , "FootprintApproach"]
     PolygonStop:
       type: "polygon"
       points: [0.3, 0.3, 0.3, -0.3, 0.0, -0.3, 0.0, 0.3]
@@ -48,37 +48,33 @@ collision_monitor:
       min_points: 6
       visualize: True
       polygon_pub_topic: "polygon_approach"
-      polygon_velocity: ["stop", "rotation", "translation_forward", "translation_backward"] # third priority
-      stop:
-        points: [0.25, 0.25, 0.25, -0.25, -0.25, -0.25, -0.25, 0.25]
-        linear_min: 0.0
-        linear_max: 0.01
-        direction_min: -3.14159
-        direction_max: 3.14159
-        theta_min: 0.0
-        theta_max: 0.01
+      polygon_velocity: ["rotation", "translation_forward", "translation_backward", "stop"] # third priority
       rotation:
         points: [0.3, 0.3, 0.3, -0.3, -0.3, -0.3, -0.3, 0.3]
+        holonomic: false
         linear_min: 0.0
         linear_max: 0.05
-        direction_min: -3.14159
-        direction_max: 3.14159
         theta_min: -1.0
         theta_max: 1.0
       translation_forward:
         points: [0.35, 0.3, 0.35, -0.3, -0.2, -0.3, -0.2, 0.3]
+        holonomic: false
         linear_min: 0.0
         linear_max: 1.0
-        direction_min: -1.5708
-        direction_max: 1.5708
         theta_min: -1.0
         theta_max: 1.0
       translation_backward:
         points: [0.2, 0.3, 0.2, -0.3, -0.35, -0.3, -0.35, 0.3]
-        linear_min: 0.0
+        holonomic: false
+        linear_min: -1.0
+        linear_max: 0.0
+        theta_min: -1.0
+        theta_max: 1.0
+      stop:
+        points: [0.25, 0.25, 0.25, -0.25, -0.25, -0.25, -0.25, 0.25]
+        holonomic: false
+        linear_min: -1.0
         linear_max: 1.0
-        direction_min: 1.5708
-        direction_max: -1.5708
         theta_min: -1.0
         theta_max: 1.0
     observation_sources: ["scan"]

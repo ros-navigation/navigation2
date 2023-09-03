@@ -20,6 +20,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 
+#include "nav2_util/lifecycle_node.hpp"
 #include "nav2_collision_monitor/types.hpp"
 
 namespace nav2_collision_monitor
@@ -35,28 +36,24 @@ class PolygonVelocity
 public:
   /**
    * @brief PolygonVelocity constructor
-   * @param poly Points of the polygon
-   * @param polygon_name Name of polygon
-   * @param linear_max Maximum twist linear velocity
-   * @param linear_min Minimum twist linear velocity
-   * @param direction_max Maximum twist direction angle
-   * @param direction_min Minimum twist direction angle
-   * @param theta_max Maximum twist rotational speed
-   * @param theta_min Minimum twist rotational speed
+   * @param node Collision Monitor node pointer
+   * @param polygon_name Name of main polygon
+   * @param polygon_velocity_name Name of polygon velocity
    */
   PolygonVelocity(
-    const std::vector<Point> & poly,
+    const nav2_util::LifecycleNode::WeakPtr & node,
     const std::string & polygon_name,
-    const double & linear_max,
-    const double & linear_min,
-    const double & direction_max,
-    const double & direction_min,
-    const double & theta_max,
-    const double & theta_min);
+    const std::string & polygon_velocity_name);
   /**
    * @brief PolygonVelocity destructor
    */
   virtual ~PolygonVelocity();
+
+  /**
+   * @brief Supporting routine obtaining polygon velocity specific ROS-parameters
+   * @return True if all parameters were obtained or false in failure case
+   */
+  bool getParameters();
 
   /**
    * @brief Check if the velocities and direction is in expected range.
@@ -75,6 +72,8 @@ public:
 protected:
   // ----- Variables -----
 
+  /// @brief Collision Monitor node
+  nav2_util::LifecycleNode::WeakPtr node_;
   /// @brief Collision monitor node logger stored for further usage
   rclcpp::Logger logger_{rclcpp::get_logger("collision_monitor")};
 
@@ -83,14 +82,18 @@ protected:
   std::vector<Point> poly_;
   /// @brief Name of polygon
   std::string polygon_name_;
+  /// @brief polygon_velocity_name Name of polygon velocity
+  std::string polygon_velocity_name_;
+  /// @brief Holonomic flag (true for holonomic, false for non-holonomic)
+  bool holonomic_;
   /// @brief Maximum twist linear velocity
   double linear_max_;
   /// @brief Minimum twist linear velocity
   double linear_min_;
-  /// @brief Maximum twist direction angle
-  double direction_max_;
-  /// @brief Minimum twist direction angle
-  double direction_min_;
+  /// @brief End angle of velocity direction for holonomic model
+  double direction_end_angle_;
+  /// @brief Start angle of velocity direction for holonomic model
+  double direction_start_angle_;
   /// @brief Maximum twist rotational speed
   double theta_max_;
   /// @brief Minimum twist rotational speed

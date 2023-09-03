@@ -174,34 +174,41 @@ bool Polygon::isUsingPolygonVelocitySelector()
   return !polygons_velocity_.empty();
 }
 
-void Polygon::updatePolygonByVelocity(const Velocity & cmd_vel_in)
+void Polygon::updatePolygon(const Velocity & cmd_vel_in)
 {
-  for (auto & polygon_velocity : polygons_velocity_) {
+  if (isUsingPolygonVelocitySelector()) {
+    for (auto & polygon_velocity : polygons_velocity_) {
 
-    if (polygon_velocity->isInRange(cmd_vel_in)) {
-      // Set the polygon that is within the speed range
-      poly_ = polygon_velocity->getPolygon();
+      if (polygon_velocity->isInRange(cmd_vel_in)) {
+        // Set the polygon that is within the speed range
+        poly_ = polygon_velocity->getPolygon();
 
-      // Update visualization polygon
-      polygon_.polygon.points.clear();
-      for (const Point & p : poly_) {
-        geometry_msgs::msg::Point32 p_s;
-        p_s.x = p.x;
-        p_s.y = p.y;
-        // p_s.z will remain 0.0
-        polygon_.polygon.points.push_back(p_s);
+        // Update visualization polygon
+        polygon_.polygon.points.clear();
+        for (const Point & p : poly_) {
+          geometry_msgs::msg::Point32 p_s;
+          p_s.x = p.x;
+          p_s.y = p.y;
+          // p_s.z will remain 0.0
+          polygon_.polygon.points.push_back(p_s);
+        }
+
+        return;
       }
-
-      return;
     }
-  }
-  RCLCPP_WARN(
-    logger_, "Velocity is not covered by any of the speed polygons. x: %.3f y: %.3f tw: %.3f ",
-    cmd_vel_in.x, cmd_vel_in.y, cmd_vel_in.tw);
-}
 
-void Polygon::updatePolygon()
-{
+    // Log for uncovered velocity
+    auto node = node_.lock();
+    if (!node) {
+      throw std::runtime_error{"Failed to lock node"};
+    }
+    RCLCPP_WARN_THROTTLE(
+      logger_,
+      *node->get_clock(), 2.0, "Velocity is not covered by any of the speed polygons. x: %.3f y: %.3f tw: %.3f ",
+      cmd_vel_in.x, cmd_vel_in.y, cmd_vel_in.tw);
+    return;
+  }
+
   if (footprint_sub_ != nullptr) {
     // Get latest robot footprint from footprint subscriber
     std::vector<geometry_msgs::msg::Point> footprint_vec;
@@ -424,7 +431,14 @@ bool Polygon::getParameters(
         node->get_parameter(polygon_name_ + ".points").as_double_array();
       // Do not need to proceed further, if "points" parameter is defined.
       // Static polygon will be used.
-      return setPolygonShape(poly_row, poly_);
+      if (!setPolygonShape(poly_row, poly_)) {
+        RCLCPP_ERROR(
+          logger_,
+          "[%s]: Polygon has incorrect points description",
+          polygon_name_.c_str());
+        return false;
+      }
+      return true;
     } catch (const rclcpp::exceptions::ParameterUninitializedException &) {
       RCLCPP_INFO(
         logger_,
@@ -432,7 +446,6 @@ bool Polygon::getParameters(
         polygon_name_.c_str());
     }
 
-      std::string polygon_name = polygon_velocity_name;
     try {
       if (action_type_ == STOP || action_type_ == SLOWDOWN || action_type_ == LIMIT ||
         action_type_ == DO_NOTHING)
@@ -458,6 +471,7 @@ bool Polygon::getParameters(
         polygon_name_.c_str());
     }
 
+
     // Polygon velocity will be used
     nav2_util::declare_parameter_if_not_declared(
       node, polygon_name_ + ".polygon_velocity", rclcpp::PARAMETER_STRING_ARRAY);
@@ -465,75 +479,15 @@ bool Polygon::getParameters(
       polygon_name_ + ".polygon_velocity").as_string_array();
 
     for (std::string polygon_velocity_name : polygon_velocity_array) {
-
-      std::string polygon_name = polygon_velocity_name;
-
-      nav2_util::declare_parameter_if_not_declared(
-        node, polygon_name_ + "." + polygon_velocity_name + ".points",
-        rclcpp::PARAMETER_DOUBLE_ARRAY);
-      std::vector<double> polygon_points = node->get_parameter(
-        polygon_name_ + "." + polygon_velocity_name + ".points").as_double_array();
-
-      std::vector<Point> poly;
-      if (!setPolygonShape(polygon_points, poly)) {
-        return false;
+      auto polygon_velocity = std::make_shared<PolygonVelocity>(
+        node_, polygon_name_,
+        polygon_velocity_name);
+      if (polygon_velocity->getParameters()) {
+        polygons_velocity_.emplace_back(polygon_velocity);
       }
 
-      // linear_max param
-      nav2_util::declare_parameter_if_not_declared(
-        node, polygon_name_ + "." + polygon_velocity_name + ".linear_max",
-        rclcpp::ParameterValue(0.0));
-      double linear_max =
-        node->get_parameter(
-        polygon_name_ + "." + polygon_velocity_name +
-        ".linear_max").as_double();
-
-      // linear_min param
-      nav2_util::declare_parameter_if_not_declared(
-        node, polygon_name_ + "." + polygon_velocity_name + ".linear_min",
-        rclcpp::ParameterValue(0.0));
-      double linear_min =
-        node->get_parameter(
-        polygon_name_ + "." + polygon_velocity_name +
-        ".linear_min").as_double();
-
-      // direction_max param
-      nav2_util::declare_parameter_if_not_declared(
-        node, polygon_name_ + "." + polygon_velocity_name + ".direction_max",
-        rclcpp::ParameterValue(0.0));
-      double direction_max =
-        node->get_parameter(
-        polygon_name_ + "." + polygon_velocity_name +
-        ".direction_max").as_double();
-
-      // direction_min param
-      nav2_util::declare_parameter_if_not_declared(
-        node, polygon_name_ + "." + polygon_velocity_name + ".direction_min",
-        rclcpp::ParameterValue(0.0));
-      double direction_min =
-        node->get_parameter(
-        polygon_name_ + "." + polygon_velocity_name +
-        ".direction_min").as_double();
-
-      // theta_max param
-      nav2_util::declare_parameter_if_not_declared(
-        node, polygon_name_ + "." + polygon_velocity_name + ".theta_max", rclcpp::ParameterValue(
-          0.0));
-      double theta_max =
-        node->get_parameter(polygon_name_ + "." + polygon_velocity_name + ".theta_max").as_double();
-
-      // theta_min param
-      nav2_util::declare_parameter_if_not_declared(
-        node, polygon_name_ + "." + polygon_velocity_name + ".theta_min", rclcpp::ParameterValue(
-          0.0));
-      double theta_min =
-        node->get_parameter(polygon_name_ + "." + polygon_velocity_name + ".theta_min").as_double();
-
-      polygons_velocity_.push_back(
-        std::make_shared<PolygonVelocity>(
-          poly, polygon_name, linear_max, linear_min, direction_max,
-          direction_min, theta_max, theta_min));
     }
+
   } catch (const std::exception & ex) {
     RCLCPP_ERROR(
       logger_,
@@ -628,10 +582,6 @@ bool Polygon::setPolygonShape(std::vector<double> & poly_points, std::vector<Poi
 {
   // Check for points format correctness
   if (poly_points.size() <= 6 || poly_points.size() % 2 != 0) {
-    RCLCPP_ERROR(
-      logger_,
-      "[%s]: Polygon has incorrect points description",
-      polygon_name_.c_str());
     return false;
   }
 
