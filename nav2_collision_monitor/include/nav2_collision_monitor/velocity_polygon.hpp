@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_COLLISION_MONITOR__POLYGON_VELOCITY_HPP_
-#define NAV2_COLLISION_MONITOR__POLYGON_VELOCITY_HPP_
+#ifndef NAV2_COLLISION_MONITOR__VELOCITY_POLYGON_HPP_
+#define NAV2_COLLISION_MONITOR__VELOCITY_POLYGON_HPP_
 
 #include <string>
 #include <vector>
@@ -27,30 +27,30 @@ namespace nav2_collision_monitor
 {
 
 /**
- * @brief Polygon velocity class.
+ * @brief Velocity polygon class.
  * This class contains all the points of the polygon and
  * the expected condition of the velocity based polygon.
  */
-class PolygonVelocity
+class VelocityPolygon
 {
 public:
   /**
-   * @brief PolygonVelocity constructor
+   * @brief VelocityPolygon constructor
    * @param node Collision Monitor node pointer
    * @param polygon_name Name of main polygon
-   * @param polygon_velocity_name Name of polygon velocity
+   * @param velocity_polygon_name Name of velocity polygon
    */
-  PolygonVelocity(
+  VelocityPolygon(
     const nav2_util::LifecycleNode::WeakPtr & node,
     const std::string & polygon_name,
-    const std::string & polygon_velocity_name);
+    const std::string & velocity_polygon_name);
   /**
-   * @brief PolygonVelocity destructor
+   * @brief VelocityPolygon destructor
    */
-  virtual ~PolygonVelocity();
+  virtual ~VelocityPolygon();
 
   /**
-   * @brief Supporting routine obtaining polygon velocity specific ROS-parameters
+   * @brief Supporting routine obtaining velocity polygon specific ROS-parameters
    * @return True if all parameters were obtained or false in failure case
    */
   bool getParameters();
@@ -82,8 +82,8 @@ protected:
   std::vector<Point> poly_;
   /// @brief Name of polygon
   std::string polygon_name_;
-  /// @brief polygon_velocity_name Name of polygon velocity
-  std::string polygon_velocity_name_;
+  /// @brief velocity_polygon_name Name of velocity polygon
+  std::string velocity_polygon_name_;
   /// @brief Holonomic flag (true for holonomic, false for non-holonomic)
   bool holonomic_;
   /// @brief Maximum twist linear velocity
@@ -98,8 +98,8 @@ protected:
   double theta_max_;
   /// @brief Minimum twist rotational speed
   double theta_min_;
-};  // class PolygonVelocity
+};  // class VelocityPolygon
 
 }  // namespace nav2_collision_monitor
 
-#endif  // NAV2_COLLISION_MONITOR__POLYGON_VELOCITY_HPP_
+#endif  // NAV2_COLLISION_MONITOR__VELOCITY_POLYGON_HPP_

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_collision_monitor/polygon_velocity.hpp"
+#include "nav2_collision_monitor/velocity_polygon.hpp"
 #include "nav2_collision_monitor/polygon.hpp"
 
 #include "nav2_util/node_utils.hpp"
@@ -21,24 +21,24 @@
 namespace nav2_collision_monitor
 {
 
-PolygonVelocity::PolygonVelocity(
+VelocityPolygon::VelocityPolygon(
   const nav2_util::LifecycleNode::WeakPtr & node,
   const std::string & polygon_name,
-  const std::string & polygon_velocity_name)
-: node_(node), polygon_name_(polygon_name), polygon_velocity_name_(polygon_velocity_name)
+  const std::string & velocity_polygon_name)
+: node_(node), polygon_name_(polygon_name), velocity_polygon_name_(velocity_polygon_name)
 {
-  RCLCPP_INFO(logger_, "[%s]: Creating PolygonVelocity", polygon_velocity_name_.c_str());
+  RCLCPP_INFO(logger_, "[%s]: Creating VelocityPolygon", velocity_polygon_name_.c_str());
 }
 
 
-PolygonVelocity::~PolygonVelocity()
+VelocityPolygon::~VelocityPolygon()
 {
-  RCLCPP_INFO(logger_, "[%s]: Destroying PolygonVelocity", polygon_velocity_name_.c_str());
+  RCLCPP_INFO(logger_, "[%s]: Destroying VelocityPolygon", velocity_polygon_name_.c_str());
   poly_.clear();
 }
 
 
-bool PolygonVelocity::getParameters()
+bool VelocityPolygon::getParameters()
 {
   auto node = node_.lock();
   if (!node) {
@@ -47,10 +47,10 @@ bool PolygonVelocity::getParameters()
 
   // do some try catch?
   nav2_util::declare_parameter_if_not_declared(
-    node, polygon_name_ + "." + polygon_velocity_name_ + ".points",
+    node, polygon_name_ + "." + velocity_polygon_name_ + ".points",
     rclcpp::PARAMETER_DOUBLE_ARRAY);
   std::vector<double> polygon_points = node->get_parameter(
-    polygon_name_ + "." + polygon_velocity_name_ + ".points").as_double_array();
+    polygon_name_ + "." + velocity_polygon_name_ + ".points").as_double_array();
 
   if (!Polygon::setPolygonShape(polygon_points, poly_)) {
     RCLCPP_ERROR(
@@ -62,67 +62,67 @@ bool PolygonVelocity::getParameters()
 
   // holonomic param
   nav2_util::declare_parameter_if_not_declared(
-    node, polygon_name_ + "." + polygon_velocity_name_ + ".holonomic",
+    node, polygon_name_ + "." + velocity_polygon_name_ + ".holonomic",
     rclcpp::ParameterValue(false));
   holonomic_ =
     node->get_parameter(
-    polygon_name_ + "." + polygon_velocity_name_ +
+    polygon_name_ + "." + velocity_polygon_name_ +
     ".holonomic").as_bool();
 
   // linear_max param
   nav2_util::declare_parameter_if_not_declared(
-    node, polygon_name_ + "." + polygon_velocity_name_ + ".linear_max",
+    node, polygon_name_ + "." + velocity_polygon_name_ + ".linear_max",
     rclcpp::ParameterValue(0.0));
   linear_max_ =
     node->get_parameter(
-    polygon_name_ + "." + polygon_velocity_name_ +
+    polygon_name_ + "." + velocity_polygon_name_ +
     ".linear_max").as_double();
 
   // linear_min param
   nav2_util::declare_parameter_if_not_declared(
-    node, polygon_name_ + "." + polygon_velocity_name_ + ".linear_min",
+    node, polygon_name_ + "." + velocity_polygon_name_ + ".linear_min",
     rclcpp::ParameterValue(0.0));
   linear_min_ =
     node->get_parameter(
-    polygon_name_ + "." + polygon_velocity_name_ +
+    polygon_name_ + "." + velocity_polygon_name_ +
     ".linear_min").as_double();
 
   // direction_end_angle param
   nav2_util::declare_parameter_if_not_declared(
-    node, polygon_name_ + "." + polygon_velocity_name_ + ".direction_end_angle",
+    node, polygon_name_ + "." + velocity_polygon_name_ + ".direction_end_angle",
     rclcpp::ParameterValue(0.0));
   direction_end_angle_ =
     node->get_parameter(
-    polygon_name_ + "." + polygon_velocity_name_ +
+    polygon_name_ + "." + velocity_polygon_name_ +
     ".direction_end_angle").as_double();
 
   // direction_start_angle param
   nav2_util::declare_parameter_if_not_declared(
-    node, polygon_name_ + "." + polygon_velocity_name_ + ".direction_start_angle",
+    node, polygon_name_ + "." + velocity_polygon_name_ + ".direction_start_angle",
     rclcpp::ParameterValue(0.0));
   direction_start_angle_ =
     node->get_parameter(
-    polygon_name_ + "." + polygon_velocity_name_ +
+    polygon_name_ + "." + velocity_polygon_name_ +
     ".direction_start_angle").as_double();
 
   // theta_max param
   nav2_util::declare_parameter_if_not_declared(
-    node, polygon_name_ + "." + polygon_velocity_name_ + ".theta_max", rclcpp::ParameterValue(
+    node, polygon_name_ + "." + velocity_polygon_name_ + ".theta_max", rclcpp::ParameterValue(
       0.0));
   theta_max_ =
-    node->get_parameter(polygon_name_ + "." + polygon_velocity_name_ + ".theta_max").as_double();
+    node->get_parameter(polygon_name_ + "." + velocity_polygon_name_ + ".theta_max").as_double();
 
   // theta_min param
   nav2_util::declare_parameter_if_not_declared(
-    node, polygon_name_ + "." + polygon_velocity_name_ + ".theta_min", rclcpp::ParameterValue(
+    node, polygon_name_ + "." + velocity_polygon_name_ + ".theta_min", rclcpp::ParameterValue(
       0.0));
   theta_min_ =
-    node->get_parameter(polygon_name_ + "." + polygon_velocity_name_ + ".theta_min").as_double();
+    node->get_parameter(polygon_name_ + "." + velocity_polygon_name_ + ".theta_min").as_double();
 
   return true;
 }
 
-bool PolygonVelocity::isInRange(const Velocity & cmd_vel_in)
+bool VelocityPolygon::isInRange(const Velocity & cmd_vel_in)
 {
   if (holonomic_) {
     const double twist_linear = std::hypot(cmd_vel_in.x, cmd_vel_in.y);
@@ -152,7 +152,7 @@ bool PolygonVelocity::isInRange(const Velocity & cmd_vel_in)
   }
 }
 
-std::vector<Point> PolygonVelocity::getPolygon()
+std::vector<Point> VelocityPolygon::getPolygon()
 {
   return poly_;
 }

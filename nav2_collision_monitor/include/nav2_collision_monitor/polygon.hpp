@@ -28,7 +28,7 @@
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_costmap_2d/footprint_subscriber.hpp"
 
-#include "nav2_collision_monitor/polygon_velocity.hpp"
+#include "nav2_collision_monitor/velocity_polygon.hpp"
 #include "nav2_collision_monitor/types.hpp"
 
 namespace nav2_collision_monitor
@@ -131,7 +131,7 @@ public:
   /**
    * @brief Returns true if using velocity based polygon
    */
-  bool isUsingPolygonVelocitySelector();
+  bool isUsingVelocityPolygonSelector();
 
   /**
    * @brief Updates polygon from footprint subscriber (if any)
@@ -257,8 +257,8 @@ protected:
   /// @brief Polygon publisher for visualization purposes
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_pub_;
 
-  /// @brief Polygon velocity (if any)
-  std::vector<std::shared_ptr<PolygonVelocity>> polygons_velocity_;
+  /// @brief Velocity polygon (if any)
+  std::vector<std::shared_ptr<VelocityPolygon>> velocuty_polygons_;
 
   /// @brief Polygon points (vertices) in a base_frame_id_
   std::vector<Point> poly_;

@@ -169,19 +169,19 @@ bool Polygon::isShapeSet()
   return true;
 }
 
-bool Polygon::isUsingPolygonVelocitySelector()
+bool Polygon::isUsingVelocityPolygonSelector()
 {
-  return !polygons_velocity_.empty();
+  return !velocuty_polygons_.empty();
 }
 
 void Polygon::updatePolygon(const Velocity & cmd_vel_in)
 {
-  if (isUsingPolygonVelocitySelector()) {
-    for (auto & polygon_velocity : polygons_velocity_) {
+  if (isUsingVelocityPolygonSelector()) {
+    for (auto & velocity_polygon : velocuty_polygons_) {
 
-      if (polygon_velocity->isInRange(cmd_vel_in)) {
+      if (velocity_polygon->isInRange(cmd_vel_in)) {
         // Set the polygon that is within the speed range
-        poly_ = polygon_velocity->getPolygon();
+        poly_ = velocity_polygon->getPolygon();
 
         // Update visualization polygon
         polygon_.polygon.points.clear();
@@ -204,7 +204,7 @@ void Polygon::updatePolygon(const Velocity & cmd_vel_in)
     }
     RCLCPP_WARN_THROTTLE(
       logger_,
-      *node->get_clock(), 2.0, "Velocity is not covered by any of the speed polygons. x: %.3f y: %.3f tw: %.3f ",
+      *node->get_clock(), 2.0, "Velocity is not covered by any of the velocity polygons. x: %.3f y: %.3f tw: %.3f ",
       cmd_vel_in.x, cmd_vel_in.y, cmd_vel_in.tw);
     return;
   }
@@ -467,23 +467,23 @@ bool Polygon::getParameters(
     } catch (const rclcpp::exceptions::ParameterUninitializedException &) {
       RCLCPP_INFO(
         logger_,
-        "[%s]: Polygon topic are not defined. Using polygon velocity instead.",
+        "[%s]: Polygon topic are not defined. Using velocity polygon instead.",
         polygon_name_.c_str());
     }
 
 
-    // Polygon velocity will be used
+    // Velocity polygon will be used
     nav2_util::declare_parameter_if_not_declared(
-      node, polygon_name_ + ".polygon_velocity", rclcpp::PARAMETER_STRING_ARRAY);
-    std::vector<std::string> polygon_velocity_array = node->get_parameter(
-      polygon_name_ + ".polygon_velocity").as_string_array();
+      node, polygon_name_ + ".velocity_polygon", rclcpp::PARAMETER_STRING_ARRAY);
+    std::vector<std::string> velocity_polygon_array = node->get_parameter(
+      polygon_name_ + ".velocity_polygon").as_string_array();
 
-    for (std::string polygon_velocity_name : polygon_velocity_array) {
-      auto polygon_velocity = std::make_shared<PolygonVelocity>(
+    for (std::string velocity_polygon_name : velocity_polygon_array) {
+      auto velocity_polygon = std::make_shared<VelocityPolygon>(
         node_, polygon_name_,
-        polygon_velocity_name);
-      if (polygon_velocity->getParameters()) {
-        polygons_velocity_.emplace_back(polygon_velocity);
+        velocity_polygon_name);
+      if (velocity_polygon->getParameters()) {
+        velocuty_polygons_.emplace_back(velocity_polygon);
       }
 
     }

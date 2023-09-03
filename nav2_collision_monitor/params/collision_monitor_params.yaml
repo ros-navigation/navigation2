@@ -48,7 +48,7 @@ collision_monitor:
       min_points: 6
       visualize: True
       polygon_pub_topic: "polygon_approach"
-      polygon_velocity: ["rotation", "translation_forward", "translation_backward", "stop"] # third priority
+      velocity_polygon: ["rotation", "translation_forward", "translation_backward", "stop"] # third priority
       rotation:
         points: [0.3, 0.3, 0.3, -0.3, -0.3, -0.3, -0.3, 0.3]
         holonomic: false
