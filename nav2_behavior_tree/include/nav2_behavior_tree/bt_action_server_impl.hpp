@@ -26,6 +26,7 @@
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav2_behavior_tree/bt_action_server.hpp"
 #include "ament_index_cpp/get_package_share_directory.hpp"
+#include "nav2_util/node_utils.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -122,7 +123,12 @@ bool BtActionServer<ActionT>::on_configure()
   // Support for handling the topic-based goal pose from rviz
   client_node_ = std::make_shared<rclcpp::Node>("_", options);
 
-  // Declare parameters for client node
+  // Declare parameters for client node to share with BT nodes
+  // Declare if not declared in case being used an external application
+  nav2_util::declare_parameter_if_not_declared(
+    node, "global_frame", rclcpp::ParameterValue(std::string("map")));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "robot_base_frame", rclcpp::ParameterValue(std::string("base_link")));
   client_node_->declare_parameter(
     "robot_base_frame", node->get_parameter("robot_base_frame").as_string());
   client_node_->declare_parameter(
