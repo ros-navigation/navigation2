@@ -25,6 +25,7 @@
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_smac_planner/node_hybrid.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
+#include "nav2_smac_planner/types.hpp"
 
 class RclCppFixture
 {
@@ -88,15 +89,21 @@ TEST(NodeHybridTest, test_node_hybrid)
   EXPECT_NEAR(testB.getTraversalCost(&testA), 2.088, 0.1);
   // now with straight motion, cost is 0, so will be neutral as well
   // but now reduced by retrospective penalty (10%)
-  testB.setMotionPrimitiveIndex(1);
-  testA.setMotionPrimitiveIndex(0);
-  EXPECT_NEAR(testB.getTraversalCost(&testA), 2.088 * 0.9, 0.1);
+  testB.setMotionPrimitiveIndex(1, nav2_smac_planner::TurnDirection::LEFT);
+  testA.setMotionPrimitiveIndex(0, nav2_smac_planner::TurnDirection::FORWARD);
+  EXPECT_NEAR(testB.getTraversalCost(&testA), 2.088f * 0.9, 0.1);
   // same direction as parent, testB
-  testA.setMotionPrimitiveIndex(1);
-  EXPECT_NEAR(testB.getTraversalCost(&testA), 2.297f * 0.9, 0.01);
+  testA.setMotionPrimitiveIndex(1, nav2_smac_planner::TurnDirection::LEFT);
+  EXPECT_NEAR(testB.getTraversalCost(&testA), 2.294f * 0.9, 0.01);
   // opposite direction as parent, testB
-  testA.setMotionPrimitiveIndex(2);
+  testA.setMotionPrimitiveIndex(2, nav2_smac_planner::TurnDirection::RIGHT);
   EXPECT_NEAR(testB.getTraversalCost(&testA), 2.506f * 0.9, 0.01);
+  // reverse direction as parent, testB
+  testA.setMotionPrimitiveIndex(1, nav2_smac_planner::TurnDirection::REV_RIGHT);
+  EXPECT_NEAR(testB.getTraversalCost(&testA), 2.513f * 0.9 * 2.0, 0.01);
+  // reverse direction as parent, testB
+  testA.setMotionPrimitiveIndex(2, nav2_smac_planner::TurnDirection::REV_LEFT);
+  EXPECT_NEAR(testB.getTraversalCost(&testA), 2.513f * 0.9 * 2.0, 0.01);
 
   // will throw because never collision checked testB
   EXPECT_THROW(testA.getTraversalCost(&testB), std::runtime_error);
@@ -244,6 +251,48 @@ TEST(NodeHybridTest, test_node_debin_neighbors)
   EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[2]._x, 1.69047, 0.01);
   EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[2]._y, -0.3747, 0.01);
   EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[2]._theta, -5, 0.01);
+}
+
+TEST(NodeHybridTest, test_interpolation_prims)
+{
+  unsigned int size_x = 100;
+  unsigned int size_y = 100;
+  unsigned int size_theta = 64;
+
+  nav2_smac_planner::SearchInfo info;
+  info.change_penalty = 1.2;
+  info.non_straight_penalty = 1.4;
+  info.reverse_penalty = 2.1;
+  info.minimum_turning_radius = 8;  // 0.4 in grid coordinates
+  info.retrospective_penalty = 0.0;
+
+  // Test to make sure the right num. of prims are generated when interpolation is on
+  info.allow_primitive_interpolation = true;
+  nav2_smac_planner::NodeHybrid::initMotionModel(
+    nav2_smac_planner::MotionModel::DUBIN, size_x, size_y, size_theta, info);
+
+  EXPECT_EQ(nav2_smac_planner::NodeHybrid::motion_table.projections.size(), 5u);
+}
+
+TEST(NodeHybridTest, test_interpolation_prims2)
+{
+  unsigned int size_x = 100;
+  unsigned int size_y = 100;
+  unsigned int size_theta = 72;
+
+  nav2_smac_planner::SearchInfo info;
+  info.change_penalty = 1.2;
+  info.non_straight_penalty = 1.4;
+  info.reverse_penalty = 2.1;
+  info.minimum_turning_radius = 8;  // 0.4 in grid coordinates
+  info.retrospective_penalty = 0.0;
+
+  // Test to make sure the right num. of prims are generated when interpolation is on
+  info.allow_primitive_interpolation = true;
+  nav2_smac_planner::NodeHybrid::initMotionModel(
+    nav2_smac_planner::MotionModel::DUBIN, size_x, size_y, size_theta, info);
+
+  EXPECT_EQ(nav2_smac_planner::NodeHybrid::motion_table.projections.size(), 7u);
 }
 
 TEST(NodeHybridTest, test_node_reeds_neighbors)
