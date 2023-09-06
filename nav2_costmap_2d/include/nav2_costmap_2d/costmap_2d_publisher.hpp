@@ -48,6 +48,7 @@
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "map_msgs/msg/occupancy_grid_update.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
+#include "nav2_msgs/msg/costmap_update.hpp"
 #include "nav2_msgs/srv/get_costmap.hpp"
 #include "tf2/transform_datatypes.h"
 #include "nav2_util/lifecycle_node.hpp"
@@ -91,6 +92,7 @@ public:
     costmap_pub_->on_activate();
     costmap_update_pub_->on_activate();
     costmap_raw_pub_->on_activate();
+    costmap_raw_update_pub_->on_activate();
   }
 
   /**
@@ -101,6 +103,7 @@ public:
     costmap_pub_->on_deactivate();
     costmap_update_pub_->on_deactivate();
     costmap_raw_pub_->on_deactivate();
+    costmap_raw_update_pub_->on_activate();
   }
 
   /**
@@ -136,6 +139,8 @@ private:
   void prepareGrid();
   void prepareCostmap();
 
+  nav2_msgs::msg::CostmapUpdate get_raw_costmap_update_msg();
+
   /** @brief Publish the latest full costmap to the new subscriber. */
   // void onNewSubscription(const ros::SingleSubscriberPublisher& pub);
 
@@ -164,6 +169,7 @@ private:
 
   // Publisher for raw costmap values as msg::Costmap from layered costmap
   rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::Costmap>::SharedPtr costmap_raw_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::CostmapUpdate>::SharedPtr costmap_raw_update_pub_;
 
   // Service for getting the costmaps
   rclcpp::Service<nav2_msgs::srv::GetCostmap>::SharedPtr costmap_service_;
