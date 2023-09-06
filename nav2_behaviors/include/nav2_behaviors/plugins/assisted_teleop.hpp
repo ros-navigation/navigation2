@@ -100,7 +100,7 @@ protected:
   double projection_time_;
   double simulation_time_step_;
 
-  geometry_msgs::msg::Twist teleop_twist_;
+  geometry_msgs::msg::TwistStamped teleop_twist_;
   bool preempt_teleop_{false};
 
   // subscribers
