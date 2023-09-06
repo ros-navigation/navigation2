@@ -101,6 +101,10 @@ void SmacPlannerHybrid::configure(
     node, name + ".minimum_turning_radius", rclcpp::ParameterValue(0.4));
   node->get_parameter(name + ".minimum_turning_radius", _minimum_turning_radius_global_coords);
   nav2_util::declare_parameter_if_not_declared(
+    node, name + ".allow_primitive_interpolation", rclcpp::ParameterValue(false));
+  node->get_parameter(
+    name + ".allow_primitive_interpolation", _search_info.allow_primitive_interpolation);
+  nav2_util::declare_parameter_if_not_declared(
     node, name + ".cache_obstacle_heuristic", rclcpp::ParameterValue(false));
   node->get_parameter(name + ".cache_obstacle_heuristic", _search_info.cache_obstacle_heuristic);
   nav2_util::declare_parameter_if_not_declared(
@@ -121,6 +125,15 @@ void SmacPlannerHybrid::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".analytic_expansion_ratio", rclcpp::ParameterValue(3.5));
   node->get_parameter(name + ".analytic_expansion_ratio", _search_info.analytic_expansion_ratio);
+  nav2_util::declare_parameter_if_not_declared(
+    node, name + ".use_quadratic_cost_penalty", rclcpp::ParameterValue(false));
+  node->get_parameter(
+    name + ".use_quadratic_cost_penalty", _search_info.use_quadratic_cost_penalty);
+  nav2_util::declare_parameter_if_not_declared(
+    node, name + ".downsample_obstacle_heuristic", rclcpp::ParameterValue(true));
+  node->get_parameter(
+    name + ".downsample_obstacle_heuristic", _search_info.downsample_obstacle_heuristic);
+
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".analytic_expansion_max_length", rclcpp::ParameterValue(3.0));
   node->get_parameter(name + ".analytic_expansion_max_length", analytic_expansion_max_length_m);
@@ -151,17 +164,23 @@ void SmacPlannerHybrid::configure(
   }
 
   if (_max_on_approach_iterations <= 0) {
-    RCLCPP_INFO(
+    RCLCPP_WARN(
       _logger, "On approach iteration selected as <= 0, "
       "disabling tolerance and on approach iterations.");
     _max_on_approach_iterations = std::numeric_limits<int>::max();
   }
 
   if (_max_iterations <= 0) {
-    RCLCPP_INFO(
+    RCLCPP_WARN(
       _logger, "maximum iteration selected as <= 0, "
       "disabling maximum iterations.");
     _max_iterations = std::numeric_limits<int>::max();
+  }
+
+  if (_minimum_turning_radius_global_coords < _costmap->getResolution() * _downsampling_factor) {
+    RCLCPP_WARN(
+      _logger, "Min turning radius cannot be less than the search grid cell resolution!");
+    _minimum_turning_radius_global_coords = _costmap->getResolution() * _downsampling_factor;
   }
 
   // convert to grid coordinates
@@ -358,15 +377,28 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   NodeHybrid::CoordinateVector path;
   int num_iterations = 0;
   std::string error;
-  std::unique_ptr<std::vector<std::tuple<float, float>>> expansions = nullptr;
+  std::unique_ptr<std::vector<std::tuple<float, float, float>>> expansions = nullptr;
   if (_debug_visualizations) {
-    expansions = std::make_unique<std::vector<std::tuple<float, float>>>();
+    expansions = std::make_unique<std::vector<std::tuple<float, float, float>>>();
   }
   // Note: All exceptions thrown are handled by the planner server and returned to the action
   if (!_a_star->createPath(
       path, num_iterations,
       _tolerance / static_cast<float>(costmap->getResolution()), expansions.get()))
   {
+    if (_debug_visualizations) {
+      geometry_msgs::msg::PoseArray msg;
+      geometry_msgs::msg::Pose msg_pose;
+      msg.header.stamp = _clock->now();
+      msg.header.frame_id = _global_frame;
+      for (auto & e : *expansions) {
+        msg_pose.position.x = std::get<0>(e);
+        msg_pose.position.y = std::get<1>(e);
+        msg_pose.orientation = getWorldOrientation(std::get<2>(e));
+        msg.poses.push_back(msg_pose);
+      }
+      _expansions_publisher->publish(msg);
+    }
     if (num_iterations < _a_star->getMaxIterations()) {
       throw nav2_core::NoValidPathCouldBeFound("no valid path found");
     } else {
@@ -396,6 +428,7 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
     for (auto & e : *expansions) {
       msg_pose.position.x = std::get<0>(e);
       msg_pose.position.y = std::get<1>(e);
+      msg_pose.orientation = getWorldOrientation(std::get<2>(e));
       msg.poses.push_back(msg_pose);
     }
     _expansions_publisher->publish(msg);
@@ -472,6 +505,13 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
         if (_smoother) {
           reinit_smoother = true;
         }
+
+        if (parameter.as_double() < _costmap->getResolution() * _downsampling_factor) {
+          RCLCPP_ERROR(
+            _logger, "Min turning radius cannot be less than the search grid cell resolution!");
+          result.successful = false;
+        }
+
         _minimum_turning_radius_global_coords = static_cast<float>(parameter.as_double());
       } else if (name == _name + ".reverse_penalty") {
         reinit_a_star = true;
@@ -503,6 +543,9 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
       } else if (name == _name + ".cache_obstacle_heuristic") {
         reinit_a_star = true;
         _search_info.cache_obstacle_heuristic = parameter.as_bool();
+      } else if (name == _name + ".allow_primitive_interpolation") {
+        _search_info.allow_primitive_interpolation = parameter.as_bool();
+        reinit_a_star = true;
       } else if (name == _name + ".smooth_path") {
         if (parameter.as_bool()) {
           reinit_smoother = true;

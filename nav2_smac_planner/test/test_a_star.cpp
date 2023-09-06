@@ -162,11 +162,14 @@ TEST(AStarTest, test_a_star_se2)
   a_star.setStart(10u, 10u, 0u);
   a_star.setGoal(80u, 80u, 40u);
   nav2_smac_planner::NodeHybrid::CoordinateVector path;
-  EXPECT_TRUE(a_star.createPath(path, num_it, tolerance));
+  std::unique_ptr<std::vector<std::tuple<float, float, float>>> expansions = nullptr;
+  expansions = std::make_unique<std::vector<std::tuple<float, float, float>>>();
+
+  EXPECT_TRUE(a_star.createPath(path, num_it, tolerance, expansions.get()));
 
   // check path is the right size and collision free
-  EXPECT_EQ(num_it, 3222);
-  EXPECT_EQ(path.size(), 63u);
+  EXPECT_EQ(num_it, 3186);
+  EXPECT_EQ(path.size(), 64u);
   for (unsigned int i = 0; i != path.size(); i++) {
     EXPECT_EQ(costmapA->getCost(path[i].x, path[i].y), 0);
   }
@@ -174,6 +177,9 @@ TEST(AStarTest, test_a_star_se2)
   for (unsigned int i = 1; i != path.size(); i++) {
     EXPECT_LT(hypotf(path[i].x - path[i - 1].x, path[i].y - path[i - 1].y), 2.1f);
   }
+
+  // Expansions properly recorded
+  EXPECT_GT(expansions->size(), 5u);
 
   delete costmapA;
 }
@@ -227,7 +233,7 @@ TEST(AStarTest, test_a_star_lattice)
   EXPECT_TRUE(a_star.createPath(path, num_it, tolerance));
 
   // check path is the right size and collision free
-  EXPECT_EQ(num_it, 21);
+  EXPECT_EQ(num_it, 26);
   EXPECT_GT(path.size(), 47u);
   for (unsigned int i = 0; i != path.size(); i++) {
     EXPECT_EQ(costmapA->getCost(path[i].x, path[i].y), 0);
