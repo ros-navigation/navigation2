@@ -189,6 +189,30 @@ void AStarAlgorithm<NodeT>::populateExpansionsLog(
 }
 
 template<>
+void AStarAlgorithm<Node2D>::populateExpansionsLog(
+  const NodePtr & node,
+  std::vector<std::tuple<float, float, float>> * expansions_log)
+{
+  Node2D::Coordinates coords = node->getCoords(node->getIndex());
+  expansions_log->emplace_back(
+    _costmap->getOriginX() + ((coords.x + 0.5) * _costmap->getResolution()),
+    _costmap->getOriginY() + ((coords.y + 0.5) * _costmap->getResolution()),
+    0.0);
+}
+
+template<typename NodeT>
+void AStarAlgorithm<NodeT>::populateExpansionsLog(
+  const NodePtr & node,
+  std::vector<std::tuple<float, float, float>> * expansions_log)
+{
+  typename NodeT::Coordinates coords = node->pose;
+  expansions_log->emplace_back(
+    _costmap->getOriginX() + ((coords.x + 0.5) * _costmap->getResolution()),
+    _costmap->getOriginY() + ((coords.y + 0.5) * _costmap->getResolution()),
+    NodeT::motion_table.getAngleFromBin(coords.theta));
+}
+
+template<>
 void AStarAlgorithm<Node2D>::setGoal(
   const float & mx,
   const float & my,
