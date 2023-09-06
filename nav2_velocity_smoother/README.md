@@ -65,8 +65,8 @@ velocity_smoother:
 
 | Topic            | Type                    | Use                           |
 |------------------|-------------------------|-------------------------------|
-| smoothed_cmd_vel | geometry_msgs/Twist     | Publish smoothed velocities   |
-| cmd_vel          | geometry_msgs/Twist     | Subscribe to input velocities |
+| smoothed_cmd_vel | geometry_msgs/Twist or  geometry_msgs/TwistStamped | Publish smoothed velocities   |
+| cmd_vel          | geometry_msgs/Twist or  geometry_msgs/TwistStamped | Subscribe to input velocities |
 
 
 ## Install
