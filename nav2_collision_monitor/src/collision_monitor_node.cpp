@@ -191,6 +191,11 @@ void CollisionMonitor::cmdVelInCallback(geometry_msgs::msg::Twist::ConstSharedPt
   process({msg->linear.x, msg->linear.y, msg->angular.z});
 }
 
+void CollisionMonitor::cmdVelInCallbackStamped(geometry_msgs::msg::TwistStamped::ConstSharedPtr msg)
+{
+  cmdVelInCallback(std::make_shared<geometry_msgs::msg::Twist>(msg->twist));
+}
+
 void CollisionMonitor::publishVelocity(const Action & robot_action)
 {
   if (robot_action.req_vel.isZero()) {
