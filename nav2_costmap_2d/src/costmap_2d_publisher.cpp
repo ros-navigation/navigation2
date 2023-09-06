@@ -77,8 +77,7 @@ Costmap2DPublisher::Costmap2DPublisher(
   costmap_update_pub_ = node->create_publisher<map_msgs::msg::OccupancyGridUpdate>(
     topic_name + "_updates", custom_qos);
   costmap_raw_update_pub_ = node->create_publisher<nav2_msgs::msg::CostmapUpdate>(
-    topic_name + "_raw_updates",
-    custom_qos);
+    topic_name + "_raw_updates", custom_qos);
 
   // Create a service that will use the callback function to handle requests.
   costmap_service_ = node->create_service<nav2_msgs::srv::GetCostmap>(
@@ -192,16 +191,16 @@ nav2_msgs::msg::CostmapUpdate Costmap2DPublisher::get_raw_costmap_update_msg()
   msg.header.frame_id = global_frame_;
   msg.x = x0_;
   msg.y = y0_;
-      msg.size_x = xn_ - x0_;
-      msg.size_y = yn_ - y0_;
-      msg.data.resize(msg.size_x * msg.size_y);
-    
-    unsigned int i = 0;
-    for (unsigned int y = y0_; y < yn_; y++) {
-      for (unsigned int x = x0_; x < xn_; x++) {
-        msg.data[i++] = costmap_->getCost(x, y);
-      }
+  msg.size_x = xn_ - x0_;
+  msg.size_y = yn_ - y0_;
+  msg.data.resize(msg.size_x * msg.size_y);
+
+  unsigned int i = 0;
+  for (unsigned int y = y0_; y < yn_; y++) {
+    for (unsigned int x = x0_; x < xn_; x++) {
+      msg.data[i++] = costmap_->getCost(x, y);
     }
+  }
   return msg;
 }
 
@@ -243,15 +242,9 @@ void Costmap2DPublisher::publishCostmap()
       }
       costmap_update_pub_->publish(std::move(update));
     }
-
     if (costmap_raw_update_pub_->get_subscription_count() > 0) {
-      RCLCPP_WARN(
-      logger_,
-      "PUBLIKUJE");
       costmap_raw_update_pub_->publish(get_raw_costmap_update_msg());
     }
-
-    
   }
 
   xn_ = yn_ = 0;
