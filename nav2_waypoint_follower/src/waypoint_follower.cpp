@@ -275,9 +275,7 @@ WaypointFollower::followWaypoints()
       }
     }
 
-    if (current_goal_status_.status != ActionStatus::PROCESSING &&
-      current_goal_status_.status != ActionStatus::UNKNOWN)
-    {
+    if (current_goal_status_.status != ActionStatus::PROCESSING) {
       // Update server state
       goal_index++;
       new_goal = true;
