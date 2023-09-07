@@ -61,6 +61,9 @@ BtActionServer<ActionT>::BtActionServer(
   if (!node->has_parameter("default_server_timeout")) {
     node->declare_parameter("default_server_timeout", 20);
   }
+  if (!node->has_parameter("action_server_result_timeout")) {
+    node->declare_parameter("action_server_result_timeout", 900.0);
+  }
 
   std::vector<std::string> error_code_names = {
     "follow_path_error_code",
@@ -91,16 +94,6 @@ BtActionServer<ActionT>::BtActionServer(
       }
       RCLCPP_INFO_STREAM(logger_, "Error_code parameters were set to:" << error_codes_str);
     }
-  }
-
-  // Result timeout for the action server.
-  // In https://github.com/ros2/rcl/pull/1012 a change was introduced
-  // which makes action servers discard a goal handle if the result is not produced
-  // within 10 seconds. Since this may not be the case for all actions in
-  // Nav2, this timeout is exposed as a parameter and defaults to the previous
-  // expiration value of 15 minutes.
-  if (!node->has_parameter("action_server_result_timeout")) {
-    node->declare_parameter("action_server_result_timeout", 900.0);
   }
 }
 

@@ -133,14 +133,8 @@ public:
     node->get_parameter("robot_base_frame", robot_base_frame_);
     node->get_parameter("transform_tolerance", transform_tolerance_);
 
-    // Result timeout for the action server.
-    // In https://github.com/ros2/rcl/pull/1012 a change was introduced
-    // which makes action servers discard a goal handle if the result is not produced
-    // within 10 seconds. Since this may not be the case for all actions in
-    // Nav2, this timeout is exposed as a parameter and defaults to the previous
-    // expiration value of 15 minutes.
     if (!node->has_parameter("action_server_result_timeout")) {
-      node->declare_parameter("action_server_result_timeout", 900.0);
+      node->declare_parameter("action_server_result_timeout", 10.0);
     }
 
     double action_server_result_timeout;

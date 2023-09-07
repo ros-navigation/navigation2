@@ -37,12 +37,6 @@ WaypointFollower::WaypointFollower(const rclcpp::NodeOptions & options)
   declare_parameter("stop_on_failure", true);
   declare_parameter("loop_rate", 20);
 
-  // Result timeout for the action server.
-  // In https://github.com/ros2/rcl/pull/1012 a change was introduced
-  // which makes action servers discard a goal handle if the result is not produced
-  // within 10 seconds. Since this may not be the case for all actions in
-  // Nav2, this timeout is exposed as a parameter and defaults to the previous
-  // expiration value of 15 minutes.
   declare_parameter("action_server_result_timeout", 900.0);
 
   nav2_util::declare_parameter_if_not_declared(
