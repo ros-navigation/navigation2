@@ -87,6 +87,7 @@ class RewrittenYaml(launch.Substitution):
         param_rewrites, keys_rewrites = self.resolve_rewrites(context)
         data = yaml.safe_load(open(yaml_filename, 'r'))
         self.substitute_params(data, param_rewrites)
+        self.add_params(data, param_rewrites)
         self.substitute_keys(data, keys_rewrites)
         if self.__root_key is not None:
             root_key = launch.utilities.perform_substitutions(context, self.__root_key)
@@ -121,6 +122,15 @@ class RewrittenYaml(launch.Substitution):
                 yaml_keys = path.split('.')
                 yaml = self.updateYamlPathVals(yaml, yaml_keys, rewrite_val)
 
+    def add_params(self, yaml, param_rewrites):
+        # add new total path parameters
+        yaml_paths = self.pathify(yaml)
+        for path in param_rewrites:
+            if not path in yaml_paths:
+                new_val = self.convert(param_rewrites[path])
+                yaml_keys = path.split('.')
+                if 'ros__parameters' in yaml_keys:
+                    yaml = self.updateYamlPathVals(yaml, yaml_keys, new_val)
 
     def updateYamlPathVals(self, yaml, yaml_key_list, rewrite_val):
         for key in yaml_key_list:

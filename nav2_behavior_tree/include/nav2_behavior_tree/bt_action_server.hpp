@@ -196,6 +196,11 @@ protected:
    */
   void populateErrorCode(typename std::shared_ptr<typename ActionT::Result> result);
 
+  /**
+   * @brief Setting BT error codes to success. Used to clean blackboard between different BT runs
+   */
+  void cleanErrorCodes();
+
   // Action name
   std::string action_name_;
 
