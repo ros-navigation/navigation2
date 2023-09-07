@@ -110,7 +110,7 @@ public:
    */
   bool createPath(
     CoordinateVector & path, int & num_iterations, const float & tolerance,
-    std::vector<std::tuple<float, float>> * expansions_log = nullptr);
+    std::vector<std::tuple<float, float, float>> * expansions_log = nullptr);
 
   /**
    * @brief Sets the collision checker to use
@@ -239,6 +239,14 @@ protected:
    * @brief Clear graph of nodes searched
    */
   inline void clearGraph();
+
+  /**
+   * @brief Populate a debug log of expansions for Hybrid-A* for visualization
+   * @param node Node expanded
+   * @param expansions_log Log to add not expanded to
+   */
+  inline void populateExpansionsLog(
+    const NodePtr & node, std::vector<std::tuple<float, float, float>> * expansions_log);
 
   int _timing_interval = 5000;
 
