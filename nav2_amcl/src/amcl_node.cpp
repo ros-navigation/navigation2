@@ -290,8 +290,8 @@ AmclNode::AmclNode(const rclcpp::NodeOptions & options)
     "Use dynamic laser importance based on augmented MCL score"
   );
 
-  localization_mode_ = "laser";
-  last_mode_switch_ts_ = now();
+  amcl_seed_ = time(NULL);
+  srand48(amcl_seed_);
   
   diagnostic_updater_ = std::make_shared<diagnostic_updater::Updater>(this);
 }
@@ -775,6 +775,10 @@ AmclNode::handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped & msg)
   pf_init_ = false;
   init_pose_received_on_inactive = false;
   initial_pose_is_known_ = true;
+
+  RCLCPP_INFO(get_logger(), "AMCL random seed: %ld", amcl_seed_);
+  RCLCPP_INFO(get_logger(), "Gaussian PDF random seed: %ld", pf_->gaussian_random_seed);
+  RCLCPP_INFO(get_logger(), "PF random seed: %ld", pf_->pf_random_seed);
 }
 
 void

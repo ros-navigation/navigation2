@@ -58,8 +58,6 @@ pf_t * pf_alloc(
   pf_sample_set_t * set;
   pf_sample_t * sample;
 
-  srand48(time(NULL));
-
   pf = calloc(1, sizeof(pf_t));
 
   pf->random_pose_fn = random_pose_fn;
@@ -67,6 +65,9 @@ pf_t * pf_alloc(
 
   pf->min_samples = min_samples;
   pf->max_samples = max_samples;
+
+  pf->pf_random_seed = time(NULL);
+  srand48(pf->pf_random_seed);
 
   // Control parameters for the population size calculation.  [err] is
   // the max error between the true distribution and the estimated
@@ -169,6 +170,10 @@ void pf_init(pf_t * pf, pf_vector_t mean, pf_matrix_t cov)
 
   // set converged to 0
   pf_init_converged(pf);
+
+  // Update seeds
+  pf->gaussian_random_seed = pdf->seed;
+
 }
 
 

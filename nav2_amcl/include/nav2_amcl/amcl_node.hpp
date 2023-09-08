@@ -288,6 +288,11 @@ protected:
   pf_vector_t pf_odom_pose_;
   int resample_count_{0};
 
+  // Random seeds
+  long amcl_seed_;
+  long gaussian_pdf_seed_;
+  long pf_seed_;
+  
   // External pose fusion related
   /*
    * @brief Check if external pose has been received
@@ -308,9 +313,6 @@ protected:
   double std_warn_level_y_;
   double std_warn_level_yaw_;
   double aug_mcl_score_threshold_;
-
-  std::string localization_mode_ = "";
-  rclcpp::Time last_mode_switch_ts_;
 
   /*
     * @brief Check localization health

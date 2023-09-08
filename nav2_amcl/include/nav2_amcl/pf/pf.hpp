@@ -151,6 +151,9 @@ typedef struct _pf_t
   int ext_pose_is_valid;
 
   double use_augmented_mcl;
+
+  long gaussian_random_seed;
+  long pf_random_seed;
 } pf_t;
 
 

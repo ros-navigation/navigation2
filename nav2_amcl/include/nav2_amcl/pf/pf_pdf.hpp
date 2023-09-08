@@ -54,8 +54,8 @@ typedef struct
   pf_matrix_t cr;
   pf_vector_t cd;
 
-  // A random number generator
-  // gsl_rng *rng;
+  // Random seed
+  long seed;
 } pf_pdf_gaussian_t;
 
 
