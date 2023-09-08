@@ -57,6 +57,11 @@ public:
   std::shared_ptr<Costmap2D> getCostmap();
 
   /**
+   * @brief Get the frame id of the costmap 
+   */
+  std::string getFrameID();
+
+  /**
    * @brief Convert an occ grid message into a costmap object
    */
   void toCostmap2D();

@@ -56,7 +56,7 @@ public:
    * @brief Initialize the search algorithm
    * @param costmap Costmap to use to check for state validity
    */
-  void initialize(nav2_costmap_2d::Costmap2D * costmap, int max_iterations);
+  void initialize(std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap, int max_iterations);
 
   /**
    * @brief Set the start of the breadth first search
@@ -125,7 +125,7 @@ private:
   unsigned int y_size_;
   unsigned int max_index_;
   std::vector<int> neighbors_grid_offsets_;
-  nav2_costmap_2d::Costmap2D * costmap_;
+  std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap_;
   int max_iterations_;
 };
 }  // namespace nav2_route

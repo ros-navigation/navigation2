@@ -29,11 +29,11 @@ public:
   {
     costmap = std::make_unique<Costmap2D>(x_size, y_size, 0.0, 0.0, 1);
 
-    bfs.initialize(costmap.get(), 200);
+    bfs.initialize(costmap, 200);
   }
 
   BreadthFirstSearch bfs;
-  std::unique_ptr<Costmap2D> costmap;
+  std::shared_ptr<Costmap2D> costmap;
 };
 
 TEST_F(BFSTestFixture, free_space)

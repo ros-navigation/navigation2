@@ -27,7 +27,7 @@
 namespace nav2_route
 {
 
-void BreadthFirstSearch::initialize(nav2_costmap_2d::Costmap2D * costmap, int max_iterations)
+void BreadthFirstSearch::initialize(std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap, int max_iterations)
 {
   costmap_ = costmap;
 

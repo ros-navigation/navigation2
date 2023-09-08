@@ -88,11 +88,11 @@ TEST(GoalIntentExtractorTest, test_transform_pose)
   // Test transformations same frame, should pass
   geometry_msgs::msg::PoseStamped pose;
   pose.header.frame_id = "map";
-  EXPECT_NO_THROW(extractor.transformPose(pose));
+  EXPECT_NO_THROW(extractor.transformPose(pose, "map"));
 
   // Test transformations when nothing on TF buffer of different frames
   pose.header.frame_id = "gps";
-  EXPECT_THROW(extractor.transformPose(pose), nav2_core::RouteTFError);
+  EXPECT_THROW(extractor.transformPose(pose, "map"), nav2_core::RouteTFError);
 
   // Now transforms are available, should work
   geometry_msgs::msg::TransformStamped transform;
@@ -100,7 +100,7 @@ TEST(GoalIntentExtractorTest, test_transform_pose)
   transform.header.stamp = node->now();
   transform.child_frame_id = "gps";
   broadcaster.sendTransform(transform);
-  EXPECT_NO_THROW(extractor.transformPose(pose));
+  EXPECT_NO_THROW(extractor.transformPose(pose, "map"));
 }
 
 TEST(GoalIntentExtractorTest, test_start_goal_finder)

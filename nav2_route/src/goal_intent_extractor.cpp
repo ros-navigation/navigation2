@@ -39,6 +39,7 @@ void GoalIntentExtractor::configure(
   const std::string & base_frame)
 {
   logger_ = node->get_logger();
+  clock_ = node->get_clock();
   id_to_graph_map_ = id_to_graph_map;
   graph_ = &graph;
   tf_ = tf;
@@ -96,10 +97,11 @@ void GoalIntentExtractor::configure(
   }
 }
 
-void GoalIntentExtractor::activate()
+void GoalIntentExtractor::initialize()
 {
   if (enable_search_) {
-    bfs_->initialize(costmap_sub_->getCostmap().get(), max_iterations_);
+    bfs_->initialize(costmap_sub_->getCostmap(), max_iterations_);
+    costmap_frame_ = costmap_sub_->getFrameID();
   }
 }
 
@@ -110,15 +112,16 @@ void GoalIntentExtractor::setGraph(Graph & graph, GraphToIDMap * id_to_graph_map
 }
 
 geometry_msgs::msg::PoseStamped GoalIntentExtractor::transformPose(
-  geometry_msgs::msg::PoseStamped & pose)
+  geometry_msgs::msg::PoseStamped & pose,
+  const std::string & frame_id)
 {
-  if (pose.header.frame_id != route_frame_) {
+  if (pose.header.frame_id != frame_id) {
     RCLCPP_INFO(
       logger_,
       "Request pose in %s frame. Converting to route server frame: %s.",
       pose.header.frame_id.c_str(), route_frame_.c_str());
-    if (!nav2_util::transformPoseInTargetFrame(pose, pose, *tf_, route_frame_)) {
-      throw nav2_core::RouteTFError("Failed to transform starting pose to: " + route_frame_);
+    if (!nav2_util::transformPoseInTargetFrame(pose, pose, *tf_, frame_id)) {
+      throw nav2_core::RouteTFError("Failed to transform pose to: " + frame_id);
     }
   }
   return pose;
@@ -156,9 +159,8 @@ GoalIntentExtractor::findStartandGoal(const std::shared_ptr<const GoalT> goal)
     }
   }
 
-  // transform to route_frame
-  start_ = transformPose(start_pose);
-  goal_ = transformPose(goal_pose);
+  start_ = transformPose(start_pose, route_frame_);
+  goal_ = transformPose(goal_pose, route_frame_);
 
   // Find closest route graph nodes to start and goal to plan between.
   // Note that these are the location indices in the graph
@@ -255,28 +257,36 @@ Route GoalIntentExtractor::pruneStartandGoal(
 
 unsigned int GoalIntentExtractor::associatePoseWithGraphNode(
   std::vector<unsigned int> node_indices,
-  const geometry_msgs::msg::PoseStamped & pose)
+  geometry_msgs::msg::PoseStamped & pose)
 { 
+  auto start = transformPose(pose, costmap_frame_);
   unsigned int s_mx, s_my, g_mx, g_my;
   if (!costmap_sub_->getCostmap()->worldToMap(
-      pose.pose.position.x, pose.pose.position.y,
+      start.pose.position.x, start.pose.position.y,
       s_mx, s_my))
   {
     throw nav2_core::StartOutsideMapBounds(
-            "Start Coordinates of(" + std::to_string(pose.pose.position.x) + ", " +
-            std::to_string(pose.pose.position.y) + ") was outside bounds");
+            "Start Coordinates of(" + std::to_string(start.pose.position.x) + ", " +
+            std::to_string(start.pose.position.y) + ") was outside bounds");
   }
 
   if (costmap_sub_->getCostmap()->getCost(s_mx, s_my) == nav2_costmap_2d::LETHAL_OBSTACLE) {
     throw nav2_core::StartOccupied("Start was in lethal cost");
   }
 
-  //TODO(jwallace42): double check the frames, probably need to move into the map frame...
   std::vector<unsigned int> valid_node_indices;
   std::vector<nav2_costmap_2d::MapLocation> goals;
   for (const auto & node_index : node_indices) {
-    float goal_x = (*graph_)[node_index].coords.x;
-    float goal_y = (*graph_)[node_index].coords.y;
+    geometry_msgs::msg::PoseStamped route_goal;
+    geometry_msgs::msg::PoseStamped goal;
+    auto node = graph_->at(node_index);
+    route_goal.pose.position.x = node.coords.x;
+    route_goal.pose.position.y = node.coords.y;
+    route_goal.header.frame_id = node.coords.frame_id;
+    goal = transformPose(route_goal, costmap_frame_);
+
+    float goal_x = goal.pose.position.x;
+    float goal_y = goal.pose.position.y;
     if (!costmap_sub_->getCostmap()->worldToMap(goal_x, goal_y, g_mx, g_my)) {
       RCLCPP_WARN_STREAM(
         logger_, "Goal coordinate of(" + std::to_string(goal_x) + ", " +

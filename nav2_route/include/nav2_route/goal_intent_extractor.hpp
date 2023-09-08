@@ -73,9 +73,9 @@ public:
     const std::string & base_frame);
 
   /**
-   * @brief Activate extractor
+   * @brief Initialize extractor
    */
-  void activate();
+  void initialize();
 
   /**
    * @brief Sets a new graph when updated
@@ -85,10 +85,13 @@ public:
   void setGraph(Graph & graph, GraphToIDMap * id_to_graph_map);
 
   /**
-   * @brief Transforms a pose into the route frame
+   * @brief Transforms a pose into the desired frame
    * @param pose Pose to transform (e.g. start, goal)
+   * @param frame_id The frame to transform the pose into
    */
-  geometry_msgs::msg::PoseStamped transformPose(geometry_msgs::msg::PoseStamped & pose);
+  geometry_msgs::msg::PoseStamped transformPose(
+      geometry_msgs::msg::PoseStamped & pose,
+      const std::string & frame_id);
 
   /**
    * @brief Main API to find the start and goal graph IDX (not IDs) for routing
@@ -131,7 +134,7 @@ protected:
    */
   unsigned int associatePoseWithGraphNode(
     std::vector<unsigned int> node_indices,
-    const geometry_msgs::msg::PoseStamped & pose);
+    geometry_msgs::msg::PoseStamped & pose);
 
   /**
    * @brief Visualize the search expansions
@@ -141,12 +144,14 @@ protected:
     rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr occ_grid_pub);
 
   rclcpp::Logger logger_{rclcpp::get_logger("GoalIntentExtractor")};
+  rclcpp::Clock::SharedPtr clock_;
   std::shared_ptr<NodeSpatialTree> node_spatial_tree_;
   GraphToIDMap * id_to_graph_map_;
   Graph * graph_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::string route_frame_;
   std::string base_frame_;
+  std::string costmap_frame_;
   geometry_msgs::msg::PoseStamped start_, goal_;
   bool prune_goal_;
   float max_dist_from_edge_, min_dist_from_goal_, min_dist_from_start_;

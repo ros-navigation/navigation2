@@ -101,7 +101,7 @@ nav2_util::CallbackReturn
 RouteServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
-  goal_intent_extractor_->activate();
+  goal_intent_extractor_->initialize();
   compute_route_server_->activate();
   compute_and_track_route_server_->activate();
   graph_vis_publisher_->on_activate();
