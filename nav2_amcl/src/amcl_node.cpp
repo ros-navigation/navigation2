@@ -289,10 +289,19 @@ AmclNode::AmclNode(const rclcpp::NodeOptions & options)
     "dynamic_laser_importance", rclcpp::ParameterValue(false),
     "Use dynamic laser importance based on augmented MCL score"
   );
+  add_parameter(
+    "amcl_random_seed", rclcpp::ParameterValue(-1),
+    "Seed value for random number generator used in the amcl node"
+  );
+  add_parameter(
+    "gaussian_pdf_random_seed", rclcpp::ParameterValue(-1),
+    "Seed value for random number generator used for PDF generation"
+  );
+  add_parameter(
+    "pf_random_seed", rclcpp::ParameterValue(-1),
+    "Seed value for random number generator used in the amcl node"
+  );
 
-  amcl_seed_ = time(NULL);
-  srand48(amcl_seed_);
-  
   diagnostic_updater_ = std::make_shared<diagnostic_updater::Updater>(this);
 }
 
@@ -322,6 +331,11 @@ AmclNode::on_configure(const rclcpp_lifecycle::State & /*state*/)
   executor_thread_ = std::make_unique<nav2_util::NodeThread>(executor_);
 
   ext_pose_buffer_ = std::make_unique<ExternalPoseBuffer>(ext_pose_search_tolerance_sec_);
+
+  if(amcl_seed_ == -1) {
+    amcl_seed_ = time(NULL);
+  } 
+  srand48(amcl_seed_);
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -771,7 +785,7 @@ AmclNode::handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped & msg)
   pf_init_pose_cov.m[2][2] = msg.pose.covariance[6 * 5 + 5];
 
   std::lock_guard<std::recursive_mutex> cfl(mutex_);
-  pf_init(pf_, pf_init_pose_mean, pf_init_pose_cov);
+  pf_init(pf_, pf_init_pose_mean, pf_init_pose_cov, gaussian_pdf_seed_);
   pf_init_ = false;
   init_pose_received_on_inactive = false;
   initial_pose_is_known_ = true;
@@ -1350,7 +1364,10 @@ AmclNode::initParameters()
   get_parameter("use_cluster_averaging", use_cluster_averaging_);
   get_parameter("use_augmented_mcl", use_augmented_mcl_);
   get_parameter("dynamic_laser_importance", dynamic_laser_importance_);
-  
+  get_parameter("amcl_random_seed", amcl_seed_);
+  get_parameter("gaussian_pdf_random_seed", gaussian_pdf_seed_);
+  get_parameter("pf_random_seed", pf_seed_);
+    
   save_pose_period_ = tf2::durationFromSec(1.0 / save_pose_rate);
   transform_tol_scan_odom_sec_ = tf2::durationFromSec(tmp_tol_odom);
   transform_tol_scan_robot_sec_ = tf2::durationFromSec(tmp_tol_robot);
@@ -1882,7 +1899,7 @@ AmclNode::initParticleFilter()
   pf_ = pf_alloc(
     min_particles_, max_particles_, alpha_slow_, alpha_fast_,
     (pf_init_model_fn_t)AmclNode::uniformPoseGenerator,
-    reinterpret_cast<void *>(map_), max_particle_gen_prob_ext_pose_, use_augmented_mcl_);
+    reinterpret_cast<void *>(map_), max_particle_gen_prob_ext_pose_, use_augmented_mcl_, pf_seed_);
   pf_->pop_err = pf_err_;
   pf_->pop_z = pf_z_;
 
@@ -1897,7 +1914,7 @@ AmclNode::initParticleFilter()
   pf_init_pose_cov.m[1][1] = init_cov_[1];
   pf_init_pose_cov.m[2][2] = init_cov_[2];
 
-  pf_init(pf_, pf_init_pose_mean, pf_init_pose_cov);
+  pf_init(pf_, pf_init_pose_mean, pf_init_pose_cov, gaussian_pdf_seed_);
 
   pf_init_ = false;
   resample_count_ = 0;

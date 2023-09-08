@@ -164,13 +164,13 @@ pf_t * pf_alloc(
   pf_init_model_fn_t random_pose_fn,
   void * random_pose_data,
   double max_particle_gen_prob_ext_pose,
-  int use_augmented_mcl);
+  int use_augmented_mcl, long pf_random_seed);
 
 // Free an existing filter
 void pf_free(pf_t * pf);
 
 // Initialize the filter using a guassian
-void pf_init(pf_t * pf, pf_vector_t mean, pf_matrix_t cov);
+void pf_init(pf_t * pf, pf_vector_t mean, pf_matrix_t cov, long gaussian_random_seed);
 
 // Initialize the filter using some model
 void pf_init_model(pf_t * pf, pf_init_model_fn_t init_fn, void * init_data);

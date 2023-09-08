@@ -45,7 +45,7 @@ static unsigned int pf_pdf_seed;
  *************************************************************************/
 
 // Create a gaussian pdf
-pf_pdf_gaussian_t * pf_pdf_gaussian_alloc(pf_vector_t x, pf_matrix_t cx)
+pf_pdf_gaussian_t * pf_pdf_gaussian_alloc(pf_vector_t x, pf_matrix_t cx, long gaussian_random_seed)
 {
   pf_matrix_t cd;
   pf_pdf_gaussian_t * pdf;
@@ -64,9 +64,12 @@ pf_pdf_gaussian_t * pf_pdf_gaussian_alloc(pf_vector_t x, pf_matrix_t cx)
   pdf->cd.v[2] = sqrt(cd.m[2][2]);
 
   // Initialize the random number generator
-  // pdf->rng = gsl_rng_alloc(gsl_rng_taus);
-  // gsl_rng_set(pdf->rng, ++pf_pdf_seed);
-  pdf->seed = ++pf_pdf_seed;
+  if (gaussian_random_seed == -1){
+    pdf->seed = ++pf_pdf_seed;
+  }
+  else {
+    pdf->seed = gaussian_random_seed;
+  }
   srand48(pdf->seed);
 
   return pdf;
