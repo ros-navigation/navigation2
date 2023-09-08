@@ -80,10 +80,10 @@ public:
   void search(unsigned int & goal);
 
   /**
-   * @brief Preform a ray trace check to see if the node is directly visable
+   * @brief Preform a ray trace check to see if the first node is visable
    * @param True if the node is visable
    */
-  bool isNodeVisible();
+  bool isFirstGoalVisible();
 
 
   /**

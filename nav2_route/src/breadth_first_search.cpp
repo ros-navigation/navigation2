@@ -84,7 +84,6 @@ void BreadthFirstSearch::search(unsigned int & goal)
       throw nav2_core::PlannerTimedOut("Exceeded maximum iterations");
     }
 
-
     // Check goals
     for (unsigned int i = 0; i < goals_.size(); ++i) {
       if (current->index == goals_[i]->index) {
@@ -145,14 +144,14 @@ void BreadthFirstSearch::getNeighbors(unsigned int parent_index, NodeVector & ne
   }
 }
 
-bool BreadthFirstSearch::isNodeVisible()
+bool BreadthFirstSearch::isFirstGoalVisible()
 {
   unsigned int s_mx, s_my, g_mx, g_my;
   costmap_->indexToCells(start_->index, s_mx, s_my);
   costmap_->indexToCells(goals_.front()->index, g_mx, g_my);
 
   for (nav2_util::LineIterator line(s_mx, s_my, g_mx, g_my); line.isValid(); line.advance()) {
-    double cost = costmap_->getCost(line.getX(), line.getX());
+    double cost = costmap_->getCost(line.getX(), line.getY());
     if (cost == nav2_costmap_2d::LETHAL_OBSTACLE ||
       cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE)
     {

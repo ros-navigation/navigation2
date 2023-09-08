@@ -86,14 +86,14 @@ TEST_F(BFSTestFixture, ray_trace)
   goals.push_back({5u, 5u});
   bfs.setGoals(goals);
 
-  bool result = bfs.isNodeVisible();
+  bool result = bfs.isFirstGoalVisible();
   EXPECT_TRUE(result);
   bfs.clearGraph();
 
   bfs.setStart(0u, 0u);
   bfs.setGoals(goals);
   costmap->setCost(2u, 2u, LETHAL_OBSTACLE);
-  result = bfs.isNodeVisible();
+  result = bfs.isFirstGoalVisible();
   EXPECT_FALSE(result);
 
   bfs.clearGraph();

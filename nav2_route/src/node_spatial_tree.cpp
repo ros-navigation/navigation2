@@ -41,7 +41,7 @@ NodeSpatialTree::~NodeSpatialTree()
 
 void NodeSpatialTree::computeTree(Graph & graph)
 {
-  if (kdtree_ != nullptr) {
+  if (kdtree_) {
     delete kdtree_;
     kdtree_ = nullptr;
   }

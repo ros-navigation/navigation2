@@ -67,26 +67,26 @@ void GoalIntentExtractor::configure(
   node_spatial_tree_->computeTree(graph);
 
   nav2_util::declare_parameter_if_not_declared(
-    node, "enable_search", rclcpp::ParameterValue(false));
+    node, "enable_search", rclcpp::ParameterValue(true));
   enable_search_ = node->get_parameter("enable_search").as_bool();
 
   if (enable_search_) {
-    std::string global_costmap_topic;
+    std::string costmap_topic;
     nav2_util::declare_parameter_if_not_declared(
-      node, "global_costmap_topic",
+      node, "costmap_topic",
       rclcpp::ParameterValue(std::string("global_costmap/costmap_raw")));
-    node->get_parameter("global_costmap_topic", global_costmap_topic);
+    node->get_parameter("costmap_topic", costmap_topic);
 
     nav2_util::declare_parameter_if_not_declared(
-      node, "max_iterations", rclcpp::ParameterValue(500));
+      node, "max_iterations", rclcpp::ParameterValue(10000));
     max_iterations_ = node->get_parameter("max_iterations").as_int();
 
     nav2_util::declare_parameter_if_not_declared(
-      node, "enable_search_viz", rclcpp::ParameterValue(false));
+      node, "enable_search_viz", rclcpp::ParameterValue(true));
     enable_search_viz_ = node->get_parameter("enable_search_viz").as_bool();
 
     costmap_sub_ =
-      std::make_unique<nav2_costmap_2d::CostmapSubscriber>(node, global_costmap_topic);
+      std::make_unique<nav2_costmap_2d::CostmapSubscriber>(node, costmap_topic);
     bfs_ = std::make_unique<BreadthFirstSearch>();
     start_expansion_viz_ = node->create_publisher<nav_msgs::msg::OccupancyGrid>(
       "start_expansions",
@@ -256,7 +256,7 @@ Route GoalIntentExtractor::pruneStartandGoal(
 unsigned int GoalIntentExtractor::associatePoseWithGraphNode(
   std::vector<unsigned int> node_indices,
   const geometry_msgs::msg::PoseStamped & pose)
-{
+{ 
   unsigned int s_mx, s_my, g_mx, g_my;
   if (!costmap_sub_->getCostmap()->worldToMap(
       pose.pose.position.x, pose.pose.position.y,
@@ -287,7 +287,8 @@ unsigned int GoalIntentExtractor::associatePoseWithGraphNode(
     if (costmap_sub_->getCostmap()->getCost(g_mx, g_my) == nav2_costmap_2d::LETHAL_OBSTACLE) {
       RCLCPP_WARN_STREAM(
         logger_, "Goal corrdinate of(" + std::to_string(goal_x) + ", " +
-        std::to_string(goal_y) + ") was in lethal cost. Removing from goal list.");continue;
+        std::to_string(goal_y) + ") was in lethal cost. Removing from goal list.");
+      continue;
     }
     valid_node_indices.push_back(node_index);
     goals.push_back({g_mx, g_my});
@@ -300,10 +301,10 @@ unsigned int GoalIntentExtractor::associatePoseWithGraphNode(
   bfs_->clearGraph();
   bfs_->setStart(s_mx, s_my);
   bfs_->setGoals(goals);
-  if (bfs_->isNodeVisible()) {
-    // The visiblity check only validates the first node in goal array
-    return valid_node_indices.front();
-  }
+  // if (bfs_->isFirstGoalVisible()) {
+  //   // The visiblity check only validates the first node in goal array
+  //   return valid_node_indices.front();
+  // }
 
   unsigned int goal;
   bfs_->search(goal);
@@ -317,15 +318,17 @@ void GoalIntentExtractor::visualizeExpansions(
   if (!enable_search_viz_) {
     return;
   }
+
+  auto costmap = costmap_sub_->getCostmap();
   nav_msgs::msg::OccupancyGrid occ_grid_msg;
-  unsigned int width = costmap_sub_.get()->getCostmap()->getSizeInCellsX();
-  unsigned int height = costmap_sub_.get()->getCostmap()->getSizeInCellsY();
+  unsigned int width = costmap->getSizeInCellsX();
+  unsigned int height = costmap->getSizeInCellsY();
   occ_grid_msg.header.frame_id = "map";
-  occ_grid_msg.info.resolution = costmap_sub_.get()->getCostmap()->getResolution();
+  occ_grid_msg.info.resolution = costmap->getResolution();
   occ_grid_msg.info.width = width;
   occ_grid_msg.info.height = height;
-  occ_grid_msg.info.origin.position.x = costmap_sub_.get()->getCostmap()->getOriginX();
-  occ_grid_msg.info.origin.position.y = costmap_sub_.get()->getCostmap()->getOriginY();
+  occ_grid_msg.info.origin.position.x = costmap->getOriginX();
+  occ_grid_msg.info.origin.position.y = costmap->getOriginY();
   occ_grid_msg.info.origin.orientation.w = 1.0;
   occ_grid_msg.data.assign(width * height, 0);
 
