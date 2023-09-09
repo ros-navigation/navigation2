@@ -61,6 +61,9 @@ BtActionServer<ActionT>::BtActionServer(
   if (!node->has_parameter("default_server_timeout")) {
     node->declare_parameter("default_server_timeout", 20);
   }
+  if (!node->has_parameter("action_server_result_timeout")) {
+    node->declare_parameter("action_server_result_timeout", 900.0);
+  }
 
   std::vector<std::string> error_code_names = {
     "follow_path_error_code",
@@ -123,8 +126,6 @@ bool BtActionServer<ActionT>::on_configure()
   // Support for handling the topic-based goal pose from rviz
   client_node_ = std::make_shared<rclcpp::Node>("_", options);
 
-<<<<<<< HEAD
-=======
   // Declare parameters for client node to share with BT nodes
   // Declare if not declared in case being used an external application
   nav2_util::declare_parameter_if_not_declared(
@@ -136,20 +137,27 @@ bool BtActionServer<ActionT>::on_configure()
   client_node_->declare_parameter(
     "global_frame", node->get_parameter("global_frame").as_string());
 
->>>>>>> be4d4071 (fixing external users of the BT action node template (#3792))
+  // set the timeout in seconds for the action server to discard goal handles if not finished
+  double action_server_result_timeout;
+  node->get_parameter("action_server_result_timeout", action_server_result_timeout);
+  rcl_action_server_options_t server_options = rcl_action_server_get_default_options();
+  server_options.result_timeout.nanoseconds = RCL_S_TO_NS(action_server_result_timeout);
+
   action_server_ = std::make_shared<ActionServer>(
     node->get_node_base_interface(),
     node->get_node_clock_interface(),
     node->get_node_logging_interface(),
     node->get_node_waitables_interface(),
-    action_name_, std::bind(&BtActionServer<ActionT>::executeCallback, this));
+    action_name_, std::bind(&BtActionServer<ActionT>::executeCallback, this),
+    nullptr, std::chrono::milliseconds(500), false, server_options);
 
   // Get parameters for BT timeouts
-  int timeout;
-  node->get_parameter("bt_loop_duration", timeout);
-  bt_loop_duration_ = std::chrono::milliseconds(timeout);
-  node->get_parameter("default_server_timeout", timeout);
-  default_server_timeout_ = std::chrono::milliseconds(timeout);
+  int bt_loop_duration;
+  node->get_parameter("bt_loop_duration", bt_loop_duration);
+  bt_loop_duration_ = std::chrono::milliseconds(bt_loop_duration);
+  int default_server_timeout;
+  node->get_parameter("default_server_timeout", default_server_timeout);
+  default_server_timeout_ = std::chrono::milliseconds(default_server_timeout);
 
   // Get error code id names to grab off of the blackboard
   error_code_names_ = node->get_parameter("error_code_names").as_string_array();
