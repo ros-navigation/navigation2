@@ -36,6 +36,9 @@ WaypointFollower::WaypointFollower(const rclcpp::NodeOptions & options)
 
   declare_parameter("stop_on_failure", true);
   declare_parameter("loop_rate", 20);
+
+  declare_parameter("action_server_result_timeout", 900.0);
+
   nav2_util::declare_parameter_if_not_declared(
     this, std::string("waypoint_task_executor_plugin"),
     rclcpp::ParameterValue(std::string("wait_at_waypoint")));
@@ -71,12 +74,20 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & /*state*/)
     get_node_waitables_interface(),
     "navigate_to_pose", callback_group_);
 
+  double action_server_result_timeout;
+  get_parameter("action_server_result_timeout", action_server_result_timeout);
+  rcl_action_server_options_t server_options = rcl_action_server_get_default_options();
+  server_options.result_timeout.nanoseconds = RCL_S_TO_NS(action_server_result_timeout);
+
   action_server_ = std::make_unique<ActionServer>(
     get_node_base_interface(),
     get_node_clock_interface(),
     get_node_logging_interface(),
     get_node_waitables_interface(),
-    "follow_waypoints", std::bind(&WaypointFollower::followWaypoints, this));
+    "follow_waypoints", std::bind(
+      &WaypointFollower::followWaypoints,
+      this), nullptr, std::chrono::milliseconds(
+      500), false, server_options);
 
   try {
     waypoint_task_executor_type_ = nav2_util::get_plugin_type_param(
