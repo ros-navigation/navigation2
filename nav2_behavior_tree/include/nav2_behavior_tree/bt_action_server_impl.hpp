@@ -247,6 +247,7 @@ void BtActionServer<ActionT>::executeCallback()
 {
   if (!on_goal_received_callback_(action_server_->get_current_goal())) {
     action_server_->terminate_current();
+    cleanErrorCodes();
     return;
   }
 
@@ -301,6 +302,8 @@ void BtActionServer<ActionT>::executeCallback()
       action_server_->terminate_all(result);
       break;
   }
+
+  cleanErrorCodes();
 }
 
 template<class ActionT>
@@ -324,6 +327,14 @@ void BtActionServer<ActionT>::populateErrorCode(
 
   if (highest_priority_error_code != std::numeric_limits<int>::max()) {
     result->error_code = highest_priority_error_code;
+  }
+}
+
+template<class ActionT>
+void BtActionServer<ActionT>::cleanErrorCodes()
+{
+  for (const auto & error_code : error_code_names_) {
+    blackboard_->set<unsigned short>(error_code, 0);  //NOLINT
   }
 }
 

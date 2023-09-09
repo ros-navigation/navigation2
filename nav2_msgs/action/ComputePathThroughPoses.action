@@ -11,12 +11,12 @@ bool use_start # If false, use current robot pose as path start, if true, use st
 uint16 NONE=0
 uint16 UNKNOWN=300
 uint16 INVALID_PLANNER=301
-uint16 TF_ERROR=3002
+uint16 TF_ERROR=302
 uint16 START_OUTSIDE_MAP=303
 uint16 GOAL_OUTSIDE_MAP=304
 uint16 START_OCCUPIED=305
 uint16 GOAL_OCCUPIED=306
-uint16 TIMEOUT=3007
+uint16 TIMEOUT=307
 uint16 NO_VALID_PATH=308
 uint16 NO_VIAPOINTS_GIVEN=309
 
