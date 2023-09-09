@@ -49,7 +49,7 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
   RCLCPP_INFO(get_logger(), "Creating controller server");
 
   declare_parameter("controller_frequency", 20.0);
-  
+
   declare_parameter("action_server_result_timeout", 10.0);
 
   declare_parameter("progress_checker_plugins", default_progress_checker_ids_);
