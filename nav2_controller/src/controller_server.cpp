@@ -222,6 +222,11 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   rcl_action_server_options_t server_options = rcl_action_server_get_default_options();
   server_options.result_timeout.nanoseconds = RCL_S_TO_NS(action_server_result_timeout);
 
+  double action_server_result_timeout;
+  get_parameter("action_server_result_timeout", action_server_result_timeout);
+  rcl_action_server_options_t server_options = rcl_action_server_get_default_options();
+  server_options.result_timeout.nanoseconds = RCL_S_TO_NS(action_server_result_timeout);
+
   // Create the action server that we implement with our followPath method
   // This may throw due to real-time prioritzation if user doesn't have real-time permissions
   try {
