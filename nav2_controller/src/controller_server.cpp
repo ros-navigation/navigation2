@@ -595,6 +595,8 @@ void ControllerServer::computeAndPublishVelocity()
       nav_2d_utils::twist2Dto3D(twist),
       goal_checkers_[current_goal_checker_].get());
     last_valid_cmd_time_ = now();
+    cmd_vel_2d.header.frame_id = costmap_ros_->getBaseFrameID();
+    cmd_vel_2d.header.stamp = last_valid_cmd_time_;
     // Only no valid control exception types are valid to attempt to have control patience, as
     // other types will not be resolved with more attempts
   } catch (nav2_core::NoValidControl & e) {
