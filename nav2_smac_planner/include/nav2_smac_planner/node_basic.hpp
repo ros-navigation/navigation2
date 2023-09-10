@@ -76,6 +76,7 @@ public:
   MotionPrimitive * prim_ptr;  // Used by NodeLattice
   unsigned int index, motion_index;
   bool backward;
+  TurnDirection turn_dir;
 };
 
 }  // namespace nav2_smac_planner
