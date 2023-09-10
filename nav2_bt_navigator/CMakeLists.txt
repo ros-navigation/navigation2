@@ -19,7 +19,6 @@ find_package(nav2_core REQUIRED)
 find_package(tf2_ros REQUIRED)
 
 nav2_package()
-add_compile_options(-g)
 
 include_directories(
   include

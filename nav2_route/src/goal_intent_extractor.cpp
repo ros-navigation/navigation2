@@ -68,7 +68,7 @@ void GoalIntentExtractor::configure(
   node_spatial_tree_->computeTree(graph);
 
   nav2_util::declare_parameter_if_not_declared(
-    node, "enable_search", rclcpp::ParameterValue(true));
+    node, "enable_search", rclcpp::ParameterValue(false));
   enable_search_ = node->get_parameter("enable_search").as_bool();
 
   if (enable_search_) {
@@ -83,7 +83,7 @@ void GoalIntentExtractor::configure(
     max_iterations_ = node->get_parameter("max_iterations").as_int();
 
     nav2_util::declare_parameter_if_not_declared(
-      node, "enable_search_viz", rclcpp::ParameterValue(true));
+      node, "enable_search_viz", rclcpp::ParameterValue(false));
     enable_search_viz_ = node->get_parameter("enable_search_viz").as_bool();
 
     costmap_sub_ =
