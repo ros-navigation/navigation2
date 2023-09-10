@@ -209,7 +209,9 @@ local_costmap:
         mark_threshold: 0
         observation_sources: scan
         scan:
-          topic: /scan
+          # '<robot_namespace>' keyword shall be replaced with 'namespace' where user defined.
+          # It doesn't need to start with '/'
+          topic: <robot_namespace>/scan
           max_obstacle_height: 2.0
           clearing: True
           marking: True
@@ -239,7 +241,9 @@ global_costmap:
         enabled: True
         observation_sources: scan
         scan:
-          topic: /scan
+          # '<robot_namespace>' keyword shall be replaced with 'namespace' where user defined.
+          # It doesn't need to start with '/'
+          topic: <robot_namespace>/scan
           max_obstacle_height: 2.0
           clearing: True
           marking: True
