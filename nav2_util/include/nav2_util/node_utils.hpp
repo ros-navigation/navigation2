@@ -164,8 +164,7 @@ void copy_all_parameters(const NodeT1 & parent, const NodeT2 & child)
   using Parameters = std::vector<rclcpp::Parameter>;
   std::vector<std::string> param_names = parent->list_parameters({}, 0).names;
   Parameters params = parent->get_parameters(param_names);
-  for (Parameters::const_iterator iter = params.begin(); iter != params.end(); ++iter)
-  {
+  for (Parameters::const_iterator iter = params.begin(); iter != params.end(); ++iter) {
     if (!child->has_parameter(iter->get_name())) {
       child->declare_parameter(iter->get_name(), iter->get_parameter_value());
     }
