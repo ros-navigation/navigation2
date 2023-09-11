@@ -15,6 +15,7 @@
 #ifndef NAV2_UTIL__NODE_UTILS_HPP_
 #define NAV2_UTIL__NODE_UTILS_HPP_
 
+#include <vector>
 #include <string>
 #include "rclcpp/rclcpp.hpp"
 #include "rcl_interfaces/srv/list_parameters.hpp"
@@ -160,10 +161,10 @@ std::string get_plugin_type_param(
 template<typename NodeT1, typename NodeT2>
 void copy_all_parameters(const NodeT1 & parent, const NodeT2 & child)
 {
+  using Parameters = std::vector<rclcpp::Parameter>;
   std::vector<std::string> param_names = parent->list_parameters({}, 0).names;
-  std::vector<rclcpp::Parameter> params = parent->get_parameters(param_names);
-
-  for (std::vector<rclcpp::Parameter>::const_iterator iter = params.begin(); iter != params.end(); ++iter)
+  Parameters params = parent->get_parameters(param_names);
+  for (Parameters::const_iterator iter = params.begin(); iter != params.end(); ++iter)
   {
     if (!child->has_parameter(iter->get_name())) {
       child->declare_parameter(iter->get_name(), iter->get_parameter_value());

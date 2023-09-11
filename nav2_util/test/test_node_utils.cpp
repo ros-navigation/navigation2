@@ -105,7 +105,7 @@ TEST(TestParamCopying, TestParamCopying)
   node1->declare_parameter("Foo2", rclcpp::ParameterValue(0.123));
   node1->declare_parameter("Foo", rclcpp::ParameterValue(std::string(("bar"))));
   node1->declare_parameter("Foo.bar", rclcpp::ParameterValue(std::string(("steve"))));
-  node2->declare_parameter("Foo", rclcpp::ParameterValue(std::string(("barz"))));
+  node2->declare_parameter("Foo", rclcpp::ParameterValue(std::string(("barz2"))));
 
   // Show Node2 is empty of Node1's parameters, but contains its own
   EXPECT_FALSE(node2->has_parameter("Foo1"));
@@ -124,5 +124,5 @@ TEST(TestParamCopying, TestParamCopying)
   EXPECT_TRUE(node2->has_parameter("Foo.bar"));
   EXPECT_EQ(node2->get_parameter("Foo.bar").as_string(), std::string("steve"));
   EXPECT_TRUE(node2->has_parameter("Foo"));
-  EXPECT_EQ(node2->get_parameter("Foo").as_string(), std::string("barz"));
+  EXPECT_EQ(node2->get_parameter("Foo").as_string(), std::string("barz2"));
 }
