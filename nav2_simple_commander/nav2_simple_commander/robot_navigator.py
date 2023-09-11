@@ -46,8 +46,8 @@ class TaskResult(Enum):
 
 class BasicNavigator(Node):
 
-    def __init__(self, node_name='basic_navigator'):
-        super().__init__(node_name=node_name)
+    def __init__(self, node_name='basic_navigator', namespace=''):
+        super().__init__(node_name=node_name, namespace=namespace)
         self.initial_pose = PoseStamped()
         self.initial_pose.header.frame_id = 'map'
         self.goal_handle = None
@@ -83,13 +83,13 @@ class BasicNavigator(Node):
         self.initial_pose_pub = self.create_publisher(PoseWithCovarianceStamped,
                                                       'initialpose',
                                                       10)
-        self.change_maps_srv = self.create_client(LoadMap, '/map_server/load_map')
+        self.change_maps_srv = self.create_client(LoadMap, 'map_server/load_map')
         self.clear_costmap_global_srv = self.create_client(
-            ClearEntireCostmap, '/global_costmap/clear_entirely_global_costmap')
+            ClearEntireCostmap, 'global_costmap/clear_entirely_global_costmap')
         self.clear_costmap_local_srv = self.create_client(
-            ClearEntireCostmap, '/local_costmap/clear_entirely_local_costmap')
-        self.get_costmap_global_srv = self.create_client(GetCostmap, '/global_costmap/get_costmap')
-        self.get_costmap_local_srv = self.create_client(GetCostmap, '/local_costmap/get_costmap')
+            ClearEntireCostmap, 'local_costmap/clear_entirely_local_costmap')
+        self.get_costmap_global_srv = self.create_client(GetCostmap, 'global_costmap/get_costmap')
+        self.get_costmap_local_srv = self.create_client(GetCostmap, 'local_costmap/get_costmap')
 
     def destroyNode(self):
         self.destroy_node()
