@@ -112,7 +112,7 @@ TEST(TestParamCopying, TestParamCopying)
   EXPECT_FALSE(node2->has_parameter("Foo2"));
   EXPECT_FALSE(node2->has_parameter("Foo.bar"));
   EXPECT_TRUE(node2->has_parameter("Foo"));
-  EXPECT_EQ(node2->get_parameter("Foo").as_string(), std::string("barz"));
+  EXPECT_EQ(node2->get_parameter("Foo").as_string(), std::string("barz2"));
 
   nav2_util::copy_all_parameters(node1, node2);
 
