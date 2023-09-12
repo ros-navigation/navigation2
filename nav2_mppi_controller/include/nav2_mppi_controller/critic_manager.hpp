@@ -46,6 +46,7 @@ public:
     * @brief Constructor for mppi::CriticManager
     */
   CriticManager() = default;
+  ~CriticManager() = default;
 
   /**
     * @brief Configure critic manager on bringup and load plugins
