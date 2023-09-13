@@ -46,7 +46,7 @@ public:
     * @brief Constructor for mppi::CriticManager
     */
   CriticManager() = default;
-
+  ~CriticManager() = default;
 
   /**
     * @brief Virtual Destructor for mppi::CriticManager
