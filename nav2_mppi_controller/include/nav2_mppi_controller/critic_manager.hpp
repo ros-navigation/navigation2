@@ -46,8 +46,12 @@ public:
     * @brief Constructor for mppi::CriticManager
     */
   CriticManager() = default;
-  ~CriticManager() = default;
-
+  
+  /**
+    * @brief Virtual Destructor for mppi::CriticManager
+    */
+  virtual ~CriticManager() = default;
+  
   /**
     * @brief Configure critic manager on bringup and load plugins
     * @param parent WeakPtr to node
