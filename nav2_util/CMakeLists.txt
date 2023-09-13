@@ -32,6 +32,7 @@ set(dependencies
     bondcpp
     bond
     action_msgs
+    rcl_interfaces
 )
 
 nav2_package()
