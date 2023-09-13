@@ -187,7 +187,7 @@ LifecycleManager::createBondConnection(const std::string & node_name)
 
   if (bond_map_.find(node_name) == bond_map_.end() && bond_timeout_.count() > 0.0) {
     bond_map_[node_name] =
-      std::make_shared<bond::Bond>("bond", node_name, shared_from_this());
+      std::make_shared<bond::Bond>("/bond", node_name, shared_from_this());
     bond_map_[node_name]->setHeartbeatTimeout(timeout_s);
     bond_map_[node_name]->setHeartbeatPeriod(0.10);
     bond_map_[node_name]->start();

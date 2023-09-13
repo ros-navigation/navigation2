@@ -58,8 +58,8 @@ void LifecycleNode::createBond()
   RCLCPP_INFO(get_logger(), "Creating bond (%s) to lifecycle manager.", this->get_name());
 
   bond_ = std::make_unique<bond::Bond>(
-    std::string("bond"),
-    this->get_name(),
+    std::string("/bond"),
+    this->get_fully_qualified_name(),
     shared_from_this());
 
   bond_->setHeartbeatPeriod(0.10);
