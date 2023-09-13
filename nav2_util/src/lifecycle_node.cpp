@@ -56,8 +56,8 @@ LifecycleNode::~LifecycleNode()
 
 void LifecycleNode::createBond()
 {
-  auto name = nav2_util::strip_leading_slash(this->get_fully_qualified_name());
-  RCLCPP_INFO(get_logger(), "Creating bond (%s) to lifecycle manager.", name);
+  std::string name = nav2_util::strip_leading_slash(this->get_fully_qualified_name());
+  RCLCPP_INFO(get_logger(), "Creating bond (%s) to lifecycle manager.", name.c_str());
 
   bond_ = std::make_unique<bond::Bond>(
     std::string("bond"),
