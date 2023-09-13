@@ -28,6 +28,7 @@
   <depend>launch</depend>
   <depend>launch_testing_ament_cmake</depend>
   <depend>action_msgs</depend>
+  <depend>rcl_interfaces</depend>
 
   <exec_depend>libboost-program-options</exec_depend>
 
