@@ -44,7 +44,7 @@ public:
    * @brief A constructor for nav2_bt_navigator::BtNavigator class
    * @param options Additional options to control creation of the node.
    */
-  explicit BtNavigator(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
+  explicit BtNavigator(rclcpp::NodeOptions options = rclcpp::NodeOptions());
   /**
    * @brief A destructor for nav2_bt_navigator::BtNavigator class
    */
