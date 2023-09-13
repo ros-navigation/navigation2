@@ -54,13 +54,13 @@ typedef struct
   pf_matrix_t cr;
   pf_vector_t cd;
 
-  // A random number generator
-  // gsl_rng *rng;
+  // Random seed
+  long seed;
 } pf_pdf_gaussian_t;
 
 
 // Create a gaussian pdf
-pf_pdf_gaussian_t * pf_pdf_gaussian_alloc(pf_vector_t x, pf_matrix_t cx);
+pf_pdf_gaussian_t * pf_pdf_gaussian_alloc(pf_vector_t x, pf_matrix_t cx, long gaussian_random_seed);
 
 // Destroy the pdf
 void pf_pdf_gaussian_free(pf_pdf_gaussian_t * pdf);

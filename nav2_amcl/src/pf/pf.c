@@ -51,14 +51,12 @@ pf_t * pf_alloc(
   pf_init_model_fn_t random_pose_fn,
   void * random_pose_data,
   double max_particle_gen_prob_ext_pose,
-  int use_augmented_mcl)
+  int use_augmented_mcl, long pf_random_seed)
 {
   int i, j;
   pf_t * pf;
   pf_sample_set_t * set;
   pf_sample_t * sample;
-
-  srand48(time(NULL));
 
   pf = calloc(1, sizeof(pf_t));
 
@@ -67,6 +65,13 @@ pf_t * pf_alloc(
 
   pf->min_samples = min_samples;
   pf->max_samples = max_samples;
+
+  if(pf_random_seed == -1) {
+    pf->pf_random_seed = time(NULL);
+  } else {
+    pf->pf_random_seed = pf_random_seed;
+  }
+  srand48(pf->pf_random_seed);
 
   // Control parameters for the population size calculation.  [err] is
   // the max error between the true distribution and the estimated
@@ -134,7 +139,7 @@ void pf_free(pf_t * pf)
 }
 
 // Initialize the filter using a guassian
-void pf_init(pf_t * pf, pf_vector_t mean, pf_matrix_t cov)
+void pf_init(pf_t * pf, pf_vector_t mean, pf_matrix_t cov, long gaussian_random_seed)
 {
   int i;
   pf_sample_set_t * set;
@@ -148,7 +153,7 @@ void pf_init(pf_t * pf, pf_vector_t mean, pf_matrix_t cov)
 
   set->sample_count = pf->max_samples;
 
-  pdf = pf_pdf_gaussian_alloc(mean, cov);
+  pdf = pf_pdf_gaussian_alloc(mean, cov, gaussian_random_seed);
 
   // Compute the new sample poses
   for (i = 0; i < set->sample_count; i++) {
@@ -169,6 +174,10 @@ void pf_init(pf_t * pf, pf_vector_t mean, pf_matrix_t cov)
 
   // set converged to 0
   pf_init_converged(pf);
+
+  // Update seeds
+  pf->gaussian_random_seed = pdf->seed;
+
 }
 
 
