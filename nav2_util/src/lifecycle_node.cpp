@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "nav2_util/lifecycle_node.hpp"
+#include "nav2_util/string_utils.hpp"
 
 #include <memory>
 #include <string>
@@ -55,11 +56,12 @@ LifecycleNode::~LifecycleNode()
 
 void LifecycleNode::createBond()
 {
-  RCLCPP_INFO(get_logger(), "Creating bond (%s) to lifecycle manager.", this->get_name());
+  auto name = nav2_util::strip_leading_slash(this->get_fully_qualified_name());
+  RCLCPP_INFO(get_logger(), "Creating bond (%s) to lifecycle manager.", name);
 
   bond_ = std::make_unique<bond::Bond>(
-    std::string("/bond"),
-    this->get_fully_qualified_name(),
+    std::string("bond"),
+    name,
     shared_from_this());
 
   bond_->setHeartbeatPeriod(0.10);
