@@ -191,7 +191,10 @@ CollisionCost ObstaclesCritic::costAtPose(float x, float y, float theta)
   float & cost = collision_cost.cost;
   collision_cost.using_footprint = false;
   unsigned int x_i, y_i;
-  collision_checker_.worldToMap(x, y, x_i, y_i);
+  if (!collision_checker_.worldToMap(x, y, x_i, y_i)) {
+    cost = nav2_costmap_2d::NO_INFORMATION;
+    return collision_cost;
+  }
   cost = collision_checker_.pointCost(x_i, y_i);
 
   if (consider_footprint_ && (cost >= possibly_inscribed_cost_ || possibly_inscribed_cost_ < 1)) {
