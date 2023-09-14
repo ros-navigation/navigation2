@@ -129,6 +129,9 @@ protected:
 
   // Odometry smoother object
   std::shared_ptr<nav2_util::OdomSmoother> odom_smoother_;
+
+  // Robot's linear velocity (to calculate time remaining, if set)
+  double avg_linear_vel_;
 };
 
 }  // namespace nav2_bt_navigator

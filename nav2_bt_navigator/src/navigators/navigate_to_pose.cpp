@@ -41,6 +41,12 @@ NavigateToPoseNavigator::configure(
 
   path_blackboard_id_ = node->get_parameter("path_blackboard_id").as_string();
 
+  if (!node->has_parameter("average_linear_speed")) {
+    node->declare_parameter("average_linear_speed", 0.0);
+  }
+
+  avg_linear_vel_ = node->get_parameter("average_linear_speed").as_double();
+
   // Odometry smoother object for getting current speed
   odom_smoother_ = odom_smoother;
 
@@ -152,6 +158,11 @@ NavigateToPoseNavigator::onLoop()
     // Get current speed
     geometry_msgs::msg::Twist current_odom = odom_smoother_->getTwist();
     double current_linear_speed = std::hypot(current_odom.linear.x, current_odom.linear.y);
+
+    // If average speed is set, use that instead of current speed
+    if (avg_linear_vel_ > 0.0) {
+      current_linear_speed = avg_linear_vel_;
+    }
 
     // Calculate estimated time taken to goal if speed is higher than 1cm/s
     // and at least 10cm to go
