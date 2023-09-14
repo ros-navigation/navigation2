@@ -87,20 +87,6 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   RCLCPP_INFO(get_logger(), "getting progress checker plugins..");
   get_parameter("progress_checker_plugins", progress_checker_ids_);
-  try {
-    nav2_util::declare_parameter_if_not_declared(
-      node, "progress_checker_plugin", rclcpp::PARAMETER_STRING);
-    std::string progress_checker_plugin;
-    progress_checker_plugin = node->get_parameter("progress_checker_plugin").as_string();
-    progress_checker_ids_.clear();
-    progress_checker_ids_.push_back(progress_checker_plugin);
-    RCLCPP_WARN(
-      get_logger(),
-      "\"progress_checker_plugin\" parameter was deprecated and will be removed soon. Use "
-      "\"progress_checker_plugins\" instead to specify a list of plugins");
-  } catch (const std::exception &) {
-    // This is normal situation: progress_checker_plugin parameter should not being declared
-  }
   if (progress_checker_ids_ == default_progress_checker_ids_) {
     for (size_t i = 0; i < default_progress_checker_ids_.size(); ++i) {
       nav2_util::declare_parameter_if_not_declared(
