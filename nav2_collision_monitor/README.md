@@ -83,4 +83,4 @@ The zones around the robot and the data sources are the same as for the Collisio
 
 ### Configuration
 
-Detailed configuration parameters, their description and how to setup a Collision Detector could be found at its [Configuration Guide](https://navigation.ros.org/configuration/packages/configuring-collision-detector.html).
+Detailed configuration parameters, their description and how to setup a Collision Detector could be found at its [Configuration Guide](https://navigation.ros.org/configuration/packages/collision_monitor/configuring-collision-detector-node.html).
