@@ -183,22 +183,22 @@ void Costmap2DPublisher::prepareCostmap()
   }
 }
 
-nav2_msgs::msg::CostmapUpdate Costmap2DPublisher::get_raw_costmap_update_msg()
+std::unique_ptr<nav2_msgs::msg::CostmapUpdate> Costmap2DPublisher::get_raw_costmap_update_msg()
 {
-  nav2_msgs::msg::CostmapUpdate msg;
+  auto msg = std::make_unique<nav2_msgs::msg::CostmapUpdate>();
 
-  msg.header.stamp = clock_->now();
-  msg.header.frame_id = global_frame_;
-  msg.x = x0_;
-  msg.y = y0_;
-  msg.size_x = xn_ - x0_;
-  msg.size_y = yn_ - y0_;
-  msg.data.resize(msg.size_x * msg.size_y);
+  msg->header.stamp = clock_->now();
+  msg->header.frame_id = global_frame_;
+  msg->x = x0_;
+  msg->y = y0_;
+  msg->size_x = xn_ - x0_;
+  msg->size_y = yn_ - y0_;
+  msg->data.resize(msg->size_x * msg->size_y);
 
   unsigned int i = 0;
   for (unsigned int y = y0_; y < yn_; y++) {
     for (unsigned int x = x0_; x < xn_; x++) {
-      msg.data[i++] = costmap_->getCost(x, y);
+      msg->data[i++] = costmap_->getCost(x, y);
     }
   }
   return msg;
