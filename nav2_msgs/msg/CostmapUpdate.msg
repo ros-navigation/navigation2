@@ -8,4 +8,4 @@ uint32 size_x
 uint32 size_y
 
 # The cost data, in row-major order, starting with (x,y).
-int8[] data
+uint8[] data
