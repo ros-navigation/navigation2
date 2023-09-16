@@ -55,7 +55,8 @@ class GpsWaypointFollowerTest(Node):
         #     return False
 
         while not self.action_client.wait_for_server(timeout_sec=1.0):
-            self.info_msg("'follow_gps_waypoints' action server not available, waiting...")
+            self.info_msg(
+                "'follow_gps_waypoints' action server not available, waiting...")
 
         action_request = FollowGPSWaypoints.Goal()
         action_request.gps_poses = self.waypoints
@@ -101,7 +102,7 @@ class GpsWaypointFollowerTest(Node):
 
         self.info_msg("Goal succeeded!")
         return True
-    
+
     def setStopFailureParam(self, value):
         req = SetParameters.Request()
         req.parameters = [Parameter('stop_on_failure',
@@ -116,9 +117,11 @@ class GpsWaypointFollowerTest(Node):
         self.info_msg("Destroyed follow_gps_waypoints action client")
 
         transition_service = "lifecycle_manager_navigation/manage_nodes"
-        mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
+        mgr_client = self.create_client(
+            ManageLifecycleNodes, transition_service)
         while not mgr_client.wait_for_service(timeout_sec=1.0):
-            self.info_msg(f"{transition_service} service not available, waiting...")
+            self.info_msg(
+                f"{transition_service} service not available, waiting...")
 
         req = ManageLifecycleNodes.Request()
         req.command = ManageLifecycleNodes.Request().SHUTDOWN
@@ -172,14 +175,14 @@ def main(argv=sys.argv[1:]):
     time.sleep(2)
     test.cancel_goal()
 
-    # a failure case
+    # set waypoint outside of map
     time.sleep(2)
     test.setWaypoints([[35.0, -118.0]])
-    result = test.run(True)
+    result = test.run(True, False)
     assert not result
     result = not result
     assert test.action_result.missed_waypoints[0].error_code == \
-           ComputePathToPose.Result().GOAL_OUTSIDE_MAP
+        ComputePathToPose.Result().GOAL_OUTSIDE_MAP
 
     # stop on failure test with bogous waypoint
     test.setStopFailureParam(True)

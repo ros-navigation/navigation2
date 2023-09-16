@@ -39,7 +39,7 @@ WaypointFollower::WaypointFollower(const rclcpp::NodeOptions & options)
 
   declare_parameter("action_server_result_timeout", 900.0);
 
-  declare_parameter("global_frame_id", global_frame_id_);
+  declare_parameter("global_frame_id", "map");
 
   nav2_util::declare_parameter_if_not_declared(
     this, std::string("waypoint_task_executor_plugin"),
@@ -64,7 +64,6 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & /*state*/)
   loop_rate_ = get_parameter("loop_rate").as_int();
   waypoint_task_executor_id_ = get_parameter("waypoint_task_executor_plugin").as_string();
   global_frame_id_ = get_parameter("global_frame_id").as_string();
-
   global_frame_id_ = nav2_util::strip_leading_slash(global_frame_id_);
 
   callback_group_ = create_callback_group(
