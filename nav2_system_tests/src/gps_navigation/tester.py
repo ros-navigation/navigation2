@@ -36,6 +36,7 @@ class GpsWaypointFollowerTest(Node):
             self, FollowGPSWaypoints, "follow_gps_waypoints"
         )
         self.goal_handle = None
+        self.action_result = None
 
         self.param_cli = self.create_client(SetParameters,
                                             '/waypoint_follower/set_parameters')
@@ -87,6 +88,7 @@ class GpsWaypointFollowerTest(Node):
             rclpy.spin_until_future_complete(self, get_result_future)
             status = get_result_future.result().status
             result = get_result_future.result().result
+            self.action_result = result
         except Exception as e:  # noqa: B902
             self.error_msg(f"Service call failed {e!r}")
 
