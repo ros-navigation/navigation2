@@ -25,7 +25,8 @@ from geometry_msgs.msg import PoseWithCovarianceStamped
 from lifecycle_msgs.srv import GetState
 from nav2_msgs.action import AssistedTeleop, BackUp, Spin
 from nav2_msgs.action import ComputePathThroughPoses, ComputePathToPose
-from nav2_msgs.action import FollowPath, FollowWaypoints, FollowGPSWaypoints, NavigateThroughPoses, NavigateToPose
+from nav2_msgs.action import FollowPath, FollowWaypoints, FollowGPSWaypoints, \
+    NavigateThroughPoses, NavigateToPose
 from nav2_msgs.action import SmoothPath
 from nav2_msgs.srv import ClearEntireCostmap, GetCostmap, LoadMap, ManageLifecycleNodes
 
@@ -67,7 +68,8 @@ class BasicNavigator(Node):
                                                      'navigate_through_poses')
         self.nav_to_pose_client = ActionClient(self, NavigateToPose, 'navigate_to_pose')
         self.follow_waypoints_client = ActionClient(self, FollowWaypoints, 'follow_waypoints')
-        self.follow_gps_waypoints_client = ActionClient(self, FollowGPSWaypoints, 'follow_gps_waypoints')
+        self.follow_gps_waypoints_client = ActionClient(self, FollowGPSWaypoints,
+                                                        'follow_gps_waypoints')
         self.follow_path_client = ActionClient(self, FollowPath, 'follow_path')
         self.compute_path_to_pose_client = ActionClient(self, ComputePathToPose,
                                                         'compute_path_to_pose')
@@ -182,7 +184,7 @@ class BasicNavigator(Node):
 
         self.result_future = self.goal_handle.get_result_async()
         return True
-    
+
     def followGpsWaypoints(self, gps_poses):
         """Send a `FollowGPSWaypoints` action request."""
         self.debug("Waiting for 'FollowWaypoints' action server")
@@ -194,7 +196,7 @@ class BasicNavigator(Node):
 
         self.info(f'Following {len(goal_msg.gps_poses)} gps goals....')
         send_goal_future = self.follow_gps_waypoints_client.send_goal_async(goal_msg,
-                                                                        self._feedbackCallback)
+                                                                            self._feedbackCallback)
         rclpy.spin_until_future_complete(self, send_goal_future)
         self.goal_handle = send_goal_future.result()
 
