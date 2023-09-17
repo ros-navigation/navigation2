@@ -100,7 +100,8 @@ void GoalIntentExtractor::configure(
 void GoalIntentExtractor::initialize()
 {
   if (enable_search_) {
-    bfs_->initialize(costmap_sub_->getCostmap(), max_iterations_);
+    costmap_ = costmap_sub_->getCostmap();
+    bfs_->initialize(costmap_, max_iterations_);
     costmap_frame_ = costmap_sub_->getFrameID();
   }
 }
@@ -259,18 +260,18 @@ unsigned int GoalIntentExtractor::associatePoseWithGraphNode(
   std::vector<unsigned int> node_indices,
   geometry_msgs::msg::PoseStamped & pose)
 { 
-  auto start = transformPose(pose, costmap_frame_);
+  auto pose_transformed = transformPose(pose, costmap_frame_);
   unsigned int s_mx, s_my, g_mx, g_my;
-  if (!costmap_sub_->getCostmap()->worldToMap(
-      start.pose.position.x, start.pose.position.y,
+  if (!costmap_->worldToMap(
+      pose_transformed.pose.position.x, pose_transformed.pose.position.y,
       s_mx, s_my))
   {
     throw nav2_core::StartOutsideMapBounds(
-            "Start Coordinates of(" + std::to_string(start.pose.position.x) + ", " +
-            std::to_string(start.pose.position.y) + ") was outside bounds");
+            "Start Coordinates of(" + std::to_string(pose_transformed.pose.position.x) + ", " +
+            std::to_string(pose_transformed.pose.position.y) + ") was outside bounds");
   }
 
-  if (costmap_sub_->getCostmap()->getCost(s_mx, s_my) == nav2_costmap_2d::LETHAL_OBSTACLE) {
+  if (costmap_->getCost(s_mx, s_my) == nav2_costmap_2d::LETHAL_OBSTACLE) {
     throw nav2_core::StartOccupied("Start was in lethal cost");
   }
 
@@ -287,14 +288,14 @@ unsigned int GoalIntentExtractor::associatePoseWithGraphNode(
 
     float goal_x = goal.pose.position.x;
     float goal_y = goal.pose.position.y;
-    if (!costmap_sub_->getCostmap()->worldToMap(goal_x, goal_y, g_mx, g_my)) {
+    if (!costmap_->worldToMap(goal_x, goal_y, g_mx, g_my)) {
       RCLCPP_WARN_STREAM(
         logger_, "Goal coordinate of(" + std::to_string(goal_x) + ", " +
         std::to_string(goal_y) + ") was outside bounds. Removing from goal list");
       continue;
     }
 
-    if (costmap_sub_->getCostmap()->getCost(g_mx, g_my) == nav2_costmap_2d::LETHAL_OBSTACLE) {
+    if (costmap_->getCost(g_mx, g_my) == nav2_costmap_2d::LETHAL_OBSTACLE) {
       RCLCPP_WARN_STREAM(
         logger_, "Goal corrdinate of(" + std::to_string(goal_x) + ", " +
         std::to_string(goal_y) + ") was in lethal cost. Removing from goal list.");
@@ -329,16 +330,15 @@ void GoalIntentExtractor::visualizeExpansions(
     return;
   }
 
-  auto costmap = costmap_sub_->getCostmap();
   nav_msgs::msg::OccupancyGrid occ_grid_msg;
-  unsigned int width = costmap->getSizeInCellsX();
-  unsigned int height = costmap->getSizeInCellsY();
+  unsigned int width = costmap_->getSizeInCellsX();
+  unsigned int height = costmap_->getSizeInCellsY();
   occ_grid_msg.header.frame_id = "map";
-  occ_grid_msg.info.resolution = costmap->getResolution();
+  occ_grid_msg.info.resolution = costmap_->getResolution();
   occ_grid_msg.info.width = width;
   occ_grid_msg.info.height = height;
-  occ_grid_msg.info.origin.position.x = costmap->getOriginX();
-  occ_grid_msg.info.origin.position.y = costmap->getOriginY();
+  occ_grid_msg.info.origin.position.x = costmap_->getOriginX();
+  occ_grid_msg.info.origin.position.y = costmap_->getOriginY();
   occ_grid_msg.info.origin.orientation.w = 1.0;
   occ_grid_msg.data.assign(width * height, 0);
 
