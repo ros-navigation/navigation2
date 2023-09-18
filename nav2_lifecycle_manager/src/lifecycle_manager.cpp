@@ -106,7 +106,7 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
       service_thread_ = std::make_unique<nav2_util::NodeThread>(executor);
     });
   diagnostics_updater_.setHardwareID("Nav2");
-  diagnostics_updater_.add("Nav2 Health", this, &LifecycleManager::CreateActiveDiagnostic);
+  diagnostics_updater_.add("Nav2 Health", this, &LifecycleManager::CreateDiagnostic);
 }
 
 LifecycleManager::~LifecycleManager()
@@ -150,12 +150,16 @@ LifecycleManager::isActiveCallback(
 }
 
 void
-LifecycleManager::CreateActiveDiagnostic(diagnostic_updater::DiagnosticStatusWrapper & stat)
+LifecycleManager::CreateDiagnostic(diagnostic_updater::DiagnosticStatusWrapper & stat)
 {
-  if (system_active_) {
-    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "Nav2 is active");
-  } else {
-    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::ERROR, "Nav2 is inactive");
+  if (state_of_managed_nodes_ == NodeState::ACTIVE || state_of_managed_nodes_ == NodeState::PAUSED) {
+    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "Managed nodes' status is OK");
+  } else if (state_of_managed_nodes_ == NodeState::UNKNOWN){
+    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::ERROR, "An error has occurred during node state transition");
+  } else if (state_of_managed_nodes_ == NodeState::UNCONFIGURED){
+    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::WARN, "Managed nodes have not been configured");
+  } else if (state_of_managed_nodes_ == NodeState::FINALIZED){
+    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::WARN, "Managed nodes have been shut down");
   }
 }
 
@@ -283,10 +287,12 @@ LifecycleManager::startup()
     !changeStateForAllNodes(Transition::TRANSITION_ACTIVATE))
   {
     RCLCPP_ERROR(get_logger(), "Failed to bring up all requested nodes. Aborting bringup.");
+    state_of_managed_nodes = NodeState::UNKNOWN
     return false;
   }
   message("Managed nodes are active");
   system_active_ = true;
+  state_of_managed_nodes = NodeState::ACTIVE
   createBondTimer();
   return true;
 }
@@ -295,6 +301,7 @@ bool
 LifecycleManager::shutdown()
 {
   system_active_ = false;
+  state_of_managed_nodes = NodeState::FINALIZED
   destroyBondTimer();
 
   message("Shutting down managed nodes...");
@@ -317,11 +324,13 @@ LifecycleManager::reset(bool hard_reset)
   {
     if (!hard_reset) {
       RCLCPP_ERROR(get_logger(), "Failed to reset nodes: aborting reset");
+      state_of_managed_nodes = NodeState::UNKNOWN;
       return false;
     }
   }
 
   message("Managed nodes have been reset");
+  state_of_managed_nodes = UNCONFIGURED;
   return true;
 }
 
@@ -334,10 +343,12 @@ LifecycleManager::pause()
   message("Pausing managed nodes...");
   if (!changeStateForAllNodes(Transition::TRANSITION_DEACTIVATE)) {
     RCLCPP_ERROR(get_logger(), "Failed to pause nodes: aborting pause");
+    state_of_managed_nodes = NodeState::UNKNOWN
     return false;
   }
 
   message("Managed nodes have been paused");
+  state_of_managed_nodes = NodeState::PAUSED
   return true;
 }
 
@@ -347,11 +358,13 @@ LifecycleManager::resume()
   message("Resuming managed nodes...");
   if (!changeStateForAllNodes(Transition::TRANSITION_ACTIVATE)) {
     RCLCPP_ERROR(get_logger(), "Failed to resume nodes: aborting resume");
+    state_of_managed_nodes = NodeState::UNKNOWN
     return false;
   }
 
   message("Managed nodes are active");
   system_active_ = true;
+  state_of_managed_nodes = NodeState::ACTIVE
   createBondTimer();
   return true;
 }
