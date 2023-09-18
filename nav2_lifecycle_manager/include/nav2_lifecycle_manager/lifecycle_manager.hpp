@@ -201,7 +201,7 @@ protected:
   /**
    * @brief function to check if the Nav2 system is active
    */
-  void CreateActiveDiagnostic(diagnostic_updater::DiagnosticStatusWrapper & stat);
+  void CreateDiagnostic(diagnostic_updater::DiagnosticStatusWrapper & stat);
 
   /**
    * Register our preshutdown callback for this Node's rcl Context.
