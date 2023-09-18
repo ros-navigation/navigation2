@@ -38,6 +38,16 @@ namespace nav2_lifecycle_manager
 using namespace std::chrono_literals;  // NOLINT
 
 using nav2_msgs::srv::ManageLifecycleNodes;
+
+enum NodeState
+{
+  UNCONFIGURED,
+  ACTIVE,
+  PAUSED,
+  FINALIZED,
+  UNKNOWN,
+};
+
 /**
  * @class nav2_lifecycle_manager::LifecycleManager
  * @brief Implements service interface to transition the lifecycle nodes of
@@ -226,6 +236,7 @@ protected:
   bool attempt_respawn_reconnection_;
 
   bool system_active_{false};
+  NodeState state_of_managed_nodes_{NodeState::UNCONFIGURED};
   diagnostic_updater::Updater diagnostics_updater_;
 
   rclcpp::Time bond_respawn_start_time_{0};
