@@ -14,6 +14,10 @@ The costmaps / trajectory planners will handle most situations, but this is to h
 
 ![polygons.png](doc/polygons.png)
 
+Demonstration of Collision Monitor abilities presented at 6th ROS Developers Day 2023, could be found below:
+
+[![cm-ros-devday.png](doc/cm_ros_devday.png)](https://www.youtube.com/watch?v=bWliK0PC5Ms)
+
 ### Features
 
 The Collision Monitor uses polygons relative the robot's base frame origin to define "zones".
@@ -83,4 +87,4 @@ The zones around the robot and the data sources are the same as for the Collisio
 
 ### Configuration
 
-Detailed configuration parameters, their description and how to setup a Collision Detector could be found at its [Configuration Guide](https://navigation.ros.org/configuration/packages/configuring-collision-detector.html).
+Detailed configuration parameters, their description and how to setup a Collision Detector could be found at its [Configuration Guide](https://navigation.ros.org/configuration/packages/collision_monitor/configuring-collision-detector-node.html).
