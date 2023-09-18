@@ -579,7 +579,8 @@ Costmap2DROS::getRobotPose(geometry_msgs::msg::PoseStamped & global_pose)
 {
   return nav2_util::getCurrentPose(
     global_pose, *tf_buffer_,
-    global_frame_, robot_base_frame_, transform_tolerance_);
+    global_frame_, robot_base_frame_, transform_tolerance_,
+    now() - rclcpp::Duration::from_seconds(transform_tolerance_));
 }
 
 bool
