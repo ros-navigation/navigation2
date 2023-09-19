@@ -228,6 +228,10 @@
       <input_port name="robot_base_frame">Robot frame to check relative to global_frame</input_port>
     </Condition>
 
+    <Condition ID="IsObstacle">
+      <input_port name="distance">Distance From Obstacle</input_port>
+    </Condition>
+
     <Condition ID="TimeExpired">
       <input_port name="seconds">Time to check if expired</input_port>
     </Condition>
