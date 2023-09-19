@@ -54,7 +54,7 @@ protected:
     * @param cost Costmap cost
     * @return bool if in collision
     */
-  bool inCollision(float cost) const;
+  inline bool inCollision(float cost) const;
 
   /**
     * @brief cost at a robot pose
@@ -63,14 +63,14 @@ protected:
     * @param theta theta of pose
     * @return Collision information at pose
     */
-  CollisionCost costAtPose(float x, float y, float theta);
+  inline CollisionCost costAtPose(float x, float y, float theta);
 
   /**
     * @brief Distance to obstacle from cost
     * @param cost Costmap cost
     * @return float Distance to the obstacle represented by cost
     */
-  float distanceToObstacle(const CollisionCost & cost);
+  inline float distanceToObstacle(const CollisionCost & cost);
 
   /**
     * @brief Find the min cost of the inflation decay function for which the robot MAY be
