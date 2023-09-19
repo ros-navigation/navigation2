@@ -126,6 +126,9 @@ list(APPEND plugin_libs nav2_path_expiring_timer_condition)
 add_library(nav2_distance_traveled_condition_bt_node SHARED plugins/condition/distance_traveled_condition.cpp)
 list(APPEND plugin_libs nav2_distance_traveled_condition_bt_node)
 
+add_library(nav2_is_obstacle_condition_bt_node SHARED plugins/condition/is_obstacle_condition.cpp)
+list(APPEND plugin_libs nav2_is_obstacle_condition_bt_node)
+
 add_library(nav2_initial_pose_received_condition_bt_node SHARED plugins/condition/initial_pose_received_condition.cpp)
 list(APPEND plugin_libs nav2_initial_pose_received_condition_bt_node)
 
