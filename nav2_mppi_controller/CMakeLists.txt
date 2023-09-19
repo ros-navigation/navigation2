@@ -14,6 +14,7 @@ set(XTENSOR_USE_XSIMD 1)
 find_package(ament_cmake REQUIRED)
 find_package(xsimd REQUIRED)
 find_package(xtensor REQUIRED)
+find_package(xsimd REQUIRED)
 
 include_directories(
   include
