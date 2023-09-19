@@ -48,6 +48,7 @@ Polygon::~Polygon()
   polygon_sub_.reset();
   polygon_pub_.reset();
   poly_.clear();
+  dyn_params_handler_.reset();
 }
 
 bool Polygon::configure()
