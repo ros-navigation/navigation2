@@ -57,6 +57,18 @@ void FollowPathAction::on_wait_for_result(
     goal_updated_ = true;
   }
 
+  //TERMINAL OUTPUT TO SIGNIFY WHAT CONTROLLER IS IN USE
+  std::string controller;
+  if(new_controller_id == "FollowPath"){
+  	controller = "DWB";
+  } else {
+  	controller = "TEB";
+  }
+  
+  std::string str = "ACTIVE CONTROLLER IS: " + controller;
+  RCLCPP_INFO(node_->get_logger(), str.c_str());
+  ////////////////////////////////////////////////////////
+
   std::string new_goal_checker_id;
   getInput("goal_checker_id", new_goal_checker_id);
 
