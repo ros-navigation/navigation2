@@ -86,6 +86,11 @@ public:
    */
   ActionType getActionType() const;
   /**
+   * @brief Obtains polygon enabled state
+   * @return Whether polygon is enabled
+   */
+  bool getEnabled() const;
+  /**
    * @brief Obtains polygon minimum points to enter inside polygon causing the action
    * @return Minimum number of data readings within a zone to trigger the action
    */
@@ -222,6 +227,8 @@ protected:
   double time_before_collision_;
   /// @brief Time step for robot movement simulation
   double simulation_time_step_;
+  /// @brief Whether polygon is enabled
+  bool enabled_;
   /// @brief Polygon subscription
   rclcpp::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_sub_;
   /// @brief Footprint subscriber

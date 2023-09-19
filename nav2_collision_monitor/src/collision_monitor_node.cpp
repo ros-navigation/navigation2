@@ -382,6 +382,10 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in)
   std::shared_ptr<Polygon> action_polygon;
 
   for (std::shared_ptr<Polygon> polygon : polygons_) {
+    if (!polygon->getEnabled()) {
+      // If the polygon is disabled, skip it
+      continue;
+    }
     if (robot_action.action_type == STOP) {
       // If robot already should stop, do nothing
       break;
