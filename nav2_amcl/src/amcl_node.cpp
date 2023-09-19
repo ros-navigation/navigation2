@@ -301,6 +301,14 @@ AmclNode::AmclNode(const rclcpp::NodeOptions & options)
     "pf_random_seed", rclcpp::ParameterValue(-1),
     "Seed value for random number generator used in the amcl node"
   );
+  add_parameter(
+    "is_tf_to_update", rclcpp::ParameterValue(true),
+    "Wheter to update the tf map-odom"
+  );
+  add_parameter(
+    "tf_state_reset_timeout", rclcpp::ParameterValue(24.0f),
+    "Timeout to reactivete the tf map-odom update"
+  );
 
   diagnostic_updater_ = std::make_shared<diagnostic_updater::Updater>(this);
 }
@@ -620,6 +628,27 @@ AmclNode::getInitialPoseStatusCallback(
   response->status = response->STATUS_NOT_READY;
 
   if(initial_pose_is_ready_) response->status = response->STATUS_OK;
+}
+
+void
+AmclNode::setAmclTfStateCallback(
+  const std::shared_ptr<cmr_msgs::srv::SetAmclTfState::Request> request,
+  std::shared_ptr<cmr_msgs::srv::SetAmclTfState::Response> response)
+{
+  is_tf_to_update_ = request->active;
+
+  if (!is_tf_to_update_) {
+    reset_tf_state_timer_ = this->create_wall_timer(
+      std::chrono::seconds(static_cast<int>(tf_state_reset_timeout_)),
+      [this] () -> void {
+        reset_tf_state_timer_->cancel();
+        this->is_tf_to_update_ = true;
+        RCLCPP_INFO(get_logger(), "Resetting tf state to active");
+      });
+  }
+
+  RCLCPP_INFO(get_logger(), "Setting tf state to %s", request->active ? "active" : "inactive");
+  response->success = true;
 }
 
 void
@@ -1271,7 +1300,15 @@ AmclNode::sendMapToOdomTransform(const tf2::TimePoint & transform_expiration)
   tmp_tf_stamped.header.stamp = tf2_ros::toMsg(transform_expiration);
   tmp_tf_stamped.child_frame_id = odom_frame_id_;
   tf2::impl::Converter<false, true>::convert(latest_tf_.inverse(), tmp_tf_stamped.transform);
-  tf_broadcaster_->sendTransform(tmp_tf_stamped);
+
+  if (is_tf_to_update_) {
+    suspended_tf_stamped_ = tmp_tf_stamped;
+    tf_broadcaster_->sendTransform(tmp_tf_stamped);
+  }
+  else {
+    suspended_tf_stamped_.header.stamp = now();
+    tf_broadcaster_->sendTransform(suspended_tf_stamped_);
+  }
 }
 
 nav2_amcl::Laser *
@@ -1367,6 +1404,8 @@ AmclNode::initParameters()
   get_parameter("amcl_random_seed", amcl_seed_);
   get_parameter("gaussian_pdf_random_seed", gaussian_pdf_seed_);
   get_parameter("pf_random_seed", pf_seed_);
+  get_parameter("is_tf_to_update", is_tf_to_update_);
+  get_parameter("tf_state_reset_timeout", tf_state_reset_timeout_);
     
   save_pose_period_ = tf2::durationFromSec(1.0 / save_pose_rate);
   transform_tol_scan_odom_sec_ = tf2::durationFromSec(tmp_tol_odom);
@@ -1856,6 +1895,10 @@ AmclNode::initServices()
   get_initial_pose_status_srv_ = this->create_service<cmr_msgs::srv::GetStatus>(
     "get_initial_pose_status",
     std::bind(&AmclNode::getInitialPoseStatusCallback, this, _1, _2));
+
+  set_amcl_tf_state_srv_ = this->create_service<cmr_msgs::srv::SetAmclTfState>(
+    "set_amcl_tf_state",
+    std::bind(&AmclNode::setAmclTfStateCallback, this, _1, _2));
 }
 
 void

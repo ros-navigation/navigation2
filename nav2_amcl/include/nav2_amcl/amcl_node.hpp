@@ -48,6 +48,7 @@
 
 #include <diagnostic_updater/diagnostic_updater.hpp>
 #include "cmr_msgs/srv/get_status.hpp"
+#include "cmr_msgs/srv/set_amcl_tf_state.hpp"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -329,6 +330,20 @@ protected:
   rclcpp::Time last_ext_pose_received_ts_;
   std::chrono::seconds ext_pose_check_interval_;
   bool ext_pose_active_;
+
+  // AMCL tf state reset related
+  rclcpp::Service<cmr_msgs::srv::SetAmclTfState>::SharedPtr set_amcl_tf_state_srv_;
+  rclcpp::TimerBase::SharedPtr reset_tf_state_timer_;
+  bool is_tf_to_update_;
+  double tf_state_reset_timeout_;
+  geometry_msgs::msg::TransformStamped suspended_tf_stamped_;
+  
+  /*
+   * @brief Service callback for setting amcl tf state
+   */
+  void setAmclTfStateCallback(
+    const std::shared_ptr<cmr_msgs::srv::SetAmclTfState::Request> request,
+    std::shared_ptr<cmr_msgs::srv::SetAmclTfState::Response> response);
 
   // Laser scan related
   /*
