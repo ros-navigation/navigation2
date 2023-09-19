@@ -34,8 +34,8 @@ void ConstraintCritic::initialize()
   getParentParam(vx_min, "vx_min", -0.35);
 
   const float min_sgn = vx_min > 0.0 ? 1.0 : -1.0;
-  max_vel_ = std::sqrt(vx_max * vx_max + vy_max * vy_max);
-  min_vel_ = min_sgn * std::sqrt(vx_min * vx_min + vy_max * vy_max);
+  max_vel_ = sqrtf(vx_max * vx_max + vy_max * vy_max);
+  min_vel_ = min_sgn * sqrtf(vx_min * vx_min + vy_max * vy_max);
 }
 
 void ConstraintCritic::score(CriticData & data)
