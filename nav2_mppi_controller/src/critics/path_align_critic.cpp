@@ -88,12 +88,12 @@ void PathAlignCritic::score(CriticData & data)
     return;
   }
 
-  float dist_sq = 0, dx = 0, dy = 0, dyaw = 0, summed_dist = 0;
+  float dist_sq = 0.0f, dx = 0.0f, dy = 0.0f, dyaw = 0.0f, summed_dist = 0.0f;
   double min_dist_sq = std::numeric_limits<float>::max();
   size_t min_s = 0;
 
   for (size_t t = 0; t < batch_size; ++t) {
-    summed_dist = 0;
+    summed_dist = 0.0f;
     for (size_t p = trajectory_point_step_; p < time_steps; p += trajectory_point_step_) {
       min_dist_sq = std::numeric_limits<float>::max();
       min_s = 0;
@@ -118,7 +118,7 @@ void PathAlignCritic::score(CriticData & data)
       // The nearest path point to align to needs to be not in collision, else
       // let the obstacle critic take over in this region due to dynamic obstacles
       if (min_s != 0 && (*data.path_pts_valid)[min_s]) {
-        summed_dist += std::sqrt(min_dist_sq);
+        summed_dist += sqrtf(min_dist_sq);
       }
     }
 

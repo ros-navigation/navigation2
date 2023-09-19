@@ -115,21 +115,21 @@ void ObstaclesCritic::score(CriticData & data)
   }
 
   auto && raw_cost = xt::xtensor<float, 1>::from_shape({data.costs.shape(0)});
-  raw_cost.fill(0.0);
+  raw_cost.fill(0.0f);
   auto && repulsive_cost = xt::xtensor<float, 1>::from_shape({data.costs.shape(0)});
-  repulsive_cost.fill(0.0);
+  repulsive_cost.fill(0.0f);
 
   const size_t traj_len = data.trajectories.x.shape(1);
   bool all_trajectories_collide = true;
   for (size_t i = 0; i < data.trajectories.x.shape(0); ++i) {
     bool trajectory_collide = false;
-    float traj_cost = 0.0;
+    float traj_cost = 0.0f;
     const auto & traj = data.trajectories;
     CollisionCost pose_cost;
 
     for (size_t j = 0; j < traj_len; j++) {
       pose_cost = costAtPose(traj.x(i, j), traj.y(i, j), traj.yaws(i, j));
-      if (pose_cost.cost < 1) {continue;}  // In free space
+      if (pose_cost.cost < 1.0f) {continue;}  // In free space
 
       if (inCollision(pose_cost.cost)) {
         trajectory_collide = true;
