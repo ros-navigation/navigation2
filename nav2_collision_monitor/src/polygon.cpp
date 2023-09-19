@@ -509,7 +509,7 @@ Polygon::dynamicParametersCallback(
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
 
-    if (param_type == ParameterType::PARAMETER_BOOL) {
+    if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_BOOL) {
       if (param_name == polygon_name_ + "." + "enabled") {
         enabled_ = parameter.as_bool();
       }
