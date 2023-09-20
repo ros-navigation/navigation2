@@ -994,9 +994,8 @@ TEST_F(Tester, testCeasePublishZeroVel)
 
 TEST_F(Tester, testPolygonNotEnabled)
 {
-
   // Set Collision Monitor parameters.
-  // Making two polygons: outer polygon for slowdown and inner for robot stop.
+  // Create a STOP polygon
   setCommonParameters();
   addPolygon("Stop", POLYGON, 1.0, "stop");
   addSource(SCAN_NAME, SCAN);
@@ -1005,6 +1004,7 @@ TEST_F(Tester, testPolygonNotEnabled)
   // Start Collision Monitor node
   cm_->start();
 
+  // Check that robot stops when polygon is enabled
   rclcpp::Time curr_time = cm_->now();
   sendTransforms(curr_time);
   publishScan(0.5, curr_time);
@@ -1028,9 +1028,9 @@ TEST_F(Tester, testPolygonNotEnabled)
   auto result_future = parameters_client_->async_send_request(set_parameters_msg).future.share();
   ASSERT_TRUE(waitFuture(result_future, 2s));
 
+  // Check that robot does not stop when polygon is disabled
   curr_time = cm_->now();
   sendTransforms(curr_time);
-  // Obstacle is inside stop zone
   publishScan(0.5, curr_time);
   ASSERT_TRUE(waitData(0.5, 500ms, curr_time));
   publishCmdVel(0.5, 0.2, 0.1);
@@ -1045,7 +1045,6 @@ TEST_F(Tester, testPolygonNotEnabled)
   // Stop Collision Monitor node
   cm_->stop();
 }
-
 
 TEST_F(Tester, testProcessNonActive)
 {
