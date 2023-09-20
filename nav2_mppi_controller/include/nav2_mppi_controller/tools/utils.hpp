@@ -309,7 +309,7 @@ inline size_t findPathFurthestReachedPoint(const CriticData & data)
   const auto dists = dx * dx + dy * dy;
 
   size_t max_id_by_trajectories = 0;
-  double min_distance_by_path = std::numeric_limits<float>::max();
+  float min_distance_by_path = std::numeric_limits<float>::max();
 
   for (size_t i = 0; i < dists.shape(0); i++) {
     size_t min_id_by_path = 0;
@@ -337,7 +337,7 @@ inline size_t findPathTrajectoryInitialPoint(const CriticData & data)
   const auto dy = data.path.y - data.trajectories.y(0, 0);
   const auto dists = dx * dx + dy * dy;
 
-  double min_distance_by_path = std::numeric_limits<float>::max();
+  float min_distance_by_path = std::numeric_limits<float>::max();
   size_t min_id = 0;
   for (size_t j = 0; j < dists.shape(0); j++) {
     if (dists(j) < min_distance_by_path) {
@@ -420,23 +420,23 @@ inline void setPathCostsIfNotSet(
  * @param forward_preference If reversing direction is valid
  * @return Angle between two points
  */
-inline double posePointAngle(
+inline float posePointAngle(
   const geometry_msgs::msg::Pose & pose, double point_x, double point_y, bool forward_preference)
 {
-  double pose_x = pose.position.x;
-  double pose_y = pose.position.y;
-  double pose_yaw = tf2::getYaw(pose.orientation);
+  float pose_x = pose.position.x;
+  float pose_y = pose.position.y;
+  float pose_yaw = tf2::getYaw(pose.orientation);
 
-  double yaw = atan2(point_y - pose_y, point_x - pose_x);
+  float yaw = atan2f(point_y - pose_y, point_x - pose_x);
 
   // If no preference for forward, return smallest angle either in heading or 180 of heading
   if (!forward_preference) {
     return std::min(
-      abs(angles::shortest_angular_distance(yaw, pose_yaw)),
-      abs(angles::shortest_angular_distance(yaw, angles::normalize_angle(pose_yaw + M_PI))));
+      fabs(angles::shortest_angular_distance(yaw, pose_yaw)),
+      fabs(angles::shortest_angular_distance(yaw, angles::normalize_angle(pose_yaw + M_PI))));
   }
 
-  return abs(angles::shortest_angular_distance(yaw, pose_yaw));
+  return fabs(angles::shortest_angular_distance(yaw, pose_yaw));
 }
 
 /**
@@ -447,21 +447,21 @@ inline double posePointAngle(
  * @param point_yaw Yaw of the point to consider along Z axis
  * @return Angle between two points
  */
-inline double posePointAngle(
+inline float posePointAngle(
   const geometry_msgs::msg::Pose & pose,
   double point_x, double point_y, double point_yaw)
 {
-  double pose_x = pose.position.x;
-  double pose_y = pose.position.y;
-  double pose_yaw = tf2::getYaw(pose.orientation);
+  float pose_x = pose.position.x;
+  float pose_y = pose.position.y;
+  float pose_yaw = tf2::getYaw(pose.orientation);
 
-  double yaw = atan2(point_y - pose_y, point_x - pose_x);
+  float yaw = atan2f(point_y - pose_y, point_x - pose_x);
 
-  if (abs(angles::shortest_angular_distance(yaw, point_yaw)) > M_PI_2) {
+  if (fabs(angles::shortest_angular_distance(yaw, point_yaw)) > M_PI_2) {
     yaw = angles::normalize_angle(yaw + M_PI);
   }
 
-  return abs(angles::shortest_angular_distance(yaw, pose_yaw));
+  return fabs(angles::shortest_angular_distance(yaw, pose_yaw));
 }
 
 /**
@@ -650,17 +650,17 @@ inline unsigned int findFirstPathInversion(nav_msgs::msg::Path & path)
   // Iterating through the path to determine the position of the path inversion
   for (unsigned int idx = 1; idx < path.poses.size() - 1; ++idx) {
     // We have two vectors for the dot product OA and AB. Determining the vectors.
-    double oa_x = path.poses[idx].pose.position.x -
+    float oa_x = path.poses[idx].pose.position.x -
       path.poses[idx - 1].pose.position.x;
-    double oa_y = path.poses[idx].pose.position.y -
+    float oa_y = path.poses[idx].pose.position.y -
       path.poses[idx - 1].pose.position.y;
-    double ab_x = path.poses[idx + 1].pose.position.x -
+    float ab_x = path.poses[idx + 1].pose.position.x -
       path.poses[idx].pose.position.x;
-    double ab_y = path.poses[idx + 1].pose.position.y -
+    float ab_y = path.poses[idx + 1].pose.position.y -
       path.poses[idx].pose.position.y;
 
     // Checking for the existance of cusp, in the path, using the dot product.
-    double dot_product = (oa_x * ab_x) + (oa_y * ab_y);
+    float dot_product = (oa_x * ab_x) + (oa_y * ab_y);
     if (dot_product < 0.0) {
       return idx + 1;
     }

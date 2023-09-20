@@ -94,14 +94,14 @@ void NoiseGenerator::generateNoisedControls()
   auto & s = settings_;
 
   xt::noalias(noises_vx_) = xt::random::randn<float>(
-    {s.batch_size, s.time_steps}, 0.0,
+    {s.batch_size, s.time_steps}, 0.0f,
     s.sampling_std.vx);
   xt::noalias(noises_wz_) = xt::random::randn<float>(
-    {s.batch_size, s.time_steps}, 0.0,
+    {s.batch_size, s.time_steps}, 0.0f,
     s.sampling_std.wz);
   if (is_holonomic_) {
     xt::noalias(noises_vy_) = xt::random::randn<float>(
-      {s.batch_size, s.time_steps}, 0.0,
+      {s.batch_size, s.time_steps}, 0.0f,
       s.sampling_std.vy);
   }
 }

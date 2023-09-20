@@ -79,14 +79,14 @@ protected:
     * @return double circumscribed cost, any higher than this and need to do full footprint collision checking
     * since some element of the robot could be in collision
     */
-  double findCircumscribedCost(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap);
+  float findCircumscribedCost(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap);
 
 protected:
   nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>
   collision_checker_{nullptr};
 
   bool consider_footprint_{true};
-  double collision_cost_{0};
+  float collision_cost_{0};
   float inflation_scale_factor_{0}, inflation_radius_{0};
 
   float possibly_inscribed_cost_;

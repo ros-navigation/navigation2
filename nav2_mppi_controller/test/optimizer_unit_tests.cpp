@@ -432,20 +432,20 @@ TEST(OptimizerTests, SpeedLimitTests)
 
   // Test Speed limits API
   auto [v_min, v_max] = optimizer_tester.getVelLimits();
-  EXPECT_EQ(v_max, 0.5);
-  EXPECT_EQ(v_min, -0.35);
+  EXPECT_EQ(v_max, 0.5f);
+  EXPECT_EQ(v_min, -0.35f);
   optimizer_tester.setSpeedLimit(0, false);
   auto [v_min2, v_max2] = optimizer_tester.getVelLimits();
-  EXPECT_EQ(v_max2, 0.5);
-  EXPECT_EQ(v_min2, -0.35);
+  EXPECT_EQ(v_max2, 0.5f);
+  EXPECT_EQ(v_min2, -0.35f);
   optimizer_tester.setSpeedLimit(50.0, true);
   auto [v_min3, v_max3] = optimizer_tester.getVelLimits();
   EXPECT_NEAR(v_max3, 0.5 / 2.0, 1e-3);
   EXPECT_NEAR(v_min3, -0.35 / 2.0, 1e-3);
   optimizer_tester.setSpeedLimit(0, true);
   auto [v_min4, v_max4] = optimizer_tester.getVelLimits();
-  EXPECT_EQ(v_max4, 0.5);
-  EXPECT_EQ(v_min4, -0.35);
+  EXPECT_EQ(v_max4, 0.5f);
+  EXPECT_EQ(v_min4, -0.35f);
   optimizer_tester.setSpeedLimit(0.75, false);
   auto [v_min5, v_max5] = optimizer_tester.getVelLimits();
   EXPECT_NEAR(v_max5, 0.75, 1e-3);

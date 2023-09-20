@@ -32,7 +32,7 @@ void ObstaclesCritic::initialize()
   collision_checker_.setCostmap(costmap_);
   possibly_inscribed_cost_ = findCircumscribedCost(costmap_ros_);
 
-  if (possibly_inscribed_cost_ < 1) {
+  if (possibly_inscribed_cost_ < 1.0f) {
     RCLCPP_ERROR(
       logger_,
       "Inflation layer either not found or inflation is not set sufficiently for "
@@ -50,7 +50,7 @@ void ObstaclesCritic::initialize()
     "footprint" : "circular");
 }
 
-double ObstaclesCritic::findCircumscribedCost(
+float ObstaclesCritic::findCircumscribedCost(
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap)
 {
   double result = -1.0;
@@ -75,7 +75,7 @@ double ObstaclesCritic::findCircumscribedCost(
 
   if (!inflation_layer_found) {
     RCLCPP_WARN(
-      rclcpp::get_logger("computeCircumscribedCost"),
+      logger_,
       "No inflation layer found in costmap configuration. "
       "If this is an SE2-collision checking plugin, it cannot use costmap potential "
       "field to speed up collision checking by only checking the full footprint "
@@ -83,7 +83,7 @@ double ObstaclesCritic::findCircumscribedCost(
       "significantly slow down planning times and not avoid anything but absolute collisions!");
   }
 
-  return result;
+  return static_cast<float>(result);
 }
 
 float ObstaclesCritic::distanceToObstacle(const CollisionCost & cost)
@@ -137,7 +137,7 @@ void ObstaclesCritic::score(CriticData & data)
       }
 
       // Cannot process repulsion if inflation layer does not exist
-      if (inflation_radius_ == 0 || inflation_scale_factor_ == 0) {
+      if (inflation_radius_ == 0.0f || inflation_scale_factor_ == 0.0f) {
         continue;
       }
 
@@ -197,7 +197,9 @@ CollisionCost ObstaclesCritic::costAtPose(float x, float y, float theta)
   }
   cost = collision_checker_.pointCost(x_i, y_i);
 
-  if (consider_footprint_ && (cost >= possibly_inscribed_cost_ || possibly_inscribed_cost_ < 1)) {
+  if (consider_footprint_ &&
+    (cost >= possibly_inscribed_cost_ || possibly_inscribed_cost_ < 1.0f))
+  {
     cost = static_cast<float>(collision_checker_.footprintCostAtPose(
         x, y, theta, costmap_ros_->getRobotFootprint()));
     collision_cost.using_footprint = true;
