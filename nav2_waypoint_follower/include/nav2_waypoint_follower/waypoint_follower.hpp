@@ -198,7 +198,7 @@ protected:
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
 
   // Our action server
-  std::unique_ptr<ActionServer> action_server_;
+  std::unique_ptr<ActionServer> xyz_action_server_;
   ActionClient::SharedPtr nav_to_pose_client_;
   rclcpp::CallbackGroup::SharedPtr callback_group_;
   rclcpp::executors::SingleThreadedExecutor callback_group_executor_;

@@ -83,7 +83,7 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & /*state*/)
   rcl_action_server_options_t server_options = rcl_action_server_get_default_options();
   server_options.result_timeout.nanoseconds = RCL_S_TO_NS(action_server_result_timeout);
 
-  action_server_ = std::make_unique<ActionServer>(
+  xyz_action_server_ = std::make_unique<ActionServer>(
     get_node_base_interface(),
     get_node_clock_interface(),
     get_node_logging_interface(),
@@ -134,7 +134,7 @@ WaypointFollower::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
-  action_server_->activate();
+  xyz_action_server_->activate();
   gps_action_server_->activate();
 
   auto node = shared_from_this();
@@ -153,7 +153,7 @@ WaypointFollower::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
-  action_server_->deactivate();
+  xyz_action_server_->deactivate();
   gps_action_server_->deactivate();
   dyn_params_handler_.reset();
   // destroy bond connection
@@ -167,7 +167,7 @@ WaypointFollower::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
-  action_server_.reset();
+  xyz_action_server_.reset();
   nav_to_pose_client_.reset();
   gps_action_server_.reset();
   from_ll_to_map_client_.reset();
@@ -383,7 +383,7 @@ void WaypointFollower::followWaypointsCallback()
   followWaypointsHandler<std::unique_ptr<ActionServer>,
     ActionT::Feedback::SharedPtr,
     ActionT::Result::SharedPtr>(
-    action_server_,
+    xyz_action_server_,
     feedback, result);
 }
 
