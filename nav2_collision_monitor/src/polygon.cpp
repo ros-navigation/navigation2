@@ -63,9 +63,6 @@ bool Polygon::configure()
   if (!getParameters(polygon_sub_topic, polygon_pub_topic, footprint_topic)) {
     return false;
   }
-  // Add callback for dynamic parameters
-  dyn_params_handler_ = node->add_on_set_parameters_callback(
-    std::bind(&Polygon::dynamicParametersCallback, this, std::placeholders::_1));
 
   if (!polygon_sub_topic.empty()) {
     RCLCPP_INFO(
@@ -105,6 +102,10 @@ bool Polygon::configure()
     polygon_pub_ = node->create_publisher<geometry_msgs::msg::PolygonStamped>(
       polygon_pub_topic, polygon_qos);
   }
+
+  // Add callback for dynamic parameters
+  dyn_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(&Polygon::dynamicParametersCallback, this, std::placeholders::_1));
 
   return true;
 }
