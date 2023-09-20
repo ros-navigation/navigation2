@@ -72,7 +72,7 @@ public:
   void score(CriticData & data) override;
 
 protected:
-  double max_angle_to_furthest_{0};
+  float max_angle_to_furthest_{0};
   float threshold_to_consider_{0};
 
   size_t offset_from_furthest_{0};

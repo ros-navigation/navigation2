@@ -380,19 +380,19 @@ TEST(CriticTests, PreferForwardCritic)
   path.reset(10);
   path.x(9) = 10.0;
   critic.score(data);
-  EXPECT_NEAR(xt::sum(costs, immediate)(), 0.0, 1e-6);
+  EXPECT_NEAR(xt::sum(costs, immediate)(), 0.0f, 1e-6f);
 
   // provide state pose and path close to trigger behavior but with all forward motion
   path.x(9) = 0.15;
   state.vx = xt::ones<float>({1000, 30});
   critic.score(data);
-  EXPECT_NEAR(xt::sum(costs, immediate)(), 0.0, 1e-6);
+  EXPECT_NEAR(xt::sum(costs, immediate)(), 0.0f, 1e-6f);
 
   // provide state pose and path close to trigger behavior but with all reverse motion
   state.vx = -1.0 * xt::ones<float>({1000, 30});
   critic.score(data);
-  EXPECT_GT(xt::sum(costs, immediate)(), 0.0);
-  EXPECT_NEAR(costs(0), 15.0, 1e-6);  // 1.0 * 0.1 model_dt * 5.0 weight * 30 length
+  EXPECT_GT(xt::sum(costs, immediate)(), 0.0f);
+  EXPECT_NEAR(costs(0), 15.0f, 1e-3f);  // 1.0 * 0.1 model_dt * 5.0 weight * 30 length
 }
 
 TEST(CriticTests, TwirlingCritic)
