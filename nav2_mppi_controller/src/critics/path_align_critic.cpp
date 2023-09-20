@@ -88,12 +88,12 @@ void PathAlignCritic::score(CriticData & data)
     return;
   }
 
-  float dist_sq = 0, dx = 0, dy = 0, dyaw = 0, summed_dist = 0;
+  float dist_sq = 0.0f, dx = 0.0f, dy = 0.0f, dyaw = 0.0f, summed_dist = 0.0f;
   float min_dist_sq = std::numeric_limits<float>::max();
   size_t min_s = 0;
 
   for (size_t t = 0; t < batch_size; ++t) {
-    summed_dist = 0;
+    summed_dist = 0.0f;
     for (size_t p = trajectory_point_step_; p < time_steps; p += trajectory_point_step_) {
       min_dist_sq = std::numeric_limits<float>::max();
       min_s = 0;

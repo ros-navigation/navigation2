@@ -126,16 +126,16 @@ bool BtActionServer<ActionT>::on_configure()
   // Support for handling the topic-based goal pose from rviz
   client_node_ = std::make_shared<rclcpp::Node>("_", options);
 
-  // Declare parameters for client node to share with BT nodes
-  // Declare if not declared in case being used an external application
+  // Declare parameters for common client node applications to share with BT nodes
+  // Declare if not declared in case being used an external application, then copying
+  // all of the main node's parameters to the client for BT nodes to obtain
   nav2_util::declare_parameter_if_not_declared(
     node, "global_frame", rclcpp::ParameterValue(std::string("map")));
   nav2_util::declare_parameter_if_not_declared(
     node, "robot_base_frame", rclcpp::ParameterValue(std::string("base_link")));
-  client_node_->declare_parameter(
-    "robot_base_frame", node->get_parameter("robot_base_frame").as_string());
-  client_node_->declare_parameter(
-    "global_frame", node->get_parameter("global_frame").as_string());
+  nav2_util::declare_parameter_if_not_declared(
+    node, "transform_tolerance", rclcpp::ParameterValue(0.1));
+  nav2_util::copy_all_parameters(node, client_node_);
 
   // set the timeout in seconds for the action server to discard goal handles if not finished
   double action_server_result_timeout;
