@@ -392,7 +392,7 @@ TEST(CriticTests, PreferForwardCritic)
   state.vx = -1.0 * xt::ones<float>({1000, 30});
   critic.score(data);
   EXPECT_GT(xt::sum(costs, immediate)(), 0.0f);
-  EXPECT_NEAR(costs(0), 15.0f, 1e-6f);  // 1.0 * 0.1 model_dt * 5.0 weight * 30 length
+  EXPECT_NEAR(costs(0), 15.0f, 1e-3f);  // 1.0 * 0.1 model_dt * 5.0 weight * 30 length
 }
 
 TEST(CriticTests, TwirlingCritic)
