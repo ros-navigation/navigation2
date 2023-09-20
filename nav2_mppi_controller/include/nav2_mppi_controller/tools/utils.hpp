@@ -475,21 +475,21 @@ inline float posePointAngle(
  * @param point_yaw Yaw of the point to consider along Z axis
  * @return Angle between two points
  */
-inline double posePointAngle(
+inline float posePointAngle(
   const geometry_msgs::msg::Pose & pose,
   double point_x, double point_y, double point_yaw)
 {
-  double pose_x = pose.position.x;
-  double pose_y = pose.position.y;
-  double pose_yaw = tf2::getYaw(pose.orientation);
+  float pose_x = pose.position.x;
+  float pose_y = pose.position.y;
+  float pose_yaw = tf2::getYaw(pose.orientation);
 
-  double yaw = atan2(point_y - pose_y, point_x - pose_x);
+  float yaw = atan2f(point_y - pose_y, point_x - pose_x);
 
-  if (abs(angles::shortest_angular_distance(yaw, point_yaw)) > M_PI_2) {
+  if (fabs(angles::shortest_angular_distance(yaw, point_yaw)) > M_PI_2) {
     yaw = angles::normalize_angle(yaw + M_PI);
   }
 
-  return abs(angles::shortest_angular_distance(yaw, pose_yaw));
+  return fabs(angles::shortest_angular_distance(yaw, pose_yaw));
 }
 
 /**
