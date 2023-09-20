@@ -50,6 +50,8 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
 
   declare_parameter("controller_frequency", 20.0);
 
+  declare_parameter("action_server_result_timeout", 10.0);
+
   declare_parameter("progress_checker_plugins", default_progress_checker_ids_);
   declare_parameter("goal_checker_plugins", default_goal_checker_ids_);
   declare_parameter("controller_plugins", default_ids_);
@@ -84,20 +86,6 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   RCLCPP_INFO(get_logger(), "getting progress checker plugins..");
   get_parameter("progress_checker_plugins", progress_checker_ids_);
-  try {
-    nav2_util::declare_parameter_if_not_declared(
-      node, "progress_checker_plugin", rclcpp::PARAMETER_STRING);
-    std::string progress_checker_plugin;
-    progress_checker_plugin = node->get_parameter("progress_checker_plugin").as_string();
-    progress_checker_ids_.clear();
-    progress_checker_ids_.push_back(progress_checker_plugin);
-    RCLCPP_WARN(
-      get_logger(),
-      "\"progress_checker_plugin\" parameter was deprecated and will be removed soon. Use "
-      "\"progress_checker_plugins\" instead to specify a list of plugins");
-  } catch (const std::exception &) {
-    // This is normal situation: progress_checker_plugin parameter should not being declared
-  }
   if (progress_checker_ids_ == default_progress_checker_ids_) {
     for (size_t i = 0; i < default_progress_checker_ids_.size(); ++i) {
       nav2_util::declare_parameter_if_not_declared(
@@ -227,6 +215,11 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   odom_sub_ = std::make_unique<nav_2d_utils::OdomSubscriber>(node);
   vel_publisher_ = create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 1);
 
+  double action_server_result_timeout;
+  get_parameter("action_server_result_timeout", action_server_result_timeout);
+  rcl_action_server_options_t server_options = rcl_action_server_get_default_options();
+  server_options.result_timeout.nanoseconds = RCL_S_TO_NS(action_server_result_timeout);
+
   // Create the action server that we implement with our followPath method
   action_server_ = std::make_unique<ActionServer>(
     shared_from_this(),
@@ -234,7 +227,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     std::bind(&ControllerServer::computeControl, this),
     nullptr,
     std::chrono::milliseconds(500),
-    true);
+    true, server_options);
 
   // Set subscribtion to the speed limiting topic
   speed_limit_sub_ = create_subscription<nav2_msgs::msg::SpeedLimit>(
