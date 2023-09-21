@@ -22,6 +22,8 @@ find_package(nav2_util REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(nav2_core REQUIRED)
 find_package(pluginlib REQUIRED)
+find_package(robot_localization REQUIRED)
+find_package(geographic_msgs REQUIRED)
 
 nav2_package()
 
@@ -57,6 +59,7 @@ set(dependencies
   image_transport
   cv_bridge
   OpenCV
+  robot_localization
 )
 
 ament_target_dependencies(${executable_name}
