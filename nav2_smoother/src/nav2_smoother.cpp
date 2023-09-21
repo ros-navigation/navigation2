@@ -314,7 +314,7 @@ void SmootherServer::smoothPlan()
 
     action_server_->succeeded_current(result);
   } catch (nav2_core::PlannerException & e) {
-    RCLCPP_ERROR(this->get_logger(), e.what());
+    RCLCPP_ERROR(this->get_logger(), "%s", e.what());
     action_server_->terminate_current();
     return;
   } catch (std::exception & ex) {

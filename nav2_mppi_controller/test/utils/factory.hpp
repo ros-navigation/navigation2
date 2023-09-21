@@ -36,7 +36,9 @@
 
 namespace detail
 {
-auto setHeader(auto && msg, auto node, std::string frame)
+
+template<typename TMessage, typename TNode>
+void setHeader(TMessage && msg, TNode node, std::string frame)
 {
   auto time = node->get_clock()->now();
   msg.header.frame_id = frame;
@@ -145,9 +147,10 @@ getDummyNode(rclcpp::NodeOptions options, std::string node_name = std::string("d
   return node;
 }
 
+template<typename TNode, typename TCostMap, typename TParamHandler>
 std::shared_ptr<mppi::Optimizer> getDummyOptimizer(
-  auto node, auto costmap_ros,
-  auto * params_handler)
+  TNode node, TCostMap costmap_ros,
+  TParamHandler * params_handler)
 {
   std::shared_ptr<mppi::Optimizer> optimizer = std::make_shared<mppi::Optimizer>();
   std::weak_ptr<rclcpp_lifecycle::LifecycleNode> weak_ptr_node{node};
@@ -157,9 +160,10 @@ std::shared_ptr<mppi::Optimizer> getDummyOptimizer(
   return optimizer;
 }
 
+template<typename TNode, typename TCostMap, typename TFBuffer, typename TParamHandler>
 mppi::PathHandler getDummyPathHandler(
-  auto node, auto costmap_ros, auto tf_buffer,
-  auto * params_handler)
+  TNode node, TCostMap costmap_ros, TFBuffer tf_buffer,
+  TParamHandler * params_handler)
 {
   mppi::PathHandler path_handler;
   std::weak_ptr<rclcpp_lifecycle::LifecycleNode> weak_ptr_node{node};
@@ -169,9 +173,10 @@ mppi::PathHandler getDummyPathHandler(
   return path_handler;
 }
 
+template<typename TNode, typename TCostMap, typename TFBuffer>
 std::shared_ptr<nav2_mppi_controller::MPPIController> getDummyController(
-  auto node, auto tf_buffer,
-  auto costmap_ros)
+  TNode node, TFBuffer tf_buffer,
+  TCostMap costmap_ros)
 {
   auto controller = std::make_shared<nav2_mppi_controller::MPPIController>();
   std::weak_ptr<rclcpp_lifecycle::LifecycleNode> weak_ptr_node{node};
@@ -187,8 +192,9 @@ auto getDummyTwist()
   return twist;
 }
 
+template<typename TNode>
 geometry_msgs::msg::PoseStamped
-getDummyPointStamped(auto & node, std::string frame = std::string("odom"))
+getDummyPointStamped(TNode & node, std::string frame = std::string("odom"))
 {
   geometry_msgs::msg::PoseStamped point;
   detail::setHeader(point, node, frame);
@@ -196,7 +202,8 @@ getDummyPointStamped(auto & node, std::string frame = std::string("odom"))
   return point;
 }
 
-geometry_msgs::msg::PoseStamped getDummyPointStamped(auto & node, TestPose pose)
+template<typename TNode>
+geometry_msgs::msg::PoseStamped getDummyPointStamped(TNode & node, TestPose pose)
 {
   geometry_msgs::msg::PoseStamped point = getDummyPointStamped(node);
   point.pose.position.x = pose.x;
@@ -205,14 +212,16 @@ geometry_msgs::msg::PoseStamped getDummyPointStamped(auto & node, TestPose pose)
   return point;
 }
 
-nav_msgs::msg::Path getDummyPath(auto node, std::string frame = std::string("odom"))
+template<typename TNode>
+nav_msgs::msg::Path getDummyPath(TNode node, std::string frame = std::string("odom"))
 {
   nav_msgs::msg::Path path;
   detail::setHeader(path, node, frame);
   return path;
 }
 
-auto getDummyPath(size_t points_count, auto node)
+template<typename TNode>
+auto getDummyPath(size_t points_count, TNode node)
 {
   auto path = getDummyPath(node);
 
@@ -223,7 +232,8 @@ auto getDummyPath(size_t points_count, auto node)
   return path;
 }
 
-nav_msgs::msg::Path getIncrementalDummyPath(auto node, TestPathSettings s)
+template<typename TNode>
+nav_msgs::msg::Path getIncrementalDummyPath(TNode node, TestPathSettings s)
 {
   auto path = getDummyPath(node);
 

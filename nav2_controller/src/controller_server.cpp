@@ -424,7 +424,7 @@ void ControllerServer::computeControl()
       }
     }
   } catch (nav2_core::PlannerException & e) {
-    RCLCPP_ERROR(this->get_logger(), e.what());
+    RCLCPP_ERROR(this->get_logger(), "%s", e.what());
     publishZeroVelocity();
     action_server_->terminate_current();
     return;
@@ -490,7 +490,7 @@ void ControllerServer::computeAndPublishVelocity()
     last_valid_cmd_time_ = now();
   } catch (nav2_core::PlannerException & e) {
     if (failure_tolerance_ > 0 || failure_tolerance_ == -1.0) {
-      RCLCPP_WARN(this->get_logger(), e.what());
+      RCLCPP_WARN(this->get_logger(), "%s", e.what());
       cmd_vel_2d.twist.angular.x = 0;
       cmd_vel_2d.twist.angular.y = 0;
       cmd_vel_2d.twist.angular.z = 0;

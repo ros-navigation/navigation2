@@ -7,7 +7,6 @@ ament_target_dependencies(test_map_io rclcpp nav_msgs)
 
 target_link_libraries(test_map_io
   ${map_io_library_name}
-  stdc++fs
 )
 
 # costmap_filter_info_server unit test
