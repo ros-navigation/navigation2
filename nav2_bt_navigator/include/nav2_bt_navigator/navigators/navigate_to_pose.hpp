@@ -132,6 +132,8 @@ protected:
 
   // Robot's linear velocity (to calculate time remaining, if set)
   double avg_linear_vel_;
+  // Robot's angular velocity (to calculate time remaining, if set)
+  double avg_angular_vel_;
 };
 
 }  // namespace nav2_bt_navigator

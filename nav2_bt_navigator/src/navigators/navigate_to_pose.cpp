@@ -16,6 +16,8 @@
 #include <string>
 #include <memory>
 #include <limits>
+
+#include "tf2/LinearMath/Quaternion.h"
 #include "nav2_bt_navigator/navigators/navigate_to_pose.hpp"
 
 namespace nav2_bt_navigator
@@ -46,6 +48,12 @@ NavigateToPoseNavigator::configure(
   }
 
   avg_linear_vel_ = node->get_parameter("average_linear_speed").as_double();
+
+  if (!node->has_parameter("average_angular_speed")) {
+    node->declare_parameter("average_angular_speed", 0.0);
+  }
+
+  avg_angular_vel_ = node->get_parameter("average_angular_speed").as_double();
 
   // Odometry smoother object for getting current speed
   odom_smoother_ = odom_smoother;
@@ -158,10 +166,36 @@ NavigateToPoseNavigator::onLoop()
     // Get current speed
     geometry_msgs::msg::Twist current_odom = odom_smoother_->getTwist();
     double current_linear_speed = std::hypot(current_odom.linear.x, current_odom.linear.y);
+    double current_angular_speed = current_odom.angular.z;
 
     // If average speed is set, use that instead of current speed
     if (avg_linear_vel_ > 0.0) {
       current_linear_speed = avg_linear_vel_;
+    }
+
+    // If average angular speed is set, use that instead of current angular speed
+    if (avg_angular_vel_ > 0.0) {
+      current_angular_speed = avg_angular_vel_;
+    }
+
+    // Add orientation difference to distance
+    if (current_angular_speed > 0.01) {
+      tf2::Quaternion q(
+        current_pose.pose.orientation.x,
+        current_pose.pose.orientation.y,
+        current_pose.pose.orientation.z,
+        current_pose.pose.orientation.w);
+      double current_yaw = q.getAngle() * q.getAxis().getZ();
+      auto goal = current_path.poses.back().pose;
+      q = tf2::Quaternion(
+        goal.orientation.x,
+        goal.orientation.y,
+        goal.orientation.z,
+        goal.orientation.w);
+      double goal_yaw = q.getAngle() * q.getAxis().getZ();
+      double orientation_diff =
+        std::abs(std::fmod(current_yaw - goal_yaw + M_PI, 2 * M_PI) - M_PI);
+      distance_remaining += orientation_diff * current_linear_speed / current_angular_speed;
     }
 
     // Calculate estimated time taken to goal if speed is higher than 1cm/s
