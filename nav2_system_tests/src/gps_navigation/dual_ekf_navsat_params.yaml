@@ -1,0 +1,127 @@
+# For parameter descriptions, please refer to the template parameter files for each node.
+
+ekf_filter_node_odom:
+  ros__parameters:
+    frequency: 30.0
+    two_d_mode: true # Recommended to use 2d mode for nav2, since its world representation is 2d
+    print_diagnostics: true
+    debug: false
+    publish_tf: true
+
+    map_frame: map
+    odom_frame: odom
+    base_link_frame: base_link
+    world_frame: odom
+
+    odom0: odom
+    odom0_config: [false, false, false,
+                  false, false, false,
+                  true,  true,  true,
+                  false, false, true,
+                  false, false, false]
+    odom0_queue_size: 10
+    odom0_differential: false
+    odom0_relative: false
+
+    imu0: imu/data
+    imu0_config: [false, false, false,
+                  false,  false,  true,
+                  false, false, false,
+                  false,  false,  false,
+                  false,  false,  false]
+    imu0_differential: false  # If using a real robot you might want to set this to true, since usually absolute measurements from real imu's are not very accurate
+    imu0_relative: false
+    imu0_queue_size: 10
+    imu0_remove_gravitational_acceleration: true
+
+    use_control: false
+
+    process_noise_covariance: [1e-3, 0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+                              0.0,    1e-3,  0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+                              0.0,    0.0,    1e-3,  0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+                              0.0,    0.0,    0.0,    0.3,   0.0,    0.0,     0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+                              0.0,    0.0,    0.0,    0.0,    0.3,   0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+                              0.0,    0.0,    0.0,    0.0,    0.0,    0.01,  0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+                              0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.5,    0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+                              0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.5,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+                              0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.1,   0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+                              0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.3,   0.0,    0.0,    0.0,    0.0,    0.0,
+                              0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.3,   0.0,    0.0,    0.0,    0.0,
+                              0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.3,   0.0,    0.0,    0.0,
+                              0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.3,   0.0,    0.0,
+                              0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.3,   0.0,
+                              0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.3]
+
+ekf_filter_node_map:
+  ros__parameters:
+    frequency: 30.0
+    two_d_mode: true  # Recommended to use 2d mode for nav2, since its world representation is 2d
+    print_diagnostics: true
+    debug: false
+    publish_tf: true
+
+    map_frame: map
+    odom_frame: odom
+    base_link_frame: base_link
+    world_frame: map
+
+    odom0: odom
+    odom0_config: [false, false, false,
+                  false, false, false,
+                  true,  true,  true,
+                  false, false, true,
+                  false, false, false]
+    odom0_queue_size: 10
+    odom0_differential: false
+    odom0_relative: false
+
+    odom1: odometry/gps
+    odom1_config: [true,  true,  false,
+                  false, false, false,
+                  false, false, false,
+                  false, false, false,
+                  false, false, false]
+    odom1_queue_size: 10
+    odom1_differential: false
+    odom1_relative: false
+
+    imu0: imu/data
+    imu0_config: [false, false, false,
+                  false,  false,  true,
+                  false, false, false,
+                  false,  false,  false,
+                  false,  false,  false]
+    imu0_differential: false  # If using a real robot you might want to set this to true, since usually absolute measurements from real imu's are not very accurate
+    imu0_relative: false
+    imu0_queue_size: 10
+    imu0_remove_gravitational_acceleration: true
+
+    use_control: false
+
+    process_noise_covariance: [1.0,   0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+                              0.0,    1.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+                              0.0,    0.0,    1e-3,   0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+                              0.0,    0.0,    0.0,    0.3,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+                              0.0,    0.0,    0.0,    0.0,    0.3,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+                              0.0,    0.0,    0.0,    0.0,    0.0,    0.01,   0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+                              0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.5,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+                              0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.5,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+                              0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.1,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
+                              0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.3,    0.0,    0.0,    0.0,    0.0,    0.0,
+                              0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.3,    0.0,    0.0,    0.0,    0.0,
+                              0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.3,    0.0,    0.0,    0.0,
+                              0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.3,    0.0,    0.0,
+                              0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.3,    0.0,
+                              0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.3]
+
+navsat_transform:
+  ros__parameters:
+    frequency: 30.0
+    delay: 3.0
+    magnetic_declination_radians: 0.0429351  # For lat/long 55.944831, -3.186998
+    yaw_offset: 0.0
+    zero_altitude: true
+    broadcast_utm_transform: true
+    publish_filtered_gps: true
+    use_odometry_yaw: true
+    wait_for_datum: false 
