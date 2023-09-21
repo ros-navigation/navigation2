@@ -67,7 +67,7 @@ void ClearCostmapService::clearExceptRegionCallback(
   const shared_ptr<ClearExceptRegion::Response>/*response*/)
 {
   RCLCPP_INFO(
-    logger_,
+    logger_, "%s",
     ("Received request to clear except a region the " + costmap_.getName()).c_str());
 
   clearRegion(request->reset_distance, true);
@@ -87,7 +87,7 @@ void ClearCostmapService::clearEntireCallback(
   const std::shared_ptr<ClearEntirely::Response>/*response*/)
 {
   RCLCPP_INFO(
-    logger_,
+    logger_, "%s",
     ("Received request to clear entirely the " + costmap_.getName()).c_str());
 
   clearEntirely();
@@ -99,7 +99,7 @@ void ClearCostmapService::clearRegion(const double reset_distance, bool invert)
 
   if (!getPosition(x, y)) {
     RCLCPP_ERROR(
-      logger_,
+      logger_, "%s",
       "Cannot clear map because robot pose cannot be retrieved.");
     return;
   }

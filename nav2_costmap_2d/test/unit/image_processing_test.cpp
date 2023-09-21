@@ -139,7 +139,7 @@ Image<uint8_t> ConnectedComponentsTester::makeChessboardLikeImage(
 {
   Image<uint8_t> image = makeImage<uint8_t>(rows, cols, buffer, cols * 3);
 
-  auto inverse = [this](uint8_t v) {
+  auto inverse = [](uint8_t v) {
       return (v == BACKGROUND_CODE) ? FOREGROUND_CODE : BACKGROUND_CODE;
     };
 
