@@ -143,7 +143,7 @@ void KeepoutFilter::maskCallback(
   }
 
   // Store filter_mask_
-  filter_mask_ = msg;
+  filter_mask_ = std::make_shared<nav_msgs::msg::OccupancyGrid>(*msg);
 }
 
 void KeepoutFilter::process(
