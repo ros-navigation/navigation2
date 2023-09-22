@@ -58,6 +58,7 @@
 #include "tf2_ros/transform_listener.h"
 #include "tf2/time.h"
 #include "tf2/transform_datatypes.h"
+#include "cmr_msgs/srv/update_footprint.hpp"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
@@ -285,6 +286,10 @@ public:
    * getUnpaddedRobotFootprint(). */
   void setRobotFootprintPolygon(const geometry_msgs::msg::Polygon::SharedPtr footprint);
 
+  void updateFootprintCallback(
+    const cmr_msgs::srv::UpdateFootprint::Request::SharedPtr request,
+    cmr_msgs::srv::UpdateFootprint::Response::SharedPtr response);
+
   std::shared_ptr<tf2_ros::Buffer> getTfBuffer() {return tf_buffer_;}
 
   /**
@@ -311,6 +316,8 @@ protected:
 
   rclcpp::Subscription<geometry_msgs::msg::Polygon>::SharedPtr footprint_sub_;
   rclcpp::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr parameter_sub_;
+
+  rclcpp::Service<cmr_msgs::srv::UpdateFootprint>::SharedPtr update_footprint_service_;
 
   // Dedicated callback group and executor for tf timer_interface and message fillter
   rclcpp::CallbackGroup::SharedPtr callback_group_;
