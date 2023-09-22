@@ -39,6 +39,7 @@ using namespace std::chrono_literals;  // NOLINT
 
 using nav2_msgs::srv::ManageLifecycleNodes;
 
+/// @brief Enum to for keeping track of the state of managed nodes
 enum NodeState
 {
   UNCONFIGURED,
@@ -199,7 +200,7 @@ protected:
 
   // Diagnostics functions
   /**
-   * @brief function to check if the Nav2 system is active
+   * @brief function to check the state of Nav2 nodes
    */
   void CreateDiagnostic(diagnostic_updater::DiagnosticStatusWrapper & stat);
 
