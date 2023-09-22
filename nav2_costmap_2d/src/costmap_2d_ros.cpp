@@ -397,8 +397,13 @@ Costmap2DROS::updateFootprintCallback(
 {
   auto fp = std::make_shared<geometry_msgs::msg::Polygon>();
   fp->points = request->footprint.points;
-  setRobotFootprintPolygon(fp);
-  response->success = true;
+  try {
+    setRobotFootprintPolygon(fp);
+    response->success = true;
+  } catch (const std::exception & e) {
+    RCLCPP_ERROR(get_logger(), "Failed to update footprint: %s", e.what());
+    response->success = false;
+  }
 }
 
 void
