@@ -49,98 +49,107 @@ bool VelocityPolygon::getParameters()
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  nav2_util::declare_parameter_if_not_declared(
-    node, polygon_name_ + "." + velocity_polygon_name_ + ".points",
-    rclcpp::PARAMETER_DOUBLE_ARRAY);
-  std::vector<double> polygon_points = node->get_parameter(
-    polygon_name_ + "." + velocity_polygon_name_ + ".points").as_double_array();
+  try {
+    nav2_util::declare_parameter_if_not_declared(
+      node, polygon_name_ + "." + velocity_polygon_name_ + ".points",
+      rclcpp::PARAMETER_DOUBLE_ARRAY);
+    std::vector<double> polygon_points = node->get_parameter(
+      polygon_name_ + "." + velocity_polygon_name_ + ".points").as_double_array();
 
-  if (!Polygon::setPolygonShape(polygon_points, poly_)) {
+    if (!Polygon::setPolygonShape(polygon_points, poly_)) {
+      RCLCPP_ERROR(
+        logger_,
+        "[%s][%s]: Polygon has incorrect points description",
+        polygon_name_.c_str(), velocity_polygon_name_.c_str());
+      return false;
+    }
+
+    // holonomic param
+    nav2_util::declare_parameter_if_not_declared(
+      node, polygon_name_ + "." + velocity_polygon_name_ + ".holonomic",
+      rclcpp::ParameterValue(false));
+    holonomic_ =
+      node->get_parameter(
+      polygon_name_ + "." + velocity_polygon_name_ +
+      ".holonomic").as_bool();
+
+    // polygon_sub_topic param
+    nav2_util::declare_parameter_if_not_declared(
+      node, polygon_name_ + "." + velocity_polygon_name_ + ".polygon_sub_topic",
+      rclcpp::ParameterValue("/collision_monitor/"+polygon_name_ +"/"+velocity_polygon_name_+"/set_polygon"));
+    polygon_sub_topic_ =
+      node->get_parameter(
+      polygon_name_ + "." + velocity_polygon_name_ +
+      ".polygon_sub_topic").as_string();
+
+    if (!polygon_sub_topic_.empty()) {
+      RCLCPP_INFO(
+        logger_,
+        "[%s][%s]: Subscribing on %s topic for polygon",
+        polygon_name_.c_str(), velocity_polygon_name_.c_str(), polygon_sub_topic_.c_str());
+      rclcpp::QoS polygon_qos = rclcpp::SystemDefaultsQoS();  // set to default
+      polygon_sub_ = node->create_subscription<geometry_msgs::msg::PolygonStamped>(
+        polygon_sub_topic_, polygon_qos,
+        std::bind(&VelocityPolygon::polygonCallback, this, std::placeholders::_1));
+    }
+
+    // linear_max param
+    nav2_util::declare_parameter_if_not_declared(
+      node, polygon_name_ + "." + velocity_polygon_name_ + ".linear_max",
+      rclcpp::ParameterValue(0.0));
+    linear_max_ =
+      node->get_parameter(
+      polygon_name_ + "." + velocity_polygon_name_ +
+      ".linear_max").as_double();
+
+    // linear_min param
+    nav2_util::declare_parameter_if_not_declared(
+      node, polygon_name_ + "." + velocity_polygon_name_ + ".linear_min",
+      rclcpp::ParameterValue(0.0));
+    linear_min_ =
+      node->get_parameter(
+      polygon_name_ + "." + velocity_polygon_name_ +
+      ".linear_min").as_double();
+
+    // direction_end_angle param
+    nav2_util::declare_parameter_if_not_declared(
+      node, polygon_name_ + "." + velocity_polygon_name_ + ".direction_end_angle",
+      rclcpp::ParameterValue(0.0));
+    direction_end_angle_ =
+      node->get_parameter(
+      polygon_name_ + "." + velocity_polygon_name_ +
+      ".direction_end_angle").as_double();
+
+    // direction_start_angle param
+    nav2_util::declare_parameter_if_not_declared(
+      node, polygon_name_ + "." + velocity_polygon_name_ + ".direction_start_angle",
+      rclcpp::ParameterValue(0.0));
+    direction_start_angle_ =
+      node->get_parameter(
+      polygon_name_ + "." + velocity_polygon_name_ +
+      ".direction_start_angle").as_double();
+
+    // theta_max param
+    nav2_util::declare_parameter_if_not_declared(
+      node, polygon_name_ + "." + velocity_polygon_name_ + ".theta_max", rclcpp::ParameterValue(
+        0.0));
+    theta_max_ =
+      node->get_parameter(polygon_name_ + "." + velocity_polygon_name_ + ".theta_max").as_double();
+
+    // theta_min param
+    nav2_util::declare_parameter_if_not_declared(
+      node, polygon_name_ + "." + velocity_polygon_name_ + ".theta_min", rclcpp::ParameterValue(
+        0.0));
+    theta_min_ =
+      node->get_parameter(polygon_name_ + "." + velocity_polygon_name_ + ".theta_min").as_double();
+
+  } catch (const std::exception & ex) {
     RCLCPP_ERROR(
       logger_,
-      "[%s]: Polygon has incorrect points description",
-      polygon_name_.c_str());
+      "[%s][%s]: Error while getting polygon parameters: %s",
+      polygon_name_.c_str(), velocity_polygon_name_.c_str(), ex.what());
     return false;
   }
-
-  // holonomic param
-  nav2_util::declare_parameter_if_not_declared(
-    node, polygon_name_ + "." + velocity_polygon_name_ + ".holonomic",
-    rclcpp::ParameterValue(false));
-  holonomic_ =
-    node->get_parameter(
-    polygon_name_ + "." + velocity_polygon_name_ +
-    ".holonomic").as_bool();
-
-  // polygon_sub_topic param
-  nav2_util::declare_parameter_if_not_declared(
-    node, polygon_name_ + "." + velocity_polygon_name_ + ".polygon_sub_topic",
-    rclcpp::ParameterValue("/collision_monitor/"+polygon_name_ +"/"+velocity_polygon_name_+"/set_polygon"));
-  polygon_sub_topic_ =
-    node->get_parameter(
-    polygon_name_ + "." + velocity_polygon_name_ +
-    ".polygon_sub_topic").as_string();
-
-  if (!polygon_sub_topic_.empty()) {
-    RCLCPP_INFO(
-      logger_,
-      "[%s][%s]: Subscribing on %s topic for polygon",
-      polygon_name_.c_str(), velocity_polygon_name_.c_str(), polygon_sub_topic_.c_str());
-    rclcpp::QoS polygon_qos = rclcpp::SystemDefaultsQoS();  // set to default
-    polygon_sub_ = node->create_subscription<geometry_msgs::msg::PolygonStamped>(
-      polygon_sub_topic_, polygon_qos,
-      std::bind(&VelocityPolygon::polygonCallback, this, std::placeholders::_1));
-  }
-
-  // linear_max param
-  nav2_util::declare_parameter_if_not_declared(
-    node, polygon_name_ + "." + velocity_polygon_name_ + ".linear_max",
-    rclcpp::ParameterValue(0.0));
-  linear_max_ =
-    node->get_parameter(
-    polygon_name_ + "." + velocity_polygon_name_ +
-    ".linear_max").as_double();
-
-  // linear_min param
-  nav2_util::declare_parameter_if_not_declared(
-    node, polygon_name_ + "." + velocity_polygon_name_ + ".linear_min",
-    rclcpp::ParameterValue(0.0));
-  linear_min_ =
-    node->get_parameter(
-    polygon_name_ + "." + velocity_polygon_name_ +
-    ".linear_min").as_double();
-
-  // direction_end_angle param
-  nav2_util::declare_parameter_if_not_declared(
-    node, polygon_name_ + "." + velocity_polygon_name_ + ".direction_end_angle",
-    rclcpp::ParameterValue(0.0));
-  direction_end_angle_ =
-    node->get_parameter(
-    polygon_name_ + "." + velocity_polygon_name_ +
-    ".direction_end_angle").as_double();
-
-  // direction_start_angle param
-  nav2_util::declare_parameter_if_not_declared(
-    node, polygon_name_ + "." + velocity_polygon_name_ + ".direction_start_angle",
-    rclcpp::ParameterValue(0.0));
-  direction_start_angle_ =
-    node->get_parameter(
-    polygon_name_ + "." + velocity_polygon_name_ +
-    ".direction_start_angle").as_double();
-
-  // theta_max param
-  nav2_util::declare_parameter_if_not_declared(
-    node, polygon_name_ + "." + velocity_polygon_name_ + ".theta_max", rclcpp::ParameterValue(
-      0.0));
-  theta_max_ =
-    node->get_parameter(polygon_name_ + "." + velocity_polygon_name_ + ".theta_max").as_double();
-
-  // theta_min param
-  nav2_util::declare_parameter_if_not_declared(
-    node, polygon_name_ + "." + velocity_polygon_name_ + ".theta_min", rclcpp::ParameterValue(
-      0.0));
-  theta_min_ =
-    node->get_parameter(polygon_name_ + "." + velocity_polygon_name_ + ".theta_min").as_double();
 
   return true;
 }
