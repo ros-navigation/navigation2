@@ -24,8 +24,12 @@ namespace nav2_collision_monitor
 VelocityPolygon::VelocityPolygon(
   const nav2_util::LifecycleNode::WeakPtr & node,
   const std::string & polygon_name,
-  const std::string & velocity_polygon_name)
-: node_(node), polygon_name_(polygon_name), velocity_polygon_name_(velocity_polygon_name)
+  const std::string & velocity_polygon_name,
+  const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+  const std::string & base_frame_id,
+  const tf2::Duration & transform_tolerance)
+: node_(node), polygon_name_(polygon_name), velocity_polygon_name_(velocity_polygon_name),
+  tf_buffer_(tf_buffer), base_frame_id_(base_frame_id), transform_tolerance_(transform_tolerance)
 {
   RCLCPP_INFO(logger_, "[%s]: Creating VelocityPolygon", velocity_polygon_name_.c_str());
 }
@@ -67,6 +71,26 @@ bool VelocityPolygon::getParameters()
     node->get_parameter(
     polygon_name_ + "." + velocity_polygon_name_ +
     ".holonomic").as_bool();
+
+  // polygon_sub_topic param
+  nav2_util::declare_parameter_if_not_declared(
+    node, polygon_name_ + "." + velocity_polygon_name_ + ".polygon_sub_topic",
+    rclcpp::ParameterValue("/collision_monitor/"+polygon_name_ +"/"+velocity_polygon_name_+"/set_polygon"));
+  polygon_sub_topic_ =
+    node->get_parameter(
+    polygon_name_ + "." + velocity_polygon_name_ +
+    ".polygon_sub_topic").as_string();
+
+  if (!polygon_sub_topic_.empty()) {
+    RCLCPP_INFO(
+      logger_,
+      "[%s][%s]: Subscribing on %s topic for polygon",
+      polygon_name_.c_str(), velocity_polygon_name_.c_str(), polygon_sub_topic_.c_str());
+    rclcpp::QoS polygon_qos = rclcpp::SystemDefaultsQoS();  // set to default
+    polygon_sub_ = node->create_subscription<geometry_msgs::msg::PolygonStamped>(
+      polygon_sub_topic_, polygon_qos,
+      std::bind(&VelocityPolygon::polygonCallback, this, std::placeholders::_1));
+  }
 
   // linear_max param
   nav2_util::declare_parameter_if_not_declared(
@@ -120,6 +144,51 @@ bool VelocityPolygon::getParameters()
 
   return true;
 }
+
+void VelocityPolygon::polygonCallback(geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg)
+{
+  RCLCPP_INFO(
+    logger_,
+    "[%s][%s]: Polygon shape update has been arrived",
+    polygon_name_.c_str(), velocity_polygon_name_.c_str());
+  updatePolygon(msg);
+}
+
+void VelocityPolygon::updatePolygon(geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg)
+{
+  std::size_t new_size = msg->polygon.points.size();
+
+  if (new_size < 3) {
+    RCLCPP_ERROR(
+      logger_,
+      "[%s]: Polygon should have at least 3 points",
+      polygon_name_.c_str());
+    return;
+  }
+
+  // Get the transform from PolygonStamped frame to base_frame_id_
+  tf2::Transform tf_transform;
+  if (
+    !nav2_util::getTransform(
+      msg->header.frame_id, base_frame_id_,
+      transform_tolerance_, tf_buffer_, tf_transform))
+  {
+    return;
+  }
+
+  // Set main poly_ vertices first time
+  poly_.resize(new_size);
+  for (std::size_t i = 0; i < new_size; i++) {
+    // Transform point coordinates from PolygonStamped frame -> to base frame
+    tf2::Vector3 p_v3_s(msg->polygon.points[i].x, msg->polygon.points[i].y, 0.0);
+    tf2::Vector3 p_v3_b = tf_transform * p_v3_s;
+
+    // Fill poly_ array
+    poly_[i] = {p_v3_b.x(), p_v3_b.y()};
+  }
+}
+
+
 
 bool VelocityPolygon::isInRange(const Velocity & cmd_vel_in)
 {

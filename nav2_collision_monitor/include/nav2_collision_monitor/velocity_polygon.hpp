@@ -19,6 +19,8 @@
 #include <vector>
 
 #include "rclcpp/rclcpp.hpp"
+#include "geometry_msgs/msg/polygon_stamped.hpp"
+#include "tf2_ros/buffer.h"
 
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_collision_monitor/types.hpp"
@@ -43,7 +45,10 @@ public:
   VelocityPolygon(
     const nav2_util::LifecycleNode::WeakPtr & node,
     const std::string & polygon_name,
-    const std::string & velocity_polygon_name);
+    const std::string & velocity_polygon_name,
+    const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+    const std::string & base_frame_id,
+    const tf2::Duration & transform_tolerance);
   /**
    * @brief VelocityPolygon destructor
    */
@@ -77,11 +82,27 @@ protected:
   /// @brief Collision monitor node logger stored for further usage
   rclcpp::Logger logger_{rclcpp::get_logger("collision_monitor")};
 
+  /**
+   * @brief Dynamic polygon callback
+   * @param msg Shared pointer to the polygon message
+   */
+  void polygonCallback(geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg);
+
+  /**
+   * @brief Updates polygon from geometry_msgs::msg::PolygonStamped message
+   * @param msg Message to update polygon from
+   */
+  void updatePolygon(geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg);
+
   // Basic parameters
   /// @brief Points of the polygon
   std::vector<Point> poly_;
   /// @brief Name of polygon
   std::string polygon_name_;
+  /// @brief Topic for dynamic polygon subscriber
+  std::string polygon_sub_topic_;
+  /// @brief Polygon subscription
+  rclcpp::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_sub_;
   /// @brief velocity_polygon_name Name of velocity polygon
   std::string velocity_polygon_name_;
   /// @brief Holonomic flag (true for holonomic, false for non-holonomic)
@@ -98,6 +119,14 @@ protected:
   double theta_max_;
   /// @brief Minimum twist rotational speed
   double theta_min_;
+
+  // Global variables
+  /// @brief TF buffer
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  /// @brief Base frame ID
+  std::string base_frame_id_;
+  /// @brief Transform tolerance
+  tf2::Duration transform_tolerance_;
 };  // class VelocityPolygon
 
 }  // namespace nav2_collision_monitor

@@ -59,6 +59,7 @@ collision_monitor:
       translation_forward:
         points: [0.35, 0.3, 0.35, -0.3, -0.2, -0.3, -0.2, 0.3]
         holonomic: false
+        polygon_sub_topic: "forward_velocity_polygon"
         linear_min: 0.0
         linear_max: 1.0
         theta_min: -1.0
