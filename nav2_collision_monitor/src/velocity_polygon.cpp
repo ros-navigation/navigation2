@@ -76,7 +76,9 @@ bool VelocityPolygon::getParameters()
     // polygon_sub_topic param
     nav2_util::declare_parameter_if_not_declared(
       node, polygon_name_ + "." + velocity_polygon_name_ + ".polygon_sub_topic",
-      rclcpp::ParameterValue("/collision_monitor/"+polygon_name_ +"/"+velocity_polygon_name_+"/set_polygon"));
+      rclcpp::ParameterValue(
+        "/collision_monitor/" + polygon_name_ + "/" + velocity_polygon_name_ +
+        "/set_polygon"));
     polygon_sub_topic_ =
       node->get_parameter(
       polygon_name_ + "." + velocity_polygon_name_ +
@@ -196,7 +198,6 @@ void VelocityPolygon::updatePolygon(geometry_msgs::msg::PolygonStamped::ConstSha
     poly_[i] = {p_v3_b.x(), p_v3_b.y()};
   }
 }
-
 
 
 bool VelocityPolygon::isInRange(const Velocity & cmd_vel_in)

@@ -474,11 +474,11 @@ bool Polygon::getParameters(
 
     // Velocity polygon will be used
     nav2_util::declare_parameter_if_not_declared(
-      node, polygon_name_ + ".velocity_polygon", rclcpp::PARAMETER_STRING_ARRAY);
-    std::vector<std::string> velocity_polygon_array = node->get_parameter(
-      polygon_name_ + ".velocity_polygon").as_string_array();
+      node, polygon_name_ + ".velocity_polygons", rclcpp::PARAMETER_STRING_ARRAY);
+    std::vector<std::string> velocity_polygons = node->get_parameter(
+      polygon_name_ + ".velocity_polygons").as_string_array();
 
-    for (std::string velocity_polygon_name : velocity_polygon_array) {
+    for (std::string velocity_polygon_name : velocity_polygons) {
       auto velocity_polygon = std::make_shared<VelocityPolygon>(
         node_, polygon_name_,
         velocity_polygon_name,
