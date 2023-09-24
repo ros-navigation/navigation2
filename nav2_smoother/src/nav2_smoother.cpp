@@ -53,6 +53,8 @@ SmootherServer::SmootherServer(const rclcpp::NodeOptions & options)
     rclcpp::ParameterValue(std::string("base_link")));
   declare_parameter("transform_tolerance", rclcpp::ParameterValue(0.1));
   declare_parameter("smoother_plugins", default_ids_);
+
+  declare_parameter("action_server_result_timeout", 10.0);
 }
 
 SmootherServer::~SmootherServer()
@@ -104,6 +106,11 @@ SmootherServer::on_configure(const rclcpp_lifecycle::State &)
   // Initialize pubs & subs
   plan_publisher_ = create_publisher<nav_msgs::msg::Path>("plan_smoothed", 1);
 
+  double action_server_result_timeout;
+  get_parameter("action_server_result_timeout", action_server_result_timeout);
+  rcl_action_server_options_t server_options = rcl_action_server_get_default_options();
+  server_options.result_timeout.nanoseconds = RCL_S_TO_NS(action_server_result_timeout);
+
   // Create the action server that we implement with our smoothPath method
   action_server_ = std::make_unique<ActionServer>(
     shared_from_this(),
@@ -111,7 +118,7 @@ SmootherServer::on_configure(const rclcpp_lifecycle::State &)
     std::bind(&SmootherServer::smoothPlan, this),
     nullptr,
     std::chrono::milliseconds(500),
-    true);
+    true, server_options);
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
