@@ -548,7 +548,9 @@ void CollisionMonitor::notifyActionState(
 void CollisionMonitor::publishPolygons() const
 {
   for (std::shared_ptr<Polygon> polygon : polygons_) {
-    polygon->publish();
+    if (polygon->getEnabled()) {
+      polygon->publish();
+    }
   }
 }
 
