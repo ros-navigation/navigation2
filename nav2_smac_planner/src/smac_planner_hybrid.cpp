@@ -263,7 +263,7 @@ void SmacPlannerHybrid::deactivate()
   _raw_plan_publisher->on_deactivate();
   if (_debug_visualizations) {
     _expansions_publisher->on_deactivate();
-    _planned_footprints_publisher->on_activate();
+    _planned_footprints_publisher->on_deactivate();
   }
   if (_costmap_downsampler) {
     _costmap_downsampler->on_deactivate();
