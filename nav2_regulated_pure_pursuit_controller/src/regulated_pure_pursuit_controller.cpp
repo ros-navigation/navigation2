@@ -508,8 +508,10 @@ bool RegulatedPurePursuitController::isCollisionImminentExtendedSearch()
     std::back_inserter(extended_collision_check_path.poses),
     [](geometry_msgs::msg::PoseStamped & poseStamped) {
       // Modify Z For visualization in rviz so it is drawn between global plan and collision arc
+      geometry_msgs::msg::PoseStamped transformed_pose;
       poseStamped.pose.position.z = 0.005;
-      return poseStamped;
+      transformPose(costmap_ros_->getBaseFrameID(), poseStamped, transformed_pose);
+      return transformed_pose;
     }
   );
   extended_collision_check_path.header = global_plan_.header;
