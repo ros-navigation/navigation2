@@ -138,7 +138,7 @@ bool PhotoAtWaypoint::processAtWaypoint(
 void PhotoAtWaypoint::imageCallback(const sensor_msgs::msg::Image::SharedPtr msg)
 {
   std::lock_guard<std::mutex> guard(global_mutex_);
-  curr_frame_msg_ = msg;
+  curr_frame_msg_ = std::make_shared<sensor_msgs::msg::Image>(*msg);
 }
 
 void PhotoAtWaypoint::deepCopyMsg2Mat(
