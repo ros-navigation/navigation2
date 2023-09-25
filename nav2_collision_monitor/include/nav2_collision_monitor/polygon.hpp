@@ -129,11 +129,6 @@ public:
   virtual bool isShapeSet();
 
   /**
-   * @brief Returns true if using velocity based polygon
-   */
-  bool isUsingVelocityPolygonSelector();
-
-  /**
    * @brief Updates polygon from footprint subscriber (if any)
    */
   void updatePolygon(const Velocity & cmd_vel_in);
@@ -262,6 +257,9 @@ protected:
 
   /// @brief Polygon points (vertices) in a base_frame_id_
   std::vector<Point> poly_;
+
+  /// @brief Source for setting the polygon
+  PolygonSource polygon_source;
 };  // class Polygon
 
 }  // namespace nav2_collision_monitor

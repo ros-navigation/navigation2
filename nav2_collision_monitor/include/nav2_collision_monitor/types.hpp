@@ -79,6 +79,15 @@ struct Action
   std::string polygon_name;
 };
 
+/// @brief Source for setting the polygon
+enum PolygonSource
+{
+  POLYGON_SOURCE_UNKNOWN = 0, // Default
+  STATIC_POINTS = 1, // Set from points
+  DYNAMIC_SUB = 2, // Set from topic subscription
+  VELOCITY_POLYGON = 3 // Set based on current twists
+};
+
 }  // namespace nav2_collision_monitor
 
 #endif  // NAV2_COLLISION_MONITOR__TYPES_HPP_
