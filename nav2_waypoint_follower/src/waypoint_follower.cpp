@@ -329,7 +329,7 @@ void WaypointFollower::followWaypointsHandler(
         missedWaypoint.index = goal_index;
         missedWaypoint.goal = poses[goal_index];
         missedWaypoint.error_code =
-          nav2_msgs::action::FollowWaypoints::Result::TASK_EXECUTOR_FAILED;
+          nav2_msgs::action::FollowWaypoints::Goal::TASK_EXECUTOR_FAILED;
         result->missed_waypoints.push_back(missedWaypoint);
       }
       // if task execution was failed and stop_on_failure_ is on , terminate action
