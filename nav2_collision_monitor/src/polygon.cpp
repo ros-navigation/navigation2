@@ -38,8 +38,7 @@ Polygon::Polygon(
 : node_(node), polygon_name_(polygon_name), action_type_(DO_NOTHING),
   slowdown_ratio_(0.0), linear_limit_(0.0), angular_limit_(0.0),
   footprint_sub_(nullptr), tf_buffer_(tf_buffer),
-  base_frame_id_(base_frame_id), transform_tolerance_(transform_tolerance),
-  polygon_source(POLYGON_SOURCE_UNKNOWN)
+  base_frame_id_(base_frame_id), transform_tolerance_(transform_tolerance)
 {
   RCLCPP_INFO(logger_, "[%s]: Creating Polygon", polygon_name_.c_str());
 }
@@ -170,95 +169,89 @@ bool Polygon::isShapeSet()
   return true;
 }
 
+bool Polygon::isUsingVelocityPolygonSelector()
+{
+  return !velocity_polygons_.empty();
+}
+
 void Polygon::updatePolygon(const Velocity & cmd_vel_in)
 {
-  switch (polygon_source) {
-    case STATIC_POINTS:
-      {
-        if (!polygon_.header.frame_id.empty() && polygon_.header.frame_id != base_frame_id_) {
-          // Polygon is published in another frame: correct poly_ vertices to the latest frame state
-          std::size_t new_size = polygon_.polygon.points.size();
+  if (isUsingVelocityPolygonSelector()) {
+    for (auto & velocity_polygon : velocity_polygons_) {
 
-          // Get the transform from PolygonStamped frame to base_frame_id_
-          tf2::Transform tf_transform;
-          if (
-            !nav2_util::getTransform(
-              polygon_.header.frame_id, base_frame_id_,
-              transform_tolerance_, tf_buffer_, tf_transform))
-          {
-            return;
-          }
+      if (velocity_polygon->isInRange(cmd_vel_in)) {
+        // Set the polygon that is within the speed range
+        poly_ = velocity_polygon->getPolygon();
 
-          // Correct main poly_ vertices
-          poly_.resize(new_size);
-          for (std::size_t i = 0; i < new_size; i++) {
-            // Transform point coordinates from PolygonStamped frame -> to base frame
-            tf2::Vector3 p_v3_s(polygon_.polygon.points[i].x, polygon_.polygon.points[i].y, 0.0);
-            tf2::Vector3 p_v3_b = tf_transform * p_v3_s;
-
-            // Fill poly_ array
-            poly_[i] = {p_v3_b.x(), p_v3_b.y()};
-          }
+        // Update visualization polygon
+        polygon_.polygon.points.clear();
+        for (const Point & p : poly_) {
+          geometry_msgs::msg::Point32 p_s;
+          p_s.x = p.x;
+          p_s.y = p.y;
+          // p_s.z will remain 0.0
+          polygon_.polygon.points.push_back(p_s);
         }
-        break;
+
+        return;
       }
-    case DYNAMIC_SUB:
-      {
-        // Get latest robot footprint from footprint subscriber
-        std::vector<geometry_msgs::msg::Point> footprint_vec;
-        std_msgs::msg::Header footprint_header;
-        footprint_sub_->getFootprintInRobotFrame(footprint_vec, footprint_header);
+    }
 
-        std::size_t new_size = footprint_vec.size();
-        poly_.resize(new_size);
-        polygon_.header.frame_id = base_frame_id_;
-        polygon_.polygon.points.resize(new_size);
-
-        geometry_msgs::msg::Point32 p_s;
-        for (std::size_t i = 0; i < new_size; i++) {
-          poly_[i] = {footprint_vec[i].x, footprint_vec[i].y};
-          p_s.x = footprint_vec[i].x;
-          p_s.y = footprint_vec[i].y;
-          polygon_.polygon.points[i] = p_s;
-        }
-        break;
-      }
-    case VELOCITY_POLYGON:
-      {
-        for (auto & velocity_polygon : velocity_polygons_) {
-          if (velocity_polygon->isInRange(cmd_vel_in)) {
-            // Set the polygon that is within the speed range
-            poly_ = velocity_polygon->getPolygon();
-
-            // Update visualization polygon
-            polygon_.polygon.points.clear();
-            for (const Point & p : poly_) {
-              geometry_msgs::msg::Point32 p_s;
-              p_s.x = p.x;
-              p_s.y = p.y;
-              // p_s.z will remain 0.0
-              polygon_.polygon.points.push_back(p_s);
-            }
-            return;
-          }
-        }
-
-        // Log for uncovered velocity
-        auto node = node_.lock();
-        if (!node) {
-          throw std::runtime_error{"Failed to lock node"};
-        }
-        RCLCPP_WARN_THROTTLE(
-          logger_,
-          *node->get_clock(), 2.0, "Velocity is not covered by any of the velocity polygons. x: %.3f y: %.3f tw: %.3f ",
-          cmd_vel_in.x, cmd_vel_in.y, cmd_vel_in.tw);
-        break;
-      }
-    case POLYGON_SOURCE_UNKNOWN:
-    default:
-      break;
+    // Log for uncovered velocity
+    auto node = node_.lock();
+    if (!node) {
+      throw std::runtime_error{"Failed to lock node"};
+    }
+    RCLCPP_WARN_THROTTLE(
+      logger_,
+      *node->get_clock(), 2.0, "Velocity is not covered by any of the velocity polygons. x: %.3f y: %.3f tw: %.3f ",
+      cmd_vel_in.x, cmd_vel_in.y, cmd_vel_in.tw);
+    return;
   }
-  return;
+
+  if (footprint_sub_ != nullptr) {
+    // Get latest robot footprint from footprint subscriber
+    std::vector<geometry_msgs::msg::Point> footprint_vec;
+    std_msgs::msg::Header footprint_header;
+    footprint_sub_->getFootprintInRobotFrame(footprint_vec, footprint_header);
+
+    std::size_t new_size = footprint_vec.size();
+    poly_.resize(new_size);
+    polygon_.header.frame_id = base_frame_id_;
+    polygon_.polygon.points.resize(new_size);
+
+    geometry_msgs::msg::Point32 p_s;
+    for (std::size_t i = 0; i < new_size; i++) {
+      poly_[i] = {footprint_vec[i].x, footprint_vec[i].y};
+      p_s.x = footprint_vec[i].x;
+      p_s.y = footprint_vec[i].y;
+      polygon_.polygon.points[i] = p_s;
+    }
+  } else if (!polygon_.header.frame_id.empty() && polygon_.header.frame_id != base_frame_id_) {
+    // Polygon is published in another frame: correct poly_ vertices to the latest frame state
+    std::size_t new_size = polygon_.polygon.points.size();
+
+    // Get the transform from PolygonStamped frame to base_frame_id_
+    tf2::Transform tf_transform;
+    if (
+      !nav2_util::getTransform(
+        polygon_.header.frame_id, base_frame_id_,
+        transform_tolerance_, tf_buffer_, tf_transform))
+    {
+      return;
+    }
+
+    // Correct main poly_ vertices
+    poly_.resize(new_size);
+    for (std::size_t i = 0; i < new_size; i++) {
+      // Transform point coordinates from PolygonStamped frame -> to base frame
+      tf2::Vector3 p_v3_s(polygon_.polygon.points[i].x, polygon_.polygon.points[i].y, 0.0);
+      tf2::Vector3 p_v3_b = tf_transform * p_v3_s;
+
+      // Fill poly_ array
+      poly_[i] = {p_v3_b.x(), p_v3_b.y()};
+    }
+  }
 }
 
 int Polygon::getPointsInside(const std::vector<Point> & points) const
@@ -445,7 +438,6 @@ bool Polygon::getParameters(
           polygon_name_.c_str());
         return false;
       }
-      polygon_source = STATIC_POINTS;
       return true;
     } catch (const rclcpp::exceptions::ParameterUninitializedException &) {
       RCLCPP_INFO(
@@ -470,7 +462,6 @@ bool Polygon::getParameters(
           node, polygon_name_ + ".footprint_topic", rclcpp::PARAMETER_STRING);
         footprint_topic =
           node->get_parameter(polygon_name_ + ".footprint_topic").as_string();
-        polygon_source = DYNAMIC_SUB;
         return true;
       }
     } catch (const rclcpp::exceptions::ParameterUninitializedException &) {
@@ -495,8 +486,9 @@ bool Polygon::getParameters(
       if (velocity_polygon->getParameters()) {
         velocity_polygons_.emplace_back(velocity_polygon);
       }
+
     }
-    polygon_source = VELOCITY_POLYGON;
+
   } catch (const std::exception & ex) {
     RCLCPP_ERROR(
       logger_,
