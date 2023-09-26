@@ -37,12 +37,10 @@ Source::Source(
   transform_tolerance_(transform_tolerance), source_timeout_(source_timeout),
   base_shift_correction_(base_shift_correction)
 {
-  RCLCPP_INFO(logger_, "[%s]: Creating Source", source_name_.c_str());
 }
 
 Source::~Source()
 {
-  RCLCPP_INFO(logger_, "[%s]: Destroying Source", source_name_.c_str());
 }
 
 bool Source::configure()
