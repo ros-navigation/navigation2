@@ -48,18 +48,27 @@ bool VelocityPolygon::getParameters()
   }
 
   try {
-    nav2_util::declare_parameter_if_not_declared(
-      node, polygon_name_ + "." + velocity_polygon_name_ + ".points",
-      rclcpp::PARAMETER_DOUBLE_ARRAY);
-    std::vector<double> polygon_points = node->get_parameter(
-      polygon_name_ + "." + velocity_polygon_name_ + ".points").as_double_array();
 
-    if (!Polygon::setPolygonShape(polygon_points, poly_)) {
-      RCLCPP_ERROR(
+    try {
+      // Leave it uninitialized: it will throw an inner exception if the parameter is not set
+      nav2_util::declare_parameter_if_not_declared(
+        node, polygon_name_ + "." + velocity_polygon_name_ + ".points",
+        rclcpp::PARAMETER_DOUBLE_ARRAY);
+      std::vector<double> polygon_points = node->get_parameter(
+        polygon_name_ + "." + velocity_polygon_name_ + ".points").as_double_array();
+
+      if (!Polygon::setPolygonShape(polygon_points, poly_)) {
+        RCLCPP_ERROR(
+          logger_,
+          "[%s][%s]: Polygon has incorrect points description",
+          polygon_name_.c_str(), velocity_polygon_name_.c_str());
+        return false;
+      }
+    } catch (const rclcpp::exceptions::ParameterUninitializedException &) {
+      RCLCPP_INFO(
         logger_,
-        "[%s][%s]: Polygon has incorrect points description",
+        "[%s][%s]: Polygon points are not defined. Will wait for dynamic subscription instead.",
         polygon_name_.c_str(), velocity_polygon_name_.c_str());
-      return false;
     }
 
     std::string polygon_sub_topic = "/collision_monitor/" + polygon_name_ + "/" +
