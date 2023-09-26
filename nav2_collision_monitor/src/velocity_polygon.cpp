@@ -64,6 +64,13 @@ bool VelocityPolygon::getParameters()
       return false;
     }
 
+    std::string polygon_sub_topic = "/collision_monitor/" + polygon_name_ + "/" +
+      velocity_polygon_name_ + "/set_polygon";
+    rclcpp::QoS polygon_qos = rclcpp::SystemDefaultsQoS();  // set to default
+    polygon_sub_ = node->create_subscription<geometry_msgs::msg::PolygonStamped>(
+      polygon_sub_topic, polygon_qos,
+      std::bind(&VelocityPolygon::polygonCallback, this, std::placeholders::_1));
+
     // holonomic param
     nav2_util::declare_parameter_if_not_declared(
       node, polygon_name_ + "." + velocity_polygon_name_ + ".holonomic",
@@ -72,28 +79,6 @@ bool VelocityPolygon::getParameters()
       node->get_parameter(
       polygon_name_ + "." + velocity_polygon_name_ +
       ".holonomic").as_bool();
-
-    // polygon_sub_topic param
-    nav2_util::declare_parameter_if_not_declared(
-      node, polygon_name_ + "." + velocity_polygon_name_ + ".polygon_sub_topic",
-      rclcpp::ParameterValue(
-        "/collision_monitor/" + polygon_name_ + "/" + velocity_polygon_name_ +
-        "/set_polygon"));
-    polygon_sub_topic_ =
-      node->get_parameter(
-      polygon_name_ + "." + velocity_polygon_name_ +
-      ".polygon_sub_topic").as_string();
-
-    if (!polygon_sub_topic_.empty()) {
-      RCLCPP_INFO(
-        logger_,
-        "[%s][%s]: Subscribing on %s topic for polygon",
-        polygon_name_.c_str(), velocity_polygon_name_.c_str(), polygon_sub_topic_.c_str());
-      rclcpp::QoS polygon_qos = rclcpp::SystemDefaultsQoS();  // set to default
-      polygon_sub_ = node->create_subscription<geometry_msgs::msg::PolygonStamped>(
-        polygon_sub_topic_, polygon_qos,
-        std::bind(&VelocityPolygon::polygonCallback, this, std::placeholders::_1));
-    }
 
     // linear_max param
     nav2_util::declare_parameter_if_not_declared(

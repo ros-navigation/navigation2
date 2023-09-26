@@ -99,8 +99,6 @@ protected:
   std::vector<Point> poly_;
   /// @brief Name of polygon
   std::string polygon_name_;
-  /// @brief Topic for dynamic polygon subscriber
-  std::string polygon_sub_topic_;
   /// @brief Polygon subscription
   rclcpp::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_sub_;
   /// @brief velocity_polygon_name Name of velocity polygon
