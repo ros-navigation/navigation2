@@ -483,10 +483,10 @@ bool Polygon::getParameters(
         node_, polygon_name_,
         velocity_polygon_name,
         tf_buffer_, base_frame_id_, transform_tolerance_);
-      if (velocity_polygon->getParameters()) {
-        velocity_polygons_.emplace_back(velocity_polygon);
+      if (!velocity_polygon->getParameters()) {
+        return false;
       }
-
+      velocity_polygons_.emplace_back(velocity_polygon);
     }
 
   } catch (const std::exception & ex) {
