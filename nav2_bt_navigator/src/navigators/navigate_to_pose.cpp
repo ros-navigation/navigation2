@@ -179,7 +179,7 @@ NavigateToPoseNavigator::onLoop()
     }
 
     // Add orientation difference to distance
-    if (current_angular_speed > 0.01) {
+    if (current_angular_speed > 0.01 && current_path.poses.size() > 0) {
       tf2::Quaternion q(
         current_pose.pose.orientation.x,
         current_pose.pose.orientation.y,
