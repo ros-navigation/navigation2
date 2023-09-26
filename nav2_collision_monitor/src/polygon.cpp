@@ -480,9 +480,8 @@ bool Polygon::getParameters(
 
     for (std::string velocity_polygon_name : velocity_polygons) {
       auto velocity_polygon = std::make_shared<VelocityPolygon>(
-        node_, polygon_name_,
-        velocity_polygon_name,
-        tf_buffer_, base_frame_id_, transform_tolerance_);
+        node_, polygon_name_, velocity_polygon_name, tf_buffer_, base_frame_id_,
+        transform_tolerance_);
       if (!velocity_polygon->getParameters()) {
         return false;
       }
