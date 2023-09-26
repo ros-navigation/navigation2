@@ -164,6 +164,9 @@ protected:
   std::unique_ptr<BreadthFirstSearch> bfs_;
   rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr start_expansion_viz_;
   rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr goal_expansion_viz_;
+
+  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr route_start_pose_pub_;
+  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr route_goal_pose_pub_;
 };
 
 }  // namespace nav2_route

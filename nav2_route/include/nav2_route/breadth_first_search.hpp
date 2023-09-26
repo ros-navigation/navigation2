@@ -20,6 +20,7 @@
 #include <memory>
 #include <unordered_map>
 #include <vector>
+#include <limits>
 
 #include "nav2_costmap_2d/cost_values.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
@@ -36,10 +37,20 @@ struct SimpleNode
 {
   SimpleNode(unsigned int index)
   : index(index),
-    explored(false) {}
+    queued(false),
+    visited(false),
+    cost(std::numeric_limits<float>::max()){}
 
   unsigned int index;
-  bool explored;
+  bool queued;
+  bool visited;
+  float cost;
+};
+
+struct CompareNodeCost {
+    bool operator()(const SimpleNode * a, const SimpleNode * b) const {
+        return a->cost > b->cost;
+    }
 };
 
 /**
@@ -116,6 +127,11 @@ private:
    */
   bool inCollision(unsigned int index);
 
+  /**
+   * @brief Calculate the cost
+   */
+  float calculateCost(unsigned int current_index, unsigned int neighbor_index);
+
   std::unordered_map<unsigned int, SimpleNode> graph_;
 
   NodePtr start_;
@@ -124,6 +140,7 @@ private:
   unsigned int x_size_;
   unsigned int y_size_;
   unsigned int max_index_;
+  std::vector<int> diagonals_;
   std::vector<int> neighbors_grid_offsets_;
   std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap_;
   int max_iterations_;

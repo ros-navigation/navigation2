@@ -37,10 +37,13 @@ void BreadthFirstSearch::initialize(std::shared_ptr<nav2_costmap_2d::Costmap2D> 
   max_index_ = x_size * y_size;
   x_size_ = x_size;
 
-  neighbors_grid_offsets_ = {-1, +1,
-    -x_size, +x_size,
-    -x_size - 1, -x_size + 1,
-    +x_size - 1, +x_size + 1};
+  neighbors_grid_offsets_ = {-1, +1, 
+                    -x_size, x_size};
+  diagonals_ = {-x_size - 1, -x_size + 1,
+                +x_size -1, +x_size +1};
+
+  neighbors_grid_offsets_.insert(
+    neighbors_grid_offsets_.end(), diagonals_.begin(), diagonals_.end());
 
   max_iterations_ = max_iterations;
 }
@@ -70,15 +73,20 @@ void BreadthFirstSearch::setGoals(std::vector<nav2_costmap_2d::MapLocation> & go
 
 void BreadthFirstSearch::search(unsigned int & goal)
 {
-  std::queue<NodePtr> queue;
+  std::priority_queue<NodePtr, std::vector<NodePtr>, CompareNodeCost> queue;
 
-  start_->explored = true;
+  start_->queued = true;
+  start_->cost = 0.0f;
   queue.push(start_);
 
   int iteration = 0;
   while (!queue.empty()) {
-    auto & current = queue.front();
+    auto * current = queue.top();
     queue.pop();
+    current->queued = false;
+    std::cout << "Current index: " << current->index << std::endl;
+    std::cout << "Current cost: " << current->cost << std::endl;
+    std::cout << std::endl;
 
     if (iteration > max_iterations_) {
       throw nav2_core::PlannerTimedOut("Exceeded maximum iterations");
@@ -96,11 +104,20 @@ void BreadthFirstSearch::search(unsigned int & goal)
     getNeighbors(current->index, neighbors);
 
     for (const auto neighbor : neighbors) {
-      if (!neighbor->explored) {
-        neighbor->explored = true;
-        queue.push(neighbor);
+      if (!neighbor->visited) {
+        float updated_cost = current->cost + calculateCost(current->index, neighbor->index);
+        if (updated_cost < neighbor->cost) {
+          neighbor->cost = updated_cost;
+        }
+        
+        if(!neighbor->queued) {
+          neighbor->queued = true;
+          queue.push(neighbor);
+        }
       }
     }
+    std::cout << std::endl;
+    current->visited = true;
   }
 
   throw nav2_core::NoValidPathCouldBeFound("No valid path found");
@@ -174,6 +191,19 @@ bool BreadthFirstSearch::inCollision(unsigned int index)
   return false;
 }
 
+
+float BreadthFirstSearch::calculateCost(unsigned int current_index, unsigned int neighbor_index)
+{
+  auto diff = static_cast<int>(neighbor_index) - static_cast<int>(current_index);
+  for (const auto & offset : diagonals_) {
+    if (diff == offset) {
+      // SquareRoot of 2
+      return 1.41421356237f;
+    }
+  }
+  return 1.0f;
+}
+  
 void BreadthFirstSearch::clearGraph()
 {
   graph_.clear();

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <rclcpp/qos.hpp>
 #include <string>
 #include <memory>
 #include <vector>
@@ -68,8 +69,16 @@ void GoalIntentExtractor::configure(
   node_spatial_tree_->computeTree(graph);
 
   nav2_util::declare_parameter_if_not_declared(
-    node, "enable_search", rclcpp::ParameterValue(false));
+    node, "enable_search", rclcpp::ParameterValue(true));
   enable_search_ = node->get_parameter("enable_search").as_bool();
+
+  route_start_pose_pub_ = 
+    node->create_publisher<geometry_msgs::msg::PoseStamped>(
+    "route_start_pose", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+
+  route_goal_pose_pub_ = 
+    node->create_publisher<geometry_msgs::msg::PoseStamped>(
+    "route_goal_pose", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
 
   if (enable_search_) {
     std::string costmap_topic;
@@ -83,7 +92,7 @@ void GoalIntentExtractor::configure(
     max_iterations_ = node->get_parameter("max_iterations").as_int();
 
     nav2_util::declare_parameter_if_not_declared(
-      node, "enable_search_viz", rclcpp::ParameterValue(false));
+      node, "enable_search_viz", rclcpp::ParameterValue(true));
     enable_search_viz_ = node->get_parameter("enable_search_viz").as_bool();
 
     costmap_sub_ =
@@ -160,6 +169,9 @@ GoalIntentExtractor::findStartandGoal(const std::shared_ptr<const GoalT> goal)
     }
   }
 
+  route_start_pose_pub_->publish(start_pose);
+  route_goal_pose_pub_->publish(goal_pose);
+
   start_ = transformPose(start_pose, route_frame_);
   goal_ = transformPose(goal_pose, route_frame_);
 
@@ -175,10 +187,12 @@ GoalIntentExtractor::findStartandGoal(const std::shared_ptr<const GoalT> goal)
 
   if (enable_search_) {
     unsigned int valid_start_route_id = associatePoseWithGraphNode(start_route_ids, start_);
+    std::cout << "Start ID: " << valid_start_route_id << std::endl;
     visualizeExpansions(start_expansion_viz_);
     bfs_->clearGraph();
 
     unsigned int valid_end_route_id = associatePoseWithGraphNode(end_route_ids, goal_);
+    std::cout << "End ID: " << valid_end_route_id << std::endl;
     visualizeExpansions(goal_expansion_viz_);
     bfs_->clearGraph();
 
@@ -271,9 +285,11 @@ unsigned int GoalIntentExtractor::associatePoseWithGraphNode(
             std::to_string(pose_transformed.pose.position.y) + ") was outside bounds");
   }
 
-  if (costmap_->getCost(s_mx, s_my) == nav2_costmap_2d::LETHAL_OBSTACLE) {
+  auto cost = costmap_->getCost(s_mx, s_my);
+  if (cost == nav2_costmap_2d::LETHAL_OBSTACLE ||
+      cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE) {
     throw nav2_core::StartOccupied("Start was in lethal cost");
-  }
+ }
 
   std::vector<unsigned int> valid_node_indices;
   std::vector<nav2_costmap_2d::MapLocation> goals;
@@ -316,6 +332,7 @@ unsigned int GoalIntentExtractor::associatePoseWithGraphNode(
   //   // The visiblity check only validates the first node in goal array
   //   return valid_node_indices.front();
   // }
+  RCLCPP_INFO(logger_, "Visability Check failed");
 
   unsigned int goal;
   bfs_->search(goal);
