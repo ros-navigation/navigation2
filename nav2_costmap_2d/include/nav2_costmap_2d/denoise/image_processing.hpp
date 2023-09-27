@@ -987,8 +987,9 @@ private:
   {
     // Creates an image labels in which each obstacles group is labeled with a unique code
     Label groups_count;
-    auto labels = connectedComponents<connectivity>(image, buffer, label_trees,
-        is_background, groups_count);
+    auto labels = connectedComponents<connectivity>(
+      image, buffer, label_trees,
+      is_background, groups_count);
 
     // Calculates the size of each group.
     // Group size is equal to the number of pixels with the same label
