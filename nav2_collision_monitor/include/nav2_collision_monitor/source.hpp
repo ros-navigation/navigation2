@@ -93,6 +93,12 @@ public:
    */
   rclcpp::Duration getSourceTimeout() const;
 
+  /**
+   * @brief Obtains source enabled state
+   * @return Whether source is enabled
+   */
+  bool getEnabled() const;
+
 protected:
   /**
    * @brief Source configuration routine.
