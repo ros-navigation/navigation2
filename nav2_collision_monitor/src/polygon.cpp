@@ -48,6 +48,7 @@ Polygon::~Polygon()
   polygon_sub_.reset();
   polygon_pub_.reset();
   poly_.clear();
+  dyn_params_handler_.reset();
 }
 
 bool Polygon::configure()
@@ -102,6 +103,10 @@ bool Polygon::configure()
       polygon_pub_topic, polygon_qos);
   }
 
+  // Add callback for dynamic parameters
+  dyn_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(&Polygon::dynamicParametersCallback, this, std::placeholders::_1));
+
   return true;
 }
 
@@ -127,6 +132,11 @@ std::string Polygon::getName() const
 ActionType Polygon::getActionType() const
 {
   return action_type_;
+}
+
+bool Polygon::getEnabled() const
+{
+  return enabled_;
 }
 
 int Polygon::getMinPoints() const
@@ -301,6 +311,10 @@ bool Polygon::getCommonParameters(std::string & polygon_pub_topic)
       RCLCPP_ERROR(logger_, "[%s]: Unknown action type: %s", polygon_name_.c_str(), at_str.c_str());
       return false;
     }
+
+    nav2_util::declare_parameter_if_not_declared(
+      node, polygon_name_ + ".enabled", rclcpp::ParameterValue(true));
+    enabled_ = node->get_parameter(polygon_name_ + ".enabled").as_bool();
 
     nav2_util::declare_parameter_if_not_declared(
       node, polygon_name_ + ".min_points", rclcpp::ParameterValue(4));
@@ -485,6 +499,26 @@ void Polygon::updatePolygon(geometry_msgs::msg::PolygonStamped::ConstSharedPtr m
   // Store incoming polygon for further (possible) poly_ vertices corrections
   // from PolygonStamped frame -> to base frame
   polygon_ = *msg;
+}
+
+rcl_interfaces::msg::SetParametersResult
+Polygon::dynamicParametersCallback(
+  std::vector<rclcpp::Parameter> parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+
+  for (auto parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+
+    if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_BOOL) {
+      if (param_name == polygon_name_ + "." + "enabled") {
+        enabled_ = parameter.as_bool();
+      }
+    }
+  }
+  result.successful = true;
+  return result;
 }
 
 void Polygon::polygonCallback(geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg)

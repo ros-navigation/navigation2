@@ -86,6 +86,11 @@ public:
    */
   ActionType getActionType() const;
   /**
+   * @brief Obtains polygon enabled state
+   * @return Whether polygon is enabled
+   */
+  bool getEnabled() const;
+  /**
    * @brief Obtains polygon minimum points to enter inside polygon causing the action
    * @return Minimum number of data readings within a zone to trigger the action
    */
@@ -192,6 +197,13 @@ protected:
   void polygonCallback(geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg);
 
   /**
+   * @brief Callback executed when a parameter change is detected
+   * @param event ParameterEvent message
+   */
+  rcl_interfaces::msg::SetParametersResult dynamicParametersCallback(
+    std::vector<rclcpp::Parameter> parameters);
+
+  /**
    * @brief Checks if point is inside polygon
    * @param point Given point to check
    * @return True if given point is inside polygon, otherwise false
@@ -204,6 +216,8 @@ protected:
   nav2_util::LifecycleNode::WeakPtr node_;
   /// @brief Collision monitor node logger stored for further usage
   rclcpp::Logger logger_{rclcpp::get_logger("collision_monitor")};
+  /// @brief Dynamic parameters handler
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
 
   // Basic parameters
   /// @brief Name of polygon
@@ -222,6 +236,8 @@ protected:
   double time_before_collision_;
   /// @brief Time step for robot movement simulation
   double simulation_time_step_;
+  /// @brief Whether polygon is enabled
+  bool enabled_;
   /// @brief Polygon subscription
   rclcpp::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_sub_;
   /// @brief Footprint subscriber
