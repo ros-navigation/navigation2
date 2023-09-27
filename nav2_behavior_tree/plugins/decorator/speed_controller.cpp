@@ -43,7 +43,7 @@ SpeedController::SpeedController(
 
   if (min_rate_ <= 0.0 || max_rate_ <= 0.0) {
     std::string err_msg = "SpeedController node cannot have rate <= 0.0";
-    RCLCPP_FATAL(node_->get_logger(), "%s" ,err_msg.c_str());
+    RCLCPP_FATAL(node_->get_logger(), "%s", err_msg.c_str());
     throw BT::BehaviorTreeException(err_msg);
   }
 
