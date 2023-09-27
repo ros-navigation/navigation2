@@ -48,7 +48,7 @@ if(COMPILER_SUPPORTS_FMA)
 endif()
 
 # If building one the same hardware to be deployed on, try `-march=native`!
-add_compile_options(-O3 -finline-limit=10000000 -ffp-contract=fast -ffast-math -mtune=generic)
+add_compile_options(-O3 -finline-limit=10000000 -ffp-contract=fast -ffast-math -mtune=generic -mno-avx512f)
 
 add_library(mppi_controller SHARED
   src/controller.cpp
