@@ -61,7 +61,7 @@ void PointCloud::configure()
   std::string source_topic;
 
   getParameters(source_topic);
-    dyn_params_handler_ = node->add_on_set_parameters_callback(
+  dyn_params_handler_ = node->add_on_set_parameters_callback(
     std::bind(
       &PointCloud::dynamicParametersCallback,
       this,
@@ -78,7 +78,8 @@ rcl_interfaces::msg::SetParametersResult
 PointCloud::dynamicParametersCallback(
   std::vector<rclcpp::Parameter> parameters)
 {
-  // std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+  Source::dynamicParametersCallback(parameters);
+
   rcl_interfaces::msg::SetParametersResult result;
 
   for (auto parameter : parameters) {
@@ -88,8 +89,7 @@ PointCloud::dynamicParametersCallback(
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (param_name == source_name_ + "." + "min_height") {
         min_height_ = parameter.as_double();
-      }
-      else if (param_name == source_name_ + "." + "max_height") {
+      } else if (param_name == source_name_ + "." + "max_height") {
         max_height_ = parameter.as_double();
       }
     }

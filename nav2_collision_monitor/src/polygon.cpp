@@ -66,9 +66,9 @@ bool Polygon::configure()
   }
   dyn_params_handler_ = node->add_on_set_parameters_callback(
     std::bind(
-    &Polygon::dynamicParametersCallback,
-    this,
-    std::placeholders::_1)
+      &Polygon::dynamicParametersCallback,
+      this,
+      std::placeholders::_1)
   );
 
   if (!polygon_sub_topic.empty()) {

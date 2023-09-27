@@ -498,7 +498,7 @@ bool CollisionMonitor::processApproach(
     // chosen for previous shapes one
 
     double min_vel = polygon->getMinVelBeforeStop();
-    if (min_vel != -1.0){
+    if (min_vel != -1.0) {
       if (safe_vel < min_vel) {
         robot_action.action_type = APPROACH;
         robot_action.req_vel.x = 0.0;
