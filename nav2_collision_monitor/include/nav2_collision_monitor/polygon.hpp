@@ -203,12 +203,6 @@ protected:
    */
   void polygonCallback(geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg);
 
-    /**
-   * @brief Callback executed when a parameter change is detected
-   * @param event ParameterEvent message
-   */
-  rcl_interfaces::msg::SetParametersResult dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
-
   /**
    * @brief Callback executed when a parameter change is detected
    * @param event ParameterEvent message
