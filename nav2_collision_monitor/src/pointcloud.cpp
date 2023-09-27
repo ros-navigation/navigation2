@@ -52,6 +52,7 @@ PointCloud::~PointCloud()
 
 void PointCloud::configure()
 {
+  Source::configure();
   auto node = node_.lock();
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};

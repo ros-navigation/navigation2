@@ -110,6 +110,10 @@ bool Polygon::configure()
       polygon_pub_topic, polygon_qos);
   }
 
+  // Add callback for dynamic parameters
+  dyn_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(&Polygon::dynamicParametersCallback, this, std::placeholders::_1));
+
   return true;
 }
 
@@ -135,6 +139,11 @@ std::string Polygon::getName() const
 ActionType Polygon::getActionType() const
 {
   return action_type_;
+}
+
+bool Polygon::getEnabled() const
+{
+  return enabled_;
 }
 
 int Polygon::getMinPoints() const
@@ -314,6 +323,10 @@ bool Polygon::getCommonParameters(std::string & polygon_pub_topic)
       RCLCPP_ERROR(logger_, "[%s]: Unknown action type: %s", polygon_name_.c_str(), at_str.c_str());
       return false;
     }
+
+    nav2_util::declare_parameter_if_not_declared(
+      node, polygon_name_ + ".enabled", rclcpp::ParameterValue(true));
+    enabled_ = node->get_parameter(polygon_name_ + ".enabled").as_bool();
 
     nav2_util::declare_parameter_if_not_declared(
       node, polygon_name_ + ".min_points", rclcpp::ParameterValue(4));
@@ -508,24 +521,15 @@ rcl_interfaces::msg::SetParametersResult
 Polygon::dynamicParametersCallback(
   std::vector<rclcpp::Parameter> parameters)
 {
-  // std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   rcl_interfaces::msg::SetParametersResult result;
 
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
 
-    if (param_type == ParameterType::PARAMETER_INTEGER) {
-      if (param_name == polygon_name_ + "." + "min_points") {
-        min_points_ = parameter.as_int();
-      }
-    }
-    if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (param_name == polygon_name_ + "." + "min_vel_before_stop") {
-        min_vel_before_stop_ = parameter.as_double();
-      }
-      else if (param_name == polygon_name_ + "." + "time_before_collision") {
-        time_before_collision_ = parameter.as_double();
+    if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_BOOL) {
+      if (param_name == polygon_name_ + "." + "enabled") {
+        enabled_ = parameter.as_bool();
       }
     }
   }
