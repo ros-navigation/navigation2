@@ -36,8 +36,8 @@ namespace nav2_controller
 ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
 : nav2_util::LifecycleNode("controller_server", "", options),
   progress_checker_loader_("nav2_core", "nav2_core::ProgressChecker"),
-  default_progress_checker_id_{"progress_checker"},
-  default_progress_checker_type_{"nav2_controller::SimpleProgressChecker"},
+  default_progress_checker_ids_{"progress_checker"},
+  default_progress_checker_types_{"nav2_controller::SimpleProgressChecker"},
   goal_checker_loader_("nav2_core", "nav2_core::GoalChecker"),
   default_goal_checker_ids_{"goal_checker"},
   default_goal_checker_types_{"nav2_controller::SimpleGoalChecker"},
@@ -49,7 +49,7 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
 
   declare_parameter("controller_frequency", 20.0);
 
-  declare_parameter("progress_checker_plugin", default_progress_checker_id_);
+  declare_parameter("progress_checker_plugins", default_progress_checker_ids_);
   declare_parameter("goal_checker_plugins", default_goal_checker_ids_);
   declare_parameter("controller_plugins", default_ids_);
   declare_parameter("min_x_velocity_threshold", rclcpp::ParameterValue(0.0001));
@@ -70,7 +70,7 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
 
 ControllerServer::~ControllerServer()
 {
-  progress_checker_.reset();
+  progress_checkers_.reset();
   goal_checkers_.clear();
   controllers_.clear();
   costmap_thread_.reset();
@@ -80,16 +80,30 @@ nav2_util::CallbackReturn
 ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 {
   auto node = shared_from_this();
-
   RCLCPP_INFO(get_logger(), "Configuring controller interface");
-
-  get_parameter("progress_checker_plugin", progress_checker_id_);
-  if (progress_checker_id_ == default_progress_checker_id_) {
-    nav2_util::declare_parameter_if_not_declared(
-      node, default_progress_checker_id_ + ".plugin",
-      rclcpp::ParameterValue(default_progress_checker_type_));
+  RCLCPP_INFO(get_logger(), "getting progress checker plugins..");
+try {
+  get_parameter("progress_checker_plugins", progress_checker_id_);
+  nav2_util::declare_parameter_if_not_declared(
+      node, "progress_checker_plugin", rclcpp::PARAMETER_STRING);
+    std::string progress_checker_plugin;
+    progress_checker_plugin = node->get_parameter("progress_checker_plugin").as_string();
+    progress_checker_ids_.clear();
+    progress_checker_ids_.push_back(progress_checker_plugin);
+    RCLCPP_WARN(
+      get_logger(),
+      "\"progress_checker_plugin\" parameter was deprecated and will be removed soon. Use "
+      "\"progress_checker_plugins\" instead to specify a list of plugins");
+  } catch (const std::exception &) {
+    // This is normal situation: progress_checker_plugin parameter should not being declared
   }
-
+   if (progress_checker_ids_ == default_progress_checker_ids_) {
+    for (size_t i = 0; i < default_progress_checker_ids_.size(); ++i) {
+      nav2_util::declare_parameter_if_not_declared(
+        node, default_progress_checker_ids_[i] + ".plugin",
+        rclcpp::ParameterValue(default_progress_checker_types_[i]));
+    }
+  }
   RCLCPP_INFO(get_logger(), "getting goal checker plugins..");
   get_parameter("goal_checker_plugins", goal_checker_ids_);
   if (goal_checker_ids_ == default_goal_checker_ids_) {
@@ -124,19 +138,32 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   costmap_ros_->on_configure(state);
 
-  try {
-    progress_checker_type_ = nav2_util::get_plugin_type_param(node, progress_checker_id_);
-    progress_checker_ = progress_checker_loader_.createUniqueInstance(progress_checker_type_);
-    RCLCPP_INFO(
-      get_logger(), "Created progress_checker : %s of type %s",
-      progress_checker_id_.c_str(), progress_checker_type_.c_str());
-    progress_checker_->initialize(node, progress_checker_id_);
-  } catch (const pluginlib::PluginlibException & ex) {
-    RCLCPP_FATAL(
-      get_logger(),
-      "Failed to create progress_checker. Exception: %s", ex.what());
-    return nav2_util::CallbackReturn::FAILURE;
+   for (size_t i = 0; i != progress_checker_ids_.size(); i++) {
+    try {
+      progress_checker_types_[i] = nav2_util::get_plugin_type_param(
+        node, progress_checker_ids_[i]);
+      nav2_core::ProgressChecker::Ptr progress_checker =
+        progress_checker_loader_.createUniqueInstance(progress_checker_types_[i]);
+      RCLCPP_INFO(
+        get_logger(), "Created progress_checker : %s of type %s",
+        progress_checker_ids_[i].c_str(), progress_checker_types_[i].c_str());
+      progress_checker->initialize(node, progress_checker_ids_[i]);
+      progress_checkers_.insert({progress_checker_ids_[i], progress_checker});
+    } catch (const pluginlib::PluginlibException & ex) {
+      RCLCPP_FATAL(
+        get_logger(),
+        "Failed to create progress_checker. Exception: %s", ex.what());
+      return nav2_util::CallbackReturn::FAILURE;
+    }
   }
+
+  for (size_t i = 0; i != progress_checker_ids_.size(); i++) {
+    progress_checker_ids_concat_ += progress_checker_ids_[i] + std::string(" ");
+  }
+
+  RCLCPP_INFO(
+    get_logger(),
+    "Controller Server has %s progress checkers available.", progress_checker_ids_concat_.c_str());
 
   for (size_t i = 0; i != goal_checker_ids_.size(); i++) {
     try {
@@ -271,6 +298,7 @@ ControllerServer::on_cleanup(const rclcpp_lifecycle::State & state)
   controllers_.clear();
 
   goal_checkers_.clear();
+  progress_checkers_.clear();
   costmap_ros_->on_cleanup(state);
 
   // Release any allocated resources
@@ -341,6 +369,32 @@ bool ControllerServer::findGoalCheckerId(
   return true;
 }
 
+bool ControllerServer::findProgressCheckerId(
+  const std::string & c_name,
+  std::string & current_progress_checker)
+{
+  if (progress_checkers_.find(c_name) == progress_checkers_.end()) {
+    if (progress_checkers_.size() == 1 && c_name.empty()) {
+      RCLCPP_WARN_ONCE(
+        get_logger(), "No progress checker was specified in parameter 'current_progress_checker'."
+        " Server will use only plugin loaded %s. "
+        "This warning will appear once.", progress_checker_ids_concat_.c_str());
+      current_progress_checker = progress_checkers_.begin()->first;
+    } else {
+      RCLCPP_ERROR(
+        get_logger(), "FollowPath called with progress_checker name %s in parameter"
+        " 'current_progress_checker', which does not exist. Available progress checkers are: %s.",
+        c_name.c_str(), progress_checker_ids_concat_.c_str());
+      return false;
+    }
+  } else {
+    RCLCPP_DEBUG(get_logger(), "Selected progress checker: %s.", c_name.c_str());
+    current_progress_checker = c_name;
+  }
+
+  return true;
+}
+
 void ControllerServer::computeControl()
 {
   std::lock_guard<std::mutex> lock(dynamic_params_lock_);
@@ -366,8 +420,16 @@ void ControllerServer::computeControl()
       return;
     }
 
+    std::string pc_name = action_server_->get_current_goal()->progress_checker_id;
+    std::string current_progress_checker;
+    if (findProgressCheckerId(pc_name, current_progress_checker)) {
+      current_progress_checker_ = current_progress_checker;
+    } else {
+      throw nav2_core::ControllerException("Failed to find progress checker name: " + pc_name);
+    }
+
     setPlannerPath(action_server_->get_current_goal()->path);
-    progress_checker_->reset();
+    progress_checkers_[current_progress_checker_]->reset();
 
     last_valid_cmd_time_ = now();
     rclcpp::WallRate loop_rate(controller_frequency_);
@@ -449,8 +511,8 @@ void ControllerServer::computeAndPublishVelocity()
     throw nav2_core::PlannerException("Failed to obtain robot pose");
   }
 
-  if (!progress_checker_->check(pose)) {
-    throw nav2_core::PlannerException("Failed to make progress");
+ if (!progress_checkers_[current_progress_checker_]->check(pose)) {
+    throw nav2_core::FailedToMakeProgress("Failed to make progress");
   }
 
   nav_2d_msgs::msg::Twist2D twist = getThresholdedTwist(odom_sub_->getTwist());
@@ -525,6 +587,22 @@ void ControllerServer::updateGlobalPath()
       RCLCPP_INFO(
         get_logger(), "Terminating action, invalid controller %s requested.",
         goal->controller_id.c_str());
+      action_server_->terminate_current();
+      return;
+    }
+    std::string current_progress_checker;
+    if (findProgressCheckerId(goal->progress_checker_id, current_progress_checker)) {
+      if (current_progress_checker_ != current_progress_checker) {
+        RCLCPP_INFO(
+          get_logger(), "Change of progress checker %s requested, resetting it",
+          goal->progress_checker_id.c_str());
+        current_progress_checker_ = current_progress_checker;
+        progress_checkers_[current_progress_checker_]->reset();
+      }
+    } else {
+      RCLCPP_INFO(
+        get_logger(), "Terminating action, invalid progress checker %s requested.",
+        goal->progress_checker_id.c_str());
       action_server_->terminate_current();
       return;
     }
