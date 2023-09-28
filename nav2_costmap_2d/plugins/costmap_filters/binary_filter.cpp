@@ -161,7 +161,7 @@ void BinaryFilter::maskCallback(
     filter_mask_.reset();
   }
 
-  filter_mask_ = std::make_shared<nav_msgs::msg::OccupancyGrid>(*msg);
+  std::atomic_store(&filter_mask_, std::make_shared<nav_msgs::msg::OccupancyGrid>(*msg));
 }
 
 void BinaryFilter::process(
@@ -171,7 +171,9 @@ void BinaryFilter::process(
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
-  if (!filter_mask_) {
+  auto filter_mask_in = std::atomic_load(&filter_mask_);
+
+  if (!filter_mask_in) {
     // Show warning message every 2 seconds to not litter an output
     RCLCPP_WARN_THROTTLE(
       logger_, *(clock_), 2000,
@@ -182,13 +184,13 @@ void BinaryFilter::process(
   geometry_msgs::msg::Pose2D mask_pose;  // robot coordinates in mask frame
 
   // Transforming robot pose from current layer frame to mask frame
-  if (!transformPose(global_frame_, pose, filter_mask_->header.frame_id, mask_pose)) {
+  if (!transformPose(global_frame_, pose, filter_mask_in->header.frame_id, mask_pose)) {
     return;
   }
 
   // Converting mask_pose robot position to filter_mask_ indexes (mask_robot_i, mask_robot_j)
   unsigned int mask_robot_i, mask_robot_j;
-  if (!worldToMask(filter_mask_, mask_pose.x, mask_pose.y, mask_robot_i, mask_robot_j)) {
+  if (!worldToMask(filter_mask_in, mask_pose.x, mask_pose.y, mask_robot_i, mask_robot_j)) {
     // Robot went out of mask range. Set "false" state by-default
     RCLCPP_WARN(
       logger_,
@@ -198,7 +200,7 @@ void BinaryFilter::process(
   }
 
   // Getting filter_mask data from cell where the robot placed
-  int8_t mask_data = getMaskData(filter_mask_, mask_robot_i, mask_robot_j);
+  int8_t mask_data = getMaskData(filter_mask_in, mask_robot_i, mask_robot_j);
   if (mask_data == nav2_util::OCC_GRID_UNKNOWN) {
     // Corresponding filter mask cell is unknown.
     // Warn and do nothing.

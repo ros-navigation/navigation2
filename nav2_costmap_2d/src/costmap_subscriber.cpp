@@ -88,7 +88,7 @@ void CostmapSubscriber::toCostmap2D()
 
 void CostmapSubscriber::costmapCallback(const nav2_msgs::msg::Costmap::SharedPtr msg)
 {
-  std::atomic_store(&costmap_msg_, msg);
+  std::atomic_store(&costmap_msg_, std::make_shared<nav2_msgs::msg::Costmap>(*msg));
   if (!costmap_received_) {
     costmap_received_ = true;
   }

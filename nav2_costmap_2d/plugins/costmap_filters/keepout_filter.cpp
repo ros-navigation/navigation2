@@ -143,7 +143,7 @@ void KeepoutFilter::maskCallback(
   }
 
   // Store filter_mask_
-  filter_mask_ = std::make_shared<nav_msgs::msg::OccupancyGrid>(*msg);
+  std::atomic_store(&filter_mask_, std::make_shared<nav_msgs::msg::OccupancyGrid>(*msg));
 }
 
 void KeepoutFilter::process(
@@ -153,7 +153,9 @@ void KeepoutFilter::process(
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
-  if (!filter_mask_) {
+  auto filter_mask_in = std::atomic_load(&filter_mask_);
+
+  if (!filter_mask_in) {
     // Show warning message every 2 seconds to not litter an output
     RCLCPP_WARN_THROTTLE(
       logger_, *(clock_), 2000,
@@ -166,7 +168,7 @@ void KeepoutFilter::process(
   int mg_min_x, mg_min_y;  // masger_grid indexes of bottom-left window corner
   int mg_max_x, mg_max_y;  // masger_grid indexes of top-right window corner
 
-  const std::string mask_frame = filter_mask_->header.frame_id;
+  const std::string mask_frame = filter_mask_in->header.frame_id;
 
   if (mask_frame != global_frame_) {
     // Filter mask and current layer are in different frames:
@@ -215,9 +217,9 @@ void KeepoutFilter::process(
 
     // Calculating bounds corresponding to bottom-left overlapping (1) corner
     // filter_mask_ -> master_grid indexes conversion
-    const double half_cell_size = 0.5 * filter_mask_->info.resolution;
-    wx = filter_mask_->info.origin.position.x + half_cell_size;
-    wy = filter_mask_->info.origin.position.y + half_cell_size;
+    const double half_cell_size = 0.5 * filter_mask_in->info.resolution;
+    wx = filter_mask_in->info.origin.position.x + half_cell_size;
+    wy = filter_mask_in->info.origin.position.y + half_cell_size;
     master_grid.worldToMapNoBounds(wx, wy, mg_min_x, mg_min_y);
     // Calculation of (1) corner bounds
     if (mg_min_x >= max_i || mg_min_y >= max_j) {
@@ -229,10 +231,10 @@ void KeepoutFilter::process(
 
     // Calculating bounds corresponding to top-right window (2) corner
     // filter_mask_ -> master_grid intexes conversion
-    wx = filter_mask_->info.origin.position.x +
-      filter_mask_->info.width * filter_mask_->info.resolution + half_cell_size;
-    wy = filter_mask_->info.origin.position.y +
-      filter_mask_->info.height * filter_mask_->info.resolution + half_cell_size;
+    wx = filter_mask_in->info.origin.position.x +
+      filter_mask_in->info.width * filter_mask_in->info.resolution + half_cell_size;
+    wy = filter_mask_in->info.origin.position.y +
+      filter_mask_in->info.height * filter_mask_in->info.resolution + half_cell_size;
     master_grid.worldToMapNoBounds(wx, wy, mg_max_x, mg_max_y);
     // Calculation of (2) corner bounds
     if (mg_max_x <= min_i || mg_max_y <= min_j) {
@@ -278,8 +280,8 @@ void KeepoutFilter::process(
         msk_wy = gl_wy;
       }
       // Get mask coordinates corresponding to (i, j) point at filter_mask_
-      if (worldToMask(filter_mask_, msk_wx, msk_wy, mx, my)) {
-        data = getMaskCost(filter_mask_, mx, my);
+      if (worldToMask(filter_mask_in, msk_wx, msk_wy, mx, my)) {
+        data = getMaskCost(filter_mask_in, mx, my);
         // Update if mask_ data is valid and greater than existing master_grid's one
         if (data == NO_INFORMATION) {
           continue;
