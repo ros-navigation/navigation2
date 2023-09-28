@@ -990,9 +990,10 @@ private:
     const IsBg & is_background) const
   {
     // Creates an image labels in which each obstacles group is labeled with a unique code
-    auto components = connectedComponents<connectivity>(image, buffer, label_trees, is_background);
-    const Label groups_count = components.second;
-    const Image<Label> & labels = components.first;
+    Label groups_count;
+    auto labels = connectedComponents<connectivity>(
+      image, buffer, label_trees,
+      is_background, groups_count);
 
     // Calculates the size of each group.
     // Group size is equal to the number of pixels with the same label
@@ -1033,24 +1034,27 @@ private:
 }  // namespace imgproc_impl
 
 template<ConnectivityType connectivity, class Label, class IsBg>
-std::pair<Image<Label>, Label> connectedComponents(
+Image<Label> connectedComponents(
   const Image<uint8_t> & image, MemoryBuffer & buffer,
-  imgproc_impl::EquivalenceLabelTrees<Label> & label_trees, const IsBg & is_background)
+  imgproc_impl::EquivalenceLabelTrees<Label> & label_trees,
+  const IsBg & is_background,
+  Label & total_labels)
 {
   using namespace imgproc_impl;  // NOLINT
   const size_t pixels = image.rows() * image.columns();
 
   if (pixels == 0) {
-    return {Image<Label>{}, 0};
+    total_labels = 0;
+    return Image<Label>{};
   }
 
   Label * image_buffer = buffer.get<Label>(pixels);
   Image<Label> labels(image.rows(), image.columns(), image_buffer, image.columns());
   label_trees.reset(image.rows(), image.columns(), connectivity);
-  const Label total_labels = connectedComponentsImpl<connectivity>(
+  total_labels = connectedComponentsImpl<connectivity>(
     image, labels, label_trees,
     is_background);
-  return std::make_pair(labels, total_labels);
+  return labels;
 }
 
 }  // namespace nav2_costmap_2d

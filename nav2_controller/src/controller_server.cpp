@@ -603,7 +603,7 @@ void ControllerServer::computeAndPublishVelocity()
     // other types will not be resolved with more attempts
   } catch (nav2_core::NoValidControl & e) {
     if (failure_tolerance_ > 0 || failure_tolerance_ == -1.0) {
-      RCLCPP_WARN(this->get_logger(), e.what());
+      RCLCPP_WARN(this->get_logger(), "%s", e.what());
       cmd_vel_2d.twist.angular.x = 0;
       cmd_vel_2d.twist.angular.y = 0;
       cmd_vel_2d.twist.angular.z = 0;

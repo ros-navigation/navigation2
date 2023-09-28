@@ -188,7 +188,7 @@ public:
    */
   virtual BT::NodeStatus check_future()
   {
-    auto elapsed = (node_->now() - sent_time_).to_chrono<std::chrono::milliseconds>();
+    auto elapsed = (node_->now() - sent_time_).template to_chrono<std::chrono::milliseconds>();
     auto remaining = server_timeout_ - elapsed;
 
     if (remaining > std::chrono::milliseconds(0)) {
@@ -204,7 +204,7 @@ public:
 
       if (rc == rclcpp::FutureReturnCode::TIMEOUT) {
         on_wait_for_result();
-        elapsed = (node_->now() - sent_time_).to_chrono<std::chrono::milliseconds>();
+        elapsed = (node_->now() - sent_time_).template to_chrono<std::chrono::milliseconds>();
         if (elapsed < server_timeout_) {
           return BT::NodeStatus::RUNNING;
         }

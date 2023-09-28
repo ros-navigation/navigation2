@@ -31,7 +31,8 @@
 
 using namespace std::chrono_literals;  // NOLINT
 
-void waitSome(const std::chrono::nanoseconds & duration, auto & node)
+template<typename TNode>
+void waitSome(const std::chrono::nanoseconds & duration, TNode & node)
 {
   rclcpp::Time start_time = node->now();
   while (rclcpp::ok() && node->now() - start_time <= rclcpp::Duration(duration)) {
@@ -86,8 +87,9 @@ void printMap(const nav2_costmap_2d::Costmap2D & costmap)
  * @param trajectory trajectory container (xt::tensor) to be printed.
  * @param goal_point goal point to be printed.
  */
+template<typename TTrajectory>
 void printMapWithTrajectoryAndGoal(
-  nav2_costmap_2d::Costmap2D & costmap, const auto & trajectory,
+  nav2_costmap_2d::Costmap2D & costmap, const TTrajectory & trajectory,
   const geometry_msgs::msg::PoseStamped & goal)
 {
   const unsigned int trajectory_cost = 1;
@@ -174,7 +176,8 @@ void addObstacle(nav2_costmap_2d::Costmap2D * costmap, TestObstaclesSettings s)
  * @return true - if the trajectory crosses an obstacle on the map, false - if
  * not
  */
-bool inCollision(const auto & trajectory, const nav2_costmap_2d::Costmap2D & costmap)
+template<typename TTrajectory>
+bool inCollision(const TTrajectory & trajectory, const nav2_costmap_2d::Costmap2D & costmap)
 {
   unsigned int point_mx = 0;
   unsigned int point_my = 0;
@@ -198,8 +201,9 @@ unsigned char getCost(const nav2_costmap_2d::Costmap2D & costmap, double x, doub
   return costmap.getCost(point_mx, point_my);
 }
 
+template<typename TTrajectory>
 bool isGoalReached(
-  const auto & trajectory, const nav2_costmap_2d::Costmap2D & costmap,
+  const TTrajectory & trajectory, const nav2_costmap_2d::Costmap2D & costmap,
   const geometry_msgs::msg::PoseStamped & goal)
 {
   unsigned int trajectory_j = 0;

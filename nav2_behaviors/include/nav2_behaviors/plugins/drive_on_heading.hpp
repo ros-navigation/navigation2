@@ -93,7 +93,7 @@ public:
    * @brief Loop function to run behavior
    * @return Status of behavior
    */
-  ResultStatus onCycleUpdate()
+  ResultStatus onCycleUpdate() override
   {
     rclcpp::Duration time_remaining = end_time_ - this->steady_clock_.now();
     if (time_remaining.seconds() < 0.0 && command_time_allowance_.seconds() > 0.0) {

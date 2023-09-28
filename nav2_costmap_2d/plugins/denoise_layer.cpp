@@ -122,7 +122,7 @@ DenoiseLayer::updateCosts(
   try {
     denoise(roi_image);
   } catch (std::exception & ex) {
-    RCLCPP_ERROR(logger_, (std::string("Inner error: ") + ex.what()).c_str());
+    RCLCPP_ERROR(logger_, "%s", (std::string("Inner error: ") + ex.what()).c_str());
   }
 
   current_ = true;

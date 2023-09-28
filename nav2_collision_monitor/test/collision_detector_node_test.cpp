@@ -46,7 +46,6 @@ static constexpr double EPSILON = 1e-5;
 static const char BASE_FRAME_ID[]{"base_link"};
 static const char SOURCE_FRAME_ID[]{"base_source"};
 static const char ODOM_FRAME_ID[]{"odom"};
-static const char FOOTPRINT_TOPIC[]{"footprint"};
 static const char SCAN_NAME[]{"Scan"};
 static const char POINTCLOUD_NAME[]{"PointCloud"};
 static const char RANGE_NAME[]{"Range"};

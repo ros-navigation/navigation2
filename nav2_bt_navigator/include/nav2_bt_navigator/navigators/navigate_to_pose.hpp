@@ -72,7 +72,7 @@ public:
    * @brief Get action name for this navigator
    * @return string Name of action server
    */
-  std::string getName() {return std::string("navigate_to_pose");}
+  std::string getName() override {return std::string("navigate_to_pose");}
 
   /**
    * @brief Get navigator's default BT

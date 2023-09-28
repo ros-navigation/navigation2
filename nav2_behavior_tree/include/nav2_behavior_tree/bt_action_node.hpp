@@ -212,7 +212,8 @@ public:
       // if new goal was sent and action server has not yet responded
       // check the future goal handle
       if (future_goal_handle_) {
-        auto elapsed = (node_->now() - time_goal_sent_).to_chrono<std::chrono::milliseconds>();
+        auto elapsed =
+          (node_->now() - time_goal_sent_).template to_chrono<std::chrono::milliseconds>();
         if (!is_future_goal_handle_complete(elapsed)) {
           // return RUNNING if there is still some time before timeout happens
           if (elapsed < server_timeout_) {
@@ -243,7 +244,8 @@ public:
         {
           goal_updated_ = false;
           send_new_goal();
-          auto elapsed = (node_->now() - time_goal_sent_).to_chrono<std::chrono::milliseconds>();
+          auto elapsed =
+            (node_->now() - time_goal_sent_).template to_chrono<std::chrono::milliseconds>();
           if (!is_future_goal_handle_complete(elapsed)) {
             if (elapsed < server_timeout_) {
               return BT::NodeStatus::RUNNING;
