@@ -212,9 +212,6 @@ TEST(SmootherTest, test_sg_smoother_noisey_path)
       noisey_path_refined.poses[i].pose.position.x,
       noisey_path_refined.poses[i + 1].pose.position.y -
       noisey_path_refined.poses[i].pose.position.y);
-    // std::hypot(
-    //   noisey_path.poses[i + 1].pose.position.x - noisey_path_baseline.poses[i].pose.position.x,
-    //   noisey_path.poses[i + 1].pose.position.y - noisey_path_baseline.poses[i].pose.position.y);
   }
 
   EXPECT_LT(length, base_length);
