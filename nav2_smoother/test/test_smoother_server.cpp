@@ -147,7 +147,7 @@ public:
 
   void setCostmap(nav2_msgs::msg::Costmap::SharedPtr msg)
   {
-    costmap_msg_ = msg;
+    costmap_msg_ = std::make_shared<nav2_msgs::msg::Costmap>(*msg);
     costmap_received_ = true;
   }
 };

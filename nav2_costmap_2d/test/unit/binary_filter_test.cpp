@@ -117,7 +117,7 @@ public:
   void binaryStateCallback(
     const std_msgs::msg::Bool::SharedPtr msg)
   {
-    msg_ = msg;
+    msg_ = std::make_shared<std_msgs::msg::Bool>(*msg);
     binary_state_updated_ = true;
   }
 

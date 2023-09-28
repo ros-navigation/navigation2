@@ -127,7 +127,7 @@ public:
 
   void polygonCallback(geometry_msgs::msg::PolygonStamped::SharedPtr msg)
   {
-    polygon_received_ = msg;
+    polygon_received_ = std::make_shared<geometry_msgs::msg::PolygonStamped>(*msg);
   }
 
   geometry_msgs::msg::PolygonStamped::SharedPtr waitPolygonReceived(

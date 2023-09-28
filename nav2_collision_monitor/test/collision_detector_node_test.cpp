@@ -199,7 +199,7 @@ bool Tester::waitState(const std::chrono::nanoseconds & timeout)
 
 void Tester::stateCallback(nav2_msgs::msg::CollisionDetectorState::SharedPtr msg)
 {
-  state_msg_ = msg;
+  state_msg_ = std::make_shared<nav2_msgs::msg::CollisionDetectorState>(*msg);
 }
 
 void Tester::setCommonParameters()
