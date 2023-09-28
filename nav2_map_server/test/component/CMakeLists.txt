@@ -8,7 +8,6 @@ ament_add_gtest_executable(test_map_server_node
 ament_target_dependencies(test_map_server_node rclcpp nav_msgs)
 target_link_libraries(test_map_server_node
   ${library_name}
-  stdc++fs
 )
 
 ament_add_test(test_map_server_node
@@ -30,7 +29,6 @@ ament_add_gtest_executable(test_map_saver_node
 ament_target_dependencies(test_map_saver_node rclcpp nav_msgs)
 target_link_libraries(test_map_saver_node
   ${library_name}
-  stdc++fs
 )
 
 add_executable(test_map_saver_publisher
@@ -40,7 +38,6 @@ add_executable(test_map_saver_publisher
 
 target_link_libraries(test_map_saver_publisher
   ${map_io_library_name}
-  stdc++fs
 )
 
 ament_add_test(test_map_saver_node
