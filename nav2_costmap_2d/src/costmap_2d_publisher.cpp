@@ -198,6 +198,7 @@ std::unique_ptr<nav2_msgs::msg::CostmapUpdate> Costmap2DPublisher::get_raw_costm
   unsigned int i = 0;
   for (unsigned int y = y0_; y < yn_; y++) {
     for (unsigned int x = x0_; x < xn_; x++) {
+      //todo copy from array instead of calling method
       msg->data[i++] = costmap_->getCost(x, y);
     }
   }
