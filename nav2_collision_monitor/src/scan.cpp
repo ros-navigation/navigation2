@@ -70,10 +70,11 @@ void Scan::getData(
 {
   // Ignore data from the source if it is not being published yet or
   // not being published for a long time
-  if (data_ == nullptr) {
+  auto data_in = std::atomic_load(&data_);
+  if (data_in == nullptr) {
     return;
   }
-  if (!sourceValid(data_->header.stamp, curr_time)) {
+  if (!sourceValid(data_in->header.stamp, curr_time)) {
     return;
   }
 
@@ -83,7 +84,7 @@ void Scan::getData(
     // to the base frame and current time
     if (
       !nav2_util::getTransform(
-        data_->header.frame_id, data_->header.stamp,
+        data_in->header.frame_id, data_in->header.stamp,
         base_frame_id_, curr_time, global_frame_id_,
         transform_tolerance_, tf_buffer_, tf_transform))
     {
@@ -95,7 +96,7 @@ void Scan::getData(
     // frames.
     if (
       !nav2_util::getTransform(
-        data_->header.frame_id, base_frame_id_,
+        data_in->header.frame_id, base_frame_id_,
         transform_tolerance_, tf_buffer_, tf_transform))
     {
       return;
@@ -103,26 +104,27 @@ void Scan::getData(
   }
 
   // Calculate poses and refill data array
-  float angle = data_->angle_min;
-  for (size_t i = 0; i < data_->ranges.size(); i++) {
-    if (data_->ranges[i] >= data_->range_min && data_->ranges[i] <= data_->range_max) {
+  float angle = data_in->angle_min;
+  for (size_t i = 0; i < data_in->ranges.size(); i++) {
+    if (data_in->ranges[i] >= data_in->range_min && data_in->ranges[i] <= data_in->range_max) {
       // Transform point coordinates from source frame -> to base frame
       tf2::Vector3 p_v3_s(
-        data_->ranges[i] * std::cos(angle),
-        data_->ranges[i] * std::sin(angle),
+        data_in->ranges[i] * std::cos(angle),
+        data_in->ranges[i] * std::sin(angle),
         0.0);
       tf2::Vector3 p_v3_b = tf_transform * p_v3_s;
 
       // Refill data array
       data.push_back({p_v3_b.x(), p_v3_b.y()});
     }
-    angle += data_->angle_increment;
+    angle += data_in->angle_increment;
   }
 }
 
 void Scan::dataCallback(sensor_msgs::msg::LaserScan::ConstSharedPtr msg)
 {
-  data_ = msg;
+  sensor_msgs::msg::LaserScan::ConstSharedPtr msg_copy = std::make_shared<sensor_msgs::msg::LaserScan>(*msg);
+  std::atomic_store(&data_, msg_copy);
 }
 
 }  // namespace nav2_collision_monitor
