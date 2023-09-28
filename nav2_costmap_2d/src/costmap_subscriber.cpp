@@ -96,7 +96,7 @@ void CostmapSubscriber::costmapUpdateCallback(const nav2_msgs::msg::CostmapUpdat
     }
 
     std::lock_guard<Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
-    if(update_msg->x < 0 || update_msg->y < 0 || costmap_->getSizeInCellsX() < update_msg->x + update_msg->size_x ||
+    if(costmap_->getSizeInCellsX() < update_msg->x + update_msg->size_x ||
       costmap_->getSizeInCellsY() < update_msg->y + update_msg->size_y)
       {
         // todo : log error + error when frames dont match
