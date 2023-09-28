@@ -27,6 +27,7 @@ CostmapSubscriber::CostmapSubscriber(
 : topic_name_(topic_name)
 {
   auto node = parent.lock();
+  logger_ = node->get_logger();
   costmap_sub_ = node->create_subscription<nav2_msgs::msg::Costmap>(
     topic_name_,
     rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
@@ -45,6 +46,7 @@ CostmapSubscriber::CostmapSubscriber(
 : topic_name_(topic_name)
 {
   auto node = parent.lock();
+  logger_ = node->get_logger();
   costmap_sub_ = node->create_subscription<nav2_msgs::msg::Costmap>(
     topic_name_,
     rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
@@ -96,22 +98,35 @@ void CostmapSubscriber::costmapUpdateCallback(const nav2_msgs::msg::CostmapUpdat
     }
 
     std::lock_guard<Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
-    if(costmap_->getSizeInCellsX() < update_msg->x + update_msg->size_x ||
-      costmap_->getSizeInCellsY() < update_msg->y + update_msg->size_y)
+
+    auto map_cell_size_x = costmap_->getSizeInCellsX();
+    auto map_call_size_y = costmap_->getSizeInCellsY();
+    
+    if(map_cell_size_x < update_msg->x + update_msg->size_x ||
+      map_call_size_y < update_msg->y + update_msg->size_y)
       {
-        // todo : log error + error when frames dont match
+        RCLCPP_WARN(logger_, "Update area outside of original map area. Costmap bounds: %d X %d, "
+      "Update origin: %d, %d  bounds: %d X %d", map_cell_size_x, map_call_size_y, 
+      update_msg->x, update_msg->y, update_msg->size_x, update_msg->size_y);
         return;
       }
-    // for (size_t y = 0; y < update_msg->height; y++)
-    // {
-    //   std::copy_n(v_in.begin(), 100, v_out.begin());
-    //   memcpy(&current_map_.data[(update->y + y) * current_map_.info.width + update->x],
-    //         &update->data[y * update->width], update->width);
-    // }
+
+      // todo: check if frame is the same
+
+
+    auto master_array = costmap_->getCharMap();
+    // copy update msg row-wise
+    for (size_t y = 0; y<update_msg->size_y ; ++y)
+    {
+      auto starting_index_of_row_update_in_costmap = (y + update_msg->y)* map_cell_size_x + update_msg->x;
+      
+      std::copy_n(update_msg->data.begin()+(y * update_msg->size_x),
+        update_msg->size_x ,  &master_array[starting_index_of_row_update_in_costmap]);
+    }
   }
   else
   {
-    // todo: log debug
+      RCLCPP_WARN(logger_, "No costmap received.");
   }
 }
 
