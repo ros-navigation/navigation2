@@ -48,8 +48,8 @@ void calculateMinAndMaxDistances(
   double max_dist = 0.0;
 
   if (footprint.size() <= 2) {
-    min_dist_out = 0.0;
-    max_dist_out = 0.0;
+    min_dist_out = min_dist;
+    max_dist_out = max_dist;
     return;
   }
 
