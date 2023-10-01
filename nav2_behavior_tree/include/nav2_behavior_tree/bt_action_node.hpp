@@ -162,7 +162,7 @@ public:
   }
 
   /**
-   * @brief Function to perform some user-defined operation whe the action is aborted.
+   * @brief Function to perform some user-defined operation when the action is aborted.
    * @return BT::NodeStatus Returns FAILURE by default, user may override return another value
    */
   virtual BT::NodeStatus on_aborted()
