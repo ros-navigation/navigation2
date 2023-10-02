@@ -151,6 +151,13 @@ public:
     return BT::NodeStatus::SUCCESS;
   }
 
+  BT::NodeStatus on_cancelled() override
+  {
+    config().blackboard->set<std::vector<int>>("sequence", result_.result->sequence);
+    config().blackboard->set<bool>("on_cancelled_triggered", true);
+    return BT::NodeStatus::SUCCESS;
+  }
+
   static BT::PortsList providedPorts()
   {
     return providedBasicPorts({BT::InputPort<int>("order", "Fibonacci order")});
