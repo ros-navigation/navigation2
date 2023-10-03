@@ -105,13 +105,13 @@ BehaviorServer::loadBehaviorPlugins()
   auto node = shared_from_this();
 
   for (size_t i = 0; i != behavior_ids_.size(); i++) {
-    behavior_types_[i] = nav2_util::get_plugin_type_param(node, behavior_ids_[i]);
     try {
+      behavior_types_[i] = nav2_util::get_plugin_type_param(node, behavior_ids_[i]);
       RCLCPP_INFO(
         get_logger(), "Creating behavior plugin %s of type %s",
         behavior_ids_[i].c_str(), behavior_types_[i].c_str());
       behaviors_.push_back(plugin_loader_.createUniqueInstance(behavior_types_[i]));
-    } catch (const pluginlib::PluginlibException & ex) {
+    } catch (const std::exception & ex) {
       RCLCPP_FATAL(
         get_logger(), "Failed to create behavior %s of type %s."
         " Exception: %s", behavior_ids_[i].c_str(), behavior_types_[i].c_str(),

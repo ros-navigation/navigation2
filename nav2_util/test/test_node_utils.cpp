@@ -92,7 +92,7 @@ TEST(GetPluginTypeParam, GetPluginTypeParam)
   auto node = std::make_shared<rclcpp::Node>("test_node");
   node->declare_parameter("Foo.plugin", "bar");
   ASSERT_EQ(get_plugin_type_param(node, "Foo"), "bar");
-  ASSERT_EXIT(get_plugin_type_param(node, "Waldo"), ::testing::ExitedWithCode(255), ".*");
+  EXPECT_THROW(get_plugin_type_param(node, "Waldo"), std::runtime_error);
 }
 
 TEST(TestParamCopying, TestParamCopying)

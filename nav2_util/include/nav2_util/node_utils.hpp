@@ -142,11 +142,11 @@ std::string get_plugin_type_param(
     if (!node->get_parameter(plugin_name + ".plugin", plugin_type)) {
       RCLCPP_FATAL(
         node->get_logger(), "Can not get 'plugin' param value for %s", plugin_name.c_str());
-      exit(-1);
+      throw std::runtime_error("No 'plugin' param for param ns!");
     }
   } catch (rclcpp::exceptions::ParameterUninitializedException & ex) {
     RCLCPP_FATAL(node->get_logger(), "'plugin' param not defined for %s", plugin_name.c_str());
-    exit(-1);
+    throw std::runtime_error("No 'plugin' param for param ns!");
   }
 
   return plugin_type;

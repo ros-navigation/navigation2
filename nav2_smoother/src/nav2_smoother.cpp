@@ -142,7 +142,7 @@ bool SmootherServer::loadSmootherPlugins()
         node, smoother_ids_[i], tf_, costmap_sub_,
         footprint_sub_);
       smoothers_.insert({smoother_ids_[i], smoother});
-    } catch (const pluginlib::PluginlibException & ex) {
+    } catch (const std::exception & ex) {
       RCLCPP_FATAL(
         get_logger(), "Failed to create smoother. Exception: %s",
         ex.what());

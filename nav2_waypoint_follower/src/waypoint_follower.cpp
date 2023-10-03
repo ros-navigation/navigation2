@@ -120,10 +120,10 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & /*state*/)
       get_logger(), "Created waypoint_task_executor : %s of type %s",
       waypoint_task_executor_id_.c_str(), waypoint_task_executor_type_.c_str());
     waypoint_task_executor_->initialize(node, waypoint_task_executor_id_);
-  } catch (const pluginlib::PluginlibException & ex) {
+  } catch (const std::exception & e) {
     RCLCPP_FATAL(
       get_logger(),
-      "Failed to create waypoint_task_executor. Exception: %s", ex.what());
+      "Failed to create waypoint_task_executor. Exception: %s", e.what());
   }
 
   return nav2_util::CallbackReturn::SUCCESS;

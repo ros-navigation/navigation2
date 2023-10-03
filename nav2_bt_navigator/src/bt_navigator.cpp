@@ -161,8 +161,8 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   // Load navigator plugins
   for (size_t i = 0; i != navigator_ids.size(); i++) {
-    std::string navigator_type = nav2_util::get_plugin_type_param(node, navigator_ids[i]);
     try {
+      std::string navigator_type = nav2_util::get_plugin_type_param(node, navigator_ids[i]);
       RCLCPP_INFO(
         get_logger(), "Creating navigator id %s of type %s",
         navigator_ids[i].c_str(), navigator_type.c_str());
@@ -173,11 +173,10 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
       {
         return nav2_util::CallbackReturn::FAILURE;
       }
-    } catch (const pluginlib::PluginlibException & ex) {
+    } catch (const std::exception & ex) {
       RCLCPP_FATAL(
-        get_logger(), "Failed to create navigator id %s of type %s."
-        " Exception: %s", navigator_ids[i].c_str(), navigator_type.c_str(),
-        ex.what());
+        get_logger(), "Failed to create navigator id %s."
+        " Exception: %s", navigator_ids[i].c_str(), ex.what());
       return nav2_util::CallbackReturn::FAILURE;
     }
   }

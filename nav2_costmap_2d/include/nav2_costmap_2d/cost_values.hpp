@@ -72,5 +72,5 @@ static constexpr unsigned char LETHAL_OBSTACLE = 254;
 static constexpr unsigned char INSCRIBED_INFLATED_OBSTACLE = 253;
 static constexpr unsigned char MAX_NON_OBSTACLE = 252;
 static constexpr unsigned char FREE_SPACE = 0;
-}
+}  // namespace nav2_costmap_2d
 #endif  // NAV2_COSTMAP_2D__COST_VALUES_HPP_
