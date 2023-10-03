@@ -110,7 +110,7 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
         planner_ids_[i].c_str(), planner_types_[i].c_str());
       planner->configure(node, planner_ids_[i], tf_, costmap_ros_);
       planners_.insert({planner_ids_[i], planner});
-    } catch (const pluginlib::PluginlibException & ex) {
+    } catch (const std::exception & ex) {
       RCLCPP_FATAL(
         get_logger(), "Failed to create global planner. Exception: %s",
         ex.what());
