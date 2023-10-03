@@ -123,7 +123,7 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & /*state*/)
   } catch (const std::exception & e) {
     RCLCPP_FATAL(
       get_logger(),
-      "Failed to create waypoint_task_executor. Exception: %s", ex.what());
+      "Failed to create waypoint_task_executor. Exception: %s", e.what());
   }
 
   return nav2_util::CallbackReturn::SUCCESS;
