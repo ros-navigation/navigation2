@@ -175,9 +175,8 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
       }
     } catch (const std::exception & ex) {
       RCLCPP_FATAL(
-        get_logger(), "Failed to create navigator id %s of type %s."
-        " Exception: %s", navigator_ids[i].c_str(), navigator_type.c_str(),
-        ex.what());
+        get_logger(), "Failed to create navigator id %s."
+        " Exception: %s", navigator_ids[i].c_str(), ex.what());
       return nav2_util::CallbackReturn::FAILURE;
     }
   }

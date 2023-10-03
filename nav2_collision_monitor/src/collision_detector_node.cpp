@@ -224,7 +224,6 @@ bool CollisionDetector::configurePolygons(
           polygon_name.c_str());
         return false;
       }
-
     }
   } catch (const std::exception & ex) {
     RCLCPP_ERROR(get_logger(), "Error while getting parameters: %s", ex.what());
