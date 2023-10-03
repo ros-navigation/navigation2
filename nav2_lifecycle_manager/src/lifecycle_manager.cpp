@@ -152,15 +152,31 @@ LifecycleManager::isActiveCallback(
 void
 LifecycleManager::CreateDiagnostic(diagnostic_updater::DiagnosticStatusWrapper & stat)
 {
-  if (state_of_managed_nodes_ == NodeState::ACTIVE || state_of_managed_nodes_ == NodeState::PAUSED) {
-    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "Managed nodes' status is OK");
-  } else if (state_of_managed_nodes_ == NodeState::UNKNOWN){
-    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::ERROR, "An error has occurred during node state transition");
-  } else if (state_of_managed_nodes_ == NodeState::UNCONFIGURED){
-    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::WARN, "Managed nodes have not been configured");
-  } else if (state_of_managed_nodes_ == NodeState::FINALIZED){
-    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::WARN, "Managed nodes have been shut down");
+  unsigned char error_level;
+  std::string message;
+  switch (state_of_managed_nodes_) {
+    case NodeState::ACTIVE:
+      error_level = diagnostic_msgs::msg::DiagnosticStatus::OK;
+      message = "Managed nodes are active";
+      break;
+    case NodeState::PAUSED:
+      error_level = diagnostic_msgs::msg::DiagnosticStatus::OK;
+      message = "Managed nodes are paused";
+      break;
+    case NodeState::UNCONFIGURED:
+      error_level = diagnostic_msgs::msg::DiagnosticStatus::OK;
+      message = "Managed nodes are unconfigured";
+      break;
+    case NodeState::FINALIZED:
+      error_level = diagnostic_msgs::msg::DiagnosticStatus::WARN;
+      message = "Managed nodes have been shut down";
+      break;
+    case NodeState::UNKNOWN:
+      error_level = diagnostic_msgs::msg::DiagnosticStatus::ERROR;
+      message = "An error has occurred during a node state transition";
+      break;
   }
+  stat.summary(error_level, message);
 }
 
 void
