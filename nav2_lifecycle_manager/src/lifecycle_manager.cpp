@@ -143,7 +143,7 @@ LifecycleManager::managerCallback(
 inline bool
 LifecycleManager::isActive()
 {
-  return managed_nodes_state == NodeState::ACTIVE;
+  return managed_nodes_state_ == NodeState::ACTIVE;
 }
 
 void
