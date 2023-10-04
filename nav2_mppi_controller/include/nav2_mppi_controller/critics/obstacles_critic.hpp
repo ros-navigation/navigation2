@@ -54,7 +54,7 @@ protected:
     * @param cost Costmap cost
     * @return bool if in collision
     */
-  bool inCollision(float cost) const;
+  inline bool inCollision(float cost) const;
 
   /**
     * @brief cost at a robot pose
@@ -63,14 +63,14 @@ protected:
     * @param theta theta of pose
     * @return Collision information at pose
     */
-  CollisionCost costAtPose(float x, float y, float theta);
+  inline CollisionCost costAtPose(float x, float y, float theta);
 
   /**
     * @brief Distance to obstacle from cost
     * @param cost Costmap cost
     * @return float Distance to the obstacle represented by cost
     */
-  float distanceToObstacle(const CollisionCost & cost);
+  inline float distanceToObstacle(const CollisionCost & cost);
 
   /**
     * @brief Find the min cost of the inflation decay function for which the robot MAY be
@@ -79,14 +79,14 @@ protected:
     * @return double circumscribed cost, any higher than this and need to do full footprint collision checking
     * since some element of the robot could be in collision
     */
-  double findCircumscribedCost(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap);
+  float findCircumscribedCost(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap);
 
 protected:
   nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>
   collision_checker_{nullptr};
 
   bool consider_footprint_{true};
-  double collision_cost_{0};
+  float collision_cost_{0};
   float inflation_scale_factor_{0}, inflation_radius_{0};
 
   float possibly_inscribed_cost_;

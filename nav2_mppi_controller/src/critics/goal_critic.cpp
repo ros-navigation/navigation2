@@ -57,7 +57,7 @@ void GoalCritic::score(CriticData & data)
     xt::pow(traj_x - goal_x, 2) +
     xt::pow(traj_y - goal_y, 2));
 
-  data.costs += xt::pow(xt::mean(dists, {1}) * weight_, power_);
+  data.costs += xt::pow(xt::mean(dists, {1}, immediate) * weight_, power_);
 }
 
 }  // namespace mppi::critics
