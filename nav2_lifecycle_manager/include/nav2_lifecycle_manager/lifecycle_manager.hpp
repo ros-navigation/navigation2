@@ -44,7 +44,7 @@ enum NodeState
 {
   UNCONFIGURED,
   ACTIVE,
-  PAUSED,
+  INACTIVE,
   FINALIZED,
   UNKNOWN,
 };
@@ -212,6 +212,11 @@ protected:
    */
   void registerRclPreshutdownCallback();
 
+  /**
+   * @brief function to check if managed nodes are active
+   */
+  bool isActive();
+
   // Timer thread to look at bond connections
   rclcpp::TimerBase::SharedPtr init_timer_;
   rclcpp::TimerBase::SharedPtr bond_timer_;
@@ -236,8 +241,7 @@ protected:
   bool autostart_;
   bool attempt_respawn_reconnection_;
 
-  bool system_active_{false};
-  NodeState state_of_managed_nodes_{NodeState::UNCONFIGURED};
+  NodeState managed_nodes_state_{NodeState::UNCONFIGURED};
   diagnostic_updater::Updater diagnostics_updater_;
 
   rclcpp::Time bond_respawn_start_time_{0};
