@@ -119,7 +119,7 @@ class LatticeGenerator:
             A list of headings in radians
 
         """
-        max_val = int((((number_of_headings + 4) / 4) - 1) / 2)
+        max_val = int(number_of_headings / 8)
 
         outer_edge_x = []
         outer_edge_y = []
