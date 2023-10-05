@@ -360,34 +360,7 @@
     </sensor>
   </gazebo>
 
-  <!-- <ros2_control name="GazeboSimSystem" type="system">
-    <hardware>
-      <plugin>gz_ros2_control/GazeboSimSystem</plugin>
-    </hardware>
-    <joint name="wheel_left_joint">
-      <command_interface name="velocity"/>
-      <state_interface name="position"/>
-      <state_interface name="velocity"/>
-    </joint>
-    <joint name="wheel_right_joint">
-      <command_interface name="velocity"/>
-      <state_interface name="position"/>
-      <state_interface name="velocity"/>
-    </joint>
-  </ros2_control> -->
-
   <gazebo>
-    <!-- <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
-      <parameters>$(find nav2_bringup)/params/control.yaml</parameters>
-      <ros>
-        <remapping>~/odom:=odom</remapping>
-        <remapping>/tf:=tf</remapping>
-        <remapping>/tf_static:=tf_static</remapping>
-        <remapping>/diagnostics:=diagnostics</remapping>
-        <remapping>/diffdrive_controller/cmd_vel_unstamped:=cmd_vel</remapping>
-      </ros>
-    </plugin> -->
-
     <plugin
       filename="ignition-gazebo-diff-drive-system"
       name="gz::sim::systems::DiffDrive">
@@ -421,8 +394,8 @@
       <publish_nested_model_pose>true</publish_nested_model_pose>
       <static_publisher>true</static_publisher>
       <use_pose_vector_msg>true</use_pose_vector_msg>
-      <update_frequency>50</update_frequency>
-      <static_update_frequency>50</static_update_frequency>
+      <update_frequency>25</update_frequency>
+      <static_update_frequency>25</static_update_frequency>
     </plugin>
   </gazebo>
 
