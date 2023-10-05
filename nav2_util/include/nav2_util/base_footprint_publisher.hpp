@@ -16,6 +16,7 @@
 #define NAV2_UTIL__BASE_FOOTPRINT_PUBLISHER_HPP_
 
 #include <string>
+#include <memory>
 
 #include "rclcpp/rclcpp.hpp"
 #include "tf2_msgs/msg/tf_message.hpp"
@@ -24,6 +25,7 @@
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2_ros/buffer.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2/utils.h"
 
 namespace nav2_util
@@ -36,6 +38,7 @@ namespace nav2_util
  */
 class BaseFootprintPublisherListener : public tf2_ros::TransformListener
 {
+public:
   BaseFootprintPublisherListener(tf2::BufferCore & buffer, bool spin_thread, rclcpp::Node & node)
   : tf2_ros::TransformListener(buffer, spin_thread)
   {
@@ -72,7 +75,7 @@ class BaseFootprintPublisherListener : public tf2_ros::TransformListener
         transform.transform.translation.z = 0.0;
 
         // Remove Roll and Pitch
-        tf::Quaternion q;
+        tf2::Quaternion q;
         q.setRPY(0, 0, tf2::getYaw(t.transform.rotation));
         q.normalize();
         transform.transform.rotation.x = q.x();
@@ -103,17 +106,17 @@ public:
   /**
    * @brief A constructor
    */
-  BaseFootprintPublisher(const rclcpp::NodeOptions & options = rclcpp::NodeOptions())
+  explicit BaseFootprintPublisher(const rclcpp::NodeOptions & options = rclcpp::NodeOptions())
   : Node("base_footprint_publisher", options)
   {
     RCLCPP_INFO(get_logger(), "Creating base footprint publisher");
     tf_buffer_ = std::make_shared<tf2_ros::Buffer>(get_clock());
     auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
       get_node_base_interface(),
-      get_node_timers_interface(),
-      callback_group_);
+      get_node_timers_interface());
     tf_buffer_->setCreateTimerInterface(timer_interface);
-    listener_publisher_ = std::make_shared<BaseFootprintPublisherListener>(*tf_buffer_, *this);
+    listener_publisher_ = std::make_shared<BaseFootprintPublisherListener>(
+      *tf_buffer_, true, *this);
   }
 
 protected:
