@@ -223,6 +223,10 @@ install(DIRECTORY include/
   DESTINATION include/
 )
 
+install(DIRECTORY test/utils/
+        DESTINATION include/${PROJECT_NAME}/utils/
+)
+
 install(FILES nav2_tree_nodes.xml DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)

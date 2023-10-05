@@ -123,7 +123,7 @@ public:
    */
   virtual void matchSize();
 
-private:
+protected:
   /**
    * @brief Get parameters of layer
    */

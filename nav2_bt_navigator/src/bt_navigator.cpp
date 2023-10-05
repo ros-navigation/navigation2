@@ -22,15 +22,16 @@
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
-#include "nav2_behavior_tree/bt_conversions.hpp"
+#include "nav2_behavior_tree/bt_utils.hpp"
 
 using nav2_util::declare_parameter_if_not_declared;
 
 namespace nav2_bt_navigator
 {
 
-BtNavigator::BtNavigator(const rclcpp::NodeOptions & options)
-: nav2_util::LifecycleNode("bt_navigator", "", options),
+BtNavigator::BtNavigator(rclcpp::NodeOptions options)
+: nav2_util::LifecycleNode("bt_navigator", "",
+    options.automatically_declare_parameters_from_overrides(true)),
   class_loader_("nav2_core", "nav2_core::NavigatorBase")
 {
   RCLCPP_INFO(get_logger(), "Creating");
@@ -89,11 +90,16 @@ BtNavigator::BtNavigator(const rclcpp::NodeOptions & options)
     "nav2_is_battery_charging_condition_bt_node"
   };
 
-  declare_parameter("plugin_lib_names", plugin_libs);
-  declare_parameter("transform_tolerance", rclcpp::ParameterValue(0.1));
-  declare_parameter("global_frame", std::string("map"));
-  declare_parameter("robot_base_frame", std::string("base_link"));
-  declare_parameter("odom_topic", std::string("odom"));
+  declare_parameter_if_not_declared(
+    this, "plugin_lib_names", rclcpp::ParameterValue(plugin_libs));
+  declare_parameter_if_not_declared(
+    this, "transform_tolerance", rclcpp::ParameterValue(0.1));
+  declare_parameter_if_not_declared(
+    this, "global_frame", rclcpp::ParameterValue(std::string("map")));
+  declare_parameter_if_not_declared(
+    this, "robot_base_frame", rclcpp::ParameterValue(std::string("base_link")));
+  declare_parameter_if_not_declared(
+    this, "odom_topic", rclcpp::ParameterValue(std::string("odom")));
 }
 
 BtNavigator::~BtNavigator()
@@ -155,8 +161,8 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   // Load navigator plugins
   for (size_t i = 0; i != navigator_ids.size(); i++) {
-    std::string navigator_type = nav2_util::get_plugin_type_param(node, navigator_ids[i]);
     try {
+      std::string navigator_type = nav2_util::get_plugin_type_param(node, navigator_ids[i]);
       RCLCPP_INFO(
         get_logger(), "Creating navigator id %s of type %s",
         navigator_ids[i].c_str(), navigator_type.c_str());
@@ -167,11 +173,10 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
       {
         return nav2_util::CallbackReturn::FAILURE;
       }
-    } catch (const pluginlib::PluginlibException & ex) {
+    } catch (const std::exception & ex) {
       RCLCPP_FATAL(
-        get_logger(), "Failed to create navigator id %s of type %s."
-        " Exception: %s", navigator_ids[i].c_str(), navigator_type.c_str(),
-        ex.what());
+        get_logger(), "Failed to create navigator id %s."
+        " Exception: %s", navigator_ids[i].c_str(), ex.what());
       return nav2_util::CallbackReturn::FAILURE;
     }
   }

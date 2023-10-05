@@ -21,6 +21,7 @@
 #include "tf2_ros/create_timer_ros.h"
 
 #include "nav2_util/node_utils.hpp"
+#include "nav2_util/robot_utils.hpp"
 
 #include "nav2_collision_monitor/kinematics.hpp"
 
@@ -160,6 +161,12 @@ CollisionMonitor::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 
 void CollisionMonitor::cmdVelInCallback(geometry_msgs::msg::Twist::ConstSharedPtr msg)
 {
+  // If message contains NaN or Inf, ignore
+  if (!nav2_util::validateTwist(*msg)) {
+    RCLCPP_ERROR(get_logger(), "Velocity message contains NaNs or Infs! Ignoring as invalid!");
+    return;
+  }
+
   process({msg->linear.x, msg->linear.y, msg->angular.z});
 }
 
@@ -198,7 +205,7 @@ bool CollisionMonitor::getParameters(
   auto node = shared_from_this();
 
   nav2_util::declare_parameter_if_not_declared(
-    node, "cmd_vel_in_topic", rclcpp::ParameterValue("cmd_vel_raw"));
+    node, "cmd_vel_in_topic", rclcpp::ParameterValue("cmd_vel_smoothed"));
   cmd_vel_in_topic = get_parameter("cmd_vel_in_topic").as_string();
   nav2_util::declare_parameter_if_not_declared(
     node, "cmd_vel_out_topic", rclcpp::ParameterValue("cmd_vel"));
@@ -252,8 +259,9 @@ bool CollisionMonitor::configurePolygons(
   try {
     auto node = shared_from_this();
 
+    // Leave it to be not initialized: to intentionally cause an error if it will not set
     nav2_util::declare_parameter_if_not_declared(
-      node, "polygons", rclcpp::ParameterValue(std::vector<std::string>()));
+      node, "polygons", rclcpp::PARAMETER_STRING_ARRAY);
     std::vector<std::string> polygon_names = get_parameter("polygons").as_string_array();
     for (std::string polygon_name : polygon_names) {
       // Leave it not initialized: the will cause an error if it will not set
@@ -365,7 +373,9 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in)
 
   // Fill collision_points array from different data sources
   for (std::shared_ptr<Source> source : sources_) {
-    source->getData(curr_time, collision_points);
+    if (source->getEnabled()) {
+      source->getData(curr_time, collision_points);
+    }
   }
 
   // By default - there is no action
@@ -374,6 +384,9 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in)
   std::shared_ptr<Polygon> action_polygon;
 
   for (std::shared_ptr<Polygon> polygon : polygons_) {
+    if (!polygon->getEnabled()) {
+      continue;
+    }
     if (robot_action.action_type == STOP) {
       // If robot already should stop, do nothing
       break;
@@ -441,7 +454,7 @@ bool CollisionMonitor::processStopSlowdownLimit(
       }
     } else {  // Limit
       // Compute linear velocity
-      const double linear_vel = std::hypot(velocity.x, velocity.y); // absolute
+      const double linear_vel = std::hypot(velocity.x, velocity.y);  // absolute
       Velocity safe_vel;
       double ratio = 1.0;
       if (linear_vel != 0.0) {
@@ -537,7 +550,9 @@ void CollisionMonitor::notifyActionState(
 void CollisionMonitor::publishPolygons() const
 {
   for (std::shared_ptr<Polygon> polygon : polygons_) {
-    polygon->publish();
+    if (polygon->getEnabled()) {
+      polygon->publish();
+    }
   }
 }
 

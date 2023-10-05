@@ -26,6 +26,7 @@
 #include "behaviortree_cpp_v3/decorator_node.h"
 
 #include "nav2_behavior_tree/plugins/decorator/distance_controller.hpp"
+#include "nav2_behavior_tree/bt_utils.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -35,17 +36,17 @@ DistanceController::DistanceController(
   const BT::NodeConfiguration & conf)
 : BT::DecoratorNode(name, conf),
   distance_(1.0),
-  global_frame_("map"),
-  robot_base_frame_("base_link"),
   first_time_(false)
 {
   getInput("distance", distance_);
-  getInput("global_frame", global_frame_);
-  getInput("robot_base_frame", robot_base_frame_);
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
   tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
-
   node_->get_parameter("transform_tolerance", transform_tolerance_);
+
+  global_frame_ = BT::deconflictPortAndParamFrame<std::string, DistanceController>(
+    node_, "global_frame", this);
+  robot_base_frame_ = BT::deconflictPortAndParamFrame<std::string, DistanceController>(
+    node_, "robot_base_frame", this);
 }
 
 inline BT::NodeStatus DistanceController::tick()

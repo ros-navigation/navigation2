@@ -10,6 +10,7 @@ set(XTENSOR_USE_OPENMP 0)
 
 find_package(ament_cmake REQUIRED)
 find_package(xtensor REQUIRED)
+find_package(xsimd REQUIRED)
 
 set(dependencies_pkgs
   rclcpp
@@ -35,8 +36,18 @@ nav2_package()
 
 include(CheckCXXCompilerFlag)
 
+check_cxx_compiler_flag("-mno-avx512f" COMPILER_SUPPORTS_AVX512)
+check_cxx_compiler_flag("-msse4.2" COMPILER_SUPPORTS_SSE4)
 check_cxx_compiler_flag("-mavx2" COMPILER_SUPPORTS_AVX2)
 check_cxx_compiler_flag("-mfma" COMPILER_SUPPORTS_FMA)
+
+if(COMPILER_SUPPORTS_AVX512)
+  add_compile_options(-mno-avx512f)
+endif()
+
+if(COMPILER_SUPPORTS_SSE4)
+  add_compile_options(-msse4.2)
+endif()
 
 if(COMPILER_SUPPORTS_AVX2)
   add_compile_options(-mavx2)
@@ -46,7 +57,8 @@ if(COMPILER_SUPPORTS_FMA)
   add_compile_options(-mfma)
 endif()
 
-add_compile_options(-O3 -finline-limit=1000000 -ffp-contract=fast -ffast-math)
+# If building one the same hardware to be deployed on, try `-march=native`!
+add_compile_options(-O3 -finline-limit=10000000 -ffp-contract=fast -ffast-math -mtune=generic)
 
 add_library(mppi_controller SHARED
   src/controller.cpp

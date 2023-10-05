@@ -47,12 +47,12 @@ class CollisionMonitor : public nav2_util::LifecycleNode
 {
 public:
   /**
-   * @brief Constructor for the nav2_collision_safery::CollisionMonitor
+   * @brief Constructor for the nav2_collision_monitor::CollisionMonitor
    * @param options Additional options to control creation of the node.
    */
   explicit CollisionMonitor(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
   /**
-   * @brief Destructor for the nav2_collision_safery::CollisionMonitor
+   * @brief Destructor for the nav2_collision_monitor::CollisionMonitor
    */
   ~CollisionMonitor();
 
@@ -126,7 +126,7 @@ protected:
    * @brief Supporting routine creating and configuring all data sources
    * @param base_frame_id Robot base frame ID
    * @param odom_frame_id Odometry frame ID. Used as global frame to get
-   * source->base time inerpolated transform.
+   * source->base time interpolated transform.
    * @param transform_tolerance Transform tolerance
    * @param source_timeout Maximum time interval in which data is considered valid
    * @param base_shift_correction Whether to correct source data towards to base frame movement,

@@ -53,6 +53,8 @@ PlannerServer::PlannerServer(const rclcpp::NodeOptions & options)
   declare_parameter("planner_plugins", default_ids_);
   declare_parameter("expected_planner_frequency", 1.0);
 
+  declare_parameter("action_server_result_timeout", 10.0);
+
   get_parameter("planner_plugins", planner_ids_);
   if (planner_ids_ == default_ids_) {
     for (size_t i = 0; i < default_ids_.size(); ++i) {
@@ -108,7 +110,7 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
         planner_ids_[i].c_str(), planner_types_[i].c_str());
       planner->configure(node, planner_ids_[i], tf_, costmap_ros_);
       planners_.insert({planner_ids_[i], planner});
-    } catch (const pluginlib::PluginlibException & ex) {
+    } catch (const std::exception & ex) {
       RCLCPP_FATAL(
         get_logger(), "Failed to create global planner. Exception: %s",
         ex.what());
@@ -139,6 +141,11 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   // Initialize pubs & subs
   plan_publisher_ = create_publisher<nav_msgs::msg::Path>("plan", 1);
 
+  double action_server_result_timeout;
+  get_parameter("action_server_result_timeout", action_server_result_timeout);
+  rcl_action_server_options_t server_options = rcl_action_server_get_default_options();
+  server_options.result_timeout.nanoseconds = RCL_S_TO_NS(action_server_result_timeout);
+
   // Create the action servers for path planning to a pose and through poses
   action_server_pose_ = std::make_unique<ActionServerToPose>(
     shared_from_this(),
@@ -146,7 +153,7 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     std::bind(&PlannerServer::computePlan, this),
     nullptr,
     std::chrono::milliseconds(500),
-    true);
+    true, server_options);
 
   action_server_poses_ = std::make_unique<ActionServerThroughPoses>(
     shared_from_this(),
@@ -154,7 +161,7 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     std::bind(&PlannerServer::computePlanThroughPoses, this),
     nullptr,
     std::chrono::milliseconds(500),
-    true);
+    true, server_options);
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -436,43 +443,43 @@ void PlannerServer::computePlanThroughPoses()
     action_server_poses_->succeeded_current(result);
   } catch (nav2_core::InvalidPlanner & ex) {
     exceptionWarning(curr_start, curr_goal, goal->planner_id, ex);
-    result->error_code = ActionToPoseGoal::INVALID_PLANNER;
+    result->error_code = ActionThroughPosesResult::INVALID_PLANNER;
     action_server_poses_->terminate_current(result);
   } catch (nav2_core::StartOccupied & ex) {
     exceptionWarning(curr_start, curr_goal, goal->planner_id, ex);
-    result->error_code = ActionThroughPosesGoal::START_OCCUPIED;
+    result->error_code = ActionThroughPosesResult::START_OCCUPIED;
     action_server_poses_->terminate_current(result);
   } catch (nav2_core::GoalOccupied & ex) {
     exceptionWarning(curr_start, curr_goal, goal->planner_id, ex);
-    result->error_code = ActionThroughPosesGoal::GOAL_OCCUPIED;
+    result->error_code = ActionThroughPosesResult::GOAL_OCCUPIED;
     action_server_poses_->terminate_current(result);
   } catch (nav2_core::NoValidPathCouldBeFound & ex) {
     exceptionWarning(curr_start, curr_goal, goal->planner_id, ex);
-    result->error_code = ActionThroughPosesGoal::NO_VALID_PATH;
+    result->error_code = ActionThroughPosesResult::NO_VALID_PATH;
     action_server_poses_->terminate_current(result);
   } catch (nav2_core::PlannerTimedOut & ex) {
     exceptionWarning(curr_start, curr_goal, goal->planner_id, ex);
-    result->error_code = ActionThroughPosesGoal::TIMEOUT;
+    result->error_code = ActionThroughPosesResult::TIMEOUT;
     action_server_poses_->terminate_current(result);
   } catch (nav2_core::StartOutsideMapBounds & ex) {
     exceptionWarning(curr_start, curr_goal, goal->planner_id, ex);
-    result->error_code = ActionThroughPosesGoal::START_OUTSIDE_MAP;
+    result->error_code = ActionThroughPosesResult::START_OUTSIDE_MAP;
     action_server_poses_->terminate_current(result);
   } catch (nav2_core::GoalOutsideMapBounds & ex) {
     exceptionWarning(curr_start, curr_goal, goal->planner_id, ex);
-    result->error_code = ActionThroughPosesGoal::GOAL_OUTSIDE_MAP;
+    result->error_code = ActionThroughPosesResult::GOAL_OUTSIDE_MAP;
     action_server_poses_->terminate_current(result);
   } catch (nav2_core::PlannerTFError & ex) {
     exceptionWarning(curr_start, curr_goal, goal->planner_id, ex);
-    result->error_code = ActionThroughPosesGoal::TF_ERROR;
+    result->error_code = ActionThroughPosesResult::TF_ERROR;
     action_server_poses_->terminate_current(result);
   } catch (nav2_core::NoViapointsGiven & ex) {
     exceptionWarning(curr_start, curr_goal, goal->planner_id, ex);
-    result->error_code = ActionThroughPosesGoal::NO_VIAPOINTS_GIVEN;
+    result->error_code = ActionThroughPosesResult::NO_VIAPOINTS_GIVEN;
     action_server_poses_->terminate_current(result);
   } catch (std::exception & ex) {
     exceptionWarning(curr_start, curr_goal, goal->planner_id, ex);
-    result->error_code = ActionThroughPosesGoal::UNKNOWN;
+    result->error_code = ActionThroughPosesResult::UNKNOWN;
     action_server_poses_->terminate_current(result);
   }
 }
@@ -531,39 +538,39 @@ PlannerServer::computePlan()
     action_server_pose_->succeeded_current(result);
   } catch (nav2_core::InvalidPlanner & ex) {
     exceptionWarning(start, goal->goal, goal->planner_id, ex);
-    result->error_code = ActionToPoseGoal::INVALID_PLANNER;
+    result->error_code = ActionToPoseResult::INVALID_PLANNER;
     action_server_pose_->terminate_current(result);
   } catch (nav2_core::StartOccupied & ex) {
     exceptionWarning(start, goal->goal, goal->planner_id, ex);
-    result->error_code = ActionToPoseGoal::START_OCCUPIED;
+    result->error_code = ActionToPoseResult::START_OCCUPIED;
     action_server_pose_->terminate_current(result);
   } catch (nav2_core::GoalOccupied & ex) {
     exceptionWarning(start, goal->goal, goal->planner_id, ex);
-    result->error_code = ActionToPoseGoal::GOAL_OCCUPIED;
+    result->error_code = ActionToPoseResult::GOAL_OCCUPIED;
     action_server_pose_->terminate_current(result);
   } catch (nav2_core::NoValidPathCouldBeFound & ex) {
     exceptionWarning(start, goal->goal, goal->planner_id, ex);
-    result->error_code = ActionToPoseGoal::NO_VALID_PATH;
+    result->error_code = ActionToPoseResult::NO_VALID_PATH;
     action_server_pose_->terminate_current(result);
   } catch (nav2_core::PlannerTimedOut & ex) {
     exceptionWarning(start, goal->goal, goal->planner_id, ex);
-    result->error_code = ActionToPoseGoal::TIMEOUT;
+    result->error_code = ActionToPoseResult::TIMEOUT;
     action_server_pose_->terminate_current(result);
   } catch (nav2_core::StartOutsideMapBounds & ex) {
     exceptionWarning(start, goal->goal, goal->planner_id, ex);
-    result->error_code = ActionToPoseGoal::START_OUTSIDE_MAP;
+    result->error_code = ActionToPoseResult::START_OUTSIDE_MAP;
     action_server_pose_->terminate_current(result);
   } catch (nav2_core::GoalOutsideMapBounds & ex) {
     exceptionWarning(start, goal->goal, goal->planner_id, ex);
-    result->error_code = ActionToPoseGoal::GOAL_OUTSIDE_MAP;
+    result->error_code = ActionToPoseResult::GOAL_OUTSIDE_MAP;
     action_server_pose_->terminate_current(result);
   } catch (nav2_core::PlannerTFError & ex) {
     exceptionWarning(start, goal->goal, goal->planner_id, ex);
-    result->error_code = ActionToPoseGoal::TF_ERROR;
+    result->error_code = ActionToPoseResult::TF_ERROR;
     action_server_pose_->terminate_current(result);
   } catch (std::exception & ex) {
     exceptionWarning(start, goal->goal, goal->planner_id, ex);
-    result->error_code = ActionToPoseGoal::UNKNOWN;
+    result->error_code = ActionToPoseResult::UNKNOWN;
     action_server_pose_->terminate_current(result);
   }
 }
@@ -643,6 +650,7 @@ void PlannerServer::isPathValid(
      * The lethal check starts at the closest point to avoid points that have already been passed
      * and may have become occupied
      */
+    std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
     unsigned int mx = 0;
     unsigned int my = 0;
     for (unsigned int i = closest_point_index; i < request->path.poses.size(); ++i) {

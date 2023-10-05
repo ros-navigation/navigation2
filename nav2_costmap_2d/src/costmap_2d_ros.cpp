@@ -144,7 +144,13 @@ nav2_util::CallbackReturn
 Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
-  getParameters();
+  try {
+    getParameters();
+  } catch (const std::exception & e) {
+    RCLCPP_ERROR(
+      get_logger(), "Failed to configure costmap! %s.", e.what());
+    return nav2_util::CallbackReturn::FAILURE;
+  }
 
   callback_group_ = create_callback_group(
     rclcpp::CallbackGroupType::MutuallyExclusive, false);
@@ -338,9 +344,7 @@ Costmap2DROS::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   costmap_publisher_.reset();
   clear_costmap_service_.reset();
 
-  for (auto & layer_pub : layer_publishers_) {
-    layer_pub.reset();
-  }
+  layer_publishers_.clear();
 
   layered_costmap_.reset();
 

@@ -74,7 +74,7 @@ protected:
     std::shared_ptr<nav2_msgs::action::ComputePathToPose::Result>
     & result) override
   {
-    result->error_code = nav2_msgs::action::ComputePathToPose::Goal::TIMEOUT;
+    result->error_code = nav2_msgs::action::ComputePathToPose::Result::TIMEOUT;
   }
 
 private:
@@ -92,7 +92,7 @@ protected:
     std::shared_ptr<nav2_msgs::action::FollowPath::Result>
     & result) override
   {
-    result->error_code = nav2_msgs::action::FollowPath::Goal::NO_VALID_CONTROL;
+    result->error_code = nav2_msgs::action::FollowPath::Result::NO_VALID_CONTROL;
   }
 };
 

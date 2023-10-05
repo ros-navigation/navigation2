@@ -21,11 +21,11 @@ from launch.actions import DeclareLaunchArgument, GroupAction
 from launch.actions import SetEnvironmentVariable
 from launch.conditions import IfCondition
 from launch.substitutions import EqualsSubstitution
-from launch.substitutions import NotEqualsSubstitution
 from launch.substitutions import LaunchConfiguration, PythonExpression
+from launch.substitutions import NotEqualsSubstitution
 from launch_ros.actions import LoadComposableNodes, SetParameter
 from launch_ros.actions import Node
-from launch_ros.descriptions import ComposableNode
+from launch_ros.descriptions import ComposableNode, ParameterFile
 from nav2_common.launch import RewrittenYaml
 
 
@@ -55,11 +55,13 @@ def generate_launch_description():
     remappings = [('/tf', 'tf'),
                   ('/tf_static', 'tf_static')]
 
-    configured_params = RewrittenYaml(
-        source_file=params_file,
-        root_key=namespace,
-        param_rewrites={},
-        convert_types=True)
+    configured_params = ParameterFile(
+        RewrittenYaml(
+            source_file=params_file,
+            root_key=namespace,
+            param_rewrites={},
+            convert_types=True),
+        allow_substs=True)
 
     stdout_linebuf_envvar = SetEnvironmentVariable(
         'RCUTILS_LOGGING_BUFFERED_STREAM', '1')

@@ -1,4 +1,5 @@
 // Copyright (c) 2020, Samsung Research America
+// Copyright (c) 2023, Open Navigation LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,7 +33,7 @@ using std::placeholders::_1;
 
 SmacPlannerHybrid::SmacPlannerHybrid()
 : _a_star(nullptr),
-  _collision_checker(nullptr, 1),
+  _collision_checker(nullptr, 1, nullptr),
   _smoother(nullptr),
   _costmap(nullptr),
   _costmap_downsampler(nullptr)
@@ -100,6 +101,10 @@ void SmacPlannerHybrid::configure(
     node, name + ".minimum_turning_radius", rclcpp::ParameterValue(0.4));
   node->get_parameter(name + ".minimum_turning_radius", _minimum_turning_radius_global_coords);
   nav2_util::declare_parameter_if_not_declared(
+    node, name + ".allow_primitive_interpolation", rclcpp::ParameterValue(false));
+  node->get_parameter(
+    name + ".allow_primitive_interpolation", _search_info.allow_primitive_interpolation);
+  nav2_util::declare_parameter_if_not_declared(
     node, name + ".cache_obstacle_heuristic", rclcpp::ParameterValue(false));
   node->get_parameter(name + ".cache_obstacle_heuristic", _search_info.cache_obstacle_heuristic);
   nav2_util::declare_parameter_if_not_declared(
@@ -121,6 +126,15 @@ void SmacPlannerHybrid::configure(
     node, name + ".analytic_expansion_ratio", rclcpp::ParameterValue(3.5));
   node->get_parameter(name + ".analytic_expansion_ratio", _search_info.analytic_expansion_ratio);
   nav2_util::declare_parameter_if_not_declared(
+    node, name + ".use_quadratic_cost_penalty", rclcpp::ParameterValue(false));
+  node->get_parameter(
+    name + ".use_quadratic_cost_penalty", _search_info.use_quadratic_cost_penalty);
+  nav2_util::declare_parameter_if_not_declared(
+    node, name + ".downsample_obstacle_heuristic", rclcpp::ParameterValue(true));
+  node->get_parameter(
+    name + ".downsample_obstacle_heuristic", _search_info.downsample_obstacle_heuristic);
+
+  nav2_util::declare_parameter_if_not_declared(
     node, name + ".analytic_expansion_max_length", rclcpp::ParameterValue(3.0));
   node->get_parameter(name + ".analytic_expansion_max_length", analytic_expansion_max_length_m);
   _search_info.analytic_expansion_max_length =
@@ -134,8 +148,8 @@ void SmacPlannerHybrid::configure(
   node->get_parameter(name + ".lookup_table_size", _lookup_table_size);
 
   nav2_util::declare_parameter_if_not_declared(
-    node, name + ".viz_expansions", rclcpp::ParameterValue(false));
-  node->get_parameter(name + ".viz_expansions", _viz_expansions);
+    node, name + ".debug_visualizations", rclcpp::ParameterValue(false));
+  node->get_parameter(name + ".debug_visualizations", _debug_visualizations);
 
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".motion_model_for_search", rclcpp::ParameterValue(std::string("DUBIN")));
@@ -150,17 +164,23 @@ void SmacPlannerHybrid::configure(
   }
 
   if (_max_on_approach_iterations <= 0) {
-    RCLCPP_INFO(
+    RCLCPP_WARN(
       _logger, "On approach iteration selected as <= 0, "
       "disabling tolerance and on approach iterations.");
     _max_on_approach_iterations = std::numeric_limits<int>::max();
   }
 
   if (_max_iterations <= 0) {
-    RCLCPP_INFO(
+    RCLCPP_WARN(
       _logger, "maximum iteration selected as <= 0, "
       "disabling maximum iterations.");
     _max_iterations = std::numeric_limits<int>::max();
+  }
+
+  if (_minimum_turning_radius_global_coords < _costmap->getResolution() * _downsampling_factor) {
+    RCLCPP_WARN(
+      _logger, "Min turning radius cannot be less than the search grid cell resolution!");
+    _minimum_turning_radius_global_coords = _costmap->getResolution() * _downsampling_factor;
   }
 
   // convert to grid coordinates
@@ -186,7 +206,7 @@ void SmacPlannerHybrid::configure(
   }
 
   // Initialize collision checker
-  _collision_checker = GridCollisionChecker(_costmap, _angle_quantizations);
+  _collision_checker = GridCollisionChecker(_costmap, _angle_quantizations, node);
   _collision_checker.setFootprint(
     _costmap_ros->getRobotFootprint(),
     _costmap_ros->getUseRadius(),
@@ -219,8 +239,11 @@ void SmacPlannerHybrid::configure(
   }
 
   _raw_plan_publisher = node->create_publisher<nav_msgs::msg::Path>("unsmoothed_plan", 1);
-  if (_viz_expansions) {
+
+  if (_debug_visualizations) {
     _expansions_publisher = node->create_publisher<geometry_msgs::msg::PoseArray>("expansions", 1);
+    _planned_footprints_publisher = node->create_publisher<visualization_msgs::msg::MarkerArray>(
+      "planned_footprints", 1);
   }
 
   RCLCPP_INFO(
@@ -238,8 +261,9 @@ void SmacPlannerHybrid::activate()
     _logger, "Activating plugin %s of type SmacPlannerHybrid",
     _name.c_str());
   _raw_plan_publisher->on_activate();
-  if (_viz_expansions) {
+  if (_debug_visualizations) {
     _expansions_publisher->on_activate();
+    _planned_footprints_publisher->on_activate();
   }
   if (_costmap_downsampler) {
     _costmap_downsampler->on_activate();
@@ -256,8 +280,9 @@ void SmacPlannerHybrid::deactivate()
     _logger, "Deactivating plugin %s of type SmacPlannerHybrid",
     _name.c_str());
   _raw_plan_publisher->on_deactivate();
-  if (_viz_expansions) {
+  if (_debug_visualizations) {
     _expansions_publisher->on_deactivate();
+    _planned_footprints_publisher->on_deactivate();
   }
   if (_costmap_downsampler) {
     _costmap_downsampler->on_deactivate();
@@ -278,6 +303,7 @@ void SmacPlannerHybrid::cleanup()
   }
   _raw_plan_publisher.reset();
   _expansions_publisher.reset();
+  _planned_footprints_publisher.reset();
 }
 
 nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
@@ -351,31 +377,33 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   NodeHybrid::CoordinateVector path;
   int num_iterations = 0;
   std::string error;
-  std::unique_ptr<std::vector<std::tuple<float, float>>> expansions = nullptr;
-  if (_viz_expansions) {
-    expansions = std::make_unique<std::vector<std::tuple<float, float>>>();
+  std::unique_ptr<std::vector<std::tuple<float, float, float>>> expansions = nullptr;
+  if (_debug_visualizations) {
+    expansions = std::make_unique<std::vector<std::tuple<float, float, float>>>();
   }
   // Note: All exceptions thrown are handled by the planner server and returned to the action
-  if (!_a_star->createPath(path, num_iterations, 0, expansions.get())) {
+  if (!_a_star->createPath(
+      path, num_iterations,
+      _tolerance / static_cast<float>(costmap->getResolution()), expansions.get()))
+  {
+    if (_debug_visualizations) {
+      geometry_msgs::msg::PoseArray msg;
+      geometry_msgs::msg::Pose msg_pose;
+      msg.header.stamp = _clock->now();
+      msg.header.frame_id = _global_frame;
+      for (auto & e : *expansions) {
+        msg_pose.position.x = std::get<0>(e);
+        msg_pose.position.y = std::get<1>(e);
+        msg_pose.orientation = getWorldOrientation(std::get<2>(e));
+        msg.poses.push_back(msg_pose);
+      }
+      _expansions_publisher->publish(msg);
+    }
     if (num_iterations < _a_star->getMaxIterations()) {
       throw nav2_core::NoValidPathCouldBeFound("no valid path found");
     } else {
       throw nav2_core::PlannerTimedOut("exceeded maximum iterations");
     }
-  }
-
-  // Publish expansions for debug
-  if (_viz_expansions) {
-    geometry_msgs::msg::PoseArray msg;
-    geometry_msgs::msg::Pose msg_pose;
-    msg.header.stamp = _clock->now();
-    msg.header.frame_id = _global_frame;
-    for (auto & e : *expansions) {
-      msg_pose.position.x = std::get<0>(e);
-      msg_pose.position.y = std::get<1>(e);
-      msg.poses.push_back(msg_pose);
-    }
-    _expansions_publisher->publish(msg);
   }
 
   // Convert to world coordinates
@@ -389,6 +417,38 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   // Publish raw path for debug
   if (_raw_plan_publisher->get_subscription_count() > 0) {
     _raw_plan_publisher->publish(plan);
+  }
+
+  if (_debug_visualizations) {
+    // Publish expansions for debug
+    geometry_msgs::msg::PoseArray msg;
+    geometry_msgs::msg::Pose msg_pose;
+    msg.header.stamp = _clock->now();
+    msg.header.frame_id = _global_frame;
+    for (auto & e : *expansions) {
+      msg_pose.position.x = std::get<0>(e);
+      msg_pose.position.y = std::get<1>(e);
+      msg_pose.orientation = getWorldOrientation(std::get<2>(e));
+      msg.poses.push_back(msg_pose);
+    }
+    _expansions_publisher->publish(msg);
+
+    // plot footprint path planned for debug
+    if (_planned_footprints_publisher->get_subscription_count() > 0) {
+      auto marker_array = std::make_unique<visualization_msgs::msg::MarkerArray>();
+      for (size_t i = 0; i < plan.poses.size(); i++) {
+        const std::vector<geometry_msgs::msg::Point> edge =
+          transformFootprintToEdges(plan.poses[i].pose, _costmap_ros->getRobotFootprint());
+        marker_array->markers.push_back(createMarker(edge, i, _global_frame, _clock->now()));
+      }
+
+      if (marker_array->markers.empty()) {
+        visualization_msgs::msg::Marker clear_all_marker;
+        clear_all_marker.action = visualization_msgs::msg::Marker::DELETEALL;
+        marker_array->markers.push_back(clear_all_marker);
+      }
+      _planned_footprints_publisher->publish(std::move(marker_array));
+    }
   }
 
   // Find how much time we have left to do smoothing
@@ -445,6 +505,13 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
         if (_smoother) {
           reinit_smoother = true;
         }
+
+        if (parameter.as_double() < _costmap->getResolution() * _downsampling_factor) {
+          RCLCPP_ERROR(
+            _logger, "Min turning radius cannot be less than the search grid cell resolution!");
+          result.successful = false;
+        }
+
         _minimum_turning_radius_global_coords = static_cast<float>(parameter.as_double());
       } else if (name == _name + ".reverse_penalty") {
         reinit_a_star = true;
@@ -476,6 +543,9 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
       } else if (name == _name + ".cache_obstacle_heuristic") {
         reinit_a_star = true;
         _search_info.cache_obstacle_heuristic = parameter.as_bool();
+      } else if (name == _name + ".allow_primitive_interpolation") {
+        _search_info.allow_primitive_interpolation = parameter.as_bool();
+        reinit_a_star = true;
       } else if (name == _name + ".smooth_path") {
         if (parameter.as_bool()) {
           reinit_smoother = true;
@@ -552,6 +622,8 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
       _lookup_table_dim += 1.0;
     }
 
+    auto node = _node.lock();
+
     // Re-Initialize A* template
     if (reinit_a_star) {
       _a_star = std::make_unique<AStarAlgorithm<NodeHybrid>>(_motion_model, _search_info);
@@ -567,7 +639,6 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
     // Re-Initialize costmap downsampler
     if (reinit_downsampler) {
       if (_downsample_costmap && _downsampling_factor > 1) {
-        auto node = _node.lock();
         std::string topic_name = "downsampled_costmap";
         _costmap_downsampler = std::make_unique<CostmapDownsampler>();
         _costmap_downsampler->on_configure(
@@ -577,7 +648,7 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
 
     // Re-Initialize collision checker
     if (reinit_collision_checker) {
-      _collision_checker = GridCollisionChecker(_costmap, _angle_quantizations);
+      _collision_checker = GridCollisionChecker(_costmap, _angle_quantizations, node);
       _collision_checker.setFootprint(
         _costmap_ros->getRobotFootprint(),
         _costmap_ros->getUseRadius(),
@@ -586,7 +657,6 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
 
     // Re-Initialize smoother
     if (reinit_smoother) {
-      auto node = _node.lock();
       SmootherParams params;
       params.get(node, _name);
       _smoother = std::make_unique<Smoother>(params);

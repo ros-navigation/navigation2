@@ -50,6 +50,8 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
 
   declare_parameter("controller_frequency", 20.0);
 
+  declare_parameter("action_server_result_timeout", 10.0);
+
   declare_parameter("progress_checker_plugins", default_progress_checker_ids_);
   declare_parameter("goal_checker_plugins", default_goal_checker_ids_);
   declare_parameter("controller_plugins", default_ids_);
@@ -84,20 +86,6 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   RCLCPP_INFO(get_logger(), "getting progress checker plugins..");
   get_parameter("progress_checker_plugins", progress_checker_ids_);
-  try {
-    nav2_util::declare_parameter_if_not_declared(
-      node, "progress_checker_plugin", rclcpp::PARAMETER_STRING);
-    std::string progress_checker_plugin;
-    progress_checker_plugin = node->get_parameter("progress_checker_plugin").as_string();
-    progress_checker_ids_.clear();
-    progress_checker_ids_.push_back(progress_checker_plugin);
-    RCLCPP_WARN(
-      get_logger(),
-      "\"progress_checker_plugin\" parameter was deprecated and will be removed soon. Use "
-      "\"progress_checker_plugins\" instead to specify a list of plugins");
-  } catch (const std::exception &) {
-    // This is normal situation: progress_checker_plugin parameter should not being declared
-  }
   if (progress_checker_ids_ == default_progress_checker_ids_) {
     for (size_t i = 0; i < default_progress_checker_ids_.size(); ++i) {
       nav2_util::declare_parameter_if_not_declared(
@@ -154,7 +142,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
         progress_checker_ids_[i].c_str(), progress_checker_types_[i].c_str());
       progress_checker->initialize(node, progress_checker_ids_[i]);
       progress_checkers_.insert({progress_checker_ids_[i], progress_checker});
-    } catch (const pluginlib::PluginlibException & ex) {
+    } catch (const std::exception & ex) {
       RCLCPP_FATAL(
         get_logger(),
         "Failed to create progress_checker. Exception: %s", ex.what());
@@ -227,6 +215,11 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   odom_sub_ = std::make_unique<nav_2d_utils::OdomSubscriber>(node);
   vel_publisher_ = create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 1);
 
+  double action_server_result_timeout;
+  get_parameter("action_server_result_timeout", action_server_result_timeout);
+  rcl_action_server_options_t server_options = rcl_action_server_get_default_options();
+  server_options.result_timeout.nanoseconds = RCL_S_TO_NS(action_server_result_timeout);
+
   // Create the action server that we implement with our followPath method
   action_server_ = std::make_unique<ActionServer>(
     shared_from_this(),
@@ -234,7 +227,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     std::bind(&ControllerServer::computeControl, this),
     nullptr,
     std::chrono::milliseconds(500),
-    true);
+    true, server_options);
 
   // Set subscribtion to the speed limiting topic
   speed_limit_sub_ = create_subscription<nav2_msgs::msg::SpeedLimit>(
@@ -491,56 +484,56 @@ void ControllerServer::computeControl()
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
     publishZeroVelocity();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
-    result->error_code = Action::Goal::INVALID_CONTROLLER;
+    result->error_code = Action::Result::INVALID_CONTROLLER;
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::ControllerTFError & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
     publishZeroVelocity();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
-    result->error_code = Action::Goal::TF_ERROR;
+    result->error_code = Action::Result::TF_ERROR;
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::NoValidControl & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
     publishZeroVelocity();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
-    result->error_code = Action::Goal::NO_VALID_CONTROL;
+    result->error_code = Action::Result::NO_VALID_CONTROL;
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::FailedToMakeProgress & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
     publishZeroVelocity();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
-    result->error_code = Action::Goal::FAILED_TO_MAKE_PROGRESS;
+    result->error_code = Action::Result::FAILED_TO_MAKE_PROGRESS;
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::PatienceExceeded & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
     publishZeroVelocity();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
-    result->error_code = Action::Goal::PATIENCE_EXCEEDED;
+    result->error_code = Action::Result::PATIENCE_EXCEEDED;
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::InvalidPath & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
     publishZeroVelocity();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
-    result->error_code = Action::Goal::INVALID_PATH;
+    result->error_code = Action::Result::INVALID_PATH;
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::ControllerException & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
     publishZeroVelocity();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
-    result->error_code = Action::Goal::UNKNOWN;
+    result->error_code = Action::Result::UNKNOWN;
     action_server_->terminate_current(result);
     return;
   } catch (std::exception & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
     publishZeroVelocity();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
-    result->error_code = Action::Goal::UNKNOWN;
+    result->error_code = Action::Result::UNKNOWN;
     action_server_->terminate_current(result);
     return;
   }
@@ -601,7 +594,7 @@ void ControllerServer::computeAndPublishVelocity()
     // other types will not be resolved with more attempts
   } catch (nav2_core::NoValidControl & e) {
     if (failure_tolerance_ > 0 || failure_tolerance_ == -1.0) {
-      RCLCPP_WARN(this->get_logger(), e.what());
+      RCLCPP_WARN(this->get_logger(), "%s", e.what());
       cmd_vel_2d.twist.angular.x = 0;
       cmd_vel_2d.twist.angular.y = 0;
       cmd_vel_2d.twist.angular.z = 0;

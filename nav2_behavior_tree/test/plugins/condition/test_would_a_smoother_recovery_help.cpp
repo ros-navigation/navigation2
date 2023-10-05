@@ -24,10 +24,10 @@ class WouldASmootherRecoveryHelpFixture : public nav2_behavior_tree::BehaviorTre
 {
 public:
   using Action = nav2_msgs::action::SmoothPath;
-  using ActionGoal = Action::Goal;
+  using ActionGoal = Action::Result;
   void SetUp()
   {
-    int error_code = ActionGoal::NONE;
+    uint16_t error_code = ActionGoal::NONE;
     config_->blackboard->set("error_code", error_code);
 
     std::string xml_txt =
@@ -56,7 +56,7 @@ std::shared_ptr<BT::Tree> WouldASmootherRecoveryHelpFixture::tree_ = nullptr;
 
 TEST_F(WouldASmootherRecoveryHelpFixture, test_condition)
 {
-  std::map<int, BT::NodeStatus> error_to_status_map = {
+  std::map<uint16_t, BT::NodeStatus> error_to_status_map = {
     {ActionGoal::NONE, BT::NodeStatus::FAILURE},
     {ActionGoal::UNKNOWN, BT::NodeStatus::SUCCESS},
     {ActionGoal::TIMEOUT, BT::NodeStatus::SUCCESS},

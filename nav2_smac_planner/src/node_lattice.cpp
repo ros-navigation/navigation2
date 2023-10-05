@@ -225,7 +225,8 @@ bool NodeLattice::isNodeValid(
   if (motion_primitive) {
     const float & grid_resolution = motion_table.lattice_metadata.grid_resolution;
     const float & resolution_diag_sq = 2.0 * grid_resolution * grid_resolution;
-    MotionPose last_pose(1e9, 1e9, 1e9), pose_dist(0.0, 0.0, 0.0);
+    MotionPose last_pose(1e9, 1e9, 1e9, TurnDirection::UNKNOWN);
+    MotionPose pose_dist(0.0, 0.0, 0.0, TurnDirection::UNKNOWN);
 
     // Back out the initial node starting point to move motion primitive relative to
     MotionPose initial_pose, prim_pose;
@@ -319,7 +320,7 @@ float NodeLattice::getTraversalCost(const NodePtr & child)
 float NodeLattice::getHeuristicCost(
   const Coordinates & node_coords,
   const Coordinates & goal_coords,
-  const nav2_costmap_2d::Costmap2D * costmap)
+  const nav2_costmap_2d::Costmap2D * /*costmap*/)
 {
   // get obstacle heuristic value
   const float obstacle_heuristic = getObstacleHeuristic(
@@ -414,7 +415,7 @@ float NodeLattice::getDistanceHeuristic(
 
 void NodeLattice::precomputeDistanceHeuristic(
   const float & lookup_table_dim,
-  const MotionModel & motion_model,
+  const MotionModel & /*motion_model*/,
   const unsigned int & dim_3_size,
   const SearchInfo & search_info)
 {
