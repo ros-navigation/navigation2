@@ -38,8 +38,7 @@ using namespace std::chrono_literals;
 class DummySmoother : public nav2_core::Smoother
 {
 public:
-  DummySmoother()
-  : initialized_(false) {}
+  DummySmoother() {}
 
   ~DummySmoother() {}
 
@@ -81,7 +80,6 @@ public:
   }
 
 private:
-  bool initialized_;
   std::string command_;
   std::chrono::system_clock::time_point start_time_;
 };
