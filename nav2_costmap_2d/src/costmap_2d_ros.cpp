@@ -129,6 +129,7 @@ void Costmap2DROS::init()
   declare_parameter("rolling_window", rclcpp::ParameterValue(false));
   declare_parameter("track_unknown_space", rclcpp::ParameterValue(false));
   declare_parameter("transform_tolerance", rclcpp::ParameterValue(0.3));
+  declare_parameter("wait_for_transforms_timeout", rclcpp::ParameterValue(10.0));
   declare_parameter("trinary_costmap", rclcpp::ParameterValue(true));
   declare_parameter("unknown_cost_value", rclcpp::ParameterValue(static_cast<unsigned char>(0xff)));
   declare_parameter("update_frequency", rclcpp::ParameterValue(5.0));
@@ -279,6 +280,9 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
   RCLCPP_INFO(get_logger(), "Checking transform");
   rclcpp::Rate r(2);
+  const auto wait_for_transforms_timeout = rclcpp::Duration::from_seconds(
+    wait_for_transforms_timeout_);
+  const auto start_wait_for_transforms = now();
   while (rclcpp::ok() &&
     !tf_buffer_->canTransform(
       global_frame_, robot_base_frame_, tf2::TimePointZero, &tf_error))
@@ -287,6 +291,21 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
       get_logger(), "Timed out waiting for transform from %s to %s"
       " to become available, tf error: %s",
       robot_base_frame_.c_str(), global_frame_.c_str(), tf_error.c_str());
+
+    // Check timeout
+    if (now() > (start_wait_for_transforms + wait_for_transforms_timeout)) {
+      RCLCPP_ERROR(
+        get_logger(), "Failed to activate %s because transform from %s to %s did not become available before timeout",
+        get_name(), robot_base_frame_.c_str(), global_frame_.c_str());
+      // Deactivate already activated publishers
+      footprint_pub_->on_deactivate();
+      costmap_publisher_->on_deactivate();
+      for (auto & layer_pub : layer_publishers_) {
+        layer_pub->on_deactivate();
+      }
+
+      return nav2_util::CallbackReturn::FAILURE;
+    }
 
     // The error string will accumulate and errors will typically be the same, so the last
     // will do for the warning above. Reset the string here to avoid accumulation
@@ -386,6 +405,7 @@ Costmap2DROS::getParameters()
   get_parameter("rolling_window", rolling_window_);
   get_parameter("track_unknown_space", track_unknown_space_);
   get_parameter("transform_tolerance", transform_tolerance_);
+  get_parameter("wait_for_transforms_timeout", wait_for_transforms_timeout_);
   get_parameter("update_frequency", map_update_frequency_);
   get_parameter("width", map_width_meters_);
   get_parameter("plugins", plugin_names_);
