@@ -266,13 +266,6 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
-  footprint_pub_->on_activate();
-  costmap_publisher_->on_activate();
-
-  for (auto & layer_pub : layer_publishers_) {
-    layer_pub->on_activate();
-  }
-
   // First, make sure that the transform between the robot base frame
   // and the global frame is available
 
@@ -297,12 +290,6 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
       RCLCPP_ERROR(
         get_logger(), "Failed to activate %s because transform from %s to %s did not become available before timeout",
         get_name(), robot_base_frame_.c_str(), global_frame_.c_str());
-      // Deactivate already activated publishers
-      footprint_pub_->on_deactivate();
-      costmap_publisher_->on_deactivate();
-      for (auto & layer_pub : layer_publishers_) {
-        layer_pub->on_deactivate();
-      }
 
       return nav2_util::CallbackReturn::FAILURE;
     }
@@ -311,6 +298,14 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
     // will do for the warning above. Reset the string here to avoid accumulation
     tf_error.clear();
     r.sleep();
+  }
+
+  // Activate publishers
+  footprint_pub_->on_activate();
+  costmap_publisher_->on_activate();
+
+  for (auto & layer_pub : layer_publishers_) {
+    layer_pub->on_activate();
   }
 
   // Create a thread to handle updating the map
