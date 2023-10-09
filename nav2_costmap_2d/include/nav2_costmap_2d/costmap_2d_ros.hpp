@@ -379,7 +379,7 @@ protected:
   bool rolling_window_{false};              ///< Whether to use a rolling window version of the costmap
   bool track_unknown_space_{false};
   double transform_tolerance_{0};           ///< The timeout before transform errors
-  double wait_for_transforms_timeout_{0};   ///< The timeout before activation of the node errors
+  double initial_transform_timeout_{0};   ///< The timeout before activation of the node errors
 
   // Derived parameters
   bool use_radius_{false};
