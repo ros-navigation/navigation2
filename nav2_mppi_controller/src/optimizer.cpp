@@ -49,7 +49,7 @@ void Optimizer::initialize(
   getParams();
 
   critic_manager_.on_configure(parent_, name_, costmap_ros_, parameters_handler_);
-  noise_generator_.initialize(settings_, isHolonomic());
+  noise_generator_.initialize(settings_, isHolonomic(), name_, parameters_handler_);
 
   reset();
 }
