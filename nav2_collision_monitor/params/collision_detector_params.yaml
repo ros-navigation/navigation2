@@ -14,12 +14,15 @@ collision_detector:
       min_points: 4
       visualize: True
       polygon_pub_topic: "polygon_front"
+      enabled: True
     observation_sources: ["scan"]
     scan:
       type: "scan"
       topic: "scan"
+      enabled: True
     pointcloud:
       type: "pointcloud"
       topic: "/intel_realsense_r200_depth/points"
       min_height: 0.1
       max_height: 0.5
+      enabled: True

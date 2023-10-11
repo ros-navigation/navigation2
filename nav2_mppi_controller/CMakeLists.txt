@@ -39,8 +39,18 @@ nav2_package()
 
 include(CheckCXXCompilerFlag)
 
+check_cxx_compiler_flag("-mno-avx512f" COMPILER_SUPPORTS_AVX512)
+check_cxx_compiler_flag("-msse4.2" COMPILER_SUPPORTS_SSE4)
 check_cxx_compiler_flag("-mavx2" COMPILER_SUPPORTS_AVX2)
 check_cxx_compiler_flag("-mfma" COMPILER_SUPPORTS_FMA)
+
+if(COMPILER_SUPPORTS_AVX512)
+  add_compile_options(-mno-avx512f)
+endif()
+
+if(COMPILER_SUPPORTS_SSE4)
+  add_compile_options(-msse4.2)
+endif()
 
 if(COMPILER_SUPPORTS_AVX2)
   add_compile_options(-mavx2)
