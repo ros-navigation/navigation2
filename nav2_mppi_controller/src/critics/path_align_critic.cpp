@@ -54,7 +54,8 @@ void PathAlignCritic::score(CriticData & data)
 
   // Don't apply when first getting bearing w.r.t. the path
   utils::setPathFurthestPointIfNotSet(data);
-  if (*data.furthest_reached_path_point < offset_from_furthest_) {
+  const size_t path_segments_count = *data.furthest_reached_path_point;  // up to furthest only
+  if (path_segments_count < offset_from_furthest_) {
     return;
   }
 
@@ -80,49 +81,49 @@ void PathAlignCritic::score(CriticData & data)
 
   const size_t batch_size = T_x.shape(0);
   const size_t time_steps = T_x.shape(1);
-  const size_t traj_pts_eval = floor(time_steps / trajectory_point_step_);
-  const size_t path_segments_count = data.path.x.shape(0) - 1;
   auto && cost = xt::xtensor<float, 1>::from_shape({data.costs.shape(0)});
 
-  if (path_segments_count < 1) {
-    return;
+  // Find integrated distance in the path
+  std::vector<float> path_integrated_distances(path_segments_count, 0.0f);
+  float dx = 0.0f, dy = 0.0f;
+  for (unsigned int i = 1; i != path_segments_count; i++) {
+    dx = P_x(i) - P_x(i - 1);
+    dy = P_y(i) - P_y(i - 1);
+    float curr_dist = sqrtf(dx * dx + dy * dy);
+    path_integrated_distances[i] = path_integrated_distances[i - 1] + curr_dist;
   }
 
-  float dist_sq = 0.0f, dx = 0.0f, dy = 0.0f, dyaw = 0.0f, summed_dist = 0.0f;
-  float min_dist_sq = std::numeric_limits<float>::max();
-  size_t min_s = 0;
-
+  float traj_integrated_distance = 0.0f;
+  float summed_path_dist = 0.0f, dyaw = 0.0f;
+  float num_samples = 0.0f;
+  size_t path_pt;
   for (size_t t = 0; t < batch_size; ++t) {
-    summed_dist = 0.0f;
+    traj_integrated_distance = 0.0f;
+    summed_path_dist = 0.0f;
+    num_samples = 0.0f;
     for (size_t p = trajectory_point_step_; p < time_steps; p += trajectory_point_step_) {
-      min_dist_sq = std::numeric_limits<float>::max();
-      min_s = 0;
-
-      // Find closest path segment to the trajectory point
-      for (size_t s = 0; s < path_segments_count - 1; s++) {
-        xt::xtensor_fixed<float, xt::xshape<2>> P;
-        dx = P_x(s) - T_x(t, p);
-        dy = P_y(s) - T_y(t, p);
-        if (use_path_orientations_) {
-          dyaw = angles::shortest_angular_distance(P_yaw(s), T_yaw(t, p));
-          dist_sq = dx * dx + dy * dy + dyaw * dyaw;
-        } else {
-          dist_sq = dx * dx + dy * dy;
-        }
-        if (dist_sq < min_dist_sq) {
-          min_dist_sq = dist_sq;
-          min_s = s;
-        }
-      }
+      dx = T_x(t, p) - T_x(t, p - trajectory_point_step_);
+      dy = T_y(t, p) - T_y(t, p - trajectory_point_step_);
+      traj_integrated_distance += sqrtf(dx * dx + dy * dy);
+      path_pt = utils::findClosestPathPt(path_integrated_distances, traj_integrated_distance);
 
       // The nearest path point to align to needs to be not in collision, else
       // let the obstacle critic take over in this region due to dynamic obstacles
-      if (min_s != 0 && (*data.path_pts_valid)[min_s]) {
-        summed_dist += sqrtf(min_dist_sq);
+      if ((*data.path_pts_valid)[path_pt]) {
+        dx = P_x(path_pt) - T_x(t, p);
+        dy = P_y(path_pt) - T_y(t, p);
+        num_samples += 1.0f;
+        if (use_path_orientations_) {
+          dyaw = angles::shortest_angular_distance(P_yaw(path_pt), T_yaw(t, p));
+          summed_path_dist += sqrtf(dx * dx + dy * dy + dyaw * dyaw);
+        } else {
+          summed_path_dist += sqrtf(dx * dx + dy * dy);
+        }
       }
     }
-
-    cost[t] = summed_dist / traj_pts_eval;
+    if (num_samples > 0) {
+      cost[t] = summed_path_dist / num_samples;
+    }
   }
 
   data.costs += xt::pow(std::move(cost) * weight_, power_);

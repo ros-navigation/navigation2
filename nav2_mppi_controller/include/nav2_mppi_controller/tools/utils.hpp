@@ -688,6 +688,23 @@ inline unsigned int removePosesAfterFirstInversion(nav_msgs::msg::Path & path)
   return first_after_inversion;
 }
 
+/**
+ * @brief Compare to trajectory points to find closest path point along integrated distances
+ * @param vec Vect to check
+ * @return dist Distance to look for
+ */
+inline size_t findClosestPathPt(const std::vector<float> & vec, float dist)
+{
+  auto iter = std::lower_bound(vec.begin(), vec.end(), dist);
+  if (iter == vec.begin()) {
+    return 0;
+  }
+  if (dist - *(iter - 1) < *iter - dist) {
+    return iter - 1 - vec.begin();
+  }
+  return iter - vec.begin();
+}
+
 }  // namespace mppi::utils
 
 #endif  // NAV2_MPPI_CONTROLLER__TOOLS__UTILS_HPP_
