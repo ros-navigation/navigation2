@@ -23,12 +23,22 @@
 namespace mppi
 {
 
-void NoiseGenerator::initialize(mppi::models::OptimizerSettings & settings, bool is_holonomic)
+void NoiseGenerator::initialize(
+  mppi::models::OptimizerSettings & settings, bool is_holonomic,
+  const std::string & name, ParametersHandler * param_handler)
 {
   settings_ = settings;
   is_holonomic_ = is_holonomic;
   active_ = true;
-  noise_thread_ = std::thread(std::bind(&NoiseGenerator::noiseThread, this));
+
+  auto getParam = param_handler->getParamGetter(name);
+  getParam(regenerate_noises_, "regenerate_noises", false);
+
+  if (regenerate_noises_) {
+    noise_thread_ = std::thread(std::bind(&NoiseGenerator::noiseThread, this));
+  } else {
+    generateNoisedControls();
+  }
 }
 
 void NoiseGenerator::shutdown()
@@ -44,7 +54,7 @@ void NoiseGenerator::shutdown()
 void NoiseGenerator::generateNextNoises()
 {
   // Trigger the thread to run in parallel to this iteration
-  // to generate the next iteration's noises.
+  // to generate the next iteration's noises (if applicable).
   {
     std::unique_lock<std::mutex> guard(noise_lock_);
     ready_ = true;
@@ -76,7 +86,12 @@ void NoiseGenerator::reset(mppi::models::OptimizerSettings & settings, bool is_h
     xt::noalias(noises_wz_) = xt::zeros<float>({settings_.batch_size, settings_.time_steps});
     ready_ = true;
   }
-  noise_cond_.notify_all();
+
+  if (regenerate_noises_) {
+    noise_cond_.notify_all();
+  } else {
+    generateNoisedControls();
+  }
 }
 
 void NoiseGenerator::noiseThread()
