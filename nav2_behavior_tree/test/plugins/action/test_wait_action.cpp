@@ -137,7 +137,7 @@ TEST_F(WaitActionTestFixture, test_tick)
     R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-            <Wait wait_duration="-5"/>
+            <Wait wait_duration="-5.0"/>
         </BehaviorTree>
       </root>)";
 
