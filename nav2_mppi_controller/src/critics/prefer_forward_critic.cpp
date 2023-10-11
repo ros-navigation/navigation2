@@ -33,12 +33,9 @@ void PreferForwardCritic::initialize()
 void PreferForwardCritic::score(CriticData & data)
 {
   using xt::evaluation_strategy::immediate;
-
-  if (!enabled_) {
-    return;
-  }
-
-  if (utils::withinPositionGoalTolerance(threshold_to_consider_, data.state.pose.pose, data.path)) {
+  if (!enabled_ ||
+    utils::withinPositionGoalTolerance(threshold_to_consider_, data.state.pose.pose, data.path))
+  {
     return;
   }
 

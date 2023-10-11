@@ -6,7 +6,10 @@ add_definitions(-DXTENSOR_USE_XSIMD)
 
 set(XTENSOR_USE_TBB 0)
 set(XTENSOR_USE_OPENMP 0)
+set(XTENSOR_USE_XSIMD 1)
 
+# set(XTENSOR_DEFAULT_LAYOUT column_major)  # row_major, column_major
+# set(XTENSOR_DEFAULT_TRAVERSAL row_major)  # row_major, column_major
 
 find_package(ament_cmake REQUIRED)
 find_package(xtensor REQUIRED)
@@ -86,7 +89,7 @@ set(libraries mppi_controller mppi_critics)
 
 foreach(lib IN LISTS libraries)
   target_compile_options(${lib} PUBLIC -fconcepts)
-  target_include_directories(${lib} PUBLIC include ${xsimd_INCLUDE_DIRS} ${OpenMP_INCLUDE_DIRS})
+  target_include_directories(${lib} PUBLIC include ${xsimd_INCLUDE_DIRS})  #  ${OpenMP_INCLUDE_DIRS}
   target_link_libraries(${lib} xtensor xtensor::optimize xtensor::use_xsimd)
   ament_target_dependencies(${lib} ${dependencies_pkgs})
 endforeach()
