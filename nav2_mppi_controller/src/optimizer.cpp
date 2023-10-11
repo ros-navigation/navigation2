@@ -269,7 +269,7 @@ void Optimizer::integrateStateVelocities(
   xt::xtensor<float, 2> & trajectory,
   const xt::xtensor<float, 2> & sequence) const
 {
-  double initial_yaw = tf2::getYaw(state_.pose.pose.orientation);
+  float initial_yaw = tf2::getYaw(state_.pose.pose.orientation);
 
   const auto vx = xt::view(sequence, xt::all(), 0);
   const auto vy = xt::view(sequence, xt::all(), 2);
