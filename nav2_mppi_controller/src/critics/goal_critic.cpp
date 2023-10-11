@@ -35,11 +35,7 @@ void GoalCritic::initialize()
 
 void GoalCritic::score(CriticData & data)
 {
-  if (!enabled_) {
-    return;
-  }
-
-  if (!utils::withinPositionGoalTolerance(
+  if (!enabled_ || !utils::withinPositionGoalTolerance(
       threshold_to_consider_, data.state.pose.pose, data.path))
   {
     return;

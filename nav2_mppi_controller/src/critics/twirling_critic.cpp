@@ -31,11 +31,9 @@ void TwirlingCritic::initialize()
 void TwirlingCritic::score(CriticData & data)
 {
   using xt::evaluation_strategy::immediate;
-  if (!enabled_) {
-    return;
-  }
-
-  if (utils::withinPositionGoalTolerance(data.goal_checker, data.state.pose.pose, data.path)) {
+  if (!enabled_ ||
+    utils::withinPositionGoalTolerance(data.goal_checker, data.state.pose.pose, data.path))
+  {
     return;
   }
 
