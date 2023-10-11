@@ -19,6 +19,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <cmath>
 #include <xtensor/xmath.hpp>
 #include <xtensor/xrandom.hpp>
 #include <xtensor/xnoalias.hpp>
@@ -49,7 +50,7 @@ void Optimizer::initialize(
   getParams();
 
   critic_manager_.on_configure(parent_, name_, costmap_ros_, parameters_handler_);
-  noise_generator_.initialize(settings_, isHolonomic());
+  noise_generator_.initialize(settings_, isHolonomic(), name_, parameters_handler_);
 
   reset();
 }
@@ -268,7 +269,7 @@ void Optimizer::integrateStateVelocities(
   xt::xtensor<float, 2> & trajectory,
   const xt::xtensor<float, 2> & sequence) const
 {
-  double initial_yaw = tf2::getYaw(state_.pose.pose.orientation);
+  float initial_yaw = tf2::getYaw(state_.pose.pose.orientation);
 
   const auto vx = xt::view(sequence, xt::all(), 0);
   const auto vy = xt::view(sequence, xt::all(), 2);
@@ -278,8 +279,7 @@ void Optimizer::integrateStateVelocities(
   auto traj_y = xt::view(trajectory, xt::all(), 1);
   auto traj_yaws = xt::view(trajectory, xt::all(), 2);
 
-  xt::noalias(traj_yaws) =
-    utils::normalize_angles(xt::cumsum(wz * settings_.model_dt, 0) + initial_yaw);
+  xt::noalias(traj_yaws) = xt::cumsum(wz * settings_.model_dt, 0 + initial_yaw);
 
   auto && yaw_cos = xt::xtensor<float, 1>::from_shape(traj_yaws.shape());
   auto && yaw_sin = xt::xtensor<float, 1>::from_shape(traj_yaws.shape());
@@ -307,10 +307,10 @@ void Optimizer::integrateStateVelocities(
   models::Trajectories & trajectories,
   const models::State & state) const
 {
-  const double initial_yaw = tf2::getYaw(state.pose.pose.orientation);
+  const float initial_yaw = tf2::getYaw(state.pose.pose.orientation);
 
   xt::noalias(trajectories.yaws) =
-    utils::normalize_angles(xt::cumsum(state.wz * settings_.model_dt, 1) + initial_yaw);
+    xt::cumsum(state.wz * settings_.model_dt, 1) + initial_yaw;
 
   const auto yaws_cutted = xt::view(trajectories.yaws, xt::all(), xt::range(0, -1));
 
