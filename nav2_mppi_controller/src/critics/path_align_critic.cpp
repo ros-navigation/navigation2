@@ -106,7 +106,8 @@ void PathAlignCritic::score(CriticData & data)
       dx = Tx - T_x(p - trajectory_point_step_);
       dy = Ty - T_y(p - trajectory_point_step_);
       traj_integrated_distance += sqrtf(dx * dx + dy * dy);
-      path_pt = utils::findClosestPathPt(path_integrated_distances, traj_integrated_distance, path_pt);
+      path_pt = utils::findClosestPathPt(
+        path_integrated_distances, traj_integrated_distance, path_pt);
 
       // The nearest path point to align to needs to be not in collision, else
       // let the obstacle critic take over in this region due to dynamic obstacles

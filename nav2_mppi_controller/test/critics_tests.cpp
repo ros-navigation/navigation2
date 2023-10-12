@@ -586,8 +586,8 @@ TEST(CriticTests, PathAlignCritic)
   path.x(21) = 0.9;
   generated_trajectories.x = 0.66 * xt::ones<float>({1000, 30});
   critic.score(data);
-  // 0.04 * 1000 * 10 weight * 4 num pts eval / 4 normalization term
-  EXPECT_NEAR(xt::sum(costs, immediate)(), 400.0, 1e-2);
+  // 0.66 * 1000 * 10 weight * 6 num pts eval / 6 normalization term
+  EXPECT_NEAR(xt::sum(costs, immediate)(), 6600.0, 1e-2);
 
   // provide state pose and path far enough to enable, with data to pass condition
   // but path is blocked in collision
