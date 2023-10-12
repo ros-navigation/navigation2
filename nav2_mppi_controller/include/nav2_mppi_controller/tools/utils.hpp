@@ -308,14 +308,16 @@ inline size_t findPathFurthestReachedPoint(const CriticData & data)
 
   const auto dists = dx * dx + dy * dy;
 
-  size_t max_id_by_trajectories = 0;
+  size_t max_id_by_trajectories = 0, min_id_by_path = 0;
   float min_distance_by_path = std::numeric_limits<float>::max();
+  float cur_dist = 0.0f;
 
   for (size_t i = 0; i < dists.shape(0); i++) {
-    size_t min_id_by_path = 0;
+    min_id_by_path = 0;
     for (size_t j = 0; j < dists.shape(1); j++) {
-      if (dists(i, j) < min_distance_by_path) {
-        min_distance_by_path = dists(i, j);
+      cur_dist = dists(i, j);
+      if (cur_dist < min_distance_by_path) {
+        min_distance_by_path = cur_dist;
         min_id_by_path = j;
       }
     }
