@@ -35,7 +35,8 @@ WaitAction::WaitAction(
       "(%f). Setting to positive.", duration);
     duration *= -1;
   }
-  goal_.time = rlcpp::Duration::from_seconds(duration);
+  
+  goal_.time = rclcpp::Duration::from_seconds(duration);
 }
 
 void WaitAction::on_tick()
