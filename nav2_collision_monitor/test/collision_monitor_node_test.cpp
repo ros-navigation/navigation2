@@ -625,12 +625,12 @@ bool Tester::waitActionState(const std::chrono::nanoseconds & timeout)
 
 void Tester::cmdVelOutCallback(geometry_msgs::msg::Twist::SharedPtr msg)
 {
-  cmd_vel_out_ = msg;
+  cmd_vel_out_ = std::make_shared<geometry_msgs::msg::Twist>(*msg);
 }
 
 void Tester::actionStateCallback(nav2_msgs::msg::CollisionMonitorState::SharedPtr msg)
 {
-  action_state_ = msg;
+  action_state_ = std::make_shared<nav2_msgs::msg::CollisionMonitorState>(*msg);
 }
 
 TEST_F(Tester, testProcessStopSlowdownLimit)

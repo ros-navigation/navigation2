@@ -122,7 +122,7 @@ void Scan::getData(
 
 void Scan::dataCallback(sensor_msgs::msg::LaserScan::ConstSharedPtr msg)
 {
-  data_ = msg;
+  data_ = std::make_shared<sensor_msgs::msg::LaserScan>(*msg);
 }
 
 }  // namespace nav2_collision_monitor

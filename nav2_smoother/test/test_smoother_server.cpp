@@ -145,7 +145,7 @@ public:
 
   void setCostmap(nav2_msgs::msg::Costmap::SharedPtr msg)
   {
-    costmap_msg_ = msg;
+    costmap_msg_ = std::make_shared<nav2_msgs::msg::Costmap>(*msg);
     costmap_received_ = true;
   }
 };
@@ -177,7 +177,7 @@ public:
 
   void setFootprint(geometry_msgs::msg::PolygonStamped::SharedPtr msg)
   {
-    footprint_ = msg;
+    footprint_ = std::make_shared<geometry_msgs::msg::PolygonStamped>(*msg);
     footprint_received_ = true;
   }
 };

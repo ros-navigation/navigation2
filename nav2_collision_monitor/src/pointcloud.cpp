@@ -139,7 +139,7 @@ void PointCloud::getParameters(std::string & source_topic)
 
 void PointCloud::dataCallback(sensor_msgs::msg::PointCloud2::ConstSharedPtr msg)
 {
-  data_ = msg;
+  data_ = std::make_shared<sensor_msgs::msg::PointCloud2>(*msg);
 }
 
 }  // namespace nav2_collision_monitor

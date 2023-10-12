@@ -130,7 +130,7 @@ private:
   void infoCallback(const nav2_msgs::msg::CostmapFilterInfo::SharedPtr msg)
   {
     std::lock_guard<mutex_t> guard(*getMutex());
-    info_ = msg;
+    info_ = std::make_shared<nav2_msgs::msg::CostmapFilterInfo>(*msg);
   }
 
   rclcpp::Subscription<nav2_msgs::msg::CostmapFilterInfo>::SharedPtr subscription_;

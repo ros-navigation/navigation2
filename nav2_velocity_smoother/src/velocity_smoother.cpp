@@ -187,7 +187,7 @@ void VelocitySmoother::inputCommandCallback(const geometry_msgs::msg::Twist::Sha
     return;
   }
 
-  command_ = msg;
+  command_ = std::make_shared<geometry_msgs::msg::Twist>(*msg);
   last_command_time_ = now();
 }
 

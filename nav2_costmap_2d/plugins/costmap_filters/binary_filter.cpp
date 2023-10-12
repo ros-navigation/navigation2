@@ -161,7 +161,7 @@ void BinaryFilter::maskCallback(
     filter_mask_.reset();
   }
 
-  filter_mask_ = msg;
+  filter_mask_ = std::make_shared<nav_msgs::msg::OccupancyGrid>(*msg);
 }
 
 void BinaryFilter::process(

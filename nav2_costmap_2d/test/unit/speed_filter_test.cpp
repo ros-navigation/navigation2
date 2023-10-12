@@ -115,7 +115,7 @@ public:
   void speedLimitCallback(
     const nav2_msgs::msg::SpeedLimit::SharedPtr msg)
   {
-    msg_ = msg;
+    msg_ = std::make_shared<nav2_msgs::msg::SpeedLimit>(*msg);
     speed_limit_updated_ = true;
   }
 
