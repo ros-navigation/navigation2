@@ -17,6 +17,10 @@
       <description>mppi critic for aligning to path</description>
     </class>
 
+    <class type="mppi::critics::PathAlignLegacyCritic" base_class_type="mppi::critics::CriticFunction">
+      <description>mppi critic for aligning to path (legacy)</description>
+    </class>
+
     <class type="mppi::critics::PathAngleCritic" base_class_type="mppi::critics::CriticFunction">
       <description>mppi critic for tracking the path in the correct heading</description>
     </class>
