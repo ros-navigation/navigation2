@@ -174,7 +174,10 @@ PlannerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   plan_publisher_->on_activate();
   action_server_pose_->activate();
   action_server_poses_->activate();
-  costmap_ros_->activate();
+  const auto costmap_ros_state = costmap_ros_->activate();
+  if (costmap_ros_state.id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
+    return nav2_util::CallbackReturn::FAILURE;
+  }
 
   PlannerMap::iterator it;
   for (it = planners_.begin(); it != planners_.end(); ++it) {
