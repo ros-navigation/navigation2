@@ -35,9 +35,7 @@ WaitAction::WaitAction(
       "(%f). Setting to positive.", duration);
     duration *= -1;
   }
-  
-  goal_.time.sec = int(duration);
-  goal_.time.nanosec = int((duration - goal_.time.sec) * pow(10, 9));
+  goal_.time = rlcpp::Duration::from_seconds(duration);
 }
 
 void WaitAction::on_tick()
