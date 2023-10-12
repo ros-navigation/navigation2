@@ -129,6 +129,7 @@ void Costmap2DROS::init()
   declare_parameter("rolling_window", rclcpp::ParameterValue(false));
   declare_parameter("track_unknown_space", rclcpp::ParameterValue(false));
   declare_parameter("transform_tolerance", rclcpp::ParameterValue(0.3));
+  declare_parameter("initial_transform_timeout", rclcpp::ParameterValue(60.0));
   declare_parameter("trinary_costmap", rclcpp::ParameterValue(true));
   declare_parameter("unknown_cost_value", rclcpp::ParameterValue(static_cast<unsigned char>(0xff)));
   declare_parameter("update_frequency", rclcpp::ParameterValue(5.0));
@@ -265,13 +266,6 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
-  footprint_pub_->on_activate();
-  costmap_publisher_->on_activate();
-
-  for (auto & layer_pub : layer_publishers_) {
-    layer_pub->on_activate();
-  }
-
   // First, make sure that the transform between the robot base frame
   // and the global frame is available
 
@@ -279,6 +273,9 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
   RCLCPP_INFO(get_logger(), "Checking transform");
   rclcpp::Rate r(2);
+  const auto initial_transform_timeout = rclcpp::Duration::from_seconds(
+    initial_transform_timeout_);
+  const auto initial_transform_timeout_point = now() + initial_transform_timeout;
   while (rclcpp::ok() &&
     !tf_buffer_->canTransform(
       global_frame_, robot_base_frame_, tf2::TimePointZero, &tf_error))
@@ -288,10 +285,27 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
       " to become available, tf error: %s",
       robot_base_frame_.c_str(), global_frame_.c_str(), tf_error.c_str());
 
+    // Check timeout
+    if (now() > initial_transform_timeout_point) {
+      RCLCPP_ERROR(
+        get_logger(), "Failed to activate %s because transform from %s to %s did not become available before timeout",
+        get_name(), robot_base_frame_.c_str(), global_frame_.c_str());
+
+      return nav2_util::CallbackReturn::FAILURE;
+    }
+
     // The error string will accumulate and errors will typically be the same, so the last
     // will do for the warning above. Reset the string here to avoid accumulation
     tf_error.clear();
     r.sleep();
+  }
+
+  // Activate publishers
+  footprint_pub_->on_activate();
+  costmap_publisher_->on_activate();
+
+  for (auto & layer_pub : layer_publishers_) {
+    layer_pub->on_activate();
   }
 
   // Create a thread to handle updating the map
@@ -386,6 +400,7 @@ Costmap2DROS::getParameters()
   get_parameter("rolling_window", rolling_window_);
   get_parameter("track_unknown_space", track_unknown_space_);
   get_parameter("transform_tolerance", transform_tolerance_);
+  get_parameter("initial_transform_timeout", initial_transform_timeout_);
   get_parameter("update_frequency", map_update_frequency_);
   get_parameter("width", map_width_meters_);
   get_parameter("plugins", plugin_names_);
