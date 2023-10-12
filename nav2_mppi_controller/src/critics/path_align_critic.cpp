@@ -92,6 +92,7 @@ void PathAlignCritic::score(CriticData & data)
   float traj_integrated_distance = 0.0f;
   float summed_path_dist = 0.0f, dyaw = 0.0f;
   float num_samples = 0.0f;
+  float Tx = 0.0f, Ty = 0.0f;
   size_t path_pt = 0;
   for (size_t t = 0; t < batch_size; ++t) {
     traj_integrated_distance = 0.0f;
@@ -99,20 +100,22 @@ void PathAlignCritic::score(CriticData & data)
     num_samples = 0.0f;
     const auto T_x = xt::view(data.trajectories.x, t, xt::all());
     const auto T_y = xt::view(data.trajectories.y, t, xt::all());
-    const auto T_yaw = xt::view(data.trajectories.yaws, t, xt::all());
     for (size_t p = trajectory_point_step_; p < time_steps; p += trajectory_point_step_) {
-      dx = T_x(p) - T_x(p - trajectory_point_step_);
-      dy = T_y(p) - T_y(p - trajectory_point_step_);
+      Tx = T_x(p);
+      Ty = T_y(p);
+      dx = Tx - T_x(p - trajectory_point_step_);
+      dy = Ty - T_y(p - trajectory_point_step_);
       traj_integrated_distance += sqrtf(dx * dx + dy * dy);
       path_pt = utils::findClosestPathPt(path_integrated_distances, traj_integrated_distance, path_pt);
 
       // The nearest path point to align to needs to be not in collision, else
       // let the obstacle critic take over in this region due to dynamic obstacles
       if ((*data.path_pts_valid)[path_pt]) {
-        dx = P_x(path_pt) - T_x(p);
-        dy = P_y(path_pt) - T_y(p);
+        dx = P_x(path_pt) - Tx;
+        dy = P_y(path_pt) - Ty;
         num_samples += 1.0f;
         if (use_path_orientations_) {
+          const auto T_yaw = xt::view(data.trajectories.yaws, t, xt::all());
           dyaw = angles::shortest_angular_distance(P_yaw(path_pt), T_yaw(p));
           summed_path_dist += sqrtf(dx * dx + dy * dy + dyaw * dyaw);
         } else {
