@@ -53,7 +53,7 @@ public:
   {
     return providedBasicPorts(
       {
-        BT::InputPort<int>("wait_duration", 1, "Wait time")
+        BT::InputPort<double>("wait_duration", 1.0, "Wait time")
       });
   }
 };
