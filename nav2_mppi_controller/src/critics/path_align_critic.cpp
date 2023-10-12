@@ -71,16 +71,12 @@ void PathAlignCritic::score(CriticData & data)
     }
   }
 
-  const auto & T_x = data.trajectories.x;
-  const auto & T_y = data.trajectories.y;
-  const auto & T_yaw = data.trajectories.yaws;
-
   const auto P_x = xt::view(data.path.x, xt::range(_, -1));  // path points
   const auto P_y = xt::view(data.path.y, xt::range(_, -1));  // path points
   const auto P_yaw = xt::view(data.path.yaws, xt::range(_, -1));  // path points
 
-  const size_t batch_size = T_x.shape(0);
-  const size_t time_steps = T_x.shape(1);
+  const size_t batch_size = data.trajectories.x.shape(0);
+  const size_t time_steps = data.trajectories.x.shape(1);
   auto && cost = xt::xtensor<float, 1>::from_shape({data.costs.shape(0)});
 
   // Find integrated distance in the path
@@ -96,25 +92,28 @@ void PathAlignCritic::score(CriticData & data)
   float traj_integrated_distance = 0.0f;
   float summed_path_dist = 0.0f, dyaw = 0.0f;
   float num_samples = 0.0f;
-  size_t path_pt;
+  size_t path_pt = 0;
   for (size_t t = 0; t < batch_size; ++t) {
     traj_integrated_distance = 0.0f;
     summed_path_dist = 0.0f;
     num_samples = 0.0f;
+    const auto T_x = xt::view(data.trajectories.x, t, xt::all());
+    const auto T_y = xt::view(data.trajectories.y, t, xt::all());
+    const auto T_yaw = xt::view(data.trajectories.yaws, t, xt::all());
     for (size_t p = trajectory_point_step_; p < time_steps; p += trajectory_point_step_) {
-      dx = T_x(t, p) - T_x(t, p - trajectory_point_step_);
-      dy = T_y(t, p) - T_y(t, p - trajectory_point_step_);
+      dx = T_x(p) - T_x(p - trajectory_point_step_);
+      dy = T_y(p) - T_y(p - trajectory_point_step_);
       traj_integrated_distance += sqrtf(dx * dx + dy * dy);
-      path_pt = utils::findClosestPathPt(path_integrated_distances, traj_integrated_distance);
+      path_pt = utils::findClosestPathPt(path_integrated_distances, traj_integrated_distance, path_pt);
 
       // The nearest path point to align to needs to be not in collision, else
       // let the obstacle critic take over in this region due to dynamic obstacles
       if ((*data.path_pts_valid)[path_pt]) {
-        dx = P_x(path_pt) - T_x(t, p);
-        dy = P_y(path_pt) - T_y(t, p);
+        dx = P_x(path_pt) - T_x(p);
+        dy = P_y(path_pt) - T_y(p);
         num_samples += 1.0f;
         if (use_path_orientations_) {
-          dyaw = angles::shortest_angular_distance(P_yaw(path_pt), T_yaw(t, p));
+          dyaw = angles::shortest_angular_distance(P_yaw(path_pt), T_yaw(p));
           summed_path_dist += sqrtf(dx * dx + dy * dy + dyaw * dyaw);
         } else {
           summed_path_dist += sqrtf(dx * dx + dy * dy);
