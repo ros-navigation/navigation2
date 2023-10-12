@@ -119,6 +119,8 @@ This process is then repeated a number of times and returns a converged solution
  | max_path_occupancy_ratio   | double | Default 0.07 (7%). Maximum proportion of the path that can be occupied before this critic is not considered to allow the obstacle and path follow critics to avoid obstacles while following the path's intent in presence of dynamic objects in the scene.  |
  | use_path_orientations   | bool | Default false. Whether to consider path's orientations in path alignment, which can be useful when paired with feasible smac planners to incentivize directional changes only where/when the smac planner requests them. If you want the robot to deviate and invert directions where the controller sees fit, keep as false. If your plans do not contain orientation information (e.g. navfn), keep as false.  |
 
+Note: There is a "Legacy" version of this critic also available with the same parameters of an old formulation pre-October 2023.
+
 #### Path Angle Critic
  | Parameter                 | Type   | Definition                                                                                                  |
  | ---------------           | ------ | ----------------------------------------------------------------------------------------------------------- |
