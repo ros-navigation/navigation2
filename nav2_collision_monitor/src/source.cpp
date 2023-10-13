@@ -31,11 +31,12 @@ Source::Source(
   const std::string & global_frame_id,
   const tf2::Duration & transform_tolerance,
   const rclcpp::Duration & source_timeout,
-  const bool base_shift_correction)
+  const bool base_shift_correction,
+  const bool block_if_invalid)
 : node_(node), source_name_(source_name), tf_buffer_(tf_buffer),
   base_frame_id_(base_frame_id), global_frame_id_(global_frame_id),
   transform_tolerance_(transform_tolerance), source_timeout_(source_timeout),
-  base_shift_correction_(base_shift_correction)
+  base_shift_correction_(base_shift_correction), block_if_invalid_(block_if_invalid)
 {
 }
 

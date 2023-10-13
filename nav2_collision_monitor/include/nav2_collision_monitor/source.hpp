@@ -48,6 +48,7 @@ public:
    * @param source_timeout Maximum time interval in which data is considered valid
    * @param base_shift_correction Whether to correct source data towards to base frame movement,
    * considering the difference between current time and latest source time
+   * @param block_if_invalid Whether to stop the robot if a source is invalid
    */
   Source(
     const nav2_util::LifecycleNode::WeakPtr & node,
@@ -57,7 +58,8 @@ public:
     const std::string & global_frame_id,
     const tf2::Duration & transform_tolerance,
     const rclcpp::Duration & source_timeout,
-    const bool base_shift_correction);
+    const bool base_shift_correction,
+    const bool block_if_invalid);
   /**
    * @brief Source destructor
    */
@@ -69,8 +71,9 @@ public:
    * @param curr_time Current node time for data interpolation
    * @param data Array where the data from source to be added.
    * Added data is transformed to base_frame_id_ coordinate system at curr_time.
+   * @return false if an invalid source should block the robot
    */
-  virtual void getData(
+  virtual bool getData(
     const rclcpp::Time & curr_time,
     std::vector<Point> & data) const = 0;
 
@@ -137,6 +140,8 @@ protected:
   /// @brief Whether to correct source data towards to base frame movement,
   /// considering the difference between current time and latest source time
   bool base_shift_correction_;
+  /// @brief block_if_invalid Whether to stop the robot if a source is invalid
+  bool block_if_invalid_;
   /// @brief Whether source is enabled
   bool enabled_;
 };  // class Source

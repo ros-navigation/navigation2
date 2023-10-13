@@ -167,6 +167,10 @@ bool CollisionDetector::getParameters()
     node, "base_shift_correction", rclcpp::ParameterValue(true));
   const bool base_shift_correction =
     get_parameter("base_shift_correction").as_bool();
+  nav2_util::declare_parameter_if_not_declared(
+    node, "block_if_invalid", rclcpp::ParameterValue(false));
+  const bool block_if_invalid =
+    get_parameter("block_if_invalid").as_bool();
 
   if (!configurePolygons(base_frame_id, transform_tolerance)) {
     return false;
@@ -174,7 +178,7 @@ bool CollisionDetector::getParameters()
 
   if (!configureSources(
       base_frame_id, odom_frame_id, transform_tolerance, source_timeout,
-      base_shift_correction))
+      base_shift_correction, block_if_invalid))
   {
     return false;
   }
@@ -244,7 +248,8 @@ bool CollisionDetector::configureSources(
   const std::string & odom_frame_id,
   const tf2::Duration & transform_tolerance,
   const rclcpp::Duration & source_timeout,
-  const bool base_shift_correction)
+  const bool base_shift_correction,
+  const bool block_if_invalid)
 {
   try {
     auto node = shared_from_this();
@@ -259,10 +264,24 @@ bool CollisionDetector::configureSources(
         rclcpp::ParameterValue("scan"));  // Laser scanner by default
       const std::string source_type = get_parameter(source_name + ".type").as_string();
 
+      nav2_util::declare_parameter_if_not_declared(
+        node, source_name + ".source_timeout",
+        rclcpp::ParameterValue(source_timeout.seconds()));    // node source_timeout by default
+      const rclcpp::Duration sensor_specific_source_timeout = rclcpp::Duration::from_seconds(
+        get_parameter(
+          source_name + ".source_timeout").as_double());
+
+      nav2_util::declare_parameter_if_not_declared(
+        node, source_name + ".block_if_invalid",
+        rclcpp::ParameterValue(block_if_invalid));    // node block_if_invalid by default
+      const bool sensor_specific_block_if_invalid =
+        get_parameter(source_name + ".block_if_invalid").as_double();
+
       if (source_type == "scan") {
         std::shared_ptr<Scan> s = std::make_shared<Scan>(
           node, source_name, tf_buffer_, base_frame_id, odom_frame_id,
-          transform_tolerance, source_timeout, base_shift_correction);
+          transform_tolerance, sensor_specific_source_timeout, base_shift_correction,
+          sensor_specific_block_if_invalid);
 
         s->configure();
 
@@ -270,7 +289,8 @@ bool CollisionDetector::configureSources(
       } else if (source_type == "pointcloud") {
         std::shared_ptr<PointCloud> p = std::make_shared<PointCloud>(
           node, source_name, tf_buffer_, base_frame_id, odom_frame_id,
-          transform_tolerance, source_timeout, base_shift_correction);
+          transform_tolerance, sensor_specific_source_timeout, base_shift_correction,
+          sensor_specific_block_if_invalid);
 
         p->configure();
 
@@ -278,7 +298,8 @@ bool CollisionDetector::configureSources(
       } else if (source_type == "range") {
         std::shared_ptr<Range> r = std::make_shared<Range>(
           node, source_name, tf_buffer_, base_frame_id, odom_frame_id,
-          transform_tolerance, source_timeout, base_shift_correction);
+          transform_tolerance, sensor_specific_source_timeout, base_shift_correction,
+          sensor_specific_block_if_invalid);
 
         r->configure();
 
