@@ -224,7 +224,6 @@ bool CollisionDetector::configurePolygons(
           polygon_name.c_str());
         return false;
       }
-
     }
   } catch (const std::exception & ex) {
     RCLCPP_ERROR(get_logger(), "Error while getting parameters: %s", ex.what());
@@ -304,13 +303,18 @@ void CollisionDetector::process()
 
   // Fill collision_points array from different data sources
   for (std::shared_ptr<Source> source : sources_) {
-    source->getData(curr_time, collision_points);
+    if (source->getEnabled()) {
+      source->getData(curr_time, collision_points);
+    }
   }
 
   std::unique_ptr<nav2_msgs::msg::CollisionDetectorState> state_msg =
     std::make_unique<nav2_msgs::msg::CollisionDetectorState>();
 
   for (std::shared_ptr<Polygon> polygon : polygons_) {
+    if (!polygon->getEnabled()) {
+      continue;
+    }
     state_msg->polygons.push_back(polygon->getName());
     state_msg->detections.push_back(
       polygon->getPointsInside(
@@ -326,7 +330,9 @@ void CollisionDetector::process()
 void CollisionDetector::publishPolygons() const
 {
   for (std::shared_ptr<Polygon> polygon : polygons_) {
-    polygon->publish();
+    if (polygon->getEnabled()) {
+      polygon->publish();
+    }
   }
 }
 

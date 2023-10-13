@@ -152,7 +152,7 @@ void ObstaclesCritic::score(CriticData & data)
     }
 
     if (!trajectory_collide) {all_trajectories_collide = false;}
-    raw_cost[i] = static_cast<float>(trajectory_collide ? collision_cost_ : traj_cost);
+    raw_cost[i] = trajectory_collide ? collision_cost_ : traj_cost;
   }
 
   data.costs += xt::pow(
