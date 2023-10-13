@@ -392,7 +392,9 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in)
 
   // Fill collision_points array from different data sources
   for (std::shared_ptr<Source> source : sources_) {
-    source->getData(curr_time, collision_points);
+    if (source->getEnabled()) {
+      source->getData(curr_time, collision_points);
+    }
   }
 
   if (collision_points_marker_pub_) {
@@ -431,6 +433,9 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in)
   std::shared_ptr<Polygon> action_polygon;
 
   for (std::shared_ptr<Polygon> polygon : polygons_) {
+    if (!polygon->getEnabled()) {
+      continue;
+    }
     if (robot_action.action_type == STOP) {
       // If robot already should stop, do nothing
       break;
@@ -594,7 +599,9 @@ void CollisionMonitor::notifyActionState(
 void CollisionMonitor::publishPolygons() const
 {
   for (std::shared_ptr<Polygon> polygon : polygons_) {
-    polygon->publish();
+    if (polygon->getEnabled()) {
+      polygon->publish();
+    }
   }
 }
 

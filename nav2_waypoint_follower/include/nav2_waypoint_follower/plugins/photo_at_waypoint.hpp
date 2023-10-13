@@ -22,7 +22,7 @@
 #define _LIBCPP_NO_EXPERIMENTAL_DEPRECATION_WARNING_FILESYSTEM
 
 
-#include <experimental/filesystem>
+#include <filesystem>
 #include <mutex>
 #include <string>
 #include <exception>
@@ -97,7 +97,7 @@ protected:
   // to ensure safety when accessing global var curr_frame_
   std::mutex global_mutex_;
   // the taken photos will be saved under this directory
-  std::experimental::filesystem::path save_dir_;
+  std::filesystem::path save_dir_;
   // .png ? .jpg ? or some other well known format
   std::string image_format_;
   // the topic to subscribe in order capture a frame
