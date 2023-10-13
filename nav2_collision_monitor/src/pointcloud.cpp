@@ -15,7 +15,6 @@
 #include "nav2_collision_monitor/pointcloud.hpp"
 
 #include <functional>
-#include <memory>
 
 #include "sensor_msgs/point_cloud2_iterator.hpp"
 
@@ -72,11 +71,10 @@ void PointCloud::getData(
 {
   // Ignore data from the source if it is not being published yet or
   // not published for a long time
-  auto data_in = std::atomic_load(&data_);
-  if (data_in == nullptr) {
+  if (data_ == nullptr) {
     return;
   }
-  if (!sourceValid(data_in->header.stamp, curr_time)) {
+  if (!sourceValid(data_->header.stamp, curr_time)) {
     return;
   }
 
@@ -86,7 +84,7 @@ void PointCloud::getData(
     // to the base frame and current time
     if (
       !nav2_util::getTransform(
-        data_in->header.frame_id, data_in->header.stamp,
+        data_->header.frame_id, data_->header.stamp,
         base_frame_id_, curr_time, global_frame_id_,
         transform_tolerance_, tf_buffer_, tf_transform))
     {
@@ -98,16 +96,16 @@ void PointCloud::getData(
     // frames.
     if (
       !nav2_util::getTransform(
-        data_in->header.frame_id, base_frame_id_,
+        data_->header.frame_id, base_frame_id_,
         transform_tolerance_, tf_buffer_, tf_transform))
     {
       return;
     }
   }
 
-  sensor_msgs::PointCloud2ConstIterator<float> iter_x(*data_in, "x");
-  sensor_msgs::PointCloud2ConstIterator<float> iter_y(*data_in, "y");
-  sensor_msgs::PointCloud2ConstIterator<float> iter_z(*data_in, "z");
+  sensor_msgs::PointCloud2ConstIterator<float> iter_x(*data_, "x");
+  sensor_msgs::PointCloud2ConstIterator<float> iter_y(*data_, "y");
+  sensor_msgs::PointCloud2ConstIterator<float> iter_z(*data_, "z");
 
   // Refill data array with PointCloud points in base frame
   for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z) {
@@ -141,7 +139,7 @@ void PointCloud::getParameters(std::string & source_topic)
 
 void PointCloud::dataCallback(sensor_msgs::msg::PointCloud2::ConstSharedPtr msg)
 {
-  std::atomic_store(&data_, msg);
+  data_ = msg;
 }
 
 }  // namespace nav2_collision_monitor
