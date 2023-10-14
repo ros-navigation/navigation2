@@ -2,6 +2,7 @@ MIT License
 
 Copyright (c) 2021-2022 Fast Sense Studio
 Copyright (c) 2022-2023 Samsung Research America
+Copyright (c) 2023 Open Navigation LLC
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
