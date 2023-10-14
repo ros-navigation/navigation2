@@ -279,7 +279,7 @@ void Optimizer::integrateStateVelocities(
   auto traj_y = xt::view(trajectory, xt::all(), 1);
   auto traj_yaws = xt::view(trajectory, xt::all(), 2);
 
-  xt::noalias(traj_yaws) = xt::cumsum(wz * settings_.model_dt, 0 + initial_yaw);
+  xt::noalias(traj_yaws) = xt::cumsum(wz * settings_.model_dt, 0) + initial_yaw;
 
   auto && yaw_cos = xt::xtensor<float, 1>::from_shape(traj_yaws.shape());
   auto && yaw_sin = xt::xtensor<float, 1>::from_shape(traj_yaws.shape());
