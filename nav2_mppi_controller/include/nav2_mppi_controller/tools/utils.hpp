@@ -308,14 +308,16 @@ inline size_t findPathFurthestReachedPoint(const CriticData & data)
 
   const auto dists = dx * dx + dy * dy;
 
-  size_t max_id_by_trajectories = 0;
+  size_t max_id_by_trajectories = 0, min_id_by_path = 0;
   float min_distance_by_path = std::numeric_limits<float>::max();
+  float cur_dist = 0.0f;
 
   for (size_t i = 0; i < dists.shape(0); i++) {
-    size_t min_id_by_path = 0;
+    min_id_by_path = 0;
     for (size_t j = 0; j < dists.shape(1); j++) {
-      if (dists(i, j) < min_distance_by_path) {
-        min_distance_by_path = dists(i, j);
+      cur_dist = dists(i, j);
+      if (cur_dist < min_distance_by_path) {
+        min_distance_by_path = cur_dist;
         min_id_by_path = j;
       }
     }
@@ -686,6 +688,23 @@ inline unsigned int removePosesAfterFirstInversion(nav_msgs::msg::Path & path)
     cropped_path.poses.begin() + first_after_inversion, cropped_path.poses.end());
   path = cropped_path;
   return first_after_inversion;
+}
+
+/**
+ * @brief Compare to trajectory points to find closest path point along integrated distances
+ * @param vec Vect to check
+ * @return dist Distance to look for
+ */
+inline size_t findClosestPathPt(const std::vector<float> & vec, float dist, size_t init = 0)
+{
+  auto iter = std::lower_bound(vec.begin() + init, vec.end(), dist);
+  if (iter == vec.begin()) {
+    return 0;
+  }
+  if (dist - *(iter - 1) < *iter - dist) {
+    return iter - 1 - vec.begin();
+  }
+  return iter - vec.begin();
 }
 
 }  // namespace mppi::utils
