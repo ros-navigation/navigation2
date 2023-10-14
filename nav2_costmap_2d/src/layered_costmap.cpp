@@ -274,12 +274,9 @@ bool LayeredCostmap::isCurrent()
 
 void LayeredCostmap::setFootprint(const std::vector<geometry_msgs::msg::Point> & footprint_spec)
 {
-  auto min_max = nav2_costmap_2d::calculateMinAndMaxDistances(footprint_spec);
-  {
-    std::lock_guard<std::mutex> lock(footprint_mutex_);
-    footprint_ = footprint_spec;
-    std::tie(inscribed_radius_, circumscribed_radius_) = min_max;
-  }
+  footprint_ = footprint_spec;
+  std::tie(inscribed_radius_, circumscribed_radius_) = nav2_costmap_2d::calculateMinAndMaxDistances(
+    footprint_spec);
 
   for (vector<std::shared_ptr<Layer>>::iterator plugin = plugins_.begin();
     plugin != plugins_.end();

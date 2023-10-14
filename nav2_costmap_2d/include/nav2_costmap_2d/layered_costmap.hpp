@@ -188,30 +188,21 @@ public:
   void setFootprint(const std::vector<geometry_msgs::msg::Point> & footprint_spec);
 
   /** @brief Returns the latest footprint stored with setFootprint(). */
-  const std::vector<geometry_msgs::msg::Point> & getFootprint() {
-      std::lock_guard<std::mutex> lock(footprint_mutex_);
-      return footprint_;
-  }
+  const std::vector<geometry_msgs::msg::Point> & getFootprint() {return footprint_;}
 
   /** @brief The radius of a circle centered at the origin of the
    * robot which just surrounds all points on the robot's
    * footprint.
    *
    * This is updated by setFootprint(). */
-  double getCircumscribedRadius() {
-      std::lock_guard<std::mutex> lock(footprint_mutex_);
-      return circumscribed_radius_;
-  }
+  double getCircumscribedRadius() {return circumscribed_radius_;}
 
   /** @brief The radius of a circle centered at the origin of the
    * robot which is just within all points and edges of the robot's
    * footprint.
    *
    * This is updated by setFootprint(). */
-  double getInscribedRadius() {
-      std::lock_guard<std::mutex> lock(footprint_mutex_);
-      return inscribed_radius_;
-  }
+  double getInscribedRadius() {return inscribed_radius_;}
 
   /** @brief Checks if the robot is outside the bounds of its costmap in the case
   * of poorly configured setups. */
@@ -239,7 +230,6 @@ private:
   bool size_locked_;
   double circumscribed_radius_, inscribed_radius_;
   std::vector<geometry_msgs::msg::Point> footprint_;
-  std::mutex footprint_mutex_;
 };
 
 }  // namespace nav2_costmap_2d
