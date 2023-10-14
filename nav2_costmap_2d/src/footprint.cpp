@@ -68,7 +68,7 @@ std::pair<double, double> calculateMinAndMaxDistances(
   min_dist = std::min(min_dist, std::min(vertex_dist, edge_dist));
   max_dist = std::max(max_dist, std::max(vertex_dist, edge_dist));
 
-    return std::pair<double, double>(min_dist, max_dist);
+  return std::pair<double, double>(min_dist, max_dist);
 }
 
 geometry_msgs::msg::Point32 toPoint32(geometry_msgs::msg::Point pt)
