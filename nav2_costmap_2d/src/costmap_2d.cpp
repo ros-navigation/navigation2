@@ -265,19 +265,16 @@ unsigned char * Costmap2D::getCharMap() const
 
 unsigned char Costmap2D::getCost(unsigned int mx, unsigned int my) const
 {
-  std::unique_lock<mutex_t> lock(*access_);
   return costmap_[getIndex(mx, my)];
 }
 
 unsigned char Costmap2D::getCost(unsigned int undex) const
 {
-  std::unique_lock<mutex_t> lock(*access_);
   return costmap_[undex];
 }
 
 void Costmap2D::setCost(unsigned int mx, unsigned int my, unsigned char cost)
 {
-  std::unique_lock<mutex_t> lock(*access_);
   costmap_[getIndex(mx, my)] = cost;
 }
 
