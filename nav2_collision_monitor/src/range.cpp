@@ -72,6 +72,9 @@ bool Range::getData(
   // Ignore data from the source if it is not being published yet or
   // not being published for a long time
   if (data_ == nullptr) {
+    if (source_timeout_.seconds() == 0.0) {
+      return true;
+    }
     return false;
   }
   if (!sourceValid(data_->header.stamp, curr_time)) {
