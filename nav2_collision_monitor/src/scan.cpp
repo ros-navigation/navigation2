@@ -30,11 +30,10 @@ Scan::Scan(
   const std::string & global_frame_id,
   const tf2::Duration & transform_tolerance,
   const rclcpp::Duration & source_timeout,
-  const bool base_shift_correction,
-  const bool block_if_invalid)
+  const bool base_shift_correction)
 : Source(
     node, source_name, tf_buffer, base_frame_id, global_frame_id,
-    transform_tolerance, source_timeout, base_shift_correction, block_if_invalid),
+    transform_tolerance, source_timeout, base_shift_correction),
   data_(nullptr)
 {
   RCLCPP_INFO(logger_, "[%s]: Creating Scan", source_name_.c_str());
@@ -72,10 +71,10 @@ bool Scan::getData(
   // Ignore data from the source if it is not being published yet or
   // not being published for a long time
   if (data_ == nullptr) {
-    return !block_if_invalid_;
+    return false;
   }
   if (!sourceValid(data_->header.stamp, curr_time)) {
-    return !block_if_invalid_;
+    return false;
   }
 
   tf2::Transform tf_transform;
@@ -88,7 +87,7 @@ bool Scan::getData(
         base_frame_id_, curr_time, global_frame_id_,
         transform_tolerance_, tf_buffer_, tf_transform))
     {
-      return !block_if_invalid_;
+      return false;
     }
   } else {
     // Obtaining the transform to get data from source frame to base frame without time shift
@@ -99,7 +98,7 @@ bool Scan::getData(
         data_->header.frame_id, base_frame_id_,
         transform_tolerance_, tf_buffer_, tf_transform))
     {
-      return !block_if_invalid_;
+      return false;
     }
   }
 

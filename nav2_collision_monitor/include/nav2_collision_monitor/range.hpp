@@ -43,7 +43,6 @@ public:
    * @param source_timeout Maximum time interval in which data is considered valid
    * @param base_shift_correction Whether to correct source data towards to base frame movement,
    * considering the difference between current time and latest source time
-   * @param block_if_invalid Whether to stop the robot if a source is invalid
    */
   Range(
     const nav2_util::LifecycleNode::WeakPtr & node,
@@ -53,8 +52,7 @@ public:
     const std::string & global_frame_id,
     const tf2::Duration & transform_tolerance,
     const rclcpp::Duration & source_timeout,
-    const bool base_shift_correction,
-    const bool block_if_invalid);
+    const bool base_shift_correction);
   /**
    * @brief Range destructor
    */

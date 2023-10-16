@@ -31,12 +31,11 @@ Source::Source(
   const std::string & global_frame_id,
   const tf2::Duration & transform_tolerance,
   const rclcpp::Duration & source_timeout,
-  const bool base_shift_correction,
-  const bool block_if_invalid)
+  const bool base_shift_correction)
 : node_(node), source_name_(source_name), tf_buffer_(tf_buffer),
   base_frame_id_(base_frame_id), global_frame_id_(global_frame_id),
   transform_tolerance_(transform_tolerance), source_timeout_(source_timeout),
-  base_shift_correction_(base_shift_correction), block_if_invalid_(block_if_invalid)
+  base_shift_correction_(base_shift_correction)
 {
 }
 
@@ -76,6 +75,10 @@ bool Source::sourceValid(
   const rclcpp::Time & source_time,
   const rclcpp::Time & curr_time) const
 {
+  // Ignore timestamp check if source_timeout == 0.0
+  if (source_timeout_.seconds() == 0.0) {
+    return true;
+  }
   // Source is considered as not valid, if latest received data timestamp is earlier
   // than current time by source_timeout_ interval
   const rclcpp::Duration dt = curr_time - source_time;
