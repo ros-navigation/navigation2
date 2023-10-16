@@ -117,18 +117,18 @@ TEST_F(WaitActionTestFixture, test_ports)
       </root>)";
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
-  EXPECT_EQ(tree_->rootNode()->getInput<int>("wait_duration"), 1);
+  EXPECT_EQ(tree_->rootNode()->getInput<double>("wait_duration"), 1.0);
 
   xml_txt =
     R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-            <Wait wait_duration="10" />
+            <Wait wait_duration="10.0" />
         </BehaviorTree>
       </root>)";
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
-  EXPECT_EQ(tree_->rootNode()->getInput<int>("wait_duration"), 10);
+  EXPECT_EQ(tree_->rootNode()->getInput<double>("wait_duration"), 10.0);
 }
 
 TEST_F(WaitActionTestFixture, test_tick)
@@ -137,7 +137,7 @@ TEST_F(WaitActionTestFixture, test_tick)
     R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-            <Wait wait_duration="-5"/>
+            <Wait wait_duration="-5.0"/>
         </BehaviorTree>
       </root>)";
 
