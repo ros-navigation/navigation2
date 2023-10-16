@@ -76,7 +76,7 @@ void PolygonSource::getData(
   }
   // get the oldest time stamp from the polygon array
   rclcpp::Time oldest_stamp = rclcpp::Time(data_->polygons[0].header.stamp);
-  for (const auto& polygon : data_->polygons) {
+  for (const auto & polygon : data_->polygons) {
     if (rclcpp::Time(polygon.header.stamp) < oldest_stamp) {
       oldest_stamp = rclcpp::Time(polygon.header.stamp);
     }
@@ -110,47 +110,50 @@ void PolygonSource::getData(
     }
   }
 
-  for (const auto& polygon : data_->polygons) {
+  for (const auto & polygon : data_->polygons) {
     geometry_msgs::msg::PolygonStamped poly_out;
     tf2::doTransform(polygon, poly_out, tf);
     convertPolygonStampedToPoints(poly_out, data);
   }
 
 }
-void PolygonSource::convertPolygonStampedToPoints(const geometry_msgs::msg::PolygonStamped& polygon, std::vector<Point>& data) const
+void PolygonSource::convertPolygonStampedToPoints(
+  const geometry_msgs::msg::PolygonStamped & polygon, std::vector<Point> & data) const
 {
-    // Calculate the total perimeter of the polygon
-    double perimeter = 0.0;
-    double spacing = 0.1;
-    for (size_t i = 0; i < polygon.polygon.points.size(); ++i) {
-        const auto& currentPoint = polygon.polygon.points[i];
-        const auto& nextPoint = polygon.polygon.points[(i + 1) % polygon.polygon.points.size()];
-        perimeter += sqrt(pow(nextPoint.x - currentPoint.x, 2) + pow(nextPoint.y - currentPoint.y, 2));
+  // Calculate the total perimeter of the polygon
+  double perimeter = 0.0;
+  double spacing = 0.1;
+  for (size_t i = 0; i < polygon.polygon.points.size(); ++i) {
+    const auto & currentPoint = polygon.polygon.points[i];
+    const auto & nextPoint = polygon.polygon.points[(i + 1) % polygon.polygon.points.size()];
+    perimeter += sqrt(pow(nextPoint.x - currentPoint.x, 2) + pow(nextPoint.y - currentPoint.y, 2));
+  }
+
+  // Iterate over the vertices of the polygon
+  for (size_t i = 0; i < polygon.polygon.points.size(); ++i) {
+    const auto & currentPoint = polygon.polygon.points[i];
+    const auto & nextPoint = polygon.polygon.points[(i + 1) % polygon.polygon.points.size()];
+
+    // Calculate the distance between the current and next points
+    double segmentLength =
+      sqrt(pow(nextPoint.x - currentPoint.x, 2) + pow(nextPoint.y - currentPoint.y, 2));
+
+    // Calculate the number of points to sample in the current segment
+    size_t numPointsInSegment =
+      std::max(static_cast<size_t>(segmentLength / spacing), static_cast<size_t>(1));
+
+    // Calculate the step size for each pair of vertices
+    const double dx = (nextPoint.x - currentPoint.x) / numPointsInSegment;
+    const double dy = (nextPoint.y - currentPoint.y) / numPointsInSegment;
+
+    // Sample the points with equal spacing
+    for (size_t j = 0; j <= numPointsInSegment; ++j) {
+      Point p;
+      p.x = currentPoint.x + j * dx;
+      p.y = currentPoint.y + j * dy;
+      data.push_back(p);
     }
-
-    // Iterate over the vertices of the polygon
-    for (size_t i = 0; i < polygon.polygon.points.size(); ++i) {
-        const auto& currentPoint = polygon.polygon.points[i];
-        const auto& nextPoint = polygon.polygon.points[(i + 1) % polygon.polygon.points.size()];
-
-        // Calculate the distance between the current and next points
-        double segmentLength = sqrt(pow(nextPoint.x - currentPoint.x, 2) + pow(nextPoint.y - currentPoint.y, 2));
-
-        // Calculate the number of points to sample in the current segment
-        size_t numPointsInSegment = std::max(static_cast<size_t>(segmentLength / spacing), static_cast<size_t>(1));
-
-        // Calculate the step size for each pair of vertices
-        const double dx = (nextPoint.x - currentPoint.x) / numPointsInSegment;
-        const double dy = (nextPoint.y - currentPoint.y) / numPointsInSegment;
-
-        // Sample the points with equal spacing
-        for (size_t j = 0; j <= numPointsInSegment; ++j) {
-            Point p;
-            p.x = currentPoint.x + j * dx;
-            p.y = currentPoint.y + j * dy;
-            data.push_back(p);
-        }
-    }
+  }
 }
 
 void PolygonSource::getParameters(std::string & source_topic)
