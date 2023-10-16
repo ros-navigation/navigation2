@@ -8,6 +8,7 @@ collision_monitor:
     transform_tolerance: 0.5
     source_timeout: 5.0
     base_shift_correction: True
+    visualize_collision_points: False
     stop_pub_timeout: 2.0
     # Polygons represent zone around the robot for "stop", "slowdown" and "limit" action types,
     # and robot footprint for "approach" action type.
