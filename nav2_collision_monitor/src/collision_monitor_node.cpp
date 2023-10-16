@@ -80,7 +80,7 @@ CollisionMonitor::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   if (visualize_collision_points) {
     collision_points_marker_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(
-      "~/collision_points_marker", 1);
+      "collision_points_marker", 1);
   }
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -408,11 +408,11 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in)
       marker.id = 0;
       marker.type = visualization_msgs::msg::Marker::POINTS;
       marker.action = visualization_msgs::msg::Marker::ADD;
-      marker.scale.x = 0.1;
-      marker.scale.y = 0.1;
+      marker.scale.x = 0.02;
+      marker.scale.y = 0.02;
       marker.color.r = 1.0;
       marker.color.a = 1.0;
-      marker.lifetime = rclcpp::Duration(2, 0);
+      marker.lifetime = rclcpp::Duration(0, 0);
 
       for (const auto & point : collision_points) {
         geometry_msgs::msg::Point p;
@@ -425,7 +425,6 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in)
     }
     collision_points_marker_pub_->publish(marker_array);
   }
-
 
   // By default - there is no action
   Action robot_action{DO_NOTHING, cmd_vel_in, ""};
