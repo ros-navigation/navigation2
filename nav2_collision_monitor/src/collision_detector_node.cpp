@@ -52,11 +52,6 @@ CollisionDetector::on_configure(const rclcpp_lifecycle::State & /*state*/)
   tf_buffer_->setCreateTimerInterface(timer_interface);
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
-  // Obtaining ROS parameters
-  if (!getParameters()) {
-    return nav2_util::CallbackReturn::FAILURE;
-  }
-
   state_pub_ = this->create_publisher<nav2_msgs::msg::CollisionDetectorState>(
     "collision_detector_state", rclcpp::SystemDefaultsQoS());
 
@@ -282,6 +277,13 @@ bool CollisionDetector::configureSources(
         r->configure();
 
         sources_.push_back(r);
+      } else if (source_type == "polygon_source") {
+        std::shared_ptr<PolygonSource> ps = std::make_shared<PolygonSource>(
+          node, source_name, tf_buffer_, base_frame_id, odom_frame_id,
+          transform_tolerance, source_timeout, base_shift_correction);
+        ps->configure();
+
+        sources_.push_back(ps);
       } else {  // Error if something else
         RCLCPP_ERROR(
           get_logger(),
