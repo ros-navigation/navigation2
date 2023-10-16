@@ -99,6 +99,11 @@ bool Source::getEnabled() const
   return enabled_;
 }
 
+std::string Source::getSourceName() const
+{
+  return source_name_;
+}
+
 rcl_interfaces::msg::SetParametersResult
 Source::dynamicParametersCallback(
   std::vector<rclcpp::Parameter> parameters)

@@ -389,7 +389,9 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in)
   for (std::shared_ptr<Source> source : sources_) {
     if (source->getEnabled()) {
       if (!source->getData(curr_time, collision_points)) {
-        RCLCPP_WARN(get_logger(), "Invalid blocking source detected, stopping the robot");
+        RCLCPP_WARN(
+          get_logger(), "[%s]: Invalid source detected, stopping the robot",
+          source->getSourceName().c_str());
         Velocity stop_vel;
         stop_vel.tw = 0.0;
         stop_vel.x = 0.0;

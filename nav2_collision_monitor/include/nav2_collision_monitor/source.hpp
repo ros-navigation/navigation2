@@ -81,6 +81,12 @@ public:
    */
   bool getEnabled() const;
 
+  /**
+   * @brief Obtains the name of the data source
+   * @return Name of the data source
+   */
+  std::string getSourceName() const;
+
 protected:
   /**
    * @brief Source configuration routine.
