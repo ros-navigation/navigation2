@@ -87,7 +87,7 @@ geometry_msgs::msg::TwistStamped MPPIController::computeVelocityCommands(
   nav_msgs::msg::Path transformed_plan = path_handler_.transformPath(robot_pose);
 
   nav2_costmap_2d::Costmap2D * costmap = costmap_ros_->getCostmap();
-  std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> cosmtap_lock(*(costmap->getMutex()));
+  std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> costmap_lock(*(costmap->getMutex()));
 
   geometry_msgs::msg::TwistStamped cmd =
     optimizer_.evalControl(robot_pose, robot_speed, transformed_plan, goal_checker);
