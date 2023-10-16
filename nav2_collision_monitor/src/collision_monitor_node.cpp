@@ -57,13 +57,9 @@ CollisionMonitor::on_configure(const rclcpp_lifecycle::State & /*state*/)
   std::string cmd_vel_in_topic;
   std::string cmd_vel_out_topic;
   std::string state_topic;
-  bool visualize_collision_points;
 
   // Obtaining ROS parameters
-  if (!getParameters(
-      cmd_vel_in_topic, cmd_vel_out_topic, state_topic,
-      visualize_collision_points))
-  {
+  if (!getParameters(cmd_vel_in_topic, cmd_vel_out_topic, state_topic)) {
     return nav2_util::CallbackReturn::FAILURE;
   }
 
@@ -72,16 +68,11 @@ CollisionMonitor::on_configure(const rclcpp_lifecycle::State & /*state*/)
     std::bind(&CollisionMonitor::cmdVelInCallback, this, std::placeholders::_1));
   cmd_vel_out_pub_ = this->create_publisher<geometry_msgs::msg::Twist>(
     cmd_vel_out_topic, 1);
-
   if (!state_topic.empty()) {
     state_pub_ = this->create_publisher<nav2_msgs::msg::CollisionMonitorState>(
       state_topic, 1);
   }
 
-  if (visualize_collision_points) {
-    collision_points_marker_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(
-      "collision_points_marker", 1);
-  }
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -94,9 +85,6 @@ CollisionMonitor::on_activate(const rclcpp_lifecycle::State & /*state*/)
   cmd_vel_out_pub_->on_activate();
   if (state_pub_) {
     state_pub_->on_activate();
-  }
-  if (collision_points_marker_pub_) {
-    collision_points_marker_pub_->on_activate();
   }
 
   // Activating polygons
@@ -138,9 +126,7 @@ CollisionMonitor::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   if (state_pub_) {
     state_pub_->on_deactivate();
   }
-  if (collision_points_marker_pub_) {
-    collision_points_marker_pub_->on_deactivate();
-  }
+
   // Destroying bond connection
   destroyBond();
 
@@ -155,7 +141,6 @@ CollisionMonitor::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   cmd_vel_in_sub_.reset();
   cmd_vel_out_pub_.reset();
   state_pub_.reset();
-  collision_points_marker_pub_.reset();
 
   polygons_.clear();
   sources_.clear();
@@ -211,8 +196,7 @@ void CollisionMonitor::publishVelocity(const Action & robot_action)
 bool CollisionMonitor::getParameters(
   std::string & cmd_vel_in_topic,
   std::string & cmd_vel_out_topic,
-  std::string & state_topic,
-  bool & visualize_collision_points)
+  std::string & state_topic)
 {
   std::string base_frame_id, odom_frame_id;
   tf2::Duration transform_tolerance;
@@ -229,9 +213,6 @@ bool CollisionMonitor::getParameters(
   nav2_util::declare_parameter_if_not_declared(
     node, "state_topic", rclcpp::ParameterValue(""));
   state_topic = get_parameter("state_topic").as_string();
-  nav2_util::declare_parameter_if_not_declared(
-    node, "visualize_collision_points", rclcpp::ParameterValue(false));
-  visualize_collision_points = get_parameter("visualize_collision_points").as_bool();
 
   nav2_util::declare_parameter_if_not_declared(
     node, "base_frame_id", rclcpp::ParameterValue("base_footprint"));
@@ -402,33 +383,6 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in)
     if (source->getEnabled()) {
       source->getData(curr_time, collision_points);
     }
-  }
-
-  if (collision_points_marker_pub_) {
-    // visualize collision points with markers
-    visualization_msgs::msg::MarkerArray marker_array;
-    visualization_msgs::msg::Marker marker;
-    marker.header.frame_id = get_parameter("base_frame_id").as_string();
-    marker.header.stamp = rclcpp::Time(0, 0);
-    marker.ns = "collision_points";
-    marker.id = 0;
-    marker.type = visualization_msgs::msg::Marker::POINTS;
-    marker.action = visualization_msgs::msg::Marker::ADD;
-    marker.scale.x = 0.02;
-    marker.scale.y = 0.02;
-    marker.color.r = 1.0;
-    marker.color.a = 1.0;
-    marker.lifetime = rclcpp::Duration(0, 0);
-
-    for (const auto & point : collision_points) {
-      geometry_msgs::msg::Point p;
-      p.x = point.x;
-      p.y = point.y;
-      p.z = 0.0;
-      marker.points.push_back(p);
-    }
-    marker_array.markers.push_back(marker);
-    collision_points_marker_pub_->publish(marker_array);
   }
 
   // By default - there is no action

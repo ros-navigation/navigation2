@@ -60,9 +60,9 @@ CollisionDetector::on_configure(const rclcpp_lifecycle::State & /*state*/)
   state_pub_ = this->create_publisher<nav2_msgs::msg::CollisionDetectorState>(
     "collision_detector_state", rclcpp::SystemDefaultsQoS());
 
-  if (visualize_collision_points_) {
-    collision_points_marker_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(
-      "collision_points_marker", 1);
+  // Obtaining ROS parameters
+  if (!getParameters()) {
+    return nav2_util::CallbackReturn::FAILURE;
   }
 
   return nav2_util::CallbackReturn::SUCCESS;
@@ -75,9 +75,6 @@ CollisionDetector::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
   // Activating lifecycle publisher
   state_pub_->on_activate();
-  if (collision_points_marker_pub_) {
-    collision_points_marker_pub_->on_activate();
-  }
 
   // Activating polygons
   for (std::shared_ptr<Polygon> polygon : polygons_) {
@@ -105,9 +102,6 @@ CollisionDetector::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 
   // Deactivating lifecycle publishers
   state_pub_->on_deactivate();
-  if (collision_points_marker_pub_) {
-    collision_points_marker_pub_->on_deactivate();
-  }
 
   // Deactivating polygons
   for (std::shared_ptr<Polygon> polygon : polygons_) {
@@ -126,7 +120,6 @@ CollisionDetector::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
   state_pub_.reset();
-  collision_points_marker_pub_.reset();
 
   polygons_.clear();
   sources_.clear();
@@ -155,9 +148,6 @@ bool CollisionDetector::getParameters()
   nav2_util::declare_parameter_if_not_declared(
     node, "frequency", rclcpp::ParameterValue(10.0));
   frequency_ = get_parameter("frequency").as_double();
-  nav2_util::declare_parameter_if_not_declared(
-    node, "visualize_collision_points", rclcpp::ParameterValue(false));
-  visualize_collision_points_ = get_parameter("visualize_collision_points").as_bool();
   nav2_util::declare_parameter_if_not_declared(
     node, "base_frame_id", rclcpp::ParameterValue("base_footprint"));
   base_frame_id = get_parameter("base_frame_id").as_string();
@@ -321,33 +311,6 @@ void CollisionDetector::process()
     if (source->getEnabled()) {
       source->getData(curr_time, collision_points);
     }
-  }
-
-  if (collision_points_marker_pub_) {
-    // visualize collision points with markers
-    visualization_msgs::msg::MarkerArray marker_array;
-    visualization_msgs::msg::Marker marker;
-    marker.header.frame_id = get_parameter("base_frame_id").as_string();
-    marker.header.stamp = rclcpp::Time(0, 0);
-    marker.ns = "collision_points";
-    marker.id = 0;
-    marker.type = visualization_msgs::msg::Marker::POINTS;
-    marker.action = visualization_msgs::msg::Marker::ADD;
-    marker.scale.x = 0.02;
-    marker.scale.y = 0.02;
-    marker.color.r = 1.0;
-    marker.color.a = 1.0;
-    marker.lifetime = rclcpp::Duration(0, 0);
-
-    for (const auto & point : collision_points) {
-      geometry_msgs::msg::Point p;
-      p.x = point.x;
-      p.y = point.y;
-      p.z = 0.0;
-      marker.points.push_back(p);
-    }
-    marker_array.markers.push_back(marker);
-    collision_points_marker_pub_->publish(marker_array);
   }
 
   std::unique_ptr<nav2_msgs::msg::CollisionDetectorState> state_msg =

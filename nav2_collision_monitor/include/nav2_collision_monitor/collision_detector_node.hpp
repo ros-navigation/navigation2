@@ -28,7 +28,6 @@
 
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_msgs/msg/collision_detector_state.hpp"
-#include "visualization_msgs/msg/marker_array.hpp"
 
 #include "nav2_collision_monitor/types.hpp"
 #include "nav2_collision_monitor/polygon.hpp"
@@ -148,16 +147,11 @@ protected:
   /// @brief collision monitor state publisher
   rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::CollisionDetectorState>::SharedPtr
     state_pub_;
-  /// @brief Collision points marker publisher
-  rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr
-    collision_points_marker_pub_;
   /// @brief timer that runs actions
   rclcpp::TimerBase::SharedPtr timer_;
 
   /// @brief main loop frequency
   double frequency_;
-  /// @brief whether to publish collision points
-  bool visualize_collision_points_ = false;
 };  // class CollisionDetector
 
 }  // namespace nav2_collision_monitor
