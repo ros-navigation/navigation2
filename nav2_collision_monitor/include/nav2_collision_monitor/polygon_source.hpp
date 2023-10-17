@@ -99,6 +99,8 @@ protected:
   /// @brief Latest data obtained
   nav2_msgs::msg::PolygonsArray::ConstSharedPtr data_;
 
+  /// @brief distance between sampled points on polygon edges
+  double sampling_distance_;
 };  // class PolygonSource
 
 }  // namespace nav2_collision_monitor

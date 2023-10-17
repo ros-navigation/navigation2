@@ -123,37 +123,28 @@ void PolygonSource::getData(
 void PolygonSource::convertPolygonStampedToPoints(
   const geometry_msgs::msg::PolygonStamped & polygon, std::vector<Point> & data) const
 {
-  // Calculate the total perimeter of the polygon
-  double perimeter = 0.0;
-  double spacing = 0.1;
-  for (size_t i = 0; i < polygon.polygon.points.size(); ++i) {
-    const auto & currentPoint = polygon.polygon.points[i];
-    const auto & nextPoint = polygon.polygon.points[(i + 1) % polygon.polygon.points.size()];
-    perimeter += std::hypot(nextPoint.x - currentPoint.x, nextPoint.y - currentPoint.y);
-  }
-
   // Iterate over the vertices of the polygon
   for (size_t i = 0; i < polygon.polygon.points.size(); ++i) {
-    const auto & currentPoint = polygon.polygon.points[i];
-    const auto & nextPoint = polygon.polygon.points[(i + 1) % polygon.polygon.points.size()];
+    const auto & current_point = polygon.polygon.points[i];
+    const auto & next_point = polygon.polygon.points[(i + 1) % polygon.polygon.points.size()];
 
     // Calculate the distance between the current and next points
-    double segmentLength =
-      std::hypot(nextPoint.x - currentPoint.x, nextPoint.y - currentPoint.y);
+    double segment_length =
+      std::hypot(next_point.x - current_point.x, next_point.y - current_point.y);
 
     // Calculate the number of points to sample in the current segment
-    size_t numPointsInSegment =
-      std::max(static_cast<size_t>(segmentLength / spacing), static_cast<size_t>(1));
+    size_t num_points_in_segment =
+      std::max(static_cast<size_t>(segment_length / sampling_distance_), static_cast<size_t>(1));
 
     // Calculate the step size for each pair of vertices
-    const double dx = (nextPoint.x - currentPoint.x) / numPointsInSegment;
-    const double dy = (nextPoint.y - currentPoint.y) / numPointsInSegment;
+    const double dx = (next_point.x - current_point.x) / num_points_in_segment;
+    const double dy = (next_point.y - current_point.y) / num_points_in_segment;
 
     // Sample the points with equal spacing
-    for (size_t j = 0; j <= numPointsInSegment; ++j) {
+    for (size_t j = 0; j <= num_points_in_segment; ++j) {
       Point p;
-      p.x = currentPoint.x + j * dx;
-      p.y = currentPoint.y + j * dy;
+      p.x = current_point.x + j * dx;
+      p.y = current_point.y + j * dy;
       data.push_back(p);
     }
   }
@@ -161,7 +152,16 @@ void PolygonSource::convertPolygonStampedToPoints(
 
 void PolygonSource::getParameters(std::string & source_topic)
 {
+  auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+
   getCommonParameters(source_topic);
+
+  nav2_util::declare_parameter_if_not_declared(
+    node, source_name_ + ".sampling_distance", rclcpp::ParameterValue(0.1));
+  sampling_distance_ = node->get_parameter(source_name_ + ".sampling_distance").as_double();
 }
 
 void PolygonSource::dataCallback(nav2_msgs::msg::PolygonsArray::ConstSharedPtr msg)
