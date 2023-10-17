@@ -109,14 +109,12 @@ protected:
    * @param cmd_vel_out_topic Output name of cmd_vel_out topic
    * is required.
    * @param state_topic topic name for publishing collision monitor state
-   * @param visualize_collision_points boolean flag to enable/disable collision points visualization
    * @return True if all parameters were obtained or false in failure case
    */
   bool getParameters(
     std::string & cmd_vel_in_topic,
     std::string & cmd_vel_out_topic,
-    std::string & state_topic,
-    bool & visualize_collision_points);
+    std::string & state_topic);
   /**
    * @brief Supporting routine creating and configuring all polygons
    * @param base_frame_id Robot base frame ID

@@ -57,12 +57,10 @@ CollisionMonitor::on_configure(const rclcpp_lifecycle::State & /*state*/)
   std::string cmd_vel_in_topic;
   std::string cmd_vel_out_topic;
   std::string state_topic;
-  bool visualize_collision_points;
 
   // Obtaining ROS parameters
   if (!getParameters(
-      cmd_vel_in_topic, cmd_vel_out_topic, state_topic,
-      visualize_collision_points))
+      cmd_vel_in_topic, cmd_vel_out_topic, state_topic))
   {
     return nav2_util::CallbackReturn::FAILURE;
   }
@@ -78,10 +76,9 @@ CollisionMonitor::on_configure(const rclcpp_lifecycle::State & /*state*/)
       state_topic, 1);
   }
 
-  if (visualize_collision_points) {
-    collision_points_marker_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(
-      "collision_points_marker", 1);
-  }
+  collision_points_marker_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(
+    "collision_points_marker", 1);
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -95,9 +92,7 @@ CollisionMonitor::on_activate(const rclcpp_lifecycle::State & /*state*/)
   if (state_pub_) {
     state_pub_->on_activate();
   }
-  if (collision_points_marker_pub_) {
-    collision_points_marker_pub_->on_activate();
-  }
+  collision_points_marker_pub_->on_activate();
 
   // Activating polygons
   for (std::shared_ptr<Polygon> polygon : polygons_) {
@@ -138,9 +133,8 @@ CollisionMonitor::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   if (state_pub_) {
     state_pub_->on_deactivate();
   }
-  if (collision_points_marker_pub_) {
-    collision_points_marker_pub_->on_deactivate();
-  }
+  collision_points_marker_pub_->on_deactivate();
+
   // Destroying bond connection
   destroyBond();
 
@@ -211,8 +205,7 @@ void CollisionMonitor::publishVelocity(const Action & robot_action)
 bool CollisionMonitor::getParameters(
   std::string & cmd_vel_in_topic,
   std::string & cmd_vel_out_topic,
-  std::string & state_topic,
-  bool & visualize_collision_points)
+  std::string & state_topic)
 {
   std::string base_frame_id, odom_frame_id;
   tf2::Duration transform_tolerance;
@@ -229,9 +222,6 @@ bool CollisionMonitor::getParameters(
   nav2_util::declare_parameter_if_not_declared(
     node, "state_topic", rclcpp::ParameterValue(""));
   state_topic = get_parameter("state_topic").as_string();
-  nav2_util::declare_parameter_if_not_declared(
-    node, "visualize_collision_points", rclcpp::ParameterValue(false));
-  visualize_collision_points = get_parameter("visualize_collision_points").as_bool();
 
   nav2_util::declare_parameter_if_not_declared(
     node, "base_frame_id", rclcpp::ParameterValue("base_footprint"));
@@ -397,9 +387,9 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in)
     }
   }
 
-  if (collision_points_marker_pub_) {
+  if (collision_points_marker_pub_->get_subscription_count() > 0) {
     // visualize collision points with markers
-    visualization_msgs::msg::MarkerArray marker_array;
+    auto marker_array = std::make_unique<visualization_msgs::msg::MarkerArray>();
     visualization_msgs::msg::Marker marker;
     marker.header.frame_id = get_parameter("base_frame_id").as_string();
     marker.header.stamp = rclcpp::Time(0, 0);
@@ -420,8 +410,8 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in)
       p.z = 0.0;
       marker.points.push_back(p);
     }
-    marker_array.markers.push_back(marker);
-    collision_points_marker_pub_->publish(marker_array);
+    marker_array->markers.push_back(marker);
+    collision_points_marker_pub_->publish(std::move(marker_array));
   }
 
   // By default - there is no action

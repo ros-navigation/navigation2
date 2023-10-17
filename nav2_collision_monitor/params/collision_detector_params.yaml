@@ -6,7 +6,6 @@ collision_detector:
     transform_tolerance: 0.5
     source_timeout: 5.0
     base_shift_correction: True
-    visualize_collision_points: False
     polygons: ["PolygonFront"]
     PolygonFront:
       type: "polygon"
