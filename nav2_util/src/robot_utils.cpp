@@ -82,7 +82,7 @@ bool getTransform(
   const std::string & target_frame_id,
   const tf2::Duration & transform_tolerance,
   const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
-  tf2::Transform & tf2_transform)
+  tf2::Stamped<tf2::Transform> & tf2_transform)
 {
   geometry_msgs::msg::TransformStamped transform;
   tf2_transform.setIdentity();  // initialize by identical transform
@@ -106,7 +106,7 @@ bool getTransform(
   }
 
   // Convert TransformStamped to TF2 transform
-  tf2::fromMsg(transform.transform, tf2_transform);
+  tf2::fromMsg(transform, tf2_transform);
   return true;
 }
 
@@ -118,7 +118,7 @@ bool getTransform(
   const std::string & fixed_frame_id,
   const tf2::Duration & transform_tolerance,
   const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
-  tf2::Transform & tf2_transform)
+  tf2::Stamped<tf2::Transform> & tf2_transform)
 {
   geometry_msgs::msg::TransformStamped transform;
   tf2_transform.setIdentity();  // initialize by identical transform
@@ -139,67 +139,7 @@ bool getTransform(
   }
 
   // Convert TransformStamped to TF2 transform
-  tf2::fromMsg(transform.transform, tf2_transform);
-  return true;
-}
-
-bool getTransform(
-  const std::string & source_frame_id,
-  const std::string & target_frame_id,
-  const tf2::Duration & transform_tolerance,
-  const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
-  geometry_msgs::msg::TransformStamped & transform_stamped)
-{
-  geometry_msgs::msg::TransformStamped transform;
-
-  if (source_frame_id == target_frame_id) {
-    // We are already in required frame
-    return true;
-  }
-
-  try {
-    // Obtaining the transform to get data from source to target frame
-    transform_stamped = tf_buffer->lookupTransform(
-      target_frame_id, source_frame_id,
-      tf2::TimePointZero, transform_tolerance);
-  } catch (tf2::TransformException & e) {
-    RCLCPP_ERROR(
-      rclcpp::get_logger("getTransform"),
-      "Failed to get \"%s\"->\"%s\" frame transform: %s",
-      source_frame_id.c_str(), target_frame_id.c_str(), e.what());
-    return false;
-  }
-
-  return true;
-}
-
-bool getTransform(
-  const std::string & source_frame_id,
-  const rclcpp::Time & source_time,
-  const std::string & target_frame_id,
-  const rclcpp::Time & target_time,
-  const std::string & fixed_frame_id,
-  const tf2::Duration & transform_tolerance,
-  const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
-  geometry_msgs::msg::TransformStamped & transform_stamped)
-{
-  geometry_msgs::msg::TransformStamped transform;
-
-  try {
-    // Obtaining the transform to get data from source to target frame.
-    // This also considers the time shift between source and target.
-    transform_stamped = tf_buffer->lookupTransform(
-      target_frame_id, target_time,
-      source_frame_id, source_time,
-      fixed_frame_id, transform_tolerance);
-  } catch (tf2::TransformException & ex) {
-    RCLCPP_ERROR(
-      rclcpp::get_logger("getTransform"),
-      "Failed to get \"%s\"->\"%s\" frame transform: %s",
-      source_frame_id.c_str(), target_frame_id.c_str(), ex.what());
-    return false;
-  }
-
+  tf2::fromMsg(transform, tf2_transform);
   return true;
 }
 

@@ -17,6 +17,8 @@
 #include <cmath>
 #include <functional>
 
+#include "tf2/transform_datatypes.h"
+
 #include "nav2_util/robot_utils.hpp"
 
 namespace nav2_collision_monitor
@@ -77,7 +79,7 @@ void Scan::getData(
     return;
   }
 
-  tf2::Transform tf_transform;
+  tf2::Stamped<tf2::Transform> tf_transform;
   if (base_shift_correction_) {
     // Obtaining the transform to get data from source frame and time where it was received
     // to the base frame and current time

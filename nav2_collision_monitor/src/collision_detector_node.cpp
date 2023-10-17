@@ -277,7 +277,7 @@ bool CollisionDetector::configureSources(
         r->configure();
 
         sources_.push_back(r);
-      } else if (source_type == "polygon_source") {
+      } else if (source_type == "polygon") {
         std::shared_ptr<PolygonSource> ps = std::make_shared<PolygonSource>(
           node, source_name, tf_buffer_, base_frame_id, odom_frame_id,
           transform_tolerance, source_timeout, base_shift_correction);

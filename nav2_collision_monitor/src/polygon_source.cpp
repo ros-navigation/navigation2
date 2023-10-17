@@ -15,8 +15,10 @@
 #include "nav2_collision_monitor/polygon_source.hpp"
 
 #include <functional>
+#include <cmath>
 
 #include "geometry_msgs/msg/polygon_stamped.hpp"
+#include "tf2/transform_datatypes.h"
 
 #include "nav2_util/node_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
@@ -85,33 +87,34 @@ void PolygonSource::getData(
     return;
   }
 
-  geometry_msgs::msg::TransformStamped tf;
-  if (base_shift_correction_) {
-    // Obtaining the transform to get data from source frame and time where it was received
-    // to the base frame and current time
-    if (
-      !nav2_util::getTransform(
-        data_->header.frame_id, data_->header.stamp,
-        base_frame_id_, curr_time, global_frame_id_,
-        transform_tolerance_, tf_buffer_, tf))
-    {
-      return;
-    }
-  } else {
-    // Obtaining the transform to get data from source frame to base frame without time shift
-    // considered. Less accurate but much more faster option not dependent on state estimation
-    // frames.
-    if (
-      !nav2_util::getTransform(
-        data_->header.frame_id, base_frame_id_,
-        transform_tolerance_, tf_buffer_, tf))
-    {
-      return;
-    }
-  }
+  tf2::Stamped<tf2::Transform> tf_transform;
 
   for (const auto & polygon : data_->polygons) {
+    if (base_shift_correction_) {
+      // Obtaining the transform to get data from source frame and time where it was received
+      // to the base frame and current time
+      if (
+        !nav2_util::getTransform(
+          polygon.header.frame_id, polygon.header.stamp,
+          base_frame_id_, curr_time, global_frame_id_,
+          transform_tolerance_, tf_buffer_, tf_transform))
+      {
+        return;
+      }
+    } else {
+      // Obtaining the transform to get data from source frame to base frame without time shift
+      // considered. Less accurate but much more faster option not dependent on state estimation
+      // frames.
+      if (
+        !nav2_util::getTransform(
+          polygon.header.frame_id, base_frame_id_,
+          transform_tolerance_, tf_buffer_, tf_transform))
+      {
+        return;
+      }
+    }
     geometry_msgs::msg::PolygonStamped poly_out;
+    geometry_msgs::msg::TransformStamped tf = tf2::toMsg(tf_transform);
     tf2::doTransform(polygon, poly_out, tf);
     convertPolygonStampedToPoints(poly_out, data);
   }
@@ -126,7 +129,7 @@ void PolygonSource::convertPolygonStampedToPoints(
   for (size_t i = 0; i < polygon.polygon.points.size(); ++i) {
     const auto & currentPoint = polygon.polygon.points[i];
     const auto & nextPoint = polygon.polygon.points[(i + 1) % polygon.polygon.points.size()];
-    perimeter += sqrt(pow(nextPoint.x - currentPoint.x, 2) + pow(nextPoint.y - currentPoint.y, 2));
+    perimeter += std::hypot(nextPoint.x - currentPoint.x, nextPoint.y - currentPoint.y);
   }
 
   // Iterate over the vertices of the polygon
@@ -136,7 +139,7 @@ void PolygonSource::convertPolygonStampedToPoints(
 
     // Calculate the distance between the current and next points
     double segmentLength =
-      sqrt(pow(nextPoint.x - currentPoint.x, 2) + pow(nextPoint.y - currentPoint.y, 2));
+      std::hypot(nextPoint.x - currentPoint.x, nextPoint.y - currentPoint.y);
 
     // Calculate the number of points to sample in the current segment
     size_t numPointsInSegment =
