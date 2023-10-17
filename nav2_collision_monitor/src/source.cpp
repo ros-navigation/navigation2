@@ -75,10 +75,6 @@ bool Source::sourceValid(
   const rclcpp::Time & source_time,
   const rclcpp::Time & curr_time) const
 {
-  // Ignore timestamp check if source_timeout == 0.0
-  if (source_timeout_.seconds() == 0.0) {
-    return true;
-  }
   // Source is considered as not valid, if latest received data timestamp is earlier
   // than current time by source_timeout_ interval
   const rclcpp::Duration dt = curr_time - source_time;
