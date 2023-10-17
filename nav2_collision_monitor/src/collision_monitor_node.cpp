@@ -59,9 +59,7 @@ CollisionMonitor::on_configure(const rclcpp_lifecycle::State & /*state*/)
   std::string state_topic;
 
   // Obtaining ROS parameters
-  if (!getParameters(
-      cmd_vel_in_topic, cmd_vel_out_topic, state_topic))
-  {
+  if (!getParameters(cmd_vel_in_topic, cmd_vel_out_topic, state_topic)) {
     return nav2_util::CallbackReturn::FAILURE;
   }
 
