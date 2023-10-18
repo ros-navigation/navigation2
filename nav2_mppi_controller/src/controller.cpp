@@ -86,13 +86,20 @@ geometry_msgs::msg::TwistStamped MPPIController::computeVelocityCommands(
   auto start = std::chrono::system_clock::now();
 #endif
 
+<<<<<<< HEAD
   if (clock_->now() - last_time_called_ > rclcpp::Duration::from_seconds(reset_period_)) {
     reset();
   }
   last_time_called_ = clock_->now();
 
   std::lock_guard<std::mutex> lock(*parameters_handler_->getLock());
+=======
+  std::lock_guard<std::mutex> param_lock(*parameters_handler_->getLock());
+>>>>>>> a1c9fd5a (Use mutex to protect costmap reads. (#3877))
   nav_msgs::msg::Path transformed_plan = path_handler_.transformPath(robot_pose);
+
+  nav2_costmap_2d::Costmap2D * costmap = costmap_ros_->getCostmap();
+  std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> costmap_lock(*(costmap->getMutex()));
 
   geometry_msgs::msg::TwistStamped cmd =
     optimizer_.evalControl(robot_pose, robot_speed, transformed_plan, goal_checker);
