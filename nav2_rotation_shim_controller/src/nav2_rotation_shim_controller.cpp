@@ -140,6 +140,9 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
   nav2_core::GoalChecker * goal_checker)
 {
   if (path_updated_) {
+    nav2_costmap_2d::Costmap2D * costmap = costmap_ros_->getCostmap();
+    std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap->getMutex()));
+
     std::lock_guard<std::mutex> lock_reinit(mutex_);
     try {
       geometry_msgs::msg::Pose sampled_pt_base = transformPoseToBaseFrame(getSampledPathPt());
