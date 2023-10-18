@@ -22,88 +22,79 @@
 using namespace nav2_costmap_2d; //NOLINT
 using namespace nav2_route; //NOLINT
 
-class BFSTestFixture : public ::testing::Test
+class DSTestFixture : public ::testing::Test
 {
 public:
   void initialize(unsigned int x_size, unsigned int y_size)
   {
     costmap = std::make_unique<Costmap2D>(x_size, y_size, 0.0, 0.0, 1);
 
-    bfs.initialize(costmap, 200);
+    ds.initialize(costmap, 200);
   }
 
-  BreadthFirstSearch bfs;
+  DijkstraSearch ds;
   std::shared_ptr<Costmap2D> costmap;
 };
 
-TEST_F(BFSTestFixture, free_space)
+TEST_F(DSTestFixture, free_space)
 {
   initialize(100u, 100u);
 
-  bfs.setStart(0u, 0u);
-  std::cout << "Set start" << std::endl;
+  ds.setStart(0u, 0u);
 
   std::vector<nav2_costmap_2d::MapLocation> goals;
-  goals.push_back({100u, 100u});
-  bfs.setGoals(goals);
-  std::cout << "set goal" << std::endl;
+  goals.push_back({50u, 50u});
+  ds.setGoals(goals);
 
   unsigned int goal = 0;
-  std::cout << "start search" << std::endl;
-  ASSERT_NO_THROW(bfs.search(goal));
-  std::cout << "search" << std::endl;
-  auto graph = bfs.getGraph();
-  for (const auto node : *graph) {
-    std::cout << "Index: " << node.first << std::endl;
-    std::cout << "Cost: " << node.second.cost << std::endl;
-  }
+  ASSERT_NO_THROW(ds.search(goal));
 
-  // EXPECT_EQ(costmap->getIndex(goals[goal].x, goals[goal].y), costmap->getIndex(0u, 0u));
-  bfs.clearGraph();
+  EXPECT_EQ(costmap->getIndex(goals[goal].x, goals[goal].y), costmap->getIndex(50u, 50u));
+  ds.clearGraph();
 }
 
-// TEST_F(BFSTestFixture, wall)
-// {
-//   initialize(10u, 10u);
-//
-//   unsigned int mx_obs = 3;
-//   for (unsigned int my_obs = 0; my_obs < costmap->getSizeInCellsY(); ++my_obs) {
-//     costmap->setCost(mx_obs, my_obs, LETHAL_OBSTACLE);
-//   }
-//
-//   bfs.setStart(0u, 0u);
-//
-//   std::vector<nav2_costmap_2d::MapLocation> goals;
-//   goals.push_back({5u, 0u});
-//   goals.push_back({0u, 4u});
-//   bfs.setGoals(goals);
-//
-//   unsigned int goal = 0;
-//   EXPECT_NO_THROW(bfs.search(goal));
-//
-//   EXPECT_EQ(costmap->getIndex(goals[goal].x, goals[goal].y), costmap->getIndex(0u, 4u));
-//   bfs.clearGraph();
-// }
-//
-// TEST_F(BFSTestFixture, ray_trace)
-// {
-//   initialize(10u, 10u);
-//
-//   bfs.setStart(0u, 0u);
-//
-//   std::vector<nav2_costmap_2d::MapLocation> goals;
-//   goals.push_back({5u, 5u});
-//   bfs.setGoals(goals);
-//
-//   bool result = bfs.isFirstGoalVisible();
-//   EXPECT_TRUE(result);
-//   bfs.clearGraph();
-//
-//   bfs.setStart(0u, 0u);
-//   bfs.setGoals(goals);
-//   costmap->setCost(2u, 2u, LETHAL_OBSTACLE);
-//   result = bfs.isFirstGoalVisible();
-//   EXPECT_FALSE(result);
-//
-//   bfs.clearGraph();
-// }
+TEST_F(DSTestFixture, wall)
+{
+  initialize(10u, 10u);
+
+  unsigned int mx_obs = 3;
+  for (unsigned int my_obs = 0; my_obs < costmap->getSizeInCellsY(); ++my_obs) {
+    costmap->setCost(mx_obs, my_obs, LETHAL_OBSTACLE);
+  }
+
+  ds.setStart(0u, 0u);
+
+  std::vector<nav2_costmap_2d::MapLocation> goals;
+  goals.push_back({5u, 0u});
+  goals.push_back({0u, 4u});
+  ds.setGoals(goals);
+
+  unsigned int goal = 0;
+  EXPECT_NO_THROW(ds.search(goal));
+
+  EXPECT_EQ(costmap->getIndex(goals[goal].x, goals[goal].y), costmap->getIndex(0u, 4u));
+  ds.clearGraph();
+}
+
+TEST_F(DSTestFixture, ray_trace)
+{
+  initialize(10u, 10u);
+
+  ds.setStart(0u, 0u);
+
+  std::vector<nav2_costmap_2d::MapLocation> goals;
+  goals.push_back({5u, 5u});
+  ds.setGoals(goals);
+
+  bool result = ds.isFirstGoalVisible();
+  EXPECT_TRUE(result);
+  ds.clearGraph();
+
+  ds.setStart(0u, 0u);
+  ds.setGoals(goals);
+  costmap->setCost(2u, 2u, LETHAL_OBSTACLE);
+  result = ds.isFirstGoalVisible();
+  EXPECT_FALSE(result);
+
+  ds.clearGraph();
+}

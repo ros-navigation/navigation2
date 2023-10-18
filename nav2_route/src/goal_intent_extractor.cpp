@@ -69,7 +69,7 @@ void GoalIntentExtractor::configure(
   node_spatial_tree_->computeTree(graph);
 
   nav2_util::declare_parameter_if_not_declared(
-    node, "enable_search", rclcpp::ParameterValue(true));
+    node, "enable_search", rclcpp::ParameterValue(false));
   enable_search_ = node->get_parameter("enable_search").as_bool();
 
   route_start_pose_pub_ = 
@@ -92,12 +92,12 @@ void GoalIntentExtractor::configure(
     max_iterations_ = node->get_parameter("max_iterations").as_int();
 
     nav2_util::declare_parameter_if_not_declared(
-      node, "enable_search_viz", rclcpp::ParameterValue(true));
+      node, "enable_search_viz", rclcpp::ParameterValue(false));
     enable_search_viz_ = node->get_parameter("enable_search_viz").as_bool();
 
     costmap_sub_ =
       std::make_unique<nav2_costmap_2d::CostmapSubscriber>(node, costmap_topic);
-    bfs_ = std::make_unique<BreadthFirstSearch>();
+    ds_ = std::make_unique<DijkstraSearch>();
     start_expansion_viz_ = node->create_publisher<nav_msgs::msg::OccupancyGrid>(
       "start_expansions",
       1);
@@ -110,7 +110,7 @@ void GoalIntentExtractor::initialize()
 {
   if (enable_search_) {
     costmap_ = costmap_sub_->getCostmap();
-    bfs_->initialize(costmap_, max_iterations_);
+    ds_->initialize(costmap_, max_iterations_);
     costmap_frame_ = costmap_sub_->getFrameID();
   }
 }
@@ -187,14 +187,12 @@ GoalIntentExtractor::findStartandGoal(const std::shared_ptr<const GoalT> goal)
 
   if (enable_search_) {
     unsigned int valid_start_route_id = associatePoseWithGraphNode(start_route_ids, start_);
-    std::cout << "Start ID: " << valid_start_route_id << std::endl;
     visualizeExpansions(start_expansion_viz_);
-    bfs_->clearGraph();
+    ds_->clearGraph();
 
     unsigned int valid_end_route_id = associatePoseWithGraphNode(end_route_ids, goal_);
-    std::cout << "End ID: " << valid_end_route_id << std::endl;
     visualizeExpansions(goal_expansion_viz_);
-    bfs_->clearGraph();
+    ds_->clearGraph();
 
     return {valid_start_route_id, valid_end_route_id};
   }
@@ -325,17 +323,17 @@ unsigned int GoalIntentExtractor::associatePoseWithGraphNode(
     throw nav2_core::PlannerException("All goals were invalid");
   }
 
-  bfs_->clearGraph();
-  bfs_->setStart(s_mx, s_my);
-  bfs_->setGoals(goals);
-  // if (bfs_->isFirstGoalVisible()) {
-  //   // The visiblity check only validates the first node in goal array
-  //   return valid_node_indices.front();
-  // }
-  RCLCPP_INFO(logger_, "Visability Check failed");
+  ds_->clearGraph();
+  ds_->setStart(s_mx, s_my);
+  ds_->setGoals(goals);
+  if (ds_->isFirstGoalVisible()) {
+    // The visiblity check only validates the first node in goal array
+    return valid_node_indices.front();
+  }
+  RCLCPP_WARN(logger_, "Visability Check failed");
 
   unsigned int goal;
-  bfs_->search(goal);
+  ds_->search(goal);
 
   return valid_node_indices[goal];
 }
@@ -359,7 +357,7 @@ void GoalIntentExtractor::visualizeExpansions(
   occ_grid_msg.info.origin.orientation.w = 1.0;
   occ_grid_msg.data.assign(width * height, 0);
 
-  auto graph = bfs_->getGraph();
+  auto graph = ds_->getGraph();
 
   for (const auto & node : *graph) {
     occ_grid_msg.data[node.first] = 100;

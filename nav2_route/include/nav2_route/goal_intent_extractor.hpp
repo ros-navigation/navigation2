@@ -161,7 +161,7 @@ protected:
   int max_iterations_;
   std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
   std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap_;
-  std::unique_ptr<BreadthFirstSearch> bfs_;
+  std::unique_ptr<DijkstraSearch> ds_;
   rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr start_expansion_viz_;
   rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr goal_expansion_viz_;
 

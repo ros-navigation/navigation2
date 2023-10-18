@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Samsung Research America
-// Copyright (c) 2023 Joshua Wallace
+// Copyright (c) 2022 Joshua Wallace
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,38 +30,37 @@ namespace nav2_route
 {
 
 /**
- * @struct nav2_route::SimpleNode
- * @brief A Node implementation for the breadth first search
- */
-struct SimpleNode
-{
-  SimpleNode(unsigned int index)
-  : index(index),
-    queued(false),
-    visited(false),
-    cost(std::numeric_limits<float>::max()){}
-
-  unsigned int index;
-  bool queued;
-  bool visited;
-  float cost;
-};
-
-struct CompareNodeCost {
-    bool operator()(const SimpleNode * a, const SimpleNode * b) const {
-        return a->cost > b->cost;
-    }
-};
-
-/**
  * @class nav2_route::BreadthFirstSearch
  * @brief Preforms a breadth first search between the start and goal
  */
-class BreadthFirstSearch
+class DijkstraSearch
 {
 public:
+  /**
+   * @struct nav2_route::SimpleNode
+   * @brief A Node implementation for the breadth first search
+   */
+  struct SimpleNode
+  {
+    SimpleNode(unsigned int index)
+    : index(index),
+      visited(false),
+      cost(std::numeric_limits<float>::max()){}
+
+    unsigned int index;
+    bool visited;
+    float cost;
+  };
   typedef SimpleNode * NodePtr;
   typedef std::vector<NodePtr> NodeVector;
+  typedef std::pair<float, NodePtr> QueueElement;
+
+  struct CompareNodeCost {
+      bool operator()(const QueueElement & a, const QueueElement & b) const {
+          return a.first > b.first;
+      }
+  };
+  typedef std::priority_queue<QueueElement, std::vector<QueueElement>, CompareNodeCost> NodeQueue;
 
   /**
    * @brief Initialize the search algorithm

@@ -15,7 +15,6 @@
 
 #include "nav2_route/breadth_first_search.hpp"
 
-#include <iostream>
 #include <queue>
 #include <unordered_map>
 #include <vector>
@@ -27,7 +26,7 @@
 namespace nav2_route
 {
 
-void BreadthFirstSearch::initialize(std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap, int max_iterations)
+void DijkstraSearch::initialize(std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap, int max_iterations)
 {
   costmap_ = costmap;
 
@@ -48,7 +47,7 @@ void BreadthFirstSearch::initialize(std::shared_ptr<nav2_costmap_2d::Costmap2D> 
   max_iterations_ = max_iterations;
 }
 
-BreadthFirstSearch::NodePtr BreadthFirstSearch::addToGraph(const unsigned int index)
+DijkstraSearch::NodePtr DijkstraSearch::addToGraph(const unsigned int index)
 {
   auto iter = graph_.find(index);
   if (iter != graph_.end()) {
@@ -58,12 +57,12 @@ BreadthFirstSearch::NodePtr BreadthFirstSearch::addToGraph(const unsigned int in
   return &(graph_.emplace(index, SimpleNode(index)).first->second);
 }
 
-void BreadthFirstSearch::setStart(unsigned int mx, unsigned int my)
+void DijkstraSearch::setStart(unsigned int mx, unsigned int my)
 {
   start_ = addToGraph(costmap_->getIndex(mx, my));
 }
 
-void BreadthFirstSearch::setGoals(std::vector<nav2_costmap_2d::MapLocation> & goals)
+void DijkstraSearch::setGoals(std::vector<nav2_costmap_2d::MapLocation> & goals)
 {
   goals_.clear();
   for (const auto & goal : goals) {
@@ -71,28 +70,22 @@ void BreadthFirstSearch::setGoals(std::vector<nav2_costmap_2d::MapLocation> & go
   }
 }
 
-void BreadthFirstSearch::search(unsigned int & goal)
+void DijkstraSearch::search(unsigned int & goal)
 {
-  std::priority_queue<NodePtr, std::vector<NodePtr>, CompareNodeCost> queue;
-
-  start_->queued = true;
+  NodeQueue queue;
   start_->cost = 0.0f;
-  queue.push(start_);
+  queue.push(std::make_pair(start_->cost, start_));
 
   int iteration = 0;
   while (!queue.empty()) {
-    auto * current = queue.top();
+    
+    auto current = queue.top().second;
     queue.pop();
-    current->queued = false;
-    std::cout << "Current index: " << current->index << std::endl;
-    std::cout << "Current cost: " << current->cost << std::endl;
-    std::cout << std::endl;
 
     if (iteration > max_iterations_) {
       throw nav2_core::PlannerTimedOut("Exceeded maximum iterations");
     }
 
-    // Check goals
     for (unsigned int i = 0; i < goals_.size(); ++i) {
       if (current->index == goals_[i]->index) {
         goal = i;
@@ -108,22 +101,17 @@ void BreadthFirstSearch::search(unsigned int & goal)
         float updated_cost = current->cost + calculateCost(current->index, neighbor->index);
         if (updated_cost < neighbor->cost) {
           neighbor->cost = updated_cost;
-        }
-        
-        if(!neighbor->queued) {
-          neighbor->queued = true;
-          queue.push(neighbor);
+          queue.push(std::make_pair(neighbor->cost, neighbor));
         }
       }
     }
-    std::cout << std::endl;
     current->visited = true;
   }
 
   throw nav2_core::NoValidPathCouldBeFound("No valid path found");
 }
 
-void BreadthFirstSearch::getNeighbors(unsigned int parent_index, NodeVector & neighbors)
+void DijkstraSearch::getNeighbors(unsigned int parent_index, NodeVector & neighbors)
 {
   unsigned int p_mx, p_my;
   costmap_->indexToCells(parent_index, p_mx, p_my);
@@ -161,7 +149,7 @@ void BreadthFirstSearch::getNeighbors(unsigned int parent_index, NodeVector & ne
   }
 }
 
-bool BreadthFirstSearch::isFirstGoalVisible()
+bool DijkstraSearch::isFirstGoalVisible()
 {
   unsigned int s_mx, s_my, g_mx, g_my;
   costmap_->indexToCells(start_->index, s_mx, s_my);
@@ -179,7 +167,7 @@ bool BreadthFirstSearch::isFirstGoalVisible()
   return true;
 }
 
-bool BreadthFirstSearch::inCollision(unsigned int index)
+bool DijkstraSearch::inCollision(unsigned int index)
 {
   unsigned char cost = costmap_->getCost(index);
 
@@ -192,24 +180,23 @@ bool BreadthFirstSearch::inCollision(unsigned int index)
 }
 
 
-float BreadthFirstSearch::calculateCost(unsigned int current_index, unsigned int neighbor_index)
+float DijkstraSearch::calculateCost(unsigned int current_index, unsigned int neighbor_index)
 {
   auto diff = static_cast<int>(neighbor_index) - static_cast<int>(current_index);
   for (const auto & offset : diagonals_) {
     if (diff == offset) {
-      // SquareRoot of 2
-      return 1.41421356237f;
+      return 14.0f;
     }
   }
-  return 1.0f;
+  return 10.0f;
 }
   
-void BreadthFirstSearch::clearGraph()
+void DijkstraSearch::clearGraph()
 {
   graph_.clear();
 }
 
-std::unordered_map<unsigned int, SimpleNode> * BreadthFirstSearch::getGraph()
+std::unordered_map<unsigned int, DijkstraSearch::SimpleNode> * DijkstraSearch::getGraph()
 {
   return &graph_;
 }
