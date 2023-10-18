@@ -1,4 +1,4 @@
-// Copyright (c) 2023 Open Navigation LLC
+// Copyright (c) 2022 Samsung Research America, @artofnothingness Alexey Budyakov
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_MPPI_CONTROLLER__CRITICS__PATH_ALIGN_CRITIC_HPP_
-#define NAV2_MPPI_CONTROLLER__CRITICS__PATH_ALIGN_CRITIC_HPP_
+#ifndef NAV2_MPPI_CONTROLLER__CRITICS__PATH_ALIGN_LEGACY_CRITIC_HPP_
+#define NAV2_MPPI_CONTROLLER__CRITICS__PATH_ALIGN_LEGACY_CRITIC_HPP_
 
 #include "nav2_mppi_controller/critic_function.hpp"
 #include "nav2_mppi_controller/models/state.hpp"
@@ -23,13 +23,14 @@ namespace mppi::critics
 {
 
 /**
- * @class mppi::critics::ConstraintCritic
+ * @class mppi::critics::PathAlignLegacyCritic
  * @brief Critic objective function for aligning to the path. Note:
  * High settings of this will follow the path more precisely, but also makes it
  * difficult (or impossible) to deviate in the presence of dynamic obstacles.
  * This is an important critic to tune and consider in tandem with Obstacle.
+ * This is the initial 'Legacy' implementation before replacement Oct 2023.
  */
-class PathAlignCritic : public CriticFunction
+class PathAlignLegacyCritic : public CriticFunction
 {
 public:
   /**
@@ -56,4 +57,4 @@ protected:
 
 }  // namespace mppi::critics
 
-#endif  // NAV2_MPPI_CONTROLLER__CRITICS__PATH_ALIGN_CRITIC_HPP_
+#endif  // NAV2_MPPI_CONTROLLER__CRITICS__PATH_ALIGN_LEGACY_CRITIC_HPP_
