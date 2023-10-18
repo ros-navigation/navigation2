@@ -194,7 +194,7 @@ protected:
   rclcpp::Subscription<nav2_msgs::msg::CollisionMonitorState>::SharedPtr action_state_sub_;
   nav2_msgs::msg::CollisionMonitorState::SharedPtr action_state_;
 
-  // CollisionMonitor Action state
+  // CollisionMonitor collision points markers
   rclcpp::Subscription<visualization_msgs::msg::MarkerArray>::SharedPtr collision_points_marker_sub_;
   visualization_msgs::msg::MarkerArray::SharedPtr collision_points_marker_msg_;
 
@@ -566,6 +566,7 @@ void Tester::publishCmdVel(const double x, const double y, const double tw)
   // Reset cmd_vel_out_ before calling CollisionMonitor::process()
   cmd_vel_out_ = nullptr;
   action_state_ = nullptr;
+  collision_points_marker_msg_ = nullptr;
 
   std::unique_ptr<geometry_msgs::msg::Twist> msg =
     std::make_unique<geometry_msgs::msg::Twist>();
@@ -1207,13 +1208,8 @@ TEST_F(Tester, testCollisionPointsMarkers)
   // Set Collision Monitor parameters.
   // Making two polygons: outer polygon for slowdown and inner for robot stop.
   setCommonParameters();
-  addPolygon("Limit", POLYGON, 3.0, "limit");
-  addPolygon("SlowDown", POLYGON, 2.0, "slowdown");
-  addPolygon("Stop", POLYGON, 1.0, "stop");
   addSource(SCAN_NAME, SCAN);
-  addSource(POINTCLOUD_NAME, POINTCLOUD);
-  addSource(RANGE_NAME, RANGE);
-  setVectors({"Limit", "SlowDown", "Stop"}, {SCAN_NAME, POINTCLOUD_NAME, RANGE_NAME});
+  setVectors({}, {SCAN_NAME});
 
   // Start Collision Monitor node
   cm_->start();
@@ -1221,7 +1217,6 @@ TEST_F(Tester, testCollisionPointsMarkers)
   // Share TF
   sendTransforms(curr_time);
 
-  // 1. Obstacle is far away from robot
   publishCmdVel(0.5, 0.2, 0.1);
   ASSERT_TRUE(waitCollisionPointsMarker(500ms));
   ASSERT_EQ(collision_points_marker_msg_->markers[0].points.size(), 0u);
@@ -1229,7 +1224,6 @@ TEST_F(Tester, testCollisionPointsMarkers)
   publishCmdVel(0.5, 0.2, 0.1);
   publishScan(0.5, curr_time);
   ASSERT_TRUE(waitData(0.5, 500ms, curr_time));
-  
   ASSERT_TRUE(waitCollisionPointsMarker(500ms));
   ASSERT_NE(collision_points_marker_msg_->markers[0].points.size(), 0u);
   // Stop Collision Monitor node
