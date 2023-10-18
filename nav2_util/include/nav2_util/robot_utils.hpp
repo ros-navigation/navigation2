@@ -23,6 +23,7 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "tf2/time.h"
+#include "tf2/transform_datatypes.h"
 #include "tf2_ros/buffer.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -73,7 +74,7 @@ bool getTransform(
   const std::string & target_frame_id,
   const tf2::Duration & transform_tolerance,
   const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
-  tf2::Transform & tf2_transform);
+  tf2::Stamped<tf2::Transform> & tf2_transform);
 
 /**
  * @brief Obtains a transform from source_frame_id at source_time ->
@@ -96,7 +97,7 @@ bool getTransform(
   const std::string & fixed_frame_id,
   const tf2::Duration & transform_tolerance,
   const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
-  tf2::Transform & tf2_transform);
+  tf2::Stamped<tf2::Transform> & tf2_transform);
 
 /**
  * @brief Validates a twist message contains no nans or infs
