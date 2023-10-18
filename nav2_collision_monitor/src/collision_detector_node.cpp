@@ -56,7 +56,7 @@ CollisionDetector::on_configure(const rclcpp_lifecycle::State & /*state*/)
     "collision_detector_state", rclcpp::SystemDefaultsQoS());
 
   collision_points_marker_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(
-    "collision_points_marker", 1);
+    "~/collision_points_marker", 1);
 
   // Obtaining ROS parameters
   if (!getParameters()) {
