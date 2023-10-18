@@ -29,6 +29,7 @@
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "sensor_msgs/msg/range.hpp"
 #include "sensor_msgs/point_cloud2_iterator.hpp"
+#include "nav2_msgs/msg/polygons_array.hpp"
 
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
@@ -38,6 +39,7 @@
 #include "nav2_collision_monitor/scan.hpp"
 #include "nav2_collision_monitor/pointcloud.hpp"
 #include "nav2_collision_monitor/range.hpp"
+#include "nav2_collision_monitor/polygon_source.hpp"
 
 using namespace std::chrono_literals;
 
@@ -52,6 +54,8 @@ static const char POINTCLOUD_NAME[]{"PointCloud"};
 static const char POINTCLOUD_TOPIC[]{"pointcloud"};
 static const char RANGE_NAME[]{"Range"};
 static const char RANGE_TOPIC[]{"range"};
+static const char POLYGON_NAME[]{"Polygon"};
+static const char POLYGON_TOPIC[]{"polygon"};
 static const tf2::Duration TRANSFORM_TOLERANCE{tf2::durationFromSec(0.1)};
 static const rclcpp::Duration DATA_TIMEOUT{rclcpp::Duration::from_seconds(5.0)};
 
@@ -68,6 +72,7 @@ public:
     scan_pub_.reset();
     pointcloud_pub_.reset();
     range_pub_.reset();
+    polygon_pub_.reset();
   }
 
   void publishScan(const rclcpp::Time & stamp, const double range)
@@ -156,10 +161,47 @@ public:
     range_pub_->publish(std::move(msg));
   }
 
+  void publishPolygon(const rclcpp::Time & stamp)
+  {
+    polygon_pub_ = this->create_publisher<nav2_msgs::msg::PolygonsArray>(
+      POLYGON_TOPIC, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+
+    std::unique_ptr<nav2_msgs::msg::PolygonsArray> msg =
+      std::make_unique<nav2_msgs::msg::PolygonsArray>();
+
+    geometry_msgs::msg::PolygonStamped polygon_msg;
+
+    polygon_msg.header.frame_id = SOURCE_FRAME_ID;
+    polygon_msg.header.stamp = stamp;
+
+    geometry_msgs::msg::Point32 point;
+    point.x = 1.0;
+    point.y = 0.0;
+    point.z = 0.0;
+    polygon_msg.polygon.points.push_back(point);
+    point.x = 1.0;
+    point.y = 1.0;
+    point.z = 0.0;
+    polygon_msg.polygon.points.push_back(point);
+    point.x = -1.0;
+    point.y = 1.0;
+    point.z = 0.0;
+    polygon_msg.polygon.points.push_back(point);
+    point.x = -1.0;
+    point.y = -1.0;
+    point.z = 0.0;
+    polygon_msg.polygon.points.push_back(point);
+
+    msg->polygons.push_back(polygon_msg);
+
+    polygon_pub_->publish(std::move(msg));
+  }
+
 private:
   rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr scan_pub_;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pointcloud_pub_;
   rclcpp::Publisher<sensor_msgs::msg::Range>::SharedPtr range_pub_;
+  rclcpp::Publisher<nav2_msgs::msg::PolygonsArray>::SharedPtr polygon_pub_;
 };  // TestNode
 
 class ScanWrapper : public nav2_collision_monitor::Scan
@@ -231,6 +273,29 @@ public:
   }
 };  // RangeWrapper
 
+class PolygonWrapper : public nav2_collision_monitor::PolygonSource
+{
+public:
+  PolygonWrapper(
+    const nav2_util::LifecycleNode::WeakPtr & node,
+    const std::string & source_name,
+    const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+    const std::string & base_frame_id,
+    const std::string & global_frame_id,
+    const tf2::Duration & transform_tolerance,
+    const rclcpp::Duration & data_timeout,
+    const bool base_shift_correction)
+  : nav2_collision_monitor::PolygonSource(
+      node, source_name, tf_buffer, base_frame_id, global_frame_id,
+      transform_tolerance, data_timeout, base_shift_correction)
+  {}
+
+  bool dataReceived() const
+  {
+    return data_ != nullptr;
+  }
+};  // PolygonWrapper
+
 class Tester : public ::testing::Test
 {
 public:
@@ -248,14 +313,17 @@ protected:
   bool waitScan(const std::chrono::nanoseconds & timeout);
   bool waitPointCloud(const std::chrono::nanoseconds & timeout);
   bool waitRange(const std::chrono::nanoseconds & timeout);
+  bool waitPolygon(const std::chrono::nanoseconds & timeout);
   void checkScan(const std::vector<nav2_collision_monitor::Point> & data);
   void checkPointCloud(const std::vector<nav2_collision_monitor::Point> & data);
   void checkRange(const std::vector<nav2_collision_monitor::Point> & data);
+  void checkPolygon(const std::vector<nav2_collision_monitor::Point> & data);
 
   std::shared_ptr<TestNode> test_node_;
   std::shared_ptr<ScanWrapper> scan_;
   std::shared_ptr<PointCloudWrapper> pointcloud_;
   std::shared_ptr<RangeWrapper> range_;
+  std::shared_ptr<PolygonWrapper> polygon_;
 
 private:
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
@@ -331,6 +399,21 @@ void Tester::createSources(const bool base_shift_correction)
     BASE_FRAME_ID, GLOBAL_FRAME_ID,
     TRANSFORM_TOLERANCE, DATA_TIMEOUT, base_shift_correction);
   range_->configure();
+
+  // Create Polygon object
+  test_node_->declare_parameter(
+    std::string(POLYGON_NAME) + ".topic", rclcpp::ParameterValue(POLYGON_TOPIC));
+  test_node_->set_parameter(
+    rclcpp::Parameter(std::string(POLYGON_NAME) + ".topic", POLYGON_TOPIC));
+
+  test_node_->declare_parameter(
+    std::string(POLYGON_NAME) + ".sampling_distance", rclcpp::ParameterValue(0.1));
+
+  polygon_ = std::make_shared<PolygonWrapper>(
+    test_node_, POLYGON_NAME, tf_buffer_,
+    BASE_FRAME_ID, GLOBAL_FRAME_ID,
+    TRANSFORM_TOLERANCE, DATA_TIMEOUT, base_shift_correction);
+  polygon_->configure();
 }
 
 void Tester::sendTransforms(const rclcpp::Time & stamp)
@@ -404,6 +487,19 @@ bool Tester::waitRange(const std::chrono::nanoseconds & timeout)
   return false;
 }
 
+bool Tester::waitPolygon(const std::chrono::nanoseconds & timeout)
+{
+  rclcpp::Time start_time = test_node_->now();
+  while (rclcpp::ok() && test_node_->now() - start_time <= rclcpp::Duration(timeout)) {
+    if (polygon_->dataReceived()) {
+      return true;
+    }
+    rclcpp::spin_some(test_node_->get_node_base_interface());
+    std::this_thread::sleep_for(10ms);
+  }
+  return false;
+}
+
 void Tester::checkScan(const std::vector<nav2_collision_monitor::Point> & data)
 {
   ASSERT_EQ(data.size(), 4u);
@@ -458,6 +554,11 @@ void Tester::checkRange(const std::vector<nav2_collision_monitor::Point> & data)
   ASSERT_NEAR(data[i].y, 1.0 * std::sin(angle) + 0.1, EPSILON);
 }
 
+void Tester::checkPolygon(const std::vector<nav2_collision_monitor::Point> & data)
+{
+  ASSERT_EQ(data.size(), 76u);
+}
+
 TEST_F(Tester, testGetData)
 {
   rclcpp::Time curr_time = test_node_->now();
@@ -470,11 +571,13 @@ TEST_F(Tester, testGetData)
   test_node_->publishScan(curr_time, 1.0);
   test_node_->publishPointCloud(curr_time);
   test_node_->publishRange(curr_time, 1.0);
+  test_node_->publishPolygon(curr_time);
 
   // Wait until all sources will receive the data
   ASSERT_TRUE(waitScan(500ms));
   ASSERT_TRUE(waitPointCloud(500ms));
   ASSERT_TRUE(waitRange(500ms));
+  ASSERT_TRUE(waitPolygon(500ms));
 
   // Check Scan data
   std::vector<nav2_collision_monitor::Point> data;
@@ -490,6 +593,11 @@ TEST_F(Tester, testGetData)
   data.clear();
   range_->getData(curr_time, data);
   checkRange(data);
+
+  // Check Polygon data
+  data.clear();
+  polygon_->getData(curr_time, data);
+  checkPolygon(data);
 }
 
 TEST_F(Tester, testGetOutdatedData)
@@ -504,11 +612,13 @@ TEST_F(Tester, testGetOutdatedData)
   test_node_->publishScan(curr_time - DATA_TIMEOUT - 1s, 1.0);
   test_node_->publishPointCloud(curr_time - DATA_TIMEOUT - 1s);
   test_node_->publishRange(curr_time - DATA_TIMEOUT - 1s, 1.0);
+  test_node_->publishPolygon(curr_time - DATA_TIMEOUT - 1s);
 
   // Wait until all sources will receive the data
   ASSERT_TRUE(waitScan(500ms));
   ASSERT_TRUE(waitPointCloud(500ms));
   ASSERT_TRUE(waitRange(500ms));
+  ASSERT_TRUE(waitPolygon(500ms));
 
   // Scan data should be empty
   std::vector<nav2_collision_monitor::Point> data;
@@ -521,6 +631,10 @@ TEST_F(Tester, testGetOutdatedData)
 
   // Range data should be empty
   range_->getData(curr_time, data);
+  ASSERT_EQ(data.size(), 0u);
+
+  // Polygon data should be empty
+  polygon_->getData(curr_time, data);
   ASSERT_EQ(data.size(), 0u);
 }
 
@@ -537,11 +651,13 @@ TEST_F(Tester, testIncorrectFrameData)
   test_node_->publishScan(curr_time, 1.0);
   test_node_->publishPointCloud(curr_time);
   test_node_->publishRange(curr_time, 1.0);
+  test_node_->publishPolygon(curr_time);
 
   // Wait until all sources will receive the data
   ASSERT_TRUE(waitScan(500ms));
   ASSERT_TRUE(waitPointCloud(500ms));
   ASSERT_TRUE(waitRange(500ms));
+  ASSERT_TRUE(waitPolygon(500ms));
 
   // Scan data should be empty
   std::vector<nav2_collision_monitor::Point> data;
@@ -554,6 +670,10 @@ TEST_F(Tester, testIncorrectFrameData)
 
   // Range data should be empty
   range_->getData(curr_time, data);
+  ASSERT_EQ(data.size(), 0u);
+
+  // Polygon data should be empty
+  polygon_->getData(curr_time, data);
   ASSERT_EQ(data.size(), 0u);
 }
 
@@ -597,11 +717,13 @@ TEST_F(Tester, testIgnoreTimeShift)
   test_node_->publishScan(curr_time, 1.0);
   test_node_->publishPointCloud(curr_time);
   test_node_->publishRange(curr_time, 1.0);
+  test_node_->publishPolygon(curr_time);
 
   // Wait until all sources will receive the data
   ASSERT_TRUE(waitScan(500ms));
   ASSERT_TRUE(waitPointCloud(500ms));
   ASSERT_TRUE(waitRange(500ms));
+  ASSERT_TRUE(waitPolygon(500ms));
 
   // Scan data should be consistent
   std::vector<nav2_collision_monitor::Point> data;
@@ -617,6 +739,11 @@ TEST_F(Tester, testIgnoreTimeShift)
   data.clear();
   range_->getData(curr_time, data);
   checkRange(data);
+
+  // Polygon data should be consistent
+  data.clear();
+  polygon_->getData(curr_time, data);
+  checkPolygon(data);
 }
 
 int main(int argc, char ** argv)
