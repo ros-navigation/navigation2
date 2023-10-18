@@ -17,7 +17,7 @@
 
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
-#include "nav2_route/breadth_first_search.hpp"
+#include "nav2_route/dijkstra_search.hpp"
 
 using namespace nav2_costmap_2d; //NOLINT
 using namespace nav2_route; //NOLINT

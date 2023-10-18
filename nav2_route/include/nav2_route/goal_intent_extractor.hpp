@@ -31,7 +31,7 @@
 #include "nav2_route/types.hpp"
 #include "nav2_route/utils.hpp"
 #include "nav2_route/node_spatial_tree.hpp"
-#include "nav2_route/breadth_first_search.hpp"
+#include "nav2_route/dijkstra_search.hpp"
 
 namespace nav2_route
 {

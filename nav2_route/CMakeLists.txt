@@ -54,7 +54,7 @@ add_library(${library_name} SHARED
   src/path_converter.cpp
   src/graph_loader.cpp
   src/goal_intent_extractor.cpp
-  src/breadth_first_search.cpp
+  src/dijkstra_search.cpp
 )
 
 ament_target_dependencies(${library_name}

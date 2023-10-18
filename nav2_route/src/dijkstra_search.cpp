@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_route/breadth_first_search.hpp"
+#include "nav2_route/dijkstra_search.hpp"
 
 #include <queue>
 #include <unordered_map>

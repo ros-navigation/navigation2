@@ -144,12 +144,12 @@ target_link_libraries(test_route_server
 )
 
 # Test Breadth first search 
-ament_add_gtest(test_bfs
-  test_breadth_first_search.cpp
+ament_add_gtest(test_ds
+  test_dijkstra_search.cpp
 )
-ament_target_dependencies(test_bfs 
+ament_target_dependencies(test_ds 
   ${dependencies}
 )
-target_link_libraries(test_bfs
+target_link_libraries(test_ds
   ${library_name}
 )
