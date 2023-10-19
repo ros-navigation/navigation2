@@ -17,6 +17,7 @@
 #include <functional>
 
 #include "sensor_msgs/point_cloud2_iterator.hpp"
+#include "tf2/transform_datatypes.h"
 
 #include "nav2_util/node_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
@@ -111,7 +112,7 @@ void PointCloud::getData(
     return;
   }
 
-  tf2::Transform tf_transform;
+  tf2::Stamped<tf2::Transform> tf_transform;
   if (base_shift_correction_) {
     // Obtaining the transform to get data from source frame and time where it was received
     // to the base frame and current time

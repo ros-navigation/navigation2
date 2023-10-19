@@ -82,7 +82,7 @@ bool getTransform(
   const std::string & target_frame_id,
   const tf2::Duration & transform_tolerance,
   const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
-  tf2::Transform & tf2_transform)
+  tf2::Stamped<tf2::Transform> & tf2_transform)
 {
   geometry_msgs::msg::TransformStamped transform;
   tf2_transform.setIdentity();  // initialize by identical transform
@@ -106,7 +106,7 @@ bool getTransform(
   }
 
   // Convert TransformStamped to TF2 transform
-  tf2::fromMsg(transform.transform, tf2_transform);
+  tf2::fromMsg(transform, tf2_transform);
   return true;
 }
 
@@ -118,7 +118,7 @@ bool getTransform(
   const std::string & fixed_frame_id,
   const tf2::Duration & transform_tolerance,
   const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
-  tf2::Transform & tf2_transform)
+  tf2::Stamped<tf2::Transform> & tf2_transform)
 {
   geometry_msgs::msg::TransformStamped transform;
   tf2_transform.setIdentity();  // initialize by identical transform
@@ -139,7 +139,7 @@ bool getTransform(
   }
 
   // Convert TransformStamped to TF2 transform
-  tf2::fromMsg(transform.transform, tf2_transform);
+  tf2::fromMsg(transform, tf2_transform);
   return true;
 }
 

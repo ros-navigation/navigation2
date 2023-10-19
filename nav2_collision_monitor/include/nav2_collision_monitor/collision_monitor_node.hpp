@@ -21,6 +21,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/twist.hpp"
+#include "visualization_msgs/msg/marker_array.hpp"
 
 #include "tf2/time.h"
 #include "tf2_ros/buffer.h"
@@ -36,6 +37,7 @@
 #include "nav2_collision_monitor/scan.hpp"
 #include "nav2_collision_monitor/pointcloud.hpp"
 #include "nav2_collision_monitor/range.hpp"
+#include "nav2_collision_monitor/polygon_source.hpp"
 
 namespace nav2_collision_monitor
 {
@@ -107,6 +109,7 @@ protected:
    * @param cmd_vel_in_topic Output name of cmd_vel_in topic
    * @param cmd_vel_out_topic Output name of cmd_vel_out topic
    * is required.
+   * @param state_topic topic name for publishing collision monitor state
    * @return True if all parameters were obtained or false in failure case
    */
   bool getParameters(
@@ -209,6 +212,10 @@ protected:
   /// @brief CollisionMonitor state publisher
   rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::CollisionMonitorState>::SharedPtr
     state_pub_;
+
+  /// @brief Collision points marker publisher
+  rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr
+    collision_points_marker_pub_;
 
   /// @brief Whether main routine is active
   bool process_active_;
