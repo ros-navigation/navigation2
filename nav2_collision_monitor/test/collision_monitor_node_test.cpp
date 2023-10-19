@@ -49,7 +49,7 @@ static const char ODOM_FRAME_ID[]{"odom"};
 static const char CMD_VEL_IN_TOPIC[]{"cmd_vel_in"};
 static const char CMD_VEL_OUT_TOPIC[]{"cmd_vel_out"};
 static const char STATE_TOPIC[]{"collision_monitor_state"};
-static const char COLLISION_POINTS_MARKERS_TOPIC[]{"collision_points_marker"};
+static const char COLLISION_POINTS_MARKERS_TOPIC[]{"/collision_monitor/collision_points_marker"};
 static const char FOOTPRINT_TOPIC[]{"footprint"};
 static const char SCAN_NAME[]{"Scan"};
 static const char POINTCLOUD_NAME[]{"PointCloud"};

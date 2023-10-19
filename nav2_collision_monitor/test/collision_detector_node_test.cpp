@@ -50,7 +50,7 @@ static const char SCAN_NAME[]{"Scan"};
 static const char POINTCLOUD_NAME[]{"PointCloud"};
 static const char RANGE_NAME[]{"Range"};
 static const char STATE_TOPIC[]{"collision_detector_state"};
-static const char COLLISION_POINTS_MARKERS_TOPIC[]{"collision_points_marker"};
+static const char COLLISION_POINTS_MARKERS_TOPIC[]{"/collision_detector/collision_points_marker"};
 static const int MIN_POINTS{1};
 static const double SIMULATION_TIME_STEP{0.01};
 static const double TRANSFORM_TOLERANCE{0.5};
