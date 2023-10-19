@@ -339,7 +339,6 @@ void CollisionDetector::process()
     marker.lifetime = rclcpp::Duration(0, 0);
 
     for (const auto & point : collision_points) {
-      std::cout << "collision point: " << point.x << ", " << point.y << std::endl;
       geometry_msgs::msg::Point p;
       p.x = point.x;
       p.y = point.y;
