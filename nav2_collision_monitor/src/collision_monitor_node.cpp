@@ -414,7 +414,7 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in)
     notifyActionState(robot_action, action_polygon);
   }
 
-  // Publish requred robot velocity
+  // Publish required robot velocity
   publishVelocity(robot_action);
 
   // Publish polygons for better visualization

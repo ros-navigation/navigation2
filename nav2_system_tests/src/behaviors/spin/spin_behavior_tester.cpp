@@ -142,7 +142,7 @@ bool SpinBehaviorTester::defaultSpinBehaviorTest(
   auto goal_msg = Spin::Goal();
   goal_msg.target_yaw = target_yaw;
 
-  // Intialize fake costmap
+  // Initialize fake costmap
   if (make_fake_costmap_) {
     sendFakeCostmap(target_yaw);
     sendFakeOdom(0.0);
@@ -160,7 +160,7 @@ bool SpinBehaviorTester::defaultSpinBehaviorTest(
     fabs(tf2::getYaw(initial_pose.pose.orientation)));
   RCLCPP_INFO(node_->get_logger(), "Before sending goal");
 
-  // Intialize fake costmap
+  // Initialize fake costmap
   if (make_fake_costmap_) {
     sendFakeCostmap(target_yaw);
     sendFakeOdom(0.0);

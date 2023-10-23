@@ -920,7 +920,7 @@ void TestNode::verifyBinaryParams(
 
 TEST_F(TestNode, testBinaryState)
 {
-  // Initilize test system
+  // Initialize test system
   createMaps("map");
   publishMaps(nav2_costmap_2d::BINARY_FILTER, MASK_TOPIC, 0.0, 1.0);
   ASSERT_TRUE(createBinaryFilter("map", 10.0));
@@ -935,7 +935,7 @@ TEST_F(TestNode, testBinaryState)
 
 TEST_F(TestNode, testBinaryStateScaled)
 {
-  // Initilize test system
+  // Initialize test system
   createMaps("map");
   publishMaps(nav2_costmap_2d::BINARY_FILTER, MASK_TOPIC, 100.0, -1.0);
   ASSERT_TRUE(createBinaryFilter("map", 35.0));
@@ -1053,7 +1053,7 @@ TEST_F(TestNode, testWrongBinaryParamName)
 
 TEST_F(TestNode, testInvertedBinaryState)
 {
-  // Initilize test system
+  // Initialize test system
   createMaps("map");
   publishMaps(nav2_costmap_2d::BINARY_FILTER, MASK_TOPIC, 0.0, 1.0);
   setDefaultState(true);
@@ -1069,7 +1069,7 @@ TEST_F(TestNode, testInvertedBinaryState)
 
 TEST_F(TestNode, testOutOfBounds)
 {
-  // Initilize test system
+  // Initialize test system
   createMaps("map");
   publishMaps(nav2_costmap_2d::BINARY_FILTER, MASK_TOPIC, 0.0, 1.0);
   ASSERT_TRUE(createBinaryFilter("map", 10.0));
@@ -1084,7 +1084,7 @@ TEST_F(TestNode, testOutOfBounds)
 
 TEST_F(TestNode, testInfoRePublish)
 {
-  // Initilize test system
+  // Initialize test system
   createMaps("map");
   // Publish Info with incorrect dummy mask topic
   publishMaps(nav2_costmap_2d::BINARY_FILTER, "dummy_topic", 0.0, 1.0);
@@ -1125,7 +1125,7 @@ TEST_F(TestNode, testMaskRePublish)
 
 TEST_F(TestNode, testIncorrectFilterType)
 {
-  // Initilize test system
+  // Initialize test system
   createMaps("map");
   publishMaps(INCORRECT_TYPE, MASK_TOPIC, 0.0, 1.0);
   ASSERT_FALSE(createBinaryFilter("map", 10.0));
@@ -1137,7 +1137,7 @@ TEST_F(TestNode, testIncorrectFilterType)
 
 TEST_F(TestNode, testDifferentFrame)
 {
-  // Initilize test system
+  // Initialize test system
   createMaps("map");
   publishMaps(nav2_costmap_2d::BINARY_FILTER, MASK_TOPIC, 0.0, 1.0);
   ASSERT_TRUE(createBinaryFilter("odom", 10.0));
@@ -1153,7 +1153,7 @@ TEST_F(TestNode, testDifferentFrame)
 
 TEST_F(TestNode, testIncorrectFrame)
 {
-  // Initilize test system
+  // Initialize test system
   createMaps("map");
   publishMaps(nav2_costmap_2d::BINARY_FILTER, MASK_TOPIC, 0.0, 1.0);
   ASSERT_TRUE(createBinaryFilter("odom", 10.0));
@@ -1169,7 +1169,7 @@ TEST_F(TestNode, testIncorrectFrame)
 
 TEST_F(TestNode, testResetState)
 {
-  // Initilize test system
+  // Initialize test system
   createMaps("map");
   publishMaps(nav2_costmap_2d::BINARY_FILTER, MASK_TOPIC, 0.0, 1.0);
   ASSERT_TRUE(createBinaryFilter("map", 10.0));
