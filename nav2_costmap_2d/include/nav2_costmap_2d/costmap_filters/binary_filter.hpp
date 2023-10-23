@@ -130,15 +130,15 @@ private:
   std::vector<std::string> binary_parameters_;
 
   // Parameter information
-  typedef struct
+  struct BinaryParameter
   {
     std::string node_name;    // Node to which the parameter belongs
     std::string param_name;   // Name of parameter
     bool default_state;       // Parameter default state
-  } binary_parameter_t;
+  };
 
   // List of params with info
-  std::vector<binary_parameter_t> binary_parameters_info_;
+  std::vector<BinaryParameter> binary_parameters_info_;
   // List of clients for changing parameters
   std::vector<rclcpp::Client<rcl_interfaces::srv::SetParameters>::SharedPtr>
   change_parameters_clients_;

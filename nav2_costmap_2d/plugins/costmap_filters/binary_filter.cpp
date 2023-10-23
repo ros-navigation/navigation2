@@ -79,7 +79,7 @@ void BinaryFilter::initializeFilter(
   node->get_parameter(name_ + "." + "change_parameter_timeout", change_parameter_timeout_);
 
   for (std::string param : binary_parameters_) {
-    binary_parameter_t param_struct;
+    BinaryParameter param_struct;
 
     declareParameter(param + "." + "node_name", rclcpp::ParameterValue(""));
     node->get_parameter(name_ + "." + param + "." + "node_name", param_struct.node_name);
