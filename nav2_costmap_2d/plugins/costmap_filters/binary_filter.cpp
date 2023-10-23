@@ -91,7 +91,6 @@ void BinaryFilter::initializeFilter(
     declareParameter(param + "." + "default_state", rclcpp::ParameterValue(default_state_));
     node->get_parameter(name_ + "." + param + "." + "default_state", param_struct.default_state);
 
-
     binary_parameters_info_.push_back(param_struct);
   }
 
@@ -106,7 +105,6 @@ void BinaryFilter::initializeFilter(
     std::bind(&BinaryFilter::filterInfoCallback, this, std::placeholders::_1));
 
   // Create clients for changing parameters
-
   for (auto param : binary_parameters_info_) {
     RCLCPP_DEBUG(
       logger_,
