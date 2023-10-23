@@ -51,9 +51,7 @@ namespace nav2_costmap_2d
 BinaryFilter::BinaryFilter()
 : filter_info_sub_(nullptr), mask_sub_(nullptr),
   binary_state_pub_(nullptr), filter_mask_(nullptr), global_frame_(""),
-  default_state_(false), binary_state_(default_state_),
-  binary_parameters_{""}, binary_parameters_info_{},
-  change_parameters_clients_{}, change_parameter_timeout_()
+  default_state_(false), binary_state_(default_state_)
 {
 }
 
