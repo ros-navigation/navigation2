@@ -319,10 +319,14 @@ void BinaryFilter::changeParameters(const bool state)
     rcl_interfaces::msg::Parameter bool_param;
     bool_param.name = binary_parameters_info_.at(param_index).param_name;
     bool_param.value.type = rcl_interfaces::msg::ParameterType::PARAMETER_BOOL;
-    if (binary_parameters_info_.at(param_index).default_state != default_state_) {
-      bool_param.value.bool_value = !state;
+
+    const bool param_default_state = binary_parameters_info_.at(param_index).default_state;
+    if (state == default_state_) {
+      // Filter is not flipped
+      bool_param.value.bool_value = param_default_state;
     } else {
-      bool_param.value.bool_value = state;
+      // Filter is flipped
+      bool_param.value.bool_value = !param_default_state;
     }
     request->parameters.push_back(bool_param);
 
