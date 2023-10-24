@@ -132,7 +132,7 @@ Image<T>::Image(size_t rows, size_t columns, T * data, size_t step)
 }
 
 template<class T>
-Image<T>::Imagec(const Image & other)
+Image<T>::Image(const Image & other)
 : data_start_{other.data_start_},
   rows_{other.rows_}, columns_{other.columns_}, step_{other.step_} {}
 
