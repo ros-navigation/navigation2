@@ -32,6 +32,7 @@
 #include "sensor_msgs/point_cloud2_iterator.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/polygon_stamped.hpp"
+#include "visualization_msgs/msg/marker_array.hpp"
 
 #include "tf2_ros/transform_broadcaster.h"
 
@@ -48,6 +49,7 @@ static const char ODOM_FRAME_ID[]{"odom"};
 static const char CMD_VEL_IN_TOPIC[]{"cmd_vel_in"};
 static const char CMD_VEL_OUT_TOPIC[]{"cmd_vel_out"};
 static const char STATE_TOPIC[]{"collision_monitor_state"};
+static const char COLLISION_POINTS_MARKERS_TOPIC[]{"/collision_monitor/collision_points_marker"};
 static const char FOOTPRINT_TOPIC[]{"footprint"};
 static const char SCAN_NAME[]{"Scan"};
 static const char POINTCLOUD_NAME[]{"PointCloud"};
@@ -161,10 +163,12 @@ public:
     const rclcpp::Time & stamp);
   bool waitCmdVel(const std::chrono::nanoseconds & timeout);
   bool waitActionState(const std::chrono::nanoseconds & timeout);
+  bool waitCollisionPointsMarker(const std::chrono::nanoseconds & timeout);
 
 protected:
   void cmdVelOutCallback(geometry_msgs::msg::Twist::SharedPtr msg);
   void actionStateCallback(nav2_msgs::msg::CollisionMonitorState::SharedPtr msg);
+  void collisionPointsMarkerCallback(visualization_msgs::msg::MarkerArray::SharedPtr msg);
 
   // CollisionMonitor node
   std::shared_ptr<CollisionMonitorWrapper> cm_;
@@ -186,6 +190,16 @@ protected:
   // CollisionMonitor Action state
   rclcpp::Subscription<nav2_msgs::msg::CollisionMonitorState>::SharedPtr action_state_sub_;
   nav2_msgs::msg::CollisionMonitorState::SharedPtr action_state_;
+<<<<<<< HEAD
+=======
+
+  // CollisionMonitor collision points markers
+  rclcpp::Subscription<visualization_msgs::msg::MarkerArray>::SharedPtr collision_points_marker_sub_;
+  visualization_msgs::msg::MarkerArray::SharedPtr collision_points_marker_msg_;
+
+  // Service client for setting CollisionMonitor parameters
+  rclcpp::Client<rcl_interfaces::srv::SetParameters>::SharedPtr parameters_client_;
+>>>>>>> c0fd78fc (Publish collision points for debug purposes (#3879))
 };  // Tester
 
 Tester::Tester()
@@ -211,6 +225,16 @@ Tester::Tester()
   action_state_sub_ = cm_->create_subscription<nav2_msgs::msg::CollisionMonitorState>(
     STATE_TOPIC, rclcpp::SystemDefaultsQoS(),
     std::bind(&Tester::actionStateCallback, this, std::placeholders::_1));
+<<<<<<< HEAD
+=======
+  collision_points_marker_sub_ = cm_->create_subscription<visualization_msgs::msg::MarkerArray>(
+    COLLISION_POINTS_MARKERS_TOPIC, rclcpp::SystemDefaultsQoS(),
+    std::bind(&Tester::collisionPointsMarkerCallback, this, std::placeholders::_1));
+  parameters_client_ =
+    cm_->create_client<rcl_interfaces::srv::SetParameters>(
+    std::string(
+      cm_->get_name()) + "/set_parameters");
+>>>>>>> c0fd78fc (Publish collision points for debug purposes (#3879))
 }
 
 Tester::~Tester()
@@ -225,6 +249,7 @@ Tester::~Tester()
   cmd_vel_out_sub_.reset();
 
   action_state_sub_.reset();
+  collision_points_marker_sub_.reset();
 
   cm_.reset();
 }
@@ -539,6 +564,7 @@ void Tester::publishCmdVel(const double x, const double y, const double tw)
   // Reset cmd_vel_out_ before calling CollisionMonitor::process()
   cmd_vel_out_ = nullptr;
   action_state_ = nullptr;
+  collision_points_marker_msg_ = nullptr;
 
   std::unique_ptr<geometry_msgs::msg::Twist> msg =
     std::make_unique<geometry_msgs::msg::Twist>();
@@ -592,6 +618,19 @@ bool Tester::waitActionState(const std::chrono::nanoseconds & timeout)
   return false;
 }
 
+bool Tester::waitCollisionPointsMarker(const std::chrono::nanoseconds & timeout)
+{
+  rclcpp::Time start_time = cm_->now();
+  while (rclcpp::ok() && cm_->now() - start_time <= rclcpp::Duration(timeout)) {
+    if (collision_points_marker_msg_) {
+      return true;
+    }
+    rclcpp::spin_some(cm_->get_node_base_interface());
+    std::this_thread::sleep_for(10ms);
+  }
+  return false;
+}
+
 void Tester::cmdVelOutCallback(geometry_msgs::msg::Twist::SharedPtr msg)
 {
   cmd_vel_out_ = msg;
@@ -600,6 +639,11 @@ void Tester::cmdVelOutCallback(geometry_msgs::msg::Twist::SharedPtr msg)
 void Tester::actionStateCallback(nav2_msgs::msg::CollisionMonitorState::SharedPtr msg)
 {
   action_state_ = msg;
+}
+
+void Tester::collisionPointsMarkerCallback(visualization_msgs::msg::MarkerArray::SharedPtr msg)
+{
+  collision_points_marker_msg_ = msg;
 }
 
 TEST_F(Tester, testProcessStopSlowdownLimit)
@@ -1027,6 +1071,35 @@ TEST_F(Tester, testSourcesNotSet)
 
   // Check that Collision Monitor node can not be configured for this parameters set
   cm_->cant_configure();
+}
+
+TEST_F(Tester, testCollisionPointsMarkers)
+{
+  rclcpp::Time curr_time = cm_->now();
+
+  // Set Collision Monitor parameters.
+  // Making two polygons: outer polygon for slowdown and inner for robot stop.
+  setCommonParameters();
+  addSource(SCAN_NAME, SCAN);
+  setVectors({}, {SCAN_NAME});
+
+  // Start Collision Monitor node
+  cm_->start();
+
+  // Share TF
+  sendTransforms(curr_time);
+
+  publishCmdVel(0.5, 0.2, 0.1);
+  ASSERT_TRUE(waitCollisionPointsMarker(500ms));
+  ASSERT_EQ(collision_points_marker_msg_->markers[0].points.size(), 0u);
+
+  publishCmdVel(0.5, 0.2, 0.1);
+  publishScan(0.5, curr_time);
+  ASSERT_TRUE(waitData(0.5, 500ms, curr_time));
+  ASSERT_TRUE(waitCollisionPointsMarker(500ms));
+  ASSERT_NE(collision_points_marker_msg_->markers[0].points.size(), 0u);
+  // Stop Collision Monitor node
+  cm_->stop();
 }
 
 int main(int argc, char ** argv)
