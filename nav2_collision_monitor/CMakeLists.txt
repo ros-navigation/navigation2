@@ -14,6 +14,11 @@ find_package(tf2_geometry_msgs REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
+<<<<<<< HEAD
+=======
+find_package(nav2_msgs REQUIRED)
+find_package(visualization_msgs REQUIRED)
+>>>>>>> c0fd78fc (Publish collision points for debug purposes (#3879))
 
 ### Header ###
 
@@ -35,6 +40,11 @@ set(dependencies
   tf2_geometry_msgs
   nav2_util
   nav2_costmap_2d
+<<<<<<< HEAD
+=======
+  nav2_msgs
+  visualization_msgs
+>>>>>>> c0fd78fc (Publish collision points for debug purposes (#3879))
 )
 
 set(executable_name collision_monitor)
