@@ -50,7 +50,7 @@ public:
    * Share image data between new and old object.
    * Changing data in a new object will affect the given one and vice versa
    */
-  Image(Image & other);
+  Image(const Image & other);
 
   /**
    * @brief Create image from the other (move constructor)
@@ -132,7 +132,7 @@ Image<T>::Image(size_t rows, size_t columns, T * data, size_t step)
 }
 
 template<class T>
-Image<T>::Image(Image & other)
+Image<T>::Image(const Image & other)
 : data_start_{other.data_start_},
   rows_{other.rows_}, columns_{other.columns_}, step_{other.step_} {}
 
