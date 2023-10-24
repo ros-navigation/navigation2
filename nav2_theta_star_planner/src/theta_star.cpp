@@ -248,15 +248,13 @@ void ThetaStar::resetContainers()
 
 void ThetaStar::initializePosn(int size_inc)
 {
-  int i = 0;
-
   if (!node_position_.empty()) {
-    for (; i < size_x_ * size_y_; i++) {
+    for (int i = 0; i < size_x_ * size_y_; i++) {
       node_position_[i] = nullptr;
     }
   }
 
-  for (; i < size_inc; i++) {
+  for (int i = 0; i < size_inc; i++) {
     node_position_.push_back(nullptr);
   }
 }

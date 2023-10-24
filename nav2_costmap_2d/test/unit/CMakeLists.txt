@@ -18,6 +18,11 @@ target_link_libraries(declare_parameter_test
   nav2_costmap_2d_core
 )
 
+ament_add_gtest(costmap_filter_test costmap_filter_test.cpp)
+target_link_libraries(costmap_filter_test
+  nav2_costmap_2d_core
+)
+
 ament_add_gtest(keepout_filter_test keepout_filter_test.cpp)
 target_link_libraries(keepout_filter_test
   nav2_costmap_2d_core
@@ -44,4 +49,9 @@ target_link_libraries(copy_window_test
 ament_add_gtest(costmap_filter_service_test costmap_filter_service_test.cpp)
 target_link_libraries(costmap_filter_service_test
   nav2_costmap_2d_core
+)
+
+ament_add_gtest(denoise_layer_test denoise_layer_test.cpp image_test.cpp image_processing_test.cpp)
+target_link_libraries(denoise_layer_test
+  nav2_costmap_2d_core layers
 )

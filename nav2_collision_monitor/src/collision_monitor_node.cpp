@@ -148,6 +148,12 @@ CollisionMonitor::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 
 void CollisionMonitor::cmdVelInCallback(geometry_msgs::msg::Twist::ConstSharedPtr msg)
 {
+  // If message contains NaN or Inf, ignore
+  if (!nav2_util::validateTwist(*msg)) {
+    RCLCPP_ERROR(get_logger(), "Velocity message contains NaNs or Infs! Ignoring as invalid!");
+    return;
+  }
+
   process({msg->linear.x, msg->linear.y, msg->angular.z});
 }
 
@@ -205,6 +211,10 @@ bool CollisionMonitor::getParameters(
     node, "source_timeout", rclcpp::ParameterValue(2.0));
   source_timeout =
     rclcpp::Duration::from_seconds(get_parameter("source_timeout").as_double());
+  nav2_util::declare_parameter_if_not_declared(
+    node, "base_shift_correction", rclcpp::ParameterValue(true));
+  const bool base_shift_correction =
+    get_parameter("base_shift_correction").as_bool();
 
   nav2_util::declare_parameter_if_not_declared(
     node, "stop_pub_timeout", rclcpp::ParameterValue(1.0));
@@ -215,7 +225,10 @@ bool CollisionMonitor::getParameters(
     return false;
   }
 
-  if (!configureSources(base_frame_id, odom_frame_id, transform_tolerance, source_timeout)) {
+  if (
+    !configureSources(
+      base_frame_id, odom_frame_id, transform_tolerance, source_timeout, base_shift_correction))
+  {
     return false;
   }
 
@@ -271,7 +284,8 @@ bool CollisionMonitor::configureSources(
   const std::string & base_frame_id,
   const std::string & odom_frame_id,
   const tf2::Duration & transform_tolerance,
-  const rclcpp::Duration & source_timeout)
+  const rclcpp::Duration & source_timeout,
+  const bool base_shift_correction)
 {
   try {
     auto node = shared_from_this();
@@ -289,7 +303,7 @@ bool CollisionMonitor::configureSources(
       if (source_type == "scan") {
         std::shared_ptr<Scan> s = std::make_shared<Scan>(
           node, source_name, tf_buffer_, base_frame_id, odom_frame_id,
-          transform_tolerance, source_timeout);
+          transform_tolerance, source_timeout, base_shift_correction);
 
         s->configure();
 
@@ -297,7 +311,7 @@ bool CollisionMonitor::configureSources(
       } else if (source_type == "pointcloud") {
         std::shared_ptr<PointCloud> p = std::make_shared<PointCloud>(
           node, source_name, tf_buffer_, base_frame_id, odom_frame_id,
-          transform_tolerance, source_timeout);
+          transform_tolerance, source_timeout, base_shift_correction);
 
         p->configure();
 
@@ -305,7 +319,7 @@ bool CollisionMonitor::configureSources(
       } else if (source_type == "range") {
         std::shared_ptr<Range> r = std::make_shared<Range>(
           node, source_name, tf_buffer_, base_frame_id, odom_frame_id,
-          transform_tolerance, source_timeout);
+          transform_tolerance, source_timeout, base_shift_correction);
 
         r->configure();
 

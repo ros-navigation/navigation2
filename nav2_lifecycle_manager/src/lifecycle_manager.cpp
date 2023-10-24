@@ -45,6 +45,8 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
   declare_parameter("bond_respawn_max_duration", 10.0);
   declare_parameter("attempt_respawn_reconnection", true);
 
+  registerRclPreshutdownCallback();
+
   node_names_ = get_parameter("node_names").as_string_array();
   get_parameter("autostart", autostart_);
   double bond_timeout_s;
@@ -62,13 +64,13 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
   manager_srv_ = create_service<ManageLifecycleNodes>(
     get_name() + std::string("/manage_nodes"),
     std::bind(&LifecycleManager::managerCallback, this, _1, _2, _3),
-    rmw_qos_profile_services_default,
+    rclcpp::ServicesQoS().get_rmw_qos_profile(),
     callback_group_);
 
   is_active_srv_ = create_service<std_srvs::srv::Trigger>(
     get_name() + std::string("/is_active"),
     std::bind(&LifecycleManager::isActiveCallback, this, _1, _2, _3),
-    rmw_qos_profile_services_default,
+    rclcpp::ServicesQoS().get_rmw_qos_profile(),
     callback_group_);
 
   transition_state_map_[Transition::TRANSITION_CONFIGURE] = State::PRIMARY_STATE_INACTIVE;
@@ -376,6 +378,35 @@ LifecycleManager::destroyBondTimer()
     bond_timer_->cancel();
     bond_timer_.reset();
   }
+}
+
+void
+LifecycleManager::onRclPreshutdown()
+{
+  RCLCPP_INFO(
+    get_logger(), "Running Nav2 LifecycleManager rcl preshutdown (%s)",
+    this->get_name());
+
+  destroyBondTimer();
+
+  /*
+   * Dropping the bond map is what we really need here, but we drop the others
+   * to prevent the bond map being used. Likewise, squash the service thread.
+   */
+  service_thread_.reset();
+  node_names_.clear();
+  node_map_.clear();
+  bond_map_.clear();
+}
+
+void
+LifecycleManager::registerRclPreshutdownCallback()
+{
+  rclcpp::Context::SharedPtr context = get_node_base_interface()->get_context();
+
+  context->add_pre_shutdown_callback(
+    std::bind(&LifecycleManager::onRclPreshutdown, this)
+  );
 }
 
 void

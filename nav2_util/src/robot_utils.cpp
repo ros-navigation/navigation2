@@ -15,6 +15,7 @@
 // limitations under the License.
 
 #include <string>
+#include <cmath>
 #include <memory>
 
 #include "nav2_util/robot_utils.hpp"
@@ -73,6 +74,101 @@ bool transformPoseInTargetFrame(
   }
 
   return false;
+}
+
+bool getTransform(
+  const std::string & source_frame_id,
+  const std::string & target_frame_id,
+  const tf2::Duration & transform_tolerance,
+  const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+  tf2::Transform & tf2_transform)
+{
+  geometry_msgs::msg::TransformStamped transform;
+  tf2_transform.setIdentity();  // initialize by identical transform
+
+  if (source_frame_id == target_frame_id) {
+    // We are already in required frame
+    return true;
+  }
+
+  try {
+    // Obtaining the transform to get data from source to target frame
+    transform = tf_buffer->lookupTransform(
+      target_frame_id, source_frame_id,
+      tf2::TimePointZero, transform_tolerance);
+  } catch (tf2::TransformException & e) {
+    RCLCPP_ERROR(
+      rclcpp::get_logger("getTransform"),
+      "Failed to get \"%s\"->\"%s\" frame transform: %s",
+      source_frame_id.c_str(), target_frame_id.c_str(), e.what());
+    return false;
+  }
+
+  // Convert TransformStamped to TF2 transform
+  tf2::fromMsg(transform.transform, tf2_transform);
+  return true;
+}
+
+bool getTransform(
+  const std::string & source_frame_id,
+  const rclcpp::Time & source_time,
+  const std::string & target_frame_id,
+  const rclcpp::Time & target_time,
+  const std::string & fixed_frame_id,
+  const tf2::Duration & transform_tolerance,
+  const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+  tf2::Transform & tf2_transform)
+{
+  geometry_msgs::msg::TransformStamped transform;
+  tf2_transform.setIdentity();  // initialize by identical transform
+
+  try {
+    // Obtaining the transform to get data from source to target frame.
+    // This also considers the time shift between source and target.
+    transform = tf_buffer->lookupTransform(
+      target_frame_id, target_time,
+      source_frame_id, source_time,
+      fixed_frame_id, transform_tolerance);
+  } catch (tf2::TransformException & ex) {
+    RCLCPP_ERROR(
+      rclcpp::get_logger("getTransform"),
+      "Failed to get \"%s\"->\"%s\" frame transform: %s",
+      source_frame_id.c_str(), target_frame_id.c_str(), ex.what());
+    return false;
+  }
+
+  // Convert TransformStamped to TF2 transform
+  tf2::fromMsg(transform.transform, tf2_transform);
+  return true;
+}
+
+bool validateTwist(const geometry_msgs::msg::Twist & msg)
+{
+  if (std::isinf(msg.linear.x) || std::isnan(msg.linear.x)) {
+    return false;
+  }
+
+  if (std::isinf(msg.linear.y) || std::isnan(msg.linear.y)) {
+    return false;
+  }
+
+  if (std::isinf(msg.linear.z) || std::isnan(msg.linear.z)) {
+    return false;
+  }
+
+  if (std::isinf(msg.angular.x) || std::isnan(msg.angular.x)) {
+    return false;
+  }
+
+  if (std::isinf(msg.angular.y) || std::isnan(msg.angular.y)) {
+    return false;
+  }
+
+  if (std::isinf(msg.angular.z) || std::isnan(msg.angular.z)) {
+    return false;
+  }
+
+  return true;
 }
 
 }  // end namespace nav2_util

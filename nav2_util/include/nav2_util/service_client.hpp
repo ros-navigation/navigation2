@@ -46,7 +46,7 @@ public:
     callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
     client_ = node_->create_client<ServiceT>(
       service_name,
-      rmw_qos_profile_services_default,
+      rclcpp::ServicesQoS().get_rmw_qos_profile(),
       callback_group_);
   }
 
@@ -81,6 +81,8 @@ public:
     if (callback_group_executor_.spin_until_future_complete(future_result, timeout) !=
       rclcpp::FutureReturnCode::SUCCESS)
     {
+      // Pending request must be manually cleaned up if execution is interrupted or timed out
+      client_->remove_pending_request(future_result);
       throw std::runtime_error(service_name_ + " service client: async_send_request failed");
     }
 
@@ -115,6 +117,8 @@ public:
     if (callback_group_executor_.spin_until_future_complete(future_result) !=
       rclcpp::FutureReturnCode::SUCCESS)
     {
+      // Pending request must be manually cleaned up if execution is interrupted or timed out
+      client_->remove_pending_request(future_result);
       return false;
     }
 

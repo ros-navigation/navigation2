@@ -152,10 +152,8 @@ public:
   /**
    * @brief Add a new costmap filter plugin to the filters vector to process
    */
-  void addFilter(std::shared_ptr<Layer> filter)
-  {
-    filters_.push_back(filter);
-  }
+  void addFilter(std::shared_ptr<Layer> filter);
+
 
   /**
    * @brief Get if the size of the costmap is locked

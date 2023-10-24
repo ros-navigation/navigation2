@@ -19,6 +19,7 @@
 #include <utility>
 #include <limits>
 
+#include "lifecycle_msgs/msg/state.hpp"
 #include "nav2_core/controller_exceptions.hpp"
 #include "nav_2d_utils/conversions.hpp"
 #include "nav_2d_utils/tf_help.hpp"
@@ -63,9 +64,6 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
   // The costmap node is used in the implementation of the controller
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "local_costmap", std::string{get_namespace()}, "local_costmap");
-
-  // Launch a thread to run the costmap node
-  costmap_thread_ = std::make_unique<nav2_util::NodeThread>(costmap_ros_);
 }
 
 ControllerServer::~ControllerServer()
@@ -123,6 +121,8 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   get_parameter("failure_tolerance", failure_tolerance_);
 
   costmap_ros_->configure();
+  // Launch a thread to run the costmap node
+  costmap_thread_ = std::make_unique<nav2_util::NodeThread>(costmap_ros_);
 
   try {
     progress_checker_type_ = nav2_util::get_plugin_type_param(node, progress_checker_id_);
@@ -246,7 +246,19 @@ ControllerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   for (it = controllers_.begin(); it != controllers_.end(); ++it) {
     it->second->deactivate();
   }
-  costmap_ros_->deactivate();
+
+  /*
+   * The costmap is also a lifecycle node, so it may have already fired on_deactivate
+   * via rcl preshutdown cb. Despite the rclcpp docs saying on_shutdown callbacks fire
+   * in the order added, the preshutdown callbacks clearly don't per se, due to using an
+   * unordered_set iteration. Once this issue is resolved, we can maybe make a stronger
+   * ordering assumption: https://github.com/ros2/rclcpp/issues/2096
+   */
+  if (costmap_ros_->get_current_state().id() ==
+    lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+  {
+    costmap_ros_->deactivate();
+  }
 
   publishZeroVelocity();
   vel_publisher_->on_deactivate();
@@ -271,11 +283,17 @@ ControllerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   controllers_.clear();
 
   goal_checkers_.clear();
-  costmap_ros_->cleanup();
+
+  if (costmap_ros_->get_current_state().id() ==
+    lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
+  {
+    costmap_ros_->cleanup();
+  }
 
   // Release any allocated resources
   action_server_.reset();
   odom_sub_.reset();
+  costmap_thread_.reset();
   vel_publisher_.reset();
   speed_limit_sub_.reset();
 

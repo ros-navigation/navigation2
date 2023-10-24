@@ -47,7 +47,7 @@ def generate_launch_description():
     param_substitutions = {
         'planner_server.ros__parameters.GridBased.use_astar': os.getenv('ASTAR'),
         'filter_mask_server.ros__parameters.yaml_filename': filter_mask_file,
-        'yaml_filename': filter_mask_file}
+        'map_server.ros__parameters.yaml_filename': map_yaml_file}
     configured_params = RewrittenYaml(
         source_file=params_file,
         root_key='',

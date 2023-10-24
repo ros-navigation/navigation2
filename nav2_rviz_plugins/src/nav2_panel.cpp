@@ -275,7 +275,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   accumulated_nav_through_poses_->addTransition(accumulatedNTPTransition);
 
   auto options = rclcpp::NodeOptions().arguments(
-    {"--ros-args --remap __node:=navigation_dialog_action_client"});
+    {"--ros-args", "--remap", "__node:=rviz_navigation_dialog_action_client", "--"});
   client_node_ = std::make_shared<rclcpp::Node>("_", options);
 
   client_nav_ = std::make_shared<nav2_lifecycle_manager::LifecycleManagerClient>(

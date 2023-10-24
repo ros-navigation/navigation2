@@ -223,21 +223,16 @@ public:
 };
 
 // Define a test class to hold the context for the tests
-
-class SmootherConfigTest : public ::testing::Test
-{
-};
-
 class SmootherTest : public ::testing::Test
 {
-protected:
-  SmootherTest() {SetUp();}
+public:
+  SmootherTest() {}
   ~SmootherTest() {}
 
-  void SetUp()
+  void SetUp() override
   {
-    node_lifecycle_ =
-      std::make_shared<rclcpp_lifecycle::LifecycleNode>(
+    node_ =
+      std::make_shared<rclcpp::Node>(
       "LifecycleSmootherTestNode", rclcpp::NodeOptions());
 
     smoother_server_ = std::make_shared<DummySmootherServer>();
@@ -252,10 +247,10 @@ protected:
     smoother_server_->activate();
 
     client_ = rclcpp_action::create_client<SmoothAction>(
-      node_lifecycle_->get_node_base_interface(),
-      node_lifecycle_->get_node_graph_interface(),
-      node_lifecycle_->get_node_logging_interface(),
-      node_lifecycle_->get_node_waitables_interface(), "smooth_path");
+      node_->get_node_base_interface(),
+      node_->get_node_graph_interface(),
+      node_->get_node_logging_interface(),
+      node_->get_node_waitables_interface(), "smooth_path");
     std::cout << "Setup complete." << std::endl;
   }
 
@@ -264,6 +259,9 @@ protected:
     smoother_server_->deactivate();
     smoother_server_->cleanup();
     smoother_server_->shutdown();
+    smoother_server_.reset();
+    client_.reset();
+    node_.reset();
   }
 
   bool sendGoal(
@@ -291,7 +289,7 @@ protected:
 
     auto future_goal = client_->async_send_goal(goal);
 
-    if (rclcpp::spin_until_future_complete(node_lifecycle_, future_goal) !=
+    if (rclcpp::spin_until_future_complete(node_, future_goal) !=
       rclcpp::FutureReturnCode::SUCCESS)
     {
       std::cout << "failed sending goal" << std::endl;
@@ -315,12 +313,12 @@ protected:
     std::cout << "Getting async result..." << std::endl;
     auto future_result = client_->async_get_result(goal_handle_);
     std::cout << "Waiting on future..." << std::endl;
-    rclcpp::spin_until_future_complete(node_lifecycle_, future_result);
+    rclcpp::spin_until_future_complete(node_, future_result);
     std::cout << "future received!" << std::endl;
     return future_result.get();
   }
 
-  std::shared_ptr<rclcpp_lifecycle::LifecycleNode> node_lifecycle_;
+  std::shared_ptr<rclcpp::Node> node_;
   std::shared_ptr<DummySmootherServer> smoother_server_;
   std::shared_ptr<rclcpp_action::Client<SmoothAction>> client_;
   std::shared_ptr<rclcpp_action::ClientGoalHandle<SmoothAction>> goal_handle_;
@@ -387,7 +385,7 @@ TEST_F(SmootherTest, testingCollisionCheckDisabled)
   SUCCEED();
 }
 
-TEST_F(SmootherConfigTest, testingConfigureSuccessWithValidSmootherPlugin)
+TEST(SmootherConfigTest, testingConfigureSuccessWithValidSmootherPlugin)
 {
   auto smoother_server = std::make_shared<DummySmootherServer>();
   smoother_server->set_parameter(
@@ -402,7 +400,7 @@ TEST_F(SmootherConfigTest, testingConfigureSuccessWithValidSmootherPlugin)
   SUCCEED();
 }
 
-TEST_F(SmootherConfigTest, testingConfigureFailureWithInvalidSmootherPlugin)
+TEST(SmootherConfigTest, testingConfigureFailureWithInvalidSmootherPlugin)
 {
   auto smoother_server = std::make_shared<DummySmootherServer>();
   smoother_server->set_parameter(
@@ -417,7 +415,7 @@ TEST_F(SmootherConfigTest, testingConfigureFailureWithInvalidSmootherPlugin)
   SUCCEED();
 }
 
-TEST_F(SmootherConfigTest, testingConfigureSuccessWithDefaultPlugin)
+TEST(SmootherConfigTest, testingConfigureSuccessWithDefaultPlugin)
 {
   auto smoother_server = std::make_shared<DummySmootherServer>();
   auto state = smoother_server->configure();

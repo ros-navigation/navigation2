@@ -30,10 +30,11 @@ Range::Range(
   const std::string & base_frame_id,
   const std::string & global_frame_id,
   const tf2::Duration & transform_tolerance,
-  const rclcpp::Duration & source_timeout)
+  const rclcpp::Duration & source_timeout,
+  const bool base_shift_correction)
 : Source(
     node, source_name, tf_buffer, base_frame_id, global_frame_id,
-    transform_tolerance, source_timeout),
+    transform_tolerance, source_timeout, base_shift_correction),
   data_(nullptr)
 {
   RCLCPP_INFO(logger_, "[%s]: Creating Range", source_name_.c_str());
@@ -77,18 +78,36 @@ void Range::getData(
 
   // Ignore data, if its range is out of scope of range sensor abilities
   if (data_->range < data_->min_range || data_->range > data_->max_range) {
-    RCLCPP_WARN(
+    RCLCPP_DEBUG(
       logger_,
       "[%s]: Data range %fm is out of {%f..%f} sensor span. Ignoring...",
       source_name_.c_str(), data_->range, data_->min_range, data_->max_range);
     return;
   }
 
-  // Obtaining the transform to get data from source frame and time where it was received
-  // to the base frame and current time
   tf2::Transform tf_transform;
-  if (!getTransform(data_->header.frame_id, data_->header.stamp, curr_time, tf_transform)) {
-    return;
+  if (base_shift_correction_) {
+    // Obtaining the transform to get data from source frame and time where it was received
+    // to the base frame and current time
+    if (
+      !nav2_util::getTransform(
+        data_->header.frame_id, data_->header.stamp,
+        base_frame_id_, curr_time, global_frame_id_,
+        transform_tolerance_, tf_buffer_, tf_transform))
+    {
+      return;
+    }
+  } else {
+    // Obtaining the transform to get data from source frame to base frame without time shift
+    // considered. Less accurate but much more faster option not dependent on state estimation
+    // frames.
+    if (
+      !nav2_util::getTransform(
+        data_->header.frame_id, base_frame_id_,
+        transform_tolerance_, tf_buffer_, tf_transform))
+    {
+      return;
+    }
   }
 
   // Calculate poses and refill data array

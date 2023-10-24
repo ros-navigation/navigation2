@@ -18,7 +18,7 @@
 #include <memory>
 #include <utility>
 
-#include "spin.hpp"
+#include "nav2_behaviors/plugins/spin.hpp"
 #include "tf2/utils.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "nav2_util/node_utils.hpp"

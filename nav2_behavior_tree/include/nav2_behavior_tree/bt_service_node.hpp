@@ -39,13 +39,16 @@ class BtServiceNode : public BT::ActionNodeBase
 public:
   /**
    * @brief A nav2_behavior_tree::BtServiceNode constructor
-   * @param service_node_name Service name this node creates a client for
+   * @param service_node_name BT node name
    * @param conf BT node configuration
+   * @param service_name Optional service name this node creates a client for instead of from input port
    */
   BtServiceNode(
     const std::string & service_node_name,
-    const BT::NodeConfiguration & conf)
-  : BT::ActionNodeBase(service_node_name, conf), service_node_name_(service_node_name)
+    const BT::NodeConfiguration & conf,
+    const std::string & service_name = "")
+  : BT::ActionNodeBase(service_node_name, conf), service_name_(service_name), service_node_name_(
+      service_node_name)
   {
     node_ = config().blackboard->template get<rclcpp::Node::SharedPtr>("node");
     callback_group_ = node_->create_callback_group(
@@ -64,7 +67,7 @@ public:
     getInput("service_name", service_name_);
     service_client_ = node_->create_client<ServiceT>(
       service_name_,
-      rmw_qos_profile_services_default,
+      rclcpp::ServicesQoS().get_rmw_qos_profile(),
       callback_group_);
 
     // Make a request for the service without parameter
@@ -128,7 +131,17 @@ public:
   BT::NodeStatus tick() override
   {
     if (!request_sent_) {
+      // reset the flag to send the request or not,
+      // allowing the user the option to set it in on_tick
+      should_send_request_ = true;
+
+      // user defined callback, may modify "should_send_request_".
       on_tick();
+
+      if (!should_send_request_) {
+        return BT::NodeStatus::FAILURE;
+      }
+
       future_result_ = service_client_->async_send_request(request_).share();
       sent_time_ = node_->now();
       request_sent_ = true;
@@ -240,6 +253,9 @@ protected:
   std::shared_future<typename ServiceT::Response::SharedPtr> future_result_;
   bool request_sent_{false};
   rclcpp::Time sent_time_;
+
+  // Can be set in on_tick or on_wait_for_result to indicate if a request should be sent.
+  bool should_send_request_;
 };
 
 }  // namespace nav2_behavior_tree
