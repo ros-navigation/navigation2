@@ -64,6 +64,7 @@ public:
    * @brief Callback for the costmap's update topic
    */
   void costmapUpdateCallback(const nav2_msgs::msg::CostmapUpdate::SharedPtr update_msg);
+
 protected:
   void processCurrentCostmapMsg();
   bool areCostmapParametersChanged();
@@ -73,7 +74,7 @@ protected:
 
   std::shared_ptr<Costmap2D> costmap_;
   nav2_msgs::msg::Costmap::SharedPtr costmap_msg_;
-  
+
   std::string topic_name_;
   bool costmap_received_{false};
   std::mutex costmap_msg_mutex_;
