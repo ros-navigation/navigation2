@@ -73,17 +73,18 @@ void GoalReachedCondition::initialize()
 
 bool GoalReachedCondition::isGoalReached()
 {
-  geometry_msgs::msg::PoseStamped current_pose;
+  geometry_msgs::msg::PoseStamped goal;
+  getInput("goal", goal);
+  if (goal.header.frame_id.empty()) goal.header.frame_id = global_frame_;
 
+  geometry_msgs::msg::PoseStamped current_pose;
   if (!nav2_util::getCurrentPose(
-      current_pose, *tf_, global_frame_, robot_base_frame_, transform_tolerance_))
+      current_pose, *tf_, goal.header.frame_id, robot_base_frame_, transform_tolerance_))
   {
     RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
     return false;
   }
 
-  geometry_msgs::msg::PoseStamped goal;
-  getInput("goal", goal);
   double dx = goal.pose.position.x - current_pose.pose.position.x;
   double dy = goal.pose.position.y - current_pose.pose.position.y;
 

@@ -209,10 +209,21 @@ NavigateToPoseNavigator::initializeGoalPose(ActionT::Goal::ConstSharedPtr goal)
     feedback_utils_.global_frame, feedback_utils_.robot_frame,
     feedback_utils_.transform_tolerance);
 
+  geometry_msgs::msg::PoseStamped goal_pose;
+  if (!nav2_util::transformPoseInTargetFrame(
+        goal->pose, goal_pose, *feedback_utils_.tf, feedback_utils_.global_frame,
+        feedback_utils_.transform_tolerance)) {
+    RCLCPP_ERROR(
+      logger_,
+      "Failed to transform a goal pose provided with frame_id '%s' to the global frame '%s'.",
+      goal->pose.header.frame_id.c_str(), feedback_utils_.global_frame.c_str());
+    throw std::runtime_error("transformation failed");
+  }
+
   RCLCPP_INFO(
     logger_, "Begin navigating from current location (%.2f, %.2f) to (%.2f, %.2f)",
     current_pose.pose.position.x, current_pose.pose.position.y,
-    goal->pose.pose.position.x, goal->pose.pose.position.y);
+    goal_pose.pose.position.x, goal_pose.pose.position.y);
 
   // Reset state for new action feedback
   start_time_ = clock_->now();
@@ -220,7 +231,7 @@ NavigateToPoseNavigator::initializeGoalPose(ActionT::Goal::ConstSharedPtr goal)
   blackboard->set<int>("number_recoveries", 0);  // NOLINT
 
   // Update the goal pose on the blackboard
-  blackboard->set<geometry_msgs::msg::PoseStamped>(goal_blackboard_id_, goal->pose);
+  blackboard->set<geometry_msgs::msg::PoseStamped>(goal_blackboard_id_, goal_pose);
 }
 
 void
