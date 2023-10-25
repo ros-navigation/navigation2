@@ -60,8 +60,7 @@ public:
     const rclcpp::QoS & qos,
     TwistCallbackT && TwistCallback,
     TwistStampedCallbackT && TwistStampedCallback
-  )
-  : {
+  ) {
     using nav2_util::declare_parameter_if_not_declared;
     declare_parameter_if_not_declared(
       node, "enable_stamped_cmd_vel",
