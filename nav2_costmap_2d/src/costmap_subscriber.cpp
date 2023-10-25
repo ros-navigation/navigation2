@@ -33,7 +33,7 @@ CostmapSubscriber::CostmapSubscriber(
     rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
     std::bind(&CostmapSubscriber::costmapCallback, this, std::placeholders::_1));
   costmap_update_sub_ = node->create_subscription<nav2_msgs::msg::CostmapUpdate>(
-    topic_name_+ "_updates",
+    topic_name_ + "_updates",
     rclcpp::QoS(rclcpp::KeepLast(10)).transient_local().reliable(),
     std::bind(&CostmapSubscriber::costmapUpdateCallback, this, std::placeholders::_1));
 }
@@ -52,7 +52,7 @@ CostmapSubscriber::CostmapSubscriber(
     rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
     std::bind(&CostmapSubscriber::costmapCallback, this, std::placeholders::_1));
   costmap_update_sub_ = node->create_subscription<nav2_msgs::msg::CostmapUpdate>(
-    topic_name_+ "_updates",
+    topic_name_ + "_updates",
     rclcpp::QoS(rclcpp::KeepLast(10)).transient_local().reliable(),
     std::bind(&CostmapSubscriber::costmapUpdateCallback, this, std::placeholders::_1));
 }
@@ -63,9 +63,8 @@ std::shared_ptr<Costmap2D> CostmapSubscriber::getCostmap()
   if (!costmap_received_) {
     throw std::runtime_error("Costmap is not available");
   }
-  if(costmap_msg_ != nullptr)
-  {
-    processCurrentCostmapMsg(); 
+  if (costmap_msg_ != nullptr) {
+    processCurrentCostmapMsg();
   }
   return costmap_;
 }
@@ -73,7 +72,7 @@ std::shared_ptr<Costmap2D> CostmapSubscriber::getCostmap()
 void CostmapSubscriber::costmapCallback(const nav2_msgs::msg::Costmap::SharedPtr msg)
 {
   {
-    std::lock_guard<std::mutex> lock(costmap_msg_mutex_); 
+    std::lock_guard<std::mutex> lock(costmap_msg_mutex_);
     costmap_msg_ = msg;
   }
   if (!costmap_received_) {
@@ -82,66 +81,64 @@ void CostmapSubscriber::costmapCallback(const nav2_msgs::msg::Costmap::SharedPtr
       msg->metadata.resolution, msg->metadata.origin.position.x,
       msg->metadata.origin.position.y);
 
-      processCurrentCostmapMsg();
+    processCurrentCostmapMsg();
 
-      costmap_received_ = true;
+    costmap_received_ = true;
   }
 }
 
-void CostmapSubscriber::costmapUpdateCallback(const nav2_msgs::msg::CostmapUpdate::SharedPtr update_msg)
+void CostmapSubscriber::costmapUpdateCallback(
+  const nav2_msgs::msg::CostmapUpdate::SharedPtr update_msg)
 {
-  if(costmap_received_)
-  {
-    if(costmap_msg_ != nullptr)
-    {
-     processCurrentCostmapMsg(); 
+  if (costmap_received_) {
+    if (costmap_msg_ != nullptr) {
+      processCurrentCostmapMsg();
     }
 
     std::lock_guard<Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
 
     auto map_cell_size_x = costmap_->getSizeInCellsX();
     auto map_call_size_y = costmap_->getSizeInCellsY();
-    
-    if(map_cell_size_x < update_msg->x + update_msg->size_x ||
-      map_call_size_y < update_msg->y + update_msg->size_y)
-      {
-        RCLCPP_WARN(logger_, "Update area outside of original map area. Costmap bounds: %d X %d, "
-      "Update origin: %d, %d  bounds: %d X %d", map_cell_size_x, map_call_size_y, 
-      update_msg->x, update_msg->y, update_msg->size_x, update_msg->size_y);
-        return;
-      }
 
-      // todo: check if frame is the same
+    if (map_cell_size_x < update_msg->x + update_msg->size_x ||
+      map_call_size_y < update_msg->y + update_msg->size_y)
+    {
+      RCLCPP_WARN(
+        logger_, "Update area outside of original map area. Costmap bounds: %d X %d, "
+        "Update origin: %d, %d  bounds: %d X %d", map_cell_size_x, map_call_size_y,
+        update_msg->x, update_msg->y, update_msg->size_x, update_msg->size_y);
+      return;
+    }
+
+    // todo: check if frame is the same
 
 
     auto master_array = costmap_->getCharMap();
     // copy update msg row-wise
-    for (size_t y = 0; y<update_msg->size_y ; ++y)
-    {
-      auto starting_index_of_row_update_in_costmap = (y + update_msg->y)* map_cell_size_x + update_msg->x;
-      
-      std::copy_n(update_msg->data.begin()+(y * update_msg->size_x),
-        update_msg->size_x ,  &master_array[starting_index_of_row_update_in_costmap]);
+    for (size_t y = 0; y < update_msg->size_y; ++y) {
+      auto starting_index_of_row_update_in_costmap = (y + update_msg->y) * map_cell_size_x +
+        update_msg->x;
+
+      std::copy_n(
+        update_msg->data.begin() + (y * update_msg->size_x),
+        update_msg->size_x, &master_array[starting_index_of_row_update_in_costmap]);
     }
-  }
-  else
-  {
-      RCLCPP_WARN(logger_, "No costmap received.");
+  } else {
+    RCLCPP_WARN(logger_, "No costmap received.");
   }
 }
 
 void CostmapSubscriber::processCurrentCostmapMsg()
-{ 
-  std::scoped_lock lock(*(costmap_->getMutex()), costmap_msg_mutex_); 
-  if(areCostmapParametersChanged())
-  {
+{
+  std::scoped_lock lock(*(costmap_->getMutex()), costmap_msg_mutex_);
+  if (areCostmapParametersChanged()) {
     costmap_->resizeMap(
       costmap_msg_->metadata.size_x, costmap_msg_->metadata.size_y,
       costmap_msg_->metadata.resolution,
       costmap_msg_->metadata.origin.position.x,
       costmap_msg_->metadata.origin.position.y);
   }
-  
+
   auto master_array = costmap_->getCharMap();
   std::copy(costmap_msg_->data.begin(), costmap_msg_->data.end(), master_array);
   costmap_msg_ = nullptr;
@@ -149,11 +146,11 @@ void CostmapSubscriber::processCurrentCostmapMsg()
 
 bool CostmapSubscriber::areCostmapParametersChanged()
 {
-  return costmap_->getSizeInCellsX() != costmap_msg_->metadata.size_x ||  
-    costmap_->getSizeInCellsY() != costmap_msg_->metadata.size_y ||
-    costmap_->getResolution() != costmap_msg_->metadata.resolution ||
-    costmap_->getOriginX() != costmap_msg_->metadata.origin.position.x ||
-    costmap_->getOriginY() != costmap_msg_->metadata.origin.position.y;
+  return costmap_->getSizeInCellsX() != costmap_msg_->metadata.size_x ||
+         costmap_->getSizeInCellsY() != costmap_msg_->metadata.size_y ||
+         costmap_->getResolution() != costmap_msg_->metadata.resolution ||
+         costmap_->getOriginX() != costmap_msg_->metadata.origin.position.x ||
+         costmap_->getOriginY() != costmap_msg_->metadata.origin.position.y;
 }
 
 }  // namespace nav2_costmap_2d
