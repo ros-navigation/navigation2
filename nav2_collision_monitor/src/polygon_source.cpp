@@ -39,8 +39,7 @@ PolygonSource::PolygonSource(
   const bool base_shift_correction)
 : Source(
     node, source_name, tf_buffer, base_frame_id, global_frame_id,
-    transform_tolerance, source_timeout, base_shift_correction),
-  data_(nullptr)
+    transform_tolerance, source_timeout, base_shift_correction)
 {
 }
 
@@ -62,7 +61,7 @@ void PolygonSource::configure()
   getParameters(source_topic);
 
   rclcpp::QoS qos = rclcpp::SensorDataQoS();  // set to default
-  data_sub_ = node->create_subscription<nav2_msgs::msg::PolygonsArray>(
+  data_sub_ = node->create_subscription<geometry_msgs::msg::PolygonStamped>(
     source_topic, qos,
     std::bind(&PolygonSource::dataCallback, this, std::placeholders::_1));
 }
@@ -73,29 +72,18 @@ void PolygonSource::getData(
 {
   // Ignore data from the source if it is not being published yet or
   // not published for a long time
-  if (data_ == nullptr || data_->polygons.empty()) {
-    return;
-  }
-  // get the oldest time stamp from the polygon array
-  rclcpp::Time oldest_stamp = rclcpp::Time(data_->polygons[0].header.stamp);
-  for (const auto & polygon : data_->polygons) {
-    if (rclcpp::Time(polygon.header.stamp) < oldest_stamp) {
-      oldest_stamp = rclcpp::Time(polygon.header.stamp);
-    }
-  }
-  if (!sourceValid(oldest_stamp, curr_time)) {
+  if (data_.empty()) {
     return;
   }
 
   tf2::Stamped<tf2::Transform> tf_transform;
-
-  for (const auto & polygon : data_->polygons) {
+  for (const auto & polygon_stamped : data_) {
     if (base_shift_correction_) {
       // Obtaining the transform to get data from source frame and time where it was received
       // to the base frame and current time
       if (
         !nav2_util::getTransform(
-          polygon.header.frame_id, polygon.header.stamp,
+          polygon_stamped.header.frame_id, polygon_stamped.header.stamp,
           base_frame_id_, curr_time, global_frame_id_,
           transform_tolerance_, tf_buffer_, tf_transform))
       {
@@ -107,7 +95,7 @@ void PolygonSource::getData(
       // frames.
       if (
         !nav2_util::getTransform(
-          polygon.header.frame_id, base_frame_id_,
+          polygon_stamped.header.frame_id, base_frame_id_,
           transform_tolerance_, tf_buffer_, tf_transform))
       {
         return;
@@ -115,10 +103,9 @@ void PolygonSource::getData(
     }
     geometry_msgs::msg::PolygonStamped poly_out;
     geometry_msgs::msg::TransformStamped tf = tf2::toMsg(tf_transform);
-    tf2::doTransform(polygon, poly_out, tf);
+    tf2::doTransform(polygon_stamped, poly_out, tf);
     convertPolygonStampedToPoints(poly_out, data);
   }
-
 }
 
 void PolygonSource::convertPolygonStampedToPoints(
@@ -165,9 +152,33 @@ void PolygonSource::getParameters(std::string & source_topic)
   sampling_distance_ = node->get_parameter(source_name_ + ".sampling_distance").as_double();
 }
 
-void PolygonSource::dataCallback(nav2_msgs::msg::PolygonsArray::ConstSharedPtr msg)
+void PolygonSource::dataCallback(geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg)
 {
-  data_ = msg;
+  auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+  auto curr_time = node->now();
+
+  // remove old data 
+  data_.erase(
+    std::remove_if(
+      data_.begin(), data_.end(),
+      [this, curr_time](const geometry_msgs::msg::PolygonStamped & polygon_stamped) {
+        return curr_time - rclcpp::Time(polygon_stamped.header.stamp) > source_timeout_;
+      }), data_.end());
+
+  // check if older polygon exists already and replace it with the new one
+  for (auto & polygon_stamped : data_) {
+    if (msg->polygon == polygon_stamped.polygon &&
+      rclcpp::Time(msg->header.stamp) > rclcpp::Time(polygon_stamped.header.stamp))
+    {
+      polygon_stamped = *msg;
+      return;
+    }
+  }
+  data_.push_back(*msg);
 }
 
 }  // namespace nav2_collision_monitor
+

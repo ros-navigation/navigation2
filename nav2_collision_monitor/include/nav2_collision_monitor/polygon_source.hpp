@@ -19,7 +19,7 @@
 #include <vector>
 #include <string>
 
-#include "nav2_msgs/msg/polygons_array.hpp"
+#include "geometry_msgs/msg/polygon_stamped.hpp"
 
 #include "nav2_collision_monitor/source.hpp"
 
@@ -89,15 +89,15 @@ protected:
    * @brief PolygonSource data callback
    * @param msg Shared pointer to PolygonSource message
    */
-  void dataCallback(nav2_msgs::msg::PolygonsArray::ConstSharedPtr msg);
+  void dataCallback(geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg);
 
   // ----- Variables -----
 
   /// @brief PolygonSource data subscriber
-  rclcpp::Subscription<nav2_msgs::msg::PolygonsArray>::SharedPtr data_sub_;
+  rclcpp::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr data_sub_;
 
   /// @brief Latest data obtained
-  nav2_msgs::msg::PolygonsArray::ConstSharedPtr data_;
+  std::vector<geometry_msgs::msg::PolygonStamped> data_;
 
   /// @brief distance between sampled points on polygon edges
   double sampling_distance_;
