@@ -50,11 +50,15 @@ void AssistedTeleop::onConfigure()
   std::string cmd_vel_teleop;
   node->get_parameter("cmd_vel_teleop", cmd_vel_teleop);
 
-  vel_sub_ = node->create_subscription<geometry_msgs::msg::Twist>(
+
+  vel_sub_ = std::make_shared<nav2_util::TwistSubscriber>(
+    node,
     cmd_vel_teleop, rclcpp::SystemDefaultsQoS(),
-    std::bind(
-      &AssistedTeleop::teleopVelocityCallback,
-      this, std::placeholders::_1));
+    [&](geometry_msgs::msg::Twist::SharedPtr msg) {
+      teleop_twist_.twist = *msg;
+    }, [&](geometry_msgs::msg::TwistStamped::SharedPtr msg) {
+      teleop_twist_ = *msg;
+    });
 
   preempt_teleop_sub_ = node->create_subscription<std_msgs::msg::Empty>(
     "preempt_teleop", rclcpp::SystemDefaultsQoS(),
@@ -169,11 +173,6 @@ geometry_msgs::msg::Pose2D AssistedTeleop::projectPose(
   projected_pose.theta += projection_time * twist.angular.z;
 
   return projected_pose;
-}
-
-void AssistedTeleop::teleopVelocityCallback(const geometry_msgs::msg::Twist::SharedPtr msg)
-{
-  teleop_twist_.twist = *msg;
 }
 
 void AssistedTeleop::preemptTeleopCallback(const std_msgs::msg::Empty::SharedPtr)
