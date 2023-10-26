@@ -120,6 +120,7 @@ void PolygonSource::getData(
   }
 
 }
+
 void PolygonSource::convertPolygonStampedToPoints(
   const geometry_msgs::msg::PolygonStamped & polygon, std::vector<Point> & data) const
 {
