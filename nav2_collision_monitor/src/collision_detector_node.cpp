@@ -356,9 +356,6 @@ void CollisionDetector::process()
     collision_points_marker_pub_->publish(std::move(marker_array));
   }
 
-  std::unique_ptr<nav2_msgs::msg::CollisionDetectorState> state_msg =
-    std::make_unique<nav2_msgs::msg::CollisionDetectorState>();
-
   for (std::shared_ptr<Polygon> polygon : polygons_) {
     if (!polygon->getEnabled()) {
       continue;

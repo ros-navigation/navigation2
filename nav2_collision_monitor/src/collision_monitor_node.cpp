@@ -432,11 +432,6 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in)
     collision_points_marker_pub_->publish(std::move(marker_array));
   }
 
-  // By default - there is no action
-  Action robot_action{DO_NOTHING, cmd_vel_in, ""};
-  // Polygon causing robot action (if any)
-  std::shared_ptr<Polygon> action_polygon;
-
   for (std::shared_ptr<Polygon> polygon : polygons_) {
     if (!polygon->getEnabled()) {
       continue;
