@@ -908,6 +908,7 @@ TEST_F(Tester, testCrossOver)
   // 1. Obstacle is not in the slowdown zone, but less than TIME_BEFORE_COLLISION (ahead in 1.5 m).
   // Robot should approach the obstacle.
   publishPointCloud(2.5, curr_time);
+  publishRange(2.5, curr_time);
   ASSERT_TRUE(waitData(std::hypot(2.5, 0.01), 500ms, curr_time));
   publishCmdVel(3.0, 0.0, 0.0);
   ASSERT_TRUE(waitCmdVel(500ms));
