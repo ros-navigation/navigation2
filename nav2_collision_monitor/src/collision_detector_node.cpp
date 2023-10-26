@@ -314,10 +314,18 @@ void CollisionDetector::process()
   // Points array collected from different data sources in a robot base frame
   std::vector<Point> collision_points;
 
+  std::unique_ptr<nav2_msgs::msg::CollisionDetectorState> state_msg =
+    std::make_unique<nav2_msgs::msg::CollisionDetectorState>();
+
   // Fill collision_points array from different data sources
   for (std::shared_ptr<Source> source : sources_) {
     if (source->getEnabled()) {
-      source->getData(curr_time, collision_points);
+      if (!source->getData(curr_time, collision_points)) {
+        RCLCPP_WARN(
+          get_logger(),
+          "Invalid source %s detected",
+          source->getSourceName().c_str());
+      }
     }
   }
 
