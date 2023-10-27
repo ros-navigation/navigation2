@@ -163,36 +163,32 @@ public:
 
   void publishPolygon(const rclcpp::Time & stamp)
   {
-    polygon_pub_ = this->create_publisher<nav2_msgs::msg::PolygonsArray>(
+    polygon_pub_ = this->create_publisher<geometry_msgs::msg::PolygonStamped>(
       POLYGON_TOPIC, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
 
-    std::unique_ptr<nav2_msgs::msg::PolygonsArray> msg =
-      std::make_unique<nav2_msgs::msg::PolygonsArray>();
+    std::unique_ptr<geometry_msgs::msg::PolygonStamped> msg =
+      std::make_unique<geometry_msgs::msg::PolygonStamped>();
 
-    geometry_msgs::msg::PolygonStamped polygon_msg;
-
-    polygon_msg.header.frame_id = SOURCE_FRAME_ID;
-    polygon_msg.header.stamp = stamp;
+    msg->header.frame_id = SOURCE_FRAME_ID;
+    msg->header.stamp = stamp;
 
     geometry_msgs::msg::Point32 point;
     point.x = 1.0;
-    point.y = 0.0;
+    point.y = -1.0;
     point.z = 0.0;
-    polygon_msg.polygon.points.push_back(point);
+    msg->polygon.points.push_back(point);
     point.x = 1.0;
     point.y = 1.0;
     point.z = 0.0;
-    polygon_msg.polygon.points.push_back(point);
+    msg->polygon.points.push_back(point);
     point.x = -1.0;
     point.y = 1.0;
     point.z = 0.0;
-    polygon_msg.polygon.points.push_back(point);
+    msg->polygon.points.push_back(point);
     point.x = -1.0;
     point.y = -1.0;
     point.z = 0.0;
-    polygon_msg.polygon.points.push_back(point);
-
-    msg->polygons.push_back(polygon_msg);
+    msg->polygon.points.push_back(point);
 
     polygon_pub_->publish(std::move(msg));
   }
@@ -201,7 +197,7 @@ private:
   rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr scan_pub_;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pointcloud_pub_;
   rclcpp::Publisher<sensor_msgs::msg::Range>::SharedPtr range_pub_;
-  rclcpp::Publisher<nav2_msgs::msg::PolygonsArray>::SharedPtr polygon_pub_;
+  rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_pub_;
 };  // TestNode
 
 class ScanWrapper : public nav2_collision_monitor::Scan
@@ -292,7 +288,7 @@ public:
 
   bool dataReceived() const
   {
-    return data_ != nullptr;
+    return data_.size() > 0;
   }
 };  // PolygonWrapper
 
