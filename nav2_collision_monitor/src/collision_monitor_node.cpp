@@ -329,8 +329,7 @@ bool CollisionMonitor::configureSources(
         node, source_name + ".source_timeout",
         rclcpp::ParameterValue(source_timeout.seconds()));    // node source_timeout by default
       const rclcpp::Duration sensor_specific_source_timeout = rclcpp::Duration::from_seconds(
-        get_parameter(
-          source_name + ".source_timeout").as_double());
+        get_parameter(source_name + ".source_timeout").as_double());
 
       if (source_type == "scan") {
         std::shared_ptr<Scan> s = std::make_shared<Scan>(
