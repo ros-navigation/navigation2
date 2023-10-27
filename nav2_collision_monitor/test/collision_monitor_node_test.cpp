@@ -430,6 +430,10 @@ void Tester::addSource(
       source_name + ".sampling_distance", rclcpp::ParameterValue(0.1));
     cm_->set_parameter(
       rclcpp::Parameter(source_name + ".sampling_distance", 0.1));
+    cm_->declare_parameter(
+      source_name + ".polygon_similarity_threshold", rclcpp::ParameterValue(2.0));
+    cm_->set_parameter(
+      rclcpp::Parameter(source_name + ".polygon_similarity_threshold", 2.0));
   } else {  // type == SOURCE_UNKNOWN
     cm_->declare_parameter(
       source_name + ".type", rclcpp::ParameterValue("unknown"));
