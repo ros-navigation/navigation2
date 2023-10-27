@@ -123,9 +123,7 @@ public:
       source->getData(stamp, collision_points);
       if (collision_points.size() != 0) {
         const double dist = std::hypot(collision_points[0].x, collision_points[0].y);
-        if (expected_dist == -1){
-          return true;
-        } else if (std::fabs(dist - expected_dist) <= EPSILON) {
+        if (std::fabs(dist - expected_dist) <= EPSILON) {
           return true;
         }
       }
@@ -814,7 +812,7 @@ TEST_F(Tester, testPolygonSource)
 
   // 1. Obstacle is far away from robot
   publishPolygon(4.5, curr_time);
-  ASSERT_TRUE(waitData(-1, 500ms, curr_time));
+  ASSERT_TRUE(waitData(std::hypot(1.0, 4.5), 500ms, curr_time));
   publishCmdVel(0.5, 0.2, 0.1);
   ASSERT_TRUE(waitCmdVel(500ms));
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
@@ -823,7 +821,7 @@ TEST_F(Tester, testPolygonSource)
 
   // 2. Obstacle is in limit robot zone
   publishPolygon(3.0, curr_time);
-  ASSERT_TRUE(waitData(-1, 500ms, curr_time));
+  ASSERT_TRUE(waitData(std::hypot(1.0, 3.0), 500ms, curr_time));
   publishCmdVel(0.5, 0.2, 0.1);
   ASSERT_TRUE(waitCmdVel(500ms));
   const double speed = std::sqrt(0.5 * 0.5 + 0.2 * 0.2);
@@ -837,7 +835,7 @@ TEST_F(Tester, testPolygonSource)
 
   // 3. Obstacle is in slowdown robot zone
   publishPolygon(1.5, curr_time);
-  ASSERT_TRUE(waitData(-1, 500ms, curr_time));
+  ASSERT_TRUE(waitData(std::hypot(1.0, 1.5), 500ms, curr_time));
   publishCmdVel(0.5, 0.2, 0.1);
   ASSERT_TRUE(waitCmdVel(500ms));
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5 * SLOWDOWN_RATIO, EPSILON);
@@ -849,7 +847,7 @@ TEST_F(Tester, testPolygonSource)
 
   // 4. Obstacle is inside stop zone
   publishPolygon(0.5, curr_time);
-  ASSERT_TRUE(waitData(-1, 500ms, curr_time));
+  ASSERT_TRUE(waitData(std::hypot(1.0, 0.5), 500ms, curr_time));
   publishCmdVel(0.5, 0.2, 0.1);
   ASSERT_TRUE(waitCmdVel(500ms));
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.0, EPSILON);
@@ -861,7 +859,7 @@ TEST_F(Tester, testPolygonSource)
 
   // 5. Restoring back normal operation
   publishPolygon(4.5, curr_time);
-  ASSERT_TRUE(waitData(-1, 500ms, curr_time));
+  ASSERT_TRUE(waitData(std::hypot(1.0, 4.5), 500ms, curr_time));
   publishCmdVel(0.5, 0.2, 0.1);
   ASSERT_TRUE(waitCmdVel(500ms));
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
