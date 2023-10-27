@@ -69,6 +69,12 @@ void Source::getCommonParameters(std::string & source_topic)
   nav2_util::declare_parameter_if_not_declared(
     node, source_name_ + ".enabled", rclcpp::ParameterValue(true));
   enabled_ = node->get_parameter(source_name_ + ".enabled").as_bool();
+
+  nav2_util::declare_parameter_if_not_declared(
+    node, source_name_ + ".source_timeout",
+    rclcpp::ParameterValue(source_timeout_.seconds()));      // node source_timeout by default
+  source_timeout_ = rclcpp::Duration::from_seconds(
+    node->get_parameter(source_name_ + ".source_timeout").as_double());
 }
 
 bool Source::sourceValid(
