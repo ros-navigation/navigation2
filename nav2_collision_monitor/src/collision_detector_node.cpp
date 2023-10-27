@@ -336,6 +336,7 @@ void CollisionDetector::process()
     marker.color.r = 1.0;
     marker.color.a = 1.0;
     marker.lifetime = rclcpp::Duration(0, 0);
+    marker.frame_locked = true;
 
     for (const auto & point : collision_points) {
       geometry_msgs::msg::Point p;
