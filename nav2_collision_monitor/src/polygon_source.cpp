@@ -150,6 +150,9 @@ void PolygonSource::getParameters(std::string & source_topic)
   nav2_util::declare_parameter_if_not_declared(
     node, source_name_ + ".sampling_distance", rclcpp::ParameterValue(0.1));
   sampling_distance_ = node->get_parameter(source_name_ + ".sampling_distance").as_double();
+  nav2_util::declare_parameter_if_not_declared(
+    node, source_name_ + ".polygon_similarity_threshold", rclcpp::ParameterValue(2.0));
+  polygon_similarity_threshold_ = node->get_parameter(source_name_ + ".polygon_similarity_threshold").as_double();
 }
 
 void PolygonSource::dataCallback(geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg)
@@ -160,7 +163,7 @@ void PolygonSource::dataCallback(geometry_msgs::msg::PolygonStamped::ConstShared
   }
   auto curr_time = node->now();
 
-  // remove old data 
+  // remove old data
   data_.erase(
     std::remove_if(
       data_.begin(), data_.end(),
@@ -168,10 +171,10 @@ void PolygonSource::dataCallback(geometry_msgs::msg::PolygonStamped::ConstShared
         return curr_time - rclcpp::Time(polygon_stamped.header.stamp) > source_timeout_;
       }), data_.end());
 
-  // check if older polygon exists already and replace it with the new one
+  // check if older similar polygon exists already and replace it with the new one
   for (auto & polygon_stamped : data_) {
-    if (msg->polygon == polygon_stamped.polygon &&
-      rclcpp::Time(msg->header.stamp) > rclcpp::Time(polygon_stamped.header.stamp))
+    if (rclcpp::Time(msg->header.stamp) > rclcpp::Time(polygon_stamped.header.stamp) &&
+      arePolygonsSimilar(msg->polygon, polygon_stamped.polygon))
     {
       polygon_stamped = *msg;
       return;
@@ -180,5 +183,27 @@ void PolygonSource::dataCallback(geometry_msgs::msg::PolygonStamped::ConstShared
   data_.push_back(*msg);
 }
 
-}  // namespace nav2_collision_monitor
+bool PolygonSource::arePolygonsSimilar(
+  const geometry_msgs::msg::Polygon & polygon1,
+  const geometry_msgs::msg::Polygon & polygon2)
+{
+  // Compare the number of points in the polygons
+  if (polygon1.points.size() != polygon2.points.size()) {
+    return false;
+  }
 
+  // Compare the distance between each pair of corresponding points
+  for (size_t i = 0; i < polygon1.points.size(); ++i) {
+    double dx = polygon1.points[i].x - polygon2.points[i].x;
+    double dy = polygon1.points[i].y - polygon2.points[i].y;
+    double dz = polygon1.points[i].z - polygon2.points[i].z;
+    double distance = std::sqrt(dx * dx + dy * dy + dz * dz);
+    if (distance > polygon_similarity_threshold_) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+}  // namespace nav2_collision_monitor
