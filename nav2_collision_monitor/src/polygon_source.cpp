@@ -173,7 +173,8 @@ void PolygonSource::dataCallback(geometry_msgs::msg::PolygonStamped::ConstShared
 
   // check if older similar polygon exists already and replace it with the new one
   for (auto & polygon_stamped : data_) {
-    if (rclcpp::Time(msg->header.stamp) > rclcpp::Time(polygon_stamped.header.stamp) &&
+    if (msg->header.frame_id == polygon_stamped.header.frame_id &&
+      rclcpp::Time(msg->header.stamp) > rclcpp::Time(polygon_stamped.header.stamp) &&
       arePolygonsSimilar(msg->polygon, polygon_stamped.polygon))
     {
       polygon_stamped = *msg;
@@ -185,7 +186,7 @@ void PolygonSource::dataCallback(geometry_msgs::msg::PolygonStamped::ConstShared
 
 bool PolygonSource::arePolygonsSimilar(
   const geometry_msgs::msg::Polygon & polygon1,
-  const geometry_msgs::msg::Polygon & polygon2)
+  const geometry_msgs::msg::Polygon & polygon2) const
 {
   // Compare the number of points in the polygons
   if (polygon1.points.size() != polygon2.points.size()) {

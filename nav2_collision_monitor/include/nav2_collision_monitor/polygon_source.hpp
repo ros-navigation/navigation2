@@ -99,7 +99,7 @@ protected:
    */
   bool arePolygonsSimilar(
     const geometry_msgs::msg::Polygon & polygon1,
-    const geometry_msgs::msg::Polygon & polygon2);
+    const geometry_msgs::msg::Polygon & polygon2) const;
 
   // ----- Variables -----
 
