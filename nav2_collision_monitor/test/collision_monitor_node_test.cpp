@@ -54,6 +54,7 @@ static const char FOOTPRINT_TOPIC[]{"footprint"};
 static const char SCAN_NAME[]{"Scan"};
 static const char POINTCLOUD_NAME[]{"PointCloud"};
 static const char RANGE_NAME[]{"Range"};
+static const char POLYGON_NAME[]{"Polygon"};
 static const int MIN_POINTS{2};
 static const double SLOWDOWN_RATIO{0.7};
 static const double LINEAR_LIMIT{0.4};
@@ -76,7 +77,8 @@ enum SourceType
   SOURCE_UNKNOWN = 0,
   SCAN = 1,
   POINTCLOUD = 2,
-  RANGE = 3
+  RANGE = 3,
+  POLYGON_SOURCE = 4
 };
 
 enum ActionType
@@ -121,7 +123,9 @@ public:
       source->getData(stamp, collision_points);
       if (collision_points.size() != 0) {
         const double dist = std::hypot(collision_points[0].x, collision_points[0].y);
-        if (std::fabs(dist - expected_dist) <= EPSILON) {
+        if (expected_dist == -1){
+          return true;
+        } else if (std::fabs(dist - expected_dist) <= EPSILON) {
           return true;
         }
       }
@@ -156,6 +160,7 @@ public:
   void publishScan(const double dist, const rclcpp::Time & stamp);
   void publishPointCloud(const double dist, const rclcpp::Time & stamp);
   void publishRange(const double dist, const rclcpp::Time & stamp);
+  void publishPolygon(const double dist, const rclcpp::Time & stamp);
   void publishCmdVel(const double x, const double y, const double tw);
   bool waitData(
     const double expected_dist,
@@ -183,6 +188,7 @@ protected:
   rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr scan_pub_;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pointcloud_pub_;
   rclcpp::Publisher<sensor_msgs::msg::Range>::SharedPtr range_pub_;
+  rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_source_pub_;
 
   // Working with cmd_vel_in/cmd_vel_out
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_in_pub_;
@@ -215,6 +221,8 @@ Tester::Tester()
     POINTCLOUD_NAME, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
   range_pub_ = cm_->create_publisher<sensor_msgs::msg::Range>(
     RANGE_NAME, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+  polygon_source_pub_ = cm_->create_publisher<geometry_msgs::msg::PolygonStamped>(
+    POLYGON_NAME, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
 
   cmd_vel_in_pub_ = cm_->create_publisher<geometry_msgs::msg::Twist>(
     CMD_VEL_IN_TOPIC, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
@@ -241,6 +249,7 @@ Tester::~Tester()
   scan_pub_.reset();
   pointcloud_pub_.reset();
   range_pub_.reset();
+  polygon_source_pub_.reset();
 
   cmd_vel_in_pub_.reset();
   cmd_vel_out_sub_.reset();
@@ -413,6 +422,16 @@ void Tester::addSource(
       source_name + ".obstacles_angle", rclcpp::ParameterValue(M_PI / 200));
     cm_->set_parameter(
       rclcpp::Parameter(source_name + ".obstacles_angle", M_PI / 200));
+  } else if (type == POLYGON_SOURCE) {
+    cm_->declare_parameter(
+      source_name + ".type", rclcpp::ParameterValue("polygon"));
+    cm_->set_parameter(
+      rclcpp::Parameter(source_name + ".type", "polygon"));
+
+    cm_->declare_parameter(
+      source_name + ".sampling_distance", rclcpp::ParameterValue(0.1));
+    cm_->set_parameter(
+      rclcpp::Parameter(source_name + ".sampling_distance", 0.1));
   } else {  // type == SOURCE_UNKNOWN
     cm_->declare_parameter(
       source_name + ".type", rclcpp::ParameterValue("unknown"));
@@ -559,6 +578,31 @@ void Tester::publishRange(const double dist, const rclcpp::Time & stamp)
   msg->range = dist;
 
   range_pub_->publish(std::move(msg));
+}
+
+void Tester::publishPolygon(const double dist, const rclcpp::Time & stamp)
+{
+  std::unique_ptr<geometry_msgs::msg::PolygonStamped> msg =
+    std::make_unique<geometry_msgs::msg::PolygonStamped>();
+
+  msg->header.frame_id = SOURCE_FRAME_ID;
+  msg->header.stamp = stamp;
+
+  geometry_msgs::msg::Point32 p;
+  p.x = 1.0;
+  p.y = dist;
+  msg->polygon.points.push_back(p);
+  p.x = -1.0;
+  p.y = dist;
+  msg->polygon.points.push_back(p);
+  p.x = -1.0;
+  p.y = dist + 1.0;
+  msg->polygon.points.push_back(p);
+  p.x = 1.0;
+  p.y = dist + 1.0;
+  msg->polygon.points.push_back(p);
+
+  polygon_source_pub_->publish(std::move(msg));
 }
 
 void Tester::publishCmdVel(const double x, const double y, const double tw)
@@ -733,6 +777,91 @@ TEST_F(Tester, testProcessStopSlowdownLimit)
   // 5. Restoring back normal operation
   publishScan(4.5, curr_time);
   ASSERT_TRUE(waitData(4.5, 500ms, curr_time));
+  publishCmdVel(0.5, 0.2, 0.1);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->linear.y, 0.2, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->angular.z, 0.1, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, DO_NOTHING);
+  ASSERT_EQ(action_state_->polygon_name, "");
+
+  // Stop Collision Monitor node
+  cm_->stop();
+}
+
+TEST_F(Tester, testPolygonSource)
+{
+  rclcpp::Time curr_time = cm_->now();
+
+  // Set Collision Monitor parameters.
+  // Making two polygons: outer polygon for slowdown and inner for robot stop.
+  setCommonParameters();
+  // Set source_timeout to 0.0 to clear out quickly the polygons from test to test
+  cm_->set_parameter(
+    rclcpp::Parameter("source_timeout", 0.0));
+  addPolygon("Limit", POLYGON, 3.0, "limit");
+  addPolygon("SlowDown", POLYGON, 2.0, "slowdown");
+  addPolygon("Stop", POLYGON, 1.0, "stop");
+  addSource(POLYGON_NAME, POLYGON_SOURCE);
+  setVectors({"Limit", "SlowDown", "Stop"}, {POLYGON_NAME});
+
+  // Start Collision Monitor node
+  cm_->start();
+
+  // Share TF
+  sendTransforms(curr_time);
+
+  // 1. Obstacle is far away from robot
+  publishPolygon(4.5, curr_time);
+  ASSERT_TRUE(waitData(-1, 500ms, curr_time));
+  publishCmdVel(0.5, 0.2, 0.1);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->linear.y, 0.2, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->angular.z, 0.1, EPSILON);
+
+  // 2. Obstacle is in limit robot zone
+  publishPolygon(3.0, curr_time);
+  ASSERT_TRUE(waitData(-1, 500ms, curr_time));
+  publishCmdVel(0.5, 0.2, 0.1);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  const double speed = std::sqrt(0.5 * 0.5 + 0.2 * 0.2);
+  const double ratio = LINEAR_LIMIT / speed;
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5 * ratio, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->linear.y, 0.2 * ratio, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->angular.z, 0.09, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, LIMIT);
+  ASSERT_EQ(action_state_->polygon_name, "Limit");
+
+  // 3. Obstacle is in slowdown robot zone
+  publishPolygon(1.5, curr_time);
+  ASSERT_TRUE(waitData(-1, 500ms, curr_time));
+  publishCmdVel(0.5, 0.2, 0.1);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5 * SLOWDOWN_RATIO, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->linear.y, 0.2 * SLOWDOWN_RATIO, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->angular.z, 0.1 * SLOWDOWN_RATIO, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, SLOWDOWN);
+  ASSERT_EQ(action_state_->polygon_name, "SlowDown");
+
+  // 4. Obstacle is inside stop zone
+  publishPolygon(0.5, curr_time);
+  ASSERT_TRUE(waitData(-1, 500ms, curr_time));
+  publishCmdVel(0.5, 0.2, 0.1);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.0, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, STOP);
+  ASSERT_EQ(action_state_->polygon_name, "Stop");
+
+  // 5. Restoring back normal operation
+  publishPolygon(4.5, curr_time);
+  ASSERT_TRUE(waitData(-1, 500ms, curr_time));
   publishCmdVel(0.5, 0.2, 0.1);
   ASSERT_TRUE(waitCmdVel(500ms));
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);

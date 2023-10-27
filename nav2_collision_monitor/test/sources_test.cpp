@@ -552,7 +552,7 @@ void Tester::checkRange(const std::vector<nav2_collision_monitor::Point> & data)
 
 void Tester::checkPolygon(const std::vector<nav2_collision_monitor::Point> & data)
 {
-  ASSERT_EQ(data.size(), 76u);
+  ASSERT_EQ(data.size(), 84u);
 }
 
 TEST_F(Tester, testGetData)
