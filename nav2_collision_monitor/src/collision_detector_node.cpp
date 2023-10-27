@@ -322,7 +322,9 @@ void CollisionDetector::process()
       if (!source->getData(curr_time, collision_points)) {
         RCLCPP_WARN(
           get_logger(),
-          "Invalid source %s detected",
+          "Invalid source %s detected."
+          " Either due to data not published yet, or to lack of new data received within the"
+          " sensor timeout, or if impossible to transform data to base frame",
           source->getSourceName().c_str());
       }
     }

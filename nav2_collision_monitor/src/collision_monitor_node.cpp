@@ -562,7 +562,9 @@ void CollisionMonitor::notifyActionState(
     if (robot_action.polygon_name == "invalid source") {
       RCLCPP_WARN(
         get_logger(),
-        "Robot to stop due to invalid source");
+        "Robot to stop due to invalid source."
+        " Either due to data not published yet, or to lack of new data received within the"
+        " sensor timeout, or if impossible to transform data to base frame");
     } else {
       RCLCPP_INFO(
         get_logger(),
