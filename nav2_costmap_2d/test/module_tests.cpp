@@ -1123,7 +1123,7 @@ TEST(costmap, testTrickyPropagation) {
   // Add a dynamic obstacle
   pcl::PointCloud<pcl::PointXYZ> c2;
   c2.points.resize(3);
-  // Dynamic obstacle that raytaces.
+  // Dynamic obstacle that raytraces.
   c2.points[0].x = 7.0;
   c2.points[0].y = 8.0;
   c2.points[0].z = 1.0;
@@ -1167,7 +1167,7 @@ TEST(costmap, testTrickyPropagation) {
 
   pcl::PointCloud<pcl::PointXYZ> c;
   c.points.resize(1);
-  // Dynamic obstacle that raytaces the one at (3.0, 4.0).
+  // Dynamic obstacle that raytraces the one at (3.0, 4.0).
   c.points[0].x = 4.0;
   c.points[0].y = 5.0;
   c.points[0].z = 1.0;
