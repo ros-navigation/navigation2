@@ -62,6 +62,9 @@ public:
 
   void setCostmap(nav2_util::Costmap * costmap)
   {
+    std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(
+      *(costmap_ros_->getCostmap()->getMutex()));
+
     nav2_msgs::msg::CostmapMetaData prop;
     nav2_msgs::msg::Costmap cm = costmap->get_costmap(prop);
     prop = cm.metadata;
