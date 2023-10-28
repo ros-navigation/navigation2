@@ -32,6 +32,7 @@
 #include "sensor_msgs/point_cloud2_iterator.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/polygon_stamped.hpp"
+#include "visualization_msgs/msg/marker_array.hpp"
 
 #include "tf2_ros/transform_broadcaster.h"
 
@@ -49,6 +50,7 @@ static const char SCAN_NAME[]{"Scan"};
 static const char POINTCLOUD_NAME[]{"PointCloud"};
 static const char RANGE_NAME[]{"Range"};
 static const char STATE_TOPIC[]{"collision_detector_state"};
+static const char COLLISION_POINTS_MARKERS_TOPIC[]{"/collision_detector/collision_points_marker"};
 static const int MIN_POINTS{1};
 static const double SIMULATION_TIME_STEP{0.01};
 static const double TRANSFORM_TOLERANCE{0.5};
@@ -144,6 +146,8 @@ public:
     const rclcpp::Time & stamp);
   bool waitState(const std::chrono::nanoseconds & timeout);
   void stateCallback(nav2_msgs::msg::CollisionDetectorState::SharedPtr msg);
+  bool waitCollisionPointsMarker(const std::chrono::nanoseconds & timeout);
+  void collisionPointsMarkerCallback(visualization_msgs::msg::MarkerArray::SharedPtr msg);
 
 protected:
   // CollisionDetector node
@@ -156,6 +160,11 @@ protected:
 
   rclcpp::Subscription<nav2_msgs::msg::CollisionDetectorState>::SharedPtr state_sub_;
   nav2_msgs::msg::CollisionDetectorState::SharedPtr state_msg_;
+
+  // CollisionMonitor collision points markers
+  rclcpp::Subscription<visualization_msgs::msg::MarkerArray>::SharedPtr collision_points_marker_sub_;
+  visualization_msgs::msg::MarkerArray::SharedPtr collision_points_marker_msg_;
+
 };  // Tester
 
 Tester::Tester()
@@ -172,6 +181,10 @@ Tester::Tester()
   state_sub_ = cd_->create_subscription<nav2_msgs::msg::CollisionDetectorState>(
     STATE_TOPIC, rclcpp::SystemDefaultsQoS(),
     std::bind(&Tester::stateCallback, this, std::placeholders::_1));
+
+  collision_points_marker_sub_ = cd_->create_subscription<visualization_msgs::msg::MarkerArray>(
+    COLLISION_POINTS_MARKERS_TOPIC, rclcpp::SystemDefaultsQoS(),
+    std::bind(&Tester::collisionPointsMarkerCallback, this, std::placeholders::_1));
 }
 
 Tester::~Tester()
@@ -179,6 +192,7 @@ Tester::~Tester()
   scan_pub_.reset();
   pointcloud_pub_.reset();
   range_pub_.reset();
+  collision_points_marker_sub_.reset();
 
   cd_.reset();
 }
@@ -196,9 +210,28 @@ bool Tester::waitState(const std::chrono::nanoseconds & timeout)
   return false;
 }
 
+bool Tester::waitCollisionPointsMarker(const std::chrono::nanoseconds & timeout)
+{
+  collision_points_marker_msg_ = nullptr;
+  rclcpp::Time start_time = cd_->now();
+  while (rclcpp::ok() && cd_->now() - start_time <= rclcpp::Duration(timeout)) {
+    if (collision_points_marker_msg_) {
+      return true;
+    }
+    rclcpp::spin_some(cd_->get_node_base_interface());
+    std::this_thread::sleep_for(10ms);
+  }
+  return false;
+}
+
 void Tester::stateCallback(nav2_msgs::msg::CollisionDetectorState::SharedPtr msg)
 {
   state_msg_ = msg;
+}
+
+void Tester::collisionPointsMarkerCallback(visualization_msgs::msg::MarkerArray::SharedPtr msg)
+{
+  collision_points_marker_msg_ = msg;
 }
 
 void Tester::setCommonParameters()
@@ -675,6 +708,33 @@ TEST_F(Tester, testPointcloudDetection)
   ASSERT_EQ(state_msg_->detections[0], true);
 
   // Stop Collision Detector node
+  cd_->stop();
+}
+
+TEST_F(Tester, testCollisionPointsMarkers)
+{
+  rclcpp::Time curr_time = cd_->now();
+
+  // Set Collision Monitor parameters.
+  // Making two polygons: outer polygon for slowdown and inner for robot stop.
+  setCommonParameters();
+  addSource(SCAN_NAME, SCAN);
+  setVectors({}, {SCAN_NAME});
+
+  // Start Collision Monitor node
+  cd_->start();
+
+  // Share TF
+  sendTransforms(curr_time);
+
+  ASSERT_TRUE(waitCollisionPointsMarker(500ms));
+  ASSERT_EQ(collision_points_marker_msg_->markers[0].points.size(), 0u);
+
+  publishScan(0.5, curr_time);
+  ASSERT_TRUE(waitData(0.5, 500ms, curr_time));
+  ASSERT_TRUE(waitCollisionPointsMarker(500ms));
+  ASSERT_NE(collision_points_marker_msg_->markers[0].points.size(), 0u);
+  // Stop Collision Monitor node
   cd_->stop();
 }
 
