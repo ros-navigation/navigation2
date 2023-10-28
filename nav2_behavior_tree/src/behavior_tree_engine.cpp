@@ -55,7 +55,12 @@ BehaviorTreeEngine::run(
 
       onLoop();
 
-      loopRate.sleep();
+      if (!loopRate.sleep()) {
+        RCLCPP_WARN(
+          rclcpp::get_logger("BehaviorTreeEngine"),
+          "Behavior Tree tick rate %0.2f was exceeded!",
+          1.0 / (loopRate.period().count() * 1.0e-9));
+      }
     }
   } catch (const std::exception & ex) {
     RCLCPP_ERROR(
