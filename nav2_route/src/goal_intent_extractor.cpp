@@ -80,6 +80,10 @@ void GoalIntentExtractor::configure(
     "route_goal_pose", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
 
   if (enable_search_) {
+    nav2_util::declare_parameter_if_not_declared(
+      node, "use_closest_node_on_search_failure", rclcpp::ParameterValue(true));
+    use_closest_node_on_search_failure_ = node->get_parameter("use_closest_node_on_search_failure").as_bool();
+
     std::string costmap_topic;
     nav2_util::declare_parameter_if_not_declared(
       node, "costmap_topic",
@@ -91,7 +95,7 @@ void GoalIntentExtractor::configure(
     max_iterations_ = node->get_parameter("max_iterations").as_int();
 
     nav2_util::declare_parameter_if_not_declared(
-      node, "enable_search_viz", rclcpp::ParameterValue(false));
+      node, "enable_search_viz", rclcpp::ParameterValue(true));
     enable_search_viz_ = node->get_parameter("enable_search_viz").as_bool();
 
     costmap_sub_ =
@@ -185,11 +189,32 @@ GoalIntentExtractor::findStartandGoal(const std::shared_ptr<const GoalT> goal)
   }
 
   if (enable_search_) {
-    unsigned int valid_start_route_id = associatePoseWithGraphNode(start_route_ids, start_);
+    costmap_ = costmap_sub_->getCostmap();
+
+    unsigned int valid_start_route_id;
+    try {
+      valid_start_route_id = associatePoseWithGraphNode(start_route_ids, start_);
+    } catch (nav2_core::PlannerException &ex) {
+      if(use_closest_node_on_search_failure_) {
+        RCLCPP_WARN(logger_, "Node association failed to find start id. Using closeset node");
+        return {start_route_ids.front(), end_route_ids.front()};
+      }
+      throw ex;
+    }
+
     visualizeExpansions(start_expansion_viz_);
     ds_->clearGraph();
 
-    unsigned int valid_end_route_id = associatePoseWithGraphNode(end_route_ids, goal_);
+    unsigned int valid_end_route_id;
+    try {
+      valid_end_route_id = associatePoseWithGraphNode(end_route_ids, goal_);
+    } catch (nav2_core::PlannerException &ex) {
+      if(use_closest_node_on_search_failure_) {
+        RCLCPP_WARN(logger_, "Node association failed to find end id. Using closeset node");
+        return {start_route_ids.front(), end_route_ids.front()};
+      }
+      throw ex;
+    }
     visualizeExpansions(goal_expansion_viz_);
     ds_->clearGraph();
 
@@ -319,6 +344,7 @@ unsigned int GoalIntentExtractor::associatePoseWithGraphNode(
   }
 
   if (goals.empty()) {
+    RCLCPP_WARN(logger_, "All goals for association were invalid");
     throw nav2_core::PlannerException("All goals were invalid");
   }
 

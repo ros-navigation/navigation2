@@ -106,6 +106,7 @@ void DijkstraSearch::search(unsigned int & goal)
       }
     }
     current->visited = true;
+    iteration++;
   }
 
   throw nav2_core::NoValidPathCouldBeFound("No valid path found");

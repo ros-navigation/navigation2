@@ -157,6 +157,7 @@ protected:
   float max_dist_from_edge_, min_dist_from_goal_, min_dist_from_start_;
 
   bool enable_search_;
+  bool use_closest_node_on_search_failure_;
   bool enable_search_viz_;
   int max_iterations_;
   std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
