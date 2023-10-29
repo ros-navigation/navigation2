@@ -386,7 +386,9 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in)
   // Fill collision_points array from different data sources
   for (std::shared_ptr<Source> source : sources_) {
     if (source->getEnabled()) {
-      if (!source->getData(curr_time, collision_points)) {
+      if (!source->getData(curr_time, collision_points) &&
+        source->getSourceTimeout().seconds() != 0.0)
+      {
         action_polygon = nullptr;
         robot_action.polygon_name = "invalid source";
         robot_action.action_type = STOP;

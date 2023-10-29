@@ -87,6 +87,12 @@ public:
    */
   std::string getSourceName() const;
 
+  /**
+   * @brief Obtains the source_timeout parameter of the data source
+   * @return source_timeout parameter value of the data source
+   */
+  rclcpp::Duration getSourceTimeout() const;
+
 protected:
   /**
    * @brief Source configuration routine.

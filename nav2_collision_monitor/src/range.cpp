@@ -78,10 +78,6 @@ bool Range::getData(
     return false;
   }
   if (!sourceValid(data_->header.stamp, curr_time)) {
-    // Don't block if source_timeout == 0.0
-    if (source_timeout_.seconds() == 0.0) {
-      return true;
-    }
     return false;
   }
 

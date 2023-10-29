@@ -313,7 +313,9 @@ void CollisionDetector::process()
   // Fill collision_points array from different data sources
   for (std::shared_ptr<Source> source : sources_) {
     if (source->getEnabled()) {
-      if (!source->getData(curr_time, collision_points)) {
+      if (!source->getData(curr_time, collision_points) &&
+        source->getSourceTimeout().seconds() != 0.0)
+      {
         RCLCPP_WARN(
           get_logger(),
           "Invalid source %s detected."
