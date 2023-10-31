@@ -60,7 +60,8 @@ public:
     const rclcpp::QoS & qos,
     TwistCallbackT && TwistCallback,
     TwistStampedCallbackT && TwistStampedCallback
-  ) {
+  )
+  {
     using nav2_util::declare_parameter_if_not_declared;
     declare_parameter_if_not_declared(
       node, "enable_stamped_cmd_vel",
@@ -78,51 +79,6 @@ public:
         std::forward<TwistCallbackT>(TwistCallback));
     }
   }
-
-  // void on_activate()
-  // {
-  //   if (is_stamped_) {
-  //     twist_stamped_pub_->on_activate();
-  //   } else {
-  //     twist_pub_->on_activate();
-  //   }
-  // }
-
-  // void on_deactivate()
-  // {
-  //   if (is_stamped_) {
-  //     twist_stamped_pub_->on_deactivate();
-  //   } else {
-  //     twist_pub_->on_deactivate();
-  //   }
-  // }
-
-  // [[nodiscard]] bool is_activated() const
-  // {
-  //   if (is_stamped_) {
-  //     return twist_stamped_pub_->is_activated();
-  //   } else {
-  //     return twist_pub_->is_activated();
-  //   }
-  // }
-
-  // void publish(const geometry_msgs::msg::TwistStamped & velocity)
-  // {
-  //   if (is_stamped_) {
-  //     twist_stamped_pub_->publish(velocity);
-  //   } else {
-  //     twist_pub_->publish(velocity.twist);
-  //   }
-  // }
-
-  // [[nodiscard]] size_t get_subscription_count() const
-  // {
-  //   if (is_stamped_) {
-  //     return twist_stamped_pub_->get_subscription_count();
-  //   } else {
-  //     return twist_pub_->get_subscription_count();
-  //   }
-  // }
 
 protected:
   bool is_stamped_;
