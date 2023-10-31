@@ -99,6 +99,18 @@ public:
    */
   bool getEnabled() const;
 
+  /**
+   * @brief Obtains the name of the data source
+   * @return Name of the data source
+   */
+  std::string getSourceName() const;
+
+  /**
+   * @brief Obtains the source_timeout parameter of the data source
+   * @return source_timeout parameter value of the data source
+   */
+  rclcpp::Duration getSourceTimeout() const;
+
 protected:
   /**
    * @brief Source configuration routine.
