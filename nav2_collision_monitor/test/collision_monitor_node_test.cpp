@@ -909,6 +909,7 @@ TEST_F(Tester, testCrossOver)
   // 1. Obstacle is not in the slowdown zone, but less than TIME_BEFORE_COLLISION (ahead in 1.5 m).
   // Robot should approach the obstacle.
   publishPointCloud(2.5, curr_time);
+  publishRange(2.5, curr_time);
   ASSERT_TRUE(waitData(std::hypot(2.5, 0.01), 500ms, curr_time));
   publishCmdVel(3.0, 0.0, 0.0);
   ASSERT_TRUE(waitCmdVel(500ms));
@@ -943,6 +944,87 @@ TEST_F(Tester, testCrossOver)
   change_ratio = (0.5 / 1.0) / TIME_BEFORE_COLLISION;
   ASSERT_NEAR(
     cmd_vel_out_->linear.x, 1.0 * change_ratio, 1.0 * SIMULATION_TIME_STEP / TIME_BEFORE_COLLISION);
+  ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, APPROACH);
+  ASSERT_EQ(action_state_->polygon_name, "Approach");
+
+  // Stop Collision Monitor node
+  cm_->stop();
+}
+
+TEST_F(Tester, testSourceTimeout)
+{
+  rclcpp::Time curr_time = cm_->now();
+
+  // Set Collision Monitor parameters.
+  // Making two polygons: outer polygon for slowdown and inner circle
+  // as robot footprint for approach.
+  setCommonParameters();
+  addPolygon("SlowDown", POLYGON, 2.0, "slowdown");
+  addPolygon("Approach", CIRCLE, 1.0, "approach");
+  addSource(POINTCLOUD_NAME, POINTCLOUD);
+  addSource(RANGE_NAME, RANGE);
+  setVectors({"SlowDown", "Approach"}, {POINTCLOUD_NAME, RANGE_NAME});
+
+  // Start Collision Monitor node
+  cm_->start();
+
+  // Share TF
+  sendTransforms(curr_time);
+
+  // Obstacle is not in the slowdown zone, but less than TIME_BEFORE_COLLISION (ahead in 1.5 m).
+  // Robot should approach the obstacle.
+  publishPointCloud(2.5, curr_time);
+  ASSERT_TRUE(waitData(std::hypot(2.5, 0.01), 500ms, curr_time));
+  publishCmdVel(3.0, 3.0, 3.0);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  // Range configured but not published, range source should be considered invalid
+  ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, STOP);
+  ASSERT_EQ(action_state_->polygon_name, "invalid source");
+
+  // Stop Collision Monitor node
+  cm_->stop();
+}
+
+TEST_F(Tester, testSourceTimeoutOverride)
+{
+  rclcpp::Time curr_time = cm_->now();
+
+  // Set Collision Monitor parameters.
+  // Making two polygons: outer polygon for slowdown and inner circle
+  // as robot footprint for approach.
+  setCommonParameters();
+  addPolygon("SlowDown", POLYGON, 2.0, "slowdown");
+  addPolygon("Approach", CIRCLE, 1.0, "approach");
+  addSource(POINTCLOUD_NAME, POINTCLOUD);
+  addSource(RANGE_NAME, RANGE);
+  setVectors({"SlowDown", "Approach"}, {POINTCLOUD_NAME, RANGE_NAME});
+  cm_->set_parameter(rclcpp::Parameter("source_timeout", 0.0));
+
+  // Start Collision Monitor node
+  cm_->start();
+
+  // Share TF
+  sendTransforms(curr_time);
+
+  // Obstacle is not in the slowdown zone, but less than TIME_BEFORE_COLLISION (ahead in 1.5 m).
+  // Robot should approach the obstacle.
+  publishPointCloud(2.5, curr_time);
+  ASSERT_TRUE(waitData(std::hypot(2.5, 0.01), 500ms, curr_time));
+  publishCmdVel(3.0, 0.0, 0.0);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  // change_ratio = (1.5 m / 3.0 m/s) / TIME_BEFORE_COLLISION s
+  double change_ratio = (1.5 / 3.0) / TIME_BEFORE_COLLISION;
+  // Range configured but not published, range source should be considered invalid
+  // but as we set the source_timeout of the Range source to 0.0, its validity check is overidden
+  ASSERT_NEAR(
+    cmd_vel_out_->linear.x, 3.0 * change_ratio, 3.0 * SIMULATION_TIME_STEP / TIME_BEFORE_COLLISION);
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
   ASSERT_TRUE(waitActionState(500ms));
