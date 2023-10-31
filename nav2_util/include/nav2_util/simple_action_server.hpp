@@ -179,6 +179,26 @@ public:
   }
 
   /**
+   * @brief Sets thread priority level
+   */
+  void setSoftRealTimePriority()
+  {
+    if (use_realtime_prioritization_) {
+      sched_param sch;
+      sch.sched_priority = 90;
+      if (sched_setscheduler(0, SCHED_FIFO, &sch) == -1) {
+        std::string errmsg(
+          "Cannot set as real-time thread. Users must set: <username> hard rtprio 99 and "
+          "<username> soft rtprio 99 in /etc/security/limits.conf to enable "
+          "realtime prioritization! Error: ");
+        throw std::runtime_error(errmsg + std::strerror(errno));
+      } else {
+        debug_msg("Soft realtime prioritization successfully set!");
+      }
+    }
+  }
+
+  /**
    * @brief Handles accepted goals and adds to preempted queue to switch to
    * @param Goal A server goal handle to cancel
    */
@@ -211,19 +231,7 @@ public:
       // Return quickly to avoid blocking the executor, so spin up a new thread
       debug_msg("Executing goal asynchronously.");
       execution_future_ = std::async(std::launch::async, [this]() {
-        if (use_realtime_prioritization_) {
-          sched_param sch;
-          sch.sched_priority = 90;
-          if (sched_setscheduler(0, SCHED_FIFO, &sch) == -1) {
-            std::string errmsg(
-              "Cannot set as real-time thread. Users must set: <username> hard rtprio 99 and "
-              "<username> soft rtprio 99 in /etc/security/limits.conf to enable "
-              "realtime prioritization! Error: ");
-            throw std::runtime_error(errmsg + std::strerror(errno));
-          } else {
-            debug_msg("Soft realtime prioritization successfully set!");
-          }
-        }
+        setSoftRealTimePriority();
         work();
       });
     }
