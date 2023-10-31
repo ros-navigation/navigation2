@@ -29,6 +29,7 @@
 #include "tf2_ros/transform_listener.h"
 
 #include "nav2_util/lifecycle_node.hpp"
+#include "nav2_util/twist_subscriber.hpp"
 #include "nav2_msgs/msg/collision_monitor_state.hpp"
 
 #include "nav2_collision_monitor/types.hpp"
@@ -205,8 +206,8 @@ protected:
   std::vector<std::shared_ptr<Source>> sources_;
 
   // Input/output speed controls
-  /// @beirf Input cmd_vel subscriber
-  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_in_sub_;
+  /// @brief Input cmd_vel subscriber
+  std::shared_ptr<nav2_util::TwistSubscriber> cmd_vel_in_sub_;
   /// @brief Output cmd_vel publisher
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_out_pub_;
 

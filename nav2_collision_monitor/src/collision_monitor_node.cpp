@@ -63,9 +63,13 @@ CollisionMonitor::on_configure(const rclcpp_lifecycle::State & /*state*/)
     return nav2_util::CallbackReturn::FAILURE;
   }
 
-  cmd_vel_in_sub_ = this->create_subscription<geometry_msgs::msg::Twist>(
-    cmd_vel_in_topic, 1,
-    std::bind(&CollisionMonitor::cmdVelInCallback, this, std::placeholders::_1));
+  cmd_vel_in_sub_ = std::make_shared<nav2_util::TwistSubscriber>(
+    shared_from_this(),
+    cmd_vel_in_topic,
+    1,
+    std::bind(&CollisionMonitor::cmdVelInCallback, this, std::placeholders::_1),
+    std::bind(&CollisionMonitor::cmdVelInCallbackStamped, this, std::placeholders::_1));
+
   cmd_vel_out_pub_ = this->create_publisher<geometry_msgs::msg::Twist>(
     cmd_vel_out_topic, 1);
 
