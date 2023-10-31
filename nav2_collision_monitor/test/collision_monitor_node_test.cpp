@@ -1003,9 +1003,8 @@ TEST_F(Tester, testSourceTimeoutOverride)
   addPolygon("Approach", CIRCLE, 1.0, "approach");
   addSource(POINTCLOUD_NAME, POINTCLOUD);
   addSource(RANGE_NAME, RANGE);
-  cm_->set_parameter(
-    rclcpp::Parameter(std::string(RANGE_NAME) + ".source_timeout", SOURCE_TIMEOUT));
   setVectors({"SlowDown", "Approach"}, {POINTCLOUD_NAME, RANGE_NAME});
+  cm_->set_parameter(rclcpp::Parameter("source_timeout", 0.0));
 
   // Start Collision Monitor node
   cm_->start();
@@ -1017,7 +1016,7 @@ TEST_F(Tester, testSourceTimeoutOverride)
   // Robot should approach the obstacle.
   publishPointCloud(2.5, curr_time);
   ASSERT_TRUE(waitData(std::hypot(2.5, 0.01), 500ms, curr_time));
-  publishCmdVel(3.0, 3.0, 3.0);
+  publishCmdVel(3.0, 0.0, 0.0);
   ASSERT_TRUE(waitCmdVel(500ms));
   // change_ratio = (1.5 m / 3.0 m/s) / TIME_BEFORE_COLLISION s
   double change_ratio = (1.5 / 3.0) / TIME_BEFORE_COLLISION;
