@@ -69,6 +69,12 @@ void Source::getCommonParameters(std::string & source_topic)
   nav2_util::declare_parameter_if_not_declared(
     node, source_name_ + ".enabled", rclcpp::ParameterValue(true));
   enabled_ = node->get_parameter(source_name_ + ".enabled").as_bool();
+
+  nav2_util::declare_parameter_if_not_declared(
+    node, source_name_ + ".source_timeout",
+    rclcpp::ParameterValue(source_timeout_.seconds()));      // node source_timeout by default
+  source_timeout_ = rclcpp::Duration::from_seconds(
+    node->get_parameter(source_name_ + ".source_timeout").as_double());
 }
 
 bool Source::sourceValid(
@@ -78,7 +84,7 @@ bool Source::sourceValid(
   // Source is considered as not valid, if latest received data timestamp is earlier
   // than current time by source_timeout_ interval
   const rclcpp::Duration dt = curr_time - source_time;
-  if (dt > source_timeout_) {
+  if (source_timeout_.seconds() != 0.0 && dt > source_timeout_) {
     RCLCPP_WARN(
       logger_,
       "[%s]: Latest source and current collision monitor node timestamps differ on %f seconds. "
@@ -93,6 +99,16 @@ bool Source::sourceValid(
 bool Source::getEnabled() const
 {
   return enabled_;
+}
+
+std::string Source::getSourceName() const
+{
+  return source_name_;
+}
+
+rclcpp::Duration Source::getSourceTimeout() const
+{
+  return source_timeout_;
 }
 
 rcl_interfaces::msg::SetParametersResult
