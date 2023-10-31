@@ -64,17 +64,17 @@ void Scan::configure()
     std::bind(&Scan::dataCallback, this, std::placeholders::_1));
 }
 
-void Scan::getData(
+bool Scan::getData(
   const rclcpp::Time & curr_time,
   std::vector<Point> & data) const
 {
   // Ignore data from the source if it is not being published yet or
   // not being published for a long time
   if (data_ == nullptr) {
-    return;
+    return false;
   }
   if (!sourceValid(data_->header.stamp, curr_time)) {
-    return;
+    return false;
   }
 
   tf2::Transform tf_transform;
@@ -87,7 +87,7 @@ void Scan::getData(
         base_frame_id_, curr_time, global_frame_id_,
         transform_tolerance_, tf_buffer_, tf_transform))
     {
-      return;
+      return false;
     }
   } else {
     // Obtaining the transform to get data from source frame to base frame without time shift
@@ -98,7 +98,7 @@ void Scan::getData(
         data_->header.frame_id, base_frame_id_,
         transform_tolerance_, tf_buffer_, tf_transform))
     {
-      return;
+      return false;
     }
   }
 
@@ -118,6 +118,7 @@ void Scan::getData(
     }
     angle += data_->angle_increment;
   }
+  return true;
 }
 
 void Scan::dataCallback(sensor_msgs::msg::LaserScan::ConstSharedPtr msg)
