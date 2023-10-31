@@ -129,9 +129,12 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State &)
 
   // Setup inputs / outputs
   smoothed_cmd_pub_ = create_publisher<geometry_msgs::msg::Twist>("cmd_vel_smoothed", 1);
-  cmd_sub_ = create_subscription<geometry_msgs::msg::Twist>(
+  cmd_sub_ = std::make_shared<nav2_util::TwistSubscriber>(
+    shared_from_this(),
     "cmd_vel", rclcpp::QoS(1),
-    std::bind(&VelocitySmoother::inputCommandCallback, this, std::placeholders::_1));
+    std::bind(&VelocitySmoother::inputCommandCallback, this, std::placeholders::_1),
+    std::bind(&VelocitySmoother::inputCommandStampedCallback, this, std::placeholders::_1)
+  );
 
   declare_parameter_if_not_declared(node, "use_realtime_priority", rclcpp::ParameterValue(false));
   bool use_realtime_priority = false;
@@ -209,6 +212,12 @@ void VelocitySmoother::inputCommandCallback(const geometry_msgs::msg::Twist::Sha
 
   command_ = msg;
   last_command_time_ = now();
+}
+
+void VelocitySmoother::inputCommandStampedCallback(
+  geometry_msgs::msg::TwistStamped::ConstSharedPtr msg)
+{
+  inputCommandCallback(std::make_shared<geometry_msgs::msg::Twist>(msg->twist));
 }
 
 double VelocitySmoother::findEtaConstraint(
