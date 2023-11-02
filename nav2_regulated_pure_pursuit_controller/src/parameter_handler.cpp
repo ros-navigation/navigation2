@@ -91,9 +91,6 @@ ParameterHandler::ParameterHandler(
     node, plugin_name_ + ".max_robot_pose_search_dist",
     rclcpp::ParameterValue(costmap_size_x / 2.0));
   declare_parameter_if_not_declared(
-    node, plugin_name_ + ".use_interpolation",
-    rclcpp::ParameterValue(true));
-  declare_parameter_if_not_declared(
     node, plugin_name_ + ".use_collision_detection",
     rclcpp::ParameterValue(true));
 
@@ -162,9 +159,6 @@ ParameterHandler::ParameterHandler(
     params_.max_robot_pose_search_dist = std::numeric_limits<double>::max();
   }
 
-  node->get_parameter(
-    plugin_name_ + ".use_interpolation",
-    params_.use_interpolation);
   node->get_parameter(
     plugin_name_ + ".use_collision_detection",
     params_.use_collision_detection);
