@@ -228,8 +228,6 @@ NavfnPlanner::makePlan(
   plan.header.stamp = clock_->now();
   plan.header.frame_id = global_frame_;
 
-  // TODO(orduno): add checks for start and goal reference frame -- should be in global frame
-
   double wx = start.position.x;
   double wy = start.position.y;
 
@@ -265,9 +263,6 @@ NavfnPlanner::makePlan(
   int map_goal[2];
   map_goal[0] = mx;
   map_goal[1] = my;
-
-  // TODO(orduno): Explain why we are providing 'map_goal' to setStart().
-  //               Same for setGoal, seems reversed. Computing backwards?
 
   planner_->setStart(map_goal);
   planner_->setGoal(map_start);
