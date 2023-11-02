@@ -410,7 +410,8 @@ void PlannerServer::computePlanThroughPoses()
         curr_start = start;
       } else {
         if (allow_path_end_pose_deviation_) {
-          // pick the end of the last planning task as the start for the next one
+          // Pick the end of the last planning task as the start for the next one
+          // to allow for path tolerance deviations
           curr_start = concat_path.poses.back();
           curr_start.header = concat_path.header;
         } else {
