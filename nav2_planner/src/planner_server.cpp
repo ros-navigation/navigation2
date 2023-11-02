@@ -52,6 +52,7 @@ PlannerServer::PlannerServer(const rclcpp::NodeOptions & options)
   // Declare this node's parameters
   declare_parameter("planner_plugins", default_ids_);
   declare_parameter("expected_planner_frequency", 1.0);
+  declare_parameter("allow_path_end_pose_deviation", false);
 
   declare_parameter("action_server_result_timeout", 10.0);
 
@@ -137,6 +138,7 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
       " than 0.0 to turn on duration overrrun warning messages", expected_planner_frequency);
     max_planner_duration_ = 0.0;
   }
+  get_parameter("allow_path_end_pose_deviation", allow_path_end_pose_deviation_);
 
   // Initialize pubs & subs
   plan_publisher_ = create_publisher<nav_msgs::msg::Path>("plan", 1);
@@ -407,7 +409,14 @@ void PlannerServer::computePlanThroughPoses()
       if (i == 0) {
         curr_start = start;
       } else {
-        curr_start = goal->goals[i - 1];
+        if (allow_path_end_pose_deviation_) {
+          // pick the end of the last planning task as the start for the next one
+          curr_start = concat_path.poses.back();
+          curr_start.header = concat_path.header;
+        } else {
+          // pick the exact pose task as the start for the next one
+          curr_start = goal->goals[i - 1];
+        }
       }
       curr_goal = goal->goals[i];
 
@@ -691,6 +700,10 @@ PlannerServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> paramete
             " than 0.0 to turn on duration overrrun warning messages", parameter.as_double());
           max_planner_duration_ = 0.0;
         }
+      }
+    } else if (type == ParameterType::PARAMETER_BOOL) {
+      if (name == "allow_path_end_pose_deviation") {
+        allow_path_end_pose_deviation_ = parameter.as_bool();
       }
     }
   }
