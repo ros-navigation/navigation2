@@ -348,8 +348,8 @@ NavfnPlanner::makePlan(
     }
   } else {
     throw nav2_core::GoalOccupied(
-            "Goal Coordinates of(" + std::to_string(goal.pose.position.x) + ", " +
-            std::to_string(goal.pose.position.y) + ") was in lethal cost");
+            "Goal Coordinates of(" + std::to_string(goal.position.x) + ", " +
+            std::to_string(goal.position.y) + ") was in lethal cost");
   }
 
   return !plan.poses.empty();
