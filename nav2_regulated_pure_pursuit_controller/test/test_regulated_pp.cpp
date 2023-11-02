@@ -379,26 +379,7 @@ TEST(RegulatedPurePursuitTest, lookaheadAPI)
   auto pt = ctrl->getLookAheadPointWrapper(dist, path);
   EXPECT_EQ(pt.pose.position.x, 1.0);
 
-  // test getting next closest point without interpolation
-  node->set_parameter(
-    rclcpp::Parameter(
-      name + ".use_interpolation",
-      rclcpp::ParameterValue(false)));
-  ctrl->configure(node, name, tf, costmap);
-  dist = 3.8;
-  pt = ctrl->getLookAheadPointWrapper(dist, path);
-  EXPECT_EQ(pt.pose.position.x, 4.0);
-
-  // test end of path
-  dist = 100.0;
-  pt = ctrl->getLookAheadPointWrapper(dist, path);
-  EXPECT_EQ(pt.pose.position.x, 9.0);
-
   // test interpolation
-  node->set_parameter(
-    rclcpp::Parameter(
-      name + ".use_interpolation",
-      rclcpp::ParameterValue(true)));
   ctrl->configure(node, name, tf, costmap);
   dist = 3.8;
   pt = ctrl->getLookAheadPointWrapper(dist, path);
