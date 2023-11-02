@@ -346,6 +346,10 @@ NavfnPlanner::makePlan(
         "Failed to create a plan from potential when a legal"
         " potential was found. This shouldn't happen.");
     }
+  } else {
+    throw nav2_core::GoalOccupied(
+            "Goal Coordinates of(" + std::to_string(goal.pose.position.x) + ", " +
+            std::to_string(goal.pose.position.y) + ") was in lethal cost");
   }
 
   return !plan.poses.empty();
