@@ -74,7 +74,7 @@ BeamModel::sensorFunction(LaserData * data, pf_sample_set_t * set)
       obs_range = data->ranges[i][0];
 
       // Check for NaN
-      if (obs_range != obs_range) {
+      if (isnan(obs_range)) {
         continue;
       }
 
