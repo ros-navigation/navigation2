@@ -132,7 +132,7 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
         float initial_score = scoringFn(analytic_nodes);
         float score = std::numeric_limits<float>::max();
         float min_turn_rad = node->motion_table.min_turning_radius;
-        float step = 0.10; // 10cm TODO make proportional to costmap resolution or a parameter?
+        float step = 0.05; // 5cm TODO make proportional to costmap resolution or a parameter?
         while (true) {
           min_turn_rad += step;
           auto state_space = std::make_shared<ompl::base::DubinsStateSpace>(min_turn_rad);  // TODO set based on motion model
