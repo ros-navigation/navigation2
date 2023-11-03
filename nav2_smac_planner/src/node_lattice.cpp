@@ -64,6 +64,7 @@ void LatticeMotionTable::initMotionModel(
   current_lattice_filepath = search_info.lattice_filepath;
   allow_reverse_expansion = search_info.allow_reverse_expansion;
   rotation_penalty = search_info.rotation_penalty;
+  min_turning_radius = search_info.minimum_turning_radius;
 
   // Get the metadata about this minimum control set
   lattice_metadata = getLatticeMetadata(current_lattice_filepath);
@@ -77,10 +78,10 @@ void LatticeMotionTable::initMotionModel(
 
   if (!state_space) {
     if (!allow_reverse_expansion) {
-      state_space = std::make_unique<ompl::base::DubinsStateSpace>(
+      state_space = std::make_shared<ompl::base::DubinsStateSpace>(
         lattice_metadata.min_turning_radius);
     } else {
-      state_space = std::make_unique<ompl::base::ReedsSheppStateSpace>(
+      state_space = std::make_shared<ompl::base::ReedsSheppStateSpace>(
         lattice_metadata.min_turning_radius);
     }
   }
@@ -421,10 +422,10 @@ void NodeLattice::precomputeDistanceHeuristic(
 {
   // Dubin or Reeds-Shepp shortest distances
   if (!search_info.allow_reverse_expansion) {
-    motion_table.state_space = std::make_unique<ompl::base::DubinsStateSpace>(
+    motion_table.state_space = std::make_shared<ompl::base::DubinsStateSpace>(
       search_info.minimum_turning_radius);
   } else {
-    motion_table.state_space = std::make_unique<ompl::base::ReedsSheppStateSpace>(
+    motion_table.state_space = std::make_shared<ompl::base::ReedsSheppStateSpace>(
       search_info.minimum_turning_radius);
   }
   motion_table.lattice_metadata =
