@@ -679,7 +679,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
 
     // Resample the particles
     if (!(++resample_count_ % resample_interval_)) {
-      pf_update_resample(pf_);
+      pf_update_resample(pf_, reinterpret_cast<void *>(map_));
       resampled = true;
     }
 
@@ -1571,8 +1571,7 @@ AmclNode::initParticleFilter()
   // Create the particle filter
   pf_ = pf_alloc(
     min_particles_, max_particles_, alpha_slow_, alpha_fast_,
-    (pf_init_model_fn_t)AmclNode::uniformPoseGenerator,
-    reinterpret_cast<void *>(map_));
+    (pf_init_model_fn_t)AmclNode::uniformPoseGenerator);
   pf_->pop_err = pf_err_;
   pf_->pop_z = pf_z_;
 
