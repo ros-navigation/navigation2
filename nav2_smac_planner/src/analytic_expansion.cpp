@@ -124,25 +124,30 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
           const float & weight = expansion[0].node->motion_table.cost_penalty;
           for (auto iter = expansion.begin(); iter != expansion.end(); ++iter) {
             normalized_cost = iter->node->getCost() / 252.0f;
+            // H-cost method
             score += distance * (1.0 + weight * normalized_cost); // TODO quadratic option, add `* normalized_cost`
+            // Cost-only method
+            // score += normalized_cost;
           }
           return score;
+          // return score / expansion.size();
         };
 
-        float initial_score = scoringFn(analytic_nodes);
+        float best_score = scoringFn(analytic_nodes);
         float score = std::numeric_limits<float>::max();
         float min_turn_rad = node->motion_table.min_turning_radius;
-        float step = 0.05; // 5cm TODO make proportional to costmap resolution or a parameter?
-        while (true) {
+        const float step = 0.2; // TODO make proportional to resolution or parameter? In grid coords
+        unsigned int i = 0;
+        while (i < 20) {  // TODO what max to check?
           min_turn_rad += step;
           auto state_space = std::make_shared<ompl::base::DubinsStateSpace>(min_turn_rad);  // TODO set based on motion model
-          refined_analytic_nodes = getAnalyticPath(node, goal_node, getter, state_space);
+          refined_analytic_nodes = getAnalyticPath(node, goal_node, getter, state_space);  // TODO other types of splines?
           score = scoringFn(refined_analytic_nodes);
-          if (score <= initial_score) {
+          if (score <= best_score) {
             analytic_nodes = refined_analytic_nodes;
-          } else {
-            break;
+            best_score = score;
           }
+          i++;
         }
 
         return setAnalyticPath(node, goal_node, analytic_nodes);
