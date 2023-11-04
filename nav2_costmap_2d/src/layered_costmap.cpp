@@ -68,7 +68,8 @@ LayeredCostmap::LayeredCostmap(std::string global_frame, bool rolling_window, bo
   initialized_(false),
   size_locked_(false),
   circumscribed_radius_(1.0),
-  inscribed_radius_(0.1)
+  inscribed_radius_(0.1),
+  footprint_(std::make_shared<std::vector<geometry_msgs::msg::Point>>())
 {
   if (track_unknown) {
     primary_costmap_.setDefaultValue(255);
