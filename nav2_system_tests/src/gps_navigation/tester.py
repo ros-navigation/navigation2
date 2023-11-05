@@ -21,11 +21,12 @@ from geographic_msgs.msg import GeoPose
 from nav2_msgs.action import ComputePathToPose, FollowGPSWaypoints
 from nav2_msgs.srv import ManageLifecycleNodes
 from rcl_interfaces.srv import SetParameters
-from rclpy.parameter import Parameter
 
 import rclpy
+
 from rclpy.action import ActionClient
 from rclpy.node import Node
+from rclpy.parameter import Parameter
 
 
 class GpsWaypointFollowerTest(Node):
