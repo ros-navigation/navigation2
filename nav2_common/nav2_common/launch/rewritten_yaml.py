@@ -139,7 +139,7 @@ class RewrittenYaml(launch.Substitution):
         # add new total path parameters
         yaml_paths = self.pathify(yaml)
         for path in param_rewrites:
-            if not path in yaml_paths:
+            if yaml_paths not in path:
                 new_val = self.convert(param_rewrites[path])
                 yaml_keys = path.split(".")
                 if "ros__parameters" in yaml_keys:
