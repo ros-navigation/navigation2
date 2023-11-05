@@ -24,11 +24,11 @@ def generate_launch_description():
     return LaunchDescription(
         [
             launch_ros.actions.Node(
-                package="nav2_map_server",
-                executable="map_server",
-                output="screen",
+                package='nav2_map_server',
+                executable='map_server',
+                output='screen',
                 parameters=[
-                    os.path.join(os.getenv("TEST_DIR"), "map_server_params.yaml")
+                    os.path.join(os.getenv('TEST_DIR'), 'map_server_params.yaml')
                 ],
             )
         ]
