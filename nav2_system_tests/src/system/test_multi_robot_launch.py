@@ -46,11 +46,11 @@ def generate_launch_description():
     )
 
     bringup_dir = get_package_share_directory("nav2_bringup")
-    robot1_params_file = os.path.join(
-        bringup_dir, "params/nav2_multirobot_params_1.yaml"  # noqa: F841
+    robot1_params_file = os.path.join(  # noqa: F841
+        bringup_dir, "params/nav2_multirobot_params_1.yaml"
     )
-    robot2_params_file = os.path.join(
-        bringup_dir, "params/nav2_multirobot_params_2.yaml"  # noqa: F841
+    robot2_params_file = os.path.join(  # noqa: F841
+        bringup_dir, "params/nav2_multirobot_params_2.yaml"
     )
 
     # Names and poses of the robots
