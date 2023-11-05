@@ -16,7 +16,6 @@
 from geometry_msgs.msg import PoseStamped
 from nav2_simple_commander.robot_navigator import BasicNavigator
 import rclpy
-from ament_index_python.packages import get_package_share_directory
 
 import math
 import os
