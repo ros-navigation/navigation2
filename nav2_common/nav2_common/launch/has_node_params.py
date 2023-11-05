@@ -18,8 +18,6 @@ from typing import Text
 import yaml
 import launch
 
-import sys  # delete this
-
 
 class HasNodeParams(launch.Substitution):
     """
