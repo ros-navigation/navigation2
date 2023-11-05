@@ -27,7 +27,7 @@ class TrajectoryGenerator:
 
     def __init__(self, config: dict):
         """Init TrajectoryGenerator using the user supplied config."""
-        self.turning_radius = config["turning_radius"]
+        self.turning_radius = config['turning_radius']
 
     def _get_arc_point(
         self, trajectory_params: TrajectoryParameters, t: float
@@ -399,8 +399,8 @@ class TrajectoryGenerator:
 
             else:
                 logger.debug(
-                    "No trajectory possible for equivalent start and "
-                    + f"end angles that also passes through p = {x2, y2}"
+                    'No trajectory possible for equivalent start and '
+                    + f'end angles that also passes through p = {x2, y2}'
                 )
                 return None
 
@@ -413,8 +413,8 @@ class TrajectoryGenerator:
             arc_start_point, intersection_point, start_angle
         ):
             logger.debug(
-                "No trajectory possible since intersection point occurs "
-                + "before start point on line 1"
+                'No trajectory possible since intersection point occurs '
+                + 'before start point on line 1'
             )
             return None
 
@@ -422,8 +422,8 @@ class TrajectoryGenerator:
         # the angle of line 2
         if not self._is_dir_vec_correct(intersection_point, arc_end_point, end_angle):
             logger.debug(
-                "No trajectory possible since intersection point occurs "
-                + "after end point on line 2"
+                'No trajectory possible since intersection point occurs '
+                + 'after end point on line 2'
             )
             return None
 
@@ -451,8 +451,8 @@ class TrajectoryGenerator:
         # line 1 must be greater than the minimum valid distance
         if dist_a < min_valid_distance or dist_b < min_valid_distance:
             logger.debug(
-                "No trajectory possible where radius is larger than "
-                + "minimum turning radius"
+                'No trajectory possible where radius is larger than '
+                + 'minimum turning radius'
             )
             return None
 
@@ -505,8 +505,8 @@ class TrajectoryGenerator:
 
         if radius < self.turning_radius:
             logger.debug(
-                "Calculated circle radius is smaller than allowed turning "
-                + f"radius: r = {radius}, min_radius = {self.turning_radius}"
+                'Calculated circle radius is smaller than allowed turning '
+                + f'radius: r = {radius}, min_radius = {self.turning_radius}'
             )
             return None
 
@@ -562,7 +562,7 @@ class TrajectoryGenerator:
         if trajectory_params is None:
             return None
 
-        logger.debug("Trajectory found")
+        logger.debug('Trajectory found')
 
         trajectory_path = self._create_path(trajectory_params, primitive_resolution)
 

@@ -41,26 +41,26 @@ def handle_arg_parsing():
 
     """
     parser = argparse.ArgumentParser(
-        description="Generate motionprimitives " "for Nav2's State " "Lattice Planner"
+        description="Generate motionprimitives for Nav2's State Lattice Planner"
     )
     parser.add_argument(
-        "--config",
+        '--config',
         type=Path,
-        default="./config.json",
-        help="The config file containing the " "parameters to be used",
+        default='./config.json',
+        help='The config file containing the ' 'parameters to be used',
     )
     parser.add_argument(
-        "--output",
+        '--output',
         type=Path,
-        default="./output.json",
-        help="The output file containing the " "trajectory data",
+        default='./output.json',
+        help='The output file containing the ' 'trajectory data',
     )
     parser.add_argument(
-        "--visualizations",
+        '--visualizations',
         type=Path,
-        default="./visualizations",
-        help="The output folder where the "
-        "visualizations of the trajectories will be saved",
+        default='./visualizations',
+        help='The output folder where the '
+        'visualizations of the trajectories will be saved',
     )
 
     return parser.parse_args()
@@ -124,21 +124,21 @@ def create_header(config: dict, minimal_set_trajectories: dict) -> dict:
 
     """
     header_dict = {
-        "version": constants.VERSION,
-        "date_generated": datetime.today().strftime("%Y-%m-%d"),
-        "lattice_metadata": {},
-        "primitives": [],
+        'version': constants.VERSION,
+        'date_generated': datetime.today().strftime('%Y-%m-%d'),
+        'lattice_metadata': {},
+        'primitives': [],
     }
 
     for key, value in config.items():
-        header_dict["lattice_metadata"][key] = value
+        header_dict['lattice_metadata'][key] = value
 
     heading_angles = create_heading_angle_list(minimal_set_trajectories)
     adjusted_heading_angles = [
         angle + 2 * np.pi if angle < 0 else angle for angle in heading_angles
     ]
 
-    header_dict["lattice_metadata"]["heading_angles"] = adjusted_heading_angles
+    header_dict['lattice_metadata']['heading_angles'] = adjusted_heading_angles
 
     return header_dict
 
@@ -174,33 +174,33 @@ def write_to_json(
         ):
 
             traj_info = {}
-            traj_info["trajectory_id"] = idx
-            traj_info["start_angle_index"] = heading_lookup[
+            traj_info['trajectory_id'] = idx
+            traj_info['start_angle_index'] = heading_lookup[
                 trajectory.parameters.start_angle
             ]
-            traj_info["end_angle_index"] = heading_lookup[
+            traj_info['end_angle_index'] = heading_lookup[
                 trajectory.parameters.end_angle
             ]
-            traj_info["left_turn"] = bool(trajectory.parameters.left_turn)
-            traj_info["trajectory_radius"] = trajectory.parameters.turning_radius
-            traj_info["trajectory_length"] = round(
+            traj_info['left_turn'] = bool(trajectory.parameters.left_turn)
+            traj_info['trajectory_radius'] = trajectory.parameters.turning_radius
+            traj_info['trajectory_length'] = round(
                 trajectory.parameters.total_length, 5
             )
-            traj_info["arc_length"] = round(trajectory.parameters.arc_length, 5)
-            traj_info["straight_length"] = round(
+            traj_info['arc_length'] = round(trajectory.parameters.arc_length, 5)
+            traj_info['straight_length'] = round(
                 trajectory.parameters.start_straight_length
                 + trajectory.parameters.end_straight_length,
                 5,
             )
-            traj_info["poses"] = trajectory.path.to_output_format()
+            traj_info['poses'] = trajectory.path.to_output_format()
 
-            output_dict["primitives"].append(traj_info)
+            output_dict['primitives'].append(traj_info)
             idx += 1
 
-    output_dict["lattice_metadata"]["number_of_trajectories"] = idx
+    output_dict['lattice_metadata']['number_of_trajectories'] = idx
 
-    with open(output_path, "w") as output_file:
-        json.dump(output_dict, output_file, indent="\t")
+    with open(output_path, 'w') as output_file:
+        json.dump(output_dict, output_file, indent='\t')
 
 
 def save_visualizations(
@@ -223,14 +223,14 @@ def save_visualizations(
     for start_angle in minimal_set_trajectories.keys():
 
         for trajectory in minimal_set_trajectories[start_angle]:
-            plt.plot(trajectory.path.xs, trajectory.path.ys, "b")
+            plt.plot(trajectory.path.xs, trajectory.path.ys, 'b')
 
     plt.grid(True)
-    plt.axis("square")
+    plt.axis('square')
     left_x, right_x = plt.xlim()
     left_y, right_y = plt.ylim()
 
-    output_path = visualizations_folder / "all_trajectories.png"
+    output_path = visualizations_folder / 'all_trajectories.png'
     plt.savefig(output_path)
     plt.clf()
 
@@ -242,18 +242,18 @@ def save_visualizations(
             continue
 
         for trajectory in minimal_set_trajectories[start_angle]:
-            plt.plot(trajectory.path.xs, trajectory.path.ys, "b")
+            plt.plot(trajectory.path.xs, trajectory.path.ys, 'b')
             plt.xlim(left_x, right_x)
             plt.ylim(left_y, right_y)
 
         plt.grid(True)
 
-        output_path = visualizations_folder / f"{angle_in_deg}.png"
+        output_path = visualizations_folder / f'{angle_in_deg}.png'
         plt.savefig(output_path)
         plt.clf()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
 
     args = handle_arg_parsing()
     config = read_config(args.config)
@@ -261,7 +261,7 @@ if __name__ == "__main__":
     start = time.time()
     lattice_gen = LatticeGenerator(config)
     minimal_set_trajectories = lattice_gen.run()
-    print(f"Finished Generating. Took {time.time() - start} seconds")
+    print(f'Finished Generating. Took {time.time() - start} seconds')
 
     write_to_json(args.output, minimal_set_trajectories, config)
     save_visualizations(args.visualizations, minimal_set_trajectories)

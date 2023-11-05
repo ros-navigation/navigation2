@@ -25,7 +25,7 @@ class TestTrajectoryGenerator(unittest.TestCase):
     """Contains the unit tests for the TrajectoryGenerator."""
 
     def setUp(self) -> None:
-        config = {"turning_radius": TURNING_RADIUS}
+        config = {'turning_radius': TURNING_RADIUS}
         self.trajectory_generator = TrajectoryGenerator(config)
 
     def test_generate_trajectory_only_arc(self):
@@ -246,5 +246,5 @@ class TestTrajectoryGenerator(unittest.TestCase):
         self.assertEqual(trajectory, None)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

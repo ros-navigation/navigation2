@@ -17,7 +17,7 @@ import unittest
 from lattice_generator import LatticeGenerator
 import numpy as np
 
-MOTION_MODEL = "ackermann"
+MOTION_MODEL = 'ackermann'
 TURNING_RADIUS = 0.5
 GRID_RESOLUTION = 0.05
 STOPPING_THRESHOLD = 5
@@ -29,11 +29,11 @@ class TestLatticeGenerator(unittest.TestCase):
 
     def setUp(self) -> None:
         config = {
-            "motion_model": MOTION_MODEL,
-            "turning_radius": TURNING_RADIUS,
-            "grid_resolution": GRID_RESOLUTION,
-            "stopping_threshold": STOPPING_THRESHOLD,
-            "num_of_headings": NUM_OF_HEADINGS,
+            'motion_model': MOTION_MODEL,
+            'turning_radius': TURNING_RADIUS,
+            'grid_resolution': GRID_RESOLUTION,
+            'stopping_threshold': STOPPING_THRESHOLD,
+            'num_of_headings': NUM_OF_HEADINGS,
         }
 
         lattice_gen = LatticeGenerator(config)
@@ -88,5 +88,5 @@ class TestLatticeGenerator(unittest.TestCase):
                     self.assertLessEqual(angle, 2 * np.pi)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()
