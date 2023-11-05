@@ -32,51 +32,51 @@ from nav2_common.launch import RewrittenYaml
 
 def generate_launch_description():
     # Environment
-    package_dir = get_package_share_directory("nav2_collision_monitor")
+    package_dir = get_package_share_directory('nav2_collision_monitor')
 
     # Constant parameters
-    lifecycle_nodes = ["collision_monitor"]
+    lifecycle_nodes = ['collision_monitor']
     autostart = True
-    remappings = [("/tf", "tf"), ("/tf_static", "tf_static")]
+    remappings = [('/tf', 'tf'), ('/tf_static', 'tf_static')]
 
     # Launch arguments
     # 1. Create the launch configuration variables
-    namespace = LaunchConfiguration("namespace")
-    use_sim_time = LaunchConfiguration("use_sim_time")
-    params_file = LaunchConfiguration("params_file")
-    use_composition = LaunchConfiguration("use_composition")
-    container_name = LaunchConfiguration("container_name")
-    container_name_full = (namespace, "/", container_name)
+    namespace = LaunchConfiguration('namespace')
+    use_sim_time = LaunchConfiguration('use_sim_time')
+    params_file = LaunchConfiguration('params_file')
+    use_composition = LaunchConfiguration('use_composition')
+    container_name = LaunchConfiguration('container_name')
+    container_name_full = (namespace, '/', container_name)
 
     # 2. Declare the launch arguments
     declare_namespace_cmd = DeclareLaunchArgument(
-        "namespace", default_value="", description="Top-level namespace"
+        'namespace', default_value='', description='Top-level namespace'
     )
 
     declare_use_sim_time_cmd = DeclareLaunchArgument(
-        "use_sim_time",
-        default_value="True",
-        description="Use simulation (Gazebo) clock if true",
+        'use_sim_time',
+        default_value='True',
+        description='Use simulation (Gazebo) clock if true',
     )
 
     declare_params_file_cmd = DeclareLaunchArgument(
-        "params_file",
+        'params_file',
         default_value=os.path.join(
-            package_dir, "params", "collision_monitor_params.yaml"
+            package_dir, 'params', 'collision_monitor_params.yaml'
         ),
-        description="Full path to the ROS2 parameters file to use for all launched nodes",
+        description='Full path to the ROS2 parameters file to use for all launched nodes',
     )
 
     declare_use_composition_cmd = DeclareLaunchArgument(
-        "use_composition",
-        default_value="True",
-        description="Use composed bringup if True",
+        'use_composition',
+        default_value='True',
+        description='Use composed bringup if True',
     )
 
     declare_container_name_cmd = DeclareLaunchArgument(
-        "container_name",
-        default_value="nav2_container",
-        description="the name of conatiner that nodes will load in if use composition",
+        'container_name',
+        default_value='nav2_container',
+        description='the name of conatiner that nodes will load in if use composition',
     )
 
     configured_params = ParameterFile(
@@ -91,28 +91,28 @@ def generate_launch_description():
 
     # Declare node launching commands
     load_nodes = GroupAction(
-        condition=IfCondition(PythonExpression(["not ", use_composition])),
+        condition=IfCondition(PythonExpression(['not ', use_composition])),
         actions=[
-            SetParameter("use_sim_time", use_sim_time),
+            SetParameter('use_sim_time', use_sim_time),
             PushROSNamespace(
                 condition=IfCondition(
-                    NotEqualsSubstitution(LaunchConfiguration("namespace"), "")
+                    NotEqualsSubstitution(LaunchConfiguration('namespace'), '')
                 ),
                 namespace=namespace,
             ),
             Node(
-                package="nav2_lifecycle_manager",
-                executable="lifecycle_manager",
-                name="lifecycle_manager_collision_monitor",
-                output="screen",
+                package='nav2_lifecycle_manager',
+                executable='lifecycle_manager',
+                name='lifecycle_manager_collision_monitor',
+                output='screen',
                 emulate_tty=True,  # https://github.com/ros2/launch/issues/188
-                parameters=[{"autostart": autostart}, {"node_names": lifecycle_nodes}],
+                parameters=[{'autostart': autostart}, {'node_names': lifecycle_nodes}],
                 remappings=remappings,
             ),
             Node(
-                package="nav2_collision_monitor",
-                executable="collision_monitor",
-                output="screen",
+                package='nav2_collision_monitor',
+                executable='collision_monitor',
+                output='screen',
                 emulate_tty=True,  # https://github.com/ros2/launch/issues/188
                 parameters=[configured_params],
                 remappings=remappings,
@@ -123,10 +123,10 @@ def generate_launch_description():
     load_composable_nodes = GroupAction(
         condition=IfCondition(use_composition),
         actions=[
-            SetParameter("use_sim_time", use_sim_time),
+            SetParameter('use_sim_time', use_sim_time),
             PushROSNamespace(
                 condition=IfCondition(
-                    NotEqualsSubstitution(LaunchConfiguration("namespace"), "")
+                    NotEqualsSubstitution(LaunchConfiguration('namespace'), '')
                 ),
                 namespace=namespace,
             ),
@@ -134,19 +134,19 @@ def generate_launch_description():
                 target_container=container_name_full,
                 composable_node_descriptions=[
                     ComposableNode(
-                        package="nav2_lifecycle_manager",
-                        plugin="nav2_lifecycle_manager::LifecycleManager",
-                        name="lifecycle_manager_collision_monitor",
+                        package='nav2_lifecycle_manager',
+                        plugin='nav2_lifecycle_manager::LifecycleManager',
+                        name='lifecycle_manager_collision_monitor',
                         parameters=[
-                            {"autostart": autostart},
-                            {"node_names": lifecycle_nodes},
+                            {'autostart': autostart},
+                            {'node_names': lifecycle_nodes},
                         ],
                         remappings=remappings,
                     ),
                     ComposableNode(
-                        package="nav2_collision_monitor",
-                        plugin="nav2_collision_monitor::CollisionMonitor",
-                        name="collision_monitor",
+                        package='nav2_collision_monitor',
+                        plugin='nav2_collision_monitor::CollisionMonitor',
+                        name='collision_monitor',
                         parameters=[configured_params],
                         remappings=remappings,
                     ),
