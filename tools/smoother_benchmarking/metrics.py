@@ -14,19 +14,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from geometry_msgs.msg import PoseStamped
-from nav2_simple_commander.robot_navigator import BasicNavigator
-import rclpy
-
 import math
 import os
 import pickle
+from random import randint, seed, uniform
+
+from geometry_msgs.msg import PoseStamped
+from nav2_simple_commander.robot_navigator import BasicNavigator
 import numpy as np
-
-from random import seed
-from random import randint
-from random import uniform
-
+import rclpy
 from transforms3d.euler import euler2quat
 
 

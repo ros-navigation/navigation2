@@ -18,6 +18,7 @@
 
 import argparse
 import xml.etree.ElementTree
+
 import graphviz  # pip3 install graphviz
 
 control_nodes = [

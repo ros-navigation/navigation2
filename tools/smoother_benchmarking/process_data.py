@@ -15,14 +15,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import numpy as np
 import math
-
 import os
 import pickle
 
-import seaborn as sns
 import matplotlib.pylab as plt
+import numpy as np
+import seaborn as sns
 from tabulate import tabulate
 
 
