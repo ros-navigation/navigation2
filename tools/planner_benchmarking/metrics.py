@@ -46,17 +46,17 @@ def getPlannerResults(navigator, initial_pose, goal_pose, planners):
 
 def getRandomStart(costmap, max_cost, side_buffer, time_stamp, res):
     start = PoseStamped()
-    start.header.frame_id = 'map'
+    start.header.frame_id = "map"
     start.header.stamp = time_stamp
     while True:
-        row = randint(side_buffer, costmap.shape[0]-side_buffer)
-        col = randint(side_buffer, costmap.shape[1]-side_buffer)
+        row = randint(side_buffer, costmap.shape[0] - side_buffer)
+        col = randint(side_buffer, costmap.shape[1] - side_buffer)
 
         if costmap[row, col] < max_cost:
-            start.pose.position.x = col*res
-            start.pose.position.y = row*res
+            start.pose.position.x = col * res
+            start.pose.position.y = row * res
 
-            yaw = uniform(0, 1) * 2*math.pi
+            yaw = uniform(0, 1) * 2 * math.pi
             quad = euler2quat(0.0, 0.0, yaw)
             start.pose.orientation.w = quad[0]
             start.pose.orientation.x = quad[1]
@@ -68,16 +68,16 @@ def getRandomStart(costmap, max_cost, side_buffer, time_stamp, res):
 
 def getRandomGoal(costmap, start, max_cost, side_buffer, time_stamp, res):
     goal = PoseStamped()
-    goal.header.frame_id = 'map'
+    goal.header.frame_id = "map"
     goal.header.stamp = time_stamp
     while True:
-        row = randint(side_buffer, costmap.shape[0]-side_buffer)
-        col = randint(side_buffer, costmap.shape[1]-side_buffer)
+        row = randint(side_buffer, costmap.shape[0] - side_buffer)
+        col = randint(side_buffer, costmap.shape[1] - side_buffer)
 
         start_x = start.pose.position.x
         start_y = start.pose.position.y
-        goal_x = col*res
-        goal_y = row*res
+        goal_x = col * res
+        goal_y = row * res
         x_diff = goal_x - start_x
         y_diff = goal_y - start_y
         dist = math.sqrt(x_diff ** 2 + y_diff ** 2)
@@ -86,7 +86,7 @@ def getRandomGoal(costmap, start, max_cost, side_buffer, time_stamp, res):
             goal.pose.position.x = goal_x
             goal.pose.position.y = goal_y
 
-            yaw = uniform(0, 1) * 2*math.pi
+            yaw = uniform(0, 1) * 2 * math.pi
             quad = euler2quat(0.0, 0.0, yaw)
             goal.pose.orientation.w = quad[0]
             goal.pose.orientation.x = quad[1]
@@ -102,7 +102,7 @@ def main():
     navigator = BasicNavigator()
 
     # Set map to use, other options: 100by100_15, 100by100_10
-    map_path = os.getcwd() + '/' + glob.glob('**/100by100_20.yaml', recursive=True)[0]
+    map_path = os.getcwd() + "/" + glob.glob("**/100by100_20.yaml", recursive=True)[0]
     navigator.changeMap(map_path)
     time.sleep(2)
 
@@ -111,7 +111,7 @@ def main():
     costmap = np.asarray(costmap_msg.data)
     costmap.resize(costmap_msg.metadata.size_y, costmap_msg.metadata.size_x)
 
-    planners = ['Navfn', 'ThetaStar', 'SmacHybrid', 'Smac2d',  'SmacLattice']
+    planners = ["Navfn", "ThetaStar", "SmacHybrid", "Smac2d", "SmacLattice"]
     max_cost = 210
     side_buffer = 100
     time_stamp = navigator.get_clock().now().to_msg()
@@ -135,17 +135,17 @@ def main():
             print("One of the planners was invalid")
 
     print("Write Results...")
-    with open(os.getcwd() + '/results.pickle', 'wb+') as f:
+    with open(os.getcwd() + "/results.pickle", "wb+") as f:
         pickle.dump(results, f, pickle.HIGHEST_PROTOCOL)
 
-    with open(os.getcwd() + '/costmap.pickle', 'wb+') as f:
+    with open(os.getcwd() + "/costmap.pickle", "wb+") as f:
         pickle.dump(costmap_msg, f, pickle.HIGHEST_PROTOCOL)
 
-    with open(os.getcwd() + '/planners.pickle', 'wb+') as f:
+    with open(os.getcwd() + "/planners.pickle", "wb+") as f:
         pickle.dump(planners, f, pickle.HIGHEST_PROTOCOL)
     print("Write Complete")
     exit(0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

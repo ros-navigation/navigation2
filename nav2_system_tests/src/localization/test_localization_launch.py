@@ -26,46 +26,56 @@ from launch_testing.legacy import LaunchTestService
 
 
 def main(argv=sys.argv[1:]):
-    mapFile = os.getenv('TEST_MAP')
-    testExecutable = os.getenv('TEST_EXECUTABLE')
-    world = os.getenv('TEST_WORLD')
+    mapFile = os.getenv("TEST_MAP")
+    testExecutable = os.getenv("TEST_EXECUTABLE")
+    world = os.getenv("TEST_WORLD")
 
     launch_gazebo = launch.actions.ExecuteProcess(
-        cmd=['gzserver', '-s', 'libgazebo_ros_init.so', '--minimal_comms', world],
-        output='screen')
+        cmd=["gzserver", "-s", "libgazebo_ros_init.so", "--minimal_comms", world],
+        output="screen",
+    )
     link_footprint = launch_ros.actions.Node(
-        package='tf2_ros',
-        executable='static_transform_publisher',
-        output='screen',
-        arguments=['0', '0', '0', '0', '0', '0', 'base_footprint', 'base_link'])
+        package="tf2_ros",
+        executable="static_transform_publisher",
+        output="screen",
+        arguments=["0", "0", "0", "0", "0", "0", "base_footprint", "base_link"],
+    )
     footprint_scan = launch_ros.actions.Node(
-        package='tf2_ros',
-        executable='static_transform_publisher',
-        output='screen',
-        arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'base_scan'])
+        package="tf2_ros",
+        executable="static_transform_publisher",
+        output="screen",
+        arguments=["0", "0", "0", "0", "0", "0", "base_link", "base_scan"],
+    )
     run_map_server = launch_ros.actions.Node(
-        package='nav2_map_server',
-        executable='map_server',
-        name='map_server',
-        output='screen',
-        parameters=[{'yaml_filename': mapFile}])
+        package="nav2_map_server",
+        executable="map_server",
+        name="map_server",
+        output="screen",
+        parameters=[{"yaml_filename": mapFile}],
+    )
     run_amcl = launch_ros.actions.Node(
-        package='nav2_amcl',
-        executable='amcl',
-        output='screen')
+        package="nav2_amcl", executable="amcl", output="screen"
+    )
     run_lifecycle_manager = launch_ros.actions.Node(
-        package='nav2_lifecycle_manager',
-        executable='lifecycle_manager',
-        name='lifecycle_manager',
-        output='screen',
-        parameters=[{'node_names': ['map_server', 'amcl']}, {'autostart': True}])
-    ld = LaunchDescription([launch_gazebo, link_footprint, footprint_scan,
-                            run_map_server, run_amcl, run_lifecycle_manager])
+        package="nav2_lifecycle_manager",
+        executable="lifecycle_manager",
+        name="lifecycle_manager",
+        output="screen",
+        parameters=[{"node_names": ["map_server", "amcl"]}, {"autostart": True}],
+    )
+    ld = LaunchDescription(
+        [
+            launch_gazebo,
+            link_footprint,
+            footprint_scan,
+            run_map_server,
+            run_amcl,
+            run_lifecycle_manager,
+        ]
+    )
 
     test1_action = ExecuteProcess(
-        cmd=[testExecutable],
-        name='test_localization_node',
-        output='screen'
+        cmd=[testExecutable], name="test_localization_node", output="screen"
     )
 
     lts = LaunchTestService()
@@ -75,5 +85,5 @@ def main(argv=sys.argv[1:]):
     return lts.run(ls)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

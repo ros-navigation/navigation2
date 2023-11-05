@@ -30,7 +30,7 @@ def main():
 
     # Set our demo's initial pose
     initial_pose = PoseStamped()
-    initial_pose.header.frame_id = 'map'
+    initial_pose.header.frame_id = "map"
     initial_pose.header.stamp = navigator.get_clock().now().to_msg()
     initial_pose.pose.position.x = 3.45
     initial_pose.pose.position.y = 2.15
@@ -56,7 +56,7 @@ def main():
 
     # Go to our demos first goal pose
     goal_pose = PoseStamped()
-    goal_pose.header.frame_id = 'map'
+    goal_pose.header.frame_id = "map"
     goal_pose.header.stamp = navigator.get_clock().now().to_msg()
     goal_pose.pose.position.x = -2.0
     goal_pose.pose.position.y = -0.5
@@ -79,9 +79,14 @@ def main():
         i = i + 1
         feedback = navigator.getFeedback()
         if feedback and i % 5 == 0:
-            print('Estimated time of arrival: ' + '{0:.0f}'.format(
-                  Duration.from_msg(feedback.estimated_time_remaining).nanoseconds / 1e9)
-                  + ' seconds.')
+            print(
+                "Estimated time of arrival: "
+                + "{0:.0f}".format(
+                    Duration.from_msg(feedback.estimated_time_remaining).nanoseconds
+                    / 1e9
+                )
+                + " seconds."
+            )
 
             # Some navigation timeout to demo cancellation
             if Duration.from_msg(feedback.navigation_time) > Duration(seconds=600.0):
@@ -95,18 +100,18 @@ def main():
     # Do something depending on the return code
     result = navigator.getResult()
     if result == TaskResult.SUCCEEDED:
-        print('Goal succeeded!')
+        print("Goal succeeded!")
     elif result == TaskResult.CANCELED:
-        print('Goal was canceled!')
+        print("Goal was canceled!")
     elif result == TaskResult.FAILED:
-        print('Goal failed!')
+        print("Goal failed!")
     else:
-        print('Goal has an invalid return status!')
+        print("Goal has an invalid return status!")
 
     navigator.lifecycleShutdown()
 
     exit(0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

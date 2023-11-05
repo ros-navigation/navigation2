@@ -31,7 +31,7 @@ def main():
 
     # Set our demo's initial pose
     initial_pose = PoseStamped()
-    initial_pose.header.frame_id = 'map'
+    initial_pose.header.frame_id = "map"
     initial_pose.header.stamp = navigator.get_clock().now().to_msg()
     initial_pose.pose.position.x = 3.45
     initial_pose.pose.position.y = 2.15
@@ -52,5 +52,5 @@ def main():
     exit(0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

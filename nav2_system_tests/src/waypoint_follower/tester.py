@@ -31,45 +31,48 @@ from rclpy.qos import QoSProfile
 
 
 class WaypointFollowerTest(Node):
-
     def __init__(self):
-        super().__init__(node_name='nav2_waypoint_tester', namespace='')
+        super().__init__(node_name="nav2_waypoint_tester", namespace="")
         self.waypoints = None
-        self.action_client = ActionClient(self, FollowWaypoints, 'follow_waypoints')
-        self.initial_pose_pub = self.create_publisher(PoseWithCovarianceStamped,
-                                                      'initialpose', 10)
+        self.action_client = ActionClient(self, FollowWaypoints, "follow_waypoints")
+        self.initial_pose_pub = self.create_publisher(
+            PoseWithCovarianceStamped, "initialpose", 10
+        )
         self.initial_pose_received = False
         self.goal_handle = None
         self.action_result = None
 
         pose_qos = QoSProfile(
-          durability=QoSDurabilityPolicy.TRANSIENT_LOCAL,
-          reliability=QoSReliabilityPolicy.RELIABLE,
-          history=QoSHistoryPolicy.KEEP_LAST,
-          depth=1)
+            durability=QoSDurabilityPolicy.TRANSIENT_LOCAL,
+            reliability=QoSReliabilityPolicy.RELIABLE,
+            history=QoSHistoryPolicy.KEEP_LAST,
+            depth=1,
+        )
 
-        self.model_pose_sub = self.create_subscription(PoseWithCovarianceStamped,
-                                                       'amcl_pose', self.poseCallback, pose_qos)
-        self.param_cli = self.create_client(SetParameters,
-                                            '/waypoint_follower/set_parameters')
+        self.model_pose_sub = self.create_subscription(
+            PoseWithCovarianceStamped, "amcl_pose", self.poseCallback, pose_qos
+        )
+        self.param_cli = self.create_client(
+            SetParameters, "/waypoint_follower/set_parameters"
+        )
 
     def setInitialPose(self, pose):
         self.init_pose = PoseWithCovarianceStamped()
         self.init_pose.pose.pose.position.x = pose[0]
         self.init_pose.pose.pose.position.y = pose[1]
-        self.init_pose.header.frame_id = 'map'
+        self.init_pose.header.frame_id = "map"
         self.publishInitialPose()
         time.sleep(5)
 
     def poseCallback(self, msg):
-        self.info_msg('Received amcl_pose')
+        self.info_msg("Received amcl_pose")
         self.initial_pose_received = True
 
     def setWaypoints(self, waypoints):
         self.waypoints = []
         for wp in waypoints:
             msg = PoseStamped()
-            msg.header.frame_id = 'map'
+            msg.header.frame_id = "map"
             msg.pose.position.x = wp[0]
             msg.pose.position.y = wp[1]
             msg.pose.orientation.w = 1.0
@@ -86,19 +89,19 @@ class WaypointFollowerTest(Node):
         action_request = FollowWaypoints.Goal()
         action_request.poses = self.waypoints
 
-        self.info_msg('Sending goal request...')
+        self.info_msg("Sending goal request...")
         send_goal_future = self.action_client.send_goal_async(action_request)
         try:
             rclpy.spin_until_future_complete(self, send_goal_future)
             self.goal_handle = send_goal_future.result()
         except Exception as e:  # noqa: B902
-            self.error_msg(f'Service call failed {e!r}')
+            self.error_msg(f"Service call failed {e!r}")
 
         if not self.goal_handle.accepted:
-            self.error_msg('Goal rejected')
+            self.error_msg("Goal rejected")
             return False
 
-        self.info_msg('Goal accepted')
+        self.info_msg("Goal accepted")
         if not block:
             return True
 
@@ -114,17 +117,19 @@ class WaypointFollowerTest(Node):
             result = get_result_future.result().result
             self.action_result = result
         except Exception as e:  # noqa: B902
-            self.error_msg(f'Service call failed {e!r}')
+            self.error_msg(f"Service call failed {e!r}")
 
         if status != GoalStatus.STATUS_SUCCEEDED:
-            self.info_msg(f'Goal failed with status code: {status}')
+            self.info_msg(f"Goal failed with status code: {status}")
             return False
         if len(self.action_result.missed_waypoints) > 0:
-            self.info_msg('Goal failed to process all waypoints,'
-                          ' missed {0} wps.'.format(len(self.action_result.missed_waypoints)))
+            self.info_msg(
+                "Goal failed to process all waypoints,"
+                " missed {0} wps.".format(len(self.action_result.missed_waypoints))
+            )
             return False
 
-        self.info_msg('Goal succeeded!')
+        self.info_msg("Goal succeeded!")
         return True
 
     def publishInitialPose(self):
@@ -132,21 +137,22 @@ class WaypointFollowerTest(Node):
 
     def setStopFailureParam(self, value):
         req = SetParameters.Request()
-        req.parameters = [Parameter('stop_on_failure',
-                                    Parameter.Type.BOOL, value).to_parameter_msg()]
+        req.parameters = [
+            Parameter("stop_on_failure", Parameter.Type.BOOL, value).to_parameter_msg()
+        ]
         future = self.param_cli.call_async(req)
         rclpy.spin_until_future_complete(self, future)
 
     def shutdown(self):
-        self.info_msg('Shutting down')
+        self.info_msg("Shutting down")
 
         self.action_client.destroy()
-        self.info_msg('Destroyed follow_waypoints action client')
+        self.info_msg("Destroyed follow_waypoints action client")
 
-        transition_service = 'lifecycle_manager_navigation/manage_nodes'
+        transition_service = "lifecycle_manager_navigation/manage_nodes"
         mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
         while not mgr_client.wait_for_service(timeout_sec=1.0):
-            self.info_msg(f'{transition_service} service not available, waiting...')
+            self.info_msg(f"{transition_service} service not available, waiting...")
 
         req = ManageLifecycleNodes.Request()
         req.command = ManageLifecycleNodes.Request().SHUTDOWN
@@ -155,14 +161,14 @@ class WaypointFollowerTest(Node):
             rclpy.spin_until_future_complete(self, future)
             future.result()
         except Exception as e:  # noqa: B902
-            self.error_msg(f'{transition_service} service call failed {e!r}')
+            self.error_msg(f"{transition_service} service call failed {e!r}")
 
-        self.info_msg(f'{transition_service} finished')
+        self.info_msg(f"{transition_service} finished")
 
-        transition_service = 'lifecycle_manager_localization/manage_nodes'
+        transition_service = "lifecycle_manager_localization/manage_nodes"
         mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
         while not mgr_client.wait_for_service(timeout_sec=1.0):
-            self.info_msg(f'{transition_service} service not available, waiting...')
+            self.info_msg(f"{transition_service} service not available, waiting...")
 
         req = ManageLifecycleNodes.Request()
         req.command = ManageLifecycleNodes.Request().SHUTDOWN
@@ -171,9 +177,9 @@ class WaypointFollowerTest(Node):
             rclpy.spin_until_future_complete(self, future)
             future.result()
         except Exception as e:  # noqa: B902
-            self.error_msg(f'{transition_service} service call failed {e!r}')
+            self.error_msg(f"{transition_service} service call failed {e!r}")
 
-        self.info_msg(f'{transition_service} finished')
+        self.info_msg(f"{transition_service} finished")
 
     def cancel_goal(self):
         cancel_future = self.goal_handle.cancel_goal_async()
@@ -205,9 +211,9 @@ def main(argv=sys.argv[1:]):
     retries = 2
     while not test.initial_pose_received and retry_count <= retries:
         retry_count += 1
-        test.info_msg('Setting initial pose')
+        test.info_msg("Setting initial pose")
         test.setInitialPose(starting_pose)
-        test.info_msg('Waiting for amcl_pose to be received')
+        test.info_msg("Waiting for amcl_pose to be received")
         rclpy.spin_once(test, timeout_sec=1.0)  # wait for poseCallback
 
     result = test.run(True, False)
@@ -230,8 +236,10 @@ def main(argv=sys.argv[1:]):
     result = test.run(True, False)
     assert not result
     result = not result
-    assert test.action_result.missed_waypoints[0].error_code == \
-           ComputePathToPose.Result().GOAL_OUTSIDE_MAP
+    assert (
+        test.action_result.missed_waypoints[0].error_code
+        == ComputePathToPose.Result().GOAL_OUTSIDE_MAP
+    )
 
     # stop on failure test with bogous waypoint
     test.setStopFailureParam(True)
@@ -255,15 +263,15 @@ def main(argv=sys.argv[1:]):
     result = not result
 
     test.shutdown()
-    test.info_msg('Done Shutting Down.')
+    test.info_msg("Done Shutting Down.")
 
     if not result:
-        test.info_msg('Exiting failed')
+        test.info_msg("Exiting failed")
         exit(1)
     else:
-        test.info_msg('Exiting passed')
+        test.info_msg("Exiting passed")
         exit(0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

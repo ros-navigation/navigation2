@@ -30,7 +30,7 @@ def main():
 
     # Set our demo's initial pose
     initial_pose = PoseStamped()
-    initial_pose.header.frame_id = 'map'
+    initial_pose.header.frame_id = "map"
     initial_pose.header.stamp = navigator.get_clock().now().to_msg()
     initial_pose.pose.position.x = 3.45
     initial_pose.pose.position.y = 2.15
@@ -43,7 +43,7 @@ def main():
 
     # Go to our demos first goal pose
     goal_pose = PoseStamped()
-    goal_pose.header.frame_id = 'map'
+    goal_pose.header.frame_id = "map"
     goal_pose.header.stamp = navigator.get_clock().now().to_msg()
     goal_pose.pose.position.x = -3.0
     goal_pose.pose.position.y = -2.0
@@ -68,26 +68,28 @@ def main():
         i += 1
         feedback = navigator.getFeedback()
         if feedback and i % 5 == 0:
-            print('Estimated distance remaining to goal position: ' +
-                  '{0:.3f}'.format(feedback.distance_to_goal) +
-                  '\nCurrent speed of the robot: ' +
-                  '{0:.3f}'.format(feedback.speed))
+            print(
+                "Estimated distance remaining to goal position: "
+                + "{0:.3f}".format(feedback.distance_to_goal)
+                + "\nCurrent speed of the robot: "
+                + "{0:.3f}".format(feedback.speed)
+            )
 
     # Do something depending on the return code
     result = navigator.getResult()
     if result == TaskResult.SUCCEEDED:
-        print('Goal succeeded!')
+        print("Goal succeeded!")
     elif result == TaskResult.CANCELED:
-        print('Goal was canceled!')
+        print("Goal was canceled!")
     elif result == TaskResult.FAILED:
-        print('Goal failed!')
+        print("Goal failed!")
     else:
-        print('Goal has an invalid return status!')
+        print("Goal has an invalid return status!")
 
     navigator.lifecycleShutdown()
 
     exit(0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

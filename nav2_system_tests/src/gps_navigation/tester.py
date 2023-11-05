@@ -38,8 +38,9 @@ class GpsWaypointFollowerTest(Node):
         self.goal_handle = None
         self.action_result = None
 
-        self.param_cli = self.create_client(SetParameters,
-                                            '/waypoint_follower/set_parameters')
+        self.param_cli = self.create_client(
+            SetParameters, "/waypoint_follower/set_parameters"
+        )
 
     def setWaypoints(self, waypoints):
         self.waypoints = []
@@ -57,7 +58,8 @@ class GpsWaypointFollowerTest(Node):
 
         while not self.action_client.wait_for_server(timeout_sec=1.0):
             self.info_msg(
-                "'follow_gps_waypoints' action server not available, waiting...")
+                "'follow_gps_waypoints' action server not available, waiting..."
+            )
 
         action_request = FollowGPSWaypoints.Goal()
         action_request.gps_poses = self.waypoints
@@ -107,8 +109,9 @@ class GpsWaypointFollowerTest(Node):
 
     def setStopFailureParam(self, value):
         req = SetParameters.Request()
-        req.parameters = [Parameter('stop_on_failure',
-                                    Parameter.Type.BOOL, value).to_parameter_msg()]
+        req.parameters = [
+            Parameter("stop_on_failure", Parameter.Type.BOOL, value).to_parameter_msg()
+        ]
         future = self.param_cli.call_async(req)
         rclpy.spin_until_future_complete(self, future)
 
@@ -119,11 +122,9 @@ class GpsWaypointFollowerTest(Node):
         self.info_msg("Destroyed follow_gps_waypoints action client")
 
         transition_service = "lifecycle_manager_navigation/manage_nodes"
-        mgr_client = self.create_client(
-            ManageLifecycleNodes, transition_service)
+        mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
         while not mgr_client.wait_for_service(timeout_sec=1.0):
-            self.info_msg(
-                f"{transition_service} service not available, waiting...")
+            self.info_msg(f"{transition_service} service not available, waiting...")
 
         req = ManageLifecycleNodes.Request()
         req.command = ManageLifecycleNodes.Request().SHUTDOWN
@@ -183,8 +184,10 @@ def main(argv=sys.argv[1:]):
     result = test.run(True, False)
     assert not result
     result = not result
-    assert test.action_result.missed_waypoints[0].error_code == \
-        ComputePathToPose.Result().GOAL_OUTSIDE_MAP
+    assert (
+        test.action_result.missed_waypoints[0].error_code
+        == ComputePathToPose.Result().GOAL_OUTSIDE_MAP
+    )
 
     # stop on failure test with bogous waypoint
     test.setStopFailureParam(True)

@@ -33,7 +33,7 @@ def main():
 
     # Set our demo's initial pose
     initial_pose = PoseStamped()
-    initial_pose.header.frame_id = 'map'
+    initial_pose.header.frame_id = "map"
     initial_pose.header.stamp = navigator.get_clock().now().to_msg()
     initial_pose.pose.position.x = 3.45
     initial_pose.pose.position.y = 2.15
@@ -45,7 +45,7 @@ def main():
     navigator.waitUntilNav2Active()
 
     goal_pose = PoseStamped()
-    goal_pose.header.frame_id = 'map'
+    goal_pose.header.frame_id = "map"
     goal_pose.header.stamp = navigator.get_clock().now().to_msg()
     goal_pose.pose.position.x = 6.13
     goal_pose.pose.position.y = 1.90
@@ -59,12 +59,12 @@ def main():
         feedback = navigator.getFeedback()
         if feedback and i % 5 == 0:
             print(
-                f'Estimated time of arrival to destination is: \
-                {Duration.from_msg(feedback.estimated_time_remaining).nanoseconds / 1e9}'
+                f"Estimated time of arrival to destination is: \
+                {Duration.from_msg(feedback.estimated_time_remaining).nanoseconds / 1e9}"
             )
 
     # Robot hit a dead end, back it up
-    print('Robot hit a dead end, backing up...')
+    print("Robot hit a dead end, backing up...")
     navigator.backup(backup_dist=0.5, backup_speed=0.1)
 
     i = 0
@@ -72,10 +72,10 @@ def main():
         i += 1
         feedback = navigator.getFeedback()
         if feedback and i % 5 == 0:
-            print(f'Distance traveled: {feedback.distance_traveled}')
+            print(f"Distance traveled: {feedback.distance_traveled}")
 
     # Turn it around
-    print('Spinning robot around...')
+    print("Spinning robot around...")
     navigator.spin(spin_dist=3.14)
 
     i = 0
@@ -83,15 +83,15 @@ def main():
         i += 1
         feedback = navigator.getFeedback()
         if feedback and i % 5 == 0:
-            print(f'Spin angle traveled: {feedback.angular_distance_traveled}')
+            print(f"Spin angle traveled: {feedback.angular_distance_traveled}")
 
     result = navigator.getResult()
     if result == TaskResult.SUCCEEDED:
-        print('Dead end confirmed! Returning to start...')
+        print("Dead end confirmed! Returning to start...")
     elif result == TaskResult.CANCELED:
-        print('Recovery was canceled. Returning to start...')
+        print("Recovery was canceled. Returning to start...")
     elif result == TaskResult.FAILED:
-        print('Recovering from dead end failed! Returning to start...')
+        print("Recovering from dead end failed! Returning to start...")
 
     initial_pose.header.stamp = navigator.get_clock().now().to_msg()
     navigator.goToPose(initial_pose)
@@ -101,5 +101,5 @@ def main():
     exit(0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

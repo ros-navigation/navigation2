@@ -53,14 +53,13 @@ class LatticeGenerator:
     def __init__(self, config: dict):
         """Init the lattice generator from the user supplied config."""
         self.trajectory_generator = TrajectoryGenerator(config)
-        self.grid_resolution = config['grid_resolution']
-        self.turning_radius = config['turning_radius']
-        self.stopping_threshold = config['stopping_threshold']
-        self.num_of_headings = config['num_of_headings']
-        self.headings = \
-            self._get_heading_discretization(config['num_of_headings'])
+        self.grid_resolution = config["grid_resolution"]
+        self.turning_radius = config["turning_radius"]
+        self.stopping_threshold = config["stopping_threshold"]
+        self.num_of_headings = config["num_of_headings"]
+        self.headings = self._get_heading_discretization(config["num_of_headings"])
 
-        self.motion_model = self.MotionModel[config['motion_model'].upper()]
+        self.motion_model = self.MotionModel[config["motion_model"].upper()]
 
         self.DISTANCE_THRESHOLD = 0.5 * self.grid_resolution
         self.ROTATION_THRESHOLD = 0.5 * (2 * np.pi / self.num_of_headings)
@@ -210,7 +209,7 @@ class LatticeGenerator:
             # difference. If they are within threshold then this
             # trajectory can be composed from a previous trajectory
             for prior_end_pose in prior_end_poses.intersection(
-                (left_bb, bottom_bb, right_bb, top_bb), objects='raw'
+                (left_bb, bottom_bb, right_bb, top_bb), objects="raw"
             ):
                 if (
                     self._point_to_line_distance(p1, p2, prior_end_pose[:-1])
@@ -370,7 +369,7 @@ class LatticeGenerator:
                 angle_idx - (self.num_of_headings / 2)
             ) % self.num_of_headings
         else:
-            raise Exception(f'Unsupported flip type: {flip_type}')
+            raise Exception(f"Unsupported flip type: {flip_type}")
 
         return self.headings[int(heading_idx)]
 
@@ -567,8 +566,7 @@ class LatticeGenerator:
             return omni_spanning_set
 
         else:
-            print('No handling implemented for Motion Model: ' +
-                  f'{self.motion_model}')
+            print("No handling implemented for Motion Model: " + f"{self.motion_model}")
             raise NotImplementedError
 
     def _add_in_place_turns(self, spanning_set: dict) -> dict:
