@@ -21,7 +21,7 @@ import yaml
 
 class HasNodeParams(launch.Substitution):
     """
-    Substitution that checks if a param file contains parameters for a node
+    Substitution that checks if a param file contains parameters for a node.
 
     Used in launch system
     """

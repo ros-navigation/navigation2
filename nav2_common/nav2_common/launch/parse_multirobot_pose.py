@@ -19,13 +19,11 @@ import yaml
 
 
 class ParseMultiRobotPose:
-    """
-    Parsing argument using sys module
-    """
+    """Parsing argument using sys module."""
 
     def __init__(self, target_argument: Text):
         """
-        Parse arguments for multi-robot's pose
+        Parse arguments for multi-robot's pose.
 
         for example,
         `ros2 launch nav2_bringup bringup_multirobot_launch.py
@@ -43,9 +41,7 @@ class ParseMultiRobotPose:
         self.__args: Text = self.__parse_argument(target_argument)
 
     def __parse_argument(self, target_argument: Text) -> Text:
-        """
-        get value of target argument
-        """
+        """Get value of target argument."""
         if len(sys.argv) > 4:
             argv = sys.argv[4:]
             for arg in argv:
@@ -54,9 +50,7 @@ class ParseMultiRobotPose:
         return ""
 
     def value(self) -> Dict:
-        """
-        get value of target argument
-        """
+        """Get value of target argument."""
         args = self.__args
         parsed_args = [] if len(args) == 0 else args.split(";")
         multirobots = {}
