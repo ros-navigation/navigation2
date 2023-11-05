@@ -26,9 +26,9 @@ from lifecycle_msgs.srv import GetState
 from nav2_msgs.action import AssistedTeleop, BackUp, Spin
 from nav2_msgs.action import ComputePathThroughPoses, ComputePathToPose
 from nav2_msgs.action import (
+    FollowGPSWaypoints,
     FollowPath,
     FollowWaypoints,
-    FollowGPSWaypoints,
     NavigateThroughPoses,
     NavigateToPose,
 )
