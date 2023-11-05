@@ -129,7 +129,7 @@ def arcCenter(pt_prev, pt, pt_next):
 
     det = d1[0] * d2[1] - d1[1] * d2[0]
     if abs(det) < 1e-4:  # straight line
-        return (float("inf"), float("inf"))
+        return (float('inf'), float('inf'))
 
     # circle center is at the intersection of mirror axes of the segments:
     # http://paulbourke.net/geometry/circlesphere/
@@ -162,7 +162,7 @@ def getPathCurvatures(paths):
             pm2[0] = path.poses[i - 2].pose.position.x
             pm2[1] = path.poses[i - 2].pose.position.y
             center = arcCenter(pm2, pm1, pm0)
-            if center[0] != float("inf"):
+            if center[0] != float('inf'):
                 turning_rad = np.linalg.norm(pm1 - center)
                 radiuses.append(turning_rad)
         curvatures.append(np.average(radiuses))
@@ -176,11 +176,11 @@ def plotResults(costmap, paths):
     data = np.where(data <= 253, 0, data)
 
     plt.figure(3)
-    ax = sns.heatmap(data, cmap="Greys", cbar=False)
+    ax = sns.heatmap(data, cmap='Greys', cbar=False)
     for i in range(0, len(coords), 2):
         ax.plot(coords[i], coords[i + 1], linewidth=0.7)
-    plt.axis("off")
-    ax.set_aspect("equal", "box")
+    plt.axis('off')
+    ax.set_aspect('equal', 'box')
     plt.show()
 
 
@@ -229,17 +229,17 @@ def maxPathCost(paths, costmap, num_of_planners):
 def main():
     # Read the data
     benchmark_dir = os.getcwd()
-    print("Read data")
-    with open(os.path.join(benchmark_dir, "results.pickle"), "rb") as f:
+    print('Read data')
+    with open(os.path.join(benchmark_dir, 'results.pickle'), 'rb') as f:
         results = pickle.load(f)
 
-    with open(os.path.join(benchmark_dir, "methods.pickle"), "rb") as f:
+    with open(os.path.join(benchmark_dir, 'methods.pickle'), 'rb') as f:
         smoothers = pickle.load(f)
     planner = smoothers[0]
     del smoothers[0]
     methods_num = len(smoothers) + 1
 
-    with open(os.path.join(benchmark_dir, "costmap.pickle"), "rb") as f:
+    with open(os.path.join(benchmark_dir, 'costmap.pickle'), 'rb') as f:
         costmap = pickle.load(f)
 
     # Paths (planner and smoothers)
@@ -281,13 +281,13 @@ def main():
     # Generate table
     planner_table = [
         [
-            "Planner",
-            "Time (s)",
-            "Path length (m)",
-            "Average cost",
-            "Max cost",
-            "Path smoothness (x100)",
-            "Average turning rad (m)",
+            'Planner',
+            'Time (s)',
+            'Path length (m)',
+            'Average cost',
+            'Max cost',
+            'Path smoothness (x100)',
+            'Average turning rad (m)',
         ]
     ]
     # for path planner
@@ -323,5 +323,5 @@ def main():
     exit(0)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

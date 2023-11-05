@@ -32,7 +32,7 @@ from transforms3d.euler import euler2quat
 def getPlannerResults(navigator, initial_pose, goal_pose, planner):
     result = navigator._getPathImpl(initial_pose, goal_pose, planner, use_start=True)
     if result is None or result.error_code != 0:
-        print(planner, "planner failed to produce the path")
+        print(planner, 'planner failed to produce the path')
         return None
     return result
 
@@ -44,14 +44,14 @@ def getSmootherResults(navigator, path, smoothers):
         if smoothed_result is not None:
             smoothed_results.append(smoothed_result)
         else:
-            print(smoother, "failed to smooth the path")
+            print(smoother, 'failed to smooth the path')
             return None
     return smoothed_results
 
 
 def getRandomStart(costmap, max_cost, side_buffer, time_stamp, res):
     start = PoseStamped()
-    start.header.frame_id = "map"
+    start.header.frame_id = 'map'
     start.header.stamp = time_stamp
     while True:
         row = randint(side_buffer, costmap.shape[0] - side_buffer)
@@ -73,7 +73,7 @@ def getRandomStart(costmap, max_cost, side_buffer, time_stamp, res):
 
 def getRandomGoal(costmap, start, max_cost, side_buffer, time_stamp, res):
     goal = PoseStamped()
-    goal.header.frame_id = "map"
+    goal.header.frame_id = 'map'
     goal.header.stamp = time_stamp
     while True:
         row = randint(side_buffer, costmap.shape[0] - side_buffer)
@@ -107,16 +107,16 @@ def main():
     navigator = BasicNavigator()
 
     # Wait for planner and smoother to fully activate
-    print("Waiting for planner and smoother servers to activate")
-    navigator.waitUntilNav2Active("smoother_server", "planner_server")
+    print('Waiting for planner and smoother servers to activate')
+    navigator.waitUntilNav2Active('smoother_server', 'planner_server')
 
     # Get the costmap for start/goal validation
     costmap_msg = navigator.getGlobalCostmap()
     costmap = np.asarray(costmap_msg.data)
     costmap.resize(costmap_msg.metadata.size_y, costmap_msg.metadata.size_x)
 
-    planner = "SmacHybrid"
-    smoothers = ["simple_smoother", "constrained_smoother", "sg_smoother"]
+    planner = 'SmacHybrid'
+    smoothers = ['simple_smoother', 'constrained_smoother', 'sg_smoother']
     max_cost = 210
     side_buffer = 10
     time_stamp = navigator.get_clock().now().to_msg()
@@ -127,11 +127,11 @@ def main():
     i = 0
     res = costmap_msg.metadata.resolution
     while i < random_pairs:
-        print("Cycle: ", i, "out of: ", random_pairs)
+        print('Cycle: ', i, 'out of: ', random_pairs)
         start = getRandomStart(costmap, max_cost, side_buffer, time_stamp, res)
         goal = getRandomGoal(costmap, start, max_cost, side_buffer, time_stamp, res)
-        print("Start", start)
-        print("Goal", goal)
+        print('Start', start)
+        print('Goal', goal)
         result = getPlannerResults(navigator, start, goal, planner)
         if result is not None:
             smoothed_results = getSmootherResults(navigator, result.path, smoothers)
@@ -140,21 +140,21 @@ def main():
                 results.append(smoothed_results)
                 i += 1
 
-    print("Write Results...")
+    print('Write Results...')
     benchmark_dir = os.getcwd()
-    with open(os.path.join(benchmark_dir, "results.pickle"), "wb") as f:
+    with open(os.path.join(benchmark_dir, 'results.pickle'), 'wb') as f:
         pickle.dump(results, f, pickle.HIGHEST_PROTOCOL)
 
-    with open(os.path.join(benchmark_dir, "costmap.pickle"), "wb") as f:
+    with open(os.path.join(benchmark_dir, 'costmap.pickle'), 'wb') as f:
         pickle.dump(costmap_msg, f, pickle.HIGHEST_PROTOCOL)
 
     smoothers.insert(0, planner)
-    with open(os.path.join(benchmark_dir, "methods.pickle"), "wb") as f:
+    with open(os.path.join(benchmark_dir, 'methods.pickle'), 'wb') as f:
         pickle.dump(smoothers, f, pickle.HIGHEST_PROTOCOL)
-    print("Write Complete")
+    print('Write Complete')
 
     exit(0)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

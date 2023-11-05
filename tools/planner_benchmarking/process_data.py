@@ -74,11 +74,11 @@ def plotResults(costmap, paths):
     data = np.where(data <= 253, 0, data)
 
     plt.figure(3)
-    ax = sns.heatmap(data, cmap="Greys", cbar=False)
+    ax = sns.heatmap(data, cmap='Greys', cbar=False)
     for i in range(0, len(coords), 2):
         ax.plot(coords[i], coords[i + 1], linewidth=0.7)
-    plt.axis("off")
-    ax.set_aspect("equal", "box")
+    plt.axis('off')
+    ax.set_aspect('equal', 'box')
     plt.show()
 
 
@@ -126,14 +126,14 @@ def maxPathCost(paths, costmap, num_of_planners):
 
 def main():
 
-    print("Read data")
-    with open(os.getcwd() + "/results.pickle", "rb") as f:
+    print('Read data')
+    with open(os.getcwd() + '/results.pickle', 'rb') as f:
         results = pickle.load(f)
 
-    with open(os.getcwd() + "/planners.pickle", "rb") as f:
+    with open(os.getcwd() + '/planners.pickle', 'rb') as f:
         planners = pickle.load(f)
 
-    with open(os.getcwd() + "/costmap.pickle", "rb") as f:
+    with open(os.getcwd() + '/costmap.pickle', 'rb') as f:
         costmap = pickle.load(f)
 
     paths = getPaths(results)
@@ -159,11 +159,11 @@ def main():
     # Generate table
     planner_table = [
         [
-            "Planner",
-            "Average path length (m)",
-            "Average Time (s)",
-            "Average cost",
-            "Max cost",
+            'Planner',
+            'Average path length (m)',
+            'Average Time (s)',
+            'Average cost',
+            'Max cost',
         ]
     ]
 
@@ -183,5 +183,5 @@ def main():
     plotResults(costmap, paths)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

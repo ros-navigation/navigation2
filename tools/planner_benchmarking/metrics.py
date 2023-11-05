@@ -34,14 +34,14 @@ def getPlannerResults(navigator, initial_pose, goal_pose, planners):
         if path is not None and path.error_code == 0:
             results.append(path)
         else:
-            print(planner, "planner failed to produce the path")
+            print(planner, 'planner failed to produce the path')
             return results
     return results
 
 
 def getRandomStart(costmap, max_cost, side_buffer, time_stamp, res):
     start = PoseStamped()
-    start.header.frame_id = "map"
+    start.header.frame_id = 'map'
     start.header.stamp = time_stamp
     while True:
         row = randint(side_buffer, costmap.shape[0] - side_buffer)
@@ -63,7 +63,7 @@ def getRandomStart(costmap, max_cost, side_buffer, time_stamp, res):
 
 def getRandomGoal(costmap, start, max_cost, side_buffer, time_stamp, res):
     goal = PoseStamped()
-    goal.header.frame_id = "map"
+    goal.header.frame_id = 'map'
     goal.header.stamp = time_stamp
     while True:
         row = randint(side_buffer, costmap.shape[0] - side_buffer)
@@ -97,7 +97,7 @@ def main():
     navigator = BasicNavigator()
 
     # Set map to use, other options: 100by100_15, 100by100_10
-    map_path = os.getcwd() + "/" + glob.glob("**/100by100_20.yaml", recursive=True)[0]
+    map_path = os.getcwd() + '/' + glob.glob('**/100by100_20.yaml', recursive=True)[0]
     navigator.changeMap(map_path)
     time.sleep(2)
 
@@ -106,7 +106,7 @@ def main():
     costmap = np.asarray(costmap_msg.data)
     costmap.resize(costmap_msg.metadata.size_y, costmap_msg.metadata.size_x)
 
-    planners = ["Navfn", "ThetaStar", "SmacHybrid", "Smac2d", "SmacLattice"]
+    planners = ['Navfn', 'ThetaStar', 'SmacHybrid', 'Smac2d', 'SmacLattice']
     max_cost = 210
     side_buffer = 100
     time_stamp = navigator.get_clock().now().to_msg()
@@ -117,30 +117,30 @@ def main():
     res = costmap_msg.metadata.resolution
     i = 0
     while len(results) != random_pairs:
-        print("Cycle: ", i, "out of: ", random_pairs)
+        print('Cycle: ', i, 'out of: ', random_pairs)
         start = getRandomStart(costmap, max_cost, side_buffer, time_stamp, res)
         goal = getRandomGoal(costmap, start, max_cost, side_buffer, time_stamp, res)
-        print("Start", start)
-        print("Goal", goal)
+        print('Start', start)
+        print('Goal', goal)
         result = getPlannerResults(navigator, start, goal, planners)
         if len(result) == len(planners):
             results.append(result)
             i = i + 1
         else:
-            print("One of the planners was invalid")
+            print('One of the planners was invalid')
 
-    print("Write Results...")
-    with open(os.getcwd() + "/results.pickle", "wb+") as f:
+    print('Write Results...')
+    with open(os.getcwd() + '/results.pickle', 'wb+') as f:
         pickle.dump(results, f, pickle.HIGHEST_PROTOCOL)
 
-    with open(os.getcwd() + "/costmap.pickle", "wb+") as f:
+    with open(os.getcwd() + '/costmap.pickle', 'wb+') as f:
         pickle.dump(costmap_msg, f, pickle.HIGHEST_PROTOCOL)
 
-    with open(os.getcwd() + "/planners.pickle", "wb+") as f:
+    with open(os.getcwd() + '/planners.pickle', 'wb+') as f:
         pickle.dump(planners, f, pickle.HIGHEST_PROTOCOL)
-    print("Write Complete")
+    print('Write Complete')
     exit(0)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

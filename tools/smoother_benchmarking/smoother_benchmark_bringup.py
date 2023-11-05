@@ -22,78 +22,78 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
-    nav2_bringup_dir = get_package_share_directory("nav2_bringup")
+    nav2_bringup_dir = get_package_share_directory('nav2_bringup')
     benchmark_dir = os.getcwd()
-    metrics_py = os.path.join(benchmark_dir, "metrics.py")
+    metrics_py = os.path.join(benchmark_dir, 'metrics.py')
     config = os.path.join(
-        get_package_share_directory("nav2_bringup"), "params", "nav2_params.yaml"
+        get_package_share_directory('nav2_bringup'), 'params', 'nav2_params.yaml'
     )
-    map_file = os.path.join(benchmark_dir, "maps", "smoothers_world.yaml")
-    lifecycle_nodes = ["map_server", "planner_server", "smoother_server"]
+    map_file = os.path.join(benchmark_dir, 'maps', 'smoothers_world.yaml')
+    lifecycle_nodes = ['map_server', 'planner_server', 'smoother_server']
 
     static_transform_one = Node(
-        package="tf2_ros",
-        executable="static_transform_publisher",
-        output="screen",
-        arguments=["0", "0", "0", "0", "0", "0", "base_link", "map"],
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        output='screen',
+        arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'map'],
     )
 
     static_transform_two = Node(
-        package="tf2_ros",
-        executable="static_transform_publisher",
-        output="screen",
-        arguments=["0", "0", "0", "0", "0", "0", "base_link", "odom"],
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        output='screen',
+        arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'odom'],
     )
 
     start_map_server_cmd = Node(
-        package="nav2_map_server",
-        executable="map_server",
-        name="map_server",
-        output="screen",
+        package='nav2_map_server',
+        executable='map_server',
+        name='map_server',
+        output='screen',
         parameters=[
-            {"use_sim_time": True},
-            {"yaml_filename": map_file},
-            {"topic_name": "map"},
+            {'use_sim_time': True},
+            {'yaml_filename': map_file},
+            {'topic_name': 'map'},
         ],
     )
 
     start_planner_server_cmd = Node(
-        package="nav2_planner",
-        executable="planner_server",
-        name="planner_server",
-        output="screen",
+        package='nav2_planner',
+        executable='planner_server',
+        name='planner_server',
+        output='screen',
         parameters=[config],
     )
 
     start_smoother_server_cmd = Node(
-        package="nav2_smoother",
-        executable="smoother_server",
-        name="smoother_server",
-        output="screen",
+        package='nav2_smoother',
+        executable='smoother_server',
+        name='smoother_server',
+        output='screen',
         parameters=[config],
     )
 
     start_lifecycle_manager_cmd = Node(
-        package="nav2_lifecycle_manager",
-        executable="lifecycle_manager",
-        name="lifecycle_manager",
-        output="screen",
+        package='nav2_lifecycle_manager',
+        executable='lifecycle_manager',
+        name='lifecycle_manager',
+        output='screen',
         parameters=[
-            {"use_sim_time": True},
-            {"autostart": True},
-            {"node_names": lifecycle_nodes},
+            {'use_sim_time': True},
+            {'autostart': True},
+            {'node_names': lifecycle_nodes},
         ],
     )
 
     rviz_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(nav2_bringup_dir, "launch", "rviz_launch.py")
+            os.path.join(nav2_bringup_dir, 'launch', 'rviz_launch.py')
         ),
-        launch_arguments={"namespace": "", "use_namespace": "False"}.items(),
+        launch_arguments={'namespace': '', 'use_namespace': 'False'}.items(),
     )
 
     metrics_cmd = ExecuteProcess(
-        cmd=["python3", "-u", metrics_py], cwd=[benchmark_dir], output="screen"
+        cmd=['python3', '-u', metrics_py], cwd=[benchmark_dir], output='screen'
     )
 
     ld = LaunchDescription()
