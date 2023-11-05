@@ -116,17 +116,12 @@ void ObstaclesCritic::score(CriticData & data)
   if (!enabled_) {
     return;
   }
-  auto parent = parent_.lock();
-  auto t0 = parent->now(); // xx!!
+
   if (consider_footprint_) {
     // footprint has almost certainly changed since initialize()
+    // and may continue to change
     possibly_inscribed_cost_ = findCircumscribedCost(costmap_ros_);
   }
-  auto t1 = parent->now();
-  auto dt = (t1 - t0).seconds();
-  static double fcc_dt = 0.05;
-  fcc_dt = 0.9 * fcc_dt + 0.1 * dt;
-  RCLCPP_WARN_THROTTLE(logger_, *(parent->get_clock()), 500, "findCircumscribedCost took %f ms (%f)", 1000.0*dt, 1000.0*fcc_dt);
 
   // If near the goal, don't apply the preferential term since the goal is near obstacles
   bool near_goal = false;
@@ -180,12 +175,6 @@ void ObstaclesCritic::score(CriticData & data)
     (repulsion_weight_ * repulsive_cost / traj_len),
     power_);
   data.fail_flag = all_trajectories_collide;
-
-  auto t2 = parent->now();
-  dt = (t2 - t0).seconds();
-  static double score_dt = 0.05;
-  score_dt = 0.9 * score_dt + 0.1 * dt;
-  RCLCPP_WARN_THROTTLE(logger_, *(parent->get_clock()), 500, "score took %f ms (%f)", 1000.0*dt, 1000.0*score_dt);
 }
 
 /**
