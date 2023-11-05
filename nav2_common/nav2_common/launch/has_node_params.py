@@ -15,8 +15,8 @@
 from typing import List
 from typing import Text
 
-import yaml
 import launch
+import yaml
 
 
 class HasNodeParams(launch.Substitution):
