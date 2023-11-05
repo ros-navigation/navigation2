@@ -198,16 +198,16 @@ def make_label(node):
     return label
 
 
-def node_color(type):
-    if type in control_nodes:
+def node_color(node_type):
+    if node_type in control_nodes:
         return "chartreuse4"
-    if type in action_nodes:
+    if node_type in action_nodes:
         return "cornflowerblue"
-    if type in condition_nodes:
+    if node_type in condition_nodes:
         return "yellow2"
-    if type in decorator_nodes:
+    if node_type in decorator_nodes:
         return "darkorange1"
-    if type in subtree_nodes:
+    if node_type in subtree_nodes:
         return "darkorchid1"
     # else it's unknown
     return "grey"
