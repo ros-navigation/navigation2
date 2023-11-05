@@ -45,33 +45,33 @@ class ParseMultiRobotPose:
         if len(sys.argv) > 4:
             argv = sys.argv[4:]
             for arg in argv:
-                if arg.startswith(target_argument + ":="):
-                    return arg.replace(target_argument + ":=", "")
-        return ""
+                if arg.startswith(target_argument + ':='):
+                    return arg.replace(target_argument + ':=', '')
+        return ''
 
     def value(self) -> Dict:
         """Get value of target argument."""
         args = self.__args
-        parsed_args = [] if len(args) == 0 else args.split(";")
+        parsed_args = [] if len(args) == 0 else args.split(';')
         multirobots = {}
         for arg in parsed_args:
-            key_val = arg.strip().split("=")
+            key_val = arg.strip().split('=')
             if len(key_val) != 2:
                 continue
             key = key_val[0].strip()
             val = key_val[1].strip()
             robot_pose = yaml.safe_load(val)
-            if "x" not in robot_pose:
-                robot_pose["x"] = 0.0
-            if "y" not in robot_pose:
-                robot_pose["y"] = 0.0
-            if "z" not in robot_pose:
-                robot_pose["z"] = 0.0
-            if "roll" not in robot_pose:
-                robot_pose["roll"] = 0.0
-            if "pitch" not in robot_pose:
-                robot_pose["pitch"] = 0.0
-            if "yaw" not in robot_pose:
-                robot_pose["yaw"] = 0.0
+            if 'x' not in robot_pose:
+                robot_pose['x'] = 0.0
+            if 'y' not in robot_pose:
+                robot_pose['y'] = 0.0
+            if 'z' not in robot_pose:
+                robot_pose['z'] = 0.0
+            if 'roll' not in robot_pose:
+                robot_pose['roll'] = 0.0
+            if 'pitch' not in robot_pose:
+                robot_pose['pitch'] = 0.0
+            if 'yaw' not in robot_pose:
+                robot_pose['yaw'] = 0.0
             multirobots[key] = robot_pose
         return multirobots

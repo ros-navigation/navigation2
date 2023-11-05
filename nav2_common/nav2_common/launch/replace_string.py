@@ -57,18 +57,18 @@ class ReplaceString(launch.Substitution):
 
     def describe(self) -> Text:
         """Return a description of this substitution as a string."""
-        return ""
+        return ''
 
     def perform(self, context: launch.LaunchContext) -> Text:
         yaml_filename = launch.utilities.perform_substitutions(context, self.name)
         if self.__condition is None or self.__condition.evaluate(context):
-            output_file = tempfile.NamedTemporaryFile(mode="w", delete=False)
+            output_file = tempfile.NamedTemporaryFile(mode='w', delete=False)
             replacements = self.resolve_replacements(context)
             try:
-                input_file = open(yaml_filename, "r")
+                input_file = open(yaml_filename, 'r')
                 self.replace(input_file, output_file, replacements)
             except Exception as err:  # noqa: B902
-                print("ReplaceString substitution error: ", err)
+                print('ReplaceString substitution error: ', err)
             finally:
                 input_file.close()
                 output_file.close()
@@ -92,7 +92,7 @@ class ReplaceString(launch.Substitution):
                         line = line.replace(key, value)
                 else:
                     raise TypeError(
-                        "A provided replacement pair is not a string. Both key and value should be"
-                        "strings."
+                        'A provided replacement pair is not a string. Both key and value should be'
+                        'strings.'
                     )
             output_file.write(line)

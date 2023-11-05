@@ -85,13 +85,13 @@ class RewrittenYaml(launch.Substitution):
 
     def describe(self) -> Text:
         """Return a description of this substitution as a string."""
-        return ""
+        return ''
 
     def perform(self, context: launch.LaunchContext) -> Text:
         yaml_filename = launch.utilities.perform_substitutions(context, self.name)
-        rewritten_yaml = tempfile.NamedTemporaryFile(mode="w", delete=False)
+        rewritten_yaml = tempfile.NamedTemporaryFile(mode='w', delete=False)
         param_rewrites, keys_rewrites = self.resolve_rewrites(context)
-        data = yaml.safe_load(open(yaml_filename, "r"))
+        data = yaml.safe_load(open(yaml_filename, 'r'))
         self.substitute_params(data, param_rewrites)
         self.add_params(data, param_rewrites)
         self.substitute_keys(data, keys_rewrites)
@@ -129,7 +129,7 @@ class RewrittenYaml(launch.Substitution):
             if path in param_rewrites:
                 # this is an absolute path (ex. 'key.keyA.keyB.val')
                 rewrite_val = self.convert(param_rewrites[path])
-                yaml_keys = path.split(".")
+                yaml_keys = path.split('.')
                 yaml = self.updateYamlPathVals(yaml, yaml_keys, rewrite_val)
 
     def add_params(self, yaml, param_rewrites):
@@ -138,8 +138,8 @@ class RewrittenYaml(launch.Substitution):
         for path in param_rewrites:
             if yaml_paths not in path:
                 new_val = self.convert(param_rewrites[path])
-                yaml_keys = path.split(".")
-                if "ros__parameters" in yaml_keys:
+                yaml_keys = path.split('.')
+                if 'ros__parameters' in yaml_keys:
                     yaml = self.updateYamlPathVals(yaml, yaml_keys, new_val)
 
     def updateYamlPathVals(self, yaml, yaml_key_list, rewrite_val):
@@ -178,13 +178,13 @@ class RewrittenYaml(launch.Substitution):
         except AttributeError:
             return
 
-    def pathify(self, d, p=None, paths=None, joinchar="."):
+    def pathify(self, d, p=None, paths=None, joinchar='.'):
         if p is None:
             paths = {}
-            self.pathify(d, "", paths, joinchar=joinchar)
+            self.pathify(d, '', paths, joinchar=joinchar)
             return paths
         pn = p
-        if p != "":
+        if p != '':
             pn += joinchar
         if isinstance(d, dict):
             for k in d:
@@ -200,14 +200,14 @@ class RewrittenYaml(launch.Substitution):
         if self.__convert_types:
             # try converting to int or float
             try:
-                return float(text_value) if "." in text_value else int(text_value)
+                return float(text_value) if '.' in text_value else int(text_value)
             except ValueError:
                 pass
 
         # try converting to bool
-        if text_value.lower() == "true":
+        if text_value.lower() == 'true':
             return True
-        if text_value.lower() == "false":
+        if text_value.lower() == 'false':
             return False
 
         # nothing else worked so fall through and return text
