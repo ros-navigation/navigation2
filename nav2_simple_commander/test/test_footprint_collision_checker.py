@@ -147,5 +147,5 @@ class TestFootprintCollisionChecker(unittest.TestCase):
         self.assertEqual(fcc_.footprintCost(footprint), LETHAL_OBSTACLE)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

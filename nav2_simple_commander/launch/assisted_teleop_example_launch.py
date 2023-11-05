@@ -30,72 +30,72 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
-    warehouse_dir = get_package_share_directory("aws_robomaker_small_warehouse_world")
-    nav2_bringup_dir = get_package_share_directory("nav2_bringup")
-    python_commander_dir = get_package_share_directory("nav2_simple_commander")
+    warehouse_dir = get_package_share_directory('aws_robomaker_small_warehouse_world')
+    nav2_bringup_dir = get_package_share_directory('nav2_bringup')
+    python_commander_dir = get_package_share_directory('nav2_simple_commander')
 
-    map_yaml_file = os.path.join(warehouse_dir, "maps", "005", "map.yaml")
-    world = os.path.join(python_commander_dir, "warehouse.world")
+    map_yaml_file = os.path.join(warehouse_dir, 'maps', '005', 'map.yaml')
+    world = os.path.join(python_commander_dir, 'warehouse.world')
 
     # Launch configuration variables
-    use_rviz = LaunchConfiguration("use_rviz")
-    headless = LaunchConfiguration("headless")
+    use_rviz = LaunchConfiguration('use_rviz')
+    headless = LaunchConfiguration('headless')
 
     # Declare the launch arguments
     declare_use_rviz_cmd = DeclareLaunchArgument(
-        "use_rviz", default_value="True", description="Whether to start RVIZ"
+        'use_rviz', default_value='True', description='Whether to start RVIZ'
     )
 
     declare_simulator_cmd = DeclareLaunchArgument(
-        "headless", default_value="False", description="Whether to execute gzclient)"
+        'headless', default_value='False', description='Whether to execute gzclient)'
     )
 
     # start the simulation
     start_gazebo_server_cmd = ExecuteProcess(
-        cmd=["gzserver", "-s", "libgazebo_ros_factory.so", world],
+        cmd=['gzserver', '-s', 'libgazebo_ros_factory.so', world],
         cwd=[warehouse_dir],
-        output="screen",
+        output='screen',
     )
 
     start_gazebo_client_cmd = ExecuteProcess(
-        condition=IfCondition(PythonExpression(["not ", headless])),
-        cmd=["gzclient"],
+        condition=IfCondition(PythonExpression(['not ', headless])),
+        cmd=['gzclient'],
         cwd=[warehouse_dir],
-        output="screen",
+        output='screen',
     )
 
-    urdf = os.path.join(nav2_bringup_dir, "urdf", "turtlebot3_waffle.urdf")
+    urdf = os.path.join(nav2_bringup_dir, 'urdf', 'turtlebot3_waffle.urdf')
     start_robot_state_publisher_cmd = Node(
-        package="robot_state_publisher",
-        executable="robot_state_publisher",
-        name="robot_state_publisher",
-        output="screen",
+        package='robot_state_publisher',
+        executable='robot_state_publisher',
+        name='robot_state_publisher',
+        output='screen',
         arguments=[urdf],
     )
 
     # start the visualization
     rviz_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(nav2_bringup_dir, "launch", "rviz_launch.py")
+            os.path.join(nav2_bringup_dir, 'launch', 'rviz_launch.py')
         ),
         condition=IfCondition(use_rviz),
-        launch_arguments={"namespace": "", "use_namespace": "False"}.items(),
+        launch_arguments={'namespace': '', 'use_namespace': 'False'}.items(),
     )
 
     # start navigation
     bringup_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(nav2_bringup_dir, "launch", "bringup_launch.py")
+            os.path.join(nav2_bringup_dir, 'launch', 'bringup_launch.py')
         ),
-        launch_arguments={"map": map_yaml_file}.items(),
+        launch_arguments={'map': map_yaml_file}.items(),
     )
 
     # start the demo autonomy task
     demo_cmd = Node(
-        package="nav2_simple_commander",
-        executable="example_assisted_teleop",
+        package='nav2_simple_commander',
+        executable='example_assisted_teleop',
         emulate_tty=True,
-        output="screen",
+        output='screen',
     )
 
     ld = LaunchDescription()

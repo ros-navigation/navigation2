@@ -48,7 +48,7 @@ def main():
 
     # Set our demo's initial pose
     initial_pose = PoseStamped()
-    initial_pose.header.frame_id = "map"
+    initial_pose.header.frame_id = 'map'
     initial_pose.header.stamp = navigator.get_clock().now().to_msg()
     initial_pose.pose.position.x = 3.45
     initial_pose.pose.position.y = 2.15
@@ -64,7 +64,7 @@ def main():
         # Send our route
         route_poses = []
         pose = PoseStamped()
-        pose.header.frame_id = "map"
+        pose.header.frame_id = 'map'
         pose.header.stamp = navigator.get_clock().now().to_msg()
         pose.pose.orientation.w = 1.0
         for pt in security_route:
@@ -81,19 +81,19 @@ def main():
             feedback = navigator.getFeedback()
             if feedback and i % 5 == 0:
                 print(
-                    "Estimated time to complete current route: "
-                    + "{0:.0f}".format(
+                    'Estimated time to complete current route: '
+                    + '{0:.0f}'.format(
                         Duration.from_msg(feedback.estimated_time_remaining).nanoseconds
                         / 1e9
                     )
-                    + " seconds."
+                    + ' seconds.'
                 )
 
                 # Some failure mode, must stop since the robot is clearly stuck
                 if Duration.from_msg(feedback.navigation_time) > Duration(
                     seconds=180.0
                 ):
-                    print("Navigation has exceeded timeout of 180s, canceling request.")
+                    print('Navigation has exceeded timeout of 180s, canceling request.')
                     navigator.cancelTask()
 
         # If at end of route, reverse the route to restart
@@ -101,15 +101,15 @@ def main():
 
         result = navigator.getResult()
         if result == TaskResult.SUCCEEDED:
-            print("Route complete! Restarting...")
+            print('Route complete! Restarting...')
         elif result == TaskResult.CANCELED:
-            print("Security route was canceled, exiting.")
+            print('Security route was canceled, exiting.')
             exit(1)
         elif result == TaskResult.FAILED:
-            print("Security route failed! Restarting from other side...")
+            print('Security route failed! Restarting from other side...')
 
     exit(0)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

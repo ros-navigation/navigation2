@@ -46,7 +46,7 @@ def main():
 
     # Set our demo's initial pose
     initial_pose = PoseStamped()
-    initial_pose.header.frame_id = "map"
+    initial_pose.header.frame_id = 'map'
     initial_pose.header.stamp = navigator.get_clock().now().to_msg()
     initial_pose.pose.position.x = 3.45
     initial_pose.pose.position.y = 2.15
@@ -60,7 +60,7 @@ def main():
     # Send our route
     inspection_points = []
     inspection_pose = PoseStamped()
-    inspection_pose.header.frame_id = "map"
+    inspection_pose.header.frame_id = 'map'
     inspection_pose.header.stamp = navigator.get_clock().now().to_msg()
     inspection_pose.pose.orientation.z = 1.0
     inspection_pose.pose.orientation.w = 0.0
@@ -78,19 +78,19 @@ def main():
         feedback = navigator.getFeedback()
         if feedback and i % 5 == 0:
             print(
-                "Executing current waypoint: "
+                'Executing current waypoint: '
                 + str(feedback.current_waypoint + 1)
-                + "/"
+                + '/'
                 + str(len(inspection_points))
             )
 
     result = navigator.getResult()
     if result == TaskResult.SUCCEEDED:
-        print("Inspection of shelves complete! Returning to start...")
+        print('Inspection of shelves complete! Returning to start...')
     elif result == TaskResult.CANCELED:
-        print("Inspection of shelving was canceled. Returning to start...")
+        print('Inspection of shelving was canceled. Returning to start...')
     elif result == TaskResult.FAILED:
-        print("Inspection of shelving failed! Returning to start...")
+        print('Inspection of shelving failed! Returning to start...')
 
     # go back to start
     initial_pose.header.stamp = navigator.get_clock().now().to_msg()
@@ -101,5 +101,5 @@ def main():
     exit(0)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

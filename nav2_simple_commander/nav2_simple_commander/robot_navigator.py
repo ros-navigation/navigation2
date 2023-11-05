@@ -51,10 +51,10 @@ class TaskResult(Enum):
 
 
 class BasicNavigator(Node):
-    def __init__(self, node_name="basic_navigator", namespace=""):
+    def __init__(self, node_name='basic_navigator', namespace=''):
         super().__init__(node_name=node_name, namespace=namespace)
         self.initial_pose = PoseStamped()
-        self.initial_pose.header.frame_id = "map"
+        self.initial_pose.header.frame_id = 'map'
         self.goal_handle = None
         self.result_future = None
         self.feedback = None
@@ -69,49 +69,49 @@ class BasicNavigator(Node):
 
         self.initial_pose_received = False
         self.nav_through_poses_client = ActionClient(
-            self, NavigateThroughPoses, "navigate_through_poses"
+            self, NavigateThroughPoses, 'navigate_through_poses'
         )
-        self.nav_to_pose_client = ActionClient(self, NavigateToPose, "navigate_to_pose")
+        self.nav_to_pose_client = ActionClient(self, NavigateToPose, 'navigate_to_pose')
         self.follow_waypoints_client = ActionClient(
-            self, FollowWaypoints, "follow_waypoints"
+            self, FollowWaypoints, 'follow_waypoints'
         )
         self.follow_gps_waypoints_client = ActionClient(
-            self, FollowGPSWaypoints, "follow_gps_waypoints"
+            self, FollowGPSWaypoints, 'follow_gps_waypoints'
         )
-        self.follow_path_client = ActionClient(self, FollowPath, "follow_path")
+        self.follow_path_client = ActionClient(self, FollowPath, 'follow_path')
         self.compute_path_to_pose_client = ActionClient(
-            self, ComputePathToPose, "compute_path_to_pose"
+            self, ComputePathToPose, 'compute_path_to_pose'
         )
         self.compute_path_through_poses_client = ActionClient(
-            self, ComputePathThroughPoses, "compute_path_through_poses"
+            self, ComputePathThroughPoses, 'compute_path_through_poses'
         )
-        self.smoother_client = ActionClient(self, SmoothPath, "smooth_path")
-        self.spin_client = ActionClient(self, Spin, "spin")
-        self.backup_client = ActionClient(self, BackUp, "backup")
+        self.smoother_client = ActionClient(self, SmoothPath, 'smooth_path')
+        self.spin_client = ActionClient(self, Spin, 'spin')
+        self.backup_client = ActionClient(self, BackUp, 'backup')
         self.assisted_teleop_client = ActionClient(
-            self, AssistedTeleop, "assisted_teleop"
+            self, AssistedTeleop, 'assisted_teleop'
         )
         self.localization_pose_sub = self.create_subscription(
             PoseWithCovarianceStamped,
-            "amcl_pose",
+            'amcl_pose',
             self._amclPoseCallback,
             amcl_pose_qos,
         )
         self.initial_pose_pub = self.create_publisher(
-            PoseWithCovarianceStamped, "initialpose", 10
+            PoseWithCovarianceStamped, 'initialpose', 10
         )
-        self.change_maps_srv = self.create_client(LoadMap, "map_server/load_map")
+        self.change_maps_srv = self.create_client(LoadMap, 'map_server/load_map')
         self.clear_costmap_global_srv = self.create_client(
-            ClearEntireCostmap, "global_costmap/clear_entirely_global_costmap"
+            ClearEntireCostmap, 'global_costmap/clear_entirely_global_costmap'
         )
         self.clear_costmap_local_srv = self.create_client(
-            ClearEntireCostmap, "local_costmap/clear_entirely_local_costmap"
+            ClearEntireCostmap, 'local_costmap/clear_entirely_local_costmap'
         )
         self.get_costmap_global_srv = self.create_client(
-            GetCostmap, "global_costmap/get_costmap"
+            GetCostmap, 'global_costmap/get_costmap'
         )
         self.get_costmap_local_srv = self.create_client(
-            GetCostmap, "local_costmap/get_costmap"
+            GetCostmap, 'local_costmap/get_costmap'
         )
 
     def destroyNode(self):
@@ -135,7 +135,7 @@ class BasicNavigator(Node):
         self.initial_pose = initial_pose
         self._setInitialPose()
 
-    def goThroughPoses(self, poses, behavior_tree=""):
+    def goThroughPoses(self, poses, behavior_tree=''):
         """Send a `NavThroughPoses` action request."""
         self.debug("Waiting for 'NavigateThroughPoses' action server")
         while not self.nav_through_poses_client.wait_for_server(timeout_sec=1.0):
@@ -145,7 +145,7 @@ class BasicNavigator(Node):
         goal_msg.poses = poses
         goal_msg.behavior_tree = behavior_tree
 
-        self.info(f"Navigating with {len(goal_msg.poses)} goals....")
+        self.info(f'Navigating with {len(goal_msg.poses)} goals....')
         send_goal_future = self.nav_through_poses_client.send_goal_async(
             goal_msg, self._feedbackCallback
         )
@@ -153,13 +153,13 @@ class BasicNavigator(Node):
         self.goal_handle = send_goal_future.result()
 
         if not self.goal_handle.accepted:
-            self.error(f"Goal with {len(poses)} poses was rejected!")
+            self.error(f'Goal with {len(poses)} poses was rejected!')
             return False
 
         self.result_future = self.goal_handle.get_result_async()
         return True
 
-    def goToPose(self, pose, behavior_tree=""):
+    def goToPose(self, pose, behavior_tree=''):
         """Send a `NavToPose` action request."""
         self.debug("Waiting for 'NavigateToPose' action server")
         while not self.nav_to_pose_client.wait_for_server(timeout_sec=1.0):
@@ -170,11 +170,11 @@ class BasicNavigator(Node):
         goal_msg.behavior_tree = behavior_tree
 
         self.info(
-            "Navigating to goal: "
+            'Navigating to goal: '
             + str(pose.pose.position.x)
-            + " "
+            + ' '
             + str(pose.pose.position.y)
-            + "..."
+            + '...'
         )
         send_goal_future = self.nav_to_pose_client.send_goal_async(
             goal_msg, self._feedbackCallback
@@ -184,11 +184,11 @@ class BasicNavigator(Node):
 
         if not self.goal_handle.accepted:
             self.error(
-                "Goal to "
+                'Goal to '
                 + str(pose.pose.position.x)
-                + " "
+                + ' '
                 + str(pose.pose.position.y)
-                + " was rejected!"
+                + ' was rejected!'
             )
             return False
 
@@ -204,7 +204,7 @@ class BasicNavigator(Node):
         goal_msg = FollowWaypoints.Goal()
         goal_msg.poses = poses
 
-        self.info(f"Following {len(goal_msg.poses)} goals....")
+        self.info(f'Following {len(goal_msg.poses)} goals....')
         send_goal_future = self.follow_waypoints_client.send_goal_async(
             goal_msg, self._feedbackCallback
         )
@@ -212,7 +212,7 @@ class BasicNavigator(Node):
         self.goal_handle = send_goal_future.result()
 
         if not self.goal_handle.accepted:
-            self.error(f"Following {len(poses)} waypoints request was rejected!")
+            self.error(f'Following {len(poses)} waypoints request was rejected!')
             return False
 
         self.result_future = self.goal_handle.get_result_async()
@@ -227,7 +227,7 @@ class BasicNavigator(Node):
         goal_msg = FollowGPSWaypoints.Goal()
         goal_msg.gps_poses = gps_poses
 
-        self.info(f"Following {len(goal_msg.gps_poses)} gps goals....")
+        self.info(f'Following {len(goal_msg.gps_poses)} gps goals....')
         send_goal_future = self.follow_gps_waypoints_client.send_goal_async(
             goal_msg, self._feedbackCallback
         )
@@ -236,7 +236,7 @@ class BasicNavigator(Node):
 
         if not self.goal_handle.accepted:
             self.error(
-                f"Following {len(gps_poses)} gps waypoints request was rejected!"
+                f'Following {len(gps_poses)} gps waypoints request was rejected!'
             )
             return False
 
@@ -251,7 +251,7 @@ class BasicNavigator(Node):
         goal_msg.target_yaw = spin_dist
         goal_msg.time_allowance = Duration(sec=time_allowance)
 
-        self.info(f"Spinning to angle {goal_msg.target_yaw}....")
+        self.info(f'Spinning to angle {goal_msg.target_yaw}....')
         send_goal_future = self.spin_client.send_goal_async(
             goal_msg, self._feedbackCallback
         )
@@ -259,7 +259,7 @@ class BasicNavigator(Node):
         self.goal_handle = send_goal_future.result()
 
         if not self.goal_handle.accepted:
-            self.error("Spin request was rejected!")
+            self.error('Spin request was rejected!')
             return False
 
         self.result_future = self.goal_handle.get_result_async()
@@ -274,7 +274,7 @@ class BasicNavigator(Node):
         goal_msg.speed = backup_speed
         goal_msg.time_allowance = Duration(sec=time_allowance)
 
-        self.info(f"Backing up {goal_msg.target.x} m at {goal_msg.speed} m/s....")
+        self.info(f'Backing up {goal_msg.target.x} m at {goal_msg.speed} m/s....')
         send_goal_future = self.backup_client.send_goal_async(
             goal_msg, self._feedbackCallback
         )
@@ -282,7 +282,7 @@ class BasicNavigator(Node):
         self.goal_handle = send_goal_future.result()
 
         if not self.goal_handle.accepted:
-            self.error("Backup request was rejected!")
+            self.error('Backup request was rejected!')
             return False
 
         self.result_future = self.goal_handle.get_result_async()
@@ -303,13 +303,13 @@ class BasicNavigator(Node):
         self.goal_handle = send_goal_future.result()
 
         if not self.goal_handle.accepted:
-            self.error("Assisted Teleop request was rejected!")
+            self.error('Assisted Teleop request was rejected!')
             return False
 
         self.result_future = self.goal_handle.get_result_async()
         return True
 
-    def followPath(self, path, controller_id="", goal_checker_id=""):
+    def followPath(self, path, controller_id='', goal_checker_id=''):
         """Send a `FollowPath` action request."""
         self.debug("Waiting for 'FollowPath' action server")
         while not self.follow_path_client.wait_for_server(timeout_sec=1.0):
@@ -320,7 +320,7 @@ class BasicNavigator(Node):
         goal_msg.controller_id = controller_id
         goal_msg.goal_checker_id = goal_checker_id
 
-        self.info("Executing path...")
+        self.info('Executing path...')
         send_goal_future = self.follow_path_client.send_goal_async(
             goal_msg, self._feedbackCallback
         )
@@ -328,7 +328,7 @@ class BasicNavigator(Node):
         self.goal_handle = send_goal_future.result()
 
         if not self.goal_handle.accepted:
-            self.error("Follow path was rejected!")
+            self.error('Follow path was rejected!')
             return False
 
         self.result_future = self.goal_handle.get_result_async()
@@ -336,7 +336,7 @@ class BasicNavigator(Node):
 
     def cancelTask(self):
         """Cancel pending task request of any type."""
-        self.info("Canceling current task.")
+        self.info('Canceling current task.')
         if self.result_future:
             future = self.goal_handle.cancel_goal_async()
             rclpy.spin_until_future_complete(self, future)
@@ -351,13 +351,13 @@ class BasicNavigator(Node):
         if self.result_future.result():
             self.status = self.result_future.result().status
             if self.status != GoalStatus.STATUS_SUCCEEDED:
-                self.debug(f"Task with failed with status code: {self.status}")
+                self.debug(f'Task with failed with status code: {self.status}')
                 return True
         else:
             # Timed out, still processing, not complete yet
             return False
 
-        self.debug("Task succeeded!")
+        self.debug('Task succeeded!')
         return True
 
     def getFeedback(self):
@@ -375,17 +375,17 @@ class BasicNavigator(Node):
         else:
             return TaskResult.UNKNOWN
 
-    def waitUntilNav2Active(self, navigator="bt_navigator", localizer="amcl"):
+    def waitUntilNav2Active(self, navigator='bt_navigator', localizer='amcl'):
         """Block until the full navigation system is up and running."""
-        if localizer != "robot_localization":  # non-lifecycle node
+        if localizer != 'robot_localization':  # non-lifecycle node
             self._waitForNodeToActivate(localizer)
-        if localizer == "amcl":
+        if localizer == 'amcl':
             self._waitForInitialPose()
         self._waitForNodeToActivate(navigator)
-        self.info("Nav2 is ready for use!")
+        self.info('Nav2 is ready for use!')
         return
 
-    def _getPathImpl(self, start, goal, planner_id="", use_start=False):
+    def _getPathImpl(self, start, goal, planner_id='', use_start=False):
         """
         Send a `ComputePathToPose` action request.
 
@@ -401,13 +401,13 @@ class BasicNavigator(Node):
         goal_msg.planner_id = planner_id
         goal_msg.use_start = use_start
 
-        self.info("Getting path...")
+        self.info('Getting path...')
         send_goal_future = self.compute_path_to_pose_client.send_goal_async(goal_msg)
         rclpy.spin_until_future_complete(self, send_goal_future)
         self.goal_handle = send_goal_future.result()
 
         if not self.goal_handle.accepted:
-            self.error("Get path was rejected!")
+            self.error('Get path was rejected!')
             return None
 
         self.result_future = self.goal_handle.get_result_async()
@@ -416,12 +416,12 @@ class BasicNavigator(Node):
 
         return self.result_future.result().result
 
-    def getPath(self, start, goal, planner_id="", use_start=False):
+    def getPath(self, start, goal, planner_id='', use_start=False):
         """Send a `ComputePathToPose` action request."""
         rtn = self._getPathImpl(start, goal, planner_id, use_start)
 
         if self.status != GoalStatus.STATUS_SUCCEEDED:
-            self.warn(f"Getting path failed with status code: {self.status}")
+            self.warn(f'Getting path failed with status code: {self.status}')
             return None
 
         if not rtn:
@@ -429,7 +429,7 @@ class BasicNavigator(Node):
         else:
             return rtn.path
 
-    def _getPathThroughPosesImpl(self, start, goals, planner_id="", use_start=False):
+    def _getPathThroughPosesImpl(self, start, goals, planner_id='', use_start=False):
         """
         Send a `ComputePathThroughPoses` action request.
 
@@ -449,7 +449,7 @@ class BasicNavigator(Node):
         goal_msg.planner_id = planner_id
         goal_msg.use_start = use_start
 
-        self.info("Getting path...")
+        self.info('Getting path...')
         send_goal_future = self.compute_path_through_poses_client.send_goal_async(
             goal_msg
         )
@@ -457,7 +457,7 @@ class BasicNavigator(Node):
         self.goal_handle = send_goal_future.result()
 
         if not self.goal_handle.accepted:
-            self.error("Get path was rejected!")
+            self.error('Get path was rejected!')
             return None
 
         self.result_future = self.goal_handle.get_result_async()
@@ -466,12 +466,12 @@ class BasicNavigator(Node):
 
         return self.result_future.result().result
 
-    def getPathThroughPoses(self, start, goals, planner_id="", use_start=False):
+    def getPathThroughPoses(self, start, goals, planner_id='', use_start=False):
         """Send a `ComputePathThroughPoses` action request."""
         rtn = self.__getPathThroughPosesImpl(start, goals, planner_id, use_start)
 
         if self.status != GoalStatus.STATUS_SUCCEEDED:
-            self.warn(f"Getting path failed with status code: {self.status}")
+            self.warn(f'Getting path failed with status code: {self.status}')
             return None
 
         if not rtn:
@@ -480,7 +480,7 @@ class BasicNavigator(Node):
             return rtn.path
 
     def _smoothPathImpl(
-        self, path, smoother_id="", max_duration=2.0, check_for_collision=False
+        self, path, smoother_id='', max_duration=2.0, check_for_collision=False
     ):
         """
         Send a `SmoothPath` action request.
@@ -497,13 +497,13 @@ class BasicNavigator(Node):
         goal_msg.smoother_id = smoother_id
         goal_msg.check_for_collisions = check_for_collision
 
-        self.info("Smoothing path...")
+        self.info('Smoothing path...')
         send_goal_future = self.smoother_client.send_goal_async(goal_msg)
         rclpy.spin_until_future_complete(self, send_goal_future)
         self.goal_handle = send_goal_future.result()
 
         if not self.goal_handle.accepted:
-            self.error("Smooth path was rejected!")
+            self.error('Smooth path was rejected!')
             return None
 
         self.result_future = self.goal_handle.get_result_async()
@@ -513,13 +513,13 @@ class BasicNavigator(Node):
         return self.result_future.result().result
 
     def smoothPath(
-        self, path, smoother_id="", max_duration=2.0, check_for_collision=False
+        self, path, smoother_id='', max_duration=2.0, check_for_collision=False
     ):
         """Send a `SmoothPath` action request."""
         rtn = self._smoothPathImpl(path, smoother_id, max_duration, check_for_collision)
 
         if self.status != GoalStatus.STATUS_SUCCEEDED:
-            self.warn(f"Getting path failed with status code: {self.status}")
+            self.warn(f'Getting path failed with status code: {self.status}')
             return None
 
         if not rtn:
@@ -530,16 +530,16 @@ class BasicNavigator(Node):
     def changeMap(self, map_filepath):
         """Change the current static map in the map server."""
         while not self.change_maps_srv.wait_for_service(timeout_sec=1.0):
-            self.info("change map service not available, waiting...")
+            self.info('change map service not available, waiting...')
         req = LoadMap.Request()
         req.map_url = map_filepath
         future = self.change_maps_srv.call_async(req)
         rclpy.spin_until_future_complete(self, future)
         status = future.result().result
         if status != LoadMap.Response().RESULT_SUCCESS:
-            self.error("Change map request failed!")
+            self.error('Change map request failed!')
         else:
-            self.info("Change map request was successful!")
+            self.info('Change map request was successful!')
         return
 
     def clearAllCostmaps(self):
@@ -551,7 +551,7 @@ class BasicNavigator(Node):
     def clearLocalCostmap(self):
         """Clear local costmap."""
         while not self.clear_costmap_local_srv.wait_for_service(timeout_sec=1.0):
-            self.info("Clear local costmaps service not available, waiting...")
+            self.info('Clear local costmaps service not available, waiting...')
         req = ClearEntireCostmap.Request()
         future = self.clear_costmap_local_srv.call_async(req)
         rclpy.spin_until_future_complete(self, future)
@@ -560,7 +560,7 @@ class BasicNavigator(Node):
     def clearGlobalCostmap(self):
         """Clear global costmap."""
         while not self.clear_costmap_global_srv.wait_for_service(timeout_sec=1.0):
-            self.info("Clear global costmaps service not available, waiting...")
+            self.info('Clear global costmaps service not available, waiting...')
         req = ClearEntireCostmap.Request()
         future = self.clear_costmap_global_srv.call_async(req)
         rclpy.spin_until_future_complete(self, future)
@@ -569,7 +569,7 @@ class BasicNavigator(Node):
     def getGlobalCostmap(self):
         """Get the global costmap."""
         while not self.get_costmap_global_srv.wait_for_service(timeout_sec=1.0):
-            self.info("Get global costmaps service not available, waiting...")
+            self.info('Get global costmaps service not available, waiting...')
         req = GetCostmap.Request()
         future = self.get_costmap_global_srv.call_async(req)
         rclpy.spin_until_future_complete(self, future)
@@ -578,7 +578,7 @@ class BasicNavigator(Node):
     def getLocalCostmap(self):
         """Get the local costmap."""
         while not self.get_costmap_local_srv.wait_for_service(timeout_sec=1.0):
-            self.info("Get local costmaps service not available, waiting...")
+            self.info('Get local costmaps service not available, waiting...')
         req = GetCostmap.Request()
         future = self.get_costmap_local_srv.call_async(req)
         rclpy.spin_until_future_complete(self, future)
@@ -586,13 +586,13 @@ class BasicNavigator(Node):
 
     def lifecycleStartup(self):
         """Startup nav2 lifecycle system."""
-        self.info("Starting up lifecycle nodes based on lifecycle_manager.")
+        self.info('Starting up lifecycle nodes based on lifecycle_manager.')
         for srv_name, srv_type in self.get_service_names_and_types():
-            if srv_type[0] == "nav2_msgs/srv/ManageLifecycleNodes":
-                self.info(f"Starting up {srv_name}")
+            if srv_type[0] == 'nav2_msgs/srv/ManageLifecycleNodes':
+                self.info(f'Starting up {srv_name}')
                 mgr_client = self.create_client(ManageLifecycleNodes, srv_name)
                 while not mgr_client.wait_for_service(timeout_sec=1.0):
-                    self.info(f"{srv_name} service not available, waiting...")
+                    self.info(f'{srv_name} service not available, waiting...')
                 req = ManageLifecycleNodes.Request()
                 req.command = ManageLifecycleNodes.Request().STARTUP
                 future = mgr_client.call_async(req)
@@ -605,18 +605,18 @@ class BasicNavigator(Node):
                         self._waitForInitialPose()
                     else:
                         break
-        self.info("Nav2 is ready for use!")
+        self.info('Nav2 is ready for use!')
         return
 
     def lifecycleShutdown(self):
         """Shutdown nav2 lifecycle system."""
-        self.info("Shutting down lifecycle nodes based on lifecycle_manager.")
+        self.info('Shutting down lifecycle nodes based on lifecycle_manager.')
         for srv_name, srv_type in self.get_service_names_and_types():
-            if srv_type[0] == "nav2_msgs/srv/ManageLifecycleNodes":
-                self.info(f"Shutting down {srv_name}")
+            if srv_type[0] == 'nav2_msgs/srv/ManageLifecycleNodes':
+                self.info(f'Shutting down {srv_name}')
                 mgr_client = self.create_client(ManageLifecycleNodes, srv_name)
                 while not mgr_client.wait_for_service(timeout_sec=1.0):
-                    self.info(f"{srv_name} service not available, waiting...")
+                    self.info(f'{srv_name} service not available, waiting...')
                 req = ManageLifecycleNodes.Request()
                 req.command = ManageLifecycleNodes.Request().SHUTDOWN
                 future = mgr_client.call_async(req)
@@ -626,39 +626,39 @@ class BasicNavigator(Node):
 
     def _waitForNodeToActivate(self, node_name):
         # Waits for the node within the tester namespace to become active
-        self.debug(f"Waiting for {node_name} to become active..")
-        node_service = f"{node_name}/get_state"
+        self.debug(f'Waiting for {node_name} to become active..')
+        node_service = f'{node_name}/get_state'
         state_client = self.create_client(GetState, node_service)
         while not state_client.wait_for_service(timeout_sec=1.0):
-            self.info(f"{node_service} service not available, waiting...")
+            self.info(f'{node_service} service not available, waiting...')
 
         req = GetState.Request()
-        state = "unknown"
-        while state != "active":
-            self.debug(f"Getting {node_name} state...")
+        state = 'unknown'
+        while state != 'active':
+            self.debug(f'Getting {node_name} state...')
             future = state_client.call_async(req)
             rclpy.spin_until_future_complete(self, future)
             if future.result() is not None:
                 state = future.result().current_state.label
-                self.debug(f"Result of get_state: {state}")
+                self.debug(f'Result of get_state: {state}')
             time.sleep(2)
         return
 
     def _waitForInitialPose(self):
         while not self.initial_pose_received:
-            self.info("Setting initial pose")
+            self.info('Setting initial pose')
             self._setInitialPose()
-            self.info("Waiting for amcl_pose to be received")
+            self.info('Waiting for amcl_pose to be received')
             rclpy.spin_once(self, timeout_sec=1.0)
         return
 
     def _amclPoseCallback(self, msg):
-        self.debug("Received amcl pose")
+        self.debug('Received amcl pose')
         self.initial_pose_received = True
         return
 
     def _feedbackCallback(self, msg):
-        self.debug("Received action feedback message")
+        self.debug('Received action feedback message')
         self.feedback = msg.feedback
         return
 
@@ -667,7 +667,7 @@ class BasicNavigator(Node):
         msg.pose.pose = self.initial_pose.pose
         msg.header.frame_id = self.initial_pose.header.frame_id
         msg.header.stamp = self.initial_pose.header.stamp
-        self.info("Publishing Initial Pose")
+        self.info('Publishing Initial Pose')
         self.initial_pose_pub.publish(msg)
         return
 

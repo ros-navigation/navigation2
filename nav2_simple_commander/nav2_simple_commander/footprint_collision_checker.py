@@ -146,7 +146,7 @@ class FootprintCollisionChecker:
         """
         if self.costmap_ is None:
             raise ValueError(
-                "Costmap not specified, use setCostmap to specify the costmap first"
+                'Costmap not specified, use setCostmap to specify the costmap first'
             )
         return self.costmap_.worldToMapValidated(wx, wy)
 
@@ -166,7 +166,7 @@ class FootprintCollisionChecker:
         """
         if self.costmap_ is None:
             raise ValueError(
-                "Costmap not specified, use setCostmap to specify the costmap first"
+                'Costmap not specified, use setCostmap to specify the costmap first'
             )
         return self.costmap_.getCostXY(x, y)
 
