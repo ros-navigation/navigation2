@@ -57,8 +57,8 @@ class ParseMultiRobotPose:
         get value of target argument
         """
         args = self.__args
-        parsed_args = list() if len(args) == 0 else args.split(";")
-        multirobots = dict()
+        parsed_args = [] if len(args) == 0 else args.split(";")
+        multirobots = {}
         for arg in parsed_args:
             key_val = arg.strip().split("=")
             if len(key_val) != 2:
