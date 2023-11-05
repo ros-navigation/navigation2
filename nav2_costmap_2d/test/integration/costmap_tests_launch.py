@@ -28,30 +28,30 @@ from launch_testing.legacy import LaunchTestService
 
 def main(argv=sys.argv[1:]):
     launchFile = os.path.join(
-        os.getenv("TEST_LAUNCH_DIR"), "costmap_map_server.launch.py"
+        os.getenv('TEST_LAUNCH_DIR'), 'costmap_map_server.launch.py'
     )
-    testExecutable = os.getenv("TEST_EXECUTABLE")
+    testExecutable = os.getenv('TEST_EXECUTABLE')
 
     map_to_odom = launch_ros.actions.Node(
-        package="tf2_ros",
-        executable="static_transform_publisher",
-        output="screen",
-        arguments=["0", "0", "0", "0", "0", "0", "map", "odom"],
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        output='screen',
+        arguments=['0', '0', '0', '0', '0', '0', 'map', 'odom'],
     )
 
     odom_to_base_link = launch_ros.actions.Node(
-        package="tf2_ros",
-        executable="static_transform_publisher",
-        output="screen",
-        arguments=["0", "0", "0", "0", "0", "0", "odom", "base_link"],
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        output='screen',
+        arguments=['0', '0', '0', '0', '0', '0', 'odom', 'base_link'],
     )
 
     lifecycle_manager = launch_ros.actions.Node(
-        package="nav2_lifecycle_manager",
-        executable="lifecycle_manager",
-        name="lifecycle_manager",
-        output="screen",
-        parameters=[{"node_names": ["map_server"]}, {"autostart": True}],
+        package='nav2_lifecycle_manager',
+        executable='lifecycle_manager',
+        name='lifecycle_manager',
+        output='screen',
+        parameters=[{'node_names': ['map_server']}, {'autostart': True}],
     )
 
     ld = LaunchDescription(
@@ -64,7 +64,7 @@ def main(argv=sys.argv[1:]):
     )
 
     test1_action = ExecuteProcess(
-        cmd=[testExecutable], name="costmap_tests", output="screen"
+        cmd=[testExecutable], name='costmap_tests', output='screen'
     )
 
     lts = LaunchTestService()
@@ -74,5 +74,5 @@ def main(argv=sys.argv[1:]):
     return lts.run(ls)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     sys.exit(main())
