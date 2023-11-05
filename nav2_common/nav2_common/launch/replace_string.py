@@ -94,6 +94,7 @@ class ReplaceString(launch.Substitution):
                         line = line.replace(key, value)
                 else:
                     raise TypeError(
-                        "A provided replacement pair is not a string. Both key and value should be strings."
+                        "A provided replacement pair is not a string. Both key and value should be"
+                        "strings."
                     )
             output_file.write(line)
