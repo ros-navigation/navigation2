@@ -25,14 +25,14 @@ from launch_testing.legacy import LaunchTestService
 
 
 def main(argv=sys.argv[1:]):
-    testExecutable = os.getenv("TEST_EXECUTABLE")
+    testExecutable = os.getenv('TEST_EXECUTABLE')
 
     ld = LaunchDescription([])
 
     test1_action = ExecuteProcess(
-        cmd=[testExecutable, "--ros-args -p use_sim_time:=True"],
-        name="test_planner_costmaps_node",
-        output="screen",
+        cmd=[testExecutable, '--ros-args -p use_sim_time:=True'],
+        name='test_planner_costmaps_node',
+        output='screen',
     )
 
     lts = LaunchTestService()
@@ -42,5 +42,5 @@ def main(argv=sys.argv[1:]):
     return lts.run(ls)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     sys.exit(main())

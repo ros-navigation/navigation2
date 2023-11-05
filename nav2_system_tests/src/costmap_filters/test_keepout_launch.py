@@ -36,29 +36,29 @@ from nav2_common.launch import RewrittenYaml
 
 
 def generate_launch_description():
-    map_yaml_file = os.getenv("TEST_MAP")
-    filter_mask_file = os.getenv("TEST_MASK")
-    world = os.getenv("TEST_WORLD")
+    map_yaml_file = os.getenv('TEST_MAP')
+    filter_mask_file = os.getenv('TEST_MASK')
+    world = os.getenv('TEST_WORLD')
 
     bt_navigator_xml = os.path.join(
-        get_package_share_directory("nav2_bt_navigator"),
-        "behavior_trees",
-        os.getenv("BT_NAVIGATOR_XML"),
+        get_package_share_directory('nav2_bt_navigator'),
+        'behavior_trees',
+        os.getenv('BT_NAVIGATOR_XML'),
     )
 
-    bringup_dir = get_package_share_directory("nav2_bringup")
+    bringup_dir = get_package_share_directory('nav2_bringup')
     script_dir = os.path.dirname(os.path.realpath(__file__))
-    params_file = os.path.join(script_dir, "keepout_params.yaml")
+    params_file = os.path.join(script_dir, 'keepout_params.yaml')
 
     # Replace the `use_astar` setting on the params file
     param_substitutions = {
-        "planner_server.ros__parameters.GridBased.use_astar": os.getenv("ASTAR"),
-        "filter_mask_server.ros__parameters.yaml_filename": filter_mask_file,
-        "map_server.ros__parameters.yaml_filename": map_yaml_file,
+        'planner_server.ros__parameters.GridBased.use_astar': os.getenv('ASTAR'),
+        'filter_mask_server.ros__parameters.yaml_filename': filter_mask_file,
+        'map_server.ros__parameters.yaml_filename': map_yaml_file,
     }
     configured_params = RewrittenYaml(
         source_file=params_file,
-        root_key="",
+        root_key='',
         param_rewrites=param_substitutions,
         convert_types=True,
     )
@@ -67,84 +67,84 @@ def generate_launch_description():
     new_yaml = configured_params.perform(context)
     return LaunchDescription(
         [
-            SetEnvironmentVariable("RCUTILS_LOGGING_BUFFERED_STREAM", "1"),
-            SetEnvironmentVariable("RCUTILS_LOGGING_USE_STDOUT", "1"),
+            SetEnvironmentVariable('RCUTILS_LOGGING_BUFFERED_STREAM', '1'),
+            SetEnvironmentVariable('RCUTILS_LOGGING_USE_STDOUT', '1'),
             # Launch gazebo server for simulation
             ExecuteProcess(
                 cmd=[
-                    "gzserver",
-                    "-s",
-                    "libgazebo_ros_init.so",
-                    "--minimal_comms",
+                    'gzserver',
+                    '-s',
+                    'libgazebo_ros_init.so',
+                    '--minimal_comms',
                     world,
                 ],
-                output="screen",
+                output='screen',
             ),
             # TODO(orduno) Launch the robot state publisher instead
             #              using a local copy of TB3 urdf file
             Node(
-                package="tf2_ros",
-                executable="static_transform_publisher",
-                output="screen",
-                arguments=["0", "0", "0", "0", "0", "0", "base_footprint", "base_link"],
+                package='tf2_ros',
+                executable='static_transform_publisher',
+                output='screen',
+                arguments=['0', '0', '0', '0', '0', '0', 'base_footprint', 'base_link'],
             ),
             Node(
-                package="tf2_ros",
-                executable="static_transform_publisher",
-                output="screen",
-                arguments=["0", "0", "0", "0", "0", "0", "base_link", "base_scan"],
+                package='tf2_ros',
+                executable='static_transform_publisher',
+                output='screen',
+                arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'base_scan'],
             ),
             Node(
-                package="nav2_lifecycle_manager",
-                executable="lifecycle_manager",
-                name="lifecycle_manager_filters",
-                output="screen",
+                package='nav2_lifecycle_manager',
+                executable='lifecycle_manager',
+                name='lifecycle_manager_filters',
+                output='screen',
                 parameters=[
                     {
-                        "node_names": [
-                            "filter_mask_server",
-                            "costmap_filter_info_server",
+                        'node_names': [
+                            'filter_mask_server',
+                            'costmap_filter_info_server',
                         ]
                     },
-                    {"autostart": True},
+                    {'autostart': True},
                 ],
             ),
             # Nodes required for Costmap Filters configuration
             Node(
-                package="nav2_map_server",
-                executable="map_server",
-                name="filter_mask_server",
-                output="screen",
+                package='nav2_map_server',
+                executable='map_server',
+                name='filter_mask_server',
+                output='screen',
                 parameters=[new_yaml],
             ),
             Node(
-                package="nav2_map_server",
-                executable="costmap_filter_info_server",
-                name="costmap_filter_info_server",
-                output="screen",
+                package='nav2_map_server',
+                executable='costmap_filter_info_server',
+                name='costmap_filter_info_server',
+                output='screen',
                 parameters=[new_yaml],
             ),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
-                    os.path.join(bringup_dir, "launch", "bringup_launch.py")
+                    os.path.join(bringup_dir, 'launch', 'bringup_launch.py')
                 ),
                 launch_arguments={
-                    "namespace": "",
-                    "use_namespace": "False",
-                    "map": map_yaml_file,
-                    "use_sim_time": "True",
-                    "params_file": new_yaml,
-                    "bt_xml_file": bt_navigator_xml,
-                    "use_composition": "False",
-                    "autostart": "True",
+                    'namespace': '',
+                    'use_namespace': 'False',
+                    'map': map_yaml_file,
+                    'use_sim_time': 'True',
+                    'params_file': new_yaml,
+                    'bt_xml_file': bt_navigator_xml,
+                    'use_composition': 'False',
+                    'autostart': 'True',
                 }.items(),
             ),
             Node(
-                package="nav2_costmap_2d",
-                executable="nav2_costmap_2d_cloud",
-                name="costmap_2d_cloud",
-                output="screen",
-                remappings=[("voxel_grid", "local_costmap/voxel_grid")],
+                package='nav2_costmap_2d',
+                executable='nav2_costmap_2d_cloud',
+                name='costmap_2d_cloud',
+                output='screen',
+                remappings=[('voxel_grid', 'local_costmap/voxel_grid')],
             ),
         ]
     )
@@ -155,17 +155,17 @@ def main(argv=sys.argv[1:]):
 
     test1_action = ExecuteProcess(
         cmd=[
-            os.path.join(os.getenv("TEST_DIR"), "tester_node.py"),
-            "-t",
-            "keepout",
-            "-r",
-            "-2.0",
-            "-0.5",
-            "0.0",
-            "-0.5",
+            os.path.join(os.getenv('TEST_DIR'), 'tester_node.py'),
+            '-t',
+            'keepout',
+            '-r',
+            '-2.0',
+            '-0.5',
+            '0.0',
+            '-0.5',
         ],
-        name="tester_node",
-        output="screen",
+        name='tester_node',
+        output='screen',
     )
 
     lts = LaunchTestService()
@@ -175,5 +175,5 @@ def main(argv=sys.argv[1:]):
     return lts.run(ls)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     sys.exit(main())

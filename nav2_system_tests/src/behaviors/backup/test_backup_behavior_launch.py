@@ -33,63 +33,63 @@ from nav2_common.launch import RewrittenYaml
 
 
 def generate_launch_description():
-    map_yaml_file = os.getenv("TEST_MAP")
-    world = os.getenv("TEST_WORLD")
+    map_yaml_file = os.getenv('TEST_MAP')
+    world = os.getenv('TEST_WORLD')
 
     bt_navigator_xml = os.path.join(
-        get_package_share_directory("nav2_bt_navigator"),
-        "behavior_trees",
-        os.getenv("BT_NAVIGATOR_XML"),
+        get_package_share_directory('nav2_bt_navigator'),
+        'behavior_trees',
+        os.getenv('BT_NAVIGATOR_XML'),
     )
 
-    bringup_dir = get_package_share_directory("nav2_bringup")
-    params_file = os.path.join(bringup_dir, "params/nav2_params.yaml")
+    bringup_dir = get_package_share_directory('nav2_bringup')
+    params_file = os.path.join(bringup_dir, 'params/nav2_params.yaml')
 
     # Replace the `use_astar` setting on the params file
     configured_params = RewrittenYaml(
-        source_file=params_file, root_key="", param_rewrites="", convert_types=True
+        source_file=params_file, root_key='', param_rewrites='', convert_types=True
     )
 
     return LaunchDescription(
         [
-            SetEnvironmentVariable("RCUTILS_LOGGING_BUFFERED_STREAM", "1"),
-            SetEnvironmentVariable("RCUTILS_LOGGING_USE_STDOUT", "1"),
+            SetEnvironmentVariable('RCUTILS_LOGGING_BUFFERED_STREAM', '1'),
+            SetEnvironmentVariable('RCUTILS_LOGGING_USE_STDOUT', '1'),
             # Launch gazebo server for simulation
             ExecuteProcess(
                 cmd=[
-                    "gzserver",
-                    "-s",
-                    "libgazebo_ros_init.so",
-                    "--minimal_comms",
+                    'gzserver',
+                    '-s',
+                    'libgazebo_ros_init.so',
+                    '--minimal_comms',
                     world,
                 ],
-                output="screen",
+                output='screen',
             ),
             # TODO(orduno) Launch the robot state publisher instead
             #              using a local copy of TB3 urdf file
             Node(
-                package="tf2_ros",
-                executable="static_transform_publisher",
-                output="screen",
-                arguments=["0", "0", "0", "0", "0", "0", "base_footprint", "base_link"],
+                package='tf2_ros',
+                executable='static_transform_publisher',
+                output='screen',
+                arguments=['0', '0', '0', '0', '0', '0', 'base_footprint', 'base_link'],
             ),
             Node(
-                package="tf2_ros",
-                executable="static_transform_publisher",
-                output="screen",
-                arguments=["0", "0", "0", "0", "0", "0", "base_link", "base_scan"],
+                package='tf2_ros',
+                executable='static_transform_publisher',
+                output='screen',
+                arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'base_scan'],
             ),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
-                    os.path.join(bringup_dir, "launch", "bringup_launch.py")
+                    os.path.join(bringup_dir, 'launch', 'bringup_launch.py')
                 ),
                 launch_arguments={
-                    "map": map_yaml_file,
-                    "use_sim_time": "True",
-                    "params_file": configured_params,
-                    "bt_xml_file": bt_navigator_xml,
-                    "use_composition": "False",
-                    "autostart": "True",
+                    'map': map_yaml_file,
+                    'use_sim_time': 'True',
+                    'params_file': configured_params,
+                    'bt_xml_file': bt_navigator_xml,
+                    'use_composition': 'False',
+                    'autostart': 'True',
                 }.items(),
             ),
         ]
@@ -99,10 +99,10 @@ def generate_launch_description():
 def main(argv=sys.argv[1:]):
     ld = generate_launch_description()
 
-    testExecutable = os.getenv("TEST_EXECUTABLE")
+    testExecutable = os.getenv('TEST_EXECUTABLE')
 
     test1_action = ExecuteProcess(
-        cmd=[testExecutable], name="test_backup_behavior_node", output="screen"
+        cmd=[testExecutable], name='test_backup_behavior_node', output='screen'
     )
 
     lts = LaunchTestService()
@@ -112,5 +112,5 @@ def main(argv=sys.argv[1:]):
     return lts.run(ls)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     sys.exit(main())

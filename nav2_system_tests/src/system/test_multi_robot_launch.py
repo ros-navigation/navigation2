@@ -34,43 +34,43 @@ from launch_testing.legacy import LaunchTestService
 
 
 def generate_launch_description():
-    map_yaml_file = os.getenv("TEST_MAP")
-    world = os.getenv("TEST_WORLD")
-    urdf = os.getenv("TEST_URDF")
-    sdf = os.getenv("TEST_SDF")
+    map_yaml_file = os.getenv('TEST_MAP')
+    world = os.getenv('TEST_WORLD')
+    urdf = os.getenv('TEST_URDF')
+    sdf = os.getenv('TEST_SDF')
 
     bt_xml_file = os.path.join(
-        get_package_share_directory("nav2_bt_navigator"),
-        "behavior_trees",
-        os.getenv("BT_NAVIGATOR_XML"),
+        get_package_share_directory('nav2_bt_navigator'),
+        'behavior_trees',
+        os.getenv('BT_NAVIGATOR_XML'),
     )
 
-    bringup_dir = get_package_share_directory("nav2_bringup")
+    bringup_dir = get_package_share_directory('nav2_bringup')
     robot1_params_file = os.path.join(  # noqa: F841
-        bringup_dir, "params/nav2_multirobot_params_1.yaml"
+        bringup_dir, 'params/nav2_multirobot_params_1.yaml'
     )
     robot2_params_file = os.path.join(  # noqa: F841
-        bringup_dir, "params/nav2_multirobot_params_2.yaml"
+        bringup_dir, 'params/nav2_multirobot_params_2.yaml'
     )
 
     # Names and poses of the robots
     robots = [
-        {"name": "robot1", "x_pose": 0.0, "y_pose": 0.5, "z_pose": 0.01},
-        {"name": "robot2", "x_pose": 0.0, "y_pose": -0.5, "z_pose": 0.01},
+        {'name': 'robot1', 'x_pose': 0.0, 'y_pose': 0.5, 'z_pose': 0.01},
+        {'name': 'robot2', 'x_pose': 0.0, 'y_pose': -0.5, 'z_pose': 0.01},
     ]
 
     # Launch Gazebo server for simulation
     start_gazebo_cmd = ExecuteProcess(
         cmd=[
-            "gzserver",
-            "-s",
-            "libgazebo_ros_init.so",
-            "-s",
-            "libgazebo_ros_factory.so",
-            "--minimal_comms",
+            'gzserver',
+            '-s',
+            'libgazebo_ros_init.so',
+            '-s',
+            'libgazebo_ros_factory.so',
+            '--minimal_comms',
             world,
         ],
-        output="screen",
+        output='screen',
     )
 
     # Define commands for spawing the robots into Gazebo
@@ -78,27 +78,27 @@ def generate_launch_description():
     for robot in robots:
         spawn_robots_cmds.append(
             Node(
-                package="gazebo_ros",
-                executable="spawn_entity.py",
-                output="screen",
+                package='gazebo_ros',
+                executable='spawn_entity.py',
+                output='screen',
                 arguments=[
-                    "-entity",
-                    TextSubstitution(text=robot["name"]),
-                    "-robot_namespace",
-                    TextSubstitution(text=robot["name"]),
-                    "-file",
+                    '-entity',
+                    TextSubstitution(text=robot['name']),
+                    '-robot_namespace',
+                    TextSubstitution(text=robot['name']),
+                    '-file',
                     TextSubstitution(text=sdf),
-                    "-x",
-                    TextSubstitution(text=str(robot["x_pose"])),
-                    "-y",
-                    TextSubstitution(text=str(robot["y_pose"])),
-                    "-z",
-                    TextSubstitution(text=str(robot["z_pose"])),
+                    '-x',
+                    TextSubstitution(text=str(robot['x_pose'])),
+                    '-y',
+                    TextSubstitution(text=str(robot['y_pose'])),
+                    '-z',
+                    TextSubstitution(text=str(robot['z_pose'])),
                 ],
             )
         )
 
-    with open(urdf, "r") as infp:
+    with open(urdf, 'r') as infp:
         robot_description = infp.read()
 
     # Define commands for launching the robot state publishers
@@ -106,14 +106,14 @@ def generate_launch_description():
     for robot in robots:
         robot_state_pubs_cmds.append(
             Node(
-                package="robot_state_publisher",
-                executable="robot_state_publisher",
-                namespace=TextSubstitution(text=robot["name"]),
-                output="screen",
+                package='robot_state_publisher',
+                executable='robot_state_publisher',
+                namespace=TextSubstitution(text=robot['name']),
+                output='screen',
                 parameters=[
-                    {"use_sim_time": True, "robot_description": robot_description}
+                    {'use_sim_time': True, 'robot_description': robot_description}
                 ],
-                remappings=[("/tf", "tf"), ("/tf_static", "tf_static")],
+                remappings=[('/tf', 'tf'), ('/tf_static', 'tf_static')],
             )
         )
 
@@ -125,20 +125,20 @@ def generate_launch_description():
         group = GroupAction(
             [
                 # Instances use the robot's name for namespace
-                PushROSNamespace(robot["name"]),
+                PushROSNamespace(robot['name']),
                 IncludeLaunchDescription(
                     PythonLaunchDescriptionSource(
-                        os.path.join(bringup_dir, "launch", "bringup_launch.py")
+                        os.path.join(bringup_dir, 'launch', 'bringup_launch.py')
                     ),
                     launch_arguments={
-                        "namespace": robot["name"],
-                        "map": map_yaml_file,
-                        "use_sim_time": "True",
-                        "params_file": params_file,
-                        "bt_xml_file": bt_xml_file,
-                        "autostart": "True",
-                        "use_composition": "False",
-                        "use_remappings": "True",
+                        'namespace': robot['name'],
+                        'map': map_yaml_file,
+                        'use_sim_time': 'True',
+                        'params_file': params_file,
+                        'bt_xml_file': bt_xml_file,
+                        'autostart': 'True',
+                        'use_composition': 'False',
+                        'use_remappings': 'True',
                     }.items(),
                 ),
             ]
@@ -147,10 +147,10 @@ def generate_launch_description():
 
     ld = LaunchDescription()
     ld.add_action(
-        SetEnvironmentVariable("RCUTILS_LOGGING_BUFFERED_STREAM", "1"),
+        SetEnvironmentVariable('RCUTILS_LOGGING_BUFFERED_STREAM', '1'),
     )
     ld.add_action(
-        SetEnvironmentVariable("RCUTILS_LOGGING_USE_STDOUT", "1"),
+        SetEnvironmentVariable('RCUTILS_LOGGING_USE_STDOUT', '1'),
     )
     ld.add_action(start_gazebo_cmd)
     for spawn_robot in spawn_robots_cmds:
@@ -169,24 +169,24 @@ def main(argv=sys.argv[1:]):
     # TODO(orduno) remove duplicated definition of robots on `generate_launch_description`
     test1_action = ExecuteProcess(
         cmd=[
-            os.path.join(os.getenv("TEST_DIR"), os.getenv("TESTER")),
-            "-rs",
-            "robot1",
-            "0.0",
-            "0.5",
-            "1.0",
-            "0.5",
-            "-rs",
-            "robot2",
-            "0.0",
-            "-0.5",
-            "1.0",
-            "-0.5",
-            "-e",
-            "True",
+            os.path.join(os.getenv('TEST_DIR'), os.getenv('TESTER')),
+            '-rs',
+            'robot1',
+            '0.0',
+            '0.5',
+            '1.0',
+            '0.5',
+            '-rs',
+            'robot2',
+            '0.0',
+            '-0.5',
+            '1.0',
+            '-0.5',
+            '-e',
+            'True',
         ],
-        name="tester_node",
-        output="screen",
+        name='tester_node',
+        output='screen',
     )
 
     lts = LaunchTestService()
@@ -196,5 +196,5 @@ def main(argv=sys.argv[1:]):
     return lts.run(ls)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     sys.exit(main())

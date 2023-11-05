@@ -25,58 +25,58 @@ from launch_testing.legacy import LaunchTestService
 
 
 def generate_launch_description():
-    params_file = os.path.join(os.getenv("TEST_DIR"), "error_code_param.yaml")
+    params_file = os.path.join(os.getenv('TEST_DIR'), 'error_code_param.yaml')
 
-    remappings = [("/tf", "tf"), ("/tf_static", "tf_static")]
+    remappings = [('/tf', 'tf'), ('/tf_static', 'tf_static')]
 
-    lifecycle_nodes = ["controller_server", "planner_server", "smoother_server"]
+    lifecycle_nodes = ['controller_server', 'planner_server', 'smoother_server']
 
     load_nodes = GroupAction(
         actions=[
             Node(
-                package="tf2_ros",
-                executable="static_transform_publisher",
-                output="screen",
-                arguments=["0", "0", "0", "0", "0", "0", "map", "odom"],
+                package='tf2_ros',
+                executable='static_transform_publisher',
+                output='screen',
+                arguments=['0', '0', '0', '0', '0', '0', 'map', 'odom'],
             ),
             Node(
-                package="tf2_ros",
-                executable="static_transform_publisher",
-                output="screen",
-                arguments=["0", "0", "0", "0", "0", "0", "odom", "base_link"],
+                package='tf2_ros',
+                executable='static_transform_publisher',
+                output='screen',
+                arguments=['0', '0', '0', '0', '0', '0', 'odom', 'base_link'],
             ),
             Node(
-                package="nav2_controller",
-                executable="controller_server",
-                output="screen",
+                package='nav2_controller',
+                executable='controller_server',
+                output='screen',
                 respawn_delay=2.0,
                 parameters=[params_file],
-                remappings=remappings + [("cmd_vel", "cmd_vel_nav")],
+                remappings=remappings + [('cmd_vel', 'cmd_vel_nav')],
             ),
             Node(
-                package="nav2_planner",
-                executable="planner_server",
-                name="planner_server",
-                output="screen",
-                respawn_delay=2.0,
-                parameters=[params_file],
-                remappings=remappings,
-            ),
-            Node(
-                package="nav2_smoother",
-                executable="smoother_server",
-                name="smoother_server",
-                output="screen",
+                package='nav2_planner',
+                executable='planner_server',
+                name='planner_server',
+                output='screen',
                 respawn_delay=2.0,
                 parameters=[params_file],
                 remappings=remappings,
             ),
             Node(
-                package="nav2_lifecycle_manager",
-                executable="lifecycle_manager",
-                name="lifecycle_manager_navigation",
-                output="screen",
-                parameters=[{"autostart": True}, {"node_names": lifecycle_nodes}],
+                package='nav2_smoother',
+                executable='smoother_server',
+                name='smoother_server',
+                output='screen',
+                respawn_delay=2.0,
+                parameters=[params_file],
+                remappings=remappings,
+            ),
+            Node(
+                package='nav2_lifecycle_manager',
+                executable='lifecycle_manager',
+                name='lifecycle_manager_navigation',
+                output='screen',
+                parameters=[{'autostart': True}, {'node_names': lifecycle_nodes}],
             ),
         ]
     )
@@ -91,9 +91,9 @@ def main(argv=sys.argv[1:]):
     ld = generate_launch_description()
 
     test_error_codes_action = ExecuteProcess(
-        cmd=[os.path.join(os.getenv("TEST_DIR"), "test_error_codes.py")],
-        name="test_error_codes",
-        output="screen",
+        cmd=[os.path.join(os.getenv('TEST_DIR'), 'test_error_codes.py')],
+        name='test_error_codes',
+        output='screen',
     )
 
     lts = LaunchTestService()
@@ -103,5 +103,5 @@ def main(argv=sys.argv[1:]):
     return lts.run(ls)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     sys.exit(main())

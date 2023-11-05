@@ -35,38 +35,38 @@ def main():
     successful_bringup_count = 0
     successful_shutdown_count = 0
     for line in log.readlines():
-        if line.startswith("======= START OF RUN:"):
+        if line.startswith('======= START OF RUN:'):
             test_successful = True
             shutdown_successful = False
             bringup_successful = False
 
-        if line.startswith("======== END OF RUN:"):
+        if line.startswith('======== END OF RUN:'):
             test_count += 1
-            conclusion = ""
+            conclusion = ''
             if bringup_successful:
                 successful_bringup_count += 1
-                conclusion = " but bringup was successful"
+                conclusion = ' but bringup was successful'
             if shutdown_successful:
                 successful_shutdown_count += 1
-                conclusion = " but shutdown was successful"
+                conclusion = ' but shutdown was successful'
             if not test_successful:
                 fail_count += 1
-                print("Failure in test ", test_count, conclusion)
+                print('Failure in test ', test_count, conclusion)
 
-        if "[ERROR]" in line:
+        if '[ERROR]' in line:
             test_successful = False
 
-        if "The system is active" in line:
+        if 'The system is active' in line:
             bringup_successful = True
 
-        if "The system has been sucessfully shut down" in line:
+        if 'The system has been sucessfully shut down' in line:
             shutdown_successful = True
 
-    print("Number of tests: ", test_count)
-    print("Number of successes: ", test_count - fail_count)
-    print("Number of successful bringups", successful_bringup_count)
-    print("Number of successful shutdowns", successful_shutdown_count)
+    print('Number of tests: ', test_count)
+    print('Number of successes: ', test_count - fail_count)
+    print('Number of successful bringups', successful_bringup_count)
+    print('Number of successful shutdowns', successful_shutdown_count)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
