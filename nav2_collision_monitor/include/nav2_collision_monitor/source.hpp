@@ -69,8 +69,9 @@ public:
    * @param curr_time Current node time for data interpolation
    * @param data Array where the data from source to be added.
    * Added data is transformed to base_frame_id_ coordinate system at curr_time.
+   * @return false if an invalid source should block the robot
    */
-  virtual void getData(
+  virtual bool getData(
     const rclcpp::Time & curr_time,
     std::vector<Point> & data) const = 0;
 
@@ -79,6 +80,18 @@ public:
    * @return Whether source is enabled
    */
   bool getEnabled() const;
+
+  /**
+   * @brief Obtains the name of the data source
+   * @return Name of the data source
+   */
+  std::string getSourceName() const;
+
+  /**
+   * @brief Obtains the source_timeout parameter of the data source
+   * @return source_timeout parameter value of the data source
+   */
+  rclcpp::Duration getSourceTimeout() const;
 
 protected:
   /**
