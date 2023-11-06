@@ -126,6 +126,8 @@ void PathAlignCritic::score(CriticData & data)
     }
     if (num_samples > 0) {
       cost[t] = summed_path_dist / num_samples;
+    } else {
+      cost[t] = 0.0f;
     }
   }
 
