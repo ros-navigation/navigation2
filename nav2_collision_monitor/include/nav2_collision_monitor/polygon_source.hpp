@@ -69,11 +69,17 @@ public:
    * @param curr_time Current node time for data interpolation
    * @param data Array where the data from source to be added.
    * Added data is transformed to base_frame_id_ coordinate system at curr_time.
+   * @return false if an invalid source should block the robot
    */
-  void getData(
+  bool getData(
     const rclcpp::Time & curr_time,
     std::vector<Point> & data) const;
 
+  /**
+   * @brief Converts a PolygonStamped to a std::vector<Point>
+   * @param polygon Input Polygon to be converted
+   * @param data Output vector of Point
+   */
   void convertPolygonStampedToPoints(
     const geometry_msgs::msg::PolygonStamped & polygon,
     std::vector<Point> & data) const;
