@@ -55,6 +55,13 @@ float ObstaclesCritic::findCircumscribedCost(
 {
   double result = -1.0;
   bool inflation_layer_found = false;
+
+  const double circum_radius = costmap->getLayeredCostmap()->getCircumscribedRadius();
+  if (static_cast<float>(circum_radius) == circumscribed_radius_) {
+    // early return if footprint size is unchanged
+    return circumscribed_cost_;
+  }
+
   // check if the costmap has an inflation layer
   for (auto layer = costmap->getLayeredCostmap()->getPlugins()->begin();
     layer != costmap->getLayeredCostmap()->getPlugins()->end();
@@ -66,7 +73,6 @@ float ObstaclesCritic::findCircumscribedCost(
     }
 
     inflation_layer_found = true;
-    const double circum_radius = costmap->getLayeredCostmap()->getCircumscribedRadius();
     const double resolution = costmap->getCostmap()->getResolution();
     result = inflation_layer->computeCost(circum_radius / resolution);
     inflation_scale_factor_ = static_cast<float>(inflation_layer->getCostScalingFactor());
@@ -83,7 +89,10 @@ float ObstaclesCritic::findCircumscribedCost(
       "significantly slow down planning times and not avoid anything but absolute collisions!");
   }
 
-  return static_cast<float>(result);
+  circumscribed_radius_ = static_cast<float>(circum_radius);
+  circumscribed_cost_ = static_cast<float>(result);
+
+  return circumscribed_cost_;
 }
 
 float ObstaclesCritic::distanceToObstacle(const CollisionCost & cost)
@@ -106,6 +115,11 @@ void ObstaclesCritic::score(CriticData & data)
   using xt::evaluation_strategy::immediate;
   if (!enabled_) {
     return;
+  }
+
+  if (consider_footprint_) {
+    // footprint may have changed since initialization if user has dynamic footprints
+    possibly_inscribed_cost_ = findCircumscribedCost(costmap_ros_);
   }
 
   // If near the goal, don't apply the preferential term since the goal is near obstacles
