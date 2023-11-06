@@ -118,8 +118,7 @@ void ObstaclesCritic::score(CriticData & data)
   }
 
   if (consider_footprint_) {
-    // footprint has almost certainly changed since initialize()
-    // and may continue to change
+    // footprint may have changed since initialization if user has dynamic footprints
     possibly_inscribed_cost_ = findCircumscribedCost(costmap_ros_);
   }
 
