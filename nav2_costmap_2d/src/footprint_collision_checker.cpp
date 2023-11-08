@@ -110,18 +110,21 @@ template<typename CostmapT>
 bool FootprintCollisionChecker<CostmapT>::worldToMap(
   double wx, double wy, unsigned int & mx, unsigned int & my)
 {
+  std::lock_guard<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
   return costmap_->worldToMap(wx, wy, mx, my);
 }
 
 template<typename CostmapT>
 double FootprintCollisionChecker<CostmapT>::pointCost(int x, int y) const
 {
+  std::lock_guard<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
   return costmap_->getCost(x, y);
 }
 
 template<typename CostmapT>
 void FootprintCollisionChecker<CostmapT>::setCostmap(CostmapT costmap)
 {
+  std::lock_guard<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap->getMutex()));
   costmap_ = costmap;
 }
 
