@@ -31,7 +31,6 @@ from rclpy.qos import QoSProfile
 
 
 class WaypointFollowerTest(Node):
-
     def __init__(self):
         super().__init__(node_name='nav2_waypoint_tester', namespace='')
         self.waypoints = None

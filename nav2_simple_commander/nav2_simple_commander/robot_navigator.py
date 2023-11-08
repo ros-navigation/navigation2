@@ -53,7 +53,6 @@ class TaskResult(Enum):
 
 
 class BasicNavigator(Node):
-
     def __init__(self, node_name='basic_navigator', namespace=''):
         super().__init__(node_name=node_name, namespace=namespace)
         self.initial_pose = PoseStamped()
