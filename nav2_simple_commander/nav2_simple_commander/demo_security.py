@@ -43,7 +43,8 @@ def main():
         [-3.665, -9.427],
         [-3.665, -4.303],
         [-3.665, 2.330],
-        [-3.665, 9.283]]
+        [-3.665, 9.283],
+    ]
 
     # Set our demo's initial pose
     initial_pose = PoseStamped()
@@ -79,12 +80,19 @@ def main():
             i += 1
             feedback = navigator.getFeedback()
             if feedback and i % 5 == 0:
-                print('Estimated time to complete current route: ' + '{0:.0f}'.format(
-                      Duration.from_msg(feedback.estimated_time_remaining).nanoseconds / 1e9)
-                      + ' seconds.')
+                print(
+                    'Estimated time to complete current route: '
+                    + '{0:.0f}'.format(
+                        Duration.from_msg(feedback.estimated_time_remaining).nanoseconds
+                        / 1e9
+                    )
+                    + ' seconds.'
+                )
 
                 # Some failure mode, must stop since the robot is clearly stuck
-                if Duration.from_msg(feedback.navigation_time) > Duration(seconds=180.0):
+                if Duration.from_msg(feedback.navigation_time) > Duration(
+                    seconds=180.0
+                ):
                     print('Navigation has exceeded timeout of 180s, canceling request.')
                     navigator.cancelTask()
 

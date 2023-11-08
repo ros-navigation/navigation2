@@ -32,40 +32,50 @@ def main(argv=sys.argv[1:]):
 
     launch_gazebo = launch.actions.ExecuteProcess(
         cmd=['gzserver', '-s', 'libgazebo_ros_init.so', '--minimal_comms', world],
-        output='screen')
+        output='screen',
+    )
     link_footprint = launch_ros.actions.Node(
         package='tf2_ros',
         executable='static_transform_publisher',
         output='screen',
-        arguments=['0', '0', '0', '0', '0', '0', 'base_footprint', 'base_link'])
+        arguments=['0', '0', '0', '0', '0', '0', 'base_footprint', 'base_link'],
+    )
     footprint_scan = launch_ros.actions.Node(
         package='tf2_ros',
         executable='static_transform_publisher',
         output='screen',
-        arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'base_scan'])
+        arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'base_scan'],
+    )
     run_map_server = launch_ros.actions.Node(
         package='nav2_map_server',
         executable='map_server',
         name='map_server',
         output='screen',
-        parameters=[{'yaml_filename': mapFile}])
+        parameters=[{'yaml_filename': mapFile}],
+    )
     run_amcl = launch_ros.actions.Node(
-        package='nav2_amcl',
-        executable='amcl',
-        output='screen')
+        package='nav2_amcl', executable='amcl', output='screen'
+    )
     run_lifecycle_manager = launch_ros.actions.Node(
         package='nav2_lifecycle_manager',
         executable='lifecycle_manager',
         name='lifecycle_manager',
         output='screen',
-        parameters=[{'node_names': ['map_server', 'amcl']}, {'autostart': True}])
-    ld = LaunchDescription([launch_gazebo, link_footprint, footprint_scan,
-                            run_map_server, run_amcl, run_lifecycle_manager])
+        parameters=[{'node_names': ['map_server', 'amcl']}, {'autostart': True}],
+    )
+    ld = LaunchDescription(
+        [
+            launch_gazebo,
+            link_footprint,
+            footprint_scan,
+            run_map_server,
+            run_amcl,
+            run_lifecycle_manager,
+        ]
+    )
 
     test1_action = ExecuteProcess(
-        cmd=[testExecutable],
-        name='test_localization_node',
-        output='screen'
+        cmd=[testExecutable], name='test_localization_node', output='screen'
     )
 
     lts = LaunchTestService()

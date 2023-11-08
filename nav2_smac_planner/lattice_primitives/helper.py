@@ -28,11 +28,11 @@ def normalize_angle(angle):
     The normalized angle in the range [0,2pi)
 
     """
-    while angle >= 2*np.pi:
-        angle -= 2*np.pi
+    while angle >= 2 * np.pi:
+        angle -= 2 * np.pi
 
     while angle < 0:
-        angle += 2*np.pi
+        angle += 2 * np.pi
 
     return angle
 
@@ -123,5 +123,4 @@ def get_rotation_matrix(angle):
     A 2x2 matrix representing a 2D rotation by angle
 
     """
-    return np.array([[np.cos(angle), -np.sin(angle)],
-                    [np.sin(angle), np.cos(angle)]])
+    return np.array([[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]])
