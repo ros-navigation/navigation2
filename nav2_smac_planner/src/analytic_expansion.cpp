@@ -108,9 +108,12 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
         }
 
         // The analytic expansion can short-cut near obstacles when closer to a goal
-        // So, we can attempt to refine it more by increasing the possible curvature
+        // So, we can attempt to refine it more by increasing the possible radius
         // higher than the minimum turning radius and use the best solution based on
         // a scoring function similar to that used in traveral cost estimation.
+
+        // TODO continue to search and compare?
+        // TODO take original and patch up: curve fitting path minimize curvature?
         auto scoringFn = [&](const AnalyticExpansionNodes & expansion) {
           if (expansion.size() < 2) {
             return std::numeric_limits<float>::max();
@@ -118,36 +121,37 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
 
           float score = 0.0;
           float normalized_cost = 0.0;
+          // Analytic expansions are consistently spaced
           const float distance = hypotf(
             expansion[1].proposed_coords.x - expansion[0].proposed_coords.x,
             expansion[1].proposed_coords.y - expansion[0].proposed_coords.y);
           const float & weight = expansion[0].node->motion_table.cost_penalty;
           for (auto iter = expansion.begin(); iter != expansion.end(); ++iter) {
             normalized_cost = iter->node->getCost() / 252.0f;
-            // H-cost method
-            score += distance * (1.0 + weight * normalized_cost); // TODO quadratic option, add `* normalized_cost`
-            // Cost-only method
-            // score += normalized_cost;
+            // Search's Traversal Cost Function
+            score += distance * (1.0 + weight * normalized_cost);
           }
           return score;
-          // return score / expansion.size();
         };
 
         float best_score = scoringFn(analytic_nodes);
         float score = std::numeric_limits<float>::max();
         float min_turn_rad = node->motion_table.min_turning_radius;
-        const float step = 0.2; // TODO make proportional to resolution or parameter? In grid coords
-        unsigned int i = 0;
-        while (i < 20) {  // TODO what max to check?
-          min_turn_rad += step;
-          auto state_space = std::make_shared<ompl::base::DubinsStateSpace>(min_turn_rad);  // TODO set based on motion model
-          refined_analytic_nodes = getAnalyticPath(node, goal_node, getter, state_space);  // TODO other types of splines?
+        const float max_min_turn_rad = 4.0 * min_turn_rad;  // Up to 4x the turning radius
+        while (min_turn_rad < max_min_turn_rad) {
+          min_turn_rad += 0.5;  // In Grid Coords, 1/2 cell steps
+          ompl::base::StateSpacePtr state_space;
+          if (node->motion_table.motion_model == MotionModel::DUBIN) {
+            state_space = std::make_shared<ompl::base::DubinsStateSpace>(min_turn_rad);
+          } else {
+            state_space = std::make_shared<ompl::base::ReedsSheppStateSpace>(min_turn_rad);
+          }
+          refined_analytic_nodes = getAnalyticPath(node, goal_node, getter, state_space);
           score = scoringFn(refined_analytic_nodes);
           if (score <= best_score) {
             analytic_nodes = refined_analytic_nodes;
             best_score = score;
           }
-          i++;
         }
 
         return setAnalyticPath(node, goal_node, analytic_nodes);
