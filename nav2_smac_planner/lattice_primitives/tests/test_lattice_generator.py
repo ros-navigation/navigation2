@@ -28,11 +28,13 @@ class TestLatticeGenerator(unittest.TestCase):
     """Contains the unit tests for the TrajectoryGenerator."""
 
     def setUp(self) -> None:
-        config = {'motion_model': MOTION_MODEL,
-                  'turning_radius': TURNING_RADIUS,
-                  'grid_resolution': GRID_RESOLUTION,
-                  'stopping_threshold': STOPPING_THRESHOLD,
-                  'num_of_headings': NUM_OF_HEADINGS}
+        config = {
+            'motion_model': MOTION_MODEL,
+            'turning_radius': TURNING_RADIUS,
+            'grid_resolution': GRID_RESOLUTION,
+            'stopping_threshold': STOPPING_THRESHOLD,
+            'num_of_headings': NUM_OF_HEADINGS,
+        }
 
         lattice_gen = LatticeGenerator(config)
 
@@ -83,7 +85,7 @@ class TestLatticeGenerator(unittest.TestCase):
 
                 for x, y, angle in output:
                     self.assertGreaterEqual(angle, 0)
-                    self.assertLessEqual(angle, 2*np.pi)
+                    self.assertLessEqual(angle, 2 * np.pi)
 
 
 if __name__ == '__main__':
