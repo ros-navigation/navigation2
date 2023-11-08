@@ -63,7 +63,7 @@ def main():
             shutdown_successful = True
 
     print('Number of tests: ', test_count)
-    print('Number of successes: ', test_count-fail_count)
+    print('Number of successes: ', test_count - fail_count)
     print('Number of successful bringups', successful_bringup_count)
     print('Number of successful shutdowns', successful_shutdown_count)
 

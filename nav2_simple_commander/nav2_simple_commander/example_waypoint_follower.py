@@ -101,8 +101,12 @@ def main():
         i = i + 1
         feedback = navigator.getFeedback()
         if feedback and i % 5 == 0:
-            print('Executing current waypoint: ' +
-                  str(feedback.current_waypoint + 1) + '/' + str(len(goal_poses)))
+            print(
+                'Executing current waypoint: '
+                + str(feedback.current_waypoint + 1)
+                + '/'
+                + str(len(goal_poses))
+            )
             now = navigator.get_clock().now()
 
             # Some navigation timeout to demo cancellation
