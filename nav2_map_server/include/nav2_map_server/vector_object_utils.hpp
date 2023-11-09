@@ -28,6 +28,20 @@
 namespace nav2_map_server
 {
 
+// ---------- Working with UUID-s ----------
+
+/**
+ * @beirf Converts input UUID from input array to unparsed string
+ * @param uuid Input UUID in array format
+ * @return Unparsed UUID string
+ */
+inline std::string unparseUUID(const unsigned char * uuid)
+{
+  char uuid_str[37];
+  uuid_unparse(uuid, uuid_str);
+  return std::string(uuid_str);
+}
+
 // ---------- Working with ROS-parameters ----------
 
 /**

@@ -26,8 +26,8 @@
 
 #include "tf2_ros/buffer.h"
 
-#include "nav2_msgs/msg/polygon_vo.hpp"
-#include "nav2_msgs/msg/circle_vo.hpp"
+#include "nav2_msgs/msg/polygon_object.hpp"
+#include "nav2_msgs/msg/circle_object.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 
 #include "nav2_map_server/vector_object_utils.hpp"
@@ -35,7 +35,7 @@
 namespace nav2_map_server
 {
 
-/// @brief Possible VO-shape types
+/// @brief Possible vector object shape types
 enum ShapeType
 {
   UNKNOWN = 0,
@@ -69,7 +69,7 @@ public:
    * for the given shape object
    * @return True if UUID was obtained or false in failure case
    */
-  bool getShapeUUID(const std::string & shape_name, unsigned char * out_uuid);
+  bool obtainShapeUUID(const std::string & shape_name, unsigned char * out_uuid);
 
   /**
    * @brief Supporting routine obtaining ROS-parameters for the given vector object.
@@ -77,7 +77,7 @@ public:
    * @param shape_name Name of the shape
    * @return True if all parameters were obtained or false in failure case
    */
-  virtual bool getROSParameters(const std::string & shape_name) = 0;
+  virtual bool obtainParameters(const std::string & shape_name) = 0;
 
   /**
    * @brief Gets shape boundaries.
@@ -171,20 +171,20 @@ public:
   /*
    * @brief Polygon class constructor
    * @param node Vector Object server node pointer
-   * @param params PolygonVO parameters. In case of nullptr,
+   * @param params PolygonObject parameters. In case of nullptr,
    * parameters to be read from ROS-parameters.
    * @throw std::exception in case of inconsistent shape
    */
   Polygon(
     const nav2_util::LifecycleNode::WeakPtr & node,
-    const nav2_msgs::msg::PolygonVO::SharedPtr params = nullptr);
+    const nav2_msgs::msg::PolygonObject::SharedPtr params = nullptr);
 
   /**
    * @brief Supporting routine obtaining ROS-parameters for the given vector object.
    * @param shape_name Name of the shape
    * @return True if all parameters were obtained or false in failure case
    */
-  bool getROSParameters(const std::string & shape_name);
+  bool obtainParameters(const std::string & shape_name);
 
   /**
    * @brief Gets shape boundaries
@@ -214,13 +214,13 @@ public:
    * @brief Gets Polygon parameters
    * @return Polygon parameters
    */
-  nav2_msgs::msg::PolygonVO::SharedPtr getParams() const;
+  nav2_msgs::msg::PolygonObject::SharedPtr getParams() const;
 
   /**
    * @brief Tries to update Polygon parameters
    * @throw std::exception in case of inconsistent shape
    */
-  void setParams(const nav2_msgs::msg::PolygonVO::SharedPtr params);
+  void setParams(const nav2_msgs::msg::PolygonObject::SharedPtr params);
 
   /**
    * @brief Gets the value of the shape.
@@ -273,7 +273,7 @@ protected:
   void checkConsistency();
 
   /// @brief Input polygon parameters (could be in any frame)
-  nav2_msgs::msg::PolygonVO::SharedPtr params_;
+  nav2_msgs::msg::PolygonObject::SharedPtr params_;
   /// @brief Polygon in the map's frame
   geometry_msgs::msg::Polygon::SharedPtr polygon_;
 };
@@ -285,20 +285,20 @@ public:
   /*
    * @brief Circle class constructor
    * @param node Vector Object server node pointer
-   * @param params CircleVO parameters. In case of nullptr,
+   * @param params CircleObject parameters. In case of nullptr,
    * parameters to be read from ROS-parameters.
    * @throw std::exception in case of inconsistent shape
    */
   Circle(
     const nav2_util::LifecycleNode::WeakPtr & node,
-    const nav2_msgs::msg::CircleVO::SharedPtr params = nullptr);
+    const nav2_msgs::msg::CircleObject::SharedPtr params = nullptr);
 
   /**
    * @brief Supporting routine obtaining ROS-parameters for the given vector object.
    * @param shape_name Name of the shape
    * @return True if all parameters were obtained or false in failure case
    */
-  bool getROSParameters(const std::string & shape_name);
+  bool obtainParameters(const std::string & shape_name);
 
   /**
    * @brief Gets shape boundaries
@@ -328,13 +328,13 @@ public:
    * @brief Gets Circle parameters
    * @return Circle parameters
    */
-  nav2_msgs::msg::CircleVO::SharedPtr getParams() const;
+  nav2_msgs::msg::CircleObject::SharedPtr getParams() const;
 
   /**
    * @brief Tries to update Circle parameters
    * @throw std::exception in case of inconsistent shape
    */
-  void setParams(const nav2_msgs::msg::CircleVO::SharedPtr params);
+  void setParams(const nav2_msgs::msg::CircleObject::SharedPtr params);
 
   /**
    * @brief Gets the value of the shape.
@@ -412,7 +412,7 @@ protected:
     const OverlayType overlay_type);
 
   /// @brief Input circle parameters (could be in any frame)
-  nav2_msgs::msg::CircleVO::SharedPtr params_;
+  nav2_msgs::msg::CircleObject::SharedPtr params_;
   /// @brief Circle center in the map's frame
   geometry_msgs::msg::Point32::SharedPtr center_;
 };

@@ -17,7 +17,7 @@
 
 #include <memory>
 #include <string>
-#include <vector>
+#include <unordered_map>
 
 #include "nav_msgs/msg/occupancy_grid.hpp"
 
@@ -178,15 +178,15 @@ protected:
    * @brief Supporting routine obtaining all ROS-parameters
    * @return True if all parameters were obtained or false in the failure case
    */
-  bool getROSParameters();
+  bool obtainParameters();
 
   /// @brief TF buffer
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   /// @brief TF listener
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 
-  /// @brief All vector objects vector
-  std::vector<std::shared_ptr<Shape>> shapes_;
+  /// @brief All {UUID, Shape} vector objects map
+  std::unordered_map<std::string, std::shared_ptr<Shape>> shapes_;
 
   /// @brief Output map resolution
   double resolution_;
@@ -201,7 +201,7 @@ protected:
   double process_map_;
 
   /// @brief Frame of output map
-  std::string frame_id_;
+  std::string global_frame_id_;
   /// @brief Transform tolerance
   double transform_tolerance_;
 
