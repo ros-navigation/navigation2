@@ -87,7 +87,7 @@ public:
    * @brief Function to explicitly reset all BT nodes to initial state
    * @param tree Tree to halt
    */
-  void haltAllActions(BT::Tree &tree);
+  void haltAllActions(BT::Tree & tree);
 
 protected:
   // The factory that will be used to dynamically construct the behavior tree

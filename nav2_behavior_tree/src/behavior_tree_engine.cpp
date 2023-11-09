@@ -90,7 +90,7 @@ BehaviorTreeEngine::createTreeFromFile(
 
 // In order to re-run a Behavior Tree, we must be able to reset all nodes to the initial state
 void
-BehaviorTreeEngine::haltAllActions(BT::Tree &tree)
+BehaviorTreeEngine::haltAllActions(BT::Tree & tree)
 {
   // this halt signal should propagate through the entire tree.
   tree.haltTree();
