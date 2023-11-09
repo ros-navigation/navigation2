@@ -103,7 +103,7 @@ public:
     costmap_pub_->on_deactivate();
     costmap_update_pub_->on_deactivate();
     costmap_raw_pub_->on_deactivate();
-    costmap_raw_update_pub_->on_activate();
+    costmap_raw_update_pub_->on_deactivate();
   }
 
   /**
@@ -139,7 +139,8 @@ private:
   void prepareGrid();
   void prepareCostmap();
 
-  std::unique_ptr<nav2_msgs::msg::CostmapUpdate> get_raw_costmap_update_msg();
+  /** @brief Prepare CostmapUpdate msg for publication. */
+  std::unique_ptr<nav2_msgs::msg::CostmapUpdate> createRawCostmapUpdateMsg();
 
   /** @brief Publish the latest full costmap to the new subscriber. */
   // void onNewSubscription(const ros::SingleSubscriberPublisher& pub);

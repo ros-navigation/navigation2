@@ -21,6 +21,8 @@
 namespace nav2_costmap_2d
 {
 
+constexpr int costmapUpdateQueueDepth = 10;
+
 CostmapSubscriber::CostmapSubscriber(
   const nav2_util::LifecycleNode::WeakPtr & parent,
   const std::string & topic_name)
@@ -34,10 +36,9 @@ CostmapSubscriber::CostmapSubscriber(
     std::bind(&CostmapSubscriber::costmapCallback, this, std::placeholders::_1));
   costmap_update_sub_ = node->create_subscription<nav2_msgs::msg::CostmapUpdate>(
     topic_name_ + "_updates",
-    rclcpp::QoS(rclcpp::KeepLast(10)).transient_local().reliable(),
+    rclcpp::QoS(rclcpp::KeepLast(costmapUpdateQueueDepth)).transient_local().reliable(),
     std::bind(&CostmapSubscriber::costmapUpdateCallback, this, std::placeholders::_1));
 }
-
 
 // todo: is it still necessary
 CostmapSubscriber::CostmapSubscriber(
@@ -53,7 +54,7 @@ CostmapSubscriber::CostmapSubscriber(
     std::bind(&CostmapSubscriber::costmapCallback, this, std::placeholders::_1));
   costmap_update_sub_ = node->create_subscription<nav2_msgs::msg::CostmapUpdate>(
     topic_name_ + "_updates",
-    rclcpp::QoS(rclcpp::KeepLast(10)).transient_local().reliable(),
+    rclcpp::QoS(rclcpp::KeepLast(costmapUpdateQueueDepth)).transient_local().reliable(),
     std::bind(&CostmapSubscriber::costmapUpdateCallback, this, std::placeholders::_1));
 }
 
@@ -112,7 +113,6 @@ void CostmapSubscriber::costmapUpdateCallback(
 
     // todo: check if frame is the same
 
-
     auto master_array = costmap_->getCharMap();
     // copy update msg row-wise
     for (size_t y = 0; y < update_msg->size_y; ++y) {
@@ -131,7 +131,7 @@ void CostmapSubscriber::costmapUpdateCallback(
 void CostmapSubscriber::processCurrentCostmapMsg()
 {
   std::scoped_lock lock(*(costmap_->getMutex()), costmap_msg_mutex_);
-  if (areCostmapParametersChanged()) {
+  if (haveCostmapParametersChanged()) {
     costmap_->resizeMap(
       costmap_msg_->metadata.size_x, costmap_msg_->metadata.size_y,
       costmap_msg_->metadata.resolution,
@@ -144,12 +144,27 @@ void CostmapSubscriber::processCurrentCostmapMsg()
   costmap_msg_ = nullptr;
 }
 
-bool CostmapSubscriber::areCostmapParametersChanged()
+bool CostmapSubscriber::haveCostmapParametersChanged()
+{
+  return hasCostmapSizeChanged() ||
+         hasCostmapResolutionChanged() ||
+         hasCostmapOriginPositionChanged();
+}
+
+bool CostmapSubscriber::hasCostmapSizeChanged()
 {
   return costmap_->getSizeInCellsX() != costmap_msg_->metadata.size_x ||
-         costmap_->getSizeInCellsY() != costmap_msg_->metadata.size_y ||
-         costmap_->getResolution() != costmap_msg_->metadata.resolution ||
-         costmap_->getOriginX() != costmap_msg_->metadata.origin.position.x ||
+         costmap_->getSizeInCellsY() != costmap_msg_->metadata.size_y;
+}
+
+bool CostmapSubscriber::hasCostmapResolutionChanged()
+{
+  return costmap_->getResolution() != costmap_msg_->metadata.resolution;
+}
+
+bool CostmapSubscriber::hasCostmapOriginPositionChanged()
+{
+  return costmap_->getOriginX() != costmap_msg_->metadata.origin.position.x ||
          costmap_->getOriginY() != costmap_msg_->metadata.origin.position.y;
 }
 

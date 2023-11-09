@@ -183,7 +183,7 @@ void Costmap2DPublisher::prepareCostmap()
   }
 }
 
-std::unique_ptr<nav2_msgs::msg::CostmapUpdate> Costmap2DPublisher::get_raw_costmap_update_msg()
+std::unique_ptr<nav2_msgs::msg::CostmapUpdate> Costmap2DPublisher::createRawCostmapUpdateMsg()
 {
   auto msg = std::make_unique<nav2_msgs::msg::CostmapUpdate>();
 
@@ -195,9 +195,9 @@ std::unique_ptr<nav2_msgs::msg::CostmapUpdate> Costmap2DPublisher::get_raw_costm
   msg->size_y = yn_ - y0_;
   msg->data.resize(msg->size_x * msg->size_y);
 
-  unsigned int i = 0;
-  for (unsigned int y = y0_; y < yn_; y++) {
-    for (unsigned int x = x0_; x < xn_; x++) {
+  std::uint32_t i = 0;
+  for (std::uint32_t y = y0_; y < yn_; y++) {
+    for (std::uint32_t x = x0_; x < xn_; x++) {
       //todo copy from array instead of calling method
       msg->data[i++] = costmap_->getCost(x, y);
     }
@@ -244,7 +244,7 @@ void Costmap2DPublisher::publishCostmap()
       costmap_update_pub_->publish(std::move(update));
     }
     if (costmap_raw_update_pub_->get_subscription_count() > 0) {
-      costmap_raw_update_pub_->publish(get_raw_costmap_update_msg());
+      costmap_raw_update_pub_->publish(createRawCostmapUpdateMsg());
     }
   }
 

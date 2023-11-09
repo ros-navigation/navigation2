@@ -67,7 +67,11 @@ public:
 
 protected:
   void processCurrentCostmapMsg();
-  bool areCostmapParametersChanged();
+
+  bool haveCostmapParametersChanged();
+  bool hasCostmapSizeChanged();
+  bool hasCostmapResolutionChanged();
+  bool hasCostmapOriginPositionChanged();
 
   rclcpp::Subscription<nav2_msgs::msg::Costmap>::SharedPtr costmap_sub_;
   rclcpp::Subscription<nav2_msgs::msg::CostmapUpdate>::SharedPtr costmap_update_sub_;
