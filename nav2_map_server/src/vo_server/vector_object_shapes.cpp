@@ -44,7 +44,7 @@ ShapeType Shape::getType()
   return type_;
 }
 
-bool Shape::getShapeUUID(const std::string & shape_name, unsigned char * out_uuid)
+bool Shape::obtainShapeUUID(const std::string & shape_name, unsigned char * out_uuid)
 {
   auto node = node_.lock();
   if (!node) {
@@ -81,13 +81,13 @@ bool Shape::getShapeUUID(const std::string & shape_name, unsigned char * out_uui
 
 Polygon::Polygon(
   const nav2_util::LifecycleNode::WeakPtr & node,
-  const nav2_msgs::msg::PolygonVO::SharedPtr params)
+  const nav2_msgs::msg::PolygonObject::SharedPtr params)
 : Shape::Shape(node)
 {
   type_ = POLYGON;
 
   if (!params) {
-    params_ = std::make_shared<nav2_msgs::msg::PolygonVO>();
+    params_ = std::make_shared<nav2_msgs::msg::PolygonObject>();
   } else {
     params_ = params;
     checkConsistency();
@@ -103,7 +103,7 @@ Polygon::Polygon(
   }
 }
 
-bool Polygon::getROSParameters(const std::string & shape_name)
+bool Polygon::obtainParameters(const std::string & shape_name)
 {
   auto node = node_.lock();
   if (!node) {
@@ -155,7 +155,7 @@ bool Polygon::getROSParameters(const std::string & shape_name)
   polygon_->points = params_->points;
 
   // Getting shape UUID
-  return getShapeUUID(shape_name, params_->uuid.uuid.data());
+  return obtainShapeUUID(shape_name, params_->uuid.uuid.data());
 }
 
 void Polygon::getBoundaries(double & min_x, double & min_y, double & max_x, double & max_y)
@@ -248,12 +248,12 @@ void Polygon::putBorders(
   }
 }
 
-nav2_msgs::msg::PolygonVO::SharedPtr Polygon::getParams() const
+nav2_msgs::msg::PolygonObject::SharedPtr Polygon::getParams() const
 {
   return params_;
 }
 
-void Polygon::setParams(const nav2_msgs::msg::PolygonVO::SharedPtr params)
+void Polygon::setParams(const nav2_msgs::msg::PolygonObject::SharedPtr params)
 {
   params_ = params;
   checkConsistency();
@@ -275,9 +275,7 @@ std::string Polygon::getFrameID() const
 
 std::string Polygon::getUUID() const
 {
-  char uuid_str[37];
-  uuid_unparse(params_->uuid.uuid.data(), uuid_str);
-  return std::string(uuid_str);
+  return unparseUUID(params_->uuid.uuid.data());
 }
 
 bool Polygon::isUUID(const unsigned char * uuid) const
@@ -327,13 +325,13 @@ void Polygon::checkConsistency()
 
 Circle::Circle(
   const nav2_util::LifecycleNode::WeakPtr & node,
-  const nav2_msgs::msg::CircleVO::SharedPtr params)
+  const nav2_msgs::msg::CircleObject::SharedPtr params)
 : Shape::Shape(node)
 {
   type_ = CIRCLE;
 
   if (!params) {
-    params_ = std::make_shared<nav2_msgs::msg::CircleVO>();
+    params_ = std::make_shared<nav2_msgs::msg::CircleObject>();
   } else {
     params_ = params;
   }
@@ -350,7 +348,7 @@ Circle::Circle(
   checkConsistency();
 }
 
-bool Circle::getROSParameters(const std::string & shape_name)
+bool Circle::obtainParameters(const std::string & shape_name)
 {
   auto node = node_.lock();
   if (!node) {
@@ -394,7 +392,7 @@ bool Circle::getROSParameters(const std::string & shape_name)
   *center_ = params_->center;
 
   // Getting shape UUID
-  return getShapeUUID(shape_name, params_->uuid.uuid.data());
+  return obtainShapeUUID(shape_name, params_->uuid.uuid.data());
 }
 
 // Get/update shape boundaries
@@ -503,12 +501,12 @@ void Circle::putBorders(
   }
 }
 
-nav2_msgs::msg::CircleVO::SharedPtr Circle::getParams() const
+nav2_msgs::msg::CircleObject::SharedPtr Circle::getParams() const
 {
   return params_;
 }
 
-void Circle::setParams(const nav2_msgs::msg::CircleVO::SharedPtr params)
+void Circle::setParams(const nav2_msgs::msg::CircleObject::SharedPtr params)
 {
   params_ = params;
   if (!center_) {
@@ -530,9 +528,7 @@ std::string Circle::getFrameID() const
 
 std::string Circle::getUUID() const
 {
-  char uuid_str[37];
-  uuid_unparse(params_->uuid.uuid.data(), uuid_str);
-  return std::string(uuid_str);
+  return unparseUUID(params_->uuid.uuid.data());
 }
 
 bool Circle::isUUID(const unsigned char * uuid) const

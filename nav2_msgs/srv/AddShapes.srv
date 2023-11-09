@@ -1,6 +1,6 @@
 # Add/update vector objects on map
 
-CircleVO[] circles
-PolygonVO[] polygons
+CircleObject[] circles
+PolygonObject[] polygons
 ---
 bool success

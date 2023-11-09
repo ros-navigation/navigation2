@@ -1,5 +1,6 @@
 # Remove vector objects from map
 
+bool all_objects
 unique_identifier_msgs/UUID[] uuids
 ---
 bool success
