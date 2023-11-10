@@ -41,7 +41,7 @@ AnalyticExpansion<NodeT>::AnalyticExpansion(
 
 template<typename NodeT>
 void AnalyticExpansion<NodeT>::setCollisionChecker(
-  GridCollisionChecker * collision_checker)
+  GridCollisionChecker * & collision_checker)
 {
   _collision_checker = collision_checker;
 }
@@ -191,8 +191,8 @@ typename AnalyticExpansion<NodeT>::AnalyticExpansionNodes AnalyticExpansion<Node
   }
 
   // A move of sqrt(2) is guaranteed to be in a new cell
-  static const float sqrt_2 = std::sqrt(2.);
-  unsigned int num_intervals = std::floor(d / sqrt_2);
+  static const float sqrt_2 = std::sqrt(2.0f);
+  unsigned int num_intervals = static_cast<unsigned int>(std::floor(d / sqrt_2));
 
   AnalyticExpansionNodes possible_nodes;
   // When "from" and "to" are zero or one cell away,

@@ -87,7 +87,7 @@ public:
    * @brief Gets the accumulated cost at this node
    * @return accumulated cost
    */
-  inline float & getAccumulatedCost()
+  inline float getAccumulatedCost()
   {
     return _accumulated_cost;
   }
@@ -105,7 +105,7 @@ public:
    * @brief Gets the costmap cost at this node
    * @return costmap cost
    */
-  inline float & getCost()
+  inline float getCost()
   {
     return _cell_cost;
   }
@@ -123,7 +123,7 @@ public:
    * @brief Gets if cell has been visited in search
    * @param If cell was visited
    */
-  inline bool & wasVisited()
+  inline bool wasVisited()
   {
     return _was_visited;
   }
@@ -158,7 +158,7 @@ public:
    * @brief Gets cell index
    * @return Reference to cell index
    */
-  inline unsigned int & getIndex()
+  inline unsigned int getIndex()
   {
     return _index;
   }

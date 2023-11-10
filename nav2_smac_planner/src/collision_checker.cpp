@@ -49,7 +49,7 @@ void GridCollisionChecker::setFootprint(
   const bool & radius,
   const double & possible_inscribed_cost)
 {
-  possible_inscribed_cost_ = possible_inscribed_cost;
+  possible_inscribed_cost_ = static_cast<float>(possible_inscribed_cost);
   footprint_is_radius_ = radius;
 
   // Use radius, no caching required
@@ -106,8 +106,8 @@ bool GridCollisionChecker::inCollision(
   if (!footprint_is_radius_) {
     // if footprint, then we check for the footprint's points, but first see
     // if the robot is even potentially in an inscribed collision
-    footprint_cost_ = costmap_->getCost(
-      static_cast<unsigned int>(x), static_cast<unsigned int>(y));
+    footprint_cost_ = static_cast<float>(costmap_->getCost(
+      static_cast<unsigned int>(x + 0.5), static_cast<unsigned int>(y + 0.5)));
 
     if (footprint_cost_ < possible_inscribed_cost_) {
       if (possible_inscribed_cost_ > 0) {
@@ -146,7 +146,7 @@ bool GridCollisionChecker::inCollision(
       current_footprint.push_back(new_pt);
     }
 
-    footprint_cost_ = footprintCost(current_footprint);
+    footprint_cost_ = static_cast<float>(footprintCost(current_footprint));
 
     if (footprint_cost_ == UNKNOWN && traverse_unknown) {
       return false;
@@ -156,15 +156,15 @@ bool GridCollisionChecker::inCollision(
     return footprint_cost_ >= OCCUPIED;
   } else {
     // if radius, then we can check the center of the cost assuming inflation is used
-    footprint_cost_ = costmap_->getCost(
-      static_cast<unsigned int>(x), static_cast<unsigned int>(y));
+    footprint_cost_ = static_cast<float>(costmap_->getCost(
+      static_cast<unsigned int>(x + 0.5), static_cast<unsigned int>(y + 0.5)));
 
     if (footprint_cost_ == UNKNOWN && traverse_unknown) {
       return false;
     }
 
     // if occupied or unknown and not to traverse unknown space
-    return static_cast<double>(footprint_cost_) >= INSCRIBED;
+    return footprint_cost_ >= INSCRIBED;
   }
 }
 

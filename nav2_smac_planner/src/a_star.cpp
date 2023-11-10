@@ -110,7 +110,7 @@ void AStarAlgorithm<NodeT>::setCollisionChecker(GridCollisionChecker * collision
     _y_size = y_size;
     NodeT::initMotionModel(_motion_model, _x_size, _y_size, _dim3_size, _search_info);
   }
-  _expander->setCollisionChecker(collision_checker);
+  _expander->setCollisionChecker(_collision_checker);
 }
 
 template<typename NodeT>
