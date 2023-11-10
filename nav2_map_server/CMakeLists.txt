@@ -28,13 +28,15 @@ set(library_name ${map_server_executable}_core)
 
 set(map_io_library_name map_io)
 
+set(vo_library_name vector_object_core)
+
 set(map_saver_cli_executable map_saver_cli)
 
 set(map_saver_server_executable map_saver_server)
 
 set(costmap_filter_info_server_executable costmap_filter_info_server)
 
-set(vector_object_server_executable vector_object_server)
+set(vo_server_executable vector_object_server)
 
 add_library(${map_io_library_name} SHARED
   src/map_mode.cpp
@@ -71,6 +73,28 @@ target_link_libraries(${library_name} PUBLIC
   nav2_util::nav2_util_core
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
+)
+target_link_libraries(${library_name} PRIVATE
+  ${lifecycle_msgs_TARGETS}
+  rclcpp_components::component
+  yaml-cpp::yaml-cpp
+)
+
+add_library(${vo_library_name} SHARED
+  src/vo_server/vector_object_shapes.cpp
+  src/vo_server/vector_object_server.cpp)
+target_include_directories(${vo_library_name}
+  PUBLIC
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+target_link_libraries(${vo_library_name} PUBLIC
+  ${nav_msgs_TARGETS}
+  ${nav2_msgs_TARGETS}
+  nav2_util::nav2_util_core
+  rclcpp::rclcpp
+  rclcpp_lifecycle::rclcpp_lifecycle
+  rclcpp_components::component
+  ${UUID_LIBRARIES}
 )
 target_link_libraries(${library_name} PRIVATE
   ${lifecycle_msgs_TARGETS}
@@ -138,29 +162,28 @@ target_link_libraries(${costmap_filter_info_server_executable} PRIVATE
   rclcpp_lifecycle::rclcpp_lifecycle
 )
 
-add_executable(${vector_object_server_executable}
-  src/vo_server/vector_object_shapes.cpp
-  src/vo_server/vector_object_server.cpp
+add_executable(${vo_server_executable}
   src/vo_server/vector_object_server_node.cpp)
-target_include_directories(${vector_object_server_executable}
+target_include_directories(${vo_server_executable}
   PRIVATE
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
-target_link_libraries(${vector_object_server_executable} PRIVATE
+target_link_libraries(${vo_server_executable} PRIVATE
+  ${vo_library_name}
   ${nav_msgs_TARGETS}
   ${nav2_msgs_TARGETS}
   nav2_util::nav2_util_core
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
-  ${UUID_LIBRARIES}
 )
 
 rclcpp_components_register_nodes(${library_name} "nav2_map_server::CostmapFilterInfoServer")
 rclcpp_components_register_nodes(${library_name} "nav2_map_server::MapSaver")
 rclcpp_components_register_nodes(${library_name} "nav2_map_server::MapServer")
+rclcpp_components_register_nodes(${vo_library_name} "nav2_map_server::VectorObjectServer")
 
 install(TARGETS
-    ${library_name} ${map_io_library_name}
+    ${library_name} ${map_io_library_name} ${vo_library_name}
   EXPORT ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
@@ -168,7 +191,7 @@ install(TARGETS
 
 install(TARGETS
     ${map_server_executable} ${map_saver_cli_executable} ${map_saver_server_executable}
-    ${costmap_filter_info_server_executable} ${vector_object_server_executable}
+    ${costmap_filter_info_server_executable} ${vo_server_executable}
   RUNTIME DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY include/
@@ -192,6 +215,7 @@ ament_export_include_directories("include/${PROJECT_NAME}")
 ament_export_libraries(
   ${library_name}
   ${map_io_library_name}
+  ${vo_library_name}
 )
 ament_export_dependencies(nav_msgs nav2_msgs nav2_util rclcpp rclcpp_lifecycle)
 ament_export_targets(${library_name})

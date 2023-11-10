@@ -19,9 +19,14 @@ import os
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
-from launch.substitutions import LaunchConfiguration
+from launch.actions import DeclareLaunchArgument, GroupAction
+from launch.conditions import IfCondition
+from launch.substitutions import LaunchConfiguration, PythonExpression
+from launch.substitutions import NotEqualsSubstitution
+from launch_ros.actions import LoadComposableNodes, SetParameter
 from launch_ros.actions import Node
+from launch_ros.actions import PushROSNamespace
+from launch_ros.descriptions import ComposableNode, ParameterFile
 from nav2_common.launch import RewrittenYaml
 
 
@@ -32,12 +37,17 @@ def generate_launch_description():
     # Constant parameters
     lifecycle_nodes = ['vector_object_server']
     autostart = True
+    remappings = [('/tf', 'tf'),
+                  ('/tf_static', 'tf_static')]
 
     # Launch arguments
     # 1. Create the launch configuration variables
     namespace = LaunchConfiguration('namespace')
     use_sim_time = LaunchConfiguration('use_sim_time')
     params_file = LaunchConfiguration('params_file')
+    use_composition = LaunchConfiguration('use_composition')
+    container_name = LaunchConfiguration('container_name')
+    container_name_full = (namespace, '/', container_name)
 
     # 2. Declare the launch arguments
     declare_namespace_cmd = DeclareLaunchArgument(
@@ -55,33 +65,76 @@ def generate_launch_description():
         default_value=os.path.join(package_dir, 'params', 'vector_object_server_params.yaml'),
         description='Full path to the ROS2 parameters file to use for all launched nodes')
 
-    # Create our own temporary YAML files that include substitutions
-    param_substitutions = {
-        'use_sim_time': use_sim_time}
+    declare_use_composition_cmd = DeclareLaunchArgument(
+        'use_composition', default_value='True',
+        description='Use composed bringup if True')
 
-    configured_params = RewrittenYaml(
-        source_file=params_file,
-        root_key=namespace,
-        param_rewrites=param_substitutions,
-        convert_types=True)
+    declare_container_name_cmd = DeclareLaunchArgument(
+        'container_name', default_value='nav2_container',
+        description='the name of conatiner that nodes will load in if use composition')
 
-    # Nodes launching commands
-    start_lifecycle_manager_cmd = Node(
-            package='nav2_lifecycle_manager',
-            executable='lifecycle_manager',
-            name='lifecycle_manager',
-            output='screen',
-            emulate_tty=True,  # https://github.com/ros2/launch/issues/188
-            parameters=[{'use_sim_time': use_sim_time},
-                        {'autostart': autostart},
-                        {'node_names': lifecycle_nodes}])
+    configured_params = ParameterFile(
+        RewrittenYaml(
+            source_file=params_file,
+            root_key=namespace,
+            param_rewrites={},
+            convert_types=True),
+        allow_substs=True)
 
-    start_vector_object_server_cmd = Node(
-            package='nav2_map_server',
-            executable='vector_object_server',
-            output='screen',
-            emulate_tty=True,  # https://github.com/ros2/launch/issues/188
-            parameters=[configured_params])
+    # Declare node launching commands
+    load_nodes = GroupAction(
+        condition=IfCondition(PythonExpression(['not ', use_composition])),
+        actions=[
+            SetParameter('use_sim_time', use_sim_time),
+            PushROSNamespace(
+                condition=IfCondition(NotEqualsSubstitution(LaunchConfiguration('namespace'), '')),
+                namespace=namespace),
+            Node(
+                package='nav2_lifecycle_manager',
+                executable='lifecycle_manager',
+                name='lifecycle_manager_vo_server',
+                output='screen',
+                emulate_tty=True,  # https://github.com/ros2/launch/issues/188
+                parameters=[{'autostart': autostart},
+                            {'node_names': lifecycle_nodes}],
+                remappings=remappings),
+            Node(
+                package='nav2_map_server',
+                executable='vector_object_server',
+                output='screen',
+                emulate_tty=True,  # https://github.com/ros2/launch/issues/188
+                parameters=[configured_params],
+                remappings=remappings)
+        ]
+    )
+
+    load_composable_nodes = GroupAction(
+        condition=IfCondition(use_composition),
+        actions=[
+            SetParameter('use_sim_time', use_sim_time),
+            PushROSNamespace(
+                condition=IfCondition(NotEqualsSubstitution(LaunchConfiguration('namespace'), '')),
+                namespace=namespace),
+            LoadComposableNodes(
+                target_container=container_name_full,
+                composable_node_descriptions=[
+                    ComposableNode(
+                        package='nav2_lifecycle_manager',
+                        plugin='nav2_lifecycle_manager::LifecycleManager',
+                        name='lifecycle_manager_vo_server',
+                        parameters=[{'autostart': autostart},
+                                    {'node_names': lifecycle_nodes}],
+                        remappings=remappings),
+                    ComposableNode(
+                        package='nav2_map_server',
+                        plugin='nav2_map_server::VectorObjectServer',
+                        name='vector_object_server',
+                        parameters=[configured_params],
+                        remappings=remappings)
+                ],
+            )
+        ]
+    )
 
     ld = LaunchDescription()
 
@@ -89,9 +142,11 @@ def generate_launch_description():
     ld.add_action(declare_namespace_cmd)
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_params_file_cmd)
+    ld.add_action(declare_use_composition_cmd)
+    ld.add_action(declare_container_name_cmd)
 
     # Node launching commands
-    ld.add_action(start_lifecycle_manager_cmd)
-    ld.add_action(start_vector_object_server_cmd)
+    ld.add_action(load_nodes)
+    ld.add_action(load_composable_nodes)
 
     return ld
