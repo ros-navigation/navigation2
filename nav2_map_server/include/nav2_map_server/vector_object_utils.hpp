@@ -52,7 +52,7 @@ inline std::string unparseUUID(const unsigned char * uuid)
  * @return Obtained parameter value
  */
 template<typename ValT>
-inline rclcpp::Parameter getROSParameter(
+inline rclcpp::Parameter getParameter(
   nav2_util::LifecycleNode::SharedPtr node,
   const std::string & param_name,
   const ValT & default_val)
@@ -71,7 +71,7 @@ inline rclcpp::Parameter getROSParameter(
  * @throw std::exception if parameter is not set
  */
 template<>
-inline rclcpp::Parameter getROSParameter<rclcpp::ParameterType>(
+inline rclcpp::Parameter getParameter<rclcpp::ParameterType>(
   nav2_util::LifecycleNode::SharedPtr node,
   const std::string & param_name,
   const rclcpp::ParameterType & val_type)

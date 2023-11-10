@@ -53,7 +53,7 @@ bool Shape::obtainShapeUUID(const std::string & shape_name, unsigned char * out_
 
   try {
     // Try to get shape UUID from ROS-parameters
-    std::string uuid_str = getROSParameter(
+    std::string uuid_str = getParameter(
       node, shape_name + ".uuid", rclcpp::PARAMETER_STRING).as_string();
     if (uuid_parse(uuid_str.c_str(), out_uuid)) {
       RCLCPP_ERROR(
@@ -100,17 +100,17 @@ bool Polygon::obtainParams(const std::string & shape_name)
     polygon_ = std::make_shared<geometry_msgs::msg::Polygon>();
   }
 
-  params_->header.frame_id = getROSParameter(
+  params_->header.frame_id = getParameter(
     node, shape_name + ".frame_id", "map").as_string();
-  params_->value = getROSParameter(
+  params_->value = getParameter(
     node, shape_name + ".value", nav2_util::OCC_GRID_OCCUPIED).as_int();
 
-  params_->closed = getROSParameter(
+  params_->closed = getParameter(
     node, shape_name + ".closed", true).as_bool();
 
   std::vector<double> poly_row;
   try {
-    poly_row = getROSParameter(
+    poly_row = getParameter(
       node, shape_name + ".points", rclcpp::PARAMETER_DOUBLE_ARRAY).as_double_array();
   } catch (const std::exception & ex) {
     RCLCPP_ERROR(
@@ -352,19 +352,19 @@ bool Circle::obtainParams(const std::string & shape_name)
     center_ = std::make_shared<geometry_msgs::msg::Point32>();
   }
 
-  params_->header.frame_id = getROSParameter(
+  params_->header.frame_id = getParameter(
     node, shape_name + ".frame_id", "map").as_string();
-  params_->value = getROSParameter(
+  params_->value = getParameter(
     node, shape_name + ".value", nav2_util::OCC_GRID_OCCUPIED).as_int();
 
-  params_->fill = getROSParameter(
+  params_->fill = getParameter(
     node, shape_name + ".fill", true).as_bool();
 
   std::vector<double> center_row;
   try {
-    center_row = getROSParameter(
+    center_row = getParameter(
       node, shape_name + ".center", rclcpp::PARAMETER_DOUBLE_ARRAY).as_double_array();
-    params_->radius = getROSParameter(
+    params_->radius = getParameter(
       node, shape_name + ".radius", rclcpp::PARAMETER_DOUBLE).as_double();
     if (params_->radius < 0) {
       RCLCPP_ERROR(

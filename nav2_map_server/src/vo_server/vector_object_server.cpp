@@ -492,29 +492,29 @@ void VectorObjectServer::removeShapesCallback(
 bool VectorObjectServer::obtainParams()
 {
   // Main ROS-parameters
-  map_topic_ = getROSParameter(
+  map_topic_ = getParameter(
     shared_from_this(), "map_topic", "vo_map").as_string();
-  global_frame_id_ = getROSParameter(
+  global_frame_id_ = getParameter(
     shared_from_this(), "global_frame_id", "map").as_string();
-  resolution_ = getROSParameter(
+  resolution_ = getParameter(
     shared_from_this(), "resolution", 0.05).as_double();
-  default_value_ = getROSParameter(
+  default_value_ = getParameter(
     shared_from_this(), "default_value", nav2_util::OCC_GRID_UNKNOWN).as_int();
-  overlay_type_ = static_cast<OverlayType>(getROSParameter(
+  overlay_type_ = static_cast<OverlayType>(getParameter(
       shared_from_this(), "overlay_type", static_cast<int>(OverlayType::OVERLAY_SEQ)).as_int());
-  update_frequency_ = getROSParameter(
+  update_frequency_ = getParameter(
     shared_from_this(), "update_frequency", 1.0).as_double();
-  transform_tolerance_ = getROSParameter(
+  transform_tolerance_ = getParameter(
     shared_from_this(), "transform_tolerance", 0.1).as_double();
 
   // Shapes
-  std::vector<std::string> shape_names = getROSParameter(
+  std::vector<std::string> shape_names = getParameter(
     shared_from_this(), "shapes", std::vector<std::string>()).as_string_array();
   for (std::string shape_name : shape_names) {
     std::string shape_type;
 
     try {
-      shape_type = getROSParameter(
+      shape_type = getParameter(
         shared_from_this(), shape_name + ".type", rclcpp::PARAMETER_STRING).as_string();
     } catch (const std::exception & ex) {
       RCLCPP_ERROR(
