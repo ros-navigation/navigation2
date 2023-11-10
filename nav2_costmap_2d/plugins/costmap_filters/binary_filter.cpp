@@ -199,7 +199,7 @@ void BinaryFilter::process(
   }
 
   // Getting filter_mask data from cell where the robot placed
-  int8_t mask_data = nav2_util::getMapData(filter_mask_, mask_robot_i, mask_robot_j);
+  int8_t mask_data = getMaskData(filter_mask_, mask_robot_i, mask_robot_j);
   if (mask_data == nav2_util::OCC_GRID_UNKNOWN) {
     // Corresponding filter mask cell is unknown.
     // Warn and do nothing.
