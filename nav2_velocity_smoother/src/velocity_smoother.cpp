@@ -83,6 +83,14 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State &)
       throw std::runtime_error(
               "Negative values set of acceleration! These should be positive to speed up!");
     }
+    if (min_velocities_[i] > 0.0) {
+      throw std::runtime_error(
+              "Positive values set of min_velocities! These should be negative!");
+    }
+    if (max_velocities_[i] < 0.0) {
+      throw std::runtime_error(
+              "Negative values set of max_velocities! These should be positive!");
+    }
     if (min_velocities_[i] > max_velocities_[i]) {
       throw std::runtime_error(
               "Min velocities are higher than max velocities!");
@@ -361,9 +369,29 @@ VelocitySmoother::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
       }
 
       if (name == "max_velocity") {
-        max_velocities_ = parameter.as_double_array();
+        for (unsigned int i = 0; i != 3; i++) {
+          if (parameter.as_double_array()[i] < 0.0) {
+            RCLCPP_WARN(
+              get_logger(),
+              "Negative values set of max_velocity! These should be positive!");
+            result.successful = false;
+          }
+        }
+        if (result.successful) {
+          max_velocities_ = parameter.as_double_array();
+        }
       } else if (name == "min_velocity") {
-        min_velocities_ = parameter.as_double_array();
+        for (unsigned int i = 0; i != 3; i++) {
+          if (parameter.as_double_array()[i] > 0.0) {
+            RCLCPP_WARN(
+              get_logger(),
+              "Positive values set of min_velocity! These should be negative!");
+            result.successful = false;
+          }
+        }
+        if (result.successful) {
+          min_velocities_ = parameter.as_double_array();
+        }
       } else if (name == "max_accel") {
         for (unsigned int i = 0; i != 3; i++) {
           if (parameter.as_double_array()[i] < 0.0) {
