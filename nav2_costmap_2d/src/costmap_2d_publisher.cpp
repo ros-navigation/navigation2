@@ -183,7 +183,7 @@ void Costmap2DPublisher::prepareCostmap()
   }
 }
 
-std::unique_ptr<nav2_msgs::msg::CostmapUpdate> Costmap2DPublisher::createRawCostmapUpdateMsg()
+std::unique_ptr<nav2_msgs::msg::CostmapUpdate> Costmap2DPublisher::createCostmapUpdateMsg()
 {
   auto msg = std::make_unique<nav2_msgs::msg::CostmapUpdate>();
 
@@ -244,7 +244,7 @@ void Costmap2DPublisher::publishCostmap()
       costmap_update_pub_->publish(std::move(update));
     }
     if (costmap_raw_update_pub_->get_subscription_count() > 0) {
-      costmap_raw_update_pub_->publish(createRawCostmapUpdateMsg());
+      costmap_raw_update_pub_->publish(createCostmapUpdateMsg());
     }
   }
 
