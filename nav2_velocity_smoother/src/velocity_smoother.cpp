@@ -401,7 +401,9 @@ VelocitySmoother::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
             result.successful = false;
           }
         }
-        max_accels_ = parameter.as_double_array();
+        if (result.successful) {
+          max_accels_ = parameter.as_double_array();
+        }
       } else if (name == "max_decel") {
         for (unsigned int i = 0; i != 3; i++) {
           if (parameter.as_double_array()[i] > 0.0) {
@@ -411,7 +413,9 @@ VelocitySmoother::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
             result.successful = false;
           }
         }
-        max_decels_ = parameter.as_double_array();
+        if (result.successful) {
+          max_decels_ = parameter.as_double_array();
+        }
       } else if (name == "deadband_velocity") {
         deadband_velocities_ = parameter.as_double_array();
       }
