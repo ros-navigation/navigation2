@@ -140,7 +140,7 @@ private:
   void prepareCostmap();
 
   /** @brief Prepare CostmapUpdate msg for publication. */
-  std::unique_ptr<nav2_msgs::msg::CostmapUpdate> createRawCostmapUpdateMsg();
+  std::unique_ptr<nav2_msgs::msg::CostmapUpdate> createCostmapUpdateMsg();
 
   /** @brief Publish the latest full costmap to the new subscriber. */
   // void onNewSubscription(const ros::SingleSubscriberPublisher& pub);

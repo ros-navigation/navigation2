@@ -92,7 +92,7 @@ void CostmapSubscriber::costmapUpdateCallback(
   const nav2_msgs::msg::CostmapUpdate::SharedPtr update_msg)
 {
   if (costmap_received_) {
-    if (costmap_msg_ != nullptr) {
+    if (costmap_msg_) {
       processCurrentCostmapMsg();
     }
 
@@ -110,10 +110,7 @@ void CostmapSubscriber::costmapUpdateCallback(
         update_msg->x, update_msg->y, update_msg->size_x, update_msg->size_y);
       return;
     }
-
-    // todo: check if frame is the same
-
-    auto master_array = costmap_->getCharMap();
+    unsigned char * master_array = costmap_->getCharMap();
     // copy update msg row-wise
     for (size_t y = 0; y < update_msg->size_y; ++y) {
       auto starting_index_of_row_update_in_costmap = (y + update_msg->y) * map_cell_size_x +
@@ -139,7 +136,7 @@ void CostmapSubscriber::processCurrentCostmapMsg()
       costmap_msg_->metadata.origin.position.y);
   }
 
-  auto master_array = costmap_->getCharMap();
+  unsigned char * master_array = costmap_->getCharMap();
   std::copy(costmap_msg_->data.begin(), costmap_msg_->data.end(), master_array);
   costmap_msg_ = nullptr;
 }
