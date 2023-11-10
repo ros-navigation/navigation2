@@ -58,7 +58,7 @@ bool Shape::obtainShapeUUID(const std::string & shape_name, unsigned char * out_
     if (uuid_parse(uuid_str.c_str(), out_uuid)) {
       RCLCPP_ERROR(
         node->get_logger(),
-        "Can not parse UUID string for %s shape: %s",
+        "[%s] Can not parse UUID string for shape: %s",
         shape_name.c_str(), uuid_str.c_str());
       return false;
     }
@@ -70,7 +70,7 @@ bool Shape::obtainShapeUUID(const std::string & shape_name, unsigned char * out_
     uuid_unparse(out_uuid, uuid_str);
     RCLCPP_INFO(
       node->get_logger(),
-      "No UUID is specified for %s shape. Generating a new one: %s",
+      "[%s] No UUID is specified for shape. Generating a new one: %s",
       shape_name.c_str(), uuid_str);
   }
 
@@ -80,34 +80,24 @@ bool Shape::obtainShapeUUID(const std::string & shape_name, unsigned char * out_
 // ---------- Polygon ----------
 
 Polygon::Polygon(
-  const nav2_util::LifecycleNode::WeakPtr & node,
-  const nav2_msgs::msg::PolygonObject::SharedPtr params)
+  const nav2_util::LifecycleNode::WeakPtr & node)
 : Shape::Shape(node)
 {
   type_ = POLYGON;
-
-  if (!params) {
-    params_ = std::make_shared<nav2_msgs::msg::PolygonObject>();
-  } else {
-    params_ = params;
-    checkConsistency();
-  }
-  if (!polygon_) {
-    polygon_ = std::make_shared<geometry_msgs::msg::Polygon>();
-  }
-  polygon_->points = params_->points;
-
-  // If no UUID was specified, generate a new one
-  if (uuid_is_null(params_->uuid.uuid.data())) {
-    uuid_generate(params_->uuid.uuid.data());
-  }
 }
 
-bool Polygon::obtainParameters(const std::string & shape_name)
+bool Polygon::obtainParams(const std::string & shape_name)
 {
   auto node = node_.lock();
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
+  }
+
+  if (!params_) {
+    params_ = std::make_shared<nav2_msgs::msg::PolygonObject>();
+  }
+  if (!polygon_) {
+    polygon_ = std::make_shared<geometry_msgs::msg::Polygon>();
   }
 
   params_->header.frame_id = getROSParameter(
@@ -125,7 +115,7 @@ bool Polygon::obtainParameters(const std::string & shape_name)
   } catch (const std::exception & ex) {
     RCLCPP_ERROR(
       node->get_logger(),
-      "Error while getting polygon %s parameters: %s",
+      "[%s] Error while getting polygon parameters: %s",
       shape_name.c_str(), ex.what());
     return false;
   }
@@ -133,7 +123,7 @@ bool Polygon::obtainParameters(const std::string & shape_name)
   if (poly_row.size() <= 6 || poly_row.size() % 2 != 0) {
     RCLCPP_ERROR(
       node->get_logger(),
-      "Polygon %s has incorrect points description",
+      "[%s] Polygon has incorrect points description",
       shape_name.c_str());
     return false;
   }
@@ -228,8 +218,8 @@ void Polygon::putBorders(
   if (!nav2_util::worldToMap(map, polygon_->points[0].x, polygon_->points[0].y, mx1, my1)) {
     RCLCPP_ERROR(
       node->get_logger(),
-      "Can not convert (%f, %f) point to map",
-      polygon_->points[0].x, polygon_->points[0].y);
+      "[UUID: %s] Can not convert (%f, %f) point to map",
+      getUUID().c_str(), polygon_->points[0].x, polygon_->points[0].y);
     return;
   }
 
@@ -240,8 +230,8 @@ void Polygon::putBorders(
     if (!nav2_util::worldToMap(map, polygon_->points[i].x, polygon_->points[i].y, mx1, my1)) {
       RCLCPP_ERROR(
         node->get_logger(),
-        "Can not convert (%f, %f) point to map",
-        polygon_->points[i].x, polygon_->points[i].y);
+        "[UUID: %s] Can not convert (%f, %f) point to map",
+        getUUID().c_str(), polygon_->points[i].x, polygon_->points[i].y);
       return;
     }
     nav2_util::raytraceLine(ma, mx0, my0, mx1, my1, map->info.width);
@@ -253,14 +243,21 @@ nav2_msgs::msg::PolygonObject::SharedPtr Polygon::getParams() const
   return params_;
 }
 
-void Polygon::setParams(const nav2_msgs::msg::PolygonObject::SharedPtr params)
+bool Polygon::setParams(const nav2_msgs::msg::PolygonObject::SharedPtr params)
 {
   params_ = params;
-  checkConsistency();
+
   if (!polygon_) {
     polygon_ = std::make_shared<geometry_msgs::msg::Polygon>();
   }
   polygon_->points = params_->points;
+
+  // If no UUID was specified, generate a new one
+  if (uuid_is_null(params_->uuid.uuid.data())) {
+    uuid_generate(params_->uuid.uuid.data());
+  }
+
+  return checkConsistency();
 }
 
 int8_t Polygon::getValue() const
@@ -314,45 +311,45 @@ bool Polygon::toFrame(
   return true;
 }
 
-void Polygon::checkConsistency()
+bool Polygon::checkConsistency()
 {
   if (params_->points.size() < 3) {
-    throw std::runtime_error("Polygon has incorrect number of vertices");
+    auto node = node_.lock();
+    if (!node) {
+      throw std::runtime_error{"Failed to lock node"};
+    }
+
+    RCLCPP_ERROR(
+      node->get_logger(),
+      "[UUID: %s] Polygon has incorrect number of vertices: %li",
+      getUUID().c_str(), params_->points.size());
+    return false;
   }
+
+  return true;
 }
 
 // ---------- Circle ----------
 
 Circle::Circle(
-  const nav2_util::LifecycleNode::WeakPtr & node,
-  const nav2_msgs::msg::CircleObject::SharedPtr params)
+  const nav2_util::LifecycleNode::WeakPtr & node)
 : Shape::Shape(node)
 {
   type_ = CIRCLE;
-
-  if (!params) {
-    params_ = std::make_shared<nav2_msgs::msg::CircleObject>();
-  } else {
-    params_ = params;
-  }
-  if (!center_) {
-    center_ = std::make_shared<geometry_msgs::msg::Point32>();
-  }
-  *center_ = params_->center;
-
-  // If no UUID was specified, generate a new one
-  if (uuid_is_null(params_->uuid.uuid.data())) {
-    uuid_generate(params_->uuid.uuid.data());
-  }
-
-  checkConsistency();
 }
 
-bool Circle::obtainParameters(const std::string & shape_name)
+bool Circle::obtainParams(const std::string & shape_name)
 {
   auto node = node_.lock();
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
+  }
+
+  if (!params_) {
+    params_ = std::make_shared<nav2_msgs::msg::CircleObject>();
+  }
+  if (!center_) {
+    center_ = std::make_shared<geometry_msgs::msg::Point32>();
   }
 
   params_->header.frame_id = getROSParameter(
@@ -369,10 +366,17 @@ bool Circle::obtainParameters(const std::string & shape_name)
       node, shape_name + ".center", rclcpp::PARAMETER_DOUBLE_ARRAY).as_double_array();
     params_->radius = getROSParameter(
       node, shape_name + ".radius", rclcpp::PARAMETER_DOUBLE).as_double();
+    if (params_->radius < 0) {
+      RCLCPP_ERROR(
+        node->get_logger(),
+        "[%s] Circle has incorrect radius less than zero",
+        shape_name.c_str());
+      return false;
+    }
   } catch (const std::exception & ex) {
     RCLCPP_ERROR(
       node->get_logger(),
-      "Error while getting circle %s parameters: %s",
+      "[%s] Error while getting circle parameters: %s",
       shape_name.c_str(), ex.what());
     return false;
   }
@@ -380,7 +384,7 @@ bool Circle::obtainParameters(const std::string & shape_name)
   if (center_row.size() != 2) {
     RCLCPP_ERROR(
       node->get_logger(),
-      "Circle %s has incorrect center description",
+      "[%s] Circle has incorrect center description",
       shape_name.c_str());
     return false;
   }
@@ -423,8 +427,8 @@ bool Circle::centerToMap(
   if (center_->x < map->info.origin.position.x || center_->y < map->info.origin.position.y) {
     RCLCPP_ERROR(
       node->get_logger(),
-      "Can not convert (%f, %f) circle center to map",
-      center_->x, center_->y);
+      "[UUID: %s] Can not convert (%f, %f) circle center to map",
+      getUUID().c_str(), center_->x, center_->y);
     return false;
   }
   // We need the circle center to be always shifted one cell less its logical center
@@ -436,7 +440,9 @@ bool Circle::centerToMap(
     std::round((center_->y - map->info.origin.position.y) / map->info.resolution)) - 1;
   if (mcx >= map->info.width || mcy >= map->info.height) {
     RCLCPP_ERROR(
-      node->get_logger(), "Can not convert (%f, %f) point to map", center_->x, center_->y);
+      node->get_logger(),
+      "[UUID: %s] Can not convert (%f, %f) point to map",
+      getUUID().c_str(), center_->x, center_->y);
     return false;
   }
 
@@ -506,14 +512,21 @@ nav2_msgs::msg::CircleObject::SharedPtr Circle::getParams() const
   return params_;
 }
 
-void Circle::setParams(const nav2_msgs::msg::CircleObject::SharedPtr params)
+bool Circle::setParams(const nav2_msgs::msg::CircleObject::SharedPtr params)
 {
   params_ = params;
+
   if (!center_) {
     center_ = std::make_shared<geometry_msgs::msg::Point32>();
   }
   *center_ = params_->center;
-  checkConsistency();
+
+  // If no UUID was specified, generate a new one
+  if (uuid_is_null(params_->uuid.uuid.data())) {
+    uuid_generate(params_->uuid.uuid.data());
+  }
+
+  return checkConsistency();
 }
 
 int8_t Circle::getValue() const
@@ -565,11 +578,21 @@ bool Circle::toFrame(
   return true;
 }
 
-void Circle::checkConsistency()
+bool Circle::checkConsistency()
 {
   if (params_->radius < 0.0) {
-    throw std::runtime_error("Circle has incorrect radius less than zero");
+    auto node = node_.lock();
+    if (!node) {
+      throw std::runtime_error{"Failed to lock node"};
+    }
+
+    RCLCPP_ERROR(
+      node->get_logger(),
+      "[UUID: %s] Circle has incorrect radius less than zero",
+      getUUID().c_str());
+    return false;
   }
+  return true;
 }
 
 }  // namespace nav2_map_server

@@ -77,7 +77,7 @@ public:
    * @param shape_name Name of the shape
    * @return True if all parameters were obtained or false in failure case
    */
-  virtual bool obtainParameters(const std::string & shape_name) = 0;
+  virtual bool obtainParams(const std::string & shape_name) = 0;
 
   /**
    * @brief Gets shape boundaries.
@@ -171,20 +171,16 @@ public:
   /*
    * @brief Polygon class constructor
    * @param node Vector Object server node pointer
-   * @param params PolygonObject parameters. In case of nullptr,
-   * parameters to be read from ROS-parameters.
-   * @throw std::exception in case of inconsistent shape
+   * @note setParams()/obtainParams() should be called after to configure the shape
    */
-  Polygon(
-    const nav2_util::LifecycleNode::WeakPtr & node,
-    const nav2_msgs::msg::PolygonObject::SharedPtr params = nullptr);
+  Polygon(const nav2_util::LifecycleNode::WeakPtr & node);
 
   /**
    * @brief Supporting routine obtaining ROS-parameters for the given vector object.
    * @param shape_name Name of the shape
    * @return True if all parameters were obtained or false in failure case
    */
-  bool obtainParameters(const std::string & shape_name);
+  bool obtainParams(const std::string & shape_name);
 
   /**
    * @brief Gets shape boundaries
@@ -218,9 +214,9 @@ public:
 
   /**
    * @brief Tries to update Polygon parameters
-   * @throw std::exception in case of inconsistent shape
+   * @return False in case of inconsistent shape
    */
-  void setParams(const nav2_msgs::msg::PolygonObject::SharedPtr params);
+  bool setParams(const nav2_msgs::msg::PolygonObject::SharedPtr params);
 
   /**
    * @brief Gets the value of the shape.
@@ -268,9 +264,9 @@ public:
 protected:
   /**
    * @brief Checks that shape is consistent for further operation
-   * @throw std::exception in case of inconsistent shape
+   * @return False in case of inconsistent shape
    */
-  void checkConsistency();
+  bool checkConsistency();
 
   /// @brief Input polygon parameters (could be in any frame)
   nav2_msgs::msg::PolygonObject::SharedPtr params_;
@@ -285,20 +281,16 @@ public:
   /*
    * @brief Circle class constructor
    * @param node Vector Object server node pointer
-   * @param params CircleObject parameters. In case of nullptr,
-   * parameters to be read from ROS-parameters.
-   * @throw std::exception in case of inconsistent shape
+   * @note setParams()/obtainParams() should be called after to configure the shape
    */
-  Circle(
-    const nav2_util::LifecycleNode::WeakPtr & node,
-    const nav2_msgs::msg::CircleObject::SharedPtr params = nullptr);
+  Circle(const nav2_util::LifecycleNode::WeakPtr & node);
 
   /**
    * @brief Supporting routine obtaining ROS-parameters for the given vector object.
    * @param shape_name Name of the shape
    * @return True if all parameters were obtained or false in failure case
    */
-  bool obtainParameters(const std::string & shape_name);
+  bool obtainParams(const std::string & shape_name);
 
   /**
    * @brief Gets shape boundaries
@@ -332,9 +324,9 @@ public:
 
   /**
    * @brief Tries to update Circle parameters
-   * @throw std::exception in case of inconsistent shape
+   * @return False in case of inconsistent shape
    */
-  void setParams(const nav2_msgs::msg::CircleObject::SharedPtr params);
+  bool setParams(const nav2_msgs::msg::CircleObject::SharedPtr params);
 
   /**
    * @brief Gets the value of the shape.
@@ -382,9 +374,9 @@ public:
 protected:
   /**
    * @brief Checks that shape is consistent for further operation
-   * @throw std::exception in case of inconsistent shape
+   * @return False in case of inconsistent shape
    */
-  void checkConsistency();
+  bool checkConsistency();
 
   /**
    * @brief Converts circle center to map coordinates
