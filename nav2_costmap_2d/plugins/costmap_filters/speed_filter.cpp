@@ -202,7 +202,7 @@ void SpeedFilter::process(
 
   // Getting filter_mask data from cell where the robot placed and
   // calculating speed limit value
-  int8_t speed_mask_data = nav2_util::getMapData(filter_mask_, mask_robot_i, mask_robot_j);
+  int8_t speed_mask_data = getMaskData(filter_mask_, mask_robot_i, mask_robot_j);
   if (speed_mask_data == SPEED_MASK_NO_LIMIT) {
     // Corresponding filter mask cell is free.
     // Setting no speed limit there.

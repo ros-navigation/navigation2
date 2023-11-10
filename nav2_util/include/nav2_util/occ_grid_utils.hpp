@@ -44,35 +44,6 @@ namespace nav2_util
 {
 
 /**
- * @brief  Get the data of a cell in the OccupancyGrid map
- * @param  map OccupancyGrid map to get the data from
- * @param  mx The x coordinate of the cell
- * @param  my The y coordinate of the cell
- * @return The data of the selected cell
- */
-inline int8_t getMapData(
-  nav_msgs::msg::OccupancyGrid::ConstSharedPtr map,
-  const unsigned int mx, const unsigned int my)
-{
-  return map->data[my * map->info.width + mx];
-}
-
-/**
- * @brief  Set the data of a cell in the OccupancyGrid map to a given value
- * @param  map OccupancyGrid map to get the data from
- * @param  mx The x coordinate of the cell
- * @param  my The y coordinate of the cell
- * @param  value The value to set map cell to
- */
-inline void setMapData(
-  nav_msgs::msg::OccupancyGrid::SharedPtr map,
-  const unsigned int mx, const unsigned int my, const int8_t value)
-{
-  map->data[my * map->info.width + mx] = value;
-}
-
-
-/**
  * @brief: Convert from world coordinates to map coordinates.
    Similar to Costmap2D::worldToMap() method but works directly with OccupancyGrid-s.
  * @param  map OccupancyGrid map on which to convert
