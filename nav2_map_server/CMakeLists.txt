@@ -30,7 +30,7 @@ set(map_saver_server_executable map_saver_server)
 
 set(costmap_filter_info_server_executable costmap_filter_info_server)
 
-set(vector_object_server_executable vector_object_server)
+set(vo_server_executable vector_object_server)
 
 add_executable(${map_server_executable}
   src/map_server/main.cpp)
@@ -44,14 +44,14 @@ add_executable(${map_saver_server_executable}
 add_executable(${costmap_filter_info_server_executable}
   src/costmap_filter_info/main.cpp)
 
-add_executable(${vector_object_server_executable}
-  src/vo_server/vector_object_shapes.cpp
-  src/vo_server/vector_object_server.cpp
+add_executable(${vo_server_executable}
   src/vo_server/vector_object_server_node.cpp)
 
 set(map_io_library_name map_io)
 
 set(library_name ${map_server_executable}_core)
+
+set(vo_library_name vector_object_core)
 
 add_library(${map_io_library_name} SHARED
   src/map_mode.cpp
@@ -61,6 +61,10 @@ add_library(${library_name} SHARED
   src/map_server/map_server.cpp
   src/map_saver/map_saver.cpp
   src/costmap_filter_info/costmap_filter_info_server.cpp)
+
+add_library(${vo_library_name} SHARED
+  src/vo_server/vector_object_shapes.cpp
+  src/vo_server/vector_object_server.cpp)
 
 set(map_io_dependencies
   yaml_cpp_vendor
@@ -88,6 +92,7 @@ set(map_saver_dependencies
 set(vo_server_dependencies
   rclcpp
   rclcpp_lifecycle
+  rclcpp_components
   nav_msgs
   nav2_msgs
   nav2_util)
@@ -104,15 +109,17 @@ ament_target_dependencies(${map_saver_server_executable}
 ament_target_dependencies(${costmap_filter_info_server_executable}
   ${map_saver_dependencies})
 
+ament_target_dependencies(${vo_server_executable}
+  ${vo_server_dependencies})
+
 ament_target_dependencies(${library_name}
   ${map_server_dependencies})
 
 ament_target_dependencies(${map_io_library_name}
   ${map_io_dependencies})
 
-ament_target_dependencies(${vector_object_server_executable}
-  ${vo_server_dependencies}
-)
+ament_target_dependencies(${vo_library_name}
+  ${vo_server_dependencies})
 
 target_link_libraries(${library_name}
   ${map_io_library_name})
@@ -145,23 +152,26 @@ if(WIN32)
     YAML_CPP_DLL)
 endif()
 
-target_link_libraries(${vector_object_server_executable}
-  ${UUID_LIBRARIES}
-)
+target_link_libraries(${vo_library_name}
+  ${UUID_LIBRARIES})
+
+target_link_libraries(${vo_server_executable}
+  ${vo_library_name})
 
 rclcpp_components_register_nodes(${library_name} "nav2_map_server::CostmapFilterInfoServer")
 rclcpp_components_register_nodes(${library_name} "nav2_map_server::MapSaver")
 rclcpp_components_register_nodes(${library_name} "nav2_map_server::MapServer")
+rclcpp_components_register_nodes(${vo_library_name} "nav2_map_server::VectorObjectServer")
 
 install(TARGETS
-    ${library_name} ${map_io_library_name}
+    ${library_name} ${map_io_library_name} ${vo_library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin)
 
 install(TARGETS
     ${map_server_executable} ${map_saver_cli_executable} ${map_saver_server_executable}
-    ${costmap_filter_info_server_executable} ${vector_object_server_executable}
+    ${costmap_filter_info_server_executable} ${vo_server_executable}
   RUNTIME DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY include/
@@ -184,6 +194,7 @@ ament_export_include_directories(include)
 ament_export_libraries(
   ${library_name}
   ${map_io_library_name}
+  ${vo_library_name}
 )
 ament_export_dependencies(${map_io_dependencies} ${map_server_dependencies})
 ament_package()
