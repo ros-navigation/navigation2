@@ -222,7 +222,7 @@ bool BtActionServer<ActionT>::on_cleanup()
   plugin_lib_names_.clear();
   current_bt_xml_filename_.clear();
   blackboard_.reset();
-  bt_->haltAllActions(tree_.rootNode());
+  bt_->haltAllActions(tree_);
   bt_.reset();
   return true;
 }
@@ -303,7 +303,7 @@ void BtActionServer<ActionT>::executeCallback()
 
   // Make sure that the Bt is not in a running state from a previous execution
   // note: if all the ControlNodes are implemented correctly, this is not needed.
-  bt_->haltAllActions(tree_.rootNode());
+  bt_->haltAllActions(tree_);
 
   // Give server an opportunity to populate the result message or simple give
   // an indication that the action is complete.
