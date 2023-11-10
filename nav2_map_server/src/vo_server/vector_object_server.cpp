@@ -46,7 +46,7 @@ VectorObjectServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
   // Obtaining ROS parameters
-  if (!obtainParameters()) {
+  if (!obtainParams()) {
     return nav2_util::CallbackReturn::FAILURE;
   }
 
@@ -368,23 +368,18 @@ void VectorObjectServer::addShapesCallback(
 
       // Preserving old parameters for the case, if new ones to be incorrect
       nav2_msgs::msg::PolygonObject::SharedPtr old_params = polygon->getParams();
-      try {
-        polygon->setParams(new_params);
-      } catch (const std::exception & ex) {
+      if (!polygon->setParams(new_params)) {
         // Restore old parameters
         polygon->setParams(old_params);
-        // ... and report the problem
-        RCLCPP_ERROR(get_logger(), "Can not update polygon: %s", ex.what());
+        // ... and set the failure to return
         response->success = false;
       }
     } else {
       // Vector Object with given UUID was not found: creating a new one
-      // Creating new polygon
-      try {
-        std::shared_ptr<Polygon> polygon = std::make_shared<Polygon>(node, new_params);
+      std::shared_ptr<Polygon> polygon = std::make_shared<Polygon>(node);
+      if (polygon->setParams(new_params)) {
         shapes_.insert({polygon->getUUID(), polygon});
-      } catch (const std::exception & ex) {
-        RCLCPP_ERROR(get_logger(), "Can not add polygon: %s", ex.what());
+      } else {
         response->success = false;
       }
     }
@@ -413,23 +408,18 @@ void VectorObjectServer::addShapesCallback(
 
       // Preserving old parameters for the case, if new ones to be incorrect
       nav2_msgs::msg::CircleObject::SharedPtr old_params = circle->getParams();
-      try {
-        circle->setParams(new_params);
-      } catch (const std::exception & ex) {
+      if (!circle->setParams(new_params)) {
         // Restore old parameters
         circle->setParams(old_params);
-        // ... and report the problem
-        RCLCPP_ERROR(get_logger(), "Can not update circle: %s", ex.what());
+        // ... and set the failure to return
         response->success = false;
       }
     } else {
       // Vector Object with given UUID was not found: creating a new one
-      // Creating new circle
-      try {
-        std::shared_ptr<Circle> circle = std::make_shared<Circle>(node, new_params);
+      std::shared_ptr<Circle> circle = std::make_shared<Circle>(node);
+      if (circle->setParams(new_params)) {
         shapes_.insert({circle->getUUID(), circle});
-      } catch (const std::exception & ex) {
-        RCLCPP_ERROR(get_logger(), "Can not add circle: %s", ex.what());
+      } else {
         response->success = false;
       }
     }
@@ -499,7 +489,7 @@ void VectorObjectServer::removeShapesCallback(
   switchMapUpdate();
 }
 
-bool VectorObjectServer::obtainParameters()
+bool VectorObjectServer::obtainParams()
 {
   // Main ROS-parameters
   map_topic_ = getROSParameter(
@@ -537,7 +527,7 @@ bool VectorObjectServer::obtainParameters()
     if (shape_type == "polygon") {
       try {
         std::shared_ptr<Polygon> polygon = std::make_shared<Polygon>(shared_from_this());
-        if (!polygon->obtainParameters(shape_name)) {
+        if (!polygon->obtainParams(shape_name)) {
           return false;
         }
         shapes_.insert({polygon->getUUID(), polygon});
@@ -549,7 +539,7 @@ bool VectorObjectServer::obtainParameters()
       try {
         std::shared_ptr<Circle> circle = std::make_shared<Circle>(shared_from_this());
 
-        if (!circle->obtainParameters(shape_name)) {
+        if (!circle->obtainParams(shape_name)) {
           return false;
         }
         shapes_.insert({circle->getUUID(), circle});

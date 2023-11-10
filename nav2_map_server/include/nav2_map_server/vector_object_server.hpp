@@ -178,7 +178,7 @@ protected:
    * @brief Supporting routine obtaining all ROS-parameters
    * @return True if all parameters were obtained or false in the failure case
    */
-  bool obtainParameters();
+  bool obtainParams();
 
   /// @brief TF buffer
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
