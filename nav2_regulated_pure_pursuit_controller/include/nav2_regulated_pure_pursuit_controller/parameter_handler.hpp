@@ -34,6 +34,7 @@ struct Parameters
 {
   double desired_linear_vel, base_desired_linear_vel;
   double lookahead_dist;
+  bool project_carrot_past_goal;
   double rotate_to_heading_angular_vel;
   double max_lookahead_dist;
   double min_lookahead_dist;

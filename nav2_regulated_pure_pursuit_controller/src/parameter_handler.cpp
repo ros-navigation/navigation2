@@ -40,6 +40,8 @@ ParameterHandler::ParameterHandler(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".lookahead_dist", rclcpp::ParameterValue(0.6));
   declare_parameter_if_not_declared(
+    node, plugin_name_ + ".project_carrot_past_goal", rclcpp::ParameterValue(false));
+  declare_parameter_if_not_declared(
     node, plugin_name_ + ".min_lookahead_dist", rclcpp::ParameterValue(0.3));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".max_lookahead_dist", rclcpp::ParameterValue(0.9));
@@ -97,7 +99,13 @@ ParameterHandler::ParameterHandler(
   node->get_parameter(plugin_name_ + ".desired_linear_vel", params_.desired_linear_vel);
   params_.base_desired_linear_vel = params_.desired_linear_vel;
   node->get_parameter(plugin_name_ + ".lookahead_dist", params_.lookahead_dist);
+  node->get_parameter(plugin_name_ + ".project_carrot_past_goal", params_.project_carrot_past_goal);
   node->get_parameter(plugin_name_ + ".min_lookahead_dist", params_.min_lookahead_dist);
+  if (params_.min_lookahead_dist > 0.0 && !params_.project_carrot_past_goal) {
+    RCLCPP_WARN(
+      logger_, "min_lookahead_dist is non-zero but project_carrot_past_goal is not set "
+      "- min_lookahead_dist will not be respected at end of the path");
+  }
   node->get_parameter(plugin_name_ + ".max_lookahead_dist", params_.max_lookahead_dist);
   node->get_parameter(plugin_name_ + ".lookahead_time", params_.lookahead_time);
   node->get_parameter(
@@ -241,6 +249,8 @@ ParameterHandler::dynamicParametersCallback(
     } else if (type == ParameterType::PARAMETER_BOOL) {
       if (name == plugin_name_ + ".use_velocity_scaled_lookahead_dist") {
         params_.use_velocity_scaled_lookahead_dist = parameter.as_bool();
+      } else if (name == plugin_name_ + ".project_carrot_past_goal") {
+        params_.project_carrot_past_goal = parameter.as_bool();
       } else if (name == plugin_name_ + ".use_regulated_linear_velocity_scaling") {
         params_.use_regulated_linear_velocity_scaling = parameter.as_bool();
       } else if (name == plugin_name_ + ".use_fixed_curvature_lookahead") {
