@@ -73,8 +73,7 @@ class TrajectoryParameters:
     @property
     def total_length(self):
         """Total length of trajectory."""
-        return self.arc_length + self.start_straight_length + \
-            self.end_straight_length
+        return self.arc_length + self.start_straight_length + self.end_straight_length
 
     @staticmethod
     def no_arc(end_point, start_angle, end_angle):
