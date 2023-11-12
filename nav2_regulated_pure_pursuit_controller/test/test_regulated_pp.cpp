@@ -101,10 +101,22 @@ public:
       linear_vel, sign);
   }
 
+  unsigned int getIndexOfNextCuspWrapper(
+    const nav_msgs::msg::Path & transformed_plan, const unsigned int start_index)
+  {
+    return getIndexOfNextCusp(transformed_plan, start_index);
+  }
+
   double findVelocitySignChangeWrapper(
     const nav_msgs::msg::Path & transformed_plan)
   {
     return findVelocitySignChange(transformed_plan);
+  }
+
+  geometry_msgs::msg::Point retractPointWrapper(
+    const geometry_msgs::msg::Point & origin, const geometry_msgs::msg::Point & towards)
+  {
+    return retractPoint(origin, towards);
   }
 
   nav_msgs::msg::Path transformGlobalPlanWrapper(
@@ -166,6 +178,68 @@ TEST(RegulatedPurePursuitTest, createCarrotMsg)
   EXPECT_EQ(rtn->point.z, 0.01);
 }
 
+TEST(RegulatedPurePursuitTest, getIndexOfNextCusp)
+{
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testRPPgetIndexOfNextCusp");
+  auto ctrl = std::make_shared<BasicAPIRPP>();
+
+  std::string name = "PathFollower";
+  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
+  rclcpp_lifecycle::State state;
+  costmap->on_configure(state);
+  ctrl->configure(node, name, tf, costmap);
+
+  geometry_msgs::msg::PoseStamped pose;
+  pose.header.frame_id = "smb";
+  auto time = node->get_clock()->now();
+  pose.header.stamp = time;
+
+  nav_msgs::msg::Path path;
+  path.poses.resize(15);
+  path.header.frame_id = "smb";
+  path.header.stamp = pose.header.stamp;
+  for (auto i = 0u; i < path.poses.size(); i++) {
+    path.poses[i].pose.position.x = i + 1;
+    path.poses[i].pose.position.y = i + 1;
+  }
+
+  // Check that selecting the first node to start is okay
+  auto rtn = ctrl->getIndexOfNextCuspWrapper(path, 0);
+  EXPECT_EQ(rtn, path.poses.size() - 1);
+
+  // Starting midway should still not find a cusp
+  rtn = ctrl->getIndexOfNextCuspWrapper(path, 2);
+  EXPECT_EQ(rtn, path.poses.size() - 1);
+
+  // Starting beyond the path length should still not find a cusp
+  rtn = ctrl->getIndexOfNextCuspWrapper(path, 99);
+  EXPECT_EQ(rtn, path.poses.size() - 1);
+
+  // Add two cusps
+  // Make a sawtooth pattern
+  for (auto i = 5u; i < 10; i++) {
+    path.poses[i].pose.position.x = 9 - i;
+    path.poses[i].pose.position.y = 9 - i;
+  }
+  for (auto i = 10u; i < 15; i++) {
+    path.poses[i].pose.position.x = i - 9;
+    path.poses[i].pose.position.y = i - 9;
+  }
+
+  // Find the first cusp if starting at the beginning
+  rtn = ctrl->getIndexOfNextCuspWrapper(path, 1);
+  EXPECT_EQ(rtn, 4);
+
+  // Find the first cusp if starting at the cusp
+  rtn = ctrl->getIndexOfNextCuspWrapper(path, 4);
+  EXPECT_EQ(rtn, 4);
+
+  // Find the second cusp if starting after the first
+  rtn = ctrl->getIndexOfNextCuspWrapper(path, 5);
+  EXPECT_EQ(rtn, 9);
+}
+
 TEST(RegulatedPurePursuitTest, findVelocitySignChange)
 {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testRPPfindVelocitySignChange");
@@ -204,6 +278,68 @@ TEST(RegulatedPurePursuitTest, findVelocitySignChange)
   ctrl->setPlan(path);
   rtn = ctrl->findVelocitySignChangeWrapper(path);
   EXPECT_EQ(rtn, std::numeric_limits<double>::max());
+}
+
+TEST(RegulatedPurePursuitTest, augmentPlanWhenProjectingPastGoal)
+{
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testRPPaugmentPlan");
+  auto ctrl = std::make_shared<BasicAPIRPP>();
+
+  std::string name = "PathFollower";
+  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
+  rclcpp_lifecycle::State state;
+  costmap->on_configure(state);
+  ctrl->configure(node, name, tf, costmap);
+
+  // Check retraction in the correct direction
+  geometry_msgs::msg::Point origin;
+  geometry_msgs::msg::Point towards;
+  origin.x = 1.0;
+  origin.y = 1.0;
+  auto retracted = ctrl->retractPointWrapper(origin, towards);
+  EXPECT_NEAR(retracted.x, 0.999, 5e-4);
+  EXPECT_NEAR(retracted.y, 0.999, 5e-4);
+
+
+  geometry_msgs::msg::PoseStamped pose;
+  pose.header.frame_id = "smb";
+  auto time = node->get_clock()->now();
+  pose.header.stamp = time;
+  pose.pose.position.x = 1.0;
+  pose.pose.position.y = 0.0;
+
+  nav_msgs::msg::Path path;
+  path.poses.resize(3);
+  path.header.frame_id = "smb";
+  path.header.stamp = pose.header.stamp;
+  for (auto & p : path.poses) {
+    p.header = pose.header;
+  }
+  path.poses[0].pose.position.x = 1.0;
+  path.poses[0].pose.position.y = 1.0;
+  path.poses[1].pose.position.x = 2.0;
+  path.poses[1].pose.position.y = 2.0;
+  path.poses[2].pose.position.x = 3.0;
+  path.poses[2].pose.position.y = 3.0;
+  ctrl->setPlan(path);
+  // Should have left the path unchanged
+  EXPECT_EQ(ctrl->getPlan().poses.size(), path.poses.size());
+
+  node->set_parameter(
+    rclcpp::Parameter(
+      name + ".project_carrot_past_goal",
+      rclcpp::ParameterValue(true)));
+  ctrl->configure(node, name, tf, costmap);
+  // Should have added one pose before the goal
+  ctrl->setPlan(path);
+  EXPECT_EQ(ctrl->getPlan().poses.size(), path.poses.size() + 1);
+
+  path.poses[2].pose.position.x = -1.0;
+  path.poses[2].pose.position.y = -1.0;
+  ctrl->setPlan(path);
+  // Should have added one pose before the goal and one before the cusp
+  EXPECT_EQ(ctrl->getPlan().poses.size(), path.poses.size() + 2);
 }
 
 using CircleSegmentIntersectionParam = std::tuple<
@@ -384,6 +520,21 @@ TEST(RegulatedPurePursuitTest, lookaheadAPI)
   dist = 3.8;
   pt = ctrl->getLookAheadPointWrapper(dist, path);
   EXPECT_EQ(pt.pose.position.x, 3.8);
+
+  // test projection past end of path
+  node->set_parameter(
+    rclcpp::Parameter(
+      name + ".project_carrot_past_goal", rclcpp::ParameterValue(false)));
+  dist = 100.0;
+  pt = ctrl->getLookAheadPointWrapper(dist, path);
+  EXPECT_EQ(pt.pose.position.x, 9.0);
+
+  node->set_parameter(
+    rclcpp::Parameter(
+      name + ".project_carrot_past_goal", rclcpp::ParameterValue(true)));
+  dist = 100.0;
+  pt = ctrl->getLookAheadPointWrapper(dist, path);
+  EXPECT_EQ(pt.pose.position.x, 100.0);
 }
 
 TEST(RegulatedPurePursuitTest, rotateTests)

@@ -191,10 +191,41 @@ protected:
 
   /**
    * @brief checks for the cusp position
-   * @param pose Pose input to determine the cusp position
-   * @return robot distance from the cusp
+   * @param transformed_plan Transformed plan to search for the velocity sign change
+   * @return robot distance from the velocity sign change
    */
   double findVelocitySignChange(const nav_msgs::msg::Path & transformed_plan);
+
+/**
+   * @brief Gets the index of the next cusp position
+   * @param transformed_plan Path to search for the cusp position
+   * @param start_index Index of the pose in the path to begin the search
+   * @return index of the pose of the cusp, or last pose if no cusp found
+   */
+  unsigned int getIndexOfNextCusp(
+    const nav_msgs::msg::Path & transformed_plan,
+    const unsigned int start_index);
+
+  /**
+   * @brief Finds the position a very small distance from the initial point in the direction of the target point
+   * @param origin Position of the origin
+   * @param towards Position of the target to retract towards
+   * @return position of the retracted point
+   */
+  geometry_msgs::msg::Point retractPoint(
+    const geometry_msgs::msg::Point & origin,
+    const geometry_msgs::msg::Point & towards);
+
+  /**
+   * @brief Project the carrot past the end of the path to maintain the lookahead distance
+   * @param lookahead_dist Lookahead distance
+   * @param transformed_plan Path to project carrot off the end of
+   * @return pose of the lookahead point
+   */
+  geometry_msgs::msg::PoseStamped projectCarrotPastGoal(
+    const double & lookahead_dist,
+    const nav_msgs::msg::Path & transformed_plan);
+
 
   rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
