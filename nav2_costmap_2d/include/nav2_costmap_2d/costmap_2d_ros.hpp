@@ -169,7 +169,7 @@ public:
   /** @brief Same as getLayeredCostmap()->isCurrent(). */
   bool isCurrent()
   {
-    std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_.getCostmap()->getMutex()));
+    std::unique_lock<Costmap2D::mutex_t> lock(*(layered_costmap_->getCostmap()->getMutex()));
     if(layered_costmap_==nullptr) return false;
     return layered_costmap_->isCurrent();
   }
