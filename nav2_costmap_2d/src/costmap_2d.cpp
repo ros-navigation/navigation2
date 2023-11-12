@@ -238,6 +238,7 @@ Costmap2D::Costmap2D(const Costmap2D & map)
 : costmap_(NULL)
 {
   access_ = new mutex_t();
+  free_access_ = new mutex_t();//only for UAF check
   *this = map;
 }
 
@@ -246,12 +247,14 @@ Costmap2D::Costmap2D()
 : size_x_(0), size_y_(0), resolution_(0.0), origin_x_(0.0), origin_y_(0.0), costmap_(NULL)
 {
   access_ = new mutex_t();
+  free_access_ = new mutex_t();//only for UAF check
 }
 
 Costmap2D::~Costmap2D()
 {
   deleteMaps();
   delete access_;
+  delete free_access_;//only for UAF check
 }
 
 unsigned int Costmap2D::cellDistance(double world_dist)
