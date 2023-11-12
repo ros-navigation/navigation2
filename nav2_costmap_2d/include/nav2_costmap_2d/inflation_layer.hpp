@@ -131,7 +131,7 @@ public:
   /**
    * @brief If clearing operations should be processed on this layer or not
    */
-  virtual bool isClearable() {return false;}
+  virtual bool isClearable() override {return false;}
 
   /**
    * @brief Reset this costmap
@@ -170,6 +170,16 @@ public:
   mutex_t * getMutex()
   {
     return access_;
+  }
+
+  double getCostScalingFactor()
+  {
+    return cost_scaling_factor_;
+  }
+
+  double getInflationRadius()
+  {
+    return inflation_radius_;
   }
 
 protected:
