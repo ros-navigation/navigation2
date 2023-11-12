@@ -40,14 +40,15 @@
 namespace nav2_costmap_2d
 {
 
-std::pair<double, double> calculateMinAndMaxDistances(
-  const std::vector<geometry_msgs::msg::Point> & footprint)
+void calculateMinAndMaxDistances(
+  const std::vector<geometry_msgs::msg::Point> & footprint,
+  double & min_dist, double & max_dist)
 {
-  double min_dist = std::numeric_limits<double>::max();
-  double max_dist = 0.0;
+  min_dist = std::numeric_limits<double>::max();
+  max_dist = 0.0;
 
   if (footprint.size() <= 2) {
-    return std::pair<double, double>(min_dist, max_dist);
+    return;
   }
 
   for (unsigned int i = 0; i < footprint.size() - 1; ++i) {
@@ -67,8 +68,6 @@ std::pair<double, double> calculateMinAndMaxDistances(
     footprint.front().x, footprint.front().y);
   min_dist = std::min(min_dist, std::min(vertex_dist, edge_dist));
   max_dist = std::max(max_dist, std::max(vertex_dist, edge_dist));
-
-  return std::pair<double, double>(min_dist, max_dist);
 }
 
 geometry_msgs::msg::Point32 toPoint32(geometry_msgs::msg::Point pt)

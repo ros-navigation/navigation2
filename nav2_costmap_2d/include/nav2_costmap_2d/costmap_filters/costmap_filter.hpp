@@ -43,7 +43,6 @@
 
 #include <string>
 #include <mutex>
-#include <memory>
 
 #include "geometry_msgs/msg/pose2_d.hpp"
 #include "std_srvs/srv/set_bool.hpp"
@@ -213,17 +212,6 @@ protected:
   }
 
   /**
-   * @brief  Get the cost of a cell in the filter mask
-   * @param  filter_mask Filter mask to get the cost from
-   * @param  mx The x coordinate of the cell
-   * @param  my The y coordinate of the cell
-   * @return The cost to set the cell to
-   */
-  unsigned char getMaskCost(
-    nav_msgs::msg::OccupancyGrid::ConstSharedPtr filter_mask,
-    const unsigned int mx, const unsigned int & my) const;
-
-  /**
    * @brief: Name of costmap filter info topic
    */
   std::string filter_info_topic_;
@@ -234,7 +222,7 @@ protected:
   std::string mask_topic_;
 
   /**
-   * @brief: mask_frame->global_frame_ transform tolerance
+   * @brief: mask_frame_->global_frame_ transform tolerance
    */
   tf2::Duration transform_tolerance_;
 

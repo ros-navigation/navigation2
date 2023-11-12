@@ -292,8 +292,8 @@ nav2_util::CallbackReturn
 Costmap2DROS::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
-
-  std::unique_lock<Costmap2D::mutex_t> lock(*(layered_costmap_->getCostmap()->getMutex()));
+  std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_.getCostmap()->getMutex()));
+  
   layered_costmap_.reset();
 
   tf_listener_.reset();
@@ -306,6 +306,8 @@ Costmap2DROS::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   clear_costmap_service_.reset();
 
   executor_thread_.reset();
+
+  lock.unlock();
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
