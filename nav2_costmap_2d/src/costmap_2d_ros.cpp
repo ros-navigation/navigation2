@@ -359,8 +359,12 @@ Costmap2DROS::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   clear_costmap_service_.reset();
 
   layer_publishers_.clear();
-
+  
+  //lock the layered_costmap because no ptr-free is allowed until other ptr-access finished
+  std::unique_lock<Costmap2D::mutex_t> lock(*(layered_costmap_->getCostmap()->getMutex_free_access()));
   layered_costmap_.reset();
+  //unlock the layered_costmap_ to avoid pid stop 
+  lock.unlock();
 
   tf_listener_.reset();
   tf_buffer_.reset();
