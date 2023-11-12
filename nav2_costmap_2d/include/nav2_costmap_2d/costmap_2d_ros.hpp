@@ -74,35 +74,22 @@ class Costmap2DROS : public nav2_util::LifecycleNode
 {
 public:
   /**
-   * @brief  Constructor for the wrapper
-   */
-  Costmap2DROS();
-
-  /**
    * @brief  Constructor for the wrapper, the node will
    * be placed in a namespace equal to the node's name
    * @param name Name of the costmap ROS node
-   * @param use_sim_time Whether to use simulation or real time
    */
-  explicit Costmap2DROS(const std::string & name, const bool & use_sim_time = false);
+  explicit Costmap2DROS(const std::string & name);
 
   /**
    * @brief  Constructor for the wrapper
    * @param name Name of the costmap ROS node
    * @param parent_namespace Absolute namespace of the node hosting the costmap node
    * @param local_namespace Namespace to append to the parent namespace
-   * @param use_sim_time Whether to use simulation or real time
    */
   explicit Costmap2DROS(
     const std::string & name,
     const std::string & parent_namespace,
-    const std::string & local_namespace,
-    const bool & use_sim_time);
-
-  /**
-   * @brief Common initialization for constructors
-   */
-  void init();
+    const std::string & local_namespace);
 
   /**
    * @brief A destructor
@@ -169,9 +156,7 @@ public:
   /** @brief Same as getLayeredCostmap()->isCurrent(). */
   bool isCurrent()
   {
-    //lock the layered_costmap because no ptr-free is allowed until other ptr-access finished
-    std::unique_lock<Costmap2D::mutex_t> lock(*(layered_costmap_->getCostmap()->getMutex_free_access()));
-    if(layered_costmap_==nullptr) return false;
+    std::unique_lock<Costmap2D::mutex_t> lock(*(layered_costmap_->getCostmap()->getMutex()));
     return layered_costmap_->isCurrent();
   }
 
@@ -323,9 +308,7 @@ protected:
   // Publishers and subscribers
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr
     footprint_pub_;
-  std::unique_ptr<Costmap2DPublisher> costmap_publisher_;
-
-  std::vector<std::unique_ptr<Costmap2DPublisher>> layer_publishers_;
+  std::unique_ptr<Costmap2DPublisher> costmap_publisher_{nullptr};
 
   rclcpp::Subscription<geometry_msgs::msg::Polygon>::SharedPtr footprint_sub_;
   rclcpp::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr parameter_sub_;
@@ -363,7 +346,7 @@ protected:
   bool always_send_full_costmap_{false};
   std::string footprint_;
   float footprint_padding_{0};
-  std::string global_frame_;                ///< The global frame for the costmap
+  std::string global_frame_;       ///< The global frame for the costmap
   int map_height_meters_{0};
   double map_publish_frequency_{0};
   double map_update_frequency_{0};
@@ -377,12 +360,11 @@ protected:
   std::vector<std::string> filter_names_;
   std::vector<std::string> filter_types_;
   double resolution_{0};
-  std::string robot_base_frame_;            ///< The frame_id of the robot base
+  std::string robot_base_frame_;   ///< The frame_id of the robot base
   double robot_radius_;
-  bool rolling_window_{false};              ///< Whether to use a rolling window version of the costmap
+  bool rolling_window_{false};     ///< Whether to use a rolling window version of the costmap
   bool track_unknown_space_{false};
-  double transform_tolerance_{0};           ///< The timeout before transform errors
-  double initial_transform_timeout_{0};   ///< The timeout before activation of the node errors
+  double transform_tolerance_{0};  ///< The timeout before transform errors
 
   // Derived parameters
   bool use_radius_{false};
