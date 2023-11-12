@@ -298,7 +298,7 @@ Costmap2DROS::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   layered_costmap_.reset();
   //unlock the layered_costmap_ to avoid pid stop 
   lock.unlock();
-  
+
 
   tf_listener_.reset();
   tf_buffer_.reset();
