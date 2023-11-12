@@ -364,6 +364,10 @@ public:
   {
     return access_;
   }
+  mutex_t * getMutex_free_access()
+  {
+    return free_access_;//only for UAF check
+  }
 
 protected:
   /**
@@ -516,6 +520,7 @@ private:
   }
 
   mutex_t * access_;
+  mutex_t * free_access_; //only for UAF check
 
 protected:
   unsigned int size_x_;
