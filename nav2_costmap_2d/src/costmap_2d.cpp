@@ -53,6 +53,7 @@ Costmap2D::Costmap2D(
   origin_y_(origin_y), costmap_(NULL), default_value_(default_value)
 {
   access_ = new mutex_t();
+  free_access_ = new mutex_t();//only for UAF check
 
   // create the costmap
   initMaps(size_x_, size_y_);
@@ -63,6 +64,7 @@ Costmap2D::Costmap2D(const nav_msgs::msg::OccupancyGrid & map)
 : default_value_(FREE_SPACE)
 {
   access_ = new mutex_t();
+  free_access_ = new mutex_t();//only for UAF check
 
   // fill local variables
   size_x_ = map.info.width;
