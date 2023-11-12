@@ -346,7 +346,11 @@ RegulatedPurePursuitController::getLookAheadPoint(
 
   // If the no pose is not far enough, take the last pose
   if (goal_pose_it == transformed_plan.poses.end()) {
-    goal_pose_it = std::prev(transformed_plan.poses.end());
+    if (params_->project_carrot_past_goal) {
+      return projectCarrotPastGoal(lookahead_dist, transformed_plan);
+    } else {
+      goal_pose_it = std::prev(transformed_plan.poses.end());
+    }
   } else if (goal_pose_it != transformed_plan.poses.begin()) {
     // Find the point on the line segment between the two poses
     // that is exactly the lookahead distance away from the robot pose (the
@@ -444,7 +448,47 @@ void RegulatedPurePursuitController::applyConstraints(
 
 void RegulatedPurePursuitController::setPlan(const nav_msgs::msg::Path & path)
 {
-  path_handler_->setPlan(path);
+  if (params_->project_carrot_past_goal && path.poses.size() >= 2) {
+    // Insert an additional goal pose extremely close to the goal pose so that
+    // the returned plan has at least two poses to allow projection of the
+    // carrot past the goal pose if requested
+    // We also want to do this at cusp points
+
+    nav_msgs::msg::Path augmented_plan;
+    augmented_plan.header = path.header;
+
+    auto cusp_idx = getIndexOfNextCusp(path, 1);
+    unsigned int last_cusp = 0;
+    while (true) {
+      // Loop until the cusp function returns the index to the goal pose
+      // This might happen on the first loop and we want to make sure we copy
+      // the poses up to that point, so use an infinite loop and break out at
+      // the end
+
+      // Copy from the last copied pose up to the cusp
+      std::copy(
+        path.poses.begin() + last_cusp, path.poses.begin() + cusp_idx,
+        std::back_inserter(augmented_plan.poses));
+      const auto cusp_pose_stamped = path.poses[cusp_idx];
+      const auto prev_pose_stamped = path.poses[cusp_idx - 1];
+      const auto retracted_pos = retractPoint(
+        cusp_pose_stamped.pose.position,
+        prev_pose_stamped.pose.position);
+      auto retracted_pose_stamped{cusp_pose_stamped};
+      retracted_pose_stamped.pose.position = retracted_pos;
+      augmented_plan.poses.push_back(retracted_pose_stamped);
+      last_cusp = cusp_idx;
+      if (cusp_idx == path.poses.size() - 1) {
+        break;
+      }
+      cusp_idx = getIndexOfNextCusp(path, last_cusp + 1);
+    }
+    // Add the goal pose at the end
+    augmented_plan.poses.push_back(path.poses.back());
+    path_handler_->setPlan(augmented_plan);
+  } else {
+    path_handler_->setPlan(path);
+  }
 }
 
 geometry_msgs::msg::Point RegulatedPurePursuitController::retractPoint(
