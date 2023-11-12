@@ -162,7 +162,6 @@ public:
     return layered_costmap_->isCurrent();
   }
 
-
   /**
    * @brief Get the pose of the robot in the global frame of the costmap
    * @param global_pose Will be set to the pose of the robot in the global frame of the costmap
