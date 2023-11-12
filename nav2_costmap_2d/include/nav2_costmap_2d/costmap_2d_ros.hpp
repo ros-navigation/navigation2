@@ -171,7 +171,6 @@ public:
   {
     // lock the costmap because no costmap-reset is allowed until the isCurrent() finished
     std::unique_lock<Costmap2D::mutex_t> lock(*(layered_costmap_->getCostmap()->getMutex()));
-    
     return layered_costmap_->isCurrent();
   }
 
