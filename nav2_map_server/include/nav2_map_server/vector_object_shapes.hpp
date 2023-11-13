@@ -129,14 +129,6 @@ public:
   virtual std::string getUUID() const = 0;
 
   /**
-   * @brief Checks whether the shape is equal to a given UUID.
-   * Empty virtual method intended to be used in child implementations
-   * @param uuid Given UUID to check with
-   * @return True if the shape has the same as given UUID, otherwise false
-   */
-  virtual bool isUUID(const unsigned char * uuid) const = 0;
-
-  /**
    * @brief Whether the shape to be filled or only its borders to be put on map.
    * Empty virtual method intended to be used in child implementations
    * @return True if shape to be filled
@@ -235,13 +227,6 @@ public:
    * @return Shape UUID string
    */
   std::string getUUID() const;
-
-  /**
-   * @brief Checks whether the shape is equal to a given UUID.
-   * @param uuid Given UUID to check with
-   * @return True if the shape has the same as given UUID, otherwise false
-   */
-  bool isUUID(const unsigned char * uuid) const;
 
   /**
    * @brief Whether the shape to be filled or only its borders to be put on map.
@@ -345,13 +330,6 @@ public:
    * @return Shape UUID string
    */
   std::string getUUID() const;
-
-  /**
-   * @brief Checks whether the shape is equal to a given UUID.
-   * @param uuid Given UUID to check with
-   * @return True if the shape has the same as given UUID, otherwise false
-   */
-  bool isUUID(const unsigned char * uuid) const;
 
   /**
    * @brief Whether the shape to be filled or only its borders to be put on map.
