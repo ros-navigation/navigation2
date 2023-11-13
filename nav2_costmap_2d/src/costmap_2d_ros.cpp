@@ -135,10 +135,12 @@ void Costmap2DROS::init()
   declare_parameter("update_frequency", rclcpp::ParameterValue(5.0));
   declare_parameter("use_maximum", rclcpp::ParameterValue(false));
   declare_parameter("clearable_layers", rclcpp::ParameterValue(clearable_layers));
+  access_ = new mutex_t();
 }
 
 Costmap2DROS::~Costmap2DROS()
 {
+  delete(access_);
 }
 
 nav2_util::CallbackReturn
