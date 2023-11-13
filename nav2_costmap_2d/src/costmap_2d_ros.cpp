@@ -362,6 +362,8 @@ Costmap2DROS::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 
   layer_publishers_.clear();
 
+  //lock because no ptr-access is allowed until other ptr-free finished
+  std::unique_lock<Costmap2D::mutex_t> lock(*access_);
   layered_costmap_.reset();
 
   tf_listener_.reset();
@@ -372,6 +374,8 @@ Costmap2DROS::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 
 
   executor_thread_.reset();
+  
+  lock.unlock();
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
