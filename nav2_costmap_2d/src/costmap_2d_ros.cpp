@@ -140,7 +140,7 @@ void Costmap2DROS::init()
 
 Costmap2DROS::~Costmap2DROS()
 {
-  delete(access_);
+  delete access_;
 }
 
 nav2_util::CallbackReturn
@@ -362,7 +362,7 @@ Costmap2DROS::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 
   layer_publishers_.clear();
 
-  //lock because no ptr-access is allowed until other ptr-free finished
+  //lock because no ptr-access is allowed until this ptr-free finished
   std::unique_lock<Costmap2D::mutex_t> lock(*access_);
   layered_costmap_.reset();
 
