@@ -158,6 +158,9 @@ bool BtActionServer<ActionT>::on_configure()
   int default_server_timeout;
   node->get_parameter("default_server_timeout", default_server_timeout);
   default_server_timeout_ = std::chrono::milliseconds(default_server_timeout);
+  int bt_wait_for_service_timeout;
+  node->get_parameter("bt_wait_for_service_timeout", bt_wait_for_service_timeout);
+  bt_wait_for_service_timeout_ = std::chrono::milliseconds(bt_wait_for_service_timeout);
 
   // Get error code id names to grab off of the blackboard
   error_code_names_ = node->get_parameter("error_code_names").as_string_array();
@@ -172,6 +175,7 @@ bool BtActionServer<ActionT>::on_configure()
   blackboard_->set<rclcpp::Node::SharedPtr>("node", client_node_);  // NOLINT
   blackboard_->set<std::chrono::milliseconds>("server_timeout", default_server_timeout_);  // NOLINT
   blackboard_->set<std::chrono::milliseconds>("bt_loop_duration", bt_loop_duration_);  // NOLINT
+  blackboard_->set<std::chrono::milliseconds>("bt_wait_for_service_timeout_", bt_wait_for_service_timeout_);  // NOLINT
 
   return true;
 }
@@ -235,6 +239,7 @@ bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filena
       blackboard->set<rclcpp::Node::SharedPtr>("node", client_node_);
       blackboard->set<std::chrono::milliseconds>("server_timeout", default_server_timeout_);
       blackboard->set<std::chrono::milliseconds>("bt_loop_duration", bt_loop_duration_);
+      blackboard->set<std::chrono::milliseconds>("bt_wait_for_service_timeout", bt_wait_for_service_timeout_);
     }
   } catch (const std::exception & e) {
     RCLCPP_ERROR(logger_, "Exception when loading BT: %s", e.what());
