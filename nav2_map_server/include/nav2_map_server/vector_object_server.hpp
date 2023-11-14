@@ -123,13 +123,6 @@ protected:
   void processMap();
 
   /**
-   * @brief Whether the map should be updated dynamically:
-   * at least one of the vector shapes is in another than output map frame
-   * @return True if map should be updated dynamically
-   */
-  bool isMapUpdate();
-
-  /**
    * @brief If map to be update dynamically, creates map processing timer,
    * otherwise process map once
    */
