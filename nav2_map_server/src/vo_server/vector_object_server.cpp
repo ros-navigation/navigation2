@@ -284,7 +284,7 @@ void VectorObjectServer::processMap()
   }
 
   try {
-    if (shapes_.size()) {
+    if (shapes_.size() > 0) {
       if (!transformVectorObjects()) {
         return;
       }
