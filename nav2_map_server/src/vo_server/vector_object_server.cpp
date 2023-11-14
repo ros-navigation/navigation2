@@ -117,9 +117,6 @@ VectorObjectServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   map_pub_.reset();
   map_.reset();
 
-  for (auto shape : shapes_) {
-    shape.second.reset();
-  }
   shapes_.clear();
 
   tf_listener_.reset();
@@ -463,9 +460,6 @@ void VectorObjectServer::removeShapesCallback(
 
   if (request->all_objects) {
     // Clear all objects
-    for (auto shape : shapes_) {
-      shape.second.reset();
-    }
     shapes_.clear();
   } else {
     // Find objects to remove
