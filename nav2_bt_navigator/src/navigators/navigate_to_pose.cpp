@@ -94,9 +94,7 @@ NavigateToPoseNavigator::goalReceived(ActionT::Goal::ConstSharedPtr goal)
     return false;
   }
 
-  initializeGoalPose(goal);
-
-  return true;
+  return initializeGoalPose(goal);
 }
 
 void
@@ -200,24 +198,29 @@ NavigateToPoseNavigator::onPreempt(ActionT::Goal::ConstSharedPtr goal)
   }
 }
 
-void
+bool
 NavigateToPoseNavigator::initializeGoalPose(ActionT::Goal::ConstSharedPtr goal)
 {
   geometry_msgs::msg::PoseStamped current_pose;
-  nav2_util::getCurrentPose(
-    current_pose, *feedback_utils_.tf,
-    feedback_utils_.global_frame, feedback_utils_.robot_frame,
-    feedback_utils_.transform_tolerance);
+  if (!nav2_util::getCurrentPose(
+      current_pose, *feedback_utils_.tf,
+      feedback_utils_.global_frame, feedback_utils_.robot_frame,
+      feedback_utils_.transform_tolerance))
+  {
+    RCLCPP_ERROR(logger_, "Initial robot pose is not available.");
+    return false;
+  }
 
   geometry_msgs::msg::PoseStamped goal_pose;
   if (!nav2_util::transformPoseInTargetFrame(
-        goal->pose, goal_pose, *feedback_utils_.tf, feedback_utils_.global_frame,
-        feedback_utils_.transform_tolerance)) {
+      goal->pose, goal_pose, *feedback_utils_.tf, feedback_utils_.global_frame,
+      feedback_utils_.transform_tolerance))
+  {
     RCLCPP_ERROR(
       logger_,
       "Failed to transform a goal pose provided with frame_id '%s' to the global frame '%s'.",
       goal->pose.header.frame_id.c_str(), feedback_utils_.global_frame.c_str());
-    throw std::runtime_error("transformation failed");
+    return false;
   }
 
   RCLCPP_INFO(
@@ -232,6 +235,8 @@ NavigateToPoseNavigator::initializeGoalPose(ActionT::Goal::ConstSharedPtr goal)
 
   // Update the goal pose on the blackboard
   blackboard->set<geometry_msgs::msg::PoseStamped>(goal_blackboard_id_, goal_pose);
+
+  return true;
 }
 
 void

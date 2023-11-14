@@ -37,8 +37,6 @@ RemovePassedGoals::RemovePassedGoals(
   auto node = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
   node->get_parameter("transform_tolerance", transform_tolerance_);
 
-  global_frame_ = BT::deconflictPortAndParamFrame<std::string, RemovePassedGoals>(
-    node, "global_frame", this);
   robot_base_frame_ = BT::deconflictPortAndParamFrame<std::string, RemovePassedGoals>(
     node, "robot_base_frame", this);
 }
@@ -57,16 +55,15 @@ inline BT::NodeStatus RemovePassedGoals::tick()
 
   using namespace nav2_util::geometry_utils;  // NOLINT
 
-  geometry_msgs::msg::PoseStamped current_pose;
-  if (!nav2_util::getCurrentPose(
-      current_pose, *tf_, global_frame_, robot_base_frame_,
-      transform_tolerance_))
-  {
-    return BT::NodeStatus::FAILURE;
-  }
-
   double dist_to_goal;
   while (goal_poses.size() > 1) {
+    geometry_msgs::msg::PoseStamped current_pose;
+    if (!nav2_util::getCurrentPose(
+        current_pose, *tf_, goal_poses[0].header.frame_id, robot_base_frame_,
+        transform_tolerance_))
+    {
+      return BT::NodeStatus::FAILURE;
+    }
     dist_to_goal = euclidean_distance(goal_poses[0].pose, current_pose.pose);
 
     if (dist_to_goal > viapoint_achieved_radius_) {

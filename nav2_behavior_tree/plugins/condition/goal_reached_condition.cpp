@@ -33,8 +33,6 @@ GoalReachedCondition::GoalReachedCondition(
 {
   auto node = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
 
-  global_frame_ = BT::deconflictPortAndParamFrame<std::string, GoalReachedCondition>(
-    node, "global_frame", this);
   robot_base_frame_ = BT::deconflictPortAndParamFrame<std::string, GoalReachedCondition>(
     node, "robot_base_frame", this);
 }
@@ -75,7 +73,6 @@ bool GoalReachedCondition::isGoalReached()
 {
   geometry_msgs::msg::PoseStamped goal;
   getInput("goal", goal);
-  if (goal.header.frame_id.empty()) goal.header.frame_id = global_frame_;
 
   geometry_msgs::msg::PoseStamped current_pose;
   if (!nav2_util::getCurrentPose(
