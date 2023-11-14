@@ -171,8 +171,8 @@ public:
   {
     //lock because no ptr-access is allowed until other ptr-free finished
     std::unique_lock<Costmap2D::mutex_t> lock(*access_);
-    if(layered_costmap_==nullptr){
-      return false;  // to avoid nullptr accessed
+    if (layered_costmap_ == nullptr) {
+      return false;                                // to avoid nullptr accessed
     }
     return layered_costmap_->isCurrent();
   }
