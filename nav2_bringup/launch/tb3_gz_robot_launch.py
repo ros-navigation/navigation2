@@ -29,7 +29,6 @@ def generate_launch_description():
 
     namespace = LaunchConfiguration('namespace')
     use_simulator = LaunchConfiguration('use_simulator')
-    use_sim_time = LaunchConfiguration('use_sim_time')
     robot_name = LaunchConfiguration('robot_name')
     robot_sdf = LaunchConfiguration('robot_sdf')
     pose = {'x': LaunchConfiguration('x_pose', default='-2.00'),
@@ -50,11 +49,6 @@ def generate_launch_description():
         default_value='True',
         description='Whether to start the simulator')
 
-    declare_use_sim_time_cmd = DeclareLaunchArgument(
-        'use_sim_time',
-        default_value='true',
-        description='Use simulation (Gazebo) clock if true')
-
     declare_robot_name_cmd = DeclareLaunchArgument(
         'robot_name',
         default_value='turtlebot3_waffle',
@@ -65,75 +59,19 @@ def generate_launch_description():
         default_value=os.path.join(bringup_dir, 'urdf', 'gz_turtlebot3_waffle.urdf'),
         description='Full path to robot sdf file to spawn the robot in gazebo')
 
-    clock_bridge = Node(
-        condition=IfCondition(use_simulator),
-        package='ros_gz_bridge', executable='parameter_bridge',
-        name='clock_bridge',
-        output='screen',
-        parameters=[{
-            'use_sim_time': use_sim_time
-        }],
-        arguments=['/clock' + '@rosgraph_msgs/msg/Clock' + '[gz.msgs.Clock']
-    )
-
-    lidar_bridge = Node(
-        condition=IfCondition(use_simulator),
-        package='ros_gz_bridge',
-        executable='parameter_bridge',
-        name='lidar_bridge',
-        output='screen',
-        parameters=[{
-            'use_sim_time': use_sim_time
-        }],
-        arguments=[['/scan' + '@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan']],
-    )
-
-    imu_bridge = Node(
-        condition=IfCondition(use_simulator),
-        package='ros_gz_bridge',
-        executable='parameter_bridge',
-        name='imu_bridge',
-        output='screen',
-        parameters=[{
-            'use_sim_time': use_sim_time
-        }],
-        arguments=[['/imu' + '@sensor_msgs/msg/Imu[gz.msgs.IMU']],
-    )
-
-    odom_bridge = Node(
-        condition=IfCondition(use_simulator),
-        package='ros_gz_bridge',
-        executable='parameter_bridge',
-        name='odom_bridge',
-        output='screen',
-        parameters=[{
-            'use_sim_time': use_sim_time
-        }],
-        arguments=[['/odom' + '@nav_msgs/msg/Odometry[gz.msgs.Odometry']],
-    )
-
-    odom_tf_bridge = Node(
-        condition=IfCondition(use_simulator),
-        package='ros_gz_bridge',
-        executable='parameter_bridge',
-        name='odom_tf_bridge',
-        output='screen',
-        parameters=[{
-            'use_sim_time': use_sim_time
-        }],
-        arguments=[['/tf' + '@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V']],
-    )
-
-    cm_vel_bridge = Node(
-        condition=IfCondition(use_simulator),
-        package='ros_gz_bridge',
-        executable='parameter_bridge',
-        name='cm_vel_bridge',
-        output='screen',
-        parameters=[{
-            'use_sim_time': use_sim_time
-        }],
-        arguments=[['/cmd_vel' + '@geometry_msgs/msg/Twist]gz.msgs.Twist']],
+    pkg_nav2_bringup = get_package_share_directory("nav2_bringup")
+    bridge = Node(
+        package="ros_gz_bridge",
+        executable="parameter_bridge",
+        parameters=[
+            {
+                "config_file": os.path.join(
+                    pkg_nav2_bringup, "params", "turtlebot3_waffle_bridge.yaml"
+                ),
+                "qos_overrides./tf_static.publisher.durability": "transient_local",
+            }
+        ],
+        output="screen",
     )
 
     spawn_model = Node(
@@ -164,15 +102,9 @@ def generate_launch_description():
     ld.add_action(declare_robot_name_cmd)
     ld.add_action(declare_robot_sdf_cmd)
     ld.add_action(declare_use_simulator_cmd)
-    ld.add_action(declare_use_sim_time_cmd)
 
     ld.add_action(set_env_vars_resources)
 
-    ld.add_action(clock_bridge)
-    ld.add_action(lidar_bridge)
-    ld.add_action(imu_bridge)
+    ld.add_action(bridge)
     ld.add_action(spawn_model)
-    ld.add_action(odom_bridge)
-    ld.add_action(odom_tf_bridge)
-    ld.add_action(cm_vel_bridge)
     return ld
