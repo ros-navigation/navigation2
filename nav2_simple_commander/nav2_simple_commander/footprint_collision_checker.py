@@ -34,7 +34,7 @@ MAX_NON_OBSTACLE = 252
 FREE_SPACE = 0
 
 
-class FootprintCollisionChecker():
+class FootprintCollisionChecker:
     """
     FootprintCollisionChecker.
 
@@ -65,8 +65,7 @@ class FootprintCollisionChecker():
         x1 = 0.0
         y1 = 0.0
 
-        x0, y0 = self.worldToMapValidated(
-            footprint.points[0].x, footprint.points[0].y)
+        x0, y0 = self.worldToMapValidated(footprint.points[0].x, footprint.points[0].y)
 
         if x0 is None or y0 is None:
             return LETHAL_OBSTACLE
@@ -76,13 +75,13 @@ class FootprintCollisionChecker():
 
         for i in range(len(footprint.points) - 1):
             x1, y1 = self.worldToMapValidated(
-                footprint.points[i + 1].x, footprint.points[i + 1].y)
+                footprint.points[i + 1].x, footprint.points[i + 1].y
+            )
 
             if x1 is None or y1 is None:
                 return LETHAL_OBSTACLE
 
-            footprint_cost = max(
-                float(self.lineCost(x0, x1, y0, y1)), footprint_cost)
+            footprint_cost = max(float(self.lineCost(x0, x1, y0, y1)), footprint_cost)
             x0 = x1
             y0 = y1
 
@@ -115,7 +114,8 @@ class FootprintCollisionChecker():
 
         while line_iterator.isValid():
             point_cost = self.pointCost(
-                int(line_iterator.getX()), int(line_iterator.getY()))
+                int(line_iterator.getX()), int(line_iterator.getY())
+            )
 
             if point_cost == LETHAL_OBSTACLE:
                 return point_cost
@@ -146,7 +146,8 @@ class FootprintCollisionChecker():
         """
         if self.costmap_ is None:
             raise ValueError(
-                'Costmap not specified, use setCostmap to specify the costmap first')
+                'Costmap not specified, use setCostmap to specify the costmap first'
+            )
         return self.costmap_.worldToMapValidated(wx, wy)
 
     def pointCost(self, x: int, y: int):
@@ -165,7 +166,8 @@ class FootprintCollisionChecker():
         """
         if self.costmap_ is None:
             raise ValueError(
-                'Costmap not specified, use setCostmap to specify the costmap first')
+                'Costmap not specified, use setCostmap to specify the costmap first'
+            )
         return self.costmap_.getCostXY(x, y)
 
     def setCostmap(self, costmap: PyCostmap2D):
@@ -207,12 +209,12 @@ class FootprintCollisionChecker():
 
         for i in range(len(footprint.points)):
             new_pt = Point32()
-            new_pt.x = x + \
-                (footprint.points[i].x * cos_th -
-                 footprint.points[i].y * sin_th)
-            new_pt.y = y + \
-                (footprint.points[i].x * sin_th +
-                 footprint.points[i].y * cos_th)
+            new_pt.x = x + (
+                footprint.points[i].x * cos_th - footprint.points[i].y * sin_th
+            )
+            new_pt.y = y + (
+                footprint.points[i].x * sin_th + footprint.points[i].y * cos_th
+            )
             oriented_footprint.points.append(new_pt)
 
         return self.footprintCost(oriented_footprint)

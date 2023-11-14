@@ -268,7 +268,7 @@ public:
         // Action related failure that should not fail the tree, but the node
         return BT::NodeStatus::FAILURE;
       } else {
-        // Internal exception to propogate to the tree
+        // Internal exception to propagate to the tree
         throw e;
       }
     }

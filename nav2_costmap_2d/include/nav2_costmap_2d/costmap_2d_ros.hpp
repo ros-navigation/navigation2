@@ -360,7 +360,7 @@ protected:
   bool always_send_full_costmap_{false};
   std::string footprint_;
   float footprint_padding_{0};
-  std::string global_frame_;       ///< The global frame for the costmap
+  std::string global_frame_;                ///< The global frame for the costmap
   int map_height_meters_{0};
   double map_publish_frequency_{0};
   double map_update_frequency_{0};
@@ -374,11 +374,12 @@ protected:
   std::vector<std::string> filter_names_;
   std::vector<std::string> filter_types_;
   double resolution_{0};
-  std::string robot_base_frame_;   ///< The frame_id of the robot base
+  std::string robot_base_frame_;            ///< The frame_id of the robot base
   double robot_radius_;
-  bool rolling_window_{false};     ///< Whether to use a rolling window version of the costmap
+  bool rolling_window_{false};              ///< Whether to use a rolling window version of the costmap
   bool track_unknown_space_{false};
-  double transform_tolerance_{0};  ///< The timeout before transform errors
+  double transform_tolerance_{0};           ///< The timeout before transform errors
+  double initial_transform_timeout_{0};   ///< The timeout before activation of the node errors
 
   // Derived parameters
   bool use_radius_{false};

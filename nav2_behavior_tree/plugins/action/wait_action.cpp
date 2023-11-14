@@ -14,6 +14,7 @@
 
 #include <string>
 #include <memory>
+#include <cmath>
 
 #include "nav2_behavior_tree/plugins/action/wait_action.hpp"
 
@@ -26,16 +27,16 @@ WaitAction::WaitAction(
   const BT::NodeConfiguration & conf)
 : BtActionNode<nav2_msgs::action::Wait>(xml_tag_name, action_name, conf)
 {
-  int duration;
+  double duration;
   getInput("wait_duration", duration);
   if (duration <= 0) {
     RCLCPP_WARN(
       node_->get_logger(), "Wait duration is negative or zero "
-      "(%i). Setting to positive.", duration);
+      "(%f). Setting to positive.", duration);
     duration *= -1;
   }
 
-  goal_.time.sec = duration;
+  goal_.time = rclcpp::Duration::from_seconds(duration);
 }
 
 void WaitAction::on_tick()
