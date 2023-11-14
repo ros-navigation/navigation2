@@ -301,34 +301,26 @@ void VectorObjectServer::processMap()
   publishMap();
 }
 
-bool VectorObjectServer::isMapUpdate()
+void VectorObjectServer::switchMapUpdate()
 {
   for (auto shape : shapes_) {
     if (shape.second->getFrameID() != global_frame_id_ && !shape.second->getFrameID().empty()) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-void VectorObjectServer::switchMapUpdate()
-{
-  if (isMapUpdate()) {
-    if (!map_timer_) {
-      map_timer_ = this->create_timer(
-        std::chrono::duration<double>(1.0 / update_frequency_),
-        std::bind(&VectorObjectServer::processMap, this));
+      if (!map_timer_) {
+        map_timer_ = this->create_timer(
+          std::chrono::duration<double>(1.0 / update_frequency_),
+          std::bind(&VectorObjectServer::processMap, this));
+      }
       RCLCPP_INFO(get_logger(), "Publishing map dynamically");
+      return;
     }
-  } else {
-    if (map_timer_) {
-      map_timer_->cancel();
-      map_timer_.reset();
-    }
-    RCLCPP_INFO(get_logger(), "Publishing map once");
-    processMap();
   }
+
+  if (map_timer_) {
+    map_timer_->cancel();
+    map_timer_.reset();
+  }
+  RCLCPP_INFO(get_logger(), "Publishing map once");
+  processMap();
 }
 
 void VectorObjectServer::addShapesCallback(
