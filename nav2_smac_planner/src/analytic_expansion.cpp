@@ -111,28 +111,25 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
         // So, we can attempt to refine it more by increasing the possible radius
         // higher than the minimum turning radius and use the best solution based on
         // a scoring function similar to that used in traveral cost estimation.
-
-        // TODO continue to search and compare?
-        // TODO take original and patch up: curve fitting path minimize curvature?
         auto scoringFn = [&](const AnalyticExpansionNodes & expansion) {
-          if (expansion.size() < 2) {
-            return std::numeric_limits<float>::max();
-          }
+            if (expansion.size() < 2) {
+              return std::numeric_limits<float>::max();
+            }
 
-          float score = 0.0;
-          float normalized_cost = 0.0;
-          // Analytic expansions are consistently spaced
-          const float distance = hypotf(
-            expansion[1].proposed_coords.x - expansion[0].proposed_coords.x,
-            expansion[1].proposed_coords.y - expansion[0].proposed_coords.y);
-          const float & weight = expansion[0].node->motion_table.cost_penalty;
-          for (auto iter = expansion.begin(); iter != expansion.end(); ++iter) {
-            normalized_cost = iter->node->getCost() / 252.0f;
-            // Search's Traversal Cost Function
-            score += distance * (1.0 + weight * normalized_cost);
-          }
-          return score;
-        };
+            float score = 0.0;
+            float normalized_cost = 0.0;
+            // Analytic expansions are consistently spaced
+            const float distance = hypotf(
+              expansion[1].proposed_coords.x - expansion[0].proposed_coords.x,
+              expansion[1].proposed_coords.y - expansion[0].proposed_coords.y);
+            const float & weight = expansion[0].node->motion_table.cost_penalty;
+            for (auto iter = expansion.begin(); iter != expansion.end(); ++iter) {
+              normalized_cost = iter->node->getCost() / 252.0f;
+              // Search's Traversal Cost Function
+              score += distance * (1.0 + weight * normalized_cost);
+            }
+            return score;
+          };
 
         float best_score = scoringFn(analytic_nodes);
         float score = std::numeric_limits<float>::max();
@@ -208,6 +205,8 @@ typename AnalyticExpansion<NodeT>::AnalyticExpansionNodes AnalyticExpansion<Node
   float angle = 0.0;
   Coordinates proposed_coordinates;
   bool failure = false;
+  std::vector<float> node_costs;
+  node_costs.reserve(num_intervals);
 
   // Check intermediary poses (non-goal, non-start)
   for (float i = 1; i < num_intervals; i++) {
@@ -231,6 +230,7 @@ typename AnalyticExpansion<NodeT>::AnalyticExpansionNodes AnalyticExpansion<Node
       if (next->isNodeValid(_traverse_unknown, _collision_checker) && next != prev) {
         // Save the node, and its previous coordinates in case we need to abort
         possible_nodes.emplace_back(next, initial_node_coords, proposed_coordinates);
+        node_costs.emplace_back(next->getCost());
         prev = next;
       } else {
         // Abort
@@ -242,6 +242,38 @@ typename AnalyticExpansion<NodeT>::AnalyticExpansionNodes AnalyticExpansion<Node
       // Abort
       failure = true;
       break;
+    }
+  }
+
+  if (!failure) {
+    // We found 'a' valid expansion. Now to tell if its a quality option...
+    const float max_cost = _search_info.analytic_expansion_max_cost;
+    if (*std::max_element(node_costs.begin(), node_costs.end()) > max_cost) {
+      // If any element is above the comfortable cost limit, check edge cases:
+      // (1) Check if goal is in greater than max_cost space requiring
+      //  entering it, but only entering it on final approach, not in-and-out
+      // (2) Checks if goal is in normal space, but enters costed space unnecessarily
+      //  mid-way through, skirting obstacle or in non-globally confined space
+      bool cost_exit_high_cost_region = false;
+      for (auto iter = node_costs.rbegin(); iter != node_costs.rend(); ++iter) {
+        const float & curr_cost = *iter;
+        if (curr_cost <= max_cost) {
+          cost_exit_high_cost_region = true;
+        } else if (curr_cost > max_cost && cost_exit_high_cost_region) {
+          failure = true;
+          break;
+        }
+      }
+
+      // (3) Handle exception: there may be no other option close to goal
+      // if max cost is set too low (optional)
+      if (failure) {
+        if (d < 2.0f * M_PI * goal->motion_table.min_turning_radius &&
+          _search_info.analytic_expansion_max_cost_override)
+        {
+          failure = false;
+        }
+      }
     }
   }
 
