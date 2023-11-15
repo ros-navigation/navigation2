@@ -33,8 +33,6 @@ GoalReachedCondition::GoalReachedCondition(
 {
   auto node = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
 
-  global_frame_ = BT::deconflictPortAndParamFrame<std::string, GoalReachedCondition>(
-    node, "global_frame", this);
   robot_base_frame_ = BT::deconflictPortAndParamFrame<std::string, GoalReachedCondition>(
     node, "robot_base_frame", this);
 }
@@ -73,17 +71,17 @@ void GoalReachedCondition::initialize()
 
 bool GoalReachedCondition::isGoalReached()
 {
-  geometry_msgs::msg::PoseStamped current_pose;
+  geometry_msgs::msg::PoseStamped goal;
+  getInput("goal", goal);
 
+  geometry_msgs::msg::PoseStamped current_pose;
   if (!nav2_util::getCurrentPose(
-      current_pose, *tf_, global_frame_, robot_base_frame_, transform_tolerance_))
+      current_pose, *tf_, goal.header.frame_id, robot_base_frame_, transform_tolerance_))
   {
     RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
     return false;
   }
 
-  geometry_msgs::msg::PoseStamped goal;
-  getInput("goal", goal);
   double dx = goal.pose.position.x - current_pose.pose.position.x;
   double dy = goal.pose.position.y - current_pose.pose.position.y;
 
