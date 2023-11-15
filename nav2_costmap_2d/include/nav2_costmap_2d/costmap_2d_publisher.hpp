@@ -145,6 +145,8 @@ private:
   /** @brief Publish the latest full costmap to the new subscriber. */
   // void onNewSubscription(const ros::SingleSubscriberPublisher& pub);
 
+  void updateGridParams();
+
   /** @brief GetCostmap callback service */
   void costmap_service_callback(
     const std::shared_ptr<rmw_request_id_t> request_header,

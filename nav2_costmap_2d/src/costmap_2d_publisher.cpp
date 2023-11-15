@@ -117,13 +117,20 @@ void Costmap2DPublisher::onNewSubscription(const ros::SingleSubscriberPublisher&
   pub.publish(grid_);
 } */
 
+
+void Costmap2DPublisher::updateGridParams()
+{
+  saved_origin_x_ = costmap_->getOriginX();
+  saved_origin_y_ = costmap_->getOriginY();
+  grid_resolution = costmap_->getResolution();
+  grid_width = costmap_->getSizeInCellsX();
+  grid_height = costmap_->getSizeInCellsY();
+}
+
 // prepare grid_ message for publication.
 void Costmap2DPublisher::prepareGrid()
 {
   std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
-  grid_resolution = costmap_->getResolution();
-  grid_width = costmap_->getSizeInCellsX();
-  grid_height = costmap_->getSizeInCellsY();
 
   grid_ = std::make_unique<nav_msgs::msg::OccupancyGrid>();
 
@@ -141,8 +148,6 @@ void Costmap2DPublisher::prepareGrid()
   grid_->info.origin.position.y = wy - grid_resolution / 2;
   grid_->info.origin.position.z = 0.0;
   grid_->info.origin.orientation.w = 1.0;
-  saved_origin_x_ = costmap_->getOriginX();
-  saved_origin_y_ = costmap_->getOriginY();
 
   grid_->data.resize(grid_->info.width * grid_->info.height);
 
@@ -214,6 +219,7 @@ void Costmap2DPublisher::publishCostmap()
     saved_origin_x_ != costmap_->getOriginX() ||
     saved_origin_y_ != costmap_->getOriginY())
   {
+    updateGridParams();
     if (costmap_pub_->get_subscription_count() > 0) {
       prepareGrid();
       costmap_pub_->publish(std::move(grid_));
