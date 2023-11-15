@@ -230,10 +230,11 @@ public:
 
       // Return quickly to avoid blocking the executor, so spin up a new thread
       debug_msg("Executing goal asynchronously.");
-      execution_future_ = std::async(std::launch::async, [this]() {
-        setSoftRealTimePriority();
-        work();
-      });
+      execution_future_ = std::async(
+        std::launch::async, [this]() {
+          setSoftRealTimePriority();
+          work();
+        });
     }
   }
 

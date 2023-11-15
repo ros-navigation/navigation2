@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include <memory>
-#include <sched.h>
 #include "nav2_util/node_thread.hpp"
 
 namespace nav2_util
@@ -36,9 +35,10 @@ NodeThread::NodeThread(
 NodeThread::NodeThread(rclcpp::executors::SingleThreadedExecutor::SharedPtr executor)
 : executor_(executor)
 {
-  thread_ = std::make_unique<std::thread>([&]() {
-    executor_->spin();
-  });
+  thread_ = std::make_unique<std::thread>(
+    [&]() {
+      executor_->spin();
+    });
 }
 
 NodeThread::~NodeThread()
