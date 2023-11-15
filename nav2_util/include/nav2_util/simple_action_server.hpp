@@ -185,7 +185,7 @@ public:
   {
     if (use_realtime_prioritization_) {
       sched_param sch;
-      sch.sched_priority = 90;
+      sch.sched_priority = 49;
       if (sched_setscheduler(0, SCHED_FIFO, &sch) == -1) {
         std::string errmsg(
           "Cannot set as real-time thread. Users must set: <username> hard rtprio 99 and "
