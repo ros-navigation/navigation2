@@ -9,8 +9,8 @@
 For detailed instructions on how to:
 - [Getting Started](https://navigation.ros.org/getting_started/index.html)
 - [Concepts](https://navigation.ros.org/concepts/index.html)
-- [Build](https://navigation.ros.org/build_instructions/index.html#build)
-- [Install](https://navigation.ros.org/build_instructions/index.html#install)
+- [Build](https://navigation.ros.org/development_guides/build_docs/index.html#build)
+- [Install](https://navigation.ros.org/development_guides/build_docs/index.html#install)
 - [General Tutorials](https://navigation.ros.org/tutorials/index.html) and [Algorithm Developer Tutorials](https://navigation.ros.org/plugin_tutorials/index.html)
 - [Configure](https://navigation.ros.org/configuration/index.html)
 - [Navigation Plugins](https://navigation.ros.org/plugins/index.html)
