@@ -378,10 +378,25 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in)
   // Points array collected from different data sources in a robot base frame
   std::vector<Point> collision_points;
 
+  // By default - there is no action
+  Action robot_action{DO_NOTHING, cmd_vel_in, ""};
+  // Polygon causing robot action (if any)
+  std::shared_ptr<Polygon> action_polygon;
+
   // Fill collision_points array from different data sources
   for (std::shared_ptr<Source> source : sources_) {
     if (source->getEnabled()) {
-      source->getData(curr_time, collision_points);
+      if (!source->getData(curr_time, collision_points) &&
+        source->getSourceTimeout().seconds() != 0.0)
+      {
+        action_polygon = nullptr;
+        robot_action.polygon_name = "invalid source";
+        robot_action.action_type = STOP;
+        robot_action.req_vel.x = 0.0;
+        robot_action.req_vel.y = 0.0;
+        robot_action.req_vel.tw = 0.0;
+        break;
+      }
     }
   }
 
@@ -411,11 +426,6 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in)
     marker_array->markers.push_back(marker);
     collision_points_marker_pub_->publish(std::move(marker_array));
   }
-
-  // By default - there is no action
-  Action robot_action{DO_NOTHING, cmd_vel_in, ""};
-  // Polygon causing robot action (if any)
-  std::shared_ptr<Polygon> action_polygon;
 
   for (std::shared_ptr<Polygon> polygon : polygons_) {
     if (!polygon->getEnabled()) {
@@ -545,10 +555,18 @@ void CollisionMonitor::notifyActionState(
   const Action & robot_action, const std::shared_ptr<Polygon> action_polygon) const
 {
   if (robot_action.action_type == STOP) {
-    RCLCPP_INFO(
-      get_logger(),
-      "Robot to stop due to %s polygon",
-      action_polygon->getName().c_str());
+    if (robot_action.polygon_name == "invalid source") {
+      RCLCPP_WARN(
+        get_logger(),
+        "Robot to stop due to invalid source."
+        " Either due to data not published yet, or to lack of new data received within the"
+        " sensor timeout, or if impossible to transform data to base frame");
+    } else {
+      RCLCPP_INFO(
+        get_logger(),
+        "Robot to stop due to %s polygon",
+        action_polygon->getName().c_str());
+    }
   } else if (robot_action.action_type == SLOWDOWN) {
     RCLCPP_INFO(
       get_logger(),
