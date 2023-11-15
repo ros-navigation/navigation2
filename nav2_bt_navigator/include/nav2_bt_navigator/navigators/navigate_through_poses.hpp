@@ -104,8 +104,9 @@ protected:
 
   /**
    * @brief Goal pose initialization on the blackboard
+   * @return bool if goal was initialized successfully to be processed
    */
-  void initializeGoalPoses(ActionT::Goal::ConstSharedPtr goal);
+  bool initializeGoalPoses(ActionT::Goal::ConstSharedPtr goal);
 
   rclcpp::Time start_time_;
   std::string goals_blackboard_id_;
