@@ -187,8 +187,7 @@ NavigateThroughPosesNavigator::onPreempt(ActionT::Goal::ConstSharedPtr goal)
     // if pending goal requests the same BT as the current goal, accept the pending goal
     // if pending goal has an empty behavior_tree field, it requests the default BT file
     // accept the pending goal if the current goal is running the default BT file
-    if (!initializeGoalPoses(bt_action_server_->acceptPendingGoal()))
-    {
+    if (!initializeGoalPoses(bt_action_server_->acceptPendingGoal())) {
       RCLCPP_WARN(
         logger_,
         "Preemption request was rejected since the goal poses could not be "
