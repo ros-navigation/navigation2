@@ -376,7 +376,6 @@ Costmap2DROS::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 
   executor_thread_.reset();
 
-  lock.unlock();
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
