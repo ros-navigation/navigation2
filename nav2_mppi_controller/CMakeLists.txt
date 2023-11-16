@@ -6,11 +6,18 @@ add_definitions(-DXTENSOR_USE_XSIMD)
 
 set(XTENSOR_USE_TBB 0)
 set(XTENSOR_USE_OPENMP 0)
+set(XTENSOR_USE_XSIMD 1)
 
+# set(XTENSOR_DEFAULT_LAYOUT column_major)  # row_major, column_major
+# set(XTENSOR_DEFAULT_TRAVERSAL row_major)  # row_major, column_major
 
 find_package(ament_cmake REQUIRED)
 find_package(xtensor REQUIRED)
 find_package(xsimd REQUIRED)
+
+include_directories(
+  include
+)
 
 set(dependencies_pkgs
   rclcpp
@@ -36,8 +43,18 @@ nav2_package()
 
 include(CheckCXXCompilerFlag)
 
+check_cxx_compiler_flag("-mno-avx512f" COMPILER_SUPPORTS_AVX512)
+check_cxx_compiler_flag("-msse4.2" COMPILER_SUPPORTS_SSE4)
 check_cxx_compiler_flag("-mavx2" COMPILER_SUPPORTS_AVX2)
 check_cxx_compiler_flag("-mfma" COMPILER_SUPPORTS_FMA)
+
+if(COMPILER_SUPPORTS_AVX512)
+  add_compile_options(-mno-avx512f)
+endif()
+
+if(COMPILER_SUPPORTS_SSE4)
+  add_compile_options(-msse4.2)
+endif()
 
 if(COMPILER_SUPPORTS_AVX2)
   add_compile_options(-mavx2)
@@ -65,6 +82,7 @@ add_library(mppi_critics SHARED
   src/critics/goal_critic.cpp
   src/critics/goal_angle_critic.cpp
   src/critics/path_align_critic.cpp
+  src/critics/path_align_legacy_critic.cpp
   src/critics/path_follow_critic.cpp
   src/critics/path_angle_critic.cpp
   src/critics/prefer_forward_critic.cpp
@@ -76,7 +94,7 @@ set(libraries mppi_controller mppi_critics)
 
 foreach(lib IN LISTS libraries)
   target_compile_options(${lib} PUBLIC -fconcepts)
-  target_include_directories(${lib} PUBLIC include ${xsimd_INCLUDE_DIRS} ${OpenMP_INCLUDE_DIRS})
+  target_include_directories(${lib} PUBLIC ${xsimd_INCLUDE_DIRS})  #  ${OpenMP_INCLUDE_DIRS}
   target_link_libraries(${lib} xtensor xtensor::optimize xtensor::use_xsimd)
   ament_target_dependencies(${lib} ${dependencies_pkgs})
 endforeach()

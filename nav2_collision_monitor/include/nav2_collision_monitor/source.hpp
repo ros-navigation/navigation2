@@ -69,12 +69,37 @@ public:
    * @param curr_time Current node time for data interpolation
    * @param data Array where the data from source to be added.
    * Added data is transformed to base_frame_id_ coordinate system at curr_time.
+   * @return false if an invalid source should block the robot
    */
-  virtual void getData(
+  virtual bool getData(
     const rclcpp::Time & curr_time,
     std::vector<Point> & data) const = 0;
 
+  /**
+   * @brief Obtains source enabled state
+   * @return Whether source is enabled
+   */
+  bool getEnabled() const;
+
+  /**
+   * @brief Obtains the name of the data source
+   * @return Name of the data source
+   */
+  std::string getSourceName() const;
+
+  /**
+   * @brief Obtains the source_timeout parameter of the data source
+   * @return source_timeout parameter value of the data source
+   */
+  rclcpp::Duration getSourceTimeout() const;
+
 protected:
+  /**
+   * @brief Source configuration routine.
+   * @return True in case of everything is configured correctly, or false otherwise
+   */
+  bool configure();
+
   /**
    * @brief Supporting routine obtaining ROS-parameters common for all data sources
    * @param source_topic Output name of source subscription topic
@@ -91,12 +116,21 @@ protected:
     const rclcpp::Time & source_time,
     const rclcpp::Time & curr_time) const;
 
+  /**
+   * @brief Callback executed when a parameter change is detected
+   * @param event ParameterEvent message
+   */
+  rcl_interfaces::msg::SetParametersResult dynamicParametersCallback(
+    std::vector<rclcpp::Parameter> parameters);
+
   // ----- Variables -----
 
   /// @brief Collision Monitor node
   nav2_util::LifecycleNode::WeakPtr node_;
   /// @brief Collision monitor node logger stored for further usage
   rclcpp::Logger logger_{rclcpp::get_logger("collision_monitor")};
+  /// @brief Dynamic parameters handler
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
 
   // Basic parameters
   /// @brief Name of data source
@@ -116,6 +150,8 @@ protected:
   /// @brief Whether to correct source data towards to base frame movement,
   /// considering the difference between current time and latest source time
   bool base_shift_correction_;
+  /// @brief Whether source is enabled
+  bool enabled_;
 };  // class Source
 
 }  // namespace nav2_collision_monitor

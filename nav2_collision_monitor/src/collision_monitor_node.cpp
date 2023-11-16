@@ -68,10 +68,14 @@ CollisionMonitor::on_configure(const rclcpp_lifecycle::State & /*state*/)
     std::bind(&CollisionMonitor::cmdVelInCallback, this, std::placeholders::_1));
   cmd_vel_out_pub_ = this->create_publisher<geometry_msgs::msg::Twist>(
     cmd_vel_out_topic, 1);
+
   if (!state_topic.empty()) {
     state_pub_ = this->create_publisher<nav2_msgs::msg::CollisionMonitorState>(
       state_topic, 1);
   }
+
+  collision_points_marker_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(
+    "~/collision_points_marker", 1);
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -86,6 +90,7 @@ CollisionMonitor::on_activate(const rclcpp_lifecycle::State & /*state*/)
   if (state_pub_) {
     state_pub_->on_activate();
   }
+  collision_points_marker_pub_->on_activate();
 
   // Activating polygons
   for (std::shared_ptr<Polygon> polygon : polygons_) {
@@ -126,6 +131,7 @@ CollisionMonitor::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   if (state_pub_) {
     state_pub_->on_deactivate();
   }
+  collision_points_marker_pub_->on_deactivate();
 
   // Destroying bond connection
   destroyBond();
@@ -141,6 +147,7 @@ CollisionMonitor::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   cmd_vel_in_sub_.reset();
   cmd_vel_out_pub_.reset();
   state_pub_.reset();
+  collision_points_marker_pub_.reset();
 
   polygons_.clear();
   sources_.clear();
@@ -371,17 +378,59 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in)
   // Points array collected from different data sources in a robot base frame
   std::vector<Point> collision_points;
 
-  // Fill collision_points array from different data sources
-  for (std::shared_ptr<Source> source : sources_) {
-    source->getData(curr_time, collision_points);
-  }
-
   // By default - there is no action
   Action robot_action{DO_NOTHING, cmd_vel_in, ""};
   // Polygon causing robot action (if any)
   std::shared_ptr<Polygon> action_polygon;
 
+  // Fill collision_points array from different data sources
+  for (std::shared_ptr<Source> source : sources_) {
+    if (source->getEnabled()) {
+      if (!source->getData(curr_time, collision_points) &&
+        source->getSourceTimeout().seconds() != 0.0)
+      {
+        action_polygon = nullptr;
+        robot_action.polygon_name = "invalid source";
+        robot_action.action_type = STOP;
+        robot_action.req_vel.x = 0.0;
+        robot_action.req_vel.y = 0.0;
+        robot_action.req_vel.tw = 0.0;
+        break;
+      }
+    }
+  }
+
+  if (collision_points_marker_pub_->get_subscription_count() > 0) {
+    // visualize collision points with markers
+    auto marker_array = std::make_unique<visualization_msgs::msg::MarkerArray>();
+    visualization_msgs::msg::Marker marker;
+    marker.header.frame_id = get_parameter("base_frame_id").as_string();
+    marker.header.stamp = rclcpp::Time(0, 0);
+    marker.ns = "collision_points";
+    marker.id = 0;
+    marker.type = visualization_msgs::msg::Marker::POINTS;
+    marker.action = visualization_msgs::msg::Marker::ADD;
+    marker.scale.x = 0.02;
+    marker.scale.y = 0.02;
+    marker.color.r = 1.0;
+    marker.color.a = 1.0;
+    marker.lifetime = rclcpp::Duration(0, 0);
+
+    for (const auto & point : collision_points) {
+      geometry_msgs::msg::Point p;
+      p.x = point.x;
+      p.y = point.y;
+      p.z = 0.0;
+      marker.points.push_back(p);
+    }
+    marker_array->markers.push_back(marker);
+    collision_points_marker_pub_->publish(std::move(marker_array));
+  }
+
   for (std::shared_ptr<Polygon> polygon : polygons_) {
+    if (!polygon->getEnabled()) {
+      continue;
+    }
     if (robot_action.action_type == STOP) {
       // If robot already should stop, do nothing
       break;
@@ -409,7 +458,7 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in)
     notifyActionState(robot_action, action_polygon);
   }
 
-  // Publish requred robot velocity
+  // Publish required robot velocity
   publishVelocity(robot_action);
 
   // Publish polygons for better visualization
@@ -506,10 +555,18 @@ void CollisionMonitor::notifyActionState(
   const Action & robot_action, const std::shared_ptr<Polygon> action_polygon) const
 {
   if (robot_action.action_type == STOP) {
-    RCLCPP_INFO(
-      get_logger(),
-      "Robot to stop due to %s polygon",
-      action_polygon->getName().c_str());
+    if (robot_action.polygon_name == "invalid source") {
+      RCLCPP_WARN(
+        get_logger(),
+        "Robot to stop due to invalid source."
+        " Either due to data not published yet, or to lack of new data received within the"
+        " sensor timeout, or if impossible to transform data to base frame");
+    } else {
+      RCLCPP_INFO(
+        get_logger(),
+        "Robot to stop due to %s polygon",
+        action_polygon->getName().c_str());
+    }
   } else if (robot_action.action_type == SLOWDOWN) {
     RCLCPP_INFO(
       get_logger(),
@@ -545,7 +602,9 @@ void CollisionMonitor::notifyActionState(
 void CollisionMonitor::publishPolygons() const
 {
   for (std::shared_ptr<Polygon> polygon : polygons_) {
-    polygon->publish();
+    if (polygon->getEnabled()) {
+      polygon->publish();
+    }
   }
 }
 

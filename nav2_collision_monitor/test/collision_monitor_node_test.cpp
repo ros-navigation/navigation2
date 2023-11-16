@@ -32,6 +32,7 @@
 #include "sensor_msgs/point_cloud2_iterator.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/polygon_stamped.hpp"
+#include "visualization_msgs/msg/marker_array.hpp"
 
 #include "tf2_ros/transform_broadcaster.h"
 
@@ -48,6 +49,7 @@ static const char ODOM_FRAME_ID[]{"odom"};
 static const char CMD_VEL_IN_TOPIC[]{"cmd_vel_in"};
 static const char CMD_VEL_OUT_TOPIC[]{"cmd_vel_out"};
 static const char STATE_TOPIC[]{"collision_monitor_state"};
+static const char COLLISION_POINTS_MARKERS_TOPIC[]{"/collision_monitor/collision_points_marker"};
 static const char FOOTPRINT_TOPIC[]{"footprint"};
 static const char SCAN_NAME[]{"Scan"};
 static const char POINTCLOUD_NAME[]{"PointCloud"};
@@ -160,11 +162,16 @@ public:
     const std::chrono::nanoseconds & timeout,
     const rclcpp::Time & stamp);
   bool waitCmdVel(const std::chrono::nanoseconds & timeout);
+  bool waitFuture(
+    rclcpp::Client<rcl_interfaces::srv::SetParameters>::SharedFuture,
+    const std::chrono::nanoseconds & timeout);
   bool waitActionState(const std::chrono::nanoseconds & timeout);
+  bool waitCollisionPointsMarker(const std::chrono::nanoseconds & timeout);
 
 protected:
   void cmdVelOutCallback(geometry_msgs::msg::Twist::SharedPtr msg);
   void actionStateCallback(nav2_msgs::msg::CollisionMonitorState::SharedPtr msg);
+  void collisionPointsMarkerCallback(visualization_msgs::msg::MarkerArray::SharedPtr msg);
 
   // CollisionMonitor node
   std::shared_ptr<CollisionMonitorWrapper> cm_;
@@ -186,6 +193,13 @@ protected:
   // CollisionMonitor Action state
   rclcpp::Subscription<nav2_msgs::msg::CollisionMonitorState>::SharedPtr action_state_sub_;
   nav2_msgs::msg::CollisionMonitorState::SharedPtr action_state_;
+
+  // CollisionMonitor collision points markers
+  rclcpp::Subscription<visualization_msgs::msg::MarkerArray>::SharedPtr collision_points_marker_sub_;
+  visualization_msgs::msg::MarkerArray::SharedPtr collision_points_marker_msg_;
+
+  // Service client for setting CollisionMonitor parameters
+  rclcpp::Client<rcl_interfaces::srv::SetParameters>::SharedPtr parameters_client_;
 };  // Tester
 
 Tester::Tester()
@@ -211,6 +225,13 @@ Tester::Tester()
   action_state_sub_ = cm_->create_subscription<nav2_msgs::msg::CollisionMonitorState>(
     STATE_TOPIC, rclcpp::SystemDefaultsQoS(),
     std::bind(&Tester::actionStateCallback, this, std::placeholders::_1));
+  collision_points_marker_sub_ = cm_->create_subscription<visualization_msgs::msg::MarkerArray>(
+    COLLISION_POINTS_MARKERS_TOPIC, rclcpp::SystemDefaultsQoS(),
+    std::bind(&Tester::collisionPointsMarkerCallback, this, std::placeholders::_1));
+  parameters_client_ =
+    cm_->create_client<rcl_interfaces::srv::SetParameters>(
+    std::string(
+      cm_->get_name()) + "/set_parameters");
 }
 
 Tester::~Tester()
@@ -225,6 +246,7 @@ Tester::~Tester()
   cmd_vel_out_sub_.reset();
 
   action_state_sub_.reset();
+  collision_points_marker_sub_.reset();
 
   cm_.reset();
 }
@@ -307,6 +329,11 @@ void Tester::addPolygon(
     cm_->set_parameter(
       rclcpp::Parameter(polygon_name + ".type", "unknown"));
   }
+
+  cm_->declare_parameter(
+    polygon_name + ".enabled", rclcpp::ParameterValue(true));
+  cm_->set_parameter(
+    rclcpp::Parameter(polygon_name + ".enabled", true));
 
   cm_->declare_parameter(
     polygon_name + ".action_type", rclcpp::ParameterValue(at));
@@ -539,6 +566,7 @@ void Tester::publishCmdVel(const double x, const double y, const double tw)
   // Reset cmd_vel_out_ before calling CollisionMonitor::process()
   cmd_vel_out_ = nullptr;
   action_state_ = nullptr;
+  collision_points_marker_msg_ = nullptr;
 
   std::unique_ptr<geometry_msgs::msg::Twist> msg =
     std::make_unique<geometry_msgs::msg::Twist>();
@@ -579,11 +607,40 @@ bool Tester::waitCmdVel(const std::chrono::nanoseconds & timeout)
   return false;
 }
 
+bool Tester::waitFuture(
+  rclcpp::Client<rcl_interfaces::srv::SetParameters>::SharedFuture result_future,
+  const std::chrono::nanoseconds & timeout)
+{
+  rclcpp::Time start_time = cm_->now();
+  while (rclcpp::ok() && cm_->now() - start_time <= rclcpp::Duration(timeout)) {
+    std::future_status status = result_future.wait_for(10ms);
+    if (status == std::future_status::ready) {
+      return true;
+    }
+    rclcpp::spin_some(cm_->get_node_base_interface());
+    std::this_thread::sleep_for(10ms);
+  }
+  return false;
+}
+
 bool Tester::waitActionState(const std::chrono::nanoseconds & timeout)
 {
   rclcpp::Time start_time = cm_->now();
   while (rclcpp::ok() && cm_->now() - start_time <= rclcpp::Duration(timeout)) {
     if (action_state_) {
+      return true;
+    }
+    rclcpp::spin_some(cm_->get_node_base_interface());
+    std::this_thread::sleep_for(10ms);
+  }
+  return false;
+}
+
+bool Tester::waitCollisionPointsMarker(const std::chrono::nanoseconds & timeout)
+{
+  rclcpp::Time start_time = cm_->now();
+  while (rclcpp::ok() && cm_->now() - start_time <= rclcpp::Duration(timeout)) {
+    if (collision_points_marker_msg_) {
       return true;
     }
     rclcpp::spin_some(cm_->get_node_base_interface());
@@ -600,6 +657,11 @@ void Tester::cmdVelOutCallback(geometry_msgs::msg::Twist::SharedPtr msg)
 void Tester::actionStateCallback(nav2_msgs::msg::CollisionMonitorState::SharedPtr msg)
 {
   action_state_ = msg;
+}
+
+void Tester::collisionPointsMarkerCallback(visualization_msgs::msg::MarkerArray::SharedPtr msg)
+{
+  collision_points_marker_msg_ = msg;
 }
 
 TEST_F(Tester, testProcessStopSlowdownLimit)
@@ -846,6 +908,7 @@ TEST_F(Tester, testCrossOver)
   // 1. Obstacle is not in the slowdown zone, but less than TIME_BEFORE_COLLISION (ahead in 1.5 m).
   // Robot should approach the obstacle.
   publishPointCloud(2.5, curr_time);
+  publishRange(2.5, curr_time);
   ASSERT_TRUE(waitData(std::hypot(2.5, 0.01), 500ms, curr_time));
   publishCmdVel(3.0, 0.0, 0.0);
   ASSERT_TRUE(waitCmdVel(500ms));
@@ -880,6 +943,87 @@ TEST_F(Tester, testCrossOver)
   change_ratio = (0.5 / 1.0) / TIME_BEFORE_COLLISION;
   ASSERT_NEAR(
     cmd_vel_out_->linear.x, 1.0 * change_ratio, 1.0 * SIMULATION_TIME_STEP / TIME_BEFORE_COLLISION);
+  ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, APPROACH);
+  ASSERT_EQ(action_state_->polygon_name, "Approach");
+
+  // Stop Collision Monitor node
+  cm_->stop();
+}
+
+TEST_F(Tester, testSourceTimeout)
+{
+  rclcpp::Time curr_time = cm_->now();
+
+  // Set Collision Monitor parameters.
+  // Making two polygons: outer polygon for slowdown and inner circle
+  // as robot footprint for approach.
+  setCommonParameters();
+  addPolygon("SlowDown", POLYGON, 2.0, "slowdown");
+  addPolygon("Approach", CIRCLE, 1.0, "approach");
+  addSource(POINTCLOUD_NAME, POINTCLOUD);
+  addSource(RANGE_NAME, RANGE);
+  setVectors({"SlowDown", "Approach"}, {POINTCLOUD_NAME, RANGE_NAME});
+
+  // Start Collision Monitor node
+  cm_->start();
+
+  // Share TF
+  sendTransforms(curr_time);
+
+  // Obstacle is not in the slowdown zone, but less than TIME_BEFORE_COLLISION (ahead in 1.5 m).
+  // Robot should approach the obstacle.
+  publishPointCloud(2.5, curr_time);
+  ASSERT_TRUE(waitData(std::hypot(2.5, 0.01), 500ms, curr_time));
+  publishCmdVel(3.0, 3.0, 3.0);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  // Range configured but not published, range source should be considered invalid
+  ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, STOP);
+  ASSERT_EQ(action_state_->polygon_name, "invalid source");
+
+  // Stop Collision Monitor node
+  cm_->stop();
+}
+
+TEST_F(Tester, testSourceTimeoutOverride)
+{
+  rclcpp::Time curr_time = cm_->now();
+
+  // Set Collision Monitor parameters.
+  // Making two polygons: outer polygon for slowdown and inner circle
+  // as robot footprint for approach.
+  setCommonParameters();
+  addPolygon("SlowDown", POLYGON, 2.0, "slowdown");
+  addPolygon("Approach", CIRCLE, 1.0, "approach");
+  addSource(POINTCLOUD_NAME, POINTCLOUD);
+  addSource(RANGE_NAME, RANGE);
+  setVectors({"SlowDown", "Approach"}, {POINTCLOUD_NAME, RANGE_NAME});
+  cm_->set_parameter(rclcpp::Parameter("source_timeout", 0.0));
+
+  // Start Collision Monitor node
+  cm_->start();
+
+  // Share TF
+  sendTransforms(curr_time);
+
+  // Obstacle is not in the slowdown zone, but less than TIME_BEFORE_COLLISION (ahead in 1.5 m).
+  // Robot should approach the obstacle.
+  publishPointCloud(2.5, curr_time);
+  ASSERT_TRUE(waitData(std::hypot(2.5, 0.01), 500ms, curr_time));
+  publishCmdVel(3.0, 0.0, 0.0);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  // change_ratio = (1.5 m / 3.0 m/s) / TIME_BEFORE_COLLISION s
+  double change_ratio = (1.5 / 3.0) / TIME_BEFORE_COLLISION;
+  // Range configured but not published, range source should be considered invalid
+  // but as we set the source_timeout of the Range source to 0.0, its validity check is overidden
+  ASSERT_NEAR(
+    cmd_vel_out_->linear.x, 3.0 * change_ratio, 3.0 * SIMULATION_TIME_STEP / TIME_BEFORE_COLLISION);
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
   ASSERT_TRUE(waitActionState(500ms));
@@ -961,6 +1105,116 @@ TEST_F(Tester, testCeasePublishZeroVel)
   cm_->stop();
 }
 
+TEST_F(Tester, testPolygonNotEnabled)
+{
+  // Set Collision Monitor parameters.
+  // Create a STOP polygon
+  setCommonParameters();
+  addPolygon("Stop", POLYGON, 1.0, "stop");
+  // Create a Scan source
+  addSource(SCAN_NAME, SCAN);
+  setVectors({"Stop"}, {SCAN_NAME});
+
+  // Start Collision Monitor node
+  cm_->start();
+
+  // Check that robot stops when polygon is enabled
+  rclcpp::Time curr_time = cm_->now();
+  sendTransforms(curr_time);
+  publishScan(0.5, curr_time);
+  ASSERT_TRUE(waitData(0.5, 500ms, curr_time));
+  publishCmdVel(0.5, 0.2, 0.1);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.0, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, STOP);
+  ASSERT_EQ(action_state_->polygon_name, "Stop");
+
+  // Disable polygon by calling service
+  auto set_parameters_msg = std::make_shared<rcl_interfaces::srv::SetParameters::Request>();
+  auto parameter_msg = std::make_shared<rcl_interfaces::msg::Parameter>();
+  parameter_msg->name = "Stop.enabled";
+  parameter_msg->value.type = rcl_interfaces::msg::ParameterType::PARAMETER_BOOL;
+  parameter_msg->value.bool_value = false;
+  set_parameters_msg->parameters.push_back(*parameter_msg);
+  auto result_future = parameters_client_->async_send_request(set_parameters_msg).future.share();
+  ASSERT_TRUE(waitFuture(result_future, 2s));
+
+  // Check that robot does not stop when polygon is disabled
+  curr_time = cm_->now();
+  sendTransforms(curr_time);
+  publishScan(0.5, curr_time);
+  ASSERT_TRUE(waitData(0.5, 500ms, curr_time));
+  publishCmdVel(0.5, 0.2, 0.1);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->linear.y, 0.2, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->angular.z, 0.1, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, DO_NOTHING);
+  ASSERT_EQ(action_state_->polygon_name, "");
+
+  // Stop Collision Monitor node
+  cm_->stop();
+}
+
+TEST_F(Tester, testSourceNotEnabled)
+{
+  // Set Collision Monitor parameters.
+  // Create a STOP polygon
+  setCommonParameters();
+  addPolygon("Stop", POLYGON, 1.0, "stop");
+  // Create a Scan source
+  addSource(SCAN_NAME, SCAN);
+  setVectors({"Stop"}, {SCAN_NAME});
+
+  // Start Collision Monitor node
+  cm_->start();
+
+  // Check that robot stops when source is enabled
+  rclcpp::Time curr_time = cm_->now();
+  sendTransforms(curr_time);
+  publishScan(0.5, curr_time);
+  ASSERT_TRUE(waitData(0.5, 500ms, curr_time));
+  publishCmdVel(0.5, 0.2, 0.1);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.0, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, STOP);
+  ASSERT_EQ(action_state_->polygon_name, "Stop");
+
+  // Disable source by calling service
+  auto set_parameters_msg = std::make_shared<rcl_interfaces::srv::SetParameters::Request>();
+  auto parameter_msg = std::make_shared<rcl_interfaces::msg::Parameter>();
+  parameter_msg->name = std::string(SCAN_NAME) + ".enabled";
+  parameter_msg->value.type = rcl_interfaces::msg::ParameterType::PARAMETER_BOOL;
+  parameter_msg->value.bool_value = false;
+  set_parameters_msg->parameters.push_back(*parameter_msg);
+  auto result_future = parameters_client_->async_send_request(set_parameters_msg).future.share();
+  ASSERT_TRUE(waitFuture(result_future, 2s));
+
+  // Check that robot does not stop when source is disabled
+  curr_time = cm_->now();
+  sendTransforms(curr_time);
+  publishScan(0.5, curr_time);
+  ASSERT_TRUE(waitData(0.5, 500ms, curr_time));
+  publishCmdVel(0.5, 0.2, 0.1);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->linear.y, 0.2, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->angular.z, 0.1, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, DO_NOTHING);
+  ASSERT_EQ(action_state_->polygon_name, "");
+
+  // Stop Collision Monitor node
+  cm_->stop();
+}
+
 TEST_F(Tester, testProcessNonActive)
 {
   rclcpp::Time curr_time = cm_->now();
@@ -1022,11 +1276,40 @@ TEST_F(Tester, testSourcesNotSet)
   setCommonParameters();
   addPolygon("Stop", POLYGON, 1.0, "stop");
   addSource(SCAN_NAME, SCAN);
-  cm_->declare_parameter("polygons", rclcpp::ParameterValue({"Stop"}));
+  cm_->declare_parameter("polygons", rclcpp::ParameterValue(std::vector<std::string>{"Stop"}));
   cm_->set_parameter(rclcpp::Parameter("polygons", std::vector<std::string>{"Stop"}));
 
   // Check that Collision Monitor node can not be configured for this parameters set
   cm_->cant_configure();
+}
+
+TEST_F(Tester, testCollisionPointsMarkers)
+{
+  rclcpp::Time curr_time = cm_->now();
+
+  // Set Collision Monitor parameters.
+  // Making two polygons: outer polygon for slowdown and inner for robot stop.
+  setCommonParameters();
+  addSource(SCAN_NAME, SCAN);
+  setVectors({}, {SCAN_NAME});
+
+  // Start Collision Monitor node
+  cm_->start();
+
+  // Share TF
+  sendTransforms(curr_time);
+
+  publishCmdVel(0.5, 0.2, 0.1);
+  ASSERT_TRUE(waitCollisionPointsMarker(500ms));
+  ASSERT_EQ(collision_points_marker_msg_->markers[0].points.size(), 0u);
+
+  publishCmdVel(0.5, 0.2, 0.1);
+  publishScan(0.5, curr_time);
+  ASSERT_TRUE(waitData(0.5, 500ms, curr_time));
+  ASSERT_TRUE(waitCollisionPointsMarker(500ms));
+  ASSERT_NE(collision_points_marker_msg_->markers[0].points.size(), 0u);
+  // Stop Collision Monitor node
+  cm_->stop();
 }
 
 int main(int argc, char ** argv)

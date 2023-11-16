@@ -32,7 +32,7 @@ def main(argv=sys.argv[1:]):
     test1_action = ExecuteProcess(
         cmd=[testExecutable, '--ros-args -p use_sim_time:=True'],
         name='test_planner_random_node',
-        output='screen'
+        output='screen',
     )
 
     lts = LaunchTestService()

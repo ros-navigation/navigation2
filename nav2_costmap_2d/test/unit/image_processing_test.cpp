@@ -139,7 +139,7 @@ Image<uint8_t> ConnectedComponentsTester::makeChessboardLikeImage(
 {
   Image<uint8_t> image = makeImage<uint8_t>(rows, cols, buffer, cols * 3);
 
-  auto inverse = [this](uint8_t v) {
+  auto inverse = [](uint8_t v) {
       return (v == BACKGROUND_CODE) ? FOREGROUND_CODE : BACKGROUND_CODE;
     };
 
@@ -161,71 +161,78 @@ Image<uint8_t> ConnectedComponentsTester::makeChessboardLikeImage(
 
 TEST_F(ConnectedComponentsTester, way4EmptyTest) {
   Image<uint8_t> empty;
-  const auto result = connectedComponents<ConnectivityType::Way4>(
+  uint8_t total_labels;
+  connectedComponents<ConnectivityType::Way4>(
     empty, buffer_, label_trees_,
-    isBackground);
-  ASSERT_EQ(result.second, uint8_t(0));
+    isBackground, total_labels);
+  ASSERT_EQ(total_labels, uint8_t(0));
 }
 
 TEST_F(ConnectedComponentsTester, way4SinglePixelTest) {
   Image<uint8_t> input = makeImage(1, 1, image_buffer_bytes_);
+  uint8_t total_labels;
   {
     input.row(0)[0] = BACKGROUND_CODE;
 
     const auto result = connectedComponents<ConnectivityType::Way4>(
       input, buffer_, label_trees_,
-      isBackground);
+      isBackground, total_labels);
 
-    ASSERT_EQ(result.first.row(0)[0], 0);
-    ASSERT_EQ(result.second, 1);
+    ASSERT_EQ(result.row(0)[0], 0);
+    ASSERT_EQ(total_labels, 1);
   }
   {
     input.row(0)[0] = FOREGROUND_CODE;
 
     const auto result = connectedComponents<ConnectivityType::Way4>(
       input, buffer_, label_trees_,
-      isBackground);
+      isBackground, total_labels);
 
-    ASSERT_EQ(result.first.row(0)[0], 1);
-    ASSERT_EQ(result.second, 2);
+    ASSERT_EQ(result.row(0)[0], 1);
+    ASSERT_EQ(total_labels, 2);
   }
 }
 
 TEST_F(ConnectedComponentsTester, way4ImageSmallTest) {
   {
     Image<uint8_t> input = makeImage(1, 2, image_buffer_bytes_);
+    uint8_t total_labels;
     input.row(0)[0] = BACKGROUND_CODE;
     input.row(0)[1] = FOREGROUND_CODE;
 
     const auto result = connectedComponents<ConnectivityType::Way4>(
       input, buffer_, label_trees_,
-      isBackground);
+      isBackground, total_labels);
 
-    ASSERT_EQ(result.second, uint8_t(2));
-    ASSERT_EQ(result.first.row(0)[0], 0);
-    ASSERT_EQ(result.first.row(0)[1], 1);
+    ASSERT_EQ(total_labels, uint8_t(2));
+    ASSERT_EQ(result.row(0)[0], 0);
+    ASSERT_EQ(result.row(0)[1], 1);
   }
   {
     Image<uint8_t> input = makeImage(2, 1, image_buffer_bytes_);
+    uint8_t total_labels;
     input.row(0)[0] = BACKGROUND_CODE;
     input.row(1)[0] = FOREGROUND_CODE;
 
     const auto result = connectedComponents<ConnectivityType::Way4>(
       input, buffer_, label_trees_,
-      isBackground);
+      isBackground, total_labels);
 
-    ASSERT_EQ(result.second, uint8_t(2));
-    ASSERT_EQ(result.first.row(0)[0], 0);
-    ASSERT_EQ(result.first.row(1)[0], 1);
+    ASSERT_EQ(total_labels, uint8_t(2));
+    ASSERT_EQ(result.row(0)[0], 0);
+    ASSERT_EQ(result.row(1)[0], 1);
   }
 }
 
 TEST_F(ConnectedComponentsTester, way4LabelsOverflowTest) {
   // big chessboard image
   Image<uint8_t> input = makeChessboardLikeImage(32, 17, image_buffer_bytes_);
+  uint8_t total_labels;
 
   ASSERT_THROW(
-    (connectedComponents<ConnectivityType::Way4>(input, buffer_, label_trees_, isBackground)),
+    (connectedComponents<ConnectivityType::Way4>(
+      input, buffer_, label_trees_,
+      isBackground, total_labels)),
     LabelOverflow);
 }
 
@@ -273,12 +280,13 @@ TEST_F(ConnectedComponentsTester, way4ImageStepsTest) {
     ".xx."
     "xx.."
     "....", image_buffer_bytes2_);
+  uint8_t total_labels;
   const auto result = connectedComponents<ConnectivityType::Way4>(
     input, buffer_, label_trees_,
-    isBackground);
+    isBackground, total_labels);
 
-  ASSERT_EQ(result.second, uint8_t(2));
-  ASSERT_TRUE(isEqualLabels(result.first, expected_labels));
+  ASSERT_EQ(total_labels, uint8_t(2));
+  ASSERT_TRUE(isEqualLabels(result, expected_labels));
 }
 
 /// @brief create mapping '.'->0, 'a'->1, 'b'->2, ... max_symbol->n
@@ -307,13 +315,14 @@ TEST_F(ConnectedComponentsTester, way8ImageStepsTest) {
     "...bb."
     ".....b"
     "....b.", image_buffer_bytes2_, makeLabelsMap('b'));
+  uint8_t total_labels;
 
   const auto result = connectedComponents<ConnectivityType::Way8>(
     input, buffer_, label_trees_,
-    isBackground);
+    isBackground, total_labels);
 
-  ASSERT_EQ(result.second, uint8_t(3));
-  ASSERT_TRUE(isEqualLabels(result.first, expected_labels));
+  ASSERT_EQ(total_labels, uint8_t(3));
+  ASSERT_TRUE(isEqualLabels(result, expected_labels));
 }
 
 TEST_F(ConnectedComponentsTester, way4ImageSieveTest) {
@@ -329,13 +338,14 @@ TEST_F(ConnectedComponentsTester, way4ImageSieveTest) {
     "f.g.h"
     ".i.j."
     "k.l.m", image_buffer_bytes2_, makeLabelsMap('m'));
+  uint8_t total_labels;
 
   const auto result = connectedComponents<ConnectivityType::Way4>(
     input, buffer_, label_trees_,
-    isBackground);
+    isBackground, total_labels);
 
-  ASSERT_EQ(result.second, uint8_t(14));
-  ASSERT_TRUE(isEqualLabels(result.first, expected_labels));
+  ASSERT_EQ(total_labels, uint8_t(14));
+  ASSERT_TRUE(isEqualLabels(result, expected_labels));
 }
 
 template<ConnectivityType connectivity>
@@ -353,10 +363,13 @@ bool ConnectedComponentsTester::fingerTest()
     "..b.c"
     "a.b.c"
     "a.b.c", image_buffer_bytes2_, makeLabelsMap('c'));
+  uint8_t total_labels;
 
-  const auto result = connectedComponents<connectivity>(input, buffer_, label_trees_, isBackground);
+  const auto result = connectedComponents<connectivity>(
+    input, buffer_,
+    label_trees_, isBackground, total_labels);
 
-  return result.second == 4 && isEqualLabels(result.first, expected_labels);
+  return total_labels == 4 && isEqualLabels(result, expected_labels);
 }
 
 TEST_F(ConnectedComponentsTester, way4ImageFingerTest) {
@@ -386,9 +399,12 @@ bool ConnectedComponentsTester::spiralTest()
     ".x.xx.x"
     ".x....x"
     ".xxxxxx", image_buffer_bytes2_);
+  uint8_t total_labels;
 
-  const auto result = connectedComponents<connectivity>(input, buffer_, label_trees_, isBackground);
-  return result.second == 2 && isEqualLabels(result.first, expected_labels);
+  const auto result = connectedComponents<connectivity>(
+    input, buffer_,
+    label_trees_, isBackground, total_labels);
+  return total_labels == 2 && isEqualLabels(result, expected_labels);
 }
 
 TEST_F(ConnectedComponentsTester, way4ImageSpiralTest) {

@@ -46,12 +46,8 @@ class TestType(Enum):
     SPEED = 1
 
 
-class FilterMask():
-
-    def __init__(
-        self,
-        filter_mask: OccupancyGrid
-    ):
+class FilterMask:
+    def __init__(self, filter_mask: OccupancyGrid):
         self.filter_mask = filter_mask
 
     # Converts world coordinates into filter mask map coordinate.
@@ -82,38 +78,45 @@ class FilterMask():
 
 
 class NavTester(Node):
-
     def __init__(
         self,
         test_type: TestType,
         initial_pose: Pose,
         goal_pose: Pose,
-        namespace: str = ''
+        namespace: str = '',
     ):
         super().__init__(node_name='nav2_tester', namespace=namespace)
-        self.initial_pose_pub = self.create_publisher(PoseWithCovarianceStamped,
-                                                      'initialpose', 10)
+        self.initial_pose_pub = self.create_publisher(
+            PoseWithCovarianceStamped, 'initialpose', 10
+        )
         self.goal_pub = self.create_publisher(PoseStamped, 'goal_pose', 10)
 
         transient_local_qos = QoSProfile(
             durability=QoSDurabilityPolicy.TRANSIENT_LOCAL,
             reliability=QoSReliabilityPolicy.RELIABLE,
             history=QoSHistoryPolicy.KEEP_LAST,
-            depth=1)
+            depth=1,
+        )
 
         volatile_qos = QoSProfile(
             durability=QoSDurabilityPolicy.RMW_QOS_POLICY_DURABILITY_VOLATILE,
             reliability=QoSReliabilityPolicy.RELIABLE,
             history=QoSHistoryPolicy.RMW_QOS_POLICY_HISTORY_KEEP_LAST,
-            depth=1)
+            depth=1,
+        )
 
-        self.model_pose_sub = self.create_subscription(PoseWithCovarianceStamped,
-                                                       'amcl_pose', self.poseCallback,
-                                                       transient_local_qos)
-        self.clearing_ep_sub = self.create_subscription(PointCloud2,
-                                                        'local_costmap/clearing_endpoints',
-                                                        self.clearingEndpointsCallback,
-                                                        transient_local_qos)
+        self.model_pose_sub = self.create_subscription(
+            PoseWithCovarianceStamped,
+            'amcl_pose',
+            self.poseCallback,
+            transient_local_qos,
+        )
+        self.clearing_ep_sub = self.create_subscription(
+            PointCloud2,
+            'local_costmap/clearing_endpoints',
+            self.clearingEndpointsCallback,
+            transient_local_qos,
+        )
         self.test_type = test_type
         self.filter_test_result = True
         self.clearing_endpoints_received = False
@@ -122,38 +125,37 @@ class NavTester(Node):
         self.cost_cloud_received = False
 
         if self.test_type == TestType.KEEPOUT:
-            self.plan_sub = self.create_subscription(Path, 'plan',
-                                                     self.planCallback, volatile_qos)
-            self.voxel_marked_sub = self.create_subscription(PointCloud2,
-                                                             'voxel_marked_cloud',
-                                                             self.voxelMarkedCallback,
-                                                             1)
-            self.voxel_unknown_sub = self.create_subscription(PointCloud2,
-                                                              'voxel_unknown_cloud',
-                                                              self.voxelUnknownCallback,
-                                                              1)
-            self.cost_cloud_sub = self.create_subscription(PointCloud2,
-                                                           'cost_cloud',
-                                                           self.dwbCostCloudCallback,
-                                                           1)
+            self.plan_sub = self.create_subscription(
+                Path, 'plan', self.planCallback, volatile_qos
+            )
+            self.voxel_marked_sub = self.create_subscription(
+                PointCloud2, 'voxel_marked_cloud', self.voxelMarkedCallback, 1
+            )
+            self.voxel_unknown_sub = self.create_subscription(
+                PointCloud2, 'voxel_unknown_cloud', self.voxelUnknownCallback, 1
+            )
+            self.cost_cloud_sub = self.create_subscription(
+                PointCloud2, 'cost_cloud', self.dwbCostCloudCallback, 1
+            )
         elif self.test_type == TestType.SPEED:
             self.speed_it = 0
             # Expected chain of speed limits
             self.limits = [50.0, 0.0]
-            # Permissive array: all received speed limits must match to "limits" from above
+            # Permissive array: all received speed limits must match to 'limits' from above
             self.limit_passed = [False, False]
-            self.plan_sub = self.create_subscription(SpeedLimit, 'speed_limit',
-                                                     self.speedLimitCallback, volatile_qos)
+            self.plan_sub = self.create_subscription(
+                SpeedLimit, 'speed_limit', self.speedLimitCallback, volatile_qos
+            )
 
         self.mask_received = False
-        self.mask_sub = self.create_subscription(OccupancyGrid, 'filter_mask',
-                                                 self.maskCallback, transient_local_qos)
+        self.mask_sub = self.create_subscription(
+            OccupancyGrid, 'filter_mask', self.maskCallback, transient_local_qos
+        )
 
         self.initial_pose_received = False
         self.initial_pose = initial_pose
         self.goal_pose = goal_pose
-        self.action_client = ActionClient(
-            self, NavigateToPose, 'navigate_to_pose')
+        self.action_client = ActionClient(self, NavigateToPose, 'navigate_to_pose')
 
     def info_msg(self, msg: str):
         self.get_logger().info('\033[1;37;44m' + msg + '\033[0m')
@@ -186,8 +188,7 @@ class NavTester(Node):
         # Sends a `NavToPose` action request and waits for completion
         self.info_msg("Waiting for 'NavigateToPose' action server")
         while not self.action_client.wait_for_server(timeout_sec=1.0):
-            self.info_msg(
-                "'NavigateToPose' action server not available, waiting...")
+            self.info_msg("'NavigateToPose' action server not available, waiting...")
 
         self.goal_pose = goal_pose if goal_pose is not None else self.goal_pose
         goal_msg = NavigateToPose.Goal()
@@ -235,12 +236,12 @@ class NavTester(Node):
         return True
 
     # Checks that currently received speed_limit is equal to the it-th item
-    # of expected speed "limits" array.
-    # If so, sets it-th item of permissive array "limit_passed" to be true.
+    # of expected speed 'limits' array.
+    # If so, sets it-th item of permissive array 'limit_passed' to be true.
     # Otherwise it will be remained to be false.
     # Also verifies that speed limit messages received no more than N-times
-    # (where N - is the length of "limits" array),
-    # otherwise sets overall "filter_test_result" to be false.
+    # (where N - is the length of 'limits' array),
+    # otherwise sets overall 'filter_test_result' to be false.
     def checkSpeed(self, it, speed_limit):
         if it >= len(self.limits):
             self.error_msg('Got excess speed limit')
@@ -249,15 +250,21 @@ class NavTester(Node):
         if speed_limit == self.limits[it]:
             self.limit_passed[it] = True
         else:
-            self.error_msg('Incorrect speed limit received: ' + str(speed_limit) +
-                           ', but should be: ' + str(self.limits[it]))
+            self.error_msg(
+                'Incorrect speed limit received: '
+                + str(speed_limit)
+                + ', but should be: '
+                + str(self.limits[it])
+            )
 
     def poseCallback(self, msg):
         self.info_msg('Received amcl_pose')
         self.current_pose = msg.pose.pose
         self.initial_pose_received = True
         if self.test_type == TestType.KEEPOUT:
-            if not self.checkKeepout(msg.pose.pose.position.x, msg.pose.pose.position.y):
+            if not self.checkKeepout(
+                msg.pose.pose.position.x, msg.pose.pose.position.y
+            ):
                 self.error_msg('Robot goes into keepout zone')
 
     def planCallback(self, msg):
@@ -307,16 +314,21 @@ class NavTester(Node):
 
     def wait_for_pointcloud_subscribers(self, timeout):
         start_time = time.time()
-        while not self.voxel_unknown_received or not self.voxel_marked_received \
-                or not self.clearing_endpoints_received:
+        while (
+            not self.voxel_unknown_received
+            or not self.voxel_marked_received
+            or not self.clearing_endpoints_received
+        ):
             self.info_msg(
                 'Waiting for voxel_marked_cloud/voxel_unknown_cloud/\
-                clearing_endpoints msg to be received ...')
+                clearing_endpoints msg to be received ...'
+            )
             rclpy.spin_once(self, timeout_sec=1)
             if (time.time() - start_time) > timeout:
                 self.error_msg(
                     'Time out to waiting for voxel_marked_cloud/voxel_unknown_cloud/\
-                    clearing_endpoints msgs')
+                    clearing_endpoints msgs'
+                )
                 return False
         return True
 
@@ -351,7 +363,7 @@ class NavTester(Node):
             self.info_msg(f'{node_service} service not available, waiting...')
         req = GetState.Request()  # empty request
         state = 'UNKNOWN'
-        while (state != 'active'):
+        while state != 'active':
             self.info_msg(f'Getting {node_name} state...')
             future = state_client.call_async(req)
             rclpy.spin_until_future_complete(self, future)
@@ -359,8 +371,9 @@ class NavTester(Node):
                 state = future.result().current_state.label
                 self.info_msg(f'Result of get_state: {state}')
             else:
-                self.error_msg('Exception while calling service: %r' %
-                               future.exception())
+                self.error_msg(
+                    'Exception while calling service: %r' % future.exception()
+                )
             time.sleep(5)
 
     def shutdown(self):
@@ -368,8 +381,7 @@ class NavTester(Node):
         self.action_client.destroy()
 
         transition_service = 'lifecycle_manager_navigation/manage_nodes'
-        mgr_client = self.create_client(
-            ManageLifecycleNodes, transition_service)
+        mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
         while not mgr_client.wait_for_service(timeout_sec=1.0):
             self.info_msg(f'{transition_service} service not available, waiting...')
 
@@ -380,13 +392,11 @@ class NavTester(Node):
             self.info_msg('Shutting down navigation lifecycle manager...')
             rclpy.spin_until_future_complete(self, future)
             future.result()
-            self.info_msg(
-                'Shutting down navigation lifecycle manager complete.')
+            self.info_msg('Shutting down navigation lifecycle manager complete.')
         except Exception as e:  # noqa: B902
             self.error_msg(f'Service call failed {e!r}')
         transition_service = 'lifecycle_manager_localization/manage_nodes'
-        mgr_client = self.create_client(
-            ManageLifecycleNodes, transition_service)
+        mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
         while not mgr_client.wait_for_service(timeout_sec=1.0):
             self.info_msg(f'{transition_service} service not available, waiting...')
 
@@ -397,8 +407,7 @@ class NavTester(Node):
             self.info_msg('Shutting down localization lifecycle manager...')
             rclpy.spin_until_future_complete(self, future)
             future.result()
-            self.info_msg(
-                'Shutting down localization lifecycle manager complete')
+            self.info_msg('Shutting down localization lifecycle manager complete')
         except Exception as e:  # noqa: B902
             self.error_msg(f'Service call failed {e!r}')
 
@@ -419,10 +428,10 @@ def test_RobotMovesToGoal(robot_tester):
 
 
 # Tests that all received speed limits are correct:
-# If overall "filter_test_result" is true
-# checks that all items in "limit_passed" permissive array are also true.
+# If overall 'filter_test_result' is true
+# checks that all items in 'limit_passed' permissive array are also true.
 # In other words, it verifies that all speed limits are received
-# exactly (by count and values) as expected by "limits" array.
+# exactly (by count and values) as expected by 'limits' array.
 def test_SpeedLimitsAllCorrect(robot_tester):
     if not robot_tester.filter_test_result:
         return False
@@ -436,21 +445,21 @@ def test_SpeedLimitsAllCorrect(robot_tester):
 def run_all_tests(robot_tester):
     # set transforms to use_sim_time
     result = True
-    if (result):
+    if result:
         robot_tester.wait_for_node_active('amcl')
         robot_tester.wait_for_initial_pose()
         robot_tester.wait_for_node_active('bt_navigator')
         result = robot_tester.wait_for_filter_mask(10)
-    if (result):
+    if result:
         result = robot_tester.runNavigateAction()
 
     if robot_tester.test_type == TestType.KEEPOUT:
         result = result and robot_tester.wait_for_pointcloud_subscribers(10)
 
-    if (result):
+    if result:
         result = test_RobotMovesToGoal(robot_tester)
 
-    if (result):
+    if result:
         if robot_tester.test_type == TestType.KEEPOUT:
             result = robot_tester.filter_test_result
             result = result and robot_tester.cost_cloud_received
@@ -459,7 +468,7 @@ def run_all_tests(robot_tester):
 
     # Add more tests here if desired
 
-    if (result):
+    if result:
         robot_tester.info_msg('Test PASSED')
     else:
         robot_tester.error_msg('Test FAILED')
@@ -491,23 +500,44 @@ def get_tester(args):
     tester = NavTester(
         test_type,
         initial_pose=fwd_pose(float(init_x), float(init_y)),
-        goal_pose=fwd_pose(float(final_x), float(final_y)))
+        goal_pose=fwd_pose(float(final_x), float(final_y)),
+    )
     tester.info_msg(
-        'Starting tester, robot going from ' + init_x + ', ' + init_y +
-        ' to ' + final_x + ', ' + final_y + '.')
+        'Starting tester, robot going from '
+        + init_x
+        + ', '
+        + init_y
+        + ' to '
+        + final_x
+        + ', '
+        + final_y
+        + '.'
+    )
     return tester
 
 
 def main(argv=sys.argv[1:]):
     # The robot(s) positions from the input arguments
     parser = argparse.ArgumentParser(
-        description='System-level costmap filters tester node')
-    parser.add_argument('-t', '--type', type=str, action='store', dest='type',
-                        help='Type of costmap filter being tested.')
+        description='System-level costmap filters tester node'
+    )
+    parser.add_argument(
+        '-t',
+        '--type',
+        type=str,
+        action='store',
+        dest='type',
+        help='Type of costmap filter being tested.',
+    )
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('-r', '--robot', action='append', nargs=4,
-                       metavar=('init_x', 'init_y', 'final_x', 'final_y'),
-                       help='The robot starting and final positions.')
+    group.add_argument(
+        '-r',
+        '--robot',
+        action='append',
+        nargs=4,
+        metavar=('init_x', 'init_y', 'final_x', 'final_y'),
+        help='The robot starting and final positions.',
+    )
 
     args, unknown = parser.parse_known_args()
 
