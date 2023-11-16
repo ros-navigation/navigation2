@@ -188,6 +188,27 @@ void Costmap2DPublisher::prepareCostmap()
   }
 }
 
+std::unique_ptr<map_msgs::msg::OccupancyGridUpdate> Costmap2DPublisher::createGridUpdateMsg()
+{
+  auto update = std::make_unique<map_msgs::msg::OccupancyGridUpdate>();
+
+  update->header.stamp = clock_->now();
+  update->header.frame_id = global_frame_;
+  update->x = x0_;
+  update->y = y0_;
+  update->width = xn_ - x0_;
+  update->height = yn_ - y0_;
+  update->data.resize(update->width * update->height);
+
+  std::uint32_t i = 0;
+  for (std::uint32_t y = y0_; y < yn_; y++) {
+    for (std::uint32_t x = x0_; x < xn_; x++) {
+      update->data[i++] = cost_translation_table_[costmap_->getCost(x, y)];
+    }
+  }
+  return update;
+}
+
 std::unique_ptr<nav2_msgs::msg::CostmapUpdate> Costmap2DPublisher::createCostmapUpdateMsg()
 {
   auto msg = std::make_unique<nav2_msgs::msg::CostmapUpdate>();
@@ -232,22 +253,7 @@ void Costmap2DPublisher::publishCostmap()
     // Publish Just Updates
     std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
     if (costmap_update_pub_->get_subscription_count() > 0) {
-      auto update = std::make_unique<map_msgs::msg::OccupancyGridUpdate>();
-      update->header.stamp = rclcpp::Time();
-      update->header.frame_id = global_frame_;
-      update->x = x0_;
-      update->y = y0_;
-      update->width = xn_ - x0_;
-      update->height = yn_ - y0_;
-      update->data.resize(update->width * update->height);
-      unsigned int i = 0;
-      for (unsigned int y = y0_; y < yn_; y++) {
-        for (unsigned int x = x0_; x < xn_; x++) {
-          unsigned char cost = costmap_->getCost(x, y);
-          update->data[i++] = cost_translation_table_[cost];
-        }
-      }
-      costmap_update_pub_->publish(std::move(update));
+      costmap_update_pub_->publish(createGridUpdateMsg());
     }
     if (costmap_raw_update_pub_->get_subscription_count() > 0) {
       costmap_raw_update_pub_->publish(createCostmapUpdateMsg());

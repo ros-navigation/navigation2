@@ -139,6 +139,8 @@ private:
   void prepareGrid();
   void prepareCostmap();
 
+  /** @brief Prepare OccupancyGridUpdate msg for publication. */
+  std::unique_ptr<map_msgs::msg::OccupancyGridUpdate> createGridUpdateMsg();
   /** @brief Prepare CostmapUpdate msg for publication. */
   std::unique_ptr<nav2_msgs::msg::CostmapUpdate> createCostmapUpdateMsg();
 
