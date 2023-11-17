@@ -16,6 +16,7 @@
 #define NAV2_GRACEFUL_MOTION_CONTROLLER__GRACEFUL_CONTROLLER_HPP_
 
 #include <string>
+#include <limits>
 #include <vector>
 #include <memory>
 #include <algorithm>
@@ -114,6 +115,16 @@ protected:
     const double & motion_target_dist,
     const nav_msgs::msg::Path & path);
 
+  /**
+   * @brief Simulate trajectory calculating in every step the new velocity command based on 
+   * a new curvature value.
+   * 
+   * @param motion_target Motion target point
+   * @return nav_msgs::msg::Path Simulated trajectory
+   */
+  nav_msgs::msg::Path simulateTrajectory(
+    const geometry_msgs::msg::PoseStamped & motion_target);
+
   rclcpp_lifecycle::LifecycleNode::WeakPtr parent_node_;
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::string plugin_name_;
@@ -122,10 +133,6 @@ protected:
 
   Parameters * params_;
   double goal_dist_tolerance_;
-  // FIXME: Remove this line when checked velocity = last_cmd_vel_
-  // geometry_msgs::msg::Twist last_cmd_vel_;
-  rclcpp::Time attenuation_start_;
-  rclcpp::Time speedup_start_;
 
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> transformed_plan_pub_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> local_plan_pub_;

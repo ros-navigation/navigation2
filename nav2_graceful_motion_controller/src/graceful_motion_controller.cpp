@@ -131,10 +131,10 @@ geometry_msgs::msg::TwistStamped GracefulMotionController::computeVelocityComman
 
   // TODO(ajtudela): Check collision
 
-  // FIXME: Remove this. Only use in testing
-  RCLCPP_INFO(
-    logger_, "Current velocity command: %f, %f",
-    cmd_vel.twist.linear.x, cmd_vel.twist.angular.z);
+  // Generate and publish local plan for debugging / visualization
+  nav_msgs::msg::Path local_plan = simulateTrajectory(motion_target);
+  local_plan.header = transformed_plan.header;
+  local_plan_pub_->publish(local_plan);
 
   return cmd_vel;
 }
@@ -186,7 +186,34 @@ geometry_msgs::msg::PoseStamped GracefulMotionController::getMotionTarget(
   return *goal_pose_it;
 }
 
+nav_msgs::msg::Path GracefulMotionController::simulateTrajectory(
+  const geometry_msgs::msg::PoseStamped & motion_target)
+{
+  nav_msgs::msg::Path trajectory;
+  // First pose
+  geometry_msgs::msg::PoseStamped next_pose;
+  next_pose.header.frame_id = costmap_ros_->getBaseFrameID();
+  next_pose.pose.orientation.w = 1.0;
+  trajectory.poses.push_back(next_pose);
+
+  // Generate path
+  double distance = std::numeric_limits<double>::max();
+  double resolution_ = costmap_ros_->getCostmap()->getResolution();
+  double dt = (params_->v_linear_max > 0.0) ? resolution_ / params_->v_linear_max : 0.0;
+  do{
+    next_pose.pose = control_law_->calculateNextPose(dt, motion_target.pose, next_pose.pose);
+    trajectory.poses.push_back(next_pose);
+    double error_x = motion_target.pose.position.x - next_pose.pose.position.x;
+    double error_y = motion_target.pose.position.y - next_pose.pose.position.y;
+    distance = std::hypot(error_x, error_y);
+  }while(distance > resolution_);
+
+  return trajectory;
+}
+
 }  // namespace nav2_graceful_motion_controller
 
 // Register this controller as a nav2_core plugin
-PLUGINLIB_EXPORT_CLASS(nav2_graceful_motion_controller::GracefulMotionController, nav2_core::Controller)
+PLUGINLIB_EXPORT_CLASS(
+  nav2_graceful_motion_controller::GracefulMotionController,
+  nav2_core::Controller)
