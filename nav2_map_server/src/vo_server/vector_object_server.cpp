@@ -133,15 +133,26 @@ VectorObjectServer::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
+std::vector<std::shared_ptr<Shape>>::iterator
+VectorObjectServer::findShape(const unsigned char * uuid)
+{
+  for (auto it = shapes_.begin(); it != shapes_.end(); it++) {
+    if ((*it)->isUUID(uuid)) {
+      return it;
+    }
+  }
+  return shapes_.end();
+}
+
 bool VectorObjectServer::transformVectorObjects()
 {
   for (auto shape : shapes_) {
-    if (shape.second->getFrameID() != global_frame_id_ && !shape.second->getFrameID().empty()) {
+    if (shape->getFrameID() != global_frame_id_ && !shape->getFrameID().empty()) {
       // Shape to be updated dynamically
-      if (!shape.second->toFrame(global_frame_id_, tf_buffer_, transform_tolerance_)) {
+      if (!shape->toFrame(global_frame_id_, tf_buffer_, transform_tolerance_)) {
         RCLCPP_ERROR(
           get_logger(), "Can not transform vector object from %s to %s frame",
-          shape.second->getFrameID().c_str(), global_frame_id_.c_str());
+          shape->getFrameID().c_str(), global_frame_id_.c_str());
         return false;
       }
     }
@@ -161,7 +172,7 @@ void VectorObjectServer::getMapBoundaries(
   double min_p_x, min_p_y, max_p_x, max_p_y;
 
   for (auto shape : shapes_) {
-    shape.second->getBoundaries(min_p_x, min_p_y, max_p_x, max_p_y);
+    shape->getBoundaries(min_p_x, min_p_y, max_p_x, max_p_y);
     if (min_p_x < min_x) {
       min_x = min_p_x;
     }
@@ -225,7 +236,7 @@ void VectorObjectServer::putVectorObjectsOnMap()
 {
   // Filling the shapes
   for (auto shape : shapes_) {
-    if (shape.second->isFill()) {
+    if (shape->isFill()) {
       // Put filled shape on map
       double wx1 = std::numeric_limits<double>::max();
       double wy1 = std::numeric_limits<double>::max();
@@ -236,7 +247,7 @@ void VectorObjectServer::putVectorObjectsOnMap()
       unsigned int mx2 = 0;
       unsigned int my2 = 0;
 
-      shape.second->getBoundaries(wx1, wy1, wx2, wy2);
+      shape->getBoundaries(wx1, wy1, wx2, wy2);
       if (
         !nav2_util::worldToMap(map_, wx1, wy1, mx1, my1) ||
         !nav2_util::worldToMap(map_, wx2, wy2, mx2, my2))
@@ -244,7 +255,7 @@ void VectorObjectServer::putVectorObjectsOnMap()
         RCLCPP_ERROR(
           get_logger(),
           "Error to get shape boundaries on map (UUID: %s)",
-          shape.second->getUUID().c_str());
+          shape->getUUID().c_str());
         return;
       }
 
@@ -254,14 +265,14 @@ void VectorObjectServer::putVectorObjectsOnMap()
           it = my * map_->info.width + mx;
           double wx, wy;
           nav2_util::mapToWorld(map_, mx, my, wx, wy);
-          if (shape.second->isPointInside(wx, wy)) {
-            processVal(map_->data[it], shape.second->getValue(), overlay_type_);
+          if (shape->isPointInside(wx, wy)) {
+            processVal(map_->data[it], shape->getValue(), overlay_type_);
           }
         }
       }
     } else {
       // Put shape borders on map
-      shape.second->putBorders(map_, overlay_type_);
+      shape->putBorders(map_, overlay_type_);
     }
   }
 }
@@ -304,7 +315,7 @@ void VectorObjectServer::processMap()
 void VectorObjectServer::switchMapUpdate()
 {
   for (auto shape : shapes_) {
-    if (shape.second->getFrameID() != global_frame_id_ && !shape.second->getFrameID().empty()) {
+    if (shape->getFrameID() != global_frame_id_ && !shape->getFrameID().empty()) {
       if (!map_timer_) {
         map_timer_ = this->create_timer(
           std::chrono::duration<double>(1.0 / update_frequency_),
@@ -339,21 +350,21 @@ void VectorObjectServer::addShapesCallback(
     nav2_msgs::msg::PolygonObject::SharedPtr new_params =
       std::make_shared<nav2_msgs::msg::PolygonObject>(req_poly);
 
-    auto shape = shapes_.find(unparseUUID(new_params->uuid.uuid.data()));
-    if (shape != shapes_.end()) {
+    auto it = findShape(new_params->uuid.uuid.data());
+    if (it != shapes_.end()) {
       // Vector Object with given UUID was found: updating it
       // Check that found shape has correct type
-      if (shape->second->getType() != POLYGON) {
+      if ((*it)->getType() != POLYGON) {
         RCLCPP_ERROR(
           get_logger(),
           "Shape (UUID: %s) is not a polygon type",
-          shape->second->getUUID().c_str());
+          (*it)->getUUID().c_str());
         response->success = false;
         // Do not add this shape
         continue;
       }
 
-      std::shared_ptr<Polygon> polygon = std::static_pointer_cast<Polygon>(shape->second);
+      std::shared_ptr<Polygon> polygon = std::static_pointer_cast<Polygon>(*it);
 
       // Preserving old parameters for the case, if new ones to be incorrect
       nav2_msgs::msg::PolygonObject::SharedPtr old_params = polygon->getParams();
@@ -367,7 +378,7 @@ void VectorObjectServer::addShapesCallback(
       // Vector Object with given UUID was not found: creating a new one
       std::shared_ptr<Polygon> polygon = std::make_shared<Polygon>(node);
       if (polygon->setParams(new_params)) {
-        shapes_.insert({polygon->getUUID(), polygon});
+        shapes_.push_back(polygon);
       } else {
         response->success = false;
       }
@@ -379,21 +390,21 @@ void VectorObjectServer::addShapesCallback(
     nav2_msgs::msg::CircleObject::SharedPtr new_params =
       std::make_shared<nav2_msgs::msg::CircleObject>(req_crcl);
 
-    auto shape = shapes_.find(unparseUUID(new_params->uuid.uuid.data()));
-    if (shape != shapes_.end()) {
+    auto it = findShape(new_params->uuid.uuid.data());
+    if (it != shapes_.end()) {
       // Vector object with given UUID was found: updating it
       // Check that found shape has correct type
-      if (shape->second->getType() != CIRCLE) {
+      if ((*it)->getType() != CIRCLE) {
         RCLCPP_ERROR(
           get_logger(),
           "Shape (UUID: %s) is not a circle type",
-          shape->second->getUUID().c_str());
+          (*it)->getUUID().c_str());
         response->success = false;
         // Do not add this shape
         continue;
       }
 
-      std::shared_ptr<Circle> circle = std::static_pointer_cast<Circle>(shape->second);
+      std::shared_ptr<Circle> circle = std::static_pointer_cast<Circle>(*it);
 
       // Preserving old parameters for the case, if new ones to be incorrect
       nav2_msgs::msg::CircleObject::SharedPtr old_params = circle->getParams();
@@ -407,7 +418,7 @@ void VectorObjectServer::addShapesCallback(
       // Vector Object with given UUID was not found: creating a new one
       std::shared_ptr<Circle> circle = std::make_shared<Circle>(node);
       if (circle->setParams(new_params)) {
-        shapes_.insert({circle->getUUID(), circle});
+        shapes_.push_back(circle);
       } else {
         response->success = false;
       }
@@ -426,17 +437,17 @@ void VectorObjectServer::getShapesCallback(
   std::shared_ptr<Circle> circle;
 
   for (auto shape : shapes_) {
-    switch (shape.second->getType()) {
+    switch (shape->getType()) {
       case POLYGON:
-        polygon = std::static_pointer_cast<Polygon>(shape.second);
+        polygon = std::static_pointer_cast<Polygon>(shape);
         response->polygons.push_back(*(polygon->getParams()));
         break;
       case CIRCLE:
-        circle = std::static_pointer_cast<Circle>(shape.second);
+        circle = std::static_pointer_cast<Circle>(shape);
         response->circles.push_back(*(circle->getParams()));
         break;
       default:
-        RCLCPP_WARN(get_logger(), "Unknown shape type (UUID: %s)", shape.second->getUUID().c_str());
+        RCLCPP_WARN(get_logger(), "Unknown shape type (UUID: %s)", shape->getUUID().c_str());
     }
   }
 }
@@ -456,11 +467,11 @@ void VectorObjectServer::removeShapesCallback(
   } else {
     // Find objects to remove
     for (auto req_uuid : request->uuids) {
-      auto shape = shapes_.find(unparseUUID(req_uuid.uuid.data()));
-      if (shape != shapes_.end()) {
-        // Polygon with given UUID was found: remove it
-        shape->second.reset();
-        shapes_.erase(shape);
+      auto it = findShape(req_uuid.uuid.data());
+      if (it != shapes_.end()) {
+        // Shape with given UUID was found: remove it
+        (*it).reset();
+        shapes_.erase(it);
       } else {
         // Required vector object was not found
         RCLCPP_ERROR(
@@ -516,7 +527,7 @@ bool VectorObjectServer::obtainParams()
         if (!polygon->obtainParams(shape_name)) {
           return false;
         }
-        shapes_.insert({polygon->getUUID(), polygon});
+        shapes_.push_back(polygon);
       } catch (const std::exception & ex) {
         RCLCPP_ERROR(get_logger(), "Can not create new polygon: %s", ex.what());
         return false;
@@ -528,7 +539,7 @@ bool VectorObjectServer::obtainParams()
         if (!circle->obtainParams(shape_name)) {
           return false;
         }
-        shapes_.insert({circle->getUUID(), circle});
+        shapes_.push_back(circle);
       } catch (const std::exception & ex) {
         RCLCPP_ERROR(get_logger(), "Can not create new circle: %s", ex.what());
         return false;
