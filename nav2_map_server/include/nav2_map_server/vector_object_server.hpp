@@ -100,7 +100,7 @@ protected:
    * @throw std::exception if can not obtain one of the map boundaries
    */
   void getMapBoundaries(
-    double & min_x, double & min_y, double & max_x, double & max_y);
+    double & min_x, double & min_y, double & max_x, double & max_y) const;
 
   /**
    * @brief Creates or updates existing map with required sizes and fills it with default value
