@@ -152,8 +152,6 @@ public:
       msg->metadata.origin.position.y);
 
     processCurrentCostmapMsg();
-
-    costmap_received_ = true;
   }
 };
 

@@ -66,6 +66,7 @@ public:
   void costmapUpdateCallback(const nav2_msgs::msg::CostmapUpdate::SharedPtr update_msg);
 
 protected:
+  bool isCostmapReceived() {return costmap_ != nullptr;}
   void processCurrentCostmapMsg();
 
   bool haveCostmapParametersChanged();
@@ -80,7 +81,6 @@ protected:
   nav2_msgs::msg::Costmap::SharedPtr costmap_msg_;
 
   std::string topic_name_;
-  bool costmap_received_{false};
   std::mutex costmap_msg_mutex_;
   rclcpp::Logger logger_{rclcpp::get_logger("nav2_costmap_2d")};
 };
