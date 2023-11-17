@@ -30,6 +30,8 @@
 #include "nav2_graceful_motion_controller/parameter_handler.hpp"
 #include "nav2_graceful_motion_controller/smooth_control_law.hpp"
 
+#include "visualization_msgs/msg/marker.hpp"
+
 namespace nav2_graceful_motion_controller
 {
 
@@ -63,25 +65,25 @@ public:
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
 
   /**
-   * @brief Cleanup controller state machine
+   * @brief Cleanup controller state machine.
    */
   void cleanup() override;
 
   /**
-   * @brief Activate controller state machine
+   * @brief Activate controller state machine.
    */
   void activate() override;
 
   /**
-   * @brief Deactivate controller state machine
+   * @brief Deactivate controller state machine.
    */
   void deactivate() override;
 
   /**
-   * @brief Compute the best command given the current pose and velocity
+   * @brief Compute the best command given the current pose and velocity.
    * @param pose      Current robot pose
    * @param velocity  Current robot velocity
-   * @param goal_checker   Ptr to the goal checker for this task in case useful in computing commands
+   * @param goal_checker Ptr to the goal checker for this task in case useful in computing commands
    * @return          Best command
    */
   geometry_msgs::msg::TwistStamped computeVelocityCommands(
@@ -90,7 +92,7 @@ public:
     nav2_core::GoalChecker * goal_checker) override;
 
   /**
-   * @brief nav2_core setPlan - Sets the global plan
+   * @brief nav2_core setPlan - Sets the global plan.
    * @param path The global plan
    */
   void setPlan(const nav_msgs::msg::Path & path) override;
@@ -98,15 +100,15 @@ public:
   /**
    * @brief Limits the maximum linear speed of the robot.
    * @param speed_limit expressed in absolute value (in m/s)
-   * or in percentage from maximum robot speed.
-   * @param percentage Setting speed limit in percentage if true
-   * or in absolute values in false case.
+   * or in percentage from maximum robot speed
+   * @param percentage setting speed limit in percentage if true
+   * or in absolute values in false case
    */
   void setSpeedLimit(const double & speed_limit, const bool & percentage) override;
 
 protected:
   /**
-   * @brief Get motion target point
+   * @brief Get motion target point.
    * @param motion_target_dist Optimal motion target distance
    * @param path Current global path
    * @return Motion target point
@@ -116,9 +118,29 @@ protected:
     const nav_msgs::msg::Path & path);
 
   /**
-   * @brief Simulate trajectory calculating in every step the new velocity command based on 
+   * @brief Create a PointStamped message of the motion target for
+   * debugging / visualization porpuses.
+   *
+   * @param motion_target Motion target in PoseStamped format
+   * @return geometry_msgs::msg::PointStamped Motion target in PointStamped format
+   */
+  geometry_msgs::msg::PointStamped createMotionTargetMsg(
+    const geometry_msgs::msg::PoseStamped & motion_target);
+
+  /**
+   * @brief Create a flat circle marker of radius slowdown_radius around the motion target for
+   * debugging / visualization porpuses.
+   *
+   * @param motion_target Motion target
+   * @return visualization_msgs::msg::Marker Slowdown marker
+   */
+  visualization_msgs::msg::Marker createSlowdownMsg(
+    const geometry_msgs::msg::PoseStamped & motion_target);
+
+  /**
+   * @brief Simulate trajectory calculating in every step the new velocity command based on
    * a new curvature value.
-   * 
+   *
    * @param motion_target Motion target point
    * @return nav_msgs::msg::Path Simulated trajectory
    */
@@ -138,6 +160,8 @@ protected:
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> local_plan_pub_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PointStamped>>
   motion_target_pub_;
+  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::Marker>>
+  slowdown_pub_;
   std::unique_ptr<nav2_graceful_motion_controller::PathHandler> path_handler_;
   std::unique_ptr<nav2_graceful_motion_controller::ParameterHandler> param_handler_;
   std::unique_ptr<nav2_graceful_motion_controller::SmoothControlLaw> control_law_;
