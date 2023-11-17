@@ -162,7 +162,7 @@ bool VectorObjectServer::transformVectorObjects()
 }
 
 void VectorObjectServer::getMapBoundaries(
-  double & min_x, double & min_y, double & max_x, double & max_y)
+  double & min_x, double & min_y, double & max_x, double & max_y) const
 {
   min_x = std::numeric_limits<double>::max();
   min_y = std::numeric_limits<double>::max();
@@ -305,7 +305,7 @@ void VectorObjectServer::processMap()
       updateMap(0.0, 0.0, 0.0, 0.0);
     }
   } catch (const std::exception & ex) {
-    RCLCPP_ERROR(get_logger(), "Can not upate map: %s", ex.what());
+    RCLCPP_ERROR(get_logger(), "Can not update map: %s", ex.what());
     return;
   }
 
@@ -522,30 +522,21 @@ bool VectorObjectServer::obtainParams()
     }
 
     if (shape_type == "polygon") {
-      try {
-        std::shared_ptr<Polygon> polygon = std::make_shared<Polygon>(shared_from_this());
-        if (!polygon->obtainParams(shape_name)) {
-          return false;
-        }
-        shapes_.push_back(polygon);
-      } catch (const std::exception & ex) {
-        RCLCPP_ERROR(get_logger(), "Can not create new polygon: %s", ex.what());
+      std::shared_ptr<Polygon> polygon = std::make_shared<Polygon>(shared_from_this());
+      if (!polygon->obtainParams(shape_name)) {
         return false;
       }
+      shapes_.push_back(polygon);
     } else if (shape_type == "circle") {
-      try {
-        std::shared_ptr<Circle> circle = std::make_shared<Circle>(shared_from_this());
+      std::shared_ptr<Circle> circle = std::make_shared<Circle>(shared_from_this());
 
-        if (!circle->obtainParams(shape_name)) {
-          return false;
-        }
-        shapes_.push_back(circle);
-      } catch (const std::exception & ex) {
-        RCLCPP_ERROR(get_logger(), "Can not create new circle: %s", ex.what());
+      if (!circle->obtainParams(shape_name)) {
         return false;
       }
+      shapes_.push_back(circle);
     } else {
       RCLCPP_ERROR(get_logger(), "Please specify correct shape %s type", shape_name.c_str());
+      return false;
     }
   }
 

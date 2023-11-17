@@ -120,7 +120,7 @@ bool Polygon::obtainParams(const std::string & shape_name)
     return false;
   }
   // Check for points format correctness
-  if (poly_row.size() <= 6 || poly_row.size() % 2 != 0) {
+  if (poly_row.size() < 6 || poly_row.size() % 2 != 0) {
     RCLCPP_ERROR(
       node->get_logger(),
       "[%s] Polygon has incorrect points description",
