@@ -249,7 +249,7 @@ protected:
   std::chrono::milliseconds default_server_timeout_;
 
   // The timeout value for waiting for a service to response
-  std::chrono::milliseconds bt_wait_for_service_timeout_;
+  std::chrono::milliseconds wait_for_service_timeout_;
 
   // User-provided callbacks
   OnGoalReceivedCallback on_goal_received_callback_;
