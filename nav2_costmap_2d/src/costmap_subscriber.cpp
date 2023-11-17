@@ -40,7 +40,6 @@ CostmapSubscriber::CostmapSubscriber(
     std::bind(&CostmapSubscriber::costmapUpdateCallback, this, std::placeholders::_1));
 }
 
-// todo: is it still necessary
 CostmapSubscriber::CostmapSubscriber(
   const rclcpp::Node::WeakPtr & parent,
   const std::string & topic_name)
@@ -58,13 +57,12 @@ CostmapSubscriber::CostmapSubscriber(
     std::bind(&CostmapSubscriber::costmapUpdateCallback, this, std::placeholders::_1));
 }
 
-// todo: change to const?
 std::shared_ptr<Costmap2D> CostmapSubscriber::getCostmap()
 {
   if (!costmap_received_) {
     throw std::runtime_error("Costmap is not available");
   }
-  if (costmap_msg_ != nullptr) {
+  if (costmap_msg_) {
     processCurrentCostmapMsg();
   }
   return costmap_;
@@ -138,7 +136,7 @@ void CostmapSubscriber::processCurrentCostmapMsg()
 
   unsigned char * master_array = costmap_->getCharMap();
   std::copy(costmap_msg_->data.begin(), costmap_msg_->data.end(), master_array);
-  costmap_msg_ = nullptr;
+  costmap_msg_.reset();
 }
 
 bool CostmapSubscriber::haveCostmapParametersChanged()

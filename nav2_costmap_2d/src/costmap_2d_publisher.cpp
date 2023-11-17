@@ -224,7 +224,6 @@ std::unique_ptr<nav2_msgs::msg::CostmapUpdate> Costmap2DPublisher::createCostmap
   std::uint32_t i = 0;
   for (std::uint32_t y = y0_; y < yn_; y++) {
     for (std::uint32_t x = x0_; x < xn_; x++) {
-      //todo copy from array instead of calling method
       msg->data[i++] = costmap_->getCost(x, y);
     }
   }
@@ -250,7 +249,7 @@ void Costmap2DPublisher::publishCostmap()
       costmap_raw_pub_->publish(std::move(costmap_raw_));
     }
   } else if (x0_ < xn_) {
-    // Publish Just Updates
+    // Publish just update msgs
     std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
     if (costmap_update_pub_->get_subscription_count() > 0) {
       costmap_update_pub_->publish(createGridUpdateMsg());
