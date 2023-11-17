@@ -169,6 +169,11 @@ public:
   /** @brief Same as getLayeredCostmap()->isCurrent(). */
   bool isCurrent()
   {
+    //lock because no ptr-access is allowed until other ptr-free finished
+    std::unique_lock<Costmap2D::mutex_t> lock(*access_);
+    if (!layered_costmap_) {
+      return false;                                // to avoid nullptr accessed
+    }
     return layered_costmap_->isCurrent();
   }
 
@@ -316,6 +321,13 @@ public:
    */
   double getRobotRadius() {return robot_radius_;}
 
+  // Provide a typedef to ease future code maintenance
+  typedef std::recursive_mutex mutex_t;
+  mutex_t * getMutex()
+  {
+    return access_;
+  }
+
 protected:
   // Publishers and subscribers
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr
@@ -397,6 +409,9 @@ protected:
    */
   rcl_interfaces::msg::SetParametersResult
   dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
+
+private:
+  mutex_t * access_;
 };
 
 }  // namespace nav2_costmap_2d
