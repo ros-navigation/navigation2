@@ -426,7 +426,9 @@ double RegulatedPurePursuitController::findVelocitySignChange(
       return hypot(
         transformed_plan.poses[pose_id].pose.position.x,
         transformed_plan.poses[pose_id].pose.position.y);
-    } else if (
+    }
+
+    if (
       (hypot(oa_x, oa_y) == 0.0 &&
       transformed_plan.poses[pose_id - 1].pose.orientation !=
       transformed_plan.poses[pose_id].pose.orientation)
