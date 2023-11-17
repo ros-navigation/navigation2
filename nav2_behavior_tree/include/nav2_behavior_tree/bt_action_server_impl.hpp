@@ -175,7 +175,7 @@ bool BtActionServer<ActionT>::on_configure()
   blackboard_->set<rclcpp::Node::SharedPtr>("node", client_node_);  // NOLINT
   blackboard_->set<std::chrono::milliseconds>("server_timeout", default_server_timeout_);  // NOLINT
   blackboard_->set<std::chrono::milliseconds>("bt_loop_duration", bt_loop_duration_);  // NOLINT
-  blackboard_->set<std::chrono::milliseconds>("wait_for_service_timeout_", wait_for_service_timeout_);  // NOLINT
+  blackboard_->set<std::chrono::milliseconds>("wait_for_service_timeout", wait_for_service_timeout_);  // NOLINT
 
   return true;
 }
