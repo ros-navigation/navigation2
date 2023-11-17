@@ -122,9 +122,9 @@ void Costmap2DPublisher::updateGridParams()
 {
   saved_origin_x_ = costmap_->getOriginX();
   saved_origin_y_ = costmap_->getOriginY();
-  grid_resolution = costmap_->getResolution();
-  grid_width = costmap_->getSizeInCellsX();
-  grid_height = costmap_->getSizeInCellsY();
+  grid_resolution_ = costmap_->getResolution();
+  grid_width_ = costmap_->getSizeInCellsX();
+  grid_height_ = costmap_->getSizeInCellsY();
 }
 
 // prepare grid_ message for publication.
@@ -137,15 +137,15 @@ void Costmap2DPublisher::prepareGrid()
   grid_->header.frame_id = global_frame_;
   grid_->header.stamp = clock_->now();
 
-  grid_->info.resolution = grid_resolution;
+  grid_->info.resolution = grid_resolution_;
 
-  grid_->info.width = grid_width;
-  grid_->info.height = grid_height;
+  grid_->info.width = grid_width_;
+  grid_->info.height = grid_height_;
 
   double wx, wy;
   costmap_->mapToWorld(0, 0, wx, wy);
-  grid_->info.origin.position.x = wx - grid_resolution / 2;
-  grid_->info.origin.position.y = wy - grid_resolution / 2;
+  grid_->info.origin.position.x = wx - grid_resolution_ / 2;
+  grid_->info.origin.position.y = wy - grid_resolution_ / 2;
   grid_->info.origin.position.z = 0.0;
   grid_->info.origin.orientation.w = 1.0;
 
@@ -233,9 +233,9 @@ std::unique_ptr<nav2_msgs::msg::CostmapUpdate> Costmap2DPublisher::createCostmap
 void Costmap2DPublisher::publishCostmap()
 {
   float resolution = costmap_->getResolution();
-  if (always_send_full_costmap_ || grid_resolution != resolution ||
-    grid_width != costmap_->getSizeInCellsX() ||
-    grid_height != costmap_->getSizeInCellsY() ||
+  if (always_send_full_costmap_ || grid_resolution_ != resolution ||
+    grid_width_ != costmap_->getSizeInCellsX() ||
+    grid_height_ != costmap_->getSizeInCellsY() ||
     saved_origin_x_ != costmap_->getOriginX() ||
     saved_origin_y_ != costmap_->getOriginY())
   {
