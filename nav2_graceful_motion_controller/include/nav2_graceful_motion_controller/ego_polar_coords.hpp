@@ -28,7 +28,7 @@ namespace nav2_graceful_motion_controller
 
 /**
  * @brief Egocentric polar coordinates defined as the difference between the
- * robot pose and the target pose relative to base location and orientation.
+ * robot pose and the target pose relative to the robot position and orientation.
  */
 struct EgocentricPolarCoordinates
 {
@@ -37,39 +37,31 @@ struct EgocentricPolarCoordinates
                   // from the robot to the target.
   double delta;   // Steering angle of the robot with respect to the line of sight.
 
+  // TODO(ajtudela): Add backwards direction
   EgocentricPolarCoordinates(
-    const double & r_in = 0.0, const double & phi_in = 0.0,
+    const double & r_in = 0.0,
+    const double & phi_in = 0.0,
     const double & delta_in = 0.0)
   : r(r_in), phi(phi_in), delta(delta_in) {}
 
   /**
-   * @brief Construct a new Egocentric Polar Coordinates using the target pose.
-   * 
-   * @param target Target pose
-   */
-  explicit EgocentricPolarCoordinates(const geometry_msgs::msg::Pose & target)
-  {
-    r = sqrt(target.position.x * target.position.x + target.position.y * target.position.y);
-    delta = std::atan2(-target.position.y, target.position.x);
-    phi = angles::normalize_angle(tf2::getYaw(target.orientation) + delta);
-  }
-
-  /**
-   * @brief Construct a new Egocentric Polar Coordinates using the current and target pose 
+   * @brief Construct a new Egocentric Polar Coordinates using the current and target pose
    * both in the same frame.
-   * 
-   * @param current Current pose
-   * @param target Target pose
+   *
+   * @param target Target pose.
+   * @param current Current pose. Defaults to the origin.
    */
   explicit EgocentricPolarCoordinates(
-    const geometry_msgs::msg::Pose & current,
-    const geometry_msgs::msg::Pose & target)
+    const geometry_msgs::msg::Pose & target,
+    const geometry_msgs::msg::Pose & current = geometry_msgs::msg::Pose())
   {
     float dX = target.position.x - current.position.x;
     float dY = target.position.y - current.position.y;
+    float line_of_sight = std::atan2(-dY, dX);
+
     r = sqrt(dX * dX + dY * dY);
-    delta = std::atan2(-dY, dX);
-    phi = angles::normalize_angle(tf2::getYaw(target.orientation) + delta);
+    phi = angles::normalize_angle(tf2::getYaw(target.orientation) + line_of_sight);
+    delta = tf2::getYaw(current.orientation) + line_of_sight;
   }
 };
 

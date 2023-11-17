@@ -28,10 +28,10 @@ SmoothControlLaw::SmoothControlLaw(
 }
 
 geometry_msgs::msg::Twist SmoothControlLaw::calculateRegularVelocity(
-  const geometry_msgs::msg::Pose & target)
+  const geometry_msgs::msg::Pose & target, const geometry_msgs::msg::Pose & current)
 {
   // Convert the target to polar coordinates
-  auto ego_coords = EgocentricPolarCoordinates(target);
+  auto ego_coords = EgocentricPolarCoordinates(target, current);
   // Calculate the curvature
   double curvature = calculateCurvature(ego_coords.r, ego_coords.phi, ego_coords.delta);
 
@@ -68,6 +68,22 @@ void SmoothControlLaw::setSpeedLimit(
   v_linear_min_ = v_linear_min;
   v_linear_max_ = v_linear_max;
   v_angular_max_ = v_angular_max;
+}
+
+geometry_msgs::msg::Pose SmoothControlLaw::calculateNextPose(
+  const double dt,
+  const geometry_msgs::msg::Pose & target,
+  const geometry_msgs::msg::Pose & current)
+{
+  geometry_msgs::msg::Twist vel = calculateRegularVelocity(target, current);
+  geometry_msgs::msg::Pose next;
+  double yaw = tf2::getYaw(current.orientation);
+  next.position.x = current.position.x + vel.linear.x * dt * cos(yaw);
+  next.position.y = current.position.y + vel.linear.x * dt * sin(yaw);
+  yaw += vel.angular.z * dt;
+  next.orientation.z = sin(yaw / 2.0);
+  next.orientation.w = cos(yaw / 2.0);
+  return next;
 }
 
 double SmoothControlLaw::calculateCurvature(double r, double phi, double delta)

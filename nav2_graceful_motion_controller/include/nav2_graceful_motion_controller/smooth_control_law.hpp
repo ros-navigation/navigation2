@@ -55,9 +55,12 @@ public:
    * @brief Compute linear and angular velocities command using the curvature.
    *
    * @param target Pose of the target in the robot frame.
+   * @param current Current pose of the robot in the robot frame. Defaults to the origin.
    * @return Velocity command.
    */
-  geometry_msgs::msg::Twist calculateRegularVelocity(const geometry_msgs::msg::Pose & target);
+  geometry_msgs::msg::Twist calculateRegularVelocity(
+    const geometry_msgs::msg::Pose & target,
+    const geometry_msgs::msg::Pose & current = geometry_msgs::msg::Pose());
 
   /**
    * @brief Update the velocity limits.
@@ -68,6 +71,20 @@ public:
   void setSpeedLimit(
     const double v_linear_min, const double v_linear_max,
     const double v_angular_max);
+
+  /**
+   * @brief Calculate the next pose of the robot by generating a velocity command using the
+   * curvature and the current pose.
+   *
+   * @param dt Time step.
+   * @param target Pose of the target in the robot frame.
+   * @param current Current pose of the robot in the robot frame. Defaults to the origin.
+   * @return geometry_msgs::msg::Pose
+   */
+  geometry_msgs::msg::Pose calculateNextPose(
+    const double dt,
+    const geometry_msgs::msg::Pose & target,
+    const geometry_msgs::msg::Pose & current = geometry_msgs::msg::Pose());
 
 private:
   /**
