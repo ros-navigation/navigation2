@@ -60,7 +60,7 @@ public:
       config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
     getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
     wait_for_service_timeout_ =
-      config().blackboard->template get<std::chrono::milliseconds>("wait_for_service_timeout_");
+      config().blackboard->template get<std::chrono::milliseconds>("wait_for_service_timeout");
 
     std::string remapped_action_name;
     if (getInput("server_name", remapped_action_name)) {

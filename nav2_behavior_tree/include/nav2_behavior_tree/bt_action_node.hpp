@@ -62,7 +62,7 @@ public:
       config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
     getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
     wait_for_service_timeout_ =
-      config().blackboard->template get<std::chrono::milliseconds>("wait_for_service_timeout_");
+      config().blackboard->template get<std::chrono::milliseconds>("wait_for_service_timeout");
 
     // Initialize the input and output messages
     goal_ = typename ActionT::Goal();
