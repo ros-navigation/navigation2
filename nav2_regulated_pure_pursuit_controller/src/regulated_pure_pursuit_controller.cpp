@@ -426,14 +426,16 @@ double RegulatedPurePursuitController::findVelocitySignChange(
       return hypot(
         transformed_plan.poses[pose_id].pose.position.x,
         transformed_plan.poses[pose_id].pose.position.y);
-    } else if (
+    }
+
+    if (
       (hypot(oa_x, oa_y) == 0.0 &&
-        transformed_plan.poses[pose_id - 1].pose.orientation !=
-        transformed_plan.poses[pose_id].pose.orientation)
+      transformed_plan.poses[pose_id - 1].pose.orientation !=
+      transformed_plan.poses[pose_id].pose.orientation)
       ||
       (hypot(ab_x, ab_y) == 0.0 &&
-        transformed_plan.poses[pose_id].pose.orientation !=
-        transformed_plan.poses[pose_id + 1].pose.orientation))
+      transformed_plan.poses[pose_id].pose.orientation !=
+      transformed_plan.poses[pose_id + 1].pose.orientation))
     {
       // returning the distance since the points overlap
       // but are not simply duplicate points (e.g. in place rotation)
