@@ -17,7 +17,7 @@
 
 #include <memory>
 #include <string>
-#include <unordered_map>
+#include <vector>
 
 #include "nav_msgs/msg/occupancy_grid.hpp"
 
@@ -78,6 +78,13 @@ protected:
    * @return Success or Failure
    */
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+
+  /**
+   * @brief Finds the shape with given UUID
+   * @param uuid Given UUID to search with
+   * @return Iterator to the shape, if found. Otherwise past-the-end iterator.
+   */
+  std::vector<std::shared_ptr<Shape>>::iterator findShape(const unsigned char * uuid);
 
   /**
    * @brief Transform all vector shapes from their local frame to output map frame
@@ -178,8 +185,8 @@ protected:
   /// @brief TF listener
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 
-  /// @brief All {UUID, Shape} vector objects map
-  std::unordered_map<std::string, std::shared_ptr<Shape>> shapes_;
+  /// @brief All shapes vector
+  std::vector<std::shared_ptr<Shape>> shapes_;
 
   /// @brief Output map resolution
   double resolution_;

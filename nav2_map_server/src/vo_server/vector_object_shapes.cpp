@@ -275,6 +275,11 @@ std::string Polygon::getUUID() const
   return unparseUUID(params_->uuid.uuid.data());
 }
 
+bool Polygon::isUUID(const unsigned char * uuid) const
+{
+  return uuid_compare(params_->uuid.uuid.data(), uuid) == 0;
+}
+
 bool Polygon::isFill() const
 {
   return params_->closed;
@@ -537,6 +542,11 @@ std::string Circle::getFrameID() const
 std::string Circle::getUUID() const
 {
   return unparseUUID(params_->uuid.uuid.data());
+}
+
+bool Circle::isUUID(const unsigned char * uuid) const
+{
+  return uuid_compare(params_->uuid.uuid.data(), uuid) == 0;
 }
 
 bool Circle::isFill() const
