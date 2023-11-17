@@ -87,6 +87,14 @@ protected:
       currentSubscriberCostmap->getSizeInCellsX());
   }
 
+  std::vector<uint8_t> getCurrentCharMapToSend()
+  {
+    return std::vector<uint8_t>(
+      costmapToSend->getCharMap(),
+      costmapToSend->getCharMap() + costmapToSend->getSizeInCellsX() *
+      costmapToSend->getSizeInCellsX());
+  }
+
   int fullCostmapMsgCount;
   int updateCostmapMsgCount;
   std::string topicName;
@@ -100,6 +108,39 @@ protected:
   rclcpp::Subscription<nav2_msgs::msg::CostmapUpdate>::SharedPtr dummyCostmapUpdateMsgSubscriber;
 };
 
+TEST_F(TestCostmapSubscriberShould, handleFullCostmapMsgs)
+{
+  bool always_send_full_costmap = true;
+
+  std::vector<std::vector<std::uint8_t>> expectedCostmaps;
+  std::vector<std::vector<std::uint8_t>> recievedCostmaps;
+
+  auto costmapPublisher = std::make_shared<nav2_costmap_2d::Costmap2DPublisher>(
+    node, costmapToSend.get(), "", topicName, always_send_full_costmap);
+  costmapPublisher->on_activate();
+
+  for (const auto & mapChange :mapChanges) {
+    for (const auto & observation : mapChange.observations) {
+      costmapToSend->setCost(observation.x, observation.y, observation.cost);
+    }
+
+    expectedCostmaps.emplace_back(getCurrentCharMapToSend());
+
+    costmapPublisher->updateBounds(mapChange.x0, mapChange.xn, mapChange.y0, mapChange.yn);
+    costmapPublisher->publishCostmap();
+
+    rclcpp::spin_some(node->get_node_base_interface());
+
+    recievedCostmaps.emplace_back(getCurrentCharMapFromSubscriber());
+  }
+
+  ASSERT_EQ(fullCostmapMsgCount, mapChanges.size());
+  ASSERT_EQ(updateCostmapMsgCount, 0);
+
+  ASSERT_EQ(expectedCostmaps, recievedCostmaps);
+
+  costmapPublisher->on_deactivate();
+}
 
 TEST_F(TestCostmapSubscriberShould, handleCostmapUpdateMsgs)
 {
@@ -112,25 +153,12 @@ TEST_F(TestCostmapSubscriberShould, handleCostmapUpdateMsgs)
     node, costmapToSend.get(), "", topicName, always_send_full_costmap);
   costmapPublisher->on_activate();
 
-  auto costmap = costmapToSend;
-
-  expectedCostmaps.emplace_back(
-    std::vector<uint8_t>(
-      costmap->getCharMap(),
-      costmap->getCharMap() + costmap->getSizeInCellsX() * costmap->getSizeInCellsX()));
-  costmapPublisher->publishCostmap();
-  rclcpp::spin_some(node->get_node_base_interface());
-  recievedCostmaps.emplace_back(getCurrentCharMapFromSubscriber());
-
   for (const auto & mapChange :mapChanges) {
     for (const auto & observation : mapChange.observations) {
       costmapToSend->setCost(observation.x, observation.y, observation.cost);
     }
 
-    expectedCostmaps.emplace_back(
-      std::vector<uint8_t>(
-        costmap->getCharMap(),
-        costmap->getCharMap() + costmap->getSizeInCellsX() * costmap->getSizeInCellsX()));
+    expectedCostmaps.emplace_back(getCurrentCharMapToSend());
 
     costmapPublisher->updateBounds(mapChange.x0, mapChange.xn, mapChange.y0, mapChange.yn);
     costmapPublisher->publishCostmap();
@@ -140,46 +168,8 @@ TEST_F(TestCostmapSubscriberShould, handleCostmapUpdateMsgs)
     recievedCostmaps.emplace_back(getCurrentCharMapFromSubscriber());
   }
 
-  // costmap->setCost(2, 2, 255);
-  // costmap->setCost(2, 3, 255);
-  // costmap->setCost(3, 2, 255);
-  // costmapPublisher->updateBounds(2, 4, 2, 4);
-
-  // expectedCostmaps.emplace_back(
-  //   std::vector<uint8_t>(
-  //     costmap->getCharMap(),
-  //     costmap->getCharMap() + costmap->getSizeInCellsX() * costmap->getSizeInCellsX()));
-  // costmapPublisher->publishCostmap();
-  // rclcpp::spin_some(node->get_node_base_interface());
-  // recievedCostmaps.emplace_back(getCurrentCharMapFromSubscriber());
-
-
-  // costmap->setCost(7, 7, 255);
-  // costmap->setCost(7, 8, 255);
-  // costmapPublisher->updateBounds(7, 8, 7, 9);
-  // expectedCostmaps.emplace_back(
-  //   std::vector<uint8_t>(
-  //     costmap->getCharMap(),
-  //     costmap->getCharMap() + costmap->getSizeInCellsX() * costmap->getSizeInCellsX()));
-  // costmapPublisher->publishCostmap();
-  // rclcpp::spin_some(node->get_node_base_interface());
-  // recievedCostmaps.emplace_back(getCurrentCharMapFromSubscriber());
-
-
-  // costmap->setCost(2, 2, 0);
-  // costmap->setCost(2, 3, 0);
-  // costmap->setCost(3, 2, 0);
-  // costmapPublisher->updateBounds(2, 4, 2, 4);
-  // expectedCostmaps.emplace_back(
-  //   std::vector<uint8_t>(
-  //     costmap->getCharMap(),
-  //     costmap->getCharMap() + costmap->getSizeInCellsX() * costmap->getSizeInCellsX()));
-  // costmapPublisher->publishCostmap();
-  // rclcpp::spin_some(node->get_node_base_interface());
-  // recievedCostmaps.emplace_back(getCurrentCharMapFromSubscriber());
-
   ASSERT_EQ(fullCostmapMsgCount, 1);
-  ASSERT_EQ(updateCostmapMsgCount, 3);
+  ASSERT_EQ(updateCostmapMsgCount, mapChanges.size() - 1);
 
   ASSERT_EQ(expectedCostmaps, recievedCostmaps);
 
@@ -191,73 +181,4 @@ TEST_F(
   throwExceptionIfGetCostmapMethodIsCalledBeforeAnyCostmapMsgReceived)
 {
   ASSERT_ANY_THROW(costmapSubscriber->getCostmap());
-}
-
-TEST_F(TestCostmapSubscriberShould, handleFullCostmapMsgs)
-{
-  bool always_send_full_costmap = true;
-
-  std::vector<std::vector<std::uint8_t>> expectedCostmaps;
-  std::vector<std::vector<std::uint8_t>> recievedCostmaps;
-
-  auto costmapPublisher = std::make_unique<nav2_costmap_2d::Costmap2DPublisher>(
-    node, costmapToSend.get(), "", topicName, always_send_full_costmap);
-  costmapPublisher->on_activate();
-
-  auto costmap = costmapToSend;
-
-  expectedCostmaps.emplace_back(
-    std::vector<uint8_t>(
-      costmap->getCharMap(),
-      costmap->getCharMap() + costmap->getSizeInCellsX() * costmap->getSizeInCellsX()));
-  costmapPublisher->publishCostmap();
-  rclcpp::spin_some(node->get_node_base_interface());
-
-  recievedCostmaps.emplace_back(getCurrentCharMapFromSubscriber());
-
-  costmap->setCost(2, 2, 255);
-  costmap->setCost(2, 3, 255);
-  costmap->setCost(3, 2, 255);
-  costmapPublisher->updateBounds(2, 4, 2, 4);
-
-  expectedCostmaps.emplace_back(
-    std::vector<uint8_t>(
-      costmap->getCharMap(),
-      costmap->getCharMap() + costmap->getSizeInCellsX() * costmap->getSizeInCellsX()));
-  costmapPublisher->publishCostmap();
-  rclcpp::spin_some(node->get_node_base_interface());
-  recievedCostmaps.emplace_back(getCurrentCharMapFromSubscriber());
-
-
-  costmap->setCost(7, 7, 255);
-  costmap->setCost(7, 8, 255);
-  costmapPublisher->updateBounds(7, 8, 7, 9);
-  expectedCostmaps.emplace_back(
-    std::vector<uint8_t>(
-      costmap->getCharMap(),
-      costmap->getCharMap() + costmap->getSizeInCellsX() * costmap->getSizeInCellsX()));
-  costmapPublisher->publishCostmap();
-  rclcpp::spin_some(node->get_node_base_interface());
-  recievedCostmaps.emplace_back(getCurrentCharMapFromSubscriber());
-
-
-  costmap->setCost(2, 2, 0);
-  costmap->setCost(2, 3, 0);
-  costmap->setCost(3, 2, 0);
-  costmapPublisher->updateBounds(2, 4, 2, 4);
-  expectedCostmaps.emplace_back(
-    std::vector<uint8_t>(
-      costmap->getCharMap(),
-      costmap->getCharMap() + costmap->getSizeInCellsX() * costmap->getSizeInCellsX()));
-  costmapPublisher->publishCostmap();
-  rclcpp::spin_some(node->get_node_base_interface());
-  recievedCostmaps.emplace_back(getCurrentCharMapFromSubscriber());
-
-
-  ASSERT_EQ(fullCostmapMsgCount, 4);
-  ASSERT_EQ(updateCostmapMsgCount, 0);
-
-  ASSERT_EQ(expectedCostmaps, recievedCostmaps);
-
-  costmapPublisher->on_deactivate();
 }
