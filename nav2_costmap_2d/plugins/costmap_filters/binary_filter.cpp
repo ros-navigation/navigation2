@@ -298,6 +298,12 @@ void BinaryFilter::changeState(const bool state)
 
 void BinaryFilter::changeParameters(const bool state)
 {
+
+  rclcpp_lifecycle::LifecycleNode::SharedPtr node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+
   for (size_t param_index = 0; param_index < binary_parameters_info_.size(); ++param_index) {
     std::shared_ptr<rclcpp::Client<rcl_interfaces::srv::SetParameters>>
     change_parameters_client = change_parameters_clients_.at(param_index);
@@ -333,27 +339,33 @@ void BinaryFilter::changeParameters(const bool state)
     }
     request->parameters.push_back(bool_param);
 
-    using ServiceResponseFuture =
-      rclcpp::Client<rcl_interfaces::srv::SetParameters>::SharedFuture;
-    auto response_received_callback = [this, bool_param](ServiceResponseFuture future) {
-        auto result = future.get();
-        if (!result->results.at(0).successful) {
-          RCLCPP_ERROR(
-            logger_, "BinaryFilter: Failed to change parameter %s",
-            bool_param.name.c_str());
-        } else {
-          RCLCPP_DEBUG(
-            logger_, "BinaryFilter: Successfully changed parameter to %s",
-            bool_param.value.bool_value ? "true" : "false");
-        }
-      };
-
     RCLCPP_DEBUG(
       logger_, "BinaryFilter: Sending request to set parameter  %s to %s",
       binary_parameter_info.param_name.c_str(),
       bool_param.value.bool_value ? "true" : "false");
-    auto future_result = change_parameters_client->async_send_request(
-      request, response_received_callback);
+    auto future_result = change_parameters_client->async_send_request(request);
+
+    rclcpp::FutureReturnCode return_code = rclcpp::spin_until_future_complete(
+      node, future_result, std::chrono::milliseconds(change_parameter_timeout_));
+    if (return_code == rclcpp::FutureReturnCode::SUCCESS)
+    {
+      auto result = future_result.get();
+      if (!result->results.at(0).successful) {
+        RCLCPP_ERROR(
+          logger_, "BinaryFilter: Failed to change parameter %s",
+          bool_param.name.c_str());
+        // TODO (@enricosutera) replace this once we figure out what to do
+        // throw std::runtime_error("BinaryFilter: Can't update binary filter parameter!");
+      } else {
+        RCLCPP_DEBUG(
+          logger_, "BinaryFilter: Successfully changed parameter to %s",
+          bool_param.value.bool_value ? "true" : "false");
+      }  
+    } else if (return_code == rclcpp::FutureReturnCode::INTERRUPTED) {
+      throw std::runtime_error("BinaryFilter: Interruped while spinning for parameter update!");
+    } else {
+      throw std::runtime_error("BinaryFilter: Spinning for parameter update went wrong :( !");
+    }
   }
 }
 
