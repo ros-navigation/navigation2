@@ -74,11 +74,13 @@ void BinaryFilter::initializeFilter(
   declareParameter("flip_threshold", rclcpp::ParameterValue(50.0));
   node->get_parameter(name_ + "." + "flip_threshold", flip_threshold_);
   declareParameter("binary_parameters", rclcpp::ParameterValue(std::vector<std::string>()));
-  node->get_parameter(name_ + "." + "binary_parameters", binary_parameters_);
+  // List of binary params to be changed
+  std::vector<std::string> binary_parameters;
+  node->get_parameter(name_ + "." + "binary_parameters", binary_parameters);
   declareParameter("change_parameter_timeout", rclcpp::ParameterValue(10));
   node->get_parameter(name_ + "." + "change_parameter_timeout", change_parameter_timeout_);
 
-  for (std::string param : binary_parameters_) {
+  for (std::string param : binary_parameters) {
     BinaryParameter param_struct;
 
     declareParameter(param + "." + "node_name", rclcpp::ParameterValue(""));

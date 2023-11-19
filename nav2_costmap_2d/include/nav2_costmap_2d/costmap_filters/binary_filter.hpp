@@ -126,9 +126,6 @@ private:
   bool default_state_;  // Default Binary Filter state
   bool binary_state_;  // Current Binary Filter state
 
-  // List of binary params to be changed
-  std::vector<std::string> binary_parameters_;
-
   // Parameter information
   struct BinaryParameter
   {
