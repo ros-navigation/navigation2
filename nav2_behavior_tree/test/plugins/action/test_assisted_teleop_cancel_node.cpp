@@ -65,7 +65,7 @@ public:
     config_->blackboard->set<std::chrono::milliseconds>(
       "bt_loop_duration",
       std::chrono::milliseconds(10));
-     config_->blackboard->set<std::chrono::milliseconds>(
+    config_->blackboard->set<std::chrono::milliseconds>(
       "wait_for_service_timeout",
       std::chrono::milliseconds(1000));
     client_ = rclcpp_action::create_client<nav2_msgs::action::AssistedTeleop>(
