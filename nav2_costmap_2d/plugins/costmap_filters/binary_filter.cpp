@@ -111,9 +111,9 @@ void BinaryFilter::initializeFilter(
       "BinaryFilter: Creating client for changing parameter \"%s\" of node \"%s\"...",
       param.param_name.c_str(), param.node_name.c_str());
 
-    auto change_parameters_client_ = node->create_client<rcl_interfaces::srv::SetParameters>(
+    auto change_parameters_client = node->create_client<rcl_interfaces::srv::SetParameters>(
       "/" + param.node_name + "/set_parameters");
-    change_parameters_clients_.push_back(change_parameters_client_);
+    change_parameters_clients_.push_back(change_parameters_client);
   }
 
   // Get global frame required for binary state publisher
