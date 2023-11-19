@@ -360,8 +360,7 @@ void BinaryFilter::changeParameters(const bool state)
 
     rclcpp::FutureReturnCode return_code = rclcpp::spin_until_future_complete(
       node, future_result, std::chrono::milliseconds(change_parameter_timeout_));
-    if (return_code == rclcpp::FutureReturnCode::SUCCESS)
-    {
+    if (return_code == rclcpp::FutureReturnCode::SUCCESS) {
       auto result = future_result.get();
       if (!result->results.at(0).successful) {
         RCLCPP_ERROR(
@@ -373,7 +372,7 @@ void BinaryFilter::changeParameters(const bool state)
         RCLCPP_DEBUG(
           logger_, "BinaryFilter: Successfully changed parameter to %s",
           bool_param.value.bool_value ? "true" : "false");
-      }  
+      }
     } else if (return_code == rclcpp::FutureReturnCode::INTERRUPTED) {
       throw std::runtime_error("BinaryFilter: Interruped while spinning for parameter update!");
     } else {
