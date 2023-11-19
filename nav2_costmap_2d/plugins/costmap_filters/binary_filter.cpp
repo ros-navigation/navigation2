@@ -116,6 +116,19 @@ void BinaryFilter::initializeFilter(
     auto change_parameters_client = node->create_client<rcl_interfaces::srv::SetParameters>(
       "/" + param.node_name + "/set_parameters");
     change_parameters_clients_.push_back(change_parameters_client);
+    if (!change_parameters_client->wait_for_service(
+        std::chrono::milliseconds(change_parameter_timeout_)))
+    {
+      RCLCPP_ERROR(
+        logger_, "BinaryFilter:  service %s not available. Skipping ...",
+        change_parameters_client->get_service_name());
+      // TODO (@enricosutera) replace this once we figure out what to do
+      // throw std::runtime_error("BinaryFilter: Service not available!");
+    } else {
+      RCLCPP_INFO(
+        logger_, "BinaryFilter:  service %s available.",
+        change_parameters_client->get_service_name());
+    }
   }
 
   // Get global frame required for binary state publisher
