@@ -299,17 +299,19 @@ void BinaryFilter::changeState(const bool state)
 void BinaryFilter::changeParameters(const bool state)
 {
   for (size_t param_index = 0; param_index < binary_parameters_info_.size(); ++param_index) {
-    if (!change_parameters_clients_.at(param_index)->wait_for_service(
+    std::shared_ptr<rclcpp::Client<rcl_interfaces::srv::SetParameters>>
+      change_parameters_client = change_parameters_clients_.at(param_index);
+    if (!change_parameters_client->wait_for_service(
         std::chrono::milliseconds(change_parameter_timeout_)))
     {
       RCLCPP_WARN(
         logger_, "BinaryFilter:  service %s not available. Skipping ...",
-        change_parameters_clients_.at(param_index)->get_service_name());
+        change_parameters_client->get_service_name());
       continue;
     } else {
       RCLCPP_INFO(
         logger_, "BinaryFilter:  service %s available.",
-        change_parameters_clients_.at(param_index)->get_service_name());
+        change_parameters_client->get_service_name());
     }
 
     // Create a rcl_interfaces::msg::SetParameters client for changing parameters
@@ -317,10 +319,11 @@ void BinaryFilter::changeParameters(const bool state)
 
     // Set parameters for BinaryFilter
     rcl_interfaces::msg::Parameter bool_param;
-    bool_param.name = binary_parameters_info_.at(param_index).param_name;
+    BinaryFilter::BinaryParameter binary_parameter_info = binary_parameters_info_.at(param_index);
+    bool_param.name = binary_parameter_info.param_name;
     bool_param.value.type = rcl_interfaces::msg::ParameterType::PARAMETER_BOOL;
 
-    const bool param_default_state = binary_parameters_info_.at(param_index).default_state;
+    const bool param_default_state = binary_parameter_info.default_state;
     if (state == default_state_) {
       // Filter is not flipped
       bool_param.value.bool_value = param_default_state;
@@ -347,9 +350,9 @@ void BinaryFilter::changeParameters(const bool state)
 
     RCLCPP_DEBUG(
       logger_, "BinaryFilter: Sending request to set parameter  %s to %s",
-      binary_parameters_info_.at(param_index).param_name.c_str(),
+      binary_parameter_info.param_name.c_str(),
       bool_param.value.bool_value ? "true" : "false");
-    auto future_result = change_parameters_clients_.at(param_index)->async_send_request(
+    auto future_result = change_parameters_client->async_send_request(
       request, response_received_callback);
   }
 }
