@@ -873,8 +873,8 @@ void TestNode::reset()
 /**
  * @brief Adds a new binary param to the list of params to be tested
  *
- * @param param_namespace
  * @param param_node_name
+ * @param param_namespace
  * @param param_name
  * @param default_value_set whether default value is set or not
  * @param default_param_value default value of the param (ignored if default_value_set is false)
