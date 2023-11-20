@@ -69,6 +69,9 @@ public:
     config_->blackboard->set<std::chrono::milliseconds>(
       "bt_loop_duration",
       std::chrono::milliseconds(10));
+    config_->blackboard->set<std::chrono::milliseconds>(
+      "wait_for_service_timeout",
+      std::chrono::milliseconds(1000));
     config_->blackboard->set<bool>("initial_pose_received", false);
 
     BT::NodeBuilder builder =
