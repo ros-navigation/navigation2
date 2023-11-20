@@ -257,6 +257,9 @@ protected:
   // The timeout value for waiting for a service to response
   std::chrono::milliseconds wait_for_service_timeout_;
 
+  // The timeout value for waiting for a service to response
+  std::chrono::milliseconds wait_for_service_timeout_;
+
   // To track the server response when a new request is sent
   std::shared_future<typename ServiceT::Response::SharedPtr> future_result_;
   bool request_sent_{false};
