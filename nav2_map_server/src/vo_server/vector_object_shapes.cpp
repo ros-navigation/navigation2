@@ -55,7 +55,7 @@ bool Shape::obtainShapeUUID(const std::string & shape_name, unsigned char * out_
     // Try to get shape UUID from ROS-parameters
     std::string uuid_str = getParameter(
       node, shape_name + ".uuid", rclcpp::PARAMETER_STRING).as_string();
-    if (uuid_parse(uuid_str.c_str(), out_uuid)) {
+    if (uuid_parse(uuid_str.c_str(), out_uuid) != 0) {
       RCLCPP_ERROR(
         node->get_logger(),
         "[%s] Can not parse UUID string for shape: %s",

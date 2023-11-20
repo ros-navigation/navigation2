@@ -409,40 +409,6 @@ protected:
   geometry_msgs::msg::Point32::SharedPtr center_;
 };
 
-/// @brief Functor class used in raytraceLine algorithm
-class MapAction
-{
-public:
-  /**
-   * @brief MapAction constructor
-   * @param map Output map pointer
-   * @param value Value to put on map
-   * @param overlay_type Overlay type
-   */
-  MapAction(
-    nav_msgs::msg::OccupancyGrid::SharedPtr map,
-    int8_t value, OverlayType overlay_type)
-  : map_(map), value_(value), overlay_type_(overlay_type)
-  {}
-
-  /**
-   * @brief Map filling operator
-   * @param offset Offset on the map where the cell to be changed
-   */
-  inline void operator()(unsigned int offset)
-  {
-    fillMap(map_, offset, value_, overlay_type_);
-  }
-
-protected:
-  /// @brief Output map pointer
-  nav_msgs::msg::OccupancyGrid::SharedPtr map_;
-  /// @brief Value to put on map
-  int8_t value_;
-  /// @brief Overlay type
-  OverlayType overlay_type_;
-};
-
 }  // namespace nav2_map_server
 
 #endif  // NAV2_MAP_SERVER__VECTOR_OBJECT_SHAPES_HPP_
