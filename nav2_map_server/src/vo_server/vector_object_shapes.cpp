@@ -24,6 +24,7 @@
 
 #include "nav2_util/occ_grid_utils.hpp"
 #include "nav2_util/occ_grid_values.hpp"
+#include "nav2_util/polygon_utils.hpp"
 #include "nav2_util/raytrace_line_2d.hpp"
 #include "nav2_util/robot_utils.hpp"
 
@@ -173,36 +174,7 @@ void Polygon::getBoundaries(double & min_x, double & min_y, double & max_x, doub
 
 bool Polygon::isPointInside(const double px, const double py) const
 {
-  // Adaptation of Shimrat, Moshe. "Algorithm 112: position of point relative to polygon."
-  // Communications of the ACM 5.8 (1962): 434.
-  // Implementation of ray crossings algorithm for point in polygon task solving.
-  // Y coordinate is fixed. Moving the ray on X+ axis starting from given point.
-  // Odd number of intersections with polygon boundaries means the point is inside polygon.
-  const int points_num = polygon_->points.size();
-  int i, j;  // Polygon vertex iterators
-  bool res = false;  // Final result, initialized with already inverted value
-
-  // Starting from the edge where the last point of polygon is connected to the first
-  i = points_num - 1;
-  for (j = 0; j < points_num; j++) {
-    // Checking the edge only if given point is between edge boundaries by Y coordinates.
-    // One of the condition should contain equality in order to exclude the edges
-    // parallel to X+ ray.
-    if ((py <= polygon_->points[i].y) == (py > polygon_->points[j].y)) {
-      // Calculating the intersection coordinate of X+ ray
-      const double x_inter = polygon_->points[i].x +
-        (py - polygon_->points[i].y) *
-        (polygon_->points[j].x - polygon_->points[i].x) /
-        (polygon_->points[j].y - polygon_->points[i].y);
-      // If intersection with checked edge is greater than point x coordinate,
-      // inverting the result
-      if (x_inter > px) {
-        res = !res;
-      }
-    }
-    i = j;
-  }
-  return res;
+  return nav2_util::isPointInsidePolygon<geometry_msgs::msg::Point32>(px, py, polygon_->points);
 }
 
 void Polygon::putBorders(
