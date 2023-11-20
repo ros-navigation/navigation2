@@ -151,7 +151,7 @@ public:
    */
   void on_rcl_preshutdown() override
   {
-    //do nothing
+    // do nothing
     return;
   }
 
