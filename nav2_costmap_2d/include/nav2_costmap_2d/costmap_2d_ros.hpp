@@ -135,6 +135,27 @@ public:
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
   /**
+   * @brief override on_rcl_preshutdown() as empty
+   * [reason] costmap only could be created by its parents like planner/controller_server
+   * [reason] costmap should react to ctrl+C later than its parents to avoid nullptr-accessed
+   * so the reaction must be later than its parent
+   *
+   * thus, it's a more perfect way to make on_rcl_preshutdown() as empty function
+   * only joint in planner/controller_server->on_deactivate()
+   * and planner/controller_server->on_cleanup()
+   *
+   * !!! a mention !!!
+   * if any other place use this class (Costmap2DROS)
+   * it's neccessary to let costmap->deactivate() joint in parent->deactivate()
+   * and let costmap->cleanup() joint in parent->cleanup()
+   */
+  void on_rcl_preshutdown() override
+  {
+    //do nothing
+    return;
+  }
+
+  /**
    * @brief  Subscribes to sensor topics if necessary and starts costmap
    * updates, can be called to restart the costmap after calls to either
    * stop() or pause()
