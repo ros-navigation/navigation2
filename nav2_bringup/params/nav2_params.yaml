@@ -122,6 +122,7 @@ controller_server:
     progress_checker_plugins: ["progress_checker"]
     goal_checker_plugins: ["general_goal_checker"] # "precise_goal_checker"
     controller_plugins: ["FollowPath"]
+    use_realtime_priority: false
 
     # Progress checker parameters
     progress_checker:
