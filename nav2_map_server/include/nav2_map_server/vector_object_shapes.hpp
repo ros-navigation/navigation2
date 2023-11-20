@@ -173,7 +173,7 @@ public:
    * @param node Vector Object server node pointer
    * @note setParams()/obtainParams() should be called after to configure the shape
    */
-  Polygon(const nav2_util::LifecycleNode::WeakPtr & node);
+  explicit Polygon(const nav2_util::LifecycleNode::WeakPtr & node);
 
   /**
    * @brief Supporting routine obtaining ROS-parameters for the given vector object.
@@ -283,7 +283,7 @@ public:
    * @param node Vector Object server node pointer
    * @note setParams()/obtainParams() should be called after to configure the shape
    */
-  Circle(const nav2_util::LifecycleNode::WeakPtr & node);
+  explicit Circle(const nav2_util::LifecycleNode::WeakPtr & node);
 
   /**
    * @brief Supporting routine obtaining ROS-parameters for the given vector object.
