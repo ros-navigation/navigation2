@@ -321,7 +321,7 @@ void VectorObjectServer::switchMapUpdate()
           std::chrono::duration<double>(1.0 / update_frequency_),
           std::bind(&VectorObjectServer::processMap, this));
       }
-      RCLCPP_INFO(get_logger(), "Publishing map dynamically");
+      RCLCPP_INFO(get_logger(), "Publishing map dynamically at %f Hz rate", update_frequency_);
       return;
     }
   }
