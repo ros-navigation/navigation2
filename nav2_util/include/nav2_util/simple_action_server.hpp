@@ -25,6 +25,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "nav2_util/node_thread.hpp"
+#include "nav2_util/node_utils.hpp"
 
 namespace nav2_util
 {
@@ -184,17 +185,8 @@ public:
   void setSoftRealTimePriority()
   {
     if (use_realtime_prioritization_) {
-      sched_param sch;
-      sch.sched_priority = 49;
-      if (sched_setscheduler(0, SCHED_FIFO, &sch) == -1) {
-        std::string errmsg(
-          "Cannot set as real-time thread. Users must set: <username> hard rtprio 99 and "
-          "<username> soft rtprio 99 in /etc/security/limits.conf to enable "
-          "realtime prioritization! Error: ");
-        throw std::runtime_error(errmsg + std::strerror(errno));
-      } else {
-        debug_msg("Soft realtime prioritization successfully set!");
-      }
+      nav2_util::setSoftRealTimePriority();
+      debug_msg("Soft realtime prioritization successfully set!");
     }
   }
 
