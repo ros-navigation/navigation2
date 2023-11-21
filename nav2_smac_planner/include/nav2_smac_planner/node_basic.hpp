@@ -47,7 +47,6 @@ class NodeBasic
 public:
   /**
    * @brief A constructor for nav2_smac_planner::NodeBasic
-   * @param cost_in The costmap cost at this node
    * @param index The index of this node for self-reference
    */
   explicit NodeBasic(const unsigned int index)
