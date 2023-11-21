@@ -234,11 +234,6 @@ bool AStarAlgorithm<NodeT>::areInputsValid()
     throw nav2_core::GoalOccupied("Goal was in lethal cost");
   }
 
-  // Check if starting point is valid
-  if (!_start->isNodeValid(_traverse_unknown, _collision_checker)) {
-    throw nav2_core::StartOccupied("Start was in lethal cost");
-  }
-
   return true;
 }
 
@@ -252,6 +247,18 @@ bool AStarAlgorithm<NodeT>::createPath(
   _tolerance = tolerance;
   _best_heuristic_node = {std::numeric_limits<float>::max(), 0};
   clearQueue();
+
+
+
+  // if constexpr(std::is_same<NodeT, Node2D>::value) {
+  //   auto coords = _start->getCoords(_start->getIndex());
+  //   _costmap->setCost(coords.x, coords.y, nav2_costmap_2d::FREE_SPACE);
+  // }
+
+  // if (std::is_same<NodeT, NodeHybrid>::value) {
+  //   auto coords = _start->getCoords(_start->getIndex(), _costmap->getXSize());
+
+
 
   if (!areInputsValid()) {
     return false;
@@ -463,6 +470,13 @@ template<typename NodeT>
 unsigned int & AStarAlgorithm<NodeT>::getSizeDim3()
 {
   return _dim3_size;
+}
+
+template<typename NodeT>
+void AStarAlgorithm<NodeT>::clearStart(
+  unsigned int mx, unsigned int my)
+{
+  _costmap->setCost(mx, my, nav2_costmap_2d::FREE_SPACE);
 }
 
 // Instantiate algorithm for the supported template types

@@ -217,6 +217,7 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
             std::to_string(start.pose.position.y) + ") was outside bounds");
   }
   _a_star->setStart(mx_start, my_start, 0);
+  _a_star->clearStart(mx_start, my_start);
 
   // Set goal point
   if (!costmap->worldToMap(goal.pose.position.x, goal.pose.position.y, mx_goal, my_goal)) {
@@ -240,9 +241,6 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
 
   // Corner case of start and goal beeing on the same cell
   if (mx_start == mx_goal && my_start == my_goal) {
-    if (costmap->getCost(mx_start, my_start) == nav2_costmap_2d::LETHAL_OBSTACLE) {
-      throw nav2_core::StartOccupied("Start was in lethal cost");
-    }
     pose.pose = start.pose;
     // if we have a different start and goal orientation, set the unique path pose to the goal
     // orientation, unless use_final_approach_orientation=true where we need it to be the start

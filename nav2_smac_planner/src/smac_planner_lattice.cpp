@@ -255,6 +255,7 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
   _a_star->setStart(
     mx, my,
     NodeLattice::motion_table.getClosestAngularBin(tf2::getYaw(start.pose.orientation)));
+  _a_star->clearStart(mx, my);
 
   // Set goal point, in A* bin search coordinates
   if (!_costmap->worldToMap(goal.pose.position.x, goal.pose.position.y, mx, my)) {

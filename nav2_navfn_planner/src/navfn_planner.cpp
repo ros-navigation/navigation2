@@ -147,12 +147,6 @@ nav_msgs::msg::Path NavfnPlanner::createPlan(
             std::to_string(goal.pose.position.y) + ") was outside bounds");
   }
 
-  if (costmap_->getCost(mx_start, my_start) == nav2_costmap_2d::LETHAL_OBSTACLE) {
-    throw nav2_core::StartOccupied(
-            "Start Coordinates of(" + std::to_string(start.pose.position.x) + ", " +
-            std::to_string(start.pose.position.y) + ") was in lethal cost");
-  }
-
   if (tolerance_ == 0 && costmap_->getCost(mx_goal, my_goal) == nav2_costmap_2d::LETHAL_OBSTACLE) {
     throw nav2_core::GoalOccupied(
             "Goal Coordinates of(" + std::to_string(goal.pose.position.x) + ", " +

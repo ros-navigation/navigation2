@@ -116,6 +116,11 @@ public:
     return !(isSafe(src_.x, src_.y)) || !(isSafe(dst_.x, dst_.y));
   }
 
+  /**
+   * @brief Clear the starting cell. 
+   */
+  void clearStart();
+
   int nodes_opened = 0;
 
 protected:

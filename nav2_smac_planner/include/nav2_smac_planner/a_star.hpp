@@ -188,6 +188,11 @@ public:
    */
   unsigned int & getSizeDim3();
 
+  /**
+   * @brief Clear Start
+   */
+  void clearStart(unsigned int mx, unsigned int my);
+
 protected:
   /**
    * @brief Get pointer to next goal in open set

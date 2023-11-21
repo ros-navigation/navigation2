@@ -322,7 +322,6 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
     _collision_checker.setCostmap(costmap);
   }
 
-  // Set collision checker and costmap information
   _a_star->setCollisionChecker(&_collision_checker);
 
   // Set starting point, in A* bin search coordinates
@@ -343,6 +342,7 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   }
   unsigned int orientation_bin_id = static_cast<unsigned int>(floor(orientation_bin));
   _a_star->setStart(mx, my, orientation_bin_id);
+  _a_star->clearStart(mx, my);
 
   // Set goal point, in A* bin search coordinates
   if (!costmap->worldToMap(goal.pose.position.x, goal.pose.position.y, mx, my)) {
