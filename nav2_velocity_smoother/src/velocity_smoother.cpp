@@ -148,6 +148,18 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State &)
     }
   }
 
+  declare_parameter_if_not_declared(node, "use_realtime_priority", rclcpp::ParameterValue(false));
+  bool use_realtime_priority = false;
+  node->get_parameter("use_realtime_priority", use_realtime_priority);
+  if (use_realtime_priority) {
+    try {
+      nav2_util::setSoftRealTimePriority();
+    } catch (const std::runtime_error & e) {
+      RCLCPP_ERROR(get_logger(), "%s", e.what());
+      return nav2_util::CallbackReturn::FAILURE;
+    }
+  }
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 

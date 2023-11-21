@@ -160,6 +160,13 @@ std::string get_plugin_type_param(
  */
 void setSoftRealTimePriority();
 
+/**
+ * @brief Sets the caller thread to have a soft-realtime prioritization by
+ * increasing the priority level of the host thread.
+ * May throw exception if unable to set prioritization successfully
+ */
+void setSoftRealTimePriority();
+
 }  // namespace nav2_util
 
 #endif  // NAV2_UTIL__NODE_UTILS_HPP_
