@@ -248,18 +248,6 @@ bool AStarAlgorithm<NodeT>::createPath(
   _best_heuristic_node = {std::numeric_limits<float>::max(), 0};
   clearQueue();
 
-
-
-  // if constexpr(std::is_same<NodeT, Node2D>::value) {
-  //   auto coords = _start->getCoords(_start->getIndex());
-  //   _costmap->setCost(coords.x, coords.y, nav2_costmap_2d::FREE_SPACE);
-  // }
-
-  // if (std::is_same<NodeT, NodeHybrid>::value) {
-  //   auto coords = _start->getCoords(_start->getIndex(), _costmap->getXSize());
-
-
-
   if (!areInputsValid()) {
     return false;
   }

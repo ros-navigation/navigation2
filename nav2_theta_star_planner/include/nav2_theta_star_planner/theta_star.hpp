@@ -117,7 +117,7 @@ public:
   }
 
   /**
-   * @brief Clear the starting cell. 
+   * @brief Clear the starting cell.
    */
   void clearStart();
 
