@@ -1,4 +1,5 @@
 // Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2023 Open Navigation LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -170,6 +171,13 @@ void copy_all_parameters(const NodeT1 & parent, const NodeT2 & child)
     }
   }
 }
+
+/**
+ * @brief Sets the caller thread to have a soft-realtime prioritization by
+ * increasing the priority level of the host thread.
+ * May throw exception if unable to set prioritization successfully
+ */
+void setSoftRealTimePriority();
 
 }  // namespace nav2_util
 

@@ -77,6 +77,20 @@ CollisionMonitor::on_configure(const rclcpp_lifecycle::State & /*state*/)
   collision_points_marker_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(
     "~/collision_points_marker", 1);
 
+  auto node = shared_from_this();
+  nav2_util::declare_parameter_if_not_declared(
+    node, "use_realtime_priority", rclcpp::ParameterValue(false));
+  bool use_realtime_priority = false;
+  node->get_parameter("use_realtime_priority", use_realtime_priority);
+  if (use_realtime_priority) {
+    try {
+      nav2_util::setSoftRealTimePriority();
+    } catch (const std::runtime_error & e) {
+      RCLCPP_ERROR(get_logger(), "%s", e.what());
+      return nav2_util::CallbackReturn::FAILURE;
+    }
+  }
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
