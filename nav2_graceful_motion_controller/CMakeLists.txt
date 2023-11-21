@@ -39,7 +39,6 @@ set(dependencies
 set(library_name nav2_graceful_motion_controller)
 
 add_library(${library_name} SHARED
-    src/collision_checker.cpp
     src/graceful_motion_controller.cpp
     src/parameter_handler.cpp
     src/path_handler.cpp
@@ -65,7 +64,7 @@ if(BUILD_TESTING)
   # the following line skips the linter which checks for copyrights
   set(ament_cmake_copyright_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
-  #add_subdirectory(test)
+  add_subdirectory(test)
 endif()
 
 ament_export_include_directories(include)

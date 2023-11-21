@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_GRACEFUL_MOTION_CONTROLLER__TYPES_HPP_
-#define NAV2_GRACEFUL_MOTION_CONTROLLER__TYPES_HPP_
+#ifndef NAV2_GRACEFUL_MOTION_CONTROLLER__EGO_POLAR_COORDS_HPP_
+#define NAV2_GRACEFUL_MOTION_CONTROLLER__EGO_POLAR_COORDS_HPP_
 
 #include <math.h>
 
@@ -67,4 +67,4 @@ struct EgocentricPolarCoordinates
 
 }  // namespace nav2_graceful_motion_controller
 
-#endif  // NAV2_GRACEFUL_MOTION_CONTROLLER__TYPES_HPP_
+#endif  // NAV2_GRACEFUL_MOTION_CONTROLLER__EGO_POLAR_COORDS_HPP_

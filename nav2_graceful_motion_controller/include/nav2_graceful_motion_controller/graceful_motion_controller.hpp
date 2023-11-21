@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_GRACEFUL_MOTION_CONTROLLER__GRACEFUL_CONTROLLER_HPP_
-#define NAV2_GRACEFUL_MOTION_CONTROLLER__GRACEFUL_CONTROLLER_HPP_
+#ifndef NAV2_GRACEFUL_MOTION_CONTROLLER__GRACEFUL_MOTION_CONTROLLER_HPP_
+#define NAV2_GRACEFUL_MOTION_CONTROLLER__GRACEFUL_MOTION_CONTROLLER_HPP_
 
 #include <string>
 #include <limits>
@@ -169,4 +169,4 @@ protected:
 
 }  // namespace nav2_graceful_motion_controller
 
-#endif  // NAV2_GRACEFUL_MOTION_CONTROLLER__GRACEFUL_CONTROLLER_HPP_
+#endif  // NAV2_GRACEFUL_MOTION_CONTROLLER__GRACEFUL_MOTION_CONTROLLER_HPP_

@@ -235,7 +235,8 @@ nav_msgs::msg::Path GracefulMotionController::simulateTrajectory(
   double resolution_ = costmap_ros_->getCostmap()->getResolution();
   double dt = (params_->v_linear_max > 0.0) ? resolution_ / params_->v_linear_max : 0.0;
   // Set max iter to avoid infinite loop
-  unsigned int max_iter = 2 * sqrt(motion_target.pose.position.x * motion_target.pose.position.x +
+  unsigned int max_iter = 2 * sqrt(
+    motion_target.pose.position.x * motion_target.pose.position.x +
     motion_target.pose.position.y * motion_target.pose.position.y) / resolution_;
   // Generate path
   do{
