@@ -462,7 +462,7 @@ unsigned int & AStarAlgorithm<NodeT>::getSizeDim3()
 
 template<typename NodeT>
 void AStarAlgorithm<NodeT>::clearStart(
-  unsigned int mx, unsigned int my)
+  unsigned int & mx, unsigned int & my)
 {
   _costmap->setCost(mx, my, nav2_costmap_2d::FREE_SPACE);
 }

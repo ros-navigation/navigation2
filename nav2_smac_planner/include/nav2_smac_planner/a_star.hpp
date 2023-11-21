@@ -190,8 +190,10 @@ public:
 
   /**
    * @brief Clear Start
+   * @param mx The x index of the start
+   * @param my The y index of the start
    */
-  void clearStart(unsigned int mx, unsigned int my);
+  void clearStart(unsigned int & mx, unsigned int & my);
 
 protected:
   /**
