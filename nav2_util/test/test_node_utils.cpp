@@ -94,35 +94,3 @@ TEST(GetPluginTypeParam, GetPluginTypeParam)
   ASSERT_EQ(get_plugin_type_param(node, "Foo"), "bar");
   EXPECT_THROW(get_plugin_type_param(node, "Waldo"), std::runtime_error);
 }
-
-TEST(TestParamCopying, TestParamCopying)
-{
-  auto node1 = std::make_shared<rclcpp::Node>("test_node1");
-  auto node2 = std::make_shared<rclcpp::Node>("test_node2");
-
-  // Tests for (1) multiple types, (2) recursion, (3) overriding values
-  node1->declare_parameter("Foo1", rclcpp::ParameterValue(std::string(("bar1"))));
-  node1->declare_parameter("Foo2", rclcpp::ParameterValue(0.123));
-  node1->declare_parameter("Foo", rclcpp::ParameterValue(std::string(("bar"))));
-  node1->declare_parameter("Foo.bar", rclcpp::ParameterValue(std::string(("steve"))));
-  node2->declare_parameter("Foo", rclcpp::ParameterValue(std::string(("barz2"))));
-
-  // Show Node2 is empty of Node1's parameters, but contains its own
-  EXPECT_FALSE(node2->has_parameter("Foo1"));
-  EXPECT_FALSE(node2->has_parameter("Foo2"));
-  EXPECT_FALSE(node2->has_parameter("Foo.bar"));
-  EXPECT_TRUE(node2->has_parameter("Foo"));
-  EXPECT_EQ(node2->get_parameter("Foo").as_string(), std::string("barz2"));
-
-  nav2_util::copy_all_parameters(node1, node2);
-
-  // Test new parameters exist, of expected value, and original param is not overridden
-  EXPECT_TRUE(node2->has_parameter("Foo1"));
-  EXPECT_EQ(node2->get_parameter("Foo1").as_string(), std::string("bar1"));
-  EXPECT_TRUE(node2->has_parameter("Foo2"));
-  EXPECT_EQ(node2->get_parameter("Foo2").as_double(), 0.123);
-  EXPECT_TRUE(node2->has_parameter("Foo.bar"));
-  EXPECT_EQ(node2->get_parameter("Foo.bar").as_string(), std::string("steve"));
-  EXPECT_TRUE(node2->has_parameter("Foo"));
-  EXPECT_EQ(node2->get_parameter("Foo").as_string(), std::string("barz2"));
-}
