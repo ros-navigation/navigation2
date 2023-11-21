@@ -220,7 +220,7 @@ PlannerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
    */
   if (costmap_ros_->get_current_state().id() ==
     lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
-  //this condition could be removed
+  //  this condition could be removed
   {
     costmap_ros_->deactivate();
   }
@@ -254,7 +254,7 @@ PlannerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
    */
   if (costmap_ros_->get_current_state().id() ==
     lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
-  //this condition could be removed
+  //  this condition could be removed
   {
     costmap_ros_->cleanup();
   }
