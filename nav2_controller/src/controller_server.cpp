@@ -132,7 +132,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   costmap_thread_ = std::make_unique<nav2_util::NodeThread>(costmap_ros_);
   // work as a child-LifecycleNode of its parent controller_server
   costmap_ros_->turnChildLifecycleNode();
-  
+
   for (size_t i = 0; i != progress_checker_ids_.size(); i++) {
     try {
       progress_checker_types_[i] = nav2_util::get_plugin_type_param(
@@ -288,9 +288,9 @@ ControllerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 //    lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
 //  {
 //    RCLCPP_INFO(get_logger(), "costmap_ros_->cleanup()");
-    costmap_ros_->deactivate();
+  costmap_ros_->deactivate();
 //  }
-  // after turnChildLifecycleNode(), this double check is not neccessary anymore
+// after turnChildLifecycleNode(), this double check is not neccessary anymore
 
   publishZeroVelocity();
   vel_publisher_->on_deactivate();
@@ -320,9 +320,9 @@ ControllerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 //    lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
 //  {
 //    RCLCPP_INFO(get_logger(), "costmap_ros_->cleanup()");
-    costmap_ros_->cleanup();
+  costmap_ros_->cleanup();
 //  }
-  // after turnChildLifecycleNode(), this double check is not neccessary anymore
+// after turnChildLifecycleNode(), this double check is not neccessary anymore
 
   // Release any allocated resources
   action_server_.reset();
