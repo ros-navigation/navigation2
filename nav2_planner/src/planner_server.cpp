@@ -88,7 +88,9 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   // Launch a thread to run the costmap node
   costmap_thread_ = std::make_unique<nav2_util::NodeThread>(costmap_ros_);
-
+  // work as a child-LifecycleNode of its parent planner_server
+  costmap_ros_->turnChildLifecycleNode();
+  
   RCLCPP_DEBUG(
     get_logger(), "Costmap size: %d,%d",
     costmap_->getSizeInCellsX(), costmap_->getSizeInCellsY());
@@ -218,12 +220,13 @@ PlannerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
    * unordered_set iteration. Once this issue is resolved, we can maybe make a stronger
    * ordering assumption: https://github.com/ros2/rclcpp/issues/2096
    */
-  if (costmap_ros_->get_current_state().id() ==
-    lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
-  //  this condition could be removed
-  {
+//  if (costmap_ros_->get_current_state().id() ==
+//    lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
+//  {
+//    RCLCPP_INFO(get_logger(), "costmap_ros_->cleanup()");
     costmap_ros_->deactivate();
-  }
+//  }
+  // after turnChildLifecycleNode(), this double check is not neccessary anymore
 
   PlannerMap::iterator it;
   for (it = planners_.begin(); it != planners_.end(); ++it) {
@@ -252,12 +255,13 @@ PlannerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
    * Double check whether something else transitioned it to INACTIVE
    * already, e.g. the rcl preshutdown callback.
    */
-  if (costmap_ros_->get_current_state().id() ==
-    lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
-  //  this condition could be removed
-  {
+//  if (costmap_ros_->get_current_state().id() ==
+//    lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
+//  {
+//    RCLCPP_INFO(get_logger(), "costmap_ros_->cleanup()");
     costmap_ros_->cleanup();
-  }
+//  }
+  // after turnChildLifecycleNode(), this double check is not neccessary anymore
 
   PlannerMap::iterator it;
   for (it = planners_.begin(); it != planners_.end(); ++it) {
