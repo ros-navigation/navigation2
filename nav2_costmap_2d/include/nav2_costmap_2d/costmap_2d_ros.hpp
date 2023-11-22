@@ -135,24 +135,39 @@ public:
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
   /**
-   * @brief override on_rcl_preshutdown() as empty
-   * [reason] costmap only could be created by its parents like planner/controller_server
-   * [reason] costmap should react to ctrl+C later than its parents to avoid nullptr-accessed
-   * so the reaction must be later than its parent
-   *
-   * thus, it's a more perfect way to make on_rcl_preshutdown() as empty function
-   * only joint in planner/controller_server->on_deactivate()
-   * and planner/controller_server->on_cleanup()
-   *
-   * !!! a mention !!!
-   * if any other place use this class (Costmap2DROS)
-   * it's neccessary to let costmap->deactivate() joint in parent->deactivate()
-   * and let costmap->cleanup() joint in parent->cleanup()
+   * @brief child-LifecycleNode mode
+   * sometimes costmap may be launched by another LifecycleNode and work as a child-thread    
+   * child-LifecycleNode should react to ctrl+C later than its parents to avoid unclean shutdown
+   * Thus, it's neccessary to turnChildLifecycleNode() to change its launch mode
+   * 
+   * in ChildLifecycleNode mode, it would react to rcl_preshutdown anymore
+   * all its lifecycle state would be controlled by its parent-LifecycleNode
    */
+  void turnChildLifecycleNode()
+  {
+    // as a child-LifecycleNode launched by its parent-LifecycleNode
+    // and work as a child-thread
+    is_thread_ = true;
+  }
+  bool isThread()
+  {
+    return is_thread_; 
+  }
   void on_rcl_preshutdown() override
   {
-    // do nothing
-    return;
+    if( isThread() ){
+      // all of its reaction is up to its parent
+      return;
+    }
+
+    // else, same as ``on_rcl_preshutdown` in lifecycle_node.cpp` 
+    RCLCPP_INFO(
+    get_logger(), "Running Nav2 LifecycleNode rcl preshutdown (%s)",
+    this->get_name());
+
+    runCleanups();
+
+    destroyBond();
   }
 
   /**
