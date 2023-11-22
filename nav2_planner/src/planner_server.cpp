@@ -90,7 +90,7 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   costmap_thread_ = std::make_unique<nav2_util::NodeThread>(costmap_ros_);
   // work as a child-LifecycleNode of its parent planner_server
   costmap_ros_->turnChildLifecycleNode();
-  
+
   RCLCPP_DEBUG(
     get_logger(), "Costmap size: %d,%d",
     costmap_->getSizeInCellsX(), costmap_->getSizeInCellsY());
@@ -224,9 +224,9 @@ PlannerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 //    lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
 //  {
 //    RCLCPP_INFO(get_logger(), "costmap_ros_->cleanup()");
-    costmap_ros_->deactivate();
+  costmap_ros_->deactivate();
 //  }
-  // after turnChildLifecycleNode(), this double check is not neccessary anymore
+// after turnChildLifecycleNode(), this double check is not neccessary anymore
 
   PlannerMap::iterator it;
   for (it = planners_.begin(); it != planners_.end(); ++it) {
@@ -259,9 +259,9 @@ PlannerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 //    lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
 //  {
 //    RCLCPP_INFO(get_logger(), "costmap_ros_->cleanup()");
-    costmap_ros_->cleanup();
+  costmap_ros_->cleanup();
 //  }
-  // after turnChildLifecycleNode(), this double check is not neccessary anymore
+// after turnChildLifecycleNode(), this double check is not neccessary anymore
 
   PlannerMap::iterator it;
   for (it = planners_.begin(); it != planners_.end(); ++it) {
