@@ -130,6 +130,8 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   costmap_ros_->configure();
   // Launch a thread to run the costmap node
   costmap_thread_ = std::make_unique<nav2_util::NodeThread>(costmap_ros_);
+  // work as a child-LifecycleNode of its parent controller_server
+  costmap_ros_->turnChildLifecycleNode();
 
   for (size_t i = 0; i != progress_checker_ids_.size(); i++) {
     try {
@@ -282,12 +284,13 @@ ControllerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
    * unordered_set iteration. Once this issue is resolved, we can maybe make a stronger
    * ordering assumption: https://github.com/ros2/rclcpp/issues/2096
    */
-  if (costmap_ros_->get_current_state().id() ==
-    lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
-  //  this condition could be removed
-  {
-    costmap_ros_->deactivate();
-  }
+//  if (costmap_ros_->get_current_state().id() ==
+//    lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
+//  {
+//    RCLCPP_INFO(get_logger(), "costmap_ros_->cleanup()");
+  costmap_ros_->deactivate();
+//  }
+// after turnChildLifecycleNode(), this double check is not neccessary anymore
 
   publishZeroVelocity();
   vel_publisher_->on_deactivate();
@@ -313,12 +316,13 @@ ControllerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 
   goal_checkers_.clear();
   progress_checkers_.clear();
-  if (costmap_ros_->get_current_state().id() ==
-    lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
-  //  this condition could be removed
-  {
-    costmap_ros_->cleanup();
-  }
+//  if (costmap_ros_->get_current_state().id() ==
+//    lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
+//  {
+//    RCLCPP_INFO(get_logger(), "costmap_ros_->cleanup()");
+  costmap_ros_->cleanup();
+//  }
+// after turnChildLifecycleNode(), this double check is not neccessary anymore
 
   // Release any allocated resources
   action_server_.reset();
