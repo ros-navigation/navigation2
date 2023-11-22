@@ -353,6 +353,9 @@ public:
   double getRobotRadius() {return robot_radius_;}
 
 protected:
+  // launch mode: as a child-thread or an independent-process
+  bool is_thread_{false};
+
   // Publishers and subscribers
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr
     footprint_pub_;
