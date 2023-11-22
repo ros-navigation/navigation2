@@ -136,10 +136,10 @@ public:
 
   /**
    * @brief child-LifecycleNode mode
-   * sometimes costmap may be launched by another LifecycleNode and work as a child-thread    
+   * sometimes costmap may be launched by another LifecycleNode and work as a child-thread
    * child-LifecycleNode should react to ctrl+C later than its parents to avoid unclean shutdown
    * Thus, it's neccessary to turnChildLifecycleNode() to change its launch mode
-   * 
+   *
    * in ChildLifecycleNode mode, it would react to rcl_preshutdown anymore
    * all its lifecycle state would be controlled by its parent-LifecycleNode
    */
@@ -151,19 +151,19 @@ public:
   }
   bool isThread()
   {
-    return is_thread_; 
+    return is_thread_;
   }
   void on_rcl_preshutdown() override
   {
-    if( isThread() ){
+    if (isThread() ) {
       // all of its reaction is up to its parent
       return;
     }
 
-    // else, same as ``on_rcl_preshutdown` in lifecycle_node.cpp` 
+    // else, same as ``on_rcl_preshutdown` in lifecycle_node.cpp`
     RCLCPP_INFO(
-    get_logger(), "Running Nav2 LifecycleNode rcl preshutdown (%s)",
-    this->get_name());
+      get_logger(), "Running Nav2 LifecycleNode rcl preshutdown (%s)",
+      this->get_name());
 
     runCleanups();
 
