@@ -358,9 +358,6 @@ public:
   double getRobotRadius() {return robot_radius_;}
 
 protected:
-  // whether is a child-LifecycleNode following another parent-LifecycleNode
-  bool is_lifecycle_follower_{false};
-
   // Publishers and subscribers
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr
     footprint_pub_;
@@ -424,6 +421,7 @@ protected:
   bool track_unknown_space_{false};
   double transform_tolerance_{0};           ///< The timeout before transform errors
   double initial_transform_timeout_{0};   ///< The timeout before activation of the node errors
+  bool is_lifecycle_follower_{false};     ///< whether is a child-LifecycleNode following another parent-LifecycleNode
 
   // Derived parameters
   bool use_radius_{false};
