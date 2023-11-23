@@ -100,6 +100,21 @@ public:
     const bool & use_sim_time);
 
   /**
+   * @brief  Constructor for the wrapper
+   * @param name Name of the costmap ROS node
+   * @param parent_namespace Absolute namespace of the node hosting the costmap node
+   * @param local_namespace Namespace to append to the parent namespace
+   * @param use_sim_time Whether to use simulation or real time
+   * @param is_lifecycle_follower Whether launch as a child-LifecycleNode following others
+   */
+  explicit Costmap2DROS(
+    const std::string & name,
+    const std::string & parent_namespace,
+    const std::string & local_namespace,
+    const bool & use_sim_time,
+    const bool & is_lifecycle_follower);
+
+  /**
    * @brief Common initialization for constructors
    */
   void init();
@@ -135,28 +150,18 @@ public:
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
   /**
-   * @brief child-LifecycleNode mode
+   * @brief as a child-LifecycleNode :
    * sometimes costmap may be launched by another LifecycleNode and work as a child-thread
    * child-LifecycleNode should react to ctrl+C later than its parents to avoid unclean shutdown
-   * Thus, it's neccessary to turnChildLifecycleNode() to change its launch mode
+   * Thus, it's neccessary to set NodeOption is_lifecycle_follower_ as false
    *
-   * in ChildLifecycleNode mode, it would react to rcl_preshutdown anymore
+   * in this NodeOption, it would not react to rcl_preshutdown anymore
    * all its lifecycle state would be controlled by its parent-LifecycleNode
    */
-  void turnChildLifecycleNode()
-  {
-    // as a child-LifecycleNode launched by its parent-LifecycleNode
-    // and work as a child-thread
-    is_thread_ = true;
-  }
-  bool isThread()
-  {
-    return is_thread_;
-  }
   void on_rcl_preshutdown() override
   {
-    if (isThread() ) {
-      // all of its reaction is up to its parent
+    if (!is_lifecycle_follower_) {
+      // all of its reaction is up to its parent-LifecycleNode
       return;
     }
 
@@ -353,8 +358,8 @@ public:
   double getRobotRadius() {return robot_radius_;}
 
 protected:
-  // launch mode: as a child-thread or an independent-process
-  bool is_thread_{false};
+  // whether is a child-LifecycleNode following another parent-LifecycleNode
+  bool is_lifecycle_follower_{false};
 
   // Publishers and subscribers
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr
