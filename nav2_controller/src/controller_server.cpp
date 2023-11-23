@@ -62,12 +62,13 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
   declare_parameter("speed_limit_topic", rclcpp::ParameterValue("speed_limit"));
 
   declare_parameter("failure_tolerance", rclcpp::ParameterValue(0.0));
+  declare_parameter("use_realtime_priority", rclcpp::ParameterValue(false));
 
   // The costmap node is used in the implementation of the controller
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "local_costmap", std::string{get_namespace()}, "local_costmap",
     get_parameter("use_sim_time").as_bool(),
-    true); // work as a child-LifecycleNode following controller_server
+    true);  // work as a child-LifecycleNode of planner_server
 }
 
 ControllerServer::~ControllerServer()
@@ -224,19 +225,12 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   // Create the action server that we implement with our followPath method
   // This may throw due to real-time prioritzation if user doesn't have real-time permissions
-  action_server_ = std::make_unique<ActionServer>(
   try {
-    shared_from_this(),
     action_server_ = std::make_unique<ActionServer>(
-    "follow_path",
       shared_from_this(),
-    std::bind(&ControllerServer::computeControl, this),
       "follow_path",
-    nullptr,
       std::bind(&ControllerServer::computeControl, this),
-    std::chrono::milliseconds(500),
       nullptr,
-    true, server_options);
       std::chrono::milliseconds(500),
       true /*spin thread*/, server_options, use_realtime_priority_ /*soft realtime*/);
   } catch (const std::runtime_error & e) {
@@ -304,7 +298,6 @@ ControllerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
    */
   costmap_ros_->deactivate();
 
-
   publishZeroVelocity();
   vel_publisher_->on_deactivate();
   dyn_params_handler_.reset();
@@ -329,7 +322,6 @@ ControllerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 
   goal_checkers_.clear();
   progress_checkers_.clear();
-
 
   costmap_ros_->cleanup();
 
