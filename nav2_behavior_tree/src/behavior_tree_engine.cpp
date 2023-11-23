@@ -39,6 +39,7 @@ BehaviorTreeEngine::run(
   std::function<void()> onLoop,
   std::function<bool()> cancelRequested,
   rclcpp::Logger logger,
+  rclcpp::Clock::SharedPtr clock,
   std::chrono::milliseconds loopTimeout)
 {
   rclcpp::WallRate loopRate(loopTimeout);
@@ -57,8 +58,9 @@ BehaviorTreeEngine::run(
       onLoop();
 
       if (!loopRate.sleep()) {
-        RCLCPP_WARN(
+        RCLCPP_WARN_THROTTLE(
           rclcpp::get_logger("BehaviorTreeEngine"),
+          *(clock), 1000,
           "Behavior Tree tick rate %0.2f was exceeded!",
           1.0 / (loopRate.period().count() * 1.0e-9));
       }
