@@ -67,7 +67,6 @@ PlannerServer::PlannerServer(const rclcpp::NodeOptions & options)
     "global_costmap", std::string{get_namespace()}, "global_costmap",
     get_parameter("use_sim_time").as_bool(),
     true);  // work as a child-LifecycleNode of planner_server
-
 }
 
 PlannerServer::~PlannerServer()
