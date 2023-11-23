@@ -18,7 +18,7 @@
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "nav2_graceful_motion_controller/ego_polar_coords.hpp"
 
-TEST(EgocentricPolarCoordinatesTest, ConstructorDefault) {
+TEST(EgocentricPolarCoordinatesTest, constructorDefault) {
   nav2_graceful_motion_controller::EgocentricPolarCoordinates coords;
 
   EXPECT_DOUBLE_EQ(0.0, coords.r);
@@ -26,7 +26,7 @@ TEST(EgocentricPolarCoordinatesTest, ConstructorDefault) {
   EXPECT_DOUBLE_EQ(0.0, coords.delta);
 }
 
-TEST(EgocentricPolarCoordinatesTest, ConstructorWithValues) {
+TEST(EgocentricPolarCoordinatesTest, constructorWithValues) {
   double r_value = 5.0;
   double phi_value = 1.2;
   double delta_value = -0.5;
@@ -39,7 +39,7 @@ TEST(EgocentricPolarCoordinatesTest, ConstructorWithValues) {
   EXPECT_DOUBLE_EQ(delta_value, coords.delta);
 }
 
-TEST(EgocentricPolarCoordinatesTest, ConstructorFromPoses) {
+TEST(EgocentricPolarCoordinatesTest, constructorFromPoses) {
   geometry_msgs::msg::Pose target;
   target.position.x = 3.0;
   target.position.y = 4.0;
@@ -62,8 +62,6 @@ TEST(EgocentricPolarCoordinatesTest, ConstructorFromPoses) {
 int main(int argc, char ** argv)
 {
   testing::InitGoogleTest(&argc, argv);
-  rclcpp::init(argc, argv);
   bool success = RUN_ALL_TESTS();
-  rclcpp::shutdown();
   return success;
 }

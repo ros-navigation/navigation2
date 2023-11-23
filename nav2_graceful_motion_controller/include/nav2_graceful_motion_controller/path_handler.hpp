@@ -63,6 +63,13 @@ public:
    */
   void setPlan(const nav_msgs::msg::Path & path);
 
+  /**
+   * @brief Gets the global plan
+   *
+   * @return The global plan
+   */
+  nav_msgs::msg::Path getPlan() {return global_plan_;}
+
 protected:
   rclcpp::Duration transform_tolerance_{0, 0};
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
