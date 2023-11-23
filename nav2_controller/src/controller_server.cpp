@@ -62,12 +62,12 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
   declare_parameter("speed_limit_topic", rclcpp::ParameterValue("speed_limit"));
 
   declare_parameter("failure_tolerance", rclcpp::ParameterValue(0.0));
-  declare_parameter("use_realtime_priority", rclcpp::ParameterValue(false));
 
   // The costmap node is used in the implementation of the controller
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "local_costmap", std::string{get_namespace()}, "local_costmap",
-    get_parameter("use_sim_time").as_bool());
+    get_parameter("use_sim_time").as_bool(),
+    true); // work as a child-LifecycleNode following controller_server
 }
 
 ControllerServer::~ControllerServer()
@@ -127,13 +127,10 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   std::string speed_limit_topic;
   get_parameter("speed_limit_topic", speed_limit_topic);
   get_parameter("failure_tolerance", failure_tolerance_);
-  get_parameter("use_realtime_priority", use_realtime_priority_);
 
   costmap_ros_->configure();
   // Launch a thread to run the costmap node
   costmap_thread_ = std::make_unique<nav2_util::NodeThread>(costmap_ros_);
-  // work as a child-LifecycleNode of its parent controller_server
-  costmap_ros_->turnChildLifecycleNode();
 
   for (size_t i = 0; i != progress_checker_ids_.size(); i++) {
     try {
@@ -225,19 +222,13 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   server_options.result_timeout.nanoseconds = RCL_S_TO_NS(action_server_result_timeout);
 
   // Create the action server that we implement with our followPath method
-  // This may throw due to real-time prioritzation if user doesn't have real-time permissions
-  try {
-    action_server_ = std::make_unique<ActionServer>(
-      shared_from_this(),
-      "follow_path",
-      std::bind(&ControllerServer::computeControl, this),
-      nullptr,
-      std::chrono::milliseconds(500),
-      true /*spin thread*/, server_options, use_realtime_priority_ /*soft realtime*/);
-  } catch (const std::runtime_error & e) {
-    RCLCPP_ERROR(get_logger(), "Error creating action server! %s", e.what());
-    return nav2_util::CallbackReturn::FAILURE;
-  }
+  action_server_ = std::make_unique<ActionServer>(
+    shared_from_this(),
+    "follow_path",
+    std::bind(&ControllerServer::computeControl, this),
+    nullptr,
+    std::chrono::milliseconds(500),
+    true, server_options);
 
   // Set subscribtion to the speed limiting topic
   speed_limit_sub_ = create_subscription<nav2_msgs::msg::SpeedLimit>(
@@ -292,13 +283,13 @@ ControllerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
    * unordered_set iteration. Once this issue is resolved, we can maybe make a stronger
    * ordering assumption: https://github.com/ros2/rclcpp/issues/2096
    */
-//  if (costmap_ros_->get_current_state().id() ==
-//    lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
-//  {
-//    RCLCPP_INFO(get_logger(), "costmap_ros_->cleanup()");
+  /*
+   * The costmap is changed into is_lifecycle_follower_{true}
+   * https://github.com/ros-planning/navigation2/pull/3972
+   * within this NodeOption, no neccessary to set double check.
+   */
   costmap_ros_->deactivate();
-//  }
-// after turnChildLifecycleNode(), this double check is not neccessary anymore
+
 
   publishZeroVelocity();
   vel_publisher_->on_deactivate();
@@ -324,13 +315,10 @@ ControllerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 
   goal_checkers_.clear();
   progress_checkers_.clear();
-//  if (costmap_ros_->get_current_state().id() ==
-//    lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
-//  {
-//    RCLCPP_INFO(get_logger(), "costmap_ros_->cleanup()");
+
+
   costmap_ros_->cleanup();
-//  }
-// after turnChildLifecycleNode(), this double check is not neccessary anymore
+
 
   // Release any allocated resources
   action_server_.reset();
