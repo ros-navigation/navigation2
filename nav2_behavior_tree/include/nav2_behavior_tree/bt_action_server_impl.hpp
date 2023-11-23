@@ -310,7 +310,7 @@ void BtActionServer<ActionT>::executeCallback()
     };
 
   // Execute the BT that was previously created in the configure step
-  nav2_behavior_tree::BtStatus rc = bt_->run(tree_, on_loop, is_canceling, logger_, bt_loop_duration_);
+  nav2_behavior_tree::BtStatus rc = bt_->run(tree_, on_loop, is_canceling, logger_, clock_, bt_loop_duration_);
 
   // send remaining logs
   topic_logger_->flush();

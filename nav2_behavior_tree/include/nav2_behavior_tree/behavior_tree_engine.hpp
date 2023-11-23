@@ -63,6 +63,7 @@ public:
     std::function<void()> onLoop,
     std::function<bool()> cancelRequested,
     rclcpp::Logger logger,
+    rclcpp::Clock::SharedPtr clock,
     std::chrono::milliseconds loopTimeout = std::chrono::milliseconds(10));
 
   /**
