@@ -98,7 +98,7 @@ Costmap2DROS::Costmap2DROS(
     "nav2_costmap_2d::StaticLayer",
     "nav2_costmap_2d::ObstacleLayer",
     "nav2_costmap_2d::InflationLayer"},
-  is_lifecycle_follower_(true) //  default: is an independent node
+  is_lifecycle_follower_(true) //  default: is not an independent node
 {
   declare_parameter(
     "map_topic", rclcpp::ParameterValue(
