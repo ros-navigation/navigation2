@@ -69,7 +69,7 @@ Costmap2DROS::Costmap2DROS()
     "nav2_costmap_2d::StaticLayer",
     "nav2_costmap_2d::ObstacleLayer",
     "nav2_costmap_2d::InflationLayer"},
-  is_lifecycle_follower_(false) //  default: work as an independent node
+  is_lifecycle_follower_(false) //  default: is an independent node
 {
   declare_parameter("map_topic", rclcpp::ParameterValue(std::string("map")));
   init();
@@ -80,14 +80,6 @@ Costmap2DROS::Costmap2DROS(
   const std::string & parent_namespace,
   const std::string & local_namespace,
   const bool & use_sim_time)
-: Costmap2DROS(name, parent_namespace, local_namespace, use_sim_time, false) {}
-
-Costmap2DROS::Costmap2DROS(
-  const std::string & name,
-  const std::string & parent_namespace,
-  const std::string & local_namespace,
-  const bool & use_sim_time,
-  const bool & is_lifecycle_follower)
 : nav2_util::LifecycleNode(name, "",
     // NodeOption arguments take precedence over the ones provided on the command line
     // use this to make sure the node is placed on the provided namespace
@@ -105,8 +97,7 @@ Costmap2DROS::Costmap2DROS(
   default_types_{
     "nav2_costmap_2d::StaticLayer",
     "nav2_costmap_2d::ObstacleLayer",
-    "nav2_costmap_2d::InflationLayer"},
-  is_lifecycle_follower_(is_lifecycle_follower)
+    "nav2_costmap_2d::InflationLayer"}
 {
   declare_parameter(
     "map_topic", rclcpp::ParameterValue(
