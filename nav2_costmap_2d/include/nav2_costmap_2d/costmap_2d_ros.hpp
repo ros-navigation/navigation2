@@ -100,21 +100,6 @@ public:
     const bool & use_sim_time);
 
   /**
-   * @brief  Constructor for the wrapper
-   * @param name Name of the costmap ROS node
-   * @param parent_namespace Absolute namespace of the node hosting the costmap node
-   * @param local_namespace Namespace to append to the parent namespace
-   * @param use_sim_time Whether to use simulation or real time
-   * @param is_lifecycle_follower Whether launch as a child-LifecycleNode following others
-   */
-  explicit Costmap2DROS(
-    const std::string & name,
-    const std::string & parent_namespace,
-    const std::string & local_namespace,
-    const bool & use_sim_time,
-    const bool & is_lifecycle_follower);
-
-  /**
    * @brief Common initialization for constructors
    */
   void init();
@@ -153,14 +138,14 @@ public:
    * @brief as a child-LifecycleNode :
    * sometimes costmap may be launched by another LifecycleNode and work as a child-thread
    * child-LifecycleNode should react to ctrl+C later than its parents to avoid unclean shutdown
-   * Thus, it's neccessary to set NodeOption is_lifecycle_follower_ as false
+   * Thus, it's neccessary to set NodeOption is_lifecycle_follower_ as true
    *
    * in this NodeOption, it would not react to rcl_preshutdown anymore
    * all its lifecycle state would be controlled by its parent-LifecycleNode
    */
   void on_rcl_preshutdown() override
   {
-    if (!is_lifecycle_follower_) {
+    if (is_lifecycle_follower_) {
       // all of its reaction is up to its parent-LifecycleNode
       return;
     }
@@ -421,7 +406,7 @@ protected:
   bool track_unknown_space_{false};
   double transform_tolerance_{0};           ///< The timeout before transform errors
   double initial_transform_timeout_{0};   ///< The timeout before activation of the node errors
-  bool is_lifecycle_follower_{false};     ///< whether is a child-LifecycleNode following another parent-LifecycleNode
+  bool is_lifecycle_follower_{true};     ///< whether is a child-LifecycleNode or an independent node
 
   // Derived parameters
   bool use_radius_{false};
