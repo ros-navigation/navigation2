@@ -319,18 +319,6 @@ void BinaryFilter::changeParameters(const bool state)
   for (size_t param_index = 0; param_index < binary_parameters_info_.size(); ++param_index) {
     std::shared_ptr<rclcpp::Client<rcl_interfaces::srv::SetParameters>>
     change_parameters_client = change_parameters_clients_.at(param_index);
-    if (!change_parameters_client->wait_for_service(
-        std::chrono::milliseconds(change_parameter_timeout_)))
-    {
-      RCLCPP_WARN(
-        logger_, "BinaryFilter:  service %s not available. Skipping ...",
-        change_parameters_client->get_service_name());
-      continue;
-    } else {
-      RCLCPP_INFO(
-        logger_, "BinaryFilter:  service %s available.",
-        change_parameters_client->get_service_name());
-    }
 
     // Create a rcl_interfaces::msg::SetParameters client for changing parameters
     auto request = std::make_shared<rcl_interfaces::srv::SetParameters::Request>();
