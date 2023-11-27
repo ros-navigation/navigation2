@@ -83,11 +83,14 @@ void BinaryFilter::initializeFilter(
   for (std::string param : binary_parameters) {
     BinaryParameter param_struct;
 
-    declareParameter(param + "." + "node_name", rclcpp::ParameterValue(""));
-    node->get_parameter(name_ + "." + param + "." + "node_name", param_struct.node_name);
+    declareParameter(param + "." + "node_name", rclcpp::PARAMETER_STRING);
+    // This throws an error if param is not initialized
+    param_struct.node_name =
+      node->get_parameter(name_ + "." + param + "." + "node_name").as_string();
 
-    declareParameter(param + "." + "param_name", rclcpp::ParameterValue(""));
-    node->get_parameter(name_ + "." + param + "." + "param_name", param_struct.param_name);
+    declareParameter(param + "." + "param_name", rclcpp::PARAMETER_STRING);
+    param_struct.param_name =
+      node->get_parameter(name_ + "." + param + "." + "param_name").as_string();
 
     // Take default value from parameter server if not specified
     declareParameter(param + "." + "default_state", rclcpp::ParameterValue(default_state_));
