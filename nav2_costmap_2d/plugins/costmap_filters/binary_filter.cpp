@@ -128,11 +128,11 @@ void BinaryFilter::initializeFilter(
           "not available!");
       }
       RCLCPP_ERROR(
-        logger_, "BinaryFilter:  service %s not available. Skipping ...",
+        logger_, "BinaryFilter: service %s not available. Skipping ...",
         change_parameters_client->get_service_name());
     } else {
       RCLCPP_INFO(
-        logger_, "BinaryFilter:  service %s available.",
+        logger_, "BinaryFilter: service %s available.",
         change_parameters_client->get_service_name());
     }
   }
