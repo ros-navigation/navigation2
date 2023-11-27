@@ -258,7 +258,8 @@ protected:
   void createNodesWithParams();
   void addBinaryParam(
     std::string param_node_name, std::string param_namespace,
-    std::string param_name, bool default_value_set, bool default_param_value);
+    std::string param_name, bool default_value_set, bool default_param_value,
+    bool is_critical = true);
   void resetBinaryParams();
   void verifyBinaryParams(bool param1_expected_value, bool param2_expected_value);
 
@@ -294,6 +295,7 @@ private:
     std::string name;
     bool default_value_set;
     bool default_value;
+    bool is_critical;
   } BinaryParam;
 
   std::vector<BinaryParam> binary_params_{};
@@ -479,6 +481,13 @@ bool TestNode::createBinaryFilter(const std::string & global_frame, double flip_
           std::string(FILTER_NAME) + "." + param.namespace_ + ".default_state",
           param.default_value));
     }
+    node_->declare_parameter(
+      std::string(FILTER_NAME) + "." + param.namespace_ + ".is_critical",
+      rclcpp::ParameterValue(true));
+    node_->set_parameter(
+      rclcpp::Parameter(
+        std::string(FILTER_NAME) + "." + param.namespace_ + ".is_critical",
+        param.is_critical));
   }
 
   binary_filter_ = std::make_shared<nav2_costmap_2d::BinaryFilter>();
@@ -878,10 +887,11 @@ void TestNode::reset()
  * @param param_name
  * @param default_value_set whether default value is set or not
  * @param default_param_value default value of the param (ignored if default_value_set is false)
+ * @param is_critical Whether any fail on changing this should lead to an error
  */
 void TestNode::addBinaryParam(
   std::string param_node_name, std::string param_namespace, std::string param_name,
-  bool default_value_set, bool default_param_value)
+  bool default_value_set, bool default_param_value, bool is_critical)
 {
   BinaryParam param;
   param.namespace_ = param_namespace;
@@ -889,6 +899,7 @@ void TestNode::addBinaryParam(
   param.name = param_name;
   param.default_value_set = default_value_set;
   param.default_value = default_param_value;
+  param.is_critical = is_critical;
   binary_params_.push_back(param);
 }
 
@@ -1003,7 +1014,7 @@ TEST_F(TestNode, testWrongBinaryParamNode)
   publishMaps(nav2_costmap_2d::BINARY_FILTER, MASK_TOPIC, 0.0, 1.0);
 
   // Set woring Param1 node name
-  addBinaryParam("wrong_node_name", PARAM_NAMESPACE_0, PARAM_NAME_0, true, true);
+  addBinaryParam("wrong_node_name", PARAM_NAMESPACE_0, PARAM_NAME_0, true, true, false);
   addBinaryParam(NODE_NAME_1, PARAM_NAMESPACE_1, PARAM_NAME_1, true, false);
   createNodesWithParams();
   ASSERT_TRUE(createBinaryFilter("map", 10.0));
@@ -1025,7 +1036,7 @@ TEST_F(TestNode, testWrongBinaryParamName)
   publishMaps(nav2_costmap_2d::BINARY_FILTER, MASK_TOPIC, 0.0, 1.0);
 
   // Set wrong node name for first parameter
-  addBinaryParam(NODE_NAME_0, PARAM_NAMESPACE_0, "wrong_param_name", true, true);
+  addBinaryParam(NODE_NAME_0, PARAM_NAMESPACE_0, "wrong_param_name", true, true, false);
   addBinaryParam(NODE_NAME_1, PARAM_NAMESPACE_1, PARAM_NAME_1, true, false);
   createNodesWithParams();
   ASSERT_TRUE(createBinaryFilter("map", 10.0));
