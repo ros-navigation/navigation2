@@ -376,7 +376,7 @@ void BinaryFilter::changeParameters(const bool state)
     } else if (return_code == rclcpp::FutureReturnCode::INTERRUPTED) {
       throw std::runtime_error("BinaryFilter: Interruped while spinning for parameter update!");
     } else {
-      throw std::runtime_error("BinaryFilter: Spinning for parameter update went wrong :( !");
+      throw std::runtime_error("BinaryFilter: Spinning for parameter update went wrong !");
     }
   }
 }
