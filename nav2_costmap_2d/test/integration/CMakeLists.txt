@@ -63,6 +63,17 @@ target_link_libraries(test_costmap_subscriber_exec
     ${PROJECT_NAME}::nav2_costmap_2d_client
 )
 
+ament_add_gtest_executable(test_costmap_subscriber_exec
+test_costmap_subscriber.cpp
+)
+ament_target_dependencies(test_costmap_subscriber_exec
+    ${dependencies}
+)
+target_link_libraries(test_costmap_subscriber_exec
+    nav2_costmap_2d_core
+    nav2_costmap_2d_client
+)
+
 ament_add_test(test_collision_checker
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/costmap_tests_launch.py"
