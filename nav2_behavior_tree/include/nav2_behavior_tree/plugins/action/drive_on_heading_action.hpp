@@ -62,7 +62,7 @@ public:
   /**
  * @brief Function to perform some user-defined operation on tick
  */
-  BT::NodeStatus on_tick() override;
+  void on_tick() override;
 
   /**
  * @brief Function to perform some user-defined operation upon successful completion of the action

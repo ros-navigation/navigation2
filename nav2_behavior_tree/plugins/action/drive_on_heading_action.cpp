@@ -28,7 +28,7 @@ DriveOnHeadingAction::DriveOnHeadingAction(
 {
 }
 
-BT::NodeStatus DriveOnHeadingAction::on_tick()
+void DriveOnHeadingAction::on_tick()
 {
   double dist;
   getInput("dist_to_travel", dist);
