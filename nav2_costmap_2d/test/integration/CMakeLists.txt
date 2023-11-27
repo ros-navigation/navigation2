@@ -76,6 +76,17 @@ target_link_libraries(test_costmap_publisher_exec
     layers
 )
 
+ament_add_gtest_executable(test_costmap_subscriber_exec
+test_costmap_subscriber.cpp
+)
+ament_target_dependencies(test_costmap_subscriber_exec
+    ${dependencies}
+)
+target_link_libraries(test_costmap_subscriber_exec
+    nav2_costmap_2d_core
+    nav2_costmap_2d_client
+)
+
 ament_add_test(test_collision_checker
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/costmap_tests_launch.py"
@@ -134,6 +145,16 @@ ament_add_test(test_costmap_publisher_exec
     TEST_MAP=${TEST_MAP_DIR}/TenByTen.yaml
     TEST_LAUNCH_DIR=${TEST_LAUNCH_DIR}
     TEST_EXECUTABLE=$<TARGET_FILE:test_costmap_publisher_exec>
+)
+
+ament_add_test(test_costmap_subscriber_exec
+    GENERATE_RESULT_FOR_RETURN_CODE_ZERO
+    COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/costmap_tests_launch.py"
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+    ENV
+    TEST_MAP=${TEST_MAP_DIR}/TenByTen.yaml
+    TEST_LAUNCH_DIR=${TEST_LAUNCH_DIR}
+    TEST_EXECUTABLE=$<TARGET_FILE:test_costmap_subscriber_exec>
 )
 
 ## TODO(bpwilcox): this test (I believe) is intended to be launched with the simple_driving_test.xml,
