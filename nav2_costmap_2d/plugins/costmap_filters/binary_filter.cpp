@@ -311,7 +311,6 @@ void BinaryFilter::changeState(const bool state)
 
 void BinaryFilter::changeParameters(const bool state)
 {
-
   rclcpp_lifecycle::LifecycleNode::SharedPtr node = node_.lock();
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
