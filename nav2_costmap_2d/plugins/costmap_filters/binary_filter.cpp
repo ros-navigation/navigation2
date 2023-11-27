@@ -126,7 +126,7 @@ void BinaryFilter::initializeFilter(
         throw std::runtime_error(
                 "BinaryFilter: Service " +
                 std::string(change_parameters_client->get_service_name()) +
-                "not available!");
+                " not available!");
       }
       RCLCPP_ERROR(
         logger_, "BinaryFilter: service %s not available. Skipping ...",
