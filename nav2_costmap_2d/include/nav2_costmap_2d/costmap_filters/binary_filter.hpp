@@ -132,6 +132,7 @@ private:
     std::string node_name;    // Node to which the parameter belongs
     std::string param_name;   // Name of parameter
     bool default_state;       // Parameter default state
+    bool is_critical;         // Whether any fail on changing this should lead to an error
   };
 
   // List of params with info

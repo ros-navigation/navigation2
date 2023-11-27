@@ -93,6 +93,9 @@ void BinaryFilter::initializeFilter(
     declareParameter(param + "." + "default_state", rclcpp::ParameterValue(default_state_));
     node->get_parameter(name_ + "." + param + "." + "default_state", param_struct.default_state);
 
+    declareParameter(param + "." + "is_critical", rclcpp::ParameterValue(true));
+    node->get_parameter(name_ + "." + param + "." + "is_critical", param_struct.is_critical);
+
     binary_parameters_info_.push_back(param_struct);
   }
 
@@ -119,11 +122,14 @@ void BinaryFilter::initializeFilter(
     if (!change_parameters_client->wait_for_service(
         std::chrono::milliseconds(change_parameter_timeout_)))
     {
+      if (param.is_critical){
+        throw std::runtime_error("BinaryFilter: Service " + 
+          std::string(change_parameters_client->get_service_name()) + 
+          "not available!");
+      }
       RCLCPP_ERROR(
         logger_, "BinaryFilter:  service %s not available. Skipping ...",
         change_parameters_client->get_service_name());
-      // TODO (@enricosutera) replace this once we figure out what to do
-      // throw std::runtime_error("BinaryFilter: Service not available!");
     } else {
       RCLCPP_INFO(
         logger_, "BinaryFilter:  service %s available.",
@@ -350,11 +356,14 @@ void BinaryFilter::changeParameters(const bool state)
     if (return_code == rclcpp::FutureReturnCode::SUCCESS) {
       auto result = future_result.get();
       if (!result->results.at(0).successful) {
+        if (binary_parameter_info.is_critical){
+          throw std::runtime_error("BinaryFilter: Could not change parameter " + 
+            std::string(binary_parameter_info.param_name) + " from node " + 
+            std::string(binary_parameter_info.node_name));
+        }
         RCLCPP_ERROR(
           logger_, "BinaryFilter: Failed to change parameter %s",
           bool_param.name.c_str());
-        // TODO (@enricosutera) replace this once we figure out what to do
-        // throw std::runtime_error("BinaryFilter: Can't update binary filter parameter!");
       } else {
         RCLCPP_DEBUG(
           logger_, "BinaryFilter: Successfully changed parameter to %s",
