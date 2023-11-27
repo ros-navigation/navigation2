@@ -122,10 +122,11 @@ void BinaryFilter::initializeFilter(
     if (!change_parameters_client->wait_for_service(
         std::chrono::milliseconds(change_parameter_timeout_)))
     {
-      if (param.is_critical){
-        throw std::runtime_error("BinaryFilter: Service " + 
-          std::string(change_parameters_client->get_service_name()) + 
-          "not available!");
+      if (param.is_critical) {
+        throw std::runtime_error(
+                "BinaryFilter: Service " +
+                std::string(change_parameters_client->get_service_name()) +
+                "not available!");
       }
       RCLCPP_ERROR(
         logger_, "BinaryFilter: service %s not available. Skipping ...",
@@ -356,10 +357,11 @@ void BinaryFilter::changeParameters(const bool state)
     if (return_code == rclcpp::FutureReturnCode::SUCCESS) {
       auto result = future_result.get();
       if (!result->results.at(0).successful) {
-        if (binary_parameter_info.is_critical){
-          throw std::runtime_error("BinaryFilter: Could not change parameter " + 
-            std::string(binary_parameter_info.param_name) + " from node " + 
-            std::string(binary_parameter_info.node_name));
+        if (binary_parameter_info.is_critical) {
+          throw std::runtime_error(
+                  "BinaryFilter: Could not change parameter " +
+                  std::string(binary_parameter_info.param_name) + " from node " +
+                  std::string(binary_parameter_info.node_name));
         }
         RCLCPP_ERROR(
           logger_, "BinaryFilter: Failed to change parameter %s",
@@ -370,9 +372,13 @@ void BinaryFilter::changeParameters(const bool state)
           bool_param.value.bool_value ? "true" : "false");
       }
     } else if (return_code == rclcpp::FutureReturnCode::INTERRUPTED) {
-      throw std::runtime_error("BinaryFilter: Interruped while spinning for parameter update!");
+      if (binary_parameter_info.is_critical) {
+        throw std::runtime_error("BinaryFilter: Interruped while spinning for parameter update!");
+      }
     } else {
-      throw std::runtime_error("BinaryFilter: Spinning for parameter update went wrong !");
+      if (binary_parameter_info.is_critical) {
+        throw std::runtime_error("BinaryFilter: Spinning for parameter update timeout!");
+      }
     }
   }
 }
