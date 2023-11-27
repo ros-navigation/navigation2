@@ -29,12 +29,12 @@ IsPathValidCondition::IsPathValidCondition(
   client_ = node_->create_client<nav2_msgs::srv::IsPathValid>("is_path_valid");
 
   server_timeout_ = config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
-  getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
 }
 
 BT::NodeStatus IsPathValidCondition::tick()
 {
   nav_msgs::msg::Path path;
+  getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
   getInput("path", path);
 
   auto request = std::make_shared<nav2_msgs::srv::IsPathValid::Request>();

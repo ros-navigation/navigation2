@@ -29,9 +29,6 @@ IsBatteryLowCondition::IsBatteryLowCondition(
   is_voltage_(false),
   is_battery_low_(false)
 {
-  getInput("min_battery", min_battery_);
-  getInput("battery_topic", battery_topic_);
-  getInput("is_voltage", is_voltage_);
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
   callback_group_ = node_->create_callback_group(
     rclcpp::CallbackGroupType::MutuallyExclusive,
@@ -49,6 +46,10 @@ IsBatteryLowCondition::IsBatteryLowCondition(
 
 BT::NodeStatus IsBatteryLowCondition::tick()
 {
+  getInput("min_battery", min_battery_);
+  getInput("battery_topic", battery_topic_);
+  getInput("is_voltage", is_voltage_);
+
   callback_group_executor_.spin_some();
   if (is_battery_low_) {
     return BT::NodeStatus::SUCCESS;

@@ -29,23 +29,28 @@ RemovePassedGoals::RemovePassedGoals(
   const std::string & name,
   const BT::NodeConfiguration & conf)
 : BT::ActionNodeBase(name, conf),
-  viapoint_achieved_radius_(0.5)
+  viapoint_achieved_radius_(0.5),
+  first_time(true)
 {
-  getInput("radius", viapoint_achieved_radius_);
-
-  tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
-  auto node = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
-  node->get_parameter("transform_tolerance", transform_tolerance_);
-
-  global_frame_ = BT::deconflictPortAndParamFrame<std::string, RemovePassedGoals>(
-    node, "global_frame", this);
-  robot_base_frame_ = BT::deconflictPortAndParamFrame<std::string, RemovePassedGoals>(
-    node, "robot_base_frame", this);
 }
 
 inline BT::NodeStatus RemovePassedGoals::tick()
 {
   setStatus(BT::NodeStatus::RUNNING);
+
+  if (first_time) {
+    first_time = false;
+    getInput("radius", viapoint_achieved_radius_);
+
+    tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
+    auto node = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+    node->get_parameter("transform_tolerance", transform_tolerance_);
+
+    global_frame_ = BT::deconflictPortAndParamFrame<std::string, RemovePassedGoals>(
+      node, "global_frame", this);
+    robot_base_frame_ = BT::deconflictPortAndParamFrame<std::string, RemovePassedGoals>(
+      node, "robot_base_frame", this);
+  }
 
   Goals goal_poses;
   getInput("input_goals", goal_poses);

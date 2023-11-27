@@ -33,7 +33,7 @@ BT::NodeStatus RateController::tick()
   double hz = 1.0;
   getInput("hz", hz);
   period_ = 1.0 / hz;
-  
+
   if (status() == BT::NodeStatus::IDLE) {
     // Reset the starting point since we're starting a new iteration of
     // the rate controller (moving from IDLE to RUNNING)

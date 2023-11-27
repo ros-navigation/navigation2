@@ -29,13 +29,14 @@ TimeExpiredCondition::TimeExpiredCondition(
 : BT::ConditionNode(condition_name, conf),
   period_(1.0)
 {
-  getInput("seconds", period_);
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
   start_ = node_->now();
 }
 
 BT::NodeStatus TimeExpiredCondition::tick()
 {
+  getInput("seconds", period_);
+
   if (status() == BT::NodeStatus::IDLE) {
     start_ = node_->now();
     return BT::NodeStatus::FAILURE;
