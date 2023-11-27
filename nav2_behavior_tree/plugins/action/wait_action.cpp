@@ -27,6 +27,10 @@ WaitAction::WaitAction(
   const BT::NodeConfiguration & conf)
 : BtActionNode<nav2_msgs::action::Wait>(xml_tag_name, action_name, conf)
 {
+}
+
+void WaitAction::on_tick()
+{
   double duration;
   getInput("wait_duration", duration);
   if (duration <= 0) {
@@ -37,10 +41,6 @@ WaitAction::WaitAction(
   }
 
   goal_.time = rclcpp::Duration::from_seconds(duration);
-}
-
-void WaitAction::on_tick()
-{
   increment_recovery_count();
 }
 

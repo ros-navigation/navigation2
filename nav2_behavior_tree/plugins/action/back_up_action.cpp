@@ -26,6 +26,10 @@ BackUpAction::BackUpAction(
   const BT::NodeConfiguration & conf)
 : BtActionNode<nav2_msgs::action::BackUp>(xml_tag_name, action_name, conf)
 {
+}
+
+void BackUpAction::on_tick()
+{
   double dist;
   getInput("backup_dist", dist);
   double speed;
@@ -39,10 +43,7 @@ BackUpAction::BackUpAction(
   goal_.target.z = 0.0;
   goal_.speed = speed;
   goal_.time_allowance = rclcpp::Duration::from_seconds(time_allowance);
-}
-
-void BackUpAction::on_tick()
-{
+  
   increment_recovery_count();
 }
 

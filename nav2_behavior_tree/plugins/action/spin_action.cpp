@@ -25,6 +25,10 @@ SpinAction::SpinAction(
   const BT::NodeConfiguration & conf)
 : BtActionNode<nav2_msgs::action::Spin>(xml_tag_name, action_name, conf)
 {
+}
+
+void SpinAction::on_tick()
+{
   double dist;
   getInput("spin_dist", dist);
   double time_allowance;
@@ -32,10 +36,7 @@ SpinAction::SpinAction(
   goal_.target_yaw = dist;
   goal_.time_allowance = rclcpp::Duration::from_seconds(time_allowance);
   getInput("is_recovery", is_recovery_);
-}
-
-void SpinAction::on_tick()
-{
+  
   if (is_recovery_) {
     increment_recovery_count();
   }

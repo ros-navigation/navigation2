@@ -26,6 +26,10 @@ DriveOnHeadingAction::DriveOnHeadingAction(
   const BT::NodeConfiguration & conf)
 : BtActionNode<nav2_msgs::action::DriveOnHeading>(xml_tag_name, action_name, conf)
 {
+}
+
+BT::NodeStatus DriveOnHeadingAction::on_tick()
+{
   double dist;
   getInput("dist_to_travel", dist);
   double speed;
