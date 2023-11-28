@@ -68,7 +68,7 @@ Costmap2DROS::Costmap2DROS(const rclcpp::NodeOptions & options)
   default_types_{
     "nav2_costmap_2d::StaticLayer",
     "nav2_costmap_2d::ObstacleLayer",
-    "nav2_costmap_2d::InflationLayer"},
+    "nav2_costmap_2d::InflationLayer"}
 {
   declare_parameter("map_topic", rclcpp::ParameterValue(std::string("map")));
   /**
