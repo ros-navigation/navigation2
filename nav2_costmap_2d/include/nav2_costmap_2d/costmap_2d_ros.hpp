@@ -75,8 +75,9 @@ class Costmap2DROS : public nav2_util::LifecycleNode
 public:
   /**
    * @brief  Constructor for the wrapper
+   * @param options Additional options to control creation of the node.
    */
-  Costmap2DROS();
+  Costmap2DROS(const rclcpp::NodeOptions & options);
 
   /**
    * @brief  Constructor for the wrapper, the node will
