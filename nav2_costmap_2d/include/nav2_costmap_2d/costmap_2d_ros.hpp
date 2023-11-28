@@ -151,7 +151,7 @@ public:
       return;
     }
 
-    // else, same as ``on_rcl_preshutdown` in lifecycle_node.cpp`
+    // Else, we need to cleanup ourselves
     RCLCPP_INFO(
       get_logger(), "Running Nav2 LifecycleNode rcl preshutdown (%s)",
       this->get_name());
