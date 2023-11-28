@@ -135,6 +135,13 @@ public:
    */
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
+  /**
+   * @brief as a child-LifecycleNode :
+   * sometimes costmap may be launched by another LifecycleNode and work as a child-thread
+   * child-LifecycleNodes should wait for their parents to handle the shutdown, which includes this module
+   * Thus, it's neccessary to set NodeOption is_lifecycle_follower_ as true
+   *
+   */
   void on_rcl_preshutdown() override
   {
     if (is_lifecycle_follower_) {
