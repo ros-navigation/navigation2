@@ -218,11 +218,6 @@ PlannerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
    * unordered_set iteration. Once this issue is resolved, we can maybe make a stronger
    * ordering assumption: https://github.com/ros2/rclcpp/issues/2096
    */
-  /*
-   * The costmap is changed into is_lifecycle_follower_{true}
-   * https://github.com/ros-planning/navigation2/pull/3972
-   * within this NodeOption, no neccessary to set double check.
-   */
   costmap_ros_->deactivate();
 
   PlannerMap::iterator it;
