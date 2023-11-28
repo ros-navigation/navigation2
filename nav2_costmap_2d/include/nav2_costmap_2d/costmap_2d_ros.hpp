@@ -138,7 +138,7 @@ public:
   /**
    * @brief as a child-LifecycleNode :
    * sometimes costmap may be launched by another LifecycleNode and work as a child-thread
-   * child-LifecycleNode should react to ctrl+C later than its parents to avoid unclean shutdown
+   * child-LifecycleNodes should wait for their parents to handle the shutdown, which includes this module
    * Thus, it's neccessary to set NodeOption is_lifecycle_follower_ as true
    *
    * in this NodeOption, it would not react to rcl_preshutdown anymore
