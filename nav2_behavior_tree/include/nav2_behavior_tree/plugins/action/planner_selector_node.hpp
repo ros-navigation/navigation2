@@ -83,7 +83,7 @@ private:
    */
   void callbackPlannerSelect(const std_msgs::msg::String::SharedPtr msg);
 
-  bool first_time;
+
   rclcpp::Subscription<std_msgs::msg::String>::SharedPtr planner_selector_sub_;
 
   std::string last_selected_planner_;

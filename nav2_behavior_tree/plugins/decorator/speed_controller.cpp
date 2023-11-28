@@ -35,14 +35,7 @@ SpeedController::SpeedController(
   max_speed_(0.5)
 {
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
-  std::string odom_topic;
-  node_->get_parameter_or("odom_topic", odom_topic, std::string("odom"));
-  odom_smoother_ = config().blackboard->get<std::shared_ptr<nav2_util::OdomSmoother>>(
-    "odom_smoother");
-}
 
-inline BT::NodeStatus SpeedController::tick()
-{
   getInput("min_rate", min_rate_);
   getInput("max_rate", max_rate_);
   getInput("min_speed", min_speed_);
@@ -57,7 +50,14 @@ inline BT::NodeStatus SpeedController::tick()
   d_rate_ = max_rate_ - min_rate_;
   d_speed_ = max_speed_ - min_speed_;
 
+  std::string odom_topic;
+  node_->get_parameter_or("odom_topic", odom_topic, std::string("odom"));
+  odom_smoother_ = config().blackboard->get<std::shared_ptr<nav2_util::OdomSmoother>>(
+    "odom_smoother");
+}
 
+inline BT::NodeStatus SpeedController::tick()
+{
   if (status() == BT::NodeStatus::IDLE) {
     // Reset since we're starting a new iteration of
     // the speed controller (moving from IDLE to RUNNING)

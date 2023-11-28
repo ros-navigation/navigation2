@@ -36,7 +36,7 @@ void SpinAction::on_tick()
   goal_.target_yaw = dist;
   goal_.time_allowance = rclcpp::Duration::from_seconds(time_allowance);
   getInput("is_recovery", is_recovery_);
-
+  
   if (is_recovery_) {
     increment_recovery_count();
   }

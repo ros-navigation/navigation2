@@ -43,7 +43,7 @@ void BackUpAction::on_tick()
   goal_.target.z = 0.0;
   goal_.speed = speed;
   goal_.time_allowance = rclcpp::Duration::from_seconds(time_allowance);
-
+  
   increment_recovery_count();
 }
 

@@ -30,22 +30,19 @@ using std::placeholders::_1;
 ControllerSelector::ControllerSelector(
   const std::string & name,
   const BT::NodeConfiguration & conf)
-: BT::SyncActionNode(name, conf),
-  first_time(true)
+: BT::SyncActionNode(name, conf)
 {
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
   callback_group_ = node_->create_callback_group(
     rclcpp::CallbackGroupType::MutuallyExclusive,
     false);
   callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
-}
 
-BT::NodeStatus ControllerSelector::tick()
-{
   getInput("topic_name", topic_name_);
 
   rclcpp::QoS qos(rclcpp::KeepLast(1));
   qos.transient_local().reliable();
+
   rclcpp::SubscriptionOptions sub_option;
   sub_option.callback_group = callback_group_;
   controller_selector_sub_ = node_->create_subscription<std_msgs::msg::String>(
@@ -53,7 +50,10 @@ BT::NodeStatus ControllerSelector::tick()
     qos,
     std::bind(&ControllerSelector::callbackControllerSelect, this, _1),
     sub_option);
+}
 
+BT::NodeStatus ControllerSelector::tick()
+{
   callback_group_executor_.spin_some();
 
   // This behavior always use the last selected controller received from the topic input.
