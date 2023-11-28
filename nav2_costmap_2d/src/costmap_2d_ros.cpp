@@ -68,20 +68,18 @@ Costmap2DROS::Costmap2DROS(const rclcpp::NodeOptions & options)
   default_types_{
     "nav2_costmap_2d::StaticLayer",
     "nav2_costmap_2d::ObstacleLayer",
-    "nav2_costmap_2d::InflationLayer"}
+    "nav2_costmap_2d::InflationLayer"},
 {
   declare_parameter("map_topic", rclcpp::ParameterValue(std::string("map")));
   /**
-   * @brief as an independent node
-   * if launched as an independent node, 
-   * set `is_lifecycle_follower_  = true`.
-   * thus, it would react to rcl_preshutdown
-   * 
-   * else if launched in a thread created by another LifecycleNode (its parent), 
-   * set  `is_lifecycle_follower_  = false`.
-   * it would not react to rcl_preshutdown anymore and its lifecycle state is controlled by its parent
+   * @brief
+   * If launched as an independent node, set `is_lifecycle_follower_  = true`.
+   * Thus, it would react to rcl_preshutdown.
+   * Else if launched in a thread created by another LifecycleNode(its parent), set
+   * `is_lifecycle_follower_  = false`. It would not react to rcl_preshutdown anymore
+   * and its lifecycle state is controlled by its parent.
    */
-  is_lifecycle_follower_ = false;
+  get_parameter("is_lifecycle_follower", is_lifecycle_follower_);
   init();
 }
 
