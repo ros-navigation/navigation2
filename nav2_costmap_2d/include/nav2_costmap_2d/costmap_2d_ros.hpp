@@ -147,7 +147,7 @@ public:
   void on_rcl_preshutdown() override
   {
     if (is_lifecycle_follower_) {
-      // all of its reaction is up to its parent-LifecycleNode
+      // Transitioning handled by parent node
       return;
     }
 
