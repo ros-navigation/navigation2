@@ -142,7 +142,7 @@ public:
       return;
     }
 
-    // Else, we need to cleanup ourselves
+    // Else, if this is an independent node, this node needs to handle itself.
     RCLCPP_INFO(
       get_logger(), "Running Nav2 LifecycleNode rcl preshutdown (%s)",
       this->get_name());
