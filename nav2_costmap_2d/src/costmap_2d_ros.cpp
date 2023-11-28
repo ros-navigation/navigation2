@@ -62,7 +62,7 @@ Costmap2DROS::Costmap2DROS(const std::string & name, const bool & use_sim_time)
 : Costmap2DROS(name, "/", name, use_sim_time) {}
 
 Costmap2DROS::Costmap2DROS(const rclcpp::NodeOptions & options)
-: nav2_util::LifecycleNode("costmap", "",options),
+: nav2_util::LifecycleNode("costmap", "", options),
   name_("costmap"),
   default_plugins_{"static_layer", "obstacle_layer", "inflation_layer"},
   default_types_{
@@ -87,7 +87,7 @@ Costmap2DROS::Costmap2DROS(
   const std::string & name,
   const std::string & parent_namespace,
   const std::string & local_namespace,
-  const bool & use_sim_time)  
+  const bool & use_sim_time)
 : nav2_util::LifecycleNode(name, "",
     // NodeOption arguments take precedence over the ones provided on the command line
     // use this to make sure the node is placed on the provided namespace
