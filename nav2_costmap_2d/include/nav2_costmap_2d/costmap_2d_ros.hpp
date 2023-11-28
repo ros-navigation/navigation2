@@ -137,7 +137,7 @@ public:
 
   /**
    * @brief as a child-LifecycleNode :
-   * sometimes costmap may be launched by another LifecycleNode and work as a child-thread
+   * Costmap2DROS may be launched by another Lifecycle Node as a composed module
    * child-LifecycleNodes should wait for their parents to handle the shutdown, which includes this module
    * Thus, it's neccessary to set NodeOption is_lifecycle_follower_ as true
    *
