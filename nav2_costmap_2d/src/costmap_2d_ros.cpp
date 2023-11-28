@@ -79,7 +79,7 @@ Costmap2DROS::Costmap2DROS(const rclcpp::NodeOptions & options)
    * `is_lifecycle_follower_  = false`. It would not react to rcl_preshutdown anymore
    * and its lifecycle state is controlled by its parent.
    */
-  get_parameter("is_lifecycle_follower", is_lifecycle_follower_);
+  is_lifecycle_follower_ = false;
   init();
 }
 
