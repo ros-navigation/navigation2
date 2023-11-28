@@ -24,7 +24,8 @@ TEST(LifecylceTest, CheckInitialTfTimeout) {
 
   //  launch costmap as an independent node
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
-    rclcpp::NodeOptions.append_paramerter_override("is_lifecycle_follower", false));
+    rclcpp::NodeOptions().append_parameter_override("is_lifecycle_follower", false)
+  );
   costmap->set_parameter({"initial_transform_timeout", 0.0});
 
   std::thread spin_thread{[costmap]() {rclcpp::spin(costmap->get_node_base_interface());}};
