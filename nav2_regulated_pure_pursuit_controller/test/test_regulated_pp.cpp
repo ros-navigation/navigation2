@@ -68,6 +68,14 @@ public:
     return circleSegmentIntersection(p1, p2, r);
   }
 
+  geometry_msgs::msg::PoseStamped
+  projectCarrotPastGoalWrapper(
+    const double & dist,
+    const nav_msgs::msg::Path & path)
+  {
+    return projectCarrotPastGoal(dist, path);
+  }
+
   geometry_msgs::msg::PoseStamped getLookAheadPointWrapper(
     const double & dist, const nav_msgs::msg::Path & path)
   {
@@ -465,6 +473,30 @@ INSTANTIATE_TEST_SUITE_P(
   {3.0, -4.0}
 }
 ));
+
+TEST(RegulatedPurePursuitTest, projectCarrotPastGoal) {
+  auto ctrl = std::make_shared<BasicAPIRPP>();
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testRPP");
+  std::string name = "PathFollower";
+  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  auto costmap =
+    std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
+  rclcpp_lifecycle::State state;
+  costmap->on_configure(state);
+  ctrl->configure(node, name, tf, costmap);
+
+  nav_msgs::msg::Path path;
+  path.poses.resize(1);
+  path.poses[0].pose.position.x = 1.0;
+  // For a path with a single pose the carrot should be directly in line
+  // This avoids turning
+  auto pt = ctrl->projectCarrotPastGoalWrapper(10.0, path);
+  EXPECT_EQ(pt.pose.position.x, 10.0);
+
+  path.poses[0].pose.position.x = -1.0;
+  pt = ctrl->projectCarrotPastGoalWrapper(10.0, path);
+  EXPECT_EQ(pt.pose.position.x, -10.0);
+}
 
 TEST(RegulatedPurePursuitTest, lookaheadAPI)
 {
