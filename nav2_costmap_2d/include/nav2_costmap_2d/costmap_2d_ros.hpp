@@ -139,8 +139,6 @@ public:
    * @brief as a child-LifecycleNode :
    * Costmap2DROS may be launched by another Lifecycle Node as a composed module
    * If composed, its parents will handle the shutdown, which includes this module
-   * Thus, it's neccessary to set NodeOption is_lifecycle_follower_ as true
-   *
    */
   void on_rcl_preshutdown() override
   {
