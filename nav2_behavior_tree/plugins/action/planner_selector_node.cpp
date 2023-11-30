@@ -31,33 +31,21 @@ PlannerSelector::PlannerSelector(
   const std::string & name,
   const BT::NodeConfiguration & conf)
 : BT::SyncActionNode(name, conf),
-  first_time(true)
+  initialized_(false)
 {
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
   callback_group_ = node_->create_callback_group(
     rclcpp::CallbackGroupType::MutuallyExclusive,
     false);
   callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
-
 }
 
 BT::NodeStatus PlannerSelector::tick()
 {
-  if (first_time) {
-    getInput("topic_name", topic_name_);
-
-    rclcpp::QoS qos(rclcpp::KeepLast(1));
-    qos.transient_local().reliable();
-
-    rclcpp::SubscriptionOptions sub_option;
-    sub_option.callback_group = callback_group_;
-    planner_selector_sub_ = node_->create_subscription<std_msgs::msg::String>(
-      topic_name_,
-      qos,
-      std::bind(&PlannerSelector::callbackPlannerSelect, this, _1),
-      sub_option);
-    first_time = false;
+  if(!initialized) {
+    initialize();
   }
+
   callback_group_executor_.spin_some();
 
   // This behavior always use the last selected planner received from the topic input.
@@ -78,6 +66,23 @@ BT::NodeStatus PlannerSelector::tick()
   setOutput("selected_planner", last_selected_planner_);
 
   return BT::NodeStatus::SUCCESS;
+}
+
+void PlannerSelector::initialize()
+{
+  getInput("topic_name", topic_name_);
+
+  rclcpp::QoS qos(rclcpp::KeepLast(1));
+  qos.transient_local().reliable();
+
+  rclcpp::SubscriptionOptions sub_option;
+  sub_option.callback_group = callback_group_;
+  planner_selector_sub_ = node_->create_subscription<std_msgs::msg::String>(
+    topic_name_,
+    qos,
+    std::bind(&PlannerSelector::callbackPlannerSelect, this, _1),
+    sub_option);
+  initialized_ = true;
 }
 
 void

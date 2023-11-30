@@ -39,26 +39,10 @@ TransformAvailableCondition::~TransformAvailableCondition()
   RCLCPP_DEBUG(node_->get_logger(), "Shutting down TransformAvailableCondition BT node");
 }
 
-void TransformAvailableCondition::initialize() 
-{
-  getInput("child", child_frame_);
-  getInput("parent", parent_frame_);
-
-  if (child_frame_.empty() || parent_frame_.empty()) {
-    RCLCPP_FATAL(
-      node_->get_logger(), "Child frame (%s) or parent frame (%s) were empty.",
-      child_frame_.c_str(), parent_frame_.c_str());
-    throw std::runtime_error("TransformAvailableCondition: Child or parent frames not provided!");
-  }
-
-  RCLCPP_DEBUG(node_->get_logger(), "Initialized an TransformAvailableCondition BT node");
-  initialized_ = true;
-}
-
 BT::NodeStatus TransformAvailableCondition::tick()
-{ 
-  if(!initialized) {
-    intialize();
+{
+  if(!initialized_) {
+    initialize();
   }
 
   if (was_found_) {
@@ -79,6 +63,22 @@ BT::NodeStatus TransformAvailableCondition::tick()
     child_frame_.c_str(), parent_frame_.c_str(), tf_error.c_str());
 
   return BT::NodeStatus::FAILURE;
+}
+
+void TransformAvailableCondition::initialize()
+{
+  getInput("child", child_frame_);
+  getInput("parent", parent_frame_);
+
+  if (child_frame_.empty() || parent_frame_.empty()) {
+    RCLCPP_FATAL(
+      node_->get_logger(), "Child frame (%s) or parent frame (%s) were empty.",
+      child_frame_.c_str(), parent_frame_.c_str());
+    throw std::runtime_error("TransformAvailableCondition: Child or parent frames not provided!");
+  }
+
+  RCLCPP_DEBUG(node_->get_logger(), "Initialized an TransformAvailableCondition BT node");
+  initialized_ = true;
 }
 
 }  // namespace nav2_behavior_tree

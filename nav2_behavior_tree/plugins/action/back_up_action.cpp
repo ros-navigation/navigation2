@@ -24,11 +24,21 @@ BackUpAction::BackUpAction(
   const std::string & xml_tag_name,
   const std::string & action_name,
   const BT::NodeConfiguration & conf)
-: BtActionNode<nav2_msgs::action::BackUp>(xml_tag_name, action_name, conf)
+: BtActionNode<nav2_msgs::action::BackUp>(xml_tag_name, action_name, conf),
+  initalized_(false)
 {
 }
 
 void BackUpAction::on_tick()
+{
+  if(!initialized_) {
+    initialize();
+  }
+
+  increment_recovery_count();
+}
+
+void nav2_behavior_tree::BackUpAction::initialize()
 {
   double dist;
   getInput("backup_dist", dist);
@@ -43,8 +53,7 @@ void BackUpAction::on_tick()
   goal_.target.z = 0.0;
   goal_.speed = speed;
   goal_.time_allowance = rclcpp::Duration::from_seconds(time_allowance);
-
-  increment_recovery_count();
+  initialized_ = true;
 }
 
 BT::NodeStatus BackUpAction::on_success()

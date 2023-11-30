@@ -31,7 +31,8 @@ TruncatePath::TruncatePath(
   const std::string & name,
   const BT::NodeConfiguration & conf)
 : BT::ActionNodeBase(name, conf),
-  distance_(1.0)
+  distance_(1.0),
+  first_time_(true)
 {
 }
 
@@ -39,6 +40,11 @@ inline BT::NodeStatus TruncatePath::tick()
 {
   setStatus(BT::NodeStatus::RUNNING);
   getInput("distance", distance_);
+
+  if(first_time_) {
+    getInput("distance", distance_);
+    first_time_ = false;
+  }
 
   nav_msgs::msg::Path input_path;
 

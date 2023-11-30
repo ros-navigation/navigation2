@@ -25,11 +25,24 @@ IsBatteryChargingCondition::IsBatteryChargingCondition(
 : BT::ConditionNode(condition_name, conf),
   battery_topic_("/battery_status"),
   is_battery_charging_(false),
-  initialized(false)
+  initialized_(false)
 {
 }
 
-void IsBatteryChargingCondition::initialize() 
+BT::NodeStatus IsBatteryChargingCondition::tick()
+{
+  if(!initialized) {
+    initialize();
+  }
+  
+  callback_group_executor_.spin_some();
+  if (is_battery_charging_) {
+    return BT::NodeStatus::SUCCESS;
+  }
+  return BT::NodeStatus::FAILURE;
+}
+
+void IsBatteryChargingCondition::initialize()
 {
   getInput("battery_topic", battery_topic_);
   auto node = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
@@ -45,20 +58,7 @@ void IsBatteryChargingCondition::initialize()
     rclcpp::SystemDefaultsQoS(),
     std::bind(&IsBatteryChargingCondition::batteryCallback, this, std::placeholders::_1),
     sub_option);
-  initialized = true;
-} 
-
-BT::NodeStatus IsBatteryChargingCondition::tick()
-{
-  if(!initialized) {
-    initialize();
-  }
-
-  callback_group_executor_.spin_some();
-  if (is_battery_charging_) {
-    return BT::NodeStatus::SUCCESS;
-  }
-  return BT::NodeStatus::FAILURE;
+  initialized_ = true;
 }
 
 void IsBatteryChargingCondition::batteryCallback(sensor_msgs::msg::BatteryState::SharedPtr msg)

@@ -31,24 +31,17 @@ GoalCheckerSelector::GoalCheckerSelector(
   const std::string & name,
   const BT::NodeConfiguration & conf)
 : BT::SyncActionNode(name, conf),
-  first_time(true)
+  initialized_(false)
 {
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
 }
 
 BT::NodeStatus GoalCheckerSelector::tick()
 {
-  if (first_time) {
-    getInput("topic_name", topic_name_);
-
-    rclcpp::QoS qos(rclcpp::KeepLast(1));
-    qos.transient_local().reliable();
-
-    goal_checker_selector_sub_ = node_->create_subscription<std_msgs::msg::String>(
-      topic_name_, qos, std::bind(&GoalCheckerSelector::callbackGoalCheckerSelect, this, _1));
-    first_time = false;
+  if(!initiazed_) {
+    initialize();
   }
-
+  
   rclcpp::spin_some(node_);
 
   // This behavior always use the last selected goal checker received from the topic input.
@@ -69,6 +62,18 @@ BT::NodeStatus GoalCheckerSelector::tick()
   setOutput("selected_goal_checker", last_selected_goal_checker_);
 
   return BT::NodeStatus::SUCCESS;
+}
+
+void GoalCheckerSelector::initialize()
+{
+  getInput("topic_name", topic_name_);
+
+  rclcpp::QoS qos(rclcpp::KeepLast(1));
+  qos.transient_local().reliable();
+
+  goal_checker_selector_sub_ = node_->create_subscription<std_msgs::msg::String>(
+    topic_name_, qos, std::bind(&GoalCheckerSelector::callbackGoalCheckerSelect, this, _1));
+  initialized_ = true;
 }
 
 void

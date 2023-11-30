@@ -23,11 +23,23 @@ SpinAction::SpinAction(
   const std::string & xml_tag_name,
   const std::string & action_name,
   const BT::NodeConfiguration & conf)
-: BtActionNode<nav2_msgs::action::Spin>(xml_tag_name, action_name, conf)
+: BtActionNode<nav2_msgs::action::Spin>(xml_tag_name, action_name, conf),
+  initialized_(false)
 {
 }
 
 void SpinAction::on_tick()
+{
+  if(!initialized_) {
+    initialize();    
+  }
+
+  if (is_recovery_) {
+    increment_recovery_count();
+  }
+}
+
+void SpinaAction::initialize()
 {
   double dist;
   getInput("spin_dist", dist);
@@ -37,9 +49,7 @@ void SpinAction::on_tick()
   goal_.time_allowance = rclcpp::Duration::from_seconds(time_allowance);
   getInput("is_recovery", is_recovery_);
 
-  if (is_recovery_) {
-    increment_recovery_count();
-  }
+  initialized_ = true;
 }
 
 BT::NodeStatus SpinAction::on_success()

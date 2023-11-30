@@ -31,27 +31,13 @@ DistanceTraveledCondition::DistanceTraveledCondition(
 : BT::ConditionNode(condition_name, conf),
   distance_(1.0),
   transform_tolerance_(0.1),
-  initialized(false)
+  initialized_(false)
 {
-}
-
-void nav2_behavior_tree::DistanceTraveledCondition::initialize() {
-  getInput("distance", distance_);
-
-  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
-  tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
-  node_->get_parameter("transform_tolerance", transform_tolerance_);
-
-  global_frame_ = BT::deconflictPortAndParamFrame<std::string, DistanceTraveledCondition>(
-    node_, "global_frame", this);
-  robot_base_frame_ = BT::deconflictPortAndParamFrame<std::string, DistanceTraveledCondition>(
-    node_, "robot_base_frame", this);
-  initialized = true;
 }
 
 BT::NodeStatus DistanceTraveledCondition::tick()
 {
-  if(initialized){
+  if(!initialized_) {
     initialize();
   }
 
@@ -87,6 +73,21 @@ BT::NodeStatus DistanceTraveledCondition::tick()
   start_pose_ = current_pose;
 
   return BT::NodeStatus::SUCCESS;
+}
+
+void DistanceTraveledCondition::initialize()
+{
+  getInput("distance", distance_);
+
+  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+  tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
+  node_->get_parameter("transform_tolerance", transform_tolerance_);
+
+  global_frame_ = BT::deconflictPortAndParamFrame<std::string, DistanceTraveledCondition>(
+    node_, "global_frame", this);
+  robot_base_frame_ = BT::deconflictPortAndParamFrame<std::string, DistanceTraveledCondition>(
+    node_, "robot_base_frame", this);
+  initialized_ = true;
 }
 
 }  // namespace nav2_behavior_tree

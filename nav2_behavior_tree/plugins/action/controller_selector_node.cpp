@@ -31,7 +31,7 @@ ControllerSelector::ControllerSelector(
   const std::string & name,
   const BT::NodeConfiguration & conf)
 : BT::SyncActionNode(name, conf),
-  first_time(true)
+  initialized_(false)
 {
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
   callback_group_ = node_->create_callback_group(
@@ -42,22 +42,10 @@ ControllerSelector::ControllerSelector(
 
 BT::NodeStatus ControllerSelector::tick()
 {
-  if (first_time) {
-    getInput("topic_name", topic_name_);
-
-    rclcpp::QoS qos(rclcpp::KeepLast(1));
-    qos.transient_local().reliable();
-
-    rclcpp::SubscriptionOptions sub_option;
-    sub_option.callback_group = callback_group_;
-    controller_selector_sub_ = node_->create_subscription<std_msgs::msg::String>(
-      topic_name_,
-      qos,
-      std::bind(&ControllerSelector::callbackControllerSelect, this, _1),
-      sub_option);
-    first_time = false;
+  if(!initialized_) {
+    initialize();
   }
-
+  
   callback_group_executor_.spin_some();
 
   // This behavior always use the last selected controller received from the topic input.
@@ -78,6 +66,23 @@ BT::NodeStatus ControllerSelector::tick()
   setOutput("selected_controller", last_selected_controller_);
 
   return BT::NodeStatus::SUCCESS;
+}
+
+void ControllerSelector::initialize()
+{
+  getInput("topic_name", topic_name_);
+
+  rclcpp::QoS qos(rclcpp::KeepLast(1));
+  qos.transient_local().reliable();
+
+  rclcpp::SubscriptionOptions sub_option;
+  sub_option.callback_group = callback_group_;
+  controller_selector_sub_ = node_->create_subscription<std_msgs::msg::String>(
+    topic_name_,
+    qos,
+    std::bind(&ControllerSelector::callbackControllerSelect, this, _1),
+    sub_option);
+  initialized_ = true;
 }
 
 void

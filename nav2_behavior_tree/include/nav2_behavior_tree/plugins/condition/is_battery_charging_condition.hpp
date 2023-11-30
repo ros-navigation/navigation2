@@ -51,15 +51,14 @@ public:
   BT::NodeStatus tick() override;
 
   /**
-   * @brief Creates list of BT ports
-   * @return BT::PortsList Containing node-specific ports
-   */
-
-  /**
    * @brief Function to read parameters and initialize class variables
    */
   void initialize();
 
+  /**
+   * @brief Creates list of BT ports
+   * @return BT::PortsList Containing node-specific ports
+   */
   static BT::PortsList providedPorts()
   {
     return {
@@ -80,7 +79,7 @@ private:
   rclcpp::Subscription<sensor_msgs::msg::BatteryState>::SharedPtr battery_sub_;
   std::string battery_topic_;
   bool is_battery_charging_;
-  bool initialized;
+  bool initialized_;
 };
 
 }  // namespace nav2_behavior_tree
