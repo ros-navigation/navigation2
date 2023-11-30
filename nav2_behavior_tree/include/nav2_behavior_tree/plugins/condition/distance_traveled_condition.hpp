@@ -71,7 +71,7 @@ public:
   }
 
 private:
-  bool initialized; 
+  bool initialized;
   rclcpp::Node::SharedPtr node_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
 
