@@ -25,7 +25,7 @@ BackUpAction::BackUpAction(
   const std::string & action_name,
   const BT::NodeConfiguration & conf)
 : BtActionNode<nav2_msgs::action::BackUp>(xml_tag_name, action_name, conf),
-  initalized_(false)
+  initialized_(false)
 {
 }
 
