@@ -7,25 +7,24 @@ vector_object_server:
     overlay_type: 0
     update_frequency: 1.0
     transform_tolerance: 0.1
-    shapes: ["Poly", "CircleA", "CircleB"]
+    shapes: ["Poly", "Circle"]
     Poly:
       type: "polygon"
       frame_id: "map"
       closed: True
       value: 100
-      points: [0.3, 0.3, 0.3, -0.3, 0.0, -0.3, 0.0, 0.3]
-    CircleA:
+      points: [0.3, 0.5, -0.4, 1.2, -0.4, -0.2]
+    Circle:
       type: "circle"
       frame_id: "map"
       fill: True
-      value: 10
-      center: [3.0, 3.0]
-      radius: 0.5
-      uuid: "7b3f3d7d-135c-4b6c-aca1-7a84d1050505"
-    CircleB:
-      type: "circle"
-      frame_id: "map"
-      fill: False
-      value: 90
-      center: [3.5, 3.5]
-      radius: 1.5
+      value: 100
+      center: [1.5, 0.5]
+      radius: 0.7
+costmap_filter_info_server:
+  ros__parameters:
+    type: 0
+    filter_info_topic: "costmap_filter_info"
+    mask_topic: "vo_map"
+    base: 0.0
+    multiplier: 1.0
