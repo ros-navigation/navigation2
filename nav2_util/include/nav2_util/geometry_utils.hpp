@@ -132,7 +132,7 @@ inline Iter min_by(Iter begin, Iter end, Getter getCompareVal)
   Iter lowest_it = begin;
   for (Iter it = ++begin; it != end; ++it) {
     auto comp = getCompareVal(*it);
-    if (comp < lowest) {
+    if (comp <= lowest) {
       lowest = comp;
       lowest_it = it;
     }

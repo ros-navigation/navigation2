@@ -24,16 +24,21 @@ from launch_testing.legacy import LaunchTestService
 
 
 def generate_launch_description():
-    return LaunchDescription([
-        Node(
-            package='nav2_lifecycle_manager',
-            executable='lifecycle_manager',
-            name='lifecycle_manager_test',
-            output='screen',
-            parameters=[{'use_sim_time': False},
-                        {'autostart': False},
-                        {'node_names': ['bond_tester']}]),
-    ])
+    return LaunchDescription(
+        [
+            Node(
+                package='nav2_lifecycle_manager',
+                executable='lifecycle_manager',
+                name='lifecycle_manager_test',
+                output='screen',
+                parameters=[
+                    {'use_sim_time': False},
+                    {'autostart': False},
+                    {'node_names': ['bond_tester']},
+                ],
+            ),
+        ]
+    )
 
 
 def main(argv=sys.argv[1:]):
@@ -42,9 +47,8 @@ def main(argv=sys.argv[1:]):
     testExecutable = os.getenv('TEST_EXECUTABLE')
 
     test1_action = ExecuteProcess(
-        cmd=[testExecutable],
-        name='test_bond_gtest',
-        output='screen')
+        cmd=[testExecutable], name='test_bond_gtest', output='screen'
+    )
 
     lts = LaunchTestService()
     lts.add_test_action(ld, test1_action)

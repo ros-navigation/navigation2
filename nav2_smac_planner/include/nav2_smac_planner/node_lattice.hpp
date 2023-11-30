@@ -58,8 +58,6 @@ struct LatticeMotionTable
   /**
    * @brief Initializing state lattice planner's motion model
    * @param size_x_in Size of costmap in X
-   * @param size_y_in Size of costmap in Y
-   * @param angle_quantization_in Size of costmap in bin sizes
    * @param search_info Parameters for searching
    */
   void initMotionModel(

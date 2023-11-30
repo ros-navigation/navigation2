@@ -58,9 +58,8 @@ namespace nav2_costmap_2d
  * @param min_dist Output parameter of the minimum distance
  * @param max_dist Output parameter of the maximum distance
  */
-void calculateMinAndMaxDistances(
-  const std::vector<geometry_msgs::msg::Point> & footprint,
-  double & min_dist, double & max_dist);
+std::pair<double, double> calculateMinAndMaxDistances(
+  const std::vector<geometry_msgs::msg::Point> & footprint);
 
 /**
  * @brief Convert Point32 to Point
