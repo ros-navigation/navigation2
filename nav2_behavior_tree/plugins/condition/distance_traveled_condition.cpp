@@ -37,7 +37,7 @@ DistanceTraveledCondition::DistanceTraveledCondition(
 
 BT::NodeStatus DistanceTraveledCondition::tick()
 {
-  if(!initialized_) {
+  if (!initialized_) {
     initialize();
   }
 

@@ -43,7 +43,7 @@ SmootherSelector::SmootherSelector(
 
 BT::NodeStatus SmootherSelector::tick()
 {
-  if(!initialized_) {
+  if (!initialized_) {
     initialize();
   }
 

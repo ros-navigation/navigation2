@@ -34,7 +34,7 @@ TimeExpiredCondition::TimeExpiredCondition(
 
 BT::NodeStatus TimeExpiredCondition::tick()
 {
-  if(!initialized_) {
+  if (!initialized_) {
     initialize();
   }
 

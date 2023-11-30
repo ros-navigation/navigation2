@@ -29,9 +29,9 @@ DriveOnHeadingAction::DriveOnHeadingAction(
 {
 }
 
-void DriveOnHeadingAction::on_tick() 
+void DriveOnHeadingAction::on_tick()
 {
-  if(!initalized_){
+  if (!initalized_) {
     initialize();
   }
 }

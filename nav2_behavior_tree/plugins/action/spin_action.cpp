@@ -30,8 +30,8 @@ SpinAction::SpinAction(
 
 void SpinAction::on_tick()
 {
-  if(!initialized_) {
-    initialize();    
+  if (!initialized_) {
+    initialize();
   }
 
   if (is_recovery_) {

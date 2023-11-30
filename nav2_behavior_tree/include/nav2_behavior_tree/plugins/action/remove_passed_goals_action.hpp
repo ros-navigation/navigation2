@@ -40,7 +40,7 @@ public:
    * @brief Function to read parameters and initialize class variables
    */
   void initialize();
-  
+
   static BT::PortsList providedPorts()
   {
     return {

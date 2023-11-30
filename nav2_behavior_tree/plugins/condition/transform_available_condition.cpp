@@ -41,7 +41,7 @@ TransformAvailableCondition::~TransformAvailableCondition()
 
 BT::NodeStatus TransformAvailableCondition::tick()
 {
-  if(!initialized_) {
+  if (!initialized_) {
     initialize();
   }
 

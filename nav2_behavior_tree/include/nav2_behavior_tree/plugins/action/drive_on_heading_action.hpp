@@ -42,7 +42,7 @@ public:
     const std::string & xml_tag_name,
     const std::string & action_name,
     const BT::NodeConfiguration & conf);
-  
+
   /**
    * @brief Function to read parameters and initialize class variables
    */

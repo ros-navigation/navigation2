@@ -31,7 +31,7 @@ AssistedTeleopAction::AssistedTeleopAction(
 
 void AssistedTeleopAction::on_tick()
 {
-  if(!initialized_) {
+  if (!initialized_) {
     initialize();
   }
 
@@ -40,7 +40,7 @@ void AssistedTeleopAction::on_tick()
   }
 }
 
-void AssistedTeleopAction::initialize() 
+void AssistedTeleopAction::initialize()
 {
   double time_allowance;
   getInput("time_allowance", time_allowance);

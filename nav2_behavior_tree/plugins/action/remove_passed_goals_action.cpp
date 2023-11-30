@@ -38,7 +38,7 @@ inline BT::NodeStatus RemovePassedGoals::tick()
 {
   setStatus(BT::NodeStatus::RUNNING);
 
-  if(!initialized_){
+  if (!initialized_) {
     initialize();
   }
 
@@ -76,7 +76,7 @@ inline BT::NodeStatus RemovePassedGoals::tick()
   return BT::NodeStatus::SUCCESS;
 }
 
-void RemovePassedGoals::initialize() 
+void RemovePassedGoals::initialize()
 {
   getInput("radius", viapoint_achieved_radius_);
 

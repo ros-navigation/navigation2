@@ -31,7 +31,7 @@ BackUpAction::BackUpAction(
 
 void BackUpAction::on_tick()
 {
-  if(!initialized_) {
+  if (!initialized_) {
     initialize();
   }
 

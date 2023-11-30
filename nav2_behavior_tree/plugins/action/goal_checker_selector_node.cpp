@@ -38,10 +38,10 @@ GoalCheckerSelector::GoalCheckerSelector(
 
 BT::NodeStatus GoalCheckerSelector::tick()
 {
-  if(!initiazed_) {
+  if (!initiazed_) {
     initialize();
   }
-  
+
   rclcpp::spin_some(node_);
 
   // This behavior always use the last selected goal checker received from the topic input.

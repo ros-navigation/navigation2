@@ -42,10 +42,10 @@ ControllerSelector::ControllerSelector(
 
 BT::NodeStatus ControllerSelector::tick()
 {
-  if(!initialized_) {
+  if (!initialized_) {
     initialize();
   }
-  
+
   callback_group_executor_.spin_some();
 
   // This behavior always use the last selected controller received from the topic input.

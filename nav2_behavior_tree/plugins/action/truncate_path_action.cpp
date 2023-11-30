@@ -41,7 +41,7 @@ inline BT::NodeStatus TruncatePath::tick()
   setStatus(BT::NodeStatus::RUNNING);
   getInput("distance", distance_);
 
-  if(first_time_) {
+  if (first_time_) {
     getInput("distance", distance_);
     first_time_ = false;
   }

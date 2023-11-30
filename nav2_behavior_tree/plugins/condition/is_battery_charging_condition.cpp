@@ -31,10 +31,10 @@ IsBatteryChargingCondition::IsBatteryChargingCondition(
 
 BT::NodeStatus IsBatteryChargingCondition::tick()
 {
-  if(!initialized) {
+  if (!initialized) {
     initialize();
   }
-  
+
   callback_group_executor_.spin_some();
   if (is_battery_charging_) {
     return BT::NodeStatus::SUCCESS;

@@ -34,11 +34,11 @@ IsPathValidCondition::IsPathValidCondition(
 
 BT::NodeStatus IsPathValidCondition::tick()
 {
-  if(first_time) {
+  if (first_time) {
     getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
     first_time_ = false;
   }
-  
+
   nav_msgs::msg::Path path;
   getInput("path", path);
 

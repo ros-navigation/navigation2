@@ -34,7 +34,7 @@ IsBatteryLowCondition::IsBatteryLowCondition(
 
 BT::NodeStatus IsBatteryLowCondition::tick()
 {
-  if(!initialized) {
+  if (!initialized) {
     initialize();
   }
 

@@ -32,14 +32,14 @@ WaitAction::WaitAction(
 
 void WaitAction::on_tick()
 {
-  if(!initialized_) {
+  if (!initialized_) {
     initialize();
   }
 
   increment_recovery_count();
 }
 
-void WaitAction::initialize() 
+void WaitAction::initialize()
 {
   double duration;
   getInput("wait_duration", duration);
