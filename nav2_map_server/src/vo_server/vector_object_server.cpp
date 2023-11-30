@@ -14,14 +14,19 @@
 
 #include "nav2_map_server/vector_object_server.hpp"
 
-#include <cmath>
+#include <chrono>
+#include <exception>
 #include <functional>
 #include <limits>
 #include <stdexcept>
+#include <utility>
+
+#include "rclcpp/create_timer.hpp"
 
 #include "tf2_ros/create_timer_ros.h"
 
 #include "nav2_util/occ_grid_utils.hpp"
+#include "nav2_util/occ_grid_values.hpp"
 
 using namespace std::placeholders;
 
@@ -131,6 +136,63 @@ VectorObjectServer::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Shutting down");
 
   return nav2_util::CallbackReturn::SUCCESS;
+}
+
+bool VectorObjectServer::obtainParams()
+{
+  // Main ROS-parameters
+  map_topic_ = getParameter(
+    shared_from_this(), "map_topic", "vo_map").as_string();
+  global_frame_id_ = getParameter(
+    shared_from_this(), "global_frame_id", "map").as_string();
+  resolution_ = getParameter(
+    shared_from_this(), "resolution", 0.05).as_double();
+  default_value_ = getParameter(
+    shared_from_this(), "default_value", nav2_util::OCC_GRID_UNKNOWN).as_int();
+  overlay_type_ = static_cast<OverlayType>(getParameter(
+      shared_from_this(), "overlay_type", static_cast<int>(OverlayType::OVERLAY_SEQ)).as_int());
+  update_frequency_ = getParameter(
+    shared_from_this(), "update_frequency", 1.0).as_double();
+  transform_tolerance_ = getParameter(
+    shared_from_this(), "transform_tolerance", 0.1).as_double();
+
+  // Shapes
+  std::vector<std::string> shape_names = getParameter(
+    shared_from_this(), "shapes", std::vector<std::string>()).as_string_array();
+  for (std::string shape_name : shape_names) {
+    std::string shape_type;
+
+    try {
+      shape_type = getParameter(
+        shared_from_this(), shape_name + ".type", rclcpp::PARAMETER_STRING).as_string();
+    } catch (const std::exception & ex) {
+      RCLCPP_ERROR(
+        get_logger(),
+        "Error while getting shape %s type: %s",
+        shape_name.c_str(), ex.what());
+      return false;
+    }
+
+    if (shape_type == "polygon") {
+      std::shared_ptr<Polygon> polygon = std::make_shared<Polygon>(shared_from_this());
+      if (!polygon->obtainParams(shape_name)) {
+        return false;
+      }
+      shapes_.push_back(polygon);
+    } else if (shape_type == "circle") {
+      std::shared_ptr<Circle> circle = std::make_shared<Circle>(shared_from_this());
+
+      if (!circle->obtainParams(shape_name)) {
+        return false;
+      }
+      shapes_.push_back(circle);
+    } else {
+      RCLCPP_ERROR(get_logger(), "Please specify correct shape %s type", shape_name.c_str());
+      return false;
+    }
+  }
+
+  return true;
 }
 
 std::vector<std::shared_ptr<Shape>>::iterator
@@ -484,63 +546,6 @@ void VectorObjectServer::removeShapesCallback(
   }
 
   switchMapUpdate();
-}
-
-bool VectorObjectServer::obtainParams()
-{
-  // Main ROS-parameters
-  map_topic_ = getParameter(
-    shared_from_this(), "map_topic", "vo_map").as_string();
-  global_frame_id_ = getParameter(
-    shared_from_this(), "global_frame_id", "map").as_string();
-  resolution_ = getParameter(
-    shared_from_this(), "resolution", 0.05).as_double();
-  default_value_ = getParameter(
-    shared_from_this(), "default_value", nav2_util::OCC_GRID_UNKNOWN).as_int();
-  overlay_type_ = static_cast<OverlayType>(getParameter(
-      shared_from_this(), "overlay_type", static_cast<int>(OverlayType::OVERLAY_SEQ)).as_int());
-  update_frequency_ = getParameter(
-    shared_from_this(), "update_frequency", 1.0).as_double();
-  transform_tolerance_ = getParameter(
-    shared_from_this(), "transform_tolerance", 0.1).as_double();
-
-  // Shapes
-  std::vector<std::string> shape_names = getParameter(
-    shared_from_this(), "shapes", std::vector<std::string>()).as_string_array();
-  for (std::string shape_name : shape_names) {
-    std::string shape_type;
-
-    try {
-      shape_type = getParameter(
-        shared_from_this(), shape_name + ".type", rclcpp::PARAMETER_STRING).as_string();
-    } catch (const std::exception & ex) {
-      RCLCPP_ERROR(
-        get_logger(),
-        "Error while getting shape %s type: %s",
-        shape_name.c_str(), ex.what());
-      return false;
-    }
-
-    if (shape_type == "polygon") {
-      std::shared_ptr<Polygon> polygon = std::make_shared<Polygon>(shared_from_this());
-      if (!polygon->obtainParams(shape_name)) {
-        return false;
-      }
-      shapes_.push_back(polygon);
-    } else if (shape_type == "circle") {
-      std::shared_ptr<Circle> circle = std::make_shared<Circle>(shared_from_this());
-
-      if (!circle->obtainParams(shape_name)) {
-        return false;
-      }
-      shapes_.push_back(circle);
-    } else {
-      RCLCPP_ERROR(get_logger(), "Please specify correct shape %s type", shape_name.c_str());
-      return false;
-    }
-  }
-
-  return true;
 }
 
 }  // namespace nav2_map_server

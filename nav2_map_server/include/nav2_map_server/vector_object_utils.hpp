@@ -19,6 +19,7 @@
 #include <string>
 #include <stdexcept>
 
+#include "rclcpp/rclcpp.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 
 #include "nav2_util/lifecycle_node.hpp"
