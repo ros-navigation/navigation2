@@ -52,6 +52,7 @@ private:
   void halt() override {}
   BT::NodeStatus tick() override;
 
+  bool first_time;
   double viapoint_achieved_radius_;
   double transform_tolerance_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
