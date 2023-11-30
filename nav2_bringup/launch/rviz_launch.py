@@ -39,18 +39,23 @@ def generate_launch_description():
     declare_namespace_cmd = DeclareLaunchArgument(
         'namespace',
         default_value='navigation',
-        description=('Top-level namespace. The value will be used to replace the '
-                     '<robot_namespace> keyword on the rviz config file.'))
+        description=(
+            'Top-level namespace. The value will be used to replace the '
+            '<robot_namespace> keyword on the rviz config file.'
+        ),
+    )
 
     declare_use_namespace_cmd = DeclareLaunchArgument(
         'use_namespace',
         default_value='false',
-        description='Whether to apply a namespace to the navigation stack')
+        description='Whether to apply a namespace to the navigation stack',
+    )
 
     declare_rviz_config_file_cmd = DeclareLaunchArgument(
         'rviz_config',
         default_value=os.path.join(bringup_dir, 'rviz', 'nav2_default_view.rviz'),
-        description='Full path to the RVIZ config file to use')
+        description='Full path to the RVIZ config file to use',
+    )
 
     # Launch rviz
     start_rviz_cmd = Node(
@@ -58,11 +63,13 @@ def generate_launch_description():
         package='rviz2',
         executable='rviz2',
         arguments=['-d', rviz_config_file],
-        output='screen')
+        output='screen',
+    )
 
     namespaced_rviz_config_file = ReplaceString(
         source_file=rviz_config_file,
-        replacements={'<robot_namespace>': ('/', namespace)})
+        replacements={'<robot_namespace>': ('/', namespace)},
+    )
 
     start_namespaced_rviz_cmd = Node(
         condition=IfCondition(use_namespace),
@@ -71,24 +78,31 @@ def generate_launch_description():
         namespace=namespace,
         arguments=['-d', namespaced_rviz_config_file],
         output='screen',
-        remappings=[('/map', 'map'),
-                    ('/tf', 'tf'),
-                    ('/tf_static', 'tf_static'),
-                    ('/goal_pose', 'goal_pose'),
-                    ('/clicked_point', 'clicked_point'),
-                    ('/initialpose', 'initialpose')])
+        remappings=[
+            ('/map', 'map'),
+            ('/tf', 'tf'),
+            ('/tf_static', 'tf_static'),
+            ('/goal_pose', 'goal_pose'),
+            ('/clicked_point', 'clicked_point'),
+            ('/initialpose', 'initialpose'),
+        ],
+    )
 
     exit_event_handler = RegisterEventHandler(
         condition=UnlessCondition(use_namespace),
         event_handler=OnProcessExit(
             target_action=start_rviz_cmd,
-            on_exit=EmitEvent(event=Shutdown(reason='rviz exited'))))
+            on_exit=EmitEvent(event=Shutdown(reason='rviz exited')),
+        ),
+    )
 
     exit_event_handler_namespaced = RegisterEventHandler(
         condition=IfCondition(use_namespace),
         event_handler=OnProcessExit(
             target_action=start_namespaced_rviz_cmd,
-            on_exit=EmitEvent(event=Shutdown(reason='rviz exited'))))
+            on_exit=EmitEvent(event=Shutdown(reason='rviz exited')),
+        ),
+    )
 
     # Create the launch description and populate
     ld = LaunchDescription()

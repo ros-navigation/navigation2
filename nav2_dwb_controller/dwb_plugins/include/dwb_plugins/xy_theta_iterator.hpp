@@ -58,18 +58,6 @@ public:
   nav_2d_msgs::msg::Twist2D nextTwist() override;
 
 protected:
-  /**
-   * @brief Check to see whether the combined x/y/theta velocities are valid
-   * @return True if the magnitude hypot(x,y) and theta are within the robot's absolute limits
-   *
-   * This is based on three parameters: min_speed_xy, max_speed_xy and min_speed_theta.
-   * The speed is valid if
-   *  1) The combined magnitude hypot(x,y) is less than max_speed_xy (or max_speed_xy is negative)
-   *  AND
-   *  2) min_speed_xy is negative or min_speed_theta is negative or
-   *     hypot(x,y) is greater than min_speed_xy or fabs(theta) is greater than min_speed_theta.
-   */
-  bool isValidSpeed(double x, double y, double theta);
   virtual bool isValidVelocity();
   void iterateToValidVelocity();
   int vx_samples_, vy_samples_, vtheta_samples_;

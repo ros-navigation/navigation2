@@ -31,8 +31,7 @@ RemovePassedGoals::RemovePassedGoals(
 : BT::ActionNodeBase(name, conf),
   viapoint_achieved_radius_(0.5),
   initialized_(false)
-{
-}
+{}
 
 inline BT::NodeStatus RemovePassedGoals::tick()
 {
@@ -54,7 +53,7 @@ inline BT::NodeStatus RemovePassedGoals::tick()
 
   geometry_msgs::msg::PoseStamped current_pose;
   if (!nav2_util::getCurrentPose(
-      current_pose, *tf_, global_frame_, robot_base_frame_,
+      current_pose, *tf_, goal_poses[0].header.frame_id, robot_base_frame_,
       transform_tolerance_))
   {
     return BT::NodeStatus::FAILURE;
