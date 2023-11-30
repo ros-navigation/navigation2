@@ -35,8 +35,7 @@ def generate_launch_description():
     package_dir = get_package_share_directory('nav2_map_server')
 
     # Constant parameters
-    lifecycle_nodes = ['vector_object_server']
-    autostart = True
+    lifecycle_nodes = ['vector_object_server', 'costmap_filter_info_server']
     remappings = [('/tf', 'tf'),
                   ('/tf_static', 'tf_static')]
 
@@ -45,9 +44,9 @@ def generate_launch_description():
     namespace = LaunchConfiguration('namespace')
     use_sim_time = LaunchConfiguration('use_sim_time')
     params_file = LaunchConfiguration('params_file')
+    autostart = LaunchConfiguration('autostart')
     use_composition = LaunchConfiguration('use_composition')
     container_name = LaunchConfiguration('container_name')
-    container_name_full = (namespace, '/', container_name)
 
     # 2. Declare the launch arguments
     declare_namespace_cmd = DeclareLaunchArgument(
@@ -64,6 +63,10 @@ def generate_launch_description():
         'params_file',
         default_value=os.path.join(package_dir, 'params', 'vector_object_server_params.yaml'),
         description='Full path to the ROS2 parameters file to use for all launched nodes')
+
+    declare_autostart_cmd = DeclareLaunchArgument(
+        'autostart', default_value='True',
+        description='Automatically startup Vector Object server')
 
     declare_use_composition_cmd = DeclareLaunchArgument(
         'use_composition', default_value='True',
@@ -101,6 +104,15 @@ def generate_launch_description():
             Node(
                 package='nav2_map_server',
                 executable='vector_object_server',
+                name='vector_object_server',
+                output='screen',
+                emulate_tty=True,  # https://github.com/ros2/launch/issues/188
+                parameters=[configured_params],
+                remappings=remappings),
+            Node(
+                package='nav2_map_server',
+                executable='costmap_filter_info_server',
+                name='costmap_filter_info_server',
                 output='screen',
                 emulate_tty=True,  # https://github.com/ros2/launch/issues/188
                 parameters=[configured_params],
@@ -116,7 +128,7 @@ def generate_launch_description():
                 condition=IfCondition(NotEqualsSubstitution(LaunchConfiguration('namespace'), '')),
                 namespace=namespace),
             LoadComposableNodes(
-                target_container=container_name_full,
+                target_container=container_name,
                 composable_node_descriptions=[
                     ComposableNode(
                         package='nav2_lifecycle_manager',
@@ -130,6 +142,12 @@ def generate_launch_description():
                         plugin='nav2_map_server::VectorObjectServer',
                         name='vector_object_server',
                         parameters=[configured_params],
+                        remappings=remappings),
+                    ComposableNode(
+                        package='nav2_map_server',
+                        plugin='nav2_map_server::CostmapFilterInfoServer',
+                        name='costmap_filter_info_server',
+                        parameters=[configured_params],
                         remappings=remappings)
                 ],
             )
@@ -142,6 +160,7 @@ def generate_launch_description():
     ld.add_action(declare_namespace_cmd)
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_params_file_cmd)
+    ld.add_action(declare_autostart_cmd)
     ld.add_action(declare_use_composition_cmd)
     ld.add_action(declare_container_name_cmd)
 
