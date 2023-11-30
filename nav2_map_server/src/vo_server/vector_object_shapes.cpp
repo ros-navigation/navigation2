@@ -15,10 +15,11 @@
 #include "nav2_map_server/vector_object_shapes.hpp"
 
 #include <uuid/uuid.h>
-#include <math.h>
 #include <cmath>
+#include <exception>
 #include <limits>
 #include <stdexcept>
+#include <vector>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
@@ -87,6 +88,31 @@ Polygon::Polygon(
   type_ = POLYGON;
 }
 
+int8_t Polygon::getValue() const
+{
+  return params_->value;
+}
+
+std::string Polygon::getFrameID() const
+{
+  return params_->header.frame_id;
+}
+
+std::string Polygon::getUUID() const
+{
+  return unparseUUID(params_->uuid.uuid.data());
+}
+
+bool Polygon::isUUID(const unsigned char * uuid) const
+{
+  return uuid_compare(params_->uuid.uuid.data(), uuid) == 0;
+}
+
+bool Polygon::isFill() const
+{
+  return params_->closed;
+}
+
 bool Polygon::obtainParams(const std::string & shape_name)
 {
   auto node = node_.lock();
@@ -147,6 +173,54 @@ bool Polygon::obtainParams(const std::string & shape_name)
 
   // Getting shape UUID
   return obtainShapeUUID(shape_name, params_->uuid.uuid.data());
+}
+
+nav2_msgs::msg::PolygonObject::SharedPtr Polygon::getParams() const
+{
+  return params_;
+}
+
+bool Polygon::setParams(const nav2_msgs::msg::PolygonObject::SharedPtr params)
+{
+  params_ = params;
+
+  if (!polygon_) {
+    polygon_ = std::make_shared<geometry_msgs::msg::Polygon>();
+  }
+  polygon_->points = params_->points;
+
+  // If no UUID was specified, generate a new one
+  if (uuid_is_null(params_->uuid.uuid.data())) {
+    uuid_generate(params_->uuid.uuid.data());
+  }
+
+  return checkConsistency();
+}
+
+bool Polygon::toFrame(
+  const std::string & to_frame,
+  const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+  const double transform_tolerance)
+{
+  geometry_msgs::msg::PoseStamped from_pose, to_pose;
+  from_pose.header = params_->header;
+  for (unsigned int i = 0; i < params_->points.size(); i++) {
+    from_pose.pose.position.x = params_->points[i].x;
+    from_pose.pose.position.y = params_->points[i].y;
+    from_pose.pose.position.z = params_->points[i].z;
+    if (
+      nav2_util::transformPoseInTargetFrame(
+        from_pose, to_pose, *tf_buffer, to_frame, transform_tolerance))
+    {
+      polygon_->points[i].x = to_pose.pose.position.x;
+      polygon_->points[i].y = to_pose.pose.position.y;
+      polygon_->points[i].z = to_pose.pose.position.z;
+    } else {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 void Polygon::getBoundaries(double & min_x, double & min_y, double & max_x, double & max_y)
@@ -210,79 +284,6 @@ void Polygon::putBorders(
   }
 }
 
-nav2_msgs::msg::PolygonObject::SharedPtr Polygon::getParams() const
-{
-  return params_;
-}
-
-bool Polygon::setParams(const nav2_msgs::msg::PolygonObject::SharedPtr params)
-{
-  params_ = params;
-
-  if (!polygon_) {
-    polygon_ = std::make_shared<geometry_msgs::msg::Polygon>();
-  }
-  polygon_->points = params_->points;
-
-  // If no UUID was specified, generate a new one
-  if (uuid_is_null(params_->uuid.uuid.data())) {
-    uuid_generate(params_->uuid.uuid.data());
-  }
-
-  return checkConsistency();
-}
-
-int8_t Polygon::getValue() const
-{
-  return params_->value;
-}
-
-std::string Polygon::getFrameID() const
-{
-  return params_->header.frame_id;
-}
-
-std::string Polygon::getUUID() const
-{
-  return unparseUUID(params_->uuid.uuid.data());
-}
-
-bool Polygon::isUUID(const unsigned char * uuid) const
-{
-  return uuid_compare(params_->uuid.uuid.data(), uuid) == 0;
-}
-
-bool Polygon::isFill() const
-{
-  return params_->closed;
-}
-
-bool Polygon::toFrame(
-  const std::string & to_frame,
-  const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
-  const double transform_tolerance)
-{
-  geometry_msgs::msg::PoseStamped from_pose, to_pose;
-  from_pose.header = params_->header;
-  for (unsigned int i = 0; i < params_->points.size(); i++) {
-    from_pose.pose.position.x = params_->points[i].x;
-    from_pose.pose.position.y = params_->points[i].y;
-    from_pose.pose.position.z = params_->points[i].z;
-    if (
-      nav2_util::transformPoseInTargetFrame(
-        from_pose, to_pose, *tf_buffer, to_frame, transform_tolerance))
-    {
-      polygon_->points[i].x = to_pose.pose.position.x;
-      polygon_->points[i].y = to_pose.pose.position.y;
-      polygon_->points[i].z = to_pose.pose.position.z;
-    } else {
-      return false;
-    }
-  }
-
-  return true;
-}
-
 bool Polygon::checkConsistency()
 {
   if (params_->points.size() < 3) {
@@ -308,6 +309,31 @@ Circle::Circle(
 : Shape::Shape(node)
 {
   type_ = CIRCLE;
+}
+
+int8_t Circle::getValue() const
+{
+  return params_->value;
+}
+
+std::string Circle::getFrameID() const
+{
+  return params_->header.frame_id;
+}
+
+std::string Circle::getUUID() const
+{
+  return unparseUUID(params_->uuid.uuid.data());
+}
+
+bool Circle::isUUID(const unsigned char * uuid) const
+{
+  return uuid_compare(params_->uuid.uuid.data(), uuid) == 0;
+}
+
+bool Circle::isFill() const
+{
+  return params_->fill;
 }
 
 bool Circle::obtainParams(const std::string & shape_name)
@@ -371,7 +397,52 @@ bool Circle::obtainParams(const std::string & shape_name)
   return obtainShapeUUID(shape_name, params_->uuid.uuid.data());
 }
 
-// Get/update shape boundaries
+nav2_msgs::msg::CircleObject::SharedPtr Circle::getParams() const
+{
+  return params_;
+}
+
+bool Circle::setParams(const nav2_msgs::msg::CircleObject::SharedPtr params)
+{
+  params_ = params;
+
+  if (!center_) {
+    center_ = std::make_shared<geometry_msgs::msg::Point32>();
+  }
+  *center_ = params_->center;
+
+  // If no UUID was specified, generate a new one
+  if (uuid_is_null(params_->uuid.uuid.data())) {
+    uuid_generate(params_->uuid.uuid.data());
+  }
+
+  return checkConsistency();
+}
+
+bool Circle::toFrame(
+  const std::string & to_frame,
+  const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+  const double transform_tolerance)
+{
+  geometry_msgs::msg::PoseStamped from_pose, to_pose;
+  from_pose.header = params_->header;
+  from_pose.pose.position.x = params_->center.x;
+  from_pose.pose.position.y = params_->center.y;
+  from_pose.pose.position.z = params_->center.z;
+  if (
+    nav2_util::transformPoseInTargetFrame(
+      from_pose, to_pose, *tf_buffer, to_frame, transform_tolerance))
+  {
+    center_->x = to_pose.pose.position.x;
+    center_->y = to_pose.pose.position.y;
+    center_->z = to_pose.pose.position.z;
+  } else {
+    return false;
+  }
+
+  return true;
+}
+
 void Circle::getBoundaries(double & min_x, double & min_y, double & max_x, double & max_y)
 {
   min_x = center_->x - params_->radius;
@@ -386,50 +457,6 @@ bool Circle::isPointInside(const double px, const double py) const
          params_->radius * params_->radius;
 }
 
-bool Circle::centerToMap(
-  nav_msgs::msg::OccupancyGrid::ConstSharedPtr map,
-  unsigned int & mcx, unsigned int & mcy)
-{
-  auto node = node_.lock();
-  if (!node) {
-    throw std::runtime_error{"Failed to lock node"};
-  }
-
-  // Get center of circle in map coordinates
-  if (center_->x < map->info.origin.position.x || center_->y < map->info.origin.position.y) {
-    RCLCPP_ERROR(
-      node->get_logger(),
-      "[UUID: %s] Can not convert (%f, %f) circle center to map",
-      getUUID().c_str(), center_->x, center_->y);
-    return false;
-  }
-  // We need the circle center to be always shifted one cell less its logical center
-  // and to avoid any FP-accuracy loosing on small values, so we are using another
-  // than nav2_util::worldToMap() approach
-  mcx = static_cast<unsigned int>(
-    std::round((center_->x - map->info.origin.position.x) / map->info.resolution)) - 1;
-  mcy = static_cast<unsigned int>(
-    std::round((center_->y - map->info.origin.position.y) / map->info.resolution)) - 1;
-  if (mcx >= map->info.width || mcy >= map->info.height) {
-    RCLCPP_ERROR(
-      node->get_logger(),
-      "[UUID: %s] Can not convert (%f, %f) point to map",
-      getUUID().c_str(), center_->x, center_->y);
-    return false;
-  }
-
-  return true;
-}
-
-inline void Circle::putPoint(
-  unsigned int mx, unsigned int my,
-  nav_msgs::msg::OccupancyGrid::SharedPtr map,
-  const OverlayType overlay_type)
-{
-  fillMap(map, my * map->info.width + mx, params_->value, overlay_type);
-}
-
-// Put params_gons line borders on map
 void Circle::putBorders(
   nav_msgs::msg::OccupancyGrid::SharedPtr map, const OverlayType overlay_type)
 {
@@ -479,77 +506,6 @@ void Circle::putBorders(
   }
 }
 
-nav2_msgs::msg::CircleObject::SharedPtr Circle::getParams() const
-{
-  return params_;
-}
-
-bool Circle::setParams(const nav2_msgs::msg::CircleObject::SharedPtr params)
-{
-  params_ = params;
-
-  if (!center_) {
-    center_ = std::make_shared<geometry_msgs::msg::Point32>();
-  }
-  *center_ = params_->center;
-
-  // If no UUID was specified, generate a new one
-  if (uuid_is_null(params_->uuid.uuid.data())) {
-    uuid_generate(params_->uuid.uuid.data());
-  }
-
-  return checkConsistency();
-}
-
-int8_t Circle::getValue() const
-{
-  return params_->value;
-}
-
-std::string Circle::getFrameID() const
-{
-  return params_->header.frame_id;
-}
-
-std::string Circle::getUUID() const
-{
-  return unparseUUID(params_->uuid.uuid.data());
-}
-
-bool Circle::isUUID(const unsigned char * uuid) const
-{
-  return uuid_compare(params_->uuid.uuid.data(), uuid) == 0;
-}
-
-bool Circle::isFill() const
-{
-  return params_->fill;
-}
-
-bool Circle::toFrame(
-  const std::string & to_frame,
-  const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
-  const double transform_tolerance)
-{
-  geometry_msgs::msg::PoseStamped from_pose, to_pose;
-  from_pose.header = params_->header;
-  from_pose.pose.position.x = params_->center.x;
-  from_pose.pose.position.y = params_->center.y;
-  from_pose.pose.position.z = params_->center.z;
-  if (
-    nav2_util::transformPoseInTargetFrame(
-      from_pose, to_pose, *tf_buffer, to_frame, transform_tolerance))
-  {
-    center_->x = to_pose.pose.position.x;
-    center_->y = to_pose.pose.position.y;
-    center_->z = to_pose.pose.position.z;
-  } else {
-    return false;
-  }
-
-  return true;
-}
-
 bool Circle::checkConsistency()
 {
   if (params_->radius < 0.0) {
@@ -565,6 +521,49 @@ bool Circle::checkConsistency()
     return false;
   }
   return true;
+}
+
+bool Circle::centerToMap(
+  nav_msgs::msg::OccupancyGrid::ConstSharedPtr map,
+  unsigned int & mcx, unsigned int & mcy)
+{
+  auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+
+  // Get center of circle in map coordinates
+  if (center_->x < map->info.origin.position.x || center_->y < map->info.origin.position.y) {
+    RCLCPP_ERROR(
+      node->get_logger(),
+      "[UUID: %s] Can not convert (%f, %f) circle center to map",
+      getUUID().c_str(), center_->x, center_->y);
+    return false;
+  }
+  // We need the circle center to be always shifted one cell less its logical center
+  // and to avoid any FP-accuracy loosing on small values, so we are using another
+  // than nav2_util::worldToMap() approach
+  mcx = static_cast<unsigned int>(
+    std::round((center_->x - map->info.origin.position.x) / map->info.resolution)) - 1;
+  mcy = static_cast<unsigned int>(
+    std::round((center_->y - map->info.origin.position.y) / map->info.resolution)) - 1;
+  if (mcx >= map->info.width || mcy >= map->info.height) {
+    RCLCPP_ERROR(
+      node->get_logger(),
+      "[UUID: %s] Can not convert (%f, %f) point to map",
+      getUUID().c_str(), center_->x, center_->y);
+    return false;
+  }
+
+  return true;
+}
+
+inline void Circle::putPoint(
+  unsigned int mx, unsigned int my,
+  nav_msgs::msg::OccupancyGrid::SharedPtr map,
+  const OverlayType overlay_type)
+{
+  fillMap(map, my * map->info.width + mx, params_->value, overlay_type);
 }
 
 }  // namespace nav2_map_server

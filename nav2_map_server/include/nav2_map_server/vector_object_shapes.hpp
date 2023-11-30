@@ -15,11 +15,10 @@
 #ifndef NAV2_MAP_SERVER__VECTOR_OBJECT_SHAPES_HPP_
 #define NAV2_MAP_SERVER__VECTOR_OBJECT_SHAPES_HPP_
 
-#include <cmath>
 #include <memory>
 #include <string>
-#include <vector>
 
+#include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/polygon.hpp"
 #include "geometry_msgs/msg/point32.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
@@ -72,42 +71,6 @@ public:
   bool obtainShapeUUID(const std::string & shape_name, unsigned char * out_uuid);
 
   /**
-   * @brief Supporting routine obtaining ROS-parameters for the given vector object.
-   * Empty virtual method intended to be used in child implementations
-   * @param shape_name Name of the shape
-   * @return True if all parameters were obtained or false in failure case
-   */
-  virtual bool obtainParams(const std::string & shape_name) = 0;
-
-  /**
-   * @brief Gets shape boundaries.
-   * Empty virtual method intended to be used in child implementations
-   * @param min_x output min X-boundary of shape
-   * @param min_y output min Y-boundary of shape
-   * @param max_x output max X-boundary of shape
-   * @param max_y output max Y-boundary of shape
-   */
-  virtual void getBoundaries(double & min_x, double & min_y, double & max_x, double & max_y) = 0;
-
-  /**
-   * @brief Is the point inside the shape.
-   * Empty virtual method intended to be used in child implementations
-   * @param px X-coordinate of the given point to check
-   * @param py Y-coordinate of the given point to check
-   * @return True if given point inside the shape
-   */
-  virtual bool isPointInside(const double px, const double py) const = 0;
-
-  /**
-   * @brief Puts shape borders on map.
-   * Empty virtual method intended to be used in child implementations
-   * @param map Output map pointer
-   * @param overlay_type Overlay type
-   */
-  virtual void putBorders(
-    nav_msgs::msg::OccupancyGrid::SharedPtr map, const OverlayType overlay_type) = 0;
-
-  /**
    * @brief Gets the value of the shape.
    * Empty virtual method intended to be used in child implementations
    * @return OccupancyGrid value of the shape
@@ -144,6 +107,14 @@ public:
   virtual bool isFill() const = 0;
 
   /**
+   * @brief Supporting routine obtaining ROS-parameters for the given vector object.
+   * Empty virtual method intended to be used in child implementations
+   * @param shape_name Name of the shape
+   * @return True if all parameters were obtained or false in failure case
+   */
+  virtual bool obtainParams(const std::string & shape_name) = 0;
+
+  /**
    * @brief Transforms shape coordinates to a new frame.
    * Empty virtual method intended to be used in child implementations
    * @param to_frame Frame ID to transform to
@@ -155,6 +126,34 @@ public:
     const std::string & to_frame,
     const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
     const double transform_tolerance) = 0;
+
+  /**
+   * @brief Gets shape boundaries.
+   * Empty virtual method intended to be used in child implementations
+   * @param min_x output min X-boundary of shape
+   * @param min_y output min Y-boundary of shape
+   * @param max_x output max X-boundary of shape
+   * @param max_y output max Y-boundary of shape
+   */
+  virtual void getBoundaries(double & min_x, double & min_y, double & max_x, double & max_y) = 0;
+
+  /**
+   * @brief Is the point inside the shape.
+   * Empty virtual method intended to be used in child implementations
+   * @param px X-coordinate of the given point to check
+   * @param py Y-coordinate of the given point to check
+   * @return True if given point inside the shape
+   */
+  virtual bool isPointInside(const double px, const double py) const = 0;
+
+  /**
+   * @brief Puts shape borders on map.
+   * Empty virtual method intended to be used in child implementations
+   * @param map Output map pointer
+   * @param overlay_type Overlay type
+   */
+  virtual void putBorders(
+    nav_msgs::msg::OccupancyGrid::SharedPtr map, const OverlayType overlay_type) = 0;
 
 protected:
   /// @brief Type of shape
@@ -174,49 +173,6 @@ public:
    * @note setParams()/obtainParams() should be called after to configure the shape
    */
   explicit Polygon(const nav2_util::LifecycleNode::WeakPtr & node);
-
-  /**
-   * @brief Supporting routine obtaining ROS-parameters for the given vector object.
-   * @param shape_name Name of the shape
-   * @return True if all parameters were obtained or false in failure case
-   */
-  bool obtainParams(const std::string & shape_name);
-
-  /**
-   * @brief Gets shape boundaries
-   * @param min_x output min X-boundary of shape
-   * @param min_y output min Y-boundary of shape
-   * @param max_x output max X-boundary of shape
-   * @param max_y output max Y-boundary of shape
-   */
-  void getBoundaries(double & min_x, double & min_y, double & max_x, double & max_y);
-
-  /**
-   * @brief Is the point inside the shape.
-   * @param px X-coordinate of the given point to check
-   * @param py Y-coordinate of the given point to check
-   * @return True if given point inside the shape
-   */
-  bool isPointInside(const double px, const double py) const;
-
-  /**
-   * @brief Puts shape borders on map.
-   * @param map Output map pointer
-   * @param overlay_type Overlay type
-   */
-  void putBorders(nav_msgs::msg::OccupancyGrid::SharedPtr map, const OverlayType overlay_type);
-
-  /**
-   * @brief Gets Polygon parameters
-   * @return Polygon parameters
-   */
-  nav2_msgs::msg::PolygonObject::SharedPtr getParams() const;
-
-  /**
-   * @brief Tries to update Polygon parameters
-   * @return False in case of inconsistent shape
-   */
-  bool setParams(const nav2_msgs::msg::PolygonObject::SharedPtr params);
 
   /**
    * @brief Gets the value of the shape.
@@ -250,6 +206,25 @@ public:
   bool isFill() const;
 
   /**
+   * @brief Supporting routine obtaining ROS-parameters for the given vector object.
+   * @param shape_name Name of the shape
+   * @return True if all parameters were obtained or false in failure case
+   */
+  bool obtainParams(const std::string & shape_name);
+
+  /**
+   * @brief Gets Polygon parameters
+   * @return Polygon parameters
+   */
+  nav2_msgs::msg::PolygonObject::SharedPtr getParams() const;
+
+  /**
+   * @brief Tries to update Polygon parameters
+   * @return False in case of inconsistent shape
+   */
+  bool setParams(const nav2_msgs::msg::PolygonObject::SharedPtr params);
+
+  /**
    * @brief Transforms shape coordinates to a new frame.
    * @param to_frame Frame ID to transform to
    * @param tf_buffer TF buffer to use for the transformation
@@ -260,6 +235,30 @@ public:
     const std::string & to_frame,
     const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
     const double transform_tolerance);
+
+  /**
+   * @brief Gets shape boundaries
+   * @param min_x output min X-boundary of shape
+   * @param min_y output min Y-boundary of shape
+   * @param max_x output max X-boundary of shape
+   * @param max_y output max Y-boundary of shape
+   */
+  void getBoundaries(double & min_x, double & min_y, double & max_x, double & max_y);
+
+  /**
+   * @brief Is the point inside the shape.
+   * @param px X-coordinate of the given point to check
+   * @param py Y-coordinate of the given point to check
+   * @return True if given point inside the shape
+   */
+  bool isPointInside(const double px, const double py) const;
+
+  /**
+   * @brief Puts shape borders on map.
+   * @param map Output map pointer
+   * @param overlay_type Overlay type
+   */
+  void putBorders(nav_msgs::msg::OccupancyGrid::SharedPtr map, const OverlayType overlay_type);
 
 protected:
   /**
@@ -286,49 +285,6 @@ public:
   explicit Circle(const nav2_util::LifecycleNode::WeakPtr & node);
 
   /**
-   * @brief Supporting routine obtaining ROS-parameters for the given vector object.
-   * @param shape_name Name of the shape
-   * @return True if all parameters were obtained or false in failure case
-   */
-  bool obtainParams(const std::string & shape_name);
-
-  /**
-   * @brief Gets shape boundaries
-   * @param min_x output min X-boundary of shape
-   * @param min_y output min Y-boundary of shape
-   * @param max_x output max X-boundary of shape
-   * @param max_y output max Y-boundary of shape
-   */
-  void getBoundaries(double & min_x, double & min_y, double & max_x, double & max_y);
-
-  /**
-   * @brief Is the point inside the shape.
-   * @param px X-coordinate of the given point to check
-   * @param py Y-coordinate of the given point to check
-   * @return True if given point inside the shape
-   */
-  bool isPointInside(const double px, const double py) const;
-
-  /**
-   * @brief Puts shape borders on map.
-   * @param map Output map pointer
-   * @param overlay_type Overlay type
-   */
-  void putBorders(nav_msgs::msg::OccupancyGrid::SharedPtr map, const OverlayType overlay_type);
-
-  /**
-   * @brief Gets Circle parameters
-   * @return Circle parameters
-   */
-  nav2_msgs::msg::CircleObject::SharedPtr getParams() const;
-
-  /**
-   * @brief Tries to update Circle parameters
-   * @return False in case of inconsistent shape
-   */
-  bool setParams(const nav2_msgs::msg::CircleObject::SharedPtr params);
-
-  /**
    * @brief Gets the value of the shape.
    * @return OccupancyGrid value of the shape
    */
@@ -360,6 +316,25 @@ public:
   bool isFill() const;
 
   /**
+   * @brief Supporting routine obtaining ROS-parameters for the given vector object.
+   * @param shape_name Name of the shape
+   * @return True if all parameters were obtained or false in failure case
+   */
+  bool obtainParams(const std::string & shape_name);
+
+  /**
+   * @brief Gets Circle parameters
+   * @return Circle parameters
+   */
+  nav2_msgs::msg::CircleObject::SharedPtr getParams() const;
+
+  /**
+   * @brief Tries to update Circle parameters
+   * @return False in case of inconsistent shape
+   */
+  bool setParams(const nav2_msgs::msg::CircleObject::SharedPtr params);
+
+  /**
    * @brief Transforms shape coordinates to a new frame.
    * @param to_frame Frame ID to transform to
    * @param tf_buffer TF buffer to use for the transformation
@@ -370,6 +345,30 @@ public:
     const std::string & to_frame,
     const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
     const double transform_tolerance);
+
+  /**
+   * @brief Gets shape boundaries
+   * @param min_x output min X-boundary of shape
+   * @param min_y output min Y-boundary of shape
+   * @param max_x output max X-boundary of shape
+   * @param max_y output max Y-boundary of shape
+   */
+  void getBoundaries(double & min_x, double & min_y, double & max_x, double & max_y);
+
+  /**
+   * @brief Is the point inside the shape.
+   * @param px X-coordinate of the given point to check
+   * @param py Y-coordinate of the given point to check
+   * @return True if given point inside the shape
+   */
+  bool isPointInside(const double px, const double py) const;
+
+  /**
+   * @brief Puts shape borders on map.
+   * @param map Output map pointer
+   * @param overlay_type Overlay type
+   */
+  void putBorders(nav_msgs::msg::OccupancyGrid::SharedPtr map, const OverlayType overlay_type);
 
 protected:
   /**

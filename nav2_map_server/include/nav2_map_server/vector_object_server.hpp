@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 
+#include "rclcpp/rclcpp.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 
 #include "tf2_ros/buffer.h"
@@ -28,7 +29,6 @@
 #include "nav2_msgs/srv/remove_shapes.hpp"
 #include "nav2_msgs/srv/get_shapes.hpp"
 #include "nav2_util/lifecycle_node.hpp"
-#include "nav2_util/occ_grid_values.hpp"
 
 #include "nav2_map_server/vector_object_utils.hpp"
 #include "nav2_map_server/vector_object_shapes.hpp"
@@ -80,6 +80,12 @@ protected:
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
   /**
+   * @brief Supporting routine obtaining all ROS-parameters
+   * @return True if all parameters were obtained or false in the failure case
+   */
+  bool obtainParams();
+
+  /**
    * @brief Finds the shape with given UUID
    * @param uuid Given UUID to search with
    * @return Iterator to the shape, if found. Otherwise past-the-end iterator.
@@ -88,6 +94,7 @@ protected:
 
   /**
    * @brief Transform all vector shapes from their local frame to output map frame
+   * @return Whether all vector objects were transformed successfully
    */
   bool transformVectorObjects();
 
@@ -124,8 +131,8 @@ protected:
   void publishMap();
 
   /**
-   * @brief Calculates new map sizes, updates map, process all vector objects on it
-   * and publish output map one time
+   * @brief Calculates new map sizes, updates map, processes all vector objects on it
+   * and publishes output map one time
    */
   void processMap();
 
@@ -174,12 +181,6 @@ protected:
     std::shared_ptr<nav2_msgs::srv::RemoveShapes::Response> response);
 
 protected:
-  /**
-   * @brief Supporting routine obtaining all ROS-parameters
-   * @return True if all parameters were obtained or false in the failure case
-   */
-  bool obtainParams();
-
   /// @brief TF buffer
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   /// @brief TF listener
