@@ -214,6 +214,7 @@ void AStarAlgorithm<NodeT>::setGoal(
   _goal->setPose(_goal_coordinates);
 }
 
+// Note: We do not check the if the start is valid because it is cleared
 template<typename NodeT>
 bool AStarAlgorithm<NodeT>::areInputsValid()
 {
@@ -233,8 +234,6 @@ bool AStarAlgorithm<NodeT>::areInputsValid()
   {
     throw nav2_core::GoalOccupied("Goal was in lethal cost");
   }
-
-  // Note: We do not check the if the start is valid because it is cleared
 
   return true;
 }

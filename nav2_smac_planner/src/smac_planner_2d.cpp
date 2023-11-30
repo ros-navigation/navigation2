@@ -260,6 +260,11 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
       path, num_iterations,
       _tolerance / static_cast<float>(costmap->getResolution())))
   {
+    // Note: If the start is blocked only one iteration will occur before failure
+    if (num_iterations == 1) {
+      throw nav2_core::StartOccupied("Start occupied");
+    }
+
     if (num_iterations < _a_star->getMaxIterations()) {
       throw nav2_core::NoValidPathCouldBeFound("no valid path found");
     } else {
