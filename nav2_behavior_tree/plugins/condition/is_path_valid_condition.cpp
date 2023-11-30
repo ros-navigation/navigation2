@@ -23,17 +23,22 @@ namespace nav2_behavior_tree
 IsPathValidCondition::IsPathValidCondition(
   const std::string & condition_name,
   const BT::NodeConfiguration & conf)
-: BT::ConditionNode(condition_name, conf)
+: BT::ConditionNode(condition_name, conf),
+  first_time_(true)
 {
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
   client_ = node_->create_client<nav2_msgs::srv::IsPathValid>("is_path_valid");
 
   server_timeout_ = config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
-  getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
 }
 
 BT::NodeStatus IsPathValidCondition::tick()
 {
+  if(first_time_) {
+    getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
+    first_time = false;
+  }
+  
   nav_msgs::msg::Path path;
   getInput("path", path);
 

@@ -24,7 +24,12 @@ IsBatteryChargingCondition::IsBatteryChargingCondition(
   const BT::NodeConfiguration & conf)
 : BT::ConditionNode(condition_name, conf),
   battery_topic_("/battery_status"),
-  is_battery_charging_(false)
+  is_battery_charging_(false),
+  initialized(false)
+{
+}
+
+void IsBatteryChargingCondition::initialize() 
 {
   getInput("battery_topic", battery_topic_);
   auto node = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
@@ -40,10 +45,15 @@ IsBatteryChargingCondition::IsBatteryChargingCondition(
     rclcpp::SystemDefaultsQoS(),
     std::bind(&IsBatteryChargingCondition::batteryCallback, this, std::placeholders::_1),
     sub_option);
-}
+  initialized = true;
+} 
 
 BT::NodeStatus IsBatteryChargingCondition::tick()
 {
+  if(!initialized) {
+    initialize();
+  }
+
   callback_group_executor_.spin_some();
   if (is_battery_charging_) {
     return BT::NodeStatus::SUCCESS;

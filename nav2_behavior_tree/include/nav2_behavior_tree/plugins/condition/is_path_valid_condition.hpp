@@ -68,6 +68,7 @@ private:
   // The timeout value while waiting for a responce from the
   // is path valid service
   std::chrono::milliseconds server_timeout_;
+  bool first_time_;
 };
 
 }  // namespace nav2_behavior_tree

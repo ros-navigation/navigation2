@@ -53,6 +53,11 @@ public:
   BT::NodeStatus tick() override;
 
   /**
+   * @brief Function to read parameters and initialize class variables
+   */
+  void initialize();
+
+  /**
    * @brief Creates list of BT ports
    * @return BT::PortsList Containing node-specific ports
    */
@@ -66,6 +71,7 @@ public:
   }
 
 private:
+  bool initialized; 
   rclcpp::Node::SharedPtr node_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
 

@@ -30,8 +30,12 @@ DistanceTraveledCondition::DistanceTraveledCondition(
   const BT::NodeConfiguration & conf)
 : BT::ConditionNode(condition_name, conf),
   distance_(1.0),
-  transform_tolerance_(0.1)
+  transform_tolerance_(0.1),
+  initialized(false)
 {
+}
+
+void nav2_behavior_tree::DistanceTraveledCondition::initialize() {
   getInput("distance", distance_);
 
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
@@ -42,10 +46,15 @@ DistanceTraveledCondition::DistanceTraveledCondition(
     node_, "global_frame", this);
   robot_base_frame_ = BT::deconflictPortAndParamFrame<std::string, DistanceTraveledCondition>(
     node_, "robot_base_frame", this);
+  initialized = true;
 }
 
 BT::NodeStatus DistanceTraveledCondition::tick()
 {
+  if(initialized){
+    initialize();
+  }
+
   if (status() == BT::NodeStatus::IDLE) {
     if (!nav2_util::getCurrentPose(
         start_pose_, *tf_, global_frame_, robot_base_frame_,
