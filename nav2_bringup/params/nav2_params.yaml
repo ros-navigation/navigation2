@@ -316,6 +316,25 @@ waypoint_follower:
       enabled: True
       waypoint_pause_duration: 200
 
+route_server:
+  ros__parameters:
+    graph_filepath: "/home/steve/Documents/nav2_ws/src/navigation2/nav2_route/graphs/aws_graph.geojson"
+    boundary_radius_to_achieve_node: 1.0
+    radius_to_achieve_node: 2.0
+    operations: ["AdjustSpeedLimit", "ReroutingService", "CollisionMonitor"]
+    ReroutingService:
+      plugin: "nav2_route::ReroutingService"
+    AdjustSpeedLimit:
+      plugin: "nav2_route::AdjustSpeedLimit"
+    CollisionMonitor:
+      plugin: "nav2_route::CollisionMonitor"
+      max_collision_dist: 1.0
+    edge_cost_functions: ["DistanceScorer", "CostmapScorer"]
+    DistanceScorer:
+      plugin: "nav2_route::DistanceScorer"
+    CostmapScorer:
+      plugin: "nav2_route::CostmapScorer"
+
 velocity_smoother:
   ros__parameters:
     smoothing_frequency: 20.0

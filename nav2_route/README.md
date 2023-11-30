@@ -396,7 +396,8 @@ Note that there are parameters like `prune_goal`, `min_distance_from_start` and 
 
 # Steve's TODO list
 
-- [ ] Sample files: AWS final + TB3 sandbox world
+- [ ] path marker points align with direction
+- [ ] Sample files: AWS final
 - [ ] QGIS demo + plugins for editing and visualizing graphs
 - [ ] use map for checking start/goal nodes for infra blockages not just NN. Evaluate K. Share costmap?
 
@@ -406,11 +407,12 @@ Note that there are parameters like `prune_goal`, `min_distance_from_start` and 
   - Keep graph visualization in rviz but turn off by default
   - Default graph sandbox + launch configuration to set (and get filepath + mirror `map` comments). 
 
-  - Tutorials (bt change, plugin customize, file field examples)
+  - Tutorials (bt xml change, plugin customize (op/edge), file field examples)
   - BT XMLs (first/last mile, freq. replanning, navigation using it, WPF using it, clearance)
   - Demos (route -> global -> local. outdoor non-planar. waypoint follower (GPS?) of route nodes. controller server of dense path)
 
   - Finish system test with route file + evaluation
+  - stop / clearance
 
 - [ ] Testing by users
 
