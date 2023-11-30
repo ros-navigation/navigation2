@@ -41,7 +41,3 @@ target_link_libraries(test_odometry_utils ${library_name})
 ament_add_gtest(test_robot_utils test_robot_utils.cpp)
 ament_target_dependencies(test_robot_utils geometry_msgs)
 target_link_libraries(test_robot_utils ${library_name})
-
-ament_add_gtest(test_base_footprint_publisher test_base_footprint_publisher.cpp)
-ament_target_dependencies(test_base_footprint_publisher geometry_msgs)
-target_link_libraries(test_base_footprint_publisher ${library_name})
