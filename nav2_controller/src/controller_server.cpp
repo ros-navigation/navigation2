@@ -290,11 +290,7 @@ ControllerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
    * unordered_set iteration. Once this issue is resolved, we can maybe make a stronger
    * ordering assumption: https://github.com/ros2/rclcpp/issues/2096
    */
-  if (costmap_ros_->get_current_state().id() ==
-    lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
-  {
-    costmap_ros_->deactivate();
-  }
+  costmap_ros_->deactivate();
 
   publishZeroVelocity();
   vel_publisher_->on_deactivate();
@@ -320,11 +316,9 @@ ControllerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 
   goal_checkers_.clear();
   progress_checkers_.clear();
-  if (costmap_ros_->get_current_state().id() ==
-    lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
-  {
-    costmap_ros_->cleanup();
-  }
+
+  costmap_ros_->cleanup();
+
 
   // Release any allocated resources
   action_server_.reset();
