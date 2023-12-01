@@ -61,6 +61,47 @@ namespace nav2_costmap_2d
 Costmap2DROS::Costmap2DROS(const std::string & name)
 : Costmap2DROS(name, "/", name) {}
 
+Costmap2DROS::Costmap2DROS(const rclcpp::NodeOptions & options)
+: nav2_util::LifecycleNode("costmap", "", options),
+  name_("costmap"),
+  default_plugins_{"static_layer", "obstacle_layer", "inflation_layer"},
+  default_types_{
+    "nav2_costmap_2d::StaticLayer",
+    "nav2_costmap_2d::ObstacleLayer",
+    "nav2_costmap_2d::InflationLayer"}
+{
+  is_lifecycle_follower_ = false;
+  
+  RCLCPP_INFO(get_logger(), "Creating Costmap");
+
+  declare_parameter("always_send_full_costmap", rclcpp::ParameterValue(false));
+  declare_parameter("footprint_padding", rclcpp::ParameterValue(0.01f));
+  declare_parameter("footprint", rclcpp::ParameterValue(std::string("[]")));
+  declare_parameter("global_frame", rclcpp::ParameterValue(std::string("map")));
+  declare_parameter("height", rclcpp::ParameterValue(5));
+  declare_parameter("width", rclcpp::ParameterValue(5));
+  declare_parameter("lethal_cost_threshold", rclcpp::ParameterValue(100));
+  declare_parameter(
+    "map_topic", rclcpp::ParameterValue(
+      (parent_namespace_ == "/" ? "/" : parent_namespace_ + "/") + std::string("map")));
+  declare_parameter("observation_sources", rclcpp::ParameterValue(std::string("")));
+  declare_parameter("origin_x", rclcpp::ParameterValue(0.0));
+  declare_parameter("origin_y", rclcpp::ParameterValue(0.0));
+  declare_parameter("plugins", rclcpp::ParameterValue(default_plugins_));
+  declare_parameter("filters", rclcpp::ParameterValue(std::vector<std::string>()));
+  declare_parameter("publish_frequency", rclcpp::ParameterValue(1.0));
+  declare_parameter("resolution", rclcpp::ParameterValue(0.1));
+  declare_parameter("robot_base_frame", rclcpp::ParameterValue(std::string("base_link")));
+  declare_parameter("robot_radius", rclcpp::ParameterValue(0.1));
+  declare_parameter("rolling_window", rclcpp::ParameterValue(false));
+  declare_parameter("track_unknown_space", rclcpp::ParameterValue(false));
+  declare_parameter("transform_tolerance", rclcpp::ParameterValue(0.3));
+  declare_parameter("trinary_costmap", rclcpp::ParameterValue(true));
+  declare_parameter("unknown_cost_value", rclcpp::ParameterValue(static_cast<unsigned char>(0xff)));
+  declare_parameter("update_frequency", rclcpp::ParameterValue(5.0));
+  declare_parameter("use_maximum", rclcpp::ParameterValue(false));
+}
+
 Costmap2DROS::Costmap2DROS(
   const std::string & name,
   const std::string & parent_namespace,
