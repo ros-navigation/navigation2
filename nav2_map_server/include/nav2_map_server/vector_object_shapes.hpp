@@ -128,7 +128,7 @@ public:
     const double transform_tolerance) = 0;
 
   /**
-   * @brief Gets shape boundaries.
+   * @brief Gets shape box-boundaries.
    * Empty virtual method intended to be used in child implementations
    * @param min_x output min X-boundary of shape
    * @param min_y output min Y-boundary of shape
@@ -237,7 +237,7 @@ public:
     const double transform_tolerance);
 
   /**
-   * @brief Gets shape boundaries
+   * @brief Gets shape box-boundaries
    * @param min_x output min X-boundary of shape
    * @param min_y output min Y-boundary of shape
    * @param max_x output max X-boundary of shape
@@ -347,7 +347,7 @@ public:
     const double transform_tolerance);
 
   /**
-   * @brief Gets shape boundaries
+   * @brief Gets shape box-boundaries
    * @param min_x output min X-boundary of shape
    * @param min_y output min Y-boundary of shape
    * @param max_x output max X-boundary of shape

@@ -1,4 +1,4 @@
-// Copyright (c) 2023 Samsung R&D Institute Russia
+// Copyright (c) 2022 Samsung R&D Institute Russia
 // All rights reserved.
 //
 // Software License Agreement (BSD License 2.0)
@@ -38,6 +38,9 @@
 
 #include "nav2_util/raytrace_line_2d.hpp"
 
+// MapAction - is a functor class used to cover raytraceLine algorithm.
+// It contains char map inside, which is an abstract one and not related
+// to any concrete representation (like Costmap2D or OccupancyGrid).
 class MapAction
 {
 public:

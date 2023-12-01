@@ -170,7 +170,7 @@ protected:
 
   /**
    * @brief Callback for RemoveShapes service call.
-   * Try to remove all requested objects and switches map processing/publishing routine
+   * Try to remove requested vector objects and switches map processing/publishing routine
    * @param request_header Service request header
    * @param request Service request
    * @param response Service response

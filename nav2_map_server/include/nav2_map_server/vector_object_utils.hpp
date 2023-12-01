@@ -16,8 +16,8 @@
 #define NAV2_MAP_SERVER__VECTOR_OBJECT_UTILS_HPP_
 
 #include <uuid/uuid.h>
-#include <string>
 #include <stdexcept>
+#include <string>
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
@@ -32,7 +32,7 @@ namespace nav2_map_server
 // ---------- Working with UUID-s ----------
 
 /**
- * @beirf Converts input UUID from input array to unparsed string
+ * @beirf Converts UUID from input array to unparsed string
  * @param uuid Input UUID in array format
  * @return Unparsed UUID string
  */
@@ -49,7 +49,7 @@ inline std::string unparseUUID(const unsigned char * uuid)
  * @brief Declares and obtains ROS-parameter from given node
  * @param node LifecycleNode pointer where the parameter belongs to
  * @param param_name Parameter name string
- * @param default_val Default value of the parameter (in case if parameter is not set)
+ * @param default_val Default value of the parameter (for the case if parameter is not set)
  * @return Obtained parameter value
  */
 template<typename ValT>
@@ -94,7 +94,7 @@ enum class OverlayType : uint8_t
 
 /**
  * @brief Updates map value with shape's one according to the given overlay type
- * @param map_val Map value. To be updated with new value if overlay is required
+ * @param map_val Map value. To be updated with new value if overlay is involved
  * @param shape_val Vector object value to be overlayed on map
  * @param overlay_type Type of overlay
  * @throw std::exception in case of unknown overlay type
@@ -125,13 +125,13 @@ inline void processVal(
 }
 
 /**
- * @brief Fill the cell on the map with given shape value according to the given overlay type
- * @param map Output map to be filled with
- * @param offset Offset to the cell to be filled
- * @param shape_val Vector object value to be overlayed on map
+ * @brief Updates the cell on the map with given shape value according to the given overlay type
+ * @param map Output map to be updated with
+ * @param offset Offset to the cell to be updated
+ * @param shape_val Vector object value to be updated map with
  * @param overlay_type Type of overlay
  */
-inline void fillMap(
+inline void processCell(
   nav_msgs::msg::OccupancyGrid::SharedPtr map,
   const unsigned int offset,
   const int8_t shape_val,
@@ -148,7 +148,7 @@ class MapAction
 public:
   /**
    * @brief MapAction constructor
-   * @param map Output map pointer
+   * @param map Pointer to output map
    * @param value Value to put on map
    * @param overlay_type Overlay type
    */
@@ -159,12 +159,12 @@ public:
   {}
 
   /**
-   * @brief Map filling operator
+   * @brief Map' cell updating operator
    * @param offset Offset on the map where the cell to be changed
    */
   inline void operator()(unsigned int offset)
   {
-    fillMap(map_, offset, value_, overlay_type_);
+    processCell(map_, offset, value_, overlay_type_);
   }
 
 protected:
