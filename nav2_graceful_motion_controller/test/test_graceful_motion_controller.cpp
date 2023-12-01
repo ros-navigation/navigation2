@@ -78,7 +78,9 @@ TEST(GracefulMotionControllerTest, dynamicParameters) {
       rclcpp::Parameter("test.v_linear_min", 8.0),
       rclcpp::Parameter("test.v_linear_max", 9.0),
       rclcpp::Parameter("test.v_angular_max", 10.0),
-      rclcpp::Parameter("test.slowdown_radius", 11.0)});
+      rclcpp::Parameter("test.slowdown_radius", 11.0),
+      rclcpp::Parameter("test.initial_rotation", false),
+      rclcpp::Parameter("test.initial_rotation_min_angle", 12.0)});
 
   // Spin
   rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
@@ -95,6 +97,8 @@ TEST(GracefulMotionControllerTest, dynamicParameters) {
   EXPECT_EQ(node->get_parameter("test.v_linear_max").as_double(), 9.0);
   EXPECT_EQ(node->get_parameter("test.v_angular_max").as_double(), 10.0);
   EXPECT_EQ(node->get_parameter("test.slowdown_radius").as_double(), 11.0);
+  EXPECT_EQ(node->get_parameter("test.initial_rotation").as_bool(), false);
+  EXPECT_EQ(node->get_parameter("test.initial_rotation_min_angle").as_double(), 12.0);
 
   // Set max search distant to negative so it warns
   results = params->set_parameters_atomically(
@@ -140,6 +144,27 @@ TEST(SmoothControlLawTest, calculateRegularVelocity) {
 }
 
 TEST(SmoothControlLawTest, calculateNextPose) {
+  // Initialize SmoothControlLaw
+  nav2_graceful_motion_controller::SmoothControlLaw scl(1.0, 10.0, 0.2, 2.0, 0.1, 0.0, 1.0, 1.0);
+
+  // Initialize target
+  geometry_msgs::msg::Pose target;
+  target.position.x = 0.0;
+  target.position.y = 5.0;
+  target.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
+  // Initialize current
+  geometry_msgs::msg::Pose current;
+  current.position.x = 0.0;
+  current.position.y = 0.0;
+  current.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
+  // Calculate next pose
+  float dt = 0.1;
+  auto next_pose = scl.calculateNextPose(dt, target, current);
+
+  // Check results
+  EXPECT_NEAR(next_pose.position.x, 0.1, 0.1);
+  EXPECT_NEAR(next_pose.position.y, 0.0, 0.1);
+  EXPECT_NEAR(tf2::getYaw(next_pose.orientation), 0.0, 0.1);
 }
 
 int main(int argc, char ** argv)

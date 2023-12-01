@@ -53,6 +53,10 @@ ParameterHandler::ParameterHandler(
     node, plugin_name_ + ".v_angular_max", rclcpp::ParameterValue(1.0));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".slowdown_radius", rclcpp::ParameterValue(1.5));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".initial_rotation", rclcpp::ParameterValue(true));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".initial_rotation_min_angle", rclcpp::ParameterValue(0.75));
 
   node->get_parameter(plugin_name_ + ".transform_tolerance", params_.transform_tolerance);
   node->get_parameter(plugin_name_ + ".motion_target_dist", params_.motion_target_dist);
@@ -73,6 +77,9 @@ ParameterHandler::ParameterHandler(
   node->get_parameter(plugin_name_ + ".v_linear_max", params_.v_linear_max);
   node->get_parameter(plugin_name_ + ".v_angular_max", params_.v_angular_max);
   node->get_parameter(plugin_name_ + ".slowdown_radius", params_.slowdown_radius);
+  node->get_parameter(plugin_name_ + ".initial_rotation", params_.initial_rotation);
+  node->get_parameter(
+    plugin_name_ + ".initial_rotation_min_angle", params_.initial_rotation_min_angle);
 
   dyn_params_handler_ = node->add_on_set_parameters_callback(
     std::bind(&ParameterHandler::dynamicParametersCallback, this, std::placeholders::_1));
@@ -105,8 +112,16 @@ ParameterHandler::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
         params_.v_linear_min = parameter.as_double();
       } else if (name == plugin_name_ + ".v_linear_max") {
         params_.v_linear_max = parameter.as_double();
+      } else if (name == plugin_name_ + ".v_angular_max") {
+        params_.v_angular_max = parameter.as_double();
       } else if (name == plugin_name_ + ".slowdown_radius") {
         params_.slowdown_radius = parameter.as_double();
+      } else if (name == plugin_name_ + ".initial_rotation_min_angle") {
+        params_.initial_rotation_min_angle = parameter.as_double();
+      }
+    } else if (type == ParameterType::PARAMETER_BOOL) {
+      if (name == plugin_name_ + ".initial_rotation") {
+        params_.initial_rotation = parameter.as_bool();
       }
     }
   }

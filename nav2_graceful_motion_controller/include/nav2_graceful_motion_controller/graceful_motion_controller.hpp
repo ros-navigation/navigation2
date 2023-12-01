@@ -147,6 +147,15 @@ protected:
   nav_msgs::msg::Path simulateTrajectory(
     const geometry_msgs::msg::PoseStamped & motion_target);
 
+  /**
+   * @brief Rotate the robot to face the motion target with maximum angular velocity.
+   *
+   * @param angle_to_target Angle to the motion target
+   * @return geometry_msgs::msg::Twist Velocity command
+   */
+  geometry_msgs::msg::Twist rotateToTarget(
+    const double & angle_to_target);
+
   rclcpp_lifecycle::LifecycleNode::WeakPtr parent_node_;
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::string plugin_name_;

@@ -128,10 +128,17 @@ geometry_msgs::msg::TwistStamped GracefulMotionController::computeVelocityComman
   auto slowdown_marker = createSlowdownMsg(motion_target);
   slowdown_pub_->publish(slowdown_marker);
 
-  // Compute velocity command
+  // Compute velocity command:
+  // 1. Check if we must do a rotation in place before moving
+  // 2. Calculate the new velocity command using the smooth control law
   geometry_msgs::msg::TwistStamped cmd_vel;
   cmd_vel.header = pose.header;
-  cmd_vel.twist = control_law_->calculateRegularVelocity(motion_target.pose);
+  double angle_to_target = atan2(motion_target.pose.position.y, motion_target.pose.position.x);
+  if (params_->initial_rotation && fabs(angle_to_target) > params_->initial_rotation_min_angle) {
+    cmd_vel.twist = rotateToTarget(angle_to_target);
+  } else {
+    cmd_vel.twist = control_law_->calculateRegularVelocity(motion_target.pose);
+  }
 
   // TODO(ajtudela): Check collision
 
@@ -248,6 +255,15 @@ nav_msgs::msg::Path GracefulMotionController::simulateTrajectory(
   }while(distance > resolution_ && trajectory.poses.size() < max_iter);
 
   return trajectory;
+}
+
+geometry_msgs::msg::Twist GracefulMotionController::rotateToTarget(const double & angle_to_target)
+{
+  double sign = angle_to_target < 0.0 ? -1.0 : 1.0;
+  geometry_msgs::msg::Twist vel;
+  vel.linear.x = 0.0;
+  vel.angular.z = sign * params_->v_angular_max;
+  return vel;
 }
 
 }  // namespace nav2_graceful_motion_controller
