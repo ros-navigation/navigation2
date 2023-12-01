@@ -563,7 +563,7 @@ inline void Circle::putPoint(
   nav_msgs::msg::OccupancyGrid::SharedPtr map,
   const OverlayType overlay_type)
 {
-  fillMap(map, my * map->info.width + mx, params_->value, overlay_type);
+  processCell(map, my * map->info.width + mx, params_->value, overlay_type);
 }
 
 }  // namespace nav2_map_server

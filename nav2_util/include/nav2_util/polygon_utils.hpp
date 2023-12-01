@@ -1,4 +1,4 @@
-// Copyright (c) 2023 Samsung R&D Institute Russia
+// Copyright (c) 2022 Samsung R&D Institute Russia
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.

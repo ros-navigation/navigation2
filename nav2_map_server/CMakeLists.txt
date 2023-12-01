@@ -8,6 +8,8 @@ find_package(nav2_common REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(rclcpp_components REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(tf2_ros REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
@@ -93,6 +95,8 @@ set(vo_server_dependencies
   rclcpp
   rclcpp_lifecycle
   rclcpp_components
+  geometry_msgs
+  tf2_ros
   nav_msgs
   nav2_msgs
   nav2_util)
