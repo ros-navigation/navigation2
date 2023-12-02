@@ -129,7 +129,6 @@ void SmacPlannerLattice::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".debug_visualizations", rclcpp::ParameterValue(false));
   node->get_parameter(name + ".debug_visualizations", _debug_visualizations);
-  
   _metadata = LatticeMotionTable::getLatticeMetadata(_search_info.lattice_filepath);
   _search_info.minimum_turning_radius =
     _metadata.min_turning_radius / (_costmap->getResolution());
@@ -197,9 +196,9 @@ void SmacPlannerLattice::configure(
   }
 
   if (_debug_visualizations) {
-      _expansions_publisher = node->create_publisher<geometry_msgs::msg::PoseArray>("expansions", 1);
-      _planned_footprints_publisher = node->create_publisher<visualization_msgs::msg::MarkerArray>(
-        "planned_footprints", 1);
+    _expansions_publisher = node->create_publisher<geometry_msgs::msg::PoseArray>("expansions", 1);
+    _planned_footprints_publisher = node->create_publisher<visualization_msgs::msg::MarkerArray>(
+      "planned_footprints", 1);
   }
 
   RCLCPP_INFO(
@@ -351,7 +350,6 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
   if (_raw_plan_publisher->get_subscription_count() > 0) {
     _raw_plan_publisher->publish(plan);
   }
-  
   if (_debug_visualizations) {
     // Publish expansions for debug
     geometry_msgs::msg::PoseArray msg;
@@ -383,7 +381,6 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
       _planned_footprints_publisher->publish(std::move(marker_array));
     }
   }
-  
   // Find how much time we have left to do smoothing
   steady_clock::time_point b = steady_clock::now();
   duration<double> time_span = duration_cast<duration<double>>(b - a);
