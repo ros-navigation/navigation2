@@ -127,6 +127,7 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
       rclcpp::Parameter("test.tolerance", 42.0),
       rclcpp::Parameter("test.rotation_penalty", 42.0),
       rclcpp::Parameter("test.max_on_approach_iterations", 42),
+      rclcpp::Parameter("test.debug_visualizations", true),
       rclcpp::Parameter("test.allow_reverse_expansion", true)});
 
   try {
