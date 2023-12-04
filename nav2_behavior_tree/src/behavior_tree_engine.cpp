@@ -28,7 +28,7 @@ namespace nav2_behavior_tree
 BehaviorTreeEngine::BehaviorTreeEngine(
   const std::vector<std::string> & plugin_libraries,
   rclcpp::Clock::SharedPtr clock)
-  : clock_(clock)
+: clock_(clock)
 {
   BT::SharedLibrary loader;
   for (const auto & p : plugin_libraries) {
