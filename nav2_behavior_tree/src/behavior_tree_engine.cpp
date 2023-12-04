@@ -25,7 +25,10 @@
 namespace nav2_behavior_tree
 {
 
-BehaviorTreeEngine::BehaviorTreeEngine(const std::vector<std::string> & plugin_libraries)
+BehaviorTreeEngine::BehaviorTreeEngine(
+  const std::vector<std::string> & plugin_libraries,
+  rclcpp::Clock::SharedPtr clock)
+  : clock_(clock)
 {
   BT::SharedLibrary loader;
   for (const auto & p : plugin_libraries) {
@@ -40,7 +43,7 @@ BehaviorTreeEngine::run(
   std::function<bool()> cancelRequested,
   std::chrono::milliseconds loopTimeout)
 {
-  rclcpp::WallRate loopRate(loopTimeout);
+  rclcpp::Rate loopRate(loopTimeout, clock_);
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
 
   // Loop until something happens with ROS or the node completes

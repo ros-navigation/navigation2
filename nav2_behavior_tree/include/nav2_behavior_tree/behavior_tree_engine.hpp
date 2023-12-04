@@ -25,6 +25,7 @@
 #include "behaviortree_cpp_v3/xml_parsing.h"
 #include "behaviortree_cpp_v3/loggers/bt_zmq_publisher.h"
 
+#include "rclcpp/rclcpp.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -45,8 +46,11 @@ public:
   /**
    * @brief A constructor for nav2_behavior_tree::BehaviorTreeEngine
    * @param plugin_libraries vector of BT plugin library names to load
+   * @param clock System clock to use to set looping rate of BT ticking
    */
-  explicit BehaviorTreeEngine(const std::vector<std::string> & plugin_libraries);
+  explicit BehaviorTreeEngine(
+    const std::vector<std::string> & plugin_libraries,
+    rclcpp::Clock::SharedPtr clock);
   virtual ~BehaviorTreeEngine() {}
 
   /**
@@ -92,6 +96,7 @@ public:
 protected:
   // The factory that will be used to dynamically construct the behavior tree
   BT::BehaviorTreeFactory factory_;
+  rclcpp::Clock::SharedPtr clock_;
 };
 
 }  // namespace nav2_behavior_tree
