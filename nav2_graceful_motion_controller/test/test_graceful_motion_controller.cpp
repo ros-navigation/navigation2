@@ -80,7 +80,8 @@ TEST(GracefulMotionControllerTest, dynamicParameters) {
       rclcpp::Parameter("test.v_angular_max", 10.0),
       rclcpp::Parameter("test.slowdown_radius", 11.0),
       rclcpp::Parameter("test.initial_rotation", false),
-      rclcpp::Parameter("test.initial_rotation_min_angle", 12.0)});
+      rclcpp::Parameter("test.initial_rotation_min_angle", 12.0),
+      rclcpp::Parameter("test.final_rotation", false)});
 
   // Spin
   rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
@@ -99,6 +100,7 @@ TEST(GracefulMotionControllerTest, dynamicParameters) {
   EXPECT_EQ(node->get_parameter("test.slowdown_radius").as_double(), 11.0);
   EXPECT_EQ(node->get_parameter("test.initial_rotation").as_bool(), false);
   EXPECT_EQ(node->get_parameter("test.initial_rotation_min_angle").as_double(), 12.0);
+  EXPECT_EQ(node->get_parameter("test.final_rotation").as_bool(), false);
 
   // Set max search distant to negative so it warns
   results = params->set_parameters_atomically(

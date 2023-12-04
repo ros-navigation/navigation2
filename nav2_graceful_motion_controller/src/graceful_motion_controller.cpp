@@ -128,13 +128,32 @@ geometry_msgs::msg::TwistStamped GracefulMotionController::computeVelocityComman
   auto slowdown_marker = createSlowdownMsg(motion_target);
   slowdown_pub_->publish(slowdown_marker);
 
+  // Compute distance to goal
+  geometry_msgs::msg::PoseStamped goal_pose = transformed_plan.poses.back();
+  double dist_to_goal = std::hypot(goal_pose.pose.position.x, goal_pose.pose.position.y);
+
+  // If the distance to the goal is less than the motion target distance, i.e.
+  // the 'motion target' is the goal, then we skip the goal orientation and
+  // rotate along the path to avoid big curvature changes
+  double angle_to_target = atan2(motion_target.pose.position.y, motion_target.pose.position.x);
+  if (params_->final_rotation && dist_to_goal < params_->motion_target_dist) {
+    motion_target.pose.orientation.z = sin(angle_to_target / 2.0);
+    motion_target.pose.orientation.w = cos(angle_to_target / 2.0);
+  }
+
   // Compute velocity command:
-  // 1. Check if we must do a rotation in place before moving
-  // 2. Calculate the new velocity command using the smooth control law
+  // 1. Check if we are close enough to the goal to do a final rotation in place
+  // 2. Check if we must do a rotation in place before moving
+  // 3. Calculate the new velocity command using the smooth control law
   geometry_msgs::msg::TwistStamped cmd_vel;
   cmd_vel.header = pose.header;
-  double angle_to_target = atan2(motion_target.pose.position.y, motion_target.pose.position.x);
-  if (params_->initial_rotation && fabs(angle_to_target) > params_->initial_rotation_min_angle) {
+  if (params_->final_rotation && (dist_to_goal < goal_dist_tolerance_ || goal_reached_)) {
+    goal_reached_ = true;
+    double angle_to_goal = tf2::getYaw(transformed_plan.poses.back().pose.orientation);
+    cmd_vel.twist = rotateToTarget(angle_to_goal);
+  } else if (params_->initial_rotation &&
+    fabs(angle_to_target) > params_->initial_rotation_min_angle)
+  {
     cmd_vel.twist = rotateToTarget(angle_to_target);
   } else {
     cmd_vel.twist = control_law_->calculateRegularVelocity(motion_target.pose);
@@ -153,6 +172,7 @@ geometry_msgs::msg::TwistStamped GracefulMotionController::computeVelocityComman
 void GracefulMotionController::setPlan(const nav_msgs::msg::Path & path)
 {
   path_handler_->setPlan(path);
+  goal_reached_ = false;
 }
 
 void GracefulMotionController::setSpeedLimit(

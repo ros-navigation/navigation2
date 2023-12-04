@@ -164,6 +164,7 @@ protected:
 
   Parameters * params_;
   double goal_dist_tolerance_;
+  bool goal_reached_;
 
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> transformed_plan_pub_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> local_plan_pub_;

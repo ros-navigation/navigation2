@@ -45,6 +45,7 @@ struct Parameters
   double slowdown_radius;
   bool initial_rotation;
   double initial_rotation_min_angle;
+  bool final_rotation;
 };
 
 /**
