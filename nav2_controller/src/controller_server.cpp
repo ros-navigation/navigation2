@@ -456,7 +456,7 @@ void ControllerServer::computeControl()
     progress_checkers_[current_progress_checker_]->reset();
 
     last_valid_cmd_time_ = now();
-    rclcpp::Rate loop_rate(controller_frequency_, get_clock());
+    rclcpp::WallRate loop_rate(controller_frequency_);
     while (rclcpp::ok()) {
       if (action_server_ == nullptr || !action_server_->is_server_active()) {
         RCLCPP_DEBUG(get_logger(), "Action server unavailable or inactive. Stopping.");

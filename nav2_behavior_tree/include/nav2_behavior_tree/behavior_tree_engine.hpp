@@ -46,11 +46,9 @@ public:
   /**
    * @brief A constructor for nav2_behavior_tree::BehaviorTreeEngine
    * @param plugin_libraries vector of BT plugin library names to load
-   * @param clock System clock to use to set looping rate of BT ticking
    */
   explicit BehaviorTreeEngine(
-    const std::vector<std::string> & plugin_libraries,
-    rclcpp::Clock::SharedPtr clock);
+    const std::vector<std::string> & plugin_libraries);
   virtual ~BehaviorTreeEngine() {}
 
   /**
