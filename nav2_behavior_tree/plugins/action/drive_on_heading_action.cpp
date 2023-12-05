@@ -56,7 +56,7 @@ void DriveOnHeadingAction::initialize()
 
 BT::NodeStatus DriveOnHeadingAction::on_success()
 {
-  setOutput("error_code_id", ActionResult::NONE);
+  setOutput("error_code_id", ActionResult::NONE);dfg
   return BT::NodeStatus::SUCCESS;
 }
 

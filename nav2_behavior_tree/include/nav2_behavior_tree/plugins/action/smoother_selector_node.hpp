@@ -88,7 +88,6 @@ private:
    */
   void callbackSmootherSelect(const std_msgs::msg::String::SharedPtr msg);
 
-  bool first_time;
   rclcpp::Subscription<std_msgs::msg::String>::SharedPtr smoother_selector_sub_;
 
   std::string last_selected_smoother_;
