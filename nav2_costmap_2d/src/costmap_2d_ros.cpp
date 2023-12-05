@@ -61,6 +61,20 @@ namespace nav2_costmap_2d
 Costmap2DROS::Costmap2DROS(const std::string & name)
 : Costmap2DROS(name, "/", name) {}
 
+Costmap2DROS::Costmap2DROS(const rclcpp::NodeOptions & options)
+: nav2_util::LifecycleNode("costmap", ""),
+  name_("costmap"),
+  default_plugins_{"static_layer", "obstacle_layer", "inflation_layer"},
+  default_types_{
+    "nav2_costmap_2d::StaticLayer",
+    "nav2_costmap_2d::ObstacleLayer",
+    "nav2_costmap_2d::InflationLayer"}
+{
+  declare_parameter("map_topic", rclcpp::ParameterValue(std::string("map")));
+  is_lifecycle_follower_ = false;
+  init();
+}
+
 Costmap2DROS::Costmap2DROS(
   const std::string & name,
   const std::string & parent_namespace,
@@ -83,6 +97,14 @@ Costmap2DROS::Costmap2DROS(
     "nav2_costmap_2d::ObstacleLayer",
     "nav2_costmap_2d::InflationLayer"}
 {
+  declare_parameter(
+    "map_topic", rclcpp::ParameterValue(
+      (parent_namespace_ == "/" ? "/" : parent_namespace_ + "/") + std::string("map")));
+  init();
+}
+
+void Costmap2DROS::init()
+{
   RCLCPP_INFO(get_logger(), "Creating Costmap");
 
   std::vector<std::string> clearable_layers{"obstacle_layer", "voxel_layer", "range_layer"};
@@ -94,9 +116,6 @@ Costmap2DROS::Costmap2DROS(
   declare_parameter("height", rclcpp::ParameterValue(5));
   declare_parameter("width", rclcpp::ParameterValue(5));
   declare_parameter("lethal_cost_threshold", rclcpp::ParameterValue(100));
-  declare_parameter(
-    "map_topic", rclcpp::ParameterValue(
-      (parent_namespace_ == "/" ? "/" : parent_namespace_ + "/") + std::string("map")));
   declare_parameter("observation_sources", rclcpp::ParameterValue(std::string("")));
   declare_parameter("origin_x", rclcpp::ParameterValue(0.0));
   declare_parameter("origin_y", rclcpp::ParameterValue(0.0));
