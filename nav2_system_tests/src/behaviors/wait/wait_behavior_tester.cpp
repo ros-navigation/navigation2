@@ -164,7 +164,8 @@ bool WaitBehaviorTester::behaviorTest(
 
   RCLCPP_INFO(node_->get_logger(), "result received");
 
-
+  RCLCPP_INFO(node_->get_logger(), "DTime: %f", (node_->now() - start_time).seconds());
+  RCLCPP_INFO(node_->get_logger(), "WTime: %f", static_cast<double>(wait_time));
   if ((node_->now() - start_time).seconds() < static_cast<double>(wait_time)) {
     return false;
   }
