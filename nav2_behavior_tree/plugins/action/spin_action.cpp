@@ -39,7 +39,7 @@ void SpinAction::on_tick()
   }
 }
 
-void SpinaAction::initialize()
+void SpinAction::initialize()
 {
   double dist;
   getInput("spin_dist", dist);
