@@ -94,7 +94,6 @@ public:
 protected:
   // The factory that will be used to dynamically construct the behavior tree
   BT::BehaviorTreeFactory factory_;
-  rclcpp::Clock::SharedPtr clock_;
 };
 
 }  // namespace nav2_behavior_tree
