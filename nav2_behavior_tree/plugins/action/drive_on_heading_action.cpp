@@ -38,10 +38,6 @@ void DriveOnHeadingAction::on_tick()
 
 void DriveOnHeadingAction::initialize()
 {
-}
-
-void DriveOnHeadingAction::on_tick()
-{
   double dist;
   getInput("dist_to_travel", dist);
   double speed;
