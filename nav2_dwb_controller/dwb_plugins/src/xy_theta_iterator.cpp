@@ -41,8 +41,6 @@
 #include "nav_2d_utils/parameters.hpp"
 #include "nav2_util/node_utils.hpp"
 
-#define EPSILON 1E-5
-
 namespace dwb_plugins
 {
 void XYThetaIterator::initialize(
@@ -92,29 +90,10 @@ void XYThetaIterator::startNewIteration(
   }
 }
 
-bool XYThetaIterator::isValidSpeed(double x, double y, double theta)
-{
-  KinematicParameters kinematics = kinematics_handler_->getKinematics();
-  double vmag_sq = x * x + y * y;
-  if (kinematics.getMaxSpeedXY() >= 0.0 && vmag_sq > kinematics.getMaxSpeedXY_SQ() + EPSILON) {
-    return false;
-  }
-  if (kinematics.getMinSpeedXY() >= 0.0 && vmag_sq + EPSILON < kinematics.getMinSpeedXY_SQ() &&
-    kinematics.getMinSpeedTheta() >= 0.0 && fabs(theta) + EPSILON < kinematics.getMinSpeedTheta())
-  {
-    return false;
-  }
-  if (vmag_sq == 0.0 && th_it_->getVelocity() == 0.0) {
-    return false;
-  }
-  return true;
-}
-
 bool XYThetaIterator::isValidVelocity()
 {
-  return isValidSpeed(
-    x_it_->getVelocity(), y_it_->getVelocity(),
-    th_it_->getVelocity());
+  return kinematics_handler_->getKinematics().isValidSpeed(
+    x_it_->getVelocity(), y_it_->getVelocity(), th_it_->getVelocity());
 }
 
 bool XYThetaIterator::hasMoreTwists()
