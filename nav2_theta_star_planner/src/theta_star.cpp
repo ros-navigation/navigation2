@@ -258,4 +258,12 @@ void ThetaStar::initializePosn(int size_inc)
     node_position_.push_back(nullptr);
   }
 }
+
+void ThetaStar::clearStart()
+{
+  unsigned int mx_start = static_cast<unsigned int>(src_.x);
+  unsigned int my_start = static_cast<unsigned int>(src_.y);
+  costmap_->setCost(mx_start, my_start, nav2_costmap_2d::FREE_SPACE);
+}
+
 }  //  namespace theta_star
