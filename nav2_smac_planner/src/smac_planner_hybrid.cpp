@@ -322,6 +322,7 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
     _collision_checker.setCostmap(costmap);
   }
 
+  // Set collision checker and costmap information
   _a_star->setCollisionChecker(&_collision_checker);
 
   // Set starting point, in A* bin search coordinates
