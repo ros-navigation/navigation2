@@ -95,7 +95,7 @@ Selector::timerEvent(QTimerEvent * event)
       controller->addItems(id_list);
       id_list.clear();
     } else {
-      auto parameters_con = parameter_client_con->get_parameters({"FollowPath"});
+      auto parameters_con = parameter_client_con->get_parameters({"FollowPath.plugin"});
       std::cout<<parameters_con.size()<<std::endl;      
       // auto str_arr = parameters_con[0].as_string_array();
       // for (auto str: str_arr)
@@ -103,7 +103,11 @@ Selector::timerEvent(QTimerEvent * event)
       // controller_params->addItems(id_list);
       // id_list.clear();
     }
+    const auto parameters = parameter_client_con->list_parameters({}, 50); // Timeout in seconds
 
+    for (const auto &param_name : parameters.names) {
+      std::cout << param_name << std::endl;
+    }
     auto parameter_client = std::make_shared<rclcpp::SyncParametersClient>(client_node_, "planner_server");
 
     while (!parameter_client->wait_for_service(1s)) {
