@@ -31,7 +31,7 @@ ResultStatus BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> comma
   command_speed_ = -std::fabs(command->speed);
   command_time_allowance_ = command->time_allowance;
 
-  end_time_ = steady_clock_.now() + command_time_allowance_;
+  end_time_ = this->clock_->now() + command_time_allowance_;
 
   if (!nav2_util::getCurrentPose(
       initial_pose_, *tf_, local_frame_, robot_base_frame_,

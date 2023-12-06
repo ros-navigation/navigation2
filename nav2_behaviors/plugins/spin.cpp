@@ -91,14 +91,14 @@ ResultStatus Spin::onRun(const std::shared_ptr<const SpinActionGoal> command)
     cmd_yaw_);
 
   command_time_allowance_ = command->time_allowance;
-  end_time_ = steady_clock_.now() + command_time_allowance_;
+  end_time_ = this->clock_->now() + command_time_allowance_;
 
   return ResultStatus{Status::SUCCEEDED, SpinActionResult::NONE};
 }
 
 ResultStatus Spin::onCycleUpdate()
 {
-  rclcpp::Duration time_remaining = end_time_ - steady_clock_.now();
+  rclcpp::Duration time_remaining = end_time_ - this->clock_->now();
   if (time_remaining.seconds() < 0.0 && command_time_allowance_.seconds() > 0.0) {
     stopRobot();
     RCLCPP_WARN(
