@@ -217,7 +217,6 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
             std::to_string(start.pose.position.y) + ") was outside bounds");
   }
   _a_star->setStart(mx_start, my_start, 0);
-  _a_star->clearStart(mx_start, my_start);
 
   // Set goal point
   if (!costmap->worldToMap(goal.pose.position.x, goal.pose.position.y, mx_goal, my_goal)) {

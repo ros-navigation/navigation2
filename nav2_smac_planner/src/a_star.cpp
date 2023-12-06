@@ -235,6 +235,8 @@ bool AStarAlgorithm<NodeT>::areInputsValid()
     throw nav2_core::GoalOccupied("Goal was in lethal cost");
   }
 
+  clearStart();
+
   return true;
 }
 
@@ -461,11 +463,18 @@ unsigned int & AStarAlgorithm<NodeT>::getSizeDim3()
   return _dim3_size;
 }
 
-template<typename NodeT>
-void AStarAlgorithm<NodeT>::clearStart(
-  unsigned int & mx, unsigned int & my)
+template<>
+void AStarAlgorithm<Node2D>::clearStart()
 {
-  _costmap->setCost(mx, my, nav2_costmap_2d::FREE_SPACE);
+  auto coords = Node2D::getCoords(_start->getIndex());
+  _costmap->setCost(coords.x, coords.y, nav2_costmap_2d::FREE_SPACE);
+}
+
+template<typename NodeT>
+void AStarAlgorithm<NodeT>::clearStart()
+{
+  auto coords = NodeT::getCoords(_start->getIndex(), _costmap->getSizeInCellsX(), getSizeDim3());
+  _costmap->setCost(coords.x, coords.y, nav2_costmap_2d::FREE_SPACE);
 }
 
 // Instantiate algorithm for the supported template types

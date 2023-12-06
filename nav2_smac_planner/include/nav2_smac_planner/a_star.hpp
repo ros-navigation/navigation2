@@ -187,13 +187,6 @@ public:
    */
   unsigned int & getSizeDim3();
 
-  /**
-   * @brief Clear Start
-   * @param mx The x index of the start
-   * @param my The y index of the start
-   */
-  void clearStart(unsigned int & mx, unsigned int & my);
-
 protected:
   /**
    * @brief Get pointer to next goal in open set
@@ -251,6 +244,11 @@ protected:
    */
   inline void populateExpansionsLog(
     const NodePtr & node, std::vector<std::tuple<float, float, float>> * expansions_log);
+
+  /**
+   * @brief Clear Start
+   */
+  void clearStart();
 
   int _timing_interval = 5000;
 
