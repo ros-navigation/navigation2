@@ -291,6 +291,11 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
   if (!_a_star->createPath(
       path, num_iterations, _tolerance / static_cast<float>(_costmap->getResolution())))
   {
+    // Note: If the start is blocked only one iteration will occur before failure
+    if (num_iterations == 1) {
+      throw nav2_core::StartOccupied("Start occupied");
+    }
+
     if (num_iterations < _a_star->getMaxIterations()) {
       throw nav2_core::NoValidPathCouldBeFound("no valid path found");
     } else {

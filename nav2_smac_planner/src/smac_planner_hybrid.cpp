@@ -409,6 +409,12 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
       }
       _expansions_publisher->publish(msg);
     }
+
+    // Note: If the start is blocked only one iteration will occur before failure
+    if (num_iterations == 1) {
+      throw nav2_core::StartOccupied("Start occupied");
+    }
+
     if (num_iterations < _a_star->getMaxIterations()) {
       throw nav2_core::NoValidPathCouldBeFound("no valid path found");
     } else {
