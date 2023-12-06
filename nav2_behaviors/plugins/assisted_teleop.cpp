@@ -67,7 +67,7 @@ ResultStatus AssistedTeleop::onRun(const std::shared_ptr<const AssistedTeleopAct
 {
   preempt_teleop_ = false;
   command_time_allowance_ = command->time_allowance;
-  end_time_ = steady_clock_.now() + command_time_allowance_;
+  end_time_ = this->clock_->now() + command_time_allowance_;
   return ResultStatus{Status::SUCCEEDED, AssistedTeleopActionResult::NONE};
 }
 
@@ -82,7 +82,7 @@ ResultStatus AssistedTeleop::onCycleUpdate()
   feedback_->current_teleop_duration = elasped_time_;
   action_server_->publish_feedback(feedback_);
 
-  rclcpp::Duration time_remaining = end_time_ - steady_clock_.now();
+  rclcpp::Duration time_remaining = end_time_ - this->clock_->now();
   if (time_remaining.seconds() < 0.0 && command_time_allowance_.seconds() > 0.0) {
     stopRobot();
     RCLCPP_WARN_STREAM(
@@ -125,7 +125,7 @@ ResultStatus AssistedTeleop::onCycleUpdate()
       if (time == simulation_time_step_) {
         RCLCPP_DEBUG_STREAM_THROTTLE(
           logger_,
-          steady_clock_,
+          *clock_,
           1000,
           behavior_name_.c_str() << " collided on first time step, setting velocity to zero");
         scaled_twist.linear.x = 0.0f;
@@ -135,7 +135,7 @@ ResultStatus AssistedTeleop::onCycleUpdate()
       } else {
         RCLCPP_DEBUG_STREAM_THROTTLE(
           logger_,
-          steady_clock_,
+          *clock_,
           1000,
           behavior_name_.c_str() << " collision approaching in " << time << " seconds");
         double scale_factor = time / projection_time_;

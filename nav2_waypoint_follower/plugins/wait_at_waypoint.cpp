@@ -42,6 +42,7 @@ void WaitAtWaypoint::initialize(
     throw std::runtime_error{"Failed to lock node in wait at waypoint plugin!"};
   }
   logger_ = node->get_logger();
+  clock_ = node->get_clock();
   nav2_util::declare_parameter_if_not_declared(
     node,
     plugin_name + ".waypoint_pause_duration",
@@ -77,7 +78,7 @@ bool WaitAtWaypoint::processAtWaypoint(
     logger_, "Arrived at %i'th waypoint, sleeping for %i milliseconds",
     curr_waypoint_index,
     waypoint_pause_duration_);
-  rclcpp::sleep_for(std::chrono::milliseconds(waypoint_pause_duration_));
+  clock_->sleep_for(std::chrono::milliseconds(waypoint_pause_duration_));
   return true;
 }
 }  // namespace nav2_waypoint_follower
