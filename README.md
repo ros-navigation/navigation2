@@ -42,6 +42,8 @@ Please thank our amazing sponsors for their generous support of Nav2 on behalf o
 ### Confidential is just happy to support Nav2's mission!
 
 
+If you need professional services related to Nav2, please contact Open Navigation at info@opennav.org.
+
 ## Our Sponsors
 
 Please thank our amazing sponsors for their generous support of Nav2 on behalf of the community to allow the project to continue to be professionally maintained, developed, and supported for the long-haul! [Open Navigation LLC](https://www.opennav.org/) provides project leadership, maintenance, development, and support services to the Nav2 & ROS community. 
