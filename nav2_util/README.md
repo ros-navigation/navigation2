@@ -7,6 +7,36 @@ The `nav2_util` package contains utilities abstracted from individual packages w
 - Simplified service clients
 - Simplified action servers
 - Transformation and robot pose helpers
+- Twist Subscriber and Twist Publisher
 
 The long-term aim is for these utilities to find more permanent homes in other packages (within and outside of Nav2) or migrate to the raw tools made available in ROS 2.
- 
+
+## Twist Publisher and Twist Subscriber for commanded velocities
+
+### Background 
+
+The Twist Publisher and Twist Subscriber are utility classes to assist NAV2 transition from 
+[Twist](https://github.com/ros2/common_interfaces/blob/humble/geometry_msgs/msg/Twist.msg) to [TwistStamped](https://github.com/ros2/common_interfaces/blob/humble/geometry_msgs/msg/TwistStamped.msg).
+
+This utility is in support of the following [GSoC Project](https://navigation.ros.org/2021summerOfCode/projects/twist_n_config.html#convert-twist-to-twiststamped-in-ecosystem-and-run-time-configuration).
+Details on the migration are found in [#1594](https://github.com/ros-planning/navigation2/issues/1594).
+
+Certain applications of NAV2, such as in ROS Aerial mandate the usage of `TwistStamped`, while many other applications still use `Twist`.
+
+The utility has the following effect:
+* Allows use of either `Twist` or `TwistStamped`, controlled by ROS parameter `enable_stamped_cmd_vel`
+* Preserves existing topic names without duplication of data
+
+Every node in `nav2` that subscribes or publishes velocity commands with `Twist` now supports this optional behavior.
+The behavior up through ROS 2 Iron is preserved - using `Twist`. In a future ROS 2 version, when enough of the
+ROS ecosystem has moved to `TwistStamped`, the default may change. 
+
+### Usage
+
+See [test/test_twist_publisher.cpp](test/test_twist_publisher.cpp) or [test/test_twist_subscriber.cpp](test/test_twist_subscriber.cpp) for examples.
+
+To use `Twist`, you can rely on the default value of `enable_stamped_cmd_vel`, or set it to `False` in your parameter file.
+To use `TwistStamped`, set `enable_stamped_cmd_vel` to `True`. 
+Each node in `nav2` that uses a `TwistPublisher` or `TwistSubscriber` has it documented in the README.
+
+The parameter is read-only, therefore it must be set at launch time. Do not try changing the value at runtime.
