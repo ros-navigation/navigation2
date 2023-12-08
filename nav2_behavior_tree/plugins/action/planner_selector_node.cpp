@@ -42,7 +42,7 @@ PlannerSelector::PlannerSelector(
 
 BT::NodeStatus PlannerSelector::tick()
 {
-  if (!initialized) {
+  if (!initialized_) {
     initialize();
   }
 

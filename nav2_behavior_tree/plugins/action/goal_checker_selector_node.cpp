@@ -38,7 +38,7 @@ GoalCheckerSelector::GoalCheckerSelector(
 
 BT::NodeStatus GoalCheckerSelector::tick()
 {
-  if (!initiazed_) {
+  if (!initialized_) {
     initialize();
   }
 

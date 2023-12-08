@@ -28,7 +28,7 @@ TimeExpiredCondition::TimeExpiredCondition(
   const BT::NodeConfiguration & conf)
 : BT::ConditionNode(condition_name, conf),
   period_(1.0),
-  initialized(false)
+  initialized_(false)
 {
 }
 

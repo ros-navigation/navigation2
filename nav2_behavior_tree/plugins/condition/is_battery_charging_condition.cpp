@@ -31,7 +31,7 @@ IsBatteryChargingCondition::IsBatteryChargingCondition(
 
 BT::NodeStatus IsBatteryChargingCondition::tick()
 {
-  if (!initialized) {
+  if (!initialized_) {
     initialize();
   }
 
