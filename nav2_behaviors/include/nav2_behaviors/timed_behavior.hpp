@@ -290,14 +290,14 @@ protected:
   // Stop the robot with a commanded velocity
   void stopRobot()
   {
-    auto cmd_vel = std::make_unique<geometry_msgs::msg::TwistStamped>();
-    cmd_vel->header.frame_id = "base_link";
-    cmd_vel->header.stamp = rclcpp::Time();
-    cmd_vel->twist.linear.x = 0.0;
-    cmd_vel->twist.linear.y = 0.0;
-    cmd_vel->twist.angular.z = 0.0;
+    auto cmd_vel = geometry_msgs::msg::TwistStamped();
+    cmd_vel.header.frame_id = "base_link";
+    cmd_vel.header.stamp = rclcpp::Time();
+    cmd_vel.twist.linear.x = 0.0;
+    cmd_vel.twist.linear.y = 0.0;
+    cmd_vel.twist.angular.z = 0.0;
 
-    // vel_pub_->publish(std::move(cmd_vel));
+    vel_pub_->publish(cmd_vel);
   }
 };
 
