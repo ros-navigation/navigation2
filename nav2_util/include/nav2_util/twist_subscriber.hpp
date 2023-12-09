@@ -36,10 +36,35 @@ namespace nav2_util
 
 /**
  * @class nav2_util::TwistSubscriber
- * @brief A simple wrapper on a Twist subscriber that receives either Twist or TwistStamped
+ * @brief A simple wrapper on a Twist subscriber that receives either 
+ *        geometry_msgs::msg::TwistStamped or geometry_msgs::msg::Twist
  *
- * The default is to subscribe to Twist to preserve backwards compatibility, but it can be overridden
- * using the "enable_stamped_cmd_vel" parameter to subscribe to TwistStamped.
+ * @note Usage:
+ * The default behavior is to subscribe to Twist, which preserves backwards compatibility
+ * with ROS distributions up to Iron. 
+ * The behavior can be overridden using the "enable_stamped_cmd_vel" parameter. 
+ * By setting that to "True", the TwistSubscriber class would subscribe to TwistStamped.
+ * 
+ * @note Why use Twist Stamped over Twist?
+ * Twist has been used widely in many ROS applications, typically for body-frame velocity control, 
+ * and between ROS nodes on the same computer. Many ROS interfaces are moving to using TwistStamped 
+ * because it is more robust for stale data protection. This protection is especially important 
+ * when sending velocity control over lossy communication links. 
+ * An example application where this matters is a drone with a Linux computer running a ROS 
+ * controller that sends Twist commands to an embedded autopilot. If the autopilot failed to 
+ * recognize a highly latent connection, it could result in instability or a crash because of the 
+ * decreased phase margin for control.
+ * TwistStamped also has a frame ID, allowing explicit control for multiple frames, rather than 
+ * relying on an assumption of body-frame control or having to create a different topic.
+ * Adding a header is low-cost for most ROS applications; the header can be set to an empty string 
+ * if bandwidth is of concern.
+ * 
+ * @note Implementation Design Notes:
+ * Compared to the naive approach of setting up one subscriber for each message type, 
+ * only one subscriber is created at a time; the other is nullptr.
+ * This reduces RAM usage and ROS discovery traffic.
+ * This approach allows NAV2 libraries to be flexible in which Twist message they support,
+ * while maintaining a stable API in a ROS distribution.
  *
  */
 
@@ -47,10 +72,12 @@ class TwistSubscriber
 {
 public:
   /**
-  * @brief A constructor
-  * @param nh The node
-  * @param topic publisher topic name
-  * @param qos publisher quality of service
+  * @brief A constructor that supports either Twist and TwistStamped
+  * @param node The node to add the Twist subscriber to
+  * @param topic The subscriber topic name
+  * @param qos The subscriber quality of service
+  * @param TwistCallback The subscriber callback for Twist messages
+  * @param TwistStampedCallback The subscriber callback for TwistStamped messages
   */
   template<typename TwistCallbackT,
     typename TwistStampedCallbackT
@@ -63,11 +90,10 @@ public:
     TwistStampedCallbackT && TwistStampedCallback
   )
   {
-    using nav2_util::declare_parameter_if_not_declared;
-    declare_parameter_if_not_declared(
-      node, "enable_stamped_cmd_vel",
-      rclcpp::ParameterValue{false});
-    node->get_parameter("enable_stamped_cmd_vel", is_stamped_);
+    nav2_util::declare_parameter_if_not_declared(
+      node, stamped_param_name_,
+      rclcpp::ParameterValue{is_stamped_});
+    node->get_parameter(stamped_param_name_, is_stamped_);
     if (is_stamped_) {
       twist_stamped_sub_ = node->create_subscription<geometry_msgs::msg::TwistStamped>(
         topic,
@@ -81,11 +107,78 @@ public:
     }
   }
 
+  /**
+  * @brief A constructor that only supports TwistStamped
+  * @param node The node to add the TwistStamped subscriber to
+  * @param topic The subscriber topic name
+  * @param qos The subscriber quality of service
+  * @param TwistStampedCallback The subscriber callback for TwistStamped messages
+  * @throw std::invalid_argument When configured with an invalid ROS parameter
+  */
+  template<typename TwistStampedCallbackT>
+  explicit TwistSubscriber(
+    nav2_util::LifecycleNode::SharedPtr node,
+    const std::string & topic,
+    const rclcpp::QoS & qos,
+    TwistStampedCallbackT && TwistStampedCallback
+  )
+  {
+    nav2_util::declare_parameter_if_not_declared(
+      node, stamped_param_name_,
+      rclcpp::ParameterValue{is_stamped_});
+    node->get_parameter(stamped_param_name_, is_stamped_);
+    if (is_stamped_) {
+      twist_stamped_sub_ = node->create_subscription<geometry_msgs::msg::TwistStamped>(
+        topic,
+        qos,
+        std::forward<TwistStampedCallbackT>(TwistStampedCallback));
+    } else {
+      throw std::invalid_argument("The parameter '%s' must be true when using this constructor!", stamped_param_name_);
+    }
+  }
+
+  // /**
+  // * @brief A constructor that only supports Twist
+  // * @param node The node to add the Twist subscriber to
+  // * @param topic The subscriber topic name
+  // * @param qos The subscriber quality of service
+  // * @param TwistCallback The subscriber callback for Twist messages
+  // * @throw std::invalid_argument When configured with an invalid ROS parameter
+  // */
+  // template<typename TwistCallbackT>
+  // explicit TwistSubscriber(
+  //   nav2_util::LifecycleNode::SharedPtr node,
+  //   const std::string & topic,
+  //   const rclcpp::QoS & qos,
+  //   TwistCallbackT && TwistCallback
+  // )
+  // {
+  //   nav2_util::declare_parameter_if_not_declared(
+  //     node, stamped_param_name_,
+  //     rclcpp::ParameterValue{is_stamped_});
+  //   node->get_parameter(stamped_param_name_, is_stamped_);
+  //   if (is_stamped_) {
+  //     throw std::invalid_argument("The parameter '%s' must be false when using this constructor!", stamped_param_name_);
+  //   } else {
+  //     twist_sub_ = node->create_subscription<geometry_msgs::msg::Twist>(
+  //       topic,
+  //       qos,
+  //       std::forward<TwistCallbackT>(TwistCallback));
+  //   }
+  // }
+
 protected:
-  bool is_stamped_;
-  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr twist_sub_;
-  rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr twist_stamped_sub_;
+  //! @brief The user-configured value for ROS parameter enable_stamped_cmd_vel
+  bool is_stamped_{false};
+  //! @brief The subscription when using Twist
+  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr twist_sub_ {nullptr};
+  //! @brief The subscription when using TwistStamped
+  rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr twist_stamped_sub_ {nullptr};
+  //! @brief The name of the ROS parameter that controls whether twist data is stamped
+  const std::string stamped_param_name_ {"enable_stamped_cmd_vel"};
 };
+
+
 
 }  // namespace nav2_util
 
