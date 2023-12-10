@@ -240,7 +240,7 @@ protected:
   std::vector<std::string> planner_types_;
   double max_planner_duration_;
   std::string planner_ids_concat_;
-  bool allow_path_end_pose_deviation_;
+  bool allow_path_through_poses_goal_deviation_;
 
   // Clock
   rclcpp::Clock steady_clock_{RCL_STEADY_TIME};
