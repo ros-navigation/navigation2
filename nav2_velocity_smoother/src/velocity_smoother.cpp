@@ -83,6 +83,14 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State &)
       throw std::runtime_error(
               "Negative values set of acceleration! These should be positive to speed up!");
     }
+    if (min_velocities_[i] > 0.0) {
+      throw std::runtime_error(
+              "Positive values set of min_velocities! These should be negative!");
+    }
+    if (max_velocities_[i] < 0.0) {
+      throw std::runtime_error(
+              "Negative values set of max_velocities! These should be positive!");
+    }
     if (min_velocities_[i] > max_velocities_[i]) {
       throw std::runtime_error(
               "Min velocities are higher than max velocities!");
@@ -125,6 +133,18 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State &)
     "cmd_vel", rclcpp::QoS(1),
     std::bind(&VelocitySmoother::inputCommandCallback, this, std::placeholders::_1));
 
+  declare_parameter_if_not_declared(node, "use_realtime_priority", rclcpp::ParameterValue(false));
+  bool use_realtime_priority = false;
+  node->get_parameter("use_realtime_priority", use_realtime_priority);
+  if (use_realtime_priority) {
+    try {
+      nav2_util::setSoftRealTimePriority();
+    } catch (const std::runtime_error & e) {
+      RCLCPP_ERROR(get_logger(), "%s", e.what());
+      return nav2_util::CallbackReturn::FAILURE;
+    }
+  }
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -134,7 +154,7 @@ VelocitySmoother::on_activate(const rclcpp_lifecycle::State &)
   RCLCPP_INFO(get_logger(), "Activating");
   smoothed_cmd_pub_->on_activate();
   double timer_duration_ms = 1000.0 / smoothing_frequency_;
-  timer_ = create_wall_timer(
+  timer_ = this->create_wall_timer(
     std::chrono::milliseconds(static_cast<int>(timer_duration_ms)),
     std::bind(&VelocitySmoother::smootherTimer, this));
 
@@ -342,7 +362,7 @@ VelocitySmoother::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
         }
 
         double timer_duration_ms = 1000.0 / smoothing_frequency_;
-        timer_ = create_wall_timer(
+        timer_ = this->create_wall_timer(
           std::chrono::milliseconds(static_cast<int>(timer_duration_ms)),
           std::bind(&VelocitySmoother::smootherTimer, this));
       } else if (name == "velocity_timeout") {
@@ -361,9 +381,29 @@ VelocitySmoother::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
       }
 
       if (name == "max_velocity") {
-        max_velocities_ = parameter.as_double_array();
+        for (unsigned int i = 0; i != 3; i++) {
+          if (parameter.as_double_array()[i] < 0.0) {
+            RCLCPP_WARN(
+              get_logger(),
+              "Negative values set of max_velocity! These should be positive!");
+            result.successful = false;
+          }
+        }
+        if (result.successful) {
+          max_velocities_ = parameter.as_double_array();
+        }
       } else if (name == "min_velocity") {
-        min_velocities_ = parameter.as_double_array();
+        for (unsigned int i = 0; i != 3; i++) {
+          if (parameter.as_double_array()[i] > 0.0) {
+            RCLCPP_WARN(
+              get_logger(),
+              "Positive values set of min_velocity! These should be negative!");
+            result.successful = false;
+          }
+        }
+        if (result.successful) {
+          min_velocities_ = parameter.as_double_array();
+        }
       } else if (name == "max_accel") {
         for (unsigned int i = 0; i != 3; i++) {
           if (parameter.as_double_array()[i] < 0.0) {
@@ -373,7 +413,9 @@ VelocitySmoother::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
             result.successful = false;
           }
         }
-        max_accels_ = parameter.as_double_array();
+        if (result.successful) {
+          max_accels_ = parameter.as_double_array();
+        }
       } else if (name == "max_decel") {
         for (unsigned int i = 0; i != 3; i++) {
           if (parameter.as_double_array()[i] > 0.0) {
@@ -383,7 +425,9 @@ VelocitySmoother::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
             result.successful = false;
           }
         }
-        max_decels_ = parameter.as_double_array();
+        if (result.successful) {
+          max_decels_ = parameter.as_double_array();
+        }
       } else if (name == "deadband_velocity") {
         deadband_velocities_ = parameter.as_double_array();
       }

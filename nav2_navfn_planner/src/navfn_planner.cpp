@@ -147,12 +147,6 @@ nav_msgs::msg::Path NavfnPlanner::createPlan(
             std::to_string(goal.pose.position.y) + ") was outside bounds");
   }
 
-  if (costmap_->getCost(mx_start, my_start) == nav2_costmap_2d::LETHAL_OBSTACLE) {
-    throw nav2_core::StartOccupied(
-            "Start Coordinates of(" + std::to_string(start.pose.position.x) + ", " +
-            std::to_string(start.pose.position.y) + ") was in lethal cost");
-  }
-
   if (tolerance_ == 0 && costmap_->getCost(mx_goal, my_goal) == nav2_costmap_2d::LETHAL_OBSTACLE) {
     throw nav2_core::GoalOccupied(
             "Goal Coordinates of(" + std::to_string(goal.pose.position.x) + ", " +
@@ -228,8 +222,6 @@ NavfnPlanner::makePlan(
   plan.header.stamp = clock_->now();
   plan.header.frame_id = global_frame_;
 
-  // TODO(orduno): add checks for start and goal reference frame -- should be in global frame
-
   double wx = start.position.x;
   double wy = start.position.y;
 
@@ -265,9 +257,6 @@ NavfnPlanner::makePlan(
   int map_goal[2];
   map_goal[0] = mx;
   map_goal[1] = my;
-
-  // TODO(orduno): Explain why we are providing 'map_goal' to setStart().
-  //               Same for setGoal, seems reversed. Computing backwards?
 
   planner_->setStart(map_goal);
   planner_->setGoal(map_start);

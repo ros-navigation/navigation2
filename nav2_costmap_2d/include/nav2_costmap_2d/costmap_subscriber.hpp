@@ -21,6 +21,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
+#include "nav2_msgs/msg/costmap_update.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 
 namespace nav2_costmap_2d
@@ -52,25 +53,36 @@ public:
   ~CostmapSubscriber() {}
 
   /**
-   * @brief A Get the costmap from topic
+   * @brief Get current costmap
    */
   std::shared_ptr<Costmap2D> getCostmap();
-
-  /**
-   * @brief Convert an occ grid message into a costmap object
-   */
-  void toCostmap2D();
   /**
    * @brief Callback for the costmap topic
    */
   void costmapCallback(const nav2_msgs::msg::Costmap::SharedPtr msg);
+  /**
+   * @brief Callback for the costmap's update topic
+   */
+  void costmapUpdateCallback(const nav2_msgs::msg::CostmapUpdate::SharedPtr update_msg);
 
 protected:
+  bool isCostmapReceived() {return costmap_ != nullptr;}
+  void processCurrentCostmapMsg();
+
+  bool haveCostmapParametersChanged();
+  bool hasCostmapSizeChanged();
+  bool hasCostmapResolutionChanged();
+  bool hasCostmapOriginPositionChanged();
+
+  rclcpp::Subscription<nav2_msgs::msg::Costmap>::SharedPtr costmap_sub_;
+  rclcpp::Subscription<nav2_msgs::msg::CostmapUpdate>::SharedPtr costmap_update_sub_;
+
   std::shared_ptr<Costmap2D> costmap_;
   nav2_msgs::msg::Costmap::SharedPtr costmap_msg_;
+
   std::string topic_name_;
-  bool costmap_received_{false};
-  rclcpp::Subscription<nav2_msgs::msg::Costmap>::SharedPtr costmap_sub_;
+  std::mutex costmap_msg_mutex_;
+  rclcpp::Logger logger_{rclcpp::get_logger("nav2_costmap_2d")};
 };
 
 }  // namespace nav2_costmap_2d

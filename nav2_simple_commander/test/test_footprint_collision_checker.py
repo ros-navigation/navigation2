@@ -23,7 +23,6 @@ LETHAL_OBSTACLE = 254
 
 
 class TestFootprintCollisionChecker(unittest.TestCase):
-
     def test_no_costmap(self):
         # Test if a type error raised when costmap is not specified yet
         fcc_ = FootprintCollisionChecker()

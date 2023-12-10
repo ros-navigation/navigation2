@@ -132,6 +132,7 @@ bool ConstrainedSmoother::smooth(nav_msgs::msg::Path & path, const rclcpp::Durat
 
   // Smooth plan
   auto costmap = costmap_sub_->getCostmap();
+  std::lock_guard<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap->getMutex()));
   if (!smoother_->smooth(path_world, start_dir, end_dir, costmap.get(), smoother_params_)) {
     RCLCPP_WARN(
       logger_,

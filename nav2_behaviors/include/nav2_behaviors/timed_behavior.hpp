@@ -119,8 +119,8 @@ public:
   {
     node_ = parent;
     auto node = node_.lock();
-
     logger_ = node->get_logger();
+    clock_ = node->get_clock();
 
     RCLCPP_INFO(logger_, "Configuring %s", name.c_str());
 
@@ -200,7 +200,7 @@ protected:
   rclcpp::Duration elasped_time_{0, 0};
 
   // Clock
-  rclcpp::Clock steady_clock_{RCL_STEADY_TIME};
+  rclcpp::Clock::SharedPtr clock_;
 
   // Logger
   rclcpp::Logger logger_{rclcpp::get_logger("nav2_behaviors")};
@@ -231,11 +231,11 @@ protected:
       return;
     }
 
-    auto start_time = steady_clock_.now();
+    auto start_time = clock_->now();
     rclcpp::WallRate loop_rate(cycle_frequency_);
 
     while (rclcpp::ok()) {
-      elasped_time_ = steady_clock_.now() - start_time;
+      elasped_time_ = clock_->now() - start_time;
       if (action_server_->is_cancel_requested()) {
         RCLCPP_INFO(logger_, "Canceling %s", behavior_name_.c_str());
         stopRobot();
@@ -252,7 +252,7 @@ protected:
           " however feature is currently not implemented. Aborting and stopping.",
           behavior_name_.c_str());
         stopRobot();
-        result->total_elapsed_time = steady_clock_.now() - start_time;
+        result->total_elapsed_time = clock_->now() - start_time;
         onActionCompletion(result);
         action_server_->terminate_current(result);
         return;
@@ -264,14 +264,14 @@ protected:
           RCLCPP_INFO(
             logger_,
             "%s completed successfully", behavior_name_.c_str());
-          result->total_elapsed_time = steady_clock_.now() - start_time;
+          result->total_elapsed_time = clock_->now() - start_time;
           onActionCompletion(result);
           action_server_->succeeded_current(result);
           return;
 
         case Status::FAILED:
           RCLCPP_WARN(logger_, "%s failed", behavior_name_.c_str());
-          result->total_elapsed_time = steady_clock_.now() - start_time;
+          result->total_elapsed_time = clock_->now() - start_time;
           result->error_code = on_cycle_update_result.error_code;
           onActionCompletion(result);
           action_server_->terminate_current(result);

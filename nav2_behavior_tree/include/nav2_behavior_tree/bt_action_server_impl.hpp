@@ -135,7 +135,7 @@ bool BtActionServer<ActionT>::on_configure()
     node, "robot_base_frame", rclcpp::ParameterValue(std::string("base_link")));
   nav2_util::declare_parameter_if_not_declared(
     node, "transform_tolerance", rclcpp::ParameterValue(0.1));
-  nav2_util::copy_all_parameters(node, client_node_);
+  rclcpp::copy_all_parameter_values(node, client_node_);
 
   // set the timeout in seconds for the action server to discard goal handles if not finished
   double action_server_result_timeout;
@@ -158,6 +158,9 @@ bool BtActionServer<ActionT>::on_configure()
   int default_server_timeout;
   node->get_parameter("default_server_timeout", default_server_timeout);
   default_server_timeout_ = std::chrono::milliseconds(default_server_timeout);
+  int wait_for_service_timeout;
+  node->get_parameter("wait_for_service_timeout", wait_for_service_timeout);
+  wait_for_service_timeout_ = std::chrono::milliseconds(wait_for_service_timeout);
 
   // Get error code id names to grab off of the blackboard
   error_code_names_ = node->get_parameter("error_code_names").as_string_array();
@@ -172,6 +175,9 @@ bool BtActionServer<ActionT>::on_configure()
   blackboard_->set<rclcpp::Node::SharedPtr>("node", client_node_);  // NOLINT
   blackboard_->set<std::chrono::milliseconds>("server_timeout", default_server_timeout_);  // NOLINT
   blackboard_->set<std::chrono::milliseconds>("bt_loop_duration", bt_loop_duration_);  // NOLINT
+  blackboard_->set<std::chrono::milliseconds>(
+    "wait_for_service_timeout",
+    wait_for_service_timeout_);
 
   return true;
 }
@@ -203,7 +209,7 @@ bool BtActionServer<ActionT>::on_cleanup()
   plugin_lib_names_.clear();
   current_bt_xml_filename_.clear();
   blackboard_.reset();
-  bt_->haltAllActions(tree_.rootNode());
+  bt_->haltAllActions(tree_);
   bt_.reset();
   return true;
 }
@@ -235,6 +241,9 @@ bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filena
       blackboard->set<rclcpp::Node::SharedPtr>("node", client_node_);
       blackboard->set<std::chrono::milliseconds>("server_timeout", default_server_timeout_);
       blackboard->set<std::chrono::milliseconds>("bt_loop_duration", bt_loop_duration_);
+      blackboard->set<std::chrono::milliseconds>(
+        "wait_for_service_timeout",
+        wait_for_service_timeout_);
     }
   } catch (const std::exception & e) {
     RCLCPP_ERROR(logger_, "Exception when loading BT: %s", e.what());
@@ -281,7 +290,7 @@ void BtActionServer<ActionT>::executeCallback()
 
   // Make sure that the Bt is not in a running state from a previous execution
   // note: if all the ControlNodes are implemented correctly, this is not needed.
-  bt_->haltAllActions(tree_.rootNode());
+  bt_->haltAllActions(tree_);
 
   // Give server an opportunity to populate the result message or simple give
   // an indication that the action is complete.
