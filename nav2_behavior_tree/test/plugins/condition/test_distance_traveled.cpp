@@ -19,7 +19,7 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_util/robot_utils.hpp"
 
-#include "../../test_behavior_tree_fixture.hpp"
+#include "utils/test_behavior_tree_fixture.hpp"
 #include "nav2_behavior_tree/plugins/condition/distance_traveled_condition.hpp"
 
 class DistanceTraveledConditionTestFixture : public nav2_behavior_tree::BehaviorTreeTestFixture
@@ -27,6 +27,8 @@ class DistanceTraveledConditionTestFixture : public nav2_behavior_tree::Behavior
 public:
   void SetUp()
   {
+    config_->input_ports["global_frame"] = "map";
+    config_->input_ports["robot_base_frame"] = "base_link";
     bt_node_ = std::make_shared<nav2_behavior_tree::DistanceTraveledCondition>(
       "distance_traveled", *config_);
   }

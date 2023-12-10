@@ -17,14 +17,17 @@
 
 #include <memory>
 #include <string>
+#include <chrono>
 
 #include "behaviortree_cpp_v3/action_node.h"
 #include "nav2_util/node_utils.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
-#include "nav2_behavior_tree/bt_conversions.hpp"
+#include "nav2_behavior_tree/bt_utils.hpp"
 
 namespace nav2_behavior_tree
 {
+
+using namespace std::chrono_literals;  // NOLINT
 
 /**
  * @brief Abstract class representing an action based BT node
@@ -44,7 +47,7 @@ public:
     const std::string & xml_tag_name,
     const std::string & action_name,
     const BT::NodeConfiguration & conf)
-  : BT::ActionNodeBase(xml_tag_name, conf), action_name_(action_name)
+  : BT::ActionNodeBase(xml_tag_name, conf), action_name_(action_name), should_send_goal_(true)
   {
     node_ = config().blackboard->template get<rclcpp::Node::SharedPtr>("node");
     callback_group_ = node_->create_callback_group(
@@ -58,6 +61,8 @@ public:
     server_timeout_ =
       config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
     getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
+    wait_for_service_timeout_ =
+      config().blackboard->template get<std::chrono::milliseconds>("wait_for_service_timeout");
 
     // Initialize the input and output messages
     goal_ = typename ActionT::Goal();
@@ -90,13 +95,13 @@ public:
 
     // Make sure the server is actually there before continuing
     RCLCPP_DEBUG(node_->get_logger(), "Waiting for \"%s\" action server", action_name.c_str());
-    static constexpr std::chrono::milliseconds wait_for_server_timeout =
-      std::chrono::milliseconds(1000);
-    if (!action_client_->wait_for_action_server(wait_for_server_timeout)) {
+    if (!action_client_->wait_for_action_server(wait_for_service_timeout_)) {
       RCLCPP_ERROR(
-        node_->get_logger(), "\"%s\" action server not available after waiting for %li ms",
-        action_name.c_str(), wait_for_server_timeout.count());
-      throw std::runtime_error("Action server not available");
+        node_->get_logger(), "\"%s\" action server not available after waiting for 1 s",
+        action_name.c_str());
+      throw std::runtime_error(
+              std::string("Action server ") + action_name +
+              std::string(" not available"));
     }
   }
 
@@ -159,7 +164,7 @@ public:
   }
 
   /**
-   * @brief Function to perform some user-defined operation whe the action is aborted.
+   * @brief Function to perform some user-defined operation when the action is aborted.
    * @return BT::NodeStatus Returns FAILURE by default, user may override return another value
    */
   virtual BT::NodeStatus on_aborted()
@@ -187,9 +192,15 @@ public:
       // setting the status to RUNNING to notify the BT Loggers (if any)
       setStatus(BT::NodeStatus::RUNNING);
 
-      // user defined callback
+      // reset the flag to send the goal or not, allowing the user the option to set it in on_tick
+      should_send_goal_ = true;
+
+      // user defined callback, may modify "should_send_goal_".
       on_tick();
 
+      if (!should_send_goal_) {
+        return BT::NodeStatus::FAILURE;
+      }
       send_new_goal();
     }
 
@@ -197,7 +208,8 @@ public:
       // if new goal was sent and action server has not yet responded
       // check the future goal handle
       if (future_goal_handle_) {
-        auto elapsed = (node_->now() - time_goal_sent_).to_chrono<std::chrono::milliseconds>();
+        auto elapsed =
+          (node_->now() - time_goal_sent_).template to_chrono<std::chrono::milliseconds>();
         if (!is_future_goal_handle_complete(elapsed)) {
           // return RUNNING if there is still some time before timeout happens
           if (elapsed < server_timeout_) {
@@ -222,12 +234,14 @@ public:
         feedback_.reset();
 
         auto goal_status = goal_handle_->get_status();
-        if (goal_updated_ && (goal_status == action_msgs::msg::GoalStatus::STATUS_EXECUTING ||
+        if (goal_updated_ &&
+          (goal_status == action_msgs::msg::GoalStatus::STATUS_EXECUTING ||
           goal_status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED))
         {
           goal_updated_ = false;
           send_new_goal();
-          auto elapsed = (node_->now() - time_goal_sent_).to_chrono<std::chrono::milliseconds>();
+          auto elapsed =
+            (node_->now() - time_goal_sent_).template to_chrono<std::chrono::milliseconds>();
           if (!is_future_goal_handle_complete(elapsed)) {
             if (elapsed < server_timeout_) {
               return BT::NodeStatus::RUNNING;
@@ -256,7 +270,7 @@ public:
         // Action related failure that should not fail the tree, but the node
         return BT::NodeStatus::FAILURE;
       } else {
-        // Internal exception to propogate to the tree
+        // Internal exception to propagate to the tree
         throw e;
       }
     }
@@ -290,6 +304,7 @@ public:
   void halt() override
   {
     if (should_cancel_goal()) {
+      auto future_result = action_client_->async_get_result(goal_handle_);
       auto future_cancel = action_client_->async_cancel_goal(goal_handle_);
       if (callback_group_executor_.spin_until_future_complete(future_cancel, server_timeout_) !=
         rclcpp::FutureReturnCode::SUCCESS)
@@ -298,6 +313,16 @@ public:
           node_->get_logger(),
           "Failed to cancel action server for %s", action_name_.c_str());
       }
+
+      if (callback_group_executor_.spin_until_future_complete(future_result, server_timeout_) !=
+        rclcpp::FutureReturnCode::SUCCESS)
+      {
+        RCLCPP_ERROR(
+          node_->get_logger(),
+          "Failed to get result for %s in node halt!", action_name_.c_str());
+      }
+
+      on_cancelled();
     }
 
     setStatus(BT::NodeStatus::IDLE);
@@ -439,10 +464,16 @@ protected:
   // The timeout value for BT loop execution
   std::chrono::milliseconds bt_loop_duration_;
 
+  // The timeout value for waiting for a service to response
+  std::chrono::milliseconds wait_for_service_timeout_;
+
   // To track the action server acknowledgement when a new goal is sent
   std::shared_ptr<std::shared_future<typename rclcpp_action::ClientGoalHandle<ActionT>::SharedPtr>>
   future_goal_handle_;
   rclcpp::Time time_goal_sent_;
+
+  // Can be set in on_tick or on_wait_for_result to indicate if a goal should be sent.
+  bool should_send_goal_;
 };
 
 }  // namespace nav2_behavior_tree

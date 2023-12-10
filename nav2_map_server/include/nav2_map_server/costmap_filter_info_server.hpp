@@ -29,8 +29,10 @@ class CostmapFilterInfoServer : public nav2_util::LifecycleNode
 public:
   /**
    * @brief Constructor for the nav2_map_server::CostmapFilterInfoServer
+   * @param options Additional options to control creation of the node.
    */
-  CostmapFilterInfoServer();
+  explicit CostmapFilterInfoServer(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
+
   /**
    * @brief Destructor for the nav2_map_server::CostmapFilterInfoServer
    */
@@ -71,7 +73,7 @@ protected:
 private:
   rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::CostmapFilterInfo>::SharedPtr publisher_;
 
-  std::unique_ptr<nav2_msgs::msg::CostmapFilterInfo> msg_;
+  nav2_msgs::msg::CostmapFilterInfo msg_;
 };  // CostmapFilterInfoServer
 
 }  // namespace nav2_map_server

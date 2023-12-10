@@ -161,7 +161,7 @@ StaticLayer::getParameters()
   // Enforce bounds
   lethal_threshold_ = std::max(std::min(temp_lethal_threshold, 100), 0);
   map_received_ = false;
-  update_in_progress_.store(false);
+  map_received_in_update_bounds_ = false;
 
   transform_tolerance_ = tf2::durationFromSec(temp_tf_tol);
 
@@ -277,17 +277,13 @@ StaticLayer::interpretValue(unsigned char value)
 void
 StaticLayer::incomingMap(const nav_msgs::msg::OccupancyGrid::SharedPtr new_map)
 {
-  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   if (!map_received_) {
+    processMap(*new_map);
     map_received_ = true;
-    processMap(*new_map);
+    return;
   }
-  if (update_in_progress_.load()) {
-    map_buffer_ = new_map;
-  } else {
-    processMap(*new_map);
-    map_buffer_ = nullptr;
-  }
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+  map_buffer_ = new_map;
 }
 
 void
@@ -338,11 +334,12 @@ StaticLayer::updateBounds(
   double * max_y)
 {
   if (!map_received_) {
+    map_received_in_update_bounds_ = false;
     return;
   }
+  map_received_in_update_bounds_ = true;
 
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
-  update_in_progress_.store(true);
 
   // If there is a new available map, load it.
   if (map_buffer_) {
@@ -378,17 +375,15 @@ StaticLayer::updateCosts(
 {
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   if (!enabled_) {
-    update_in_progress_.store(false);
     return;
   }
-  if (!map_received_) {
+  if (!map_received_in_update_bounds_) {
     static int count = 0;
     // throttle warning down to only 1/10 message rate
     if (++count == 10) {
       RCLCPP_WARN(logger_, "Can't update static costmap layer, no map received");
       count = 0;
     }
-    update_in_progress_.store(false);
     return;
   }
 
@@ -411,7 +406,6 @@ StaticLayer::updateCosts(
         transform_tolerance_);
     } catch (tf2::TransformException & ex) {
       RCLCPP_ERROR(logger_, "StaticLayer: %s", ex.what());
-      update_in_progress_.store(false);
       return;
     }
     // Copy map data given proper transformations
@@ -436,7 +430,6 @@ StaticLayer::updateCosts(
       }
     }
   }
-  update_in_progress_.store(false);
   current_ = true;
 }
 

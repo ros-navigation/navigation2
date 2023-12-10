@@ -57,8 +57,7 @@ class LatticeGenerator:
         self.turning_radius = config['turning_radius']
         self.stopping_threshold = config['stopping_threshold']
         self.num_of_headings = config['num_of_headings']
-        self.headings = \
-            self._get_heading_discretization(config['num_of_headings'])
+        self.headings = self._get_heading_discretization(config['num_of_headings'])
 
         self.motion_model = self.MotionModel[config['motion_model'].upper()]
 
@@ -119,7 +118,7 @@ class LatticeGenerator:
             A list of headings in radians
 
         """
-        max_val = int((((number_of_headings + 4) / 4) - 1) / 2)
+        max_val = int(number_of_headings / 8)
 
         outer_edge_x = []
         outer_edge_y = []
@@ -567,8 +566,7 @@ class LatticeGenerator:
             return omni_spanning_set
 
         else:
-            print('No handling implemented for Motion Model: ' +
-                  f'{self.motion_model}')
+            print('No handling implemented for Motion Model: ' + f'{self.motion_model}')
             raise NotImplementedError
 
     def _add_in_place_turns(self, spanning_set: dict) -> dict:

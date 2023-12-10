@@ -131,7 +131,7 @@ public:
   /**
    * @brief If clearing operations should be processed on this layer or not
    */
-  virtual bool isClearable() {return false;}
+  virtual bool isClearable() override {return false;}
 
   /**
    * @brief Reset this costmap
@@ -172,13 +172,22 @@ public:
     return access_;
   }
 
+  double getCostScalingFactor()
+  {
+    return cost_scaling_factor_;
+  }
+
+  double getInflationRadius()
+  {
+    return inflation_radius_;
+  }
+
 protected:
   /**
    * @brief Process updates on footprint changes to the inflation layer
    */
   void onFootprintChanged() override;
 
-private:
   /**
    * @brief  Lookup pre-computed distances
    * @param mx The x coordinate of the current cell

@@ -72,9 +72,10 @@ float Node2D::getTraversalCost(const NodePtr & child)
 
   // If a diagonal move, travel cost is sqrt(2) not 1.0.
   if ((dx * dx + dy * dy) > 1.05) {
-    return sqrt_2 + cost_travel_multiplier * normalized_cost;
+    return sqrt_2 * (1.0 + cost_travel_multiplier * normalized_cost);
   }
 
+  // Length = 1.0
   return 1.0 + cost_travel_multiplier * normalized_cost;
 }
 
@@ -85,34 +86,26 @@ float Node2D::getHeuristicCost(
 {
   // Using Moore distance as it more accurately represents the distances
   // even a Van Neumann neighborhood robot can navigate.
-  return fabs(goal_coordinates.x - node_coords.x) +
-         fabs(goal_coordinates.y - node_coords.y);
+  auto dx = goal_coordinates.x - node_coords.x;
+  auto dy = goal_coordinates.y - node_coords.y;
+  return std::sqrt(dx * dx + dy * dy);
 }
 
 void Node2D::initMotionModel(
-  const MotionModel & neighborhood,
+  const MotionModel & motion_model,
   unsigned int & x_size_uint,
   unsigned int & /*size_y*/,
   unsigned int & /*num_angle_quantization*/,
   SearchInfo & search_info)
 {
+  if (motion_model != MotionModel::TWOD) {
+    throw std::runtime_error("Invalid motion model for 2D node.");
+  }
+
   int x_size = static_cast<int>(x_size_uint);
   cost_travel_multiplier = search_info.cost_penalty;
-  switch (neighborhood) {
-    case MotionModel::UNKNOWN:
-      throw std::runtime_error("Unknown neighborhood type selected.");
-    case MotionModel::VON_NEUMANN:
-      _neighbors_grid_offsets = {-1, +1, -x_size, +x_size};
-      break;
-    case MotionModel::MOORE:
-      _neighbors_grid_offsets = {-1, +1, -x_size, +x_size, -x_size - 1,
-        -x_size + 1, +x_size - 1, +x_size + 1};
-      break;
-    default:
-      throw std::runtime_error(
-              "Invalid neighborhood type selected. "
-              "Von-Neumann and Moore are valid for Node2D.");
-  }
+  _neighbors_grid_offsets = {-1, +1, -x_size, +x_size, -x_size - 1,
+    -x_size + 1, +x_size - 1, +x_size + 1};
 }
 
 void Node2D::getNeighbors(
@@ -169,7 +162,10 @@ bool Node2D::backtracePath(CoordinateVector & path)
     current_node = current_node->parent;
   }
 
-  return path.size() > 0;
+  // add the start pose
+  path.push_back(Node2D::getCoords(current_node->getIndex()));
+
+  return true;
 }
 
 }  // namespace nav2_smac_planner

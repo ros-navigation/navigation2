@@ -172,7 +172,7 @@ TEST(collision_footprint, not_enough_points)
   double min_dist = 0.0;
   double max_dist = 0.0;
 
-  nav2_costmap_2d::calculateMinAndMaxDistances(footprint, min_dist, max_dist);
+  std::tie(min_dist, max_dist) = nav2_costmap_2d::calculateMinAndMaxDistances(footprint);
   EXPECT_EQ(min_dist, std::numeric_limits<double>::max());
   EXPECT_EQ(max_dist, 0.0f);
 }

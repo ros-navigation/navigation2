@@ -68,7 +68,17 @@ add_library(simple_smoother SHARED
 ament_target_dependencies(simple_smoother
   ${dependencies}
 )
+
+# Savitzky Golay Smoother plugin
+add_library(savitzky_golay_smoother SHARED
+  src/savitzky_golay_smoother.cpp
+)
+ament_target_dependencies(savitzky_golay_smoother
+  ${dependencies}
+)
+
 pluginlib_export_plugin_description_file(nav2_core plugins.xml)
+
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -82,7 +92,7 @@ endif()
 rclcpp_components_register_nodes(${library_name} "nav2_smoother::SmootherServer")
 
 install(
-  TARGETS ${library_name} simple_smoother
+  TARGETS ${library_name} simple_smoother savitzky_golay_smoother
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -104,6 +114,6 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-ament_export_libraries(${library_name} simple_smoother)
+ament_export_libraries(${library_name} simple_smoother savitzky_golay_smoother)
 ament_export_dependencies(${dependencies})
 ament_package()

@@ -25,7 +25,8 @@
 namespace nav2_behavior_tree
 {
 
-BehaviorTreeEngine::BehaviorTreeEngine(const std::vector<std::string> & plugin_libraries)
+BehaviorTreeEngine::BehaviorTreeEngine(
+  const std::vector<std::string> & plugin_libraries)
 {
   BT::SharedLibrary loader;
   for (const auto & p : plugin_libraries) {
@@ -55,7 +56,12 @@ BehaviorTreeEngine::run(
 
       onLoop();
 
-      loopRate.sleep();
+      if (!loopRate.sleep()) {
+        RCLCPP_WARN(
+          rclcpp::get_logger("BehaviorTreeEngine"),
+          "Behavior Tree tick rate %0.2f was exceeded!",
+          1.0 / (loopRate.period().count() * 1.0e-9));
+      }
     }
   } catch (const std::exception & ex) {
     RCLCPP_ERROR(
@@ -85,22 +91,10 @@ BehaviorTreeEngine::createTreeFromFile(
 
 // In order to re-run a Behavior Tree, we must be able to reset all nodes to the initial state
 void
-BehaviorTreeEngine::haltAllActions(BT::TreeNode * root_node)
+BehaviorTreeEngine::haltAllActions(BT::Tree & tree)
 {
-  if (!root_node) {
-    return;
-  }
-
   // this halt signal should propagate through the entire tree.
-  root_node->halt();
-
-  // but, just in case...
-  auto visitor = [](BT::TreeNode * node) {
-      if (node->status() == BT::NodeStatus::RUNNING) {
-        node->halt();
-      }
-    };
-  BT::applyRecursiveVisitor(root_node, visitor);
+  tree.haltTree();
 }
 
 }  // namespace nav2_behavior_tree

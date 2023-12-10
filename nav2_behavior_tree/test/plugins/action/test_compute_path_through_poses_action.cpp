@@ -24,7 +24,7 @@
 
 #include "behaviortree_cpp_v3/bt_factory.h"
 
-#include "../../test_action_server.hpp"
+#include "utils/test_action_server.hpp"
 #include "nav2_behavior_tree/plugins/action/compute_path_through_poses_action.hpp"
 
 class ComputePathThroughPosesActionServer
@@ -76,6 +76,9 @@ public:
     config_->blackboard->set<std::chrono::milliseconds>(
       "bt_loop_duration",
       std::chrono::milliseconds(10));
+    config_->blackboard->set<std::chrono::milliseconds>(
+      "wait_for_service_timeout",
+      std::chrono::milliseconds(1000));
     config_->blackboard->set<bool>("initial_pose_received", false);
 
     BT::NodeBuilder builder =

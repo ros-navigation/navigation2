@@ -21,10 +21,9 @@
 #include <vector>
 
 #include "nav2_constrained_smoother/constrained_smoother.hpp"
-#include "nav2_core/exceptions.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
+#include "nav2_core/smoother_exceptions.hpp"
 
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
@@ -133,13 +132,14 @@ bool ConstrainedSmoother::smooth(nav_msgs::msg::Path & path, const rclcpp::Durat
 
   // Smooth plan
   auto costmap = costmap_sub_->getCostmap();
+  std::lock_guard<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap->getMutex()));
   if (!smoother_->smooth(path_world, start_dir, end_dir, costmap.get(), smoother_params_)) {
     RCLCPP_WARN(
       logger_,
       "%s: failed to smooth plan, Ceres could not find a usable solution to optimize.",
       plugin_name_.c_str());
-    throw new nav2_core::PlannerException(
-            "Failed to smooth plan, Ceres could not find a usable solution.");
+    throw nav2_core::FailedToSmoothPath(
+            "Failed to smooth plan, Ceres could not find a usable solution");
   }
 
   // populate final path

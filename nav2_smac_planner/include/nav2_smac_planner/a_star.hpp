@@ -22,10 +22,13 @@
 #include <memory>
 #include <queue>
 #include <utility>
+#include <tuple>
 #include "Eigen/Core"
 
 #include "nav2_costmap_2d/costmap_2d.hpp"
+#include "nav2_core/planner_exceptions.hpp"
 
+#include "nav2_smac_planner/thirdparty/robin_hood.h"
 #include "nav2_smac_planner/analytic_expansion.hpp"
 #include "nav2_smac_planner/node_2d.hpp"
 #include "nav2_smac_planner/node_hybrid.hpp"
@@ -46,7 +49,7 @@ class AStarAlgorithm
 {
 public:
   typedef NodeT * NodePtr;
-  typedef std::unordered_map<unsigned int, NodeT> Graph;
+  typedef robin_hood::unordered_node_map<unsigned int, NodeT> Graph;
   typedef std::vector<NodePtr> NodeVector;
   typedef std::pair<float, NodeBasic<NodeT>> NodeElement;
   typedef typename NodeT::Coordinates Coordinates;
@@ -69,8 +72,7 @@ public:
   typedef std::priority_queue<NodeElement, std::vector<NodeElement>, NodeComparator> NodeQueue;
 
   /**
-   * @brief A constructor for nav2_smac_planner::PlannerServer
-   * @param neighborhood The type of neighborhood to use for search (4 or 8 connected)
+   * @brief A constructor for nav2_smac_planner::AStarAlgorithm
    */
   explicit AStarAlgorithm(const MotionModel & motion_model, const SearchInfo & search_info);
 
@@ -102,9 +104,12 @@ public:
    * @param path Reference to a vector of indicies of generated path
    * @param num_iterations Reference to number of iterations to create plan
    * @param tolerance Reference to tolerance in costmap nodes
+   * @param expansions_log Optional expansions logged for debug
    * @return if plan was successful
    */
-  bool createPath(CoordinateVector & path, int & num_iterations, const float & tolerance);
+  bool createPath(
+    CoordinateVector & path, int & num_iterations, const float & tolerance,
+    std::vector<std::tuple<float, float, float>> * expansions_log = nullptr);
 
   /**
    * @brief Sets the collision checker to use
@@ -190,7 +195,7 @@ protected:
   inline NodePtr getNextNode();
 
   /**
-   * @brief Get pointer to next goal in open set
+   * @brief Add a node to the open set
    * @param cost The cost to sort into the open set of the node
    * @param node Node pointer reference to add to open set
    */
@@ -198,8 +203,7 @@ protected:
 
   /**
    * @brief Adds node to graph
-   * @param cost The cost to sort into the open set of the node
-   * @param node Node pointer reference to add to open set
+   * @param index Node index to add
    */
   inline NodePtr addToGraph(const unsigned int & index);
 
@@ -212,9 +216,8 @@ protected:
 
   /**
    * @brief Get cost of heuristic of node
-   * @param node Node index current
-   * @param node Node index of new
-   * @return Heuristic cost between the nodes
+   * @param node Node pointer to get heuristic for
+   * @return Heuristic cost for node
    */
   inline float getHeuristicCost(const NodePtr & node);
 
@@ -233,6 +236,19 @@ protected:
    * @brief Clear graph of nodes searched
    */
   inline void clearGraph();
+
+  /**
+   * @brief Populate a debug log of expansions for Hybrid-A* for visualization
+   * @param node Node expanded
+   * @param expansions_log Log to add not expanded to
+   */
+  inline void populateExpansionsLog(
+    const NodePtr & node, std::vector<std::tuple<float, float, float>> * expansions_log);
+
+  /**
+   * @brief Clear Start
+   */
+  void clearStart();
 
   int _timing_interval = 5000;
 

@@ -36,7 +36,12 @@ LifecycleServiceClient::LifecycleServiceClient(const string & lifecycle_node_nam
   get_state_(lifecycle_node_name + "/get_state", node_)
 {
   // Block until server is up
-  get_state_.wait_for_service();
+  rclcpp::Rate r(20);
+  while (!get_state_.wait_for_service(2s)) {
+    RCLCPP_INFO(
+      node_->get_logger(), "Waiting for service %s...", get_state_.getServiceName().c_str());
+    r.sleep();
+  }
 }
 
 LifecycleServiceClient::LifecycleServiceClient(
@@ -47,7 +52,12 @@ LifecycleServiceClient::LifecycleServiceClient(
   get_state_(lifecycle_node_name + "/get_state", node_)
 {
   // Block until server is up
-  get_state_.wait_for_service();
+  rclcpp::Rate r(20);
+  while (!get_state_.wait_for_service(2s)) {
+    RCLCPP_INFO(
+      node_->get_logger(), "Waiting for service %s...", get_state_.getServiceName().c_str());
+    r.sleep();
+  }
 }
 
 bool LifecycleServiceClient::change_state(

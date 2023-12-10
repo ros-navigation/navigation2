@@ -30,6 +30,9 @@ namespace nav2_behavior_tree
  */
 class SmoothPathAction : public nav2_behavior_tree::BtActionNode<nav2_msgs::action::SmoothPath>
 {
+  using Action = nav2_msgs::action::SmoothPath;
+  using ActionResult = Action::Result;
+
 public:
   /**
    * @brief A constructor for nav2_behavior_tree::SmoothPathAction
@@ -53,6 +56,16 @@ public:
   BT::NodeStatus on_success() override;
 
   /**
+   * @brief Function to perform some user-defined operation upon abortion of the action
+   */
+  BT::NodeStatus on_aborted() override;
+
+  /**
+   * @brief Function to perform some user-defined operation upon cancellation of the action
+   */
+  BT::NodeStatus on_cancelled() override;
+
+  /**
    * @brief Creates list of BT ports
    * @return BT::PortsList Containing basic ports along with node-specific ports
    */
@@ -60,18 +73,20 @@ public:
   {
     return providedBasicPorts(
       {
-        BT::OutputPort<nav_msgs::msg::Path>(
-          "smoothed_path",
-          "Path smoothed by SmootherServer node"),
-        BT::OutputPort<double>("smoothing_duration", "Time taken to smooth path"),
-        BT::OutputPort<bool>(
-          "was_completed", "True if smoothing was not interrupted by time limit"),
         BT::InputPort<nav_msgs::msg::Path>("unsmoothed_path", "Path to be smoothed"),
         BT::InputPort<double>("max_smoothing_duration", 3.0, "Maximum smoothing duration"),
         BT::InputPort<bool>(
           "check_for_collisions", false,
           "If true collision check will be performed after smoothing"),
         BT::InputPort<std::string>("smoother_id", ""),
+        BT::OutputPort<nav_msgs::msg::Path>(
+          "smoothed_path",
+          "Path smoothed by SmootherServer node"),
+        BT::OutputPort<double>("smoothing_duration", "Time taken to smooth path"),
+        BT::OutputPort<bool>(
+          "was_completed", "True if smoothing was not interrupted by time limit"),
+        BT::OutputPort<ActionResult::_error_code_type>(
+          "error_code_id", "The smooth path error code"),
       });
   }
 };

@@ -128,7 +128,7 @@ public:
    */
   void bufferIncomingRangeMsg(const sensor_msgs::msg::Range::SharedPtr range_message);
 
-private:
+protected:
   /**
    * @brief Processes all sensors into the costmap buffered from callbacks
    */

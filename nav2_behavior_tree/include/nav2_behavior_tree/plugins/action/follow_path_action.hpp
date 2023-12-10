@@ -29,6 +29,9 @@ namespace nav2_behavior_tree
  */
 class FollowPathAction : public BtActionNode<nav2_msgs::action::FollowPath>
 {
+  using Action = nav2_msgs::action::FollowPath;
+  using ActionResult = Action::Result;
+
 public:
   /**
    * @brief A constructor for nav2_behavior_tree::FollowPathAction
@@ -47,12 +50,27 @@ public:
   void on_tick() override;
 
   /**
+   * @brief Function to perform some user-defined operation upon successful completion of the action
+   */
+  BT::NodeStatus on_success() override;
+
+  /**
+   * @brief Function to perform some user-defined operation upon abortion of the action
+   */
+  BT::NodeStatus on_aborted() override;
+
+  /**
+   * @brief Function to perform some user-defined operation upon cancellation of the action
+   */
+  BT::NodeStatus on_cancelled() override;
+
+  /**
    * @brief Function to perform some user-defined operation after a timeout
    * waiting for a result that hasn't been received yet
    * @param feedback shared_ptr to latest feedback message
    */
   void on_wait_for_result(
-    std::shared_ptr<const nav2_msgs::action::FollowPath::Feedback> feedback) override;
+    std::shared_ptr<const Action::Feedback> feedback) override;
 
   /**
    * @brief Creates list of BT ports
@@ -65,6 +83,9 @@ public:
         BT::InputPort<nav_msgs::msg::Path>("path", "Path to follow"),
         BT::InputPort<std::string>("controller_id", ""),
         BT::InputPort<std::string>("goal_checker_id", ""),
+        BT::InputPort<std::string>("progress_checker_id", ""),
+        BT::OutputPort<ActionResult::_error_code_type>(
+          "error_code_id", "The follow path error code"),
       });
   }
 };

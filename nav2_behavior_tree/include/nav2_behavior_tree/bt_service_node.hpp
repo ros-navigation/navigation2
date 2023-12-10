@@ -17,14 +17,17 @@
 
 #include <string>
 #include <memory>
+#include <chrono>
 
 #include "behaviortree_cpp_v3/action_node.h"
 #include "nav2_util/node_utils.hpp"
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_behavior_tree/bt_conversions.hpp"
+#include "nav2_behavior_tree/bt_utils.hpp"
 
 namespace nav2_behavior_tree
 {
+
+using namespace std::chrono_literals;  // NOLINT
 
 /**
  * @brief Abstract class representing a service based BT node
@@ -36,13 +39,16 @@ class BtServiceNode : public BT::ActionNodeBase
 public:
   /**
    * @brief A nav2_behavior_tree::BtServiceNode constructor
-   * @param service_node_name Service name this node creates a client for
+   * @param service_node_name BT node name
    * @param conf BT node configuration
+   * @param service_name Optional service name this node creates a client for instead of from input port
    */
   BtServiceNode(
     const std::string & service_node_name,
-    const BT::NodeConfiguration & conf)
-  : BT::ActionNodeBase(service_node_name, conf), service_node_name_(service_node_name)
+    const BT::NodeConfiguration & conf,
+    const std::string & service_name = "")
+  : BT::ActionNodeBase(service_node_name, conf), service_name_(service_name), service_node_name_(
+      service_node_name)
   {
     node_ = config().blackboard->template get<rclcpp::Node::SharedPtr>("node");
     callback_group_ = node_->create_callback_group(
@@ -56,12 +62,14 @@ public:
     server_timeout_ =
       config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
     getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
+    wait_for_service_timeout_ =
+      config().blackboard->template get<std::chrono::milliseconds>("wait_for_service_timeout");
 
     // Now that we have node_ to use, create the service client for this BT service
     getInput("service_name", service_name_);
     service_client_ = node_->create_client<ServiceT>(
       service_name_,
-      rmw_qos_profile_services_default,
+      rclcpp::SystemDefaultsQoS(),
       callback_group_);
 
     // Make a request for the service without parameter
@@ -71,7 +79,15 @@ public:
     RCLCPP_DEBUG(
       node_->get_logger(), "Waiting for \"%s\" service",
       service_name_.c_str());
-    service_client_->wait_for_service();
+    if (!service_client_->wait_for_service(wait_for_service_timeout_)) {
+      RCLCPP_ERROR(
+        node_->get_logger(), "\"%s\" service server not available after waiting for 1 s",
+        service_node_name.c_str());
+      throw std::runtime_error(
+              std::string(
+                "Service server %s not available",
+                service_node_name.c_str()));
+    }
 
     RCLCPP_DEBUG(
       node_->get_logger(), "\"%s\" BtServiceNode initialized",
@@ -117,7 +133,17 @@ public:
   BT::NodeStatus tick() override
   {
     if (!request_sent_) {
+      // reset the flag to send the request or not,
+      // allowing the user the option to set it in on_tick
+      should_send_request_ = true;
+
+      // user defined callback, may modify "should_send_request_".
       on_tick();
+
+      if (!should_send_request_) {
+        return BT::NodeStatus::FAILURE;
+      }
+
       future_result_ = service_client_->async_send_request(request_).share();
       sent_time_ = node_->now();
       request_sent_ = true;
@@ -159,14 +185,14 @@ public:
    */
   virtual BT::NodeStatus check_future()
   {
-    auto elapsed = (node_->now() - sent_time_).to_chrono<std::chrono::milliseconds>();
+    auto elapsed = (node_->now() - sent_time_).template to_chrono<std::chrono::milliseconds>();
     auto remaining = server_timeout_ - elapsed;
 
     if (remaining > std::chrono::milliseconds(0)) {
       auto timeout = remaining > bt_loop_duration_ ? bt_loop_duration_ : remaining;
 
       rclcpp::FutureReturnCode rc;
-      rc = callback_group_executor_.spin_until_future_complete(future_result_, server_timeout_);
+      rc = callback_group_executor_.spin_until_future_complete(future_result_, timeout);
       if (rc == rclcpp::FutureReturnCode::SUCCESS) {
         request_sent_ = false;
         BT::NodeStatus status = on_completion(future_result_.get());
@@ -175,7 +201,7 @@ public:
 
       if (rc == rclcpp::FutureReturnCode::TIMEOUT) {
         on_wait_for_result();
-        elapsed = (node_->now() - sent_time_).to_chrono<std::chrono::milliseconds>();
+        elapsed = (node_->now() - sent_time_).template to_chrono<std::chrono::milliseconds>();
         if (elapsed < server_timeout_) {
           return BT::NodeStatus::RUNNING;
         }
@@ -225,10 +251,16 @@ protected:
   // The timeout value for BT loop execution
   std::chrono::milliseconds bt_loop_duration_;
 
+  // The timeout value for waiting for a service to response
+  std::chrono::milliseconds wait_for_service_timeout_;
+
   // To track the server response when a new request is sent
   std::shared_future<typename ServiceT::Response::SharedPtr> future_result_;
   bool request_sent_{false};
   rclcpp::Time sent_time_;
+
+  // Can be set in on_tick or on_wait_for_result to indicate if a request should be sent.
+  bool should_send_request_;
 };
 
 }  // namespace nav2_behavior_tree

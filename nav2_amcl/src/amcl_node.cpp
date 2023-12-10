@@ -146,11 +146,11 @@ AmclNode::AmclNode(const rclcpp::NodeOptions & options)
 
   add_parameter(
     "max_particles", rclcpp::ParameterValue(2000),
-    "Minimum allowed number of particles");
+    "Maximum allowed number of particles");
 
   add_parameter(
     "min_particles", rclcpp::ParameterValue(500),
-    "Maximum allowed number of particles");
+    "Minimum allowed number of particles");
 
   add_parameter(
     "odom_frame_id", rclcpp::ParameterValue(std::string("odom")),
@@ -679,7 +679,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
 
     // Resample the particles
     if (!(++resample_count_ % resample_interval_)) {
-      pf_update_resample(pf_);
+      pf_update_resample(pf_, reinterpret_cast<void *>(map_));
       resampled = true;
     }
 
@@ -807,6 +807,15 @@ bool AmclNode::updateFilter(
   RCLCPP_DEBUG(
     get_logger(), "Laser %d angles in base frame: min: %.3f inc: %.3f", laser_index, angle_min,
     angle_increment);
+
+  // Check the validity of range_max, must > 0.0
+  if (laser_scan->range_max <= 0.0) {
+    RCLCPP_WARN(
+      get_logger(), "wrong range_max of laser_scan data: %f. The message could be malformed."
+      " Ignore this message and stop updating.",
+      laser_scan->range_max);
+    return false;
+  }
 
   // Apply range min/max thresholds, if the user supplied them
   if (laser_max_range_ > 0.0) {
@@ -1158,18 +1167,53 @@ AmclNode::dynamicParametersCallback(
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (param_name == "alpha1") {
         alpha1_ = parameter.as_double();
+        //alpha restricted to be non-negative
+        if (alpha1_ < 0.0) {
+          RCLCPP_WARN(
+            get_logger(), "You've set alpha1 to be negative,"
+            " this isn't allowed, so the alpha1 will be set to be zero.");
+          alpha1_ = 0.0;
+        }
         reinit_odom = true;
       } else if (param_name == "alpha2") {
         alpha2_ = parameter.as_double();
+        //alpha restricted to be non-negative
+        if (alpha2_ < 0.0) {
+          RCLCPP_WARN(
+            get_logger(), "You've set alpha2 to be negative,"
+            " this isn't allowed, so the alpha2 will be set to be zero.");
+          alpha2_ = 0.0;
+        }
         reinit_odom = true;
       } else if (param_name == "alpha3") {
         alpha3_ = parameter.as_double();
+        //alpha restricted to be non-negative
+        if (alpha3_ < 0.0) {
+          RCLCPP_WARN(
+            get_logger(), "You've set alpha3 to be negative,"
+            " this isn't allowed, so the alpha3 will be set to be zero.");
+          alpha3_ = 0.0;
+        }
         reinit_odom = true;
       } else if (param_name == "alpha4") {
         alpha4_ = parameter.as_double();
+        //alpha restricted to be non-negative
+        if (alpha4_ < 0.0) {
+          RCLCPP_WARN(
+            get_logger(), "You've set alpha4 to be negative,"
+            " this isn't allowed, so the alpha4 will be set to be zero.");
+          alpha4_ = 0.0;
+        }
         reinit_odom = true;
       } else if (param_name == "alpha5") {
         alpha5_ = parameter.as_double();
+        //alpha restricted to be non-negative
+        if (alpha5_ < 0.0) {
+          RCLCPP_WARN(
+            get_logger(), "You've set alpha5 to be negative,"
+            " this isn't allowed, so the alpha5 will be set to be zero.");
+          alpha5_ = 0.0;
+        }
         reinit_odom = true;
       } else if (param_name == "beam_skip_distance") {
         beam_skip_distance_ = parameter.as_double();
@@ -1536,8 +1580,7 @@ AmclNode::initParticleFilter()
   // Create the particle filter
   pf_ = pf_alloc(
     min_particles_, max_particles_, alpha_slow_, alpha_fast_,
-    (pf_init_model_fn_t)AmclNode::uniformPoseGenerator,
-    reinterpret_cast<void *>(map_));
+    (pf_init_model_fn_t)AmclNode::uniformPoseGenerator);
   pf_->pop_err = pf_err_;
   pf_->pop_z = pf_z_;
 

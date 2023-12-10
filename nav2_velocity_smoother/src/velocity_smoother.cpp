@@ -74,11 +74,26 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State &)
   node->get_parameter("max_accel", max_accels_);
   node->get_parameter("max_decel", max_decels_);
 
-  for (unsigned int i = 0; i != max_decels_.size(); i++) {
+  for (unsigned int i = 0; i != 3; i++) {
     if (max_decels_[i] > 0.0) {
-      RCLCPP_WARN(
-        get_logger(),
-        "Positive values set of deceleration! These should be negative to slow down!");
+      throw std::runtime_error(
+              "Positive values set of deceleration! These should be negative to slow down!");
+    }
+    if (max_accels_[i] < 0.0) {
+      throw std::runtime_error(
+              "Negative values set of acceleration! These should be positive to speed up!");
+    }
+    if (min_velocities_[i] > 0.0) {
+      throw std::runtime_error(
+              "Positive values set of min_velocities! These should be negative!");
+    }
+    if (max_velocities_[i] < 0.0) {
+      throw std::runtime_error(
+              "Negative values set of max_velocities! These should be positive!");
+    }
+    if (min_velocities_[i] > max_velocities_[i]) {
+      throw std::runtime_error(
+              "Min velocities are higher than max velocities!");
     }
   }
 
@@ -118,6 +133,18 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State &)
     "cmd_vel", rclcpp::QoS(1),
     std::bind(&VelocitySmoother::inputCommandCallback, this, std::placeholders::_1));
 
+  declare_parameter_if_not_declared(node, "use_realtime_priority", rclcpp::ParameterValue(false));
+  bool use_realtime_priority = false;
+  node->get_parameter("use_realtime_priority", use_realtime_priority);
+  if (use_realtime_priority) {
+    try {
+      nav2_util::setSoftRealTimePriority();
+    } catch (const std::runtime_error & e) {
+      RCLCPP_ERROR(get_logger(), "%s", e.what());
+      return nav2_util::CallbackReturn::FAILURE;
+    }
+  }
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -127,7 +154,7 @@ VelocitySmoother::on_activate(const rclcpp_lifecycle::State &)
   RCLCPP_INFO(get_logger(), "Activating");
   smoothed_cmd_pub_->on_activate();
   double timer_duration_ms = 1000.0 / smoothing_frequency_;
-  timer_ = create_wall_timer(
+  timer_ = this->create_wall_timer(
     std::chrono::milliseconds(static_cast<int>(timer_duration_ms)),
     std::bind(&VelocitySmoother::smootherTimer, this));
 
@@ -174,6 +201,12 @@ VelocitySmoother::on_shutdown(const rclcpp_lifecycle::State &)
 
 void VelocitySmoother::inputCommandCallback(const geometry_msgs::msg::Twist::SharedPtr msg)
 {
+  // If message contains NaN or Inf, ignore
+  if (!nav2_util::validateTwist(*msg)) {
+    RCLCPP_ERROR(get_logger(), "Velocity message contains NaNs or Infs! Ignoring as invalid!");
+    return;
+  }
+
   command_ = msg;
   last_command_time_ = now();
 }
@@ -182,9 +215,21 @@ double VelocitySmoother::findEtaConstraint(
   const double v_curr, const double v_cmd, const double accel, const double decel)
 {
   // Exploiting vector scaling properties
-  const double v_component_max = accel / smoothing_frequency_;
-  const double v_component_min = decel / smoothing_frequency_;
-  const double dv = v_cmd - v_curr;
+  double dv = v_cmd - v_curr;
+
+  double v_component_max;
+  double v_component_min;
+
+  // Accelerating if magnitude of v_cmd is above magnitude of v_curr
+  // and if v_cmd and v_curr have the same sign (i.e. speed is NOT passing through 0.0)
+  // Decelerating otherwise
+  if (abs(v_cmd) >= abs(v_curr) && v_curr * v_cmd >= 0.0) {
+    v_component_max = accel / smoothing_frequency_;
+    v_component_min = -accel / smoothing_frequency_;
+  } else {
+    v_component_max = -decel / smoothing_frequency_;
+    v_component_min = decel / smoothing_frequency_;
+  }
 
   if (dv > v_component_max) {
     return v_component_max / dv;
@@ -202,23 +247,40 @@ double VelocitySmoother::applyConstraints(
   const double accel, const double decel, const double eta)
 {
   double dv = v_cmd - v_curr;
-  const double v_component_max = accel / smoothing_frequency_;
-  const double v_component_min = decel / smoothing_frequency_;
+
+  double v_component_max;
+  double v_component_min;
+
+  // Accelerating if magnitude of v_cmd is above magnitude of v_curr
+  // and if v_cmd and v_curr have the same sign (i.e. speed is NOT passing through 0.0)
+  // Decelerating otherwise
+  if (abs(v_cmd) >= abs(v_curr) && v_curr * v_cmd >= 0.0) {
+    v_component_max = accel / smoothing_frequency_;
+    v_component_min = -accel / smoothing_frequency_;
+  } else {
+    v_component_max = -decel / smoothing_frequency_;
+    v_component_min = decel / smoothing_frequency_;
+  }
+
   return v_curr + std::clamp(eta * dv, v_component_min, v_component_max);
 }
 
 void VelocitySmoother::smootherTimer()
 {
+  // Wait until the first command is received
+  if (!command_) {
+    return;
+  }
+
   auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>();
 
-  // Check for velocity timeout. If nothing received, publish zeros to stop robot
+  // Check for velocity timeout. If nothing received, publish zeros to apply deceleration
   if (now() - last_command_time_ > velocity_timeout_) {
-    last_cmd_ = geometry_msgs::msg::Twist();
-    if (!stopped_) {
-      smoothed_cmd_pub_->publish(std::move(cmd_vel));
+    if (last_cmd_ == geometry_msgs::msg::Twist() || stopped_) {
+      stopped_ = true;
+      return;
     }
-    stopped_ = true;
-    return;
+    *command_ = geometry_msgs::msg::Twist();
   }
 
   stopped_ = false;
@@ -270,17 +332,14 @@ void VelocitySmoother::smootherTimer()
     current_.linear.y, command_->linear.y, max_accels_[1], max_decels_[1], eta);
   cmd_vel->angular.z = applyConstraints(
     current_.angular.z, command_->angular.z, max_accels_[2], max_decels_[2], eta);
-
-  // If open loop, assume we achieved it
-  if (open_loop_) {
-    last_cmd_ = *cmd_vel;
-  }
+  last_cmd_ = *cmd_vel;
 
   // Apply deadband restrictions & publish
   cmd_vel->linear.x = fabs(cmd_vel->linear.x) < deadband_velocities_[0] ? 0.0 : cmd_vel->linear.x;
   cmd_vel->linear.y = fabs(cmd_vel->linear.y) < deadband_velocities_[1] ? 0.0 : cmd_vel->linear.y;
   cmd_vel->angular.z = fabs(cmd_vel->angular.z) <
     deadband_velocities_[2] ? 0.0 : cmd_vel->angular.z;
+
   smoothed_cmd_pub_->publish(std::move(cmd_vel));
 }
 
@@ -303,7 +362,7 @@ VelocitySmoother::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
         }
 
         double timer_duration_ms = 1000.0 / smoothing_frequency_;
-        timer_ = create_wall_timer(
+        timer_ = this->create_wall_timer(
           std::chrono::milliseconds(static_cast<int>(timer_duration_ms)),
           std::bind(&VelocitySmoother::smootherTimer, this));
       } else if (name == "velocity_timeout") {
@@ -322,13 +381,53 @@ VelocitySmoother::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
       }
 
       if (name == "max_velocity") {
-        max_velocities_ = parameter.as_double_array();
+        for (unsigned int i = 0; i != 3; i++) {
+          if (parameter.as_double_array()[i] < 0.0) {
+            RCLCPP_WARN(
+              get_logger(),
+              "Negative values set of max_velocity! These should be positive!");
+            result.successful = false;
+          }
+        }
+        if (result.successful) {
+          max_velocities_ = parameter.as_double_array();
+        }
       } else if (name == "min_velocity") {
-        min_velocities_ = parameter.as_double_array();
+        for (unsigned int i = 0; i != 3; i++) {
+          if (parameter.as_double_array()[i] > 0.0) {
+            RCLCPP_WARN(
+              get_logger(),
+              "Positive values set of min_velocity! These should be negative!");
+            result.successful = false;
+          }
+        }
+        if (result.successful) {
+          min_velocities_ = parameter.as_double_array();
+        }
       } else if (name == "max_accel") {
-        max_accels_ = parameter.as_double_array();
+        for (unsigned int i = 0; i != 3; i++) {
+          if (parameter.as_double_array()[i] < 0.0) {
+            RCLCPP_WARN(
+              get_logger(),
+              "Negative values set of acceleration! These should be positive to speed up!");
+            result.successful = false;
+          }
+        }
+        if (result.successful) {
+          max_accels_ = parameter.as_double_array();
+        }
       } else if (name == "max_decel") {
-        max_decels_ = parameter.as_double_array();
+        for (unsigned int i = 0; i != 3; i++) {
+          if (parameter.as_double_array()[i] > 0.0) {
+            RCLCPP_WARN(
+              get_logger(),
+              "Positive values set of deceleration! These should be negative to slow down!");
+            result.successful = false;
+          }
+        }
+        if (result.successful) {
+          max_decels_ = parameter.as_double_array();
+        }
       } else if (name == "deadband_velocity") {
         deadband_velocities_ = parameter.as_double_array();
       }

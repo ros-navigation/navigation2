@@ -1,0 +1,42 @@
+<library path="global_planner">
+    <class type="nav2_system_tests::UnknownErrorPlanner"
+           base_class_type="nav2_core::GlobalPlanner">
+        <description>This global planner produces a goal a timeout exception.</description>
+    </class>
+    <class type="nav2_system_tests::StartOccupiedErrorPlanner"
+           base_class_type="nav2_core::GlobalPlanner">
+        <description>This global planner produces a start occupied exception.</description>
+    </class>
+    <class type="nav2_system_tests::GoalOccupiedErrorPlanner"
+           base_class_type="nav2_core::GlobalPlanner">
+        <description>This global planner produces a goal occupied exception.</description>
+    </class>
+    <class type="nav2_system_tests::StartOutsideMapErrorPlanner"
+           base_class_type="nav2_core::GlobalPlanner">
+        <description>This global planner produces a start outside map bounds exception.</description>
+    </class>
+    <class type="nav2_system_tests::GoalOutsideMapErrorPlanner"
+           base_class_type="nav2_core::GlobalPlanner">
+        <description>This global planner produces a goal outside map bounds exception.</description>
+    </class>
+    <class type="nav2_system_tests::NoValidPathErrorPlanner"
+           base_class_type="nav2_core::GlobalPlanner">
+        <description>This global planner produces a no valid path exception.</description>
+    </class>
+    <class type="nav2_system_tests::NoValidPathErrorPlanner"
+           base_class_type="nav2_core::GlobalPlanner">
+        <description>This global planner produces a no via points given exception.</description>
+    </class>
+    <class type="nav2_system_tests::TimedOutErrorPlanner"
+           base_class_type="nav2_core::GlobalPlanner">
+        <description>This global planner produces a timed out exception.</description>
+    </class>
+    <class type="nav2_system_tests::TFErrorPlanner"
+           base_class_type="nav2_core::GlobalPlanner">
+        <description>This global planner produces a planner tf error exception.</description>
+    </class>
+    <class type="nav2_system_tests::NoViapointsGivenErrorPlanner"
+           base_class_type="nav2_core::GlobalPlanner">
+        <description>This global planner produces a no via points exception.</description>
+    </class>
+</library>

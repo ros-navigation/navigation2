@@ -28,6 +28,7 @@
 
 #include "nav2_constrained_smoother/smoother_cost_function.hpp"
 #include "nav2_constrained_smoother/utils.hpp"
+#include "nav2_core/smoother_exceptions.hpp"
 
 #include "ceres/ceres.h"
 #include "Eigen/Core"
@@ -94,7 +95,7 @@ public:
   {
     // Path has always at least 2 points
     if (path.size() < 2) {
-      throw std::runtime_error("Constrained smoother: Path must have at least 2 points");
+      throw nav2_core::InvalidPath("Constrained smoother: Path must have at least 2 points");
     }
 
     options_.max_solver_time_in_seconds = params.max_time;
@@ -110,7 +111,7 @@ public:
         RCLCPP_INFO(rclcpp::get_logger("smoother_server"), "%s", summary.FullReport().c_str());
       }
       if (!summary.IsSolutionUsable() || summary.initial_cost - summary.final_cost < 0.0) {
-        return false;
+        throw nav2_core::FailedToSmoothPath("Solution is not usable");
       }
     } else {
       RCLCPP_INFO(rclcpp::get_logger("smoother_server"), "Path too short to optimize");
@@ -193,8 +194,8 @@ private:
       // update cusp zone costmap weights
       if (is_cusp) {
         double len_to_cusp = current_segment_len;
-        for (int i = potential_cusp_funcs.size() - 1; i >= 0; i--) {
-          auto & f = potential_cusp_funcs[i];
+        for (int i_cusp = potential_cusp_funcs.size() - 1; i_cusp >= 0; i_cusp--) {
+          auto & f = potential_cusp_funcs[i_cusp];
           double new_weight =
             params.cusp_costmap_weight * (1.0 - len_to_cusp / cusp_half_length) +
             params.costmap_weight * len_to_cusp / cusp_half_length;

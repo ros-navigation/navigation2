@@ -35,7 +35,9 @@ DriveOnHeadingBehaviorTester::DriveOnHeadingBehaviorTester()
 : is_active_(false),
   initial_pose_received_(false)
 {
-  node_ = rclcpp::Node::make_shared("DriveOnHeading_behavior_test");
+  rclcpp::NodeOptions options;
+  options.parameter_overrides({{"use_sim_time", true}});
+  node_ = rclcpp::Node::make_shared("DriveOnHeading_behavior_test", options);
 
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);

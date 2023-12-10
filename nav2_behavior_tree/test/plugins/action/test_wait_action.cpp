@@ -20,7 +20,7 @@
 
 #include "behaviortree_cpp_v3/bt_factory.h"
 
-#include "../../test_action_server.hpp"
+#include "utils/test_action_server.hpp"
 #include "nav2_behavior_tree/plugins/action/wait_action.hpp"
 
 class WaitActionServer : public TestActionServer<nav2_msgs::action::Wait>
@@ -59,6 +59,9 @@ public:
     config_->blackboard->set<std::chrono::milliseconds>(
       "bt_loop_duration",
       std::chrono::milliseconds(10));
+    config_->blackboard->set<std::chrono::milliseconds>(
+      "wait_for_service_timeout",
+      std::chrono::milliseconds(1000));
     config_->blackboard->set<bool>("initial_pose_received", false);
     config_->blackboard->set<int>("number_recoveries", 0);
 
@@ -117,18 +120,18 @@ TEST_F(WaitActionTestFixture, test_ports)
       </root>)";
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
-  EXPECT_EQ(tree_->rootNode()->getInput<int>("wait_duration"), 1);
+  EXPECT_EQ(tree_->rootNode()->getInput<double>("wait_duration"), 1.0);
 
   xml_txt =
     R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-            <Wait wait_duration="10" />
+            <Wait wait_duration="10.0" />
         </BehaviorTree>
       </root>)";
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
-  EXPECT_EQ(tree_->rootNode()->getInput<int>("wait_duration"), 10);
+  EXPECT_EQ(tree_->rootNode()->getInput<double>("wait_duration"), 10.0);
 }
 
 TEST_F(WaitActionTestFixture, test_tick)
@@ -137,7 +140,7 @@ TEST_F(WaitActionTestFixture, test_tick)
     R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-            <Wait wait_duration="-5"/>
+            <Wait wait_duration="-5.0"/>
         </BehaviorTree>
       </root>)";
 

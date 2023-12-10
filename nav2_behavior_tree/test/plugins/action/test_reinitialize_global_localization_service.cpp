@@ -20,7 +20,7 @@
 
 #include "behaviortree_cpp_v3/bt_factory.h"
 
-#include "../../test_service.hpp"
+#include "utils/test_service.hpp"
 #include "nav2_behavior_tree/plugins/action/reinitialize_global_localization_service.hpp"
 
 class ReinitializeGlobalLocalizationService : public TestService<std_srvs::srv::Empty>
@@ -53,6 +53,9 @@ public:
     config_->blackboard->set<std::chrono::milliseconds>(
       "bt_loop_duration",
       std::chrono::milliseconds(10));
+    config_->blackboard->set<std::chrono::milliseconds>(
+      "wait_for_service_timeout",
+      std::chrono::milliseconds(1000));
     config_->blackboard->set<bool>("initial_pose_received", false);
 
     factory_->registerNodeType<nav2_behavior_tree::ReinitializeGlobalLocalizationService>(

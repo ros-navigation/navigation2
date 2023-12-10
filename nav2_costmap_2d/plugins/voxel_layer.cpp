@@ -86,8 +86,11 @@ void VoxelLayer::onInitialize()
   node->get_parameter(name_ + "." + "z_resolution", z_resolution_);
   node->get_parameter(name_ + "." + "unknown_threshold", unknown_threshold_);
   node->get_parameter(name_ + "." + "mark_threshold", mark_threshold_);
-  node->get_parameter(name_ + "." + "combination_method", combination_method_);
   node->get_parameter(name_ + "." + "publish_voxel_map", publish_voxel_);
+
+  int combination_method_param{};
+  node->get_parameter(name_ + "." + "combination_method", combination_method_param);
+  combination_method_ = combination_method_from_int(combination_method_param);
 
   auto custom_qos = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable();
 
@@ -275,11 +278,13 @@ void VoxelLayer::raytraceFreespace(
   if (!worldToMap3DFloat(ox, oy, oz, sensor_x, sensor_y, sensor_z)) {
     RCLCPP_WARN(
       logger_,
-      "Sensor origin at (%.2f, %.2f %.2f) is out of map bounds (%.2f, %.2f, %.2f) to (%.2f, %.2f, %.2f). "
+      "Sensor origin at (%.2f, %.2f %.2f) is out of map bounds "
+      "(%.2f, %.2f, %.2f) to (%.2f, %.2f, %.2f). "
       "The costmap cannot raytrace for it.",
       ox, oy, oz,
-      ox + getSizeInMetersX(), oy + getSizeInMetersY(), oz + getSizeInMetersZ(),
-      origin_x_, origin_y_, origin_z_);
+      origin_x_, origin_y_, origin_z_,
+      origin_x_ + getSizeInMetersX(), origin_y_ + getSizeInMetersY(),
+      origin_z_ + getSizeInMetersZ());
 
     return;
   }
@@ -520,7 +525,7 @@ VoxelLayer::dynamicParametersCallback(
       } else if (param_name == name_ + "." + "mark_threshold") {
         mark_threshold_ = parameter.as_int();
       } else if (param_name == name_ + "." + "combination_method") {
-        combination_method_ = parameter.as_int();
+        combination_method_ = combination_method_from_int(parameter.as_int());
       }
     }
   }

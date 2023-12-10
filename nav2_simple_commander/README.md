@@ -14,6 +14,8 @@ See its [API Guide Page](https://navigation.ros.org/commander_api/index.html) fo
 
 The methods provided by the basic navigator are shown below, with inputs and expected returns. If a server fails, it may throw an exception or return a `None` object, so please be sure to properly wrap your navigation calls in try/catch and check results for `None` type.
 
+New as of September 2023: the simple navigator constructor will accept a `namespace` field to support multi-robot applications or namespaced Nav2 launches.
+
 | Robot Navigator Method            | Description                                                                |
 | --------------------------------- | -------------------------------------------------------------------------- |
 | setInitialPose(initial_pose)      | Sets the initial pose (`PoseStamped`) of the robot to localization.        |
@@ -85,14 +87,14 @@ The main benefit of this is automatically showing the above demonstrations in a 
 
 ``` bash
 # Launch the launch file for the demo / example
-ros2 launch nav2_simple_commander demo_security_launch.py
+ros2 launch nav2_simple_commander  security_demo_launch.py
 ```
 
 This will bring up the robot in the AWS Warehouse in a reasonable position, launch the autonomy script, and complete some task to demonstrate the `nav2_simple_commander` API.
 
 ### Manually
 
-The main benefit of this is to be able to launch alternative robot models or different navigation configurations than the default for a specific technology demonstation. As long as Nav2 and the simulation (or physical robot) is running, the simple python commander examples / demos don't care what the robot is or how it got there. Since the examples / demos do contain hard-programmed item locations or routes, you should still utilize the AWS Warehouse. Obviously these are easy to update if you wish to adapt these examples / demos to another environment.
+The main benefit of this is to be able to launch alternative robot models or different navigation configurations than the default for a specific technology demonstration. As long as Nav2 and the simulation (or physical robot) is running, the simple python commander examples / demos don't care what the robot is or how it got there. Since the examples / demos do contain hard-programmed item locations or routes, you should still utilize the AWS Warehouse. Obviously these are easy to update if you wish to adapt these examples / demos to another environment.
 
 ``` bash
 # Terminal 1: launch your robot navigation and simulation (or physical robot). For example

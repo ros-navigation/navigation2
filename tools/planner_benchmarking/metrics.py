@@ -13,31 +13,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from geometry_msgs.msg import PoseStamped
-from nav2_simple_commander.robot_navigator import BasicNavigator
-import rclpy
-from ament_index_python.packages import get_package_share_directory
-
+import glob
 import math
 import os
 import pickle
+from random import randint, seed, uniform
+import time
+
+from geometry_msgs.msg import PoseStamped
+from nav2_simple_commander.robot_navigator import BasicNavigator
 import numpy as np
-
-from random import seed
-from random import randint
-from random import uniform
-
+import rclpy
 from transforms3d.euler import euler2quat
-
-# Note: Map origin is assumed to be (0,0)
 
 
 def getPlannerResults(navigator, initial_pose, goal_pose, planners):
     results = []
     for planner in planners:
-        path = navigator.getPath(initial_pose, goal_pose, planner)
-        if path is not None:
+        path = navigator._getPathImpl(initial_pose, goal_pose, planner, use_start=True)
+        if path is not None and path.error_code == 0:
             results.append(path)
+        else:
+            print(planner, 'planner failed to produce the path')
+            return results
     return results
 
 
@@ -46,14 +44,14 @@ def getRandomStart(costmap, max_cost, side_buffer, time_stamp, res):
     start.header.frame_id = 'map'
     start.header.stamp = time_stamp
     while True:
-        row = randint(side_buffer, costmap.shape[0]-side_buffer)
-        col = randint(side_buffer, costmap.shape[1]-side_buffer)
+        row = randint(side_buffer, costmap.shape[0] - side_buffer)
+        col = randint(side_buffer, costmap.shape[1] - side_buffer)
 
         if costmap[row, col] < max_cost:
-            start.pose.position.x = col*res
-            start.pose.position.y = row*res
+            start.pose.position.x = col * res
+            start.pose.position.y = row * res
 
-            yaw = uniform(0, 1) * 2*math.pi
+            yaw = uniform(0, 1) * 2 * math.pi
             quad = euler2quat(0.0, 0.0, yaw)
             start.pose.orientation.w = quad[0]
             start.pose.orientation.x = quad[1]
@@ -68,13 +66,13 @@ def getRandomGoal(costmap, start, max_cost, side_buffer, time_stamp, res):
     goal.header.frame_id = 'map'
     goal.header.stamp = time_stamp
     while True:
-        row = randint(side_buffer, costmap.shape[0]-side_buffer)
-        col = randint(side_buffer, costmap.shape[1]-side_buffer)
+        row = randint(side_buffer, costmap.shape[0] - side_buffer)
+        col = randint(side_buffer, costmap.shape[1] - side_buffer)
 
         start_x = start.pose.position.x
         start_y = start.pose.position.y
-        goal_x = col*res
-        goal_y = row*res
+        goal_x = col * res
+        goal_y = row * res
         x_diff = goal_x - start_x
         y_diff = goal_y - start_y
         dist = math.sqrt(x_diff ** 2 + y_diff ** 2)
@@ -83,7 +81,7 @@ def getRandomGoal(costmap, start, max_cost, side_buffer, time_stamp, res):
             goal.pose.position.x = goal_x
             goal.pose.position.y = goal_y
 
-            yaw = uniform(0, 1) * 2*math.pi
+            yaw = uniform(0, 1) * 2 * math.pi
             quad = euler2quat(0.0, 0.0, yaw)
             goal.pose.orientation.w = quad[0]
             goal.pose.orientation.x = quad[1]
@@ -98,25 +96,17 @@ def main():
 
     navigator = BasicNavigator()
 
-    # Set our experiment's initial pose
-    initial_pose = PoseStamped()
-    initial_pose.header.frame_id = 'map'
-    initial_pose.header.stamp = navigator.get_clock().now().to_msg()
-    initial_pose.pose.position.x = 1.0
-    initial_pose.pose.position.y = 1.0
-    initial_pose.pose.orientation.z = 0.0
-    initial_pose.pose.orientation.w = 1.0
-    navigator.setInitialPose(initial_pose)
-
-    # Wait for navigation to fully activate
-    navigator.waitUntilNav2Active()
+    # Set map to use, other options: 100by100_15, 100by100_10
+    map_path = os.getcwd() + '/' + glob.glob('**/100by100_20.yaml', recursive=True)[0]
+    navigator.changeMap(map_path)
+    time.sleep(2)
 
     # Get the costmap for start/goal validation
     costmap_msg = navigator.getGlobalCostmap()
     costmap = np.asarray(costmap_msg.data)
     costmap.resize(costmap_msg.metadata.size_y, costmap_msg.metadata.size_x)
 
-    planners = ['NavFn', 'Smac2d', 'SmacLattice', 'SmacHybrid']
+    planners = ['Navfn', 'ThetaStar', 'SmacHybrid', 'Smac2d', 'SmacLattice']
     max_cost = 210
     side_buffer = 100
     time_stamp = navigator.get_clock().now().to_msg()
@@ -125,31 +115,30 @@ def main():
 
     random_pairs = 100
     res = costmap_msg.metadata.resolution
-    for i in range(random_pairs):
-        print("Cycle: ", i, "out of: ", random_pairs)
+    i = 0
+    while len(results) != random_pairs:
+        print('Cycle: ', i, 'out of: ', random_pairs)
         start = getRandomStart(costmap, max_cost, side_buffer, time_stamp, res)
         goal = getRandomGoal(costmap, start, max_cost, side_buffer, time_stamp, res)
-        print("Start", start)
-        print("Goal", goal)
+        print('Start', start)
+        print('Goal', goal)
         result = getPlannerResults(navigator, start, goal, planners)
         if len(result) == len(planners):
             results.append(result)
+            i = i + 1
         else:
-            print("One of the planners was invalid")
+            print('One of the planners was invalid')
 
-    print("Write Results...")
-    nav2_planner_metrics_dir = get_package_share_directory('nav2_planner_metrics')
-    with open(os.path.join(nav2_planner_metrics_dir, 'results.pickle'), 'wb') as f:
+    print('Write Results...')
+    with open(os.getcwd() + '/results.pickle', 'wb+') as f:
         pickle.dump(results, f, pickle.HIGHEST_PROTOCOL)
 
-    with open(os.path.join(nav2_planner_metrics_dir, 'costmap.pickle'), 'wb') as f:
+    with open(os.getcwd() + '/costmap.pickle', 'wb+') as f:
         pickle.dump(costmap_msg, f, pickle.HIGHEST_PROTOCOL)
 
-    with open(os.path.join(nav2_planner_metrics_dir, 'planners.pickle'), 'wb') as f:
+    with open(os.getcwd() + '/planners.pickle', 'wb+') as f:
         pickle.dump(planners, f, pickle.HIGHEST_PROTOCOL)
-    print("Write Complete")
-
-    navigator.lifecycleShutdown()
+    print('Write Complete')
     exit(0)
 
 

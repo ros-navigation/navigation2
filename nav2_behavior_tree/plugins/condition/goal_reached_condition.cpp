@@ -20,6 +20,7 @@
 #include "nav2_util/node_utils.hpp"
 
 #include "nav2_behavior_tree/plugins/condition/goal_reached_condition.hpp"
+#include "nav2_behavior_tree/bt_utils.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -28,12 +29,12 @@ GoalReachedCondition::GoalReachedCondition(
   const std::string & condition_name,
   const BT::NodeConfiguration & conf)
 : BT::ConditionNode(condition_name, conf),
-  initialized_(false),
-  global_frame_("map"),
-  robot_base_frame_("base_link")
+  initialized_(false)
 {
-  getInput("global_frame", global_frame_);
-  getInput("robot_base_frame", robot_base_frame_);
+  auto node = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+
+  robot_base_frame_ = BT::deconflictPortAndParamFrame<std::string, GoalReachedCondition>(
+    node, "robot_base_frame", this);
 }
 
 GoalReachedCondition::~GoalReachedCondition()
@@ -70,17 +71,17 @@ void GoalReachedCondition::initialize()
 
 bool GoalReachedCondition::isGoalReached()
 {
-  geometry_msgs::msg::PoseStamped current_pose;
+  geometry_msgs::msg::PoseStamped goal;
+  getInput("goal", goal);
 
+  geometry_msgs::msg::PoseStamped current_pose;
   if (!nav2_util::getCurrentPose(
-      current_pose, *tf_, global_frame_, robot_base_frame_, transform_tolerance_))
+      current_pose, *tf_, goal.header.frame_id, robot_base_frame_, transform_tolerance_))
   {
     RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
     return false;
   }
 
-  geometry_msgs::msg::PoseStamped goal;
-  getInput("goal", goal);
   double dx = goal.pose.position.x - current_pose.pose.position.x;
   double dy = goal.pose.position.y - current_pose.pose.position.y;
 

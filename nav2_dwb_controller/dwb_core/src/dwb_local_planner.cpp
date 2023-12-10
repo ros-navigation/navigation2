@@ -44,11 +44,11 @@
 #include "dwb_msgs/msg/critic_score.hpp"
 #include "nav_2d_msgs/msg/twist2_d.hpp"
 #include "nav_2d_utils/conversions.hpp"
-#include "nav_2d_utils/parameters.hpp"
 #include "nav_2d_utils/tf_help.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_util/node_utils.hpp"
+#include "nav2_core/controller_exceptions.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
@@ -91,6 +91,9 @@ void DWBLocalPlanner::configure(
     node, dwb_plugin_name_ + ".prune_distance",
     rclcpp::ParameterValue(2.0));
   declare_parameter_if_not_declared(
+    node, dwb_plugin_name_ + ".forward_prune_distance",
+    rclcpp::ParameterValue(2.0));
+  declare_parameter_if_not_declared(
     node, dwb_plugin_name_ + ".debug_trajectory_details",
     rclcpp::ParameterValue(false));
   declare_parameter_if_not_declared(
@@ -115,6 +118,13 @@ void DWBLocalPlanner::configure(
 
   node->get_parameter(dwb_plugin_name_ + ".prune_plan", prune_plan_);
   node->get_parameter(dwb_plugin_name_ + ".prune_distance", prune_distance_);
+  node->get_parameter(dwb_plugin_name_ + ".forward_prune_distance", forward_prune_distance_);
+  if (forward_prune_distance_ < 0.0) {
+    RCLCPP_WARN(
+      logger_, "Forward prune distance is negative, setting to max to search"
+      " every point on path for the closest value.");
+    forward_prune_distance_ = std::numeric_limits<double>::max();
+  }
   node->get_parameter(dwb_plugin_name_ + ".debug_trajectory_details", debug_trajectory_details_);
   node->get_parameter(dwb_plugin_name_ + ".trajectory_generator_name", traj_generator_name);
   node->get_parameter(
@@ -133,7 +143,9 @@ void DWBLocalPlanner::configure(
     loadCritics();
   } catch (const std::exception & e) {
     RCLCPP_ERROR(logger_, "Couldn't load critics! Caught exception: %s", e.what());
-    throw;
+    throw nav2_core::ControllerException(
+            "Couldn't load critics! Caught exception: " +
+            std::string(e.what()));
   }
 }
 
@@ -214,7 +226,9 @@ DWBLocalPlanner::loadCritics()
       plugin->initialize(node, critic_plugin_name, dwb_plugin_name_, costmap_ros_);
     } catch (const std::exception & e) {
       RCLCPP_ERROR(logger_, "Couldn't initialize critic plugin!");
-      throw;
+      throw nav2_core::ControllerException(
+              "Couldn't initialize critic plugin: " +
+              std::string(e.what()));
     }
     RCLCPP_INFO(logger_, "Critic plugin initialized");
   }
@@ -253,9 +267,18 @@ DWBLocalPlanner::computeVelocityCommands(
     geometry_msgs::msg::TwistStamped cmd_vel;
     cmd_vel.twist = nav_2d_utils::twist2Dto3D(cmd_vel2d.velocity);
     return cmd_vel;
-  } catch (const nav2_core::PlannerException & e) {
+  } catch (const nav2_core::ControllerTFError & e) {
     pub_->publishEvaluation(results);
-    throw;
+    throw e;
+  } catch (const nav2_core::InvalidPath & e) {
+    pub_->publishEvaluation(results);
+    throw e;
+  } catch (const nav2_core::NoValidControl & e) {
+    pub_->publishEvaluation(results);
+    throw e;
+  } catch (const nav2_core::ControllerException & e) {
+    pub_->publishEvaluation(results);
+    throw e;
   }
 }
 
@@ -333,7 +356,9 @@ DWBLocalPlanner::computeVelocityCommands(
     pub_->publishLocalPlan(pose.header, empty_traj);
     pub_->publishCostGrid(costmap_ros_, critics_);
 
-    throw;
+    throw nav2_core::NoValidControl(
+            "Could not find a legal trajectory: " +
+            std::string(e.what()));
   }
 }
 
@@ -441,7 +466,7 @@ DWBLocalPlanner::transformGlobalPlan(
   const nav_2d_msgs::msg::Pose2DStamped & pose)
 {
   if (global_plan_.poses.empty()) {
-    throw nav2_core::PlannerException("Received plan with zero length");
+    throw nav2_core::InvalidPath("Received plan with zero length");
   }
 
   // let's get the pose of the robot in the frame of the plan
@@ -450,15 +475,14 @@ DWBLocalPlanner::transformGlobalPlan(
       tf_, global_plan_.header.frame_id, pose,
       robot_pose, transform_tolerance_))
   {
-    throw dwb_core::
-          PlannerTFException("Unable to transform robot pose into global plan's frame");
+    throw nav2_core::
+          ControllerTFError("Unable to transform robot pose into global plan's frame");
   }
 
   // we'll discard points on the plan that are outside the local costmap
   nav2_costmap_2d::Costmap2D * costmap = costmap_ros_->getCostmap();
   double dist_threshold = std::max(costmap->getSizeInCellsX(), costmap->getSizeInCellsY()) *
     costmap->getResolution() / 2.0;
-
 
   // If prune_plan is enabled (it is by default) then we want to restrict the
   // plan to distances within that range as well.
@@ -474,20 +498,21 @@ DWBLocalPlanner::transformGlobalPlan(
     transform_start_threshold = dist_threshold;
   }
 
-  // Set the maximum distance we'll include points after the part of the part of
-  // the plan near the robot (the end of the plan). This determines the amount
-  // of the plan passed on to the critics
+  // Set the maximum distance we'll include points after the part of the plan
+  // near the robot (the end of the plan). This determines the amount of the
+  // plan passed on to the critics
   double transform_end_threshold;
+  double forward_prune_dist = forward_prune_distance_;
   if (shorten_transformed_plan_) {
-    transform_end_threshold = std::min(dist_threshold, prune_dist);
+    transform_end_threshold = std::min(dist_threshold, forward_prune_dist);
   } else {
     transform_end_threshold = dist_threshold;
   }
 
-  // Find the first pose in the global plan that's further than prune distance
+  // Find the first pose in the global plan that's further than forward prune distance
   // from the robot using integrated distance
   auto prune_point = nav2_util::geometry_utils::first_after_integrated_distance(
-    global_plan_.poses.begin(), global_plan_.poses.end(), prune_dist);
+    global_plan_.poses.begin(), global_plan_.poses.end(), forward_prune_distance_);
 
   // Find the first pose in the plan (upto prune_point) that's less than transform_start_threshold
   // from the robot.
@@ -501,8 +526,8 @@ DWBLocalPlanner::transformGlobalPlan(
   // from the robot using integrated distance
   auto transformation_end = std::find_if(
     transformation_begin, global_plan_.poses.end(),
-    [&](const auto & pose) {
-      return euclidean_distance(pose, robot_pose.pose) > transform_end_threshold;
+    [&](const auto & global_plan_pose) {
+      return euclidean_distance(global_plan_pose, robot_pose.pose) > transform_end_threshold;
     });
 
   // Transform the near part of the global plan into the robot's frame of reference.
@@ -535,7 +560,7 @@ DWBLocalPlanner::transformGlobalPlan(
   }
 
   if (transformed_plan.poses.empty()) {
-    throw nav2_core::PlannerException("Resulting plan has 0 poses in it.");
+    throw nav2_core::InvalidPath("Resulting plan has 0 poses in it.");
   }
   return transformed_plan;
 }

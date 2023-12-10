@@ -1,6 +1,7 @@
 # Nav2 Core
 
 This package hosts the abstract interface (virtual base classes) for plugins to be used with the following:
+- navigators (e.g., `navigate_to_pose`)
 - global planner (e.g., `nav2_navfn_planner`)
 - controller (e.g., path execution controller, e.g `nav2_dwb_controller`)
 - smoother (e.g., `nav2_ceres_costaware_smoother`)

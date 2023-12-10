@@ -57,7 +57,6 @@ public:
       BT::InputPort<double>("max_rate", 1.0, "Maximum rate"),
       BT::InputPort<double>("min_speed", 0.0, "Minimum speed"),
       BT::InputPort<double>("max_speed", 0.5, "Maximum speed"),
-      BT::InputPort<double>("filter_duration", 0.3, "Duration (secs) for velocity smoothing filter")
     };
   }
 

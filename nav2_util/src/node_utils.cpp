@@ -1,4 +1,5 @@
 // Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2023 Open Navigation LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -89,13 +90,17 @@ rclcpp::Node::SharedPtr generate_internal_node(const std::string & prefix)
   return rclcpp::Node::make_shared("_", options);
 }
 
-rclcpp::NodeOptions
-get_node_options_default(bool allow_undeclared, bool declare_initial_params)
+void setSoftRealTimePriority()
 {
-  rclcpp::NodeOptions options;
-  options.allow_undeclared_parameters(allow_undeclared);
-  options.automatically_declare_parameters_from_overrides(declare_initial_params);
-  return options;
+  sched_param sch;
+  sch.sched_priority = 49;
+  if (sched_setscheduler(0, SCHED_FIFO, &sch) == -1) {
+    std::string errmsg(
+      "Cannot set as real-time thread. Users must set: <username> hard rtprio 99 and "
+      "<username> soft rtprio 99 in /etc/security/limits.conf to enable "
+      "realtime prioritization! Error: ");
+    throw std::runtime_error(errmsg + std::strerror(errno));
+  }
 }
 
 }  // namespace nav2_util

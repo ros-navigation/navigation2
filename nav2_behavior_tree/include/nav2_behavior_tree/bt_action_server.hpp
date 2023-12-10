@@ -177,10 +177,11 @@ public:
   /**
    * @brief Function to halt the current tree. It will interrupt the execution of RUNNING nodes
    * by calling their halt() implementation (only for Async nodes that may return RUNNING)
+   * This should already done for all the exit states of the action but preemption
    */
   void haltTree()
   {
-    tree_.rootNode()->halt();
+    tree_.haltTree();
   }
 
 protected:
@@ -188,6 +189,18 @@ protected:
    * @brief Action server callback
    */
   void executeCallback();
+
+  /**
+   * @brief updates the action server result to the highest priority error code posted on the
+   * blackboard
+   * @param result the action server result to be updated
+   */
+  void populateErrorCode(typename std::shared_ptr<typename ActionT::Result> result);
+
+  /**
+   * @brief Setting BT error codes to success. Used to clean blackboard between different BT runs
+   */
+  void cleanErrorCodes();
 
   // Action name
   std::string action_name_;
@@ -211,6 +224,9 @@ protected:
   // Libraries to pull plugins (BT Nodes) from
   std::vector<std::string> plugin_lib_names_;
 
+  // Error code id names
+  std::vector<std::string> error_code_names_;
+
   // A regular, non-spinning ROS node that we can use for calls to the action client
   rclcpp::Node::SharedPtr client_node_;
 
@@ -231,6 +247,9 @@ protected:
 
   // Default timeout value while waiting for response from a server
   std::chrono::milliseconds default_server_timeout_;
+
+  // The timeout value for waiting for a service to response
+  std::chrono::milliseconds wait_for_service_timeout_;
 
   // User-provided callbacks
   OnGoalReceivedCallback on_goal_received_callback_;

@@ -31,7 +31,7 @@ using std::placeholders::_1;
 
 SmacPlanner2D::SmacPlanner2D()
 : _a_star(nullptr),
-  _collision_checker(nullptr, 1),
+  _collision_checker(nullptr, 1, nullptr),
   _smoother(nullptr),
   _costmap(nullptr),
   _costmap_downsampler(nullptr)
@@ -91,17 +91,7 @@ void SmacPlanner2D::configure(
     node, name + ".max_planning_time", rclcpp::ParameterValue(2.0));
   node->get_parameter(name + ".max_planning_time", _max_planning_time);
 
-  nav2_util::declare_parameter_if_not_declared(
-    node, name + ".motion_model_for_search", rclcpp::ParameterValue(std::string("MOORE")));
-  node->get_parameter(name + ".motion_model_for_search", _motion_model_for_search);
-  _motion_model = fromString(_motion_model_for_search);
-  if (_motion_model == MotionModel::UNKNOWN) {
-    RCLCPP_WARN(
-      _logger,
-      "Unable to get MotionModel search type. Given '%s', "
-      "valid options are MOORE, VON_NEUMANN, DUBIN, REEDS_SHEPP.",
-      _motion_model_for_search.c_str());
-  }
+  _motion_model = MotionModel::TWOD;
 
   if (_max_on_approach_iterations <= 0) {
     RCLCPP_INFO(
@@ -118,7 +108,7 @@ void SmacPlanner2D::configure(
   }
 
   // Initialize collision checker
-  _collision_checker = GridCollisionChecker(_costmap, 1 /*for 2D, most be 1*/);
+  _collision_checker = GridCollisionChecker(_costmap, 1 /*for 2D, most be 1*/, node);
   _collision_checker.setFootprint(
     costmap_ros->getRobotFootprint(),
     true /*for 2D, most use radius*/,
@@ -154,10 +144,9 @@ void SmacPlanner2D::configure(
   RCLCPP_INFO(
     _logger, "Configured plugin %s of type SmacPlanner2D with "
     "tolerance %.2f, maximum iterations %i, "
-    "max on approach iterations %i, and %s. Using motion model: %s.",
+    "max on approach iterations %i, and %s.",
     _name.c_str(), _tolerance, _max_iterations, _max_on_approach_iterations,
-    _allow_unknown ? "allowing unknown traversal" : "not allowing unknown traversal",
-    toString(_motion_model).c_str());
+    _allow_unknown ? "allowing unknown traversal" : "not allowing unknown traversal");
 }
 
 void SmacPlanner2D::activate()
@@ -222,11 +211,19 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
 
   // Set starting point
   unsigned int mx_start, my_start, mx_goal, my_goal;
-  costmap->worldToMap(start.pose.position.x, start.pose.position.y, mx_start, my_start);
+  if (!costmap->worldToMap(start.pose.position.x, start.pose.position.y, mx_start, my_start)) {
+    throw nav2_core::StartOutsideMapBounds(
+            "Start Coordinates of(" + std::to_string(start.pose.position.x) + ", " +
+            std::to_string(start.pose.position.y) + ") was outside bounds");
+  }
   _a_star->setStart(mx_start, my_start, 0);
 
   // Set goal point
-  costmap->worldToMap(goal.pose.position.x, goal.pose.position.y, mx_goal, my_goal);
+  if (!costmap->worldToMap(goal.pose.position.x, goal.pose.position.y, mx_goal, my_goal)) {
+    throw nav2_core::GoalOutsideMapBounds(
+            "Goal Coordinates of(" + std::to_string(goal.pose.position.x) + ", " +
+            std::to_string(goal.pose.position.y) + ") was outside bounds");
+  }
   _a_star->setGoal(mx_goal, my_goal, 0);
 
   // Setup message
@@ -243,10 +240,6 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
 
   // Corner case of start and goal beeing on the same cell
   if (mx_start == mx_goal && my_start == my_goal) {
-    if (costmap->getCost(mx_start, my_start) == nav2_costmap_2d::LETHAL_OBSTACLE) {
-      RCLCPP_WARN(_logger, "Failed to create a unique pose path because of obstacles");
-      return plan;
-    }
     pose.pose = start.pose;
     // if we have a different start and goal orientation, set the unique path pose to the goal
     // orientation, unless use_final_approach_orientation=true where we need it to be the start
@@ -261,28 +254,21 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
   // Compute plan
   Node2D::CoordinateVector path;
   int num_iterations = 0;
-  std::string error;
-  try {
-    if (!_a_star->createPath(
-        path, num_iterations, _tolerance / static_cast<float>(costmap->getResolution())))
-    {
-      if (num_iterations < _a_star->getMaxIterations()) {
-        error = std::string("no valid path found");
-      } else {
-        error = std::string("exceeded maximum iterations");
-      }
+  // Note: All exceptions thrown are handled by the planner server and returned to the action
+  if (!_a_star->createPath(
+      path, num_iterations,
+      _tolerance / static_cast<float>(costmap->getResolution())))
+  {
+    // Note: If the start is blocked only one iteration will occur before failure
+    if (num_iterations == 1) {
+      throw nav2_core::StartOccupied("Start occupied");
     }
-  } catch (const std::runtime_error & e) {
-    error = "invalid use: ";
-    error += e.what();
-  }
 
-  if (!error.empty()) {
-    RCLCPP_WARN(
-      _logger,
-      "%s: failed to create plan, %s.",
-      _name.c_str(), error.c_str());
-    return plan;
+    if (num_iterations < _a_star->getMaxIterations()) {
+      throw nav2_core::NoValidPathCouldBeFound("no valid path found");
+    } else {
+      throw nav2_core::PlannerTimedOut("exceeded maximum iterations");
+    }
   }
 
   // Convert to world coordinates
@@ -390,18 +376,6 @@ SmacPlanner2D::dynamicParametersCallback(std::vector<rclcpp::Parameter> paramete
             _logger, "On approach iteration selected as <= 0, "
             "disabling tolerance and on approach iterations.");
           _max_on_approach_iterations = std::numeric_limits<int>::max();
-        }
-      }
-    } else if (type == ParameterType::PARAMETER_STRING) {
-      if (name == _name + ".motion_model_for_search") {
-        reinit_a_star = true;
-        _motion_model = fromString(parameter.as_string());
-        if (_motion_model == MotionModel::UNKNOWN) {
-          RCLCPP_WARN(
-            _logger,
-            "Unable to get MotionModel search type. Given '%s', "
-            "valid options are MOORE, VON_NEUMANN, DUBIN, REEDS_SHEPP.",
-            _motion_model_for_search.c_str());
         }
       }
     }

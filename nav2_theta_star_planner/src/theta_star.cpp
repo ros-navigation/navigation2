@@ -23,6 +23,7 @@ ThetaStar::ThetaStar()
   w_euc_cost_(2.0),
   w_heuristic_cost_(1.0),
   how_many_corners_(8),
+  allow_unknown_(true),
   size_x_(0),
   size_y_(0),
   index_generated_(0)
@@ -247,16 +248,22 @@ void ThetaStar::resetContainers()
 
 void ThetaStar::initializePosn(int size_inc)
 {
-  int i = 0;
-
   if (!node_position_.empty()) {
-    for (; i < size_x_ * size_y_; i++) {
+    for (int i = 0; i < size_x_ * size_y_; i++) {
       node_position_[i] = nullptr;
     }
   }
 
-  for (; i < size_inc; i++) {
+  for (int i = 0; i < size_inc; i++) {
     node_position_.push_back(nullptr);
   }
 }
+
+void ThetaStar::clearStart()
+{
+  unsigned int mx_start = static_cast<unsigned int>(src_.x);
+  unsigned int my_start = static_cast<unsigned int>(src_.y);
+  costmap_->setCost(mx_start, my_start, nav2_costmap_2d::FREE_SPACE);
+}
+
 }  //  namespace theta_star

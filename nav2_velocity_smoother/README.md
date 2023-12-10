@@ -3,7 +3,7 @@
 The ``nav2_velocity_smoother`` is a package containing a lifecycle-component node for smoothing velocities sent by Nav2 to robot controllers.
 The aim of this package is to implement velocity, acceleration, and deadband smoothing from Nav2 to reduce wear-and-tear on robot motors and hardware controllers by smoothing out the accelerations/jerky movements that might be present with some local trajectory planners' control efforts.
 
-It supports differential drive and omnidirectional robot platforms primarily, but is applicable to ackermann as well with some intepretations of ``Twist``. It was built by [Steve Macenski](https://www.linkedin.com/in/steve-macenski-41a985101/) while at [Samsung Research](https://www.sra.samsung.com/). 
+It supports differential drive and omnidirectional robot platforms primarily, but is applicable to ackermann as well with some interpretations of ``Twist``. It was built by [Steve Macenski](https://www.linkedin.com/in/steve-macenski-41a985101/) while at [Samsung Research](https://www.sra.samsung.com/). 
 
 See its [Configuration Guide Page](https://navigation.ros.org/configuration/packages/configuring-velocity-smoother.html) for additional parameter descriptions.
 
@@ -39,7 +39,7 @@ There are two primary operation modes: open and closed loop.
 In open-loop, the node assumes that the robot was able to achieve the velocity send to it in the last command which was smoothed (which should be a good assumption if acceleration limits are set properly).
 This is useful when robot odometry is not particularly accurate or has significant latency relative to `smoothing_frequency` so there isn't a delay in the feedback loop.
 In closed-loop, the node will read from the odometry topic and apply a smoother over it to obtain the robot's current speed.
-This will be used to determine the robot's current velocity and therefore achivable velocity targets by the velocity, acceleration, and deadband constraints using live data.
+This will be used to determine the robot's current velocity and therefore achievable velocity targets by the velocity, acceleration, and deadband constraints using live data.
 
 ## Parameters
 

@@ -109,7 +109,7 @@ TEST(RotationShimControllerTest, lifecycleTransitions)
 
   ctrl->activate();
 
-  ctrl->setSpeedLimit(50.0, 2.0);
+  ctrl->setSpeedLimit(50.0, true);
 
   ctrl->deactivate();
   ctrl->cleanup();

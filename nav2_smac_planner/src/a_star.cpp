@@ -117,8 +117,11 @@ template<typename NodeT>
 typename AStarAlgorithm<NodeT>::NodePtr AStarAlgorithm<NodeT>::addToGraph(
   const unsigned int & index)
 {
-  // Emplace will only create a new object if it doesn't already exist.
-  // If an element exists, it will return the existing object, not create a new one.
+  auto iter = _graph.find(index);
+  if (iter != _graph.end()) {
+    return &(iter->second);
+  }
+
   return &(_graph.emplace(index, NodeT(index)).first->second);
 }
 
@@ -146,6 +149,30 @@ void AStarAlgorithm<NodeT>::setStart(
       static_cast<float>(mx),
       static_cast<float>(my),
       static_cast<float>(dim_3)));
+}
+
+template<>
+void AStarAlgorithm<Node2D>::populateExpansionsLog(
+  const NodePtr & node,
+  std::vector<std::tuple<float, float, float>> * expansions_log)
+{
+  Node2D::Coordinates coords = node->getCoords(node->getIndex());
+  expansions_log->emplace_back(
+    _costmap->getOriginX() + ((coords.x + 0.5) * _costmap->getResolution()),
+    _costmap->getOriginY() + ((coords.y + 0.5) * _costmap->getResolution()),
+    0.0);
+}
+
+template<typename NodeT>
+void AStarAlgorithm<NodeT>::populateExpansionsLog(
+  const NodePtr & node,
+  std::vector<std::tuple<float, float, float>> * expansions_log)
+{
+  typename NodeT::Coordinates coords = node->pose;
+  expansions_log->emplace_back(
+    _costmap->getOriginX() + ((coords.x + 0.5) * _costmap->getResolution()),
+    _costmap->getOriginY() + ((coords.y + 0.5) * _costmap->getResolution()),
+    NodeT::motion_table.getAngleFromBin(coords.theta));
 }
 
 template<>
@@ -204,13 +231,11 @@ bool AStarAlgorithm<NodeT>::areInputsValid()
   if (getToleranceHeuristic() < 0.001 &&
     !_goal->isNodeValid(_traverse_unknown, _collision_checker))
   {
-    throw std::runtime_error("Failed to compute path, goal is occupied with no tolerance.");
+    throw nav2_core::GoalOccupied("Goal was in lethal cost");
   }
 
-  // Check if starting point is valid
-  if (!_start->isNodeValid(_traverse_unknown, _collision_checker)) {
-    throw std::runtime_error("Starting point in lethal space! Cannot create feasible plan.");
-  }
+  // Note: We do not check the if the start is valid because it is cleared
+  clearStart();
 
   return true;
 }
@@ -218,7 +243,8 @@ bool AStarAlgorithm<NodeT>::areInputsValid()
 template<typename NodeT>
 bool AStarAlgorithm<NodeT>::createPath(
   CoordinateVector & path, int & iterations,
-  const float & tolerance)
+  const float & tolerance,
+  std::vector<std::tuple<float, float, float>> * expansions_log)
 {
   steady_clock::time_point start_time = steady_clock::now();
   _tolerance = tolerance;
@@ -269,6 +295,11 @@ bool AStarAlgorithm<NodeT>::createPath(
 
     // 1) Pick Nbest from O s.t. min(f(Nbest)), remove from queue
     current_node = getNextNode();
+
+    // Save current node coordinates for debug
+    if (expansions_log) {
+      populateExpansionsLog(current_node, expansions_log);
+    }
 
     // We allow for nodes to be queued multiple times in case
     // shorter paths result in it, but we can visit only once
@@ -321,6 +352,11 @@ bool AStarAlgorithm<NodeT>::createPath(
         addNode(g_cost + getHeuristicCost(neighbor), neighbor);
       }
     }
+  }
+
+  if (_best_heuristic_node.first < getToleranceHeuristic()) {
+    // If we run out of serach options, return the path that is closest, if within tolerance.
+    return _graph.at(_best_heuristic_node.second).backtracePath(path);
   }
 
   return false;
@@ -425,6 +461,20 @@ template<typename NodeT>
 unsigned int & AStarAlgorithm<NodeT>::getSizeDim3()
 {
   return _dim3_size;
+}
+
+template<>
+void AStarAlgorithm<Node2D>::clearStart()
+{
+  auto coords = Node2D::getCoords(_start->getIndex());
+  _costmap->setCost(coords.x, coords.y, nav2_costmap_2d::FREE_SPACE);
+}
+
+template<typename NodeT>
+void AStarAlgorithm<NodeT>::clearStart()
+{
+  auto coords = NodeT::getCoords(_start->getIndex(), _costmap->getSizeInCellsX(), getSizeDim3());
+  _costmap->setCost(coords.x, coords.y, nav2_costmap_2d::FREE_SPACE);
 }
 
 // Instantiate algorithm for the supported template types

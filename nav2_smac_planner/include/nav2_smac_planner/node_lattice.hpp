@@ -58,8 +58,6 @@ struct LatticeMotionTable
   /**
    * @brief Initializing state lattice planner's motion model
    * @param size_x_in Size of costmap in X
-   * @param size_y_in Size of costmap in Y
-   * @param angle_quantization_in Size of costmap in bin sizes
    * @param search_info Parameters for searching
    */
   void initMotionModel(
@@ -407,6 +405,12 @@ public:
    * @return whether the path was able to be backtraced
    */
   bool backtracePath(CoordinateVector & path);
+
+  /**
+   * \brief add node to the path
+   * \param current_node
+   */
+  void addNodeToPath(NodePtr current_node, CoordinateVector & path);
 
   NodeLattice * parent;
   Coordinates pose;

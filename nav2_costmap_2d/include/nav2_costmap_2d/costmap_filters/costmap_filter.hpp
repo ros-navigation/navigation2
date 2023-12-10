@@ -2,6 +2,7 @@
  *
  * Software License Agreement (BSD License)
  *
+ *  Copyright (c) 2008, 2013, Willow Garage, Inc.
  *  Copyright (c) 2020 Samsung Research Russia
  *  All rights reserved.
  *
@@ -32,7 +33,9 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *
- * Author: Alexey Merzlyakov
+ * Author: Eitan Marder-Eppstein
+ *         David V. Lu!!
+ *         Alexey Merzlyakov
  *********************************************************************/
 
 #ifndef NAV2_COSTMAP_2D__COSTMAP_FILTERS__COSTMAP_FILTER_HPP_
@@ -40,9 +43,12 @@
 
 #include <string>
 #include <mutex>
+#include <memory>
 
 #include "geometry_msgs/msg/pose2_d.hpp"
+#include "std_srvs/srv/set_bool.hpp"
 #include "nav2_costmap_2d/layer.hpp"
+#include "nav_msgs/msg/occupancy_grid.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -154,6 +160,70 @@ public:
 
 protected:
   /**
+   * @brief Costmap filter enabling/disabling callback
+   * @param request_header Service request header
+   * @param request Service request
+   * @param response Service response
+   */
+  void enableCallback(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
+    std::shared_ptr<std_srvs::srv::SetBool::Response> response);
+
+  /**
+   * @brief:  Transforms robot pose from current layer frame to mask frame
+   * @param:  global_frame Costmap frame to transform from
+   * @param:  global_pose Robot pose in costmap frame
+   * @param:  mask_frame Filter mask frame to transform to
+   * @param:  mask_pose Output robot pose in mask frame
+   * @return: True if the transformation was successful, false otherwise
+   */
+  bool transformPose(
+    const std::string global_frame,
+    const geometry_msgs::msg::Pose2D & global_pose,
+    const std::string mask_frame,
+    geometry_msgs::msg::Pose2D & mask_pose) const;
+
+  /**
+   * @brief: Convert from world coordinates to mask coordinates.
+     Similar to Costmap2D::worldToMap() method but works directly with OccupancyGrid-s.
+   * @param  filter_mask Filter mask on which to convert
+   * @param  wx The x world coordinate
+   * @param  wy The y world coordinate
+   * @param  mx Will be set to the associated mask x coordinate
+   * @param  my Will be set to the associated mask y coordinate
+   * @return True if the conversion was successful (legal bounds) false otherwise
+   */
+  bool worldToMask(
+    nav_msgs::msg::OccupancyGrid::ConstSharedPtr filter_mask,
+    double wx, double wy, unsigned int & mx, unsigned int & my) const;
+
+  /**
+   * @brief  Get the data of a cell in the filter mask
+   * @param  filter_mask Filter mask to get the data from
+   * @param  mx The x coordinate of the cell
+   * @param  my The y coordinate of the cell
+   * @return The data of the selected cell
+   */
+  inline int8_t getMaskData(
+    nav_msgs::msg::OccupancyGrid::ConstSharedPtr filter_mask,
+    const unsigned int mx, const unsigned int my) const
+  {
+    return filter_mask->data[my * filter_mask->info.width + mx];
+  }
+
+  /**
+   * @brief  Get the cost of a cell in the filter mask
+   * @param  filter_mask Filter mask to get the cost from
+   * @param  mx The x coordinate of the cell
+   * @param  my The y coordinate of the cell
+   * @return The cost to set the cell to
+   */
+  unsigned char getMaskCost(
+    nav_msgs::msg::OccupancyGrid::ConstSharedPtr filter_mask,
+    const unsigned int mx, const unsigned int & my) const;
+
+  /**
    * @brief: Name of costmap filter info topic
    */
   std::string filter_info_topic_;
@@ -164,9 +234,14 @@ protected:
   std::string mask_topic_;
 
   /**
-   * @brief: mask_frame_->global_frame_ transform tolerance
+   * @brief: mask_frame->global_frame_ transform tolerance
    */
   tf2::Duration transform_tolerance_;
+
+  /**
+   * @brief: A service to enable/disable costmap filter
+   */
+  rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr enable_service_;
 
 private:
   /**
