@@ -32,37 +32,36 @@
 #ifndef NAV2_COSTMAP_2D__SEGMENTATION_HPP_
 #define NAV2_COSTMAP_2D__SEGMENTATION_HPP_
 
-#include <map>
-
 #include <geometry_msgs/msg/point.hpp>
+#include <map>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 
-namespace nav2_costmap_2d {
+namespace nav2_costmap_2d
+{
 
 /**
- * @brief Stores an segmentation in terms of a point cloud containing the class and confidence 
- * of each point, the origin of the source and a class map containing the names of each class id
- * in the pointcloud
+ * @brief Stores an segmentation in terms of a point cloud and the origin of the source
  * @note Tried to make members and constructor arguments const but the compiler would not accept the
  * default assignment operator for vector insertion!
  */
 class Segmentation
 {
- public:
+public:
   /**
    * @brief  Creates an empty segmentation
    */
-  Segmentation() : cloud_(new sensor_msgs::msg::PointCloud2()) {}
+  Segmentation()
+  : cloud_(new sensor_msgs::msg::PointCloud2()) {}
   /**
-   * @brief A destructor. Deletes pointcloud pointer
+   * @brief A destructor
    */
-  virtual ~Segmentation() { delete cloud_; }
+  virtual ~Segmentation() {delete cloud_;}
 
   /**
    * @brief  Copy assignment operator
    * @param obs The segmentation to copy
    */
-  Segmentation& operator=(const Segmentation& obs)
+  Segmentation & operator=(const Segmentation & obs)
   {
     origin_ = obs.origin_;
     cloud_ = new sensor_msgs::msg::PointCloud2(*(obs.cloud_));
@@ -72,15 +71,22 @@ class Segmentation
   }
 
   /**
-   * @brief  Creates an segmentation from an origin point, a point cloud and a class map
+   * @brief  Creates an segmentation from an origin point and a point cloud
    * @param origin The origin point of the segmentation
-   * @param cloud The point cloud of the segmentation. It must have the class and intensity channels
-   * @param class_map The name of each class id in the segmentation. i.e: 1: "Grass", 2: "Street"
+   * @param cloud The point cloud of the segmentation
+   * @param obstacle_max_range The range out to which an segmentation should be able to insert
    * obstacles
+   * @param obstacle_min_range The range from which an segmentation should be able to insert
+   * obstacles
+   * @param raytrace_max_range The range out to which an segmentation should be able to clear via
+   * raytracing
+   * @param raytrace_min_range The range from which an segmentation should be able to clear via
+   * raytracing
    */
-  Segmentation(geometry_msgs::msg::Point& origin, const sensor_msgs::msg::PointCloud2& cloud,
-               std::map<uint16_t, std::string> class_map)
-    : origin_(origin), cloud_(new sensor_msgs::msg::PointCloud2(cloud)), class_map_(class_map)
+  Segmentation(
+    geometry_msgs::msg::Point & origin, const sensor_msgs::msg::PointCloud2 & cloud,
+    std::unordered_map<uint16_t, uint8_t> class_map)
+  : origin_(origin), cloud_(new sensor_msgs::msg::PointCloud2(cloud)), class_map_(class_map)
   {
   }
 
@@ -88,8 +94,8 @@ class Segmentation
    * @brief  Copy constructor
    * @param obs The segmentation to copy
    */
-  Segmentation(const Segmentation& obs)
-    : origin_(obs.origin_)
+  Segmentation(const Segmentation & obs)
+  : origin_(obs.origin_)
     , cloud_(new sensor_msgs::msg::PointCloud2(*(obs.cloud_)))
     , class_map_(obs.class_map_)
   {
@@ -98,16 +104,19 @@ class Segmentation
   /**
    * @brief  Creates an segmentation from a point cloud
    * @param cloud The point cloud of the segmentation
+   * @param obstacle_max_range The range out to which an segmentation should be able to insert
+   * obstacles
+   * @param obstacle_min_range The range from which an segmentation should be able to insert
+   * obstacles
    */
-  Segmentation(const sensor_msgs::msg::PointCloud2& cloud)
-    : cloud_(new sensor_msgs::msg::PointCloud2(cloud))
+  Segmentation(const sensor_msgs::msg::PointCloud2 & cloud)
+  : cloud_(new sensor_msgs::msg::PointCloud2(cloud))
   {
   }
 
   geometry_msgs::msg::Point origin_;
-  sensor_msgs::msg::PointCloud2* cloud_;
-  ///< @brief To store the correspondence of each class id with its name
-  std::map<uint16_t, std::string> class_map_;
+  sensor_msgs::msg::PointCloud2 * cloud_;
+  std::unordered_map<uint16_t, uint8_t> class_map_; // contains class_id->cost relation
 };
 
 }  // namespace nav2_costmap_2d

@@ -46,19 +46,24 @@
 #include "tf2/convert.h"
 using namespace std::chrono_literals;
 
-namespace nav2_costmap_2d {
-SegmentationBuffer::SegmentationBuffer(const nav2_util::LifecycleNode::WeakPtr& parent,
-                                       std::string topic_name, double observation_keep_time,
-                                       double expected_update_rate, double max_lookahead_distance,
-                                       double min_lookahead_distance, tf2_ros::Buffer& tf2_buffer,
-                                       std::string global_frame, std::string sensor_frame,
-                                       tf2::Duration tf_tolerance)
-  : tf2_buffer_(tf2_buffer)
+namespace nav2_costmap_2d
+{
+SegmentationBuffer::SegmentationBuffer(
+  const nav2_util::LifecycleNode::WeakPtr & parent,
+  std::string buffer_source, std::vector<std::string> class_types, std::unordered_map<std::string,
+  uint8_t> class_names_cost_map, double observation_keep_time,
+  double expected_update_rate, double max_lookahead_distance,
+  double min_lookahead_distance, tf2_ros::Buffer & tf2_buffer,
+  std::string global_frame, std::string sensor_frame,
+  tf2::Duration tf_tolerance)
+: tf2_buffer_(tf2_buffer)
+  , class_types_(class_types)
+  , class_names_cost_map_(class_names_cost_map)
   , observation_keep_time_(rclcpp::Duration::from_seconds(observation_keep_time))
   , expected_update_rate_(rclcpp::Duration::from_seconds(expected_update_rate))
   , global_frame_(global_frame)
   , sensor_frame_(sensor_frame)
-  , topic_name_(topic_name)
+  , buffer_source_(buffer_source)
   , sq_max_lookahead_distance_(std::pow(max_lookahead_distance, 2))
   , sq_min_lookahead_distance_(std::pow(min_lookahead_distance, 2))
   , tf_tolerance_(tf_tolerance)
@@ -71,9 +76,17 @@ SegmentationBuffer::SegmentationBuffer(const nav2_util::LifecycleNode::WeakPtr& 
 
 SegmentationBuffer::~SegmentationBuffer() {}
 
+void SegmentationBuffer::createClassIdCostMap(const vision_msgs::msg::LabelInfo & label_info)
+{
+  for (const auto & semantic_class : label_info.class_map) {
+    class_ids_cost_map_[semantic_class.class_id] = class_names_cost_map_[semantic_class.class_name];
+  }
+}
+
 void SegmentationBuffer::bufferSegmentation(
-  const sensor_msgs::msg::PointCloud2& cloud,
-  const vision_msgs::msg::SemanticSegmentation& segmentation)
+  const sensor_msgs::msg::PointCloud2 & cloud,
+  const sensor_msgs::msg::Image & segmentation,
+  const sensor_msgs::msg::Image & confidence)
 {
   geometry_msgs::msg::PointStamped global_origin;
 
@@ -84,8 +97,7 @@ void SegmentationBuffer::bufferSegmentation(
   // or whether we should get it from the cloud
   std::string origin_frame = sensor_frame_ == "" ? cloud.header.frame_id : sensor_frame_;
 
-  try
-  {
+  try {
     // given these segmentations come from sensors...
     // we'll need to store the origin pt of the sensor
     geometry_msgs::msg::PointStamped local_origin;
@@ -103,9 +115,9 @@ void SegmentationBuffer::bufferSegmentation(
     tf2_buffer_.transform(cloud, global_frame_cloud, global_frame_, tf_tolerance_);
     global_frame_cloud.header.stamp = cloud.header.stamp;
 
-    // create a segmented pointcloud to store the original 3D data as well as the class and confidence
-    // of each point
-    sensor_msgs::msg::PointCloud2& segmentation_cloud = *(segmentation_list_.front().cloud_);
+    // now we need to remove segmentations from the cloud that are below
+    // or above our height thresholds
+    sensor_msgs::msg::PointCloud2 & segmentation_cloud = *(segmentation_list_.front().cloud_);
     segmentation_cloud.height = global_frame_cloud.height;
     segmentation_cloud.width = global_frame_cloud.width;
     segmentation_cloud.fields = global_frame_cloud.fields;
@@ -117,15 +129,14 @@ void SegmentationBuffer::bufferSegmentation(
     unsigned int cloud_size = global_frame_cloud.height * global_frame_cloud.width;
     sensor_msgs::PointCloud2Modifier modifier(segmentation_cloud);
 
-    // add the class and confidence fields to the pointcloud.
     segmentation_cloud.point_step =
-      addPointField(segmentation_cloud, "class", 1, sensor_msgs::msg::PointField::INT8,
-                    segmentation_cloud.point_step);
+      addPointField(
+      segmentation_cloud, "class", 1, sensor_msgs::msg::PointField::INT8,
+      segmentation_cloud.point_step);
     segmentation_cloud.point_step =
-      addPointField(segmentation_cloud, "confidence", 1, sensor_msgs::msg::PointField::INT8,
-                    segmentation_cloud.point_step);
-    
-    // update the point step and get iterators
+      addPointField(
+      segmentation_cloud, "confidence", 1, sensor_msgs::msg::PointField::INT8,
+      segmentation_cloud.point_step);
     modifier.resize(cloud_size);
     sensor_msgs::PointCloud2Iterator<uint8_t> iter_class_obs(segmentation_cloud, "class");
     sensor_msgs::PointCloud2Iterator<uint8_t> iter_confidence_obs(segmentation_cloud, "confidence");
@@ -133,37 +144,28 @@ void SegmentationBuffer::bufferSegmentation(
     sensor_msgs::PointCloud2Iterator<float> iter_y_obs(segmentation_cloud, "y");
     sensor_msgs::PointCloud2Iterator<float> iter_z_obs(segmentation_cloud, "z");
 
-    // get iterators for the original cloud
     sensor_msgs::PointCloud2ConstIterator<float> iter_x_global(global_frame_cloud, "x");
     sensor_msgs::PointCloud2ConstIterator<float> iter_y_global(global_frame_cloud, "y");
     sensor_msgs::PointCloud2ConstIterator<float> iter_z_global(global_frame_cloud, "z");
     unsigned int point_count = 0;
 
     // copy over the points that are within our segmentation range
-    for (size_t v = 0; v < segmentation.height; v++)
-    {
-      for (size_t u = 0; u < segmentation.width; u++)
-      {
+    for (size_t v = 0; v < segmentation.height; v++) {
+      for (size_t u = 0; u < segmentation.width; u++) {
         int pixel_idx = v * segmentation.width + u;
         // remove invalid points
-        if (!std::isfinite(*(iter_z_global + pixel_idx)))
-        {
+        if (!std::isfinite(*(iter_z_global + pixel_idx))) {
           continue;
         }
-        // calculate the distance of the point to the sensor
         double sq_dist =
           std::pow(*(iter_x_global + pixel_idx) - segmentation_list_.front().origin_.x, 2) +
           std::pow(*(iter_y_global + pixel_idx) - segmentation_list_.front().origin_.y, 2) +
           std::pow(*(iter_z_global + pixel_idx) - segmentation_list_.front().origin_.z, 2);
-
-        // Remove points that are too far or too close
-        if (sq_dist >= sq_max_lookahead_distance_ || sq_dist <= sq_min_lookahead_distance_)
-        {
+        if (sq_dist >= sq_max_lookahead_distance_ || sq_dist <= sq_min_lookahead_distance_) {
           continue;
         }
-        // assign the values to the segmentation and the original pointcloud to each point
         *(iter_class_obs + point_count) = segmentation.data[pixel_idx];
-        *(iter_confidence_obs + point_count) = segmentation.confidence[pixel_idx];
+        *(iter_confidence_obs + point_count) = confidence.data[pixel_idx];
         *(iter_x_obs + point_count) = *(iter_x_global + pixel_idx);
         *(iter_y_obs + point_count) = *(iter_y_global + pixel_idx);
         *(iter_z_obs + point_count) = *(iter_z_global + pixel_idx);
@@ -176,19 +178,14 @@ void SegmentationBuffer::bufferSegmentation(
     segmentation_cloud.header.stamp = cloud.header.stamp;
     segmentation_cloud.header.frame_id = global_frame_cloud.header.frame_id;
 
-    // create the class map from the classes contained on the segmentation message
-    std::map<uint16_t, std::string>& segmentation_class_map = segmentation_list_.front().class_map_;
-    for (auto& semantic_class : segmentation.class_map)
-    {
-      segmentation_class_map[semantic_class.class_id] = semantic_class.class_name;
-    }
-  } catch (tf2::TransformException& ex)
-  {
+    segmentation_list_.front().class_map_ = class_ids_cost_map_;
+  } catch (tf2::TransformException & ex) {
     // if an exception occurs, we need to remove the empty segmentation from the list
     segmentation_list_.pop_front();
-    RCLCPP_ERROR(logger_,
-                 "TF Exception that should never happen for sensor frame: %s, cloud frame: %s, %s",
-                 sensor_frame_.c_str(), cloud.header.frame_id.c_str(), ex.what());
+    RCLCPP_ERROR(
+      logger_,
+      "TF Exception that should never happen for sensor frame: %s, cloud frame: %s, %s",
+      sensor_frame_.c_str(), cloud.header.frame_id.c_str(), ex.what());
     return;
   }
 
@@ -200,40 +197,40 @@ void SegmentationBuffer::bufferSegmentation(
 }
 
 // returns a copy of the segmentations
-void SegmentationBuffer::getSegmentations(std::vector<Segmentation>& segmentations)
+void SegmentationBuffer::getSegmentations(std::vector<Segmentation> & segmentations)
 {
   // first... let's make sure that we don't have any stale segmentations
   purgeStaleSegmentations();
 
   // now we'll just copy the segmentations for the caller
   std::list<Segmentation>::iterator obs_it;
-  for (obs_it = segmentation_list_.begin(); obs_it != segmentation_list_.end(); ++obs_it)
-  {
+  for (obs_it = segmentation_list_.begin(); obs_it != segmentation_list_.end(); ++obs_it) {
     segmentations.push_back(*obs_it);
   }
   segmentation_list_.clear();
 }
 
+std::unordered_map<std::string, uint8_t> SegmentationBuffer::getClassMap()
+{
+  return class_names_cost_map_;
+}
+
 void SegmentationBuffer::purgeStaleSegmentations()
 {
-  if (!segmentation_list_.empty())
-  {
+  if (!segmentation_list_.empty()) {
     std::list<Segmentation>::iterator obs_it = segmentation_list_.begin();
     // if we're keeping segmentations for no time... then we'll only keep one segmentation
-    if (observation_keep_time_ == rclcpp::Duration(0.0s))
-    {
+    if (observation_keep_time_ == rclcpp::Duration(0.0s)) {
       segmentation_list_.erase(++obs_it, segmentation_list_.end());
       return;
     }
 
     // otherwise... we'll have to loop through the segmentations to see which ones are stale
-    for (obs_it = segmentation_list_.begin(); obs_it != segmentation_list_.end(); ++obs_it)
-    {
-      Segmentation& obs = *obs_it;
+    for (obs_it = segmentation_list_.begin(); obs_it != segmentation_list_.end(); ++obs_it) {
+      Segmentation & obs = *obs_it;
       // check if the segmentation is out of date... and if it is,
       // remove it and those that follow from the list
-      if ((clock_->now() - obs.cloud_->header.stamp) > observation_keep_time_)
-      {
+      if ((clock_->now() - obs.cloud_->header.stamp) > observation_keep_time_) {
         segmentation_list_.erase(obs_it, segmentation_list_.end());
         return;
       }
@@ -241,24 +238,28 @@ void SegmentationBuffer::purgeStaleSegmentations()
   }
 }
 
+void SegmentationBuffer::updateClassMap(std::string new_class, uint8_t new_cost)
+{
+  class_names_cost_map_[new_class] = new_cost;
+}
+
 bool SegmentationBuffer::isCurrent() const
 {
-  if (expected_update_rate_ == rclcpp::Duration(0.0s))
-  {
+  if (expected_update_rate_ == rclcpp::Duration(0.0s)) {
     return true;
   }
 
   bool current = (clock_->now() - last_updated_) <= expected_update_rate_;
-  if (!current)
-  {
-    RCLCPP_WARN(logger_,
-                "The %s segmentation buffer has not been updated for %.2f seconds, "
-                "and it should be updated every %.2f seconds.",
-                topic_name_.c_str(), (clock_->now() - last_updated_).seconds(),
-                expected_update_rate_.seconds());
+  if (!current) {
+    RCLCPP_WARN(
+      logger_,
+      "The %s segmentation buffer has not been updated for %.2f seconds, "
+      "and it should be updated every %.2f seconds.",
+      buffer_source_.c_str(), (clock_->now() - last_updated_).seconds(),
+      expected_update_rate_.seconds());
   }
   return current;
 }
 
-void SegmentationBuffer::resetLastUpdated() { last_updated_ = clock_->now(); }
+void SegmentationBuffer::resetLastUpdated() {last_updated_ = clock_->now();}
 }  // namespace nav2_costmap_2d

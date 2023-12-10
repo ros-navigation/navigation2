@@ -50,10 +50,12 @@
 #include "nav2_costmap_2d/segmentation_buffer.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "sensor_msgs/msg/image.hpp"
 #include "tf2_ros/message_filter.h"
-#include "vision_msgs/msg/semantic_segmentation.hpp"
+#include "vision_msgs/msg/label_info.hpp"
 
-namespace nav2_costmap_2d {
+namespace nav2_costmap_2d
+{
 
 /**
  * @class SemanticSegmentationLayer
@@ -61,7 +63,7 @@ namespace nav2_costmap_2d {
  */
 class SemanticSegmentationLayer : public CostmapLayer
 {
- public:
+public:
   /**
    * @brief A constructor
    */
@@ -86,8 +88,9 @@ class SemanticSegmentationLayer : public CostmapLayer
    * @param max_x X max map coord of the window to update
    * @param max_y Y max map coord of the window to update
    */
-  virtual void updateBounds(double robot_x, double robot_y, double robot_yaw, double* min_x,
-                            double* min_y, double* max_x, double* max_y);
+  virtual void updateBounds(
+    double robot_x, double robot_y, double robot_yaw, double * min_x, double * min_y,
+    double * max_x, double * max_y);
   /**
    * @brief Update the costs in the master costmap in the window
    * @param master_grid The master costmap grid to update
@@ -96,8 +99,9 @@ class SemanticSegmentationLayer : public CostmapLayer
    * @param max_x X max map coord of the window to update
    * @param max_y Y max map coord of the window to update
    */
-  virtual void updateCosts(nav2_costmap_2d::Costmap2D& master_grid, int min_i, int min_j, int max_i,
-                           int max_j);
+  virtual void updateCosts(
+    nav2_costmap_2d::Costmap2D & master_grid, int min_i, int min_j,
+    int max_i, int max_j);
 
   /**
    * @brief Reset this costmap
@@ -109,50 +113,56 @@ class SemanticSegmentationLayer : public CostmapLayer
   /**
    * @brief If clearing operations should be processed on this layer or not
    */
-  virtual bool isClearable() { return true; }
+  virtual bool isClearable() {return true;}
 
- private:
- /**
-   * @brief Callback called when a poincloud and a segmentation are synced and a tf is available
-   * @param segmentation a pointer segmentation mask containing the class and confidence of each pixel
-   * @param pointcloud A pointer to the aligned pointcloud
-   */
+  bool getSegmentations(std::vector<nav2_costmap_2d::Segmentation> & segmentations) const;
+
+  rcl_interfaces::msg::SetParametersResult dynamicParametersCallback(
+    std::vector<rclcpp::Parameter> parameters);
+
+private:
   void syncSegmPointcloudCb(
-    const std::shared_ptr<const vision_msgs::msg::SemanticSegmentation>& segmentation,
-    const std::shared_ptr<const sensor_msgs::msg::PointCloud2>& pointcloud);
+    const std::shared_ptr<const sensor_msgs::msg::Image> & segmentation,
+    const std::shared_ptr<const sensor_msgs::msg::PointCloud2> & pointcloud,
+    const std::shared_ptr<nav2_costmap_2d::SegmentationBuffer> & buffer);
 
-  ///< @brief subscriber to segmentation messages
-  std::shared_ptr<message_filters::Subscriber<vision_msgs::msg::SemanticSegmentation>>
-    semantic_segmentation_sub_;
-  ///< @brief subscriber to aligned pointclouds
-  std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::PointCloud2>> pointcloud_sub_;
-  ///< @brief subscriber to guarantee that transforms are available when pointclouds are received
-  std::shared_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::PointCloud2>> pointcloud_tf_sub_;
-  ///< @brief subscriber to sync transforms, pointclouds and segmentations
-  std::shared_ptr<message_filters::TimeSynchronizer<vision_msgs::msg::SemanticSegmentation,
-                                                    sensor_msgs::msg::PointCloud2>>
-    segm_pc_sync_;
+  void labelinfoCb(
+    const std::shared_ptr<const vision_msgs::msg::LabelInfo> & label_info,
+    const std::shared_ptr<nav2_costmap_2d::SegmentationBuffer> & buffer);
+
+  std::vector<std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::Image,
+    rclcpp_lifecycle::LifecycleNode>>>
+  semantic_segmentation_subs_;
+  std::vector<
+    std::shared_ptr<message_filters::Subscriber<vision_msgs::msg::LabelInfo,
+    rclcpp_lifecycle::LifecycleNode>>>
+  label_info_subs_;
+  std::vector<
+    std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::PointCloud2,
+    rclcpp_lifecycle::LifecycleNode>>>
+  pointcloud_subs_;
+  std::vector<
+    std::shared_ptr<message_filters::TimeSynchronizer<sensor_msgs::msg::Image,
+    sensor_msgs::msg::PointCloud2>>>
+  segm_pc_notifiers_;
+  std::vector<std::shared_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::PointCloud2>>>
+  pointcloud_tf_subs_;
 
   // debug publishers
-  ///< @brief publisher to publish segmentation messages when buffered
-  std::shared_ptr<rclcpp::Publisher<vision_msgs::msg::SemanticSegmentation>> sgm_debug_pub_;
-  ///< @brief publisher to publish pointcloud messages when buffered
-  std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::PointCloud2>> orig_pointcloud_pub_;
-  ///< @brief publisher to publish pointclouds with class and confidence channels when put in the costmap
-  std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::PointCloud2>> proc_pointcloud_pub_;
+  std::map<std::string,
+    std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::PointCloud2>>> proc_pointcloud_pubs_map_;
 
-  /// @brief Used to store segmentations and aligned pointclouds
-  std::shared_ptr<nav2_costmap_2d::SegmentationBuffer> segmentation_buffer_;
+  std::vector<std::shared_ptr<nav2_costmap_2d::SegmentationBuffer>> segmentation_buffers_;
 
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
 
-  std::string global_frame_;  ///< @brief The global frame for the costmap
+  std::string global_frame_;
+  std::string topics_string_;
 
-  ///< @brief Correspondence between class names and cost. i.e: "Grass": 254, "Floor": 0
   std::map<std::string, uint8_t> class_map_;
 
   bool rolling_window_;
   bool was_reset_;
-  bool debug_topics_;
   int combination_method_;
 };
 
