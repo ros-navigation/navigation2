@@ -1,0 +1,4 @@
+filter=-build/c++14
+extensions=h,hpp,c,cpp
+linelength=120
+
