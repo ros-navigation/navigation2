@@ -32,19 +32,6 @@ IsBatteryLowCondition::IsBatteryLowCondition(
 {
 }
 
-BT::NodeStatus IsBatteryLowCondition::tick()
-{
-  if (!initialized_) {
-    initialize();
-  }
-
-  callback_group_executor_.spin_some();
-  if (is_battery_low_) {
-    return BT::NodeStatus::SUCCESS;
-  }
-  return BT::NodeStatus::FAILURE;
-}
-
 void IsBatteryLowCondition::initialize()
 {
   getInput("min_battery", min_battery_);
@@ -64,6 +51,19 @@ void IsBatteryLowCondition::initialize()
     std::bind(&IsBatteryLowCondition::batteryCallback, this, std::placeholders::_1),
     sub_option);
   initialized_ = true;
+}
+
+BT::NodeStatus IsBatteryLowCondition::tick()
+{
+  if (!initialized_) {
+    initialize();
+  }
+
+  callback_group_executor_.spin_some();
+  if (is_battery_low_) {
+    return BT::NodeStatus::SUCCESS;
+  }
+  return BT::NodeStatus::FAILURE;
 }
 
 void IsBatteryLowCondition::batteryCallback(sensor_msgs::msg::BatteryState::SharedPtr msg)

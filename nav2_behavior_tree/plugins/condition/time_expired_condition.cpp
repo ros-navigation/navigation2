@@ -32,6 +32,14 @@ TimeExpiredCondition::TimeExpiredCondition(
 {
 }
 
+void TimeExpiredCondition::initialize()
+{
+  getInput("seconds", period_);
+  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+  start_ = node_->now();
+  initialized_ = true;
+}
+
 BT::NodeStatus TimeExpiredCondition::tick()
 {
   if (!initialized_) {
@@ -55,14 +63,6 @@ BT::NodeStatus TimeExpiredCondition::tick()
 
   start_ = node_->now();  // Reset the timer
   return BT::NodeStatus::SUCCESS;
-}
-
-void TimeExpiredCondition::initialize()
-{
-  getInput("seconds", period_);
-  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
-  start_ = node_->now();
-  initialized_ = true;
 }
 
 }  // namespace nav2_behavior_tree

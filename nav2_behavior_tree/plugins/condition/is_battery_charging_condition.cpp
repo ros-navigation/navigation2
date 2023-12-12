@@ -29,19 +29,6 @@ IsBatteryChargingCondition::IsBatteryChargingCondition(
 {
 }
 
-BT::NodeStatus IsBatteryChargingCondition::tick()
-{
-  if (!initialized_) {
-    initialize();
-  }
-
-  callback_group_executor_.spin_some();
-  if (is_battery_charging_) {
-    return BT::NodeStatus::SUCCESS;
-  }
-  return BT::NodeStatus::FAILURE;
-}
-
 void IsBatteryChargingCondition::initialize()
 {
   getInput("battery_topic", battery_topic_);
@@ -59,6 +46,19 @@ void IsBatteryChargingCondition::initialize()
     std::bind(&IsBatteryChargingCondition::batteryCallback, this, std::placeholders::_1),
     sub_option);
   initialized_ = true;
+}
+
+BT::NodeStatus IsBatteryChargingCondition::tick()
+{
+  if (!initialized_) {
+    initialize();
+  }
+
+  callback_group_executor_.spin_some();
+  if (is_battery_charging_) {
+    return BT::NodeStatus::SUCCESS;
+  }
+  return BT::NodeStatus::FAILURE;
 }
 
 void IsBatteryChargingCondition::batteryCallback(sensor_msgs::msg::BatteryState::SharedPtr msg)

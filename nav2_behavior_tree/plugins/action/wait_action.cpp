@@ -30,15 +30,6 @@ WaitAction::WaitAction(
 {
 }
 
-void WaitAction::on_tick()
-{
-  if (!initialized_) {
-    initialize();
-  }
-
-  increment_recovery_count();
-}
-
 void WaitAction::initialize()
 {
   double duration;
@@ -52,6 +43,15 @@ void WaitAction::initialize()
 
   goal_.time = rclcpp::Duration::from_seconds(duration);
   initialized_ = true;
+}
+
+void WaitAction::on_tick()
+{
+  if (!initialized_) {
+    initialize();
+  }
+
+  increment_recovery_count();
 }
 
 }  // namespace nav2_behavior_tree

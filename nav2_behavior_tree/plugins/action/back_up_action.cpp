@@ -29,15 +29,6 @@ BackUpAction::BackUpAction(
 {
 }
 
-void BackUpAction::on_tick()
-{
-  if (!initialized_) {
-    initialize();
-  }
-
-  increment_recovery_count();
-}
-
 void nav2_behavior_tree::BackUpAction::initialize()
 {
   double dist;
@@ -54,6 +45,15 @@ void nav2_behavior_tree::BackUpAction::initialize()
   goal_.speed = speed;
   goal_.time_allowance = rclcpp::Duration::from_seconds(time_allowance);
   initialized_ = true;
+}
+
+void BackUpAction::on_tick()
+{
+  if (!initialized_) {
+    initialize();
+  }
+
+  increment_recovery_count();
 }
 
 BT::NodeStatus BackUpAction::on_success()

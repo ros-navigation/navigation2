@@ -41,6 +41,23 @@ SmootherSelector::SmootherSelector(
   callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
 }
 
+void SmootherSelector::initialize()
+{
+  getInput("topic_name", topic_name_);
+
+  rclcpp::QoS qos(rclcpp::KeepLast(1));
+  qos.transient_local().reliable();
+
+  rclcpp::SubscriptionOptions sub_option;
+  sub_option.callback_group = callback_group_;
+  smoother_selector_sub_ = node_->create_subscription<std_msgs::msg::String>(
+    topic_name_,
+    qos,
+    std::bind(&SmootherSelector::callbackSmootherSelect, this, _1),
+    sub_option);
+  initialized_ = true;
+}
+
 BT::NodeStatus SmootherSelector::tick()
 {
   if (!initialized_) {
@@ -67,23 +84,6 @@ BT::NodeStatus SmootherSelector::tick()
   setOutput("selected_smoother", last_selected_smoother_);
 
   return BT::NodeStatus::SUCCESS;
-}
-
-void SmootherSelector::initialize()
-{
-  getInput("topic_name", topic_name_);
-
-  rclcpp::QoS qos(rclcpp::KeepLast(1));
-  qos.transient_local().reliable();
-
-  rclcpp::SubscriptionOptions sub_option;
-  sub_option.callback_group = callback_group_;
-  smoother_selector_sub_ = node_->create_subscription<std_msgs::msg::String>(
-    topic_name_,
-    qos,
-    std::bind(&SmootherSelector::callbackSmootherSelect, this, _1),
-    sub_option);
-  initialized_ = true;
 }
 
 void

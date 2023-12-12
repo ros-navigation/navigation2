@@ -28,17 +28,6 @@ SpinAction::SpinAction(
 {
 }
 
-void SpinAction::on_tick()
-{
-  if (!initialized_) {
-    initialize();
-  }
-
-  if (is_recovery_) {
-    increment_recovery_count();
-  }
-}
-
 void SpinAction::initialize()
 {
   double dist;
@@ -50,6 +39,17 @@ void SpinAction::initialize()
   getInput("is_recovery", is_recovery_);
 
   initialized_ = true;
+}
+
+void SpinAction::on_tick()
+{
+  if (!initialized_) {
+    initialize();
+  }
+
+  if (is_recovery_) {
+    increment_recovery_count();
+  }
 }
 
 BT::NodeStatus SpinAction::on_success()

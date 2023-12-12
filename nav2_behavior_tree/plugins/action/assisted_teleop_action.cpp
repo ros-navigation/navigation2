@@ -29,17 +29,6 @@ AssistedTeleopAction::AssistedTeleopAction(
 {
 }
 
-void AssistedTeleopAction::on_tick()
-{
-  if (!initialized_) {
-    initialize();
-  }
-
-  if (is_recovery_) {
-    increment_recovery_count();
-  }
-}
-
 void AssistedTeleopAction::initialize()
 {
   double time_allowance;
@@ -49,6 +38,17 @@ void AssistedTeleopAction::initialize()
   // Populate the input message
   goal_.time_allowance = rclcpp::Duration::from_seconds(time_allowance);
   initialized_ = true;
+}
+
+void AssistedTeleopAction::on_tick()
+{
+  if (!initialized_) {
+    initialize();
+  }
+
+  if (is_recovery_) {
+    increment_recovery_count();
+  }
 }
 
 BT::NodeStatus AssistedTeleopAction::on_success()

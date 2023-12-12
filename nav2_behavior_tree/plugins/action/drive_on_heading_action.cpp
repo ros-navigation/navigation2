@@ -29,13 +29,6 @@ DriveOnHeadingAction::DriveOnHeadingAction(
 {
 }
 
-void DriveOnHeadingAction::on_tick()
-{
-  if (!initalized_) {
-    initialize();
-  }
-}
-
 void DriveOnHeadingAction::initialize()
 {
   double dist;
@@ -52,6 +45,13 @@ void DriveOnHeadingAction::initialize()
   goal_.speed = speed;
   goal_.time_allowance = rclcpp::Duration::from_seconds(time_allowance);
   initalized_ = true;
+}
+
+void DriveOnHeadingAction::on_tick()
+{
+  if (!initalized_) {
+    initialize();
+  }
 }
 
 BT::NodeStatus DriveOnHeadingAction::on_success()
