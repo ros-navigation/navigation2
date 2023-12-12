@@ -27,6 +27,8 @@
 #include "nav2_smac_planner/a_star.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
 #include "nav2_smac_planner/smac_planner_lattice.hpp"
+#include <geometry_msgs/msg/pose_array.hpp>
+#include <visualization_msgs/msg/marker_array.hpp>
 
 class RclCppFixture
 {
@@ -144,4 +146,75 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
   std::vector<rclcpp::Parameter> parameters;
   parameters.push_back(rclcpp::Parameter("test.lattice_filepath", std::string("HI")));
   EXPECT_THROW(planner->callDynamicParams(parameters), std::runtime_error);
+}
+
+TEST(SmacTest, test_smac_lattice_debug_visualizations)
+{
+  rclcpp_lifecycle::LifecycleNode::SharedPtr nodeLattice =
+    std::make_shared<rclcpp_lifecycle::LifecycleNode>("SmacLatticeTest");
+
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros =
+    std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+
+  auto planner = std::make_unique<nav2_smac_planner::SmacPlannerLattice>();
+  try {
+    // Expect to throw due to invalid prims file in param
+    planner->configure(nodeLattice, "test", nullptr, costmap_ros);
+  } catch (...) {
+  }
+
+  geometry_msgs::msg::PoseStamped start, goal;
+  start.pose.position.x = 0.0;
+  start.pose.position.y = 0.0;
+  start.pose.orientation.w = 1.0;
+  goal.pose.position.x = 1.0;
+  goal.pose.position.y = 1.0;
+  goal.pose.orientation.w = 1.0;
+
+  auto subscriber_node = std::make_shared<rclcpp::Node>("test_subscriber_node");
+
+  auto expansions_callback = [](const geometry_msgs::msg::PoseArray::SharedPtr msg) {
+    // Validate the message here
+  };
+
+  auto planned_footprints_callback = [](const visualization_msgs::msg::MarkerArray::SharedPtr msg) {
+    // Validate the message here
+  };
+
+  // Create subscribers
+  auto expansions_subscriber = subscriber_node->create_subscription<geometry_msgs::msg::PoseArray>(
+      "expansions", 1, expansions_callback);
+  auto planned_footprints_subscriber = subscriber_node->create_subscription<visualization_msgs::msg::MarkerArray>(
+      "planned_footprints", 1, planned_footprints_callback);
+
+  planner->activate();
+
+  auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
+    nodeLattice->get_node_base_interface(), nodeLattice->get_node_topics_interface(),
+    nodeLattice->get_node_graph_interface(),
+    nodeLattice->get_node_services_interface());
+
+  auto results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.debug_visualizations", true)});
+    
+  try {
+    planner->createPlan(start, goal);
+  } catch (...) {
+  }
+
+  rclcpp::spin_some(subscriber_node);
+  std::this_thread::sleep_for(std::chrono::seconds(1));
+  rclcpp::spin_some(subscriber_node);
+
+  planner->deactivate();
+  planner->cleanup();
+
+  planner.reset();
+  costmap_ros->on_cleanup(rclcpp_lifecycle::State());
+  costmap_ros.reset();
+  nodeLattice.reset();
+  expansions_subscriber.reset();
+  planned_footprints_subscriber.reset();
+  subscriber_node.reset();
 }
