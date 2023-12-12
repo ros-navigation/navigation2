@@ -67,7 +67,6 @@ private:
   BT::NodeStatus tick() override;
 
   double distance_;
-  bool first_time_;
 };
 
 }  // namespace nav2_behavior_tree
