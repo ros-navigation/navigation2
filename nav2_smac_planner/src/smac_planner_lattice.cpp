@@ -310,7 +310,6 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
     if (num_iterations == 1) {
       throw nav2_core::StartOccupied("Start occupied");
     }
-
     if (_debug_visualizations) {
       geometry_msgs::msg::PoseArray msg;
       geometry_msgs::msg::Pose msg_pose;
