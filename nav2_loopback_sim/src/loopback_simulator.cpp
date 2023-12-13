@@ -21,13 +21,13 @@ namespace nav2_loopback_sim
 LoopbackSimulator::LoopbackSimulator(const rclcpp::NodeOptions & options)
 : Node("loopback_simulator_node", options)
 {
-  // Initialise subscribers
+  // Initialize subscribers
   vel_subscriber_ = this->create_subscription<geometry_msgs::msg::Twist>(
     "cmd_vel", 10, std::bind(&LoopbackSimulator::twistCallback, this, std::placeholders::_1));
 
   init_pose_subscriber_ = create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "initialpose", 10,
-    std::bind(&LoopbackSimulator::initposeCallback, this, std::placeholders::_1));
+    std::bind(&LoopbackSimulator::initPoseCallback, this, std::placeholders::_1));
 
   // Frequency parameter for timer function
   double timer_frequency{0.0};
@@ -39,10 +39,8 @@ LoopbackSimulator::LoopbackSimulator(const rclcpp::NodeOptions & options)
     std::chrono::duration<double>(1.0 / timer_frequency),
     std::bind(&LoopbackSimulator::timerCallback, this));
 
-  // Initialize tf broadcaster
+  // Transforms
   tf_broadcaster_ = std::make_unique<tf2_ros::StaticTransformBroadcaster>(*this);
-
-  //  tf
   tf_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 }
@@ -119,11 +117,11 @@ void LoopbackSimulator::twistCallback(const geometry_msgs::msg::Twist::SharedPtr
   tf_broadcaster_->sendTransform(odom_to_base_transform);
 }
 
-void LoopbackSimulator::initposeCallback(
+void LoopbackSimulator::initPoseCallback(
   const
   geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
 {
-  RCLCPP_INFO(this->get_logger(), "Received initial pose wrt map");
+  RCLCPP_INFO(this->get_logger(), "Received initial pose!");
   init_pose_ = *msg;
   init_pose_set_ = true;
 

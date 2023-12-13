@@ -15,7 +15,6 @@
 #ifndef NAV2_LOOPBACK_SIM__LOOPBACK_SIMULATOR_HPP_
 #define NAV2_LOOPBACK_SIM__LOOPBACK_SIMULATOR_HPP_
 
-#pragma once
 #include <iostream>
 #include <functional>
 #include <memory>
@@ -37,7 +36,7 @@
 namespace nav2_loopback_sim
 {
 /**
- * @class nav2_planner::LoopbackSimulator
+ * @class nav2_loopback_sim::LoopbackSimulator
  * @brief A class that is a lightweight simulation alternative designed to facilitate
  * testing of higher-level behavioral attributes
 */
@@ -45,7 +44,7 @@ class LoopbackSimulator : public rclcpp::Node
 {
 public:
   /**
-  * @brief A constructor for nav2_planner::LoopbackSimulator
+  * @brief A constructor for nav2_loopback_sim::LoopbackSimulator
   */
   explicit LoopbackSimulator(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
   /**
@@ -66,7 +65,7 @@ private:
   * @brief Called when initial pose is set by the user
   * @param msg initial pose
   */
-  void initposeCallback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
+  void initPoseCallback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
 
   /**
   * @brief Timer function to continously broadcast map->odom tf
