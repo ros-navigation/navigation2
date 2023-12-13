@@ -282,7 +282,7 @@ TEST(CriticTests, PathAngleCritic)
   path.y(6) = 4.0;
   critic.score(data);
   EXPECT_GT(xt::sum(costs, immediate)(), 0.0);
-  EXPECT_NEAR(costs(0), 3.6315, 1e-2);  // atan2(4,-1) [1.81] * 2.0 weight
+  EXPECT_NEAR(costs(0), 3.9947, 1e-2);  // atan2(4,-1) [1.81] * 2.2 weight
 
   // Set mode to no directional preferences + reset costs
   critic.setMode(1);
@@ -306,7 +306,7 @@ TEST(CriticTests, PathAngleCritic)
   critic.score(data);
   EXPECT_GT(xt::sum(costs, immediate)(), 0.0);
   // should use reverse orientation as the closer angle in no dir preference mode
-  EXPECT_NEAR(costs(0), 2.6516, 1e-2);
+  EXPECT_NEAR(costs(0), 2.9167, 1e-2);
 
   // Set mode to consider path directionality + reset costs
   critic.setMode(2);
@@ -330,7 +330,7 @@ TEST(CriticTests, PathAngleCritic)
   critic.score(data);
   EXPECT_GT(xt::sum(costs, immediate)(), 0.0);
   // should use reverse orientation as the closer angle in no dir preference mode
-  EXPECT_NEAR(costs(0), 2.6516, 1e-2);
+  EXPECT_NEAR(costs(0), 2.9167, 1e-2);
 
   PathAngleMode mode;
   mode = PathAngleMode::FORWARD_PREFERENCE;
