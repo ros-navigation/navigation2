@@ -138,12 +138,10 @@ void LoopbackSimulator::initPoseCallback(
     odom_to_base_transform.transform.translation.x = 0.0;
     odom_to_base_transform.transform.translation.y = 0.0;
     odom_to_base_transform.transform.translation.z = 0.0;
-    tf2::Quaternion q;
-    q.setRPY(0, 0, 0);
-    odom_to_base_transform.transform.rotation.x = q.x();
-    odom_to_base_transform.transform.rotation.y = q.y();
-    odom_to_base_transform.transform.rotation.z = q.z();
-    odom_to_base_transform.transform.rotation.w = q.w();
+    odom_to_base_transform.transform.rotation.x = 0.0;
+    odom_to_base_transform.transform.rotation.y = 0.0;
+    odom_to_base_transform.transform.rotation.z = 0.0;
+    odom_to_base_transform.transform.rotation.w = 1.0;
 
     tf_broadcaster_->sendTransform(odom_to_base_transform);
     init_odom_base_published_ = true;
