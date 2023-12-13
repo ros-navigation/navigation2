@@ -4,6 +4,7 @@ project(nav2_loopback_sim)
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_components REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(tf2 REQUIRED)
@@ -19,6 +20,7 @@ set(library_name ${executable_name}_core)
 
 set(dependencies
   rclcpp
+  rclcpp_components
   std_msgs
   geometry_msgs
   tf2
@@ -44,7 +46,7 @@ ament_target_dependencies(${executable_name}
   ${dependencies}
 )
 
-rclcpp_components_register_nodes(${library_name} "nav2_loopback_sim::SimServer")
+rclcpp_components_register_nodes(${library_name} "nav2_loopback_sim::LoopbackSimulator")
 
 install(TARGETS ${library_name}
   ARCHIVE DESTINATION lib

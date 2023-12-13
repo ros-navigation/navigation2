@@ -47,7 +47,13 @@ public:
   /**
   * @brief A constructor for nav2_planner::LoopbackSimulator
   */
-  LoopbackSimulator();
+  explicit LoopbackSimulator(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
+  /**
+   * @brief A destructor for nav2_loopback_sim::LoopbackSimulator
+   * 
+   */
+  ~LoopbackSimulator();
+  
 
 private:
   /**

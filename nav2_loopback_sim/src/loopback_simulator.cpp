@@ -19,8 +19,8 @@
 namespace nav2_loopback_sim
 {
 
-LoopbackSimulator::LoopbackSimulator()
-: Node("loopback_simulator_node")
+LoopbackSimulator::LoopbackSimulator(const rclcpp::NodeOptions & options)
+: Node("loopback_simulator_node", options)
 {
   // Initialise subscribers
   vel_subscriber_ = this->create_subscription<geometry_msgs::msg::Twist>(
@@ -47,6 +47,12 @@ LoopbackSimulator::LoopbackSimulator()
   tf_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 }
+
+LoopbackSimulator::~LoopbackSimulator()
+{
+  RCLCPP_INFO(get_logger(), "Destroying %s", get_name());
+}
+
 
 void LoopbackSimulator::twistCallback(const geometry_msgs::msg::Twist::SharedPtr msg)
 {
@@ -162,3 +168,10 @@ void LoopbackSimulator::timerCallback()
 }
 
 }  // namespace nav2_loopback_sim
+
+#include "rclcpp_components/register_node_macro.hpp"
+
+// Register the component with class_loader.
+// This acts as a sort of entry point, allowing the component to be discoverable when its library
+// is being loaded into a running process.
+RCLCPP_COMPONENTS_REGISTER_NODE(nav2_loopback_sim::LoopbackSimulator)
