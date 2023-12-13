@@ -1,4 +1,5 @@
 // Copyright (c) 2022 Samsung Research America, @artofnothingness Alexey Budyakov
+// Copyright (c) 2023 Open Navigation LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,7 +26,7 @@ void ObstaclesCritic::initialize()
   getParam(power_, "cost_power", 1);
   getParam(repulsion_weight_, "repulsion_weight", 1.5);
   getParam(critical_weight_, "critical_weight", 20.0);
-  getParam(collision_cost_, "collision_cost", 10000.0);
+  getParam(collision_cost_, "collision_cost", 100000.0);
   getParam(collision_margin_distance_, "collision_margin_distance", 0.10);
   getParam(near_goal_distance_, "near_goal_distance", 0.5);
   getParam(inflation_layer_name_, "inflation_layer_name", std::string(""));
@@ -164,8 +165,11 @@ void ObstaclesCritic::score(CriticData & data)
       // Let near-collision trajectory points be punished severely
       if (dist_to_obj < collision_margin_distance_) {
         traj_cost += (collision_margin_distance_ - dist_to_obj);
-      } else if (!near_goal) {  // Generally prefer trajectories further from obstacles
-        repulsive_cost[i] += (inflation_radius_ - dist_to_obj);
+      }
+
+      // Generally prefer trajectories further from obstacles
+      if (!near_goal) {
+        repulsive_cost[i] += inflation_radius_ - dist_to_obj;
       }
     }
 
@@ -173,9 +177,14 @@ void ObstaclesCritic::score(CriticData & data)
     raw_cost[i] = trajectory_collide ? collision_cost_ : traj_cost;
   }
 
+  // Normalize repulsive cost by trajectory length & lowest score to not overweight importance
+  // This is a preferential cost, not collision cost, to be tuned relative to desired behaviors
+  auto && repulsive_cost_normalized =
+    (repulsive_cost - xt::amin(repulsive_cost, immediate)) / traj_len;
+
   data.costs += xt::pow(
     (critical_weight_ * raw_cost) +
-    (repulsion_weight_ * repulsive_cost / traj_len),
+    (repulsion_weight_ * repulsive_cost_normalized),
     power_);
   data.fail_flag = all_trajectories_collide;
 }
