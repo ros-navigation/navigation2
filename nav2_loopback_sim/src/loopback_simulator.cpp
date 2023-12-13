@@ -53,7 +53,11 @@ LoopbackSimulator::~LoopbackSimulator()
 
 void LoopbackSimulator::twistCallback(const geometry_msgs::msg::Twist::SharedPtr msg)
 {
-  if (init_pose_set_ == false) {return;}
+  if (init_pose_set_ == false)
+  {
+    RCLCPP_WARN(rclcpp::get_logger("logger_name"), "Initial pose has not been set. Ignoring incoming velocity messages.");
+    return;
+  }
 
   double dt = 0.1;  // Adjust the time step
 
