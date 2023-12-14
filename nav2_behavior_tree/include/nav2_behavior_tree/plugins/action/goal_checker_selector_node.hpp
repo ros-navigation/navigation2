@@ -49,11 +49,6 @@ public:
     const BT::NodeConfiguration & conf);
 
   /**
-   * @brief Function to read parameters and initialize class variables
-   */
-  void initialize();
-
-  /**
    * @brief Creates list of BT ports
    * @return BT::PortsList Containing basic ports along with node-specific ports
    */
@@ -95,7 +90,6 @@ private:
   rclcpp::Node::SharedPtr node_;
 
   std::string topic_name_;
-  bool initialized_;
 };
 
 }  // namespace nav2_behavior_tree

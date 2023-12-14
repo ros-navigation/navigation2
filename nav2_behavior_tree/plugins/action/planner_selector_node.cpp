@@ -30,18 +30,14 @@ using std::placeholders::_1;
 PlannerSelector::PlannerSelector(
   const std::string & name,
   const BT::NodeConfiguration & conf)
-: BT::SyncActionNode(name, conf),
-  initialized_(false)
+: BT::SyncActionNode(name, conf)
 {
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
   callback_group_ = node_->create_callback_group(
     rclcpp::CallbackGroupType::MutuallyExclusive,
     false);
   callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
-}
 
-void PlannerSelector::initialize()
-{
   getInput("topic_name", topic_name_);
 
   rclcpp::QoS qos(rclcpp::KeepLast(1));
@@ -54,15 +50,10 @@ void PlannerSelector::initialize()
     qos,
     std::bind(&PlannerSelector::callbackPlannerSelect, this, _1),
     sub_option);
-  initialized_ = true;
 }
 
 BT::NodeStatus PlannerSelector::tick()
 {
-  if (!initialized_) {
-    initialize();
-  }
-
   callback_group_executor_.spin_some();
 
   // This behavior always use the last selected planner received from the topic input.

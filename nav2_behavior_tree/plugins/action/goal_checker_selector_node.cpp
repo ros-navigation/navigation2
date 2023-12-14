@@ -30,14 +30,10 @@ using std::placeholders::_1;
 GoalCheckerSelector::GoalCheckerSelector(
   const std::string & name,
   const BT::NodeConfiguration & conf)
-: BT::SyncActionNode(name, conf),
-  initialized_(false)
+: BT::SyncActionNode(name, conf)
 {
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
-}
 
-void GoalCheckerSelector::initialize()
-{
   getInput("topic_name", topic_name_);
 
   rclcpp::QoS qos(rclcpp::KeepLast(1));
@@ -45,15 +41,10 @@ void GoalCheckerSelector::initialize()
 
   goal_checker_selector_sub_ = node_->create_subscription<std_msgs::msg::String>(
     topic_name_, qos, std::bind(&GoalCheckerSelector::callbackGoalCheckerSelect, this, _1));
-  initialized_ = true;
 }
 
 BT::NodeStatus GoalCheckerSelector::tick()
 {
-  if (!initialized_) {
-    initialize();
-  }
-
   rclcpp::spin_some(node_);
 
   // This behavior always use the last selected goal checker received from the topic input.

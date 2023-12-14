@@ -49,11 +49,6 @@ public:
     const BT::NodeConfiguration & conf);
 
   /**
-   * @brief Function to read parameters and initialize class variables
-   */
-  void initialize();
-
-  /**
    * @brief Creates list of BT ports
    * @return BT::PortsList Containing basic ports along with node-specific ports
    */
@@ -88,6 +83,7 @@ private:
    */
   void callbackPlannerSelect(const std_msgs::msg::String::SharedPtr msg);
 
+
   rclcpp::Subscription<std_msgs::msg::String>::SharedPtr planner_selector_sub_;
 
   std::string last_selected_planner_;
@@ -97,7 +93,6 @@ private:
   rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
 
   std::string topic_name_;
-  bool initialized_;
 };
 
 }  // namespace nav2_behavior_tree
