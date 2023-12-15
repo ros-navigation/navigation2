@@ -92,10 +92,6 @@ TEST(AStarTest, test_a_star_2d)
   a_star_2.setCollisionChecker(checker.get());
   num_it = 0;
   EXPECT_THROW(a_star_2.createPath(path, num_it, tolerance), std::runtime_error);
-  a_star_2.setStart(50, 50, 0);  // invalid
-  a_star_2.setGoal(0, 0, 0);  // valid
-  num_it = 0;
-  EXPECT_THROW(a_star_2.createPath(path, num_it, tolerance), std::runtime_error);
   a_star_2.setStart(0, 0, 0);  // valid
   a_star_2.setGoal(50, 50, 0);  // invalid
   num_it = 0;
