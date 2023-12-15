@@ -158,8 +158,12 @@ def generate_launch_description():
 
     declare_robot_sdf_cmd = DeclareLaunchArgument(
         'robot_sdf',
-        default_value=os.path.join(bringup_dir, 'urdf', 'gz_turtlebot3_waffle.urdf'),
+        default_value=os.path.join(bringup_dir, 'worlds', 'gz_waffle.model'),
         description='Full path to robot sdf file to spawn the robot in gazebo')
+
+    urdf = os.path.join(bringup_dir, 'urdf', 'turtlebot3_waffle.urdf')
+    with open(urdf, 'r') as infp:
+        robot_description = infp.read()
 
     start_robot_state_publisher_cmd = Node(
         condition=IfCondition(use_robot_state_pub),
@@ -168,8 +172,9 @@ def generate_launch_description():
         name='robot_state_publisher',
         namespace=namespace,
         output='screen',
-        parameters=[{'use_sim_time': use_sim_time,
-                     'robot_description': Command(['xacro', ' ', robot_sdf])}],
+        parameters=[
+            {'use_sim_time': use_sim_time, 'robot_description': robot_description}
+        ],
         remappings=remappings)
 
     rviz_cmd = IncludeLaunchDescription(
