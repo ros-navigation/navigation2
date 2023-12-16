@@ -135,12 +135,17 @@ geometry_msgs::msg::TwistStamped GracefulMotionController::computeVelocityComman
   double dist_to_goal = std::hypot(goal_pose.pose.position.x, goal_pose.pose.position.y);
 
   // If the distance to the goal is less than the motion target distance, i.e.
-  // the 'motion target' is the goal, then we skip the goal orientation and
-  // rotate along the path to avoid big curvature changes
+  // the 'motion target' is the goal, then we skip the motion target orientation by pointing
+  // it in the same orientation that the last segment of the path
   double angle_to_target = atan2(motion_target.pose.position.y, motion_target.pose.position.x);
   if (params_->final_rotation && dist_to_goal < params_->motion_target_dist) {
-    motion_target.pose.orientation.z = sin(angle_to_target / 2.0);
-    motion_target.pose.orientation.w = cos(angle_to_target / 2.0);
+    geometry_msgs::msg::PoseStamped stl_pose =
+      transformed_plan.poses[transformed_plan.poses.size() - 2];
+    double dx = goal_pose.pose.position.x - stl_pose.pose.position.x;
+    double dy = goal_pose.pose.position.y - stl_pose.pose.position.y;
+    double yaw = std::atan2(dy, dx);
+    motion_target.pose.orientation.z = sin(yaw / 2.0);
+    motion_target.pose.orientation.w = cos(yaw / 2.0);
   }
 
   // Compute velocity command:
