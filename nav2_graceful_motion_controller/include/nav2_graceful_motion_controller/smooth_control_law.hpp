@@ -15,6 +15,7 @@
 #ifndef NAV2_GRACEFUL_MOTION_CONTROLLER__SMOOTH_CONTROL_LAW_HPP_
 #define NAV2_GRACEFUL_MOTION_CONTROLLER__SMOOTH_CONTROL_LAW_HPP_
 
+#include <algorithm>
 #include <string>
 
 #include "geometry_msgs/msg/pose.hpp"

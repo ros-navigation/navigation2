@@ -44,14 +44,11 @@ geometry_msgs::msg::Twist SmoothControlLaw::calculateRegularVelocity(
 
   // Slowdown when the robot is near the target to remove singularity
   v = std::min(v_linear_max_ * (ego_coords.r / slowdown_radius_), v);
-  // v *= -1.0;
-
-  // TODO(ajtudela): Allow to move backwards
 
   // Compute the angular velocity
   double w = curvature * v;
   // Bound angular velocity between [-max_angular_vel, max_angular_vel]
-  double w_bound = std::min(v_angular_max_, std::max(-v_angular_max_, w));
+  double w_bound = std::clamp(w, -v_angular_max_, v_angular_max_);
   // And linear velocity to follow the curvature
   v = (curvature != 0.0) ? (w_bound / curvature) : v;
 

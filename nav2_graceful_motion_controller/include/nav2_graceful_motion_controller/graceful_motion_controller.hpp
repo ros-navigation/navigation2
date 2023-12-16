@@ -23,6 +23,7 @@
 #include <mutex>
 
 #include "nav2_core/controller.hpp"
+#include "nav2_costmap_2d/footprint_collision_checker.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
@@ -139,13 +140,16 @@ protected:
 
   /**
    * @brief Simulate trajectory calculating in every step the new velocity command based on
-   * a new curvature value.
+   * a new curvature value and checking for collisions.
    *
+   * @param robot_pose Robot pose
    * @param motion_target Motion target point
-   * @return nav_msgs::msg::Path Simulated trajectory
+   * @param trajectory Simulated trajectory
+   * @return true if the trajectory is collision free, false otherwise
    */
-  nav_msgs::msg::Path simulateTrajectory(
-    const geometry_msgs::msg::PoseStamped & motion_target);
+  bool simulateTrajectory(
+    const geometry_msgs::msg::PoseStamped & robot_pose,
+    const geometry_msgs::msg::PoseStamped & motion_target, nav_msgs::msg::Path & trajectory);
 
   /**
    * @brief Rotate the robot to face the motion target with maximum angular velocity.
@@ -156,10 +160,22 @@ protected:
   geometry_msgs::msg::Twist rotateToTarget(
     const double & angle_to_target);
 
+  /**
+   * @brief Checks if the robot is in collision
+   * @param x The x coordinate of the robot in global frame
+   * @param y The y coordinate of the robot in global frame
+   * @param theta The orientation of the robot in global frame
+   * @return Whether in collision
+   */
+  bool inCollision(const double & x, const double & y, const double & theta);
+
   rclcpp_lifecycle::LifecycleNode::WeakPtr parent_node_;
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::string plugin_name_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
+  std::unique_ptr<nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>
+  collision_checker_;
+  geometry_msgs::msg::TransformStamped costmap_transform_;
   rclcpp::Logger logger_{rclcpp::get_logger("GracefulMotionController")};
 
   Parameters * params_;

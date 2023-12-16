@@ -51,7 +51,9 @@ void GracefulMotionController::configure(
     params_->k_phi, params_->k_delta, params_->beta, params_->lambda, params_->slowdown_radius,
     params_->v_linear_min, params_->v_linear_max, params_->v_angular_max);
 
-  // TODO(ajtudela): Add collision object
+  // Initialize footprint collision checker
+  collision_checker_ = std::make_unique<nav2_costmap_2d::
+      FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>(costmap_ros_->getCostmap());
 
   // Publishers
   transformed_plan_pub_ = node->create_publisher<nav_msgs::msg::Path>("transformed_global_plan", 1);
@@ -103,7 +105,7 @@ geometry_msgs::msg::TwistStamped GracefulMotionController::computeVelocityComman
   const geometry_msgs::msg::Twist & /*velocity*/,
   nav2_core::GoalChecker * goal_checker)
 {
-  std::lock_guard<std::mutex> lock_reinit(param_handler_->getMutex());
+  std::lock_guard<std::mutex> param_lock(param_handler_->getMutex());
 
   // Update for the current goal checker's state
   geometry_msgs::msg::Pose pose_tolerance;
@@ -151,7 +153,7 @@ geometry_msgs::msg::TwistStamped GracefulMotionController::computeVelocityComman
     goal_reached_ = true;
     double angle_to_goal = tf2::getYaw(transformed_plan.poses.back().pose.orientation);
     cmd_vel.twist = rotateToTarget(angle_to_goal);
-  } else if (params_->initial_rotation &&
+  } else if (params_->initial_rotation && // NOLINT
     fabs(angle_to_target) > params_->initial_rotation_min_angle)
   {
     cmd_vel.twist = rotateToTarget(angle_to_target);
@@ -159,10 +161,24 @@ geometry_msgs::msg::TwistStamped GracefulMotionController::computeVelocityComman
     cmd_vel.twist = control_law_->calculateRegularVelocity(motion_target.pose);
   }
 
-  // TODO(ajtudela): Check collision
+  // Transform local frame to global frame to use in collision checking
+  try {
+    costmap_transform_ = tf_buffer_->lookupTransform(
+      costmap_ros_->getGlobalFrameID(), costmap_ros_->getBaseFrameID(),
+      tf2::TimePointZero);
+  } catch (tf2::TransformException & ex) {
+    RCLCPP_ERROR(
+      logger_, "Could not transform %s to %s: %s",
+      costmap_ros_->getBaseFrameID().c_str(), costmap_ros_->getGlobalFrameID().c_str(),
+      ex.what());
+    return cmd_vel;
+  }
 
   // Generate and publish local plan for debugging / visualization
-  nav_msgs::msg::Path local_plan = simulateTrajectory(motion_target);
+  nav_msgs::msg::Path local_plan;
+  if (!simulateTrajectory(pose, motion_target, local_plan)) {
+    throw nav2_core::NoValidControl("Collision detected in the trajectory");
+  }
   local_plan.header = transformed_plan.header;
   local_plan_pub_->publish(local_plan);
 
@@ -179,7 +195,7 @@ void GracefulMotionController::setSpeedLimit(
   const double & speed_limit,
   const bool & percentage)
 {
-  std::lock_guard<std::mutex> lock_reinit(param_handler_->getMutex());
+  std::lock_guard<std::mutex> param_lock(param_handler_->getMutex());
   // TODO(ajtudela): Add angular?
   // FIXME: Check this
   double max_linear_vel_ = 0.5;
@@ -248,10 +264,18 @@ visualization_msgs::msg::Marker GracefulMotionController::createSlowdownMsg(
   return slowdown_marker;
 }
 
-nav_msgs::msg::Path GracefulMotionController::simulateTrajectory(
-  const geometry_msgs::msg::PoseStamped & motion_target)
+bool GracefulMotionController::simulateTrajectory(
+  const geometry_msgs::msg::PoseStamped & robot_pose,
+  const geometry_msgs::msg::PoseStamped & motion_target, nav_msgs::msg::Path & trajectory)
 {
-  nav_msgs::msg::Path trajectory;
+  // Check for cllision before moving
+  if (inCollision(
+      robot_pose.pose.position.x, robot_pose.pose.position.y,
+      tf2::getYaw(robot_pose.pose.orientation)))
+  {
+    return false;
+  }
+
   // First pose
   geometry_msgs::msg::PoseStamped next_pose;
   next_pose.header.frame_id = costmap_ros_->getBaseFrameID();
@@ -261,20 +285,37 @@ nav_msgs::msg::Path GracefulMotionController::simulateTrajectory(
   double distance = std::numeric_limits<double>::max();
   double resolution_ = costmap_ros_->getCostmap()->getResolution();
   double dt = (params_->v_linear_max > 0.0) ? resolution_ / params_->v_linear_max : 0.0;
+
   // Set max iter to avoid infinite loop
   unsigned int max_iter = 2 * sqrt(
     motion_target.pose.position.x * motion_target.pose.position.x +
     motion_target.pose.position.y * motion_target.pose.position.y) / resolution_;
+
   // Generate path
   do{
+    // Apply velocities to calculate next pose
     next_pose.pose = control_law_->calculateNextPose(dt, motion_target.pose, next_pose.pose);
+
+    // Add the pose to the trajectory for visualization
     trajectory.poses.push_back(next_pose);
+
+    // Check for collision
+    geometry_msgs::msg::PoseStamped global_pose;
+    tf2::doTransform(next_pose, global_pose, costmap_transform_);
+    if (inCollision(
+        global_pose.pose.position.x, global_pose.pose.position.y,
+        tf2::getYaw(global_pose.pose.orientation)))
+    {
+      return false;
+    }
+
+    // Check if we reach the goal
     double error_x = motion_target.pose.position.x - next_pose.pose.position.x;
     double error_y = motion_target.pose.position.y - next_pose.pose.position.y;
     distance = std::hypot(error_x, error_y);
   }while(distance > resolution_ && trajectory.poses.size() < max_iter);
 
-  return trajectory;
+  return true;
 }
 
 geometry_msgs::msg::Twist GracefulMotionController::rotateToTarget(const double & angle_to_target)
@@ -284,6 +325,27 @@ geometry_msgs::msg::Twist GracefulMotionController::rotateToTarget(const double 
   vel.linear.x = 0.0;
   vel.angular.z = sign * params_->v_angular_max;
   return vel;
+}
+
+bool GracefulMotionController::inCollision(const double & x, const double & y, const double & theta)
+{
+  unsigned int mx, my;
+  if (!costmap_ros_->getCostmap()->worldToMap(x, y, mx, my)) {
+    RCLCPP_WARN(
+      logger_, "The path is not in the costmap. Cannot check for collisions. "
+      "Proceed at your own risk, slow the robot, or increase your costmap size.");
+    return false;
+  }
+
+  double footprint_cost = collision_checker_->footprintCostAtPose(
+    x, y, theta, costmap_ros_->getRobotFootprint());
+  if (footprint_cost == static_cast<double>(nav2_costmap_2d::NO_INFORMATION) &&
+    costmap_ros_->getLayeredCostmap()->isTrackingUnknown())
+  {
+    return false;
+  }
+  // If occupied or unknown and not to traverse unknown space
+  return footprint_cost >= static_cast<double>(nav2_costmap_2d::LETHAL_OBSTACLE);
 }
 
 }  // namespace nav2_graceful_motion_controller
