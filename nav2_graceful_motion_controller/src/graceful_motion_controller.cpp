@@ -197,27 +197,22 @@ void GracefulMotionController::setPlan(const nav_msgs::msg::Path & path)
 }
 
 void GracefulMotionController::setSpeedLimit(
-  const double & speed_limit,
-  const bool & percentage)
+  const double & speed_limit, const bool & percentage)
 {
   std::lock_guard<std::mutex> param_lock(param_handler_->getMutex());
-  // TODO(ajtudela): Add angular?
-  // FIXME: Check this
-  double max_linear_vel_ = 0.5;
-  double base_linear_vel_ = 0.5;
-  if (speed_limit == nav2_costmap_2d::NO_SPEED_LIMIT) {
-    // Restore default value
-    max_linear_vel_ = base_linear_vel_;
+
+  if (percentage) {
+    // Speed limit is expressed in % from maximum speed of robot
+    params_->v_linear_max = std::max(
+      params_->v_linear_max * speed_limit / 100.0,
+      params_->v_linear_min);
   } else {
-    if (percentage) {
-      // Speed limit is expressed in % from maximum speed of robot
-      max_linear_vel_ = base_linear_vel_ * speed_limit / 100.0;
-    } else {
-      // Speed limit is expressed in m/s
-      max_linear_vel_ = speed_limit;
-    }
+    // Speed limit is expressed in m/s
+    params_->v_linear_max = std::max(speed_limit, params_->v_linear_min);
   }
-  base_linear_vel_ = max_linear_vel_;
+
+  // Update the speed limit in the control law
+  control_law_->setSpeedLimit(params_->v_linear_min, params_->v_linear_max, params_->v_angular_max);
 }
 
 geometry_msgs::msg::PoseStamped GracefulMotionController::getMotionTarget(

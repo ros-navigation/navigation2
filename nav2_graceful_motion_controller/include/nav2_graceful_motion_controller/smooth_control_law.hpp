@@ -87,7 +87,7 @@ public:
     const geometry_msgs::msg::Pose & target,
     const geometry_msgs::msg::Pose & current = geometry_msgs::msg::Pose());
 
-private:
+protected:
   /**
    * @brief Ratio of the rate of change in phi to the rate of change in r. Controls the convergence
    * of the slow subsystem.

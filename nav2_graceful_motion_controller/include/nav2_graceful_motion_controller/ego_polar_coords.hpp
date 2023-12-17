@@ -37,7 +37,6 @@ struct EgocentricPolarCoordinates
                   // from the robot to the target.
   double delta;   // Steering angle of the robot with respect to the line of sight.
 
-  // TODO(ajtudela): Add backwards direction
   EgocentricPolarCoordinates(
     const double & r_in = 0.0,
     const double & phi_in = 0.0,

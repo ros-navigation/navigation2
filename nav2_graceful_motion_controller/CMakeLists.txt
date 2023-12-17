@@ -39,10 +39,10 @@ set(dependencies
 set(library_name nav2_graceful_motion_controller)
 
 add_library(${library_name} SHARED
-    src/graceful_motion_controller.cpp
-    src/parameter_handler.cpp
-    src/path_handler.cpp
-    src/smooth_control_law.cpp
+  src/graceful_motion_controller.cpp
+  src/parameter_handler.cpp
+  src/path_handler.cpp
+  src/smooth_control_law.cpp
 )
 
 ament_target_dependencies(${library_name}
@@ -61,6 +61,7 @@ install(DIRECTORY include/
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
+
   # the following line skips the linter which checks for copyrights
   set(ament_cmake_copyright_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
@@ -74,4 +75,3 @@ ament_export_dependencies(${dependencies})
 pluginlib_export_plugin_description_file(nav2_core graceful_controller_plugin.xml)
 
 ament_package()
-
