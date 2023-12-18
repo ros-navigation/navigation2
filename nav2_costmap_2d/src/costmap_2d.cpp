@@ -102,6 +102,8 @@ void Costmap2D::initMaps(unsigned int size_x, unsigned int size_y)
 {
   std::unique_lock<mutex_t> lock(*access_);
   delete[] costmap_;
+  size_x_ = size_x;
+  size_y_ = size_y;
   costmap_ = new unsigned char[size_x * size_y];
 }
 
