@@ -47,31 +47,15 @@ public:
     const std::string & xml_tag_name,
     const std::string & action_name,
     const BT::NodeConfiguration & conf)
-  : BT::ActionNodeBase(xml_tag_name, conf), action_name_(action_name)
+  : BT::ActionNodeBase(xml_tag_name, conf), 
+    action_name_(action_name),
+    initialized_(false)
   {
     node_ = config().blackboard->template get<rclcpp::Node::SharedPtr>("node");
     callback_group_ = node_->create_callback_group(
       rclcpp::CallbackGroupType::MutuallyExclusive,
       false);
     callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
-
-    // Get the required items from the blackboard
-    server_timeout_ =
-      config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
-    getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
-    wait_for_service_timeout_ =
-      config().blackboard->template get<std::chrono::milliseconds>("wait_for_service_timeout");
-
-    std::string remapped_action_name;
-    if (getInput("server_name", remapped_action_name)) {
-      action_name_ = remapped_action_name;
-    }
-    createActionClient(action_name_);
-
-    // Give the derive class a chance to do any initialization
-    RCLCPP_DEBUG(
-      node_->get_logger(), "\"%s\" BtCancelActionNode initialized",
-      xml_tag_name.c_str());
   }
 
   BtCancelActionNode() = delete;
@@ -130,6 +114,31 @@ public:
   {
     return providedBasicPorts({});
   }
+  
+  /**
+   * @brief Function to read parameters and initialize class variables
+   */
+  void initialize() {
+    // Get the required items from the blackboard
+    server_timeout_ =
+      config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
+    getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
+    wait_for_service_timeout_ =
+      config().blackboard->template get<std::chrono::milliseconds>("wait_for_service_timeout");
+
+    std::string remapped_action_name;
+    if (getInput("server_name", remapped_action_name)) {
+      action_name_ = remapped_action_name;
+    }
+    createActionClient(action_name_);
+
+    // Give the derive class a chance to do any initialization
+    RCLCPP_DEBUG(
+      node_->get_logger(), "\"%s\" BtCancelActionNode initialized",
+      xml_tag_name.c_str());
+
+    initialized_ = true;
+  }
 
   /**
    * @brief The main override required by a BT action
@@ -137,6 +146,10 @@ public:
    */
   BT::NodeStatus tick() override
   {
+    if(!initialized_) {
+      initialize();
+    }
+
     // setting the status to RUNNING to notify the BT Loggers (if any)
     setStatus(BT::NodeStatus::RUNNING);
 
@@ -172,6 +185,7 @@ protected:
   std::chrono::milliseconds server_timeout_;
   // The timeout value for waiting for a service to response
   std::chrono::milliseconds wait_for_service_timeout_;
+  bool initialized_;
 };
 
 }  // namespace nav2_behavior_tree
