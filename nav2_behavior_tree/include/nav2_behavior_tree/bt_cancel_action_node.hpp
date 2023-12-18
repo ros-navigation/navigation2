@@ -47,9 +47,7 @@ public:
     const std::string & xml_tag_name,
     const std::string & action_name,
     const BT::NodeConfiguration & conf)
-  : BT::ActionNodeBase(xml_tag_name, conf), 
-    action_name_(action_name),
-    initialized_(false)
+  : BT::ActionNodeBase(xml_tag_name, conf), action_name_(action_name), initialized_(false)
   {
     node_ = config().blackboard->template get<rclcpp::Node::SharedPtr>("node");
     callback_group_ = node_->create_callback_group(
