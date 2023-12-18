@@ -41,11 +41,8 @@ void RemovePassedGoals::initialize()
   auto node = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
   node->get_parameter("transform_tolerance", transform_tolerance_);
 
-  global_frame_ = BT::deconflictPortAndParamFrame<std::string, RemovePassedGoals>(
-    node, "global_frame", this);
   robot_base_frame_ = BT::deconflictPortAndParamFrame<std::string, RemovePassedGoals>(
     node, "robot_base_frame", this);
-  initialized_ = true;
 }
 
 inline BT::NodeStatus RemovePassedGoals::tick()
