@@ -32,7 +32,8 @@ IsPathValidCondition::IsPathValidCondition(
   server_timeout_ = config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
 }
 
-void IsPathValidCondition::initialize() {
+void IsPathValidCondition::initialize()
+{
   getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
   initialized_ = true;
 }

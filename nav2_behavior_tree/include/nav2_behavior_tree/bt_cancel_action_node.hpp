@@ -47,7 +47,8 @@ public:
     const std::string & xml_tag_name,
     const std::string & action_name,
     const BT::NodeConfiguration & conf)
-  : BT::ActionNodeBase(xml_tag_name, conf), action_name_(action_name), initialized_(false)
+  : BT::ActionNodeBase(xml_tag_name, conf), action_name_(action_name), initialized_(false), xml_tag(
+      xml_tag_name)
   {
     node_ = config().blackboard->template get<rclcpp::Node::SharedPtr>("node");
     callback_group_ = node_->create_callback_group(
@@ -112,11 +113,12 @@ public:
   {
     return providedBasicPorts({});
   }
-  
+
   /**
    * @brief Function to read parameters and initialize class variables
    */
-  void initialize() {
+  void initialize()
+  {
     // Get the required items from the blackboard
     server_timeout_ =
       config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
@@ -133,7 +135,7 @@ public:
     // Give the derive class a chance to do any initialization
     RCLCPP_DEBUG(
       node_->get_logger(), "\"%s\" BtCancelActionNode initialized",
-      xml_tag_name.c_str());
+      xml_tag.c_str());
 
     initialized_ = true;
   }
@@ -144,7 +146,7 @@ public:
    */
   BT::NodeStatus tick() override
   {
-    if(!initialized_) {
+    if (!initialized_) {
       initialize();
     }
 
@@ -184,6 +186,7 @@ protected:
   // The timeout value for waiting for a service to response
   std::chrono::milliseconds wait_for_service_timeout_;
   bool initialized_;
+  std::string xml_tag;
 };
 
 }  // namespace nav2_behavior_tree

@@ -29,7 +29,8 @@ RateController::RateController(
 {
 }
 
-void RateController::initialize() {
+void RateController::initialize()
+{
   double hz = 1.0;
   getInput("hz", hz);
   period_ = 1.0 / hz;
@@ -38,7 +39,7 @@ void RateController::initialize() {
 
 BT::NodeStatus RateController::tick()
 {
-  if(!initialized_) {
+  if (!initialized_) {
     initialize();
   }
 
