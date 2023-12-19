@@ -47,14 +47,35 @@ public:
     const std::string & xml_tag_name,
     const std::string & action_name,
     const BT::NodeConfiguration & conf)
-  : BT::ActionNodeBase(xml_tag_name, conf), action_name_(action_name), should_send_goal_(true),
-    initialized_(false), xml_tag(xml_tag_name)
+  : BT::ActionNodeBase(xml_tag_name, conf), action_name_(action_name), should_send_goal_(true)
   {
     node_ = config().blackboard->template get<rclcpp::Node::SharedPtr>("node");
     callback_group_ = node_->create_callback_group(
       rclcpp::CallbackGroupType::MutuallyExclusive,
       false);
     callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
+
+    // Get the required items from the blackboard
+    bt_loop_duration_ =
+      config().blackboard->template get<std::chrono::milliseconds>("bt_loop_duration");
+    server_timeout_ =
+      config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
+    getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
+    wait_for_service_timeout_ =
+      config().blackboard->template get<std::chrono::milliseconds>("wait_for_service_timeout");
+
+    // Initialize the input and output messages
+    goal_ = typename ActionT::Goal();
+    result_ = typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult();
+
+    std::string remapped_action_name;
+    if (getInput("server_name", remapped_action_name)) {
+      action_name_ = remapped_action_name;
+    }
+    createActionClient(action_name_);
+
+    // Give the derive class a chance to do any initialization
+    RCLCPP_DEBUG(node_->get_logger(), "\"%s\" BtActionNode initialized", xml_tag_name.c_str());
   }
 
   BtActionNode() = delete;
@@ -161,44 +182,11 @@ public:
   }
 
   /**
-   * @brief Function to read parameters and initialize class variables
-   */
-  void initialize()
-  {
-    // Get the required items from the blackboard
-    bt_loop_duration_ =
-      config().blackboard->template get<std::chrono::milliseconds>("bt_loop_duration");
-    server_timeout_ =
-      config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
-    getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
-    wait_for_service_timeout_ =
-      config().blackboard->template get<std::chrono::milliseconds>("wait_for_service_timeout");
-
-    // Initialize the input and output messages
-    goal_ = typename ActionT::Goal();
-    result_ = typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult();
-
-    std::string remapped_action_name;
-    if (getInput("server_name", remapped_action_name)) {
-      action_name_ = remapped_action_name;
-    }
-    createActionClient(action_name_);
-
-    // Give the derive class a chance to do any initialization
-    RCLCPP_DEBUG(node_->get_logger(), "\"%s\" BtActionNode initialized", xml_tag.c_str());
-    initialized_ = true;
-  }
-
-  /**
    * @brief The main override required by a BT action
    * @return BT::NodeStatus Status of tick execution
    */
   BT::NodeStatus tick() override
   {
-    if (!initialized_) {
-      initialize();
-    }
-
     // first step to be done only at the beginning of the Action
     if (status() == BT::NodeStatus::IDLE) {
       // setting the status to RUNNING to notify the BT Loggers (if any)
@@ -486,8 +474,6 @@ protected:
 
   // Can be set in on_tick or on_wait_for_result to indicate if a goal should be sent.
   bool should_send_goal_;
-  bool initialized_;
-  std::string xml_tag;
 };
 
 }  // namespace nav2_behavior_tree
