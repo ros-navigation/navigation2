@@ -172,6 +172,11 @@ float & LatticeMotionTable::getAngleFromBin(const unsigned int & bin_idx)
   return lattice_metadata.heading_angles[bin_idx];
 }
 
+unsigned int getNumOfBins()
+{
+  return lattice_metadata.heading_angles.size();
+}
+
 NodeLattice::NodeLattice(const unsigned int index)
 : parent(nullptr),
   pose(0.0f, 0.0f, 0.0f),

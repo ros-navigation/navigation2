@@ -126,7 +126,8 @@ public:
   void setGoal(
     const unsigned int & mx,
     const unsigned int & my,
-    const unsigned int & dim_3);
+    const unsigned int & dim_3, 
+    const GoalHeading & goal_heading=GoalHeading::DEFAULT);
 
   /**
    * @brief Set the starting pose for planning, as a node index
@@ -262,9 +263,9 @@ protected:
   unsigned int _dim3_size;
   SearchInfo _search_info;
 
-  Coordinates _goal_coordinates;
+  std::vector<Coordinates> _goals_coordinates;
   NodePtr _start;
-  NodePtr _goal;
+  std::vector<NodePtr> _goals;
 
   Graph _graph;
   NodeQueue _queue;

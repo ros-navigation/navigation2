@@ -179,30 +179,85 @@ template<>
 void AStarAlgorithm<Node2D>::setGoal(
   const unsigned int & mx,
   const unsigned int & my,
-  const unsigned int & dim_3)
+  const unsigned int & dim_3,
+  const GoalHeading & goal_heading)
 {
   if (dim_3 != 0) {
     throw std::runtime_error("Node type Node2D cannot be given non-zero goal dim 3.");
   }
 
-  _goal = addToGraph(Node2D::getIndex(mx, my, getSizeX()));
-  _goal_coordinates = Node2D::Coordinates(mx, my);
+  _goal.clear();
+  _goal_coordinates.clear();
+  _goals.push_back(addToGraph(Node2D::getIndex(mx, my, getSizeX())));
+  _goals_coordinates.push_back(Node2D::Coordinates(mx, my));
 }
 
 template<typename NodeT>
 void AStarAlgorithm<NodeT>::setGoal(
   const unsigned int & mx,
   const unsigned int & my,
-  const unsigned int & dim_3)
+  const unsigned int & dim_3,
+  const GoalHeading & goal_heading)
 {
-  _goal = addToGraph(NodeT::getIndex(mx, my, dim_3));
+  _goals.clear();
+  // _goals_coordinates.clear();
+  std::vector<Coordinates> goal_coordinates;
+  unsigned int number_of_bins = NodeT::motion_table.getNumOfBins();
+  if(goal_heading == GoalHeading::DEFAULT){
+    _goals.push_back(addToGraph(NodeT::getIndex(mx, my, dim_3)));
+    goal_coordinates.push_back(typename NodeT::Coordinates(
+      static_cast<float>(mx),
+      static_cast<float>(my),
+      static_cast<float>(dim_3)));
+  }else if(goal_heading == GoalHeading::BIDIRECTIONAL)
+  {
+    _goals.push_back(addToGraph(NodeT::getIndex(mx, my, dim_3)));
+    // add angle -180
+    _goals.push_back(addToGraph(NodeT::getIndex(mx, my, dim_3 + number_of_bins/2)));
+    goal_coordinates.push_back(typename NodeT::Coordinates(
+      static_cast<float>(mx),
+      static_cast<float>(my),
+      static_cast<float>(dim_3)));
+    goal_coordinates.push_back(typename NodeT::Coordinates(
+      static_cast<float>(mx),
+      static_cast<float>(my),
+      static_cast<float>(dim_3 + number_of_bins/2)));
+    
+  }else if (goal_heading == GoalHeading::ANY_HEADING)
+  {
+    for (unsigned int i = 0; i < number_of_bins; i++)
+    {
+      _goals.push_back(addToGraph(NodeT::getIndex(mx, my, i)));
+      goal_coordinates.push_back(typename NodeT::Coordinates(
+        static_cast<float>(mx),
+        static_cast<float>(my),
+        static_cast<float>(i)));
+    }
+  }
+  else
+  {
+    throw std::runtime_error("Goal Heading not supported");
+  }
 
-  typename NodeT::Coordinates goal_coords(
-    static_cast<float>(mx),
-    static_cast<float>(my),
-    static_cast<float>(dim_3));
+  auto has_goals_changed = [](const std::vector<Coordinates> & current_goal_coordinates,const std::vector<Coordinates> & previous_goal_coordinates) -> bool 
+  {
+    if(current_goal_coordinates.size() != previous_goal_coordinates.size())
+    {
+      return true;
+    }
+    else 
+    {
+      for(unsigned int i = 0; i < goal_coordinates.size() - 1; i++)
+    {
+      if(goal_coordinates[i] != goal_coordinates[i+1])
+      {
+        return true;
+      }
+    }
+    }    
+  }
 
-  if (!_search_info.cache_obstacle_heuristic || goal_coords != _goal_coordinates) {
+  if (!_search_info.cache_obstacle_heuristic || has_goals_changed(goal_coordinates)) {
     if (!_start) {
       throw std::runtime_error("Start must be set before goal.");
     }
@@ -210,8 +265,12 @@ void AStarAlgorithm<NodeT>::setGoal(
     NodeT::resetObstacleHeuristic(_costmap, _start->pose.x, _start->pose.y, mx, my);
   }
 
-  _goal_coordinates = goal_coords;
-  _goal->setPose(_goal_coordinates);
+  _goals_coordinates.clear();
+  _goals_coordinates = goal_coordinates;
+  for(int i = 0; i < _goals_coordinates.size(); i++)
+  {
+    _goals[i]->setPose(_goals_coordinates[i]);
+  }
 }
 
 template<typename NodeT>
@@ -367,6 +426,7 @@ bool AStarAlgorithm<NodeT>::isGoal(NodePtr & node)
 {
   return node == getGoal();
 }
+
 
 template<typename NodeT>
 typename AStarAlgorithm<NodeT>::NodePtr & AStarAlgorithm<NodeT>::getStart()

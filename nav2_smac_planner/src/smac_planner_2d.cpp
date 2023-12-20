@@ -90,7 +90,7 @@ void SmacPlanner2D::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".max_planning_time", rclcpp::ParameterValue(2.0));
   node->get_parameter(name + ".max_planning_time", _max_planning_time);
-
+  
   _motion_model = MotionModel::TWOD;
 
   if (_max_on_approach_iterations <= 0) {

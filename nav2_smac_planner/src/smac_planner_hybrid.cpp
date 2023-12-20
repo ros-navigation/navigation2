@@ -154,6 +154,20 @@ void SmacPlannerHybrid::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".motion_model_for_search", rclcpp::ParameterValue(std::string("DUBIN")));
   node->get_parameter(name + ".motion_model_for_search", _motion_model_for_search);
+
+  nav2_util::declare_parameter_if_not_declared(
+  node, name + ".goal_heading", rclcpp::ParameterValue("DEFAULT"));
+  node->get_parameter(name + ".goal_heading", _goal_heading_type);
+
+  _goal_heading = fromStringToGH(_goal_heading_type);
+  if(_goal_heading == GoalHeading::UNKNOWN)
+  {
+    RCLCPP_WARN(
+      _logger,
+      "Unable to get GoalHeader type. Given '%s', "
+      "Valid options are DEFAULT, BIDIRECTIONAL, ANY_HEADING. ",
+      _goal_heading_type.c_str());
+  }
   _motion_model = fromString(_motion_model_for_search);
   if (_motion_model == MotionModel::UNKNOWN) {
     RCLCPP_WARN(
@@ -359,7 +373,7 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
     orientation_bin -= static_cast<float>(_angle_quantizations);
   }
   orientation_bin_id = static_cast<unsigned int>(floor(orientation_bin));
-  _a_star->setGoal(mx, my, orientation_bin_id);
+  _a_star->setGoal(mx, my, orientation_bin_id, _goal_heading);
 
   // Setup message
   nav_msgs::msg::Path plan;
@@ -599,6 +613,17 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
             "Unable to get MotionModel search type. Given '%s', "
             "valid options are MOORE, VON_NEUMANN, DUBIN, REEDS_SHEPP.",
             _motion_model_for_search.c_str());
+        }
+      }else if (name == _name + ".goal_heading") {
+        _goal_heading_type = parameter.as_string();
+        _goal_heading = fromStringToGH(_goal_heading_type);
+        if(_goal_heading == GoalHeading::UNKNOWN)
+        {
+          RCLCPP_WARN(
+            _logger,
+            "Unable to get GoalHeader type. Given '%s', "
+            "Valid options are DEFAULT, BIDIRECTIONAL, ANY_HEADING. ",
+            _goal_heading_type.c_str());
         }
       }
     }

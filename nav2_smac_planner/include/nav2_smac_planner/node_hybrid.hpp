@@ -110,6 +110,8 @@ struct HybridMotionTable
    */
   float getAngleFromBin(const unsigned int & bin_idx);
 
+  unsigned int getNumOfBins();
+
   MotionModel motion_model = MotionModel::UNKNOWN;
   MotionPoses projections;
   unsigned int size_x;
