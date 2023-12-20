@@ -1,24 +1,6 @@
 <?xml version="1.0"?>
 <sdf version="1.6">
   <world name="default">
-    <plugin
-      filename="ignition-gazebo-physics-system"
-      name="ignition::gazebo::systems::Physics">
-    </plugin>
-    <plugin
-      filename="ignition-gazebo-user-commands-system"
-      name="ignition::gazebo::systems::UserCommands">
-    </plugin>
-    <plugin
-      filename="ignition-gazebo-sensors-system"
-      name="ignition::gazebo::systems::Sensors">
-      <render_engine>ogre</render_engine>
-    </plugin>
-    <plugin
-      filename="ignition-gazebo-imu-system"
-      name="ignition::gazebo::systems::Imu">
-    </plugin>
-
     <light name='sun' type='directional'>
         <cast_shadows>0</cast_shadows>
         <pose>0 0 10 0 0 0</pose>
@@ -62,8 +44,6 @@
 
     <scene>
       <shadows>0</shadows>
-      <grid>false</grid>
-      <origin_visual>false</origin_visual>
     </scene>
 
     <physics name='1ms' type='ode'>

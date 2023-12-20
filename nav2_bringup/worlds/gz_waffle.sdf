@@ -46,6 +46,7 @@
           <update_rate>200</update_rate>
           <topic>imu</topic>
           <ignition_frame_id>imu_link</ignition_frame_id>
+          <gz_frame_id>imu_link</gz_frame_id>
           <imu>
             <angular_velocity>
               <x>
@@ -132,6 +133,7 @@
           <update_rate>5</update_rate>
           <topic>scan</topic>
           <ignition_frame_id>base_scan</ignition_frame_id>
+          <gz_frame_id>base_scan</gz_frame_id>
           <ray>
             <scan>
               <horizontal>
@@ -179,14 +181,13 @@
             </cylinder>
           </geometry>
           <surface>
-            <!-- This friction pamareter don't contain reliable data!! -->
             <friction>
               <ode>
-                <mu>100000.0</mu>
-                <mu2>100000.0</mu2>
-                <fdir1>0 0 0</fdir1>
-                <slip1>0.0</slip1>
-                <slip2>0.0</slip2>
+                <mu>1</mu>
+                <mu2>1</mu2>
+                <slip1>0.035</slip1>
+                <slip2>0</slip2>
+                <fdir1>0 0 1</fdir1>
               </ode>
             </friction>
             <contact>
@@ -237,14 +238,13 @@
             </cylinder>
           </geometry>
           <surface>
-            <!-- This friction pamareter don't contain reliable data!! -->
             <friction>
               <ode>
-                <mu>100000.0</mu>
-                <mu2>100000.0</mu2>
-                <fdir1>0 0 0</fdir1>
-                <slip1>0.0</slip1>
-                <slip2>0.0</slip2>
+                <mu>1</mu>
+                <mu2>1</mu2>
+                <slip1>0.035</slip1>
+                <slip2>0</slip2>
+                <fdir1>0 0 1</fdir1>
               </ode>
             </friction>
             <contact>
@@ -368,6 +368,7 @@
           <update_rate>5</update_rate>
           <pose>0.064 -0.047 0.107 0 0 0</pose>
           <ignition_frame_id>camera_depth_frame</ignition_frame_id>
+          <gz_frame_id>camera_depth_frame</gz_frame_id>
           <camera name="realsense_depth_camera">
             <horizontal_fov>1.047</horizontal_fov>
             <image>
@@ -445,7 +446,7 @@
 
 
       <plugin
-        filename="ignition-gazebo-diff-drive-system"
+        filename="gz-sim-diff-drive-system"
         name="gz::sim::systems::DiffDrive">
         <left_joint>wheel_left_joint</left_joint>
         <right_joint>wheel_right_joint</right_joint>
@@ -468,11 +469,12 @@
       </plugin>
 
       <plugin
-        filename="ignition-gazebo-joint-state-publisher-system"
+        filename="gz-sim-joint-state-publisher-system"
         name="gz::sim::systems::JointStatePublisher">
         <joint_name>wheel_left_joint</joint_name>
         <joint_name>wheel_right_joint</joint_name>
         <topic>joint_states</topic>
+        <update_rate>30</update_rate>
       </plugin>
 
     </model>
