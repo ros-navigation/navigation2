@@ -39,8 +39,9 @@ geometry_msgs::msg::Twist SmoothControlLaw::calculateRegularVelocity(
   // slowdown the controller as it approaches its target
   double v = v_linear_max_ / (1.0 + beta_ * std::pow(fabs(curvature), lambda_));
 
-  // TODO(ajtudela): Set some small v_min when far away from origin to promote faster
+  // Set some small v_min when far away from origin to promote faster
   // turning motion when the curvature is very high
+  v = std::clamp(v, v_linear_min_, v_linear_max_);
 
   // Slowdown when the robot is near the target to remove singularity
   v = std::min(v_linear_max_ * (ego_coords.r / slowdown_radius_), v);
