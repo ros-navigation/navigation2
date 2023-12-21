@@ -50,6 +50,16 @@ static const std::vector<double> SQUARE_POLYGON {
   0.5, 0.5, 0.5, -0.5, -0.5, -0.5, -0.5, 0.5};
 static const std::vector<double> ARBITRARY_POLYGON {
   1.0, 1.0, 1.0, 0.0, 2.0, 0.0, 2.0, -1.0, -1.0, -1.0, -1.0, 1.0};
+static const char SQUARE_POLYGON_STR[]{
+  "[[0.5, 0.5], [0.5, -0.5], [-0.5, -0.5], [-0.5, 0.5]]"};
+static const char ARBITRARY_POLYGON_STR[]{
+  "[[1.0, 1.0], [1.0, 0.0], [2.0, 0.0], [2.0, -1.0], [-1.0, -1.0], [-1.0, 1.0]]"};
+static const char INCORRECT_POINTS_1_STR[]{
+  "[[0.5, 0.5], [0.5, -0.5], [-0.5, -0.5]]"
+};
+static const char INCORRECT_POINTS_2_STR[]{
+  "[[0.5, 0.5], [0.5, -0.5], [-0.5, -0.5], [-0.5, 0.5], [0]]"
+};
 static const double CIRCLE_RADIUS{0.5};
 static const int MIN_POINTS{2};
 static const double SLOWDOWN_RATIO{0.7};
@@ -212,7 +222,7 @@ protected:
   // Working with parameters
   void setCommonParameters(const std::string & polygon_name, const std::string & action_type);
   void setPolygonParameters(
-    const std::vector<double> & points,
+    const char * points,
     const bool is_static);
   void setCircleParameters(const double radius);
   bool checkUndeclaredParameter(const std::string & polygon_name, const std::string & param);
@@ -311,7 +321,7 @@ void Tester::setCommonParameters(const std::string & polygon_name, const std::st
 }
 
 void Tester::setPolygonParameters(
-  const std::vector<double> & points, const bool is_static)
+  const char * points, const bool is_static)
 {
   if (is_static) {
     test_node_->declare_parameter(
@@ -360,7 +370,7 @@ bool Tester::checkUndeclaredParameter(const std::string & polygon_name, const st
 void Tester::createPolygon(const std::string & action_type, const bool is_static)
 {
   setCommonParameters(POLYGON_NAME, action_type);
-  setPolygonParameters(SQUARE_POLYGON, is_static);
+  setPolygonParameters(SQUARE_POLYGON_STR, is_static);
 
   polygon_ = std::make_shared<PolygonWrapper>(
     test_node_, POLYGON_NAME,
@@ -546,7 +556,7 @@ TEST_F(Tester, testPolygonUndeclaredPoints)
 TEST_F(Tester, testPolygonIncorrectActionType)
 {
   setCommonParameters(POLYGON_NAME, "incorrect_action_type");
-  setPolygonParameters(SQUARE_POLYGON, true);
+  setPolygonParameters(SQUARE_POLYGON_STR, true);
 
   polygon_ = std::make_shared<PolygonWrapper>(
     test_node_, POLYGON_NAME,
@@ -558,12 +568,11 @@ TEST_F(Tester, testPolygonIncorrectPoints1)
 {
   setCommonParameters(POLYGON_NAME, "stop");
 
-  std::vector<double> incorrect_points = SQUARE_POLYGON;
-  incorrect_points.resize(6);  // Not enough for triangle
+  // Triangle points
   test_node_->declare_parameter(
-    std::string(POLYGON_NAME) + ".points", rclcpp::ParameterValue(incorrect_points));
+    std::string(POLYGON_NAME) + ".points", rclcpp::ParameterValue(INCORRECT_POINTS_1_STR));
   test_node_->set_parameter(
-    rclcpp::Parameter(std::string(POLYGON_NAME) + ".points", incorrect_points));
+    rclcpp::Parameter(std::string(POLYGON_NAME) + ".points", INCORRECT_POINTS_1_STR));
 
   polygon_ = std::make_shared<PolygonWrapper>(
     test_node_, POLYGON_NAME,
@@ -575,12 +584,11 @@ TEST_F(Tester, testPolygonIncorrectPoints2)
 {
   setCommonParameters(POLYGON_NAME, "stop");
 
-  std::vector<double> incorrect_points = SQUARE_POLYGON;
-  incorrect_points.resize(9);  // Odd number of points
+  // Odd number of elements
   test_node_->declare_parameter(
-    std::string(POLYGON_NAME) + ".points", rclcpp::ParameterValue(incorrect_points));
+    std::string(POLYGON_NAME) + ".points", rclcpp::ParameterValue(INCORRECT_POINTS_2_STR));
   test_node_->set_parameter(
-    rclcpp::Parameter(std::string(POLYGON_NAME) + ".points", incorrect_points));
+    rclcpp::Parameter(std::string(POLYGON_NAME) + ".points", INCORRECT_POINTS_2_STR));
 
   polygon_ = std::make_shared<PolygonWrapper>(
     test_node_, POLYGON_NAME,
@@ -592,7 +600,7 @@ TEST_F(Tester, testPolygonIncorrectPoints2)
 TEST_F(Tester, testPolygonMaxPoints)
 {
   setCommonParameters(POLYGON_NAME, "stop");
-  setPolygonParameters(SQUARE_POLYGON, true);
+  setPolygonParameters(SQUARE_POLYGON_STR, true);
 
   const int max_points = 5;
   test_node_->declare_parameter(
@@ -751,7 +759,7 @@ TEST_F(Tester, testPolygonGetPointsInsideEdge)
   // Test for checking edge cases in raytracing algorithm.
   // All points are lie on the edge lines parallel to OX, where the raytracing takes place.
   setCommonParameters(POLYGON_NAME, "stop");
-  setPolygonParameters(ARBITRARY_POLYGON, true);
+  setPolygonParameters(ARBITRARY_POLYGON_STR, true);
 
   polygon_ = std::make_shared<PolygonWrapper>(
     test_node_, POLYGON_NAME,
@@ -884,7 +892,7 @@ TEST_F(Tester, testPolygonDefaultVisualize)
     std::string(POLYGON_NAME) + ".action_type", rclcpp::ParameterValue("stop"));
   test_node_->set_parameter(
     rclcpp::Parameter(std::string(POLYGON_NAME) + ".action_type", "stop"));
-  setPolygonParameters(SQUARE_POLYGON, true);
+  setPolygonParameters(SQUARE_POLYGON_STR, true);
 
   // Create new polygon
   polygon_ = std::make_shared<PolygonWrapper>(

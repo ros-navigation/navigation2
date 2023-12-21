@@ -558,8 +558,8 @@ bool Polygon::getPolygonFromString(
     return false;
   }
 
-  // Check for minimum 3 points
-  if (vvf.size() < 3) {
+  // Check for minimum 4 points
+  if (vvf.size() <= 3) {
     RCLCPP_ERROR(
       logger_,
       "Polygon must have at least three points.");
