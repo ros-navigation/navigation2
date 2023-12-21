@@ -16,6 +16,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_util/lifecycle_node.hpp"
+#include "nav2_core/controller_exceptions.hpp"
 #include "nav2_graceful_motion_controller/ego_polar_coords.hpp"
 #include "nav2_graceful_motion_controller/smooth_control_law.hpp"
 #include "nav2_graceful_motion_controller/graceful_motion_controller.hpp"
@@ -76,6 +77,12 @@ public:
   }
 
   double getSpeedLinearMax() {return params_->v_linear_max;}
+
+  nav_msgs::msg::Path transformGlobalPlan(
+    const geometry_msgs::msg::PoseStamped & pose)
+  {
+    return path_handler_->transformGlobalPlan(pose, params_->max_robot_pose_search_dist);
+  }
 };
 
 TEST(SmoothControlLawTest, setSpeedLimits) {
@@ -202,6 +209,7 @@ TEST(GracefulMotionControllerTest, configure) {
 
   // Set the plan
   nav_msgs::msg::Path plan;
+  plan.header.frame_id = "map";
   plan.poses.resize(3);
   plan.poses[0].header.frame_id = "map";
   controller->setPlan(plan);
@@ -213,6 +221,10 @@ TEST(GracefulMotionControllerTest, dynamicParameters) {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testGraceful");
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
+
+  // Set max search distant to negative so it warns
+  nav2_util::declare_parameter_if_not_declared(
+    node, "test.max_robot_pose_search_dist", rclcpp::ParameterValue(-2.0));
 
   // Create controller
   auto controller = std::make_shared<nav2_graceful_motion_controller::GracefulMotionController>();
@@ -229,7 +241,6 @@ TEST(GracefulMotionControllerTest, dynamicParameters) {
   auto results = params->set_parameters_atomically(
     {rclcpp::Parameter("test.transform_tolerance", 1.0),
       rclcpp::Parameter("test.motion_target_dist", 2.0),
-      rclcpp::Parameter("test.max_robot_pose_search_dist", 3.0),
       rclcpp::Parameter("test.k_phi", 4.0),
       rclcpp::Parameter("test.k_delta", 5.0),
       rclcpp::Parameter("test.beta", 6.0),
@@ -248,7 +259,6 @@ TEST(GracefulMotionControllerTest, dynamicParameters) {
   // Check parameters
   EXPECT_EQ(node->get_parameter("test.transform_tolerance").as_double(), 1.0);
   EXPECT_EQ(node->get_parameter("test.motion_target_dist").as_double(), 2.0);
-  EXPECT_EQ(node->get_parameter("test.max_robot_pose_search_dist").as_double(), 3.0);
   EXPECT_EQ(node->get_parameter("test.k_phi").as_double(), 4.0);
   EXPECT_EQ(node->get_parameter("test.k_delta").as_double(), 5.0);
   EXPECT_EQ(node->get_parameter("test.beta").as_double(), 6.0);
@@ -260,11 +270,6 @@ TEST(GracefulMotionControllerTest, dynamicParameters) {
   EXPECT_EQ(node->get_parameter("test.initial_rotation").as_bool(), false);
   EXPECT_EQ(node->get_parameter("test.initial_rotation_min_angle").as_double(), 12.0);
   EXPECT_EQ(node->get_parameter("test.final_rotation").as_bool(), false);
-
-  // Set max search distant to negative so it warns
-  results = params->set_parameters_atomically(
-    {rclcpp::Parameter("test.max_robot_pose_search_dist", -1.0)});
-  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
 }
 
 TEST(GracefulMotionControllerTest, getDifferentMotionTargets) {
@@ -280,6 +285,7 @@ TEST(GracefulMotionControllerTest, getDifferentMotionTargets) {
 
   // Set the plan
   nav_msgs::msg::Path plan;
+  plan.header.frame_id = "map";
   plan.poses.resize(3);
   plan.poses[0].header.frame_id = "map";
   plan.poses[0].pose.position.x = 1.0;
@@ -475,6 +481,313 @@ TEST(GracefulMotionControllerTest, setSpeedLimit) {
 
   // Check results
   EXPECT_EQ(speed_limit, 2.0);
+}
+
+TEST(GracefulMotionControllerTest, emptyPlan) {
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testGraceful");
+  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+
+  // Create a costmap of 10x10 meters
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+  auto results = costmap_ros->set_parameters(
+    {rclcpp::Parameter("global_frame", "test_global_frame"),
+      rclcpp::Parameter("robot_base_frame", "test_robot_frame"),
+      rclcpp::Parameter("width", 10),
+      rclcpp::Parameter("height", 10),
+      rclcpp::Parameter("resolution", 0.1)});
+  for (const auto & result : results) {
+    EXPECT_TRUE(result.successful) << result.reason;
+  }
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+
+  // Set max search distant
+  nav2_util::declare_parameter_if_not_declared(
+    node, "test.max_robot_pose_search_dist", rclcpp::ParameterValue(5.0));
+
+  // Create controller
+  auto controller = std::make_shared<GMControllerFixture>();
+  controller->configure(node, "test", tf, costmap_ros);
+  controller->activate();
+
+  // Create the robot pose
+  geometry_msgs::msg::PoseStamped robot_pose;
+  robot_pose.header.frame_id = "test_robot_frame";
+  robot_pose.pose.position.x = 0.0;
+  robot_pose.pose.position.y = 0.0;
+  robot_pose.pose.position.z = 0.0;
+
+  // Set transform between global and robot frame
+  geometry_msgs::msg::TransformStamped global_to_robot;
+  global_to_robot.header.frame_id = "test_global_frame";
+  global_to_robot.child_frame_id = "test_robot_frame";
+  global_to_robot.transform.translation.x = robot_pose.pose.position.x;
+  global_to_robot.transform.translation.y = robot_pose.pose.position.y;
+  global_to_robot.transform.translation.z = robot_pose.pose.position.z;
+  tf->setTransform(global_to_robot, "test", false);
+
+  // Set an empty global plan
+  nav_msgs::msg::Path global_plan;
+  global_plan.header.frame_id = "test_global_frame";
+  controller->setPlan(global_plan);
+
+  EXPECT_THROW(controller->transformGlobalPlan(robot_pose), nav2_core::InvalidPath);
+}
+
+TEST(GracefulMotionControllerTest, poseOutsideCostmap) {
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testGraceful");
+  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+
+  // Create a costmap of 10x10 meters
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+  auto results = costmap_ros->set_parameters(
+    {rclcpp::Parameter("global_frame", "test_global_frame"),
+      rclcpp::Parameter("robot_base_frame", "test_robot_frame"),
+      rclcpp::Parameter("width", 10),
+      rclcpp::Parameter("height", 10),
+      rclcpp::Parameter("resolution", 0.1)});
+  for (const auto & result : results) {
+    EXPECT_TRUE(result.successful) << result.reason;
+  }
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+
+  // Set max search distant
+  nav2_util::declare_parameter_if_not_declared(
+    node, "test.max_robot_pose_search_dist", rclcpp::ParameterValue(5.0));
+
+  // Create controller
+  auto controller = std::make_shared<GMControllerFixture>();
+  controller->configure(node, "test", tf, costmap_ros);
+  controller->activate();
+
+  // Create the robot pose
+  geometry_msgs::msg::PoseStamped robot_pose;
+  robot_pose.header.frame_id = "test_robot_frame";
+  robot_pose.pose.position.x = 500.0;
+  robot_pose.pose.position.y = 500.0;
+  robot_pose.pose.position.z = 0.0;
+
+  // Set transform between global and robot frame
+  geometry_msgs::msg::TransformStamped global_to_robot;
+  global_to_robot.header.frame_id = "test_global_frame";
+  global_to_robot.child_frame_id = "test_robot_frame";
+  global_to_robot.transform.translation.x = robot_pose.pose.position.x;
+  global_to_robot.transform.translation.y = robot_pose.pose.position.y;
+  global_to_robot.transform.translation.z = robot_pose.pose.position.z;
+  tf->setTransform(global_to_robot, "test", false);
+
+  // Set an empty global plan
+  nav_msgs::msg::Path global_plan;
+  global_plan.header.frame_id = "test_global_frame";
+  global_plan.poses.resize(1);
+  global_plan.poses[0].header.frame_id = "test_global_frame";
+  global_plan.poses[0].pose.position.x = 0.0;
+  global_plan.poses[0].pose.position.y = 0.0;
+  controller->setPlan(global_plan);
+
+  EXPECT_THROW(controller->transformGlobalPlan(robot_pose), nav2_core::ControllerException);
+}
+
+TEST(GracefulMotionControllerTest, noPruningPlan) {
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testGraceful");
+  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+
+  // Create a costmap of 10x10 meters
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+  auto results = costmap_ros->set_parameters(
+    {rclcpp::Parameter("global_frame", "test_global_frame"),
+      rclcpp::Parameter("robot_base_frame", "test_robot_frame"),
+      rclcpp::Parameter("width", 10),
+      rclcpp::Parameter("height", 10),
+      rclcpp::Parameter("resolution", 0.1)});
+  for (const auto & result : results) {
+    EXPECT_TRUE(result.successful) << result.reason;
+  }
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+
+  // Set max search distant
+  nav2_util::declare_parameter_if_not_declared(
+    node, "test.max_robot_pose_search_dist", rclcpp::ParameterValue(5.0));
+
+  // Create controller
+  auto controller = std::make_shared<GMControllerFixture>();
+  controller->configure(node, "test", tf, costmap_ros);
+  controller->activate();
+
+  // Create the robot pose
+  geometry_msgs::msg::PoseStamped robot_pose;
+  robot_pose.header.frame_id = "test_robot_frame";
+  robot_pose.pose.position.x = 0.0;
+  robot_pose.pose.position.y = 0.0;
+  robot_pose.pose.position.z = 0.0;
+
+  // Set transform between global and robot frame
+  geometry_msgs::msg::TransformStamped global_to_robot;
+  global_to_robot.header.frame_id = "test_global_frame";
+  global_to_robot.child_frame_id = "test_robot_frame";
+  global_to_robot.transform.translation.x = robot_pose.pose.position.x;
+  global_to_robot.transform.translation.y = robot_pose.pose.position.y;
+  global_to_robot.transform.translation.z = robot_pose.pose.position.z;
+  tf->setTransform(global_to_robot, "test", false);
+
+  // Set a linear global plan
+  nav_msgs::msg::Path global_plan;
+  global_plan.header.frame_id = "test_global_frame";
+  global_plan.poses.resize(3);
+  global_plan.poses[0].header.frame_id = "test_global_frame";
+  global_plan.poses[0].pose.position.x = 0.0;
+  global_plan.poses[0].pose.position.y = 0.0;
+  global_plan.poses[0].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
+  global_plan.poses[1].header.frame_id = "test_global_frame";
+  global_plan.poses[1].pose.position.x = 1.0;
+  global_plan.poses[1].pose.position.y = 1.0;
+  global_plan.poses[1].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
+  global_plan.poses[2].header.frame_id = "test_global_frame";
+  global_plan.poses[2].pose.position.x = 3.0;
+  global_plan.poses[2].pose.position.y = 3.0;
+  global_plan.poses[2].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
+  controller->setPlan(global_plan);
+
+  auto transformed_plan = controller->transformGlobalPlan(robot_pose);
+  EXPECT_EQ(transformed_plan.poses.size(), global_plan.poses.size());
+}
+
+TEST(GracefulMotionControllerTest, pruningPlan) {
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testGraceful");
+  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+
+  // Create a costmap of 20x20 meters
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+  auto results = costmap_ros->set_parameters(
+    {rclcpp::Parameter("global_frame", "test_global_frame"),
+      rclcpp::Parameter("robot_base_frame", "test_robot_frame"),
+      rclcpp::Parameter("width", 20),
+      rclcpp::Parameter("height", 20),
+      rclcpp::Parameter("resolution", 0.1)});
+  for (const auto & result : results) {
+    EXPECT_TRUE(result.successful) << result.reason;
+  }
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+
+  // Set max search distant
+  nav2_util::declare_parameter_if_not_declared(
+    node, "test.max_robot_pose_search_dist", rclcpp::ParameterValue(9.0));
+
+  // Create controller
+  auto controller = std::make_shared<GMControllerFixture>();
+  controller->configure(node, "test", tf, costmap_ros);
+  controller->activate();
+
+  // Create the robot pose
+  geometry_msgs::msg::PoseStamped robot_pose;
+  robot_pose.header.frame_id = "test_robot_frame";
+  robot_pose.pose.position.x = 0.0;
+  robot_pose.pose.position.y = 0.0;
+  robot_pose.pose.position.z = 0.0;
+
+  // Set transform between global and robot frame
+  geometry_msgs::msg::TransformStamped global_to_robot;
+  global_to_robot.header.frame_id = "test_global_frame";
+  global_to_robot.child_frame_id = "test_robot_frame";
+  global_to_robot.transform.translation.x = robot_pose.pose.position.x;
+  global_to_robot.transform.translation.y = robot_pose.pose.position.y;
+  global_to_robot.transform.translation.z = robot_pose.pose.position.z;
+  tf->setTransform(global_to_robot, "test", false);
+
+  // Set a linear global plan
+  nav_msgs::msg::Path global_plan;
+  global_plan.header.frame_id = "test_global_frame";
+  global_plan.poses.resize(6);
+  global_plan.poses[0].header.frame_id = "test_global_frame";
+  global_plan.poses[0].pose.position.x = 0.0;
+  global_plan.poses[0].pose.position.y = 0.0;
+  global_plan.poses[0].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
+  global_plan.poses[1].header.frame_id = "test_global_frame";
+  global_plan.poses[1].pose.position.x = 3.0;
+  global_plan.poses[1].pose.position.y = 3.0;
+  global_plan.poses[1].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
+  global_plan.poses[2].header.frame_id = "test_global_frame";
+  global_plan.poses[2].pose.position.x = 5.0;
+  global_plan.poses[2].pose.position.y = 5.0;
+  global_plan.poses[2].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
+  global_plan.poses[3].header.frame_id = "test_global_frame";
+  global_plan.poses[3].pose.position.x = 10.0;
+  global_plan.poses[3].pose.position.y = 10.0;
+  global_plan.poses[3].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
+  global_plan.poses[4].header.frame_id = "test_global_frame";
+  global_plan.poses[4].pose.position.x = 20.0;
+  global_plan.poses[4].pose.position.y = 20.0;
+  global_plan.poses[4].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
+  global_plan.poses[5].pose.position.x = 500.0;
+  global_plan.poses[5].pose.position.y = 500.0;
+  global_plan.poses[5].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
+  controller->setPlan(global_plan);
+
+  auto transformed_plan = controller->transformGlobalPlan(robot_pose);
+  EXPECT_EQ(transformed_plan.poses.size(), 3);
+}
+
+TEST(GracefulMotionControllerTest, pruningPlanOutsideCostmap) {
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testGraceful");
+  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+
+  // Create a costmap of 10x10 meters
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+  auto results = costmap_ros->set_parameters(
+    {rclcpp::Parameter("global_frame", "test_global_frame"),
+      rclcpp::Parameter("robot_base_frame", "test_robot_frame"),
+      rclcpp::Parameter("width", 10),
+      rclcpp::Parameter("height", 10),
+      rclcpp::Parameter("resolution", 0.1)});
+  for (const auto & result : results) {
+    EXPECT_TRUE(result.successful) << result.reason;
+  }
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+
+  // Set max search distant
+  nav2_util::declare_parameter_if_not_declared(
+    node, "test.max_robot_pose_search_dist", rclcpp::ParameterValue(15.0));
+
+  // Create controller
+  auto controller = std::make_shared<GMControllerFixture>();
+  controller->configure(node, "test", tf, costmap_ros);
+  controller->activate();
+
+  // Create the robot pose
+  geometry_msgs::msg::PoseStamped robot_pose;
+  robot_pose.header.frame_id = "test_robot_frame";
+  robot_pose.pose.position.x = 0.0;
+  robot_pose.pose.position.y = 0.0;
+  robot_pose.pose.position.z = 0.0;
+
+  // Set transform between global and robot frame
+  geometry_msgs::msg::TransformStamped global_to_robot;
+  global_to_robot.header.frame_id = "test_global_frame";
+  global_to_robot.child_frame_id = "test_robot_frame";
+  global_to_robot.transform.translation.x = robot_pose.pose.position.x;
+  global_to_robot.transform.translation.y = robot_pose.pose.position.y;
+  global_to_robot.transform.translation.z = robot_pose.pose.position.z;
+  tf->setTransform(global_to_robot, "test", false);
+
+  // Set a linear global plan
+  nav_msgs::msg::Path global_plan;
+  global_plan.header.frame_id = "test_global_frame";
+  global_plan.poses.resize(3);
+  global_plan.poses[0].header.frame_id = "test_global_frame";
+  global_plan.poses[0].pose.position.x = 0.0;
+  global_plan.poses[0].pose.position.y = 0.0;
+  global_plan.poses[0].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
+  global_plan.poses[1].header.frame_id = "test_global_frame";
+  global_plan.poses[1].pose.position.x = 3.0;
+  global_plan.poses[1].pose.position.y = 3.0;
+  global_plan.poses[1].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
+  global_plan.poses[2].header.frame_id = "test_global_frame";
+  global_plan.poses[2].pose.position.x = 200.0;
+  global_plan.poses[2].pose.position.y = 200.0;
+  global_plan.poses[2].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
+  controller->setPlan(global_plan);
+
+  auto transformed_plan = controller->transformGlobalPlan(robot_pose);
+  EXPECT_EQ(transformed_plan.poses.size(), 2);
 }
 
 int main(int argc, char ** argv)
