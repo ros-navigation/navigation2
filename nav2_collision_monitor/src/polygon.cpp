@@ -574,7 +574,8 @@ bool Polygon::getPolygonFromString(
     } else {
       RCLCPP_ERROR(
         logger_,
-        "Points in the polygon specification must be pairs of numbers. Found a point with %d numbers.",
+        "Points in the polygon specification must be pairs of numbers"
+        "Found a point with %d numbers.",
         static_cast<int>(vvf[i].size()));
       return false;
     }
