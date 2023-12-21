@@ -552,19 +552,16 @@ bool Polygon::getPolygonFromString(
 
   if (error != "") {
     RCLCPP_ERROR(
-      rclcpp::get_logger(
-        "nav2_collision_monitor"), "Error parsing polygon parameter: '%s'", error.c_str());
+      logger_, "Error parsing polygon parameter: '%s'", error.c_str());
     RCLCPP_ERROR(
-      rclcpp::get_logger(
-        "nav2_collision_monitor"), "  Polygon string was '%s'.", poly_string.c_str());
+      logger_, "  Polygon string was '%s'.", poly_string.c_str());
     return false;
   }
 
   // Check for minimum 3 points
   if (vvf.size() < 3) {
     RCLCPP_ERROR(
-      rclcpp::get_logger(
-        "nav2_collision_monitor"),
+      logger_,
       "Polygon must have at least three points.");
     return false;
   }
@@ -576,9 +573,8 @@ bool Polygon::getPolygonFromString(
       polygon.push_back(point);
     } else {
       RCLCPP_ERROR(
-        rclcpp::get_logger(
-          "nav2_collision_monitor"),
-        "Points in the polygon specification must be pairs of numbers. Found a point with %d numbers.", //NOLINT
+        logger_,
+        "Points in the polygon specification must be pairs of numbers. Found a point with %d numbers.",
         static_cast<int>(vvf[i].size()));
       return false;
     }
