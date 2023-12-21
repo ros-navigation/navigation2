@@ -544,7 +544,7 @@ inline bool Polygon::isPointInside(const Point & point) const
 }
 
 bool Polygon::getPolygonFromString(
-  std::string &  poly_string,
+  std::string & poly_string,
   std::vector<Point> & polygon)
 {
   std::string error;
