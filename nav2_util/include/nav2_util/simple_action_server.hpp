@@ -244,7 +244,7 @@ public:
           node_logging_interface_->get_logger(),
           "Action server failed while executing action callback: \"%s\"", ex.what());
         terminate_all();
-        completion_callback_();
+        if (completion_callback_) {completion_callback_();}
         return;
       }
 
@@ -254,14 +254,14 @@ public:
       if (stop_execution_) {
         warn_msg("Stopping the thread per request.");
         terminate_all();
-        completion_callback_();
+        if (completion_callback_) {completion_callback_();}
         break;
       }
 
       if (is_active(current_handle_)) {
         warn_msg("Current goal was not completed successfully.");
         terminate(current_handle_);
-        completion_callback_();
+        if (completion_callback_) {completion_callback_();}
       }
 
       if (is_active(pending_handle_)) {
@@ -314,7 +314,7 @@ public:
       info_msg("Waiting for async process to finish.");
       if (steady_clock::now() - start_time >= server_timeout_) {
         terminate_all();
-        completion_callback_();
+        if (completion_callback_) {completion_callback_();}
         throw std::runtime_error("Action callback is still running and missed deadline to stop");
       }
     }
