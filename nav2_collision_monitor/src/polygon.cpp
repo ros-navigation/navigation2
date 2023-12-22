@@ -552,9 +552,8 @@ bool Polygon::getPolygonFromString(
 
   if (error != "") {
     RCLCPP_ERROR(
-      logger_, "Error parsing polygon parameter: '%s'", error.c_str());
-    RCLCPP_ERROR(
-      logger_, "  Polygon string was '%s'.", poly_string.c_str());
+      logger_, "Error parsing polygon parameter %s: '%s'",
+      poly_string.c_str(), error.c_str());
     return false;
   }
 
