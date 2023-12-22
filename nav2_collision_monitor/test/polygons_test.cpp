@@ -60,6 +60,9 @@ static const char INCORRECT_POINTS_1_STR[]{
 static const char INCORRECT_POINTS_2_STR[]{
   "[[0.5, 0.5], [0.5, -0.5], [-0.5, -0.5], [-0.5, 0.5], [0]]"
 };
+static const char INVALID_POINTS_STR[]{
+  "[[[0.5, 0.5], [0.5, -0.5], [-0.5, -0.5], [-0.5, 0.5], 0]]"
+};
 static const double CIRCLE_RADIUS{0.5};
 static const int MIN_POINTS{2};
 static const double SLOWDOWN_RATIO{0.7};
@@ -906,6 +909,22 @@ TEST_F(Tester, testPolygonDefaultVisualize)
 
   // Wait for polygon: it should not be published
   ASSERT_EQ(test_node_->waitPolygonReceived(100ms), nullptr);
+}
+
+TEST_F(Tester, testPolygonInvalidPointsString)
+{
+  setCommonParameters(POLYGON_NAME, "stop");
+
+  // Invalid points
+  test_node_->declare_parameter(
+    std::string(POLYGON_NAME) + ".points", rclcpp::ParameterValue(INVALID_POINTS_STR));
+  test_node_->set_parameter(
+    rclcpp::Parameter(std::string(POLYGON_NAME) + ".points", INVALID_POINTS_STR));
+
+  polygon_ = std::make_shared<PolygonWrapper>(
+    test_node_, POLYGON_NAME,
+    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
+  ASSERT_FALSE(polygon_->configure());
 }
 
 int main(int argc, char ** argv)
