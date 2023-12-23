@@ -29,13 +29,3 @@ The utility has the following effect:
 Every node in `nav2` that subscribes or publishes velocity commands with `Twist` now supports this optional behavior.
 The behavior up through ROS 2 Iron is preserved - using `Twist`. In a future ROS 2 version, when enough of the
 ROS ecosystem has moved to `TwistStamped`, the default may change. 
-
-### Usage
-
-See [test/test_twist_publisher.cpp](test/test_twist_publisher.cpp) or [test/test_twist_subscriber.cpp](test/test_twist_subscriber.cpp) for examples.
-
-To use `Twist`, you can rely on the default value of `enable_stamped_cmd_vel`, or set it to `False` in your parameter file.
-To use `TwistStamped`, set `enable_stamped_cmd_vel` to `True`. 
-Each node in `nav2` that uses a `TwistPublisher` or `TwistSubscriber` has it documented in the README.
-
-The parameter is read-only, therefore it must be set at launch time. Do not try changing the value at runtime.
