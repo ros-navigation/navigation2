@@ -139,36 +139,6 @@ public:
     }
   }
 
-  // /**
-  // * @brief A constructor that only supports Twist
-  // * @param node The node to add the Twist subscriber to
-  // * @param topic The subscriber topic name
-  // * @param qos The subscriber quality of service
-  // * @param TwistCallback The subscriber callback for Twist messages
-  // * @throw std::invalid_argument When configured with an invalid ROS parameter
-  // */
-  // template<typename TwistCallbackT>
-  // explicit TwistSubscriber(
-  //   nav2_util::LifecycleNode::SharedPtr node,
-  //   const std::string & topic,
-  //   const rclcpp::QoS & qos,
-  //   TwistCallbackT && TwistCallback
-  // )
-  // {
-  //   nav2_util::declare_parameter_if_not_declared(
-  //     node, stamped_param_name_,
-  //     rclcpp::ParameterValue{is_stamped_});
-  //   node->get_parameter(stamped_param_name_, is_stamped_);
-  //   if (is_stamped_) {
-  //     throw std::invalid_argument("The parameter '%s' must be false when using this constructor!", stamped_param_name_);
-  //   } else {
-  //     twist_sub_ = node->create_subscription<geometry_msgs::msg::Twist>(
-  //       topic,
-  //       qos,
-  //       std::forward<TwistCallbackT>(TwistCallback));
-  //   }
-  // }
-
 protected:
   //! @brief The user-configured value for ROS parameter enable_stamped_cmd_vel
   bool is_stamped_{false};
