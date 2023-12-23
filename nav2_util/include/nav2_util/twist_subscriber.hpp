@@ -36,31 +36,31 @@ namespace nav2_util
 
 /**
  * @class nav2_util::TwistSubscriber
- * @brief A simple wrapper on a Twist subscriber that receives either 
+ * @brief A simple wrapper on a Twist subscriber that receives either
  *        geometry_msgs::msg::TwistStamped or geometry_msgs::msg::Twist
  *
  * @note Usage:
  * The default behavior is to subscribe to Twist, which preserves backwards compatibility
- * with ROS distributions up to Iron. 
- * The behavior can be overridden using the "enable_stamped_cmd_vel" parameter. 
+ * with ROS distributions up to Iron.
+ * The behavior can be overridden using the "enable_stamped_cmd_vel" parameter.
  * By setting that to "True", the TwistSubscriber class would subscribe to TwistStamped.
- * 
+ *
  * @note Why use Twist Stamped over Twist?
- * Twist has been used widely in many ROS applications, typically for body-frame velocity control, 
- * and between ROS nodes on the same computer. Many ROS interfaces are moving to using TwistStamped 
- * because it is more robust for stale data protection. This protection is especially important 
- * when sending velocity control over lossy communication links. 
- * An example application where this matters is a drone with a Linux computer running a ROS 
- * controller that sends Twist commands to an embedded autopilot. If the autopilot failed to 
- * recognize a highly latent connection, it could result in instability or a crash because of the 
+ * Twist has been used widely in many ROS applications, typically for body-frame velocity control,
+ * and between ROS nodes on the same computer. Many ROS interfaces are moving to using TwistStamped
+ * because it is more robust for stale data protection. This protection is especially important
+ * when sending velocity control over lossy communication links.
+ * An example application where this matters is a drone with a Linux computer running a ROS
+ * controller that sends Twist commands to an embedded autopilot. If the autopilot failed to
+ * recognize a highly latent connection, it could result in instability or a crash because of the
  * decreased phase margin for control.
- * TwistStamped also has a frame ID, allowing explicit control for multiple frames, rather than 
+ * TwistStamped also has a frame ID, allowing explicit control for multiple frames, rather than
  * relying on an assumption of body-frame control or having to create a different topic.
- * Adding a header is low-cost for most ROS applications; the header can be set to an empty string 
+ * Adding a header is low-cost for most ROS applications; the header can be set to an empty string
  * if bandwidth is of concern.
- * 
+ *
  * @note Implementation Design Notes:
- * Compared to the naive approach of setting up one subscriber for each message type, 
+ * Compared to the naive approach of setting up one subscriber for each message type,
  * only one subscriber is created at a time; the other is nullptr.
  * This reduces RAM usage and ROS discovery traffic.
  * This approach allows NAV2 libraries to be flexible in which Twist message they support,
@@ -133,7 +133,9 @@ public:
         qos,
         std::forward<TwistStampedCallbackT>(TwistStampedCallback));
     } else {
-      throw std::invalid_argument("The parameter '%s' must be true when using this constructor!", stamped_param_name_);
+      throw std::invalid_argument(
+              "The parameter '%s' must be true when using this constructor!",
+              stamped_param_name_);
     }
   }
 
@@ -177,7 +179,6 @@ protected:
   //! @brief The name of the ROS parameter that controls whether twist data is stamped
   const std::string stamped_param_name_ {"enable_stamped_cmd_vel"};
 };
-
 
 
 }  // namespace nav2_util
