@@ -48,7 +48,7 @@ public:
 
   bool isOdomSmoother() {return odom_smoother_ ? true : false;}
   bool hasCommandMsg() {return last_command_time_.nanoseconds() != 0;}
-  geometry_msgs::msg::Twist::SharedPtr lastCommandMsg() {return command_;}
+  geometry_msgs::msg::TwistStamped::SharedPtr lastCommandMsg() {return command_;}
 
   void sendCommandMsg(geometry_msgs::msg::Twist::SharedPtr msg) {inputCommandCallback(msg);}
 };
@@ -573,7 +573,7 @@ TEST(VelocitySmootherTest, testCommandCallback)
   rclcpp::spin_some(smoother->get_node_base_interface());
 
   EXPECT_TRUE(smoother->hasCommandMsg());
-  EXPECT_EQ(smoother->lastCommandMsg()->linear.x, 100.0);
+  EXPECT_EQ(smoother->lastCommandMsg()->twist.linear.x, 100.0);
 }
 
 TEST(VelocitySmootherTest, testClosedLoopSub)
