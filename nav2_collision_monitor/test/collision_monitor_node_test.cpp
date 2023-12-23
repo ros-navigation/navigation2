@@ -301,8 +301,11 @@ void Tester::addPolygon(
       rclcpp::Parameter(polygon_name + ".type", "polygon"));
 
     if (at != "approach") {
-      const std::vector<double> points {
-        size, size, size, -size, -size, -size, -size, size};
+      const std::string points = "[[" +
+        std::to_string(size) + ", " + std::to_string(size) + "], [" +
+        std::to_string(size) + ", " + std::to_string(-size) + "], [" +
+        std::to_string(-size) + ", " + std::to_string(-size) + "], [" +
+        std::to_string(-size) + ", " + std::to_string(size) + "]]";
       cm_->declare_parameter(
         polygon_name + ".points", rclcpp::ParameterValue(points));
       cm_->set_parameter(

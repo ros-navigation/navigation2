@@ -34,7 +34,7 @@
 #include <vector>
 
 #include "geometry_msgs/msg/point32.hpp"
-#include "nav2_costmap_2d/array_parser.hpp"
+#include "nav2_util/array_parser.hpp"
 #include "nav2_costmap_2d/costmap_math.hpp"
 
 namespace nav2_costmap_2d
@@ -177,7 +177,7 @@ bool makeFootprintFromString(
   std::vector<geometry_msgs::msg::Point> & footprint)
 {
   std::string error;
-  std::vector<std::vector<float>> vvf = parseVVF(footprint_string, error);
+  std::vector<std::vector<float>> vvf = nav2_util::parseVVF(footprint_string, error);
 
   if (error != "") {
     RCLCPP_ERROR(
