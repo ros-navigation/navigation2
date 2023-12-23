@@ -54,8 +54,7 @@ public:
   explicit TwistPublisher(
     nav2_util::LifecycleNode::SharedPtr node,
     const std::string & topic,
-    const rclcpp::QoS & qos
-  )
+    const rclcpp::QoS & qos)
   : topic_(topic)
   {
     using nav2_util::declare_parameter_if_not_declared;
