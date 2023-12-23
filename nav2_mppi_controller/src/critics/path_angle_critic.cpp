@@ -36,13 +36,13 @@ void PathAngleCritic::initialize()
   auto getParam = parameters_handler_->getParamGetter(name_);
   getParam(offset_from_furthest_, "offset_from_furthest", 4);
   getParam(power_, "cost_power", 1);
-  getParam(weight_, "cost_weight", 2.0);
+  getParam(weight_, "cost_weight", 2.2);
   getParam(
     threshold_to_consider_,
     "threshold_to_consider", 0.5);
   getParam(
     max_angle_to_furthest_,
-    "max_angle_to_furthest", 1.2);
+    "max_angle_to_furthest", 0.785398);
 
   int mode = 0;
   getParam(mode, "mode", mode);

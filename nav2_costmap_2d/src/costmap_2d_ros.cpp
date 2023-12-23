@@ -449,6 +449,18 @@ Costmap2DROS::getParameters()
         footprint_.c_str(), robot_radius_);
     }
   }
+
+  // 4. The width and height of map cannot be negative or 0 (to avoid abnoram memory usage)
+  if (map_width_meters_ <= 0) {
+    RCLCPP_ERROR(
+      get_logger(), "You try to set width of map to be negative or zero,"
+      " this isn't allowed, please give a positive value.");
+  }
+  if (map_height_meters_ <= 0) {
+    RCLCPP_ERROR(
+      get_logger(), "You try to set height of map to be negative or zero,"
+      " this isn't allowed, please give a positive value.");
+  }
 }
 
 void

@@ -13,26 +13,38 @@
               <RemovePassedGoals input_goals="{goals}" output_goals="{goals}" radius="0.7"/>
               <ComputePathThroughPoses goals="{goals}" path="{path}" planner_id="GridBased" error_code_id="{compute_path_error_code}"/>
             </ReactiveSequence>
-            <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap"/>
+            <Sequence>
+              <WouldAPlannerRecoveryHelp error_code="{compute_path_error_code}"/>
+              <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap"/>
+            </Sequence>
           </RecoveryNode>
         </RateController>
         <RecoveryNode number_of_retries="1" name="FollowPath">
           <FollowPath path="{path}" controller_id="FollowPath" error_code_id="{follow_path_error_code}"/>
-          <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
+          <Sequence>
+            <WouldAControllerRecoveryHelp error_code="{follow_path_error_code}"/>
+            <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
+          </Sequence>
         </RecoveryNode>
       </PipelineSequence>
-      <ReactiveFallback name="RecoveryFallback">
-        <GoalUpdated/>
-        <RoundRobin name="RecoveryActions">
-          <Sequence name="ClearingActions">
-            <ClearEntireCostmap name="ClearLocalCostmap-Subtree" service_name="local_costmap/clear_entirely_local_costmap"/>
-            <ClearEntireCostmap name="ClearGlobalCostmap-Subtree" service_name="global_costmap/clear_entirely_global_costmap"/>
-          </Sequence>
-          <Spin spin_dist="1.57" error_code_id="{spin_error_code}"/>
-          <Wait wait_duration="5.0"/>
-          <BackUp backup_dist="0.30" backup_speed="0.05" error_code_id="{backup_error_code}"/>
-        </RoundRobin>
-      </ReactiveFallback>
+      <Sequence>
+        <Fallback>
+          <WouldAControllerRecoveryHelp error_code="{follow_path_error_code}"/>
+          <WouldAPlannerRecoveryHelp error_code="{compute_path_error_code}"/>
+        </Fallback>
+        <ReactiveFallback name="RecoveryFallback">
+          <GoalUpdated/>
+          <RoundRobin name="RecoveryActions">
+            <Sequence name="ClearingActions">
+              <ClearEntireCostmap name="ClearLocalCostmap-Subtree" service_name="local_costmap/clear_entirely_local_costmap"/>
+              <ClearEntireCostmap name="ClearGlobalCostmap-Subtree" service_name="global_costmap/clear_entirely_global_costmap"/>
+            </Sequence>
+            <Spin spin_dist="1.57" error_code_id="{spin_error_code}"/>
+            <Wait wait_duration="5.0"/>
+            <BackUp backup_dist="0.30" backup_speed="0.05" error_code_id="{backup_error_code}"/>
+          </RoundRobin>
+        </ReactiveFallback>
+      </Sequence>
     </RecoveryNode>
   </BehaviorTree>
 </root>
