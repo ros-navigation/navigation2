@@ -34,7 +34,7 @@
 #include <sstream>
 #include <vector>
 
-namespace nav2_costmap_2d
+namespace nav2_util
 {
 
 /** @brief Parse a vector of vector of floats from a string.
@@ -102,4 +102,4 @@ std::vector<std::vector<float>> parseVVF(const std::string & input, std::string 
   return result;
 }
 
-}  // end namespace nav2_costmap_2d
+}  // end namespace nav2_util
