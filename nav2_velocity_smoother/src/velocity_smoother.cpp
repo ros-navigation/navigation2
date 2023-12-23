@@ -217,7 +217,6 @@ void VelocitySmoother::inputCommandStampedCallback(
   } else {
     last_command_time_ = msg->header.stamp;
   }
-
 }
 
 void VelocitySmoother::inputCommandCallback(
