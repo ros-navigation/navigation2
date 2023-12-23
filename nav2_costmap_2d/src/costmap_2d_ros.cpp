@@ -61,8 +61,8 @@ namespace nav2_costmap_2d
 Costmap2DROS::Costmap2DROS(const std::string & name, const bool & use_sim_time)
 : Costmap2DROS(name, "/", name, use_sim_time) {}
 
-Costmap2DROS::Costmap2DROS()
-: nav2_util::LifecycleNode("costmap", ""),
+Costmap2DROS::Costmap2DROS(const rclcpp::NodeOptions & options)
+: nav2_util::LifecycleNode("costmap", "", options),
   name_("costmap"),
   default_plugins_{"static_layer", "obstacle_layer", "inflation_layer"},
   default_types_{
@@ -71,6 +71,7 @@ Costmap2DROS::Costmap2DROS()
     "nav2_costmap_2d::InflationLayer"}
 {
   declare_parameter("map_topic", rclcpp::ParameterValue(std::string("map")));
+  is_lifecycle_follower_ = false;
   init();
 }
 
@@ -447,6 +448,18 @@ Costmap2DROS::getParameters()
         get_logger(), "The footprint parameter is invalid: \"%s\", using radius (%lf) instead",
         footprint_.c_str(), robot_radius_);
     }
+  }
+
+  // 4. The width and height of map cannot be negative or 0 (to avoid abnoram memory usage)
+  if (map_width_meters_ <= 0) {
+    RCLCPP_ERROR(
+      get_logger(), "You try to set width of map to be negative or zero,"
+      " this isn't allowed, please give a positive value.");
+  }
+  if (map_height_meters_ <= 0) {
+    RCLCPP_ERROR(
+      get_logger(), "You try to set height of map to be negative or zero,"
+      " this isn't allowed, please give a positive value.");
   }
 }
 

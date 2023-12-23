@@ -111,12 +111,6 @@ nav_msgs::msg::Path ThetaStarPlanner::createPlan(
             std::to_string(goal.pose.position.y) + ") was outside bounds");
   }
 
-  if (planner_->costmap_->getCost(mx_start, my_start) == nav2_costmap_2d::LETHAL_OBSTACLE) {
-    throw nav2_core::StartOccupied(
-            "Start Coordinates of(" + std::to_string(start.pose.position.x) + ", " +
-            std::to_string(start.pose.position.y) + ") was in lethal cost");
-  }
-
   if (planner_->costmap_->getCost(mx_goal, my_goal) == nav2_costmap_2d::LETHAL_OBSTACLE) {
     throw nav2_core::GoalOccupied(
             "Goal Coordinates of(" + std::to_string(goal.pose.position.x) + ", " +
@@ -141,6 +135,7 @@ nav_msgs::msg::Path ThetaStarPlanner::createPlan(
     return global_path;
   }
 
+  planner_->clearStart();
   planner_->setStartAndGoal(start, goal);
   RCLCPP_DEBUG(
     logger_, "Got the src and dst... (%i, %i) && (%i, %i)",

@@ -38,7 +38,6 @@ include_directories(
 add_definitions(${EIGEN3_DEFINITIONS})
 
 add_library(nav2_costmap_2d_core SHARED
-  src/array_parser.cpp
   src/costmap_2d.cpp
   src/layer.cpp
   src/layered_costmap.cpp

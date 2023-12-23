@@ -8,6 +8,7 @@ add_library(${library_name} SHARED
   robot_utils.cpp
   node_thread.cpp
   odometry_utils.cpp
+  array_parser.cpp
 )
 
 ament_target_dependencies(${library_name}
