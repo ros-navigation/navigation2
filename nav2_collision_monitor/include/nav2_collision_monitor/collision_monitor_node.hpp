@@ -29,6 +29,7 @@
 #include "tf2_ros/transform_listener.h"
 
 #include "nav2_util/lifecycle_node.hpp"
+#include "nav2_util/twist_publisher.hpp"
 #include "nav2_util/twist_subscriber.hpp"
 #include "nav2_msgs/msg/collision_monitor_state.hpp"
 
@@ -97,8 +98,8 @@ protected:
    * @brief Callback for input cmd_vel
    * @param msg Input cmd_vel message
    */
-  void cmdVelInCallback(geometry_msgs::msg::Twist::ConstSharedPtr msg);
   void cmdVelInCallbackStamped(geometry_msgs::msg::TwistStamped::ConstSharedPtr msg);
+  void cmdVelInCallbackUnstamped(geometry_msgs::msg::Twist::ConstSharedPtr msg);
   /**
    * @brief Publishes output cmd_vel. If robot was stopped more than stop_pub_timeout_ seconds,
    * quit to publish 0-velocity.
@@ -209,7 +210,7 @@ protected:
   /// @brief Input cmd_vel subscriber
   std::shared_ptr<nav2_util::TwistSubscriber> cmd_vel_in_sub_;
   /// @brief Output cmd_vel publisher
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_out_pub_;
+  std::unique_ptr<nav2_util::TwistPublisher> cmd_vel_out_pub_;
 
   /// @brief CollisionMonitor state publisher
   rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::CollisionMonitorState>::SharedPtr
