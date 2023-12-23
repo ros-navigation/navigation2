@@ -18,7 +18,6 @@ The long-term aim is for these utilities to find more permanent homes in other p
 The Twist Publisher and Twist Subscriber are utility classes to assist NAV2 transition from 
 [Twist](https://github.com/ros2/common_interfaces/blob/humble/geometry_msgs/msg/Twist.msg) to [TwistStamped](https://github.com/ros2/common_interfaces/blob/humble/geometry_msgs/msg/TwistStamped.msg).
 
-This utility is in support of the following [GSoC Project](https://navigation.ros.org/2021summerOfCode/projects/twist_n_config.html#convert-twist-to-twiststamped-in-ecosystem-and-run-time-configuration).
 Details on the migration are found in [#1594](https://github.com/ros-planning/navigation2/issues/1594).
 
 Certain applications of NAV2, such as in ROS Aerial mandate the usage of `TwistStamped`, while many other applications still use `Twist`.
