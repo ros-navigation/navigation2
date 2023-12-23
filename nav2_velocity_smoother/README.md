@@ -59,7 +59,7 @@ velocity_smoother:
    	max_decel: [-2.5, 0.0, -3.2]  # Maximum deceleration, ordered [Ax, Ay, Aw]
    	odom_topic: "odom"  # Topic of odometry to use for estimating current velocities
    	odom_duration: 0.1  # Period of time (s) to sample odometry information in for velocity estimation
-	enable_stamped_cmd_vel: false
+	enable_stamped_cmd_vel: false # Whether to stamp the velocity. True uses TwistStamped. False uses Twist
 ```
 
 ## Topics
