@@ -104,6 +104,7 @@ struct LatticeMotionTable
   float rotation_penalty;
   bool allow_reverse_expansion;
   std::vector<std::vector<MotionPrimitive>> motion_primitives;
+  std::vector<unsigned int> direction_change_indices;
   ompl::base::StateSpacePtr state_space;
   std::vector<TrigValues> trig_values;
   std::string current_lattice_filepath;

@@ -95,12 +95,19 @@ void LatticeMotionTable::initMotionModel(
 
     if (prev_start_angle != new_primitive.start_angle) {
       motion_primitives.push_back(primitives);
+
+      // adding direction change index, used only if reversing is allowed
+      direction_change_indices.push_back(static_cast<unsigned int>(primitives.size()));
+
       primitives.clear();
       prev_start_angle = new_primitive.start_angle;
     }
     primitives.push_back(new_primitive);
   }
   motion_primitives.push_back(primitives);
+  // adding direction change index for last angle
+  direction_change_indices.push_back(static_cast<unsigned int>(primitives.size()));
+
 
   // Populate useful precomputed values to be leveraged
   trig_values.reserve(lattice_metadata.number_of_headings);
@@ -128,6 +135,7 @@ MotionPrimitivePtrs LatticeMotionTable::getMotionPrimitives(const NodeLattice * 
     if (reserve_heading > num_angle_quantization) {
       reserve_heading -= num_angle_quantization;
     }
+    // direction change index can be obtained from here
 
     MotionPrimitives & prims_at_reverse_heading = motion_primitives[reserve_heading];
     for (unsigned int i = 0; i != prims_at_reverse_heading.size(); i++) {
@@ -472,14 +480,7 @@ void NodeLattice::getNeighbors(
   Coordinates initial_node_coords, motion_projection;
   MotionPrimitivePtrs motion_primitives = motion_table.getMotionPrimitives(this);
   const float & grid_resolution = motion_table.lattice_metadata.grid_resolution;
-
-  unsigned int direction_change_idx = 1e9;
-  for (unsigned int i = 0; i != motion_primitives.size(); i++) {
-    if (motion_primitives[0]->start_angle != motion_primitives[i]->start_angle) {
-      direction_change_idx = i;
-      break;
-    }
-  }
+  unsigned int start_angle_index = static_cast<unsigned int>(motion_primitives[0]->start_angle);
 
   for (unsigned int i = 0; i != motion_primitives.size(); i++) {
     const MotionPose & end_pose = motion_primitives[i]->poses.back();
@@ -502,7 +503,7 @@ void NodeLattice::getNeighbors(
       // account in case the robot base footprint is asymmetric.
       backwards = false;
       angle = motion_projection.theta;
-      if (i >= direction_change_idx) {
+      if (i >= motion_table.direction_change_indices[start_angle_index]) {
         backwards = true;
         angle = motion_projection.theta - (motion_table.num_angle_quantization / 2);
         if (angle < 0) {
