@@ -126,23 +126,23 @@ public:
       return ResultStatus{Status::SUCCEEDED, ActionT::Result::NONE};
     }
 
-    auto cmd_vel = geometry_msgs::msg::TwistStamped();
-    cmd_vel.twist.linear.y = 0.0;
-    cmd_vel.twist.angular.z = 0.0;
-    cmd_vel.twist.linear.x = command_speed_;
+    auto cmd_vel = std::make_unique<geometry_msgs::msg::TwistStamped>();
+    cmd_vel->twist.linear.y = 0.0;
+    cmd_vel->twist.angular.z = 0.0;
+    cmd_vel->twist.linear.x = command_speed_;
 
     geometry_msgs::msg::Pose2D pose2d;
     pose2d.x = current_pose.pose.position.x;
     pose2d.y = current_pose.pose.position.y;
     pose2d.theta = tf2::getYaw(current_pose.pose.orientation);
 
-    if (!isCollisionFree(distance, cmd_vel.twist, pose2d)) {
+    if (!isCollisionFree(distance, cmd_vel->twist, pose2d)) {
       this->stopRobot();
       RCLCPP_WARN(this->logger_, "Collision Ahead - Exiting DriveOnHeading");
       return ResultStatus{Status::FAILED, ActionT::Result::COLLISION_AHEAD};
     }
 
-    this->vel_pub_->publish(cmd_vel);
+    this->vel_pub_->publish(*cmd_vel);
 
     return ResultStatus{Status::RUNNING, ActionT::Result::NONE};
   }

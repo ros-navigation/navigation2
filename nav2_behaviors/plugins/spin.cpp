@@ -138,21 +138,21 @@ ResultStatus Spin::onCycleUpdate()
   double vel = sqrt(2 * rotational_acc_lim_ * remaining_yaw);
   vel = std::min(std::max(vel, min_rotational_vel_), max_rotational_vel_);
 
-  auto cmd_vel = geometry_msgs::msg::TwistStamped();
-  cmd_vel.twist.angular.z = copysign(vel, cmd_yaw_);
+  auto cmd_vel = std::make_unique<geometry_msgs::msg::TwistStamped>();
+  cmd_vel->twist.angular.z = copysign(vel, cmd_yaw_);
 
   geometry_msgs::msg::Pose2D pose2d;
   pose2d.x = current_pose.pose.position.x;
   pose2d.y = current_pose.pose.position.y;
   pose2d.theta = tf2::getYaw(current_pose.pose.orientation);
 
-  if (!isCollisionFree(relative_yaw_, cmd_vel.twist, pose2d)) {
+  if (!isCollisionFree(relative_yaw_, cmd_vel->twist, pose2d)) {
     stopRobot();
     RCLCPP_WARN(logger_, "Collision Ahead - Exiting Spin");
     return ResultStatus{Status::FAILED, SpinActionResult::COLLISION_AHEAD};
   }
 
-  vel_pub_->publish(cmd_vel);
+  vel_pub_->publish(*cmd_vel);
 
   return ResultStatus{Status::RUNNING, SpinActionResult::NONE};
 }

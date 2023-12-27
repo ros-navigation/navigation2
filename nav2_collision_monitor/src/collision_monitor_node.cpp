@@ -214,15 +214,15 @@ void CollisionMonitor::publishVelocity(const Action & robot_action)
     }
   }
 
-  auto cmd_vel_out_msg = geometry_msgs::msg::TwistStamped();
-  cmd_vel_out_msg.header.stamp = this->now();
+  auto cmd_vel_out_msg = std::make_unique<geometry_msgs::msg::TwistStamped>();
+  cmd_vel_out_msg->header.stamp = this->now();
 
-  cmd_vel_out_msg.twist.linear.x = robot_action.req_vel.x;
-  cmd_vel_out_msg.twist.linear.y = robot_action.req_vel.y;
-  cmd_vel_out_msg.twist.angular.z = robot_action.req_vel.tw;
+  cmd_vel_out_msg->twist.linear.x = robot_action.req_vel.x;
+  cmd_vel_out_msg->twist.linear.y = robot_action.req_vel.y;
+  cmd_vel_out_msg->twist.angular.z = robot_action.req_vel.tw;
   // linear.z, angular.x and angular.y will remain 0.0
 
-  cmd_vel_out_pub_->publish(cmd_vel_out_msg);
+  cmd_vel_out_pub_->publish(*cmd_vel_out_msg);
 }
 
 bool CollisionMonitor::getParameters(
