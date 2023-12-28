@@ -81,9 +81,7 @@ NavigateThroughPosesNavigator::goalReceived(ActionT::Goal::ConstSharedPtr goal)
     return false;
   }
 
-  initializeGoalPoses(goal);
-
-  return true;
+  return initializeGoalPoses(goal);
 }
 
 void
@@ -113,10 +111,14 @@ NavigateThroughPosesNavigator::onLoop()
   }
 
   geometry_msgs::msg::PoseStamped current_pose;
-  nav2_util::getCurrentPose(
-    current_pose, *feedback_utils_.tf,
-    feedback_utils_.global_frame, feedback_utils_.robot_frame,
-    feedback_utils_.transform_tolerance);
+  if (!nav2_util::getCurrentPose(
+      current_pose, *feedback_utils_.tf,
+      feedback_utils_.global_frame, feedback_utils_.robot_frame,
+      feedback_utils_.transform_tolerance))
+  {
+    RCLCPP_ERROR(logger_, "Robot pose is not available.");
+    return;
+  }
 
   try {
     // Get current path points
@@ -185,7 +187,13 @@ NavigateThroughPosesNavigator::onPreempt(ActionT::Goal::ConstSharedPtr goal)
     // if pending goal requests the same BT as the current goal, accept the pending goal
     // if pending goal has an empty behavior_tree field, it requests the default BT file
     // accept the pending goal if the current goal is running the default BT file
-    initializeGoalPoses(bt_action_server_->acceptPendingGoal());
+    if (!initializeGoalPoses(bt_action_server_->acceptPendingGoal())) {
+      RCLCPP_WARN(
+        logger_,
+        "Preemption request was rejected since the goal poses could not be "
+        "transformed. For now, continuing to track the last goal until completion.");
+      bt_action_server_->terminatePendingGoal();
+    }
   } else {
     RCLCPP_WARN(
       logger_,
@@ -198,13 +206,27 @@ NavigateThroughPosesNavigator::onPreempt(ActionT::Goal::ConstSharedPtr goal)
   }
 }
 
-void
+bool
 NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr goal)
 {
-  if (goal->poses.size() > 0) {
+  Goals goal_poses = goal->poses;
+  for (auto & goal_pose : goal_poses) {
+    if (!nav2_util::transformPoseInTargetFrame(
+        goal_pose, goal_pose, *feedback_utils_.tf, feedback_utils_.global_frame,
+        feedback_utils_.transform_tolerance))
+    {
+      RCLCPP_ERROR(
+        logger_,
+        "Failed to transform a goal pose provided with frame_id '%s' to the global frame '%s'.",
+        goal_pose.header.frame_id.c_str(), feedback_utils_.global_frame.c_str());
+      return false;
+    }
+  }
+
+  if (goal_poses.size() > 0) {
     RCLCPP_INFO(
       logger_, "Begin navigating from current location through %zu poses to (%.2f, %.2f)",
-      goal->poses.size(), goal->poses.back().pose.position.x, goal->poses.back().pose.position.y);
+      goal_poses.size(), goal_poses.back().pose.position.x, goal_poses.back().pose.position.y);
   }
 
   // Reset state for new action feedback
@@ -213,7 +235,9 @@ NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr
   blackboard->set<int>("number_recoveries", 0);  // NOLINT
 
   // Update the goal pose on the blackboard
-  blackboard->set<Goals>(goals_blackboard_id_, goal->poses);
+  blackboard->set<Goals>(goals_blackboard_id_, std::move(goal_poses));
+
+  return true;
 }
 
 }  // namespace nav2_bt_navigator

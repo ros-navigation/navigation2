@@ -9,6 +9,7 @@
 | Ticket(s) this addresses   | (add tickets here #1) |
 | Primary OS tested on | (Ubuntu, MacOS, Windows) |
 | Robotic platform tested on | (Steve's Robot, gazebo simulation of Tally, hardware turtlebot) |
+| Does this PR contain AI generated software? | (No; Yes and it is marked inline in the code) |
 
 ---
 

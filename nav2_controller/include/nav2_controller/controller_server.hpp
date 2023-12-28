@@ -265,6 +265,7 @@ protected:
   double min_theta_velocity_threshold_;
 
   double failure_tolerance_;
+  bool use_realtime_priority_;
 
   // Whether we've published the single controller warning yet
   geometry_msgs::msg::PoseStamped end_pose_;

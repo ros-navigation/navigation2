@@ -18,7 +18,7 @@ from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, ExecuteProcess
-from launch.actions import SetEnvironmentVariable
+from launch.actions import AppendEnvironmentVariable
 from launch.conditions import IfCondition
 from launch.substitutions import Command, LaunchConfiguration
 from launch_ros.actions import Node
@@ -56,7 +56,7 @@ def generate_launch_description():
 
     declare_robot_sdf_cmd = DeclareLaunchArgument(
         'robot_sdf',
-        default_value=os.path.join(bringup_dir, 'urdf', 'gz_turtlebot3_waffle.urdf'),
+        default_value=os.path.join(bringup_dir, 'worlds', 'gz_waffle.sdf'),
         description='Full path to robot sdf file to spawn the robot in gazebo')
 
     pkg_nav2_bringup = get_package_share_directory("nav2_bringup")
@@ -81,20 +81,15 @@ def generate_launch_description():
         output='screen',
         arguments=[
             '-entity', robot_name,
-            '-string', Command(['xacro', ' ', robot_sdf]),
+            '-file', robot_sdf,
             '-robot_namespace', namespace,
             '-x', pose['x'], '-y', pose['y'], '-z', pose['z'],
             '-R', pose['R'], '-P', pose['P'], '-Y', pose['Y']]
     )
 
-    env_vars = os.getenv('IGN_GAZEBO_RESOURCE_PATH', default="")
-    env_vars += ':' + \
-        os.path.join(get_package_share_directory('turtlebot3_gazebo'), 'models') \
-        + ':' + \
-        os.path.join(get_package_share_directory(
-            'turtlebot3_gazebo'), '..')
-
-    set_env_vars_resources = SetEnvironmentVariable('IGN_GAZEBO_RESOURCE_PATH', env_vars)
+    set_env_vars_resources = AppendEnvironmentVariable('GZ_SIM_RESOURCE_PATH', 
+            os.path.join(get_package_share_directory('turtlebot3_gazebo'), 
+                'models'))
 
     # Create the launch description and populate
     ld = LaunchDescription()
