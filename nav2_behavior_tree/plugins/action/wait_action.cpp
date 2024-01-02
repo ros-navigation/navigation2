@@ -25,7 +25,12 @@ WaitAction::WaitAction(
   const std::string & xml_tag_name,
   const std::string & action_name,
   const BT::NodeConfiguration & conf)
-: BtActionNode<nav2_msgs::action::Wait>(xml_tag_name, action_name, conf)
+: BtActionNode<nav2_msgs::action::Wait>(xml_tag_name, action_name, conf),
+  initialized_(false)
+{
+}
+
+void WaitAction::initialize()
 {
   double duration;
   getInput("wait_duration", duration);
@@ -37,10 +42,15 @@ WaitAction::WaitAction(
   }
 
   goal_.time = rclcpp::Duration::from_seconds(duration);
+  initialized_ = true;
 }
 
 void WaitAction::on_tick()
 {
+  if (!initialized_) {
+    initialize();
+  }
+
   increment_recovery_count();
 }
 

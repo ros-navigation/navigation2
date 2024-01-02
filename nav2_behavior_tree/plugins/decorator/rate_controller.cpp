@@ -24,15 +24,25 @@ RateController::RateController(
   const std::string & name,
   const BT::NodeConfiguration & conf)
 : BT::DecoratorNode(name, conf),
-  first_time_(false)
+  first_time_(false),
+  initialized_(false)
+{
+}
+
+void RateController::initialize()
 {
   double hz = 1.0;
   getInput("hz", hz);
   period_ = 1.0 / hz;
+  initialized_ = true;
 }
 
 BT::NodeStatus RateController::tick()
 {
+  if (!initialized_) {
+    initialize();
+  }
+
   if (status() == BT::NodeStatus::IDLE) {
     // Reset the starting point since we're starting a new iteration of
     // the rate controller (moving from IDLE to RUNNING)
