@@ -26,8 +26,7 @@ AssistedTeleopAction::AssistedTeleopAction(
   const BT::NodeConfiguration & conf)
 : BtActionNode<nav2_msgs::action::AssistedTeleop>(xml_tag_name, action_name, conf),
   initialized_(false)
-{
-}
+{}
 
 void AssistedTeleopAction::initialize()
 {
