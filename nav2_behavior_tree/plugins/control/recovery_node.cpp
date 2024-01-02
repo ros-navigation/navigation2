@@ -26,11 +26,11 @@ RecoveryNode::RecoveryNode(
   number_of_retries_(1),
   retry_count_(0)
 {
-  getInput("number_of_retries", number_of_retries_);
 }
 
 BT::NodeStatus RecoveryNode::tick()
 {
+  getInput("number_of_retries", number_of_retries_);
   const unsigned children_count = children_nodes_.size();
 
   if (children_count != 2) {
