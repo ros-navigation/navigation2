@@ -33,12 +33,12 @@ TruncatePath::TruncatePath(
 : BT::ActionNodeBase(name, conf),
   distance_(1.0)
 {
-  getInput("distance", distance_);
 }
 
 inline BT::NodeStatus TruncatePath::tick()
 {
   setStatus(BT::NodeStatus::RUNNING);
+  getInput("distance", distance_);
 
   nav_msgs::msg::Path input_path;
 

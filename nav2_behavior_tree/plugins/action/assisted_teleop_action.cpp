@@ -24,7 +24,11 @@ AssistedTeleopAction::AssistedTeleopAction(
   const std::string & xml_tag_name,
   const std::string & action_name,
   const BT::NodeConfiguration & conf)
-: BtActionNode<nav2_msgs::action::AssistedTeleop>(xml_tag_name, action_name, conf)
+: BtActionNode<nav2_msgs::action::AssistedTeleop>(xml_tag_name, action_name, conf),
+  initialized_(false)
+{}
+
+void AssistedTeleopAction::initialize()
 {
   double time_allowance;
   getInput("time_allowance", time_allowance);
@@ -32,10 +36,15 @@ AssistedTeleopAction::AssistedTeleopAction(
 
   // Populate the input message
   goal_.time_allowance = rclcpp::Duration::from_seconds(time_allowance);
+  initialized_ = true;
 }
 
 void AssistedTeleopAction::on_tick()
 {
+  if (!initialized_) {
+    initialize();
+  }
+
   if (is_recovery_) {
     increment_recovery_count();
   }

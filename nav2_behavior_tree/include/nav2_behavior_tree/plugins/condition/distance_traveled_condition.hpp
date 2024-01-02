@@ -53,6 +53,11 @@ public:
   BT::NodeStatus tick() override;
 
   /**
+   * @brief Function to read parameters and initialize class variables
+   */
+  void initialize();
+
+  /**
    * @brief Creates list of BT ports
    * @return BT::PortsList Containing node-specific ports
    */
@@ -74,6 +79,7 @@ private:
   double distance_;
   double transform_tolerance_;
   std::string global_frame_, robot_base_frame_;
+  bool initialized_;
 };
 
 }  // namespace nav2_behavior_tree
