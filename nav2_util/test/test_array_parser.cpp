@@ -31,13 +31,13 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "nav2_costmap_2d/array_parser.hpp"
+#include "nav2_util/array_parser.hpp"
 
 TEST(array_parser, basic_operation)
 {
   std::string error;
   std::vector<std::vector<float>> vvf;
-  vvf = nav2_costmap_2d::parseVVF("[[1, 2.2], [.3, -4e4]]", error);
+  vvf = nav2_util::parseVVF("[[1, 2.2], [.3, -4e4]]", error);
   EXPECT_EQ(2u, vvf.size() );
   EXPECT_EQ(2u, vvf[0].size() );
   EXPECT_EQ(2u, vvf[1].size() );
@@ -52,7 +52,7 @@ TEST(array_parser, missing_open)
 {
   std::string error;
   std::vector<std::vector<float>> vvf;
-  vvf = nav2_costmap_2d::parseVVF("[1, 2.2], [.3, -4e4]]", error);
+  vvf = nav2_util::parseVVF("[1, 2.2], [.3, -4e4]]", error);
   EXPECT_NE(error, "");
 }
 
@@ -60,7 +60,7 @@ TEST(array_parser, missing_close)
 {
   std::string error;
   std::vector<std::vector<float>> vvf;
-  vvf = nav2_costmap_2d::parseVVF("[[1, 2.2], [.3, -4e4]", error);
+  vvf = nav2_util::parseVVF("[[1, 2.2], [.3, -4e4]", error);
   EXPECT_NE(error, "");
 }
 
@@ -68,7 +68,7 @@ TEST(array_parser, wrong_depth)
 {
   std::string error;
   std::vector<std::vector<float>> vvf;
-  vvf = nav2_costmap_2d::parseVVF("[1, 2.2], [.3, -4e4]", error);
+  vvf = nav2_util::parseVVF("[1, 2.2], [.3, -4e4]", error);
   EXPECT_NE(error, "");
 }
 
