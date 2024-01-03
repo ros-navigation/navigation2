@@ -6,7 +6,7 @@
   <img height="300" src="doc/nav2_logo.png" />
 </p>
 
-For detailed instructions on how to:
+For detailed instructions on how to: 
 - [Getting Started](https://navigation.ros.org/getting_started/index.html)
 - [Concepts](https://navigation.ros.org/concepts/index.html)
 - [Build](https://navigation.ros.org/development_guides/build_docs/index.html#build)
