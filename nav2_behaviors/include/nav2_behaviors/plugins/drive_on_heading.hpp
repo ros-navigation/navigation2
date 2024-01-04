@@ -142,7 +142,7 @@ public:
       return ResultStatus{Status::FAILED, ActionT::Result::COLLISION_AHEAD};
     }
 
-    this->vel_pub_->publish(*cmd_vel);
+    this->vel_pub_->publish(std::move(cmd_vel));
 
     return ResultStatus{Status::RUNNING, ActionT::Result::NONE};
   }

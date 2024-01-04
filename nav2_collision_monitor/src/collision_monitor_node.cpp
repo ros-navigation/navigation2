@@ -63,7 +63,7 @@ CollisionMonitor::on_configure(const rclcpp_lifecycle::State & /*state*/)
     return nav2_util::CallbackReturn::FAILURE;
   }
 
-  cmd_vel_in_sub_ = std::make_shared<nav2_util::TwistSubscriber>(
+  cmd_vel_in_sub_ = std::make_unique<nav2_util::TwistSubscriber>(
     shared_from_this(),
     cmd_vel_in_topic,
     1,
@@ -183,7 +183,7 @@ CollisionMonitor::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
-void CollisionMonitor::cmdVelInCallbackStamped(geometry_msgs::msg::TwistStamped::ConstSharedPtr msg)
+void CollisionMonitor::cmdVelInCallbackStamped(geometry_msgs::msg::TwistStamped::SharedPtr msg)
 {
   // If message contains NaN or Inf, ignore
   if (!nav2_util::validateTwist(*msg)) {
@@ -194,11 +194,11 @@ void CollisionMonitor::cmdVelInCallbackStamped(geometry_msgs::msg::TwistStamped:
   process({msg->twist.linear.x, msg->twist.linear.y, msg->twist.angular.z});
 }
 
-void CollisionMonitor::cmdVelInCallbackUnstamped(geometry_msgs::msg::Twist::ConstSharedPtr msg)
+void CollisionMonitor::cmdVelInCallbackUnstamped(geometry_msgs::msg::Twist::SharedPtr msg)
 {
-  geometry_msgs::msg::TwistStamped twist_stamped;
-  twist_stamped.twist = *msg;
-  cmdVelInCallbackStamped(std::make_shared<geometry_msgs::msg::TwistStamped>(twist_stamped));
+  auto twist_stamped = std::make_shared<geometry_msgs::msg::TwistStamped>();
+  twist_stamped->twist = *msg;
+  cmdVelInCallbackStamped(twist_stamped);
 }
 
 void CollisionMonitor::publishVelocity(const Action & robot_action)
@@ -216,13 +216,12 @@ void CollisionMonitor::publishVelocity(const Action & robot_action)
 
   auto cmd_vel_out_msg = std::make_unique<geometry_msgs::msg::TwistStamped>();
   cmd_vel_out_msg->header.stamp = this->now();
-
   cmd_vel_out_msg->twist.linear.x = robot_action.req_vel.x;
   cmd_vel_out_msg->twist.linear.y = robot_action.req_vel.y;
   cmd_vel_out_msg->twist.angular.z = robot_action.req_vel.tw;
   // linear.z, angular.x and angular.y will remain 0.0
 
-  cmd_vel_out_pub_->publish(*cmd_vel_out_msg);
+  cmd_vel_out_pub_->publish(std::move(cmd_vel_out_msg));
 }
 
 bool CollisionMonitor::getParameters(

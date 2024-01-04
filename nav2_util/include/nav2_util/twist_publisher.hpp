@@ -19,6 +19,7 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 
 #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
@@ -100,12 +101,12 @@ public:
     }
   }
 
-  void publish(const geometry_msgs::msg::TwistStamped & velocity)
+  void publish(std::unique_ptr<geometry_msgs::msg::TwistStamped> velocity)
   {
     if (is_stamped_) {
-      twist_stamped_pub_->publish(velocity);
+      twist_stamped_pub_->publish(std::move(velocity));
     } else {
-      twist_pub_->publish(velocity.twist);
+      twist_pub_->publish(std::move(std::make_unique<geometry_msgs::msg::Twist>(velocity->twist)));
     }
   }
 

@@ -41,23 +41,24 @@ TEST(TwistPublisher, Unstamped)
   sub_node->configure();
   sub_node->activate();
 
-  geometry_msgs::msg::TwistStamped pub_msg {};
-  pub_msg.twist.linear.x = 42.0;
+  auto pub_msg = std::make_unique<geometry_msgs::msg::TwistStamped>();
+  pub_msg->twist.linear.x = 42.0;
+  auto pub_msg_copy = pub_msg->twist;
 
   geometry_msgs::msg::Twist sub_msg {};
   auto my_sub = sub_node->create_subscription<geometry_msgs::msg::Twist>(
     "cmd_vel", 10,
     [&](const geometry_msgs::msg::Twist msg) {sub_msg = msg;});
 
-  vel_publisher->publish(pub_msg);
+  vel_publisher->publish(std::move(pub_msg));
   rclcpp::spin_some(sub_node->get_node_base_interface());
 
-  EXPECT_EQ(pub_msg.twist.linear.x, sub_msg.linear.x);
-  ASSERT_EQ(vel_publisher->get_subscription_count(), 1);
+  EXPECT_EQ(pub_msg_copy.linear.x, sub_msg.linear.x);
+  EXPECT_EQ(vel_publisher->get_subscription_count(), 1);
   pub_node->deactivate();
   sub_node->deactivate();
   rclcpp::shutdown();
-  // Have to join thread after rclcpp is shut down otherwise test hangs.
+  // // Have to join thread after rclcpp is shut down otherwise test hangs.
   pub_thread.join();
 }
 
@@ -78,19 +79,20 @@ TEST(TwistPublisher, Stamped)
   sub_node->configure();
   sub_node->activate();
 
-  geometry_msgs::msg::TwistStamped pub_msg {};
-  pub_msg.twist.linear.x = 42.0;
-  pub_msg.header.frame_id = "foo";
+  auto pub_msg = std::make_unique<geometry_msgs::msg::TwistStamped>();
+  pub_msg->twist.linear.x = 42.0;
+  pub_msg->header.frame_id = "foo";
+  auto pub_msg_copy = *pub_msg;
 
   geometry_msgs::msg::TwistStamped sub_msg {};
   auto my_sub = sub_node->create_subscription<geometry_msgs::msg::TwistStamped>(
     "cmd_vel", 10,
     [&](const geometry_msgs::msg::TwistStamped msg) {sub_msg = msg;});
 
-  vel_publisher->publish(pub_msg);
+  vel_publisher->publish(std::move(pub_msg));
   rclcpp::spin_some(sub_node->get_node_base_interface());
   ASSERT_EQ(vel_publisher->get_subscription_count(), 1);
-  EXPECT_EQ(pub_msg, sub_msg);
+  EXPECT_EQ(pub_msg_copy, sub_msg);
   pub_node->deactivate();
   sub_node->deactivate();
   rclcpp::shutdown();

@@ -117,8 +117,8 @@ protected:
    * @brief Callback for incoming velocity commands
    * @param msg Twist message
    */
-  void inputCommandCallback(const geometry_msgs::msg::Twist::ConstSharedPtr msg);
-  void inputCommandStampedCallback(const geometry_msgs::msg::TwistStamped::ConstSharedPtr msg);
+  void inputCommandCallback(const geometry_msgs::msg::Twist::SharedPtr msg);
+  void inputCommandStampedCallback(const geometry_msgs::msg::TwistStamped::SharedPtr msg);
 
   /**
    * @brief Main worker timer function
@@ -135,7 +135,7 @@ protected:
   // Network interfaces
   std::unique_ptr<nav2_util::OdomSmoother> odom_smoother_;
   std::unique_ptr<nav2_util::TwistPublisher> smoothed_cmd_pub_;
-  std::shared_ptr<nav2_util::TwistSubscriber> cmd_sub_;
+  std::unique_ptr<nav2_util::TwistSubscriber> cmd_sub_;
   rclcpp::TimerBase::SharedPtr timer_;
 
   rclcpp::Clock::SharedPtr clock_;

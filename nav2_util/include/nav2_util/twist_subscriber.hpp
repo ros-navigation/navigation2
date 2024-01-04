@@ -91,9 +91,9 @@ public:
   )
   {
     nav2_util::declare_parameter_if_not_declared(
-      node, stamped_param_name_,
-      rclcpp::ParameterValue{is_stamped_});
-    node->get_parameter(stamped_param_name_, is_stamped_);
+      node, "enable_stamped_cmd_vel",
+      rclcpp::ParameterValue(false));
+    node->get_parameter("enable_stamped_cmd_vel", is_stamped_);
     if (is_stamped_) {
       twist_stamped_sub_ = node->create_subscription<geometry_msgs::msg::TwistStamped>(
         topic,
@@ -124,9 +124,9 @@ public:
   )
   {
     nav2_util::declare_parameter_if_not_declared(
-      node, stamped_param_name_,
-      rclcpp::ParameterValue{is_stamped_});
-    node->get_parameter(stamped_param_name_, is_stamped_);
+      node, "enable_stamped_cmd_vel",
+      rclcpp::ParameterValue(false));
+    node->get_parameter("enable_stamped_cmd_vel", is_stamped_);
     if (is_stamped_) {
       twist_stamped_sub_ = node->create_subscription<geometry_msgs::msg::TwistStamped>(
         topic,
@@ -134,8 +134,7 @@ public:
         std::forward<TwistStampedCallbackT>(TwistStampedCallback));
     } else {
       throw std::invalid_argument(
-              "The parameter '%s' must be true when using this constructor!",
-              stamped_param_name_);
+              "enable_stamped_cmd_vel must be true when using this constructor!");
     }
   }
 
@@ -146,8 +145,6 @@ protected:
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr twist_sub_ {nullptr};
   //! @brief The subscription when using TwistStamped
   rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr twist_stamped_sub_ {nullptr};
-  //! @brief The name of the ROS parameter that controls whether twist data is stamped
-  const std::string stamped_param_name_ {"enable_stamped_cmd_vel"};
 };
 
 

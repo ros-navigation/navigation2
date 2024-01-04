@@ -697,13 +697,13 @@ void ControllerServer::publishVelocity(const geometry_msgs::msg::TwistStamped & 
 {
   auto cmd_vel = std::make_unique<geometry_msgs::msg::TwistStamped>(velocity);
   if (vel_publisher_->is_activated() && vel_publisher_->get_subscription_count() > 0) {
-    vel_publisher_->publish(*cmd_vel);
+    vel_publisher_->publish(std::move(cmd_vel));
   }
 }
 
 void ControllerServer::publishZeroVelocity()
 {
-  auto velocity = geometry_msgs::msg::TwistStamped();
+  geometry_msgs::msg::TwistStamped velocity;
   velocity.twist.angular.x = 0;
   velocity.twist.angular.y = 0;
   velocity.twist.angular.z = 0;
