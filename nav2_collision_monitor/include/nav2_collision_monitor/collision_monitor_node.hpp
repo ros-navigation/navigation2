@@ -104,8 +104,9 @@ protected:
    * @brief Publishes output cmd_vel. If robot was stopped more than stop_pub_timeout_ seconds,
    * quit to publish 0-velocity.
    * @param robot_action Robot action to publish
+   * @param header TwistStamped header to use
    */
-  void publishVelocity(const Action & robot_action);
+  void publishVelocity(const Action & robot_action, const std_msgs::msg::Header & header);
 
   /**
    * @brief Supporting routine obtaining all ROS-parameters
@@ -149,8 +150,9 @@ protected:
   /**
    * @brief Main processing routine
    * @param cmd_vel_in Input desired robot velocity
+   * @param header Twist header
    */
-  void process(const Velocity & cmd_vel_in);
+  void process(const Velocity & cmd_vel_in, const std_msgs::msg::Header & header);
 
   /**
    * @brief Processes the polygon of STOP, SLOWDOWN and LIMIT action type

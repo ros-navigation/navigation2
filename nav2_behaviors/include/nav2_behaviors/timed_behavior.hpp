@@ -291,8 +291,8 @@ protected:
   void stopRobot()
   {
     auto cmd_vel = std::make_unique<geometry_msgs::msg::TwistStamped>();
-    cmd_vel->header.frame_id = "base_link";
-    cmd_vel->header.stamp = rclcpp::Time();
+    cmd_vel->header.frame_id = robot_base_frame_;
+    cmd_vel->header.stamp = clock_->now();
     cmd_vel->twist.linear.x = 0.0;
     cmd_vel->twist.linear.y = 0.0;
     cmd_vel->twist.angular.z = 0.0;
