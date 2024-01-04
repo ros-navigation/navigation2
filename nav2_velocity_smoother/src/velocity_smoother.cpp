@@ -289,6 +289,7 @@ void VelocitySmoother::smootherTimer()
   }
 
   auto cmd_vel = std::make_unique<geometry_msgs::msg::TwistStamped>();
+  cmd_vel->header = command_->header;
 
   // Check for velocity timeout. If nothing received, publish zeros to apply deceleration
   if (now() - last_command_time_ > velocity_timeout_) {

@@ -127,6 +127,8 @@ public:
     }
 
     auto cmd_vel = std::make_unique<geometry_msgs::msg::TwistStamped>();
+    cmd_vel->header.stamp = this->clock_->now();
+    cmd_vel->header.frame_id = this->robot_base_frame_;
     cmd_vel->twist.linear.y = 0.0;
     cmd_vel->twist.angular.z = 0.0;
     cmd_vel->twist.linear.x = command_speed_;

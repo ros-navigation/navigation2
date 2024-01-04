@@ -191,7 +191,7 @@ void CollisionMonitor::cmdVelInCallbackStamped(geometry_msgs::msg::TwistStamped:
     return;
   }
 
-  process({msg->twist.linear.x, msg->twist.linear.y, msg->twist.angular.z});
+  process({msg->twist.linear.x, msg->twist.linear.y, msg->twist.angular.z}, msg->header);
 }
 
 void CollisionMonitor::cmdVelInCallbackUnstamped(geometry_msgs::msg::Twist::SharedPtr msg)
@@ -201,7 +201,8 @@ void CollisionMonitor::cmdVelInCallbackUnstamped(geometry_msgs::msg::Twist::Shar
   cmdVelInCallbackStamped(twist_stamped);
 }
 
-void CollisionMonitor::publishVelocity(const Action & robot_action)
+void CollisionMonitor::publishVelocity(
+  const Action & robot_action, const std_msgs::msg::Header & header)
 {
   if (robot_action.req_vel.isZero()) {
     if (!robot_action_prev_.req_vel.isZero()) {
@@ -215,7 +216,7 @@ void CollisionMonitor::publishVelocity(const Action & robot_action)
   }
 
   auto cmd_vel_out_msg = std::make_unique<geometry_msgs::msg::TwistStamped>();
-  cmd_vel_out_msg->header.stamp = this->now();
+  cmd_vel_out_msg->header = header;
   cmd_vel_out_msg->twist.linear.x = robot_action.req_vel.x;
   cmd_vel_out_msg->twist.linear.y = robot_action.req_vel.y;
   cmd_vel_out_msg->twist.angular.z = robot_action.req_vel.tw;
@@ -389,7 +390,7 @@ bool CollisionMonitor::configureSources(
   return true;
 }
 
-void CollisionMonitor::process(const Velocity & cmd_vel_in)
+void CollisionMonitor::process(const Velocity & cmd_vel_in, const std_msgs::msg::Header & header)
 {
   // Current timestamp for all inner routines prolongation
   rclcpp::Time curr_time = this->now();
@@ -483,7 +484,7 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in)
   }
 
   // Publish required robot velocity
-  publishVelocity(robot_action);
+  publishVelocity(robot_action, header);
 
   // Publish polygons for better visualization
   publishPolygons();

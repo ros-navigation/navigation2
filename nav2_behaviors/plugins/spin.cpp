@@ -139,6 +139,8 @@ ResultStatus Spin::onCycleUpdate()
   vel = std::min(std::max(vel, min_rotational_vel_), max_rotational_vel_);
 
   auto cmd_vel = std::make_unique<geometry_msgs::msg::TwistStamped>();
+  cmd_vel->header.frame_id = robot_base_frame_;
+  cmd_vel->header.stamp = clock_->now();
   cmd_vel->twist.angular.z = copysign(vel, cmd_yaw_);
 
   geometry_msgs::msg::Pose2D pose2d;
