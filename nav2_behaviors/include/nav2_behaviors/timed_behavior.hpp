@@ -297,7 +297,7 @@ protected:
     cmd_vel->twist.linear.y = 0.0;
     cmd_vel->twist.angular.z = 0.0;
 
-    vel_pub_->publish(*cmd_vel);
+    vel_pub_->publish(std::move(cmd_vel));
   }
 };
 

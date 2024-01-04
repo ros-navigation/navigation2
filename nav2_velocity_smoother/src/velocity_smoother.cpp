@@ -129,7 +129,7 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State &)
 
   // Setup inputs / outputs
   smoothed_cmd_pub_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel_smoothed", 1);
-  cmd_sub_ = std::make_shared<nav2_util::TwistSubscriber>(
+  cmd_sub_ = std::make_unique<nav2_util::TwistSubscriber>(
     node,
     "cmd_vel", rclcpp::QoS(1),
     std::bind(&VelocitySmoother::inputCommandCallback, this, std::placeholders::_1),
@@ -203,7 +203,7 @@ VelocitySmoother::on_shutdown(const rclcpp_lifecycle::State &)
 }
 
 void VelocitySmoother::inputCommandStampedCallback(
-  const geometry_msgs::msg::TwistStamped::ConstSharedPtr msg)
+  const geometry_msgs::msg::TwistStamped::SharedPtr msg)
 {
   // If message contains NaN or Inf, ignore
   if (!nav2_util::validateTwist(msg->twist)) {
@@ -211,7 +211,7 @@ void VelocitySmoother::inputCommandStampedCallback(
     return;
   }
 
-  command_ = std::make_shared<geometry_msgs::msg::TwistStamped>(*msg);
+  command_ = msg;
   if (msg->header.stamp.sec == 0 && msg->header.stamp.nanosec == 0) {
     last_command_time_ = now();
   } else {
@@ -220,11 +220,11 @@ void VelocitySmoother::inputCommandStampedCallback(
 }
 
 void VelocitySmoother::inputCommandCallback(
-  geometry_msgs::msg::Twist::ConstSharedPtr msg)
+  geometry_msgs::msg::Twist::SharedPtr msg)
 {
-  auto twist_stamped = geometry_msgs::msg::TwistStamped();
-  twist_stamped.twist = *msg;
-  inputCommandStampedCallback(std::make_shared<geometry_msgs::msg::TwistStamped>(twist_stamped));
+  auto twist_stamped = std::make_shared<geometry_msgs::msg::TwistStamped>();
+  twist_stamped->twist = *msg;
+  inputCommandStampedCallback(twist_stamped);
 }
 
 double VelocitySmoother::findEtaConstraint(
@@ -357,14 +357,14 @@ void VelocitySmoother::smootherTimer()
   last_cmd_ = *cmd_vel;
 
   // Apply deadband restrictions & publish
-  cmd_vel->twist.linear.x = fabs(cmd_vel->twist.linear.x) <
-    deadband_velocities_[0] ? 0.0 : cmd_vel->twist.linear.x;
-  cmd_vel->twist.linear.y = fabs(cmd_vel->twist.linear.y) <
-    deadband_velocities_[1] ? 0.0 : cmd_vel->twist.linear.y;
-  cmd_vel->twist.angular.z = fabs(cmd_vel->twist.angular.z) <
-    deadband_velocities_[2] ? 0.0 : cmd_vel->twist.angular.z;
+  cmd_vel->twist.linear.x =
+    fabs(cmd_vel->twist.linear.x) < deadband_velocities_[0] ? 0.0 : cmd_vel->twist.linear.x;
+  cmd_vel->twist.linear.y =
+    fabs(cmd_vel->twist.linear.y) < deadband_velocities_[1] ? 0.0 : cmd_vel->twist.linear.y;
+  cmd_vel->twist.angular.z =
+    fabs(cmd_vel->twist.angular.z) < deadband_velocities_[2] ? 0.0 : cmd_vel->twist.angular.z;
 
-  smoothed_cmd_pub_->publish(*cmd_vel);
+  smoothed_cmd_pub_->publish(std::move(cmd_vel));
 }
 
 rcl_interfaces::msg::SetParametersResult

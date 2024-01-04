@@ -98,8 +98,8 @@ protected:
    * @brief Callback for input cmd_vel
    * @param msg Input cmd_vel message
    */
-  void cmdVelInCallbackStamped(geometry_msgs::msg::TwistStamped::ConstSharedPtr msg);
-  void cmdVelInCallbackUnstamped(geometry_msgs::msg::Twist::ConstSharedPtr msg);
+  void cmdVelInCallbackStamped(geometry_msgs::msg::TwistStamped::SharedPtr msg);
+  void cmdVelInCallbackUnstamped(geometry_msgs::msg::Twist::SharedPtr msg);
   /**
    * @brief Publishes output cmd_vel. If robot was stopped more than stop_pub_timeout_ seconds,
    * quit to publish 0-velocity.
@@ -208,7 +208,7 @@ protected:
 
   // Input/output speed controls
   /// @brief Input cmd_vel subscriber
-  std::shared_ptr<nav2_util::TwistSubscriber> cmd_vel_in_sub_;
+  std::unique_ptr<nav2_util::TwistSubscriber> cmd_vel_in_sub_;
   /// @brief Output cmd_vel publisher
   std::unique_ptr<nav2_util::TwistPublisher> cmd_vel_out_pub_;
 

@@ -152,7 +152,7 @@ ResultStatus Spin::onCycleUpdate()
     return ResultStatus{Status::FAILED, SpinActionResult::COLLISION_AHEAD};
   }
 
-  vel_pub_->publish(*cmd_vel);
+  vel_pub_->publish(std::move(cmd_vel));
 
   return ResultStatus{Status::RUNNING, SpinActionResult::NONE};
 }
