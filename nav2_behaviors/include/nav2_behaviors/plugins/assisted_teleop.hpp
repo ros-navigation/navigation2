@@ -99,7 +99,7 @@ protected:
   bool preempt_teleop_{false};
 
   // subscribers
-  std::shared_ptr<nav2_util::TwistSubscriber> vel_sub_;
+  std::unique_ptr<nav2_util::TwistSubscriber> vel_sub_;
   rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr preempt_teleop_sub_;
 
   rclcpp::Duration command_time_allowance_{0, 0};

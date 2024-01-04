@@ -50,8 +50,7 @@ void AssistedTeleop::onConfigure()
   std::string cmd_vel_teleop;
   node->get_parameter("cmd_vel_teleop", cmd_vel_teleop);
 
-
-  vel_sub_ = std::make_shared<nav2_util::TwistSubscriber>(
+  vel_sub_ = std::make_unique<nav2_util::TwistSubscriber>(
     node,
     cmd_vel_teleop, rclcpp::SystemDefaultsQoS(),
     [&](geometry_msgs::msg::Twist::SharedPtr msg) {
