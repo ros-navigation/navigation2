@@ -652,7 +652,6 @@ void PlannerServer::isPathValid(
 
     bool use_radius = costmap_ros_->getUseRadius();
 
-    // Visualize the first polygon on the path
     unsigned int cost = nav2_costmap_2d::FREE_SPACE;
     for (unsigned int i = closest_point_index; i < request->path.poses.size(); ++i) {
       auto & position = request->path.poses[i].pose.position;
@@ -733,4 +732,3 @@ void PlannerServer::exceptionWarning(
 // This acts as a sort of entry point, allowing the component to be discoverable when its library
 // is being loaded into a running process.
 RCLCPP_COMPONENTS_REGISTER_NODE(nav2_planner::PlannerServer)
-
