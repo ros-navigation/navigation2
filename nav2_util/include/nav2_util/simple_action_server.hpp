@@ -57,6 +57,8 @@ public:
    * @param server_timeout Timeout to to react to stop or preemption requests
    * @param spin_thread Whether to spin with a dedicated thread internally
    * @param options Options to pass to the underlying rcl_action_server_t
+   * @param realtime Whether the action server's worker thread should have elevated
+   * prioritization (soft realtime)
    */
   template<typename NodeT>
   explicit SimpleActionServer(
@@ -66,13 +68,15 @@ public:
     CompletionCallback completion_callback = nullptr,
     std::chrono::milliseconds server_timeout = std::chrono::milliseconds(500),
     bool spin_thread = false,
-    const rcl_action_server_options_t & options = rcl_action_server_get_default_options())
+    const rcl_action_server_options_t & options = rcl_action_server_get_default_options(),
+    const bool realtime = false)
   : SimpleActionServer(
       node->get_node_base_interface(),
       node->get_node_clock_interface(),
       node->get_node_logging_interface(),
       node->get_node_waitables_interface(),
-      action_name, execute_callback, completion_callback, server_timeout, spin_thread, options)
+      action_name, execute_callback, completion_callback,
+      server_timeout, spin_thread, options, realtime)
   {}
 
   /**
@@ -83,6 +87,8 @@ public:
    * @param server_timeout Timeout to to react to stop or preemption requests
    * @param spin_thread Whether to spin with a dedicated thread internally
    * @param options Options to pass to the underlying rcl_action_server_t
+   * @param realtime Whether the action server's worker thread should have elevated
+   * prioritization (soft realtime)
    */
   explicit SimpleActionServer(
     rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base_interface,
@@ -94,7 +100,8 @@ public:
     CompletionCallback completion_callback = nullptr,
     std::chrono::milliseconds server_timeout = std::chrono::milliseconds(500),
     bool spin_thread = false,
-    const rcl_action_server_options_t & options = rcl_action_server_get_default_options())
+    const rcl_action_server_options_t & options = rcl_action_server_get_default_options(),
+    const bool realtime = false)
   : node_base_interface_(node_base_interface),
     node_clock_interface_(node_clock_interface),
     node_logging_interface_(node_logging_interface),
@@ -106,6 +113,7 @@ public:
     spin_thread_(spin_thread)
   {
     using namespace std::placeholders;  // NOLINT
+    use_realtime_prioritization_ = realtime;
     if (spin_thread_) {
       callback_group_ = node_base_interface->create_callback_group(
         rclcpp::CallbackGroupType::MutuallyExclusive, false);
@@ -171,6 +179,26 @@ public:
   }
 
   /**
+   * @brief Sets thread priority level
+   */
+  void setSoftRealTimePriority()
+  {
+    if (use_realtime_prioritization_) {
+      sched_param sch;
+      sch.sched_priority = 49;
+      if (sched_setscheduler(0, SCHED_FIFO, &sch) == -1) {
+        std::string errmsg(
+          "Cannot set as real-time thread. Users must set: <username> hard rtprio 99 and "
+          "<username> soft rtprio 99 in /etc/security/limits.conf to enable "
+          "realtime prioritization! Error: ");
+        throw std::runtime_error(errmsg + std::strerror(errno));
+      } else {
+        debug_msg("Soft realtime prioritization successfully set!");
+      }
+    }
+  }
+
+  /**
    * @brief Handles accepted goals and adds to preempted queue to switch to
    * @param Goal A server goal handle to cancel
    */
@@ -202,7 +230,11 @@ public:
 
       // Return quickly to avoid blocking the executor, so spin up a new thread
       debug_msg("Executing goal asynchronously.");
-      execution_future_ = std::async(std::launch::async, [this]() {work();});
+      execution_future_ = std::async(
+        std::launch::async, [this]() {
+          setSoftRealTimePriority();
+          work();
+        });
     }
   }
 
@@ -509,6 +541,7 @@ protected:
   CompletionCallback completion_callback_;
   std::future<void> execution_future_;
   bool stop_execution_{false};
+  bool use_realtime_prioritization_{false};
 
   mutable std::recursive_mutex update_mutex_;
   bool server_active_{false};
