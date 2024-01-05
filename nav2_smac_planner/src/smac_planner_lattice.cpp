@@ -306,7 +306,8 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
 
   // Note: All exceptions thrown are handled by the planner server and returned to the action
   if (!_a_star->createPath(
-      path, num_iterations, _tolerance / static_cast<float>(_costmap->getResolution())))
+      path, num_iterations,
+      _tolerance / static_cast<float>(_costmap->getResolution()), expansions.get()))
   {
     if (_debug_visualizations) {
       geometry_msgs::msg::PoseArray msg;
