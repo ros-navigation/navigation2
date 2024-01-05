@@ -133,6 +133,7 @@ MotionPrimitivePtrs LatticeMotionTable::getMotionPrimitives(
     if (reserve_heading > num_angle_quantization) {
       reserve_heading -= num_angle_quantization;
     }
+
     MotionPrimitives & prims_at_reverse_heading = motion_primitives[reserve_heading];
     for (unsigned int i = 0; i != prims_at_reverse_heading.size(); i++) {
       primitive_projection_list.push_back(&prims_at_reverse_heading[i]);
