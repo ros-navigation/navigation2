@@ -67,9 +67,12 @@ struct LatticeMotionTable
   /**
    * @brief Get projections of motion models
    * @param node Ptr to NodeLattice
+   * @param Reference direction change index
    * @return A set of motion poses
    */
-  MotionPrimitivePtrs getMotionPrimitives(const NodeLattice * node);
+  MotionPrimitivePtrs getMotionPrimitives(
+    const NodeLattice * node,
+    unsigned int & direction_change_index);
 
   /**
    * @brief Get file metadata needed

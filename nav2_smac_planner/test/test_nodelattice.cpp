@@ -120,9 +120,12 @@ TEST(NodeLatticeTest, test_node_lattice_neighbors_and_parsing)
     nav2_smac_planner::MotionModel::STATE_LATTICE, x, y, angle_quantization, info);
 
   nav2_smac_planner::NodeLattice aNode(0);
+  unsigned int direction_change_index = 0;
   aNode.setPose(nav2_smac_planner::NodeHybrid::Coordinates(0, 0, 0));
   nav2_smac_planner::MotionPrimitivePtrs projections =
-    nav2_smac_planner::NodeLattice::motion_table.getMotionPrimitives(&aNode);
+    nav2_smac_planner::NodeLattice::motion_table.getMotionPrimitives(
+    &aNode,
+    direction_change_index);
 
   EXPECT_NEAR(projections[0]->poses.back()._x, 0.5, 0.01);
   EXPECT_NEAR(projections[0]->poses.back()._y, -0.35, 0.01);
@@ -130,7 +133,9 @@ TEST(NodeLatticeTest, test_node_lattice_neighbors_and_parsing)
 
   EXPECT_NEAR(
     nav2_smac_planner::NodeLattice::motion_table.getLatticeMetadata(
-      filePath).grid_resolution, 0.05, 0.005);
+      filePath)
+    .grid_resolution,
+    0.05, 0.005);
 }
 
 TEST(NodeLatticeTest, test_node_lattice_conversions)
@@ -248,7 +253,6 @@ TEST(NodeLatticeTest, test_node_lattice)
   delete costmapA;
 }
 
-
 TEST(NodeLatticeTest, test_get_neighbors)
 {
   auto lnode = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
@@ -356,9 +360,12 @@ TEST(NodeLatticeTest, test_node_lattice_custom_footprint)
   node.pose.x = 20;
   node.pose.y = 20;
   node.pose.theta = 0;
+
+  // initialize direction change index
+  unsigned int direction_change_index = 0;
   // Test that the node is valid though all motion primitives poses for custom footprint
   nav2_smac_planner::MotionPrimitivePtrs motion_primitives =
-    nav2_smac_planner::NodeLattice::motion_table.getMotionPrimitives(&node);
+    nav2_smac_planner::NodeLattice::motion_table.getMotionPrimitives(&node, direction_change_index);
   EXPECT_GT(motion_primitives.size(), 0u);
   for (unsigned int i = 0; i < motion_primitives.size(); i++) {
     EXPECT_EQ(node.isNodeValid(true, checker.get(), motion_primitives[i], false), true);
