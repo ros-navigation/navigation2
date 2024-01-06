@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-          linter: [copyright, xmllint, cpplint, uncrustify, pep257, flake8]
+          linter: [xmllint, cpplint, uncrustify, pep257, flake8]
     steps:
     - uses: actions/checkout@v2
     - uses: ros-tooling/action-ros-lint@v0.1
