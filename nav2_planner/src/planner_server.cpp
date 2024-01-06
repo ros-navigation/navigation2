@@ -649,8 +649,8 @@ void PlannerServer::isPathValid(
 
     /**
      * The lethal check starts at the closest point to avoid points that have already been passed
-     * and may have become occupied. The method for collision detection is based on the shape of 
-     * the footprint. 
+     * and may have become occupied. The method for collision detection is based on the shape of
+     * the footprint.
      */
     std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
     unsigned int mx = 0;
