@@ -108,14 +108,14 @@ bool VelocityPolygon::getParameters(
       if (holonomic_) {
         nav2_util::declare_parameter_if_not_declared(
           node, polygon_name_ + "." + velocity_polygon_name + ".direction_end_angle",
-          rclcpp::ParameterValue(0.0));
+          rclcpp::ParameterValue(M_PI));
         direction_end_angle =
           node->get_parameter(polygon_name_ + "." + velocity_polygon_name + ".direction_end_angle")
           .as_double();
 
         nav2_util::declare_parameter_if_not_declared(
           node, polygon_name_ + "." + velocity_polygon_name + ".direction_start_angle",
-          rclcpp::ParameterValue(0.0));
+          rclcpp::ParameterValue(-M_PI));
         direction_start_angle =
           node
           ->get_parameter(polygon_name_ + "." + velocity_polygon_name + ".direction_start_angle")
@@ -169,32 +169,27 @@ void VelocityPolygon::updatePolygon(const Velocity & cmd_vel_in)
 }
 
 bool VelocityPolygon::isInRange(
-  const Velocity & cmd_vel_in, const SubPolygonParameter & sub_polygon) {
-  if (holonomic_) {
-    const double twist_linear = std::hypot(cmd_vel_in.x, cmd_vel_in.y);
+  const Velocity & cmd_vel_in, const SubPolygonParameter & sub_polygon)
+{
+  bool in_range =
+    (cmd_vel_in.x <= sub_polygon.linear_max_ && cmd_vel_in.x >= sub_polygon.linear_min_ &&
+    cmd_vel_in.tw <= sub_polygon.theta_max_ && cmd_vel_in.tw >= sub_polygon.theta_min_);
 
-    // check if direction in angle range(min -> max)
-    double direction = std::atan2(cmd_vel_in.y, cmd_vel_in.x);
-    bool direction_in_range;
+  if (holonomic_) {
+    // Additionally check if moving direction in angle range(start -> end) for holonomic case
+    const double direction = std::atan2(cmd_vel_in.y, cmd_vel_in.x);
     if (sub_polygon.direction_start_angle_ <= sub_polygon.direction_end_angle_) {
-      direction_in_range =
+      in_range &=
         (direction >= sub_polygon.direction_start_angle_ &&
         direction <= sub_polygon.direction_end_angle_);
     } else {
-      direction_in_range =
+      in_range &=
         (direction >= sub_polygon.direction_start_angle_ ||
         direction <= sub_polygon.direction_end_angle_);
     }
-
-    return twist_linear <= sub_polygon.linear_max_ && twist_linear >= sub_polygon.linear_min_ &&
-           direction_in_range && cmd_vel_in.tw <= sub_polygon.theta_max_ &&
-           cmd_vel_in.tw >= sub_polygon.theta_min_;
-  } else {
-    // non-holonomic
-    return cmd_vel_in.x <= sub_polygon.linear_max_ && cmd_vel_in.x >= sub_polygon.linear_min_ &&
-           cmd_vel_in.tw <= sub_polygon.theta_max_ && cmd_vel_in.tw >= sub_polygon.theta_min_;
   }
-  return true;
+
+  return in_range;
 }
 
 }  // namespace nav2_collision_monitor

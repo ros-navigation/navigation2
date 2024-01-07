@@ -51,7 +51,10 @@ public:
   virtual ~VelocityPolygon();
 
   /**
-   * @brief Supporting routine obtaining velocity polygon specific ROS-parameters
+   * @brief Overriden getParameters function for VelocityPolygon parameters
+   * @param polygon_sub_topic Not used in VelocityPolygon
+   * @param polygon_pub_topic Output name of polygon publishing topic
+   * @param footprint_topic Not used in VelocityPolygon
    * @return True if all parameters were obtained or false in failure case
    */
   bool getParameters(
@@ -59,12 +62,17 @@ public:
     std::string & /*footprint_topic*/) override;
 
 protected:
-  // override the base class update polygon
-  void updatePolygon(const Velocity & cmd_vel_in) override;
-
-  bool holonomic_;
-
-  // Define a structure to store the basic parameters
+  /**
+    * @brief Custom struc to store the parameters of the sub-polygon
+    * @param poly_ The points of the sub-polygon
+    * @param velocity_polygon_name_ The name of the sub-polygon
+    * @param linear_min_ The minimum linear velocity
+    * @param linear_max_ The maximum linear velocity
+    * @param theta_min_ The minimum angular velocity
+    * @param theta_max_ The maximum angular velocity
+    * @param direction_end_angle_ The end angle of the direction(For holonomic robot only)
+    * @param direction_start_angle_ The start angle of the direction(For holonomic robot only)
+    */
   struct SubPolygonParameter
   {
     std::vector<Point> poly_;
@@ -77,16 +85,25 @@ protected:
     double direction_start_angle_;
   };
 
-  // Create a vector to store instances of BasicParameters
-  std::vector<SubPolygonParameter> sub_polygons_;
+  /**
+   * @brief Overriden updatePolygon function for VelocityPolygon
+   * @param cmd_vel_in Robot twist command input
+   */
+  void updatePolygon(const Velocity & cmd_vel_in) override;
 
   /**
    * @brief Check if the velocities and direction is in expected range.
    * @param cmd_vel_in Robot twist command input
+   * @param sub_polygon_param Sub polygon parameters
    * @return True if speed and direction is within the condition
    */
   bool isInRange(const Velocity & cmd_vel_in, const SubPolygonParameter & sub_polygon_param);
 
+  // Variables
+  /// @brief Flag to indicate if the robot is holonomic
+  bool holonomic_;
+  /// @brief Vector to store the parameters of the sub-polygon
+  std::vector<SubPolygonParameter> sub_polygons_;
 };  // class VelocityPolygon
 
 }  // namespace nav2_collision_monitor
