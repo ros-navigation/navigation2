@@ -28,7 +28,6 @@
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_costmap_2d/footprint_subscriber.hpp"
 
-#include "nav2_collision_monitor/velocity_polygon.hpp"
 #include "nav2_collision_monitor/types.hpp"
 
 namespace nav2_collision_monitor
@@ -134,14 +133,9 @@ public:
   virtual bool isShapeSet();
 
   /**
-   * @brief Returns true if using velocity based polygon
-   */
-  bool isUsingVelocityPolygonSelector();
-
-  /**
    * @brief Updates polygon from footprint subscriber (if any)
    */
-  void updatePolygon(const Velocity & cmd_vel_in);
+  virtual void updatePolygon(const Velocity & /*cmd_vel_in*/);
 
   /**
    * @brief Gets number of points inside given polygon
@@ -167,14 +161,6 @@ public:
    * @brief Publishes polygon message into a its own topic
    */
   void publish();
-
-  /**
-   * @brief Set the polygon shape based on the polygon points
-   * @param poly_points Polygon points in the format of x1, y1, x2, y2 ...
-   * @param poly Output polygon points (vertices)
-   * @return True if successfully set the polygon shape
-   */
-  static bool setPolygonShape(std::vector<double> & poly_points, std::vector<Point> & poly);
 
 protected:
   /**
@@ -280,9 +266,6 @@ protected:
   geometry_msgs::msg::PolygonStamped polygon_;
   /// @brief Polygon publisher for visualization purposes
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_pub_;
-
-  /// @brief Velocity polygon (if any)
-  std::vector<std::shared_ptr<VelocityPolygon>> velocity_polygons_;
 
   /// @brief Polygon points (vertices) in a base_frame_id_
   std::vector<Point> poly_;

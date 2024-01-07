@@ -1,4 +1,4 @@
-// Copyright (c) 2022 Dexory
+// Copyright (c) 2023 Dexory
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,12 +18,12 @@
 #include <string>
 #include <vector>
 
-#include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/polygon_stamped.hpp"
-#include "tf2_ros/buffer.h"
-
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_collision_monitor/polygon.hpp"
 #include "nav2_collision_monitor/types.hpp"
+#include "nav2_util/lifecycle_node.hpp"
+#include "rclcpp/rclcpp.hpp"
+#include "tf2_ros/buffer.h"
 
 namespace nav2_collision_monitor
 {
@@ -33,21 +33,17 @@ namespace nav2_collision_monitor
  * This class contains all the points of the polygon and
  * the expected condition of the velocity based polygon.
  */
-class VelocityPolygon
+class VelocityPolygon : public Polygon
 {
 public:
   /**
    * @brief VelocityPolygon constructor
    * @param node Collision Monitor node pointer
    * @param polygon_name Name of main polygon
-   * @param velocity_polygon_name Name of velocity polygon
    */
   VelocityPolygon(
-    const nav2_util::LifecycleNode::WeakPtr & node,
-    const std::string & polygon_name,
-    const std::string & velocity_polygon_name,
-    const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
-    const std::string & base_frame_id,
+    const nav2_util::LifecycleNode::WeakPtr & node, const std::string & polygon_name,
+    const std::shared_ptr<tf2_ros::Buffer> tf_buffer, const std::string & base_frame_id,
     const tf2::Duration & transform_tolerance);
   /**
    * @brief VelocityPolygon destructor
@@ -58,73 +54,39 @@ public:
    * @brief Supporting routine obtaining velocity polygon specific ROS-parameters
    * @return True if all parameters were obtained or false in failure case
    */
-  bool getParameters();
-
-  /**
-   * @brief Check if the velocities and direction is in expected range.
-   * @param cmd_vel_in Robot twist command input
-   * @return True if speed and direction is within the condition
-   */
-  bool isInRange(const Velocity & cmd_vel_in);
-
-  /**
-   * @brief Check if the velocities and direction is in expected range.
-   * @param cmd_vel_in Robot twist command input
-   * @return True if speed and direction is within the condition
-   */
-  std::vector<Point> getPolygon();
+  bool getParameters(
+    std::string & /*polygon_sub_topic*/, std::string & polygon_pub_topic,
+    std::string & /*footprint_topic*/) override;
 
 protected:
-  // ----- Variables -----
+  // override the base class update polygon
+  void updatePolygon(const Velocity & cmd_vel_in) override;
 
-  /// @brief Collision Monitor node
-  nav2_util::LifecycleNode::WeakPtr node_;
-  /// @brief Collision monitor node logger stored for further usage
-  rclcpp::Logger logger_{rclcpp::get_logger("collision_monitor")};
-
-  /**
-   * @brief Dynamic polygon callback
-   * @param msg Shared pointer to the polygon message
-   */
-  void polygonCallback(geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg);
-
-  /**
-   * @brief Updates polygon from geometry_msgs::msg::PolygonStamped message
-   * @param msg Message to update polygon from
-   */
-  void updatePolygon(geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg);
-
-  // Basic parameters
-  /// @brief Points of the polygon
-  std::vector<Point> poly_;
-  /// @brief Name of polygon
-  std::string polygon_name_;
-  /// @brief Polygon subscription
-  rclcpp::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_sub_;
-  /// @brief velocity_polygon_name Name of velocity polygon
-  std::string velocity_polygon_name_;
-  /// @brief Holonomic flag (true for holonomic, false for non-holonomic)
   bool holonomic_;
-  /// @brief Maximum twist linear velocity
-  double linear_max_;
-  /// @brief Minimum twist linear velocity
-  double linear_min_;
-  /// @brief End angle of velocity direction for holonomic model
-  double direction_end_angle_;
-  /// @brief Start angle of velocity direction for holonomic model
-  double direction_start_angle_;
-  /// @brief Maximum twist rotational speed
-  double theta_max_;
-  /// @brief Minimum twist rotational speed
-  double theta_min_;
 
-  // Global variables
-  /// @brief TF buffer
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
-  /// @brief Base frame ID
-  std::string base_frame_id_;
-  /// @brief Transform tolerance
-  tf2::Duration transform_tolerance_;
+  // Define a structure to store the basic parameters
+  struct SubPolygonParameter
+  {
+    std::vector<Point> poly_;
+    std::string velocity_polygon_name_;
+    double linear_min_;
+    double linear_max_;
+    double theta_min_;
+    double theta_max_;
+    double direction_end_angle_;
+    double direction_start_angle_;
+  };
+
+  // Create a vector to store instances of BasicParameters
+  std::vector<SubPolygonParameter> sub_polygons_;
+
+  /**
+   * @brief Check if the velocities and direction is in expected range.
+   * @param cmd_vel_in Robot twist command input
+   * @return True if speed and direction is within the condition
+   */
+  bool isInRange(const Velocity & cmd_vel_in, const SubPolygonParameter & sub_polygon_param);
+
 };  // class VelocityPolygon
 
 }  // namespace nav2_collision_monitor

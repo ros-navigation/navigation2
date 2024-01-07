@@ -14,7 +14,6 @@
 
 #include "nav2_collision_monitor/polygon.hpp"
 
-#include <memory>
 #include <exception>
 #include <utility>
 
@@ -180,46 +179,8 @@ bool Polygon::isShapeSet()
   return true;
 }
 
-bool Polygon::isUsingVelocityPolygonSelector()
+void Polygon::updatePolygon(const Velocity & /*cmd_vel_in*/)
 {
-  return !velocity_polygons_.empty();
-}
-
-void Polygon::updatePolygon(const Velocity & cmd_vel_in)
-{
-  if (isUsingVelocityPolygonSelector()) {
-    for (auto & velocity_polygon : velocity_polygons_) {
-
-      if (velocity_polygon->isInRange(cmd_vel_in)) {
-        // Set the polygon that is within the speed range
-        poly_ = velocity_polygon->getPolygon();
-
-        // Update visualization polygon
-        polygon_.polygon.points.clear();
-        for (const Point & p : poly_) {
-          geometry_msgs::msg::Point32 p_s;
-          p_s.x = p.x;
-          p_s.y = p.y;
-          // p_s.z will remain 0.0
-          polygon_.polygon.points.push_back(p_s);
-        }
-
-        return;
-      }
-    }
-
-    // Log for uncovered velocity
-    auto node = node_.lock();
-    if (!node) {
-      throw std::runtime_error{"Failed to lock node"};
-    }
-    RCLCPP_WARN_THROTTLE(
-      logger_,
-      *node->get_clock(), 2.0, "Velocity is not covered by any of the velocity polygons. x: %.3f y: %.3f tw: %.3f ",
-      cmd_vel_in.x, cmd_vel_in.y, cmd_vel_in.tw);
-    return;
-  }
-
   if (footprint_sub_ != nullptr) {
     // Get latest robot footprint from footprint subscriber
     std::vector<geometry_msgs::msg::Point> footprint_vec;
@@ -456,48 +417,22 @@ bool Polygon::getParameters(
         polygon_name_.c_str());
     }
 
-    try {
-      if (action_type_ == STOP || action_type_ == SLOWDOWN || action_type_ == LIMIT ||
-        action_type_ == DO_NOTHING)
-      {
-        // Dynamic polygon will be used
-        nav2_util::declare_parameter_if_not_declared(
-          node, polygon_name_ + ".polygon_sub_topic", rclcpp::PARAMETER_STRING);
-        polygon_sub_topic =
-          node->get_parameter(polygon_name_ + ".polygon_sub_topic").as_string();
-        return true;
-      } else if (action_type_ == APPROACH) {
-        // Obtain the footprint topic to make a footprint subscription for approach polygon
-        nav2_util::declare_parameter_if_not_declared(
-          node, polygon_name_ + ".footprint_topic", rclcpp::PARAMETER_STRING);
-        footprint_topic =
-          node->get_parameter(polygon_name_ + ".footprint_topic").as_string();
-        return true;
-      }
-    } catch (const rclcpp::exceptions::ParameterUninitializedException &) {
-      RCLCPP_INFO(
-        logger_,
-        "[%s]: Polygon topic are not defined. Using velocity polygon instead.",
-        polygon_name_.c_str());
+    if (action_type_ == STOP || action_type_ == SLOWDOWN || action_type_ == LIMIT ||
+      action_type_ == DO_NOTHING)
+    {
+      // Dynamic polygon will be used
+      nav2_util::declare_parameter_if_not_declared(
+        node, polygon_name_ + ".polygon_sub_topic", rclcpp::PARAMETER_STRING);
+      polygon_sub_topic =
+        node->get_parameter(polygon_name_ + ".polygon_sub_topic").as_string();
+    } else if (action_type_ == APPROACH) {
+      // Obtain the footprint topic to make a footprint subscription for approach polygon
+      nav2_util::declare_parameter_if_not_declared(
+        node, polygon_name_ + ".footprint_topic",
+        rclcpp::ParameterValue("local_costmap/published_footprint"));
+      footprint_topic =
+        node->get_parameter(polygon_name_ + ".footprint_topic").as_string();
     }
-
-
-    // Velocity polygon will be used
-    nav2_util::declare_parameter_if_not_declared(
-      node, polygon_name_ + ".velocity_polygons", rclcpp::PARAMETER_STRING_ARRAY);
-    std::vector<std::string> velocity_polygons = node->get_parameter(
-      polygon_name_ + ".velocity_polygons").as_string_array();
-
-    for (std::string velocity_polygon_name : velocity_polygons) {
-      auto velocity_polygon = std::make_shared<VelocityPolygon>(
-        node_, polygon_name_, velocity_polygon_name, tf_buffer_, base_frame_id_,
-        transform_tolerance_);
-      if (!velocity_polygon->getParameters()) {
-        return false;
-      }
-      velocity_polygons_.emplace_back(velocity_polygon);
-    }
-
   } catch (const std::exception & ex) {
     RCLCPP_ERROR(
       logger_,
@@ -645,28 +580,6 @@ bool Polygon::getPolygonFromString(
     }
   }
 
-  return true;
-}
-
-bool Polygon::setPolygonShape(std::vector<double> & poly_points, std::vector<Point> & poly)
-{
-  // Check for points format correctness
-  if (poly_points.size() <= 6 || poly_points.size() % 2 != 0) {
-    return false;
-  }
-
-  // Obtain polygon vertices
-  Point point;
-  bool first = true;
-  for (double val : poly_points) {
-    if (first) {
-      point.x = val;
-    } else {
-      point.y = val;
-      poly.push_back(point);
-    }
-    first = !first;
-  }
   return true;
 }
 
