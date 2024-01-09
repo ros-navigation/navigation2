@@ -59,21 +59,29 @@ public:
   geometry_msgs::msg::PointStamped createMotionTargetMsg(
     const geometry_msgs::msg::PoseStamped & motion_target)
   {
-    return nav2_graceful_motion_controller::GracefulMotionController::createMotionTargetMsg(
-      motion_target);
+    return nav2_graceful_motion_controller::createMotionTargetMsg(motion_target);
   }
 
-  visualization_msgs::msg::Marker createSlowdownMsg(
+  visualization_msgs::msg::Marker createSlowdownMarker(
     const geometry_msgs::msg::PoseStamped & motion_target)
   {
-    return nav2_graceful_motion_controller::GracefulMotionController::createSlowdownMsg(
-      motion_target);
+    return nav2_graceful_motion_controller::createSlowdownMarker(
+      motion_target,
+      params_->slowdown_radius);
   }
 
   geometry_msgs::msg::Twist rotateToTarget(const double & angle_to_target)
   {
     return nav2_graceful_motion_controller::GracefulMotionController::rotateToTarget(
       angle_to_target);
+  }
+
+  bool simulateTrajectory(
+    const geometry_msgs::msg::PoseStamped & robot_pose,
+    const geometry_msgs::msg::PoseStamped & motion_target, nav_msgs::msg::Path & trajectory)
+  {
+    return nav2_graceful_motion_controller::GracefulMotionController::simulateTrajectory(
+      robot_pose, motion_target, trajectory);
   }
 
   double getSpeedLinearMax() {return params_->v_linear_max;}
@@ -379,7 +387,7 @@ TEST(GracefulMotionControllerTest, createSlowdownMsg) {
   rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
 
   // Create slowdown message
-  auto slowdown_msg = controller->createSlowdownMsg(motion_target);
+  auto slowdown_msg = controller->createSlowdownMarker(motion_target);
 
   // Check results
   EXPECT_EQ(slowdown_msg.header.frame_id, "map");

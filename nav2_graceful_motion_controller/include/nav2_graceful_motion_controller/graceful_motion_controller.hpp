@@ -30,8 +30,7 @@
 #include "nav2_graceful_motion_controller/path_handler.hpp"
 #include "nav2_graceful_motion_controller/parameter_handler.hpp"
 #include "nav2_graceful_motion_controller/smooth_control_law.hpp"
-
-#include "visualization_msgs/msg/marker.hpp"
+#include "nav2_graceful_motion_controller/utils.hpp"
 
 namespace nav2_graceful_motion_controller
 {
@@ -117,26 +116,6 @@ protected:
   geometry_msgs::msg::PoseStamped getMotionTarget(
     const double & motion_target_dist,
     const nav_msgs::msg::Path & path);
-
-  /**
-   * @brief Create a PointStamped message of the motion target for
-   * debugging / visualization porpuses.
-   *
-   * @param motion_target Motion target in PoseStamped format
-   * @return geometry_msgs::msg::PointStamped Motion target in PointStamped format
-   */
-  geometry_msgs::msg::PointStamped createMotionTargetMsg(
-    const geometry_msgs::msg::PoseStamped & motion_target);
-
-  /**
-   * @brief Create a flat circle marker of radius slowdown_radius around the motion target for
-   * debugging / visualization porpuses.
-   *
-   * @param motion_target Motion target
-   * @return visualization_msgs::msg::Marker Slowdown marker
-   */
-  visualization_msgs::msg::Marker createSlowdownMsg(
-    const geometry_msgs::msg::PoseStamped & motion_target);
 
   /**
    * @brief Simulate trajectory calculating in every step the new velocity command based on

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "nav2_util/geometry_utils.hpp"
 #include "nav2_graceful_motion_controller/ego_polar_coords.hpp"
 #include "nav2_graceful_motion_controller/smooth_control_law.hpp"
 
@@ -80,8 +81,7 @@ geometry_msgs::msg::Pose SmoothControlLaw::calculateNextPose(
   next.position.x = current.position.x + vel.linear.x * dt * cos(yaw);
   next.position.y = current.position.y + vel.linear.x * dt * sin(yaw);
   yaw += vel.angular.z * dt;
-  next.orientation.z = sin(yaw / 2.0);
-  next.orientation.w = cos(yaw / 2.0);
+  next.orientation = nav2_util::geometry_utils::orientationAroundZAxis(yaw);
   return next;
 }
 

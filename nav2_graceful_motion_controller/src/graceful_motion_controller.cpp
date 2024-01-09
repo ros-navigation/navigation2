@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "nav2_core/controller_exceptions.hpp"
+#include "nav2_util/geometry_utils.hpp"
 #include "nav2_graceful_motion_controller/graceful_motion_controller.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 
@@ -123,11 +124,13 @@ geometry_msgs::msg::TwistStamped GracefulMotionController::computeVelocityComman
 
   // Get the particular point on the path at the motion target distance and publish it
   auto motion_target = getMotionTarget(params_->motion_target_dist, transformed_plan);
-  auto motion_target_point = createMotionTargetMsg(motion_target);
+  auto motion_target_point = nav2_graceful_motion_controller::createMotionTargetMsg(motion_target);
   motion_target_pub_->publish(motion_target_point);
 
   // Publish marker for slowdown radius around motion target for debugging / visualization
-  auto slowdown_marker = createSlowdownMsg(motion_target);
+  auto slowdown_marker = nav2_graceful_motion_controller::createSlowdownMarker(
+    motion_target,
+    params_->slowdown_radius);
   slowdown_pub_->publish(slowdown_marker);
 
   // Compute distance to goal
@@ -144,8 +147,7 @@ geometry_msgs::msg::TwistStamped GracefulMotionController::computeVelocityComman
     double dx = goal_pose.pose.position.x - stl_pose.pose.position.x;
     double dy = goal_pose.pose.position.y - stl_pose.pose.position.y;
     double yaw = std::atan2(dy, dx);
-    motion_target.pose.orientation.z = sin(yaw / 2.0);
-    motion_target.pose.orientation.w = cos(yaw / 2.0);
+    motion_target.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(yaw);
   }
 
   // Compute velocity command:
@@ -204,7 +206,7 @@ void GracefulMotionController::setSpeedLimit(
   if (percentage) {
     // Speed limit is expressed in % from maximum speed of robot
     params_->v_linear_max = std::max(
-      params_->v_linear_max * speed_limit / 100.0,
+      params_->v_linear_max_initial * speed_limit / 100.0,
       params_->v_linear_min);
   } else {
     // Speed limit is expressed in m/s
@@ -222,7 +224,7 @@ geometry_msgs::msg::PoseStamped GracefulMotionController::getMotionTarget(
   // Find the first pose which is at a distance greater than the motion target distance
   auto goal_pose_it = std::find_if(
     transformed_plan.poses.begin(), transformed_plan.poses.end(), [&](const auto & ps) {
-      return hypot(ps.pose.position.x, ps.pose.position.y) >= motion_target_dist;
+      return std::hypot(ps.pose.position.x, ps.pose.position.y) >= motion_target_dist;
     });
 
   // If the pose is not far enough, take the last pose
@@ -231,37 +233,6 @@ geometry_msgs::msg::PoseStamped GracefulMotionController::getMotionTarget(
   }
 
   return *goal_pose_it;
-}
-
-geometry_msgs::msg::PointStamped GracefulMotionController::createMotionTargetMsg(
-  const geometry_msgs::msg::PoseStamped & motion_target)
-{
-  geometry_msgs::msg::PointStamped motion_target_point;
-  motion_target_point.header = motion_target.header;
-  motion_target_point.point = motion_target.pose.position;
-  motion_target_point.point.z = 0.01;
-  return motion_target_point;
-}
-
-visualization_msgs::msg::Marker GracefulMotionController::createSlowdownMsg(
-  const geometry_msgs::msg::PoseStamped & motion_target)
-{
-  visualization_msgs::msg::Marker slowdown_marker;
-  slowdown_marker.header = motion_target.header;
-  slowdown_marker.ns = "slowdown";
-  slowdown_marker.id = 0;
-  slowdown_marker.type = visualization_msgs::msg::Marker::SPHERE;
-  slowdown_marker.action = visualization_msgs::msg::Marker::ADD;
-  slowdown_marker.pose = motion_target.pose;
-  slowdown_marker.pose.position.z = 0.01;
-  slowdown_marker.scale.x = params_->slowdown_radius * 2.0;
-  slowdown_marker.scale.y = params_->slowdown_radius * 2.0;
-  slowdown_marker.scale.z = 0.02;
-  slowdown_marker.color.a = 0.2;
-  slowdown_marker.color.r = 0.0;
-  slowdown_marker.color.g = 1.0;
-  slowdown_marker.color.b = 0.0;
-  return slowdown_marker;
 }
 
 bool GracefulMotionController::simulateTrajectory(
@@ -310,9 +281,7 @@ bool GracefulMotionController::simulateTrajectory(
     }
 
     // Check if we reach the goal
-    double error_x = motion_target.pose.position.x - next_pose.pose.position.x;
-    double error_y = motion_target.pose.position.y - next_pose.pose.position.y;
-    distance = std::hypot(error_x, error_y);
+    distance = nav2_util::geometry_utils::euclidean_distance(motion_target.pose, next_pose.pose);
   }while(distance > resolution_ && trajectory.poses.size() < max_iter);
 
   return true;

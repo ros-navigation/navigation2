@@ -41,6 +41,7 @@ struct Parameters
   double lambda;
   double v_linear_min;
   double v_linear_max;
+  double v_linear_max_initial;
   double v_angular_max;
   double slowdown_radius;
   bool initial_rotation;

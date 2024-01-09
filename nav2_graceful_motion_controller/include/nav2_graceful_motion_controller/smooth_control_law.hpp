@@ -89,6 +89,17 @@ public:
 
 protected:
   /**
+   * @brief Calculate the path curvature using a Lyapunov-based feedback control law from
+   * "A smooth control law for graceful motion" (Jong Jin Park and Benjamin Kuipers).
+   *
+   * @param r Distance between the robot and the target.
+   * @param phi Orientation of target with respect to the line of sight from the robot to the target.
+   * @param delta Steering angle of the robot.
+   * @return The curvature
+   */
+  double calculateCurvature(double r, double phi, double delta);
+
+  /**
    * @brief Ratio of the rate of change in phi to the rate of change in r. Controls the convergence
    * of the slow subsystem.
    * Note: If this value is equal to zero, the controller will behave as a pure waypoint follower.
@@ -134,17 +145,6 @@ protected:
    * @brief Maximum angular velocity.
    */
   double v_angular_max_;
-
-  /**
-   * @brief Calculate the path curvature using a Lyapunov-based feedback control law from
-   * "A smooth control law for graceful motion" (Jong Jin Park and Benjamin Kuipers).
-   *
-   * @param r Distance between the robot and the target.
-   * @param phi Orientation of target with respect to the line of sight from the robot to the target.
-   * @param delta Steering angle of the robot.
-   * @return The curvature
-   */
-  double calculateCurvature(double r, double phi, double delta);
 };
 
 }  // namespace nav2_graceful_motion_controller

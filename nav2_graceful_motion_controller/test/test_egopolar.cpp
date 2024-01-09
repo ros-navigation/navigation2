@@ -21,22 +21,22 @@
 TEST(EgocentricPolarCoordinatesTest, constructorDefault) {
   nav2_graceful_motion_controller::EgocentricPolarCoordinates coords;
 
-  EXPECT_DOUBLE_EQ(0.0, coords.r);
-  EXPECT_DOUBLE_EQ(0.0, coords.phi);
-  EXPECT_DOUBLE_EQ(0.0, coords.delta);
+  EXPECT_FLOAT_EQ(0.0, coords.r);
+  EXPECT_FLOAT_EQ(0.0, coords.phi);
+  EXPECT_FLOAT_EQ(0.0, coords.delta);
 }
 
 TEST(EgocentricPolarCoordinatesTest, constructorWithValues) {
-  double r_value = 5.0;
-  double phi_value = 1.2;
-  double delta_value = -0.5;
+  float r_value = 5.0;
+  float phi_value = 1.2;
+  float delta_value = -0.5;
 
   nav2_graceful_motion_controller::EgocentricPolarCoordinates coords(r_value, phi_value,
     delta_value);
 
-  EXPECT_DOUBLE_EQ(r_value, coords.r);
-  EXPECT_DOUBLE_EQ(phi_value, coords.phi);
-  EXPECT_DOUBLE_EQ(delta_value, coords.delta);
+  EXPECT_FLOAT_EQ(r_value, coords.r);
+  EXPECT_FLOAT_EQ(phi_value, coords.phi);
+  EXPECT_FLOAT_EQ(delta_value, coords.delta);
 }
 
 TEST(EgocentricPolarCoordinatesTest, constructorFromPoses) {
@@ -54,9 +54,9 @@ TEST(EgocentricPolarCoordinatesTest, constructorFromPoses) {
 
   // Perform assertions based on expected values.
 
-  EXPECT_DOUBLE_EQ(3.6055512428283691, coords.r);
-  EXPECT_DOUBLE_EQ(-0.18279374837875384, coords.phi);
-  EXPECT_DOUBLE_EQ(-1.1827937483787536, coords.delta);
+  EXPECT_FLOAT_EQ(3.6055512428283691, coords.r);
+  EXPECT_FLOAT_EQ(-0.18279374837875384, coords.phi);
+  EXPECT_FLOAT_EQ(-1.1827937483787536, coords.delta);
 }
 
 int main(int argc, char ** argv)

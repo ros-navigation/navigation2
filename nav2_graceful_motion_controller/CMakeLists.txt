@@ -43,6 +43,7 @@ add_library(${library_name} SHARED
   src/parameter_handler.cpp
   src/path_handler.cpp
   src/smooth_control_law.cpp
+  src/utils.cpp
 )
 
 ament_target_dependencies(${library_name}

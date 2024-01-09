@@ -32,15 +32,15 @@ namespace nav2_graceful_motion_controller
  */
 struct EgocentricPolarCoordinates
 {
-  double r;       // Distance between the robot pose and the target pose.
-  double phi;     // Orientation of target with respect to the line of sight
-                  // from the robot to the target.
-  double delta;   // Steering angle of the robot with respect to the line of sight.
+  float r;       // Distance between the robot pose and the target pose.
+  float phi;     // Orientation of target with respect to the line of sight
+                 // from the robot to the target.
+  float delta;   // Steering angle of the robot with respect to the line of sight.
 
   EgocentricPolarCoordinates(
-    const double & r_in = 0.0,
-    const double & phi_in = 0.0,
-    const double & delta_in = 0.0)
+    const float & r_in = 0.0,
+    const float & phi_in = 0.0,
+    const float & delta_in = 0.0)
   : r(r_in), phi(phi_in), delta(delta_in) {}
 
   /**
@@ -60,7 +60,7 @@ struct EgocentricPolarCoordinates
 
     r = sqrt(dX * dX + dY * dY);
     phi = angles::normalize_angle(tf2::getYaw(target.orientation) + line_of_sight);
-    delta = tf2::getYaw(current.orientation) + line_of_sight;
+    delta = angles::normalize_angle(tf2::getYaw(current.orientation) + line_of_sight);
   }
 };
 
