@@ -149,7 +149,7 @@ bool BtActionServer<ActionT>::on_configure()
     node->get_node_logging_interface(),
     node->get_node_waitables_interface(),
     action_name_, std::bind(&BtActionServer<ActionT>::executeCallback, this),
-    nullptr, std::chrono::milliseconds(500), false, server_options);
+    nullptr, std::chrono::milliseconds(500), true, server_options);
 
   // Get parameters for BT timeouts
   int bt_loop_duration;
