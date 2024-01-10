@@ -409,7 +409,6 @@ bool Polygon::getParameters(
       // Do not need to proceed further, if "points" parameter is defined.
       // Static polygon will be used.
       return getPolygonFromString(poly_string, poly_);
-
     } catch (const rclcpp::exceptions::ParameterUninitializedException &) {
       RCLCPP_INFO(
         logger_,

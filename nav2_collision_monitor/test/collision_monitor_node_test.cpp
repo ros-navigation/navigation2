@@ -195,7 +195,8 @@ protected:
   nav2_msgs::msg::CollisionMonitorState::SharedPtr action_state_;
 
   // CollisionMonitor collision points markers
-  rclcpp::Subscription<visualization_msgs::msg::MarkerArray>::SharedPtr collision_points_marker_sub_;
+  rclcpp::Subscription<visualization_msgs::msg::MarkerArray>::SharedPtr
+    collision_points_marker_sub_;
   visualization_msgs::msg::MarkerArray::SharedPtr collision_points_marker_msg_;
 
   // Service client for setting CollisionMonitor parameters
