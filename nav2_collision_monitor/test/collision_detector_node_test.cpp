@@ -163,7 +163,7 @@ protected:
 
   // CollisionMonitor collision points markers
   rclcpp::Subscription<visualization_msgs::msg::MarkerArray>::SharedPtr
-  collision_points_marker_sub_;
+    collision_points_marker_sub_;
   visualization_msgs::msg::MarkerArray::SharedPtr collision_points_marker_msg_;
 };  // Tester
 
