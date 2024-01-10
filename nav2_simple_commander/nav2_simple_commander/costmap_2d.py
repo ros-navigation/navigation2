@@ -39,7 +39,8 @@ class PyCostmap2D:
 
         Args:
         ----
-            occupancy_map (OccupancyGrid): 2D OccupancyGrid Map
+            occupancy_map (OccupancyGrid):
+                2D OccupancyGrid Map
 
         """
         self.size_x = occupancy_map.info.width
