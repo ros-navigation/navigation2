@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_COSTMAP_2D__IMAGE_TESTS_HELPER_HPP_
-#define NAV2_COSTMAP_2D__IMAGE_TESTS_HELPER_HPP_
+#ifndef UNIT__IMAGE_TESTS_HELPER_HPP_
+#define UNIT__IMAGE_TESTS_HELPER_HPP_
 
 #include "nav2_costmap_2d/denoise/image.hpp"
 #include <cmath>
@@ -121,4 +121,4 @@ std::ostream & operator<<(std::ostream & out, const Image<T> & image)
 
 }  // namespace nav2_costmap_2d
 
-#endif  // NAV2_COSTMAP_2D__IMAGE_TESTS_HELPER_HPP_
+#endif  // UNIT__IMAGE_TESTS_HELPER_HPP_

@@ -131,7 +131,7 @@ public:
   /**
    * @brief If clearing operations should be processed on this layer or not
    */
-  virtual bool isClearable() override {return false;}
+  bool isClearable() override {return false;}
 
   /**
    * @brief Reset this costmap

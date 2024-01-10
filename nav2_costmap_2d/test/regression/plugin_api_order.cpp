@@ -16,8 +16,8 @@
 #include <vector>
 #include <memory>
 
-#include <nav2_costmap_2d/costmap_2d_ros.hpp>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
+#include "nav2_costmap_2d/costmap_2d_ros.hpp"
 
 TEST(CostmapPluginsTester, checkPluginAPIOrder)
 {
