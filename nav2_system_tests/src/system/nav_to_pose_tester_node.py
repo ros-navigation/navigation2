@@ -38,6 +38,7 @@ from rclpy.qos import QoSProfile
 
 
 class NavTester(Node):
+
     def __init__(self, initial_pose: Pose, goal_pose: Pose, namespace: str = ''):
         super().__init__(node_name='nav2_tester', namespace=namespace)
         self.initial_pose_pub = self.create_publisher(
