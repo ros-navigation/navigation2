@@ -17,7 +17,7 @@
 #include "nav2_costmap_2d/denoise/image.hpp"
 #include "image_tests_helper.hpp"
 
-using namespace nav2_costmap_2d;
+using namespace nav2_costmap_2d;  // NOLINT
 
 struct ImageTester : public ::testing::Test
 {

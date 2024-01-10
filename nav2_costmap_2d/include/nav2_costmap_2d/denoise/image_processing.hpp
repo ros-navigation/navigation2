@@ -81,7 +81,7 @@ void morphologyOperation(
 
 using ShapeBuffer3x3 = std::array<uint8_t, 9>;  // NOLINT
 inline Image<uint8_t> createShape(ShapeBuffer3x3 & buffer, ConnectivityType connectivity);
-} // namespace imgproc_impl
+}  // namespace imgproc_impl
 
 /**
  * @brief Perform morphological dilation
