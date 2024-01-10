@@ -162,9 +162,9 @@ protected:
   nav2_msgs::msg::CollisionDetectorState::SharedPtr state_msg_;
 
   // CollisionMonitor collision points markers
-  rclcpp::Subscription<visualization_msgs::msg::MarkerArray>::SharedPtr collision_points_marker_sub_;
+  rclcpp::Subscription<visualization_msgs::msg::MarkerArray>::SharedPtr
+    collision_points_marker_sub_;
   visualization_msgs::msg::MarkerArray::SharedPtr collision_points_marker_msg_;
-
 };  // Tester
 
 Tester::Tester()

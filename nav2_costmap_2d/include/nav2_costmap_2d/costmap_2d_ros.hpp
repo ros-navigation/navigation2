@@ -77,7 +77,7 @@ public:
    * @brief  Constructor for the wrapper
    * @param options Additional options to control creation of the node.
    */
-  Costmap2DROS(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
+  explicit Costmap2DROS(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
 
   /**
    * @brief  Constructor for the wrapper, the node will
@@ -400,12 +400,12 @@ protected:
   double resolution_{0};
   std::string robot_base_frame_;            ///< The frame_id of the robot base
   double robot_radius_;
-  bool rolling_window_{false};              ///< Whether to use a rolling window version of the costmap
+  bool rolling_window_{false};          ///< Whether to use a rolling window version of the costmap
   bool track_unknown_space_{false};
   double transform_tolerance_{0};           ///< The timeout before transform errors
   double initial_transform_timeout_{0};   ///< The timeout before activation of the node errors
 
-  bool is_lifecycle_follower_{true};     ///< whether is a child-LifecycleNode or an independent node
+  bool is_lifecycle_follower_{true};   ///< whether is a child-LifecycleNode or an independent node
 
   // Derived parameters
   bool use_radius_{false};
