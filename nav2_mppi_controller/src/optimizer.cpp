@@ -137,6 +137,8 @@ void Optimizer::reset()
 
   settings_.constraints = settings_.base_constraints;
 
+  settings_.constraints = settings_.base_constraints;
+
   costs_ = xt::zeros<float>({settings_.batch_size});
   generated_trajectories_.reset(settings_.batch_size, settings_.time_steps);
 
