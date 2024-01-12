@@ -16,9 +16,10 @@
 #define NAV2_MPPI_CONTROLLER__CRITICS__OBSTACLES_CRITIC_HPP_
 
 #include <memory>
+#include <string>
+
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
 #include "nav2_costmap_2d/inflation_layer.hpp"
-
 #include "nav2_mppi_controller/critic_function.hpp"
 #include "nav2_mppi_controller/models/state.hpp"
 #include "nav2_mppi_controller/tools/utils.hpp"
@@ -96,6 +97,7 @@ protected:
 
   unsigned int power_{0};
   float repulsion_weight_, critical_weight_{0};
+  std::string inflation_layer_name_;
 };
 
 }  // namespace mppi::critics
