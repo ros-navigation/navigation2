@@ -28,7 +28,11 @@ RemovePassedGoals::RemovePassedGoals(
   const std::string & name,
   const BT::NodeConfiguration & conf)
 : BT::ActionNodeBase(name, conf),
-  viapoint_achieved_radius_(0.5)
+  viapoint_achieved_radius_(0.5),
+  initialized_(false)
+{}
+
+void RemovePassedGoals::initialize()
 {
   getInput("radius", viapoint_achieved_radius_);
 
@@ -37,11 +41,16 @@ RemovePassedGoals::RemovePassedGoals(
   tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
   auto node = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
   node->get_parameter("transform_tolerance", transform_tolerance_);
+  initialized_ = true;
 }
 
 inline BT::NodeStatus RemovePassedGoals::tick()
 {
   setStatus(BT::NodeStatus::RUNNING);
+
+  if (!initialized_) {
+    initialize();
+  }
 
   Goals goal_poses;
   getInput("input_goals", goal_poses);

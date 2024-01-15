@@ -29,13 +29,13 @@ PathExpiringTimerCondition::PathExpiringTimerCondition(
   period_(1.0),
   first_time_(true)
 {
-  getInput("seconds", period_);
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
 }
 
 BT::NodeStatus PathExpiringTimerCondition::tick()
 {
   if (first_time_) {
+    getInput("seconds", period_);
     getInput("path", prev_path_);
     first_time_ = false;
     start_ = node_->now();

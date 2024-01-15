@@ -27,15 +27,25 @@ TimeExpiredCondition::TimeExpiredCondition(
   const std::string & condition_name,
   const BT::NodeConfiguration & conf)
 : BT::ConditionNode(condition_name, conf),
-  period_(1.0)
+  period_(1.0),
+  initialized_(false)
+{
+}
+
+void TimeExpiredCondition::initialize()
 {
   getInput("seconds", period_);
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
   start_ = node_->now();
+  initialized_ = true;
 }
 
 BT::NodeStatus TimeExpiredCondition::tick()
 {
+  if (!initialized_) {
+    initialize();
+  }
+
   if (status() == BT::NodeStatus::IDLE) {
     start_ = node_->now();
     return BT::NodeStatus::FAILURE;
