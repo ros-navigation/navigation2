@@ -106,7 +106,8 @@ public:
     if (is_stamped_) {
       twist_stamped_pub_->publish(std::move(velocity));
     } else {
-      twist_pub_->publish(std::move(std::make_unique<geometry_msgs::msg::Twist>(velocity->twist)));
+      auto twist_msg = std::make_unique<geometry_msgs::msg::Twist>(velocity->twist);
+      twist_pub_->publish(std::move(twist_msg));
     }
   }
 
