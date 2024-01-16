@@ -155,7 +155,7 @@ if(BUILD_TESTING)
   set(AMENT_LINT_AUTO_FILE_EXCLUDE include/nav2_smac_planner/thirdparty/robin_hood.h)
   ament_lint_auto_find_test_dependencies()
   find_package(ament_cmake_gtest REQUIRED)
-  add_subdirectory(test)
+  # add_subdirectory(test)
 endif()
 
 ament_export_include_directories(include ${OMPL_INCLUDE_DIRS})

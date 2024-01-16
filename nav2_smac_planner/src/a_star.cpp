@@ -207,7 +207,8 @@ void AStarAlgorithm<NodeT>::setGoal(
       throw std::runtime_error("Start must be set before goal.");
     }
 
-    NodeT::resetObstacleHeuristic(_costmap, _start->pose.x, _start->pose.y, mx, my);
+    NodeT::resetObstacleHeuristic(
+      _collision_checker->getCostmapROS(), _start->pose.x, _start->pose.y, mx, my);
   }
 
   _goal_coordinates = goal_coords;
@@ -403,7 +404,7 @@ float AStarAlgorithm<NodeT>::getHeuristicCost(const NodePtr & node)
   const Coordinates node_coords =
     NodeT::getCoords(node->getIndex(), getSizeX(), getSizeDim3());
   float heuristic = NodeT::getHeuristicCost(
-    node_coords, _goal_coordinates, _costmap);
+    node_coords, _goal_coordinates);
 
   if (heuristic < _best_heuristic_node.first) {
     _best_heuristic_node = {heuristic, node->getIndex()};
