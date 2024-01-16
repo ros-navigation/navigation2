@@ -41,6 +41,7 @@ bool VelocityPolygon::getParameters(
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
   }
+  clock_ = node->get_clock();
 
   if (!getCommonParameters(polygon_pub_topic)) {
     return false;
@@ -74,7 +75,7 @@ bool VelocityPolygon::getParameters(
       double linear_min;
       nav2_util::declare_parameter_if_not_declared(
         node, polygon_name_ + "." + velocity_polygon_name + ".linear_min",
-        rclcpp::ParameterValue(0.0));
+        rclcpp::PARAMETER_DOUBLE);
       linear_min = node->get_parameter(polygon_name_ + "." + velocity_polygon_name + ".linear_min")
         .as_double();
 
@@ -82,7 +83,7 @@ bool VelocityPolygon::getParameters(
       double linear_max;
       nav2_util::declare_parameter_if_not_declared(
         node, polygon_name_ + "." + velocity_polygon_name + ".linear_max",
-        rclcpp::ParameterValue(0.0));
+        rclcpp::PARAMETER_DOUBLE);
       linear_max = node->get_parameter(polygon_name_ + "." + velocity_polygon_name + ".linear_max")
         .as_double();
 
@@ -90,7 +91,7 @@ bool VelocityPolygon::getParameters(
       double theta_min;
       nav2_util::declare_parameter_if_not_declared(
         node, polygon_name_ + "." + velocity_polygon_name + ".theta_min",
-        rclcpp::ParameterValue(0.0));
+        rclcpp::PARAMETER_DOUBLE);
       theta_min =
         node->get_parameter(polygon_name_ + "." + velocity_polygon_name + ".theta_min").as_double();
 
@@ -98,7 +99,7 @@ bool VelocityPolygon::getParameters(
       double theta_max;
       nav2_util::declare_parameter_if_not_declared(
         node, polygon_name_ + "." + velocity_polygon_name + ".theta_max",
-        rclcpp::ParameterValue(0.0));
+        rclcpp::PARAMETER_DOUBLE);
       theta_max =
         node->get_parameter(polygon_name_ + "." + velocity_polygon_name + ".theta_max").as_double();
 
@@ -122,10 +123,9 @@ bool VelocityPolygon::getParameters(
           .as_double();
       }
 
-      SubPolygonParameter sub_polygon = {
-        poly, velocity_polygon_name, linear_min, linear_max, theta_min,
-        theta_max, direction_end_angle, direction_start_angle};
-      sub_polygons_.emplace_back(sub_polygon);
+      sub_polygons_.emplace_back(
+        SubPolygonParameter{poly, velocity_polygon_name, linear_min, linear_max, theta_min,
+          theta_max, direction_end_angle, direction_start_angle});
     }
   } catch (const std::exception & ex) {
     RCLCPP_ERROR(
@@ -157,12 +157,8 @@ void VelocityPolygon::updatePolygon(const Velocity & cmd_vel_in)
   }
 
   // Log for uncovered velocity
-  auto node = node_.lock();
-  if (!node) {
-    throw std::runtime_error{"Failed to lock node"};
-  }
   RCLCPP_WARN_THROTTLE(
-    logger_, *node->get_clock(), 2.0,
+    logger_, *(clock_), 2.0,
     "Velocity is not covered by any of the velocity polygons. x: %.3f y: %.3f tw: %.3f ",
     cmd_vel_in.x, cmd_vel_in.y, cmd_vel_in.tw);
   return;

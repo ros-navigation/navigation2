@@ -99,6 +99,9 @@ protected:
    */
   bool isInRange(const Velocity & cmd_vel_in, const SubPolygonParameter & sub_polygon_param);
 
+  // Clock
+  rclcpp::Clock::SharedPtr clock_;
+
   // Variables
   /// @brief Flag to indicate if the robot is holonomic
   bool holonomic_;
