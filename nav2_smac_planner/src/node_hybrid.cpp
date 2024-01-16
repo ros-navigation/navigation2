@@ -537,7 +537,7 @@ inline float adjustedFootprintCost(
   // TODO efficiency: have radius check to know if needed at H cost start, find + store inflation layer
   // TODO architecture: abstract out object in utils to share with MPPI
   // TODO reenable and fix tests
-  if (!costmap_ros->getUseRadius()) {
+  if (costmap_ros->getUseRadius()) {
     return cost;
   }
 
