@@ -31,7 +31,12 @@ DistanceTraveledCondition::DistanceTraveledCondition(
   distance_(1.0),
   transform_tolerance_(0.1),
   global_frame_("map"),
-  robot_base_frame_("base_link")
+  robot_base_frame_("base_link"),
+  initialized_(false)
+{
+}
+
+void DistanceTraveledCondition::initialize()
 {
   getInput("distance", distance_);
   getInput("global_frame", global_frame_);
@@ -39,10 +44,15 @@ DistanceTraveledCondition::DistanceTraveledCondition(
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
   tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
   node_->get_parameter("transform_tolerance", transform_tolerance_);
+  initialized_ = true;
 }
 
 BT::NodeStatus DistanceTraveledCondition::tick()
 {
+  if (!initialized_) {
+    initialize();
+  }
+
   if (status() == BT::NodeStatus::IDLE) {
     if (!nav2_util::getCurrentPose(
         start_pose_, *tf_, global_frame_, robot_base_frame_,

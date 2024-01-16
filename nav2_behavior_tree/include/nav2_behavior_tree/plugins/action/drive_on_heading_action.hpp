@@ -45,6 +45,11 @@ public:
     const BT::NodeConfiguration & conf);
 
   /**
+   * @brief Function to read parameters and initialize class variables
+   */
+  void initialize();
+
+  /**
    * @brief Creates list of BT ports
    * @return BT::PortsList Containing basic ports along with node-specific ports
    */
@@ -63,6 +68,11 @@ public:
   }
 
   /**
+ * @brief Function to perform some user-defined operation on tick
+ */
+  void on_tick() override;
+
+  /**
  * @brief Function to perform some user-defined operation upon successful completion of the action
  */
   BT::NodeStatus on_success() override;
@@ -76,6 +86,9 @@ public:
    * @brief Function to perform some user-defined operation upon cancellation of the action
    */
   BT::NodeStatus on_cancelled() override;
+
+private:
+  bool initalized_;
 };
 
 }  // namespace nav2_behavior_tree
