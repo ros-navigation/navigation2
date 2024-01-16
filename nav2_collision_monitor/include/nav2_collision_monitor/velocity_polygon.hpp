@@ -15,6 +15,7 @@
 #ifndef NAV2_COLLISION_MONITOR__VELOCITY_POLYGON_HPP_
 #define NAV2_COLLISION_MONITOR__VELOCITY_POLYGON_HPP_
 
+#include <memory>
 #include <string>
 #include <vector>
 
