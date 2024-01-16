@@ -29,6 +29,7 @@ void ObstaclesCritic::initialize()
   getParam(collision_cost_, "collision_cost", 100000.0);
   getParam(collision_margin_distance_, "collision_margin_distance", 0.10);
   getParam(near_goal_distance_, "near_goal_distance", 0.5);
+  getParam(inflation_layer_name_, "inflation_layer_name", std::string(""));
 
   collision_checker_.setCostmap(costmap_);
   possibly_inscribed_cost_ = findCircumscribedCost(costmap_ros_);
@@ -69,7 +70,10 @@ float ObstaclesCritic::findCircumscribedCost(
     ++layer)
   {
     auto inflation_layer = std::dynamic_pointer_cast<nav2_costmap_2d::InflationLayer>(*layer);
-    if (!inflation_layer) {
+    if (!inflation_layer ||
+      (!inflation_layer_name_.empty() &&
+      inflation_layer->getName() != inflation_layer_name_))
+    {
       continue;
     }
 

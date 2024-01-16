@@ -111,13 +111,18 @@ void LatticeMotionTable::initMotionModel(
   }
 }
 
-MotionPrimitivePtrs LatticeMotionTable::getMotionPrimitives(const NodeLattice * node)
+MotionPrimitivePtrs LatticeMotionTable::getMotionPrimitives(
+  const NodeLattice * node,
+  unsigned int & direction_change_index)
 {
   MotionPrimitives & prims_at_heading = motion_primitives[node->pose.theta];
   MotionPrimitivePtrs primitive_projection_list;
   for (unsigned int i = 0; i != prims_at_heading.size(); i++) {
     primitive_projection_list.push_back(&prims_at_heading[i]);
   }
+
+  // direction change index
+  direction_change_index = static_cast<unsigned int>(primitive_projection_list.size());
 
   if (allow_reverse_expansion) {
     // Find normalized heading bin of the reverse expansion
@@ -470,16 +475,11 @@ void NodeLattice::getNeighbors(
   bool backwards = false;
   NodePtr neighbor = nullptr;
   Coordinates initial_node_coords, motion_projection;
-  MotionPrimitivePtrs motion_primitives = motion_table.getMotionPrimitives(this);
+  unsigned int direction_change_index = 0;
+  MotionPrimitivePtrs motion_primitives = motion_table.getMotionPrimitives(
+    this,
+    direction_change_index);
   const float & grid_resolution = motion_table.lattice_metadata.grid_resolution;
-
-  unsigned int direction_change_idx = 1e9;
-  for (unsigned int i = 0; i != motion_primitives.size(); i++) {
-    if (motion_primitives[0]->start_angle != motion_primitives[i]->start_angle) {
-      direction_change_idx = i;
-      break;
-    }
-  }
 
   for (unsigned int i = 0; i != motion_primitives.size(); i++) {
     const MotionPose & end_pose = motion_primitives[i]->poses.back();
@@ -502,7 +502,7 @@ void NodeLattice::getNeighbors(
       // account in case the robot base footprint is asymmetric.
       backwards = false;
       angle = motion_projection.theta;
-      if (i >= direction_change_idx) {
+      if (i >= direction_change_index) {
         backwards = true;
         angle = motion_projection.theta - (motion_table.num_angle_quantization / 2);
         if (angle < 0) {
