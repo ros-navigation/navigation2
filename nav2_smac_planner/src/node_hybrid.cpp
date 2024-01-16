@@ -42,6 +42,8 @@ HybridMotionTable NodeHybrid::motion_table;
 float NodeHybrid::size_lookup = 25;
 LookupTable NodeHybrid::dist_heuristic_lookup_table;
 nav2_costmap_2d::Costmap2D * NodeHybrid::sampled_costmap = nullptr;
+std::shared_ptr<nav2_costmap_2d::Costmap2DROS> NodeHybrid::costmap_ros = nullptr;
+
 CostmapDownsampler NodeHybrid::downsampler;
 ObstacleHeuristicQueue NodeHybrid::obstacle_heuristic_queue;
 
@@ -485,8 +487,8 @@ void NodeHybrid::resetObstacleHeuristic(
   // the planner considerably to search through 75% less cells with no detectable
   // erosion of path quality after even modest smoothing. The error would be no more
   // than 0.05 * normalized cost. Since this is just a search prior, there's no loss in generality
-  sampled_costmap = costmap_ros->getCostmap();
   costmap_ros = costmap_ros_i;
+  sampled_costmap = costmap_ros->getCostmap();
   if (motion_table.downsample_obstacle_heuristic) {
     std::weak_ptr<nav2_util::LifecycleNode> ptr;
     downsampler.on_configure(ptr, "fake_frame", "fake_topic", sampled_costmap, 2.0, true);
@@ -530,7 +532,7 @@ void NodeHybrid::resetObstacleHeuristic(
   obstacle_heuristic_lookup_table[goal_index] = -0.00001f;
 }
 
-float adjustedFootprintCost(
+inline float adjustedFootprintCost(
   const float & cost, std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
   // TODO efficiency: have radius check to know if needed at H cost start, find + store inflation layer
