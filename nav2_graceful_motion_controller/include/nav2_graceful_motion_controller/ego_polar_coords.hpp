@@ -32,7 +32,7 @@ namespace nav2_graceful_motion_controller
  */
 struct EgocentricPolarCoordinates
 {
-  float r;       // Distance between the robot pose and the target pose.
+  float r;       // Radial distance between the robot pose and the target pose.
   float phi;     // Orientation of target with respect to the line of sight
                  // from the robot to the target.
   float delta;   // Steering angle of the robot with respect to the line of sight.
@@ -44,8 +44,10 @@ struct EgocentricPolarCoordinates
   : r(r_in), phi(phi_in), delta(delta_in) {}
 
   /**
-   * @brief Construct a new Egocentric Polar Coordinates using the current and target pose
-   * both in the same frame.
+   * @brief Construct a new egocentric polar coordinates as the difference between the robot pose
+   * and the target pose relative to the robot position and orientation, both referenced to the same frame.
+   *
+   * Thus, r, phi and delta are always at the origin of the frame.
    *
    * @param target Target pose.
    * @param current Current pose. Defaults to the origin.

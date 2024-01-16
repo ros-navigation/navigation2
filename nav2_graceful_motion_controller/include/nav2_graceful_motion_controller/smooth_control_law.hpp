@@ -26,7 +26,8 @@ namespace nav2_graceful_motion_controller
 
 /**
  * @class nav2_graceful_motion_controller::SmoothControlLaw
- * @brief Smooth control law
+ * @brief Smooth control law for graceful motion based on "A smooth control law for graceful motion"
+ * (Jong Jin Park and Benjamin Kuipers).
  */
 class SmoothControlLaw
 {
@@ -102,15 +103,21 @@ protected:
   /**
    * @brief Ratio of the rate of change in phi to the rate of change in r. Controls the convergence
    * of the slow subsystem.
-   * Note: If this value is equal to zero, the controller will behave as a pure waypoint follower.
+   *
+   * If this value is equal to zero, the controller will behave as a pure waypoint follower.
    * A high value offers extreme scenario of pose-following where theta is reduced much faster than r.
+   *
+   * Note: This variable is called k1 in earlier versions of the paper.
    */
   double k_phi_;
 
   /**
    * @brief Constant factor applied to the heading error feedback. Controls the convergence of the
    * fast subsystem.
-   * Note: The bigger the value, therobot converge faster to the reference heading.
+   *
+   * The bigger the value, the robot converge faster to the reference heading.
+   *
+   * Note: This variable is called k2 in earlier versions of the paper.
    */
   double k_delta_;
 
