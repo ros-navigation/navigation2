@@ -36,6 +36,7 @@ SmacPlannerHybrid::SmacPlannerHybrid()
   _collision_checker(nullptr, 1, nullptr),
   _smoother(nullptr),
   _costmap(nullptr),
+  _costmap_ros(nullptr),
   _costmap_downsampler(nullptr)
 {
 }

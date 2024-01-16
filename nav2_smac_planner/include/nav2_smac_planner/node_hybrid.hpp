@@ -31,6 +31,8 @@
 #include "nav2_smac_planner/types.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
 #include "nav2_smac_planner/costmap_downsampler.hpp"
+#include "nav2_costmap_2d/costmap_2d_ros.hpp"
+#include "nav2_costmap_2d/inflation_layer.hpp"
 
 namespace nav2_smac_planner
 {

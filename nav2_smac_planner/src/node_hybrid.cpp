@@ -28,7 +28,6 @@
 #include "ompl/base/spaces/ReedsSheppStateSpace.h"
 
 #include "nav2_smac_planner/node_hybrid.hpp"
-#include "nav2_costmap_2d/inflation_layer.hpp"
 
 using namespace std::chrono;  // NOLINT
 
