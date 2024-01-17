@@ -123,9 +123,10 @@ bool VelocityPolygon::getParameters(
           .as_double();
       }
 
-      sub_polygons_.emplace_back(
-        SubPolygonParameter{poly, velocity_polygon_name, linear_min, linear_max, theta_min,
-          theta_max, direction_end_angle, direction_start_angle});
+      SubPolygonParameter sub_polygon = {
+        poly, velocity_polygon_name, linear_min, linear_max, theta_min,
+        theta_max, direction_end_angle, direction_start_angle};
+      sub_polygons_.push_back(sub_polygon);
     }
   } catch (const std::exception & ex) {
     RCLCPP_ERROR(
