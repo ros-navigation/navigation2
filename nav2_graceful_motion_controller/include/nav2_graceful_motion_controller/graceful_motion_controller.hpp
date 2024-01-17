@@ -124,11 +124,13 @@ protected:
    * @param robot_pose Robot pose
    * @param motion_target Motion target point
    * @param trajectory Simulated trajectory
+   * @param backward Flag to indicate if the robot is moving backward
    * @return true if the trajectory is collision free, false otherwise
    */
   bool simulateTrajectory(
     const geometry_msgs::msg::PoseStamped & robot_pose,
-    const geometry_msgs::msg::PoseStamped & motion_target, nav_msgs::msg::Path & trajectory);
+    const geometry_msgs::msg::PoseStamped & motion_target, nav_msgs::msg::Path & trajectory,
+    const bool & backward);
 
   /**
    * @brief Rotate the robot to face the motion target with maximum angular velocity.

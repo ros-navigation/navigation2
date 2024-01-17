@@ -57,12 +57,25 @@ public:
    * @brief Compute linear and angular velocities command using the curvature.
    *
    * @param target Pose of the target in the robot frame.
-   * @param current Current pose of the robot in the robot frame. Defaults to the origin.
+   * @param current Current pose of the robot in the robot frame.
+   * @param backward If true, the robot is moving backwards. Defaults to false.
    * @return Velocity command.
    */
   geometry_msgs::msg::Twist calculateRegularVelocity(
     const geometry_msgs::msg::Pose & target,
-    const geometry_msgs::msg::Pose & current = geometry_msgs::msg::Pose());
+    const geometry_msgs::msg::Pose & current,
+    const bool & backward = false);
+
+  /**
+   * @brief Compute linear and angular velocities command using the curvature.
+   *
+   * @param target Pose of the target in the robot frame.
+   * @param backward If true, the robot is moving backwards. Defaults to false.
+   * @return Velocity command.
+   */
+  geometry_msgs::msg::Twist calculateRegularVelocity(
+    const geometry_msgs::msg::Pose & target,
+    const bool & backward = false);
 
   /**
    * @brief Update the velocity limits.
@@ -80,13 +93,15 @@ public:
    *
    * @param dt Time step.
    * @param target Pose of the target in the robot frame.
-   * @param current Current pose of the robot in the robot frame. Defaults to the origin.
+   * @param current Current pose of the robot in the robot frame.
+   * @param backward If true, the robot is moving backwards. Defaults to false.
    * @return geometry_msgs::msg::Pose
    */
   geometry_msgs::msg::Pose calculateNextPose(
     const double dt,
     const geometry_msgs::msg::Pose & target,
-    const geometry_msgs::msg::Pose & current = geometry_msgs::msg::Pose());
+    const geometry_msgs::msg::Pose & current,
+    const bool & backward = false);
 
 protected:
   /**

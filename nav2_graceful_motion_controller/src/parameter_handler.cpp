@@ -59,6 +59,8 @@ ParameterHandler::ParameterHandler(
     node, plugin_name_ + ".initial_rotation_min_angle", rclcpp::ParameterValue(0.75));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".final_rotation", rclcpp::ParameterValue(true));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".allow_backward", rclcpp::ParameterValue(false));
 
   node->get_parameter(plugin_name_ + ".transform_tolerance", params_.transform_tolerance);
   node->get_parameter(plugin_name_ + ".motion_target_dist", params_.motion_target_dist);
@@ -84,6 +86,14 @@ ParameterHandler::ParameterHandler(
   node->get_parameter(
     plugin_name_ + ".initial_rotation_min_angle", params_.initial_rotation_min_angle);
   node->get_parameter(plugin_name_ + ".final_rotation", params_.final_rotation);
+  node->get_parameter(plugin_name_ + ".allow_backward", params_.allow_backward);
+
+  if (params_.initial_rotation && params_.allow_backward) {
+    RCLCPP_WARN(
+      logger_, "Initial rotation and allow backward parameters are both true, "
+      "setting allow backward to false.");
+    params_.allow_backward = false;
+  }
 
   dyn_params_handler_ = node->add_on_set_parameters_callback(
     std::bind(&ParameterHandler::dynamicParametersCallback, this, std::placeholders::_1));
@@ -126,9 +136,23 @@ ParameterHandler::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
       }
     } else if (type == ParameterType::PARAMETER_BOOL) {
       if (name == plugin_name_ + ".initial_rotation") {
+        if (parameter.as_bool() && params_.allow_backward) {
+          RCLCPP_WARN(
+            logger_, "Initial rotation and allow backward parameters are both true, "
+            "rejecting parameter change.");
+          continue;
+        }
         params_.initial_rotation = parameter.as_bool();
       } else if (name == plugin_name_ + ".final_rotation") {
         params_.final_rotation = parameter.as_bool();
+      } else if (name == plugin_name_ + ".allow_backward") {
+        if (params_.initial_rotation && parameter.as_bool()) {
+          RCLCPP_WARN(
+            logger_, "Initial rotation and allow backward parameters are both true, "
+            "rejecting parameter change.");
+          continue;
+        }
+        params_.allow_backward = parameter.as_bool();
       }
     }
   }

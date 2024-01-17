@@ -48,6 +48,10 @@ public:
   GMControllerFixture()
   : nav2_graceful_motion_controller::GracefulMotionController() {}
 
+  bool getInitialRotation() {return params_->initial_rotation;}
+
+  bool getAllowBackward() {return params_->allow_backward;}
+
   nav_msgs::msg::Path getPlan() {return path_handler_->getPlan();}
 
   geometry_msgs::msg::PoseStamped getMotionTarget(
@@ -79,10 +83,11 @@ public:
 
   bool simulateTrajectory(
     const geometry_msgs::msg::PoseStamped & robot_pose,
-    const geometry_msgs::msg::PoseStamped & motion_target, nav_msgs::msg::Path & trajectory)
+    const geometry_msgs::msg::PoseStamped & motion_target, nav_msgs::msg::Path & trajectory,
+    const bool & backward)
   {
     return nav2_graceful_motion_controller::GracefulMotionController::simulateTrajectory(
-      robot_pose, motion_target, trajectory);
+      robot_pose, motion_target, trajectory, backward);
   }
 
   double getSpeedLinearMax() {return params_->v_linear_max;}
@@ -235,11 +240,20 @@ TEST(GracefulMotionControllerTest, dynamicParameters) {
   nav2_util::declare_parameter_if_not_declared(
     node, "test.max_robot_pose_search_dist", rclcpp::ParameterValue(-2.0));
 
+  // Set initial rotation and allow backward to true so it warns and allow backward is false
+  nav2_util::declare_parameter_if_not_declared(
+    node, "test.initial_rotation", rclcpp::ParameterValue(true));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "test.allow_backward", rclcpp::ParameterValue(true));
+
   // Create controller
-  auto controller = std::make_shared<nav2_graceful_motion_controller::GracefulMotionController>();
+  auto controller = std::make_shared<GMControllerFixture>();
   costmap_ros->on_configure(rclcpp_lifecycle::State());
   controller->configure(node, "test", tf, costmap_ros);
   controller->activate();
+
+  // Check first allowed backward is false
+  EXPECT_EQ(controller->getAllowBackward(), false);
 
   auto params = std::make_shared<rclcpp::AsyncParametersClient>(
     node->get_node_base_interface(), node->get_node_topics_interface(),
@@ -260,7 +274,8 @@ TEST(GracefulMotionControllerTest, dynamicParameters) {
       rclcpp::Parameter("test.slowdown_radius", 11.0),
       rclcpp::Parameter("test.initial_rotation", false),
       rclcpp::Parameter("test.initial_rotation_min_angle", 12.0),
-      rclcpp::Parameter("test.final_rotation", false)});
+      rclcpp::Parameter("test.final_rotation", false),
+      rclcpp::Parameter("test.allow_backward", true)});
 
   // Spin
   rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
@@ -279,6 +294,38 @@ TEST(GracefulMotionControllerTest, dynamicParameters) {
   EXPECT_EQ(node->get_parameter("test.initial_rotation").as_bool(), false);
   EXPECT_EQ(node->get_parameter("test.initial_rotation_min_angle").as_double(), 12.0);
   EXPECT_EQ(node->get_parameter("test.final_rotation").as_bool(), false);
+  EXPECT_EQ(node->get_parameter("test.allow_backward").as_bool(), true);
+
+  // Set initial rotation to true
+  results = params->set_parameters_atomically(
+    {rclcpp::Parameter("test.initial_rotation", true)});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+  // Check parameters. Initial rotation should be false as both cannot be true at the same time
+  EXPECT_EQ(controller->getInitialRotation(), false);
+  EXPECT_EQ(controller->getAllowBackward(), true);
+
+  // Set both initial rotation and allow backward to false
+  results = params->set_parameters_atomically(
+    {rclcpp::Parameter("test.initial_rotation", false),
+      rclcpp::Parameter("test.allow_backward", false)});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+  // Check parameters.
+  EXPECT_EQ(node->get_parameter("test.initial_rotation").as_bool(), false);
+  EXPECT_EQ(node->get_parameter("test.allow_backward").as_bool(), false);
+
+  // Set initial rotation to true
+  results = params->set_parameters_atomically(
+    {rclcpp::Parameter("test.initial_rotation", true)});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+  EXPECT_EQ(controller->getInitialRotation(), true);
+
+  // Set allow backward to true
+  results = params->set_parameters_atomically(
+    {rclcpp::Parameter("test.allow_backward", true)});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+  // Check parameters. Now allow backward should be false as both cannot be true at the same time
+  EXPECT_EQ(controller->getInitialRotation(), true);
+  EXPECT_EQ(controller->getAllowBackward(), false);
 }
 
 TEST(GracefulMotionControllerTest, getDifferentMotionTargets) {
@@ -952,6 +999,87 @@ TEST(GracefulMotionControllerTest, computeVelocityCommandRegular) {
   // So, linear velocity should be some positive value and angular velocity should be zero.
   EXPECT_GT(cmd_vel.twist.linear.x, 0.0);
   EXPECT_EQ(cmd_vel.twist.angular.z, 0.0);
+}
+
+TEST(GracefulMotionControllerTest, computeVelocityCommandRegularBackwards) {
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testGraceful");
+  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+
+  // Set initial rotation false and allow backward to true
+  nav2_util::declare_parameter_if_not_declared(
+    node, "test.initial_rotation", rclcpp::ParameterValue(false));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "test.allow_backward", rclcpp::ParameterValue(true));
+
+  // Create a costmap of 10x10 meters
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+  auto results = costmap_ros->set_parameters(
+    {rclcpp::Parameter("global_frame", "test_global_frame"),
+      rclcpp::Parameter("robot_base_frame", "test_robot_frame"),
+      rclcpp::Parameter("width", 10),
+      rclcpp::Parameter("height", 10),
+      rclcpp::Parameter("resolution", 0.1)});
+  for (const auto & result : results) {
+    EXPECT_TRUE(result.successful) << result.reason;
+  }
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+
+  // Create controller
+  auto controller = std::make_shared<GMControllerFixture>();
+  controller->configure(node, "test", tf, costmap_ros);
+  controller->activate();
+
+  // Create the robot pose
+  geometry_msgs::msg::PoseStamped robot_pose;
+  robot_pose.header.frame_id = "test_robot_frame";
+  robot_pose.pose.position.x = 0.0;
+  robot_pose.pose.position.y = 0.0;
+  robot_pose.pose.position.z = 0.0;
+  robot_pose.pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
+
+  // Set transform between global and robot frame
+  geometry_msgs::msg::TransformStamped global_to_robot;
+  global_to_robot.header.frame_id = "test_global_frame";
+  global_to_robot.header.stamp = node->get_clock()->now();
+  global_to_robot.child_frame_id = "test_robot_frame";
+  global_to_robot.transform.translation.x = robot_pose.pose.position.x;
+  global_to_robot.transform.translation.y = robot_pose.pose.position.y;
+  global_to_robot.transform.translation.z = robot_pose.pose.position.z;
+  tf->setTransform(global_to_robot, "test", false);
+
+  // Set a plan in a straight line from the robot
+  nav_msgs::msg::Path plan;
+  plan.header.frame_id = "test_global_frame";
+  plan.poses.resize(3);
+  plan.poses[0].header.frame_id = "test_global_frame";
+  plan.poses[0].pose.position.x = 0.0;
+  plan.poses[0].pose.position.y = 0.0;
+  plan.poses[0].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
+  plan.poses[1].header.frame_id = "test_global_frame";
+  plan.poses[1].pose.position.x = -1.0;
+  plan.poses[1].pose.position.y = 0.0;
+  plan.poses[1].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
+  plan.poses[2].header.frame_id = "test_global_frame";
+  plan.poses[2].pose.position.x = -2.0;
+  plan.poses[2].pose.position.y = 0.0;
+  plan.poses[2].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
+  controller->setPlan(plan);
+
+  // Set velocity
+  geometry_msgs::msg::Twist robot_velocity;
+  robot_velocity.linear.x = 0.0;
+  robot_velocity.linear.y = 0.0;
+
+  // Set the goal checker
+  nav2_controller::SimpleGoalChecker checker;
+  checker.initialize(node, "checker", costmap_ros);
+
+  auto cmd_vel = controller->computeVelocityCommands(robot_pose, robot_velocity, &checker);
+
+  // Check results. The robot should go straight to the target.
+  // So, both linear velocity should be some negative values.
+  EXPECT_LT(cmd_vel.twist.linear.x, 0.0);
+  EXPECT_LT(cmd_vel.twist.angular.z, 0.0);
 }
 
 TEST(GracefulMotionControllerTest, computeVelocityCommandFinal) {

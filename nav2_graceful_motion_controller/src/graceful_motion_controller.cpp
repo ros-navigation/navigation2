@@ -150,6 +150,14 @@ geometry_msgs::msg::TwistStamped GracefulMotionController::computeVelocityComman
     motion_target.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(yaw);
   }
 
+  // Flip the orientation of the motion target if the robot is moving backwards
+  bool reversing = false;
+  if (params_->allow_backward && motion_target.pose.position.x < 0.0) {
+    reversing = true;
+    motion_target.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(
+      tf2::getYaw(motion_target.pose.orientation) + M_PI);
+  }
+
   // Compute velocity command:
   // 1. Check if we are close enough to the goal to do a final rotation in place
   // 2. Check if we must do a rotation in place before moving
@@ -165,7 +173,7 @@ geometry_msgs::msg::TwistStamped GracefulMotionController::computeVelocityComman
   {
     cmd_vel.twist = rotateToTarget(angle_to_target);
   } else {
-    cmd_vel.twist = control_law_->calculateRegularVelocity(motion_target.pose);
+    cmd_vel.twist = control_law_->calculateRegularVelocity(motion_target.pose, reversing);
   }
 
   // Transform local frame to global frame to use in collision checking
@@ -183,7 +191,7 @@ geometry_msgs::msg::TwistStamped GracefulMotionController::computeVelocityComman
 
   // Generate and publish local plan for debugging / visualization
   nav_msgs::msg::Path local_plan;
-  if (!simulateTrajectory(pose, motion_target, local_plan)) {
+  if (!simulateTrajectory(pose, motion_target, local_plan, reversing)) {
     throw nav2_core::NoValidControl("Collision detected in the trajectory");
   }
   local_plan.header = transformed_plan.header;
@@ -237,7 +245,8 @@ geometry_msgs::msg::PoseStamped GracefulMotionController::getMotionTarget(
 
 bool GracefulMotionController::simulateTrajectory(
   const geometry_msgs::msg::PoseStamped & robot_pose,
-  const geometry_msgs::msg::PoseStamped & motion_target, nav_msgs::msg::Path & trajectory)
+  const geometry_msgs::msg::PoseStamped & motion_target, nav_msgs::msg::Path & trajectory,
+  const bool & backward)
 {
   // Check for collision before moving
   if (inCollision(
@@ -265,7 +274,8 @@ bool GracefulMotionController::simulateTrajectory(
   // Generate path
   do{
     // Apply velocities to calculate next pose
-    next_pose.pose = control_law_->calculateNextPose(dt, motion_target.pose, next_pose.pose);
+    next_pose.pose = control_law_->calculateNextPose(
+      dt, motion_target.pose, next_pose.pose, backward);
 
     // Add the pose to the trajectory for visualization
     trajectory.poses.push_back(next_pose);

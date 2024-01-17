@@ -52,11 +52,27 @@ TEST(EgocentricPolarCoordinatesTest, constructorFromPoses) {
 
   nav2_graceful_motion_controller::EgocentricPolarCoordinates coords(target, current);
 
-  // Perform assertions based on expected values.
-
   EXPECT_FLOAT_EQ(3.6055512428283691, coords.r);
   EXPECT_FLOAT_EQ(-0.18279374837875384, coords.phi);
   EXPECT_FLOAT_EQ(-1.1827937483787536, coords.delta);
+}
+
+TEST(EgocentricPolarCoordinatesTest, constructorFromPosesBackward) {
+  geometry_msgs::msg::Pose target;
+  target.position.x = -3.0;
+  target.position.y = -4.0;
+  target.orientation = tf2::toMsg(tf2::Quaternion(tf2::Vector3(0, 0, 1), 0.8));
+
+  geometry_msgs::msg::Pose current;
+  current.position.x = 1.0;
+  current.position.y = 1.0;
+  current.orientation = tf2::toMsg(tf2::Quaternion(tf2::Vector3(0, 0, 1), -0.2));
+
+  nav2_graceful_motion_controller::EgocentricPolarCoordinates coords(target, current, true);
+
+  EXPECT_FLOAT_EQ(-6.4031243, coords.r);
+  EXPECT_FLOAT_EQ(-0.096055523, coords.phi);
+  EXPECT_FLOAT_EQ(-1.0960555, coords.delta);
 }
 
 int main(int argc, char ** argv)

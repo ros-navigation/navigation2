@@ -33,6 +33,7 @@ namespace nav2_graceful_motion_controller
 struct EgocentricPolarCoordinates
 {
   float r;       // Radial distance between the robot pose and the target pose.
+                 // Negative value if the robot is moving backwards.
   float phi;     // Orientation of target with respect to the line of sight
                  // from the robot to the target.
   float delta;   // Steering angle of the robot with respect to the line of sight.
@@ -51,18 +52,37 @@ struct EgocentricPolarCoordinates
    *
    * @param target Target pose.
    * @param current Current pose. Defaults to the origin.
+   * @param backward If true, the robot is moving backwards. Defaults to false.
    */
   explicit EgocentricPolarCoordinates(
     const geometry_msgs::msg::Pose & target,
-    const geometry_msgs::msg::Pose & current = geometry_msgs::msg::Pose())
+    const geometry_msgs::msg::Pose & current = geometry_msgs::msg::Pose(), bool backward = false)
   {
+    // Compute the difference between the target and the current pose
     float dX = target.position.x - current.position.x;
     float dY = target.position.y - current.position.y;
-    float line_of_sight = std::atan2(-dY, dX);
-
+    // Compute the line of sight from the robot to the target
+    // Flip it if the robot is moving backwards
+    float line_of_sight = backward ? (std::atan2(-dY, dX) + M_PI) : std::atan2(-dY, dX);
+    // Compute the ego polar coordinates
     r = sqrt(dX * dX + dY * dY);
     phi = angles::normalize_angle(tf2::getYaw(target.orientation) + line_of_sight);
     delta = angles::normalize_angle(tf2::getYaw(current.orientation) + line_of_sight);
+    // If the robot is moving backwards, flip the sign of the radial distance
+    r *= backward ? -1.0 : 1.0;
+  }
+
+  /**
+   * @brief Construct a new egocentric polar coordinates for the target pose.
+   *
+   * @param target Target pose.
+   * @param backward If true, the robot is moving backwards. Defaults to false.
+   */
+  explicit EgocentricPolarCoordinates(
+    const geometry_msgs::msg::Pose & target,
+    bool backward = false)
+  {
+    EgocentricPolarCoordinates(target, geometry_msgs::msg::Pose(), backward);
   }
 };
 

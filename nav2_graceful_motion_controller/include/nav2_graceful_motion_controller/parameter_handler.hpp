@@ -47,6 +47,7 @@ struct Parameters
   bool initial_rotation;
   double initial_rotation_min_angle;
   bool final_rotation;
+  bool allow_backward;
 };
 
 /**
