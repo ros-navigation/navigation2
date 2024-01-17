@@ -104,7 +104,7 @@ public:
 private:
   rclcpp::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_sub_;
   geometry_msgs::msg::PolygonStamped::SharedPtr polygon_received_;
-}; // TestNode
+};  // TestNode
 
 class VelocityPolygonWrapper : public nav2_collision_monitor::VelocityPolygon
 {
@@ -134,8 +134,7 @@ public:
   {
     return sub_polygons_;
   }
-
-}; // VelocityPolygonWrapper
+};  // VelocityPolygonWrapper
 
 class Tester : public ::testing::Test
 {
@@ -168,14 +167,14 @@ protected:
 
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
-}; // Tester
+};  // Tester
 
 Tester::Tester()
 {
   test_node_ = std::make_shared<TestNode>();
 
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(test_node_->get_clock());
-  tf_buffer_->setUsingDedicatedThread(true); // One-thread broadcasting-listening model
+  tf_buffer_->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 }
 
