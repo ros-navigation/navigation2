@@ -36,21 +36,24 @@ set(dependencies
   angles
 )
 
+# Add Smooth Control Law as library
+add_library(smooth_control_law SHARED src/smooth_control_law.cpp)
+ament_target_dependencies(smooth_control_law ${dependencies})
+
+# Add Graceful Motion Controller
 set(library_name nav2_graceful_motion_controller)
 
 add_library(${library_name} SHARED
   src/graceful_motion_controller.cpp
   src/parameter_handler.cpp
   src/path_handler.cpp
-  src/smooth_control_law.cpp
   src/utils.cpp
 )
 
-ament_target_dependencies(${library_name}
-  ${dependencies}
-)
+target_link_libraries(${library_name} smooth_control_law)
+ament_target_dependencies(${library_name} ${dependencies})
 
-install(TARGETS ${library_name}
+install(TARGETS smooth_control_law ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -70,7 +73,7 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-ament_export_libraries(${library_name})
+ament_export_libraries(smooth_control_law ${library_name})
 ament_export_dependencies(${dependencies})
 
 pluginlib_export_plugin_description_file(nav2_core graceful_controller_plugin.xml)
