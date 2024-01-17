@@ -158,7 +158,7 @@ void VelocityPolygon::updatePolygon(const Velocity & cmd_vel_in)
 
   // Log for uncovered velocity
   RCLCPP_WARN_THROTTLE(
-    logger_, *(clock_), 2.0,
+    logger_, *clock_, 2.0,
     "Velocity is not covered by any of the velocity polygons. x: %.3f y: %.3f tw: %.3f ",
     cmd_vel_in.x, cmd_vel_in.y, cmd_vel_in.tw);
   return;
