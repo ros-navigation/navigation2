@@ -62,6 +62,12 @@ public:
     std::string & /*polygon_sub_topic*/, std::string & polygon_pub_topic,
     std::string & /*footprint_topic*/) override;
 
+  /**
+   * @brief Overriden updatePolygon function for VelocityPolygon
+   * @param cmd_vel_in Robot twist command input
+   */
+  void updatePolygon(const Velocity & cmd_vel_in) override;
+
 protected:
   /**
     * @brief Custom struc to store the parameters of the sub-polygon
@@ -85,12 +91,6 @@ protected:
     double direction_end_angle_;
     double direction_start_angle_;
   };
-
-  /**
-   * @brief Overriden updatePolygon function for VelocityPolygon
-   * @param cmd_vel_in Robot twist command input
-   */
-  void updatePolygon(const Velocity & cmd_vel_in) override;
 
   /**
    * @brief Check if the velocities and direction is in expected range.
