@@ -275,6 +275,7 @@ TEST(GracefulMotionControllerTest, dynamicParameters) {
       rclcpp::Parameter("test.initial_rotation", false),
       rclcpp::Parameter("test.initial_rotation_min_angle", 12.0),
       rclcpp::Parameter("test.final_rotation", false),
+      rclcpp::Parameter("test.rotation_scaling_factor", 13.0),
       rclcpp::Parameter("test.allow_backward", true)});
 
   // Spin
@@ -294,6 +295,7 @@ TEST(GracefulMotionControllerTest, dynamicParameters) {
   EXPECT_EQ(node->get_parameter("test.initial_rotation").as_bool(), false);
   EXPECT_EQ(node->get_parameter("test.initial_rotation_min_angle").as_double(), 12.0);
   EXPECT_EQ(node->get_parameter("test.final_rotation").as_bool(), false);
+  EXPECT_EQ(node->get_parameter("test.rotation_scaling_factor").as_double(), 13.0);
   EXPECT_EQ(node->get_parameter("test.allow_backward").as_bool(), true);
 
   // Set initial rotation to true
@@ -475,7 +477,8 @@ TEST(GracefulMotionControllerTest, rotateToTarget) {
     node->get_node_graph_interface(),
     node->get_node_services_interface());
   auto results = params->set_parameters_atomically(
-    {rclcpp::Parameter("test.v_angular_max", 1.0)});
+    {rclcpp::Parameter("test.v_angular_max", 1.0),
+      rclcpp::Parameter("test.rotation_scaling_factor", 0.5)});
   rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
 
   // Set angle to target and get velocity command
@@ -484,7 +487,7 @@ TEST(GracefulMotionControllerTest, rotateToTarget) {
 
   // Check results
   EXPECT_EQ(cmd_vel.linear.x, 0.0);
-  EXPECT_EQ(cmd_vel.angular.z, 1.0);
+  EXPECT_EQ(cmd_vel.angular.z, 0.25);
 
   // Set a new angle to target
   angle_to_target = -0.5;
@@ -492,7 +495,7 @@ TEST(GracefulMotionControllerTest, rotateToTarget) {
 
   // Check results with negative sign
   EXPECT_EQ(cmd_vel.linear.x, 0.0);
-  EXPECT_EQ(cmd_vel.angular.z, -1.0);
+  EXPECT_EQ(cmd_vel.angular.z, -0.25);
 }
 
 TEST(GracefulMotionControllerTest, setSpeedLimit) {
@@ -855,6 +858,11 @@ TEST(GracefulMotionControllerTest, computeVelocityCommandRotate) {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testGraceful");
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
 
+  nav2_util::declare_parameter_if_not_declared(
+    node, "test.v_angular_max", rclcpp::ParameterValue(1.0));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "test.rotation_scaling_factor", rclcpp::ParameterValue(0.5));
+
   // Create a costmap of 10x10 meters
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
   auto results = costmap_ros->set_parameters(
@@ -921,9 +929,10 @@ TEST(GracefulMotionControllerTest, computeVelocityCommandRotate) {
   auto cmd_vel = controller->computeVelocityCommands(robot_pose, robot_velocity, &checker);
 
   // Check results. The robot should rotate in place.
-  // So, linear velocity should be zero and angular velocity should be the v_angular_max parameter.
+  // So, linear velocity should be zero and angular velocity should be a positive value below 0.5.
   EXPECT_EQ(cmd_vel.twist.linear.x, 0.0);
-  EXPECT_EQ(cmd_vel.twist.angular.z, 1.0);
+  EXPECT_GE(cmd_vel.twist.angular.x, 0.0);
+  EXPECT_LE(cmd_vel.twist.angular.x, 0.5);
 }
 
 TEST(GracefulMotionControllerTest, computeVelocityCommandRegular) {
@@ -1160,9 +1169,10 @@ TEST(GracefulMotionControllerTest, computeVelocityCommandFinal) {
   auto cmd_vel = controller->computeVelocityCommands(robot_pose, robot_velocity, &checker);
 
   // Check results. The robot should do a final rotation near the target.
-  // So, linear velocity should be zero and angular velocity should be the v_angular_max parameter.
+  // So, linear velocity should be zero and angular velocity should be a positive value below 0.5.
   EXPECT_EQ(cmd_vel.twist.linear.x, 0.0);
-  EXPECT_EQ(cmd_vel.twist.angular.z, 1.0);
+  EXPECT_GE(cmd_vel.twist.angular.x, 0.0);
+  EXPECT_LE(cmd_vel.twist.angular.x, 0.5);
 }
 
 int main(int argc, char ** argv)

@@ -299,10 +299,9 @@ bool GracefulMotionController::simulateTrajectory(
 
 geometry_msgs::msg::Twist GracefulMotionController::rotateToTarget(const double & angle_to_target)
 {
-  double sign = angle_to_target < 0.0 ? -1.0 : 1.0;
   geometry_msgs::msg::Twist vel;
   vel.linear.x = 0.0;
-  vel.angular.z = sign * params_->v_angular_max;
+  vel.angular.z = params_->rotation_scaling_factor * angle_to_target * params_->v_angular_max;
   return vel;
 }
 

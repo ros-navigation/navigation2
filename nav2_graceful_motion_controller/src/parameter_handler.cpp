@@ -60,6 +60,8 @@ ParameterHandler::ParameterHandler(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".final_rotation", rclcpp::ParameterValue(true));
   declare_parameter_if_not_declared(
+    node, plugin_name_ + ".rotation_scaling_factor", rclcpp::ParameterValue(0.5));
+  declare_parameter_if_not_declared(
     node, plugin_name_ + ".allow_backward", rclcpp::ParameterValue(false));
 
   node->get_parameter(plugin_name_ + ".transform_tolerance", params_.transform_tolerance);
@@ -86,6 +88,7 @@ ParameterHandler::ParameterHandler(
   node->get_parameter(
     plugin_name_ + ".initial_rotation_min_angle", params_.initial_rotation_min_angle);
   node->get_parameter(plugin_name_ + ".final_rotation", params_.final_rotation);
+  node->get_parameter(plugin_name_ + ".rotation_scaling_factor", params_.rotation_scaling_factor);
   node->get_parameter(plugin_name_ + ".allow_backward", params_.allow_backward);
 
   if (params_.initial_rotation && params_.allow_backward) {
@@ -133,6 +136,8 @@ ParameterHandler::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
         params_.slowdown_radius = parameter.as_double();
       } else if (name == plugin_name_ + ".initial_rotation_min_angle") {
         params_.initial_rotation_min_angle = parameter.as_double();
+      } else if (name == plugin_name_ + ".rotation_scaling_factor") {
+        params_.rotation_scaling_factor = parameter.as_double();
       }
     } else if (type == ParameterType::PARAMETER_BOOL) {
       if (name == plugin_name_ + ".initial_rotation") {
