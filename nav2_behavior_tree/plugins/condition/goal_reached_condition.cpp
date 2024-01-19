@@ -34,12 +34,6 @@ GoalReachedCondition::GoalReachedCondition(
   global_frame_("map"),
   robot_base_frame_("base_link")
 {
-  getInput("global_frame", global_frame_);
-  getInput("robot_base_frame", robot_base_frame_);
-  getInput("xy_goal_tolerance", goal_reached_tol_);
-  getInput("yaw_goal_tolerance", goal_reached_tol_yaw_);
-  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
-  tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
 }
 
 GoalReachedCondition::~GoalReachedCondition()
@@ -67,8 +61,13 @@ void GoalReachedCondition::initialize()
     node_, "goal_reached_tol",
     rclcpp::ParameterValue(0.25));
   node_->get_parameter_or<double>("goal_reached_tol", goal_reached_tol_, 0.25);
-  tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
 
+  getInput("global_frame", global_frame_);
+  getInput("robot_base_frame", robot_base_frame_);
+  getInput("xy_goal_tolerance", goal_reached_tol_);
+  getInput("yaw_goal_tolerance", goal_reached_tol_yaw_);
+
+  tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
   node_->get_parameter("transform_tolerance", transform_tolerance_);
 
   initialized_ = true;
