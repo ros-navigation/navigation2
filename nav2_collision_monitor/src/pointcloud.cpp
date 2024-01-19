@@ -99,17 +99,17 @@ PointCloud::dynamicParametersCallback(
   return result;
 }
 
-void PointCloud::getData(
+bool PointCloud::getData(
   const rclcpp::Time & curr_time,
   std::vector<Point> & data) const
 {
   // Ignore data from the source if it is not being published yet or
   // not published for a long time
   if (data_ == nullptr) {
-    return;
+    return false;
   }
   if (!sourceValid(data_->header.stamp, curr_time)) {
-    return;
+    return false;
   }
 
   tf2::Stamped<tf2::Transform> tf_transform;
@@ -122,7 +122,7 @@ void PointCloud::getData(
         base_frame_id_, curr_time, global_frame_id_,
         transform_tolerance_, tf_buffer_, tf_transform))
     {
-      return;
+      return false;
     }
   } else {
     // Obtaining the transform to get data from source frame to base frame without time shift
@@ -133,7 +133,7 @@ void PointCloud::getData(
         data_->header.frame_id, base_frame_id_,
         transform_tolerance_, tf_buffer_, tf_transform))
     {
-      return;
+      return false;
     }
   }
 
@@ -152,6 +152,7 @@ void PointCloud::getData(
       data.push_back({p_v3_b.x(), p_v3_b.y()});
     }
   }
+  return true;
 }
 
 void PointCloud::getParameters(std::string & source_topic)

@@ -67,14 +67,14 @@ void PolygonSource::configure()
     std::bind(&PolygonSource::dataCallback, this, std::placeholders::_1));
 }
 
-void PolygonSource::getData(
+bool PolygonSource::getData(
   const rclcpp::Time & curr_time,
   std::vector<Point> & data) const
 {
   // Ignore data from the source if it is not being published yet or
   // not published for a long time
   if (data_ == nullptr || data_->polygons.empty()) {
-    return;
+    return false;
   }
   // get the oldest time stamp from the polygon array
   rclcpp::Time oldest_stamp = rclcpp::Time(data_->polygons[0].header.stamp);
@@ -84,7 +84,7 @@ void PolygonSource::getData(
     }
   }
   if (!sourceValid(oldest_stamp, curr_time)) {
-    return;
+    return false;
   }
 
   tf2::Stamped<tf2::Transform> tf_transform;
@@ -99,7 +99,7 @@ void PolygonSource::getData(
           base_frame_id_, curr_time, global_frame_id_,
           transform_tolerance_, tf_buffer_, tf_transform))
       {
-        return;
+        return false;
       }
     } else {
       // Obtaining the transform to get data from source frame to base frame without time shift
@@ -110,7 +110,7 @@ void PolygonSource::getData(
           polygon.header.frame_id, base_frame_id_,
           transform_tolerance_, tf_buffer_, tf_transform))
       {
-        return;
+        return false;
       }
     }
     geometry_msgs::msg::PolygonStamped poly_out;
@@ -118,6 +118,7 @@ void PolygonSource::getData(
     tf2::doTransform(polygon, poly_out, tf);
     convertPolygonStampedToPoints(poly_out, data);
   }
+  return true;
 
 }
 void PolygonSource::convertPolygonStampedToPoints(
