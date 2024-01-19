@@ -58,10 +58,10 @@ void GoalReachedCondition::initialize()
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
 
   nav2_util::declare_parameter_if_not_declared(
-   node_, "goal_reached_tol",
-   rclcpp::ParameterValue(0.25));
+    node_, "goal_reached_tol",
+    rclcpp::ParameterValue(0.25));
   node_->get_parameter_or<double>("goal_reached_tol", goal_reached_tol_, 0.25);
-  
+
   getInput("global_frame", global_frame_);
   getInput("robot_base_frame", robot_base_frame_);
   getInput("xy_goal_tolerance", goal_reached_tol_);
@@ -93,7 +93,8 @@ bool GoalReachedCondition::isGoalReached()
   double dx = goal.pose.position.x - current_pose.pose.position.x;
   double dy = goal.pose.position.y - current_pose.pose.position.y;
 
-  return (dx * dx + dy * dy) <= (goal_reached_tol_ * goal_reached_tol_) && dangle <= goal_reached_tol_yaw_;
+  return (dx * dx + dy * dy) <= (goal_reached_tol_ * goal_reached_tol_) &&
+         dangle <= goal_reached_tol_yaw_;
 }
 
 }  // namespace nav2_behavior_tree
