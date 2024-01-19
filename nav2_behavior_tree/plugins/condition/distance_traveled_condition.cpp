@@ -38,7 +38,6 @@ DistanceTraveledCondition::DistanceTraveledCondition(
 
 void DistanceTraveledCondition::initialize()
 {
-  
   getInput("distance", distance_);
   getInput("global_frame", global_frame_);
   getInput("robot_base_frame", robot_base_frame_);
