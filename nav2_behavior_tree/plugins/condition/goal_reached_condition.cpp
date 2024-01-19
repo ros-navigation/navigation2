@@ -66,7 +66,7 @@ void GoalReachedCondition::initialize()
   getInput("robot_base_frame", robot_base_frame_);
   getInput("xy_goal_tolerance", goal_reached_tol_);
   getInput("yaw_goal_tolerance", goal_reached_tol_yaw_);
-  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+
   tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
 
   node_->get_parameter("transform_tolerance", transform_tolerance_);
