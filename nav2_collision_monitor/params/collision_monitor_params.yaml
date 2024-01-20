@@ -55,12 +55,10 @@ collision_monitor:
     VelocityPolygonStop:
       type: "velocity_polygon"
       action_type: "stop"
-      time_before_collision: 2.0
-      simulation_time_step: 0.1
       min_points: 6
       visualize: True
       enabled: True
-      polygon_pub_topic: "polygon_approach"
+      polygon_pub_topic: "velocity_polygon_stop"
       velocity_polygons: ["rotation", "translation_forward", "translation_backward", "stopped"]
       holonomic: false
       rotation:
