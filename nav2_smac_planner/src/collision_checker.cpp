@@ -108,7 +108,7 @@ bool GridCollisionChecker::inCollision(
     // if footprint, then we check for the footprint's points, but first see
     // if the robot is even potentially in an inscribed collision
     footprint_cost_ = costmap_->getCost(
-      static_cast<unsigned int>(x), static_cast<unsigned int>(y));
+      static_cast<unsigned int>(x + 0.5), static_cast<unsigned int>(y + 0.5));
 
     if (footprint_cost_ < possible_inscribed_cost_) {
       if (possible_inscribed_cost_ > 0) {
@@ -158,7 +158,7 @@ bool GridCollisionChecker::inCollision(
   } else {
     // if radius, then we can check the center of the cost assuming inflation is used
     footprint_cost_ = costmap_->getCost(
-      static_cast<unsigned int>(x), static_cast<unsigned int>(y));
+      static_cast<unsigned int>(x + 0.5), static_cast<unsigned int>(y + 0.5));
 
     if (footprint_cost_ == UNKNOWN && traverse_unknown) {
       return false;
