@@ -148,7 +148,7 @@ TEST_F(NavigateThroughPosesActionTestFixture, test_tick)
   EXPECT_EQ(action_server_->getCurrentGoal()->poses, poses);
 
   // halt node so another goal can be sent
-  tree_->rootNode()->halt();
+  tree_->haltTree();
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::IDLE);
 }
 

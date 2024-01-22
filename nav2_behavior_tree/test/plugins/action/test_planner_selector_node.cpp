@@ -93,7 +93,7 @@ TEST_F(PlannerSelectorTestFixture, test_custom_topic)
 
   // check default value
   std::string selected_planner_result;
-  config_->blackboard->get("selected_planner", selected_planner_result);
+  EXPECT_TRUE(config_->blackboard->get("selected_planner", selected_planner_result));
 
   EXPECT_EQ(selected_planner_result, "GridBased");
 
@@ -117,7 +117,7 @@ TEST_F(PlannerSelectorTestFixture, test_custom_topic)
   }
 
   // check planner updated
-  config_->blackboard->get("selected_planner", selected_planner_result);
+  EXPECT_TRUE(config_->blackboard->get("selected_planner", selected_planner_result));
   EXPECT_EQ("RRT", selected_planner_result);
 }
 
@@ -141,7 +141,7 @@ TEST_F(PlannerSelectorTestFixture, test_default_topic)
 
   // check default value
   std::string selected_planner_result;
-  config_->blackboard->get("selected_planner", selected_planner_result);
+  EXPECT_TRUE(config_->blackboard->get("selected_planner", selected_planner_result));
 
   EXPECT_EQ(selected_planner_result, "GridBased");
 
@@ -165,7 +165,7 @@ TEST_F(PlannerSelectorTestFixture, test_default_topic)
   }
 
   // check planner updated
-  config_->blackboard->get("selected_planner", selected_planner_result);
+  EXPECT_TRUE(config_->blackboard->get("selected_planner", selected_planner_result));
   EXPECT_EQ("RRT", selected_planner_result);
 }
 

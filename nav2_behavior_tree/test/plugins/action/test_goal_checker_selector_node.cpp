@@ -95,7 +95,7 @@ TEST_F(GoalCheckerSelectorTestFixture, test_custom_topic)
 
   // check default value
   std::string selected_goal_checker_result;
-  config_->blackboard->get("selected_goal_checker", selected_goal_checker_result);
+  EXPECT_TRUE(config_->blackboard->get("selected_goal_checker", selected_goal_checker_result));
 
   EXPECT_EQ(selected_goal_checker_result, "SimpleGoalCheck");
 
@@ -119,7 +119,7 @@ TEST_F(GoalCheckerSelectorTestFixture, test_custom_topic)
   }
 
   // check goal_checker updated
-  config_->blackboard->get("selected_goal_checker", selected_goal_checker_result);
+  EXPECT_TRUE(config_->blackboard->get("selected_goal_checker", selected_goal_checker_result));
   EXPECT_EQ("AngularGoalChecker", selected_goal_checker_result);
 }
 
@@ -143,7 +143,7 @@ TEST_F(GoalCheckerSelectorTestFixture, test_default_topic)
 
   // check default value
   std::string selected_goal_checker_result;
-  config_->blackboard->get("selected_goal_checker", selected_goal_checker_result);
+  EXPECT_TRUE(config_->blackboard->get("selected_goal_checker", selected_goal_checker_result));
 
   EXPECT_EQ(selected_goal_checker_result, "GridBased");
 
@@ -167,7 +167,7 @@ TEST_F(GoalCheckerSelectorTestFixture, test_default_topic)
   }
 
   // check goal_checker updated
-  config_->blackboard->get("selected_goal_checker", selected_goal_checker_result);
+  EXPECT_TRUE(config_->blackboard->get("selected_goal_checker", selected_goal_checker_result));
   EXPECT_EQ("RRT", selected_goal_checker_result);
 }
 

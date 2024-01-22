@@ -138,7 +138,7 @@ TEST_F(TruncatePathLocalTestFixture, test_tick)
   }
 
   nav_msgs::msg::Path truncated_path;
-  config_->blackboard->get("truncated_path", truncated_path);
+  EXPECT_TRUE(config_->blackboard->get("truncated_path", truncated_path));
 
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
   EXPECT_NE(path, truncated_path);
@@ -160,7 +160,7 @@ TEST_F(TruncatePathLocalTestFixture, test_tick)
   {
     tree_->rootNode()->executeTick();
   }
-  config_->blackboard->get("truncated_path", truncated_path);
+  EXPECT_TRUE(config_->blackboard->get("truncated_path", truncated_path));
 
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
   EXPECT_NE(path, truncated_path);
@@ -182,7 +182,7 @@ TEST_F(TruncatePathLocalTestFixture, test_tick)
   {
     tree_->rootNode()->executeTick();
   }
-  config_->blackboard->get("truncated_path", truncated_path);
+  EXPECT_TRUE(config_->blackboard->get("truncated_path", truncated_path));
 
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
   EXPECT_NE(path, truncated_path);
@@ -233,7 +233,7 @@ TEST_F(TruncatePathLocalTestFixture, test_success_on_empty_path)
     tree_->rootNode()->executeTick();
   }
   nav_msgs::msg::Path truncated_path;
-  config_->blackboard->get("truncated_path", truncated_path);
+  EXPECT_TRUE(config_->blackboard->get("truncated_path", truncated_path));
 
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
   EXPECT_EQ(path, truncated_path);
@@ -276,7 +276,7 @@ TEST_F(TruncatePathLocalTestFixture, test_failure_on_no_pose)
     tree_->rootNode()->executeTick();
   }
   nav_msgs::msg::Path truncated_path;
-  config_->blackboard->get("truncated_path", truncated_path);
+  EXPECT_TRUE(config_->blackboard->get("truncated_path", truncated_path));
 
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::FAILURE);
   SUCCEED();
@@ -317,7 +317,7 @@ TEST_F(TruncatePathLocalTestFixture, test_failure_on_invalid_robot_frame)
     tree_->rootNode()->executeTick();
   }
   nav_msgs::msg::Path truncated_path;
-  config_->blackboard->get("truncated_path", truncated_path);
+  EXPECT_TRUE(config_->blackboard->get("truncated_path", truncated_path));
 
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::FAILURE);
   SUCCEED();
@@ -362,7 +362,7 @@ TEST_F(TruncatePathLocalTestFixture, test_path_pruning)
   {
     tree_->rootNode()->executeTick();
   }
-  config_->blackboard->get("truncated_path", truncated_path);
+  EXPECT_TRUE(config_->blackboard->get("truncated_path", truncated_path));
 
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
   EXPECT_NE(path, truncated_path);
@@ -395,7 +395,7 @@ TEST_F(TruncatePathLocalTestFixture, test_path_pruning)
   {
     tree_->rootNode()->executeTick();
   }
-  config_->blackboard->get("truncated_path", truncated_path);
+  EXPECT_TRUE(config_->blackboard->get("truncated_path", truncated_path));
 
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
   EXPECT_NE(path, truncated_path);
@@ -428,7 +428,7 @@ TEST_F(TruncatePathLocalTestFixture, test_path_pruning)
   {
     tree_->rootNode()->executeTick();
   }
-  config_->blackboard->get("truncated_path", truncated_path);
+  EXPECT_TRUE(config_->blackboard->get("truncated_path", truncated_path));
 
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
   EXPECT_NE(path, truncated_path);
