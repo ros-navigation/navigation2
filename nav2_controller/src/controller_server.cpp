@@ -68,6 +68,11 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "local_costmap", std::string{get_namespace()}, "local_costmap",
     get_parameter("use_sim_time").as_bool());
+
+  // The costmap node is used in the implementation of the controller to cut paths based on sensor realtime data
+  sensor_costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "sensor_local_costmap", std::string{get_namespace()}, "sensor_local_costmap",
+    get_parameter("use_sim_time").as_bool());
 }
 
 ControllerServer::~ControllerServer()
@@ -144,6 +149,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   get_parameter("use_realtime_priority", use_realtime_priority_);
 
   costmap_ros_->configure();
+  sensor_costmap_ros_->configure();
   // Launch a thread to run the costmap node
   costmap_thread_ = std::make_unique<nav2_util::NodeThread>(costmap_ros_);
 
@@ -238,7 +244,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   // Create the action server that we implement with our followPath method
   // This may throw due to real-time prioritzation if user doesn't have real-time permissions
-  try {
+  try {                                           custom_via_points_active_(false), no_infeasible_plans_(0),
     action_server_ = std::make_unique<ActionServer>(
       shared_from_this(),
       "follow_path",
