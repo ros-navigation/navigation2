@@ -133,6 +133,18 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State &)
     "cmd_vel", rclcpp::QoS(1),
     std::bind(&VelocitySmoother::inputCommandCallback, this, std::placeholders::_1));
 
+  declare_parameter_if_not_declared(node, "use_realtime_priority", rclcpp::ParameterValue(false));
+  bool use_realtime_priority = false;
+  node->get_parameter("use_realtime_priority", use_realtime_priority);
+  if (use_realtime_priority) {
+    try {
+      nav2_util::setSoftRealTimePriority();
+    } catch (const std::runtime_error & e) {
+      RCLCPP_ERROR(get_logger(), "%s", e.what());
+      return nav2_util::CallbackReturn::FAILURE;
+    }
+  }
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -142,7 +154,7 @@ VelocitySmoother::on_activate(const rclcpp_lifecycle::State &)
   RCLCPP_INFO(get_logger(), "Activating");
   smoothed_cmd_pub_->on_activate();
   double timer_duration_ms = 1000.0 / smoothing_frequency_;
-  timer_ = create_wall_timer(
+  timer_ = this->create_wall_timer(
     std::chrono::milliseconds(static_cast<int>(timer_duration_ms)),
     std::bind(&VelocitySmoother::smootherTimer, this));
 
@@ -350,7 +362,7 @@ VelocitySmoother::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
         }
 
         double timer_duration_ms = 1000.0 / smoothing_frequency_;
-        timer_ = create_wall_timer(
+        timer_ = this->create_wall_timer(
           std::chrono::milliseconds(static_cast<int>(timer_duration_ms)),
           std::bind(&VelocitySmoother::smootherTimer, this));
       } else if (name == "velocity_timeout") {

@@ -65,6 +65,11 @@ public:
   BT::NodeStatus on_cancelled() override;
 
   /**
+   * @brief Function to read parameters and initialize class variables
+   */
+  void initialize();
+
+  /**
    * @brief Creates list of BT ports
    * @return BT::PortsList Containing basic ports along with node-specific ports
    */
@@ -79,6 +84,9 @@ public:
           "error_code_id", "The back up behavior server error code")
       });
   }
+
+private:
+  bool initialized_;
 };
 
 }  // namespace nav2_behavior_tree

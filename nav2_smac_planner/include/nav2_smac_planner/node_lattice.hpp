@@ -58,8 +58,6 @@ struct LatticeMotionTable
   /**
    * @brief Initializing state lattice planner's motion model
    * @param size_x_in Size of costmap in X
-   * @param size_y_in Size of costmap in Y
-   * @param angle_quantization_in Size of costmap in bin sizes
    * @param search_info Parameters for searching
    */
   void initMotionModel(
@@ -69,9 +67,12 @@ struct LatticeMotionTable
   /**
    * @brief Get projections of motion models
    * @param node Ptr to NodeLattice
+   * @param Reference direction change index
    * @return A set of motion poses
    */
-  MotionPrimitivePtrs getMotionPrimitives(const NodeLattice * node);
+  MotionPrimitivePtrs getMotionPrimitives(
+    const NodeLattice * node,
+    unsigned int & direction_change_index);
 
   /**
    * @brief Get file metadata needed

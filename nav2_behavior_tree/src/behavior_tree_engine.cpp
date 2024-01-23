@@ -25,7 +25,8 @@
 namespace nav2_behavior_tree
 {
 
-BehaviorTreeEngine::BehaviorTreeEngine(const std::vector<std::string> & plugin_libraries)
+BehaviorTreeEngine::BehaviorTreeEngine(
+  const std::vector<std::string> & plugin_libraries)
 {
   BT::SharedLibrary loader;
   for (const auto & p : plugin_libraries) {

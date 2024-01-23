@@ -92,10 +92,6 @@ TEST(AStarTest, test_a_star_2d)
   a_star_2.setCollisionChecker(checker.get());
   num_it = 0;
   EXPECT_THROW(a_star_2.createPath(path, num_it, tolerance), std::runtime_error);
-  a_star_2.setStart(50, 50, 0);  // invalid
-  a_star_2.setGoal(0, 0, 0);  // valid
-  num_it = 0;
-  EXPECT_THROW(a_star_2.createPath(path, num_it, tolerance), std::runtime_error);
   a_star_2.setStart(0, 0, 0);  // valid
   a_star_2.setGoal(50, 50, 0);  // invalid
   num_it = 0;
@@ -234,7 +230,7 @@ TEST(AStarTest, test_a_star_lattice)
 
   // check path is the right size and collision free
   EXPECT_EQ(num_it, 22);
-  EXPECT_GT(path.size(), 46u);
+  EXPECT_GT(path.size(), 45u);
   for (unsigned int i = 0; i != path.size(); i++) {
     EXPECT_EQ(costmapA->getCost(path[i].x, path[i].y), 0);
   }

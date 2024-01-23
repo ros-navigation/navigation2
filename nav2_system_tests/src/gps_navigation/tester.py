@@ -30,6 +30,7 @@ from rclpy.parameter import Parameter
 
 
 class GpsWaypointFollowerTest(Node):
+
     def __init__(self):
         super().__init__(node_name='nav2_gps_waypoint_tester', namespace='')
         self.waypoints = None

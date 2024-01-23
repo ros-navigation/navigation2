@@ -47,6 +47,7 @@ class TestType(Enum):
 
 
 class FilterMask:
+
     def __init__(self, filter_mask: OccupancyGrid):
         self.filter_mask = filter_mask
 

@@ -26,7 +26,10 @@ WouldAPlannerRecoveryHelp::WouldAPlannerRecoveryHelp(
   error_codes_to_check_ = {
     ActionResult::UNKNOWN,
     ActionResult::NO_VALID_PATH,
-    ActionResult::TIMEOUT
+    ActionResult::TIMEOUT,
+    ThroughActionResult::UNKNOWN,
+    ThroughActionResult::TIMEOUT,
+    ThroughActionResult::NO_VALID_PATH
   };
 }
 

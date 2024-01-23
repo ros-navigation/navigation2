@@ -45,6 +45,7 @@ TEST(SmacTest, test_smac_se2)
 {
   rclcpp_lifecycle::LifecycleNode::SharedPtr nodeSE2 =
     std::make_shared<rclcpp_lifecycle::LifecycleNode>("SmacSE2Test");
+  nodeSE2->declare_parameter("test.debug_visualizations", rclcpp::ParameterValue(true));
 
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros =
     std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");

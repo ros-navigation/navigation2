@@ -36,6 +36,10 @@ public:
     const std::string & xml_tag_name,
     const BT::NodeConfiguration & conf);
 
+  /**
+   * @brief Function to read parameters and initialize class variables
+   */
+  void initialize();
 
   static BT::PortsList providedPorts()
   {
@@ -56,6 +60,7 @@ private:
   double transform_tolerance_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::string robot_base_frame_;
+  bool initialized_;
 };
 
 }  // namespace nav2_behavior_tree
