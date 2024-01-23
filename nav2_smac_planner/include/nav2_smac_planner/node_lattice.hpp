@@ -105,12 +105,14 @@ struct LatticeMotionTable
   float reverse_penalty;
   float travel_distance_reward;
   float rotation_penalty;
+  float min_turning_radius;
   bool allow_reverse_expansion;
   std::vector<std::vector<MotionPrimitive>> motion_primitives;
   ompl::base::StateSpacePtr state_space;
   std::vector<TrigValues> trig_values;
   std::string current_lattice_filepath;
   LatticeMetadata lattice_metadata;
+  MotionModel motion_model = MotionModel::UNKNOWN;
 };
 
 /**
@@ -183,7 +185,7 @@ public:
    * @brief Gets the accumulated cost at this node
    * @return accumulated cost
    */
-  inline float & getAccumulatedCost()
+  inline float getAccumulatedCost()
   {
     return _accumulated_cost;
   }
@@ -201,7 +203,7 @@ public:
    * @brief Gets the costmap cost at this node
    * @return costmap cost
    */
-  inline float & getCost()
+  inline float getCost()
   {
     return _cell_cost;
   }
@@ -210,7 +212,7 @@ public:
    * @brief Gets if cell has been visited in search
    * @param If cell was visited
    */
-  inline bool & wasVisited()
+  inline bool wasVisited()
   {
     return _was_visited;
   }
@@ -227,7 +229,7 @@ public:
    * @brief Gets cell index
    * @return Reference to cell index
    */
-  inline unsigned int & getIndex()
+  inline unsigned int getIndex()
   {
     return _index;
   }
