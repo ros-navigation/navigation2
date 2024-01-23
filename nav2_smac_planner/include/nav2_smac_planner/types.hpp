@@ -43,6 +43,8 @@ struct SearchInfo
   float rotation_penalty{5.0};
   float analytic_expansion_ratio{3.5};
   float analytic_expansion_max_length{60.0};
+  float analytic_expansion_max_cost{200.0};
+  bool analytic_expansion_max_cost_override{false};
   std::string lattice_filepath;
   bool cache_obstacle_heuristic{false};
   bool allow_reverse_expansion{false};

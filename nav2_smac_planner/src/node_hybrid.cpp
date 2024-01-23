@@ -139,7 +139,7 @@ void HybridMotionTable::initDubin(
   }
 
   // Create the correct OMPL state space
-  state_space = std::make_unique<ompl::base::DubinsStateSpace>(min_turning_radius);
+  state_space = std::make_shared<ompl::base::DubinsStateSpace>(min_turning_radius);
 
   // Precompute projection deltas
   delta_xs.resize(projections.size());
@@ -260,7 +260,7 @@ void HybridMotionTable::initReedsShepp(
   }
 
   // Create the correct OMPL state space
-  state_space = std::make_unique<ompl::base::ReedsSheppStateSpace>(min_turning_radius);
+  state_space = std::make_shared<ompl::base::ReedsSheppStateSpace>(min_turning_radius);
 
   // Precompute projection deltas
   delta_xs.resize(projections.size());
@@ -747,10 +747,10 @@ void NodeHybrid::precomputeDistanceHeuristic(
 {
   // Dubin or Reeds-Shepp shortest distances
   if (motion_model == MotionModel::DUBIN) {
-    motion_table.state_space = std::make_unique<ompl::base::DubinsStateSpace>(
+    motion_table.state_space = std::make_shared<ompl::base::DubinsStateSpace>(
       search_info.minimum_turning_radius);
   } else if (motion_model == MotionModel::REEDS_SHEPP) {
-    motion_table.state_space = std::make_unique<ompl::base::ReedsSheppStateSpace>(
+    motion_table.state_space = std::make_shared<ompl::base::ReedsSheppStateSpace>(
       search_info.minimum_turning_radius);
   } else {
     throw std::runtime_error(
