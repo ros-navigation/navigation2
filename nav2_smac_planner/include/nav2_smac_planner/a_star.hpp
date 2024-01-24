@@ -70,8 +70,7 @@ public:
   typedef std::priority_queue<NodeElement, std::vector<NodeElement>, NodeComparator> NodeQueue;
 
   /**
-   * @brief A constructor for nav2_smac_planner::PlannerServer
-   * @param neighborhood The type of neighborhood to use for search (4 or 8 connected)
+   * @brief A constructor for nav2_smac_planner::AStarAlgorithm
    */
   explicit AStarAlgorithm(const MotionModel & motion_model, const SearchInfo & search_info);
 
@@ -191,7 +190,7 @@ protected:
   inline NodePtr getNextNode();
 
   /**
-   * @brief Get pointer to next goal in open set
+   * @brief Add a node to the open set
    * @param cost The cost to sort into the open set of the node
    * @param node Node pointer reference to add to open set
    */
@@ -199,8 +198,7 @@ protected:
 
   /**
    * @brief Adds node to graph
-   * @param cost The cost to sort into the open set of the node
-   * @param node Node pointer reference to add to open set
+   * @param index Node index to add
    */
   inline NodePtr addToGraph(const unsigned int & index);
 
@@ -213,9 +211,8 @@ protected:
 
   /**
    * @brief Get cost of heuristic of node
-   * @param node Node index current
-   * @param node Node index of new
-   * @return Heuristic cost between the nodes
+   * @param node Node pointer to get heuristic for
+   * @return Heuristic cost for node
    */
   inline float getHeuristicCost(const NodePtr & node);
 

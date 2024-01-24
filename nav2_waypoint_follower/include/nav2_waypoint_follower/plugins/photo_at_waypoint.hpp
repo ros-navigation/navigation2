@@ -108,7 +108,7 @@ protected:
   sensor_msgs::msg::Image::SharedPtr curr_frame_msg_;
   // global logger
   rclcpp::Logger logger_{rclcpp::get_logger("nav2_waypoint_follower")};
-  // ros susbcriber to get camera image
+  // ros subscriber to get camera image
   rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr camera_image_subscriber_;
 };
 }  // namespace nav2_waypoint_follower

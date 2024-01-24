@@ -111,7 +111,7 @@ static Counts& counts() {
 #    error Unsupported bitness
 #endif
 
-// endianess
+// endianness
 #ifdef _MSC_VER
 #    define ROBIN_HOOD_PRIVATE_DEFINITION_LITTLE_ENDIAN() 1
 #    define ROBIN_HOOD_PRIVATE_DEFINITION_BIG_ENDIAN() 0
@@ -2132,7 +2132,7 @@ public:
             return maxElements * MaxLoadFactor100 / 100;
         }
 
-        // we might be a bit inprecise, but since maxElements is quite large that doesn't matter
+        // we might be a bit imprecise, but since maxElements is quite large that doesn't matter
         return (maxElements / 100) * MaxLoadFactor100;
     }
 

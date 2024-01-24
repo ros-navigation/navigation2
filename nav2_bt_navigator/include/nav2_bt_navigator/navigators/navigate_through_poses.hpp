@@ -32,7 +32,7 @@ namespace nav2_bt_navigator
 {
 
 /**
- * @class NavigateToPoseNavigator
+ * @class NavigateThroughPosesNavigator
  * @brief A navigator for navigating to a a bunch of intermediary poses
  */
 class NavigateThroughPosesNavigator
