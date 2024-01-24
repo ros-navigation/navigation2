@@ -356,7 +356,7 @@ TEST(UtilsTests, SmootherTest)
   EXPECT_NEAR(history[3].wz, 0.23, 0.02);
 
   // Check that path is smoother
-  float smoothed_val, original_val;
+  float smoothed_val{0}, original_val{0};
   for (unsigned int i = 0; i != noisey_sequence.vx.shape(0); i++) {
     smoothed_val += fabs(noisey_sequence.vx(i) - 0.2);
     smoothed_val += fabs(noisey_sequence.vy(i) - 0.0);
