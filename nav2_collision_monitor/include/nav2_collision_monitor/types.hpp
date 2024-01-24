@@ -16,6 +16,7 @@
 #define NAV2_COLLISION_MONITOR__TYPES_HPP_
 
 #include <string>
+#include <cmath>
 
 namespace nav2_collision_monitor
 {
@@ -29,21 +30,26 @@ struct Velocity
 
   inline bool operator<(const Velocity & second) const
   {
-    const double first_vel = x * x + y * y + tw * tw;
-    const double second_vel = second.x * second.x + second.y * second.y + second.tw * second.tw;
+    const double first_vel = getMagnitude();
+    const double second_vel = second.getMagnitude();
     // This comparison includes rotations in place, where linear velocities are equal to zero
     return first_vel < second_vel;
   }
 
   inline bool operator<(const double & second) const
   {
-    const double first_vel = x * x + y * y + tw * tw;
+    const double first_vel = getMagnitude();
     return first_vel < second;
   }
 
   inline Velocity operator*(const double & mul) const
   {
     return {x * mul, y * mul, tw * mul};
+  }
+
+  inline double getMagnitude() const
+  {
+    return sqrt(x * x + y * y + tw * tw);
   }
 
   inline bool isZero() const

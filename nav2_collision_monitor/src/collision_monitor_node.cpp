@@ -552,19 +552,23 @@ bool CollisionMonitor::processApproach(
   if (!polygon->isShapeSet()) {
     return false;
   }
+  double min_vel = polygon->getMinVelBeforeStop();
+  double collision_time = -1.0;
 
-  // Obtain time before a collision
-  const double collision_time = polygon->getCollisionTime(collision_points, velocity);
+  // Obtain time before a collision, using max(velocity, min_vel_before_stop)
+  if((min_vel != -1.0) && (velocity < min_vel)){
+    const double ratio = min_vel / velocity.getMagnitude();
+    collision_time = polygon->getCollisionTime(collision_points, velocity * ratio);
+  } else {
+    collision_time = polygon->getCollisionTime(collision_points, velocity);
+  } 
   if (collision_time >= 0.0) {
     // If collision will occurr, reduce robot speed
     const double change_ratio = collision_time / polygon->getTimeBeforeCollision();
     const Velocity safe_vel = velocity * change_ratio;
-    // Check that currently calculated velocity is safer than
-    // chosen for previous shapes one
 
-    double min_vel = polygon->getMinVelBeforeStop();
     if (min_vel != -1.0) {
-      if (safe_vel < min_vel) {
+      if (safe_vel < velocity.getMagnitude()) {
         robot_action.action_type = APPROACH;
         robot_action.req_vel.x = 0.0;
         robot_action.req_vel.y = 0.0;
@@ -573,6 +577,8 @@ bool CollisionMonitor::processApproach(
       }
     }
 
+    // Check that currently calculated velocity is safer than
+    // chosen for previous shapes one
     if (safe_vel < robot_action.req_vel) {
       robot_action.polygon_name = polygon->getName();
       robot_action.action_type = APPROACH;
