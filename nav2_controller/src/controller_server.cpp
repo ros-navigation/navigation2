@@ -158,7 +158,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
         progress_checker_ids_[i].c_str(), progress_checker_types_[i].c_str());
       progress_checker->initialize(node, progress_checker_ids_[i]);
       progress_checkers_.insert({progress_checker_ids_[i], progress_checker});
-    } catch (const pluginlib::PluginlibException & ex) {
+    } catch (const std::exception & ex) {
       RCLCPP_FATAL(
         get_logger(),
         "Failed to create progress_checker. Exception: %s", ex.what());
@@ -264,7 +264,10 @@ ControllerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
-  costmap_ros_->activate();
+  const auto costmap_ros_state = costmap_ros_->activate();
+  if (costmap_ros_state.id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
+    return nav2_util::CallbackReturn::FAILURE;
+  }
   ControllerMap::iterator it;
   for (it = controllers_.begin(); it != controllers_.end(); ++it) {
     it->second->activate();

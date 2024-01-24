@@ -52,7 +52,6 @@ PlannerServer::PlannerServer(const rclcpp::NodeOptions & options)
   // Declare this node's parameters
   declare_parameter("planner_plugins", default_ids_);
   declare_parameter("expected_planner_frequency", 1.0);
-
   declare_parameter("action_server_result_timeout", 10.0);
 
   get_parameter("planner_plugins", planner_ids_);
@@ -86,6 +85,12 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   costmap_ros_->configure();
   costmap_ = costmap_ros_->getCostmap();
 
+  if (!costmap_ros_->getUseRadius()) {
+    collision_checker_ =
+      std::make_unique<nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>(
+      costmap_);
+  }
+
   // Launch a thread to run the costmap node
   costmap_thread_ = std::make_unique<nav2_util::NodeThread>(costmap_ros_);
 
@@ -110,7 +115,7 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
         planner_ids_[i].c_str(), planner_types_[i].c_str());
       planner->configure(node, planner_ids_[i], tf_, costmap_ros_);
       planners_.insert({planner_ids_[i], planner});
-    } catch (const pluginlib::PluginlibException & ex) {
+    } catch (const std::exception & ex) {
       RCLCPP_FATAL(
         get_logger(), "Failed to create global planner. Exception: %s",
         ex.what());
@@ -174,7 +179,10 @@ PlannerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   plan_publisher_->on_activate();
   action_server_pose_->activate();
   action_server_poses_->activate();
-  costmap_ros_->activate();
+  const auto costmap_ros_state = costmap_ros_->activate();
+  if (costmap_ros_state.id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
+    return nav2_util::CallbackReturn::FAILURE;
+  }
 
   PlannerMap::iterator it;
   for (it = planners_.begin(); it != planners_.end(); ++it) {
@@ -648,21 +656,40 @@ void PlannerServer::isPathValid(
 
     /**
      * The lethal check starts at the closest point to avoid points that have already been passed
-     * and may have become occupied
+     * and may have become occupied. The method for collision detection is based on the shape of 
+     * the footprint. 
      */
     std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
     unsigned int mx = 0;
     unsigned int my = 0;
-    for (unsigned int i = closest_point_index; i < request->path.poses.size(); ++i) {
-      costmap_->worldToMap(
-        request->path.poses[i].pose.position.x,
-        request->path.poses[i].pose.position.y, mx, my);
-      unsigned int cost = costmap_->getCost(mx, my);
 
-      if (cost == nav2_costmap_2d::LETHAL_OBSTACLE ||
-        cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE)
+    bool use_radius = costmap_ros_->getUseRadius();
+
+    unsigned int cost = nav2_costmap_2d::FREE_SPACE;
+    for (unsigned int i = closest_point_index; i < request->path.poses.size(); ++i) {
+      auto & position = request->path.poses[i].pose.position;
+      if (use_radius) {
+        if (costmap_->worldToMap(position.x, position.y, mx, my)) {
+          cost = costmap_->getCost(mx, my);
+        } else {
+          cost = nav2_costmap_2d::LETHAL_OBSTACLE;
+        }
+      } else {
+        nav2_costmap_2d::Footprint footprint = costmap_ros_->getRobotFootprint();
+        auto theta = tf2::getYaw(request->path.poses[i].pose.orientation);
+        cost = static_cast<unsigned int>(collision_checker_->footprintCostAtPose(
+            position.x, position.y, theta, footprint));
+      }
+
+      if (use_radius &&
+        (cost == nav2_costmap_2d::LETHAL_OBSTACLE ||
+        cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE))
       {
         response->is_valid = false;
+        break;
+      } else if (cost == nav2_costmap_2d::LETHAL_OBSTACLE) {
+        response->is_valid = false;
+        break;
       }
     }
   }

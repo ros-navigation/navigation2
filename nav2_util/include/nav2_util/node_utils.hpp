@@ -1,4 +1,5 @@
 // Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2023 Open Navigation LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -142,11 +143,11 @@ std::string get_plugin_type_param(
     if (!node->get_parameter(plugin_name + ".plugin", plugin_type)) {
       RCLCPP_FATAL(
         node->get_logger(), "Can not get 'plugin' param value for %s", plugin_name.c_str());
-      exit(-1);
+      throw std::runtime_error("No 'plugin' param for param ns!");
     }
   } catch (rclcpp::exceptions::ParameterUninitializedException & ex) {
     RCLCPP_FATAL(node->get_logger(), "'plugin' param not defined for %s", plugin_name.c_str());
-    exit(-1);
+    throw std::runtime_error("No 'plugin' param for param ns!");
   }
 
   return plugin_type;
@@ -170,6 +171,13 @@ void copy_all_parameters(const NodeT1 & parent, const NodeT2 & child)
     }
   }
 }
+
+/**
+ * @brief Sets the caller thread to have a soft-realtime prioritization by
+ * increasing the priority level of the host thread.
+ * May throw exception if unable to set prioritization successfully
+ */
+void setSoftRealTimePriority();
 
 }  // namespace nav2_util
 

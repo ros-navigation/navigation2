@@ -25,6 +25,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "nav2_util/node_thread.hpp"
+#include "nav2_util/node_utils.hpp"
 
 namespace nav2_util
 {
@@ -184,17 +185,8 @@ public:
   void setSoftRealTimePriority()
   {
     if (use_realtime_prioritization_) {
-      sched_param sch;
-      sch.sched_priority = 49;
-      if (sched_setscheduler(0, SCHED_FIFO, &sch) == -1) {
-        std::string errmsg(
-          "Cannot set as real-time thread. Users must set: <username> hard rtprio 99 and "
-          "<username> soft rtprio 99 in /etc/security/limits.conf to enable "
-          "realtime prioritization! Error: ");
-        throw std::runtime_error(errmsg + std::strerror(errno));
-      } else {
-        debug_msg("Soft realtime prioritization successfully set!");
-      }
+      nav2_util::setSoftRealTimePriority();
+      debug_msg("Soft realtime prioritization successfully set!");
     }
   }
 
@@ -252,7 +244,7 @@ public:
           node_logging_interface_->get_logger(),
           "Action server failed while executing action callback: \"%s\"", ex.what());
         terminate_all();
-        completion_callback_();
+        if (completion_callback_) {completion_callback_();}
         return;
       }
 
@@ -262,14 +254,14 @@ public:
       if (stop_execution_) {
         warn_msg("Stopping the thread per request.");
         terminate_all();
-        completion_callback_();
+        if (completion_callback_) {completion_callback_();}
         break;
       }
 
       if (is_active(current_handle_)) {
         warn_msg("Current goal was not completed successfully.");
         terminate(current_handle_);
-        completion_callback_();
+        if (completion_callback_) {completion_callback_();}
       }
 
       if (is_active(pending_handle_)) {
@@ -322,7 +314,7 @@ public:
       info_msg("Waiting for async process to finish.");
       if (steady_clock::now() - start_time >= server_timeout_) {
         terminate_all();
-        completion_callback_();
+        if (completion_callback_) {completion_callback_();}
         throw std::runtime_error("Action callback is still running and missed deadline to stop");
       }
     }
