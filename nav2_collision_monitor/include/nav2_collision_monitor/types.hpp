@@ -30,15 +30,15 @@ struct Velocity
 
   inline bool operator<(const Velocity & second) const
   {
-    const double first_vel = getMagnitudeSq();
-    const double second_vel = second.getMagnitudeSq();
+    const double first_vel = getMagnitude();
+    const double second_vel = second.getMagnitude();
     // This comparison includes rotations in place, where linear velocities are equal to zero
     return first_vel < second_vel;
   }
 
   inline bool operator<(const double & second) const
   {
-    const double first_vel = getMagnitudeSq();
+    const double first_vel = getMagnitude();
     return first_vel < second;
   }
 
@@ -47,9 +47,9 @@ struct Velocity
     return {x * mul, y * mul, tw * mul};
   }
 
-  inline double getMagnitudeSq() const
+  inline double getMagnitude() const
   {
-    return x * x + y * y + tw * tw;
+    return sqrt(x * x + y * y + tw * tw);
   }
 
   inline bool isZero() const

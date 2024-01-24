@@ -544,13 +544,11 @@ bool CollisionMonitor::processApproach(
     return false;
   }
   double min_vel = polygon->getMinVelBeforeStop();
-  const double min_vel_sq = min_vel * min_vel;
   double collision_time = -1.0;
 
   // Obtain time before a collision, using max(velocity, min_vel_before_stop)
-  if((velocity < min_vel_sq) && (min_vel != -1.0)){
-    const double vel_magnitude_sq = velocity.getMagnitudeSq();
-    const double ratio = min_vel_sq / vel_magnitude_sq;
+  if((min_vel != -1.0) && (velocity < min_vel)){
+    const double ratio = min_vel / velocity.getMagnitude();
     collision_time = polygon->getCollisionTime(collision_points, velocity * ratio);
   } else {
     collision_time = polygon->getCollisionTime(collision_points, velocity);
@@ -561,7 +559,7 @@ bool CollisionMonitor::processApproach(
     const Velocity safe_vel = velocity * change_ratio;
 
     if (min_vel != -1.0) {
-      if (safe_vel < min_vel_sq) {
+      if (safe_vel < velocity.getMagnitude()) {
         robot_action.action_type = APPROACH;
         robot_action.req_vel.x = 0.0;
         robot_action.req_vel.y = 0.0;
