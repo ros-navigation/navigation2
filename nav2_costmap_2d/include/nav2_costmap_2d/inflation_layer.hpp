@@ -41,6 +41,8 @@
 #include <map>
 #include <vector>
 #include <mutex>
+#include <memory>
+#include <string>
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/layer.hpp"
