@@ -328,6 +328,7 @@ AmclNode::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   nomotion_update_srv_.reset();
   initial_pose_sub_.reset();
   laser_scan_connection_.disconnect();
+  tf_listener_.reset();  //  listener may access lase_scan_filter_, so it should be reset earlier
   laser_scan_filter_.reset();
   laser_scan_sub_.reset();
 
@@ -341,7 +342,6 @@ AmclNode::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 
   // Transforms
   tf_broadcaster_.reset();
-  tf_listener_.reset();
   tf_buffer_.reset();
 
   // PubSub
