@@ -329,7 +329,7 @@ AmclNode::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   initial_pose_sub_.reset();
   laser_scan_connection_.disconnect();
 
-  tf_listener_.reset(); // tf_listener_ will access laser_scan_filter, so it should be reset earlier
+  tf_listener_.reset();  // tf_listener_ will access laser_scan_filter, so it should be reset earlier
   laser_scan_filter_.reset();
   laser_scan_sub_.reset();
 
