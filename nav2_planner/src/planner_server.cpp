@@ -144,7 +144,9 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
       " than 0.0 to turn on duration overrrun warning messages", expected_planner_frequency);
     max_planner_duration_ = 0.0;
   }
-  get_parameter("allow_path_through_poses_goal_deviation", allow_path_through_poses_goal_deviation_);
+  get_parameter(
+    "allow_path_through_poses_goal_deviation",
+    allow_path_through_poses_goal_deviation_);
 
   // Initialize pubs & subs
   plan_publisher_ = create_publisher<nav_msgs::msg::Path>("plan", 1);
@@ -655,8 +657,8 @@ void PlannerServer::isPathValid(
 
     /**
      * The lethal check starts at the closest point to avoid points that have already been passed
-     * and may have become occupied. The method for collision detection is based on the shape of 
-     * the footprint. 
+     * and may have become occupied. The method for collision detection is based on the shape of
+     * the footprint.
      */
     std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
     unsigned int mx = 0;
