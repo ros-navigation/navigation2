@@ -31,6 +31,8 @@
 #include "nav2_smac_planner/types.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
 #include "nav2_smac_planner/costmap_downsampler.hpp"
+#include "nav2_costmap_2d/costmap_2d_ros.hpp"
+#include "nav2_costmap_2d/inflation_layer.hpp"
 
 namespace nav2_smac_planner
 {
@@ -360,13 +362,11 @@ public:
    * @brief Get cost of heuristic of node
    * @param node Node index current
    * @param node Node index of new
-   * @param costmap Costmap ptr to use
    * @return Heuristic cost between the nodes
    */
   static float getHeuristicCost(
     const Coordinates & node_coords,
-    const Coordinates & goal_coordinates,
-    const nav2_costmap_2d::Costmap2D * costmap);
+    const Coordinates & goal_coordinates);
 
   /**
    * @brief Initialize motion models
@@ -423,13 +423,21 @@ public:
 
   /**
    * @brief reset the obstacle heuristic state
-   * @param costmap Costmap to use
+   * @param costmap_ros Costmap to use
    * @param goal_coords Coordinates to start heuristic expansion at
    */
   static void resetObstacleHeuristic(
-    nav2_costmap_2d::Costmap2D * costmap,
+    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
     const unsigned int & start_x, const unsigned int & start_y,
     const unsigned int & goal_x, const unsigned int & goal_y);
+
+  /**
+   * @brief Using the inflation layer, find the footprint's adjusted cost
+   * if the robot is non-circular
+   * @param cost Cost to adjust
+   * @return float Cost adjusted
+   */
+  static float adjustedFootprintCost(const float & cost);
 
   /**
    * @brief Retrieve all valid neighbors of a node.
@@ -462,6 +470,8 @@ public:
   static ObstacleHeuristicQueue obstacle_heuristic_queue;
 
   static nav2_costmap_2d::Costmap2D * sampled_costmap;
+  static std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros;
+  static std::shared_ptr<nav2_costmap_2d::InflationLayer> inflation_layer;
   static CostmapDownsampler downsampler;
   // Dubin / Reeds-Shepp lookup and size for dereferencing
   static LookupTable dist_heuristic_lookup_table;

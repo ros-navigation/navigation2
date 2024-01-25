@@ -11,8 +11,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
+
 #include <vector>
+#include <memory>
+
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
+#include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_smac_planner/constants.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 
@@ -39,7 +43,7 @@ public:
    * orientations for to speed up collision checking
    */
   GridCollisionChecker(
-    nav2_costmap_2d::Costmap2D * costmap,
+    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap,
     unsigned int num_quantizations,
     rclcpp_lifecycle::LifecycleNode::SharedPtr node);
 
@@ -103,6 +107,12 @@ public:
     return angles_;
   }
 
+  /**
+   * @brief Get costmap ros object for inflation layer params
+   * @return Costmap ros
+   */
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> getCostmapROS() {return costmap_ros_;}
+
 private:
   /**
    * @brief Check if value outside the range
@@ -114,6 +124,7 @@ private:
   bool outsideRange(const unsigned int & max, const float & value);
 
 protected:
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   std::vector<nav2_costmap_2d::Footprint> oriented_footprints_;
   nav2_costmap_2d::Footprint unoriented_footprint_;
   float footprint_cost_;

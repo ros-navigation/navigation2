@@ -312,13 +312,11 @@ public:
    * @brief Get cost of heuristic of node
    * @param node Node index current
    * @param node Node index of new
-   * @param costmap Costmap ptr to use
    * @return Heuristic cost between the nodes
    */
   static float getHeuristicCost(
     const Coordinates & node_coords,
-    const Coordinates & goal_coordinates,
-    const nav2_costmap_2d::Costmap2D * costmap);
+    const Coordinates & goal_coordinates);
 
   /**
    * @brief Initialize motion models
@@ -355,12 +353,12 @@ public:
    * @param goal_coords Coordinates to start heuristic expansion at
    */
   static void resetObstacleHeuristic(
-    nav2_costmap_2d::Costmap2D * costmap,
+    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
     const unsigned int & start_x, const unsigned int & start_y,
     const unsigned int & goal_x, const unsigned int & goal_y)
   {
     // State Lattice and Hybrid-A* share this heuristics
-    NodeHybrid::resetObstacleHeuristic(costmap, start_x, start_y, goal_x, goal_y);
+    NodeHybrid::resetObstacleHeuristic(costmap_ros, start_x, start_y, goal_x, goal_y);
   }
 
   /**

@@ -57,12 +57,12 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
     _motion_model == MotionModel::STATE_LATTICE)
   {
     // See if we are closer and should be expanding more often
-    auto costmap = _collision_checker->getCostmap();
     const Coordinates node_coords =
-      NodeT::getCoords(current_node->getIndex(), costmap->getSizeInCellsX(), _dim_3_size);
+      NodeT::getCoords(
+      current_node->getIndex(), _collision_checker->getCostmap()->getSizeInCellsX(), _dim_3_size);
     closest_distance = std::min(
       closest_distance,
-      static_cast<int>(NodeT::getHeuristicCost(node_coords, goal_node->pose, costmap)));
+      static_cast<int>(NodeT::getHeuristicCost(node_coords, goal_node->pose)));
 
     // We want to expand at a rate of d/expansion_ratio,
     // but check to see if we are so close that we would be expanding every iteration
