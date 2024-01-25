@@ -26,7 +26,6 @@ void GracefulMotionController::configure(
   const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
   auto node = parent.lock();
-  parent_node_ = parent;
   if (!node) {
     throw nav2_core::ControllerException("Unable to lock node!");
   }
@@ -52,10 +51,6 @@ void GracefulMotionController::configure(
     params_->k_phi, params_->k_delta, params_->beta, params_->lambda, params_->slowdown_radius,
     params_->v_linear_min, params_->v_linear_max, params_->v_angular_max);
 
-  // Initialize footprint collision checker
-  collision_checker_ = std::make_unique<nav2_costmap_2d::
-      FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>(costmap_ros_->getCostmap());
-
   // Publishers
   transformed_plan_pub_ = node->create_publisher<nav_msgs::msg::Path>("transformed_global_plan", 1);
   local_plan_pub_ = node->create_publisher<nav_msgs::msg::Path>("local_plan", 1);
@@ -75,6 +70,9 @@ void GracefulMotionController::cleanup()
   local_plan_pub_.reset();
   motion_target_pub_.reset();
   slowdown_pub_.reset();
+  path_handler_.reset();
+  param_handler_.reset();
+  control_law_.reset();
 }
 
 void GracefulMotionController::activate()
@@ -133,9 +131,8 @@ geometry_msgs::msg::TwistStamped GracefulMotionController::computeVelocityComman
     params_->slowdown_radius);
   slowdown_pub_->publish(slowdown_marker);
 
-  // Compute distance to goal
-  geometry_msgs::msg::PoseStamped goal_pose = transformed_plan.poses.back();
-  double dist_to_goal = std::hypot(goal_pose.pose.position.x, goal_pose.pose.position.y);
+  // Compute distance to goal as the path's integrated distance to account for path curvatures
+  double dist_to_goal = nav2_util::geometry_utils::calculate_path_length(transformed_plan);
 
   // If the distance to the goal is less than the motion target distance, i.e.
   // the 'motion target' is the goal, then we skip the motion target orientation by pointing
@@ -144,6 +141,7 @@ geometry_msgs::msg::TwistStamped GracefulMotionController::computeVelocityComman
   if (params_->final_rotation && dist_to_goal < params_->motion_target_dist) {
     geometry_msgs::msg::PoseStamped stl_pose =
       transformed_plan.poses[transformed_plan.poses.size() - 2];
+    geometry_msgs::msg::PoseStamped goal_pose = transformed_plan.poses.back();
     double dx = goal_pose.pose.position.x - stl_pose.pose.position.x;
     double dy = goal_pose.pose.position.y - stl_pose.pose.position.y;
     double yaw = std::atan2(dy, dx);
@@ -317,14 +315,19 @@ bool GracefulMotionController::inCollision(const double & x, const double & y, c
 
   // Calculate the cost of the footprint at the robot's current position depending
   // on the shape of the footprint
+  std::unique_ptr<nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>
+  collision_checker =
+    std::make_unique<nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>(
+    costmap_ros_->getCostmap());
+
   double footprint_cost;
   if (costmap_ros_->getUseRadius()) {
-    footprint_cost = collision_checker_->pointCost(mx, my);
+    footprint_cost = collision_checker->pointCost(mx, my);
     if (footprint_cost >= nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE) {
       return true;
     }
   } else {
-    footprint_cost = collision_checker_->footprintCostAtPose(
+    footprint_cost = collision_checker->footprintCostAtPose(
       x, y, theta, costmap_ros_->getRobotFootprint());
     if (footprint_cost == static_cast<double>(nav2_costmap_2d::NO_INFORMATION) &&
       costmap_ros_->getLayeredCostmap()->isTrackingUnknown())

@@ -218,8 +218,6 @@ TEST(GracefulMotionControllerTest, configure) {
   costmap_ros->on_configure(rclcpp_lifecycle::State());
   controller->configure(node, "test", tf, costmap_ros);
   controller->activate();
-  controller->deactivate();
-  controller->cleanup();
 
   // Set the plan
   nav_msgs::msg::Path plan;
@@ -229,6 +227,10 @@ TEST(GracefulMotionControllerTest, configure) {
   controller->setPlan(plan);
   EXPECT_EQ(controller->getPlan().poses.size(), 3u);
   EXPECT_EQ(controller->getPlan().poses[0].header.frame_id, "map");
+
+  // Cleaning up
+  controller->deactivate();
+  controller->cleanup();
 }
 
 TEST(GracefulMotionControllerTest, dynamicParameters) {
