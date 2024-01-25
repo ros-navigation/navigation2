@@ -18,14 +18,18 @@ namespace nav2_smac_planner
 {
 
 GridCollisionChecker::GridCollisionChecker(
-  nav2_costmap_2d::Costmap2D * costmap,
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
   unsigned int num_quantizations,
   rclcpp_lifecycle::LifecycleNode::SharedPtr node)
-: FootprintCollisionChecker(costmap)
+: FootprintCollisionChecker(costmap_ros ? costmap_ros->getCostmap() : nullptr)
 {
   if (node) {
     clock_ = node->get_clock();
     logger_ = node->get_logger();
+  }
+
+  if (costmap_ros) {
+    costmap_ros_ = costmap_ros;
   }
 
   // Convert number of regular bins into angles

@@ -327,8 +327,7 @@ float NodeLattice::getTraversalCost(const NodePtr & child)
 
 float NodeLattice::getHeuristicCost(
   const Coordinates & node_coords,
-  const Coordinates & goal_coords,
-  const nav2_costmap_2d::Costmap2D * /*costmap*/)
+  const Coordinates & goal_coords)
 {
   // get obstacle heuristic value
   const float obstacle_heuristic = getObstacleHeuristic(
