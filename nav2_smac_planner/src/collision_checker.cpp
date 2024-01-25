@@ -27,7 +27,7 @@ GridCollisionChecker::GridCollisionChecker(
     clock_ = node->get_clock();
     logger_ = node->get_logger();
   }
-  
+
   if (costmap_ros) {
     costmap_ros_ = costmap_ros;
   }

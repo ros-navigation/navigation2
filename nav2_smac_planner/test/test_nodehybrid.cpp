@@ -177,8 +177,15 @@ TEST(NodeHybridTest, test_obstacle_heuristic)
       costmapA->setCost(i, j, 254);
     }
   }
+
+  // Convert raw costmap into a costmap ros object
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  auto costmap = costmap_ros->getCostmap();
+  *costmap = *costmapA;
+
   std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
-    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmapA, 72, node);
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, 72, node);
   checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
 
   nav2_smac_planner::NodeHybrid testA(0);
@@ -335,8 +342,15 @@ TEST(NodeHybridTest, test_node_reeds_neighbors)
   EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[5]._theta, 3, 0.01);
 
   nav2_costmap_2d::Costmap2D costmapA(100, 100, 0.05, 0.0, 0.0, 0);
+
+  // Convert raw costmap into a costmap ros object
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  auto costmap = costmap_ros->getCostmap();
+  *costmap = costmapA;
+
   std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
-    std::make_unique<nav2_smac_planner::GridCollisionChecker>(&costmapA, 72, lnode);
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, 72, lnode);
   checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
   nav2_smac_planner::NodeHybrid * node = new nav2_smac_planner::NodeHybrid(49);
   std::function<bool(const unsigned int &, nav2_smac_planner::NodeHybrid * &)> neighborGetter =
