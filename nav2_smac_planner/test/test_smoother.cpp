@@ -94,8 +94,15 @@ TEST(SmootherTest, test_full_smoother)
 
   a_star.initialize(
     false, max_iterations, std::numeric_limits<int>::max(), max_planning_time, 401, size_theta);
+
+  // Convert raw costmap into a costmap ros object
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  auto costmapi = costmap_ros->getCostmap();
+  *costmapi = *costmap;
+
   std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
-    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap, size_theta, node);
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, size_theta, node);
   checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
 
   // Create A* search to smooth
