@@ -400,7 +400,10 @@ void PlannerServer::computePlanThroughPoses()
       if (i == 0) {
         curr_start = start;
       } else {
-        curr_start = goal->goals[i - 1];
+        // pick the end of the last planning task as the start for the next one
+        // to allow for path tolerance deviations
+        curr_start = concat_path.poses.back();
+        curr_start.header = concat_path.header;
       }
       curr_goal = goal->goals[i];
 
