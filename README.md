@@ -70,6 +70,19 @@ If you use **any** of the algorithms in Nav2 or the analysis of the algorithms i
   }
 ```
 
+If you use the Smac Planner (Hybrid A*, State Lattice, 2D), please cite this work in your papers!
+
+- S. Macenski, M. Booker, J. Wallace, [**Open-Source, Cost-Aware Kinematically Feasible Planning for Mobile and Surface Robotics**]([https://arxiv.org/abs/2305.20026](https://arxiv.org/abs/2401.13078)). 2024.
+
+```bibtex
+@article{macenski2024smac,
+      title={Open-Source, Cost-Aware Kinematically Feasible Planning for Mobile and Surface Robotics}, 
+      author={Steve Macenski and Matthew Booker and Josh Wallace},
+      year={2024},
+      journal = {Arxiv}
+}
+```
+
 If you use the Regulated Pure Pursuit Controller algorithm or software from this repository, please cite this work in your papers!
 
 - S. Macenski, S. Singh, F. Martin, J. Gines, [**Regulated Pure Pursuit for Robot Path Tracking**](https://arxiv.org/abs/2305.20026). Autonomous Robots, 2023.
