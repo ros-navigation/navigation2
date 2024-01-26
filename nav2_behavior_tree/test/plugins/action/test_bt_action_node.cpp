@@ -153,8 +153,8 @@ public:
 
   BT::NodeStatus on_cancelled() override
   {
-    config().blackboard->set<std::vector<int>>("sequence", result_.result->sequence);
-    config().blackboard->set<bool>("on_cancelled_triggered", true);
+    config().blackboard->set("sequence", result_.result->sequence);
+    config().blackboard->set("on_cancelled_triggered", true);
     return BT::NodeStatus::SUCCESS;
   }
 
