@@ -38,7 +38,7 @@ public:
     // Create the blackboard that will be shared by all of the nodes in the tree
     config_->blackboard = BT::Blackboard::create();
     // Put items on the blackboard
-    config_->blackboard->set<rclcpp::Node::SharedPtr>("node", node_);
+    config_->blackboard->set("node", node_);
 
     BT::NodeBuilder builder = [](const std::string & name, const BT::NodeConfiguration & config) {
         return std::make_unique<nav2_behavior_tree::PlannerSelector>(name, config);

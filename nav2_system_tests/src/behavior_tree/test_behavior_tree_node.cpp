@@ -133,17 +133,17 @@ public:
     blackboard = BT::Blackboard::create();
 
     // Put items on the blackboard
-    blackboard->set<rclcpp::Node::SharedPtr>("node", node_);  // NOLINT
+    blackboard->set("node", node_);  // NOLINT
     blackboard->set<std::chrono::milliseconds>(
       "server_timeout", std::chrono::milliseconds(20));  // NOLINT
     blackboard->set<std::chrono::milliseconds>(
       "bt_loop_duration", std::chrono::milliseconds(10));  // NOLINT
     blackboard->set<std::chrono::milliseconds>(
       "wait_for_service_timeout", std::chrono::milliseconds(1000));  // NOLINT
-    blackboard->set<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer", tf_);  // NOLINT
-    blackboard->set<bool>("initial_pose_received", false);  // NOLINT
-    blackboard->set<int>("number_recoveries", 0);  // NOLINT
-    blackboard->set<std::shared_ptr<nav2_util::OdomSmoother>>("odom_smoother", odom_smoother_);  // NOLINT
+    blackboard->set("tf_buffer", tf_);  // NOLINT
+    blackboard->set("initial_pose_received", false);  // NOLINT
+    blackboard->set("number_recoveries", 0);  // NOLINT
+    blackboard->set("odom_smoother", odom_smoother_);  // NOLINT
 
     // set dummy goal on blackboard
     geometry_msgs::msg::PoseStamped goal;
@@ -157,7 +157,7 @@ public:
     goal.pose.orientation.z = 0.0;
     goal.pose.orientation.w = 1.0;
 
-    blackboard->set<geometry_msgs::msg::PoseStamped>("goal", goal);  // NOLINT
+    blackboard->set("goal", goal);  // NOLINT
 
     // Create the Behavior Tree from the XML input
     try {
@@ -599,7 +599,7 @@ TEST_F(BehaviorTreeTestFixture, TestRecoverySubtreeGoalUpdated)
       goal.pose.orientation.y = 0.0;
       goal.pose.orientation.z = 0.0;
       goal.pose.orientation.w = 1.0;
-      bt_handler->blackboard->set<geometry_msgs::msg::PoseStamped>("goal", goal);  // NOLINT
+      bt_handler->blackboard->set("goal", goal);  // NOLINT
     }
 
     std::this_thread::sleep_for(10ms);

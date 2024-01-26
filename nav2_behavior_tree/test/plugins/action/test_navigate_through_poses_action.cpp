@@ -61,7 +61,7 @@ public:
     // Create the blackboard that will be shared by all of the nodes in the tree
     config_->blackboard = BT::Blackboard::create();
     // Put items on the blackboard
-    config_->blackboard->set<rclcpp::Node::SharedPtr>(
+    config_->blackboard->set(
       "node",
       node_);
     config_->blackboard->set<std::chrono::milliseconds>(
@@ -73,9 +73,9 @@ public:
     config_->blackboard->set<std::chrono::milliseconds>(
       "wait_for_service_timeout",
       std::chrono::milliseconds(1000));
-    config_->blackboard->set<bool>("initial_pose_received", false);
+    config_->blackboard->set("initial_pose_received", false);
     std::vector<geometry_msgs::msg::PoseStamped> poses;
-    config_->blackboard->set<std::vector<geometry_msgs::msg::PoseStamped>>(
+    config_->blackboard->set(
       "goals", poses);
 
     BT::NodeBuilder builder =
@@ -136,7 +136,7 @@ TEST_F(NavigateThroughPosesActionTestFixture, test_tick)
   poses.resize(1);
   poses[0].pose.position.x = -2.5;
   poses[0].pose.orientation.x = 1.0;
-  config_->blackboard->set<std::vector<geometry_msgs::msg::PoseStamped>>("goals", poses);
+  config_->blackboard->set("goals", poses);
 
   // tick until node succeeds
   while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS) {
