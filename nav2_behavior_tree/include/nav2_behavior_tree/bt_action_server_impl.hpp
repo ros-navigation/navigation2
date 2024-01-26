@@ -251,7 +251,7 @@ bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filena
   try {
     tree_ = bt_->createTreeFromFile(filename, blackboard_);
     for (auto & blackboard : tree_.blackboard_stack) {
-      blackboard->set<rclcpp::Node::SharedPtr>("node", client_node_);
+      blackboard->set("node", client_node_);
       blackboard->set<std::chrono::milliseconds>("server_timeout", default_server_timeout_);
       blackboard->set<std::chrono::milliseconds>("bt_loop_duration", bt_loop_duration_);
       blackboard->set<std::chrono::milliseconds>(

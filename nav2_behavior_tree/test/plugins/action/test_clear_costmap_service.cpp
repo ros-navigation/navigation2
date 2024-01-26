@@ -44,7 +44,7 @@ public:
     // Create the blackboard that will be shared by all of the nodes in the tree
     config_->blackboard = BT::Blackboard::create();
     // Put items on the blackboard
-    config_->blackboard->set<rclcpp::Node::SharedPtr>(
+    config_->blackboard->set(
       "node",
       node_);
     config_->blackboard->set<std::chrono::milliseconds>(
@@ -56,8 +56,8 @@ public:
     config_->blackboard->set<std::chrono::milliseconds>(
       "wait_for_service_timeout",
       std::chrono::milliseconds(1000));
-    config_->blackboard->set<bool>("initial_pose_received", false);
-    config_->blackboard->set<int>("number_recoveries", 0);
+    config_->blackboard->set("initial_pose_received", false);
+    config_->blackboard->set("number_recoveries", 0);
 
     factory_->registerNodeType<nav2_behavior_tree::ClearEntireCostmapService>("ClearEntireCostmap");
   }
@@ -133,7 +133,7 @@ public:
     // Create the blackboard that will be shared by all of the nodes in the tree
     config_->blackboard = BT::Blackboard::create();
     // Put items on the blackboard
-    config_->blackboard->set<rclcpp::Node::SharedPtr>(
+    config_->blackboard->set(
       "node",
       node_);
     config_->blackboard->set<std::chrono::milliseconds>(
@@ -145,8 +145,8 @@ public:
     config_->blackboard->set<std::chrono::milliseconds>(
       "wait_for_service_timeout",
       std::chrono::milliseconds(1000));
-    config_->blackboard->set<bool>("initial_pose_received", false);
-    config_->blackboard->set<int>("number_recoveries", 0);
+    config_->blackboard->set("initial_pose_received", false);
+    config_->blackboard->set("number_recoveries", 0);
 
     factory_->registerNodeType<nav2_behavior_tree::ClearCostmapExceptRegionService>(
       "ClearCostmapExceptRegion");
@@ -228,7 +228,7 @@ public:
     // Create the blackboard that will be shared by all of the nodes in the tree
     config_->blackboard = BT::Blackboard::create();
     // Put items on the blackboard
-    config_->blackboard->set<rclcpp::Node::SharedPtr>(
+    config_->blackboard->set(
       "node",
       node_);
     config_->blackboard->set<std::chrono::milliseconds>(
@@ -240,8 +240,8 @@ public:
     config_->blackboard->set<std::chrono::milliseconds>(
       "wait_for_service_timeout",
       std::chrono::milliseconds(1000));
-    config_->blackboard->set<bool>("initial_pose_received", false);
-    config_->blackboard->set<int>("number_recoveries", 0);
+    config_->blackboard->set("initial_pose_received", false);
+    config_->blackboard->set("number_recoveries", 0);
 
     factory_->registerNodeType<nav2_behavior_tree::ClearCostmapAroundRobotService>(
       "ClearCostmapAroundRobot");

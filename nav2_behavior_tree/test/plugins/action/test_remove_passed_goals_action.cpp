@@ -43,10 +43,10 @@ public:
     // Create the blackboard that will be shared by all of the nodes in the tree
     config_->blackboard = BT::Blackboard::create();
     // Put items on the blackboard
-    config_->blackboard->set<rclcpp::Node::SharedPtr>(
+    config_->blackboard->set(
       "node",
       node_);
-    config_->blackboard->set<std::shared_ptr<tf2_ros::Buffer>>(
+    config_->blackboard->set(
       "tf_buffer",
       transform_handler_->getBuffer());
 

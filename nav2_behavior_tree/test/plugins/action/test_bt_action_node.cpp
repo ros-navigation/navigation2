@@ -140,14 +140,14 @@ public:
 
   BT::NodeStatus on_success() override
   {
-    config().blackboard->set<std::vector<int>>("sequence", result_.result->sequence);
+    config().blackboard->set("sequence", result_.result->sequence);
     return BT::NodeStatus::SUCCESS;
   }
 
   BT::NodeStatus on_cancelled() override
   {
-    config().blackboard->set<std::vector<int>>("sequence", result_.result->sequence);
-    config().blackboard->set<bool>("on_cancelled_triggered", true);
+    config().blackboard->set("sequence", result_.result->sequence);
+    config().blackboard->set("on_cancelled_triggered", true);
     return BT::NodeStatus::SUCCESS;
   }
 
@@ -170,12 +170,12 @@ public:
     // Create the blackboard that will be shared by all of the nodes in the tree
     config_->blackboard = BT::Blackboard::create();
     // Put items on the blackboard
-    config_->blackboard->set<rclcpp::Node::SharedPtr>("node", node_);
+    config_->blackboard->set("node", node_);
     config_->blackboard->set<std::chrono::milliseconds>("server_timeout", 20ms);
     config_->blackboard->set<std::chrono::milliseconds>("bt_loop_duration", 10ms);
     config_->blackboard->set<std::chrono::milliseconds>("wait_for_service_timeout", 1000ms);
-    config_->blackboard->set<bool>("initial_pose_received", false);
-    config_->blackboard->set<bool>("on_cancelled_triggered", false);
+    config_->blackboard->set("initial_pose_received", false);
+    config_->blackboard->set("on_cancelled_triggered", false);
 
     BT::NodeBuilder builder =
       [](const std::string & name, const BT::NodeConfiguration & config)
@@ -303,7 +303,7 @@ TEST_F(BTActionNodeTestFixture, test_server_timeout_success)
   // reset state variables
   ticks = 0;
   result = BT::NodeStatus::RUNNING;
-  config_->blackboard->set<bool>("on_cancelled_triggered", false);
+  config_->blackboard->set("on_cancelled_triggered", false);
 
   // main BT execution loop
   while (rclcpp::ok() && result == BT::NodeStatus::RUNNING) {
@@ -384,7 +384,7 @@ TEST_F(BTActionNodeTestFixture, test_server_timeout_failure)
   // reset state variables
   ticks = 0;
   result = BT::NodeStatus::RUNNING;
-  config_->blackboard->set<bool>("on_cancelled_triggered", false);
+  config_->blackboard->set("on_cancelled_triggered", false);
 
   // main BT execution loop
   while (rclcpp::ok() && result == BT::NodeStatus::RUNNING) {
@@ -458,7 +458,7 @@ TEST_F(BTActionNodeTestFixture, test_server_cancel)
 
   // reset state variable
   ticks = 0;
-  config_->blackboard->set<bool>("on_cancelled_triggered", false);
+  config_->blackboard->set("on_cancelled_triggered", false);
   result = BT::NodeStatus::RUNNING;
 
   // main BT execution loop
