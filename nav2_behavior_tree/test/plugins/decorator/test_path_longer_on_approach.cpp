@@ -42,7 +42,7 @@ public:
     // Create the blackboard that will be shared by all of the nodes in the tree
     config_->blackboard = BT::Blackboard::create();
     // Put items on the blackboard
-    config_->blackboard->set<rclcpp::Node::SharedPtr>(
+    config_->blackboard->set(
       "node",
       node_);
 
@@ -106,7 +106,7 @@ TEST_F(PathLongerOnApproachTestFixture, test_tick)
     // Assuming distance between waypoints to be 1.5m
     new_path.poses[i].pose.position.x = 1.5 * i;
   }
-  config_->blackboard->set<nav_msgs::msg::Path>("path", new_path);
+  config_->blackboard->set("path", new_path);
 
   tree_->rootNode()->executeTick();
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
@@ -132,7 +132,7 @@ TEST_F(PathLongerOnApproachTestFixture, test_tick)
     // Assuming distance between waypoints to be 3.0m
     old_path.poses[i - 1].pose.position.x = 3.0 * i;
   }
-  config_->blackboard->set<nav_msgs::msg::Path>("path", old_path);
+  config_->blackboard->set("path", old_path);
   tree_->rootNode()->executeTick();
 
   // set new path on blackboard
@@ -141,7 +141,7 @@ TEST_F(PathLongerOnApproachTestFixture, test_tick)
     // Assuming distance between waypoints to be 1.5m
     new_path.poses[i].pose.position.x = 1.5 * i;
   }
-  config_->blackboard->set<nav_msgs::msg::Path>("path", new_path);
+  config_->blackboard->set("path", new_path);
   tree_->rootNode()->executeTick();
 
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::FAILURE);

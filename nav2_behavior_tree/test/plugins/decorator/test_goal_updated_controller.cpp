@@ -35,7 +35,7 @@ public:
     std::vector<geometry_msgs::msg::PoseStamped> poses1;
     poses1.push_back(goal1);
     config_->blackboard->set("goal", goal1);
-    config_->blackboard->set<std::vector<geometry_msgs::msg::PoseStamped>>("goals", poses1);
+    config_->blackboard->set("goals", poses1);
 
     bt_node_ = std::make_shared<nav2_behavior_tree::GoalUpdatedController>(
       "goal_updated_controller", *config_);
@@ -86,7 +86,7 @@ TEST_F(GoalUpdatedControllerTestFixture, test_behavior)
   EXPECT_EQ(dummy_node_->status(), BT::NodeStatus::IDLE);
 
   // tick again with updated goals, dummy node should be ticked
-  config_->blackboard->set<std::vector<geometry_msgs::msg::PoseStamped>>("goals", poses2);
+  config_->blackboard->set("goals", poses2);
   dummy_node_->changeStatus(BT::NodeStatus::SUCCESS);
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
   EXPECT_EQ(dummy_node_->status(), BT::NodeStatus::IDLE);
