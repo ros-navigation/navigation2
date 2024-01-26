@@ -72,7 +72,7 @@ If you use **any** of the algorithms in Nav2 or the analysis of the algorithms i
 
 If you use the Smac Planner (Hybrid A*, State Lattice, 2D), please cite this work in your papers!
 
-- S. Macenski, M. Booker, J. Wallace, [**Open-Source, Cost-Aware Kinematically Feasible Planning for Mobile and Surface Robotics**]([https://arxiv.org/abs/2305.20026](https://arxiv.org/abs/2401.13078)). 2024.
+- S. Macenski, M. Booker, J. Wallace, [**Open-Source, Cost-Aware Kinematically Feasible Planning for Mobile and Surface Robotics**](https://arxiv.org/abs/2401.13078). 2024.
 
 ```bibtex
 @article{macenski2024smac,
