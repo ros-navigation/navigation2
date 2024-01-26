@@ -83,11 +83,12 @@ public:
 
   bool simulateTrajectory(
     const geometry_msgs::msg::PoseStamped & robot_pose,
-    const geometry_msgs::msg::PoseStamped & motion_target, nav_msgs::msg::Path & trajectory,
-    const bool & backward)
+    const geometry_msgs::msg::PoseStamped & motion_target,
+    const geometry_msgs::msg::TransformStamped & costmap_transform,
+    nav_msgs::msg::Path & trajectory, const bool & backward)
   {
     return nav2_graceful_motion_controller::GracefulMotionController::simulateTrajectory(
-      robot_pose, motion_target, trajectory, backward);
+      robot_pose, motion_target, costmap_transform, trajectory, backward);
   }
 
   double getSpeedLinearMax() {return params_->v_linear_max;}

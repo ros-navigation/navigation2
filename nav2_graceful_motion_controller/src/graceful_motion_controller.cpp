@@ -180,8 +180,9 @@ geometry_msgs::msg::TwistStamped GracefulMotionController::computeVelocityComman
   }
 
   // Transform local frame to global frame to use in collision checking
+  geometry_msgs::msg::TransformStamped costmap_transform;
   try {
-    costmap_transform_ = tf_buffer_->lookupTransform(
+    costmap_transform = tf_buffer_->lookupTransform(
       costmap_ros_->getGlobalFrameID(), costmap_ros_->getBaseFrameID(),
       tf2::TimePointZero);
   } catch (tf2::TransformException & ex) {
@@ -194,7 +195,7 @@ geometry_msgs::msg::TwistStamped GracefulMotionController::computeVelocityComman
 
   // Generate and publish local plan for debugging / visualization
   nav_msgs::msg::Path local_plan;
-  if (!simulateTrajectory(pose, motion_target, local_plan, reversing)) {
+  if (!simulateTrajectory(pose, motion_target, costmap_transform, local_plan, reversing)) {
     throw nav2_core::NoValidControl("Collision detected in the trajectory");
   }
   local_plan.header = transformed_plan.header;
@@ -248,8 +249,9 @@ geometry_msgs::msg::PoseStamped GracefulMotionController::getMotionTarget(
 
 bool GracefulMotionController::simulateTrajectory(
   const geometry_msgs::msg::PoseStamped & robot_pose,
-  const geometry_msgs::msg::PoseStamped & motion_target, nav_msgs::msg::Path & trajectory,
-  const bool & backward)
+  const geometry_msgs::msg::PoseStamped & motion_target,
+  const geometry_msgs::msg::TransformStamped & costmap_transform,
+  nav_msgs::msg::Path & trajectory, const bool & backward)
 {
   // Check for collision before moving
   if (inCollision(
@@ -285,7 +287,7 @@ bool GracefulMotionController::simulateTrajectory(
 
     // Check for collision
     geometry_msgs::msg::PoseStamped global_pose;
-    tf2::doTransform(next_pose, global_pose, costmap_transform_);
+    tf2::doTransform(next_pose, global_pose, costmap_transform);
     if (inCollision(
         global_pose.pose.position.x, global_pose.pose.position.y,
         tf2::getYaw(global_pose.pose.orientation)))
