@@ -52,7 +52,6 @@ PlannerServer::PlannerServer(const rclcpp::NodeOptions & options)
   // Declare this node's parameters
   declare_parameter("planner_plugins", default_ids_);
   declare_parameter("expected_planner_frequency", 1.0);
-
   declare_parameter("action_server_result_timeout", 10.0);
 
   get_parameter("planner_plugins", planner_ids_);
