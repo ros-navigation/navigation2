@@ -49,8 +49,10 @@ public:
   static BT::PortsList providedPorts()
   {
     return {
-      BT::InputPort<std::vector<geometry_msgs::msg::PoseStamped>>("goals"),
-      BT::InputPort<geometry_msgs::msg::PoseStamped>("goal"),
+      BT::InputPort<std::vector<geometry_msgs::msg::PoseStamped>>(
+        "goals", "Vector of navigation goals"),
+      BT::InputPort<geometry_msgs::msg::PoseStamped>(
+        "goal", "Navigation goal"),
     };
   }
 
