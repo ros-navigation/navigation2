@@ -58,7 +58,7 @@ public:
     // Create the blackboard that will be shared by all of the nodes in the tree
     config_->blackboard = BT::Blackboard::create();
     // Put items on the blackboard
-    config_->blackboard->set<rclcpp::Node::SharedPtr>(
+    config_->blackboard->set(
       "node",
       node_);
     config_->blackboard->set<std::chrono::milliseconds>(
@@ -70,7 +70,7 @@ public:
     config_->blackboard->set<std::chrono::milliseconds>(
       "wait_for_service_timeout",
       std::chrono::milliseconds(1000));
-    config_->blackboard->set<bool>("initial_pose_received", false);
+    config_->blackboard->set("initial_pose_received", false);
 
     BT::NodeBuilder builder =
       [](const std::string & name, const BT::NodeConfiguration & config)
@@ -130,7 +130,7 @@ TEST_F(FollowPathActionTestFixture, test_tick)
   nav_msgs::msg::Path path;
   path.poses.resize(1);
   path.poses[0].pose.position.x = 1.0;
-  config_->blackboard->set<nav_msgs::msg::Path>("path", path);
+  config_->blackboard->set("path", path);
 
   // tick until node succeeds
   while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS) {
@@ -150,7 +150,7 @@ TEST_F(FollowPathActionTestFixture, test_tick)
 
   // set new goal
   path.poses[0].pose.position.x = -2.5;
-  config_->blackboard->set<nav_msgs::msg::Path>("path", path);
+  config_->blackboard->set("path", path);
 
   while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS) {
     tree_->rootNode()->executeTick();

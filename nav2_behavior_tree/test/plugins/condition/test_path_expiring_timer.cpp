@@ -34,7 +34,7 @@ public:
     node_ = std::make_shared<rclcpp::Node>("test_path_expiring_condition");
     config_ = new BT::NodeConfiguration();
     config_->blackboard = BT::Blackboard::create();
-    config_->blackboard->set<rclcpp::Node::SharedPtr>("node", node_);
+    config_->blackboard->set("node", node_);
     bt_node_ = std::make_shared<nav2_behavior_tree::PathExpiringTimerCondition>(
       "time_expired", *config_);
   }
@@ -78,7 +78,7 @@ TEST_F(PathExpiringTimerConditionTestFixture, test_behavior)
   pose.pose.position.x = 1.0;
   path.poses.push_back(pose);
 
-  config_->blackboard->set<nav_msgs::msg::Path>("path", path);
+  config_->blackboard->set("path", path);
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
   rclcpp::sleep_for(1500ms);
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
