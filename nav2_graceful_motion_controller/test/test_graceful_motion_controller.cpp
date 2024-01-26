@@ -31,6 +31,11 @@ public:
   : nav2_graceful_motion_controller::SmoothControlLaw(k_phi, k_delta, beta, lambda,
       slowdown_radius, v_linear_min, v_linear_max, v_angular_max) {}
 
+  double getCurvatureKPhi() {return k_phi_;}
+  double getCurvatureKDelta() {return k_delta_;}
+  double getCurvatureBeta() {return beta_;}
+  double getCurvatureLambda() {return lambda_;}
+  double getSlowdownRadius() {return slowdown_radius_;}
   double getSpeedLinearMin() {return v_linear_min_;}
   double getSpeedLinearMax() {return v_linear_max_;}
   double getSpeedAngularMax() {return v_angular_max_;}
@@ -99,6 +104,24 @@ public:
     return path_handler_->transformGlobalPlan(pose, params_->max_robot_pose_search_dist);
   }
 };
+
+TEST(SmoothControlLawTest, setCurvatureConstants) {
+  // Initialize SmoothControlLaw
+  SCLFixture scl(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0);
+
+  // Set curvature constants
+  scl.setCurvatureConstants(1.0, 2.0, 3.0, 4.0);
+
+  // Set slowdown radius
+  scl.setSlowdownRadius(5.0);
+
+  // Check results
+  EXPECT_EQ(scl.getCurvatureKPhi(), 1.0);
+  EXPECT_EQ(scl.getCurvatureKDelta(), 2.0);
+  EXPECT_EQ(scl.getCurvatureBeta(), 3.0);
+  EXPECT_EQ(scl.getCurvatureLambda(), 4.0);
+  EXPECT_EQ(scl.getSlowdownRadius(), 5.0);
+}
 
 TEST(SmoothControlLawTest, setSpeedLimits) {
   // Initialize SmoothControlLaw

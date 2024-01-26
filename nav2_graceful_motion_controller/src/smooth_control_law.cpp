@@ -28,6 +28,20 @@ SmoothControlLaw::SmoothControlLaw(
 {
 }
 
+void SmoothControlLaw::setCurvatureConstants(
+  double k_phi, double k_delta, double beta, double lambda)
+{
+  k_phi_ = k_phi;
+  k_delta_ = k_delta;
+  beta_ = beta;
+  lambda_ = lambda;
+}
+
+void SmoothControlLaw::setSlowdownRadius(double slowdown_radius)
+{
+  slowdown_radius_ = slowdown_radius;
+}
+
 geometry_msgs::msg::Twist SmoothControlLaw::calculateRegularVelocity(
   const geometry_msgs::msg::Pose & target, const geometry_msgs::msg::Pose & current,
   const bool & backward)

@@ -54,6 +54,24 @@ public:
   ~SmoothControlLaw() = default;
 
   /**
+   * @brief Set the values that define the curvature.
+   *
+   * @param k_phi Ratio of the rate of change in phi to the rate of change in r.
+   * @param k_delta Constant factor applied to the heading error feedback.
+   * @param beta Constant factor applied to the path curvature: dropping velocity.
+   * @param lambda Constant factor applied to the path curvature for sharpness.
+   */
+  void setCurvatureConstants(
+    const double k_phi, const double k_delta, const double beta, const double lambda);
+
+  /**
+   * @brief Set the slowdown radius
+   *
+   * @param slowdown_radius Radial threshold applied to the slowdown rule.
+   */
+  void setSlowdownRadius(const double slowdown_radius);
+
+  /**
    * @brief Compute linear and angular velocities command using the curvature.
    *
    * @param target Pose of the target in the robot frame.

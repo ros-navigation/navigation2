@@ -120,6 +120,11 @@ geometry_msgs::msg::TwistStamped GracefulMotionController::computeVelocityComman
     goal_dist_tolerance_ = pose_tolerance.position.x;
   }
 
+  // Update the smooth control law with the new params
+  control_law_->setCurvatureConstants(
+    params_->k_phi, params_->k_delta, params_->beta, params_->lambda);
+  control_law_->setSlowdownRadius(params_->slowdown_radius);
+
   // Transform path to robot base frame and publish it
   auto transformed_plan = path_handler_->transformGlobalPlan(
     pose, params_->max_robot_pose_search_dist);
