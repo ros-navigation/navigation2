@@ -35,7 +35,7 @@ public:
   void SetUp()
   {
     odom_smoother_ = std::make_shared<nav2_util::OdomSmoother>(node_);
-    config_->blackboard->set<std::shared_ptr<nav2_util::OdomSmoother>>(
+    config_->blackboard->set(
       "odom_smoother", odom_smoother_);  // NOLINT
 
     geometry_msgs::msg::PoseStamped goal;
