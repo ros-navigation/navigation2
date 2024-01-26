@@ -80,12 +80,11 @@ inline double findCircumscribedCost(std::shared_ptr<nav2_costmap_2d::Costmap2DRO
 
   // check if the costmap has an inflation layer
   const auto inflation_layer = nav2_costmap_2d::InflationLayer::getInflationLayer(costmap);
-  if (inflation_layer != nullptr){
+  if (inflation_layer != nullptr) {
     double circum_radius = costmap->getLayeredCostmap()->getCircumscribedRadius();
     double resolution = costmap->getCostmap()->getResolution();
     result = static_cast<double>(inflation_layer->computeCost(circum_radius / resolution));
-  }
-  else{
+  } else {
     RCLCPP_WARN(
       rclcpp::get_logger("computeCircumscribedCost"),
       "No inflation layer found in costmap configuration. "

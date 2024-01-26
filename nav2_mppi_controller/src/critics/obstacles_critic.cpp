@@ -63,14 +63,15 @@ float ObstaclesCritic::findCircumscribedCost(
   }
 
   // check if the costmap has an inflation layer
-  const auto inflation_layer = nav2_costmap_2d::InflationLayer::getInflationLayer(costmap, inflation_layer_name_);
-  if (inflation_layer != nullptr){
+  const auto inflation_layer = nav2_costmap_2d::InflationLayer::getInflationLayer(
+    costmap,
+    inflation_layer_name_);
+  if (inflation_layer != nullptr) {
     const double resolution = costmap->getCostmap()->getResolution();
     result = inflation_layer->computeCost(circum_radius / resolution);
     inflation_scale_factor_ = static_cast<float>(inflation_layer->getCostScalingFactor());
     inflation_radius_ = static_cast<float>(inflation_layer->getInflationRadius());
-  }
-  else{
+  } else {
     RCLCPP_WARN(
       logger_,
       "No inflation layer found in costmap configuration. "
