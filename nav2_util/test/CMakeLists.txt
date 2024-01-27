@@ -44,3 +44,11 @@ target_link_libraries(test_robot_utils ${library_name})
 
 ament_add_gtest(test_array_parser test_array_parser.cpp)
 target_link_libraries(test_array_parser ${library_name})
+
+ament_add_gtest(test_twist_publisher test_twist_publisher.cpp)
+ament_target_dependencies(test_twist_publisher rclcpp_lifecycle)
+target_link_libraries(test_twist_publisher ${library_name})
+
+ament_add_gtest(test_twist_subscriber test_twist_subscriber.cpp)
+ament_target_dependencies(test_twist_subscriber rclcpp_lifecycle)
+target_link_libraries(test_twist_subscriber ${library_name})
