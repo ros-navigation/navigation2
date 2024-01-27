@@ -23,6 +23,7 @@
 #include "nav2_velocity_smoother/velocity_smoother.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "geometry_msgs/msg/twist.hpp"
+#include "nav2_util/twist_subscriber.hpp"
 
 using namespace std::chrono_literals;
 
@@ -47,7 +48,7 @@ public:
 
   bool isOdomSmoother() {return odom_smoother_ ? true : false;}
   bool hasCommandMsg() {return last_command_time_.nanoseconds() != 0;}
-  geometry_msgs::msg::Twist::SharedPtr lastCommandMsg() {return command_;}
+  geometry_msgs::msg::TwistStamped::SharedPtr lastCommandMsg() {return command_;}
 
   void sendCommandMsg(geometry_msgs::msg::Twist::SharedPtr msg) {inputCommandCallback(msg);}
 };
@@ -66,11 +67,14 @@ TEST(VelocitySmootherTest, openLoopTestTimer)
   smoother->activate(state);
 
   std::vector<double> linear_vels;
-  auto subscription = smoother->create_subscription<geometry_msgs::msg::Twist>(
+  auto subscription = nav2_util::TwistSubscriber(
+    smoother,
     "cmd_vel_smoothed",
     1,
     [&](geometry_msgs::msg::Twist::SharedPtr msg) {
       linear_vels.push_back(msg->linear.x);
+    }, [&](geometry_msgs::msg::TwistStamped::SharedPtr msg) {
+      linear_vels.push_back(msg->twist.linear.x);
     });
 
   // Send a velocity command
@@ -117,11 +121,14 @@ TEST(VelocitySmootherTest, approxClosedLoopTestTimer)
   smoother->activate(state);
 
   std::vector<double> linear_vels;
-  auto subscription = smoother->create_subscription<geometry_msgs::msg::Twist>(
+  auto subscription = nav2_util::TwistSubscriber(
+    smoother,
     "cmd_vel_smoothed",
     1,
     [&](geometry_msgs::msg::Twist::SharedPtr msg) {
       linear_vels.push_back(msg->linear.x);
+    }, [&](geometry_msgs::msg::TwistStamped::SharedPtr msg) {
+      linear_vels.push_back(msg->twist.linear.x);
     });
 
   auto odom_pub = smoother->create_publisher<nav_msgs::msg::Odometry>("odom", 1);
@@ -566,7 +573,7 @@ TEST(VelocitySmootherTest, testCommandCallback)
   rclcpp::spin_some(smoother->get_node_base_interface());
 
   EXPECT_TRUE(smoother->hasCommandMsg());
-  EXPECT_EQ(smoother->lastCommandMsg()->linear.x, 100.0);
+  EXPECT_EQ(smoother->lastCommandMsg()->twist.linear.x, 100.0);
 }
 
 TEST(VelocitySmootherTest, testClosedLoopSub)

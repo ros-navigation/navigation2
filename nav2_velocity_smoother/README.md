@@ -59,14 +59,15 @@ velocity_smoother:
    	max_decel: [-2.5, 0.0, -3.2]  # Maximum deceleration, ordered [Ax, Ay, Aw]
    	odom_topic: "odom"  # Topic of odometry to use for estimating current velocities
    	odom_duration: 0.1  # Period of time (s) to sample odometry information in for velocity estimation
+	enable_stamped_cmd_vel: false # Whether to stamp the velocity. True uses TwistStamped. False uses Twist
 ```
 
 ## Topics
 
 | Topic            | Type                    | Use                           |
 |------------------|-------------------------|-------------------------------|
-| smoothed_cmd_vel | geometry_msgs/Twist     | Publish smoothed velocities   |
-| cmd_vel          | geometry_msgs/Twist     | Subscribe to input velocities |
+| smoothed_cmd_vel | geometry_msgs/Twist or  geometry_msgs/TwistStamped | Publish smoothed velocities   |
+| cmd_vel          | geometry_msgs/Twist or  geometry_msgs/TwistStamped | Subscribe to input velocities |
 
 
 ## Install
@@ -85,3 +86,5 @@ When in doubt, open-loop is a reasonable choice for most users.
 The minimum and maximum velocities for rotation (e.g. ``Vw``) represent left and right turns. While we make it possible to specify these separately, most users would be wise to set these values the same (but signed) for rotation. Additionally, the parameters are signed, so it is important to specify maximum deceleration with negative signs to represent deceleration. Minimum velocities with negatives when moving backward, so backward movement can be restricted by setting this to ``0``.
 
 Deadband velocities are minimum thresholds, below which we set its value to `0`. This can be useful when your robot's breaking torque from stand still is non-trivial so sending very small values will pull high amounts of current.
+
+The `VelocitySmoother` node makes use of a [nav2_util::TwistSubscriber](../nav2_util/README.md#twist-publisher-and-twist-subscriber-for-commanded-velocities).
