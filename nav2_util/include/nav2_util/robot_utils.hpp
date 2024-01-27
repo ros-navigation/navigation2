@@ -22,6 +22,7 @@
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/twist.hpp"
+#include "geometry_msgs/msg/twist_stamped.hpp"
 #include "tf2/time.h"
 #include "tf2_ros/buffer.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
@@ -103,7 +104,8 @@ bool getTransform(
  * @param msg Twist message to validate
  * @return True if valid, false if contains unactionable values
  */
-bool validateTwist(const geometry_msgs::msg::Twist & msg);
+[[nodiscard]] bool validateTwist(const geometry_msgs::msg::Twist & msg);
+[[nodiscard]] bool validateTwist(const geometry_msgs::msg::TwistStamped & msg);
 
 }  // end namespace nav2_util
 

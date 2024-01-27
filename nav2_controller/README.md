@@ -7,3 +7,5 @@ An execution module implementing the `nav2_msgs::action::FollowPath` action serv
 See the [Navigation Plugin list](https://navigation.ros.org/plugins/index.html) for a list of the currently known and available controller plugins. 
 
 See its [Configuration Guide Page](https://navigation.ros.org/configuration/packages/configuring-controller-server.html) for additional parameter descriptions and a [tutorial about writing controller plugins](https://navigation.ros.org/plugin_tutorials/docs/writing_new_nav2controller_plugin.html).
+
+The `ControllerServer` makes use of a [nav2_util::TwistPublisher](../nav2_util/README.md#twist-publisher-and-twist-subscriber-for-commanded-velocities).
