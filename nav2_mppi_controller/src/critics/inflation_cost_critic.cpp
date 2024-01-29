@@ -108,7 +108,7 @@ void InflationCostCritic::score(CriticData & data)
     CollisionCost pose_cost;
 
     for (size_t j = 0; j < traj_len; j++) {
-      // The costAtPose doesn't use orientation 
+      // The costAtPose doesn't use orientation
       // The footprintCostAtPose will always return "INSCRIBED" if footprint is over it
       // So the center point has more information than the footprint
       pose_cost = costAtPose(traj.x(i, j), traj.y(i, j));
