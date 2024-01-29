@@ -14,7 +14,7 @@
 // limitations under the License.
 
 #include <cmath>
-#include "veh_nav_action/critics/inflation_cost_critic.hpp"
+#include "nav2_mppi_controller/critics/inflation_cost_critic.hpp"
 
 namespace mppi::critics
 {
