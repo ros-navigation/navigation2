@@ -333,6 +333,7 @@ AmclNode::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   laser_scan_sub_.reset();
 
   // Map
+  map_sub_.reset();  //  map_sub_ may access map_, so it should be reset earlier
   if (map_ != NULL) {
     map_free(map_);
     map_ = nullptr;
