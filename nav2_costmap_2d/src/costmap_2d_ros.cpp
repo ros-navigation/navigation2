@@ -89,7 +89,7 @@ Costmap2DROS::Costmap2DROS(
     nav2_util::add_namespaces(parent_namespace, local_namespace),
     "--ros-args", "-r", name + ":" + std::string("__node:=") + name,
     "--ros-args", "-p", "use_sim_time:=" + std::string(use_sim_time ? "true" : "false"),
-  })),
+  }).use_intra_process_comms(true)),
   name_(name),
   parent_namespace_(parent_namespace),
   default_plugins_{"static_layer", "obstacle_layer", "inflation_layer"},
@@ -208,6 +208,8 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
     RCLCPP_INFO(get_logger(), "Initialized costmap filter \"%s\"", filter_names_[i].c_str());
   }
 
+  auto qos = rclcpp::SystemDefaultsQoS();
+  RCLCPP_INFO(get_logger(), "Created SystemDefaultsQoS with depth %li", qos.depth());
   // Create the publishers and subscribers
   footprint_sub_ = create_subscription<geometry_msgs::msg::Polygon>(
     "footprint",
@@ -215,7 +217,7 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
     std::bind(&Costmap2DROS::setRobotFootprintPolygon, this, std::placeholders::_1));
 
   footprint_pub_ = create_publisher<geometry_msgs::msg::PolygonStamped>(
-    "published_footprint", rclcpp::SystemDefaultsQoS());
+    "published_footprint", rclcpp::SystemDefaultsQoS().keep_last(1));
 
   costmap_publisher_ = std::make_unique<Costmap2DPublisher>(
     shared_from_this(),
@@ -543,6 +545,14 @@ Costmap2DROS::updateMap()
       footprint->header = pose.header;
       transformFootprint(x, y, yaw, padded_footprint_, *footprint);
 
+      RCLCPP_DEBUG(get_logger(), "Publishing footprint");
+      if (get_node_options().use_intra_process_comms())
+      {
+        RCLCPP_INFO(get_logger(), "use_intra_process_comms is true for %s", get_name());
+      } else {
+        RCLCPP_INFO(get_logger(), "use_intra_process_comms is false for %s", get_name());
+      }
+      
       RCLCPP_DEBUG(get_logger(), "Publishing footprint");
       footprint_pub_->publish(std::move(footprint));
       initialized_ = true;

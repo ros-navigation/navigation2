@@ -63,6 +63,8 @@ PlannerServer::PlannerServer(const rclcpp::NodeOptions & options)
   }
 
   // Setup the global costmap
+  auto qos = rclcpp::SystemDefaultsQoS();
+  RCLCPP_INFO(get_logger(), "Created SystemDefaultsQoS with depth %li", qos.depth());
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "global_costmap", std::string{get_namespace()}, "global_costmap",
     get_parameter("use_sim_time").as_bool());

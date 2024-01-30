@@ -63,14 +63,15 @@ public:
   /**
    * @brief Callback for the costmap topic
    */
-  void costmapCallback(const nav2_msgs::msg::Costmap::SharedPtr msg);
+  void costmapCallback(const nav2_msgs::msg::Costmap::ConstSharedPtr msg);
 
 protected:
   std::shared_ptr<Costmap2D> costmap_;
-  nav2_msgs::msg::Costmap::SharedPtr costmap_msg_;
+  nav2_msgs::msg::Costmap::ConstSharedPtr costmap_msg_;
   std::string topic_name_;
   bool costmap_received_{false};
   rclcpp::Subscription<nav2_msgs::msg::Costmap>::SharedPtr costmap_sub_;
+  rclcpp::Logger logger_{rclcpp::get_logger("costmap_sub")};
 };
 
 }  // namespace nav2_costmap_2d

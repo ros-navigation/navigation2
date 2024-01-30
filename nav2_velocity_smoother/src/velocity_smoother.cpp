@@ -332,6 +332,7 @@ void VelocitySmoother::smootherTimer()
   cmd_vel->angular.z = fabs(cmd_vel->angular.z) <
     deadband_velocities_[2] ? 0.0 : cmd_vel->angular.z;
 
+  RCLCPP_INFO(get_logger(), "Publishing velocity: x: %f on address: %lu", cmd_vel->linear.x, reinterpret_cast<std::uintptr_t>(cmd_vel.get()));
   smoothed_cmd_pub_->publish(std::move(cmd_vel));
 }
 
