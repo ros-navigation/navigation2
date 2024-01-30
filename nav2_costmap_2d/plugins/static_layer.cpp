@@ -275,7 +275,7 @@ StaticLayer::interpretValue(unsigned char value)
 }
 
 void
-StaticLayer::incomingMap(const nav_msgs::msg::OccupancyGrid::SharedPtr new_map)
+StaticLayer::incomingMap(const nav_msgs::msg::OccupancyGrid::ConstSharedPtr new_map)
 {
   if (!map_received_) {
     processMap(*new_map);

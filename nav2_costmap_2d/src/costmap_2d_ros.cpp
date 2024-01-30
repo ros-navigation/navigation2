@@ -58,8 +58,8 @@ using rcl_interfaces::msg::ParameterType;
 
 namespace nav2_costmap_2d
 {
-Costmap2DROS::Costmap2DROS(const std::string & name, const bool & use_sim_time)
-: Costmap2DROS(name, "/", name, use_sim_time) {}
+Costmap2DROS::Costmap2DROS(const std::string & name, const bool & use_sim_time, const bool & use_intra_process_comms)
+: Costmap2DROS(name, "/", name, use_sim_time, use_intra_process_comms) {}
 
 Costmap2DROS::Costmap2DROS()
 : nav2_util::LifecycleNode("costmap", ""),
@@ -78,7 +78,8 @@ Costmap2DROS::Costmap2DROS(
   const std::string & name,
   const std::string & parent_namespace,
   const std::string & local_namespace,
-  const bool & use_sim_time)
+  const bool & use_sim_time,
+  const bool & use_intra_process_comms)
 : nav2_util::LifecycleNode(name, "",
     // NodeOption arguments take precedence over the ones provided on the command line
     // use this to make sure the node is placed on the provided namespace
@@ -89,7 +90,7 @@ Costmap2DROS::Costmap2DROS(
     nav2_util::add_namespaces(parent_namespace, local_namespace),
     "--ros-args", "-r", name + ":" + std::string("__node:=") + name,
     "--ros-args", "-p", "use_sim_time:=" + std::string(use_sim_time ? "true" : "false"),
-  }).use_intra_process_comms(true)),
+  }).use_intra_process_comms(use_intra_process_comms)),
   name_(name),
   parent_namespace_(parent_namespace),
   default_plugins_{"static_layer", "obstacle_layer", "inflation_layer"},
