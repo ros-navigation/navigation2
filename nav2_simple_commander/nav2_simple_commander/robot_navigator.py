@@ -496,7 +496,7 @@ class BasicNavigator(Node):
 
     def getPathThroughPoses(self, start, goals, planner_id='', use_start=False):
         """Send a `ComputePathThroughPoses` action request."""
-        rtn = self.__getPathThroughPosesImpl(start, goals, planner_id, use_start)
+        rtn = self._getPathThroughPosesImpl(start, goals, planner_id, use_start)
 
         if self.status != GoalStatus.STATUS_SUCCEEDED:
             self.warn(f'Getting path failed with status code: {self.status}')
