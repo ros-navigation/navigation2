@@ -153,7 +153,7 @@ TEST(SmoothControlLawTest, calculateCurvature) {
   // Calculate curvature
   double curvature = scl.calculateCurvature(target, current);
 
-  // Check results
+  // Check results: it must be positive
   EXPECT_NEAR(curvature, 5.407042, 0.0001);
 
   // Set a new target
@@ -167,7 +167,7 @@ TEST(SmoothControlLawTest, calculateCurvature) {
   // Calculate curvature
   curvature = scl.calculateCurvature(target, current);
 
-  // Check results
+  // Check results: it must be neggative
   EXPECT_NEAR(curvature, -0.416228, 0.0001);
 }
 
@@ -188,7 +188,7 @@ TEST(SmoothControlLawTest, calculateRegularVelocity) {
   // Calculate velocity
   auto cmd_vel = scl.calculateRegularVelocity(target, current);
 
-  // Check results
+  // Check results: both linear and angular velocity must be positive
   EXPECT_NEAR(cmd_vel.linear.x, 0.1460446, 0.0001);
   EXPECT_NEAR(cmd_vel.angular.z, 0.7896695, 0.0001);
 
@@ -203,7 +203,7 @@ TEST(SmoothControlLawTest, calculateRegularVelocity) {
   // Calculate velocity
   cmd_vel = scl.calculateRegularVelocity(target, current);
 
-  // Check results
+  // Check results: linear velocity must be positive and angular velocity must be negative
   EXPECT_NEAR(cmd_vel.linear.x, 0.96651200, 0.0001);
   EXPECT_NEAR(cmd_vel.angular.z, -0.4022844, 0.0001);
 }
@@ -399,7 +399,7 @@ TEST(GracefulMotionControllerTest, getDifferentMotionTargets) {
   motion_target_distance = 10.0;
   motion_target = controller->getMotionTarget(motion_target_distance, plan);
 
-  // Check results, should be the last one
+  // Check results: should be the last one
   EXPECT_EQ(motion_target.header.frame_id, "map");
   EXPECT_EQ(motion_target.pose.position.x, 5.0);
   EXPECT_EQ(motion_target.pose.position.y, 6.0);
@@ -511,7 +511,7 @@ TEST(GracefulMotionControllerTest, rotateToTarget) {
   double angle_to_target = 0.5;
   auto cmd_vel = controller->rotateToTarget(angle_to_target);
 
-  // Check results
+  // Check results: it must be a positive rotation
   EXPECT_EQ(cmd_vel.linear.x, 0.0);
   EXPECT_EQ(cmd_vel.angular.z, 0.25);
 
@@ -519,7 +519,7 @@ TEST(GracefulMotionControllerTest, rotateToTarget) {
   angle_to_target = -0.5;
   cmd_vel = controller->rotateToTarget(angle_to_target);
 
-  // Check results with negative sign
+  // Check results: it must be a negative rotation
   EXPECT_EQ(cmd_vel.linear.x, 0.0);
   EXPECT_EQ(cmd_vel.angular.z, -0.25);
 }
@@ -735,6 +735,7 @@ TEST(GracefulMotionControllerTest, noPruningPlan) {
   global_plan.poses[2].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
   controller->setPlan(global_plan);
 
+  // Check results: the plan should not be pruned
   auto transformed_plan = controller->transformGlobalPlan(robot_pose);
   EXPECT_EQ(transformed_plan.poses.size(), global_plan.poses.size());
 }
@@ -811,6 +812,7 @@ TEST(GracefulMotionControllerTest, pruningPlan) {
   global_plan.poses[5].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
   controller->setPlan(global_plan);
 
+  // Check results: the plan should be pruned
   auto transformed_plan = controller->transformGlobalPlan(robot_pose);
   EXPECT_EQ(transformed_plan.poses.size(), 3);
 }
@@ -876,6 +878,7 @@ TEST(GracefulMotionControllerTest, pruningPlanOutsideCostmap) {
   global_plan.poses[2].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
   controller->setPlan(global_plan);
 
+  // Check results: the plan should be pruned
   auto transformed_plan = controller->transformGlobalPlan(robot_pose);
   EXPECT_EQ(transformed_plan.poses.size(), 2);
 }
@@ -954,7 +957,7 @@ TEST(GracefulMotionControllerTest, computeVelocityCommandRotate) {
 
   auto cmd_vel = controller->computeVelocityCommands(robot_pose, robot_velocity, &checker);
 
-  // Check results. The robot should rotate in place.
+  // Check results: the robot should rotate in place.
   // So, linear velocity should be zero and angular velocity should be a positive value below 0.5.
   EXPECT_EQ(cmd_vel.twist.linear.x, 0.0);
   EXPECT_GE(cmd_vel.twist.angular.x, 0.0);
@@ -1030,7 +1033,7 @@ TEST(GracefulMotionControllerTest, computeVelocityCommandRegular) {
 
   auto cmd_vel = controller->computeVelocityCommands(robot_pose, robot_velocity, &checker);
 
-  // Check results. The robot should go straight to the target.
+  // Check results: the robot should go straight to the target.
   // So, linear velocity should be some positive value and angular velocity should be zero.
   EXPECT_GT(cmd_vel.twist.linear.x, 0.0);
   EXPECT_EQ(cmd_vel.twist.angular.z, 0.0);
@@ -1111,7 +1114,7 @@ TEST(GracefulMotionControllerTest, computeVelocityCommandRegularBackwards) {
 
   auto cmd_vel = controller->computeVelocityCommands(robot_pose, robot_velocity, &checker);
 
-  // Check results. The robot should go straight to the target.
+  // Check results: the robot should go straight to the target.
   // So, both linear velocity should be some negative values.
   EXPECT_LT(cmd_vel.twist.linear.x, 0.0);
   EXPECT_LT(cmd_vel.twist.angular.z, 0.0);
@@ -1194,7 +1197,7 @@ TEST(GracefulMotionControllerTest, computeVelocityCommandFinal) {
 
   auto cmd_vel = controller->computeVelocityCommands(robot_pose, robot_velocity, &checker);
 
-  // Check results. The robot should do a final rotation near the target.
+  // Check results: the robot should do a final rotation near the target.
   // So, linear velocity should be zero and angular velocity should be a positive value below 0.5.
   EXPECT_EQ(cmd_vel.twist.linear.x, 0.0);
   EXPECT_GE(cmd_vel.twist.angular.x, 0.0);
