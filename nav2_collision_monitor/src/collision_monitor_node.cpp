@@ -183,7 +183,6 @@ CollisionMonitor::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 void CollisionMonitor::cmdVelInCallback(geometry_msgs::msg::Twist::ConstSharedPtr msg)
 {
   // If message contains NaN or Inf, ignore
-  RCLCPP_INFO(get_logger(), "Recived velocity: x: %f on address: %lu", msg->linear.x, reinterpret_cast<std::uintptr_t>(msg.get()));
   if (!nav2_util::validateTwist(*msg)) {
     RCLCPP_ERROR(get_logger(), "Velocity message contains NaNs or Infs! Ignoring as invalid!");
     return;

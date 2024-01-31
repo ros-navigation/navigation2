@@ -185,7 +185,6 @@ void Costmap2DPublisher::publishCostmap()
 {
   if (costmap_raw_pub_->get_subscription_count() > 0) {
     prepareCostmap();
-    RCLCPP_INFO(logger_, "Publishing costmap %i on address: %lu", costmap_raw_->header.stamp.nanosec, reinterpret_cast<std::uintptr_t>(costmap_raw_.get()));
 
     costmap_raw_pub_->publish(std::move(costmap_raw_));
   }

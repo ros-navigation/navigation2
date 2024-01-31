@@ -26,7 +26,6 @@ CostmapSubscriber::CostmapSubscriber(
 : topic_name_(topic_name)
 {
   auto node = parent.lock();
-  logger_ = node->get_logger();
   costmap_sub_ = node->create_subscription<nav2_msgs::msg::Costmap>(
     topic_name_,
     rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
@@ -89,7 +88,6 @@ void CostmapSubscriber::toCostmap2D()
 
 void CostmapSubscriber::costmapCallback(const nav2_msgs::msg::Costmap::ConstSharedPtr msg)
 {
-  RCLCPP_INFO(logger_, "Received costmap %i on topic %s, on address: %lu ", msg->header.stamp.nanosec, topic_name_.c_str(), reinterpret_cast<std::uintptr_t>(msg.get()));
   std::atomic_store(&costmap_msg_, msg);
   if (!costmap_received_) {
     costmap_received_ = true;

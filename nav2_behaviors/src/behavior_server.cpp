@@ -200,15 +200,7 @@ BehaviorServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   }
 
   // create bond connection
-  createBond();
-
-  if (get_node_options().use_intra_process_comms())
-      {
-        RCLCPP_INFO(get_logger(), "use_intra_process_comms is true for %s", get_name());
-      } else {
-        RCLCPP_INFO(get_logger(), "use_intra_process_comms is false for %s", get_name());
-      }
-      
+  createBond();      
 
   return nav2_util::CallbackReturn::SUCCESS;
 }

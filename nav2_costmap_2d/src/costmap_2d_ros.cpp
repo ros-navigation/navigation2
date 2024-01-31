@@ -209,8 +209,6 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
     RCLCPP_INFO(get_logger(), "Initialized costmap filter \"%s\"", filter_names_[i].c_str());
   }
 
-  auto qos = rclcpp::SystemDefaultsQoS();
-  RCLCPP_INFO(get_logger(), "Created SystemDefaultsQoS with depth %li", qos.depth());
   // Create the publishers and subscribers
   footprint_sub_ = create_subscription<geometry_msgs::msg::Polygon>(
     "footprint",
@@ -545,14 +543,6 @@ Costmap2DROS::updateMap()
       auto footprint = std::make_unique<geometry_msgs::msg::PolygonStamped>();
       footprint->header = pose.header;
       transformFootprint(x, y, yaw, padded_footprint_, *footprint);
-
-      RCLCPP_DEBUG(get_logger(), "Publishing footprint");
-      if (get_node_options().use_intra_process_comms())
-      {
-        RCLCPP_INFO(get_logger(), "use_intra_process_comms is true for %s", get_name());
-      } else {
-        RCLCPP_INFO(get_logger(), "use_intra_process_comms is false for %s", get_name());
-      }
       
       RCLCPP_DEBUG(get_logger(), "Publishing footprint");
       footprint_pub_->publish(std::move(footprint));
