@@ -71,7 +71,6 @@ protected:
   std::string topic_name_;
   bool costmap_received_{false};
   rclcpp::Subscription<nav2_msgs::msg::Costmap>::SharedPtr costmap_sub_;
-  rclcpp::Logger logger_{rclcpp::get_logger("costmap_sub")};
 };
 
 }  // namespace nav2_costmap_2d
