@@ -39,7 +39,7 @@ repositories:
   #   type: git
   #   url: https://github.com/ros-simulation/gazebo_ros_pkgs.git
   #   version: ros2
-  ros2/geometry2:
-    type: git
-    url: https://github.com/ros2/geometry2.git
-    version: rolling
+  # ros2/geometry2:
+  #   type: git
+  #   url: https://github.com/ros2/geometry2.git
+  #   version: rolling
