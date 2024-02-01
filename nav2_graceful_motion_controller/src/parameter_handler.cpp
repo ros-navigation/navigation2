@@ -83,6 +83,7 @@ ParameterHandler::ParameterHandler(
   node->get_parameter(plugin_name_ + ".v_linear_max", params_.v_linear_max);
   params_.v_linear_max_initial = params_.v_linear_max;
   node->get_parameter(plugin_name_ + ".v_angular_max", params_.v_angular_max);
+  params_.v_angular_max_initial = params_.v_angular_max;
   node->get_parameter(plugin_name_ + ".slowdown_radius", params_.slowdown_radius);
   node->get_parameter(plugin_name_ + ".initial_rotation", params_.initial_rotation);
   node->get_parameter(
@@ -132,6 +133,7 @@ ParameterHandler::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
         params_.v_linear_max_initial = params_.v_linear_max;
       } else if (name == plugin_name_ + ".v_angular_max") {
         params_.v_angular_max = parameter.as_double();
+        params_.v_angular_max_initial = params_.v_angular_max;
       } else if (name == plugin_name_ + ".slowdown_radius") {
         params_.slowdown_radius = parameter.as_double();
       } else if (name == plugin_name_ + ".initial_rotation_min_angle") {

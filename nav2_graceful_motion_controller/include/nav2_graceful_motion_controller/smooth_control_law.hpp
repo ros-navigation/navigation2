@@ -72,6 +72,17 @@ public:
   void setSlowdownRadius(const double slowdown_radius);
 
   /**
+   * @brief Update the velocity limits.
+   *
+   * @param v_linear_min The minimum absolute velocity in the linear direction.
+   * @param v_linear_max The maximum absolute velocity in the linear direction.
+   * @param v_angular_max The maximum absolute velocity in the angular direction.
+   */
+  void setSpeedLimit(
+    const double v_linear_min, const double v_linear_max,
+    const double v_angular_max);
+
+  /**
    * @brief Compute linear and angular velocities command using the curvature.
    *
    * @param target Pose of the target in the robot frame.
@@ -94,16 +105,6 @@ public:
   geometry_msgs::msg::Twist calculateRegularVelocity(
     const geometry_msgs::msg::Pose & target,
     const bool & backward = false);
-
-  /**
-   * @brief Update the velocity limits.
-   * @param v_linear_min The minimum absolute velocity in the linear direction.
-   * @param v_linear_max The maximum absolute velocity in the linear direction.
-   * @param v_angular_max The maximum absolute velocity in the angular direction.
-   */
-  void setSpeedLimit(
-    const double v_linear_min, const double v_linear_max,
-    const double v_angular_max);
 
   /**
    * @brief Calculate the next pose of the robot by generating a velocity command using the

@@ -230,6 +230,10 @@ void GracefulMotionController::setSpeedLimit(
     params_->v_linear_max = std::max(speed_limit, params_->v_linear_min);
   }
 
+  // Limit the angular velocity to be proportional to the linear velocity
+  params_->v_angular_max = params_->v_linear_max * params_->rotation_scaling_factor;
+  params_->v_angular_max = std::min(params_->v_angular_max, params_->v_angular_max_initial);
+
   // Update the speed limit in the control law
   control_law_->setSpeedLimit(params_->v_linear_min, params_->v_linear_max, params_->v_angular_max);
 }

@@ -42,6 +42,15 @@ void SmoothControlLaw::setSlowdownRadius(double slowdown_radius)
   slowdown_radius_ = slowdown_radius;
 }
 
+void SmoothControlLaw::setSpeedLimit(
+  const double v_linear_min, const double v_linear_max,
+  const double v_angular_max)
+{
+  v_linear_min_ = v_linear_min;
+  v_linear_max_ = v_linear_max;
+  v_angular_max_ = v_angular_max;
+}
+
 geometry_msgs::msg::Twist SmoothControlLaw::calculateRegularVelocity(
   const geometry_msgs::msg::Pose & target, const geometry_msgs::msg::Pose & current,
   const bool & backward)
@@ -80,15 +89,6 @@ geometry_msgs::msg::Twist SmoothControlLaw::calculateRegularVelocity(
   const geometry_msgs::msg::Pose & target, const bool & backward)
 {
   return calculateRegularVelocity(target, geometry_msgs::msg::Pose(), backward);
-}
-
-void SmoothControlLaw::setSpeedLimit(
-  const double v_linear_min, const double v_linear_max,
-  const double v_angular_max)
-{
-  v_linear_min_ = v_linear_min;
-  v_linear_max_ = v_linear_max;
-  v_angular_max_ = v_angular_max;
 }
 
 geometry_msgs::msg::Pose SmoothControlLaw::calculateNextPose(
