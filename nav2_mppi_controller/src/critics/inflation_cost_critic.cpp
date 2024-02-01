@@ -24,15 +24,15 @@ void InflationCostCritic::initialize()
   auto getParam = parameters_handler_->getParamGetter(name_);
   getParam(consider_footprint_, "consider_footprint", false);
   getParam(power_, "cost_power", 1);
-  getParam(repulsion_weight_, "repulsion_weight", 1.5);
+  getParam(weight_, "cost_weight", 0.015);
   getParam(critical_cost_, "critical_cost", 300.0);
-  getParam(collision_cost_, "collision_cost", 10000.0);
+  getParam(collision_cost_, "collision_cost", 1000000.0);
   getParam(near_goal_distance_, "near_goal_distance", 0.5);
 
   collision_checker_.setCostmap(costmap_);
   possibly_inscribed_cost_ = findCircumscribedCost(costmap_ros_);
 
-  if (possibly_inscribed_cost_ < 1) {
+  if (possibly_inscribed_cost_ < 1.0f) {
     RCLCPP_ERROR(
       logger_,
       "Inflation layer either not found or inflation is not set sufficiently for "
@@ -46,7 +46,7 @@ void InflationCostCritic::initialize()
     logger_,
     "InflationCostCritic instantiated with %d power and %f / %f weights. "
     "Critic will collision check based on %s cost.",
-    power_, critical_cost_, repulsion_weight_, consider_footprint_ ?
+    power_, critical_cost_, weight_, consider_footprint_ ?
     "footprint" : "circular");
 }
 
@@ -105,26 +105,26 @@ void InflationCostCritic::score(CriticData & data)
   for (size_t i = 0; i < data.trajectories.x.shape(0); ++i) {
     bool trajectory_collide = false;
     const auto & traj = data.trajectories;
-    CollisionCost pose_cost;
+    float pose_cost;
 
     for (size_t j = 0; j < traj_len; j++) {
       // The costAtPose doesn't use orientation
       // The footprintCostAtPose will always return "INSCRIBED" if footprint is over it
       // So the center point has more information than the footprint
       pose_cost = costAtPose(traj.x(i, j), traj.y(i, j));
-      if (pose_cost.cost < 1) {continue;}  // In free space
+      if (pose_cost < 1.0f) {continue;}  // In free space
 
-      if (inCollision(traj.x(i, j), traj.y(i, j), traj.yaws(i, j))) {
+      if (inCollision(pose_cost, traj.x(i, j), traj.y(i, j), traj.yaws(i, j))) {
         trajectory_collide = true;
         break;
       }
 
       // Let near-collision trajectory points be punished severely
       using namespace nav2_costmap_2d; // NOLINT
-      if (pose_cost.cost >= INSCRIBED_INFLATED_OBSTACLE) {
+      if (pose_cost >= INSCRIBED_INFLATED_OBSTACLE) {
         repulsive_cost[i] += critical_cost_;
       } else if (!near_goal) {  // Generally prefer trajectories further from obstacles
-        repulsive_cost[i] += pose_cost.cost;
+        repulsive_cost[i] += pose_cost;
       }
     }
 
@@ -135,7 +135,7 @@ void InflationCostCritic::score(CriticData & data)
     }
   }
 
-  data.costs += xt::pow((repulsion_weight_ * repulsive_cost / traj_len), power_);
+  data.costs += xt::pow((weight_ * repulsive_cost / traj_len), power_);
   data.fail_flag = all_trajectories_collide;
 }
 
@@ -144,17 +144,15 @@ void InflationCostCritic::score(CriticData & data)
   * @param cost Costmap cost
   * @return bool if in collision
   */
-bool InflationCostCritic::inCollision(float x, float y, float theta)
+bool InflationCostCritic::inCollision(float cost, float x, float y, float theta)
 {
   bool is_tracking_unknown =
     costmap_ros_->getLayeredCostmap()->isTrackingUnknown();
 
-  unsigned int x_i, y_i;
-  collision_checker_.worldToMap(x, y, x_i, y_i);
-  double cost = collision_checker_.pointCost(x_i, y_i);
-
   // If consider_footprint_ check footprint scort for collision
-  if (consider_footprint_ && (cost >= possibly_inscribed_cost_ || possibly_inscribed_cost_ < 1)) {
+  if (consider_footprint_ &&
+    (cost >= possibly_inscribed_cost_ || possibly_inscribed_cost_ < 1.0f))
+  {
     cost = static_cast<float>(collision_checker_.footprintCostAtPose(
         x, y, theta, costmap_ros_->getRobotFootprint()));
   }
@@ -172,20 +170,15 @@ bool InflationCostCritic::inCollision(float x, float y, float theta)
   return false;
 }
 
-CollisionCost InflationCostCritic::costAtPose(float x, float y)
+float InflationCostCritic::costAtPose(float x, float y)
 {
   using namespace nav2_costmap_2d;   // NOLINT
-  CollisionCost collision_cost;
-  float & cost = collision_cost.cost;
-  collision_cost.using_footprint = false;
   unsigned int x_i, y_i;
   if (!collision_checker_.worldToMap(x, y, x_i, y_i)) {
-    cost = nav2_costmap_2d::NO_INFORMATION;
-    return collision_cost;
+    return nav2_costmap_2d::NO_INFORMATION;
   }
-  cost = collision_checker_.pointCost(x_i, y_i);
 
-  return collision_cost;
+  return collision_checker_.pointCost(x_i, y_i);
 }
 
 }  // namespace mppi::critics

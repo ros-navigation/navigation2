@@ -48,12 +48,13 @@ public:
 protected:
   /**
     * @brief Checks if cost represents a collision
+    * @param cost Point cost at pose center
     * @param x X of pose
     * @param y Y of pose
     * @param theta theta of pose
     * @return bool if in collision
     */
-  bool inCollision(float x, float y, float theta);
+  bool inCollision(float cost, float x, float y, float theta);
 
   /**
     * @brief cost at a robot pose
@@ -62,7 +63,7 @@ protected:
     * @param theta theta of pose
     * @return Collision information at pose
     */
-  CollisionCost costAtPose(float x, float y);
+  float costAtPose(float x, float y);
 
   /**
     * @brief Find the min cost of the inflation decay function for which the robot MAY be
@@ -81,7 +82,7 @@ protected:
   bool consider_footprint_{true};
   double collision_cost_{0};
   double critical_cost_{0};
-  double repulsion_weight_{0};
+  double weight_{0};
 
   float near_goal_distance_;
 
