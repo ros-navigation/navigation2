@@ -15,7 +15,7 @@
   <class name="nav2_rviz_plugins/Selector"
          type="nav2_rviz_plugins::Selector"
          base_class_type="rviz_common::Panel">
-    <description>The Nav2 rviz panel for selection.</description>
+    <description>The Nav2 rviz panel for selecting planners and controllers.</description>
   </class>
 
   <class name="nav2_rviz_plugins/ParticleCloud"
