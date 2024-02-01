@@ -24,11 +24,14 @@ void CostCritic::initialize()
   auto getParam = parameters_handler_->getParamGetter(name_);
   getParam(consider_footprint_, "consider_footprint", false);
   getParam(power_, "cost_power", 1);
-  getParam(weight_, "cost_weight", 0.015);
+  getParam(weight_, "cost_weight", 3.81);
   getParam(critical_cost_, "critical_cost", 300.0);
   getParam(collision_cost_, "collision_cost", 1000000.0);
   getParam(near_goal_distance_, "near_goal_distance", 0.5);
   getParam(inflation_layer_name_, "inflation_layer_name", std::string(""));
+
+  // Normalized by cost value to put in same regime as other weights
+  weight_ /= 254.0f;
 
   collision_checker_.setCostmap(costmap_);
   possibly_inscribed_cost_ = findCircumscribedCost(costmap_ros_);
