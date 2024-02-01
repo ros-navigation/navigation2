@@ -47,6 +47,7 @@ private:
   void timerEvent(QTimerEvent * event) override;
 
   rclcpp::Node::SharedPtr client_node_;
+  rclcpp::Node::SharedPtr node_;
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_controller_;
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_planner_;
   rclcpp::TimerBase::SharedPtr rclcpp_timer_;
