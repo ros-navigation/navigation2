@@ -123,7 +123,6 @@ Uses inflated costmap cost directly to avoid obstacles
  | cost_power           | int    | Default 1. Power order to apply to term.                                                                    |
  | collision_cost       | double | Default 1000000.0. Cost to apply to a true collision in a trajectory.                                          |
  | critical_cost       | double | Default 300.0. Cost to apply to a pose with any point in in inflated space to prefer distance from obstacles.                                          |
- | collision_margin_distance   | double    | Default 0.10. Margin distance from collision to apply severe penalty, similar to footprint inflation. Between 0.05-0.2 is reasonable. |
  | near_goal_distance          | double    | Default 0.5. Distance near goal to stop applying preferential obstacle term to allow robot to smoothly converge to goal pose in close proximity to obstacles.   
  | inflation_layer_name        | string    | Default "". Name of the inflation layer. If empty, it uses the last inflation layer in the costmap. If you have multiple inflation layers, you may want to specify the name of the layer to use. |
 
@@ -235,7 +234,7 @@ controller_server:
       # CostCritic:
       #   enabled: true
       #   cost_power: 1
-      #   cost_weight: 0.015
+      #   cost_weight: 3.81
       #   critical_cost: 300.0
       #   consider_footprint: true
       #   collision_cost: 1000000.0
