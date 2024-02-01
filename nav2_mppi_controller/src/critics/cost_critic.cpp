@@ -14,12 +14,12 @@
 // limitations under the License.
 
 #include <cmath>
-#include "nav2_mppi_controller/critics/inflation_cost_critic.hpp"
+#include "nav2_mppi_controller/critics/cost_critic.hpp"
 
 namespace mppi::critics
 {
 
-void InflationCostCritic::initialize()
+void CostCritic::initialize()
 {
   auto getParam = parameters_handler_->getParamGetter(name_);
   getParam(consider_footprint_, "consider_footprint", false);
@@ -28,6 +28,7 @@ void InflationCostCritic::initialize()
   getParam(critical_cost_, "critical_cost", 300.0);
   getParam(collision_cost_, "collision_cost", 1000000.0);
   getParam(near_goal_distance_, "near_goal_distance", 0.5);
+  getParam(inflation_layer_name_, "inflation_layer_name", std::string(""));
 
   collision_checker_.setCostmap(costmap_);
   possibly_inscribed_cost_ = findCircumscribedCost(costmap_ros_);
@@ -50,30 +51,26 @@ void InflationCostCritic::initialize()
     "footprint" : "circular");
 }
 
-double InflationCostCritic::findCircumscribedCost(
+float CostCritic::findCircumscribedCost(
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap)
 {
   double result = -1.0;
-  bool inflation_layer_found = false;
-  // check if the costmap has an inflation layer
-  for (auto layer = costmap->getLayeredCostmap()->getPlugins()->begin();
-    layer != costmap->getLayeredCostmap()->getPlugins()->end();
-    ++layer)
-  {
-    auto inflation_layer = std::dynamic_pointer_cast<nav2_costmap_2d::InflationLayer>(*layer);
-    if (!inflation_layer) {
-      continue;
-    }
-
-    inflation_layer_found = true;
-    const double circum_radius = costmap->getLayeredCostmap()->getCircumscribedRadius();
-    const double resolution = costmap->getCostmap()->getResolution();
-    result = inflation_layer->computeCost(circum_radius / resolution);
+  const double circum_radius = costmap->getLayeredCostmap()->getCircumscribedRadius();
+  if (static_cast<float>(circum_radius) == circumscribed_radius_) {
+    // early return if footprint size is unchanged
+    return circumscribed_cost_;
   }
 
-  if (!inflation_layer_found) {
+  // check if the costmap has an inflation layer
+  const auto inflation_layer = nav2_costmap_2d::InflationLayer::getInflationLayer(
+    costmap,
+    inflation_layer_name_);
+  if (inflation_layer != nullptr) {
+    const double resolution = costmap->getCostmap()->getResolution();
+    result = inflation_layer->computeCost(circum_radius / resolution);
+  } else {
     RCLCPP_WARN(
-      rclcpp::get_logger("computeCircumscribedCost"),
+      logger_,
       "No inflation layer found in costmap configuration. "
       "If this is an SE2-collision checking plugin, it cannot use costmap potential "
       "field to speed up collision checking by only checking the full footprint "
@@ -81,14 +78,22 @@ double InflationCostCritic::findCircumscribedCost(
       "significantly slow down planning times and not avoid anything but absolute collisions!");
   }
 
-  return result;
+  circumscribed_radius_ = static_cast<float>(circum_radius);
+  circumscribed_cost_ = static_cast<float>(result);
+
+  return circumscribed_cost_;
 }
 
-void InflationCostCritic::score(CriticData & data)
+void CostCritic::score(CriticData & data)
 {
   using xt::evaluation_strategy::immediate;
   if (!enabled_) {
     return;
+  }
+
+  if (consider_footprint_) {
+    // footprint may have changed since initialization if user has dynamic footprints
+    possibly_inscribed_cost_ = findCircumscribedCost(costmap_ros_);
   }
 
   // If near the goal, don't apply the preferential term since the goal is near obstacles
@@ -144,7 +149,7 @@ void InflationCostCritic::score(CriticData & data)
   * @param cost Costmap cost
   * @return bool if in collision
   */
-bool InflationCostCritic::inCollision(float cost, float x, float y, float theta)
+bool CostCritic::inCollision(float cost, float x, float y, float theta)
 {
   bool is_tracking_unknown =
     costmap_ros_->getLayeredCostmap()->isTrackingUnknown();
@@ -170,7 +175,7 @@ bool InflationCostCritic::inCollision(float cost, float x, float y, float theta)
   return false;
 }
 
-float InflationCostCritic::costAtPose(float x, float y)
+float CostCritic::costAtPose(float x, float y)
 {
   using namespace nav2_costmap_2d;   // NOLINT
   unsigned int x_i, y_i;
@@ -186,5 +191,5 @@ float InflationCostCritic::costAtPose(float x, float y)
 #include <pluginlib/class_list_macros.hpp>
 
 PLUGINLIB_EXPORT_CLASS(
-  mppi::critics::InflationCostCritic,
+  mppi::critics::CostCritic,
   mppi::critics::CriticFunction)

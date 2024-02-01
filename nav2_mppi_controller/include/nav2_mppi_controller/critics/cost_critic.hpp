@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_MPPI_CONTROLLER__CRITICS__INFLATION_COST_CRITIC_HPP_
-#define NAV2_MPPI_CONTROLLER__CRITICS__INFLATION_COST_CRITIC_HPP_
+#ifndef NAV2_MPPI_CONTROLLER__CRITICS__COST_CRITIC_HPP_
+#define NAV2_MPPI_CONTROLLER__CRITICS__COST_CRITIC_HPP_
 
 #include <memory>
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
@@ -27,10 +27,10 @@ namespace mppi::critics
 {
 
 /**
- * @class mppi::critics::InflationCostCritic
- * @brief Critic objective function for avoiding obstacles using inflation cost
+ * @class mppi::critics::CostCritic
+ * @brief Critic objective function for avoiding obstacles using costmap's inflated cost
  */
-class InflationCostCritic : public CriticFunction
+class CostCritic : public CriticFunction
 {
 public:
   /**
@@ -72,7 +72,7 @@ protected:
     * @return double circumscribed cost, any higher than this and need to do full footprint collision checking
     * since some element of the robot could be in collision
     */
-  double findCircumscribedCost(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap);
+  float findCircumscribedCost(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap);
 
 protected:
   nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>
@@ -80,15 +80,18 @@ protected:
   float possibly_inscribed_cost_;
 
   bool consider_footprint_{true};
-  double collision_cost_{0};
-  double critical_cost_{0};
-  double weight_{0};
+  float circumscribed_radius_{0};
+  float circumscribed_cost_{0};
+  float collision_cost_{0};
+  float critical_cost_{0};
+  float weight_{0};
 
   float near_goal_distance_;
+  std::string inflation_layer_name_;
 
   unsigned int power_{0};
 };
 
 }  // namespace mppi::critics
 
-#endif  // NAV2_MPPI_CONTROLLER__CRITICS__INFLATION_COST_CRITIC_HPP_
+#endif  // NAV2_MPPI_CONTROLLER__CRITICS__COST_CRITIC_HPP_
