@@ -62,7 +62,6 @@ protected:
     * @brief cost at a robot pose
     * @param x X of pose
     * @param y Y of pose
-    * @param theta theta of pose
     * @return Collision information at pose
     */
   float costAtPose(float x, float y);
