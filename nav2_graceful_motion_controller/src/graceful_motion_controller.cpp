@@ -124,6 +124,7 @@ geometry_msgs::msg::TwistStamped GracefulMotionController::computeVelocityComman
   control_law_->setCurvatureConstants(
     params_->k_phi, params_->k_delta, params_->beta, params_->lambda);
   control_law_->setSlowdownRadius(params_->slowdown_radius);
+  control_law_->setSpeedLimit(params_->v_linear_min, params_->v_linear_max, params_->v_angular_max);
 
   // Transform path to robot base frame and publish it
   auto transformed_plan = path_handler_->transformGlobalPlan(
@@ -220,22 +221,23 @@ void GracefulMotionController::setSpeedLimit(
 {
   std::lock_guard<std::mutex> param_lock(param_handler_->getMutex());
 
-  if (percentage) {
-    // Speed limit is expressed in % from maximum speed of robot
-    params_->v_linear_max = std::max(
-      params_->v_linear_max_initial * speed_limit / 100.0,
-      params_->v_linear_min);
+  if (speed_limit == nav2_costmap_2d::NO_SPEED_LIMIT) {
+    params_->v_linear_max = params_->v_linear_max_initial;
+    params_->v_angular_max = params_->v_angular_max_initial;
   } else {
-    // Speed limit is expressed in m/s
-    params_->v_linear_max = std::max(speed_limit, params_->v_linear_min);
+    if (percentage) {
+      // Speed limit is expressed in % from maximum speed of robot
+      params_->v_linear_max = std::max(
+        params_->v_linear_max_initial * speed_limit / 100.0, params_->v_linear_min);
+      params_->v_angular_max = params_->v_angular_max_initial * speed_limit / 100.0;
+    } else {
+      // Speed limit is expressed in m/s
+      params_->v_linear_max = std::max(speed_limit, params_->v_linear_min);
+      // Limit the angular velocity to be proportional to the linear velocity
+      params_->v_angular_max = params_->v_angular_max_initial *
+        speed_limit / params_->v_linear_max_initial;
+    }
   }
-
-  // Limit the angular velocity to be proportional to the linear velocity
-  params_->v_angular_max = params_->v_linear_max * params_->rotation_scaling_factor;
-  params_->v_angular_max = std::min(params_->v_angular_max, params_->v_angular_max_initial);
-
-  // Update the speed limit in the control law
-  control_law_->setSpeedLimit(params_->v_linear_min, params_->v_linear_max, params_->v_angular_max);
 }
 
 geometry_msgs::msg::PoseStamped GracefulMotionController::getMotionTarget(
