@@ -128,6 +128,8 @@ void CostCritic::score(CriticData & data)
       }
 
       // Let near-collision trajectory points be punished severely
+      // Note that we collision check based on the footprint actual,
+      // but score based on the center-point cost regardless
       using namespace nav2_costmap_2d; // NOLINT
       if (pose_cost >= INSCRIBED_INFLATED_OBSTACLE) {
         repulsive_cost[i] += critical_cost_;
