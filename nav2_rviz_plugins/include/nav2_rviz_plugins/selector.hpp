@@ -54,7 +54,7 @@ private:
   bool plugins_loaded_ = false;
 
   QBasicTimer timer_;
-  QVBoxLayout * main_layout;
+  QVBoxLayout * main_layout_;
   QComboBox * controller_;
   QComboBox * planner_;
 

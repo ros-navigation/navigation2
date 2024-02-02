@@ -30,18 +30,18 @@ Selector::Selector(QWidget * parent)
     client_node_->create_publisher<std_msgs::msg::String>("controller_selector", qos);
   pub_planner_ = client_node_->create_publisher<std_msgs::msg::String>("planner_selector", qos);
 
-  main_layout = new QVBoxLayout;
+  main_layout_ = new QVBoxLayout;
   controller_ = new QComboBox;
   planner_ = new QComboBox;
 
-  main_layout->setContentsMargins(10, 10, 10, 10);
+  main_layout_->setContentsMargins(10, 10, 10, 10);
 
-  main_layout->addWidget(new QLabel("Controller"));
-  main_layout->addWidget(controller_);
-  main_layout->addWidget(new QLabel("Planner"));
-  main_layout->addWidget(planner_);
+  main_layout_->addWidget(new QLabel("Controller"));
+  main_layout_->addWidget(controller_);
+  main_layout_->addWidget(new QLabel("Planner"));
+  main_layout_->addWidget(planner_);
 
-  setLayout(main_layout);
+  setLayout(main_layout_);
   timer_.start(200, this);
 
   connect(
