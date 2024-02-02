@@ -49,6 +49,8 @@ private:
   rclcpp::Node::SharedPtr client_node_;
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_controller_;
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_planner_;
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_goal_checker_;
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_smoother_;
   rclcpp::TimerBase::SharedPtr rclcpp_timer_;
 
   bool plugins_loaded_ = false;
@@ -57,9 +59,13 @@ private:
   QVBoxLayout * main_layout_;
   QComboBox * controller_;
   QComboBox * planner_;
+  QComboBox * goal_checker_;
+  QComboBox * smoother_;
 
   void setController();
   void setPlanner();
+  void setGoalChecker();
+  void setSmoother();
 
   /*
     * @brief Load the avaialble plugins into the combo box
@@ -75,10 +81,13 @@ private:
     QComboBox * combo_box);
 
   /*
-    * @brief Remove the item from the combo box
-    * @param combo_box The combo box to remove the item from
+    * @brief Set the selection from the combo box
+    * @param combo_box The combo box to set the selection for
+    * @param publisher Publish the selected plugin
   */
-  void removeItem(QComboBox * combo_box);
+  void setSelection(
+    QComboBox * combo_box,
+    rclcpp::Publisher<std_msgs::msg::String>::SharedPtr publisher);
 
 protected:
   QVBoxLayout * layout1 = new QVBoxLayout;
