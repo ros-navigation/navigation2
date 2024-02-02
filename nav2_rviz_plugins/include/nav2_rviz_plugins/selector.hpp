@@ -47,7 +47,6 @@ private:
   void timerEvent(QTimerEvent * event) override;
 
   rclcpp::Node::SharedPtr client_node_;
-  rclcpp::Node::SharedPtr node_;
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_controller_;
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_planner_;
   rclcpp::TimerBase::SharedPtr rclcpp_timer_;
@@ -59,7 +58,6 @@ private:
   QComboBox * controller_;
   QComboBox * planner_;
 
-  void start_ros_timer();
   void setController();
   void setPlanner();
 
@@ -75,6 +73,12 @@ private:
     const std::string & server_name,
     const std::string & plugin_type,
     QComboBox * combo_box);
+
+  /*
+    * @brief Remove the item from the combo box
+    * @param combo_box The combo box to remove the item from
+  */
+  void removeItem(QComboBox * combo_box);
 
 protected:
   QVBoxLayout * layout1 = new QVBoxLayout;

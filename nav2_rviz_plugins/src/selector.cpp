@@ -57,9 +57,20 @@ Selector::~Selector()
 {
 }
 
+// Function to remove the option "default" from the combo box
+void Selector::removeItem(QComboBox * combo_box)
+{
+  if (combo_box->findText("Default") != -1) {
+    combo_box->removeItem(0);
+  }
+}
+
 // Publish the selected controller
 void Selector::setController()
 {
+  // If "default" option is selected, it get's removed and the next item is selected
+  removeItem(controller_);
+
   std_msgs::msg::String msg;
   msg.data = controller_->currentText().toStdString();
 
@@ -70,6 +81,9 @@ void Selector::setController()
 // Publish the selected planner
 void Selector::setPlanner()
 {
+  // If "default" option is selected, it get's removed and the next item is selected
+  removeItem(planner_);
+
   std_msgs::msg::String msg;
   msg.data = planner_->currentText().toStdString();
 
@@ -97,11 +111,13 @@ void Selector::pluginLoader(
 
   // Loading the plugins into the combo box
   if (!plugins_loaded_) {
+    combo_box->addItem("Default");
     auto parameters = parameter_client->get_parameters({plugin_type});
     auto str_arr = parameters[0].as_string_array();
     for (auto str : str_arr) {
       combo_box->addItem(QString::fromStdString(str));
     }
+    combo_box->setCurrentText("Default");
   }
 }
 
@@ -116,12 +132,6 @@ Selector::timerEvent(QTimerEvent * event)
     }
     timer_.stop();
   }
-}
-
-void
-Selector::start_ros_timer()
-{
-  rclcpp::spin(node_);
 }
 
 }  // namespace nav2_rviz_plugins
