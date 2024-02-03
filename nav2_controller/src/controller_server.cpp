@@ -67,12 +67,12 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
   // The costmap node is used in the implementation of the controller
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "local_costmap", std::string{get_namespace()}, "local_costmap",
-    get_parameter("use_sim_time").as_bool());
+    get_parameter("use_sim_time").as_bool(), options.use_intra_process_comms());
 
   // The costmap node is used in the implementation of the controller to cut paths based on sensor realtime data
   sensor_costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "sensor_local_costmap", std::string{get_namespace()}, "sensor_local_costmap",
-    get_parameter("use_sim_time").as_bool());
+    get_parameter("use_sim_time").as_bool(), options.use_intra_process_comms());
 }
 
 ControllerServer::~ControllerServer()

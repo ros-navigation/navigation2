@@ -140,7 +140,7 @@ protected:
    * map along with its size will determine what parts of the costmap's
    * static map are overwritten.
    */
-  void incomingMap(const nav_msgs::msg::OccupancyGrid::SharedPtr new_map);
+  void incomingMap(const nav_msgs::msg::OccupancyGrid::ConstSharedPtr new_map);
   /**
    * @brief Callback to update the costmap's map from the map_server (or SLAM)
    * with an update in a particular area of the map
@@ -185,7 +185,7 @@ protected:
   bool map_received_{false};
   bool map_received_in_update_bounds_{false};
   tf2::Duration transform_tolerance_;
-  nav_msgs::msg::OccupancyGrid::SharedPtr map_buffer_;
+  nav_msgs::msg::OccupancyGrid::ConstSharedPtr map_buffer_;
   // Dynamic parameters handler
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
 };

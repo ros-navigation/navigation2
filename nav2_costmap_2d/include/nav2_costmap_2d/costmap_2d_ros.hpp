@@ -84,7 +84,7 @@ public:
    * @param name Name of the costmap ROS node
    * @param use_sim_time Whether to use simulation or real time
    */
-  explicit Costmap2DROS(const std::string & name, const bool & use_sim_time = false);
+  explicit Costmap2DROS(const std::string & name, const bool & use_sim_time = false, const bool & use_intra_process_comms = false);
 
   /**
    * @brief  Constructor for the wrapper
@@ -97,7 +97,8 @@ public:
     const std::string & name,
     const std::string & parent_namespace,
     const std::string & local_namespace,
-    const bool & use_sim_time);
+    const bool & use_sim_time,
+    const bool & use_intra_process_comms = false);
 
   /**
    * @brief Common initialization for constructors
