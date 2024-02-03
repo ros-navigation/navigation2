@@ -13,9 +13,8 @@ do
     # Bound the time of the bringup/shutdown in case it hangs
     timeout 100 ./start_nav2
 
-    # Make sure there aren't any stray gazebo or ros2 processes hanging around
+    # Make sure there aren't any stray ros2 processes hanging around
     # that were not properly killed by the launch script
-    #kill -9 $(pgrep gzserver) &> /dev/null
     kill -9 $(pgrep ros2) &> /dev/null
 
     echo "======== END OF RUN: $i =========="

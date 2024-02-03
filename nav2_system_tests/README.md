@@ -12,3 +12,6 @@ Most tests in this package will spin up Gazebo instances of a robot in an enviro
 - Testing system failures are properly recorded and can be recovered from
 
 This is primarily for use in Nav2 CI to establish a high degree of maintainer confidence when merging in large architectural changes to the Nav2 project. However, this is also useful to test installs of Nav2 locally or for additional information.
+
+To disable system tests depending on Gazebo Classic, which is end of life January 29th, 2025,
+set the environment variable `GZ_VERSION` to your chosen GZ name, such as `ignition` or `harmonic`. 
