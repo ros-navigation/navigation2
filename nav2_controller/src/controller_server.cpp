@@ -81,6 +81,7 @@ ControllerServer::~ControllerServer()
   goal_checkers_.clear();
   controllers_.clear();
   costmap_thread_.reset();
+  sensor_costmap_thread_.reset();
 }
 
 nav2_util::CallbackReturn
@@ -152,6 +153,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   sensor_costmap_ros_->configure();
   // Launch a thread to run the costmap node
   costmap_thread_ = std::make_unique<nav2_util::NodeThread>(costmap_ros_);
+  sensor_costmap_thread_ = std::make_unique<nav2_util::NodeThread>(sensor_costmap_ros_);
 
   for (size_t i = 0; i != progress_checker_ids_.size(); i++) {
     try {
@@ -347,6 +349,7 @@ ControllerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   action_server_.reset();
   odom_sub_.reset();
   costmap_thread_.reset();
+  sensor_costmap_thread_.reset();
   vel_publisher_.reset();
   speed_limit_sub_.reset();
 
