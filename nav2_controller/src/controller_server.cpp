@@ -216,7 +216,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
         controller_ids_[i].c_str(), controller_types_[i].c_str());
       controller->configure(
         node, controller_ids_[i],
-        costmap_ros_->getTfBuffer(), costmap_ros_);
+        costmap_ros_->getTfBuffer(), costmap_ros_, sensor_costmap_ros_);
       controllers_.insert({controller_ids_[i], controller});
     } catch (const pluginlib::PluginlibException & ex) {
       RCLCPP_FATAL(
@@ -244,7 +244,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   // Create the action server that we implement with our followPath method
   // This may throw due to real-time prioritzation if user doesn't have real-time permissions
-  try {                                           custom_via_points_active_(false), no_infeasible_plans_(0),
+  try {
     action_server_ = std::make_unique<ActionServer>(
       shared_from_this(),
       "follow_path",
@@ -618,10 +618,6 @@ void ControllerServer::computeAndPublishVelocity()
     throw nav2_core::ControllerTFError("Failed to obtain robot pose");
   }
 
-  if (!progress_checkers_[current_progress_checker_]->check(pose)) {
-    throw nav2_core::FailedToMakeProgress("Failed to make progress");
-  }
-
   nav_2d_msgs::msg::Twist2D twist = getThresholdedTwist(odom_sub_->getTwist());
 
   geometry_msgs::msg::TwistStamped cmd_vel_2d;
@@ -655,6 +651,12 @@ void ControllerServer::computeAndPublishVelocity()
       throw nav2_core::NoValidControl(e.what());
     }
   }
+
+
+  if (!progress_checkers_[current_progress_checker_]->check(pose, cmd_vel_2d)) {
+    throw nav2_core::FailedToMakeProgress("Failed to make progress");
+  }
+
 
   std::shared_ptr<Action::Feedback> feedback = std::make_shared<Action::Feedback>();
   feedback->speed = std::hypot(cmd_vel_2d.twist.linear.x, cmd_vel_2d.twist.linear.y);

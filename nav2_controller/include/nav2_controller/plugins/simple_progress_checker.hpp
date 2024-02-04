@@ -37,7 +37,7 @@ public:
   void initialize(
     const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
     const std::string & plugin_name) override;
-  bool check(geometry_msgs::msg::PoseStamped & current_pose) override;
+  bool check(geometry_msgs::msg::PoseStamped & current_pose, geometry_msgs::msg::TwistStamped & cmd_vel_2d) override;
   void reset() override;
 
 protected:
@@ -60,6 +60,7 @@ protected:
   rclcpp::Clock::SharedPtr clock_;
 
   double radius_;
+  double idle_speed_;
   rclcpp::Duration time_allowance_{0, 0};
 
   geometry_msgs::msg::Pose2D baseline_pose_;
