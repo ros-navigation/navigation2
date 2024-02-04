@@ -273,6 +273,7 @@ ControllerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Activating");
 
   costmap_ros_->activate();
+  sensor_costmap_ros_->activate();
   ControllerMap::iterator it;
   for (it = controllers_.begin(); it != controllers_.end(); ++it) {
     it->second->activate();
@@ -314,6 +315,11 @@ ControllerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   {
     costmap_ros_->deactivate();
   }
+  if (sensor_costmap_ros_->get_current_state().id() ==
+    lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+  {
+    sensor_costmap_ros_->deactivate();
+  }
 
   publishZeroVelocity();
   vel_publisher_->on_deactivate();
@@ -343,6 +349,11 @@ ControllerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
     lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
   {
     costmap_ros_->cleanup();
+  }
+  if (sensor_costmap_ros_->get_current_state().id() ==
+    lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
+  {
+    sensor_costmap_ros_->cleanup();
   }
 
   // Release any allocated resources
