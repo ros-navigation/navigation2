@@ -438,8 +438,9 @@ bool Tester::waitFootprint(
   std::vector<nav2_collision_monitor::Point> & footprint)
 {
   rclcpp::Time start_time = test_node_->now();
+  nav2_collision_monitor::Velocity vel{0.0, 0.0, 0.0};
   while (rclcpp::ok() && test_node_->now() - start_time <= rclcpp::Duration(timeout)) {
-    polygon_->updatePolygon();
+    polygon_->updatePolygon(vel);
     polygon_->getPolygon(footprint);
     if (footprint.size() > 0) {
       return true;
@@ -684,8 +685,9 @@ TEST_F(Tester, testPolygonTopicUpdateDifferentFrame)
 
   // Move BASE2_FRAME_ID to 0.2 m away from BASE_FRAME_ID
   sendTransforms(0.2);
-  // updatePolygon() should update poly coordinates to correct ones in BASE_FRAME_ID
-  polygon_->updatePolygon();
+  // updatePolygon(vel) should update poly coordinates to correct ones in BASE_FRAME_ID
+  nav2_collision_monitor::Velocity vel{0.0, 0.0, 0.0};
+  polygon_->updatePolygon(vel);
   // Check that polygon coordinates were updated correctly
   ASSERT_TRUE(waitPolygon(500ms, poly));
   ASSERT_EQ(poly.size(), 4u);
