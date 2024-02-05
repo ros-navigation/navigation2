@@ -333,23 +333,28 @@ bool GracefulMotionController::inCollision(const double & x, const double & y, c
 
   // Calculate the cost of the footprint at the robot's current position depending
   // on the shape of the footprint
+  bool is_tracking_unknown =
+    costmap_ros_->getLayeredCostmap()->isTrackingUnknown();
+  bool consider_footprint = !costmap_ros_->getUseRadius();
+
   double footprint_cost;
-  if (costmap_ros_->getUseRadius()) {
-    footprint_cost = collision_checker_->pointCost(mx, my);
-    if (footprint_cost >= nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE) {
-      return true;
-    }
-  } else {
+  if (consider_footprint) {
     footprint_cost = collision_checker_->footprintCostAtPose(
       x, y, theta, costmap_ros_->getRobotFootprint());
-    if (footprint_cost == static_cast<double>(nav2_costmap_2d::NO_INFORMATION) &&
-      costmap_ros_->getLayeredCostmap()->isTrackingUnknown())
-    {
-      return false;
-    }
+  } else {
+    footprint_cost = collision_checker_->pointCost(mx, my);
   }
-  // If occupied or unknown and not to traverse unknown space
-  return footprint_cost >= static_cast<double>(nav2_costmap_2d::LETHAL_OBSTACLE);
+
+  switch (static_cast<unsigned char>(footprint_cost)) {
+    case (nav2_costmap_2d::LETHAL_OBSTACLE):
+      return true;
+    case (nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE):
+      return consider_footprint ? false : true;
+    case (nav2_costmap_2d::NO_INFORMATION):
+      return is_tracking_unknown ? false : true;
+  }
+
+  return false;
 }
 
 }  // namespace nav2_graceful_motion_controller
