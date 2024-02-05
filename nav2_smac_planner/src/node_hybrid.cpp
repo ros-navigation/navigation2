@@ -559,7 +559,7 @@ float NodeHybrid::adjustedFootprintCost(const float & cost)
 float NodeHybrid::getObstacleHeuristic(
   const Coordinates & node_coords,
   const Coordinates & goal_coords,
-  const double & cost_penalty)
+  const float & cost_penalty)
 {
   // If already expanded, return the cost
   const unsigned int size_x = sampled_costmap->getSizeInCellsX();
