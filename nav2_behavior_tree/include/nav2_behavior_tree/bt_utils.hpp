@@ -181,19 +181,19 @@ T1 deconflictPortAndParamFrame(
  * @return <T>
  */
 template<typename T> inline
-BT::Result getInputPortOrBlackboard(
+bool getInputPortOrBlackboard(
   const BT::TreeNode & bt_node,
   const BT::Blackboard & blackboard,
   const std::string & param_name,
   T & value)
 {
-  if (auto res = bt_node.getInput<T>(param_name, value)) {
-    return res;
+  if (bt_node.getInput<T>(param_name, value)) {
+    return true;
   }
-  if (auto res = blackboard.get<T>(param_name, value)) {
-    return {};
+  if (blackboard.get<T>(param_name, value)) {
+    return true;
   }
-  return nonstd::make_unexpected(StrCat(param_name, " not found"));
+  return false;
 }
 
 // Macro to remove boiler plate when using getInputPortOrBlackboard
