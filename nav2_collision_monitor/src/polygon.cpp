@@ -179,7 +179,7 @@ bool Polygon::isShapeSet()
   return true;
 }
 
-void Polygon::updatePolygon()
+void Polygon::updatePolygon(const Velocity & /*cmd_vel_in*/)
 {
   if (footprint_sub_ != nullptr) {
     // Get latest robot footprint from footprint subscriber
