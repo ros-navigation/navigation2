@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(nav2_graceful_motion_controller)
+project(nav2_graceful_controller)
 
 find_package(ament_cmake REQUIRED)
 find_package(nav2_common REQUIRED)
@@ -39,11 +39,11 @@ set(dependencies
 add_library(smooth_control_law SHARED src/smooth_control_law.cpp)
 ament_target_dependencies(smooth_control_law ${dependencies})
 
-# Add Graceful Motion Controller
-set(library_name nav2_graceful_motion_controller)
+# Add Graceful Controller
+set(library_name nav2_graceful_controller)
 
 add_library(${library_name} SHARED
-  src/graceful_motion_controller.cpp
+  src/graceful_controller.cpp
   src/parameter_handler.cpp
   src/path_handler.cpp
   src/utils.cpp

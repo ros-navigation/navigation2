@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_GRACEFUL_MOTION_CONTROLLER__GRACEFUL_MOTION_CONTROLLER_HPP_
-#define NAV2_GRACEFUL_MOTION_CONTROLLER__GRACEFUL_MOTION_CONTROLLER_HPP_
+#ifndef NAV2_GRACEFUL_CONTROLLER__GRACEFUL_CONTROLLER_HPP_
+#define NAV2_GRACEFUL_CONTROLLER__GRACEFUL_CONTROLLER_HPP_
 
 #include <string>
 #include <limits>
@@ -27,30 +27,30 @@
 #include "rclcpp/rclcpp.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
-#include "nav2_graceful_motion_controller/path_handler.hpp"
-#include "nav2_graceful_motion_controller/parameter_handler.hpp"
-#include "nav2_graceful_motion_controller/smooth_control_law.hpp"
-#include "nav2_graceful_motion_controller/utils.hpp"
+#include "nav2_graceful_controller/path_handler.hpp"
+#include "nav2_graceful_controller/parameter_handler.hpp"
+#include "nav2_graceful_controller/smooth_control_law.hpp"
+#include "nav2_graceful_controller/utils.hpp"
 
-namespace nav2_graceful_motion_controller
+namespace nav2_graceful_controller
 {
 
 /**
- * @class nav2_graceful_motion_controller::GracefulMotionController
+ * @class nav2_graceful_controller::GracefulController
  * @brief Graceful controller plugin
  */
-class GracefulMotionController : public nav2_core::Controller
+class GracefulController : public nav2_core::Controller
 {
 public:
   /**
-   * @brief Constructor for nav2_graceful_motion_controller::GracefulMotionController
+   * @brief Constructor for nav2_graceful_controller::GracefulController
    */
-  GracefulMotionController() = default;
+  GracefulController() = default;
 
   /**
-   * @brief Destructor for nav2_graceful_motion_controller::GracefulMotionController
+   * @brief Destructor for nav2_graceful_controller::GracefulController
    */
-  ~GracefulMotionController() override = default;
+  ~GracefulController() override = default;
 
   /**
    * @brief Configure controller state machine
@@ -158,7 +158,7 @@ protected:
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   std::unique_ptr<nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>
   collision_checker_;
-  rclcpp::Logger logger_{rclcpp::get_logger("GracefulMotionController")};
+  rclcpp::Logger logger_{rclcpp::get_logger("GracefulController")};
 
   Parameters * params_;
   double goal_dist_tolerance_;
@@ -170,11 +170,11 @@ protected:
   motion_target_pub_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::Marker>>
   slowdown_pub_;
-  std::unique_ptr<nav2_graceful_motion_controller::PathHandler> path_handler_;
-  std::unique_ptr<nav2_graceful_motion_controller::ParameterHandler> param_handler_;
-  std::unique_ptr<nav2_graceful_motion_controller::SmoothControlLaw> control_law_;
+  std::unique_ptr<nav2_graceful_controller::PathHandler> path_handler_;
+  std::unique_ptr<nav2_graceful_controller::ParameterHandler> param_handler_;
+  std::unique_ptr<nav2_graceful_controller::SmoothControlLaw> control_law_;
 };
 
-}  // namespace nav2_graceful_motion_controller
+}  // namespace nav2_graceful_controller
 
-#endif  // NAV2_GRACEFUL_MOTION_CONTROLLER__GRACEFUL_MOTION_CONTROLLER_HPP_
+#endif  // NAV2_GRACEFUL_CONTROLLER__GRACEFUL_CONTROLLER_HPP_
