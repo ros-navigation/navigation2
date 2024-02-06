@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_graceful_motion_controller/utils.hpp"
+#include "nav2_graceful_controller/utils.hpp"
 
-namespace nav2_graceful_motion_controller
+namespace nav2_graceful_controller
 {
 
 geometry_msgs::msg::PointStamped createMotionTargetMsg(
@@ -48,4 +48,4 @@ visualization_msgs::msg::Marker createSlowdownMarker(
   return slowdown_marker;
 }
 
-}  // namespace nav2_graceful_motion_controller
+}  // namespace nav2_graceful_controller

@@ -18,17 +18,17 @@
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_controller/plugins/simple_goal_checker.hpp"
 #include "nav2_core/controller_exceptions.hpp"
-#include "nav2_graceful_motion_controller/ego_polar_coords.hpp"
-#include "nav2_graceful_motion_controller/smooth_control_law.hpp"
-#include "nav2_graceful_motion_controller/graceful_motion_controller.hpp"
+#include "nav2_graceful_controller/ego_polar_coords.hpp"
+#include "nav2_graceful_controller/smooth_control_law.hpp"
+#include "nav2_graceful_controller/graceful_controller.hpp"
 
-class SCLFixture : public nav2_graceful_motion_controller::SmoothControlLaw
+class SCLFixture : public nav2_graceful_controller::SmoothControlLaw
 {
 public:
   SCLFixture(
     double k_phi, double k_delta, double beta, double lambda,
     double slowdown_radius, double v_linear_min, double v_linear_max, double v_angular_max)
-  : nav2_graceful_motion_controller::SmoothControlLaw(k_phi, k_delta, beta, lambda,
+  : nav2_graceful_controller::SmoothControlLaw(k_phi, k_delta, beta, lambda,
       slowdown_radius, v_linear_min, v_linear_max, v_angular_max) {}
 
   double getCurvatureKPhi() {return k_phi_;}
@@ -41,17 +41,17 @@ public:
   double getSpeedAngularMax() {return v_angular_max_;}
   double calculateCurvature(geometry_msgs::msg::Pose target, geometry_msgs::msg::Pose current)
   {
-    auto ego_coords = nav2_graceful_motion_controller::EgocentricPolarCoordinates(target, current);
-    return nav2_graceful_motion_controller::SmoothControlLaw::calculateCurvature(
+    auto ego_coords = nav2_graceful_controller::EgocentricPolarCoordinates(target, current);
+    return nav2_graceful_controller::SmoothControlLaw::calculateCurvature(
       ego_coords.r, ego_coords.phi, ego_coords.delta);
   }
 };
 
-class GMControllerFixture : public nav2_graceful_motion_controller::GracefulMotionController
+class GMControllerFixture : public nav2_graceful_controller::GracefulController
 {
 public:
   GMControllerFixture()
-  : nav2_graceful_motion_controller::GracefulMotionController() {}
+  : nav2_graceful_controller::GracefulController() {}
 
   bool getInitialRotation() {return params_->initial_rotation;}
 
@@ -62,27 +62,27 @@ public:
   geometry_msgs::msg::PoseStamped getMotionTarget(
     const double & motion_target_distance, const nav_msgs::msg::Path & plan)
   {
-    return nav2_graceful_motion_controller::GracefulMotionController::getMotionTarget(
+    return nav2_graceful_controller::GracefulController::getMotionTarget(
       motion_target_distance, plan);
   }
 
   geometry_msgs::msg::PointStamped createMotionTargetMsg(
     const geometry_msgs::msg::PoseStamped & motion_target)
   {
-    return nav2_graceful_motion_controller::createMotionTargetMsg(motion_target);
+    return nav2_graceful_controller::createMotionTargetMsg(motion_target);
   }
 
   visualization_msgs::msg::Marker createSlowdownMarker(
     const geometry_msgs::msg::PoseStamped & motion_target)
   {
-    return nav2_graceful_motion_controller::createSlowdownMarker(
+    return nav2_graceful_controller::createSlowdownMarker(
       motion_target,
       params_->slowdown_radius);
   }
 
   geometry_msgs::msg::Twist rotateToTarget(const double & angle_to_target)
   {
-    return nav2_graceful_motion_controller::GracefulMotionController::rotateToTarget(
+    return nav2_graceful_controller::GracefulController::rotateToTarget(
       angle_to_target);
   }
 
@@ -92,7 +92,7 @@ public:
     const geometry_msgs::msg::TransformStamped & costmap_transform,
     nav_msgs::msg::Path & trajectory, const bool & backward)
   {
-    return nav2_graceful_motion_controller::GracefulMotionController::simulateTrajectory(
+    return nav2_graceful_controller::GracefulController::simulateTrajectory(
       robot_pose, motion_target, costmap_transform, trajectory, backward);
   }
 
@@ -232,7 +232,7 @@ TEST(SmoothControlLawTest, calculateNextPose) {
   EXPECT_NEAR(tf2::getYaw(next_pose.orientation), 0.0, 0.1);
 }
 
-TEST(GracefulMotionControllerTest, configure) {
+TEST(GracefulControllerTest, configure) {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testGraceful");
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
@@ -257,7 +257,7 @@ TEST(GracefulMotionControllerTest, configure) {
   controller->cleanup();
 }
 
-TEST(GracefulMotionControllerTest, dynamicParameters) {
+TEST(GracefulControllerTest, dynamicParameters) {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testGraceful");
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
@@ -356,7 +356,7 @@ TEST(GracefulMotionControllerTest, dynamicParameters) {
   EXPECT_EQ(controller->getAllowBackward(), false);
 }
 
-TEST(GracefulMotionControllerTest, getDifferentMotionTargets) {
+TEST(GracefulControllerTest, getDifferentMotionTargets) {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testGraceful");
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
@@ -406,7 +406,7 @@ TEST(GracefulMotionControllerTest, getDifferentMotionTargets) {
   EXPECT_EQ(motion_target.pose.orientation, tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0)));
 }
 
-TEST(GracefulMotionControllerTest, createMotionTargetMsg) {
+TEST(GracefulControllerTest, createMotionTargetMsg) {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testGraceful");
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
@@ -434,7 +434,7 @@ TEST(GracefulMotionControllerTest, createMotionTargetMsg) {
   EXPECT_EQ(motion_target_msg.point.z, 0.01);
 }
 
-TEST(GracefulMotionControllerTest, createSlowdownMsg) {
+TEST(GracefulControllerTest, createSlowdownMsg) {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testGraceful");
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
@@ -486,7 +486,7 @@ TEST(GracefulMotionControllerTest, createSlowdownMsg) {
   EXPECT_EQ(slowdown_msg.color.b, 0.0);
 }
 
-TEST(GracefulMotionControllerTest, rotateToTarget) {
+TEST(GracefulControllerTest, rotateToTarget) {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testGraceful");
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
@@ -524,7 +524,7 @@ TEST(GracefulMotionControllerTest, rotateToTarget) {
   EXPECT_EQ(cmd_vel.angular.z, -0.25);
 }
 
-TEST(GracefulMotionControllerTest, setSpeedLimit) {
+TEST(GracefulControllerTest, setSpeedLimit) {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testGraceful");
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
@@ -568,7 +568,7 @@ TEST(GracefulMotionControllerTest, setSpeedLimit) {
   EXPECT_EQ(speed_limit, 2.0);
 }
 
-TEST(GracefulMotionControllerTest, emptyPlan) {
+TEST(GracefulControllerTest, emptyPlan) {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testGraceful");
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
 
@@ -619,7 +619,7 @@ TEST(GracefulMotionControllerTest, emptyPlan) {
   EXPECT_THROW(controller->transformGlobalPlan(robot_pose), nav2_core::InvalidPath);
 }
 
-TEST(GracefulMotionControllerTest, poseOutsideCostmap) {
+TEST(GracefulControllerTest, poseOutsideCostmap) {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testGraceful");
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
 
@@ -674,7 +674,7 @@ TEST(GracefulMotionControllerTest, poseOutsideCostmap) {
   EXPECT_THROW(controller->transformGlobalPlan(robot_pose), nav2_core::ControllerException);
 }
 
-TEST(GracefulMotionControllerTest, noPruningPlan) {
+TEST(GracefulControllerTest, noPruningPlan) {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testGraceful");
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
 
@@ -740,7 +740,7 @@ TEST(GracefulMotionControllerTest, noPruningPlan) {
   EXPECT_EQ(transformed_plan.poses.size(), global_plan.poses.size());
 }
 
-TEST(GracefulMotionControllerTest, pruningPlan) {
+TEST(GracefulControllerTest, pruningPlan) {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testGraceful");
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
 
@@ -817,7 +817,7 @@ TEST(GracefulMotionControllerTest, pruningPlan) {
   EXPECT_EQ(transformed_plan.poses.size(), 3);
 }
 
-TEST(GracefulMotionControllerTest, pruningPlanOutsideCostmap) {
+TEST(GracefulControllerTest, pruningPlanOutsideCostmap) {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testGraceful");
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
 
@@ -883,7 +883,7 @@ TEST(GracefulMotionControllerTest, pruningPlanOutsideCostmap) {
   EXPECT_EQ(transformed_plan.poses.size(), 2);
 }
 
-TEST(GracefulMotionControllerTest, computeVelocityCommandRotate) {
+TEST(GracefulControllerTest, computeVelocityCommandRotate) {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testGraceful");
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
 
@@ -964,7 +964,7 @@ TEST(GracefulMotionControllerTest, computeVelocityCommandRotate) {
   EXPECT_LE(cmd_vel.twist.angular.x, 0.5);
 }
 
-TEST(GracefulMotionControllerTest, computeVelocityCommandRegular) {
+TEST(GracefulControllerTest, computeVelocityCommandRegular) {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testGraceful");
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
 
@@ -1039,7 +1039,7 @@ TEST(GracefulMotionControllerTest, computeVelocityCommandRegular) {
   EXPECT_EQ(cmd_vel.twist.angular.z, 0.0);
 }
 
-TEST(GracefulMotionControllerTest, computeVelocityCommandRegularBackwards) {
+TEST(GracefulControllerTest, computeVelocityCommandRegularBackwards) {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testGraceful");
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
 
@@ -1120,7 +1120,7 @@ TEST(GracefulMotionControllerTest, computeVelocityCommandRegularBackwards) {
   EXPECT_LT(cmd_vel.twist.angular.z, 0.0);
 }
 
-TEST(GracefulMotionControllerTest, computeVelocityCommandFinal) {
+TEST(GracefulControllerTest, computeVelocityCommandFinal) {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testGraceful");
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
 
