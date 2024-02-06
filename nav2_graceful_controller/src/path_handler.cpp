@@ -23,9 +23,9 @@
 #include "nav2_util/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav_2d_utils/tf_help.hpp"
-#include "nav2_graceful_motion_controller/path_handler.hpp"
+#include "nav2_graceful_controller/path_handler.hpp"
 
-namespace nav2_graceful_motion_controller
+namespace nav2_graceful_controller
 {
 
 using nav2_util::geometry_utils::euclidean_distance;
@@ -123,4 +123,4 @@ void PathHandler::setPlan(const nav_msgs::msg::Path & path)
   global_plan_ = path;
 }
 
-}  // namespace nav2_graceful_motion_controller
+}  // namespace nav2_graceful_controller

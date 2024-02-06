@@ -14,13 +14,13 @@
 
 #include "nav2_core/controller_exceptions.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav2_graceful_motion_controller/graceful_motion_controller.hpp"
+#include "nav2_graceful_controller/graceful_controller.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 
-namespace nav2_graceful_motion_controller
+namespace nav2_graceful_controller
 {
 
-void GracefulMotionController::configure(
+void GracefulController::configure(
   const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
   std::string name, const std::shared_ptr<tf2_ros::Buffer> tf,
   const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
@@ -64,11 +64,11 @@ void GracefulMotionController::configure(
   RCLCPP_INFO(logger_, "Configured Graceful Motion Controller: %s", plugin_name_.c_str());
 }
 
-void GracefulMotionController::cleanup()
+void GracefulController::cleanup()
 {
   RCLCPP_INFO(
     logger_,
-    "Cleaning up controller: %s of type graceful_motion_controller::GracefulMotionController",
+    "Cleaning up controller: %s of type graceful_controller::GracefulController",
     plugin_name_.c_str());
   transformed_plan_pub_.reset();
   local_plan_pub_.reset();
@@ -80,11 +80,11 @@ void GracefulMotionController::cleanup()
   control_law_.reset();
 }
 
-void GracefulMotionController::activate()
+void GracefulController::activate()
 {
   RCLCPP_INFO(
     logger_,
-    "Activating controller: %s of type graceful_motion_controller::GracefulMotionController",
+    "Activating controller: %s of type nav2_graceful_controller::GracefulController",
     plugin_name_.c_str());
   transformed_plan_pub_->on_activate();
   local_plan_pub_->on_activate();
@@ -92,11 +92,11 @@ void GracefulMotionController::activate()
   slowdown_pub_->on_activate();
 }
 
-void GracefulMotionController::deactivate()
+void GracefulController::deactivate()
 {
   RCLCPP_INFO(
     logger_,
-    "Deactivating controller: %s of type graceful_motion_controller::GracefulMotionController",
+    "Deactivating controller: %s of type nav2_graceful_controller::GracefulController",
     plugin_name_.c_str());
   transformed_plan_pub_->on_deactivate();
   local_plan_pub_->on_deactivate();
@@ -104,7 +104,7 @@ void GracefulMotionController::deactivate()
   slowdown_pub_->on_deactivate();
 }
 
-geometry_msgs::msg::TwistStamped GracefulMotionController::computeVelocityCommands(
+geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
   const geometry_msgs::msg::PoseStamped & pose,
   const geometry_msgs::msg::Twist & /*velocity*/,
   nav2_core::GoalChecker * goal_checker)
@@ -133,11 +133,11 @@ geometry_msgs::msg::TwistStamped GracefulMotionController::computeVelocityComman
 
   // Get the particular point on the path at the motion target distance and publish it
   auto motion_target = getMotionTarget(params_->motion_target_dist, transformed_plan);
-  auto motion_target_point = nav2_graceful_motion_controller::createMotionTargetMsg(motion_target);
+  auto motion_target_point = nav2_graceful_controller::createMotionTargetMsg(motion_target);
   motion_target_pub_->publish(motion_target_point);
 
   // Publish marker for slowdown radius around motion target for debugging / visualization
-  auto slowdown_marker = nav2_graceful_motion_controller::createSlowdownMarker(
+  auto slowdown_marker = nav2_graceful_controller::createSlowdownMarker(
     motion_target,
     params_->slowdown_radius);
   slowdown_pub_->publish(slowdown_marker);
@@ -210,13 +210,13 @@ geometry_msgs::msg::TwistStamped GracefulMotionController::computeVelocityComman
   return cmd_vel;
 }
 
-void GracefulMotionController::setPlan(const nav_msgs::msg::Path & path)
+void GracefulController::setPlan(const nav_msgs::msg::Path & path)
 {
   path_handler_->setPlan(path);
   goal_reached_ = false;
 }
 
-void GracefulMotionController::setSpeedLimit(
+void GracefulController::setSpeedLimit(
   const double & speed_limit, const bool & percentage)
 {
   std::lock_guard<std::mutex> param_lock(param_handler_->getMutex());
@@ -240,7 +240,7 @@ void GracefulMotionController::setSpeedLimit(
   }
 }
 
-geometry_msgs::msg::PoseStamped GracefulMotionController::getMotionTarget(
+geometry_msgs::msg::PoseStamped GracefulController::getMotionTarget(
   const double & motion_target_dist,
   const nav_msgs::msg::Path & transformed_plan)
 {
@@ -258,7 +258,7 @@ geometry_msgs::msg::PoseStamped GracefulMotionController::getMotionTarget(
   return *goal_pose_it;
 }
 
-bool GracefulMotionController::simulateTrajectory(
+bool GracefulController::simulateTrajectory(
   const geometry_msgs::msg::PoseStamped & robot_pose,
   const geometry_msgs::msg::PoseStamped & motion_target,
   const geometry_msgs::msg::TransformStamped & costmap_transform,
@@ -313,7 +313,7 @@ bool GracefulMotionController::simulateTrajectory(
   return true;
 }
 
-geometry_msgs::msg::Twist GracefulMotionController::rotateToTarget(const double & angle_to_target)
+geometry_msgs::msg::Twist GracefulController::rotateToTarget(const double & angle_to_target)
 {
   geometry_msgs::msg::Twist vel;
   vel.linear.x = 0.0;
@@ -321,7 +321,7 @@ geometry_msgs::msg::Twist GracefulMotionController::rotateToTarget(const double 
   return vel;
 }
 
-bool GracefulMotionController::inCollision(const double & x, const double & y, const double & theta)
+bool GracefulController::inCollision(const double & x, const double & y, const double & theta)
 {
   unsigned int mx, my;
   if (!costmap_ros_->getCostmap()->worldToMap(x, y, mx, my)) {
@@ -357,9 +357,9 @@ bool GracefulMotionController::inCollision(const double & x, const double & y, c
   return false;
 }
 
-}  // namespace nav2_graceful_motion_controller
+}  // namespace nav2_graceful_controller
 
 // Register this controller as a nav2_core plugin
 PLUGINLIB_EXPORT_CLASS(
-  nav2_graceful_motion_controller::GracefulMotionController,
+  nav2_graceful_controller::GracefulController,
   nav2_core::Controller)

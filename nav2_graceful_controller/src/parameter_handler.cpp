@@ -19,9 +19,9 @@
 #include <vector>
 #include <utility>
 
-#include "nav2_graceful_motion_controller/parameter_handler.hpp"
+#include "nav2_graceful_controller/parameter_handler.hpp"
 
-namespace nav2_graceful_motion_controller
+namespace nav2_graceful_controller
 {
 
 using nav2_util::declare_parameter_if_not_declared;
@@ -168,4 +168,4 @@ ParameterHandler::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
   return result;
 }
 
-}  // namespace nav2_graceful_motion_controller
+}  // namespace nav2_graceful_controller
