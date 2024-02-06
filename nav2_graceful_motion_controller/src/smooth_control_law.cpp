@@ -71,6 +71,9 @@ geometry_msgs::msg::Twist SmoothControlLaw::calculateRegularVelocity(
   // turning motion when the curvature is very high
   v = std::clamp(v, v_linear_min_, v_linear_max_);
 
+  // Set the velocity to negative if the robot is moving backwards
+  v = backward ? -v : v;
+
   // Compute the angular velocity
   double w = curvature * v;
   // Bound angular velocity between [-max_angular_vel, max_angular_vel]
