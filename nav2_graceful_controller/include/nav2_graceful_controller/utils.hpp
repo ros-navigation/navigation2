@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_GRACEFUL_MOTION_CONTROLLER__UTILS_HPP_
-#define NAV2_GRACEFUL_MOTION_CONTROLLER__UTILS_HPP_
+#ifndef NAV2_GRACEFUL_CONTROLLER__UTILS_HPP_
+#define NAV2_GRACEFUL_CONTROLLER__UTILS_HPP_
 
 #include "geometry_msgs/msg/point_stamped.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "visualization_msgs/msg/marker.hpp"
 
-namespace nav2_graceful_motion_controller
+namespace nav2_graceful_controller
 {
 /**
    * @brief Create a PointStamped message of the motion target for
@@ -42,6 +42,6 @@ geometry_msgs::msg::PointStamped createMotionTargetMsg(
 visualization_msgs::msg::Marker createSlowdownMarker(
   const geometry_msgs::msg::PoseStamped & motion_target, const double & slowdown_radius);
 
-}  // namespace nav2_graceful_motion_controller
+}  // namespace nav2_graceful_controller
 
-#endif  // NAV2_GRACEFUL_MOTION_CONTROLLER__UTILS_HPP_
+#endif  // NAV2_GRACEFUL_CONTROLLER__UTILS_HPP_

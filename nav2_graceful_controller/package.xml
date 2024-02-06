@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>nav2_graceful_motion_controller</name>
+  <name>nav2_graceful_controller</name>
   <version>1.2.0</version>
   <description>Graceful motion controller</description>
   <maintainer email="ajtudela@gmail.com">Alberto Tudela</maintainer>
