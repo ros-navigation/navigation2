@@ -133,9 +133,14 @@ void Selector::pluginLoader(
 {
   auto parameter_client = std::make_shared<rclcpp::SyncParametersClient>(node, server_name);
 
+  // Do not load the plugins if the combo box is already populated
+  if (combo_box->count() > 0) {
+    return;
+  }
+
   // Wait for the service to be available before calling it
   bool server_unavailable = false;
-  while (!parameter_client->wait_for_service(3s)) {
+  while (!parameter_client->wait_for_service(1s)) {
     if (!rclcpp::ok()) {
       RCLCPP_ERROR(node->get_logger(), "Interrupted while waiting for the service. Exiting.");
       rclcpp::shutdown();
@@ -144,6 +149,7 @@ void Selector::pluginLoader(
       node->get_logger(),
       (server_name + " service not available").c_str());
     server_unavailable = true;
+    server_failed_ = true;
     break;
   }
 
@@ -175,6 +181,17 @@ Selector::timerEvent(QTimerEvent * event)
 
       plugins_loaded_ = true;
     }
+
+    // Restart the timer if the one of the server fails
+    if (server_failed_ && !tried_once_) {
+      RCLCPP_INFO(client_node_->get_logger(), "Retrying to connect to the failed server.");
+      server_failed_ = false;
+      plugins_loaded_ = false;
+      tried_once_ = true;
+      timer_.start(200, this);
+      return;
+    }
+
     timer_.stop();
   }
 }

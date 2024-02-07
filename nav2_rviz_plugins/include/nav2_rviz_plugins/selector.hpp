@@ -54,6 +54,8 @@ private:
   rclcpp::TimerBase::SharedPtr rclcpp_timer_;
 
   bool plugins_loaded_ = false;
+  bool server_failed_ = false;
+  bool tried_once_ = false;
 
   QBasicTimer timer_;
   QHBoxLayout * main_layout_;
