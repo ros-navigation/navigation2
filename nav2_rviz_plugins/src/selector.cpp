@@ -33,7 +33,9 @@ Selector::Selector(QWidget * parent)
     client_node_->create_publisher<std_msgs::msg::String>("goal_checker_selector", qos);
   pub_smoother_ = client_node_->create_publisher<std_msgs::msg::String>("smoother_selector", qos);
 
-  main_layout_ = new QVBoxLayout;
+  main_layout_ = new QHBoxLayout;
+  left_layout_ = new QVBoxLayout;
+  right_layout_ = new QVBoxLayout;
   controller_ = new QComboBox;
   planner_ = new QComboBox;
   goal_checker_ = new QComboBox;
@@ -41,14 +43,17 @@ Selector::Selector(QWidget * parent)
 
   main_layout_->setContentsMargins(10, 10, 10, 10);
 
-  main_layout_->addWidget(new QLabel("Controller"));
-  main_layout_->addWidget(controller_);
-  main_layout_->addWidget(new QLabel("Planner"));
-  main_layout_->addWidget(planner_);
-  main_layout_->addWidget(new QLabel("Goal Checker"));
-  main_layout_->addWidget(goal_checker_);
-  main_layout_->addWidget(new QLabel("Smoother"));
-  main_layout_->addWidget(smoother_);
+  left_layout_->addWidget(new QLabel("Controller"));
+  left_layout_->addWidget(controller_);
+  left_layout_->addWidget(new QLabel("Planner"));
+  left_layout_->addWidget(planner_);
+  right_layout_->addWidget(new QLabel("Goal Checker"));
+  right_layout_->addWidget(goal_checker_);
+  right_layout_->addWidget(new QLabel("Smoother"));
+  right_layout_->addWidget(smoother_);
+
+  main_layout_->addLayout(left_layout_);
+  main_layout_->addLayout(right_layout_);
 
   setLayout(main_layout_);
   timer_.start(200, this);
