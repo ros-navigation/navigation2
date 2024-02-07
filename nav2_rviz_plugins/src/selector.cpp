@@ -135,7 +135,7 @@ void Selector::pluginLoader(
 
   // Wait for the service to be available before calling it
   bool server_unavailable = false;
-  while (!parameter_client->wait_for_service(1s)) {
+  while (!parameter_client->wait_for_service(3s)) {
     if (!rclcpp::ok()) {
       RCLCPP_ERROR(node->get_logger(), "Interrupted while waiting for the service. Exiting.");
       rclcpp::shutdown();
