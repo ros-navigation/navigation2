@@ -51,6 +51,7 @@ private:
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_planner_;
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_goal_checker_;
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_smoother_;
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_progress_checker_;
   rclcpp::TimerBase::SharedPtr rclcpp_timer_;
 
   bool plugins_loaded_ = false;
@@ -58,18 +59,24 @@ private:
   bool tried_once_ = false;
 
   QBasicTimer timer_;
-  QHBoxLayout * main_layout_;
-  QVBoxLayout * left_layout_;
-  QVBoxLayout * right_layout_;
+  QVBoxLayout * main_layout_;
+  QHBoxLayout * row_1_layout_;
+  QHBoxLayout * row_2_layout_;
+  QHBoxLayout * row_3_layout_;
+  QHBoxLayout * row_1_label_layout_;
+  QHBoxLayout * row_2_label_layout_;
+  QHBoxLayout * row_3_label_layout_;
   QComboBox * controller_;
   QComboBox * planner_;
   QComboBox * goal_checker_;
   QComboBox * smoother_;
+  QComboBox * progress_checker_;
 
   void setController();
   void setPlanner();
   void setGoalChecker();
   void setSmoother();
+  void setProgressChecker();
 
   /*
     * @brief Load the avaialble plugins into the combo box

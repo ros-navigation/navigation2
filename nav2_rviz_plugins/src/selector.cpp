@@ -32,28 +32,41 @@ Selector::Selector(QWidget * parent)
   pub_goal_checker_ =
     client_node_->create_publisher<std_msgs::msg::String>("goal_checker_selector", qos);
   pub_smoother_ = client_node_->create_publisher<std_msgs::msg::String>("smoother_selector", qos);
+  pub_progress_checker_ =
+    client_node_->create_publisher<std_msgs::msg::String>("progress_checker_selector", qos);
 
-  main_layout_ = new QHBoxLayout;
-  left_layout_ = new QVBoxLayout;
-  right_layout_ = new QVBoxLayout;
+  main_layout_ = new QVBoxLayout;
+  row_1_label_layout_ = new QHBoxLayout;
+  row_2_label_layout_ = new QHBoxLayout;
+  row_3_label_layout_ = new QHBoxLayout;
+  row_1_layout_ = new QHBoxLayout;
+  row_2_layout_ = new QHBoxLayout;
+  row_3_layout_ = new QHBoxLayout;
   controller_ = new QComboBox;
   planner_ = new QComboBox;
   goal_checker_ = new QComboBox;
   smoother_ = new QComboBox;
+  progress_checker_ = new QComboBox;
 
   main_layout_->setContentsMargins(10, 10, 10, 10);
 
-  left_layout_->addWidget(new QLabel("Controller"));
-  left_layout_->addWidget(controller_);
-  left_layout_->addWidget(new QLabel("Planner"));
-  left_layout_->addWidget(planner_);
-  right_layout_->addWidget(new QLabel("Goal Checker"));
-  right_layout_->addWidget(goal_checker_);
-  right_layout_->addWidget(new QLabel("Smoother"));
-  right_layout_->addWidget(smoother_);
+  row_1_label_layout_->addWidget(new QLabel("Controller"));
+  row_1_layout_->addWidget(controller_);
+  row_1_label_layout_->addWidget(new QLabel("Planner"));
+  row_1_layout_->addWidget(planner_);
+  row_2_label_layout_->addWidget(new QLabel("Goal Checker"));
+  row_2_layout_->addWidget(goal_checker_);
+  row_2_label_layout_->addWidget(new QLabel("Smoother"));
+  row_2_layout_->addWidget(smoother_);
+  row_3_label_layout_->addWidget(new QLabel("Progress Checker"));
+  row_3_layout_->addWidget(progress_checker_);
 
-  main_layout_->addLayout(left_layout_);
-  main_layout_->addLayout(right_layout_);
+  main_layout_->addLayout(row_1_label_layout_);
+  main_layout_->addLayout(row_1_layout_);
+  main_layout_->addLayout(row_2_label_layout_);
+  main_layout_->addLayout(row_2_layout_);
+  main_layout_->addLayout(row_3_label_layout_);
+  main_layout_->addLayout(row_3_layout_);
 
   setLayout(main_layout_);
   timer_.start(200, this);
@@ -73,6 +86,10 @@ Selector::Selector(QWidget * parent)
   connect(
     smoother_, QOverload<int>::of(&QComboBox::activated), this,
     &Selector::setSmoother);
+
+  connect(
+    progress_checker_, QOverload<int>::of(&QComboBox::activated), this,
+    &Selector::setProgressChecker);
 }
 
 Selector::~Selector()
@@ -122,6 +139,11 @@ void Selector::setGoalChecker()
 void Selector::setSmoother()
 {
   setSelection(smoother_, pub_smoother_);
+}
+
+void Selector::setProgressChecker()
+{
+  setSelection(progress_checker_, pub_progress_checker_);
 }
 
 // Load the available plugins into the combo box
@@ -178,6 +200,9 @@ Selector::timerEvent(QTimerEvent * event)
       pluginLoader(client_node_, "planner_server", "planner_plugins", planner_);
       pluginLoader(client_node_, "controller_server", "goal_checker_plugins", goal_checker_);
       pluginLoader(client_node_, "smoother_server", "smoother_plugins", smoother_);
+      pluginLoader(
+        client_node_, "controller_server", "progress_checker_plugins",
+        progress_checker_);
 
       plugins_loaded_ = true;
     }
