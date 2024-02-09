@@ -87,7 +87,9 @@ BtNavigator::BtNavigator(rclcpp::NodeOptions options)
     "nav2_assisted_teleop_cancel_bt_node",
     "nav2_back_up_cancel_bt_node",
     "nav2_drive_on_heading_cancel_bt_node",
-    "nav2_is_battery_charging_condition_bt_node"
+    "nav2_is_battery_charging_condition_bt_node",
+    "nav2_progress_checker_selector_bt_node",
+    "nav2_smoother_selector_bt_node"
   };
 
   declare_parameter_if_not_declared(
