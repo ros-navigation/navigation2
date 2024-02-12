@@ -99,6 +99,9 @@ This process is then repeated a number of times and returns a converged solution
 
 
 #### Obstacles Critic
+
+Uses estimated distances from obstacles using cost and inflation parameters to avoid obstacles
+
  | Parameter            | Type   | Definition                                                                                                  |
  | ---------------      | ------ | ----------------------------------------------------------------------------------------------------------- |
  | consider_footprint   | bool   | Default: False. Whether to use point cost (if robot is circular or low compute power) or compute SE2 footprint cost. |
@@ -110,6 +113,20 @@ This process is then repeated a number of times and returns a converged solution
  | near_goal_distance          | double    | Default 0.5. Distance near goal to stop applying preferential obstacle term to allow robot to smoothly converge to goal pose in close proximity to obstacles.   
  | cost_scaling_factor       | double    | Default 10.0. Exponential decay factor across inflation radius. This should be the same as for your inflation layer (Humble only)
  | inflation_radius          | double    | Default 0.55. Radius to inflate costmap around lethal obstacles. This should be the same as for your inflation layer (Humble only)
+
+#### Cost Critic
+
+Uses inflated costmap cost directly to avoid obstacles
+
+ | Parameter            | Type   | Definition                                                                                                  |
+ | ---------------      | ------ | ----------------------------------------------------------------------------------------------------------- |
+ | consider_footprint   | bool   | Default: False. Whether to use point cost (if robot is circular or low compute power) or compute SE2 footprint cost. |
+ | cost_weight          | double | Default 3.81. Wight to apply to critic to avoid obstacles.                                       | 
+ | cost_power           | int    | Default 1. Power order to apply to term.                                                                    |
+ | collision_cost       | double | Default 1000000.0. Cost to apply to a true collision in a trajectory.                                          |
+ | critical_cost       | double | Default 300.0. Cost to apply to a pose with any point in in inflated space to prefer distance from obstacles.                                          |
+ | near_goal_distance          | double    | Default 0.5. Distance near goal to stop applying preferential obstacle term to allow robot to smoothly converge to goal pose in close proximity to obstacles.   
+ | inflation_layer_name        | string    | Default "". Name of the inflation layer. If empty, it uses the last inflation layer in the costmap. If you have multiple inflation layers, you may want to specify the name of the layer to use. |
 
 #### Path Align Critic
  | Parameter                  | Type   | Definition                                                                                                                         |
@@ -215,6 +232,15 @@ controller_server:
         collision_cost: 10000.0
         collision_margin_distance: 0.1
         near_goal_distance: 0.5
+      # Option to replace Obstacles and use Cost instead
+      # CostCritic:
+      #   enabled: true
+      #   cost_power: 1
+      #   cost_weight: 3.81
+      #   critical_cost: 300.0
+      #   consider_footprint: true
+      #   collision_cost: 1000000.0
+      #   near_goal_distance: 1.0
       PathAlignCritic:
         enabled: true
         cost_power: 1
