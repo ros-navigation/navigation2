@@ -156,13 +156,13 @@ TEST_F(ComputePathThroughPosesActionTestFixture, test_tick)
 
   // check if returned path is correct
   nav_msgs::msg::Path path;
-  config_->blackboard->get<nav_msgs::msg::Path>("path", path);
+  EXPECT_TRUE(config_->blackboard->get<nav_msgs::msg::Path>("path", path));
   EXPECT_EQ(path.poses.size(), 2u);
   EXPECT_EQ(path.poses[0].pose.position.x, 0.0);
   EXPECT_EQ(path.poses[1].pose.position.x, 1.0);
 
   // halt node so another goal can be sent
-  tree_->rootNode()->halt();
+  tree_->haltTree();
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::IDLE);
 
   // set new goal
@@ -176,7 +176,7 @@ TEST_F(ComputePathThroughPosesActionTestFixture, test_tick)
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
   EXPECT_EQ(action_server_->getCurrentGoal()->goals[0].pose.position.x, -2.5);
 
-  config_->blackboard->get<nav_msgs::msg::Path>("path", path);
+  EXPECT_TRUE(config_->blackboard->get<nav_msgs::msg::Path>("path", path));
   EXPECT_EQ(path.poses.size(), 2u);
   EXPECT_EQ(path.poses[0].pose.position.x, 0.0);
   EXPECT_EQ(path.poses[1].pose.position.x, -2.5);
@@ -222,13 +222,13 @@ TEST_F(ComputePathThroughPosesActionTestFixture, test_tick_use_start)
 
   // check if returned path is correct
   nav_msgs::msg::Path path;
-  config_->blackboard->get<nav_msgs::msg::Path>("path", path);
+  EXPECT_TRUE(config_->blackboard->get<nav_msgs::msg::Path>("path", path));
   EXPECT_EQ(path.poses.size(), 2u);
   EXPECT_EQ(path.poses[0].pose.position.x, 2.0);
   EXPECT_EQ(path.poses[1].pose.position.x, 1.0);
 
   // halt node so another goal can be sent
-  tree_->rootNode()->halt();
+  tree_->haltTree();
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::IDLE);
 
   // set new goal and new start
@@ -244,7 +244,7 @@ TEST_F(ComputePathThroughPosesActionTestFixture, test_tick_use_start)
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
   EXPECT_EQ(action_server_->getCurrentGoal()->goals[0].pose.position.x, -2.5);
 
-  config_->blackboard->get<nav_msgs::msg::Path>("path", path);
+  EXPECT_TRUE(config_->blackboard->get<nav_msgs::msg::Path>("path", path));
   EXPECT_EQ(path.poses.size(), 2u);
   EXPECT_EQ(path.poses[0].pose.position.x, -1.5);
   EXPECT_EQ(path.poses[1].pose.position.x, -2.5);

@@ -107,7 +107,7 @@ TEST_F(GoalUpdaterTestFixture, test_tick)
   // tick tree without publishing updated goal and get updated_goal
   tree_->rootNode()->executeTick();
   geometry_msgs::msg::PoseStamped updated_goal;
-  config_->blackboard->get("updated_goal", updated_goal);
+  EXPECT_TRUE(config_->blackboard->get("updated_goal", updated_goal));
 }
 
 TEST_F(GoalUpdaterTestFixture, test_older_goal_update)
@@ -141,7 +141,7 @@ TEST_F(GoalUpdaterTestFixture, test_older_goal_update)
   goal_updater_pub->publish(goal_to_update);
   tree_->rootNode()->executeTick();
   geometry_msgs::msg::PoseStamped updated_goal;
-  config_->blackboard->get("updated_goal", updated_goal);
+  EXPECT_TRUE(config_->blackboard->get("updated_goal", updated_goal));
 
   // expect to succeed and not update goal
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
@@ -184,7 +184,7 @@ TEST_F(GoalUpdaterTestFixture, test_get_latest_goal_update)
   goal_updater_pub->publish(goal_to_update_2);
   tree_->rootNode()->executeTick();
   geometry_msgs::msg::PoseStamped updated_goal;
-  config_->blackboard->get("updated_goal", updated_goal);
+  EXPECT_TRUE(config_->blackboard->get("updated_goal", updated_goal));
 
   // expect to succeed
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);

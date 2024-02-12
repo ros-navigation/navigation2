@@ -48,7 +48,7 @@ BehaviorTreeEngine::run(
   try {
     while (rclcpp::ok() && result == BT::NodeStatus::RUNNING) {
       if (cancelRequested()) {
-        tree->rootNode()->halt();
+        tree->haltTree();
         return BtStatus::CANCELED;
       }
 

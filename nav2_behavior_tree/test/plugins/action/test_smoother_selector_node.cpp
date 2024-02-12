@@ -95,7 +95,7 @@ TEST_F(SmootherSelectorTestFixture, test_custom_topic)
 
   // check default value
   std::string selected_smoother_result;
-  config_->blackboard->get("selected_smoother", selected_smoother_result);
+  EXPECT_TRUE(config_->blackboard->get("selected_smoother", selected_smoother_result));
 
   EXPECT_EQ(selected_smoother_result, "DWB");
 
@@ -119,7 +119,7 @@ TEST_F(SmootherSelectorTestFixture, test_custom_topic)
   }
 
   // check smoother updated
-  config_->blackboard->get("selected_smoother", selected_smoother_result);
+  EXPECT_TRUE(config_->blackboard->get("selected_smoother", selected_smoother_result));
   EXPECT_EQ("DWC", selected_smoother_result);
 }
 
@@ -143,7 +143,7 @@ TEST_F(SmootherSelectorTestFixture, test_default_topic)
 
   // check default value
   std::string selected_smoother_result;
-  config_->blackboard->get("selected_smoother", selected_smoother_result);
+  EXPECT_TRUE(config_->blackboard->get("selected_smoother", selected_smoother_result));
 
   EXPECT_EQ(selected_smoother_result, "GridBased");
 
@@ -167,7 +167,7 @@ TEST_F(SmootherSelectorTestFixture, test_default_topic)
   }
 
   // check smoother updated
-  config_->blackboard->get("selected_smoother", selected_smoother_result);
+  EXPECT_TRUE(config_->blackboard->get("selected_smoother", selected_smoother_result));
   EXPECT_EQ("RRT", selected_smoother_result);
 }
 
