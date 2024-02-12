@@ -137,7 +137,7 @@ TEST_F(RemovePassedGoalsTestFixture, test_tick)
 
   // check that it removed the point in range
   std::vector<geometry_msgs::msg::PoseStamped> output_poses;
-  config_->blackboard->get("goals", output_poses);
+  EXPECT_TRUE(config_->blackboard->get("goals", output_poses));
 
   EXPECT_EQ(output_poses.size(), 2u);
   EXPECT_EQ(output_poses[0], poses[2]);

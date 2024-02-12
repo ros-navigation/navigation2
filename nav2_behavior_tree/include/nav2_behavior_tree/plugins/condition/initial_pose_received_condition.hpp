@@ -15,6 +15,7 @@
 #ifndef NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__INITIAL_POSE_RECEIVED_CONDITION_HPP_
 #define NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__INITIAL_POSE_RECEIVED_CONDITION_HPP_
 
+#include <string>
 #include "behaviortree_cpp_v3/behavior_tree.h"
 
 namespace nav2_behavior_tree
@@ -23,7 +24,21 @@ namespace nav2_behavior_tree
  * @brief A BT::ConditionNode that returns SUCCESS if initial pose
  * has been received and FAILURE otherwise
  */
-BT::NodeStatus initialPoseReceived(BT::TreeNode & tree_node);
-}
+class InitialPoseReceived : public BT::ConditionNode
+{
+public:
+  InitialPoseReceived(
+    const std::string & name,
+    const BT::NodeConfiguration & config);
+
+  static BT::PortsList providedPorts()
+  {
+    return {BT::InputPort<bool>("initial_pose_received")};
+  }
+
+  BT::NodeStatus tick() override;
+};
+
+}  // namespace nav2_behavior_tree
 
 #endif  // NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__INITIAL_POSE_RECEIVED_CONDITION_HPP_

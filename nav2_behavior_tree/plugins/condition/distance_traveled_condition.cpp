@@ -43,9 +43,9 @@ void DistanceTraveledCondition::initialize()
   tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
   node_->get_parameter("transform_tolerance", transform_tolerance_);
 
-  global_frame_ = BT::deconflictPortAndParamFrame<std::string, DistanceTraveledCondition>(
+  global_frame_ = BT::deconflictPortAndParamFrame<std::string>(
     node_, "global_frame", this);
-  robot_base_frame_ = BT::deconflictPortAndParamFrame<std::string, DistanceTraveledCondition>(
+  robot_base_frame_ = BT::deconflictPortAndParamFrame<std::string>(
     node_, "robot_base_frame", this);
   initialized_ = true;
 }
