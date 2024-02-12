@@ -224,9 +224,15 @@
       <input_port name="parent">Parent frame for transform</input_port>
     </Condition>
 
-    <Condition ID="GoalUpdated"/>
+    <Condition ID="GoalUpdated">
+      <input_port name="goal">Vector of navigation goals</input_port>
+      <input_port name="goals">Navigation goal</input_port>
+    </Condition>
 
-    <Condition ID="GlobalUpdatedGoal"/>
+    <Condition ID="GlobalUpdatedGoal">
+      <input_port name="goal">Vector of navigation goals</input_port>
+      <input_port name="goals">Navigation goal</input_port>
+    </Condition>
 
     <Condition ID="IsBatteryLow">
       <input_port name="min_battery">Min battery % or voltage before triggering</input_port>
@@ -255,6 +261,7 @@
     </Condition>
 
     <Condition ID="InitialPoseReceived">
+      <input_port name="initial_pose_received">SUCCESS if initial_pose_received true</input_port>
     </Condition>
 
     <Condition ID="IsPathValid">
@@ -313,6 +320,8 @@
       <input_port name="max_rate">Maximum rate</input_port>
       <input_port name="min_speed">Minimum speed</input_port>
       <input_port name="max_speed">Maximum speed</input_port>
+      <input_port name="goal">Vector of navigation goals</input_port>
+      <input_port name="goals">Navigation goal</input_port>
     </Decorator>
 
     <Decorator ID="PathLongerOnApproach">
@@ -322,6 +331,8 @@
     </Decorator>
 
     <Decorator ID="GoalUpdatedController">
+      <input_port name="goal">Vector of navigation goals</input_port>
+      <input_port name="goals">Navigation goal</input_port>
     </Decorator>
 
   </TreeNodesModel>

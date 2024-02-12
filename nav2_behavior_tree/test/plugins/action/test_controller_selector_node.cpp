@@ -95,7 +95,7 @@ TEST_F(ControllerSelectorTestFixture, test_custom_topic)
 
   // check default value
   std::string selected_controller_result;
-  config_->blackboard->get("selected_controller", selected_controller_result);
+  EXPECT_TRUE(config_->blackboard->get("selected_controller", selected_controller_result));
 
   EXPECT_EQ(selected_controller_result, "DWB");
 
@@ -119,7 +119,7 @@ TEST_F(ControllerSelectorTestFixture, test_custom_topic)
   }
 
   // check controller updated
-  config_->blackboard->get("selected_controller", selected_controller_result);
+  EXPECT_TRUE(config_->blackboard->get("selected_controller", selected_controller_result));
   EXPECT_EQ("DWC", selected_controller_result);
 }
 
@@ -143,7 +143,7 @@ TEST_F(ControllerSelectorTestFixture, test_default_topic)
 
   // check default value
   std::string selected_controller_result;
-  config_->blackboard->get("selected_controller", selected_controller_result);
+  EXPECT_TRUE(config_->blackboard->get("selected_controller", selected_controller_result));
 
   EXPECT_EQ(selected_controller_result, "GridBased");
 
@@ -167,7 +167,7 @@ TEST_F(ControllerSelectorTestFixture, test_default_topic)
   }
 
   // check controller updated
-  config_->blackboard->get("selected_controller", selected_controller_result);
+  EXPECT_TRUE(config_->blackboard->get("selected_controller", selected_controller_result));
   EXPECT_EQ("RRT", selected_controller_result);
 }
 

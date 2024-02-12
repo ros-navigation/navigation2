@@ -132,20 +132,27 @@ inline std::set<int> convertFromString(StringView key)
 }
 
 /**
- * @brief Return parameter value from behavior tree node or ros2 parameter file
+ * @brief Return parameter value from behavior tree node or ros2 parameter file.
  * @param node rclcpp::Node::SharedPtr
  * @param param_name std::string
  * @param behavior_tree_node T2
  * @return <T1>
  */
-template<typename T1, typename T2>
+template<typename T1, typename T2 = BT::TreeNode>
 T1 deconflictPortAndParamFrame(
   rclcpp::Node::SharedPtr node,
   std::string param_name,
-  T2 * behavior_tree_node)
+  const T2 * behavior_tree_node)
 {
   T1 param_value;
-  if (!behavior_tree_node->getInput(param_name, param_value)) {
+  bool param_from_input = behavior_tree_node->getInput(param_name, param_value);
+
+  if constexpr (std::is_same_v<T1, std::string>) {
+    // not valid if port doesn't exist or it is an empty string
+    param_from_input &= !param_value.empty();
+  }
+
+  if (!param_from_input) {
     RCLCPP_DEBUG(
       node->get_logger(),
       "Parameter '%s' not provided by behavior tree xml file, "
@@ -161,6 +168,37 @@ T1 deconflictPortAndParamFrame(
     return param_value;
   }
 }
+
+/**
+ * @brief Try reading an import port first, and if that doesn't work
+ * fallback to reading directly the blackboard.
+ * The blackboard must be passed explitly because config() is private in BT.CPP 4.X
+ *
+ * @param bt_node node
+ * @param blackboard the blackboard ovtained with node->config().blackboard
+ * @param param_name std::string
+ * @param behavior_tree_node the node
+ * @return <T>
+ */
+template<typename T> inline
+bool getInputPortOrBlackboard(
+  const BT::TreeNode & bt_node,
+  const BT::Blackboard & blackboard,
+  const std::string & param_name,
+  T & value)
+{
+  if (bt_node.getInput<T>(param_name, value)) {
+    return true;
+  }
+  if (blackboard.get<T>(param_name, value)) {
+    return true;
+  }
+  return false;
+}
+
+// Macro to remove boiler plate when using getInputPortOrBlackboard
+#define getInputOrBlackboard(name, value) \
+  getInputPortOrBlackboard(*this, *(this->config().blackboard), name, value);
 
 }  // namespace BT
 
