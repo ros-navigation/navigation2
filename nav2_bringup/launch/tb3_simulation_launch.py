@@ -176,13 +176,10 @@ def generate_launch_description():
         condition=IfCondition(use_simulator),
         cmd=[
             'gzserver',
-            '--verbose',
             '-s',
             'libgazebo_ros_init.so',
             '-s',
             'libgazebo_ros_factory.so',
-            '-e',
-            'dart',
             world,
         ],
         cwd=[launch_dir],

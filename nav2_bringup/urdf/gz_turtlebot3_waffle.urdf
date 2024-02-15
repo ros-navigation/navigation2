@@ -277,7 +277,7 @@
   <gazebo reference="base_scan">
     <sensor name='gpu_lidar' type='gpu_lidar'>"
       <topic>scan</topic>
-      <ignition_frame_id>base_scan</ignition_frame_id>
+      <gz_frame_id>base_scan</gz_frame_id>
       <pose>-0.064 0 0.15 0 0 0</pose>
       <update_rate>5</update_rate>
       <ray>
@@ -314,7 +314,7 @@
       <always_on>true</always_on>
       <update_rate>200</update_rate>
       <topic>imu</topic>
-      <ignition_frame_id>imu_link</ignition_frame_id>
+      <gz_frame_id>imu_link</gz_frame_id>
       <imu>
         <angular_velocity>
           <x>
@@ -362,7 +362,7 @@
 
   <gazebo>
     <plugin
-      filename="ignition-gazebo-diff-drive-system"
+      filename="gz-sim-diff-drive-system"
       name="gz::sim::systems::DiffDrive">
       <left_joint>wheel_left_joint</left_joint>
       <right_joint>wheel_right_joint</right_joint>
@@ -385,8 +385,8 @@
     </plugin>
 
     <plugin
-      filename="ignition-gazebo-pose-publisher-system"
-      name="ignition::gazebo::systems::PosePublisher">
+      filename="gz-sim-pose-publisher-system"
+      name="gz::sim::systems::PosePublisher">
       <publish_link_pose>true</publish_link_pose>
       <publish_sensor_pose>true</publish_sensor_pose>
       <publish_collision_pose>false</publish_collision_pose>

@@ -37,6 +37,9 @@
               <scale>0.001 0.001 0.001</scale>
             </mesh>
           </geometry>
+          <material>
+            <diffuse>1 1 1</diffuse>
+          </material>
         </visual>
       </link>
 
@@ -45,7 +48,6 @@
           <always_on>true</always_on>
           <update_rate>200</update_rate>
           <topic>imu</topic>
-          <ignition_frame_id>imu_link</ignition_frame_id>
           <gz_frame_id>imu_link</gz_frame_id>
           <imu>
             <angular_velocity>
@@ -124,6 +126,9 @@
               <scale>0.001 0.001 0.001</scale>
             </mesh>
           </geometry>
+          <material>
+            <diffuse>1 1 1</diffuse>
+          </material>
         </visual>
 
         <sensor name="hls_lfcd_lds" type="gpu_lidar">
@@ -132,7 +137,6 @@
           <pose>-0.064 0 0.15 0 0 0</pose>
           <update_rate>5</update_rate>
           <topic>scan</topic>
-          <ignition_frame_id>base_scan</ignition_frame_id>
           <gz_frame_id>base_scan</gz_frame_id>
           <ray>
             <scan>
@@ -211,6 +215,9 @@
               <scale>0.001 0.001 0.001</scale>
             </mesh>
           </geometry>
+          <material>
+            <diffuse>1 1 1</diffuse>
+          </material>
         </visual>
       </link>
 
@@ -268,6 +275,9 @@
               <scale>0.001 0.001 0.001</scale>
             </mesh>
           </geometry>
+          <material>
+            <diffuse>1 1 1</diffuse>
+          </material>
         </visual>
       </link>
 
@@ -367,7 +377,6 @@
           <always_on>1</always_on>
           <update_rate>5</update_rate>
           <pose>0.064 -0.047 0.107 0 0 0</pose>
-          <ignition_frame_id>camera_depth_frame</ignition_frame_id>
           <gz_frame_id>camera_depth_frame</gz_frame_id>
           <camera name="realsense_depth_camera">
             <horizontal_fov>1.047</horizontal_fov>

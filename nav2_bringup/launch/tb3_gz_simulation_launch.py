@@ -15,20 +15,24 @@
 """This is all-in-one launch script intended for use by nav2 developers."""
 
 import os
+import tempfile
 
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
 from launch.actions import (
+    AppendEnvironmentVariable,
     DeclareLaunchArgument,
     ExecuteProcess,
     IncludeLaunchDescription,
-    SetEnvironmentVariable,
+    OpaqueFunction,
+    RegisterEventHandler,
 )
-from launch.conditions import IfCondition, UnlessCondition
+from launch.conditions import IfCondition
+from launch.event_handlers import OnShutdown
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PythonExpression
-from launch.substitutions import Command
+
 from launch_ros.actions import Node
 
 
@@ -159,7 +163,7 @@ def generate_launch_description():
         #              https://github.com/ROBOTIS-GIT/turtlebot3_simulations/issues/91
         # default_value=os.path.join(get_package_share_directory('turtlebot3_gazebo'),
         # worlds/turtlebot3_worlds/waffle.model')
-        default_value=os.path.join(bringup_dir, 'worlds', 'gz_world_only.model'),
+        default_value=os.path.join(bringup_dir, 'worlds', 'gz_world_only.sdf.xacro'),
         description='Full path to world model file to load',
     )
 
@@ -215,29 +219,30 @@ def generate_launch_description():
         }.items(),
     )
 
-    gz_sim_server_config = SetEnvironmentVariable('GZ_SIM_SERVER_CONFIG_PATH', 
-            os.path.join(bringup_dir, 'worlds', 'gz_sim_server_config.xml'), 
-            condition=IfCondition(headless))
-
-    gz_start_scene_broadcaster = SetEnvironmentVariable('GZ_SIM_SERVER_CONFIG_PATH', 
-            os.path.join(bringup_dir, 'worlds', 'gz_sim_server_scene_broadcaster_config.xml'),
-            condition=UnlessCondition(headless))
-
+    world_sdf = tempfile.mktemp(prefix='nav2_', suffix='.sdf')
+    world_sdf_xacro = ExecuteProcess(
+        cmd=['xacro', '-o', world_sdf, ['headless:=', headless], world])
     gazebo_server = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(get_package_share_directory('ros_gz_sim'),
-                'launch',
-                'gz_sim.launch.py')
-        ),
-        launch_arguments={'gz_args': ['-r -s ', world]}.items(),
-        condition=IfCondition(use_simulator)
-    )
+            os.path.join(get_package_share_directory('ros_gz_sim'), 'launch',
+                         'gz_sim.launch.py')),
+        launch_arguments={'gz_args': ['-r -s ', world_sdf]}.items(),
+        condition=IfCondition(use_simulator))
 
+    remove_temp_sdf_file = RegisterEventHandler(event_handler=OnShutdown(
+        on_shutdown=[
+            OpaqueFunction(function=lambda context: os.remove(world_sdf))
+        ]))
+
+    set_env_vars_resources = AppendEnvironmentVariable(
+            'GZ_SIM_RESOURCE_PATH',
+            os.path.join(get_package_share_directory('turtlebot3_gazebo'),
+                         'models'))
     gazebo_client = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(get_package_share_directory('ros_gz_sim'),
-                'launch',
-                'gz_sim.launch.py')
+                         'launch',
+                         'gz_sim.launch.py')
         ),
         condition=IfCondition(PythonExpression(
             [use_simulator, ' and not ', headless])),
@@ -282,10 +287,10 @@ def generate_launch_description():
     ld.add_action(declare_robot_sdf_cmd)
     ld.add_action(declare_use_respawn_cmd)
 
-
+    ld.add_action(set_env_vars_resources)
+    ld.add_action(world_sdf_xacro)
+    ld.add_action(remove_temp_sdf_file)
     ld.add_action(gz_robot)
-    ld.add_action(gz_sim_server_config)
-    ld.add_action(gz_start_scene_broadcaster)
     ld.add_action(gazebo_server)
     ld.add_action(gazebo_client)
 
