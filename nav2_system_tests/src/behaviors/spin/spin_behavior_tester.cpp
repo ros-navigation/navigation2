@@ -136,6 +136,7 @@ bool SpinBehaviorTester::defaultSpinBehaviorTest(
   std::this_thread::sleep_for(5s);
 
   if (make_fake_costmap_) {
+    sendFakeCostmap(target_yaw);
     sendFakeOdom(0.0);
   }
 
@@ -211,7 +212,7 @@ bool SpinBehaviorTester::defaultSpinBehaviorTest(
     {
       sendFakeOdom(command_yaw);
       sendFakeCostmap(target_yaw);
-      rclcpp::sleep_for(std::chrono::milliseconds(1));
+      rclcpp::sleep_for(std::chrono::milliseconds(3));
     }
     sendFakeOdom(target_yaw);
     sendFakeCostmap(target_yaw);
@@ -277,7 +278,7 @@ void SpinBehaviorTester::sendFakeCostmap(float angle)
   nav2_msgs::msg::Costmap fake_costmap;
 
   fake_costmap.header.frame_id = "odom";
-  fake_costmap.header.stamp = stamp_;
+  fake_costmap.header.stamp = node_->now();
   fake_costmap.metadata.layer = "master";
   fake_costmap.metadata.resolution = .1;
   fake_costmap.metadata.size_x = 100;
@@ -288,9 +289,9 @@ void SpinBehaviorTester::sendFakeCostmap(float angle)
   float costmap_val = 0;
   for (int ix = 0; ix < 100; ix++) {
     for (int iy = 0; iy < 100; iy++) {
-      if (abs(angle) > M_PI_2f32) {
+      if (fabs(angle) > M_PI_2f32) {
         // fake obstacles in the way so we get failure due to potential collision
-        costmap_val = 100;
+        costmap_val = 253;
       }
       fake_costmap.data.push_back(costmap_val);
     }
@@ -302,7 +303,7 @@ void SpinBehaviorTester::sendInitialPose()
 {
   geometry_msgs::msg::PoseWithCovarianceStamped pose;
   pose.header.frame_id = "map";
-  pose.header.stamp = stamp_;
+  pose.header.stamp = node_->now();
   pose.pose.pose.position.x = -2.0;
   pose.pose.pose.position.y = -0.5;
   pose.pose.pose.position.z = 0.0;
@@ -325,7 +326,7 @@ void SpinBehaviorTester::sendFakeOdom(float angle)
 {
   geometry_msgs::msg::TransformStamped transformStamped;
 
-  transformStamped.header.stamp = stamp_;
+  transformStamped.header.stamp = node_->now();
   transformStamped.header.frame_id = "odom";
   transformStamped.child_frame_id = "base_link";
   transformStamped.transform.translation.x = 0.0;
@@ -342,7 +343,7 @@ void SpinBehaviorTester::sendFakeOdom(float angle)
 
   geometry_msgs::msg::PolygonStamped footprint;
   footprint.header.frame_id = "odom";
-  footprint.header.stamp = stamp_;
+  footprint.header.stamp = node_->now();
   footprint.polygon.points.resize(4);
   footprint.polygon.points[0].x = 0.22;
   footprint.polygon.points[0].y = 0.22;
