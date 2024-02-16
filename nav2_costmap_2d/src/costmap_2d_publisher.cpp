@@ -43,6 +43,9 @@
 #include <utility>
 
 #include "nav2_costmap_2d/cost_values.hpp"
+#include "rclcpp/node_interfaces/get_node_parameters_interface.hpp"
+#include "rclcpp/node_interfaces/get_node_topics_interface.hpp"
+#include "rclcpp/create_publisher.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -64,18 +67,34 @@ Costmap2DPublisher::Costmap2DPublisher(
   auto node = parent.lock();
   clock_ = node->get_clock();
   logger_ = node->get_logger();
+  const auto custom_qos = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable();
+  rclcpp::PublisherOptionsWithAllocator<std::allocator<void>> pub_options;
+  pub_options.use_intra_process_comm = rclcpp::IntraProcessSetting::Disable;
 
-  auto custom_qos = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable();
+
+  costmap_pub_ =
+    std::make_shared<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::OccupancyGrid>>(
+    node->get_node_base_interface().get(),
+    topic_name_,
+    custom_qos,
+    pub_options
+    );
 
   // TODO(bpwilcox): port onNewSubscription functionality for publisher
-  costmap_pub_ = node->create_publisher<nav_msgs::msg::OccupancyGrid>(
-    topic_name,
-    custom_qos);
-  costmap_raw_pub_ = node->create_publisher<nav2_msgs::msg::Costmap>(
+  costmap_raw_pub_ =
+    std::make_shared<rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::Costmap>>(
+    node->get_node_base_interface().get(),
     topic_name + "_raw",
-    custom_qos);
-  costmap_update_pub_ = node->create_publisher<map_msgs::msg::OccupancyGridUpdate>(
-    topic_name + "_updates", custom_qos);
+    custom_qos,
+    pub_options
+    );
+  costmap_update_pub_ =
+    std::make_shared<rclcpp_lifecycle::LifecyclePublisher<map_msgs::msg::OccupancyGridUpdate>>(
+    node->get_node_base_interface().get(),
+    topic_name + "_updates",
+    custom_qos,
+    pub_options
+    );
 
   // Create a service that will use the callback function to handle requests.
   costmap_service_ = node->create_service<nav2_msgs::srv::GetCostmap>(
