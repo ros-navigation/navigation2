@@ -43,9 +43,6 @@
 #include <utility>
 
 #include "nav2_costmap_2d/cost_values.hpp"
-#include "rclcpp/node_interfaces/get_node_parameters_interface.hpp"
-#include "rclcpp/node_interfaces/get_node_topics_interface.hpp"
-#include "rclcpp/create_publisher.hpp"
 
 namespace nav2_costmap_2d
 {
