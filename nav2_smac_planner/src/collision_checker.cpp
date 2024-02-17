@@ -51,9 +51,9 @@ GridCollisionChecker::GridCollisionChecker(
 void GridCollisionChecker::setFootprint(
   const nav2_costmap_2d::Footprint & footprint,
   const bool & radius,
-  const double & possible_inscribed_cost)
+  const double & possible_collision_cost)
 {
-  possible_inscribed_cost_ = static_cast<float>(possible_inscribed_cost);
+  possible_collision_cost_ = static_cast<float>(possible_collision_cost);
   footprint_is_radius_ = radius;
 
   // Use radius, no caching required
@@ -114,8 +114,8 @@ bool GridCollisionChecker::inCollision(
     footprint_cost_ = static_cast<float>(costmap_->getCost(
         static_cast<unsigned int>(x + 0.5), static_cast<unsigned int>(y + 0.5)));
 
-    if (footprint_cost_ < possible_inscribed_cost_) {
-      if (possible_inscribed_cost_ > 0) {
+    if (footprint_cost_ < possible_collision_cost_) {
+      if (possible_collision_cost_ > 0) {
         return false;
       } else {
         RCLCPP_ERROR_THROTTLE(
