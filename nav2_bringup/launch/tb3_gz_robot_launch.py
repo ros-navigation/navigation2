@@ -69,7 +69,6 @@ def generate_launch_description():
                 'config_file': os.path.join(
                     pkg_nav2_bringup, 'params', 'turtlebot3_waffle_bridge.yaml'
                 ),
-                'qos_overrides./tf_static.publisher.durability': 'transient_local',
             }
         ],
         output='screen',
