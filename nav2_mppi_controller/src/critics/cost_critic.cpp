@@ -34,9 +34,9 @@ void CostCritic::initialize()
   weight_ /= 254.0f;
 
   collision_checker_.setCostmap(costmap_);
-  possibly_inscribed_cost_ = findCircumscribedCost(costmap_ros_);
+  possible_collision_cost_ = findCircumscribedCost(costmap_ros_);
 
-  if (possibly_inscribed_cost_ < 1.0f) {
+  if (possible_collision_cost_ < 1.0f) {
     RCLCPP_ERROR(
       logger_,
       "Inflation layer either not found or inflation is not set sufficiently for "
@@ -96,7 +96,7 @@ void CostCritic::score(CriticData & data)
 
   if (consider_footprint_) {
     // footprint may have changed since initialization if user has dynamic footprints
-    possibly_inscribed_cost_ = findCircumscribedCost(costmap_ros_);
+    possible_collision_cost_ = findCircumscribedCost(costmap_ros_);
   }
 
   // If near the goal, don't apply the preferential term since the goal is near obstacles
@@ -161,7 +161,7 @@ bool CostCritic::inCollision(float cost, float x, float y, float theta)
 
   // If consider_footprint_ check footprint scort for collision
   if (consider_footprint_ &&
-    (cost >= possibly_inscribed_cost_ || possibly_inscribed_cost_ < 1.0f))
+    (cost >= possible_collision_cost_ || possible_collision_cost_ < 1.0f))
   {
     cost = static_cast<float>(collision_checker_.footprintCostAtPose(
         x, y, theta, costmap_ros_->getRobotFootprint()));

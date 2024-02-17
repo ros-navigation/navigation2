@@ -78,7 +78,7 @@ protected:
 protected:
   nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>
   collision_checker_{nullptr};
-  float possibly_inscribed_cost_;
+  float possible_collision_cost_;
 
   bool consider_footprint_{true};
   float circumscribed_radius_{0};
