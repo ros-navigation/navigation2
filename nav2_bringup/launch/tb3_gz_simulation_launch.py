@@ -218,8 +218,12 @@ def generate_launch_description():
             'use_respawn': use_respawn,
         }.items(),
     )
-
-    world_sdf = tempfile.mktemp(prefix='nav2_', suffix='.sdf')
+    # The SDF file for the world is a xacro file because we wanted to
+    # conditionally load the SceneBroadcaster plugin based on wheter we're
+    # running in headless mode. But currently, the Gazebo command line doesn't
+    # take SDF strings for worlds, so the output of xacro needs to be saved into
+    # a temporary file and passed to Gazebo.
+    world_sdf = tempfile.mktemp(prefix="nav2_", suffix=".sdf")
     world_sdf_xacro = ExecuteProcess(
         cmd=['xacro', '-o', world_sdf, ['headless:=', headless], world])
     gazebo_server = IncludeLaunchDescription(
@@ -231,7 +235,7 @@ def generate_launch_description():
 
     remove_temp_sdf_file = RegisterEventHandler(event_handler=OnShutdown(
         on_shutdown=[
-            OpaqueFunction(function=lambda context: os.remove(world_sdf))
+            OpaqueFunction(function=lambda _: os.remove(world_sdf))
         ]))
 
     set_env_vars_resources = AppendEnvironmentVariable(
