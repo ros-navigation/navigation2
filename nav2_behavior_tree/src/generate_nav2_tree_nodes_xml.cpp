@@ -29,7 +29,7 @@ int main()
   BT::BehaviorTreeFactory factory;
 
   std::vector<std::string> plugins_list;
-  boost::split(plugins_list, nav2::details::BT_PLUGIN_LIST, boost::is_any_of(";"));
+  boost::split(plugins_list, nav2::details::BT_BUILTIN_PLUGINS, boost::is_any_of(";"));
 
   for (const auto & plugin : plugins_list) {
     std::cout << "Loading: " << plugin << "\n";

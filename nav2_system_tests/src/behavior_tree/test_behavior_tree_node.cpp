@@ -62,7 +62,7 @@ public:
     odom_smoother_ = std::make_shared<nav2_util::OdomSmoother>(node_);
 
     std::vector<std::string> plugin_libs;
-    boost::split(plugin_libs, nav2::details::BT_PLUGIN_LIST, boost::is_any_of(";"));
+    boost::split(plugin_libs, nav2::details::BT_BUILTIN_PLUGINS, boost::is_any_of(";"));
 
     for (const auto & p : plugin_libs) {
       factory_.registerFromPlugin(BT::SharedLibrary::getOSName(p));
