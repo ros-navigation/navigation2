@@ -36,8 +36,15 @@ TEST(Node2DTest, test_node_2d)
 {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
   nav2_costmap_2d::Costmap2D costmapA(10, 10, 0.05, 0.0, 0.0, 0);
+
+  // Convert raw costmap into a costmap ros object
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  auto costmap = costmap_ros->getCostmap();
+  *costmap = costmapA;
+
   std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
-    std::make_unique<nav2_smac_planner::GridCollisionChecker>(&costmapA, 72, node);
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, 72, node);
   checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
 
   // test construction
@@ -69,7 +76,7 @@ TEST(Node2DTest, test_node_2d)
   // check heuristic cost computation
   nav2_smac_planner::Node2D::Coordinates A(0.0, 0.0);
   nav2_smac_planner::Node2D::Coordinates B(10.0, 5.0);
-  EXPECT_NEAR(testB.getHeuristicCost(A, B, nullptr), 11.18, 0.02);
+  EXPECT_NEAR(testB.getHeuristicCost(A, B), 11.18, 0.02);
 
   // check operator== works on index
   unsigned char costC = '2';
@@ -123,8 +130,15 @@ TEST(Node2DTest, test_node_2d_neighbors)
   EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[7], 101);
 
   nav2_costmap_2d::Costmap2D costmapA(10, 10, 0.05, 0.0, 0.0, 0);
+
+  // Convert raw costmap into a costmap ros object
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  auto costmap = costmap_ros->getCostmap();
+  *costmap = costmapA;
+
   std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
-    std::make_unique<nav2_smac_planner::GridCollisionChecker>(&costmapA, 72, lnode);
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, 72, lnode);
   unsigned char cost = static_cast<unsigned int>(1);
   nav2_smac_planner::Node2D * node = new nav2_smac_planner::Node2D(1);
   node->setCost(cost);

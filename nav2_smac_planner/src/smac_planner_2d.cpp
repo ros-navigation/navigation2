@@ -108,7 +108,7 @@ void SmacPlanner2D::configure(
   }
 
   // Initialize collision checker
-  _collision_checker = GridCollisionChecker(_costmap, 1 /*for 2D, most be 1*/, node);
+  _collision_checker = GridCollisionChecker(costmap_ros, 1 /*for 2D, most be 1*/, node);
   _collision_checker.setFootprint(
     costmap_ros->getRobotFootprint(),
     true /*for 2D, most use radius*/,

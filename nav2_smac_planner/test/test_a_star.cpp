@@ -61,9 +61,15 @@ TEST(AStarTest, test_a_star_2d)
     }
   }
 
+  // Convert raw costmap into a costmap ros object
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  auto costmap = costmap_ros->getCostmap();
+  *costmap = *costmapA;
+
   // functional case testing
   std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
-    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmapA, 1, lnode);
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, 1, lnode);
   checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
   a_star.setCollisionChecker(checker.get());
   a_star.setStart(20u, 20u, 0);
@@ -149,8 +155,14 @@ TEST(AStarTest, test_a_star_se2)
     }
   }
 
+  // Convert raw costmap into a costmap ros object
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  auto costmap = costmap_ros->getCostmap();
+  *costmap = *costmapA;
+
   std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
-    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmapA, size_theta, lnode);
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, size_theta, lnode);
   checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
 
   // functional case testing
@@ -164,8 +176,8 @@ TEST(AStarTest, test_a_star_se2)
   EXPECT_TRUE(a_star.createPath(path, num_it, tolerance, expansions.get()));
 
   // check path is the right size and collision free
-  EXPECT_EQ(num_it, 3186);
-  EXPECT_EQ(path.size(), 64u);
+  EXPECT_EQ(num_it, 3146);
+  EXPECT_EQ(path.size(), 63u);
   for (unsigned int i = 0; i != path.size(); i++) {
     EXPECT_EQ(costmapA->getCost(path[i].x, path[i].y), 0);
   }
@@ -217,8 +229,14 @@ TEST(AStarTest, test_a_star_lattice)
     }
   }
 
+  // Convert raw costmap into a costmap ros object
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  auto costmap = costmap_ros->getCostmap();
+  *costmap = *costmapA;
+
   std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
-    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmapA, size_theta, lnode);
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, size_theta, lnode);
   checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
 
   // functional case testing
@@ -229,8 +247,8 @@ TEST(AStarTest, test_a_star_lattice)
   EXPECT_TRUE(a_star.createPath(path, num_it, tolerance));
 
   // check path is the right size and collision free
-  EXPECT_EQ(num_it, 26);
-  EXPECT_GT(path.size(), 47u);
+  EXPECT_EQ(num_it, 22);
+  EXPECT_GT(path.size(), 45u);
   for (unsigned int i = 0; i != path.size(); i++) {
     EXPECT_EQ(costmapA->getCost(path[i].x, path[i].y), 0);
   }
@@ -268,8 +286,14 @@ TEST(AStarTest, test_se2_single_pose_path)
   nav2_costmap_2d::Costmap2D * costmapA =
     new nav2_costmap_2d::Costmap2D(100, 100, 0.1, 0.0, 0.0, 0);
 
+  // Convert raw costmap into a costmap ros object
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  auto costmap = costmap_ros->getCostmap();
+  *costmap = *costmapA;
+
   std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
-    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmapA, size_theta, lnode);
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, size_theta, lnode);
   checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
 
   // functional case testing

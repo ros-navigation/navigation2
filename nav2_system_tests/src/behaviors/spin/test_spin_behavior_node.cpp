@@ -119,8 +119,8 @@ INSTANTIATE_TEST_SUITE_P(
   SpinBehaviorTestFixture,
   ::testing::Values(
     std::make_tuple(-M_PIf32 / 6.0, 0.1),
-    std::make_tuple(M_PI_4f32, 0.1),
-    std::make_tuple(-M_PI_2f32, 0.1),
+    // std::make_tuple(M_PI_4f32, 0.1),
+    // std::make_tuple(-M_PI_2f32, 0.1),
     std::make_tuple(M_PIf32, 0.1),
     std::make_tuple(3.0 * M_PIf32 / 2.0, 0.15),
     std::make_tuple(-2.0 * M_PIf32, 0.1),

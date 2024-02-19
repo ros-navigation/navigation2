@@ -38,7 +38,7 @@ public:
     // Create the blackboard that will be shared by all of the nodes in the tree
     config_->blackboard = BT::Blackboard::create();
     // Put items on the blackboard
-    config_->blackboard->set<rclcpp::Node::SharedPtr>("node", node_);
+    config_->blackboard->set("node", node_);
 
     BT::NodeBuilder builder = [](const std::string & name, const BT::NodeConfiguration & config) {
         return std::make_unique<nav2_behavior_tree::SmootherSelector>(name, config);
@@ -95,7 +95,7 @@ TEST_F(SmootherSelectorTestFixture, test_custom_topic)
 
   // check default value
   std::string selected_smoother_result;
-  config_->blackboard->get("selected_smoother", selected_smoother_result);
+  EXPECT_TRUE(config_->blackboard->get("selected_smoother", selected_smoother_result));
 
   EXPECT_EQ(selected_smoother_result, "DWB");
 
@@ -119,7 +119,7 @@ TEST_F(SmootherSelectorTestFixture, test_custom_topic)
   }
 
   // check smoother updated
-  config_->blackboard->get("selected_smoother", selected_smoother_result);
+  EXPECT_TRUE(config_->blackboard->get("selected_smoother", selected_smoother_result));
   EXPECT_EQ("DWC", selected_smoother_result);
 }
 
@@ -143,7 +143,7 @@ TEST_F(SmootherSelectorTestFixture, test_default_topic)
 
   // check default value
   std::string selected_smoother_result;
-  config_->blackboard->get("selected_smoother", selected_smoother_result);
+  EXPECT_TRUE(config_->blackboard->get("selected_smoother", selected_smoother_result));
 
   EXPECT_EQ(selected_smoother_result, "GridBased");
 
@@ -167,7 +167,7 @@ TEST_F(SmootherSelectorTestFixture, test_default_topic)
   }
 
   // check smoother updated
-  config_->blackboard->get("selected_smoother", selected_smoother_result);
+  EXPECT_TRUE(config_->blackboard->get("selected_smoother", selected_smoother_result));
   EXPECT_EQ("RRT", selected_smoother_result);
 }
 

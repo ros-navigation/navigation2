@@ -43,10 +43,10 @@ public:
     // Create the blackboard that will be shared by all of the nodes in the tree
     config_->blackboard = BT::Blackboard::create();
     // Put items on the blackboard
-    config_->blackboard->set<rclcpp::Node::SharedPtr>(
+    config_->blackboard->set(
       "node",
       node_);
-    config_->blackboard->set<std::shared_ptr<tf2_ros::Buffer>>(
+    config_->blackboard->set(
       "tf_buffer",
       transform_handler_->getBuffer());
 
@@ -137,7 +137,7 @@ TEST_F(RemovePassedGoalsTestFixture, test_tick)
 
   // check that it removed the point in range
   std::vector<geometry_msgs::msg::PoseStamped> output_poses;
-  config_->blackboard->get("goals", output_poses);
+  EXPECT_TRUE(config_->blackboard->get("goals", output_poses));
 
   EXPECT_EQ(output_poses.size(), 2u);
   EXPECT_EQ(output_poses[0], poses[2]);

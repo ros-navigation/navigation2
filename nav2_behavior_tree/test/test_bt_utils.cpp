@@ -310,12 +310,12 @@ TEST(deconflictPortAndParamFrameTest, test_correct_syntax)
   node->declare_parameter<int>("test", 2);
   node->declare_parameter<int>("test_alternative", 3);
 
-  int value = BT::deconflictPortAndParamFrame<int, BT::TreeNode>(
+  int value = BT::deconflictPortAndParamFrame<int>(
     node, "test_alternative", tree.rootNode());
 
   EXPECT_EQ(value, 3);
 
-  value = BT::deconflictPortAndParamFrame<int, BT::TreeNode>(
+  value = BT::deconflictPortAndParamFrame<int>(
     node, "test", tree.rootNode());
 
   EXPECT_EQ(value, 1);

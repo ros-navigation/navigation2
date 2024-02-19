@@ -41,7 +41,7 @@ public:
     // Create the blackboard that will be shared by all of the nodes in the tree
     config_->blackboard = BT::Blackboard::create();
     // Put items on the blackboard
-    config_->blackboard->set<rclcpp::Node::SharedPtr>(
+    config_->blackboard->set(
       "node",
       node_);
 
@@ -127,7 +127,7 @@ TEST_F(TruncatePathTestFixture, test_tick)
   }
 
   nav_msgs::msg::Path truncated_path;
-  config_->blackboard->get("truncated_path", truncated_path);
+  EXPECT_TRUE(config_->blackboard->get("truncated_path", truncated_path));
 
   EXPECT_NE(path, truncated_path);
   EXPECT_EQ(truncated_path.poses.size(), 2u);

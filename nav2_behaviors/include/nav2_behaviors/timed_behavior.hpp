@@ -29,8 +29,9 @@
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/create_timer_ros.h"
 #include "geometry_msgs/msg/twist.hpp"
-#include "nav2_util/simple_action_server.hpp"
 #include "nav2_util/robot_utils.hpp"
+#include "nav2_util/twist_publisher.hpp"
+#include "nav2_util/simple_action_server.hpp"
 #include "nav2_core/behavior.hpp"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
@@ -150,7 +151,7 @@ public:
     local_collision_checker_ = local_collision_checker;
     global_collision_checker_ = global_collision_checker;
 
-    vel_pub_ = node->template create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 1);
+    vel_pub_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel", 1);
 
     onConfigure();
   }
@@ -185,7 +186,7 @@ protected:
   rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
 
   std::string behavior_name_;
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
+  std::unique_ptr<nav2_util::TwistPublisher> vel_pub_;
   std::shared_ptr<ActionServer> action_server_;
   std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> local_collision_checker_;
   std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> global_collision_checker_;
@@ -289,10 +290,12 @@ protected:
   // Stop the robot with a commanded velocity
   void stopRobot()
   {
-    auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>();
-    cmd_vel->linear.x = 0.0;
-    cmd_vel->linear.y = 0.0;
-    cmd_vel->angular.z = 0.0;
+    auto cmd_vel = std::make_unique<geometry_msgs::msg::TwistStamped>();
+    cmd_vel->header.frame_id = robot_base_frame_;
+    cmd_vel->header.stamp = clock_->now();
+    cmd_vel->twist.linear.x = 0.0;
+    cmd_vel->twist.linear.y = 0.0;
+    cmd_vel->twist.angular.z = 0.0;
 
     vel_pub_->publish(std::move(cmd_vel));
   }
