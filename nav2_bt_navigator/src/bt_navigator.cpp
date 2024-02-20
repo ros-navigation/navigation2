@@ -76,16 +76,11 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   std::vector<std::string> plugin_lib_names;
   boost::split(plugin_lib_names, nav2::details::BT_BUILTIN_PLUGINS, boost::is_any_of(";"));
 
-  rclcpp::Parameter plugins_param;
-  if (get_parameter("plugin_lib_names", plugins_param) &&
-    plugins_param.get_type() == rclcpp::ParameterType::PARAMETER_STRING_ARRAY)
-  {
-    auto user_defined_plugins = plugins_param.as_string_array();
-    // append user_defined_plugins to plugin_lib_names
-    plugin_lib_names.insert(
-      plugin_lib_names.end(), user_defined_plugins.begin(),
-      user_defined_plugins.end());
-  }
+  auto user_defined_plugins = get_parameter("plugin_lib_names").as_string_array();
+  // append user_defined_plugins to plugin_lib_names
+  plugin_lib_names.insert(
+    plugin_lib_names.end(), user_defined_plugins.begin(),
+    user_defined_plugins.end());
 
   nav2_core::FeedbackUtils feedback_utils;
   feedback_utils.tf = tf_;
