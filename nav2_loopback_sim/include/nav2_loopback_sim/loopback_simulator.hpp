@@ -18,12 +18,14 @@
 #include <iostream>
 #include <functional>
 #include <memory>
+#include <string>
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+#include "sensor_msgs/msg/laser_scan.hpp"
 #include "tf2_ros/static_transform_broadcaster.h"
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/transform_broadcaster.h"
@@ -49,10 +51,9 @@ public:
   explicit LoopbackSimulator(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
   /**
    * @brief A destructor for nav2_loopback_sim::LoopbackSimulator
-   * 
+   *
    */
   ~LoopbackSimulator();
-  
 
 private:
   /**
@@ -72,18 +73,33 @@ private:
   */
   void timerCallback();
 
+  /**
+   * @brief Function to publish transform between given frames
+   * @param pose Transform to be published
+   * @param parent_frame Parent frame
+   * @param child_frame Child frame
+   */
+  void publishTransform(
+    const geometry_msgs::msg::Pose & pose,
+    const std::string & parent_frame,
+    const std::string & child_frame);
+
   // Poses
   geometry_msgs::msg::PoseWithCovarianceStamped init_pose_;  // init odom pose wrt map frame
   geometry_msgs::msg::PoseWithCovarianceStamped odom_updated_pose_;
   // Transformed init_pose_ from "map" to "odom" frame
   bool init_pose_set_ = false;
-  bool init_odom_base_published_ = false;
-  bool transform_initpose_once_ = true;
+  bool zero_odom_base_published_ = false;
+  double dt_{0.1};
+  geometry_msgs::msg::Pose relocalization_pose_;
 
   // Subscribers
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr vel_subscriber_;
   rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr
     init_pose_subscriber_;
+
+  // Publishers
+  rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr scan_publisher_;
 
   // tf
   std::unique_ptr<tf2_ros::StaticTransformBroadcaster> tf_broadcaster_;

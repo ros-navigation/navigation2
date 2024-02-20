@@ -6,6 +6,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
@@ -22,6 +23,7 @@ set(dependencies
   rclcpp
   rclcpp_components
   std_msgs
+  sensor_msgs
   geometry_msgs
   tf2
   tf2_ros
@@ -71,7 +73,7 @@ if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   find_package(ament_cmake_gtest REQUIRED)
   ament_lint_auto_find_test_dependencies()
-  #add_subdirectory(test)
+  add_subdirectory(test)
 endif()
 
 ament_export_include_directories(include)

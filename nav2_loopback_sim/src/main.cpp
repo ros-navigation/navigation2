@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <memory>
+
 #include "nav2_loopback_sim/loopback_simulator.hpp"
 
 int main(int argc, char ** argv)
@@ -21,5 +22,6 @@ int main(int argc, char ** argv)
   auto node = std::make_shared<nav2_loopback_sim::LoopbackSimulator>();
   rclcpp::spin(node);
   rclcpp::shutdown();
+
   return 0;
 }
