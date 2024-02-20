@@ -23,7 +23,7 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "tf2_ros/buffer.h"
 
-#include "behaviortree_cpp_v3/decorator_node.h"
+#include "behaviortree_cpp/decorator_node.h"
 
 #include "nav2_behavior_tree/plugins/decorator/distance_controller.hpp"
 #include "nav2_behavior_tree/bt_utils.hpp"
@@ -114,7 +114,7 @@ inline BT::NodeStatus DistanceController::tick()
 
 }  // namespace nav2_behavior_tree
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
   factory.registerNodeType<nav2_behavior_tree::DistanceController>("DistanceController");

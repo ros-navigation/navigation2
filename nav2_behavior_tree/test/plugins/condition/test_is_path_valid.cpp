@@ -92,7 +92,7 @@ TEST_F(IsPathValidTestFixture, test_behavior)
 {
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <IsPathValid/>
         </BehaviorTree>

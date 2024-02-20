@@ -89,7 +89,7 @@ TEST_F(PathLongerOnApproachTestFixture, test_tick)
   // create tree
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
           <PathLongerOnApproach path="{path}" prox_len="5.0" length_factor="2.0">
             <AlwaysSuccess/>
@@ -115,7 +115,7 @@ TEST_F(PathLongerOnApproachTestFixture, test_tick)
   // create tree
   xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
           <PathLongerOnApproach path="{path}" prox_len="20.0" length_factor="1.0">
             <AlwaysFailure/>

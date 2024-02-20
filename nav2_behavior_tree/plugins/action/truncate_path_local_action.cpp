@@ -17,7 +17,7 @@
 #include <string>
 #include <vector>
 
-#include "behaviortree_cpp_v3/decorator_node.h"
+#include "behaviortree_cpp/decorator_node.h"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
@@ -150,7 +150,7 @@ TruncatePathLocal::poseDistance(
 
 }  // namespace nav2_behavior_tree
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory) {
   factory.registerNodeType<nav2_behavior_tree::TruncatePathLocal>(
     "TruncatePathLocal");
