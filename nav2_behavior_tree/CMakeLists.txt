@@ -225,6 +225,17 @@ install(TARGETS ${library_name}
   RUNTIME DESTINATION bin
 )
 
+# we will embed the list of plugin names inside a header file
+set(GENERATED_DIR ${CMAKE_CURRENT_BINARY_DIR}/gen)
+configure_file(plugins_list.hpp.in ${GENERATED_DIR}/plugins_list.hpp)
+
+add_executable(generate_nav2_tree_nodes_xml src/generate_nav2_tree_nodes_xml.cpp)
+ament_target_dependencies(generate_nav2_tree_nodes_xml ${dependencies})
+# allow generate_nav2_tree_nodes_xml to find plugins_list.hpp
+target_include_directories(generate_nav2_tree_nodes_xml PRIVATE ${GENERATED_DIR})
+install(TARGETS generate_nav2_tree_nodes_xml DESTINATION lib/${PROJECT_NAME})
+
+
 install(DIRECTORY include/
   DESTINATION include/
 )
@@ -234,6 +245,7 @@ install(DIRECTORY test/utils/
 )
 
 install(FILES nav2_tree_nodes.xml DESTINATION share/${PROJECT_NAME})
+install(FILES ${GENERATED_DIR}/plugins_list.hpp DESTINATION include/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
