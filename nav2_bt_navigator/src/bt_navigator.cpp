@@ -18,6 +18,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <boost/algorithm/string.hpp>
 
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/node_utils.hpp"
