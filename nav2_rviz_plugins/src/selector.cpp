@@ -169,7 +169,7 @@ void Selector::pluginLoader(
     }
     RCLCPP_INFO(
       node->get_logger(),
-      (server_name + " service not available").c_str());
+      "%s service not available", server_name.c_str());
     server_unavailable = true;
     server_failed_ = true;
     break;
