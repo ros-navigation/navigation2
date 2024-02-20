@@ -77,8 +77,8 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   boost::split(plugin_lib_names, nav2::details::BT_BUILTIN_PLUGINS, boost::is_any_of(";"));
 
   rclcpp::Parameter plugins_param;
-  if(get_parameter("plugin_lib_names", plugins_param) && 
-     plugins_param.get_type() == rclcpp::ParameterType::PARAMETER_STRING_ARRAY)
+  if (get_parameter("plugin_lib_names", plugins_param) &&
+    plugins_param.get_type() == rclcpp::ParameterType::PARAMETER_STRING_ARRAY)
   {
     auto user_defined_plugins = plugins_param.as_string_array();
     // append user_defined_plugins to plugin_lib_names

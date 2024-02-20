@@ -50,7 +50,7 @@ bt_navigator:
 
     # plugin_lib_names is used to add custom BT plugins to the executor (vector of strings).
     # Built-in plugins are added automatically
-    plugin_lib_names: []
+    # plugin_lib_names: []
 
 controller_server:
   ros__parameters:
