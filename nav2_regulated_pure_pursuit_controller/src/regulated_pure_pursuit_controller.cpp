@@ -405,7 +405,7 @@ RegulatedPurePursuitController::projectCarrotPastGoal(
 
   // Interpolate as usual
   auto point = circleSegmentIntersection(
-    prev_pose.pose.position, goal_pose.pose.position, lookahead_dist);
+    prev_pose.pose.position, pose.pose.position, lookahead_dist);
   pose.pose.position = point;
   return pose;
 }
