@@ -375,7 +375,7 @@ TEST(NodeHybridTest, test_node_reeds_neighbors)
   EXPECT_EQ(neighbors.size(), 0u);
 }
 
-TEST(NodeHybridTest, basic_get_closest_angular_bin_noPi_test)
+TEST(NodeHybridTest, basic_get_closest_angular_bin_test)
 {
   // Tests to check getClosestAngularBin behavior for different input types
   nav2_smac_planner::HybridMotionTable motion_table;
