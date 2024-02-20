@@ -374,3 +374,33 @@ TEST(NodeHybridTest, test_node_reeds_neighbors)
   // should be empty since totally invalid
   EXPECT_EQ(neighbors.size(), 0u);
 }
+
+TEST(NodeHybridTest, basic_get_closest_angular_bin_test)
+{
+  // Tests to check getClosestAngularBin behavior for different input types
+  nav2_smac_planner::HybridMotionTable motion_table;
+
+  {
+    motion_table.bin_size = 3.1415926;
+    double test_theta = 3.1415926;
+    unsigned int expected_angular_bin = 1;
+    unsigned int calculated_angular_bin = motion_table.getClosestAngularBin(test_theta);
+    EXPECT_EQ(expected_angular_bin, calculated_angular_bin);
+  }
+
+  {
+    motion_table.bin_size = M_PI;
+    double test_theta = M_PI;
+    unsigned int expected_angular_bin = 1;
+    unsigned int calculated_angular_bin = motion_table.getClosestAngularBin(test_theta);
+    EXPECT_EQ(expected_angular_bin, calculated_angular_bin);
+  }
+
+  {
+    motion_table.bin_size = M_PI;
+    float test_theta = M_PI;
+    unsigned int expected_angular_bin = 1;
+    unsigned int calculated_angular_bin = motion_table.getClosestAngularBin(test_theta);
+    EXPECT_EQ(expected_angular_bin, calculated_angular_bin);
+  }
+}
