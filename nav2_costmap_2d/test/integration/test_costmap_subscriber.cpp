@@ -53,7 +53,7 @@ public:
     costmapToSend = std::make_shared<nav2_costmap_2d::Costmap2D>(10, 10, 1.0, 0.0, 0.0);
   }
 
-  void TearDown()
+  void TearDown() override
   {
     costmapSubscriber.reset();
     costmapToSend.reset();

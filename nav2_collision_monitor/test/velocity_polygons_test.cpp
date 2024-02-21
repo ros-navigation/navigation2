@@ -40,7 +40,6 @@ using namespace std::chrono_literals;
 static constexpr double EPSILON = std::numeric_limits<float>::epsilon();
 
 static const char BASE_FRAME_ID[]{"base_link"};
-static const char BASE2_FRAME_ID[]{"base2_link"};
 static const char POLYGON_PUB_TOPIC[]{"polygon_pub"};
 static const char POLYGON_NAME[]{"TestVelocityPolygon"};
 static const char SUB_POLYGON_FORWARD_NAME[]{"Forward"};

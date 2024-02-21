@@ -145,7 +145,7 @@ T1 deconflictPortAndParamFrame(
   const T2 * behavior_tree_node)
 {
   T1 param_value;
-  bool param_from_input = behavior_tree_node->getInput(param_name, param_value);
+  bool param_from_input = behavior_tree_node->getInput(param_name, param_value).has_value();
 
   if constexpr (std::is_same_v<T1, std::string>) {
     // not valid if port doesn't exist or it is an empty string
