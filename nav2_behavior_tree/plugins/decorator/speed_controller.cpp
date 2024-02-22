@@ -59,7 +59,7 @@ SpeedController::SpeedController(
 
 inline BT::NodeStatus SpeedController::tick()
 {
-  if (status() == BT::NodeStatus::IDLE) {
+  if (!BT::isStatusActive(status())) {
     // Reset since we're starting a new iteration of
     // the speed controller (moving from IDLE to RUNNING)
     BT::getInputOrBlackboard("goals", goals_);
@@ -101,19 +101,7 @@ inline BT::NodeStatus SpeedController::tick()
       start_ = node_->now();
     }
 
-    const BT::NodeStatus child_state = child_node_->executeTick();
-
-    switch (child_state) {
-      case BT::NodeStatus::RUNNING:
-        return BT::NodeStatus::RUNNING;
-
-      case BT::NodeStatus::SUCCESS:
-        return BT::NodeStatus::SUCCESS;
-
-      case BT::NodeStatus::FAILURE:
-      default:
-        return BT::NodeStatus::FAILURE;
-    }
+    return child_node_->executeTick();
   }
 
   return status();

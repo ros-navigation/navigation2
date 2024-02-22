@@ -46,7 +46,7 @@ BT::NodeStatus TimeExpiredCondition::tick()
     initialize();
   }
 
-  if (status() == BT::NodeStatus::IDLE) {
+  if (!BT::isStatusActive(status())) {
     start_ = node_->now();
     return BT::NodeStatus::FAILURE;
   }

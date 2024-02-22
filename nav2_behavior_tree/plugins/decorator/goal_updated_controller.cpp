@@ -33,7 +33,7 @@ GoalUpdatedController::GoalUpdatedController(
 
 BT::NodeStatus GoalUpdatedController::tick()
 {
-  if (status() == BT::NodeStatus::IDLE) {
+  if (!BT::isStatusActive(status())) {
     // Reset since we're starting a new iteration of
     // the goal updated controller (moving from IDLE to RUNNING)
 
@@ -61,19 +61,7 @@ BT::NodeStatus GoalUpdatedController::tick()
   // 'til completion
   if ((child_node_->status() == BT::NodeStatus::RUNNING) || goal_was_updated_) {
     goal_was_updated_ = false;
-    const BT::NodeStatus child_state = child_node_->executeTick();
-
-    switch (child_state) {
-      case BT::NodeStatus::RUNNING:
-        return BT::NodeStatus::RUNNING;
-
-      case BT::NodeStatus::SUCCESS:
-        return BT::NodeStatus::SUCCESS;
-
-      case BT::NodeStatus::FAILURE:
-      default:
-        return BT::NodeStatus::FAILURE;
-    }
+    return child_node_->executeTick();
   }
 
   return status();

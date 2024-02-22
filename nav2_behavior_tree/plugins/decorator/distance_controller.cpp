@@ -51,7 +51,7 @@ DistanceController::DistanceController(
 
 inline BT::NodeStatus DistanceController::tick()
 {
-  if (status() == BT::NodeStatus::IDLE) {
+  if (!BT::isStatusActive(status())) {
     // Reset the starting position since we're starting a new iteration of
     // the distance controller (moving from IDLE to RUNNING)
     if (!nav2_util::getCurrentPose(
@@ -90,8 +90,9 @@ inline BT::NodeStatus DistanceController::tick()
     const BT::NodeStatus child_state = child_node_->executeTick();
 
     switch (child_state) {
+      case BT::NodeStatus::SKIPPED:
       case BT::NodeStatus::RUNNING:
-        return BT::NodeStatus::RUNNING;
+        return child_state;
 
       case BT::NodeStatus::SUCCESS:
         if (!nav2_util::getCurrentPose(

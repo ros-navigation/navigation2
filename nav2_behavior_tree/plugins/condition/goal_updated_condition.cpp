@@ -28,7 +28,7 @@ GoalUpdatedCondition::GoalUpdatedCondition(
 
 BT::NodeStatus GoalUpdatedCondition::tick()
 {
-  if (status() == BT::NodeStatus::IDLE) {
+  if (!BT::isStatusActive(status())) {
     BT::getInputOrBlackboard("goals", goals_);
     BT::getInputOrBlackboard("goal", goal_);
     return BT::NodeStatus::FAILURE;

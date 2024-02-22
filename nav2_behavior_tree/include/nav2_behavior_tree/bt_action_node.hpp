@@ -188,7 +188,7 @@ public:
   BT::NodeStatus tick() override
   {
     // first step to be done only at the beginning of the Action
-    if (status() == BT::NodeStatus::IDLE) {
+    if (!BT::isStatusActive(status())) {
       // setting the status to RUNNING to notify the BT Loggers (if any)
       setStatus(BT::NodeStatus::RUNNING);
 

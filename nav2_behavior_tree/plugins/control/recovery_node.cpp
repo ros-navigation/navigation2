@@ -46,11 +46,13 @@ BT::NodeStatus RecoveryNode::tick()
     if (current_child_idx_ == 0) {
       switch (child_status) {
         case BT::NodeStatus::SUCCESS:
-          {
-            // reset node and return success when first child returns success
-            halt();
-            return BT::NodeStatus::SUCCESS;
-          }
+          // reset node and return success when first child returns success
+          halt();
+          return BT::NodeStatus::SUCCESS;
+
+        case BT::NodeStatus::SKIPPED:
+        case BT::NodeStatus::RUNNING:
+          return child_status;
 
         case BT::NodeStatus::FAILURE:
           {
@@ -66,19 +68,16 @@ BT::NodeStatus RecoveryNode::tick()
             }
           }
 
-        case BT::NodeStatus::RUNNING:
-          {
-            return BT::NodeStatus::RUNNING;
-          }
-
         default:
-          {
-            throw BT::LogicError("A child node must never return IDLE");
-          }
+          throw BT::LogicError("A child node must never return IDLE");
       }  // end switch
 
     } else if (current_child_idx_ == 1) {
       switch (child_status) {
+        case BT::NodeStatus::SKIPPED:
+        case BT::NodeStatus::RUNNING:
+          return child_status;
+
         case BT::NodeStatus::SUCCESS:
           {
             // halt second child, increment recovery count, and tick first child in next iteration
@@ -89,21 +88,12 @@ BT::NodeStatus RecoveryNode::tick()
           break;
 
         case BT::NodeStatus::FAILURE:
-          {
-            // reset node and return failure if second child fails
-            halt();
-            return BT::NodeStatus::FAILURE;
-          }
-
-        case BT::NodeStatus::RUNNING:
-          {
-            return BT::NodeStatus::RUNNING;
-          }
+          // reset node and return failure if second child fails
+          halt();
+          return BT::NodeStatus::FAILURE;
 
         default:
-          {
-            throw BT::LogicError("A child node must never return IDLE");
-          }
+          throw BT::LogicError("A child node must never return IDLE");
       }  // end switch
     }
   }  // end while loop

@@ -30,7 +30,7 @@ SingleTrigger::SingleTrigger(
 
 BT::NodeStatus SingleTrigger::tick()
 {
-  if (status() == BT::NodeStatus::IDLE) {
+  if (!BT::isStatusActive(status())) {
     first_time_ = true;
   }
 
@@ -40,16 +40,14 @@ BT::NodeStatus SingleTrigger::tick()
     const BT::NodeStatus child_state = child_node_->executeTick();
 
     switch (child_state) {
+      case BT::NodeStatus::SKIPPED:
       case BT::NodeStatus::RUNNING:
-        return BT::NodeStatus::RUNNING;
-
-      case BT::NodeStatus::SUCCESS:
-        first_time_ = false;
-        return BT::NodeStatus::SUCCESS;
+        return child_state;
 
       case BT::NodeStatus::FAILURE:
+      case BT::NodeStatus::SUCCESS:
         first_time_ = false;
-        return BT::NodeStatus::FAILURE;
+        return child_state;
 
       default:
         first_time_ = false;

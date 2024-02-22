@@ -37,7 +37,7 @@ BT::NodeStatus RoundRobinNode::tick()
 
   setStatus(BT::NodeStatus::RUNNING);
 
-  while (num_failed_children_ < num_children) {
+  while (num_failed_children_ + num_skipped_children_ < num_children) {
     TreeNode * child_node = children_nodes_[current_child_idx_];
     const BT::NodeStatus child_status = child_node->executeTick();
 
@@ -62,15 +62,18 @@ BT::NodeStatus RoundRobinNode::tick()
           break;
         }
 
-      case BT::NodeStatus::RUNNING:
-        {
-          return BT::NodeStatus::RUNNING;
+      case BT::NodeStatus::SKIPPED:
+        num_skipped_children_++;
+        // If all the children were skipped, this node is considered skipped
+        if (num_skipped_children_ == num_children) {
+          return BT::NodeStatus::SKIPPED;
         }
+        break;
+      case BT::NodeStatus::RUNNING:
+        return BT::NodeStatus::RUNNING;
 
       default:
-        {
-          throw BT::LogicError("Invalid status return from BT node");
-        }
+        throw BT::LogicError("Invalid status return from BT node");
     }
   }
 
@@ -83,6 +86,7 @@ void RoundRobinNode::halt()
   ControlNode::halt();
   current_child_idx_ = 0;
   num_failed_children_ = 0;
+  num_skipped_children_ = 0;
 }
 
 }  // namespace nav2_behavior_tree

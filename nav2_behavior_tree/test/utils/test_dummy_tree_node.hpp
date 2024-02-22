@@ -36,8 +36,8 @@ public:
 
   void changeStatus(BT::NodeStatus status)
   {
-    if(status == BT::NodeStatus::IDLE) {
-      resetStatus()
+    if (status == BT::NodeStatus::IDLE) {
+      resetStatus();
     } else {
       setStatus(status);
     }
