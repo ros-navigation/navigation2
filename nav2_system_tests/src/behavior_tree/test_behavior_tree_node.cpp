@@ -67,6 +67,8 @@ public:
     for (const auto & p : plugin_libs) {
       factory_.registerFromPlugin(BT::SharedLibrary::getOSName(p));
     }
+    // Allow the old name, for backward compatibility
+    factory_.registerNodeType<BT::SequenceWithMemory>("SequenceStar");
   }
 
   bool loadBehaviorTree(const std::string & filename)
