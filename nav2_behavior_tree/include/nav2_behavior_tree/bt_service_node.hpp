@@ -157,7 +157,6 @@ public:
   void halt() override
   {
     request_sent_ = false;
-    setStatus(BT::NodeStatus::IDLE);
   }
 
   /**

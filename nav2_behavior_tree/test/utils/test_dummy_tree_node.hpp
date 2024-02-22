@@ -36,7 +36,11 @@ public:
 
   void changeStatus(BT::NodeStatus status)
   {
-    setStatus(status);
+    if(status == BT::NodeStatus::IDLE) {
+      resetStatus()
+    } else {
+      setStatus(status);
+    }
   }
 
   BT::NodeStatus executeTick() override

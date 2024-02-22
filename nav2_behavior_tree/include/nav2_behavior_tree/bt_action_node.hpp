@@ -324,8 +324,6 @@ public:
 
       on_cancelled();
     }
-
-    setStatus(BT::NodeStatus::IDLE);
   }
 
 protected:
