@@ -10,6 +10,7 @@ find_package(rosidl_default_generators REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geographic_msgs)
 find_package(action_msgs REQUIRED)
+find_package(unique_identifier_msgs REQUIRED)
 
 nav2_package()
 
@@ -30,6 +31,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Particle.msg"
   "msg/ParticleCloud.msg"
   "msg/MissedWaypoint.msg"
+  "msg/PolygonVO.msg"
+  "msg/CircleVO.msg"
   "srv/GetCostmap.srv"
   "srv/IsPathValid.srv"
   "srv/ClearCostmapExceptRegion.srv"
@@ -38,6 +41,9 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/ManageLifecycleNodes.srv"
   "srv/LoadMap.srv"
   "srv/SaveMap.srv"
+  "srv/AddShapes.srv"
+  "srv/RemoveShapes.srv"
+  "srv/GetShapes.srv"
   "action/AssistedTeleop.action"
   "action/BackUp.action"
   "action/ComputePathToPose.action"
@@ -52,7 +58,14 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "action/DummyBehavior.action"
   "action/FollowWaypoints.action"
   "action/FollowGPSWaypoints.action"
-  DEPENDENCIES builtin_interfaces geometry_msgs std_msgs action_msgs nav_msgs geographic_msgs
+  DEPENDENCIES
+    builtin_interfaces
+    geometry_msgs
+    std_msgs
+    action_msgs
+    nav_msgs
+    geographic_msgs
+    unique_identifier_msgs
 )
 
 ament_export_dependencies(rosidl_default_runtime)

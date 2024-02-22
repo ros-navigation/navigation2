@@ -189,29 +189,6 @@ bool CostmapFilter::transformPose(
   return true;
 }
 
-bool CostmapFilter::worldToMask(
-  nav_msgs::msg::OccupancyGrid::ConstSharedPtr filter_mask,
-  double wx, double wy, unsigned int & mx, unsigned int & my) const
-{
-  const double origin_x = filter_mask->info.origin.position.x;
-  const double origin_y = filter_mask->info.origin.position.y;
-  const double resolution = filter_mask->info.resolution;
-  const unsigned int size_x = filter_mask->info.width;
-  const unsigned int size_y = filter_mask->info.height;
-
-  if (wx < origin_x || wy < origin_y) {
-    return false;
-  }
-
-  mx = static_cast<unsigned int>((wx - origin_x) / resolution);
-  my = static_cast<unsigned int>((wy - origin_y) / resolution);
-  if (mx >= size_x || my >= size_y) {
-    return false;
-  }
-
-  return true;
-}
-
 unsigned char CostmapFilter::getMaskCost(
   nav_msgs::msg::OccupancyGrid::ConstSharedPtr filter_mask,
   const unsigned int mx, const unsigned int & my) const

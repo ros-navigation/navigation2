@@ -185,34 +185,6 @@ protected:
     geometry_msgs::msg::Pose2D & mask_pose) const;
 
   /**
-   * @brief: Convert from world coordinates to mask coordinates.
-     Similar to Costmap2D::worldToMap() method but works directly with OccupancyGrid-s.
-   * @param  filter_mask Filter mask on which to convert
-   * @param  wx The x world coordinate
-   * @param  wy The y world coordinate
-   * @param  mx Will be set to the associated mask x coordinate
-   * @param  my Will be set to the associated mask y coordinate
-   * @return True if the conversion was successful (legal bounds) false otherwise
-   */
-  bool worldToMask(
-    nav_msgs::msg::OccupancyGrid::ConstSharedPtr filter_mask,
-    double wx, double wy, unsigned int & mx, unsigned int & my) const;
-
-  /**
-   * @brief  Get the data of a cell in the filter mask
-   * @param  filter_mask Filter mask to get the data from
-   * @param  mx The x coordinate of the cell
-   * @param  my The y coordinate of the cell
-   * @return The data of the selected cell
-   */
-  inline int8_t getMaskData(
-    nav_msgs::msg::OccupancyGrid::ConstSharedPtr filter_mask,
-    const unsigned int mx, const unsigned int my) const
-  {
-    return filter_mask->data[my * filter_mask->info.width + mx];
-  }
-
-  /**
    * @brief  Get the cost of a cell in the filter mask
    * @param  filter_mask Filter mask to get the cost from
    * @param  mx The x coordinate of the cell
