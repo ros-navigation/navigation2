@@ -18,6 +18,8 @@ find_package(tf2 REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
 find_package(yaml-cpp REQUIRED)
 
+pkg_search_module(UUID REQUIRED uuid)
+
 nav2_package()
 
 set(map_server_executable map_server)
@@ -31,6 +33,8 @@ set(map_saver_cli_executable map_saver_cli)
 set(map_saver_server_executable map_saver_server)
 
 set(costmap_filter_info_server_executable costmap_filter_info_server)
+
+set(vector_object_server_executable vector_object_server)
 
 add_library(${map_io_library_name} SHARED
   src/map_mode.cpp
@@ -134,6 +138,23 @@ target_link_libraries(${costmap_filter_info_server_executable} PRIVATE
   rclcpp_lifecycle::rclcpp_lifecycle
 )
 
+add_executable(${vector_object_server_executable}
+  src/vo_server/vector_object_shapes.cpp
+  src/vo_server/vector_object_server.cpp
+  src/vo_server/vector_object_server_node.cpp)
+target_include_directories(${vector_object_server_executable}
+  PRIVATE
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+target_link_libraries(${vector_object_server_executable} PRIVATE
+  ${nav_msgs_TARGETS}
+  ${nav2_msgs_TARGETS}
+  nav2_util::nav2_util_core
+  rclcpp::rclcpp
+  rclcpp_lifecycle::rclcpp_lifecycle
+  ${UUID_LIBRARIES}
+)
+
 rclcpp_components_register_nodes(${library_name} "nav2_map_server::CostmapFilterInfoServer")
 rclcpp_components_register_nodes(${library_name} "nav2_map_server::MapSaver")
 rclcpp_components_register_nodes(${library_name} "nav2_map_server::MapServer")
@@ -147,13 +168,14 @@ install(TARGETS
 
 install(TARGETS
     ${map_server_executable} ${map_saver_cli_executable} ${map_saver_server_executable}
-    ${costmap_filter_info_server_executable}
+    ${costmap_filter_info_server_executable} ${vector_object_server_executable}
   RUNTIME DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY include/
   DESTINATION include/${PROJECT_NAME})
 
 install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
+install(DIRECTORY params DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

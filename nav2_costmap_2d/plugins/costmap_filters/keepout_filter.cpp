@@ -35,14 +35,16 @@
  * Author: Alexey Merzlyakov
  *********************************************************************/
 
+#include "nav2_costmap_2d/costmap_filters/keepout_filter.hpp"
+
 #include <string>
 #include <memory>
 #include <algorithm>
 #include "tf2/convert.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
-#include "nav2_costmap_2d/costmap_filters/keepout_filter.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
+#include "nav2_util/occ_grid_utils.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -278,7 +280,7 @@ void KeepoutFilter::process(
         msk_wy = gl_wy;
       }
       // Get mask coordinates corresponding to (i, j) point at filter_mask_
-      if (worldToMask(filter_mask_, msk_wx, msk_wy, mx, my)) {
+      if (nav2_util::worldToMap(filter_mask_, msk_wx, msk_wy, mx, my)) {
         data = getMaskCost(filter_mask_, mx, my);
         // Update if mask_ data is valid and greater than existing master_grid's one
         if (data == NO_INFORMATION) {
