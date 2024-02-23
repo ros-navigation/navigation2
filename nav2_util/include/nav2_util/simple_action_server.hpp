@@ -574,7 +574,7 @@ protected:
    * @param the Results object to terminate the action with
    */
   void terminate(
-    std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>> handle,
+    std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>> & handle,
     typename std::shared_ptr<typename ActionT::Result> result =
     std::make_shared<typename ActionT::Result>())
   {
