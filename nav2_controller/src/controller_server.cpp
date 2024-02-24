@@ -228,7 +228,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
         controller_ids_[i].c_str(), controller_types_[i].c_str());
           controller->configure(
             node, controller_ids_[i],
-            narrow_costmap_ros_->getTfBuffer(), narrow_costmap_ros_, sensor_costmap_ros_);
+            narrow_costmap_ros_->getTfBuffer(), narrow_costmap_ros_);
         } else {
 
         RCLCPP_INFO(
@@ -236,7 +236,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
           controller_ids_[i].c_str(), controller_types_[i].c_str());
           controller->configure(
             node, controller_ids_[i],
-            costmap_ros_->getTfBuffer(), costmap_ros_, sensor_costmap_ros_);
+            costmap_ros_->getTfBuffer(), costmap_ros_);
         }
       controllers_.insert({controller_ids_[i], controller});
     } catch (const pluginlib::PluginlibException & ex) {
