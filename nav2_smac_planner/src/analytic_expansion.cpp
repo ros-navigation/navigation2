@@ -189,6 +189,10 @@ typename AnalyticExpansion<NodeT>::AnalyticExpansionNodes AnalyticExpansion<Node
 
   // A move of sqrt(2) is guaranteed to be in a new cell
   static const float sqrt_2 = std::sqrt(2.0f);
+  if (d < sqrt_2) {
+    return AnalyticExpansionNodes();
+  }
+
   unsigned int num_intervals = static_cast<unsigned int>(std::floor(d / sqrt_2));
 
   AnalyticExpansionNodes possible_nodes;
@@ -248,7 +252,8 @@ typename AnalyticExpansion<NodeT>::AnalyticExpansionNodes AnalyticExpansion<Node
   if (!failure) {
     // We found 'a' valid expansion. Now to tell if its a quality option...
     const float max_cost = _search_info.analytic_expansion_max_cost;
-    if (*std::max_element(node_costs.begin(), node_costs.end()) > max_cost) {
+    auto max_cost_it = std::max_element(node_costs.begin(), node_costs.end());
+    if (max_cost_it != node_costs.end() && *max_cost_it > max_cost) {
       // If any element is above the comfortable cost limit, check edge cases:
       // (1) Check if goal is in greater than max_cost space requiring
       //  entering it, but only entering it on final approach, not in-and-out
