@@ -41,11 +41,8 @@ void SimpleProgressChecker::initialize(
     node, plugin_name + ".required_movement_radius", rclcpp::ParameterValue(0.5));
   nav2_util::declare_parameter_if_not_declared(
     node, plugin_name + ".movement_time_allowance", rclcpp::ParameterValue(10.0));
-  nav2_util::declare_parameter_if_not_declared(
-    node, plugin_name + ".idle_speed", rclcpp::ParameterValue(0.05));
   // Scale is set to 0 by default, so if it was not set otherwise, set to 0
   node->get_parameter_or(plugin_name + ".required_movement_radius", radius_, 0.5);
-  node->get_parameter_or(plugin_name + ".idle_speed", idle_speed_, 0.05);
   double time_allowance_param = 0.0;
   node->get_parameter_or(plugin_name + ".movement_time_allowance", time_allowance_param, 10.0);
   time_allowance_ = rclcpp::Duration::from_seconds(time_allowance_param);
@@ -55,7 +52,7 @@ void SimpleProgressChecker::initialize(
     std::bind(&SimpleProgressChecker::dynamicParametersCallback, this, _1));
 }
 
-bool SimpleProgressChecker::check(geometry_msgs::msg::PoseStamped & current_pose, geometry_msgs::msg::TwistStamped & cmd_vel_2d)
+bool SimpleProgressChecker::check(geometry_msgs::msg::PoseStamped & current_pose)
 {
   // relies on short circuit evaluation to not call is_robot_moved_enough if
   // baseline_pose is not set.
@@ -63,9 +60,6 @@ bool SimpleProgressChecker::check(geometry_msgs::msg::PoseStamped & current_pose
   current_pose2d = nav_2d_utils::poseToPose2D(current_pose.pose);
 
   if ((!baseline_pose_set_) || (isRobotMovedEnough(current_pose2d))) {
-    resetBaselinePose(current_pose2d);
-    return true;
-  } else if(cmd_vel_2d.twist.linear.x*cmd_vel_2d.twist.linear.x + cmd_vel_2d.twist.angular.z*cmd_vel_2d.twist.angular.z < idle_speed_){
     resetBaselinePose(current_pose2d);
     return true;
   }

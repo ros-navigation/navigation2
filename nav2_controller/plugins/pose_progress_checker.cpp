@@ -47,7 +47,7 @@ void PoseProgressChecker::initialize(
     std::bind(&PoseProgressChecker::dynamicParametersCallback, this, _1));
 }
 
-bool PoseProgressChecker::check(geometry_msgs::msg::PoseStamped & current_pose, geometry_msgs::msg::TwistStamped &)
+bool PoseProgressChecker::check(geometry_msgs::msg::PoseStamped & current_pose)
 {
   // relies on short circuit evaluation to not call is_robot_moved_enough if
   // baseline_pose is not set.

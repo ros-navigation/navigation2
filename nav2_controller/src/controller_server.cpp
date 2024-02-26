@@ -74,7 +74,7 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
     "narrow_local_costmap", std::string{get_namespace()}, "narrow_local_costmap",
     get_parameter("use_sim_time").as_bool(), options.use_intra_process_comms());
 
-  // The costmap node is used in the implementation of the controller to cut paths based on sensor realtime data
+  // The costmap node is used by BT to validate that a path can be driven on
   sensor_costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "sensor_local_costmap", std::string{get_namespace()}, "sensor_local_costmap",
     get_parameter("use_sim_time").as_bool(), options.use_intra_process_comms());
@@ -663,6 +663,10 @@ void ControllerServer::computeAndPublishVelocity()
     throw nav2_core::ControllerTFError("Failed to obtain robot pose");
   }
 
+  if (!progress_checkers_[current_progress_checker_]->check(pose)) {
+    throw nav2_core::FailedToMakeProgress("Failed to make progress");
+  }
+
   nav_2d_msgs::msg::Twist2D twist = getThresholdedTwist(odom_sub_->getTwist());
 
   geometry_msgs::msg::TwistStamped cmd_vel_2d;
@@ -696,12 +700,6 @@ void ControllerServer::computeAndPublishVelocity()
       throw nav2_core::NoValidControl(e.what());
     }
   }
-
-
-  if (!progress_checkers_[current_progress_checker_]->check(pose, cmd_vel_2d)) {
-    throw nav2_core::FailedToMakeProgress("Failed to make progress");
-  }
-
 
   std::shared_ptr<Action::Feedback> feedback = std::make_shared<Action::Feedback>();
   feedback->speed = std::hypot(cmd_vel_2d.twist.linear.x, cmd_vel_2d.twist.linear.y);

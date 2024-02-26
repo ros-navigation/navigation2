@@ -21,7 +21,6 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "geometry_msgs/msg/twist_stamped.hpp"
 #include "geometry_msgs/msg/pose2_d.hpp"
 
 namespace nav2_core
@@ -52,7 +51,7 @@ public:
    * @param current_pose Current pose of the robot
    * @return True if progress is made
    */
-  virtual bool check(geometry_msgs::msg::PoseStamped & current_pose, geometry_msgs::msg::TwistStamped & cmd_vel_2d) = 0;
+  virtual bool check(geometry_msgs::msg::PoseStamped & current_pose) = 0;
   /**
    * @brief Reset class state upon calling
    */
