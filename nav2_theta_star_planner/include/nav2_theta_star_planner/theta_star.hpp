@@ -76,6 +76,8 @@ public:
   bool allow_unknown_;
   /// the x-directional and y-directional lengths of the map respectively
   int size_x_, size_y_;
+  /// the interval at which the planner checks if it has been cancelled
+  int terminal_checking_interval_;
 
   ThetaStar();
 
@@ -87,7 +89,7 @@ public:
    * @param raw_path is used to return the path obtained by executing the algorithm
    * @return true if a path is found, false if no path is found in between the start and goal pose
    */
-  bool generatePath(std::vector<coordsW> & raw_path);
+  bool generatePath(std::vector<coordsW> & raw_path, std::function<bool()> cancel_checker);
 
   /**
    * @brief this function checks whether the cost of a point(cx, cy) on the costmap is less than the LETHAL_COST
