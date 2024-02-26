@@ -35,7 +35,7 @@ public:
   void initialize(
     const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
     const std::string & plugin_name) override;
-  bool check(geometry_msgs::msg::PoseStamped & current_pose, geometry_msgs::msg::TwistStamped & cmd_vel_2d) override;
+  bool check(geometry_msgs::msg::PoseStamped & current_pose) override;
 
 protected:
   /**
