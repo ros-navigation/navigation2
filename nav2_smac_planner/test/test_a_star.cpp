@@ -67,6 +67,10 @@ TEST(AStarTest, test_a_star_2d)
   auto costmap = costmap_ros->getCostmap();
   *costmap = *costmapA;
 
+  auto dummy_cancel_checker = []() {
+      return false;
+    };
+
   // functional case testing
   std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
     std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, 1, lnode);
@@ -75,7 +79,7 @@ TEST(AStarTest, test_a_star_2d)
   a_star.setStart(20u, 20u, 0);
   a_star.setGoal(80u, 80u, 0);
   nav2_smac_planner::Node2D::CoordinateVector path;
-  EXPECT_TRUE(a_star.createPath(path, num_it, tolerance));
+  EXPECT_TRUE(a_star.createPath(path, num_it, tolerance, dummy_cancel_checker));
   EXPECT_EQ(num_it, 2414);
 
   // check path is the right size and collision free
@@ -94,19 +98,28 @@ TEST(AStarTest, test_a_star_2d)
     nav2_smac_planner::MotionModel::TWOD, info);
   a_star_2.initialize(false, max_iterations, it_on_approach, max_planning_time, 0, 1);
   num_it = 0;
-  EXPECT_THROW(a_star_2.createPath(path, num_it, tolerance), std::runtime_error);
+  EXPECT_THROW(
+    a_star_2.createPath(
+      path, num_it, tolerance,
+      dummy_cancel_checker), std::runtime_error);
   a_star_2.setCollisionChecker(checker.get());
   num_it = 0;
-  EXPECT_THROW(a_star_2.createPath(path, num_it, tolerance), std::runtime_error);
+  EXPECT_THROW(
+    a_star_2.createPath(
+      path, num_it, tolerance,
+      dummy_cancel_checker), std::runtime_error);
   a_star_2.setStart(0, 0, 0);  // valid
   a_star_2.setGoal(50, 50, 0);  // invalid
   num_it = 0;
-  EXPECT_THROW(a_star_2.createPath(path, num_it, tolerance), std::runtime_error);
+  EXPECT_THROW(
+    a_star_2.createPath(
+      path, num_it, tolerance,
+      dummy_cancel_checker), std::runtime_error);
   num_it = 0;
   // invalid goal but liberal tolerance
   a_star_2.setStart(20, 20, 0);  // valid
   a_star_2.setGoal(50, 50, 0);  // invalid
-  EXPECT_TRUE(a_star_2.createPath(path, num_it, some_tolerance));
+  EXPECT_TRUE(a_star_2.createPath(path, num_it, some_tolerance, dummy_cancel_checker));
   EXPECT_EQ(path.size(), 21u);
   for (unsigned int i = 0; i != path.size(); i++) {
     EXPECT_EQ(costmapA->getCost(path[i].x, path[i].y), 0);
@@ -173,7 +186,11 @@ TEST(AStarTest, test_a_star_se2)
   std::unique_ptr<std::vector<std::tuple<float, float, float>>> expansions = nullptr;
   expansions = std::make_unique<std::vector<std::tuple<float, float, float>>>();
 
-  EXPECT_TRUE(a_star.createPath(path, num_it, tolerance, expansions.get()));
+  auto dummy_cancel_checker = []() {
+      return false;
+    };
+
+  EXPECT_TRUE(a_star.createPath(path, num_it, tolerance, dummy_cancel_checker, expansions.get()));
 
   // check path is the right size and collision free
   EXPECT_EQ(num_it, 3146);
@@ -239,12 +256,16 @@ TEST(AStarTest, test_a_star_lattice)
     std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, size_theta, lnode);
   checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
 
+  auto dummy_cancel_checker = []() {
+      return false;
+    };
+
   // functional case testing
   a_star.setCollisionChecker(checker.get());
   a_star.setStart(5u, 5u, 0u);
   a_star.setGoal(40u, 40u, 1u);
   nav2_smac_planner::NodeLattice::CoordinateVector path;
-  EXPECT_TRUE(a_star.createPath(path, num_it, tolerance));
+  EXPECT_TRUE(a_star.createPath(path, num_it, tolerance, dummy_cancel_checker));
 
   // check path is the right size and collision free
   EXPECT_EQ(num_it, 22);
@@ -296,13 +317,16 @@ TEST(AStarTest, test_se2_single_pose_path)
     std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, size_theta, lnode);
   checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
 
+  auto dummy_cancel_checker = []() {
+      return false;
+    };
   // functional case testing
   a_star.setCollisionChecker(checker.get());
   a_star.setStart(10u, 10u, 0u);
   // Goal is one costmap cell away
   a_star.setGoal(12u, 10u, 0u);
   nav2_smac_planner::NodeHybrid::CoordinateVector path;
-  EXPECT_TRUE(a_star.createPath(path, num_it, tolerance));
+  EXPECT_TRUE(a_star.createPath(path, num_it, tolerance, dummy_cancel_checker));
 
   // Check that the path is length one
   // With the current implementation, this produces a longer path

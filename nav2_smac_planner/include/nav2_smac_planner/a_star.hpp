@@ -104,11 +104,13 @@ public:
    * @param path Reference to a vector of indicies of generated path
    * @param num_iterations Reference to number of iterations to create plan
    * @param tolerance Reference to tolerance in costmap nodes
+   * @param cancel_checker Function to check if the task has been canceled
    * @param expansions_log Optional expansions logged for debug
    * @return if plan was successful
    */
   bool createPath(
     CoordinateVector & path, int & num_iterations, const float & tolerance,
+    std::function<bool()> cancel_checker,
     std::vector<std::tuple<float, float, float>> * expansions_log = nullptr);
 
   /**
@@ -251,6 +253,8 @@ protected:
   void clearStart();
 
   int _timing_interval = 5000;
+  int _cancel_check_interval = 500;
+
 
   bool _traverse_unknown;
   int _max_iterations;

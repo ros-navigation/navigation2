@@ -192,7 +192,8 @@ void SmacPlanner2D::cleanup()
 
 nav_msgs::msg::Path SmacPlanner2D::createPlan(
   const geometry_msgs::msg::PoseStamped & start,
-  const geometry_msgs::msg::PoseStamped & goal)
+  const geometry_msgs::msg::PoseStamped & goal,
+  std::function<bool()> cancel_checker)
 {
   std::lock_guard<std::mutex> lock_reinit(_mutex);
   steady_clock::time_point a = steady_clock::now();
@@ -257,7 +258,7 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
   // Note: All exceptions thrown are handled by the planner server and returned to the action
   if (!_a_star->createPath(
       path, num_iterations,
-      _tolerance / static_cast<float>(costmap->getResolution())))
+      _tolerance / static_cast<float>(costmap->getResolution()), cancel_checker))
   {
     // Note: If the start is blocked only one iteration will occur before failure
     if (num_iterations == 1) {

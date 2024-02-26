@@ -105,12 +105,16 @@ TEST(SmootherTest, test_full_smoother)
     std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, size_theta, node);
   checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
 
+  auto dummy_cancel_checker = []() {
+      return false;
+    };
+
   // Create A* search to smooth
   a_star.setCollisionChecker(checker.get());
   a_star.setStart(5u, 5u, 0u);
   a_star.setGoal(45u, 45u, 36u);
   nav2_smac_planner::NodeHybrid::CoordinateVector path;
-  EXPECT_TRUE(a_star.createPath(path, num_it, tolerance));
+  EXPECT_TRUE(a_star.createPath(path, num_it, tolerance, dummy_cancel_checker));
 
   // Convert to world coordinates and get length to compare to smoothed length
   nav_msgs::msg::Path plan;

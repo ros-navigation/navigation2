@@ -245,6 +245,7 @@ template<typename NodeT>
 bool AStarAlgorithm<NodeT>::createPath(
   CoordinateVector & path, int & iterations,
   const float & tolerance,
+  std::function<bool()> cancel_checker,
   std::vector<std::tuple<float, float, float>> * expansions_log)
 {
   steady_clock::time_point start_time = steady_clock::now();
@@ -292,6 +293,11 @@ bool AStarAlgorithm<NodeT>::createPath(
       if (static_cast<double>(planning_duration.count()) >= _max_planning_time) {
         return false;
       }
+    }
+
+    // Check for cancel every Nth iteration
+    if (iterations % _cancel_check_interval == 0 && cancel_checker()) {
+      throw nav2_core::PlannerCancelled("Planner was cancelled");
     }
 
     // 1) Pick Nbest from O s.t. min(f(Nbest)), remove from queue

@@ -57,6 +57,10 @@ TEST(SmacTest, test_smac_2d) {
   node2D->declare_parameter("test.downsampling_factor", 2);
   node2D->set_parameter(rclcpp::Parameter("test.downsampling_factor", 2));
 
+  auto dummy_cancel_checker = []() {
+      return false;
+    };
+
   geometry_msgs::msg::PoseStamped start, goal;
   start.pose.position.x = 0.0;
   start.pose.position.y = 0.0;
@@ -69,7 +73,7 @@ TEST(SmacTest, test_smac_2d) {
   planner_2d->configure(node2D, "test", nullptr, costmap_ros);
   planner_2d->activate();
   try {
-    planner_2d->createPlan(start, goal);
+    planner_2d->createPlan(start, goal, dummy_cancel_checker);
   } catch (...) {
   }
 

@@ -56,6 +56,10 @@ TEST(SmacTest, test_smac_se2)
   nodeSE2->declare_parameter("test.downsampling_factor", 2);
   nodeSE2->set_parameter(rclcpp::Parameter("test.downsampling_factor", 2));
 
+  auto dummy_cancel_checker = []() {
+      return false;
+    };
+
   geometry_msgs::msg::PoseStamped start, goal;
   start.pose.position.x = 0.0;
   start.pose.position.y = 0.0;
@@ -68,7 +72,7 @@ TEST(SmacTest, test_smac_se2)
   planner->activate();
 
   try {
-    planner->createPlan(start, goal);
+    planner->createPlan(start, goal, dummy_cancel_checker);
   } catch (...) {
   }
 
