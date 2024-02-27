@@ -179,17 +179,14 @@ typename AnalyticExpansion<NodeT>::AnalyticExpansionNodes AnalyticExpansion<Node
 
   float d = state_space->distance(from(), to());
 
+  // A move of sqrt(2) is guaranteed to be in a new cell
+  static const float sqrt_2 = std::sqrt(2.0f);
+
   // If the length is too far, exit. This prevents unsafe shortcutting of paths
   // into higher cost areas far out from the goal itself, let search to the work of getting
   // close before the analytic expansion brings it home. This should never be smaller than
   // 4-5x the minimum turning radius being used, or planning times will begin to spike.
-  if (d > _search_info.analytic_expansion_max_length) {
-    return AnalyticExpansionNodes();
-  }
-
-  // A move of sqrt(2) is guaranteed to be in a new cell
-  static const float sqrt_2 = std::sqrt(2.0f);
-  if (d < sqrt_2) {
+  if (d > _search_info.analytic_expansion_max_length || d < sqrt_2) {
     return AnalyticExpansionNodes();
   }
 
