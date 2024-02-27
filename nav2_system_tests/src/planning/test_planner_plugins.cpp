@@ -57,9 +57,11 @@ void testSmallPathValidityAndOrientation(std::string plugin, double length)
   goal.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(-M_PI);
   goal.header.frame_id = "map";
 
+  auto dummy_cancel_checker = []() {return false;};
+
   // Test without use_final_approach_orientation
   // expecting end path pose orientation to be equal to goal orientation
-  auto path = obj->getPlan(start, goal, "GridBased");
+  auto path = obj->getPlan(start, goal, "GridBased", dummy_cancel_checker);
   EXPECT_GT((int)path.poses.size(), 0);
   EXPECT_NEAR(tf2::getYaw(path.poses.back().pose.orientation), -M_PI, 0.01);
   // obj->onCleanup(state);
@@ -93,7 +95,9 @@ void testSmallPathValidityAndNoOrientation(std::string plugin, double length)
   goal.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(-M_PI);
   goal.header.frame_id = "map";
 
-  auto path = obj->getPlan(start, goal, "GridBased");
+  auto dummy_cancel_checker = []() {return false;};
+
+  auto path = obj->getPlan(start, goal, "GridBased", dummy_cancel_checker);
   EXPECT_GT((int)path.poses.size(), 0);
 
   int path_size = path.poses.size();
@@ -127,11 +131,14 @@ TEST(testPluginMap, Failures)
   geometry_msgs::msg::PoseStamped goal;
   std::string plugin_fake = "fake";
   std::string plugin_none = "";
-  auto path = obj->getPlan(start, goal, plugin_none);
+
+  auto dummy_cancel_checker = []() {return false;};
+
+  auto path = obj->getPlan(start, goal, plugin_none, dummy_cancel_checker);
   EXPECT_EQ(path.header.frame_id, std::string("map"));
 
   try {
-    path = obj->getPlan(start, goal, plugin_fake);
+    path = obj->getPlan(start, goal, plugin_fake, dummy_cancel_checker);
     FAIL() << "Failed to throw invalid planner id exception";
   } catch (const nav2_core::InvalidPlanner & ex) {
     EXPECT_EQ(ex.what(), std::string("Planner id fake is invalid"));
