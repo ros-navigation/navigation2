@@ -150,7 +150,7 @@ TEST_F(RecoveryNodeTestFixture, test_skipping)
   first_child_->changeStatus(BT::NodeStatus::SKIPPED);
   second_child_->changeStatus(BT::NodeStatus::SUCCESS);
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SKIPPED);
-  EXPECT_EQ(bt_node_->status(), BT::NodeStatus::SKIPPED);
+  EXPECT_EQ(bt_node_->status(), BT::NodeStatus::IDLE);
   EXPECT_EQ(first_child_->status(), BT::NodeStatus::IDLE);
   EXPECT_EQ(second_child_->status(), BT::NodeStatus::IDLE);
 

@@ -41,13 +41,16 @@ BT::NodeStatus RoundRobinNode::tick()
     TreeNode * child_node = children_nodes_[current_child_idx_];
     const BT::NodeStatus child_status = child_node->executeTick();
 
+    if (child_status != BT::NodeStatus::RUNNING) {
+      // Increment index and wrap around to the first child
+      if (++current_child_idx_ == num_children) {
+        current_child_idx_ = 0;
+      }
+    }
+
     switch (child_status) {
       case BT::NodeStatus::SUCCESS:
         {
-          // Wrap around to the first child
-          if (++current_child_idx_ >= num_children) {
-            current_child_idx_ = 0;
-          }
           num_failed_children_ = 0;
           num_skipped_children_ = 0;
           ControlNode::haltChildren();
@@ -56,21 +59,15 @@ BT::NodeStatus RoundRobinNode::tick()
 
       case BT::NodeStatus::FAILURE:
         {
-          if (++current_child_idx_ >= num_children) {
-            current_child_idx_ = 0;
-          }
           num_failed_children_++;
           break;
         }
 
       case BT::NodeStatus::SKIPPED:
-        num_skipped_children_++;
-        // If all the children were skipped, this node is considered skipped
-        if (num_skipped_children_ == num_children) {
-          halt();
-          return BT::NodeStatus::SKIPPED;
+        {
+          num_skipped_children_++;
+          break;
         }
-        break;
       case BT::NodeStatus::RUNNING:
         return BT::NodeStatus::RUNNING;
 
@@ -79,8 +76,10 @@ BT::NodeStatus RoundRobinNode::tick()
     }
   }
 
+  const bool all_skipped = (num_skipped_children_ == num_children);
   halt();
-  return BT::NodeStatus::FAILURE;
+  // If all the children were skipped, this node is considered skipped
+  return all_skipped ? BT::NodeStatus::SKIPPED : BT::NodeStatus::FAILURE;
 }
 
 void RoundRobinNode::halt()
