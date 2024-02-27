@@ -582,7 +582,7 @@ NavFn::propNavFnDijkstra(int cycles, std::function<bool()> cancelChecker, bool a
   int startCell = start[1] * nx + start[0];
 
   for (; cycle < cycles; cycle++) {  // go for this many cycles, unless interrupted
-    if (cycle % cancel_check_interval == 0 && cancelChecker()) {
+    if (cycle % terminal_checking_interval == 0 && cancelChecker()) {
       throw nav2_core::PlannerCancelled("Planner was cancelled");
     }
 
@@ -672,7 +672,7 @@ NavFn::propNavFnAstar(int cycles, std::function<bool()> cancelChecker)
 
   // do main cycle
   for (; cycle < cycles; cycle++) {  // go for this many cycles, unless interrupted
-    if (cycle % cancel_check_interval == 0 && cancelChecker()) {
+    if (cycle % terminal_checking_interval == 0 && cancelChecker()) {
       throw nav2_core::PlannerCancelled("Planner was cancelled");
     }
 

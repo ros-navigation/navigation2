@@ -37,6 +37,7 @@ AStarAlgorithm<NodeT>::AStarAlgorithm(
   const SearchInfo & search_info)
 : _traverse_unknown(true),
   _max_iterations(0),
+  _terminal_checking_interval(500),
   _max_planning_time(0),
   _x_size(0),
   _y_size(0),
@@ -59,6 +60,7 @@ void AStarAlgorithm<NodeT>::initialize(
   const bool & allow_unknown,
   int & max_iterations,
   const int & max_on_approach_iterations,
+  const int & terminal_checking_interval,
   const double & max_planning_time,
   const float & lookup_table_size,
   const unsigned int & dim_3_size)
@@ -66,6 +68,7 @@ void AStarAlgorithm<NodeT>::initialize(
   _traverse_unknown = allow_unknown;
   _max_iterations = max_iterations;
   _max_on_approach_iterations = max_on_approach_iterations;
+  _terminal_checking_interval = terminal_checking_interval;
   _max_planning_time = max_planning_time;
   NodeT::precomputeDistanceHeuristic(lookup_table_size, _motion_model, dim_3_size, _search_info);
   _dim3_size = dim_3_size;
@@ -78,6 +81,7 @@ void AStarAlgorithm<Node2D>::initialize(
   const bool & allow_unknown,
   int & max_iterations,
   const int & max_on_approach_iterations,
+  const int & terminal_checking_interval,
   const double & max_planning_time,
   const float & /*lookup_table_size*/,
   const unsigned int & dim_3_size)
@@ -85,6 +89,7 @@ void AStarAlgorithm<Node2D>::initialize(
   _traverse_unknown = allow_unknown;
   _max_iterations = max_iterations;
   _max_on_approach_iterations = max_on_approach_iterations;
+  _terminal_checking_interval = terminal_checking_interval;
   _max_planning_time = max_planning_time;
 
   if (dim_3_size != 1) {
@@ -296,7 +301,7 @@ bool AStarAlgorithm<NodeT>::createPath(
     }
 
     // Check for cancel every Nth iteration
-    if (iterations % _cancel_check_interval == 0 && cancel_checker()) {
+    if (iterations % _terminal_checking_interval == 0 && cancel_checker()) {
       throw nav2_core::PlannerCancelled("Planner was cancelled");
     }
 

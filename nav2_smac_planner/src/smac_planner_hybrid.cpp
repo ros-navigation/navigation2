@@ -95,6 +95,9 @@ void SmacPlannerHybrid::configure(
     node, name + ".max_on_approach_iterations", rclcpp::ParameterValue(1000));
   node->get_parameter(name + ".max_on_approach_iterations", _max_on_approach_iterations);
   nav2_util::declare_parameter_if_not_declared(
+    node, name + ".terminal_checking_interval", rclcpp::ParameterValue(500));
+  node->get_parameter(name + ".terminal_checking_interval", _terminal_checking_interval);
+  nav2_util::declare_parameter_if_not_declared(
     node, name + ".smooth_path", rclcpp::ParameterValue(true));
   node->get_parameter(name + ".smooth_path", smooth_path);
 
@@ -228,6 +231,7 @@ void SmacPlannerHybrid::configure(
     _allow_unknown,
     _max_iterations,
     _max_on_approach_iterations,
+    _terminal_checking_interval,
     _max_planning_time,
     _lookup_table_dim,
     _angle_quantizations);
@@ -599,6 +603,9 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
             "disabling tolerance and on approach iterations.");
           _max_on_approach_iterations = std::numeric_limits<int>::max();
         }
+      } else if (name == _name + ".terminal_checking_interval") {
+        reinit_a_star = true;
+        _terminal_checking_interval = parameter.as_int();
       } else if (name == _name + ".angle_quantization_bins") {
         reinit_collision_checker = true;
         reinit_a_star = true;
@@ -654,6 +661,7 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
         _allow_unknown,
         _max_iterations,
         _max_on_approach_iterations,
+        _terminal_checking_interval,
         _max_planning_time,
         _lookup_table_dim,
         _angle_quantizations);

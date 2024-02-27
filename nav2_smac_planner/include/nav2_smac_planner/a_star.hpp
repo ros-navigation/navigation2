@@ -88,6 +88,7 @@ public:
    * @param max_on_approach_iterations Maximum number of iterations before returning a valid
    * path once within thresholds to refine path
    * comes at more compute time but smoother paths.
+   * @param terminal_checking_interval Number of iterations to check if the task has been canceled
    * @param max_planning_time Maximum time (in seconds) to wait for a plan, createPath returns
    * false after this timeout
    */
@@ -95,6 +96,7 @@ public:
     const bool & allow_unknown,
     int & max_iterations,
     const int & max_on_approach_iterations,
+    const int & terminal_checking_interval,
     const double & max_planning_time,
     const float & lookup_table_size,
     const unsigned int & dim_3_size);
@@ -253,12 +255,12 @@ protected:
   void clearStart();
 
   int _timing_interval = 5000;
-  int _cancel_check_interval = 500;
 
 
   bool _traverse_unknown;
   int _max_iterations;
   int _max_on_approach_iterations;
+  int _terminal_checking_interval;
   double _max_planning_time;
   float _tolerance;
   unsigned int _x_size;

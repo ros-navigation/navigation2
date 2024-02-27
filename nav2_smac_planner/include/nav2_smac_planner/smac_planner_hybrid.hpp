@@ -115,6 +115,7 @@ protected:
   bool _allow_unknown;
   int _max_iterations;
   int _max_on_approach_iterations;
+  int _terminal_checking_interval;
   SearchInfo _search_info;
   double _max_planning_time;
   double _lookup_table_size;

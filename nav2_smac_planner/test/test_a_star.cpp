@@ -47,10 +47,13 @@ TEST(AStarTest, test_a_star_2d)
   float tolerance = 0.0;
   float some_tolerance = 20.0;
   int it_on_approach = 10;
+  int terminal_checking_interval = 500;
   double max_planning_time = 120.0;
   int num_it = 0;
 
-  a_star.initialize(false, max_iterations, it_on_approach, max_planning_time, 0.0, 1);
+  a_star.initialize(
+    false, max_iterations, it_on_approach, terminal_checking_interval,
+    max_planning_time, 0.0, 1);
 
   nav2_costmap_2d::Costmap2D * costmapA =
     new nav2_costmap_2d::Costmap2D(100, 100, 0.1, 0.0, 0.0, 0);
@@ -96,7 +99,9 @@ TEST(AStarTest, test_a_star_2d)
   // failure cases with invalid inputs
   nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::Node2D> a_star_2(
     nav2_smac_planner::MotionModel::TWOD, info);
-  a_star_2.initialize(false, max_iterations, it_on_approach, max_planning_time, 0, 1);
+  a_star_2.initialize(
+    false, max_iterations, it_on_approach, terminal_checking_interval,
+    max_planning_time, 0, 1);
   num_it = 0;
   EXPECT_THROW(
     a_star_2.createPath(
@@ -154,10 +159,13 @@ TEST(AStarTest, test_a_star_se2)
   int max_iterations = 10000;
   float tolerance = 10.0;
   int it_on_approach = 10;
+  int terminal_checking_interval = 500;
   double max_planning_time = 120.0;
   int num_it = 0;
 
-  a_star.initialize(false, max_iterations, it_on_approach, max_planning_time, 401, size_theta);
+  a_star.initialize(
+    false, max_iterations, it_on_approach, terminal_checking_interval,
+    max_planning_time, 401, size_theta);
 
   nav2_costmap_2d::Costmap2D * costmapA =
     new nav2_costmap_2d::Costmap2D(100, 100, 0.1, 0.0, 0.0, 0);
@@ -231,11 +239,14 @@ TEST(AStarTest, test_a_star_lattice)
   int max_iterations = 10000;
   float tolerance = 10.0;
   int it_on_approach = 10;
+  int terminal_checking_interval = 500;
   double max_planning_time = 120.0;
   int num_it = 0;
 
   a_star.initialize(
-    false, max_iterations, std::numeric_limits<int>::max(), max_planning_time, 401, size_theta);
+    false, max_iterations,
+    std::numeric_limits<int>::max(), terminal_checking_interval, max_planning_time, 401,
+    size_theta);
 
   nav2_costmap_2d::Costmap2D * costmapA =
     new nav2_costmap_2d::Costmap2D(100, 100, 0.05, 0.0, 0.0, 0);
@@ -299,10 +310,13 @@ TEST(AStarTest, test_se2_single_pose_path)
   int max_iterations = 100;
   float tolerance = 10.0;
   int it_on_approach = 10;
+  int terminal_checking_interval = 500;
   double max_planning_time = 120.0;
   int num_it = 0;
 
-  a_star.initialize(false, max_iterations, it_on_approach, max_planning_time, 401, size_theta);
+  a_star.initialize(
+    false, max_iterations, it_on_approach, terminal_checking_interval,
+    max_planning_time, 401, size_theta);
 
   nav2_costmap_2d::Costmap2D * costmapA =
     new nav2_costmap_2d::Costmap2D(100, 100, 0.1, 0.0, 0.0, 0);

@@ -183,7 +183,7 @@ public:
   float priInc;  /**< priority threshold increment */
 
   /**< number of cycles between checks for cancellation */
-  int cancel_check_interval;
+  static constexpr int terminal_checking_interval = 500;
 
   /** goal and start positions */
   /**

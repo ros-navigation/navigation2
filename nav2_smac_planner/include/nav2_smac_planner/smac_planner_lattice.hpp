@@ -110,6 +110,7 @@ protected:
   bool _allow_unknown;
   int _max_iterations;
   int _max_on_approach_iterations;
+  int _terminal_checking_interval;
   float _tolerance;
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr _raw_plan_publisher;
   double _max_planning_time;
