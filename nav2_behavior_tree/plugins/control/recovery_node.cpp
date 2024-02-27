@@ -45,14 +45,18 @@ BT::NodeStatus RecoveryNode::tick()
 
     if (current_child_idx_ == 0) {
       switch (child_status) {
+        case BT::NodeStatus::SKIPPED:
+          // If first child is skipped, the entire branch is considered skipped
+          halt();
+          return BT::NodeStatus::SKIPPED
+
         case BT::NodeStatus::SUCCESS:
           // reset node and return success when first child returns success
           halt();
           return BT::NodeStatus::SUCCESS;
 
-        case BT::NodeStatus::SKIPPED:
         case BT::NodeStatus::RUNNING:
-          return child_status;
+          return BT::NodeStatus::RUNNING;
 
         case BT::NodeStatus::FAILURE:
           {
@@ -75,6 +79,15 @@ BT::NodeStatus RecoveryNode::tick()
     } else if (current_child_idx_ == 1) {
       switch (child_status) {
         case BT::NodeStatus::SKIPPED:
+          {
+            // if we skip the recovery (maybe a precondition fails), then we
+            // should assume that no recovery is possible. For this reason,
+            // we should return FAILURE and reset the index.
+            // This does not count as a retry.      
+            current_child_idx_ = 0;
+            ControlNode::haltChild(1);
+            return BT::NodeStatus::FAILURE;
+          }
         case BT::NodeStatus::RUNNING:
           return child_status;
 
@@ -83,7 +96,7 @@ BT::NodeStatus RecoveryNode::tick()
             // halt second child, increment recovery count, and tick first child in next iteration
             ControlNode::haltChild(1);
             retry_count_++;
-            current_child_idx_--;
+            current_child_idx_ = 0;
           }
           break;
 

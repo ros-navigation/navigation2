@@ -49,6 +49,7 @@ BT::NodeStatus RoundRobinNode::tick()
             current_child_idx_ = 0;
           }
           num_failed_children_ = 0;
+          num_skipped_children_ = 0;
           ControlNode::haltChildren();
           return BT::NodeStatus::SUCCESS;
         }
@@ -66,6 +67,7 @@ BT::NodeStatus RoundRobinNode::tick()
         num_skipped_children_++;
         // If all the children were skipped, this node is considered skipped
         if (num_skipped_children_ == num_children) {
+          halt();
           return BT::NodeStatus::SKIPPED;
         }
         break;
