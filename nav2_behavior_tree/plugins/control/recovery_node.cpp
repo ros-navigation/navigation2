@@ -48,7 +48,7 @@ BT::NodeStatus RecoveryNode::tick()
         case BT::NodeStatus::SKIPPED:
           // If first child is skipped, the entire branch is considered skipped
           halt();
-          return BT::NodeStatus::SKIPPED
+          return BT::NodeStatus::SKIPPED;
 
         case BT::NodeStatus::SUCCESS:
           // reset node and return success when first child returns success
@@ -83,7 +83,7 @@ BT::NodeStatus RecoveryNode::tick()
             // if we skip the recovery (maybe a precondition fails), then we
             // should assume that no recovery is possible. For this reason,
             // we should return FAILURE and reset the index.
-            // This does not count as a retry.      
+            // This does not count as a retry.
             current_child_idx_ = 0;
             ControlNode::haltChild(1);
             return BT::NodeStatus::FAILURE;
