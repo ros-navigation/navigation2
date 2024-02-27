@@ -133,17 +133,24 @@ typename AnalyticExpansion<NodeT>::AnalyticExpansionNodes AnalyticExpansion<Node
 
   float d = node->motion_table.state_space->distance(from(), to());
 
+  // A move of sqrt(2) is guaranteed to be in a new cell
+  static const float sqrt_2 = std::sqrt(2.0f);
+
   // If the length is too far, exit. This prevents unsafe shortcutting of paths
   // into higher cost areas far out from the goal itself, let search to the work of getting
   // close before the analytic expansion brings it home. This should never be smaller than
   // 4-5x the minimum turning radius being used, or planning times will begin to spike.
-  if (d > _search_info.analytic_expansion_max_length) {
+  if (d > _search_info.analytic_expansion_max_length || d < sqrt_2) {
     return AnalyticExpansionNodes();
   }
 
+<<<<<<< HEAD
   // A move of sqrt(2) is guaranteed to be in a new cell
   static const float sqrt_2 = std::sqrt(2.);
   unsigned int num_intervals = std::floor(d / sqrt_2);
+=======
+  unsigned int num_intervals = static_cast<unsigned int>(std::floor(d / sqrt_2));
+>>>>>>> 654e7e0d (Prevent a possible segmentation fault (#4141) (#4147))
 
   AnalyticExpansionNodes possible_nodes;
   // When "from" and "to" are zero or one cell away,
@@ -196,6 +203,42 @@ typename AnalyticExpansion<NodeT>::AnalyticExpansionNodes AnalyticExpansion<Node
     }
   }
 
+<<<<<<< HEAD
+=======
+  if (!failure) {
+    // We found 'a' valid expansion. Now to tell if its a quality option...
+    const float max_cost = _search_info.analytic_expansion_max_cost;
+    auto max_cost_it = std::max_element(node_costs.begin(), node_costs.end());
+    if (max_cost_it != node_costs.end() && *max_cost_it > max_cost) {
+      // If any element is above the comfortable cost limit, check edge cases:
+      // (1) Check if goal is in greater than max_cost space requiring
+      //  entering it, but only entering it on final approach, not in-and-out
+      // (2) Checks if goal is in normal space, but enters costed space unnecessarily
+      //  mid-way through, skirting obstacle or in non-globally confined space
+      bool cost_exit_high_cost_region = false;
+      for (auto iter = node_costs.rbegin(); iter != node_costs.rend(); ++iter) {
+        const float & curr_cost = *iter;
+        if (curr_cost <= max_cost) {
+          cost_exit_high_cost_region = true;
+        } else if (curr_cost > max_cost && cost_exit_high_cost_region) {
+          failure = true;
+          break;
+        }
+      }
+
+      // (3) Handle exception: there may be no other option close to goal
+      // if max cost is set too low (optional)
+      if (failure) {
+        if (d < 2.0f * M_PI * goal->motion_table.min_turning_radius &&
+          _search_info.analytic_expansion_max_cost_override)
+        {
+          failure = false;
+        }
+      }
+    }
+  }
+
+>>>>>>> 654e7e0d (Prevent a possible segmentation fault (#4141) (#4147))
   // Reset to initial poses to not impact future searches
   for (const auto & node_pose : possible_nodes) {
     const auto & n = node_pose.node;
