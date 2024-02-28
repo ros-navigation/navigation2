@@ -168,7 +168,7 @@ ParameterHandler::ParameterHandler(
   if (!params_.use_fixed_curvature_lookahead && params_.interpolate_curvature_after_goal) {
     RCLCPP_WARN(
       logger_, "For interpolate_curvature_after_goal to be set to true, "
-      "use_fixed_curvature_lookahead should be true, it is currently set to false");
+      "use_fixed_curvature_lookahead should be true, it is currently set to false. Disabling.");
     params_.interpolate_curvature_after_goal = false;
   }
   node->get_parameter(
