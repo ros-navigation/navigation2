@@ -265,7 +265,7 @@ bool RegulatedPurePursuitController::shouldRotateToPath(
   // Whether we should rotate robot to rough path heading
   angle_to_path = atan2(carrot_pose.pose.position.y, carrot_pose.pose.position.x);
   // In case we are reversing
-  if (x_vel_sign < 0) {
+  if (x_vel_sign < 0.0) {
     angle_to_path = nav2_amcl::angleutils::normalize(angle_to_path + M_PI);
   }
   return params_->use_rotate_to_heading &&
