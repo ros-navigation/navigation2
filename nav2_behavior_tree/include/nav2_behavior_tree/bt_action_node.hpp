@@ -374,12 +374,14 @@ protected:
         if (this->goal_handle_->get_goal_id() == result.goal_id) {
           goal_result_available_ = true;
           result_ = result;
+          emitWakeUpSignal();
         }
       };
     send_goal_options.feedback_callback =
       [this](typename rclcpp_action::ClientGoalHandle<ActionT>::SharedPtr,
         const std::shared_ptr<const typename ActionT::Feedback> feedback) {
         feedback_ = feedback;
+        emitWakeUpSignal();
       };
 
     future_goal_handle_ = std::make_shared<
