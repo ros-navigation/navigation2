@@ -27,7 +27,7 @@ ThetaStar::ThetaStar()
   allow_unknown_(true),
   size_x_(0),
   size_y_(0),
-  terminal_checking_interval_(500),
+  terminal_checking_interval_(5000),
   index_generated_(0)
 {
   exp_node = new tree_node;

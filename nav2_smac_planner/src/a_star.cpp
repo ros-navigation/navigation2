@@ -37,7 +37,7 @@ AStarAlgorithm<NodeT>::AStarAlgorithm(
   const SearchInfo & search_info)
 : _traverse_unknown(true),
   _max_iterations(0),
-  _terminal_checking_interval(500),
+  _terminal_checking_interval(5000),
   _max_planning_time(0),
   _x_size(0),
   _y_size(0),
@@ -291,18 +291,16 @@ bool AStarAlgorithm<NodeT>::createPath(
     };
 
   while (iterations < getMaxIterations() && !_queue.empty()) {
-    // Check for planning timeout only on every Nth iteration
-    if (iterations % _timing_interval == 0) {
+    // Check for planning timeout and cancel only on every Nth iteration
+    if (iterations % _terminal_checking_interval == 0) {
+      if (cancel_checker()) {
+        throw nav2_core::PlannerCancelled("Planner was cancelled");
+      }
       std::chrono::duration<double> planning_duration =
         std::chrono::duration_cast<std::chrono::duration<double>>(steady_clock::now() - start_time);
       if (static_cast<double>(planning_duration.count()) >= _max_planning_time) {
         return false;
       }
-    }
-
-    // Check for cancel every Nth iteration
-    if (iterations % _terminal_checking_interval == 0 && cancel_checker()) {
-      throw nav2_core::PlannerCancelled("Planner was cancelled");
     }
 
     // 1) Pick Nbest from O s.t. min(f(Nbest)), remove from queue

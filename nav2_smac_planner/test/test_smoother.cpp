@@ -89,7 +89,7 @@ TEST(SmootherTest, test_full_smoother)
   int max_iterations = 10000;
   float tolerance = 10.0;
   int it_on_approach = 10;
-  int terminal_checking_interval = 500;
+  int terminal_checking_interval = 5000;
   double max_planning_time = 120.0;
   int num_it = 0;
 

@@ -88,7 +88,8 @@ public:
    * @param max_on_approach_iterations Maximum number of iterations before returning a valid
    * path once within thresholds to refine path
    * comes at more compute time but smoother paths.
-   * @param terminal_checking_interval Number of iterations to check if the task has been canceled
+   * @param terminal_checking_interval Number of iterations to check if the task has been canceled or
+   * or planning time exceeded
    * @param max_planning_time Maximum time (in seconds) to wait for a plan, createPath returns
    * false after this timeout
    */
@@ -253,8 +254,6 @@ protected:
    * @brief Clear Start
    */
   void clearStart();
-
-  int _timing_interval = 5000;
 
 
   bool _traverse_unknown;

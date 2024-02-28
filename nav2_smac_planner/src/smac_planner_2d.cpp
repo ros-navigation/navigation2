@@ -84,7 +84,7 @@ void SmacPlanner2D::configure(
     node, name + ".max_on_approach_iterations", rclcpp::ParameterValue(1000));
   node->get_parameter(name + ".max_on_approach_iterations", _max_on_approach_iterations);
   nav2_util::declare_parameter_if_not_declared(
-    node, name + ".terminal_checking_interval", rclcpp::ParameterValue(500));
+    node, name + ".terminal_checking_interval", rclcpp::ParameterValue(5000));
   node->get_parameter(name + ".terminal_checking_interval", _terminal_checking_interval);
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".use_final_approach_orientation", rclcpp::ParameterValue(false));

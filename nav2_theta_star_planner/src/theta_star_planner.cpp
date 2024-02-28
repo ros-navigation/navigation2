@@ -60,7 +60,7 @@ void ThetaStarPlanner::configure(
   planner_->w_heuristic_cost_ = planner_->w_euc_cost_ < 1.0 ? planner_->w_euc_cost_ : 1.0;
 
   nav2_util::declare_parameter_if_not_declared(
-    node, name_ + ".terminal_checking_interval", rclcpp::ParameterValue(500));
+    node, name_ + ".terminal_checking_interval", rclcpp::ParameterValue(5000));
   node->get_parameter(name_ + ".terminal_checking_interval", planner_->terminal_checking_interval_);
 
   nav2_util::declare_parameter_if_not_declared(
