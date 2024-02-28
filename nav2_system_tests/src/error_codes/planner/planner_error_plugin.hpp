@@ -147,6 +147,26 @@ class NoViapointsGivenErrorPlanner : public UnknownErrorPlanner
   }
 };
 
+class CancelledPlanner : public UnknownErrorPlanner
+{
+  nav_msgs::msg::Path createPlan(
+    const geometry_msgs::msg::PoseStamped &,
+    const geometry_msgs::msg::PoseStamped &,
+    std::function<bool()> cancel_checker) override
+  {
+    auto start_time = std::chrono::steady_clock::now();
+    while (rclcpp::ok() &&
+      std::chrono::steady_clock::now() - start_time < std::chrono::seconds(5))
+    {
+      if (cancel_checker()) {
+        throw nav2_core::PlannerCancelled("Planner Cancelled");
+      }
+      rclcpp::sleep_for(std::chrono::milliseconds(100));
+    }
+    throw nav2_core::PlannerException("Cancel is not called in time.");
+  }
+};
+
 }  // namespace nav2_system_tests
 
 

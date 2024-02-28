@@ -118,6 +118,36 @@ void testSmallPathValidityAndNoOrientation(std::string plugin, double length)
   obj.reset();
 }
 
+void testCancel(std::string plugin)
+{
+  auto obj = std::make_shared<nav2_system_tests::NavFnPlannerTester>();
+  rclcpp_lifecycle::State state;
+  obj->set_parameter(rclcpp::Parameter("GridBased.plugin", plugin));
+  obj->declare_parameter("GridBased.terminal_checking_interval", rclcpp::ParameterValue(1));
+  obj->onConfigure(state);
+
+  geometry_msgs::msg::PoseStamped start;
+  geometry_msgs::msg::PoseStamped goal;
+
+  start.pose.position.x = 0.0;
+  start.pose.position.y = 0.0;
+  start.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(M_PI_2);
+  start.header.frame_id = "map";
+
+  goal.pose.position.x = 0.5;
+  goal.pose.position.y = 0.6;
+  goal.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(-M_PI);
+  goal.header.frame_id = "map";
+
+  auto always_cancelled = []() {return true;};
+
+  EXPECT_THROW(
+    obj->getPlan(start, goal, "GridBased", always_cancelled),
+    nav2_core::PlannerCancelled);
+  // obj->onCleanup(state);
+  obj.reset();
+}
+
 TEST(testPluginMap, Failures)
 {
   auto obj = std::make_shared<nav2_system_tests::NavFnPlannerTester>();
@@ -146,6 +176,7 @@ TEST(testPluginMap, Failures)
 
   obj->onCleanup(state);
 }
+
 
 TEST(testPluginMap, Smac2dEqualStartGoal)
 {
@@ -296,6 +327,32 @@ TEST(testPluginMap, ThetaStarAboveCostmapResolutionN)
 {
   testSmallPathValidityAndNoOrientation("nav2_theta_star_planner/ThetaStarPlanner", 1.5);
 }
+
+TEST(testPluginMap, NavFnCancel)
+{
+  testCancel("nav2_navfn_planner/NavfnPlanner");
+}
+
+TEST(testPluginMap, ThetaStarCancel)
+{
+  testCancel("nav2_theta_star_planner/ThetaStarPlanner");
+}
+
+TEST(testPluginMap, Smac2dCancel)
+{
+  testCancel("nav2_smac_planner/SmacPlanner2D");
+}
+
+TEST(testPluginMap, SmacLatticeCancel)
+{
+  testCancel("nav2_smac_planner/SmacPlannerLattice");
+}
+
+TEST(testPluginMap, SmacHybridAStarCancel)
+{
+  testCancel("nav2_smac_planner/SmacPlannerHybrid");
+}
+
 
 int main(int argc, char ** argv)
 {
