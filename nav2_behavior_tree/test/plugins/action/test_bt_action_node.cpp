@@ -316,8 +316,10 @@ TEST_F(BTActionNodeTestFixture, test_server_timeout_success)
   // the BT should have failed
   EXPECT_EQ(result, BT::NodeStatus::FAILURE);
 
-  // since the server timeout is 20ms and bt loop duration is 10ms, number of ticks should be 2
-  EXPECT_EQ(ticks, 2);
+  // since the server timeout is 20ms and bt loop duration is 10ms, number of ticks should 
+  // be at most 2, but it can be 1 too, because the tickOnce may execute two ticks.
+  EXPECT_LE(ticks, 2);
+  EXPECT_GE(ticks, 1);
 }
 
 TEST_F(BTActionNodeTestFixture, test_server_timeout_failure)
