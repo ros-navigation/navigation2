@@ -87,7 +87,6 @@ public:
 private:
   unsigned int current_child_idx_{0};
   unsigned int num_failed_children_{0};
-  unsigned int num_skipped_children_{0};
 };
 
 }  // namespace nav2_behavior_tree

@@ -36,8 +36,9 @@ BT::NodeStatus RoundRobinNode::tick()
   const auto num_children = children_nodes_.size();
 
   setStatus(BT::NodeStatus::RUNNING);
+  unsigned num_skipped_children = 0;
 
-  while (num_failed_children_ + num_skipped_children_ < num_children) {
+  while (num_failed_children_ + num_skipped_children < num_children) {
     TreeNode * child_node = children_nodes_[current_child_idx_];
     const BT::NodeStatus child_status = child_node->executeTick();
 
@@ -52,7 +53,6 @@ BT::NodeStatus RoundRobinNode::tick()
       case BT::NodeStatus::SUCCESS:
         {
           num_failed_children_ = 0;
-          num_skipped_children_ = 0;
           ControlNode::haltChildren();
           return BT::NodeStatus::SUCCESS;
         }
@@ -65,7 +65,7 @@ BT::NodeStatus RoundRobinNode::tick()
 
       case BT::NodeStatus::SKIPPED:
         {
-          num_skipped_children_++;
+          num_skipped_children++;
           break;
         }
       case BT::NodeStatus::RUNNING:
@@ -76,7 +76,7 @@ BT::NodeStatus RoundRobinNode::tick()
     }
   }
 
-  const bool all_skipped = (num_skipped_children_ == num_children);
+  const bool all_skipped = (num_skipped_children == num_children);
   halt();
   // If all the children were skipped, this node is considered skipped
   return all_skipped ? BT::NodeStatus::SKIPPED : BT::NodeStatus::FAILURE;
