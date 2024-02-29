@@ -19,7 +19,7 @@
 #include <string>
 
 #include "utils/test_action_server.hpp"
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 #include "nav2_behavior_tree/plugins/action/progress_checker_selector_node.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "std_msgs/msg/string.hpp"
@@ -79,7 +79,7 @@ TEST_F(ProgressCheckerSelectorTestFixture, test_custom_topic)
   // create tree
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
           <ProgressCheckerSelector selected_progress_checker="{selected_progress_checker}" default_progress_checker="SimpleProgressCheck" topic_name="progress_checker_selector_custom_topic_name"/>
         </BehaviorTree>
@@ -94,7 +94,9 @@ TEST_F(ProgressCheckerSelectorTestFixture, test_custom_topic)
 
   // check default value
   std::string selected_progress_checker_result;
-  config_->blackboard->get("selected_progress_checker", selected_progress_checker_result);
+  [[maybe_unused]] auto res = config_->blackboard->get(
+    "selected_progress_checker",
+    selected_progress_checker_result);
 
   EXPECT_EQ(selected_progress_checker_result, "SimpleProgressCheck");
 
@@ -119,7 +121,7 @@ TEST_F(ProgressCheckerSelectorTestFixture, test_custom_topic)
   }
 
   // check progress_checker updated
-  config_->blackboard->get("selected_progress_checker", selected_progress_checker_result);
+  res = config_->blackboard->get("selected_progress_checker", selected_progress_checker_result);
   EXPECT_EQ("AngularProgressChecker", selected_progress_checker_result);
 }
 
@@ -128,7 +130,7 @@ TEST_F(ProgressCheckerSelectorTestFixture, test_default_topic)
   // create tree
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
           <ProgressCheckerSelector selected_progress_checker="{selected_progress_checker}" default_progress_checker="GridBased"/>
         </BehaviorTree>
@@ -143,7 +145,9 @@ TEST_F(ProgressCheckerSelectorTestFixture, test_default_topic)
 
   // check default value
   std::string selected_progress_checker_result;
-  config_->blackboard->get("selected_progress_checker", selected_progress_checker_result);
+  [[maybe_unused]] auto res = config_->blackboard->get(
+    "selected_progress_checker",
+    selected_progress_checker_result);
 
   EXPECT_EQ(selected_progress_checker_result, "GridBased");
 
@@ -167,7 +171,7 @@ TEST_F(ProgressCheckerSelectorTestFixture, test_default_topic)
   }
 
   // check goal_checker updated
-  config_->blackboard->get("selected_progress_checker", selected_progress_checker_result);
+  res = config_->blackboard->get("selected_progress_checker", selected_progress_checker_result);
   EXPECT_EQ("RRT", selected_progress_checker_result);
 }
 

@@ -41,7 +41,7 @@ BehaviorTreeEngine::BehaviorTreeEngine()
 Once a new node is registered with the factory, it is now available to the BehaviorTreeEngine and can be used in Behavior Trees. For example, the following simple XML description of a BT shows the FollowPath node in use:
 
 ```XML
-<root main_tree_to_execute="MainTree">
+<root BTCPP_format="4">
   <BehaviorTree ID="MainTree">
     <Sequence name="root">
       <ComputePathToPose goal="${goal}"/>

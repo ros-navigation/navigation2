@@ -22,9 +22,9 @@
 
 #include "gtest/gtest.h"
 
-#include "behaviortree_cpp_v3/behavior_tree.h"
-#include "behaviortree_cpp_v3/bt_factory.h"
-#include "behaviortree_cpp_v3/utils/shared_library.h"
+#include "behaviortree_cpp/behavior_tree.h"
+#include "behaviortree_cpp/bt_factory.h"
+#include "behaviortree_cpp/utils/shared_library.h"
 
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
@@ -224,7 +224,7 @@ TEST_F(BehaviorTreeTestFixture, TestAllSuccess)
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
 
   while (result == BT::NodeStatus::RUNNING) {
-    result = bt_handler->tree.tickRoot();
+    result = bt_handler->tree.tickOnce();
     std::this_thread::sleep_for(10ms);
   }
 
@@ -275,7 +275,7 @@ TEST_F(BehaviorTreeTestFixture, TestAllFailure)
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
 
   while (result == BT::NodeStatus::RUNNING) {
-    result = bt_handler->tree.tickRoot();
+    result = bt_handler->tree.tickOnce();
     std::this_thread::sleep_for(10ms);
   }
 
@@ -324,7 +324,7 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateSubtreeRecoveries)
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
 
   while (result == BT::NodeStatus::RUNNING) {
-    result = bt_handler->tree.tickRoot();
+    result = bt_handler->tree.tickOnce();
     std::this_thread::sleep_for(10ms);
   }
 
@@ -382,7 +382,7 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateRecoverySimple)
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
 
   while (result == BT::NodeStatus::RUNNING) {
-    result = bt_handler->tree.tickRoot();
+    result = bt_handler->tree.tickOnce();
     std::this_thread::sleep_for(10ms);
   }
 
@@ -476,7 +476,7 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateRecoveryComplex)
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
 
   while (result == BT::NodeStatus::RUNNING) {
-    result = bt_handler->tree.tickRoot();
+    result = bt_handler->tree.tickOnce();
     std::this_thread::sleep_for(10ms);
   }
 
@@ -540,7 +540,7 @@ TEST_F(BehaviorTreeTestFixture, TestRecoverySubtreeGoalUpdated)
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
 
   while (result == BT::NodeStatus::RUNNING) {
-    result = bt_handler->tree.tickRoot();
+    result = bt_handler->tree.tickOnce();
 
     // Update goal on blackboard after Spin has been triggered once
     // to simulate a goal update during a recovery action

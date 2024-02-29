@@ -20,7 +20,7 @@
 #include <vector>
 
 #include "rclcpp/rclcpp.hpp"
-#include "behaviortree_cpp_v3/utils/shared_library.h"
+#include "behaviortree_cpp/utils/shared_library.h"
 
 namespace nav2_behavior_tree
 {
@@ -32,6 +32,11 @@ BehaviorTreeEngine::BehaviorTreeEngine(
   for (const auto & p : plugin_libraries) {
     factory_.registerFromPlugin(loader.getOSName(p));
   }
+
+  // FIXME: the next two line are needed for back-compatibility with BT.CPP 3.8.x
+  // Note that the can be removed, once we migrate from BT.CPP 4.5.x to 4.6+
+  BT::ReactiveSequence::EnableException(false);
+  BT::ReactiveFallback::EnableException(false);
 }
 
 BtStatus
@@ -52,7 +57,7 @@ BehaviorTreeEngine::run(
         return BtStatus::CANCELED;
       }
 
-      result = tree->tickRoot();
+      result = tree->tickOnce();
 
       onLoop();
 

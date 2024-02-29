@@ -19,7 +19,7 @@
 #include <string>
 #include <chrono>
 
-#include "behaviortree_cpp_v3/action_node.h"
+#include "behaviortree_cpp/action_node.h"
 #include "nav2_util/node_utils.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "nav2_behavior_tree/bt_utils.hpp"
@@ -188,7 +188,7 @@ public:
   BT::NodeStatus tick() override
   {
     // first step to be done only at the beginning of the Action
-    if (status() == BT::NodeStatus::IDLE) {
+    if (!BT::isStatusActive(status())) {
       // setting the status to RUNNING to notify the BT Loggers (if any)
       setStatus(BT::NodeStatus::RUNNING);
 
@@ -325,7 +325,9 @@ public:
       on_cancelled();
     }
 
-    setStatus(BT::NodeStatus::IDLE);
+    // this is probably redundant, since the parent node
+    // is supposed to call it, but we keep it, just in case
+    resetStatus();
   }
 
 protected:
@@ -376,12 +378,14 @@ protected:
         if (this->goal_handle_->get_goal_id() == result.goal_id) {
           goal_result_available_ = true;
           result_ = result;
+          emitWakeUpSignal();
         }
       };
     send_goal_options.feedback_callback =
       [this](typename rclcpp_action::ClientGoalHandle<ActionT>::SharedPtr,
         const std::shared_ptr<const typename ActionT::Feedback> feedback) {
         feedback_ = feedback;
+        emitWakeUpSignal();
       };
 
     future_goal_handle_ = std::make_shared<
@@ -434,9 +438,9 @@ protected:
   void increment_recovery_count()
   {
     int recovery_count = 0;
-    config().blackboard->template get<int>("number_recoveries", recovery_count);  // NOLINT
+    [[maybe_unused]] auto res = config().blackboard->get("number_recoveries", recovery_count);  // NOLINT
     recovery_count += 1;
-    config().blackboard->template set<int>("number_recoveries", recovery_count);  // NOLINT
+    config().blackboard->set("number_recoveries", recovery_count);  // NOLINT
   }
 
   std::string action_name_;

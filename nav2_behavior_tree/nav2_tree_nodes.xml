@@ -4,7 +4,7 @@
   please refer to the groot_instructions.md and REAMDE.md respectively located in the
   nav2_behavior_tree package.
 -->
-<root>
+<root BTCPP_format="4">
   <TreeNodesModel>
     <!-- ############################### ACTION NODES ################################# -->
     <Action ID="BackUp">

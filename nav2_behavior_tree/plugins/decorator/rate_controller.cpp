@@ -43,7 +43,7 @@ BT::NodeStatus RateController::tick()
     initialize();
   }
 
-  if (status() == BT::NodeStatus::IDLE) {
+  if (!BT::isStatusActive(status())) {
     // Reset the starting point since we're starting a new iteration of
     // the rate controller (moving from IDLE to RUNNING)
     start_ = std::chrono::high_resolution_clock::now();
@@ -70,14 +70,15 @@ BT::NodeStatus RateController::tick()
     const BT::NodeStatus child_state = child_node_->executeTick();
 
     switch (child_state) {
+      case BT::NodeStatus::SKIPPED:
       case BT::NodeStatus::RUNNING:
-        return BT::NodeStatus::RUNNING;
+      case BT::NodeStatus::FAILURE:
+        return child_state;
 
       case BT::NodeStatus::SUCCESS:
         start_ = std::chrono::high_resolution_clock::now();  // Reset the timer
         return BT::NodeStatus::SUCCESS;
 
-      case BT::NodeStatus::FAILURE:
       default:
         return BT::NodeStatus::FAILURE;
     }
@@ -88,7 +89,7 @@ BT::NodeStatus RateController::tick()
 
 }  // namespace nav2_behavior_tree
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
   factory.registerNodeType<nav2_behavior_tree::RateController>("RateController");

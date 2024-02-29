@@ -18,7 +18,7 @@
 #include <chrono>
 #include <string>
 
-#include "behaviortree_cpp_v3/decorator_node.h"
+#include "behaviortree_cpp/decorator_node.h"
 
 namespace nav2_behavior_tree
 {

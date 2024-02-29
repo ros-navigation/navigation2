@@ -18,7 +18,7 @@
 #include <set>
 #include <string>
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 
 #include "utils/test_action_server.hpp"
 #include "nav2_behavior_tree/plugins/action/drive_on_heading_action.hpp"
@@ -118,7 +118,7 @@ TEST_F(DriveOnHeadingActionTestFixture, test_ports)
 {
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <DriveOnHeading />
         </BehaviorTree>
@@ -131,7 +131,7 @@ TEST_F(DriveOnHeadingActionTestFixture, test_ports)
 
   xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <DriveOnHeading dist_to_travel="2" speed="0.26" />
         </BehaviorTree>
@@ -146,7 +146,7 @@ TEST_F(DriveOnHeadingActionTestFixture, test_tick)
 {
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <DriveOnHeading dist_to_travel="2" speed="0.26" />
         </BehaviorTree>
@@ -169,7 +169,7 @@ TEST_F(DriveOnHeadingActionTestFixture, test_failure)
 {
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <DriveOnHeading dist_to_travel="2" speed="0.26" />
         </BehaviorTree>

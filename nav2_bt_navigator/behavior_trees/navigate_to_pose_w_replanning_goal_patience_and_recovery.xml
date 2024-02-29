@@ -5,7 +5,7 @@
   make the robot wait for a specific time, to see if the obstacle clears out before
   navigating along a significantly longer path to reach the goal location.
 -->
-<root main_tree_to_execute="MainTree">
+<root BTCPP_format="4" main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
     <RecoveryNode number_of_retries="6" name="NavigateRecovery">
       <PipelineSequence name="NavigateWithReplanning">
@@ -20,10 +20,10 @@
         <ReactiveSequence name="MonitorAndFollowPath">
           <PathLongerOnApproach path="{path}" prox_len="3.0" length_factor="2.0">
             <RetryUntilSuccessful num_attempts="1">
-              <SequenceStar name="CancelingControlAndWait">
+              <SequenceWithMemory name="CancelingControlAndWait">
                 <CancelControl name="ControlCancel"/>
                 <Wait wait_duration="5.0"/>
-              </SequenceStar>
+              </SequenceWithMemory>
             </RetryUntilSuccessful>
           </PathLongerOnApproach>
           <RecoveryNode number_of_retries="1" name="FollowPath">

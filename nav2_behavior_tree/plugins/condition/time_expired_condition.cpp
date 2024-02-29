@@ -16,7 +16,7 @@
 #include <string>
 #include <memory>
 
-#include "behaviortree_cpp_v3/condition_node.h"
+#include "behaviortree_cpp/condition_node.h"
 
 #include "nav2_behavior_tree/plugins/condition/time_expired_condition.hpp"
 
@@ -46,7 +46,7 @@ BT::NodeStatus TimeExpiredCondition::tick()
     initialize();
   }
 
-  if (status() == BT::NodeStatus::IDLE) {
+  if (!BT::isStatusActive(status())) {
     start_ = node_->now();
     return BT::NodeStatus::FAILURE;
   }
@@ -67,7 +67,7 @@ BT::NodeStatus TimeExpiredCondition::tick()
 
 }  // namespace nav2_behavior_tree
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
   factory.registerNodeType<nav2_behavior_tree::TimeExpiredCondition>("TimeExpired");

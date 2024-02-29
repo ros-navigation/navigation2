@@ -43,7 +43,7 @@ public:
 
     std::string xml_txt =
       R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <GoalReached goal="{goal}" robot_base_frame="base_link"/>
         </BehaviorTree>
@@ -66,32 +66,32 @@ std::shared_ptr<BT::Tree> GoalReachedConditionTestFixture::tree_ = nullptr;
 
 TEST_F(GoalReachedConditionTestFixture, test_behavior)
 {
-  EXPECT_EQ(tree_->tickRoot(), BT::NodeStatus::FAILURE);
+  EXPECT_EQ(tree_->tickOnce(), BT::NodeStatus::FAILURE);
 
   geometry_msgs::msg::Pose pose;
   pose.position.x = 0.0;
   pose.position.y = 0.0;
   transform_handler_->updateRobotPose(pose);
   std::this_thread::sleep_for(500ms);
-  EXPECT_EQ(tree_->tickRoot(), BT::NodeStatus::FAILURE);
+  EXPECT_EQ(tree_->tickOnce(), BT::NodeStatus::FAILURE);
 
   pose.position.x = 0.5;
   pose.position.y = 0.5;
   transform_handler_->updateRobotPose(pose);
   std::this_thread::sleep_for(500ms);
-  EXPECT_EQ(tree_->tickRoot(), BT::NodeStatus::FAILURE);
+  EXPECT_EQ(tree_->tickOnce(), BT::NodeStatus::FAILURE);
 
   pose.position.x = 0.9;
   pose.position.y = 0.9;
   transform_handler_->updateRobotPose(pose);
   std::this_thread::sleep_for(500ms);
-  EXPECT_EQ(tree_->tickRoot(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(tree_->tickOnce(), BT::NodeStatus::SUCCESS);
 
   pose.position.x = 1.0;
   pose.position.y = 1.0;
   transform_handler_->updateRobotPose(pose);
   std::this_thread::sleep_for(500ms);
-  EXPECT_EQ(tree_->tickRoot(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(tree_->tickOnce(), BT::NodeStatus::SUCCESS);
 }
 
 int main(int argc, char ** argv)

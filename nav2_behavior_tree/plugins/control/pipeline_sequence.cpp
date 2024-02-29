@@ -35,6 +35,7 @@ PipelineSequence::PipelineSequence(
 
 BT::NodeStatus PipelineSequence::tick()
 {
+  unsigned skipped_count = 0;
   for (std::size_t i = 0; i < children_nodes_.size(); ++i) {
     auto status = children_nodes_[i]->executeTick();
     switch (status) {
@@ -42,6 +43,10 @@ BT::NodeStatus PipelineSequence::tick()
         ControlNode::haltChildren();
         last_child_ticked_ = 0;  // reset
         return status;
+      case BT::NodeStatus::SKIPPED:
+        skipped_count++;
+        // do nothing and continue on to the next child.
+        break;
       case BT::NodeStatus::SUCCESS:
         // do nothing and continue on to the next child. If it is the last child
         // we'll exit the loop and hit the wrap-up code at the end of the method.
@@ -63,6 +68,10 @@ BT::NodeStatus PipelineSequence::tick()
   // Wrap up.
   ControlNode::haltChildren();
   last_child_ticked_ = 0;  // reset
+  if (skipped_count == children_nodes_.size()) {
+    // All the children were skipped
+    return BT::NodeStatus::SKIPPED;
+  }
   return BT::NodeStatus::SUCCESS;
 }
 

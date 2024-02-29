@@ -21,7 +21,7 @@
 #include "nav_msgs/msg/path.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 
 #include "utils/test_action_server.hpp"
 #include "nav2_behavior_tree/plugins/decorator/goal_updater_node.hpp"
@@ -86,7 +86,7 @@ TEST_F(GoalUpdaterTestFixture, test_tick)
   // create tree
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
           <GoalUpdater input_goal="{goal}" output_goal="{updated_goal}">
             <AlwaysSuccess/>
@@ -115,7 +115,7 @@ TEST_F(GoalUpdaterTestFixture, test_older_goal_update)
   // create tree
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
           <GoalUpdater input_goal="{goal}" output_goal="{updated_goal}">
             <AlwaysSuccess/>
@@ -153,7 +153,7 @@ TEST_F(GoalUpdaterTestFixture, test_get_latest_goal_update)
   // create tree
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
           <GoalUpdater input_goal="{goal}" output_goal="{updated_goal}">
             <AlwaysSuccess/>
