@@ -324,6 +324,10 @@ public:
 
       on_cancelled();
     }
+
+    // this is probably redundant, since the parent node
+    // is supposed to call it, but we keep it, just in case
+    resetStatus();
   }
 
 protected:
