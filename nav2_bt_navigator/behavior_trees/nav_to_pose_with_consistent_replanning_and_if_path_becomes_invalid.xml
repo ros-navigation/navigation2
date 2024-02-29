@@ -3,7 +3,7 @@
   recovery actions specific to planning / control as well as general system issues.
   This will be continuous if a kinematically valid planner is selected.
 -->
-<root main_tree_to_execute="MainTree">
+<root BTCPP_format="4" main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
     <RecoveryNode number_of_retries="6" name="NavigateRecovery">
       <PipelineSequence name="NavigateWithReplanning">

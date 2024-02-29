@@ -24,7 +24,7 @@
 #include "nav_msgs/msg/odometry.hpp"
 #include "nav2_util/odometry_utils.hpp"
 
-#include "behaviortree_cpp_v3/decorator_node.h"
+#include "behaviortree_cpp/decorator_node.h"
 
 namespace nav2_behavior_tree
 {

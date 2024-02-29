@@ -23,7 +23,7 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "tf2_ros/buffer.h"
 
-#include "behaviortree_cpp_v3/decorator_node.h"
+#include "behaviortree_cpp/decorator_node.h"
 
 #include "nav2_behavior_tree/plugins/decorator/distance_controller.hpp"
 #include "nav2_behavior_tree/bt_utils.hpp"
@@ -51,7 +51,7 @@ DistanceController::DistanceController(
 
 inline BT::NodeStatus DistanceController::tick()
 {
-  if (status() == BT::NodeStatus::IDLE) {
+  if (!BT::isStatusActive(status())) {
     // Reset the starting position since we're starting a new iteration of
     // the distance controller (moving from IDLE to RUNNING)
     if (!nav2_util::getCurrentPose(
@@ -90,8 +90,9 @@ inline BT::NodeStatus DistanceController::tick()
     const BT::NodeStatus child_state = child_node_->executeTick();
 
     switch (child_state) {
+      case BT::NodeStatus::SKIPPED:
       case BT::NodeStatus::RUNNING:
-        return BT::NodeStatus::RUNNING;
+        return child_state;
 
       case BT::NodeStatus::SUCCESS:
         if (!nav2_util::getCurrentPose(
@@ -114,7 +115,7 @@ inline BT::NodeStatus DistanceController::tick()
 
 }  // namespace nav2_behavior_tree
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
   factory.registerNodeType<nav2_behavior_tree::DistanceController>("DistanceController");

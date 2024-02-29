@@ -103,7 +103,7 @@ NavigateThroughPosesNavigator::onLoop()
   auto blackboard = bt_action_server_->getBlackboard();
 
   Goals goal_poses;
-  blackboard->get<Goals>(goals_blackboard_id_, goal_poses);
+  [[maybe_unused]] auto res = blackboard->get(goals_blackboard_id_, goal_poses);
 
   if (goal_poses.size() == 0) {
     bt_action_server_->publishFeedback(feedback_msg);
@@ -123,7 +123,7 @@ NavigateThroughPosesNavigator::onLoop()
   try {
     // Get current path points
     nav_msgs::msg::Path current_path;
-    blackboard->get<nav_msgs::msg::Path>(path_blackboard_id_, current_path);
+    res = blackboard->get(path_blackboard_id_, current_path);
 
     // Find the closest pose to current pose on global path
     auto find_closest_pose_idx =
@@ -166,7 +166,7 @@ NavigateThroughPosesNavigator::onLoop()
   }
 
   int recovery_count = 0;
-  blackboard->get<int>("number_recoveries", recovery_count);
+  res = blackboard->get("number_recoveries", recovery_count);
   feedback_msg->number_of_recoveries = recovery_count;
   feedback_msg->current_pose = current_pose;
   feedback_msg->navigation_time = clock_->now() - start_time_;

@@ -62,7 +62,7 @@ inline BT::NodeStatus PathLongerOnApproach::tick()
   getInput("prox_len", prox_len_);
   getInput("length_factor", length_factor_);
 
-  if (status() == BT::NodeStatus::IDLE) {
+  if (!BT::isStatusActive(status())) {
     // Reset the starting point since we're starting a new iteration of
     // PathLongerOnApproach (moving from IDLE to RUNNING)
     first_time_ = true;
@@ -77,14 +77,14 @@ inline BT::NodeStatus PathLongerOnApproach::tick()
   {
     const BT::NodeStatus child_state = child_node_->executeTick();
     switch (child_state) {
+      case BT::NodeStatus::SKIPPED:
       case BT::NodeStatus::RUNNING:
-        return BT::NodeStatus::RUNNING;
+        return child_state;
       case BT::NodeStatus::SUCCESS:
-        old_path_ = new_path_;
-        return BT::NodeStatus::SUCCESS;
       case BT::NodeStatus::FAILURE:
         old_path_ = new_path_;
-        return BT::NodeStatus::FAILURE;
+        resetChild();
+        return child_state;
       default:
         old_path_ = new_path_;
         return BT::NodeStatus::FAILURE;
@@ -97,7 +97,7 @@ inline BT::NodeStatus PathLongerOnApproach::tick()
 
 }  // namespace nav2_behavior_tree
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
   factory.registerNodeType<nav2_behavior_tree::PathLongerOnApproach>("PathLongerOnApproach");

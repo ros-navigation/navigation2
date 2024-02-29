@@ -22,7 +22,7 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_util/geometry_utils.hpp"
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 
 #include "utils/test_action_server.hpp"
 #include "nav2_behavior_tree/plugins/action/truncate_path_action.hpp"
@@ -87,7 +87,7 @@ TEST_F(TruncatePathTestFixture, test_tick)
   // create tree
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
           <TruncatePath distance="1.0" input_path="{path}" output_path="{truncated_path}"/>
         </BehaviorTree>

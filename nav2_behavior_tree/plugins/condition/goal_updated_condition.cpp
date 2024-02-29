@@ -28,7 +28,7 @@ GoalUpdatedCondition::GoalUpdatedCondition(
 
 BT::NodeStatus GoalUpdatedCondition::tick()
 {
-  if (status() == BT::NodeStatus::IDLE) {
+  if (!BT::isStatusActive(status())) {
     BT::getInputOrBlackboard("goals", goals_);
     BT::getInputOrBlackboard("goal", goal_);
     return BT::NodeStatus::FAILURE;
@@ -50,7 +50,7 @@ BT::NodeStatus GoalUpdatedCondition::tick()
 
 }  // namespace nav2_behavior_tree
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
   factory.registerNodeType<nav2_behavior_tree::GoalUpdatedCondition>("GoalUpdated");

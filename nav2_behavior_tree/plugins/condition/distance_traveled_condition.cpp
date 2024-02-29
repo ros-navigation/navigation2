@@ -56,7 +56,7 @@ BT::NodeStatus DistanceTraveledCondition::tick()
     initialize();
   }
 
-  if (status() == BT::NodeStatus::IDLE) {
+  if (!BT::isStatusActive(status())) {
     if (!nav2_util::getCurrentPose(
         start_pose_, *tf_, global_frame_, robot_base_frame_,
         transform_tolerance_))
@@ -92,7 +92,7 @@ BT::NodeStatus DistanceTraveledCondition::tick()
 
 }  // namespace nav2_behavior_tree
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
   factory.registerNodeType<nav2_behavior_tree::DistanceTraveledCondition>("DistanceTraveled");

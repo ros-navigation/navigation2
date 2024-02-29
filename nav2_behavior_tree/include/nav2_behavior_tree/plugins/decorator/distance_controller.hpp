@@ -22,7 +22,7 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "tf2_ros/buffer.h"
 
-#include "behaviortree_cpp_v3/decorator_node.h"
+#include "behaviortree_cpp/decorator_node.h"
 
 namespace nav2_behavior_tree
 {

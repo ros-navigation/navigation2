@@ -19,7 +19,7 @@
 #include <memory>
 
 #include "rclcpp/rclcpp.hpp"
-#include "behaviortree_cpp_v3/condition_node.h"
+#include "behaviortree_cpp/condition_node.h"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_msgs/srv/is_path_valid.hpp"
 

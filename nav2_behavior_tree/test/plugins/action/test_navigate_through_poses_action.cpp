@@ -23,7 +23,7 @@
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 
 #include "utils/test_action_server.hpp"
 #include "nav2_behavior_tree/plugins/action/navigate_through_poses_action.hpp"
@@ -124,7 +124,7 @@ TEST_F(NavigateThroughPosesActionTestFixture, test_tick)
   // create tree
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <NavigateThroughPoses goals="{goals}" />
         </BehaviorTree>

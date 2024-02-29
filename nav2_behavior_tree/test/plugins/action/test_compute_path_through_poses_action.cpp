@@ -22,7 +22,7 @@
 #include "nav_msgs/msg/path.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 
 #include "utils/test_action_server.hpp"
 #include "nav2_behavior_tree/plugins/action/compute_path_through_poses_action.hpp"
@@ -128,7 +128,7 @@ TEST_F(ComputePathThroughPosesActionTestFixture, test_tick)
   // create tree
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <ComputePathThroughPoses goals="{goals}" path="{path}" planner_id="GridBased"/>
         </BehaviorTree>
@@ -187,7 +187,7 @@ TEST_F(ComputePathThroughPosesActionTestFixture, test_tick_use_start)
   // create tree
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <ComputePathThroughPoses goals="{goals}" start="{start}" path="{path}" planner_id="GridBased"/>
         </BehaviorTree>
