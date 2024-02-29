@@ -20,10 +20,10 @@
         <ReactiveSequence name="MonitorAndFollowPath">
           <PathLongerOnApproach path="{path}" prox_len="3.0" length_factor="2.0">
             <RetryUntilSuccessful num_attempts="1">
-              <SequenceStar name="CancelingControlAndWait">
+              <SequenceWithMemory name="CancelingControlAndWait">
                 <CancelControl name="ControlCancel"/>
                 <Wait wait_duration="5.0"/>
-              </SequenceStar>
+              </SequenceWithMemory>
             </RetryUntilSuccessful>
           </PathLongerOnApproach>
           <RecoveryNode number_of_retries="1" name="FollowPath">
