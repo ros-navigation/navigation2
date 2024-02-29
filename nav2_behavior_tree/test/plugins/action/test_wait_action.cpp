@@ -18,7 +18,7 @@
 #include <set>
 #include <string>
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 
 #include "utils/test_action_server.hpp"
 #include "nav2_behavior_tree/plugins/action/wait_action.hpp"
@@ -113,7 +113,7 @@ TEST_F(WaitActionTestFixture, test_ports)
 {
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <Wait />
         </BehaviorTree>
@@ -124,7 +124,7 @@ TEST_F(WaitActionTestFixture, test_ports)
 
   xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <Wait wait_duration="10.0" />
         </BehaviorTree>
@@ -138,7 +138,7 @@ TEST_F(WaitActionTestFixture, test_tick)
 {
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <Wait wait_duration="-5.0"/>
         </BehaviorTree>

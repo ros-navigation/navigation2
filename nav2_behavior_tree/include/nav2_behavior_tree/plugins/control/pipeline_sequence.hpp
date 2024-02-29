@@ -16,8 +16,8 @@
 #define NAV2_BEHAVIOR_TREE__PLUGINS__CONTROL__PIPELINE_SEQUENCE_HPP_
 
 #include <string>
-#include "behaviortree_cpp_v3/control_node.h"
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/control_node.h"
+#include "behaviortree_cpp/bt_factory.h"
 
 namespace nav2_behavior_tree
 {

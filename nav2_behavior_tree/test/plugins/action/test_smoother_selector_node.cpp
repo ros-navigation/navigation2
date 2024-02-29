@@ -20,7 +20,7 @@
 #include <string>
 
 #include "utils/test_action_server.hpp"
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 #include "nav2_behavior_tree/plugins/action/smoother_selector_node.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "std_msgs/msg/string.hpp"
@@ -80,7 +80,7 @@ TEST_F(SmootherSelectorTestFixture, test_custom_topic)
   // create tree
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
           <SmootherSelector selected_smoother="{selected_smoother}" default_smoother="DWB" topic_name="smoother_selector_custom_topic_name"/>
         </BehaviorTree>
@@ -128,7 +128,7 @@ TEST_F(SmootherSelectorTestFixture, test_default_topic)
   // create tree
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
           <SmootherSelector selected_smoother="{selected_smoother}" default_smoother="GridBased"/>
         </BehaviorTree>

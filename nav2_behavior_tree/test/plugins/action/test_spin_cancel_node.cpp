@@ -17,7 +17,7 @@
 #include <set>
 #include <string>
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 
 #include "utils/test_action_server.hpp"
 #include "nav2_behavior_tree/plugins/action/spin_cancel_node.hpp"
@@ -120,7 +120,7 @@ TEST_F(CancelSpinActionTestFixture, test_ports)
 {
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
              <CancelSpin name="SpinCancel"/>
         </BehaviorTree>

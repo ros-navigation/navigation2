@@ -27,7 +27,7 @@ control_nodes = [
     'ReactiveFallback',
     'ReactiveSequence',
     'Sequence',
-    'SequenceStar',
+    'SequenceWithMemory',
     'BlackboardCheckInt',
     'BlackboardCheckDouble',
     'BlackboardCheckString',

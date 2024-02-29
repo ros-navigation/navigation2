@@ -19,7 +19,7 @@
 #include <string>
 #include <vector>
 
-#include "behaviortree_cpp_v3/decorator_node.h"
+#include "behaviortree_cpp/decorator_node.h"
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"

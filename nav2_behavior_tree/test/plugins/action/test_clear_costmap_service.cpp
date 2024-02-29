@@ -18,7 +18,7 @@
 #include <set>
 #include <string>
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 
 #include "utils/test_service.hpp"
 #include "nav2_behavior_tree/plugins/action/clear_costmap_service.hpp"
@@ -100,7 +100,7 @@ TEST_F(ClearEntireCostmapServiceTestFixture, test_tick)
 {
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <ClearEntireCostmap service_name="clear_entire_costmap"/>
         </BehaviorTree>
@@ -195,7 +195,7 @@ TEST_F(ClearCostmapExceptRegionServiceTestFixture, test_tick)
 {
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <ClearCostmapExceptRegion service_name="clear_costmap_except_region"/>
         </BehaviorTree>
@@ -290,7 +290,7 @@ TEST_F(ClearCostmapAroundRobotServiceTestFixture, test_tick)
 {
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <ClearCostmapAroundRobot service_name="clear_costmap_around_robot"/>
         </BehaviorTree>

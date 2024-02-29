@@ -18,7 +18,7 @@
 #include <set>
 #include <string>
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 
 #include "utils/test_service.hpp"
 #include "nav2_behavior_tree/plugins/action/reinitialize_global_localization_service.hpp"
@@ -97,7 +97,7 @@ TEST_F(ReinitializeGlobalLocalizationServiceTestFixture, test_tick)
 {
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <ReinitializeGlobalLocalization service_name="reinitialize_global_localization"/>
         </BehaviorTree>
