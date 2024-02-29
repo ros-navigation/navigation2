@@ -87,7 +87,6 @@ void RoundRobinNode::halt()
   ControlNode::halt();
   current_child_idx_ = 0;
   num_failed_children_ = 0;
-  num_skipped_children_ = 0;
 }
 
 }  // namespace nav2_behavior_tree
