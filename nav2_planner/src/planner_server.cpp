@@ -396,6 +396,10 @@ void PlannerServer::computePlanThroughPoses()
       throw nav2_core::PlannerTFError("Unable to get start pose");
     }
 
+    auto cancel_checker = [this]() {
+        return action_server_poses_->is_cancel_requested();
+      };
+
     // Get consecutive paths through these points
     for (unsigned int i = 0; i != goal->goals.size(); i++) {
       // Get starting point
@@ -415,7 +419,9 @@ void PlannerServer::computePlanThroughPoses()
       }
 
       // Get plan from start -> goal
-      nav_msgs::msg::Path curr_path = getPlan(curr_start, curr_goal, goal->planner_id);
+      nav_msgs::msg::Path curr_path = getPlan(
+        curr_start, curr_goal, goal->planner_id,
+        cancel_checker);
 
       if (!validatePath<ActionThroughPoses>(curr_goal, curr_path, goal->planner_id)) {
         throw nav2_core::NoValidPathCouldBeFound(goal->planner_id + " generated a empty path");
@@ -478,6 +484,9 @@ void PlannerServer::computePlanThroughPoses()
     exceptionWarning(curr_start, curr_goal, goal->planner_id, ex);
     result->error_code = ActionThroughPosesResult::NO_VIAPOINTS_GIVEN;
     action_server_poses_->terminate_current(result);
+  } catch (nav2_core::PlannerCancelled &) {
+    RCLCPP_INFO(get_logger(), "Goal was canceled. Canceling planning action.");
+    action_server_poses_->terminate_all();
   } catch (std::exception & ex) {
     exceptionWarning(curr_start, curr_goal, goal->planner_id, ex);
     result->error_code = ActionThroughPosesResult::UNKNOWN;
@@ -518,7 +527,11 @@ PlannerServer::computePlan()
       throw nav2_core::PlannerTFError("Unable to transform poses to global frame");
     }
 
-    result->path = getPlan(start, goal_pose, goal->planner_id);
+    auto cancel_checker = [this]() {
+        return action_server_pose_->is_cancel_requested();
+      };
+
+    result->path = getPlan(start, goal_pose, goal->planner_id, cancel_checker);
 
     if (!validatePath<ActionThroughPoses>(goal_pose, result->path, goal->planner_id)) {
       throw nav2_core::NoValidPathCouldBeFound(goal->planner_id + " generated a empty path");
@@ -569,6 +582,9 @@ PlannerServer::computePlan()
     exceptionWarning(start, goal->goal, goal->planner_id, ex);
     result->error_code = ActionToPoseResult::TF_ERROR;
     action_server_pose_->terminate_current(result);
+  } catch (nav2_core::PlannerCancelled &) {
+    RCLCPP_INFO(get_logger(), "Goal was canceled. Canceling planning action.");
+    action_server_pose_->terminate_all();
   } catch (std::exception & ex) {
     exceptionWarning(start, goal->goal, goal->planner_id, ex);
     result->error_code = ActionToPoseResult::UNKNOWN;
@@ -580,7 +596,8 @@ nav_msgs::msg::Path
 PlannerServer::getPlan(
   const geometry_msgs::msg::PoseStamped & start,
   const geometry_msgs::msg::PoseStamped & goal,
-  const std::string & planner_id)
+  const std::string & planner_id,
+  std::function<bool()> cancel_checker)
 {
   RCLCPP_DEBUG(
     get_logger(), "Attempting to a find path from (%.2f, %.2f) to "
@@ -588,14 +605,14 @@ PlannerServer::getPlan(
     goal.pose.position.x, goal.pose.position.y);
 
   if (planners_.find(planner_id) != planners_.end()) {
-    return planners_[planner_id]->createPlan(start, goal);
+    return planners_[planner_id]->createPlan(start, goal, cancel_checker);
   } else {
     if (planners_.size() == 1 && planner_id.empty()) {
       RCLCPP_WARN_ONCE(
         get_logger(), "No planners specified in action call. "
         "Server will use only plugin %s in server."
         " This warning will appear once.", planner_ids_concat_.c_str());
-      return planners_[planners_.begin()->first]->createPlan(start, goal);
+      return planners_[planners_.begin()->first]->createPlan(start, goal, cancel_checker);
     } else {
       RCLCPP_ERROR(
         get_logger(), "planner %s is not a valid planner. "
