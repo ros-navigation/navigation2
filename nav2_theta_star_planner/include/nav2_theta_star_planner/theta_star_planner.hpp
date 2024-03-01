@@ -54,9 +54,17 @@ public:
 
   void deactivate() override;
 
+  /**
+   * @brief Creating a plan from start and goal poses
+   * @param start Start pose
+   * @param goal Goal pose
+   * @param cancel_checker Function to check if the action has been canceled
+   * @return nav2_msgs::Path of the generated path
+   */
   nav_msgs::msg::Path createPlan(
     const geometry_msgs::msg::PoseStamped & start,
-    const geometry_msgs::msg::PoseStamped & goal) override;
+    const geometry_msgs::msg::PoseStamped & goal,
+    std::function<bool()> cancel_checker) override;
 
 protected:
   std::shared_ptr<tf2_ros::Buffer> tf_;
@@ -76,9 +84,10 @@ protected:
 
   /**
    * @brief the function responsible for calling the algorithm and retrieving a path from it
+   * @param cancel_checker is a function to check if the action has been canceled
    * @return global_path is the planned path to be taken
    */
-  void getPlan(nav_msgs::msg::Path & global_path);
+  void getPlan(nav_msgs::msg::Path & global_path, std::function<bool()> cancel_checker);
 
   /**
    * @brief interpolates points between the consecutive waypoints of the path
