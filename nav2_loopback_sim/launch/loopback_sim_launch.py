@@ -17,14 +17,15 @@ import os
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
-from launch.actions import GroupAction, DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument
+from launch.actions import GroupAction, IncludeLaunchDescription
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration, PythonExpression
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node, PushROSNamespace
-#from launch_ros.actions import PushRosNamespace
-from nav2_common.launch import RewrittenYaml, ReplaceString
+# from launch_ros.actions import PushRosNamespace
 from launch_ros.descriptions import ParameterFile
+from nav2_common.launch import ReplaceString, RewrittenYaml
 
 
 def generate_launch_description():
@@ -47,30 +48,25 @@ def generate_launch_description():
     rviz_config_file = LaunchConfiguration('rviz_config_file')
     use_robot_state_pub = LaunchConfiguration('use_robot_state_pub')
     use_rviz = LaunchConfiguration('use_rviz')
-    #headless = LaunchConfiguration('headless')
-    #world = LaunchConfiguration('world')
-    robot_name = LaunchConfiguration('robot_name')
-    robot_sdf = LaunchConfiguration('robot_sdf')
+    # headless = LaunchConfiguration('headless')
+    # world = LaunchConfiguration('world')
 
-
-    # Map fully qualified names to relative ones so the node's namespace can be prepended.
-    # In case of the transforms (tf), currently, there doesn't seem to be a better alternative
+    # Map fully qualified names to relative
+    # ones so the node's namespace can be prepended.
+    # In case of the transforms (tf), currently,
+    # there doesn't seem to be a better alternative
     # https://github.com/ros/geometry2/issues/32
     # https://github.com/ros/robot_state_publisher/pull/30
     # TODO(orduno) Substitute with `PushNodeRemapping`
     #              https://github.com/ros2/launch_ros/issues/56
     remappings = [('/tf', 'tf'),
                   ('/tf_static', 'tf_static')]
-    
+
     params_file = ReplaceString(
         source_file=params_file,
         replacements={'<robot_namespace>': ('/', namespace)},
         condition=IfCondition(use_namespace),
     )
-
-    param_substitutions = {
-        'use_sim_time': use_sim_time,   
-        'yaml_filename': map_yaml_file}
 
     configured_params = ParameterFile(
         RewrittenYaml(
@@ -81,7 +77,7 @@ def generate_launch_description():
         ),
         allow_substs=True,
     )
-    
+
     lifecycle_nodes = ['map_server']
 
     # Declare the launch arguments
@@ -114,7 +110,7 @@ def generate_launch_description():
     declare_autostart_cmd = DeclareLaunchArgument(
         'autostart', default_value='true',
         description='Automatically startup the nav2 stack')
-    
+
     declare_use_composition_cmd = DeclareLaunchArgument(
         'use_composition',
         default_value='True',
@@ -191,20 +187,24 @@ def generate_launch_description():
                 output='screen',
             ),
             IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(os.path.join(launch_dir, 'navigation_launch.py')),
-            launch_arguments={'namespace': namespace,
-                              'use_sim_time': use_sim_time,
-                              'autostart': autostart,
-                              'params_file': params_file,
-                              'use_composition': use_composition,
-                              'use_respawn': use_respawn,
-                              'use_lifecycle_mgr': 'false',
-                              'map_subscribe_transient_local': 'true'}.items(),
+                PythonLaunchDescriptionSource(
+                    os.path.join(launch_dir, 'navigation_launch.py')
+                ),
+                launch_arguments={
+                    'namespace': namespace,
+                    'use_sim_time': use_sim_time,
+                    'autostart': autostart,
+                    'params_file': params_file,
+                    'use_composition': use_composition,
+                    'use_respawn': use_respawn,
+                    'use_lifecycle_mgr': 'false',
+                    'map_subscribe_transient_local': 'true'
+                }.items(),
             ),
 
         ]
     )
-    
+
     loopback_sim_node = Node(
                         package='nav2_loopback_sim',
                         executable='sim_node',
@@ -219,7 +219,7 @@ def generate_launch_description():
                     name='map_server',
                     output='screen',
                     parameters=[configured_params,
-                            {'yaml_filename': map_yaml_file}],
+                                {'yaml_filename': map_yaml_file}],
                     remappings=remappings)
 
     lifecycle_cmd = Node(
