@@ -351,21 +351,21 @@ geometry_msgs::msg::PoseStamped RegulatedPurePursuitController::getLookAheadPoin
         last_pose_it->pose.position.y - prev_last_pose_it->pose.position.y,
         last_pose_it->pose.position.x - prev_last_pose_it->pose.position.x);
 
-      auto current_robot_pose_it = transformed_plan.poses.begin();
+      // Project the last segment out to guarantee it is beyond the look ahead
+      // distance
+      auto projected_position = last_pose_it->pose.position;
+      projected_position.x += cos(end_path_orientation) * lookahead_dist;
+      projected_position.y += sin(end_path_orientation) * lookahead_dist;
 
-      double distance_after_last_pose = lookahead_dist -
-        std::hypot(
-        last_pose_it->pose.position.x - current_robot_pose_it->pose.position.x,
-        last_pose_it->pose.position.y - current_robot_pose_it->pose.position.y);
+      // Use the circle intersection to find the position at the correct look
+      // ahead distance
+      const auto interpolated_position = circleSegmentIntersection(
+          last_pose_it->pose.position, projected_position, lookahead_dist);
 
-      geometry_msgs::msg::PoseStamped interpolated_point;
-      interpolated_point.header = last_pose_it->header;
-      interpolated_point.pose.position.x = last_pose_it->pose.position.x +
-        cos(end_path_orientation) * distance_after_last_pose;
-      interpolated_point.pose.position.y = last_pose_it->pose.position.y +
-        sin(end_path_orientation) * distance_after_last_pose;
-
-      return interpolated_point;
+      geometry_msgs::msg::PoseStamped interpolated_pose;
+      interpolated_pose.header = last_pose_it->header;
+      interpolated_pose.pose.position = interpolated_position;
+      return interpolated_pose;
     } else {
       goal_pose_it = std::prev(transformed_plan.poses.end());
     }
