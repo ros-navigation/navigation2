@@ -486,7 +486,7 @@ void ControllerServer::computeControl()
       if (!loop_rate.sleep()) {
         RCLCPP_WARN(
           get_logger(),
-          "Control loop missed its desired rate of %.4f Hz.  Current loop rate is %.4f Hz",
+          "Control loop missed its desired rate of %.4f Hz. Current loop rate is %.4f Hz.",
           controller_frequency_, 1 / cycle_duration.seconds());
       }
     }
