@@ -21,7 +21,7 @@
 #include "nav_msgs/msg/path.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 
 #include "utils/test_action_server.hpp"
 #include "nav2_behavior_tree/plugins/action/follow_path_action.hpp"
@@ -118,7 +118,7 @@ TEST_F(FollowPathActionTestFixture, test_tick)
   // create tree
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <FollowPath path="{path}" controller_id="FollowPath"/>
         </BehaviorTree>
@@ -145,7 +145,7 @@ TEST_F(FollowPathActionTestFixture, test_tick)
   EXPECT_EQ(action_server_->getCurrentGoal()->controller_id, std::string("FollowPath"));
 
   // halt node so another goal can be sent
-  tree_->rootNode()->halt();
+  tree_->haltTree();
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::IDLE);
 
   // set new goal

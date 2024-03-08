@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import sys
+import threading
 import time
 
 from geometry_msgs.msg import PoseStamped
@@ -23,7 +24,7 @@ from nav2_msgs.action import (
     FollowPath,
     SmoothPath,
 )
-from nav2_simple_commander.robot_navigator import BasicNavigator
+from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 from nav_msgs.msg import Path
 import rclpy
 
@@ -111,6 +112,17 @@ def main(argv=sys.argv[1:]):
             result.error_code == error_code
         ), 'Compute path to pose error does not match'
 
+    def cancel_task():
+        time.sleep(1)
+        navigator.goal_handle.cancel_goal_async()
+
+    # Check compute path to pose cancel
+    threading.Thread(target=cancel_task).start()
+    result = navigator._getPathImpl(initial_pose, goal_pose, 'cancelled')
+    assert (
+        navigator.getResult() == TaskResult.CANCELED
+    ), 'Compute path to pose cancel failed'
+
     # Check compute path through error codes
     goal_pose1 = goal_pose
     goal_poses = [goal_pose, goal_pose1]
@@ -133,6 +145,12 @@ def main(argv=sys.argv[1:]):
         assert (
             result.error_code == error_code
         ), 'Compute path through pose error does not match'
+    # Check compute path to pose cancel
+    threading.Thread(target=cancel_task).start()
+    result = navigator._getPathThroughPosesImpl(initial_pose, goal_poses, 'cancelled')
+    assert (
+        navigator.getResult() == TaskResult.CANCELED
+    ), 'Compute path through poses cancel failed'
 
     # Check compute path to pose error codes
     pose = PoseStamped()

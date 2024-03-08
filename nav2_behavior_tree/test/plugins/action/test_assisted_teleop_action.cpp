@@ -17,7 +17,7 @@
 #include <set>
 #include <string>
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 
 #include "utils/test_action_server.hpp"
 #include "nav2_behavior_tree/plugins/action/assisted_teleop_action.hpp"
@@ -123,7 +123,7 @@ TEST_F(AssistedTeleopActionTestFixture, test_ports)
 {
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <AssistedTeleop />
         </BehaviorTree>
@@ -134,7 +134,7 @@ TEST_F(AssistedTeleopActionTestFixture, test_ports)
 
   xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <AssistedTeleop time_allowance="20"/>
         </BehaviorTree>
@@ -148,7 +148,7 @@ TEST_F(AssistedTeleopActionTestFixture, test_tick)
 {
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <AssistedTeleop is_recovery="true"/>
         </BehaviorTree>
@@ -172,7 +172,7 @@ TEST_F(AssistedTeleopActionTestFixture, test_failure)
 {
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <AssistedTeleop is_recovery="true"/>
         </BehaviorTree>

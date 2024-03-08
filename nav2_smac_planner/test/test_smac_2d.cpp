@@ -57,6 +57,10 @@ TEST(SmacTest, test_smac_2d) {
   node2D->declare_parameter("test.downsampling_factor", 2);
   node2D->set_parameter(rclcpp::Parameter("test.downsampling_factor", 2));
 
+  auto dummy_cancel_checker = []() {
+      return false;
+    };
+
   geometry_msgs::msg::PoseStamped start, goal;
   start.pose.position.x = 0.0;
   start.pose.position.y = 0.0;
@@ -69,7 +73,7 @@ TEST(SmacTest, test_smac_2d) {
   planner_2d->configure(node2D, "test", nullptr, costmap_ros);
   planner_2d->activate();
   try {
-    planner_2d->createPlan(start, goal);
+    planner_2d->createPlan(start, goal, dummy_cancel_checker);
   } catch (...) {
   }
 
@@ -108,6 +112,7 @@ TEST(SmacTest, test_smac_2d_reconfigure) {
       rclcpp::Parameter("test.downsampling_factor", 2),
       rclcpp::Parameter("test.max_iterations", -1),
       rclcpp::Parameter("test.max_on_approach_iterations", -1),
+      rclcpp::Parameter("test.terminal_checking_interval", 100),
       rclcpp::Parameter("test.use_final_approach_orientation", false)});
 
   rclcpp::spin_until_future_complete(
@@ -127,6 +132,9 @@ TEST(SmacTest, test_smac_2d_reconfigure) {
   EXPECT_EQ(
     node2D->get_parameter("test.max_on_approach_iterations").as_int(),
     -1);
+  EXPECT_EQ(
+    node2D->get_parameter("test.terminal_checking_interval").as_int(),
+    100);
 
   results = rec_param->set_parameters_atomically(
     {rclcpp::Parameter("test.downsample_costmap", true)});

@@ -16,7 +16,7 @@
 #define NAV2_BEHAVIOR_TREE__PLUGINS__CONTROL__RECOVERY_NODE_HPP_
 
 #include <string>
-#include "behaviortree_cpp_v3/control_node.h"
+#include "behaviortree_cpp/control_node.h"
 
 namespace nav2_behavior_tree
 {

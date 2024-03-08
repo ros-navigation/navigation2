@@ -23,7 +23,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 #include "nav2_behavior_tree/bt_action_node.hpp"
 
 #include "test_msgs/action/fibonacci.hpp"
@@ -238,7 +238,7 @@ TEST_F(BTActionNodeTestFixture, test_server_timeout_success)
   // create tree
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <Fibonacci order="5" />
         </BehaviorTree>
@@ -264,7 +264,7 @@ TEST_F(BTActionNodeTestFixture, test_server_timeout_success)
 
   // main BT execution loop
   while (rclcpp::ok() && result == BT::NodeStatus::RUNNING) {
-    result = tree_->tickRoot();
+    result = tree_->tickOnce();
     ticks++;
     loopRate.sleep();
   }
@@ -307,7 +307,7 @@ TEST_F(BTActionNodeTestFixture, test_server_timeout_success)
 
   // main BT execution loop
   while (rclcpp::ok() && result == BT::NodeStatus::RUNNING) {
-    result = tree_->tickRoot();
+    result = tree_->tickOnce();
     ticks++;
     loopRate.sleep();
   }
@@ -316,8 +316,10 @@ TEST_F(BTActionNodeTestFixture, test_server_timeout_success)
   // the BT should have failed
   EXPECT_EQ(result, BT::NodeStatus::FAILURE);
 
-  // since the server timeout is 20ms and bt loop duration is 10ms, number of ticks should be 2
-  EXPECT_EQ(ticks, 2);
+  // since the server timeout is 20ms and bt loop duration is 10ms, number of ticks should
+  // be at most 2, but it can be 1 too, because the tickOnce may execute two ticks.
+  EXPECT_LE(ticks, 2);
+  EXPECT_GE(ticks, 1);
 }
 
 TEST_F(BTActionNodeTestFixture, test_server_timeout_failure)
@@ -325,7 +327,7 @@ TEST_F(BTActionNodeTestFixture, test_server_timeout_failure)
   // create tree
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <Fibonacci order="2" />
         </BehaviorTree>
@@ -352,7 +354,7 @@ TEST_F(BTActionNodeTestFixture, test_server_timeout_failure)
 
   // main BT execution loop
   while (rclcpp::ok() && result == BT::NodeStatus::RUNNING) {
-    result = tree_->tickRoot();
+    result = tree_->tickOnce();
     ticks++;
     loopRate.sleep();
   }
@@ -386,7 +388,7 @@ TEST_F(BTActionNodeTestFixture, test_server_timeout_failure)
 
   // main BT execution loop
   while (rclcpp::ok() && result == BT::NodeStatus::RUNNING) {
-    result = tree_->tickRoot();
+    result = tree_->tickOnce();
     ticks++;
     loopRate.sleep();
   }
@@ -401,7 +403,7 @@ TEST_F(BTActionNodeTestFixture, test_server_cancel)
   // create tree
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <Fibonacci order="1000000" />
         </BehaviorTree>
@@ -429,7 +431,7 @@ TEST_F(BTActionNodeTestFixture, test_server_cancel)
 
   // main BT execution loop
   while (rclcpp::ok() && result == BT::NodeStatus::RUNNING && ticks < 5) {
-    result = tree_->tickRoot();
+    result = tree_->tickOnce();
     ticks++;
     loopRate.sleep();
   }
@@ -461,7 +463,7 @@ TEST_F(BTActionNodeTestFixture, test_server_cancel)
 
   // main BT execution loop
   while (rclcpp::ok() && result == BT::NodeStatus::RUNNING && ticks < 7) {
-    result = tree_->tickRoot();
+    result = tree_->tickOnce();
     ticks++;
     loopRate.sleep();
   }

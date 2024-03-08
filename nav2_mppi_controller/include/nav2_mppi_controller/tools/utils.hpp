@@ -314,6 +314,7 @@ inline size_t findPathFurthestReachedPoint(const CriticData & data)
 
   for (size_t i = 0; i < dists.shape(0); i++) {
     min_id_by_path = 0;
+    min_distance_by_path = std::numeric_limits<float>::max();
     for (size_t j = 0; j < dists.shape(1); j++) {
       cur_dist = dists(i, j);
       if (cur_dist < min_distance_by_path) {

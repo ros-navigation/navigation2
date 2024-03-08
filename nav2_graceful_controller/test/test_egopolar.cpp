@@ -16,10 +16,10 @@
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/pose.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
-#include "nav2_graceful_motion_controller/ego_polar_coords.hpp"
+#include "nav2_graceful_controller/ego_polar_coords.hpp"
 
 TEST(EgocentricPolarCoordinatesTest, constructorDefault) {
-  nav2_graceful_motion_controller::EgocentricPolarCoordinates coords;
+  nav2_graceful_controller::EgocentricPolarCoordinates coords;
 
   EXPECT_FLOAT_EQ(0.0, coords.r);
   EXPECT_FLOAT_EQ(0.0, coords.phi);
@@ -31,7 +31,7 @@ TEST(EgocentricPolarCoordinatesTest, constructorWithValues) {
   float phi_value = 1.2;
   float delta_value = -0.5;
 
-  nav2_graceful_motion_controller::EgocentricPolarCoordinates coords(r_value, phi_value,
+  nav2_graceful_controller::EgocentricPolarCoordinates coords(r_value, phi_value,
     delta_value);
 
   EXPECT_FLOAT_EQ(r_value, coords.r);
@@ -50,7 +50,7 @@ TEST(EgocentricPolarCoordinatesTest, constructorFromPoses) {
   current.position.y = 1.0;
   current.orientation = tf2::toMsg(tf2::Quaternion(tf2::Vector3(0, 0, 1), -0.2));
 
-  nav2_graceful_motion_controller::EgocentricPolarCoordinates coords(target, current);
+  nav2_graceful_controller::EgocentricPolarCoordinates coords(target, current);
 
   EXPECT_FLOAT_EQ(3.6055512428283691, coords.r);
   EXPECT_FLOAT_EQ(-0.18279374837875384, coords.phi);
@@ -68,7 +68,7 @@ TEST(EgocentricPolarCoordinatesTest, constructorFromPosesBackward) {
   current.position.y = 1.0;
   current.orientation = tf2::toMsg(tf2::Quaternion(tf2::Vector3(0, 0, 1), -0.2));
 
-  nav2_graceful_motion_controller::EgocentricPolarCoordinates coords(target, current, true);
+  nav2_graceful_controller::EgocentricPolarCoordinates coords(target, current, true);
 
   EXPECT_FLOAT_EQ(-6.4031243, coords.r);
   EXPECT_FLOAT_EQ(-0.096055523, coords.phi);

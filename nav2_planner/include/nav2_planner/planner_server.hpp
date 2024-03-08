@@ -68,12 +68,15 @@ public:
    * @brief Method to get plan from the desired plugin
    * @param start starting pose
    * @param goal goal request
+   * @param planner_id The planner to plan with
+   * @param cancel_checker A function to check if the action has been canceled
    * @return Path
    */
   nav_msgs::msg::Path getPlan(
     const geometry_msgs::msg::PoseStamped & start,
     const geometry_msgs::msg::PoseStamped & goal,
-    const std::string & planner_id);
+    const std::string & planner_id,
+    std::function<bool()> cancel_checker);
 
 protected:
   /**
