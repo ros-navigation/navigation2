@@ -486,7 +486,7 @@ void ControllerServer::computeControl()
       if (!loop_rate.sleep()) {
         RCLCPP_WARN(
           get_logger(),
-          "Control loop missed its desired rate of %.4fHz.  Current loop rate is %.4f Hz",
+          "Control loop missed its desired rate of %.4f Hz.  Current loop rate is %.4f Hz",
           controller_frequency_, 1 / cycle_duration.seconds());
       }
     }
@@ -820,4 +820,3 @@ ControllerServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
 // This acts as a sort of entry point, allowing the component to be discoverable when its library
 // is being loaded into a running process.
 RCLCPP_COMPONENTS_REGISTER_NODE(nav2_controller::ControllerServer)
-
