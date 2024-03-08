@@ -27,22 +27,22 @@ void PathAngleCritic::initialize()
   auto getParentParam = parameters_handler_->getParamGetter(parent_name_);
   float vx_min;
   getParentParam(vx_min, "vx_min", -0.35);
-  if (fabs(vx_min) < 1e-6) {  // zero
+  if (fabs(vx_min) < 1e-6f) {  // zero
     reversing_allowed_ = false;
-  } else if (vx_min < 0.0) {   // reversing possible
+  } else if (vx_min < 0.0f) {   // reversing possible
     reversing_allowed_ = true;
   }
 
   auto getParam = parameters_handler_->getParamGetter(name_);
   getParam(offset_from_furthest_, "offset_from_furthest", 4);
   getParam(power_, "cost_power", 1);
-  getParam(weight_, "cost_weight", 2.2);
+  getParam(weight_, "cost_weight", 2.2f);
   getParam(
     threshold_to_consider_,
-    "threshold_to_consider", 0.5);
+    "threshold_to_consider", 0.5f);
   getParam(
     max_angle_to_furthest_,
-    "max_angle_to_furthest", 0.785398);
+    "max_angle_to_furthest", 0.785398f);
 
   int mode = 0;
   getParam(mode, "mode", mode);
@@ -114,7 +114,7 @@ void PathAngleCritic::score(CriticData & data)
     case PathAngleMode::NO_DIRECTIONAL_PREFERENCE:
       {
         const auto yaws_between_points_corrected = xt::where(
-          yaws < M_PI_2, yaws_between_points, utils::normalize_angles(yaws_between_points + M_PI));
+          yaws < M_PIF_2, yaws_between_points, utils::normalize_angles(yaws_between_points + M_PIF));
         const auto corrected_yaws = xt::abs(
           utils::shortest_angular_distance(data.trajectories.yaws, yaws_between_points_corrected));
         data.costs += xt::pow(xt::mean(corrected_yaws, {1}, immediate) * weight_, power_);
@@ -123,8 +123,8 @@ void PathAngleCritic::score(CriticData & data)
     case PathAngleMode::CONSIDER_FEASIBLE_PATH_ORIENTATIONS:
       {
         const auto yaws_between_points_corrected = xt::where(
-          xt::abs(utils::shortest_angular_distance(yaws_between_points, goal_yaw)) < M_PI_2,
-          yaws_between_points, utils::normalize_angles(yaws_between_points + M_PI));
+          xt::abs(utils::shortest_angular_distance(yaws_between_points, goal_yaw)) < M_PIF_2,
+          yaws_between_points, utils::normalize_angles(yaws_between_points + M_PIF));
         const auto corrected_yaws = xt::abs(
           utils::shortest_angular_distance(data.trajectories.yaws, yaws_between_points_corrected));
         data.costs += xt::pow(xt::mean(corrected_yaws, {1}, immediate) * weight_, power_);

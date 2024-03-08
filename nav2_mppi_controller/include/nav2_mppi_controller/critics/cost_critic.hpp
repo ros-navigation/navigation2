@@ -59,14 +59,6 @@ protected:
   bool inCollision(float cost, float x, float y, float theta);
 
   /**
-    * @brief cost at a robot pose
-    * @param x X of pose
-    * @param y Y of pose
-    * @return Collision information at pose
-    */
-  float costAtPose(float x, float y);
-
-  /**
     * @brief Find the min cost of the inflation decay function for which the robot MAY be
     * in collision in any orientation
     * @param costmap Costmap2DROS to get minimum inscribed cost (e.g. 128 in inflation layer documentation)
@@ -81,6 +73,7 @@ protected:
   float possible_collision_cost_;
 
   bool consider_footprint_{true};
+  bool is_tracking_unknown_{true};
   float circumscribed_radius_{0};
   float circumscribed_cost_{0};
   float collision_cost_{0};

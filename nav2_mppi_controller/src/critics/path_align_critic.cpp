@@ -27,14 +27,14 @@ void PathAlignCritic::initialize()
 {
   auto getParam = parameters_handler_->getParamGetter(name_);
   getParam(power_, "cost_power", 1);
-  getParam(weight_, "cost_weight", 10.0);
+  getParam(weight_, "cost_weight", 10.0f);
 
-  getParam(max_path_occupancy_ratio_, "max_path_occupancy_ratio", 0.07);
+  getParam(max_path_occupancy_ratio_, "max_path_occupancy_ratio", 0.07f);
   getParam(offset_from_furthest_, "offset_from_furthest", 20);
   getParam(trajectory_point_step_, "trajectory_point_step", 4);
   getParam(
     threshold_to_consider_,
-    "threshold_to_consider", 0.5);
+    "threshold_to_consider", 0.5f);
   getParam(use_path_orientations_, "use_path_orientations", false);
 
   RCLCPP_INFO(
@@ -61,11 +61,12 @@ void PathAlignCritic::score(CriticData & data)
 
   // Don't apply when dynamic obstacles are blocking significant proportions of the local path
   utils::setPathCostsIfNotSet(data, costmap_ros_);
+  std::vector<bool> path_pts_valid = *data.path_pts_valid;
   const size_t closest_initial_path_point = utils::findPathTrajectoryInitialPoint(data);
   unsigned int invalid_ctr = 0;
   const float range = *data.furthest_reached_path_point - closest_initial_path_point;
   for (size_t i = closest_initial_path_point; i < *data.furthest_reached_path_point; i++) {
-    if (!(*data.path_pts_valid)[i]) {invalid_ctr++;}
+    if (!path_pts_valid[i]) {invalid_ctr++;}
     if (static_cast<float>(invalid_ctr) / range > max_path_occupancy_ratio_ && invalid_ctr > 2) {
       return;
     }
@@ -111,13 +112,12 @@ void PathAlignCritic::score(CriticData & data)
 
       // The nearest path point to align to needs to be not in collision, else
       // let the obstacle critic take over in this region due to dynamic obstacles
-      if ((*data.path_pts_valid)[path_pt]) {
+      if (path_pts_valid[path_pt]) {
         dx = P_x(path_pt) - Tx;
         dy = P_y(path_pt) - Ty;
         num_samples += 1.0f;
         if (use_path_orientations_) {
-          const auto T_yaw = xt::view(data.trajectories.yaws, t, xt::all());
-          dyaw = angles::shortest_angular_distance(P_yaw(path_pt), T_yaw(p));
+          dyaw = angles::shortest_angular_distance(P_yaw(path_pt), data.trajectories.yaws(t, p));
           summed_path_dist += sqrtf(dx * dx + dy * dy + dyaw * dyaw);
         } else {
           summed_path_dist += sqrtf(dx * dx + dy * dy);

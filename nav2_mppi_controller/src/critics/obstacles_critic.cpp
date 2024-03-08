@@ -24,11 +24,11 @@ void ObstaclesCritic::initialize()
   auto getParam = parameters_handler_->getParamGetter(name_);
   getParam(consider_footprint_, "consider_footprint", false);
   getParam(power_, "cost_power", 1);
-  getParam(repulsion_weight_, "repulsion_weight", 1.5);
-  getParam(critical_weight_, "critical_weight", 20.0);
-  getParam(collision_cost_, "collision_cost", 100000.0);
-  getParam(collision_margin_distance_, "collision_margin_distance", 0.10);
-  getParam(near_goal_distance_, "near_goal_distance", 0.5);
+  getParam(repulsion_weight_, "repulsion_weight", 1.5f);
+  getParam(critical_weight_, "critical_weight", 20.0f);
+  getParam(collision_cost_, "collision_cost", 100000.0f);
+  getParam(collision_margin_distance_, "collision_margin_distance", 0.10f);
+  getParam(near_goal_distance_, "near_goal_distance", 0.5f);
   getParam(inflation_layer_name_, "inflation_layer_name", std::string(""));
 
   collision_checker_.setCostmap(costmap_);

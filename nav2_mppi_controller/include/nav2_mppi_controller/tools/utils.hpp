@@ -49,6 +49,9 @@
 #include "builtin_interfaces/msg/time.hpp"
 #include "nav2_mppi_controller/critic_data.hpp"
 
+#define M_PIF 3.141592653589793238462643383279502884e+00F
+#define M_PIF_2 1.5707963267948966e+00F
+
 namespace mppi::utils
 {
 using xt::evaluation_strategy::immediate;
@@ -259,7 +262,7 @@ inline bool withinPositionGoalTolerance(
 
 /**
   * @brief normalize
-  * Normalizes the angle to be -M_PI circle to +M_PI circle
+  * Normalizes the angle to be -M_PIF circle to +M_PIF circle
   * It takes and returns radians.
   * @param angles Angles to normalize
   * @return normalized angles
@@ -267,8 +270,8 @@ inline bool withinPositionGoalTolerance(
 template<typename T>
 auto normalize_angles(const T & angles)
 {
-  auto && theta = xt::eval(xt::fmod(angles + M_PI, 2.0 * M_PI));
-  return xt::eval(xt::where(theta <= 0.0, theta + M_PI, theta - M_PI));
+  auto && theta = xt::eval(xt::fmod(angles + M_PIF, 2.0f * M_PIF));
+  return xt::eval(xt::where(theta <= 0.0f, theta + M_PIF, theta - M_PIF));
 }
 
 /**
@@ -310,13 +313,12 @@ inline size_t findPathFurthestReachedPoint(const CriticData & data)
 
   size_t max_id_by_trajectories = 0, min_id_by_path = 0;
   float min_distance_by_path = std::numeric_limits<float>::max();
-  float cur_dist = 0.0f;
 
   for (size_t i = 0; i < dists.shape(0); i++) {
     min_id_by_path = 0;
     min_distance_by_path = std::numeric_limits<float>::max();
-    for (size_t j = 0; j < dists.shape(1); j++) {
-      cur_dist = dists(i, j);
+    for (size_t j = max_id_by_trajectories; j < dists.shape(1); j++) {
+      const float & cur_dist = dists(i, j);
       if (cur_dist < min_distance_by_path) {
         min_distance_by_path = cur_dist;
         min_id_by_path = j;
@@ -436,7 +438,7 @@ inline float posePointAngle(
   if (!forward_preference) {
     return std::min(
       fabs(angles::shortest_angular_distance(yaw, pose_yaw)),
-      fabs(angles::shortest_angular_distance(yaw, angles::normalize_angle(pose_yaw + M_PI))));
+      fabs(angles::shortest_angular_distance(yaw, angles::normalize_angle(pose_yaw + M_PIF))));
   }
 
   return fabs(angles::shortest_angular_distance(yaw, pose_yaw));
@@ -454,14 +456,14 @@ inline float posePointAngle(
   const geometry_msgs::msg::Pose & pose,
   double point_x, double point_y, double point_yaw)
 {
-  float pose_x = pose.position.x;
-  float pose_y = pose.position.y;
-  float pose_yaw = tf2::getYaw(pose.orientation);
+  float pose_x = static_cast<float>(pose.position.x);
+  float pose_y = static_cast<float>(pose.position.y);
+  float pose_yaw = static_cast<float>(tf2::getYaw(pose.orientation));
 
-  float yaw = atan2f(point_y - pose_y, point_x - pose_x);
+  float yaw = atan2f(static_cast<float>(point_y) - pose_y, static_cast<float>(point_x) - pose_x);
 
-  if (fabs(angles::shortest_angular_distance(yaw, point_yaw)) > M_PI_2) {
-    yaw = angles::normalize_angle(yaw + M_PI);
+  if (fabs(angles::shortest_angular_distance(yaw, static_cast<float>(point_yaw))) > M_PIF_2) {
+    yaw = angles::normalize_angle(yaw + M_PIF);
   }
 
   return fabs(angles::shortest_angular_distance(yaw, pose_yaw));
@@ -664,7 +666,7 @@ inline unsigned int findFirstPathInversion(nav_msgs::msg::Path & path)
 
     // Checking for the existance of cusp, in the path, using the dot product.
     float dot_product = (oa_x * ab_x) + (oa_y * ab_y);
-    if (dot_product < 0.0) {
+    if (dot_product < 0.0f) {
       return idx + 1;
     }
   }

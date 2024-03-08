@@ -24,10 +24,10 @@ void CostCritic::initialize()
   auto getParam = parameters_handler_->getParamGetter(name_);
   getParam(consider_footprint_, "consider_footprint", false);
   getParam(power_, "cost_power", 1);
-  getParam(weight_, "cost_weight", 3.81);
-  getParam(critical_cost_, "critical_cost", 300.0);
-  getParam(collision_cost_, "collision_cost", 1000000.0);
-  getParam(near_goal_distance_, "near_goal_distance", 0.5);
+  getParam(weight_, "cost_weight", 3.81f);
+  getParam(critical_cost_, "critical_cost", 300.0f);
+  getParam(collision_cost_, "collision_cost", 1000000.0f);
+  getParam(near_goal_distance_, "near_goal_distance", 0.5f);
   getParam(inflation_layer_name_, "inflation_layer_name", std::string(""));
 
   // Normalized by cost value to put in same regime as other weights
@@ -94,6 +94,8 @@ void CostCritic::score(CriticData & data)
     return;
   }
 
+  is_tracking_unknown_ = costmap_ros_->getLayeredCostmap()->isTrackingUnknown();
+
   if (consider_footprint_) {
     // footprint may have changed since initialization if user has dynamic footprints
     possible_collision_cost_ = findCircumscribedCost(costmap_ros_);
@@ -106,23 +108,34 @@ void CostCritic::score(CriticData & data)
   }
 
   auto && repulsive_cost = xt::xtensor<float, 1>::from_shape({data.costs.shape(0)});
-  repulsive_cost.fill(0.0);
+  repulsive_cost.fill(0.0f);
+
+  unsigned int x_i = 0u, y_i = 0u;
+  float pose_cost;
+  auto costmap = collision_checker_.getCostmap();
 
   const size_t traj_len = data.trajectories.x.shape(1);
   bool all_trajectories_collide = true;
   for (size_t i = 0; i < data.trajectories.x.shape(0); ++i) {
     bool trajectory_collide = false;
-    const auto & traj = data.trajectories;
-    float pose_cost;
+    const auto & traj_x = xt::view(data.trajectories.x, i, xt::all());
+    const auto & traj_y = xt::view(data.trajectories.y, i, xt::all());
+    const auto & traj_yaw = xt::view(data.trajectories.yaws, i, xt::all());
+    pose_cost = 0.0f;
 
     for (size_t j = 0; j < traj_len; j++) {
-      // The costAtPose doesn't use orientation
+      // The getCost doesn't use orientation
       // The footprintCostAtPose will always return "INSCRIBED" if footprint is over it
       // So the center point has more information than the footprint
-      pose_cost = costAtPose(traj.x(i, j), traj.y(i, j));
+      if (!costmap->worldToMap(traj_x(j), traj_y(j), x_i, y_i)) {
+        pose_cost = static_cast<float>(nav2_costmap_2d::NO_INFORMATION);
+      } else {
+        pose_cost = static_cast<float>(costmap->getCost(x_i, y_i));
+      }
+
       if (pose_cost < 1.0f) {continue;}  // In free space
 
-      if (inCollision(pose_cost, traj.x(i, j), traj.y(i, j), traj.yaws(i, j))) {
+      if (inCollision(pose_cost, traj_x(j), traj_y(j), traj_yaw(j))) {
         trajectory_collide = true;
         break;
       }
@@ -130,8 +143,7 @@ void CostCritic::score(CriticData & data)
       // Let near-collision trajectory points be punished severely
       // Note that we collision check based on the footprint actual,
       // but score based on the center-point cost regardless
-      using namespace nav2_costmap_2d; // NOLINT
-      if (pose_cost >= INSCRIBED_INFLATED_OBSTACLE) {
+      if (pose_cost >= nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE) {
         repulsive_cost[i] += critical_cost_;
       } else if (!near_goal) {  // Generally prefer trajectories further from obstacles
         repulsive_cost[i] += pose_cost;
@@ -156,9 +168,6 @@ void CostCritic::score(CriticData & data)
   */
 bool CostCritic::inCollision(float cost, float x, float y, float theta)
 {
-  bool is_tracking_unknown =
-    costmap_ros_->getLayeredCostmap()->isTrackingUnknown();
-
   // If consider_footprint_ check footprint scort for collision
   if (consider_footprint_ &&
     (cost >= possible_collision_cost_ || possible_collision_cost_ < 1.0f))
@@ -168,27 +177,15 @@ bool CostCritic::inCollision(float cost, float x, float y, float theta)
   }
 
   switch (static_cast<unsigned char>(cost)) {
-    using namespace nav2_costmap_2d; // NOLINT
-    case (LETHAL_OBSTACLE):
+    case (nav2_costmap_2d::LETHAL_OBSTACLE):
       return true;
-    case (INSCRIBED_INFLATED_OBSTACLE):
+    case (nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE):
       return consider_footprint_ ? false : true;
-    case (NO_INFORMATION):
-      return is_tracking_unknown ? false : true;
+    case (nav2_costmap_2d::NO_INFORMATION):
+      return is_tracking_unknown_ ? false : true;
   }
 
   return false;
-}
-
-float CostCritic::costAtPose(float x, float y)
-{
-  using namespace nav2_costmap_2d;   // NOLINT
-  unsigned int x_i, y_i;
-  if (!collision_checker_.worldToMap(x, y, x_i, y_i)) {
-    return nav2_costmap_2d::NO_INFORMATION;
-  }
-
-  return collision_checker_.pointCost(x_i, y_i);
 }
 
 }  // namespace mppi::critics
