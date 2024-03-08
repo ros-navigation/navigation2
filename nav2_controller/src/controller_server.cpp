@@ -420,7 +420,6 @@ void ControllerServer::computeControl()
   std::lock_guard<std::mutex> lock(dynamic_params_lock_);
 
   auto start_time = this->now();
-
   RCLCPP_INFO(get_logger(), "Received a goal, begin computing control effort.");
 
   try {
