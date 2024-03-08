@@ -419,6 +419,8 @@ void ControllerServer::computeControl()
 {
   std::lock_guard<std::mutex> lock(dynamic_params_lock_);
 
+  auto start_time = this->now();
+
   RCLCPP_INFO(get_logger(), "Received a goal, begin computing control effort.");
 
   try {
@@ -479,10 +481,12 @@ void ControllerServer::computeControl()
         break;
       }
 
+      auto cycle_duration = this->now() - start_time;
+
       if (!loop_rate.sleep()) {
         RCLCPP_WARN(
-          get_logger(), "Control loop missed its desired rate of %.4fHz",
-          controller_frequency_);
+          get_logger(), "Control loop missed its desired rate of %.4fHz.  Current loop rate is %.4f Hz",
+          controller_frequency_, 1 / cycle_duration.seconds());
       }
     }
   } catch (nav2_core::InvalidController & e) {
@@ -815,3 +819,4 @@ ControllerServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
 // This acts as a sort of entry point, allowing the component to be discoverable when its library
 // is being loaded into a running process.
 RCLCPP_COMPONENTS_REGISTER_NODE(nav2_controller::ControllerServer)
+
