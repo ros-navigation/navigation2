@@ -79,6 +79,7 @@ void PathAlignCritic::score(CriticData & data)
   const size_t batch_size = data.trajectories.x.shape(0);
   const size_t time_steps = data.trajectories.x.shape(1);
   auto && cost = xt::xtensor<float, 1>::from_shape({data.costs.shape(0)});
+  cost.fill(0.0f);
 
   // Find integrated distance in the path
   std::vector<float> path_integrated_distances(path_segments_count, 0.0f);
@@ -126,8 +127,6 @@ void PathAlignCritic::score(CriticData & data)
     }
     if (num_samples > 0) {
       cost[t] = summed_path_dist / num_samples;
-    } else {
-      cost[t] = 0.0f;
     }
   }
 

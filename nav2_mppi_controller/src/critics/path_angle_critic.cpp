@@ -99,24 +99,28 @@ void PathAngleCritic::score(CriticData & data)
   }
 
   auto yaws_between_points = xt::atan2(
-    goal_y - data.trajectories.y,
-    goal_x - data.trajectories.x);
-
-  auto yaws =
-    xt::abs(utils::shortest_angular_distance(data.trajectories.yaws, yaws_between_points));
+    goal_y - xt::view(data.trajectories.y, xt::all(), -1),
+    goal_x - xt::view(data.trajectories.x, xt::all(), -1));
 
   switch (mode_) {
     case PathAngleMode::FORWARD_PREFERENCE:
       {
-        data.costs += xt::pow(xt::mean(yaws, {1}, immediate) * weight_, power_);
+        auto yaws =
+          xt::abs(utils::shortest_angular_distance(
+            xt::view(data.trajectories.yaws, xt::all(), -1), yaws_between_points));
+        data.costs += xt::pow(yaws * weight_, power_);
         return;
       }
     case PathAngleMode::NO_DIRECTIONAL_PREFERENCE:
       {
+        auto yaws =
+          xt::abs(utils::shortest_angular_distance(
+            xt::view(data.trajectories.yaws, xt::all(), -1), yaws_between_points));
         const auto yaws_between_points_corrected = xt::where(
           yaws < M_PIF_2, yaws_between_points, utils::normalize_angles(yaws_between_points + M_PIF));
         const auto corrected_yaws = xt::abs(
-          utils::shortest_angular_distance(data.trajectories.yaws, yaws_between_points_corrected));
+          utils::shortest_angular_distance(
+            xt::view(data.trajectories.yaws, xt::all(), -1), yaws_between_points_corrected));
         data.costs += xt::pow(xt::mean(corrected_yaws, {1}, immediate) * weight_, power_);
         return;
       }
@@ -126,7 +130,8 @@ void PathAngleCritic::score(CriticData & data)
           xt::abs(utils::shortest_angular_distance(yaws_between_points, goal_yaw)) < M_PIF_2,
           yaws_between_points, utils::normalize_angles(yaws_between_points + M_PIF));
         const auto corrected_yaws = xt::abs(
-          utils::shortest_angular_distance(data.trajectories.yaws, yaws_between_points_corrected));
+          utils::shortest_angular_distance(
+            xt::view(data.trajectories.yaws, xt::all(), -1), yaws_between_points_corrected));
         data.costs += xt::pow(xt::mean(corrected_yaws, {1}, immediate) * weight_, power_);
         return;
       }

@@ -118,9 +118,9 @@ void CostCritic::score(CriticData & data)
   bool all_trajectories_collide = true;
   for (size_t i = 0; i < data.trajectories.x.shape(0); ++i) {
     bool trajectory_collide = false;
-    const auto & traj_x = xt::view(data.trajectories.x, i, xt::all());
-    const auto & traj_y = xt::view(data.trajectories.y, i, xt::all());
-    const auto & traj_yaw = xt::view(data.trajectories.yaws, i, xt::all());
+    const auto traj_x = xt::view(data.trajectories.x, i, xt::all());
+    const auto traj_y = xt::view(data.trajectories.y, i, xt::all());
+    const auto traj_yaw = xt::view(data.trajectories.yaws, i, xt::all());
     pose_cost = 0.0f;
 
     for (size_t j = 0; j < traj_len; j++) {
@@ -157,7 +157,7 @@ void CostCritic::score(CriticData & data)
     }
   }
 
-  data.costs += xt::pow((weight_ * repulsive_cost / traj_len), power_);
+  data.costs += xt::pow((std::move(repulsive_cost) * (weight_ / static_cast<float>(traj_len))), power_);
   data.fail_flag = all_trajectories_collide;
 }
 
