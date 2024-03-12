@@ -697,17 +697,21 @@ inline unsigned int removePosesAfterFirstInversion(nav_msgs::msg::Path & path)
  * @brief Compare to trajectory points to find closest path point along integrated distances
  * @param vec Vect to check
  * @return dist Distance to look for
+ * @return init Starting index to indec from
  */
-inline size_t findClosestPathPt(const std::vector<float> & vec, float dist, size_t init = 0)
+inline size_t findClosestPathPt(
+  const std::vector<float> & vec, const float dist, const size_t init)
 {
-  auto iter = std::lower_bound(vec.begin() + init, vec.end(), dist);
-  if (iter == vec.begin() + init) {
-    return 0;
+  for (size_t i = init; i != vec.size(); i++) {
+    if (vec[i] > dist) {
+      if (i > 0 && dist - vec[i - 1] < vec[i] - dist) {
+        return i - 1;
+      } else {
+        return i;
+      }
+    }
   }
-  if (dist - *(iter - 1) < *iter - dist) {
-    return iter - 1 - vec.begin();
-  }
-  return iter - vec.begin();
+  return vec.size() - 1;
 }
 
 }  // namespace mppi::utils

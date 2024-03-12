@@ -118,7 +118,7 @@ void PathAlignCritic::score(CriticData & data)
         dy = P_y(path_pt) - Ty;
         num_samples += 1.0f;
         if (use_path_orientations_) {
-          dyaw = angles::shortest_angular_distance(P_yaw(path_pt), data.trajectories.yaws(t, p));
+          dyaw = angles::shortest_angular_distance(P_yaw(path_pt), T_yaw(t, p));
           summed_path_dist += sqrtf(dx * dx + dy * dy + dyaw * dyaw);
         } else {
           summed_path_dist += sqrtf(dx * dx + dy * dy);
