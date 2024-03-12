@@ -108,7 +108,6 @@ void CostCritic::score(CriticData & data)
   }
 
   auto && repulsive_cost = xt::xtensor<float, 1>::from_shape({data.costs.shape(0)});
-  repulsive_cost.fill(0.0f);
 
   unsigned int x_i = 0u, y_i = 0u;
   float pose_cost;
@@ -118,10 +117,11 @@ void CostCritic::score(CriticData & data)
   bool all_trajectories_collide = true;
   for (size_t i = 0; i < data.trajectories.x.shape(0); ++i) {
     bool trajectory_collide = false;
-    const auto traj_x = xt::view(data.trajectories.x, i, xt::all());
+    const auto traj_x = xt::view(data.trajectories.x, i, xt::all()); // TODO higher level or don't use views at all!
     const auto traj_y = xt::view(data.trajectories.y, i, xt::all());
     const auto traj_yaw = xt::view(data.trajectories.yaws, i, xt::all());
     pose_cost = 0.0f;
+    repulsive_cost[i] = 0.0f;
 
     for (size_t j = 0; j < traj_len; j++) {
       // The getCost doesn't use orientation
@@ -157,7 +157,12 @@ void CostCritic::score(CriticData & data)
     }
   }
 
-  data.costs += xt::pow((std::move(repulsive_cost) * (weight_ / static_cast<float>(traj_len))), power_);
+  if (power_ > 1u) {
+    data.costs += xt::pow((std::move(repulsive_cost) * (weight_ / static_cast<float>(traj_len))), power_);
+  } else {
+    data.costs += std::move(repulsive_cost) * (weight_ / static_cast<float>(traj_len));
+  }
+
   data.fail_flag = all_trajectories_collide;
 }
 

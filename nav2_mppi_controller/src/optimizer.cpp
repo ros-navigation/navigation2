@@ -189,7 +189,7 @@ void Optimizer::prepare(
   state_.pose = robot_pose;
   state_.speed = robot_speed;
   path_ = utils::toTensor(plan);
-  costs_.fill(0);
+  costs_.fill(0.0f);
 
   critics_data_.fail_flag = false;
   critics_data_.goal_checker = goal_checker;

@@ -37,7 +37,11 @@ void TwirlingCritic::score(CriticData & data)
     return;
   }
 
-  data.costs += xt::pow(xt::mean(xt::abs(data.state.wz), {1}, immediate) * weight_, power_);
+  if (power_ > 1u) {
+    data.costs += xt::pow(xt::mean(xt::abs(data.state.wz), {1}, immediate) * weight_, power_);
+  } else {
+    data.costs += xt::mean(xt::abs(data.state.wz), {1}, immediate) * weight_;
+  }
 }
 
 }  // namespace mppi::critics

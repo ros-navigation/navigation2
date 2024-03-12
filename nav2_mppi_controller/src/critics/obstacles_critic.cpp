@@ -121,9 +121,7 @@ void ObstaclesCritic::score(CriticData & data)
   }
 
   auto && raw_cost = xt::xtensor<float, 1>::from_shape({data.costs.shape(0)});
-  raw_cost.fill(0.0f);
   auto && repulsive_cost = xt::xtensor<float, 1>::from_shape({data.costs.shape(0)});
-  repulsive_cost.fill(0.0f);
 
   const size_t traj_len = data.trajectories.x.shape(1);
   bool all_trajectories_collide = true;
@@ -132,6 +130,8 @@ void ObstaclesCritic::score(CriticData & data)
     float traj_cost = 0.0f;
     const auto & traj = data.trajectories;
     CollisionCost pose_cost;
+    raw_cost[i] = 0.0f;
+    repulsive_cost[i] = 0.0f;
 
     for (size_t j = 0; j < traj_len; j++) {
       pose_cost = costAtPose(traj.x(i, j), traj.y(i, j), traj.yaws(i, j));
@@ -169,10 +169,16 @@ void ObstaclesCritic::score(CriticData & data)
   auto && repulsive_cost_normalized =
     (repulsive_cost - xt::amin(repulsive_cost, immediate)) / traj_len;
 
-  data.costs += xt::pow(
-    (critical_weight_ * raw_cost) +
-    (repulsion_weight_ * repulsive_cost_normalized),
-    power_);
+  if (power_ > 1u) {
+    data.costs += xt::pow(
+      (critical_weight_ * raw_cost) +
+      (repulsion_weight_ * repulsive_cost_normalized),
+      power_);
+  } else {
+    data.costs += (critical_weight_ * raw_cost) +
+      (repulsion_weight_ * repulsive_cost_normalized);
+  }
+
   data.fail_flag = all_trajectories_collide;
 }
 

@@ -49,9 +49,14 @@ void GoalCritic::score(CriticData & data)
   const auto traj_x = xt::view(data.trajectories.x, xt::all(), xt::all());
   const auto traj_y = xt::view(data.trajectories.y, xt::all(), xt::all());
 
-  data.costs += xt::pow(
-    xt::mean(xt::hypot(traj_x - goal_x, traj_y - goal_y),
-    {1}, immediate) * weight_, power_);
+  if (power_ > 1u) {
+    data.costs += xt::pow(
+      xt::mean(xt::hypot(traj_x - goal_x, traj_y - goal_y),
+      {1}, immediate) * weight_, power_);
+  } else {
+    data.costs += xt::mean(xt::hypot(traj_x - goal_x, traj_y - goal_y),
+      {1}, immediate) * weight_;
+  }
 }
 
 }  // namespace mppi::critics

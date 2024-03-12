@@ -44,9 +44,14 @@ void GoalAngleCritic::score(CriticData & data)
   const auto goal_idx = data.path.x.shape(0) - 1;
   const float goal_yaw = data.path.yaws(goal_idx);
 
-  data.costs += xt::pow(
-    xt::mean(xt::abs(utils::shortest_angular_distance(data.trajectories.yaws, goal_yaw)), {1}) *
-    weight_, power_);
+  if (power_ > 1u) {
+    data.costs += xt::pow(
+      xt::mean(xt::abs(utils::shortest_angular_distance(data.trajectories.yaws, goal_yaw)), {1}) *
+      weight_, power_);
+  } else {
+    data.costs += xt::mean(
+      xt::abs(utils::shortest_angular_distance(data.trajectories.yaws, goal_yaw)), {1}) * weight_;
+  }
 }
 
 }  // namespace mppi::critics

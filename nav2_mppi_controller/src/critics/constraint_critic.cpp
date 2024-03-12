@@ -49,11 +49,18 @@ void ConstraintCritic::score(CriticData & data)
   // Differential motion model
   auto diff = dynamic_cast<DiffDriveMotionModel *>(data.motion_model.get());
   if (diff != nullptr) {
-    data.costs += xt::pow(
-      xt::sum(
-        (std::move(xt::maximum(data.state.vx - max_vel_, 0.0f)) +
-        std::move(xt::maximum(min_vel_ - data.state.vx, 0.0f))) *
-        data.model_dt, {1}, immediate) * weight_, power_);
+    if (power_ > 1u) {
+      data.costs += xt::pow(
+        xt::sum(
+          (std::move(xt::maximum(data.state.vx - max_vel_, 0.0f)) +
+          std::move(xt::maximum(min_vel_ - data.state.vx, 0.0f))) *
+          data.model_dt, {1}, immediate) * weight_, power_);
+    } else {
+      data.costs += xt::sum(
+          (std::move(xt::maximum(data.state.vx - max_vel_, 0.0f)) +
+          std::move(xt::maximum(min_vel_ - data.state.vx, 0.0f))) *
+          data.model_dt, {1}, immediate) * weight_;
+    }
     return;
   }
 
@@ -62,11 +69,18 @@ void ConstraintCritic::score(CriticData & data)
   if (omni != nullptr) {
     auto sgn = xt::eval(xt::where(data.state.vx > 0.0f, 1.0f, -1.0f));
     auto vel_total = sgn * xt::hypot(data.state.vx, data.state.vy);
-    data.costs += xt::pow(
-      xt::sum(
-        (std::move(xt::maximum(vel_total - max_vel_, 0.0f)) +
-        std::move(xt::maximum(min_vel_ - vel_total, 0.0f))) *
-        data.model_dt, {1}, immediate) * weight_, power_);
+    if (power_ > 1u) {
+      data.costs += xt::pow(
+        xt::sum(
+          (std::move(xt::maximum(vel_total - max_vel_, 0.0f)) +
+          std::move(xt::maximum(min_vel_ - vel_total, 0.0f))) *
+          data.model_dt, {1}, immediate) * weight_, power_);
+    } else {
+      data.costs += xt::sum(
+          (std::move(xt::maximum(vel_total - max_vel_, 0.0f)) +
+          std::move(xt::maximum(min_vel_ - vel_total, 0.0f))) *
+          data.model_dt, {1}, immediate) * weight_;
+    }
     return;
   }
 
@@ -77,13 +91,20 @@ void ConstraintCritic::score(CriticData & data)
     auto & wz = data.state.wz;
     auto out_of_turning_rad_motion = xt::maximum(
       acker->getMinTurningRadius() - (xt::fabs(vx) / xt::fabs(wz)), 0.0f);
-
-    data.costs += xt::pow(
-      xt::sum(
-        (std::move(xt::maximum(data.state.vx - max_vel_, 0.0f)) +
-        std::move(xt::maximum(min_vel_ - data.state.vx, 0.0f)) +
-        std::move(out_of_turning_rad_motion)) *
-        data.model_dt, {1}, immediate) * weight_, power_);
+    if (power_ > 1u) {
+      data.costs += xt::pow(
+        xt::sum(
+          (std::move(xt::maximum(data.state.vx - max_vel_, 0.0f)) +
+          std::move(xt::maximum(min_vel_ - data.state.vx, 0.0f)) +
+          std::move(out_of_turning_rad_motion)) *
+          data.model_dt, {1}, immediate) * weight_, power_);
+    } else {
+      data.costs += xt::sum(
+          (std::move(xt::maximum(data.state.vx - max_vel_, 0.0f)) +
+          std::move(xt::maximum(min_vel_ - data.state.vx, 0.0f)) +
+          std::move(out_of_turning_rad_motion)) *
+          data.model_dt, {1}, immediate) * weight_;
+    }
     return;
   }
 }

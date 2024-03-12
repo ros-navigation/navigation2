@@ -243,15 +243,15 @@ inline bool withinPositionGoalTolerance(
   const models::Path & path)
 {
   const auto goal_idx = path.x.shape(0) - 1;
-  const auto goal_x = path.x(goal_idx);
-  const auto goal_y = path.y(goal_idx);
+  const float goal_x = path.x(goal_idx);
+  const float goal_y = path.y(goal_idx);
 
-  const auto pose_tolerance_sq = pose_tolerance * pose_tolerance;
+  const float pose_tolerance_sq = pose_tolerance * pose_tolerance;
 
-  auto dx = robot.position.x - goal_x;
-  auto dy = robot.position.y - goal_y;
+  const float dx = static_cast<float>(robot.position.x) - goal_x;
+  const float dy = static_cast<float>(robot.position.y) - goal_y;
 
-  auto dist_sq = dx * dx + dy * dy;
+  float dist_sq = dx * dx + dy * dy;
 
   if (dist_sq < pose_tolerance_sq) {
     return true;
@@ -345,8 +345,9 @@ inline size_t findPathTrajectoryInitialPoint(const CriticData & data)
   float min_distance_by_path = std::numeric_limits<float>::max();
   size_t min_id = 0;
   for (size_t j = 0; j < dists.shape(0); j++) {
-    if (dists(j) < min_distance_by_path) {
-      min_distance_by_path = dists(j);
+    const float & dist = dists(j);
+    if (dist < min_distance_by_path) {
+      min_distance_by_path = dist;
       min_id = j;
     }
   }
@@ -377,26 +378,22 @@ inline void findPathCosts(
   unsigned int map_x, map_y;
   const size_t path_segments_count = data.path.x.shape(0) - 1;
   data.path_pts_valid = std::vector<bool>(path_segments_count, false);
+  const bool tracking_unknown = costmap_ros->getLayeredCostmap()->isTrackingUnknown();
   for (unsigned int idx = 0; idx < path_segments_count; idx++) {
-    const auto path_x = data.path.x(idx);
-    const auto path_y = data.path.y(idx);
-    if (!costmap->worldToMap(path_x, path_y, map_x, map_y)) {
+    if (!costmap->worldToMap(data.path.x(idx), data.path.y(idx), map_x, map_y)) {
       (*data.path_pts_valid)[idx] = false;
       continue;
     }
 
     switch (costmap->getCost(map_x, map_y)) {
-      using namespace nav2_costmap_2d; // NOLINT
-      case (LETHAL_OBSTACLE):
+      case (nav2_costmap_2d::LETHAL_OBSTACLE):
         (*data.path_pts_valid)[idx] = false;
         continue;
-      case (INSCRIBED_INFLATED_OBSTACLE):
+      case (nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE):
         (*data.path_pts_valid)[idx] = false;
         continue;
-      case (NO_INFORMATION):
-        const bool is_tracking_unknown =
-          costmap_ros->getLayeredCostmap()->isTrackingUnknown();
-        (*data.path_pts_valid)[idx] = is_tracking_unknown ? true : false;
+      case (nav2_costmap_2d::NO_INFORMATION):
+        (*data.path_pts_valid)[idx] = tracking_unknown ? true : false;
         continue;
     }
 
@@ -699,20 +696,31 @@ inline unsigned int removePosesAfterFirstInversion(nav_msgs::msg::Path & path)
  * @return dist Distance to look for
  * @return init Starting index to indec from
  */
-inline size_t findClosestPathPt(
-  const std::vector<float> & vec, const float dist, const size_t init)
+inline unsigned int findClosestPathPt(
+  const std::vector<float> & vec, const float dist, const unsigned int init = 0)
 {
-  for (size_t i = init; i != vec.size(); i++) {
-    if (vec[i] > dist) {
-      if (i > 0 && dist - vec[i - 1] < vec[i] - dist) {
+  float distim1 = init != 0u ? vec[init - 1] : vec[0];
+  float disti = 0.0f;
+  const unsigned int size = vec.size(); 
+  for (unsigned int i = init; i != size; i++) {
+    disti = vec[i];
+    if (disti > dist) {
+      if (i > 0 && dist - distim1 < disti - dist) {
         return i - 1;
-      } else {
-        return i;
       }
+      return i;
     }
+    distim1 = disti;
   }
-  return vec.size() - 1;
+  return size - 1;
 }
+
+
+// A struct to hold pose data in floating point resolution
+struct Pose2D
+{
+  float x, y, theta;
+};
 
 }  // namespace mppi::utils
 

@@ -73,9 +73,9 @@ void PathAngleCritic::score(CriticData & data)
   auto offseted_idx = std::min(
     *data.furthest_reached_path_point + offset_from_furthest_, data.path.x.shape(0) - 1);
 
-  const float goal_x = xt::view(data.path.x, offseted_idx);
-  const float goal_y = xt::view(data.path.y, offseted_idx);
-  const float goal_yaw = xt::view(data.path.yaws, offseted_idx);
+  const float goal_x = data.path.x(offseted_idx);
+  const float goal_y = data.path.y(offseted_idx);
+  const float goal_yaw = data.path.yaws(offseted_idx);
   const geometry_msgs::msg::Pose & pose = data.state.pose.pose;
 
   switch (mode_) {
@@ -108,7 +108,11 @@ void PathAngleCritic::score(CriticData & data)
         auto yaws =
           xt::abs(utils::shortest_angular_distance(
             xt::view(data.trajectories.yaws, xt::all(), -1), yaws_between_points));
-        data.costs += xt::pow(yaws * weight_, power_);
+        if (power_ > 1u) {
+          data.costs += xt::pow(yaws * weight_, power_);
+        } else {
+          data.costs += yaws * weight_;
+        }
         return;
       }
     case PathAngleMode::NO_DIRECTIONAL_PREFERENCE:
@@ -121,7 +125,11 @@ void PathAngleCritic::score(CriticData & data)
         const auto corrected_yaws = xt::abs(
           utils::shortest_angular_distance(
             xt::view(data.trajectories.yaws, xt::all(), -1), yaws_between_points_corrected));
-        data.costs += xt::pow(xt::mean(corrected_yaws, {1}, immediate) * weight_, power_);
+        if (power_ > 1u) {
+          data.costs += xt::pow(xt::mean(corrected_yaws, {1}, immediate) * weight_, power_);
+        } else {
+          data.costs += xt::mean(corrected_yaws, {1}, immediate) * weight_;
+        }
         return;
       }
     case PathAngleMode::CONSIDER_FEASIBLE_PATH_ORIENTATIONS:
@@ -132,7 +140,11 @@ void PathAngleCritic::score(CriticData & data)
         const auto corrected_yaws = xt::abs(
           utils::shortest_angular_distance(
             xt::view(data.trajectories.yaws, xt::all(), -1), yaws_between_points_corrected));
-        data.costs += xt::pow(xt::mean(corrected_yaws, {1}, immediate) * weight_, power_);
+        if (power_ > 1u) {
+          data.costs += xt::pow(xt::mean(corrected_yaws, {1}, immediate) * weight_, power_);
+        } else {
+          data.costs += xt::mean(corrected_yaws, {1}, immediate) * weight_;
+        }
         return;
       }
   }

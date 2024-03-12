@@ -63,7 +63,11 @@ void PathFollowCritic::score(CriticData & data)
   const auto last_x = xt::view(data.trajectories.x, xt::all(), -1);
   const auto last_y = xt::view(data.trajectories.y, xt::all(), -1);
 
-  data.costs += xt::pow(weight_ * std::move(xt::hypot(last_x - path_x, last_y - path_y)), power_);
+  if (power_ > 1u) {
+    data.costs += xt::pow(weight_ * std::move(xt::hypot(last_x - path_x, last_y - path_y)), power_);
+  } else {
+    data.costs += weight_ * std::move(xt::hypot(last_x - path_x, last_y - path_y));
+  }
 }
 
 }  // namespace mppi::critics
