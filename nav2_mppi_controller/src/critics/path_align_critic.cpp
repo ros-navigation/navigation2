@@ -91,22 +91,32 @@ void PathAlignCritic::score(CriticData & data)
     path_integrated_distances[i] = path_integrated_distances[i - 1] + curr_dist;
   }
 
-  float traj_integrated_distance = 0.0f;
   float summed_path_dist = 0.0f, dyaw = 0.0f;
   float num_samples = 0.0f;
-  float Tx = 0.0f, Ty = 0.0f;
   size_t path_pt = 0;
+  float traj_integrated_distance = 0.0f;
+
+  // Get strided trajectory information
+  const auto T_x = xt::view(
+    data.trajectories.x, xt::all(),
+    xt::range(trajectory_point_step_, time_steps, trajectory_point_step_));
+  const auto T_y = xt::view(
+    data.trajectories.y,
+    xt::all(), xt::range(trajectory_point_step_, time_steps, trajectory_point_step_));
+  const auto T_yaw = xt::view(
+    data.trajectories.yaws,
+    xt::all(), xt::range(trajectory_point_step_, time_steps, trajectory_point_step_));
+
   for (size_t t = 0; t < batch_size; ++t) {
-    traj_integrated_distance = 0.0f;
     summed_path_dist = 0.0f;
     num_samples = 0.0f;
-    const auto T_x = xt::view(data.trajectories.x, t, xt::all());
-    const auto T_y = xt::view(data.trajectories.y, t, xt::all());
-    for (size_t p = trajectory_point_step_; p < time_steps; p += trajectory_point_step_) {
-      Tx = T_x(p);
-      Ty = T_y(p);
-      dx = Tx - T_x(p - trajectory_point_step_);
-      dy = Ty - T_y(p - trajectory_point_step_);
+    traj_integrated_distance = 0.0f;
+    path_pt = 0;
+    for (size_t p = 1; p < T_x.shape(1); p++) {
+      const float & Tx = T_x(t, p);
+      const float & Ty = T_y(t, p);
+      dx = Tx - T_x(t, p - 1);
+      dy = Ty - T_y(t, p - 1);
       traj_integrated_distance += sqrtf(dx * dx + dy * dy);
       path_pt = utils::findClosestPathPt(
         path_integrated_distances, traj_integrated_distance, path_pt);
