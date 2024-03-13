@@ -360,7 +360,7 @@ geometry_msgs::msg::PoseStamped RegulatedPurePursuitController::getLookAheadPoin
       // Use the circle intersection to find the position at the correct look
       // ahead distance
       const auto interpolated_position = circleSegmentIntersection(
-          last_pose_it->pose.position, projected_position, lookahead_dist);
+        last_pose_it->pose.position, projected_position, lookahead_dist);
 
       geometry_msgs::msg::PoseStamped interpolated_pose;
       interpolated_pose.header = last_pose_it->header;
