@@ -697,12 +697,12 @@ inline unsigned int removePosesAfterFirstInversion(nav_msgs::msg::Path & path)
  * @return init Starting index to indec from
  */
 inline unsigned int findClosestPathPt(
-  const std::vector<float> & vec, const float dist, const unsigned int init = 0)
+  const std::vector<float> & vec, const float dist, const unsigned int init = 0u)
 {
-  float distim1 = init != 0u ? vec[init - 1] : vec[0];
+  float distim1 = init != 0u ? vec[init] : 0.0f;  // First is 0, no accumulated distance yet
   float disti = 0.0f;
-  const unsigned int size = vec.size(); 
-  for (unsigned int i = init; i != size; i++) {
+  const unsigned int size = vec.size();
+  for (unsigned int i = init + 1; i != size; i++) {
     disti = vec[i];
     if (disti > dist) {
       if (i > 0 && dist - distim1 < disti - dist) {
@@ -714,7 +714,6 @@ inline unsigned int findClosestPathPt(
   }
   return size - 1;
 }
-
 
 // A struct to hold pose data in floating point resolution
 struct Pose2D

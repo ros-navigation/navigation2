@@ -113,15 +113,15 @@ void PathAlignCritic::score(CriticData & data)
     float Tx_m1 = T_x(t, 0);
     float Ty_m1 = T_y(t, 0);
     for (size_t p = 1; p < traj_sampled_size; p++) {
-      const float Tx = T_x(t, p);  // TODO the lookups are slow
+      const float Tx = T_x(t, p);
       const float Ty = T_y(t, p);
       dx = Tx - Tx_m1;
       dy = Ty - Ty_m1;
       Tx_m1 = Tx;
       Ty_m1 = Ty;
-      traj_integrated_distance += sqrtf(dx * dx + dy * dy);  // TODO all the sqrts shave off some time
+      traj_integrated_distance += sqrtf(dx * dx + dy * dy);
       path_pt = utils::findClosestPathPt(
-        path_integrated_distances, traj_integrated_distance, path_pt);  // TODO Good bunch of time here 
+        path_integrated_distances, traj_integrated_distance, path_pt);
 
       // The nearest path point to align to needs to be not in collision, else
       // let the obstacle critic take over in this region due to dynamic obstacles
