@@ -65,8 +65,7 @@ protected:
     {
       score_cost = static_cast<float>(collision_checker_.footprintCostAtPose(
         static_cast<double>(x), static_cast<double>(y), static_cast<double>(theta),
-        costmap_ros_->getRobotFootprint())); // TODO float to double stuff
-        // TODO approximate with precomputed footprint orientations and translations?
+        costmap_ros_->getRobotFootprint()));
     }
 
     switch (static_cast<unsigned char>(score_cost)) {
