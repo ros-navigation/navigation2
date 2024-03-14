@@ -69,7 +69,7 @@ bool transformPoseInTargetFrame(
  * @return tf_transform Output source->target transform
  */
 template<typename TransformType = tf2::Transform>
-std::optional<TransformType> getTransform(
+[[nodiscard]] std::optional<TransformType> getTransform(
   const std::string & target_frame_id,
   const std::string & source_frame_id,
   const tf2::Duration & transform_timeout,
@@ -90,7 +90,7 @@ std::optional<TransformType> getTransform(
  * @return tf_transform Output source->target transform
  */
 template<typename TransformType = tf2::Transform>
-std::optional<TransformType> getTransform(
+[[nodiscard]] std::optional<TransformType> getTransform(
   const std::string & target_frame_id,
   const rclcpp::Time & target_time,
   const std::string & source_frame_id,
