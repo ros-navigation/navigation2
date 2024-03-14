@@ -28,8 +28,8 @@ Circle::Circle(
   const std::string & polygon_name,
   const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
   const std::string & base_frame_id,
-  const tf2::Duration & transform_tolerance)
-: Polygon::Polygon(node, polygon_name, tf_buffer, base_frame_id, transform_tolerance)
+  const tf2::Duration & transform_timeout)
+: Polygon::Polygon(node, polygon_name, tf_buffer, base_frame_id, transform_timeout)
 {
   RCLCPP_INFO(logger_, "[%s]: Creating Circle", polygon_name_.c_str());
 }

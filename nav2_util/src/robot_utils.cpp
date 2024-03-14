@@ -81,7 +81,7 @@ bool transformPoseInTargetFrame(
 std::optional<tf2::Transform> getTransform(
   const std::string & target_frame_id,
   const std::string & source_frame_id,
-  const tf2::Duration & transform_tolerance,
+  const tf2::Duration & transform_timeout,
   const std::shared_ptr<tf2_ros::Buffer> tf_buffer)
 {
   tf2::Transform tf2_transform;
@@ -97,7 +97,7 @@ std::optional<tf2::Transform> getTransform(
     // Obtaining the transform to get data from source to target frame
     transform = tf_buffer->lookupTransform(
       target_frame_id, source_frame_id,
-      tf2::TimePointZero, transform_tolerance);
+      tf2::TimePointZero, transform_timeout);
   } catch (tf2::TransformException & e) {
     RCLCPP_ERROR(
       rclcpp::get_logger("getTransform"),
@@ -117,7 +117,7 @@ std::optional<tf2::Transform> getTransform(
   const std::string & source_frame_id,
   const rclcpp::Time & source_time,
   const std::string & fixed_frame_id,
-  const tf2::Duration & transform_tolerance,
+  const tf2::Duration & transform_timeout,
   const std::shared_ptr<tf2_ros::Buffer> tf_buffer)
 {
   tf2::Transform tf2_transform;
@@ -131,7 +131,7 @@ std::optional<tf2::Transform> getTransform(
     transform = tf_buffer->lookupTransform(
       target_frame_id, target_time,
       source_frame_id, source_time,
-      fixed_frame_id, transform_tolerance);
+      fixed_frame_id, transform_timeout);
   } catch (tf2::TransformException & ex) {
     RCLCPP_ERROR(
       rclcpp::get_logger("getTransform"),

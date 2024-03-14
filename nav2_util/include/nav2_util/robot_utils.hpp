@@ -64,14 +64,14 @@ bool transformPoseInTargetFrame(
  * @brief Obtains a transform from source_frame_id -> to target_frame_id
  * @param target_frame_id Target frame ID to convert to
  * @param source_frame_id Source frame ID to convert from
- * @param transform_tolerance Transform tolerance
+ * @param transform_timeout How long to block before failing
  * @param tf_buffer TF buffer to use for the transformation
  * @return tf_transform Output source->target transform
  */
 std::optional<tf2::Transform> getTransform(
   const std::string & target_frame_id,
   const std::string & source_frame_id,
-  const tf2::Duration & transform_tolerance,
+  const tf2::Duration & transform_timeout,
   const std::shared_ptr<tf2_ros::Buffer> tf_buffer);
 
 /**
@@ -82,7 +82,7 @@ std::optional<tf2::Transform> getTransform(
  * @param target_frame_id Target frame ID to convert to
  * @param target_time Current node time to interpolate to
  * @param fixed_frame_id The frame in which to assume the transform is constant in time
- * @param transform_tolerance Transform tolerance
+ * @param transform_timeout How long to block before failing
  * @param tf_buffer TF buffer to use for the transformation
  * @param tf_transform Output source->target transform
  * @return tf_transform Output source->target transform
@@ -93,7 +93,7 @@ std::optional<tf2::Transform> getTransform(
   const std::string & source_frame_id,
   const rclcpp::Time & source_time,
   const std::string & fixed_frame_id,
-  const tf2::Duration & transform_tolerance,
+  const tf2::Duration & transform_timeout,
   const std::shared_ptr<tf2_ros::Buffer> tf_buffer);
 
 /**

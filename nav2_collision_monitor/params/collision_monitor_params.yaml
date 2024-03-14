@@ -5,7 +5,7 @@ collision_monitor:
     cmd_vel_in_topic: "cmd_vel_smoothed"
     cmd_vel_out_topic: "cmd_vel"
     state_topic: "collision_monitor_state"
-    transform_tolerance: 0.5
+    transform_timeout: 0.5
     source_timeout: 5.0
     base_shift_correction: True
     stop_pub_timeout: 2.0

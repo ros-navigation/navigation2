@@ -38,14 +38,14 @@ public:
    * @param polygon_name Name of circle
    * @param tf_buffer Shared pointer to a TF buffer
    * @param base_frame_id Robot base frame ID
-   * @param transform_tolerance Transform tolerance
+   * @param transform_timeout How long to block before failing
    */
   Circle(
     const nav2_util::LifecycleNode::WeakPtr & node,
     const std::string & polygon_name,
     const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
     const std::string & base_frame_id,
-    const tf2::Duration & transform_tolerance);
+    const tf2::Duration & transform_timeout);
   /**
    * @brief Circle class destructor
    */
