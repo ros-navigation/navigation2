@@ -84,15 +84,17 @@ bool PointCloud::getData(
       // base frame and current time
       if (base_shift_correction_) {
         return nav2_util::getTransform(
-          data_->header.frame_id, data_->header.stamp, base_frame_id_, curr_time, global_frame_id_,
-          transform_tolerance_, tf_buffer_);
+          base_frame_id_, curr_time, data_->header.frame_id,
+          data_->header.stamp, global_frame_id_, transform_tolerance_,
+          tf_buffer_);
       }
 
       // Obtaining the transform to get data from source frame to base frame without time shift
       // considered. Less accurate but much more faster option not dependent on state estimation
       // frames.
       return nav2_util::getTransform(
-        data_->header.frame_id, base_frame_id_, transform_tolerance_, tf_buffer_);
+        base_frame_id_, data_->header.frame_id, transform_tolerance_,
+        tf_buffer_);
     }();
 
   if (!tf_transform.has_value()) {return false;}

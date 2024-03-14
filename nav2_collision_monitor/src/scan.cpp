@@ -83,8 +83,8 @@ bool Scan::getData(
       // base frame and current time
       if (base_shift_correction_) {
         return nav2_util::getTransform(
-          data_->header.frame_id, data_->header.stamp, base_frame_id_,
-          curr_time, global_frame_id_, transform_tolerance_,
+          base_frame_id_, curr_time, data_->header.frame_id,
+          data_->header.stamp, global_frame_id_, transform_tolerance_,
           tf_buffer_);
       }
 
@@ -92,7 +92,7 @@ bool Scan::getData(
       // considered. Less accurate but much more faster option not dependent on state estimation
       // frames.
       return nav2_util::getTransform(
-        data_->header.frame_id, base_frame_id_, transform_tolerance_,
+        base_frame_id_, data_->header.frame_id, transform_tolerance_,
         tf_buffer_);
     }();
 

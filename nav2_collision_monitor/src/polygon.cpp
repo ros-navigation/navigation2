@@ -205,10 +205,11 @@ void Polygon::updatePolygon(const Velocity & /*cmd_vel_in*/)
     std::size_t new_size = polygon_.polygon.points.size();
 
     // Get the transform from PolygonStamped frame to base_frame_id_
-    std::optional<tf2::Transform> tf_transform =
-      nav2_util::getTransform(
-      polygon_.header.frame_id, base_frame_id_,
-      transform_tolerance_, tf_buffer_);
+    std::optional<tf2::Transform> tf_transform = nav2_util::getTransform(
+      base_frame_id_,
+      polygon_.header.frame_id,
+      transform_tolerance_,
+      tf_buffer_);
 
     if (!tf_transform.has_value()) {return;}
 
@@ -455,10 +456,11 @@ void Polygon::updatePolygon(geometry_msgs::msg::PolygonStamped::ConstSharedPtr m
   }
 
   // Get the transform from PolygonStamped frame to base_frame_id_
-  std::optional<tf2::Transform> tf_transform =
-    nav2_util::getTransform(
-    msg->header.frame_id, base_frame_id_,
-    transform_tolerance_, tf_buffer_);
+  std::optional<tf2::Transform> tf_transform = nav2_util::getTransform(
+    base_frame_id_,
+    msg->header.frame_id,
+    transform_tolerance_,
+    tf_buffer_);
 
   if (!tf_transform.has_value()) {return;}
 
