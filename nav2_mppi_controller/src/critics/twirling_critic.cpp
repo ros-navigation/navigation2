@@ -38,9 +38,9 @@ void TwirlingCritic::score(CriticData & data)
   }
 
   if (power_ > 1u) {
-    data.costs += xt::pow(xt::mean(xt::abs(data.state.wz), {1}, immediate) * weight_, power_);
+    data.costs += xt::pow(xt::mean(xt::fabs(data.state.wz), {1}, immediate) * weight_, power_);
   } else {
-    data.costs += xt::mean(xt::abs(data.state.wz), {1}, immediate) * weight_;
+    data.costs += xt::mean(xt::fabs(data.state.wz), {1}, immediate) * weight_;
   }
 }
 
