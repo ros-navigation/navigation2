@@ -52,7 +52,7 @@ static const char POINTCLOUD_NAME[]{"PointCloud"};
 static const char POINTCLOUD_TOPIC[]{"pointcloud"};
 static const char RANGE_NAME[]{"Range"};
 static const char RANGE_TOPIC[]{"range"};
-static const tf2::Duration TRANSFORM_TIMEOUT{tf2::durationFromSec(0.1)};
+static const tf2::Duration TRANSFORM_TOLERANCE{tf2::durationFromSec(0.1)};
 static const rclcpp::Duration DATA_TIMEOUT{rclcpp::Duration::from_seconds(5.0)};
 
 class TestNode : public nav2_util::LifecycleNode
@@ -171,12 +171,12 @@ public:
     const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
-    const tf2::Duration & transform_timeout,
+    const tf2::Duration & transform_tolerance,
     const rclcpp::Duration & data_timeout,
     const bool base_shift_correction)
   : nav2_collision_monitor::Scan(
       node, source_name, tf_buffer, base_frame_id, global_frame_id,
-      transform_timeout, data_timeout, base_shift_correction)
+      transform_tolerance, data_timeout, base_shift_correction)
   {}
 
   bool dataReceived() const
@@ -194,12 +194,12 @@ public:
     const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
-    const tf2::Duration & transform_timeout,
+    const tf2::Duration & transform_tolerance,
     const rclcpp::Duration & data_timeout,
     const bool base_shift_correction)
   : nav2_collision_monitor::PointCloud(
       node, source_name, tf_buffer, base_frame_id, global_frame_id,
-      transform_timeout, data_timeout, base_shift_correction)
+      transform_tolerance, data_timeout, base_shift_correction)
   {}
 
   bool dataReceived() const
@@ -217,12 +217,12 @@ public:
     const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
-    const tf2::Duration & transform_timeout,
+    const tf2::Duration & transform_tolerance,
     const rclcpp::Duration & data_timeout,
     const bool base_shift_correction)
   : nav2_collision_monitor::Range(
       node, source_name, tf_buffer, base_frame_id, global_frame_id,
-      transform_timeout, data_timeout, base_shift_correction)
+      transform_tolerance, data_timeout, base_shift_correction)
   {}
 
   bool dataReceived() const
@@ -294,7 +294,7 @@ void Tester::createSources(const bool base_shift_correction)
   scan_ = std::make_shared<ScanWrapper>(
     test_node_, SCAN_NAME, tf_buffer_,
     BASE_FRAME_ID, GLOBAL_FRAME_ID,
-    TRANSFORM_TIMEOUT, DATA_TIMEOUT, base_shift_correction);
+    TRANSFORM_TOLERANCE, DATA_TIMEOUT, base_shift_correction);
   scan_->configure();
 
   // Create PointCloud object
@@ -314,7 +314,7 @@ void Tester::createSources(const bool base_shift_correction)
   pointcloud_ = std::make_shared<PointCloudWrapper>(
     test_node_, POINTCLOUD_NAME, tf_buffer_,
     BASE_FRAME_ID, GLOBAL_FRAME_ID,
-    TRANSFORM_TIMEOUT, DATA_TIMEOUT, base_shift_correction);
+    TRANSFORM_TOLERANCE, DATA_TIMEOUT, base_shift_correction);
   pointcloud_->configure();
 
   // Create Range object
@@ -329,7 +329,7 @@ void Tester::createSources(const bool base_shift_correction)
   range_ = std::make_shared<RangeWrapper>(
     test_node_, RANGE_NAME, tf_buffer_,
     BASE_FRAME_ID, GLOBAL_FRAME_ID,
-    TRANSFORM_TIMEOUT, DATA_TIMEOUT, base_shift_correction);
+    TRANSFORM_TOLERANCE, DATA_TIMEOUT, base_shift_correction);
   range_->configure();
 }
 

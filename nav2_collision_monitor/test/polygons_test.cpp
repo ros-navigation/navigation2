@@ -70,7 +70,7 @@ static const double LINEAR_LIMIT{0.4};
 static const double ANGULAR_LIMIT{0.09};
 static const double TIME_BEFORE_COLLISION{1.0};
 static const double SIMULATION_TIME_STEP{0.01};
-static const tf2::Duration TRANSFORM_TIMEOUT{tf2::durationFromSec(0.1)};
+static const tf2::Duration TRANSFORM_TOLERANCE{tf2::durationFromSec(0.1)};
 
 class TestNode : public nav2_util::LifecycleNode
 {
@@ -173,9 +173,9 @@ public:
     const std::string & polygon_name,
     const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
     const std::string & base_frame_id,
-    const tf2::Duration & transform_timeout)
+    const tf2::Duration & transform_tolerance)
   : nav2_collision_monitor::Polygon(
-      node, polygon_name, tf_buffer, base_frame_id, transform_timeout)
+      node, polygon_name, tf_buffer, base_frame_id, transform_tolerance)
   {
   }
 
@@ -198,9 +198,9 @@ public:
     const std::string & polygon_name,
     const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
     const std::string & base_frame_id,
-    const tf2::Duration & transform_timeout)
+    const tf2::Duration & transform_tolerance)
   : nav2_collision_monitor::Circle(
-      node, polygon_name, tf_buffer, base_frame_id, transform_timeout)
+      node, polygon_name, tf_buffer, base_frame_id, transform_tolerance)
   {
   }
 
@@ -377,7 +377,7 @@ void Tester::createPolygon(const std::string & action_type, const bool is_static
 
   polygon_ = std::make_shared<PolygonWrapper>(
     test_node_, POLYGON_NAME,
-    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TIMEOUT);
+    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_TRUE(polygon_->configure());
   polygon_->activate();
 }
@@ -389,7 +389,7 @@ void Tester::createCircle(const std::string & action_type)
 
   circle_ = std::make_shared<CircleWrapper>(
     test_node_, CIRCLE_NAME,
-    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TIMEOUT);
+    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_TRUE(circle_->configure());
   circle_->activate();
 }
@@ -535,7 +535,7 @@ TEST_F(Tester, testPolygonUndeclaredActionType)
   // "action_type" parameter is not initialized
   polygon_ = std::make_shared<PolygonWrapper>(
     test_node_, POLYGON_NAME,
-    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TIMEOUT);
+    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_FALSE(polygon_->configure());
   // Check that "action_type" parameter is not set after configuring
   ASSERT_TRUE(checkUndeclaredParameter(POLYGON_NAME, "action_type"));
@@ -550,7 +550,7 @@ TEST_F(Tester, testPolygonUndeclaredPoints)
     rclcpp::Parameter(std::string(POLYGON_NAME) + ".action_type", "stop"));
   polygon_ = std::make_shared<PolygonWrapper>(
     test_node_, POLYGON_NAME,
-    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TIMEOUT);
+    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_FALSE(polygon_->configure());
   // Check that "points" and "polygon_sub_topic" parameters are not set after configuring
   ASSERT_TRUE(checkUndeclaredParameter(POLYGON_NAME, "points"));
@@ -564,7 +564,7 @@ TEST_F(Tester, testPolygonIncorrectActionType)
 
   polygon_ = std::make_shared<PolygonWrapper>(
     test_node_, POLYGON_NAME,
-    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TIMEOUT);
+    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_FALSE(polygon_->configure());
 }
 
@@ -580,7 +580,7 @@ TEST_F(Tester, testPolygonIncorrectPoints1)
 
   polygon_ = std::make_shared<PolygonWrapper>(
     test_node_, POLYGON_NAME,
-    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TIMEOUT);
+    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_FALSE(polygon_->configure());
 }
 
@@ -596,7 +596,7 @@ TEST_F(Tester, testPolygonIncorrectPoints2)
 
   polygon_ = std::make_shared<PolygonWrapper>(
     test_node_, POLYGON_NAME,
-    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TIMEOUT);
+    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_FALSE(polygon_->configure());
 }
 
@@ -614,7 +614,7 @@ TEST_F(Tester, testPolygonMaxPoints)
 
   polygon_ = std::make_shared<PolygonWrapper>(
     test_node_, POLYGON_NAME,
-    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TIMEOUT);
+    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_TRUE(polygon_->configure());
   EXPECT_EQ(polygon_->getMinPoints(), max_points + 1);
 }
@@ -625,7 +625,7 @@ TEST_F(Tester, testCircleUndeclaredRadius)
 
   circle_ = std::make_shared<CircleWrapper>(
     test_node_, CIRCLE_NAME,
-    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TIMEOUT);
+    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_FALSE(circle_->configure());
 
   // Check that "radius" parameter is not set after configuring
@@ -768,7 +768,7 @@ TEST_F(Tester, testPolygonGetPointsInsideEdge)
 
   polygon_ = std::make_shared<PolygonWrapper>(
     test_node_, POLYGON_NAME,
-    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TIMEOUT);
+    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_TRUE(polygon_->configure());
 
   std::vector<nav2_collision_monitor::Point> points;
@@ -902,7 +902,7 @@ TEST_F(Tester, testPolygonDefaultVisualize)
   // Create new polygon
   polygon_ = std::make_shared<PolygonWrapper>(
     test_node_, POLYGON_NAME,
-    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TIMEOUT);
+    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_TRUE(polygon_->configure());
   polygon_->activate();
 
@@ -925,7 +925,7 @@ TEST_F(Tester, testPolygonInvalidPointsString)
 
   polygon_ = std::make_shared<PolygonWrapper>(
     test_node_, POLYGON_NAME,
-    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TIMEOUT);
+    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_FALSE(polygon_->configure());
 }
 

@@ -124,18 +124,18 @@ protected:
   /**
    * @brief Supporting routine creating and configuring all polygons
    * @param base_frame_id Robot base frame ID
-   * @param transform_timeout How long to block before failing
+   * @param transform_tolerance Transform tolerance
    * @return True if all polygons were configured successfully or false in failure case
    */
   bool configurePolygons(
     const std::string & base_frame_id,
-    const tf2::Duration & transform_timeout);
+    const tf2::Duration & transform_tolerance);
   /**
    * @brief Supporting routine creating and configuring all data sources
    * @param base_frame_id Robot base frame ID
    * @param odom_frame_id Odometry frame ID. Used as global frame to get
    * source->base time interpolated transform.
-   * @param transform_timeout How long to block before failing
+   * @param transform_tolerance Transform tolerance
    * @param source_timeout Maximum time interval in which data is considered valid
    * @param base_shift_correction Whether to correct source data towards to base frame movement,
    * considering the difference between current time and latest source time
@@ -144,7 +144,7 @@ protected:
   bool configureSources(
     const std::string & base_frame_id,
     const std::string & odom_frame_id,
-    const tf2::Duration & transform_timeout,
+    const tf2::Duration & transform_tolerance,
     const rclcpp::Duration & source_timeout,
     const bool base_shift_correction);
 

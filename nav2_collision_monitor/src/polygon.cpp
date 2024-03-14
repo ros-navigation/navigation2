@@ -35,11 +35,11 @@ Polygon::Polygon(
   const std::string & polygon_name,
   const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
   const std::string & base_frame_id,
-  const tf2::Duration & transform_timeout)
+  const tf2::Duration & transform_tolerance)
 : node_(node), polygon_name_(polygon_name), action_type_(DO_NOTHING),
   slowdown_ratio_(0.0), linear_limit_(0.0), angular_limit_(0.0),
   footprint_sub_(nullptr), tf_buffer_(tf_buffer),
-  base_frame_id_(base_frame_id), transform_timeout_(transform_timeout)
+  base_frame_id_(base_frame_id), transform_tolerance_(transform_tolerance)
 {
   RCLCPP_INFO(logger_, "[%s]: Creating Polygon", polygon_name_.c_str());
 }
@@ -84,7 +84,7 @@ bool Polygon::configure()
       polygon_name_.c_str(), footprint_topic.c_str());
     footprint_sub_ = std::make_unique<nav2_costmap_2d::FootprintSubscriber>(
       node, footprint_topic, *tf_buffer_,
-      base_frame_id_, tf2::durationToSec(transform_timeout_));
+      base_frame_id_, tf2::durationToSec(transform_tolerance_));
   }
 
   if (visualize_) {
@@ -208,7 +208,7 @@ void Polygon::updatePolygon(const Velocity & /*cmd_vel_in*/)
     std::optional<tf2::Transform> tf_transform = nav2_util::getTransform(
       base_frame_id_,
       polygon_.header.frame_id,
-      transform_timeout_,
+      transform_tolerance_,
       tf_buffer_);
 
     if (!tf_transform.has_value()) {return;}
@@ -459,7 +459,7 @@ void Polygon::updatePolygon(geometry_msgs::msg::PolygonStamped::ConstSharedPtr m
   std::optional<tf2::Transform> tf_transform = nav2_util::getTransform(
     base_frame_id_,
     msg->header.frame_id,
-    transform_timeout_,
+    transform_tolerance_,
     tf_buffer_);
 
   if (!tf_transform.has_value()) {return;}

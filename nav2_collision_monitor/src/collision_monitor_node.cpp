@@ -231,7 +231,7 @@ bool CollisionMonitor::getParameters(
   std::string & state_topic)
 {
   std::string base_frame_id, odom_frame_id;
-  tf2::Duration transform_timeout;
+  tf2::Duration transform_tolerance;
   rclcpp::Duration source_timeout(2.0, 0.0);
 
   auto node = shared_from_this();
@@ -253,9 +253,9 @@ bool CollisionMonitor::getParameters(
     node, "odom_frame_id", rclcpp::ParameterValue("odom"));
   odom_frame_id = get_parameter("odom_frame_id").as_string();
   nav2_util::declare_parameter_if_not_declared(
-    node, "transform_timeout", rclcpp::ParameterValue(0.1));
-  transform_timeout =
-    tf2::durationFromSec(get_parameter("transform_timeout").as_double());
+    node, "transform_tolerance", rclcpp::ParameterValue(0.1));
+  transform_tolerance =
+    tf2::durationFromSec(get_parameter("transform_tolerance").as_double());
   nav2_util::declare_parameter_if_not_declared(
     node, "source_timeout", rclcpp::ParameterValue(2.0));
   source_timeout =
@@ -270,13 +270,13 @@ bool CollisionMonitor::getParameters(
   stop_pub_timeout_ =
     rclcpp::Duration::from_seconds(get_parameter("stop_pub_timeout").as_double());
 
-  if (!configurePolygons(base_frame_id, transform_timeout)) {
+  if (!configurePolygons(base_frame_id, transform_tolerance)) {
     return false;
   }
 
   if (
     !configureSources(
-      base_frame_id, odom_frame_id, transform_timeout, source_timeout, base_shift_correction))
+      base_frame_id, odom_frame_id, transform_tolerance, source_timeout, base_shift_correction))
   {
     return false;
   }
@@ -286,7 +286,7 @@ bool CollisionMonitor::getParameters(
 
 bool CollisionMonitor::configurePolygons(
   const std::string & base_frame_id,
-  const tf2::Duration & transform_timeout)
+  const tf2::Duration & transform_tolerance)
 {
   try {
     auto node = shared_from_this();
@@ -304,15 +304,15 @@ bool CollisionMonitor::configurePolygons(
       if (polygon_type == "polygon") {
         polygons_.push_back(
           std::make_shared<Polygon>(
-            node, polygon_name, tf_buffer_, base_frame_id, transform_timeout));
+            node, polygon_name, tf_buffer_, base_frame_id, transform_tolerance));
       } else if (polygon_type == "circle") {
         polygons_.push_back(
           std::make_shared<Circle>(
-            node, polygon_name, tf_buffer_, base_frame_id, transform_timeout));
+            node, polygon_name, tf_buffer_, base_frame_id, transform_tolerance));
       } else if (polygon_type == "velocity_polygon") {
         polygons_.push_back(
           std::make_shared<VelocityPolygon>(
-            node, polygon_name, tf_buffer_, base_frame_id, transform_timeout));
+            node, polygon_name, tf_buffer_, base_frame_id, transform_tolerance));
       } else {  // Error if something else
         RCLCPP_ERROR(
           get_logger(),
@@ -337,7 +337,7 @@ bool CollisionMonitor::configurePolygons(
 bool CollisionMonitor::configureSources(
   const std::string & base_frame_id,
   const std::string & odom_frame_id,
-  const tf2::Duration & transform_timeout,
+  const tf2::Duration & transform_tolerance,
   const rclcpp::Duration & source_timeout,
   const bool base_shift_correction)
 {
@@ -357,7 +357,7 @@ bool CollisionMonitor::configureSources(
       if (source_type == "scan") {
         std::shared_ptr<Scan> s = std::make_shared<Scan>(
           node, source_name, tf_buffer_, base_frame_id, odom_frame_id,
-          transform_timeout, source_timeout, base_shift_correction);
+          transform_tolerance, source_timeout, base_shift_correction);
 
         s->configure();
 
@@ -365,7 +365,7 @@ bool CollisionMonitor::configureSources(
       } else if (source_type == "pointcloud") {
         std::shared_ptr<PointCloud> p = std::make_shared<PointCloud>(
           node, source_name, tf_buffer_, base_frame_id, odom_frame_id,
-          transform_timeout, source_timeout, base_shift_correction);
+          transform_tolerance, source_timeout, base_shift_correction);
 
         p->configure();
 
@@ -373,7 +373,7 @@ bool CollisionMonitor::configureSources(
       } else if (source_type == "range") {
         std::shared_ptr<Range> r = std::make_shared<Range>(
           node, source_name, tf_buffer_, base_frame_id, odom_frame_id,
-          transform_timeout, source_timeout, base_shift_correction);
+          transform_tolerance, source_timeout, base_shift_correction);
 
         r->configure();
 

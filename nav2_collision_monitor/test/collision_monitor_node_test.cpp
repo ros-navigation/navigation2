@@ -60,7 +60,7 @@ static const double LINEAR_LIMIT{0.4};
 static const double ANGULAR_LIMIT{0.09};
 static const double TIME_BEFORE_COLLISION{1.0};
 static const double SIMULATION_TIME_STEP{0.01};
-static const double TRANSFORM_TIMEOUT{0.5};
+static const double TRANSFORM_TOLERANCE{0.5};
 static const double SOURCE_TIMEOUT{5.0};
 static const double STOP_PUB_TIMEOUT{0.1};
 
@@ -286,9 +286,9 @@ void Tester::setCommonParameters()
     rclcpp::Parameter("odom_frame_id", ODOM_FRAME_ID));
 
   cm_->declare_parameter(
-    "transform_timeout", rclcpp::ParameterValue(TRANSFORM_TIMEOUT));
+    "transform_tolerance", rclcpp::ParameterValue(TRANSFORM_TOLERANCE));
   cm_->set_parameter(
-    rclcpp::Parameter("transform_timeout", TRANSFORM_TIMEOUT));
+    rclcpp::Parameter("transform_tolerance", TRANSFORM_TOLERANCE));
   cm_->declare_parameter(
     "source_timeout", rclcpp::ParameterValue(SOURCE_TIMEOUT));
   cm_->set_parameter(

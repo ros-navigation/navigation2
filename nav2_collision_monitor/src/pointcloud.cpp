@@ -31,12 +31,12 @@ PointCloud::PointCloud(
   const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
   const std::string & base_frame_id,
   const std::string & global_frame_id,
-  const tf2::Duration & transform_timeout,
+  const tf2::Duration & transform_tolerance,
   const rclcpp::Duration & source_timeout,
   const bool base_shift_correction)
 : Source(
     node, source_name, tf_buffer, base_frame_id, global_frame_id,
-    transform_timeout, source_timeout, base_shift_correction),
+    transform_tolerance, source_timeout, base_shift_correction),
   data_(nullptr)
 {
   RCLCPP_INFO(logger_, "[%s]: Creating PointCloud", source_name_.c_str());
@@ -85,7 +85,7 @@ bool PointCloud::getData(
       if (base_shift_correction_) {
         return nav2_util::getTransform(
           base_frame_id_, curr_time, data_->header.frame_id,
-          data_->header.stamp, global_frame_id_, transform_timeout_,
+          data_->header.stamp, global_frame_id_, transform_tolerance_,
           tf_buffer_);
       }
 
@@ -93,7 +93,7 @@ bool PointCloud::getData(
       // considered. Less accurate but much more faster option not dependent on state estimation
       // frames.
       return nav2_util::getTransform(
-        base_frame_id_, data_->header.frame_id, transform_timeout_,
+        base_frame_id_, data_->header.frame_id, transform_tolerance_,
         tf_buffer_);
     }();
 

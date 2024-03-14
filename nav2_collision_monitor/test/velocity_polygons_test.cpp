@@ -66,7 +66,7 @@ static const char RIGHT_POLYGON_STR[]{
 static const bool IS_HOLONOMIC{true};
 static const bool IS_NOT_HOLONOMIC{false};
 static const int MIN_POINTS{2};
-static const tf2::Duration TRANSFORM_TIMEOUT{tf2::durationFromSec(0.1)};
+static const tf2::Duration TRANSFORM_TOLERANCE{tf2::durationFromSec(0.1)};
 
 class TestNode : public nav2_util::LifecycleNode
 {
@@ -113,9 +113,9 @@ public:
     const std::string & polygon_name,
     const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
     const std::string & base_frame_id,
-    const tf2::Duration & transform_timeout)
+    const tf2::Duration & transform_tolerance)
   : nav2_collision_monitor::VelocityPolygon(
-      node, polygon_name, tf_buffer, base_frame_id, transform_timeout)
+      node, polygon_name, tf_buffer, base_frame_id, transform_tolerance)
   {
   }
 
@@ -353,7 +353,7 @@ void Tester::createVelocityPolygon(const std::string & action_type, const bool i
 
   velocity_polygon_ = std::make_shared<VelocityPolygonWrapper>(
     test_node_, POLYGON_NAME,
-    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TIMEOUT);
+    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_TRUE(velocity_polygon_->configure());
   velocity_polygon_->activate();
 }

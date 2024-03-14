@@ -47,14 +47,14 @@ public:
    * @param polygon_name Name of polygon
    * @param tf_buffer Shared pointer to a TF buffer
    * @param base_frame_id Robot base frame ID
-   * @param transform_timeout how long to block before failing
+   * @param transform_tolerance Transform tolerance
    */
   Polygon(
     const nav2_util::LifecycleNode::WeakPtr & node,
     const std::string & polygon_name,
     const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
     const std::string & base_frame_id,
-    const tf2::Duration & transform_timeout);
+    const tf2::Duration & transform_tolerance);
   /**
    * @brief Polygon destructor
    */
@@ -256,8 +256,8 @@ protected:
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   /// @brief Base frame ID
   std::string base_frame_id_;
-  /// @brief Transform timeout on how long to block before failing
-  tf2::Duration transform_timeout_;
+  /// @brief Transform tolerance
+  tf2::Duration transform_tolerance_;
 
   // Visualization
   /// @brief Whether to publish the polygon

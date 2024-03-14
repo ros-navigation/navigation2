@@ -82,14 +82,14 @@ template<>
 std::optional<geometry_msgs::msg::TransformStamped> getTransform(
   const std::string & target_frame_id,
   const std::string & source_frame_id,
-  const tf2::Duration & transform_timeout,
+  const tf2::Duration & transform_tolerance,
   const std::shared_ptr<tf2_ros::Buffer> tf_buffer)
 {
   try {
     // Obtaining the transform to get data from source to target frame
     return tf_buffer->lookupTransform(
       target_frame_id, source_frame_id,
-      tf2::TimePointZero, transform_timeout);
+      tf2::TimePointZero, transform_tolerance);
   } catch (tf2::TransformException & e) {
     RCLCPP_ERROR(
       rclcpp::get_logger("getTransform"),
@@ -106,7 +106,7 @@ std::optional<geometry_msgs::msg::TransformStamped> getTransform(
   const std::string & source_frame_id,
   const rclcpp::Time & source_time,
   const std::string & fixed_frame_id,
-  const tf2::Duration & transform_timeout,
+  const tf2::Duration & transform_tolerance,
   const std::shared_ptr<tf2_ros::Buffer> tf_buffer)
 {
   try {
@@ -115,7 +115,7 @@ std::optional<geometry_msgs::msg::TransformStamped> getTransform(
     return tf_buffer->lookupTransform(
       target_frame_id, target_time,
       source_frame_id, source_time,
-      fixed_frame_id, transform_timeout);
+      fixed_frame_id, transform_tolerance);
   } catch (tf2::TransformException & ex) {
     RCLCPP_ERROR(
       rclcpp::get_logger("getTransform"),
@@ -129,7 +129,7 @@ template<>
 std::optional<tf2::Transform> getTransform(
   const std::string & target_frame_id,
   const std::string & source_frame_id,
-  const tf2::Duration & transform_timeout,
+  const tf2::Duration & transform_tolerance,
   const std::shared_ptr<tf2_ros::Buffer> tf_buffer)
 {
   tf2::Transform tf2_transform;
@@ -143,7 +143,7 @@ std::optional<tf2::Transform> getTransform(
   const auto transform_msg = getTransform<geometry_msgs::msg::TransformStamped>(
     target_frame_id,
     source_frame_id,
-    transform_timeout,
+    transform_tolerance,
     tf_buffer);
 
   if (!transform_msg.has_value()) {return std::nullopt;}
@@ -158,7 +158,7 @@ std::optional<tf2::Transform> getTransform(
   const std::string & source_frame_id,
   const rclcpp::Time & source_time,
   const std::string & fixed_frame_id,
-  const tf2::Duration & transform_timeout,
+  const tf2::Duration & transform_tolerance,
   const std::shared_ptr<tf2_ros::Buffer> tf_buffer)
 {
 
@@ -168,7 +168,7 @@ std::optional<tf2::Transform> getTransform(
     source_frame_id,
     source_time,
     fixed_frame_id,
-    transform_timeout,
+    transform_tolerance,
     tf_buffer);
 
   if (!transform_msg.has_value()) {return std::nullopt;}

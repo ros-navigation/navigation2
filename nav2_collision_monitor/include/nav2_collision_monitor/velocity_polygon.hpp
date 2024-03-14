@@ -45,7 +45,7 @@ public:
   VelocityPolygon(
     const nav2_util::LifecycleNode::WeakPtr & node, const std::string & polygon_name,
     const std::shared_ptr<tf2_ros::Buffer> tf_buffer, const std::string & base_frame_id,
-    const tf2::Duration & transform_timeout);
+    const tf2::Duration & transform_tolerance);
   /**
    * @brief VelocityPolygon destructor
    */
