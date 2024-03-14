@@ -161,7 +161,6 @@ std::optional<tf2::Transform> getTransform(
   const tf2::Duration & transform_tolerance,
   const std::shared_ptr<tf2_ros::Buffer> tf_buffer)
 {
-
   const auto transform_msg = getTransform<geometry_msgs::msg::TransformStamped>(
     target_frame_id,
     target_time,
