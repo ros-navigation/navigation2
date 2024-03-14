@@ -66,7 +66,7 @@ bool transformPoseInTargetFrame(
  * @param source_frame_id Source frame ID to convert from
  * @param transform_timeout How long to block before failing
  * @param tf_buffer TF buffer to use for the transformation
- * @return tf_transform Output source->target transform
+ * @return transform Output source->target transform
  */
 template<typename TransformType = tf2::Transform>
 [[nodiscard]] std::optional<TransformType> getTransform(
@@ -86,8 +86,7 @@ template<typename TransformType = tf2::Transform>
  * @param fixed_frame_id The frame in which to assume the transform is constant in time
  * @param transform_timeout How long to block before failing
  * @param tf_buffer TF buffer to use for the transformation
- * @param tf_transform Output source->target transform
- * @return tf_transform Output source->target transform
+ * @return transform Output source->target transform
  */
 template<typename TransformType = tf2::Transform>
 [[nodiscard]] std::optional<TransformType> getTransform(
