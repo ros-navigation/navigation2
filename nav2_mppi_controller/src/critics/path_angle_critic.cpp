@@ -109,9 +109,9 @@ void PathAngleCritic::score(CriticData & data)
           xt::abs(utils::shortest_angular_distance(
             xt::view(data.trajectories.yaws, xt::all(), -1), yaws_between_points));
         if (power_ > 1u) {
-          data.costs += xt::pow(yaws * weight_, power_);
+          data.costs += xt::pow(std::move(yaws) * weight_, power_);
         } else {
-          data.costs += yaws * weight_;
+          data.costs += std::move(yaws) * weight_;
         }
         return;
       }

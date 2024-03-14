@@ -117,31 +117,31 @@ void CostCritic::score(CriticData & data)
   }
 
   auto && repulsive_cost = xt::xtensor<float, 1>::from_shape({data.costs.shape(0)});
-
-  unsigned int x_i = 0u, y_i = 0u;
-  float pose_cost, Tx, Ty;
+  bool all_trajectories_collide = true;
 
   const size_t traj_len = floor(data.trajectories.x.shape(1) / trajectory_point_step_);
-  bool all_trajectories_collide = true;
+  const auto traj_x = xt::view(data.trajectories.x, xt::all(), xt::range(0, _, trajectory_point_step_));
+  const auto traj_y = xt::view(data.trajectories.y, xt::all(), xt::range(0, _, trajectory_point_step_));
+  const auto traj_yaw = xt::view(
+    data.trajectories.yaws, xt::all(), xt::range(0, _, trajectory_point_step_));
+
   for (size_t i = 0; i < data.trajectories.x.shape(0); ++i) {
     bool trajectory_collide = false;
-    const auto traj_x = xt::view(data.trajectories.x, i, xt::range(0, _, trajectory_point_step_));
-    const auto traj_y = xt::view(data.trajectories.y, i, xt::range(0, _, trajectory_point_step_));
-    const auto traj_yaw = xt::view(
-      data.trajectories.yaws, i, xt::range(0, _, trajectory_point_step_));
-    pose_cost = 0.0f;
-    repulsive_cost[i] = 0.0f;
+    float pose_cost = 0.0f;
+    float & traj_cost = repulsive_cost[i];
+    traj_cost = 0.0f;
 
-    for (size_t j = 0; j < traj_x.shape(0); j++) {
-      Tx = traj_x(j);
-      Ty = traj_y(j);
+    for (size_t j = 0; j < traj_len; j++) {
+      float Tx = traj_x(i, j);
+      float Ty = traj_y(i, j);
+      unsigned int x_i = 0u, y_i = 0u;
 
       // The getCost doesn't use orientation
       // The footprintCostAtPose will always return "INSCRIBED" if footprint is over it
       // So the center point has more information than the footprint
       if (!worldToMapFloat(Tx, Ty, x_i, y_i)) {
         if (!is_tracking_unknown_) {
-          repulsive_cost[i] = collision_cost_;
+          traj_cost = collision_cost_;
           trajectory_collide = true;
           break;
         }
@@ -151,8 +151,8 @@ void CostCritic::score(CriticData & data)
         if (pose_cost < 1.0f) {
           continue;  // In free space
         }
-        if (inCollision(pose_cost, Tx, Ty, traj_yaw(j))) {
-          repulsive_cost[i] = collision_cost_;
+        if (inCollision(pose_cost, Tx, Ty, traj_yaw(i, j))) {
+          traj_cost = collision_cost_;
           trajectory_collide = true;
           break;
         }
@@ -162,9 +162,9 @@ void CostCritic::score(CriticData & data)
       // Note that we collision check based on the footprint actual,
       // but score based on the center-point cost regardless
       if (pose_cost >= 253.0f /*INSCRIBED_INFLATED_OBSTACLE in float*/) {
-        repulsive_cost[i] += critical_cost_;
+        traj_cost += critical_cost_;
       } else if (!near_goal) {  // Generally prefer trajectories further from obstacles
-        repulsive_cost[i] += pose_cost;
+        traj_cost += pose_cost;
       }
     }
 

@@ -270,8 +270,8 @@ inline bool withinPositionGoalTolerance(
 template<typename T>
 auto normalize_angles(const T & angles)
 {
-  auto && theta = xt::eval(xt::fmod(angles + M_PIF, 2.0f * M_PIF));
-  return xt::eval(xt::where(theta <= 0.0f, theta + M_PIF, theta - M_PIF));
+  auto theta = xt::eval(xt::fmod(angles + M_PIF, 2.0f * M_PIF));
+  return xt::eval(xt::where(theta < 0.0f, theta + M_PIF, theta - M_PIF));
 }
 
 /**
