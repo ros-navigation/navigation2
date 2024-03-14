@@ -68,11 +68,13 @@ bool transformPoseInTargetFrame(
  * @param tf_buffer TF buffer to use for the transformation
  * @return tf_transform Output source->target transform
  */
-std::optional<tf2::Transform> getTransform(
+template<typename TransformType = tf2::Transform>
+std::optional<TransformType> getTransform(
   const std::string & target_frame_id,
   const std::string & source_frame_id,
   const tf2::Duration & transform_timeout,
   const std::shared_ptr<tf2_ros::Buffer> tf_buffer);
+
 
 /**
  * @brief Obtains a transform from source_frame_id at source_time ->
@@ -87,7 +89,8 @@ std::optional<tf2::Transform> getTransform(
  * @param tf_transform Output source->target transform
  * @return tf_transform Output source->target transform
  */
-std::optional<tf2::Transform> getTransform(
+template<typename TransformType = tf2::Transform>
+std::optional<TransformType> getTransform(
   const std::string & target_frame_id,
   const rclcpp::Time & target_time,
   const std::string & source_frame_id,
