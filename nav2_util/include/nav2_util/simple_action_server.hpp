@@ -315,7 +315,7 @@ public:
       if (steady_clock::now() - start_time >= server_timeout_) {
         terminate_all();
         if (completion_callback_) {completion_callback_();}
-        throw std::runtime_error("Action callback is still running and missed deadline to stop");
+        error_msg("Action callback is still running and missed deadline to stop");
       }
     }
 
