@@ -17,8 +17,9 @@
 #ifndef NAV2_UTIL__ROBOT_UTILS_HPP_
 #define NAV2_UTIL__ROBOT_UTILS_HPP_
 
-#include <string>
 #include <memory>
+#include <optional>
+#include <string>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/twist.hpp"
@@ -65,15 +66,13 @@ bool transformPoseInTargetFrame(
  * @param target_frame_id Target frame ID to convert to
  * @param transform_tolerance Transform tolerance
  * @param tf_buffer TF buffer to use for the transformation
- * @param tf_transform Output source->target transform
- * @return True if got correct transform, otherwise false
+ * @return tf_transform Output source->target transform
  */
-bool getTransform(
+std::optional<tf2::Transform> getTransform(
   const std::string & source_frame_id,
   const std::string & target_frame_id,
   const tf2::Duration & transform_tolerance,
-  const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
-  tf2::Transform & tf2_transform);
+  const std::shared_ptr<tf2_ros::Buffer> tf_buffer);
 
 /**
  * @brief Obtains a transform from source_frame_id at source_time ->
@@ -86,17 +85,16 @@ bool getTransform(
  * @param transform_tolerance Transform tolerance
  * @param tf_buffer TF buffer to use for the transformation
  * @param tf_transform Output source->target transform
- * @return True if got correct transform, otherwise false
+ * @return tf_transform Output source->target transform
  */
-bool getTransform(
+std::optional<tf2::Transform> getTransform(
   const std::string & source_frame_id,
   const rclcpp::Time & source_time,
   const std::string & target_frame_id,
   const rclcpp::Time & target_time,
   const std::string & fixed_frame_id,
   const tf2::Duration & transform_tolerance,
-  const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
-  tf2::Transform & tf2_transform);
+  const std::shared_ptr<tf2_ros::Buffer> tf_buffer);
 
 /**
  * @brief Validates a twist message contains no nans or infs

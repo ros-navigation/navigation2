@@ -14,6 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <optional>
 #include <string>
 #include <cmath>
 #include <memory>
@@ -77,21 +78,21 @@ bool transformPoseInTargetFrame(
   return false;
 }
 
-bool getTransform(
+std::optional<tf2::Transform> getTransform(
   const std::string & source_frame_id,
   const std::string & target_frame_id,
   const tf2::Duration & transform_tolerance,
-  const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
-  tf2::Transform & tf2_transform)
+  const std::shared_ptr<tf2_ros::Buffer> tf_buffer)
 {
-  geometry_msgs::msg::TransformStamped transform;
+  tf2::Transform tf2_transform;
   tf2_transform.setIdentity();  // initialize by identical transform
 
   if (source_frame_id == target_frame_id) {
     // We are already in required frame
-    return true;
+    return tf2_transform;
   }
 
+  geometry_msgs::msg::TransformStamped transform;
   try {
     // Obtaining the transform to get data from source to target frame
     transform = tf_buffer->lookupTransform(
@@ -102,26 +103,27 @@ bool getTransform(
       rclcpp::get_logger("getTransform"),
       "Failed to get \"%s\"->\"%s\" frame transform: %s",
       source_frame_id.c_str(), target_frame_id.c_str(), e.what());
-    return false;
+    return std::nullopt;
   }
 
   // Convert TransformStamped to TF2 transform
   tf2::fromMsg(transform.transform, tf2_transform);
-  return true;
+  return tf2_transform;
 }
 
-bool getTransform(
+std::optional<tf2::Transform> getTransform(
   const std::string & source_frame_id,
   const rclcpp::Time & source_time,
   const std::string & target_frame_id,
   const rclcpp::Time & target_time,
   const std::string & fixed_frame_id,
   const tf2::Duration & transform_tolerance,
-  const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
-  tf2::Transform & tf2_transform)
+  const std::shared_ptr<tf2_ros::Buffer> tf_buffer)
 {
-  geometry_msgs::msg::TransformStamped transform;
+  tf2::Transform tf2_transform;
   tf2_transform.setIdentity();  // initialize by identical transform
+
+  geometry_msgs::msg::TransformStamped transform;
 
   try {
     // Obtaining the transform to get data from source to target frame.
@@ -135,12 +137,12 @@ bool getTransform(
       rclcpp::get_logger("getTransform"),
       "Failed to get \"%s\"->\"%s\" frame transform: %s",
       source_frame_id.c_str(), target_frame_id.c_str(), ex.what());
-    return false;
+    return std::nullopt;
   }
 
   // Convert TransformStamped to TF2 transform
   tf2::fromMsg(transform.transform, tf2_transform);
-  return true;
+  return tf2_transform;
 }
 
 bool validateTwist(const geometry_msgs::msg::Twist & msg)
