@@ -70,7 +70,6 @@ void PathAlignCritic::score(CriticData & data)
   }
 
   const size_t batch_size = data.trajectories.x.shape(0);
-  const size_t time_steps = data.trajectories.x.shape(1);
   auto && cost = xt::xtensor<float, 1>::from_shape({data.costs.shape(0)});
 
   // Find integrated distance in the path
@@ -96,13 +95,13 @@ void PathAlignCritic::score(CriticData & data)
   // Get strided trajectory information
   const auto T_x = xt::view(
     data.trajectories.x, xt::all(),
-    xt::range(trajectory_point_step_, time_steps, trajectory_point_step_));
+    xt::range(trajectory_point_step_, _, trajectory_point_step_));
   const auto T_y = xt::view(
     data.trajectories.y, xt::all(),
-    xt::range(trajectory_point_step_, time_steps, trajectory_point_step_));
+    xt::range(trajectory_point_step_, _, trajectory_point_step_));
   const auto T_yaw = xt::view(
     data.trajectories.yaws, xt::all(),
-    xt::range(trajectory_point_step_, time_steps, trajectory_point_step_));
+    xt::range(trajectory_point_step_, _, trajectory_point_step_));
   const auto traj_sampled_size = T_x.shape(1);
 
   for (size_t t = 0; t < batch_size; ++t) {
