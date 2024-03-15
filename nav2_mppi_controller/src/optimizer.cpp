@@ -73,13 +73,13 @@ void Optimizer::getParams()
   getParam(s.iteration_count, "iteration_count", 1);
   getParam(s.temperature, "temperature", 0.3f);
   getParam(s.gamma, "gamma", 0.015f);
-  getParam(s.base_constraints.vx_max, "vx_max", 0.5);
-  getParam(s.base_constraints.vx_min, "vx_min", -0.35);
-  getParam(s.base_constraints.vy, "vy_max", 0.5);
-  getParam(s.base_constraints.wz, "wz_max", 1.9);
-  getParam(s.sampling_std.vx, "vx_std", 0.2);
-  getParam(s.sampling_std.vy, "vy_std", 0.2);
-  getParam(s.sampling_std.wz, "wz_std", 0.4);
+  getParam(s.base_constraints.vx_max, "vx_max", 0.5f);
+  getParam(s.base_constraints.vx_min, "vx_min", -0.35f);
+  getParam(s.base_constraints.vy, "vy_max", 0.5f);
+  getParam(s.base_constraints.wz, "wz_max", 1.9f);
+  getParam(s.sampling_std.vx, "vx_std", 0.2f);
+  getParam(s.sampling_std.vy, "vy_std", 0.2f);
+  getParam(s.sampling_std.wz, "wz_std", 0.4f);
   getParam(s.retry_attempt_limit, "retry_attempt_limit", 1);
 
   getParam(motion_model_name, "motion_model", std::string("DiffDrive"));
@@ -118,10 +118,10 @@ void Optimizer::reset()
 {
   state_.reset(settings_.batch_size, settings_.time_steps);
   control_sequence_.reset(settings_.time_steps);
-  control_history_[0] = {0.0, 0.0, 0.0};
-  control_history_[1] = {0.0, 0.0, 0.0};
-  control_history_[2] = {0.0, 0.0, 0.0};
-  control_history_[3] = {0.0, 0.0, 0.0};
+  control_history_[0] = {0.0f, 0.0f, 0.0f};
+  control_history_[1] = {0.0f, 0.0f, 0.0f};
+  control_history_[2] = {0.0f, 0.0f, 0.0f};
+  control_history_[3] = {0.0f, 0.0f, 0.0f};
 
   settings_.constraints = settings_.base_constraints;
 
@@ -271,10 +271,9 @@ void Optimizer::integrateStateVelocities(
   xt::xtensor<float, 2> & trajectory,
   const xt::xtensor<float, 2> & sequence) const
 {
-  float initial_yaw = tf2::getYaw(state_.pose.pose.orientation);
+  float initial_yaw = static_cast<float>(tf2::getYaw(state_.pose.pose.orientation));
 
   const auto vx = xt::view(sequence, xt::all(), 0);
-  const auto vy = xt::view(sequence, xt::all(), 2);
   const auto wz = xt::view(sequence, xt::all(), 1);
 
   auto traj_x = xt::view(trajectory, xt::all(), 0);
@@ -283,21 +282,17 @@ void Optimizer::integrateStateVelocities(
 
   xt::noalias(traj_yaws) = xt::cumsum(wz * settings_.model_dt, 0) + initial_yaw;
 
-  auto && yaw_cos = xt::xtensor<float, 1>::from_shape(traj_yaws.shape());
-  auto && yaw_sin = xt::xtensor<float, 1>::from_shape(traj_yaws.shape());
-
-  const auto yaw_offseted = xt::view(traj_yaws, xt::range(1, _));
-
-  xt::noalias(xt::view(yaw_cos, 0)) = cosf(initial_yaw);
-  xt::noalias(xt::view(yaw_sin, 0)) = sinf(initial_yaw);
-  xt::noalias(xt::view(yaw_cos, xt::range(1, _))) = xt::cos(yaw_offseted);
-  xt::noalias(xt::view(yaw_sin, xt::range(1, _))) = xt::sin(yaw_offseted);
+  auto yaw_cos = xt::eval(xt::cos(traj_yaws));
+  auto yaw_sin = xt::eval(xt::sin(traj_yaws));
+  xt::view(yaw_cos, 0) = cosf(initial_yaw);
+  xt::view(yaw_sin, 0) = sinf(initial_yaw);
 
   auto && dx = xt::eval(vx * yaw_cos);
   auto && dy = xt::eval(vx * yaw_sin);
 
   if (isHolonomic()) {
-    dx = dx - vy * yaw_sin;
+    const auto vy = xt::view(sequence, xt::all(), 2);
+    dx = dx - vy * yaw_sin; // TODO FMA
     dy = dy + vy * yaw_cos;
   }
 
@@ -309,25 +304,21 @@ void Optimizer::integrateStateVelocities(
   models::Trajectories & trajectories,
   const models::State & state) const
 {
-  const float initial_yaw = tf2::getYaw(state.pose.pose.orientation);
+  const float initial_yaw = static_cast<float>(tf2::getYaw(state.pose.pose.orientation));
 
   xt::noalias(trajectories.yaws) =
     xt::cumsum(state.wz * settings_.model_dt, 1) + initial_yaw;
 
-  const auto yaws_cutted = xt::view(trajectories.yaws, xt::all(), xt::range(0, -1));
-
-  auto && yaw_cos = xt::xtensor<float, 2>::from_shape(trajectories.yaws.shape());
-  auto && yaw_sin = xt::xtensor<float, 2>::from_shape(trajectories.yaws.shape());
-  xt::noalias(xt::view(yaw_cos, xt::all(), 0)) = cosf(initial_yaw);
-  xt::noalias(xt::view(yaw_sin, xt::all(), 0)) = sinf(initial_yaw);
-  xt::noalias(xt::view(yaw_cos, xt::all(), xt::range(1, _))) = xt::cos(yaws_cutted);
-  xt::noalias(xt::view(yaw_sin, xt::all(), xt::range(1, _))) = xt::sin(yaws_cutted);
+  auto yaw_cos = xt::eval(xt::cos(trajectories.yaws));
+  auto yaw_sin = xt::eval(xt::sin(trajectories.yaws));
+  xt::view(yaw_cos, xt::all(), 0) = cosf(initial_yaw);
+  xt::view(yaw_sin, xt::all(), 0) = sinf(initial_yaw);
 
   auto && dx = xt::eval(state.vx * yaw_cos);
   auto && dy = xt::eval(state.vx * yaw_sin);
 
   if (isHolonomic()) {
-    dx = dx - state.vy * yaw_sin;
+    dx = dx - state.vy * yaw_sin; // TODO FMA
     dy = dy + state.vy * yaw_cos;
   }
 
