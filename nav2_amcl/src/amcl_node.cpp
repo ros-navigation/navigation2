@@ -494,6 +494,16 @@ AmclNode::globalLocalizationCallback(
   pf_init_ = false;
 }
 
+void
+AmclNode::initialGuessCallback(
+  const std::shared_ptr<rmw_request_id_t>/*request_header*/,
+  const std::shared_ptr<nav2_msgs::srv::SetInitialPose::Request> req,
+  std::shared_ptr<nav2_msgs::srv::SetInitialPose::Response>/*res*/)
+{
+  std::lock_guard<std::recursive_mutex> cfl(mutex_);
+  initialPoseReceived(std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>(req->pose));
+}
+
 // force nomotion updates (amcl updating without requiring motion)
 void
 AmclNode::nomotionUpdateCallback(
@@ -1542,6 +1552,10 @@ AmclNode::initServices()
   global_loc_srv_ = create_service<std_srvs::srv::Empty>(
     "reinitialize_global_localization",
     std::bind(&AmclNode::globalLocalizationCallback, this, _1, _2, _3));
+
+  initial_guess_srv_ = create_service<nav2_msgs::srv::SetInitialPose>(
+    "set_initial_pose",
+    std::bind(&AmclNode::initialGuessCallback, this, _1, _2, _3));
 
   nomotion_update_srv_ = create_service<std_srvs::srv::Empty>(
     "request_nomotion_update",
