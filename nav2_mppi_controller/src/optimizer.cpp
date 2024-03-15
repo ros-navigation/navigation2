@@ -295,7 +295,7 @@ void Optimizer::integrateStateVelocities(
 
   if (isHolonomic()) {
     const auto vy = xt::view(sequence, xt::all(), 2);
-    dx = dx - vy * yaw_sin; // TODO FMA
+    dx = dx - vy * yaw_sin;
     dy = dy + vy * yaw_cos;
   }
 
@@ -321,7 +321,7 @@ void Optimizer::integrateStateVelocities(
   auto && dy = xt::eval(state.vx * yaw_sin);
 
   if (isHolonomic()) {
-    dx = dx - state.vy * yaw_sin; // TODO FMA
+    dx = dx - state.vy * yaw_sin;
     dy = dy + state.vy * yaw_cos;
   }
 
