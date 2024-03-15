@@ -132,6 +132,11 @@ void Optimizer::reset()
   RCLCPP_INFO(logger_, "Optimizer reset");
 }
 
+bool Optimizer::isHolonomic() const
+{
+  return motion_model_->isHolonomic();
+}
+
 geometry_msgs::msg::TwistStamped Optimizer::evalControl(
   const geometry_msgs::msg::PoseStamped & robot_pose,
   const geometry_msgs::msg::Twist & robot_speed,
@@ -227,8 +232,6 @@ void Optimizer::generateNoisedTrajectories()
   integrateStateVelocities(generated_trajectories_, state_);
 }
 
-bool Optimizer::isHolonomic() const {return motion_model_->isHolonomic();}
-
 void Optimizer::applyControlSequenceConstraints()
 {
   auto & s = settings_;
@@ -253,11 +256,11 @@ void Optimizer::updateStateVelocities(
 void Optimizer::updateInitialStateVelocities(
   models::State & state) const
 {
-  xt::noalias(xt::view(state.vx, xt::all(), 0)) = state.speed.linear.x;
-  xt::noalias(xt::view(state.wz, xt::all(), 0)) = state.speed.angular.z;
+  xt::noalias(xt::view(state.vx, xt::all(), 0)) = static_cast<float>(state.speed.linear.x);
+  xt::noalias(xt::view(state.wz, xt::all(), 0)) = static_cast<float>(state.speed.angular.z);
 
   if (isHolonomic()) {
-    xt::noalias(xt::view(state.vy, xt::all(), 0)) = state.speed.linear.y;
+    xt::noalias(xt::view(state.vy, xt::all(), 0)) = static_cast<float>(state.speed.linear.y);
   }
 }
 
@@ -307,7 +310,7 @@ void Optimizer::integrateStateVelocities(
   const float initial_yaw = static_cast<float>(tf2::getYaw(state.pose.pose.orientation));
 
   xt::noalias(trajectories.yaws) =
-    xt::cumsum(state.wz * settings_.model_dt, 1) + initial_yaw;
+    xt::cumsum(state.wz * settings_.model_dt, {1}) + initial_yaw;
 
   auto yaw_cos = xt::eval(xt::cos(trajectories.yaws));
   auto yaw_sin = xt::eval(xt::sin(trajectories.yaws));
@@ -323,21 +326,22 @@ void Optimizer::integrateStateVelocities(
   }
 
   xt::noalias(trajectories.x) = state.pose.pose.position.x +
-    xt::cumsum(dx * settings_.model_dt, 1);
+    xt::cumsum(dx * settings_.model_dt, {1});
   xt::noalias(trajectories.y) = state.pose.pose.position.y +
-    xt::cumsum(dy * settings_.model_dt, 1);
+    xt::cumsum(dy * settings_.model_dt, {1});
 }
 
 xt::xtensor<float, 2> Optimizer::getOptimizedTrajectory()
 {
+  const bool is_holo = isHolonomic();
   auto && sequence =
-    xt::xtensor<float, 2>::from_shape({settings_.time_steps, isHolonomic() ? 3u : 2u});
+    xt::xtensor<float, 2>::from_shape({settings_.time_steps, is_holo ? 3u : 2u});
   auto && trajectories = xt::xtensor<float, 2>::from_shape({settings_.time_steps, 3});
 
   xt::noalias(xt::view(sequence, xt::all(), 0)) = control_sequence_.vx;
   xt::noalias(xt::view(sequence, xt::all(), 1)) = control_sequence_.wz;
 
-  if (isHolonomic()) {
+  if (is_holo) {
     xt::noalias(xt::view(sequence, xt::all(), 2)) = control_sequence_.vy;
   }
 
@@ -347,6 +351,7 @@ xt::xtensor<float, 2> Optimizer::getOptimizedTrajectory()
 
 void Optimizer::updateControlSequence()
 {
+  const bool is_holo = isHolonomic();
   auto & s = settings_;
   auto bounded_noises_vx = state_.cvx - control_sequence_.vx;
   auto bounded_noises_wz = state_.cwz - control_sequence_.wz;
@@ -357,7 +362,7 @@ void Optimizer::updateControlSequence()
     s.gamma / powf(s.sampling_std.wz, 2) * xt::sum(
     xt::view(control_sequence_.wz, xt::newaxis(), xt::all()) * bounded_noises_wz, 1, immediate);
 
-  if (isHolonomic()) {
+  if (is_holo) {
     auto bounded_noises_vy = state_.cvy - control_sequence_.vy;
     xt::noalias(costs_) +=
       s.gamma / powf(s.sampling_std.vy, 2) * xt::sum(
@@ -372,7 +377,7 @@ void Optimizer::updateControlSequence()
 
   xt::noalias(control_sequence_.vx) = xt::sum(state_.cvx * softmaxes_extened, 0, immediate);
   xt::noalias(control_sequence_.wz) = xt::sum(state_.cwz * softmaxes_extened, 0, immediate);
-  if (isHolonomic()) {
+  if (is_holo) {
     xt::noalias(control_sequence_.vy) = xt::sum(state_.cvy * softmaxes_extened, 0, immediate);
   }
 
