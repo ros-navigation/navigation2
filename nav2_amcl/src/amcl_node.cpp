@@ -325,6 +325,7 @@ AmclNode::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   // Get rid of the inputs first (services and message filter input), so we
   // don't continue to process incoming messages
   global_loc_srv_.reset();
+  initial_guess_srv_.reset();
   nomotion_update_srv_.reset();
   initial_pose_sub_.reset();
   laser_scan_connection_.disconnect();
@@ -495,12 +496,11 @@ AmclNode::globalLocalizationCallback(
 }
 
 void
-AmclNode::initialGuessCallback(
+AmclNode::initialPoseReceivedSrv(
   const std::shared_ptr<rmw_request_id_t>/*request_header*/,
   const std::shared_ptr<nav2_msgs::srv::SetInitialPose::Request> req,
   std::shared_ptr<nav2_msgs::srv::SetInitialPose::Response>/*res*/)
 {
-  std::lock_guard<std::recursive_mutex> cfl(mutex_);
   initialPoseReceived(std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>(req->pose));
 }
 

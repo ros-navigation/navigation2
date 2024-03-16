@@ -214,9 +214,9 @@ protected:
   // service server for providing an initial pose guess
   rclcpp::Service<nav2_msgs::srv::SetInitialPose>::SharedPtr initial_guess_srv_;
   /*
-   * @brief Service callback for a global relocalization request
+   * @brief Service callback for an initial pose guess request
    */
-  void initialGuessCallback(
+  void initialPoseReceivedSrv(
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<nav2_msgs::srv::SetInitialPose::Request> request,
     std::shared_ptr<nav2_msgs::srv::SetInitialPose::Response> response);
@@ -233,7 +233,6 @@ protected:
 
   // Nomotion update control. Used to temporarily let amcl update samples even when no motion occurs
   std::atomic<bool> force_update_{false};
-
 
   // Odometry
   /*
