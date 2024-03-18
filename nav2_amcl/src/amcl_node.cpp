@@ -1555,7 +1555,7 @@ AmclNode::initServices()
 
   initial_guess_srv_ = create_service<nav2_msgs::srv::SetInitialPose>(
     "set_initial_pose",
-    std::bind(&AmclNode::initialGuessCallback, this, _1, _2, _3));
+    std::bind(&AmclNode::initialPoseReceivedSrv, this, _1, _2, _3));
 
   nomotion_update_srv_ = create_service<std_srvs::srv::Empty>(
     "request_nomotion_update",
