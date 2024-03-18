@@ -69,7 +69,7 @@ pf_t * pf_alloc(
   // p), where p is the probability that the error on the estimated
   // distrubition will be less than [err].
   pf->pop_err = 0.01;
-  pf->pop_z = 3;
+  pf->pop_z = 0.99;
   pf->dist_threshold = 0.5;
 
   pf->current_set = 0;
