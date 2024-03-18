@@ -325,6 +325,7 @@ AmclNode::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   // Get rid of the inputs first (services and message filter input), so we
   // don't continue to process incoming messages
   global_loc_srv_.reset();
+  initial_guess_srv_.reset();
   nomotion_update_srv_.reset();
   executor_thread_.reset();  //  to make sure initial_pose_sub_ completely exit
   initial_pose_sub_.reset();
@@ -493,6 +494,15 @@ AmclNode::globalLocalizationCallback(
   RCLCPP_INFO(get_logger(), "Global initialisation done!");
   initial_pose_is_known_ = true;
   pf_init_ = false;
+}
+
+void
+AmclNode::initialPoseReceivedSrv(
+  const std::shared_ptr<rmw_request_id_t>/*request_header*/,
+  const std::shared_ptr<nav2_msgs::srv::SetInitialPose::Request> req,
+  std::shared_ptr<nav2_msgs::srv::SetInitialPose::Response>/*res*/)
+{
+  initialPoseReceived(std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>(req->pose));
 }
 
 // force nomotion updates (amcl updating without requiring motion)
@@ -1543,6 +1553,10 @@ AmclNode::initServices()
   global_loc_srv_ = create_service<std_srvs::srv::Empty>(
     "reinitialize_global_localization",
     std::bind(&AmclNode::globalLocalizationCallback, this, _1, _2, _3));
+
+  initial_guess_srv_ = create_service<nav2_msgs::srv::SetInitialPose>(
+    "set_initial_pose",
+    std::bind(&AmclNode::initialPoseReceivedSrv, this, _1, _2, _3));
 
   nomotion_update_srv_ = create_service<std_srvs::srv::Empty>(
     "request_nomotion_update",
