@@ -35,6 +35,7 @@
 #include "nav2_amcl/sensors/laser/laser.hpp"
 #include "nav2_msgs/msg/particle.hpp"
 #include "nav2_msgs/msg/particle_cloud.hpp"
+#include "nav2_msgs/srv/set_initial_pose.hpp"
 #include "nav_msgs/srv/set_map.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
 #include "std_srvs/srv/empty.hpp"
@@ -209,6 +210,16 @@ protected:
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<std_srvs::srv::Empty::Request> request,
     std::shared_ptr<std_srvs::srv::Empty::Response> response);
+
+  // service server for providing an initial pose guess
+  rclcpp::Service<nav2_msgs::srv::SetInitialPose>::SharedPtr initial_guess_srv_;
+  /*
+   * @brief Service callback for an initial pose guess request
+   */
+  void initialPoseReceivedSrv(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<nav2_msgs::srv::SetInitialPose::Request> request,
+    std::shared_ptr<nav2_msgs::srv::SetInitialPose::Response> response);
 
   // Let amcl update samples without requiring motion
   rclcpp::Service<std_srvs::srv::Empty>::SharedPtr nomotion_update_srv_;
