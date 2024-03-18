@@ -1104,20 +1104,20 @@ AmclNode::initParameters()
   // Semantic checks
   if (laser_likelihood_max_dist_ < 0) {
     RCLCPP_WARN(
-      get_logger(), "You've set laser_likelihood_max_dist to be negtive,"
+      get_logger(), "You've set laser_likelihood_max_dist to be negative,"
       " this isn't allowed so it will be set to default value 2.0.");
     laser_likelihood_max_dist_ = 2.0;
   }
   if (max_particles_ < 0) {
     RCLCPP_WARN(
-      get_logger(), "You've set max_particles to be negtive,"
+      get_logger(), "You've set max_particles to be negative,"
       " this isn't allowed so it will be set to default value 2000.");
     max_particles_ = 2000;
   }
 
   if (min_particles_ < 0) {
     RCLCPP_WARN(
-      get_logger(), "You've set min_particles to be negtive,"
+      get_logger(), "You've set min_particles to be negative,"
       " this isn't allowed so it will be set to default value 500.");
     min_particles_ = 500;
   }
@@ -1131,7 +1131,7 @@ AmclNode::initParameters()
 
   if (resample_interval_ <= 0) {
     RCLCPP_WARN(
-      get_logger(), "You've set resample_interval to be zero or negtive,"
+      get_logger(), "You've set resample_interval to be zero or negative,"
       " this isn't allowed so it will be set to default value to 1.");
     resample_interval_ = 1;
   }
