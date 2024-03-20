@@ -274,6 +274,10 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
   std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(_costmap->getMutex()));
 
   // Set collision checker and costmap information
+  _collision_checker.setFootprint(
+    _costmap_ros->getRobotFootprint(),
+    _costmap_ros->getUseRadius(),
+    findCircumscribedCost(_costmap_ros));
   _a_star->setCollisionChecker(&_collision_checker);
 
   // Set starting point, in A* bin search coordinates

@@ -338,6 +338,10 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   }
 
   // Set collision checker and costmap information
+  _collision_checker.setFootprint(
+    _costmap_ros->getRobotFootprint(),
+    _costmap_ros->getUseRadius(),
+    findCircumscribedCost(_costmap_ros));
   _a_star->setCollisionChecker(&_collision_checker);
 
   // Set starting point, in A* bin search coordinates
