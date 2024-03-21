@@ -64,6 +64,9 @@ BtActionServer<ActionT>::BtActionServer(
   if (!node->has_parameter("action_server_result_timeout")) {
     node->declare_parameter("action_server_result_timeout", 900.0);
   }
+  if (!node->has_parameter("wait_for_service_timeout")) {
+    node->declare_parameter("wait_for_service_timeout", 1000);
+  }
 
   std::vector<std::string> error_code_names = {
     "follow_path_error_code",
