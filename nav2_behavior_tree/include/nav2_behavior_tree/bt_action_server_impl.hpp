@@ -60,6 +60,9 @@ BtActionServer<ActionT>::BtActionServer(
   if (!node->has_parameter("default_server_timeout")) {
     node->declare_parameter("default_server_timeout", 20);
   }
+  if (!node->has_parameter("wait_for_service_timeout")) {
+    node->declare_parameter("wait_for_service_timeout", 1000);
+  }
 }
 
 template<class ActionT>
