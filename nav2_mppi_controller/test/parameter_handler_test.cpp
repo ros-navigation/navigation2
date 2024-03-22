@@ -168,8 +168,11 @@ TEST(ParameterHandlerTest, DynamicAndStaticParametersTest)
     node->get_node_services_interface());
 
   auto results = rec_param->set_parameters_atomically(
-    {rclcpp::Parameter("dynamic_int", 10),
-      rclcpp::Parameter("static_int", 10)});
+  {
+    rclcpp::Parameter("my_node.verbose", true),
+    rclcpp::Parameter("dynamic_int", 10),
+    rclcpp::Parameter("static_int", 10)
+  });
 
   rclcpp::spin_until_future_complete(
     node->get_node_base_interface(),

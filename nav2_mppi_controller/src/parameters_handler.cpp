@@ -29,13 +29,14 @@ ParametersHandler::ParametersHandler(
 void ParametersHandler::start()
 {
   auto node = node_.lock();
+
+  auto get_param = getParamGetter(node_name_);
+  get_param(verbose_, "verbose", false);
+
   on_set_param_handler_ = node->add_on_set_parameters_callback(
     std::bind(
       &ParametersHandler::dynamicParamsCallback, this,
       std::placeholders::_1));
-
-  auto get_param = getParamGetter(node_name_);
-  get_param(verbose_, "verbose", false);
 }
 
 rcl_interfaces::msg::SetParametersResult
@@ -57,7 +58,10 @@ ParametersHandler::dynamicParamsCallback(
     {
       callback->second(param);
     } else {
-      RCLCPP_WARN(logger_, "Parameter %s not found", param_name.c_str());
+      if (verbose_) {
+        // Expected if static parameter is changed
+        RCLCPP_WARN(logger_, "Parameter callback func for '%s' not found", param_name.c_str());
+      }
     }
   }
 
