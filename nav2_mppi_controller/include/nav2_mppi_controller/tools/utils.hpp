@@ -330,32 +330,6 @@ inline size_t findPathFurthestReachedPoint(const CriticData & data)
 }
 
 /**
- * @brief Evaluate closest point idx of data.path which is
- * nearset to the start of the trajectory in data.trajectories
- * @param data Data to use
- * @return Idx of closest path point at start of the trajectories
- */
-inline size_t findPathTrajectoryInitialPoint(const CriticData & data)
-{
-  // First point should be the same for all trajectories from initial conditions
-  const auto dx = data.path.x - data.trajectories.x(0, 0);
-  const auto dy = data.path.y - data.trajectories.y(0, 0);
-  const auto dists = dx * dx + dy * dy;
-
-  float min_distance_by_path = std::numeric_limits<float>::max();
-  size_t min_id = 0;
-  for (size_t j = 0; j < dists.shape(0); j++) {
-    const float & dist = dists(j);
-    if (dist < min_distance_by_path) {
-      min_distance_by_path = dist;
-      min_id = j;
-    }
-  }
-
-  return min_id;
-}
-
-/**
  * @brief evaluate path furthest point if it is not set
  * @param data Data to use
  */

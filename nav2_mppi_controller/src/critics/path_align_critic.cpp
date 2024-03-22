@@ -51,7 +51,9 @@ void PathAlignCritic::score(CriticData & data)
 
   // Don't apply when first getting bearing w.r.t. the path
   utils::setPathFurthestPointIfNotSet(data);
-  const size_t path_segments_count = *data.furthest_reached_path_point;  // up to furthest only
+  // Up to furthest only, closest path point is always 0 from path handler
+  const size_t path_segments_count = *data.furthest_reached_path_point;
+  float path_segments_flt = static_cast<float>(path_segments_count);
   if (path_segments_count < offset_from_furthest_) {
     return;
   }
@@ -59,12 +61,10 @@ void PathAlignCritic::score(CriticData & data)
   // Don't apply when dynamic obstacles are blocking significant proportions of the local path
   utils::setPathCostsIfNotSet(data, costmap_ros_);
   std::vector<bool> & path_pts_valid = *data.path_pts_valid;
-  const size_t closest_initial_path_point = utils::findPathTrajectoryInitialPoint(data);
   float invalid_ctr = 0.0f;
-  const float range = path_segments_count - closest_initial_path_point;
-  for (size_t i = closest_initial_path_point; i < path_segments_count; i++) {
+  for (size_t i = 0; i < path_segments_count; i++) {
     if (!path_pts_valid[i]) {invalid_ctr += 1.0f;}
-    if (invalid_ctr / range > max_path_occupancy_ratio_ && invalid_ctr > 2.0f) {
+    if (invalid_ctr / path_segments_flt > max_path_occupancy_ratio_ && invalid_ctr > 2.0f) {
       return;
     }
   }
@@ -77,7 +77,7 @@ void PathAlignCritic::score(CriticData & data)
   std::vector<utils::Pose2D> path(path_segments_count);
   float dx = 0.0f, dy = 0.0f;
   for (unsigned int i = 1; i != path_segments_count; i++) {
-    auto & pose = path[i];
+    auto & pose = path[i - 1];
     pose.x = data.path.x(i - 1);
     pose.y = data.path.y(i - 1);
     pose.theta = data.path.yaws(i - 1);
@@ -86,6 +86,12 @@ void PathAlignCritic::score(CriticData & data)
     dy = data.path.y(i) - pose.y;
     path_integrated_distances[i] = path_integrated_distances[i - 1] + sqrtf(dx * dx + dy * dy);
   }
+
+  // Finish populating the path vector
+  auto & final_pose = path[path_segments_count - 1];
+  final_pose.x = data.path.x(path_segments_count - 1);
+  final_pose.y = data.path.y(path_segments_count - 1);
+  final_pose.theta = data.path.yaws(path_segments_count - 1);
 
   float summed_path_dist = 0.0f, dyaw = 0.0f;
   unsigned int num_samples = 0u;
