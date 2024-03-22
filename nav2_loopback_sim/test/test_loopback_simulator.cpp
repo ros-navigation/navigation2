@@ -54,9 +54,12 @@ TEST(RobotSimulatorTest, TFUpdates) {
 
 
   // node->tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node->get_clock());
-  // node->tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*(node->tf_buffer_));
-  // node->tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(*(node));
-  // node->cmd_vel_publisher_ = node->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
+  // node->tf_listener_ = std::make_shared
+  //  <tf2_ros::TransformListener>(*(node->tf_buffer_));
+  // node->tf_broadcaster_ = std::make_shared
+  // <tf2_ros::TransformBroadcaster>(*(node));
+  // node->cmd_vel_publisher_ = node->create_publisher
+  // <geometry_msgs::msg::Twist>("cmd_vel", 10);
   // node->initial_pose_publisher_ = node->create_publisher
   //   <geometry_msgs::msg::PoseWithCovarianceStamped>("initialpose", 10);
 
@@ -90,7 +93,8 @@ TEST(RobotSimulatorTest, TFUpdates) {
 
 
   // Publish the initial pose
-  // auto initial_pose_msg = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
+  // auto initial_pose_msg = std::make_shared
+  // <geometry_msgs::msg::PoseWithCovarianceStamped>();
 
   // // Set the frame ID
   // initial_pose_msg->header.frame_id = "map";
@@ -116,7 +120,8 @@ TEST(RobotSimulatorTest, TFUpdates) {
   // node->cmd_vel_publisher_->publish(cmd_vel_msg);
 
   // try {
-  //   geometry_msgs::msg::TransformStamped transformStamped = node->tf_buffer_->lookupTransform("map", "odom", tf2::TimePointZero);
+  //   geometry_msgs::msg::TransformStamped transformStamped =
+  // node->tf_buffer_->lookupTransform("map", "odom", tf2::TimePointZero);
 
   //   EXPECT_NEAR(transformStamped.transform.translation.x, 1.0, 0.01);
   //   EXPECT_NEAR(transformStamped.transform.translation.y, 1.0, 0.01);
@@ -124,12 +129,13 @@ TEST(RobotSimulatorTest, TFUpdates) {
   //   EXPECT_TRUE(false) << "TF lookup failed: " << ex.what();
   // }
 
-  //executor.spin();
-  //executor.spin_some(std::chrono::seconds(10));
-  //rclcpp::shutdown();
+  // executor.spin();
+  // executor.spin_some(std::chrono::seconds(10));
+  // rclcpp::shutdown();
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char ** argv)
+{
   ::testing::InitGoogleTest(&argc, argv);
 
   return RUN_ALL_TESTS();
