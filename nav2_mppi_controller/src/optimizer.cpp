@@ -285,8 +285,8 @@ void Optimizer::integrateStateVelocities(
 
   xt::noalias(traj_yaws) = xt::cumsum(wz * settings_.model_dt, 0) + initial_yaw;
 
-  auto yaw_cos = xt::eval(xt::cos(traj_yaws));
-  auto yaw_sin = xt::eval(xt::sin(traj_yaws));
+  auto yaw_cos = xt::roll(xt::eval(xt::cos(traj_yaws)), 1);
+  auto yaw_sin = xt::roll(xt::eval(xt::sin(traj_yaws)), 1);
   xt::view(yaw_cos, 0) = cosf(initial_yaw);
   xt::view(yaw_sin, 0) = sinf(initial_yaw);
 
@@ -312,8 +312,8 @@ void Optimizer::integrateStateVelocities(
   xt::noalias(trajectories.yaws) =
     xt::cumsum(state.wz * settings_.model_dt, {1}) + initial_yaw;
 
-  auto yaw_cos = xt::eval(xt::cos(trajectories.yaws));
-  auto yaw_sin = xt::eval(xt::sin(trajectories.yaws));
+  auto yaw_cos = xt::roll(xt::eval(xt::cos(trajectories.yaws)), 1, 1);
+  auto yaw_sin = xt::roll(xt::eval(xt::sin(trajectories.yaws)), 1, 1);
   xt::view(yaw_cos, xt::all(), 0) = cosf(initial_yaw);
   xt::view(yaw_sin, xt::all(), 0) = sinf(initial_yaw);
 

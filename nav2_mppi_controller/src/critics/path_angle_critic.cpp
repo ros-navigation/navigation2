@@ -107,7 +107,7 @@ void PathAngleCritic::score(CriticData & data)
       {
         auto yaws =
           xt::fabs(
-            utils::shortest_angular_distance(
+          utils::shortest_angular_distance(
             xt::view(data.trajectories.yaws, xt::all(), -1), yaws_between_points));
         if (power_ > 1u) {
           data.costs += xt::pow(std::move(yaws) * weight_, power_);
@@ -120,7 +120,7 @@ void PathAngleCritic::score(CriticData & data)
       {
         auto yaws =
           xt::fabs(
-            utils::shortest_angular_distance(
+          utils::shortest_angular_distance(
             xt::view(data.trajectories.yaws, xt::all(), -1), yaws_between_points));
         const auto yaws_between_points_corrected = xt::where(
           yaws < M_PIF_2, yaws_between_points,
@@ -129,9 +129,9 @@ void PathAngleCritic::score(CriticData & data)
           utils::shortest_angular_distance(
             xt::view(data.trajectories.yaws, xt::all(), -1), yaws_between_points_corrected));
         if (power_ > 1u) {
-          data.costs += xt::pow(xt::mean(corrected_yaws, {1}, immediate) * weight_, power_);
+          data.costs += xt::pow(std::move(corrected_yaws) * weight_, power_);
         } else {
-          data.costs += xt::mean(corrected_yaws, {1}, immediate) * weight_;
+          data.costs += std::move(corrected_yaws) * weight_;
         }
         return;
       }
@@ -144,9 +144,9 @@ void PathAngleCritic::score(CriticData & data)
           utils::shortest_angular_distance(
             xt::view(data.trajectories.yaws, xt::all(), -1), yaws_between_points_corrected));
         if (power_ > 1u) {
-          data.costs += xt::pow(xt::mean(corrected_yaws, {1}, immediate) * weight_, power_);
+          data.costs += xt::pow(std::move(corrected_yaws) * weight_, power_);
         } else {
-          data.costs += xt::mean(corrected_yaws, {1}, immediate) * weight_;
+          data.costs += std::move(corrected_yaws) * weight_;
         }
         return;
       }
