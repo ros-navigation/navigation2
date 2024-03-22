@@ -419,7 +419,6 @@ void ControllerServer::computeControl()
 {
   std::lock_guard<std::mutex> lock(dynamic_params_lock_);
 
-  auto start_time = this->now();
   RCLCPP_INFO(get_logger(), "Received a goal, begin computing control effort.");
 
   try {
@@ -482,12 +481,10 @@ void ControllerServer::computeControl()
         break;
       }
 
-      auto cycle_duration = this->now() - start_time;
       if (!loop_rate.sleep()) {
         RCLCPP_WARN(
-          get_logger(),
-          "Control loop missed its desired rate of %.4f Hz. Current loop rate is %.4f Hz.",
-          controller_frequency_, 1 / cycle_duration.seconds());
+          get_logger(), "Control loop missed its desired rate of %.4fHz",
+          controller_frequency_);
       }
     }
   } catch (nav2_core::InvalidController & e) {
