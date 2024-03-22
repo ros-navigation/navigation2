@@ -658,10 +658,10 @@ float NodeHybrid::getObstacleHeuristic(
         if (existing_cost <= 0.0f) {
           if (motion_table.use_quadratic_cost_penalty) {
             travel_cost =
-              (i <= 3 ? 1.0f : sqrt2) * (1.0f + (cost_penalty * cost * cost / 64516.0f));  // 254^2
+              (i <= 3 ? 1.0f : sqrt2) * (1.0f + (cost_penalty * cost * cost / 63504.0f));  // 252^2
           } else {
             travel_cost =
-              ((i <= 3) ? 1.0f : sqrt2) * (1.0f + (cost_penalty * cost / 254.0f));
+              ((i <= 3) ? 1.0f : sqrt2) * (1.0f + (cost_penalty * cost / 252.0f));
           }
 
           new_cost = c_cost + travel_cost;

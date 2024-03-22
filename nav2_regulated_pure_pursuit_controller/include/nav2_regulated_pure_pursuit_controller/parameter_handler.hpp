@@ -56,6 +56,7 @@ struct Parameters
   double rotate_to_heading_min_angle;
   bool allow_reversing;
   double max_robot_pose_search_dist;
+  bool interpolate_curvature_after_goal;
   bool use_collision_detection;
   double transform_tolerance;
 };
