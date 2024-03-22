@@ -1381,8 +1381,7 @@ void
 AmclNode::mapReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
 {
   RCLCPP_DEBUG(get_logger(), "AmclNode: A new map was received.");
-  if(!nav2_util::validateMsg(*msg))
-  {
+  if (!nav2_util::validateMsg(*msg)) {
     RCLCPP_ERROR(get_logger(), "Received map message is malformed. Rejecting.");
     return;
   }
