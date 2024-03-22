@@ -52,14 +52,16 @@ void ConstraintCritic::score(CriticData & data)
     if (power_ > 1u) {
       data.costs += xt::pow(
         xt::sum(
-          (std::move(xt::maximum(data.state.vx - max_vel_, 0.0f) +
-          xt::maximum(min_vel_ - data.state.vx, 0.0f))) *
-          data.model_dt, {1}, immediate) * weight_, power_);
+          (std::move(
+            xt::maximum(data.state.vx - max_vel_, 0.0f) +
+            xt::maximum(min_vel_ - data.state.vx, 0.0f))) *
+        data.model_dt, {1}, immediate) * weight_, power_);
     } else {
       data.costs += xt::sum(
-          (std::move(xt::maximum(data.state.vx - max_vel_, 0.0f) +
-          xt::maximum(min_vel_ - data.state.vx, 0.0f))) *
-          data.model_dt, {1}, immediate) * weight_;
+          (std::move(
+            xt::maximum(data.state.vx - max_vel_, 0.0f) +
+            xt::maximum(min_vel_ - data.state.vx, 0.0f))) *
+        data.model_dt, {1}, immediate) * weight_;
     }
     return;
   }
@@ -72,14 +74,16 @@ void ConstraintCritic::score(CriticData & data)
     if (power_ > 1u) {
       data.costs += xt::pow(
         xt::sum(
-          (std::move(xt::maximum(vel_total - max_vel_, 0.0f) +
-          xt::maximum(min_vel_ - vel_total, 0.0f))) *
-          data.model_dt, {1}, immediate) * weight_, power_);
+          (std::move(
+            xt::maximum(vel_total - max_vel_, 0.0f) +
+            xt::maximum(min_vel_ - vel_total, 0.0f))) *
+        data.model_dt, {1}, immediate) * weight_, power_);
     } else {
       data.costs += xt::sum(
-          (std::move(xt::maximum(vel_total - max_vel_, 0.0f) +
-          xt::maximum(min_vel_ - vel_total, 0.0f))) *
-          data.model_dt, {1}, immediate) * weight_;
+          (std::move(
+            xt::maximum(vel_total - max_vel_, 0.0f) +
+            xt::maximum(min_vel_ - vel_total, 0.0f))) *
+        data.model_dt, {1}, immediate) * weight_;
     }
     return;
   }
@@ -94,14 +98,16 @@ void ConstraintCritic::score(CriticData & data)
     if (power_ > 1u) {
       data.costs += xt::pow(
         xt::sum(
-          (std::move(xt::maximum(data.state.vx - max_vel_, 0.0f) +
-          xt::maximum(min_vel_ - data.state.vx, 0.0f) + out_of_turning_rad_motion)) *
-          data.model_dt, {1}, immediate) * weight_, power_);
+          (std::move(
+            xt::maximum(data.state.vx - max_vel_, 0.0f) +
+            xt::maximum(min_vel_ - data.state.vx, 0.0f) + out_of_turning_rad_motion)) *
+        data.model_dt, {1}, immediate) * weight_, power_);
     } else {
       data.costs += xt::sum(
-          (std::move(xt::maximum(data.state.vx - max_vel_, 0.0f) +
-          xt::maximum(min_vel_ - data.state.vx, 0.0f) + out_of_turning_rad_motion)) *
-          data.model_dt, {1}, immediate) * weight_;
+          (std::move(
+            xt::maximum(data.state.vx - max_vel_, 0.0f) +
+            xt::maximum(min_vel_ - data.state.vx, 0.0f) + out_of_turning_rad_motion)) *
+        data.model_dt, {1}, immediate) * weight_;
     }
     return;
   }

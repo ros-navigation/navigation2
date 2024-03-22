@@ -100,8 +100,8 @@ void CostCritic::score(CriticData & data)
   is_tracking_unknown_ = costmap_ros_->getLayeredCostmap()->isTrackingUnknown();
   auto * costmap = collision_checker_.getCostmap();
   origin_x_ = static_cast<float>(costmap->getOriginX());
-  origin_y_ =  static_cast<float>(costmap->getOriginY());
-  resolution_ =  static_cast<float>(costmap->getResolution());
+  origin_y_ = static_cast<float>(costmap->getOriginY());
+  resolution_ = static_cast<float>(costmap->getResolution());
   size_x_ = costmap->getSizeInCellsX();
   size_y_ = costmap->getSizeInCellsY();
 
@@ -120,8 +120,10 @@ void CostCritic::score(CriticData & data)
   bool all_trajectories_collide = true;
 
   const size_t traj_len = floor(data.trajectories.x.shape(1) / trajectory_point_step_);
-  const auto traj_x = xt::view(data.trajectories.x, xt::all(), xt::range(0, _, trajectory_point_step_));
-  const auto traj_y = xt::view(data.trajectories.y, xt::all(), xt::range(0, _, trajectory_point_step_));
+  const auto traj_x =
+    xt::view(data.trajectories.x, xt::all(), xt::range(0, _, trajectory_point_step_));
+  const auto traj_y =
+    xt::view(data.trajectories.y, xt::all(), xt::range(0, _, trajectory_point_step_));
   const auto traj_yaw = xt::view(
     data.trajectories.yaws, xt::all(), xt::range(0, _, trajectory_point_step_));
 
@@ -147,7 +149,7 @@ void CostCritic::score(CriticData & data)
         }
         pose_cost = 255.0f;  // NO_INFORMATION in float
       } else {
-        pose_cost = static_cast<float>(costmap->getCost(getIndexFloat(x_i, y_i)));
+        pose_cost = static_cast<float>(costmap->getCost(getIndex(x_i, y_i)));
         if (pose_cost < 1.0f) {
           continue;  // In free space
         }
@@ -174,7 +176,8 @@ void CostCritic::score(CriticData & data)
   }
 
   if (power_ > 1u) {
-    data.costs += xt::pow((std::move(repulsive_cost) * (weight_ / static_cast<float>(traj_len))), power_);
+    data.costs += xt::pow(
+      (std::move(repulsive_cost) * (weight_ / static_cast<float>(traj_len))), power_);
   } else {
     data.costs += std::move(repulsive_cost) * (weight_ / static_cast<float>(traj_len));
   }

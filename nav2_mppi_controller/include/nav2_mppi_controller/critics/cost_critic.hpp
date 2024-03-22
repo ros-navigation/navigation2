@@ -64,8 +64,8 @@ protected:
       (cost >= possible_collision_cost_ || possible_collision_cost_ < 1.0f))
     {
       score_cost = static_cast<float>(collision_checker_.footprintCostAtPose(
-        static_cast<double>(x), static_cast<double>(y), static_cast<double>(theta),
-        costmap_ros_->getRobotFootprint()));
+          static_cast<double>(x), static_cast<double>(y), static_cast<double>(theta),
+          costmap_ros_->getRobotFootprint()));
     }
 
     switch (static_cast<unsigned char>(score_cost)) {
@@ -113,14 +113,14 @@ protected:
   }
 
   /**
-    * @brief An implementation of getIndex fully using floats
+    * @brief A local implementation of getIndex
     * @param mx unsigned int map X coord
     * @param my unsigned into map Y coord
     * @return Index
     */
-  inline unsigned int getIndexFloat(unsigned int mx, unsigned int my) const
+  inline unsigned int getIndex(unsigned int mx, unsigned int my) const
   {
-    return static_cast<unsigned int>(my * size_x_ + mx);
+    return my * size_x_ + mx;
   }
 
   nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>

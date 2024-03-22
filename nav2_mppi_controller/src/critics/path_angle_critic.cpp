@@ -106,7 +106,8 @@ void PathAngleCritic::score(CriticData & data)
     case PathAngleMode::FORWARD_PREFERENCE:
       {
         auto yaws =
-          xt::fabs(utils::shortest_angular_distance(
+          xt::fabs(
+            utils::shortest_angular_distance(
             xt::view(data.trajectories.yaws, xt::all(), -1), yaws_between_points));
         if (power_ > 1u) {
           data.costs += xt::pow(std::move(yaws) * weight_, power_);
@@ -118,10 +119,12 @@ void PathAngleCritic::score(CriticData & data)
     case PathAngleMode::NO_DIRECTIONAL_PREFERENCE:
       {
         auto yaws =
-          xt::fabs(utils::shortest_angular_distance(
+          xt::fabs(
+            utils::shortest_angular_distance(
             xt::view(data.trajectories.yaws, xt::all(), -1), yaws_between_points));
         const auto yaws_between_points_corrected = xt::where(
-          yaws < M_PIF_2, yaws_between_points, utils::normalize_angles(yaws_between_points + M_PIF));
+          yaws < M_PIF_2, yaws_between_points,
+          utils::normalize_angles(yaws_between_points + M_PIF));
         const auto corrected_yaws = xt::fabs(
           utils::shortest_angular_distance(
             xt::view(data.trajectories.yaws, xt::all(), -1), yaws_between_points_corrected));

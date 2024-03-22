@@ -51,10 +51,12 @@ void GoalCritic::score(CriticData & data)
 
   if (power_ > 1u) {
     data.costs += xt::pow(
-      xt::mean(xt::hypot(traj_x - goal_x, traj_y - goal_y),
-      {1}, immediate) * weight_, power_);
+      xt::mean(
+        xt::hypot(traj_x - goal_x, traj_y - goal_y),
+        {1}, immediate) * weight_, power_);
   } else {
-    data.costs += xt::mean(xt::hypot(traj_x - goal_x, traj_y - goal_y),
+    data.costs += xt::mean(
+      xt::hypot(traj_x - goal_x, traj_y - goal_y),
       {1}, immediate) * weight_;
   }
 }
