@@ -18,6 +18,12 @@
 #include <string>
 #include <rclcpp/rclcpp.hpp>
 
+struct TestControllerSettings
+{
+  double controller_frequency;
+  bool visualize;
+};
+
 struct TestOptimizerSettings
 {
   int batch_size;

@@ -36,13 +36,16 @@ RosLockGuard g_rclcpp;
 
 TEST(ControllerStateTransitionTest, ControllerNotFail)
 {
-  const bool visualize = true;
+  double controller_frequency = 50.0;
+  bool visualize = true;
+
+  TestControllerSettings controller_settings{controller_frequency, visualize};
   TestCostmapSettings costmap_settings{};
 
   // Node Options
   rclcpp::NodeOptions options;
   std::vector<rclcpp::Parameter> params;
-  setUpControllerParams(visualize, params);
+  setUpControllerParams(controller_settings, params);
   options.parameter_overrides(params);
 
   auto node = getDummyNode(options);

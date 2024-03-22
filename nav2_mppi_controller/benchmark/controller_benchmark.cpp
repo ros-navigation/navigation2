@@ -46,6 +46,7 @@ void prepareAndRunBenchmark(
   bool consider_footprint, std::string motion_model,
   std::vector<std::string> critics, benchmark::State & state)
 {
+  double controller_frequency = 50.0;
   bool visualize = false;
 
   int batch_size = 300;
@@ -62,6 +63,7 @@ void prepareAndRunBenchmark(
   double path_step = costmap_settings.resolution;
 
   TestPathSettings path_settings{start_pose, path_points, path_step, path_step};
+  TestControllerSettings controller_settings{controller_frequency, visualize};
   TestOptimizerSettings optimizer_settings{batch_size, time_steps, iteration_count,
     lookahead_distance, motion_model, consider_footprint};
 
@@ -80,7 +82,7 @@ void prepareAndRunBenchmark(
 
   rclcpp::NodeOptions options;
   std::vector<rclcpp::Parameter> params;
-  setUpControllerParams(visualize, params);
+  setUpControllerParams(controller_settings, params);
   setUpOptimizerParams(optimizer_settings, critics, params);
   options.parameter_overrides(params);
   auto node = getDummyNode(options);

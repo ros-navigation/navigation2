@@ -58,34 +58,21 @@ void setUpOptimizerParams(
   const std::vector<std::string> & critics,
   std::vector<rclcpp::Parameter> & params_, std::string node_name = std::string("dummy"))
 {
-  constexpr double dummy_freq = 50.0;
   params_.emplace_back(rclcpp::Parameter(node_name + ".iteration_count", s.iteration_count));
   params_.emplace_back(rclcpp::Parameter(node_name + ".batch_size", s.batch_size));
   params_.emplace_back(rclcpp::Parameter(node_name + ".time_steps", s.time_steps));
   params_.emplace_back(rclcpp::Parameter(node_name + ".lookahead_dist", s.lookahead_distance));
   params_.emplace_back(rclcpp::Parameter(node_name + ".motion_model", s.motion_model));
   params_.emplace_back(rclcpp::Parameter(node_name + ".critics", critics));
-  params_.emplace_back(rclcpp::Parameter("controller_frequency", dummy_freq));
 }
 
 void setUpControllerParams(
-  bool visualize, std::vector<rclcpp::Parameter> & params_,
+  TestControllerSettings s,
+  std::vector<rclcpp::Parameter> & params_,
   std::string node_name = std::string("dummy"))
 {
-  double dummy_freq = 50.0;
-  params_.emplace_back(rclcpp::Parameter(node_name + ".visualize", visualize));
-  params_.emplace_back(rclcpp::Parameter("controller_frequency", dummy_freq));
-}
-
-rclcpp::NodeOptions getOptimizerOptions(
-  TestOptimizerSettings s,
-  const std::vector<std::string> & critics)
-{
-  std::vector<rclcpp::Parameter> params;
-  rclcpp::NodeOptions options;
-  setUpOptimizerParams(s, critics, params);
-  options.parameter_overrides(params);
-  return options;
+  params_.emplace_back(rclcpp::Parameter("controller_frequency", s.controller_frequency));
+  params_.emplace_back(rclcpp::Parameter(node_name + ".visualize", s.visualize));
 }
 
 geometry_msgs::msg::Point getDummyPoint(double x, double y)
@@ -118,6 +105,17 @@ std::vector<geometry_msgs::msg::Point> getDummySquareFootprint(double a)
   return {getDummyPoint(a, a), getDummyPoint(-a, -a), getDummyPoint(a, -a), getDummyPoint(-a, a)};
 }
 
+std::vector<geometry_msgs::msg::Point> getDummyRectangleFootprint(
+  double x, double y, double cx, double cy)
+{
+  return {
+    getDummyPoint(x / 2.0 - cx, y / 2.0 - cy),
+    getDummyPoint(-x / 2.0 - cx, -y / 2.0 - cy),
+    getDummyPoint(x / 2.0 - cx, -y / 2.0 - cy),
+    getDummyPoint(-x / 2.0 - cx, y / 2.0 - cy)
+  };
+}
+
 std::shared_ptr<nav2_costmap_2d::Costmap2DROS> getDummyCostmapRos(TestCostmapSettings s)
 {
   auto costmap_ros = getDummyCostmapRos();
@@ -128,16 +126,6 @@ std::shared_ptr<nav2_costmap_2d::Costmap2DROS> getDummyCostmapRos(TestCostmapSet
   costmap_ros->setRobotFootprint(getDummySquareFootprint(s.footprint_size));
 
   return costmap_ros;
-}
-
-std::shared_ptr<rclcpp_lifecycle::LifecycleNode>
-getDummyNode(
-  TestOptimizerSettings s, std::vector<std::string> critics,
-  std::string node_name = std::string("dummy"))
-{
-  auto node =
-    std::make_shared<rclcpp_lifecycle::LifecycleNode>(node_name, getOptimizerOptions(s, critics));
-  return node;
 }
 
 std::shared_ptr<rclcpp_lifecycle::LifecycleNode>

@@ -48,6 +48,9 @@ class OptimizerSuite : public ::testing::TestWithParam<std::tuple<std::string,
 TEST_P(OptimizerSuite, OptimizerTest) {
   auto [motion_model, critics, consider_footprint] = GetParam();
 
+  double controller_frequency = 50.0;
+  bool visualize = true;
+
   int batch_size = 400;
   int time_steps = 15;
   unsigned int path_points = 50u;
@@ -62,8 +65,9 @@ TEST_P(OptimizerSuite, OptimizerTest) {
   double path_step = costmap_settings.resolution;
 
   TestPathSettings path_settings{start_pose, path_points, path_step, path_step};
-  TestOptimizerSettings optimizer_settings{batch_size, time_steps, iteration_count,
-    lookahead_distance, motion_model, consider_footprint};
+  TestControllerSettings controller_settings{controller_frequency, visualize};
+  TestOptimizerSettings optimizer_settings{batch_size, time_steps,
+    iteration_count, lookahead_distance, motion_model, consider_footprint};
 
   unsigned int offset = 4;
   unsigned int obstacle_size = offset * 2;
@@ -77,7 +81,14 @@ TEST_P(OptimizerSuite, OptimizerTest) {
   addObstacle(costmap, {obst_x, obst_y, obstacle_size, obstacle_cost});
 
   printInfo(optimizer_settings, path_settings, critics);
-  auto node = getDummyNode(optimizer_settings, critics);
+
+  rclcpp::NodeOptions options;
+  std::vector<rclcpp::Parameter> params;
+  setUpControllerParams(controller_settings, params);
+  setUpOptimizerParams(optimizer_settings, critics, params);
+  options.parameter_overrides(params);
+
+  auto node = getDummyNode(options);
   auto parameters_handler = std::make_unique<mppi::ParametersHandler>(node);
   auto optimizer = getDummyOptimizer(node, costmap_ros, parameters_handler.get());
 
