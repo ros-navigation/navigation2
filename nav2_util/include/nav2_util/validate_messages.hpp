@@ -102,7 +102,7 @@ bool validateMsg(const geometry_msgs::msg::Pose & msg)
 
 
 
-// 验证地图元信息的函数
+// Function to verify map meta information
 bool validateMsg(const nav_msgs::msg::MapMetaData &msg) {
     // check sub-type
     msg.map_load_time; // no neccessary to check it
