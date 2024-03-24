@@ -58,6 +58,7 @@ void setUpOptimizerParams(
   const std::vector<std::string> & critics,
   std::vector<rclcpp::Parameter> & params_, std::string node_name = std::string("dummy"))
 {
+  params_.emplace_back(rclcpp::Parameter(node_name + ".model_dt", s.model_dt));
   params_.emplace_back(rclcpp::Parameter(node_name + ".iteration_count", s.iteration_count));
   params_.emplace_back(rclcpp::Parameter(node_name + ".batch_size", s.batch_size));
   params_.emplace_back(rclcpp::Parameter(node_name + ".time_steps", s.time_steps));

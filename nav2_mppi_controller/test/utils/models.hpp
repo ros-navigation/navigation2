@@ -31,6 +31,7 @@ struct TestOptimizerSettings
   int iteration_count;
   std::string motion_model;
   bool consider_footprint;
+  double model_dt = 0.05;
   double vx_max = 0.5;
   double vx_min = -0.35;
   double vy_max = 0.5;
