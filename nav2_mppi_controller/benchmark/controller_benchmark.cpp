@@ -53,7 +53,6 @@ void prepareAndRunBenchmark(
   int time_steps = 12;
   unsigned int path_points = 50u;
   int iteration_count = 2;
-  double lookahead_distance = 10.0;
 
   TestCostmapSettings costmap_settings{};
   auto costmap_ros = getDummyCostmapRos(costmap_settings);
@@ -65,7 +64,7 @@ void prepareAndRunBenchmark(
   TestPathSettings path_settings{start_pose, path_points, path_step, path_step};
   TestControllerSettings controller_settings{controller_frequency, visualize};
   TestOptimizerSettings optimizer_settings{batch_size, time_steps, iteration_count,
-    lookahead_distance, motion_model, consider_footprint};
+    motion_model, consider_footprint};
 
   unsigned int offset = 4;
   unsigned int obstacle_size = offset * 2;

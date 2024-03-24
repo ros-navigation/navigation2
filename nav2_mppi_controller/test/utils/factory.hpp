@@ -61,7 +61,6 @@ void setUpOptimizerParams(
   params_.emplace_back(rclcpp::Parameter(node_name + ".iteration_count", s.iteration_count));
   params_.emplace_back(rclcpp::Parameter(node_name + ".batch_size", s.batch_size));
   params_.emplace_back(rclcpp::Parameter(node_name + ".time_steps", s.time_steps));
-  params_.emplace_back(rclcpp::Parameter(node_name + ".lookahead_dist", s.lookahead_distance));
   params_.emplace_back(rclcpp::Parameter(node_name + ".motion_model", s.motion_model));
   params_.emplace_back(rclcpp::Parameter(node_name + ".critics", critics));
 }

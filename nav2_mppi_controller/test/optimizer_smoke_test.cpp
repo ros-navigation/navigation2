@@ -55,7 +55,6 @@ TEST_P(OptimizerSuite, OptimizerTest) {
   int time_steps = 15;
   unsigned int path_points = 50u;
   int iteration_count = 1;
-  double lookahead_distance = 10.0;
 
   TestCostmapSettings costmap_settings{};
   auto costmap_ros = getDummyCostmapRos(costmap_settings);
@@ -67,7 +66,7 @@ TEST_P(OptimizerSuite, OptimizerTest) {
   TestPathSettings path_settings{start_pose, path_points, path_step, path_step};
   TestControllerSettings controller_settings{controller_frequency, visualize};
   TestOptimizerSettings optimizer_settings{batch_size, time_steps,
-    iteration_count, lookahead_distance, motion_model, consider_footprint};
+    iteration_count, motion_model, consider_footprint};
 
   unsigned int offset = 4;
   unsigned int obstacle_size = offset * 2;

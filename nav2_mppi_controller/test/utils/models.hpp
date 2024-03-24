@@ -29,7 +29,6 @@ struct TestOptimizerSettings
   int batch_size;
   int time_steps;
   int iteration_count;
-  double lookahead_distance;
   std::string motion_model;
   bool consider_footprint;
 };
