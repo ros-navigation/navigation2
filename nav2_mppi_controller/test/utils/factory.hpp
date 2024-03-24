@@ -63,6 +63,13 @@ void setUpOptimizerParams(
   params_.emplace_back(rclcpp::Parameter(node_name + ".time_steps", s.time_steps));
   params_.emplace_back(rclcpp::Parameter(node_name + ".motion_model", s.motion_model));
   params_.emplace_back(rclcpp::Parameter(node_name + ".critics", critics));
+  params_.emplace_back(rclcpp::Parameter(node_name + ".vx_max", s.vx_max));
+  params_.emplace_back(rclcpp::Parameter(node_name + ".vx_min", s.vx_min));
+  params_.emplace_back(rclcpp::Parameter(node_name + ".vy_max", s.vy_max));
+  params_.emplace_back(rclcpp::Parameter(node_name + ".wz_max", s.wz_max));
+  params_.emplace_back(rclcpp::Parameter(node_name + ".vx_std", s.vx_std));
+  params_.emplace_back(rclcpp::Parameter(node_name + ".vy_std", s.vy_std));
+  params_.emplace_back(rclcpp::Parameter(node_name + ".wz_std", s.wz_std));
 }
 
 void setUpControllerParams(
