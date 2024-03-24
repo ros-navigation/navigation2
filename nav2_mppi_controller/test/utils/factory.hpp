@@ -186,6 +186,12 @@ auto getDummyTwist()
   return twist;
 }
 
+auto getDummyTwistStamped()
+{
+  geometry_msgs::msg::TwistStamped twistStamped;
+  return twistStamped;
+}
+
 template<typename TNode>
 geometry_msgs::msg::PoseStamped
 getDummyPointStamped(TNode & node, std::string frame = std::string("odom"))
