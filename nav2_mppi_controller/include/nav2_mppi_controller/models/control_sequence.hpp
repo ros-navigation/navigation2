@@ -16,6 +16,7 @@
 #define NAV2_MPPI_CONTROLLER__MODELS__CONTROL_SEQUENCE_HPP_
 
 #include <xtensor/xtensor.hpp>
+#include <xtensor/xnoalias.hpp>
 
 namespace mppi::models
 {
@@ -27,6 +28,13 @@ namespace mppi::models
 struct Control
 {
   float vx, vy, wz;
+
+  void reset()
+  {
+    vx = 0.0f;
+    vy = 0.0f;
+    wz = 0.0f;
+  }
 };
 
 /**
@@ -41,9 +49,9 @@ struct ControlSequence
 
   void reset(unsigned int time_steps)
   {
-    vx = xt::zeros<float>({time_steps});
-    vy = xt::zeros<float>({time_steps});
-    wz = xt::zeros<float>({time_steps});
+    xt::noalias(vx) = xt::zeros<float>({time_steps});
+    xt::noalias(vy) = xt::zeros<float>({time_steps});
+    xt::noalias(wz) = xt::zeros<float>({time_steps});
   }
 };
 

@@ -17,6 +17,7 @@
 
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
+#include <xtensor/xnoalias.hpp>
 
 namespace mppi::models
 {
@@ -36,9 +37,9 @@ struct Trajectories
     */
   void reset(unsigned int batch_size, unsigned int time_steps)
   {
-    x = xt::zeros<float>({batch_size, time_steps});
-    y = xt::zeros<float>({batch_size, time_steps});
-    yaws = xt::zeros<float>({batch_size, time_steps});
+    xt::noalias(x) = xt::zeros<float>({batch_size, time_steps});
+    xt::noalias(y) = xt::zeros<float>({batch_size, time_steps});
+    xt::noalias(yaws) = xt::zeros<float>({batch_size, time_steps});
   }
 };
 

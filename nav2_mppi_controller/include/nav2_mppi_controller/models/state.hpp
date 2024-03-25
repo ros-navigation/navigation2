@@ -16,6 +16,7 @@
 #define NAV2_MPPI_CONTROLLER__MODELS__STATE_HPP_
 
 #include <xtensor/xtensor.hpp>
+#include <xtensor/xnoalias.hpp>
 
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <geometry_msgs/msg/twist.hpp>
@@ -45,13 +46,33 @@ struct State
     */
   void reset(unsigned int batch_size, unsigned int time_steps)
   {
-    vx = xt::zeros<float>({batch_size, time_steps});
-    vy = xt::zeros<float>({batch_size, time_steps});
-    wz = xt::zeros<float>({batch_size, time_steps});
+    xt::noalias(vx) = xt::zeros<float>({batch_size, time_steps});
+    xt::noalias(vy) = xt::zeros<float>({batch_size, time_steps});
+    xt::noalias(wz) = xt::zeros<float>({batch_size, time_steps});
 
-    cvx = xt::zeros<float>({batch_size, time_steps});
-    cvy = xt::zeros<float>({batch_size, time_steps});
-    cwz = xt::zeros<float>({batch_size, time_steps});
+    xt::noalias(cvx) = xt::zeros<float>({batch_size, time_steps});
+    xt::noalias(cvy) = xt::zeros<float>({batch_size, time_steps});
+    xt::noalias(cwz) = xt::zeros<float>({batch_size, time_steps});
+
+    pose.header.stamp.sec = 0;
+    pose.header.stamp.nanosec = 0;
+    pose.header.frame_id = "";
+
+    pose.pose.position.x = 0.0;
+    pose.pose.position.y = 0.0;
+    pose.pose.position.z = 0.0;
+
+    pose.pose.orientation.x = 0.0;
+    pose.pose.orientation.y = 0.0;
+    pose.pose.orientation.z = 0.0;
+    pose.pose.orientation.w = 1.0;
+
+    speed.linear.x = 0.0;
+    speed.linear.y = 0.0;
+    speed.linear.z = 0.0;
+    speed.angular.x = 0.0;
+    speed.angular.y = 0.0;
+    speed.angular.z = 0.0;
   }
 };
 }  // namespace mppi::models

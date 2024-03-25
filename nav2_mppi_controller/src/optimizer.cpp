@@ -118,14 +118,12 @@ void Optimizer::reset()
 {
   state_.reset(settings_.batch_size, settings_.time_steps);
   control_sequence_.reset(settings_.time_steps);
-  control_history_[0] = {0.0f, 0.0f, 0.0f};
-  control_history_[1] = {0.0f, 0.0f, 0.0f};
-  control_history_[2] = {0.0f, 0.0f, 0.0f};
-  control_history_[3] = {0.0f, 0.0f, 0.0f};
-
+  for (auto & ch : control_history_) {
+    ch.reset();
+  }
   settings_.constraints = settings_.base_constraints;
 
-  costs_ = xt::zeros<float>({settings_.batch_size});
+  xt::noalias(costs_) = xt::zeros<float>({settings_.batch_size});
   generated_trajectories_.reset(settings_.batch_size, settings_.time_steps);
 
   noise_generator_.reset(settings_, isHolonomic());

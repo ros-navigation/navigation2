@@ -16,6 +16,7 @@
 #define NAV2_MPPI_CONTROLLER__MODELS__PATH_HPP_
 
 #include <xtensor/xtensor.hpp>
+#include <xtensor/xnoalias.hpp>
 
 namespace mppi::models
 {
@@ -35,9 +36,9 @@ struct Path
     */
   void reset(unsigned int size)
   {
-    x = xt::zeros<float>({size});
-    y = xt::zeros<float>({size});
-    yaws = xt::zeros<float>({size});
+    xt::noalias(x) = xt::zeros<float>({size});
+    xt::noalias(y) = xt::zeros<float>({size});
+    xt::noalias(yaws) = xt::zeros<float>({size});
   }
 };
 
