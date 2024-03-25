@@ -218,13 +218,13 @@ bool BtActionServer<ActionT>::on_cleanup()
 }
 
 template<class ActionT>
-bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filename)
+bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filename, bool overwrite)
 {
   // Empty filename is default for backward compatibility
   auto filename = bt_xml_filename.empty() ? default_bt_xml_filename_ : bt_xml_filename;
 
-  // Use previous BT if it is the existing one
-  if (current_bt_xml_filename_ == filename) {
+  // Use previous BT if it is the existing one and overwrite flag is not set to true
+  if (!overwrite && current_bt_xml_filename_ == filename) {
     RCLCPP_DEBUG(logger_, "BT will not be reloaded as the given xml is already loaded");
     return true;
   }
