@@ -59,6 +59,13 @@ void CriticManager::loadCritics()
   }
 }
 
+void CriticManager::reInitializeCritics()
+{
+  for (auto & critic : critics_) {
+    critic->initialize();
+  }
+}
+
 std::string CriticManager::getFullName(const std::string & name)
 {
   return "mppi::critics::" + name;

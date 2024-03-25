@@ -48,7 +48,6 @@ public:
     */
   CriticManager() = default;
 
-
   /**
     * @brief Virtual Destructor for mppi::CriticManager
     */
@@ -64,6 +63,11 @@ public:
   void on_configure(
     rclcpp_lifecycle::LifecycleNode::WeakPtr parent, const std::string & name,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS>, ParametersHandler *);
+
+  /**
+    * @brief reinitialise critic plugins to load new params
+    */
+  virtual void reInitializeCritics();
 
   /**
     * @brief Score trajectories by the set of loaded critic functions

@@ -127,6 +127,7 @@ void Optimizer::reset()
   generated_trajectories_.reset(settings_.batch_size, settings_.time_steps);
 
   noise_generator_.reset(settings_, isHolonomic());
+  critic_manager_.reInitializeCritics();
   RCLCPP_INFO(logger_, "Optimizer reset");
 }
 
