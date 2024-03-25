@@ -814,7 +814,7 @@ TEST(GracefulControllerTest, pruningPlan) {
 
   // Check results: the plan should be pruned
   auto transformed_plan = controller->transformGlobalPlan(robot_pose);
-  EXPECT_EQ(transformed_plan.poses.size(), 3);
+  EXPECT_EQ(transformed_plan.poses.size(), 3u);
 }
 
 TEST(GracefulControllerTest, pruningPlanOutsideCostmap) {
@@ -880,7 +880,7 @@ TEST(GracefulControllerTest, pruningPlanOutsideCostmap) {
 
   // Check results: the plan should be pruned
   auto transformed_plan = controller->transformGlobalPlan(robot_pose);
-  EXPECT_EQ(transformed_plan.poses.size(), 2);
+  EXPECT_EQ(transformed_plan.poses.size(), 2u);
 }
 
 TEST(GracefulControllerTest, computeVelocityCommandRotate) {
