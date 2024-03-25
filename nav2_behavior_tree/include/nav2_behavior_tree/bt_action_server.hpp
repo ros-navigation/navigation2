@@ -252,7 +252,7 @@ protected:
   std::chrono::milliseconds wait_for_service_timeout_;
 
   // should the BT be reloaded even if the same xml filename is requested?
-  bool overwrite_xml_ = false;
+  bool always_reload_bt_xml_ = false;
 
   // User-provided callbacks
   OnGoalReceivedCallback on_goal_received_callback_;
