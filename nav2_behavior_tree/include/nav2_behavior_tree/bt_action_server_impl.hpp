@@ -67,6 +67,9 @@ BtActionServer<ActionT>::BtActionServer(
   if (!node->has_parameter("wait_for_service_timeout")) {
     node->declare_parameter("wait_for_service_timeout", 1000);
   }
+  if (!node->has_parameter("overwrite_xml")) {
+    node->declare_parameter("overwrite_xml", false);
+  }
 
   std::vector<std::string> error_code_names = {
     "follow_path_error_code",
@@ -164,6 +167,7 @@ bool BtActionServer<ActionT>::on_configure()
   int wait_for_service_timeout;
   node->get_parameter("wait_for_service_timeout", wait_for_service_timeout);
   wait_for_service_timeout_ = std::chrono::milliseconds(wait_for_service_timeout);
+  node->get_parameter("overwrite_xml", overwrite_xml_);
 
   // Get error code id names to grab off of the blackboard
   error_code_names_ = node->get_parameter("error_code_names").as_string_array();
@@ -218,13 +222,13 @@ bool BtActionServer<ActionT>::on_cleanup()
 }
 
 template<class ActionT>
-bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filename, bool overwrite)
+bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filename)
 {
   // Empty filename is default for backward compatibility
   auto filename = bt_xml_filename.empty() ? default_bt_xml_filename_ : bt_xml_filename;
 
   // Use previous BT if it is the existing one and overwrite flag is not set to true
-  if (!overwrite && current_bt_xml_filename_ == filename) {
+  if (!overwrite_xml_ && current_bt_xml_filename_ == filename) {
     RCLCPP_DEBUG(logger_, "BT will not be reloaded as the given xml is already loaded");
     return true;
   }
