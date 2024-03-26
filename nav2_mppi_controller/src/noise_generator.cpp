@@ -38,6 +38,11 @@ void NoiseGenerator::initialize(
   auto getParam = param_handler->getParamGetter(name);
   getParam(regenerate_noises_, "regenerate_noises", false);
   getParam(dump_noises_, "dump_noises", true);
+  getParam(noise_seed_, "noise_seed", 0);
+
+  if (noise_seed_ != 0) {
+    xt::random::seed(noise_seed_);
+  }
 
   if (regenerate_noises_) {
     noise_thread_ = std::thread(std::bind(&NoiseGenerator::noiseThread, this));

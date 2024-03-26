@@ -195,6 +195,9 @@ void Optimizer::prepare(
   path_ = utils::toTensor(plan);
   costs_.fill(0.0f);
 
+  // FIXME: Should we be resetting generated_trajectories_ here???
+  // generated_trajectories_.reset(settings_.batch_size, settings_.time_steps);
+
   critics_data_.fail_flag = false;
   critics_data_.goal_checker = goal_checker;
   critics_data_.motion_model = motion_model_;

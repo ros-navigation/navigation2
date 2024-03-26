@@ -106,6 +106,7 @@ protected:
   std::mutex noise_lock_;
   bool active_{false}, ready_{false}, regenerate_noises_{false};
   bool dump_noises_{false};
+  int noise_seed_{0};
 };
 
 }  // namespace mppi
