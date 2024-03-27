@@ -20,7 +20,7 @@
 #include <vector>
 #include <utility>
 
-#include "nav2_amcl/angleutils.hpp"
+#include "angles/angles.h"
 #include "nav2_regulated_pure_pursuit_controller/regulated_pure_pursuit_controller.hpp"
 #include "nav2_core/controller_exceptions.hpp"
 #include "nav2_util/node_utils.hpp"
@@ -266,7 +266,7 @@ bool RegulatedPurePursuitController::shouldRotateToPath(
   angle_to_path = atan2(carrot_pose.pose.position.y, carrot_pose.pose.position.x);
   // In case we are reversing
   if (x_vel_sign < 0.0) {
-    angle_to_path = nav2_amcl::angleutils::normalize(angle_to_path + M_PI);
+    angle_to_path = angles::normalize_angle(angle_to_path + M_PI);
   }
   return params_->use_rotate_to_heading &&
          fabs(angle_to_path) > params_->rotate_to_heading_min_angle;
