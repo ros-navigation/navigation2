@@ -71,6 +71,9 @@ bool Polygon::configure()
       "[%s]: Subscribing on %s topic for polygon",
       polygon_name_.c_str(), polygon_sub_topic.c_str());
     rclcpp::QoS polygon_qos = rclcpp::SystemDefaultsQoS();  // set to default
+    if (polygon_subscribe_transient_local_) {
+      polygon_qos.transient_local();
+    }
     polygon_sub_ = node->create_subscription<geometry_msgs::msg::PolygonStamped>(
       polygon_sub_topic, polygon_qos,
       std::bind(&Polygon::polygonCallback, this, std::placeholders::_1));
@@ -432,6 +435,10 @@ bool Polygon::getParameters(
       footprint_topic =
         node->get_parameter(polygon_name_ + ".footprint_topic").as_string();
     }
+    nav2_util::declare_parameter_if_not_declared(
+      node, polygon_name_ + ".polygon_subscribe_transient_local", rclcpp::ParameterValue(false));
+    polygon_subscribe_transient_local_ =
+      node->get_parameter(polygon_name_ + ".polygon_subscribe_transient_local").as_bool();
   } catch (const std::exception & ex) {
     RCLCPP_ERROR(
       logger_,
