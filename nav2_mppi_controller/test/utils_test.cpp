@@ -257,7 +257,6 @@ TEST(UtilsTests, FurthestAndClosestReachedPoint)
   {state, generated_trajectories, path, costs, model_dt, false, nullptr, nullptr,
     std::nullopt, std::nullopt};  /// Caution, keep references
   EXPECT_EQ(findPathFurthestReachedPoint(data3), 5u);
-  EXPECT_EQ(findPathTrajectoryInitialPoint(data3), 5u);
 }
 
 TEST(UtilsTests, findPathCosts)

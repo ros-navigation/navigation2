@@ -23,17 +23,17 @@ void ConstraintCritic::initialize()
   auto getParentParam = parameters_handler_->getParamGetter(parent_name_);
 
   getParam(power_, "cost_power", 1);
-  getParam(weight_, "cost_weight", 4.0);
+  getParam(weight_, "cost_weight", 4.0f);
   RCLCPP_INFO(
     logger_, "ConstraintCritic instantiated with %d power and %f weight.",
     power_, weight_);
 
   float vx_max, vy_max, vx_min;
-  getParentParam(vx_max, "vx_max", 0.5);
-  getParentParam(vy_max, "vy_max", 0.0);
-  getParentParam(vx_min, "vx_min", -0.35);
+  getParentParam(vx_max, "vx_max", 0.5f);
+  getParentParam(vy_max, "vy_max", 0.0f);
+  getParentParam(vx_min, "vx_min", -0.35f);
 
-  const float min_sgn = vx_min > 0.0 ? 1.0 : -1.0;
+  const float min_sgn = vx_min > 0.0f ? 1.0f : -1.0f;
   max_vel_ = sqrtf(vx_max * vx_max + vy_max * vy_max);
   min_vel_ = min_sgn * sqrtf(vx_min * vx_min + vy_max * vy_max);
 }
@@ -46,32 +46,71 @@ void ConstraintCritic::score(CriticData & data)
     return;
   }
 
-  auto sgn = xt::where(data.state.vx > 0.0, 1.0, -1.0);
-  auto vel_total = sgn * xt::sqrt(data.state.vx * data.state.vx + data.state.vy * data.state.vy);
-  auto out_of_max_bounds_motion = xt::maximum(vel_total - max_vel_, 0);
-  auto out_of_min_bounds_motion = xt::maximum(min_vel_ - vel_total, 0);
+  // Differential motion model
+  auto diff = dynamic_cast<DiffDriveMotionModel *>(data.motion_model.get());
+  if (diff != nullptr) {
+    if (power_ > 1u) {
+      data.costs += xt::pow(
+        xt::sum(
+          (std::move(
+            xt::maximum(data.state.vx - max_vel_, 0.0f) +
+            xt::maximum(min_vel_ - data.state.vx, 0.0f))) *
+          data.model_dt, {1}, immediate) * weight_, power_);
+    } else {
+      data.costs += xt::sum(
+        (std::move(
+          xt::maximum(data.state.vx - max_vel_, 0.0f) +
+          xt::maximum(min_vel_ - data.state.vx, 0.0f))) *
+        data.model_dt, {1}, immediate) * weight_;
+    }
+    return;
+  }
 
+  // Omnidirectional motion model
+  auto omni = dynamic_cast<OmniMotionModel *>(data.motion_model.get());
+  if (omni != nullptr) {
+    auto sgn = xt::eval(xt::where(data.state.vx > 0.0f, 1.0f, -1.0f));
+    auto vel_total = sgn * xt::hypot(data.state.vx, data.state.vy);
+    if (power_ > 1u) {
+      data.costs += xt::pow(
+        xt::sum(
+          (std::move(
+            xt::maximum(vel_total - max_vel_, 0.0f) +
+            xt::maximum(min_vel_ - vel_total, 0.0f))) *
+          data.model_dt, {1}, immediate) * weight_, power_);
+    } else {
+      data.costs += xt::sum(
+        (std::move(
+          xt::maximum(vel_total - max_vel_, 0.0f) +
+          xt::maximum(min_vel_ - vel_total, 0.0f))) *
+        data.model_dt, {1}, immediate) * weight_;
+    }
+    return;
+  }
+
+  // Ackermann motion model
   auto acker = dynamic_cast<AckermannMotionModel *>(data.motion_model.get());
   if (acker != nullptr) {
     auto & vx = data.state.vx;
     auto & wz = data.state.wz;
     auto out_of_turning_rad_motion = xt::maximum(
-      acker->getMinTurningRadius() - (xt::fabs(vx) / xt::fabs(wz)), 0.0);
-
-    data.costs += xt::pow(
-      xt::sum(
-        (std::move(out_of_max_bounds_motion) +
-        std::move(out_of_min_bounds_motion) +
-        std::move(out_of_turning_rad_motion)) *
-        data.model_dt, {1}, immediate) * weight_, power_);
+      acker->getMinTurningRadius() - (xt::fabs(vx) / xt::fabs(wz)), 0.0f);
+    if (power_ > 1u) {
+      data.costs += xt::pow(
+        xt::sum(
+          (std::move(
+            xt::maximum(data.state.vx - max_vel_, 0.0f) +
+            xt::maximum(min_vel_ - data.state.vx, 0.0f) + out_of_turning_rad_motion)) *
+          data.model_dt, {1}, immediate) * weight_, power_);
+    } else {
+      data.costs += xt::sum(
+        (std::move(
+          xt::maximum(data.state.vx - max_vel_, 0.0f) +
+          xt::maximum(min_vel_ - data.state.vx, 0.0f) + out_of_turning_rad_motion)) *
+        data.model_dt, {1}, immediate) * weight_;
+    }
     return;
   }
-
-  data.costs += xt::pow(
-    xt::sum(
-      (std::move(out_of_max_bounds_motion) +
-      std::move(out_of_min_bounds_motion)) *
-      data.model_dt, {1}, immediate) * weight_, power_);
 }
 
 }  // namespace mppi::critics
