@@ -458,14 +458,14 @@ inline float posePointAngle(
   const geometry_msgs::msg::Pose & pose,
   double point_x, double point_y, double point_yaw)
 {
-  float pose_x = pose.position.x;
-  float pose_y = pose.position.y;
-  float pose_yaw = tf2::getYaw(pose.orientation);
+  float pose_x = static_cast<float>(pose.position.x);
+  float pose_y = static_cast<float>(pose.position.y);
+  float pose_yaw = static_cast<float>(tf2::getYaw(pose.orientation));
 
-  float yaw = atan2f(point_y - pose_y, point_x - pose_x);
+  float yaw = atan2f(static_cast<float>(point_y) - pose_y, static_cast<float>(point_x) - pose_x);
 
-  if (fabs(angles::shortest_angular_distance(yaw, point_yaw)) > M_PI_2) {
-    yaw = angles::normalize_angle(yaw + M_PI);
+  if (fabs(angles::shortest_angular_distance(yaw, static_cast<float>(point_yaw))) > M_PIF_2) {
+    yaw = angles::normalize_angle(yaw + M_PIF);
   }
 
   return fabs(angles::shortest_angular_distance(yaw, pose_yaw));
