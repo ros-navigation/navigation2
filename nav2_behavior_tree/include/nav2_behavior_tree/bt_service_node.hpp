@@ -57,7 +57,7 @@ public:
     callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
 
     // Get the required items from the blackboard
-    max_timeout_ =
+    auto bt_loop_duration =
       config().blackboard->template get<std::chrono::milliseconds>("bt_loop_duration");
     server_timeout_ =
       config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
@@ -66,7 +66,7 @@ public:
       config().blackboard->template get<std::chrono::milliseconds>("wait_for_service_timeout");
 
     // timeout should be less than bt_loop_duration to be able to finish the current tick
-    max_timeout_ *= 0.5;
+    max_timeout_ = std::chrono::duration_cast<std::chrono::milliseconds>(bt_loop_duration * 0.5);
 
     // Now that we have node_ to use, create the service client for this BT service
     getInput("service_name", service_name_);
