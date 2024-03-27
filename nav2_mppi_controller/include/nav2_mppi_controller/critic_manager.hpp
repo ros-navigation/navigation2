@@ -42,6 +42,7 @@ namespace mppi
 class CriticManager
 {
 public:
+  typedef std::vector<std::unique_ptr<critics::CriticFunction>> Critics;
   /**
     * @brief Constructor for mppi::CriticManager
     */
@@ -94,7 +95,7 @@ protected:
   ParametersHandler * parameters_handler_;
   std::vector<std::string> critic_names_;
   std::unique_ptr<pluginlib::ClassLoader<critics::CriticFunction>> loader_;
-  std::vector<std::unique_ptr<critics::CriticFunction>> critics_;
+  Critics critics_;
 
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
 };
