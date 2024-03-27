@@ -49,6 +49,9 @@
 #include "builtin_interfaces/msg/time.hpp"
 #include "nav2_mppi_controller/critic_data.hpp"
 
+#define M_PIF 3.141592653589793238462643383279502884e+00F
+#define M_PIF_2 1.5707963267948966e+00F
+
 namespace mppi::utils
 {
 using xt::evaluation_strategy::immediate;
@@ -240,15 +243,15 @@ inline bool withinPositionGoalTolerance(
   const models::Path & path)
 {
   const auto goal_idx = path.x.shape(0) - 1;
-  const auto goal_x = path.x(goal_idx);
-  const auto goal_y = path.y(goal_idx);
+  const float goal_x = path.x(goal_idx);
+  const float goal_y = path.y(goal_idx);
 
-  const auto pose_tolerance_sq = pose_tolerance * pose_tolerance;
+  const float pose_tolerance_sq = pose_tolerance * pose_tolerance;
 
-  auto dx = robot.position.x - goal_x;
-  auto dy = robot.position.y - goal_y;
+  const float dx = static_cast<float>(robot.position.x) - goal_x;
+  const float dy = static_cast<float>(robot.position.y) - goal_y;
 
-  auto dist_sq = dx * dx + dy * dy;
+  float dist_sq = dx * dx + dy * dy;
 
   if (dist_sq < pose_tolerance_sq) {
     return true;
@@ -259,7 +262,7 @@ inline bool withinPositionGoalTolerance(
 
 /**
   * @brief normalize
-  * Normalizes the angle to be -M_PI circle to +M_PI circle
+  * Normalizes the angle to be -M_PIF circle to +M_PIF circle
   * It takes and returns radians.
   * @param angles Angles to normalize
   * @return normalized angles
@@ -267,8 +270,8 @@ inline bool withinPositionGoalTolerance(
 template<typename T>
 auto normalize_angles(const T & angles)
 {
-  auto && theta = xt::eval(xt::fmod(angles + M_PI, 2.0 * M_PI));
-  return xt::eval(xt::where(theta <= 0.0, theta + M_PI, theta - M_PI));
+  auto theta = xt::eval(xt::fmod(angles + M_PIF, 2.0f * M_PIF));
+  return xt::eval(xt::where(theta < 0.0f, theta + M_PIF, theta - M_PIF));
 }
 
 /**
@@ -310,13 +313,12 @@ inline size_t findPathFurthestReachedPoint(const CriticData & data)
 
   size_t max_id_by_trajectories = 0, min_id_by_path = 0;
   float min_distance_by_path = std::numeric_limits<float>::max();
-  float cur_dist = 0.0f;
 
   for (size_t i = 0; i < dists.shape(0); i++) {
     min_id_by_path = 0;
     min_distance_by_path = std::numeric_limits<float>::max();
-    for (size_t j = 0; j < dists.shape(1); j++) {
-      cur_dist = dists(i, j);
+    for (size_t j = max_id_by_trajectories; j < dists.shape(1); j++) {
+      const float cur_dist = dists(i, j);
       if (cur_dist < min_distance_by_path) {
         min_distance_by_path = cur_dist;
         min_id_by_path = j;
@@ -325,31 +327,6 @@ inline size_t findPathFurthestReachedPoint(const CriticData & data)
     max_id_by_trajectories = std::max(max_id_by_trajectories, min_id_by_path);
   }
   return max_id_by_trajectories;
-}
-
-/**
- * @brief Evaluate closest point idx of data.path which is
- * nearset to the start of the trajectory in data.trajectories
- * @param data Data to use
- * @return Idx of closest path point at start of the trajectories
- */
-inline size_t findPathTrajectoryInitialPoint(const CriticData & data)
-{
-  // First point should be the same for all trajectories from initial conditions
-  const auto dx = data.path.x - data.trajectories.x(0, 0);
-  const auto dy = data.path.y - data.trajectories.y(0, 0);
-  const auto dists = dx * dx + dy * dy;
-
-  float min_distance_by_path = std::numeric_limits<float>::max();
-  size_t min_id = 0;
-  for (size_t j = 0; j < dists.shape(0); j++) {
-    if (dists(j) < min_distance_by_path) {
-      min_distance_by_path = dists(j);
-      min_id = j;
-    }
-  }
-
-  return min_id;
 }
 
 /**
@@ -375,26 +352,22 @@ inline void findPathCosts(
   unsigned int map_x, map_y;
   const size_t path_segments_count = data.path.x.shape(0) - 1;
   data.path_pts_valid = std::vector<bool>(path_segments_count, false);
+  const bool tracking_unknown = costmap_ros->getLayeredCostmap()->isTrackingUnknown();
   for (unsigned int idx = 0; idx < path_segments_count; idx++) {
-    const auto path_x = data.path.x(idx);
-    const auto path_y = data.path.y(idx);
-    if (!costmap->worldToMap(path_x, path_y, map_x, map_y)) {
+    if (!costmap->worldToMap(data.path.x(idx), data.path.y(idx), map_x, map_y)) {
       (*data.path_pts_valid)[idx] = false;
       continue;
     }
 
     switch (costmap->getCost(map_x, map_y)) {
-      using namespace nav2_costmap_2d; // NOLINT
-      case (LETHAL_OBSTACLE):
+      case (nav2_costmap_2d::LETHAL_OBSTACLE):
         (*data.path_pts_valid)[idx] = false;
         continue;
-      case (INSCRIBED_INFLATED_OBSTACLE):
+      case (nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE):
         (*data.path_pts_valid)[idx] = false;
         continue;
-      case (NO_INFORMATION):
-        const bool is_tracking_unknown =
-          costmap_ros->getLayeredCostmap()->isTrackingUnknown();
-        (*data.path_pts_valid)[idx] = is_tracking_unknown ? true : false;
+      case (nav2_costmap_2d::NO_INFORMATION):
+        (*data.path_pts_valid)[idx] = tracking_unknown ? true : false;
         continue;
     }
 
@@ -436,7 +409,7 @@ inline float posePointAngle(
   if (!forward_preference) {
     return std::min(
       fabs(angles::shortest_angular_distance(yaw, pose_yaw)),
-      fabs(angles::shortest_angular_distance(yaw, angles::normalize_angle(pose_yaw + M_PI))));
+      fabs(angles::shortest_angular_distance(yaw, angles::normalize_angle(pose_yaw + M_PIF))));
   }
 
   return fabs(angles::shortest_angular_distance(yaw, pose_yaw));
@@ -454,14 +427,14 @@ inline float posePointAngle(
   const geometry_msgs::msg::Pose & pose,
   double point_x, double point_y, double point_yaw)
 {
-  float pose_x = pose.position.x;
-  float pose_y = pose.position.y;
-  float pose_yaw = tf2::getYaw(pose.orientation);
+  float pose_x = static_cast<float>(pose.position.x);
+  float pose_y = static_cast<float>(pose.position.y);
+  float pose_yaw = static_cast<float>(tf2::getYaw(pose.orientation));
 
-  float yaw = atan2f(point_y - pose_y, point_x - pose_x);
+  float yaw = atan2f(static_cast<float>(point_y) - pose_y, static_cast<float>(point_x) - pose_x);
 
-  if (fabs(angles::shortest_angular_distance(yaw, point_yaw)) > M_PI_2) {
-    yaw = angles::normalize_angle(yaw + M_PI);
+  if (fabs(angles::shortest_angular_distance(yaw, static_cast<float>(point_yaw))) > M_PIF_2) {
+    yaw = angles::normalize_angle(yaw + M_PIF);
   }
 
   return fabs(angles::shortest_angular_distance(yaw, pose_yaw));
@@ -689,7 +662,7 @@ inline unsigned int findFirstPathInversion(nav_msgs::msg::Path & path)
 
     // Checking for the existance of cusp, in the path, using the dot product.
     float dot_product = (oa_x * ab_x) + (oa_y * ab_y);
-    if (dot_product < 0.0) {
+    if (dot_product < 0.0f) {
       return idx + 1;
     }
   }
@@ -720,18 +693,32 @@ inline unsigned int removePosesAfterFirstInversion(nav_msgs::msg::Path & path)
  * @brief Compare to trajectory points to find closest path point along integrated distances
  * @param vec Vect to check
  * @return dist Distance to look for
+ * @return init Starting index to indec from
  */
-inline size_t findClosestPathPt(const std::vector<float> & vec, float dist, size_t init = 0)
+inline unsigned int findClosestPathPt(
+  const std::vector<float> & vec, const float dist, const unsigned int init = 0u)
 {
-  auto iter = std::lower_bound(vec.begin() + init, vec.end(), dist);
-  if (iter == vec.begin() + init) {
-    return 0;
+  float distim1 = init != 0u ? vec[init] : 0.0f;  // First is 0, no accumulated distance yet
+  float disti = 0.0f;
+  const unsigned int size = vec.size();
+  for (unsigned int i = init + 1; i != size; i++) {
+    disti = vec[i];
+    if (disti > dist) {
+      if (i > 0 && dist - distim1 < disti - dist) {
+        return i - 1;
+      }
+      return i;
+    }
+    distim1 = disti;
   }
-  if (dist - *(iter - 1) < *iter - dist) {
-    return iter - 1 - vec.begin();
-  }
-  return iter - vec.begin();
+  return size - 1;
 }
+
+// A struct to hold pose data in floating point resolution
+struct Pose2D
+{
+  float x, y, theta;
+};
 
 }  // namespace mppi::utils
 
