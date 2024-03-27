@@ -15,6 +15,7 @@ set(TEST_NAMES
 foreach(name IN LISTS TEST_NAMES)
   ament_add_gtest(${name}
     ${name}.cpp
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
 
   ament_target_dependencies(${name}
