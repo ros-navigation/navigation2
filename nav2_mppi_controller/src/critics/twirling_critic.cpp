@@ -22,7 +22,7 @@ void TwirlingCritic::initialize()
   auto getParam = parameters_handler_->getParamGetter(name_);
 
   getParam(power_, "cost_power", 1);
-  getParam(weight_, "cost_weight", 10.0);
+  getParam(weight_, "cost_weight", 10.0f);
 
   RCLCPP_INFO(
     logger_, "TwirlingCritic instantiated with %d power and %f weight.", power_, weight_);
@@ -37,8 +37,11 @@ void TwirlingCritic::score(CriticData & data)
     return;
   }
 
-  const auto wz = xt::abs(data.state.wz);
-  data.costs += xt::pow(xt::mean(wz, {1}, immediate) * weight_, power_);
+  if (power_ > 1u) {
+    data.costs += xt::pow(xt::mean(xt::fabs(data.state.wz), {1}, immediate) * weight_, power_);
+  } else {
+    data.costs += xt::mean(xt::fabs(data.state.wz), {1}, immediate) * weight_;
+  }
 }
 
 }  // namespace mppi::critics
