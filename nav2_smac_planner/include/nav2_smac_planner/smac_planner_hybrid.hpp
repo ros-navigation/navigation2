@@ -133,6 +133,8 @@ protected:
 
   // Dynamic parameters handler
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr _dyn_params_handler;
+  std::shared_ptr<rclcpp::ParameterEventHandler> _remote_param_subscriber;
+  std::shared_ptr<rclcpp::ParameterCallbackHandle> _remote_resolution_handler;
 };
 
 }  // namespace nav2_smac_planner
