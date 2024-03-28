@@ -98,6 +98,8 @@ TEST(SmacTest, test_smac_se2_reconfigure)
   planner->configure(nodeSE2, "test", nullptr, costmap_ros);
   planner->activate();
 
+  nodeSE2->declare_parameter("resolution", 0.05);
+
   auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
     nodeSE2->get_node_base_interface(), nodeSE2->get_node_topics_interface(),
     nodeSE2->get_node_graph_interface(),
@@ -124,7 +126,6 @@ TEST(SmacTest, test_smac_se2_reconfigure)
       rclcpp::Parameter("test.analytic_expansion_max_length", 42.0),
       rclcpp::Parameter("test.max_on_approach_iterations", 42),
       rclcpp::Parameter("test.terminal_checking_interval", 42),
-      rclcpp::Parameter("resolution", 0.2),
       rclcpp::Parameter("test.motion_model_for_search", std::string("REEDS_SHEPP"))});
 
   rclcpp::spin_until_future_complete(
@@ -144,7 +145,6 @@ TEST(SmacTest, test_smac_se2_reconfigure)
   EXPECT_EQ(nodeSE2->get_parameter("test.cost_penalty").as_double(), 2.0);
   EXPECT_EQ(nodeSE2->get_parameter("test.retrospective_penalty").as_double(), 0.2);
   EXPECT_EQ(nodeSE2->get_parameter("test.tolerance").as_double(), 0.2);
-  EXPECT_EQ(nodeSE2->get_parameter("resolution").as_double(), 0.2);
   EXPECT_EQ(nodeSE2->get_parameter("test.analytic_expansion_ratio").as_double(), 4.0);
   EXPECT_EQ(nodeSE2->get_parameter("test.smooth_path").as_bool(), false);
   EXPECT_EQ(nodeSE2->get_parameter("test.max_planning_time").as_double(), 10.0);
@@ -155,4 +155,11 @@ TEST(SmacTest, test_smac_se2_reconfigure)
   EXPECT_EQ(
     nodeSE2->get_parameter("test.motion_model_for_search").as_string(),
     std::string("REEDS_SHEPP"));
+
+  auto results2 = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("resolution", 0.2)});
+  rclcpp::spin_until_future_complete(
+    nodeSE2->get_node_base_interface(),
+    results2);
+  EXPECT_EQ(nodeSE2->get_parameter("resolution").as_double(), 0.2);
 }
