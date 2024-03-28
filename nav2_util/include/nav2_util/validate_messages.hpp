@@ -109,7 +109,6 @@ bool validateMsg(const geometry_msgs::msg::Pose & msg)
 bool validateMsg(const nav_msgs::msg::MapMetaData & msg)
 {
   // check sub-type
-  msg.map_load_time;   // no neccessary to check it
   if (!validateMsg(msg.origin)) {return false;}
   if (!validateMsg(msg.resolution)) {return false;}
 
