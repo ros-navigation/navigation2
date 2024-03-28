@@ -17,9 +17,8 @@
 #ifndef NAV2_UTIL__ROBOT_UTILS_HPP_
 #define NAV2_UTIL__ROBOT_UTILS_HPP_
 
-#include <memory>
-#include <optional>
 #include <string>
+#include <memory>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/twist.hpp"
@@ -27,6 +26,7 @@
 #include "tf2/time.h"
 #include "tf2_ros/buffer.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+#include "rclcpp/rclcpp.hpp"
 
 namespace nav2_util
 {
@@ -62,19 +62,19 @@ bool transformPoseInTargetFrame(
 
 /**
  * @brief Obtains a transform from source_frame_id -> to target_frame_id
- * @param target_frame_id Target frame ID to convert to
  * @param source_frame_id Source frame ID to convert from
+ * @param target_frame_id Target frame ID to convert to
  * @param transform_tolerance Transform tolerance
  * @param tf_buffer TF buffer to use for the transformation
- * @return tf_transform Output source->target transform
+ * @param tf_transform Output source->target transform
+ * @return True if got correct transform, otherwise false
  */
-template<typename TransformType = tf2::Transform>
-[[nodiscard]] std::optional<TransformType> getTransform(
-  const std::string & target_frame_id,
+bool getTransform(
   const std::string & source_frame_id,
+  const std::string & target_frame_id,
   const tf2::Duration & transform_tolerance,
-  const std::shared_ptr<tf2_ros::Buffer> tf_buffer);
-
+  const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+  tf2::Transform & tf2_transform);
 
 /**
  * @brief Obtains a transform from source_frame_id at source_time ->
@@ -87,17 +87,17 @@ template<typename TransformType = tf2::Transform>
  * @param transform_tolerance Transform tolerance
  * @param tf_buffer TF buffer to use for the transformation
  * @param tf_transform Output source->target transform
- * @return tf_transform Output source->target transform
+ * @return True if got correct transform, otherwise false
  */
-template<typename TransformType = tf2::Transform>
-[[nodiscard]] std::optional<TransformType> getTransform(
-  const std::string & target_frame_id,
-  const rclcpp::Time & target_time,
+bool getTransform(
   const std::string & source_frame_id,
   const rclcpp::Time & source_time,
+  const std::string & target_frame_id,
+  const rclcpp::Time & target_time,
   const std::string & fixed_frame_id,
   const tf2::Duration & transform_tolerance,
-  const std::shared_ptr<tf2_ros::Buffer> tf_buffer);
+  const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+  tf2::Transform & tf2_transform);
 
 /**
  * @brief Validates a twist message contains no nans or infs

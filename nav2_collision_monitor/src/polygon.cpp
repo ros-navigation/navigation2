@@ -15,7 +15,6 @@
 #include "nav2_collision_monitor/polygon.hpp"
 
 #include <exception>
-#include <optional>
 #include <utility>
 
 #include "geometry_msgs/msg/point.hpp"
@@ -205,20 +204,21 @@ void Polygon::updatePolygon(const Velocity & /*cmd_vel_in*/)
     std::size_t new_size = polygon_.polygon.points.size();
 
     // Get the transform from PolygonStamped frame to base_frame_id_
-    std::optional<tf2::Transform> tf_transform = nav2_util::getTransform(
-      base_frame_id_,
-      polygon_.header.frame_id,
-      transform_tolerance_,
-      tf_buffer_);
-
-    if (!tf_transform.has_value()) {return;}
+    tf2::Transform tf_transform;
+    if (
+      !nav2_util::getTransform(
+        polygon_.header.frame_id, base_frame_id_,
+        transform_tolerance_, tf_buffer_, tf_transform))
+    {
+      return;
+    }
 
     // Correct main poly_ vertices
     poly_.resize(new_size);
     for (std::size_t i = 0; i < new_size; i++) {
       // Transform point coordinates from PolygonStamped frame -> to base frame
       tf2::Vector3 p_v3_s(polygon_.polygon.points[i].x, polygon_.polygon.points[i].y, 0.0);
-      tf2::Vector3 p_v3_b = tf_transform.value() * p_v3_s;
+      tf2::Vector3 p_v3_b = tf_transform * p_v3_s;
 
       // Fill poly_ array
       poly_[i] = {p_v3_b.x(), p_v3_b.y()};
@@ -456,20 +456,21 @@ void Polygon::updatePolygon(geometry_msgs::msg::PolygonStamped::ConstSharedPtr m
   }
 
   // Get the transform from PolygonStamped frame to base_frame_id_
-  std::optional<tf2::Transform> tf_transform = nav2_util::getTransform(
-    base_frame_id_,
-    msg->header.frame_id,
-    transform_tolerance_,
-    tf_buffer_);
-
-  if (!tf_transform.has_value()) {return;}
+  tf2::Transform tf_transform;
+  if (
+    !nav2_util::getTransform(
+      msg->header.frame_id, base_frame_id_,
+      transform_tolerance_, tf_buffer_, tf_transform))
+  {
+    return;
+  }
 
   // Set main poly_ vertices first time
   poly_.resize(new_size);
   for (std::size_t i = 0; i < new_size; i++) {
     // Transform point coordinates from PolygonStamped frame -> to base frame
     tf2::Vector3 p_v3_s(msg->polygon.points[i].x, msg->polygon.points[i].y, 0.0);
-    tf2::Vector3 p_v3_b = tf_transform.value() * p_v3_s;
+    tf2::Vector3 p_v3_b = tf_transform * p_v3_s;
 
     // Fill poly_ array
     poly_[i] = {p_v3_b.x(), p_v3_b.y()};

@@ -16,7 +16,6 @@
 
 #include <cmath>
 #include <functional>
-#include <optional>
 
 #include "nav2_util/robot_utils.hpp"
 
@@ -78,25 +77,30 @@ bool Scan::getData(
     return false;
   }
 
-  const auto tf_transform = [&]() -> std::optional<tf2::Transform> {
-      // Obtaining the transform to get data from source frame and time where it was received to the
-      // base frame and current time
-      if (base_shift_correction_) {
-        return nav2_util::getTransform(
-          base_frame_id_, curr_time, data_->header.frame_id,
-          data_->header.stamp, global_frame_id_, transform_tolerance_,
-          tf_buffer_);
-      }
-
-      // Obtaining the transform to get data from source frame to base frame without time shift
-      // considered. Less accurate but much more faster option not dependent on state estimation
-      // frames.
-      return nav2_util::getTransform(
-        base_frame_id_, data_->header.frame_id, transform_tolerance_,
-        tf_buffer_);
-    }();
-
-  if (!tf_transform.has_value()) {return false;}
+  tf2::Transform tf_transform;
+  if (base_shift_correction_) {
+    // Obtaining the transform to get data from source frame and time where it was received
+    // to the base frame and current time
+    if (
+      !nav2_util::getTransform(
+        data_->header.frame_id, data_->header.stamp,
+        base_frame_id_, curr_time, global_frame_id_,
+        transform_tolerance_, tf_buffer_, tf_transform))
+    {
+      return false;
+    }
+  } else {
+    // Obtaining the transform to get data from source frame to base frame without time shift
+    // considered. Less accurate but much more faster option not dependent on state estimation
+    // frames.
+    if (
+      !nav2_util::getTransform(
+        data_->header.frame_id, base_frame_id_,
+        transform_tolerance_, tf_buffer_, tf_transform))
+    {
+      return false;
+    }
+  }
 
   // Calculate poses and refill data array
   float angle = data_->angle_min;
@@ -107,7 +111,7 @@ bool Scan::getData(
         data_->ranges[i] * std::cos(angle),
         data_->ranges[i] * std::sin(angle),
         0.0);
-      tf2::Vector3 p_v3_b = tf_transform.value() * p_v3_s;
+      tf2::Vector3 p_v3_b = tf_transform * p_v3_s;
 
       // Refill data array
       data.push_back({p_v3_b.x(), p_v3_b.y()});
