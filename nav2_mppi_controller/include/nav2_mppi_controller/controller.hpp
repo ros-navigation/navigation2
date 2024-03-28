@@ -120,6 +120,8 @@ protected:
   TrajectoryVisualizer trajectory_visualizer_;
 
   bool visualize_;
+  bool visualize_generated_trajectories_;
+  bool visualize_optimal_trajectory_;
 };
 
 }  // namespace nav2_mppi_controller

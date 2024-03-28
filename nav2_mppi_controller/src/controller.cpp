@@ -37,6 +37,8 @@ void MPPIController::configure(
   // Get high-level controller parameters
   auto getParam = parameters_handler_->getParamGetter(name_);
   getParam(visualize_, "visualize", false);
+  getParam(visualize_generated_trajectories_, "visualize_generated_trajectories", true);
+  getParam(visualize_optimal_trajectory_, "visualize_optimal_trajectory", true);
 
   // Configure composed objects
   optimizer_.initialize(parent_, name_, costmap_ros_, parameters_handler_.get());
@@ -107,8 +109,12 @@ geometry_msgs::msg::TwistStamped MPPIController::computeVelocityCommands(
 
 void MPPIController::visualize(nav_msgs::msg::Path transformed_plan)
 {
-  trajectory_visualizer_.add(optimizer_.getGeneratedTrajectories(), "Candidate Trajectories");
-  trajectory_visualizer_.add(optimizer_.getOptimizedTrajectory(), "Optimal Trajectory");
+  if (visualize_generated_trajectories_) {
+    trajectory_visualizer_.add(optimizer_.getGeneratedTrajectories(), "Candidate Trajectories");
+  }
+  if (visualize_optimal_trajectory_) {
+    trajectory_visualizer_.add(optimizer_.getOptimizedTrajectory(), "Optimal Trajectory");
+  }
   trajectory_visualizer_.visualize(std::move(transformed_plan));
 }
 
