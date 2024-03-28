@@ -286,6 +286,16 @@ void SmacPlannerHybrid::activate()
   // Add callback for dynamic parameters
   _dyn_params_handler = node->add_on_set_parameters_callback(
     std::bind(&SmacPlannerHybrid::dynamicParametersCallback, this, _1));
+
+  // Special case handling to obtain resolution changes in global costmap
+  auto resolution_remote_cb = [this](const rclcpp::Parameter & p) {
+      auto node = _node.lock();
+      dynamicParametersCallback(
+        {rclcpp::Parameter("resolution", rclcpp::ParameterValue(p.as_double()))});
+    };
+  _remote_param_subscriber = std::make_shared<rclcpp::ParameterEventHandler>(_node.lock());
+  _remote_resolution_handler = _remote_param_subscriber->add_parameter_callback(
+    "resolution", resolution_remote_cb, "global_costmap/global_costmap");
 }
 
 void SmacPlannerHybrid::deactivate()
@@ -560,6 +570,14 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
       } else if (name == _name + ".analytic_expansion_max_cost") {
         reinit_a_star = true;
         _search_info.analytic_expansion_max_cost = static_cast<float>(parameter.as_double());
+      } else if (name == "resolution") {
+        // Special case: When the costmap's resolution changes, need to reinitialize
+        // the controller to have new resolution information
+        RCLCPP_INFO(_logger, "Costmap resolution changed. Reinitializing SmacPlannerHybrid.");
+        reinit_collision_checker = true;
+        reinit_a_star = true;
+        reinit_downsampler = true;
+        reinit_smoother = true;
       }
     } else if (type == ParameterType::PARAMETER_BOOL) {
       if (name == _name + ".downsample_costmap") {

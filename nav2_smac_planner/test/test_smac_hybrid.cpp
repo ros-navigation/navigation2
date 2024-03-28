@@ -98,6 +98,8 @@ TEST(SmacTest, test_smac_se2_reconfigure)
   planner->configure(nodeSE2, "test", nullptr, costmap_ros);
   planner->activate();
 
+  nodeSE2->declare_parameter("resolution", 0.05);
+
   auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
     nodeSE2->get_node_base_interface(), nodeSE2->get_node_topics_interface(),
     nodeSE2->get_node_graph_interface(),
@@ -153,4 +155,11 @@ TEST(SmacTest, test_smac_se2_reconfigure)
   EXPECT_EQ(
     nodeSE2->get_parameter("test.motion_model_for_search").as_string(),
     std::string("REEDS_SHEPP"));
+
+  auto results2 = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("resolution", 0.2)});
+  rclcpp::spin_until_future_complete(
+    nodeSE2->get_node_base_interface(),
+    results2);
+  EXPECT_EQ(nodeSE2->get_parameter("resolution").as_double(), 0.2);
 }
