@@ -482,7 +482,6 @@ void ControllerServer::computeControl()
       }
 
       auto cycle_duration = this->now() - start_time;
-
       if (!loop_rate.sleep()) {
         RCLCPP_WARN(
           get_logger(),
