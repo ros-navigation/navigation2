@@ -86,7 +86,7 @@ ParameterHandler::ParameterHandler(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".max_angular_accel", rclcpp::ParameterValue(3.2));
   declare_parameter_if_not_declared(
-    node, plugin_name_ + ".cancel_deceleration", rclcpp::ParameterValue(1.0));
+    node, plugin_name_ + ".cancel_deceleration", rclcpp::ParameterValue(3.2));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".allow_reversing", rclcpp::ParameterValue(false));
   declare_parameter_if_not_declared(
