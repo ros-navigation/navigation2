@@ -126,7 +126,10 @@ NavigateToPoseNavigator::onLoop()
   try {
     // Get current path points
     nav_msgs::msg::Path current_path;
-    [[maybe_unused]] auto res = blackboard->get(path_blackboard_id_, current_path);
+    if (!blackboard->get(path_blackboard_id_, current_path) || current_path.poses.size() == 0u) {
+      // If no path set yet or not meaningful, can't compute ETA or dist remaining yet.
+      throw std::exception();
+    }
 
     // Find the closest pose to current pose on global path
     auto find_closest_pose_idx =
