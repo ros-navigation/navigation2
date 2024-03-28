@@ -16,9 +16,13 @@
 
 #include <memory>
 #include <mutex>
+#include <fstream>
+#include <iostream>
 #include <xtensor/xmath.hpp>
 #include <xtensor/xrandom.hpp>
 #include <xtensor/xnoalias.hpp>
+#include <xtensor/xcsv.hpp>
+
 
 namespace mppi
 {
@@ -33,6 +37,7 @@ void NoiseGenerator::initialize(
 
   auto getParam = param_handler->getParamGetter(name);
   getParam(regenerate_noises_, "regenerate_noises", false);
+  getParam(dump_noises_, "dump_noises", true);
 
   if (regenerate_noises_) {
     noise_thread_ = std::thread(std::bind(&NoiseGenerator::noiseThread, this));
@@ -118,6 +123,14 @@ void NoiseGenerator::generateNoisedControls()
     xt::noalias(noises_vy_) = xt::random::randn<float>(
       {s.batch_size, s.time_steps}, 0.0f,
       s.sampling_std.vy);
+  }
+
+  if (dump_noises_) {
+    std::string fn("/tmp/mppi_noises_");
+    std::ofstream f(fn + "vx_" + std::to_string(s.sampling_std.vx) + ".csv",
+      std::ios::out | std::ios::trunc);
+    xt::dump_csv(f, noises_vx_);
+    dump_noises_ = false;
   }
 }
 
