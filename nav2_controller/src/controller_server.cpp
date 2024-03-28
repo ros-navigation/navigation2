@@ -452,6 +452,8 @@ void ControllerServer::computeControl()
     last_valid_cmd_time_ = now();
     rclcpp::WallRate loop_rate(controller_frequency_);
     while (rclcpp::ok()) {
+      auto start_time = this->now();
+
       if (action_server_ == nullptr || !action_server_->is_server_active()) {
         RCLCPP_DEBUG(get_logger(), "Action server unavailable or inactive. Stopping.");
         return;
@@ -479,10 +481,12 @@ void ControllerServer::computeControl()
         break;
       }
 
+      auto cycle_duration = this->now() - start_time;
       if (!loop_rate.sleep()) {
         RCLCPP_WARN(
-          get_logger(), "Control loop missed its desired rate of %.4fHz",
-          controller_frequency_);
+          get_logger(),
+          "Control loop missed its desired rate of %.4f Hz. Current loop rate is %.4f Hz.",
+          controller_frequency_, 1 / cycle_duration.seconds());
       }
     }
   } catch (nav2_core::InvalidController & e) {
