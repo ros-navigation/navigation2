@@ -96,6 +96,11 @@ _commands:
                 (echo vcs_export && cat) >> lockfile.txt
               sha256sum $PWD/lockfile.txt >> lockfile.txt
 
+              # Temp: Rolling transition to 24.04 leaves rosdep in 22.04 in the lurch
+              # This replaces main rosdep index with the last prior to release: Feb 28, 2024
+              sed -i "s|ros\/rosdistro\/master|ros\/rosdistro\/rolling\/2024-02-28|" /etc/ros/rosdep/sources.list.d/20-default.list
+              export ROSDISTRO_INDEX_URL=https://raw.githubusercontent.com/ros/rosdistro/rolling/2024-02-28/index-v4.yaml
+
               apt-get update
               rosdep update --rosdistro $ROS_DISTRO
               dependencies=$(
