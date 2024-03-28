@@ -165,14 +165,21 @@ public:
 protected:
   /**
    * @brief Supporting routine obtaining ROS-parameters common for all shapes
-   * @param polygon_pub_topic Output name of polygon publishing topic
+   * @param polygon_pub_topic Output name of polygon or radius subscription topic.
+   * Empty, if no polygon subscription.
+   * @param polygon_sub_topic Output name of polygon publishing topic
+   * @param footprint_topic Output name of footprint topic.
+   * Empty, if no footprint subscription.
    * @return True if all parameters were obtained or false in failure case
    */
-  bool getCommonParameters(std::string & polygon_pub_topic);
+  bool getCommonParameters(
+    std::string & polygon_sub_topic,
+    std::string & polygon_pub_topic,
+    std::string & footprint_topic);
 
   /**
    * @brief Supporting routine obtaining polygon-specific ROS-parameters
-   * @brief polygon_sub_topic Output name of polygon subscription topic.
+   * @param polygon_sub_topic Output name of polygon or radius subscription topic.
    * Empty, if no polygon subscription.
    * @param polygon_pub_topic Output name of polygon publishing topic
    * @param footprint_topic Output name of footprint topic.
@@ -183,6 +190,13 @@ protected:
     std::string & polygon_sub_topic,
     std::string & polygon_pub_topic,
     std::string & footprint_topic);
+
+  /**
+   * @brief Creates polygon or radius topic subscription
+   * @param polygon_sub_topic Output name of polygon or radius subscription topic.
+   * Empty, if no polygon subscription.
+   */
+  virtual void createSubscription(std::string & polygon_sub_topic);
 
   /**
    * @brief Updates polygon from geometry_msgs::msg::PolygonStamped message
