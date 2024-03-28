@@ -127,6 +127,12 @@ public:
   virtual void getPolygon(std::vector<Point> & poly) const;
 
   /**
+   * @brief Obtains the name of the observation sources for current polygon.
+   * @return Names of the observation sources
+   */
+  std::vector<std::string> getSourcesNames() const;
+
+  /**
    * @brief Returns true if polygon points were set.
    * Otherwise, prints a warning and returns false.
    */
@@ -269,6 +275,8 @@ protected:
   rclcpp::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_sub_;
   /// @brief Footprint subscriber
   std::unique_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
+  /// @brief Name of the observation sources to check for polygon
+  std::vector<std::string> sources_names_;
 
   // Global variables
   /// @brief TF buffer

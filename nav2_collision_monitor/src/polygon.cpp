@@ -157,6 +157,11 @@ double Polygon::getTimeBeforeCollision() const
   return time_before_collision_;
 }
 
+std::vector<std::string> Polygon::getSourcesNames() const
+{
+  return sources_names_;
+}
+
 void Polygon::getPolygon(std::vector<Point> & poly) const
 {
   poly = poly_;
@@ -390,6 +395,27 @@ bool Polygon::getCommonParameters(
           rclcpp::ParameterValue("local_costmap/published_footprint"));
         footprint_topic =
           node->get_parameter(polygon_name_ + ".footprint_topic").as_string();
+      }
+    }
+
+    // By default, use all observation sources for polygon
+    nav2_util::declare_parameter_if_not_declared(
+      node, "observation_sources", rclcpp::PARAMETER_STRING_ARRAY);
+    std::vector<std::string> source_names =
+      node->get_parameter("observation_sources").as_string_array();
+    nav2_util::declare_parameter_if_not_declared(
+      node, polygon_name_ + ".sources_names", rclcpp::ParameterValue(source_names));
+    sources_names_ = node->get_parameter(polygon_name_ + ".sources_names").as_string_array();
+
+    // Check the observation sources configured for polygon are defined
+    for (auto source_name : sources_names_) {
+      if (std::find(source_names.begin(), source_names.end(), source_name) == source_names.end()) {
+        RCLCPP_ERROR_STREAM(
+          logger_,
+          "Observation source [" << source_name <<
+            "] configured for polygon [" << getName() <<
+            "] is not defined!");
+        return false;
       }
     }
   } catch (const std::exception & ex) {

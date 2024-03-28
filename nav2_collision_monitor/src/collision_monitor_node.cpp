@@ -270,14 +270,14 @@ bool CollisionMonitor::getParameters(
   stop_pub_timeout_ =
     rclcpp::Duration::from_seconds(get_parameter("stop_pub_timeout").as_double());
 
-  if (!configurePolygons(base_frame_id, transform_tolerance)) {
-    return false;
-  }
-
   if (
     !configureSources(
       base_frame_id, odom_frame_id, transform_tolerance, source_timeout, base_shift_correction))
   {
+    return false;
+  }
+
+  if (!configurePolygons(base_frame_id, transform_tolerance)) {
     return false;
   }
 
@@ -412,7 +412,14 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in, const std_msgs::msg:
   }
 
   // Points array collected from different data sources in a robot base frame
-  std::vector<Point> collision_points;
+  std::unordered_map<std::string, std::vector<Point>> sources_collision_points_map;
+
+  // Fill collision_points array from different data sources
+  for (std::shared_ptr<Source> source : sources_) {
+    std::vector<Point> collision_points;
+    source->getData(curr_time, collision_points);
+    sources_collision_points_map.insert({source->getSourceName(), collision_points});
+  }
 
   // By default - there is no action
   Action robot_action{DO_NOTHING, cmd_vel_in, ""};
@@ -475,6 +482,28 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in, const std_msgs::msg:
 
     // Update polygon coordinates
     polygon->updatePolygon(cmd_vel_in);
+
+    // Get collision points for sources associated to polygon
+    std::vector<std::string> sources_names = polygon->getSourcesNames();
+    std::vector<Point> collision_points;
+    for (auto source_name : sources_names) {
+      try {
+        // Get vector for source
+        auto source_collision_points = sources_collision_points_map.at(source_name);
+        // Concatenate vectors
+        collision_points.insert(
+          collision_points.end(),
+          source_collision_points.begin(),
+          source_collision_points.end());
+      } catch (std::exception & e) {
+        RCLCPP_ERROR_STREAM_THROTTLE(
+          get_logger(),
+          *get_clock(),
+          1000,
+          "Observation source [" << source_name <<
+            "] configured for polygon [" << polygon->getName() << "] is not defined!");
+      }
+    }
 
     const ActionType at = polygon->getActionType();
     if (at == STOP || at == SLOWDOWN || at == LIMIT) {
