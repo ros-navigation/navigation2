@@ -352,21 +352,20 @@ void Optimizer::updateControlSequence()
 {
   const bool is_holo = isHolonomic();
   auto & s = settings_;
-  auto bounded_noises_vx = state_.cvx - control_sequence_.vx;
-  auto bounded_noises_wz = state_.cwz - control_sequence_.wz;
   xt::noalias(costs_) +=
-    s.gamma / powf(s.sampling_std.vx, 2) * xt::sum(
-    xt::view(control_sequence_.vx, xt::newaxis(), xt::all()) * bounded_noises_vx, 1, immediate);
+    s.gamma / powf(s.sampling_std.vx, 2) *
+    xt::sum(xt::view(control_sequence_.vx, xt::newaxis(), xt::all()) *
+    (state_.cvx - control_sequence_.vx), 1, immediate);
   xt::noalias(costs_) +=
-    s.gamma / powf(s.sampling_std.wz, 2) * xt::sum(
-    xt::view(control_sequence_.wz, xt::newaxis(), xt::all()) * bounded_noises_wz, 1, immediate);
+    s.gamma / powf(s.sampling_std.wz, 2) *
+    xt::sum(xt::view(control_sequence_.wz, xt::newaxis(), xt::all()) *
+    (state_.cwz - control_sequence_.wz), 1, immediate);
 
   if (is_holo) {
-    auto bounded_noises_vy = state_.cvy - control_sequence_.vy;
     xt::noalias(costs_) +=
       s.gamma / powf(s.sampling_std.vy, 2) * xt::sum(
-      xt::view(control_sequence_.vy, xt::newaxis(), xt::all()) * bounded_noises_vy,
-      1, immediate);
+      xt::view(control_sequence_.vy, xt::newaxis(), xt::all()) *
+      (state_.cvy - control_sequence_.vy), 1, immediate);
   }
 
   auto && costs_normalized = costs_ - xt::amin(costs_, immediate);
