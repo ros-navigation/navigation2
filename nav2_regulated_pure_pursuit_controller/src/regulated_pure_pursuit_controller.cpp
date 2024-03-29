@@ -238,6 +238,23 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
       collision_checker_->costAtPose(pose.pose.position.x, pose.pose.position.y), transformed_plan,
       linear_vel, x_vel_sign);
 
+    if (cancelling_) {
+      const double & dt = control_duration_;
+      linear_vel = speed.linear.x - x_vel_sign * dt * params_->cancel_deceleration;
+
+      if (x_vel_sign > 0) {
+        if (linear_vel <= 0) {
+          linear_vel = 0;
+          finished_cancelling_ = true;
+        }
+      } else {
+        if (linear_vel >= 0) {
+          linear_vel = 0;
+          finished_cancelling_ = true;
+        }
+      }
+    }
+
     // Apply curvature to angular velocity after constraining linear velocity
     angular_vel = linear_vel * regulation_curvature;
   }
@@ -256,6 +273,12 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   cmd_vel.twist.linear.x = linear_vel;
   cmd_vel.twist.angular.z = angular_vel;
   return cmd_vel;
+}
+
+bool RegulatedPurePursuitController::cancel()
+{
+  cancelling_ = true;
+  return finished_cancelling_;
 }
 
 bool RegulatedPurePursuitController::shouldRotateToPath(
@@ -443,6 +466,12 @@ void RegulatedPurePursuitController::setSpeedLimit(
       params_->desired_linear_vel = speed_limit;
     }
   }
+}
+
+void RegulatedPurePursuitController::reset()
+{
+  cancelling_ = false;
+  finished_cancelling_ = false;
 }
 
 double RegulatedPurePursuitController::findVelocitySignChange(
