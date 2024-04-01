@@ -387,15 +387,15 @@ StaticLayer::updateCosts(
     return;
   }
 
-  if (!layered_costmap_->isRolling()) {
-    // if not rolling, the layered costmap (master_grid) has same coordinates as this layer
+  if (map_frame_ == global_frame_) {
+    // When map_frame_ equals global_frame_, the layered costmap (master_grid) has same coordinates as this layer
     if (!use_maximum_) {
       updateWithTrueOverwrite(master_grid, min_i, min_j, max_i, max_j);
     } else {
       updateWithMax(master_grid, min_i, min_j, max_i, max_j);
     }
   } else {
-    // If rolling window, the master_grid is unlikely to have same coordinates as this layer
+    // When map_frame_ does not equal global_frame_, the coordinates in this layer must be transformed to align with those in the master_grid.
     unsigned int mx, my;
     double wx, wy;
     // Might even be in a different frame
