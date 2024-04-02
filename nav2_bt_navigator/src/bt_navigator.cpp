@@ -98,8 +98,8 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
     "navigate_through_poses"
   };
   const std::vector<std::string> default_navigator_types = {
-    "nav2_bt_navigator/NavigateToPoseNavigator",
-    "nav2_bt_navigator/NavigateThroughPosesNavigator"
+    "nav2_bt_navigator::NavigateToPoseNavigator",
+    "nav2_bt_navigator::NavigateThroughPosesNavigator"
   };
 
   std::vector<std::string> navigator_ids;

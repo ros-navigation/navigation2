@@ -180,177 +180,177 @@ TEST(testPluginMap, Failures)
 
 TEST(testPluginMap, Smac2dEqualStartGoal)
 {
-  testSmallPathValidityAndOrientation("nav2_smac_planner/SmacPlanner2D", 0.0);
+  testSmallPathValidityAndOrientation("nav2_smac_planner::SmacPlanner2D", 0.0);
 }
 
 TEST(testPluginMap, Smac2dEqualStartGoalN)
 {
-  testSmallPathValidityAndNoOrientation("nav2_smac_planner/SmacPlanner2D", 0.0);
+  testSmallPathValidityAndNoOrientation("nav2_smac_planner::SmacPlanner2D", 0.0);
 }
 
 TEST(testPluginMap, Smac2dVerySmallPath)
 {
-  testSmallPathValidityAndOrientation("nav2_smac_planner/SmacPlanner2D", 0.00001);
+  testSmallPathValidityAndOrientation("nav2_smac_planner::SmacPlanner2D", 0.00001);
 }
 
 TEST(testPluginMap, Smac2dVerySmallPathN)
 {
-  testSmallPathValidityAndNoOrientation("nav2_smac_planner/SmacPlanner2D", 0.00001);
+  testSmallPathValidityAndNoOrientation("nav2_smac_planner::SmacPlanner2D", 0.00001);
 }
 
 TEST(testPluginMap, Smac2dBelowCostmapResolution)
 {
-  testSmallPathValidityAndOrientation("nav2_smac_planner/SmacPlanner2D", 0.09);
+  testSmallPathValidityAndOrientation("nav2_smac_planner::SmacPlanner2D", 0.09);
 }
 
 TEST(testPluginMap, Smac2dBelowCostmapResolutionN)
 {
-  testSmallPathValidityAndNoOrientation("nav2_smac_planner/SmacPlanner2D", 0.09);
+  testSmallPathValidityAndNoOrientation("nav2_smac_planner::SmacPlanner2D", 0.09);
 }
 
 TEST(testPluginMap, Smac2dJustAboveCostmapResolution)
 {
-  testSmallPathValidityAndOrientation("nav2_smac_planner/SmacPlanner2D", 0.102);
+  testSmallPathValidityAndOrientation("nav2_smac_planner::SmacPlanner2D", 0.102);
 }
 
 TEST(testPluginMap, Smac2dJustAboveCostmapResolutionN)
 {
-  testSmallPathValidityAndNoOrientation("nav2_smac_planner/SmacPlanner2D", 0.102);
+  testSmallPathValidityAndNoOrientation("nav2_smac_planner::SmacPlanner2D", 0.102);
 }
 
 TEST(testPluginMap, Smac2dAboveCostmapResolution)
 {
-  testSmallPathValidityAndOrientation("nav2_smac_planner/SmacPlanner2D", 1.5);
+  testSmallPathValidityAndOrientation("nav2_smac_planner::SmacPlanner2D", 1.5);
 }
 
 TEST(testPluginMap, Smac2dAboveCostmapResolutionN)
 {
-  testSmallPathValidityAndNoOrientation("nav2_smac_planner/SmacPlanner2D", 1.5);
+  testSmallPathValidityAndNoOrientation("nav2_smac_planner::SmacPlanner2D", 1.5);
 }
 
 TEST(testPluginMap, NavFnEqualStartGoal)
 {
-  testSmallPathValidityAndOrientation("nav2_navfn_planner/NavfnPlanner", 0.0);
+  testSmallPathValidityAndOrientation("nav2_navfn_planner::NavfnPlanner", 0.0);
 }
 
 TEST(testPluginMap, NavFnEqualStartGoalN)
 {
-  testSmallPathValidityAndNoOrientation("nav2_navfn_planner/NavfnPlanner", 0.0);
+  testSmallPathValidityAndNoOrientation("nav2_navfn_planner::NavfnPlanner", 0.0);
 }
 
 TEST(testPluginMap, NavFnVerySmallPath)
 {
-  testSmallPathValidityAndOrientation("nav2_navfn_planner/NavfnPlanner", 0.00001);
+  testSmallPathValidityAndOrientation("nav2_navfn_planner::NavfnPlanner", 0.00001);
 }
 
 TEST(testPluginMap, NavFnVerySmallPathN)
 {
-  testSmallPathValidityAndNoOrientation("nav2_navfn_planner/NavfnPlanner", 0.00001);
+  testSmallPathValidityAndNoOrientation("nav2_navfn_planner::NavfnPlanner", 0.00001);
 }
 
 TEST(testPluginMap, NavFnBelowCostmapResolution)
 {
-  testSmallPathValidityAndOrientation("nav2_navfn_planner/NavfnPlanner", 0.09);
+  testSmallPathValidityAndOrientation("nav2_navfn_planner::NavfnPlanner", 0.09);
 }
 
 TEST(testPluginMap, NavFnBelowCostmapResolutionN)
 {
-  testSmallPathValidityAndNoOrientation("nav2_navfn_planner/NavfnPlanner", 0.09);
+  testSmallPathValidityAndNoOrientation("nav2_navfn_planner::NavfnPlanner", 0.09);
 }
 
 TEST(testPluginMap, NavFnJustAboveCostmapResolution)
 {
-  testSmallPathValidityAndOrientation("nav2_navfn_planner/NavfnPlanner", 0.102);
+  testSmallPathValidityAndOrientation("nav2_navfn_planner::NavfnPlanner", 0.102);
 }
 
 TEST(testPluginMap, NavFnJustAboveCostmapResolutionN)
 {
-  testSmallPathValidityAndNoOrientation("nav2_navfn_planner/NavfnPlanner", 0.102);
+  testSmallPathValidityAndNoOrientation("nav2_navfn_planner::NavfnPlanner", 0.102);
 }
 
 TEST(testPluginMap, NavFnAboveCostmapResolution)
 {
-  testSmallPathValidityAndOrientation("nav2_navfn_planner/NavfnPlanner", 1.5);
+  testSmallPathValidityAndOrientation("nav2_navfn_planner::NavfnPlanner", 1.5);
 }
 
 TEST(testPluginMap, NavFnAboveCostmapResolutionN)
 {
-  testSmallPathValidityAndNoOrientation("nav2_navfn_planner/NavfnPlanner", 1.5);
+  testSmallPathValidityAndNoOrientation("nav2_navfn_planner::NavfnPlanner", 1.5);
 }
 
 TEST(testPluginMap, ThetaStarEqualStartGoal)
 {
-  testSmallPathValidityAndOrientation("nav2_theta_star_planner/ThetaStarPlanner", 0.0);
+  testSmallPathValidityAndOrientation("nav2_theta_star_planner::ThetaStarPlanner", 0.0);
 }
 
 TEST(testPluginMap, ThetaStarEqualStartGoalN)
 {
-  testSmallPathValidityAndNoOrientation("nav2_theta_star_planner/ThetaStarPlanner", 0.0);
+  testSmallPathValidityAndNoOrientation("nav2_theta_star_planner::ThetaStarPlanner", 0.0);
 }
 
 TEST(testPluginMap, ThetaStarVerySmallPath)
 {
-  testSmallPathValidityAndOrientation("nav2_theta_star_planner/ThetaStarPlanner", 0.00001);
+  testSmallPathValidityAndOrientation("nav2_theta_star_planner::ThetaStarPlanner", 0.00001);
 }
 
 TEST(testPluginMap, ThetaStarVerySmallPathN)
 {
-  testSmallPathValidityAndNoOrientation("nav2_theta_star_planner/ThetaStarPlanner", 0.00001);
+  testSmallPathValidityAndNoOrientation("nav2_theta_star_planner::ThetaStarPlanner", 0.00001);
 }
 
 TEST(testPluginMap, ThetaStarBelowCostmapResolution)
 {
-  testSmallPathValidityAndOrientation("nav2_theta_star_planner/ThetaStarPlanner", 0.09);
+  testSmallPathValidityAndOrientation("nav2_theta_star_planner::ThetaStarPlanner", 0.09);
 }
 
 TEST(testPluginMap, ThetaStarBelowCostmapResolutionN)
 {
-  testSmallPathValidityAndNoOrientation("nav2_theta_star_planner/ThetaStarPlanner", 0.09);
+  testSmallPathValidityAndNoOrientation("nav2_theta_star_planner::ThetaStarPlanner", 0.09);
 }
 
 TEST(testPluginMap, ThetaStarJustAboveCostmapResolution)
 {
-  testSmallPathValidityAndOrientation("nav2_theta_star_planner/ThetaStarPlanner", 0.102);
+  testSmallPathValidityAndOrientation("nav2_theta_star_planner::ThetaStarPlanner", 0.102);
 }
 
 TEST(testPluginMap, ThetaStarJustAboveCostmapResolutionN)
 {
-  testSmallPathValidityAndNoOrientation("nav2_theta_star_planner/ThetaStarPlanner", 0.102);
+  testSmallPathValidityAndNoOrientation("nav2_theta_star_planner::ThetaStarPlanner", 0.102);
 }
 
 TEST(testPluginMap, ThetaStarAboveCostmapResolution)
 {
-  testSmallPathValidityAndOrientation("nav2_theta_star_planner/ThetaStarPlanner", 1.5);
+  testSmallPathValidityAndOrientation("nav2_theta_star_planner::ThetaStarPlanner", 1.5);
 }
 
 TEST(testPluginMap, ThetaStarAboveCostmapResolutionN)
 {
-  testSmallPathValidityAndNoOrientation("nav2_theta_star_planner/ThetaStarPlanner", 1.5);
+  testSmallPathValidityAndNoOrientation("nav2_theta_star_planner::ThetaStarPlanner", 1.5);
 }
 
 TEST(testPluginMap, NavFnCancel)
 {
-  testCancel("nav2_navfn_planner/NavfnPlanner");
+  testCancel("nav2_navfn_planner::NavfnPlanner");
 }
 
 TEST(testPluginMap, ThetaStarCancel)
 {
-  testCancel("nav2_theta_star_planner/ThetaStarPlanner");
+  testCancel("nav2_theta_star_planner::ThetaStarPlanner");
 }
 
 TEST(testPluginMap, Smac2dCancel)
 {
-  testCancel("nav2_smac_planner/SmacPlanner2D");
+  testCancel("nav2_smac_planner::SmacPlanner2D");
 }
 
 TEST(testPluginMap, SmacLatticeCancel)
 {
-  testCancel("nav2_smac_planner/SmacPlannerLattice");
+  testCancel("nav2_smac_planner::SmacPlannerLattice");
 }
 
 TEST(testPluginMap, SmacHybridAStarCancel)
 {
-  testCancel("nav2_smac_planner/SmacPlannerHybrid");
+  testCancel("nav2_smac_planner::SmacPlannerHybrid");
 }
 
 
