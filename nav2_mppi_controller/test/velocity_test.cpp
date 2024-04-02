@@ -114,20 +114,28 @@ TEST(VelocityTest, ParameterSweep)
 
   nav2_core::GoalChecker * dummy_goal_checker{nullptr};
 
-  auto feedbackFuncs = std::tuple(
+  std::vector<std::function<void(const geometry_msgs::msg::TwistStamped &,
+                                 geometry_msgs::msg::Twist &)>> feedbackFuncs;
+  feedbackFuncs.push_back(
     [](const geometry_msgs::msg::TwistStamped & cmd_vel, geometry_msgs::msg::Twist & velocity) {
       velocity.linear = cmd_vel.twist.linear;
       velocity.angular = cmd_vel.twist.angular;
-    },
+    });
+
+  feedbackFuncs.push_back(
     [](const geometry_msgs::msg::TwistStamped & cmd_vel, geometry_msgs::msg::Twist & velocity) {
       velocity.linear.x = 0.95 * velocity.linear.x + 0.05 * cmd_vel.twist.linear.x;
       velocity.angular.z = 0.95 * velocity.angular.z + 0.05 * cmd_vel.twist.angular.z;
-    },
+    });
+
+  feedbackFuncs.push_back(
     [](const geometry_msgs::msg::TwistStamped & cmd_vel, geometry_msgs::msg::Twist & velocity) {
       // Just drive straight.
       velocity.linear = cmd_vel.twist.linear;
       velocity.angular.z = 0;
-    },
+    });
+
+  feedbackFuncs.push_back(
     [](const geometry_msgs::msg::TwistStamped & cmd_vel, geometry_msgs::msg::Twist & velocity) {
       // Just drive straight.
       velocity.linear.x = 0.95 * velocity.linear.x + 0.05 * cmd_vel.twist.linear.x;
@@ -136,82 +144,89 @@ TEST(VelocityTest, ParameterSweep)
 
   auto v_in = getDummyTwist();
   auto cmd_vel = getDummyTwistStamped();
-  auto feedbackFunc = std::get<2>(feedbackFuncs);
 
   int i;
   int j;
   int k;
-  int vx_std_iter_start = 2;
-  int vx_std_iter_end = 7;
+  int vx_std_iter_start = 3;
+  int vx_std_iter_end = 5;
   double vx_std_iter_delta = 0.1;
-  int vx_iter_start = 1;
-  int vx_iter_end = 10;
-  int vx_iter_delta = 0.05;
-  int max_evalControl_iter = 4.0 / optimizer_settings.model_dt;  // Run for 4 seconds
+
+  int vx_iter_start = 0;
+  int vx_iter_end = 16;
+  double vx_iter_delta = 0.25;
+
+  double max_evalControl_iter = 4.0 / optimizer_settings.model_dt;  // Run for 4 seconds
 
   auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
     node->get_node_base_interface(), node->get_node_topics_interface(),
     node->get_node_graph_interface(),
     node->get_node_services_interface());
 
-  std::ofstream fresults;
-  std::string fn("nav2_mppi_controller_velocity_test.csv");
-  fresults.open(fn, std::ios::out | std::ios::trunc);
+  for(size_t f = 0; f < feedbackFuncs.size(); f++) {
+    auto feedbackFunc = feedbackFuncs[f];
+    std::ofstream fresults;
+    std::string fn("nav2_mppi_controller_velocity_test_");
+    fn += std::to_string(f);
+    fn += ".csv";
+    fresults.open(fn, std::ios::out | std::ios::trunc);
 
-  for (k = vx_std_iter_start; k <= vx_std_iter_end; k++) {
-    double vx_std = vx_std_iter_delta * k;
-    auto results = rec_param->set_parameters_atomically(
-      {rclcpp::Parameter("dummy.verbose", true),
-        rclcpp::Parameter("dummy.vx_std", vx_std),
-        rclcpp::Parameter("dummy.regenerate_noises", false),
-        rclcpp::Parameter("dummy.dump_noises", true),
-        rclcpp::Parameter("dummy.noise_seed", 1337),
-        rclcpp::Parameter("AckermannConstraints.min_turning_r", 2.75),
-        rclcpp::Parameter("dummy.PathFollowCritic.cost_weight", 5.0)});
+    for (k = vx_std_iter_start; k <= vx_std_iter_end; k++) {
+      double vx_std = vx_std_iter_delta * k;
+      auto results = rec_param->set_parameters_atomically(
+        {rclcpp::Parameter("dummy.verbose", true),
+          rclcpp::Parameter("dummy.vx_std", vx_std),
+          rclcpp::Parameter("dummy.regenerate_noises", false),
+          rclcpp::Parameter("dummy.dump_noises", true),
+          rclcpp::Parameter("dummy.noise_seed", 1337),
+          rclcpp::Parameter("dummy.noise_pregenerate_size", 10),
+          rclcpp::Parameter("AckermannConstraints.min_turning_r", 2.75),
+          rclcpp::Parameter("dummy.PathFollowCritic.cost_weight", 5.0)});
 
-    rclcpp::spin_until_future_complete(
-      node->get_node_base_interface(),
-      results);
+      rclcpp::spin_until_future_complete(
+        node->get_node_base_interface(),
+        results);
 
-    EXPECT_EQ(node->get_parameter("dummy.vx_std").as_double(), vx_std);
-
-    // Simulate response to generated cmd_vel by running through feedbackFunc
-    // by varying the starting velocity
-    for (j = vx_iter_start; j <= vx_iter_end; j++) {
-      // NOTE: If regenerate_noises == true we'd need to wait
-      // std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-      v_in = getDummyTwist();
-      EXPECT_NEAR(v_in.linear.x, 0.0, 1e-6);
-      EXPECT_NEAR(v_in.angular.z, 0.0, 1e-6);
-      v_in.linear.x = vx_iter_delta * j;
-      v_in.angular.z = 0.0;
-
-      cmd_vel = getDummyTwistStamped();
-      EXPECT_NEAR(cmd_vel.twist.linear.x, 0.0, 1e-6);
-      EXPECT_NEAR(cmd_vel.twist.angular.z, 0.0, 1e-6);
-
-      optimizer->reset();
       EXPECT_EQ(node->get_parameter("dummy.vx_std").as_double(), vx_std);
-      fresults << "#k,j,i,vx_max,vx_std,wz_max,wz_std,"
-               << "vx_in,wz_in,cmd_vel_vx,cmd_vel_wz" << std::endl;
-      for (i = 0; i < max_evalControl_iter; i++) {
-        cmd_vel = optimizer->evalControl(pose, v_in, path, dummy_goal_checker);
 
-        fresults << k
-                 << "," << j
-                 << "," << i
-                 << "," << optimizer_settings.vx_max
-                 << "," << vx_std
-                 << "," << optimizer_settings.wz_max
-                 << "," << optimizer_settings.wz_std
-                 << "," << v_in.linear.x
-                 << "," << v_in.angular.z
-                 << "," << cmd_vel.twist.linear.x
-                 << "," << cmd_vel.twist.angular.z
-                 << std::endl;
+      // Simulate response to generated cmd_vel by running through feedbackFunc
+      // by varying the starting velocity
+      for (j = vx_iter_start; j <= vx_iter_end; j++) {
+        // NOTE: If regenerate_noises == true we'd need to wait
+        // std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-        feedbackFunc(cmd_vel, v_in);
+        v_in = getDummyTwist();
+        EXPECT_NEAR(v_in.linear.x, 0.0, 1e-6);
+        EXPECT_NEAR(v_in.angular.z, 0.0, 1e-6);
+        v_in.linear.x = vx_iter_delta * j;
+        v_in.angular.z = 0.0;
+
+        cmd_vel = getDummyTwistStamped();
+        EXPECT_NEAR(cmd_vel.twist.linear.x, 0.0, 1e-6);
+        EXPECT_NEAR(cmd_vel.twist.angular.z, 0.0, 1e-6);
+
+        optimizer->reset();
+        EXPECT_EQ(node->get_parameter("dummy.vx_std").as_double(), vx_std);
+        fresults << "#k,j,i,vx_max,vx_std,wz_max,wz_std,"
+                 << "vx_in,wz_in,cmd_vel_vx,cmd_vel_wz" << std::endl;
+        for (i = 0; i < max_evalControl_iter; i++) {
+          cmd_vel = optimizer->evalControl(pose, v_in, path, dummy_goal_checker);
+
+          fresults << k
+                   << "," << j
+                   << "," << i
+                   << "," << optimizer_settings.vx_max
+                   << "," << vx_std
+                   << "," << optimizer_settings.wz_max
+                   << "," << optimizer_settings.wz_std
+                   << "," << v_in.linear.x
+                   << "," << v_in.angular.z
+                   << "," << cmd_vel.twist.linear.x
+                   << "," << cmd_vel.twist.angular.z
+                   << std::endl;
+
+          feedbackFunc(cmd_vel, v_in);
+        }
       }
     }
   }
