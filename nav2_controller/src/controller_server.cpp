@@ -460,10 +460,15 @@ void ControllerServer::computeControl()
       }
 
       if (action_server_->is_cancel_requested()) {
-        RCLCPP_INFO(get_logger(), "Goal was canceled. Stopping the robot.");
-        action_server_->terminate_all();
-        publishZeroVelocity();
-        return;
+        if (controllers_[current_controller_]->cancel()) {
+          RCLCPP_INFO(get_logger(), "Cancellation was successful. Stopping the robot.");
+          action_server_->terminate_all();
+          publishZeroVelocity();
+          return;
+        } else {
+          RCLCPP_INFO_THROTTLE(
+            get_logger(), *get_clock(), 1000, "Waiting for the controller to finish cancellation");
+        }
       }
 
       // Don't compute a trajectory until costmap is valid (after clear costmap)
