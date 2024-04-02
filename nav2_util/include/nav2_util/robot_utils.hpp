@@ -23,6 +23,7 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
+#include "geometry_msgs/msg/transform_stamped.hpp"
 #include "tf2/time.h"
 #include "tf2_ros/buffer.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
@@ -98,6 +99,45 @@ bool getTransform(
   const tf2::Duration & transform_tolerance,
   const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
   tf2::Transform & tf2_transform);
+
+/**
+ * @brief Obtains a transform from source_frame_id -> to target_frame_id
+ * @param source_frame_id Source frame ID to convert from
+ * @param target_frame_id Target frame ID to convert to
+ * @param transform_tolerance Transform tolerance
+ * @param tf_buffer TF buffer to use for the transformation
+ * @param transform_msg Output source->target transform msg
+ * @return True if got correct transform, otherwise false
+ */
+bool getTransform(
+  const std::string & source_frame_id,
+  const std::string & target_frame_id,
+  const tf2::Duration & transform_tolerance,
+  const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+  geometry_msgs::msg::TransformStamped & transform_msg);
+
+/**
+ * @brief Obtains a transform from source_frame_id at source_time ->
+ * to target_frame_id at target_time time
+ * @param source_frame_id Source frame ID to convert from
+ * @param source_time Source timestamp to convert from
+ * @param target_frame_id Target frame ID to convert to
+ * @param target_time Current node time to interpolate to
+ * @param fixed_frame_id The frame in which to assume the transform is constant in time
+ * @param transform_tolerance Transform tolerance
+ * @param tf_buffer TF buffer to use for the transformation
+ * @param transform_msg Output source->target transform msg
+ * @return True if got correct transform, otherwise false
+ */
+bool getTransform(
+  const std::string & source_frame_id,
+  const rclcpp::Time & source_time,
+  const std::string & target_frame_id,
+  const rclcpp::Time & target_time,
+  const std::string & fixed_frame_id,
+  const tf2::Duration & transform_tolerance,
+  const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+  geometry_msgs::msg::TransformStamped & transform_msg);
 
 /**
  * @brief Validates a twist message contains no nans or infs
