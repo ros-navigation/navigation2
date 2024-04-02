@@ -19,6 +19,7 @@
 #include "geometry_msgs/msg/transform_stamped.hpp"
 
 #include "nav2_util/node_utils.hpp"
+#include "nav2_util/robot_utils.hpp"
 
 namespace nav2_collision_monitor
 {
@@ -129,6 +130,32 @@ Source::dynamicParametersCallback(
   }
   result.successful = true;
   return result;
+}
+
+bool Source::getTransform(
+  const rclcpp::Time & curr_time,
+  const std_msgs::msg::Header & data_header,
+  tf2::Transform & tf_transform) const
+{
+  if (base_shift_correction_) {
+    if (
+      !nav2_util::getTransform(
+        data_header.frame_id, data_header.stamp,
+        base_frame_id_, curr_time, global_frame_id_,
+        transform_tolerance_, tf_buffer_, tf_transform))
+    {
+      return false;
+    }
+  } else {
+    if (
+      !nav2_util::getTransform(
+        data_header.frame_id, base_frame_id_,
+        transform_tolerance_, tf_buffer_, tf_transform))
+    {
+      return false;
+    }
+  }
+  return true;
 }
 
 }  // namespace nav2_collision_monitor
