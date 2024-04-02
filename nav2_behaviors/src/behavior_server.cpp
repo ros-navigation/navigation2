@@ -26,10 +26,10 @@ BehaviorServer::BehaviorServer(const rclcpp::NodeOptions & options)
 : LifecycleNode("behavior_server", "", options),
   plugin_loader_("nav2_core", "nav2_core::Behavior"),
   default_ids_{"spin", "backup", "drive_on_heading", "wait"},
-  default_types_{"nav2_behaviors/Spin",
-    "nav2_behaviors/BackUp",
-    "nav2_behaviors/DriveOnHeading",
-    "nav2_behaviors/Wait"}
+  default_types_{"nav2_behaviors::Spin",
+    "nav2_behaviors::BackUp",
+    "nav2_behaviors::DriveOnHeading",
+    "nav2_behaviors::Wait"}
 {
   declare_parameter(
     "local_costmap_topic",
