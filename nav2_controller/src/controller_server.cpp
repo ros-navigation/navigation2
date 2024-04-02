@@ -419,7 +419,6 @@ void ControllerServer::computeControl()
 {
   std::lock_guard<std::mutex> lock(dynamic_params_lock_);
 
-  auto start_time = this->now();
   RCLCPP_INFO(get_logger(), "Received a goal, begin computing control effort.");
 
   try {
@@ -453,16 +452,23 @@ void ControllerServer::computeControl()
     last_valid_cmd_time_ = now();
     rclcpp::WallRate loop_rate(controller_frequency_);
     while (rclcpp::ok()) {
+      auto start_time = this->now();
+
       if (action_server_ == nullptr || !action_server_->is_server_active()) {
         RCLCPP_DEBUG(get_logger(), "Action server unavailable or inactive. Stopping.");
         return;
       }
 
       if (action_server_->is_cancel_requested()) {
-        RCLCPP_INFO(get_logger(), "Goal was canceled. Stopping the robot.");
-        action_server_->terminate_all();
-        publishZeroVelocity();
-        return;
+        if (controllers_[current_controller_]->cancel()) {
+          RCLCPP_INFO(get_logger(), "Cancellation was successful. Stopping the robot.");
+          action_server_->terminate_all();
+          publishZeroVelocity();
+          return;
+        } else {
+          RCLCPP_INFO_THROTTLE(
+            get_logger(), *get_clock(), 1000, "Waiting for the controller to finish cancellation");
+        }
       }
 
       // Don't compute a trajectory until costmap is valid (after clear costmap)

@@ -41,7 +41,7 @@ AnalyticExpansion<NodeT>::AnalyticExpansion(
 
 template<typename NodeT>
 void AnalyticExpansion<NodeT>::setCollisionChecker(
-  GridCollisionChecker * & collision_checker)
+  GridCollisionChecker * collision_checker)
 {
   _collision_checker = collision_checker;
 }
