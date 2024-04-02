@@ -12,7 +12,7 @@ ament_add_test(test_bt_navigator
     TESTER=nav_to_pose_tester_node.py
     ASTAR=True
     CONTROLLER=nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController
-    PLANNER=nav2_navfn_planner/NavfnPlanner
+    PLANNER=nav2_navfn_planner::NavfnPlanner
 )
 
 ament_add_test(test_bt_navigator_with_wrong_init_pose
@@ -29,7 +29,7 @@ ament_add_test(test_bt_navigator_with_wrong_init_pose
     TESTER=nav_to_pose_tester_node.py
     ASTAR=True
     CONTROLLER=nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController
-    PLANNER=nav2_navfn_planner/NavfnPlanner
+    PLANNER=nav2_navfn_planner::NavfnPlanner
 )
 
 ament_add_test(test_bt_navigator_with_dijkstra
@@ -46,7 +46,7 @@ ament_add_test(test_bt_navigator_with_dijkstra
     TESTER=nav_to_pose_tester_node.py
     ASTAR=False
     CONTROLLER=dwb_core::DWBLocalPlanner
-    PLANNER=nav2_navfn_planner/NavfnPlanner
+    PLANNER=nav2_navfn_planner::NavfnPlanner
 )
 
 ament_add_test(test_bt_navigator_2
@@ -63,7 +63,7 @@ ament_add_test(test_bt_navigator_2
     TESTER=nav_to_pose_tester_node.py
     ASTAR=False
     CONTROLLER=dwb_core::DWBLocalPlanner
-    PLANNER=nav2_navfn_planner/NavfnPlanner
+    PLANNER=nav2_navfn_planner::NavfnPlanner
 )
 
 ament_add_test(test_dynamic_obstacle
@@ -80,7 +80,7 @@ ament_add_test(test_dynamic_obstacle
     TESTER=nav_to_pose_tester_node.py
     ASTAR=False
     CONTROLLER=dwb_core::DWBLocalPlanner
-    PLANNER=nav2_navfn_planner/NavfnPlanner
+    PLANNER=nav2_navfn_planner::NavfnPlanner
 )
 
 ament_add_test(test_nav_through_poses
@@ -97,7 +97,7 @@ ament_add_test(test_nav_through_poses
     TESTER=nav_through_poses_tester_node.py
     ASTAR=False
     CONTROLLER=dwb_core::DWBLocalPlanner
-    PLANNER=nav2_navfn_planner/NavfnPlanner
+    PLANNER=nav2_navfn_planner::NavfnPlanner
 )
 
 # ament_add_test(test_multi_robot
@@ -113,6 +113,6 @@ ament_add_test(test_nav_through_poses
 #     TEST_SDF=${PROJECT_SOURCE_DIR}/models/turtlebot3_waffle/model.sdf
 #     BT_NAVIGATOR_XML=navigate_to_pose_w_replanning_and_recovery.xml
 #     CONTROLLER=dwb_core::DWBLocalPlanner
-#     PLANNER=nav2_navfn_planner/NavfnPlanner
+#     PLANNER=nav2_navfn_planner::NavfnPlanner
 #     TESTER=nav_to_pose_tester_node.py
 # )
