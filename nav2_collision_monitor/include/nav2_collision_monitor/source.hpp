@@ -26,7 +26,7 @@
 
 #include "nav2_collision_monitor/types.hpp"
 #include "nav2_util/lifecycle_node.hpp"
-#include "std_msgs/msg//header.hpp"
+#include "std_msgs/msg/header.hpp"
 
 namespace nav2_collision_monitor
 {
