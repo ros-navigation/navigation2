@@ -79,13 +79,14 @@ Costmap2DROS::Costmap2DROS(
   const std::string & name,
   const std::string & parent_namespace,
   const std::string & local_namespace,
-  const bool & use_sim_time)
+  const bool & use_sim_time,
+  const rclcpp::NodeOptions & parent_options)
 : nav2_util::LifecycleNode(name, "",
     // NodeOption arguments take precedence over the ones provided on the command line
     // use this to make sure the node is placed on the provided namespace
     // TODO(orduno) Pass a sub-node instead of creating a new node for better handling
     //              of the namespaces
-    rclcpp::NodeOptions().arguments({
+    rclcpp::NodeOptions().arguments(parent_options.arguments()).arguments({
     "--ros-args", "-r", std::string("__ns:=") +
     nav2_util::add_namespaces(parent_namespace, local_namespace),
     "--ros-args", "-r", name + ":" + std::string("__node:=") + name,
