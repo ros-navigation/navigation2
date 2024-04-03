@@ -46,7 +46,10 @@ def generate_launch_description():
     )
 
     bringup_dir = get_package_share_directory('nav2_bringup')
-    params_file = os.path.join(bringup_dir, 'params', 'nav2_params.yaml')
+
+    # Use local param file
+    launch_dir = os.path.dirname(os.path.realpath(__file__))
+    params_file = os.path.join(launch_dir, 'nav2_system_params.yaml')
 
     # Replace the default parameter values for testing special features
     # without having multiple params_files inside the nav2 stack
