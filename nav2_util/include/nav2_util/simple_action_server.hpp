@@ -314,8 +314,8 @@ public:
       info_msg("Waiting for async process to finish.");
       if (steady_clock::now() - start_time >= server_timeout_) {
         terminate_all();
-        completion_callback_();
-        throw std::runtime_error("Action callback is still running and missed deadline to stop");
+        if (completion_callback_) {completion_callback_();}
+        error_msg("Action callback is still running and missed deadline to stop");
       }
     }
 

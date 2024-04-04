@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>nav2_behaviors</name>
-  <version>1.2.5</version>
+  <version>1.2.7</version>
   <description>TODO</description>
   <maintainer email="carlos.a.orduno@intel.com">Carlos Orduno</maintainer>
   <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>

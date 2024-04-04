@@ -325,13 +325,17 @@ AmclNode::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   // Get rid of the inputs first (services and message filter input), so we
   // don't continue to process incoming messages
   global_loc_srv_.reset();
+  initial_guess_srv_.reset();
   nomotion_update_srv_.reset();
+  executor_thread_.reset();  //  to make sure initial_pose_sub_ completely exit
   initial_pose_sub_.reset();
   laser_scan_connection_.disconnect();
+  tf_listener_.reset();  //  listener may access lase_scan_filter_, so it should be reset earlier
   laser_scan_filter_.reset();
   laser_scan_sub_.reset();
 
   // Map
+  map_sub_.reset();  //  map_sub_ may access map_, so it should be reset earlier
   if (map_ != NULL) {
     map_free(map_);
     map_ = nullptr;
@@ -341,7 +345,6 @@ AmclNode::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 
   // Transforms
   tf_broadcaster_.reset();
-  tf_listener_.reset();
   tf_buffer_.reset();
 
   // PubSub
@@ -491,6 +494,15 @@ AmclNode::globalLocalizationCallback(
   RCLCPP_INFO(get_logger(), "Global initialisation done!");
   initial_pose_is_known_ = true;
   pf_init_ = false;
+}
+
+void
+AmclNode::initialPoseReceivedSrv(
+  const std::shared_ptr<rmw_request_id_t>/*request_header*/,
+  const std::shared_ptr<nav2_msgs::srv::SetInitialPose::Request> req,
+  std::shared_ptr<nav2_msgs::srv::SetInitialPose::Response>/*res*/)
+{
+  initialPoseReceived(std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>(req->pose));
 }
 
 // force nomotion updates (amcl updating without requiring motion)
@@ -1102,20 +1114,20 @@ AmclNode::initParameters()
   // Semantic checks
   if (laser_likelihood_max_dist_ < 0) {
     RCLCPP_WARN(
-      get_logger(), "You've set laser_likelihood_max_dist to be negtive,"
+      get_logger(), "You've set laser_likelihood_max_dist to be negative,"
       " this isn't allowed so it will be set to default value 2.0.");
     laser_likelihood_max_dist_ = 2.0;
   }
   if (max_particles_ < 0) {
     RCLCPP_WARN(
-      get_logger(), "You've set max_particles to be negtive,"
+      get_logger(), "You've set max_particles to be negative,"
       " this isn't allowed so it will be set to default value 2000.");
     max_particles_ = 2000;
   }
 
   if (min_particles_ < 0) {
     RCLCPP_WARN(
-      get_logger(), "You've set min_particles to be negtive,"
+      get_logger(), "You've set min_particles to be negative,"
       " this isn't allowed so it will be set to default value 500.");
     min_particles_ = 500;
   }
@@ -1129,7 +1141,7 @@ AmclNode::initParameters()
 
   if (resample_interval_ <= 0) {
     RCLCPP_WARN(
-      get_logger(), "You've set resample_interval to be zero or negtive,"
+      get_logger(), "You've set resample_interval to be zero or negative,"
       " this isn't allowed so it will be set to default value to 1.");
     resample_interval_ = 1;
   }
@@ -1541,6 +1553,10 @@ AmclNode::initServices()
   global_loc_srv_ = create_service<std_srvs::srv::Empty>(
     "reinitialize_global_localization",
     std::bind(&AmclNode::globalLocalizationCallback, this, _1, _2, _3));
+
+  initial_guess_srv_ = create_service<nav2_msgs::srv::SetInitialPose>(
+    "set_initial_pose",
+    std::bind(&AmclNode::initialPoseReceivedSrv, this, _1, _2, _3));
 
   nomotion_update_srv_ = create_service<std_srvs::srv::Empty>(
     "request_nomotion_update",

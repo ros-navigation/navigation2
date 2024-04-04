@@ -523,6 +523,8 @@ void ControllerServer::computeControl()
     auto begin = std::chrono::steady_clock::now();
     double real_frequency = controller_frequency_;
     while (rclcpp::ok()) {
+      auto start_time = this->now();
+
       if (action_server_ == nullptr || !action_server_->is_server_active()) {
         RCLCPP_DEBUG(get_logger(), "Action server unavailable or inactive. Stopping.");
         return;
@@ -556,14 +558,16 @@ void ControllerServer::computeControl()
         break;
       }
 
+      auto cycle_duration = this->now() - start_time;
       if (!loop_rate.sleep()) {
         auto end = std::chrono::steady_clock::now();
         double period = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
         begin = end;
         real_frequency = 1.0e6 / period;
         RCLCPP_WARN(
-          get_logger(), "Control loop missed its desired rate of %.4fHz. Achieved rate: %.4fHz",
-          controller_frequency_, real_frequency);
+          get_logger(),
+          "Control loop missed its desired rate of %.4f Hz. Current loop rate is %.4f Hz.",
+          controller_frequency_, 1 / cycle_duration.seconds());
       }
     }
   } catch (nav2_core::InvalidController & e) {

@@ -24,6 +24,7 @@
 #include "nav2_mppi_controller/critics/goal_angle_critic.hpp"
 #include "nav2_mppi_controller/critics/goal_critic.hpp"
 #include "nav2_mppi_controller/critics/obstacles_critic.hpp"
+#include "nav2_mppi_controller/critics/cost_critic.hpp"
 #include "nav2_mppi_controller/critics/path_align_critic.hpp"
 #include "nav2_mppi_controller/critics/path_align_legacy_critic.hpp"
 #include "nav2_mppi_controller/critics/path_angle_critic.hpp"

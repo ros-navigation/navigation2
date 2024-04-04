@@ -184,6 +184,12 @@
         <output_port name="selected_goal_checker">Name of the selected goal checker received from the topic subcription</output_port>
     </Action>
 
+    <Action ID="ProgressCheckerSelector">
+        <input_port name="topic_name">Name of the topic to receive progress checker selection commands</input_port>
+        <input_port name="default_progress_checker">Default progress checker of the controller selector</input_port>
+        <output_port name="selected_progress_checker">Name of the selected progress checker received from the topic subcription</output_port>
+    </Action>
+
     <Action ID="Spin">
       <input_port name="spin_dist">Spin distance</input_port>
       <input_port name="time_allowance">Allowed time for spinning</input_port>
