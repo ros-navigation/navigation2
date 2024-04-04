@@ -135,7 +135,7 @@ public:
   /**
    * @brief Updates polygon from footprint subscriber (if any)
    */
-  virtual void updatePolygon(const Velocity & /*cmd_vel_in*/);
+  void updatePolygon();
 
   /**
    * @brief Gets number of points inside given polygon
