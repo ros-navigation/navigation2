@@ -433,7 +433,7 @@ void Optimizer::setSpeedLimit(double speed_limit, bool percentage)
       s.constraints.vx_min = s.base_constraints.vx_min * ratio;
       s.constraints.vy = s.base_constraints.vy * ratio;
       s.constraints.wz = s.base_constraints.wz * ratio;
-    } else {
+    } else if (speed_limit < s.base_constraints.vx_max) {
       // Speed limit is expressed in absolute value
       double ratio = speed_limit / s.base_constraints.vx_max;
       s.constraints.vx_max = s.base_constraints.vx_max * ratio;
