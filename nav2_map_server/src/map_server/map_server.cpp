@@ -242,7 +242,7 @@ bool MapServer::loadMapResponseFromYaml(
 
 void MapServer::updateMsgHeader()
 {
-  rclcpp::Clock clock(RCL_SYSTEM_TIME);
+  rclcpp::Clock clock(RCL_ROS_TIME);
   msg_.info.map_load_time = clock.now();
   msg_.header.frame_id = frame_id_;
   msg_.header.stamp = clock.now();
