@@ -242,9 +242,10 @@ bool MapServer::loadMapResponseFromYaml(
 
 void MapServer::updateMsgHeader()
 {
-  msg_.info.map_load_time = now();
+  rclcpp::Clock clock(RCL_SYSTEM_TIME);
+  msg_.info.map_load_time = clock.now();
   msg_.header.frame_id = frame_id_;
-  msg_.header.stamp = now();
+  msg_.header.stamp = clock.now();
 }
 
 }  // namespace nav2_map_server
