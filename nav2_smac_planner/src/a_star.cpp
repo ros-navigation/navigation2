@@ -287,7 +287,6 @@ bool AStarAlgorithm<NodeT>::createPath(
     };
 
   while (iterations < getMaxIterations() && !_queue.empty()) {
-
     // Check for planning timeout and cancel only on every Nth iteration
     if (iterations % _terminal_checking_interval == 0) {
       if (cancel_checker()) {
