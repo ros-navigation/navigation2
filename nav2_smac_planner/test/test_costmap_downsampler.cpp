@@ -62,6 +62,4 @@ TEST(CostmapDownsampler, costmap_downsample_test)
   // validate size
   EXPECT_EQ(downsampledCostmapB->getSizeInCellsX(), 1u);
   EXPECT_EQ(downsampledCostmapB->getSizeInCellsY(), 1u);
-
-  downsampler.resizeCostmap();
 }
