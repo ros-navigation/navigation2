@@ -79,27 +79,53 @@ public:
    * @param downsampling_factor Multiplier for the costmap resolution
    * @return A ptr to the downsampled costmap
    */
-  nav2_costmap_2d::Costmap2D * downsample(const unsigned int & downsampling_factor);
-
-  /**
-   * @brief Resize the downsampled costmap. Used in case the costmap changes and we need to update the downsampled version
-   */
-  void resizeCostmap();
+  nav2_costmap_2d::Costmap2D * downsample(const unsigned int downsampling_factor);
 
 protected:
   /**
    * @brief Update the sizes X-Y of the costmap and its downsampled version
    */
-  void updateCostmapSize();
+  inline void updateCostmapSize()
+  {
+    _size_x = _costmap->getSizeInCellsX();
+    _size_y = _costmap->getSizeInCellsY();
+    _downsampled_size_x = ceil(static_cast<float>(_size_x) / _downsampling_factor);
+    _downsampled_size_y = ceil(static_cast<float>(_size_y) / _downsampling_factor);
+    _downsampled_resolution = _downsampling_factor * _costmap->getResolution();
+  }
 
   /**
    * @brief Explore all subcells of the original costmap and assign the max cost to the new (downsampled) cell
    * @param new_mx The X-coordinate of the cell in the new costmap
    * @param new_my The Y-coordinate of the cell in the new costmap
    */
-  void setCostOfCell(
-    const unsigned int & new_mx,
-    const unsigned int & new_my);
+  inline void setCostOfCell(
+    const unsigned int new_mx,
+    const unsigned int new_my)
+  {
+    unsigned int mx, my;
+    unsigned char cost = _use_min_cost_neighbor ? 255 : 0;
+    unsigned int x_offset = new_mx * _downsampling_factor;
+    unsigned int y_offset = new_my * _downsampling_factor;
+
+    for (unsigned int i = 0; i < _downsampling_factor; ++i) {
+      mx = x_offset + i;
+      if (mx >= _size_x) {
+        continue;
+      }
+      for (unsigned int j = 0; j < _downsampling_factor; ++j) {
+        my = y_offset + j;
+        if (my >= _size_y) {
+          continue;
+        }
+        cost = _use_min_cost_neighbor ?
+          std::min(cost, _costmap->getCost(mx, my)) :
+          std::max(cost, _costmap->getCost(mx, my));
+      }
+    }
+
+    _downsampled_costmap->setCost(new_mx, new_my, cost);
+  }
 
   unsigned int _size_x;
   unsigned int _size_y;

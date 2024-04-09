@@ -463,7 +463,7 @@ public:
   Coordinates pose;
 
   // Constants required across all nodes but don't want to allocate more than once
-  static double travel_distance_cost;
+  static float travel_distance_cost;
   static HybridMotionTable motion_table;
   // Wavefront lookup and queue for continuing to expand as needed
   static LookupTable obstacle_heuristic_lookup_table;
@@ -482,6 +482,7 @@ private:
   float _accumulated_cost;
   unsigned int _index;
   bool _was_visited;
+  bool _in_collision;
   unsigned int _motion_primitive_index;
   TurnDirection _turn_dir;
 };

@@ -183,9 +183,10 @@ float & LatticeMotionTable::getAngleFromBin(const unsigned int & bin_idx)
 NodeLattice::NodeLattice(const unsigned int index)
 : parent(nullptr),
   pose(0.0f, 0.0f, 0.0f),
-  _cell_cost(std::numeric_limits<float>::quiet_NaN()),
+  _cell_cost(NAN),
   _accumulated_cost(std::numeric_limits<float>::max()),
   _index(index),
+  _in_collision(false),
   _was_visited(false),
   _motion_primitive(nullptr),
   _backwards(false)
@@ -200,9 +201,10 @@ NodeLattice::~NodeLattice()
 void NodeLattice::reset()
 {
   parent = nullptr;
-  _cell_cost = std::numeric_limits<float>::quiet_NaN();
+  _cell_cost = NAN;
   _accumulated_cost = std::numeric_limits<float>::max();
   _was_visited = false;
+  _in_collision = false;
   pose.x = 0.0f;
   pose.y = 0.0f;
   pose.theta = 0.0f;
@@ -216,6 +218,10 @@ bool NodeLattice::isNodeValid(
   MotionPrimitive * motion_primitive,
   bool is_backwards)
 {
+  if (!std::isnan(_cell_cost)) {
+    return _in_collision;
+  }
+
   // Check primitive end pose
   // Convert grid quantization of primitives to radians, then collision checker quantization
   static const double bin_size = 2.0 * M_PI / collision_checker->getPrecomputedAngles().size();
@@ -223,6 +229,8 @@ bool NodeLattice::isNodeValid(
   if (collision_checker->inCollision(
       this->pose.x, this->pose.y, angle /*bin in collision checker*/, traverse_unknown))
   {
+    _cell_cost = collision_checker->getCost();
+    _in_collision = true;
     return false;
   }
 
@@ -264,6 +272,7 @@ bool NodeLattice::isNodeValid(
             prim_pose._theta / bin_size /*bin in collision checker*/,
             traverse_unknown))
         {
+          _in_collision = true;
           return false;
         }
         max_cell_cost = std::max(max_cell_cost, collision_checker->getCost());

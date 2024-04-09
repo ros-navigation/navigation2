@@ -22,6 +22,7 @@
 #include <queue>
 #include <limits>
 #include <utility>
+#include <cmath>
 
 #include "ompl/base/ScopedState.h"
 #include "ompl/base/spaces/DubinsStateSpace.h"
@@ -36,7 +37,7 @@ namespace nav2_smac_planner
 
 // defining static member for all instance to share
 LookupTable NodeHybrid::obstacle_heuristic_lookup_table;
-double NodeHybrid::travel_distance_cost = sqrt(2);
+float NodeHybrid::travel_distance_cost = sqrtf(2);
 HybridMotionTable NodeHybrid::motion_table;
 float NodeHybrid::size_lookup = 25;
 LookupTable NodeHybrid::dist_heuristic_lookup_table;
@@ -343,7 +344,8 @@ float HybridMotionTable::getAngleFromBin(const unsigned int & bin_idx)
 NodeHybrid::NodeHybrid(const unsigned int index)
 : parent(nullptr),
   pose(0.0f, 0.0f, 0.0f),
-  _cell_cost(std::numeric_limits<float>::quiet_NaN()),
+  _cell_cost(NAN),
+  _in_collision(false),
   _accumulated_cost(std::numeric_limits<float>::max()),
   _index(index),
   _was_visited(false),
@@ -359,7 +361,8 @@ NodeHybrid::~NodeHybrid()
 void NodeHybrid::reset()
 {
   parent = nullptr;
-  _cell_cost = std::numeric_limits<float>::quiet_NaN();
+  _cell_cost = NAN;
+  _in_collision = false;
   _accumulated_cost = std::numeric_limits<float>::max();
   _was_visited = false;
   _motion_primitive_index = std::numeric_limits<unsigned int>::max();
@@ -372,9 +375,15 @@ bool NodeHybrid::isNodeValid(
   const bool & traverse_unknown,
   GridCollisionChecker * collision_checker)
 {
+  if (!std::isnan(_cell_cost)) {
+    return _in_collision;
+  }
+
   if (collision_checker->inCollision(
       this->pose.x, this->pose.y, this->pose.theta /*bin number*/, traverse_unknown))
   {
+    _cell_cost = collision_checker->getCost();
+    _in_collision = true;
     return false;
   }
 
@@ -501,15 +510,15 @@ void NodeHybrid::resetObstacleHeuristic(
   unsigned int size = sampled_costmap->getSizeInCellsX() * sampled_costmap->getSizeInCellsY();
   if (obstacle_heuristic_lookup_table.size() == size) {
     // must reset all values
-    std::fill(
+    std::fill_n(
       obstacle_heuristic_lookup_table.begin(),
-      obstacle_heuristic_lookup_table.end(), 0.0);
+      size, 0.0f);
   } else {
     unsigned int obstacle_size = obstacle_heuristic_lookup_table.size();
-    obstacle_heuristic_lookup_table.resize(size, 0.0);
+    obstacle_heuristic_lookup_table.resize(size, 0.0f);
     // must reset values for non-constructed indices
     std::fill_n(
-      obstacle_heuristic_lookup_table.begin(), obstacle_size, 0.0);
+      obstacle_heuristic_lookup_table.begin(), obstacle_size, 0.0f);
   }
 
   obstacle_heuristic_queue.clear();
@@ -601,7 +610,7 @@ float NodeHybrid::getObstacleHeuristic(
 
   const int size_x_int = static_cast<int>(size_x);
   const unsigned int size_y = sampled_costmap->getSizeInCellsY();
-  const float sqrt2 = sqrt(2.0f);
+  const float sqrt2 = sqrtf(2.0f);
   float c_cost, cost, travel_cost, new_cost, existing_cost;
   unsigned int idx, mx, my;
   unsigned int new_idx = 0;

@@ -26,6 +26,7 @@
 #include <vector>
 
 #include "nav2_smac_planner/a_star.hpp"
+
 using namespace std::chrono;  // NOLINT
 
 namespace nav2_smac_planner
@@ -48,11 +49,6 @@ AStarAlgorithm<NodeT>::AStarAlgorithm(
   _motion_model(motion_model)
 {
   _graph.reserve(100000);
-}
-
-template<typename NodeT>
-AStarAlgorithm<NodeT>::~AStarAlgorithm()
-{
 }
 
 template<typename NodeT>
@@ -120,7 +116,7 @@ void AStarAlgorithm<NodeT>::setCollisionChecker(GridCollisionChecker * collision
 
 template<typename NodeT>
 typename AStarAlgorithm<NodeT>::NodePtr AStarAlgorithm<NodeT>::addToGraph(
-  const unsigned int & index)
+  const unsigned int index)
 {
   auto iter = _graph.find(index);
   if (iter != _graph.end()) {
@@ -280,7 +276,7 @@ bool AStarAlgorithm<NodeT>::createPath(
   // Given an index, return a node ptr reference if its collision-free and valid
   const unsigned int max_index = getSizeX() * getSizeY() * getSizeDim3();
   NodeGetter neighborGetter =
-    [&, this](const unsigned int & index, NodePtr & neighbor_rtn) -> bool
+    [&, this](const unsigned int index, NodePtr & neighbor_rtn) -> bool
     {
       if (index >= max_index) {
         return false;
@@ -291,13 +287,14 @@ bool AStarAlgorithm<NodeT>::createPath(
     };
 
   while (iterations < getMaxIterations() && !_queue.empty()) {
+
     // Check for planning timeout and cancel only on every Nth iteration
     if (iterations % _terminal_checking_interval == 0) {
       if (cancel_checker()) {
         throw nav2_core::PlannerCancelled("Planner was cancelled");
       }
-      std::chrono::duration<double> planning_duration =
-        std::chrono::duration_cast<std::chrono::duration<double>>(steady_clock::now() - start_time);
+      auto planning_duration =
+        std::chrono::duration_cast<std::chrono::seconds>(steady_clock::now() - start_time);
       if (static_cast<double>(planning_duration.count()) >= _max_planning_time) {
         return false;
       }
@@ -365,7 +362,7 @@ bool AStarAlgorithm<NodeT>::createPath(
   }
 
   if (_best_heuristic_node.first < getToleranceHeuristic()) {
-    // If we run out of serach options, return the path that is closest, if within tolerance.
+    // If we run out of search options, return the path that is closest, if within tolerance.
     return _graph.at(_best_heuristic_node.second).backtracePath(path);
   }
 
@@ -376,18 +373,6 @@ template<typename NodeT>
 bool AStarAlgorithm<NodeT>::isGoal(NodePtr & node)
 {
   return node == getGoal();
-}
-
-template<typename NodeT>
-typename AStarAlgorithm<NodeT>::NodePtr & AStarAlgorithm<NodeT>::getStart()
-{
-  return _start;
-}
-
-template<typename NodeT>
-typename AStarAlgorithm<NodeT>::NodePtr & AStarAlgorithm<NodeT>::getGoal()
-{
-  return _goal;
 }
 
 template<typename NodeT>
@@ -435,42 +420,6 @@ void AStarAlgorithm<NodeT>::clearGraph()
   Graph g;
   std::swap(_graph, g);
   _graph.reserve(100000);
-}
-
-template<typename NodeT>
-int & AStarAlgorithm<NodeT>::getMaxIterations()
-{
-  return _max_iterations;
-}
-
-template<typename NodeT>
-int & AStarAlgorithm<NodeT>::getOnApproachMaxIterations()
-{
-  return _max_on_approach_iterations;
-}
-
-template<typename NodeT>
-float & AStarAlgorithm<NodeT>::getToleranceHeuristic()
-{
-  return _tolerance;
-}
-
-template<typename NodeT>
-unsigned int & AStarAlgorithm<NodeT>::getSizeX()
-{
-  return _x_size;
-}
-
-template<typename NodeT>
-unsigned int & AStarAlgorithm<NodeT>::getSizeY()
-{
-  return _y_size;
-}
-
-template<typename NodeT>
-unsigned int & AStarAlgorithm<NodeT>::getSizeDim3()
-{
-  return _dim3_size;
 }
 
 template<>

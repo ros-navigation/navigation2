@@ -427,6 +427,7 @@ private:
   float _accumulated_cost;
   unsigned int _index;
   bool _was_visited;
+  bool _in_collision;
   MotionPrimitive * _motion_primitive;
   bool _backwards;
 };

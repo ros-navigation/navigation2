@@ -79,7 +79,7 @@ public:
   /**
    * @brief A destructor for nav2_smac_planner::AStarAlgorithm
    */
-  ~AStarAlgorithm();
+  ~AStarAlgorithm() = default;
 
   /**
    * @brief Initialization of the planner with defaults
@@ -148,49 +148,73 @@ public:
    * @brief Get maximum number of iterations to plan
    * @return Reference to Maximum iterations parameter
    */
-  int & getMaxIterations();
+  inline int & getMaxIterations()
+  {
+    return _max_iterations;
+  }
 
   /**
    * @brief Get pointer reference to starting node
    * @return Node pointer reference to starting node
    */
-  NodePtr & getStart();
+  inline NodePtr & getStart()
+  {
+    return _start;
+  }
 
   /**
    * @brief Get pointer reference to goal node
    * @return Node pointer reference to goal node
    */
-  NodePtr & getGoal();
+  inline NodePtr & getGoal()
+  {
+    return _goal;
+  }
 
   /**
    * @brief Get maximum number of on-approach iterations after within threshold
    * @return Reference to Maximum on-appraoch iterations parameter
    */
-  int & getOnApproachMaxIterations();
+  inline int & getOnApproachMaxIterations()
+  {
+    return _max_on_approach_iterations;
+  }
 
   /**
    * @brief Get tolerance, in node nodes
    * @return Reference to tolerance parameter
    */
-  float & getToleranceHeuristic();
+  inline float & getToleranceHeuristic()
+  {
+    return _tolerance;
+  }
 
   /**
    * @brief Get size of graph in X
    * @return Size in X
    */
-  unsigned int & getSizeX();
+  inline unsigned int getSizeX()
+  {
+    return _x_size;
+  }
 
   /**
    * @brief Get size of graph in Y
    * @return Size in Y
    */
-  unsigned int & getSizeY();
+  inline unsigned int getSizeY()
+  {
+    return _y_size;
+  }
 
   /**
    * @brief Get number of angle quantization bins (SE2) or Z coordinate  (XYZ)
    * @return Number of angle bins / Z dimension
    */
-  unsigned int & getSizeDim3();
+  inline unsigned int getSizeDim3()
+  {
+    return _dim3_size;
+  }
 
 protected:
   /**
@@ -210,7 +234,7 @@ protected:
    * @brief Adds node to graph
    * @param index Node index to add
    */
-  inline NodePtr addToGraph(const unsigned int & index);
+  inline NodePtr addToGraph(const unsigned int index);
 
   /**
    * @brief Check if this node is the goal node
