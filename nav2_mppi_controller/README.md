@@ -171,6 +171,15 @@ Uses inflated costmap cost directly to avoid obstacles
  | cost_weight           | double | Default 10.0. Weight to apply to critic term.                                                               |
  | cost_power            | int    | Default 1. Power order to apply to term.                                                                    |
 
+
+#### Velocity Deadband Critic
+ | Parameter             | Type     | Definition                                                                                                  |
+ | ---------------       | ------   | ----------------------------------------------------------------------------------------------------------- |
+ | cost_weight           | double   | Default 100.0. Weight to apply to critic term. (100.0 fits for turtlebot3, 35.0 for linorobot2)             |
+ | cost_power            | int      | Default 1. Power order to apply to term.                                                                    |
+ | deadband_velocities   | double[] | Default [0.0, 0.0, 0.0].  The array of deadband velocities [vx, vz, wz]. A zero array indicates that the critic will take no action.      |
+
+
 ### XML configuration example
 ```
 controller_server:
@@ -200,7 +209,7 @@ controller_server:
         time_step: 3
       AckermannConstraints:
         min_turning_r: 0.2
-      critics: ["ConstraintCritic", "CostCritic", "GoalCritic", "GoalAngleCritic", "PathAlignCritic", "PathFollowCritic", "PathAngleCritic", "PreferForwardCritic"]
+      critics: ["ConstraintCritic", "CostCritic", "GoalCritic", "GoalAngleCritic", "PathAlignCritic", "PathFollowCritic", "PathAngleCritic", "PreferForwardCritic", "VelocityDeadbandCritic"]
       ConstraintCritic:
         enabled: true
         cost_power: 1
@@ -262,6 +271,11 @@ controller_server:
         threshold_to_consider: 0.5
         max_angle_to_furthest: 1.0
         forward_preference: true
+      VelocityDeadbandCritic:
+        enabled: false
+        cost_power: 1
+        cost_weight: 100.0
+        deadband_velocities: [0.08, 0.08, 0.08]
       # TwirlingCritic:
       #   enabled: true
       #   twirling_cost_power: 1
