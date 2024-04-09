@@ -128,7 +128,7 @@ public:
 
   /**
    * @brief Returns true if polygon points were set.
-   * Othewise, prints a warning and returns false.
+   * Otherwise, prints a warning and returns false.
    */
   virtual bool isShapeSet();
 
@@ -170,12 +170,15 @@ protected:
    * @param polygon_sub_topic Output name of polygon publishing topic
    * @param footprint_topic Output name of footprint topic.
    * Empty, if no footprint subscription.
+   * @param use_dynamic_sub If false, the parameter polygon_sub_topic or footprint_topic
+   * will not be declared
    * @return True if all parameters were obtained or false in failure case
    */
   bool getCommonParameters(
     std::string & polygon_sub_topic,
     std::string & polygon_pub_topic,
-    std::string & footprint_topic);
+    std::string & footprint_topic,
+    bool use_dynamic_sub = false);
 
   /**
    * @brief Supporting routine obtaining polygon-specific ROS-parameters

@@ -69,9 +69,10 @@ public:
   int getPointsInside(const std::vector<Point> & points) const override;
 
   /**
-   * @brief Specifies that the shape is always set for a circle object
+   * @brief Returns true if circle radius is set.
+   * Otherwise, prints a warning and returns false.
    */
-  bool isShapeSet() override {return true;}
+  bool isShapeSet() override;
 
 protected:
   /**
@@ -112,7 +113,7 @@ protected:
   /// @brief Radius of the circle
   double radius_;
   /// @brief (radius * radius) value. Stored for optimization.
-  double radius_squared_;
+  double radius_squared_ = -1.0;
   /// @brief Radius subscription
   rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr radius_sub_;
 };  // class Circle

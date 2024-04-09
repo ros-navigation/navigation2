@@ -44,7 +44,7 @@ bool VelocityPolygon::getParameters(
   }
   clock_ = node->get_clock();
 
-  if (!getCommonParameters(polygon_sub_topic, polygon_pub_topic, footprint_topic)) {
+  if (!getCommonParameters(polygon_sub_topic, polygon_pub_topic, footprint_topic, false)) {
     return false;
   }
 

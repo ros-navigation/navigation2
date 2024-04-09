@@ -70,6 +70,15 @@ int Circle::getPointsInside(const std::vector<Point> & points) const
   return num;
 }
 
+bool Circle::isShapeSet()
+{
+  if (radius_squared_ == -1.0) {
+    RCLCPP_WARN(logger_, "[%s]: Circle radius is not set yet", polygon_name_.c_str());
+    return false;
+  }
+  return true;
+}
+
 bool Circle::getParameters(
   std::string & polygon_sub_topic,
   std::string & polygon_pub_topic,
@@ -83,24 +92,14 @@ bool Circle::getParameters(
   // Clear the polygon subscription topic. It will be set later, if necessary.
   polygon_sub_topic.clear();
 
-  if (!getCommonParameters(polygon_sub_topic, polygon_pub_topic, footprint_topic)) {
-    return false;
-  }
-
-  // There is no footprint subscription for the Circle. Thus, set string as empty.
-  footprint_topic.clear();
-
+  bool use_dynamic_sub = true;  // if getting parameter radius fails, use dynamic subscription
   try {
     // Leave it not initialized: the will cause an error if it will not set
     nav2_util::declare_parameter_if_not_declared(
       node, polygon_name_ + ".radius", rclcpp::PARAMETER_DOUBLE);
     radius_ = node->get_parameter(polygon_name_ + ".radius").as_double();
     radius_squared_ = radius_ * radius_;
-
-    // Do not need to proceed further, if "radius" parameter is defined.
-    // Static polygon will be used.
-    polygon_sub_topic.clear();
-    return true;
+    use_dynamic_sub = false;
   } catch (const rclcpp::exceptions::ParameterUninitializedException &) {
     RCLCPP_INFO(
       logger_,
@@ -108,15 +107,23 @@ bool Circle::getParameters(
       polygon_name_.c_str());
   }
 
-  if (polygon_sub_topic.empty()) {
-    RCLCPP_ERROR(
-      logger_,
-      "[%s]: Error while getting circle parameters: static radius and sub topic both not defined",
-      polygon_name_.c_str());
-    return false;
+  bool ret = true;
+  if (!getCommonParameters(
+      polygon_sub_topic, polygon_pub_topic, footprint_topic, use_dynamic_sub))
+  {
+    if (use_dynamic_sub && polygon_sub_topic.empty()) {
+      RCLCPP_ERROR(
+        logger_,
+        "[%s]: Error while getting circle parameters: static radius and sub topic both not defined",
+        polygon_name_.c_str());
+    }
+    ret = false;
   }
 
-  return true;
+  // There is no footprint subscription for the Circle. Thus, set string as empty.
+  footprint_topic.clear();
+
+  return ret;
 }
 
 void Circle::createSubscription(std::string & polygon_sub_topic)
