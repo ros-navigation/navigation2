@@ -318,7 +318,7 @@ TEST(UtilsTests, SmootherTest)
   noisey_sequence.vy = 0.0 * xt::ones<float>({30});
   noisey_sequence.wz = 0.3 * xt::ones<float>({30});
 
-  // Make the sequence noisey
+  // Make the sequence noisy
   auto noises = xt::random::randn<float>({30}, 0.0, 0.2);
   noisey_sequence.vx += noises;
   noisey_sequence.vy += noises;
@@ -356,7 +356,7 @@ TEST(UtilsTests, SmootherTest)
   EXPECT_NEAR(history[3].wz, 0.23, 0.02);
 
   // Check that path is smoother
-  float smoothed_val, original_val;
+  float smoothed_val{0}, original_val{0};
   for (unsigned int i = 0; i != noisey_sequence.vx.shape(0); i++) {
     smoothed_val += fabs(noisey_sequence.vx(i) - 0.2);
     smoothed_val += fabs(noisey_sequence.vy(i) - 0.0);

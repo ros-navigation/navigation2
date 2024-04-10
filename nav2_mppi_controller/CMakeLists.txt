@@ -15,6 +15,10 @@ find_package(ament_cmake REQUIRED)
 find_package(xtensor REQUIRED)
 find_package(xsimd REQUIRED)
 
+include_directories(
+  include
+)
+
 set(dependencies_pkgs
   rclcpp
   nav2_common
@@ -75,6 +79,7 @@ add_library(mppi_controller SHARED
 
 add_library(mppi_critics SHARED
   src/critics/obstacles_critic.cpp
+  src/critics/cost_critic.cpp
   src/critics/goal_critic.cpp
   src/critics/goal_angle_critic.cpp
   src/critics/path_align_critic.cpp
@@ -90,7 +95,7 @@ set(libraries mppi_controller mppi_critics)
 
 foreach(lib IN LISTS libraries)
   target_compile_options(${lib} PUBLIC -fconcepts)
-  target_include_directories(${lib} PUBLIC include ${xsimd_INCLUDE_DIRS})  #  ${OpenMP_INCLUDE_DIRS}
+  target_include_directories(${lib} PUBLIC ${xsimd_INCLUDE_DIRS})  #  ${OpenMP_INCLUDE_DIRS}
   target_link_libraries(${lib} xtensor xtensor::optimize xtensor::use_xsimd)
   ament_target_dependencies(${lib} ${dependencies_pkgs})
 endforeach()

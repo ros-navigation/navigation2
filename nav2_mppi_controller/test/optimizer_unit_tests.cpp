@@ -389,7 +389,7 @@ TEST(OptimizerTests, shiftControlSequenceTests)
 
   // Test shiftControlSequence by setting the 2nd value to something unique to neighbors
   auto & sequence = optimizer_tester.grabControlSequence();
-  sequence.reset({100});
+  sequence.reset(100);
   sequence.vx(0) = 9999;
   sequence.vx(1) = 6;
   sequence.vx(2) = 888;
