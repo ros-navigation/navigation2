@@ -98,6 +98,13 @@ bool saveMapToFile(
   const nav_msgs::msg::OccupancyGrid & map,
   const SaveParameters & save_parameters);
 
+/**
+ * @brief Expand ~/ to home user dir.
+ * @param yaml_filename Name of input YAML file.
+ * @param home_dir Expanded `~/`home dir or empty string if HOME not set
+ * 
+ * @return Expanded string or input string if `~/` not expanded
+ */
 std::string expand_user_home_dir_if_needed(
   const std::string & yaml_filename,
   const char* home_dir);
