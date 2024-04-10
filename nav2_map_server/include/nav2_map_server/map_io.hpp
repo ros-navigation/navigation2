@@ -98,6 +98,10 @@ bool saveMapToFile(
   const nav_msgs::msg::OccupancyGrid & map,
   const SaveParameters & save_parameters);
 
+std::string expand_user_home_dir_if_needed(
+  const std::string & yaml_filename,
+  const char* home_dir);
+
 }  // namespace nav2_map_server
 
 #endif  // NAV2_MAP_SERVER__MAP_IO_HPP_
