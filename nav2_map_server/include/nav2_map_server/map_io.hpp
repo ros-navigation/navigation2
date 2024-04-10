@@ -106,8 +106,8 @@ bool saveMapToFile(
  * @return Expanded string or input string if `~/` not expanded
  */
 std::string expand_user_home_dir_if_needed(
-  const std::string & yaml_filename,
-  const char* home_dir);
+  std::string yaml_filename,
+  std::string home_dir);
 
 }  // namespace nav2_map_server
 
