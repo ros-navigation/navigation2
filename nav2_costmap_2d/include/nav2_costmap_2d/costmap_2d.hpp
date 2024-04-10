@@ -191,7 +191,7 @@ public:
    * @param  my Will be set to the associated map y coordinate
    * @return True if the conversion was successful (legal bounds) false otherwise
    */
-  bool worldToMapContinuous(double wx, double wy, double & mx, double & my) const;
+  bool worldToMapContinuous(double wx, double wy, float & mx, float & my) const;
 
   /**
    * @brief  Convert from world coordinates to map coordinates without checking for legal bounds

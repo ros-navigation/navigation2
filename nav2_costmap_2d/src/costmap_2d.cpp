@@ -296,7 +296,7 @@ bool Costmap2D::worldToMap(double wx, double wy, unsigned int & mx, unsigned int
   return false;
 }
 
-bool Costmap2D::worldToMapContinuous(double wx, double wy, double & mx, double & my) const
+bool Costmap2D::worldToMapContinuous(double wx, double wy, float & mx, float & my) const
 {
   if (wx < origin_x_ || wy < origin_y_) {
     return false;
