@@ -177,7 +177,7 @@ LifecycleManager::CreateDiagnostic(diagnostic_updater::DiagnosticStatusWrapper &
       error_level = diagnostic_msgs::msg::DiagnosticStatus::WARN;
       message = "Managed nodes have been shut down";
       break;
-    case NodeState::UNKNOWN:
+    default:  // NodeState::UNKNOWN
       error_level = diagnostic_msgs::msg::DiagnosticStatus::ERROR;
       message = "An error has occurred during a node state transition";
       break;
