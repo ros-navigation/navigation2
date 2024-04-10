@@ -112,10 +112,10 @@ bool GridCollisionChecker::inCollision(
     // if footprint, then we check for the footprint's points, but first see
     // if the robot is even potentially in an inscribed collision
     footprint_cost_ = static_cast<float>(costmap_->getCost(
-        static_cast<unsigned int>(x + 0.5), static_cast<unsigned int>(y + 0.5)));
+        static_cast<unsigned int>(x + 0.5f), static_cast<unsigned int>(y + 0.5f)));
 
     if (footprint_cost_ < possible_collision_cost_) {
-      if (possible_collision_cost_ > 0) {
+      if (possible_collision_cost_ > 0.0f) {
         return false;
       } else {
         RCLCPP_ERROR_THROTTLE(
@@ -162,7 +162,7 @@ bool GridCollisionChecker::inCollision(
   } else {
     // if radius, then we can check the center of the cost assuming inflation is used
     footprint_cost_ = static_cast<float>(costmap_->getCost(
-        static_cast<unsigned int>(x + 0.5), static_cast<unsigned int>(y + 0.5)));
+        static_cast<unsigned int>(x + 0.5f), static_cast<unsigned int>(y + 0.5f)));
 
     if (footprint_cost_ == UNKNOWN && traverse_unknown) {
       return false;
