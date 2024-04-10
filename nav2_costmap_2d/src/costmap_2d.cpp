@@ -296,6 +296,21 @@ bool Costmap2D::worldToMap(double wx, double wy, unsigned int & mx, unsigned int
   return false;
 }
 
+bool Costmap2D::worldToMapContinuous(double wx, double wy, double & mx, double & my) const
+{
+  if (wx < origin_x_ || wy < origin_y_) {
+    return false;
+  }
+
+  mx = (wx - origin_x_) / resolution_ + 0.5;
+  my = (wy - origin_y_) / resolution_ + 0.5;
+
+  if (mx < size_x_ && my < size_y_) {
+    return true;
+  }
+  return false;
+}
+
 void Costmap2D::worldToMapNoBounds(double wx, double wy, int & mx, int & my) const
 {
   mx = static_cast<int>((wx - origin_x_) / resolution_);
