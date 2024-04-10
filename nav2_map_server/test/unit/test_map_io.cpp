@@ -329,12 +329,12 @@ TEST(HomeUserExpanderTestSuite, homeUserExpanderShouldNotChangeInputStringWhenIn
 TEST(HomeUserExpanderTestSuite, homeUserExpanderShouldNotChangeInputStringWhenHomeVariableNotFound)
 {
   const std::string fileName{"~/valid_file.yaml"};
-  ASSERT_EQ(fileName, expand_user_home_dir_if_needed(fileName, nullptr));
+  ASSERT_EQ(fileName, expand_user_home_dir_if_needed(fileName, ""));
 }
 
 TEST(HomeUserExpanderTestSuite, homeUserExpanderShouldExpandHomeSequenceWhenHomeVariableSet)
 {
   const std::string fileName{"~/valid_file.yaml"};
   const std::string expectedOutputFileName{"/home/user/valid_file.yaml"};
-  ASSERT_EQ(expectedOutputFileName, expand_user_home_dir_if_needed(fileName,"/home/user"));
+  ASSERT_EQ(expectedOutputFileName, expand_user_home_dir_if_needed(fileName, "/home/user"));
 }

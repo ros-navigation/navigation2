@@ -116,14 +116,23 @@ T yaml_get_value(const YAML::Node & node, const std::string & key)
   }
 }
 
-std::string expand_user_home_dir_if_needed(std::string  yaml_filename, const char* home_variable_value)
+std::string get_home_dir()
+{
+  if (const char* home_dir = std::getenv("HOME"))
+  {
+     return std::string{home_dir};
+  }
+  return std::string{};
+}
+
+std::string expand_user_home_dir_if_needed(std::string  yaml_filename, std::string home_variable_value)
 {
   if (yaml_filename.size() < 2 or not (yaml_filename[0] == '~' and  yaml_filename[1] == '/'))
   {
     return yaml_filename;
   }
   
-  if (not home_variable_value)
+  if (home_variable_value.empty())
   {
     std::cout << "[INFO] [map_io]: Map yaml file name starts with '~/' but no HOME variable set. \n"
               << "[INFO] [map_io] User home dir will be not expanded \n";
@@ -136,7 +145,7 @@ std::string expand_user_home_dir_if_needed(std::string  yaml_filename, const cha
 
 LoadParameters loadMapYaml(const std::string & yaml_filename)
 {
-  YAML::Node doc = YAML::LoadFile(expand_user_home_dir_if_needed(yaml_filename, std::getenv("HOME")));
+  YAML::Node doc = YAML::LoadFile(expand_user_home_dir_if_needed(yaml_filename, get_home_dir()));
   LoadParameters load_parameters;
 
   auto image_file_name = yaml_get_value<std::string>(doc, "image");
