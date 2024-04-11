@@ -302,8 +302,8 @@ bool Costmap2D::worldToMapContinuous(double wx, double wy, float & mx, float & m
     return false;
   }
 
-  mx = (wx - origin_x_) / resolution_ + 0.5;
-  my = (wy - origin_y_) / resolution_ + 0.5;
+  mx =  static_cast<float>((wx - origin_x_) / resolution_) + 0.5f;
+  my =  static_cast<float>((wy - origin_y_) / resolution_) + 0.5f;
 
   if (mx < size_x_ && my < size_y_) {
     return true;
