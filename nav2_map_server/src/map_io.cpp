@@ -125,20 +125,18 @@ std::string get_home_dir()
   return std::string{};
 }
 
-std::string expand_user_home_dir_if_needed(std::string  yaml_filename, std::string home_variable_value)
+std::string expand_user_home_dir_if_needed(
+  std::string  yaml_filename,
+  std::string home_variable_value)
 {
-  if (yaml_filename.size() < 2 or not (yaml_filename[0] == '~' and  yaml_filename[1] == '/'))
-  {
+  if (yaml_filename.size() < 2 || !(yaml_filename[0] == '~' && yaml_filename[1] == '/')) {
     return yaml_filename;
   }
-  
-  if (home_variable_value.empty())
-  {
+  if (home_variable_value.empty()) {
     std::cout << "[INFO] [map_io]: Map yaml file name starts with '~/' but no HOME variable set. \n"
               << "[INFO] [map_io] User home dir will be not expanded \n";
     return yaml_filename;
   }
-  
   const std::string prefix{home_variable_value};
   return yaml_filename.replace(0, 1, prefix);
 }
@@ -323,7 +321,6 @@ LOAD_MAP_STATUS loadMapFromYaml(
       " for reason: " << e.what() << std::endl;
     return INVALID_MAP_METADATA;
   }
-
   try {
     loadMapFromFile(load_parameters, map);
   } catch (std::exception & e) {

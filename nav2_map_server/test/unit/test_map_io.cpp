@@ -316,14 +316,13 @@ TEST(HomeUserExpanderTestSuite, homeUserExpanderShouldNotChangeInputStringWhenSh
 {
   const std::string emptyFileName{};
   ASSERT_EQ(emptyFileName, expand_user_home_dir_if_needed(emptyFileName, "/home/user"));
-  
 }
 
-TEST(HomeUserExpanderTestSuite, homeUserExpanderShouldNotChangeInputStringWhenInputStringDoesNotStartWithHomeSequence)
+TEST(HomeUserExpanderTestSuite,
+  homeUserExpanderShouldNotChangeInputStringWhenInputStringDoesNotStartWithHomeSequence)
 {
   const std::string fileName{"valid_file.yaml"};
   ASSERT_EQ(fileName, expand_user_home_dir_if_needed(fileName, "/home/user"));
-  
 }
 
 TEST(HomeUserExpanderTestSuite, homeUserExpanderShouldNotChangeInputStringWhenHomeVariableNotFound)
