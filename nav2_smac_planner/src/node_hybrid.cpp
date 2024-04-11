@@ -36,15 +36,13 @@ namespace nav2_smac_planner
 
 // defining static member for all instance to share
 LookupTable NodeHybrid::obstacle_heuristic_lookup_table;
-double NodeHybrid::travel_distance_cost = sqrt(2);
+float NodeHybrid::travel_distance_cost = sqrtf(2.0f);
 HybridMotionTable NodeHybrid::motion_table;
 float NodeHybrid::size_lookup = 25;
 LookupTable NodeHybrid::dist_heuristic_lookup_table;
-nav2_costmap_2d::Costmap2D * NodeHybrid::sampled_costmap = nullptr;
 std::shared_ptr<nav2_costmap_2d::Costmap2DROS> NodeHybrid::costmap_ros = nullptr;
 std::shared_ptr<nav2_costmap_2d::InflationLayer> NodeHybrid::inflation_layer = nullptr;
 
-CostmapDownsampler NodeHybrid::downsampler;
 ObstacleHeuristicQueue NodeHybrid::obstacle_heuristic_queue;
 
 // Each of these tables are the projected motion models through
@@ -490,35 +488,37 @@ void NodeHybrid::resetObstacleHeuristic(
   // than 0.05 * normalized cost. Since this is just a search prior, there's no loss in generality
   costmap_ros = costmap_ros_i;
   inflation_layer = nav2_costmap_2d::InflationLayer::getInflationLayer(costmap_ros);
-  sampled_costmap = costmap_ros->getCostmap();
-  if (motion_table.downsample_obstacle_heuristic) {
-    std::weak_ptr<nav2_util::LifecycleNode> ptr;
-    downsampler.on_configure(ptr, "fake_frame", "fake_topic", sampled_costmap, 2.0, true);
-    downsampler.on_activate();
-    sampled_costmap = downsampler.downsample(2.0);
-  }
+  auto costmap = costmap_ros->getCostmap();
 
   // Clear lookup table
-  unsigned int size = sampled_costmap->getSizeInCellsX() * sampled_costmap->getSizeInCellsY();
+  unsigned int size = 0u;
+  unsigned int size_x = 0u;
+  if (motion_table.downsample_obstacle_heuristic) {
+    size_x = ceil(static_cast<float>(costmap->getSizeInCellsX()) / 2.0f);
+    size = size_x *
+      ceil(static_cast<float>(costmap->getSizeInCellsY()) / 2.0f);
+  } else {
+    size_x = costmap->getSizeInCellsX();
+    size = size_x * costmap->getSizeInCellsY();
+  }
+
   if (obstacle_heuristic_lookup_table.size() == size) {
     // must reset all values
     std::fill(
       obstacle_heuristic_lookup_table.begin(),
-      obstacle_heuristic_lookup_table.end(), 0.0);
+      obstacle_heuristic_lookup_table.end(), 0.0f);
   } else {
     unsigned int obstacle_size = obstacle_heuristic_lookup_table.size();
-    obstacle_heuristic_lookup_table.resize(size, 0.0);
+    obstacle_heuristic_lookup_table.resize(size, 0.0f);
     // must reset values for non-constructed indices
     std::fill_n(
-      obstacle_heuristic_lookup_table.begin(), obstacle_size, 0.0);
+      obstacle_heuristic_lookup_table.begin(), obstacle_size, 0.0f);
   }
 
   obstacle_heuristic_queue.clear();
-  obstacle_heuristic_queue.reserve(
-    sampled_costmap->getSizeInCellsX() * sampled_costmap->getSizeInCellsY());
+  obstacle_heuristic_queue.reserve(size);
 
   // Set initial goal point to queue from. Divided by 2 due to downsampled costmap.
-  const unsigned int size_x = sampled_costmap->getSizeInCellsX();
   unsigned int goal_index;
   if (motion_table.downsample_obstacle_heuristic) {
     goal_index = floor(goal_y / 2.0f) * size_x + floor(goal_x / 2.0f);
@@ -563,8 +563,17 @@ float NodeHybrid::getObstacleHeuristic(
   const float & cost_penalty)
 {
   // If already expanded, return the cost
-  const unsigned int size_x = sampled_costmap->getSizeInCellsX();
+  auto costmap = costmap_ros->getCostmap();
   const bool is_circular = costmap_ros->getUseRadius();
+  unsigned int size_x = 0u;
+  unsigned int size_y = 0u;
+  if (motion_table.downsample_obstacle_heuristic) {
+    size_x = ceil(static_cast<float>(costmap->getSizeInCellsX()) / 2.0f);
+    size_y = ceil(static_cast<float>(costmap->getSizeInCellsY()) / 2.0f);
+  } else {
+    size_x = costmap->getSizeInCellsX();
+    size_y = costmap->getSizeInCellsY();
+  }
 
   // Divided by 2 due to downsampled costmap.
   unsigned int start_y, start_x;
@@ -601,8 +610,7 @@ float NodeHybrid::getObstacleHeuristic(
     ObstacleHeuristicComparator{});
 
   const int size_x_int = static_cast<int>(size_x);
-  const unsigned int size_y = sampled_costmap->getSizeInCellsY();
-  const float sqrt2 = sqrt(2.0f);
+  const float sqrt2 = sqrtf(2.0f);
   float c_cost, cost, travel_cost, new_cost, existing_cost;
   unsigned int idx, mx, my;
   unsigned int new_idx = 0;
@@ -633,7 +641,30 @@ float NodeHybrid::getObstacleHeuristic(
 
       // if neighbor path is better and non-lethal, set new cost and add to queue
       if (new_idx < size_x * size_y) {
-        cost = static_cast<float>(sampled_costmap->getCost(new_idx));
+        if (downsample_H) {
+          // Get costmap values as if downsampled
+          unsigned int y_offset = (new_idx / size_x) * 2;
+          unsigned int x_offset = (new_idx - ((new_idx / size_x) * size_x)) * 2;
+          cost = costmap->getCost(x_offset, y_offset);
+          for (unsigned int i = 0; i < 2u; ++i) {
+            unsigned int mxd = x_offset + i;
+            if (mxd >= costmap->getSizeInCellsX()) {
+              continue;
+            }
+            for (unsigned int j = 0; j < 2u; ++j) {
+              unsigned int myd = y_offset + j;
+              if (myd >= costmap->getSizeInCellsY()) {
+                continue;
+              }
+              if (i == 0 && j == 0) {
+                continue;
+              }
+              cost = std::min(cost, static_cast<float>(costmap->getCost(mxd, myd)));
+            }
+          }
+        } else {
+          cost = static_cast<float>(costmap->getCost(new_idx));
+        }
 
         if (!is_circular) {
           // Adjust cost value if using SE2 footprint checks
