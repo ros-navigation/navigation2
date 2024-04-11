@@ -20,6 +20,14 @@ For detailed instructions on how to:
 
 Please visit our [documentation site](https://navigation.ros.org/). [Please visit our community Slack here](https://join.slack.com/t/navigation2/shared_invite/zt-hu52lnnq-cKYjuhTY~sEMbZXL8p9tOw) (if this link does not work, please contact maintainers to reactivate).
 
+## Changes made from upstream
+
+* Reverted to the deprecated `create_client()` service factory-function overload that uses `rmw_qos_profile_services_default`. The replacement overload that uses `rclcpp::SystemDefaultsQoS()` was never back-ported to Humble. See [ros-planning/navigation2#3287](https://github.com/ros-planning/navigation2/issues/3287) for more information.
+* Removed `launch.substitution` features that are unavailable in Humble.
+* Replaced `#include "cp_bridge/cv_bridge.hpp"` with `#include "cp_bridge/cv_bridge.h"` since the former header file is unavailable in Humble.
+* Removed GitHub workflows and CI configurations because we don't need them.
+* Removed issue and PR templates in place of our own.
+
 ## Citation
 
 If you use the navigation framework, an algorithm from this repository, or ideas from it
