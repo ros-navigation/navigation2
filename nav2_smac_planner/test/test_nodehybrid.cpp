@@ -50,7 +50,7 @@ TEST(NodeHybridTest, test_node_hybrid)
 
   // Check defaulted constants
   nav2_smac_planner::NodeHybrid testA(49);
-  EXPECT_EQ(testA.travel_distance_cost, sqrt(2));
+  EXPECT_EQ(testA.travel_distance_cost, sqrtf(2));
 
   nav2_smac_planner::NodeHybrid::initMotionModel(
     nav2_smac_planner::MotionModel::DUBIN, size_x, size_y, size_theta, info);
