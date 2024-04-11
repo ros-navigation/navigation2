@@ -318,7 +318,8 @@ TEST(HomeUserExpanderTestSuite, homeUserExpanderShouldNotChangeInputStringWhenSh
   ASSERT_EQ(emptyFileName, expand_user_home_dir_if_needed(emptyFileName, "/home/user"));
 }
 
-TEST(HomeUserExpanderTestSuite,
+TEST(
+  HomeUserExpanderTestSuite,
   homeUserExpanderShouldNotChangeInputStringWhenInputStringDoesNotStartWithHomeSequence)
 {
   const std::string fileName{"valid_file.yaml"};
