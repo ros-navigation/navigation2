@@ -118,15 +118,14 @@ T yaml_get_value(const YAML::Node & node, const std::string & key)
 
 std::string get_home_dir()
 {
-  if (const char* home_dir = std::getenv("HOME"))
-  {
+  if (const char* home_dir = std::getenv("HOME")) {
      return std::string{home_dir};
   }
   return std::string{};
 }
 
 std::string expand_user_home_dir_if_needed(
-  std::string  yaml_filename,
+  std::string yaml_filename,
   std::string home_variable_value)
 {
   if (yaml_filename.size() < 2 || !(yaml_filename[0] == '~' && yaml_filename[1] == '/')) {
