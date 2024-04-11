@@ -118,8 +118,8 @@ T yaml_get_value(const YAML::Node & node, const std::string & key)
 
 std::string get_home_dir()
 {
-  if (const char* home_dir = std::getenv("HOME")) {
-     return std::string{home_dir};
+  if (const char * home_dir = std::getenv("HOME")) {
+    return std::string{home_dir};
   }
   return std::string{};
 }
