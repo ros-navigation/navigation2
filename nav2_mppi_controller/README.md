@@ -175,7 +175,7 @@ Uses inflated costmap cost directly to avoid obstacles
 #### Velocity Deadband Critic
  | Parameter             | Type     | Definition                                                                                                  |
  | ---------------       | ------   | ----------------------------------------------------------------------------------------------------------- |
- | cost_weight           | double   | Default 100.0. Weight to apply to critic term. (100.0 fits for turtlebot3, 35.0 for linorobot2)             |
+ | cost_weight           | double   | Default 35.0. Weight to apply to critic term.                                                               |
  | cost_power            | int      | Default 1. Power order to apply to term.                                                                    |
  | deadband_velocities   | double[] | Default [0.0, 0.0, 0.0].  The array of deadband velocities [vx, vz, wz]. A zero array indicates that the critic will take no action.      |
 
