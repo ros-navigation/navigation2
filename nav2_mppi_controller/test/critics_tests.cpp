@@ -30,6 +30,7 @@
 #include "nav2_mppi_controller/critics/path_follow_critic.hpp"
 #include "nav2_mppi_controller/critics/prefer_forward_critic.hpp"
 #include "nav2_mppi_controller/critics/twirling_critic.hpp"
+#include "nav2_mppi_controller/critics/velocity_deadband_critic.hpp"
 #include "utils_test.cpp"  // NOLINT
 
 // Tests the various critic plugin functions
@@ -606,4 +607,53 @@ TEST(CriticTests, PathAlignCritic)
   path.y = 1.5 * xt::ones<float>({22});
   critic.score(data);
   EXPECT_NEAR(xt::sum(costs, immediate)(), 0.0, 1e-6);
+}
+
+TEST(CriticTests, VelocityDeadbandCritic)
+{
+  // Standard preamble
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", "dummy_costmap", true);
+  ParametersHandler param_handler(node);
+  auto getParam = param_handler.getParamGetter("critic");
+  std::vector<double> deadband_velocities_;
+  getParam(deadband_velocities_, "deadband_velocities", std::vector<double>{0.08, 0.08, 0.08});
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+
+  models::State state;
+  models::ControlSequence control_sequence;
+  models::Trajectories generated_trajectories;
+  models::Path path;
+  xt::xtensor<float, 1> costs = xt::zeros<float>({1000});
+  float model_dt = 0.1;
+  CriticData data =
+  {state, generated_trajectories, path, costs, model_dt, false, nullptr, nullptr, std::nullopt,
+    std::nullopt};
+  data.motion_model = std::make_shared<OmniMotionModel>();
+
+  // Initialization testing
+
+  // Make sure initializes correctly and that defaults are reasonable
+  VelocityDeadbandCritic critic;
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  EXPECT_EQ(critic.getName(), "critic");
+
+  // Scoring testing
+
+  // provide velocities out of deadband bounds, should not have any costs
+  state.vx = 0.80 * xt::ones<float>({1000, 30});
+  state.vy = 0.60 * xt::ones<float>({1000, 30});
+  state.wz = 0.80 * xt::ones<float>({1000, 30});
+  critic.score(data);
+  EXPECT_NEAR(xt::sum(costs, immediate)(), 0, 1e-6);
+
+  // Test cost value
+  state.vx = 0.01 * xt::ones<float>({1000, 30});
+  state.vy = 0.02 * xt::ones<float>({1000, 30});
+  state.wz = 0.021 * xt::ones<float>({1000, 30});
+  critic.score(data);
+  // 35.0 weight * 0.1 model_dt * (0.07 + 0.06 + 0.059) * 30 timesteps = 56.7
+  EXPECT_NEAR(costs(1), 19.845, 0.01);
 }
