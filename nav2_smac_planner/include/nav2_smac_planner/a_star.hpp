@@ -129,8 +129,8 @@ public:
    * @param dim_3 The node dim_3 index of the goal
    */
   void setGoal(
-    const unsigned int & mx,
-    const unsigned int & my,
+    const float & mx,
+    const float & my,
     const unsigned int & dim_3);
 
   /**
@@ -140,8 +140,8 @@ public:
    * @param dim_3 The node dim_3 index of the goal
    */
   void setStart(
-    const unsigned int & mx,
-    const unsigned int & my,
+    const float & mx,
+    const float & my,
     const unsigned int & dim_3);
 
   /**
