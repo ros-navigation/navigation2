@@ -209,7 +209,7 @@ controller_server:
         time_step: 3
       AckermannConstraints:
         min_turning_r: 0.2
-      critics: ["ConstraintCritic", "CostCritic", "GoalCritic", "GoalAngleCritic", "PathAlignCritic", "PathFollowCritic", "PathAngleCritic", "PreferForwardCritic", "VelocityDeadbandCritic"]
+      critics: ["ConstraintCritic", "CostCritic", "GoalCritic", "GoalAngleCritic", "PathAlignCritic", "PathFollowCritic", "PathAngleCritic", "PreferForwardCritic"]
       ConstraintCritic:
         enabled: true
         cost_power: 1
@@ -271,11 +271,11 @@ controller_server:
         threshold_to_consider: 0.5
         max_angle_to_furthest: 1.0
         forward_preference: true
-      VelocityDeadbandCritic:
-        enabled: false
-        cost_power: 1
-        cost_weight: 100.0
-        deadband_velocities: [0.08, 0.08, 0.08]
+      # VelocityDeadbandCritic:
+      #   enabled: true
+      #   cost_power: 1
+      #   cost_weight: 35.0
+      #   deadband_velocities: [0.05, 0.05, 0.05]
       # TwirlingCritic:
       #   enabled: true
       #   twirling_cost_power: 1
