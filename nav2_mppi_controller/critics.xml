@@ -41,5 +41,9 @@
       <description>mppi critic for incentivizing moving within kinematic and dynamic bounds</description>
     </class>
 
+    <class type="mppi::critics::VelocityDeadbandCritic" base_class_type="mppi::critics::CriticFunction">
+      <description>mppi critic for restricting command velocities in deadband range</description>
+    </class>
+
   </library>
 </class_libraries>
