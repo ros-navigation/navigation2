@@ -654,6 +654,6 @@ TEST(CriticTests, VelocityDeadbandCritic)
   state.vy = 0.02 * xt::ones<float>({1000, 30});
   state.wz = 0.021 * xt::ones<float>({1000, 30});
   critic.score(data);
-  // 100.0 weight * 0.1 model_dt * (0.07 + 0.06 + 0.059) * 30 timesteps = 56.7
-  EXPECT_NEAR(costs(1), 56.7, 0.01);
+  // 35.0 weight * 0.1 model_dt * (0.07 + 0.06 + 0.059) * 30 timesteps = 56.7
+  EXPECT_NEAR(costs(1), 19.845, 0.01);
 }
