@@ -548,6 +548,9 @@ ObstacleLayer::updateCosts(
     case 1:  // Maximum
       updateWithMax(master_grid, min_i, min_j, max_i, max_j);
       break;
+    case 2:  // Minimum
+      updateWithMin(master_grid, min_i, min_j, max_i, max_j);
+      break;
     default:  // Nothing
       break;
   }
