@@ -186,15 +186,21 @@ std::vector<geometry_msgs::msg::PoseStamped> WaypointFollower::getLatestGoalPose
   const T & action_server)
 {
   std::vector<geometry_msgs::msg::PoseStamped> poses;
+  const auto current_goal = action_server->get_current_goal();
+
+  if (!current_goal) {
+    RCLCPP_ERROR(get_logger(), "No goal specified");
+    return poses;
+  }
 
   // compile time static check to decide which block of code to be built
   if constexpr (std::is_same<T, std::unique_ptr<ActionServer>>::value) {
     // If normal waypoint following callback was called, we build here
-    poses = action_server->get_current_goal()->poses;
+    poses = current_goal->poses;
   } else {
     // If GPS waypoint following callback was called, we build here
     poses = convertGPSPosesToMapPoses(
-      action_server->get_current_goal()->gps_poses);
+      current_goal->gps_poses);
   }
   return poses;
 }
