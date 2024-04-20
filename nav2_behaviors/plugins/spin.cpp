@@ -92,6 +92,7 @@ ResultStatus Spin::onRun(const std::shared_ptr<const SpinActionGoal> command)
 
   command_time_allowance_ = command->time_allowance;
   end_time_ = steady_clock_.now() + command_time_allowance_;
+  check_local_costmap_ = command->check_local_costmap;
 
   return ResultStatus{Status::SUCCEEDED, SpinActionGoal::NONE};
 }
@@ -146,7 +147,7 @@ ResultStatus Spin::onCycleUpdate()
   pose2d.y = current_pose.pose.position.y;
   pose2d.theta = tf2::getYaw(current_pose.pose.orientation);
 
-  if (!isCollisionFree(relative_yaw_, cmd_vel.get(), pose2d)) {
+  if (check_local_costmap_ && !isCollisionFree(relative_yaw_, cmd_vel.get(), pose2d)) {
     stopRobot();
     RCLCPP_WARN(logger_, "Collision Ahead - Exiting Spin");
     return ResultStatus{Status::FAILED, SpinActionGoal::COLLISION_AHEAD};

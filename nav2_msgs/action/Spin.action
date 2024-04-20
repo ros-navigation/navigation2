@@ -9,6 +9,7 @@ uint16 COLLISION_AHEAD=703
 #goal definition
 float32 target_yaw
 builtin_interfaces/Duration time_allowance
+bool check_local_costmap 
 ---
 #result definition
 builtin_interfaces/Duration total_elapsed_time

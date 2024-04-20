@@ -90,6 +90,7 @@ protected:
   double prev_yaw_;
   double relative_yaw_;
   double simulate_ahead_time_;
+  bool check_local_costmap_;
   rclcpp::Duration command_time_allowance_{0, 0};
   rclcpp::Time end_time_;
 };

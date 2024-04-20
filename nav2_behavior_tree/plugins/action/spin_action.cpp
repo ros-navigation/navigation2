@@ -37,6 +37,9 @@ void SpinAction::initialize()
   goal_.target_yaw = dist;
   goal_.time_allowance = rclcpp::Duration::from_seconds(time_allowance);
   getInput("is_recovery", is_recovery_);
+  bool check_local_costmap;
+  getInput("check_local_costmap", check_local_costmap);
+  goal_.check_local_costmap = check_local_costmap;
 
   initialized_ = true;
 }
