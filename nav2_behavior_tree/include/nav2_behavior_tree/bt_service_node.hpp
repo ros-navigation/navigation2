@@ -62,6 +62,8 @@ public:
     server_timeout_ =
       config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
     getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
+    wait_for_service_timeout_ =
+      config().blackboard->template get<std::chrono::milliseconds>("wait_for_service_timeout");
 
     // Now that we have node_ to use, create the service client for this BT service
     getInput("service_name", service_name_);
@@ -77,7 +79,7 @@ public:
     RCLCPP_DEBUG(
       node_->get_logger(), "Waiting for \"%s\" service",
       service_name_.c_str());
-    if (!service_client_->wait_for_service(1s)) {
+    if (!service_client_->wait_for_service(wait_for_service_timeout_)) {
       RCLCPP_ERROR(
         node_->get_logger(), "\"%s\" service server not available after waiting for 1 s",
         service_node_name.c_str());
@@ -248,6 +250,9 @@ protected:
 
   // The timeout value for BT loop execution
   std::chrono::milliseconds bt_loop_duration_;
+
+  // The timeout value for waiting for a service to response
+  std::chrono::milliseconds wait_for_service_timeout_;
 
   // To track the server response when a new request is sent
   std::shared_future<typename ServiceT::Response::SharedPtr> future_result_;
