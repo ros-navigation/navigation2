@@ -98,6 +98,7 @@ void PathAlignCritic::score(CriticData & data)
     traj_integrated_distance = 0.0f;
     summed_path_dist = 0.0f;
     num_samples = 0.0f;
+    path_pt = 0u;
     const auto T_x = xt::view(data.trajectories.x, t, xt::all());
     const auto T_y = xt::view(data.trajectories.y, t, xt::all());
     for (size_t p = trajectory_point_step_; p < time_steps; p += trajectory_point_step_) {
