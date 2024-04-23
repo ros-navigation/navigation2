@@ -20,6 +20,7 @@
 #include "nav_msgs/msg/odometry.hpp"
 
 #include <cmath>
+#include <iostream>
 
 namespace nav2_util
 {
@@ -75,7 +76,7 @@ bool validateMsg(const geometry_msgs::msg::Point & msg)
   return true;
 }
 
-const double epsilon = 1e-6;
+const double epsilon = 1e-4;
 bool validateMsg(const geometry_msgs::msg::Quaternion & msg)
 {
   //  check sub-type
@@ -86,10 +87,11 @@ bool validateMsg(const geometry_msgs::msg::Quaternion & msg)
 
   // logic check
   // 1> the quaternion should be normalized:
-  //     https://math.stackexchange.com/questions/1703466/normalizing-a-quaternion
-  // @todo how to ensure that accuracy issue don't affect the judgment results ?
-  // Here's a temporary method by setting Allowable Difference Range named as epsilon
-  if (abs(msg.x * msg.x + msg.y * msg.y + msg.z * msg.z + msg.w * msg.w - 1.0) <= epsilon) {
+  //        https://math.stackexchange.com/questions/1703466/normalizing-a-quaternion
+  //    @todo how to ensure that accuracy issue don't affect the judgment results ?
+  //        Here's a temporary method by setting Allowable Difference Range named as epsilon
+  //        epsilon = 1e-4 is just fine for map/costmap validation check.
+  if (abs(msg.x * msg.x + msg.y * msg.y + msg.z * msg.z + msg.w * msg.w - 1.0) >= epsilon) {
     return false;
   }
 
@@ -129,7 +131,6 @@ bool validateMsg(const nav_msgs::msg::OccupancyGrid & msg)
   // check logic
   if (msg.data.size() != msg.info.width * msg.info.height) {
     return false;                                                          // check map-size
-
   }
   return true;
 }
