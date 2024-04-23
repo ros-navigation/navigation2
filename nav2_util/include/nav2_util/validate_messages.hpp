@@ -122,9 +122,9 @@ bool validateMsg(const nav_msgs::msg::MapMetaData & msg)
 bool validateMsg(const nav_msgs::msg::OccupancyGrid & msg)
 {
   // check sub-type
-  if (validateMsg(msg.header)) {return false;}
+  if (!validateMsg(msg.header)) {return false;}
   // msg.data :  @todo any check for it ?
-  if (validateMsg(msg.info)) {return false;}
+  if (!validateMsg(msg.info)) {return false;}
 
   // check logic
   if (msg.data.size() != msg.info.width * msg.info.height) {
