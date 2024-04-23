@@ -29,6 +29,11 @@ add_executable(lifecycle_bringup
 )
 target_link_libraries(lifecycle_bringup ${library_name})
 
+add_executable(base_footprint_publisher
+  base_footprint_publisher.cpp
+)
+target_link_libraries(base_footprint_publisher ${library_name})
+
 find_package(Boost REQUIRED COMPONENTS program_options)
 
 install(TARGETS
