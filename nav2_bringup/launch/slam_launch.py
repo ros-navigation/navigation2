@@ -17,7 +17,7 @@ import os
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, GroupAction, IncludeLaunchDescription, LogInfo
+from launch.actions import DeclareLaunchArgument, GroupAction, IncludeLaunchDescription
 from launch.conditions import IfCondition, UnlessCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
@@ -87,8 +87,6 @@ def generate_launch_description():
         'log_level', default_value='info', description='log level'
     )
 
-
-
     # Nodes launching commands
     start_map_server = GroupAction(
         actions=[
@@ -123,8 +121,8 @@ def generate_launch_description():
     start_slam_toolbox_cmd = GroupAction(
 
         actions=[
-            #Remapping required to have a slam session subscribe & publish in optional namespaces B#
-            SetRemap(src= '/scan', dst= 'scan'),
+            # Remapping required to have a slam session subscribe & publish in optional namespaces
+            SetRemap(src='/scan', dst='scan'),
             SetRemap(src='/tf', dst='tf'),
             SetRemap(src='/tf_static', dst='tf_static'),
             SetRemap(src='/map', dst='map'),
@@ -138,12 +136,11 @@ def generate_launch_description():
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(slam_launch_file),
                 launch_arguments={'use_sim_time': use_sim_time,
-                                  'slam_params_file': params_file,}.items(),
-                 condition=IfCondition(has_slam_toolbox_params),
+                                  'slam_params_file': params_file}.items(),
+                condition=IfCondition(has_slam_toolbox_params),
             )
         ]
     )
-
 
     ld = LaunchDescription()
 
