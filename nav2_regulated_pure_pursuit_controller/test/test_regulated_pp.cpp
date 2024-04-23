@@ -68,6 +68,14 @@ public:
     return circleSegmentIntersection(p1, p2, r);
   }
 
+  geometry_msgs::msg::PoseStamped
+  projectCarrotPastGoalWrapper(
+    const double & dist,
+    const nav_msgs::msg::Path & path)
+  {
+    return getLookAheadPoint(dist, path, true);
+  }
+
   geometry_msgs::msg::PoseStamped getLookAheadPointWrapper(
     const double & dist, const nav_msgs::msg::Path & path)
   {
@@ -77,7 +85,8 @@ public:
   bool shouldRotateToPathWrapper(
     const geometry_msgs::msg::PoseStamped & carrot_pose, double & angle_to_path)
   {
-    return shouldRotateToPath(carrot_pose, angle_to_path);
+    double x_vel_sign = 1.0;
+    return shouldRotateToPath(carrot_pose, angle_to_path, x_vel_sign);
   }
 
   bool shouldRotateToGoalHeadingWrapper(const geometry_msgs::msg::PoseStamped & carrot_pose)
@@ -329,6 +338,115 @@ INSTANTIATE_TEST_SUITE_P(
   {3.0, -4.0}
 }
 ));
+
+TEST(RegulatedPurePursuitTest, projectCarrotPastGoal) {
+  auto ctrl = std::make_shared<BasicAPIRPP>();
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testRPP");
+  std::string name = "PathFollower";
+  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  auto costmap =
+    std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
+  rclcpp_lifecycle::State state;
+  costmap->on_configure(state);
+  ctrl->configure(node, name, tf, costmap);
+
+  double EPSILON = std::numeric_limits<float>::epsilon();
+
+  nav_msgs::msg::Path path;
+  // More than 2 poses
+  path.poses.resize(4);
+  path.poses[0].pose.position.x = 0.0;
+  path.poses[1].pose.position.x = 1.0;
+  path.poses[2].pose.position.x = 2.0;
+  path.poses[3].pose.position.x = 3.0;
+  auto pt = ctrl->projectCarrotPastGoalWrapper(10.0, path);
+  EXPECT_NEAR(pt.pose.position.x, 10.0, EPSILON);
+  EXPECT_NEAR(pt.pose.position.y, 0.0, EPSILON);
+
+  // 2 poses fwd
+  path.poses.clear();
+  path.poses.resize(2);
+  path.poses[0].pose.position.x = 2.0;
+  path.poses[1].pose.position.x = 3.0;
+  pt = ctrl->projectCarrotPastGoalWrapper(10.0, path);
+  EXPECT_NEAR(pt.pose.position.x, 10.0, EPSILON);
+  EXPECT_NEAR(pt.pose.position.y, 0.0, EPSILON);
+
+  // 2 poses at 45°
+  path.poses.clear();
+  path.poses.resize(2);
+  path.poses[0].pose.position.x = 2.0;
+  path.poses[0].pose.position.y = 2.0;
+  path.poses[1].pose.position.x = 3.0;
+  path.poses[1].pose.position.y = 3.0;
+  pt = ctrl->projectCarrotPastGoalWrapper(10.0, path);
+  EXPECT_NEAR(pt.pose.position.x, cos(45.0 * M_PI / 180) * 10.0, EPSILON);
+  EXPECT_NEAR(pt.pose.position.y, sin(45.0 * M_PI / 180) * 10.0, EPSILON);
+
+  // 2 poses at 90°
+  path.poses.clear();
+  path.poses.resize(2);
+  path.poses[0].pose.position.x = 0.0;
+  path.poses[0].pose.position.y = 2.0;
+  path.poses[1].pose.position.x = 0.0;
+  path.poses[1].pose.position.y = 3.0;
+  pt = ctrl->projectCarrotPastGoalWrapper(10.0, path);
+  EXPECT_NEAR(pt.pose.position.x, cos(90.0 * M_PI / 180) * 10.0, EPSILON);
+  EXPECT_NEAR(pt.pose.position.y, sin(90.0 * M_PI / 180) * 10.0, EPSILON);
+
+  // 2 poses at 135°
+  path.poses.clear();
+  path.poses.resize(2);
+  path.poses[0].pose.position.x = -2.0;
+  path.poses[0].pose.position.y = 2.0;
+  path.poses[1].pose.position.x = -3.0;
+  path.poses[1].pose.position.y = 3.0;
+  pt = ctrl->projectCarrotPastGoalWrapper(10.0, path);
+  EXPECT_NEAR(pt.pose.position.x, cos(135.0 * M_PI / 180) * 10.0, EPSILON);
+  EXPECT_NEAR(pt.pose.position.y, sin(135.0 * M_PI / 180) * 10.0, EPSILON);
+
+  // 2 poses bck
+  path.poses.clear();
+  path.poses.resize(2);
+  path.poses[0].pose.position.x = -2.0;
+  path.poses[1].pose.position.x = -3.0;
+  pt = ctrl->projectCarrotPastGoalWrapper(10.0, path);
+  EXPECT_NEAR(pt.pose.position.x, -10.0, EPSILON);
+  EXPECT_NEAR(pt.pose.position.y, 0.0, EPSILON);
+
+  // 2 poses at -135°
+  path.poses.clear();
+  path.poses.resize(2);
+  path.poses[0].pose.position.x = -2.0;
+  path.poses[0].pose.position.y = -2.0;
+  path.poses[1].pose.position.x = -3.0;
+  path.poses[1].pose.position.y = -3.0;
+  pt = ctrl->projectCarrotPastGoalWrapper(10.0, path);
+  EXPECT_NEAR(pt.pose.position.x, cos(-135.0 * M_PI / 180) * 10.0, EPSILON);
+  EXPECT_NEAR(pt.pose.position.y, sin(-135.0 * M_PI / 180) * 10.0, EPSILON);
+
+  // 2 poses at -90°
+  path.poses.clear();
+  path.poses.resize(2);
+  path.poses[0].pose.position.x = 0.0;
+  path.poses[0].pose.position.y = -2.0;
+  path.poses[1].pose.position.x = 0.0;
+  path.poses[1].pose.position.y = -3.0;
+  pt = ctrl->projectCarrotPastGoalWrapper(10.0, path);
+  EXPECT_NEAR(pt.pose.position.x, cos(-90.0 * M_PI / 180) * 10.0, EPSILON);
+  EXPECT_NEAR(pt.pose.position.y, sin(-90.0 * M_PI / 180) * 10.0, EPSILON);
+
+  // 2 poses at -45°
+  path.poses.clear();
+  path.poses.resize(2);
+  path.poses[0].pose.position.x = 2.0;
+  path.poses[0].pose.position.y = -2.0;
+  path.poses[1].pose.position.x = 3.0;
+  path.poses[1].pose.position.y = -3.0;
+  pt = ctrl->projectCarrotPastGoalWrapper(10.0, path);
+  EXPECT_NEAR(pt.pose.position.x, cos(-45.0 * M_PI / 180) * 10.0, EPSILON);
+  EXPECT_NEAR(pt.pose.position.y, sin(-45.0 * M_PI / 180) * 10.0, EPSILON);
+}
 
 TEST(RegulatedPurePursuitTest, lookaheadAPI)
 {

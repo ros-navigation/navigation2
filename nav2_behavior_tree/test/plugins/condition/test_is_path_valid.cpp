@@ -56,7 +56,7 @@ public:
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
     config_ = new BT::NodeConfiguration();
     config_->blackboard = BT::Blackboard::create();
-    config_->blackboard->set<rclcpp::Node::SharedPtr>("node", node_);
+    config_->blackboard->set("node", node_);
     config_->blackboard->set<std::chrono::milliseconds>(
       "server_timeout",
       std::chrono::milliseconds(10));
@@ -92,7 +92,7 @@ TEST_F(IsPathValidTestFixture, test_behavior)
 {
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <IsPathValid/>
         </BehaviorTree>

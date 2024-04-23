@@ -20,7 +20,7 @@
 #include <string>
 
 #include "utils/test_action_server.hpp"
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 #include "nav2_behavior_tree/plugins/action/goal_checker_selector_node.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "std_msgs/msg/string.hpp"
@@ -38,7 +38,7 @@ public:
     // Create the blackboard that will be shared by all of the nodes in the tree
     config_->blackboard = BT::Blackboard::create();
     // Put items on the blackboard
-    config_->blackboard->set<rclcpp::Node::SharedPtr>("node", node_);
+    config_->blackboard->set("node", node_);
 
     BT::NodeBuilder builder = [](const std::string & name, const BT::NodeConfiguration & config) {
         return std::make_unique<nav2_behavior_tree::GoalCheckerSelector>(name, config);
@@ -80,7 +80,7 @@ TEST_F(GoalCheckerSelectorTestFixture, test_custom_topic)
   // create tree
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
           <GoalCheckerSelector selected_goal_checker="{selected_goal_checker}" default_goal_checker="SimpleGoalCheck" topic_name="goal_checker_selector_custom_topic_name"/>
         </BehaviorTree>
@@ -95,7 +95,7 @@ TEST_F(GoalCheckerSelectorTestFixture, test_custom_topic)
 
   // check default value
   std::string selected_goal_checker_result;
-  config_->blackboard->get("selected_goal_checker", selected_goal_checker_result);
+  EXPECT_TRUE(config_->blackboard->get("selected_goal_checker", selected_goal_checker_result));
 
   EXPECT_EQ(selected_goal_checker_result, "SimpleGoalCheck");
 
@@ -119,7 +119,7 @@ TEST_F(GoalCheckerSelectorTestFixture, test_custom_topic)
   }
 
   // check goal_checker updated
-  config_->blackboard->get("selected_goal_checker", selected_goal_checker_result);
+  EXPECT_TRUE(config_->blackboard->get("selected_goal_checker", selected_goal_checker_result));
   EXPECT_EQ("AngularGoalChecker", selected_goal_checker_result);
 }
 
@@ -128,7 +128,7 @@ TEST_F(GoalCheckerSelectorTestFixture, test_default_topic)
   // create tree
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
           <GoalCheckerSelector selected_goal_checker="{selected_goal_checker}" default_goal_checker="GridBased"/>
         </BehaviorTree>
@@ -143,7 +143,7 @@ TEST_F(GoalCheckerSelectorTestFixture, test_default_topic)
 
   // check default value
   std::string selected_goal_checker_result;
-  config_->blackboard->get("selected_goal_checker", selected_goal_checker_result);
+  EXPECT_TRUE(config_->blackboard->get("selected_goal_checker", selected_goal_checker_result));
 
   EXPECT_EQ(selected_goal_checker_result, "GridBased");
 
@@ -167,7 +167,7 @@ TEST_F(GoalCheckerSelectorTestFixture, test_default_topic)
   }
 
   // check goal_checker updated
-  config_->blackboard->get("selected_goal_checker", selected_goal_checker_result);
+  EXPECT_TRUE(config_->blackboard->get("selected_goal_checker", selected_goal_checker_result));
   EXPECT_EQ("RRT", selected_goal_checker_result);
 }
 

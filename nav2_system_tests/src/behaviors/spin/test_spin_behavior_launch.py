@@ -60,6 +60,8 @@ def generate_launch_description():
                     'gzserver',
                     '-s',
                     'libgazebo_ros_init.so',
+                    '-s',
+                    'libgazebo_ros_factory.so',
                     '--minimal_comms',
                     world,
                 ],

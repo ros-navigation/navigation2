@@ -20,6 +20,7 @@ import yaml
 
 
 class DictItemReference:
+
     def __init__(self, dictionary, key):
         self.dictionary = dictionary
         self.dictKey = key

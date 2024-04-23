@@ -27,10 +27,12 @@ If you need professional services related to Nav2, please contact Open Navigatio
 Please thank our amazing sponsors for their generous support of Nav2 on behalf of the community to allow the project to continue to be professionally maintained, developed, and supported for the long-haul! [Open Navigation LLC](https://www.opennav.org/) provides project leadership, maintenance, development, and support services to the Nav2 & ROS community. 
 
 <p align="center">
-  <img src="doc/sponsors_may_2023.png" />
+  <img src="doc/sponsors_feb_2024.png" />
 </p>
 
 ### [Dexory](https://www.dexory.com/) develops robotics and AI logistics solutions to drive better business decisions using a digital twin of warehouses to provide inventory insights.
+
+### [Nvidia](https://www.nvidia.com/en-us/deep-learning-ai/industries/robotics/) develops GPU and AI technologies that power modern robotics, autonomous driving, data centers, gaming, and more.
 
 ### [Polymath Robotics](https://www.polymathrobotics.com/) creates safety-critical navigation systems for industrial vehicles that are radically simple to enable and deploy.
 
@@ -68,6 +70,19 @@ If you use **any** of the algorithms in Nav2 or the analysis of the algorithms i
         year={2023},
         journal = {Robotics and Autonomous Systems}
   }
+```
+
+If you use the Smac Planner (Hybrid A*, State Lattice, 2D), please cite this work in your papers!
+
+- S. Macenski, M. Booker, J. Wallace, [**Open-Source, Cost-Aware Kinematically Feasible Planning for Mobile and Surface Robotics**](https://arxiv.org/abs/2401.13078). 2024.
+
+```bibtex
+@article{macenski2024smac,
+      title={Open-Source, Cost-Aware Kinematically Feasible Planning for Mobile and Surface Robotics}, 
+      author={Steve Macenski and Matthew Booker and Josh Wallace},
+      year={2024},
+      journal = {Arxiv}
+}
 ```
 
 If you use the Regulated Pure Pursuit Controller algorithm or software from this repository, please cite this work in your papers!

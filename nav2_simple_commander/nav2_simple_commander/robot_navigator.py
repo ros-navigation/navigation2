@@ -51,6 +51,7 @@ class TaskResult(Enum):
 
 
 class BasicNavigator(Node):
+
     def __init__(self, node_name='basic_navigator', namespace=''):
         super().__init__(node_name=node_name, namespace=namespace)
         self.initial_pose = PoseStamped()
@@ -495,7 +496,7 @@ class BasicNavigator(Node):
 
     def getPathThroughPoses(self, start, goals, planner_id='', use_start=False):
         """Send a `ComputePathThroughPoses` action request."""
-        rtn = self.__getPathThroughPosesImpl(start, goals, planner_id, use_start)
+        rtn = self._getPathThroughPosesImpl(start, goals, planner_id, use_start)
 
         if self.status != GoalStatus.STATUS_SUCCEEDED:
             self.warn(f'Getting path failed with status code: {self.status}')

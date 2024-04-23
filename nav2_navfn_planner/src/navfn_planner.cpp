@@ -129,7 +129,8 @@ NavfnPlanner::cleanup()
 
 nav_msgs::msg::Path NavfnPlanner::createPlan(
   const geometry_msgs::msg::PoseStamped & start,
-  const geometry_msgs::msg::PoseStamped & goal)
+  const geometry_msgs::msg::PoseStamped & goal,
+  std::function<bool()> cancel_checker)
 {
 #ifdef BENCHMARK_TESTING
   steady_clock::time_point a = steady_clock::now();
@@ -183,7 +184,7 @@ nav_msgs::msg::Path NavfnPlanner::createPlan(
     return path;
   }
 
-  if (!makePlan(start.pose, goal.pose, tolerance_, path)) {
+  if (!makePlan(start.pose, goal.pose, tolerance_, cancel_checker, path)) {
     throw nav2_core::NoValidPathCouldBeFound(
             "Failed to create plan with tolerance of: " + std::to_string(tolerance_) );
   }
@@ -214,6 +215,7 @@ bool
 NavfnPlanner::makePlan(
   const geometry_msgs::msg::Pose & start,
   const geometry_msgs::msg::Pose & goal, double tolerance,
+  std::function<bool()> cancel_checker,
   nav_msgs::msg::Path & plan)
 {
   // clear the plan, just in case
@@ -261,9 +263,9 @@ NavfnPlanner::makePlan(
   planner_->setStart(map_goal);
   planner_->setGoal(map_start);
   if (use_astar_) {
-    planner_->calcNavFnAstar();
+    planner_->calcNavFnAstar(cancel_checker);
   } else {
-    planner_->calcNavFnDijkstra(true);
+    planner_->calcNavFnDijkstra(cancel_checker, true);
   }
 
   double resolution = costmap_->getResolution();

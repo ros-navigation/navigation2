@@ -20,7 +20,7 @@
 #include <memory>
 #include <set>
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 #include "rclcpp/rclcpp.hpp"
 
 #include "test_transform_handler.hpp"
@@ -43,10 +43,10 @@ public:
     // Create the blackboard that will be shared by all of the nodes in the tree
     config_->blackboard = BT::Blackboard::create();
     // Put items on the blackboard
-    config_->blackboard->set<rclcpp::Node::SharedPtr>(
+    config_->blackboard->set(
       "node",
       node_);
-    config_->blackboard->set<std::shared_ptr<tf2_ros::Buffer>>(
+    config_->blackboard->set(
       "tf_buffer",
       transform_handler_->getBuffer());
     config_->blackboard->set<std::chrono::milliseconds>(
@@ -55,7 +55,7 @@ public:
     config_->blackboard->set<std::chrono::milliseconds>(
       "bt_loop_duration",
       std::chrono::milliseconds(10));
-    config_->blackboard->set<bool>("initial_pose_received", false);
+    config_->blackboard->set("initial_pose_received", false);
 
     transform_handler_->activate();
     transform_handler_->waitForTransform();

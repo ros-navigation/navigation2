@@ -17,7 +17,7 @@
 #include <memory>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "behaviortree_cpp_v3/decorator_node.h"
+#include "behaviortree_cpp/decorator_node.h"
 
 #include "nav2_behavior_tree/plugins/decorator/goal_updater_node.hpp"
 
@@ -84,7 +84,7 @@ GoalUpdater::callback_updated_goal(const geometry_msgs::msg::PoseStamped::Shared
 
 }  // namespace nav2_behavior_tree
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
   factory.registerNodeType<nav2_behavior_tree::GoalUpdater>("GoalUpdater");

@@ -52,16 +52,26 @@ public:
    */
   virtual void predict(models::State & state)
   {
-    using namespace xt::placeholders;  // NOLINT
-    xt::noalias(xt::view(state.vx, xt::all(), xt::range(1, _))) =
-      xt::view(state.cvx, xt::all(), xt::range(0, -1));
+    // Previously completed via tensor views, but found to be 10x slower
+    // using namespace xt::placeholders;  // NOLINT
+    // xt::noalias(xt::view(state.vx, xt::all(), xt::range(1, _))) =
+    //   xt::noalias(xt::view(state.cvx, xt::all(), xt::range(0, -1)));
+    // xt::noalias(xt::view(state.wz, xt::all(), xt::range(1, _))) =
+    //   xt::noalias(xt::view(state.cwz, xt::all(), xt::range(0, -1)));
+    // if (isHolonomic()) {
+    //   xt::noalias(xt::view(state.vy, xt::all(), xt::range(1, _))) =
+    //     xt::noalias(xt::view(state.cvy, xt::all(), xt::range(0, -1)));
+    // }
 
-    xt::noalias(xt::view(state.wz, xt::all(), xt::range(1, _))) =
-      xt::view(state.cwz, xt::all(), xt::range(0, -1));
-
-    if (isHolonomic()) {
-      xt::noalias(xt::view(state.vy, xt::all(), xt::range(1, _))) =
-        xt::view(state.cvy, xt::all(), xt::range(0, -1));
+    const bool is_holo = isHolonomic();
+    for (unsigned int i = 0; i != state.vx.shape(0); i++) {
+      for (unsigned int j = 1; j != state.vx.shape(1); j++) {
+        state.vx(i, j) = state.cvx(i, j - 1);
+        state.wz(i, j) = state.cwz(i, j - 1);
+        if (is_holo) {
+          state.vy(i, j) = state.cvy(i, j - 1);
+        }
+      }
     }
   }
 

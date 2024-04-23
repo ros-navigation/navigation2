@@ -18,7 +18,7 @@
 #include <chrono>
 #include <string>
 
-#include "behaviortree_cpp_v3/decorator_node.h"
+#include "behaviortree_cpp/decorator_node.h"
 
 namespace nav2_behavior_tree
 {
@@ -37,6 +37,11 @@ public:
   RateController(
     const std::string & name,
     const BT::NodeConfiguration & conf);
+
+  /**
+   * @brief Function to read parameters and initialize class variables
+   */
+  void initialize();
 
   /**
    * @brief Creates list of BT ports
@@ -59,6 +64,7 @@ private:
   std::chrono::time_point<std::chrono::high_resolution_clock> start_;
   double period_;
   bool first_time_;
+  bool initialized_;
 };
 
 }  // namespace nav2_behavior_tree

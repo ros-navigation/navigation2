@@ -19,7 +19,7 @@
 #include <memory>
 #include <utility>
 
-#include "behaviortree_cpp_v3/loggers/abstract_logger.h"
+#include "behaviortree_cpp/loggers/abstract_logger.h"
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_msgs/msg/behavior_tree_log.hpp"
 #include "nav2_msgs/msg/behavior_tree_status_change.h"

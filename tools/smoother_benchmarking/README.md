@@ -18,7 +18,7 @@ planner_server:
     expected_planner_frequency: 20.0
     planner_plugins: ["SmacHybrid"]
     SmacHybrid:
-      plugin: "nav2_smac_planner/SmacPlannerHybrid"
+      plugin: "nav2_smac_planner::SmacPlannerHybrid"
       tolerance: 0.5
       motion_model_for_search: "DUBIN" # default, non-reverse motion
       smooth_path: false # should be disabled for experiment
