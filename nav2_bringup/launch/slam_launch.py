@@ -21,7 +21,7 @@ from launch.actions import DeclareLaunchArgument, GroupAction, IncludeLaunchDesc
 from launch.conditions import IfCondition, UnlessCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
-from launch_ros.actions import Node, SetParameter
+from launch_ros.actions import Node, SetParameter, SetRemap
 from launch_ros.descriptions import ParameterFile
 from nav2_common.launch import HasNodeParams, RewrittenYaml
 
@@ -88,7 +88,6 @@ def generate_launch_description():
     )
 
     # Nodes launching commands
-
     start_map_server = GroupAction(
         actions=[
             SetParameter('use_sim_time', use_sim_time),
@@ -119,19 +118,28 @@ def generate_launch_description():
         source_file=params_file, node_name='slam_toolbox'
     )
 
-    start_slam_toolbox_cmd = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(slam_launch_file),
-        launch_arguments={'use_sim_time': use_sim_time}.items(),
-        condition=UnlessCondition(has_slam_toolbox_params),
-    )
+    start_slam_toolbox_cmd = GroupAction(
 
-    start_slam_toolbox_cmd_with_params = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(slam_launch_file),
-        launch_arguments={
-            'use_sim_time': use_sim_time,
-            'slam_params_file': params_file,
-        }.items(),
-        condition=IfCondition(has_slam_toolbox_params),
+        actions=[
+            # Remapping required to have a slam session subscribe & publish in optional namespaces
+            SetRemap(src='/scan', dst='scan'),
+            SetRemap(src='/tf', dst='tf'),
+            SetRemap(src='/tf_static', dst='tf_static'),
+            SetRemap(src='/map', dst='map'),
+
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(slam_launch_file),
+                launch_arguments={'use_sim_time': use_sim_time}.items(),
+                condition=UnlessCondition(has_slam_toolbox_params),
+            ),
+
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(slam_launch_file),
+                launch_arguments={'use_sim_time': use_sim_time,
+                                  'slam_params_file': params_file}.items(),
+                condition=IfCondition(has_slam_toolbox_params),
+            )
+        ]
     )
 
     ld = LaunchDescription()
@@ -149,6 +157,5 @@ def generate_launch_description():
 
     # Running SLAM Toolbox (Only one of them will be run)
     ld.add_action(start_slam_toolbox_cmd)
-    ld.add_action(start_slam_toolbox_cmd_with_params)
 
     return ld
