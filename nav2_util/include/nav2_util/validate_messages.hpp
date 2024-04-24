@@ -16,12 +16,12 @@
 #ifndef  NAV2_UTIL__VALIDATE_MESSAGES_HPP_
 #define  NAV2_UTIL__VALIDATE_MESSAGES_HPP_
 
+#include <cmath>
+#include <iostream>
 
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 
-#include <cmath>
-#include <iostream>
 
 // @brief Validation Check
 //  Check recieved message is safe or not for the nav2-system
@@ -141,7 +141,7 @@ bool validateMsg(const nav_msgs::msg::OccupancyGrid & msg)
 }
 
 
-} // namespace nav2_util
+}  //  namespace nav2_util
 
 
 #endif  // NAV2_UTIL__VALIDATE_MESSAGES_HPP_
