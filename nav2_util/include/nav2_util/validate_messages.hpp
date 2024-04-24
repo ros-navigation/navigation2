@@ -41,12 +41,6 @@ bool validateMsg(const double & num)
 const int NSEC_PER_SEC = 1e9;  // 1 second = 1e9 nanosecond
 bool validateMsg(const builtin_interfaces::msg::Time & msg)
 {
-  /*  @brief time-stamp check
-   *  if here'a need to check message validation
-   *  it should at least have a non-zero time-stamp
-   *  otherwise, we regard it as an invalid message
-   */
-  if (msg.sec == 0 && msg.nanosec == 0) {return false;}
   if (msg.nanosec >= NSEC_PER_SEC) {
     return false;                                      // invalid nanosec-stamp
   }
@@ -85,12 +79,6 @@ bool validateMsg(const geometry_msgs::msg::Quaternion & msg)
   if (!validateMsg(msg.z)) {return false;}
   if (!validateMsg(msg.w)) {return false;}
 
-  // logic check
-  // 1> the quaternion should be normalized:
-  //        https://math.stackexchange.com/questions/1703466/normalizing-a-quaternion
-  //    @todo how to ensure that accuracy issue don't affect the judgment results ?
-  //        Here's a temporary method by setting Allowable Difference Range named as epsilon
-  //        epsilon = 1e-4 is just fine for map/costmap validation check.
   if (abs(msg.x * msg.x + msg.y * msg.y + msg.z * msg.z + msg.w * msg.w - 1.0) >= epsilon) {
     return false;
   }
