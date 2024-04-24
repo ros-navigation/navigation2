@@ -29,7 +29,6 @@
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "sensor_msgs/msg/range.hpp"
 #include "sensor_msgs/point_cloud2_iterator.hpp"
-#include "nav2_msgs/msg/polygons_array.hpp"
 
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
@@ -163,11 +162,11 @@ public:
 
   void publishPolygon(const rclcpp::Time & stamp)
   {
-    polygon_pub_ = this->create_publisher<geometry_msgs::msg::PolygonStamped>(
+    polygon_pub_ = this->create_publisher<geometry_msgs::msg::PolygonInstanceStamped>(
       POLYGON_TOPIC, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
 
-    std::unique_ptr<geometry_msgs::msg::PolygonStamped> msg =
-      std::make_unique<geometry_msgs::msg::PolygonStamped>();
+    std::unique_ptr<geometry_msgs::msg::PolygonInstanceStamped> msg =
+      std::make_unique<geometry_msgs::msg::PolygonInstanceStamped>();
 
     msg->header.frame_id = SOURCE_FRAME_ID;
     msg->header.stamp = stamp;
@@ -176,20 +175,20 @@ public:
     point.x = 1.0;
     point.y = -1.0;
     point.z = 0.0;
-    msg->polygon.points.push_back(point);
+    msg->polygon.polygon.points.push_back(point);
     point.x = 1.0;
     point.y = 1.0;
     point.z = 0.0;
-    msg->polygon.points.push_back(point);
+    msg->polygon.polygon.points.push_back(point);
     point.x = -1.0;
     point.y = 1.0;
     point.z = 0.0;
-    msg->polygon.points.push_back(point);
+    msg->polygon.polygon.points.push_back(point);
     point.x = -1.0;
     point.y = -1.0;
     point.z = 0.0;
-    msg->polygon.points.push_back(point);
-
+    msg->polygon.polygon.points.push_back(point);
+    msg->polygon.id = 1u;
     polygon_pub_->publish(std::move(msg));
   }
 
@@ -197,7 +196,7 @@ private:
   rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr scan_pub_;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pointcloud_pub_;
   rclcpp::Publisher<sensor_msgs::msg::Range>::SharedPtr range_pub_;
-  rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_pub_;
+  rclcpp::Publisher<geometry_msgs::msg::PolygonInstanceStamped>::SharedPtr polygon_pub_;
 };  // TestNode
 
 class ScanWrapper : public nav2_collision_monitor::Scan

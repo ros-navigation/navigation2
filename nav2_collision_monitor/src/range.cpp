@@ -69,7 +69,7 @@ void Range::configure()
 
 bool Range::getData(
   const rclcpp::Time & curr_time,
-  std::vector<Point> & data) const
+  std::vector<Point> & data)
 {
   // Ignore data from the source if it is not being published yet or
   // not being published for a long time

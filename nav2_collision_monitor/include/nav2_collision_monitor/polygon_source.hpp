@@ -19,6 +19,7 @@
 #include <vector>
 #include <string>
 
+#include "geometry_msgs/msg/polygon_instance_stamped.hpp"
 #include "geometry_msgs/msg/polygon_stamped.hpp"
 
 #include "nav2_collision_monitor/source.hpp"
@@ -73,10 +74,10 @@ public:
    */
   bool getData(
     const rclcpp::Time & curr_time,
-    std::vector<Point> & data) const;
+    std::vector<Point> & data);
 
   /**
-   * @brief Converts a PolygonStamped to a std::vector<Point>
+   * @brief Converts a PolygonInstanceStamped to a std::vector<Point>
    * @param polygon Input Polygon to be converted
    * @param data Output vector of Point
    */
@@ -95,25 +96,25 @@ protected:
    * @brief PolygonSource data callback
    * @param msg Shared pointer to PolygonSource message
    */
-  void dataCallback(geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg);
+  void dataCallback(geometry_msgs::msg::PolygonInstanceStamped::ConstSharedPtr msg);
 
   /**
-   * @brief Checks if two polygons are similar
+   * @brief Checks if two polygons are the same
    * @param polygon1 First polygon
    * @param polygon2 Second polygon
    * @return True if polygons are similar, false otherwise
    */
-  bool arePolygonsSimilar(
-    const geometry_msgs::msg::Polygon & polygon1,
-    const geometry_msgs::msg::Polygon & polygon2) const;
+  bool areSamePolygons(
+    const geometry_msgs::msg::PolygonInstanceStamped & polygon1,
+    const geometry_msgs::msg::PolygonInstanceStamped & polygon2) const;
 
   // ----- Variables -----
 
   /// @brief PolygonSource data subscriber
-  rclcpp::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr data_sub_;
+  rclcpp::Subscription<geometry_msgs::msg::PolygonInstanceStamped>::SharedPtr data_sub_;
 
   /// @brief Latest data obtained
-  std::vector<geometry_msgs::msg::PolygonStamped> data_;
+  std::vector<geometry_msgs::msg::PolygonInstanceStamped> data_;
 
   /// @brief distance between sampled points on polygon edges
   double sampling_distance_;
