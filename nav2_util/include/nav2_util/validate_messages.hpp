@@ -1,3 +1,29 @@
+// Copyright (c) 2024 GoesM
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+
+#ifndef validate_message_HPP
+#define validate_message_HPP
+
+
+#include "nav_msgs/msg/occupancy_grid.hpp"
+#include "nav_msgs/msg/odometry.hpp"
+
+#include <cmath>
+#include <iostream>
+
+// @brief Validation Check
 //  Check recieved message is safe or not for the nav2-system
 //  For each msg-type known in nav2, we could check it as following:
 //  if(!validateMsg()) RCLCPP_ERROR(,"malformed msg. Rejecting.")
@@ -11,16 +37,6 @@
 //     1> Value Check: to avoid damaged value like like `nan`, `INF`, empty string and so on
 //     2> Logic Check: to avoid value with bad logic, like the size of `map` should be equal to `height*width`
 //     3> Any other needed condition could be joint here in future
-
-#ifndef validate_message_HPP
-#define validate_message_HPP
-
-
-#include "nav_msgs/msg/occupancy_grid.hpp"
-#include "nav_msgs/msg/odometry.hpp"
-
-#include <cmath>
-#include <iostream>
 
 namespace nav2_util
 {
