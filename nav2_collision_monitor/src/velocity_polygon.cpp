@@ -34,8 +34,9 @@ VelocityPolygon::~VelocityPolygon()
 }
 
 bool VelocityPolygon::getParameters(
-  std::string & /*polygon_sub_topic*/, std::string & polygon_pub_topic,
-  std::string & /*footprint_topic*/)
+  std::string & polygon_sub_topic,
+  std::string & polygon_pub_topic,
+  std::string & footprint_topic)
 {
   auto node = node_.lock();
   if (!node) {
@@ -43,7 +44,7 @@ bool VelocityPolygon::getParameters(
   }
   clock_ = node->get_clock();
 
-  if (!getCommonParameters(polygon_pub_topic)) {
+  if (!getCommonParameters(polygon_sub_topic, polygon_pub_topic, footprint_topic, false)) {
     return false;
   }
 
