@@ -117,6 +117,17 @@ public:
     polygon_pub_->publish(std::move(msg));
   }
 
+  void publishRadius()
+  {
+    radius_pub_ = this->create_publisher<std_msgs::msg::Float32>(
+      POLYGON_SUB_TOPIC, rclcpp::SystemDefaultsQoS());
+
+    std::unique_ptr<std_msgs::msg::Float32> msg = std::make_unique<std_msgs::msg::Float32>();
+    msg->data = CIRCLE_RADIUS;
+
+    radius_pub_->publish(std::move(msg));
+  }
+
   void publishFootprint()
   {
     footprint_pub_ = this->create_publisher<geometry_msgs::msg::PolygonStamped>(
@@ -159,6 +170,7 @@ public:
 
 private:
   rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_pub_;
+  rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr radius_pub_;
   rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr footprint_pub_;
   rclcpp::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_sub_;
 
@@ -227,11 +239,11 @@ protected:
   void setPolygonParameters(
     const char * points,
     const bool is_static);
-  void setCircleParameters(const double radius);
+  void setCircleParameters(const double radius, const bool is_static);
   bool checkUndeclaredParameter(const std::string & polygon_name, const std::string & param);
   // Creating routines
   void createPolygon(const std::string & action_type, const bool is_static);
-  void createCircle(const std::string & action_type);
+  void createCircle(const std::string & action_type, const bool is_static);
 
   void sendTransforms(double shift);
 
@@ -239,6 +251,9 @@ protected:
   bool waitPolygon(
     const std::chrono::nanoseconds & timeout,
     std::vector<nav2_collision_monitor::Point> & poly);
+
+  // Wait until circle polygon radius will be received
+  bool waitRadius(const std::chrono::nanoseconds & timeout);
 
   // Wait until footprint will be received
   bool waitFootprint(
@@ -344,12 +359,19 @@ void Tester::setPolygonParameters(
   }
 }
 
-void Tester::setCircleParameters(const double radius)
+void Tester::setCircleParameters(const double radius, const bool is_static)
 {
-  test_node_->declare_parameter(
-    std::string(CIRCLE_NAME) + ".radius", rclcpp::ParameterValue(radius));
-  test_node_->set_parameter(
-    rclcpp::Parameter(std::string(CIRCLE_NAME) + ".radius", radius));
+  if (is_static) {
+    test_node_->declare_parameter(
+      std::string(CIRCLE_NAME) + ".radius", rclcpp::ParameterValue(radius));
+    test_node_->set_parameter(
+      rclcpp::Parameter(std::string(CIRCLE_NAME) + ".radius", radius));
+  } else {
+    test_node_->declare_parameter(
+      std::string(CIRCLE_NAME) + ".polygon_sub_topic", rclcpp::ParameterValue(POLYGON_SUB_TOPIC));
+    test_node_->set_parameter(
+      rclcpp::Parameter(std::string(CIRCLE_NAME) + ".polygon_sub_topic", POLYGON_SUB_TOPIC));
+  }
 }
 
 bool Tester::checkUndeclaredParameter(const std::string & polygon_name, const std::string & param)
@@ -382,10 +404,10 @@ void Tester::createPolygon(const std::string & action_type, const bool is_static
   polygon_->activate();
 }
 
-void Tester::createCircle(const std::string & action_type)
+void Tester::createCircle(const std::string & action_type, const bool is_static)
 {
   setCommonParameters(CIRCLE_NAME, action_type);
-  setCircleParameters(CIRCLE_RADIUS);
+  setCircleParameters(CIRCLE_RADIUS, is_static);
 
   circle_ = std::make_shared<CircleWrapper>(
     test_node_, CIRCLE_NAME,
@@ -425,6 +447,19 @@ bool Tester::waitPolygon(
   while (rclcpp::ok() && test_node_->now() - start_time <= rclcpp::Duration(timeout)) {
     polygon_->getPolygon(poly);
     if (poly.size() > 0) {
+      return true;
+    }
+    rclcpp::spin_some(test_node_->get_node_base_interface());
+    std::this_thread::sleep_for(10ms);
+  }
+  return false;
+}
+
+bool Tester::waitRadius(const std::chrono::nanoseconds & timeout)
+{
+  rclcpp::Time start_time = test_node_->now();
+  while (rclcpp::ok() && test_node_->now() - start_time <= rclcpp::Duration(timeout)) {
+    if (circle_->isShapeSet()) {
       return true;
     }
     rclcpp::spin_some(test_node_->get_node_base_interface());
@@ -518,7 +553,7 @@ TEST_F(Tester, testPolygonGetApproachParameters)
 
 TEST_F(Tester, testCircleGetParameters)
 {
-  createCircle("approach");
+  createCircle("approach", true);
 
   // Check that common parameters set correctly
   EXPECT_EQ(circle_->getName(), CIRCLE_NAME);
@@ -628,8 +663,9 @@ TEST_F(Tester, testCircleUndeclaredRadius)
     tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_FALSE(circle_->configure());
 
-  // Check that "radius" parameter is not set after configuring
+  // Check that "radius" and "polygon_sub_topic" parameters are not set after configuring
   ASSERT_TRUE(checkUndeclaredParameter(CIRCLE_NAME, "radius"));
+  ASSERT_TRUE(checkUndeclaredParameter(CIRCLE_NAME, "polygon_sub_topic"));
 }
 
 TEST_F(Tester, testPolygonTopicUpdate)
@@ -646,7 +682,7 @@ TEST_F(Tester, testPolygonTopicUpdate)
   ASSERT_FALSE(waitPolygon(100ms, poly));
   ASSERT_FALSE(polygon_->isShapeSet());
 
-  // Publush correct polygon and make shure that it was set correctly
+  // Publish correct polygon and make sure that it was set correctly
   test_node_->publishPolygon(BASE_FRAME_ID, true);
   ASSERT_TRUE(waitPolygon(500ms, poly));
   ASSERT_TRUE(polygon_->isShapeSet());
@@ -659,6 +695,18 @@ TEST_F(Tester, testPolygonTopicUpdate)
   EXPECT_NEAR(poly[2].y, SQUARE_POLYGON[5], EPSILON);
   EXPECT_NEAR(poly[3].x, SQUARE_POLYGON[6], EPSILON);
   EXPECT_NEAR(poly[3].y, SQUARE_POLYGON[7], EPSILON);
+}
+
+TEST_F(Tester, testCircleTopicUpdate)
+{
+  createCircle("stop", false);
+  ASSERT_FALSE(circle_->isShapeSet());
+
+  // Publish radius and make sure that it was set correctly
+  test_node_->publishRadius();
+  ASSERT_TRUE(waitRadius(500ms));
+  EXPECT_NEAR(circle_->getRadius(), CIRCLE_RADIUS, EPSILON);
+  EXPECT_NEAR(circle_->getRadiusSquared(), CIRCLE_RADIUS * CIRCLE_RADIUS, EPSILON);
 }
 
 TEST_F(Tester, testPolygonTopicUpdateDifferentFrame)
@@ -789,7 +837,7 @@ TEST_F(Tester, testPolygonGetPointsInsideEdge)
 
 TEST_F(Tester, testCircleGetPointsInside)
 {
-  createCircle("stop");
+  createCircle("stop", true);
 
   std::vector<nav2_collision_monitor::Point> points;
   // Point out of radius

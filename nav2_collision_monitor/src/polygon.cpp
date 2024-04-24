@@ -65,19 +65,7 @@ bool Polygon::configure()
     return false;
   }
 
-  if (!polygon_sub_topic.empty()) {
-    RCLCPP_INFO(
-      logger_,
-      "[%s]: Subscribing on %s topic for polygon",
-      polygon_name_.c_str(), polygon_sub_topic.c_str());
-    rclcpp::QoS polygon_qos = rclcpp::SystemDefaultsQoS();  // set to default
-    if (polygon_subscribe_transient_local_) {
-      polygon_qos.transient_local();
-    }
-    polygon_sub_ = node->create_subscription<geometry_msgs::msg::PolygonStamped>(
-      polygon_sub_topic, polygon_qos,
-      std::bind(&Polygon::polygonCallback, this, std::placeholders::_1));
-  }
+  createSubscription(polygon_sub_topic);
 
   if (!footprint_topic.empty()) {
     RCLCPP_INFO(
@@ -292,7 +280,11 @@ void Polygon::publish()
   polygon_pub_->publish(std::move(msg));
 }
 
-bool Polygon::getCommonParameters(std::string & polygon_pub_topic)
+bool Polygon::getCommonParameters(
+  std::string & polygon_sub_topic,
+  std::string & polygon_pub_topic,
+  std::string & footprint_topic,
+  bool use_dynamic_sub_topic)
 {
   auto node = node_.lock();
   if (!node) {
@@ -377,6 +369,28 @@ bool Polygon::getCommonParameters(std::string & polygon_pub_topic)
         node, polygon_name_ + ".polygon_pub_topic", rclcpp::ParameterValue(polygon_name_));
       polygon_pub_topic = node->get_parameter(polygon_name_ + ".polygon_pub_topic").as_string();
     }
+
+    nav2_util::declare_parameter_if_not_declared(
+      node, polygon_name_ + ".polygon_subscribe_transient_local", rclcpp::ParameterValue(false));
+    polygon_subscribe_transient_local_ =
+      node->get_parameter(polygon_name_ + ".polygon_subscribe_transient_local").as_bool();
+
+    if (use_dynamic_sub_topic) {
+      if (action_type_ != APPROACH) {
+        // Get polygon sub topic
+        nav2_util::declare_parameter_if_not_declared(
+          node, polygon_name_ + ".polygon_sub_topic", rclcpp::PARAMETER_STRING);
+        polygon_sub_topic =
+          node->get_parameter(polygon_name_ + ".polygon_sub_topic").as_string();
+      } else {
+        // Obtain the footprint topic to make a footprint subscription for approach polygon
+        nav2_util::declare_parameter_if_not_declared(
+          node, polygon_name_ + ".footprint_topic",
+          rclcpp::ParameterValue("local_costmap/published_footprint"));
+        footprint_topic =
+          node->get_parameter(polygon_name_ + ".footprint_topic").as_string();
+      }
+    }
   } catch (const std::exception & ex) {
     RCLCPP_ERROR(
       logger_,
@@ -398,61 +412,62 @@ bool Polygon::getParameters(
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  if (!getCommonParameters(polygon_pub_topic)) {
-    return false;
-  }
-
   // Clear the subscription topics. They will be set later, if necessary.
   polygon_sub_topic.clear();
   footprint_topic.clear();
 
+  bool use_dynamic_sub = true;  // if getting parameter points fails, use dynamic subscription
   try {
-    try {
-      // Leave it uninitialized: it will throw an inner exception if the parameter is not set
-      nav2_util::declare_parameter_if_not_declared(
-        node, polygon_name_ + ".points", rclcpp::PARAMETER_STRING);
-      std::string poly_string =
-        node->get_parameter(polygon_name_ + ".points").as_string();
+    // Leave it uninitialized: it will throw an inner exception if the parameter is not set
+    nav2_util::declare_parameter_if_not_declared(
+      node, polygon_name_ + ".points", rclcpp::PARAMETER_STRING);
+    std::string poly_string =
+      node->get_parameter(polygon_name_ + ".points").as_string();
 
-      // Do not need to proceed further, if "points" parameter is defined.
-      // Static polygon will be used.
-      return getPolygonFromString(poly_string, poly_);
-    } catch (const rclcpp::exceptions::ParameterUninitializedException &) {
-      RCLCPP_INFO(
+    use_dynamic_sub = !getPolygonFromString(poly_string, poly_);
+  } catch (const rclcpp::exceptions::ParameterUninitializedException &) {
+    RCLCPP_INFO(
+      logger_,
+      "[%s]: Polygon points are not defined. Using dynamic subscription instead.",
+      polygon_name_.c_str());
+  }
+
+  if (!getCommonParameters(
+      polygon_sub_topic, polygon_pub_topic, footprint_topic, use_dynamic_sub))
+  {
+    if (use_dynamic_sub && polygon_sub_topic.empty() && footprint_topic.empty()) {
+      RCLCPP_ERROR(
         logger_,
-        "[%s]: Polygon points are not defined. Using dynamic subscription instead.",
+        "[%s]: Error while getting polygon parameters:"
+        " static points and sub topic both not defined",
         polygon_name_.c_str());
     }
-
-    if (action_type_ == STOP || action_type_ == SLOWDOWN || action_type_ == LIMIT ||
-      action_type_ == DO_NOTHING)
-    {
-      // Dynamic polygon will be used
-      nav2_util::declare_parameter_if_not_declared(
-        node, polygon_name_ + ".polygon_sub_topic", rclcpp::PARAMETER_STRING);
-      polygon_sub_topic =
-        node->get_parameter(polygon_name_ + ".polygon_sub_topic").as_string();
-    } else if (action_type_ == APPROACH) {
-      // Obtain the footprint topic to make a footprint subscription for approach polygon
-      nav2_util::declare_parameter_if_not_declared(
-        node, polygon_name_ + ".footprint_topic",
-        rclcpp::ParameterValue("local_costmap/published_footprint"));
-      footprint_topic =
-        node->get_parameter(polygon_name_ + ".footprint_topic").as_string();
-    }
-    nav2_util::declare_parameter_if_not_declared(
-      node, polygon_name_ + ".polygon_subscribe_transient_local", rclcpp::ParameterValue(false));
-    polygon_subscribe_transient_local_ =
-      node->get_parameter(polygon_name_ + ".polygon_subscribe_transient_local").as_bool();
-  } catch (const std::exception & ex) {
-    RCLCPP_ERROR(
-      logger_,
-      "[%s]: Error while getting polygon parameters: %s",
-      polygon_name_.c_str(), ex.what());
     return false;
   }
 
   return true;
+}
+
+void Polygon::createSubscription(std::string & polygon_sub_topic)
+{
+  auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+
+  if (!polygon_sub_topic.empty()) {
+    RCLCPP_INFO(
+      logger_,
+      "[%s]: Subscribing on %s topic for polygon",
+      polygon_name_.c_str(), polygon_sub_topic.c_str());
+    rclcpp::QoS polygon_qos = rclcpp::SystemDefaultsQoS();  // set to default
+    if (polygon_subscribe_transient_local_) {
+      polygon_qos.transient_local();
+    }
+    polygon_sub_ = node->create_subscription<geometry_msgs::msg::PolygonStamped>(
+      polygon_sub_topic, polygon_qos,
+      std::bind(&Polygon::polygonCallback, this, std::placeholders::_1));
+  }
 }
 
 void Polygon::updatePolygon(geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg)
@@ -587,6 +602,7 @@ bool Polygon::getPolygonFromString(
         "Points in the polygon specification must be pairs of numbers"
         "Found a point with %d numbers.",
         static_cast<int>(vvf[i].size()));
+      polygon.clear();
       return false;
     }
   }
