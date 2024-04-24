@@ -34,6 +34,7 @@ def generate_launch_description():
     namespace = LaunchConfiguration('namespace')
     use_namespace = LaunchConfiguration('use_namespace')
     rviz_config_file = LaunchConfiguration('rviz_config')
+    use_sim_time = LaunchConfiguration('use_sim_time')
 
     # Declare the launch arguments
     declare_namespace_cmd = DeclareLaunchArgument(
@@ -57,6 +58,11 @@ def generate_launch_description():
         description='Full path to the RVIZ config file to use',
     )
 
+    declare_use_sim_time_cmd = DeclareLaunchArgument(
+        'use_sim_time',
+        default_value='false',
+        description='Use simulation (Gazebo) clock if true')
+
     # Launch rviz
     start_rviz_cmd = Node(
         condition=UnlessCondition(use_namespace),
@@ -64,6 +70,7 @@ def generate_launch_description():
         executable='rviz2',
         arguments=['-d', rviz_config_file],
         output='screen',
+        parameters=[{'use_sim_time': use_sim_time}],
     )
 
     namespaced_rviz_config_file = ReplaceString(
@@ -77,6 +84,7 @@ def generate_launch_description():
         executable='rviz2',
         namespace=namespace,
         arguments=['-d', namespaced_rviz_config_file],
+        parameters=[{'use_sim_time': use_sim_time}],
         output='screen',
         remappings=[
             ('/map', 'map'),
@@ -111,6 +119,7 @@ def generate_launch_description():
     ld.add_action(declare_namespace_cmd)
     ld.add_action(declare_use_namespace_cmd)
     ld.add_action(declare_rviz_config_file_cmd)
+    ld.add_action(declare_use_sim_time_cmd)
 
     # Add any conditioned actions
     ld.add_action(start_rviz_cmd)
