@@ -13,8 +13,8 @@
 // limitations under the License.
 
 
-#ifndef validate_message_HPP
-#define validate_message_HPP
+#ifndef  NAV2_UTIL__VALIDATE_MESSAGES_HPP_
+#define  NAV2_UTIL__VALIDATE_MESSAGES_HPP_
 
 
 #include "nav_msgs/msg/occupancy_grid.hpp"
@@ -35,7 +35,8 @@
 //
 //  Following conditions are involved in check:
 //     1> Value Check: to avoid damaged value like like `nan`, `INF`, empty string and so on
-//     2> Logic Check: to avoid value with bad logic, like the size of `map` should be equal to `height*width`
+//     2> Logic Check: to avoid value with bad logic,
+//             like the size of `map` should be equal to `height*width`
 //     3> Any other needed condition could be joint here in future
 
 namespace nav2_util
@@ -140,7 +141,7 @@ bool validateMsg(const nav_msgs::msg::OccupancyGrid & msg)
 }
 
 
-}
+} // namespace nav2_util
 
 
-#endif
+#endif  // NAV2_UTIL__VALIDATE_MESSAGES_HPP_
