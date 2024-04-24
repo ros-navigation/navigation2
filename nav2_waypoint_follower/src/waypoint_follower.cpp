@@ -189,7 +189,7 @@ std::vector<geometry_msgs::msg::PoseStamped> WaypointFollower::getLatestGoalPose
   const auto current_goal = action_server->get_current_goal();
 
   if (!current_goal) {
-    RCLCPP_ERROR(get_logger(), "No goal specified");
+    RCLCPP_ERROR(get_logger(), "No current action goal found!");
     return poses;
   }
 
