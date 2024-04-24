@@ -144,8 +144,8 @@ bool BtActionServer<ActionT>::on_configure()
   rclcpp::copy_all_parameter_values(node, client_node_);
 
   // set the timeout in seconds for the action server to discard goal handles if not finished
-  double action_server_result_timeout;
-  node->get_parameter("action_server_result_timeout", action_server_result_timeout);
+  double action_server_result_timeout =
+    node->get_parameter("action_server_result_timeout").as_double();
   rcl_action_server_options_t server_options = rcl_action_server_get_default_options();
   server_options.result_timeout.nanoseconds = RCL_S_TO_NS(action_server_result_timeout);
 
