@@ -603,7 +603,6 @@ void Tester::publishPolygon(const double dist, const rclcpp::Time & stamp)
   p.x = 1.0;
   p.y = dist + 1.0;
   msg->polygon.polygon.points.push_back(p);
-  msg->polygon.id = 1u;
 
   polygon_source_pub_->publish(std::move(msg));
 }
@@ -802,7 +801,7 @@ TEST_F(Tester, testPolygonSource)
   setCommonParameters();
   // Set source_timeout to 0.0 to clear out quickly the polygons from test to test
   cm_->set_parameter(
-    rclcpp::Parameter("source_timeout", 0.0));
+    rclcpp::Parameter("source_timeout", 0.1));
   addPolygon("Limit", POLYGON, 3.0, "limit");
   addPolygon("SlowDown", POLYGON, 2.0, "slowdown");
   addPolygon("Stop", POLYGON, 1.0, "stop");
@@ -826,41 +825,42 @@ TEST_F(Tester, testPolygonSource)
 
   // 2. Obstacle is in limit robot zone
   publishPolygon(3.0, curr_time);
-  ASSERT_TRUE(waitData(std::hypot(1.0, 3.0), 500ms, curr_time));
+  EXPECT_TRUE(waitData(std::hypot(1.0, 3.0), 500ms, curr_time));
   publishCmdVel(0.5, 0.2, 0.1);
-  ASSERT_TRUE(waitCmdVel(500ms));
+  EXPECT_TRUE(waitCmdVel(500ms));
   const double speed = std::sqrt(0.5 * 0.5 + 0.2 * 0.2);
   const double ratio = LINEAR_LIMIT / speed;
-  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5 * ratio, EPSILON);
-  ASSERT_NEAR(cmd_vel_out_->linear.y, 0.2 * ratio, EPSILON);
-  ASSERT_NEAR(cmd_vel_out_->angular.z, 0.09, EPSILON);
-  ASSERT_TRUE(waitActionState(500ms));
-  ASSERT_EQ(action_state_->action_type, LIMIT);
-  ASSERT_EQ(action_state_->polygon_name, "Limit");
+  EXPECT_NEAR(cmd_vel_out_->linear.x, 0.5 * ratio, EPSILON);
+  EXPECT_NEAR(cmd_vel_out_->linear.y, 0.2 * ratio, EPSILON);
+  EXPECT_NEAR(cmd_vel_out_->angular.z, 0.09, EPSILON);
+  EXPECT_TRUE(waitActionState(500ms));
+  EXPECT_EQ(action_state_->action_type, LIMIT);
+  EXPECT_EQ(action_state_->polygon_name, "Limit");
 
   // 3. Obstacle is in slowdown robot zone
   publishPolygon(1.5, curr_time);
-  ASSERT_TRUE(waitData(std::hypot(1.0, 1.5), 500ms, curr_time));
+  EXPECT_TRUE(waitData(std::hypot(1.0, 1.5), 500ms, curr_time));
   publishCmdVel(0.5, 0.2, 0.1);
-  ASSERT_TRUE(waitCmdVel(500ms));
-  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5 * SLOWDOWN_RATIO, EPSILON);
-  ASSERT_NEAR(cmd_vel_out_->linear.y, 0.2 * SLOWDOWN_RATIO, EPSILON);
-  ASSERT_NEAR(cmd_vel_out_->angular.z, 0.1 * SLOWDOWN_RATIO, EPSILON);
-  ASSERT_TRUE(waitActionState(500ms));
-  ASSERT_EQ(action_state_->action_type, SLOWDOWN);
-  ASSERT_EQ(action_state_->polygon_name, "SlowDown");
+  EXPECT_TRUE(waitCmdVel(500ms));
+  EXPECT_NEAR(cmd_vel_out_->linear.x, 0.5 * SLOWDOWN_RATIO, EPSILON);
+  EXPECT_NEAR(cmd_vel_out_->linear.y, 0.2 * SLOWDOWN_RATIO, EPSILON);
+  EXPECT_NEAR(cmd_vel_out_->angular.z, 0.1 * SLOWDOWN_RATIO, EPSILON);
+  EXPECT_TRUE(waitActionState(500ms));
+  EXPECT_EQ(action_state_->action_type, SLOWDOWN);
+  EXPECT_EQ(action_state_->polygon_name, "SlowDown");
 
   // 4. Obstacle is inside stop zone
+  curr_time = cm_->now();
   publishPolygon(0.5, curr_time);
-  ASSERT_TRUE(waitData(std::hypot(1.0, 0.5), 500ms, curr_time));
+  EXPECT_TRUE(waitData(std::hypot(1.0, 0.5), 500ms, curr_time));
   publishCmdVel(0.5, 0.2, 0.1);
-  ASSERT_TRUE(waitCmdVel(500ms));
-  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.0, EPSILON);
-  ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
-  ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
-  ASSERT_TRUE(waitActionState(500ms));
-  ASSERT_EQ(action_state_->action_type, STOP);
-  ASSERT_EQ(action_state_->polygon_name, "Stop");
+  EXPECT_TRUE(waitCmdVel(500ms));
+  EXPECT_NEAR(cmd_vel_out_->linear.x, 0.0, EPSILON);
+  EXPECT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
+  EXPECT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
+  EXPECT_TRUE(waitActionState(500ms));
+  EXPECT_EQ(action_state_->action_type, STOP);
+  EXPECT_EQ(action_state_->polygon_name, "Stop");
 
   // 5. Restoring back normal operation
   publishPolygon(4.5, curr_time);

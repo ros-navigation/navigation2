@@ -98,16 +98,6 @@ protected:
    */
   void dataCallback(geometry_msgs::msg::PolygonInstanceStamped::ConstSharedPtr msg);
 
-  /**
-   * @brief Checks if two polygons are the same
-   * @param polygon1 First polygon
-   * @param polygon2 Second polygon
-   * @return True if polygons are similar, false otherwise
-   */
-  bool areSamePolygons(
-    const geometry_msgs::msg::PolygonInstanceStamped & polygon1,
-    const geometry_msgs::msg::PolygonInstanceStamped & polygon2) const;
-
   // ----- Variables -----
 
   /// @brief PolygonSource data subscriber
@@ -119,8 +109,6 @@ protected:
   /// @brief distance between sampled points on polygon edges
   double sampling_distance_;
 
-  /// @brief maximum distance between points of polygons to be considered similar
-  double polygon_similarity_threshold_;
 };  // class PolygonSource
 
 }  // namespace nav2_collision_monitor
