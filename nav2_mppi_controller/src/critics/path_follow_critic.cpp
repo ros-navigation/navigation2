@@ -26,10 +26,10 @@ void PathFollowCritic::initialize()
 
   getParam(
     threshold_to_consider_,
-    "threshold_to_consider", 1.4);
+    "threshold_to_consider", 1.4f);
   getParam(offset_from_furthest_, "offset_from_furthest", 6);
   getParam(power_, "cost_power", 1);
-  getParam(weight_, "cost_weight", 5.0);
+  getParam(weight_, "cost_weight", 5.0f);
 }
 
 void PathFollowCritic::score(CriticData & data)
@@ -63,11 +63,11 @@ void PathFollowCritic::score(CriticData & data)
   const auto last_x = xt::view(data.trajectories.x, xt::all(), -1);
   const auto last_y = xt::view(data.trajectories.y, xt::all(), -1);
 
-  auto dists = xt::sqrt(
-    xt::pow(last_x - path_x, 2) +
-    xt::pow(last_y - path_y, 2));
-
-  data.costs += xt::pow(weight_ * std::move(dists), power_);
+  if (power_ > 1u) {
+    data.costs += xt::pow(weight_ * std::move(xt::hypot(last_x - path_x, last_y - path_y)), power_);
+  } else {
+    data.costs += weight_ * std::move(xt::hypot(last_x - path_x, last_y - path_y));
+  }
 }
 
 }  // namespace mppi::critics

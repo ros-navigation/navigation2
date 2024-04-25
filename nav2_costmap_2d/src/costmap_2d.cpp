@@ -49,13 +49,13 @@ namespace nav2_costmap_2d
 Costmap2D::Costmap2D(
   unsigned int cells_size_x, unsigned int cells_size_y, double resolution,
   double origin_x, double origin_y, unsigned char default_value)
-: size_x_(cells_size_x), size_y_(cells_size_y), resolution_(resolution), origin_x_(origin_x),
+: resolution_(resolution), origin_x_(origin_x),
   origin_y_(origin_y), costmap_(NULL), default_value_(default_value)
 {
   access_ = new mutex_t();
 
   // create the costmap
-  initMaps(size_x_, size_y_);
+  initMaps(cells_size_x, cells_size_y);
   resetMaps();
 }
 
@@ -102,6 +102,8 @@ void Costmap2D::initMaps(unsigned int size_x, unsigned int size_y)
 {
   std::unique_lock<mutex_t> lock(*access_);
   delete[] costmap_;
+  size_x_ = size_x;
+  size_y_ = size_y;
   costmap_ = new unsigned char[size_x * size_y];
 }
 
@@ -109,8 +111,6 @@ void Costmap2D::resizeMap(
   unsigned int size_x, unsigned int size_y, double resolution,
   double origin_x, double origin_y)
 {
-  size_x_ = size_x;
-  size_y_ = size_y;
   resolution_ = resolution;
   origin_x_ = origin_x;
   origin_y_ = origin_y;
@@ -166,15 +166,12 @@ bool Costmap2D::copyCostmapWindow(
     // ROS_ERROR("Cannot window a map that the window bounds don't fit inside of");
     return false;
   }
-
-  size_x_ = upper_right_x - lower_left_x;
-  size_y_ = upper_right_y - lower_left_y;
   resolution_ = map.resolution_;
   origin_x_ = win_origin_x;
   origin_y_ = win_origin_y;
 
   // initialize our various maps and reset markers for inflation
-  initMaps(size_x_, size_y_);
+  initMaps(upper_right_x - lower_left_x, upper_right_y - lower_left_y);
 
   // copy the window of the static map and the costmap that we're taking
   copyMapRegion(
@@ -292,6 +289,21 @@ bool Costmap2D::worldToMap(double wx, double wy, unsigned int & mx, unsigned int
 
   mx = static_cast<unsigned int>((wx - origin_x_) / resolution_);
   my = static_cast<unsigned int>((wy - origin_y_) / resolution_);
+
+  if (mx < size_x_ && my < size_y_) {
+    return true;
+  }
+  return false;
+}
+
+bool Costmap2D::worldToMapContinuous(double wx, double wy, float & mx, float & my) const
+{
+  if (wx < origin_x_ || wy < origin_y_) {
+    return false;
+  }
+
+  mx = static_cast<float>((wx - origin_x_) / resolution_) + 0.5f;
+  my = static_cast<float>((wy - origin_y_) / resolution_) + 0.5f;
 
   if (mx < size_x_ && my < size_y_) {
     return true;

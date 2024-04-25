@@ -29,8 +29,9 @@
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/create_timer_ros.h"
 #include "geometry_msgs/msg/twist.hpp"
-#include "nav2_util/simple_action_server.hpp"
 #include "nav2_util/robot_utils.hpp"
+#include "nav2_util/twist_publisher.hpp"
+#include "nav2_util/simple_action_server.hpp"
 #include "nav2_core/behavior.hpp"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
@@ -119,8 +120,8 @@ public:
   {
     node_ = parent;
     auto node = node_.lock();
-
     logger_ = node->get_logger();
+    clock_ = node->get_clock();
 
     RCLCPP_INFO(logger_, "Configuring %s", name.c_str());
 
@@ -150,7 +151,7 @@ public:
     local_collision_checker_ = local_collision_checker;
     global_collision_checker_ = global_collision_checker;
 
-    vel_pub_ = node->template create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 1);
+    vel_pub_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel", 1);
 
     onConfigure();
   }
@@ -185,7 +186,7 @@ protected:
   rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
 
   std::string behavior_name_;
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
+  std::unique_ptr<nav2_util::TwistPublisher> vel_pub_;
   std::shared_ptr<ActionServer> action_server_;
   std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> local_collision_checker_;
   std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> global_collision_checker_;
@@ -200,7 +201,7 @@ protected:
   rclcpp::Duration elasped_time_{0, 0};
 
   // Clock
-  rclcpp::Clock steady_clock_{RCL_STEADY_TIME};
+  rclcpp::Clock::SharedPtr clock_;
 
   // Logger
   rclcpp::Logger logger_{rclcpp::get_logger("nav2_behaviors")};
@@ -231,11 +232,11 @@ protected:
       return;
     }
 
-    auto start_time = steady_clock_.now();
+    auto start_time = clock_->now();
     rclcpp::WallRate loop_rate(cycle_frequency_);
 
     while (rclcpp::ok()) {
-      elasped_time_ = steady_clock_.now() - start_time;
+      elasped_time_ = clock_->now() - start_time;
       if (action_server_->is_cancel_requested()) {
         RCLCPP_INFO(logger_, "Canceling %s", behavior_name_.c_str());
         stopRobot();
@@ -252,7 +253,7 @@ protected:
           " however feature is currently not implemented. Aborting and stopping.",
           behavior_name_.c_str());
         stopRobot();
-        result->total_elapsed_time = steady_clock_.now() - start_time;
+        result->total_elapsed_time = clock_->now() - start_time;
         onActionCompletion(result);
         action_server_->terminate_current(result);
         return;
@@ -264,14 +265,14 @@ protected:
           RCLCPP_INFO(
             logger_,
             "%s completed successfully", behavior_name_.c_str());
-          result->total_elapsed_time = steady_clock_.now() - start_time;
+          result->total_elapsed_time = clock_->now() - start_time;
           onActionCompletion(result);
           action_server_->succeeded_current(result);
           return;
 
         case Status::FAILED:
           RCLCPP_WARN(logger_, "%s failed", behavior_name_.c_str());
-          result->total_elapsed_time = steady_clock_.now() - start_time;
+          result->total_elapsed_time = clock_->now() - start_time;
           result->error_code = on_cycle_update_result.error_code;
           onActionCompletion(result);
           action_server_->terminate_current(result);
@@ -289,10 +290,12 @@ protected:
   // Stop the robot with a commanded velocity
   void stopRobot()
   {
-    auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>();
-    cmd_vel->linear.x = 0.0;
-    cmd_vel->linear.y = 0.0;
-    cmd_vel->angular.z = 0.0;
+    auto cmd_vel = std::make_unique<geometry_msgs::msg::TwistStamped>();
+    cmd_vel->header.frame_id = robot_base_frame_;
+    cmd_vel->header.stamp = clock_->now();
+    cmd_vel->twist.linear.x = 0.0;
+    cmd_vel->twist.linear.y = 0.0;
+    cmd_vel->twist.angular.z = 0.0;
 
     vel_pub_->publish(std::move(cmd_vel));
   }

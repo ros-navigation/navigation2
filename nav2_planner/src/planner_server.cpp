@@ -44,7 +44,7 @@ PlannerServer::PlannerServer(const rclcpp::NodeOptions & options)
 : nav2_util::LifecycleNode("planner_server", "", options),
   gp_loader_("nav2_core", "nav2_core::GlobalPlanner"),
   default_ids_{"GridBased"},
-  default_types_{"nav2_navfn_planner/NavfnPlanner"},
+  default_types_{"nav2_navfn_planner::NavfnPlanner"},
   costmap_(nullptr)
 {
   RCLCPP_INFO(get_logger(), "Creating");
@@ -52,7 +52,6 @@ PlannerServer::PlannerServer(const rclcpp::NodeOptions & options)
   // Declare this node's parameters
   declare_parameter("planner_plugins", default_ids_);
   declare_parameter("expected_planner_frequency", 1.0);
-
   declare_parameter("action_server_result_timeout", 10.0);
 
   get_parameter("planner_plugins", planner_ids_);
@@ -85,6 +84,12 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   costmap_ros_->configure();
   costmap_ = costmap_ros_->getCostmap();
+
+  if (!costmap_ros_->getUseRadius()) {
+    collision_checker_ =
+      std::make_unique<nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>(
+      costmap_);
+  }
 
   // Launch a thread to run the costmap node
   costmap_thread_ = std::make_unique<nav2_util::NodeThread>(costmap_ros_);
@@ -218,11 +223,7 @@ PlannerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
    * unordered_set iteration. Once this issue is resolved, we can maybe make a stronger
    * ordering assumption: https://github.com/ros2/rclcpp/issues/2096
    */
-  if (costmap_ros_->get_current_state().id() ==
-    lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
-  {
-    costmap_ros_->deactivate();
-  }
+  costmap_ros_->deactivate();
 
   PlannerMap::iterator it;
   for (it = planners_.begin(); it != planners_.end(); ++it) {
@@ -247,15 +248,7 @@ PlannerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   plan_publisher_.reset();
   tf_.reset();
 
-  /*
-   * Double check whether something else transitioned it to INACTIVE
-   * already, e.g. the rcl preshutdown callback.
-   */
-  if (costmap_ros_->get_current_state().id() ==
-    lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
-  {
-    costmap_ros_->cleanup();
-  }
+  costmap_ros_->cleanup();
 
   PlannerMap::iterator it;
   for (it = planners_.begin(); it != planners_.end(); ++it) {
@@ -373,7 +366,7 @@ void PlannerServer::computePlanThroughPoses()
 {
   std::lock_guard<std::mutex> lock(dynamic_params_lock_);
 
-  auto start_time = steady_clock_.now();
+  auto start_time = this->now();
 
   // Initialize the ComputePathThroughPoses goal and result
   auto goal = action_server_poses_->get_current_goal();
@@ -401,13 +394,20 @@ void PlannerServer::computePlanThroughPoses()
       throw nav2_core::PlannerTFError("Unable to get start pose");
     }
 
+    auto cancel_checker = [this]() {
+        return action_server_poses_->is_cancel_requested();
+      };
+
     // Get consecutive paths through these points
     for (unsigned int i = 0; i != goal->goals.size(); i++) {
       // Get starting point
       if (i == 0) {
         curr_start = start;
       } else {
-        curr_start = goal->goals[i - 1];
+        // pick the end of the last planning task as the start for the next one
+        // to allow for path tolerance deviations
+        curr_start = concat_path.poses.back();
+        curr_start.header = concat_path.header;
       }
       curr_goal = goal->goals[i];
 
@@ -417,7 +417,9 @@ void PlannerServer::computePlanThroughPoses()
       }
 
       // Get plan from start -> goal
-      nav_msgs::msg::Path curr_path = getPlan(curr_start, curr_goal, goal->planner_id);
+      nav_msgs::msg::Path curr_path = getPlan(
+        curr_start, curr_goal, goal->planner_id,
+        cancel_checker);
 
       if (!validatePath<ActionThroughPoses>(curr_goal, curr_path, goal->planner_id)) {
         throw nav2_core::NoValidPathCouldBeFound(goal->planner_id + " generated a empty path");
@@ -433,7 +435,7 @@ void PlannerServer::computePlanThroughPoses()
     result->path = concat_path;
     publishPlan(result->path);
 
-    auto cycle_duration = steady_clock_.now() - start_time;
+    auto cycle_duration = this->now() - start_time;
     result->planning_time = cycle_duration;
 
     if (max_planner_duration_ && cycle_duration.seconds() > max_planner_duration_) {
@@ -480,6 +482,9 @@ void PlannerServer::computePlanThroughPoses()
     exceptionWarning(curr_start, curr_goal, goal->planner_id, ex);
     result->error_code = ActionThroughPosesResult::NO_VIAPOINTS_GIVEN;
     action_server_poses_->terminate_current(result);
+  } catch (nav2_core::PlannerCancelled &) {
+    RCLCPP_INFO(get_logger(), "Goal was canceled. Canceling planning action.");
+    action_server_poses_->terminate_all();
   } catch (std::exception & ex) {
     exceptionWarning(curr_start, curr_goal, goal->planner_id, ex);
     result->error_code = ActionThroughPosesResult::UNKNOWN;
@@ -492,7 +497,7 @@ PlannerServer::computePlan()
 {
   std::lock_guard<std::mutex> lock(dynamic_params_lock_);
 
-  auto start_time = steady_clock_.now();
+  auto start_time = this->now();
 
   // Initialize the ComputePathToPose goal and result
   auto goal = action_server_pose_->get_current_goal();
@@ -520,7 +525,11 @@ PlannerServer::computePlan()
       throw nav2_core::PlannerTFError("Unable to transform poses to global frame");
     }
 
-    result->path = getPlan(start, goal_pose, goal->planner_id);
+    auto cancel_checker = [this]() {
+        return action_server_pose_->is_cancel_requested();
+      };
+
+    result->path = getPlan(start, goal_pose, goal->planner_id, cancel_checker);
 
     if (!validatePath<ActionThroughPoses>(goal_pose, result->path, goal->planner_id)) {
       throw nav2_core::NoValidPathCouldBeFound(goal->planner_id + " generated a empty path");
@@ -529,7 +538,7 @@ PlannerServer::computePlan()
     // Publish the plan for visualization purposes
     publishPlan(result->path);
 
-    auto cycle_duration = steady_clock_.now() - start_time;
+    auto cycle_duration = this->now() - start_time;
     result->planning_time = cycle_duration;
 
     if (max_planner_duration_ && cycle_duration.seconds() > max_planner_duration_) {
@@ -571,6 +580,9 @@ PlannerServer::computePlan()
     exceptionWarning(start, goal->goal, goal->planner_id, ex);
     result->error_code = ActionToPoseResult::TF_ERROR;
     action_server_pose_->terminate_current(result);
+  } catch (nav2_core::PlannerCancelled &) {
+    RCLCPP_INFO(get_logger(), "Goal was canceled. Canceling planning action.");
+    action_server_pose_->terminate_all();
   } catch (std::exception & ex) {
     exceptionWarning(start, goal->goal, goal->planner_id, ex);
     result->error_code = ActionToPoseResult::UNKNOWN;
@@ -582,7 +594,8 @@ nav_msgs::msg::Path
 PlannerServer::getPlan(
   const geometry_msgs::msg::PoseStamped & start,
   const geometry_msgs::msg::PoseStamped & goal,
-  const std::string & planner_id)
+  const std::string & planner_id,
+  std::function<bool()> cancel_checker)
 {
   RCLCPP_DEBUG(
     get_logger(), "Attempting to a find path from (%.2f, %.2f) to "
@@ -590,14 +603,14 @@ PlannerServer::getPlan(
     goal.pose.position.x, goal.pose.position.y);
 
   if (planners_.find(planner_id) != planners_.end()) {
-    return planners_[planner_id]->createPlan(start, goal);
+    return planners_[planner_id]->createPlan(start, goal, cancel_checker);
   } else {
     if (planners_.size() == 1 && planner_id.empty()) {
       RCLCPP_WARN_ONCE(
         get_logger(), "No planners specified in action call. "
         "Server will use only plugin %s in server."
         " This warning will appear once.", planner_ids_concat_.c_str());
-      return planners_[planners_.begin()->first]->createPlan(start, goal);
+      return planners_[planners_.begin()->first]->createPlan(start, goal, cancel_checker);
     } else {
       RCLCPP_ERROR(
         get_logger(), "planner %s is not a valid planner. "
@@ -651,21 +664,40 @@ void PlannerServer::isPathValid(
 
     /**
      * The lethal check starts at the closest point to avoid points that have already been passed
-     * and may have become occupied
+     * and may have become occupied. The method for collision detection is based on the shape of
+     * the footprint.
      */
     std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
     unsigned int mx = 0;
     unsigned int my = 0;
-    for (unsigned int i = closest_point_index; i < request->path.poses.size(); ++i) {
-      costmap_->worldToMap(
-        request->path.poses[i].pose.position.x,
-        request->path.poses[i].pose.position.y, mx, my);
-      unsigned int cost = costmap_->getCost(mx, my);
 
-      if (cost == nav2_costmap_2d::LETHAL_OBSTACLE ||
-        cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE)
+    bool use_radius = costmap_ros_->getUseRadius();
+
+    unsigned int cost = nav2_costmap_2d::FREE_SPACE;
+    for (unsigned int i = closest_point_index; i < request->path.poses.size(); ++i) {
+      auto & position = request->path.poses[i].pose.position;
+      if (use_radius) {
+        if (costmap_->worldToMap(position.x, position.y, mx, my)) {
+          cost = costmap_->getCost(mx, my);
+        } else {
+          cost = nav2_costmap_2d::LETHAL_OBSTACLE;
+        }
+      } else {
+        nav2_costmap_2d::Footprint footprint = costmap_ros_->getRobotFootprint();
+        auto theta = tf2::getYaw(request->path.poses[i].pose.orientation);
+        cost = static_cast<unsigned int>(collision_checker_->footprintCostAtPose(
+            position.x, position.y, theta, footprint));
+      }
+
+      if (use_radius &&
+        (cost == nav2_costmap_2d::LETHAL_OBSTACLE ||
+        cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE))
       {
         response->is_valid = false;
+        break;
+      } else if (cost == nav2_costmap_2d::LETHAL_OBSTACLE) {
+        response->is_valid = false;
+        break;
       }
     }
   }

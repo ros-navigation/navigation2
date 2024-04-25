@@ -17,9 +17,9 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "behaviortree_cpp_v3/decorator_node.h"
+#include "behaviortree_cpp/decorator_node.h"
 #include "nav2_behavior_tree/plugins/decorator/goal_updated_controller.hpp"
-
+#include "nav2_behavior_tree/bt_utils.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -33,12 +33,12 @@ GoalUpdatedController::GoalUpdatedController(
 
 BT::NodeStatus GoalUpdatedController::tick()
 {
-  if (status() == BT::NodeStatus::IDLE) {
+  if (!BT::isStatusActive(status())) {
     // Reset since we're starting a new iteration of
     // the goal updated controller (moving from IDLE to RUNNING)
 
-    config().blackboard->get<std::vector<geometry_msgs::msg::PoseStamped>>("goals", goals_);
-    config().blackboard->get<geometry_msgs::msg::PoseStamped>("goal", goal_);
+    BT::getInputOrBlackboard("goals", goals_);
+    BT::getInputOrBlackboard("goal", goal_);
 
     goal_was_updated_ = true;
   }
@@ -46,9 +46,9 @@ BT::NodeStatus GoalUpdatedController::tick()
   setStatus(BT::NodeStatus::RUNNING);
 
   std::vector<geometry_msgs::msg::PoseStamped> current_goals;
-  config().blackboard->get<std::vector<geometry_msgs::msg::PoseStamped>>("goals", current_goals);
+  BT::getInputOrBlackboard("goals", current_goals);
   geometry_msgs::msg::PoseStamped current_goal;
-  config().blackboard->get<geometry_msgs::msg::PoseStamped>("goal", current_goal);
+  BT::getInputOrBlackboard("goal", current_goal);
 
   if (goal_ != current_goal || goals_ != current_goals) {
     goal_ = current_goal;
@@ -61,19 +61,7 @@ BT::NodeStatus GoalUpdatedController::tick()
   // 'til completion
   if ((child_node_->status() == BT::NodeStatus::RUNNING) || goal_was_updated_) {
     goal_was_updated_ = false;
-    const BT::NodeStatus child_state = child_node_->executeTick();
-
-    switch (child_state) {
-      case BT::NodeStatus::RUNNING:
-        return BT::NodeStatus::RUNNING;
-
-      case BT::NodeStatus::SUCCESS:
-        return BT::NodeStatus::SUCCESS;
-
-      case BT::NodeStatus::FAILURE:
-      default:
-        return BT::NodeStatus::FAILURE;
-    }
+    return child_node_->executeTick();
   }
 
   return status();
@@ -81,7 +69,7 @@ BT::NodeStatus GoalUpdatedController::tick()
 
 }  // namespace nav2_behavior_tree
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
   factory.registerNodeType<nav2_behavior_tree::GoalUpdatedController>("GoalUpdatedController");

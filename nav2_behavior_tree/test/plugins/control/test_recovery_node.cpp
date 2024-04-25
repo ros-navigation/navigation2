@@ -144,6 +144,26 @@ TEST_F(RecoveryNodeTestFixture, test_failure_one_retry)
   EXPECT_EQ(second_child_->status(), BT::NodeStatus::IDLE);
 }
 
+TEST_F(RecoveryNodeTestFixture, test_skipping)
+{
+  // first child skipped
+  first_child_->changeStatus(BT::NodeStatus::SKIPPED);
+  second_child_->changeStatus(BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SKIPPED);
+  EXPECT_EQ(bt_node_->status(), BT::NodeStatus::IDLE);
+  EXPECT_EQ(first_child_->status(), BT::NodeStatus::IDLE);
+  EXPECT_EQ(second_child_->status(), BT::NodeStatus::IDLE);
+
+  // first child fails, second child skipped
+  first_child_->changeStatus(BT::NodeStatus::FAILURE);
+  second_child_->changeStatus(BT::NodeStatus::SKIPPED);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
+  EXPECT_EQ(bt_node_->status(), BT::NodeStatus::FAILURE);
+  EXPECT_EQ(first_child_->status(), BT::NodeStatus::IDLE);
+  EXPECT_EQ(second_child_->status(), BT::NodeStatus::IDLE);
+}
+
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);

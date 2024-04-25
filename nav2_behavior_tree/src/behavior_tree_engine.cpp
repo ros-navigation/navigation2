@@ -20,17 +20,23 @@
 #include <vector>
 
 #include "rclcpp/rclcpp.hpp"
-#include "behaviortree_cpp_v3/utils/shared_library.h"
+#include "behaviortree_cpp/utils/shared_library.h"
 
 namespace nav2_behavior_tree
 {
 
-BehaviorTreeEngine::BehaviorTreeEngine(const std::vector<std::string> & plugin_libraries)
+BehaviorTreeEngine::BehaviorTreeEngine(
+  const std::vector<std::string> & plugin_libraries)
 {
   BT::SharedLibrary loader;
   for (const auto & p : plugin_libraries) {
     factory_.registerFromPlugin(loader.getOSName(p));
   }
+
+  // FIXME: the next two line are needed for back-compatibility with BT.CPP 3.8.x
+  // Note that the can be removed, once we migrate from BT.CPP 4.5.x to 4.6+
+  BT::ReactiveSequence::EnableException(false);
+  BT::ReactiveFallback::EnableException(false);
 }
 
 BtStatus
@@ -47,11 +53,11 @@ BehaviorTreeEngine::run(
   try {
     while (rclcpp::ok() && result == BT::NodeStatus::RUNNING) {
       if (cancelRequested()) {
-        tree->rootNode()->halt();
+        tree->haltTree();
         return BtStatus::CANCELED;
       }
 
-      result = tree->tickRoot();
+      result = tree->tickOnce();
 
       onLoop();
 
@@ -90,22 +96,10 @@ BehaviorTreeEngine::createTreeFromFile(
 
 // In order to re-run a Behavior Tree, we must be able to reset all nodes to the initial state
 void
-BehaviorTreeEngine::haltAllActions(BT::TreeNode * root_node)
+BehaviorTreeEngine::haltAllActions(BT::Tree & tree)
 {
-  if (!root_node) {
-    return;
-  }
-
   // this halt signal should propagate through the entire tree.
-  root_node->halt();
-
-  // but, just in case...
-  auto visitor = [](BT::TreeNode * node) {
-      if (node->status() == BT::NodeStatus::RUNNING) {
-        node->halt();
-      }
-    };
-  BT::applyRecursiveVisitor(root_node, visitor);
+  tree.haltTree();
 }
 
 }  // namespace nav2_behavior_tree

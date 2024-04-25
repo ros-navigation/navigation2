@@ -26,10 +26,10 @@ BehaviorServer::BehaviorServer(const rclcpp::NodeOptions & options)
 : LifecycleNode("behavior_server", "", options),
   plugin_loader_("nav2_core", "nav2_core::Behavior"),
   default_ids_{"spin", "backup", "drive_on_heading", "wait"},
-  default_types_{"nav2_behaviors/Spin",
-    "nav2_behaviors/BackUp",
-    "nav2_behaviors/DriveOnHeading",
-    "nav2_behaviors/Wait"}
+  default_types_{"nav2_behaviors::Spin",
+    "nav2_behaviors::BackUp",
+    "nav2_behaviors::DriveOnHeading",
+    "nav2_behaviors::Wait"}
 {
   declare_parameter(
     "local_costmap_topic",
@@ -147,8 +147,8 @@ void BehaviorServer::setupResourcesForBehaviorPlugins()
   get_parameter("global_costmap_topic", global_costmap_topic);
   get_parameter("local_footprint_topic", local_footprint_topic);
   get_parameter("global_footprint_topic", global_footprint_topic);
-  get_parameter("transform_tolerance", transform_tolerance);
   get_parameter("robot_base_frame", robot_base_frame);
+  transform_tolerance = get_parameter("transform_tolerance").as_double();
 
   bool need_local_costmap = false;
   bool need_global_costmap = false;

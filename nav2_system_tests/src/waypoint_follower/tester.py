@@ -36,22 +36,26 @@ class WaypointFollowerTest(Node):
         super().__init__(node_name='nav2_waypoint_tester', namespace='')
         self.waypoints = None
         self.action_client = ActionClient(self, FollowWaypoints, 'follow_waypoints')
-        self.initial_pose_pub = self.create_publisher(PoseWithCovarianceStamped,
-                                                      'initialpose', 10)
+        self.initial_pose_pub = self.create_publisher(
+            PoseWithCovarianceStamped, 'initialpose', 10
+        )
         self.initial_pose_received = False
         self.goal_handle = None
         self.action_result = None
 
         pose_qos = QoSProfile(
-          durability=QoSDurabilityPolicy.TRANSIENT_LOCAL,
-          reliability=QoSReliabilityPolicy.RELIABLE,
-          history=QoSHistoryPolicy.KEEP_LAST,
-          depth=1)
+            durability=QoSDurabilityPolicy.TRANSIENT_LOCAL,
+            reliability=QoSReliabilityPolicy.RELIABLE,
+            history=QoSHistoryPolicy.KEEP_LAST,
+            depth=1,
+        )
 
-        self.model_pose_sub = self.create_subscription(PoseWithCovarianceStamped,
-                                                       'amcl_pose', self.poseCallback, pose_qos)
-        self.param_cli = self.create_client(SetParameters,
-                                            '/waypoint_follower/set_parameters')
+        self.model_pose_sub = self.create_subscription(
+            PoseWithCovarianceStamped, 'amcl_pose', self.poseCallback, pose_qos
+        )
+        self.param_cli = self.create_client(
+            SetParameters, '/waypoint_follower/set_parameters'
+        )
 
     def setInitialPose(self, pose):
         self.init_pose = PoseWithCovarianceStamped()
@@ -120,8 +124,10 @@ class WaypointFollowerTest(Node):
             self.info_msg(f'Goal failed with status code: {status}')
             return False
         if len(self.action_result.missed_waypoints) > 0:
-            self.info_msg('Goal failed to process all waypoints,'
-                          ' missed {0} wps.'.format(len(self.action_result.missed_waypoints)))
+            self.info_msg(
+                'Goal failed to process all waypoints,'
+                ' missed {0} wps.'.format(len(self.action_result.missed_waypoints))
+            )
             return False
 
         self.info_msg('Goal succeeded!')
@@ -132,8 +138,9 @@ class WaypointFollowerTest(Node):
 
     def setStopFailureParam(self, value):
         req = SetParameters.Request()
-        req.parameters = [Parameter('stop_on_failure',
-                                    Parameter.Type.BOOL, value).to_parameter_msg()]
+        req.parameters = [
+            Parameter('stop_on_failure', Parameter.Type.BOOL, value).to_parameter_msg()
+        ]
         future = self.param_cli.call_async(req)
         rclpy.spin_until_future_complete(self, future)
 
@@ -195,7 +202,7 @@ def main(argv=sys.argv[1:]):
     # wait a few seconds to make sure entire stacks are up
     time.sleep(10)
 
-    wps = [[-0.52, -0.54], [0.58, -0.55], [0.58, 0.52]]
+    wps = [[-0.52, -0.54], [0.58, -0.55], [1.78, -0.57]]
     starting_pose = [-2.0, -0.5]
 
     test = WaypointFollowerTest()
@@ -230,8 +237,10 @@ def main(argv=sys.argv[1:]):
     result = test.run(True, False)
     assert not result
     result = not result
-    assert test.action_result.missed_waypoints[0].error_code == \
-           ComputePathToPose.Result().GOAL_OUTSIDE_MAP
+    assert (
+        test.action_result.missed_waypoints[0].error_code
+        == ComputePathToPose.Result().GOAL_OUTSIDE_MAP
+    )
 
     # stop on failure test with bogous waypoint
     test.setStopFailureParam(True)

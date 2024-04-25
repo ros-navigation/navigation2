@@ -1,7 +1,6 @@
 <class_libraries>
 	<library path="nav2_navigate_to_pose_navigator">
 	  <class
-	  	name="nav2_bt_navigator/NavigateToPoseNavigator"
 	  	type="nav2_bt_navigator::NavigateToPoseNavigator"
 	  	base_class_type="nav2_core::NavigatorBase">
 	    <description>Navigate to Pose Navigator</description>
@@ -9,7 +8,6 @@
 	</library>
   <library path="nav2_navigate_through_poses">
 	  <class
-	  	name="nav2_bt_navigator/NavigateThroughPosesNavigator"
 	  	type="nav2_bt_navigator::NavigateThroughPosesNavigator"
 	  	base_class_type="nav2_core::NavigatorBase">
 	    <description>Navigate through Poses Navigator</description>

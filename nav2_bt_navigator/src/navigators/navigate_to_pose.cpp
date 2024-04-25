@@ -94,9 +94,7 @@ NavigateToPoseNavigator::goalReceived(ActionT::Goal::ConstSharedPtr goal)
     return false;
   }
 
-  initializeGoalPose(goal);
-
-  return true;
+  return initializeGoalPose(goal);
 }
 
 void
@@ -114,17 +112,24 @@ NavigateToPoseNavigator::onLoop()
   auto feedback_msg = std::make_shared<ActionT::Feedback>();
 
   geometry_msgs::msg::PoseStamped current_pose;
-  nav2_util::getCurrentPose(
-    current_pose, *feedback_utils_.tf,
-    feedback_utils_.global_frame, feedback_utils_.robot_frame,
-    feedback_utils_.transform_tolerance);
+  if (!nav2_util::getCurrentPose(
+      current_pose, *feedback_utils_.tf,
+      feedback_utils_.global_frame, feedback_utils_.robot_frame,
+      feedback_utils_.transform_tolerance))
+  {
+    RCLCPP_ERROR(logger_, "Robot pose is not available.");
+    return;
+  }
 
   auto blackboard = bt_action_server_->getBlackboard();
 
   try {
     // Get current path points
     nav_msgs::msg::Path current_path;
-    blackboard->get<nav_msgs::msg::Path>(path_blackboard_id_, current_path);
+    if (!blackboard->get(path_blackboard_id_, current_path) || current_path.poses.size() == 0u) {
+      // If no path set yet or not meaningful, can't compute ETA or dist remaining yet.
+      throw std::exception();
+    }
 
     // Find the closest pose to current pose on global path
     auto find_closest_pose_idx =
@@ -167,7 +172,7 @@ NavigateToPoseNavigator::onLoop()
   }
 
   int recovery_count = 0;
-  blackboard->get<int>("number_recoveries", recovery_count);
+  [[maybe_unused]] auto res = blackboard->get("number_recoveries", recovery_count);
   feedback_msg->number_of_recoveries = recovery_count;
   feedback_msg->current_pose = current_pose;
   feedback_msg->navigation_time = clock_->now() - start_time_;
@@ -187,7 +192,13 @@ NavigateToPoseNavigator::onPreempt(ActionT::Goal::ConstSharedPtr goal)
     // if pending goal requests the same BT as the current goal, accept the pending goal
     // if pending goal has an empty behavior_tree field, it requests the default BT file
     // accept the pending goal if the current goal is running the default BT file
-    initializeGoalPose(bt_action_server_->acceptPendingGoal());
+    if (!initializeGoalPose(bt_action_server_->acceptPendingGoal())) {
+      RCLCPP_WARN(
+        logger_,
+        "Preemption request was rejected since the goal pose could not be "
+        "transformed. For now, continuing to track the last goal until completion.");
+      bt_action_server_->terminatePendingGoal();
+    }
   } else {
     RCLCPP_WARN(
       logger_,
@@ -200,27 +211,45 @@ NavigateToPoseNavigator::onPreempt(ActionT::Goal::ConstSharedPtr goal)
   }
 }
 
-void
+bool
 NavigateToPoseNavigator::initializeGoalPose(ActionT::Goal::ConstSharedPtr goal)
 {
   geometry_msgs::msg::PoseStamped current_pose;
-  nav2_util::getCurrentPose(
-    current_pose, *feedback_utils_.tf,
-    feedback_utils_.global_frame, feedback_utils_.robot_frame,
-    feedback_utils_.transform_tolerance);
+  if (!nav2_util::getCurrentPose(
+      current_pose, *feedback_utils_.tf,
+      feedback_utils_.global_frame, feedback_utils_.robot_frame,
+      feedback_utils_.transform_tolerance))
+  {
+    RCLCPP_ERROR(logger_, "Initial robot pose is not available.");
+    return false;
+  }
+
+  geometry_msgs::msg::PoseStamped goal_pose;
+  if (!nav2_util::transformPoseInTargetFrame(
+      goal->pose, goal_pose, *feedback_utils_.tf, feedback_utils_.global_frame,
+      feedback_utils_.transform_tolerance))
+  {
+    RCLCPP_ERROR(
+      logger_,
+      "Failed to transform a goal pose provided with frame_id '%s' to the global frame '%s'.",
+      goal->pose.header.frame_id.c_str(), feedback_utils_.global_frame.c_str());
+    return false;
+  }
 
   RCLCPP_INFO(
     logger_, "Begin navigating from current location (%.2f, %.2f) to (%.2f, %.2f)",
     current_pose.pose.position.x, current_pose.pose.position.y,
-    goal->pose.pose.position.x, goal->pose.pose.position.y);
+    goal_pose.pose.position.x, goal_pose.pose.position.y);
 
   // Reset state for new action feedback
   start_time_ = clock_->now();
   auto blackboard = bt_action_server_->getBlackboard();
-  blackboard->set<int>("number_recoveries", 0);  // NOLINT
+  blackboard->set("number_recoveries", 0);  // NOLINT
 
   // Update the goal pose on the blackboard
-  blackboard->set<geometry_msgs::msg::PoseStamped>(goal_blackboard_id_, goal->pose);
+  blackboard->set(goal_blackboard_id_, goal_pose);
+
+  return true;
 }
 
 void

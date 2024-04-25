@@ -19,7 +19,7 @@
 #include <string>
 
 #include "rclcpp/rclcpp.hpp"
-#include "behaviortree_cpp_v3/condition_node.h"
+#include "behaviortree_cpp/condition_node.h"
 
 namespace nav2_behavior_tree
 {
@@ -49,6 +49,11 @@ public:
   BT::NodeStatus tick() override;
 
   /**
+   * @brief Function to read parameters and initialize class variables
+   */
+  void initialize();
+
+  /**
    * @brief Creates list of BT ports
    * @return BT::PortsList Containing node-specific ports
    */
@@ -63,6 +68,7 @@ private:
   rclcpp::Node::SharedPtr node_;
   rclcpp::Time start_;
   double period_;
+  bool initialized_;
 };
 
 }  // namespace nav2_behavior_tree

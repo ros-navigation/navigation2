@@ -21,7 +21,7 @@
 #include <set>
 
 #include "rclcpp/rclcpp.hpp"
-#include "behaviortree_cpp_v3/condition_node.h"
+#include "behaviortree_cpp/condition_node.h"
 
 namespace nav2_behavior_tree
 {

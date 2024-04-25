@@ -1,3 +1,5 @@
+// Copyright (c) 2020 Samsung Research
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -8,7 +10,7 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License. Reserved.
 
 #include <memory>
 
@@ -22,7 +24,7 @@
 TEST(LifecylceTest, CheckInitialTfTimeout) {
   rclcpp::init(0, nullptr);
 
-  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>(rclcpp::NodeOptions());
   costmap->set_parameter({"initial_transform_timeout", 0.0});
 
   std::thread spin_thread{[costmap]() {rclcpp::spin(costmap->get_node_base_interface());}};

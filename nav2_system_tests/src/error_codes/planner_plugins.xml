@@ -39,4 +39,8 @@
            base_class_type="nav2_core::GlobalPlanner">
         <description>This global planner produces a no via points exception.</description>
     </class>
+    <class type="nav2_system_tests::CancelledPlanner"
+           base_class_type="nav2_core::GlobalPlanner">
+        <description>This global planner produces a cancelled exception.</description>
+    </class>
 </library>

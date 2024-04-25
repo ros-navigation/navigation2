@@ -44,6 +44,7 @@
 #include "nav2_navfn_planner/navfn.hpp"
 
 #include <algorithm>
+#include "nav2_core/planner_exceptions.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 namespace nav2_navfn_planner
@@ -293,12 +294,12 @@ NavFn::setCostmap(const COSTTYPE * cmap, bool isROS, bool allow_unknown)
 }
 
 bool
-NavFn::calcNavFnDijkstra(bool atStart)
+NavFn::calcNavFnDijkstra(std::function<bool()> cancelChecker, bool atStart)
 {
   setupNavFn(true);
 
   // calculate the nav fn and path
-  return propNavFnDijkstra(std::max(nx * ny / 20, nx + ny), atStart);
+  return propNavFnDijkstra(std::max(nx * ny / 20, nx + ny), cancelChecker, atStart);
 }
 
 
@@ -307,12 +308,12 @@ NavFn::calcNavFnDijkstra(bool atStart)
 //
 
 bool
-NavFn::calcNavFnAstar()
+NavFn::calcNavFnAstar(std::function<bool()> cancelChecker)
 {
   setupNavFn(true);
 
   // calculate the nav fn and path
-  return propNavFnAstar(std::max(nx * ny / 20, nx + ny));
+  return propNavFnAstar(std::max(nx * ny / 20, nx + ny), cancelChecker);
 }
 
 //
@@ -571,7 +572,7 @@ NavFn::updateCellAstar(int n)
 //
 
 bool
-NavFn::propNavFnDijkstra(int cycles, bool atStart)
+NavFn::propNavFnDijkstra(int cycles, std::function<bool()> cancelChecker, bool atStart)
 {
   int nwv = 0;  // max priority block size
   int nc = 0;  // number of cells put into priority blocks
@@ -581,6 +582,10 @@ NavFn::propNavFnDijkstra(int cycles, bool atStart)
   int startCell = start[1] * nx + start[0];
 
   for (; cycle < cycles; cycle++) {  // go for this many cycles, unless interrupted
+    if (cycle % terminal_checking_interval == 0 && cancelChecker()) {
+      throw nav2_core::PlannerCancelled("Planner was cancelled");
+    }
+
     if (curPe == 0 && nextPe == 0) {  // priority blocks empty
       break;
     }
@@ -652,7 +657,7 @@ NavFn::propNavFnDijkstra(int cycles, bool atStart)
 //
 
 bool
-NavFn::propNavFnAstar(int cycles)
+NavFn::propNavFnAstar(int cycles, std::function<bool()> cancelChecker)
 {
   int nwv = 0;  // max priority block size
   int nc = 0;  // number of cells put into priority blocks
@@ -667,6 +672,10 @@ NavFn::propNavFnAstar(int cycles)
 
   // do main cycle
   for (; cycle < cycles; cycle++) {  // go for this many cycles, unless interrupted
+    if (cycle % terminal_checking_interval == 0 && cancelChecker()) {
+      throw nav2_core::PlannerCancelled("Planner was cancelled");
+    }
+
     if (curPe == 0 && nextPe == 0) {  // priority blocks empty
       break;
     }

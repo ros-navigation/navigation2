@@ -21,7 +21,7 @@
 #include "nav_msgs/msg/path.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 
 #include "utils/test_action_server.hpp"
 #include "nav2_behavior_tree/plugins/decorator/goal_updater_node.hpp"
@@ -40,7 +40,7 @@ public:
     // Create the blackboard that will be shared by all of the nodes in the tree
     config_->blackboard = BT::Blackboard::create();
     // Put items on the blackboard
-    config_->blackboard->set<rclcpp::Node::SharedPtr>(
+    config_->blackboard->set(
       "node",
       node_);
 
@@ -86,7 +86,7 @@ TEST_F(GoalUpdaterTestFixture, test_tick)
   // create tree
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
           <GoalUpdater input_goal="{goal}" output_goal="{updated_goal}">
             <AlwaysSuccess/>
@@ -107,7 +107,7 @@ TEST_F(GoalUpdaterTestFixture, test_tick)
   // tick tree without publishing updated goal and get updated_goal
   tree_->rootNode()->executeTick();
   geometry_msgs::msg::PoseStamped updated_goal;
-  config_->blackboard->get("updated_goal", updated_goal);
+  EXPECT_TRUE(config_->blackboard->get("updated_goal", updated_goal));
 }
 
 TEST_F(GoalUpdaterTestFixture, test_older_goal_update)
@@ -115,7 +115,7 @@ TEST_F(GoalUpdaterTestFixture, test_older_goal_update)
   // create tree
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
           <GoalUpdater input_goal="{goal}" output_goal="{updated_goal}">
             <AlwaysSuccess/>
@@ -141,7 +141,7 @@ TEST_F(GoalUpdaterTestFixture, test_older_goal_update)
   goal_updater_pub->publish(goal_to_update);
   tree_->rootNode()->executeTick();
   geometry_msgs::msg::PoseStamped updated_goal;
-  config_->blackboard->get("updated_goal", updated_goal);
+  EXPECT_TRUE(config_->blackboard->get("updated_goal", updated_goal));
 
   // expect to succeed and not update goal
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
@@ -153,7 +153,7 @@ TEST_F(GoalUpdaterTestFixture, test_get_latest_goal_update)
   // create tree
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
           <GoalUpdater input_goal="{goal}" output_goal="{updated_goal}">
             <AlwaysSuccess/>
@@ -184,7 +184,7 @@ TEST_F(GoalUpdaterTestFixture, test_get_latest_goal_update)
   goal_updater_pub->publish(goal_to_update_2);
   tree_->rootNode()->executeTick();
   geometry_msgs::msg::PoseStamped updated_goal;
-  config_->blackboard->get("updated_goal", updated_goal);
+  EXPECT_TRUE(config_->blackboard->get("updated_goal", updated_goal));
 
   // expect to succeed
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);

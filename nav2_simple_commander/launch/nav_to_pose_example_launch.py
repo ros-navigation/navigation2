@@ -17,7 +17,11 @@ import os
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription
+from launch.actions import (
+    DeclareLaunchArgument,
+    ExecuteProcess,
+    IncludeLaunchDescription,
+)
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PythonExpression
@@ -38,24 +42,26 @@ def generate_launch_description():
 
     # Declare the launch arguments
     declare_use_rviz_cmd = DeclareLaunchArgument(
-        'use_rviz',
-        default_value='True',
-        description='Whether to start RVIZ')
+        'use_rviz', default_value='True', description='Whether to start RVIZ'
+    )
 
     declare_simulator_cmd = DeclareLaunchArgument(
-        'headless',
-        default_value='False',
-        description='Whether to execute gzclient)')
+        'headless', default_value='False', description='Whether to execute gzclient)'
+    )
 
     # start the simulation
     start_gazebo_server_cmd = ExecuteProcess(
         cmd=['gzserver', '-s', 'libgazebo_ros_factory.so', world],
-        cwd=[warehouse_dir], output='screen')
+        cwd=[warehouse_dir],
+        output='screen',
+    )
 
     start_gazebo_client_cmd = ExecuteProcess(
         condition=IfCondition(PythonExpression(['not ', headless])),
         cmd=['gzclient'],
-        cwd=[warehouse_dir], output='screen')
+        cwd=[warehouse_dir],
+        output='screen',
+    )
 
     urdf = os.path.join(nav2_bringup_dir, 'urdf', 'turtlebot3_waffle.urdf')
     start_robot_state_publisher_cmd = Node(
@@ -63,28 +69,33 @@ def generate_launch_description():
         executable='robot_state_publisher',
         name='robot_state_publisher',
         output='screen',
-        arguments=[urdf])
+        arguments=[urdf],
+    )
 
     # start the visualization
     rviz_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(nav2_bringup_dir, 'launch', 'rviz_launch.py')),
+            os.path.join(nav2_bringup_dir, 'launch', 'rviz_launch.py')
+        ),
         condition=IfCondition(use_rviz),
-        launch_arguments={'namespace': '',
-                          'use_namespace': 'False'}.items())
+        launch_arguments={'namespace': '', 'use_namespace': 'False'}.items(),
+    )
 
     # start navigation
     bringup_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(nav2_bringup_dir, 'launch', 'bringup_launch.py')),
-        launch_arguments={'map': map_yaml_file}.items())
+            os.path.join(nav2_bringup_dir, 'launch', 'bringup_launch.py')
+        ),
+        launch_arguments={'map': map_yaml_file}.items(),
+    )
 
     # start the demo autonomy task
     demo_cmd = Node(
         package='nav2_simple_commander',
         executable='example_nav_to_pose',
         emulate_tty=True,
-        output='screen')
+        output='screen',
+    )
 
     ld = LaunchDescription()
     ld.add_action(declare_use_rviz_cmd)

@@ -64,12 +64,10 @@ param_t searchAndGetParam(
   const nav2_util::LifecycleNode::SharedPtr & nh, const std::string & param_name,
   const param_t & default_value)
 {
-  param_t value;
   nav2_util::declare_parameter_if_not_declared(
     nh, param_name,
     rclcpp::ParameterValue(default_value));
-  nh->get_parameter(param_name, value);
-  return value;
+  return nh->get_parameter(param_name).get_value<param_t>();
 }
 
 }  // namespace nav_2d_utils

@@ -12,17 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Dict
-from typing import List
-from typing import Text
-from typing import Optional
-
-import yaml
 import tempfile
+from typing import Dict, List, Optional, Text
+
 import launch
+import yaml
 
 
 class DictItemReference:
+
     def __init__(self, dictionary, key):
         self.dictionary = dictionary
         self.dictKey = key
@@ -41,12 +39,14 @@ class RewrittenYaml(launch.Substitution):
     Used in launch system
     """
 
-    def __init__(self,
+    def __init__(
+        self,
         source_file: launch.SomeSubstitutionsType,
         param_rewrites: Dict,
         root_key: Optional[launch.SomeSubstitutionsType] = None,
         key_rewrites: Optional[Dict] = None,
-        convert_types = False) -> None:
+        convert_types=False,
+    ) -> None:
         super().__init__()
         """
         Construct the substitution
@@ -58,17 +58,24 @@ class RewrittenYaml(launch.Substitution):
         :param: convert_types whether to attempt converting the string to a number or boolean
         """
 
-        from launch.utilities import normalize_to_list_of_substitutions  # import here to avoid loop
+        from launch.utilities import (
+            normalize_to_list_of_substitutions,
+        )  # import here to avoid loop
+
         self.__source_file = normalize_to_list_of_substitutions(source_file)
         self.__param_rewrites = {}
         self.__key_rewrites = {}
         self.__convert_types = convert_types
         self.__root_key = None
         for key in param_rewrites:
-            self.__param_rewrites[key] = normalize_to_list_of_substitutions(param_rewrites[key])
+            self.__param_rewrites[key] = normalize_to_list_of_substitutions(
+                param_rewrites[key]
+            )
         if key_rewrites is not None:
             for key in key_rewrites:
-                self.__key_rewrites[key] = normalize_to_list_of_substitutions(key_rewrites[key])
+                self.__key_rewrites[key] = normalize_to_list_of_substitutions(
+                    key_rewrites[key]
+                )
         if root_key is not None:
             self.__root_key = normalize_to_list_of_substitutions(root_key)
 
@@ -100,10 +107,14 @@ class RewrittenYaml(launch.Substitution):
     def resolve_rewrites(self, context):
         resolved_params = {}
         for key in self.__param_rewrites:
-            resolved_params[key] = launch.utilities.perform_substitutions(context, self.__param_rewrites[key])
+            resolved_params[key] = launch.utilities.perform_substitutions(
+                context, self.__param_rewrites[key]
+            )
         resolved_keys = {}
         for key in self.__key_rewrites:
-            resolved_keys[key] = launch.utilities.perform_substitutions(context, self.__key_rewrites[key])
+            resolved_keys[key] = launch.utilities.perform_substitutions(
+                context, self.__key_rewrites[key]
+            )
         return resolved_params, resolved_keys
 
     def substitute_params(self, yaml, param_rewrites):
@@ -126,7 +137,7 @@ class RewrittenYaml(launch.Substitution):
         # add new total path parameters
         yaml_paths = self.pathify(yaml)
         for path in param_rewrites:
-            if not path in yaml_paths:
+            if not path in yaml_paths:  # noqa: E713
                 new_val = self.convert(param_rewrites[path])
                 yaml_keys = path.split('.')
                 if 'ros__parameters' in yaml_keys:
@@ -139,9 +150,13 @@ class RewrittenYaml(launch.Substitution):
                 break
             key = yaml_key_list.pop(0)
             if isinstance(yaml, list):
-                yaml[int(key)] = self.updateYamlPathVals(yaml[int(key)], yaml_key_list, rewrite_val)
+                yaml[int(key)] = self.updateYamlPathVals(
+                    yaml[int(key)], yaml_key_list, rewrite_val
+                )
             else:
-                yaml[key] = self.updateYamlPathVals(yaml.get(key, {}), yaml_key_list, rewrite_val)
+                yaml[key] = self.updateYamlPathVals(
+                    yaml.get(key, {}), yaml_key_list, rewrite_val
+                )
         return yaml
 
     def substitute_keys(self, yaml, key_rewrites):
@@ -167,10 +182,10 @@ class RewrittenYaml(launch.Substitution):
     def pathify(self, d, p=None, paths=None, joinchar='.'):
         if p is None:
             paths = {}
-            self.pathify(d, "", paths, joinchar=joinchar)
+            self.pathify(d, '', paths, joinchar=joinchar)
             return paths
         pn = p
-        if p != "":
+        if p != '':
             pn += joinchar
         if isinstance(d, dict):
             for k in d:
@@ -191,9 +206,9 @@ class RewrittenYaml(launch.Substitution):
                 pass
 
         # try converting to bool
-        if text_value.lower() == "true":
+        if text_value.lower() == 'true':
             return True
-        if text_value.lower() == "false":
+        if text_value.lower() == 'false':
             return False
 
         # nothing else worked so fall through and return text

@@ -243,6 +243,7 @@ class TrajectoryGenerator:
             The intersection point of line 1 and 2
 
         """
+
         def line1(x):
             return m1 * x + c1
 

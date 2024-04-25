@@ -25,6 +25,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "nav2_util/node_thread.hpp"
+#include "nav2_util/node_utils.hpp"
 
 namespace nav2_util
 {
@@ -57,6 +58,8 @@ public:
    * @param server_timeout Timeout to to react to stop or preemption requests
    * @param spin_thread Whether to spin with a dedicated thread internally
    * @param options Options to pass to the underlying rcl_action_server_t
+   * @param realtime Whether the action server's worker thread should have elevated
+   * prioritization (soft realtime)
    */
   template<typename NodeT>
   explicit SimpleActionServer(
@@ -66,13 +69,15 @@ public:
     CompletionCallback completion_callback = nullptr,
     std::chrono::milliseconds server_timeout = std::chrono::milliseconds(500),
     bool spin_thread = false,
-    const rcl_action_server_options_t & options = rcl_action_server_get_default_options())
+    const rcl_action_server_options_t & options = rcl_action_server_get_default_options(),
+    const bool realtime = false)
   : SimpleActionServer(
       node->get_node_base_interface(),
       node->get_node_clock_interface(),
       node->get_node_logging_interface(),
       node->get_node_waitables_interface(),
-      action_name, execute_callback, completion_callback, server_timeout, spin_thread, options)
+      action_name, execute_callback, completion_callback,
+      server_timeout, spin_thread, options, realtime)
   {}
 
   /**
@@ -83,6 +88,8 @@ public:
    * @param server_timeout Timeout to to react to stop or preemption requests
    * @param spin_thread Whether to spin with a dedicated thread internally
    * @param options Options to pass to the underlying rcl_action_server_t
+   * @param realtime Whether the action server's worker thread should have elevated
+   * prioritization (soft realtime)
    */
   explicit SimpleActionServer(
     rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base_interface,
@@ -94,7 +101,8 @@ public:
     CompletionCallback completion_callback = nullptr,
     std::chrono::milliseconds server_timeout = std::chrono::milliseconds(500),
     bool spin_thread = false,
-    const rcl_action_server_options_t & options = rcl_action_server_get_default_options())
+    const rcl_action_server_options_t & options = rcl_action_server_get_default_options(),
+    const bool realtime = false)
   : node_base_interface_(node_base_interface),
     node_clock_interface_(node_clock_interface),
     node_logging_interface_(node_logging_interface),
@@ -106,6 +114,7 @@ public:
     spin_thread_(spin_thread)
   {
     using namespace std::placeholders;  // NOLINT
+    use_realtime_prioritization_ = realtime;
     if (spin_thread_) {
       callback_group_ = node_base_interface->create_callback_group(
         rclcpp::CallbackGroupType::MutuallyExclusive, false);
@@ -171,6 +180,17 @@ public:
   }
 
   /**
+   * @brief Sets thread priority level
+   */
+  void setSoftRealTimePriority()
+  {
+    if (use_realtime_prioritization_) {
+      nav2_util::setSoftRealTimePriority();
+      debug_msg("Soft realtime prioritization successfully set!");
+    }
+  }
+
+  /**
    * @brief Handles accepted goals and adds to preempted queue to switch to
    * @param Goal A server goal handle to cancel
    */
@@ -202,7 +222,11 @@ public:
 
       // Return quickly to avoid blocking the executor, so spin up a new thread
       debug_msg("Executing goal asynchronously.");
-      execution_future_ = std::async(std::launch::async, [this]() {work();});
+      execution_future_ = std::async(
+        std::launch::async, [this]() {
+          setSoftRealTimePriority();
+          work();
+        });
     }
   }
 
@@ -220,7 +244,7 @@ public:
           node_logging_interface_->get_logger(),
           "Action server failed while executing action callback: \"%s\"", ex.what());
         terminate_all();
-        completion_callback_();
+        if (completion_callback_) {completion_callback_();}
         return;
       }
 
@@ -230,14 +254,14 @@ public:
       if (stop_execution_) {
         warn_msg("Stopping the thread per request.");
         terminate_all();
-        completion_callback_();
+        if (completion_callback_) {completion_callback_();}
         break;
       }
 
       if (is_active(current_handle_)) {
         warn_msg("Current goal was not completed successfully.");
         terminate(current_handle_);
-        completion_callback_();
+        if (completion_callback_) {completion_callback_();}
       }
 
       if (is_active(pending_handle_)) {
@@ -290,8 +314,8 @@ public:
       info_msg("Waiting for async process to finish.");
       if (steady_clock::now() - start_time >= server_timeout_) {
         terminate_all();
-        completion_callback_();
-        throw std::runtime_error("Action callback is still running and missed deadline to stop");
+        if (completion_callback_) {completion_callback_();}
+        error_msg("Action callback is still running and missed deadline to stop");
       }
     }
 
@@ -509,6 +533,7 @@ protected:
   CompletionCallback completion_callback_;
   std::future<void> execution_future_;
   bool stop_execution_{false};
+  bool use_realtime_prioritization_{false};
 
   mutable std::recursive_mutex update_mutex_;
   bool server_active_{false};
@@ -549,7 +574,7 @@ protected:
    * @param the Results object to terminate the action with
    */
   void terminate(
-    std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>> handle,
+    std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>> & handle,
     typename std::shared_ptr<typename ActionT::Result> result =
     std::make_shared<typename ActionT::Result>())
   {

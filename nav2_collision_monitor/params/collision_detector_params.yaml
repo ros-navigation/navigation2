@@ -9,7 +9,7 @@ collision_detector:
     polygons: ["PolygonFront"]
     PolygonFront:
       type: "polygon"
-      points: [0.3, 0.3, 0.3, -0.3, 0.0, -0.3, 0.0, 0.3]
+      points: "[[0.3, 0.3], [0.3, -0.3], [0.0, -0.3], [0.0, 0.3]]"
       action_type: "none"
       min_points: 4
       visualize: True

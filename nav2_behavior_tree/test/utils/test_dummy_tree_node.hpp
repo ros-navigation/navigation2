@@ -16,8 +16,8 @@
 #ifndef UTILS__TEST_DUMMY_TREE_NODE_HPP_
 #define UTILS__TEST_DUMMY_TREE_NODE_HPP_
 
-#include <behaviortree_cpp_v3/basic_types.h>
-#include <behaviortree_cpp_v3/action_node.h>
+#include <behaviortree_cpp/basic_types.h>
+#include <behaviortree_cpp/action_node.h>
 
 namespace nav2_behavior_tree
 {
@@ -36,7 +36,11 @@ public:
 
   void changeStatus(BT::NodeStatus status)
   {
-    setStatus(status);
+    if (status == BT::NodeStatus::IDLE) {
+      resetStatus();
+    } else {
+      setStatus(status);
+    }
   }
 
   BT::NodeStatus executeTick() override
