@@ -73,13 +73,11 @@ TEST(ValidateMessagesTest, PointCheck)
   invalid_point.z = 3.0;
   EXPECT_FALSE(nav2_util::validateMsg(invalid_point));
   // Test invalid Point message with NaN value
-  geometry_msgs::msg::Point invalid_point;
   invalid_point.x = std::numeric_limits<double>::quiet_NaN();
   invalid_point.y = 2.0;
   invalid_point.z = 3.0;
   EXPECT_FALSE(nav2_util::validateMsg(invalid_point));
   // Test invalid Point message with NaN value
-  geometry_msgs::msg::Point invalid_point;
   invalid_point.x = 1.0;
   invalid_point.y = 2.0;
   invalid_point.z = std::numeric_limits<double>::quiet_NaN();
@@ -149,7 +147,6 @@ TEST(ValidateMessagesTest, PoseCheck)
   invalid_pose.orientation.w = 0.0;
   EXPECT_FALSE(nav2_util::validateMsg(invalid_pose));
   // Test invalid Pose message with invalid orientation
-  geometry_msgs::msg::Pose invalid_pose;
   invalid_pose.position.x = 1.0;
   invalid_pose.position.y = 2.0;
   invalid_pose.position.z = 3.0;
@@ -183,30 +180,22 @@ TEST(ValidateMessagesTest, MapMetaDataCheck) {
   invalid_map_meta_data.resolution = 100.0;
   invalid_map_meta_data.width = 100;
   invalid_map_meta_data.height = 100;
-  geometry_msgs::msg::Pose valid_origin;
-  valid_origin.position.x = 0.0;
-  valid_origin.position.y = 0.0;
-  valid_origin.position.z = 0.0;
-  valid_origin.orientation.x = 0.0;
-  valid_origin.orientation.y = 0.0;
-  valid_origin.orientation.z = 1.0;
-  valid_origin.orientation.w = 1.0;
-  valid_map_meta_data.origin = valid_origin;
+  geometry_msgs::msg::Pose invalid_origin;
+  invalid_origin.position.x = 0.0;
+  invalid_origin.position.y = 0.0;
+  invalid_origin.position.z = 0.0;
+  invalid_origin.orientation.x = 0.0;
+  invalid_origin.orientation.y = 0.0;
+  invalid_origin.orientation.z = 1.0;
+  invalid_origin.orientation.w = 1.0;
+  invalid_map_meta_data.origin = invalid_origin;
   EXPECT_FALSE(nav2_util::validateMsg(invalid_map_meta_data));
 
   // Test invalid resolution message
   invalid_map_meta_data.resolution = std::numeric_limits<double>::quiet_NaN();
   invalid_map_meta_data.width = 100;
   invalid_map_meta_data.height = 100;
-  geometry_msgs::msg::Pose valid_origin;
-  valid_origin.position.x = 0.0;
-  valid_origin.position.y = 0.0;
-  valid_origin.position.z = 0.0;
-  valid_origin.orientation.x = 0.0;
-  valid_origin.orientation.y = 0.0;
-  valid_origin.orientation.z = 0.0;
-  valid_origin.orientation.w = 1.0;
-  valid_map_meta_data.origin = valid_origin;
+  invalid_map_meta_data.origin = valid_origin;
   EXPECT_FALSE(nav2_util::validateMsg(invalid_map_meta_data));
 
   // Test invalid MapMetaData message with zero width
@@ -234,22 +223,18 @@ TEST(ValidateMessagesTest, OccupancyGridCheck) {
   invalid_occupancy_grid.info.resolution = 0.05;
   invalid_occupancy_grid.info.width = 100;
   invalid_occupancy_grid.info.height = 100;
-  std::vector<int8_t> invalid_data(100 * 100, 0);
-  invalid_occupancy_grid.data = invalid_data;
+  invalid_occupancy_grid.data = data;
   EXPECT_FALSE(nav2_util::validateMsg(invalid_occupancy_grid));
 
   // Test invalid info message with wrong data size
-  nav_msgs::msg::OccupancyGrid invalid_occupancy_grid;
   invalid_occupancy_grid.header.frame_id = "map";
   invalid_occupancy_grid.info.resolution = 0.05;
   invalid_occupancy_grid.info.width = 0;    // Incorrect width
   invalid_occupancy_grid.info.height = 100;
-  std::vector<int8_t> invalid_data(100 * 100, 0);
-  invalid_occupancy_grid.data = invalid_data;
+  invalid_occupancy_grid.data = data;
   EXPECT_FALSE(nav2_util::validateMsg(invalid_occupancy_grid));
 
   // Test invalid OccupancyGrid message with wrong data size
-  nav_msgs::msg::OccupancyGrid invalid_occupancy_grid;
   invalid_occupancy_grid.header.frame_id = "map";
   invalid_occupancy_grid.info.resolution = 0.05;
   invalid_occupancy_grid.info.width = 100;
