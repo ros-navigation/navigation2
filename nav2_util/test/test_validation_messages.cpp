@@ -100,7 +100,7 @@ TEST(ValidateMessagesTest, QuaternionCheck)
   invalid_quaternion.x = 0.1;
   invalid_quaternion.y = 0.2;
   invalid_quaternion.z = 0.3;
-  invalid_quaternion.w = 0.5; // Invalid magnitude (should be 1.0)
+  invalid_quaternion.w = 0.5;   // Invalid magnitude (should be 1.0)
   EXPECT_FALSE(nav2_util::validateMsg(invalid_quaternion));
 
   // One NaN value
@@ -224,13 +224,13 @@ TEST(ValidateMessagesTest, OccupancyGridCheck) {
   valid_occupancy_grid.info.resolution = 0.05;
   valid_occupancy_grid.info.width = 100;
   valid_occupancy_grid.info.height = 100;
-  std::vector<int8_t> data(100 * 100, 0); // Initialize with zeros
+  std::vector<int8_t> data(100 * 100, 0);   // Initialize with zeros
   valid_occupancy_grid.data = data;
   EXPECT_TRUE(nav2_util::validateMsg(valid_occupancy_grid));
 
   // Test invalid header message with wrong data size
   nav_msgs::msg::OccupancyGrid invalid_occupancy_grid;
-  invalid_occupancy_grid.header.frame_id = "";  // Incorrect id
+  invalid_occupancy_grid.header.frame_id = "";    // Incorrect id
   invalid_occupancy_grid.info.resolution = 0.05;
   invalid_occupancy_grid.info.width = 100;
   invalid_occupancy_grid.info.height = 100;
@@ -254,7 +254,7 @@ TEST(ValidateMessagesTest, OccupancyGridCheck) {
   invalid_occupancy_grid.info.resolution = 0.05;
   invalid_occupancy_grid.info.width = 100;
   invalid_occupancy_grid.info.height = 100;
-  std::vector<int8_t> invalid_data(100 * 99, 0); // Incorrect data size
+  std::vector<int8_t> invalid_data(100 * 99, 0);   // Incorrect data size
   invalid_occupancy_grid.data = invalid_data;
   EXPECT_FALSE(nav2_util::validateMsg(invalid_occupancy_grid));
 }
