@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
-#include "nav2_util/validate_messages.hpp"
 #include <gtest/gtest.h>
+#include "nav2_util/validate_messages.hpp"
 
 TEST(ValidateMessagesTest, DoubleValueCheck) {
   // Test valid double value
