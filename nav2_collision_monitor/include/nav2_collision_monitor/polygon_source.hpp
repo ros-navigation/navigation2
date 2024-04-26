@@ -108,7 +108,6 @@ protected:
 
   /// @brief distance between sampled points on polygon edges
   double sampling_distance_;
-
 };  // class PolygonSource
 
 }  // namespace nav2_collision_monitor
