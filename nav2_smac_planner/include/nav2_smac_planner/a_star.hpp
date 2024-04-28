@@ -55,7 +55,7 @@ public:
   typedef typename NodeT::Coordinates Coordinates;
   typedef typename NodeT::CoordinateVector CoordinateVector;
   typedef typename NodeVector::iterator NeighborIterator;
-  typedef std::function<bool (const unsigned int &, NodeT * &)> NodeGetter;
+  typedef std::function<bool (const uint64_t &, NodeT * &)> NodeGetter;
 
   /**
    * @struct nav2_smac_planner::NodeComparator
@@ -210,7 +210,7 @@ protected:
    * @brief Adds node to graph
    * @param index Node index to add
    */
-  inline NodePtr addToGraph(const unsigned int & index);
+  inline NodePtr addToGraph(const uint64_t & index);
 
   /**
    * @brief Check if this node is the goal node

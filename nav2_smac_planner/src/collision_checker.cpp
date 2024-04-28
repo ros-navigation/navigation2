@@ -174,7 +174,7 @@ bool GridCollisionChecker::inCollision(
 }
 
 bool GridCollisionChecker::inCollision(
-  const unsigned int & i,
+  const uint64_t & i,
   const bool & traverse_unknown)
 {
   footprint_cost_ = costmap_->getCost(i);
