@@ -40,8 +40,6 @@ ClearCostmapService::ClearCostmapService(
   logger_ = node->get_logger();
   reset_value_ = costmap_.getCostmap()->getDefaultValue();
 
-  node->get_parameter("clearable_layers", clearable_layers_);
-
   clear_except_service_ = node->create_service<ClearExceptRegion>(
     "clear_except_" + costmap_.getName(),
     std::bind(
