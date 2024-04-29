@@ -41,6 +41,7 @@
 #include "nav2_collision_monitor/scan.hpp"
 #include "nav2_collision_monitor/pointcloud.hpp"
 #include "nav2_collision_monitor/range.hpp"
+#include "nav2_collision_monitor/polygon_source.hpp"
 
 namespace nav2_collision_monitor
 {

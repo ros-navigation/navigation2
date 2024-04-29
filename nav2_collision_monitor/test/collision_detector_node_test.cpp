@@ -49,6 +49,7 @@ static const char ODOM_FRAME_ID[]{"odom"};
 static const char SCAN_NAME[]{"Scan"};
 static const char POINTCLOUD_NAME[]{"PointCloud"};
 static const char RANGE_NAME[]{"Range"};
+static const char POLYGON_NAME[]{"Polygon"};
 static const char STATE_TOPIC[]{"collision_detector_state"};
 static const char COLLISION_POINTS_MARKERS_TOPIC[]{"/collision_detector/collision_points_marker"};
 static const int MIN_POINTS{1};
@@ -69,7 +70,8 @@ enum SourceType
   SOURCE_UNKNOWN = 0,
   SCAN = 1,
   POINTCLOUD = 2,
-  RANGE = 3
+  RANGE = 3,
+  POLYGON_SOURCE = 4
 };
 
 class CollisionDetectorWrapper : public nav2_collision_monitor::CollisionDetector
@@ -140,6 +142,7 @@ public:
   void publishScan(const double dist, const rclcpp::Time & stamp);
   void publishPointCloud(const double dist, const rclcpp::Time & stamp);
   void publishRange(const double dist, const rclcpp::Time & stamp);
+  void publishPolygon(const double dist, const rclcpp::Time & stamp);
   bool waitData(
     const double expected_dist,
     const std::chrono::nanoseconds & timeout,
@@ -157,6 +160,7 @@ protected:
   rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr scan_pub_;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pointcloud_pub_;
   rclcpp::Publisher<sensor_msgs::msg::Range>::SharedPtr range_pub_;
+  rclcpp::Publisher<geometry_msgs::msg::PolygonInstanceStamped>::SharedPtr polygon_source_pub_;
 
   rclcpp::Subscription<nav2_msgs::msg::CollisionDetectorState>::SharedPtr state_sub_;
   nav2_msgs::msg::CollisionDetectorState::SharedPtr state_msg_;
@@ -177,6 +181,8 @@ Tester::Tester()
     POINTCLOUD_NAME, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
   range_pub_ = cd_->create_publisher<sensor_msgs::msg::Range>(
     RANGE_NAME, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+  polygon_source_pub_ = cd_->create_publisher<geometry_msgs::msg::PolygonInstanceStamped>(
+    POLYGON_NAME, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
 
   state_sub_ = cd_->create_subscription<nav2_msgs::msg::CollisionDetectorState>(
     STATE_TOPIC, rclcpp::SystemDefaultsQoS(),
@@ -192,6 +198,7 @@ Tester::~Tester()
   scan_pub_.reset();
   pointcloud_pub_.reset();
   range_pub_.reset();
+  polygon_source_pub_.reset();
   collision_points_marker_sub_.reset();
 
   cd_.reset();
@@ -353,6 +360,20 @@ void Tester::addSource(
       source_name + ".obstacles_angle", rclcpp::ParameterValue(M_PI / 200));
     cd_->set_parameter(
       rclcpp::Parameter(source_name + ".obstacles_angle", M_PI / 200));
+  } else if (type == POLYGON_SOURCE) {
+    cd_->declare_parameter(
+      source_name + ".type", rclcpp::ParameterValue("polygon"));
+    cd_->set_parameter(
+      rclcpp::Parameter(source_name + ".type", "polygon"));
+
+    cd_->declare_parameter(
+      source_name + ".sampling_distance", rclcpp::ParameterValue(0.1));
+    cd_->set_parameter(
+      rclcpp::Parameter(source_name + ".sampling_distance", 0.1));
+    cd_->declare_parameter(
+      source_name + ".polygon_similarity_threshold", rclcpp::ParameterValue(2.0));
+    cd_->set_parameter(
+      rclcpp::Parameter(source_name + ".polygon_similarity_threshold", 2.0));
   } else {  // type == SOURCE_UNKNOWN
     cd_->declare_parameter(
       source_name + ".type", rclcpp::ParameterValue("unknown"));
@@ -474,6 +495,32 @@ void Tester::publishRange(const double dist, const rclcpp::Time & stamp)
   msg->range = dist;
 
   range_pub_->publish(std::move(msg));
+}
+
+void Tester::publishPolygon(const double dist, const rclcpp::Time & stamp)
+{
+  std::unique_ptr<geometry_msgs::msg::PolygonInstanceStamped> msg =
+    std::make_unique<geometry_msgs::msg::PolygonInstanceStamped>();
+
+  msg->header.frame_id = SOURCE_FRAME_ID;
+  msg->header.stamp = stamp;
+
+  geometry_msgs::msg::Point32 p;
+  p.x = 1.0;
+  p.y = dist;
+  msg->polygon.polygon.points.push_back(p);
+  p.x = -1.0;
+  p.y = dist;
+  msg->polygon.polygon.points.push_back(p);
+  p.x = -1.0;
+  p.y = dist + 1.0;
+  msg->polygon.polygon.points.push_back(p);
+  p.x = 1.0;
+  p.y = dist + 1.0;
+  msg->polygon.polygon.points.push_back(p);
+  msg->polygon.id = 1u;
+
+  polygon_source_pub_->publish(std::move(msg));
 }
 
 bool Tester::waitData(
@@ -706,6 +753,35 @@ TEST_F(Tester, testPointcloudDetection)
   publishPointCloud(2.5, curr_time);
 
   ASSERT_TRUE(waitData(std::hypot(2.5, 0.01), 500ms, curr_time));
+  ASSERT_TRUE(waitState(300ms));
+  ASSERT_NE(state_msg_->detections.size(), 0u);
+  ASSERT_EQ(state_msg_->detections[0], true);
+
+  // Stop Collision Detector node
+  cd_->stop();
+}
+
+TEST_F(Tester, testPolygonSourceDetection)
+{
+  rclcpp::Time curr_time = cd_->now();
+
+  // Set Collision Detector parameters.
+  setCommonParameters();
+  // Create polygon
+  addPolygon("DetectionRegion", CIRCLE, 3.0, "none");
+  addSource(POLYGON_NAME, POLYGON_SOURCE);
+  setVectors({"DetectionRegion"}, {POLYGON_NAME});
+
+  // Start Collision Detector node
+  cd_->start();
+
+  // Share TF
+  sendTransforms(curr_time);
+
+  // Obstacle is in DetectionRegion
+  publishPolygon(2.5, curr_time);
+
+  ASSERT_TRUE(waitData(std::hypot(2.5, 1.0), 500ms, curr_time));
   ASSERT_TRUE(waitState(300ms));
   ASSERT_NE(state_msg_->detections.size(), 0u);
   ASSERT_EQ(state_msg_->detections[0], true);
