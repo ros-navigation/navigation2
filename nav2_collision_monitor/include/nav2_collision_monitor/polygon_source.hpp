@@ -1,4 +1,4 @@
-// Copyright (c) 2022 Samsung R&D Institute Russia
+// Copyright (c) 2023 Pixel Robotics GmbH
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,14 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_COLLISION_MONITOR__RANGE_HPP_
-#define NAV2_COLLISION_MONITOR__RANGE_HPP_
+#ifndef NAV2_COLLISION_MONITOR__POLYGON_SOURCE_HPP_
+#define NAV2_COLLISION_MONITOR__POLYGON_SOURCE_HPP_
 
 #include <memory>
 #include <vector>
 #include <string>
 
-#include "sensor_msgs/msg/range.hpp"
+#include "geometry_msgs/msg/polygon_instance_stamped.hpp"
+#include "geometry_msgs/msg/polygon_stamped.hpp"
 
 #include "nav2_collision_monitor/source.hpp"
 
@@ -27,13 +28,13 @@ namespace nav2_collision_monitor
 {
 
 /**
- * @brief Implementation for IR/ultrasound range sensor source
+ * @brief Implementation for polygon source
  */
-class Range : public Source
+class PolygonSource : public Source
 {
 public:
   /**
-   * @brief Range constructor
+   * @brief PolygonSource constructor
    * @param node Collision Monitor node pointer
    * @param source_name Name of data source
    * @param tf_buffer Shared pointer to a TF buffer
@@ -44,7 +45,7 @@ public:
    * @param base_shift_correction Whether to correct source data towards to base frame movement,
    * considering the difference between current time and latest source time
    */
-  Range(
+  PolygonSource(
     const nav2_util::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
     const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
@@ -54,18 +55,18 @@ public:
     const rclcpp::Duration & source_timeout,
     const bool base_shift_correction);
   /**
-   * @brief Range destructor
+   * @brief PolygonSource destructor
    */
-  ~Range();
+  ~PolygonSource();
 
   /**
    * @brief Data source configuration routine. Obtains ROS-parameters
-   * and creates range sensor subscriber.
+   * and creates subscriber.
    */
   void configure();
 
   /**
-   * @brief Adds latest data from range sensor to the data array.
+   * @brief Adds latest data from polygon source to the data array.
    * @param curr_time Current node time for data interpolation
    * @param data Array where the data from source to be added.
    * Added data is transformed to base_frame_id_ coordinate system at curr_time.
@@ -75,6 +76,15 @@ public:
     const rclcpp::Time & curr_time,
     std::vector<Point> & data);
 
+  /**
+   * @brief Converts a PolygonInstanceStamped to a std::vector<Point>
+   * @param polygon Input Polygon to be converted
+   * @param data Output vector of Point
+   */
+  void convertPolygonStampedToPoints(
+    const geometry_msgs::msg::PolygonStamped & polygon,
+    std::vector<Point> & data) const;
+
 protected:
   /**
    * @brief Getting sensor-specific ROS-parameters
@@ -83,23 +93,23 @@ protected:
   void getParameters(std::string & source_topic);
 
   /**
-   * @brief Range sensor data callback
-   * @param msg Shared pointer to Range sensor message
+   * @brief PolygonSource data callback
+   * @param msg Shared pointer to PolygonSource message
    */
-  void dataCallback(sensor_msgs::msg::Range::ConstSharedPtr msg);
+  void dataCallback(geometry_msgs::msg::PolygonInstanceStamped::ConstSharedPtr msg);
 
   // ----- Variables -----
 
-  /// @brief Range sensor data subscriber
-  rclcpp::Subscription<sensor_msgs::msg::Range>::SharedPtr data_sub_;
+  /// @brief PolygonSource data subscriber
+  rclcpp::Subscription<geometry_msgs::msg::PolygonInstanceStamped>::SharedPtr data_sub_;
 
-  /// @brief Angle increment (in rad) between two obstacle points at the range arc
-  double obstacles_angle_;
+  /// @brief Latest data obtained
+  std::vector<geometry_msgs::msg::PolygonInstanceStamped> data_;
 
-  /// @brief Latest data obtained from range sensor
-  sensor_msgs::msg::Range::ConstSharedPtr data_;
-};  // class Range
+  /// @brief distance between sampled points on polygon edges
+  double sampling_distance_;
+};  // class PolygonSource
 
 }  // namespace nav2_collision_monitor
 
-#endif  // NAV2_COLLISION_MONITOR__RANGE_HPP_
+#endif  // NAV2_COLLISION_MONITOR__POLYGON_SOURCE_HPP_
