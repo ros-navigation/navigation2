@@ -17,6 +17,8 @@
 #include <cmath>
 #include <functional>
 
+#include "tf2/transform_datatypes.h"
+
 #include "nav2_util/robot_utils.hpp"
 
 namespace nav2_collision_monitor
@@ -66,7 +68,7 @@ void Scan::configure()
 
 bool Scan::getData(
   const rclcpp::Time & curr_time,
-  std::vector<Point> & data) const
+  std::vector<Point> & data)
 {
   // Ignore data from the source if it is not being published yet or
   // not being published for a long time

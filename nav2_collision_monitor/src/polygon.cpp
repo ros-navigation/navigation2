@@ -19,6 +19,7 @@
 
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/point32.hpp"
+#include "tf2/transform_datatypes.h"
 
 #include "nav2_util/node_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
@@ -195,7 +196,7 @@ void Polygon::updatePolygon(const Velocity & /*cmd_vel_in*/)
     std::size_t new_size = polygon_.polygon.points.size();
 
     // Get the transform from PolygonStamped frame to base_frame_id_
-    tf2::Transform tf_transform;
+    tf2::Stamped<tf2::Transform> tf_transform;
     if (
       !nav2_util::getTransform(
         polygon_.header.frame_id, base_frame_id_,
@@ -478,7 +479,7 @@ void Polygon::updatePolygon(geometry_msgs::msg::PolygonStamped::ConstSharedPtr m
   }
 
   // Get the transform from PolygonStamped frame to base_frame_id_
-  tf2::Transform tf_transform;
+  tf2::Stamped<tf2::Transform> tf_transform;
   if (
     !nav2_util::getTransform(
       msg->header.frame_id, base_frame_id_,
