@@ -19,10 +19,16 @@
 
 #include "nav2_mppi_controller/models/control_sequence.hpp"
 #include "nav2_mppi_controller/models/state.hpp"
+
+// xtensor creates warnings that needs to be ignored as we are building with -Werror
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
 #include <xtensor/xmath.hpp>
 #include <xtensor/xmasked_view.hpp>
 #include <xtensor/xview.hpp>
 #include <xtensor/xnoalias.hpp>
+#pragma GCC diagnostic pop
 
 #include "nav2_mppi_controller/tools/parameters_handler.hpp"
 
