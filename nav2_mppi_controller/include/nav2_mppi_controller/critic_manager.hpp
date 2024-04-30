@@ -19,7 +19,13 @@
 #include <string>
 #include <vector>
 #include <pluginlib/class_loader.hpp>
+
+// xtensor creates warnings that needs to be ignored as we are building with -Werror
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
 #include <xtensor/xtensor.hpp>
+#pragma GCC diagnostic pop
 
 #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
