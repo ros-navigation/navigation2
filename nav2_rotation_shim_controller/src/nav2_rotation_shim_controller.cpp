@@ -195,10 +195,7 @@ geometry_msgs::msg::PoseStamped RotationShimController::getSampledPathPt()
     }
   }
 
-  throw nav2_core::ControllerException(
-          std::string(
-            "Unable to find a sampling point at least %0.2f from the robot,"
-            "passing off to primary controller plugin.", forward_sampling_distance_));
+  return current_path_.poses.back();
 }
 
 geometry_msgs::msg::Pose
