@@ -169,6 +169,7 @@ bool getTransform(
     tf2::fromMsg(transform.transform, tf2_transform);
     return true;
   }
+
   return false;
 }
 
