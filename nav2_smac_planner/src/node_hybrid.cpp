@@ -490,7 +490,7 @@ void NodeHybrid::resetObstacleHeuristic(
   auto costmap = costmap_ros->getCostmap();
 
   // Clear lookup table
-  uint64_t size = 0u;
+  unsigned int size = 0u;
   unsigned int size_x = 0u;
   if (motion_table.downsample_obstacle_heuristic) {
     size_x = ceil(static_cast<float>(costmap->getSizeInCellsX()) / 2.0f);
@@ -507,7 +507,7 @@ void NodeHybrid::resetObstacleHeuristic(
       obstacle_heuristic_lookup_table.begin(),
       obstacle_heuristic_lookup_table.end(), 0.0f);
   } else {
-    uint64_t obstacle_size = obstacle_heuristic_lookup_table.size();
+    unsigned int obstacle_size = obstacle_heuristic_lookup_table.size();
     obstacle_heuristic_lookup_table.resize(size, 0.0f);
     // must reset values for non-constructed indices
     std::fill_n(
@@ -518,7 +518,7 @@ void NodeHybrid::resetObstacleHeuristic(
   obstacle_heuristic_queue.reserve(size);
 
   // Set initial goal point to queue from. Divided by 2 due to downsampled costmap.
-  uint64_t goal_index;
+  unsigned int goal_index;
   if (motion_table.downsample_obstacle_heuristic) {
     goal_index = floor(goal_y / 2.0f) * size_x + floor(goal_x / 2.0f);
   } else {
@@ -585,7 +585,7 @@ float NodeHybrid::getObstacleHeuristic(
     start_x = floor(node_coords.x);
   }
 
-  const uint64_t start_index = start_y * size_x + start_x;
+  const unsigned int start_index = start_y * size_x + start_x;
   const float & requested_node_cost = obstacle_heuristic_lookup_table[start_index];
   if (requested_node_cost > 0.0f) {
     // costs are doubled due to downsampling
@@ -612,7 +612,7 @@ float NodeHybrid::getObstacleHeuristic(
   const float sqrt2 = sqrtf(2.0f);
   float c_cost, cost, travel_cost, new_cost, existing_cost;
   unsigned int mx, my;
-  uint64_t idx, new_idx = 0;
+  unsigned int idx, new_idx = 0;
 
   const std::vector<int> neighborhood = {1, -1,  // left right
     size_x_int, -size_x_int,  // up down
@@ -636,7 +636,7 @@ float NodeHybrid::getObstacleHeuristic(
 
     // find neighbors
     for (unsigned int i = 0; i != neighborhood.size(); i++) {
-      new_idx = static_cast<uint64_t>(static_cast<int>(idx) + neighborhood[i]);
+      new_idx = static_cast<unsigned int>(static_cast<int>(idx) + neighborhood[i]);
 
       // if neighbor path is better and non-lethal, set new cost and add to queue
       if (new_idx < size_x * size_y) {

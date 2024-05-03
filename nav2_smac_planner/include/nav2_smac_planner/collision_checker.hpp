@@ -89,7 +89,7 @@ public:
    * @return boolean if in collision or not.
    */
   bool inCollision(
-    const uint64_t & i,
+    const unsigned int & i,
     const bool & traverse_unknown);
 
   /**
