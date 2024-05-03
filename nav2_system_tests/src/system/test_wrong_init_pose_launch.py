@@ -114,7 +114,6 @@ def generate_launch_description():
                     'bt_xml_file': bt_navigator_xml,
                     'use_composition': 'False',
                     'autostart': 'True',
-                    'use_composition': 'False',
                 }.items(),
             ),
         ]
