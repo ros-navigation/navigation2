@@ -97,7 +97,7 @@ bool GridCollisionChecker::inCollision(
   if (outsideRange(costmap_->getSizeInCellsX(), x) ||
     outsideRange(costmap_->getSizeInCellsY(), y))
   {
-    return false;
+    return true;
   }
 
   // Assumes setFootprint already set
