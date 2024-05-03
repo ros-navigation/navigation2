@@ -412,6 +412,10 @@ StaticLayer::updateCosts(
     return;
   }
 
+  if (footprint_clearing_enabled_) {
+    setConvexPolygonCost(transformed_footprint_, nav2_costmap_2d::FREE_SPACE);
+  }
+
   if (!layered_costmap_->isRolling()) {
     // if not rolling, the layered costmap (master_grid) has same coordinates as this layer
     if (!use_maximum_) {
@@ -454,9 +458,6 @@ StaticLayer::updateCosts(
         }
       }
     }
-  }
-  if (footprint_clearing_enabled_) {
-    setConvexPolygonCost(transformed_footprint_, nav2_costmap_2d::FREE_SPACE);
   }
   current_ = true;
 }
