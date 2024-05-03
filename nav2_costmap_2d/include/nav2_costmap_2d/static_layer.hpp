@@ -48,6 +48,7 @@
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "nav2_costmap_2d/footprint.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -159,6 +160,17 @@ protected:
    */
   rcl_interfaces::msg::SetParametersResult
   dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
+
+  std::vector<geometry_msgs::msg::Point> transformed_footprint_;
+  bool footprint_clearing_enabled_;
+  /**
+   * @brief Clear costmap layer info below the robot's footprint
+   */
+  void updateFootprint(
+    double robot_x, double robot_y, double robot_yaw, double * min_x,
+    double * min_y,
+    double * max_x,
+    double * max_y);
 
   std::string global_frame_;  ///< @brief The global frame for the costmap
   std::string map_frame_;  /// @brief frame that map is located in
