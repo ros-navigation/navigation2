@@ -7,6 +7,7 @@
         "cacheFrom": "ghcr.io/ros-planning/navigation2:main"
     },
     "runArgs": [
+        "--name=nav2"
         // "--cap-add=SYS_PTRACE", // enable debugging, e.g. gdb
         // "--ipc=host", // shared memory transport with host, e.g. rviz GUIs
         // "--network=host", // network access to host interfaces, e.g. eth0
@@ -16,9 +17,9 @@
     ],
     "workspaceFolder": "/opt/overlay_ws/src/navigation2",
     "workspaceMount": "source=${localWorkspaceFolder},target=${containerWorkspaceFolder},type=bind",
-    "onCreateCommand": ".devcontainer/on-create-command.sh",
-    "updateContentCommand": ".devcontainer/update-content-command.sh",
-    "postCreateCommand": ".devcontainer/post-create-command.sh",
+    // "onCreateCommand": ".devcontainer/on-create-command.sh",
+    // "updateContentCommand": ".devcontainer/update-content-command.sh",
+    // "postCreateCommand": ".devcontainer/post-create-command.sh",
     "remoteEnv": {
         "OVERLAY_MIXINS": "release ccache lld",
         "CCACHE_DIR": "/tmp/.ccache"
@@ -29,11 +30,11 @@
             "target": "/tmp/.ccache",
             "type": "volume"
         },
-        {
-            "source": "overlay-${devcontainerId}",
-            "target": "/opt/overlay_ws",
-            "type": "volume"
-        }
+        // {
+        //     "source": "overlay-${devcontainerId}",
+        //     "target": "/opt/overlay_ws",
+        //     "type": "volume"
+        // }
     ],
     "features": {
         // "ghcr.io/devcontainers/features/desktop-lite:1": {},

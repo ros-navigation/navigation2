@@ -15,6 +15,7 @@ find_package(std_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(GRAPHICSMAGICKCPP REQUIRED)
+find_package(yaml-cpp REQUIRED)
 
 nav2_package()
 
@@ -118,7 +119,8 @@ target_include_directories(${map_io_library_name} SYSTEM PRIVATE
   ${GRAPHICSMAGICKCPP_INCLUDE_DIRS})
 
 target_link_libraries(${map_io_library_name}
-  ${GRAPHICSMAGICKCPP_LIBRARIES})
+  ${GRAPHICSMAGICKCPP_LIBRARIES}
+  yaml-cpp::yaml-cpp)
 
 if(WIN32)
   target_compile_definitions(${map_io_library_name} PRIVATE
@@ -160,5 +162,5 @@ ament_export_libraries(
   ${library_name}
   ${map_io_library_name}
 )
-ament_export_dependencies(${map_io_dependencies} ${map_server_dependencies})
+ament_export_dependencies(${map_io_dependencies} ${map_server_dependencies} yaml-cpp)
 ament_package()
