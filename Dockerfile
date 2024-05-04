@@ -72,11 +72,10 @@ ENV UNDERLAY_WS $UNDERLAY_WS
 WORKDIR $UNDERLAY_WS
 COPY --from=cacher /tmp/$UNDERLAY_WS ./
 RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
-    apt-get update && rosdep install -r -q -y \
+    apt-get update && rosdep install -q -y \
       --from-paths src \
       --skip-keys " \
         slam_toolbox \
-        turtlebot3_gazebo \
         " \
       --ignore-src \
     && rm -rf /var/lib/apt/lists/*
@@ -98,11 +97,12 @@ ENV OVERLAY_WS $OVERLAY_WS
 WORKDIR $OVERLAY_WS
 COPY --from=cacher /tmp/$OVERLAY_WS ./
 RUN . $UNDERLAY_WS/install/setup.sh && \
-    apt-get update && rosdep install -r -q -y \
+    apt-get update && rosdep install -q -y \
       --from-paths src \
       --skip-keys " \
         slam_toolbox \
         turtlebot3_gazebo \
+        gazebo_ros_pkgs \
         behaviortree_cpp \ 
         "\
       --ignore-src \
@@ -170,9 +170,9 @@ RUN mkdir -p $ROOT_SRV
 
 # install demo dependencies
 RUN apt-get update && apt-get install -y \
-      # ros-$ROS_DISTRO-aws-robomaker-small-warehouse-world \
+      ros-$ROS_DISTRO-aws-robomaker-small-warehouse-world \
       ros-$ROS_DISTRO-rviz2
-      # ros-$ROS_DISTRO-turtlebot3-simulations
+      ros-$ROS_DISTRO-turtlebot3-simulations
 
 # install gzweb dependacies
 RUN apt-get install -y --no-install-recommends \
