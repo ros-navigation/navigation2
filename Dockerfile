@@ -103,7 +103,6 @@ RUN . $UNDERLAY_WS/install/setup.sh && \
         slam_toolbox \
         turtlebot3_gazebo \
         gazebo_ros_pkgs \
-        behaviortree_cpp \ 
         "\
       --ignore-src \
     && rm -rf /var/lib/apt/lists/*

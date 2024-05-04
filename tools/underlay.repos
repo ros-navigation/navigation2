@@ -1,9 +1,8 @@
 repositories:
-  BehaviorTree/BehaviorTree.CPP:
-    # Remove when 4.6.0 is released
-    type: git
-    url: https://github.com/BehaviorTree/BehaviorTree.CPP.git
-    version: 4.6.0
+  # BehaviorTree/BehaviorTree.CPP:
+  #   type: git
+  #   url: https://github.com/BehaviorTree/BehaviorTree.CPP.git
+  #   version: master
   # ros/angles:
   #   type: git
   #   url: https://github.com/ros/angles.git
