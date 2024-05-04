@@ -171,7 +171,7 @@ RUN mkdir -p $ROOT_SRV
 # install demo dependencies
 RUN apt-get update && apt-get install -y \
       ros-$ROS_DISTRO-aws-robomaker-small-warehouse-world \
-      ros-$ROS_DISTRO-rviz2
+      ros-$ROS_DISTRO-rviz2 \
       ros-$ROS_DISTRO-turtlebot3-simulations
 
 # install gzweb dependacies
