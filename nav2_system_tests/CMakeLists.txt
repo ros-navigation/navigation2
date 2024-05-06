@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.5)
 project(nav2_system_tests)
 
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 23)
+endif()
+
 find_package(ament_cmake REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(rclcpp REQUIRED)
