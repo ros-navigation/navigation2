@@ -524,6 +524,10 @@ AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::Sha
 
   RCLCPP_INFO(get_logger(), "initialPoseReceived");
 
+  if (!nav2_util::validateMsg(*msg)) {
+    RCLCPP_ERROR(get_logger(), "Received initialpose message is malformed. Rejecting.");
+    return;
+  }
   if (msg->header.frame_id == "") {
     // This should be removed at some point
     RCLCPP_WARN(

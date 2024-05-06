@@ -244,4 +244,141 @@ TEST(ValidateMessagesTest, OccupancyGridCheck) {
   EXPECT_FALSE(nav2_util::validateMsg(invalid_occupancy_grid));
 }
 
+TEST(ValidateMessagesTest, PoseWithCovarianceCheck){
+  geometry_msgs::msg::PoseWithCovariance validate_msg = {
+    // covariance
+    {0.25, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.06853891909122467},
+    // pose
+    {
+        // position
+        {0.50010401010515571, 1.7468730211257935, 0.0},
+        // orientation
+        {0.9440542194053062, 0.0, 0.0, -0.32979028309372299}
+    }
+  };
+  EXPECT_TRUE(nav2_util::validateMsg(validate_msg));
+
+  geometry_msgs::msg::PoseWithCovariance 
+  invalidate_msg = {
+    // covariance
+    {0.25, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, NAN, 0.0, NAN, 0.0, 0.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.06853891909122467},
+    // pose
+    {
+        // position
+        {0.50010401010515571, 1.7468730211257935, 0.0},
+        // orientation
+        {0.9440542194053062, 0.0, 0.0, -0.32979028309372299}
+    }
+  };
+  EXPECT_FALSE(nav2_util::validateMsg(invalidate_msg));
+
+  invalidate_msg = {
+    // covariance
+    {0.25, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.06853891909122467},
+    // pose
+    {
+        // position
+        {NAN, 1.7468730211257935, 0.0},
+        // orientation
+        {0.9440542194053062, 0.0, 0.0, -0.32979028309372299}
+    }
+  };
+  EXPECT_FALSE(nav2_util::validateMsg(invalidate_msg));
+}
+
+
+TEST(ValidateMessagesTest, PoseWithCovarianceStampedCheck){
+  geometry_msgs::msg::PoseWithCovarianceStamped validate_msg = {
+      // Header
+      {
+          // frame_id
+          "map",
+          // stamp
+          {
+              1711029956, // sec
+              146734875   // nanosec
+          }
+      },
+      // Pose
+      {
+          // covariance
+          {0.25, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+          0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+          0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.06853891909122467},
+          // pose
+          {
+              // position
+              {0.50010401010515571, 1.7468730211257935, 0.0},
+              // orientation
+              {0.9440542194053062, 0.0, 0.0, -0.32979028309372299}
+          }
+      }
+  };
+  EXPECT_TRUE(nav2_util::validateMsg(validate_msg));
+
+  geometry_msgs::msg::PoseWithCovarianceStamped
+  invalidate_msg = {
+      // Header
+      {
+          // frame_id
+          "map",
+          // stamp
+          {
+              1711029956, // sec
+              146734875   // nanosec
+          }
+      },
+      // Pose
+      {
+          // covariance
+          {0.25, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, NAN, 0.0, NAN, 0.0, 0.0, 0.0, 0.0, 0.0,
+          0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+          0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.06853891909122467},
+          // pose
+          {
+              // position
+              {0.50010401010515571, 1.7468730211257935, 0.0},
+              // orientation
+              {0.9440542194053062, 0.0, 0.0, -0.32979028309372299}
+          }
+      }
+  };
+  EXPECT_FALSE(nav2_util::validateMsg(invalidate_msg));
+
+  invalidate_msg = {
+      // Header
+      {
+          // frame_id
+          "",
+          // stamp
+          {
+              1711029956, // sec
+              146734875   // nanosec
+          }
+      },
+      // Pose
+      {
+          // covariance
+          {0.25, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+          0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+          0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.06853891909122467},
+          // pose
+          {
+              // position
+              {0.50010401010515571, 1.7468730211257935, 0.0},
+              // orientation
+              {0.9440542194053062, 0.0, 0.0, -0.32979028309372299}
+          }
+      }
+  };
+  EXPECT_FALSE(nav2_util::validateMsg(invalidate_msg));
+}
+
+
 // Add more test cases for other validateMsg functions if needed
