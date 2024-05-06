@@ -201,7 +201,7 @@ typename AnalyticExpansion<NodeT>::AnalyticExpansionNodes AnalyticExpansion<Node
 
   // Pre-allocate
   NodePtr prev(node);
-  unsigned int index = 0;
+  uint64_t index = 0;
   NodePtr next(nullptr);
   float angle = 0.0;
   Coordinates proposed_coordinates;

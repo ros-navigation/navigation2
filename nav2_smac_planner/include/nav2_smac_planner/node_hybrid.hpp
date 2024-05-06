@@ -40,7 +40,7 @@ namespace nav2_smac_planner
 typedef std::vector<float> LookupTable;
 typedef std::pair<double, double> TrigValues;
 
-typedef std::pair<float, unsigned int> ObstacleHeuristicElement;
+typedef std::pair<float, uint64_t> ObstacleHeuristicElement;
 struct ObstacleHeuristicComparator
 {
   bool operator()(const ObstacleHeuristicElement & a, const ObstacleHeuristicElement & b) const
@@ -184,7 +184,7 @@ public:
    * @brief A constructor for nav2_smac_planner::NodeHybrid
    * @param index The index of this node for self-reference
    */
-  explicit NodeHybrid(const unsigned int index);
+  explicit NodeHybrid(const uint64_t index);
 
   /**
    * @brief A destructor for nav2_smac_planner::NodeHybrid
@@ -291,7 +291,7 @@ public:
    * @brief Gets cell index
    * @return Reference to cell index
    */
-  inline unsigned int getIndex()
+  inline uint64_t getIndex()
   {
     return _index;
   }
@@ -319,11 +319,14 @@ public:
    * @param angle_quantization Number of theta bins
    * @return Index
    */
-  static inline unsigned int getIndex(
+  static inline uint64_t getIndex(
     const unsigned int & x, const unsigned int & y, const unsigned int & angle,
     const unsigned int & width, const unsigned int & angle_quantization)
   {
-    return angle + x * angle_quantization + y * width * angle_quantization;
+    return static_cast<uint64_t>(angle) + static_cast<uint64_t>(x) *
+           static_cast<uint64_t>(angle_quantization) +
+           static_cast<uint64_t>(y) * static_cast<uint64_t>(width) *
+           static_cast<uint64_t>(angle_quantization);
   }
 
   /**
@@ -333,7 +336,7 @@ public:
    * @param angle Theta coordinate of point
    * @return Index
    */
-  static inline unsigned int getIndex(
+  static inline uint64_t getIndex(
     const unsigned int & x, const unsigned int & y, const unsigned int & angle)
   {
     return getIndex(
@@ -349,7 +352,7 @@ public:
    * @return Coordinates
    */
   static inline Coordinates getCoords(
-    const unsigned int & index,
+    const uint64_t & index,
     const unsigned int & width, const unsigned int & angle_quantization)
   {
     return Coordinates(
@@ -447,7 +450,8 @@ public:
    * @param neighbors Vector of neighbors to be filled
    */
   void getNeighbors(
-    std::function<bool(const unsigned int &, nav2_smac_planner::NodeHybrid * &)> & validity_checker,
+    std::function<bool(const uint64_t &,
+    nav2_smac_planner::NodeHybrid * &)> & validity_checker,
     GridCollisionChecker * collision_checker,
     const bool & traverse_unknown,
     NodeVector & neighbors);
@@ -478,7 +482,7 @@ public:
 private:
   float _cell_cost;
   float _accumulated_cost;
-  unsigned int _index;
+  uint64_t _index;
   bool _was_visited;
   unsigned int _motion_primitive_index;
   TurnDirection _turn_dir;

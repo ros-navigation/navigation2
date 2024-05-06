@@ -180,7 +180,7 @@ float & LatticeMotionTable::getAngleFromBin(const unsigned int & bin_idx)
   return lattice_metadata.heading_angles[bin_idx];
 }
 
-NodeLattice::NodeLattice(const unsigned int index)
+NodeLattice::NodeLattice(const uint64_t index)
 : parent(nullptr),
   pose(0.0f, 0.0f, 0.0f),
   _cell_cost(std::numeric_limits<float>::quiet_NaN()),
@@ -469,12 +469,13 @@ void NodeLattice::precomputeDistanceHeuristic(
 }
 
 void NodeLattice::getNeighbors(
-  std::function<bool(const unsigned int &, nav2_smac_planner::NodeLattice * &)> & NeighborGetter,
+  std::function<bool(const uint64_t &,
+  nav2_smac_planner::NodeLattice * &)> & NeighborGetter,
   GridCollisionChecker * collision_checker,
   const bool & traverse_unknown,
   NodeVector & neighbors)
 {
-  unsigned int index = 0;
+  uint64_t index = 0;
   float angle;
   bool backwards = false;
   NodePtr neighbor = nullptr;

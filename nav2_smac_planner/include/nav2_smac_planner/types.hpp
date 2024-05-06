@@ -26,7 +26,7 @@
 namespace nav2_smac_planner
 {
 
-typedef std::pair<float, unsigned int> NodeHeuristicPair;
+typedef std::pair<float, uint64_t> NodeHeuristicPair;
 
 /**
  * @struct nav2_smac_planner::SearchInfo
