@@ -131,7 +131,7 @@ bool validateMsg(const geometry_msgs::msg::PoseWithCovariance & msg)
   return true;
 }
 
-bool validateMsg(const geometry_msgs::msg::PoseWithCovarianceStamped & msg)
+bool validateMsg(const geometry_msgs::PoseWithCovarianceStamped_ & msg)
 {
   // check sub-type
   if (!validateMsg(msg.header)) {return false;}
