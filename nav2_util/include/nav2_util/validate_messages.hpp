@@ -56,11 +56,11 @@ bool validateMsg(const double & num)
 }
 
 template<size_t N>
-bool validateMsg(const std::array<double, N>& msg) {
+bool validateMsg(const std::array<double, N> & msg)
+{
   //  @brief double-array value check
-  for (const auto& element : msg)
-  {
-    if(!validateMsg(element)) {return false;}
+  for (const auto & element : msg) {
+    if (!validateMsg(element)) {return false;}
   }
 
   return true;
@@ -125,20 +125,19 @@ bool validateMsg(const geometry_msgs::msg::Pose & msg)
 bool validateMsg(const geometry_msgs::msg::PoseWithCovariance & msg)
 {
   // check sub-type
-  if(!validateMsg(msg.pose)) {return false;}
-  if(!validateMsg(msg.covariance)) {return false;}
-  
+  if (!validateMsg(msg.pose)) {return false;}
+  if (!validateMsg(msg.covariance)) {return false;}
+
   return true;
 }
 
 bool validateMsg(const geometry_msgs::msg::PoseWithCovarianceStamped & msg)
 {
   // check sub-type
-  if(!validateMsg(msg.header)) {return false;}
-  if(!validateMsg(msg.pose))  {return false;}
+  if (!validateMsg(msg.header)) {return false;}
+  if (!validateMsg(msg.pose)) {return false;}
   return true;
 }
-
 
 
 // Function to verify map meta information
