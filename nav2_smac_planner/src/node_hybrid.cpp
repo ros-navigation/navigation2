@@ -339,7 +339,7 @@ float HybridMotionTable::getAngleFromBin(const unsigned int & bin_idx)
   return bin_idx * bin_size;
 }
 
-NodeHybrid::NodeHybrid(const unsigned int index)
+NodeHybrid::NodeHybrid(const uint64_t index)
 : parent(nullptr),
   pose(0.0f, 0.0f, 0.0f),
   _cell_cost(std::numeric_limits<float>::quiet_NaN()),
@@ -469,7 +469,7 @@ void NodeHybrid::initMotionModel(
 }
 
 inline float distanceHeuristic2D(
-  const unsigned int idx, const unsigned int size_x,
+  const uint64_t idx, const unsigned int size_x,
   const unsigned int target_x, const unsigned int target_y)
 {
   int dx = static_cast<int>(idx % size_x) - static_cast<int>(target_x);
@@ -612,8 +612,8 @@ float NodeHybrid::getObstacleHeuristic(
   const int size_x_int = static_cast<int>(size_x);
   const float sqrt2 = sqrtf(2.0f);
   float c_cost, cost, travel_cost, new_cost, existing_cost;
-  unsigned int idx, mx, my;
-  unsigned int new_idx = 0;
+  unsigned int mx, my;
+  unsigned int idx, new_idx = 0;
 
   const std::vector<int> neighborhood = {1, -1,  // left right
     size_x_int, -size_x_int,  // up down
@@ -856,12 +856,13 @@ void NodeHybrid::precomputeDistanceHeuristic(
 }
 
 void NodeHybrid::getNeighbors(
-  std::function<bool(const unsigned int &, nav2_smac_planner::NodeHybrid * &)> & NeighborGetter,
+  std::function<bool(const uint64_t &,
+  nav2_smac_planner::NodeHybrid * &)> & NeighborGetter,
   GridCollisionChecker * collision_checker,
   const bool & traverse_unknown,
   NodeVector & neighbors)
 {
-  unsigned int index = 0;
+  uint64_t index = 0;
   NodePtr neighbor = nullptr;
   Coordinates initial_node_coords;
   const MotionPoses motion_projections = motion_table.getProjections(this);

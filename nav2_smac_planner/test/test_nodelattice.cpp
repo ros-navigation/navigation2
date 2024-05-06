@@ -303,8 +303,10 @@ TEST(NodeLatticeTest, test_get_neighbors)
     std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, 72, lnode);
   checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
 
-  std::function<bool(const unsigned int &, nav2_smac_planner::NodeLattice * &)> neighborGetter =
-    [&, this](const unsigned int & index, nav2_smac_planner::NodeLattice * & neighbor_rtn) -> bool
+  std::function<bool(const uint64_t &,
+    nav2_smac_planner::NodeLattice * &)> neighborGetter =
+    [&, this](const uint64_t & index,
+      nav2_smac_planner::NodeLattice * & neighbor_rtn) -> bool
     {
       // because we don't return a real object
       return false;

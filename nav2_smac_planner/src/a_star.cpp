@@ -120,7 +120,7 @@ void AStarAlgorithm<NodeT>::setCollisionChecker(GridCollisionChecker * collision
 
 template<typename NodeT>
 typename AStarAlgorithm<NodeT>::NodePtr AStarAlgorithm<NodeT>::addToGraph(
-  const unsigned int & index)
+  const uint64_t & index)
 {
   auto iter = _graph.find(index);
   if (iter != _graph.end()) {
@@ -287,9 +287,11 @@ bool AStarAlgorithm<NodeT>::createPath(
   int closest_distance = std::numeric_limits<int>::max();
 
   // Given an index, return a node ptr reference if its collision-free and valid
-  const unsigned int max_index = getSizeX() * getSizeY() * getSizeDim3();
+  const uint64_t max_index = static_cast<uint64_t>(getSizeX()) *
+    static_cast<uint64_t>(getSizeY()) *
+    static_cast<uint64_t>(getSizeDim3());
   NodeGetter neighborGetter =
-    [&, this](const unsigned int & index, NodePtr & neighbor_rtn) -> bool
+    [&, this](const uint64_t & index, NodePtr & neighbor_rtn) -> bool
     {
       if (index >= max_index) {
         return false;
