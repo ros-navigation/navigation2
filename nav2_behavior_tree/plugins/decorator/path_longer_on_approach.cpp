@@ -62,12 +62,11 @@ inline BT::NodeStatus PathLongerOnApproach::tick()
   getInput("prox_len", prox_len_);
   getInput("length_factor", length_factor_);
 
-  if (!BT::isStatusActive(status())) {
-    // Reset the starting point since we're starting a new iteration of
-    // PathLongerOnApproach (moving from IDLE to RUNNING)
-    first_time_ = true;
+  if (first_time_ == false) {
+    if (old_path_.poses.back() != new_path_.poses.back()) {
+      first_time_ = true;
+    }
   }
-
   setStatus(BT::NodeStatus::RUNNING);
 
   // Check if the path is updated and valid, compare the old and the new path length,
