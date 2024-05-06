@@ -249,7 +249,10 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
     makeFootprintFromString(footprint_, new_footprint);
     setRobotFootprint(new_footprint);
   }
-
+  // Create server to get the cost at a given point
+  get_cost_service_ = create_service<nav2_msgs::srv::GetCost>(
+    "get_cost_" + getName(),
+    std::bind(&Costmap2DROS::getCostCallback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
   // Add cleaning service
   clear_costmap_service_ = std::make_unique<ClearCostmapService>(shared_from_this(), *this);
 
@@ -257,6 +260,18 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
   executor_->add_callback_group(callback_group_, get_node_base_interface());
   executor_thread_ = std::make_unique<nav2_util::NodeThread>(executor_);
   return nav2_util::CallbackReturn::SUCCESS;
+}
+
+void Costmap2DROS::getCostCallback(
+  const std::shared_ptr<rmw_request_id_t> /*request_header*/,
+  const std::shared_ptr<nav2_msgs::srv::GetCost::Request> request,
+  const std::shared_ptr<nav2_msgs::srv::GetCost::Response> response)
+{
+  RCLCPP_INFO(
+    get_logger(), "Received request to get cost at point (%f, %f)", request->x, request->y);
+  auto cost = static_cast<float>(layered_costmap_->getCostmap()->getCost(
+        static_cast<unsigned int>(request->x), static_cast<unsigned int>(request->y)));
+  response->cost = cost;
 }
 
 nav2_util::CallbackReturn

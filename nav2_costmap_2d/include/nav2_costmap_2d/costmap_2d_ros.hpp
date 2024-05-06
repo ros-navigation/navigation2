@@ -58,6 +58,7 @@
 #include "tf2_ros/transform_listener.h"
 #include "tf2/time.h"
 #include "tf2/transform_datatypes.h"
+#include "nav2_msgs/srv/get_cost.hpp"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
@@ -339,6 +340,14 @@ public:
    */
   double getRobotRadius() {return robot_radius_;}
 
+  /**
+   * @brief Callback to get the cost of a point in the costmap
+   */
+  void getCostCallback(
+    const std::shared_ptr<rmw_request_id_t> /*request_header*/,
+    const std::shared_ptr<nav2_msgs::srv::GetCost::Request> request,
+    const std::shared_ptr<nav2_msgs::srv::GetCost::Response> response);
+
 protected:
   // Publishers and subscribers
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr
@@ -411,6 +420,7 @@ protected:
   std::vector<geometry_msgs::msg::Point> unpadded_footprint_;
   std::vector<geometry_msgs::msg::Point> padded_footprint_;
 
+  rclcpp::Service<nav2_msgs::srv::GetCost>::SharedPtr get_cost_service_;
   std::unique_ptr<ClearCostmapService> clear_costmap_service_;
 
   // Dynamic parameters handler
