@@ -3,7 +3,7 @@
 The `Map Server` provides maps to the rest of the Nav2 system using both topic and
 service interfaces. Map server will expose maps on the node bringup, but can also change maps using a `load_map` service during run-time, as well as save maps using a `save_map` server.
 
-See its [Configuration Guide Page](https://navigation.ros.org/configuration/packages/configuring-map-server.html) for additional parameter descriptions.
+See its [Configuration Guide Page](https://docs.nav2.org/configuration/packages/configuring-map-server.html) for additional parameter descriptions.
 
 ### Architecture
 

@@ -59,7 +59,7 @@ The following diagram is showing the high-level design of Collision Monitor modu
 
 ### Configuration
 
-Detailed configuration parameters, their description and how to setup a Collision Monitor could be found at its [Configuration Guide](https://navigation.ros.org/configuration/packages/configuring-collision-monitor.html) and [Using Collision Monitor tutorial](https://navigation.ros.org/tutorials/docs/using_collision_monitor.html) pages.
+Detailed configuration parameters, their description and how to setup a Collision Monitor could be found at its [Configuration Guide](https://docs.nav2.org/configuration/packages/configuring-collision-monitor.html) and [Using Collision Monitor tutorial](https://docs.nav2.org/tutorials/docs/using_collision_monitor.html) pages.
 
 
 ### Metrics
@@ -94,6 +94,6 @@ The zones around the robot and the data sources are the same as for the Collisio
 
 ### Configuration
 
-Detailed configuration parameters, their description and how to setup a Collision Detector could be found at its [Configuration Guide](https://navigation.ros.org/configuration/packages/collision_monitor/configuring-collision-detector-node.html).
+Detailed configuration parameters, their description and how to setup a Collision Detector could be found at its [Configuration Guide](https://docs.nav2.org/configuration/packages/collision_monitor/configuring-collision-detector-node.html).
 
 The `CollisionMonitor` node makes use of a [nav2_util::TwistSubscriber](../nav2_util/README.md#twist-publisher-and-twist-subscriber-for-commanded-velocities).

@@ -17,7 +17,7 @@ We have users reporting using this on:
 - Vertical farming
 - Solar farms
 
-See its [Configuration Guide Page](https://navigation.ros.org/configuration/packages/configuring-smac-planner.html) for additional parameter descriptions.
+See its [Configuration Guide Page](https://docs.nav2.org/configuration/packages/configuring-smac-planner.html) for additional parameter descriptions.
 
 ## Introduction
 

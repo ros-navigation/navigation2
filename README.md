@@ -7,18 +7,18 @@
 </p>
 
 For detailed instructions on how to:
-- [Getting Started](https://navigation.ros.org/getting_started/index.html)
-- [Concepts](https://navigation.ros.org/concepts/index.html)
-- [Build](https://navigation.ros.org/development_guides/build_docs/index.html#build)
-- [Install](https://navigation.ros.org/development_guides/build_docs/index.html#install)
-- [General Tutorials](https://navigation.ros.org/tutorials/index.html) and [Algorithm Developer Tutorials](https://navigation.ros.org/plugin_tutorials/index.html)
-- [Configure](https://navigation.ros.org/configuration/index.html)
-- [Navigation Plugins](https://navigation.ros.org/plugins/index.html)
-- [Migration Guides](https://navigation.ros.org/migration/index.html)
+- [Getting Started](https://docs.nav2.org/getting_started/index.html)
+- [Concepts](https://docs.nav2.org/concepts/index.html)
+- [Build](https://docs.nav2.org/development_guides/build_docs/index.html#build)
+- [Install](https://docs.nav2.org/development_guides/build_docs/index.html#install)
+- [General Tutorials](https://docs.nav2.org/tutorials/index.html) and [Algorithm Developer Tutorials](https://docs.nav2.org/plugin_tutorials/index.html)
+- [Configure](https://docs.nav2.org/configuration/index.html)
+- [Navigation Plugins](https://docs.nav2.org/plugins/index.html)
+- [Migration Guides](https://docs.nav2.org/migration/index.html)
 - [Container Images for Building Nav2](https://github.com/orgs/ros-planning/packages/container/package/navigation2)
-- [Contribute](https://navigation.ros.org/development_guides/involvement_docs/index.html)
+- [Contribute](https://docs.nav2.org/development_guides/involvement_docs/index.html)
 
-Please visit our [documentation site](https://navigation.ros.org/). [Please visit our community Slack here](https://join.slack.com/t/navigation2/shared_invite/zt-hu52lnnq-cKYjuhTY~sEMbZXL8p9tOw) (if this link does not work, please contact maintainers to reactivate).
+Please visit our [documentation site](https://docs.nav2.org/). [Please visit our community Slack here](https://join.slack.com/t/navigation2/shared_invite/zt-hu52lnnq-cKYjuhTY~sEMbZXL8p9tOw) (if this link does not work, please contact maintainers to reactivate).
 
 If you need professional services related to Nav2, please contact Open Navigation at info@opennav.org.
 
