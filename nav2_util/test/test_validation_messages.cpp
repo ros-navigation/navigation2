@@ -294,7 +294,7 @@ TEST(ValidateMessagesTest, PoseWithCovarianceCheck) {
 
 
 TEST(ValidateMessagesTest, PoseWithCovarianceStampedCheck) {
-  geometry_msgs::msg::PoseWithCovarianceStamped_ validate_msg = {
+  geometry_msgs::msg::PoseWithCovarianceStamped validate_msg = {
     // Header
     {
       // frame_id
@@ -322,8 +322,8 @@ TEST(ValidateMessagesTest, PoseWithCovarianceStampedCheck) {
   };
   EXPECT_TRUE(nav2_util::validateMsg(validate_msg));
 
-  geometry_msgs::msg::PoseWithCovarianceStamped_
-    invalidate_msg = {
+  geometry_msgs::msg::PoseWithCovarianceStamped
+  invalidate_msg = {
     // Header
     {
       // frame_id
@@ -351,6 +351,7 @@ TEST(ValidateMessagesTest, PoseWithCovarianceStampedCheck) {
   };
   EXPECT_FALSE(nav2_util::validateMsg(invalidate_msg));
 
+  geometry_msgs::msg::PoseWithCovarianceStamped
   invalidate_msg = {
     // Header
     {
