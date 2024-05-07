@@ -25,7 +25,7 @@ This plugin implements the `nav2_core::Controller` interface allowing it to be u
   <img src="https://user-images.githubusercontent.com/14944147/144323291-29e24521-674a-41f5-8a91-732121b26b47.gif">
 </p>
 
-See its [Configuration Guide Page](https://navigation.ros.org/configuration/packages/configuring-rotation-shim-controller.html) for additional parameter descriptions.
+See its [Configuration Guide Page](https://docs.nav2.org/configuration/packages/configuring-rotation-shim-controller.html) for additional parameter descriptions.
 
 ## Configuration
 

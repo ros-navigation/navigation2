@@ -10,9 +10,9 @@ The only required class a behavior must derive from is the `nav2_core/behavior.h
 
 The value of the centralized behavior server is to **share resources** amongst several behaviors that would otherwise be independent nodes. Subscriptions to TF, costmaps, and more can be quite heavy and add non-trivial compute costs to a robot system. By combining these independent behaviors into a single server, they may share these resources while retaining complete independence in execution and interface.
 
-See its [Configuration Guide Page](https://navigation.ros.org/configuration/packages/configuring-behavior-server.html) for additional parameter descriptions and a [tutorial about writing behaviors](https://navigation.ros.org/plugin_tutorials/docs/writing_new_behavior_plugin.html).
+See its [Configuration Guide Page](https://docs.nav2.org/configuration/packages/configuring-behavior-server.html) for additional parameter descriptions and a [tutorial about writing behaviors](https://docs.nav2.org/plugin_tutorials/docs/writing_new_behavior_plugin.html).
 
-See the [Navigation Plugin list](https://navigation.ros.org/plugins/index.html) for a list of the currently known and available planner plugins.
+See the [Navigation Plugin list](https://docs.nav2.org/plugins/index.html) for a list of the currently known and available planner plugins.
 
 The `TimedBehavior` template makes use of a [nav2_util::TwistPublisher](../nav2_util/README.md#twist-publisher-and-twist-subscriber-for-commanded-velocities).
 The `AssistedTeleop` behavior makes use of a [nav2_util::TwistSubscriber](../nav2_util/README.md#twist-publisher-and-twist-subscriber-for-commanded-velocities).
