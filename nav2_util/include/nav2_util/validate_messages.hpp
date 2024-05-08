@@ -21,7 +21,7 @@
 
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav_msgs/msg/odometry.hpp"
-#include "geometry_msgs/msg/PoseWithCovarianceStamped.hpp"
+#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 
 
 // @brief Validation Check
