@@ -372,7 +372,7 @@ PlannerServer::computePlanThroughPoses()
 {
   std::lock_guard<std::mutex> lock(dynamic_params_lock_);
 
-  auto start_time = steady_clock_.now();
+  auto start_time = this->now();
 
   // Initialize the ComputePathToPose goal and result
   auto goal = action_server_poses_->get_current_goal();
@@ -438,7 +438,7 @@ PlannerServer::computePlanThroughPoses()
     result->path = concat_path;
     publishPlan(result->path);
 
-    auto cycle_duration = steady_clock_.now() - start_time;
+    auto cycle_duration = this->now() - start_time;
     result->planning_time = cycle_duration;
 
     if (max_planner_duration_ && cycle_duration.seconds() > max_planner_duration_) {
@@ -464,7 +464,7 @@ PlannerServer::computePlan()
 {
   std::lock_guard<std::mutex> lock(dynamic_params_lock_);
 
-  auto start_time = steady_clock_.now();
+  auto start_time = this->now();
 
   // Initialize the ComputePathToPose goal and result
   auto goal = action_server_pose_->get_current_goal();
@@ -500,7 +500,7 @@ PlannerServer::computePlan()
     // Publish the plan for visualization purposes
     publishPlan(result->path);
 
-    auto cycle_duration = steady_clock_.now() - start_time;
+    auto cycle_duration = this->now() - start_time;
     result->planning_time = cycle_duration;
 
     if (max_planner_duration_ && cycle_duration.seconds() > max_planner_duration_) {
