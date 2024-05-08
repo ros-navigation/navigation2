@@ -249,7 +249,7 @@ TEST(ValidateMessagesTest, PoseWithCovarianceCheck) {
   geometry_msgs::msg::PoseWithCovariance validate_msg;
   validate_msg.covariance[0] = 0.25;
   // assign other covariance values...
-  validate_msg.covariance[39] = 0.06853891909122467;
+  validate_msg.covariance[35] = 0.06853891909122467;
 
   validate_msg.pose.position.x = 0.50010401010515571;
   validate_msg.pose.position.y = 1.7468730211257935;
@@ -268,7 +268,7 @@ TEST(ValidateMessagesTest, PoseWithCovarianceCheck) {
   // assign other covariance values...
   invalidate_msg1.covariance[7] = NAN;
   invalidate_msg1.covariance[9] = NAN;
-  invalidate_msg1.covariance[39] = 0.06853891909122467;
+  invalidate_msg1.covariance[35] = 0.06853891909122467;
 
   invalidate_msg1.pose.position.x = 0.50010401010515571;
   invalidate_msg1.pose.position.y = 1.7468730211257935;
@@ -284,7 +284,7 @@ TEST(ValidateMessagesTest, PoseWithCovarianceCheck) {
   geometry_msgs::msg::PoseWithCovariance invalidate_msg2;
   invalidate_msg2.covariance[0] = 0.25;
   // assign other covariance values...
-  invalidate_msg2.covariance[39] = 0.06853891909122467;
+  invalidate_msg2.covariance[35] = 0.06853891909122467;
 
   invalidate_msg2.pose.position.x = NAN;
   invalidate_msg2.pose.position.y = 1.7468730211257935;
@@ -307,7 +307,7 @@ TEST(ValidateMessagesTest, PoseWithCovarianceStampedCheck) {
 
   validate_msg.pose.covariance[0] = 0.25;
   // assign other covariance values...
-  validate_msg.pose.covariance[39] = 0.06853891909122467;
+  validate_msg.pose.covariance[35] = 0.06853891909122467;
 
   validate_msg.pose.pose.position.x = 0.50010401010515571;
   validate_msg.pose.pose.position.y = 1.7468730211257935;
@@ -330,7 +330,7 @@ TEST(ValidateMessagesTest, PoseWithCovarianceStampedCheck) {
   // assign other covariance values...
   invalidate_msg1.pose.covariance[7] = NAN;
   invalidate_msg1.pose.covariance[9] = NAN;
-  invalidate_msg1.pose.covariance[39] = 0.06853891909122467;
+  invalidate_msg1.pose.covariance[35] = 0.06853891909122467;
 
   invalidate_msg1.pose.pose.position.x = 0.50010401010515571;
   invalidate_msg1.pose.pose.position.y = 1.7468730211257935;
@@ -350,7 +350,7 @@ TEST(ValidateMessagesTest, PoseWithCovarianceStampedCheck) {
 
   invalidate_msg2.pose.covariance[0] = 0.25;
   // assign other covariance values...
-  invalidate_msg2.pose.covariance[39] = 0.06853891909122467;
+  invalidate_msg2.pose.covariance[35] = 0.06853891909122467;
 
   invalidate_msg2.pose.pose.position.x = 0.50010401010515571;
   invalidate_msg2.pose.pose.position.y = 1.7468730211257935;
