@@ -21,6 +21,7 @@
 
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav_msgs/msg/odometry.hpp"
+#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 
 
 // @brief Validation Check
@@ -52,6 +53,20 @@ bool validateMsg(const double & num)
    */
   if (std::isinf(num)) {return false;}
   if (std::isnan(num)) {return false;}
+  return true;
+}
+
+template<size_t N>
+bool validateMsg(const std::array<double, N> & msg)
+{
+  /*  @brief value check for double-array
+   *     like the field `covariance` used in the msg-type:
+   *       geometry_msgs::msg::PoseWithCovarianceStamped
+   */
+  for (const auto & element : msg) {
+    if (!validateMsg(element)) {return false;}
+  }
+
   return true;
 }
 
@@ -108,6 +123,23 @@ bool validateMsg(const geometry_msgs::msg::Pose & msg)
   // check sub-type
   if (!validateMsg(msg.position)) {return false;}
   if (!validateMsg(msg.orientation)) {return false;}
+  return true;
+}
+
+bool validateMsg(const geometry_msgs::msg::PoseWithCovariance & msg)
+{
+  // check sub-type
+  if (!validateMsg(msg.pose)) {return false;}
+  if (!validateMsg(msg.covariance)) {return false;}
+
+  return true;
+}
+
+bool validateMsg(const geometry_msgs::msg::PoseWithCovarianceStamped & msg)
+{
+  // check sub-type
+  if (!validateMsg(msg.header)) {return false;}
+  if (!validateMsg(msg.pose)) {return false;}
   return true;
 }
 
