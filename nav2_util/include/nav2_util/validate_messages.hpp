@@ -21,6 +21,7 @@
 
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav_msgs/msg/odometry.hpp"
+#include "geometry_msgs/msg/PoseWithCovarianceStamped.hpp"
 
 
 // @brief Validation Check
@@ -58,7 +59,11 @@ bool validateMsg(const double & num)
 template<size_t N>
 bool validateMsg(const std::array<double, N> & msg)
 {
-  //  @brief double-array value check
+  /*  @brief value check for double-array
+   *     YAML::List in message is always transformed into std::array in ROS,
+   *     like `covariance` field used in `/initialpose`
+   *     (geometry_msgs::msg::PoseWithCovarianceStamped)
+   */
   for (const auto & element : msg) {
     if (!validateMsg(element)) {return false;}
   }
