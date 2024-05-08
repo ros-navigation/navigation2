@@ -60,9 +60,8 @@ template<size_t N>
 bool validateMsg(const std::array<double, N> & msg)
 {
   /*  @brief value check for double-array
-   *     YAML::List in message is always transformed into std::array in ROS,
-   *     like `covariance` field used in `/initialpose`
-   *     (geometry_msgs::msg::PoseWithCovarianceStamped)
+   *     like the field `covariance` used in the msg-type:
+   *       geometry_msgs::msg::PoseWithCovarianceStamped
    */
   for (const auto & element : msg) {
     if (!validateMsg(element)) {return false;}
