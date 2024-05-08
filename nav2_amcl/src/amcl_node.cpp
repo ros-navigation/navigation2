@@ -524,11 +524,8 @@ AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::Sha
 
   RCLCPP_INFO(get_logger(), "initialPoseReceived");
 
-  if (msg->header.frame_id == "") {
-    // This should be removed at some point
-    RCLCPP_WARN(
-      get_logger(),
-      "Received initial pose with empty frame_id. You should always supply a frame_id.");
+  if (!nav2_util::validateMsg(*msg)) {
+    RCLCPP_ERROR(get_logger(), "Received initialpose message is malformed. Rejecting.");
     return;
   }
   if (nav2_util::strip_leading_slash(msg->header.frame_id) != global_frame_id_) {
