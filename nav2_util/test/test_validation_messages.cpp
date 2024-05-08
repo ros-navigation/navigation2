@@ -244,4 +244,125 @@ TEST(ValidateMessagesTest, OccupancyGridCheck) {
   EXPECT_FALSE(nav2_util::validateMsg(invalid_occupancy_grid));
 }
 
+TEST(ValidateMessagesTest, PoseWithCovarianceCheck) {
+  // Valid message
+  geometry_msgs::msg::PoseWithCovariance validate_msg;
+  validate_msg.covariance[0] = 0.25;
+  // assign other covariance values...
+  validate_msg.covariance[35] = 0.06853891909122467;
+
+  validate_msg.pose.position.x = 0.50010401010515571;
+  validate_msg.pose.position.y = 1.7468730211257935;
+  validate_msg.pose.position.z = 0.0;
+
+  validate_msg.pose.orientation.x = 0.9440542194053062;
+  validate_msg.pose.orientation.y = 0.0;
+  validate_msg.pose.orientation.z = 0.0;
+  validate_msg.pose.orientation.w = -0.32979028309372299;
+
+  EXPECT_TRUE(nav2_util::validateMsg(validate_msg));
+
+  // Invalid messages
+  geometry_msgs::msg::PoseWithCovariance invalidate_msg1;
+  invalidate_msg1.covariance[0] = 0.25;
+  // assign other covariance values...
+  invalidate_msg1.covariance[7] = NAN;
+  invalidate_msg1.covariance[9] = NAN;
+  invalidate_msg1.covariance[35] = 0.06853891909122467;
+
+  invalidate_msg1.pose.position.x = 0.50010401010515571;
+  invalidate_msg1.pose.position.y = 1.7468730211257935;
+  invalidate_msg1.pose.position.z = 0.0;
+
+  invalidate_msg1.pose.orientation.x = 0.9440542194053062;
+  invalidate_msg1.pose.orientation.y = 0.0;
+  invalidate_msg1.pose.orientation.z = 0.0;
+  invalidate_msg1.pose.orientation.w = -0.32979028309372299;
+
+  EXPECT_FALSE(nav2_util::validateMsg(invalidate_msg1));
+
+  geometry_msgs::msg::PoseWithCovariance invalidate_msg2;
+  invalidate_msg2.covariance[0] = 0.25;
+  // assign other covariance values...
+  invalidate_msg2.covariance[35] = 0.06853891909122467;
+
+  invalidate_msg2.pose.position.x = NAN;
+  invalidate_msg2.pose.position.y = 1.7468730211257935;
+  invalidate_msg2.pose.position.z = 0.0;
+
+  invalidate_msg2.pose.orientation.x = 0.9440542194053062;
+  invalidate_msg2.pose.orientation.y = 0.0;
+  invalidate_msg2.pose.orientation.z = 0.0;
+  invalidate_msg2.pose.orientation.w = -0.32979028309372299;
+
+  EXPECT_FALSE(nav2_util::validateMsg(invalidate_msg2));
+}
+
+TEST(ValidateMessagesTest, PoseWithCovarianceStampedCheck) {
+  // Valid message
+  geometry_msgs::msg::PoseWithCovarianceStamped validate_msg;
+  validate_msg.header.frame_id = "map";
+  validate_msg.header.stamp.sec = 1711029956;
+  validate_msg.header.stamp.nanosec = 146734875;
+
+  validate_msg.pose.covariance[0] = 0.25;
+  // assign other covariance values...
+  validate_msg.pose.covariance[35] = 0.06853891909122467;
+
+  validate_msg.pose.pose.position.x = 0.50010401010515571;
+  validate_msg.pose.pose.position.y = 1.7468730211257935;
+  validate_msg.pose.pose.position.z = 0.0;
+
+  validate_msg.pose.pose.orientation.x = 0.9440542194053062;
+  validate_msg.pose.pose.orientation.y = 0.0;
+  validate_msg.pose.pose.orientation.z = 0.0;
+  validate_msg.pose.pose.orientation.w = -0.32979028309372299;
+
+  EXPECT_TRUE(nav2_util::validateMsg(validate_msg));
+
+  // Invalid messages
+  geometry_msgs::msg::PoseWithCovarianceStamped invalidate_msg1;
+  invalidate_msg1.header.frame_id = "map";
+  invalidate_msg1.header.stamp.sec = 1711029956;
+  invalidate_msg1.header.stamp.nanosec = 146734875;
+
+  invalidate_msg1.pose.covariance[0] = 0.25;
+  // assign other covariance values...
+  invalidate_msg1.pose.covariance[7] = NAN;
+  invalidate_msg1.pose.covariance[9] = NAN;
+  invalidate_msg1.pose.covariance[35] = 0.06853891909122467;
+
+  invalidate_msg1.pose.pose.position.x = 0.50010401010515571;
+  invalidate_msg1.pose.pose.position.y = 1.7468730211257935;
+  invalidate_msg1.pose.pose.position.z = 0.0;
+
+  invalidate_msg1.pose.pose.orientation.x = 0.9440542194053062;
+  invalidate_msg1.pose.pose.orientation.y = 0.0;
+  invalidate_msg1.pose.pose.orientation.z = 0.0;
+  invalidate_msg1.pose.pose.orientation.w = -0.32979028309372299;
+
+  EXPECT_FALSE(nav2_util::validateMsg(invalidate_msg1));
+
+  geometry_msgs::msg::PoseWithCovarianceStamped invalidate_msg2;
+  invalidate_msg2.header.frame_id = "";
+  invalidate_msg2.header.stamp.sec = 1711029956;
+  invalidate_msg2.header.stamp.nanosec = 146734875;
+
+  invalidate_msg2.pose.covariance[0] = 0.25;
+  // assign other covariance values...
+  invalidate_msg2.pose.covariance[35] = 0.06853891909122467;
+
+  invalidate_msg2.pose.pose.position.x = 0.50010401010515571;
+  invalidate_msg2.pose.pose.position.y = 1.7468730211257935;
+  invalidate_msg2.pose.pose.position.z = 0.0;
+
+  invalidate_msg2.pose.pose.orientation.x = 0.9440542194053062;
+  invalidate_msg2.pose.pose.orientation.y = 0.0;
+  invalidate_msg2.pose.pose.orientation.z = 0.0;
+  invalidate_msg2.pose.pose.orientation.w = -0.32979028309372299;
+
+  EXPECT_FALSE(nav2_util::validateMsg(invalidate_msg2));
+}
+
+
 // Add more test cases for other validateMsg functions if needed
