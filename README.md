@@ -117,7 +117,7 @@ If you use the Regulated Pure Pursuit Controller algorithm or software from this
 | Service | Humble | Iron | Main |
 | :---: | :---: | :---: | :---: |
 | ROS Build Farm | [![Build Status](https://build.ros2.org/job/Hdev__navigation2__ubuntu_jammy_amd64/badge/icon)](https://build.ros2.org/job/Hdev__navigation2__ubuntu_jammy_amd64/) | [![Build Status](https://build.ros2.org/job/Idev__navigation2__ubuntu_jammy_amd64/badge/icon)](https://build.ros2.org/job/Idev__navigation2__ubuntu_jammy_amd64/) | N/A |
-| Circle CI | N/A | N/A | [![Build Status](https://circleci.com/gh/ros-planning/navigation2/tree/main.svg?style=svg)](https://circleci.com/gh/ros-planning/navigation2/tree/main) |
+| Circle CI | N/A | N/A | [![Build Status](https://circleci.com/gh/ros-navigation/navigation2/tree/main.svg?style=svg)](https://circleci.com/gh/ros-navigation/navigation2/tree/main) |
 
 
 | Package | Humble Source | Humble Debian | Iron Source | Iron Debian |
