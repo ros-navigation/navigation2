@@ -1,6 +1,6 @@
 # Nav2
 [![GitHub Workflow Status](https://github.com/ros-navigation/navigation2/actions/workflows/update_ci_image.yaml/badge.svg)](https://github.com/ros-navigation/navigation2/actions/workflows/update_ci_image.yaml)
-[![codecov](https://codecov.io/gh/ros-planning/navigation2/branch/main/graph/badge.svg?token=S3iRmypwlg)](https://codecov.io/gh/ros-planning/navigation2)
+[![codecov](https://codecov.io/gh/ros-navigation/navigation2/branch/main/graph/badge.svg?token=S3iRmypwlg)](https://codecov.io/gh/ros-navigation/navigation2)
 
 <p align="center">
   <img height="300" src="doc/nav2_logo.png" />
