@@ -1,0 +1,24 @@
+<!--
+  This Behavior Tree navigates to a pose with a single initially defined path, without replanning nor recovery behaviors.
+  This is suitable for rigid robotic situations where you do not wish to dynamically adjust robot behavior with changes
+  to the environment, other agents, or new information. It is often paired with the RPP planner to exactly follow the initial route.
+-->
+
+<root BTCPP_format="4" main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <PipelineSequence name="RigidNavigateWithoutReplanning">
+      <ControllerSelector selected_controller="{selected_controller}" default_controller="FollowPath" topic_name="controller_selector"/>
+      <PlannerSelector selected_planner="{selected_planner}" default_planner="GridBased" topic_name="planner_selector"/>
+      <Fallback name="FallbackComputePathToPose">
+        <ReactiveSequence name="CheckIfNewPathNeeded">
+          <Inverter>
+            <GlobalUpdatedGoal/>
+          </Inverter>
+          <!-- Option here: Check if path is still valid, user override, etc to replan -->
+        </ReactiveSequence>
+        <ComputePathToPose goal="{goal}" path="{path}" planner_id="{selected_planner}" error_code_id="{compute_path_error_code}"/>
+      </Fallback>
+      <FollowPath path="{path}" controller_id="{selected_controller}" error_code_id="{follow_path_error_code}"/>
+    </PipelineSequence>
+  </BehaviorTree>
+</root>
