@@ -205,6 +205,7 @@ protected:
 
   // Connection to tell that server is still up
   std::unique_ptr<bond::Bond> bond_{nullptr};
+  double bond_heartbeat_period;
 };
 
 }  // namespace nav2_util
