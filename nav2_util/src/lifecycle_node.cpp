@@ -35,7 +35,7 @@ LifecycleNode::LifecycleNode(
   this->set_parameter(
     rclcpp::Parameter(
       bond::msg::Constants::DISABLE_HEARTBEAT_TIMEOUT_PARAM, true));
-  
+
   nav2_util::declare_parameter_if_not_declared(
     this, "bond_heartbeat_period", rclcpp::ParameterValue(0.1));
   this->get_parameter("bond_heartbeat_period", bond_heartbeat_period);
