@@ -20,6 +20,9 @@ find_package(nav2_util REQUIRED)
 
 nav2_package()
 
+# TODO: Delete after https://github.com/BehaviorTree/BehaviorTree.CPP/issues/811 is released
+add_compile_options(-Wno-shadow)
+
 include_directories(
   include
 )
