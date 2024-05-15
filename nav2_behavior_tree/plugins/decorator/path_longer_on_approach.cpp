@@ -36,7 +36,7 @@ bool PathLongerOnApproach::isPathUpdated(
 {
   return new_path != old_path && old_path.poses.size() != 0 &&
          new_path.poses.size() != 0 &&
-         old_path.poses.back() == new_path.poses.back();
+         old_path.poses.back().pose == new_path.poses.back().pose;
 }
 
 bool PathLongerOnApproach::isRobotInGoalProximity(
