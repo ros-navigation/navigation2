@@ -64,9 +64,6 @@ if(COMPILER_SUPPORTS_FMA)
   add_compile_options(-mfma)
 endif()
 
-# If building one the same hardware to be deployed on, try `-march=native`!
-add_compile_options(-O3 -ffp-contract=fast -ffast-math -mtune=generic)
-
 add_library(mppi_controller SHARED
   src/controller.cpp
   src/optimizer.cpp
@@ -76,6 +73,9 @@ add_library(mppi_controller SHARED
   src/parameters_handler.cpp
   src/noise_generator.cpp
 )
+
+# If building one the same hardware to be deployed on, try `-march=native`!
+target_compile_options(mppi_controller PRIVATE -O3 -finline-limit=10000000 -ffp-contract=fast -ffast-math -mtune=generic)
 
 add_library(mppi_critics SHARED
   src/critics/obstacles_critic.cpp
@@ -90,6 +90,9 @@ add_library(mppi_critics SHARED
   src/critics/constraint_critic.cpp
   src/critics/velocity_deadband_critic.cpp
 )
+
+# If building one the same hardware to be deployed on, try `-march=native`!
+target_compile_options(mppi_critics PRIVATE -O3 -finline-limit=10000000 -ffp-contract=fast -ffast-math -mtune=generic)
 
 set(libraries mppi_controller mppi_critics)
 
