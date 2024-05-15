@@ -13,6 +13,7 @@
 // limitations under the License. Reserved.
 
 #include <math.h>
+#include <cmath>
 #include <memory>
 #include <string>
 #include <vector>
@@ -360,8 +361,10 @@ TEST(NodeHybridTest, test_node_reeds_neighbors)
     std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, 72, lnode);
   checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
   nav2_smac_planner::NodeHybrid * node = new nav2_smac_planner::NodeHybrid(49);
-  std::function<bool(const unsigned int &, nav2_smac_planner::NodeHybrid * &)> neighborGetter =
-    [&, this](const unsigned int & index, nav2_smac_planner::NodeHybrid * & neighbor_rtn) -> bool
+  std::function<bool(const uint64_t &,
+    nav2_smac_planner::NodeHybrid * &)> neighborGetter =
+    [&, this](const uint64_t & index,
+      nav2_smac_planner::NodeHybrid * & neighbor_rtn) -> bool
     {
       // because we don't return a real object
       return false;
@@ -382,6 +385,7 @@ TEST(NodeHybridTest, basic_get_closest_angular_bin_test)
 
   {
     motion_table.bin_size = 3.1415926;
+    motion_table.num_angle_quantization = 2;
     double test_theta = 3.1415926;
     unsigned int expected_angular_bin = 1;
     unsigned int calculated_angular_bin = motion_table.getClosestAngularBin(test_theta);
@@ -390,16 +394,27 @@ TEST(NodeHybridTest, basic_get_closest_angular_bin_test)
 
   {
     motion_table.bin_size = M_PI;
+    motion_table.num_angle_quantization = 2;
     double test_theta = M_PI;
-    unsigned int expected_angular_bin = 1;
+    unsigned int expected_angular_bin = 0;
     unsigned int calculated_angular_bin = motion_table.getClosestAngularBin(test_theta);
     EXPECT_EQ(expected_angular_bin, calculated_angular_bin);
   }
 
   {
     motion_table.bin_size = M_PI;
+    motion_table.num_angle_quantization = 2;
     float test_theta = M_PI;
     unsigned int expected_angular_bin = 1;
+    unsigned int calculated_angular_bin = motion_table.getClosestAngularBin(test_theta);
+    EXPECT_EQ(expected_angular_bin, calculated_angular_bin);
+  }
+
+  {
+    motion_table.bin_size = 0.0872664675;
+    motion_table.num_angle_quantization = 72;
+    double test_theta = 6.28318526567925;
+    unsigned int expected_angular_bin = 71;
     unsigned int calculated_angular_bin = motion_table.getClosestAngularBin(test_theta);
     EXPECT_EQ(expected_angular_bin, calculated_angular_bin);
   }

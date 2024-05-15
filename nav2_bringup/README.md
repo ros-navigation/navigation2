@@ -10,7 +10,7 @@ Dynamically composed bringup (based on  [ROS2 Composition](https://docs.ros.org/
 
 * Some discussions about performance improvement of composed bringup could be found here: https://discourse.ros.org/t/nav2-composition/22175.
 
-To use, please see the Nav2 [Getting Started Page](https://navigation.ros.org/getting_started/index.html) on our documentation website. Additional [tutorials will help you](https://navigation.ros.org/tutorials/index.html) go from an initial setup in simulation to testing on a hardware robot, using SLAM, and more.
+To use, please see the Nav2 [Getting Started Page](https://docs.nav2.org/getting_started/index.html) on our documentation website. Additional [tutorials will help you](https://docs.nav2.org/tutorials/index.html) go from an initial setup in simulation to testing on a hardware robot, using SLAM, and more.
 
 Note:
 * gazebo should be started with both libgazebo_ros_init.so and libgazebo_ros_factory.so to work correctly.

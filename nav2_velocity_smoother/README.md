@@ -5,7 +5,7 @@ The aim of this package is to implement velocity, acceleration, and deadband smo
 
 It supports differential drive and omnidirectional robot platforms primarily, but is applicable to ackermann as well with some interpretations of ``Twist``. It was built by [Steve Macenski](https://www.linkedin.com/in/steve-macenski-41a985101/) while at [Samsung Research](https://www.sra.samsung.com/). 
 
-See its [Configuration Guide Page](https://navigation.ros.org/configuration/packages/configuring-velocity-smoother.html) for additional parameter descriptions.
+See its [Configuration Guide Page](https://docs.nav2.org/configuration/packages/configuring-velocity-smoother.html) for additional parameter descriptions.
 
 ## Features
 

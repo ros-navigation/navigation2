@@ -2,7 +2,7 @@
 
 This is a controller (local trajectory planner) that implements a variant on the pure pursuit algorithm to track a path. This variant we call the Regulated Pure Pursuit Algorithm, due to its additional regulation terms on collision and linear speed. It also implements the basics behind the Adaptive Pure Pursuit algorithm to vary lookahead distances by current speed. It was developed by [Shrijit Singh](https://www.linkedin.com/in/shrijitsingh99/) and [Steve Macenski](https://www.linkedin.com/in/steve-macenski-41a985101/) while at [Samsung Research](https://www.sra.samsung.com/) as part of the Nav2 working group.
 
-Code based on a simplified version of this controller is referenced in the [Writing a New Nav2 Controller](https://navigation.ros.org/plugin_tutorials/docs/writing_new_nav2controller_plugin.html) tutorial.
+Code based on a simplified version of this controller is referenced in the [Writing a New Nav2 Controller](https://docs.nav2.org/plugin_tutorials/docs/writing_new_nav2controller_plugin.html) tutorial.
 
 This plugin implements the `nav2_core::Controller` interface allowing it to be used across the navigation stack as a local trajectory planner in the controller server's action server (`controller_server`).
 
@@ -14,7 +14,7 @@ This controller has been measured to run at well over 1 kHz on a modern intel pr
   <img src="https://user-images.githubusercontent.com/14944147/102563918-3cd49d80-408f-11eb-8e03-b472815a05d8.gif">
 </p>
 
-See its [Configuration Guide Page](https://navigation.ros.org/configuration/packages/configuring-regulated-pp.html) for additional parameter descriptions.
+See its [Configuration Guide Page](https://docs.nav2.org/configuration/packages/configuring-regulated-pp.html) for additional parameter descriptions.
 
 If you use the Regulated Pure Pursuit Controller algorithm or software from this repository, please cite this work in your papers!
 

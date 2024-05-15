@@ -25,7 +25,7 @@ namespace nav2_smac_planner
 std::vector<int> Node2D::_neighbors_grid_offsets;
 float Node2D::cost_travel_multiplier = 2.0;
 
-Node2D::Node2D(const unsigned int index)
+Node2D::Node2D(const uint64_t index)
 : parent(nullptr),
   _cell_cost(std::numeric_limits<float>::quiet_NaN()),
   _accumulated_cost(std::numeric_limits<float>::max()),
@@ -108,7 +108,8 @@ void Node2D::initMotionModel(
 }
 
 void Node2D::getNeighbors(
-  std::function<bool(const unsigned int &, nav2_smac_planner::Node2D * &)> & NeighborGetter,
+  std::function<bool(const uint64_t &,
+  nav2_smac_planner::Node2D * &)> & NeighborGetter,
   GridCollisionChecker * collision_checker,
   const bool & traverse_unknown,
   NodeVector & neighbors)
@@ -124,9 +125,9 @@ void Node2D::getNeighbors(
   // 100 100 100   where lower-middle '100' is visited with same cost by both bottom '50' nodes
   // Therefore, it is valuable to have some low-potential across the entire map
   // rather than a small inflation around the obstacles
-  int index;
+  uint64_t index;
   NodePtr neighbor;
-  int node_i = this->getIndex();
+  uint64_t node_i = this->getIndex();
   const Coordinates parent = getCoords(this->getIndex());
   Coordinates child;
 
