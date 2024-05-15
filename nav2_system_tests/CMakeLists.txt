@@ -31,8 +31,6 @@ find_package(pluginlib REQUIRED)
 
 nav2_package()
 
-# TODO: Remove after workaround for https://gcc.gnu.org/bugzilla/show_bug.cgi?id=105580 is found
-
 set(dependencies
   rclcpp
   nav2_util
