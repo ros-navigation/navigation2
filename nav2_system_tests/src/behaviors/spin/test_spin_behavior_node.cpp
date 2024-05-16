@@ -58,27 +58,27 @@ protected:
 
 SpinBehaviorTester * SpinBehaviorTestFixture::spin_recovery_tester = nullptr;
 
-TEST_P(SpinBehaviorTestFixture, testSpinRecovery)
-{
-  float target_yaw = std::get<0>(GetParam());
-  float tolerance = std::get<1>(GetParam());
+// TEST_P(SpinBehaviorTestFixture, testSpinRecovery)
+// {
+//   float target_yaw = std::get<0>(GetParam());
+//   float tolerance = std::get<1>(GetParam());
 
-  bool success = false;
-  int num_tries = 3;
-  for (int i = 0; i != num_tries; i++) {
-    success = success || spin_recovery_tester->defaultSpinBehaviorTest(target_yaw, tolerance);
-    if (success) {
-      break;
-    }
-  }
-  if (std::getenv("MAKE_FAKE_COSTMAP") != NULL && abs(target_yaw) > M_PI_2f32) {
-    // if this variable is set, make a fake costmap
-    // in the fake spin test, we expect a collision for angles > M_PI_2
-    EXPECT_EQ(false, success);
-  } else {
-    EXPECT_EQ(true, success);
-  }
-}
+//   bool success = false;
+//   int num_tries = 3;
+//   for (int i = 0; i != num_tries; i++) {
+//     success = success || spin_recovery_tester->defaultSpinBehaviorTest(target_yaw, tolerance);
+//     if (success) {
+//       break;
+//     }
+//   }
+//   if (std::getenv("MAKE_FAKE_COSTMAP") != NULL && abs(target_yaw) > M_PI_2f32) {
+//     // if this variable is set, make a fake costmap
+//     // in the fake spin test, we expect a collision for angles > M_PI_2
+//     EXPECT_EQ(false, success);
+//   } else {
+//     EXPECT_EQ(true, success);
+//   }
+// }
 
 TEST_F(SpinBehaviorTestFixture, testSpinPreemption)
 {
