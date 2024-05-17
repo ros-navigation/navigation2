@@ -414,6 +414,7 @@ void Optimizer::setMotionModel(const std::string & model)
               "Model " + model + " is not valid! Valid options are DiffDrive, Omni, "
               "or Ackermann"));
   }
+  motion_model_->on_configure(name_, parameters_handler_);
 }
 
 void Optimizer::setSpeedLimit(double speed_limit, bool percentage)

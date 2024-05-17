@@ -41,6 +41,16 @@ struct SamplingStd
   float wz;
 };
 
+/**
+ * @struct mppi::models::AccelConstraints
+ * @brief Constraints on acceleration and deceleration
+ */
+struct AccelConstraints
+{
+  float ax_max;
+  float ax_min;
+};
+
 }  // namespace mppi::models
 
 #endif  // NAV2_MPPI_CONTROLLER__MODELS__CONSTRAINTS_HPP_
