@@ -210,7 +210,7 @@ typename AnalyticExpansion<NodeT>::AnalyticExpansionNodes AnalyticExpansion<Node
   node_costs.reserve(num_intervals);
 
   // Check intermediary poses (non-goal, non-start)
-  for (float i = 1; i < num_intervals; i++) {
+  for (float i = 1; i <= num_intervals; i++) {
     state_space->interpolate(from(), to(), i / num_intervals, s());
     reals = s.reals();
     // Make sure in range [0, 2PI)
