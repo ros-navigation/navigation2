@@ -27,6 +27,7 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Warray-bounds"
 #pragma GCC diagnostic ignored "-Wstringop-overflow"
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #include <xtensor/xarray.hpp>
 #include <xtensor/xnorm.hpp>
 #include <xtensor/xmath.hpp>
