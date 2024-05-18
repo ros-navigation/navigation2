@@ -15,7 +15,11 @@
 #include <chrono>
 #include <thread>
 
+#pragma GCC diagnostic ignored "-Warray-bounds"
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
 #include <xtensor/xrandom.hpp>
+#pragma GCC diagnostic pop
+
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_mppi_controller/tools/utils.hpp"
