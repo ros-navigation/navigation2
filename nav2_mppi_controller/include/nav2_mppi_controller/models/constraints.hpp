@@ -49,6 +49,10 @@ struct AccelConstraints
 {
   float ax_max;
   float ax_min;
+  float ay_max;
+  float ay_min;
+  float alphaz_max;
+  float alphaz_min;
 };
 
 }  // namespace mppi::models

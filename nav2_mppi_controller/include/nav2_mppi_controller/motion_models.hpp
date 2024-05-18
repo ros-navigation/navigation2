@@ -16,6 +16,7 @@
 #define NAV2_MPPI_CONTROLLER__MOTION_MODELS_HPP_
 
 #include <cstdint>
+#include <string>
 
 #include "nav2_mppi_controller/models/control_sequence.hpp"
 #include "nav2_mppi_controller/models/state.hpp"
@@ -63,8 +64,12 @@ public:
     ParametersHandler * param_handler)
   {
     auto getParam = param_handler->getParamGetter(name);
-    getParam(accl_constraints_.ax_max, "ax_max", 2.0);
-    getParam(accl_constraints_.ax_min, "ax_min", -2.0);
+    getParam(accel_constraints_.ax_max, "ax_max", 2.0);
+    getParam(accel_constraints_.ax_min, "ax_min", -2.0);
+    getParam(accel_constraints_.ay_max, "ay_max", 0.0);
+    getParam(accel_constraints_.ay_min, "ay_min", -0.0);
+    getParam(accel_constraints_.alphaz_max, "alphaz_max", 3.0);
+    getParam(accel_constraints_.alphaz_min, "alphaz_min", -3.0);
     getParam(model_dt_, "model_dt", 0.05);
   }
 
@@ -88,12 +93,19 @@ public:
     const bool is_holo = isHolonomic();
     for (unsigned int i = 0; i != state.vx.shape(0); i++) {
       for (unsigned int j = 1; j != state.vx.shape(1); j++) {
-        float max_feasible_vx = state.vx(i, j-1) + model_dt_*accl_constraints_.ax_max;
-        float min_feasible_vx = state.vx(i, j-1) + model_dt_*accl_constraints_.ax_min;
+        float max_feasible_vx = state.vx(i, j - 1) + model_dt_ * accel_constraints_.ax_max;
+        float min_feasible_vx = state.vx(i, j - 1) + model_dt_ * accel_constraints_.ax_min;
         state.cvx(i, j - 1) = std::clamp(state.cvx(i, j - 1), min_feasible_vx, max_feasible_vx);
         state.vx(i, j) = state.cvx(i, j - 1);
+
+        float max_feasible_wz = state.wz(i, j - 1) + model_dt_ * accel_constraints_.alphaz_max;
+        float min_feasible_wz = state.wz(i, j - 1) + model_dt_ * accel_constraints_.alphaz_min;
+        state.cwz(i, j - 1) = std::clamp(state.cwz(i, j - 1), min_feasible_wz, max_feasible_wz);
         state.wz(i, j) = state.cwz(i, j - 1);
         if (is_holo) {
+          float max_feasible_vy = state.vy(i, j - 1) + model_dt_ * accel_constraints_.ay_max;
+          float min_feasible_vy = state.vy(i, j - 1) + model_dt_ * accel_constraints_.ay_min;
+          state.cvy(i, j - 1) = std::clamp(state.cvy(i, j - 1), min_feasible_vy, max_feasible_vy);
           state.vy(i, j) = state.cvy(i, j - 1);
         }
       }
@@ -114,7 +126,7 @@ public:
 
 protected:
   float model_dt_{0.0};
-  models::AccelConstraints accl_constraints_{0.0, 0.0};
+  models::AccelConstraints accel_constraints_{0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 };
 
 /**
