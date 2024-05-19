@@ -14,9 +14,11 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
-#include <memory>
+
 #include <chrono>
+#include <memory>
 #include <set>
+#include <string>
 
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
