@@ -7,29 +7,26 @@ find_package(rclcpp REQUIRED)
 
 nav2_package()
 
-include_directories(
-  include)
-
 add_library(voxel_grid SHARED
   src/voxel_grid.cpp
 )
-
-set(dependencies
-  rclcpp
-)
-
-ament_target_dependencies(voxel_grid
-  ${dependencies}
+target_include_directories(voxel_grid
+  PUBLIC
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+target_link_libraries(voxel_grid PUBLIC
+  rclcpp::rclcpp
 )
 
 install(TARGETS voxel_grid
+  EXPORT voxel_grid
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
 )
 
 install(DIRECTORY include/
-  DESTINATION include
+  DESTINATION include/${PROJECT_NAME}
 )
 
 if(BUILD_TESTING)
@@ -45,5 +42,6 @@ endif()
 ament_export_dependencies(rclcpp)
 ament_export_include_directories(include)
 ament_export_libraries(voxel_grid)
+ament_export_targets(voxel_grid)
 
 ament_package()
