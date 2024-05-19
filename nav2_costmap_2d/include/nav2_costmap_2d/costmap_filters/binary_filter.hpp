@@ -40,6 +40,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "nav2_costmap_2d/costmap_filters/costmap_filter.hpp"
 
