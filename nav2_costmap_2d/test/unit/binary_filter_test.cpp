@@ -474,7 +474,8 @@ bool TestNode::createBinaryFilter(const std::string & global_frame, double flip_
         param.name));
     if (param.default_value_set) {
       node_->declare_parameter(
-        std::string(FILTER_NAME) + "." + param.namespace_ + ".default_state", rclcpp::ParameterValue(
+        std::string(FILTER_NAME) + "." + param.namespace_ + ".default_state",
+        rclcpp::ParameterValue(
           param.default_value));
       node_->set_parameter(
         rclcpp::Parameter(
