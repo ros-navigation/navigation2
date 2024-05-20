@@ -11,35 +11,22 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
   <build_depend>nav2_common</build_depend>
 
-  <build_depend>rclcpp</build_depend>
-  <build_depend>rclcpp_action</build_depend>
-  <build_depend>rclcpp_lifecycle</build_depend>
-  <build_depend>nav2_behavior_tree</build_depend>
-  <build_depend>nav2_util</build_depend>
-  <build_depend>nav2_msgs</build_depend>
-  <build_depend>nav_msgs</build_depend>
-  <build_depend>tf2</build_depend>
-  <build_depend>tf2_geometry_msgs</build_depend>
-  <build_depend>geometry_msgs</build_depend>
-  <build_depend>nav2_costmap_2d</build_depend>
-  <build_depend>nav2_core</build_depend>
-  <build_depend>pluginlib</build_depend>
-
-  <exec_depend>rclcpp</exec_depend>
-  <exec_depend>rclcpp_action</exec_depend>
-  <exec_depend>rclcpp_lifecycle</exec_depend>
-  <exec_depend>nav2_behavior_tree</exec_depend>
-  <exec_depend>nav2_util</exec_depend>
-  <exec_depend>nav2_msgs</exec_depend>
-  <exec_depend>nav_msgs</exec_depend>
-  <exec_depend>geometry_msgs</exec_depend>
-  <exec_depend>nav2_costmap_2d</exec_depend>
-  <exec_depend>nav2_core</exec_depend>
-  <exec_depend>pluginlib</exec_depend>
+  <depend>geometry_msgs</depend>
+  <depend>nav2_core</depend>
+  <depend>nav2_costmap_2d</depend>
+  <depend>nav2_msgs</depend>
+  <depend>nav2_util</depend>
+  <depend>pluginlib</depend>
+  <depend>rclcpp</depend>
+  <depend>rclcpp_lifecycle</depend>
+  <depend>tf2</depend>
+  <depend>tf2_geometry_msgs</depend>
+  <depend>tf2_ros</depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_cmake_gtest</test_depend>
+  <test_depend>rclcpp_action</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>
