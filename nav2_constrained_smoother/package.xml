@@ -9,8 +9,9 @@
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+  <build_depend>eigen</build_depend>
+
   <depend>nav2_common</depend>
-  <depend>angles</depend>
   <depend>rclcpp</depend>
   <depend>nav2_util</depend>
   <depend>nav2_msgs</depend>
@@ -18,11 +19,13 @@
   <depend>nav2_core</depend>
   <depend>pluginlib</depend>
   <depend>libceres-dev</depend>
+  <depend>tf2_ros</depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_cmake_gtest</test_depend>
   <test_depend>ament_cmake_pytest</test_depend>
+  <test_depend>angles</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

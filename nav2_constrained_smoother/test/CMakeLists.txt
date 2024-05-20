@@ -1,12 +1,15 @@
 ament_add_gtest(test_constrained_smoother
   test_constrained_smoother.cpp
 )
-
 target_link_libraries(test_constrained_smoother
   ${library_name}
-)
-ament_target_dependencies(test_constrained_smoother
-  ${dependencies}
+  angles::angles
+  rclcpp::rclcpp
+  tf2_ros::tf2_ros
+  nav2_util::nav2_util_core
+  nav2_costmap_2d::nav2_costmap_2d_core
+  nav2_costmap_2d::nav2_costmap_2d_client
+  ${geometry_msgs_TARGETS}
 )
 
 ament_add_gtest(test_smoother_cost_function
@@ -14,7 +17,5 @@ ament_add_gtest(test_smoother_cost_function
 )
 target_link_libraries(test_smoother_cost_function
   ${library_name}
-)
-ament_target_dependencies(test_smoother_cost_function
-  ${dependencies}
+  rclcpp::rclcpp
 )

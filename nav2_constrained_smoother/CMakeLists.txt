@@ -6,16 +6,15 @@ set(CMAKE_BUILD_TYPE Release) # significant Ceres optimization speedup
 find_package(ament_cmake REQUIRED)
 find_package(nav2_core REQUIRED)
 find_package(nav2_common REQUIRED)
-find_package(angles REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
 find_package(pluginlib REQUIRED)
+find_package(Eigen3 REQUIRED)
 find_package(Ceres REQUIRED COMPONENTS SuiteSparse)
-
-set(CMAKE_CXX_STANDARD 17)
+find_package(tf2_ros REQUIRED)
 
 if(${CERES_VERSION} VERSION_LESS_EQUAL 2.0.0)
   add_definitions(-DUSE_OLD_CERES_API)
@@ -25,26 +24,27 @@ nav2_package()
 
 set(library_name nav2_constrained_smoother)
 
-include_directories(
-  include
-)
-
-set(dependencies
-  angles
-  rclcpp
-  rclcpp_action
-  nav2_msgs
-  nav2_costmap_2d
-  nav2_util
-  nav2_core
-  pluginlib
-)
-
 add_library(${library_name} SHARED src/constrained_smoother.cpp)
-target_link_libraries(${library_name} Ceres::ceres)
-# prevent pluginlib from using boost
-target_compile_definitions(${library_name} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
-ament_target_dependencies(${library_name} ${dependencies})
+target_include_directories(${library_name}
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+)
+target_link_libraries(${library_name} PUBLIC
+  nav2_core::nav2_core
+  rclcpp::rclcpp
+  nav2_util::nav2_util_core
+  ${geometry_msgs_TARGETS}
+  rclcpp_lifecycle::rclcpp_lifecycle
+  tf2_ros::tf2_ros
+  nav2_costmap_2d::nav2_costmap_2d_core
+  Ceres::ceres
+  Eigen3::Eigen
+)
+target_link_libraries(${library_name} PRIVATE
+  pluginlib::pluginlib
+  ${nav_msgs_TARGETS}
+)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -53,29 +53,29 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 
   find_package(ament_cmake_gtest REQUIRED)
+  find_package(angles REQUIRED)
+
+  ament_find_gtest()
+
   add_subdirectory(test)
 endif()
 
 install(
-  TARGETS
-    ${library_name}
+  TARGETS ${library_name}
+  EXPORT ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
 )
 
 install(DIRECTORY include/
-  DESTINATION include/
+  DESTINATION include/${PROJECT_NAME}
 )
-
-if(BUILD_TESTING)
-  find_package(ament_lint_auto REQUIRED)
-  ament_lint_auto_find_test_dependencies()
-endif()
 
 ament_export_include_directories(include)
 ament_export_libraries(${library_name})
-ament_export_dependencies(${dependencies})
+ament_export_dependencies(nav2_core rclcpp nav2_util geometry_msgs rclcpp_lifecycle tf2_ros nav2_costmap_2d ceres eigen3)
+ament_export_targets(${library_name})
 
 pluginlib_export_plugin_description_file(nav2_core nav2_constrained_smoother.xml)
 
