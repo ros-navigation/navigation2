@@ -66,7 +66,7 @@ Costmap2DPublisher::Costmap2DPublisher(
   logger_ = node->get_logger();
   const auto custom_qos = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable();
   rclcpp::PublisherOptionsWithAllocator<std::allocator<void>> pub_options;
-  pub_options.use_intra_process_comm = rclcpp::IntraProcessSetting::Disable;
+  // pub_options.use_intra_process_comm = rclcpp::IntraProcessSetting::Disable;
 
 
   costmap_pub_ =
