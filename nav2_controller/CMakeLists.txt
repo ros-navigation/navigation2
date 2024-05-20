@@ -14,55 +14,135 @@ find_package(nav2_msgs REQUIRED)
 find_package(nav_2d_utils REQUIRED)
 find_package(nav_2d_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
+find_package(lifecycle_msgs REQUIRED)
+find_package(rcl_interfaces REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(tf2_ros REQUIRED)
 
 nav2_package()
 
-include_directories(
-  include
-)
-
 set(executable_name controller_server)
-
-add_executable(${executable_name}
-  src/main.cpp
-)
 
 set(library_name ${executable_name}_core)
 
 add_library(${library_name} SHARED
   src/controller_server.cpp
 )
+target_include_directories(${library_name}
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+)
+target_link_libraries(${library_name} PUBLIC
+  nav2_core::nav2_core
+  nav2_costmap_2d::nav2_costmap_2d_core
+  tf2_ros::tf2_ros
+  ${nav2_msgs_TARGETS}
+  pluginlib::pluginlib
+  nav2_util::nav2_util_core
+  nav_2d_utils::conversions
+  nav_2d_utils::tf_help
+  rclcpp::rclcpp
+  ${rcl_interfaces_TARGETS}
+  rclcpp_lifecycle::rclcpp_lifecycle
+  ${geometry_msgs_TARGETS}
+  ${nav_2d_msgs_TARGETS}
+)
+target_link_libraries(${library_name} PRIVATE
+  ${lifecycle_msgs_TARGETS}
+  rclcpp_components::component
+)
 
-set(dependencies
-  angles
-  rclcpp
-  rclcpp_action
-  rclcpp_components
-  std_msgs
-  nav2_msgs
-  nav_2d_utils
-  nav_2d_msgs
-  nav2_util
-  nav2_core
-  pluginlib
+add_executable(${executable_name}
+  src/main.cpp
+)
+target_include_directories(${executable_name}
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+)
+target_link_libraries(${executable_name} PRIVATE
+  rclcpp::rclcpp
+  ${library_name}
 )
 
 add_library(simple_progress_checker SHARED plugins/simple_progress_checker.cpp)
-ament_target_dependencies(simple_progress_checker ${dependencies})
+target_include_directories(simple_progress_checker
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+)
+target_link_libraries(simple_progress_checker PUBLIC
+  rclcpp::rclcpp
+  rclcpp_lifecycle::rclcpp_lifecycle
+  ${geometry_msgs_TARGETS}
+  nav2_core::nav2_core
+  ${rcl_interfaces_TARGETS}
+)
+target_link_libraries(simple_progress_checker PRIVATE
+  nav2_util::nav2_util_core
+  nav_2d_utils::conversions
+  pluginlib::pluginlib
+)
 
 add_library(pose_progress_checker SHARED plugins/pose_progress_checker.cpp)
-target_link_libraries(pose_progress_checker simple_progress_checker)
-ament_target_dependencies(pose_progress_checker ${dependencies})
+target_include_directories(pose_progress_checker
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+)
+target_link_libraries(pose_progress_checker PUBLIC
+  simple_progress_checker
+  rclcpp_lifecycle::rclcpp_lifecycle
+  rclcpp::rclcpp
+  ${geometry_msgs_TARGETS}
+  ${rcl_interfaces_TARGETS}
+)
+target_link_libraries(pose_progress_checker PRIVATE
+  pluginlib::pluginlib
+  nav2_util::nav2_util_core
+  nav_2d_utils::conversions
+  angles::angles
+)
 
 add_library(simple_goal_checker SHARED plugins/simple_goal_checker.cpp)
-ament_target_dependencies(simple_goal_checker ${dependencies})
+target_include_directories(simple_goal_checker
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+)
+target_link_libraries(simple_goal_checker PUBLIC
+  rclcpp::rclcpp
+  rclcpp_lifecycle::rclcpp_lifecycle
+  nav2_core::nav2_core
+  ${rcl_interfaces_TARGETS}
+  ${geometry_msgs_TARGETS}
+  nav2_costmap_2d::nav2_costmap_2d_core
+)
+target_link_libraries(simple_goal_checker PRIVATE
+  pluginlib::pluginlib
+  angles::angles
+  nav2_util::nav2_util_core
+  tf2::tf2
+)
 
 add_library(stopped_goal_checker SHARED plugins/stopped_goal_checker.cpp)
-target_link_libraries(stopped_goal_checker simple_goal_checker)
-ament_target_dependencies(stopped_goal_checker ${dependencies})
-
-ament_target_dependencies(${library_name}
-  ${dependencies}
+target_include_directories(stopped_goal_checker
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+)
+target_link_libraries(stopped_goal_checker PUBLIC
+  simple_goal_checker
+  rclcpp::rclcpp
+  rclcpp_lifecycle::rclcpp_lifecycle
+  ${geometry_msgs_TARGETS}
+  nav2_costmap_2d::nav2_costmap_2d_core
+  ${rcl_interfaces_TARGETS}
+)
+target_link_libraries(stopped_goal_checker PRIVATE
+  pluginlib::pluginlib
+  nav2_util::nav2_util_core
 )
 
 if(BUILD_TESTING)
@@ -72,18 +152,17 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 
   find_package(ament_cmake_gtest REQUIRED)
+
+  ament_find_gtest()
+
+  add_subdirectory(test)
   add_subdirectory(plugins/test)
 endif()
-
-ament_target_dependencies(${executable_name}
-  ${dependencies}
-)
-
-target_link_libraries(${executable_name} ${library_name})
 
 rclcpp_components_register_nodes(${library_name} "nav2_controller::ControllerServer")
 
 install(TARGETS simple_progress_checker pose_progress_checker simple_goal_checker stopped_goal_checker ${library_name}
+  EXPORT ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -94,15 +173,8 @@ install(TARGETS ${executable_name}
 )
 
 install(DIRECTORY include/
-  DESTINATION include/
+  DESTINATION include/${PROJECT_NAME}
 )
-
-if(BUILD_TESTING)
-  find_package(ament_lint_auto REQUIRED)
-  find_package(ament_cmake_gtest REQUIRED)
-  ament_lint_auto_find_test_dependencies()
-  add_subdirectory(test)
-endif()
 
 ament_export_include_directories(include)
 ament_export_libraries(simple_progress_checker
@@ -110,7 +182,8 @@ ament_export_libraries(simple_progress_checker
   simple_goal_checker
   stopped_goal_checker
   ${library_name})
-ament_export_dependencies(${dependencies})
+ament_export_dependencies(nav2_core nav2_costmap_2d tf2_ros nav2_msgs pluginlib nav2_util nav_2d_utils rclcpp rcl_interfaces rclcpp_lifecycle geometry_msgs nav_2d_msgs)
+ament_export_targets(${library_name})
 pluginlib_export_plugin_description_file(nav2_core plugins.xml)
 
 ament_package()

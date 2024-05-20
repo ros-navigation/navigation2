@@ -19,6 +19,10 @@
   <depend>nav_2d_msgs</depend>
   <depend>nav2_core</depend>
   <depend>pluginlib</depend>
+  <depend>lifecycle_msgs</depend>
+  <depend>rcl_interfaces</depend>
+  <depend>geometry_msgs</depend>
+  <depend>tf2_ros</depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
