@@ -20,10 +20,6 @@ find_package(pluginlib REQUIRED)
 
 nav2_package()
 
-include_directories(
-  include
-)
-
 set(library_name nav2_navfn_planner)
 
 set(dependencies
@@ -47,21 +43,37 @@ add_library(${library_name} SHARED
   src/navfn_planner.cpp
   src/navfn.cpp
 )
-
-ament_target_dependencies(${library_name}
-  ${dependencies}
+target_include_directories(${library_name}
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+)
+target_link_libraries(${library_name} PUBLIC
+  ${geometry_msgs_TARGETS}
+  nav2_core::nav2_core
+  ${nav_msgs_TARGETS}
+  nav2_util::nav2_util_core
+  nav2_costmap_2d::nav2_costmap_2d_core
+  ${rcl_interfaces_TARGETS}
+  rclcpp::rclcpp
+  rclcpp_lifecycle::rclcpp_lifecycle
+)
+target_link_libraries(${library_name} PRIVATE
+  ${builtin_interfaces_TARGETS}
+  pluginlib::pluginlib
 )
 
 pluginlib_export_plugin_description_file(nav2_core global_planner_plugin.xml)
 
 install(TARGETS ${library_name}
+  EXPORT ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
 )
 
 install(DIRECTORY include/
-  DESTINATION include/
+  DESTINATION include/${PROJECT_NAME}
 )
 
 install(FILES global_planner_plugin.xml
@@ -72,10 +84,13 @@ if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   find_package(ament_cmake_gtest REQUIRED)
   ament_lint_auto_find_test_dependencies()
+
+  ament_find_gtest()
   add_subdirectory(test)
 endif()
 
-ament_export_include_directories(include)
+ament_export_include_directories(include/${PROJECT_NAME})
 ament_export_libraries(${library_name})
 ament_export_dependencies(${dependencies})
+ament_export_targets(${library_name})
 ament_package()
