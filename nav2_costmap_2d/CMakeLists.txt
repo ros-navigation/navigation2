@@ -26,7 +26,6 @@ find_package(visualization_msgs REQUIRED)
 find_package(angles REQUIRED)
 
 remove_definitions(-DDISABLE_LIBUSB-1.0)
-find_package(Eigen3 3.3 REQUIRED)
 
 nav2_package()
 
@@ -45,41 +44,22 @@ add_library(nav2_costmap_2d_core SHARED
   src/footprint_collision_checker.cpp
   plugins/costmap_filters/costmap_filter.cpp
 )
-add_library(${PROJECT_NAME}::nav2_costmap_2d_core ALIAS nav2_costmap_2d_core)
-
 target_include_directories(nav2_costmap_2d_core
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
-
-set(dependencies
-  geometry_msgs
-  laser_geometry
-  map_msgs
-  message_filters
-  nav2_msgs
-  nav2_util
-  nav2_voxel_grid
-  nav_msgs
-  pluginlib
-  rclcpp
-  rclcpp_lifecycle
-  sensor_msgs
-  std_msgs
-  std_srvs
-  tf2
-  tf2_geometry_msgs
-  tf2_ros
-  tf2_sensor_msgs
-  visualization_msgs
-  angles
+target_link_libraries(nav2_costmap_2d_core PUBLIC
+  ${geometry_msgs_TARGETS}
+  tf2_ros::tf2_ros
+  ${nav2_msgs_TARGETS}
+  nav2_util::nav2_util_core
+  ${nav_msgs_TARGETS}
+  ${tf2_sensor_msgs_TARGETS}
+  ${map_msgs_TARGETS}
+  ${std_srvs_TARGETS}
+  pluginlib::pluginlib
 )
-
-ament_target_dependencies(nav2_costmap_2d_core
-  ${dependencies}
-)
-target_link_libraries(nav2_costmap_2d_core Eigen3::Eigen)
 
 add_library(layers SHARED
   plugins/inflation_layer.cpp
@@ -90,12 +70,21 @@ add_library(layers SHARED
   plugins/range_sensor_layer.cpp
   plugins/denoise_layer.cpp
 )
-add_library(${PROJECT_NAME}::layers ALIAS layers)
-ament_target_dependencies(layers
-  ${dependencies}
+target_include_directories(layers
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
-target_link_libraries(layers
-  ${PROJECT_NAME}::nav2_costmap_2d_core
+target_link_libraries(layers PUBLIC
+  angles::angles
+  rclcpp::rclcpp
+  message_filters::message_filters
+  laser_geometry::laser_geometry
+  nav2_voxel_grid::voxel_grid
+  nav2_costmap_2d_core
+)
+target_link_libraries(layers PRIVATE
+  pluginlib::pluginlib
 )
 
 add_library(filters SHARED
@@ -103,14 +92,13 @@ add_library(filters SHARED
   plugins/costmap_filters/speed_filter.cpp
   plugins/costmap_filters/binary_filter.cpp
 )
-add_library(${PROJECT_NAME}::filters ALIAS filters)
-
-
-ament_target_dependencies(filters
-  ${dependencies}
+target_include_directories(filters
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
-target_link_libraries(filters
-  ${PROJECT_NAME}::nav2_costmap_2d_core
+target_link_libraries(filters PUBLIC
+  nav2_costmap_2d_core
 )
 
 add_library(nav2_costmap_2d_client SHARED
@@ -118,39 +106,37 @@ add_library(nav2_costmap_2d_client SHARED
   src/costmap_subscriber.cpp
   src/costmap_topic_collision_checker.cpp
 )
-add_library(${PROJECT_NAME}::nav2_costmap_2d_client ALIAS nav2_costmap_2d_client)
-
-ament_target_dependencies(nav2_costmap_2d_client
-  ${dependencies}
+target_include_directories(nav2_costmap_2d_client
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
-
-target_link_libraries(nav2_costmap_2d_client
-  ${PROJECT_NAME}::nav2_costmap_2d_core
+target_link_libraries(nav2_costmap_2d_client PUBLIC
+  nav2_costmap_2d_core
 )
 
 add_executable(nav2_costmap_2d_markers src/costmap_2d_markers.cpp)
-target_link_libraries(nav2_costmap_2d_markers
-  ${PROJECT_NAME}::nav2_costmap_2d_core
-)
-
-ament_target_dependencies(nav2_costmap_2d_markers
-  ${dependencies}
+target_link_libraries(nav2_costmap_2d_markers PRIVATE
+  rclcpp::rclcpp
+  ${visualization_msgs_TARGETS}
+  ${nav2_msgs_TARGETS}
+  nav2_voxel_grid::voxel_grid
+  nav2_util::nav2_util_core
 )
 
 add_executable(nav2_costmap_2d_cloud src/costmap_2d_cloud.cpp)
-target_link_libraries(nav2_costmap_2d_cloud
-  ${PROJECT_NAME}::nav2_costmap_2d_core
+target_link_libraries(nav2_costmap_2d_cloud PRIVATE
+  rclcpp::rclcpp
+  ${sensor_msgs_TARGETS}
+  nav2_voxel_grid::voxel_grid
+  ${nav2_msgs_TARGETS}
+  nav2_util::nav2_util_core
 )
 
 add_executable(nav2_costmap_2d src/costmap_2d_node.cpp)
-ament_target_dependencies(nav2_costmap_2d
-  ${dependencies}
-)
-
-target_link_libraries(nav2_costmap_2d
-  ${PROJECT_NAME}::nav2_costmap_2d_core
-  ${PROJECT_NAME}::layers
-  ${PROJECT_NAME}::filters
+target_link_libraries(nav2_costmap_2d PRIVATE
+  rclcpp::rclcpp
+  nav2_costmap_2d_core
 )
 
 install(TARGETS
@@ -184,11 +170,12 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 
   find_package(ament_cmake_gtest REQUIRED)
+  ament_find_gtest()
   add_subdirectory(test)
   pluginlib_export_plugin_description_file(nav2_costmap_2d test/regression/order_layer.xml)
 endif()
 
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
-ament_export_dependencies(${dependencies})
+ament_export_dependencies(geometry_msgs tf2_ros nav2_msgs nav2_util nav_msgs tf2_sensor_msgs map_msgs std_srvs pluginlib angles rclcpp message_filters laser_geometry nav2_voxel_grid)
 pluginlib_export_plugin_description_file(nav2_costmap_2d costmap_plugins.xml)
 ament_package()
