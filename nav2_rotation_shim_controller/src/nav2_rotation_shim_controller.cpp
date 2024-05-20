@@ -18,6 +18,7 @@
 #include <vector>
 #include <utility>
 
+#include "angles/angles.h"
 #include "nav2_rotation_shim_controller/nav2_rotation_shim_controller.hpp"
 
 using rcl_interfaces::msg::ParameterType;
