@@ -28,41 +28,64 @@ set(dependencies
   nav_2d_msgs
 )
 
-include_directories(
-    include
-)
-
 add_library(conversions SHARED
   src/conversions.cpp)
-
-ament_target_dependencies(conversions
-  ${dependencies}
+target_include_directories(conversions
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+)
+target_link_libraries(conversions PUBLIC
+  ${geometry_msgs_TARGETS}
+  ${nav_2d_msgs_TARGETS}
+  ${nav_msgs_TARGETS}
+  rclcpp::rclcpp
+  tf2::tf2
+)
+target_link_libraries(conversions PRIVATE
+  ${tf2_geometry_msgs_TARGETS}
+  nav2_util::nav2_util_core
 )
 
 add_library(path_ops SHARED
   src/path_ops.cpp)
-
-ament_target_dependencies(path_ops
-  ${dependencies}
+target_include_directories(path_ops
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+)
+target_link_libraries(path_ops PUBLIC
+  ${nav_2d_msgs_TARGETS}
+)
+target_link_libraries(path_ops PRIVATE
+  ${geometry_msgs_TARGETS}
 )
 
 add_library(tf_help SHARED
   src/tf_help.cpp
 )
-
-ament_target_dependencies(tf_help
-  ${dependencies}
+target_include_directories(tf_help
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
-
-target_link_libraries(tf_help conversions)
-
+target_link_libraries(tf_help PUBLIC
+  tf2_ros::tf2_ros
+  ${geometry_msgs_TARGETS}
+  rclcpp::rclcpp
+  ${nav_2d_msgs_TARGETS}
+  tf2::tf2
+  ${tf2_geometry_msgs_TARGETS}
+  conversions
+)
 install(TARGETS conversions path_ops tf_help
+  EXPORT ${PROJECT_NAME}
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib
         RUNTIME DESTINATION bin
 )
 install(DIRECTORY include/
-        DESTINATION include/
+        DESTINATION include/${PROJECT_NAME}
 )
 
 if(BUILD_TESTING)
@@ -72,11 +95,15 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 
   find_package(ament_cmake_gtest REQUIRED)
+
+  ament_find_gtest()
+
   add_subdirectory(test)
 endif()
 
-ament_export_include_directories(include)
+ament_export_include_directories(include/${PROJECT_NAME})
 ament_export_libraries(conversions path_ops tf_help)
 ament_export_dependencies(${dependencies})
+ament_export_targets(${PROJECT_NAME})
 
 ament_package()
