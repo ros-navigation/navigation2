@@ -12,12 +12,10 @@
   <depend>rclcpp</depend>
   <depend>rclcpp_action</depend>
   <depend>rclcpp_lifecycle</depend>
-  <depend>visualization_msgs</depend>
   <depend>nav2_util</depend>
   <depend>nav2_msgs</depend>
   <depend>nav_msgs</depend>
   <depend>geometry_msgs</depend>
-  <depend>builtin_interfaces</depend>
   <depend>nav2_common</depend>
   <depend>tf2_ros</depend>
   <depend>nav2_costmap_2d</depend>
