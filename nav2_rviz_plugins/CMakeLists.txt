@@ -15,6 +15,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
 
 find_package(ament_cmake REQUIRED)
+find_package(ament_index_cpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(nav2_lifecycle_manager REQUIRED)
@@ -42,10 +43,6 @@ set(nav2_rviz_plugins_headers_to_moc
   include/nav2_rviz_plugins/particle_cloud_display/particle_cloud_display.hpp
 )
 
-include_directories(
-  include
-)
-
 set(library_name ${PROJECT_NAME})
 
 add_library(${library_name} SHARED
@@ -54,6 +51,28 @@ add_library(${library_name} SHARED
   src/particle_cloud_display/flat_weighted_arrows_array.cpp
   src/particle_cloud_display/particle_cloud_display.cpp
   ${nav2_rviz_plugins_headers_to_moc}
+)
+target_include_directories(${library_name} PUBLIC
+  ${Qt5Widgets_INCLUDE_DIRS}
+  ${OGRE_INCLUDE_DIRS}
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+)
+
+target_link_libraries(${library_name} PUBLIC
+  rviz_common::rviz_common
+  pluginlib::pluginlib
+  ament_index_cpp::ament_index_cpp
+  yaml-cpp
+  ${geometry_msgs_TARGETS}
+  nav2_util::nav2_util_core
+  nav2_lifecycle_manager::nav2_lifecycle_manager_core
+  rclcpp_action::rclcpp_action
+  ${nav2_msgs_TARGETS}
+  ${visualization_msgs_TARGETS}
+  rclcpp::rclcpp
+  rviz_rendering::rviz_rendering
+  rviz_default_plugins::rviz_default_plugins
 )
 
 set(dependencies
@@ -75,19 +94,6 @@ set(dependencies
   yaml_cpp_vendor
 )
 
-ament_target_dependencies(${library_name}
-  ${dependencies}
-)
-
-target_include_directories(${library_name} PUBLIC
-  ${Qt5Widgets_INCLUDE_DIRS}
-  ${OGRE_INCLUDE_DIRS}
-)
-
-target_link_libraries(${library_name}
-  rviz_common::rviz_common
-)
-
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
 # TODO: Make this specific to this project (not rviz default plugins)
@@ -101,12 +107,11 @@ install(
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
-  INCLUDES DESTINATION include
 )
 
 install(
   DIRECTORY include/
-  DESTINATION include/
+  DESTINATION include/${PROJECT_NAME}
 )
 
 if(BUILD_TESTING)
@@ -114,7 +119,7 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-ament_export_include_directories(include)
+ament_export_include_directories(include/${PROJECT_NAME})
 ament_export_targets(${library_name} HAS_LIBRARY_TARGET)
 ament_export_dependencies(
   Qt5
