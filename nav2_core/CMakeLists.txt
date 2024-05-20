@@ -30,8 +30,35 @@ set(dependencies
   nav2_behavior_tree
 )
 
+add_library(nav2_core INTERFACE)
+target_include_directories(nav2_core
+  INTERFACE
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+)
+target_link_libraries(nav2_core INTERFACE
+  rclcpp::rclcpp
+  rclcpp_lifecycle::rclcpp_lifecycle
+  ${std_msgs_TARGETS}
+  ${geometry_msgs_TARGETS}
+  nav2_costmap_2d::nav2_costmap_2d_core
+  pluginlib::pluginlib
+  ${visualization_msgs_TARGETS}
+  ${nav_msgs_TARGETS}
+  tf2_ros::tf2_ros
+  nav2_util::nav2_util_core
+  nav2_behavior_tree::nav2_behavior_tree
+)
+
+install(TARGETS nav2_core
+  EXPORT nav2_core
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
 install(DIRECTORY include/
-  DESTINATION include/
+  DESTINATION include/${PROJECT_NAME}
 )
 
 if(BUILD_TESTING)
@@ -41,7 +68,8 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-ament_export_include_directories(include)
+ament_export_include_directories(include/${PROJECT_NAME})
 ament_export_dependencies(${dependencies})
+ament_export_targets(nav2_core)
 
 ament_package()
