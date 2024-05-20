@@ -1,10 +1,12 @@
 ament_add_gtest_executable(test_localization_node
   test_localization_node.cpp
 )
-ament_target_dependencies(test_localization_node
-  ${dependencies}
+target_link_libraries(test_localization_node
+  ${geometry_msgs_TARGETS}
+  ${std_msgs_TARGETS}
+  rclcpp::rclcpp
+  nav2_amcl::amcl_core
 )
-
 
 ament_add_test(test_localization
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO

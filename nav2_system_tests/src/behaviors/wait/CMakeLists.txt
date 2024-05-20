@@ -4,9 +4,14 @@ ament_add_gtest_executable(${test_wait_behavior_exec}
   test_wait_behavior_node.cpp
   wait_behavior_tester.cpp
 )
-
-ament_target_dependencies(${test_wait_behavior_exec}
-  ${dependencies}
+target_link_libraries(${test_wait_behavior_exec}
+  rclcpp::rclcpp
+  tf2_ros::tf2_ros
+  ${geometry_msgs_TARGETS}
+  rclcpp_action::rclcpp_action
+  angles::angles
+  nav2_util::nav2_util_core
+  ${nav2_msgs_TARGETS}
 )
 
 ament_add_test(test_wait_behavior

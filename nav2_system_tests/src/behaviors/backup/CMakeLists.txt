@@ -4,9 +4,15 @@ ament_add_gtest_executable(${test_backup_behavior}
   test_backup_behavior_node.cpp
   backup_behavior_tester.cpp
 )
-
-ament_target_dependencies(${test_backup_behavior}
-  ${dependencies}
+target_link_libraries(${test_backup_behavior}
+  rclcpp::rclcpp
+  ${nav2_msgs_TARGETS}
+  rclcpp_action::rclcpp_action
+  angles::angles
+  nav2_util::nav2_util_core
+  ${geometry_msgs_TARGETS}
+  tf2::tf2
+  tf2_ros::tf2_ros
 )
 
 ament_add_test(test_backup_recovery

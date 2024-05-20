@@ -4,9 +4,18 @@ ament_add_gtest_executable(${test_assisted_teleop_behavior}
   test_assisted_teleop_behavior_node.cpp
   assisted_teleop_behavior_tester.cpp
 )
-
-ament_target_dependencies(${test_assisted_teleop_behavior}
-  ${dependencies}
+target_link_libraries(${test_assisted_teleop_behavior}
+  rclcpp::rclcpp
+  ${nav2_msgs_TARGETS}
+  angles::angles
+  ${geometry_msgs_TARGETS}
+  nav2_costmap_2d::nav2_costmap_2d_core
+  nav2_costmap_2d::nav2_costmap_2d_client
+  nav2_util::nav2_util_core
+  rclcpp_action::rclcpp_action
+  ${std_msgs_TARGETS}
+  tf2::tf2
+  tf2_ros::tf2_ros
 )
 
 ament_add_test(test_assisted_teleop_behavior

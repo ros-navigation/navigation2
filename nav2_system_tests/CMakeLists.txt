@@ -52,8 +52,7 @@ set(dependencies
 set(local_controller_plugin_lib local_controller)
 
 add_library(${local_controller_plugin_lib} SHARED src/error_codes/controller/controller_error_plugins.cpp)
-ament_target_dependencies(${local_controller_plugin_lib} ${dependencies})
-target_compile_definitions(${local_controller_plugin_lib} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+target_link_libraries(${local_controller_plugin_lib} PRIVATE nav2_core::nav2_core nav2_costmap_2d::nav2_costmap_2d_core ${nav_msgs_TARGETS} ${geometry_msgs_TARGETS} pluginlib::pluginlib)
 pluginlib_export_plugin_description_file(nav2_core src/error_codes/controller_plugins.xml)
 
 install(TARGETS ${local_controller_plugin_lib}
@@ -69,8 +68,7 @@ install(FILES src/error_codes/controller_plugins.xml
 set(global_planner_plugin_lib global_planner)
 
 add_library(${global_planner_plugin_lib} SHARED src/error_codes/planner/planner_error_plugin.cpp)
-ament_target_dependencies(${global_planner_plugin_lib} ${dependencies})
-target_compile_definitions(${global_planner_plugin_lib} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+target_link_libraries(${global_planner_plugin_lib} PRIVATE rclcpp::rclcpp rclcpp_lifecycle::rclcpp_lifecycle tf2_ros::tf2_ros nav2_costmap_2d::nav2_costmap_2d_core ${geometry_msgs_TARGETS} nav2_core::nav2_core ${nav_msgs_TARGETS})
 pluginlib_export_plugin_description_file(nav2_core src/error_codes/planner_plugins.xml)
 
 install(TARGETS ${global_planner_plugin_lib}
@@ -86,8 +84,7 @@ install(FILES src/error_codes/planner_plugins.xml
 set(smoother_plugin_lib smoother)
 
 add_library(${smoother_plugin_lib} SHARED src/error_codes/smoother/smoother_error_plugin.cpp)
-ament_target_dependencies(${smoother_plugin_lib} ${dependencies})
-target_compile_definitions(${smoother_plugin_lib} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+target_link_libraries(${smoother_plugin_lib} PRIVATE nav2_core::nav2_core rclcpp_lifecycle::rclcpp_lifecycle tf2_ros::tf2_ros nav2_costmap_2d::nav2_costmap_2d_core rclcpp::rclcpp ${nav_msgs_TARGETS})
 pluginlib_export_plugin_description_file(nav2_core src/error_codes/smoother_plugins.xml)
 
 install(TARGETS ${smoother_plugin_lib}
@@ -106,6 +103,8 @@ if(BUILD_TESTING)
 
   find_package(ament_cmake_gtest REQUIRED)
   find_package(ament_cmake_pytest REQUIRED)
+
+  ament_find_gtest()
 
   add_subdirectory(src/behavior_tree)
   add_subdirectory(src/planning)

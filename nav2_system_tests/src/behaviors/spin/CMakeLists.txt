@@ -4,9 +4,15 @@ ament_add_gtest_executable(${test_spin_behavior_exec}
   test_spin_behavior_node.cpp
   spin_behavior_tester.cpp
 )
-
-ament_target_dependencies(${test_spin_behavior_exec}
-  ${dependencies}
+target_link_libraries(${test_spin_behavior_exec}
+  rclcpp::rclcpp
+  tf2_ros::tf2_ros
+  ${geometry_msgs_TARGETS}
+  ${nav2_msgs_TARGETS}
+  rclcpp_action::rclcpp_action
+  angles::angles
+  tf2::tf2
+  nav2_util::nav2_util_core
 )
 
 ament_add_test(test_spin_behavior
