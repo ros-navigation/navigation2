@@ -645,7 +645,8 @@ TEST_F(Tester, testProcessApproach)
   // 3. Obstacle is inside robot footprint
   publishScan(0.5, curr_time);
   ASSERT_TRUE(waitData(0.5, 500ms, curr_time));
-  publishCmdVel(0.5, 0.2, 0.0);
+  // Publish impossible cmd_vel to ensure robot footprint is checked
+  publishCmdVel(1000000000.0, 0.2, 0.0);
   ASSERT_TRUE(waitCmdVel(500ms));
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.0, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
