@@ -55,22 +55,14 @@ public:
   virtual ~MotionModel() = default;
 
   /**
-    * @brief Configure motion model on bringup and load required parameters
-    * @param name Name of plugin
-    * @param param_handler Parameter handler object
+    * @brief Initialize motion model on bringup and set required variables
+    * @param control_constraints Constraints on control
+    * @param model_dt duration of a time step
     */
-  void on_configure(
-    const std::string & name,
-    ParametersHandler * param_handler)
+  void initialize(const models::ControlConstraints & control_constraints, float model_dt)
   {
-    auto getParam = param_handler->getParamGetter(name);
-    getParam(accel_constraints_.ax_max, "ax_max", 2.0);
-    getParam(accel_constraints_.ax_min, "ax_min", -2.0);
-    getParam(accel_constraints_.ay_max, "ay_max", 0.0);
-    getParam(accel_constraints_.ay_min, "ay_min", -0.0);
-    getParam(accel_constraints_.alphaz_max, "alphaz_max", 3.0);
-    getParam(accel_constraints_.alphaz_min, "alphaz_min", -3.0);
-    getParam(model_dt_, "model_dt", 0.05);
+    control_constraints_ = control_constraints;
+    model_dt_ = model_dt;
   }
 
   /**
@@ -91,22 +83,28 @@ public:
     // }
 
     const bool is_holo = isHolonomic();
+    float max_delta_vx = model_dt_ * control_constraints_.ax_max;
+    float min_delta_vx = model_dt_ * control_constraints_.ax_min;
+    float max_delta_vy = model_dt_ * control_constraints_.ay_max;
+    float min_delta_vy = model_dt_ * control_constraints_.ay_min;
+    float max_delta_wz = model_dt_ * control_constraints_.az;
     for (unsigned int i = 0; i != state.vx.shape(0); i++) {
       for (unsigned int j = 1; j != state.vx.shape(1); j++) {
-        float max_feasible_vx = state.vx(i, j - 1) + model_dt_ * accel_constraints_.ax_max;
-        float min_feasible_vx = state.vx(i, j - 1) + model_dt_ * accel_constraints_.ax_min;
-        state.cvx(i, j - 1) = std::clamp(state.cvx(i, j - 1), min_feasible_vx, max_feasible_vx);
-        state.vx(i, j) = state.cvx(i, j - 1);
+        float& vx_curr = state.vx(i, j - 1);
+        float& cvx_curr = state.cvx(i, j - 1);        
+        cvx_curr = std::clamp(cvx_curr, vx_curr + min_delta_vx, vx_curr + max_delta_vx);
+        state.vx(i, j) = cvx_curr;
 
-        float max_feasible_wz = state.wz(i, j - 1) + model_dt_ * accel_constraints_.alphaz_max;
-        float min_feasible_wz = state.wz(i, j - 1) + model_dt_ * accel_constraints_.alphaz_min;
-        state.cwz(i, j - 1) = std::clamp(state.cwz(i, j - 1), min_feasible_wz, max_feasible_wz);
-        state.wz(i, j) = state.cwz(i, j - 1);
+        float& wz_curr = state.wz(i, j - 1);
+        float& cwz_curr = state.cwz(i, j - 1);
+        cwz_curr = std::clamp(cwz_curr, wz_curr - max_delta_wz, wz_curr + max_delta_wz);
+        state.wz(i, j) = cwz_curr;
+
         if (is_holo) {
-          float max_feasible_vy = state.vy(i, j - 1) + model_dt_ * accel_constraints_.ay_max;
-          float min_feasible_vy = state.vy(i, j - 1) + model_dt_ * accel_constraints_.ay_min;
-          state.cvy(i, j - 1) = std::clamp(state.cvy(i, j - 1), min_feasible_vy, max_feasible_vy);
-          state.vy(i, j) = state.cvy(i, j - 1);
+          float& vy_curr = state.vy(i, j - 1);
+          float& cvy_curr = state.cvy(i, j - 1);
+          cvy_curr = std::clamp(cvy_curr, vy_curr + min_delta_vy, vy_curr + max_delta_vy);
+          state.vy(i, j) = cvy_curr;
         }
       }
     }
@@ -126,7 +124,7 @@ public:
 
 protected:
   float model_dt_{0.0};
-  models::AccelConstraints accel_constraints_{0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+  models::ControlConstraints control_constraints_{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
 };
 
 /**
