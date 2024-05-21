@@ -1502,9 +1502,9 @@ TEST_F(Tester, testCollisionPointsMarkers)
   ASSERT_TRUE(waitCollisionPointsMarker(500ms));
   ASSERT_EQ(collision_points_marker_msg_->markers[0].points.size(), 0u);
 
-  publishCmdVel(0.5, 0.2, 0.1);
   publishScan(0.5, curr_time);
   ASSERT_TRUE(waitData(0.5, 500ms, curr_time));
+  publishCmdVel(0.5, 0.2, 0.1);
   ASSERT_TRUE(waitCollisionPointsMarker(500ms));
   ASSERT_NE(collision_points_marker_msg_->markers[0].points.size(), 0u);
   // Stop Collision Monitor node
