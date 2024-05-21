@@ -40,11 +40,13 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "nav2_costmap_2d/costmap_filters/costmap_filter.hpp"
 
 #include "std_msgs/msg/bool.hpp"
 #include "nav2_msgs/msg/costmap_filter_info.hpp"
+#include "rcl_interfaces/srv/set_parameters.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -101,6 +103,12 @@ private:
    */
   void changeState(const bool state);
 
+  /**
+   * @brief Changes binary parameters of filter. Call async service for each parameter.
+   * @param state New binary state
+   */
+  void changeParameters(const bool state);
+
   // Working with filter info and mask
   rclcpp::Subscription<nav2_msgs::msg::CostmapFilterInfo>::SharedPtr filter_info_sub_;
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr mask_sub_;
@@ -118,6 +126,24 @@ private:
 
   bool default_state_;  // Default Binary Filter state
   bool binary_state_;  // Current Binary Filter state
+
+  // Parameter information
+  struct BinaryParameter
+  {
+    std::string node_name;    // Node to which the parameter belongs
+    std::string param_name;   // Name of parameter
+    bool default_state;       // Parameter default state
+    bool is_critical;         // Whether any fail on changing this should lead to an error
+  };
+
+  // List of params with info
+  std::vector<BinaryParameter> binary_parameters_info_;
+  // List of clients for changing parameters
+  std::vector<rclcpp::Client<rcl_interfaces::srv::SetParameters>::SharedPtr>
+  change_parameters_clients_;
+
+  // Timeout for waiting set_parameters service in ms
+  int64_t change_parameter_timeout_;
 };
 
 }  // namespace nav2_costmap_2d

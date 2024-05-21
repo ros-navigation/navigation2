@@ -73,6 +73,41 @@ void BinaryFilter::initializeFilter(
   node->get_parameter(name_ + "." + "binary_state_topic", binary_state_topic);
   declareParameter("flip_threshold", rclcpp::ParameterValue(50.0));
   node->get_parameter(name_ + "." + "flip_threshold", flip_threshold_);
+  declareParameter("binary_parameters", rclcpp::ParameterValue(std::vector<std::string>()));
+  // List of binary params to be changed
+  std::vector<std::string> binary_parameters;
+  node->get_parameter(name_ + "." + "binary_parameters", binary_parameters);
+  declareParameter("change_parameter_timeout", rclcpp::ParameterValue(10));
+  node->get_parameter(name_ + "." + "change_parameter_timeout", change_parameter_timeout_);
+
+  for (std::string param : binary_parameters) {
+    BinaryParameter param_struct;
+
+    declareParameter(param + "." + "node_name", rclcpp::PARAMETER_STRING);
+    try {
+      param_struct.node_name =
+        node->get_parameter(name_ + "." + param + "." + "node_name").as_string();
+    } catch (rclcpp::exceptions::ParameterUninitializedException & ex) {
+      throw std::runtime_error("Node name not defined for " + param);
+    }
+
+    declareParameter(param + "." + "param_name", rclcpp::PARAMETER_STRING);
+    try {
+      param_struct.param_name =
+        node->get_parameter(name_ + "." + param + "." + "param_name").as_string();
+    } catch (rclcpp::exceptions::ParameterUninitializedException & ex) {
+      throw std::runtime_error("Parameter name not defined for " + param);
+    }
+
+    // Take default value from parameter server if not specified
+    declareParameter(param + "." + "default_state", rclcpp::ParameterValue(default_state_));
+    node->get_parameter(name_ + "." + param + "." + "default_state", param_struct.default_state);
+
+    declareParameter(param + "." + "is_critical", rclcpp::ParameterValue(true));
+    node->get_parameter(name_ + "." + param + "." + "is_critical", param_struct.is_critical);
+
+    binary_parameters_info_.push_back(param_struct);
+  }
 
   filter_info_topic_ = filter_info_topic;
   // Setting new costmap filter info subscriber
@@ -83,6 +118,35 @@ void BinaryFilter::initializeFilter(
   filter_info_sub_ = node->create_subscription<nav2_msgs::msg::CostmapFilterInfo>(
     filter_info_topic_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
     std::bind(&BinaryFilter::filterInfoCallback, this, std::placeholders::_1));
+
+  // Create clients for changing parameters
+  for (auto param : binary_parameters_info_) {
+    RCLCPP_DEBUG(
+      logger_,
+      "BinaryFilter: Creating client for changing parameter \"%s\" of node \"%s\"...",
+      param.param_name.c_str(), param.node_name.c_str());
+
+    auto change_parameters_client = node->create_client<rcl_interfaces::srv::SetParameters>(
+      "/" + param.node_name + "/set_parameters");
+    change_parameters_clients_.push_back(change_parameters_client);
+    if (!change_parameters_client->wait_for_service(
+        std::chrono::milliseconds(change_parameter_timeout_)))
+    {
+      if (param.is_critical) {
+        throw std::runtime_error(
+                "BinaryFilter: Service " +
+                std::string(change_parameters_client->get_service_name()) +
+                " not available!");
+      }
+      RCLCPP_ERROR(
+        logger_, "BinaryFilter: service %s not available. Skipping ...",
+        change_parameters_client->get_service_name());
+    } else {
+      RCLCPP_INFO(
+        logger_, "BinaryFilter: service %s available.",
+        change_parameters_client->get_service_name());
+    }
+  }
 
   // Get global frame required for binary state publisher
   global_frame_ = layered_costmap_->getGlobalFrameID();
@@ -259,6 +323,74 @@ void BinaryFilter::changeState(const bool state)
     std::make_unique<std_msgs::msg::Bool>();
   msg->data = state;
   binary_state_pub_->publish(std::move(msg));
+  changeParameters(state);
+}
+
+void BinaryFilter::changeParameters(const bool state)
+{
+  rclcpp_lifecycle::LifecycleNode::SharedPtr node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+
+  for (size_t param_index = 0; param_index < binary_parameters_info_.size(); ++param_index) {
+    std::shared_ptr<rclcpp::Client<rcl_interfaces::srv::SetParameters>>
+    change_parameters_client = change_parameters_clients_.at(param_index);
+
+    // Create a rcl_interfaces::msg::SetParameters client for changing parameters
+    auto request = std::make_shared<rcl_interfaces::srv::SetParameters::Request>();
+
+    // Set parameters for BinaryFilter
+    rcl_interfaces::msg::Parameter bool_param;
+    BinaryFilter::BinaryParameter binary_parameter_info = binary_parameters_info_.at(param_index);
+    bool_param.name = binary_parameter_info.param_name;
+    bool_param.value.type = rcl_interfaces::msg::ParameterType::PARAMETER_BOOL;
+
+    const bool param_default_state = binary_parameter_info.default_state;
+    if (state == default_state_) {
+      // Filter is not flipped
+      bool_param.value.bool_value = param_default_state;
+    } else {
+      // Filter is flipped
+      bool_param.value.bool_value = !param_default_state;
+    }
+    request->parameters.push_back(bool_param);
+
+    RCLCPP_DEBUG(
+      logger_, "BinaryFilter: Sending request to set parameter  %s to %s",
+      binary_parameter_info.param_name.c_str(),
+      bool_param.value.bool_value ? "true" : "false");
+    auto future_result = change_parameters_client->async_send_request(request);
+
+    rclcpp::FutureReturnCode return_code = rclcpp::spin_until_future_complete(
+      node, future_result, std::chrono::milliseconds(change_parameter_timeout_));
+    if (return_code == rclcpp::FutureReturnCode::SUCCESS) {
+      auto result = future_result.get();
+      if (!result->results.at(0).successful) {
+        if (binary_parameter_info.is_critical) {
+          throw std::runtime_error(
+                  "BinaryFilter: Could not change parameter " +
+                  std::string(binary_parameter_info.param_name) + " from node " +
+                  std::string(binary_parameter_info.node_name));
+        }
+        RCLCPP_ERROR(
+          logger_, "BinaryFilter: Failed to change parameter %s",
+          bool_param.name.c_str());
+      } else {
+        RCLCPP_DEBUG(
+          logger_, "BinaryFilter: Successfully changed parameter to %s",
+          bool_param.value.bool_value ? "true" : "false");
+      }
+    } else if (return_code == rclcpp::FutureReturnCode::INTERRUPTED) {
+      if (binary_parameter_info.is_critical) {
+        throw std::runtime_error("BinaryFilter: Interruped while spinning for parameter update!");
+      }
+    } else {
+      if (binary_parameter_info.is_critical) {
+        throw std::runtime_error("BinaryFilter: Spinning for parameter update timeout!");
+      }
+    }
+  }
 }
 
 }  // namespace nav2_costmap_2d
