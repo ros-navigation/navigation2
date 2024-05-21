@@ -82,6 +82,7 @@ _commands:
         - run:
             name: Install Dependencies | << parameters.workspace >>
             working_directory: << parameters.workspace >>
+            # Remove/Replace turtlebot3_gazebo and gazebo_ros_pkgs from --skip-keys after https://github.com/ros-navigation/navigation2/pull/3634
             command: |
               . << parameters.underlay >>/install/setup.sh
               AMENT_PREFIX_PATH=$(echo "$AMENT_PREFIX_PATH" | \

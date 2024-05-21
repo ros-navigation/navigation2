@@ -96,6 +96,8 @@ ARG OVERLAY_WS
 ENV OVERLAY_WS $OVERLAY_WS
 WORKDIR $OVERLAY_WS
 COPY --from=cacher /tmp/$OVERLAY_WS ./
+
+# Remove/Replace turtlebot3_gazebo and gazebo_ros_pkgs from --skip-keys after https://github.com/ros-navigation/navigation2/pull/3634
 RUN . $UNDERLAY_WS/install/setup.sh && \
     apt-get update && rosdep install -q -y \
       --from-paths src \

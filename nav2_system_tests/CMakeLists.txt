@@ -18,7 +18,7 @@ find_package(visualization_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
-# find_package(gazebo_ros_pkgs REQUIRED)
+# find_package(gazebo_ros_pkgs REQUIRED) Remove/Replace after https://github.com/ros-navigation/navigation2/pull/3634
 find_package(nav2_amcl REQUIRED)
 find_package(nav2_lifecycle_manager REQUIRED)
 find_package(rclpy REQUIRED)
@@ -41,7 +41,7 @@ set(dependencies
   nav2_amcl
   nav2_lifecycle_manager
   nav2_behavior_tree
-#   gazebo_ros_pkgs
+#   gazebo_ros_pkgs Remove/Replace after https://github.com/ros-navigation/navigation2/pull/3634
   geometry_msgs
   std_msgs
   tf2_geometry_msgs
