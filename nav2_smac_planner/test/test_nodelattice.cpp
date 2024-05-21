@@ -306,7 +306,7 @@ TEST(NodeLatticeTest, test_get_neighbors)
   std::function<bool(const uint64_t &,
     nav2_smac_planner::NodeLattice * &)> neighborGetter =
     [&, this](const uint64_t & index,
-      nav2_smac_planner::NodeLattice * & neighbor_rtn) -> bool
+    nav2_smac_planner::NodeLattice * & neighbor_rtn) -> bool
     {
       // because we don't return a real object
       return false;

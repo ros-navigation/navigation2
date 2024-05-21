@@ -404,7 +404,7 @@ protected:
   int cusp_i_ = -1;
   QualityCriterion3 mvmt_smoothness_criterion_ =
     [this](int i, const Eigen::Vector3d & prev_p, const Eigen::Vector3d & p,
-      const Eigen::Vector3d & next_p) {
+    const Eigen::Vector3d & next_p) {
       Eigen::Vector2d prev_mvmt = p.block<2, 1>(0, 0) - prev_p.block<2, 1>(0, 0);
       Eigen::Vector2d next_mvmt = next_p.block<2, 1>(0, 0) - p.block<2, 1>(0, 0);
       if (i == cusp_i_) {
@@ -986,7 +986,7 @@ TEST_F(SmootherTest, testingDownsamplingUpsampling)
   int cusp_i_out = 6;  // for upsampled path
   QualityCriterion3 mvmt_smoothness_criterion_out =
     [&cusp_i_out](int i, const Eigen::Vector3d & prev_p, const Eigen::Vector3d & p,
-      const Eigen::Vector3d & next_p) {
+    const Eigen::Vector3d & next_p) {
       Eigen::Vector2d prev_mvmt = p.block<2, 1>(0, 0) - prev_p.block<2, 1>(0, 0);
       Eigen::Vector2d next_mvmt = next_p.block<2, 1>(0, 0) - p.block<2, 1>(0, 0);
       if (i == cusp_i_out) {

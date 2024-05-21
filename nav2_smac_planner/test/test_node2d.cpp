@@ -145,7 +145,7 @@ TEST(Node2DTest, test_node_2d_neighbors)
   std::function<bool(const uint64_t &,
     nav2_smac_planner::Node2D * &)> neighborGetter =
     [&, this](const uint64_t & index,
-      nav2_smac_planner::Node2D * & neighbor_rtn) -> bool
+    nav2_smac_planner::Node2D * & neighbor_rtn) -> bool
     {
       return false;
     };
