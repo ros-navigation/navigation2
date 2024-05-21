@@ -81,6 +81,10 @@ public:
     // assert(action_server_->is_cancel_requested() == false);
     // auto feedback = std::make_shared<Fibonacci::Feedback>();
     // action_server_->publish_feedback(feedback);
+    omit_preempt_subs_.reset();
+    activate_subs_.reset();
+    deactivate_subs_.reset();
+    action_server_->deactivate();
     action_server_.reset();
   }
 
@@ -150,21 +154,33 @@ public:
       std::make_shared<std::thread>(std::bind(&RclCppFixture::server_thread_func, this));
   }
 
+  void TearDown()
+  {
+    stop_.store(true);
+    if (server_thread_ && server_thread_->joinable()) {
+      server_thread_->join();
+      server_thread_.reset();
+    }
+  }
+
   ~RclCppFixture()
   {
-    server_thread_->join();
   }
 
   void server_thread_func()
   {
     auto node = std::make_shared<FibonacciServerNode>();
     node->on_init();
-    rclcpp::spin(node->get_node_base_interface());
+    while (rclcpp::ok() && !stop_.load()) {
+      rclcpp::spin_some(node->get_node_base_interface());
+      std::this_thread::sleep_for(10ms);
+    }
     node->on_term();
     node.reset();
   }
 
   std::shared_ptr<std::thread> server_thread_;
+  std::atomic<bool> stop_{false};
 };
 
 RclCppFixture g_rclcppfixture;
@@ -189,6 +205,9 @@ public:
 
   void on_term()
   {
+    omit_prempt_pub_.reset();
+    activate_pub_.reset();
+    deactivate_pub_.reset();
     action_client_.reset();
   }
 
@@ -547,6 +566,7 @@ int main(int argc, char ** argv)
   g_rclcppfixture.Setup();
   ::testing::InitGoogleTest(&argc, argv);
   auto result = RUN_ALL_TESTS();
+  g_rclcppfixture.TearDown();
   rclcpp::shutdown();
   return result;
 }
