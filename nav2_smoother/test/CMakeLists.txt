@@ -1,36 +1,48 @@
 ament_add_gtest(test_smoother_server
   test_smoother_server.cpp
 )
-
 target_link_libraries(test_smoother_server
   ${library_name}
-)
-
-ament_target_dependencies(test_smoother_server
-  ${dependencies}
+  rclcpp::rclcpp
+  rclcpp_action::rclcpp_action
+  nav2_core::nav2_core
+  ${nav2_msgs_TARGETS}
+  rclcpp_lifecycle::rclcpp_lifecycle
+  nav2_costmap_2d::nav2_costmap_2d_core
+  nav2_costmap_2d::nav2_costmap_2d_client
+  ${geometry_msgs_TARGETS}
+  pluginlib::pluginlib
 )
 
 ament_add_gtest(test_simple_smoother
   test_simple_smoother.cpp
 )
-
 target_link_libraries(test_simple_smoother
   simple_smoother
+  rclcpp::rclcpp
+  nav2_costmap_2d::nav2_costmap_2d_core
+  nav2_costmap_2d::nav2_costmap_2d_client
+  ${nav2_msgs_TARGETS}
+  nav2_util::nav2_util_core
+  nav2_core::nav2_core
+  ${nav_msgs_TARGETS}
+  rclcpp_lifecycle::rclcpp_lifecycle
+  tf2::tf2
 )
-
-ament_target_dependencies(test_simple_smoother
-  ${dependencies}
-)
-
 
 ament_add_gtest(test_savitzky_golay_smoother
   test_savitzky_golay_smoother.cpp
 )
-
 target_link_libraries(test_savitzky_golay_smoother
   savitzky_golay_smoother
-)
-
-ament_target_dependencies(test_savitzky_golay_smoother
-  ${dependencies}
+  rclcpp::rclcpp
+  ament_index_cpp::ament_index_cpp
+  nav2_util::nav2_util_core
+  nav2_costmap_2d::nav2_costmap_2d_core
+  nav2_costmap_2d::nav2_costmap_2d_client
+  nav2_core::nav2_core
+  ${nav2_msgs_TARGETS}
+  rclcpp_lifecycle::rclcpp_lifecycle
+  tf2_ros::tf2_ros
+  ${nav_msgs_TARGETS}
 )
