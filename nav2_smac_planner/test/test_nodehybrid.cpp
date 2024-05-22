@@ -236,6 +236,7 @@ TEST(NodeHybridTest, test_obstacle_heuristic)
   EXPECT_EQ(wide_passage_cost, two_passages_cost);
 
   delete costmapA;
+  nav2_smac_planner::NodeHybrid::destroyStaticAssets();
 }
 
 TEST(NodeHybridTest, test_node_debin_neighbors)

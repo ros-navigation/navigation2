@@ -258,6 +258,7 @@ void SmacPlannerLattice::cleanup()
   RCLCPP_INFO(
     _logger, "Cleaning up plugin %s of type SmacPlannerLattice",
     _name.c_str());
+  nav2_smac_planner::NodeHybrid::destroyStaticAssets();
   _a_star.reset();
   _smoother.reset();
   _raw_plan_publisher.reset();
