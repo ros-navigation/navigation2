@@ -18,10 +18,12 @@
 #include <set>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "nav_msgs/msg/path.hpp"
 #include "nav2_util/robot_utils.hpp"
 
 #include "utils/test_behavior_tree_fixture.hpp"
 #include "nav2_behavior_tree/plugins/condition/path_expiring_timer_condition.hpp"
+#include "nav2_behavior_tree/bt_utils.hpp"
 
 using namespace std::chrono;  // NOLINT
 using namespace std::chrono_literals;  // NOLINT
