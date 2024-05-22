@@ -33,6 +33,9 @@ public:
   {
     node_ = std::make_shared<rclcpp::Node>("test_path_expiring_condition");
     config_ = new BT::NodeConfiguration();
+    config_->input_ports["seconds"] = 1.0;
+    config_->input_ports["path"] = "";
+
     config_->blackboard = BT::Blackboard::create();
     config_->blackboard->set("node", node_);
     bt_node_ = std::make_shared<nav2_behavior_tree::PathExpiringTimerCondition>(
