@@ -84,6 +84,9 @@ public:
     omit_preempt_subs_.reset();
     activate_subs_.reset();
     deactivate_subs_.reset();
+    while (action_server_->is_running()) {
+      std::this_thread::sleep_for(10ms);
+    }
     action_server_->deactivate();
     action_server_.reset();
   }
