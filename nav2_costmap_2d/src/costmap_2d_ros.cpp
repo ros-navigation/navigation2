@@ -85,8 +85,6 @@ Costmap2DROS::Costmap2DROS(
 {
   RCLCPP_INFO(get_logger(), "Creating Costmap");
 
-  std::vector<std::string> clearable_layers{"obstacle_layer", "voxel_layer", "range_layer"};
-
   declare_parameter("always_send_full_costmap", rclcpp::ParameterValue(false));
   declare_parameter("footprint_padding", rclcpp::ParameterValue(0.01f));
   declare_parameter("footprint", rclcpp::ParameterValue(std::string("[]")));
@@ -113,7 +111,6 @@ Costmap2DROS::Costmap2DROS(
   declare_parameter("unknown_cost_value", rclcpp::ParameterValue(static_cast<unsigned char>(0xff)));
   declare_parameter("update_frequency", rclcpp::ParameterValue(5.0));
   declare_parameter("use_maximum", rclcpp::ParameterValue(false));
-  declare_parameter("clearable_layers", rclcpp::ParameterValue(clearable_layers));
 }
 
 Costmap2DROS::~Costmap2DROS()
