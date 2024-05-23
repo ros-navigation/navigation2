@@ -59,7 +59,13 @@ TEST(PointPortTest, test_wrong_syntax)
 
   BT::BehaviorTreeFactory factory;
   factory.registerNodeType<TestNode<geometry_msgs::msg::Point>>("PointPort");
-  EXPECT_THROW(factory.createTreeFromText(xml_txt), std::exception);
+  auto tree = factory.createTreeFromText(xml_txt);
+
+  geometry_msgs::msg::Point value;
+  tree.rootNode()->getInput("test", value);
+  EXPECT_EQ(value.x, 0.0);
+  EXPECT_EQ(value.y, 0.0);
+  EXPECT_EQ(value.z, 0.0);
 
   xml_txt =
     R"(
@@ -69,7 +75,11 @@ TEST(PointPortTest, test_wrong_syntax)
         </BehaviorTree>
       </root>)";
 
-  EXPECT_THROW(factory.createTreeFromText(xml_txt), std::exception);
+  tree = factory.createTreeFromText(xml_txt);
+  tree.rootNode()->getInput("test", value);
+  EXPECT_EQ(value.x, 0.0);
+  EXPECT_EQ(value.y, 0.0);
+  EXPECT_EQ(value.z, 0.0);
 }
 
 TEST(PointPortTest, test_correct_syntax)
@@ -105,8 +115,14 @@ TEST(QuaternionPortTest, test_wrong_syntax)
 
   BT::BehaviorTreeFactory factory;
   factory.registerNodeType<TestNode<geometry_msgs::msg::Quaternion>>("QuaternionPort");
-  EXPECT_THROW(factory.createTreeFromText(xml_txt), std::exception);
+  auto tree = factory.createTreeFromText(xml_txt);
 
+  geometry_msgs::msg::Quaternion value;
+  tree.rootNode()->getInput("test", value);
+  EXPECT_EQ(value.x, 0.0);
+  EXPECT_EQ(value.y, 0.0);
+  EXPECT_EQ(value.z, 0.0);
+  EXPECT_EQ(value.w, 1.0);
 
   xml_txt =
     R"(
@@ -116,7 +132,12 @@ TEST(QuaternionPortTest, test_wrong_syntax)
         </BehaviorTree>
       </root>)";
 
-  EXPECT_THROW(factory.createTreeFromText(xml_txt), std::exception);
+  tree = factory.createTreeFromText(xml_txt);
+  tree.rootNode()->getInput("test", value);
+  EXPECT_EQ(value.x, 0.0);
+  EXPECT_EQ(value.y, 0.0);
+  EXPECT_EQ(value.z, 0.0);
+  EXPECT_EQ(value.w, 1.0);
 }
 
 TEST(QuaternionPortTest, test_correct_syntax)
@@ -153,7 +174,19 @@ TEST(PoseStampedPortTest, test_wrong_syntax)
 
   BT::BehaviorTreeFactory factory;
   factory.registerNodeType<TestNode<geometry_msgs::msg::PoseStamped>>("PoseStampedPort");
-  EXPECT_THROW(factory.createTreeFromText(xml_txt), std::exception);
+  auto tree = factory.createTreeFromText(xml_txt);
+
+  geometry_msgs::msg::PoseStamped value;
+  tree.rootNode()->getInput("test", value);
+  EXPECT_EQ(rclcpp::Time(value.header.stamp).nanoseconds(), 0);
+  EXPECT_EQ(value.header.frame_id, "");
+  EXPECT_EQ(value.pose.position.x, 0.0);
+  EXPECT_EQ(value.pose.position.y, 0.0);
+  EXPECT_EQ(value.pose.position.z, 0.0);
+  EXPECT_EQ(value.pose.orientation.x, 0.0);
+  EXPECT_EQ(value.pose.orientation.y, 0.0);
+  EXPECT_EQ(value.pose.orientation.z, 0.0);
+  EXPECT_EQ(value.pose.orientation.w, 1.0);
 
   xml_txt =
     R"(
@@ -163,7 +196,17 @@ TEST(PoseStampedPortTest, test_wrong_syntax)
         </BehaviorTree>
       </root>)";
 
-  EXPECT_THROW(factory.createTreeFromText(xml_txt), std::exception);
+  tree = factory.createTreeFromText(xml_txt);
+  tree.rootNode()->getInput("test", value);
+  EXPECT_EQ(rclcpp::Time(value.header.stamp).nanoseconds(), 0);
+  EXPECT_EQ(value.header.frame_id, "");
+  EXPECT_EQ(value.pose.position.x, 0.0);
+  EXPECT_EQ(value.pose.position.y, 0.0);
+  EXPECT_EQ(value.pose.position.z, 0.0);
+  EXPECT_EQ(value.pose.orientation.x, 0.0);
+  EXPECT_EQ(value.pose.orientation.y, 0.0);
+  EXPECT_EQ(value.pose.orientation.z, 0.0);
+  EXPECT_EQ(value.pose.orientation.w, 1.0);
 }
 
 TEST(PoseStampedPortTest, test_correct_syntax)
