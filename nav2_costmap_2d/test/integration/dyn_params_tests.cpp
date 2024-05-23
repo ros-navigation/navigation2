@@ -38,15 +38,14 @@ public:
 
 TEST(DynParamTestNode, testDynParamsSet)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("dyn_param_tester");
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
   costmap->on_configure(rclcpp_lifecycle::State());
 
   // Set tf between default global_frame and robot_base_frame in order not to block in on_activate
   std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_ =
-    std::make_unique<tf2_ros::TransformBroadcaster>(node);
+    std::make_unique<tf2_ros::TransformBroadcaster>(costmap);
   geometry_msgs::msg::TransformStamped t;
-  t.header.stamp = node->get_clock()->now();
+  t.header.stamp = costmap->get_clock()->now();
   t.header.frame_id = "map";
   t.child_frame_id = "base_link";
   tf_broadcaster_->sendTransform(t);
@@ -57,9 +56,10 @@ TEST(DynParamTestNode, testDynParamsSet)
   costmap->on_activate(rclcpp_lifecycle::State());
 
   auto parameter_client = std::make_shared<rclcpp::AsyncParametersClient>(
-    node->shared_from_this(),
-    "/test_costmap/test_costmap",
-    rmw_qos_profile_parameters);
+    costmap->get_node_base_interface(), costmap->get_node_topics_interface(),
+    costmap->get_node_graph_interface(),
+    costmap->get_node_services_interface());
+
   auto results1 = parameter_client->set_parameters_atomically(
   {
     rclcpp::Parameter("robot_radius", 1.234),
