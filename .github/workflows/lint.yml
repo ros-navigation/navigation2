@@ -7,7 +7,7 @@ jobs:
     name: ament_${{ matrix.linter }}
     runs-on: ubuntu-latest
     container:
-      image: rostooling/setup-ros-docker:ubuntu-jammy-ros-rolling-ros-base-latest
+      image: rostooling/setup-ros-docker:ubuntu-noble-ros-rolling-ros-base-latest
     strategy:
       fail-fast: false
       matrix:
