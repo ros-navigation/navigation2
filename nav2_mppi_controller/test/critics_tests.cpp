@@ -31,6 +31,7 @@
 #include "nav2_mppi_controller/critics/path_follow_critic.hpp"
 #include "nav2_mppi_controller/critics/prefer_forward_critic.hpp"
 #include "nav2_mppi_controller/critics/twirling_critic.hpp"
+#include "nav2_mppi_controller/critics/velocity_deadband_critic.hpp"
 #include "utils_test.cpp"  // NOLINT
 
 // Tests the various critic plugin functions
@@ -609,106 +610,51 @@ TEST(CriticTests, PathAlignCritic)
   EXPECT_NEAR(xt::sum(costs, immediate)(), 0.0, 1e-6);
 }
 
-TEST(CriticTests, PathAlignLegacyCritic)
+TEST(CriticTests, VelocityDeadbandCritic)
 {
   // Standard preamble
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", "dummy_costmap", true);
   ParametersHandler param_handler(node);
+  auto getParam = param_handler.getParamGetter("critic");
+  std::vector<double> deadband_velocities_;
+  getParam(deadband_velocities_, "deadband_velocities", std::vector<double>{0.08, 0.08, 0.08});
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
 
   models::State state;
-  state.reset(1000, 30);
   models::ControlSequence control_sequence;
   models::Trajectories generated_trajectories;
-  generated_trajectories.reset(1000, 30);
   models::Path path;
   xt::xtensor<float, 1> costs = xt::zeros<float>({1000});
   float model_dt = 0.1;
   CriticData data =
   {state, generated_trajectories, path, costs, model_dt, false, nullptr, nullptr, std::nullopt,
     std::nullopt};
-  data.motion_model = std::make_shared<DiffDriveMotionModel>();
-  TestGoalChecker goal_checker;  // from utils_tests tolerance of 0.25 positionally
-  data.goal_checker = &goal_checker;
+  data.motion_model = std::make_shared<OmniMotionModel>();
 
   // Initialization testing
 
-  // Make sure initializes correctly
-  PathAlignLegacyCritic critic;
+  // Make sure initializes correctly and that defaults are reasonable
+  VelocityDeadbandCritic critic;
   critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
   EXPECT_EQ(critic.getName(), "critic");
 
   // Scoring testing
 
-  // provide state poses and path close within positional tolerances
-  state.pose.pose.position.x = 1.0;
-  path.reset(10);
-  path.x(9) = 0.85;
+  // provide velocities out of deadband bounds, should not have any costs
+  state.vx = 0.80 * xt::ones<float>({1000, 30});
+  state.vy = 0.60 * xt::ones<float>({1000, 30});
+  state.wz = 0.80 * xt::ones<float>({1000, 30});
   critic.score(data);
-  EXPECT_NEAR(xt::sum(costs, immediate)(), 0.0, 1e-6);
+  EXPECT_NEAR(xt::sum(costs, immediate)(), 0, 1e-6);
 
-  // provide state pose and path far enough to enable
-  // but data furthest point reached is 0 and offset default is 20, so returns
-  path.x(9) = 0.15;
+  // Test cost value
+  state.vx = 0.01 * xt::ones<float>({1000, 30});
+  state.vy = 0.02 * xt::ones<float>({1000, 30});
+  state.wz = 0.021 * xt::ones<float>({1000, 30});
   critic.score(data);
-  EXPECT_NEAR(xt::sum(costs, immediate)(), 0.0, 1e-6);
-
-  // provide state pose and path far enough to enable, with data to pass condition
-  // but with empty trajectories and paths, should still be zero
-  *data.furthest_reached_path_point = 21;
-  path.x(9) = 0.15;
-  critic.score(data);
-  EXPECT_NEAR(xt::sum(costs, immediate)(), 0.0, 1e-6);
-
-  // provide state pose and path far enough to enable, with data to pass condition
-  // and with a valid path to pass invalid path condition
-  state.pose.pose.position.x = 0.0;
-  data.path_pts_valid.reset();  // Recompute on new path
-  path.reset(22);
-  path.x(0) = 0;
-  path.x(1) = 0.1;
-  path.x(2) = 0.2;
-  path.x(3) = 0.3;
-  path.x(4) = 0.4;
-  path.x(5) = 0.5;
-  path.x(6) = 0.6;
-  path.x(7) = 0.7;
-  path.x(8) = 0.8;
-  path.x(9) = 0.9;
-  path.x(10) = 0.9;
-  path.x(11) = 0.9;
-  path.x(12) = 0.9;
-  path.x(13) = 0.9;
-  path.x(14) = 0.9;
-  path.x(15) = 0.9;
-  path.x(16) = 0.9;
-  path.x(17) = 0.9;
-  path.x(18) = 0.9;
-  path.x(19) = 0.9;
-  path.x(20) = 0.9;
-  path.x(21) = 0.9;
-  generated_trajectories.x = 0.66 * xt::ones<float>({1000, 30});
-  critic.score(data);
-  // 0.04 * 1000 * 10 weight * 6 num pts eval / 6 normalization term
-  EXPECT_NEAR(xt::sum(costs, immediate)(), 400.0, 1e-2);
-
-  // provide state pose and path far enough to enable, with data to pass condition
-  // but path is blocked in collision
-  auto * costmap = costmap_ros->getCostmap();
-  // island in the middle of lethal cost to cross. Costmap defaults to size 5x5 @ 10cm resolution
-  for (unsigned int i = 11; i <= 30; ++i) {  // 1.1m-3m
-    for (unsigned int j = 11; j <= 30; ++j) {  // 1.1m-3m
-      costmap->setCost(i, j, 254);
-    }
-  }
-
-  data.path_pts_valid.reset();  // Recompute on new path
-  costs = xt::zeros<float>({1000});
-  path.x = 1.5 * xt::ones<float>({22});
-  path.y = 1.5 * xt::ones<float>({22});
-  critic.score(data);
-  EXPECT_NEAR(xt::sum(costs, immediate)(), 0.0, 1e-6);
+  // 35.0 weight * 0.1 model_dt * (0.07 + 0.06 + 0.059) * 30 timesteps = 56.7
+  EXPECT_NEAR(costs(1), 19.845, 0.01);
 }

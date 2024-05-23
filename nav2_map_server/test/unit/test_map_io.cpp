@@ -311,3 +311,30 @@ TEST_F(MapIOTester, loadInvalidYAML)
   LoadParameters loadParameters;
   ASSERT_ANY_THROW(loadParameters = loadMapYaml(path(TEST_DIR) / path("invalid_file.yaml")));
 }
+
+TEST(HomeUserExpanderTestSuite, homeUserExpanderShouldNotChangeInputStringWhenShorterThanTwo)
+{
+  const std::string emptyFileName{};
+  ASSERT_EQ(emptyFileName, expand_user_home_dir_if_needed(emptyFileName, "/home/user"));
+}
+
+TEST(
+  HomeUserExpanderTestSuite,
+  homeUserExpanderShouldNotChangeInputStringWhenInputStringDoesNotStartWithHomeSequence)
+{
+  const std::string fileName{"valid_file.yaml"};
+  ASSERT_EQ(fileName, expand_user_home_dir_if_needed(fileName, "/home/user"));
+}
+
+TEST(HomeUserExpanderTestSuite, homeUserExpanderShouldNotChangeInputStringWhenHomeVariableNotFound)
+{
+  const std::string fileName{"~/valid_file.yaml"};
+  ASSERT_EQ(fileName, expand_user_home_dir_if_needed(fileName, ""));
+}
+
+TEST(HomeUserExpanderTestSuite, homeUserExpanderShouldExpandHomeSequenceWhenHomeVariableSet)
+{
+  const std::string fileName{"~/valid_file.yaml"};
+  const std::string expectedOutputFileName{"/home/user/valid_file.yaml"};
+  ASSERT_EQ(expectedOutputFileName, expand_user_home_dir_if_needed(fileName, "/home/user"));
+}
