@@ -19,7 +19,6 @@
 #include <vector>
 
 #include "lifecycle_msgs/msg/state.hpp"
-#include "nav2_util/node_utils.hpp"
 
 namespace nav2_util
 {
@@ -35,10 +34,6 @@ LifecycleNode::LifecycleNode(
   this->set_parameter(
     rclcpp::Parameter(
       bond::msg::Constants::DISABLE_HEARTBEAT_TIMEOUT_PARAM, true));
-
-  nav2_util::declare_parameter_if_not_declared(
-    this, "bond_heartbeat_period", rclcpp::ParameterValue(0.1));
-  this->get_parameter("bond_heartbeat_period", bond_heartbeat_period);
 
   printLifecycleNodeNotification();
 
@@ -60,18 +55,16 @@ LifecycleNode::~LifecycleNode()
 
 void LifecycleNode::createBond()
 {
-  if (bond_heartbeat_period > 0.0) {
-    RCLCPP_INFO(get_logger(), "Creating bond (%s) to lifecycle manager.", this->get_name());
+  RCLCPP_INFO(get_logger(), "Creating bond (%s) to lifecycle manager.", this->get_name());
 
-    bond_ = std::make_unique<bond::Bond>(
-      std::string("bond"),
-      this->get_name(),
-      shared_from_this());
+  bond_ = std::make_unique<bond::Bond>(
+    std::string("bond"),
+    this->get_name(),
+    shared_from_this());
 
-    bond_->setHeartbeatPeriod(bond_heartbeat_period);
-    bond_->setHeartbeatTimeout(4.0);
-    bond_->start();
-  }
+  bond_->setHeartbeatPeriod(0.10);
+  bond_->setHeartbeatTimeout(4.0);
+  bond_->start();
 }
 
 void LifecycleNode::runCleanups()
@@ -117,12 +110,10 @@ void LifecycleNode::register_rcl_preshutdown_callback()
 
 void LifecycleNode::destroyBond()
 {
-  if (bond_heartbeat_period > 0.0) {
-    RCLCPP_INFO(get_logger(), "Destroying bond (%s) to lifecycle manager.", this->get_name());
+  RCLCPP_INFO(get_logger(), "Destroying bond (%s) to lifecycle manager.", this->get_name());
 
-    if (bond_) {
-      bond_.reset();
-    }
+  if (bond_) {
+    bond_.reset();
   }
 }
 
