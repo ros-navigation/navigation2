@@ -189,4 +189,5 @@ TEST(SmootherTest, test_full_smoother)
   EXPECT_NEAR(plan.poses.end()[-2].pose.orientation.w, 0.0, 1e-3);
 
   delete costmap;
+  nav2_smac_planner::NodeHybrid::destroyStaticAssets();
 }
