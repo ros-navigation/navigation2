@@ -174,7 +174,7 @@ double Polygon::getCollisionTime(
   std::vector<Point> points_transformed = collision_points;
 
   // Check static polygon
-  if (getPointsInside(points_transformed) >= min_points_) {
+  if (getPointsInside(points_transformed) >= max_points_) {
     return 0.0;
   }
 
