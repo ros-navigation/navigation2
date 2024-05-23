@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>nav2_core</name>
-  <version>1.1.14</version>
+  <version>1.1.15</version>
   <description>A set of headers for plugins core to the Nav2 stack</description>
   <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
   <maintainer email="carl.r.delsey@intel.com">Carl Delsey</maintainer>
