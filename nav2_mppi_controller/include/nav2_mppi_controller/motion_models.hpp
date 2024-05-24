@@ -86,25 +86,27 @@ public:
     float max_delta_vx = model_dt_ * control_constraints_.ax_max;
     float min_delta_vx = model_dt_ * control_constraints_.ax_min;
     float max_delta_vy = model_dt_ * control_constraints_.ay_max;
-    float min_delta_vy = model_dt_ * control_constraints_.ay_min;
-    float max_delta_wz = model_dt_ * control_constraints_.az;
+    float max_delta_wz = model_dt_ * control_constraints_.az_max;
+    float vx_last = state.vx(0, 0);
+    float vy_last = state.vy(0, 0);
+    float wz_last = state.wz(0, 0);
     for (unsigned int i = 0; i != state.vx.shape(0); i++) {
       for (unsigned int j = 1; j != state.vx.shape(1); j++) {
-        float& vx_curr = state.vx(i, j - 1);
         float& cvx_curr = state.cvx(i, j - 1);        
-        cvx_curr = std::clamp(cvx_curr, vx_curr + min_delta_vx, vx_curr + max_delta_vx);
+        cvx_curr = std::clamp(cvx_curr, vx_last + min_delta_vx, vx_last + max_delta_vx);
         state.vx(i, j) = cvx_curr;
+        vx_last  = cvx_curr;
 
-        float& wz_curr = state.wz(i, j - 1);
         float& cwz_curr = state.cwz(i, j - 1);
-        cwz_curr = std::clamp(cwz_curr, wz_curr - max_delta_wz, wz_curr + max_delta_wz);
+        cwz_curr = std::clamp(cwz_curr, wz_last - max_delta_wz, wz_last + max_delta_wz);
         state.wz(i, j) = cwz_curr;
+        wz_last = cwz_curr;
 
         if (is_holo) {
-          float& vy_curr = state.vy(i, j - 1);
           float& cvy_curr = state.cvy(i, j - 1);
-          cvy_curr = std::clamp(cvy_curr, vy_curr + min_delta_vy, vy_curr + max_delta_vy);
+          cvy_curr = std::clamp(cvy_curr, vy_last - max_delta_vy, vy_last + max_delta_vy);
           state.vy(i, j) = cvy_curr;
+          vy_last = cvy_curr;
         }
       }
     }
