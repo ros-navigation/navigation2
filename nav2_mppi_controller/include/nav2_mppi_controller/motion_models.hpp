@@ -127,7 +127,7 @@ public:
 protected:
   float model_dt_{0.0};
   models::ControlConstraints control_constraints_{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
-  0.0f};
+   0.0f};
 };
 
 /**

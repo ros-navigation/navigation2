@@ -80,7 +80,7 @@ void Optimizer::getParams()
   getParam(s.base_constraints.ax_max, "ax_max", 2.0f);
   getParam(s.base_constraints.ax_min, "ax_min", -2.0f);
   getParam(s.base_constraints.ay_max, "ay_max", 0.0f);
-  getParam(s.base_constraints.az, "az_max", 3.0f);
+  getParam(s.base_constraints.az_max, "az_max", 3.0f);
   getParam(s.sampling_std.vx, "vx_std", 0.2f);
   getParam(s.sampling_std.vy, "vy_std", 0.2f);
   getParam(s.sampling_std.wz, "wz_std", 0.4f);
