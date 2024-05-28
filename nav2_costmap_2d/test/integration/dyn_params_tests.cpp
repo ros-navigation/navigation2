@@ -84,8 +84,8 @@ TEST(DynParamTestNode, testDynParamsSet)
     rclcpp::Parameter("robot_base_frame", "wrong_test_frame"),
   });
 
-  rclcpp::spin_some(node->get_node_base_interface());
-  rclcpp::spin_some(costmap->get_node_base_interface());
+  rclcpp::spin_all(node->get_node_base_interface(), std::chrono::milliseconds(50));
+  rclcpp::spin_all(costmap->get_node_base_interface(), std::chrono::milliseconds(50));
 
   EXPECT_EQ(costmap->get_parameter("robot_radius").as_double(), 1.234);
   EXPECT_EQ(costmap->get_parameter("footprint_padding").as_double(), 2.345);
