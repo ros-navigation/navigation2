@@ -94,6 +94,16 @@ protected:
    */
   bool startup();
   /**
+   * @brief Configures the managed nodes.
+   * @return true or false
+   */
+  bool configure();
+  /**
+   * @brief Cleanups the managed nodes
+   * @return true or false
+   */
+  bool cleanup();
+  /**
    * @brief Deactivate, clean up and shut down all the managed nodes.
    * @return true or false
    */
