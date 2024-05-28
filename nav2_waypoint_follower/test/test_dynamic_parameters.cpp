@@ -42,6 +42,18 @@ public:
     rclcpp_lifecycle::State state;
     this->on_activate(state);
   }
+
+  void deactivate()
+  {
+    rclcpp_lifecycle::State state;
+    this->on_deactivate(state);
+  }
+
+  void cleanup()
+  {
+    rclcpp_lifecycle::State state;
+    this->on_cleanup(state);
+  }
 };
 
 class RclCppFixture
@@ -73,4 +85,7 @@ TEST(WPTest, test_dynamic_parameters)
 
   EXPECT_EQ(follower->get_parameter("loop_rate").as_int(), 100);
   EXPECT_EQ(follower->get_parameter("stop_on_failure").as_bool(), false);
+  follower->deactivate();
+  follower->cleanup();
+  follower.reset();
 }

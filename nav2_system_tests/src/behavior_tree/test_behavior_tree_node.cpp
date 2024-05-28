@@ -79,10 +79,10 @@ public:
       return false;
     }
 
-    auto xml_string = std::string(
-      std::istreambuf_iterator<char>(xml_file),
-      std::istreambuf_iterator<char>());
-
+    std::stringstream buffer;
+    buffer << xml_file.rdbuf();
+    xml_file.close();
+    std::string xml_string = buffer.str();
     // Create the blackboard that will be shared by all of the nodes in the tree
     blackboard = BT::Blackboard::create();
 

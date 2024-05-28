@@ -215,6 +215,7 @@ TEST(AStarTest, test_a_star_se2)
   EXPECT_GT(expansions->size(), 5u);
 
   delete costmapA;
+  nav2_smac_planner::NodeHybrid::destroyStaticAssets();
 }
 
 TEST(AStarTest, test_a_star_lattice)
@@ -290,6 +291,7 @@ TEST(AStarTest, test_a_star_lattice)
   }
 
   delete costmapA;
+  nav2_smac_planner::NodeHybrid::destroyStaticAssets();
 }
 
 TEST(AStarTest, test_se2_single_pose_path)
@@ -348,6 +350,7 @@ TEST(AStarTest, test_se2_single_pose_path)
   EXPECT_GE(path.size(), 1u);
 
   delete costmapA;
+  nav2_smac_planner::NodeHybrid::destroyStaticAssets();
 }
 
 TEST(AStarTest, test_constants)

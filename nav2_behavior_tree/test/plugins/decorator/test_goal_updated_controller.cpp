@@ -36,7 +36,8 @@ public:
     poses1.push_back(goal1);
     config_->blackboard->set("goal", goal1);
     config_->blackboard->set("goals", poses1);
-
+    config_->input_ports["goals"] = "";
+    config_->input_ports["goal"] = "";
     bt_node_ = std::make_shared<nav2_behavior_tree::GoalUpdatedController>(
       "goal_updated_controller", *config_);
     dummy_node_ = std::make_shared<nav2_behavior_tree::DummyNode>();

@@ -30,6 +30,7 @@ class DistanceControllerTestFixture : public nav2_behavior_tree::BehaviorTreeTes
 public:
   void SetUp()
   {
+    config_->input_ports["distance"] = 1.0;
     config_->input_ports["global_frame"] = "map";
     config_->input_ports["robot_base_frame"] = "base_link";
     bt_node_ = std::make_shared<nav2_behavior_tree::DistanceController>(

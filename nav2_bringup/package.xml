@@ -19,7 +19,8 @@
   <exec_depend>navigation2</exec_depend>
   <exec_depend>nav2_common</exec_depend>
   <exec_depend>slam_toolbox</exec_depend>
-  <exec_depend>turtlebot3_gazebo</exec_depend>
+  <!-- Replace after https://github.com/ros-navigation/navigation2/pull/3634 -->
+  <!-- <exec_depend>turtlebot3_gazebo</exec_depend> -->
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
