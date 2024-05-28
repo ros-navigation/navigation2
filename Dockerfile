@@ -104,7 +104,6 @@ RUN . $UNDERLAY_WS/install/setup.sh && \
       --skip-keys " \
         slam_toolbox \
         turtlebot3_gazebo \
-        gazebo_ros_pkgs \
         "\
       --ignore-src \
     && rm -rf /var/lib/apt/lists/*
