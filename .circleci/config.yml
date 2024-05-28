@@ -106,7 +106,6 @@ _commands:
                   --skip-keys " \
                     slam_toolbox \
                     turtlebot3_gazebo \
-                    gazebo_ros_pkgs \
                     " \
                   --verbose | \
                 awk '$1 ~ /^resolution\:/' | \
