@@ -236,6 +236,7 @@ TEST(NodeHybridTest, test_obstacle_heuristic)
   EXPECT_EQ(wide_passage_cost, two_passages_cost);
 
   delete costmapA;
+  nav2_smac_planner::NodeHybrid::destroyStaticAssets();
 }
 
 TEST(NodeHybridTest, test_node_debin_neighbors)
@@ -364,7 +365,7 @@ TEST(NodeHybridTest, test_node_reeds_neighbors)
   std::function<bool(const uint64_t &,
     nav2_smac_planner::NodeHybrid * &)> neighborGetter =
     [&, this](const uint64_t & index,
-      nav2_smac_planner::NodeHybrid * & neighbor_rtn) -> bool
+    nav2_smac_planner::NodeHybrid * & neighbor_rtn) -> bool
     {
       // because we don't return a real object
       return false;

@@ -58,6 +58,7 @@ class RecoveryNodeTestFixture : public nav2_behavior_tree::BehaviorTreeTestFixtu
 public:
   void SetUp() override
   {
+    config_->input_ports["number_of_retries"] = 1;
     bt_node_ = std::make_shared<nav2_behavior_tree::RecoveryNode>(
       "recovery_node", *config_);
     first_child_ = std::make_shared<RecoveryDummy>();

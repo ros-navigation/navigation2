@@ -463,6 +463,16 @@ public:
    */
   bool backtracePath(CoordinateVector & path);
 
+  /**
+    * @brief Destroy shared pointer assets at the end of the process that don't
+    * require normal destruction handling
+    */
+  static void destroyStaticAssets()
+  {
+    inflation_layer.reset();
+    costmap_ros.reset();
+  }
+
   NodeHybrid * parent;
   Coordinates pose;
 
