@@ -11,7 +11,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
-find_package(behaviortree_cpp_v3 REQUIRED)
+find_package(behaviortree_cpp REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
@@ -19,6 +19,8 @@ find_package(std_srvs REQUIRED)
 find_package(nav2_util REQUIRED)
 
 nav2_package()
+
+add_compile_options(-Wno-shadow) # Delete after https://github.com/BehaviorTree/BehaviorTree.CPP/issues/811 is released
 
 include_directories(
   include
@@ -34,7 +36,7 @@ set(dependencies
   sensor_msgs
   nav2_msgs
   nav_msgs
-  behaviortree_cpp_v3
+  behaviortree_cpp
   tf2
   tf2_ros
   tf2_geometry_msgs
@@ -204,6 +206,9 @@ list(APPEND plugin_libs nav2_smoother_selector_bt_node)
 add_library(nav2_goal_checker_selector_bt_node SHARED plugins/action/goal_checker_selector_node.cpp)
 list(APPEND plugin_libs nav2_goal_checker_selector_bt_node)
 
+add_library(nav2_progress_checker_selector_bt_node SHARED plugins/action/progress_checker_selector_node.cpp)
+list(APPEND plugin_libs nav2_progress_checker_selector_bt_node)
+
 add_library(nav2_goal_updated_controller_bt_node SHARED plugins/decorator/goal_updated_controller.cpp)
 list(APPEND plugin_libs nav2_goal_updated_controller_bt_node)
 
@@ -219,6 +224,17 @@ install(TARGETS ${library_name}
   RUNTIME DESTINATION bin
 )
 
+# we will embed the list of plugin names inside a header file
+set(GENERATED_DIR ${CMAKE_CURRENT_BINARY_DIR}/gen)
+configure_file(plugins_list.hpp.in ${GENERATED_DIR}/plugins_list.hpp)
+
+add_executable(generate_nav2_tree_nodes_xml src/generate_nav2_tree_nodes_xml.cpp)
+ament_target_dependencies(generate_nav2_tree_nodes_xml ${dependencies})
+# allow generate_nav2_tree_nodes_xml to find plugins_list.hpp
+target_include_directories(generate_nav2_tree_nodes_xml PRIVATE ${GENERATED_DIR})
+install(TARGETS generate_nav2_tree_nodes_xml DESTINATION lib/${PROJECT_NAME})
+
+
 install(DIRECTORY include/
   DESTINATION include/
 )
@@ -228,6 +244,7 @@ install(DIRECTORY test/utils/
 )
 
 install(FILES nav2_tree_nodes.xml DESTINATION share/${PROJECT_NAME})
+install(FILES ${GENERATED_DIR}/plugins_list.hpp DESTINATION include/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

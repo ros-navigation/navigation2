@@ -38,6 +38,7 @@ set(nav2_rviz_plugins_headers_to_moc
   include/nav2_rviz_plugins/goal_common.hpp
   include/nav2_rviz_plugins/goal_tool.hpp
   include/nav2_rviz_plugins/nav2_panel.hpp
+  include/nav2_rviz_plugins/selector.hpp
   include/nav2_rviz_plugins/particle_cloud_display/flat_weighted_arrows_array.hpp
   include/nav2_rviz_plugins/particle_cloud_display/particle_cloud_display.hpp
 )
@@ -51,6 +52,7 @@ set(library_name ${PROJECT_NAME})
 add_library(${library_name} SHARED
   src/goal_tool.cpp
   src/nav2_panel.cpp
+  src/selector.cpp
   src/particle_cloud_display/flat_weighted_arrows_array.cpp
   src/particle_cloud_display/particle_cloud_display.cpp
   ${nav2_rviz_plugins_headers_to_moc}

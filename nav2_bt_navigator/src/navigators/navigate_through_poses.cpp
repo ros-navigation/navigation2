@@ -103,7 +103,7 @@ NavigateThroughPosesNavigator::onLoop()
   auto blackboard = bt_action_server_->getBlackboard();
 
   Goals goal_poses;
-  blackboard->get<Goals>(goals_blackboard_id_, goal_poses);
+  [[maybe_unused]] auto res = blackboard->get(goals_blackboard_id_, goal_poses);
 
   if (goal_poses.size() == 0) {
     bt_action_server_->publishFeedback(feedback_msg);
@@ -123,7 +123,10 @@ NavigateThroughPosesNavigator::onLoop()
   try {
     // Get current path points
     nav_msgs::msg::Path current_path;
-    blackboard->get<nav_msgs::msg::Path>(path_blackboard_id_, current_path);
+    if (!blackboard->get(path_blackboard_id_, current_path) || current_path.poses.size() == 0u) {
+      // If no path set yet or not meaningful, can't compute ETA or dist remaining yet.
+      throw std::exception();
+    }
 
     // Find the closest pose to current pose on global path
     auto find_closest_pose_idx =
@@ -166,7 +169,7 @@ NavigateThroughPosesNavigator::onLoop()
   }
 
   int recovery_count = 0;
-  blackboard->get<int>("number_recoveries", recovery_count);
+  res = blackboard->get("number_recoveries", recovery_count);
   feedback_msg->number_of_recoveries = recovery_count;
   feedback_msg->current_pose = current_pose;
   feedback_msg->navigation_time = clock_->now() - start_time_;
@@ -232,7 +235,7 @@ NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr
   // Reset state for new action feedback
   start_time_ = clock_->now();
   auto blackboard = bt_action_server_->getBlackboard();
-  blackboard->set<int>("number_recoveries", 0);  // NOLINT
+  blackboard->set("number_recoveries", 0);  // NOLINT
 
   // Update the goal pose on the blackboard
   blackboard->set<Goals>(goals_blackboard_id_, std::move(goal_poses));

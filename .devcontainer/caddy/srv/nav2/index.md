@@ -14,9 +14,9 @@
 
 For more related documentation:
 
-- [Nav2 Documentation](https://navigation.ros.org)
-  - [Development Guides](https://navigation.ros.org/development_guides)
-    - [Dev Containers](https://navigation.ros.org/development_guides/devcontainer_docs)
+- [Nav2 Documentation](https://docs.nav2.org)
+  - [Development Guides](https://docs.nav2.org/development_guides)
+    - [Dev Containers](https://docs.nav2.org/development_guides/devcontainer_docs)
 
 ## Session Info
 

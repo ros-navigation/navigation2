@@ -14,7 +14,7 @@ repositories:
   # ros-perception/vision_opencv:
   #   type: git
   #   url: https://github.com/ros-perception/vision_opencv.git
-  #   version: ros2
+  #   version: rolling
   # ros/bond_core:
   #   type: git
   #   url: https://github.com/ros/bond_core.git
@@ -35,11 +35,7 @@ repositories:
   #   type: git
   #   url:  https://github.com/cra-ros-pkg/robot_localization.git
   #   version: ros2
-  # ros-simulation/gazebo_ros_pkgs:
+  # ros2/geometry2:
   #   type: git
-  #   url: https://github.com/ros-simulation/gazebo_ros_pkgs.git
-  #   version: ros2
-  ros2/geometry2:
-    type: git
-    url: https://github.com/ros2/geometry2.git
-    version: rolling
+  #   url: https://github.com/ros2/geometry2.git
+  #   version: rolling

@@ -23,17 +23,27 @@ namespace nav2_behavior_tree
 IsPathValidCondition::IsPathValidCondition(
   const std::string & condition_name,
   const BT::NodeConfiguration & conf)
-: BT::ConditionNode(condition_name, conf)
+: BT::ConditionNode(condition_name, conf),
+  initialized_(false)
 {
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
   client_ = node_->create_client<nav2_msgs::srv::IsPathValid>("is_path_valid");
 
   server_timeout_ = config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
+}
+
+void IsPathValidCondition::initialize()
+{
   getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
+  initialized_ = true;
 }
 
 BT::NodeStatus IsPathValidCondition::tick()
 {
+  if (!initialized_) {
+    initialize();
+  }
+
   nav_msgs::msg::Path path;
   getInput("path", path);
 
@@ -54,7 +64,7 @@ BT::NodeStatus IsPathValidCondition::tick()
 
 }  // namespace nav2_behavior_tree
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
   factory.registerNodeType<nav2_behavior_tree::IsPathValidCondition>("IsPathValid");

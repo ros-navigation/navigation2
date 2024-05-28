@@ -36,6 +36,8 @@ The zones around the robot can take the following shapes:
 * Arbitrary user-defined polygon relative to the robot base frame, which can be static in a configuration file or dynamically changing via a topic interface.
 * Robot footprint polygon, which is used in the approach behavior model only. Will use the static user-defined polygon or the footprint topic to allow it to be dynamically adjusted over time.
 * Circle: is made for the best performance and could be used in the cases where the zone or robot footprint could be approximated by round shape.
+* VelocityPolygon: allow switching of polygons based on the command velocity. When the velocity is covered by multiple sub polygons, the first sub polygon in the `velocity_polygons` list will be used. This is useful for robots to set different safety zones based on their velocity (e.g. a robot that has a larger safety zone when moving at 1.0 m/s than when moving at 0.5 m/s). 
+
 
 The data may be obtained from different data sources:
 
@@ -48,11 +50,16 @@ The data may be obtained from different data sources:
 The Collision Monitor is designed to operate below Nav2 as an independent safety node.
 This acts as a filter on the `cmd_vel` topic coming out of the Controller Server. If no such zone is triggered, then the Controller's `cmd_vel` is used. Else, it is scaled or set to stop as appropriate.
 
-The following diagram is showing the high-level design of Collision Monitor module. All shapes (Polygons and Circles) are derived from base `Polygon` class, so without loss of generality we can call them as polygons. Subscribed footprint is also having the same properties as other polygons, but it is being obtained a footprint topic for the Approach Model.
+The following diagram is showing the high-level design of Collision Monitor module. All shapes (`Polygon`, `Circle` and `VelocityPolygon`) are derived from base `Polygon` class, so without loss of generality we can call them as polygons. Subscribed footprint is also having the same properties as other polygons, but it is being obtained a footprint topic for the Approach Model.
 ![HLD.png](doc/HLD.png)
+
+`VelocityPolygon` can be configured with multiple sub polygons and can switch between them based on the velocity.
+![dexory_velocity_polygon.gif](doc/dexory_velocity_polygon.gif)
+
+
 ### Configuration
 
-Detailed configuration parameters, their description and how to setup a Collision Monitor could be found at its [Configuration Guide](https://navigation.ros.org/configuration/packages/configuring-collision-monitor.html) and [Using Collision Monitor tutorial](https://navigation.ros.org/tutorials/docs/using_collision_monitor.html) pages.
+Detailed configuration parameters, their description and how to setup a Collision Monitor could be found at its [Configuration Guide](https://docs.nav2.org/configuration/packages/configuring-collision-monitor.html) and [Using Collision Monitor tutorial](https://docs.nav2.org/tutorials/docs/using_collision_monitor.html) pages.
 
 
 ### Metrics
@@ -87,4 +94,6 @@ The zones around the robot and the data sources are the same as for the Collisio
 
 ### Configuration
 
-Detailed configuration parameters, their description and how to setup a Collision Detector could be found at its [Configuration Guide](https://navigation.ros.org/configuration/packages/collision_monitor/configuring-collision-detector-node.html).
+Detailed configuration parameters, their description and how to setup a Collision Detector could be found at its [Configuration Guide](https://docs.nav2.org/configuration/packages/collision_monitor/configuring-collision-detector-node.html).
+
+The `CollisionMonitor` node makes use of a [nav2_util::TwistSubscriber](../nav2_util/README.md#twist-publisher-and-twist-subscriber-for-commanded-velocities).

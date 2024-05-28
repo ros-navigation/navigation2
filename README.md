@@ -1,24 +1,24 @@
 # Nav2
-[![GitHub Workflow Status](https://github.com/ros-planning/navigation2/actions/workflows/update_ci_image.yaml/badge.svg)](https://github.com/ros-planning/navigation2/actions/workflows/update_ci_image.yaml)
-[![codecov](https://codecov.io/gh/ros-planning/navigation2/branch/main/graph/badge.svg?token=S3iRmypwlg)](https://codecov.io/gh/ros-planning/navigation2)
+[![GitHub Workflow Status](https://github.com/ros-navigation/navigation2/actions/workflows/update_ci_image.yaml/badge.svg)](https://github.com/ros-navigation/navigation2/actions/workflows/update_ci_image.yaml)
+[![codecov](https://codecov.io/gh/ros-navigation/navigation2/branch/main/graph/badge.svg?token=S3iRmypwlg)](https://codecov.io/gh/ros-navigation/navigation2)
 
 <p align="center">
   <img height="300" src="doc/nav2_logo.png" />
 </p>
 
 For detailed instructions on how to:
-- [Getting Started](https://navigation.ros.org/getting_started/index.html)
-- [Concepts](https://navigation.ros.org/concepts/index.html)
-- [Build](https://navigation.ros.org/development_guides/build_docs/index.html#build)
-- [Install](https://navigation.ros.org/development_guides/build_docs/index.html#install)
-- [General Tutorials](https://navigation.ros.org/tutorials/index.html) and [Algorithm Developer Tutorials](https://navigation.ros.org/plugin_tutorials/index.html)
-- [Configure](https://navigation.ros.org/configuration/index.html)
-- [Navigation Plugins](https://navigation.ros.org/plugins/index.html)
-- [Migration Guides](https://navigation.ros.org/migration/index.html)
-- [Container Images for Building Nav2](https://github.com/orgs/ros-planning/packages/container/package/navigation2)
-- [Contribute](https://navigation.ros.org/development_guides/involvement_docs/index.html)
+- [Getting Started](https://docs.nav2.org/getting_started/index.html)
+- [Concepts](https://docs.nav2.org/concepts/index.html)
+- [Build](https://docs.nav2.org/development_guides/build_docs/index.html#build)
+- [Install](https://docs.nav2.org/development_guides/build_docs/index.html#install)
+- [General Tutorials](https://docs.nav2.org/tutorials/index.html) and [Algorithm Developer Tutorials](https://docs.nav2.org/plugin_tutorials/index.html)
+- [Configure](https://docs.nav2.org/configuration/index.html)
+- [Navigation Plugins](https://docs.nav2.org/plugins/index.html)
+- [Migration Guides](https://docs.nav2.org/migration/index.html)
+- [Container Images for Building Nav2](https://github.com/orgs/ros-navigation/packages/container/package/navigation2)
+- [Contribute](https://docs.nav2.org/development_guides/involvement_docs/index.html)
 
-Please visit our [documentation site](https://navigation.ros.org/). [Please visit our community Slack here](https://join.slack.com/t/navigation2/shared_invite/zt-hu52lnnq-cKYjuhTY~sEMbZXL8p9tOw) (if this link does not work, please contact maintainers to reactivate).
+Please visit our [documentation site](https://docs.nav2.org/). [Please visit our community Slack here](https://join.slack.com/t/navigation2/shared_invite/zt-hu52lnnq-cKYjuhTY~sEMbZXL8p9tOw) (if this link does not work, please contact maintainers to reactivate).
 
 If you need professional services related to Nav2, please contact Open Navigation at info@opennav.org.
 
@@ -27,10 +27,12 @@ If you need professional services related to Nav2, please contact Open Navigatio
 Please thank our amazing sponsors for their generous support of Nav2 on behalf of the community to allow the project to continue to be professionally maintained, developed, and supported for the long-haul! [Open Navigation LLC](https://www.opennav.org/) provides project leadership, maintenance, development, and support services to the Nav2 & ROS community. 
 
 <p align="center">
-  <img src="doc/sponsors_may_2023.png" />
+  <img src="doc/sponsors_feb_2024.png" />
 </p>
 
 ### [Dexory](https://www.dexory.com/) develops robotics and AI logistics solutions to drive better business decisions using a digital twin of warehouses to provide inventory insights.
+
+### [Nvidia](https://www.nvidia.com/en-us/deep-learning-ai/industries/robotics/) develops GPU and AI technologies that power modern robotics, autonomous driving, data centers, gaming, and more.
 
 ### [Polymath Robotics](https://www.polymathrobotics.com/) creates safety-critical navigation systems for industrial vehicles that are radically simple to enable and deploy.
 
@@ -70,6 +72,19 @@ If you use **any** of the algorithms in Nav2 or the analysis of the algorithms i
   }
 ```
 
+If you use the Smac Planner (Hybrid A*, State Lattice, 2D), please cite this work in your papers!
+
+- S. Macenski, M. Booker, J. Wallace, [**Open-Source, Cost-Aware Kinematically Feasible Planning for Mobile and Surface Robotics**](https://arxiv.org/abs/2401.13078). 2024.
+
+```bibtex
+@article{macenski2024smac,
+      title={Open-Source, Cost-Aware Kinematically Feasible Planning for Mobile and Surface Robotics}, 
+      author={Steve Macenski and Matthew Booker and Josh Wallace},
+      year={2024},
+      journal = {Arxiv}
+}
+```
+
 If you use the Regulated Pure Pursuit Controller algorithm or software from this repository, please cite this work in your papers!
 
 - S. Macenski, S. Singh, F. Martin, J. Gines, [**Regulated Pure Pursuit for Robot Path Tracking**](https://arxiv.org/abs/2305.20026). Autonomous Robots, 2023.
@@ -102,7 +117,7 @@ If you use the Regulated Pure Pursuit Controller algorithm or software from this
 | Service | Humble | Iron | Main |
 | :---: | :---: | :---: | :---: |
 | ROS Build Farm | [![Build Status](https://build.ros2.org/job/Hdev__navigation2__ubuntu_jammy_amd64/badge/icon)](https://build.ros2.org/job/Hdev__navigation2__ubuntu_jammy_amd64/) | [![Build Status](https://build.ros2.org/job/Idev__navigation2__ubuntu_jammy_amd64/badge/icon)](https://build.ros2.org/job/Idev__navigation2__ubuntu_jammy_amd64/) | N/A |
-| Circle CI | N/A | N/A | [![Build Status](https://circleci.com/gh/ros-planning/navigation2/tree/main.svg?style=svg)](https://circleci.com/gh/ros-planning/navigation2/tree/main) |
+| Circle CI | N/A | N/A | [![Build Status](https://circleci.com/gh/ros-navigation/navigation2/tree/main.svg?style=svg)](https://circleci.com/gh/ros-navigation/navigation2/tree/main) |
 
 
 | Package | Humble Source | Humble Debian | Iron Source | Iron Debian |

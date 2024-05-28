@@ -23,8 +23,9 @@
   <exec_depend>ros_gz_bridge</exec_depend>
   <exec_depend>ros_gz_sim</exec_depend>
   <exec_depend>slam_toolbox</exec_depend>
-  <exec_depend>turtlebot3_gazebo</exec_depend>
   <exec_depend>xacro</exec_depend>
+  <!-- Replace after https://github.com/ros-navigation/navigation2/pull/3634 -->
+  <!-- <exec_depend>turtlebot3_gazebo</exec_depend> -->
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>

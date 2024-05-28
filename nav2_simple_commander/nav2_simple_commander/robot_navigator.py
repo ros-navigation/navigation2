@@ -23,7 +23,7 @@ from geometry_msgs.msg import Point
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from lifecycle_msgs.srv import GetState
-from nav2_msgs.action import AssistedTeleop, BackUp, Spin
+from nav2_msgs.action import AssistedTeleop, BackUp, DriveOnHeading, Spin
 from nav2_msgs.action import ComputePathThroughPoses, ComputePathToPose
 from nav2_msgs.action import (
     FollowGPSWaypoints,
@@ -51,6 +51,7 @@ class TaskResult(Enum):
 
 
 class BasicNavigator(Node):
+
     def __init__(self, node_name='basic_navigator', namespace=''):
         super().__init__(node_name=node_name, namespace=namespace)
         self.initial_pose = PoseStamped()
@@ -88,6 +89,9 @@ class BasicNavigator(Node):
         self.smoother_client = ActionClient(self, SmoothPath, 'smooth_path')
         self.spin_client = ActionClient(self, Spin, 'spin')
         self.backup_client = ActionClient(self, BackUp, 'backup')
+        self.drive_on_heading_client = ActionClient(
+            self, DriveOnHeading, 'drive_on_heading'
+        )
         self.assisted_teleop_client = ActionClient(
             self, AssistedTeleop, 'assisted_teleop'
         )
@@ -127,6 +131,7 @@ class BasicNavigator(Node):
         self.smoother_client.destroy()
         self.spin_client.destroy()
         self.backup_client.destroy()
+        self.drive_on_heading_client.destroy()
         super().destroy_node()
 
     def setInitialPose(self, initial_pose):
@@ -283,6 +288,29 @@ class BasicNavigator(Node):
 
         if not self.goal_handle.accepted:
             self.error('Backup request was rejected!')
+            return False
+
+        self.result_future = self.goal_handle.get_result_async()
+        return True
+
+    def driveOnHeading(self, dist=0.15, speed=0.025, time_allowance=10):
+        self.debug("Waiting for 'DriveOnHeading' action server")
+        while not self.backup_client.wait_for_server(timeout_sec=1.0):
+            self.info("'DriveOnHeading' action server not available, waiting...")
+        goal_msg = DriveOnHeading.Goal()
+        goal_msg.target = Point(x=float(dist))
+        goal_msg.speed = speed
+        goal_msg.time_allowance = Duration(sec=time_allowance)
+
+        self.info(f'Drive {goal_msg.target.x} m on heading at {goal_msg.speed} m/s....')
+        send_goal_future = self.drive_on_heading_client.send_goal_async(
+            goal_msg, self._feedbackCallback
+        )
+        rclpy.spin_until_future_complete(self, send_goal_future)
+        self.goal_handle = send_goal_future.result()
+
+        if not self.goal_handle.accepted:
+            self.error('Drive On Heading request was rejected!')
             return False
 
         self.result_future = self.goal_handle.get_result_async()
@@ -468,7 +496,7 @@ class BasicNavigator(Node):
 
     def getPathThroughPoses(self, start, goals, planner_id='', use_start=False):
         """Send a `ComputePathThroughPoses` action request."""
-        rtn = self.__getPathThroughPosesImpl(start, goals, planner_id, use_start)
+        rtn = self._getPathThroughPosesImpl(start, goals, planner_id, use_start)
 
         if self.status != GoalStatus.STATUS_SUCCEEDED:
             self.warn(f'Getting path failed with status code: {self.status}')

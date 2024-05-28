@@ -21,7 +21,7 @@
 
 #include "std_msgs/msg/string.hpp"
 
-#include "behaviortree_cpp_v3/action_node.h"
+#include "behaviortree_cpp/action_node.h"
 
 #include "rclcpp/rclcpp.hpp"
 

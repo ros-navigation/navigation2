@@ -17,19 +17,22 @@
 #include <fstream>
 #include <memory>
 #include <utility>
+#include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 
 #include "gtest/gtest.h"
 
-#include "behaviortree_cpp_v3/behavior_tree.h"
-#include "behaviortree_cpp_v3/bt_factory.h"
-#include "behaviortree_cpp_v3/utils/shared_library.h"
+#include "behaviortree_cpp/behavior_tree.h"
+#include "behaviortree_cpp/bt_factory.h"
+#include "behaviortree_cpp/utils/shared_library.h"
 
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/create_timer_ros.h"
 
 #include "nav2_util/odometry_utils.hpp"
+
+#include "nav2_behavior_tree/plugins_list.hpp"
 
 #include "rclcpp/rclcpp.hpp"
 #include "ament_index_cpp/get_package_share_directory.hpp"
@@ -58,58 +61,9 @@ public:
 
     odom_smoother_ = std::make_shared<nav2_util::OdomSmoother>(node_);
 
-    const std::vector<std::string> plugin_libs = {
-      "nav2_compute_path_to_pose_action_bt_node",
-      "nav2_compute_path_through_poses_action_bt_node",
-      "nav2_smooth_path_action_bt_node",
-      "nav2_follow_path_action_bt_node",
-      "nav2_spin_action_bt_node",
-      "nav2_wait_action_bt_node",
-      "nav2_assisted_teleop_action_bt_node",
-      "nav2_back_up_action_bt_node",
-      "nav2_drive_on_heading_bt_node",
-      "nav2_clear_costmap_service_bt_node",
-      "nav2_is_stuck_condition_bt_node",
-      "nav2_goal_reached_condition_bt_node",
-      "nav2_initial_pose_received_condition_bt_node",
-      "nav2_goal_updated_condition_bt_node",
-      "nav2_globally_updated_goal_condition_bt_node",
-      "nav2_is_path_valid_condition_bt_node",
-      "nav2_are_error_codes_active_condition_bt_node",
-      "nav2_would_a_controller_recovery_help_condition_bt_node",
-      "nav2_would_a_planner_recovery_help_condition_bt_node",
-      "nav2_would_a_smoother_recovery_help_condition_bt_node",
-      "nav2_reinitialize_global_localization_service_bt_node",
-      "nav2_rate_controller_bt_node",
-      "nav2_distance_controller_bt_node",
-      "nav2_speed_controller_bt_node",
-      "nav2_truncate_path_action_bt_node",
-      "nav2_truncate_path_local_action_bt_node",
-      "nav2_goal_updater_node_bt_node",
-      "nav2_recovery_node_bt_node",
-      "nav2_pipeline_sequence_bt_node",
-      "nav2_round_robin_node_bt_node",
-      "nav2_transform_available_condition_bt_node",
-      "nav2_time_expired_condition_bt_node",
-      "nav2_path_expiring_timer_condition",
-      "nav2_distance_traveled_condition_bt_node",
-      "nav2_single_trigger_bt_node",
-      "nav2_is_battery_low_condition_bt_node",
-      "nav2_navigate_through_poses_action_bt_node",
-      "nav2_navigate_to_pose_action_bt_node",
-      "nav2_remove_passed_goals_action_bt_node",
-      "nav2_planner_selector_bt_node",
-      "nav2_controller_selector_bt_node",
-      "nav2_goal_checker_selector_bt_node",
-      "nav2_controller_cancel_bt_node",
-      "nav2_path_longer_on_approach_bt_node",
-      "nav2_assisted_teleop_cancel_bt_node",
-      "nav2_wait_cancel_bt_node",
-      "nav2_spin_cancel_bt_node",
-      "nav2_back_up_cancel_bt_node",
-      "nav2_drive_on_heading_cancel_bt_node",
-      "nav2_goal_updated_controller_bt_node"
-    };
+    std::vector<std::string> plugin_libs;
+    boost::split(plugin_libs, nav2::details::BT_BUILTIN_PLUGINS, boost::is_any_of(";"));
+
     for (const auto & p : plugin_libs) {
       factory_.registerFromPlugin(BT::SharedLibrary::getOSName(p));
     }
@@ -125,25 +79,25 @@ public:
       return false;
     }
 
-    auto xml_string = std::string(
-      std::istreambuf_iterator<char>(xml_file),
-      std::istreambuf_iterator<char>());
-
+    std::stringstream buffer;
+    buffer << xml_file.rdbuf();
+    xml_file.close();
+    std::string xml_string = buffer.str();
     // Create the blackboard that will be shared by all of the nodes in the tree
     blackboard = BT::Blackboard::create();
 
     // Put items on the blackboard
-    blackboard->set<rclcpp::Node::SharedPtr>("node", node_);  // NOLINT
+    blackboard->set("node", node_);  // NOLINT
     blackboard->set<std::chrono::milliseconds>(
       "server_timeout", std::chrono::milliseconds(20));  // NOLINT
     blackboard->set<std::chrono::milliseconds>(
       "bt_loop_duration", std::chrono::milliseconds(10));  // NOLINT
     blackboard->set<std::chrono::milliseconds>(
       "wait_for_service_timeout", std::chrono::milliseconds(1000));  // NOLINT
-    blackboard->set<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer", tf_);  // NOLINT
-    blackboard->set<bool>("initial_pose_received", false);  // NOLINT
-    blackboard->set<int>("number_recoveries", 0);  // NOLINT
-    blackboard->set<std::shared_ptr<nav2_util::OdomSmoother>>("odom_smoother", odom_smoother_);  // NOLINT
+    blackboard->set("tf_buffer", tf_);  // NOLINT
+    blackboard->set("initial_pose_received", false);  // NOLINT
+    blackboard->set("number_recoveries", 0);  // NOLINT
+    blackboard->set("odom_smoother", odom_smoother_);  // NOLINT
 
     // set dummy goal on blackboard
     geometry_msgs::msg::PoseStamped goal;
@@ -157,7 +111,7 @@ public:
     goal.pose.orientation.z = 0.0;
     goal.pose.orientation.w = 1.0;
 
-    blackboard->set<geometry_msgs::msg::PoseStamped>("goal", goal);  // NOLINT
+    blackboard->set("goal", goal);  // NOLINT
 
     // Create the Behavior Tree from the XML input
     try {
@@ -270,7 +224,7 @@ TEST_F(BehaviorTreeTestFixture, TestAllSuccess)
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
 
   while (result == BT::NodeStatus::RUNNING) {
-    result = bt_handler->tree.tickRoot();
+    result = bt_handler->tree.tickOnce();
     std::this_thread::sleep_for(10ms);
   }
 
@@ -321,7 +275,7 @@ TEST_F(BehaviorTreeTestFixture, TestAllFailure)
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
 
   while (result == BT::NodeStatus::RUNNING) {
-    result = bt_handler->tree.tickRoot();
+    result = bt_handler->tree.tickOnce();
     std::this_thread::sleep_for(10ms);
   }
 
@@ -370,7 +324,7 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateSubtreeRecoveries)
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
 
   while (result == BT::NodeStatus::RUNNING) {
-    result = bt_handler->tree.tickRoot();
+    result = bt_handler->tree.tickOnce();
     std::this_thread::sleep_for(10ms);
   }
 
@@ -428,7 +382,7 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateRecoverySimple)
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
 
   while (result == BT::NodeStatus::RUNNING) {
-    result = bt_handler->tree.tickRoot();
+    result = bt_handler->tree.tickOnce();
     std::this_thread::sleep_for(10ms);
   }
 
@@ -522,7 +476,7 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateRecoveryComplex)
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
 
   while (result == BT::NodeStatus::RUNNING) {
-    result = bt_handler->tree.tickRoot();
+    result = bt_handler->tree.tickOnce();
     std::this_thread::sleep_for(10ms);
   }
 
@@ -586,7 +540,7 @@ TEST_F(BehaviorTreeTestFixture, TestRecoverySubtreeGoalUpdated)
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
 
   while (result == BT::NodeStatus::RUNNING) {
-    result = bt_handler->tree.tickRoot();
+    result = bt_handler->tree.tickOnce();
 
     // Update goal on blackboard after Spin has been triggered once
     // to simulate a goal update during a recovery action
@@ -599,7 +553,7 @@ TEST_F(BehaviorTreeTestFixture, TestRecoverySubtreeGoalUpdated)
       goal.pose.orientation.y = 0.0;
       goal.pose.orientation.z = 0.0;
       goal.pose.orientation.w = 1.0;
-      bt_handler->blackboard->set<geometry_msgs::msg::PoseStamped>("goal", goal);  // NOLINT
+      bt_handler->blackboard->set("goal", goal);  // NOLINT
     }
 
     std::this_thread::sleep_for(10ms);

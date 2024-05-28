@@ -33,25 +33,13 @@ GoalReachedCondition::GoalReachedCondition(
 {
   auto node = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
 
-  robot_base_frame_ = BT::deconflictPortAndParamFrame<std::string, GoalReachedCondition>(
+  robot_base_frame_ = BT::deconflictPortAndParamFrame<std::string>(
     node, "robot_base_frame", this);
 }
 
 GoalReachedCondition::~GoalReachedCondition()
 {
   cleanup();
-}
-
-BT::NodeStatus GoalReachedCondition::tick()
-{
-  if (!initialized_) {
-    initialize();
-  }
-
-  if (isGoalReached()) {
-    return BT::NodeStatus::SUCCESS;
-  }
-  return BT::NodeStatus::FAILURE;
 }
 
 void GoalReachedCondition::initialize()
@@ -67,6 +55,18 @@ void GoalReachedCondition::initialize()
   node_->get_parameter("transform_tolerance", transform_tolerance_);
 
   initialized_ = true;
+}
+
+BT::NodeStatus GoalReachedCondition::tick()
+{
+  if (!initialized_) {
+    initialize();
+  }
+
+  if (isGoalReached()) {
+    return BT::NodeStatus::SUCCESS;
+  }
+  return BT::NodeStatus::FAILURE;
 }
 
 bool GoalReachedCondition::isGoalReached()
@@ -90,7 +90,7 @@ bool GoalReachedCondition::isGoalReached()
 
 }  // namespace nav2_behavior_tree
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
   factory.registerNodeType<nav2_behavior_tree::GoalReachedCondition>("GoalReached");

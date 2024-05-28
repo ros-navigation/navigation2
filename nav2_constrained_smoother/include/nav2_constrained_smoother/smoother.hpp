@@ -293,7 +293,7 @@ private:
     }
     int last_i = 0;
     int prelast_i = -1;
-    Eigen::Vector2d prelast_dir;
+    Eigen::Vector2d prelast_dir = {0, 0};
     for (int i = 1; i <= static_cast<int>(path_optim.size()); i++) {
       if (i == static_cast<int>(path_optim.size()) || optimized[i]) {
         if (prelast_i != -1) {

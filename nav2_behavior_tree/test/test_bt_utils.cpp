@@ -22,7 +22,7 @@
 #include "geometry_msgs/msg/quaternion.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 #include "nav2_behavior_tree/bt_utils.hpp"
 
 template<typename T>
@@ -51,7 +51,7 @@ TEST(PointPortTest, test_wrong_syntax)
 {
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <PointPort test="1.0;2.0;3.0;4.0" />
         </BehaviorTree>
@@ -69,7 +69,7 @@ TEST(PointPortTest, test_wrong_syntax)
 
   xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <PointPort test="1.0;2.0" />
         </BehaviorTree>
@@ -86,7 +86,7 @@ TEST(PointPortTest, test_correct_syntax)
 {
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <PointPort test="1.0;2.0;3.0" />
         </BehaviorTree>
@@ -107,7 +107,7 @@ TEST(QuaternionPortTest, test_wrong_syntax)
 {
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <QuaternionPort test="1.0;2.0;3.0;4.0;5.0" />
         </BehaviorTree>
@@ -126,7 +126,7 @@ TEST(QuaternionPortTest, test_wrong_syntax)
 
   xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <QuaternionPort test="1.0;2.0;3.0" />
         </BehaviorTree>
@@ -144,7 +144,7 @@ TEST(QuaternionPortTest, test_correct_syntax)
 {
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <QuaternionPort test="0.7;0.0;0.0;0.7" />
         </BehaviorTree>
@@ -166,7 +166,7 @@ TEST(PoseStampedPortTest, test_wrong_syntax)
 {
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <PoseStampedPort test="0;map;1.0;2.0;3.0;4.0;5.0;6.0;7.0;8.0" />
         </BehaviorTree>
@@ -190,7 +190,7 @@ TEST(PoseStampedPortTest, test_wrong_syntax)
 
   xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <PoseStampedPort test="0;map;1.0;2.0;3.0;4.0;5.0;6.0" />
         </BehaviorTree>
@@ -213,7 +213,7 @@ TEST(PoseStampedPortTest, test_correct_syntax)
 {
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <PoseStampedPort test="0;map;1.0;2.0;3.0;4.0;5.0;6.0;7.0" />
         </BehaviorTree>
@@ -241,7 +241,7 @@ TEST(MillisecondsPortTest, test_correct_syntax)
 {
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <MillisecondsPort test="10000" />
         </BehaviorTree>
@@ -257,7 +257,7 @@ TEST(MillisecondsPortTest, test_correct_syntax)
 
   xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <MillisecondsPort test="123.4" />
         </BehaviorTree>
@@ -272,7 +272,7 @@ TEST(ErrorCodePortTest, test_correct_syntax)
 {
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <ErrorCodePort test="100;204;212"/>
         </BehaviorTree>
@@ -295,7 +295,7 @@ TEST(deconflictPortAndParamFrameTest, test_correct_syntax)
 {
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <ParamPort test="1"/>
         </BehaviorTree>
@@ -310,12 +310,12 @@ TEST(deconflictPortAndParamFrameTest, test_correct_syntax)
   node->declare_parameter<int>("test", 2);
   node->declare_parameter<int>("test_alternative", 3);
 
-  int value = BT::deconflictPortAndParamFrame<int, BT::TreeNode>(
+  int value = BT::deconflictPortAndParamFrame<int>(
     node, "test_alternative", tree.rootNode());
 
   EXPECT_EQ(value, 3);
 
-  value = BT::deconflictPortAndParamFrame<int, BT::TreeNode>(
+  value = BT::deconflictPortAndParamFrame<int>(
     node, "test", tree.rootNode());
 
   EXPECT_EQ(value, 1);

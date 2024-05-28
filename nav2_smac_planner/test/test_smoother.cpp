@@ -89,21 +89,35 @@ TEST(SmootherTest, test_full_smoother)
   int max_iterations = 10000;
   float tolerance = 10.0;
   int it_on_approach = 10;
+  int terminal_checking_interval = 5000;
   double max_planning_time = 120.0;
   int num_it = 0;
 
   a_star.initialize(
-    false, max_iterations, std::numeric_limits<int>::max(), max_planning_time, 401, size_theta);
+    false, max_iterations,
+    std::numeric_limits<int>::max(), terminal_checking_interval, max_planning_time, 401,
+    size_theta);
+
+  // Convert raw costmap into a costmap ros object
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  auto costmapi = costmap_ros->getCostmap();
+  *costmapi = *costmap;
+
   std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
-    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap, size_theta, node);
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, size_theta, node);
   checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
+
+  auto dummy_cancel_checker = []() {
+      return false;
+    };
 
   // Create A* search to smooth
   a_star.setCollisionChecker(checker.get());
   a_star.setStart(5u, 5u, 0u);
   a_star.setGoal(45u, 45u, 36u);
   nav2_smac_planner::NodeHybrid::CoordinateVector path;
-  EXPECT_TRUE(a_star.createPath(path, num_it, tolerance));
+  EXPECT_TRUE(a_star.createPath(path, num_it, tolerance, dummy_cancel_checker));
 
   // Convert to world coordinates and get length to compare to smoothed length
   nav_msgs::msg::Path plan;
@@ -175,4 +189,5 @@ TEST(SmootherTest, test_full_smoother)
   EXPECT_NEAR(plan.poses.end()[-2].pose.orientation.w, 0.0, 1e-3);
 
   delete costmap;
+  nav2_smac_planner::NodeHybrid::destroyStaticAssets();
 }

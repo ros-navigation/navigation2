@@ -25,6 +25,7 @@
   <depend>rviz_rendering</depend>
   <depend>std_msgs</depend>
   <depend>tf2_geometry_msgs</depend>
+  <depend>urdf</depend>
   <depend>visualization_msgs</depend>
   <depend>yaml_cpp_vendor</depend>
   

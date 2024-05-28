@@ -58,11 +58,12 @@ public:
    * - Outside the local_costmap (collision avoidance cannot be assured)
    * @param pose pose to transform
    * @param max_robot_pose_search_dist Distance to search for matching nearest path point
+   * @param reject_unit_path If true, fail if path has only one pose
    * @return Path in new frame
    */
   nav_msgs::msg::Path transformGlobalPlan(
     const geometry_msgs::msg::PoseStamped & pose,
-    double max_robot_pose_search_dist);
+    double max_robot_pose_search_dist, bool reject_unit_path = false);
 
   /**
    * @brief Transform a pose to another frame.

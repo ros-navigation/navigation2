@@ -35,7 +35,7 @@ public:
   void SetUp()
   {
     odom_smoother_ = std::make_shared<nav2_util::OdomSmoother>(node_);
-    config_->blackboard->set<std::shared_ptr<nav2_util::OdomSmoother>>(
+    config_->blackboard->set(
       "odom_smoother", odom_smoother_);  // NOLINT
 
     geometry_msgs::msg::PoseStamped goal;
@@ -43,7 +43,14 @@ public:
     config_->blackboard->set("goal", goal);
 
     std::vector<geometry_msgs::msg::PoseStamped> fake_poses;
-    config_->blackboard->set<std::vector<geometry_msgs::msg::PoseStamped>>("goals", fake_poses);  // NOLINT
+    config_->blackboard->set("goals", fake_poses);  // NOLINT
+
+    config_->input_ports["min_rate"] = 0.1;
+    config_->input_ports["max_rate"] = 1.0;
+    config_->input_ports["min_speed"] = 0.0;
+    config_->input_ports["max_speed"] = 0.5;
+    config_->input_ports["goals"] = "";
+    config_->input_ports["goal"] = "";
 
     bt_node_ = std::make_shared<nav2_behavior_tree::SpeedController>("speed_controller", *config_);
     dummy_node_ = std::make_shared<nav2_behavior_tree::DummyNode>();

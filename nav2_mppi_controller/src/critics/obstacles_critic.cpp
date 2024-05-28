@@ -15,7 +15,7 @@
 
 #include <cmath>
 #include "nav2_mppi_controller/critics/obstacles_critic.hpp"
-
+#include "nav2_costmap_2d/inflation_layer.hpp"
 namespace mppi::critics
 {
 
@@ -24,16 +24,17 @@ void ObstaclesCritic::initialize()
   auto getParam = parameters_handler_->getParamGetter(name_);
   getParam(consider_footprint_, "consider_footprint", false);
   getParam(power_, "cost_power", 1);
-  getParam(repulsion_weight_, "repulsion_weight", 1.5);
-  getParam(critical_weight_, "critical_weight", 20.0);
-  getParam(collision_cost_, "collision_cost", 100000.0);
-  getParam(collision_margin_distance_, "collision_margin_distance", 0.10);
-  getParam(near_goal_distance_, "near_goal_distance", 0.5);
+  getParam(repulsion_weight_, "repulsion_weight", 1.5f);
+  getParam(critical_weight_, "critical_weight", 20.0f);
+  getParam(collision_cost_, "collision_cost", 100000.0f);
+  getParam(collision_margin_distance_, "collision_margin_distance", 0.10f);
+  getParam(near_goal_distance_, "near_goal_distance", 0.5f);
+  getParam(inflation_layer_name_, "inflation_layer_name", std::string(""));
 
   collision_checker_.setCostmap(costmap_);
-  possibly_inscribed_cost_ = findCircumscribedCost(costmap_ros_);
+  possible_collision_cost_ = findCircumscribedCost(costmap_ros_);
 
-  if (possibly_inscribed_cost_ < 1.0f) {
+  if (possible_collision_cost_ < 1.0f) {
     RCLCPP_ERROR(
       logger_,
       "Inflation layer either not found or inflation is not set sufficiently for "
@@ -55,8 +56,6 @@ float ObstaclesCritic::findCircumscribedCost(
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap)
 {
   double result = -1.0;
-  bool inflation_layer_found = false;
-
   const double circum_radius = costmap->getLayeredCostmap()->getCircumscribedRadius();
   if (static_cast<float>(circum_radius) == circumscribed_radius_) {
     // early return if footprint size is unchanged
@@ -64,23 +63,15 @@ float ObstaclesCritic::findCircumscribedCost(
   }
 
   // check if the costmap has an inflation layer
-  for (auto layer = costmap->getLayeredCostmap()->getPlugins()->begin();
-    layer != costmap->getLayeredCostmap()->getPlugins()->end();
-    ++layer)
-  {
-    auto inflation_layer = std::dynamic_pointer_cast<nav2_costmap_2d::InflationLayer>(*layer);
-    if (!inflation_layer) {
-      continue;
-    }
-
-    inflation_layer_found = true;
+  const auto inflation_layer = nav2_costmap_2d::InflationLayer::getInflationLayer(
+    costmap,
+    inflation_layer_name_);
+  if (inflation_layer != nullptr) {
     const double resolution = costmap->getCostmap()->getResolution();
     result = inflation_layer->computeCost(circum_radius / resolution);
     inflation_scale_factor_ = static_cast<float>(inflation_layer->getCostScalingFactor());
     inflation_radius_ = static_cast<float>(inflation_layer->getInflationRadius());
-  }
-
-  if (!inflation_layer_found) {
+  } else {
     RCLCPP_WARN(
       logger_,
       "No inflation layer found in costmap configuration. "
@@ -120,7 +111,7 @@ void ObstaclesCritic::score(CriticData & data)
 
   if (consider_footprint_) {
     // footprint may have changed since initialization if user has dynamic footprints
-    possibly_inscribed_cost_ = findCircumscribedCost(costmap_ros_);
+    possible_collision_cost_ = findCircumscribedCost(costmap_ros_);
   }
 
   // If near the goal, don't apply the preferential term since the goal is near obstacles
@@ -130,9 +121,7 @@ void ObstaclesCritic::score(CriticData & data)
   }
 
   auto && raw_cost = xt::xtensor<float, 1>::from_shape({data.costs.shape(0)});
-  raw_cost.fill(0.0f);
   auto && repulsive_cost = xt::xtensor<float, 1>::from_shape({data.costs.shape(0)});
-  repulsive_cost.fill(0.0f);
 
   const size_t traj_len = data.trajectories.x.shape(1);
   bool all_trajectories_collide = true;
@@ -141,6 +130,8 @@ void ObstaclesCritic::score(CriticData & data)
     float traj_cost = 0.0f;
     const auto & traj = data.trajectories;
     CollisionCost pose_cost;
+    raw_cost[i] = 0.0f;
+    repulsive_cost[i] = 0.0f;
 
     for (size_t j = 0; j < traj_len; j++) {
       pose_cost = costAtPose(traj.x(i, j), traj.y(i, j), traj.yaws(i, j));
@@ -178,10 +169,16 @@ void ObstaclesCritic::score(CriticData & data)
   auto && repulsive_cost_normalized =
     (repulsive_cost - xt::amin(repulsive_cost, immediate)) / traj_len;
 
-  data.costs += xt::pow(
-    (critical_weight_ * raw_cost) +
-    (repulsion_weight_ * repulsive_cost_normalized),
-    power_);
+  if (power_ > 1u) {
+    data.costs += xt::pow(
+      (critical_weight_ * raw_cost) +
+      (repulsion_weight_ * repulsive_cost_normalized),
+      power_);
+  } else {
+    data.costs += (critical_weight_ * raw_cost) +
+      (repulsion_weight_ * repulsive_cost_normalized);
+  }
+
   data.fail_flag = all_trajectories_collide;
 }
 
@@ -195,8 +192,8 @@ bool ObstaclesCritic::inCollision(float cost) const
   bool is_tracking_unknown =
     costmap_ros_->getLayeredCostmap()->isTrackingUnknown();
 
+  using namespace nav2_costmap_2d; // NOLINT
   switch (static_cast<unsigned char>(cost)) {
-    using namespace nav2_costmap_2d; // NOLINT
     case (LETHAL_OBSTACLE):
       return true;
     case (INSCRIBED_INFLATED_OBSTACLE):
@@ -221,7 +218,7 @@ CollisionCost ObstaclesCritic::costAtPose(float x, float y, float theta)
   cost = collision_checker_.pointCost(x_i, y_i);
 
   if (consider_footprint_ &&
-    (cost >= possibly_inscribed_cost_ || possibly_inscribed_cost_ < 1.0f))
+    (cost >= possible_collision_cost_ || possible_collision_cost_ < 1.0f))
   {
     cost = static_cast<float>(collision_checker_.footprintCostAtPose(
         x, y, theta, costmap_ros_->getRobotFootprint()));
