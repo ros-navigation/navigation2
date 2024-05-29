@@ -15,7 +15,7 @@ For detailed instructions on how to:
 - [Configure](https://docs.nav2.org/configuration/index.html)
 - [Navigation Plugins](https://docs.nav2.org/plugins/index.html)
 - [Migration Guides](https://docs.nav2.org/migration/index.html)
-- [Container Images for Building Nav2](https://github.com/orgs/ros-planning/packages/container/package/navigation2)
+- [Container Images for Building Nav2](https://github.com/orgs/ros-navigation/packages/container/package/navigation2)
 - [Contribute](https://docs.nav2.org/development_guides/involvement_docs/index.html)
 
 Please visit our [documentation site](https://docs.nav2.org/). [Please visit our community Slack here](https://join.slack.com/t/navigation2/shared_invite/zt-hu52lnnq-cKYjuhTY~sEMbZXL8p9tOw) (if this link does not work, please contact maintainers to reactivate).

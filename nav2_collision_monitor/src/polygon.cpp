@@ -238,7 +238,12 @@ double Polygon::getCollisionTime(
   Velocity vel = velocity;
 
   // Array of points transformed to the frame concerned with pose on each simulation step
-  std::vector<Point> points_transformed;
+  std::vector<Point> points_transformed = collision_points;
+
+  // Check static polygon
+  if (getPointsInside(points_transformed) >= min_points_) {
+    return 0.0;
+  }
 
   // Robot movement simulation
   for (double time = 0.0; time <= time_before_collision_; time += simulation_time_step_) {

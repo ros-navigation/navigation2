@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.5)
 project(nav2_system_tests)
 
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 23)
+endif()
+
 find_package(ament_cmake REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -14,7 +18,7 @@ find_package(visualization_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
-find_package(gazebo_ros_pkgs REQUIRED)
+# find_package(gazebo_ros_pkgs REQUIRED) Remove/Replace after https://github.com/ros-navigation/navigation2/pull/3634
 find_package(nav2_amcl REQUIRED)
 find_package(nav2_lifecycle_manager REQUIRED)
 find_package(rclpy REQUIRED)
@@ -37,7 +41,7 @@ set(dependencies
   nav2_amcl
   nav2_lifecycle_manager
   nav2_behavior_tree
-  gazebo_ros_pkgs
+#   gazebo_ros_pkgs Remove/Replace after https://github.com/ros-navigation/navigation2/pull/3634
   geometry_msgs
   std_msgs
   tf2_geometry_msgs
@@ -109,18 +113,19 @@ if(BUILD_TESTING)
 
   add_subdirectory(src/behavior_tree)
   add_subdirectory(src/planning)
-  add_subdirectory(src/localization)
-  add_subdirectory(src/system)
-  add_subdirectory(src/system_failure)
-  add_subdirectory(src/updown)
-  add_subdirectory(src/waypoint_follower)
-  add_subdirectory(src/gps_navigation)
-  add_subdirectory(src/behaviors/spin)
-  add_subdirectory(src/behaviors/wait)
-  add_subdirectory(src/behaviors/backup)
-  add_subdirectory(src/behaviors/drive_on_heading)
-  add_subdirectory(src/behaviors/assisted_teleop)
-  add_subdirectory(src/costmap_filters)
+  # Uncomment after https://github.com/ros-navigation/navigation2/pull/3634
+  # add_subdirectory(src/localization)
+  # add_subdirectory(src/system)
+  # add_subdirectory(src/system_failure)
+  # add_subdirectory(src/updown)
+  # add_subdirectory(src/waypoint_follower)
+  # add_subdirectory(src/gps_navigation)
+  # add_subdirectory(src/behaviors/spin)
+  # add_subdirectory(src/behaviors/wait)
+  # add_subdirectory(src/behaviors/backup)
+  # add_subdirectory(src/behaviors/drive_on_heading)
+  # add_subdirectory(src/behaviors/assisted_teleop)
+  # add_subdirectory(src/costmap_filters)
   add_subdirectory(src/error_codes)
   install(DIRECTORY maps DESTINATION share/${PROJECT_NAME})
 
