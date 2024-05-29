@@ -87,10 +87,10 @@ public:
     float min_delta_vx = model_dt_ * control_constraints_.ax_min;
     float max_delta_vy = model_dt_ * control_constraints_.ay_max;
     float max_delta_wz = model_dt_ * control_constraints_.az_max;
-    float vx_last = state.vx(0, 0);
-    float vy_last = state.vy(0, 0);
-    float wz_last = state.wz(0, 0);
     for (unsigned int i = 0; i != state.vx.shape(0); i++) {
+      float vx_last = state.vx(i, 0);
+      float vy_last = state.vy(i, 0);
+      float wz_last = state.wz(i, 0);
       for (unsigned int j = 1; j != state.vx.shape(1); j++) {
         float & cvx_curr = state.cvx(i, j - 1);
         cvx_curr = std::clamp(cvx_curr, vx_last + min_delta_vx, vx_last + max_delta_vx);
@@ -127,7 +127,7 @@ public:
 protected:
   float model_dt_{0.0};
   models::ControlConstraints control_constraints_{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
-   0.0f};
+    0.0f};
 };
 
 /**
