@@ -63,7 +63,7 @@ inline BT::NodeStatus PathLongerOnApproach::tick()
   getInput("length_factor", length_factor_);
 
   if (first_time_ == false) {
-    if (old_path_.poses.back() != new_path_.poses.back()) {
+    if (old_path_.poses.empty() || new_path_.poses.empty() || old_path_.poses.back() != new_path_.poses.back()) {
       first_time_ = true;
     }
   }
