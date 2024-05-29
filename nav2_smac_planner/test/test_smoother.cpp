@@ -143,7 +143,7 @@ TEST(SmootherTest, test_full_smoother)
 
   // Check that we accurately detect that this path has a reversing segment
   auto path_segs = smoother->findDirectionalPathSegmentsWrapper(plan);
-  EXPECT_EQ(path_segs.size() == 2u || path_segs.size() == 3u);
+  EXPECT_TRUE(path_segs.size() == 2u || path_segs.size() == 3u);
 
   // Test smoother, should succeed with same number of points
   // and shorter overall length, while still being collision free.
