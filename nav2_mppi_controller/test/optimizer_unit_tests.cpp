@@ -525,8 +525,8 @@ TEST(OptimizerTests, updateStateVelocitiesTests)
   node->declare_parameter("mppic.wz_max", rclcpp::ParameterValue(2.0));
   node->declare_parameter("mppic.ax_max", rclcpp::ParameterValue(3.0));
   node->declare_parameter("mppic.ax_min", rclcpp::ParameterValue(-3.0));
-  node->declare_parameter("mppic.ay_max", rclcpp::ParameterValue(0.0));
-  node->declare_parameter("mppic.az_max", rclcpp::ParameterValue(3.0));
+  node->declare_parameter("mppic.ay_max", rclcpp::ParameterValue(3.0));
+  node->declare_parameter("mppic.az_max", rclcpp::ParameterValue(3.5));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", "dummy_costmap", true);
   ParametersHandler param_handler(node);
