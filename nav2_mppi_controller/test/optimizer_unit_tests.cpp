@@ -176,13 +176,17 @@ public:
     EXPECT_NEAR(state.wz(0, 0), 6.0, 1e-6);
 
     // propagateStateVelocitiesFromInitials
+    float max_delta_vx = settings_.constraints.ax_max * settings_.model_dt;
+    float min_delta_vx = settings_.constraints.ax_min * settings_.model_dt;
+    float max_delta_vy = settings_.constraints.ay_max * settings_.model_dt;
+    float max_delta_wz = settings_.constraints.az_max * settings_.model_dt;
     propagateStateVelocitiesFromInitials(state);
     EXPECT_NEAR(state.vx(0, 0), 5.0, 1e-6);
     EXPECT_NEAR(state.vy(0, 0), 1.0, 1e-6);
     EXPECT_NEAR(state.wz(0, 0), 6.0, 1e-6);
-    EXPECT_NEAR(state.vx(0, 1), 0.75, 1e-6);
-    EXPECT_NEAR(state.vy(0, 1), 0.5, 1e-6);
-    EXPECT_NEAR(state.wz(0, 1), 0.1, 1e-6);
+    EXPECT_NEAR(state.vx(0, 1), std::clamp(0.75, 5.0 + min_delta_vx, 5.0 + max_delta_vx), 1e-6);
+    EXPECT_NEAR(state.vy(0, 1), std::clamp(0.5, 1.0 - max_delta_vy, 1.0 + max_delta_vy), 1e-6);
+    EXPECT_NEAR(state.wz(0, 1), std::clamp(0.1, 6.0 - max_delta_wz, 6.0 + max_delta_wz), 1e-6);
 
     // Putting them together: updateStateVelocities
     state.reset(1000, 50);
@@ -196,9 +200,9 @@ public:
     EXPECT_NEAR(state.vx(0, 0), -5.0, 1e-6);
     EXPECT_NEAR(state.vy(0, 0), -1.0, 1e-6);
     EXPECT_NEAR(state.wz(0, 0), -6.0, 1e-6);
-    EXPECT_NEAR(state.vx(0, 1), -0.75, 1e-6);
-    EXPECT_NEAR(state.vy(0, 1), -0.5, 1e-6);
-    EXPECT_NEAR(state.wz(0, 1), -0.1, 1e-6);
+    EXPECT_NEAR(state.vx(0, 1), std::clamp(-0.75, -5.0 + min_delta_vx, -5.0 + max_delta_vx), 1e-6);
+    EXPECT_NEAR(state.vy(0, 1), std::clamp(-0.5, -1.0 - max_delta_vy, -1.0 + max_delta_vy), 1e-6);
+    EXPECT_NEAR(state.wz(0, 1), std::clamp(-0.1, -6.0 - max_delta_wz, -6.0 + max_delta_wz), 1e-6);
   }
 
   geometry_msgs::msg::TwistStamped getControlFromSequenceAsTwistWrapper()
@@ -519,6 +523,10 @@ TEST(OptimizerTests, updateStateVelocitiesTests)
   node->declare_parameter("mppic.vx_min", rclcpp::ParameterValue(-1.0));
   node->declare_parameter("mppic.vy_max", rclcpp::ParameterValue(0.60));
   node->declare_parameter("mppic.wz_max", rclcpp::ParameterValue(2.0));
+  node->declare_parameter("mppic.ax_max", rclcpp::ParameterValue(3.0));
+  node->declare_parameter("mppic.ax_min", rclcpp::ParameterValue(-3.0));
+  node->declare_parameter("mppic.ay_max", rclcpp::ParameterValue(0.0));
+  node->declare_parameter("mppic.az_max", rclcpp::ParameterValue(3.0));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", "dummy_costmap", true);
   ParametersHandler param_handler(node);
