@@ -354,6 +354,7 @@ nav2_util::CallbackReturn
 Costmap2DROS::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
+  executor_thread_.reset();
 
   costmap_publisher_.reset();
   clear_costmap_service_.reset();
@@ -367,9 +368,7 @@ Costmap2DROS::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 
   footprint_sub_.reset();
   footprint_pub_.reset();
-
-
-  executor_thread_.reset();
+ 
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
