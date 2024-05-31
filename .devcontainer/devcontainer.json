@@ -34,6 +34,11 @@
             "source": "overlay-${devcontainerId}",
             "target": "/opt/overlay_ws",
             "type": "volume"
+        },
+        {
+            "source": "nav2-bashhistory",
+            "target": "/commandhistory",
+            "type": "volume"
         }
     ],
     "features": {
