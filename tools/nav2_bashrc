@@ -1,6 +1,5 @@
 OVERLAY_DIR=/opt/overlay_ws
 
-# https://docs.ros.org/en/rolling/Tutorials/Workspace/Creating-A-Workspace.html#source-the-overlay
 OVERLAY=$OVERLAY_DIR/install/setup.bash
 UNDERLAY=/opt/ros/${ROS_DISTRO}/setup.bash
 if [ -f "$OVERLAY" ]; then
