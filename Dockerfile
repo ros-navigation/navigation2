@@ -162,7 +162,7 @@ FROM caddy:builder AS caddyer
 RUN xcaddy build \
     --with github.com/caddyserver/replace-response
 
-COPY nav2_bashrc /root/nav2_bashrc
+COPY tools/nav2_bashrc /root/nav2_bashrc
 RUN echo "source /root/nav2_bashrc" >> /root/.bashrc
 
 # multi-stage for visualizing
