@@ -87,7 +87,7 @@ void Optimizer::getParams()
   getParam(s.retry_attempt_limit, "retry_attempt_limit", 1);
 
   s.base_constraints.ax_max = std::abs(s.base_constraints.ax_max);
-  if (s.base_constraints.ax_min > 0) {
+  if (s.base_constraints.ax_min > 0.0) {
     s.base_constraints.ax_min = -1.0 * s.base_constraints.ax_min;
     RCLCPP_WARN(
       logger_,

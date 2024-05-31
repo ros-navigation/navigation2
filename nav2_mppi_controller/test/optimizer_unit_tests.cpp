@@ -149,6 +149,11 @@ public:
     return {s.constraints.vx_min, s.constraints.vx_max};
   }
 
+  models::ControlConstraints & getControlConstraints()
+  {
+    return settings_.constraints;
+  }
+
   void applyControlSequenceConstraintsWrapper()
   {
     return applyControlSequenceConstraints();
@@ -226,12 +231,17 @@ TEST(OptimizerTests, BasicInitializedFunctions)
   node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(1000));
   node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(50));
   node->declare_parameter("controller_frequency", rclcpp::ParameterValue(30.0));
+  node->declare_parameter("mppic.ax_min", rclcpp::ParameterValue(3.0));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", "dummy_costmap", true);
   ParametersHandler param_handler(node);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
   optimizer_tester.initialize(node, "mppic", costmap_ros, &param_handler);
+
+  // Test value of ax_min, it should be negative
+  auto & constraints = optimizer_tester.getControlConstraints();
+  EXPECT_EQ(constraints.ax_min, -3.0);
 
   // Should be empty of size batches x time steps
   // and tests getting set params: time_steps, batch_size, controller_frequency
