@@ -55,6 +55,7 @@
             "settings": {},
             "extensions": [
                 "althack.ament-task-provider",
+                "mhutchie.git-graph",
                 "eamodio.gitlens",
                 "esbenp.prettier-vscode",
                 "GitHub.copilot",
