@@ -162,10 +162,8 @@ FROM caddy:builder AS caddyer
 RUN xcaddy build \
     --with github.com/caddyserver/replace-response
 
-# Save bash history
-# https://code.visualstudio.com/remote/advancedcontainers/persist-bash-history
-RUN SNIPPET="export PROMPT_COMMAND='history -a' && export HISTFILE=/commandhistory/.nav2_bash_history" \
-&& echo "$SNIPPET" >> "/root/.bashrc"
+COPY nav2_bashrc /root/nav2_bashrc
+RUN echo "source /root/nav2_bashrc" >> /root/.bashrc
 
 # multi-stage for visualizing
 FROM dever AS visualizer
