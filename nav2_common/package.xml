@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>nav2_common</name>
-  <version>1.2.7</version>
+  <version>1.2.8</version>
   <description>Common support functionality used throughout the navigation 2 stack</description>
   <maintainer email="carl.r.delsey@intel.com">Carl Delsey</maintainer>
   <license>Apache-2.0</license>
