@@ -155,15 +155,15 @@ RUN apt-get update && \
 # source underlay for shell
 RUN echo 'source "$UNDERLAY_WS/install/setup.bash"' >> /etc/bash.bashrc
 
+COPY tools/nav2_bashrc /root/nav2_bashrc
+RUN echo "source /root/nav2_bashrc" >> /root/.bashrc
+
 # multi-stage for caddy
 FROM caddy:builder AS caddyer
 
 # build custom modules
 RUN xcaddy build \
     --with github.com/caddyserver/replace-response
-
-COPY tools/nav2_bashrc /root/nav2_bashrc
-RUN echo "source /root/nav2_bashrc" >> /root/.bashrc
 
 # multi-stage for visualizing
 FROM dever AS visualizer
