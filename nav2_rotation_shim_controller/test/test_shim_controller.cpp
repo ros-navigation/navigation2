@@ -343,13 +343,16 @@ TEST(RotationShimControllerTest, computeVelocityGoalRotationTests) {
 
   // Test state update and path setting
   nav_msgs::msg::Path path;
-  path.header.frame_id = "fake_frame";
+  path.header.frame_id = "base_link";
   path.poses.resize(4);
 
   geometry_msgs::msg::PoseStamped pose;
   pose.header.frame_id = "base_link";
   geometry_msgs::msg::Twist velocity;
   nav2_controller::SimpleGoalChecker checker;
+  node->declare_parameter(
+    "checker.xy_goal_tolerance",
+    1.0);
   checker.initialize(node, "checker", costmap);
 
   path.header.frame_id = "base_link";
@@ -359,15 +362,24 @@ TEST(RotationShimControllerTest, computeVelocityGoalRotationTests) {
   path.poses[1].pose.position.y = 0.05;
   path.poses[2].pose.position.x = 0.10;
   path.poses[2].pose.position.y = 0.10;
+  // goal position within checker xy_goal_tolerance
   path.poses[3].pose.position.x = 0.20;
   path.poses[3].pose.position.y = 0.20;
+  // goal heading 45 degrees to the left
+  path.poses[3].pose.orientation.z = -0.3826834;
+  path.poses[3].pose.orientation.w = 0.9238795;
   path.poses[3].header.frame_id = "base_link";
 
-  // this should make the goal checker to validated the fact that the robot is in range
-  // of the goal. The rotation shim controller should rotate toward the goal heading
-  // then it will throw an exception because the costmap is bogus
   controller->setPlan(path);
-  EXPECT_THROW(controller->computeVelocityCommands(pose, velocity, &checker), std::runtime_error);
+  auto cmd_vel = controller->computeVelocityCommands(pose, velocity, &checker);
+  EXPECT_EQ(cmd_vel.twist.angular.z, -1.8);
+
+  // goal heading 45 degrees to the right
+  path.poses[3].pose.orientation.z = 0.3826834;
+  path.poses[3].pose.orientation.w = 0.9238795;
+  controller->setPlan(path);
+  cmd_vel = controller->computeVelocityCommands(pose, velocity, &checker);
+  EXPECT_EQ(cmd_vel.twist.angular.z, 1.8);
 }
 
 TEST(RotationShimControllerTest, testDynamicParameter)
