@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_UTIL__BASE_FOOTPRINT_PUBLISHER_HPP_
-#define NAV2_UTIL__BASE_FOOTPRINT_PUBLISHER_HPP_
+#ifndef BASE_FOOTPRINT_PUBLISHER_HPP_
+#define BASE_FOOTPRINT_PUBLISHER_HPP_
 
 #include <string>
 #include <memory>
@@ -126,4 +126,4 @@ protected:
 
 }  // end namespace nav2_util
 
-#endif  // NAV2_UTIL__BASE_FOOTPRINT_PUBLISHER_HPP_
+#endif  // BASE_FOOTPRINT_PUBLISHER_HPP_
