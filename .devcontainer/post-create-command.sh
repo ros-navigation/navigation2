@@ -10,9 +10,8 @@ set -eo pipefail
 # Enable autocomplete for user
 cp /etc/skel/.bashrc ~/
 
-# Check if srv folder exists
-if [ -d "$ROOT_SRV" ]; then
-    # Setup Nav2 web app
-    for dir in $OVERLAY_WS/src/navigation2/.devcontainer/caddy/srv/*; \
-        do if [ -d "$dir" ]; then ln -s "$dir" $ROOT_SRV; fi done
-fi
+# Enable autocomplete using colcon
+echo "source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash" >> ~/.bashrc
+
+# Add aliases to .bashrc
+echo "alias sows='source $OVERLAY_WS/install/setup.bash'" >> ~/.bashrc
