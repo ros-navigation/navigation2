@@ -105,6 +105,15 @@ RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
       git+https://github.com/ruffsl/colcon-cache.git@6076815bbb574da028d270cf6eb93bdd5b29c7f4
 ENV COLCON_EXTENSION_BLOCKLIST="$COLCON_EXTENSION_BLOCKLIST:colcon_core.package_augmentation.cache_git"
 
+# setup colcon mixin and metadata
+ENV COLCON_HOME=/opt/.colcon
+RUN colcon mixin add default \
+      https://raw.githubusercontent.com/colcon/colcon-mixin-repository/master/index.yaml && \
+    colcon mixin update && \
+    colcon metadata add default \
+      https://raw.githubusercontent.com/colcon/colcon-metadata-repository/master/index.yaml && \
+    colcon metadata update
+
 ################################################################################
 # MARK: validator - setup test dependencies for validation 
 ################################################################################
