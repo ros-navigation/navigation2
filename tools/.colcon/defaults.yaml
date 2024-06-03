@@ -1,0 +1,18 @@
+_common: &common
+  # Record test results to separate directory
+  # for simpler parsing and exporting with CI
+  "test-result-base": "test_results"
+
+"clean.packages":
+  <<: *common
+"build":
+  <<: *common
+  "executor": "parallel"
+  # "parallel-workers": 4
+  "symlink-install": false
+"test":
+  <<: *common
+  "executor": "parallel"
+  # "parallel-workers": 1
+"test-result":
+  <<: *common

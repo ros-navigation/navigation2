@@ -1,0 +1,17 @@
+# System tools
+build-essential
+ca-certificates
+ccache
+distcc
+gdb
+git
+git-lfs
+lld
+mesa-utils
+nano
+unzip
+valgrind
+yadm
+
+# ROS tools
+ros-${ROS_DISTRO}-rqt-common-plugins

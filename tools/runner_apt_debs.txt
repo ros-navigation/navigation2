@@ -1,0 +1,16 @@
+# ROS
+ros-${ROS_DISTRO}-rmw-cyclonedds-cpp
+ros-${ROS_DISTRO}-ros2cli-common-extensions
+
+# System
+bash-completion
+
+# Tooling
+bashtop
+byobu
+fish
+htop
+iftop
+rsync
+tmux
+tmuxinator

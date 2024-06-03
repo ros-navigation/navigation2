@@ -1,226 +1,256 @@
-# This dockerfile can be configured via --build-arg
-# Build context must be the /navigation2 root folder for COPY.
-# Example build command:
-# export UNDERLAY_MIXINS="debug ccache lld"
-# export OVERLAY_MIXINS="debug ccache coverage-gcc lld"
-# docker build -t nav2:latest \
-#   --build-arg UNDERLAY_MIXINS \
-#   --build-arg OVERLAY_MIXINS ./
-ARG FROM_IMAGE=ros:rolling
-ARG UNDERLAY_WS=/opt/underlay_ws
-ARG OVERLAY_WS=/opt/overlay_ws
+# syntax=docker/dockerfile:1.7
+ARG DEV_FROM_STAGE=tooler
+ARG EXPORT_FROM_STAGE=builder
+ARG PREP_FROM_STAGE=runner
+ARG WS_CACHE_ID=nav2
 
-# multi-stage for caching
-FROM $FROM_IMAGE AS cacher
+ARG FROM_IMAGE=base
+# Stage from full image tag name for dependabot detection
+FROM ros:rolling as base
 
-# clone underlay source
-ARG UNDERLAY_WS
-WORKDIR $UNDERLAY_WS/src
-COPY ./tools/underlay.repos ../
-RUN vcs import ./ < ../underlay.repos
+################################################################################
+# MARK: baser - setup base image using snapshots
+################################################################################
+FROM $FROM_IMAGE as baser
+ENV FROM_IMAGE=${FROM_IMAGE}
+
+# Configure ubuntu snapshot
+RUN UBUNTU_DEB_SNAPSHOT=$(date -r /var/lib/dpkg/info +%Y%m%dT%H%M%SZ) && \
+  sed -i "s|http://archive.ubuntu.com/ubuntu/|http://snapshot.ubuntu.com/ubuntu/${UBUNTU_DEB_SNAPSHOT}|g" /etc/apt/sources.list && \
+  sed -i "s|http://security.ubuntu.com/ubuntu/|http://snapshot.ubuntu.com/ubuntu/${UBUNTU_DEB_SNAPSHOT}|g" /etc/apt/sources.list
+
+# Edit apt config for caching
+RUN mv /etc/apt/apt.conf.d/docker-clean /etc/apt/ && \
+    echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' \
+      > /etc/apt/apt.conf.d/keep-cache && \
+    # Given fixed snapshots, just cache apt update once
+    apt-get update && echo v1
+
+# Configure overlay workspace
+ENV OVERLAY_WS=/opt/nav2_ws
+WORKDIR $OVERLAY_WS
+
+# install bootstrap tools
+RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
+    apt-get install -y --no-install-recommends \
+      gettext-base \
+      wget \
+      zstd
+
+# init and update rosdep
+ENV ROS_HOME=/opt/.ros
+RUN rosdep update \
+      --rosdistro $ROS_DISTRO
+
+################################################################################
+# MARK: cacher - cache source and dependency instructions
+################################################################################
+FROM baser AS cacher
 
 # copy overlay source
-ARG OVERLAY_WS
-WORKDIR $OVERLAY_WS/src
-COPY ./ ./navigation2
+COPY ./ ./src/nav2
 
-# copy manifests for caching
-WORKDIR /opt
-RUN find . -name "src" -type d \
-      -mindepth 1 -maxdepth 2 -printf '%P\n' \
-      | xargs -I % mkdir -p /tmp/opt/% && \
-    find . -name "package.xml" \
-      | xargs cp --parents -t /tmp/opt && \
-    find . -name "COLCON_IGNORE" \
-      | xargs cp --parents -t /tmp/opt || true
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+RUN dep_types=(\
+      "exec:--dependency-types=exec" \
+      "test:--dependency-types=test" \
+      "build:"\
+    ) && \
+    for dep_type in "${dep_types[@]}"; do \
+      IFS=":"; set -- $dep_type; \
+      rosdep install -y \
+        --from-paths src \
+        --ignore-src \
+        --skip-keys " \
+          # From Nav2
+            slam_toolbox \
+            turtlebot3_gazebo \
+          "\
+        --reinstall \
+        --simulate \
+        ${2} \
+        | sed -E "s/'//g; s/ \(alternative .*\)//g" \
+        | tail -n +2 \
+        | awk '{print $NF}' \
+        | sort > /tmp/rosdep_${1}_debs.txt; \
+    done
 
-# multi-stage for building
-FROM $FROM_IMAGE AS builder
+################################################################################
+# MARK: runner - setup runtime dependencies for deployment
+################################################################################
+FROM baser as runner
 
-# config dependencies install
-ARG DEBIAN_FRONTEND=noninteractive
-RUN echo '\
-APT::Install-Recommends "0";\n\
-APT::Install-Suggests "0";\n\
-' > /etc/apt/apt.conf.d/01norecommend
-ENV PYTHONUNBUFFERED 1
+# install packages for field work
+COPY tools/runner_apt_debs.txt /tmp/runner_apt_debs.txt
+RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
+    cut -d# -f1 < /tmp/runner_apt_debs.txt | envsubst \
+      | xargs apt-get install -y --no-install-recommends
 
-# install CI dependencies
-ARG RTI_NC_LICENSE_ACCEPTED=yes
-RUN apt-get update && \
-    apt-get upgrade -y --with-new-pkgs && \
-    apt-get install -y \
-      ccache \
-      lcov \
-      lld \
+COPY --from=cacher /tmp/rosdep_exec_debs.txt /tmp/rosdep_exec_debs.txt
+RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
+    < /tmp/rosdep_exec_debs.txt xargs apt-get install -y --no-install-recommends
+
+################################################################################
+# MARK: prepper - bootstrap general dependencies for development
+################################################################################
+FROM $PREP_FROM_STAGE as prepper
+
+# install bootstrap tools
+RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
+    apt-get install -y --no-install-recommends \
+      git \
+      python3-colcon-clean \
       python3-pip \
-      ros-$ROS_DISTRO-rmw-fastrtps-cpp \
-      ros-$ROS_DISTRO-rmw-connextdds \
-      ros-$ROS_DISTRO-rmw-cyclonedds-cpp \
     && pip3 install --break-system-packages \
-      fastcov \
-      git+https://github.com/ruffsl/colcon-cache.git@a937541bfc496c7a267db7ee9d6cceca61e470ca \
-      git+https://github.com/ruffsl/colcon-clean.git@a7f1074d1ebc1a54a6508625b117974f2672f2a9 \
-    && rosdep update \
-    && colcon mixin update \
-    && colcon metadata update \
-    && rm -rf /var/lib/apt/lists/*
+      git+https://github.com/ruffsl/colcon-cache.git@6076815bbb574da028d270cf6eb93bdd5b29c7f4
+ENV COLCON_EXTENSION_BLOCKLIST="$COLCON_EXTENSION_BLOCKLIST:colcon_core.package_augmentation.cache_git"
 
-# install underlay dependencies
-ARG UNDERLAY_WS
-ENV UNDERLAY_WS $UNDERLAY_WS
-WORKDIR $UNDERLAY_WS
-COPY --from=cacher /tmp/$UNDERLAY_WS ./
-RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
-    apt-get update && rosdep install -q -y \
-      --from-paths src \
-      --skip-keys " \
-        slam_toolbox \
-        " \
-      --ignore-src \
-    && rm -rf /var/lib/apt/lists/*
+################################################################################
+# MARK: validator - setup test dependencies for validation 
+################################################################################
+FROM prepper as validator
 
-# build underlay source
-COPY --from=cacher $UNDERLAY_WS ./
-ARG UNDERLAY_MIXINS="release ccache lld"
-ARG CCACHE_DIR="$UNDERLAY_WS/.ccache"
-RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
-    colcon cache lock && \
-    colcon build \
-      --symlink-install \
-      --mixin $UNDERLAY_MIXINS \
-      --event-handlers console_direct+
+COPY --from=cacher /tmp/rosdep_test_debs.txt /tmp/rosdep_test_debs.txt
+RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
+    < /tmp/rosdep_test_debs.txt xargs apt-get install -y --no-install-recommends
 
-# install overlay dependencies
-ARG OVERLAY_WS
-ENV OVERLAY_WS $OVERLAY_WS
-WORKDIR $OVERLAY_WS
-COPY --from=cacher /tmp/$OVERLAY_WS ./
+################################################################################
+# MARK: tooler - setup build dependencies for compilation
+################################################################################
+FROM validator as tooler
 
-RUN . $UNDERLAY_WS/install/setup.sh && \
-    apt-get update && rosdep install -q -y \
-      --from-paths src \
-      --skip-keys " \
-        slam_toolbox \
-        "\
-      --ignore-src \
-    && rm -rf /var/lib/apt/lists/*
+COPY --from=cacher /tmp/rosdep_build_debs.txt /tmp/
+RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
+    < /tmp/rosdep_build_debs.txt xargs apt-get install -y --no-install-recommends
 
-# multi-stage for testing
-FROM builder AS tester
+# install packages for build work
+COPY tools/tooler_apt_deps.txt /tmp/tooler_apt_deps.txt
+RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
+  cut -d# -f1 < /tmp/tooler_apt_deps.txt | envsubst \
+    | xargs apt-get install -y --no-install-recommends
 
-# build overlay source
-COPY --from=cacher $OVERLAY_WS ./
+# setup default ccache configuration
+COPY tools/.ccache/ccache.conf /opt/.ccache/
+ENV CCACHE_CONFIGPATH="/opt/.ccache/ccache.conf"
+ENV CCACHE_DIR="$OVERLAY_WS/.ccache"
+
+# setup default colcon configuration
+COPY tools/.colcon/defaults.yaml $COLCON_HOME/
 ARG OVERLAY_MIXINS="release ccache lld"
-ARG CCACHE_DIR="$OVERLAY_WS/.ccache"
-RUN . $UNDERLAY_WS/install/setup.sh && \
-    colcon cache lock && \
-    colcon build \
-      --symlink-install \
-      --mixin $OVERLAY_MIXINS
+ENV OVERLAY_MIXINS=${OVERLAY_MIXINS}
 
-# source overlay from entrypoint
-RUN sed --in-place \
-      's|^source .*|source "$OVERLAY_WS/install/setup.bash"|' \
-      /ros_entrypoint.sh
+# capture environment to modify layer digest
+RUN env > /tmp/env.txt
 
-# test overlay build
-ARG RUN_TESTS
-ARG FAIL_ON_TEST_FAILURE
-RUN if [ -n "$RUN_TESTS" ]; then \
-        . install/setup.sh && \
-        colcon test && \
-        colcon test-result \
-          || ([ -z "$FAIL_ON_TEST_FAILURE" ] || exit 1) \
+################################################################################
+# MARK: seeder - seed workspace artifacts for caching
+################################################################################
+FROM baser as seeder
+ARG WS_CACHE_ID
+
+ARG CLEAR_WS_CACHE
+RUN --mount=type=cache,id=$WS_CACHE_ID,sharing=private,target=$OVERLAY_WS \
+    if [ -n "$CLEAR_WS_CACHE" ]; then \
+      echo "Clearing cache!" && \
+      rm -rf $OVERLAY_WS/* && \
+      echo "Cache cleared!"; \
     fi
 
-# multi-stage for developing
-FROM builder AS dever
+ARG SEED_WS_CACHE
+RUN --mount=type=bind,source=./,target=/seeder/\
+    --mount=type=cache,id=$WS_CACHE_ID,sharing=private,target=$OVERLAY_WS \
+    if [ -n "$SEED_WS_CACHE" ]; then \
+      echo "Seeding cache!" && \
+      cp -rT /seeder/cache/$OVERLAY_WS $OVERLAY_WS && \
+      echo "Cache seeded!"; \
+    fi
 
-# edit apt for caching
-RUN mv /etc/apt/apt.conf.d/docker-clean /etc/apt/
+RUN --mount=type=cache,from=cacher,target=/cacher \
+  --mount=type=cache,id=$WS_CACHE_ID,sharing=private,target=$OVERLAY_WS \
+  rm -rf ./src && \
+  cp -r /cacher/$OVERLAY_WS/src ./ && \
+  echo $(date) > /tmp/seeder_stamp.txt
 
-# install developer dependencies
-RUN apt-get update && \
-    apt-get install -y \
-      bash-completion \
-      gdb \
-      wget && \
-    pip3 install --break-system-packages \
-      bottle \
-      glances
+################################################################################
+# MARK: builder - build workspace artifacts for deployment
+################################################################################
+FROM tooler as builder
+ARG WS_CACHE_ID
 
-# source underlay for shell
-RUN echo 'source "$UNDERLAY_WS/install/setup.bash"' >> /etc/bash.bashrc
+# build overlay source
+ARG BUST_BUILD_CACHE
+RUN --mount=type=cache,from=seeder,target=/seeder \
+    --mount=type=cache,id=$WS_CACHE_ID,sharing=private,target=$OVERLAY_WS \
+    . /opt/ros/$ROS_DISTRO/setup.sh && \
+    colcon cache lock \
+      --dirhash-reset && \
+    colcon clean packages -y \
+      --packages-select-cache-invalid \
+      --packages-select-cache-key build \
+      --base-select install && \
+    colcon build \
+      --packages-skip-cache-valid \
+      --mixin $OVERLAY_MIXINS \
+      || true && \
+    echo $(date) > /tmp/builder_stamp.txt
 
-# multi-stage for caddy
-FROM caddy:builder AS caddyer
+ARG FAIL_ON_BUILD_FAILURE=1
+RUN --mount=type=cache,id=$WS_CACHE_ID,sharing=private,target=$OVERLAY_WS \
+    . /opt/ros/$ROS_DISTRO/setup.sh && \
+    BUILD_FAILED=$( \
+      colcon list \
+        --packages-select-build-failed) && \
+    if [ -n "$BUILD_FAILED" ]; then \
+      echo "BUILD_FAILED: \n$BUILD_FAILED" && \
+      ([ -z "$FAIL_ON_BUILD_FAILURE" ] || exit 1); \
+    fi
 
-# build custom modules
-RUN xcaddy build \
-    --with github.com/caddyserver/replace-response
+################################################################################
+# MARK: dever - setup user account for development
+################################################################################
+FROM $DEV_FROM_STAGE as dever
 
-# multi-stage for visualizing
-FROM dever AS visualizer
+# add default user for devcontainer
+ENV DEV_USER=ubuntu
+RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
-ENV ROOT_SRV /srv
-RUN mkdir -p $ROOT_SRV
+################################################################################
+# MARK: tester - test workspace artifacts for development
+################################################################################
+FROM validator as tester
+ARG WS_CACHE_ID
 
-# install demo dependencies
-RUN apt-get update && apt-get install -y \
-      ros-$ROS_DISTRO-rviz2
+# test overlay build
+ARG BUST_TEST_CACHE
+RUN --mount=type=cache,from=builder,target=/builder \
+    --mount=type=cache,id=$WS_CACHE_ID,sharing=private,target=$OVERLAY_WS \
+    . install/setup.sh && \
+    colcon test \
+      --packages-skip-cache-valid && \
+    echo $(date) > /tmp/tester_stamp.txt
 
-# install gzweb dependacies
-RUN apt-get install -y --no-install-recommends \
-      imagemagick \
-      libboost-all-dev \
-      libgazebo-dev \
-      libgts-dev \
-      libjansson-dev \
-      libtinyxml-dev \
-      nodejs \
-      npm \
-      psmisc \
-      xvfb
+ARG FAIL_ON_TEST_FAILURE=1
+RUN --mount=type=cache,id=$WS_CACHE_ID,sharing=private,target=$OVERLAY_WS \
+    . install/setup.sh && \
+    colcon test-result \
+      --verbose \
+      || ([ -z "$FAIL_ON_TEST_FAILURE" ] || exit 1)
 
-# clone gzweb
-ENV GZWEB_WS /opt/gzweb
-RUN git clone https://github.com/osrf/gzweb.git $GZWEB_WS
+################################################################################
+# MARK: dancer - multi-stage for caches dancing
+################################################################################
+FROM $EXPORT_FROM_STAGE as dancer
+ARG WS_CACHE_ID
 
-# setup gzweb
-RUN cd $GZWEB_WS && . /usr/share/gazebo/setup.sh && \
-    GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:$(find /opt/ros/$ROS_DISTRO/share \
-      -mindepth 1 -maxdepth 2 -type d -name "models" | paste -s -d: -) && \
-    sed -i "s|var modelList =|var modelList = []; var oldModelList =|g" gz3d/src/gzgui.js && \
-    xvfb-run -s "-screen 0 1280x1024x24" ./deploy.sh -m local && \
-    ln -s $GZWEB_WS/http/client/assets http/client/assets/models && \
-    ln -s $GZWEB_WS/http/client $ROOT_SRV/gzweb
+RUN --mount=type=cache,id=$WS_CACHE_ID,sharing=private,target=$OVERLAY_WS,readonly \
+    echo "Exporting cache!" && \
+    mkdir -p /dancer/$OVERLAY_WS && \
+    cp -rT $OVERLAY_WS /dancer/$OVERLAY_WS && \
+    echo "Cache exported!"
 
-# patch gzsever
-RUN GZSERVER=$(which gzserver) && \
-    mv $GZSERVER $GZSERVER.orig && \
-    echo '#!/bin/bash' > $GZSERVER && \
-    echo 'exec xvfb-run -s "-screen 0 1280x1024x24" gzserver.orig "$@"' >> $GZSERVER && \
-    chmod +x $GZSERVER
+################################################################################
+# MARK: exporter - multi-stage for exporting caches
+################################################################################
+FROM $EXPORT_FROM_STAGE as exporter
 
-# install foxglove dependacies
-RUN apt-get install -y --no-install-recommends \
-      ros-$ROS_DISTRO-foxglove-bridge
-
-# setup foxglove
-# Use custom fork until PR is merged:
-# https://github.com/foxglove/studio/pull/5987
-# COPY --from=ghcr.io/foxglove/studio /src $ROOT_SRV/foxglove
-COPY --from=ghcr.io/ruffsl/foxglove_studio@sha256:8a2f2be0a95f24b76b0d7aa536f1c34f3e224022eed607cbf7a164928488332e /src $ROOT_SRV/foxglove
-
-# install web server
-COPY --from=caddyer /usr/bin/caddy /usr/bin/caddy
-
-# download media files
-RUN mkdir -p $ROOT_SRV/media && cd /tmp && \
-    export ICONS="icons.tar.gz" && wget https://github.com/ros-planning/navigation2/files/11506823/$ICONS && \
-    echo "cae5e2a5230f87b004c8232b579781edb4a72a7431405381403c6f9e9f5f7d41 $ICONS" | sha256sum -c && \
-    tar xvz -C $ROOT_SRV/media -f $ICONS && rm $ICONS
-
-# multi-stage for exporting
-FROM tester AS exporter
+COPY --link --from=dancer /dancer/$OVERLAY_WS $OVERLAY_WS
