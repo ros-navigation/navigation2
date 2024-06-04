@@ -98,6 +98,10 @@ controller_server:
       time_steps: 56
       model_dt: 0.05
       batch_size: 2000
+      ax_max: 3.0
+      ax_min: -3.0
+      ay_max: 3.0
+      az_max: 3.5
       vx_std: 0.2
       vy_std: 0.2
       wz_std: 0.4
