@@ -51,7 +51,7 @@ runs:
 
     - name: Cache checkout
       id: cache_checkout
-      uses: runs-on/cache@v4
+      uses: actions/cache@v4
       with:
         path: ${{ steps.cache_dance_info.outputs.overlay_ws_src }}/
         key: ${{ steps.cache_key_info.outputs.checkout_cache_key }}

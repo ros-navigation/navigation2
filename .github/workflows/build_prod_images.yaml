@@ -47,14 +47,14 @@ jobs:
 
       - name: Restore checkout
         id: restore_checkout
-        uses: runs-on/cache/restore@v4
+        uses: actions/cache/restore@v4
         with:
           fail-on-cache-miss: true
           path: ${{ inputs.overlay_ws }}/src/
           key: ${{ inputs.checkout_cache_key }}
       - name: Restore overlay
         id: restore_overlay
-        uses: runs-on/cache/restore@v4
+        uses: actions/cache/restore@v4
         with:
           fail-on-cache-miss: true
           path: |

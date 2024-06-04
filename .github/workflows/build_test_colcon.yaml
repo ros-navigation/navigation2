@@ -49,14 +49,14 @@ jobs:
     steps:
       - name: Restore checkout
         id: restore_checkout
-        uses: runs-on/cache@v4
+        uses: actions/cache@v4
         with:
           fail-on-cache-miss: true
           path: ${{ inputs.overlay_ws }}/src/
           key: ${{ inputs.checkout_cache_key }}
       - name: Cache ccache
         id: cache_ccache
-        uses: runs-on/cache@v4
+        uses: actions/cache@v4
         with:
           save-always: true
           path: |
@@ -82,7 +82,7 @@ jobs:
           echo "overlay_cache_key=${overlay_cache_key}" >> $GITHUB_OUTPUT
       - name: Cache overlay
         id: cache_overlay
-        uses: runs-on/cache@v4
+        uses: actions/cache@v4
         with:
           save-always: true
           path: |
@@ -165,14 +165,14 @@ jobs:
     steps:
       - name: Restore checkout
         id: restore_checkout
-        uses: runs-on/cache@v4
+        uses: actions/cache@v4
         with:
           fail-on-cache-miss: true
           path: ${{ inputs.overlay_ws }}/src/
           key: ${{ inputs.checkout_cache_key }}
       - name: Cache overlay
         id: cache_overlay
-        uses: runs-on/cache@v4
+        uses: actions/cache@v4
         with:
           save-always: true
           path: |
