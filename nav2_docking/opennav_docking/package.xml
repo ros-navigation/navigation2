@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>opennav_docking</name>
+  <version>0.0.1</version>
+  <description>A Task Server for robot charger docking</description>
+  <maintainer email="steve@opennav.org">Steve Macenski</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>angles</depend>
+  <depend>rclcpp</depend>
+  <depend>rclcpp_action</depend>
+  <depend>rclcpp_lifecycle</depend>
+  <depend>nav2_graceful_controller</depend>
+  <depend>nav2_msgs</depend>
+  <depend>nav2_util</depend>
+  <depend>nav_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>builtin_interfaces</depend>
+  <depend>sensor_msgs</depend>
+  <depend>pluginlib</depend>
+  <depend>yaml_cpp_vendor</depend>
+  <depend>opennav_docking_msgs</depend>
+  <depend>opennav_docking_core</depend>
+  <depend>tf2_ros</depend>
+
+  <test_depend>ament_cmake_gtest</test_depend>
+  <test_depend>ament_cmake_pytest</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+  <test_depend>ament_lint_auto</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
