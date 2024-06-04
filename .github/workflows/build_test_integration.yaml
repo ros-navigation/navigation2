@@ -14,7 +14,7 @@ on:
       runs_on:
         required: false
         type: string
-        default: runs-on,run-id=${{ github.run_id }},image=ecr_login_image
+        default: ubuntu-latest
   workflow_dispatch:
     inputs:
       integration_ref:
@@ -41,7 +41,7 @@ jobs:
       overlay_ws: ${{ env.OVERLAY_WS }}
       tooler_image: ${{ steps.bake_base_stages.outputs.tooler_image }}
       validator_image: ${{ steps.bake_base_stages.outputs.validator_image }}
-    runs-on: ${{ inputs.runs_on }},runner=2cpu-linux-x64
+    runs-on: ${{ inputs.runs_on }}
     steps:
       - name: Checkout Integration Repo
         id: checkout_integration_repo
@@ -76,7 +76,7 @@ jobs:
       metadata: ${{ needs.build_base_images.outputs.metadata }}
       overlay_cache_sha: ${{ needs.build_base_images.outputs.overlay_cache_sha }}
       overlay_ws: ${{ needs.build_base_images.outputs.overlay_ws }}
-      runs_on: ${{ inputs.runs_on }},runner=4cpu-linux-x64
+      runs_on: ${{ inputs.runs_on }}
       tooler_image: ${{ needs.build_base_images.outputs.tooler_image }}
       validator_image: ${{ needs.build_base_images.outputs.validator_image }}
 
@@ -93,4 +93,4 @@ jobs:
       metadata: ${{ needs.build_base_images.outputs.metadata }}
       overlay_cache_key: ${{ needs.colcon_build_test.outputs.overlay_cache_key }}
       overlay_ws: ${{ needs.build_base_images.outputs.overlay_ws }}
-      runs_on: ${{ inputs.runs_on }},runner=2cpu-linux-x64
+      runs_on: ${{ inputs.runs_on }}
