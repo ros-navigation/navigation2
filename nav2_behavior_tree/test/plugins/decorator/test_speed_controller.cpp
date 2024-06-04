@@ -45,6 +45,13 @@ public:
     std::vector<geometry_msgs::msg::PoseStamped> fake_poses;
     config_->blackboard->set("goals", fake_poses);  // NOLINT
 
+    config_->input_ports["min_rate"] = 0.1;
+    config_->input_ports["max_rate"] = 1.0;
+    config_->input_ports["min_speed"] = 0.0;
+    config_->input_ports["max_speed"] = 0.5;
+    config_->input_ports["goals"] = "";
+    config_->input_ports["goal"] = "";
+
     bt_node_ = std::make_shared<nav2_behavior_tree::SpeedController>("speed_controller", *config_);
     dummy_node_ = std::make_shared<nav2_behavior_tree::DummyNode>();
     bt_node_->setChild(dummy_node_.get());

@@ -194,7 +194,8 @@ bool makeFootprintFromString(
     RCLCPP_ERROR(
       rclcpp::get_logger(
         "nav2_costmap_2d"),
-      "You must specify at least three points for the robot footprint, reverting to previous footprint."); //NOLINT
+      "You must specify at least three points for the robot footprint,"
+      " reverting to previous footprint.");
     return false;
   }
   footprint.reserve(vvf.size());
@@ -209,7 +210,8 @@ bool makeFootprintFromString(
       RCLCPP_ERROR(
         rclcpp::get_logger(
           "nav2_costmap_2d"),
-        "Points in the footprint specification must be pairs of numbers. Found a point with %d numbers.", //NOLINT
+        "Points in the footprint specification must be pairs of numbers."
+        " Found a point with %d numbers.",
         static_cast<int>(vvf[i].size()));
       return false;
     }

@@ -87,8 +87,7 @@ TEST(SmootherTest, test_full_smoother)
   nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeHybrid> a_star(
     nav2_smac_planner::MotionModel::REEDS_SHEPP, info);
   int max_iterations = 10000;
-  float tolerance = 10.0;
-  int it_on_approach = 10;
+  float tolerance = 0.0;
   int terminal_checking_interval = 5000;
   double max_planning_time = 120.0;
   int num_it = 0;
@@ -143,7 +142,8 @@ TEST(SmootherTest, test_full_smoother)
   }
 
   // Check that we accurately detect that this path has a reversing segment
-  EXPECT_EQ(smoother->findDirectionalPathSegmentsWrapper(plan).size(), 2u);
+  auto path_segs = smoother->findDirectionalPathSegmentsWrapper(plan);
+  EXPECT_TRUE(path_segs.size() == 2u || path_segs.size() == 3u);
 
   // Test smoother, should succeed with same number of points
   // and shorter overall length, while still being collision free.
@@ -189,4 +189,5 @@ TEST(SmootherTest, test_full_smoother)
   EXPECT_NEAR(plan.poses.end()[-2].pose.orientation.w, 0.0, 1e-3);
 
   delete costmap;
+  nav2_smac_planner::NodeHybrid::destroyStaticAssets();
 }

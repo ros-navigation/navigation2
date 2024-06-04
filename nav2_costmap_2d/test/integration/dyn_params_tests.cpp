@@ -57,9 +57,10 @@ TEST(DynParamTestNode, testDynParamsSet)
   costmap->on_activate(rclcpp_lifecycle::State());
 
   auto parameter_client = std::make_shared<rclcpp::AsyncParametersClient>(
-    node->shared_from_this(),
-    "/test_costmap/test_costmap",
-    rmw_qos_profile_parameters);
+    costmap->get_node_base_interface(), costmap->get_node_topics_interface(),
+    costmap->get_node_graph_interface(),
+    costmap->get_node_services_interface());
+
   auto results1 = parameter_client->set_parameters_atomically(
   {
     rclcpp::Parameter("robot_radius", 1.234),
@@ -83,7 +84,8 @@ TEST(DynParamTestNode, testDynParamsSet)
     rclcpp::Parameter("robot_base_frame", "wrong_test_frame"),
   });
 
-  rclcpp::spin_some(costmap->get_node_base_interface());
+  rclcpp::spin_all(node->get_node_base_interface(), std::chrono::milliseconds(50));
+  rclcpp::spin_all(costmap->get_node_base_interface(), std::chrono::milliseconds(50));
 
   EXPECT_EQ(costmap->get_parameter("robot_radius").as_double(), 1.234);
   EXPECT_EQ(costmap->get_parameter("footprint_padding").as_double(), 2.345);

@@ -3,10 +3,11 @@
     "build": {
         "dockerfile": "../Dockerfile",
         "context": "..",
-        "target": "visualizer",
-        "cacheFrom": "ghcr.io/ros-planning/navigation2:main"
+        "target": "dever",
+        "cacheFrom": "ghcr.io/ros-navigation/navigation2:main"
     },
     "runArgs": [
+        "--name=nav2"
         // "--cap-add=SYS_PTRACE", // enable debugging, e.g. gdb
         // "--ipc=host", // shared memory transport with host, e.g. rviz GUIs
         // "--network=host", // network access to host interfaces, e.g. eth0
