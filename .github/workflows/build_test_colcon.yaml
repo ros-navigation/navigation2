@@ -37,11 +37,6 @@ jobs:
     runs-on: ${{ inputs.runs_on }}
     container:
       image: ${{ inputs.tooler_image }}
-      # NOTE: credentials needed for ECR login are set via RunsOn preinsall script
-      # https://github.com/runs-on/runs-on/discussions/71#discussioncomment-9280395
-      # credentials:
-      #   username: AWS
-      #   password: <ECR_PASSWORD>
     defaults:
       run:
         shell: bash
@@ -153,11 +148,6 @@ jobs:
         - build_colcon_workspace
     container:
       image: ${{ inputs.validator_image }}
-      # NOTE: credentials needed for ECR login are set via RunsOn preinsall script
-      # https://github.com/runs-on/runs-on/discussions/71#discussioncomment-9280395
-      # credentials:
-      #   username: AWS
-      #   password: <ECR_PASSWORD>
     defaults:
       run:
         shell: bash
