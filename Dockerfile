@@ -2,6 +2,7 @@
 ARG DEV_FROM_STAGE=tooler
 ARG EXPORT_FROM_STAGE=builder
 ARG PREP_FROM_STAGE=runner
+ARG SHIP_FROM_STAGE=runner
 ARG WS_CACHE_ID=nav2
 
 ARG FROM_IMAGE=base
@@ -263,3 +264,22 @@ RUN --mount=type=cache,id=$WS_CACHE_ID,sharing=private,target=$OVERLAY_WS,readon
 FROM $EXPORT_FROM_STAGE as exporter
 
 COPY --link --from=dancer /dancer/$OVERLAY_WS $OVERLAY_WS
+
+################################################################################
+# MARK: shipper - setup production images using shared instructions 
+################################################################################
+FROM $SHIP_FROM_STAGE as shipper
+
+################################################################################
+# MARK: debugger - stage target for debuggin in production
+################################################################################
+FROM shipper as debugger
+
+COPY --link --from=dancer /dancer/$OVERLAY_WS $OVERLAY_WS
+
+################################################################################
+# MARK: releaser - stage target for releasing in production
+################################################################################
+FROM shipper as releaser
+
+COPY --link --from=dancer /dancer/$OVERLAY_WS/install $OVERLAY_WS/install

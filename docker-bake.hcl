@@ -108,3 +108,38 @@ target "exporter" {
   target = "exporter"
   tags = ["nav2:exporter"]
 }
+
+################################################################################
+// MARK: Production targets
+################################################################################
+
+target "shipper" {
+  inherits   = ["dancer"]
+  target = "shipper"
+  args = {
+  }
+}
+
+target "releaser" {
+  inherits   = ["shipper"]
+  target = "releaser"
+  tags = ["nav2:releaser"]
+  args = {
+    SHIP_FROM_STAGE = "runner",
+  }
+  cache-from = [
+    // "type=registry,ref=${registry}/${repo}:main-releaser.cache",
+  ]
+}
+
+target "debugger" {
+  inherits   = ["shipper"]
+  target = "debugger"
+  tags = ["nav2:debugger"]
+  args = {
+    SHIP_FROM_STAGE = "tooler",
+  }
+  cache-from = [
+    // "type=registry,ref=${registry}/${repo}:main-debugger.cache",
+  ]
+}
