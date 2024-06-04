@@ -193,8 +193,7 @@ jobs:
             | xargs)
           echo TEST_UNFINISHED: $TEST_UNFINISHED
           colcon test-result \
-            --verbose \
-            || true
+            --verbose
       - name: Upload Logs
         if: always()
         uses: actions/upload-artifact@v4
