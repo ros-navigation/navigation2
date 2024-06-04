@@ -1,0 +1,46 @@
+name: GHCR Container Retention Policy
+
+on:
+  pull_request:
+    types:
+      - closed
+  schedule:
+    - cron: "0 0 * * *"  # every day at midnight
+  workflow_dispatch:
+
+jobs:
+  clean-old-ghcr:
+    name: Delete old container images
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete untagged containers
+        uses: snok/container-retention-policy@v2.2.1
+        with:
+          image-names: navigation2
+          cut-off: A day ago UTC
+          account-type: org
+          org-name: ros-navigation
+        #   keep-at-least: 0
+          untagged-only: true
+          token: ${{ secrets.GHCR_RETENTION_PAT }}
+          dry-run: false
+  clean-unused-ghcr:
+    name: Delete unused container images
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete untagged containers
+        uses: snok/container-retention-policy@v2.2.1
+        with:
+          image-names: navigation2
+          cut-off: now UTC
+          account-type: org
+          org-name: ros-navigation
+        #   keep-at-least: 0
+        # TODO: come up with a better way to filter out the PRs
+        # as well as a better tag naming convention
+          filter-tags: "${{ github.head_ref || github.ref_name }}-*"
+          untagged-only: false
+          token: ${{ secrets.GHCR_RETENTION_PAT }}
+          dry-run: false

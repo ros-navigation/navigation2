@@ -47,39 +47,24 @@ runs:
           [worker.containerd]
             gc = false
 
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v3
       with:
-        aws-region: ${{ env.RUNS_ON_AWS_REGION }}
-    - name: AWS ECR Login
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v2
-    - name: AWS ECR Info
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ inputs.token }}
+    - name: GHCR Info
       shell: bash
       run: |
-        echo "ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}" >> $GITHUB_ENV
+        echo "GHCR_REGISTRY=ghcr.io" >> $GITHUB_ENV
         echo "INTEGRATION_REPO=$(basename ${{ inputs.integration_repo }})" >> $GITHUB_ENV
-        echo "ECR_REPO=$(basename ${{ github.repository }})" >> $GITHUB_ENV
-    - name: AWS ECR Init
-      shell: bash
-      run: |
-        REPO_EXISTS=$(aws ecr describe-repositories --repository-names ${{ env.ECR_REPO }} 2>&1 || true)
-        if echo "${REPO_EXISTS}" | grep -q 'RepositoryNotFoundException'; then
-          aws ecr create-repository \
-            --repository-name ${{ env.ECR_REPO }}
-          aws ecr put-lifecycle-policy \
-            --repository-name ${{ env.ECR_REPO }} \
-            --lifecycle-policy-text file://${{ github.action_path }}/lifecycle-policy.json
-          aws ecr set-repository-policy \
-            --repository-name ${{ env.ECR_REPO }} \
-            --policy-text file://${{ github.action_path }}/repository-policy.json
-        fi
+        echo "GHCR_REPO=$(basename ${{ github.repository }})" >> $GITHUB_ENV
 
     - name: Docker validator meta
       id: docker_meta_validator
       uses: docker/metadata-action@v5
       with:
-        images: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO }}
+        images: ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPO }}
         flavor: suffix=-validator
         bake-target: validator
         tags: type=raw,value=${{ github.head_ref || github.ref_name }}
@@ -87,7 +72,7 @@ runs:
       id: docker_meta_tooler
       uses: docker/metadata-action@v5
       with:
-        images: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO }}
+        images: ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPO }}
         flavor: suffix=-tooler
         bake-target: tooler
         tags: type=raw,value=${{ github.head_ref || github.ref_name }}
@@ -98,12 +83,12 @@ runs:
       run: |
         {
         echo 'EXTRA_BAKE_SET<<EOF'
-        if [ "$INTEGRATION_REPO" == "$ECR_REPO" ]; then
+        if [ "$INTEGRATION_REPO" == "$GHCR_REPO" ]; then
           tooler_ref=${{ fromJSON(steps.docker_meta_tooler.outputs.json).tags[0] }}
           echo    *.cache-from=type=registry,ref=${tooler_ref}.cache
           echo tooler.cache-to=type=registry,ref=${tooler_ref}.cache,mode=max,image-manifest=true,oci-mediatypes=true
         fi
-        if [ "${{ github.head_ref || github.ref_name }}" != "main" ] || [ "$INTEGRATION_REPO" != "$ECR_REPO" ]; then
+        if [ "${{ github.head_ref || github.ref_name }}" != "main" ] || [ "$INTEGRATION_REPO" != "$GHCR_REPO" ]; then
           echo *.cache-from=type=s3,blobs_prefix=cache/${{ env.INTEGRATION_REPO }}/,manifests_prefix=cache/${{ env.INTEGRATION_REPO }}/,region=${{ env.RUNS_ON_AWS_REGION }},bucket=${{ env.RUNS_ON_S3_BUCKET_CACHE }}
         fi
         echo EOF
@@ -121,7 +106,7 @@ runs:
           tooler
           validator
         set: |
-          *.cache-from=type=registry,ref=${{ env.ECR_REGISTRY }}/${{ env.INTEGRATION_REPO }}:main-tooler.cache
+          *.cache-from=type=registry,ref=${{ env.GHCR_REGISTRY }}/${{ env.INTEGRATION_REPO }}:main-tooler.cache
           *.cache-to=type=s3,blobs_prefix=cache/${{ env.INTEGRATION_REPO }}/,manifests_prefix=cache/${{ env.INTEGRATION_REPO }}/,region=${{ env.RUNS_ON_AWS_REGION }},bucket=${{ env.RUNS_ON_S3_BUCKET_CACHE }},mode=max
           ${{ env.EXTRA_BAKE_SET }}
         files: |

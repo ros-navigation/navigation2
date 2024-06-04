@@ -45,25 +45,24 @@ runs:
           [worker.containerd]
             gc = false
 
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v3
       with:
-        aws-region: ${{ env.RUNS_ON_AWS_REGION }}
-    - name: AWS ECR Login
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v2
-    - name: AWS ECR Info
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ inputs.token }}
+    - name: GHCR Info
       shell: bash
       run: |
-        echo "ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}" >> $GITHUB_ENV
+        echo "GHCR_REGISTRY=ghcr.io" >> $GITHUB_ENV
         echo "INTEGRATION_REPO=$(basename ${{ inputs.integration_repo }})" >> $GITHUB_ENV
-        echo "ECR_REPO=$(basename ${{ github.repository }})" >> $GITHUB_ENV
+        echo "GHCR_REPO=$(basename ${{ github.repository }})" >> $GITHUB_ENV
 
     - name: Docker debugger meta
       id: docker_meta_debugger
       uses: docker/metadata-action@v5
       with:
-        images: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO }}
+        images: ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPO }}
         flavor: suffix=-debugger
         bake-target: debugger
         tags: type=raw,value=${{ github.head_ref || github.ref_name }}
@@ -71,7 +70,7 @@ runs:
       id: docker_meta_releaser
       uses: docker/metadata-action@v5
       with:
-        images: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO }}
+        images: ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPO }}
         flavor: suffix=-releaser
         bake-target: releaser
         tags: type=raw,value=${{ github.head_ref || github.ref_name }}
@@ -82,7 +81,7 @@ runs:
       run: |
         {
         echo 'EXTRA_BAKE_SET<<EOF'
-        if [ "$INTEGRATION_REPO" == "$ECR_REPO" ]; then
+        if [ "$INTEGRATION_REPO" == "$GHCR_REPO" ]; then
           debugger_ref=${{ fromJSON(steps.docker_meta_debugger.outputs.json).tags[0] }}
           releaser_ref=${{ fromJSON(steps.docker_meta_releaser.outputs.json).tags[0] }}
           echo debugger.cache-from=type=registry,ref=${debugger_ref}.cache
@@ -111,8 +110,8 @@ runs:
           *.args.CLEAR_WS_CACHE=${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}
           *.args.SEED_WS_CACHE=${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}
           *.args.EXPORT_FROM_STAGE=seeder
-          debugger.cache-from=type=registry,ref=${{ env.ECR_REGISTRY }}/${{ env.INTEGRATION_REPO }}:main-debugger.cache
-          releaser.cache-from=type=registry,ref=${{ env.ECR_REGISTRY }}/${{ env.INTEGRATION_REPO }}:main-releaser.cache
+          debugger.cache-from=type=registry,ref=${{ env.GHCR_REGISTRY }}/${{ env.INTEGRATION_REPO }}:main-debugger.cache
+          releaser.cache-from=type=registry,ref=${{ env.GHCR_REGISTRY }}/${{ env.INTEGRATION_REPO }}:main-releaser.cache
           ${{ env.EXTRA_BAKE_SET }}
         files: |
           ./docker-bake.hcl
