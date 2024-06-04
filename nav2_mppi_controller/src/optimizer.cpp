@@ -77,10 +77,22 @@ void Optimizer::getParams()
   getParam(s.base_constraints.vx_min, "vx_min", -0.35f);
   getParam(s.base_constraints.vy, "vy_max", 0.5f);
   getParam(s.base_constraints.wz, "wz_max", 1.9f);
+  getParam(s.base_constraints.ax_max, "ax_max", 3.0f);
+  getParam(s.base_constraints.ax_min, "ax_min", -3.0f);
+  getParam(s.base_constraints.ay_max, "ay_max", 3.0f);
+  getParam(s.base_constraints.az_max, "az_max", 3.5f);
   getParam(s.sampling_std.vx, "vx_std", 0.2f);
   getParam(s.sampling_std.vy, "vy_std", 0.2f);
   getParam(s.sampling_std.wz, "wz_std", 0.4f);
   getParam(s.retry_attempt_limit, "retry_attempt_limit", 1);
+
+  s.base_constraints.ax_max = std::abs(s.base_constraints.ax_max);
+  if (s.base_constraints.ax_min > 0.0) {
+    s.base_constraints.ax_min = -1.0 * s.base_constraints.ax_min;
+    RCLCPP_WARN(
+      logger_,
+      "Sign of the parameter ax_min is incorrect, consider setting it negative.");
+  }
 
   getParam(motion_model_name, "motion_model", std::string("DiffDrive"));
 
@@ -242,6 +254,29 @@ void Optimizer::applyControlSequenceConstraints()
 
   control_sequence_.vx = xt::clip(control_sequence_.vx, s.constraints.vx_min, s.constraints.vx_max);
   control_sequence_.wz = xt::clip(control_sequence_.wz, -s.constraints.wz, s.constraints.wz);
+
+  float max_delta_vx = s.model_dt * s.constraints.ax_max;
+  float min_delta_vx = s.model_dt * s.constraints.ax_min;
+  float max_delta_vy = s.model_dt * s.constraints.ay_max;
+  float max_delta_wz = s.model_dt * s.constraints.az_max;
+  float vx_last = control_sequence_.vx(0);
+  float vy_last = control_sequence_.vy(0);
+  float wz_last = control_sequence_.wz(0);
+  for (unsigned int i = 1; i != control_sequence_.vx.shape(0); i++) {
+    float & vx_curr = control_sequence_.vx(i);
+    vx_curr = std::clamp(vx_curr, vx_last + min_delta_vx, vx_last + max_delta_vx);
+    vx_last = vx_curr;
+
+    float & wz_curr = control_sequence_.wz(i);
+    wz_curr = std::clamp(wz_curr, wz_last - max_delta_wz, wz_last + max_delta_wz);
+    wz_last = wz_curr;
+
+    if (isHolonomic()) {
+      float & vy_curr = control_sequence_.vy(i);
+      vy_curr = std::clamp(vy_curr, vy_last - max_delta_vy, vy_last + max_delta_vy);
+      vy_last = vy_curr;
+    }
+  }
 
   motion_model_->applyConstraints(control_sequence_);
 }
@@ -414,6 +449,7 @@ void Optimizer::setMotionModel(const std::string & model)
               "Model " + model + " is not valid! Valid options are DiffDrive, Omni, "
               "or Ackermann"));
   }
+  motion_model_->initialize(settings_.constraints, settings_.model_dt);
 }
 
 void Optimizer::setSpeedLimit(double speed_limit, bool percentage)
