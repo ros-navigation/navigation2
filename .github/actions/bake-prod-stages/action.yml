@@ -1,0 +1,152 @@
+name: "Bake prod stages"
+description: "GitHub Action to bake prod stages and push images for CD"
+author: 'ros-navigation'
+branding:
+  icon: 'package'
+  color: 'blue'
+
+inputs:
+  cache_image:
+    required: true
+    type: string
+    description: The image to cache from via registry
+  integration_repo:
+    required: true
+    type: string
+    description: The repository to checkout for running CI
+  token:
+    required: true
+    type: string
+    description: The token to use for image registry login
+
+outputs:
+  metadata:
+    description: 'Layer result metadata'
+    value: ${{ steps.bake_prod_stages.outputs.metadata }}
+  releaser_image:
+    description: 'Docker image for releasing in production'
+    value: ${{ steps.job_workflow_info.outputs.releaser_image }}
+  debugger_image:
+    description: 'Docker image for debugging in production'
+    value: ${{ steps.job_workflow_info.outputs.debugger_image }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      with:
+        cleanup: false
+        buildkitd-config-inline: |
+          [gc]
+            enabled = false
+          [worker.oci]
+            gc = false
+          [worker.containerd]
+            gc = false
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-region: ${{ env.RUNS_ON_AWS_REGION }}
+    - name: AWS ECR Login
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+    - name: AWS ECR Info
+      shell: bash
+      run: |
+        echo "ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}" >> $GITHUB_ENV
+        echo "INTEGRATION_REPO=$(basename ${{ inputs.integration_repo }})" >> $GITHUB_ENV
+        echo "ECR_REPO=$(basename ${{ github.repository }})" >> $GITHUB_ENV
+
+    - name: Docker debugger meta
+      id: docker_meta_debugger
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO }}
+        flavor: suffix=-debugger
+        bake-target: debugger
+        tags: type=raw,value=${{ github.head_ref || github.ref_name }}
+    - name: Docker releaser meta
+      id: docker_meta_releaser
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO }}
+        flavor: suffix=-releaser
+        bake-target: releaser
+        tags: type=raw,value=${{ github.head_ref || github.ref_name }}
+
+    - name: Set Extra Bake Args
+      id: docker_bake_extra
+      shell: bash
+      run: |
+        {
+        echo 'EXTRA_BAKE_SET<<EOF'
+        if [ "$INTEGRATION_REPO" == "$ECR_REPO" ]; then
+          debugger_ref=${{ fromJSON(steps.docker_meta_debugger.outputs.json).tags[0] }}
+          releaser_ref=${{ fromJSON(steps.docker_meta_releaser.outputs.json).tags[0] }}
+          echo debugger.cache-from=type=registry,ref=${debugger_ref}.cache
+          echo   debugger.cache-to=type=registry,ref=${debugger_ref}.cache,mode=min,image-manifest=true,oci-mediatypes=true
+          echo releaser.cache-from=type=registry,ref=${releaser_ref}.cache
+          echo   releaser.cache-to=type=registry,ref=${releaser_ref}.cache,mode=min,image-manifest=true,oci-mediatypes=true
+        fi
+        cache_image="${{ inputs.cache_image }}"
+        cache_image="${cache_image%@*}"
+        echo *.cache-from=type=registry,ref=${cache_image}.cache
+        echo EOF
+        } >> "$GITHUB_ENV"
+    - name: Bake prod stages
+      id: bake_prod_stages
+      uses: docker/bake-action@v4
+      with:
+        pull: true
+        push: true
+        load: false
+        provenance: false
+        no-cache: false
+        targets: |
+          debugger
+          releaser
+        set: |
+          *.args.CLEAR_WS_CACHE=${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}
+          *.args.SEED_WS_CACHE=${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}
+          *.args.EXPORT_FROM_STAGE=seeder
+          debugger.cache-from=type=registry,ref=${{ env.ECR_REGISTRY }}/${{ env.INTEGRATION_REPO }}:main-debugger.cache
+          releaser.cache-from=type=registry,ref=${{ env.ECR_REGISTRY }}/${{ env.INTEGRATION_REPO }}:main-releaser.cache
+          ${{ env.EXTRA_BAKE_SET }}
+        files: |
+          ./docker-bake.hcl
+          ${{ steps.docker_meta_debugger.outputs.bake-file }}
+          ${{ steps.docker_meta_releaser.outputs.bake-file }}
+
+    - name: Job Workflow Info
+      id: job_workflow_info
+      shell: bash
+      run: |
+        debugger_image_name="${{ fromJSON(steps.bake_prod_stages.outputs.metadata)['debugger']['image.name'] }}"
+        debugger_image_digest="${{ fromJSON(steps.bake_prod_stages.outputs.metadata)['debugger']['containerimage.digest'] }}"
+        debugger_image="${debugger_image_name}@${debugger_image_digest}"
+        echo "debugger_image=${debugger_image}" >> $GITHUB_OUTPUT
+
+        releaser_image_name="${{ fromJSON(steps.bake_prod_stages.outputs.metadata)['releaser']['image.name'] }}"
+        releaser_image_digest="${{ fromJSON(steps.bake_prod_stages.outputs.metadata)['releaser']['containerimage.digest'] }}"
+        releaser_image="${releaser_image_name}@${releaser_image_digest}"
+        echo "releaser_image=${releaser_image}" >> $GITHUB_OUTPUT
+
+        cat << EOF > $GITHUB_STEP_SUMMARY
+        ## Prod Images
+        | Image tag | Digest |
+        |-|-|
+        | \`${debugger_image_name##*:}\` | \`${debugger_image_digest}\` |
+        | \`${releaser_image_name##*:}\` | \`${releaser_image_digest}\` |
+
+        ### debugger
+        \`\`\`
+        ${debugger_image}
+        \`\`\`
+
+        ### releaser
+        \`\`\`
+        ${releaser_image}
+        \`\`\`
+        EOF

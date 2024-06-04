@@ -1,0 +1,17 @@
+{
+    "rules": [
+        {
+            "rulePriority": 1,
+            "description": "Expire untagged images 10 days since pushed",
+            "selection": {
+                "tagStatus": "untagged",
+                "countType": "sinceImagePushed",
+                "countUnit": "days",
+                "countNumber": 10
+            },
+            "action": {
+                "type": "expire"
+            }
+        }
+    ]
+}

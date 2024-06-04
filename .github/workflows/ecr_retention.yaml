@@ -1,0 +1,72 @@
+name: ECR Retention Policy
+
+on:
+  pull_request:
+    types:
+      - closed
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  clean-unused-ecr:
+    name: Delete unused container images
+    runs-on: runs-on,runner=2cpu-linux-x64,run-id=${{ github.run_id }},image=ecr_login_image
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.RUNS_ON_AWS_REGION }}
+      - name: AWS ECR Login
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+      - name: AWS ECR Info
+        shell: bash
+        run: |
+          echo "ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}" >> $GITHUB_ENV
+          echo "ECR_REPO=$(basename ${{ github.repository }})" >> $GITHUB_ENV
+      - name: Docker meta
+        id: docker_meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO }}
+          flavor: suffix=-
+          tags: type=raw,value=${{ github.head_ref || github.ref_name }}
+      # NOTE: This is convoluted because AWS ECR has no simple way to untag image without deletion
+      # given we want to leave deletion of untagged image to the ECR repo's own lifecycle policy
+      # https://stackoverflow.com/questions/70065254/remove-ecr-image-tag-despite-imagereferencedbymanifestlist-error
+      # https://github.com/aws/containers-roadmap/issues/1567
+      - name: AWS ECR Cleanup
+        shell: bash
+        run: |
+          REPO_EXISTS=$(aws ecr describe-repositories --repository-names $ECR_REPO 2>&1 || true)
+          if echo "${REPO_EXISTS}" | grep -q 'RepositoryNotFoundException'; then
+            echo "Repository not found, skipping cleanup."
+            exit 0
+          fi
+          IMAGE_TAGS=$(aws ecr list-images --repository-name $ECR_REPO --query 'imageIds[*].imageTag' --output text)
+
+          docker pull busybox
+          docker tag busybox $ECR_REGISTRY/$ECR_REPO:_
+          docker push $ECR_REGISTRY/$ECR_REPO:_
+
+          TEMP_IMAGE=$(
+            aws ecr batch-get-image \
+                --repository-name $ECR_REPO \
+                --image-ids imageTag=_ )
+          TEMP_MANIFEST=$(echo $TEMP_IMAGE | jq -r '.images[].imageManifest')
+          TEMP_DIGEST=$(echo $TEMP_IMAGE | jq -r '.images[].imageId.imageDigest')
+
+          TAG_PREFIX=$(echo ${{ fromJSON(steps.docker_meta.outputs.json).tags[0] }} | cut -d: -f2)
+          for TAG in $IMAGE_TAGS
+          do
+            if [[ $TAG == $TAG_PREFIX* ]]; then
+              docker tag busybox $ECR_REGISTRY/$ECR_REPO:$TAG
+              docker push $ECR_REGISTRY/$ECR_REPO:$TAG
+              echo "Untaged image $TAG"
+            fi
+          done
+
+          # Delete the temporary image by digest
+          aws ecr batch-delete-image \
+            --repository-name $ECR_REPO \
+            --image-ids imageDigest=$TEMP_DIGEST
