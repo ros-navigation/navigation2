@@ -30,6 +30,18 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
+      - name: GHCR Info
+        shell: bash
+        run: |
+          echo "GHCR_REGISTRY=ghcr.io" >> $GITHUB_ENV
+          echo "GHCR_REPO=$(basename ${{ github.repository }})" >> $GITHUB_ENV
+      - name: Docker meta
+        id: docker_meta
+        uses: docker/metadata-action@v5
+        with:
+            images: ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPO }}
+            flavor: suffix=-
+            tags: type=raw,value=${{ github.head_ref || github.ref_name }}
       - name: Delete untagged containers
         uses: snok/container-retention-policy@v2.2.1
         with:
@@ -40,7 +52,7 @@ jobs:
         #   keep-at-least: 0
         # TODO: come up with a better way to filter out the PRs
         # as well as a better tag naming convention
-          filter-tags: "${{ github.head_ref || github.ref_name }}-*"
+          filter-tags: "${{ fromJSON(steps.docker_meta.outputs.json).tags[0] }}*"
           untagged-only: false
           token: ${{ secrets.GHCR_RETENTION_PAT }}
           dry-run: false
