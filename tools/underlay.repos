@@ -7,10 +7,6 @@ repositories:
   #   type: git
   #   url: https://github.com/ros/angles.git
   #   version: ros2
-  # ros-simulation/gazebo_ros_pkgs:
-  #   type: git
-  #   url: https://github.com/ros-simulation/gazebo_ros_pkgs.git
-  #   version: ros2
   # ros-perception/vision_opencv:
   #   type: git
   #   url: https://github.com/ros-perception/vision_opencv.git
@@ -35,7 +31,7 @@ repositories:
   #   type: git
   #   url:  https://github.com/cra-ros-pkg/robot_localization.git
   #   version: ros2
-  # ros2/geometry2:
-  #   type: git
-  #   url: https://github.com/ros2/geometry2.git
-  #   version: rolling
+  ros-navigation/nav2_minimal_turtlebot_simulation:
+    type: git
+    url:  https://github.com/ros-navigation/nav2_minimal_turtlebot_simulation.git
+    version: ros2

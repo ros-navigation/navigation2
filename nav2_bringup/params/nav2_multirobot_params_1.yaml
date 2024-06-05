@@ -194,7 +194,7 @@ global_costmap:
 
 map_server:
   ros__parameters:
-    yaml_filename: "turtlebot3_world.yaml"
+    yaml_filename: "tb3_sandbox.yaml"
     save_map_timeout: 5.0
 
 planner_server:

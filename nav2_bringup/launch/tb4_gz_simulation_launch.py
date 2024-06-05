@@ -169,9 +169,6 @@ def generate_launch_description():
         description='Full path to robot sdf file to spawn the robot in gazebo',
     )
 
-    # TODO abstract out TB3 stuff into the same Nav2 minimal package (TB3/4?)
-    # TODO config navigation
-
     urdf = os.path.join(desc_dir, 'urdf', 'standard', 'turtlebot4.urdf.xacro')
     with open(urdf, 'r') as infp:
         robot_description = infp.read()

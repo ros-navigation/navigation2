@@ -40,8 +40,7 @@ def generate_launch_description():
     # Get the launch directory
     bringup_dir = get_package_share_directory('nav2_bringup')
     launch_dir = os.path.join(bringup_dir, 'launch')
-    # This checks that tb3 exists needed for the URDF. If not using TB3, its safe to remove.
-    _ = get_package_share_directory('turtlebot3_gazebo')
+    sim_dir = get_package_share_directory('nav2_minimal_tb3_sim')
 
     # Create the launch configuration variables
     slam = LaunchConfiguration('slam')
@@ -72,12 +71,6 @@ def generate_launch_description():
     robot_name = LaunchConfiguration('robot_name')
     robot_sdf = LaunchConfiguration('robot_sdf')
 
-    # Map fully qualified names to relative ones so the node's namespace can be prepended.
-    # In case of the transforms (tf), currently, there doesn't seem to be a better alternative
-    # https://github.com/ros/geometry2/issues/32
-    # https://github.com/ros/robot_state_publisher/pull/30
-    # TODO(orduno) Substitute with `PushNodeRemapping`
-    #              https://github.com/ros2/launch_ros/issues/56
     remappings = [('/tf', 'tf'), ('/tf_static', 'tf_static')]
 
     # Declare the launch arguments
@@ -159,11 +152,7 @@ def generate_launch_description():
 
     declare_world_cmd = DeclareLaunchArgument(
         'world',
-        # TODO(orduno) Switch back once ROS argument passing has been fixed upstream
-        #              https://github.com/ROBOTIS-GIT/turtlebot3_simulations/issues/91
-        # default_value=os.path.join(get_package_share_directory('turtlebot3_gazebo'),
-        # worlds/turtlebot3_worlds/waffle.model')
-        default_value=os.path.join(bringup_dir, 'worlds', 'gz_world_only.sdf.xacro'),
+        default_value=os.path.join(sim_dir, 'worlds', 'tb3_sandbox.sdf.xacro'),
         description='Full path to world model file to load',
     )
 
@@ -173,11 +162,11 @@ def generate_launch_description():
 
     declare_robot_sdf_cmd = DeclareLaunchArgument(
         'robot_sdf',
-        default_value=os.path.join(bringup_dir, 'worlds', 'gz_waffle.sdf'),
+        default_value=os.path.join(sim_dir, 'urdf', 'gz_waffle.sdf'),
         description='Full path to robot sdf file to spawn the robot in gazebo',
     )
 
-    urdf = os.path.join(bringup_dir, 'urdf', 'turtlebot3_waffle.urdf')
+    urdf = os.path.join(sim_dir, 'urdf', 'turtlebot3_waffle.urdf')
     with open(urdf, 'r') as infp:
         robot_description = infp.read()
 
@@ -239,10 +228,6 @@ def generate_launch_description():
             OpaqueFunction(function=lambda _: os.remove(world_sdf))
         ]))
 
-    set_env_vars_resources = AppendEnvironmentVariable(
-            'GZ_SIM_RESOURCE_PATH',
-            os.path.join(get_package_share_directory('turtlebot3_gazebo'),
-                         'models'))
     gazebo_client = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(get_package_share_directory('ros_gz_sim'),
@@ -256,7 +241,7 @@ def generate_launch_description():
 
     gz_robot = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(launch_dir, 'tb3_gz_robot_launch.py')),
+            os.path.join(sim_dir, 'launch', 'spawn_tb3.launch.py')),
         launch_arguments={'namespace': namespace,
                           'use_simulator': use_simulator,
                           'use_sim_time': use_sim_time,
@@ -292,7 +277,6 @@ def generate_launch_description():
     ld.add_action(declare_robot_sdf_cmd)
     ld.add_action(declare_use_respawn_cmd)
 
-    ld.add_action(set_env_vars_resources)
     ld.add_action(world_sdf_xacro)
     ld.add_action(remove_temp_sdf_file)
     ld.add_action(gz_robot)
