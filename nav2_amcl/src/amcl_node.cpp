@@ -1358,6 +1358,7 @@ AmclNode::dynamicParametersCallback(
     lasers_update_.clear();
     frame_to_laser_.clear();
     laser_scan_connection_.disconnect();
+    laser_scan_filter_.reset();
     laser_scan_sub_.reset();
 
     initMessageFilters();
