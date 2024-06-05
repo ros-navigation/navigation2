@@ -76,6 +76,8 @@ void RegulatedPurePursuitController::configure(
   carrot_pub_ = node->create_publisher<geometry_msgs::msg::PointStamped>("lookahead_point", 1);
   curvature_carrot_pub_ = node->create_publisher<geometry_msgs::msg::PointStamped>(
     "curvature_lookahead_point", 1);
+  is_rotating_to_heading_pub_ = node->create_publisher<std_msgs::msg::Bool>(
+    "is_rotating_to_heading", 1);
 }
 
 void RegulatedPurePursuitController::cleanup()
@@ -88,6 +90,7 @@ void RegulatedPurePursuitController::cleanup()
   global_path_pub_.reset();
   carrot_pub_.reset();
   curvature_carrot_pub_.reset();
+  is_rotating_to_heading_pub_.reset();
 }
 
 void RegulatedPurePursuitController::activate()
@@ -100,6 +103,7 @@ void RegulatedPurePursuitController::activate()
   global_path_pub_->on_activate();
   carrot_pub_->on_activate();
   curvature_carrot_pub_->on_activate();
+  is_rotating_to_heading_pub_->on_activate();
 }
 
 void RegulatedPurePursuitController::deactivate()
@@ -112,6 +116,7 @@ void RegulatedPurePursuitController::deactivate()
   global_path_pub_->on_deactivate();
   carrot_pub_->on_deactivate();
   curvature_carrot_pub_->on_deactivate();
+  is_rotating_to_heading_pub_->on_deactivate();
 }
 
 std::unique_ptr<geometry_msgs::msg::PointStamped> RegulatedPurePursuitController::createCarrotMsg(
@@ -228,11 +233,14 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   //        - otherwise equal to curvature_lookahead_pose (which can be interpolated after goal)
   double angle_to_heading;
   if (shouldRotateToGoalHeading(carrot_pose)) {
+    is_rotating_to_heading_ = true;
     double angle_to_goal = tf2::getYaw(transformed_plan.poses.back().pose.orientation);
     rotateToHeading(linear_vel, angular_vel, angle_to_goal, speed);
   } else if (shouldRotateToPath(rotate_to_path_carrot_pose, angle_to_heading, x_vel_sign)) {
+    is_rotating_to_heading_ = true;
     rotateToHeading(linear_vel, angular_vel, angle_to_heading, speed);
   } else {
+    is_rotating_to_heading_ = false;
     applyConstraints(
       regulation_curvature, speed,
       collision_checker_->costAtPose(pose.pose.position.x, pose.pose.position.y), transformed_plan,
@@ -266,6 +274,11 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   {
     throw nav2_core::NoValidControl("RegulatedPurePursuitController detected collision ahead!");
   }
+
+  // Publish whether we are rotating to goal heading
+  std_msgs::msg::Bool is_rotating_to_heading_msg;
+  is_rotating_to_heading_msg.data = is_rotating_to_heading_;
+  is_rotating_to_heading_pub_->publish(is_rotating_to_heading_msg);
 
   // populate and return message
   geometry_msgs::msg::TwistStamped cmd_vel;
