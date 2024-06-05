@@ -42,8 +42,8 @@ def generate_launch_description():
     launch_dir = os.path.join(bringup_dir, 'launch')
     # This checks that tb4 exists needed for the URDF / simulation files.
     # If not using TB4, its safe to remove.
-    sim_dir = get_package_share_directory('nav2_min_tb4_sim')
-    desc_dir = get_package_share_directory('nav2_min_tb4_description')
+    sim_dir = get_package_share_directory('nav2_minimal_tb4_sim')
+    desc_dir = get_package_share_directory('nav2_minimal_tb4_description')
 
     # Create the launch configuration variables
     slam = LaunchConfiguration('slam')
