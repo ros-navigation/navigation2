@@ -116,6 +116,13 @@ protected:
   geometry_msgs::msg::PoseStamped getSampledPathPt();
 
   /**
+   * @brief Find the goal point in path
+   * May throw exception if the path is empty
+   * @return pt location of the output point
+   */
+  geometry_msgs::msg::PoseStamped getSampledPathGoal();
+
+  /**
    * @brief Uses TF to find the location of the sampled path point in base frame
    * @param pt location of the sampled path point
    * @return location of the pose in base frame
@@ -168,6 +175,7 @@ protected:
   double forward_sampling_distance_, angular_dist_threshold_;
   double rotate_to_heading_angular_vel_, max_angular_accel_;
   double control_duration_, simulate_ahead_time_;
+  bool rotate_to_goal_heading_;
 
   // Dynamic parameters handler
   std::mutex mutex_;
