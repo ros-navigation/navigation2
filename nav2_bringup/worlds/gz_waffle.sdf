@@ -1,0 +1,490 @@
+<?xml version="1.0"?>
+<sdf version="1.6">
+    <model name="turtlebot3_waffle"> 
+      <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+
+      <link name="base_footprint"/>
+
+      <link name="base_link">
+
+        <inertial>
+          <pose>-0.064 0 0.048 0 0 0</pose>
+          <inertia>
+            <ixx>0.001</ixx>
+            <ixy>0.000</ixy>
+            <ixz>0.000</ixz>
+            <iyy>0.001</iyy>
+            <iyz>0.000</iyz>
+            <izz>0.001</izz>
+          </inertia>
+          <mass>1.0</mass>
+        </inertial>
+
+        <collision name="base_collision">
+          <pose>-0.064 0 0.048 0 0 0</pose>
+          <geometry>
+            <box>
+              <size>0.265 0.265 0.089</size>
+            </box>
+          </geometry>
+        </collision>
+
+        <visual name="base_visual">
+          <pose>-0.064 0 0 0 0 0</pose>
+          <geometry>
+            <mesh>
+              <uri>model://turtlebot3_common/meshes/waffle_base.dae</uri>
+              <scale>0.001 0.001 0.001</scale>
+            </mesh>
+          </geometry>
+          <material>
+            <diffuse>1 1 1</diffuse>
+          </material>
+        </visual>
+      </link>
+
+      <link name="imu_link">
+        <sensor name="tb3_imu" type="imu">
+          <always_on>true</always_on>
+          <update_rate>200</update_rate>
+          <topic>imu</topic>
+          <gz_frame_id>imu_link</gz_frame_id>
+          <imu>
+            <angular_velocity>
+              <x>
+                <noise type="gaussian">
+                  <mean>0.0</mean>
+                  <stddev>2e-4</stddev>
+                </noise>
+              </x>
+              <y>
+                <noise type="gaussian">
+                  <mean>0.0</mean>
+                  <stddev>2e-4</stddev>
+                </noise>
+              </y>
+              <z>
+                <noise type="gaussian">
+                  <mean>0.0</mean>
+                  <stddev>2e-4</stddev>
+                </noise>
+              </z>
+            </angular_velocity>
+            <linear_acceleration>
+              <x>
+                <noise type="gaussian">
+                  <mean>0.0</mean>
+                  <stddev>1.7e-2</stddev>
+                </noise>
+              </x>
+              <y>
+                <noise type="gaussian">
+                  <mean>0.0</mean>
+                  <stddev>1.7e-2</stddev>
+                </noise>
+              </y>
+              <z>
+                <noise type="gaussian">
+                  <mean>0.0</mean>
+                  <stddev>1.7e-2</stddev>
+                </noise>
+              </z>
+            </linear_acceleration>
+          </imu>
+        </sensor>
+      </link>
+
+      <link name="base_scan">
+        <inertial>
+          <pose>-0.064 0 0.121 0 0 0</pose>
+          <inertia>
+            <ixx>0.001</ixx>
+            <ixy>0.000</ixy>
+            <ixz>0.000</ixz>
+            <iyy>0.001</iyy>
+            <iyz>0.000</iyz>
+            <izz>0.001</izz>
+          </inertia>
+          <mass>0.125</mass>
+        </inertial>
+
+        <collision name="lidar_sensor_collision">
+          <pose>-0.052 0 0.111 0 0 0</pose>
+          <geometry>
+            <cylinder>
+              <radius>0.0508</radius>
+              <length>0.055</length>
+            </cylinder>
+          </geometry>
+        </collision>
+
+        <visual name="lidar_sensor_visual">
+          <pose>-0.064 0 0.121 0 0 0</pose>
+          <geometry>
+            <mesh>
+              <uri>model://turtlebot3_common/meshes/lds.dae</uri>
+              <scale>0.001 0.001 0.001</scale>
+            </mesh>
+          </geometry>
+          <material>
+            <diffuse>1 1 1</diffuse>
+          </material>
+        </visual>
+
+        <sensor name="hls_lfcd_lds" type="gpu_lidar">
+          <always_on>true</always_on>
+          <visualize>true</visualize>
+          <pose>-0.064 0 0.15 0 0 0</pose>
+          <update_rate>5</update_rate>
+          <topic>scan</topic>
+          <gz_frame_id>base_scan</gz_frame_id>
+          <ray>
+            <scan>
+              <horizontal>
+                <samples>360</samples>
+                <resolution>1.000000</resolution>
+                <min_angle>0.000000</min_angle>
+                <max_angle>6.280000</max_angle>
+              </horizontal>
+            </scan>
+            <range>
+              <min>0.00001</min>
+              <max>20.0</max>
+              <resolution>0.015000</resolution>
+            </range>
+            <noise>
+              <type>gaussian</type>
+              <mean>0.0</mean>
+              <stddev>0.01</stddev>
+            </noise>
+          </ray>
+        </sensor>
+      </link>
+
+      <link name="wheel_left_link">
+
+        <inertial>
+          <pose>0.0 0.144 0.023 -1.57 0 0</pose>
+          <inertia>
+            <ixx>0.001</ixx>
+            <ixy>0.000</ixy>
+            <ixz>0.000</ixz>
+            <iyy>0.001</iyy>
+            <iyz>0.000</iyz>
+            <izz>0.001</izz>
+          </inertia>
+          <mass>0.1</mass>
+        </inertial>
+
+        <collision name="wheel_left_collision">
+          <pose>0.0 0.144 0.023 -1.57 0 0</pose>
+          <geometry>
+            <cylinder>
+              <radius>0.033</radius>
+              <length>0.018</length>
+            </cylinder>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>1</mu>
+                <mu2>1</mu2>
+                <slip1>0.035</slip1>
+                <slip2>0</slip2>
+                <fdir1>0 0 1</fdir1>
+              </ode>
+            </friction>
+            <contact>
+              <ode>
+                <soft_cfm>0</soft_cfm>
+                <soft_erp>0.2</soft_erp>
+                <kp>1e+5</kp>
+                <kd>1</kd>
+                <max_vel>0.01</max_vel>
+                <min_depth>0.001</min_depth>
+              </ode>
+            </contact>
+          </surface>
+        </collision>
+
+        <visual name="wheel_left_visual">
+          <pose>0.0 0.144 0.023 0 0 0</pose>
+          <geometry>
+            <mesh>
+              <uri>model://turtlebot3_common/meshes/tire.dae</uri>
+              <scale>0.001 0.001 0.001</scale>
+            </mesh>
+          </geometry>
+          <material>
+            <diffuse>1 1 1</diffuse>
+          </material>
+        </visual>
+      </link>
+
+      <link name="wheel_right_link">
+
+        <inertial>
+          <pose>0.0 -0.144 0.023 -1.57 0 0</pose>
+          <inertia>
+            <ixx>0.001</ixx>
+            <ixy>0.000</ixy>
+            <ixz>0.000</ixz>
+            <iyy>0.001</iyy>
+            <iyz>0.000</iyz>
+            <izz>0.001</izz>
+          </inertia>
+          <mass>0.1</mass>
+        </inertial>
+      
+        <collision name="wheel_right_collision">
+          <pose>0.0 -0.144 0.023 -1.57 0 0</pose>
+          <geometry>
+            <cylinder>
+              <radius>0.033</radius>
+              <length>0.018</length>
+            </cylinder>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>1</mu>
+                <mu2>1</mu2>
+                <slip1>0.035</slip1>
+                <slip2>0</slip2>
+                <fdir1>0 0 1</fdir1>
+              </ode>
+            </friction>
+            <contact>
+              <ode>
+                <soft_cfm>0</soft_cfm>
+                <soft_erp>0.2</soft_erp>
+                <kp>1e+5</kp>
+                <kd>1</kd>
+                <max_vel>0.01</max_vel>
+                <min_depth>0.001</min_depth>
+              </ode>
+            </contact>
+          </surface>
+        </collision>
+
+        <visual name="wheel_right_visual">
+          <pose>0.0 -0.144 0.023 0 0 0</pose>
+          <geometry>
+            <mesh>
+              <uri>model://turtlebot3_common/meshes/tire.dae</uri>
+              <scale>0.001 0.001 0.001</scale>
+            </mesh>
+          </geometry>
+          <material>
+            <diffuse>1 1 1</diffuse>
+          </material>
+        </visual>
+      </link>
+
+      <link name='caster_back_right_link'>
+        <pose>-0.177 -0.064 -0.004 0 0 0</pose>
+        <inertial>
+          <mass>0.001</mass>
+          <inertia>
+            <ixx>0.00001</ixx>
+            <ixy>0.000</ixy>
+            <ixz>0.000</ixz>
+            <iyy>0.00001</iyy>
+            <iyz>0.000</iyz>
+            <izz>0.00001</izz>
+          </inertia>
+        </inertial>
+        <collision name='collision'>
+          <geometry>
+            <sphere>
+              <radius>0.005000</radius>
+            </sphere>
+          </geometry>
+          <surface>
+            <contact>
+              <ode>
+                <soft_cfm>0</soft_cfm>
+                <soft_erp>0.2</soft_erp>
+                <kp>1e+5</kp>
+                <kd>1</kd>
+                <max_vel>0.01</max_vel>
+                <min_depth>0.001</min_depth>
+              </ode>
+            </contact>
+          </surface>
+        </collision>
+      </link>
+
+      <link name='caster_back_left_link'>
+        <pose>-0.177 0.064 -0.004 0 0 0</pose>
+        <inertial>
+          <mass>0.001</mass>
+          <inertia>
+            <ixx>0.00001</ixx>
+            <ixy>0.000</ixy>
+            <ixz>0.000</ixz>
+            <iyy>0.00001</iyy>
+            <iyz>0.000</iyz>
+            <izz>0.00001</izz>
+          </inertia>
+        </inertial>
+        <collision name='collision'>
+          <geometry>
+            <sphere>
+              <radius>0.005000</radius>
+            </sphere>
+          </geometry>
+          <surface>
+            <contact>
+              <ode>
+                <soft_cfm>0</soft_cfm>
+                <soft_erp>0.2</soft_erp>
+                <kp>1e+5</kp>
+                <kd>1</kd>
+                <max_vel>0.01</max_vel>
+                <min_depth>0.001</min_depth>
+              </ode>
+            </contact>
+          </surface>
+        </collision>
+      </link>
+
+      <link name="camera_link">
+        <inertial>
+          <pose>0.069 -0.047 0.107 0 0 0</pose>
+          <inertia>
+            <ixx>0.001</ixx>
+            <ixy>0.000</ixy>
+            <ixz>0.000</ixz>
+            <iyy>0.001</iyy>
+            <iyz>0.000</iyz>
+            <izz>0.001</izz>
+          </inertia>
+          <mass>0.035</mass>
+        </inertial>
+        <collision name="collision">
+          <pose>0 0.047 -0.005 0 0 0</pose>
+          <geometry>
+            <box>
+              <size>0.008 0.130 0.022</size>
+            </box>
+          </geometry>
+        </collision>
+
+        <pose>0.069 -0.047 0.107 0 0 0</pose>
+
+        <sensor name="intel_realsense_r200_depth" type="depth">
+          <always_on>1</always_on>
+          <update_rate>5</update_rate>
+          <pose>0.064 -0.047 0.107 0 0 0</pose>
+          <gz_frame_id>camera_depth_frame</gz_frame_id>
+          <camera name="realsense_depth_camera">
+            <horizontal_fov>1.047</horizontal_fov>
+            <image>
+              <width>320</width>
+              <height>240</height>
+            </image>
+            <lens>
+              <projection>
+                <!-- focal_length = fx = fy = width / ( 2 * tan (hfov / 2 ) ) -->
+                <!-- tx = hackBaseline * focal_length -->
+                <tx>19.4</tx>
+              </projection>
+            </lens>
+            <depth_camera>
+              <clip>
+                <near>0.001</near>
+                <far>5.0</far>
+              </clip>
+            </depth_camera>
+          </camera>
+        </sensor>
+      </link>
+
+      <joint name="base_joint" type="fixed">
+        <parent>base_footprint</parent>
+        <child>base_link</child>
+        <pose>0.0 0.0 0.010 0 0 0</pose>
+      </joint>
+
+      <joint name="wheel_left_joint" type="revolute">
+        <parent>base_link</parent>
+        <child>wheel_left_link</child>
+        <pose>0.0 0.144 0.023 -1.57 0 0</pose>
+        <axis>
+          <xyz>0 0 1</xyz>
+        </axis>
+      </joint>
+
+      <joint name="wheel_right_joint" type="revolute">
+        <parent>base_link</parent>
+        <child>wheel_right_link</child>
+        <pose>0.0 -0.144 0.023 -1.57 0 0</pose>
+        <axis>
+          <xyz>0 0 1</xyz>
+        </axis>
+      </joint>
+
+      <joint name='caster_back_right_joint' type='ball'>
+        <parent>base_link</parent>
+        <child>caster_back_right_link</child>
+      </joint>
+
+      <joint name='caster_back_left_joint' type='ball'>
+        <parent>base_link</parent>
+        <child>caster_back_left_link</child>
+      </joint>
+
+      <joint name="lidar_joint" type="fixed">
+        <parent>base_link</parent>
+        <child>base_scan</child>
+        <pose>-0.064 0 0.121 0 0 0</pose>
+        <axis>
+          <xyz>0 0 1</xyz>
+        </axis>
+      </joint>
+
+      <joint name="camera_joint" type="fixed">
+        <parent>base_link</parent>
+        <child>camera_link</child>
+        <pose>0.064 -0.065 0.094 0 0 0</pose>
+        <axis>
+          <xyz>0 0 1</xyz>
+        </axis>
+      </joint>
+
+
+      <plugin
+        filename="gz-sim-diff-drive-system"
+        name="gz::sim::systems::DiffDrive">
+        <left_joint>wheel_left_joint</left_joint>
+        <right_joint>wheel_right_joint</right_joint>
+        <wheel_separation>0.287</wheel_separation>
+        <wheel_radius>0.033</wheel_radius>
+        <max_linear_acceleration>1</max_linear_acceleration>
+        <min_linear_acceleration>-1</min_linear_acceleration>
+        <max_angular_acceleration>2</max_angular_acceleration>
+        <min_angular_acceleration>-2</min_angular_acceleration>
+        <max_linear_velocity>0.46</max_linear_velocity>
+        <min_linear_velocity>-0.46</min_linear_velocity>
+        <max_angular_velocity>1.9</max_angular_velocity>
+        <min_angular_velocity>-1.9</min_angular_velocity>
+        <topic>/cmd_vel</topic>
+        <odom_topic>/odom</odom_topic>
+        <tf_topic>tf</tf_topic>
+        <frame_id>odom</frame_id>
+        <child_frame_id>base_footprint</child_frame_id>
+        <odom_publish_frequency>30</odom_publish_frequency>
+      </plugin>
+
+      <plugin
+        filename="gz-sim-joint-state-publisher-system"
+        name="gz::sim::systems::JointStatePublisher">
+        <joint_name>wheel_left_joint</joint_name>
+        <joint_name>wheel_right_joint</joint_name>
+        <topic>joint_states</topic>
+        <update_rate>30</update_rate>
+      </plugin>
+
+    </model>
+</sdf>

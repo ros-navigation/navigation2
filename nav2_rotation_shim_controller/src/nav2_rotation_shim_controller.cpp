@@ -19,6 +19,7 @@
 #include <utility>
 
 #include "nav2_rotation_shim_controller/nav2_rotation_shim_controller.hpp"
+#include "nav2_rotation_shim_controller/tools/utils.hpp"
 
 using rcl_interfaces::msg::ParameterType;
 
@@ -60,6 +61,8 @@ void RotationShimController::configure(
     node, plugin_name_ + ".simulate_ahead_time", rclcpp::ParameterValue(1.0));
   nav2_util::declare_parameter_if_not_declared(
     node, plugin_name_ + ".primary_controller", rclcpp::PARAMETER_STRING);
+  nav2_util::declare_parameter_if_not_declared(
+    node, plugin_name_ + ".rotate_to_goal_heading", rclcpp::ParameterValue(false));
 
   node->get_parameter(plugin_name_ + ".angular_dist_threshold", angular_dist_threshold_);
   node->get_parameter(plugin_name_ + ".forward_sampling_distance", forward_sampling_distance_);
@@ -72,6 +75,8 @@ void RotationShimController::configure(
   primary_controller = node->get_parameter(plugin_name_ + ".primary_controller").as_string();
   node->get_parameter("controller_frequency", control_frequency);
   control_duration_ = 1.0 / control_frequency;
+
+  node->get_parameter(plugin_name_ + ".rotate_to_goal_heading", rotate_to_goal_heading_);
 
   try {
     primary_controller_ = lp_loader_.createUniqueInstance(primary_controller);
@@ -139,6 +144,41 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
   const geometry_msgs::msg::Twist & velocity,
   nav2_core::GoalChecker * goal_checker)
 {
+  // Rotate to goal heading when in goal xy tolerance
+  if (rotate_to_goal_heading_) {
+    std::lock_guard<std::mutex> lock_reinit(mutex_);
+
+    try {
+      geometry_msgs::msg::PoseStamped sampled_pt_goal = getSampledPathGoal();
+
+      if (!nav2_util::transformPoseInTargetFrame(
+          sampled_pt_goal, sampled_pt_goal, *tf_,
+          pose.header.frame_id))
+      {
+        throw nav2_core::ControllerTFError("Failed to transform pose to base frame!");
+      }
+
+      if (utils::withinPositionGoalTolerance(
+          goal_checker,
+          pose.pose,
+          sampled_pt_goal.pose))
+      {
+        double pose_yaw = tf2::getYaw(pose.pose.orientation);
+        double goal_yaw = tf2::getYaw(sampled_pt_goal.pose.orientation);
+
+        double angular_distance_to_heading = angles::shortest_angular_distance(pose_yaw, goal_yaw);
+
+        return computeRotateToHeadingCommand(angular_distance_to_heading, pose, velocity);
+      }
+    } catch (const std::runtime_error & e) {
+      RCLCPP_INFO(
+        logger_,
+        "Rotation Shim Controller was unable to find a goal point,"
+        " a rotational collision was detected, or TF failed to transform"
+        " into base frame! what(): %s", e.what());
+    }
+  }
+
   if (path_updated_) {
     nav2_costmap_2d::Costmap2D * costmap = costmap_ros_->getCostmap();
     std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap->getMutex()));
@@ -196,6 +236,17 @@ geometry_msgs::msg::PoseStamped RotationShimController::getSampledPathPt()
   }
 
   return current_path_.poses.back();
+}
+
+geometry_msgs::msg::PoseStamped RotationShimController::getSampledPathGoal()
+{
+  if (current_path_.poses.empty()) {
+    throw nav2_core::InvalidPath("Path is empty - cannot find a goal point");
+  }
+
+  auto goal = current_path_.poses.back();
+  goal.header.stamp = clock_->now();
+  return goal;
 }
 
 geometry_msgs::msg::Pose
@@ -301,6 +352,10 @@ RotationShimController::dynamicParametersCallback(std::vector<rclcpp::Parameter>
         max_angular_accel_ = parameter.as_double();
       } else if (name == plugin_name_ + ".simulate_ahead_time") {
         simulate_ahead_time_ = parameter.as_double();
+      }
+    } else if (type == ParameterType::PARAMETER_BOOL) {
+      if (name == plugin_name_ + ".rotate_to_goal_heading") {
+        rotate_to_goal_heading_ = parameter.as_bool();
       }
     }
   }
