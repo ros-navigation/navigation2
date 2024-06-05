@@ -1,4 +1,4 @@
-# Copyright (C) 2024 Open Navigation LLC
+# Copyright (C) 2023 Open Source Robotics Foundation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
 from launch.actions import (
-    AppendEnvironmentVariable,
     DeclareLaunchArgument,
     ExecuteProcess,
     IncludeLaunchDescription,
@@ -31,7 +30,7 @@ from launch.actions import (
 from launch.conditions import IfCondition
 from launch.event_handlers import OnShutdown
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import Command, LaunchConfiguration, PythonExpression
+from launch.substitutions import LaunchConfiguration, PythonExpression
 
 from launch_ros.actions import Node
 
@@ -40,10 +39,7 @@ def generate_launch_description():
     # Get the launch directory
     bringup_dir = get_package_share_directory('nav2_bringup')
     launch_dir = os.path.join(bringup_dir, 'launch')
-    # This checks that tb4 exists needed for the URDF / simulation files.
-    # If not using TB4, its safe to remove.
-    sim_dir = get_package_share_directory('nav2_minimal_tb4_sim')
-    desc_dir = get_package_share_directory('nav2_minimal_tb4_description')
+    sim_dir = get_package_share_directory('nav2_minimal_tb3_sim')
 
     # Create the launch configuration variables
     slam = LaunchConfiguration('slam')
@@ -64,8 +60,8 @@ def generate_launch_description():
     headless = LaunchConfiguration('headless')
     world = LaunchConfiguration('world')
     pose = {
-        'x': LaunchConfiguration('x_pose', default='-8.00'),
-        'y': LaunchConfiguration('y_pose', default='0.00'),
+        'x': LaunchConfiguration('x_pose', default='-2.00'),
+        'y': LaunchConfiguration('y_pose', default='-0.50'),
         'z': LaunchConfiguration('z_pose', default='0.01'),
         'R': LaunchConfiguration('roll', default='0.00'),
         'P': LaunchConfiguration('pitch', default='0.00'),
@@ -93,7 +89,7 @@ def generate_launch_description():
 
     declare_map_yaml_cmd = DeclareLaunchArgument(
         'map',
-        default_value=os.path.join(bringup_dir, 'maps', 'depot.yaml'), #TODO update better map
+        default_value=os.path.join(bringup_dir, 'maps', 'tb3_sandbox.yaml'),
         description='Full path to map file to load',
     )
 
@@ -155,21 +151,21 @@ def generate_launch_description():
 
     declare_world_cmd = DeclareLaunchArgument(
         'world',
-        default_value=os.path.join(sim_dir, 'worlds', 'depot.sdf'), #TODO no ceiling or other (own in this package?)
+        default_value=os.path.join(sim_dir, 'worlds', 'tb3_sandbox.sdf.xacro'),
         description='Full path to world model file to load',
     )
 
     declare_robot_name_cmd = DeclareLaunchArgument(
-        'robot_name', default_value='nav2_turtlebot4', description='name of the robot'
+        'robot_name', default_value='turtlebot3_waffle', description='name of the robot'
     )
 
     declare_robot_sdf_cmd = DeclareLaunchArgument(
         'robot_sdf',
-        default_value=os.path.join(desc_dir, 'urdf', 'standard', 'turtlebot4.urdf.xacro'),
+        default_value=os.path.join(sim_dir, 'urdf', 'gz_waffle.sdf'),
         description='Full path to robot sdf file to spawn the robot in gazebo',
     )
 
-    urdf = os.path.join(desc_dir, 'urdf', 'standard', 'turtlebot4.urdf.xacro')
+    urdf = os.path.join(sim_dir, 'urdf', 'turtlebot3_waffle.urdf')
     with open(urdf, 'r') as infp:
         robot_description = infp.read()
 
@@ -181,7 +177,7 @@ def generate_launch_description():
         namespace=namespace,
         output='screen',
         parameters=[
-            {'use_sim_time': use_sim_time, 'robot_description': Command(['xacro', ' ', robot_sdf])}  
+            {'use_sim_time': use_sim_time, 'robot_description': robot_description}
         ],
         remappings=remappings,
     )
@@ -231,9 +227,6 @@ def generate_launch_description():
             OpaqueFunction(function=lambda _: os.remove(world_sdf))
         ]))
 
-    set_env_vars_resources = AppendEnvironmentVariable(
-            'GZ_SIM_RESOURCE_PATH',
-            os.path.join(sim_dir, 'worlds'))
     gazebo_client = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(get_package_share_directory('ros_gz_sim'),
@@ -247,7 +240,7 @@ def generate_launch_description():
 
     gz_robot = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(sim_dir, 'launch', 'spawn_tb4.launch.py')),
+            os.path.join(sim_dir, 'launch', 'spawn_tb3.launch.py')),
         launch_arguments={'namespace': namespace,
                           'use_simulator': use_simulator,
                           'use_sim_time': use_sim_time,
@@ -283,7 +276,6 @@ def generate_launch_description():
     ld.add_action(declare_robot_sdf_cmd)
     ld.add_action(declare_use_respawn_cmd)
 
-    ld.add_action(set_env_vars_resources)
     ld.add_action(world_sdf_xacro)
     ld.add_action(remove_temp_sdf_file)
     ld.add_action(gz_robot)
