@@ -156,8 +156,9 @@ public:
     auto & vx = control_sequence.vx;
     auto & wz = control_sequence.wz;
 
-    auto view = xt::masked_view(wz, xt::fabs(vx) / xt::fabs(wz) < min_turning_r_);
-    view = xt::sign(wz) * vx / min_turning_r_;
+    wz.noalias() = (vx.abs() / wz.abs() < min_turning_r_).select(wz, wz.sign() * vx / min_turning_r_);
+    //auto view = xt::masked_view(wz, vx.abs() / wz.abs() < min_turning_r_);
+    //view = xt::sign(wz) * vx / min_turning_r_;
   }
 
   /**

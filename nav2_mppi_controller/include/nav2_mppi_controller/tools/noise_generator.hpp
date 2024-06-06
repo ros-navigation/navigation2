@@ -93,9 +93,9 @@ protected:
    */
   void generateNoisedControls();
 
-  Eigen::MatrixXf noises_vx_;
-  Eigen::MatrixXf noises_vy_;
-  Eigen::MatrixXf noises_wz_;
+  Eigen::ArrayXXf noises_vx_;
+  Eigen::ArrayXXf noises_vy_;
+  Eigen::ArrayXXf noises_wz_;
 
   mppi::models::OptimizerSettings settings_;
   bool is_holonomic_;

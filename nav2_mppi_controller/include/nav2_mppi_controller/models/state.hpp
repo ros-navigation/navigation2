@@ -30,13 +30,13 @@ namespace mppi::models
  */
 struct State
 {
-  Eigen::MatrixXf vx;
-  Eigen::MatrixXf vy;
-  Eigen::MatrixXf wz;
+  Eigen::ArrayXXf vx;
+  Eigen::ArrayXXf vy;
+  Eigen::ArrayXXf wz;
 
-  Eigen::MatrixXf cvx;
-  Eigen::MatrixXf cvy;
-  Eigen::MatrixXf cwz;
+  Eigen::ArrayXXf cvx;
+  Eigen::ArrayXXf cvy;
+  Eigen::ArrayXXf cwz;
 
   geometry_msgs::msg::PoseStamped pose;
   geometry_msgs::msg::Twist speed;
@@ -46,13 +46,13 @@ struct State
     */
   void reset(unsigned int batch_size, unsigned int time_steps)
   {
-    vx = Eigen::MatrixXf::Zero(batch_size, time_steps);
-    vy = Eigen::MatrixXf::Zero(batch_size, time_steps);
-    wz = Eigen::MatrixXf::Zero(batch_size, time_steps);
+    vx = Eigen::ArrayXXf::Zero(batch_size, time_steps);
+    vy = Eigen::ArrayXXf::Zero(batch_size, time_steps);
+    wz = Eigen::ArrayXXf::Zero(batch_size, time_steps);
 
-    cvx = Eigen::MatrixXf::Zero(batch_size, time_steps);
-    cvy = Eigen::MatrixXf::Zero(batch_size, time_steps);
-    cwz = Eigen::MatrixXf::Zero(batch_size, time_steps);
+    cvx = Eigen::ArrayXXf::Zero(batch_size, time_steps);
+    cvy = Eigen::ArrayXXf::Zero(batch_size, time_steps);
+    cwz = Eigen::ArrayXXf::Zero(batch_size, time_steps);
   }
 };
 }  // namespace mppi::models

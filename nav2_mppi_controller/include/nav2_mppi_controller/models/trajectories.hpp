@@ -26,18 +26,18 @@ namespace mppi::models
  */
 struct Trajectories
 {
-  Eigen::MatrixXf x;
-  Eigen::MatrixXf y;
-  Eigen::MatrixXf yaws;
+  Eigen::ArrayXXf x;
+  Eigen::ArrayXXf y;
+  Eigen::ArrayXXf yaws;
 
   /**
     * @brief Reset state data
     */
   void reset(unsigned int batch_size, unsigned int time_steps)
   {
-    x = Eigen::MatrixXf::Zero(batch_size, time_steps);
-    y = Eigen::MatrixXf::Zero(batch_size, time_steps);
-    yaws = Eigen::MatrixXf::Zero(batch_size, time_steps);
+    x = Eigen::ArrayXXf::Zero(batch_size, time_steps);
+    y = Eigen::ArrayXXf::Zero(batch_size, time_steps);
+    yaws = Eigen::ArrayXXf::Zero(batch_size, time_steps);
   }
 };
 

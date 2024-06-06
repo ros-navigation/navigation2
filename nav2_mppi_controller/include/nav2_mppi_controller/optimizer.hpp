@@ -102,7 +102,7 @@ public:
    * @brief Get the optimal trajectory for a cycle for visualization
    * @return Optimal trajectory
    */
-  Eigen::MatrixXf getOptimizedTrajectory();
+  Eigen::ArrayXXf getOptimizedTrajectory();
 
   /**
    * @brief Set the maximum speed based on the speed limits callback
@@ -196,8 +196,8 @@ protected:
    * @param state fill state
    */
   void integrateStateVelocities(
-    Eigen::MatrixXf & trajectories,
-    const Eigen::MatrixXf & state) const;
+    Eigen::ArrayXXf & trajectories,
+    const Eigen::ArrayXXf & state) const;
 
   /**
    * @brief Update control sequence with state controls weighted by costs
@@ -250,7 +250,7 @@ protected:
   std::array<mppi::models::Control, 4> control_history_;
   models::Trajectories generated_trajectories_;
   models::Path path_;
-  Eigen::VectorXf costs_;
+  Eigen::ArrayXf costs_;
 
   CriticData critics_data_ =
   {state_, generated_trajectories_, path_, costs_, settings_.model_dt, false, nullptr, nullptr,

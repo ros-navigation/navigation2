@@ -26,18 +26,18 @@ namespace mppi::models
  */
 struct Path
 {
-  Eigen::VectorXf x;
-  Eigen::VectorXf y;
-  Eigen::VectorXf yaws;
+  Eigen::ArrayXf x;
+  Eigen::ArrayXf y;
+  Eigen::ArrayXf yaws;
 
   /**
     * @brief Reset path data
     */
   void reset(unsigned int size)
   {
-    x = Eigen::VectorXf::Zero(size);
-    y = Eigen::VectorXf::Zero(size);
-    yaws = Eigen::VectorXf::Zero(size);
+    x = Eigen::ArrayXf::Zero(size);
+    y = Eigen::ArrayXf::Zero(size);
+    yaws = Eigen::ArrayXf::Zero(size);
   }
 };
 

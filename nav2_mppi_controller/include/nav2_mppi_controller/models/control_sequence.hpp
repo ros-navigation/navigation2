@@ -35,15 +35,15 @@ struct Control
  */
 struct ControlSequence
 {
-  Eigen::VectorXf vx;
-  Eigen::VectorXf vy;
-  Eigen::VectorXf wz;
+  Eigen::ArrayXf vx;
+  Eigen::ArrayXf vy;
+  Eigen::ArrayXf wz;
 
   void reset(unsigned int time_steps)
   {
-    vx = Eigen::VectorXf::Zero(time_steps);
-    vy = Eigen::VectorXf::Zero(time_steps);
-    wz = Eigen::VectorXf::Zero(time_steps);
+    vx = Eigen::ArrayXf::Zero(time_steps);
+    vy = Eigen::ArrayXf::Zero(time_steps);
+    wz = Eigen::ArrayXf::Zero(time_steps);
   }
 };
 
