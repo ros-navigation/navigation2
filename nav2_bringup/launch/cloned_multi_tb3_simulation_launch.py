@@ -15,8 +15,8 @@
 
 
 import os
-import tempfile
 from pathlib import Path
+import tempfile
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
@@ -54,7 +54,6 @@ def generate_launch_description():
 
     # Simulation settings
     world = LaunchConfiguration('world')
-    simulator = LaunchConfiguration('simulator')
 
     # On this example all robots are launched with the same settings
     map_yaml_file = LaunchConfiguration('map')
@@ -70,12 +69,6 @@ def generate_launch_description():
         'world',
         default_value=os.path.join(sim_dir, 'worlds', 'tb3_sandbox.sdf.xacro'),
         description='Full path to world file to load',
-    )
-
-    declare_simulator_cmd = DeclareLaunchArgument(
-        'simulator',
-        default_value='gazebo',
-        description='The simulator to use (gazebo or gzserver)',
     )
 
     declare_map_yaml_cmd = DeclareLaunchArgument(
@@ -197,7 +190,6 @@ def generate_launch_description():
     ld.add_action(set_env_vars_resources2)
 
     # Declare the launch options
-    ld.add_action(declare_simulator_cmd)
     ld.add_action(declare_world_cmd)
     ld.add_action(declare_map_yaml_cmd)
     ld.add_action(declare_params_file_cmd)
