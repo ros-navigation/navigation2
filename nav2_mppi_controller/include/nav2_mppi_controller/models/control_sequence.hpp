@@ -15,12 +15,7 @@
 #ifndef NAV2_MPPI_CONTROLLER__MODELS__CONTROL_SEQUENCE_HPP_
 #define NAV2_MPPI_CONTROLLER__MODELS__CONTROL_SEQUENCE_HPP_
 
-// xtensor creates warnings that needs to be ignored as we are building with -Werror
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Warray-bounds"
-#pragma GCC diagnostic ignored "-Wstringop-overflow"
-#include <xtensor/xtensor.hpp>
-#pragma GCC diagnostic pop
+#include <Eigen/Dense>
 
 namespace mppi::models
 {
@@ -40,15 +35,15 @@ struct Control
  */
 struct ControlSequence
 {
-  xt::xtensor<float, 1> vx;
-  xt::xtensor<float, 1> vy;
-  xt::xtensor<float, 1> wz;
+  Eigen::VectorXf vx;
+  Eigen::VectorXf vy;
+  Eigen::VectorXf wz;
 
   void reset(unsigned int time_steps)
   {
-    vx = xt::zeros<float>({time_steps});
-    vy = xt::zeros<float>({time_steps});
-    wz = xt::zeros<float>({time_steps});
+    vx = Eigen::VectorXf::Zero(time_steps);
+    vy = Eigen::VectorXf::Zero(time_steps);
+    wz = Eigen::VectorXf::Zero(time_steps);
   }
 };
 

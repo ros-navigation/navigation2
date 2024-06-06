@@ -18,13 +18,7 @@
 #include <string>
 #include <memory>
 
-// xtensor creates warnings that needs to be ignored as we are building with -Werror
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Warray-bounds"
-#pragma GCC diagnostic ignored "-Wstringop-overflow"
-#include <xtensor/xtensor.hpp>
-#include <xtensor/xview.hpp>
-#pragma GCC diagnostic pop
+#include <Eigen/Dense>
 
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 
@@ -56,7 +50,7 @@ namespace mppi
  */
 class Optimizer
 {
-public:
+public:  
   /**
     * @brief Constructor for mppi::Optimizer
     */
@@ -108,7 +102,7 @@ public:
    * @brief Get the optimal trajectory for a cycle for visualization
    * @return Optimal trajectory
    */
-  xt::xtensor<float, 2> getOptimizedTrajectory();
+  Eigen::MatrixXf getOptimizedTrajectory();
 
   /**
    * @brief Set the maximum speed based on the speed limits callback
@@ -202,8 +196,8 @@ protected:
    * @param state fill state
    */
   void integrateStateVelocities(
-    xt::xtensor<float, 2> & trajectories,
-    const xt::xtensor<float, 2> & state) const;
+    Eigen::MatrixXf & trajectories,
+    const Eigen::MatrixXf & state) const;
 
   /**
    * @brief Update control sequence with state controls weighted by costs
@@ -256,7 +250,7 @@ protected:
   std::array<mppi::models::Control, 4> control_history_;
   models::Trajectories generated_trajectories_;
   models::Path path_;
-  xt::xtensor<float, 1> costs_;
+  Eigen::VectorXf costs_;
 
   CriticData critics_data_ =
   {state_, generated_trajectories_, path_, costs_, settings_.model_dt, false, nullptr, nullptr,

@@ -22,15 +22,7 @@
 #include "nav2_mppi_controller/models/state.hpp"
 #include "nav2_mppi_controller/models/constraints.hpp"
 
-// xtensor creates warnings that needs to be ignored as we are building with -Werror
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Warray-bounds"
-#pragma GCC diagnostic ignored "-Wstringop-overflow"
-#include <xtensor/xmath.hpp>
-#include <xtensor/xmasked_view.hpp>
-#include <xtensor/xview.hpp>
-#include <xtensor/xnoalias.hpp>
-#pragma GCC diagnostic pop
+#include <Eigen/Dense>
 
 #include "nav2_mppi_controller/tools/parameters_handler.hpp"
 
@@ -87,11 +79,11 @@ public:
     float min_delta_vx = model_dt_ * control_constraints_.ax_min;
     float max_delta_vy = model_dt_ * control_constraints_.ay_max;
     float max_delta_wz = model_dt_ * control_constraints_.az_max;
-    for (unsigned int i = 0; i != state.vx.shape(0); i++) {
+    for (unsigned int i = 0; i != state.vx.rows(); i++) {
       float vx_last = state.vx(i, 0);
       float vy_last = state.vy(i, 0);
       float wz_last = state.wz(i, 0);
-      for (unsigned int j = 1; j != state.vx.shape(1); j++) {
+      for (unsigned int j = 1; j != state.vx.cols(); j++) {
         float & cvx_curr = state.cvx(i, j - 1);
         cvx_curr = std::clamp(cvx_curr, vx_last + min_delta_vx, vx_last + max_delta_vx);
         state.vx(i, j) = cvx_curr;

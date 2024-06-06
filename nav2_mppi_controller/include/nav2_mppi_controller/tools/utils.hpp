@@ -23,16 +23,7 @@
 #include <memory>
 #include <vector>
 
-// xtensor creates warnings that needs to be ignored as we are building with -Werror
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Warray-bounds"
-#pragma GCC diagnostic ignored "-Wstringop-overflow"
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
-#include <xtensor/xarray.hpp>
-#include <xtensor/xnorm.hpp>
-#include <xtensor/xmath.hpp>
-#include <xtensor/xview.hpp>
-#pragma GCC diagnostic pop
+#include <Eigen/Dense>
 
 #include "angles/angles.h"
 
@@ -207,12 +198,12 @@ inline models::Path toTensor(const nav_msgs::msg::Path & path)
  * @param path Path to retreive goal pose from
  * @return bool If robot is within goal checker tolerances to the goal
  */
-inline bool withinPositionGoalTolerance(
+/*inline bool withinPositionGoalTolerance(
   nav2_core::GoalChecker * goal_checker,
   const geometry_msgs::msg::Pose & robot,
   const models::Path & path)
 {
-  const auto goal_idx = path.x.shape(0) - 1;
+  const auto goal_idx = path.x.size() - 1;
   const auto goal_x = path.x(goal_idx);
   const auto goal_y = path.y(goal_idx);
 
@@ -234,7 +225,7 @@ inline bool withinPositionGoalTolerance(
   }
 
   return false;
-}
+}*/
 
 /**
  * @brief Check if the robot pose is within tolerance to the goal
@@ -243,12 +234,12 @@ inline bool withinPositionGoalTolerance(
  * @param path Path to retreive goal pose from
  * @return bool If robot is within tolerance to the goal
  */
-inline bool withinPositionGoalTolerance(
+/*inline bool withinPositionGoalTolerance(
   float pose_tolerance,
   const geometry_msgs::msg::Pose & robot,
   const models::Path & path)
 {
-  const auto goal_idx = path.x.shape(0) - 1;
+  const auto goal_idx = path.x.size() - 1;
   const float goal_x = path.x(goal_idx);
   const float goal_y = path.y(goal_idx);
 
@@ -264,7 +255,7 @@ inline bool withinPositionGoalTolerance(
   }
 
   return false;
-}
+}*/
 
 /**
   * @brief normalize
@@ -273,12 +264,12 @@ inline bool withinPositionGoalTolerance(
   * @param angles Angles to normalize
   * @return normalized angles
   */
-template<typename T>
+/*template<typename T>
 auto normalize_angles(const T & angles)
 {
   auto theta = xt::eval(xt::fmod(angles + M_PIF, 2.0f * M_PIF));
   return xt::eval(xt::where(theta < 0.0f, theta + M_PIF, theta - M_PIF));
-}
+}*/
 
 /**
   * @brief shortest_angular_distance
@@ -293,13 +284,13 @@ auto normalize_angles(const T & angles)
   * @param to End angle
   * @return Shortest distance between angles
   */
-template<typename F, typename T>
+/*template<typename F, typename T>
 auto shortest_angular_distance(
   const F & from,
   const T & to)
 {
   return normalize_angles(to - from);
-}
+}*/
 
 /**
  * @brief Evaluate furthest point idx of data.path which is
@@ -307,7 +298,7 @@ auto shortest_angular_distance(
  * @param data Data to use
  * @return Idx of furthest path point reached by a set of trajectories
  */
-inline size_t findPathFurthestReachedPoint(const CriticData & data)
+/*inline size_t findPathFurthestReachedPoint(const CriticData & data)
 {
   const auto traj_x = xt::view(data.trajectories.x, xt::all(), -1, xt::newaxis());
   const auto traj_y = xt::view(data.trajectories.y, xt::all(), -1, xt::newaxis());
@@ -333,24 +324,24 @@ inline size_t findPathFurthestReachedPoint(const CriticData & data)
     max_id_by_trajectories = std::max(max_id_by_trajectories, min_id_by_path);
   }
   return max_id_by_trajectories;
-}
+}*/
 
 /**
  * @brief evaluate path furthest point if it is not set
  * @param data Data to use
  */
-inline void setPathFurthestPointIfNotSet(CriticData & data)
+/*inline void setPathFurthestPointIfNotSet(CriticData & data)
 {
   if (!data.furthest_reached_path_point) {
     data.furthest_reached_path_point = findPathFurthestReachedPoint(data);
   }
-}
+}*/
 
 /**
  * @brief evaluate path costs
  * @param data Data to use
  */
-inline void findPathCosts(
+/*inline void findPathCosts(
   CriticData & data,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
@@ -379,20 +370,20 @@ inline void findPathCosts(
 
     (*data.path_pts_valid)[idx] = true;
   }
-}
+}*/
 
 /**
  * @brief evaluate path costs if it is not set
  * @param data Data to use
  */
-inline void setPathCostsIfNotSet(
+/*inline void setPathCostsIfNotSet(
   CriticData & data,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
   if (!data.path_pts_valid) {
     findPathCosts(data, costmap_ros);
   }
-}
+}*/
 
 /**
  * @brief evaluate angle from pose (have angle) to point (no angle)
@@ -402,7 +393,7 @@ inline void setPathCostsIfNotSet(
  * @param forward_preference If reversing direction is valid
  * @return Angle between two points
  */
-inline float posePointAngle(
+/*inline float posePointAngle(
   const geometry_msgs::msg::Pose & pose, double point_x, double point_y, bool forward_preference)
 {
   float pose_x = pose.position.x;
@@ -419,7 +410,7 @@ inline float posePointAngle(
   }
 
   return fabs(angles::shortest_angular_distance(yaw, pose_yaw));
-}
+}*/
 
 /**
  * @brief evaluate angle from pose (have angle) to point (no angle)
@@ -429,7 +420,7 @@ inline float posePointAngle(
  * @param point_yaw Yaw of the point to consider along Z axis
  * @return Angle between two points
  */
-inline float posePointAngle(
+/*inline float posePointAngle(
   const geometry_msgs::msg::Pose & pose,
   double point_x, double point_y, double point_yaw)
 {
@@ -444,7 +435,7 @@ inline float posePointAngle(
   }
 
   return fabs(angles::shortest_angular_distance(yaw, pose_yaw));
-}
+}*/
 
 /**
  * @brief Apply Savisky-Golay filter to optimal trajectory

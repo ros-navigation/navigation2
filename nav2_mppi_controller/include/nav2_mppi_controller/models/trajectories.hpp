@@ -15,13 +15,7 @@
 #ifndef NAV2_MPPI_CONTROLLER__MODELS__TRAJECTORIES_HPP_
 #define NAV2_MPPI_CONTROLLER__MODELS__TRAJECTORIES_HPP_
 
-// xtensor creates warnings that needs to be ignored as we are building with -Werror
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Warray-bounds"
-#pragma GCC diagnostic ignored "-Wstringop-overflow"
-#include <xtensor/xtensor.hpp>
-#include <xtensor/xview.hpp>
-#pragma GCC diagnostic pop
+#include <Eigen/Dense>
 
 namespace mppi::models
 {
@@ -32,18 +26,18 @@ namespace mppi::models
  */
 struct Trajectories
 {
-  xt::xtensor<float, 2> x;
-  xt::xtensor<float, 2> y;
-  xt::xtensor<float, 2> yaws;
+  Eigen::MatrixXf x;
+  Eigen::MatrixXf y;
+  Eigen::MatrixXf yaws;
 
   /**
     * @brief Reset state data
     */
   void reset(unsigned int batch_size, unsigned int time_steps)
   {
-    x = xt::zeros<float>({batch_size, time_steps});
-    y = xt::zeros<float>({batch_size, time_steps});
-    yaws = xt::zeros<float>({batch_size, time_steps});
+    x = Eigen::MatrixXf::Zero(batch_size, time_steps);
+    y = Eigen::MatrixXf::Zero(batch_size, time_steps);
+    yaws = Eigen::MatrixXf::Zero(batch_size, time_steps);
   }
 };
 
