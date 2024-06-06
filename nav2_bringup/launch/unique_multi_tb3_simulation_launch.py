@@ -21,18 +21,24 @@ The robots co-exist on a shared environment and are controlled by independent na
 """
 
 import os
+import tempfile
+from pathlib import Path
 
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
 from launch.actions import (
+    AppendEnvironmentVariable,
     DeclareLaunchArgument,
     ExecuteProcess,
     GroupAction,
     IncludeLaunchDescription,
     LogInfo,
+    OpaqueFunction,
+    RegisterEventHandler,
 )
 from launch.conditions import IfCondition
+from launch.event_handlers import OnShutdown
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, TextSubstitution
 
@@ -41,6 +47,7 @@ def generate_launch_description():
     # Get the launch directory
     bringup_dir = get_package_share_directory('nav2_bringup')
     launch_dir = os.path.join(bringup_dir, 'launch')
+    sim_dir = get_package_share_directory('nav2_minimal_tb3_sim')
 
     # Names and poses of the robots
     robots = [
@@ -80,7 +87,7 @@ def generate_launch_description():
     # Declare the launch arguments
     declare_world_cmd = DeclareLaunchArgument(
         'world',
-        default_value=os.path.join(bringup_dir, 'worlds', 'world_only.model'),
+        default_value=os.path.join(sim_dir, 'worlds', 'tb3_sandbox.sdf.xacro'),
         description='Full path to world file to load',
     )
 
@@ -135,18 +142,19 @@ def generate_launch_description():
     )
 
     # Start Gazebo with plugin providing the robot spawning service
-    start_gazebo_cmd = ExecuteProcess(
-        cmd=[
-            simulator,
-            '--verbose',
-            '-s',
-            'libgazebo_ros_init.so',
-            '-s',
-            'libgazebo_ros_factory.so',
-            world,
-        ],
-        output='screen',
-    )
+    world_sdf = tempfile.mktemp(prefix='nav2_', suffix='.sdf')
+    world_sdf_xacro = ExecuteProcess(
+        cmd=['xacro', '-o', world_sdf, ['headless:=', 'False'], world])
+    start_gazebo_cmd = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(get_package_share_directory('ros_gz_sim'), 'launch',
+                         'gz_sim.launch.py')),
+        launch_arguments={'gz_args': ['-r -s ', world_sdf]}.items())
+
+    remove_temp_sdf_file = RegisterEventHandler(event_handler=OnShutdown(
+        on_shutdown=[
+            OpaqueFunction(function=lambda _: os.remove(world_sdf))
+        ]))
 
     # Define commands for launching the navigation instances
     nav_instances_cmds = []
@@ -223,8 +231,16 @@ def generate_launch_description():
 
         nav_instances_cmds.append(group)
 
+    set_env_vars_resources = AppendEnvironmentVariable(
+        'GZ_SIM_RESOURCE_PATH', os.path.join(sim_dir, 'models'))
+    set_env_vars_resources2 = AppendEnvironmentVariable(
+            'GZ_SIM_RESOURCE_PATH',
+            str(Path(os.path.join(sim_dir)).parent.resolve()))
+
     # Create the launch description and populate
     ld = LaunchDescription()
+    ld.add_action(set_env_vars_resources)
+    ld.add_action(set_env_vars_resources2)
 
     # Declare the launch options
     ld.add_action(declare_simulator_cmd)
@@ -238,7 +254,9 @@ def generate_launch_description():
     ld.add_action(declare_use_robot_state_pub_cmd)
 
     # Add the actions to start gazebo, robots and simulations
+    ld.add_action(world_sdf_xacro)
     ld.add_action(start_gazebo_cmd)
+    ld.add_action(remove_temp_sdf_file)
 
     for simulation_instance_cmd in nav_instances_cmds:
         ld.add_action(simulation_instance_cmd)
