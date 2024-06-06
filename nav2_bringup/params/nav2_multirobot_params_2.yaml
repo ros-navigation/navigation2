@@ -98,8 +98,6 @@ controller_server:
       min_speed_xy: 0.0
       max_speed_xy: 0.26
       min_speed_theta: 0.0
-      # Add high threshold velocity for turtlebot 3 issue.
-      # https://github.com/ROBOTIS-GIT/turtlebot3_simulations/issues/75
       acc_lim_x: 2.5
       acc_lim_y: 0.0
       acc_lim_theta: 3.2
@@ -193,7 +191,7 @@ global_costmap:
 
 map_server:
   ros__parameters:
-    yaml_filename: "turtlebot3_world.yaml"
+    yaml_filename: "tb3_sandbox.yaml"
     save_map_timeout: 5.0
 
 planner_server:

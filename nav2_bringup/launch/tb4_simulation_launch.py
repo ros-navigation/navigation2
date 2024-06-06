@@ -1,4 +1,4 @@
-# Copyright (C) 2023 Open Source Robotics Foundation
+# Copyright (C) 2024 Open Navigation LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ from launch.actions import (
 from launch.conditions import IfCondition
 from launch.event_handlers import OnShutdown
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration, PythonExpression
+from launch.substitutions import Command, LaunchConfiguration, PythonExpression
 
 from launch_ros.actions import Node
 
@@ -40,8 +40,10 @@ def generate_launch_description():
     # Get the launch directory
     bringup_dir = get_package_share_directory('nav2_bringup')
     launch_dir = os.path.join(bringup_dir, 'launch')
-    # This checks that tb3 exists needed for the URDF. If not using TB3, its safe to remove.
-    _ = get_package_share_directory('turtlebot3_gazebo')
+    # This checks that tb4 exists needed for the URDF / simulation files.
+    # If not using TB4, its safe to remove.
+    sim_dir = get_package_share_directory('nav2_minimal_tb4_sim')
+    desc_dir = get_package_share_directory('nav2_minimal_tb4_description')
 
     # Create the launch configuration variables
     slam = LaunchConfiguration('slam')
@@ -62,22 +64,16 @@ def generate_launch_description():
     headless = LaunchConfiguration('headless')
     world = LaunchConfiguration('world')
     pose = {
-        'x': LaunchConfiguration('x_pose', default='-2.00'),
-        'y': LaunchConfiguration('y_pose', default='-0.50'),
+        'x': LaunchConfiguration('x_pose', default='-8.00'),  # Warehouse: 2.12
+        'y': LaunchConfiguration('y_pose', default='0.00'),  # Warehouse: -21.3
         'z': LaunchConfiguration('z_pose', default='0.01'),
         'R': LaunchConfiguration('roll', default='0.00'),
         'P': LaunchConfiguration('pitch', default='0.00'),
-        'Y': LaunchConfiguration('yaw', default='0.00'),
+        'Y': LaunchConfiguration('yaw', default='0.00'),  # Warehouse: 1.57
     }
     robot_name = LaunchConfiguration('robot_name')
     robot_sdf = LaunchConfiguration('robot_sdf')
 
-    # Map fully qualified names to relative ones so the node's namespace can be prepended.
-    # In case of the transforms (tf), currently, there doesn't seem to be a better alternative
-    # https://github.com/ros/geometry2/issues/32
-    # https://github.com/ros/robot_state_publisher/pull/30
-    # TODO(orduno) Substitute with `PushNodeRemapping`
-    #              https://github.com/ros2/launch_ros/issues/56
     remappings = [('/tf', 'tf'), ('/tf_static', 'tf_static')]
 
     # Declare the launch arguments
@@ -97,7 +93,7 @@ def generate_launch_description():
 
     declare_map_yaml_cmd = DeclareLaunchArgument(
         'map',
-        default_value=os.path.join(bringup_dir, 'maps', 'turtlebot3_world.yaml'),
+        default_value=os.path.join(bringup_dir, 'maps', 'depot.yaml'),  # Try warehouse.yaml!
         description='Full path to map file to load',
     )
 
@@ -159,27 +155,19 @@ def generate_launch_description():
 
     declare_world_cmd = DeclareLaunchArgument(
         'world',
-        # TODO(orduno) Switch back once ROS argument passing has been fixed upstream
-        #              https://github.com/ROBOTIS-GIT/turtlebot3_simulations/issues/91
-        # default_value=os.path.join(get_package_share_directory('turtlebot3_gazebo'),
-        # worlds/turtlebot3_worlds/waffle.model')
-        default_value=os.path.join(bringup_dir, 'worlds', 'gz_world_only.sdf.xacro'),
+        default_value=os.path.join(sim_dir, 'worlds', 'depot.sdf'),  # Try warehouse.sdf!
         description='Full path to world model file to load',
     )
 
     declare_robot_name_cmd = DeclareLaunchArgument(
-        'robot_name', default_value='turtlebot3_waffle', description='name of the robot'
+        'robot_name', default_value='nav2_turtlebot4', description='name of the robot'
     )
 
     declare_robot_sdf_cmd = DeclareLaunchArgument(
         'robot_sdf',
-        default_value=os.path.join(bringup_dir, 'worlds', 'gz_waffle.sdf'),
+        default_value=os.path.join(desc_dir, 'urdf', 'standard', 'turtlebot4.urdf.xacro'),
         description='Full path to robot sdf file to spawn the robot in gazebo',
     )
-
-    urdf = os.path.join(bringup_dir, 'urdf', 'turtlebot3_waffle.urdf')
-    with open(urdf, 'r') as infp:
-        robot_description = infp.read()
 
     start_robot_state_publisher_cmd = Node(
         condition=IfCondition(use_robot_state_pub),
@@ -189,7 +177,7 @@ def generate_launch_description():
         namespace=namespace,
         output='screen',
         parameters=[
-            {'use_sim_time': use_sim_time, 'robot_description': robot_description}
+            {'use_sim_time': use_sim_time, 'robot_description': Command(['xacro', ' ', robot_sdf])}
         ],
         remappings=remappings,
     )
@@ -200,6 +188,7 @@ def generate_launch_description():
         launch_arguments={
             'namespace': namespace,
             'use_namespace': use_namespace,
+            'use_sim_time': use_sim_time,
             'rviz_config': rviz_config_file,
         }.items(),
     )
@@ -240,8 +229,7 @@ def generate_launch_description():
 
     set_env_vars_resources = AppendEnvironmentVariable(
             'GZ_SIM_RESOURCE_PATH',
-            os.path.join(get_package_share_directory('turtlebot3_gazebo'),
-                         'models'))
+            os.path.join(sim_dir, 'worlds'))
     gazebo_client = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(get_package_share_directory('ros_gz_sim'),
@@ -255,7 +243,7 @@ def generate_launch_description():
 
     gz_robot = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(launch_dir, 'tb3_gz_robot_launch.py')),
+            os.path.join(sim_dir, 'launch', 'spawn_tb4.launch.py')),
         launch_arguments={'namespace': namespace,
                           'use_simulator': use_simulator,
                           'use_sim_time': use_sim_time,

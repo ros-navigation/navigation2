@@ -1,4 +1,5 @@
 # Copyright (c) 2023 LG Electronics.
+# Copyright (c) 2024 Open Navigation LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,17 +15,23 @@
 
 
 import os
+from pathlib import Path
+import tempfile
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import (
+    AppendEnvironmentVariable,
     DeclareLaunchArgument,
     ExecuteProcess,
     GroupAction,
     IncludeLaunchDescription,
     LogInfo,
+    OpaqueFunction,
+    RegisterEventHandler,
 )
 from launch.conditions import IfCondition
+from launch.event_handlers import OnShutdown
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, TextSubstitution
 from nav2_common.launch import ParseMultiRobotPose
@@ -43,10 +50,10 @@ def generate_launch_description():
     # Get the launch directory
     bringup_dir = get_package_share_directory('nav2_bringup')
     launch_dir = os.path.join(bringup_dir, 'launch')
+    sim_dir = get_package_share_directory('nav2_minimal_tb3_sim')
 
     # Simulation settings
     world = LaunchConfiguration('world')
-    simulator = LaunchConfiguration('simulator')
 
     # On this example all robots are launched with the same settings
     map_yaml_file = LaunchConfiguration('map')
@@ -60,19 +67,13 @@ def generate_launch_description():
     # Declare the launch arguments
     declare_world_cmd = DeclareLaunchArgument(
         'world',
-        default_value=os.path.join(bringup_dir, 'worlds', 'world_only.model'),
+        default_value=os.path.join(sim_dir, 'worlds', 'tb3_sandbox.sdf.xacro'),
         description='Full path to world file to load',
-    )
-
-    declare_simulator_cmd = DeclareLaunchArgument(
-        'simulator',
-        default_value='gazebo',
-        description='The simulator to use (gazebo or gzserver)',
     )
 
     declare_map_yaml_cmd = DeclareLaunchArgument(
         'map',
-        default_value=os.path.join(bringup_dir, 'maps', 'turtlebot3_world.yaml'),
+        default_value=os.path.join(bringup_dir, 'maps', 'tb3_sandbox.yaml'),
         description='Full path to map file to load',
     )
 
@@ -107,18 +108,19 @@ def generate_launch_description():
     )
 
     # Start Gazebo with plugin providing the robot spawning service
-    start_gazebo_cmd = ExecuteProcess(
-        cmd=[
-            simulator,
-            '--verbose',
-            '-s',
-            'libgazebo_ros_init.so',
-            '-s',
-            'libgazebo_ros_factory.so',
-            world,
-        ],
-        output='screen',
-    )
+    world_sdf = tempfile.mktemp(prefix='nav2_', suffix='.sdf')
+    world_sdf_xacro = ExecuteProcess(
+        cmd=['xacro', '-o', world_sdf, ['headless:=', 'False'], world])
+    start_gazebo_cmd = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(get_package_share_directory('ros_gz_sim'), 'launch',
+                         'gz_sim.launch.py')),
+        launch_arguments={'gz_args': ['-r -s ', world_sdf]}.items())
+
+    remove_temp_sdf_file = RegisterEventHandler(event_handler=OnShutdown(
+        on_shutdown=[
+            OpaqueFunction(function=lambda _: os.remove(world_sdf))
+        ]))
 
     robots_list = ParseMultiRobotPose('robots').value()
 
@@ -176,11 +178,18 @@ def generate_launch_description():
 
         bringup_cmd_group.append(group)
 
+    set_env_vars_resources = AppendEnvironmentVariable(
+        'GZ_SIM_RESOURCE_PATH', os.path.join(sim_dir, 'models'))
+    set_env_vars_resources2 = AppendEnvironmentVariable(
+            'GZ_SIM_RESOURCE_PATH',
+            str(Path(os.path.join(sim_dir)).parent.resolve()))
+
     # Create the launch description and populate
     ld = LaunchDescription()
+    ld.add_action(set_env_vars_resources)
+    ld.add_action(set_env_vars_resources2)
 
     # Declare the launch options
-    ld.add_action(declare_simulator_cmd)
     ld.add_action(declare_world_cmd)
     ld.add_action(declare_map_yaml_cmd)
     ld.add_action(declare_params_file_cmd)
@@ -190,7 +199,9 @@ def generate_launch_description():
     ld.add_action(declare_use_robot_state_pub_cmd)
 
     # Add the actions to start gazebo, robots and simulations
+    ld.add_action(world_sdf_xacro)
     ld.add_action(start_gazebo_cmd)
+    ld.add_action(remove_temp_sdf_file)
 
     ld.add_action(LogInfo(msg=['number_of_robots=', str(len(robots_list))]))
 
