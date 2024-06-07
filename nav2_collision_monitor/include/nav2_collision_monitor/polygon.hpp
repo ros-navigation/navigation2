@@ -18,6 +18,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/polygon_stamped.hpp"
@@ -152,15 +153,27 @@ public:
   virtual int getPointsInside(const std::vector<Point> & points) const;
 
   /**
+   * @brief Gets number of points inside given polygon
+   * @param sources_collision_points_map Map containing source name as key,
+   * and input array of source's points to be checked as value
+   * @return Number of points inside polygon,
+   * for sources in map that are associated with current polygon.
+   * If there are no points, returns zero value.
+   */
+  virtual int getPointsInside(
+    const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map) const;
+
+  /**
    * @brief Obtains estimated (simulated) time before a collision.
    * Applicable for APPROACH model.
-   * @param collision_points Array of 2D obstacle points
+   * @param sources_collision_points_map Map containing source name as key,
+   * and input array of source's 2D obstacle points as value
    * @param velocity Simulated robot velocity
    * @return Estimated time before a collision. If there is no collision,
    * return value will be negative.
    */
   double getCollisionTime(
-    const std::vector<Point> & collision_points,
+    const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map,
     const Velocity & velocity) const;
 
   /**
