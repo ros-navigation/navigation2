@@ -4,4 +4,7 @@
 # First-order allow exception for select directories
 !/cache
 !/nav*
-!/tools
+!/.docker
+
+# Second-order deny exception for Dockerfile
+/.docker/Dockerfile

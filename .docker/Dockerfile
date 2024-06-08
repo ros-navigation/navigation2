@@ -82,7 +82,7 @@ RUN dep_types=(\
 FROM baser as runner
 
 # install packages for field work
-COPY tools/runner_apt_debs.txt /tmp/runner_apt_debs.txt
+COPY .docker/runner_apt_debs.txt /tmp/runner_apt_debs.txt
 RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
     cut -d# -f1 < /tmp/runner_apt_debs.txt | envsubst \
       | xargs apt-get install -y --no-install-recommends
@@ -134,18 +134,18 @@ RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
     < /tmp/rosdep_build_debs.txt xargs apt-get install -y --no-install-recommends
 
 # install packages for build work
-COPY tools/tooler_apt_deps.txt /tmp/tooler_apt_deps.txt
+COPY .docker/tooler_apt_deps.txt /tmp/tooler_apt_deps.txt
 RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
   cut -d# -f1 < /tmp/tooler_apt_deps.txt | envsubst \
     | xargs apt-get install -y --no-install-recommends
 
 # setup default ccache configuration
-COPY tools/.ccache/ccache.conf /opt/.ccache/
+COPY .docker/.ccache/ccache.conf /opt/.ccache/
 ENV CCACHE_CONFIGPATH="/opt/.ccache/ccache.conf"
 ENV CCACHE_DIR="$OVERLAY_WS/.ccache"
 
 # setup default colcon configuration
-COPY tools/.colcon/defaults.yaml $COLCON_HOME/
+COPY .docker/.colcon/defaults.yaml $COLCON_HOME/
 ARG OVERLAY_MIXINS="release ccache lld"
 ENV OVERLAY_MIXINS=${OVERLAY_MIXINS}
 

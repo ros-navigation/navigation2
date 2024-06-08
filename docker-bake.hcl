@@ -21,6 +21,7 @@ target "baser" {
   cache-from = [
     // "type=registry,ref=${registry}/${repo}:main-tooler.cache",
   ]
+  dockerfile = ".docker/Dockerfile"
 }
 
 target "cacher" {
