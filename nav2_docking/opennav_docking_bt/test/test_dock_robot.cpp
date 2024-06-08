@@ -22,7 +22,7 @@
 #include "behaviortree_cpp/bt_factory.h"
 
 #include "nav2_behavior_tree/utils/test_action_server.hpp"
-#include "nav2_msgs/dock_robot.hpp"
+#include "opennav_docking_bt/dock_robot.hpp"
 
 class DockRobotActionServer
   : public TestActionServer<nav2_msgs::action::DockRobot>
