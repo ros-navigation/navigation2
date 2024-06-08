@@ -21,7 +21,6 @@ find_package(tf2_ros REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
 find_package(yaml-cpp REQUIRED)
-find_package(opennav_docking_msgs REQUIRED)
 find_package(opennav_docking_core REQUIRED)
 
 # potentially replace with nav2_common, nav2_package()
