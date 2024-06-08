@@ -54,6 +54,12 @@
             "source": "overlay-${devcontainerId}",
             "target": "/opt/nav2_ws",
             "type": "volume"
+        },
+        {
+            // Mount home dotfiles
+            "source": "nav2-home",
+            "target": "/home/ubuntu",
+            "type": "volume"
         }
     ],
     "features": {
