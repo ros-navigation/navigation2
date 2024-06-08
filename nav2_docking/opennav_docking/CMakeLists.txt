@@ -130,5 +130,5 @@ endif()
 
 ament_export_include_directories(include)
 ament_export_libraries(${library_name})
-ament_export_dependencies(${dependencies})
+ament_export_dependencies(${dependencies} yaml-cpp)
 ament_package()
