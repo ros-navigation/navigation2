@@ -54,7 +54,6 @@ set(dependencies
   tf2_geometry_msgs
   pluginlib
   yaml_cpp_vendor
-  opennav_docking_msgs
   opennav_docking_core
 )
 

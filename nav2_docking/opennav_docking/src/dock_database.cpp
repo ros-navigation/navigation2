@@ -42,7 +42,7 @@ bool DockDatabase::initialize(
     return true;
   }
 
-  reload_db_service_ = node->create_service<opennav_docking_msgs::srv::ReloadDatabase>(
+  reload_db_service_ = node->create_service<nav2_msgs::srv::ReloadDockDatabase>(
     "~/reload_database",
     std::bind(
       &DockDatabase::reloadDbCb, this,
@@ -68,8 +68,8 @@ void DockDatabase::deactivate()
 }
 
 void DockDatabase::reloadDbCb(
-  const std::shared_ptr<opennav_docking_msgs::srv::ReloadDatabase::Request> request,
-  std::shared_ptr<opennav_docking_msgs::srv::ReloadDatabase::Response> response)
+  const std::shared_ptr<nav2_msgs::srv::ReloadDockDatabase::Request> request,
+  std::shared_ptr<nav2_msgs::srv::ReloadDockDatabase::Response> response)
 {
   DockMap dock_instances;
   if (utils::parseDockFile(request->filepath, node_.lock(), dock_instances)) {

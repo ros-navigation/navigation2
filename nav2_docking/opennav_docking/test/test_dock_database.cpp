@@ -109,9 +109,9 @@ TEST(DatabaseTests, reloadDbService)
 
   // Call service with a filepath
   auto client =
-    node->create_client<opennav_docking_msgs::srv::ReloadDatabase>("test/reload_database");
+    node->create_client<nav2_msgs::srv::ReloadDockDatabase>("test/reload_database");
 
-  auto request = std::make_shared<opennav_docking_msgs::srv::ReloadDatabase::Request>();
+  auto request = std::make_shared<nav2_msgs::srv::ReloadDockDatabase::Request>();
   request->filepath = ament_index_cpp::get_package_share_directory("opennav_docking") +
     "/test_dock_file.yaml";
   EXPECT_TRUE(client->wait_for_service(1s));
@@ -122,7 +122,7 @@ TEST(DatabaseTests, reloadDbService)
   EXPECT_TRUE(result.get()->success);
 
   // Try again with a bogus file
-  auto request2 = std::make_shared<opennav_docking_msgs::srv::ReloadDatabase::Request>();
+  auto request2 = std::make_shared<nav2_msgs::srv::ReloadDockDatabase::Request>();
   request2->filepath = ament_index_cpp::get_package_share_directory("opennav_docking") +
     "/file_does_not_exist.yaml";
   EXPECT_TRUE(client->wait_for_service(1s));

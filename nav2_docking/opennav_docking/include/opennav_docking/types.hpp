@@ -18,13 +18,13 @@
 #include <unordered_map>
 #include <string>
 
-#include "opennav_docking_msgs/action/dock_robot.hpp"
-#include "opennav_docking_msgs/action/undock_robot.hpp"
+#include "nav2_msgs/action/dock_robot.hpp"
+#include "nav2_msgs/action/undock_robot.hpp"
 #include "opennav_docking_core/charging_dock.hpp"
 #include "opennav_docking_core/docking_exceptions.hpp"
 
-typedef opennav_docking_msgs::action::DockRobot DockRobot;
-typedef opennav_docking_msgs::action::UndockRobot UndockRobot;
+typedef nav2_msgs::action::DockRobot DockRobot;
+typedef nav2_msgs::action::UndockRobot UndockRobot;
 
 /**
 * @struct A dock instance struct for a database

@@ -22,10 +22,10 @@
 #include "behaviortree_cpp/bt_factory.h"
 
 #include "nav2_behavior_tree/utils/test_action_server.hpp"
-#include "opennav_docking_bt/dock_robot.hpp"
+#include "nav2_msgs/dock_robot.hpp"
 
 class DockRobotActionServer
-  : public TestActionServer<opennav_docking_msgs::action::DockRobot>
+  : public TestActionServer<nav2_msgs::action::DockRobot>
 {
 public:
   DockRobotActionServer()
@@ -35,13 +35,13 @@ public:
 protected:
   void execute(
     const typename std::shared_ptr<
-      rclcpp_action::ServerGoalHandle<opennav_docking_msgs::action::DockRobot>>
+      rclcpp_action::ServerGoalHandle<nav2_msgs::action::DockRobot>>
     goal_handle)
   override
   {
     const auto goal = goal_handle->get_goal();
     auto result =
-      std::make_shared<opennav_docking_msgs::action::DockRobot::Result>();
+      std::make_shared<nav2_msgs::action::DockRobot::Result>();
     result->success = true;
     goal_handle->succeed(result);
   }

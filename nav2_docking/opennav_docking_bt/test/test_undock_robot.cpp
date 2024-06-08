@@ -25,7 +25,7 @@
 #include "opennav_docking_bt/undock_robot.hpp"
 
 class UndockRobotActionServer
-  : public TestActionServer<opennav_docking_msgs::action::UndockRobot>
+  : public TestActionServer<nav2_msgs::action::UndockRobot>
 {
 public:
   UndockRobotActionServer()
@@ -35,13 +35,13 @@ public:
 protected:
   void execute(
     const typename std::shared_ptr<
-      rclcpp_action::ServerGoalHandle<opennav_docking_msgs::action::UndockRobot>>
+      rclcpp_action::ServerGoalHandle<nav2_msgs::action::UndockRobot>>
     goal_handle)
   override
   {
     const auto goal = goal_handle->get_goal();
     auto result =
-      std::make_shared<opennav_docking_msgs::action::UndockRobot::Result>();
+      std::make_shared<nav2_msgs::action::UndockRobot::Result>();
     result->success = true;
     goal_handle->succeed(result);
   }

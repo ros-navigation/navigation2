@@ -5,15 +5,15 @@ find_package(ament_cmake REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
-find_package(opennav_docking_msgs REQUIRED)
 find_package(nav2_util REQUIRED)
+find_package(nav2_msgs REQUIRED)
 
 nav2_package()
 
 set(dependencies
   rclcpp
   rclcpp_lifecycle
-  opennav_docking_msgs
+  nav2_msgs
   nav2_util
 )
 

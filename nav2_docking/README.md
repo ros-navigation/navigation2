@@ -7,7 +7,6 @@ This work is sponsored by [NVIDIA](https://www.nvidia.com/en-us/) and created by
 This is split into 4 packages
 
 - `opennav_docking`: Contains the main docking framework
-- `opennav_docking_msgs`: Contains the action interfaces for docking and undocking
 - `opennav_docking_core`: Contains the dock plugin header file to be implemented for each dock type
 - `opennav_docking_bt`: Contains behavior tree nodes and example XML files using the docking task server
 - `nova_carter_docking`: Contains an implementation using the Docking system with the Nvidia [Nova Carter](https://robotics.segway.com/nova-carter/) Robot platform and dock.

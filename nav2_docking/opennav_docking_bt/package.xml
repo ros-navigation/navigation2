@@ -17,7 +17,6 @@
   <depend>nav2_msgs</depend>
   <depend>nav_msgs</depend>
   <depend>geometry_msgs</depend>
-  <depend>opennav_docking_msgs</depend>
   <depend>behaviortree_cpp</depend>
 
   <test_depend>ament_lint_common</test_depend>

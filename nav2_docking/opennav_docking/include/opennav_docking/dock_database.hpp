@@ -28,7 +28,7 @@
 #include "nav2_util/simple_action_server.hpp"
 #include "opennav_docking/utils.hpp"
 #include "opennav_docking/types.hpp"
-#include "opennav_docking_msgs/srv/reload_database.hpp"
+#include "nav2_msgs/srv/reload_dock_database.hpp"
 
 namespace opennav_docking
 {
@@ -123,14 +123,14 @@ protected:
    * @param response Service response
    */
   void reloadDbCb(
-    const std::shared_ptr<opennav_docking_msgs::srv::ReloadDatabase::Request> request,
-    std::shared_ptr<opennav_docking_msgs::srv::ReloadDatabase::Response> response);
+    const std::shared_ptr<nav2_msgs::srv::ReloadDockDatabase::Request> request,
+    std::shared_ptr<nav2_msgs::srv::ReloadDockDatabase::Response> response);
 
   rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
   DockPluginMap dock_plugins_;
   DockMap dock_instances_;
   pluginlib::ClassLoader<opennav_docking_core::ChargingDock> dock_loader_;
-  rclcpp::Service<opennav_docking_msgs::srv::ReloadDatabase>::SharedPtr reload_db_service_;
+  rclcpp::Service<nav2_msgs::srv::ReloadDockDatabase>::SharedPtr reload_db_service_;
 };
 
 }  // namespace opennav_docking

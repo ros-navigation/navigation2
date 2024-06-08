@@ -22,7 +22,7 @@ from launch import LaunchDescription
 from launch_ros.actions import Node
 import launch_testing
 from nav2_msgs.action import NavigateToPose
-from opennav_docking_msgs.action import DockRobot, UndockRobot
+from nav2_msgs.action import DockRobot, UndockRobot
 import pytest
 import rclpy
 from rclpy.action import ActionClient, ActionServer

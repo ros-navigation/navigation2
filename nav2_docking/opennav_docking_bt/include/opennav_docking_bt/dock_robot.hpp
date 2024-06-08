@@ -19,7 +19,7 @@
 #include <memory>
 #include <vector>
 
-#include "opennav_docking_msgs/action/dock_robot.hpp"
+#include "nav2_msgs/action/dock_robot.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_behavior_tree/bt_action_node.hpp"
 
@@ -27,13 +27,13 @@ namespace opennav_docking_bt
 {
 
 /**
- * @brief nav2_behavior_tree::BtActionNode class that wraps opennav_docking_msgs/DockRobot
+ * @brief nav2_behavior_tree::BtActionNode class that wraps opnav2_msgsennav_docking_msgs/DockRobot
  */
 class DockRobotAction
   : public nav2_behavior_tree::BtActionNode<
-    opennav_docking_msgs::action::DockRobot>
+    nav2_msgs::action::DockRobot>
 {
-  using Action = opennav_docking_msgs::action::DockRobot;
+  using Action = nav2_msgs::action::DockRobot;
   using ActionResult = Action::Result;
 
 public:

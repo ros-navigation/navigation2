@@ -11,7 +11,6 @@ find_package(nav2_core REQUIRED)
 find_package(nav2_behavior_tree REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
-find_package(opennav_docking_msgs REQUIRED)
 find_package(behaviortree_cpp REQUIRED)
 
 # potentially replace with nav2_common, nav2_package()
@@ -32,7 +31,6 @@ set(dependencies
   nav2_behavior_tree
   nav_msgs
   geometry_msgs
-  opennav_docking_msgs
   behaviortree_cpp
 )
 

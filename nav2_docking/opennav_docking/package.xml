@@ -22,7 +22,6 @@
   <depend>sensor_msgs</depend>
   <depend>pluginlib</depend>
   <depend>yaml_cpp_vendor</depend>
-  <depend>opennav_docking_msgs</depend>
   <depend>opennav_docking_core</depend>
   <depend>tf2_ros</depend>
 
