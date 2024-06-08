@@ -68,9 +68,9 @@ void NoiseGenerator::setNoisedControls(
 {
   std::unique_lock<std::mutex> guard(noise_lock_);
 
-  xt::noalias(state.cvx) = control_sequence.vx + noises_vx_;
-  xt::noalias(state.cvy) = control_sequence.vy + noises_vy_;
-  xt::noalias(state.cwz) = control_sequence.wz + noises_wz_;
+  state.cvx = noises_vx_.rowwise() + control_sequence.vx.transpose();
+  state.cvy = noises_vy_.rowwise() + control_sequence.vy.transpose();
+  state.cwz = noises_wz_.rowwise() + control_sequence.wz.transpose();
 }
 
 void NoiseGenerator::reset(mppi::models::OptimizerSettings & settings, bool is_holonomic)
