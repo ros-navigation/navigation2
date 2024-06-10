@@ -366,11 +366,11 @@ class BasicNavigator(Node):
         self.result_future = self.goal_handle.get_result_async()
         return True
 
-    def dockRobot(self, dock_pose, dock_type, nav_to_dock=True):
+    def dockRobotByPose(self, dock_pose, dock_type, nav_to_dock=True):
         """Send a `DockRobot` action request."""
-        print("Waiting for 'DockRobot' action server")
+        self.info("Waiting for 'DockRobot' action server")
         while not self.docking_client.wait_for_server(timeout_sec=1.0):
-            print('"DockRobot" action server not available, waiting...')
+            self.info('"DockRobot" action server not available, waiting...')
 
         goal_msg = DockRobot.Goal()
         goal_msg.use_dock_id = False
@@ -378,60 +378,60 @@ class BasicNavigator(Node):
         goal_msg.dock_type = dock_type
         goal_msg.navigate_to_staging_pose = nav_to_dock  # if want to navigate before staging
 
-        print('Docking at pose: ' + str(dock_pose) + '...')
+        self.info('Docking at pose: ' + str(dock_pose) + '...')
         send_goal_future = self.docking_client.send_goal_async(goal_msg,
-                                                                self._feedbackCallback)
+                                                               self._feedbackCallback)
         rclpy.spin_until_future_complete(self, send_goal_future)
         self.goal_handle = send_goal_future.result()
 
         if not self.goal_handle.accepted:
-            print('Docking request was rejected!')
+            self.info('Docking request was rejected!')
             return False
 
         self.result_future = self.goal_handle.get_result_async()
         return True
 
-    def dockRobot(self, dock_id, nav_to_dock=True):
+    def dockRobotByID(self, dock_id, nav_to_dock=True):
         """Send a `DockRobot` action request."""
-        print("Waiting for 'DockRobot' action server")
+        self.info("Waiting for 'DockRobot' action server")
         while not self.docking_client.wait_for_server(timeout_sec=1.0):
-            print('"DockRobot" action server not available, waiting...')
+            self.info('"DockRobot" action server not available, waiting...')
 
         goal_msg = DockRobot.Goal()
         goal_msg.use_dock_id = True
         goal_msg.dock_id = dock_id
         goal_msg.navigate_to_staging_pose = nav_to_dock  # if want to navigate before staging
 
-        print('Docking at pose: ' + str(dock_pose) + '...')
+        self.info('Docking at dock ID: ' + str(dock_id) + '...')
         send_goal_future = self.docking_client.send_goal_async(goal_msg,
-                                                                self._feedbackCallback)
+                                                               self._feedbackCallback)
         rclpy.spin_until_future_complete(self, send_goal_future)
         self.goal_handle = send_goal_future.result()
 
         if not self.goal_handle.accepted:
-            print('Docking request was rejected!')
+            self.info('Docking request was rejected!')
             return False
 
         self.result_future = self.goal_handle.get_result_async()
         return True
 
-    def undockRobot(self, dock_type=""):
+    def undockRobot(self, dock_type=''):
         """Send a `UndockRobot` action request."""
-        print("Waiting for 'UndockRobot' action server")
+        self.info("Waiting for 'UndockRobot' action server")
         while not self.undocking_client.wait_for_server(timeout_sec=1.0):
-            print('"UndockRobot" action server not available, waiting...')
+            self.info('"UndockRobot" action server not available, waiting...')
 
         goal_msg = UndockRobot.Goal()
         goal_msg.dock_type = dock_type
 
-        print('Undocking from dock of type: ' + str(dock_type) + '...')
+        self.info('Undocking from dock of type: ' + str(dock_type) + '...')
         send_goal_future = self.undocking_client.send_goal_async(goal_msg,
                                                                  self._feedbackCallback)
         rclpy.spin_until_future_complete(self, send_goal_future)
         self.goal_handle = send_goal_future.result()
 
         if not self.goal_handle.accepted:
-            print('Undocking request was rejected!')
+            self.info('Undocking request was rejected!')
             return False
 
         self.result_future = self.goal_handle.get_result_async()
