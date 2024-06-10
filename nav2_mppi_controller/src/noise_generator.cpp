@@ -16,9 +16,6 @@
 
 #include <memory>
 #include <mutex>
-#include <xtensor/xmath.hpp>
-#include <xtensor/xrandom.hpp>
-#include <xtensor/xnoalias.hpp>
 
 namespace mppi
 {
@@ -81,9 +78,9 @@ void NoiseGenerator::reset(mppi::models::OptimizerSettings & settings, bool is_h
   // Recompute the noises on reset, initialization, and fallback
   {
     std::unique_lock<std::mutex> guard(noise_lock_);
-    xt::noalias(noises_vx_) = xt::zeros<float>({settings_.batch_size, settings_.time_steps});
-    xt::noalias(noises_vy_) = xt::zeros<float>({settings_.batch_size, settings_.time_steps});
-    xt::noalias(noises_wz_) = xt::zeros<float>({settings_.batch_size, settings_.time_steps});
+    noises_vx_ = Eigen::ArrayXXf::Zero(settings_.batch_size, settings_.time_steps);
+    noises_vy_ = Eigen::ArrayXXf::Zero(settings_.batch_size, settings_.time_steps);
+    noises_wz_ = Eigen::ArrayXXf::Zero(settings_.batch_size, settings_.time_steps);
     ready_ = true;
   }
 
@@ -107,17 +104,10 @@ void NoiseGenerator::noiseThread()
 void NoiseGenerator::generateNoisedControls()
 {
   auto & s = settings_;
-
-  xt::noalias(noises_vx_) = xt::random::randn<float>(
-    {s.batch_size, s.time_steps}, 0.0f,
-    s.sampling_std.vx);
-  xt::noalias(noises_wz_) = xt::random::randn<float>(
-    {s.batch_size, s.time_steps}, 0.0f,
-    s.sampling_std.wz);
-  if (is_holonomic_) {
-    xt::noalias(noises_vy_) = xt::random::randn<float>(
-      {s.batch_size, s.time_steps}, 0.0f,
-      s.sampling_std.vy);
+  noises_vx_ = Eigen::ArrayXXf::NullaryExpr(s.batch_size, s.time_steps, [&] () {return ndistribution_vx(generator_);});
+  noises_wz_ = Eigen::ArrayXXf::NullaryExpr(s.batch_size, s.time_steps, [&] () {return ndistribution_wz(generator_);});
+  if(is_holonomic_) {
+    noises_vy_ = Eigen::ArrayXXf::NullaryExpr(s.batch_size, s.time_steps, [&] () {return ndistribution_vy(generator_);});
   }
 }
 

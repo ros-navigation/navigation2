@@ -20,7 +20,7 @@
 
 #include "nav2_mppi_controller/tools/path_handler.hpp"
 #include "nav2_mppi_controller/optimizer.hpp"
-#include "nav2_mppi_controller/tools/trajectory_visualizer.hpp"
+//#include "nav2_mppi_controller/tools/trajectory_visualizer.hpp"
 #include "nav2_mppi_controller/models/constraints.hpp"
 #include "nav2_mppi_controller/tools/utils.hpp"
 
@@ -117,7 +117,7 @@ protected:
   std::unique_ptr<ParametersHandler> parameters_handler_;
   Optimizer optimizer_;
   PathHandler path_handler_;
-  TrajectoryVisualizer trajectory_visualizer_;
+  //TrajectoryVisualizer trajectory_visualizer_;
 
   bool visualize_;
 };

@@ -20,6 +20,7 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <random>
 
 #include <Eigen/Dense>
 
@@ -78,6 +79,10 @@ public:
    */
   void reset(mppi::models::OptimizerSettings & settings, bool is_holonomic);
 
+  inline static std::normal_distribution<float> ndistribution_vx;
+  inline static std::normal_distribution<float> ndistribution_wz;
+  inline static std::normal_distribution<float> ndistribution_vy;
+
 protected:
   /**
    * @brief Thread to execute noise generation process
@@ -96,6 +101,8 @@ protected:
   Eigen::ArrayXXf noises_vx_;
   Eigen::ArrayXXf noises_vy_;
   Eigen::ArrayXXf noises_wz_;
+
+  inline static std::default_random_engine generator_;
 
   mppi::models::OptimizerSettings settings_;
   bool is_holonomic_;

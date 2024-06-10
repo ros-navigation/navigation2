@@ -18,12 +18,7 @@
 #include <memory>
 #include <vector>
 
-// xtensor creates warnings that needs to be ignored as we are building with -Werror
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Warray-bounds"
-#pragma GCC diagnostic ignored "-Wstringop-overflow"
-#include <xtensor/xtensor.hpp>
-#pragma GCC diagnostic pop
+#include <Eigen/Dense>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_core/goal_checker.hpp"
@@ -47,7 +42,7 @@ struct CriticData
   const models::Trajectories & trajectories;
   const models::Path & path;
 
-  xt::xtensor<float, 1> & costs;
+  Eigen::ArrayXf & costs;
   float & model_dt;
 
   bool fail_flag;

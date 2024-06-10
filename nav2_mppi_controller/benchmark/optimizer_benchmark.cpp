@@ -25,9 +25,7 @@
 #include <nav2_costmap_2d/costmap_2d_ros.hpp>
 #include <nav2_core/goal_checker.hpp>
 
-#include <xtensor/xarray.hpp>
-#include <xtensor/xio.hpp>
-#include <xtensor/xview.hpp>
+#include <Eigen/Dense>
 
 #include "nav2_mppi_controller/optimizer.hpp"
 #include "nav2_mppi_controller/motion_models.hpp"
@@ -49,11 +47,11 @@ void prepareAndRunBenchmark(
   bool consider_footprint, std::string motion_model,
   std::vector<std::string> critics, benchmark::State & state)
 {
-  int batch_size = 300;
-  int time_steps = 12;
-  unsigned int path_points = 50u;
+  int batch_size = 2000;
+  int time_steps = 56;
+  unsigned int path_points = 150u;
   int iteration_count = 2;
-  double lookahead_distance = 10.0;
+  double lookahead_distance = 40.0;
 
   TestCostmapSettings costmap_settings{};
   auto costmap_ros = getDummyCostmapRos(costmap_settings);
@@ -97,8 +95,7 @@ static void BM_DiffDrivePointFootprint(benchmark::State & state)
 {
   bool consider_footprint = true;
   std::string motion_model = "DiffDrive";
-  std::vector<std::string> critics = {{"GoalCritic"}, {"GoalAngleCritic"}, {"ObstaclesCritic"},
-    {"PathAngleCritic"}, {"PathFollowCritic"}, {"PreferForwardCritic"}};
+  std::vector<std::string> critics = {};
 
   prepareAndRunBenchmark(consider_footprint, motion_model, critics, state);
 }
@@ -107,8 +104,7 @@ static void BM_DiffDrive(benchmark::State & state)
 {
   bool consider_footprint = true;
   std::string motion_model = "DiffDrive";
-  std::vector<std::string> critics = {{"GoalCritic"}, {"GoalAngleCritic"}, {"ObstaclesCritic"},
-    {"PathAngleCritic"}, {"PathFollowCritic"}, {"PreferForwardCritic"}};
+  std::vector<std::string> critics = {};
 
   prepareAndRunBenchmark(consider_footprint, motion_model, critics, state);
 }
@@ -118,8 +114,7 @@ static void BM_Omni(benchmark::State & state)
 {
   bool consider_footprint = true;
   std::string motion_model = "Omni";
-  std::vector<std::string> critics = {{"GoalCritic"}, {"GoalAngleCritic"}, {"ObstaclesCritic"},
-    {"TwirlingCritic"}, {"PathFollowCritic"}, {"PreferForwardCritic"}};
+  std::vector<std::string> critics = {};
 
   prepareAndRunBenchmark(consider_footprint, motion_model, critics, state);
 }
@@ -128,13 +123,12 @@ static void BM_Ackermann(benchmark::State & state)
 {
   bool consider_footprint = true;
   std::string motion_model = "Ackermann";
-  std::vector<std::string> critics = {{"GoalCritic"}, {"GoalAngleCritic"}, {"ObstaclesCritic"},
-    {"PathAngleCritic"}, {"PathFollowCritic"}, {"PreferForwardCritic"}};
+  std::vector<std::string> critics = {};
 
   prepareAndRunBenchmark(consider_footprint, motion_model, critics, state);
 }
 
-static void BM_GoalCritic(benchmark::State & state)
+/*static void BM_GoalCritic(benchmark::State & state)
 {
   bool consider_footprint = true;
   std::string motion_model = "Ackermann";
@@ -195,19 +189,19 @@ static void BM_PathAngleCritic(benchmark::State & state)
   std::vector<std::string> critics = {{"PathAngleCritic"}};
 
   prepareAndRunBenchmark(consider_footprint, motion_model, critics, state);
-}
+}*/
 
 BENCHMARK(BM_DiffDrivePointFootprint)->Unit(benchmark::kMillisecond);
 BENCHMARK(BM_DiffDrive)->Unit(benchmark::kMillisecond);
 BENCHMARK(BM_Omni)->Unit(benchmark::kMillisecond);
 BENCHMARK(BM_Ackermann)->Unit(benchmark::kMillisecond);
 
-BENCHMARK(BM_GoalCritic)->Unit(benchmark::kMillisecond);
+/*BENCHMARK(BM_GoalCritic)->Unit(benchmark::kMillisecond);
 BENCHMARK(BM_GoalAngleCritic)->Unit(benchmark::kMillisecond);
 BENCHMARK(BM_PathAngleCritic)->Unit(benchmark::kMillisecond);
 BENCHMARK(BM_PathFollowCritic)->Unit(benchmark::kMillisecond);
 BENCHMARK(BM_ObstaclesCritic)->Unit(benchmark::kMillisecond);
 BENCHMARK(BM_ObstaclesCriticPointFootprint)->Unit(benchmark::kMillisecond);
-BENCHMARK(BM_TwilringCritic)->Unit(benchmark::kMillisecond);
+BENCHMARK(BM_TwilringCritic)->Unit(benchmark::kMillisecond);*/
 
 BENCHMARK_MAIN();

@@ -51,7 +51,6 @@
 
 namespace mppi::utils
 {
-
 /**
  * @brief Convert data into pose
  * @param x X position
@@ -451,7 +450,7 @@ inline void savitskyGolayFilter(
   Eigen::Array<float, 9, 1> filter = {-21.0, 14.0, 39.0, 54.0, 59.0, 54.0, 39.0, 14.0, -21.0};
   filter /= 231.0;
 
-  const unsigned int num_sequences = control_sequence.vx.shape(0) - 1;
+  const unsigned int num_sequences = control_sequence.vx.size() - 1;
 
   // Too short to smooth meaningfully
   if (num_sequences < 20) {
@@ -459,7 +458,7 @@ inline void savitskyGolayFilter(
   }
 
   auto applyFilter = [&](const Eigen::Array<float, 9, 1> & data) -> float {
-      return xt::sum(data * filter, {0}, immediate)();
+      return (data * filter).sum();
     };
 
   auto applyFilterOverAxis =
@@ -666,7 +665,7 @@ inline unsigned int removePosesAfterFirstInversion(nav_msgs::msg::Path & path)
  * @return dist Distance to look for
  * @return init Starting index to indec from
  */
-inline unsigned int findClosestPathPt(
+/*inline unsigned int findClosestPathPt(
   const std::vector<float> & vec, const float dist, const unsigned int init = 0u)
 {
   float distim1 = init != 0u ? vec[init] : 0.0f;  // First is 0, no accumulated distance yet
@@ -683,7 +682,7 @@ inline unsigned int findClosestPathPt(
     distim1 = disti;
   }
   return size - 1;
-}
+}*/
 
 // A struct to hold pose data in floating point resolution
 struct Pose2D
