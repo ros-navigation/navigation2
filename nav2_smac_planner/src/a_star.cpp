@@ -250,8 +250,6 @@ bool AStarAlgorithm<NodeT>::areInputsValid()
   }
 
   // Note: We do not check the if the start is valid because it is cleared
-  clearStart();
-
   return true;
 }
 
@@ -482,20 +480,6 @@ template<typename NodeT>
 unsigned int & AStarAlgorithm<NodeT>::getSizeDim3()
 {
   return _dim3_size;
-}
-
-template<>
-void AStarAlgorithm<Node2D>::clearStart()
-{
-  auto coords = Node2D::getCoords(_start->getIndex());
-  _costmap->setCost(coords.x, coords.y, nav2_costmap_2d::FREE_SPACE);
-}
-
-template<typename NodeT>
-void AStarAlgorithm<NodeT>::clearStart()
-{
-  auto coords = NodeT::getCoords(_start->getIndex(), _costmap->getSizeInCellsX(), getSizeDim3());
-  _costmap->setCost(coords.x, coords.y, nav2_costmap_2d::FREE_SPACE);
 }
 
 // Instantiate algorithm for the supported template types
