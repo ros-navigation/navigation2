@@ -93,8 +93,8 @@ public:
     RCLCPP_DEBUG(node_->get_logger(), "Waiting for \"%s\" action server", action_name.c_str());
     if (!action_client_->wait_for_action_server(wait_for_service_timeout_)) {
       RCLCPP_ERROR(
-        node_->get_logger(), "\"%s\" action server not available after waiting for 1 s",
-        action_name.c_str());
+        node_->get_logger(), "\"%s\" action server not available after waiting for %.2fs",
+        action_name.c_str(), wait_for_service_timeout_.count() / 1000.0);
       throw std::runtime_error(
               std::string("Action server ") + action_name +
               std::string(" not available"));
