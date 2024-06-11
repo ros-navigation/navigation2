@@ -69,7 +69,6 @@ class TestDockingServer(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        print('setUpClass Start')
         rclpy.init()
         # Latest odom -> base_link
         cls.x = 0.0
@@ -80,35 +79,27 @@ class TestDockingServer(unittest.TestCase):
         # Latest command velocity
         cls.command = Twist()
         cls.node = rclpy.create_node('test_docking_server')
-        print('setUpClass OK')
 
     @classmethod
     def tearDownClass(cls):
-        print('tearDownClass Start')
         cls.node.destroy_node()
         rclpy.shutdown()
-        print('tearDownClass OK')
 
     def command_velocity_callback(self, msg):
-        print('command_velocity_callback Start')
         self.node.get_logger().info('Command: %f %f' % (msg.linear.x, msg.angular.z))
         self.command = msg
-        print('command_velocity_callback OK')
 
     def timer_callback(self):
         # Propagate command
-        print('timer_callback Start')
         period = 0.05
         self.x += cos(self.theta) * self.command.linear.x * period
         self.y += sin(self.theta) * self.command.linear.x * period
         self.theta += self.command.angular.z * period
         # Need to publish updated TF
         self.publish()
-        print('timer_callback OK')
 
     def publish(self):
         # Publish base->odom transform
-        print('publish Start')
         t = TransformStamped()
         t.header.stamp = self.node.get_clock().now().to_msg()
         t.header.frame_id = 'odom'
@@ -125,34 +116,16 @@ class TestDockingServer(unittest.TestCase):
         else:
             b.current = -1.0
         self.battery_state_pub.publish(b)
-        print('publish OK')
-
-    def action_goal_callback(self, future):
-        print('action_goal_callback Start')
-        self.goal_handle = future.result()
-        assert self.goal_handle.accepted
-        result_future = self.goal_handle.get_result_async()
-        result_future.add_done_callback(self.action_result_callback)
-        print('action_goal_callback OK')
-
-    def action_result_callback(self, future):
-        print('action_result_callback Start')
-        self.action_result.append(future.result())
-        print(future.result())
-        print('action_result_callback OK')
 
     def action_feedback_callback(self, msg):
-        print('action_feedback_callback Start')
         # Force the docking action to run a full recovery loop and then
         # make contact with the dock (based on pose of robot) before
         # we report that the robot is charging
         if msg.feedback.num_retries > 0 and \
                 msg.feedback.state == msg.feedback.WAIT_FOR_CHARGE:
             self.is_charging = True
-        print('action_feedback_callback OK')
 
     def nav_execute_callback(self, goal_handle):
-        print('nav_execute_callback Start')
         goal = goal_handle.request
         self.x = goal.pose.pose.position.x - 0.05
         self.y = goal.pose.pose.position.y + 0.05
@@ -163,11 +136,9 @@ class TestDockingServer(unittest.TestCase):
 
         result = NavigateToPose.Result()
         result.error_code = 0
-        print('nav_execute_callback OK')
         return result
 
     def test_docking_server(self):
-        print('test_docking_server Start')
         # Publish TF for odometry
         self.tf_broadcaster = TransformBroadcaster(self.node)
 
@@ -203,8 +174,6 @@ class TestDockingServer(unittest.TestCase):
         # Spin once so that TF is published
         rclpy.spin_once(self.node, timeout_sec=0.1)
 
-        print('test_docking_server Preample OK')
-
         # Test docking action
         self.action_result = []
         self.dock_action_client.wait_for_server(timeout_sec=5.0)
@@ -213,33 +182,32 @@ class TestDockingServer(unittest.TestCase):
         goal.dock_id = 'test_dock'
         future = self.dock_action_client.send_goal_async(
             goal, feedback_callback=self.action_feedback_callback)
-        future.add_done_callback(self.action_goal_callback)
-
-        print('test_docking_server dock start OK')
+        rclpy.spin_until_future_complete(self.node, future)
+        self.goal_handle = future.result()
+        assert self.goal_handle.accepted
+        result_future_original = self.goal_handle.get_result_async()
 
         # Run for 2 seconds
         for i in range(20):
             rclpy.spin_once(self.node, timeout_sec=0.1)
             time.sleep(0.1)
 
-        print('test_docking_server dock start spin OK')
-
         # Send another goal to preempt the first
         future = self.dock_action_client.send_goal_async(
             goal, feedback_callback=self.action_feedback_callback)
-        future.add_done_callback(self.action_goal_callback)
+        rclpy.spin_until_future_complete(self.node, future)
+        self.goal_handle = future.result()
+        assert self.goal_handle.accepted
+        result_future = self.goal_handle.get_result_async()
+        rclpy.spin_until_future_complete(self.node, result_future)
+        self.action_result.append(result_future.result())
 
-        print('test_docking_server dock preempt OK')
+        rclpy.spin_until_future_complete(self.node, result_future_original)
+        self.action_result.append(result_future_original.result())
 
-        # Wait until we get the dock preemption
-        while len(self.action_result) == 0:
-            rclpy.spin_once(self.node, timeout_sec=0.1)
-            time.sleep(0.1)
-
-        print('test_docking_server dock prempt spin OK')
-
-        assert self.action_result[0].status == GoalStatus.STATUS_ABORTED
-        assert not self.action_result[0].result.success
+        # First is aborted due to preemption
+        self.assertEqual(self.action_result[0].status, GoalStatus.STATUS_ABORTED)
+        self.assertFalse(self.action_result[0].result.success)
 
         self.node.get_logger().info('Goal preempted')
 
@@ -248,48 +216,24 @@ class TestDockingServer(unittest.TestCase):
             rclpy.spin_once(self.node, timeout_sec=0.1)
             time.sleep(0.1)
 
-        print('test_docking_server preempted spin OK post-assert')
-
-        # Then terminate the docking action
-        self.goal_handle.cancel_goal_async()
-
-        print('test_docking_server dock cancel OK')
-
-        # Wait until we get the dock cancellation
-        while len(self.action_result) < 2:
-            rclpy.spin_once(self.node, timeout_sec=0.1)
-            time.sleep(0.1)
-
-        print('test_docking_server dock cancel spin OK')
-
-        assert self.action_result[1].status == GoalStatus.STATUS_ABORTED
-        assert not self.action_result[1].result.success
-
-        print('test_docking_server dock cancel spin  assert OK')
-
-        self.node.get_logger().info('Goal cancelled')
+        # Second is aborted due to preemption during main loop (takes down all actions)
+        self.assertEqual(self.action_result[1].status, GoalStatus.STATUS_ABORTED)
+        self.assertFalse(self.action_result[1].result.success)
 
         # Resend the goal
         self.node.get_logger().info('Sending goal again')
         future = self.dock_action_client.send_goal_async(
             goal, feedback_callback=self.action_feedback_callback)
-        future.add_done_callback(self.action_goal_callback)
+        rclpy.spin_until_future_complete(self.node, future)
+        self.goal_handle = future.result()
+        assert self.goal_handle.accepted
+        result_future = self.goal_handle.get_result_async()
+        rclpy.spin_until_future_complete(self.node, result_future)
+        self.action_result.append(result_future.result())
 
-        print('test_docking_server  resend goal OK')
-
-        # Wait for action to finish, this test publishes the
-        # battery state message and will force one recovery
-        # before it reports the robot is charging
-        while len(self.action_result) < 3:
-            rclpy.spin_once(self.node, timeout_sec=0.1)
-
-        print('test_docking_server  resend goal forever spin OK')
-
-        assert self.action_result[2].status == GoalStatus.STATUS_SUCCEEDED
-        assert self.action_result[2].result.success
-        assert self.action_result[2].result.num_retries == 1
-
-        print('test_docking_server  resend goal forever spin assert OK')
+        self.assertEqual(self.action_result[2].status, GoalStatus.STATUS_SUCCEEDED)
+        self.assertTrue(self.action_result[2].result.success)
+        self.assertEqual(self.action_result[2].result.num_retries, 1)
 
         # Test undocking action
         self.is_charging = False
@@ -297,15 +241,12 @@ class TestDockingServer(unittest.TestCase):
         goal = UndockRobot.Goal()
         goal.dock_type = 'test_dock_plugin'
         future = self.undock_action_client.send_goal_async(goal)
-        future.add_done_callback(self.action_goal_callback)
+        rclpy.spin_until_future_complete(self.node, future)
+        self.goal_handle = future.result()
+        assert self.goal_handle.accepted
+        result_future = self.goal_handle.get_result_async()
+        rclpy.spin_until_future_complete(self.node, result_future)
+        self.action_result.append(result_future.result())
 
-        print('test_docking_server undocking OK')
-
-        while len(self.action_result) < 4:
-            rclpy.spin_once(self.node, timeout_sec=0.1)
-
-        print('test_docking_server undocking  spin OK')
-
-        assert self.action_result[3].status == GoalStatus.STATUS_SUCCEEDED
-        assert self.action_result[3].result.success
-        print('test_docking_server OK')
+        self.assertEqual(self.action_result[3].status, GoalStatus.STATUS_SUCCEEDED)
+        self.assertTrue(self.action_result[3].result.success)
