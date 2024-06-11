@@ -321,13 +321,14 @@ AmclNode::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
-  executor_thread_.reset();  //  at the very beginning, shutdown threads
+  executor_thread_.reset();
 
   // Get rid of the inputs first (services and message filter input), so we
   // don't continue to process incoming messages
   global_loc_srv_.reset();
   initial_guess_srv_.reset();
-  nomotion_update_srv_.reset(); 
+  nomotion_update_srv_.reset();
+  executor_thread_.reset();  //  to make sure initial_pose_sub_ completely exit
   initial_pose_sub_.reset();
   laser_scan_connection_.disconnect();
   tf_listener_.reset();  //  listener may access lase_scan_filter_, so it should be reset earlier
@@ -535,12 +536,6 @@ AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::Sha
       global_frame_id_.c_str());
     return;
   }
-  if(abs(msg->pose.pose.position.x) > map_->size_x || abs(msg->pose.pose.position.y) > map_->size_y)
-  {
-      RCLCPP_ERROR(get_logger(), "Received initialpose from message is out of the size of map_. Rejecting.");
-      return;
-  }
-  
   // Overriding last published pose to initial pose
   last_published_pose_ = *msg;
 
@@ -1368,15 +1363,13 @@ AmclNode::dynamicParametersCallback(
 
   // Re-initialize the lasers and it's filters
   if (reinit_laser) {
-    // firstly, shutdown threads of plugins
-    laser_scan_connection_.disconnect();
-    laser_scan_filter_.reset();
-    laser_scan_sub_.reset();
-    // secondly, clear memory used in these threads.
     lasers_.clear();
     lasers_update_.clear();
     frame_to_laser_.clear();
-    // thirdly, launch plugins within new configuration
+    laser_scan_connection_.disconnect();
+    laser_scan_filter_.reset();
+    laser_scan_sub_.reset();
+
     initMessageFilters();
   }
 
