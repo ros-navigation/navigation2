@@ -35,10 +35,10 @@ def main():
     initial_pose = PoseStamped()
     initial_pose.header.frame_id = 'map'
     initial_pose.header.stamp = navigator.get_clock().now().to_msg()
-    initial_pose.pose.position.x = 3.45
-    initial_pose.pose.position.y = 2.15
-    initial_pose.pose.orientation.z = 1.0
-    initial_pose.pose.orientation.w = 0.0
+    initial_pose.pose.position.x = 0.0
+    initial_pose.pose.position.y = 0.0
+    initial_pose.pose.orientation.z = 0.0
+    initial_pose.pose.orientation.w = 1.0
     navigator.setInitialPose(initial_pose)
 
     # Wait for navigation to fully activate
@@ -47,8 +47,8 @@ def main():
     goal_pose = PoseStamped()
     goal_pose.header.frame_id = 'map'
     goal_pose.header.stamp = navigator.get_clock().now().to_msg()
-    goal_pose.pose.position.x = 6.13
-    goal_pose.pose.position.y = 1.90
+    goal_pose.pose.position.x = 8.21
+    goal_pose.pose.position.y = 1.3
     goal_pose.pose.orientation.w = 1.0
 
     navigator.goToPose(goal_pose)
@@ -64,7 +64,7 @@ def main():
             )
 
     # Robot hit a dead end, back it up
-    print('Robot hit a dead end, backing up...')
+    print('Robot hit a dead end (lets pretend), backing up...')
     navigator.backup(backup_dist=0.5, backup_speed=0.1)
 
     i = 0
