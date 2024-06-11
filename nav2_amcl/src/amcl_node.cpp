@@ -321,7 +321,7 @@ AmclNode::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
-  executor_thread_.reset();  //  shutdown excutor_thread at the very begeinng, to make sure initial_pose_sub_ completely exit
+  executor_thread_.reset();
 
   // Get rid of the inputs first (services and message filter input), so we
   // don't continue to process incoming messages
