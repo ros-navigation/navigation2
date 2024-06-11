@@ -535,8 +535,7 @@ AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::Sha
       global_frame_id_.c_str());
     return;
   }
-  if (abs(msg->pose.pose.position.x) > map_->size_x ||
-    abs(msg->pose.pose.position.y) > map_->size_y)
+  if (abs(msg->pose.pose.position.x) > map_->size_x || abs(msg->pose.pose.position.y) > map_->size_y)
   {
     RCLCPP_ERROR(
       get_logger(), "Received initialpose from message is out of the size of map_. Rejecting.");
