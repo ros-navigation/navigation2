@@ -81,7 +81,7 @@ Costmap2DPublisher::Costmap2DPublisher(
 
   // Create a service that will use the callback function to handle requests.
   costmap_service_ = node->create_service<nav2_msgs::srv::GetCostmap>(
-    "get_costmap", std::bind(
+    "get_" + topic_name, std::bind(
       &Costmap2DPublisher::costmap_service_callback,
       this, std::placeholders::_1, std::placeholders::_2,
       std::placeholders::_3));
