@@ -250,12 +250,6 @@ protected:
   inline void populateExpansionsLog(
     const NodePtr & node, std::vector<std::tuple<float, float, float>> * expansions_log);
 
-  /**
-   * @brief Clear Start
-   */
-  void clearStart();
-
-
   bool _traverse_unknown;
   int _max_iterations;
   int _max_on_approach_iterations;
