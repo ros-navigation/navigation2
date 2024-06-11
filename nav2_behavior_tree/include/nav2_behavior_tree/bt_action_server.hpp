@@ -232,6 +232,9 @@ protected:
   // Default timeout value while waiting for response from a server
   std::chrono::milliseconds default_server_timeout_;
 
+  // The timeout value for waiting for a service to response
+  std::chrono::milliseconds wait_for_service_timeout_;
+
   // User-provided callbacks
   OnGoalReceivedCallback on_goal_received_callback_;
   OnLoopCallback on_loop_callback_;
