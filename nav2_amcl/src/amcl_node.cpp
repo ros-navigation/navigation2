@@ -333,7 +333,6 @@ AmclNode::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   global_loc_srv_.reset();
   initial_guess_srv_.reset();
   nomotion_update_srv_.reset();
-  executor_thread_.reset();  //  to make sure initial_pose_sub_ completely exit
   initial_pose_sub_.reset();
   laser_scan_connection_.disconnect();
   tf_listener_.reset();  //  listener may access lase_scan_filter_, so it should be reset earlier
