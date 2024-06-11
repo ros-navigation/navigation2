@@ -138,7 +138,7 @@ def generate_launch_description():
             str(Path(os.path.join(desc_dir)).parent.resolve()))
 
     ld = LaunchDescription()
-    ld.add_action(declare_use_rviz_cmd)   
+    ld.add_action(declare_use_rviz_cmd)
     ld.add_action(declare_simulator_cmd)
     ld.add_action(world_sdf_xacro)
     ld.add_action(remove_temp_sdf_file)
