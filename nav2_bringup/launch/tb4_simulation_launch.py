@@ -207,6 +207,7 @@ def generate_launch_description():
             'use_respawn': use_respawn,
         }.items(),
     )
+
     # The SDF file for the world is a xacro file because we wanted to
     # conditionally load the SceneBroadcaster plugin based on wheter we're
     # running in headless mode. But currently, the Gazebo command line doesn't
