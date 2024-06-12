@@ -230,12 +230,13 @@ InflationLayer::updateCosts(
 
   // Start with lethal obstacles: by definition distance is 0.0
   auto & obs_bin = inflation_cells_[0];
+  obs_bin.reserve(200);
   for (int j = min_j; j < max_j; j++) {
     for (int i = min_i; i < max_i; i++) {
       int index = static_cast<int>(master_grid.getIndex(i, j));
       unsigned char cost = master_array[index];
       if (cost == LETHAL_OBSTACLE || (inflate_around_unknown_ && cost == NO_INFORMATION)) {
-        obs_bin.emplace_back(index, i, j, i, j);
+        obs_bin.emplace_back(i, j, i, j);
       }
     }
   }
@@ -243,12 +244,18 @@ InflationLayer::updateCosts(
   // Process cells by increasing distance; new cells are appended to the
   // corresponding distance bin, so they
   // can overtake previously inserted but farther away cells
-  for (const auto & dist_bin : inflation_cells_) {
+  for (auto & dist_bin : inflation_cells_) {
+    dist_bin.reserve(200);
     for (std::size_t i = 0; i < dist_bin.size(); ++i) {
       // Do not use iterator or for-range based loops to
       // iterate though dist_bin, since it's size might
       // change when a new cell is enqueued, invalidating all iterators
-      unsigned int index = dist_bin[i].index_;
+      const CellData & cell = dist_bin[i];
+      unsigned int mx = cell.x_;
+      unsigned int my = cell.y_;
+      unsigned int sx = cell.src_x_;
+      unsigned int sy = cell.src_y_;
+      unsigned int index = master_grid.getIndex(mx, my);
 
       // ignore if already visited
       if (seen_[index]) {
@@ -256,11 +263,6 @@ InflationLayer::updateCosts(
       }
 
       seen_[index] = true;
-
-      unsigned int mx = dist_bin[i].x_;
-      unsigned int my = dist_bin[i].y_;
-      unsigned int sx = dist_bin[i].src_x_;
-      unsigned int sy = dist_bin[i].src_y_;
 
       // assign the cost associated with the distance from an obstacle to the cell
       unsigned char cost = costLookup(mx, my, sx, sy);
@@ -296,11 +298,9 @@ InflationLayer::updateCosts(
         enqueue(index + size_x, mx, my + 1, sx, sy);
       }
     }
-  }
-
-  for (auto & dist : inflation_cells_) {
-    dist.clear();
-    dist.reserve(200);
+    // This level of inflation_cells_ is not needed anymore. We can free the memory
+    // Note that dist_bin.clear() is not enough, because it won't free the memory
+    dist_bin = std::vector<CellData>();
   }
 
   current_ = true;
@@ -334,8 +334,8 @@ InflationLayer::enqueue(
     const unsigned int r = cell_inflation_radius_ + 2;
 
     // push the cell data onto the inflation list and mark
-    inflation_cells_[distance_matrix_[mx - src_x + r][my - src_y + r]].emplace_back(
-      index, mx, my, src_x, src_y);
+    const auto dist = distance_matrix_[mx - src_x + r][my - src_y + r];
+    inflation_cells_[dist].emplace_back(mx, my, src_x, src_y);
   }
 }
 
@@ -372,9 +372,6 @@ InflationLayer::computeCaches()
   int max_dist = generateIntegerDistances();
   inflation_cells_.clear();
   inflation_cells_.resize(max_dist + 1);
-  for (auto & dist : inflation_cells_) {
-    dist.reserve(200);
-  }
 }
 
 int
