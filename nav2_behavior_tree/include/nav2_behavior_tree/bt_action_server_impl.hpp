@@ -60,6 +60,9 @@ BtActionServer<ActionT>::BtActionServer(
   if (!node->has_parameter("default_server_timeout")) {
     node->declare_parameter("default_server_timeout", 20);
   }
+  if (!node->has_parameter("always_reload_bt_xml")) {
+    node->declare_parameter("always_reload_bt_xml", false);
+  }
   if (!node->has_parameter("wait_for_service_timeout")) {
     node->declare_parameter("wait_for_service_timeout", 1000);
   }
@@ -118,6 +121,7 @@ bool BtActionServer<ActionT>::on_configure()
   int wait_for_service_timeout;
   node->get_parameter("wait_for_service_timeout", wait_for_service_timeout);
   wait_for_service_timeout_ = std::chrono::milliseconds(wait_for_service_timeout);
+  node->get_parameter("always_reload_bt_xml", always_reload_bt_xml_);
 
   // Create the class that registers our custom nodes and executes the BT
   bt_ = std::make_unique<nav2_behavior_tree::BehaviorTreeEngine>(plugin_lib_names_);
@@ -174,8 +178,8 @@ bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filena
   // Empty filename is default for backward compatibility
   auto filename = bt_xml_filename.empty() ? default_bt_xml_filename_ : bt_xml_filename;
 
-  // Use previous BT if it is the existing one
-  if (current_bt_xml_filename_ == filename) {
+  // Use previous BT if it is the existing one and always reload flag is not set to true
+  if (!always_reload_bt_xml_ && current_bt_xml_filename_ == filename) {
     RCLCPP_DEBUG(logger_, "BT will not be reloaded as the given xml is already loaded");
     return true;
   }
