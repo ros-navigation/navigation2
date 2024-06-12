@@ -231,7 +231,7 @@ AmclNode::AmclNode(const rclcpp::NodeOptions & options)
   add_parameter(
     "freespace_downsampling", rclcpp::ParameterValue(
       false),
-    "If true, downsample the free space used by the Pose Generator. This will save memory in VERY large maps");
+    "Downsample the free space used by the Pose Generator. Use it with large maps to save memory");
 }
 
 AmclNode::~AmclNode()
