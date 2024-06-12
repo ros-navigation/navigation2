@@ -236,7 +236,7 @@ InflationLayer::updateCosts(
       int index = static_cast<int>(master_grid.getIndex(i, j));
       unsigned char cost = master_array[index];
       if (cost == LETHAL_OBSTACLE || (inflate_around_unknown_ && cost == NO_INFORMATION)) {
-        obs_bin.emplace_back(index, i, j, i, j);
+        obs_bin.emplace_back(i, j, i, j);
       }
     }
   }
@@ -250,7 +250,12 @@ InflationLayer::updateCosts(
       // Do not use iterator or for-range based loops to
       // iterate though dist_bin, since it's size might
       // change when a new cell is enqueued, invalidating all iterators
-      unsigned int index = dist_bin[i].index_;
+      const CellData& cell = dist_bin[i];
+      unsigned int mx = cell.x_;
+      unsigned int my = cell.y_;
+      unsigned int sx = cell.src_x_;
+      unsigned int sy = cell.src_y_;
+      unsigned int index = master_grid.getIndex(mx, my);
 
       // ignore if already visited
       if (seen_[index]) {
@@ -258,11 +263,6 @@ InflationLayer::updateCosts(
       }
 
       seen_[index] = true;
-
-      unsigned int mx = dist_bin[i].x_;
-      unsigned int my = dist_bin[i].y_;
-      unsigned int sx = dist_bin[i].src_x_;
-      unsigned int sy = dist_bin[i].src_y_;
 
       // assign the cost associated with the distance from an obstacle to the cell
       unsigned char cost = costLookup(mx, my, sx, sy);
@@ -334,8 +334,8 @@ InflationLayer::enqueue(
     const unsigned int r = cell_inflation_radius_ + 2;
 
     // push the cell data onto the inflation list and mark
-    inflation_cells_[distance_matrix_[mx - src_x + r][my - src_y + r]].emplace_back(
-      index, mx, my, src_x, src_y);
+    const auto dist = distance_matrix_[mx - src_x + r][my - src_y + r];
+    inflation_cells_[dist].emplace_back(mx, my, src_x, src_y);
   }
 }
 
