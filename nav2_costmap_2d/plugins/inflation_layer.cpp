@@ -250,7 +250,7 @@ InflationLayer::updateCosts(
       // Do not use iterator or for-range based loops to
       // iterate though dist_bin, since it's size might
       // change when a new cell is enqueued, invalidating all iterators
-      const CellData& cell = dist_bin[i];
+      const CellData & cell = dist_bin[i];
       unsigned int mx = cell.x_;
       unsigned int my = cell.y_;
       unsigned int sx = cell.src_x_;
