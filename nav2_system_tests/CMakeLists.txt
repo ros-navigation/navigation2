@@ -126,7 +126,7 @@ if(BUILD_TESTING)
   # add_subdirectory(src/behaviors/drive_on_heading)
   # add_subdirectory(src/behaviors/assisted_teleop)
   # add_subdirectory(src/costmap_filters)
-  # add_subdirectory(src/error_codes)
+  add_subdirectory(src/error_codes)
   install(DIRECTORY maps DESTINATION share/${PROJECT_NAME})
 
 endif()
