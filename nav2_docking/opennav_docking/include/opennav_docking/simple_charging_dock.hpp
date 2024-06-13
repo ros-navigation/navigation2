@@ -46,24 +46,24 @@ public:
    * @param  name The name of this planner
    * @param  tf A pointer to a TF buffer
    */
-  virtual void configure(
+  void configure(
     const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
-    const std::string & name, std::shared_ptr<tf2_ros::Buffer> tf);
+    const std::string & name, std::shared_ptr<tf2_ros::Buffer> tf) override;
 
   /**
    * @brief Method to cleanup resources used on shutdown.
    */
-  virtual void cleanup() {}
+  void cleanup() override {}
 
   /**
    * @brief Method to active Behavior and any threads involved in execution.
    */
-  virtual void activate() {}
+  void activate() override {}
 
   /**
    * @brief Method to deactive Behavior and any threads involved in execution.
    */
-  virtual void deactivate() {}
+  virtual void deactivate() override {}
 
   /**
    * @brief Method to obtain the dock's staging pose. This method should likely
@@ -73,35 +73,35 @@ public:
    * @param frame Dock's frame of pose
    * @return PoseStamped of staging pose in the specified frame
    */
-  virtual geometry_msgs::msg::PoseStamped getStagingPose(
-    const geometry_msgs::msg::Pose & pose, const std::string & frame);
+  geometry_msgs::msg::PoseStamped getStagingPose(
+    const geometry_msgs::msg::Pose & pose, const std::string & frame) override;
 
   /**
    * @brief Method to obtain the refined pose of the dock, usually based on sensors
    * @param pose The initial estimate of the dock pose.
    * @param frame The frame of the initial estimate.
    */
-  virtual bool getRefinedPose(geometry_msgs::msg::PoseStamped & pose);
+  bool getRefinedPose(geometry_msgs::msg::PoseStamped & pose) override;
 
   /**
    * @copydoc opennav_docking_core::ChargingDock::isDocked
    */
-  virtual bool isDocked();
+  bool isDocked() override;
 
   /**
    * @copydoc opennav_docking_core::ChargingDock::isCharging
    */
-  virtual bool isCharging();
+  bool isCharging() override;
 
   /**
    * @copydoc opennav_docking_core::ChargingDock::disableCharging
    */
-  virtual bool disableCharging();
+  bool disableCharging() override;
 
   /**
    * @brief Similar to isCharging() but called when undocking.
    */
-  virtual bool hasStoppedCharging();
+  bool hasStoppedCharging() override;
 
 protected:
   void jointStateCallback(const sensor_msgs::msg::JointState::SharedPtr state);
