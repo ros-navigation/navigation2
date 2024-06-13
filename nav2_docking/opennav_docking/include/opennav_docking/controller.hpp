@@ -16,6 +16,7 @@
 #define OPENNAV_DOCKING__CONTROLLER_HPP_
 
 #include <memory>
+#include <vector>
 
 #include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/twist.hpp"
