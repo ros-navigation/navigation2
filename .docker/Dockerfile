@@ -48,6 +48,11 @@ RUN rosdep update \
 ################################################################################
 FROM baser AS cacher
 
+# clone underlay source
+COPY ./tools/underlay.repos ./
+RUN mkdir src && \
+    vcs import src < underlay.repos
+
 # copy overlay source
 COPY ./ ./src/nav2
 

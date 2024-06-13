@@ -2,9 +2,10 @@
 *
 
 # First-order allow exception for select directories
+!/.docker
 !/cache
 !/nav*
-!/.docker
+!/tools
 
 # Second-order deny exception for Dockerfile
 /.docker/Dockerfile
