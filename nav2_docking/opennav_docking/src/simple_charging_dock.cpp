@@ -284,19 +284,23 @@ void SimpleChargingDock::jointStateCallback(const sensor_msgs::msg::JointState::
 {
   double velocity = 0.0;
   double effort = 0.0;
+  size_t match_count = 0;  
   for (size_t i = 0; i < state->name.size(); ++i) {
     for (auto & name : stall_joint_names_) {
       if (state->name[i] == name) {
         // Tracking this joint
         velocity += abs(state->velocity[i]);
         effort += abs(state->effort[i]);
+        ++match_count;
       }
     }
   }
 
   // Take average
-  effort /= stall_joint_names_.size();
-  velocity /= stall_joint_names_.size();
+  if (match_count > 0) {
+    effort /= stall_joint_names_.size();
+    velocity /= stall_joint_names_.size();
+  }
 
   is_stalled_ = (velocity < stall_velocity_threshold_) && (effort > stall_effort_threshold_);
 }
