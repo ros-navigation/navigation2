@@ -17,6 +17,7 @@
 
 #include <string>
 #include <memory>
+#include <stdexcept>
 
 namespace opennav_docking_core
 {
