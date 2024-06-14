@@ -45,4 +45,38 @@ TEST(ControllerTests, ObjectLifecycle)
   controller.reset();
 }
 
+TEST(ControllerTests, DynamicParameters) {
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  auto controller = std::make_shared<opennav_docking::Controller>(node);
+
+  auto params = std::make_shared<rclcpp::AsyncParametersClient>(
+    node->get_node_base_interface(), node->get_node_topics_interface(),
+    node->get_node_graph_interface(),
+    node->get_node_services_interface());
+
+  // Set parameters
+  auto results = params->set_parameters_atomically(
+    {rclcpp::Parameter("controller.k_phi", 1.0),
+      rclcpp::Parameter("controller.k_delta", 2.0),
+      rclcpp::Parameter("controller.beta", 3.0),
+      rclcpp::Parameter("controller.lambda", 4.0),
+      rclcpp::Parameter("controller.v_linear_min", 5.0),
+      rclcpp::Parameter("controller.v_linear_max", 6.0),
+      rclcpp::Parameter("controller.v_angular_max", 7.0),
+      rclcpp::Parameter("controller.slowdown_radius", 8.0)});
+
+  // Spin
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+
+  // Check parameters
+  EXPECT_EQ(node->get_parameter("controller.k_phi").as_double(), 1.0);
+  EXPECT_EQ(node->get_parameter("controller.k_delta").as_double(), 2.0);
+  EXPECT_EQ(node->get_parameter("controller.beta").as_double(), 3.0);
+  EXPECT_EQ(node->get_parameter("controller.lambda").as_double(), 4.0);
+  EXPECT_EQ(node->get_parameter("controller.v_linear_min").as_double(), 5.0);
+  EXPECT_EQ(node->get_parameter("controller.v_linear_max").as_double(), 6.0);
+  EXPECT_EQ(node->get_parameter("controller.v_angular_max").as_double(), 7.0);
+  EXPECT_EQ(node->get_parameter("controller.slowdown_radius").as_double(), 8.0);
+}
+
 }  // namespace opennav_docking
