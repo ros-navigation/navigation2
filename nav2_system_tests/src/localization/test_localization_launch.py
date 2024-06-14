@@ -17,11 +17,11 @@
 import os
 import sys
 
+from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch import LaunchService
 from launch.actions import ExecuteProcess
 import launch_ros.actions
-from ament_index_python.packages import get_package_share_directory
 from launch_testing.legacy import LaunchTestService
 from launch.actions import AppendEnvironmentVariable, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
