@@ -21,9 +21,9 @@ from launch import LaunchDescription
 from launch import LaunchService
 from launch.actions import ExecuteProcess
 import launch_ros.actions
-from launch_testing.legacy import LaunchTestService
 from ament_index_python.packages import get_package_share_directory
-from launch.actions import IncludeLaunchDescription, AppendEnvironmentVariable
+from launch_testing.legacy import LaunchTestService
+from launch.actions import AppendEnvironmentVariable, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 
@@ -85,7 +85,7 @@ def main(argv=sys.argv[1:]):
         parameters=[{'yaml_filename': map_yaml_file}],
     )
     run_amcl = launch_ros.actions.Node(
-        package="nav2_amcl", executable="amcl", output="screen"
+        package='nav2_amcl', executable='amcl', output='screen'
     )
     run_lifecycle_manager = launch_ros.actions.Node(
         package='nav2_lifecycle_manager',
