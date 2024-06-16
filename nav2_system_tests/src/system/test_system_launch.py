@@ -116,17 +116,6 @@ def generate_launch_description():
                     'yaw': '0.0',
                 }.items(),
             ),
-            # # Launch gazebo server for simulation
-            # ExecuteProcess(
-            #     cmd=[
-            #         'gzserver',
-            #         '-s',
-            #         'libgazebo_ros_init.so',
-            #         '--minimal_comms',
-            #         world,
-            #     ],
-            #     output='screen',
-            # ),
             # TODO(orduno) Launch the robot state publisher instead
             #              using a local copy of TB3 urdf file
             Node(
