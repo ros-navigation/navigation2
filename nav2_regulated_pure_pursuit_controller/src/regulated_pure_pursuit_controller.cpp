@@ -291,8 +291,9 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
 bool RegulatedPurePursuitController::cancel()
 {
   // if false then publish zero velocity
-  if (!params_->use_cancel_deceleration)
+  if (!params_->use_cancel_deceleration) {
     return true;
+  }
   cancelling_ = true;
   return finished_cancelling_;
 }
