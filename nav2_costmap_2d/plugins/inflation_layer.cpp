@@ -171,10 +171,12 @@ InflationLayer::onFootprintChanged()
   need_reinflation_ = true;
 
   if (inflation_radius_ < inscribed_radius_) {
-    RCLCPP_WARN(
+    RCLCPP_ERROR(
       logger_,
-      "The configured inflation radius (%.3f) is smaller than the computed inscribed radius (%.3f) of your footprint, "
-      "it is highly recommended to set inflation radius to be at least as big as the inscribed radius to avoid collisions",
+      "The configured inflation radius (%.3f) is smaller than "
+      "the computed inscribed radius (%.3f) of your footprint, "
+      "it is highly recommended to set inflation radius to be at "
+      "least as big as the inscribed radius to avoid collisions",
       inflation_radius_, inscribed_radius_);
   }
 
