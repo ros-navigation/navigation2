@@ -17,12 +17,13 @@
 
 import os
 import sys
-
+from pathlib import Path
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
 from launch import LaunchService
 from launch.actions import (
+    AppendEnvironmentVariable,
     ExecuteProcess,
     IncludeLaunchDescription,
     SetEnvironmentVariable,
@@ -36,8 +37,16 @@ from nav2_common.launch import RewrittenYaml
 
 
 def generate_launch_description():
-    map_yaml_file = os.getenv('TEST_MAP')
-    world = os.getenv('TEST_WORLD')
+    # map_yaml_file = os.getenv('TEST_MAP')
+    # world = os.getenv('TEST_WORLD')
+    sim_dir = get_package_share_directory('nav2_minimal_tb3_sim')
+    nav2_bringup_dir = get_package_share_directory('nav2_bringup')
+    ros_gz_sim_dir = get_package_share_directory('ros_gz_sim')
+
+    world_sdf_xacro = os.path.join(sim_dir, 'worlds', 'tb3_sandbox.sdf.xacro')
+    robot_sdf = os.path.join(sim_dir, 'urdf', 'gz_waffle.sdf')
+
+    map_yaml_file = os.path.join(nav2_bringup_dir, 'maps', 'tb3_sandbox.yaml')
 
     bt_navigator_xml = os.path.join(
         get_package_share_directory('nav2_bt_navigator'),
@@ -77,19 +86,47 @@ def generate_launch_description():
 
     return LaunchDescription(
         [
-            SetEnvironmentVariable('RCUTILS_LOGGING_BUFFERED_STREAM', '1'),
-            SetEnvironmentVariable('RCUTILS_LOGGING_USE_STDOUT', '1'),
-            # Launch gazebo server for simulation
-            ExecuteProcess(
-                cmd=[
-                    'gzserver',
-                    '-s',
-                    'libgazebo_ros_init.so',
-                    '--minimal_comms',
-                    world,
-                ],
-                output='screen',
+            # SetEnvironmentVariable('RCUTILS_LOGGING_BUFFERED_STREAM', '1'),
+            # SetEnvironmentVariable('RCUTILS_LOGGING_USE_STDOUT', '1'),
+            AppendEnvironmentVariable(
+                'GZ_SIM_RESOURCE_PATH', os.path.join(sim_dir, 'models')
             ),
+            AppendEnvironmentVariable(
+            'GZ_SIM_RESOURCE_PATH',
+                str(Path(os.path.join(sim_dir)).parent.resolve())
+            ),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    os.path.join(ros_gz_sim_dir, 'launch', 'gz_sim.launch.py')
+                ),
+                launch_arguments={'gz_args': ['-r -s ', world_sdf_xacro]}.items(),
+            ),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    os.path.join(sim_dir, 'launch', 'spawn_tb3.launch.py')
+                ),
+                launch_arguments={
+                    'use_sim_time': 'True',
+                    'robot_sdf': robot_sdf,
+                    'x_pose': '-2.0',
+                    'y_pose': '-0.5',
+                    'z_pose': '0.01',
+                    'roll': '0.0',
+                    'pitch': '0.0',
+                    'yaw': '0.0',
+                }.items(),
+            ),
+            # # Launch gazebo server for simulation
+            # ExecuteProcess(
+            #     cmd=[
+            #         'gzserver',
+            #         '-s',
+            #         'libgazebo_ros_init.so',
+            #         '--minimal_comms',
+            #         world,
+            #     ],
+            #     output='screen',
+            # ),
             # TODO(orduno) Launch the robot state publisher instead
             #              using a local copy of TB3 urdf file
             Node(

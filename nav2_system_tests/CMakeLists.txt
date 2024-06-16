@@ -28,6 +28,7 @@ find_package(navigation2)
 find_package(angles REQUIRED)
 find_package(behaviortree_cpp REQUIRED)
 find_package(pluginlib REQUIRED)
+find_package(nav2_minimal_tb3_sim REQUIRED)
 
 nav2_package()
 
@@ -115,7 +116,7 @@ if(BUILD_TESTING)
   add_subdirectory(src/planning)
   # Uncomment after https://github.com/ros-navigation/navigation2/pull/3634
   # add_subdirectory(src/localization)
-  # add_subdirectory(src/system)
+  add_subdirectory(src/system)
   # add_subdirectory(src/system_failure)
   # add_subdirectory(src/updown)
   # add_subdirectory(src/waypoint_follower)
