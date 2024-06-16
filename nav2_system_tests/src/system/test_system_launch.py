@@ -86,8 +86,8 @@ def generate_launch_description():
 
     return LaunchDescription(
         [
-            # SetEnvironmentVariable('RCUTILS_LOGGING_BUFFERED_STREAM', '1'),
-            # SetEnvironmentVariable('RCUTILS_LOGGING_USE_STDOUT', '1'),
+            SetEnvironmentVariable('RCUTILS_LOGGING_BUFFERED_STREAM', '1'),
+            SetEnvironmentVariable('RCUTILS_LOGGING_USE_STDOUT', '1'),
             AppendEnvironmentVariable(
                 'GZ_SIM_RESOURCE_PATH', os.path.join(sim_dir, 'models')
             ),
