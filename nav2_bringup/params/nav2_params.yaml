@@ -407,11 +407,12 @@ docking_server:
       filter_coef: 0.1
 
     # Dock instances
-    docks: ['home_dock']  # Input your docks here
-    home_dock:
-      type: 'simple_charging_dock'
-      frame: map
-      pose: [0.0, 0.0, 0.0]
+    # The following example illustrates how you should configure the docks instances.
+    # docks: ['home_dock']  # Input your docks here
+    # home_dock:
+    #   type: 'simple_charging_dock'
+    #   frame: map
+    #   pose: [0.0, 0.0, 0.0]
 
     controller:
       k_phi: 3.0
