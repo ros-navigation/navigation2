@@ -34,13 +34,24 @@ bool DockDatabase::initialize(
   node_ = parent;
   auto node = node_.lock();
 
-  if (getDockPlugins(node, tf) && getDockInstances(node)) {
-    RCLCPP_INFO(
+  if (!getDockPlugins(node, tf)) {
+    RCLCPP_ERROR(
       node->get_logger(),
-      "Docking Server has %u dock types and %u dock instances available.",
-      this->plugin_size(), this->instance_size());
-    return true;
+      "An error occurred while getting the dock plugins!");
+    return false;
   }
+
+  if (!getDockInstances(node)) {
+    RCLCPP_ERROR(
+      node->get_logger(),
+      "An error occurred while getting the dock instances!");
+    return false;
+  }
+
+  RCLCPP_INFO(
+    node->get_logger(),
+    "Docking Server has %u dock types and %u dock instances available.",
+    this->plugin_size(), this->instance_size());
 
   reload_db_service_ = node->create_service<nav2_msgs::srv::ReloadDockDatabase>(
     "~/reload_database",
@@ -48,7 +59,7 @@ bool DockDatabase::initialize(
       &DockDatabase::reloadDbCb, this,
       std::placeholders::_1, std::placeholders::_2));
 
-  return false;
+  return true;
 }
 
 void DockDatabase::activate()
@@ -194,10 +205,12 @@ bool DockDatabase::getDockInstances(const rclcpp_lifecycle::LifecycleNode::Share
     return utils::parseDockParams(docks_param, node, dock_instances_);
   }
 
-  RCLCPP_ERROR(
+  RCLCPP_WARN(
     node->get_logger(),
-    "Dock database filepath nor dock parameters set. Unable to perform docking actions.");
-  return false;
+    "Dock database filepath nor dock parameters set. "
+    "Docking actions can only be executed specifying the dock pose via the action request. "
+    "Or update the dock database via the reload_database service.");
+  return true;
 }
 
 unsigned int DockDatabase::plugin_size() const
