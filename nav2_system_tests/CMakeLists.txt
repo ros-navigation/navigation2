@@ -114,7 +114,7 @@ if(BUILD_TESTING)
   add_subdirectory(src/behavior_tree)
   add_subdirectory(src/planning)
   # Uncomment after https://github.com/ros-navigation/navigation2/pull/3634
-  # add_subdirectory(src/localization)
+  add_subdirectory(src/localization)
   # add_subdirectory(src/system)
   # add_subdirectory(src/system_failure)
   # add_subdirectory(src/updown)
