@@ -160,7 +160,7 @@ def generate_launch_description():
 
     declare_robot_sdf_cmd = DeclareLaunchArgument(
         'robot_sdf',
-        default_value=os.path.join(sim_dir, 'urdf', 'gz_waffle.sdf'),
+        default_value=os.path.join(sim_dir, 'urdf', 'gz_waffle.sdf.xacro'),
         description='Full path to robot sdf file to spawn the robot in gazebo',
     )
 
@@ -241,7 +241,6 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(
             os.path.join(sim_dir, 'launch', 'spawn_tb3.launch.py')),
         launch_arguments={'namespace': namespace,
-                          'use_simulator': use_simulator,
                           'use_sim_time': use_sim_time,
                           'robot_name': robot_name,
                           'robot_sdf': robot_sdf,
