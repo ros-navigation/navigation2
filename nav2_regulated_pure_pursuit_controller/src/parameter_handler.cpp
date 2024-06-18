@@ -86,6 +86,8 @@ ParameterHandler::ParameterHandler(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".max_angular_accel", rclcpp::ParameterValue(3.2));
   declare_parameter_if_not_declared(
+    node, plugin_name_ + ".use_cancel_deceleration", rclcpp::ParameterValue(false));
+  declare_parameter_if_not_declared(
     node, plugin_name_ + ".cancel_deceleration", rclcpp::ParameterValue(3.2));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".allow_reversing", rclcpp::ParameterValue(false));
@@ -153,6 +155,7 @@ ParameterHandler::ParameterHandler(
   node->get_parameter(
     plugin_name_ + ".rotate_to_heading_min_angle", params_.rotate_to_heading_min_angle);
   node->get_parameter(plugin_name_ + ".max_angular_accel", params_.max_angular_accel);
+  node->get_parameter(plugin_name_ + ".use_cancel_deceleration", params_.use_cancel_deceleration);
   node->get_parameter(plugin_name_ + ".cancel_deceleration", params_.cancel_deceleration);
   node->get_parameter(plugin_name_ + ".allow_reversing", params_.allow_reversing);
   node->get_parameter(
@@ -258,6 +261,8 @@ ParameterHandler::dynamicParametersCallback(
         params_.use_collision_detection = parameter.as_bool();
       } else if (name == plugin_name_ + ".use_rotate_to_heading") {
         params_.use_rotate_to_heading = parameter.as_bool();
+      } else if (name == plugin_name_ + ".use_cancel_deceleration") {
+        params_.use_cancel_deceleration = parameter.as_bool();
       } else if (name == plugin_name_ + ".allow_reversing") {
         if (params_.use_rotate_to_heading && parameter.as_bool()) {
           RCLCPP_WARN(
