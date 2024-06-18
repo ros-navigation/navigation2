@@ -71,7 +71,7 @@ void PathAngleCritic::score(CriticData & data)
 
   utils::setPathFurthestPointIfNotSet(data);
   auto offseted_idx = std::min(
-    *data.furthest_reached_path_point + offset_from_furthest_, data.path.x.shape(0) - 1);
+    *data.furthest_reached_path_point + offset_from_furthest_, (size_t)data.path.x.size() - 1);
 
   const float goal_x = data.path.x(offseted_idx);
   const float goal_y = data.path.y(offseted_idx);
@@ -98,19 +98,18 @@ void PathAngleCritic::score(CriticData & data)
       throw nav2_core::ControllerException("Invalid path angle mode!");
   }
 
-  auto yaws_between_points = xt::atan2(
-    goal_y - xt::view(data.trajectories.y, xt::all(), -1),
-    goal_x - xt::view(data.trajectories.x, xt::all(), -1));
+  int && rightmost_idx = data.trajectories.y.cols() - 1;
+  auto yaws_between_points = ((goal_y - data.trajectories.y.col(rightmost_idx)).binaryExpr(
+    (goal_x - data.trajectories.x.col(rightmost_idx)), [&](const float & y, const float & x){return std::atan2(y, x);})).eval();
 
   switch (mode_) {
     case PathAngleMode::FORWARD_PREFERENCE:
       {
-        auto yaws =
-          xt::fabs(
-          utils::shortest_angular_distance(
-            xt::view(data.trajectories.yaws, xt::all(), -1), yaws_between_points));
+        const Eigen::ArrayXf& yaws =
+          Eigen::abs(
+          utils::shortest_angular_distance(data.trajectories.yaws.col(rightmost_idx), yaws_between_points));
         if (power_ > 1u) {
-          data.costs += xt::pow(std::move(yaws) * weight_, power_);
+          data.costs += Eigen::pow(std::move(yaws) * weight_, power_);
         } else {
           data.costs += std::move(yaws) * weight_;
         }
@@ -118,18 +117,14 @@ void PathAngleCritic::score(CriticData & data)
       }
     case PathAngleMode::NO_DIRECTIONAL_PREFERENCE:
       {
-        auto yaws =
-          xt::fabs(
-          utils::shortest_angular_distance(
-            xt::view(data.trajectories.yaws, xt::all(), -1), yaws_between_points));
-        const auto yaws_between_points_corrected = xt::where(
-          yaws < M_PIF_2, yaws_between_points,
-          utils::normalize_angles(yaws_between_points + M_PIF));
-        const auto corrected_yaws = xt::fabs(
-          utils::shortest_angular_distance(
-            xt::view(data.trajectories.yaws, xt::all(), -1), yaws_between_points_corrected));
+        const Eigen::ArrayXf& yaws =
+          Eigen::abs(
+          utils::shortest_angular_distance(data.trajectories.yaws.col(rightmost_idx), yaws_between_points));
+        const Eigen::ArrayXf& yaws_between_points_corrected = ((yaws < M_PIF_2).select(yaws_between_points, utils::normalize_angles((yaws_between_points + M_PIF)))).eval();
+        const Eigen::ArrayXf& corrected_yaws = Eigen::abs(
+          utils::shortest_angular_distance(data.trajectories.yaws.col(rightmost_idx), yaws_between_points_corrected));
         if (power_ > 1u) {
-          data.costs += xt::pow(std::move(corrected_yaws) * weight_, power_);
+          data.costs += Eigen::pow(std::move(corrected_yaws) * weight_, power_);
         } else {
           data.costs += std::move(corrected_yaws) * weight_;
         }
@@ -137,14 +132,12 @@ void PathAngleCritic::score(CriticData & data)
       }
     case PathAngleMode::CONSIDER_FEASIBLE_PATH_ORIENTATIONS:
       {
-        const auto yaws_between_points_corrected = xt::where(
-          xt::fabs(utils::shortest_angular_distance(yaws_between_points, goal_yaw)) < M_PIF_2,
-          yaws_between_points, utils::normalize_angles(yaws_between_points + M_PIF));
-        const auto corrected_yaws = xt::fabs(
-          utils::shortest_angular_distance(
-            xt::view(data.trajectories.yaws, xt::all(), -1), yaws_between_points_corrected));
+        const Eigen::ArrayXf&  yaws_between_points_corrected = ((Eigen::abs(utils::shortest_angular_distance(yaws_between_points, goal_yaw)) < M_PIF_2).select(
+          yaws_between_points, utils::normalize_angles(yaws_between_points + M_PIF))).eval();
+        const Eigen::ArrayXf& corrected_yaws = Eigen::abs(
+          utils::shortest_angular_distance(data.trajectories.yaws.col(rightmost_idx), yaws_between_points_corrected));
         if (power_ > 1u) {
-          data.costs += xt::pow(std::move(corrected_yaws) * weight_, power_);
+          data.costs += Eigen::pow(std::move(corrected_yaws) * weight_, power_);
         } else {
           data.costs += std::move(corrected_yaws) * weight_;
         }

@@ -248,10 +248,10 @@ void Optimizer::applyControlSequenceConstraints()
   float & vy = s.constraints.vy;
   float & wz = s.constraints.wz;
 
-  float max_delta_vx = s.model_dt * s.constraints.ax_max;
-  float min_delta_vx = s.model_dt * s.constraints.ax_min;
-  float max_delta_vy = s.model_dt * s.constraints.ay_max;
-  float max_delta_wz = s.model_dt * s.constraints.az_max;
+  float && max_delta_vx = s.model_dt * s.constraints.ax_max;
+  float && min_delta_vx = s.model_dt * s.constraints.ax_min;
+  float && max_delta_vy = s.model_dt * s.constraints.ay_max;
+  float && max_delta_wz = s.model_dt * s.constraints.az_max;
   float vx_last = std::clamp(control_sequence_.vx(0), vx_min, vx_max);
   float vy_last = std::clamp(control_sequence_.vy(0), -vy, vy);
   float wz_last = std::clamp(control_sequence_.wz(0), -wz, wz);
@@ -336,7 +336,7 @@ void Optimizer::propagateStateVelocitiesFromInitials(
 
 void Optimizer::integrateStateVelocities(
   models::Trajectories & trajectories,
-  const models::State & state) const
+  models::State & state) const
 {
   const float initial_yaw = static_cast<float>(tf2::getYaw(state.pose.pose.orientation));
 
@@ -363,10 +363,10 @@ void Optimizer::integrateStateVelocities(
   auto dy = (state.vx * yaw_sin).eval();
 
   if (isHolonomic()) {
-    auto && ddx = (state.vy * yaw_sin).eval();
-    auto && ddy = (state.vy * yaw_cos).eval();
-    dx = dx - ddx;
-    dy = dy + ddy;
+    //auto && ddx = (state.vy * yaw_sin).eval();
+    //auto && ddy = (state.vy * yaw_cos).eval();
+    dx = dx - state.vy * yaw_sin;
+    dy = dy + state.vy * yaw_cos;
   }
 
   trajectories.x.col(0) = dx.col(0) * settings_.model_dt + state.pose.pose.position.x;
@@ -400,13 +400,13 @@ void Optimizer::updateControlSequence()
 {
   const bool is_holo = isHolonomic();
   auto & s = settings_;
-  auto bounded_noises_vx = state_.cvx - control_sequence_.vx;
-  auto bounded_noises_wz = state_.cwz - control_sequence_.wz;
-  costs_ += s.gamma / powf(s.sampling_std.vx, 2) * (bounded_noises_vx.rowwise() * control_sequence_.vx.transpose()).rowwise().sum().eval();
-  costs_ += s.gamma / powf(s.sampling_std.wz, 2) * (bounded_noises_wz.rowwise() * control_sequence_.wz.transpose()).rowwise().sum().eval();
+  auto && bounded_noises_vx = state_.cvx.rowwise() - control_sequence_.vx.transpose();
+  auto && bounded_noises_wz = state_.cwz.rowwise() - control_sequence_.wz.transpose();
+  costs_ += s.gamma / powf(s.sampling_std.vx, 2) * (bounded_noises_vx.rowwise() * control_sequence_.vx.transpose()).rowwise().sum();
+  costs_ += s.gamma / powf(s.sampling_std.wz, 2) * (bounded_noises_wz.rowwise() * control_sequence_.wz.transpose()).rowwise().sum();
   if (is_holo) {
-    auto bounded_noises_vy = state_.cvy - control_sequence_.vy;
-    costs_ += s.gamma / powf(s.sampling_std.vy, 2) * (bounded_noises_vy.rowwise() * control_sequence_.vy.transpose()).rowwise().sum().eval();
+    auto && bounded_noises_vy = state_.cvy.rowwise() - control_sequence_.vy.transpose();
+    costs_ += s.gamma / powf(s.sampling_std.vy, 2) * (bounded_noises_vy.rowwise() * control_sequence_.vy.transpose()).rowwise().sum();
   }
 
   auto && costs_normalized = costs_ - costs_.minCoeff();

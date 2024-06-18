@@ -30,7 +30,6 @@ void TwirlingCritic::initialize()
 
 void TwirlingCritic::score(CriticData & data)
 {
-  using xt::evaluation_strategy::immediate;
   if (!enabled_ ||
     utils::withinPositionGoalTolerance(data.goal_checker, data.state.pose.pose, data.path))
   {
@@ -38,9 +37,9 @@ void TwirlingCritic::score(CriticData & data)
   }
 
   if (power_ > 1u) {
-    data.costs += xt::pow(xt::mean(xt::fabs(data.state.wz), {1}, immediate) * weight_, power_);
+    data.costs += Eigen::pow((Eigen::abs(data.state.wz)).rowwise().mean().eval() * weight_, power_);
   } else {
-    data.costs += xt::mean(xt::fabs(data.state.wz), {1}, immediate) * weight_;
+    data.costs += (Eigen::abs(data.state.wz)).rowwise().mean().eval() * weight_;
   }
 }
 

@@ -79,9 +79,21 @@ add_library(mppi_controller SHARED
   src/noise_generator.cpp
 )
 
-#add_library(mppi_critics SHARED)
+add_library(mppi_critics SHARED
+  src/critics/obstacles_critic.cpp
+  #src/critics/cost_critic.cpp
+  src/critics/goal_critic.cpp
+  src/critics/goal_angle_critic.cpp
+  #src/critics/path_align_critic.cpp
+  src/critics/path_follow_critic.cpp
+  src/critics/path_angle_critic.cpp
+  src/critics/prefer_forward_critic.cpp
+  src/critics/twirling_critic.cpp
+  #src/critics/constraint_critic.cpp
+  #src/critics/velocity_deadband_critic.cpp
+)
 
-set(libraries mppi_controller) #mppi_critics
+set(libraries mppi_controller mppi_critics) #
 
 foreach(lib IN LISTS libraries)
   target_compile_options(${lib} PUBLIC -fconcepts)

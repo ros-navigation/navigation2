@@ -34,7 +34,7 @@ void PathFollowCritic::initialize()
 
 void PathFollowCritic::score(CriticData & data)
 {
-  if (!enabled_ || data.path.x.shape(0) < 2 ||
+  if (!enabled_ || data.path.x.size() < 2 ||
     utils::withinPositionGoalTolerance(threshold_to_consider_, data.state.pose.pose, data.path))
   {
     return;
@@ -42,7 +42,7 @@ void PathFollowCritic::score(CriticData & data)
 
   utils::setPathFurthestPointIfNotSet(data);
   utils::setPathCostsIfNotSet(data, costmap_ros_);
-  const size_t path_size = data.path.x.shape(0) - 1;
+  const size_t path_size = data.path.x.size() - 1;
 
   auto offseted_idx = std::min(
     *data.furthest_reached_path_point + offset_from_furthest_, path_size);
@@ -60,13 +60,16 @@ void PathFollowCritic::score(CriticData & data)
   const auto path_x = data.path.x(offseted_idx);
   const auto path_y = data.path.y(offseted_idx);
 
-  const auto last_x = xt::view(data.trajectories.x, xt::all(), -1);
-  const auto last_y = xt::view(data.trajectories.y, xt::all(), -1);
+  const int && rightmost_idx = data.trajectories.x.cols() - 1;
+  const auto last_x = data.trajectories.x.col(rightmost_idx);
+  const auto last_y = data.trajectories.y.col(rightmost_idx);
 
+  const auto delta_x = last_x - path_x;
+  const auto delta_y = last_y - path_y;
   if (power_ > 1u) {
-    data.costs += xt::pow(weight_ * std::move(xt::hypot(last_x - path_x, last_y - path_y)), power_);
+    data.costs += Eigen::pow(weight_ * std::move((delta_x.square() + delta_y.square()).sqrt()), power_);
   } else {
-    data.costs += weight_ * std::move(xt::hypot(last_x - path_x, last_y - path_y));
+    data.costs += weight_ * std::move((delta_x.square() + delta_y.square()).sqrt());
   }
 }
 

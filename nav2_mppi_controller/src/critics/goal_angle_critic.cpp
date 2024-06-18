@@ -41,16 +41,13 @@ void GoalAngleCritic::score(CriticData & data)
     return;
   }
 
-  const auto goal_idx = data.path.x.shape(0) - 1;
+  const auto goal_idx = data.path.x.size() - 1;
   const float goal_yaw = data.path.yaws(goal_idx);
 
   if (power_ > 1u) {
-    data.costs += xt::pow(
-      xt::mean(xt::fabs(utils::shortest_angular_distance(data.trajectories.yaws, goal_yaw)), {1}) *
-      weight_, power_);
+    data.costs += Eigen::pow(((Eigen::abs(utils::shortest_angular_distance(data.trajectories.yaws, goal_yaw))).rowwise().mean()) * weight_, power_);
   } else {
-    data.costs += xt::mean(
-      xt::fabs(utils::shortest_angular_distance(data.trajectories.yaws, goal_yaw)), {1}) * weight_;
+    data.costs += ((Eigen::abs(utils::shortest_angular_distance(data.trajectories.yaws, goal_yaw))).rowwise().mean()) * weight_;
   }
 }
 

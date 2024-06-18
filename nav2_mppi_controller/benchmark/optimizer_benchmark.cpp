@@ -48,7 +48,7 @@ void prepareAndRunBenchmark(
   std::vector<std::string> critics, benchmark::State & state)
 {
   int batch_size = 2000;
-  int time_steps = 56;
+  int time_steps = 70;
   unsigned int path_points = 150u;
   int iteration_count = 2;
   double lookahead_distance = 40.0;
@@ -95,7 +95,8 @@ static void BM_DiffDrivePointFootprint(benchmark::State & state)
 {
   bool consider_footprint = true;
   std::string motion_model = "DiffDrive";
-  std::vector<std::string> critics = {};
+  std::vector<std::string> critics = {{"GoalCritic"}, {"GoalAngleCritic"}, {"ObstaclesCritic"},
+    {"PathAngleCritic"}, {"PathFollowCritic"}, {"PreferForwardCritic"}};
 
   prepareAndRunBenchmark(consider_footprint, motion_model, critics, state);
 }
@@ -104,26 +105,28 @@ static void BM_DiffDrive(benchmark::State & state)
 {
   bool consider_footprint = true;
   std::string motion_model = "DiffDrive";
-  std::vector<std::string> critics = {};
+  std::vector<std::string> critics = {{"GoalCritic"}, {"GoalAngleCritic"}, {"ObstaclesCritic"},
+    {"PathAngleCritic"}, {"PathFollowCritic"}, {"PreferForwardCritic"}};
 
   prepareAndRunBenchmark(consider_footprint, motion_model, critics, state);
 }
 
 
-static void BM_Omni(benchmark::State & state)
+/*static void BM_Omni(benchmark::State & state)
 {
   bool consider_footprint = true;
   std::string motion_model = "Omni";
   std::vector<std::string> critics = {};
 
   prepareAndRunBenchmark(consider_footprint, motion_model, critics, state);
-}
+}*/
 
 static void BM_Ackermann(benchmark::State & state)
 {
   bool consider_footprint = true;
   std::string motion_model = "Ackermann";
-  std::vector<std::string> critics = {};
+  std::vector<std::string> critics = {{"GoalCritic"}, {"GoalAngleCritic"}, {"ObstaclesCritic"},
+    {"PathAngleCritic"}, {"PathFollowCritic"}, {"PreferForwardCritic"}};
 
   prepareAndRunBenchmark(consider_footprint, motion_model, critics, state);
 }
@@ -193,7 +196,7 @@ static void BM_PathAngleCritic(benchmark::State & state)
 
 BENCHMARK(BM_DiffDrivePointFootprint)->Unit(benchmark::kMillisecond);
 BENCHMARK(BM_DiffDrive)->Unit(benchmark::kMillisecond);
-BENCHMARK(BM_Omni)->Unit(benchmark::kMillisecond);
+//BENCHMARK(BM_Omni)->Unit(benchmark::kMillisecond);
 BENCHMARK(BM_Ackermann)->Unit(benchmark::kMillisecond);
 
 /*BENCHMARK(BM_GoalCritic)->Unit(benchmark::kMillisecond);

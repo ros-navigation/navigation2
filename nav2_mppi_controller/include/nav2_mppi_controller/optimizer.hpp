@@ -188,7 +188,7 @@ protected:
    */
   void integrateStateVelocities(
     models::Trajectories & trajectories,
-    const models::State & state) const;
+    models::State & state) const;
 
   /**
    * @brief Rollout velocities in state to poses

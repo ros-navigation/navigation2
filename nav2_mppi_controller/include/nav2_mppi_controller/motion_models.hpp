@@ -75,10 +75,11 @@ public:
     // }
 
     const bool is_holo = isHolonomic();
-    float max_delta_vx = model_dt_ * control_constraints_.ax_max;
-    float min_delta_vx = model_dt_ * control_constraints_.ax_min;
-    float max_delta_vy = model_dt_ * control_constraints_.ay_max;
-    float max_delta_wz = model_dt_ * control_constraints_.az_max;
+    float && max_delta_vx = model_dt_ * control_constraints_.ax_max;
+    float && min_delta_vx = model_dt_ * control_constraints_.ax_min;
+    float && max_delta_vy = model_dt_ * control_constraints_.ay_max;
+    float && max_delta_wz = model_dt_ * control_constraints_.az_max;
+
     for (unsigned int i = 0; i != state.vx.rows(); i++) {
       float vx_last = state.vx(i, 0);
       float vy_last = state.vy(i, 0);
