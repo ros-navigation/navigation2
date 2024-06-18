@@ -125,7 +125,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
       navigators_.push_back(class_loader_.createUniqueInstance(navigator_type));
       if (!navigators_.back()->on_configure(
           node, plugin_lib_names, feedback_utils,
-          &plugin_muxer_, odom_smoother_))
+          &plugin_muxer_, odom_smoother_, logger_cout_))
       {
         return nav2_util::CallbackReturn::FAILURE;
       }

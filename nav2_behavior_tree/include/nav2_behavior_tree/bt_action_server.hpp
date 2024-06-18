@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 
+#include "behaviortree_cpp_v3/loggers/bt_cout_logger.h"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_behavior_tree/behavior_tree_engine.hpp"
 #include "nav2_behavior_tree/ros_topic_logger.hpp"

@@ -20,6 +20,7 @@
 #include <string>
 #include <vector>
 
+#include "behaviortree_cpp_v3/loggers/bt_cout_logger.h"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_util/odometry_utils.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
@@ -92,6 +93,7 @@ protected:
 
   // Odometry smoother object
   std::shared_ptr<nav2_util::OdomSmoother> odom_smoother_;
+  std::shared_ptr<BT::StdCoutLogger> logger_cout_;
 
   // Metrics for feedback
   std::string robot_frame_;
