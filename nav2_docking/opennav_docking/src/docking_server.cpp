@@ -236,7 +236,7 @@ void DockingServer::dockRobot()
     }
 
     // Check if the robot is docked or charging before proceeding
-    if (dock->plugin->isDocked() || dock->plugin->isCharging()){
+    if (dock->plugin->isDocked() || dock->plugin->isCharging()) {
       RCLCPP_INFO(get_logger(), "Robot is already charging, no need to dock");
       return;
     }
