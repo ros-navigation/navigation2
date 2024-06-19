@@ -36,6 +36,7 @@ AStarAlgorithm<NodeT>::AStarAlgorithm(
   const MotionModel & motion_model,
   const SearchInfo & search_info)
 : _traverse_unknown(true),
+  _is_initialized(false),
   _max_iterations(0),
   _max_planning_time(0),
   _x_size(0),
@@ -67,7 +68,10 @@ void AStarAlgorithm<NodeT>::initialize(
   _max_iterations = max_iterations;
   _max_on_approach_iterations = max_on_approach_iterations;
   _max_planning_time = max_planning_time;
-  NodeT::precomputeDistanceHeuristic(lookup_table_size, _motion_model, dim_3_size, _search_info);
+  if(!_is_initialized) {
+    NodeT::precomputeDistanceHeuristic(lookup_table_size, _motion_model, dim_3_size, _search_info);
+  }
+  _is_initialized = true;
   _dim3_size = dim_3_size;
   _expander = std::make_unique<AnalyticExpansion<NodeT>>(
     _motion_model, _search_info, _traverse_unknown, _dim3_size);
