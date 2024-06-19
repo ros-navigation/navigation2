@@ -84,7 +84,7 @@ void DockDatabase::reloadDbCb(
 {
   auto node = node_.lock();
   DockMap dock_instances;
-  if (utils::parseDockFile(request->filepath, node_.lock(), dock_instances)) {
+  if (utils::parseDockFile(request->filepath, node, dock_instances)) {
     dock_instances_ = dock_instances;
     response->success = true;
     RCLCPP_INFO(
@@ -92,10 +92,6 @@ void DockDatabase::reloadDbCb(
       "Dock database reloaded from file %s.", request->filepath.c_str());
     return;
   }
-
-  RCLCPP_ERROR(
-    node->get_logger(),
-    "Dock database reload failed from file %s.", request->filepath.c_str());
   response->success = false;
 }
 
@@ -118,17 +114,6 @@ Dock * DockDatabase::findDock(const std::string & dock_id)
 
 Dock * DockDatabase::findDockInstance(const std::string & dock_id)
 {
-  if (dock_instances_.empty()) {
-    auto node = node_.lock();
-    RCLCPP_WARN(
-      node->get_logger(),
-      "Dock database filepath nor dock parameters set. "
-      "Docking actions can only be executed specifying the dock pose via the action request. "
-      "Or update the dock database via the reload_database service.");
-
-    return nullptr;
-  }
-
   auto it = dock_instances_.find(dock_id);
   if (it != dock_instances_.end()) {
     return &(it->second);

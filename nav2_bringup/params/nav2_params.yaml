@@ -407,7 +407,7 @@ docking_server:
       filter_coef: 0.1
 
     # Dock instances
-    # The following example illustrates how you should configure the docks instances.
+    # The following example illustrates configuring dock instances.
     # docks: ['home_dock']  # Input your docks here
     # home_dock:
     #   type: 'simple_charging_dock'
