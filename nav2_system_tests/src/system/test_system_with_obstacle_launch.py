@@ -39,11 +39,10 @@ from nav2_simple_commander.utils import kill_os_processes
 
 
 def generate_launch_description():
-    # map_yaml_file = os.getenv('TEST_MAP')
-    # world = os.getenv('TEST_WORLD')
     sim_dir = get_package_share_directory('nav2_minimal_tb3_sim')
     nav2_bringup_dir = get_package_share_directory('nav2_bringup')
     ros_gz_sim_dir = get_package_share_directory('ros_gz_sim')
+    nav2_system_tests_dir = get_package_share_directory('nav2_system_tests')
 
     world_sdf_xacro = os.path.join(sim_dir, 'worlds', 'tb3_sandbox.sdf.xacro')
     robot_sdf = os.path.join(sim_dir, 'urdf', 'gz_waffle.sdf')
@@ -86,7 +85,7 @@ def generate_launch_description():
 
     new_yaml = configured_params.perform(context)
 
-    cardbox_sdf = os.path.join(sim_dir, 'urdf', 'cardboard_box.sdf')
+    cardbox_sdf = os.path.join(nav2_system_tests_dir, 'models', 'cardboard_box.sdf')
 
     return LaunchDescription(
         [

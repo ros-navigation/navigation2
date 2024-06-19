@@ -1,6 +1,4 @@
-"""
-General utility functions
-"""
+"""General utility functions"""
 
 import os
 import signal
@@ -18,7 +16,7 @@ def find_os_processes(name):
             pid = columns[1]
             command = ' '.join(columns[10:])
             if command.startswith(name):
-                gz_sim_processes.append((pid, command))   
+                gz_sim_processes.append((pid, command))
     return gz_sim_processes
 
 
