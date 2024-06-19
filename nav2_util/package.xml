@@ -10,37 +10,31 @@
   <license>BSD-3-Clause</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
-  <build_depend>libboost-program-options-dev</build_depend>
+
   <depend>nav2_common</depend>
 
+  <depend>bond</depend>
+  <depend>bondcpp</depend>
+  <depend>builtin_interfaces</depend>
   <depend>geometry_msgs</depend>
-  <depend>rclcpp</depend>
+  <depend>lifecycle_msgs</depend>
   <depend>nav2_msgs</depend>
   <depend>nav_msgs</depend>
-  <depend>tf2</depend>
-  <depend>tf2_ros</depend>
-  <depend>tf2_geometry_msgs</depend>
-  <depend>lifecycle_msgs</depend>
-  <depend>bondcpp</depend>
-  <depend>bond</depend>
+  <depend>rcl_interfaces</depend>
+  <depend>rclcpp</depend>
   <depend>rclcpp_action</depend>
   <depend>rclcpp_lifecycle</depend>
-  <depend>launch</depend>
-  <depend>launch_testing_ament_cmake</depend>
-  <depend>action_msgs</depend>
-  <depend>rcl_interfaces</depend>
-
-  <exec_depend>libboost-program-options</exec_depend>
+  <depend>std_msgs</depend>
+  <depend>tf2</depend>
+  <depend>tf2_geometry_msgs</depend>
+  <depend>tf2_msgs</depend>
+  <depend>tf2_ros</depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_cmake_gtest</test_depend>
-  <test_depend>launch</test_depend>
-  <test_depend>launch_testing_ament_cmake</test_depend>
   <test_depend>std_srvs</test_depend>
   <test_depend>test_msgs</test_depend>
-  <test_depend>action_msgs</test_depend>
-  <test_depend>launch_testing_ros</test_depend>
   <test_depend>ament_cmake_pytest</test_depend>
 
   <export>

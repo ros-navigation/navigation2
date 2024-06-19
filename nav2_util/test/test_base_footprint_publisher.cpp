@@ -15,7 +15,7 @@
 #include <string>
 #include <memory>
 
-#include "nav2_util/base_footprint_publisher.hpp"
+#include "base_footprint_publisher.hpp"
 #include "gtest/gtest.h"
 #include "tf2/exceptions.h"
 
