@@ -76,7 +76,6 @@ ament_add_test(test_nav_through_poses
   TIMEOUT 180
   ENV
     TEST_DIR=${CMAKE_CURRENT_SOURCE_DIR}
-    GZ_SIM_RESOURCE_PATH=${PROJECT_SOURCE_DIR}/models
     ADD_OBSTACLE=True
     BT_NAVIGATOR_XML=navigate_through_poses_w_replanning_and_recovery.xml
     TESTER=nav_through_poses_tester_node.py
