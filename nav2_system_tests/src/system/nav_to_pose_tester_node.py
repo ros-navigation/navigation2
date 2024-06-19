@@ -59,6 +59,7 @@ class NavTester(Node):
         self.initial_pose_received = False
         self.initial_pose = initial_pose
         self.goal_pose = goal_pose
+        self.set_initial_pose_timeout = 100
         self.action_client = ActionClient(self, NavigateToPose, 'navigate_to_pose')
 
     def info_msg(self, msg: str):
@@ -212,11 +213,22 @@ class NavTester(Node):
 
     def wait_for_initial_pose(self):
         self.initial_pose_received = False
+        # If the initial pose is not received within 100 seconds, return False
+        # this is because when setting a wrong initial pose, amcl_pose is not received
+        # and the test will hang indefinitely
+        start_time = time.time()
+        duration = 0        
         while not self.initial_pose_received:
             self.info_msg('Setting initial pose')
             self.setInitialPose()
             self.info_msg('Waiting for amcl_pose to be received')
+            duration = time.time() - start_time
+            print("waited ", duration, " for initial pose to be set")
+            if duration > self.set_initial_pose_timeout:
+                self.error_msg('Timeout waiting for initial pose to be set')
+                return False
             rclpy.spin_once(self, timeout_sec=1)
+        return True
 
 
 def test_RobotMovesToGoal(robot_tester):
@@ -231,7 +243,8 @@ def run_all_tests(robot_tester):
     result = True
     if result:
         robot_tester.wait_for_node_active('amcl')
-        robot_tester.wait_for_initial_pose()
+        result = robot_tester.wait_for_initial_pose()
+    if result:
         robot_tester.wait_for_node_active('bt_navigator')
         result = robot_tester.runNavigateAction()
 

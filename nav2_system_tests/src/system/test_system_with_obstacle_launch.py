@@ -21,6 +21,7 @@ import signal
 import subprocess
 import sys
 from ament_index_python.packages import get_package_share_directory
+
 from launch import LaunchDescription
 from launch import LaunchService
 from launch.actions import (
@@ -38,6 +39,8 @@ from nav2_common.launch import RewrittenYaml
 
 
 def generate_launch_description():
+    # map_yaml_file = os.getenv('TEST_MAP')
+    # world = os.getenv('TEST_WORLD')
     sim_dir = get_package_share_directory('nav2_minimal_tb3_sim')
     nav2_bringup_dir = get_package_share_directory('nav2_bringup')
     ros_gz_sim_dir = get_package_share_directory('ros_gz_sim')
@@ -83,6 +86,8 @@ def generate_launch_description():
 
     new_yaml = configured_params.perform(context)
 
+    cardbox_sdf = os.path.join(sim_dir, 'urdf', 'cardboard_box.sdf')
+
     return LaunchDescription(
         [
             SetEnvironmentVariable('RCUTILS_LOGGING_BUFFERED_STREAM', '1'),
@@ -114,6 +119,16 @@ def generate_launch_description():
                     'pitch': '0.0',
                     'yaw': '0.0',
                 }.items(),
+            ),
+            Node (
+                package='ros_gz_sim',
+                executable='create',
+                output='screen',
+                arguments=[
+                    '-entity', 'cardboard_box',
+                    '-file', cardbox_sdf,
+                    '-x', '-1.0', '-y', '0.6', '-z', '0.15',
+                    '-R', '0.0', '-P', '0.0', '-Y', '0.0',]
             ),
             # TODO(orduno) Launch the robot state publisher instead
             #              using a local copy of TB3 urdf file
@@ -175,12 +190,12 @@ def main(argv=sys.argv[1:]):
         cmd=[
             os.path.join(os.getenv('TEST_DIR'), os.getenv('TESTER')),
             '-r',
-            '-200000.0',
-            '-200000.0',
+            '-2.0',
+            '-0.5',
             '0.0',
             '2.0',
             '-e',
-            'False',
+            'True',
         ],
         name='tester_node',
         output='screen',
