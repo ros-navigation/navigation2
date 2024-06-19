@@ -217,7 +217,7 @@ class NavTester(Node):
         # this is because when setting a wrong initial pose, amcl_pose is not received
         # and the test will hang indefinitely
         start_time = time.time()
-        duration = 0     
+        duration = 0
         while not self.initial_pose_received:
             self.info_msg('Setting initial pose')
             self.setInitialPose()

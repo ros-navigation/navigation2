@@ -34,7 +34,8 @@ from launch_ros.actions import Node
 from launch_testing.legacy import LaunchTestService
 
 from nav2_common.launch import RewrittenYaml
-from nav2_simple_commander.utils import find_gz_sim_processes, kill_process
+from nav2_simple_commander.utils import kill_os_processes
+
 
 def generate_launch_description():
     sim_dir = get_package_share_directory('nav2_minimal_tb3_sim')
@@ -175,15 +176,7 @@ def main(argv=sys.argv[1:]):
     # and it is still running in the background. This affects
     # the next test run. This is a temporary fix until we find
     # a better way of killing the gz server after the test.
-    processes = find_gz_sim_processes()
-    if processes:
-        print("Found the following processes starting with 'gz_sim':")
-        for pid, command in processes:
-            print(f"PID: {pid}, Command: {command}")
-            kill_process(pid)
-    else:
-        print("No processes found starting with 'gz_sim'")
-
+    kill_os_processes('gz sim')
     return return_code
 
 
