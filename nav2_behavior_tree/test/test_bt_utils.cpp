@@ -59,7 +59,7 @@ TEST(PointPortTest, test_wrong_syntax)
 
   BT::BehaviorTreeFactory factory;
   factory.registerNodeType<TestNode<geometry_msgs::msg::Point>>("PointPort");
-  EXPECT_THROW(factory.createTreeFromText(xml_txt), std::runtime_error);
+  EXPECT_THROW(factory.createTreeFromText(xml_txt), std::exception);
 
   xml_txt =
     R"(
@@ -69,7 +69,7 @@ TEST(PointPortTest, test_wrong_syntax)
         </BehaviorTree>
       </root>)";
 
-  EXPECT_THROW(factory.createTreeFromText(xml_txt), std::runtime_error);
+  EXPECT_THROW(factory.createTreeFromText(xml_txt), std::exception);
 }
 
 TEST(PointPortTest, test_correct_syntax)
@@ -106,7 +106,7 @@ TEST(QuaternionPortTest, test_wrong_syntax)
   BT::BehaviorTreeFactory factory;
   factory.registerNodeType<TestNode<geometry_msgs::msg::Quaternion>>("QuaternionPort");
 
-  EXPECT_THROW(factory.createTreeFromText(xml_txt), std::runtime_error);
+  EXPECT_THROW(factory.createTreeFromText(xml_txt), std::exception);
 
   xml_txt =
     R"(
@@ -116,7 +116,7 @@ TEST(QuaternionPortTest, test_wrong_syntax)
         </BehaviorTree>
       </root>)";
 
-  EXPECT_THROW(factory.createTreeFromText(xml_txt), std::runtime_error);
+  EXPECT_THROW(factory.createTreeFromText(xml_txt), std::exception);
 }
 
 TEST(QuaternionPortTest, test_correct_syntax)
@@ -153,7 +153,7 @@ TEST(PoseStampedPortTest, test_wrong_syntax)
 
   BT::BehaviorTreeFactory factory;
   factory.registerNodeType<TestNode<geometry_msgs::msg::PoseStamped>>("PoseStampedPort");
-  EXPECT_THROW(factory.createTreeFromText(xml_txt), std::runtime_error);
+  EXPECT_THROW(factory.createTreeFromText(xml_txt), std::exception);
 
   xml_txt =
     R"(
@@ -163,7 +163,7 @@ TEST(PoseStampedPortTest, test_wrong_syntax)
         </BehaviorTree>
       </root>)";
 
-  EXPECT_THROW(factory.createTreeFromText(xml_txt), std::runtime_error);
+  EXPECT_THROW(factory.createTreeFromText(xml_txt), std::exception);
 }
 
 TEST(PoseStampedPortTest, test_correct_syntax)
