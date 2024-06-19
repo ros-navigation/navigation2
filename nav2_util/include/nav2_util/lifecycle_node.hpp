@@ -19,6 +19,7 @@
 #include <string>
 #include <thread>
 
+#include "rcl_interfaces/msg/parameter_descriptor.hpp"
 #include "nav2_util/node_thread.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "rclcpp/rclcpp.hpp"
