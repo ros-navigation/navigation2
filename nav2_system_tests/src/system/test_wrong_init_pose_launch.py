@@ -17,9 +17,8 @@
 
 import os
 from pathlib import Path
-import signal
-import subprocess
 import sys
+
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch import LaunchService
@@ -35,7 +34,7 @@ from launch_ros.actions import Node
 from launch_testing.legacy import LaunchTestService
 
 from nav2_common.launch import RewrittenYaml
-
+from nav2_simple_commander.utils import find_gz_sim_processes, kill_process
 
 def generate_launch_description():
     sim_dir = get_package_share_directory('nav2_minimal_tb3_sim')
@@ -91,7 +90,7 @@ def generate_launch_description():
                 'GZ_SIM_RESOURCE_PATH', os.path.join(sim_dir, 'models')
             ),
             AppendEnvironmentVariable(
-            'GZ_SIM_RESOURCE_PATH',
+                'GZ_SIM_RESOURCE_PATH',
                 str(Path(os.path.join(sim_dir)).parent.resolve())
             ),
             IncludeLaunchDescription(
@@ -147,26 +146,6 @@ def generate_launch_description():
         ]
     )
 
-def find_gz_sim_processes():
-    ps_output = subprocess.check_output(['ps', 'aux'], text=True)
-    ps_lines = ps_output.split('\n')
-    gz_sim_processes = []
-    for line in ps_lines:
-        if 'gz sim' in line:
-            columns = line.split()
-            pid = columns[1]
-            command = ' '.join(columns[10:])
-            if command.startswith('gz sim'):
-                gz_sim_processes.append((pid, command))
-    
-    return gz_sim_processes
-
-def kill_process(pid):
-    try:
-        os.kill(int(pid), signal.SIGKILL)
-        print(f"Successfully killed process with PID: {pid}")
-    except Exception as e:
-        print(f"Failed to kill process with PID: {pid}. Error: {e}")
 
 def main(argv=sys.argv[1:]):
     ld = generate_launch_description()
@@ -190,7 +169,7 @@ def main(argv=sys.argv[1:]):
     lts.add_test_action(ld, test1_action)
     ls = LaunchService(argv=argv)
     ls.include_launch_description(ld)
-    return_code =  lts.run(ls)
+    return_code = lts.run(ls)
     # (TODO ) This is a workaround to kill the gz server after the test
     # We noticed that the gz server is not killed after the test
     # and it is still running in the background. This affects

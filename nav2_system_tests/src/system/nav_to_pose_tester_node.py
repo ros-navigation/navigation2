@@ -59,7 +59,7 @@ class NavTester(Node):
         self.initial_pose_received = False
         self.initial_pose = initial_pose
         self.goal_pose = goal_pose
-        self.set_initial_pose_timeout = 100
+        self.set_initial_pose_timeout = 80
         self.action_client = ActionClient(self, NavigateToPose, 'navigate_to_pose')
 
     def info_msg(self, msg: str):
@@ -217,13 +217,13 @@ class NavTester(Node):
         # this is because when setting a wrong initial pose, amcl_pose is not received
         # and the test will hang indefinitely
         start_time = time.time()
-        duration = 0        
+        duration = 0     
         while not self.initial_pose_received:
             self.info_msg('Setting initial pose')
             self.setInitialPose()
             self.info_msg('Waiting for amcl_pose to be received')
             duration = time.time() - start_time
-            print("waited ", duration, " for initial pose to be set")
+            self.info_msg(f'waited {duration} for initial pose to be set')
             if duration > self.set_initial_pose_timeout:
                 self.error_msg('Timeout waiting for initial pose to be set')
                 return False
