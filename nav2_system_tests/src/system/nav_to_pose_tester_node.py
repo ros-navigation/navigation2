@@ -59,7 +59,7 @@ class NavTester(Node):
         self.initial_pose_received = False
         self.initial_pose = initial_pose
         self.goal_pose = goal_pose
-        self.set_initial_pose_timeout = 80
+        self.set_initial_pose_timeout = 15
         self.action_client = ActionClient(self, NavigateToPose, 'navigate_to_pose')
 
     def info_msg(self, msg: str):
