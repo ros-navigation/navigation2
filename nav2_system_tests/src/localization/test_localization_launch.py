@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import os
+from pathlib import Path
 import sys
 
 from ament_index_python.packages import get_package_share_directory
@@ -38,10 +39,18 @@ def main(argv=sys.argv[1:]):
     world_sdf_xacro = os.path.join(sim_dir, 'worlds', 'tb3_sandbox.sdf.xacro')
     robot_sdf = os.path.join(sim_dir, 'urdf', 'gz_waffle.sdf')
 
+    urdf = os.path.join(sim_dir, 'urdf', 'turtlebot3_waffle.urdf')
+    with open(urdf, 'r') as infp:
+        robot_description = infp.read()
+
     map_yaml_file = os.path.join(nav2_bringup_dir, 'maps', 'tb3_sandbox.yaml')
 
     set_env_vars_resources = AppendEnvironmentVariable(
         'GZ_SIM_RESOURCE_PATH', os.path.join(sim_dir, 'models')
+    )
+    set_env_vars_resources2 = AppendEnvironmentVariable(
+        'GZ_SIM_RESOURCE_PATH',
+        str(Path(os.path.join(sim_dir)).parent.resolve())
     )
 
     start_gazebo_server = IncludeLaunchDescription(
@@ -66,18 +75,14 @@ def main(argv=sys.argv[1:]):
             'yaw': '0.0',
         }.items(),
     )
-
-    link_footprint = launch_ros.actions.Node(
-        package='tf2_ros',
-        executable='static_transform_publisher',
+    run_robot_state_publisher = launch_ros.actions.Node(
+        package='robot_state_publisher',
+        executable='robot_state_publisher',
+        name='robot_state_publisher',
         output='screen',
-        arguments=['0', '0', '0', '0', '0', '0', 'base_footprint', 'base_link'],
-    )
-    footprint_scan = launch_ros.actions.Node(
-        package='tf2_ros',
-        executable='static_transform_publisher',
-        output='screen',
-        arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'base_scan'],
+        parameters=[
+            {'use_sim_time': True, 'robot_description': robot_description}
+        ],
     )
     run_map_server = launch_ros.actions.Node(
         package='nav2_map_server',
@@ -99,10 +104,10 @@ def main(argv=sys.argv[1:]):
     ld = LaunchDescription(
         [
             set_env_vars_resources,
+            set_env_vars_resources2,
             start_gazebo_server,
             spawn_robot,
-            link_footprint,
-            footprint_scan,
+            run_robot_state_publisher,
             run_map_server,
             run_amcl,
             run_lifecycle_manager,
