@@ -54,8 +54,6 @@ def generate_launch_description():
         os.getenv('BT_NAVIGATOR_XML'),
     )
 
-    bringup_dir = get_package_share_directory('nav2_bringup')
-
     # Use local param file
     launch_dir = os.path.dirname(os.path.realpath(__file__))
     params_file = os.path.join(launch_dir, 'nav2_system_params.yaml')
@@ -132,7 +130,7 @@ def generate_launch_description():
             ),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
-                    os.path.join(bringup_dir, 'launch', 'bringup_launch.py')
+                    os.path.join(nav2_bringup_dir, 'launch', 'bringup_launch.py')
                 ),
                 launch_arguments={
                     'namespace': '',
