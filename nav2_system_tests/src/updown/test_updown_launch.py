@@ -21,8 +21,6 @@ import launch.actions
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 
-from nav2_simple_commander.utils import kill_os_processes
-
 
 def generate_launch_description():
 
