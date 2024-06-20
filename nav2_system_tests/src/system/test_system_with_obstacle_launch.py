@@ -127,8 +127,6 @@ def generate_launch_description():
                     '-x', '-1.0', '-y', '0.6', '-z', '0.15',
                     '-R', '0.0', '-P', '0.0', '-Y', '0.0',]
             ),
-            # TODO(orduno) Launch the robot state publisher instead
-            #              using a local copy of TB3 urdf file
             Node(
                 package='tf2_ros',
                 executable='static_transform_publisher',
@@ -183,11 +181,6 @@ def main(argv=sys.argv[1:]):
     ls = LaunchService(argv=argv)
     ls.include_launch_description(ld)
     return_code = lts.run(ls)
-    # (TODO ) This is a workaround to kill the gz server after the test
-    # We noticed that the gz server is not killed after the test
-    # and it is still running in the background. This affects
-    # the next test run. This is a temporary fix until we find
-    # a better way of killing the gz server after the test.
     kill_os_processes('gz sim')
     return return_code
 

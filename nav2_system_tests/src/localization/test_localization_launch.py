@@ -26,6 +26,8 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 import launch_ros.actions
 from launch_testing.legacy import LaunchTestService
 
+from nav2_simple_commander.utils import kill_os_processes
+
 
 def main(argv=sys.argv[1:]):
     testExecutable = os.getenv('TEST_EXECUTABLE')
@@ -115,7 +117,9 @@ def main(argv=sys.argv[1:]):
     lts.add_test_action(ld, test1_action)
     ls = LaunchService(argv=argv)
     ls.include_launch_description(ld)
-    return lts.run(ls)
+    return_code = lts.run(ls)
+    kill_os_processes('gz sim')
+    return return_code
 
 
 if __name__ == '__main__':
