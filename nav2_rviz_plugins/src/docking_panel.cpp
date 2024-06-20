@@ -37,8 +37,7 @@ DockingPanel::DockingPanel(QWidget * parent)
   client_node_ = std::make_shared<rclcpp::Node>("nav2_rviz_docking_panel_node");
 
   main_layout_ = new QVBoxLayout;
-  dock_info_layout_ = new QHBoxLayout;
-  undock_info_layout_ = new QHBoxLayout;
+  info_layout_ = new QHBoxLayout;
   feedback_layout_ = new QVBoxLayout;
   dock_id_layout_ = new QHBoxLayout;
   dock_type_layout_ = new QHBoxLayout;
@@ -46,10 +45,8 @@ DockingPanel::DockingPanel(QWidget * parent)
   docking_button_ = new QPushButton("Dock robot");
   undocking_button_ = new QPushButton("Undock robot");
   docking_goal_status_indicator_ = new QLabel;
-  undocking_goal_status_indicator_ = new QLabel;
   docking_feedback_indicator_ = new QLabel;
   docking_result_indicator_ = new QLabel;
-  undocking_result_indicator_ = new QLabel;
   use_dock_id_checkbox_ = new QCheckBox;
   dock_id_ = new QLineEdit;
 
@@ -57,17 +54,13 @@ DockingPanel::DockingPanel(QWidget * parent)
   undocking_button_->setEnabled(false);
   dock_id_->setEnabled(false);
   use_dock_id_checkbox_->setEnabled(false);
-  docking_goal_status_indicator_->setText(nav2_rviz_plugins::getGoalStatusLabel("Docking"));
-  undocking_goal_status_indicator_->setText(nav2_rviz_plugins::getGoalStatusLabel("Undocking"));
+  docking_goal_status_indicator_->setText(nav2_rviz_plugins::getGoalStatusLabel());
   docking_feedback_indicator_->setText(getDockFeedbackLabel());
   docking_goal_status_indicator_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-  undocking_goal_status_indicator_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
   docking_feedback_indicator_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
-  dock_info_layout_->addWidget(docking_goal_status_indicator_);
-  dock_info_layout_->addWidget(docking_result_indicator_);
-  undock_info_layout_->addWidget(undocking_goal_status_indicator_);
-  undock_info_layout_->addWidget(undocking_result_indicator_);
+  info_layout_->addWidget(docking_goal_status_indicator_);
+  info_layout_->addWidget(docking_result_indicator_);
   feedback_layout_->addWidget(docking_feedback_indicator_);
   dock_id_layout_->addWidget(new QLabel("Dock id"));
   dock_id_layout_->addWidget(use_dock_id_checkbox_);
@@ -76,8 +69,7 @@ DockingPanel::DockingPanel(QWidget * parent)
   dock_type_layout_->addWidget(dock_type_);
 
   main_layout_->setContentsMargins(10, 10, 10, 10);
-  main_layout_->addLayout(dock_info_layout_);
-  main_layout_->addLayout(undock_info_layout_);
+  main_layout_->addLayout(info_layout_);
   main_layout_->addLayout(feedback_layout_);
   main_layout_->addLayout(dock_id_layout_);
   main_layout_->addLayout(dock_type_layout_);
@@ -127,7 +119,7 @@ void DockingPanel::onInitialize()
     rclcpp::SystemDefaultsQoS(),
     [this](const action_msgs::msg::GoalStatusArray::SharedPtr msg) {
       docking_goal_status_indicator_->setText(
-        nav2_rviz_plugins::getGoalStatusLabel("Docking", msg->status_list.back().status));
+        nav2_rviz_plugins::getGoalStatusLabel("Feedback", msg->status_list.back().status));
       docking_button_->setText("Dock robot");
       docking_in_progress_ = false;
       // Reset values when action is completed
@@ -140,8 +132,8 @@ void DockingPanel::onInitialize()
     "undock_robot/_action/status",
     rclcpp::SystemDefaultsQoS(),
     [this](const action_msgs::msg::GoalStatusArray::SharedPtr msg) {
-      undocking_goal_status_indicator_->setText(
-        nav2_rviz_plugins::getGoalStatusLabel("Undocking", msg->status_list.back().status));
+      docking_goal_status_indicator_->setText(
+        nav2_rviz_plugins::getGoalStatusLabel("Feedback", msg->status_list.back().status));
       undocking_button_->setText("Undock robot");
       undocking_in_progress_ = false;
     });
@@ -262,9 +254,9 @@ void DockingPanel::startUndocking()
   send_goal_options.result_callback = [this](const UndockGoalHandle::WrappedResult & result) {
       undock_goal_handle_.reset();
       if (result.result->success) {
-        undocking_result_indicator_->setText("");
+        docking_result_indicator_->setText("");
       } else {
-        undocking_result_indicator_->setText(
+        docking_result_indicator_->setText(
           QString(std::string("(" + dockErrorToString(result.result->error_code) + ")").c_str()));
       }
     };

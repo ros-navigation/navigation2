@@ -92,8 +92,7 @@ private:
   QBasicTimer timer_;
 
   QVBoxLayout * main_layout_{nullptr};
-  QHBoxLayout * dock_info_layout_{nullptr};
-  QHBoxLayout * undock_info_layout_{nullptr};
+  QHBoxLayout * info_layout_{nullptr};
   QVBoxLayout * feedback_layout_{nullptr};
   QHBoxLayout * dock_id_layout_{nullptr};
   QHBoxLayout * dock_type_layout_{nullptr};
@@ -104,10 +103,8 @@ private:
   QCheckBox * use_dock_id_checkbox_{nullptr};
 
   QLabel * docking_goal_status_indicator_{nullptr};
-  QLabel * undocking_goal_status_indicator_{nullptr};
   QLabel * docking_feedback_indicator_{nullptr};
   QLabel * docking_result_indicator_{nullptr};
-  QLabel * undocking_result_indicator_{nullptr};
 
   QLineEdit * dock_id_{nullptr};
 
