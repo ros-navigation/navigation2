@@ -102,8 +102,11 @@ TEST(DatabaseTests, findTests)
 TEST(DatabaseTests, reloadDbService)
 {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
-  std::vector<std::string> plugins{"dockv1", "dockv2"};
+  std::vector<std::string> plugins{"dockv1"};
   node->declare_parameter("dock_plugins", rclcpp::ParameterValue(plugins));
+  node->declare_parameter(
+    "dockv1.plugin",
+    rclcpp::ParameterValue("opennav_docking::SimpleChargingDock"));
   opennav_docking::DockDatabase db;
   db.initialize(node, nullptr);
 
