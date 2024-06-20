@@ -46,6 +46,10 @@ def generate_launch_description():
     world_sdf_xacro = os.path.join(sim_dir, 'worlds', 'tb3_sandbox.sdf.xacro')
     robot_sdf = os.path.join(sim_dir, 'urdf', 'gz_waffle.sdf')
 
+    urdf = os.path.join(sim_dir, 'urdf', 'turtlebot3_waffle.urdf')
+    with open(urdf, 'r') as infp:
+        robot_description = infp.read()
+
     map_yaml_file = os.path.join(nav2_bringup_dir, 'maps', 'tb3_sandbox.yaml')
 
     bt_navigator_xml = os.path.join(
@@ -115,16 +119,13 @@ def generate_launch_description():
                 }.items(),
             ),
             Node(
-                package='tf2_ros',
-                executable='static_transform_publisher',
+                package='robot_state_publisher',
+                executable='robot_state_publisher',
+                name='robot_state_publisher',
                 output='screen',
-                arguments=['0', '0', '0', '0', '0', '0', 'base_footprint', 'base_link'],
-            ),
-            Node(
-                package='tf2_ros',
-                executable='static_transform_publisher',
-                output='screen',
-                arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'base_scan'],
+                parameters=[
+                    {'use_sim_time': True, 'robot_description': robot_description}
+                ],
             ),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
