@@ -116,9 +116,9 @@ if(BUILD_TESTING)
   add_subdirectory(src/planning)
   add_subdirectory(src/localization)
   add_subdirectory(src/system)
-  # Uncomment after https://github.com/ros-navigation/navigation2/pull/3634
-  # add_subdirectory(src/system_failure)
+  add_subdirectory(src/system_failure)
   add_subdirectory(src/updown)
+  # Uncomment after https://github.com/ros-navigation/navigation2/pull/3634
   # add_subdirectory(src/waypoint_follower)
   # add_subdirectory(src/gps_navigation)
   # add_subdirectory(src/behaviors/spin)
