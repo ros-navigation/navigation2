@@ -115,7 +115,13 @@ def main(argv=sys.argv[1:]):
     lts.add_test_action(ld, test1_action)
     ls = LaunchService(argv=argv)
     ls.include_launch_description(ld)
-    return lts.run(ls)
+    return_code = lts.run(ls)
+    # (TODO ) This is a workaround to kill the gz server after the test
+    # We noticed that the gz server is not killed after the test
+    # and it is still running in the background. This affects
+    # the next test run. This is a temporary fix until we find
+    # a better way of killing the gz server after the test.
+    return return_code
 
 
 if __name__ == '__main__':
