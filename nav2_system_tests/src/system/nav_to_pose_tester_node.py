@@ -223,7 +223,6 @@ class NavTester(Node):
             self.setInitialPose()
             self.info_msg('Waiting for amcl_pose to be received')
             duration = time.time() - start_time
-            self.info_msg(f'waited {duration} for initial pose to be set')
             if duration > self.set_initial_pose_timeout:
                 self.error_msg('Timeout waiting for initial pose to be set')
                 return False
