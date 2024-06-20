@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
-# Copyright 2021 Samsung Research America
-# Copyright 2022 Stevedan Ogochukwu Omodolor
+# Copyright 2024 Open Navigation LLC
+# Copyright 2024 Stevedan Ogochukwu Omodolor Omodia
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
