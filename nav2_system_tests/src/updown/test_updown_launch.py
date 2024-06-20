@@ -21,15 +21,15 @@ import launch.actions
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 
+from nav2_simple_commander.utils import kill_os_processes
+
 
 def generate_launch_description():
 
     # Configuration parameters for the launch
-    launch_dir = os.path.join(get_package_share_directory('nav2_bringup'), 'launch')
+    nav2_bringup_dir = get_package_share_directory('nav2_bringup')
 
-    map_yaml_file = os.path.join(
-        get_package_share_directory('nav2_system_tests'), 'maps/map_circular.yaml'
-    )
+    map_yaml_file = os.path.join(nav2_bringup_dir, 'maps', 'tb3_sandbox.yaml')
 
     # Specify the actions
     start_tf_cmd_1 = Node(
@@ -61,7 +61,8 @@ def generate_launch_description():
     )
 
     nav2_bringup = launch.actions.IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(os.path.join(launch_dir, 'bringup_launch.py')),
+        PythonLaunchDescriptionSource(
+            os.path.join(nav2_bringup_dir, 'launch', 'bringup_launch.py')),
         launch_arguments={
             'map': map_yaml_file,
             'use_sim_time': 'True',
@@ -77,7 +78,7 @@ def generate_launch_description():
                 'lib/nav2_system_tests/test_updown',
             )
         ],
-        cwd=[launch_dir],
+        cwd=[nav2_bringup_dir],
         output='screen',
     )
 
