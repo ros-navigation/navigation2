@@ -79,19 +79,6 @@ private:
   void setProgressChecker();
 
   /*
-    * @brief Load the avaialble plugins into the combo box
-    * @param node The node to use for loading the plugins
-    * @param server_name The name of the server to load plugins for
-    * @param plugin_type The type of plugin to load
-    * @param combo_box The combo box to add the loaded plugins to
-  */
-  void pluginLoader(
-    rclcpp::Node::SharedPtr node,
-    const std::string & server_name,
-    const std::string & plugin_type,
-    QComboBox * combo_box);
-
-  /*
     * @brief Set the selection from the combo box
     * @param combo_box The combo box to set the selection for
     * @param publisher Publish the selected plugin

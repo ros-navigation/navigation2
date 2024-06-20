@@ -28,6 +28,7 @@
 #include <string>
 
 #include "nav2_rviz_plugins/goal_common.hpp"
+#include "nav2_rviz_plugins/utils.hpp"
 #include "rviz_common/display_context.hpp"
 #include "ament_index_cpp/get_package_share_directory.hpp"
 #include "yaml-cpp/yaml.h"
@@ -90,7 +91,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
 
   navigation_status_indicator_->setText(navigation_unknown);
   localization_status_indicator_->setText(localization_unknown);
-  navigation_goal_status_indicator_->setText(getGoalStatusLabel());
+  navigation_goal_status_indicator_->setText(nav2_rviz_plugins::getGoalStatusLabel());
   number_of_loops_->setText("Num of loops");
   navigation_feedback_indicator_->setText(getNavThroughPosesFeedbackLabel());
   navigation_status_indicator_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
@@ -481,7 +482,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
     initial_thread_, &InitialThread::navigationInactive,
     [this, navigation_inactive] {
       navigation_status_indicator_->setText(navigation_inactive);
-      navigation_goal_status_indicator_->setText(getGoalStatusLabel());
+      navigation_goal_status_indicator_->setText(nav2_rviz_plugins::getGoalStatusLabel());
       navigation_feedback_indicator_->setText(getNavThroughPosesFeedbackLabel());
     });
   QObject::connect(
@@ -821,7 +822,7 @@ Nav2Panel::onInitialize()
     rclcpp::SystemDefaultsQoS(),
     [this](const action_msgs::msg::GoalStatusArray::SharedPtr msg) {
       navigation_goal_status_indicator_->setText(
-        getGoalStatusLabel(msg->status_list.back().status));
+        nav2_rviz_plugins::getGoalStatusLabel("Feedback", msg->status_list.back().status));
       // Clearing all the stored values once reaching the final goal
       if (
         loop_count_ == stoi(nr_of_loops_->displayText().toStdString()) &&
@@ -840,7 +841,7 @@ Nav2Panel::onInitialize()
     rclcpp::SystemDefaultsQoS(),
     [this](const action_msgs::msg::GoalStatusArray::SharedPtr msg) {
       navigation_goal_status_indicator_->setText(
-        getGoalStatusLabel(msg->status_list.back().status));
+        nav2_rviz_plugins::getGoalStatusLabel("Feedback", msg->status_list.back().status));
       if (msg->status_list.back().status != action_msgs::msg::GoalStatus::STATUS_EXECUTING) {
         navigation_feedback_indicator_->setText(getNavThroughPosesFeedbackLabel());
       }
@@ -1438,41 +1439,6 @@ Nav2Panel::updateWpNavigationMarkers()
   }
 
   wp_navigation_markers_pub_->publish(std::move(marker_array));
-}
-
-inline QString
-Nav2Panel::getGoalStatusLabel(int8_t status)
-{
-  std::string status_str;
-  switch (status) {
-    case action_msgs::msg::GoalStatus::STATUS_EXECUTING:
-      status_str = "<font color=green>active</color>";
-      break;
-
-    case action_msgs::msg::GoalStatus::STATUS_SUCCEEDED:
-      status_str = "<font color=green>reached</color>";
-      break;
-
-    case action_msgs::msg::GoalStatus::STATUS_CANCELED:
-      status_str = "<font color=orange>canceled</color>";
-      break;
-
-    case action_msgs::msg::GoalStatus::STATUS_ABORTED:
-      status_str = "<font color=red>aborted</color>";
-      break;
-
-    case action_msgs::msg::GoalStatus::STATUS_UNKNOWN:
-      status_str = "unknown";
-      break;
-
-    default:
-      status_str = "inactive";
-      break;
-  }
-  return QString(
-    std::string(
-      "<table><tr><td width=100><b>Feedback:</b></td><td>" +
-      status_str + "</td></tr></table>").c_str());
 }
 
 inline QString
