@@ -46,6 +46,10 @@ def generate_launch_description():
     world_sdf_xacro = os.path.join(sim_dir, 'worlds', 'tb3_sandbox.sdf.xacro')
     robot_sdf = os.path.join(sim_dir, 'urdf', 'gz_waffle.sdf')
 
+    urdf = os.path.join(sim_dir, 'urdf', 'turtlebot3_waffle.urdf')
+    with open(urdf, 'r') as infp:
+        robot_description = infp.read()
+
     map_yaml_file = os.path.join(nav2_bringup_dir, 'maps', 'tb3_sandbox.yaml')
 
     bt_navigator_xml = os.path.join(
@@ -102,19 +106,14 @@ def generate_launch_description():
                     'yaw': '0.0',
                 }.items(),
             ),
-            # TODO(orduno) Launch the robot state publisher instead
-            #              using a local copy of TB3 urdf file
             Node(
-                package='tf2_ros',
-                executable='static_transform_publisher',
+                package='robot_state_publisher',
+                executable='robot_state_publisher',
+                name='robot_state_publisher',
                 output='screen',
-                arguments=['0', '0', '0', '0', '0', '0', 'base_footprint', 'base_link'],
-            ),
-            Node(
-                package='tf2_ros',
-                executable='static_transform_publisher',
-                output='screen',
-                arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'base_scan'],
+                parameters=[
+                    {'use_sim_time': True, 'robot_description': robot_description}
+                ],
             ),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
@@ -156,11 +155,6 @@ def main(argv=sys.argv[1:]):
     ls = LaunchService(argv=argv)
     ls.include_launch_description(ld)
     return_code = lts.run(ls)
-    # (TODO ) This is a workaround to kill the gz server after the test
-    # We noticed that the gz server is not killed after the test
-    # and it is still running in the background. This affects
-    # the next test run. This is a temporary fix until we find
-    # a better way of killing the gz server after the test.
     kill_os_processes('gz sim')
     return return_code
 
