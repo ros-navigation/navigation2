@@ -28,6 +28,7 @@ find_package(navigation2)
 find_package(angles REQUIRED)
 find_package(behaviortree_cpp REQUIRED)
 find_package(pluginlib REQUIRED)
+find_package(nav2_minimal_tb3_sim REQUIRED)
 
 nav2_package()
 
@@ -127,7 +128,7 @@ if(BUILD_TESTING)
   # add_subdirectory(src/behaviors/assisted_teleop)
   # add_subdirectory(src/costmap_filters)
   add_subdirectory(src/error_codes)
-  install(DIRECTORY maps DESTINATION share/${PROJECT_NAME})
+  install(DIRECTORY maps models DESTINATION share/${PROJECT_NAME})
 
 endif()
 

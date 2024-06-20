@@ -42,6 +42,7 @@ def generate_launch_description():
     sim_dir = get_package_share_directory('nav2_minimal_tb3_sim')
     nav2_bringup_dir = get_package_share_directory('nav2_bringup')
     ros_gz_sim_dir = get_package_share_directory('ros_gz_sim')
+    nav2_system_tests_dir = get_package_share_directory('nav2_system_tests')
 
     world_sdf_xacro = os.path.join(sim_dir, 'worlds', 'tb3_sandbox.sdf.xacro')
     robot_sdf = os.path.join(sim_dir, 'urdf', 'gz_waffle.sdf')
@@ -86,6 +87,8 @@ def generate_launch_description():
 
     new_yaml = configured_params.perform(context)
 
+    cardbox_sdf = os.path.join(nav2_system_tests_dir, 'models', 'cardboard_box.sdf')
+
     return LaunchDescription(
         [
             SetEnvironmentVariable('RCUTILS_LOGGING_BUFFERED_STREAM', '1'),
@@ -117,6 +120,16 @@ def generate_launch_description():
                     'pitch': '0.0',
                     'yaw': '0.0',
                 }.items(),
+            ),
+            Node(
+                package='ros_gz_sim',
+                executable='create',
+                output='screen',
+                arguments=[
+                    '-entity', 'cardboard_box',
+                    '-file', cardbox_sdf,
+                    '-x', '-1.0', '-y', '0.6', '-z', '0.15',
+                    '-R', '0.0', '-P', '0.0', '-Y', '0.0',]
             ),
             Node(
                 package='robot_state_publisher',
