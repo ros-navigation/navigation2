@@ -16,6 +16,7 @@
 #define OPENNAV_DOCKING__CONTROLLER_HPP_
 
 #include <memory>
+#include <vector>
 
 #include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/twist.hpp"
@@ -47,8 +48,22 @@ public:
     const geometry_msgs::msg::Pose & pose, geometry_msgs::msg::Twist & cmd,
     bool backward = false);
 
+  /**
+   * @brief Callback executed when a parameter change is detected
+   * @param event ParameterEvent message
+   */
+  rcl_interfaces::msg::SetParametersResult
+  dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
+
+  // Dynamic parameters handler
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
+  std::mutex dynamic_params_lock_;
+
 protected:
   std::unique_ptr<nav2_graceful_controller::SmoothControlLaw> control_law_;
+
+  double k_phi_, k_delta_, beta_, lambda_;
+  double slowdown_radius_, v_linear_min_, v_linear_max_, v_angular_max_;
 };
 
 }  // namespace opennav_docking

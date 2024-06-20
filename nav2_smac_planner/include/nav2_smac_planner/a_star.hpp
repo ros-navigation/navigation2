@@ -251,6 +251,7 @@ protected:
     const NodePtr & node, std::vector<std::tuple<float, float, float>> * expansions_log);
 
   bool _traverse_unknown;
+  bool _is_initialized;
   int _max_iterations;
   int _max_on_approach_iterations;
   int _terminal_checking_interval;
