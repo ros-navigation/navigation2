@@ -76,17 +76,17 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   const char * nft_goal_msg = "Start navigating through poses";
   const char * cancel_waypoint_msg = "Cancel waypoint / viapoint accumulation mode";
 
-  const QString navigation_active("<table><tr><td width=100><b>Navigation:</b></td>"
+  const QString navigation_active("<table><tr><td width=150><b>Navigation:</b></td>"
     "<td><font color=green>active</color></td></tr></table>");
-  const QString navigation_inactive("<table><tr><td width=100><b>Navigation:</b></td>"
+  const QString navigation_inactive("<table><tr><td width=150><b>Navigation:</b></td>"
     "<td>inactive</td></tr></table>");
-  const QString navigation_unknown("<table><tr><td width=100><b>Navigation:</b></td>"
+  const QString navigation_unknown("<table><tr><td width=150><b>Navigation:</b></td>"
     "<td>unknown</td></tr></table>");
-  const QString localization_active("<table><tr><td width=100><b>Localization:</b></td>"
+  const QString localization_active("<table><tr><td width=150><b>Localization:</b></td>"
     "<td><font color=green>active</color></td></tr></table>");
-  const QString localization_inactive("<table><tr><td width=100><b>Localization:</b></td>"
+  const QString localization_inactive("<table><tr><td width=150><b>Localization:</b></td>"
     "<td>inactive</td></tr></table>");
-  const QString localization_unknown("<table><tr><td width=100><b>Localization:</b></td>"
+  const QString localization_unknown("<table><tr><td width=150><b>Localization:</b></td>"
     "<td>unknown</td></tr></table>");
 
   navigation_status_indicator_->setText(navigation_unknown);

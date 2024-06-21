@@ -69,7 +69,7 @@ DockingPanel::DockingPanel(QWidget * parent)
   docking_feedback_indicator_->setText(getDockFeedbackLabel());
   docking_goal_status_indicator_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
   docking_feedback_indicator_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-  nav_to_staging_checkbox_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  nav_to_staging_checkbox_->setFixedWidth(150);
 
   info_layout_->addWidget(docking_goal_status_indicator_);
   info_layout_->addWidget(docking_result_indicator_);
@@ -241,8 +241,9 @@ void DockingPanel::startDocking()
     goal_msg.dock_type = combo_box->currentText().toStdString();
 
     RCLCPP_INFO(
-      client_node_->get_logger(), "DockRobot will be called using dock pose: (%f, %f)",
-      goal_msg.dock_pose.pose.position.x, goal_msg.dock_pose.pose.position.y);
+      client_node_->get_logger(), "DockRobot will be called using dock pose: (%f, %f) and type: %s",
+      goal_msg.dock_pose.pose.position.x, goal_msg.dock_pose.pose.position.y,
+      goal_msg.dock_type.c_str());
   }
 
   // Enable result awareness by providing an empty lambda function

@@ -90,7 +90,7 @@ QString getGoalStatusLabel(std::string title, int8_t status)
   }
   return QString(
     std::string(
-      "<table><tr><td width=100><b>" + title + ":</b></td><td>" +
+      "<table><tr><td width=150><b>" + title + ":</b></td><td>" +
       status_str + "</td></tr></table>").c_str());
 }
 
