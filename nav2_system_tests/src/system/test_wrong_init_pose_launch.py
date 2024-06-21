@@ -43,7 +43,7 @@ def generate_launch_description():
     ros_gz_sim_dir = get_package_share_directory('ros_gz_sim')
 
     world_sdf_xacro = os.path.join(sim_dir, 'worlds', 'tb3_sandbox.sdf.xacro')
-    robot_sdf = os.path.join(sim_dir, 'urdf', 'gz_waffle.sdf')
+    robot_sdf = os.path.join(sim_dir, 'urdf', 'gz_waffle.sdf.xacro')
 
     urdf = os.path.join(sim_dir, 'urdf', 'turtlebot3_waffle.urdf')
     with open(urdf, 'r') as infp:
