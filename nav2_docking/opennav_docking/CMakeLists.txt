@@ -56,8 +56,15 @@ set(dependencies
   opennav_docking_core
 )
 
-add_library(${library_name} SHARED
+add_library(controller SHARED
   src/controller.cpp
+)
+
+ament_target_dependencies(controller
+  ${dependencies}
+)
+
+add_library(${library_name} SHARED
   src/docking_server.cpp
   src/dock_database.cpp
   src/navigator.cpp
@@ -68,7 +75,9 @@ ament_target_dependencies(${library_name}
 )
 
 target_link_libraries(${library_name}
-  yaml-cpp::yaml-cpp)
+  yaml-cpp::yaml-cpp
+  controller
+)
 
 add_library(pose_filter SHARED
   src/pose_filter.cpp
@@ -100,7 +109,7 @@ target_link_libraries(simple_charging_dock pose_filter)
 
 pluginlib_export_plugin_description_file(opennav_docking_core plugins.xml)
 
-install(TARGETS ${library_name} pose_filter simple_charging_dock
+install(TARGETS ${library_name} controller pose_filter simple_charging_dock
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -127,6 +136,6 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-ament_export_libraries(${library_name} pose_filter)
+ament_export_libraries(${library_name} controller pose_filter)
 ament_export_dependencies(${dependencies} yaml-cpp)
 ament_package()

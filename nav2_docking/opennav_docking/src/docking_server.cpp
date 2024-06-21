@@ -235,6 +235,12 @@ void DockingServer::dockRobot()
       dock = generateGoalDock(goal);
     }
 
+    // Check if the robot is docked or charging before proceeding
+    if (dock->plugin->isDocked() || dock->plugin->isCharging()) {
+      RCLCPP_INFO(get_logger(), "Robot is already charging, no need to dock");
+      return;
+    }
+
     // Send robot to its staging pose
     publishDockingFeedback(DockRobot::Feedback::NAV_TO_STAGING_POSE);
     const auto initial_staging_pose = dock->getStagingPose();
@@ -568,6 +574,12 @@ void DockingServer::undockRobot()
     RCLCPP_INFO(
       get_logger(),
       "Attempting to undock robot from charger of type %s.", dock->getName().c_str());
+
+    // Check if the robot is docked before proceeding
+    if (!dock->isDocked()) {
+      RCLCPP_INFO(get_logger(), "Robot is not in the charger, no need to undock");
+      return;
+    }
 
     // Get "dock pose" by finding the robot pose
     geometry_msgs::msg::PoseStamped dock_pose = getRobotPoseInFrame(fixed_frame_);

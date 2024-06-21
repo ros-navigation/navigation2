@@ -86,9 +86,8 @@ TEST(DockingServerTests, testErrorExceptions)
   node->on_configure(rclcpp_lifecycle::State());
   node->on_activate(rclcpp_lifecycle::State());
 
-  node->declare_parameter(
-    "exception_to_throw",
-    rclcpp::ParameterValue(""));
+  node->declare_parameter("exception_to_throw", rclcpp::ParameterValue(""));
+  node->declare_parameter("dock_action_called", rclcpp::ParameterValue(false));
 
   // Error codes docking
   std::vector<std::string> error_ids{
@@ -141,6 +140,9 @@ TEST(DockingServerTests, testErrorExceptions)
     "TransformException", "DockNotValid", "FailedToControl",
     "DockingException", "exception"};
   std::vector<int> error_codes_undocking{999, 902, 905, 999, 999};
+
+  // Set dock_action_called to true to simulate robot being docked in dock plugin
+  node->set_parameter(rclcpp::Parameter("dock_action_called", true));
 
   // Call action, check error code
   for (unsigned int i = 0; i != error_ids_undocking.size(); i++) {

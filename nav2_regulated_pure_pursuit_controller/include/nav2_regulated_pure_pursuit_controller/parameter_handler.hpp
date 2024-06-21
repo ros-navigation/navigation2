@@ -53,6 +53,7 @@ struct Parameters
   double curvature_lookahead_dist;
   bool use_rotate_to_heading;
   double max_angular_accel;
+  bool use_cancel_deceleration;
   double cancel_deceleration;
   double rotate_to_heading_min_angle;
   bool allow_reversing;

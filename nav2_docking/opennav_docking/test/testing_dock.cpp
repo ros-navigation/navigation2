@@ -80,7 +80,9 @@ public:
 
   virtual bool isDocked()
   {
-    return false;
+    bool dock_action_called;
+    node_->get_parameter("dock_action_called", dock_action_called);
+    return dock_action_called;
   }
 
   virtual bool isCharging()

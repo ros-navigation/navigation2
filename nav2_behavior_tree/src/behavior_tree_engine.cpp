@@ -26,12 +26,15 @@ namespace nav2_behavior_tree
 {
 
 BehaviorTreeEngine::BehaviorTreeEngine(
-  const std::vector<std::string> & plugin_libraries)
+  const std::vector<std::string> & plugin_libraries, rclcpp::Node::SharedPtr node)
 {
   BT::SharedLibrary loader;
   for (const auto & p : plugin_libraries) {
     factory_.registerFromPlugin(loader.getOSName(p));
   }
+
+  // clock for throttled debug log
+  clock_ = node->get_clock();
 
   // FIXME: the next two line are needed for back-compatibility with BT.CPP 3.8.x
   // Note that the can be removed, once we migrate from BT.CPP 4.5.x to 4.6+
@@ -62,8 +65,9 @@ BehaviorTreeEngine::run(
       onLoop();
 
       if (!loopRate.sleep()) {
-        RCLCPP_WARN(
+        RCLCPP_DEBUG_THROTTLE(
           rclcpp::get_logger("BehaviorTreeEngine"),
+          *clock_, 1000,
           "Behavior Tree tick rate %0.2f was exceeded!",
           1.0 / (loopRate.period().count() * 1.0e-9));
       }

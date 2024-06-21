@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # Copyright (c) 2018 Intel Corporation
-# Copyright (c) 2020 Samsung Research America
+# Copyright (c) 2020 Florian Gramss
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -42,6 +42,7 @@ def generate_launch_description():
     sim_dir = get_package_share_directory('nav2_minimal_tb3_sim')
     nav2_bringup_dir = get_package_share_directory('nav2_bringup')
     ros_gz_sim_dir = get_package_share_directory('ros_gz_sim')
+    nav2_system_tests_dir = get_package_share_directory('nav2_system_tests')
 
     world_sdf_xacro = os.path.join(sim_dir, 'worlds', 'tb3_sandbox.sdf.xacro')
     robot_sdf = os.path.join(sim_dir, 'urdf', 'gz_waffle.sdf')
@@ -58,12 +59,25 @@ def generate_launch_description():
         os.getenv('BT_NAVIGATOR_XML'),
     )
 
-    params_file = os.path.join(nav2_bringup_dir, 'params', 'nav2_params.yaml')
+    # Use local param file
+    launch_dir = os.path.dirname(os.path.realpath(__file__))
+    params_file = os.path.join(launch_dir, 'nav2_system_params.yaml')
 
-    # Replace the `use_astar` setting on the params file
-    param_substitutions = {
-        'planner_server.ros__parameters.GridBased.use_astar': 'False'
-    }
+    # Replace the default parameter values for testing special features
+    # without having multiple params_files inside the nav2 stack
+    context = LaunchContext()
+    param_substitutions = {}
+
+    if os.getenv('ASTAR') == 'True':
+        param_substitutions.update({'use_astar': 'True'})
+
+    param_substitutions.update(
+        {'planner_server.ros__parameters.GridBased.plugin': os.getenv('PLANNER')}
+    )
+    param_substitutions.update(
+        {'controller_server.ros__parameters.FollowPath.plugin': os.getenv('CONTROLLER')}
+    )
+
     configured_params = RewrittenYaml(
         source_file=params_file,
         root_key='',
@@ -71,13 +85,14 @@ def generate_launch_description():
         convert_types=True,
     )
 
-    context = LaunchContext()
     new_yaml = configured_params.perform(context)
+
+    cardbox_sdf = os.path.join(nav2_system_tests_dir, 'models', 'cardboard_box.sdf')
+
     return LaunchDescription(
         [
             SetEnvironmentVariable('RCUTILS_LOGGING_BUFFERED_STREAM', '1'),
             SetEnvironmentVariable('RCUTILS_LOGGING_USE_STDOUT', '1'),
-            # Launch gazebo server for simulation
             AppendEnvironmentVariable(
                 'GZ_SIM_RESOURCE_PATH', os.path.join(sim_dir, 'models')
             ),
@@ -105,6 +120,16 @@ def generate_launch_description():
                     'pitch': '0.0',
                     'yaw': '0.0',
                 }.items(),
+            ),
+            Node(
+                package='ros_gz_sim',
+                executable='create',
+                output='screen',
+                arguments=[
+                    '-entity', 'cardboard_box',
+                    '-file', cardbox_sdf,
+                    '-x', '-1.0', '-y', '0.6', '-z', '0.15',
+                    '-R', '0.0', '-P', '0.0', '-Y', '0.0',]
             ),
             Node(
                 package='robot_state_publisher',
@@ -139,12 +164,14 @@ def main(argv=sys.argv[1:]):
 
     test1_action = ExecuteProcess(
         cmd=[
-            os.path.join(os.getenv('TEST_DIR'), 'tester_node.py'),
+            os.path.join(os.getenv('TEST_DIR'), os.getenv('TESTER')),
             '-r',
             '-2.0',
             '-0.5',
-            '100.0',
-            '100.0',
+            '0.0',
+            '2.0',
+            '-e',
+            'True',
         ],
         name='tester_node',
         output='screen',

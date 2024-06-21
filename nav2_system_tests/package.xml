@@ -30,6 +30,7 @@
   <build_depend>launch_ros</build_depend>
   <build_depend>launch_testing</build_depend>
   <build_depend>nav2_planner</build_depend>
+  <build_depend>nav2_minimal_tb3_sim</build_depend>
 
   <exec_depend>launch_ros</exec_depend>
   <exec_depend>launch_testing</exec_depend>
@@ -48,6 +49,7 @@
   <exec_depend>nav2_amcl</exec_depend>
   <exec_depend>std_msgs</exec_depend>
   <exec_depend>tf2_geometry_msgs</exec_depend>
+  <exec_depend>nav2_minimal_tb3_sim</exec_depend>
   <!-- <exec_depend>gazebo_ros_pkgs</exec_depend> Remove/Replace after https://github.com/ros-navigation/navigation2/pull/3634 -->
   <exec_depend>navigation2</exec_depend>
   <exec_depend>lcov</exec_depend>
