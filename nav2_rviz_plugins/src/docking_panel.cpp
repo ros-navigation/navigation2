@@ -22,6 +22,7 @@
 #include <QLabel>
 #include <rviz_common/display_context.hpp>
 
+#include "nav2_util/geometry_utils.hpp"
 #include "nav2_rviz_plugins/docking_panel.hpp"
 #include "nav2_rviz_plugins/utils.hpp"
 
@@ -41,6 +42,8 @@ DockingPanel::DockingPanel(QWidget * parent)
   feedback_layout_ = new QVBoxLayout;
   dock_id_layout_ = new QHBoxLayout;
   dock_type_layout_ = new QHBoxLayout;
+  dock_pose_layout_ = new QHBoxLayout;
+  nav_stage_layout_ = new QHBoxLayout;
   dock_type_ = new QComboBox;
   docking_button_ = new QPushButton("Dock robot");
   undocking_button_ = new QPushButton("Undock robot");
@@ -48,16 +51,25 @@ DockingPanel::DockingPanel(QWidget * parent)
   docking_feedback_indicator_ = new QLabel;
   docking_result_indicator_ = new QLabel;
   use_dock_id_checkbox_ = new QCheckBox;
+  nav_to_staging_checkbox_ = new QCheckBox;
   dock_id_ = new QLineEdit;
+  dock_pose_x_ = new QLineEdit;
+  dock_pose_y_ = new QLineEdit;
+  dock_pose_yaw_ = new QLineEdit;
 
   docking_button_->setEnabled(false);
   undocking_button_->setEnabled(false);
-  dock_id_->setEnabled(false);
   use_dock_id_checkbox_->setEnabled(false);
+  nav_to_staging_checkbox_->setEnabled(false);
+  dock_id_->setEnabled(false);
+  dock_pose_x_->setEnabled(false);
+  dock_pose_y_->setEnabled(false);
+  dock_pose_yaw_->setEnabled(false);
   docking_goal_status_indicator_->setText(nav2_rviz_plugins::getGoalStatusLabel());
   docking_feedback_indicator_->setText(getDockFeedbackLabel());
   docking_goal_status_indicator_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
   docking_feedback_indicator_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+  nav_to_staging_checkbox_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
   info_layout_->addWidget(docking_goal_status_indicator_);
   info_layout_->addWidget(docking_result_indicator_);
@@ -67,12 +79,23 @@ DockingPanel::DockingPanel(QWidget * parent)
   dock_id_layout_->addWidget(dock_id_);
   dock_type_layout_->addWidget(new QLabel("Dock type"));
   dock_type_layout_->addWidget(dock_type_);
+  dock_pose_layout_->addWidget(new QLabel("Dock pose {X"));
+  dock_pose_layout_->addWidget(dock_pose_x_);
+  dock_pose_layout_->addWidget(new QLabel("Y"));
+  dock_pose_layout_->addWidget(dock_pose_y_);
+  dock_pose_layout_->addWidget(new QLabel("θ"));
+  dock_pose_layout_->addWidget(dock_pose_yaw_);
+  dock_pose_layout_->addWidget(new QLabel("}"));
+  nav_stage_layout_->addWidget(nav_to_staging_checkbox_);
+  nav_stage_layout_->addWidget(new QLabel("Navigate to staging pose"));
 
   main_layout_->setContentsMargins(10, 10, 10, 10);
   main_layout_->addLayout(info_layout_);
   main_layout_->addLayout(feedback_layout_);
+  main_layout_->addLayout(nav_stage_layout_);
   main_layout_->addLayout(dock_id_layout_);
   main_layout_->addLayout(dock_type_layout_);
+  main_layout_->addLayout(dock_pose_layout_);
   main_layout_->addWidget(docking_button_);
   main_layout_->addWidget(undocking_button_);
 
@@ -120,8 +143,11 @@ void DockingPanel::onInitialize()
     [this](const action_msgs::msg::GoalStatusArray::SharedPtr msg) {
       docking_goal_status_indicator_->setText(
         nav2_rviz_plugins::getGoalStatusLabel("Feedback", msg->status_list.back().status));
-      docking_button_->setText("Dock robot");
-      docking_in_progress_ = false;
+      if (msg->status_list.back().status != action_msgs::msg::GoalStatus::STATUS_EXECUTING) {
+        docking_button_->setText("Dock robot");
+        undocking_button_->setEnabled(true);
+        docking_in_progress_ = false;
+      }
       // Reset values when action is completed
       if (msg->status_list.back().status == action_msgs::msg::GoalStatus::STATUS_SUCCEEDED) {
         docking_feedback_indicator_->setText(getDockFeedbackLabel());
@@ -134,8 +160,11 @@ void DockingPanel::onInitialize()
     [this](const action_msgs::msg::GoalStatusArray::SharedPtr msg) {
       docking_goal_status_indicator_->setText(
         nav2_rviz_plugins::getGoalStatusLabel("Feedback", msg->status_list.back().status));
-      undocking_button_->setText("Undock robot");
-      undocking_in_progress_ = false;
+      if (msg->status_list.back().status != action_msgs::msg::GoalStatus::STATUS_EXECUTING) {
+        docking_button_->setEnabled(true);
+        undocking_button_->setText("Undock robot");
+        undocking_in_progress_ = false;
+      }
     });
 }
 
@@ -170,26 +199,51 @@ void DockingPanel::startDocking()
     return;
   }
 
-  if (use_dock_id_) {
-    if (dock_id_->text().isEmpty()) {
-      RCLCPP_ERROR(client_node_->get_logger(), "Dock id is empty.");
-      return;
-    }
-  } else {
-    RCLCPP_ERROR(
-      client_node_->get_logger(),
-      "You must check use_dock_id. Using dock pose is not currently supported.");
+  QComboBox * combo_box = dock_type_;
+  // If "default" option is selected, it gets removed and the next item is selected
+  if (combo_box->findText("Default") != -1) {
+    combo_box->removeItem(0);
+  }
+
+  // If there are no plugins available, return
+  if (combo_box->count() == 0) {
     return;
   }
 
   // Send the goal to the action server
   auto goal_msg = Dock::Goal();
   goal_msg.use_dock_id = use_dock_id_;
-  goal_msg.dock_id = dock_id_->text().toStdString();
+  goal_msg.navigate_to_staging_pose = nav_to_staging_checkbox_->isChecked();
+  if (use_dock_id_) {
+    if (dock_id_->text().isEmpty()) {
+      RCLCPP_ERROR(client_node_->get_logger(), "Dock id is empty.");
+      return;
+    }
+    goal_msg.dock_id = dock_id_->text().toStdString();
 
-  RCLCPP_INFO(
-    client_node_->get_logger(), "DockRobot will be called using dock id: %s",
-    goal_msg.dock_id.c_str());
+    RCLCPP_INFO(
+      client_node_->get_logger(), "DockRobot will be called using dock id: %s",
+      goal_msg.dock_id.c_str());
+
+  } else {
+    if (dock_pose_x_->text().isEmpty() || dock_pose_y_->text().isEmpty() ||
+      dock_pose_yaw_->text().isEmpty())
+    {
+      RCLCPP_ERROR(client_node_->get_logger(), "Dock pose is empty.");
+      return;
+    }
+    goal_msg.dock_pose.header.frame_id = "map";
+    goal_msg.dock_pose.header.stamp = client_node_->now();
+    goal_msg.dock_pose.pose.position.x = dock_pose_x_->text().toDouble();
+    goal_msg.dock_pose.pose.position.y = dock_pose_y_->text().toDouble();
+    goal_msg.dock_pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(
+      dock_pose_yaw_->text().toDouble());
+    goal_msg.dock_type = combo_box->currentText().toStdString();
+
+    RCLCPP_INFO(
+      client_node_->get_logger(), "DockRobot will be called using dock pose: (%f, %f)",
+      goal_msg.dock_pose.pose.position.x, goal_msg.dock_pose.pose.position.y);
+  }
 
   // Enable result awareness by providing an empty lambda function
   auto send_goal_options = rclcpp_action::Client<Dock>::SendGoalOptions();
@@ -284,9 +338,15 @@ void DockingPanel::dockIdCheckbox()
   if (use_dock_id_checkbox_->isChecked()) {
     use_dock_id_ = true;
     dock_id_->setEnabled(true);
+    dock_pose_x_->setEnabled(false);
+    dock_pose_y_->setEnabled(false);
+    dock_pose_yaw_->setEnabled(false);
   } else {
     use_dock_id_ = false;
     dock_id_->setEnabled(false);
+    dock_pose_x_->setEnabled(true);
+    dock_pose_y_->setEnabled(true);
+    dock_pose_yaw_->setEnabled(true);
   }
 }
 
@@ -327,12 +387,13 @@ void DockingPanel::timerEvent(QTimerEvent * event)
       nav2_rviz_plugins::pluginLoader(
         client_node_, server_failed_, "docking_server", "dock_plugins", dock_type_);
       plugins_loaded_ = true;
-    }
-
-    if (!server_failed_) {
       docking_button_->setEnabled(true);
       undocking_button_->setEnabled(true);
       use_dock_id_checkbox_->setEnabled(true);
+      use_dock_id_checkbox_->setChecked(true);
+      nav_to_staging_checkbox_->setEnabled(true);
+      nav_to_staging_checkbox_->setChecked(true);
+      dock_id_->setEnabled(true);
     }
 
     // Restart the timer if the one of the server fails

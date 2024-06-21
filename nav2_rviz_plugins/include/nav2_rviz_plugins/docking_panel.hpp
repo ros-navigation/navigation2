@@ -96,17 +96,23 @@ private:
   QVBoxLayout * feedback_layout_{nullptr};
   QHBoxLayout * dock_id_layout_{nullptr};
   QHBoxLayout * dock_type_layout_{nullptr};
+  QHBoxLayout * dock_pose_layout_{nullptr};
+  QHBoxLayout * nav_stage_layout_{nullptr};
 
   QComboBox * dock_type_{nullptr};
   QPushButton * docking_button_{nullptr};
   QPushButton * undocking_button_{nullptr};
   QCheckBox * use_dock_id_checkbox_{nullptr};
+  QCheckBox * nav_to_staging_checkbox_{nullptr};
 
   QLabel * docking_goal_status_indicator_{nullptr};
   QLabel * docking_feedback_indicator_{nullptr};
   QLabel * docking_result_indicator_{nullptr};
 
   QLineEdit * dock_id_{nullptr};
+  QLineEdit * dock_pose_x_{nullptr};
+  QLineEdit * dock_pose_y_{nullptr};
+  QLineEdit * dock_pose_yaw_{nullptr};
 
   // The current state of the docking and undocking actions
   bool docking_in_progress_ = false;
