@@ -45,7 +45,7 @@ def generate_launch_description():
     nav2_system_tests_dir = get_package_share_directory('nav2_system_tests')
 
     world_sdf_xacro = os.path.join(sim_dir, 'worlds', 'tb3_sandbox.sdf.xacro')
-    robot_sdf = os.path.join(sim_dir, 'urdf', 'gz_waffle.sdf')
+    robot_sdf = os.path.join(sim_dir, 'urdf', 'gz_waffle.sdf.xacro')
 
     urdf = os.path.join(sim_dir, 'urdf', 'turtlebot3_waffle.urdf')
     with open(urdf, 'r') as infp:
