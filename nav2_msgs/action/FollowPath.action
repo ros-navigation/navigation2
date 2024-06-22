@@ -19,6 +19,7 @@ uint16 NO_VALID_CONTROL=106
 
 std_msgs/Empty result
 uint16 error_code
+string error_msg
 ---
 #feedback definition
 float32 distance_to_goal

@@ -12,6 +12,8 @@ uint16 UNKNOWN=600
 uint16 TASK_EXECUTOR_FAILED=601
 
 MissedWaypoint[] missed_waypoints
+uint16 error_code
+string error_msg
 ---
 #feedback definition
 uint32 current_waypoint
