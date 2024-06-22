@@ -232,11 +232,10 @@ void WaypointFollower::followWaypointsHandler(
     static_cast<int>(poses.size()));
 
   if (poses.empty()) {
-    RCLCPP_ERROR(
-      get_logger(),
+    result->error_msg =
       "Empty vector of waypoints passed to waypoint following "
-      "action potentially due to conversation failure or empty request."
-    );
+      "action potentially due to conversation failure or empty request.";
+    RCLCPP_ERROR(get_logger(), result->error_msg.c_str());
     action_server->terminate_current(result);
     return;
   }
@@ -264,10 +263,10 @@ void WaypointFollower::followWaypointsHandler(
       goal = action_server->accept_pending_goal();
       poses = getLatestGoalPoses<T>(action_server);
       if (poses.empty()) {
-        RCLCPP_ERROR(
-          get_logger(),
+        result->error_msg =
           "Empty vector of Waypoints passed to waypoint following logic. "
-          "Nothing to execute, returning with failure!");
+          "Nothing to execute, returning with failure!";
+        RCLCPP_ERROR(get_logger(), result->error_msg.c_str());
         action_server->terminate_current(result);
         return;
       }
