@@ -224,9 +224,8 @@ protected:
 
     ResultStatus on_run_result = onRun(action_server_->get_current_goal());
     if (on_run_result.status != Status::SUCCEEDED) {
-      RCLCPP_INFO(
-        logger_,
-        "Initial checks failed for %s", behavior_name_.c_str());
+      result->error_msg = "Initial checks failed for " + behavior_name_;
+      RCLCPP_INFO(logger_, result->error_msg.c_str());
       result->error_code = on_run_result.error_code;
       action_server_->terminate_current(result);
       return;
@@ -271,7 +270,8 @@ protected:
           return;
 
         case Status::FAILED:
-          RCLCPP_WARN(logger_, "%s failed", behavior_name_.c_str());
+          result->error_msg = behavior_name_ + " failed";
+          RCLCPP_WARN(logger_, result->error_msg.c_str());
           result->total_elapsed_time = clock_->now() - start_time;
           result->error_code = on_cycle_update_result.error_code;
           onActionCompletion(result);
