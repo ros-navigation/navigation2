@@ -219,7 +219,7 @@ protected:
     const geometry_msgs::msg::PoseStamped & goal,
     const std::string & planner_id,
     const std::exception & ex,
-    std::string& msg);
+    std::string & msg);
 
   /**
    * @brief Callback executed when a parameter change is detected

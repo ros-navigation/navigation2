@@ -738,7 +738,7 @@ void PlannerServer::exceptionWarning(
   const geometry_msgs::msg::PoseStamped & goal,
   const std::string & planner_id,
   const std::exception & ex,
-  std::string& error_msg)
+  std::string & error_msg)
 {
   error_msg = planner_id +
     "plugin failed to plan from (" +
