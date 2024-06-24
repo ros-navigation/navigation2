@@ -12,6 +12,7 @@ uint16 TF_ERROR=732
 
 builtin_interfaces/Duration total_elapsed_time
 uint16 error_code
+string error_msg
 ---
 #feedback
 builtin_interfaces/Duration current_teleop_duration

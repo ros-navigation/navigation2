@@ -20,6 +20,6 @@ uint16 UNKNOWN=999
 
 bool success True  # docking success status
 uint16 error_code 0  # Contextual error code, if any
-
+string error_msg
 ---
 #feedback definition
