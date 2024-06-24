@@ -17,6 +17,7 @@ uint16 INVALID_INPUT=724
 
 builtin_interfaces/Duration total_elapsed_time
 uint16 error_code
+string error_msg
 ---
 #feedback definition
 float32 distance_traveled
