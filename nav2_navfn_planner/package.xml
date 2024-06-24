@@ -3,7 +3,7 @@
 <package format="3">
   <name>nav2_navfn_planner</name>
   <version>1.2.0</version>
-  <description>TODO</description>
+  <description>Nav2 NavFn planner</description>
   <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
   <maintainer email="carlos.a.orduno@intel.com">Carlos Orduno</maintainer>
   <license>Apache-2.0</license>

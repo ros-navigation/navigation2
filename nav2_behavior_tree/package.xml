@@ -3,7 +3,7 @@
 <package format="3">
   <name>nav2_behavior_tree</name>
   <version>1.2.0</version>
-  <description>TODO</description>
+  <description>Nav2 behavior tree wrappers, nodes, and utilities</description>
   <maintainer email="michael.jeronimo@intel.com">Michael Jeronimo</maintainer>
   <maintainer email="carlos.a.orduno@intel.com">Carlos Orduno</maintainer>
   <maintainer email="mohammad.haghighipanah@intel.com">Carlos Orduno</maintainer>
