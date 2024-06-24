@@ -101,6 +101,8 @@ def main():
     
     # Special case for Opennav Docking for directory structure of Nav2
     body.replace('opennav_docking', 'nav2_docking')
+    # Special case for reducing the label length
+    body.replace('nav2_regulated_pure_pursuit_controller', 'nav2_regulated_pure_pursuit')
     
     print(header + '\n' + body)
 
