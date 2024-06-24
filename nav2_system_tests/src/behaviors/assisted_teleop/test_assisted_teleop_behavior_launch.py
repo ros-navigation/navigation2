@@ -32,6 +32,7 @@ from launch_ros.actions import Node
 from launch_testing.legacy import LaunchTestService
 
 from nav2_common.launch import RewrittenYaml
+from nav2_simple_commander.utils import kill_os_processes
 
 
 def generate_launch_description():
