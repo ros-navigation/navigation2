@@ -26,7 +26,7 @@ uint16 UNKNOWN=999
 bool success True  # docking success status
 uint16 error_code 0  # Contextual error code, if any
 uint16 num_retries 0  # Number of retries attempted
-
+string error_msg
 ---
 #feedback definition
 
