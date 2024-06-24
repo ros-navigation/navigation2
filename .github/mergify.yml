@@ -1,4 +1,13 @@
 pull_request_rules:
+  - name: backport to jazzy at reviewers discretion
+    conditions:
+      - base=main
+      - "label=backport-jazzy"
+    actions:
+      backport:
+        branches:
+          - jazzy
+  
   - name: backport to iron at reviewers discretion
     conditions:
       - base=main
@@ -16,24 +25,6 @@ pull_request_rules:
       backport:
         branches:
           - humble
-
-  - name: backport to galactic at reviewers discretion
-    conditions:
-      - base=main
-      - "label=backport-galactic"
-    actions:
-      backport:
-        branches:
-          - galactic
-
-  - name: backport to foxy at reviewers discretion
-    conditions:
-      - base=main
-      - "label=backport-foxy"
-    actions:
-      backport:
-        branches:
-          - foxy-devel
 
   - name: delete head branch after merge
     conditions:
