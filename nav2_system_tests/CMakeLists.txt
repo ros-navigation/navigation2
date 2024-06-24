@@ -121,7 +121,7 @@ if(BUILD_TESTING)
   add_subdirectory(src/waypoint_follower)
   # Uncomment after https://github.com/ros-navigation/navigation2/pull/3634
   # add_subdirectory(src/gps_navigation)
-  # add_subdirectory(src/behaviors/spin)
+  add_subdirectory(src/behaviors/spin)
   # add_subdirectory(src/behaviors/wait)
   # add_subdirectory(src/behaviors/backup)
   # add_subdirectory(src/behaviors/drive_on_heading)
