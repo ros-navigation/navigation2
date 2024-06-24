@@ -30,6 +30,11 @@ from nav2_common.launch import RewrittenYaml
 def generate_launch_description():
 
     bringup_dir = get_package_share_directory('nav2_bringup')
+    sim_dir = get_package_share_directory('nav2_minimal_tb3_sim')
+
+    urdf = os.path.join(sim_dir, 'urdf', 'turtlebot3_waffle.urdf')
+    with open(urdf, 'r') as infp:
+        robot_description = infp.read()
 
     namespace = LaunchConfiguration('namespace')
     use_sim_time = LaunchConfiguration('use_sim_time')
@@ -112,8 +117,6 @@ def generate_launch_description():
                 default_value='false',
                 description='Whether to set the map subscriber QoS to transient local',
             ),
-            # TODO(orduno) Launch the robot state publisher instead
-            #              using a local copy of TB3 urdf file
             Node(
                 package='tf2_ros',
                 executable='static_transform_publisher',
@@ -121,16 +124,13 @@ def generate_launch_description():
                 arguments=['0', '0', '0', '0', '0', '0', 'map', 'odom'],
             ),
             Node(
-                package='tf2_ros',
-                executable='static_transform_publisher',
+                package='robot_state_publisher',
+                executable='robot_state_publisher',
+                name='robot_state_publisher',
                 output='screen',
-                arguments=['0', '0', '0', '0', '0', '0', 'base_footprint', 'base_link'],
-            ),
-            Node(
-                package='tf2_ros',
-                executable='static_transform_publisher',
-                output='screen',
-                arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'base_scan'],
+                parameters=[
+                    {'use_sim_time': True, 'robot_description': robot_description}
+                ],
             ),
             Node(
                 package='nav2_behaviors',
