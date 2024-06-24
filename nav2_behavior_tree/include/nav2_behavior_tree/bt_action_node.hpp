@@ -56,13 +56,16 @@ public:
     callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
 
     // Get the required items from the blackboard
-    bt_loop_duration_ =
+    auto bt_loop_duration =
       config().blackboard->template get<std::chrono::milliseconds>("bt_loop_duration");
     server_timeout_ =
       config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
     getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
     wait_for_service_timeout_ =
       config().blackboard->template get<std::chrono::milliseconds>("wait_for_service_timeout");
+
+    // timeout should be less than bt_loop_duration to be able to finish the current tick
+    max_timeout_ = std::chrono::duration_cast<std::chrono::milliseconds>(bt_loop_duration * 0.5);
 
     // Initialize the input and output messages
     goal_ = typename ActionT::Goal();
@@ -405,7 +408,7 @@ protected:
       return false;
     }
 
-    auto timeout = remaining > bt_loop_duration_ ? bt_loop_duration_ : remaining;
+    auto timeout = remaining > max_timeout_ ? max_timeout_ : remaining;
     auto result =
       callback_group_executor_.spin_until_future_complete(*future_goal_handle_, timeout);
     elapsed += timeout;
@@ -461,7 +464,7 @@ protected:
   std::chrono::milliseconds server_timeout_;
 
   // The timeout value for BT loop execution
-  std::chrono::milliseconds bt_loop_duration_;
+  std::chrono::milliseconds max_timeout_;
 
   // The timeout value for waiting for a service to response
   std::chrono::milliseconds wait_for_service_timeout_;
