@@ -15,6 +15,13 @@
 
 # This tool populates the README table of build status for each package
 
+import requests
+
+# Global information about current distributions, shouldn't need to update
+OSs = {'humble': 'jammy', 'iron': 'jammy', 'jazzy': 'noble'}
+Prefixs = {'humble': 'H', 'iron': 'I', 'jazzy': 'J'}
+
+# Set your packages here
 Packages = [
     'navigation2',
     'nav2_amcl',
@@ -28,8 +35,8 @@ Packages = [
     'nav2_controller',
     'nav2_core',
     'nav2_costmap_2d',
-    'opennav_docking',  # We rename to `nav2_docking` for directory later
-    'nav2_dwb_controller',
+    'opennav_docking',
+    'nav2_dwb_controller',  # Controller plugin for DWB packages
     'nav2_graceful_controller',
     'nav2_lifecycle_manager',
     'nav2_map_server',
@@ -51,13 +58,11 @@ Packages = [
     'nav2_waypoint_follower',
 ]
 
+# Set which distributions you care about
 Distros = ['humble', 'iron', 'jazzy']
-OSs = {'humble': 'jammy', 'iron': 'jammy', 'jazzy': 'noble'}
-Prefixs = {'humble': 'H', 'iron': 'I', 'jazzy': 'J'}
 
 def getSrcPath(package, prefix, OS):
     return f'https://build.ros2.org/job/{prefix}src_uJ__{package}__ubuntu_{OS}__source/'
-
 
 def getBinPath(package, prefix, OS):
     return f'https://build.ros2.org/job/{prefix}bin_uJ64__{package}__ubuntu_{OS}_amd64__binary/'
@@ -67,11 +72,9 @@ def createPreamble(Distros):
     for distro in Distros:
         table += distro + ' Source | ' + distro + ' Debian | '
     table += '\n'
-
     table += '| :---: |'
     for distro in Distros:
         table += ' :---: | :---: |'
-    
     return table
 
 def main():
@@ -81,12 +84,23 @@ def main():
     for package in Packages:
         entry = f'| {package} | '
         for distro in Distros:
+            # TODO check if website exists with requests
             prefix = Prefixs[distro]
             OS = OSs[distro]
-            entry += f'[![Build Status]({getSrcPath(package, prefix, OS)}badge/icon)]({getSrcPath(package, prefix, OS)}) | '
-            entry += f'[![Build Status]({getBinPath(package, prefix, OS)}badge/icon)]({getBinPath(package, prefix, OS)}) | '
+            srcURL = getSrcPath(package, prefix, OS)
+            binURL = getBinPath(package, prefix, OS)
+            response = requests.get(srcURL)
+            # Check if package isn't in a given distribution
+            if response.status_code != 200:
+                entry += 'N/A | N/A | '
+            else:
+                entry += f'[![Build Status]({srcURL}badge/icon)]({srcURL}) | '
+                entry += f'[![Build Status]({binURL}badge/icon)]({binURL}) | '
         entry += '\n'
         body += entry
+    
+    # Special case for Opennav Docking for directory structure of Nav2
+    body.replace('opennav_docking', 'nav2_docking')
     
     print(header + '\n' + body)
 
