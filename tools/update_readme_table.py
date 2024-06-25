@@ -62,10 +62,10 @@ Packages = [
 Distros = ['humble', 'iron', 'jazzy']
 
 def getSrcPath(package, prefix, OS):
-    return f'https://build.ros2.org/job/{prefix}src_uJ__{package}__ubuntu_{OS}__source/'
+    return f'https://build.ros2.org/job/{prefix}src_u{OS[0]}__{package}__ubuntu_{OS}__source/'
 
 def getBinPath(package, prefix, OS):
-    return f'https://build.ros2.org/job/{prefix}bin_uJ64__{package}__ubuntu_{OS}_amd64__binary/'
+    return f'https://build.ros2.org/job/{prefix}bin_u{OS[0]}64__{package}__ubuntu_{OS}_amd64__binary/'
 
 def createPreamble(Distros):
     table = '| Package | '
