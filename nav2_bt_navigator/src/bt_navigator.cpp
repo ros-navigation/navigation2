@@ -18,10 +18,10 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include <boost/algorithm/string.hpp>
 
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/node_utils.hpp"
+#include "nav2_util/string_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_behavior_tree/bt_utils.hpp"
 
@@ -74,7 +74,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   // Libraries to pull plugins (BT Nodes) from
   std::vector<std::string> plugin_lib_names;
-  boost::split(plugin_lib_names, nav2::details::BT_BUILTIN_PLUGINS, boost::is_any_of(";"));
+  plugin_lib_names = nav2_util::split(nav2::details::BT_BUILTIN_PLUGINS, ';');
 
   auto user_defined_plugins = get_parameter("plugin_lib_names").as_string_array();
   // append user_defined_plugins to plugin_lib_names
