@@ -2,21 +2,22 @@ cmake_minimum_required(VERSION 3.5)
 project(nav2_behavior_tree CXX)
 
 find_package(ament_cmake REQUIRED)
+find_package(behaviortree_cpp REQUIRED)
+find_package(builtin_interfaces REQUIRED)
+find_package(cv_bridge REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
 find_package(nav2_common REQUIRED)
+find_package(nav2_msgs REQUIRED)
+find_package(nav2_util REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
-find_package(builtin_interfaces REQUIRED)
-find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
-find_package(nav2_msgs REQUIRED)
-find_package(nav_msgs REQUIRED)
-find_package(behaviortree_cpp REQUIRED)
-find_package(tf2_ros REQUIRED)
-find_package(tf2_geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
-find_package(nav2_util REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(tf2_ros REQUIRED)
 
 nav2_package()
 
@@ -29,20 +30,21 @@ include_directories(
 set(library_name ${PROJECT_NAME})
 
 set(dependencies
+  behaviortree_cpp
+  cv_bridge
+  geometry_msgs
+  nav_msgs
+  nav2_msgs
+  nav2_util
   rclcpp
   rclcpp_action
   rclcpp_lifecycle
-  geometry_msgs
   sensor_msgs
-  nav2_msgs
-  nav_msgs
-  behaviortree_cpp
-  tf2
-  tf2_ros
-  tf2_geometry_msgs
   std_msgs
   std_srvs
-  nav2_util
+  tf2
+  tf2_geometry_msgs
+  tf2_ros
 )
 
 add_library(${library_name} SHARED
@@ -118,6 +120,9 @@ list(APPEND plugin_libs nav2_goal_updated_condition_bt_node)
 
 add_library(nav2_is_path_valid_condition_bt_node SHARED plugins/condition/is_path_valid_condition.cpp)
 list(APPEND plugin_libs nav2_is_path_valid_condition_bt_node)
+
+add_library(nav2_ml_vicinity_condition_bt_node SHARED plugins/condition/ml_vicinity_condition.cpp)
+list(APPEND plugin_libs nav2_ml_vicinity_condition_bt_node)
 
 add_library(nav2_time_expired_condition_bt_node SHARED plugins/condition/time_expired_condition.cpp)
 list(APPEND plugin_libs nav2_time_expired_condition_bt_node)
