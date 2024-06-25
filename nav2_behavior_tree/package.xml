@@ -15,6 +15,7 @@
   <build_export_depend>std_srvs</build_export_depend>
 
   <build_depend>rclcpp</build_depend>
+  <build_depend>libboost-dev</build_depend>
   <build_depend>rclcpp_action</build_depend>
   <build_depend>rclcpp_lifecycle</build_depend>
   <build_depend>behaviortree_cpp</build_depend>
