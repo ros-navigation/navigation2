@@ -740,18 +740,15 @@ void PlannerServer::exceptionWarning(
   const std::exception & ex,
   std::string & error_msg)
 {
-  error_msg = planner_id +
-    "plugin failed to plan from (" +
-    std::to_string(start.pose.position.x) +
-    ", " +
-    std::to_string(start.pose.position.y) +
-    ") to (" +
-    std::to_string(goal.pose.position.x) +
-    ", " +
-    std::to_string(goal.pose.position.y) +
-    ": \"" +
-    ex.what() +
-    "\"";
+  std::stringstream ss;
+  ss << std::fixed << std::setprecision(2)
+     << planner_id << "plugin failed to plan from ("
+     << start.pose.position.x << ", " << start.pose.position.y
+     << ") to ("
+     << goal.pose.position.x << ", " << goal.pose.position.y << ")"
+     << ": \"" << ex.what() << "\"";
+
+  error_msg = ss.str();
   RCLCPP_WARN(get_logger(), error_msg.c_str());
 }
 
