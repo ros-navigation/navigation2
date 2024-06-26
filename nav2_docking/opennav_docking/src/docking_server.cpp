@@ -352,6 +352,7 @@ void DockingServer::dockRobot()
   } catch (opennav_docking_core::DockingException & e) {
     result->error_msg = e.what();
     RCLCPP_ERROR(get_logger(), result->error_msg.c_str());
+    result->error_code = DockRobot::Result::UNKNOWN;
   } catch (std::exception & e) {
     result->error_code = DockRobot::Result::UNKNOWN;
     result->error_msg = e.what();
