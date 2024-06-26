@@ -106,7 +106,7 @@ def main():
     elif result == TaskResult.CANCELED:
         print('Goal was canceled!')
     elif result == TaskResult.FAILED:
-        (error_code, error_msg) = navigator.getLastError()
+        (error_code, error_msg) = navigator.getLastActionError()
         print('Goal failed!{error_code}:{error_msg}')
     else:
         print('Goal has an invalid return status!')
