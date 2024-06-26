@@ -98,7 +98,7 @@ def main():
     elif result == TaskResult.CANCELED:
         print('Inspection of shelving was canceled. Returning to start...')
     elif result == TaskResult.FAILED:
-        (error_code, error_msg) = navigator.getLastError()
+        (error_code, error_msg) = navigator.getLastActionError()
         print(f'Inspection of shelving failed!:{error_code}:{error_msg}')
         print('Returning to start...')
 

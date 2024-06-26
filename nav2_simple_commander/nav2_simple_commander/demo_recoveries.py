@@ -91,7 +91,7 @@ def main():
     elif result == TaskResult.CANCELED:
         print('Recovery was canceled. Returning to start...')
     elif result == TaskResult.FAILED:
-        (error_code, error_msg) = navigator.getLastError()
+        (error_code, error_msg) = navigator.getLastActionError()
         print(f'Recovering from dead end failed!:{error_code}:{error_msg}')
         print('Returning to start...')
 
