@@ -140,7 +140,7 @@ class TestDockingServer(unittest.TestCase):
 
         result = NavigateToPose.Result()
         result.error_code = 0
-        result.error_msg = ""
+        result.error_msg = ''
         return result
 
     def test_docking_server(self):
