@@ -38,3 +38,11 @@ target_link_libraries(critics_tests mppi_controller mppi_critics)
 if(${TEST_DEBUG_INFO})
   target_compile_definitions(critics_tests PUBLIC -DTEST_DEBUG_INFO)
 endif()
+
+# OTSAW CRITICS
+ament_add_gtest(otsaw_critics_tests otsaw_critics_tests.cpp)
+ament_target_dependencies(otsaw_critics_tests ${dependencies_pkgs})
+target_link_libraries(otsaw_critics_tests mppi_controller mppi_critics otsaw_critic_gpu)
+if(${TEST_DEBUG_INFO})
+  target_compile_definitions(otsaw_critics_tests PUBLIC -DTEST_DEBUG_INFO)
+endif()
