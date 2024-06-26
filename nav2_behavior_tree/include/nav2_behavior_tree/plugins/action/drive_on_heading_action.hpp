@@ -61,7 +61,9 @@ public:
         BT::InputPort<double>("time_allowance", 10.0, "Allowed time for driving on heading"),
         BT::InputPort<bool>("disable_collision_checks", false, "Disable collision checking"),
         BT::OutputPort<Action::Result::_error_code_type>(
-          "error_code_id", "The drive on heading behavior server error code")
+          "error_code_id", "The drive on heading behavior server error code"),
+        BT::OutputPort<ActionResult::_error_code_type>(
+          "error_msg", "The drive on heading behavior server error msg"),
       });
   }
 
