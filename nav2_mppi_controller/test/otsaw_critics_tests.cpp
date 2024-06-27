@@ -8,6 +8,7 @@
 #include "nav2_mppi_controller/tools/utils.hpp"
 #include "nav2_mppi_controller/motion_models.hpp"
 #include "nav2_mppi_controller/critics/otsaw_critic.hpp"
+#include <xtensor/xio.hpp>  // for debugging, to support std::out
 
 #include "utils_test.cpp"  // NOLINT
 
@@ -47,8 +48,34 @@ TEST(CriticTests, OtsawCritic)
   OtsawCritic critic;
   critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
   EXPECT_EQ(critic.getName(), "critic");
+  EXPECT_TRUE(critic.getMaxVelConstraint() > 0.0);
+  EXPECT_TRUE(critic.getMinVelConstraint() < 0.0);
 
   // Scoring testing
+
+  // provide velocities in constraints, should not have any costs
+  state.vx = 0.40 * xt::ones<float>({1000, 30});
+  state.vy = xt::zeros<float>({1000, 30});
+  state.wz = xt::ones<float>({1000, 30});
   critic.score(data);
-  EXPECT_NEAR(costs(0), 3.0f, 1e-6);  // 3.0f
+  EXPECT_NEAR(xt::sum(costs, immediate)(), 0, 1e-6);
+
+  // provide out of maximum velocity constraint
+  auto last_batch_traj_in_full = xt::view(state.vx, -1, xt::all());
+  last_batch_traj_in_full = 0.60 * xt::ones<float>({30});
+  critic.score(data);
+  EXPECT_GT(xt::sum(costs, immediate)(), 0);
+  // 4.0 weight * 0.1 model_dt * 0.1 error introduced * 30 timesteps = 1.2
+  EXPECT_NEAR(costs(999), 1.2, 0.01);
+  costs = xt::zeros<float>({10});
+
+  // provide out of minimum velocity constraint
+  auto first_batch_traj_in_full = xt::view(state.vx, 1, xt::all());
+  first_batch_traj_in_full = -0.45 * xt::ones<float>({30});
+
+  critic.score(data);
+  EXPECT_GT(xt::sum(costs, immediate)(), 0);
+  // 4.0 weight * 0.1 model_dt * 0.1 error introduced * 30 timesteps = 1.2
+  EXPECT_NEAR(costs(1), 1.2, 0.01);
+  costs = xt::zeros<float>({10});
 }

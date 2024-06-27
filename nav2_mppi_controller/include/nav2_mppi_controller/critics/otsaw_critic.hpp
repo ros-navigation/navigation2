@@ -8,6 +8,8 @@
 #include "nav2_mppi_controller/tools/utils.hpp"
 #include "nav2_mppi_controller/cuda/otsaw_critic_gpu.cuh"
 
+#include <xtensor/xadapt.hpp>
+
 namespace mppi::critics
 {
 
@@ -30,9 +32,14 @@ public:
    */
   void score(CriticData & data) override;
 
+  float getMaxVelConstraint() {return max_vel_;}
+  float getMinVelConstraint() {return min_vel_;}
+
 protected:
   unsigned int power_{0};
   float weight_{0};
+  float min_vel_;
+  float max_vel_;
 };
 
 }  // namespace mppi::critics
