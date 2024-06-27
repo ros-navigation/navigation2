@@ -493,11 +493,6 @@ NavfnPlanner::worldToMap(double wx, double wy, unsigned int & mx, unsigned int &
     return true;
   }
 
-  RCLCPP_ERROR(
-    logger_,
-    "worldToMap failed: mx,my: %d,%d, size_x,size_y: %d,%d", mx, my,
-    costmap_->getSizeInCellsX(), costmap_->getSizeInCellsY());
-
   return false;
 }
 

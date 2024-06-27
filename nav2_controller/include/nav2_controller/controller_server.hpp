@@ -36,6 +36,8 @@
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
 
+#include "nav2_controller/intermediate_planner_server.hpp"
+
 namespace nav2_controller
 {
 
@@ -212,6 +214,9 @@ protected:
   // Dynamic parameters handler
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
   std::mutex dynamic_params_lock_;
+
+  // Intermediate planner
+  std::shared_ptr<nav2_controller::IntermediatePlannerServer> intermediate_planner_;
 
   // The controller needs a costmap node
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;

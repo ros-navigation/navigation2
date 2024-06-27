@@ -14,6 +14,7 @@ find_package(nav2_msgs REQUIRED)
 find_package(nav_2d_utils REQUIRED)
 find_package(nav_2d_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
+find_package(service_robot_msgs REQUIRED)
 
 nav2_package()
 
@@ -31,6 +32,7 @@ set(library_name ${executable_name}_core)
 
 add_library(${library_name} SHARED
   src/controller_server.cpp
+  src/intermediate_planner_server.cpp
 )
 
 set(dependencies
@@ -45,6 +47,7 @@ set(dependencies
   nav2_util
   nav2_core
   pluginlib
+  service_robot_msgs
 )
 
 add_library(simple_progress_checker SHARED plugins/simple_progress_checker.cpp)
