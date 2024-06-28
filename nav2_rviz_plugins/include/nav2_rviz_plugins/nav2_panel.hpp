@@ -204,10 +204,6 @@ private:
 
   void resetUniqueId();
 
-  // create label string from goal status msg
-  static inline QString getGoalStatusLabel(
-    int8_t status = action_msgs::msg::GoalStatus::STATUS_UNKNOWN);
-
   // create label string from feedback msg
   static inline QString getNavToPoseFeedbackLabel(
     nav2_msgs::action::NavigateToPose::Feedback msg =

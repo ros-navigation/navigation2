@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "nav2_rviz_plugins/selector.hpp"
+#include "nav2_rviz_plugins/utils.hpp"
 #include "rviz_common/display_context.hpp"
 
 using namespace std::chrono_literals;
@@ -146,62 +147,21 @@ void Selector::setProgressChecker()
   setSelection(progress_checker_, pub_progress_checker_);
 }
 
-// Load the available plugins into the combo box
-void Selector::pluginLoader(
-  rclcpp::Node::SharedPtr node,
-  const std::string & server_name,
-  const std::string & plugin_type,
-  QComboBox * combo_box)
-{
-  auto parameter_client = std::make_shared<rclcpp::SyncParametersClient>(node, server_name);
-
-  // Do not load the plugins if the combo box is already populated
-  if (combo_box->count() > 0) {
-    return;
-  }
-
-  // Wait for the service to be available before calling it
-  bool server_unavailable = false;
-  while (!parameter_client->wait_for_service(1s)) {
-    if (!rclcpp::ok()) {
-      RCLCPP_ERROR(node->get_logger(), "Interrupted while waiting for the service. Exiting.");
-      rclcpp::shutdown();
-    }
-    RCLCPP_INFO(
-      node->get_logger(),
-      "%s service not available", server_name.c_str());
-    server_unavailable = true;
-    server_failed_ = true;
-    break;
-  }
-
-  // Loading the plugins into the combo box
-  if (!plugins_loaded_) {
-    // If server unavaialble, let the combo box be empty
-    if (server_unavailable) {
-      return;
-    }
-    combo_box->addItem("Default");
-    auto parameters = parameter_client->get_parameters({plugin_type});
-    auto str_arr = parameters[0].as_string_array();
-    for (auto str : str_arr) {
-      combo_box->addItem(QString::fromStdString(str));
-    }
-    combo_box->setCurrentText("Default");
-  }
-}
-
 void
 Selector::timerEvent(QTimerEvent * event)
 {
   if (event->timerId() == timer_.timerId()) {
     if (!plugins_loaded_) {
-      pluginLoader(client_node_, "controller_server", "controller_plugins", controller_);
-      pluginLoader(client_node_, "planner_server", "planner_plugins", planner_);
-      pluginLoader(client_node_, "controller_server", "goal_checker_plugins", goal_checker_);
-      pluginLoader(client_node_, "smoother_server", "smoother_plugins", smoother_);
-      pluginLoader(
-        client_node_, "controller_server", "progress_checker_plugins",
+      nav2_rviz_plugins::pluginLoader(
+        client_node_, server_failed_, "controller_server", "controller_plugins", controller_);
+      nav2_rviz_plugins::pluginLoader(
+        client_node_, server_failed_, "planner_server", "planner_plugins", planner_);
+      nav2_rviz_plugins::pluginLoader(
+        client_node_, server_failed_, "controller_server", "goal_checker_plugins", goal_checker_);
+      nav2_rviz_plugins::pluginLoader(
+        client_node_, server_failed_, "smoother_server", "smoother_plugins", smoother_);
+      nav2_rviz_plugins::pluginLoader(
+        client_node_, server_failed_, "controller_server", "progress_checker_plugins",
         progress_checker_);
 
       plugins_loaded_ = true;
