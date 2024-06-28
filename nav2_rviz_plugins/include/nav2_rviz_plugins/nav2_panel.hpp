@@ -178,7 +178,6 @@ private:
   QState * paused_wp_{nullptr};
   QState * resumed_wp_{nullptr};
 
-  QImage * image_{nullptr};
   QLabel * imgDisplayLabel_{nullptr};
 
   // The following states are added to allow for the state of the button to only expose reset

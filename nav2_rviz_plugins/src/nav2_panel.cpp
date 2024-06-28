@@ -30,6 +30,7 @@
 #include "nav2_rviz_plugins/goal_common.hpp"
 #include "nav2_rviz_plugins/utils.hpp"
 #include "rviz_common/display_context.hpp"
+#include "rviz_common/load_resource.hpp"
 #include "ament_index_cpp/get_package_share_directory.hpp"
 #include "yaml-cpp/yaml.h"
 #include "geometry_msgs/msg/pose2_d.hpp"
@@ -523,9 +524,9 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   QVBoxLayout * group_box_layout = new QVBoxLayout;
 
   QGroupBox * groupBox = new QGroupBox(tr("Tools for WP-Following"));
-  image_ = new QImage("src/navigation2/doc/nav2_logo_small.png");
   imgDisplayLabel_ = new QLabel("");
-  imgDisplayLabel_->setPixmap(QPixmap::fromImage(*image_));
+  imgDisplayLabel_->setPixmap(
+    rviz_common::loadPixmap("package://nav2_rviz_plugins/icons/classes/nav2_logo_small.png"));
 
   status_layout->addWidget(navigation_status_indicator_);
   status_layout->addWidget(localization_status_indicator_);
