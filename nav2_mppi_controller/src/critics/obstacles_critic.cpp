@@ -129,22 +129,30 @@ void ObstaclesCritic::score(CriticData & data)
     near_goal = true;
   }
 
+  auto && raw_cost = xt::xtensor<float, 1>::from_shape({data.costs.shape(0)});
+  raw_cost.fill(0.0f);
+  auto && repulsive_cost = xt::xtensor<float, 1>::from_shape({data.costs.shape(0)});
+  repulsive_cost.fill(0.0f);
+
+  const size_t traj_len = data.trajectories.x.shape(1);
+  bool all_trajectories_collide = true;
+
   // Prepare Data for GPU
-  unsigned char * costmap_arr = costmap_.getCharMap();
-  unsigned int costmap_size_x = costmap_.getSizeInCellsX();
-  unsigned int costmap_size_y = costmap_.getSizeInCellsY();
-  double costmap_resolution = costmap_.getResolution();
-  double costmap_origin_x = costmap_.getOriginX();
-  double costmap_origin_y = costmap_.getOriginY();
+  unsigned char * costmap_arr = costmap_->getCharMap();
+  unsigned int costmap_size_x = costmap_->getSizeInCellsX();
+  unsigned int costmap_size_y = costmap_->getSizeInCellsY();
+  double costmap_resolution = costmap_->getResolution();
+  double costmap_origin_x = costmap_->getOriginX();
+  double costmap_origin_y = costmap_->getOriginY();
 
   std::vector<float> traj_x(data.trajectories.x.begin(), data.trajectories.x.end());
   std::vector<float> traj_y(data.trajectories.y.begin(), data.trajectories.y.end());
   std::vector<float> traj_yaws(data.trajectories.yaws.begin(), data.trajectories.yaws.end());
-  unsigned int batch_size = data.costs.shape(0);
-  unsigned int time_steps = data.costs.shape(1);
-  
-  std::vector<float> raw_cost_vec(data.costs.shape(0), 0.0);
-  std::vector<float> repulsive_cost_vec(data.costs.shape(0), 0.0);
+  unsigned int batch_size = data.trajectories.x.shape(0);
+  unsigned int time_steps = data.trajectories.x.shape(1);
+
+  std::vector<float> raw_cost_vec;
+  std::vector<float> repulsive_cost_vec;
 
   calc_obstacle_critics_cost(
     // Input(1): Costmap
@@ -152,6 +160,7 @@ void ObstaclesCritic::score(CriticData & data)
     costmap_size_x,
     costmap_size_y,
     costmap_resolution,
+    costmap_origin_x,
     costmap_origin_y,
     // Input(2): Trajectories
     traj_x,
@@ -160,33 +169,11 @@ void ObstaclesCritic::score(CriticData & data)
     batch_size,
     time_steps,
     // Output: Costs
-    &raw_cost_vec,
-    &repulsive_cost_vec
+    raw_cost_vec,
+    repulsive_cost_vec
   );
 
-  // Repackage output for next processing
-  xt::xarray<float> raw_cost = xt::adapt(
-    raw_cost_vec.data(),
-    raw_cost_vec.size(),
-    xt::no_ownership(),
-    data.costs.shape(0)
-  );
-  xt::xarray<float> repulsive_cost = xt::adapt(
-    repulsive_cost_vec.data(),
-    repulsive_cost_vec.size(),
-    xt::no_ownership(),
-    data.costs.shape(0)
-  );
-
-  // CPU Code
-  /*
-  auto && raw_cost = xt::xtensor<float, 1>::from_shape({data.costs.shape(0)});
-  raw_cost.fill(0.0f);
-  auto && repulsive_cost = xt::xtensor<float, 1>::from_shape({data.costs.shape(0)});
-  repulsive_cost.fill(0.0f);
-
-  const size_t traj_len = data.trajectories.x.shape(1);
-  bool all_trajectories_collide = true;
+  // Current CPU process
   for (size_t i = 0; i < data.trajectories.x.shape(0); ++i) {
     bool trajectory_collide = false;
     float traj_cost = 0.0f;
@@ -220,7 +207,6 @@ void ObstaclesCritic::score(CriticData & data)
     if (!trajectory_collide) {all_trajectories_collide = false;}
     raw_cost[i] = trajectory_collide ? collision_cost_ : traj_cost;
   }
-  */
 
   data.costs += xt::pow(
     (critical_weight_ * raw_cost) +

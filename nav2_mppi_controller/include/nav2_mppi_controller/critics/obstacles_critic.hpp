@@ -25,6 +25,8 @@
 
 #include "nav2_mppi_controller/cuda/otsaw_critic_gpu.cuh"
 
+#include <xtensor/xadapt.hpp>
+
 namespace mppi::critics
 {
 

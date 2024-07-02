@@ -28,13 +28,13 @@ void calc_obstacle_critics_cost(
   double costmap_resolution,
   double costmap_origin_x,
   double costmap_origin_y,
-  std::vector<float> traj_x;
-  std::vector<float> traj_y;
-  std::vector<float> traj_yaws;
+  std::vector<float> traj_x,
+  std::vector<float> traj_y,
+  std::vector<float> traj_yaws,
   unsigned int batch_size,
   unsigned int time_steps,
-  std::vector<float>& raw_cost;
-  std::vector<float>& repulsive_cost;
+  std::vector<float>& raw_cost,
+  std::vector<float>& repulsive_cost
 );
 
 #endif  // NAV2_MPPI_CONTROLLER__CUDA__OTSAW_CRITIC_GPU_CUH_
