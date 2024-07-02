@@ -71,3 +71,100 @@ std::vector<float> calc_constraint_critics_cost(
 
     return out;
 }
+
+__global__ void obstacleKernel(
+    unsigned char *costmap_arr,
+    unsigned int costmap_size_x,
+    unsigned int costmap_size_y,
+    double costmap_resolution,
+    double costmap_origin_x,
+    double costmap_origin_y,
+    float *traj_x,
+    float *traj_y,
+    float *traj_yaws,
+    unsigned int batch_size,
+    unsigned int time_steps,
+    float *raw_cost,
+    float *repulsive_cost,
+    int n
+) {
+    int tid = blockIdx.x * blockDim.x + threadIdx.x;
+    if (tid < n) {
+        unsigned int j = index / batch_size;  // pose in traj index
+        unsigned int i = index - (j * batch_size);  // traj in batch of trajectories
+
+        // Process
+        printf("tid=%d, i=%d, j=%d, x=%.2f, y=%.2f, yaws=%.2f\n",
+            tid,
+            i,
+            j,
+            traj_x[tid],
+            traj_y[tid],
+            traj_yaws[tid]
+        );
+    }
+}
+
+void calc_obstacle_critics_cost(
+    unsigned char * costmap_arr,
+    unsigned int costmap_size_x,
+    unsigned int costmap_size_y,
+    double costmap_resolution,
+    double costmap_origin_x,
+    double costmap_origin_y,
+    std::vector<float> traj_x;
+    std::vector<float> traj_y;
+    std::vector<float> traj_yaws;
+    unsigned int batch_size,
+    unsigned int time_steps,
+    std::vector<float>& raw_cost;
+    std::vector<float>& repulsive_cost;
+) {
+    thrust::device_vector<float> d_costmap_arr(costmap_arr,
+        costmap_arr + costmap_size_x * costmap_size_y);
+    thrust::device_vector<float> d_traj_x = traj_x;
+    thrust::device_vector<float> d_traj_y = traj_y;
+    thrust::device_vector<float> d_traj_yaws = traj_yaws;
+    thrust::device_vector<float> d_raw_cost = raw_cost_vec;
+    thrust::device_vector<float> d_repulsive_cost = repulsive_cost_vec;
+
+    float* ptr_costmap_arr = thrust::raw_pointer_cast(d_costmap_arr.data());
+    float* ptr_traj_x = thrust::raw_pointer_cast(d_traj_x.data());
+    float* ptr_traj_y = thrust::raw_pointer_cast(d_traj_y.data());
+    float* ptr_traj_yaws = thrust::raw_pointer_cast(d_traj_yaws.data());
+    float* ptr_raw_cost = thrust::raw_pointer_cast(d_raw_cost.data());
+    float* ptr_repulsive_cost = thrust::raw_pointer_cast(d_repulsive_cost.data());
+
+    // Max number of triggers
+    int N = batch_size * time_steps;
+
+    // Launch kernel
+    int blockSize = 256;
+    int numBlocks = (N + blockSize - 1) / blockSize;
+
+    obstacleKernel<<<numBlocks, blockSize>>>(
+        ptr_costmap_arr,
+        costmap_size_x,
+        costmap_size_y,
+        costmap_resolution,
+        costmap_origin_x,
+        costmap_origin_y,
+        ptr_traj_x,
+        ptr_traj_y,
+        ptr_traj_yaws,
+        batch_size,
+        time_steps,
+        ptr_raw_cost,
+        ptr_repulsive_cost,
+        N
+    );
+
+    cudaDeviceSynchronize();
+
+    // Output
+    thrust::host_vector<float> h_raw_cost = ptr_raw_cost;
+    raw_cost = std::vector<float>(h_raw_cost.begin(), h_raw_cost.end());
+
+    thrust::host_vector<float> h_repulsive_cost = ptr_repulsive_cost;
+    repulsive_cost = std::vector<float>(h_repulsive_cost.begin(), h_repulsive_cost.end());
+}
