@@ -140,7 +140,7 @@ public:
   /**
     * @brief Constructor for mppi::AckermannMotionModel
     */
-  explicit AckermannMotionModel(ParametersHandler * param_handler, const std::string &name)
+  explicit AckermannMotionModel(ParametersHandler * param_handler, const std::string & name)
   {
     auto getParam = param_handler->getParamGetter(name + ".AckermannConstraints");
     getParam(min_turning_r_, "min_turning_r", 0.2);
