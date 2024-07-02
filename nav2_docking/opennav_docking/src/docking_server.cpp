@@ -370,7 +370,7 @@ void DockingServer::doInitialPerception(Dock * dock, geometry_msgs::msg::PoseSta
   rclcpp::Rate loop_rate(controller_frequency_);
   auto start = this->now();
   auto timeout = rclcpp::Duration::from_seconds(initial_perception_timeout_);
-  while (!dock->plugin->getRefinedPose(dock_pose)) {
+  while (!dock->plugin->getRefinedPose(dock_pose, dock->id)) {
     if (this->now() - start > timeout) {
       throw opennav_docking_core::FailedToDetectDock("Failed initial dock detection");
     }
@@ -406,7 +406,7 @@ bool DockingServer::approachDock(Dock * dock, geometry_msgs::msg::PoseStamped & 
     }
 
     // Update perception
-    if (!dock->plugin->getRefinedPose(dock_pose)) {
+    if (!dock->plugin->getRefinedPose(dock_pose, dock->id)) {
       throw opennav_docking_core::FailedToDetectDock("Failed dock detection");
     }
 
