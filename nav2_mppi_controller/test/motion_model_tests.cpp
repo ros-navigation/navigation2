@@ -136,7 +136,7 @@ TEST(MotionModelTests, AckermannTest)
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
   ParametersHandler param_handler(node);
   std::unique_ptr<AckermannMotionModel> model =
-    std::make_unique<AckermannMotionModel>(&param_handler);
+    std::make_unique<AckermannMotionModel>(&param_handler, node->get_name());
 
   // Check that predict properly populates the trajectory velocities with the control velocities
   state.cvx = 10 * xt::ones<float>({batches, timesteps});
