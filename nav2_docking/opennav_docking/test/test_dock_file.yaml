@@ -6,3 +6,4 @@ docks:
   dock2:
     type: "dockv1"
     pose: [0.0, 0.0, 0.4]
+    id: "2"
