@@ -95,6 +95,10 @@ inline bool parseDockFile(
     curr_dock.pose.position.y = pose_arr[1];
     curr_dock.pose.orientation = orientationAroundZAxis(pose_arr[2]);
 
+    if (dock_attribs["id"]) {
+      curr_dock.id = dock_attribs["id"].as<std::string>();
+    }
+
     // Insert into dock instance database
     dock_db.emplace(dock_name, curr_dock);
   }
@@ -140,6 +144,11 @@ inline bool parseDockParams(
     curr_dock.pose.position.x = pose_arr[0];
     curr_dock.pose.position.y = pose_arr[1];
     curr_dock.pose.orientation = orientationAroundZAxis(pose_arr[2]);
+
+    if (!node->has_parameter(dock_name + ".id")) {
+      node->declare_parameter(dock_name + ".id", "");
+    }
+    node->get_parameter(dock_name + ".id", curr_dock.id);
 
     // Insert into dock instance database
     dock_db.emplace(dock_name, curr_dock);

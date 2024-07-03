@@ -111,11 +111,10 @@ def generate_launch_description():
     world_sdf = tempfile.mktemp(prefix='nav2_', suffix='.sdf')
     world_sdf_xacro = ExecuteProcess(
         cmd=['xacro', '-o', world_sdf, ['headless:=', 'False'], world])
-    start_gazebo_cmd = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(get_package_share_directory('ros_gz_sim'), 'launch',
-                         'gz_sim.launch.py')),
-        launch_arguments={'gz_args': ['-r -s ', world_sdf]}.items())
+    start_gazebo_cmd = ExecuteProcess(
+        cmd=['gz', 'sim', '-r', '-s', world_sdf],
+        output='screen',
+    )
 
     remove_temp_sdf_file = RegisterEventHandler(event_handler=OnShutdown(
         on_shutdown=[

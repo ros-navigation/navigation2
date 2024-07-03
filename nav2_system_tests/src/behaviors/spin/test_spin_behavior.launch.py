@@ -38,8 +38,6 @@ def generate_launch_description():
     bringup_dir = get_package_share_directory('nav2_bringup')
     sim_dir = get_package_share_directory('nav2_minimal_tb3_sim')
     params_file = LaunchConfiguration('params_file')
-
-
     world_sdf_xacro = os.path.join(sim_dir, 'worlds', 'tb3_sandbox.sdf.xacro')
     robot_sdf = os.path.join(sim_dir, 'urdf', 'gz_waffle.sdf.xacro')
     urdf = os.path.join(sim_dir, 'urdf', 'turtlebot3_waffle.urdf')
@@ -145,7 +143,8 @@ def main(argv=sys.argv[1:]):
     lts.add_test_action(ld, test1_action)
     ls = LaunchService(argv=argv)
     ls.include_launch_description(ld)
-    return lts.run(ls)
+    return_code = lts.run(ls)
+    return return_code
 
 
 if __name__ == '__main__':

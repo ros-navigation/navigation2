@@ -1,6 +1,7 @@
 # Nav2
 [![GitHub Workflow Status](https://github.com/ros-navigation/navigation2/actions/workflows/update_ci_image.yaml/badge.svg)](https://github.com/ros-navigation/navigation2/actions/workflows/update_ci_image.yaml)
 [![codecov](https://codecov.io/gh/ros-navigation/navigation2/branch/main/graph/badge.svg?token=S3iRmypwlg)](https://codecov.io/gh/ros-navigation/navigation2)
+[![Build Status](https://circleci.com/gh/ros-navigation/navigation2/tree/main.svg?style=svg)](https://circleci.com/gh/ros-navigation/navigation2/tree/main)
 
 <p align="center">
   <img height="300" src="doc/nav2_logo.png" />
@@ -113,11 +114,6 @@ If you use the Regulated Pure Pursuit Controller algorithm or software from this
 ```
 
 ## Build Status
-
-| Service | Humble | Iron  | Jazzy | Main  |
-| :---:   | :---:  | :---: | :---: | :---: |
-| ROS Build Farm | [![Build Status](https://build.ros2.org/job/Hdev__navigation2__ubuntu_jammy_amd64/badge/icon)](https://build.ros2.org/job/Hdev__navigation2__ubuntu_jammy_amd64/) | [![Build Status](https://build.ros2.org/job/Idev__navigation2__ubuntu_jammy_amd64/badge/icon)](https://build.ros2.org/job/Idev__navigation2__ubuntu_jammy_amd64/) |  [![Build Status](https://build.ros2.org/job/Jdev__navigation2__ubuntu_noble_amd64/badge/icon)](https://build.ros2.org/job/Jdev__navigation2__ubuntu_noble_amd64/) | N/A |
-| Circle CI | N/A | N/A | N/A | [![Build Status](https://circleci.com/gh/ros-navigation/navigation2/tree/main.svg?style=svg)](https://circleci.com/gh/ros-navigation/navigation2/tree/main) |
 
 | Package | humble Source | humble Debian | iron Source | iron Debian | jazzy Source | jazzy Debian | 
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: |

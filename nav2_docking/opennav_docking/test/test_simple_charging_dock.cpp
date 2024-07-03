@@ -219,7 +219,7 @@ TEST(SimpleChargingDockTests, RefinedPoseTest)
 
   // Timestamps are outdated; this is after timeout
   EXPECT_FALSE(dock->isDocked());
-  EXPECT_FALSE(dock->getRefinedPose(pose));
+  EXPECT_FALSE(dock->getRefinedPose(pose, ""));
 
   geometry_msgs::msg::PoseStamped detected_pose;
   detected_pose.header.stamp = node->now();
@@ -230,7 +230,7 @@ TEST(SimpleChargingDockTests, RefinedPoseTest)
   rclcpp::spin_some(node->get_node_base_interface());
 
   pose.header.frame_id = "my_frame";
-  EXPECT_TRUE(dock->getRefinedPose(pose));
+  EXPECT_TRUE(dock->getRefinedPose(pose, ""));
   EXPECT_NEAR(pose.pose.position.x, 0.1, 0.01);
   EXPECT_NEAR(pose.pose.position.y, -0.3, 0.01);  // Applies external_detection_translation_x, +0.2
 
