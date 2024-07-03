@@ -27,8 +27,6 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 import launch_ros.actions
 from launch_testing.legacy import LaunchTestService
 
-from nav2_simple_commander.utils import kill_os_processes
-
 
 def main(argv=sys.argv[1:]):
     testExecutable = os.getenv('TEST_EXECUTABLE')
