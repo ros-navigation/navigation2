@@ -27,9 +27,9 @@ from launch.actions import (
     ExecuteProcess,
     IncludeLaunchDescription,
     SetEnvironmentVariable)
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
-from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_testing.legacy import LaunchTestService
 from nav2_common.launch import RewrittenYaml
 
@@ -134,7 +134,8 @@ def main(argv=sys.argv[1:]):
     ld = generate_launch_description()
 
     test1_action = ExecuteProcess(
-        cmd=[os.path.join(os.getenv('TEST_DIR'), 'spin_tester.py'), '--ros-args', '-p', 'use_sim_time:=True'],
+        cmd=[os.path.join(
+            os.getenv('TEST_DIR'), 'spin_tester.py'), '--ros-args', '-p', 'use_sim_time:=True'],
         name='tester_node',
         output='screen',
     )

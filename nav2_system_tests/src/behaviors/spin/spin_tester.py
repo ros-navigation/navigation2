@@ -17,21 +17,22 @@ import sys
 import time
 
 from action_msgs.msg import GoalStatus
+from geometry_msgs.msg import Point32, PolygonStamped
 from nav2_msgs.action import Spin
 from nav2_msgs.msg import Costmap
 from nav2_msgs.srv import ManageLifecycleNodes
-from geometry_msgs.msg import Point32, PolygonStamped
 
 import rclpy
 
 from rclpy.action import ActionClient
-from rclpy.node import Node
 from rclpy.duration import Duration
+from rclpy.node import Node
 from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSReliabilityPolicy
 from rclpy.qos import QoSProfile
 
 
 class SpinTest(Node):
+
     def __init__(self):
         super().__init__(node_name='spin_tester', namespace='')
         self.costmap_qos = QoSProfile(
@@ -41,8 +42,10 @@ class SpinTest(Node):
             depth=1,
         )
         self.action_client = ActionClient(self, Spin, 'spin')
-        self.costmap_pub = self.create_publisher(Costmap, 'local_costmap/costmap_raw', self.costmap_qos)
-        self.footprint_pub = self.create_publisher(PolygonStamped, 'local_costmap/published_footprint', 10)
+        self.costmap_pub = self.create_publisher(
+            Costmap, 'local_costmap/costmap_raw', self.costmap_qos)
+        self.footprint_pub = self.create_publisher(
+            PolygonStamped, 'local_costmap/published_footprint', 10)
         self.goal_handle = None
         self.action_result = None
 
