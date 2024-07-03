@@ -18,7 +18,7 @@ import time
 
 from action_msgs.msg import GoalStatus
 from geometry_msgs.msg import Point32, PolygonStamped
-from nav2_msgs.action import Spin
+from nav2_msgs.action import DriveOnHeading
 from nav2_msgs.msg import Costmap
 from nav2_msgs.srv import ManageLifecycleNodes
 
@@ -31,17 +31,17 @@ from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSReliabilityPolic
 from rclpy.qos import QoSProfile
 
 
-class SpinTest(Node):
+class DriveTest(Node):
 
     def __init__(self):
-        super().__init__(node_name='spin_tester', namespace='')
+        super().__init__(node_name='drive_tester', namespace='')
         self.costmap_qos = QoSProfile(
             durability=QoSDurabilityPolicy.TRANSIENT_LOCAL,
             reliability=QoSReliabilityPolicy.RELIABLE,
             history=QoSHistoryPolicy.KEEP_LAST,
             depth=1,
         )
-        self.action_client = ActionClient(self, Spin, 'spin')
+        self.action_client = ActionClient(self, DriveOnHeading, 'drive_on_heading')
         self.costmap_pub = self.create_publisher(
             Costmap, 'local_costmap/costmap_raw', self.costmap_qos)
         self.footprint_pub = self.create_publisher(
@@ -65,7 +65,7 @@ class SpinTest(Node):
         self.info_msg('Goal accepted')
         self.result_future = self.goal_handle.get_result_async()
 
-        self.info_msg("Waiting for 'spin' action to complete")
+        self.info_msg("Waiting for 'DriveOnHeading' action to complete")
         try:
             rclpy.spin_until_future_complete(self, self.result_future)
             status = self.result_future.result().status
@@ -78,12 +78,12 @@ class SpinTest(Node):
             self.info_msg(f'Goal failed with status code: {status}')
             return False
         if self.action_result.error_code == 0:
-            self.info_msg('Spin was successful!')
+            self.info_msg('DriveOnHeading was successful!')
             return True
-        self.info_msg('Spin failed to meet target!')
+        self.info_msg('DriveOnHeading failed to meet target!')
         return False
 
-    def sendAndPreemptWithInvertedCommand(self, command):
+    def sendAndPreemptWithFasterCommand(self, command):
         # Send initial goal
         self.info_msg('Sending goal request...')
         self.goal_future = self.action_client.send_goal_async(command)
@@ -103,7 +103,7 @@ class SpinTest(Node):
         # Now preempt it
         time.sleep(0.5)
         self.info_msg('Sending preemption request...')
-        command.target_yaw = -command.target_yaw
+        command.speed = 0.2
         self.goal_future = self.action_client.send_goal_async(command)
         try:
             rclpy.spin_until_future_complete(self, self.goal_future)
@@ -119,7 +119,7 @@ class SpinTest(Node):
         self.result_future = self.goal_handle.get_result_async()
 
         # Wait for new goal to complete
-        self.info_msg("Waiting for 'spin' action Preemption to complete")
+        self.info_msg("Waiting for 'DriveOnHeading' action Preemption to complete")
         try:
             rclpy.spin_until_future_complete(self, self.result_future)
             status = self.result_future.result().status
@@ -132,9 +132,9 @@ class SpinTest(Node):
             self.info_msg(f'Goal failed with status code: {status}')
             return False
         if self.action_result.error_code == 0:
-            self.info_msg('Spin was successful!')
+            self.info_msg('DriveOnHeading was successful!')
             return True
-        self.info_msg('Spin failed to meet target!')
+        self.info_msg('DriveOnHeading failed to meet target!')
         return False
 
     def sendAndCancelCommand(self, command):
@@ -214,11 +214,12 @@ class SpinTest(Node):
 
     def run(self):
         while not self.action_client.wait_for_server(timeout_sec=1.0):
-            self.info_msg("'spin' action server not available, waiting...")
+            self.info_msg("'DriveOnHeading' action server not available, waiting...")
 
         # Test A: Send without valid costmap
-        action_request = Spin.Goal()
-        action_request.target_yaw = 0.349066  # 20 deg
+        action_request = DriveOnHeading.Goal()
+        action_request.speed = 0.15
+        action_request.target.x = 0.15
         action_request.time_allowance = Duration(seconds=5).to_msg()
         cmd1 = self.sendCommand(action_request)
 
@@ -228,19 +229,19 @@ class SpinTest(Node):
         else:
             self.info_msg('Test A passed')
 
-        # Test B: Send with valid costmap and spin a couple of times
+        # Test B: Send with valid costmap and DriveOnHeading a couple of times
         self.sendFreeCostmap()
         time.sleep(1)
         cmd1 = self.sendCommand(action_request)
-        action_request.target_yaw = -3.49066  # -200 deg
+        action_request.target.x = 0.1
         cmd2 = self.sendCommand(action_request)
 
         if not cmd1 or not cmd2:
-            self.error_msg('Test B failed: Failed to spin with valid costmap!')
+            self.error_msg('Test B failed: Failed to DriveOnHeading with valid costmap!')
             return not cmd1 or not cmd2
 
-        action_request.target_yaw = 0.349066  # 20 deg
-        cmd_preempt = self.sendAndPreemptWithInvertedCommand(action_request)
+        action_request.target.x = 0.5
+        cmd_preempt = self.sendAndPreemptWithFasterCommand(action_request)
         if not cmd_preempt:
             self.error_msg('Test B failed: Failed to preempt and invert command!')
             return not cmd_preempt
@@ -252,16 +253,31 @@ class SpinTest(Node):
         else:
             self.info_msg('Test B passed')
 
-        # Test C: Send with impossible command in time allowance
+        # Test C: Send with impossible command in time allowance & target * signs
         action_request.time_allowance = Duration(seconds=0.1).to_msg()
         cmd3 = self.sendCommand(action_request)
         if cmd3:
             self.error_msg('Test C failed: Passed while impoossible timing requested!')
             return not cmd3
+
+        action_request.target.y = 0.5
+        cmd_invalid_target = self.sendCommand(action_request)
+        if cmd_invalid_target:
+            self.error_msg('Test C failed: Passed while impoossible target requested!')
+            return not cmd_invalid_target
         else:
+            action_request.target.y = 0.0
+
+        action_request.target.x = -0.5
+        cmd_invalid_sign = self.sendCommand(action_request)
+        if cmd_invalid_sign:
+            self.error_msg('Test C failed: Passed while impoossible target sign requested!')
+            return not cmd_invalid_sign
+        else:
+            action_request.target.x = 0.5
             self.info_msg('Test C passed')
 
-        # Test D: Send with lethal costmap and spin
+        # Test D: Send with lethal costmap and DriveOnHeading
         action_request.time_allowance = Duration(seconds=5).to_msg()
         self.sendOccupiedCostmap()
         time.sleep(1)
@@ -277,7 +293,7 @@ class SpinTest(Node):
         self.info_msg('Shutting down')
 
         self.action_client.destroy()
-        self.info_msg('Destroyed backup action client')
+        self.info_msg('Destroyed DriveOnHeading action client')
 
         transition_service = 'lifecycle_manager_navigation/manage_nodes'
         mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
@@ -308,7 +324,7 @@ class SpinTest(Node):
 def main(argv=sys.argv[1:]):
     rclpy.init()
     time.sleep(10)
-    test = SpinTest()
+    test = DriveTest()
     result = test.run()
     test.shutdown()
 
