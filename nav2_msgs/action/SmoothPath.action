@@ -20,5 +20,6 @@ nav_msgs/Path path
 builtin_interfaces/Duration smoothing_duration
 bool was_completed
 uint16 error_code
+string error_msg
 ---
 #feedback definition

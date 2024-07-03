@@ -39,6 +39,7 @@ struct Dock
   geometry_msgs::msg::Pose pose;
   std::string frame;
   std::string type;
+  std::string id;
   opennav_docking_core::ChargingDock::Ptr plugin{nullptr};
 };
 

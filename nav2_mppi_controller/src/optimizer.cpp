@@ -442,7 +442,7 @@ void Optimizer::setMotionModel(const std::string & model)
   } else if (model == "Omni") {
     motion_model_ = std::make_shared<OmniMotionModel>();
   } else if (model == "Ackermann") {
-    motion_model_ = std::make_shared<AckermannMotionModel>(parameters_handler_);
+    motion_model_ = std::make_shared<AckermannMotionModel>(parameters_handler_, name_);
   } else {
     throw nav2_core::ControllerException(
             std::string(

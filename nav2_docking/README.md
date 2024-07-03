@@ -93,10 +93,12 @@ dock1:
   type: "dockv3"
   frame: map
   pose: [0.3, 0.3, 0.0]
+  id: "kitchen_dock"
 dock2:
   type: "dockv1"
   frame: map
   pose: [0.0, 0.0, 0.4]
+  id: "42"
 ```
 
 If you'd prefer to specify the docks using an external file, you may use the `dock_database` parameter to specify the filepath to the yaml file. The file should be laid out like:
@@ -107,13 +109,15 @@ docks:
     type: "dockv3"
     frame: map
     pose: [0.3, 0.3, 0.0]
+    id: "kitchen_dock"
   dock2:
     type: "dockv1"
     frame: map
     pose: [0.0, 0.0, 0.4]
+    id: "42"
 ```
 
-Note that you may leave the `type` to an empty string **if** there is only one type of dock being used. The `frame` will also default to `map` if not otherwise specified. The `type` and `pose` fields are required. Note also that these can be in any frame, not just map (i.e. `odom`, `base_link`, etc) in both the database and action requests.
+Note that you may leave the `type` to an empty string **if** there is only one type of dock being used. The `frame` will also default to `map` if not otherwise specified. The `type` and `pose` fields are required. Note also that these can be in any frame, not just map (i.e. `odom`, `base_link`, etc) in both the database and action requests. You may also specify the `id` field, for example to select the associated AprilTag. If the dock plugin does not use it, you can leave it unspecified.
 
 ## Dock Plugin API
 

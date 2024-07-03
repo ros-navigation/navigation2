@@ -72,7 +72,7 @@ public:
     return geometry_msgs::msg::PoseStamped();
   }
 
-  virtual bool getRefinedPose(geometry_msgs::msg::PoseStamped &)
+  virtual bool getRefinedPose(geometry_msgs::msg::PoseStamped &, std::string)
   {
     // Always return false to trigger a timeout, when no exceptions are thrown
     return false;

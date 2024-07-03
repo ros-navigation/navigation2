@@ -17,6 +17,7 @@ uint16 COLLISION_AHEAD=714
 
 builtin_interfaces/Duration total_elapsed_time
 uint16 error_code
+string error_msg
 ---
 #feedback definition
 float32 distance_traveled

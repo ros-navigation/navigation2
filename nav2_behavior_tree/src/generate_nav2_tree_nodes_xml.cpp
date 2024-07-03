@@ -15,7 +15,6 @@
 #include <vector>
 #include <string>
 #include <fstream>
-#include <boost/algorithm/string.hpp>
 
 #include "behaviortree_cpp/behavior_tree.h"
 #include "behaviortree_cpp/bt_factory.h"
@@ -23,13 +22,13 @@
 #include "behaviortree_cpp/xml_parsing.h"
 
 #include "plugins_list.hpp"
+#include "nav2_util/string_utils.hpp"
 
 int main()
 {
   BT::BehaviorTreeFactory factory;
 
-  std::vector<std::string> plugins_list;
-  boost::split(plugins_list, nav2::details::BT_BUILTIN_PLUGINS, boost::is_any_of(";"));
+  std::vector<std::string> plugins_list = nav2_util::split(nav2::details::BT_BUILTIN_PLUGINS, ';');
 
   for (const auto & plugin : plugins_list) {
     std::cout << "Loading: " << plugin << "\n";

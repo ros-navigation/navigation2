@@ -18,6 +18,12 @@
     <description>The Nav2 rviz panel for selecting planners and controllers.</description>
   </class>
 
+  <class name="nav2_rviz_plugins/Docking"
+         type="nav2_rviz_plugins::DockingPanel"
+         base_class_type="rviz_common::Panel">
+    <description>The Nav2 rviz panel for dock and undock actions.</description>
+  </class>
+
   <class name="nav2_rviz_plugins/ParticleCloud"
          type="nav2_rviz_plugins::ParticleCloudDisplay"
          base_class_type="rviz_common::Display">
