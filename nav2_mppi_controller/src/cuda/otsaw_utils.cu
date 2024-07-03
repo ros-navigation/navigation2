@@ -384,7 +384,7 @@ void calc_cost_at_pose(
         N
     );
 
-    // cudaDeviceSynchronize();
+    cudaDeviceSynchronize();
 
     // Output:
     thrust::host_vector<float> h_pose_cost = d_vec_pose_cost;

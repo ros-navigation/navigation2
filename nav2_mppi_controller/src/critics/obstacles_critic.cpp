@@ -16,6 +16,8 @@
 #include "nav2_mppi_controller/critics/obstacles_critic.hpp"
 #include <chrono>
 
+#define MAX_ERR 1e-6
+
 namespace mppi::critics
 {
 
@@ -114,6 +116,8 @@ float ObstaclesCritic::distanceToObstacle(const CollisionCost & cost)
 
 void ObstaclesCritic::score(CriticData & data)
 {
+  auto start_time = std::chrono::high_resolution_clock::now();
+
   using xt::evaluation_strategy::immediate;
   if (!enabled_) {
     return;
@@ -139,7 +143,6 @@ void ObstaclesCritic::score(CriticData & data)
   bool all_trajectories_collide = true;
 
   // Prepare Data for GPU
-  auto start_gpu = std::chrono::high_resolution_clock::now();
   std::vector<float> traj_x(data.trajectories.x.begin(), data.trajectories.x.end());
   std::vector<float> traj_y(data.trajectories.y.begin(), data.trajectories.y.end());
   std::vector<float> traj_yaws(data.trajectories.yaws.begin(), data.trajectories.yaws.end());
@@ -189,22 +192,31 @@ void ObstaclesCritic::score(CriticData & data)
     pose_cost_vec,
     using_footprint_vec
   );
-  auto end_gpu = std::chrono::high_resolution_clock::now();
-  std::chrono::duration<double, std::milli> duration1 = end_gpu - start_gpu;
-  std::cout << "GPU runtime: " << duration1.count() << " ms" << std::endl;
 
 
-  auto start_cpu = std::chrono::high_resolution_clock::now();
+  // sanity check
   for (size_t i = 0; i < data.trajectories.x.shape(0); ++i) {
-    CollisionCost pose_cost;
     const auto & traj = data.trajectories;
-    for (size_t j = 0; j < traj_len; j++) {
+    CollisionCost pose_cost;
+    for (size_t j = 0; j < data.trajectories.x.shape(1); j++) {
       pose_cost = costAtPose(traj.x(i, j), traj.y(i, j), traj.yaws(i, j));
+
+      unsigned int index = i * time_steps + j;
+      if (
+        fabs(pose_cost_vec[index] - pose_cost.cost) > MAX_ERR ||
+        fabs(using_footprint_vec[index] - pose_cost.using_footprint) > MAX_ERR
+      ) {
+        std::cout << "i=" << i;
+        std::cout << ", j=" << j;
+        std::cout << ", x CPU=" << traj.x(i, j) << ", GPU=" << traj_x[index];
+        std::cout << ", y CPU=" << traj.y(i, j) << ", GPU=" << traj_y[index];
+        std::cout << ", yaws CPU=" << traj.yaws(i, j) << ", GPU=" << traj_yaws[index];
+        std::cout << ", pose_cost CPU=" << pose_cost.cost << ", GPU=" << pose_cost_vec[index];
+        std::cout << ", using_footprint CPU=" << pose_cost.using_footprint << ", GPU=" << using_footprint_vec[index];
+        std::cout << std::endl;
+      }
     }
   }
-  auto end_cpu = std::chrono::high_resolution_clock::now();
-  std::chrono::duration<double, std::milli> duration3 = end_cpu - start_cpu;
-  std::cout << "CPU runtime: " << duration3.count() << " ms" << std::endl;
 
   // Current CPU process
   for (size_t i = 0; i < data.trajectories.x.shape(0); ++i) {
@@ -215,14 +227,6 @@ void ObstaclesCritic::score(CriticData & data)
 
     for (size_t j = 0; j < traj_len; j++) {
       pose_cost = costAtPose(traj.x(i, j), traj.y(i, j), traj.yaws(i, j));
-      // std::cout << "[CPU] i=" << i;
-      // std::cout << ", j=" << j;
-      // std::cout << ", x=" << traj.x(i, j);
-      // std::cout << ", y=" << traj.y(i, j);
-      // std::cout << ", yaws=" << traj.yaws(i, j);
-      // std::cout << ", pose_cost=" << pose_cost.cost;
-      // std::cout << ", using_footprint=" << pose_cost.using_footprint;
-      // std::cout << std::endl;
 
       if (pose_cost.cost < 1.0f) {continue;}  // In free space
 
@@ -255,6 +259,10 @@ void ObstaclesCritic::score(CriticData & data)
     (repulsion_weight_ * repulsive_cost / traj_len),
     power_);
   data.fail_flag = all_trajectories_collide;
+
+  auto end_time = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double, std::milli> duration = end_time - start_time;
+  std::cout << "ObstaclesCritic: " << duration.count() << " ms" << std::endl;
 }
 
 /**
