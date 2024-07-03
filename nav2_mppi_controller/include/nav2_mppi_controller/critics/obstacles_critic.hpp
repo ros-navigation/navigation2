@@ -67,7 +67,7 @@ protected:
     * @param theta theta of pose
     * @return Collision information at pose
     */
-  inline CollisionCost costAtPose(float x, float y, float theta);
+  inline CollisionCost costAtPose(float x, float y, float theta, bool debug);
 
   /**
     * @brief Distance to obstacle from cost

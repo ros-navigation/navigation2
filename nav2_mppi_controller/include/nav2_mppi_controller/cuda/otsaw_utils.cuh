@@ -25,12 +25,12 @@ void calc_cost_at_pose(
     unsigned char * costmap_arr,
     unsigned int costmap_size_x,
     unsigned int costmap_size_y,
-    float costmap_resolution,
-    float costmap_origin_x,
-    float costmap_origin_y,
+    double costmap_resolution,
+    double costmap_origin_x,
+    double costmap_origin_y,
     // Input(2): Footprint
-    std::vector<float> footprint_x,
-    std::vector<float> footprint_y,
+    std::vector<double> footprint_x,
+    std::vector<double> footprint_y,
     unsigned int footprint_size,
     // Input(3): Config
     bool consider_footprint,

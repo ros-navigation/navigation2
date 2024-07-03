@@ -12,14 +12,14 @@ static constexpr unsigned char LETHAL_OBSTACLE = 254;
 // costmap_2d.cpp
 __device__ bool worldToMap(
     // Input
-    float wx,
-    float wy,
+    double wx,
+    double wy,
     // Costmap
     unsigned int costmap_size_x,
     unsigned int costmap_size_y,
-    float costmap_resolution,
-    float costmap_origin_x,
-    float costmap_origin_y,
+    double costmap_resolution,
+    double costmap_origin_x,
+    double costmap_origin_y,
     // Output
     unsigned int & mx,
     unsigned int & my
@@ -38,7 +38,7 @@ __device__ bool worldToMap(
 }
 
 // footprint_collision_checker.cpp
-__device__ float pointCost(
+__device__ double pointCost(
     // Input(0): xy pixel index
     unsigned int x_i,
     unsigned int y_i,
@@ -51,15 +51,15 @@ __device__ float pointCost(
 }
 
 // footprint_collision_checker.cpp
-__device__ float lineCost(
+__device__ double lineCost(
     // Input(0): 2 points
     int x0, int x1, int y0, int y1,
     // Input(1): Costmap
     unsigned char *costmap_arr,
     unsigned int costmap_size_x
 ) {
-    float line_cost = 0.0;
-    float point_cost = -1.0;
+    double line_cost = 0.0;
+    double point_cost = -1.0;
 
     for (LineIterator line(x0, y0, x1, y1); line.isValid(); line.advance()) {
         point_cost = pointCost(
@@ -68,7 +68,7 @@ __device__ float lineCost(
         );   // Score the current point
 
         // if in collision, no need to continue
-        if (point_cost == static_cast<float>(LETHAL_OBSTACLE)) {
+        if (point_cost == static_cast<double>(LETHAL_OBSTACLE)) {
             return point_cost;
         }
 
@@ -81,42 +81,45 @@ __device__ float lineCost(
 }
 
 // footprint_collision_checker.cpp
-__device__ float footprintCostAtPose(
+__device__ double footprintCostAtPose(
     // Input(0): Pose
-    float x, float y, float theta,
+    double x, double y, double theta,
     // Input(1): Costmap
     unsigned char *costmap_arr,
     unsigned int costmap_size_x,
     unsigned int costmap_size_y,
-    float costmap_resolution,
-    float costmap_origin_x,
-    float costmap_origin_y,
+    double costmap_resolution,
+    double costmap_origin_x,
+    double costmap_origin_y,
     // Input(2): footprint
-    float *footprint_x,
-    float *footprint_y,
+    double *footprint_x,
+    double *footprint_y,
     unsigned int footprint_size
 ) {
-    float cos_th = cosf(theta);
-    float sin_th = sinf(theta);
+    double cos_th = cosf(theta);
+    double sin_th = sinf(theta);
+
+    double oriented_footprint_x[10];
+    double oriented_footprint_y[10];
 
     for (unsigned int i = 0; i < footprint_size; ++i) {
-        float new_x = x + (footprint_x[i] * cos_th - footprint_y[i] * sin_th);
-        float new_y = y + (footprint_x[i] * sin_th + footprint_y[i] * cos_th);
-        footprint_x[i] = new_x;
-        footprint_y[i] = new_y;
+        double new_x = x + (footprint_x[i] * cos_th - footprint_y[i] * sin_th);
+        double new_y = y + (footprint_x[i] * sin_th + footprint_y[i] * cos_th);
+        oriented_footprint_x[i] = new_x;
+        oriented_footprint_y[i] = new_y;
     }
 
     // now we really have to lay down the footprint in the costmap_ grid
     unsigned int x0, x1, y0, y1;
-    float footprint_cost = 0.0;
+    double footprint_cost = 0.0;
 
     // get the cell coord of the first point
-    if (!worldToMap(footprint_x[0], footprint_y[0],
+    if (!worldToMap(oriented_footprint_x[0], oriented_footprint_y[0],
         costmap_size_x, costmap_size_y, costmap_resolution,
         costmap_origin_x, costmap_origin_y,
         x0, y0)
     ) {
-        return static_cast<float>(LETHAL_OBSTACLE);
+        return static_cast<double>(LETHAL_OBSTACLE);
     }
 
     // cache the start to eliminate a worldToMap call
@@ -127,12 +130,12 @@ __device__ float footprintCostAtPose(
     // we need to rasterize each line in the footprint
     for (unsigned int i = 0; i < footprint_size - 1; ++i) {
         // get the cell coord of the second point
-        if (!worldToMap(footprint_x[i + 1], footprint_y[i + 1],
+        if (!worldToMap(oriented_footprint_x[i + 1], oriented_footprint_y[i + 1],
             costmap_size_x, costmap_size_y, costmap_resolution,
             costmap_origin_x, costmap_origin_y,
             x1, y1)
         ) {
-            return static_cast<float>(LETHAL_OBSTACLE);
+            return static_cast<double>(LETHAL_OBSTACLE);
         }
 
         footprint_cost = fmaxf(
@@ -144,7 +147,7 @@ __device__ float footprintCostAtPose(
         y0 = y1;
 
         // if in collision, no need to continue
-        if (footprint_cost == static_cast<float>(LETHAL_OBSTACLE)) {
+        if (footprint_cost == static_cast<double>(LETHAL_OBSTACLE)) {
             return footprint_cost;
         }
     }
@@ -165,19 +168,21 @@ __device__ void costAtPose(
     unsigned char *costmap_arr,
     unsigned int costmap_size_x,
     unsigned int costmap_size_y,
-    float costmap_resolution,
-    float costmap_origin_x,
-    float costmap_origin_y,
+    double costmap_resolution,
+    double costmap_origin_x,
+    double costmap_origin_y,
     // Input(2): Footprint
-    float *footprint_x,
-    float *footprint_y,
+    double *footprint_x,
+    double *footprint_y,
     unsigned int footprint_size,
     // Input(3): Config
     bool consider_footprint,
     float possibly_inscribed_cost,
     // Output
     float &cost,
-    bool &using_footprint
+    bool &using_footprint,
+    // others
+    bool debug = false
 ) {
     using_footprint = false;
     unsigned int x_i, y_i;
@@ -192,6 +197,10 @@ __device__ void costAtPose(
     }
 
     cost = pointCost(x_i, y_i, costmap_arr, costmap_size_x);
+    if (debug) {
+        printf("[GPU] pointCost(%d, %d)=%.2f\n",
+            x_i, y_i, cost);
+    }
 
     if (consider_footprint &&
         (cost >= possibly_inscribed_cost || possibly_inscribed_cost < 1.0f))
@@ -212,6 +221,9 @@ __device__ void costAtPose(
             footprint_y,
             footprint_size
         );
+        if (debug) {
+            printf("[GPU] footprintCostAtPose=%.2f\n", cost);
+        }
         using_footprint = true;
     }
 }
@@ -227,12 +239,12 @@ __global__ void poseCostKernel(
     unsigned char *costmap_arr,
     unsigned int costmap_size_x,
     unsigned int costmap_size_y,
-    float costmap_resolution,
-    float costmap_origin_x,
-    float costmap_origin_y,
+    double costmap_resolution,
+    double costmap_origin_x,
+    double costmap_origin_y,
     // Input(2): Footprint
-    float *footprint_x,
-    float *footprint_y,
+    double *footprint_x,
+    double *footprint_y,
     unsigned int footprint_size,
     // Input(3): Config
     bool consider_footprint,
@@ -270,23 +282,30 @@ __global__ void poseCostKernel(
             possibly_inscribed_cost,
             // Output
             cost,
-            using_footprint
+            using_footprint,
+            // Debug (i*time_steps+j)
+            (tid == 0*time_steps+55)
         );
+        
+        // batchsize 2000 x timestep 56
         out_pose_cost[tid] = cost;
         out_using_footprint[tid] = using_footprint;
 
-        // unsigned int j = tid / batch_size;  // pose in traj index
-        // unsigned int i = tid - (j * batch_size);  // traj in batch of trajectories
-        // printf("[GPU] tid=%d, i=%d, j=%d, x=%.2f, y=%.2f, yaws=%.2f, pose_cost=%.2f, using_footprint=%d\n",
-        //     tid,
-        //     i,
-        //     j,
-        //     traj_x[tid],
-        //     traj_y[tid],
-        //     traj_yaws[tid],
-        //     out_pose_cost[tid],
-        //     out_using_footprint[tid] ? 1 : 0
-        // );
+        if (tid == 0*time_steps+55) {
+            unsigned int i = tid / time_steps;
+            unsigned int j = tid - (i * time_steps);
+            
+            printf("[GPU] tid=%d, i=%d, j=%d, x=%f, y=%f, yaws=%f, pose_cost=%.2f, using_footprint=%d\n",
+                tid,
+                i,
+                j,
+                traj_x[tid],
+                traj_y[tid],
+                traj_yaws[tid],
+                out_pose_cost[tid],
+                out_using_footprint[tid] ? 1 : 0
+            );
+        }
     }
 }
 
@@ -301,12 +320,12 @@ void calc_cost_at_pose(
     unsigned char * costmap_arr,
     unsigned int costmap_size_x,
     unsigned int costmap_size_y,
-    float costmap_resolution,
-    float costmap_origin_x,
-    float costmap_origin_y,
+    double costmap_resolution,
+    double costmap_origin_x,
+    double costmap_origin_y,
     // Input(2): Footprint
-    std::vector<float> footprint_x,
-    std::vector<float> footprint_y,
+    std::vector<double> footprint_x,
+    std::vector<double> footprint_y,
     unsigned int footprint_size,
     // Input(3): Config
     bool consider_footprint,
@@ -315,17 +334,14 @@ void calc_cost_at_pose(
     std::vector<float>& out_pose_cost,
     std::vector<bool>& out_using_footprint
 ) {
-    cudaEvent_t t0, t_end;
-    cudaEventCreate(&t0);
-    cudaEventCreate(&t_end);
-
-    // Record start event
-    cudaEventRecord(t0);
+    // Timing
+    // cudaEvent_t t0, t_end;
+    // cudaEventCreate(&t0);
+    // cudaEventCreate(&t_end);
+    // cudaEventRecord(t0);
 
     // Max number of triggers
     int N = traj_x.size();
-    // printf("traj_x.size()=%d, batch_size=%d, timestep=%d",
-    //     traj_x.size(), batch_size, time_steps);
 
     thrust::device_vector<unsigned char> d_vec_costmap_arr(costmap_arr,
         costmap_arr + costmap_size_x * costmap_size_y);
@@ -340,11 +356,11 @@ void calc_cost_at_pose(
     thrust::device_vector<float> d_vec_traj_yaws = traj_yaws;
     float* d_traj_yaws = thrust::raw_pointer_cast(d_vec_traj_yaws.data());
 
-    thrust::device_vector<float> d_vec_footprint_x = footprint_x;
-    float* d_footprint_x = thrust::raw_pointer_cast(d_vec_footprint_x.data());
+    thrust::device_vector<double> d_vec_footprint_x = footprint_x;
+    double* d_footprint_x = thrust::raw_pointer_cast(d_vec_footprint_x.data());
 
-    thrust::device_vector<float> d_vec_footprint_y = footprint_y;
-    float* d_footprint_y = thrust::raw_pointer_cast(d_vec_footprint_y.data());
+    thrust::device_vector<double> d_vec_footprint_y = footprint_y;
+    double* d_footprint_y = thrust::raw_pointer_cast(d_vec_footprint_y.data());
 
     thrust::device_vector<float> d_vec_pose_cost(batch_size);
     float* d_pose_cost = thrust::raw_pointer_cast(d_vec_pose_cost.data());
@@ -394,9 +410,9 @@ void calc_cost_at_pose(
     out_using_footprint = std::vector<bool>(h_using_footprint.begin(), h_using_footprint.end());
 
     // Calculate elapsed time
-    cudaEventRecord(t_end);
-    cudaEventSynchronize(t_end);
-    float milliseconds = 0;
-    cudaEventElapsedTime(&milliseconds, t0, t_end);
-    std::cout << "t_end-t0: " << milliseconds << " ms" << std::endl;
+    // cudaEventRecord(t_end);
+    // cudaEventSynchronize(t_end);
+    // float milliseconds = 0;
+    // cudaEventElapsedTime(&milliseconds, t0, t_end);
+    // std::cout << "t_end-t0: " << milliseconds << " ms" << std::endl;
 }

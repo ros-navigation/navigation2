@@ -157,8 +157,8 @@ void ObstaclesCritic::score(CriticData & data)
   double costmap_origin_y = costmap_->getOriginY();
 
   std::vector<geometry_msgs::msg::Point> footprint = costmap_ros_->getRobotFootprint();
-  std::vector<float> footprint_x;
-  std::vector<float> footprint_y;
+  std::vector<double> footprint_x;
+  std::vector<double> footprint_y;
   for (unsigned int i = 0; i < footprint.size() - 1; ++i) {
     footprint_x.push_back(footprint[i].x);
     footprint_y.push_back(footprint[i].y);
@@ -199,21 +199,44 @@ void ObstaclesCritic::score(CriticData & data)
     const auto & traj = data.trajectories;
     CollisionCost pose_cost;
     for (size_t j = 0; j < data.trajectories.x.shape(1); j++) {
-      pose_cost = costAtPose(traj.x(i, j), traj.y(i, j), traj.yaws(i, j));
+      bool debug = (i==0 && j==55);
+      pose_cost = costAtPose(traj.x(i, j), traj.y(i, j), traj.yaws(i, j), debug);
 
       unsigned int index = i * time_steps + j;
       if (
-        fabs(pose_cost_vec[index] - pose_cost.cost) > MAX_ERR ||
-        fabs(using_footprint_vec[index] - pose_cost.using_footprint) > MAX_ERR
+        debug
+        // (fabs(pose_cost_vec[index] - pose_cost.cost) > MAX_ERR ||
+        // fabs(using_footprint_vec[index] - pose_cost.using_footprint) > MAX_ERR)
       ) {
-        std::cout << "i=" << i;
-        std::cout << ", j=" << j;
-        std::cout << ", x CPU=" << traj.x(i, j) << ", GPU=" << traj_x[index];
-        std::cout << ", y CPU=" << traj.y(i, j) << ", GPU=" << traj_y[index];
-        std::cout << ", yaws CPU=" << traj.yaws(i, j) << ", GPU=" << traj_yaws[index];
-        std::cout << ", pose_cost CPU=" << pose_cost.cost << ", GPU=" << pose_cost_vec[index];
-        std::cout << ", using_footprint CPU=" << pose_cost.using_footprint << ", GPU=" << using_footprint_vec[index];
-        std::cout << std::endl;
+        printf("[CPU] tid=%d, i=%ld, j=%ld, x=%f, y=%f, yaws=%f, pose_cost=%.2f, using_footprint=%d\n",
+                index,
+                i,
+                j,
+                traj.x(i, j),
+                traj.y(i, j),
+                traj.yaws(i, j),
+                pose_cost.cost,
+                pose_cost.using_footprint ? 1 : 0
+            );
+          printf("[OUT] tid=%d, i=%ld, j=%ld, x=%f, y=%f, yaws=%f, pose_cost=%.2f, using_footprint=%d\n",
+                index,
+                i,
+                j,
+                traj_x[index],
+                traj_y[index],
+                traj_yaws[index],
+                pose_cost_vec[index],
+                using_footprint_vec[index] ? 1 : 0
+            );
+        // std::cout << "i=" << i;
+        // std::cout << ", j=" << j;
+        // std::cout << ", index=" << index;
+        // std::cout << ", x=" << traj.x(i, j) << " | " << traj_x[index];
+        // std::cout << ", y=" << traj.y(i, j) << " | " << traj_y[index];
+        // std::cout << ", yaws=" << traj.yaws(i, j) << " | " << traj_yaws[index];
+        // std::cout << ", pose_cost=" << pose_cost.cost << " | " << pose_cost_vec[index];
+        // std::cout << ", using_footprint CPU=" << pose_cost.using_footprint << " | " << using_footprint_vec[index];
+        // std::cout << std::endl;
       }
     }
   }
@@ -226,7 +249,7 @@ void ObstaclesCritic::score(CriticData & data)
     CollisionCost pose_cost;
 
     for (size_t j = 0; j < traj_len; j++) {
-      pose_cost = costAtPose(traj.x(i, j), traj.y(i, j), traj.yaws(i, j));
+      pose_cost = costAtPose(traj.x(i, j), traj.y(i, j), traj.yaws(i, j), false);
 
       if (pose_cost.cost < 1.0f) {continue;}  // In free space
 
@@ -262,7 +285,7 @@ void ObstaclesCritic::score(CriticData & data)
 
   auto end_time = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double, std::milli> duration = end_time - start_time;
-  std::cout << "ObstaclesCritic: " << duration.count() << " ms" << std::endl;
+  std::cout << "ObstaclesCritic: " << duration.count() << " ms" << std::endl << std::endl;
 }
 
 /**
@@ -288,7 +311,7 @@ bool ObstaclesCritic::inCollision(float cost) const
   return false;
 }
 
-CollisionCost ObstaclesCritic::costAtPose(float x, float y, float theta)
+CollisionCost ObstaclesCritic::costAtPose(float x, float y, float theta, bool debug=false)
 {
   CollisionCost collision_cost;
   float & cost = collision_cost.cost;
@@ -299,12 +322,19 @@ CollisionCost ObstaclesCritic::costAtPose(float x, float y, float theta)
     return collision_cost;
   }
   cost = collision_checker_.pointCost(x_i, y_i);
+  if (debug) {
+    printf("[CPU] pointCost(%d, %d)=%.2f\n",
+      x_i, y_i, cost);
+  }
 
   if (consider_footprint_ &&
     (cost >= possibly_inscribed_cost_ || possibly_inscribed_cost_ < 1.0f))
   {
     cost = static_cast<float>(collision_checker_.footprintCostAtPose(
         x, y, theta, costmap_ros_->getRobotFootprint()));
+    if (debug) {
+      printf("[CPU] footprintCostAtPose=%.2f\n", cost);
+    }
     collision_cost.using_footprint = true;
   }
 
