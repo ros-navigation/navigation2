@@ -23,51 +23,48 @@ from launch import LaunchDescription
 from launch import LaunchService
 from launch.actions import (
     AppendEnvironmentVariable,
+    DeclareLaunchArgument,
     ExecuteProcess,
     IncludeLaunchDescription,
-    SetEnvironmentVariable,
-)
-from launch.launch_description_sources import PythonLaunchDescriptionSource
+    SetEnvironmentVariable)
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_testing.legacy import LaunchTestService
-
 from nav2_common.launch import RewrittenYaml
-from nav2_simple_commander.utils import kill_os_processes
 
 
 def generate_launch_description():
+    bringup_dir = get_package_share_directory('nav2_bringup')
     sim_dir = get_package_share_directory('nav2_minimal_tb3_sim')
-    nav2_bringup_dir = get_package_share_directory('nav2_bringup')
-    ros_gz_sim_dir = get_package_share_directory('ros_gz_sim')
+    params_file = LaunchConfiguration('params_file')
+
 
     world_sdf_xacro = os.path.join(sim_dir, 'worlds', 'tb3_sandbox.sdf.xacro')
     robot_sdf = os.path.join(sim_dir, 'urdf', 'gz_waffle.sdf.xacro')
-
     urdf = os.path.join(sim_dir, 'urdf', 'turtlebot3_waffle.urdf')
     with open(urdf, 'r') as infp:
         robot_description = infp.read()
 
-    map_yaml_file = os.path.join(nav2_bringup_dir, 'maps', 'tb3_sandbox.yaml')
-
-    bt_navigator_xml = os.path.join(
-        get_package_share_directory('nav2_bt_navigator'),
-        'behavior_trees',
-        os.getenv('BT_NAVIGATOR_XML'),
-    )
-
-    bringup_dir = get_package_share_directory('nav2_bringup')
-    params_file = os.path.join(bringup_dir, 'params/nav2_params.yaml')
-
-    # Replace the `use_astar` setting on the params file
+    # Create our own temporary YAML files that include substitutions
+    param_substitutions = {'use_sim_time': 'True'}
     configured_params = RewrittenYaml(
-        source_file=params_file, root_key='', param_rewrites='', convert_types=True
+        source_file=params_file,
+        root_key='',
+        param_rewrites=param_substitutions,
+        convert_types=True,
     )
 
     return LaunchDescription(
         [
             SetEnvironmentVariable('RCUTILS_LOGGING_BUFFERED_STREAM', '1'),
             SetEnvironmentVariable('RCUTILS_LOGGING_USE_STDOUT', '1'),
-            # Launch gazebo server for simulation
+            DeclareLaunchArgument(
+                'params_file',
+                default_value=os.path.join(bringup_dir, 'params', 'nav2_params.yaml'),
+                description='Full path to the ROS2 parameters file to use',
+            ),
+            # Simulation for odometry
             AppendEnvironmentVariable(
                 'GZ_SIM_RESOURCE_PATH', os.path.join(sim_dir, 'models')
             ),
@@ -75,11 +72,9 @@ def generate_launch_description():
                 'GZ_SIM_RESOURCE_PATH',
                 str(Path(os.path.join(sim_dir)).parent.resolve())
             ),
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    os.path.join(ros_gz_sim_dir, 'launch', 'gz_sim.launch.py')
-                ),
-                launch_arguments={'gz_args': ['-r -s ', world_sdf_xacro]}.items(),
+            ExecuteProcess(
+                cmd=['gz', 'sim', '-r', '-s', world_sdf_xacro],
+                output='screen',
             ),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
@@ -96,6 +91,15 @@ def generate_launch_description():
                     'yaw': '0.0',
                 }.items(),
             ),
+            # No need for localization
+            Node(
+                package='tf2_ros',
+                executable='static_transform_publisher',
+                output='screen',
+                arguments=['0', '0', '0', '0', '0', '0', 'map', 'odom'],
+                parameters=[{'use_sim_time': True}],
+            ),
+            # Need transforms
             Node(
                 package='robot_state_publisher',
                 executable='robot_state_publisher',
@@ -105,18 +109,24 @@ def generate_launch_description():
                     {'use_sim_time': True, 'robot_description': robot_description}
                 ],
             ),
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    os.path.join(bringup_dir, 'launch', 'bringup_launch.py')
-                ),
-                launch_arguments={
-                    'map': map_yaml_file,
-                    'use_sim_time': 'True',
-                    'params_file': configured_params,
-                    'bt_xml_file': bt_navigator_xml,
-                    'use_composition': 'False',
-                    'autostart': 'True',
-                }.items(),
+            # Server under test
+            Node(
+                package='nav2_behaviors',
+                executable='behavior_server',
+                name='behavior_server',
+                output='screen',
+                parameters=[configured_params],
+            ),
+            Node(
+                package='nav2_lifecycle_manager',
+                executable='lifecycle_manager',
+                name='lifecycle_manager_navigation',
+                output='screen',
+                parameters=[
+                    {'use_sim_time': True},
+                    {'autostart': True},
+                    {'node_names': ['behavior_server']},
+                ],
             ),
         ]
     )
@@ -125,19 +135,17 @@ def generate_launch_description():
 def main(argv=sys.argv[1:]):
     ld = generate_launch_description()
 
-    testExecutable = os.getenv('TEST_EXECUTABLE')
-
     test1_action = ExecuteProcess(
-        cmd=[testExecutable], name='test_spin_behavior_node', output='screen',
+        cmd=[os.path.join(os.getenv('TEST_DIR'), 'spin_tester.py'), '--ros-args', '-p', 'use_sim_time:=True'],
+        name='tester_node',
+        output='screen',
     )
 
     lts = LaunchTestService()
     lts.add_test_action(ld, test1_action)
     ls = LaunchService(argv=argv)
     ls.include_launch_description(ld)
-    return_code = lts.run(ls)
-    kill_os_processes('gz sim')
-    return return_code
+    return lts.run(ls)
 
 
 if __name__ == '__main__':
