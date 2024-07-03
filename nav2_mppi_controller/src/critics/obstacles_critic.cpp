@@ -14,7 +14,7 @@
 
 #include <cmath>
 #include "nav2_mppi_controller/critics/obstacles_critic.hpp"
-#include <xtensor/xio.hpp>
+#include <chrono>
 
 namespace mppi::critics
 {
@@ -139,6 +139,7 @@ void ObstaclesCritic::score(CriticData & data)
   bool all_trajectories_collide = true;
 
   // Prepare Data for GPU
+  auto start_gpu = std::chrono::high_resolution_clock::now();
   std::vector<float> traj_x(data.trajectories.x.begin(), data.trajectories.x.end());
   std::vector<float> traj_y(data.trajectories.y.begin(), data.trajectories.y.end());
   std::vector<float> traj_yaws(data.trajectories.yaws.begin(), data.trajectories.yaws.end());
@@ -188,6 +189,22 @@ void ObstaclesCritic::score(CriticData & data)
     pose_cost_vec,
     using_footprint_vec
   );
+  auto end_gpu = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double, std::milli> duration1 = end_gpu - start_gpu;
+  std::cout << "GPU runtime: " << duration1.count() << " ms" << std::endl;
+
+
+  auto start_cpu = std::chrono::high_resolution_clock::now();
+  for (size_t i = 0; i < data.trajectories.x.shape(0); ++i) {
+    CollisionCost pose_cost;
+    const auto & traj = data.trajectories;
+    for (size_t j = 0; j < traj_len; j++) {
+      pose_cost = costAtPose(traj.x(i, j), traj.y(i, j), traj.yaws(i, j));
+    }
+  }
+  auto end_cpu = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double, std::milli> duration3 = end_cpu - start_cpu;
+  std::cout << "CPU runtime: " << duration3.count() << " ms" << std::endl;
 
   // Current CPU process
   for (size_t i = 0; i < data.trajectories.x.shape(0); ++i) {

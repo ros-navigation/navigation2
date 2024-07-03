@@ -23,7 +23,7 @@
 #include "nav2_mppi_controller/models/state.hpp"
 #include "nav2_mppi_controller/tools/utils.hpp"
 
-#include "nav2_mppi_controller/cuda/otsaw_critic_gpu.cuh"
+#include "nav2_mppi_controller/cuda/otsaw_utils.cuh"
 
 #include <xtensor/xadapt.hpp>
 

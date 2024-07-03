@@ -76,8 +76,8 @@ link_directories(${CUDA_LIBRARY_DIRS})
 # for Orin, consider to uncomment below line
 # set(CUDA_NVCC_FLAGS "--expt-relaxed-constexpr -arch sm_87")
 
-cuda_add_library(otsaw_critic_gpu SHARED
-  src/cuda/otsaw_critic_gpu.cu
+cuda_add_library(otsaw_gpu_utils SHARED
+  src/cuda/otsaw_utils.cu
 )
 
 add_library(mppi_controller SHARED
@@ -103,7 +103,6 @@ add_library(mppi_critics SHARED
   src/critics/twirling_critic.cpp
   src/critics/constraint_critic.cpp
   src/critics/velocity_deadband_critic.cpp
-  src/critics/otsaw_critic.cpp
 )
 
 set(libraries mppi_controller mppi_critics)
@@ -111,8 +110,8 @@ set(libraries mppi_controller mppi_critics)
 foreach(lib IN LISTS libraries)
   target_compile_options(${lib} PUBLIC -fconcepts)
   target_include_directories(${lib} PUBLIC ${xsimd_INCLUDE_DIRS})  #  ${OpenMP_INCLUDE_DIRS}
-  add_dependencies(${lib} otsaw_critic_gpu)
-  target_link_libraries(${lib} xtensor xtensor::optimize xtensor::use_xsimd otsaw_critic_gpu)
+  add_dependencies(${lib} otsaw_gpu_utils)
+  target_link_libraries(${lib} xtensor xtensor::optimize xtensor::use_xsimd otsaw_gpu_utils)
   ament_target_dependencies(${lib} ${dependencies_pkgs})
 endforeach()
 

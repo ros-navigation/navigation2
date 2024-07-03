@@ -1,7 +1,7 @@
 // Copyright (c) 2024 OTSAW
 
-#ifndef NAV2_MPPI_CONTROLLER__CUDA__OTSAW_CRITIC_GPU_CUH_
-#define NAV2_MPPI_CONTROLLER__CUDA__OTSAW_CRITIC_GPU_CUH_
+#ifndef NAV2_MPPI_CONTROLLER__CUDA__OTSAW_UTILS_CUH_
+#define NAV2_MPPI_CONTROLLER__CUDA__OTSAW_UTILS_CUH_
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,14 +13,6 @@
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
 #include "nav2_mppi_controller/cuda/line_iterator.cuh"
-
-std::vector<float> calc_constraint_critics_cost(
-    std::vector<float> vx,
-    std::vector<float> vy,
-    float max_vel,
-    float min_vel,
-    float dt
-);
 
 void calc_cost_at_pose(
     // Input(0): Trajectories
@@ -48,4 +40,4 @@ void calc_cost_at_pose(
     std::vector<bool>& using_footprint
 );
 
-#endif  // NAV2_MPPI_CONTROLLER__CUDA__OTSAW_CRITIC_GPU_CUH_
+#endif  // NAV2_MPPI_CONTROLLER__CUDA__OTSAW_UTILS_CUH_
