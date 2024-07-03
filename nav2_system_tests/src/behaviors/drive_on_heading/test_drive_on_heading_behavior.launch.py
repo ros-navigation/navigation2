@@ -14,13 +14,20 @@
 # limitations under the License.
 
 import os
+from pathlib import Path
 import sys
 
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
 from launch import LaunchService
-from launch.actions import DeclareLaunchArgument, ExecuteProcess, SetEnvironmentVariable
+from launch.actions import (
+    AppendEnvironmentVariable,
+    DeclareLaunchArgument,
+    ExecuteProcess,
+    IncludeLaunchDescription,
+    SetEnvironmentVariable)
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from launch_testing.legacy import LaunchTestService
@@ -28,101 +35,69 @@ from nav2_common.launch import RewrittenYaml
 
 
 def generate_launch_description():
-
     bringup_dir = get_package_share_directory('nav2_bringup')
     sim_dir = get_package_share_directory('nav2_minimal_tb3_sim')
-
+    params_file = LaunchConfiguration('params_file')
+    world_sdf_xacro = os.path.join(sim_dir, 'worlds', 'tb3_sandbox.sdf.xacro')
+    robot_sdf = os.path.join(sim_dir, 'urdf', 'gz_waffle.sdf.xacro')
     urdf = os.path.join(sim_dir, 'urdf', 'turtlebot3_waffle.urdf')
     with open(urdf, 'r') as infp:
         robot_description = infp.read()
 
-    namespace = LaunchConfiguration('namespace')
-    use_sim_time = LaunchConfiguration('use_sim_time')
-    autostart = LaunchConfiguration('autostart')
-    params_file = LaunchConfiguration('params_file')
-    default_nav_through_poses_bt_xml = LaunchConfiguration(
-        'default_nav_through_poses_bt_xml'
-    )
-    default_nav_to_pose_bt_xml = LaunchConfiguration('default_nav_to_pose_bt_xml')
-    map_subscribe_transient_local = LaunchConfiguration('map_subscribe_transient_local')
-
     # Create our own temporary YAML files that include substitutions
-    param_substitutions = {
-        'use_sim_time': use_sim_time,
-        'default_nav_through_poses_bt_xml': default_nav_through_poses_bt_xml,
-        'default_nav_to_pose_bt_xml': default_nav_to_pose_bt_xml,
-        'autostart': autostart,
-        'map_subscribe_transient_local': map_subscribe_transient_local,
-    }
-
+    param_substitutions = {'use_sim_time': 'True'}
     configured_params = RewrittenYaml(
         source_file=params_file,
-        root_key=namespace,
+        root_key='',
         param_rewrites=param_substitutions,
         convert_types=True,
     )
-
-    lifecycle_nodes = ['behavior_server']
-
-    # Map fully qualified names to relative ones so the node's namespace can be prepended.
-    # In case of the transforms (tf), currently, there doesn't seem to be a better alternative
-    # https://github.com/ros/geometry2/issues/32
-    # https://github.com/ros/robot_state_publisher/pull/30
-    # TODO(orduno) Substitute with `PushNodeRemapping`
-    #              https://github.com/ros2/launch_ros/issues/56
-    remappings = [('/tf', 'tf'), ('/tf_static', 'tf_static')]
 
     return LaunchDescription(
         [
             SetEnvironmentVariable('RCUTILS_LOGGING_BUFFERED_STREAM', '1'),
             SetEnvironmentVariable('RCUTILS_LOGGING_USE_STDOUT', '1'),
             DeclareLaunchArgument(
-                'namespace', default_value='', description='Top-level namespace'
-            ),
-            DeclareLaunchArgument(
-                'use_sim_time',
-                default_value='false',
-                description='Use simulation (Gazebo) clock if true',
-            ),
-            DeclareLaunchArgument(
-                'autostart',
-                default_value='true',
-                description='Automatically startup the nav2 stack',
-            ),
-            DeclareLaunchArgument(
                 'params_file',
                 default_value=os.path.join(bringup_dir, 'params', 'nav2_params.yaml'),
                 description='Full path to the ROS2 parameters file to use',
             ),
-            DeclareLaunchArgument(
-                'default_nav_through_poses_bt_xml',
-                default_value=os.path.join(
-                    get_package_share_directory('nav2_bt_navigator'),
-                    'behavior_trees',
-                    'navigate_through_poses_w_replanning_and_recovery.xml',
+            # Simulation for odometry
+            AppendEnvironmentVariable(
+                'GZ_SIM_RESOURCE_PATH', os.path.join(sim_dir, 'models')
+            ),
+            AppendEnvironmentVariable(
+                'GZ_SIM_RESOURCE_PATH',
+                str(Path(os.path.join(sim_dir)).parent.resolve())
+            ),
+            ExecuteProcess(
+                cmd=['gz', 'sim', '-r', '-s', world_sdf_xacro],
+                output='screen',
+            ),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    os.path.join(sim_dir, 'launch', 'spawn_tb3.launch.py')
                 ),
-                description='Full path to the behavior tree xml file to use',
+                launch_arguments={
+                    'use_sim_time': 'True',
+                    'robot_sdf': robot_sdf,
+                    'x_pose': '-2.0',
+                    'y_pose': '-0.5',
+                    'z_pose': '0.01',
+                    'roll': '0.0',
+                    'pitch': '0.0',
+                    'yaw': '0.0',
+                }.items(),
             ),
-            DeclareLaunchArgument(
-                'default_nav_to_pose_bt_xml',
-                default_value=os.path.join(
-                    get_package_share_directory('nav2_bt_navigator'),
-                    'behavior_trees',
-                    'navigate_to_pose_w_replanning_and_recovery.xml',
-                ),
-                description='Full path to the behavior tree xml file to use',
-            ),
-            DeclareLaunchArgument(
-                'map_subscribe_transient_local',
-                default_value='false',
-                description='Whether to set the map subscriber QoS to transient local',
-            ),
+            # No need for localization
             Node(
                 package='tf2_ros',
                 executable='static_transform_publisher',
                 output='screen',
                 arguments=['0', '0', '0', '0', '0', '0', 'map', 'odom'],
+                parameters=[{'use_sim_time': True}],
             ),
+            # Need transforms
             Node(
                 package='robot_state_publisher',
                 executable='robot_state_publisher',
@@ -132,13 +107,13 @@ def generate_launch_description():
                     {'use_sim_time': True, 'robot_description': robot_description}
                 ],
             ),
+            # Server under test
             Node(
                 package='nav2_behaviors',
                 executable='behavior_server',
                 name='behavior_server',
                 output='screen',
                 parameters=[configured_params],
-                remappings=remappings,
             ),
             Node(
                 package='nav2_lifecycle_manager',
@@ -146,9 +121,9 @@ def generate_launch_description():
                 name='lifecycle_manager_navigation',
                 output='screen',
                 parameters=[
-                    {'use_sim_time': use_sim_time},
-                    {'autostart': autostart},
-                    {'node_names': lifecycle_nodes},
+                    {'use_sim_time': True},
+                    {'autostart': True},
+                    {'node_names': ['behavior_server']},
                 ],
             ),
         ]
@@ -158,17 +133,19 @@ def generate_launch_description():
 def main(argv=sys.argv[1:]):
     ld = generate_launch_description()
 
-    testExecutable = os.getenv('TEST_EXECUTABLE')
-
     test1_action = ExecuteProcess(
-        cmd=[testExecutable], name='test_spin_behavior_fake_node', output='screen'
+        cmd=[os.path.join(
+            os.getenv('TEST_DIR'), 'drive_tester.py'), '--ros-args', '-p', 'use_sim_time:=True'],
+        name='tester_node',
+        output='screen',
     )
 
     lts = LaunchTestService()
     lts.add_test_action(ld, test1_action)
     ls = LaunchService(argv=argv)
     ls.include_launch_description(ld)
-    return lts.run(ls)
+    return_code = lts.run(ls)
+    return return_code
 
 
 if __name__ == '__main__':
