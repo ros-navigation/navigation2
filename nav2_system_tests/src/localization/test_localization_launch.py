@@ -27,14 +27,11 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 import launch_ros.actions
 from launch_testing.legacy import LaunchTestService
 
-from nav2_simple_commander.utils import kill_os_processes
-
 
 def main(argv=sys.argv[1:]):
     testExecutable = os.getenv('TEST_EXECUTABLE')
     sim_dir = get_package_share_directory('nav2_minimal_tb3_sim')
     nav2_bringup_dir = get_package_share_directory('nav2_bringup')
-    ros_gz_sim_dir = get_package_share_directory('ros_gz_sim')
 
     world_sdf_xacro = os.path.join(sim_dir, 'worlds', 'tb3_sandbox.sdf.xacro')
     robot_sdf = os.path.join(sim_dir, 'urdf', 'gz_waffle.sdf.xacro')
@@ -53,11 +50,9 @@ def main(argv=sys.argv[1:]):
         str(Path(os.path.join(sim_dir)).parent.resolve())
     )
 
-    start_gazebo_server = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(ros_gz_sim_dir, 'launch', 'gz_sim.launch.py')
-        ),
-        launch_arguments={'gz_args': ['-r -s ', world_sdf_xacro]}.items(),
+    start_gazebo_server = ExecuteProcess(
+        cmd=['gz', 'sim', '-r', '-s', world_sdf_xacro],
+        output='screen',
     )
 
     spawn_robot = IncludeLaunchDescription(
@@ -123,7 +118,6 @@ def main(argv=sys.argv[1:]):
     ls = LaunchService(argv=argv)
     ls.include_launch_description(ld)
     return_code = lts.run(ls)
-    kill_os_processes('gz sim')
     return return_code
 
 
