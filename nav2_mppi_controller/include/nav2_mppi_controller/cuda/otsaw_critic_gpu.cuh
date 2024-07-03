@@ -12,6 +12,7 @@
 
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
+#include "nav2_mppi_controller/cuda/line_iterator.cuh"
 
 std::vector<float> calc_constraint_critics_cost(
     std::vector<float> vx,
@@ -21,20 +22,30 @@ std::vector<float> calc_constraint_critics_cost(
     float dt
 );
 
-void calc_obstacle_critics_cost(
-  unsigned char * costmap_arr,
-  unsigned int costmap_size_x,
-  unsigned int costmap_size_y,
-  double costmap_resolution,
-  double costmap_origin_x,
-  double costmap_origin_y,
-  std::vector<float> traj_x,
-  std::vector<float> traj_y,
-  std::vector<float> traj_yaws,
-  unsigned int batch_size,
-  unsigned int time_steps,
-  std::vector<float>& raw_cost,
-  std::vector<float>& repulsive_cost
+void calc_cost_at_pose(
+    // Input(0): Trajectories
+    std::vector<float> traj_x,
+    std::vector<float> traj_y,
+    std::vector<float> traj_yaws,
+    unsigned int batch_size,
+    unsigned int time_steps,
+    // Input(1): Costmap
+    unsigned char * costmap_arr,
+    unsigned int costmap_size_x,
+    unsigned int costmap_size_y,
+    float costmap_resolution,
+    float costmap_origin_x,
+    float costmap_origin_y,
+    // Input(2): Footprint
+    std::vector<float> footprint_x,
+    std::vector<float> footprint_y,
+    unsigned int footprint_size,
+    // Input(3): Config
+    bool consider_footprint,
+    float possibly_inscribed_cost,
+    // Output:
+    std::vector<float>& pose_cost,
+    std::vector<bool>& using_footprint
 );
 
 #endif  // NAV2_MPPI_CONTROLLER__CUDA__OTSAW_CRITIC_GPU_CUH_

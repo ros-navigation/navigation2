@@ -14,6 +14,7 @@
 
 #include <cmath>
 #include "nav2_mppi_controller/critics/obstacles_critic.hpp"
+#include <xtensor/xio.hpp>
 
 namespace mppi::critics
 {
@@ -138,6 +139,12 @@ void ObstaclesCritic::score(CriticData & data)
   bool all_trajectories_collide = true;
 
   // Prepare Data for GPU
+  std::vector<float> traj_x(data.trajectories.x.begin(), data.trajectories.x.end());
+  std::vector<float> traj_y(data.trajectories.y.begin(), data.trajectories.y.end());
+  std::vector<float> traj_yaws(data.trajectories.yaws.begin(), data.trajectories.yaws.end());
+  unsigned int batch_size = data.trajectories.x.shape(0);
+  unsigned int time_steps = data.trajectories.x.shape(1);
+
   unsigned char * costmap_arr = costmap_->getCharMap();
   unsigned int costmap_size_x = costmap_->getSizeInCellsX();
   unsigned int costmap_size_y = costmap_->getSizeInCellsY();
@@ -145,16 +152,24 @@ void ObstaclesCritic::score(CriticData & data)
   double costmap_origin_x = costmap_->getOriginX();
   double costmap_origin_y = costmap_->getOriginY();
 
-  std::vector<float> traj_x(data.trajectories.x.begin(), data.trajectories.x.end());
-  std::vector<float> traj_y(data.trajectories.y.begin(), data.trajectories.y.end());
-  std::vector<float> traj_yaws(data.trajectories.yaws.begin(), data.trajectories.yaws.end());
-  unsigned int batch_size = data.trajectories.x.shape(0);
-  unsigned int time_steps = data.trajectories.x.shape(1);
+  std::vector<geometry_msgs::msg::Point> footprint = costmap_ros_->getRobotFootprint();
+  std::vector<float> footprint_x;
+  std::vector<float> footprint_y;
+  for (unsigned int i = 0; i < footprint.size() - 1; ++i) {
+    footprint_x.push_back(footprint[i].x);
+    footprint_y.push_back(footprint[i].y);
+  }
 
-  std::vector<float> raw_cost_vec;
-  std::vector<float> repulsive_cost_vec;
+  std::vector<float> pose_cost_vec;
+  std::vector<bool> using_footprint_vec;
 
-  calc_obstacle_critics_cost(
+  calc_cost_at_pose(
+    // Input(0): Trajectories
+    traj_x,
+    traj_y,
+    traj_yaws,
+    batch_size,
+    time_steps,
     // Input(1): Costmap
     costmap_arr,
     costmap_size_x,
@@ -162,15 +177,16 @@ void ObstaclesCritic::score(CriticData & data)
     costmap_resolution,
     costmap_origin_x,
     costmap_origin_y,
-    // Input(2): Trajectories
-    traj_x,
-    traj_y,
-    traj_yaws,
-    batch_size,
-    time_steps,
-    // Output: Costs
-    raw_cost_vec,
-    repulsive_cost_vec
+    // Input(2): Footprint
+    footprint_x,
+    footprint_y,
+    footprint.size(),
+    // Input(3): Config
+    consider_footprint_,
+    possibly_inscribed_cost_,
+    // Output:
+    pose_cost_vec,
+    using_footprint_vec
   );
 
   // Current CPU process
@@ -182,6 +198,15 @@ void ObstaclesCritic::score(CriticData & data)
 
     for (size_t j = 0; j < traj_len; j++) {
       pose_cost = costAtPose(traj.x(i, j), traj.y(i, j), traj.yaws(i, j));
+      // std::cout << "[CPU] i=" << i;
+      // std::cout << ", j=" << j;
+      // std::cout << ", x=" << traj.x(i, j);
+      // std::cout << ", y=" << traj.y(i, j);
+      // std::cout << ", yaws=" << traj.yaws(i, j);
+      // std::cout << ", pose_cost=" << pose_cost.cost;
+      // std::cout << ", using_footprint=" << pose_cost.using_footprint;
+      // std::cout << std::endl;
+
       if (pose_cost.cost < 1.0f) {continue;}  // In free space
 
       if (inCollision(pose_cost.cost)) {
