@@ -59,8 +59,11 @@ inline BT::NodeStatus GetPoseFromPath::tick()
   geometry_msgs::msg::PoseStamped output_pose;
   output_pose = input_path.poses[pose_index];
 
-  // populate pose frame from path
-  output_pose.header.frame_id = input_path.header.frame_id;
+  // populate pose frame from path if necessary
+  if(output_pose.header.frame_id.empty()) {
+    output_pose.header.frame_id = input_path.header.frame_id;
+  }
+  
 
   setOutput("pose", output_pose);
 
