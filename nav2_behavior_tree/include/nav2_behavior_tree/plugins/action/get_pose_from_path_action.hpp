@@ -31,8 +31,6 @@ namespace nav2_behavior_tree
 class GetPoseFromPath : public BT::ActionNodeBase
 {
 public:
-  typedef std::vector<geometry_msgs::msg::PoseStamped> Goals;
-
   GetPoseFromPath(
     const std::string & xml_tag_name,
     const BT::NodeConfiguration & conf);
