@@ -23,10 +23,11 @@
 #include "nav_msgs/msg/path.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 
 #include "utils/test_action_server.hpp"
 #include "nav2_behavior_tree/plugins/action/get_pose_from_path_action.hpp"
+#include "utils/test_behavior_tree_fixture.hpp"
 
 class GetPoseFromPathTestFixture : public ::testing::Test
 {
@@ -78,8 +79,7 @@ protected:
 
 rclcpp::Node::SharedPtr GetPoseFromPathTestFixture::node_ = nullptr;
 BT::NodeConfiguration * GetPoseFromPathTestFixture::config_ = nullptr;
-std::shared_ptr<BT::BehaviorTreeFactory> GetPoseFromPathTestFixture::factory_ =
-  nullptr;
+std::shared_ptr<BT::BehaviorTreeFactory> GetPoseFromPathTestFixture::factory_ = nullptr;
 std::shared_ptr<BT::Tree> GetPoseFromPathTestFixture::tree_ = nullptr;
 
 TEST_F(GetPoseFromPathTestFixture, test_tick)
@@ -87,7 +87,7 @@ TEST_F(GetPoseFromPathTestFixture, test_tick)
   // create tree
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <GetPoseFromPath path="{path}" pose="{startPose}" index="{index}" />
         </BehaviorTree>
