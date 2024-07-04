@@ -46,12 +46,12 @@ inline BT::NodeStatus GetPoseFromPath::tick()
   }
 
   // Account for negative indices
-  if(pose_index < 0){
-    pose_index = input_path.poses.size()+pose_index;
+  if(pose_index < 0) {
+    pose_index = input_path.poses.size() + pose_index;
   }
 
   // out of bounds index
-  if(pose_index < 0 || static_cast<unsigned>(pose_index) >= input_path.poses.size()){
+  if(pose_index < 0 || static_cast<unsigned>(pose_index) >= input_path.poses.size()) {
     return BT::NodeStatus::FAILURE;
   }
 

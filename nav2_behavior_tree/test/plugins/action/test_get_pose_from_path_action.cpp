@@ -123,7 +123,7 @@ TEST_F(GetPoseFromPathTestFixture, test_tick)
   EXPECT_EQ(pose.pose.position.x, 1.0);
 
   // halt node so another goal can be sent
-  tree_->rootNode()->halt();
+  tree_->haltTree();
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::IDLE);
 
   // try last element
