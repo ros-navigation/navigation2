@@ -63,7 +63,7 @@ inline BT::NodeStatus GetPoseFromPath::tick()
   if(output_pose.header.frame_id.empty()) {
     output_pose.header.frame_id = input_path.header.frame_id;
   }
-  
+
 
   setOutput("pose", output_pose);
 
