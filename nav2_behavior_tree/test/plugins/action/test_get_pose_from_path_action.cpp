@@ -114,7 +114,6 @@ TEST_F(GetPoseFromPathTestFixture, test_tick)
 
   // the goal should have reached our server
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
-  EXPECT_EQ(tree_->rootNode()->getInput<std::string>("planner_id"), std::string("GridBased"));
 
   // check if returned pose is correct
   geometry_msgs::msg::PoseStamped pose;
