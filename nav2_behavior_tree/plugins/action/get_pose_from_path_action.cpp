@@ -34,7 +34,7 @@ GetPoseFromPath::GetPoseFromPath(
 inline BT::NodeStatus GetPoseFromPath::tick()
 {
   setStatus(BT::NodeStatus::RUNNING);
-  
+
   nav_msgs::msg::Path input_path;
   getInput("path", input_path);
 
@@ -45,22 +45,23 @@ inline BT::NodeStatus GetPoseFromPath::tick()
     return BT::NodeStatus::FAILURE;
   }
 
-  if(pose_index<0){ //Account for negative indices
+  // Account for negative indices
+  if(pose_index < 0){ 
     pose_index = input_path.poses.size()+pose_index;
   }
 
-  //out of bounds index
-  if(pose_index<0 || static_cast<unsigned>(pose_index>=input_path.poses.size())){
+  // out of bounds index
+  if(pose_index < 0 || static_cast<unsigned>(pose_index) >= input_path.poses.size()){
     return BT::NodeStatus::FAILURE;
   }
 
-  //extract pose
+  // extract pose
   geometry_msgs::msg::PoseStamped output_pose;
   output_pose = input_path.poses[pose_index];
 
-  //populate pose frame from path
+  // populate pose frame from path
   output_pose.header.frame_id = input_path.header.frame_id;
-  
+
   setOutput("pose", output_pose);
 
   return BT::NodeStatus::SUCCESS;
