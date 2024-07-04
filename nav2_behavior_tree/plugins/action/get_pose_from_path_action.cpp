@@ -29,38 +29,39 @@ GetPoseFromPath::GetPoseFromPath(
   const BT::NodeConfiguration & conf)
 : BT::ActionNodeBase(name, conf)
 {
-  getInput("index", poseIndex);
 }
 
 inline BT::NodeStatus GetPoseFromPath::tick()
 {
   setStatus(BT::NodeStatus::RUNNING);
+  
+  nav_msgs::msg::Path input_path;
+  getInput("path", input_path);
 
-  nav_msgs::msg::Path inputPath;
-  getInput("path", inputPath);
+  int pose_index;
+  getInput("index", pose_index);
 
-  if (inputPath.poses.empty()) {
+  if (input_path.poses.empty()) {
     return BT::NodeStatus::FAILURE;
   }
 
-  int tempPoseIndex = poseIndex;
-  if(tempPoseIndex<0){ //Account for negative indices
-    tempPoseIndex = inputPath.poses.size()+tempPoseIndex;
+  if(pose_index<0){ //Account for negative indices
+    pose_index = input_path.poses.size()+pose_index;
   }
 
   //out of bounds index
-  if(tempPoseIndex<0 || (unsigned)tempPoseIndex>=inputPath.poses.size()){
+  if(pose_index<0 || static_cast<unsigned>(pose_index>=input_path.poses.size())){
     return BT::NodeStatus::FAILURE;
   }
 
   //extract pose
-  geometry_msgs::msg::PoseStamped outputPose;
-  outputPose = inputPath.poses[tempPoseIndex];
+  geometry_msgs::msg::PoseStamped output_pose;
+  output_pose = input_path.poses[pose_index];
 
   //populate pose frame from path
-  outputPose.header.frame_id = inputPath.header.frame_id;
+  output_pose.header.frame_id = input_path.header.frame_id;
   
-  setOutput("pose", outputPose);
+  setOutput("pose", output_pose);
 
   return BT::NodeStatus::SUCCESS;
 }

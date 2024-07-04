@@ -48,7 +48,6 @@ public:
 private:
   void halt() override {}
   BT::NodeStatus tick() override;
-  int poseIndex = 0;
 };
 
 }  // namespace nav2_behavior_tree
