@@ -284,28 +284,28 @@ __global__ void poseCostKernel(
             cost,
             using_footprint,
             // Debug (i*time_steps+j)
-            (tid == 0*time_steps+55)
+            false // (tid == 0*time_steps+0)
         );
         
         // batchsize 2000 x timestep 56
         out_pose_cost[tid] = cost;
         out_using_footprint[tid] = using_footprint;
 
-        if (tid == 0*time_steps+55) {
-            unsigned int i = tid / time_steps;
-            unsigned int j = tid - (i * time_steps);
+        // if (tid == 0*time_steps+0) {
+        //     unsigned int i = tid / time_steps;
+        //     unsigned int j = tid - (i * time_steps);
             
-            printf("[GPU] tid=%d, i=%d, j=%d, x=%f, y=%f, yaws=%f, pose_cost=%.2f, using_footprint=%d\n",
-                tid,
-                i,
-                j,
-                traj_x[tid],
-                traj_y[tid],
-                traj_yaws[tid],
-                out_pose_cost[tid],
-                out_using_footprint[tid] ? 1 : 0
-            );
-        }
+        //     printf("[GPU] tid=%d, i=%d, j=%d, x=%f, y=%f, yaws=%f, pose_cost=%.2f, using_footprint=%d\n",
+        //         tid,
+        //         i,
+        //         j,
+        //         traj_x[tid],
+        //         traj_y[tid],
+        //         traj_yaws[tid],
+        //         out_pose_cost[tid],
+        //         out_using_footprint[tid] ? 1 : 0
+        //     );
+        // }
     }
 }
 
@@ -362,10 +362,10 @@ void calc_cost_at_pose(
     thrust::device_vector<double> d_vec_footprint_y = footprint_y;
     double* d_footprint_y = thrust::raw_pointer_cast(d_vec_footprint_y.data());
 
-    thrust::device_vector<float> d_vec_pose_cost(batch_size);
+    thrust::device_vector<float> d_vec_pose_cost(N);
     float* d_pose_cost = thrust::raw_pointer_cast(d_vec_pose_cost.data());
 
-    thrust::device_vector<bool> d_vec_using_footprint(batch_size);
+    thrust::device_vector<bool> d_vec_using_footprint(N);
     bool* d_using_footprint = thrust::raw_pointer_cast(d_vec_using_footprint.data());
 
     // Launch kernel

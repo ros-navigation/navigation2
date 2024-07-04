@@ -149,12 +149,12 @@ void ObstaclesCritic::score(CriticData & data)
   unsigned int batch_size = data.trajectories.x.shape(0);
   unsigned int time_steps = data.trajectories.x.shape(1);
 
-  unsigned char * costmap_arr = costmap_->getCharMap();
-  unsigned int costmap_size_x = costmap_->getSizeInCellsX();
-  unsigned int costmap_size_y = costmap_->getSizeInCellsY();
-  double costmap_resolution = costmap_->getResolution();
-  double costmap_origin_x = costmap_->getOriginX();
-  double costmap_origin_y = costmap_->getOriginY();
+  unsigned char * costmap_arr = costmap_ros_->getCostmap()->getCharMap();
+  unsigned int costmap_size_x = costmap_ros_->getCostmap()->getSizeInCellsX();
+  unsigned int costmap_size_y = costmap_ros_->getCostmap()->getSizeInCellsY();
+  double costmap_resolution = costmap_ros_->getCostmap()->getResolution();
+  double costmap_origin_x = costmap_ros_->getCostmap()->getOriginX();
+  double costmap_origin_y = costmap_ros_->getCostmap()->getOriginY();
 
   std::vector<geometry_msgs::msg::Point> footprint = costmap_ros_->getRobotFootprint();
   std::vector<double> footprint_x;
@@ -199,44 +199,42 @@ void ObstaclesCritic::score(CriticData & data)
     const auto & traj = data.trajectories;
     CollisionCost pose_cost;
     for (size_t j = 0; j < data.trajectories.x.shape(1); j++) {
-      bool debug = (i==0 && j==55);
-      pose_cost = costAtPose(traj.x(i, j), traj.y(i, j), traj.yaws(i, j), debug);
 
+      pose_cost = costAtPose(traj.x(i, j), traj.y(i, j), traj.yaws(i, j), false);
       unsigned int index = i * time_steps + j;
       if (
-        debug
-        // (fabs(pose_cost_vec[index] - pose_cost.cost) > MAX_ERR ||
-        // fabs(using_footprint_vec[index] - pose_cost.using_footprint) > MAX_ERR)
+        (fabs(pose_cost_vec[index] - pose_cost.cost) > MAX_ERR ||
+        fabs(using_footprint_vec[index] - pose_cost.using_footprint) > MAX_ERR)
       ) {
-        printf("[CPU] tid=%d, i=%ld, j=%ld, x=%f, y=%f, yaws=%f, pose_cost=%.2f, using_footprint=%d\n",
-                index,
-                i,
-                j,
-                traj.x(i, j),
-                traj.y(i, j),
-                traj.yaws(i, j),
-                pose_cost.cost,
-                pose_cost.using_footprint ? 1 : 0
-            );
-          printf("[OUT] tid=%d, i=%ld, j=%ld, x=%f, y=%f, yaws=%f, pose_cost=%.2f, using_footprint=%d\n",
-                index,
-                i,
-                j,
-                traj_x[index],
-                traj_y[index],
-                traj_yaws[index],
-                pose_cost_vec[index],
-                using_footprint_vec[index] ? 1 : 0
-            );
-        // std::cout << "i=" << i;
-        // std::cout << ", j=" << j;
-        // std::cout << ", index=" << index;
-        // std::cout << ", x=" << traj.x(i, j) << " | " << traj_x[index];
-        // std::cout << ", y=" << traj.y(i, j) << " | " << traj_y[index];
-        // std::cout << ", yaws=" << traj.yaws(i, j) << " | " << traj_yaws[index];
-        // std::cout << ", pose_cost=" << pose_cost.cost << " | " << pose_cost_vec[index];
-        // std::cout << ", using_footprint CPU=" << pose_cost.using_footprint << " | " << using_footprint_vec[index];
-        // std::cout << std::endl;
+        // printf("[CPU] tid=%d, i=%ld, j=%ld, x=%f, y=%f, yaws=%f, pose_cost=%.2f, using_footprint=%d\n",
+        //   index,
+        //   i,
+        //   j,
+        //   traj.x(i, j),
+        //   traj.y(i, j),
+        //   traj.yaws(i, j),
+        //   pose_cost.cost,
+        //   pose_cost.using_footprint ? 1 : 0
+        // );
+        // printf("[OUT] tid=%d, i=%ld, j=%ld, x=%f, y=%f, yaws=%f, pose_cost=%.2f, using_footprint=%d\n\n",
+        //   index,
+        //   i,
+        //   j,
+        //   traj_x[index],
+        //   traj_y[index],
+        //   traj_yaws[index],
+        //   pose_cost_vec[index],
+        //   using_footprint_vec[index] ? 1 : 0
+        // );
+        std::cout << "i=" << i;
+        std::cout << ", j=" << j;
+        std::cout << ", index=" << index;
+        std::cout << ", x=" << traj.x(i, j) << " | " << traj_x[index];
+        std::cout << ", y=" << traj.y(i, j) << " | " << traj_y[index];
+        std::cout << ", yaws=" << traj.yaws(i, j) << " | " << traj_yaws[index];
+        std::cout << ", pose_cost=" << pose_cost.cost << " | " << pose_cost_vec[index];
+        std::cout << ", using_footprint CPU=" << pose_cost.using_footprint << " | " << using_footprint_vec[index];
+        std::cout << std::endl;
       }
     }
   }
@@ -249,7 +247,12 @@ void ObstaclesCritic::score(CriticData & data)
     CollisionCost pose_cost;
 
     for (size_t j = 0; j < traj_len; j++) {
+      // CPU:
       pose_cost = costAtPose(traj.x(i, j), traj.y(i, j), traj.yaws(i, j), false);
+      // GPU:
+      // unsigned int index = i * time_steps + j;
+      // pose_cost.cost = pose_cost_vec[index];
+      // pose_cost.using_footprint = using_footprint_vec[index];
 
       if (pose_cost.cost < 1.0f) {continue;}  // In free space
 
