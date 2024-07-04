@@ -89,7 +89,7 @@ TEST_F(GetPoseFromPathTestFixture, test_tick)
     R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-            <GetPoseFromPath path="{path}" pose="{startPose}" index="{index}" />
+            <GetPoseFromPath path="{path}" pose="{pose}" index="{index}" />
         </BehaviorTree>
       </root>)";
 
