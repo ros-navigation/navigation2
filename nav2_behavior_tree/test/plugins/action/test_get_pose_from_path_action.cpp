@@ -101,9 +101,10 @@ TEST_F(GetPoseFromPathTestFixture, test_tick)
   goals.resize(2);
   goals[0].pose.position.x = 1.0;
   goals[1].pose.position.x = 2.0;
-  path.poses=goals;
+  path.poses = goals;
   path.header.frame_id = "test_frame_1";
   config_->blackboard->set("path", path);
+
   config_->blackboard->set("index", 0);
 
   // tick until node succeeds
@@ -117,7 +118,7 @@ TEST_F(GetPoseFromPathTestFixture, test_tick)
 
   // check if returned pose is correct
   geometry_msgs::msg::PoseStamped pose;
-  config_->blackboard->get<geometry_msgs::msg::PoseStamped>("pose", pose);
+  EXPECT_TRUE(config_->blackboard->get<geometry_msgs::msg::PoseStamped>("pose", pose));
   EXPECT_EQ(pose.header.frame_id, "test_frame_1");
   EXPECT_EQ(pose.pose.position.x, 1.0);
 
@@ -135,7 +136,7 @@ TEST_F(GetPoseFromPathTestFixture, test_tick)
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
 
   // check if returned pose is correct
-  config_->blackboard->get<geometry_msgs::msg::PoseStamped>("pose", pose);
+  EXPECT_TRUE(config_->blackboard->get<geometry_msgs::msg::PoseStamped>("pose", pose));
   EXPECT_EQ(pose.header.frame_id, "test_frame_1");
   EXPECT_EQ(pose.pose.position.x, 2.0);
 }

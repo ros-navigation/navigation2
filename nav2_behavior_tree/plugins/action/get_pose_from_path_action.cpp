@@ -46,7 +46,7 @@ inline BT::NodeStatus GetPoseFromPath::tick()
   }
 
   // Account for negative indices
-  if(pose_index < 0){ 
+  if(pose_index < 0){
     pose_index = input_path.poses.size()+pose_index;
   }
 
