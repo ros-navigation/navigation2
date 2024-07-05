@@ -117,7 +117,7 @@ float ObstaclesCritic::distanceToObstacle(const CollisionCost & cost)
 
 void ObstaclesCritic::score(CriticData & data)
 {
-  auto start_time = std::chrono::high_resolution_clock::now();
+  // auto start_time = std::chrono::high_resolution_clock::now();
 
   using xt::evaluation_strategy::immediate;
   if (!enabled_) {
@@ -280,11 +280,11 @@ void ObstaclesCritic::score(CriticData & data)
     power_);
   data.fail_flag = all_trajectories_collide;
 
-  if (use_gpu_) {
-    auto end_time = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::milli> duration = end_time - start_time;
-    std::cout << "ObstaclesCritic: " << duration.count() << " ms" << std::endl;
-  }
+  // if (use_gpu_) {
+  //   auto end_time = std::chrono::high_resolution_clock::now();
+  //   std::chrono::duration<double, std::milli> duration = end_time - start_time;
+  //   std::cout << "ObstaclesCritic: " << duration.count() << " ms" << std::endl;
+  // }
 }
 
 /**
