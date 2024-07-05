@@ -89,7 +89,7 @@ public:
         BT::OutputPort<ActionResult::_success_type>(
           "success", "If the action was successful"),
         BT::OutputPort<ActionResult::_error_code_type>(
-          "error_code", "Error code"),
+          "error_code_id", "Error code"),
       });
   }
 };
