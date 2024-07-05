@@ -66,6 +66,8 @@ __device__ double lineCost(
             line.getX(), line.getY(),
             costmap_arr, costmap_size_x
         );   // Score the current point
+        // printf("[GPU] line.pointCost(%d, %d)=%.2f\n",
+        //     line.getX(), line.getY(), point_cost);
 
         // if in collision, no need to continue
         if (point_cost == static_cast<double>(LETHAL_OBSTACLE)) {
@@ -96,8 +98,8 @@ __device__ double footprintCostAtPose(
     double *footprint_y,
     unsigned int footprint_size
 ) {
-    double cos_th = cosf(theta);
-    double sin_th = sinf(theta);
+    double sin_th = sin(theta);
+    double cos_th = cos(theta);
 
     double oriented_footprint_x[10];
     double oriented_footprint_y[10];
@@ -138,7 +140,7 @@ __device__ double footprintCostAtPose(
             return static_cast<double>(LETHAL_OBSTACLE);
         }
 
-        footprint_cost = fmaxf(
+        footprint_cost = fmax(
             lineCost(x0, x1, y0, y1, costmap_arr, costmap_size_x),
             footprint_cost);
 
@@ -154,7 +156,7 @@ __device__ double footprintCostAtPose(
 
     // we also need to connect the first point in the footprint to the last point
     // the last iteration's x1, y1 are the last footprint point's coordinates
-    return fmaxf(
+    return fmax(
         lineCost(xstart, x1, ystart, y1, costmap_arr, costmap_size_x),
         footprint_cost);
 }
@@ -284,7 +286,7 @@ __global__ void poseCostKernel(
             cost,
             using_footprint,
             // Debug (i*time_steps+j)
-            false // (tid == 0*time_steps+0)
+            (false && tid == 0*time_steps+0)
         );
         
         // batchsize 2000 x timestep 56

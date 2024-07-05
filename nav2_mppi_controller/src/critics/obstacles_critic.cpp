@@ -155,15 +155,13 @@ void ObstaclesCritic::score(CriticData & data)
   double costmap_resolution = costmap_ros_->getCostmap()->getResolution();
   double costmap_origin_x = costmap_ros_->getCostmap()->getOriginX();
   double costmap_origin_y = costmap_ros_->getCostmap()->getOriginY();
-
   std::vector<geometry_msgs::msg::Point> footprint = costmap_ros_->getRobotFootprint();
   std::vector<double> footprint_x;
   std::vector<double> footprint_y;
-  for (unsigned int i = 0; i < footprint.size() - 1; ++i) {
+  for (unsigned int i = 0; i < footprint.size(); ++i) {
     footprint_x.push_back(footprint[i].x);
     footprint_y.push_back(footprint[i].y);
   }
-
   std::vector<float> pose_cost_vec;
   std::vector<bool> using_footprint_vec;
 
@@ -193,66 +191,56 @@ void ObstaclesCritic::score(CriticData & data)
     using_footprint_vec
   );
 
-
   // sanity check
-  for (size_t i = 0; i < data.trajectories.x.shape(0); ++i) {
-    const auto & traj = data.trajectories;
-    CollisionCost pose_cost;
-    for (size_t j = 0; j < data.trajectories.x.shape(1); j++) {
+  // for (size_t i = 0; i < data.trajectories.x.shape(0); ++i) {
+  //   const auto & traj = data.trajectories;
+  //   CollisionCost pose_cost;
+  //   for (size_t j = 0; j < data.trajectories.x.shape(1); j++) {
 
-      pose_cost = costAtPose(traj.x(i, j), traj.y(i, j), traj.yaws(i, j), false);
-      unsigned int index = i * time_steps + j;
-      if (
-        (fabs(pose_cost_vec[index] - pose_cost.cost) > MAX_ERR ||
-        fabs(using_footprint_vec[index] - pose_cost.using_footprint) > MAX_ERR)
-      ) {
-        // printf("[CPU] tid=%d, i=%ld, j=%ld, x=%f, y=%f, yaws=%f, pose_cost=%.2f, using_footprint=%d\n",
-        //   index,
-        //   i,
-        //   j,
-        //   traj.x(i, j),
-        //   traj.y(i, j),
-        //   traj.yaws(i, j),
-        //   pose_cost.cost,
-        //   pose_cost.using_footprint ? 1 : 0
-        // );
-        // printf("[OUT] tid=%d, i=%ld, j=%ld, x=%f, y=%f, yaws=%f, pose_cost=%.2f, using_footprint=%d\n\n",
-        //   index,
-        //   i,
-        //   j,
-        //   traj_x[index],
-        //   traj_y[index],
-        //   traj_yaws[index],
-        //   pose_cost_vec[index],
-        //   using_footprint_vec[index] ? 1 : 0
-        // );
-        std::cout << "i=" << i;
-        std::cout << ", j=" << j;
-        std::cout << ", index=" << index;
-        std::cout << ", x=" << traj.x(i, j) << " | " << traj_x[index];
-        std::cout << ", y=" << traj.y(i, j) << " | " << traj_y[index];
-        std::cout << ", yaws=" << traj.yaws(i, j) << " | " << traj_yaws[index];
-        std::cout << ", pose_cost=" << pose_cost.cost << " | " << pose_cost_vec[index];
-        std::cout << ", using_footprint CPU=" << pose_cost.using_footprint << " | " << using_footprint_vec[index];
-        std::cout << std::endl;
-      }
-    }
-  }
+  //     pose_cost = costAtPose(traj.x(i, j), traj.y(i, j), traj.yaws(i, j), (false && i==0 && j==0));
+  //     unsigned int index = i * time_steps + j;
+  //     if (
+  //       (fabs(pose_cost_vec[index] - pose_cost.cost) > MAX_ERR ||
+  //       fabs(using_footprint_vec[index] - pose_cost.using_footprint) > MAX_ERR)
+  //     ) {
+  //       printf("[GPU] tid=%d, i=%ld, j=%ld, x=%f, y=%f, yaws=%f, pose_cost=%.2f, using_footprint=%d\n",
+  //         index,
+  //         i,
+  //         j,
+  //         traj_x[index],
+  //         traj_y[index],
+  //         traj_yaws[index],
+  //         pose_cost_vec[index],
+  //         using_footprint_vec[index] ? 1 : 0
+  //       );
+  //       printf("[cpu] tid=%d, i=%ld, j=%ld, x=%f, y=%f, yaws=%f, pose_cost=%.2f, using_footprint=%d\n\n",
+  //         index,
+  //         i,
+  //         j,
+  //         traj.x(i, j),
+  //         traj.y(i, j),
+  //         traj.yaws(i, j),
+  //         pose_cost.cost,
+  //         pose_cost.using_footprint ? 1 : 0
+  //       );
+  //     }
+  //   }
+  // }
 
   // Current CPU process
   for (size_t i = 0; i < data.trajectories.x.shape(0); ++i) {
     bool trajectory_collide = false;
     float traj_cost = 0.0f;
-    const auto & traj = data.trajectories;
+    // const auto & traj = data.trajectories;
     CollisionCost pose_cost;
 
     for (size_t j = 0; j < traj_len; j++) {
       // CPU:
-      pose_cost = costAtPose(traj.x(i, j), traj.y(i, j), traj.yaws(i, j), false);
+      // pose_cost = costAtPose(traj.x(i, j), traj.y(i, j), traj.yaws(i, j), false);
       // GPU:
-      // unsigned int index = i * time_steps + j;
-      // pose_cost.cost = pose_cost_vec[index];
-      // pose_cost.using_footprint = using_footprint_vec[index];
+      unsigned int index = i * time_steps + j;
+      pose_cost.cost = pose_cost_vec[index];
+      pose_cost.using_footprint = using_footprint_vec[index];
 
       if (pose_cost.cost < 1.0f) {continue;}  // In free space
 
@@ -288,7 +276,7 @@ void ObstaclesCritic::score(CriticData & data)
 
   auto end_time = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double, std::milli> duration = end_time - start_time;
-  std::cout << "ObstaclesCritic: " << duration.count() << " ms" << std::endl << std::endl;
+  // std::cout << "ObstaclesCritic: " << duration.count() << " ms" << std::endl;
 }
 
 /**
@@ -326,8 +314,9 @@ CollisionCost ObstaclesCritic::costAtPose(float x, float y, float theta, bool de
   }
   cost = collision_checker_.pointCost(x_i, y_i);
   if (debug) {
-    printf("[CPU] pointCost(%d, %d)=%.2f\n",
-      x_i, y_i, cost);
+    printf("[cpu] pointCost(%d, %d)=%.2f\n",x_i, y_i, cost);
+    printf("[cpu] consider_footprint_=%d, possibly_inscribed_cost_=%.1f\n",
+    consider_footprint_ ? 1 : 0, possibly_inscribed_cost_);
   }
 
   if (consider_footprint_ &&
@@ -336,7 +325,7 @@ CollisionCost ObstaclesCritic::costAtPose(float x, float y, float theta, bool de
     cost = static_cast<float>(collision_checker_.footprintCostAtPose(
         x, y, theta, costmap_ros_->getRobotFootprint()));
     if (debug) {
-      printf("[CPU] footprintCostAtPose=%.2f\n", cost);
+      printf("[cpu] footprintCostAtPose=%.2f\n", cost);
     }
     collision_cost.using_footprint = true;
   }
