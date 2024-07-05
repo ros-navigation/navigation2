@@ -36,7 +36,7 @@ RosLockGuard g_rclcpp;
 
 void prepareAndRunBenchmark(
   bool consider_footprint, std::string motion_model,
-  std::vector<std::string> critics, benchmark::State & state)
+  std::vector<std::string> critics, benchmark::State & state, bool use_gpu)
 {
   int batch_size = 2000;
   int time_steps = 54;
@@ -103,6 +103,7 @@ void prepareAndRunBenchmark(
     rclcpp::Parameter(node_name + ".motion_model", optimizer_settings.motion_model),
     rclcpp::Parameter(node_name + ".critics", critics),
     rclcpp::Parameter(node_name + ".ObstaclesCritic.consider_footprint", optimizer_settings.consider_footprint),
+    rclcpp::Parameter(node_name + ".ObstaclesCritic.use_gpu", use_gpu),
     rclcpp::Parameter("controller_frequency", 50.0)
   };
   rclcpp::NodeOptions options;
@@ -133,16 +134,25 @@ void prepareAndRunBenchmark(
   }
 }
 
-static void BM_ObstaclesCriticPointFootprint(benchmark::State & state)
+static void BM_ObstaclesCriticCPU(benchmark::State & state)
 {
   bool consider_footprint = true;
+  bool use_gpu = false;
   std::string motion_model = "DiffDrive";
   std::vector<std::string> critics = {{"ObstaclesCritic"}};
-
-  prepareAndRunBenchmark(consider_footprint, motion_model, critics, state);
+  prepareAndRunBenchmark(consider_footprint, motion_model, critics, state, use_gpu);
 }
 
+static void BM_ObstaclesCriticGPU(benchmark::State & state)
+{
+  bool consider_footprint = true;
+  bool use_gpu = true;
+  std::string motion_model = "DiffDrive";
+  std::vector<std::string> critics = {{"ObstaclesCritic"}};
+  prepareAndRunBenchmark(consider_footprint, motion_model, critics, state, use_gpu);
+}
 
-BENCHMARK(BM_ObstaclesCriticPointFootprint)->Unit(benchmark::kMillisecond);
+BENCHMARK(BM_ObstaclesCriticCPU)->Unit(benchmark::kMillisecond);
+BENCHMARK(BM_ObstaclesCriticGPU)->Unit(benchmark::kMillisecond);
 
 BENCHMARK_MAIN();

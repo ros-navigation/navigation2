@@ -31,6 +31,7 @@ void ObstaclesCritic::initialize()
   getParam(collision_cost_, "collision_cost", 10000.0);
   getParam(collision_margin_distance_, "collision_margin_distance", 0.10);
   getParam(near_goal_distance_, "near_goal_distance", 0.5);
+  getParam(use_gpu_, "use_gpu", true);
 
   collision_checker_.setCostmap(costmap_);
   possibly_inscribed_cost_ = findCircumscribedCost(costmap_ros_);
@@ -143,104 +144,109 @@ void ObstaclesCritic::score(CriticData & data)
   bool all_trajectories_collide = true;
 
   // Prepare Data for GPU
-  std::vector<float> traj_x(data.trajectories.x.begin(), data.trajectories.x.end());
-  std::vector<float> traj_y(data.trajectories.y.begin(), data.trajectories.y.end());
-  std::vector<float> traj_yaws(data.trajectories.yaws.begin(), data.trajectories.yaws.end());
-  unsigned int batch_size = data.trajectories.x.shape(0);
-  unsigned int time_steps = data.trajectories.x.shape(1);
-
-  unsigned char * costmap_arr = costmap_ros_->getCostmap()->getCharMap();
-  unsigned int costmap_size_x = costmap_ros_->getCostmap()->getSizeInCellsX();
-  unsigned int costmap_size_y = costmap_ros_->getCostmap()->getSizeInCellsY();
-  double costmap_resolution = costmap_ros_->getCostmap()->getResolution();
-  double costmap_origin_x = costmap_ros_->getCostmap()->getOriginX();
-  double costmap_origin_y = costmap_ros_->getCostmap()->getOriginY();
-  std::vector<geometry_msgs::msg::Point> footprint = costmap_ros_->getRobotFootprint();
-  std::vector<double> footprint_x;
-  std::vector<double> footprint_y;
-  for (unsigned int i = 0; i < footprint.size(); ++i) {
-    footprint_x.push_back(footprint[i].x);
-    footprint_y.push_back(footprint[i].y);
-  }
   std::vector<float> pose_cost_vec;
   std::vector<bool> using_footprint_vec;
+  if (use_gpu_) {
+    std::vector<float> traj_x(data.trajectories.x.begin(), data.trajectories.x.end());
+    std::vector<float> traj_y(data.trajectories.y.begin(), data.trajectories.y.end());
+    std::vector<float> traj_yaws(data.trajectories.yaws.begin(), data.trajectories.yaws.end());
+    unsigned int batch_size = data.trajectories.x.shape(0);
+    unsigned int time_steps = data.trajectories.x.shape(1);
 
-  calc_cost_at_pose(
-    // Input(0): Trajectories
-    traj_x,
-    traj_y,
-    traj_yaws,
-    batch_size,
-    time_steps,
-    // Input(1): Costmap
-    costmap_arr,
-    costmap_size_x,
-    costmap_size_y,
-    costmap_resolution,
-    costmap_origin_x,
-    costmap_origin_y,
-    // Input(2): Footprint
-    footprint_x,
-    footprint_y,
-    footprint.size(),
-    // Input(3): Config
-    consider_footprint_,
-    possibly_inscribed_cost_,
-    // Output:
-    pose_cost_vec,
-    using_footprint_vec
-  );
+    unsigned char * costmap_arr = costmap_ros_->getCostmap()->getCharMap();
+    unsigned int costmap_size_x = costmap_ros_->getCostmap()->getSizeInCellsX();
+    unsigned int costmap_size_y = costmap_ros_->getCostmap()->getSizeInCellsY();
+    double costmap_resolution = costmap_ros_->getCostmap()->getResolution();
+    double costmap_origin_x = costmap_ros_->getCostmap()->getOriginX();
+    double costmap_origin_y = costmap_ros_->getCostmap()->getOriginY();
+    std::vector<geometry_msgs::msg::Point> footprint = costmap_ros_->getRobotFootprint();
+    std::vector<double> footprint_x;
+    std::vector<double> footprint_y;
+    for (unsigned int i = 0; i < footprint.size(); ++i) {
+      footprint_x.push_back(footprint[i].x);
+      footprint_y.push_back(footprint[i].y);
+    }
 
-  // sanity check
-  // for (size_t i = 0; i < data.trajectories.x.shape(0); ++i) {
-  //   const auto & traj = data.trajectories;
-  //   CollisionCost pose_cost;
-  //   for (size_t j = 0; j < data.trajectories.x.shape(1); j++) {
+    calc_cost_at_pose(
+      // Input(0): Trajectories
+      traj_x,
+      traj_y,
+      traj_yaws,
+      batch_size,
+      time_steps,
+      // Input(1): Costmap
+      costmap_arr,
+      costmap_size_x,
+      costmap_size_y,
+      costmap_resolution,
+      costmap_origin_x,
+      costmap_origin_y,
+      // Input(2): Footprint
+      footprint_x,
+      footprint_y,
+      footprint.size(),
+      // Input(3): Config
+      consider_footprint_,
+      possibly_inscribed_cost_,
+      // Output:
+      pose_cost_vec,
+      using_footprint_vec
+    );
 
-  //     pose_cost = costAtPose(traj.x(i, j), traj.y(i, j), traj.yaws(i, j), (false && i==0 && j==0));
-  //     unsigned int index = i * time_steps + j;
-  //     if (
-  //       (fabs(pose_cost_vec[index] - pose_cost.cost) > MAX_ERR ||
-  //       fabs(using_footprint_vec[index] - pose_cost.using_footprint) > MAX_ERR)
-  //     ) {
-  //       printf("[GPU] tid=%d, i=%ld, j=%ld, x=%f, y=%f, yaws=%f, pose_cost=%.2f, using_footprint=%d\n",
-  //         index,
-  //         i,
-  //         j,
-  //         traj_x[index],
-  //         traj_y[index],
-  //         traj_yaws[index],
-  //         pose_cost_vec[index],
-  //         using_footprint_vec[index] ? 1 : 0
-  //       );
-  //       printf("[cpu] tid=%d, i=%ld, j=%ld, x=%f, y=%f, yaws=%f, pose_cost=%.2f, using_footprint=%d\n\n",
-  //         index,
-  //         i,
-  //         j,
-  //         traj.x(i, j),
-  //         traj.y(i, j),
-  //         traj.yaws(i, j),
-  //         pose_cost.cost,
-  //         pose_cost.using_footprint ? 1 : 0
-  //       );
-  //     }
-  //   }
-  // }
+    // sanity check - ncomment if needed
+    /*
+    for (size_t i = 0; i < data.trajectories.x.shape(0); ++i) {
+      const auto & traj = data.trajectories;
+      CollisionCost pose_cost;
+      for (size_t j = 0; j < data.trajectories.x.shape(1); j++) {
+
+        pose_cost = costAtPose(traj.x(i, j), traj.y(i, j), traj.yaws(i, j), (false && i==0 && j==0));
+        unsigned int index = i * time_steps + j;
+        if (
+          (fabs(pose_cost_vec[index] - pose_cost.cost) > MAX_ERR ||
+          fabs(using_footprint_vec[index] - pose_cost.using_footprint) > MAX_ERR)
+        ) {
+          printf("[GPU] tid=%d, i=%ld, j=%ld, x=%f, y=%f, yaws=%f, pose_cost=%.2f, using_footprint=%d\n",
+            index,
+            i,
+            j,
+            traj_x[index],
+            traj_y[index],
+            traj_yaws[index],
+            pose_cost_vec[index],
+            using_footprint_vec[index] ? 1 : 0
+          );
+          printf("[cpu] tid=%d, i=%ld, j=%ld, x=%f, y=%f, yaws=%f, pose_cost=%.2f, using_footprint=%d\n\n",
+            index,
+            i,
+            j,
+            traj.x(i, j),
+            traj.y(i, j),
+            traj.yaws(i, j),
+            pose_cost.cost,
+            pose_cost.using_footprint ? 1 : 0
+          );
+        }
+      }
+    } */
+  }
 
   // Current CPU process
   for (size_t i = 0; i < data.trajectories.x.shape(0); ++i) {
     bool trajectory_collide = false;
     float traj_cost = 0.0f;
-    // const auto & traj = data.trajectories;
     CollisionCost pose_cost;
 
     for (size_t j = 0; j < traj_len; j++) {
-      // CPU:
-      // pose_cost = costAtPose(traj.x(i, j), traj.y(i, j), traj.yaws(i, j), false);
-      // GPU:
-      unsigned int index = i * time_steps + j;
-      pose_cost.cost = pose_cost_vec[index];
-      pose_cost.using_footprint = using_footprint_vec[index];
+      if (use_gpu_) {
+        // GPU method
+        unsigned int index = i * traj_len + j;
+        pose_cost.cost = pose_cost_vec[index];
+        pose_cost.using_footprint = using_footprint_vec[index];
+      } else {
+        // CPU method:
+        pose_cost = costAtPose(data.trajectories.x(i, j), data.trajectories.y(i, j), data.trajectories.yaws(i, j), false);
+      }
 
       if (pose_cost.cost < 1.0f) {continue;}  // In free space
 
@@ -274,9 +280,11 @@ void ObstaclesCritic::score(CriticData & data)
     power_);
   data.fail_flag = all_trajectories_collide;
 
-  auto end_time = std::chrono::high_resolution_clock::now();
-  std::chrono::duration<double, std::milli> duration = end_time - start_time;
-  // std::cout << "ObstaclesCritic: " << duration.count() << " ms" << std::endl;
+  if (use_gpu_) {
+    auto end_time = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> duration = end_time - start_time;
+    std::cout << "ObstaclesCritic: " << duration.count() << " ms" << std::endl;
+  }
 }
 
 /**

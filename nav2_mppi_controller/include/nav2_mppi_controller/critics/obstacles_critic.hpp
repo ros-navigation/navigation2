@@ -100,6 +100,8 @@ protected:
 
   unsigned int power_{0};
   float repulsion_weight_, critical_weight_{0};
+
+  bool use_gpu_{true};
 };
 
 }  // namespace mppi::critics
