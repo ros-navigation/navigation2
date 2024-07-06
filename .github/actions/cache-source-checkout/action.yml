@@ -49,9 +49,9 @@ runs:
         shopt -s dotglob
         mv ${{ github.workspace }}/* $integration_repo_path
 
-    - name: Cache checkout
-      id: cache_checkout
-      uses: actions/cache@v4
+    - name: Save checkout
+      id: save_checkout
+      uses: actions/cache/save@v4
       with:
         path: ${{ steps.cache_dance_info.outputs.overlay_ws_src }}/
         key: ${{ steps.cache_key_info.outputs.checkout_cache_key }}
