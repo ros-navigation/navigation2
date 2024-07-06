@@ -89,6 +89,7 @@ jobs:
       - colcon_build_test
     with:
       cache_image: ${{ needs.build_base_images.outputs.tooler_image }}
+      ccache_cache_key: ${{ needs.colcon_build_test.outputs.ccache_cache_key }}
       checkout_cache_key: ${{ needs.build_base_images.outputs.checkout_cache_key }}
       metadata: ${{ needs.build_base_images.outputs.metadata }}
       overlay_cache_key: ${{ needs.colcon_build_test.outputs.overlay_cache_key }}
