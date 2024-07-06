@@ -57,8 +57,8 @@ runs:
       shell: bash
       run: |
         echo "GHCR_REGISTRY=ghcr.io" >> $GITHUB_ENV
-        echo "INTEGRATION_REPO=$(basename ${{ inputs.integration_repo }})" >> $GITHUB_ENV
-        echo "GHCR_REPO=$(basename ${{ github.repository }})" >> $GITHUB_ENV
+        echo "INTEGRATION_REPO=${{ inputs.integration_repo }}" >> $GITHUB_ENV
+        echo "GHCR_REPO=${{ github.repository }}" >> $GITHUB_ENV
 
     - name: Docker validator meta
       id: docker_meta_validator

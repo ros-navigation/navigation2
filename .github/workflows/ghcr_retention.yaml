@@ -34,7 +34,7 @@ jobs:
         shell: bash
         run: |
           echo "GHCR_REGISTRY=ghcr.io" >> $GITHUB_ENV
-          echo "GHCR_REPO=$(basename ${{ github.repository }})" >> $GITHUB_ENV
+          echo "GHCR_REPO=${{ github.repository }}" >> $GITHUB_ENV
       - name: Docker meta
         id: docker_meta
         uses: docker/metadata-action@v5
