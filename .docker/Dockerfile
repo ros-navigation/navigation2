@@ -50,8 +50,8 @@ FROM baser AS cacher
 
 # clone underlay source
 COPY ./tools/underlay.repos ./
-RUN mkdir src && \
-    vcs import src < underlay.repos
+RUN mkdir -p src/underlay && \
+    vcs import src/underlay < underlay.repos
 
 # copy overlay source
 COPY ./ ./src/nav2
@@ -153,6 +153,9 @@ ENV CCACHE_DIR="$OVERLAY_WS/.ccache"
 COPY .docker/.colcon/defaults.yaml $COLCON_HOME/
 ARG OVERLAY_MIXINS="release ccache lld"
 ENV OVERLAY_MIXINS=${OVERLAY_MIXINS}
+
+# copy underlay source
+COPY --from=cacher $OVERLAY_WS/src/underlay $OVERLAY_WS/src/underlay
 
 # capture environment to modify layer digest
 RUN env > /tmp/env.txt
