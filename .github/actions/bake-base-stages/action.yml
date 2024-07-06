@@ -86,7 +86,7 @@ runs:
         if [ "$INTEGRATION_REPO" == "$GHCR_REPO" ]; then
           tooler_ref=${{ fromJSON(steps.docker_meta_tooler.outputs.json).tags[0] }}
           echo    *.cache-from=type=registry,ref=${tooler_ref}.cache
-          echo tooler.cache-to=type=registry,ref=${tooler_ref}.cache,mode=max,image-manifest=true,oci-mediatypes=true
+          echo tooler.cache-to=type=registry,ref=${tooler_ref}.cache,mode=max
         fi
         if [ "${{ github.head_ref || github.ref_name }}" != "main" ] || [ "$INTEGRATION_REPO" != "$GHCR_REPO" ]; then
           echo *.cache-from=type=s3,blobs_prefix=cache/${{ env.INTEGRATION_REPO }}/,manifests_prefix=cache/${{ env.INTEGRATION_REPO }}/,region=${{ env.RUNS_ON_AWS_REGION }},bucket=${{ env.RUNS_ON_S3_BUCKET_CACHE }}

@@ -85,9 +85,9 @@ runs:
           debugger_ref=${{ fromJSON(steps.docker_meta_debugger.outputs.json).tags[0] }}
           releaser_ref=${{ fromJSON(steps.docker_meta_releaser.outputs.json).tags[0] }}
           echo debugger.cache-from=type=registry,ref=${debugger_ref}.cache
-          echo   debugger.cache-to=type=registry,ref=${debugger_ref}.cache,mode=min,image-manifest=true,oci-mediatypes=true
+          echo   debugger.cache-to=type=registry,ref=${debugger_ref}.cache,mode=min
           echo releaser.cache-from=type=registry,ref=${releaser_ref}.cache
-          echo   releaser.cache-to=type=registry,ref=${releaser_ref}.cache,mode=min,image-manifest=true,oci-mediatypes=true
+          echo   releaser.cache-to=type=registry,ref=${releaser_ref}.cache,mode=min
         fi
         cache_image="${{ inputs.cache_image }}"
         cache_image="${cache_image%@*}"
