@@ -14,7 +14,7 @@ jobs:
 
       - name: Build and load
         id: docker_bake_load
-        uses: docker/bake-action@v4
+        uses: docker/bake-action@v5
         with:
           push: false
           load: true
@@ -27,7 +27,7 @@ jobs:
 
       - name: Build and push
         id: docker_bake_push
-        uses: docker/bake-action@v4
+        uses: docker/bake-action@v5
         with:
           push: true
           load: false

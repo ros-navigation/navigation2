@@ -96,7 +96,7 @@ runs:
         } >> "$GITHUB_ENV"
     - name: Bake prod stages
       id: bake_prod_stages
-      uses: docker/bake-action@v4
+      uses: docker/bake-action@v5
       with:
         pull: true
         push: true
