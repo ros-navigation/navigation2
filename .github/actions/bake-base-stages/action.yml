@@ -89,7 +89,7 @@ runs:
           echo tooler.cache-to=type=registry,ref=${tooler_ref}.cache,mode=max
         fi
         if [ "${{ github.head_ref || github.ref_name }}" != "main" ] || [ "$INTEGRATION_REPO" != "$GHCR_REPO" ]; then
-          echo *.cache-from=type=s3,blobs_prefix=cache/${{ env.INTEGRATION_REPO }}/,manifests_prefix=cache/${{ env.INTEGRATION_REPO }}/,region=${{ env.RUNS_ON_AWS_REGION }},bucket=${{ env.RUNS_ON_S3_BUCKET_CACHE }}
+          echo *.cache-from=type=gha
         fi
         echo EOF
         } >> "$GITHUB_ENV"
@@ -107,7 +107,7 @@ runs:
           validator
         set: |
           *.cache-from=type=registry,ref=${{ env.GHCR_REGISTRY }}/${{ env.INTEGRATION_REPO }}:main-tooler.cache
-          *.cache-to=type=s3,blobs_prefix=cache/${{ env.INTEGRATION_REPO }}/,manifests_prefix=cache/${{ env.INTEGRATION_REPO }}/,region=${{ env.RUNS_ON_AWS_REGION }},bucket=${{ env.RUNS_ON_S3_BUCKET_CACHE }},mode=max
+          *.cache-to=type=gha,mode=max
           ${{ env.EXTRA_BAKE_SET }}
         files: |
           ./docker-bake.hcl
