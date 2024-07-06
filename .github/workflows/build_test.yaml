@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - '.docker/Dockerfile'
+      - '.docker/**'
       - '.github/workflows/build_prod_images.yaml'
       - '.github/workflows/build_test_colcon.yaml'
       - '.github/workflows/build_test_integration.yaml'
@@ -14,7 +14,7 @@ on:
       - 'nav*/**'
   pull_request:
     paths:
-      - '.docker/Dockerfile'
+      - '.docker/**'
       - '.github/workflows/build_prod_images.yaml'
       - '.github/workflows/build_test_colcon.yaml'
       - '.github/workflows/build_test_integration.yaml'
