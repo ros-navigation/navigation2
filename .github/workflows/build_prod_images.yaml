@@ -99,7 +99,7 @@ jobs:
 
       - name: Bake prod stages
         id: bake_prod_stages
-        uses: ros-navigation/navigation2/.github/actions/bake-prod-stages@main
+        uses: ros-navigation/navigation2/.github/actions/bake-prod-stages@buildkit
         with:
           cache_image: ${{ inputs.cache_image }}
           integration_repo: ${{ github.repository }}

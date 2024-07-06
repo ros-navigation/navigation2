@@ -116,7 +116,7 @@ runs:
 
     - name: Get Layer Metadata
       id: get_layer_metadata
-      uses: ros-navigation/navigation2/.github/actions/get-layer-metadata@main
+      uses: ros-navigation/navigation2/.github/actions/get-layer-metadata@buildkit
       with:
         metadata: ${{ steps.bake_base_stages.outputs.metadata }}
         load: false

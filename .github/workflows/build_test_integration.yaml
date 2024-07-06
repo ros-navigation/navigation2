@@ -54,21 +54,21 @@ jobs:
 
       - name: Bake base stages
         id: bake_base_stages
-        uses: ros-navigation/navigation2/.github/actions/bake-base-stages@main
+        uses: ros-navigation/navigation2/.github/actions/bake-base-stages@buildkit
         with:
           integration_repo: ${{ inputs.integration_repo }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Cache source checkout
         id: cache_source_checkout
-        uses: ros-navigation/navigation2/.github/actions/cache-source-checkout@main
+        uses: ros-navigation/navigation2/.github/actions/cache-source-checkout@buildkit
         with:
           integration_repo: ${{ inputs.integration_repo }}
           overlay_ws: ${{ env.OVERLAY_WS }}
 
   colcon_build_test:
     name: Colcon
-    uses: ros-navigation/navigation2/.github/workflows/build_test_colcon.yaml@main
+    uses: ros-navigation/navigation2/.github/workflows/build_test_colcon.yaml@buildkit
     secrets: inherit
     needs: build_base_images
     with:
@@ -82,7 +82,7 @@ jobs:
 
   build_prod_images:
     name: Prod
-    uses: ros-navigation/navigation2/.github/workflows/build_prod_images.yaml@main
+    uses: ros-navigation/navigation2/.github/workflows/build_prod_images.yaml@buildkit
     secrets: inherit
     needs:
       - build_base_images

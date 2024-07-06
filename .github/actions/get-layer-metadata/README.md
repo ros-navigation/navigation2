@@ -20,7 +20,7 @@ jobs:
           load: true
       - name: Get Layer Metadata Locally
         id: get_layer_metadata_local
-        uses: ros-navigation/navigation2/.github/actions/get-layer-metadata@main
+        uses: ros-navigation/navigation2/.github/actions/get-layer-metadata@buildkit
         with:
           metadata: ${{ steps.docker_bake_load.outputs.metadata }}
           load: true
@@ -33,7 +33,7 @@ jobs:
           load: false
       - name: Get Layer Metadata Remotely
         id: get_layer_metadata_remote
-        uses: ros-navigation/navigation2/.github/actions/get-layer-metadata@main
+        uses: ros-navigation/navigation2/.github/actions/get-layer-metadata@buildkit
         with:
           metadata: ${{ steps.docker_bake_push.outputs.metadata }}
           load: false

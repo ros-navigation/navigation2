@@ -26,5 +26,5 @@ on:
 jobs:
   integration:
     name: Integration
-    uses: ros-navigation/navigation2/.github/workflows/build_test_integration.yaml@main
+    uses: ros-navigation/navigation2/.github/workflows/build_test_integration.yaml@buildkit
     secrets: inherit
