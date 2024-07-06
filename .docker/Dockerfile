@@ -7,12 +7,12 @@ ARG WS_CACHE_ID=nav2
 
 ARG FROM_IMAGE=base
 # Stage from full image tag name for dependabot detection
-FROM ros:rolling as base
+FROM ros:rolling AS base
 
 ################################################################################
 # MARK: baser - setup base image using snapshots
 ################################################################################
-FROM $FROM_IMAGE as baser
+FROM $FROM_IMAGE AS baser
 ENV FROM_IMAGE=${FROM_IMAGE}
 
 # Configure ubuntu snapshot
@@ -84,7 +84,7 @@ RUN dep_types=(\
 ################################################################################
 # MARK: runner - setup runtime dependencies for deployment
 ################################################################################
-FROM baser as runner
+FROM baser AS runner
 
 # install packages for field work
 COPY .docker/runner_apt_debs.txt /tmp/runner_apt_debs.txt
@@ -99,7 +99,7 @@ RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
 ################################################################################
 # MARK: prepper - bootstrap general dependencies for development
 ################################################################################
-FROM $PREP_FROM_STAGE as prepper
+FROM $PREP_FROM_STAGE AS prepper
 
 # install bootstrap tools
 RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
@@ -123,7 +123,7 @@ RUN colcon mixin add default \
 ################################################################################
 # MARK: validator - setup test dependencies for validation 
 ################################################################################
-FROM prepper as validator
+FROM prepper AS validator
 
 COPY --from=cacher /tmp/rosdep_test_debs.txt /tmp/rosdep_test_debs.txt
 RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
@@ -132,7 +132,7 @@ RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
 ################################################################################
 # MARK: tooler - setup build dependencies for compilation
 ################################################################################
-FROM validator as tooler
+FROM validator AS tooler
 
 COPY --from=cacher /tmp/rosdep_build_debs.txt /tmp/
 RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
@@ -160,7 +160,7 @@ RUN env > /tmp/env.txt
 ################################################################################
 # MARK: seeder - seed workspace artifacts for caching
 ################################################################################
-FROM baser as seeder
+FROM baser AS seeder
 ARG WS_CACHE_ID
 
 ARG CLEAR_WS_CACHE
@@ -189,7 +189,7 @@ RUN --mount=type=cache,from=cacher,target=/cacher \
 ################################################################################
 # MARK: builder - build workspace artifacts for deployment
 ################################################################################
-FROM tooler as builder
+FROM tooler AS builder
 ARG WS_CACHE_ID
 
 # build overlay source
@@ -223,7 +223,7 @@ RUN --mount=type=cache,id=$WS_CACHE_ID,sharing=private,target=$OVERLAY_WS \
 ################################################################################
 # MARK: dever - setup user account for development
 ################################################################################
-FROM $DEV_FROM_STAGE as dever
+FROM $DEV_FROM_STAGE AS dever
 
 # add default user for devcontainer
 ENV DEV_USER=ubuntu
@@ -232,7 +232,7 @@ RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 ################################################################################
 # MARK: tester - test workspace artifacts for development
 ################################################################################
-FROM validator as tester
+FROM validator AS tester
 ARG WS_CACHE_ID
 
 # test overlay build
@@ -254,7 +254,7 @@ RUN --mount=type=cache,id=$WS_CACHE_ID,sharing=private,target=$OVERLAY_WS \
 ################################################################################
 # MARK: dancer - multi-stage for caches dancing
 ################################################################################
-FROM $EXPORT_FROM_STAGE as dancer
+FROM $EXPORT_FROM_STAGE AS dancer
 ARG WS_CACHE_ID
 
 RUN --mount=type=cache,id=$WS_CACHE_ID,sharing=private,target=$OVERLAY_WS,readonly \
@@ -266,25 +266,25 @@ RUN --mount=type=cache,id=$WS_CACHE_ID,sharing=private,target=$OVERLAY_WS,readon
 ################################################################################
 # MARK: exporter - multi-stage for exporting caches
 ################################################################################
-FROM $EXPORT_FROM_STAGE as exporter
+FROM $EXPORT_FROM_STAGE AS exporter
 
 COPY --link --from=dancer /dancer/$OVERLAY_WS $OVERLAY_WS
 
 ################################################################################
 # MARK: shipper - setup production images using shared instructions 
 ################################################################################
-FROM $SHIP_FROM_STAGE as shipper
+FROM $SHIP_FROM_STAGE AS shipper
 
 ################################################################################
 # MARK: debugger - stage target for debuggin in production
 ################################################################################
-FROM shipper as debugger
+FROM shipper AS debugger
 
 COPY --link --from=dancer /dancer/$OVERLAY_WS $OVERLAY_WS
 
 ################################################################################
 # MARK: releaser - stage target for releasing in production
 ################################################################################
-FROM shipper as releaser
+FROM shipper AS releaser
 
 COPY --link --from=dancer /dancer/$OVERLAY_WS/install $OVERLAY_WS/install
