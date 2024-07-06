@@ -44,23 +44,27 @@ jobs:
     steps:
       - name: Restore checkout
         id: restore_checkout
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           fail-on-cache-miss: true
           path: ${{ inputs.overlay_ws }}/src/
           key: ${{ inputs.checkout_cache_key }}
-      - name: Cache ccache
-        id: cache_ccache
-        uses: actions/cache@v4
+      - name: Cache ccache info
+        id: cache_ccache_info
+        run: |
+          ccache_cache_key="ccache-v1"\
+          "-${{ github.ref }}"\
+          "-${{ github.run_id }}"\
+          "-${{ github.run_number }}"\
+          "-${{ github.run_attempt }}"
+          echo "ccache_cache_key=${ccache_cache_key}" >> $GITHUB_OUTPUT
+      - name: Restore ccache
+        id: restore_ccache
+        uses: actions/cache/restore@v4
         with:
-          save-always: true
           path: |
             ${{ inputs.overlay_ws }}/.ccache
-          key: "ccache-v1\
-            -${{ github.ref }}\
-            -${{ github.run_id }}\
-            -${{ github.run_number }}\
-            -${{ github.run_attempt }}"
+          key: ${{ steps.cache_ccache_info.outputs.ccache_cache_key }}
           restore-keys: |
             ccache-v1-${{ github.ref }}
             ccache-v1-refs/heads/${{ github.head_ref }}
@@ -75,11 +79,10 @@ jobs:
           "-${{ github.run_number }}"\
           "-${{ github.run_attempt }}"
           echo "overlay_cache_key=${overlay_cache_key}" >> $GITHUB_OUTPUT
-      - name: Cache overlay
-        id: cache_overlay
-        uses: actions/cache@v4
+      - name: Restore overlay
+        id: restore_overlay
+        uses: actions/cache/restore@v4
         with:
-          save-always: true
           path: |
             ${{ inputs.overlay_ws }}/build
             ${{ inputs.overlay_ws }}/install
@@ -138,6 +141,24 @@ jobs:
         with:
           name: build-logs
           path: ${{ inputs.overlay_ws }}/log/
+      - name: Save ccache
+        id: save_ccache
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: |
+            ${{ inputs.overlay_ws }}/.ccache
+          key: ${{ steps.cache_ccache_info.outputs.ccache_cache_key }}
+      - name: Save overlay
+        id: save_overlay
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: |
+            ${{ inputs.overlay_ws }}/build
+            ${{ inputs.overlay_ws }}/install
+            ${{ inputs.overlay_ws }}/test_results
+          key: ${{ steps.cache_overlay_info.outputs.overlay_cache_key }}
 
   test_colcon_workspace:
     name: Test Workspace
@@ -155,16 +176,15 @@ jobs:
     steps:
       - name: Restore checkout
         id: restore_checkout
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           fail-on-cache-miss: true
           path: ${{ inputs.overlay_ws }}/src/
           key: ${{ inputs.checkout_cache_key }}
-      - name: Cache overlay
-        id: cache_overlay
-        uses: actions/cache@v4
+      - name: Restore overlay
+        id: restore_overlay
+        uses: actions/cache/restore@v4
         with:
-          save-always: true
           path: |
             ${{ inputs.overlay_ws }}/build
             ${{ inputs.overlay_ws }}/install
@@ -206,3 +226,13 @@ jobs:
         with:
           name: test-results
           path: ${{ inputs.overlay_ws }}/test_results/
+      - name: Save overlay
+        id: save_overlay
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: |
+            ${{ inputs.overlay_ws }}/build
+            ${{ inputs.overlay_ws }}/install
+            ${{ inputs.overlay_ws }}/test_results
+          key: ${{ needs.build_colcon_workspace.outputs.overlay_cache_key }}-${{ github.run_attempt }}
