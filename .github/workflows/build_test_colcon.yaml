@@ -25,6 +25,8 @@ on:
         required: true
         type: string
     outputs:
+      ccache_cache_key:
+        value: ${{ jobs.build_colcon_workspace.outputs.ccache_cache_key }}
       overlay_cache_key:
         value: ${{ jobs.test_colcon_workspace.outputs.overlay_cache_key }}
 
@@ -32,6 +34,7 @@ jobs:
   build_colcon_workspace:
     name: Build Workspace
     outputs:
+      ccache_cache_key: ${{ steps.cache_ccache_info.outputs.ccache_cache_key }}
       overlay_cache_key: ${{ steps.cache_overlay_info.outputs.overlay_cache_key }}
       build_packages: ${{ steps.check_differential.outputs.build_packages }}
     runs-on: ${{ inputs.runs_on }}
