@@ -5,21 +5,21 @@ on:
   #   branches:
   #     - main
   #   paths:
+  #     - '.docker/Dockerfile'
   #     - '.github/workflows/build_prod_images.yaml'
   #     - '.github/workflows/build_test_colcon.yaml'
   #     - '.github/workflows/build_test_integration.yaml'
   #     - '.github/workflows/build_test.yaml'
   #     - 'docker-bake.hcl'
-  #     - 'Dockerfile'
   #     - 'nav*/**'
   # pull_request:
   #   paths:
+  #     - '.docker/Dockerfile'
   #     - '.github/workflows/build_prod_images.yaml'
   #     - '.github/workflows/build_test_colcon.yaml'
   #     - '.github/workflows/build_test_integration.yaml'
   #     - '.github/workflows/build_test.yaml'
   #     - 'docker-bake.hcl'
-  #     - 'Dockerfile'
   #     - 'nav*/**'
   workflow_dispatch:
 
