@@ -3,6 +3,9 @@ name: Build Prod Images
 on:
   workflow_call:
     inputs:
+      ccache_cache_key:
+        required: true
+        type: string
       checkout_cache_key:
         required: true
         type: string
@@ -52,6 +55,14 @@ jobs:
           fail-on-cache-miss: true
           path: ${{ inputs.overlay_ws }}/src/
           key: ${{ inputs.checkout_cache_key }}
+      - name: Restore ccache
+        id: restore_ccache
+        uses: actions/cache/restore@v4
+        with:
+          fail-on-cache-miss: true
+          path: |
+            ${{ inputs.overlay_ws }}/.ccache
+          key: ${{ inputs.ccache_cache_key }}
       - name: Restore overlay
         id: restore_overlay
         uses: actions/cache/restore@v4
