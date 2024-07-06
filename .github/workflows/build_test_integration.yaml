@@ -49,7 +49,7 @@ jobs:
         with:
           ref: ${{ inputs.integration_ref }}
           repository: ${{ inputs.integration_repo }}
-          token: ${{ secrets.GIT_CHECKOUT_PAT }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           submodules: 'recursive'
 
       - name: Bake base stages
