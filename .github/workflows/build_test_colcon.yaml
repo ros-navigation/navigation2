@@ -25,10 +25,14 @@ on:
         required: true
         type: string
     outputs:
+      build_result:
+        value: ${{ jobs.build_colcon_workspace.result }}
       ccache_cache_key:
         value: ${{ jobs.build_colcon_workspace.outputs.ccache_cache_key }}
       overlay_cache_key:
         value: ${{ jobs.test_colcon_workspace.outputs.overlay_cache_key }}
+      test_result:
+        value: ${{ jobs.test_colcon_workspace.result }}
 
 jobs:
   build_colcon_workspace:
