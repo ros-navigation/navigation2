@@ -29,7 +29,7 @@ on:
         type: string
 
 env:
-  OVERLAY_WS: /opt/auto_ws
+  OVERLAY_WS: /opt/nav2_ws
 
 jobs:
   build_base_images:
