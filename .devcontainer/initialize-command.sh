@@ -16,4 +16,4 @@ docker buildx bake --load \
     --set $target.tags=nav2:devcontainer \
     $target
 
-mkdir -p $HOME/nav2
+# mkdir -p $HOME/nav2
