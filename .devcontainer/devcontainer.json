@@ -60,11 +60,17 @@
             "source": "nav2-home",
             "target": "/home/ubuntu",
             "type": "volume"
+        },
+        {
+            // Mount docker socket
+            "source": "/var/run/docker.sock",
+            "target": "/var/run/docker-host.sock",
+            "type": "bind"
         }
     ],
     "features": {
         // "ghcr.io/devcontainers/features/desktop-lite:1": {},
-        // "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
+        "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
         // "ghcr.io/devcontainers/features/github-cli:1": {}
     },
     "customizations": {
@@ -81,7 +87,7 @@
                 "esbenp.prettier-vscode",
                 "GitHub.copilot",
                 "hashicorp.hcl",
-                // "ms-azuretools.vscode-docker",
+                "ms-azuretools.vscode-docker",
                 "ms-iot.vscode-ros",
                 "streetsidesoftware.code-spell-checker",
                 "twxs.cmake"
