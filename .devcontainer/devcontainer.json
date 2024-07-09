@@ -43,7 +43,7 @@
         },
         {
             // Cache colcon workspace
-            "source": "overlay-${devcontainerId}",
+            "source": "nav2-ws-${devcontainerId}",
             "target": "/opt/nav2_ws",
             "type": "volume"
         },
