@@ -90,7 +90,7 @@
                 "ms-azuretools.vscode-docker",
                 "ms-iot.vscode-ros",
                 "streetsidesoftware.code-spell-checker",
-                "twxs.cmake"
+                "vitaliymaz.vscode-svg-previewer",
             ]
         }
     }
