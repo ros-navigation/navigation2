@@ -26,6 +26,8 @@
         // Explicitly set DISPLAY for NVIDIA Container Toolkit
         "DISPLAY": "${localEnv:DISPLAY}",
         "OVERLAY_MIXINS": "release ccache lld",
+        // Explicitly set SSH_AUTH_SOCK for devcontainer CLI
+        "SSH_AUTH_SOCK": "${localEnv:SSH_AUTH_SOCK}",
     },
     "remoteUser": "ubuntu",
     "mounts": [
@@ -80,6 +82,12 @@
             // interferes with VSCode's default X11 forwarding behavior
             "source": "/tmp/.X11-unix",
             "target": "/tmp/.X11-unix",
+            "type": "bind"
+        },
+        {
+            // Explicitly mount SSH socket for devcontainer CLI
+            "source": "${localEnv:SSH_AUTH_SOCK}",
+            "target": "${localEnv:SSH_AUTH_SOCK}",
             "type": "bind"
         }
     ],
