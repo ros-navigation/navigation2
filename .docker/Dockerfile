@@ -134,9 +134,9 @@ RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
     < /tmp/rosdep_build_debs.txt xargs apt-get install -y --no-install-recommends
 
 # install packages for build work
-COPY .docker/tooler_apt_deps.txt /tmp/tooler_apt_deps.txt
+COPY .docker/tooler_apt_debs.txt /tmp/tooler_apt_debs.txt
 RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
-  cut -d# -f1 < /tmp/tooler_apt_deps.txt | envsubst \
+  cut -d# -f1 < /tmp/tooler_apt_debs.txt | envsubst \
     | xargs apt-get install -y --no-install-recommends
 
 # setup default ccache configuration
@@ -219,6 +219,12 @@ RUN --mount=type=cache,id=$WS_CACHE_ID,sharing=private,target=$OVERLAY_WS \
 # MARK: dever - setup user account for development
 ################################################################################
 FROM $DEV_FROM_STAGE AS dever
+
+# install packages for development work
+COPY .docker/dever_apt_debs.txt /tmp/dever_apt_debs.txt
+RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
+  cut -d# -f1 < /tmp/dever_apt_debs.txt | envsubst \
+    | xargs apt-get install -y --no-install-recommends
 
 # add default user for devcontainer
 ENV DEV_USER=ubuntu

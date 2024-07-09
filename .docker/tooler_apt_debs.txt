@@ -12,6 +12,3 @@ nano
 unzip
 valgrind
 yadm
-
-# ROS tools
-ros-${ROS_DISTRO}-rqt-common-plugins
