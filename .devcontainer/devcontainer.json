@@ -49,7 +49,7 @@
         },
         {
             // Mount home dotfiles
-            "source": "nav2-home",
+            "source": "nav2-home-${localEnv:USER}",
             "target": "/home/ubuntu",
             "type": "volume"
         },
