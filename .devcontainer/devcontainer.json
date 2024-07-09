@@ -22,10 +22,10 @@
     "updateContentCommand": ".devcontainer/update-content-command.sh",
     "postCreateCommand": ".devcontainer/post-create-command.sh",
     "remoteEnv": {
-        "OVERLAY_MIXINS": "release ccache lld",
         "CCACHE_DIR": "/opt/nav2_ws/.ccache",
         // Explicitly set DISPLAY for NVIDIA Container Toolkit
         "DISPLAY": "${localEnv:DISPLAY}",
+        "OVERLAY_MIXINS": "release ccache lld",
     },
     "remoteUser": "ubuntu",
     "mounts": [
