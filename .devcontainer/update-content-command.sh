@@ -42,9 +42,9 @@ then
     colcon list \
         --names-only \
         --packages-above \
-        $BUILD_UNFINISHED \
-        $BUILD_FAILED \
-        $BUILD_INVALID \
+            $BUILD_UNFINISHED \
+            $BUILD_FAILED \
+            $BUILD_INVALID \
     | xargs)
 fi
 echo BUILD_PACKAGES: $BUILD_PACKAGES
