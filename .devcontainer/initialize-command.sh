@@ -15,3 +15,5 @@ docker buildx bake --load \
     --file docker-bake.hcl \
     --set $target.tags=nav2:devcontainer \
     $target
+
+mkdir -p $HOME/nav2

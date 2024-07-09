@@ -54,6 +54,12 @@
             "type": "volume"
         },
         {
+            // Mount home nav2
+            "source": "${localEnv:HOME}/nav2/",
+            "target": "/home/ubuntu/nav2",
+            "type": "bind"
+        },
+        {
             // Mount docker socket
             "source": "/var/run/docker.sock",
             "target": "/var/run/docker-host.sock",
