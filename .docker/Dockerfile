@@ -49,7 +49,7 @@ RUN rosdep update \
 FROM baser AS cacher
 
 # copy overlay source
-COPY ./ ./src/nav2
+COPY ./ ./src/navigation2
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 RUN dep_types=(\
