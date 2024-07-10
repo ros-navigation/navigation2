@@ -58,10 +58,17 @@ target "tooler" {
 // MARK: Development targets 
 ################################################################################
 
+variable "DEV_FROM_STAGE" {
+  default = "tooler"
+}
+
 target "dever" {
   inherits   = ["tooler"]
   target = "dever"
   tags = ["nav2:dever"]
+  args = {
+    DEV_FROM_STAGE = "${DEV_FROM_STAGE}",
+  }
 }
 
 target "seeder" {
