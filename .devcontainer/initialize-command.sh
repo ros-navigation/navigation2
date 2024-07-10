@@ -11,7 +11,7 @@ set -eo pipefail
 target=$1
 
 ################################################################################
-# MARK: Pull image - download image from CI and AWS ECR for local dev container
+# MARK: Pull image - download image from CI and GHCR for local dev container
 # REFERENCE_IMAGE=ghcr.io/ros-navigation/navigation2:main-debugger
 # docker pull $REFERENCE_IMAGE
 # export DEV_FROM_STAGE=$REFERENCE_IMAGE
