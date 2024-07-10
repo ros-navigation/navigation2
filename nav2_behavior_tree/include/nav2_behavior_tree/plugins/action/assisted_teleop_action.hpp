@@ -81,7 +81,7 @@ public:
         BT::InputPort<bool>("is_recovery", false, "If true the recovery count will be incremented"),
         BT::OutputPort<ActionResult::_error_code_type>(
           "error_code_id", "The assisted teleop behavior server error code"),
-        BT::OutputPort<ActionResult::_error_code_type>(
+        BT::OutputPort<std::string>(
           "error_msg", "The assisted teleop behavior server error msg"),
       });
   }
