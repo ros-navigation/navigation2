@@ -50,9 +50,9 @@ You may also configure Docker to use those credentials when interacting with the
 gh auth token | docker login ghcr.io --username <github-username> --password-stdin
 ```
 
-### Cloning, Building and Running
+### Submodule Setup
 
-Next, recursively clone this repository and included submodules, bake default image tags using buildx, and then simply run containers using the build docker image.
+Next, recursively clone this repository and included submodules.
 
 ```shell
 # Clone the repository and submodules
@@ -64,13 +64,35 @@ cd navigation2
 
 # Configure the local git include path
 git config --local include.path ../.gitconfig
+```
 
-# Bake the tooler image tag as a test
-docker buildx bake tooler
+### Images Setup
+
+To create the base image for the container, one can either build the image locally, or pull CI image layers cached remotely. If you need to modify the base image during the development process, such as adding or removing dependencies, you can build images locally before opening any PRs. If you want to evaluate modifications to the base image during the review process, you could then also pull pre-built CI images from an opened PR.
+
+#### Building Locally
+
+Building locally leverages various caching strategies to speedup subsequent docker rebuilds, such as caching apt package downloads, incremental build artifacts, and multi-stage optimizations for image layer reuse. You can either let the dev container's initialization lifecycle script build the image for you, or you can pre-build the image manually:
+
+```shell
+# Bake the dever image tag as a test
+docker buildx bake dever
 
 # Run container from image as a test
-docker run -it --rm auto:tooler bash
+docker run -it --rm nav2:tooler bash
 ```
+
+#### Pulling Remotely
+
+Alternatively, you can pull the CI image layers from the GitHub Container Registry (GHCR) to bootstrap the dev container. While this method may be faster or slower depending on your local network connection, it remains particularly useful for downloading pre-built colcon workspaces built by CI and baked into the debugger stage, avoiding the need to build the image layers or re-compile a PR locally. Simply use the `DEV_FROM_STAGE` environment variable to shortcut the build process to use a given reference image, as commented from the initialization script:
+
+```shell
+REFERENCE_IMAGE=ghcr.io/ros-navigation/navigation2:main-debugger
+docker pull $REFERENCE_IMAGE
+export DEV_FROM_STAGE=$REFERENCE_IMAGE
+```
+
+> Note: you may want to clean or create new named volumes as defined in the dev container config, given cached volumes only initialize from their first attached container. I.e. to switch between different PRs, you'll want to avoid using a named volume that was seeded from a different/older docker image.
 
 ### Launching Development Containers
 
