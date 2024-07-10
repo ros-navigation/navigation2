@@ -237,8 +237,7 @@ protected:
     while (rclcpp::ok()) {
       elasped_time_ = clock_->now() - start_time;
       if (action_server_->is_cancel_requested()) {
-        result->error_msg = "Canceling " + behavior_name_;
-        RCLCPP_INFO(logger_, result->error_msg.c_str());
+        RCLCPP_INFO(logger_, "Canceling %s", behavior_name_.c_str());
         stopRobot();
         result->total_elapsed_time = elasped_time_;
         onActionCompletion(result);
