@@ -17,11 +17,6 @@ target=$1
 # export DEV_FROM_STAGE=$REFERENCE_IMAGE
 ################################################################################
 
-################################################################################
-# MARK: Build image - bake image using local Dockerfile for local dev container
-unset DEV_FROM_STAGE
-################################################################################
-
 # Bake the target and export locally to static tag
 docker buildx bake --load \
     --file docker-bake.hcl \
