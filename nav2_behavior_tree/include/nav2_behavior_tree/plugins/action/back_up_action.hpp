@@ -83,7 +83,7 @@ public:
         BT::InputPort<bool>("disable_collision_checks", false, "Disable collision checking"),
         BT::OutputPort<ActionResult::_error_code_type>(
           "error_code_id", "The back up behavior server error code"),
-        BT::OutputPort<ActionResult::_error_code_type>(
+        BT::OutputPort<std::string>(
           "error_msg", "The back up behavior server error msg"),
       });
   }
