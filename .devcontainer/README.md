@@ -79,7 +79,7 @@ Building locally leverages various caching strategies to speedup subsequent dock
 docker buildx bake dever
 
 # Run container from image as a test
-docker run -it --rm nav2:tooler bash
+docker run -it --rm nav2:dever bash
 ```
 
 #### Pulling Remotely
