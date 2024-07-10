@@ -83,7 +83,7 @@ jobs:
   build_prod_images:
     name: Prod
     uses: ros-navigation/navigation2/.github/workflows/build_prod_images.yaml@buildkit
-    if: needs.colcon_build_test.outputs.build_result == 'success'
+    if:  ${{ always() && (needs.colcon_build_test.outputs.build_result == 'success') }}
     secrets: inherit
     needs:
       - build_base_images
