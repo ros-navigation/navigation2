@@ -66,7 +66,7 @@ public:
         BT::InputPort<bool>("is_recovery", true, "True if recovery"),
         BT::OutputPort<ActionResult::_error_code_type>(
           "error_code_id", "The spin behavior error code"),
-        BT::OutputPort<ActionResult::_error_code_type>(
+        BT::OutputPort<std::string>(
           "error_msg", "The spin behavior error msg"),
       });
   }
