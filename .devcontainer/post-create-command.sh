@@ -15,3 +15,4 @@ echo "source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash" >> ~/.b
 
 # Add aliases to .bashrc
 echo "alias sows='source $OVERLAY_WS/install/setup.bash'" >> ~/.bashrc
+echo "alias suws='source $ROS_DISTRO/setup.bash'" >> ~/.bashrc
