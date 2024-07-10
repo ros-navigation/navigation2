@@ -57,7 +57,6 @@ echo BUILD_PACKAGES: $BUILD_PACKAGES
 # OPTOINAL: Uncomment to build packages upon update
 . /opt/ros/$ROS_DISTRO/setup.sh
 colcon build \
-    --symlink-install \
     --mixin $OVERLAY_MIXINS \
     --packages-select ${BUILD_PACKAGES} \
     || true
