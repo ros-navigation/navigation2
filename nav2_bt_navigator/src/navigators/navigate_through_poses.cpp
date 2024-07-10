@@ -231,6 +231,7 @@ bool
 NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr goal)
 {
   geometry_msgs::msg::PoseStampedArray pose_stamped_array = goal->poses;
+  int i = 0;
   for (auto & goal_pose : pose_stamped_array.poses) {
     if (!nav2_util::transformPoseInTargetFrame(
         goal_pose, goal_pose, *feedback_utils_.tf, feedback_utils_.global_frame,
@@ -238,7 +239,7 @@ NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr
     {
       current_error_code_ = ActionT::Result::TF_ERROR;
       current_error_msg_ =
-        "Failed to transform a goal pose provided with frame_id '" +
+        "Failed to transform a goal pose (" + std::to_string(i) + ") provided with frame_id '" +
         goal_pose.header.frame_id +
         "' to the global frame '" +
         feedback_utils_.global_frame +
@@ -247,6 +248,7 @@ NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr
       RCLCPP_ERROR(logger_, current_error_msg_.c_str());
       return false;
     }
+    i++;
   }
 
   if (pose_stamped_array.poses.size() > 0) {
