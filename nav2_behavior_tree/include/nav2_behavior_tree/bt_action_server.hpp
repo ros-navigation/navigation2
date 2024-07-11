@@ -228,8 +228,8 @@ protected:
   // Libraries to pull plugins (BT Nodes) from
   std::vector<std::string> plugin_lib_names_;
 
-  // Error code id names
-  std::vector<std::string> error_code_names_;
+  // Error code name prefixes
+  std::vector<std::string> error_code_name_prefixes_;
 
   // A regular, non-spinning ROS node that we can use for calls to the action client
   rclcpp::Node::SharedPtr client_node_;
