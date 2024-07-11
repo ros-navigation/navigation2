@@ -271,6 +271,7 @@ void BtActionServer<ActionT>::executeCallback()
 {
   if (!on_goal_received_callback_(action_server_->get_current_goal())) {
     // Give server an opportunity to populate the result message
+    // if the goal is not accepted
     auto result = std::make_shared<typename ActionT::Result>();
     populateErrorCode(result);
     action_server_->terminate_current(result);
