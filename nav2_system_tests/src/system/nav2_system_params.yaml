@@ -51,9 +51,9 @@ bt_navigator:
       plugin: "nav2_bt_navigator::NavigateToPoseNavigator"
     navigate_through_poses:
       plugin: "nav2_bt_navigator::NavigateThroughPosesNavigator"
-    error_code_names:
-      - compute_path_error_code
-      - follow_path_error_code
+    error_code_name_prefixes:
+      - compute_path: compute_path
+      - follow_path: follow_path
 
 controller_server:
   ros__parameters:
@@ -364,4 +364,4 @@ docking_server:
       k_delta: 2.0
       v_linear_min: 0.15
       v_linear_max: 0.15
-      
+

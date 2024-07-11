@@ -73,34 +73,41 @@ BtActionServer<ActionT>::BtActionServer(
     node->declare_parameter("wait_for_service_timeout", 1000);
   }
 
-  std::vector<std::string> error_code_names = {
-    "follow_path_error_code",
-    "compute_path_error_code"
+  std::vector<std::string> error_code_name_prefixes = {
+    "follow_path",
+    "compute_path",
   };
 
-  if (!node->has_parameter("error_code_names")) {
+  if (node->has_parameter("error_code_names")) {
+    RCLCPP_ERROR(logger_, "parameter 'error_code_names' has been replaced by "
+      " 'error_code_name_prefixes'. Please update");
+  }
+
+  if (!node->has_parameter("error_code_name_prefixes")) {
     const rclcpp::ParameterValue value = node->declare_parameter(
-      "error_code_names",
+      "error_code_name_prefixes",
       rclcpp::PARAMETER_STRING_ARRAY);
     if (value.get_type() == rclcpp::PARAMETER_NOT_SET) {
-      std::string error_codes_str;
-      for (const auto & error_code : error_code_names) {
-        error_codes_str += " " + error_code;
+      std::string error_code_name_prefixes_str;
+      for (const auto & error_code_name_prefix : error_code_name_prefixes) {
+        error_code_name_prefixes_str += " " + error_code_name_prefix;
       }
       RCLCPP_WARN_STREAM(
-        logger_, "Error_code parameters were not set. Using default values of:"
-          << error_codes_str + "\n"
+        logger_, "error_code_name_prefixes parameters were not set. Using default values of:"
+          << error_code_name_prefixes_str + "\n"
           << "Make sure these match your BT and there are not other sources of error codes you"
           "reported to your application");
-      rclcpp::Parameter error_code_names_param("error_code_names", error_code_names);
-      node->set_parameter(error_code_names_param);
+      rclcpp::Parameter error_code_name_prefixes_param("error_code_name_prefixes",
+        error_code_name_prefixes);
+      node->set_parameter(error_code_name_prefixes_param);
     } else {
-      error_code_names = value.get<std::vector<std::string>>();
-      std::string error_codes_str;
-      for (const auto & error_code : error_code_names) {
-        error_codes_str += " " + error_code;
+      error_code_name_prefixes = value.get<std::vector<std::string>>();
+      std::string error_code_name_prefixes_str;
+      for (const auto & error_code_name_prefix : error_code_name_prefixes) {
+        error_code_name_prefixes_str += " " + error_code_name_prefix;
       }
-      RCLCPP_INFO_STREAM(logger_, "Error_code parameters were set to:" << error_codes_str);
+      RCLCPP_INFO_STREAM(logger_, "Error_code parameters were set to:"
+        << error_code_name_prefixes_str);
     }
   }
 }
@@ -172,7 +179,7 @@ bool BtActionServer<ActionT>::on_configure()
   node->get_parameter("always_reload_bt_xml", always_reload_bt_xml_);
 
   // Get error code id names to grab off of the blackboard
-  error_code_names_ = node->get_parameter("error_code_names").as_string_array();
+  error_code_name_prefixes_ = node->get_parameter("error_code_name_prefixes").as_string_array();
 
   // Create the class that registers our custom nodes and executes the BT
   bt_ = std::make_unique<nav2_behavior_tree::BehaviorTreeEngine>(plugin_lib_names_, client_node_);
@@ -340,17 +347,21 @@ void BtActionServer<ActionT>::populateErrorCode(
 {
   int highest_priority_error_code = std::numeric_limits<int>::max();
   std::string highest_priority_error_msg = "";
-  for (const auto & error_code : error_code_names_) {
+  std::string name;
+  for (const auto & error_code_name_prefix : error_code_name_prefixes_) {
     try {
-      int current_error_code = blackboard_->get<int>(error_code);
+      name = error_code_name_prefix + "_error_code";
+      int current_error_code = blackboard_->get<int>(name);
       if (current_error_code != 0 && current_error_code < highest_priority_error_code) {
         highest_priority_error_code = current_error_code;
+        name = error_code_name_prefix + "_error_msg";
+        highest_priority_error_msg = blackboard_->get<std::string>(name);
       }
     } catch (...) {
       RCLCPP_DEBUG(
         logger_,
-        "Failed to get error code: %s from blackboard",
-        error_code.c_str());
+        "Failed to get error code name: %s from blackboard",
+        name.c_str());
     }
   }
 
@@ -363,8 +374,12 @@ void BtActionServer<ActionT>::populateErrorCode(
 template<class ActionT>
 void BtActionServer<ActionT>::cleanErrorCodes()
 {
-  for (const auto & error_code : error_code_names_) {
-    blackboard_->set<unsigned short>(error_code, 0);  //NOLINT
+  std::string name;
+  for (const auto & error_code_name_prefix : error_code_name_prefixes_) {
+    name = error_code_name_prefix + "_error_code";
+    blackboard_->set<unsigned short>(name, 0);  //NOLINT
+    name = error_code_name_prefix + "_error_msg";
+    blackboard_->set<std::string>(name, 0);  //NOLINT
   }
 }
 
