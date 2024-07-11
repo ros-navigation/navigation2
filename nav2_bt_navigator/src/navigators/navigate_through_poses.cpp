@@ -211,6 +211,18 @@ NavigateThroughPosesNavigator::onPreempt(ActionT::Goal::ConstSharedPtr goal)
 bool
 NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr goal)
 {
+  geometry_msgs::msg::PoseStamped current_pose;
+  if (!nav2_util::getCurrentPose(
+      current_pose, *feedback_utils_.tf,
+      feedback_utils_.global_frame, feedback_utils_.robot_frame,
+      feedback_utils_.transform_tolerance))
+  {
+    current_error_code_ = ActionT::Result::POSE_NOT_AVAILABLE;
+    current_error_msg_ = "Initial robot pose is not available.";
+    RCLCPP_ERROR(logger_, current_error_msg_.c_str());
+    return false;
+  }
+
   geometry_msgs::msg::PoseStampedArray pose_stamped_array = goal->poses;
   int i = 0;
   for (auto & goal_pose : pose_stamped_array.poses) {
