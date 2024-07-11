@@ -231,7 +231,7 @@ NavigateToPoseNavigator::initializeGoalPose(ActionT::Goal::ConstSharedPtr goal)
       goal->pose, goal_pose, *feedback_utils_.tf, feedback_utils_.global_frame,
       feedback_utils_.transform_tolerance))
   {
-    current_error_code_ = ActionT::Result::TF_ERROR;
+    current_error_code_ = ActionT::Result::GOAL_TRANSFORMATION_ERROR;
     current_error_msg_ =
       "Failed to transform a goal pose provided with frame_id '" +
       goal->pose.header.frame_id +
