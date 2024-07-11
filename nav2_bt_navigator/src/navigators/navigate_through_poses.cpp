@@ -18,7 +18,6 @@
 #include <memory>
 #include <limits>
 #include "nav2_bt_navigator/navigators/navigate_through_poses.hpp"
-#include "nav2_core/navigator_exceptions.hpp"
 
 namespace nav2_bt_navigator
 {
@@ -122,17 +121,14 @@ NavigateThroughPosesNavigator::onLoop()
       feedback_utils_.global_frame, feedback_utils_.robot_frame,
       feedback_utils_.transform_tolerance))
   {
-    throw nav2_core::NavigatorPoseNotAvailable("Robot pose is not available.");
+    // Robot pose is not yet available, no feedback
+    return;
   }
 
-  try {
-    // Get current path points
-    nav_msgs::msg::Path current_path;
-    if (!blackboard->get(path_blackboard_id_, current_path) || current_path.poses.size() == 0u) {
-      // If no path set yet or not meaningful, can't compute ETA or dist remaining yet.
-      throw nav2_core::NavigatorInvalidPath("no valid path available");
-    }
-
+  // Get current path points
+  nav_msgs::msg::Path current_path;
+  res = blackboard->get(path_blackboard_id_, current_path);
+  if (res && current_path.poses.size() > 0u) {
     // Find the closest pose to current pose on global path
     auto find_closest_pose_idx =
       [&current_pose, &current_path]() {
@@ -169,21 +165,6 @@ NavigateThroughPosesNavigator::onLoop()
 
     feedback_msg->distance_remaining = distance_remaining;
     feedback_msg->estimated_time_remaining = estimated_time_remaining;
-  } catch (const nav2_core::NavigatorPoseNotAvailable & ex) {
-    current_error_code_ = ActionT::Result::POSE_NOT_AVAILABLE;
-    current_error_msg_ = ex.what();
-    RCLCPP_ERROR(logger_, current_error_msg_.c_str());
-    // Returning since no point attempting recovery or publishing
-    // feedback until robot pose is available.
-    return;
-  } catch (const nav2_core::NavigatorInvalidPath & ex) {
-    current_error_code_ = ActionT::Result::NO_VALID_PATH;
-    current_error_msg_ = ex.what();
-    // Ignore ??
-  } catch (const std::runtime_error & ex) {
-    current_error_code_ = ActionT::Result::UNKNOWN;
-    current_error_msg_ = ex.what();
-    // Ignore ??
   }
 
   int recovery_count = 0;
