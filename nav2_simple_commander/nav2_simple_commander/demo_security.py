@@ -104,7 +104,7 @@ def main():
             print('Security route was canceled, exiting.')
             exit(1)
         elif result == TaskResult.FAILED:
-            (error_code, error_msg) = navigator.getLastActionError()
+            (error_code, error_msg) = navigator.getTaskError()
             print(f'Security route failed!:{error_code}:{error_msg}')
             print('Restarting from other side...')
 
