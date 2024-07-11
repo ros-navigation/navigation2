@@ -39,6 +39,7 @@ BT::NodeStatus UndockRobotAction::on_success()
 {
   setOutput("success", result_.result->success);
   setOutput("error_code_id", ActionResult::NONE);
+  setOutput("error_msg", "");
   return BT::NodeStatus::SUCCESS;
 }
 
@@ -46,12 +47,14 @@ BT::NodeStatus UndockRobotAction::on_aborted()
 {
   setOutput("success", result_.result->success);
   setOutput("error_code_id", result_.result->error_code);
+  setOutput("error_msg", result_.result->error_msg);
   return BT::NodeStatus::FAILURE;
 }
 
 BT::NodeStatus UndockRobotAction::on_cancelled()
 {
   setOutput("error_code_id", ActionResult::NONE);
+  setOutput("error_msg", "");
   return BT::NodeStatus::SUCCESS;
 }
 
