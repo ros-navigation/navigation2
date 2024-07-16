@@ -311,6 +311,7 @@ void SmacPlannerHybrid::deactivate()
   if (_costmap_downsampler) {
     _costmap_downsampler->on_deactivate();
   }
+  _node.lock()->remove_on_set_parameters_callback(_dyn_params_handler.get());
   _dyn_params_handler.reset();
 }
 

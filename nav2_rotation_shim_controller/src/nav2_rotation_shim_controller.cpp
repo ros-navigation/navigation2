@@ -124,6 +124,7 @@ void RotationShimController::deactivate()
 
   primary_controller_->deactivate();
 
+  node_.lock()->remove_on_set_parameters_callback(dyn_params_handler_);
   dyn_params_handler_.reset();
 }
 
