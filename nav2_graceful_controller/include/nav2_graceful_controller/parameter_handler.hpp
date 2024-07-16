@@ -70,7 +70,7 @@ public:
   /**
    * @brief Destructor for nav2_graceful_controller::ParameterHandler
    */
-  ~ParameterHandler() = default;
+  ~ParameterHandler();
 
   std::mutex & getMutex() {return mutex_;}
 

@@ -81,7 +81,7 @@ public:
   /**
    * @brief Destrructor for nav2_regulated_pure_pursuit_controller::ParameterHandler
    */
-  ~ParameterHandler() = default;
+  ~ParameterHandler();
 
   std::mutex & getMutex() {return mutex_;}
 
