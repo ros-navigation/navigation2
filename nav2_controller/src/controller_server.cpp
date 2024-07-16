@@ -294,6 +294,8 @@ ControllerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 
   publishZeroVelocity();
   vel_publisher_->on_deactivate();
+
+  remove_on_set_parameters_callback(dyn_param_handler_.get());
   dyn_params_handler_.reset();
 
   // destroy bond connection
