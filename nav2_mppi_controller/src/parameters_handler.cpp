@@ -26,6 +26,12 @@ ParametersHandler::ParametersHandler(
   logger_ = node->get_logger();
 }
 
+ParametersHandler::~ParametersHandler()
+{
+  node_.lock()->remove_on_set_parameters_callback(on_set_param_handler_.get());
+  on_set_param_handler_.reset();
+}
+
 void ParametersHandler::start()
 {
   auto node = node_.lock();
