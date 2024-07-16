@@ -32,6 +32,7 @@ ParameterHandler::ParameterHandler(
   std::string & plugin_name, rclcpp::Logger & logger,
   const double costmap_size_x)
 {
+  node_ = node;
   plugin_name_ = plugin_name;
   logger_ = logger;
 
@@ -192,6 +193,12 @@ ParameterHandler::ParameterHandler(
     std::bind(
       &ParameterHandler::dynamicParametersCallback,
       this, std::placeholders::_1));
+}
+
+ParameterHandler::~ParameterHandler()
+{
+  node_->remove_on_set_parameters_callback(dyn_params_handler_.get());
+  dyn_params_handler_.reset();
 }
 
 rcl_interfaces::msg::SetParametersResult
