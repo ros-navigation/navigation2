@@ -329,6 +329,7 @@ Costmap2DROS::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
+  remove_on_set_parameters_callback(dyn_param_handler_.get());
   dyn_params_handler.reset();
 
   stop();
