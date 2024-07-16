@@ -56,6 +56,8 @@ KinematicsHandler::KinematicsHandler()
 
 KinematicsHandler::~KinematicsHandler()
 {
+  node_->remove_on_set_parameters_callback(dyn_params_handler_.get());
+  dyn_params_handler_.reset();
   delete kinematics_.load();
 }
 
@@ -63,6 +65,7 @@ void KinematicsHandler::initialize(
   const nav2_util::LifecycleNode::SharedPtr & nh,
   const std::string & plugin_name)
 {
+  node_ = nh;
   plugin_name_ = plugin_name;
 
   declare_parameter_if_not_declared(nh, plugin_name + ".min_vel_x", rclcpp::ParameterValue(0.0));

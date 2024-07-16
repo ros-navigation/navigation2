@@ -150,6 +150,7 @@ public:
   using Ptr = std::shared_ptr<KinematicsHandler>;
 
 protected:
+  nav2_util::LifecycleNode::SharedPtr node_;
   std::atomic<KinematicParameters *> kinematics_;
 
   // Dynamic parameters handler
