@@ -312,7 +312,7 @@ void SmacPlannerHybrid::deactivate()
     _costmap_downsampler->on_deactivate();
   }
   // shutdown dyn_param_handler
-  if(auto node = _node.lock()) {
+  if (auto node = _node.lock()) {
     node->remove_on_set_parameters_callback(_dyn_params_handler.get());
   }
   _dyn_params_handler.reset();
