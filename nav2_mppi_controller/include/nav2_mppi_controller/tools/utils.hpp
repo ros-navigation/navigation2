@@ -474,7 +474,7 @@ inline void savitskyGolayFilter(
 
   auto applyFilterOverAxis =
     [&](xt::xtensor<float, 1> & sequence,
-    const float hist_0, const float hist_1, const float hist_2, const float hist_3) -> void
+      const float hist_0, const float hist_1, const float hist_2, const float hist_3) -> void
     {
       unsigned int idx = 0;
       sequence(idx) = applyFilter(

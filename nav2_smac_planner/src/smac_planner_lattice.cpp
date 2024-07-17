@@ -251,10 +251,12 @@ void SmacPlannerLattice::deactivate()
     _planned_footprints_publisher->on_deactivate();
   }
   // shutdown dyn_param_handler
-  if (auto node = _node.lock()) {
+  auto node = node_.lock();
+  if (_dyn_params_handler && node) {
     node->remove_on_set_parameters_callback(_dyn_params_handler.get());
   }
   _dyn_params_handler.reset();
+  node.reset();
 }
 
 void SmacPlannerLattice::cleanup()

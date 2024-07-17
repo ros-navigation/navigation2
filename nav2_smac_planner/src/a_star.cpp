@@ -71,7 +71,7 @@ void AStarAlgorithm<NodeT>::initialize(
   _max_on_approach_iterations = max_on_approach_iterations;
   _terminal_checking_interval = terminal_checking_interval;
   _max_planning_time = max_planning_time;
-  if(!_is_initialized) {
+  if (!_is_initialized) {
     NodeT::precomputeDistanceHeuristic(lookup_table_size, _motion_model, dim_3_size, _search_info);
   }
   _is_initialized = true;

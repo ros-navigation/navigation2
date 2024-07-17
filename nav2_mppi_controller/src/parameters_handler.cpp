@@ -28,10 +28,12 @@ ParametersHandler::ParametersHandler(
 
 ParametersHandler::~ParametersHandler()
 {
-  if (auto node = node_.lock()) {
+  auto node = node_.lock();
+  if (on_set_param_handler_ && node) {
     node->remove_on_set_parameters_callback(on_set_param_handler_.get());
   }
   on_set_param_handler_.reset();
+  node.reset();
 }
 
 void ParametersHandler::start()
