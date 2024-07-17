@@ -62,8 +62,7 @@ namespace nav2_costmap_2d
 
 ObstacleLayer::~ObstacleLayer()
 {
-  if(auto node = node_.lock())
-  {
+  if(auto node = node_.lock())  {
     node->remove_on_set_parameters_callback(dyn_params_handler_.get());
   }
   dyn_params_handler_.reset();
