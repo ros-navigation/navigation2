@@ -78,7 +78,7 @@ InflationLayer::InflationLayer()
 
 InflationLayer::~InflationLayer()
 {
-  auto node = node_.lock()
+  auto node = node_.lock();
   if (dyn_params_handler_ && node) {
     node->remove_on_set_parameters_callback(dyn_params_handler_.get());
   }
