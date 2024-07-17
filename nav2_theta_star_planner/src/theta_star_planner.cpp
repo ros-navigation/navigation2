@@ -86,7 +86,8 @@ void ThetaStarPlanner::activate()
 void ThetaStarPlanner::deactivate()
 {
   RCLCPP_INFO(logger_, "Deactivating plugin %s of type nav2_theta_star_planner", name_.c_str());
-  parent_node_.lock()->remove_on_set_parameters_callback(dyn_params_handler_.get());
+  auto node = parent_node_.lock();
+  node->remove_on_set_parameters_callback(dyn_params_handler_.get());
   dyn_params_handler_.reset();
 }
 

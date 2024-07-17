@@ -112,7 +112,8 @@ StaticLayer::activate()
 void
 StaticLayer::deactivate()
 {
-  node_.lock()->remove_on_set_parameters_callback(dyn_params_handler_.get());
+  auto node = node_.lock();
+  node->remove_on_set_parameters_callback(dyn_params_handler_.get());
   dyn_params_handler_.reset();
 }
 
