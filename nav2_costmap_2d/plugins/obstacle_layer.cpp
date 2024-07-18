@@ -67,7 +67,6 @@ ObstacleLayer::~ObstacleLayer()
     node->remove_on_set_parameters_callback(dyn_params_handler_.get());
   }
   dyn_params_handler_.reset();
-  node.reset();
   for (auto & notifier : observation_notifiers_) {
     notifier.reset();
   }

@@ -88,7 +88,7 @@ public:
   Parameters * getParams() {return &params_;}
 
 protected:
-  rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
+  rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
   /**
    * @brief Callback executed when a parameter change is detected
    * @param event ParameterEvent message
