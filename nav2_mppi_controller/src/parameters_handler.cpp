@@ -33,7 +33,6 @@ ParametersHandler::~ParametersHandler()
     node->remove_on_set_parameters_callback(on_set_param_handler_.get());
   }
   on_set_param_handler_.reset();
-  node.reset();
 }
 
 void ParametersHandler::start()

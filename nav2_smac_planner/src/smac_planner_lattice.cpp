@@ -256,7 +256,6 @@ void SmacPlannerLattice::deactivate()
     node->remove_on_set_parameters_callback(_dyn_params_handler.get());
   }
   _dyn_params_handler.reset();
-  node.reset();
 }
 
 void SmacPlannerLattice::cleanup()
