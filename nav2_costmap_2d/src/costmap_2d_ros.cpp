@@ -111,6 +111,7 @@ void Costmap2DROS::init()
   std::vector<std::string> clearable_layers{"obstacle_layer", "voxel_layer", "range_layer"};
 
   declare_parameter("always_send_full_costmap", rclcpp::ParameterValue(false));
+  declare_parameter("map_vis_y", rclcpp::ParameterValue(0.0));
   declare_parameter("footprint_padding", rclcpp::ParameterValue(0.01f));
   declare_parameter("footprint", rclcpp::ParameterValue(std::string("[]")));
   declare_parameter("global_frame", rclcpp::ParameterValue(std::string("map")));
@@ -224,10 +225,14 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
   footprint_pub_ = create_publisher<geometry_msgs::msg::PolygonStamped>(
     "published_footprint", rclcpp::SystemDefaultsQoS());
 
+ 
+  double map_vis_y_;
+  get_parameter("map_vis_y", map_vis_y_);
+
   costmap_publisher_ = std::make_unique<Costmap2DPublisher>(
     shared_from_this(),
     layered_costmap_->getCostmap(), global_frame_,
-    "costmap", always_send_full_costmap_);
+    "costmap", always_send_full_costmap_, map_vis_y_);
 
   auto layers = layered_costmap_->getPlugins();
 
@@ -238,7 +243,7 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
         std::make_unique<Costmap2DPublisher>(
           shared_from_this(),
           costmap_layer.get(), global_frame_,
-          layer->getName(), always_send_full_costmap_)
+          layer->getName(), always_send_full_costmap_, map_vis_y_)
       );
     }
   }

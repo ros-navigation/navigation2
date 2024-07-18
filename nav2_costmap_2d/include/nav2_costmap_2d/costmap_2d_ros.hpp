@@ -381,6 +381,8 @@ protected:
   double transform_tolerance_{0};           ///< The timeout before transform errors
   double initial_transform_timeout_{0};   ///< The timeout before activation of the node errors
 
+  //double map_vis_y_;
+
   // Derived parameters
   bool use_radius_{false};
   std::vector<geometry_msgs::msg::Point> unpadded_footprint_;
