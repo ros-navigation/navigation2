@@ -267,8 +267,8 @@ void SmootherServer::smoothPlan()
   try {
     auto goal = action_server_->get_current_goal();
     if (goal == nulPtr) {
-      return ;  // if action_server_ is inactivate, goal would be a nullptr
-    } 
+      return;  //  if action_server_ is inactivate, goal would be a nullptr
+    }
 
     std::string c_name = goal->smoother_id;
     std::string current_smoother;
