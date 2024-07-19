@@ -266,7 +266,7 @@ void SmootherServer::smoothPlan()
   auto result = std::make_shared<Action::Result>();
   try {
     auto goal = action_server_->get_current_goal();
-    if (goal == nulPtr) {
+    if (!goal) {
       return;  //  if action_server_ is inactivate, goal would be a nullptr
     }
 
