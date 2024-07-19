@@ -132,6 +132,7 @@ DockingServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   navigator_->deactivate();
   vel_publisher_->on_deactivate();
 
+  remove_on_set_parameters_callback(dyn_params_handler_.get());
   dyn_params_handler_.reset();
   tf2_listener_.reset();
 

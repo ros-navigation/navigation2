@@ -58,6 +58,11 @@ public:
     const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent);
 
   /**
+    * @brief Destructor for mppi::ParametersHandler
+    */
+  ~ParametersHandler();
+
+  /**
     * @brief Starts processing dynamic parameter changes
     */
   void start();

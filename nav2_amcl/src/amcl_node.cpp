@@ -312,7 +312,8 @@ AmclNode::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   pose_pub_->on_deactivate();
   particle_cloud_pub_->on_deactivate();
 
-  // reset dynamic parameter handler
+  // shutdown and reset dynamic parameter handler
+  remove_on_set_parameters_callback(dyn_params_handler_.get());
   dyn_params_handler_.reset();
 
   // destroy bond connection
