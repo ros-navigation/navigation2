@@ -225,8 +225,6 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
   footprint_pub_ = create_publisher<geometry_msgs::msg::PolygonStamped>(
     "published_footprint", rclcpp::SystemDefaultsQoS());
 
- 
-  double map_vis_y_;
   get_parameter("map_vis_y", map_vis_y_);
 
   costmap_publisher_ = std::make_unique<Costmap2DPublisher>(
