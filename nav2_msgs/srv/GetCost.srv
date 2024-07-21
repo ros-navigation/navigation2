@@ -1,0 +1,6 @@
+# Get costmap cost at given point
+
+float32 x
+float32 y
+---
+float32 cost
