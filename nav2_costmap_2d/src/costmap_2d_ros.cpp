@@ -830,7 +830,7 @@ void Costmap2DROS::getCostCallback(
 {
   RCLCPP_INFO(
     get_logger(), "Received request to get cost at point (%f, %f)", request->x, request->y);
-  
+
   auto costmap = layered_costmap_->getCostmap();
 
   unsigned int mx, my;

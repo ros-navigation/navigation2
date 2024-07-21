@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef COSTMAP_COST_TOOL_HPP_
-#define COSTMAP_COST_TOOL_HPP_
+#ifndef NAV2_RVIZ_PLUGINS__COSTMAP_COST_TOOL_HPP_
+#define NAV2_RVIZ_PLUGINS__COSTMAP_COST_TOOL_HPP_
 
 #include <nav2_msgs/srv/get_cost.hpp>
 #include <rviz_common/tool.hpp>
@@ -25,6 +25,7 @@ namespace nav2_rviz_plugins
 class CostmapCostTool : public rviz_common::Tool
 {
   Q_OBJECT
+
 public:
   CostmapCostTool();
   virtual ~CostmapCostTool();
@@ -33,7 +34,7 @@ public:
   void activate() override;
   void deactivate() override;
 
-  int processMouseEvent(rviz_common::ViewportMouseEvent& event) override;
+  int processMouseEvent(rviz_common::ViewportMouseEvent & event) override;
 
   void callCostService(float x, float y);
 
@@ -55,6 +56,7 @@ private:
 
   rclcpp::QoS qos_profile_;
 };
-}
 
-#endif
+}  // namespace nav2_rviz_plugins
+
+#endif  // NAV2_RVIZ_PLUGINS__COSTMAP_COST_TOOL_HPP_

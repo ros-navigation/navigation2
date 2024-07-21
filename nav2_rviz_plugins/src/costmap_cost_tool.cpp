@@ -44,9 +44,9 @@ void CostmapCostTool::onInitialize()
   setIcon(rviz_common::loadPixmap("package://rviz_default_plugins/icons/classes/PointStamped.png"));
 
   node_ = context_->getRosNodeAbstraction().lock()->get_raw_node();
-  local_cost_client_ = 
+  local_cost_client_ =
     node_->create_client<nav2_msgs::srv::GetCost>("/local_costmap/get_cost_local_costmap");
-  global_cost_client_ = 
+  global_cost_client_ =
     node_->create_client<nav2_msgs::srv::GetCost>("/global_costmap/get_cost_global_costmap");
 }
 
@@ -82,7 +82,7 @@ int CostmapCostTool::processMouseEvent(rviz_common::ViewportMouseEvent & event)
     setStatus("Move over an object to select the target point.");
   }
   return flags;
-}  
+}
 
 void CostmapCostTool::callCostService(float x, float y)
 {
@@ -131,7 +131,7 @@ void CostmapCostTool::handleGlobalCostResponse(
     RCLCPP_ERROR(node_->get_logger(), "Failed to get global costmap cost");
   }
 }
-} // namespace nav2_rviz_plugins
+}  // namespace nav2_rviz_plugins
 
 #include <pluginlib/class_list_macros.hpp>
 PLUGINLIB_EXPORT_CLASS(nav2_rviz_plugins::CostmapCostTool, rviz_common::Tool)
