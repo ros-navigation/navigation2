@@ -24,7 +24,7 @@ namespace nav2_rviz_plugins
 {
 class CostmapCostTool : public rviz_common::Tool
 {
-Q_OBJECT
+  Q_OBJECT
 public:
   CostmapCostTool();
   virtual ~CostmapCostTool();
@@ -33,14 +33,14 @@ public:
   void activate() override;
   void deactivate() override;
 
-  int processMouseEvent( rviz_common::ViewportMouseEvent& event ) override;
+  int processMouseEvent(rviz_common::ViewportMouseEvent& event) override;
 
   void callCostService(float x, float y);
 
   void handleLocalCostResponse(rclcpp::Client<nav2_msgs::srv::GetCost>::SharedFuture);
   void handleGlobalCostResponse(rclcpp::Client<nav2_msgs::srv::GetCost>::SharedFuture);
 
-private Q_SLOTS:  
+private Q_SLOTS:
   void updateAutoDeactivate();
 
 private:
@@ -57,4 +57,4 @@ private:
 };
 }
 
-#endif  
+#endif

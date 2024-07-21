@@ -25,7 +25,7 @@ namespace nav2_rviz_plugins
 CostmapCostTool::CostmapCostTool()
 : qos_profile_(5)
 {
-  shortcut_key_ = 'm'; 
+  shortcut_key_ = 'm';
 
   auto_deactivate_property_ = new rviz_common::properties::BoolProperty(
     "Single click", true,
@@ -44,14 +44,16 @@ void CostmapCostTool::onInitialize()
   setIcon(rviz_common::loadPixmap("package://rviz_default_plugins/icons/classes/PointStamped.png"));
 
   node_ = context_->getRosNodeAbstraction().lock()->get_raw_node();
-  local_cost_client_ = node_->create_client<nav2_msgs::srv::GetCost>("/local_costmap/get_cost_local_costmap");
-  global_cost_client_ = node_->create_client<nav2_msgs::srv::GetCost>("/global_costmap/get_cost_global_costmap");
+  local_cost_client_ = 
+    node_->create_client<nav2_msgs::srv::GetCost>("/local_costmap/get_cost_local_costmap");
+  global_cost_client_ = 
+    node_->create_client<nav2_msgs::srv::GetCost>("/global_costmap/get_cost_global_costmap");
 }
 
 void CostmapCostTool::activate() {}
 void CostmapCostTool::deactivate() {}
 
-int CostmapCostTool::processMouseEvent(rviz_common::ViewportMouseEvent& event)
+int CostmapCostTool::processMouseEvent(rviz_common::ViewportMouseEvent & event)
 {
   int flags = 0;
 
@@ -95,7 +97,8 @@ void CostmapCostTool::callCostService(float x, float y)
     return;
   }
 
-  local_cost_client_->async_send_request(request, std::bind(&CostmapCostTool::handleLocalCostResponse, this, std::placeholders::_1));
+  local_cost_client_->async_send_request(request,
+    std::bind(&CostmapCostTool::handleLocalCostResponse, this, std::placeholders::_1));
 
   // Call global costmap service
   if (!global_cost_client_->wait_for_service(std::chrono::seconds(1))) {
@@ -103,10 +106,12 @@ void CostmapCostTool::callCostService(float x, float y)
     return;
   }
 
-  global_cost_client_->async_send_request(request, std::bind(&CostmapCostTool::handleGlobalCostResponse, this, std::placeholders::_1));
+  global_cost_client_->async_send_request(request,
+    std::bind(&CostmapCostTool::handleGlobalCostResponse, this, std::placeholders::_1));
 }
 
-void CostmapCostTool::handleLocalCostResponse(rclcpp::Client<nav2_msgs::srv::GetCost>::SharedFuture future)
+void CostmapCostTool::handleLocalCostResponse(
+  rclcpp::Client<nav2_msgs::srv::GetCost>::SharedFuture future)
 {
   auto response = future.get();
   if (response->cost != -1) {
@@ -116,7 +121,8 @@ void CostmapCostTool::handleLocalCostResponse(rclcpp::Client<nav2_msgs::srv::Get
   }
 }
 
-void CostmapCostTool::handleGlobalCostResponse(rclcpp::Client<nav2_msgs::srv::GetCost>::SharedFuture future)
+void CostmapCostTool::handleGlobalCostResponse(
+  rclcpp::Client<nav2_msgs::srv::GetCost>::SharedFuture future)
 {
   auto response = future.get();
   if (response->cost != -1) {
