@@ -180,6 +180,11 @@ float & LatticeMotionTable::getAngleFromBin(const unsigned int & bin_idx)
   return lattice_metadata.heading_angles[bin_idx];
 }
 
+double LatticeMotionTable::getAngle(const double & theta)
+{
+  return getClosestAngularBin(theta);
+}
+
 NodeLattice::NodeLattice(const uint64_t index)
 : parent(nullptr),
   pose(0.0f, 0.0f, 0.0f),

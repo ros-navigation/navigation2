@@ -97,6 +97,13 @@ struct LatticeMotionTable
    */
   float & getAngleFromBin(const unsigned int & bin_idx);
 
+  /**
+   * @brief Get the angular bin to use from a raw orientation
+   * @param theta Angle in radians
+   * @return bin index of closest angle to request
+   */
+  double getAngle(const double & theta);
+
   unsigned int size_x;
   unsigned int num_angle_quantization;
   float change_penalty;

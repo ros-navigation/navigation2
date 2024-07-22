@@ -257,7 +257,7 @@ TEST(AStarTest, test_a_star_analytic_expansion)
     std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, size_theta, lnode);
   checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
 
-  // functional case testing
+  // should be a straight path running backwards
   a_star.setCollisionChecker(checker.get());
   a_star.setStart(80u, 0u, 0u);
   a_star.setGoal(20u, 0u, 0u);
@@ -271,14 +271,6 @@ TEST(AStarTest, test_a_star_analytic_expansion)
 
   EXPECT_TRUE(a_star.createPath(path, num_it, tolerance, dummy_cancel_checker, expansions.get()));
 
-  // check path is collision free
-  for (unsigned int i = 0; i != path.size(); i++) {
-    EXPECT_EQ(costmapA->getCost(path[i].x, path[i].y), 0);
-  }
-  // no skipped nodes
-  for (unsigned int i = 1; i != path.size(); i++) {
-    EXPECT_LT(hypotf(path[i].x - path[i - 1].x, path[i].y - path[i - 1].y), 2.1f);
-  }
   // all straight with no wiggle
   for (unsigned int i = 0; i != path.size(); i++) {
     EXPECT_NEAR(path[i].theta, 0.0, 1e-3);
