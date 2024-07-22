@@ -424,7 +424,12 @@ void ControllerServer::computeControl()
   RCLCPP_INFO(get_logger(), "Received a goal, begin computing control effort.");
 
   try {
-    std::string c_name = action_server_->get_current_goal()->controller_id;
+    auto goal = action_server_->get_current_goal();
+    if (!goal) {
+      return;  //  goal would be nullptr if action_server_ is inactivate.
+    }
+
+    std::string c_name = goal->controller_id;
     std::string current_controller;
     if (findControllerId(c_name, current_controller)) {
       current_controller_ = current_controller;
@@ -432,7 +437,7 @@ void ControllerServer::computeControl()
       throw nav2_core::InvalidController("Failed to find controller name: " + c_name);
     }
 
-    std::string gc_name = action_server_->get_current_goal()->goal_checker_id;
+    std::string gc_name = goal->goal_checker_id;
     std::string current_goal_checker;
     if (findGoalCheckerId(gc_name, current_goal_checker)) {
       current_goal_checker_ = current_goal_checker;
@@ -440,7 +445,7 @@ void ControllerServer::computeControl()
       throw nav2_core::ControllerException("Failed to find goal checker name: " + gc_name);
     }
 
-    std::string pc_name = action_server_->get_current_goal()->progress_checker_id;
+    std::string pc_name = goal->progress_checker_id;
     std::string current_progress_checker;
     if (findProgressCheckerId(pc_name, current_progress_checker)) {
       current_progress_checker_ = current_progress_checker;
@@ -448,7 +453,7 @@ void ControllerServer::computeControl()
       throw nav2_core::ControllerException("Failed to find progress checker name: " + pc_name);
     }
 
-    setPlannerPath(action_server_->get_current_goal()->path);
+    setPlannerPath(goal->path);
     progress_checkers_[current_progress_checker_]->reset();
 
     last_valid_cmd_time_ = now();
