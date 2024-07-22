@@ -216,7 +216,7 @@ typename AnalyticExpansion<NodeT>::AnalyticExpansionNodes AnalyticExpansion<Node
     // Make sure in range [0, 2PI)
     theta = (reals[2] < 0.0) ? (reals[2] + 2.0 * M_PI) : reals[2];
     theta = (theta > 2.0 * M_PI) ? (theta - 2.0 * M_PI) : theta;
-    angle = node->motion_table.getClosestAngularBin(theta);
+    angle = node->motion_table.getAngle(theta);
 
     // Turn the pose into a node, and check if it is valid
     index = NodeT::getIndex(

@@ -339,6 +339,11 @@ float HybridMotionTable::getAngleFromBin(const unsigned int & bin_idx)
   return bin_idx * bin_size;
 }
 
+double HybridMotionTable::getAngle(const double & theta)
+{
+  return theta / bin_size;
+}
+
 NodeHybrid::NodeHybrid(const uint64_t index)
 : parent(nullptr),
   pose(0.0f, 0.0f, 0.0f),
