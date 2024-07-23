@@ -828,13 +828,28 @@ void Costmap2DROS::getCostCallback(
   const std::shared_ptr<nav2_msgs::srv::GetCost::Request> request,
   const std::shared_ptr<nav2_msgs::srv::GetCost::Response> response)
 {
-  RCLCPP_INFO(
-    get_logger(), "Received request to get cost at point (%f, %f)", request->x, request->y);
+  unsigned int mx, my;
 
   auto costmap = layered_costmap_->getCostmap();
 
-  unsigned int mx, my;
-  if (costmap->worldToMap(request->x, request->y, mx, my)) {
+  if (request->use_footprint) {
+    geometry_msgs::msg::PoseStamped global_pose;
+    // get the pose of footprint
+    if (!getRobotPose(global_pose)) {
+      RCLCPP_WARN(get_logger(), "Failed to get robot pose");
+      response->cost = -1.0;
+    }
+    RCLCPP_INFO(
+      get_logger(), "Received request to get cost at point (%f, %f)", global_pose.pose.position.x,
+      global_pose.pose.position.y);
+    // Get the cost at the map coordinates
+    if (costmap->worldToMap(global_pose.pose.position.x, global_pose.pose.position.y, mx, my)) {
+      auto cost = static_cast<float>(costmap->getCost(mx, my));
+      response->cost = cost;
+    }
+  } else if (costmap->worldToMap(request->x, request->y, mx, my)) {
+    RCLCPP_INFO(
+      get_logger(), "Received request to get cost at point (%f, %f)", request->x, request->y);
     // Get the cost at the map coordinates
     auto cost = static_cast<float>(costmap->getCost(mx, my));
     response->cost = cost;
