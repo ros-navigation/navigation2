@@ -19,6 +19,15 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include "nav2_msgs/srv/get_cost.hpp"
+#include "nav2_costmap_2d/costmap_2d_ros.hpp"
+
+class RclCppFixture
+{
+public:
+  RclCppFixture() {rclcpp::init(0, nullptr);}
+  ~RclCppFixture() {rclcpp::shutdown();}
+};
+RclCppFixture g_rclcppfixture;
 
 using namespace std::chrono_literals;
 
@@ -27,32 +36,27 @@ class GetCostServiceTest : public ::testing::Test
 protected:
   void SetUp() override
   {
-    node_ = std::make_shared<rclcpp::Node>("get_cost_service_test");
-    local_cost_client_ = node_->create_client<nav2_msgs::srv::GetCost>(
-      "/local_costmap/get_cost_local_costmap");
-    global_cost_client_ = node_->create_client<nav2_msgs::srv::GetCost>(
-      "/global_costmap/get_cost_global_costmap");
-
-    // Wait for the service to be available
-    ASSERT_TRUE(local_cost_client_->wait_for_service(10s));
-    ASSERT_TRUE(global_cost_client_->wait_for_service(10s));
+    costmap_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("costmap");
+    client_ = costmap_->create_client<nav2_msgs::srv::GetCost>(
+      "/costmap/get_cost_costmap");
+    costmap_->on_configure(rclcpp_lifecycle::State());
+    ASSERT_TRUE(client_->wait_for_service(10s));
   }
 
-  rclcpp::Node::SharedPtr node_;
-  rclcpp::Client<nav2_msgs::srv::GetCost>::SharedPtr local_cost_client_;
-  rclcpp::Client<nav2_msgs::srv::GetCost>::SharedPtr global_cost_client_;
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_;
+  rclcpp::Client<nav2_msgs::srv::GetCost>::SharedPtr client_;
 };
 
-TEST_F(GetCostServiceTest, TestGlobalWithoutFootprint)
+TEST_F(GetCostServiceTest, TestWithoutFootprint)
 {
   auto request = std::make_shared<nav2_msgs::srv::GetCost::Request>();
   request->x = 0.0;
   request->y = 0.0;
   request->use_footprint = false;
 
-  auto result_future = global_cost_client_->async_send_request(request);
+  auto result_future = client_->async_send_request(request);
   if (rclcpp::spin_until_future_complete(
-      node_,
+      costmap_,
       result_future) == rclcpp::FutureReturnCode::SUCCESS)
   {
     SUCCEED();
@@ -61,65 +65,20 @@ TEST_F(GetCostServiceTest, TestGlobalWithoutFootprint)
   }
 }
 
-TEST_F(GetCostServiceTest, TestGlobalWithFootprint)
-{
-  auto request = std::make_shared<nav2_msgs::srv::GetCost::Request>();
-  request->x = 1.0;
-  request->y = 1.0;
-  request->use_footprint = true;
-
-  auto result_future = global_cost_client_->async_send_request(request);
-  if (rclcpp::spin_until_future_complete(
-      node_,
-      result_future) == rclcpp::FutureReturnCode::SUCCESS)
-  {
-    SUCCEED();
-  } else {
-    FAIL() << "Failed to call service";
-  }
-}
-
-TEST_F(GetCostServiceTest, TestLocalWithoutFootprint)
+TEST_F(GetCostServiceTest, TestWithFootprint)
 {
   auto request = std::make_shared<nav2_msgs::srv::GetCost::Request>();
   request->x = 0.0;
   request->y = 0.0;
-  request->use_footprint = false;
-
-  auto result_future = local_cost_client_->async_send_request(request);
-  if (rclcpp::spin_until_future_complete(
-      node_,
-      result_future) == rclcpp::FutureReturnCode::SUCCESS)
-  {
-    SUCCEED();
-  } else {
-    FAIL() << "Failed to call service";
-  }
-}
-
-TEST_F(GetCostServiceTest, TestLocalWithFootprint)
-{
-  auto request = std::make_shared<nav2_msgs::srv::GetCost::Request>();
-  request->x = 1.0;
-  request->y = 1.0;
   request->use_footprint = true;
 
-  auto result_future = local_cost_client_->async_send_request(request);
+  auto result_future = client_->async_send_request(request);
   if (rclcpp::spin_until_future_complete(
-      node_,
+      costmap_,
       result_future) == rclcpp::FutureReturnCode::SUCCESS)
   {
     SUCCEED();
   } else {
     FAIL() << "Failed to call service";
   }
-}
-
-int main(int argc, char ** argv)
-{
-  ::testing::InitGoogleTest(&argc, argv);
-  rclcpp::init(argc, argv);
-  int result = RUN_ALL_TESTS();
-  rclcpp::shutdown();
-  return result;
 }
