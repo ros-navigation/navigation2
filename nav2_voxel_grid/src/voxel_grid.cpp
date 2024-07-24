@@ -36,6 +36,9 @@
 *********************************************************************/
 #include <nav2_voxel_grid/voxel_grid.hpp>
 
+#include <rclcpp/logger.hpp>
+#include <rclcpp/logging.hpp>
+
 namespace nav2_voxel_grid
 {
 VoxelGrid::VoxelGrid(unsigned int size_x, unsigned int size_y, unsigned int size_z)
