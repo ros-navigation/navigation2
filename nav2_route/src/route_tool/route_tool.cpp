@@ -18,9 +18,13 @@ namespace route_tool
     {
         // Extend the widget with all attributes and children from UI file
         ui_->setupUi(this);
-        auto options = rclcpp::NodeOptions().arguments(
-        {"--ros-args", "--remap", "__node:=route_tool_node", "--"});
-        node_ = std::make_shared<rclcpp::Node>("_", options);
+        node_ = std::make_shared<nav2_util::LifecycleNode>("route_tool_node", "", rclcpp::NodeOptions());
+        node_->configure();
+        graph_vis_publisher_ = node_->create_publisher<visualization_msgs::msg::MarkerArray>(
+            "route_graph", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+        node_->activate();
+        tf_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
+        graph_loader_ = std::make_shared<nav2_route::GraphLoader>(node_, tf_, "map");
     }
 
     void routeTool::update_display(void)
@@ -59,12 +63,18 @@ namespace route_tool
 
     void routeTool::load_route_graph(std::string filename)
     {
-        // TODO
+        graph_loader_->loadGraphFromFile(graph_, graph_to_id_map_, filename);
+        graph_vis_publisher_->publish(nav2_route::utils::toMsg(graph_, "map", node_->now()));
     }
 
     void routeTool::save_route_graph(void)
     {
         // TODO
+    }
+
+    void routeTool::load_map(std::string filename)
+    {
+        RCLCPP_INFO(node_->get_logger(), "Map: %s", filename.c_str());
     }
 
     void routeTool::save(rviz_common::Config config) const

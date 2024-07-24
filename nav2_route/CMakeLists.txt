@@ -53,6 +53,8 @@ set(dependencies
 # Qt5 boilerplate options from http://doc.qt.io/qt-5/cmake-manual.html
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTORCC ON)
 
 include_directories(
   include
@@ -218,19 +220,20 @@ target_link_libraries(graph_file_loaders PRIVATE
 
 # Generate header for ui
 qt5_wrap_ui(route_tool_UIS_H resource/route_tool.ui)
-qt5_wrap_cpp(route_tool_MOCS include/route_tool/route_tool.hpp)
+qt5_wrap_cpp(route_tool_MOCS include/nav2_route/route_tool/route_tool.hpp)
 
 add_library(route_tool_rviz_panel SHARED
   src/route_tool/route_tool.cpp
-  ${${PROJECT_NAME}_UIS_H}
-  ${${PROJECT_NAME}_MOCS}
+  ${route_tool_UIS_H}
+  ${route_tool_MOCS}
 )
 
 ament_target_dependencies(route_tool_rviz_panel ${dependencies})
-target_link_libraries(route_tool_rviz_panel rviz_common::rviz_common)
-target_compile_definitions(${library_name} PRIVATE QT_NO_KEYWORDS)
+target_link_libraries(route_tool_rviz_panel ${library_name} rviz_common::rviz_common)
+target_compile_definitions(route_tool_rviz_panel PRIVATE QT_NO_KEYWORDS)
 
-pluginlib_export_plugin_description_file(nav2_route plugins.xml)
+pluginlib_export_plugin_description_file(route_tool plugins.xml)
+pluginlib_export_plugin_description_file(rviz_common rviz2_plugins.xml)
 
 install(DIRECTORY include/
   DESTINATION include/${PROJECT_NAME}

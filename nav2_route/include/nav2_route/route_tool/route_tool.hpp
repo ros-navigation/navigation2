@@ -16,6 +16,10 @@
 // Other ROS dependencies
 #include <std_msgs/msg/int16.hpp>
 #include <std_msgs/msg/string.hpp>
+#include <nav_msgs/msg/occupancy_grid.hpp>
+#include <nav2_route/graph_loader.hpp>
+#include <nav2_route/types.hpp>
+#include <nav2_route/utils.hpp>
 
 
 namespace route_tool
@@ -85,8 +89,16 @@ namespace route_tool
         private:
             void load_route_graph(std::string filename);
             void save_route_graph(void);
+            void load_map(std::string filename);
 
-            rclcpp::Node::SharedPtr node_;
+            nav2_util::LifecycleNode::SharedPtr node_;
+            std::shared_ptr<nav2_route::GraphLoader> graph_loader_;
+            std::shared_ptr<tf2_ros::Buffer> tf_;
+            nav2_route::Graph graph_;
+            nav2_route::GraphToIDMap graph_to_id_map_;
+            rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
+                graph_vis_publisher_;
+
 
     };
 } // namespace route_tool
