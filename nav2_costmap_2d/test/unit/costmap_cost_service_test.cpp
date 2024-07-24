@@ -50,8 +50,8 @@ protected:
 TEST_F(GetCostServiceTest, TestWithoutFootprint)
 {
   auto request = std::make_shared<nav2_msgs::srv::GetCost::Request>();
-  request->x = 0.0;
-  request->y = 0.0;
+  request->x = 0.5;
+  request->y = 1.0;
   request->use_footprint = false;
 
   auto result_future = client_->async_send_request(request);
@@ -59,7 +59,9 @@ TEST_F(GetCostServiceTest, TestWithoutFootprint)
       costmap_,
       result_future) == rclcpp::FutureReturnCode::SUCCESS)
   {
-    SUCCEED();
+    auto response = result_future.get();
+    EXPECT_GE(response->cost, 0.0) << "Cost is less than 0";
+    EXPECT_LE(response->cost, 255.0) << "Cost is greater than 255";
   } else {
     FAIL() << "Failed to call service";
   }
@@ -68,8 +70,9 @@ TEST_F(GetCostServiceTest, TestWithoutFootprint)
 TEST_F(GetCostServiceTest, TestWithFootprint)
 {
   auto request = std::make_shared<nav2_msgs::srv::GetCost::Request>();
-  request->x = 0.0;
-  request->y = 0.0;
+  request->x = 1.0;
+  request->y = 1.0;
+  request->theta = 0.5;
   request->use_footprint = true;
 
   auto result_future = client_->async_send_request(request);
@@ -77,7 +80,9 @@ TEST_F(GetCostServiceTest, TestWithFootprint)
       costmap_,
       result_future) == rclcpp::FutureReturnCode::SUCCESS)
   {
-    SUCCEED();
+    auto response = result_future.get();
+    EXPECT_GE(response->cost, 0.0) << "Cost is less than 0";
+    EXPECT_LE(response->cost, 255.0) << "Cost is greater than 255";
   } else {
     FAIL() << "Failed to call service";
   }

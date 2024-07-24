@@ -73,7 +73,6 @@ int CostmapCostTool::processMouseEvent(rviz_common::ViewportMouseEvent & event)
 
       callCostService(point.x, point.y);
 
-
       if (auto_deactivate_property_->getBool()) {
         flags |= Finished;
       }
@@ -92,22 +91,16 @@ void CostmapCostTool::callCostService(float x, float y)
   request->y = y;
 
   // Call local costmap service
-  if (!local_cost_client_->wait_for_service(std::chrono::seconds(1))) {
-    RCLCPP_ERROR(node_->get_logger(), "Local costmap service not available");
-    return;
+  if (local_cost_client_->wait_for_service(std::chrono::seconds(1))) {
+    local_cost_client_->async_send_request(request,
+      std::bind(&CostmapCostTool::handleLocalCostResponse, this, std::placeholders::_1));
   }
-
-  local_cost_client_->async_send_request(request,
-    std::bind(&CostmapCostTool::handleLocalCostResponse, this, std::placeholders::_1));
 
   // Call global costmap service
-  if (!global_cost_client_->wait_for_service(std::chrono::seconds(1))) {
-    RCLCPP_ERROR(node_->get_logger(), "Global costmap service not available");
-    return;
+  if (global_cost_client_->wait_for_service(std::chrono::seconds(1))) {
+    global_cost_client_->async_send_request(request,
+      std::bind(&CostmapCostTool::handleGlobalCostResponse, this, std::placeholders::_1));
   }
-
-  global_cost_client_->async_send_request(request,
-    std::bind(&CostmapCostTool::handleGlobalCostResponse, this, std::placeholders::_1));
 }
 
 void CostmapCostTool::handleLocalCostResponse(

@@ -830,29 +830,24 @@ void Costmap2DROS::getCostCallback(
 {
   unsigned int mx, my;
 
-  auto costmap = layered_costmap_->getCostmap();
+  Costmap2D * costmap = layered_costmap_->getCostmap();
 
   if (request->use_footprint) {
-    geometry_msgs::msg::PoseStamped global_pose;
-    // get the pose of footprint
-    if (!getRobotPose(global_pose)) {
-      RCLCPP_WARN(get_logger(), "Failed to get robot pose");
-      response->cost = -1.0;
-    }
+    Footprint footprint = layered_costmap_->getFootprint();
+    FootprintCollisionChecker<Costmap2D *> collision_checker_(costmap);
+
     RCLCPP_INFO(
-      get_logger(), "Received request to get cost at point (%f, %f)", global_pose.pose.position.x,
-      global_pose.pose.position.y);
-    // Get the cost at the map coordinates
-    if (costmap->worldToMap(global_pose.pose.position.x, global_pose.pose.position.y, mx, my)) {
-      auto cost = static_cast<float>(costmap->getCost(mx, my));
-      response->cost = cost;
-    }
+      get_logger(), "Received request to get cost at footprint (%.2f, %.2f, %.2f)",
+      request->x, request->y, request->theta);
+
+    response->cost = collision_checker_.footprintCostAtPose(
+      request->x, request->y, request->theta, footprint);
   } else if (costmap->worldToMap(request->x, request->y, mx, my)) {
     RCLCPP_INFO(
       get_logger(), "Received request to get cost at point (%f, %f)", request->x, request->y);
+
     // Get the cost at the map coordinates
-    auto cost = static_cast<float>(costmap->getCost(mx, my));
-    response->cost = cost;
+    response->cost = static_cast<float>(costmap->getCost(mx, my));
   } else {
     RCLCPP_WARN(get_logger(), "Point (%f, %f) is out of bounds", request->x, request->y);
     response->cost = -1.0;
