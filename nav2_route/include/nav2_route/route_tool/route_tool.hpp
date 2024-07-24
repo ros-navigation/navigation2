@@ -87,7 +87,7 @@ namespace route_tool
             // ROS declaration
 
         private:
-            void load_route_graph(std::string filename);
+            void update_route_graph(void);
             void save_route_graph(void);
             void load_map(std::string filename);
 
@@ -98,6 +98,7 @@ namespace route_tool
             nav2_route::GraphToIDMap graph_to_id_map_;
             rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
                 graph_vis_publisher_;
+            unsigned int next_node_id_ = 0;
 
 
     };

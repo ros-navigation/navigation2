@@ -38,7 +38,7 @@ namespace route_tool
         QString filename = QFileDialog::getOpenFileName(this,
         tr("Open Address Book"), "",
         tr("Address Book (*.geojson);;All Files (*)"));
-        load_route_graph(filename.toStdString());
+        graph_loader_->loadGraphFromFile(graph_, graph_to_id_map_, filename.toStdString());
     }
 
     void routeTool::on_save_button_clicked(void)
@@ -48,11 +48,24 @@ namespace route_tool
 
     void routeTool::on_create_button_clicked(void)
     {
-
+        if (ui_->add_node_button->isChecked()) {
+            auto longitude = ui_->add_field_1->toPlainText().toFloat();
+            auto latitude = ui_->add_field_2->toPlainText().toFloat();
+            nav2_route::Node new_node;
+            new_node.nodeid = next_node_id_++;
+            new_node.coords.x = longitude;
+            new_node.coords.y = latitude;
+            graph_.push_back(new_node);
+            RCLCPP_INFO(node_->get_logger(), "Adding node at: (%f, %f)", longitude, latitude);
+            update_route_graph();
+        } else if (ui_->add_edge_button->isChecked()) {
+            RCLCPP_INFO(node_->get_logger(), "ADDING EDGE");
+        }
     }
 
     void routeTool::on_submit_button_clicked(void)
     {
+
 
     }
 
@@ -61,9 +74,8 @@ namespace route_tool
 
     }
 
-    void routeTool::load_route_graph(std::string filename)
+    void routeTool::update_route_graph(void)
     {
-        graph_loader_->loadGraphFromFile(graph_, graph_to_id_map_, filename);
         graph_vis_publisher_->publish(nav2_route::utils::toMsg(graph_, "map", node_->now()));
     }
 
