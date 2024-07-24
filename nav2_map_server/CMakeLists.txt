@@ -32,27 +32,6 @@ set(map_saver_server_executable map_saver_server)
 
 set(costmap_filter_info_server_executable costmap_filter_info_server)
 
-add_library(${library_name} SHARED
-  src/map_server/map_server.cpp
-  src/map_saver/map_saver.cpp
-  src/costmap_filter_info/costmap_filter_info_server.cpp)
-target_include_directories(${library_name}
-  PUBLIC
-  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
-target_link_libraries(${library_name} PUBLIC
-  nav2_util::nav2_util_core
-  rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
-  ${nav2_msgs_TARGETS}
-  ${nav_msgs_TARGETS}
-)
-target_link_libraries(${library_name} PRIVATE
-  ${lifecycle_msgs_TARGETS}
-  rclcpp_components::component
-  yaml-cpp::yaml-cpp
-)
-
 add_library(${map_io_library_name} SHARED
   src/map_mode.cpp
   src/map_io.cpp)
@@ -73,6 +52,28 @@ target_link_libraries(${map_io_library_name} PRIVATE
   yaml-cpp::yaml-cpp
 )
 
+add_library(${library_name} SHARED
+  src/map_server/map_server.cpp
+  src/map_saver/map_saver.cpp
+  src/costmap_filter_info/costmap_filter_info_server.cpp)
+target_include_directories(${library_name}
+  PUBLIC
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+target_link_libraries(${library_name} PUBLIC
+  ${map_io_library_name}
+  ${nav_msgs_TARGETS}
+  ${nav2_msgs_TARGETS}
+  nav2_util::nav2_util_core
+  rclcpp::rclcpp
+  rclcpp_lifecycle::rclcpp_lifecycle
+)
+target_link_libraries(${library_name} PRIVATE
+  ${lifecycle_msgs_TARGETS}
+  rclcpp_components::component
+  yaml-cpp::yaml-cpp
+)
+
 add_executable(${map_server_executable}
   src/map_server/main.cpp)
 target_include_directories(${map_server_executable}
@@ -80,9 +81,9 @@ target_include_directories(${map_server_executable}
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(${map_server_executable} PRIVATE
-  rclcpp::rclcpp
   ${library_name}
   ${map_io_library_name}
+  rclcpp::rclcpp
 )
 
 add_executable(${map_saver_cli_executable}
@@ -92,13 +93,13 @@ target_include_directories(${map_saver_cli_executable}
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(${map_saver_cli_executable} PRIVATE
-  rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
+  ${library_name}
+  ${map_io_library_name}
   ${nav_msgs_TARGETS}
   ${nav2_msgs_TARGETS}
   nav2_util::nav2_util_core
-  ${library_name}
-  ${map_io_library_name}
+  rclcpp::rclcpp
+  rclcpp_lifecycle::rclcpp_lifecycle
 )
 
 add_executable(${map_saver_server_executable}
@@ -108,13 +109,13 @@ target_include_directories(${map_saver_server_executable}
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(${map_saver_server_executable} PRIVATE
-  rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
+  ${library_name}
+  ${map_io_library_name}
   ${nav_msgs_TARGETS}
   ${nav2_msgs_TARGETS}
   nav2_util::nav2_util_core
-  ${library_name}
-  ${map_io_library_name}
+  rclcpp::rclcpp
+  rclcpp_lifecycle::rclcpp_lifecycle
 )
 
 add_executable(${costmap_filter_info_server_executable}
@@ -124,13 +125,13 @@ target_include_directories(${costmap_filter_info_server_executable}
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(${costmap_filter_info_server_executable} PRIVATE
-  rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
+  ${library_name}
+  ${map_io_library_name}
   ${nav_msgs_TARGETS}
   ${nav2_msgs_TARGETS}
   nav2_util::nav2_util_core
-  ${library_name}
-  ${map_io_library_name}
+  rclcpp::rclcpp
+  rclcpp_lifecycle::rclcpp_lifecycle
 )
 
 rclcpp_components_register_nodes(${library_name} "nav2_map_server::CostmapFilterInfoServer")
