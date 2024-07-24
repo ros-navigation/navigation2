@@ -62,9 +62,4 @@
       <description>Route operation to add actual times of traversal to edge's metdata for use in later more accurate planning by the TimeScorer</description>
     </class>
   </library>
-  <library path="route_tool_rviz_panel">
-  <class type="route_tool::routeTool" base_class_type="rviz_common::Panel">
-    <description>Route Tool Rviz Panel</description>
-  </class>
-  </library>
 </class_libraries>
