@@ -19,7 +19,7 @@ For detailed instructions on how to:
 - [Container Images for Building Nav2](https://github.com/orgs/ros-navigation/packages/container/package/navigation2)
 - [Contribute](https://docs.nav2.org/development_guides/involvement_docs/index.html)
 
-Please visit our [documentation site](https://docs.nav2.org/). [Please visit our community Slack here](https://join.slack.com/t/navigation2/shared_invite/zt-hu52lnnq-cKYjuhTY~sEMbZXL8p9tOw) (if this link does not work, please contact maintainers to reactivate).
+Please visit our [documentation site](https://docs.nav2.org/). [Please visit our community Slack here](https://join.slack.com/t/navigation2/shared_invite/zt-uj428p0x-jKx8U7OzK1IOWp5TnDS2rA) (if this link does not work, please contact maintainers to reactivate).
 
 If you need professional services related to Nav2, please contact Open Navigation at info@opennav.org.
 
