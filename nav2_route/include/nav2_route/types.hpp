@@ -17,6 +17,7 @@
 #include <any>
 #include <vector>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <limits>
 #include <geometry_msgs/msg/pose_stamped.hpp>
@@ -61,6 +62,8 @@ typedef Node * NodePtr;
 typedef std::vector<Node> NodeVector;
 typedef NodeVector Graph;
 typedef std::unordered_map<unsigned int, unsigned int> GraphToIDMap;
+typedef std::unordered_map<unsigned int, std::vector<unsigned int>> GraphToIncomingEdgesMap;
+typedef std::vector<NodePtr> NodePtrVector;
 typedef std::pair<float, NodePtr> NodeElement;
 typedef std::pair<unsigned int, unsigned int> NodeExtents;
 
