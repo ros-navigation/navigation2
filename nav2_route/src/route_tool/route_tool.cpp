@@ -63,8 +63,8 @@ namespace route_tool
             auto start_node = ui_->add_field_1->toPlainText().toInt();
             auto end_node = ui_->add_field_2->toPlainText().toInt();
             nav2_route::EdgeCost edge_cost;
-            graph_[graph_to_id_map_[start_node]].addEdge(edge_cost, &(graph_[graph_to_id_map_[end_node]]), next_node_id_++);
-            RCLCPP_INFO(node_->get_logger(), "Neighbor: (%f, %f)", graph_[graph_to_id_map_[start_node]].neighbors[0].start->coords.x, graph_[graph_to_id_map_[start_node]].neighbors[0].start->coords.y);
+            graph_[graph_to_id_map_[start_node]].addEdge(edge_cost, &(graph_[graph_to_id_map_[end_node]]), next_node_id_);
+            edge_to_node_map_[next_node_id_++] = start_node;
             RCLCPP_INFO(node_->get_logger(), "Adding edge from %d to %d", start_node, end_node);
             update_route_graph();
         }
@@ -80,7 +80,24 @@ namespace route_tool
             graph_[graph_to_id_map_[node_id]].coords.y = new_latitude;
             update_route_graph();
         } else if (ui_->edit_edge_button->isChecked()) {
-
+            auto edge_id = (unsigned int) ui_->edit_id->toPlainText().toInt();
+            auto new_start = ui_->edit_field_1->toPlainText().toInt();
+            auto new_end = ui_->edit_field_2->toPlainText().toInt();
+            // Find and remove current edge
+            auto current_start_node = &graph_[graph_to_id_map_[edge_to_node_map_[edge_id]]];
+            for (auto itr = current_start_node->neighbors.begin(); itr != current_start_node->neighbors.end(); itr++) {
+                if (itr->edgeid == edge_id) {
+                    RCLCPP_INFO(node_->get_logger(), "Found and removed edge connecting %d and %d", itr->start->nodeid, itr->end->nodeid);
+                    current_start_node->neighbors.erase(itr);
+                    break;
+                }
+            }
+            // Create new edge with same ID using new start and stop nodes
+            nav2_route::EdgeCost edge_cost;
+            graph_[graph_to_id_map_[new_start]].addEdge(edge_cost, &(graph_[graph_to_id_map_[new_end]]), edge_id);
+            RCLCPP_INFO(node_->get_logger(), "Adding edge from %d to %d", new_start, new_end);
+            edge_to_node_map_[edge_id] = new_start;
+            update_route_graph();
         }
 
     }

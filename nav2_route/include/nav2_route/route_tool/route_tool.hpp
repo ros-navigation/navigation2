@@ -96,6 +96,7 @@ namespace route_tool
             std::shared_ptr<tf2_ros::Buffer> tf_;
             nav2_route::Graph graph_;
             nav2_route::GraphToIDMap graph_to_id_map_;
+            nav2_route::GraphToIDMap edge_to_node_map_;
             rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
                 graph_vis_publisher_;
             unsigned int next_node_id_ = 0;
