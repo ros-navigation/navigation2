@@ -67,11 +67,11 @@ std::string CriticManager::getFullName(const std::string & name)
 void CriticManager::evalTrajectoriesScores(
   CriticData & data) const
 {
-  for (size_t q = 0; q < critics_.size(); q++) {
+  for (const auto & critic : critics_) {
     if (data.fail_flag) {
       break;
     }
-    critics_[q]->score(data);
+    critic->score(data);
   }
 }
 

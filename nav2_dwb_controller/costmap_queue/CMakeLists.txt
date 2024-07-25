@@ -12,7 +12,7 @@ include_directories(
   include
 )
 
-add_library(${PROJECT_NAME}
+add_library(${PROJECT_NAME} SHARED
   src/costmap_queue.cpp
   src/limited_costmap_queue.cpp
 )

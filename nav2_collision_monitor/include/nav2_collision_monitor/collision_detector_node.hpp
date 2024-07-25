@@ -33,10 +33,12 @@
 #include "nav2_collision_monitor/types.hpp"
 #include "nav2_collision_monitor/polygon.hpp"
 #include "nav2_collision_monitor/circle.hpp"
+#include "nav2_collision_monitor/velocity_polygon.hpp"
 #include "nav2_collision_monitor/source.hpp"
 #include "nav2_collision_monitor/scan.hpp"
 #include "nav2_collision_monitor/pointcloud.hpp"
 #include "nav2_collision_monitor/range.hpp"
+#include "nav2_collision_monitor/polygon_source.hpp"
 
 namespace nav2_collision_monitor
 {

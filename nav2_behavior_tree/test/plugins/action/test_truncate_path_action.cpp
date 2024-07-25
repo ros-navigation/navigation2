@@ -14,17 +14,21 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
+
 #include <memory>
 #include <set>
 #include <string>
 
-#include "nav_msgs/msg/path.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "nav_msgs/msg/path.hpp"
 #include "nav2_util/geometry_utils.hpp"
+#include "rclcpp/rclcpp.hpp"
+#include "tf2/LinearMath/Matrix3x3.h"
+#include "tf2/LinearMath/Quaternion.h"
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 
-#include "utils/test_action_server.hpp"
+#include "nav2_behavior_tree/utils/test_action_server.hpp"
 #include "nav2_behavior_tree/plugins/action/truncate_path_action.hpp"
 
 
@@ -41,7 +45,7 @@ public:
     // Create the blackboard that will be shared by all of the nodes in the tree
     config_->blackboard = BT::Blackboard::create();
     // Put items on the blackboard
-    config_->blackboard->set<rclcpp::Node::SharedPtr>(
+    config_->blackboard->set(
       "node",
       node_);
 
@@ -87,7 +91,7 @@ TEST_F(TruncatePathTestFixture, test_tick)
   // create tree
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
           <TruncatePath distance="1.0" input_path="{path}" output_path="{truncated_path}"/>
         </BehaviorTree>
@@ -127,7 +131,7 @@ TEST_F(TruncatePathTestFixture, test_tick)
   }
 
   nav_msgs::msg::Path truncated_path;
-  config_->blackboard->get("truncated_path", truncated_path);
+  EXPECT_TRUE(config_->blackboard->get("truncated_path", truncated_path));
 
   EXPECT_NE(path, truncated_path);
   EXPECT_EQ(truncated_path.poses.size(), 2u);

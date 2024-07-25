@@ -73,6 +73,18 @@ LifecycleManagerClient::reset(const std::chrono::nanoseconds timeout)
   return callService(ManageLifecycleNodes::Request::RESET, timeout);
 }
 
+bool
+LifecycleManagerClient::configure(const std::chrono::nanoseconds timeout)
+{
+  return callService(ManageLifecycleNodes::Request::CONFIGURE, timeout);
+}
+
+bool
+LifecycleManagerClient::cleanup(const std::chrono::nanoseconds timeout)
+{
+  return callService(ManageLifecycleNodes::Request::CLEANUP, timeout);
+}
+
 SystemStatus
 LifecycleManagerClient::is_active(const std::chrono::nanoseconds timeout)
 {

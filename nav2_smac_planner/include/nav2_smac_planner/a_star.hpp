@@ -49,13 +49,13 @@ class AStarAlgorithm
 {
 public:
   typedef NodeT * NodePtr;
-  typedef robin_hood::unordered_node_map<unsigned int, NodeT> Graph;
+  typedef robin_hood::unordered_node_map<uint64_t, NodeT> Graph;
   typedef std::vector<NodePtr> NodeVector;
   typedef std::pair<float, NodeBasic<NodeT>> NodeElement;
   typedef typename NodeT::Coordinates Coordinates;
   typedef typename NodeT::CoordinateVector CoordinateVector;
   typedef typename NodeVector::iterator NeighborIterator;
-  typedef std::function<bool (const unsigned int &, NodeT * &)> NodeGetter;
+  typedef std::function<bool (const uint64_t &, NodeT * &)> NodeGetter;
 
   /**
    * @struct nav2_smac_planner::NodeComparator
@@ -72,8 +72,7 @@ public:
   typedef std::priority_queue<NodeElement, std::vector<NodeElement>, NodeComparator> NodeQueue;
 
   /**
-   * @brief A constructor for nav2_smac_planner::PlannerServer
-   * @param neighborhood The type of neighborhood to use for search (4 or 8 connected)
+   * @brief A constructor for nav2_smac_planner::AStarAlgorithm
    */
   explicit AStarAlgorithm(const MotionModel & motion_model, const SearchInfo & search_info);
 
@@ -89,6 +88,8 @@ public:
    * @param max_on_approach_iterations Maximum number of iterations before returning a valid
    * path once within thresholds to refine path
    * comes at more compute time but smoother paths.
+   * @param terminal_checking_interval Number of iterations to check if the task has been canceled or
+   * or planning time exceeded
    * @param max_planning_time Maximum time (in seconds) to wait for a plan, createPath returns
    * false after this timeout
    */
@@ -96,6 +97,7 @@ public:
     const bool & allow_unknown,
     int & max_iterations,
     const int & max_on_approach_iterations,
+    const int & terminal_checking_interval,
     const double & max_planning_time,
     const float & lookup_table_size,
     const unsigned int & dim_3_size);
@@ -105,11 +107,13 @@ public:
    * @param path Reference to a vector of indicies of generated path
    * @param num_iterations Reference to number of iterations to create plan
    * @param tolerance Reference to tolerance in costmap nodes
+   * @param cancel_checker Function to check if the task has been canceled
    * @param expansions_log Optional expansions logged for debug
    * @return if plan was successful
    */
   bool createPath(
     CoordinateVector & path, int & num_iterations, const float & tolerance,
+    std::function<bool()> cancel_checker,
     std::vector<std::tuple<float, float, float>> * expansions_log = nullptr);
 
   /**
@@ -125,8 +129,8 @@ public:
    * @param dim_3 The node dim_3 index of the goal
    */
   void setGoal(
-    const unsigned int & mx,
-    const unsigned int & my,
+    const float & mx,
+    const float & my,
     const unsigned int & dim_3);
 
   /**
@@ -136,8 +140,8 @@ public:
    * @param dim_3 The node dim_3 index of the goal
    */
   void setStart(
-    const unsigned int & mx,
-    const unsigned int & my,
+    const float & mx,
+    const float & my,
     const unsigned int & dim_3);
 
   /**
@@ -196,7 +200,7 @@ protected:
   inline NodePtr getNextNode();
 
   /**
-   * @brief Get pointer to next goal in open set
+   * @brief Add a node to the open set
    * @param cost The cost to sort into the open set of the node
    * @param node Node pointer reference to add to open set
    */
@@ -204,10 +208,9 @@ protected:
 
   /**
    * @brief Adds node to graph
-   * @param cost The cost to sort into the open set of the node
-   * @param node Node pointer reference to add to open set
+   * @param index Node index to add
    */
-  inline NodePtr addToGraph(const unsigned int & index);
+  inline NodePtr addToGraph(const uint64_t & index);
 
   /**
    * @brief Check if this node is the goal node
@@ -218,9 +221,8 @@ protected:
 
   /**
    * @brief Get cost of heuristic of node
-   * @param node Node index current
-   * @param node Node index of new
-   * @return Heuristic cost between the nodes
+   * @param node Node pointer to get heuristic for
+   * @return Heuristic cost for node
    */
   inline float getHeuristicCost(const NodePtr & node);
 
@@ -248,11 +250,11 @@ protected:
   inline void populateExpansionsLog(
     const NodePtr & node, std::vector<std::tuple<float, float, float>> * expansions_log);
 
-  int _timing_interval = 5000;
-
   bool _traverse_unknown;
+  bool _is_initialized;
   int _max_iterations;
   int _max_on_approach_iterations;
+  int _terminal_checking_interval;
   double _max_planning_time;
   float _tolerance;
   unsigned int _x_size;

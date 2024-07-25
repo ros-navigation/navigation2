@@ -36,10 +36,10 @@ public:
     // Create the blackboard that will be shared by all of the nodes in the tree
     config_->blackboard = BT::Blackboard::create();
     // Put items on the blackboard
-    config_->blackboard->set<rclcpp::Node::SharedPtr>(
+    config_->blackboard->set(
       "node",
       node_);
-    config_->blackboard->set<std::shared_ptr<tf2_ros::Buffer>>(
+    config_->blackboard->set(
       "tf_buffer",
       transform_handler_->getBuffer());
     config_->blackboard->set<std::chrono::milliseconds>(
@@ -48,7 +48,7 @@ public:
     config_->blackboard->set<std::chrono::milliseconds>(
       "bt_loop_duration",
       std::chrono::milliseconds(10));
-    config_->blackboard->set<bool>("initial_pose_received", false);
+    config_->blackboard->set("initial_pose_received", false);
   }
 
   static void TearDownTestCase()
@@ -65,7 +65,7 @@ public:
   {
     std::string xml_txt =
       R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <TransformAvailable child="base_link" parent="map" />
         </BehaviorTree>
@@ -99,10 +99,10 @@ std::shared_ptr<BT::Tree> TransformAvailableConditionTestFixture::tree_ = nullpt
 
 TEST_F(TransformAvailableConditionTestFixture, test_behavior)
 {
-  EXPECT_EQ(tree_->tickRoot(), BT::NodeStatus::FAILURE);
+  EXPECT_EQ(tree_->tickOnce(), BT::NodeStatus::FAILURE);
   transform_handler_->activate();
   transform_handler_->waitForTransform();
-  EXPECT_EQ(tree_->tickRoot(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(tree_->tickOnce(), BT::NodeStatus::SUCCESS);
 }
 
 int main(int argc, char ** argv)

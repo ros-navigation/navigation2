@@ -1,0 +1,25 @@
+#goal definition
+
+# If initialized on a dock so the server doesn't know what type of dock its on,
+# you must specify what dock it is to know where to stage for undocking.
+# If only one type of dock plugin is present, it is not necessary to set.
+# If not set & server instance was used to dock, server will use current dock information from last docking request.
+string dock_type
+
+float32 max_undocking_time 30.0 # Maximum time to undock
+
+---
+#result definition
+
+# Error codes
+# Note: The expected priority order of the errors should match the message order
+uint16 NONE=0
+uint16 DOCK_NOT_VALID=902
+uint16 FAILED_TO_CONTROL=905
+uint16 UNKNOWN=999
+
+bool success True  # docking success status
+uint16 error_code 0  # Contextual error code, if any
+string error_msg
+---
+#feedback definition

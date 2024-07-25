@@ -54,10 +54,15 @@ TEST(SmacTest, test_smac_lattice)
 {
   rclcpp_lifecycle::LifecycleNode::SharedPtr nodeLattice =
     std::make_shared<rclcpp_lifecycle::LifecycleNode>("SmacLatticeTest");
+  nodeLattice->declare_parameter("test.debug_visualizations", rclcpp::ParameterValue(true));
 
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros =
     std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
   costmap_ros->on_configure(rclcpp_lifecycle::State());
+
+  auto dummy_cancel_checker = []() {
+      return false;
+    };
 
   geometry_msgs::msg::PoseStamped start, goal;
   start.pose.position.x = 0.0;
@@ -75,7 +80,7 @@ TEST(SmacTest, test_smac_lattice)
   planner->activate();
 
   try {
-    planner->createPlan(start, goal);
+    planner->createPlan(start, goal, dummy_cancel_checker);
   } catch (...) {
   }
 
@@ -127,6 +132,7 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
       rclcpp::Parameter("test.tolerance", 42.0),
       rclcpp::Parameter("test.rotation_penalty", 42.0),
       rclcpp::Parameter("test.max_on_approach_iterations", 42),
+      rclcpp::Parameter("test.terminal_checking_interval", 42),
       rclcpp::Parameter("test.allow_reverse_expansion", true)});
 
   try {

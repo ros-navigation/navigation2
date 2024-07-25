@@ -36,7 +36,7 @@ public:
     // Create the blackboard that will be shared by all of the nodes in the tree
     config_->blackboard = BT::Blackboard::create();
     // Put items on the blackboard
-    config_->blackboard->set<rclcpp::Node::SharedPtr>(
+    config_->blackboard->set(
       "node",
       node_);
 
@@ -73,7 +73,7 @@ TEST_F(IsBatteryChargingConditionTestFixture, test_behavior_power_supply_status)
 {
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <IsBatteryCharging battery_topic="/battery_status"/>
         </BehaviorTree>
@@ -86,32 +86,32 @@ TEST_F(IsBatteryChargingConditionTestFixture, test_behavior_power_supply_status)
   battery_pub_->publish(battery_msg);
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
   rclcpp::spin_some(node_);
-  EXPECT_EQ(tree.tickRoot(), BT::NodeStatus::FAILURE);
+  EXPECT_EQ(tree.tickOnce(), BT::NodeStatus::FAILURE);
 
   battery_msg.power_supply_status = sensor_msgs::msg::BatteryState::POWER_SUPPLY_STATUS_CHARGING;
   battery_pub_->publish(battery_msg);
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
   rclcpp::spin_some(node_);
-  EXPECT_EQ(tree.tickRoot(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(tree.tickOnce(), BT::NodeStatus::SUCCESS);
 
   battery_msg.power_supply_status = sensor_msgs::msg::BatteryState::POWER_SUPPLY_STATUS_DISCHARGING;
   battery_pub_->publish(battery_msg);
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
   rclcpp::spin_some(node_);
-  EXPECT_EQ(tree.tickRoot(), BT::NodeStatus::FAILURE);
+  EXPECT_EQ(tree.tickOnce(), BT::NodeStatus::FAILURE);
 
   battery_msg.power_supply_status =
     sensor_msgs::msg::BatteryState::POWER_SUPPLY_STATUS_NOT_CHARGING;
   battery_pub_->publish(battery_msg);
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
   rclcpp::spin_some(node_);
-  EXPECT_EQ(tree.tickRoot(), BT::NodeStatus::FAILURE);
+  EXPECT_EQ(tree.tickOnce(), BT::NodeStatus::FAILURE);
 
   battery_msg.power_supply_status = sensor_msgs::msg::BatteryState::POWER_SUPPLY_STATUS_FULL;
   battery_pub_->publish(battery_msg);
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
   rclcpp::spin_some(node_);
-  EXPECT_EQ(tree.tickRoot(), BT::NodeStatus::FAILURE);
+  EXPECT_EQ(tree.tickOnce(), BT::NodeStatus::FAILURE);
 }
 
 int main(int argc, char ** argv)

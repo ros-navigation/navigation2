@@ -28,6 +28,8 @@ class GoalUpdatedConditionTestFixture : public nav2_behavior_tree::BehaviorTreeT
 public:
   void SetUp()
   {
+    config_->input_ports["goals"] = "";
+    config_->input_ports["goal"] = "";
     bt_node_ = std::make_shared<nav2_behavior_tree::GoalUpdatedCondition>(
       "goal_updated", *config_);
   }

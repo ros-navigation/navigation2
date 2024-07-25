@@ -27,15 +27,15 @@ namespace mppi::models
  */
 struct OptimizerSettings
 {
-  models::ControlConstraints base_constraints{0, 0, 0, 0};
-  models::ControlConstraints constraints{0, 0, 0, 0};
-  models::SamplingStd sampling_std{0, 0, 0};
-  float model_dt{0};
-  float temperature{0};
-  float gamma{0};
-  unsigned int batch_size{0};
-  unsigned int time_steps{0};
-  unsigned int iteration_count{0};
+  models::ControlConstraints base_constraints{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+  models::ControlConstraints constraints{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+  models::SamplingStd sampling_std{0.0f, 0.0f, 0.0f};
+  float model_dt{0.0f};
+  float temperature{0.0f};
+  float gamma{0.0f};
+  unsigned int batch_size{0u};
+  unsigned int time_steps{0u};
+  unsigned int iteration_count{0u};
   bool shift_control_sequence{false};
   size_t retry_attempt_limit{0};
 };

@@ -19,7 +19,13 @@
 #include <string>
 #include <vector>
 #include <pluginlib/class_loader.hpp>
+
+// xtensor creates warnings that needs to be ignored as we are building with -Werror
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
 #include <xtensor/xtensor.hpp>
+#pragma GCC diagnostic pop
 
 #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
@@ -42,6 +48,7 @@ namespace mppi
 class CriticManager
 {
 public:
+  typedef std::vector<std::unique_ptr<critics::CriticFunction>> Critics;
   /**
     * @brief Constructor for mppi::CriticManager
     */
@@ -94,7 +101,7 @@ protected:
   ParametersHandler * parameters_handler_;
   std::vector<std::string> critic_names_;
   std::unique_ptr<pluginlib::ClassLoader<critics::CriticFunction>> loader_;
-  std::vector<std::unique_ptr<critics::CriticFunction>> critics_;
+  Critics critics_;
 
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
 };

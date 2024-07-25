@@ -81,11 +81,13 @@ public:
    * @brief Creating a plan from start and goal poses
    * @param start Start pose
    * @param goal Goal pose
+   * @param cancel_checker Function to check if the action has been canceled
    * @return nav2_msgs::Path of the generated path
    */
   nav_msgs::msg::Path createPlan(
     const geometry_msgs::msg::PoseStamped & start,
-    const geometry_msgs::msg::PoseStamped & goal) override;
+    const geometry_msgs::msg::PoseStamped & goal,
+    std::function<bool()> cancel_checker)  override;
 
 protected:
   /**
@@ -113,6 +115,7 @@ protected:
   bool _allow_unknown;
   int _max_iterations;
   int _max_on_approach_iterations;
+  int _terminal_checking_interval;
   SearchInfo _search_info;
   double _max_planning_time;
   double _lookup_table_size;
@@ -130,6 +133,8 @@ protected:
 
   // Dynamic parameters handler
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr _dyn_params_handler;
+  std::shared_ptr<rclcpp::ParameterEventHandler> _remote_param_subscriber;
+  std::shared_ptr<rclcpp::ParameterCallbackHandle> _remote_resolution_handler;
 };
 
 }  // namespace nav2_smac_planner

@@ -15,7 +15,11 @@
 #include <chrono>
 #include <thread>
 
+#pragma GCC diagnostic ignored "-Warray-bounds"
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
 #include <xtensor/xrandom.hpp>
+#pragma GCC diagnostic pop
+
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_mppi_controller/tools/utils.hpp"
@@ -257,7 +261,6 @@ TEST(UtilsTests, FurthestAndClosestReachedPoint)
   {state, generated_trajectories, path, costs, model_dt, false, nullptr, nullptr,
     std::nullopt, std::nullopt};  /// Caution, keep references
   EXPECT_EQ(findPathFurthestReachedPoint(data3), 5u);
-  EXPECT_EQ(findPathTrajectoryInitialPoint(data3), 5u);
 }
 
 TEST(UtilsTests, findPathCosts)

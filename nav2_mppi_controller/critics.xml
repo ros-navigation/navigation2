@@ -5,6 +5,10 @@
       <description>mppi critic for obstacle avoidance</description>
     </class>
 
+    <class type="mppi::critics::CostCritic" base_class_type="mppi::critics::CriticFunction">
+      <description>mppi critic for obstacle avoidance using costmap score</description>
+    </class>
+
     <class type="mppi::critics::GoalCritic" base_class_type="mppi::critics::CriticFunction">
       <description>mppi critic for driving towards the goal</description>
     </class>
@@ -15,10 +19,6 @@
 
     <class type="mppi::critics::PathAlignCritic" base_class_type="mppi::critics::CriticFunction">
       <description>mppi critic for aligning to path</description>
-    </class>
-
-    <class type="mppi::critics::PathAlignLegacyCritic" base_class_type="mppi::critics::CriticFunction">
-      <description>mppi critic for aligning to path (legacy)</description>
     </class>
 
     <class type="mppi::critics::PathAngleCritic" base_class_type="mppi::critics::CriticFunction">
@@ -39,6 +39,10 @@
 
     <class type="mppi::critics::ConstraintCritic" base_class_type="mppi::critics::CriticFunction">
       <description>mppi critic for incentivizing moving within kinematic and dynamic bounds</description>
+    </class>
+
+    <class type="mppi::critics::VelocityDeadbandCritic" base_class_type="mppi::critics::CriticFunction">
+      <description>mppi critic for restricting command velocities in deadband range</description>
     </class>
 
   </library>

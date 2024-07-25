@@ -32,25 +32,28 @@ def main():
     navigator = BasicNavigator()
 
     # Inspection route, probably read in from a file for a real application
-    # from either a map or drive and repeat.
+    # from either a map or drive and repeat. (x, y, yaw)
     inspection_route = [
-        [3.461, -0.450],
-        [5.531, -0.450],
-        [3.461, -2.200],
-        [5.531, -2.200],
-        [3.661, -4.121],
-        [5.431, -4.121],
-        [3.661, -5.850],
-        [5.431, -5.800]]
+        [8.21, 1.3, 1.57],
+        [8.7, 4.0, 1.57],
+        [11.6, 4.0, -1.57],
+        [11.6, 1.3, -1.57],
+        [12.6, 1.3, 1.57],
+        [12.6, 4.0, -1.57],
+        [15.27, 1.3, -1.57],
+        [16.4, 1.3, 1.57],
+        [19.0, 1.3, 1.57],
+        [19.0, 4.0, 1.57],
+    ]
 
     # Set our demo's initial pose
     initial_pose = PoseStamped()
     initial_pose.header.frame_id = 'map'
     initial_pose.header.stamp = navigator.get_clock().now().to_msg()
-    initial_pose.pose.position.x = 3.45
-    initial_pose.pose.position.y = 2.15
-    initial_pose.pose.orientation.z = 1.0
-    initial_pose.pose.orientation.w = 0.0
+    initial_pose.pose.position.x = 0.0
+    initial_pose.pose.position.y = 0.0
+    initial_pose.pose.orientation.z = 0.0
+    initial_pose.pose.orientation.w = 1.0
     navigator.setInitialPose(initial_pose)
 
     # Wait for navigation to fully activate
@@ -61,12 +64,18 @@ def main():
     inspection_pose = PoseStamped()
     inspection_pose.header.frame_id = 'map'
     inspection_pose.header.stamp = navigator.get_clock().now().to_msg()
-    inspection_pose.pose.orientation.z = 1.0
-    inspection_pose.pose.orientation.w = 0.0
     for pt in inspection_route:
         inspection_pose.pose.position.x = pt[0]
         inspection_pose.pose.position.y = pt[1]
+        # Simplification of angle handling for demonstration purposes
+        if pt[2] > 0:
+            inspection_pose.pose.orientation.z = 0.707
+            inspection_pose.pose.orientation.w = 0.707
+        else:
+            inspection_pose.pose.orientation.z = -0.707
+            inspection_pose.pose.orientation.w = 0.707
         inspection_points.append(deepcopy(inspection_pose))
+
     navigator.followWaypoints(inspection_points)
 
     # Do something during our route (e.x. AI to analyze stock information or upload to the cloud)
@@ -76,8 +85,12 @@ def main():
         i += 1
         feedback = navigator.getFeedback()
         if feedback and i % 5 == 0:
-            print('Executing current waypoint: ' +
-                  str(feedback.current_waypoint + 1) + '/' + str(len(inspection_points)))
+            print(
+                'Executing current waypoint: '
+                + str(feedback.current_waypoint + 1)
+                + '/'
+                + str(len(inspection_points))
+            )
 
     result = navigator.getResult()
     if result == TaskResult.SUCCEEDED:

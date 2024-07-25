@@ -75,8 +75,9 @@ class Costmap2DROS : public nav2_util::LifecycleNode
 public:
   /**
    * @brief  Constructor for the wrapper
+   * @param options Additional options to control creation of the node.
    */
-  Costmap2DROS();
+  explicit Costmap2DROS(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
 
   /**
    * @brief  Constructor for the wrapper, the node will
@@ -133,6 +134,28 @@ public:
    * @brief shutdown node
    */
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+
+  /**
+   * @brief as a child-LifecycleNode :
+   * Costmap2DROS may be launched by another Lifecycle Node as a composed module
+   * If composed, its parents will handle the shutdown, which includes this module
+   */
+  void on_rcl_preshutdown() override
+  {
+    if (is_lifecycle_follower_) {
+      // Transitioning handled by parent node
+      return;
+    }
+
+    // Else, if this is an independent node, this node needs to handle itself.
+    RCLCPP_INFO(
+      get_logger(), "Running Nav2 LifecycleNode rcl preshutdown (%s)",
+      this->get_name());
+
+    runCleanups();
+
+    destroyBond();
+  }
 
   /**
    * @brief  Subscribes to sensor topics if necessary and starts costmap
@@ -348,6 +371,7 @@ protected:
   std::atomic<bool> stop_updates_{false};
   std::atomic<bool> initialized_{false};
   std::atomic<bool> stopped_{true};
+  std::mutex _dynamic_parameter_mutex;
   std::unique_ptr<std::thread> map_update_thread_;  ///< @brief A thread for updating the map
   rclcpp::Time last_publish_{0, 0, RCL_ROS_TIME};
   rclcpp::Duration publish_cycle_{1, 0};
@@ -376,11 +400,13 @@ protected:
   double resolution_{0};
   std::string robot_base_frame_;            ///< The frame_id of the robot base
   double robot_radius_;
-  bool rolling_window_{false};              ///< Whether to use a rolling window version of the costmap
+  bool rolling_window_{false};          ///< Whether to use a rolling window version of the costmap
   bool track_unknown_space_{false};
   double transform_tolerance_{0};           ///< The timeout before transform errors
   double initial_transform_timeout_{0};   ///< The timeout before activation of the node errors
   float map_vis_z_{0};
+
+  bool is_lifecycle_follower_{true};   ///< whether is a child-LifecycleNode or an independent node
 
   // Derived parameters
   bool use_radius_{false};

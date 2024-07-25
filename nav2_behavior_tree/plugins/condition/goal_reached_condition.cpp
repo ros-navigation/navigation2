@@ -33,27 +33,13 @@ GoalReachedCondition::GoalReachedCondition(
 {
   auto node = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
 
-  global_frame_ = BT::deconflictPortAndParamFrame<std::string, GoalReachedCondition>(
-    node, "global_frame", this);
-  robot_base_frame_ = BT::deconflictPortAndParamFrame<std::string, GoalReachedCondition>(
+  robot_base_frame_ = BT::deconflictPortAndParamFrame<std::string>(
     node, "robot_base_frame", this);
 }
 
 GoalReachedCondition::~GoalReachedCondition()
 {
   cleanup();
-}
-
-BT::NodeStatus GoalReachedCondition::tick()
-{
-  if (!initialized_) {
-    initialize();
-  }
-
-  if (isGoalReached()) {
-    return BT::NodeStatus::SUCCESS;
-  }
-  return BT::NodeStatus::FAILURE;
 }
 
 void GoalReachedCondition::initialize()
@@ -71,19 +57,31 @@ void GoalReachedCondition::initialize()
   initialized_ = true;
 }
 
+BT::NodeStatus GoalReachedCondition::tick()
+{
+  if (!initialized_) {
+    initialize();
+  }
+
+  if (isGoalReached()) {
+    return BT::NodeStatus::SUCCESS;
+  }
+  return BT::NodeStatus::FAILURE;
+}
+
 bool GoalReachedCondition::isGoalReached()
 {
-  geometry_msgs::msg::PoseStamped current_pose;
+  geometry_msgs::msg::PoseStamped goal;
+  getInput("goal", goal);
 
+  geometry_msgs::msg::PoseStamped current_pose;
   if (!nav2_util::getCurrentPose(
-      current_pose, *tf_, global_frame_, robot_base_frame_, transform_tolerance_))
+      current_pose, *tf_, goal.header.frame_id, robot_base_frame_, transform_tolerance_))
   {
     RCLCPP_DEBUG(node_->get_logger(), "Current robot pose is not available.");
     return false;
   }
 
-  geometry_msgs::msg::PoseStamped goal;
-  getInput("goal", goal);
   double dx = goal.pose.position.x - current_pose.pose.position.x;
   double dy = goal.pose.position.y - current_pose.pose.position.y;
 
@@ -92,7 +90,7 @@ bool GoalReachedCondition::isGoalReached()
 
 }  // namespace nav2_behavior_tree
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
   factory.registerNodeType<nav2_behavior_tree::GoalReachedCondition>("GoalReached");

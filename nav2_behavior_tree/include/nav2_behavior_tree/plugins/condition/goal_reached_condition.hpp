@@ -19,7 +19,7 @@
 #include <memory>
 
 #include "rclcpp/rclcpp.hpp"
-#include "behaviortree_cpp_v3/condition_node.h"
+#include "behaviortree_cpp/condition_node.h"
 #include "tf2_ros/buffer.h"
 
 namespace nav2_behavior_tree
@@ -92,7 +92,7 @@ private:
   bool initialized_;
   double goal_reached_tol_;
   double transform_tolerance_;
-  std::string global_frame_, robot_base_frame_;
+  std::string robot_base_frame_;
 };
 
 }  // namespace nav2_behavior_tree

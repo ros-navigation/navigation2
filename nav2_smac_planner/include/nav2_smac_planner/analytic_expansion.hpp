@@ -35,7 +35,7 @@ class AnalyticExpansion
 public:
   typedef NodeT * NodePtr;
   typedef typename NodeT::Coordinates Coordinates;
-  typedef std::function<bool (const unsigned int &, NodeT * &)> NodeGetter;
+  typedef std::function<bool (const uint64_t &, NodeT * &)> NodeGetter;
 
   /**
    * @struct nav2_smac_planner::AnalyticExpansion::AnalyticExpansionNodes
@@ -95,11 +95,12 @@ public:
    * @param node The node to start the analytic path from
    * @param goal The goal node to plan to
    * @param getter The function object that gets valid nodes from the graph
+   * @param state_space State space to use for computing analytic expansions
    * @return A set of analytically expanded nodes to the goal from current node, if possible
    */
   AnalyticExpansionNodes getAnalyticPath(
     const NodePtr & node, const NodePtr & goal,
-    const NodeGetter & getter);
+    const NodeGetter & getter, const ompl::base::StateSpacePtr & state_space);
 
   /**
    * @brief Takes final analytic expansion and appends to current expanded node

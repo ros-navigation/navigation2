@@ -19,6 +19,7 @@
 #include <string>
 #include <thread>
 
+#include "rcl_interfaces/msg/parameter_descriptor.hpp"
 #include "nav2_util/node_thread.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -205,6 +206,7 @@ protected:
 
   // Connection to tell that server is still up
   std::unique_ptr<bond::Bond> bond_{nullptr};
+  double bond_heartbeat_period;
 };
 
 }  // namespace nav2_util

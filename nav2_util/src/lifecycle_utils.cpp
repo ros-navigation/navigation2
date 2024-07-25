@@ -13,16 +13,13 @@
 // limitations under the License.
 
 #include <chrono>
+#include <stdexcept>
 #include <string>
-#include <thread>
 #include <vector>
 
-#include "lifecycle_msgs/srv/change_state.hpp"
-#include "lifecycle_msgs/srv/get_state.hpp"
-#include "nav2_util/lifecycle_service_client.hpp"
+#include "lifecycle_msgs/msg/transition.hpp"
 
-using std::string;
-using lifecycle_msgs::msg::Transition;
+#include "nav2_util/lifecycle_service_client.hpp"
 
 namespace nav2_util
 {
@@ -34,7 +31,7 @@ namespace nav2_util
       try { \
         fn; \
         break; \
-      } catch (std::runtime_error & e) { \
+      } catch (const std::runtime_error & e) { \
         ++count; \
         if (count > (retries)) { \
           throw e;} \
@@ -53,10 +50,10 @@ static void startupLifecycleNode(
   // service calls still frequently hang. To get reliable startup it's necessary
   // to timeout the service call and retry it when that happens.
   RETRY(
-    sc.change_state(Transition::TRANSITION_CONFIGURE, service_call_timeout),
+    sc.change_state(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE, service_call_timeout),
     retries);
   RETRY(
-    sc.change_state(Transition::TRANSITION_ACTIVATE, service_call_timeout),
+    sc.change_state(lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE, service_call_timeout),
     retries);
 }
 
@@ -81,10 +78,10 @@ static void resetLifecycleNode(
   // service calls still frequently hang. To get reliable reset it's necessary
   // to timeout the service call and retry it when that happens.
   RETRY(
-    sc.change_state(Transition::TRANSITION_DEACTIVATE, service_call_timeout),
+    sc.change_state(lifecycle_msgs::msg::Transition::TRANSITION_DEACTIVATE, service_call_timeout),
     retries);
   RETRY(
-    sc.change_state(Transition::TRANSITION_CLEANUP, service_call_timeout),
+    sc.change_state(lifecycle_msgs::msg::Transition::TRANSITION_CLEANUP, service_call_timeout),
     retries);
 }
 

@@ -50,11 +50,14 @@ void AssistedTeleop::onConfigure()
   std::string cmd_vel_teleop;
   node->get_parameter("cmd_vel_teleop", cmd_vel_teleop);
 
-  vel_sub_ = node->create_subscription<geometry_msgs::msg::Twist>(
+  vel_sub_ = std::make_unique<nav2_util::TwistSubscriber>(
+    node,
     cmd_vel_teleop, rclcpp::SystemDefaultsQoS(),
-    std::bind(
-      &AssistedTeleop::teleopVelocityCallback,
-      this, std::placeholders::_1));
+    [&](geometry_msgs::msg::Twist::SharedPtr msg) {
+      teleop_twist_.twist = *msg;
+    }, [&](geometry_msgs::msg::TwistStamped::SharedPtr msg) {
+      teleop_twist_ = *msg;
+    });
 
   preempt_teleop_sub_ = node->create_subscription<std_msgs::msg::Empty>(
     "preempt_teleop", rclcpp::SystemDefaultsQoS(),
@@ -67,13 +70,13 @@ ResultStatus AssistedTeleop::onRun(const std::shared_ptr<const AssistedTeleopAct
 {
   preempt_teleop_ = false;
   command_time_allowance_ = command->time_allowance;
-  end_time_ = steady_clock_.now() + command_time_allowance_;
+  end_time_ = this->clock_->now() + command_time_allowance_;
   return ResultStatus{Status::SUCCEEDED, AssistedTeleopActionResult::NONE};
 }
 
 void AssistedTeleop::onActionCompletion(std::shared_ptr<AssistedTeleopActionResult>/*result*/)
 {
-  teleop_twist_ = geometry_msgs::msg::Twist();
+  teleop_twist_ = geometry_msgs::msg::TwistStamped();
   preempt_teleop_ = false;
 }
 
@@ -82,7 +85,7 @@ ResultStatus AssistedTeleop::onCycleUpdate()
   feedback_->current_teleop_duration = elasped_time_;
   action_server_->publish_feedback(feedback_);
 
-  rclcpp::Duration time_remaining = end_time_ - steady_clock_.now();
+  rclcpp::Duration time_remaining = end_time_ - this->clock_->now();
   if (time_remaining.seconds() < 0.0 && command_time_allowance_.seconds() > 0.0) {
     stopRobot();
     RCLCPP_WARN_STREAM(
@@ -115,33 +118,33 @@ ResultStatus AssistedTeleop::onCycleUpdate()
   projected_pose.y = current_pose.pose.position.y;
   projected_pose.theta = tf2::getYaw(current_pose.pose.orientation);
 
-  geometry_msgs::msg::Twist scaled_twist = teleop_twist_;
+  auto scaled_twist = std::make_unique<geometry_msgs::msg::TwistStamped>(teleop_twist_);
   for (double time = simulation_time_step_; time < projection_time_;
     time += simulation_time_step_)
   {
-    projected_pose = projectPose(projected_pose, teleop_twist_, simulation_time_step_);
+    projected_pose = projectPose(projected_pose, teleop_twist_.twist, simulation_time_step_);
 
     if (!local_collision_checker_->isCollisionFree(projected_pose)) {
       if (time == simulation_time_step_) {
         RCLCPP_DEBUG_STREAM_THROTTLE(
           logger_,
-          steady_clock_,
+          *clock_,
           1000,
           behavior_name_.c_str() << " collided on first time step, setting velocity to zero");
-        scaled_twist.linear.x = 0.0f;
-        scaled_twist.linear.y = 0.0f;
-        scaled_twist.angular.z = 0.0f;
+        scaled_twist->twist.linear.x = 0.0f;
+        scaled_twist->twist.linear.y = 0.0f;
+        scaled_twist->twist.angular.z = 0.0f;
         break;
       } else {
         RCLCPP_DEBUG_STREAM_THROTTLE(
           logger_,
-          steady_clock_,
+          *clock_,
           1000,
           behavior_name_.c_str() << " collision approaching in " << time << " seconds");
         double scale_factor = time / projection_time_;
-        scaled_twist.linear.x *= scale_factor;
-        scaled_twist.linear.y *= scale_factor;
-        scaled_twist.angular.z *= scale_factor;
+        scaled_twist->twist.linear.x *= scale_factor;
+        scaled_twist->twist.linear.y *= scale_factor;
+        scaled_twist->twist.angular.z *= scale_factor;
         break;
       }
     }
@@ -169,11 +172,6 @@ geometry_msgs::msg::Pose2D AssistedTeleop::projectPose(
   projected_pose.theta += projection_time * twist.angular.z;
 
   return projected_pose;
-}
-
-void AssistedTeleop::teleopVelocityCallback(const geometry_msgs::msg::Twist::SharedPtr msg)
-{
-  teleop_twist_ = *msg;
 }
 
 void AssistedTeleop::preemptTeleopCallback(const std_msgs::msg::Empty::SharedPtr)

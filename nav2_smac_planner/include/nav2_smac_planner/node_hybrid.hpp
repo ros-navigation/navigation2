@@ -31,6 +31,8 @@
 #include "nav2_smac_planner/types.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
 #include "nav2_smac_planner/costmap_downsampler.hpp"
+#include "nav2_costmap_2d/costmap_2d_ros.hpp"
+#include "nav2_costmap_2d/inflation_layer.hpp"
 
 namespace nav2_smac_planner
 {
@@ -38,7 +40,7 @@ namespace nav2_smac_planner
 typedef std::vector<float> LookupTable;
 typedef std::pair<double, double> TrigValues;
 
-typedef std::pair<float, unsigned int> ObstacleHeuristicElement;
+typedef std::pair<float, uint64_t> ObstacleHeuristicElement;
 struct ObstacleHeuristicComparator
 {
   bool operator()(const ObstacleHeuristicElement & a, const ObstacleHeuristicElement & b) const
@@ -109,6 +111,13 @@ struct HybridMotionTable
    * @return Raw orientation in radians
    */
   float getAngleFromBin(const unsigned int & bin_idx);
+
+  /**
+   * @brief Get the angle scaled across bins from a raw orientation
+   * @param theta Angle in radians
+   * @return angle scaled across bins
+   */
+  double getAngle(const double & theta);
 
   MotionModel motion_model = MotionModel::UNKNOWN;
   MotionPoses projections;
@@ -182,7 +191,7 @@ public:
    * @brief A constructor for nav2_smac_planner::NodeHybrid
    * @param index The index of this node for self-reference
    */
-  explicit NodeHybrid(const unsigned int index);
+  explicit NodeHybrid(const uint64_t index);
 
   /**
    * @brief A destructor for nav2_smac_planner::NodeHybrid
@@ -217,7 +226,7 @@ public:
    * @brief Gets the accumulated cost at this node
    * @return accumulated cost
    */
-  inline float & getAccumulatedCost()
+  inline float getAccumulatedCost()
   {
     return _accumulated_cost;
   }
@@ -263,7 +272,7 @@ public:
    * @brief Gets the costmap cost at this node
    * @return costmap cost
    */
-  inline float & getCost()
+  inline float getCost()
   {
     return _cell_cost;
   }
@@ -272,7 +281,7 @@ public:
    * @brief Gets if cell has been visited in search
    * @param If cell was visited
    */
-  inline bool & wasVisited()
+  inline bool wasVisited()
   {
     return _was_visited;
   }
@@ -289,7 +298,7 @@ public:
    * @brief Gets cell index
    * @return Reference to cell index
    */
-  inline unsigned int & getIndex()
+  inline uint64_t getIndex()
   {
     return _index;
   }
@@ -317,11 +326,14 @@ public:
    * @param angle_quantization Number of theta bins
    * @return Index
    */
-  static inline unsigned int getIndex(
+  static inline uint64_t getIndex(
     const unsigned int & x, const unsigned int & y, const unsigned int & angle,
     const unsigned int & width, const unsigned int & angle_quantization)
   {
-    return angle + x * angle_quantization + y * width * angle_quantization;
+    return static_cast<uint64_t>(angle) + static_cast<uint64_t>(x) *
+           static_cast<uint64_t>(angle_quantization) +
+           static_cast<uint64_t>(y) * static_cast<uint64_t>(width) *
+           static_cast<uint64_t>(angle_quantization);
   }
 
   /**
@@ -331,7 +343,7 @@ public:
    * @param angle Theta coordinate of point
    * @return Index
    */
-  static inline unsigned int getIndex(
+  static inline uint64_t getIndex(
     const unsigned int & x, const unsigned int & y, const unsigned int & angle)
   {
     return getIndex(
@@ -347,7 +359,7 @@ public:
    * @return Coordinates
    */
   static inline Coordinates getCoords(
-    const unsigned int & index,
+    const uint64_t & index,
     const unsigned int & width, const unsigned int & angle_quantization)
   {
     return Coordinates(
@@ -360,13 +372,11 @@ public:
    * @brief Get cost of heuristic of node
    * @param node Node index current
    * @param node Node index of new
-   * @param costmap Costmap ptr to use
    * @return Heuristic cost between the nodes
    */
   static float getHeuristicCost(
     const Coordinates & node_coords,
-    const Coordinates & goal_coordinates,
-    const nav2_costmap_2d::Costmap2D * costmap);
+    const Coordinates & goal_coordinates);
 
   /**
    * @brief Initialize motion models
@@ -406,7 +416,7 @@ public:
   static float getObstacleHeuristic(
     const Coordinates & node_coords,
     const Coordinates & goal_coords,
-    const double & cost_penalty);
+    const float & cost_penalty);
 
   /**
    * @brief Compute the Distance heuristic
@@ -423,13 +433,21 @@ public:
 
   /**
    * @brief reset the obstacle heuristic state
-   * @param costmap Costmap to use
+   * @param costmap_ros Costmap to use
    * @param goal_coords Coordinates to start heuristic expansion at
    */
   static void resetObstacleHeuristic(
-    nav2_costmap_2d::Costmap2D * costmap,
+    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
     const unsigned int & start_x, const unsigned int & start_y,
     const unsigned int & goal_x, const unsigned int & goal_y);
+
+  /**
+   * @brief Using the inflation layer, find the footprint's adjusted cost
+   * if the robot is non-circular
+   * @param cost Cost to adjust
+   * @return float Cost adjusted
+   */
+  static float adjustedFootprintCost(const float & cost);
 
   /**
    * @brief Retrieve all valid neighbors of a node.
@@ -439,7 +457,8 @@ public:
    * @param neighbors Vector of neighbors to be filled
    */
   void getNeighbors(
-    std::function<bool(const unsigned int &, nav2_smac_planner::NodeHybrid * &)> & validity_checker,
+    std::function<bool(const uint64_t &,
+    nav2_smac_planner::NodeHybrid * &)> & validity_checker,
     GridCollisionChecker * collision_checker,
     const bool & traverse_unknown,
     NodeVector & neighbors);
@@ -451,18 +470,28 @@ public:
    */
   bool backtracePath(CoordinateVector & path);
 
+  /**
+    * @brief Destroy shared pointer assets at the end of the process that don't
+    * require normal destruction handling
+    */
+  static void destroyStaticAssets()
+  {
+    inflation_layer.reset();
+    costmap_ros.reset();
+  }
+
   NodeHybrid * parent;
   Coordinates pose;
 
   // Constants required across all nodes but don't want to allocate more than once
-  static double travel_distance_cost;
+  static float travel_distance_cost;
   static HybridMotionTable motion_table;
   // Wavefront lookup and queue for continuing to expand as needed
   static LookupTable obstacle_heuristic_lookup_table;
   static ObstacleHeuristicQueue obstacle_heuristic_queue;
 
-  static nav2_costmap_2d::Costmap2D * sampled_costmap;
-  static CostmapDownsampler downsampler;
+  static std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros;
+  static std::shared_ptr<nav2_costmap_2d::InflationLayer> inflation_layer;
   // Dubin / Reeds-Shepp lookup and size for dereferencing
   static LookupTable dist_heuristic_lookup_table;
   static float size_lookup;
@@ -470,7 +499,7 @@ public:
 private:
   float _cell_cost;
   float _accumulated_cost;
-  unsigned int _index;
+  uint64_t _index;
   bool _was_visited;
   unsigned int _motion_primitive_index;
   TurnDirection _turn_dir;

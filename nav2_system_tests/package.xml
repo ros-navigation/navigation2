@@ -2,8 +2,8 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>nav2_system_tests</name>
-  <version>1.2.0</version>
-  <description>TODO</description>
+  <version>1.3.1</version>
+  <description>A sets of system-level tests for Nav2 usually involving full robot simulation</description>
   <maintainer email="carlos.a.orduno@intel.com">Carlos Orduno</maintainer>
   <license>Apache-2.0</license>
 
@@ -26,10 +26,10 @@
   <build_depend>geometry_msgs</build_depend>
   <build_depend>std_msgs</build_depend>
   <build_depend>tf2_geometry_msgs</build_depend>
-  <build_depend>gazebo_ros_pkgs</build_depend>
   <build_depend>launch_ros</build_depend>
   <build_depend>launch_testing</build_depend>
   <build_depend>nav2_planner</build_depend>
+  <build_depend>nav2_minimal_tb3_sim</build_depend>
 
   <exec_depend>launch_ros</exec_depend>
   <exec_depend>launch_testing</exec_depend>
@@ -48,7 +48,7 @@
   <exec_depend>nav2_amcl</exec_depend>
   <exec_depend>std_msgs</exec_depend>
   <exec_depend>tf2_geometry_msgs</exec_depend>
-  <exec_depend>gazebo_ros_pkgs</exec_depend>
+  <exec_depend>nav2_minimal_tb3_sim</exec_depend>
   <exec_depend>navigation2</exec_depend>
   <exec_depend>lcov</exec_depend>
   <exec_depend>robot_state_publisher</exec_depend>

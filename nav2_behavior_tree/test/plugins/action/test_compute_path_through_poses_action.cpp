@@ -22,9 +22,9 @@
 #include "nav_msgs/msg/path.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 
-#include "utils/test_action_server.hpp"
+#include "nav2_behavior_tree/utils/test_action_server.hpp"
 #include "nav2_behavior_tree/plugins/action/compute_path_through_poses_action.hpp"
 
 class ComputePathThroughPosesActionServer
@@ -67,7 +67,7 @@ public:
     // Create the blackboard that will be shared by all of the nodes in the tree
     config_->blackboard = BT::Blackboard::create();
     // Put items on the blackboard
-    config_->blackboard->set<rclcpp::Node::SharedPtr>(
+    config_->blackboard->set(
       "node",
       node_);
     config_->blackboard->set<std::chrono::milliseconds>(
@@ -76,7 +76,10 @@ public:
     config_->blackboard->set<std::chrono::milliseconds>(
       "bt_loop_duration",
       std::chrono::milliseconds(10));
-    config_->blackboard->set<bool>("initial_pose_received", false);
+    config_->blackboard->set<std::chrono::milliseconds>(
+      "wait_for_service_timeout",
+      std::chrono::milliseconds(1000));
+    config_->blackboard->set("initial_pose_received", false);
 
     BT::NodeBuilder builder =
       [](const std::string & name, const BT::NodeConfiguration & config)
@@ -125,7 +128,7 @@ TEST_F(ComputePathThroughPosesActionTestFixture, test_tick)
   // create tree
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <ComputePathThroughPoses goals="{goals}" path="{path}" planner_id="GridBased"/>
         </BehaviorTree>
@@ -153,13 +156,13 @@ TEST_F(ComputePathThroughPosesActionTestFixture, test_tick)
 
   // check if returned path is correct
   nav_msgs::msg::Path path;
-  config_->blackboard->get<nav_msgs::msg::Path>("path", path);
+  EXPECT_TRUE(config_->blackboard->get<nav_msgs::msg::Path>("path", path));
   EXPECT_EQ(path.poses.size(), 2u);
   EXPECT_EQ(path.poses[0].pose.position.x, 0.0);
   EXPECT_EQ(path.poses[1].pose.position.x, 1.0);
 
   // halt node so another goal can be sent
-  tree_->rootNode()->halt();
+  tree_->haltTree();
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::IDLE);
 
   // set new goal
@@ -173,7 +176,7 @@ TEST_F(ComputePathThroughPosesActionTestFixture, test_tick)
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
   EXPECT_EQ(action_server_->getCurrentGoal()->goals[0].pose.position.x, -2.5);
 
-  config_->blackboard->get<nav_msgs::msg::Path>("path", path);
+  EXPECT_TRUE(config_->blackboard->get<nav_msgs::msg::Path>("path", path));
   EXPECT_EQ(path.poses.size(), 2u);
   EXPECT_EQ(path.poses[0].pose.position.x, 0.0);
   EXPECT_EQ(path.poses[1].pose.position.x, -2.5);
@@ -184,7 +187,7 @@ TEST_F(ComputePathThroughPosesActionTestFixture, test_tick_use_start)
   // create tree
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <ComputePathThroughPoses goals="{goals}" start="{start}" path="{path}" planner_id="GridBased"/>
         </BehaviorTree>
@@ -219,13 +222,13 @@ TEST_F(ComputePathThroughPosesActionTestFixture, test_tick_use_start)
 
   // check if returned path is correct
   nav_msgs::msg::Path path;
-  config_->blackboard->get<nav_msgs::msg::Path>("path", path);
+  EXPECT_TRUE(config_->blackboard->get<nav_msgs::msg::Path>("path", path));
   EXPECT_EQ(path.poses.size(), 2u);
   EXPECT_EQ(path.poses[0].pose.position.x, 2.0);
   EXPECT_EQ(path.poses[1].pose.position.x, 1.0);
 
   // halt node so another goal can be sent
-  tree_->rootNode()->halt();
+  tree_->haltTree();
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::IDLE);
 
   // set new goal and new start
@@ -241,7 +244,7 @@ TEST_F(ComputePathThroughPosesActionTestFixture, test_tick_use_start)
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
   EXPECT_EQ(action_server_->getCurrentGoal()->goals[0].pose.position.x, -2.5);
 
-  config_->blackboard->get<nav_msgs::msg::Path>("path", path);
+  EXPECT_TRUE(config_->blackboard->get<nav_msgs::msg::Path>("path", path));
   EXPECT_EQ(path.poses.size(), 2u);
   EXPECT_EQ(path.poses[0].pose.position.x, -1.5);
   EXPECT_EQ(path.poses[1].pose.position.x, -2.5);

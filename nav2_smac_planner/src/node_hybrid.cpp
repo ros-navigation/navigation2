@@ -36,12 +36,13 @@ namespace nav2_smac_planner
 
 // defining static member for all instance to share
 LookupTable NodeHybrid::obstacle_heuristic_lookup_table;
-double NodeHybrid::travel_distance_cost = sqrt(2);
+float NodeHybrid::travel_distance_cost = sqrtf(2.0f);
 HybridMotionTable NodeHybrid::motion_table;
 float NodeHybrid::size_lookup = 25;
 LookupTable NodeHybrid::dist_heuristic_lookup_table;
-nav2_costmap_2d::Costmap2D * NodeHybrid::sampled_costmap = nullptr;
-CostmapDownsampler NodeHybrid::downsampler;
+std::shared_ptr<nav2_costmap_2d::Costmap2DROS> NodeHybrid::costmap_ros = nullptr;
+std::shared_ptr<nav2_costmap_2d::InflationLayer> NodeHybrid::inflation_layer = nullptr;
+
 ObstacleHeuristicQueue NodeHybrid::obstacle_heuristic_queue;
 
 // Each of these tables are the projected motion models through
@@ -139,7 +140,7 @@ void HybridMotionTable::initDubin(
   }
 
   // Create the correct OMPL state space
-  state_space = std::make_unique<ompl::base::DubinsStateSpace>(min_turning_radius);
+  state_space = std::make_shared<ompl::base::DubinsStateSpace>(min_turning_radius);
 
   // Precompute projection deltas
   delta_xs.resize(projections.size());
@@ -260,7 +261,7 @@ void HybridMotionTable::initReedsShepp(
   }
 
   // Create the correct OMPL state space
-  state_space = std::make_unique<ompl::base::ReedsSheppStateSpace>(min_turning_radius);
+  state_space = std::make_shared<ompl::base::ReedsSheppStateSpace>(min_turning_radius);
 
   // Precompute projection deltas
   delta_xs.resize(projections.size());
@@ -329,7 +330,8 @@ MotionPoses HybridMotionTable::getProjections(const NodeHybrid * node)
 
 unsigned int HybridMotionTable::getClosestAngularBin(const double & theta)
 {
-  return static_cast<unsigned int>(floor(theta / bin_size));
+  return static_cast<unsigned int>(floor(theta / static_cast<double>(bin_size))) %
+         num_angle_quantization;
 }
 
 float HybridMotionTable::getAngleFromBin(const unsigned int & bin_idx)
@@ -337,7 +339,12 @@ float HybridMotionTable::getAngleFromBin(const unsigned int & bin_idx)
   return bin_idx * bin_size;
 }
 
-NodeHybrid::NodeHybrid(const unsigned int index)
+double HybridMotionTable::getAngle(const double & theta)
+{
+  return theta / bin_size;
+}
+
+NodeHybrid::NodeHybrid(const uint64_t index)
 : parent(nullptr),
   pose(0.0f, 0.0f, 0.0f),
   _cell_cost(std::numeric_limits<float>::quiet_NaN()),
@@ -433,8 +440,7 @@ float NodeHybrid::getTraversalCost(const NodePtr & child)
 
 float NodeHybrid::getHeuristicCost(
   const Coordinates & node_coords,
-  const Coordinates & goal_coords,
-  const nav2_costmap_2d::Costmap2D * /*costmap*/)
+  const Coordinates & goal_coords)
 {
   const float obstacle_heuristic =
     getObstacleHeuristic(node_coords, goal_coords, motion_table.cost_penalty);
@@ -468,7 +474,7 @@ void NodeHybrid::initMotionModel(
 }
 
 inline float distanceHeuristic2D(
-  const unsigned int idx, const unsigned int size_x,
+  const uint64_t idx, const unsigned int size_x,
   const unsigned int target_x, const unsigned int target_y)
 {
   int dx = static_cast<int>(idx % size_x) - static_cast<int>(target_x);
@@ -477,7 +483,7 @@ inline float distanceHeuristic2D(
 }
 
 void NodeHybrid::resetObstacleHeuristic(
-  nav2_costmap_2d::Costmap2D * costmap,
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_i,
   const unsigned int & start_x, const unsigned int & start_y,
   const unsigned int & goal_x, const unsigned int & goal_y)
 {
@@ -485,35 +491,39 @@ void NodeHybrid::resetObstacleHeuristic(
   // the planner considerably to search through 75% less cells with no detectable
   // erosion of path quality after even modest smoothing. The error would be no more
   // than 0.05 * normalized cost. Since this is just a search prior, there's no loss in generality
-  sampled_costmap = costmap;
-  if (motion_table.downsample_obstacle_heuristic) {
-    std::weak_ptr<nav2_util::LifecycleNode> ptr;
-    downsampler.on_configure(ptr, "fake_frame", "fake_topic", costmap, 2.0, true);
-    downsampler.on_activate();
-    sampled_costmap = downsampler.downsample(2.0);
-  }
+  costmap_ros = costmap_ros_i;
+  inflation_layer = nav2_costmap_2d::InflationLayer::getInflationLayer(costmap_ros);
+  auto costmap = costmap_ros->getCostmap();
 
   // Clear lookup table
-  unsigned int size = sampled_costmap->getSizeInCellsX() * sampled_costmap->getSizeInCellsY();
+  unsigned int size = 0u;
+  unsigned int size_x = 0u;
+  if (motion_table.downsample_obstacle_heuristic) {
+    size_x = ceil(static_cast<float>(costmap->getSizeInCellsX()) / 2.0f);
+    size = size_x *
+      ceil(static_cast<float>(costmap->getSizeInCellsY()) / 2.0f);
+  } else {
+    size_x = costmap->getSizeInCellsX();
+    size = size_x * costmap->getSizeInCellsY();
+  }
+
   if (obstacle_heuristic_lookup_table.size() == size) {
     // must reset all values
     std::fill(
       obstacle_heuristic_lookup_table.begin(),
-      obstacle_heuristic_lookup_table.end(), 0.0);
+      obstacle_heuristic_lookup_table.end(), 0.0f);
   } else {
     unsigned int obstacle_size = obstacle_heuristic_lookup_table.size();
-    obstacle_heuristic_lookup_table.resize(size, 0.0);
+    obstacle_heuristic_lookup_table.resize(size, 0.0f);
     // must reset values for non-constructed indices
     std::fill_n(
-      obstacle_heuristic_lookup_table.begin(), obstacle_size, 0.0);
+      obstacle_heuristic_lookup_table.begin(), obstacle_size, 0.0f);
   }
 
   obstacle_heuristic_queue.clear();
-  obstacle_heuristic_queue.reserve(
-    sampled_costmap->getSizeInCellsX() * sampled_costmap->getSizeInCellsY());
+  obstacle_heuristic_queue.reserve(size);
 
   // Set initial goal point to queue from. Divided by 2 due to downsampled costmap.
-  const unsigned int size_x = sampled_costmap->getSizeInCellsX();
   unsigned int goal_index;
   if (motion_table.downsample_obstacle_heuristic) {
     goal_index = floor(goal_y / 2.0f) * size_x + floor(goal_x / 2.0f);
@@ -529,13 +539,46 @@ void NodeHybrid::resetObstacleHeuristic(
   obstacle_heuristic_lookup_table[goal_index] = -0.00001f;
 }
 
+float NodeHybrid::adjustedFootprintCost(const float & cost)
+{
+  if (!inflation_layer) {
+    return cost;
+  }
+
+  const auto layered_costmap = costmap_ros->getLayeredCostmap();
+  const float scale_factor = inflation_layer->getCostScalingFactor();
+  const float min_radius = layered_costmap->getInscribedRadius();
+  float dist_to_obj = (scale_factor * min_radius - log(cost) + log(253.0f)) / scale_factor;
+
+  // Subtract minimum radius for edge cost
+  dist_to_obj -= min_radius;
+  if (dist_to_obj < 0.0f) {
+    dist_to_obj = 0.0f;
+  }
+
+  // Compute cost at this value
+  return static_cast<float>(
+    inflation_layer->computeCost(dist_to_obj / layered_costmap->getCostmap()->getResolution()));
+}
+
+
 float NodeHybrid::getObstacleHeuristic(
   const Coordinates & node_coords,
   const Coordinates & goal_coords,
-  const double & cost_penalty)
+  const float & cost_penalty)
 {
   // If already expanded, return the cost
-  const unsigned int size_x = sampled_costmap->getSizeInCellsX();
+  auto costmap = costmap_ros->getCostmap();
+  const bool is_circular = costmap_ros->getUseRadius();
+  unsigned int size_x = 0u;
+  unsigned int size_y = 0u;
+  if (motion_table.downsample_obstacle_heuristic) {
+    size_x = ceil(static_cast<float>(costmap->getSizeInCellsX()) / 2.0f);
+    size_y = ceil(static_cast<float>(costmap->getSizeInCellsY()) / 2.0f);
+  } else {
+    size_x = costmap->getSizeInCellsX();
+    size_y = costmap->getSizeInCellsY();
+  }
 
   // Divided by 2 due to downsampled costmap.
   unsigned int start_y, start_x;
@@ -572,11 +615,10 @@ float NodeHybrid::getObstacleHeuristic(
     ObstacleHeuristicComparator{});
 
   const int size_x_int = static_cast<int>(size_x);
-  const unsigned int size_y = sampled_costmap->getSizeInCellsY();
-  const float sqrt2 = sqrt(2.0f);
+  const float sqrt2 = sqrtf(2.0f);
   float c_cost, cost, travel_cost, new_cost, existing_cost;
-  unsigned int idx, mx, my;
-  unsigned int new_idx = 0;
+  unsigned int mx, my;
+  unsigned int idx, new_idx = 0;
 
   const std::vector<int> neighborhood = {1, -1,  // left right
     size_x_int, -size_x_int,  // up down
@@ -604,8 +646,38 @@ float NodeHybrid::getObstacleHeuristic(
 
       // if neighbor path is better and non-lethal, set new cost and add to queue
       if (new_idx < size_x * size_y) {
-        cost = static_cast<float>(sampled_costmap->getCost(new_idx));
-        if (cost >= INSCRIBED) {
+        if (downsample_H) {
+          // Get costmap values as if downsampled
+          unsigned int y_offset = (new_idx / size_x) * 2;
+          unsigned int x_offset = (new_idx - ((new_idx / size_x) * size_x)) * 2;
+          cost = costmap->getCost(x_offset, y_offset);
+          for (unsigned int i = 0; i < 2u; ++i) {
+            unsigned int mxd = x_offset + i;
+            if (mxd >= costmap->getSizeInCellsX()) {
+              continue;
+            }
+            for (unsigned int j = 0; j < 2u; ++j) {
+              unsigned int myd = y_offset + j;
+              if (myd >= costmap->getSizeInCellsY()) {
+                continue;
+              }
+              if (i == 0 && j == 0) {
+                continue;
+              }
+              cost = std::min(cost, static_cast<float>(costmap->getCost(mxd, myd)));
+            }
+          }
+        } else {
+          cost = static_cast<float>(costmap->getCost(new_idx));
+        }
+
+        if (!is_circular) {
+          // Adjust cost value if using SE2 footprint checks
+          cost = adjustedFootprintCost(cost);
+          if (cost >= OCCUPIED) {
+            continue;
+          }
+        } else if (cost >= INSCRIBED) {
           continue;
         }
 
@@ -623,10 +695,10 @@ float NodeHybrid::getObstacleHeuristic(
         if (existing_cost <= 0.0f) {
           if (motion_table.use_quadratic_cost_penalty) {
             travel_cost =
-              (i <= 3 ? 1.0f : sqrt2) * (1.0f + (cost_penalty * cost * cost / 64516.0f));  // 254^2
+              (i <= 3 ? 1.0f : sqrt2) * (1.0f + (cost_penalty * cost * cost / 63504.0f));  // 252^2
           } else {
             travel_cost =
-              ((i <= 3) ? 1.0f : sqrt2) * (1.0f + (cost_penalty * cost / 254.0f));
+              ((i <= 3) ? 1.0f : sqrt2) * (1.0f + (cost_penalty * cost / 252.0f));
           }
 
           new_cost = c_cost + travel_cost;
@@ -747,10 +819,10 @@ void NodeHybrid::precomputeDistanceHeuristic(
 {
   // Dubin or Reeds-Shepp shortest distances
   if (motion_model == MotionModel::DUBIN) {
-    motion_table.state_space = std::make_unique<ompl::base::DubinsStateSpace>(
+    motion_table.state_space = std::make_shared<ompl::base::DubinsStateSpace>(
       search_info.minimum_turning_radius);
   } else if (motion_model == MotionModel::REEDS_SHEPP) {
-    motion_table.state_space = std::make_unique<ompl::base::ReedsSheppStateSpace>(
+    motion_table.state_space = std::make_shared<ompl::base::ReedsSheppStateSpace>(
       search_info.minimum_turning_radius);
   } else {
     throw std::runtime_error(
@@ -789,12 +861,13 @@ void NodeHybrid::precomputeDistanceHeuristic(
 }
 
 void NodeHybrid::getNeighbors(
-  std::function<bool(const unsigned int &, nav2_smac_planner::NodeHybrid * &)> & NeighborGetter,
+  std::function<bool(const uint64_t &,
+  nav2_smac_planner::NodeHybrid * &)> & NeighborGetter,
   GridCollisionChecker * collision_checker,
   const bool & traverse_unknown,
   NodeVector & neighbors)
 {
-  unsigned int index = 0;
+  uint64_t index = 0;
   NodePtr neighbor = nullptr;
   Coordinates initial_node_coords;
   const MotionPoses motion_projections = motion_table.getProjections(this);

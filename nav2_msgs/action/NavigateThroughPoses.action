@@ -10,6 +10,7 @@ string behavior_tree
 uint16 NONE=0
 
 uint16 error_code
+string error_msg
 ---
 #feedback definition
 geometry_msgs/PoseStamped current_pose

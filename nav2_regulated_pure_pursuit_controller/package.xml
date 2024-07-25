@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>nav2_regulated_pure_pursuit_controller</name>
-  <version>1.2.0</version>
+  <version>1.3.1</version>
   <description>Regulated Pure Pursuit Controller</description>
   <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
   <maintainer email="shrijitsingh99@gmail.com">Shrijit Singh</maintainer>
@@ -10,6 +10,7 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <depend>angles</depend>
   <depend>nav2_common</depend>
   <depend>nav2_core</depend>
   <depend>nav2_util</depend>

@@ -178,7 +178,6 @@ private:
   QState * paused_wp_{nullptr};
   QState * resumed_wp_{nullptr};
 
-  QImage * image_{nullptr};
   QLabel * imgDisplayLabel_{nullptr};
 
   // The following states are added to allow for the state of the button to only expose reset
@@ -203,10 +202,6 @@ private:
   int getUniqueId();
 
   void resetUniqueId();
-
-  // create label string from goal status msg
-  static inline QString getGoalStatusLabel(
-    int8_t status = action_msgs::msg::GoalStatus::STATUS_UNKNOWN);
 
   // create label string from feedback msg
   static inline QString getNavToPoseFeedbackLabel(

@@ -20,6 +20,7 @@
 #include <vector>
 #include <utility>
 
+#include "angles/angles.h"
 #include "nav2_regulated_pure_pursuit_controller/regulated_pure_pursuit_controller.hpp"
 #include "nav2_core/controller_exceptions.hpp"
 #include "nav2_util/node_utils.hpp"
@@ -73,6 +74,10 @@ void RegulatedPurePursuitController::configure(
 
   global_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("received_global_plan", 1);
   carrot_pub_ = node->create_publisher<geometry_msgs::msg::PointStamped>("lookahead_point", 1);
+  curvature_carrot_pub_ = node->create_publisher<geometry_msgs::msg::PointStamped>(
+    "curvature_lookahead_point", 1);
+  is_rotating_to_heading_pub_ = node->create_publisher<std_msgs::msg::Bool>(
+    "is_rotating_to_heading", 1);
 }
 
 void RegulatedPurePursuitController::cleanup()
@@ -84,6 +89,8 @@ void RegulatedPurePursuitController::cleanup()
     plugin_name_.c_str());
   global_path_pub_.reset();
   carrot_pub_.reset();
+  curvature_carrot_pub_.reset();
+  is_rotating_to_heading_pub_.reset();
 }
 
 void RegulatedPurePursuitController::activate()
@@ -95,6 +102,8 @@ void RegulatedPurePursuitController::activate()
     plugin_name_.c_str());
   global_path_pub_->on_activate();
   carrot_pub_->on_activate();
+  curvature_carrot_pub_->on_activate();
+  is_rotating_to_heading_pub_->on_activate();
 }
 
 void RegulatedPurePursuitController::deactivate()
@@ -106,6 +115,8 @@ void RegulatedPurePursuitController::deactivate()
     plugin_name_.c_str());
   global_path_pub_->on_deactivate();
   carrot_pub_->on_deactivate();
+  curvature_carrot_pub_->on_deactivate();
+  is_rotating_to_heading_pub_->on_deactivate();
 }
 
 std::unique_ptr<geometry_msgs::msg::PointStamped> RegulatedPurePursuitController::createCarrotMsg(
@@ -171,7 +182,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
 
   // Transform path to robot base frame
   auto transformed_plan = path_handler_->transformGlobalPlan(
-    pose, params_->max_robot_pose_search_dist);
+    pose, params_->max_robot_pose_search_dist, params_->interpolate_curvature_after_goal);
   global_path_pub_->publish(transformed_plan);
 
   // Find look ahead distance and point on path and publish
@@ -190,6 +201,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
 
   // Get the particular point on the path at the lookahead distance
   auto carrot_pose = getLookAheadPoint(lookahead_dist, transformed_plan);
+  auto rotate_to_path_carrot_pose = carrot_pose;
   carrot_pub_->publish(createCarrotMsg(carrot_pose));
 
   double linear_vel, angular_vel;
@@ -200,33 +212,59 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   if (params_->use_fixed_curvature_lookahead) {
     auto curvature_lookahead_pose = getLookAheadPoint(
       params_->curvature_lookahead_dist,
-      transformed_plan);
+      transformed_plan, params_->interpolate_curvature_after_goal);
+    rotate_to_path_carrot_pose = curvature_lookahead_pose;
     regulation_curvature = calculateCurvature(curvature_lookahead_pose.pose.position);
+    curvature_carrot_pub_->publish(createCarrotMsg(curvature_lookahead_pose));
   }
 
   // Setting the velocity direction
-  double sign = 1.0;
+  double x_vel_sign = 1.0;
   if (params_->allow_reversing) {
-    sign = carrot_pose.pose.position.x >= 0.0 ? 1.0 : -1.0;
+    x_vel_sign = carrot_pose.pose.position.x >= 0.0 ? 1.0 : -1.0;
   }
 
   linear_vel = params_->desired_linear_vel;
 
   // Make sure we're in compliance with basic constraints
+  // For shouldRotateToPath, using x_vel_sign in order to support allow_reversing
+  // and rotate_to_path_carrot_pose for the direction carrot pose:
+  //        - equal to "normal" carrot_pose when curvature_lookahead_pose = false
+  //        - otherwise equal to curvature_lookahead_pose (which can be interpolated after goal)
   double angle_to_heading;
   if (shouldRotateToGoalHeading(carrot_pose)) {
+    is_rotating_to_heading_ = true;
     double angle_to_goal = tf2::getYaw(transformed_plan.poses.back().pose.orientation);
     rotateToHeading(linear_vel, angular_vel, angle_to_goal, speed);
-  } else if (shouldRotateToPath(carrot_pose, angle_to_heading)) {
+  } else if (shouldRotateToPath(rotate_to_path_carrot_pose, angle_to_heading, x_vel_sign)) {
+    is_rotating_to_heading_ = true;
     rotateToHeading(linear_vel, angular_vel, angle_to_heading, speed);
   } else {
+    is_rotating_to_heading_ = false;
     applyConstraints(
       regulation_curvature, speed,
       collision_checker_->costAtPose(pose.pose.position.x, pose.pose.position.y), transformed_plan,
-      linear_vel, sign);
+      linear_vel, x_vel_sign);
+
+    if (cancelling_) {
+      const double & dt = control_duration_;
+      linear_vel = speed.linear.x - x_vel_sign * dt * params_->cancel_deceleration;
+
+      if (x_vel_sign > 0) {
+        if (linear_vel <= 0) {
+          linear_vel = 0;
+          finished_cancelling_ = true;
+        }
+      } else {
+        if (linear_vel >= 0) {
+          linear_vel = 0;
+          finished_cancelling_ = true;
+        }
+      }
+    }
 
     // Apply curvature to angular velocity after constraining linear velocity
-    angular_vel = linear_vel * lookahead_curvature;
+    angular_vel = linear_vel * regulation_curvature;
   }
 
   // Collision checking on this velocity heading
@@ -237,6 +275,11 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
     throw nav2_core::NoValidControl("RegulatedPurePursuitController detected collision ahead!");
   }
 
+  // Publish whether we are rotating to goal heading
+  std_msgs::msg::Bool is_rotating_to_heading_msg;
+  is_rotating_to_heading_msg.data = is_rotating_to_heading_;
+  is_rotating_to_heading_pub_->publish(is_rotating_to_heading_msg);
+
   // populate and return message
   geometry_msgs::msg::TwistStamped cmd_vel;
   cmd_vel.header = pose.header;
@@ -245,11 +288,26 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   return cmd_vel;
 }
 
+bool RegulatedPurePursuitController::cancel()
+{
+  // if false then publish zero velocity
+  if (!params_->use_cancel_deceleration) {
+    return true;
+  }
+  cancelling_ = true;
+  return finished_cancelling_;
+}
+
 bool RegulatedPurePursuitController::shouldRotateToPath(
-  const geometry_msgs::msg::PoseStamped & carrot_pose, double & angle_to_path)
+  const geometry_msgs::msg::PoseStamped & carrot_pose, double & angle_to_path,
+  double & x_vel_sign)
 {
   // Whether we should rotate robot to rough path heading
   angle_to_path = atan2(carrot_pose.pose.position.y, carrot_pose.pose.position.x);
+  // In case we are reversing
+  if (x_vel_sign < 0.0) {
+    angle_to_path = angles::normalize_angle(angle_to_path + M_PI);
+  }
   return params_->use_rotate_to_heading &&
          fabs(angle_to_path) > params_->rotate_to_heading_min_angle;
 }
@@ -314,7 +372,8 @@ geometry_msgs::msg::Point RegulatedPurePursuitController::circleSegmentIntersect
 
 geometry_msgs::msg::PoseStamped RegulatedPurePursuitController::getLookAheadPoint(
   const double & lookahead_dist,
-  const nav_msgs::msg::Path & transformed_plan)
+  const nav_msgs::msg::Path & transformed_plan,
+  bool interpolate_after_goal)
 {
   // Find the first pose which is at a distance greater than the lookahead distance
   auto goal_pose_it = std::find_if(
@@ -324,7 +383,32 @@ geometry_msgs::msg::PoseStamped RegulatedPurePursuitController::getLookAheadPoin
 
   // If the no pose is not far enough, take the last pose
   if (goal_pose_it == transformed_plan.poses.end()) {
-    goal_pose_it = std::prev(transformed_plan.poses.end());
+    if (interpolate_after_goal) {
+      auto last_pose_it = std::prev(transformed_plan.poses.end());
+      auto prev_last_pose_it = std::prev(last_pose_it);
+
+      double end_path_orientation = atan2(
+        last_pose_it->pose.position.y - prev_last_pose_it->pose.position.y,
+        last_pose_it->pose.position.x - prev_last_pose_it->pose.position.x);
+
+      // Project the last segment out to guarantee it is beyond the look ahead
+      // distance
+      auto projected_position = last_pose_it->pose.position;
+      projected_position.x += cos(end_path_orientation) * lookahead_dist;
+      projected_position.y += sin(end_path_orientation) * lookahead_dist;
+
+      // Use the circle intersection to find the position at the correct look
+      // ahead distance
+      const auto interpolated_position = circleSegmentIntersection(
+        last_pose_it->pose.position, projected_position, lookahead_dist);
+
+      geometry_msgs::msg::PoseStamped interpolated_pose;
+      interpolated_pose.header = last_pose_it->header;
+      interpolated_pose.pose.position = interpolated_position;
+      return interpolated_pose;
+    } else {
+      goal_pose_it = std::prev(transformed_plan.poses.end());
+    }
   } else if (goal_pose_it != transformed_plan.poses.begin()) {
     // Find the point on the line segment between the two poses
     // that is exactly the lookahead distance away from the robot pose (the origin)
@@ -401,6 +485,12 @@ void RegulatedPurePursuitController::setSpeedLimit(
   }
 }
 
+void RegulatedPurePursuitController::reset()
+{
+  cancelling_ = false;
+  finished_cancelling_ = false;
+}
+
 double RegulatedPurePursuitController::findVelocitySignChange(
   const nav_msgs::msg::Path & transformed_plan)
 {
@@ -419,9 +509,26 @@ double RegulatedPurePursuitController::findVelocitySignChange(
     /* Checking for the existance of cusp, in the path, using the dot product
     and determine it's distance from the robot. If there is no cusp in the path,
     then just determine the distance to the goal location. */
-    if ( (oa_x * ab_x) + (oa_y * ab_y) < 0.0) {
+    const double dot_prod = (oa_x * ab_x) + (oa_y * ab_y);
+    if (dot_prod < 0.0) {
       // returning the distance if there is a cusp
       // The transformed path is in the robots frame, so robot is at the origin
+      return hypot(
+        transformed_plan.poses[pose_id].pose.position.x,
+        transformed_plan.poses[pose_id].pose.position.y);
+    }
+
+    if (
+      (hypot(oa_x, oa_y) == 0.0 &&
+      transformed_plan.poses[pose_id - 1].pose.orientation !=
+      transformed_plan.poses[pose_id].pose.orientation)
+      ||
+      (hypot(ab_x, ab_y) == 0.0 &&
+      transformed_plan.poses[pose_id].pose.orientation !=
+      transformed_plan.poses[pose_id + 1].pose.orientation))
+    {
+      // returning the distance since the points overlap
+      // but are not simply duplicate points (e.g. in place rotation)
       return hypot(
         transformed_plan.poses[pose_id].pose.position.x,
         transformed_plan.poses[pose_id].pose.position.y);

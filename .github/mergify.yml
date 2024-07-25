@@ -1,4 +1,13 @@
 pull_request_rules:
+  - name: backport to jazzy at reviewers discretion
+    conditions:
+      - base=main
+      - "label=backport-jazzy"
+    actions:
+      backport:
+        branches:
+          - jazzy
+  
   - name: backport to iron at reviewers discretion
     conditions:
       - base=main
@@ -16,24 +25,6 @@ pull_request_rules:
       backport:
         branches:
           - humble
-
-  - name: backport to galactic at reviewers discretion
-    conditions:
-      - base=main
-      - "label=backport-galactic"
-    actions:
-      backport:
-        branches:
-          - galactic
-
-  - name: backport to foxy at reviewers discretion
-    conditions:
-      - base=main
-      - "label=backport-foxy"
-    actions:
-      backport:
-        branches:
-          - foxy-devel
 
   - name: delete head branch after merge
     conditions:
@@ -83,7 +74,7 @@ pull_request_rules:
         comment:
           message: |
             @{{author}}, please properly fill in PR template in the future. @stevemacenski, use this instead.
-            - [ ] Check that any new parameters added are updated in navigation.ros.org
+            - [ ] Check that any new parameters added are updated in docs.nav2.org
             - [ ] Check that any significant change is added to the migration guide
             - [ ] Check that any new features **OR** changes to existing behaviors are reflected in the tuning guide
             - [ ] Check that any new functions have Doxygen added

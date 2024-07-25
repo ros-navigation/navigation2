@@ -27,6 +27,7 @@
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "geometry_msgs/msg/pose2_d.hpp"
+#include "std_msgs/msg/bool.hpp"
 #include "nav2_regulated_pure_pursuit_controller/path_handler.hpp"
 #include "nav2_regulated_pure_pursuit_controller/collision_checker.hpp"
 #include "nav2_regulated_pure_pursuit_controller/parameter_handler.hpp"
@@ -96,6 +97,8 @@ public:
     const geometry_msgs::msg::Twist & velocity,
     nav2_core::GoalChecker * /*goal_checker*/) override;
 
+  bool cancel() override;
+
   /**
    * @brief nav2_core setPlan - Sets the global plan
    * @param path The global plan
@@ -110,6 +113,8 @@ public:
    * or in absolute values in false case.
    */
   void setSpeedLimit(const double & speed_limit, const bool & percentage) override;
+
+  void reset() override;
 
 protected:
   /**
@@ -131,10 +136,12 @@ protected:
    * @brief Whether robot should rotate to rough path heading
    * @param carrot_pose current lookahead point
    * @param angle_to_path Angle of robot output relatie to carrot marker
+   * @param x_vel_sign Velocoty sign (forward or backward)
    * @return Whether should rotate to path heading
    */
   bool shouldRotateToPath(
-    const geometry_msgs::msg::PoseStamped & carrot_pose, double & angle_to_path);
+    const geometry_msgs::msg::PoseStamped & carrot_pose, double & angle_to_path,
+    double & x_vel_sign);
 
   /**
    * @brief Whether robot should rotate to final goal orientation
@@ -185,9 +192,13 @@ protected:
    * @brief Get lookahead point
    * @param lookahead_dist Optimal lookahead distance
    * @param path Current global path
+   * @param interpolate_after_goal If true, interpolate the lookahead point after the goal based
+   * on the orientation given by the position of the last two pose of the path
    * @return Lookahead point
    */
-  geometry_msgs::msg::PoseStamped getLookAheadPoint(const double &, const nav_msgs::msg::Path &);
+  geometry_msgs::msg::PoseStamped getLookAheadPoint(
+    const double &, const nav_msgs::msg::Path &,
+    bool interpolate_after_goal = false);
 
   /**
    * @brief checks for the cusp position
@@ -206,10 +217,17 @@ protected:
   Parameters * params_;
   double goal_dist_tol_;
   double control_duration_;
+  bool cancelling_ = false;
+  bool finished_cancelling_ = false;
+  bool is_rotating_to_heading_ = false;
 
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> global_path_pub_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PointStamped>>
   carrot_pub_;
+  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PointStamped>>
+  curvature_carrot_pub_;
+  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Bool>>
+  is_rotating_to_heading_pub_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> carrot_arc_pub_;
   std::unique_ptr<nav2_regulated_pure_pursuit_controller::PathHandler> path_handler_;
   std::unique_ptr<nav2_regulated_pure_pursuit_controller::ParameterHandler> param_handler_;

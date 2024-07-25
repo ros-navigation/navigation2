@@ -37,22 +37,21 @@ def main():
     # Security route, probably read in from a file for a real application
     # from either a map or drive and repeat.
     security_route = [
-        [1.792, 2.144],
-        [1.792, -5.44],
-        [1.792, -9.427],
-        [-3.665, -9.427],
-        [-3.665, -4.303],
-        [-3.665, 2.330],
-        [-3.665, 9.283]]
+        [10.15, -0.77],
+        [17.86, -0.77],
+        [21.58, -3.5],
+        [19.4, -6.4],
+        [-6.0, 5.0],
+    ]
 
     # Set our demo's initial pose
     initial_pose = PoseStamped()
     initial_pose.header.frame_id = 'map'
     initial_pose.header.stamp = navigator.get_clock().now().to_msg()
-    initial_pose.pose.position.x = 3.45
-    initial_pose.pose.position.y = 2.15
-    initial_pose.pose.orientation.z = 1.0
-    initial_pose.pose.orientation.w = 0.0
+    initial_pose.pose.position.x = 0.0
+    initial_pose.pose.position.y = 0.0
+    initial_pose.pose.orientation.z = 0.0
+    initial_pose.pose.orientation.w = 1.0
     navigator.setInitialPose(initial_pose)
 
     # Wait for navigation to fully activate
@@ -79,12 +78,19 @@ def main():
             i += 1
             feedback = navigator.getFeedback()
             if feedback and i % 5 == 0:
-                print('Estimated time to complete current route: ' + '{0:.0f}'.format(
-                      Duration.from_msg(feedback.estimated_time_remaining).nanoseconds / 1e9)
-                      + ' seconds.')
+                print(
+                    'Estimated time to complete current route: '
+                    + '{0:.0f}'.format(
+                        Duration.from_msg(feedback.estimated_time_remaining).nanoseconds
+                        / 1e9
+                    )
+                    + ' seconds.'
+                )
 
                 # Some failure mode, must stop since the robot is clearly stuck
-                if Duration.from_msg(feedback.navigation_time) > Duration(seconds=180.0):
+                if Duration.from_msg(feedback.navigation_time) > Duration(
+                    seconds=180.0
+                ):
                     print('Navigation has exceeded timeout of 180s, canceling request.')
                     navigator.cancelTask()
 

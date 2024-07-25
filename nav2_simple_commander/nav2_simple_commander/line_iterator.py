@@ -24,7 +24,7 @@ through the points of a line.
 from cmath import sqrt
 
 
-class LineIterator():
+class LineIterator:
     """
     LineIterator.
 
@@ -77,18 +77,19 @@ class LineIterator():
 
         if x1 != x0 and y1 != y0:
             self.valid_ = True
-            self.m_ = (y1-y0)/(x1-x0)
-            self.b_ = y1 - (self.m_*x1)
+            self.m_ = (y1 - y0) / (x1 - x0)
+            self.b_ = y1 - (self.m_ * x1)
         elif x1 == x0 and y1 != y0:
             self.valid_ = True
         elif y1 == y1 and x1 != x0:
             self.valid_ = True
-            self.m_ = (y1-y0)/(x1-x0)
-            self.b_ = y1 - (self.m_*x1)
+            self.m_ = (y1 - y0) / (x1 - x0)
+            self.b_ = y1 - (self.m_ * x1)
         else:
             self.valid_ = False
             raise ValueError(
-                'Line has zero length (All 4 points have same coordinates)')
+                'Line has zero length (All 4 points have same coordinates)'
+            )
 
     def isValid(self):
         """Check if line is valid."""
@@ -98,29 +99,33 @@ class LineIterator():
         """Advance to the next point in the line."""
         if self.x1_ > self.x0_:
             if self.x_ < self.x1_:
-                self.x_ = round(self.clamp(
-                    self.x_ + self.step_size_, self.x0_, self.x1_), 5)
+                self.x_ = round(
+                    self.clamp(self.x_ + self.step_size_, self.x0_, self.x1_), 5
+                )
                 self.y_ = round(self.m_ * self.x_ + self.b_, 5)
             else:
                 self.valid_ = False
         elif self.x1_ < self.x0_:
             if self.x_ > self.x1_:
-                self.x_ = round(self.clamp(
-                    self.x_ - self.step_size_, self.x1_, self.x0_), 5)
+                self.x_ = round(
+                    self.clamp(self.x_ - self.step_size_, self.x1_, self.x0_), 5
+                )
                 self.y_ = round(self.m_ * self.x_ + self.b_, 5)
             else:
                 self.valid_ = False
         else:
             if self.y1_ > self.y0_:
                 if self.y_ < self.y1_:
-                    self.y_ = round(self.clamp(
-                        self.y_ + self.step_size_, self.y0_, self.y1_), 5)
+                    self.y_ = round(
+                        self.clamp(self.y_ + self.step_size_, self.y0_, self.y1_), 5
+                    )
                 else:
                     self.valid_ = False
             elif self.y1_ < self.y0_:
                 if self.y_ > self.y1_:
-                    self.y_ = round(self.clamp(
-                        self.y_ - self.step_size_, self.y1_, self.y0_), 5)
+                    self.y_ = round(
+                        self.clamp(self.y_ - self.step_size_, self.y1_, self.y0_), 5
+                    )
                 else:
                     self.valid_ = False
             else:

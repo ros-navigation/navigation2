@@ -98,15 +98,34 @@ This process is then repeated a number of times and returns a converged solution
 
 
 #### Obstacles Critic
+
+Uses estimated distances from obstacles using cost and inflation parameters to avoid obstacles
+
  | Parameter            | Type   | Definition                                                                                                  |
  | ---------------      | ------ | ----------------------------------------------------------------------------------------------------------- |
  | consider_footprint   | bool   | Default: False. Whether to use point cost (if robot is circular or low compute power) or compute SE2 footprint cost. |
  | critical_weight          | double | Default 20.0. Weight to apply to critic for near collisions closer than `collision_margin_distance` to prevent near collisions **only** as a method of virtually inflating the footprint. This should not be used to generally influence obstacle avoidance away from critical collisions.                                                                |
  | repulsion_weight          | double | Default 1.5. Weight to apply to critic for generally preferring routes in lower cost space. This is separated from the critical term to allow for fine tuning of obstacle behaviors with path alignment for dynamic scenes without impacting actions which may directly lead to near-collisions. This is applied within the `inflation_radius` distance from obstacles.                                                                |
  | cost_power           | int    | Default 1. Power order to apply to term.                                                                    |
- | collision_cost       | double | Default 10000.0. Cost to apply to a true collision in a trajectory.                                          |
+ | collision_cost       | double | Default 100000.0. Cost to apply to a true collision in a trajectory.                                          |
  | collision_margin_distance   | double    | Default 0.10. Margin distance from collision to apply severe penalty, similar to footprint inflation. Between 0.05-0.2 is reasonable. |
  | near_goal_distance          | double    | Default 0.5. Distance near goal to stop applying preferential obstacle term to allow robot to smoothly converge to goal pose in close proximity to obstacles.   
+ | inflation_layer_name        | string    | Default "". Name of the inflation layer. If empty, it uses the last inflation layer in the costmap. If you have multiple inflation layers, you may want to specify the name of the layer to use. |
+
+#### Cost Critic
+
+Uses inflated costmap cost directly to avoid obstacles
+
+ | Parameter            | Type   | Definition                                                                                                  |
+ | ---------------      | ------ | ----------------------------------------------------------------------------------------------------------- |
+ | consider_footprint   | bool   | Default: False. Whether to use point cost (if robot is circular or low compute power) or compute SE2 footprint cost. |
+ | cost_weight          | double | Default 3.81. Wight to apply to critic to avoid obstacles.                                       | 
+ | cost_power           | int    | Default 1. Power order to apply to term.                                                                    |
+ | collision_cost       | double | Default 1000000.0. Cost to apply to a true collision in a trajectory.                                          |
+ | critical_cost       | double | Default 300.0. Cost to apply to a pose with any point in in inflated space to prefer distance from obstacles.                                          |
+ | near_goal_distance          | double    | Default 0.5. Distance near goal to stop applying preferential obstacle term to allow robot to smoothly converge to goal pose in close proximity to obstacles.   
+ | inflation_layer_name        | string    | Default "". Name of the inflation layer. If empty, it uses the last inflation layer in the costmap. If you have multiple inflation layers, you may want to specify the name of the layer to use. |
+ | trajectory_point_step      | int | Default 2. Step of trajectory points to evaluate for costs since otherwise so dense represents multiple points for a single costmap cell.   |
 
 #### Path Align Critic
  | Parameter                  | Type   | Definition                                                                                                                         |
@@ -115,20 +134,18 @@ This process is then repeated a number of times and returns a converged solution
  | cost_power                 | int    | Default 1. Power order to apply to term.                                                                                           |
  | threshold_to_consider      | double | Default 0.5. Distance between robot and goal above which path align cost stops being considered                                    |
  | offset_from_furthest      | double | Default 20. Checks that the candidate trajectories are sufficiently far along their way tracking the path to apply the alignment critic. This ensures that path alignment is only considered when actually tracking the path, preventing awkward initialization motions preventing the robot from leaving the path to achieve the appropriate heading.  |
- | trajectory_point_step      | double | Default 4. Step of trajectory points to evaluate for path distance to reduce compute time. Between 1-10 is typically reasonable.   |
+ | trajectory_point_step      | int | Default 4. Step of trajectory points to evaluate for path distance to reduce compute time. Between 1-10 is typically reasonable.   |
  | max_path_occupancy_ratio   | double | Default 0.07 (7%). Maximum proportion of the path that can be occupied before this critic is not considered to allow the obstacle and path follow critics to avoid obstacles while following the path's intent in presence of dynamic objects in the scene.  |
  | use_path_orientations   | bool | Default false. Whether to consider path's orientations in path alignment, which can be useful when paired with feasible smac planners to incentivize directional changes only where/when the smac planner requests them. If you want the robot to deviate and invert directions where the controller sees fit, keep as false. If your plans do not contain orientation information (e.g. navfn), keep as false.  |
-
-Note: There is a "Legacy" version of this critic also available with the same parameters of an old formulation pre-October 2023.
 
 #### Path Angle Critic
  | Parameter                 | Type   | Definition                                                                                                  |
  | ---------------           | ------ | ----------------------------------------------------------------------------------------------------------- |
- | cost_weight               | double | Default 2.0. Weight to apply to critic term.                                                                |
+ | cost_weight               | double | Default 2.2. Weight to apply to critic term.                                                                |
  | cost_power                | int    | Default 1. Power order to apply to term.                                                                    |
  | threshold_to_consider     | double | Default 0.5. Distance between robot and goal above which path angle cost stops being considered             |
  | offset_from_furthest      | int    | Default 4. Number of path points after furthest one any trajectory achieves to compute path angle relative to.  |
- | max_angle_to_furthest     | double | Default 1.2. Angular distance between robot and goal above which path angle cost starts being considered           |
+ | max_angle_to_furthest     | double | Default 0.785398. Angular distance between robot and goal above which path angle cost starts being considered           |
  | mode     | int | Default 0 (Forward Preference). Enum type for mode of operations for the path angle critic depending on path input types and behavioral desires. 0: Forward Preference, penalizes high path angles relative to the robot's orientation to incentivize turning towards the path. 1: No directional preference, penalizes high path angles relative to the robot's orientation or mirrored orientation (e.g. reverse), which ever is less, when a particular direction of travel is not preferable. 2: Consider feasible path orientation, when using a feasible path whereas the path points have orientation information (e.g. Smac Planners), consider the path's requested direction of travel to penalize path angles such that the robot will follow the path in the requested direction. |
 
 
@@ -153,6 +170,15 @@ Note: There is a "Legacy" version of this critic also available with the same pa
  | ---------------       | ------ | ----------------------------------------------------------------------------------------------------------- |
  | cost_weight           | double | Default 10.0. Weight to apply to critic term.                                                               |
  | cost_power            | int    | Default 1. Power order to apply to term.                                                                    |
+
+
+#### Velocity Deadband Critic
+ | Parameter             | Type     | Definition                                                                                                  |
+ | ---------------       | ------   | ----------------------------------------------------------------------------------------------------------- |
+ | cost_weight           | double   | Default 35.0. Weight to apply to critic term.                                                               |
+ | cost_power            | int      | Default 1. Power order to apply to term.                                                                    |
+ | deadband_velocities   | double[] | Default [0.0, 0.0, 0.0].  The array of deadband velocities [vx, vz, wz]. A zero array indicates that the critic will take no action.      |
+
 
 ### XML configuration example
 ```
@@ -183,7 +209,7 @@ controller_server:
         time_step: 3
       AckermannConstraints:
         min_turning_r: 0.2
-      critics: ["ConstraintCritic", "ObstaclesCritic", "GoalCritic", "GoalAngleCritic", "PathAlignCritic", "PathFollowCritic", "PathAngleCritic", "PreferForwardCritic"]
+      critics: ["ConstraintCritic", "CostCritic", "GoalCritic", "GoalAngleCritic", "PathAlignCritic", "PathFollowCritic", "PathAngleCritic", "PreferForwardCritic"]
       ConstraintCritic:
         enabled: true
         cost_power: 1
@@ -203,21 +229,31 @@ controller_server:
         cost_power: 1
         cost_weight: 5.0
         threshold_to_consider: 0.5
-      ObstaclesCritic:
+      # Option to replace Cost and use Obstacles instead
+      # ObstaclesCritic:
+      #   enabled: true
+      #   cost_power: 1
+      #   repulsion_weight: 1.5
+      #   critical_weight: 20.0
+      #   consider_footprint: false
+      #   collision_cost: 10000.0
+      #   collision_margin_distance: 0.1
+      #   near_goal_distance: 0.5
+      CostCritic:
         enabled: true
         cost_power: 1
-        repulsion_weight: 1.5
-        critical_weight: 20.0
-        consider_footprint: false
-        collision_cost: 10000.0
-        collision_margin_distance: 0.1
-        near_goal_distance: 0.5
+        cost_weight: 3.81
+        critical_cost: 300.0
+        consider_footprint: true
+        collision_cost: 1000000.0
+        near_goal_distance: 1.0
+        trajectory_point_step: 2
       PathAlignCritic:
         enabled: true
         cost_power: 1
         cost_weight: 14.0
         max_path_occupancy_ratio: 0.05
-        trajectory_point_step: 3
+        trajectory_point_step: 4
         threshold_to_consider: 0.5
         offset_from_furthest: 20
         use_path_orientations: false
@@ -235,6 +271,11 @@ controller_server:
         threshold_to_consider: 0.5
         max_angle_to_furthest: 1.0
         forward_preference: true
+      # VelocityDeadbandCritic:
+      #   enabled: true
+      #   cost_power: 1
+      #   cost_weight: 35.0
+      #   deadband_velocities: [0.05, 0.05, 0.05]
       # TwirlingCritic:
       #   enabled: true
       #   twirling_cost_power: 1
@@ -260,6 +301,8 @@ The most common parameters you might want to start off changing are the velocity
 If you don't require path following behavior (e.g. just want to follow a goal pose and let the model predictive elements decide the best way to accomplish that), you may easily remove the PathAlign, PathFollow and PathAngle critics. 
 
 By default, the controller is tuned and has the capabilities established in the PathAlign/Obstacle critics to generally follow the path closely when no obstacles prevent it, but able to deviate from the path when blocked. See `PathAlignCritic::score()` for details, but it is disabled when the local path is blocked so the obstacle critic takes over in that state.
+
+If you want to slow further on approach to goal, consider increasing the ``threshold_to_consider`` parameters to give a hand off from the path tracking critics to the goal approach critics sooner - then tune those critics for your profile of interest.
 
 ### Prediction Horizon, Costmap Sizing, and Offsets
 

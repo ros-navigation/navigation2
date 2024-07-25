@@ -46,9 +46,9 @@ inline geometry_msgs::msg::Pose getWorldCoords(
 {
   geometry_msgs::msg::Pose msg;
   msg.position.x =
-    static_cast<float>(costmap->getOriginX()) + (mx + 0.5) * costmap->getResolution();
+    static_cast<float>(costmap->getOriginX()) + (mx - 0.5) * costmap->getResolution();
   msg.position.y =
-    static_cast<float>(costmap->getOriginY()) + (my + 0.5) * costmap->getResolution();
+    static_cast<float>(costmap->getOriginY()) + (my - 0.5) * costmap->getResolution();
   return msg;
 }
 
@@ -76,27 +76,15 @@ inline geometry_msgs::msg::Quaternion getWorldOrientation(
 inline double findCircumscribedCost(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap)
 {
   double result = -1.0;
-  bool inflation_layer_found = false;
   std::vector<std::shared_ptr<nav2_costmap_2d::Layer>>::iterator layer;
 
   // check if the costmap has an inflation layer
-  for (layer = costmap->getLayeredCostmap()->getPlugins()->begin();
-    layer != costmap->getLayeredCostmap()->getPlugins()->end();
-    ++layer)
-  {
-    std::shared_ptr<nav2_costmap_2d::InflationLayer> inflation_layer =
-      std::dynamic_pointer_cast<nav2_costmap_2d::InflationLayer>(*layer);
-    if (!inflation_layer) {
-      continue;
-    }
-
-    inflation_layer_found = true;
+  const auto inflation_layer = nav2_costmap_2d::InflationLayer::getInflationLayer(costmap);
+  if (inflation_layer != nullptr) {
     double circum_radius = costmap->getLayeredCostmap()->getCircumscribedRadius();
     double resolution = costmap->getCostmap()->getResolution();
     result = static_cast<double>(inflation_layer->computeCost(circum_radius / resolution));
-  }
-
-  if (!inflation_layer_found) {
+  } else {
     RCLCPP_WARN(
       rclcpp::get_logger("computeCircumscribedCost"),
       "No inflation layer found in costmap configuration. "

@@ -9,6 +9,7 @@
 | Ticket(s) this addresses   | (add tickets here #1) |
 | Primary OS tested on | (Ubuntu, MacOS, Windows) |
 | Robotic platform tested on | (Steve's Robot, gazebo simulation of Tally, hardware turtlebot) |
+| Does this PR contain AI generated software? | (No; Yes and it is marked inline in the code) |
 
 ---
 
@@ -37,7 +38,7 @@
 -->
 
 #### For Maintainers: <!-- DO NOT EDIT OR REMOVE -->
-- [ ] Check that any new parameters added are updated in navigation.ros.org
+- [ ] Check that any new parameters added are updated in docs.nav2.org
 - [ ] Check that any significant change is added to the migration guide
 - [ ] Check that any new features **OR** changes to existing behaviors are reflected in the tuning guide
 - [ ] Check that any new functions have Doxygen added

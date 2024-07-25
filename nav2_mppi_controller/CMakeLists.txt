@@ -12,8 +12,8 @@ set(XTENSOR_USE_XSIMD 1)
 # set(XTENSOR_DEFAULT_TRAVERSAL row_major)  # row_major, column_major
 
 find_package(ament_cmake REQUIRED)
-find_package(xtensor REQUIRED)
 find_package(xsimd REQUIRED)
+find_package(xtensor REQUIRED)
 
 include_directories(
   include
@@ -79,15 +79,16 @@ add_library(mppi_controller SHARED
 
 add_library(mppi_critics SHARED
   src/critics/obstacles_critic.cpp
+  src/critics/cost_critic.cpp
   src/critics/goal_critic.cpp
   src/critics/goal_angle_critic.cpp
   src/critics/path_align_critic.cpp
-  src/critics/path_align_legacy_critic.cpp
   src/critics/path_follow_critic.cpp
   src/critics/path_angle_critic.cpp
   src/critics/prefer_forward_critic.cpp
   src/critics/twirling_critic.cpp
   src/critics/constraint_critic.cpp
+  src/critics/velocity_deadband_critic.cpp
 )
 
 set(libraries mppi_controller mppi_critics)

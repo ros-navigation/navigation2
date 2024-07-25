@@ -78,8 +78,7 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & /*state*/)
     get_node_waitables_interface(),
     "navigate_to_pose", callback_group_);
 
-  double action_server_result_timeout;
-  get_parameter("action_server_result_timeout", action_server_result_timeout);
+  double action_server_result_timeout = get_parameter("action_server_result_timeout").as_double();
   rcl_action_server_options_t server_options = rcl_action_server_get_default_options();
   server_options.result_timeout.nanoseconds = RCL_S_TO_NS(action_server_result_timeout);
 
@@ -155,6 +154,7 @@ WaypointFollower::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 
   xyz_action_server_->deactivate();
   gps_action_server_->deactivate();
+  remove_on_set_parameters_callback(dyn_params_handler_.get());
   dyn_params_handler_.reset();
   // destroy bond connection
   destroyBond();
@@ -187,15 +187,21 @@ std::vector<geometry_msgs::msg::PoseStamped> WaypointFollower::getLatestGoalPose
   const T & action_server)
 {
   std::vector<geometry_msgs::msg::PoseStamped> poses;
+  const auto current_goal = action_server->get_current_goal();
+
+  if (!current_goal) {
+    RCLCPP_ERROR(get_logger(), "No current action goal found!");
+    return poses;
+  }
 
   // compile time static check to decide which block of code to be built
   if constexpr (std::is_same<T, std::unique_ptr<ActionServer>>::value) {
     // If normal waypoint following callback was called, we build here
-    poses = action_server->get_current_goal()->poses;
+    poses = current_goal->poses;
   } else {
     // If GPS waypoint following callback was called, we build here
     poses = convertGPSPosesToMapPoses(
-      action_server->get_current_goal()->gps_poses);
+      current_goal->gps_poses);
   }
   return poses;
 }
