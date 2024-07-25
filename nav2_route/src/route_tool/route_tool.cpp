@@ -70,9 +70,18 @@ namespace route_tool
         }
     }
 
-    void routeTool::on_submit_button_clicked(void)
+    void routeTool::on_confirm_button_clicked(void)
     {
+        if (ui_->edit_node_button->isChecked()) {
+            auto node_id = ui_->edit_id->toPlainText().toInt();
+            auto new_longitude = ui_->edit_field_1->toPlainText().toFloat();
+            auto new_latitude = ui_->edit_field_2->toPlainText().toFloat();
+            graph_[graph_to_id_map_[node_id]].coords.x = new_longitude;
+            graph_[graph_to_id_map_[node_id]].coords.y = new_latitude;
+            update_route_graph();
+        } else if (ui_->edit_edge_button->isChecked()) {
 
+        }
 
     }
 
