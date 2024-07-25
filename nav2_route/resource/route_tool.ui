@@ -21,7 +21,7 @@
        <item alignment="Qt::AlignHCenter|Qt::AlignTop">
         <widget class="QTabWidget" name="tabWidget">
          <property name="currentIndex">
-          <number>0</number>
+          <number>1</number>
          </property>
          <widget class="QWidget" name="add_tab">
           <property name="minimumSize">
@@ -153,7 +153,7 @@
              <item>
               <layout class="QHBoxLayout" name="horizontalLayout_6">
                <item>
-                <widget class="QRadioButton" name="radioButton_3">
+                <widget class="QRadioButton" name="edit_node_button">
                  <property name="text">
                   <string>Node</string>
                  </property>
@@ -169,7 +169,7 @@
                 </widget>
                </item>
                <item>
-                <widget class="QRadioButton" name="radioButton_4">
+                <widget class="QRadioButton" name="edit_edge_button">
                  <property name="text">
                   <string>Edge</string>
                  </property>
@@ -187,7 +187,7 @@
                 </widget>
                </item>
                <item>
-                <widget class="QTextBrowser" name="textBrowser">
+                <widget class="QTextEdit" name="edit_id">
                  <property name="maximumSize">
                   <size>
                    <width>16777215</width>
@@ -221,14 +221,14 @@
                <item>
                 <layout class="QHBoxLayout" name="horizontalLayout_8">
                  <item>
-                  <widget class="QLabel" name="label_5">
+                  <widget class="QLabel" name="edit_label_1">
                    <property name="text">
                     <string>Field 1:</string>
                    </property>
                   </widget>
                  </item>
                  <item>
-                  <widget class="QTextEdit" name="textEdit_4">
+                  <widget class="QTextEdit" name="edit_field_1">
                    <property name="maximumSize">
                     <size>
                      <width>16777215</width>
@@ -242,14 +242,14 @@
                <item>
                 <layout class="QHBoxLayout" name="horizontalLayout_9">
                  <item>
-                  <widget class="QLabel" name="label_6">
+                  <widget class="QLabel" name="edit_label_2">
                    <property name="text">
                     <string>Field 2:</string>
                    </property>
                   </widget>
                  </item>
                  <item>
-                  <widget class="QTextEdit" name="textEdit_5">
+                  <widget class="QTextEdit" name="edit_field_2">
                    <property name="maximumSize">
                     <size>
                      <width>16777215</width>
@@ -263,7 +263,7 @@
               </layout>
              </item>
              <item alignment="Qt::AlignVCenter">
-              <widget class="QPushButton" name="pushButton_2">
+              <widget class="QPushButton" name="confirm_button">
                <property name="text">
                 <string>Confirm</string>
                </property>

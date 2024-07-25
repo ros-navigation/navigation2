@@ -68,7 +68,7 @@ namespace route_tool
 
             void on_create_button_clicked(void);
 
-            void on_submit_button_clicked(void);
+            void on_confirm_button_clicked(void);
 
             void on_delete_button_clicked(void);
 
