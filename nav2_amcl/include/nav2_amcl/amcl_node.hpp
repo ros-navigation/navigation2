@@ -37,17 +37,13 @@
 #include "nav2_msgs/msg/particle_cloud.hpp"
 #include "nav2_msgs/srv/set_initial_pose.hpp"
 #include "nav_msgs/srv/set_map.hpp"
+#include "pluginlib/class_loader.hpp"
+#include "rclcpp/node_options.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
 #include "std_srvs/srv/empty.hpp"
+#include "tf2_ros/message_filter.h"
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2_ros/transform_listener.h"
-#include "pluginlib/class_loader.hpp"
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#pragma GCC diagnostic ignored "-Wreorder"
-#include "tf2_ros/message_filter.h"
-#pragma GCC diagnostic pop
 
 #define NEW_UNIFORM_SAMPLING 1
 
