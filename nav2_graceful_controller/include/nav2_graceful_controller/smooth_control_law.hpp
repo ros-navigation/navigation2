@@ -79,8 +79,7 @@ public:
    * @param v_angular_max The maximum absolute velocity in the angular direction.
    */
   void setSpeedLimit(
-    const double v_linear_min, const double v_linear_max,
-    const double v_angular_max);
+    const double v_linear_min, const double v_linear_max, const double v_angular_max);
 
   /**
    * @brief Compute linear and angular velocities command using the curvature.
@@ -103,8 +102,7 @@ public:
    * @return Velocity command.
    */
   geometry_msgs::msg::Twist calculateRegularVelocity(
-    const geometry_msgs::msg::Pose & target,
-    const bool & backward = false);
+    const geometry_msgs::msg::Pose & target, const bool & backward = false);
 
   /**
    * @brief Calculate the next pose of the robot by generating a velocity command using the
