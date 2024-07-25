@@ -834,13 +834,13 @@ void Costmap2DROS::getCostCallback(
 
   if (request->use_footprint) {
     Footprint footprint = layered_costmap_->getFootprint();
-    FootprintCollisionChecker<Costmap2D *> collision_checker_(costmap);
+    FootprintCollisionChecker<Costmap2D *> collision_checker(costmap);
 
     RCLCPP_INFO(
-      get_logger(), "Received request to get cost at footprint (%.2f, %.2f, %.2f)",
+      get_logger(), "Received request to get cost at footprint pose (%.2f, %.2f, %.2f)",
       request->x, request->y, request->theta);
 
-    response->cost = collision_checker_.footprintCostAtPose(
+    response->cost = collision_checker.footprintCostAtPose(
       request->x, request->y, request->theta, footprint);
   } else if (costmap->worldToMap(request->x, request->y, mx, my)) {
     RCLCPP_INFO(
