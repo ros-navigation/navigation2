@@ -146,8 +146,8 @@ void Costmap2DPublisher::prepareGrid()
 
   double wx, wy;
   costmap_->mapToWorld(0, 0, wx, wy);
-  grid_->info.origin.position.x = wx - grid_resolution / 2;
-  grid_->info.origin.position.y = wy - grid_resolution / 2;
+  grid_->info.origin.position.x = wx - grid_resolution_ / 2;
+  grid_->info.origin.position.y = wy - grid_resolution_ / 2;
   grid_->info.origin.position.z = map_vis_z_;
   grid_->info.origin.orientation.w = 1.0;
 
