@@ -52,14 +52,21 @@ namespace route_tool
             auto longitude = ui_->add_field_1->toPlainText().toFloat();
             auto latitude = ui_->add_field_2->toPlainText().toFloat();
             nav2_route::Node new_node;
-            new_node.nodeid = next_node_id_++;
+            new_node.nodeid = next_node_id_;
             new_node.coords.x = longitude;
             new_node.coords.y = latitude;
             graph_.push_back(new_node);
+            graph_to_id_map_[next_node_id_++] = graph_.size() - 1;
             RCLCPP_INFO(node_->get_logger(), "Adding node at: (%f, %f)", longitude, latitude);
             update_route_graph();
         } else if (ui_->add_edge_button->isChecked()) {
-            RCLCPP_INFO(node_->get_logger(), "ADDING EDGE");
+            auto start_node = ui_->add_field_1->toPlainText().toInt();
+            auto end_node = ui_->add_field_2->toPlainText().toInt();
+            nav2_route::EdgeCost edge_cost;
+            graph_[graph_to_id_map_[start_node]].addEdge(edge_cost, &(graph_[graph_to_id_map_[end_node]]), next_node_id_++);
+            RCLCPP_INFO(node_->get_logger(), "Neighbor: (%f, %f)", graph_[graph_to_id_map_[start_node]].neighbors[0].start->coords.x, graph_[graph_to_id_map_[start_node]].neighbors[0].start->coords.y);
+            RCLCPP_INFO(node_->get_logger(), "Adding edge from %d to %d", start_node, end_node);
+            update_route_graph();
         }
     }
 
