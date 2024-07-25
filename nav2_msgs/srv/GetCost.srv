@@ -1,0 +1,8 @@
+# Get costmap cost at given point
+
+bool use_footprint
+float32 x
+float32 y
+float32 theta
+---
+float32 cost

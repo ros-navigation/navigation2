@@ -24,6 +24,12 @@
     <description>The Nav2 rviz panel for dock and undock actions.</description>
   </class>
 
+  <class name="nav2_rviz_plugins/CostmapCostTool"
+         type="nav2_rviz_plugins::CostmapCostTool"
+         base_class_type="rviz_common::Tool">
+    <description>A Nav2 tool for getting the cost of point in costmap.</description>
+  </class>
+
   <class name="nav2_rviz_plugins/ParticleCloud"
          type="nav2_rviz_plugins::ParticleCloudDisplay"
          base_class_type="rviz_common::Display">
