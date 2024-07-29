@@ -18,6 +18,7 @@
 #include <vector>
 #include <memory>
 #include <string>
+#include <mutex>
 
 #include "rclcpp/rclcpp.hpp"
 #include "pluginlib/class_loader.hpp"
@@ -42,7 +43,7 @@ public:
   /**
    * @brief A constructor for opennav_docking::DockDatabase
    */
-  DockDatabase();
+  explicit DockDatabase(std::shared_ptr<std::mutex> mutex = std::make_shared<std::mutex>());
 
   /**
    * @brief A setup function to populate database
@@ -127,6 +128,7 @@ protected:
     std::shared_ptr<nav2_msgs::srv::ReloadDockDatabase::Response> response);
 
   rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
+  std::shared_ptr<std::mutex> mutex_;  // Don't reload database while actively docking
   DockPluginMap dock_plugins_;
   DockMap dock_instances_;
   pluginlib::ClassLoader<opennav_docking_core::ChargingDock> dock_loader_;
