@@ -85,9 +85,10 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     true, server_options);
 
   // Create composed utilities
+  mutex_ = std::make_shared<std::mutex>();
   controller_ = std::make_unique<Controller>(node);
   navigator_ = std::make_unique<Navigator>(node);
-  dock_db_ = std::make_unique<DockDatabase>();
+  dock_db_ = std::make_unique<DockDatabase>(mutex_);
   if (!dock_db_->initialize(node, tf2_buffer_)) {
     return nav2_util::CallbackReturn::FAILURE;
   }
@@ -198,7 +199,7 @@ bool DockingServer::checkAndWarnIfPreempted(
 
 void DockingServer::dockRobot()
 {
-  std::lock_guard<std::mutex> lock(dynamic_params_lock_);
+  std::lock_guard<std::mutex> lock(*mutex_);
   action_start_time_ = this->now();
   rclcpp::Rate loop_rate(controller_frequency_);
 
@@ -546,7 +547,7 @@ bool DockingServer::getCommandToPose(
 
 void DockingServer::undockRobot()
 {
-  std::lock_guard<std::mutex> lock(dynamic_params_lock_);
+  std::lock_guard<std::mutex> lock(*mutex_);
   action_start_time_ = this->now();
   rclcpp::Rate loop_rate(controller_frequency_);
 
@@ -694,7 +695,7 @@ void DockingServer::publishDockingFeedback(uint16_t state)
 rcl_interfaces::msg::SetParametersResult
 DockingServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
 {
-  std::lock_guard<std::mutex> lock(dynamic_params_lock_);
+  std::lock_guard<std::mutex> lock(*mutex_);
 
   rcl_interfaces::msg::SetParametersResult result;
   for (auto parameter : parameters) {
