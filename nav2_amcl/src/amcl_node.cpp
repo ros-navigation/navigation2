@@ -34,7 +34,9 @@
 #include "nav2_amcl/pf/pf.hpp"
 #include "nav2_util/string_utils.hpp"
 #include "nav2_amcl/sensors/laser/laser.hpp"
+#include "rclcpp/node_options.hpp"
 #include "tf2/convert.h"
+#include "tf2/utils.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2/LinearMath/Transform.h"
 #include "tf2_ros/buffer.h"
@@ -43,15 +45,9 @@
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/create_timer_ros.h"
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
-#include "tf2/utils.h"
-#pragma GCC diagnostic pop
-
 #include "nav2_amcl/portable_utils.hpp"
 #include "nav2_util/validate_messages.hpp"
 
-using namespace std::placeholders;
 using rcl_interfaces::msg::ParameterType;
 using namespace std::chrono_literals;
 
@@ -1571,15 +1567,18 @@ AmclNode::initServices()
 {
   global_loc_srv_ = create_service<std_srvs::srv::Empty>(
     "reinitialize_global_localization",
-    std::bind(&AmclNode::globalLocalizationCallback, this, _1, _2, _3));
+    std::bind(&AmclNode::globalLocalizationCallback, this, std::placeholders::_1,
+      std::placeholders::_2, std::placeholders::_3));
 
   initial_guess_srv_ = create_service<nav2_msgs::srv::SetInitialPose>(
     "set_initial_pose",
-    std::bind(&AmclNode::initialPoseReceivedSrv, this, _1, _2, _3));
+    std::bind(&AmclNode::initialPoseReceivedSrv, this, std::placeholders::_1, std::placeholders::_2,
+      std::placeholders::_3));
 
   nomotion_update_srv_ = create_service<std_srvs::srv::Empty>(
     "request_nomotion_update",
-    std::bind(&AmclNode::nomotionUpdateCallback, this, _1, _2, _3));
+    std::bind(&AmclNode::nomotionUpdateCallback, this, std::placeholders::_1, std::placeholders::_2,
+      std::placeholders::_3));
 }
 
 void

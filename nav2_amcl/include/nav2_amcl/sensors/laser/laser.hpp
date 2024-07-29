@@ -18,10 +18,10 @@
 #ifndef NAV2_AMCL__SENSORS__LASER__LASER_HPP_
 #define NAV2_AMCL__SENSORS__LASER__LASER_HPP_
 
-#include <string>
+#include "nav2_amcl/map/map.hpp"
 #include "nav2_amcl/pf/pf.hpp"
 #include "nav2_amcl/pf/pf_pdf.hpp"
-#include "nav2_amcl/map/map.hpp"
+#include "nav2_amcl/pf/pf_vector.hpp"
 
 namespace nav2_amcl
 {
