@@ -404,7 +404,7 @@ protected:
   bool track_unknown_space_{false};
   double transform_tolerance_{0};           ///< The timeout before transform errors
   double initial_transform_timeout_{0};   ///< The timeout before activation of the node errors
-  double map_vis_z_{0};
+  double map_vis_z_{0};                 ///< The height of map, allows to avoid flickering at -0.008
 
   bool is_lifecycle_follower_{true};   ///< whether is a child-LifecycleNode or an independent node
 
