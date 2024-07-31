@@ -55,7 +55,7 @@ Costmap2DPublisher::Costmap2DPublisher(
   std::string global_frame,
   std::string topic_name,
   bool always_send_full_costmap,
-  float map_vis_z)
+  double map_vis_z)
 : costmap_(costmap),
   global_frame_(global_frame),
   topic_name_(topic_name),
