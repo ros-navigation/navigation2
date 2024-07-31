@@ -14,13 +14,13 @@
 
 #include <gtest/gtest.h>
 
-#include <math.h>
 #include <chrono>
+#include <cmath>
+#include <limits>
 #include <memory>
+#include <string>
 #include <utility>
 #include <vector>
-#include <string>
-#include <limits>
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/lifecycle_node.hpp"
