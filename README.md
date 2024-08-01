@@ -21,7 +21,7 @@ For detailed instructions on how to:
 
 Please visit our [documentation site](https://docs.nav2.org/). [Please visit our community Slack here](https://join.slack.com/t/navigation2/shared_invite/zt-uj428p0x-jKx8U7OzK1IOWp5TnDS2rA) (if this link does not work, please contact maintainers to reactivate).
 
-If you need professional services related to Nav2, please contact Open Navigation at info@opennav.org.
+**⚠️ If you need professional services related to Nav2, please contact [Open Navigation](https://www.opennav.org/) at info@opennav.org.**
 
 ## Our Sponsors
 
