@@ -20,6 +20,8 @@
 #include <utility>
 #include <vector>
 
+#include "geometry_msgs/msg/pose_stamped.hpp"
+
 #include "nav2_constrained_smoother/constrained_smoother.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
