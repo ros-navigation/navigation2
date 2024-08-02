@@ -21,6 +21,7 @@
   <depend>tf2_geometry_msgs</depend>
   <depend>nav_2d_utils</depend>
   <depend>angles</depend>
+  <depend>visualization_msgs</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

@@ -64,34 +64,61 @@ def generate_launch_description():
                 package='tf2_ros',
                 executable='static_transform_publisher',
                 output='screen',
-                arguments=['0', '0', '0', '0', '0', '0', 'base_footprint', 'base_link'],
-            ),
-            Node(
-                package='tf2_ros',
-                executable='static_transform_publisher',
-                output='screen',
-                arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'base_scan'],
-            ),
-            Node(
-                package='tf2_ros',
-                executable='static_transform_publisher',
-                output='screen',
                 arguments=[
-                    '-0.32',
-                    '0',
-                    '0.068',
-                    '0',
-                    '0',
-                    '0',
-                    'base_link',
-                    'imu_link',
+                    '--x', '0',
+                    '--y', '0',
+                    '--z', '0',
+                    '--roll', '0',
+                    '--pitch', '0',
+                    '--yaw', '0',
+                    '--frame-id', 'base_footprint',
+                    '--child-frame-id', 'base_link'
                 ],
             ),
             Node(
                 package='tf2_ros',
                 executable='static_transform_publisher',
                 output='screen',
-                arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'gps_link'],
+                arguments=[
+                    '--x', '0',
+                    '--y', '0',
+                    '--z', '0',
+                    '--roll', '0',
+                    '--pitch', '0',
+                    '--yaw', '0',
+                    '--frame-id', 'base_link',
+                    '--child-frame-id', 'base_scan'
+                ],
+            ),
+            Node(
+                package='tf2_ros',
+                executable='static_transform_publisher',
+                output='screen',
+                arguments=[
+                    '--x', '-0.32',
+                    '--y', '0',
+                    '--z', '0.068',
+                    '--roll', '0',
+                    '--pitch', '0',
+                    '--yaw', '0',
+                    '--frame-id', 'base_link',
+                    '--child-frame-id', 'imu_link'
+                ],
+            ),
+            Node(
+                package='tf2_ros',
+                executable='static_transform_publisher',
+                output='screen',
+                arguments=[
+                    '--x', '0',
+                    '--y', '0',
+                    '--z', '0',
+                    '--roll', '0',
+                    '--pitch', '0',
+                    '--yaw', '0',
+                    '--frame-id', 'base_link',
+                    '--child-frame-id', 'gps_link'
+                ],
             ),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(

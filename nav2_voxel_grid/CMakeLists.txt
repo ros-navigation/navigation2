@@ -43,7 +43,7 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_dependencies(rclcpp)
-ament_export_include_directories(include)
+ament_export_include_directories("include/${PROJECT_NAME}")
 ament_export_libraries(voxel_grid)
 ament_export_targets(voxel_grid)
 

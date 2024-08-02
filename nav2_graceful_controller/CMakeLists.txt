@@ -14,6 +14,7 @@ find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(nav_2d_utils REQUIRED)
 find_package(angles REQUIRED)
+find_package(visualization_msgs REQUIRED)
 
 nav2_package()
 
@@ -33,6 +34,7 @@ set(dependencies
   tf2_geometry_msgs
   nav_2d_utils
   angles
+  visualization_msgs
 )
 
 # Add Smooth Control Law as library

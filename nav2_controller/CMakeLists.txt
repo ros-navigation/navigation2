@@ -2,67 +2,146 @@ cmake_minimum_required(VERSION 3.5)
 project(nav2_controller)
 
 find_package(ament_cmake REQUIRED)
+find_package(angles REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(lifecycle_msgs REQUIRED)
 find_package(nav2_core REQUIRED)
 find_package(nav2_common REQUIRED)
-find_package(angles REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(rclcpp_action REQUIRED)
-find_package(rclcpp_components REQUIRED)
-find_package(std_msgs REQUIRED)
-find_package(nav2_util REQUIRED)
 find_package(nav2_msgs REQUIRED)
-find_package(nav_2d_utils REQUIRED)
+find_package(nav2_util REQUIRED)
 find_package(nav_2d_msgs REQUIRED)
+find_package(nav_2d_utils REQUIRED)
 find_package(pluginlib REQUIRED)
+find_package(rcl_interfaces REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(rclcpp_components REQUIRED)
+find_package(rclcpp_lifecycle REQUIRED)
+find_package(tf2_ros REQUIRED)
 
 nav2_package()
 
-include_directories(
-  include
-)
-
 set(executable_name controller_server)
-
-add_executable(${executable_name}
-  src/main.cpp
-)
 
 set(library_name ${executable_name}_core)
 
 add_library(${library_name} SHARED
   src/controller_server.cpp
 )
+target_include_directories(${library_name}
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+)
+target_link_libraries(${library_name} PUBLIC
+  ${geometry_msgs_TARGETS}
+  nav2_core::nav2_core
+  nav2_costmap_2d::nav2_costmap_2d_core
+  ${nav2_msgs_TARGETS}
+  nav2_util::nav2_util_core
+  ${nav_2d_msgs_TARGETS}
+  nav_2d_utils::conversions
+  nav_2d_utils::tf_help
+  pluginlib::pluginlib
+  rclcpp::rclcpp
+  rclcpp_lifecycle::rclcpp_lifecycle
+  ${rcl_interfaces_TARGETS}
+  tf2_ros::tf2_ros
+)
+target_link_libraries(${library_name} PRIVATE
+  ${lifecycle_msgs_TARGETS}
+  rclcpp_components::component
+)
 
-set(dependencies
-  angles
-  rclcpp
-  rclcpp_action
-  rclcpp_components
-  std_msgs
-  nav2_msgs
-  nav_2d_utils
-  nav_2d_msgs
-  nav2_util
-  nav2_core
-  pluginlib
+add_executable(${executable_name}
+  src/main.cpp
+)
+target_include_directories(${executable_name}
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+)
+target_link_libraries(${executable_name} PRIVATE
+  rclcpp::rclcpp
+  ${library_name}
 )
 
 add_library(simple_progress_checker SHARED plugins/simple_progress_checker.cpp)
-ament_target_dependencies(simple_progress_checker ${dependencies})
+target_include_directories(simple_progress_checker
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+)
+target_link_libraries(simple_progress_checker PUBLIC
+  ${geometry_msgs_TARGETS}
+  nav2_core::nav2_core
+  rclcpp::rclcpp
+  rclcpp_lifecycle::rclcpp_lifecycle
+  ${rcl_interfaces_TARGETS}
+)
+target_link_libraries(simple_progress_checker PRIVATE
+  nav2_util::nav2_util_core
+  nav_2d_utils::conversions
+  pluginlib::pluginlib
+)
 
 add_library(pose_progress_checker SHARED plugins/pose_progress_checker.cpp)
-target_link_libraries(pose_progress_checker simple_progress_checker)
-ament_target_dependencies(pose_progress_checker ${dependencies})
+target_include_directories(pose_progress_checker
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+)
+target_link_libraries(pose_progress_checker PUBLIC
+  ${geometry_msgs_TARGETS}
+  rclcpp::rclcpp
+  rclcpp_lifecycle::rclcpp_lifecycle
+  ${rcl_interfaces_TARGETS}
+  simple_progress_checker
+)
+target_link_libraries(pose_progress_checker PRIVATE
+  angles::angles
+  nav2_util::nav2_util_core
+  nav_2d_utils::conversions
+  pluginlib::pluginlib
+)
 
 add_library(simple_goal_checker SHARED plugins/simple_goal_checker.cpp)
-ament_target_dependencies(simple_goal_checker ${dependencies})
+target_include_directories(simple_goal_checker
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+)
+target_link_libraries(simple_goal_checker PUBLIC
+  ${geometry_msgs_TARGETS}
+  nav2_core::nav2_core
+  nav2_costmap_2d::nav2_costmap_2d_core
+  rclcpp::rclcpp
+  rclcpp_lifecycle::rclcpp_lifecycle
+  ${rcl_interfaces_TARGETS}
+)
+target_link_libraries(simple_goal_checker PRIVATE
+  angles::angles
+  nav2_util::nav2_util_core
+  pluginlib::pluginlib
+  tf2::tf2
+)
 
 add_library(stopped_goal_checker SHARED plugins/stopped_goal_checker.cpp)
-target_link_libraries(stopped_goal_checker simple_goal_checker)
-ament_target_dependencies(stopped_goal_checker ${dependencies})
-
-ament_target_dependencies(${library_name}
-  ${dependencies}
+target_include_directories(stopped_goal_checker
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+)
+target_link_libraries(stopped_goal_checker PUBLIC
+  ${geometry_msgs_TARGETS}
+  nav2_costmap_2d::nav2_costmap_2d_core
+  rclcpp::rclcpp
+  rclcpp_lifecycle::rclcpp_lifecycle
+  ${rcl_interfaces_TARGETS}
+  simple_goal_checker
+)
+target_link_libraries(stopped_goal_checker PRIVATE
+  nav2_util::nav2_util_core
+  pluginlib::pluginlib
 )
 
 if(BUILD_TESTING)
@@ -72,18 +151,17 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 
   find_package(ament_cmake_gtest REQUIRED)
+
+  ament_find_gtest()
+
+  add_subdirectory(test)
   add_subdirectory(plugins/test)
 endif()
-
-ament_target_dependencies(${executable_name}
-  ${dependencies}
-)
-
-target_link_libraries(${executable_name} ${library_name})
 
 rclcpp_components_register_nodes(${library_name} "nav2_controller::ControllerServer")
 
 install(TARGETS simple_progress_checker pose_progress_checker simple_goal_checker stopped_goal_checker ${library_name}
+  EXPORT ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -94,23 +172,30 @@ install(TARGETS ${executable_name}
 )
 
 install(DIRECTORY include/
-  DESTINATION include/
+  DESTINATION include/${PROJECT_NAME}
 )
 
-if(BUILD_TESTING)
-  find_package(ament_lint_auto REQUIRED)
-  find_package(ament_cmake_gtest REQUIRED)
-  ament_lint_auto_find_test_dependencies()
-  add_subdirectory(test)
-endif()
-
-ament_export_include_directories(include)
+ament_export_include_directories(include/${PROJECT_NAME})
 ament_export_libraries(simple_progress_checker
   pose_progress_checker
   simple_goal_checker
   stopped_goal_checker
   ${library_name})
-ament_export_dependencies(${dependencies})
+ament_export_dependencies(
+  geometry_msgs
+  nav2_core
+  nav2_costmap_2d
+  nav2_msgs
+  nav2_util
+  nav_2d_msgs
+  nav_2d_utils
+  pluginlib
+  rclcpp
+  rclcpp_lifecycle
+  rcl_interfaces
+  tf2_ros
+)
+ament_export_targets(${library_name})
 pluginlib_export_plugin_description_file(nav2_core plugins.xml)
 
 ament_package()

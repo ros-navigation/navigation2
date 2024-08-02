@@ -34,6 +34,7 @@ find_package(visualization_msgs REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
 
 set(nav2_rviz_plugins_headers_to_moc
+  include/nav2_rviz_plugins/costmap_cost_tool.hpp
   include/nav2_rviz_plugins/docking_panel.hpp
   include/nav2_rviz_plugins/goal_pose_updater.hpp
   include/nav2_rviz_plugins/goal_common.hpp
@@ -52,6 +53,7 @@ include_directories(
 set(library_name ${PROJECT_NAME})
 
 add_library(${library_name} SHARED
+  src/costmap_cost_tool.cpp
   src/docking_panel.cpp
   src/goal_tool.cpp
   src/nav2_panel.cpp
