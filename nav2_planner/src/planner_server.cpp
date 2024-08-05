@@ -24,7 +24,6 @@
 #include <vector>
 #include <utility>
 
-#include "builtin_interfaces/msg/duration.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "nav2_util/costmap.hpp"
 #include "nav2_util/node_utils.hpp"
