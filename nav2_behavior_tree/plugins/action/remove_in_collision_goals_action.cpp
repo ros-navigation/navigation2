@@ -18,7 +18,6 @@
 
 #include "nav2_behavior_tree/plugins/action/remove_in_collision_goals_action.hpp"
 #include "nav2_behavior_tree/bt_utils.hpp"
-#include "nav2_costmap_2d/cost_values.hpp"
 #include "tf2/utils.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
@@ -31,7 +30,7 @@ RemoveInCollisionGoals::RemoveInCollisionGoals(
 : BT::ActionNodeBase(name, conf),
   initialized_(false),
   which_costmap_("both"),
-  cost_threshold_(nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE)
+  cost_threshold_(253)
 {}
 
 void RemoveInCollisionGoals::initialize()
