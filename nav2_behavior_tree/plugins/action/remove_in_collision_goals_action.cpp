@@ -112,7 +112,8 @@ inline BT::NodeStatus RemoveInCollisionGoals::tick()
       } else {
         RCLCPP_ERROR(
           node_->get_logger(),
-          "RemoveInCollisionGoals BT node failed to call GetCost service of local or global costmap");
+          "RemoveInCollisionGoals BT node failed to call GetCost "
+          "service of local or global costmap");
         return BT::NodeStatus::FAILURE;
       }
     } else {

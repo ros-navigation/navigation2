@@ -851,8 +851,7 @@ void Costmap2DROS::getCostCallback(
 
     response->cost = collision_checker.footprintCostAtPose(
       request->x, request->y, request->theta, footprint);
-  }
-  else {
+  } else {
     RCLCPP_DEBUG(
       get_logger(), "Received request to get cost at point (%f, %f)", request->x, request->y);
 
