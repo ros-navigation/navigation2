@@ -256,7 +256,8 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
   // Service to get the cost at a point
   get_cost_service_ = create_service<nav2_msgs::srv::GetCost>(
     "get_cost_" + getName(),
-    std::bind(&Costmap2DROS::getCostCallback, this, std::placeholders::_1, std::placeholders::_2,
+    std::bind(
+      &Costmap2DROS::getCostCallback, this, std::placeholders::_1, std::placeholders::_2,
       std::placeholders::_3));
 
   // Add cleaning service
@@ -423,7 +424,7 @@ Costmap2DROS::getParameters()
     std::size_t first_slash = raw_namespace.find('/', 1);
     std::string robot_namespace = "";
     if (first_slash != std::string::npos) {
-        robot_namespace = raw_namespace.substr(1, first_slash - 1) + "/";
+      robot_namespace = raw_namespace.substr(1, first_slash - 1) + "/";
     }
 
     global_frame_ = robot_namespace + nav2_util::strip_leading_slash(global_frame_);
