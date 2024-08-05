@@ -392,6 +392,7 @@ protected:
    * @brief Get parameters for node
    */
   void getParameters();
+  bool use_namespace_for_frame_id_{false};
   bool always_send_full_costmap_{false};
   std::string footprint_;
   float footprint_padding_{0};

@@ -50,6 +50,7 @@
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2_ros/create_timer_ros.h"
 #include "nav2_util/robot_utils.hpp"
+#include "nav2_util/string_utils.hpp"
 #include "rcl_interfaces/msg/set_parameters_result.hpp"
 
 using namespace std::chrono_literals;
@@ -109,6 +110,7 @@ void Costmap2DROS::init()
 {
   RCLCPP_INFO(get_logger(), "Creating Costmap");
 
+  declare_parameter("use_namespace_for_frame_id", rclcpp::ParameterValue(false));
   declare_parameter("always_send_full_costmap", rclcpp::ParameterValue(false));
   declare_parameter("map_vis_z", rclcpp::ParameterValue(0.0));
   declare_parameter("footprint_padding", rclcpp::ParameterValue(0.01f));
@@ -393,6 +395,7 @@ Costmap2DROS::getParameters()
   RCLCPP_DEBUG(get_logger(), " getParameters");
 
   // Get all of the required parameters
+  get_parameter("use_namespace_for_frame_id", use_namespace_for_frame_id_);
   get_parameter("always_send_full_costmap", always_send_full_costmap_);
   get_parameter("map_vis_z", map_vis_z_);
   get_parameter("footprint", footprint_);
@@ -413,6 +416,19 @@ Costmap2DROS::getParameters()
   get_parameter("width", map_width_meters_);
   get_parameter("plugins", plugin_names_);
   get_parameter("filters", filter_names_);
+
+  if (use_namespace_for_frame_id_) {
+    std::string raw_namespace = std::string(get_namespace());
+
+    std::size_t first_slash = raw_namespace.find('/', 1);
+    std::string robot_namespace = "";
+    if (first_slash != std::string::npos) {
+        robot_namespace = raw_namespace.substr(1, first_slash - 1) + "/";
+    }
+
+    global_frame_ = robot_namespace + nav2_util::strip_leading_slash(global_frame_);
+    robot_base_frame_ = robot_namespace + nav2_util::strip_leading_slash(robot_base_frame_);
+  }
 
   auto node = shared_from_this();
 

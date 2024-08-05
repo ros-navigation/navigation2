@@ -55,6 +55,7 @@
 #include "yaml-cpp/yaml.h"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "nav2_map_server/map_io.hpp"
+#include "nav2_util/string_utils.hpp"
 
 using namespace std::chrono_literals;
 using namespace std::placeholders;
@@ -68,6 +69,7 @@ MapServer::MapServer(const rclcpp::NodeOptions & options)
   RCLCPP_INFO(get_logger(), "Creating");
 
   // Declare the node parameters
+  declare_parameter("use_namespace_for_frame_id", rclcpp::ParameterValue(false));
   declare_parameter("yaml_filename", rclcpp::PARAMETER_STRING);
   declare_parameter("topic_name", "map");
   declare_parameter("frame_id", "map");
@@ -83,9 +85,19 @@ MapServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Configuring");
 
   // Get the name of the YAML file to use (can be empty if no initial map should be used)
+  bool use_namespace_for_frame_id = get_parameter("use_namespace_for_frame_id").as_bool();
   std::string yaml_filename = get_parameter("yaml_filename").as_string();
   std::string topic_name = get_parameter("topic_name").as_string();
   frame_id_ = get_parameter("frame_id").as_string();
+
+  frame_id_ = nav2_util::strip_leading_slash(frame_id_);
+
+  if (use_namespace_for_frame_id) {
+    std::string robot_namespace = std::string(get_namespace()).erase(0, 1);
+    if (!robot_namespace.empty()) {
+      frame_id_ = robot_namespace + "/" + frame_id_;
+    }
+  }
 
   // only try to load map if parameter was set
   if (!yaml_filename.empty()) {

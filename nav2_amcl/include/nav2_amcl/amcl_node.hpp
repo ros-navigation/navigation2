@@ -350,6 +350,7 @@ protected:
    * @brief Get ROS parameters for node
    */
   void initParameters();
+  bool use_namespace_for_frame_id_;
   double alpha1_;
   double alpha2_;
   double alpha3_;

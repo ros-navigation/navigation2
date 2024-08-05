@@ -67,10 +67,19 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   tf_->setUsingDedicatedThread(true);
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_, this, false);
 
+  get_parameter_or("use_namespace_for_frame_id", use_namespace_for_frame_id_, false);
   global_frame_ = get_parameter("global_frame").as_string();
   robot_frame_ = get_parameter("robot_base_frame").as_string();
   transform_tolerance_ = get_parameter("transform_tolerance").as_double();
   odom_topic_ = get_parameter("odom_topic").as_string();
+
+  if (use_namespace_for_frame_id_) {
+    std::string robot_namespace = std::string(get_namespace()).erase(0, 1);
+    if (!robot_namespace.empty()) {
+      global_frame_ = robot_namespace + "/" + nav2_util::strip_leading_slash(global_frame_);
+      robot_frame_ = robot_namespace + "/" + nav2_util::strip_leading_slash(robot_frame_);
+    }
+  }
 
   // Libraries to pull plugins (BT Nodes) from
   std::vector<std::string> plugin_lib_names;

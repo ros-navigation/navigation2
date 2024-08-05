@@ -61,6 +61,10 @@ AmclNode::AmclNode(const rclcpp::NodeOptions & options)
   RCLCPP_INFO(get_logger(), "Creating");
 
   add_parameter(
+    "use_namespace_for_frame_id", rclcpp::ParameterValue(false),
+    "Set this to True to use namespace for frame id");
+
+  add_parameter(
     "alpha1", rclcpp::ParameterValue(0.2),
     "This is the alpha1 parameter", "These are additional constraints for alpha1");
 
@@ -1063,6 +1067,7 @@ AmclNode::initParameters()
   double save_pose_rate;
   double tmp_tol;
 
+  get_parameter("use_namespace_for_frame_id", use_namespace_for_frame_id_);
   get_parameter("alpha1", alpha1_);
   get_parameter("alpha2", alpha2_);
   get_parameter("alpha3", alpha3_);
@@ -1116,6 +1121,15 @@ AmclNode::initParameters()
   odom_frame_id_ = nav2_util::strip_leading_slash(odom_frame_id_);
   base_frame_id_ = nav2_util::strip_leading_slash(base_frame_id_);
   global_frame_id_ = nav2_util::strip_leading_slash(global_frame_id_);
+
+  if (use_namespace_for_frame_id_) {
+    std::string robot_namespace = std::string(get_namespace()).erase(0, 1);
+    if (!robot_namespace.empty()) {
+      odom_frame_id_ = robot_namespace + "/" + odom_frame_id_;
+      base_frame_id_ = robot_namespace + "/" + base_frame_id_;
+      global_frame_id_ = robot_namespace + "/" + global_frame_id_;
+    }
+  }
 
   last_time_printed_msg_ = now();
 

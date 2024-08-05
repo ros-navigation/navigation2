@@ -94,6 +94,7 @@ protected:
   std::shared_ptr<nav2_util::OdomSmoother> odom_smoother_;
 
   // Metrics for feedback
+  bool use_namespace_for_frame_id_;
   std::string robot_frame_;
   std::string global_frame_;
   double transform_tolerance_;

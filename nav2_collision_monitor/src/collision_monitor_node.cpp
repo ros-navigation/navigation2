@@ -22,6 +22,7 @@
 
 #include "nav2_util/node_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
+#include "nav2_util/string_utils.hpp"
 
 #include "nav2_collision_monitor/kinematics.hpp"
 
@@ -230,12 +231,14 @@ bool CollisionMonitor::getParameters(
   std::string & cmd_vel_out_topic,
   std::string & state_topic)
 {
+  bool use_namespace_for_frame_id = false;
   std::string base_frame_id, odom_frame_id;
   tf2::Duration transform_tolerance;
   rclcpp::Duration source_timeout(2.0, 0.0);
 
   auto node = shared_from_this();
 
+  use_namespace_for_frame_id = get_parameter("use_namespace_for_frame_id").as_bool();
   nav2_util::declare_parameter_if_not_declared(
     node, "cmd_vel_in_topic", rclcpp::ParameterValue("cmd_vel_smoothed"));
   cmd_vel_in_topic = get_parameter("cmd_vel_in_topic").as_string();
@@ -269,6 +272,14 @@ bool CollisionMonitor::getParameters(
     node, "stop_pub_timeout", rclcpp::ParameterValue(1.0));
   stop_pub_timeout_ =
     rclcpp::Duration::from_seconds(get_parameter("stop_pub_timeout").as_double());
+
+  if (use_namespace_for_frame_id) {
+    std::string robot_namespace = std::string(get_namespace()).erase(0, 1);
+    if (!robot_namespace.empty()) {
+      base_frame_id = robot_namespace + "/" + nav2_util::strip_leading_slash(base_frame_id);
+      odom_frame_id = robot_namespace + "/" + nav2_util::strip_leading_slash(odom_frame_id);
+    }
+  }
 
   if (!configurePolygons(base_frame_id, transform_tolerance)) {
     return false;
