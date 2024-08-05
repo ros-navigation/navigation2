@@ -1,29 +1,17 @@
 cmake_minimum_required(VERSION 3.5)
 project(nav2_rviz_plugins)
 
-# Default to C++14
-if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 17)
-endif()
-
-if(CMAKE_CXX_COMPILER_ID MATCHES "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic -Werror)
-endif()
-
-# Qt5 boilerplate options from http://doc.qt.io/qt-5/cmake-manual.html
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
-set(CMAKE_AUTOMOC ON)
-
 find_package(ament_cmake REQUIRED)
+find_package(ament_index_cpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
-find_package(nav2_util REQUIRED)
+find_package(nav2_common REQUIRED)
 find_package(nav2_lifecycle_manager REQUIRED)
 find_package(nav2_msgs REQUIRED)
-find_package(nav_msgs REQUIRED)
+find_package(nav2_util REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets Test Concurrent)
 find_package(rclcpp REQUIRED)
-find_package(rclcpp_lifecycle REQUIRED)
+find_package(rclcpp_action REQUIRED)
 find_package(rviz_common REQUIRED)
 find_package(rviz_default_plugins REQUIRED)
 find_package(rviz_ogre_vendor REQUIRED)
@@ -32,23 +20,25 @@ find_package(std_msgs REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
+find_package(yaml-cpp REQUIRED)
 
+nav2_package()
+
+# We specifically don't turn on CMAKE_AUTOMOC, since it generates one huge
+# mocs_compilation.cpp file that takes a lot of memory to compile.  Instead
+# we create individual moc files that can be compiled separately.
 set(nav2_rviz_plugins_headers_to_moc
   include/nav2_rviz_plugins/costmap_cost_tool.hpp
   include/nav2_rviz_plugins/docking_panel.hpp
   include/nav2_rviz_plugins/goal_pose_updater.hpp
-  include/nav2_rviz_plugins/goal_common.hpp
   include/nav2_rviz_plugins/goal_tool.hpp
   include/nav2_rviz_plugins/nav2_panel.hpp
   include/nav2_rviz_plugins/selector.hpp
-  include/nav2_rviz_plugins/utils.hpp
-  include/nav2_rviz_plugins/particle_cloud_display/flat_weighted_arrows_array.hpp
   include/nav2_rviz_plugins/particle_cloud_display/particle_cloud_display.hpp
 )
-
-include_directories(
-  include
-)
+foreach(header "${nav2_rviz_plugins_headers_to_moc}")
+  qt5_wrap_cpp(nav2_rviz_plugins_moc_files "${header}")
+endforeach()
 
 set(library_name ${PROJECT_NAME})
 
@@ -61,45 +51,34 @@ add_library(${library_name} SHARED
   src/utils.cpp
   src/particle_cloud_display/flat_weighted_arrows_array.cpp
   src/particle_cloud_display/particle_cloud_display.cpp
-  ${nav2_rviz_plugins_headers_to_moc}
+  ${nav2_rviz_plugins_moc_files}
 )
-
-set(dependencies
-  geometry_msgs
-  nav2_util
-  nav2_lifecycle_manager
-  nav2_msgs
-  nav_msgs
-  pluginlib
-  Qt5
-  rclcpp
-  rclcpp_lifecycle
-  rviz_common
-  rviz_default_plugins
-  rviz_ogre_vendor
-  rviz_rendering
-  std_msgs
-  tf2_geometry_msgs
-  yaml_cpp_vendor
-)
-
-ament_target_dependencies(${library_name}
-  ${dependencies}
-)
-
 target_include_directories(${library_name} PUBLIC
   ${Qt5Widgets_INCLUDE_DIRS}
   ${OGRE_INCLUDE_DIRS}
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
-
-target_link_libraries(${library_name}
+target_link_libraries(${library_name} PUBLIC
+  ${geometry_msgs_TARGETS}
+  nav2_lifecycle_manager::nav2_lifecycle_manager_core
+  ${nav2_msgs_TARGETS}
+  nav2_util::nav2_util_core
+  rclcpp::rclcpp
+  rclcpp_action::rclcpp_action
   rviz_common::rviz_common
+  rviz_default_plugins::rviz_default_plugins
+  rviz_rendering::rviz_rendering
+  ${std_msgs_TARGETS}
+  tf2_geometry_msgs::tf2_geometry_msgs
+  ${visualization_msgs_TARGETS}
+  # TODO(clalancette): We aren't linking against any Qt libraries here?
 )
-
-# Causes the visibility macros to use dllexport rather than dllimport,
-# which is appropriate when building the dll but not consuming it.
-# TODO: Make this specific to this project (not rviz default plugins)
-target_compile_definitions(${library_name} PRIVATE "RVIZ_DEFAULT_PLUGINS_BUILDING_LIBRARY")
+target_link_libraries(${library_name} PRIVATE
+  ament_index_cpp::ament_index_cpp
+  pluginlib::pluginlib
+  yaml-cpp::yaml-cpp
+)
 
 pluginlib_export_plugin_description_file(rviz_common plugins_description.xml)
 
@@ -109,12 +88,11 @@ install(
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
-  INCLUDES DESTINATION include
 )
 
 install(
   DIRECTORY include/
-  DESTINATION include/
+  DESTINATION include/${PROJECT_NAME}
 )
 
 install(
@@ -127,15 +105,22 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-ament_export_include_directories(include)
+ament_export_include_directories(include/${PROJECT_NAME})
 ament_export_targets(${library_name} HAS_LIBRARY_TARGET)
 ament_export_dependencies(
-  Qt5
-  rviz_common
   geometry_msgs
-  map_msgs
-  nav_msgs
+  nav2_lifecycle_manager
+  nav2_msgs
+  nav2_util
+  Qt5
   rclcpp
+  rclcpp_action
+  rviz_common
+  rviz_default_plugins
+  rviz_rendering
+  std_msgs
+  tf2_geometry_msgs
+  visualization_msgs
 )
 
 ament_package()

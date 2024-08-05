@@ -29,6 +29,7 @@
 
 #include "nav2_rviz_plugins/goal_common.hpp"
 #include "nav2_rviz_plugins/utils.hpp"
+#include "rclcpp/rclcpp.hpp"
 #include "rviz_common/display_context.hpp"
 #include "rviz_common/load_resource.hpp"
 #include "ament_index_cpp/get_package_share_directory.hpp"
@@ -777,7 +778,12 @@ void Nav2Panel::handleGoalSaver()
 void
 Nav2Panel::onInitialize()
 {
-  auto node = getDisplayContext()->getRosNodeAbstraction().lock()->get_raw_node();
+  node_ptr_ = getDisplayContext()->getRosNodeAbstraction().lock();
+  if (node_ptr_ == nullptr) {
+    // The node no longer exists, so just don't initialize
+    return;
+  }
+  rclcpp::Node::SharedPtr node = node_ptr_->get_raw_node();
 
   // declaring parameter to get the base frame
   node->declare_parameter("base_frame", rclcpp::ParameterValue(std::string("base_footprint")));
