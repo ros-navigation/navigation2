@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 project(nav2_smac_planner)
 
-set(CMAKE_BUILD_TYPE Release) #Debug, Release
-
 find_package(ament_cmake REQUIRED)
 find_package(ament_index_cpp REQUIRED)
 find_package(angles REQUIRED)
