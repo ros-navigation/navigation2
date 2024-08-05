@@ -45,8 +45,10 @@ public:
   {
     return {
       BT::InputPort<Goals>("input_goals", "Original goals to remove from"),
-      BT::InputPort<std::string>("costmap", "Which costmap to use for checking collision. Choices: local, global, both"),
-      BT::InputPort<std::string>("cost_threshold", "Cost threshold for considering a goal in collision"),
+      BT::InputPort<std::string>("costmap",
+          "Which costmap to use for checking collision. Choices: local, global, both"),
+      BT::InputPort<std::string>("cost_threshold",
+          "Cost threshold for considering a goal in collision"),
       BT::OutputPort<Goals>("output_goals", "Goals with in-collision goals removed"),
     };
   }
