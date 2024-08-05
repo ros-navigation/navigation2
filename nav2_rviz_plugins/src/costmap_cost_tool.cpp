@@ -89,6 +89,7 @@ void CostmapCostTool::callCostService(float x, float y)
   auto request = std::make_shared<nav2_msgs::srv::GetCost::Request>();
   request->x = x;
   request->y = y;
+  // request->use_footprint = true;
 
   // Call local costmap service
   if (local_cost_client_->wait_for_service(std::chrono::seconds(1))) {

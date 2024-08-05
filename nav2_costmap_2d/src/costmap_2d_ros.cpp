@@ -834,25 +834,30 @@ void Costmap2DROS::getCostCallback(
 
   Costmap2D * costmap = layered_costmap_->getCostmap();
 
+  bool in_bounds = costmap->worldToMap(request->x, request->y, mx, my);
+
+  if (!in_bounds) {
+    response->cost = -1.0;
+    return;
+  }
+
   if (request->use_footprint) {
     Footprint footprint = layered_costmap_->getFootprint();
     FootprintCollisionChecker<Costmap2D *> collision_checker(costmap);
 
-    RCLCPP_INFO(
+    RCLCPP_DEBUG(
       get_logger(), "Received request to get cost at footprint pose (%.2f, %.2f, %.2f)",
       request->x, request->y, request->theta);
 
     response->cost = collision_checker.footprintCostAtPose(
       request->x, request->y, request->theta, footprint);
-  } else if (costmap->worldToMap(request->x, request->y, mx, my)) {
-    RCLCPP_INFO(
+  }
+  else {
+    RCLCPP_DEBUG(
       get_logger(), "Received request to get cost at point (%f, %f)", request->x, request->y);
 
     // Get the cost at the map coordinates
     response->cost = static_cast<float>(costmap->getCost(mx, my));
-  } else {
-    RCLCPP_WARN(get_logger(), "Point (%f, %f) is out of bounds", request->x, request->y);
-    response->cost = -1.0;
   }
 }
 
