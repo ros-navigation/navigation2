@@ -30,7 +30,6 @@ RemoveInCollisionGoals::RemoveInCollisionGoals(
 : BT::ActionNodeBase(name, conf),
   initialized_(false),
   costmap_cost_service_("/global_costmap/get_cost_global_costmap"),
-  costmap_cost_service_2_(""),
   use_footprint_(true),
   cost_threshold_(253)
 {}
@@ -41,15 +40,10 @@ void RemoveInCollisionGoals::initialize()
   server_timeout_ = config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
 
   getInput("costmap_cost_service", costmap_cost_service_);
-  getInput("costmap_cost_service_2", costmap_cost_service_2_);
 
   get_cost_client_ = node_->create_client<nav2_msgs::srv::GetCost>(
     costmap_cost_service_);
 
-  if (!costmap_cost_service_2_.empty()) {
-    get_cost_client_2_ = node_->create_client<nav2_msgs::srv::GetCost>(
-      costmap_cost_service_2_);
-  }
 }
 
 inline BT::NodeStatus RemoveInCollisionGoals::tick()
@@ -79,39 +73,17 @@ inline BT::NodeStatus RemoveInCollisionGoals::tick()
     request->theta = tf2::getYaw(goal.pose.orientation);
     request->use_footprint = use_footprint_;
 
-    if (costmap_cost_service_2_.empty()) {
-      auto future = get_cost_client_->async_send_request(request);
-      auto ret = rclcpp::spin_until_future_complete(node_, future, server_timeout_);
-      if (ret == rclcpp::FutureReturnCode::SUCCESS) {
-        if (future.get()->cost <= cost_threshold_) {
-          valid_goal_poses.push_back(goal);
-        }
-      } else {
-        RCLCPP_ERROR(
-          node_->get_logger(),
-          "RemoveInCollisionGoals BT node failed to call GetCost service of costmap");
-        return BT::NodeStatus::FAILURE;
+    auto future = get_cost_client_->async_send_request(request);
+    auto ret = rclcpp::spin_until_future_complete(node_, future, server_timeout_);
+    if (ret == rclcpp::FutureReturnCode::SUCCESS) {
+      if (future.get()->cost <= cost_threshold_) {
+        valid_goal_poses.push_back(goal);
       }
     } else {
-      auto future = get_cost_client_->async_send_request(request);
-      auto future_2 = get_cost_client_2_->async_send_request(request);
-      auto ret = rclcpp::spin_until_future_complete(node_, future, server_timeout_);
-      auto ret_2 = rclcpp::spin_until_future_complete(node_, future_2, server_timeout_);
-      if (ret == rclcpp::FutureReturnCode::SUCCESS &&
-        ret_2 == rclcpp::FutureReturnCode::SUCCESS)
-      {
-        if (future.get()->cost <= cost_threshold_ &&
-          future_2.get()->cost <= cost_threshold_)
-        {
-          valid_goal_poses.push_back(goal);
-        }
-      } else {
-        RCLCPP_ERROR(
-          node_->get_logger(),
-          "RemoveInCollisionGoals BT node failed to call GetCost "
-          "service of one or two costmaps");
-        return BT::NodeStatus::FAILURE;
-      }
+      RCLCPP_ERROR(
+        node_->get_logger(),
+        "RemoveInCollisionGoals BT node failed to call GetCost service of costmap");
+      return BT::NodeStatus::FAILURE;
     }
   }
   setOutput("output_goals", valid_goal_poses);

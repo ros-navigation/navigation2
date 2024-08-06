@@ -47,8 +47,6 @@ public:
       BT::InputPort<Goals>("input_goals", "Original goals to remove from"),
       BT::InputPort<std::string>("costmap_cost_service",
           "Service to get cost from costmap"),
-      BT::InputPort<std::string>("costmap_cost_service_2",
-          "Second service name to get cost from costmap. If empty, only first service is used"),
       BT::InputPort<double>("cost_threshold",
           "Cost threshold for considering a goal in collision"),
       BT::InputPort<bool>("use_footprint",
@@ -63,9 +61,7 @@ private:
 
   rclcpp::Node::SharedPtr node_;
   rclcpp::Client<nav2_msgs::srv::GetCost>::SharedPtr get_cost_client_;
-  rclcpp::Client<nav2_msgs::srv::GetCost>::SharedPtr get_cost_client_2_;
   std::string costmap_cost_service_;
-  std::string costmap_cost_service_2_;
   bool initialized_;
   bool use_footprint_;
   double cost_threshold_;
