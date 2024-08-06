@@ -61,8 +61,8 @@ private:
 
   rclcpp::Node::SharedPtr node_;
   rclcpp::Client<nav2_msgs::srv::GetCost>::SharedPtr get_cost_client_;
-  std::string costmap_cost_service_;
   bool initialized_;
+  std::string costmap_cost_service_;
   bool use_footprint_;
   double cost_threshold_;
   std::chrono::milliseconds server_timeout_;
