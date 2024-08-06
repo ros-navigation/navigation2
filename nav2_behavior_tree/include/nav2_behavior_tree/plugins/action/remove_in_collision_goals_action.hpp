@@ -45,10 +45,14 @@ public:
   {
     return {
       BT::InputPort<Goals>("input_goals", "Original goals to remove from"),
-      BT::InputPort<std::string>("costmap",
-          "Which costmap to use for checking collision. Choices: local, global, both"),
-      BT::InputPort<std::string>("cost_threshold",
+      BT::InputPort<std::string>("costmap_cost_service",
+          "Service to get cost from costmap"),
+      BT::InputPort<std::string>("costmap_cost_service_2",
+          "Second service name to get cost from costmap. If empty, only first service is used"),
+      BT::InputPort<double>("cost_threshold",
           "Cost threshold for considering a goal in collision"),
+      BT::InputPort<bool>("use_footprint",
+          "Whether to use footprint cost"),
       BT::OutputPort<Goals>("output_goals", "Goals with in-collision goals removed"),
     };
   }
@@ -58,11 +62,13 @@ private:
   BT::NodeStatus tick() override;
 
   rclcpp::Node::SharedPtr node_;
+  rclcpp::Client<nav2_msgs::srv::GetCost>::SharedPtr get_cost_client_;
+  rclcpp::Client<nav2_msgs::srv::GetCost>::SharedPtr get_cost_client_2_;
+  std::string costmap_cost_service_;
+  std::string costmap_cost_service_2_;
   bool initialized_;
-  std::string which_costmap_;
+  bool use_footprint_;
   double cost_threshold_;
-  rclcpp::Client<nav2_msgs::srv::GetCost>::SharedPtr get_global_cost_client_;
-  rclcpp::Client<nav2_msgs::srv::GetCost>::SharedPtr get_local_cost_client_;
   std::chrono::milliseconds server_timeout_;
 };
 

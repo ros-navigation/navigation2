@@ -29,18 +29,27 @@ RemoveInCollisionGoals::RemoveInCollisionGoals(
   const BT::NodeConfiguration & conf)
 : BT::ActionNodeBase(name, conf),
   initialized_(false),
-  which_costmap_("both"),
+  costmap_cost_service_("/global_costmap/get_cost_global_costmap"),
+  costmap_cost_service_2_(""),
+  use_footprint_(true),
   cost_threshold_(253)
 {}
 
 void RemoveInCollisionGoals::initialize()
 {
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
-  get_global_cost_client_ = node_->create_client<nav2_msgs::srv::GetCost>(
-    "global_costmap/get_cost_global_costmap");
-  get_local_cost_client_ = node_->create_client<nav2_msgs::srv::GetCost>(
-    "local_costmap/get_cost_local_costmap");
   server_timeout_ = config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
+
+  getInput("costmap_cost_service", costmap_cost_service_);
+  getInput("costmap_cost_service_2", costmap_cost_service_2_);
+
+  get_cost_client_ = node_->create_client<nav2_msgs::srv::GetCost>(
+    costmap_cost_service_);
+
+  if (!costmap_cost_service_2_.empty()) {
+    get_cost_client_2_ = node_->create_client<nav2_msgs::srv::GetCost>(
+      costmap_cost_service_2_);
+  }
 }
 
 inline BT::NodeStatus RemoveInCollisionGoals::tick()
@@ -51,7 +60,7 @@ inline BT::NodeStatus RemoveInCollisionGoals::tick()
     initialize();
   }
 
-  getInput("costmap", which_costmap_);
+  getInput("use_footprint", use_footprint_);
   getInput("cost_threshold", cost_threshold_);
 
   Goals goal_poses;
@@ -68,44 +77,31 @@ inline BT::NodeStatus RemoveInCollisionGoals::tick()
     request->x = goal.pose.position.x;
     request->y = goal.pose.position.y;
     request->theta = tf2::getYaw(goal.pose.orientation);
-    request->use_footprint = true;
+    request->use_footprint = use_footprint_;
 
-    if (which_costmap_ == "global") {
-      auto future_global = get_global_cost_client_->async_send_request(request);
-      auto ret_global = rclcpp::spin_until_future_complete(node_, future_global, server_timeout_);
-      if (ret_global == rclcpp::FutureReturnCode::SUCCESS) {
-        if (future_global.get()->cost <= cost_threshold_) {
+    if (costmap_cost_service_2_.empty()) {
+      auto future = get_cost_client_->async_send_request(request);
+      auto ret = rclcpp::spin_until_future_complete(node_, future, server_timeout_);
+      if (ret == rclcpp::FutureReturnCode::SUCCESS) {
+        if (future.get()->cost <= cost_threshold_) {
           valid_goal_poses.push_back(goal);
         }
       } else {
         RCLCPP_ERROR(
           node_->get_logger(),
-          "RemoveInCollisionGoals BT node failed to call GetCost service of global costmap");
+          "RemoveInCollisionGoals BT node failed to call GetCost service of costmap");
         return BT::NodeStatus::FAILURE;
       }
-    } else if (which_costmap_ == "local") {
-      auto future_local = get_local_cost_client_->async_send_request(request);
-      auto ret_local = rclcpp::spin_until_future_complete(node_, future_local, server_timeout_);
-      if (ret_local == rclcpp::FutureReturnCode::SUCCESS) {
-        if (future_local.get()->cost <= cost_threshold_) {
-          valid_goal_poses.push_back(goal);
-        }
-      } else {
-        RCLCPP_ERROR(
-          node_->get_logger(),
-          "RemoveInCollisionGoals BT node failed to call GetCost service of local costmap");
-        return BT::NodeStatus::FAILURE;
-      }
-    } else if (which_costmap_ == "both") {
-      auto future_global = get_global_cost_client_->async_send_request(request);
-      auto future_local = get_local_cost_client_->async_send_request(request);
-      auto ret_global = rclcpp::spin_until_future_complete(node_, future_global, server_timeout_);
-      auto ret_local = rclcpp::spin_until_future_complete(node_, future_local, server_timeout_);
-      if (ret_local == rclcpp::FutureReturnCode::SUCCESS &&
-        ret_global == rclcpp::FutureReturnCode::SUCCESS)
+    } else {
+      auto future = get_cost_client_->async_send_request(request);
+      auto future_2 = get_cost_client_2_->async_send_request(request);
+      auto ret = rclcpp::spin_until_future_complete(node_, future, server_timeout_);
+      auto ret_2 = rclcpp::spin_until_future_complete(node_, future_2, server_timeout_);
+      if (ret == rclcpp::FutureReturnCode::SUCCESS &&
+        ret_2 == rclcpp::FutureReturnCode::SUCCESS)
       {
-        if (future_local.get()->cost <= cost_threshold_ &&
-          future_global.get()->cost <= cost_threshold_)
+        if (future.get()->cost <= cost_threshold_ &&
+          future_2.get()->cost <= cost_threshold_)
         {
           valid_goal_poses.push_back(goal);
         }
@@ -113,13 +109,9 @@ inline BT::NodeStatus RemoveInCollisionGoals::tick()
         RCLCPP_ERROR(
           node_->get_logger(),
           "RemoveInCollisionGoals BT node failed to call GetCost "
-          "service of local or global costmap");
+          "service of one or two costmaps");
         return BT::NodeStatus::FAILURE;
       }
-    } else {
-      RCLCPP_ERROR(
-        node_->get_logger(), "The costmap parameter must be either 'local', 'global', or 'both'");
-      return BT::NodeStatus::FAILURE;
     }
   }
   setOutput("output_goals", valid_goal_poses);
