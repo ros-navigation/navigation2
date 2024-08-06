@@ -270,14 +270,14 @@ bool CollisionMonitor::getParameters(
   stop_pub_timeout_ =
     rclcpp::Duration::from_seconds(get_parameter("stop_pub_timeout").as_double());
 
-  if (!configurePolygons(base_frame_id, transform_tolerance)) {
-    return false;
-  }
-
   if (
     !configureSources(
       base_frame_id, odom_frame_id, transform_tolerance, source_timeout, base_shift_correction))
   {
+    return false;
+  }
+
+  if (!configurePolygons(base_frame_id, transform_tolerance)) {
     return false;
   }
 
@@ -412,19 +412,21 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in, const std_msgs::msg:
   }
 
   // Points array collected from different data sources in a robot base frame
-  std::vector<Point> collision_points;
+  std::unordered_map<std::string, std::vector<Point>> sources_collision_points_map;
 
   // By default - there is no action
   Action robot_action{DO_NOTHING, cmd_vel_in, ""};
   // Polygon causing robot action (if any)
   std::shared_ptr<Polygon> action_polygon;
 
-  // Fill collision_points array from different data sources
+  // Fill collision points array from different data sources
   for (std::shared_ptr<Source> source : sources_) {
+    std::vector<Point> collision_points;
+    auto iter = sources_collision_points_map.insert({source->getSourceName(), collision_points});
+    bool is_source_valid = source->getData(curr_time, iter.first->second);
+
     if (source->getEnabled()) {
-      if (!source->getData(curr_time, collision_points) &&
-        source->getSourceTimeout().seconds() != 0.0)
-      {
+      if (!is_source_valid && source->getSourceTimeout().seconds() != 0.0) {
         action_polygon = nullptr;
         robot_action.polygon_name = "invalid source";
         robot_action.action_type = STOP;
@@ -434,34 +436,34 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in, const std_msgs::msg:
         break;
       }
     }
-  }
 
-  if (collision_points_marker_pub_->get_subscription_count() > 0) {
-    // visualize collision points with markers
-    auto marker_array = std::make_unique<visualization_msgs::msg::MarkerArray>();
-    visualization_msgs::msg::Marker marker;
-    marker.header.frame_id = get_parameter("base_frame_id").as_string();
-    marker.header.stamp = rclcpp::Time(0, 0);
-    marker.ns = "collision_points";
-    marker.id = 0;
-    marker.type = visualization_msgs::msg::Marker::POINTS;
-    marker.action = visualization_msgs::msg::Marker::ADD;
-    marker.scale.x = 0.02;
-    marker.scale.y = 0.02;
-    marker.color.r = 1.0;
-    marker.color.a = 1.0;
-    marker.lifetime = rclcpp::Duration(0, 0);
-    marker.frame_locked = true;
+    if (collision_points_marker_pub_->get_subscription_count() > 0) {
+      // visualize collision points with markers
+      auto marker_array = std::make_unique<visualization_msgs::msg::MarkerArray>();
+      visualization_msgs::msg::Marker marker;
+      marker.header.frame_id = get_parameter("base_frame_id").as_string();
+      marker.header.stamp = rclcpp::Time(0, 0);
+      marker.ns = "collision_points";
+      marker.id = 0;
+      marker.type = visualization_msgs::msg::Marker::POINTS;
+      marker.action = visualization_msgs::msg::Marker::ADD;
+      marker.scale.x = 0.02;
+      marker.scale.y = 0.02;
+      marker.color.r = 1.0;
+      marker.color.a = 1.0;
+      marker.lifetime = rclcpp::Duration(0, 0);
+      marker.frame_locked = true;
 
-    for (const auto & point : collision_points) {
-      geometry_msgs::msg::Point p;
-      p.x = point.x;
-      p.y = point.y;
-      p.z = 0.0;
-      marker.points.push_back(p);
+      for (const auto & point : iter.first->second) {
+        geometry_msgs::msg::Point p;
+        p.x = point.x;
+        p.y = point.y;
+        p.z = 0.0;
+        marker.points.push_back(p);
+      }
+      marker_array->markers.push_back(marker);
+      collision_points_marker_pub_->publish(std::move(marker_array));
     }
-    marker_array->markers.push_back(marker);
-    collision_points_marker_pub_->publish(std::move(marker_array));
   }
 
   for (std::shared_ptr<Polygon> polygon : polygons_) {
@@ -479,12 +481,14 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in, const std_msgs::msg:
     const ActionType at = polygon->getActionType();
     if (at == STOP || at == SLOWDOWN || at == LIMIT) {
       // Process STOP/SLOWDOWN for the selected polygon
-      if (processStopSlowdownLimit(polygon, collision_points, cmd_vel_in, robot_action)) {
+      if (processStopSlowdownLimit(
+          polygon, sources_collision_points_map, cmd_vel_in, robot_action))
+      {
         action_polygon = polygon;
       }
     } else if (at == APPROACH) {
       // Process APPROACH for the selected polygon
-      if (processApproach(polygon, collision_points, cmd_vel_in, robot_action)) {
+      if (processApproach(polygon, sources_collision_points_map, cmd_vel_in, robot_action)) {
         action_polygon = polygon;
       }
     }
@@ -506,7 +510,7 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in, const std_msgs::msg:
 
 bool CollisionMonitor::processStopSlowdownLimit(
   const std::shared_ptr<Polygon> polygon,
-  const std::vector<Point> & collision_points,
+  const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map,
   const Velocity & velocity,
   Action & robot_action) const
 {
@@ -514,7 +518,7 @@ bool CollisionMonitor::processStopSlowdownLimit(
     return false;
   }
 
-  if (polygon->getPointsInside(collision_points) >= polygon->getMinPoints()) {
+  if (polygon->getPointsInside(sources_collision_points_map) >= polygon->getMinPoints()) {
     if (polygon->getActionType() == STOP) {
       // Setting up zero velocity for STOP model
       robot_action.polygon_name = polygon->getName();
@@ -561,7 +565,7 @@ bool CollisionMonitor::processStopSlowdownLimit(
 
 bool CollisionMonitor::processApproach(
   const std::shared_ptr<Polygon> polygon,
-  const std::vector<Point> & collision_points,
+  const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map,
   const Velocity & velocity,
   Action & robot_action) const
 {
@@ -570,7 +574,7 @@ bool CollisionMonitor::processApproach(
   }
 
   // Obtain time before a collision
-  const double collision_time = polygon->getCollisionTime(collision_points, velocity);
+  const double collision_time = polygon->getCollisionTime(sources_collision_points_map, velocity);
   if (collision_time >= 0.0) {
     // If collision will occurr, reduce robot speed
     const double change_ratio = collision_time / polygon->getTimeBeforeCollision();

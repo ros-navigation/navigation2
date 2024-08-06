@@ -157,6 +157,11 @@ double Polygon::getTimeBeforeCollision() const
   return time_before_collision_;
 }
 
+std::vector<std::string> Polygon::getSourcesNames() const
+{
+  return sources_names_;
+}
+
 void Polygon::getPolygon(std::vector<Point> & poly) const
 {
   poly = poly_;
@@ -229,39 +234,80 @@ int Polygon::getPointsInside(const std::vector<Point> & points) const
   return num;
 }
 
+int Polygon::getPointsInside(
+  const std::unordered_map<std::string,
+  std::vector<Point>> & sources_collision_points_map) const
+{
+  int num = 0;
+  std::vector<std::string> polygon_sources_names = getSourcesNames();
+
+  for (const auto & iter : sources_collision_points_map) {
+    // Check the points only if the source is associated with current polygon
+    if (std::find(
+        polygon_sources_names.begin(), polygon_sources_names.end(), iter.first) ==
+      polygon_sources_names.end())
+    {
+      continue;
+    }
+
+    // Sum the number of points from all sources associated with polygon
+    num += getPointsInside(iter.second);
+  }
+  return num;
+}
+
 double Polygon::getCollisionTime(
-  const std::vector<Point> & collision_points,
+  const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map,
   const Velocity & velocity) const
 {
   // Initial robot pose is {0,0} in base_footprint coordinates
   Pose pose = {0.0, 0.0, 0.0};
   Velocity vel = velocity;
 
-  // Array of points transformed to the frame concerned with pose on each simulation step
-  std::vector<Point> points_transformed = collision_points;
+  double collision_time = -1.0;  // initialize collision time as if there is no collision
+  std::vector<std::string> polygon_sources_names = getSourcesNames();
 
-  // Check static polygon
-  if (getPointsInside(points_transformed) >= min_points_) {
-    return 0.0;
-  }
+  for (const auto & iter : sources_collision_points_map) {
+    // Check the points only if the source is associated with current polygon
+    if (std::find(
+        polygon_sources_names.begin(), polygon_sources_names.end(), iter.first) ==
+      polygon_sources_names.end())
+    {
+      continue;
+    }
 
-  // Robot movement simulation
-  for (double time = 0.0; time <= time_before_collision_; time += simulation_time_step_) {
-    // Shift the robot pose towards to the vel during simulation_time_step_ time interval
-    // NOTE: vel is changing during the simulation
-    projectState(simulation_time_step_, pose, vel);
-    // Transform collision_points to the frame concerned with current robot pose
-    points_transformed = collision_points;
-    transformPoints(pose, points_transformed);
-    // If the collision occurred on this stage, return the actual time before a collision
-    // as if robot was moved with given velocity
-    if (getPointsInside(points_transformed) >= min_points_) {
-      return time;
+    // Array of points transformed to the frame concerned with pose on each simulation step
+    std::vector<Point> points_transformed = iter.second;
+
+    // Check static polygon
+    if (getPointsInside(iter.second) >= min_points_) {
+      return 0.0;  // immediate collision, other sources don't need to be checked
+    }
+
+    // Robot movement simulation
+    for (double time = 0.0; time <= time_before_collision_; time += simulation_time_step_) {
+      // Shift the robot pose towards to the vel during simulation_time_step_ time interval
+      // NOTE: vel is changing during the simulation
+      projectState(simulation_time_step_, pose, vel);
+      // Transform collision_points to the frame concerned with current robot pose
+      points_transformed = iter.second;
+      transformPoints(pose, points_transformed);
+      // If the collision occurred on this stage, return the actual time before a collision
+      // as if robot was moved with given velocity
+      if (getPointsInside(points_transformed) >= min_points_) {
+        if (collision_time == -1.0) {
+          // If first collision detected, keep collision time value
+          collision_time = time;
+        } else if (time < collision_time) {
+          // Keep the smallest collision time value from all sources
+          collision_time = time;
+        }
+      }
     }
   }
 
   // There is no collision
-  return -1.0;
+  return collision_time;
 }
 
 void Polygon::publish()
@@ -390,6 +436,27 @@ bool Polygon::getCommonParameters(
           rclcpp::ParameterValue("local_costmap/published_footprint"));
         footprint_topic =
           node->get_parameter(polygon_name_ + ".footprint_topic").as_string();
+      }
+    }
+
+    // By default, use all observation sources for polygon
+    nav2_util::declare_parameter_if_not_declared(
+      node, "observation_sources", rclcpp::PARAMETER_STRING_ARRAY);
+    std::vector<std::string> source_names =
+      node->get_parameter("observation_sources").as_string_array();
+    nav2_util::declare_parameter_if_not_declared(
+      node, polygon_name_ + ".sources_names", rclcpp::ParameterValue(source_names));
+    sources_names_ = node->get_parameter(polygon_name_ + ".sources_names").as_string_array();
+
+    // Check the observation sources configured for polygon are defined
+    for (auto source_name : sources_names_) {
+      if (std::find(source_names.begin(), source_names.end(), source_name) == source_names.end()) {
+        RCLCPP_ERROR_STREAM(
+          logger_,
+          "Observation source [" << source_name <<
+            "] configured for polygon [" << getName() <<
+            "] is not defined!");
+        return false;
       }
     }
   } catch (const std::exception & ex) {
