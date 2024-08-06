@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <functional>
+
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/simple_action_server.hpp"
@@ -94,26 +96,35 @@ TEST(NavigatorTests, TestNavigator)
   auto navigator = std::make_unique<Navigator>(node);
   navigator->activate();
 
+  std::function<bool()> is_preempted_true = []() {return true;};
+  std::function<bool()> is_preempted_false = []() {return false;};
+
   // Should succeed, action server set to succeed
   dummy_navigator_node->setReturn(true);
   EXPECT_NO_THROW(
-    navigator->goToPose(geometry_msgs::msg::PoseStamped(), rclcpp::Duration(10.0, 10.0)));
+    navigator->goToPose(geometry_msgs::msg::PoseStamped(), rclcpp::Duration(10.0, 10.0), is_preempted_false));
 
   // Should fail, timeout exceeded
   EXPECT_THROW(
-    navigator->goToPose(geometry_msgs::msg::PoseStamped(), rclcpp::Duration(0.0, 0.0)),
+    navigator->goToPose(geometry_msgs::msg::PoseStamped(), rclcpp::Duration(0.0, 0.0), is_preempted_false),
     opennav_docking_core::FailedToStage);
 
   // Should fail, action server set to succeed
   dummy_navigator_node->setReturn(false);
   EXPECT_THROW(
-    navigator->goToPose(geometry_msgs::msg::PoseStamped(), rclcpp::Duration(10.0, 10.0)),
+    navigator->goToPose(geometry_msgs::msg::PoseStamped(), rclcpp::Duration(10.0, 10.0), is_preempted_false),
     opennav_docking_core::FailedToStage);
 
   // First should fail, recursion should succeed
   dummy_navigator_node->setToggle();
   EXPECT_NO_THROW(
-    navigator->goToPose(geometry_msgs::msg::PoseStamped(), rclcpp::Duration(10.0, 10.0)));
+    navigator->goToPose(geometry_msgs::msg::PoseStamped(), rclcpp::Duration(10.0, 10.0), is_preempted_false));
+
+  // Should fail, preempted
+  dummy_navigator_node->setReturn(true);
+  EXPECT_THROW(
+    navigator->goToPose(geometry_msgs::msg::PoseStamped(), rclcpp::Duration(10.0, 10.0), is_preempted_true),
+    opennav_docking_core::FailedToStage);
 
   navigator->deactivate();
   navigator.reset();

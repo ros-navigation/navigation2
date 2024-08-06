@@ -51,13 +51,16 @@ void Navigator::deactivate()
 
 void Navigator::goToPose(
   const geometry_msgs::msg::PoseStamped & pose,
-  const rclcpp::Duration & max_staging_duration,
+  rclcpp::Duration remaining_staging_duration,
+  std::function<bool()> isPreempted,
   bool recursed)
 {
+  auto node = node_.lock();
+
   Nav2Pose::Goal goal;
   goal.pose = pose;
   goal.behavior_tree = navigator_bt_xml_;
-  const auto timeout = max_staging_duration.to_chrono<std::chrono::milliseconds>();
+  const auto start_time = node->now();
 
   // Wait for server to be active
   nav_to_pose_client_->wait_for_action_server(1s);
@@ -66,19 +69,41 @@ void Navigator::goToPose(
       future_goal_handle, 2s) == rclcpp::FutureReturnCode::SUCCESS)
   {
     auto future_result = nav_to_pose_client_->async_get_result(future_goal_handle.get());
-    if (executor_.spin_until_future_complete(
-        future_result, timeout) == rclcpp::FutureReturnCode::SUCCESS)
-    {
-      auto result = future_result.get();
-      if (result.code == rclcpp_action::ResultCode::SUCCEEDED && result.result->error_code == 0) {
-        return;  // Success!
+
+    while (rclcpp::ok()) {
+      if (isPreempted()) {
+        auto cancel_future = nav_to_pose_client_->async_cancel_goal(future_goal_handle.get());
+        executor_.spin_until_future_complete(cancel_future, 1s);
+        throw opennav_docking_core::FailedToStage("Navigation request to staging pose preempted.");
+      }
+
+      if (node->now() - start_time > remaining_staging_duration) {
+        auto cancel_future = nav_to_pose_client_->async_cancel_goal(future_goal_handle.get());
+        executor_.spin_until_future_complete(cancel_future, 1s);
+        throw opennav_docking_core::FailedToStage("Navigation request to staging pose timed out.");
+      }
+
+      if (executor_.spin_until_future_complete(
+          future_result, 10ms) == rclcpp::FutureReturnCode::SUCCESS)
+      {
+        auto result = future_result.get();
+        if (result.code == rclcpp_action::ResultCode::SUCCEEDED &&
+          result.result->error_code == 0)
+        {
+          return;  // Success!
+        } else {
+          RCLCPP_WARN(node->get_logger(), "Navigation request to staging pose failed.");
+          break;
+        }
       }
     }
   }
 
   // Attempt to retry once using single iteration recursion
   if (!recursed) {
-    goToPose(pose, max_staging_duration, true);
+    auto elapsed_time = node->now() - start_time;
+    remaining_staging_duration = remaining_staging_duration - elapsed_time;
+    goToPose(pose, remaining_staging_duration, isPreempted, true);
     return;
   }
 
