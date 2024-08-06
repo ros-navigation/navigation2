@@ -18,6 +18,11 @@
 #include <vector>
 #include <utility>
 
+#include "angles/angles.h"
+#include "nav2_util/geometry_utils.hpp"
+#include "nav2_util/node_utils.hpp"
+#include "nav2_util/robot_utils.hpp"
+
 #include "nav2_rotation_shim_controller/nav2_rotation_shim_controller.hpp"
 #include "nav2_rotation_shim_controller/tools/utils.hpp"
 
