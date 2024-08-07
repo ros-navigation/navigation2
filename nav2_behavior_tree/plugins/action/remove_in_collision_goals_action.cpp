@@ -79,8 +79,9 @@ inline BT::NodeStatus RemoveInCollisionGoals::tick()
   auto future = get_cost_client_->async_send_request(request);
   auto ret = rclcpp::spin_until_future_complete(node_, future, server_timeout_);
   if (ret == rclcpp::FutureReturnCode::SUCCESS) {
-    for (size_t i = 0; i < future.get()->costs.size(); ++i) {
-      if (future.get()->costs[i] <= cost_threshold_) {
+    auto response = future.get();
+    for (size_t i = 0; i < response->costs.size(); ++i) {
+      if (response->costs[i] <= cost_threshold_) {
         valid_goal_poses.push_back(goal_poses[i]);
       }
     }
