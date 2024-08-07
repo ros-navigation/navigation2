@@ -110,8 +110,8 @@ void CostmapCostTool::handleLocalCostResponse(
   rclcpp::Client<nav2_msgs::srv::GetCosts>::SharedFuture future)
 {
   auto response = future.get();
-  if (response->cost != -1) {
-    RCLCPP_INFO(node_->get_logger(), "Local costmap cost: %.1f", response->cost);
+  if (response->costs[0] != -1) {
+    RCLCPP_INFO(node_->get_logger(), "Local costmap cost: %.1f", response->costs[0]);
   } else {
     RCLCPP_ERROR(node_->get_logger(), "Failed to get local costmap cost");
   }
@@ -121,8 +121,8 @@ void CostmapCostTool::handleGlobalCostResponse(
   rclcpp::Client<nav2_msgs::srv::GetCosts>::SharedFuture future)
 {
   auto response = future.get();
-  if (response->cost != -1) {
-    RCLCPP_INFO(node_->get_logger(), "Global costmap cost: %.1f", response->cost);
+  if (response->costs[0] != -1) {
+    RCLCPP_INFO(node_->get_logger(), "Global costmap cost: %.1f", response->costs[0]);
   } else {
     RCLCPP_ERROR(node_->get_logger(), "Failed to get global costmap cost");
   }
