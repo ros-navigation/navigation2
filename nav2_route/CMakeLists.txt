@@ -258,7 +258,7 @@ install(TARGETS ${library_name} edge_scorers route_operations graph_file_loaders
   RUNTIME DESTINATION bin
 )
 
-install(DIRECTORY graphs DESTINATION share/${PROJECT_NAME})
+install(DIRECTORY graphs rviz launch DESTINATION share/${PROJECT_NAME})
 install(DIRECTORY test/test_graphs DESTINATION share/${PROJECT_NAME}/test)
 
 if(BUILD_TESTING)
