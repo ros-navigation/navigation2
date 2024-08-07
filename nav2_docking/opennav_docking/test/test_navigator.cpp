@@ -102,28 +102,33 @@ TEST(NavigatorTests, TestNavigator)
   // Should succeed, action server set to succeed
   dummy_navigator_node->setReturn(true);
   EXPECT_NO_THROW(
-    navigator->goToPose(geometry_msgs::msg::PoseStamped(), rclcpp::Duration(10.0, 10.0), is_preempted_false));
+    navigator->goToPose(geometry_msgs::msg::PoseStamped(), rclcpp::Duration(10.0, 10.0),
+      is_preempted_false));
 
   // Should fail, timeout exceeded
   EXPECT_THROW(
-    navigator->goToPose(geometry_msgs::msg::PoseStamped(), rclcpp::Duration(0.0, 0.0), is_preempted_false),
+    navigator->goToPose(geometry_msgs::msg::PoseStamped(), rclcpp::Duration(0.0, 0.0),
+      is_preempted_false),
     opennav_docking_core::FailedToStage);
 
   // Should fail, action server set to succeed
   dummy_navigator_node->setReturn(false);
   EXPECT_THROW(
-    navigator->goToPose(geometry_msgs::msg::PoseStamped(), rclcpp::Duration(10.0, 10.0), is_preempted_false),
+    navigator->goToPose(geometry_msgs::msg::PoseStamped(), rclcpp::Duration(10.0, 10.0),
+      is_preempted_false),
     opennav_docking_core::FailedToStage);
 
   // First should fail, recursion should succeed
   dummy_navigator_node->setToggle();
   EXPECT_NO_THROW(
-    navigator->goToPose(geometry_msgs::msg::PoseStamped(), rclcpp::Duration(10.0, 10.0), is_preempted_false));
+    navigator->goToPose(geometry_msgs::msg::PoseStamped(), rclcpp::Duration(10.0, 10.0),
+      is_preempted_false));
 
   // Should fail, preempted
   dummy_navigator_node->setReturn(true);
   EXPECT_THROW(
-    navigator->goToPose(geometry_msgs::msg::PoseStamped(), rclcpp::Duration(10.0, 10.0), is_preempted_true),
+    navigator->goToPose(geometry_msgs::msg::PoseStamped(), rclcpp::Duration(10.0, 10.0),
+      is_preempted_true),
     opennav_docking_core::FailedToStage);
 
   navigator->deactivate();
