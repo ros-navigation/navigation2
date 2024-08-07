@@ -41,9 +41,8 @@ void RemoveInCollisionGoals::initialize()
 
   getInput("costmap_cost_service", costmap_cost_service_);
 
-  get_cost_client_ = node_->create_client<nav2_msgs::srv::GetCost>(
+  get_cost_client_ = node_->create_client<nav2_msgs::srv::GetCosts>(
     costmap_cost_service_);
-
 }
 
 inline BT::NodeStatus RemoveInCollisionGoals::tick()
@@ -66,25 +65,30 @@ inline BT::NodeStatus RemoveInCollisionGoals::tick()
   }
 
   Goals valid_goal_poses;
-  for (const auto & goal : goal_poses) {
-    auto request = std::make_shared<nav2_msgs::srv::GetCost::Request>();
-    request->x = goal.pose.position.x;
-    request->y = goal.pose.position.y;
-    request->theta = tf2::getYaw(goal.pose.orientation);
-    request->use_footprint = use_footprint_;
+  auto request = std::make_shared<nav2_msgs::srv::GetCosts::Request>();
+  request->use_footprint = use_footprint_;
 
-    auto future = get_cost_client_->async_send_request(request);
-    auto ret = rclcpp::spin_until_future_complete(node_, future, server_timeout_);
-    if (ret == rclcpp::FutureReturnCode::SUCCESS) {
-      if (future.get()->cost <= cost_threshold_) {
-        valid_goal_poses.push_back(goal);
+  for (const auto & goal : goal_poses) {
+    geometry_msgs::msg::Pose2D pose;
+    pose.x = goal.pose.position.x;
+    pose.y = goal.pose.position.y;
+    pose.theta = tf2::getYaw(goal.pose.orientation);
+    request->poses.push_back(pose);
+  }
+
+  auto future = get_cost_client_->async_send_request(request);
+  auto ret = rclcpp::spin_until_future_complete(node_, future, server_timeout_);
+  if (ret == rclcpp::FutureReturnCode::SUCCESS) {
+    for (size_t i = 0; i < future.get()->costs.size(); ++i) {
+      if (future.get()->costs[i] <= cost_threshold_) {
+        valid_goal_poses.push_back(goal_poses[i]);
       }
-    } else {
-      RCLCPP_ERROR(
-        node_->get_logger(),
-        "RemoveInCollisionGoals BT node failed to call GetCost service of costmap");
-      return BT::NodeStatus::FAILURE;
     }
+  } else {
+    RCLCPP_ERROR(
+      node_->get_logger(),
+      "RemoveInCollisionGoals BT node failed to call GetCost service of costmap");
+    return BT::NodeStatus::FAILURE;
   }
   setOutput("output_goals", valid_goal_poses);
   return BT::NodeStatus::SUCCESS;

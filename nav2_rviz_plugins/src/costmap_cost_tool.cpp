@@ -45,9 +45,9 @@ void CostmapCostTool::onInitialize()
 
   node_ = context_->getRosNodeAbstraction().lock()->get_raw_node();
   local_cost_client_ =
-    node_->create_client<nav2_msgs::srv::GetCost>("/local_costmap/get_cost_local_costmap");
+    node_->create_client<nav2_msgs::srv::GetCosts>("/local_costmap/get_cost_local_costmap");
   global_cost_client_ =
-    node_->create_client<nav2_msgs::srv::GetCost>("/global_costmap/get_cost_global_costmap");
+    node_->create_client<nav2_msgs::srv::GetCosts>("/global_costmap/get_cost_global_costmap");
 }
 
 void CostmapCostTool::activate() {}
@@ -86,10 +86,12 @@ int CostmapCostTool::processMouseEvent(rviz_common::ViewportMouseEvent & event)
 void CostmapCostTool::callCostService(float x, float y)
 {
   // Create request for local costmap
-  auto request = std::make_shared<nav2_msgs::srv::GetCost::Request>();
-  request->x = x;
-  request->y = y;
-  // request->use_footprint = true;
+  auto request = std::make_shared<nav2_msgs::srv::GetCosts::Request>();
+  geometry_msgs::msg::Pose2D pose;
+  pose.x = x;
+  pose.y = y;
+  request->poses.push_back(pose);
+  request->use_footprint = false;
 
   // Call local costmap service
   if (local_cost_client_->wait_for_service(std::chrono::seconds(1))) {
@@ -105,7 +107,7 @@ void CostmapCostTool::callCostService(float x, float y)
 }
 
 void CostmapCostTool::handleLocalCostResponse(
-  rclcpp::Client<nav2_msgs::srv::GetCost>::SharedFuture future)
+  rclcpp::Client<nav2_msgs::srv::GetCosts>::SharedFuture future)
 {
   auto response = future.get();
   if (response->cost != -1) {
@@ -116,7 +118,7 @@ void CostmapCostTool::handleLocalCostResponse(
 }
 
 void CostmapCostTool::handleGlobalCostResponse(
-  rclcpp::Client<nav2_msgs::srv::GetCost>::SharedFuture future)
+  rclcpp::Client<nav2_msgs::srv::GetCosts>::SharedFuture future)
 {
   auto response = future.get();
   if (response->cost != -1) {

@@ -22,7 +22,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "behaviortree_cpp/action_node.h"
-#include "nav2_msgs/srv/get_cost.hpp"
+#include "nav2_msgs/srv/get_costs.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -60,7 +60,7 @@ private:
   BT::NodeStatus tick() override;
 
   rclcpp::Node::SharedPtr node_;
-  rclcpp::Client<nav2_msgs::srv::GetCost>::SharedPtr get_cost_client_;
+  rclcpp::Client<nav2_msgs::srv::GetCosts>::SharedPtr get_cost_client_;
   bool initialized_;
   std::string costmap_cost_service_;
   bool use_footprint_;

@@ -15,7 +15,7 @@
 #ifndef NAV2_RVIZ_PLUGINS__COSTMAP_COST_TOOL_HPP_
 #define NAV2_RVIZ_PLUGINS__COSTMAP_COST_TOOL_HPP_
 
-#include <nav2_msgs/srv/get_cost.hpp>
+#include <nav2_msgs/srv/get_costs.hpp>
 #include <rviz_common/tool.hpp>
 #include <rviz_default_plugins/tools/point/point_tool.hpp>
 #include <rclcpp/rclcpp.hpp>
@@ -38,15 +38,15 @@ public:
 
   void callCostService(float x, float y);
 
-  void handleLocalCostResponse(rclcpp::Client<nav2_msgs::srv::GetCost>::SharedFuture);
-  void handleGlobalCostResponse(rclcpp::Client<nav2_msgs::srv::GetCost>::SharedFuture);
+  void handleLocalCostResponse(rclcpp::Client<nav2_msgs::srv::GetCosts>::SharedFuture);
+  void handleGlobalCostResponse(rclcpp::Client<nav2_msgs::srv::GetCosts>::SharedFuture);
 
 private Q_SLOTS:
   void updateAutoDeactivate();
 
 private:
-  rclcpp::Client<nav2_msgs::srv::GetCost>::SharedPtr local_cost_client_;
-  rclcpp::Client<nav2_msgs::srv::GetCost>::SharedPtr global_cost_client_;
+  rclcpp::Client<nav2_msgs::srv::GetCosts>::SharedPtr local_cost_client_;
+  rclcpp::Client<nav2_msgs::srv::GetCosts>::SharedPtr global_cost_client_;
   rclcpp::Node::SharedPtr node_;
 
   QCursor std_cursor_;
