@@ -21,29 +21,38 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "behaviortree_cpp/action_node.h"
+#include "nav2_behavior_tree/bt_service_node.hpp"
 #include "nav2_msgs/srv/get_costs.hpp"
 
 namespace nav2_behavior_tree
 {
 
-class RemoveInCollisionGoals : public BT::ActionNodeBase
+class RemoveInCollisionGoals : public BtServiceNode<nav2_msgs::srv::GetCosts>
 {
 public:
   typedef std::vector<geometry_msgs::msg::PoseStamped> Goals;
 
+  /**
+   * @brief A constructor for nav2_behavior_tree::RemoveInCollisionGoals
+   * @param service_node_name Service name this node creates a client for
+   * @param conf BT node configuration
+   */
   RemoveInCollisionGoals(
-    const std::string & xml_tag_name,
+    const std::string & service_node_name,
     const BT::NodeConfiguration & conf);
 
   /**
-   * @brief Function to read parameters and initialize class variables
+   * @brief The main override required by a BT service
+   * @return BT::NodeStatus Status of tick execution
    */
-  void initialize();
+  void on_tick() override;
+
+  BT::NodeStatus on_completion(std::shared_ptr<nav2_msgs::srv::GetCosts::Response> response)
+  override;
 
   static BT::PortsList providedPorts()
   {
-    return {
+    return providedBasicPorts({
       BT::InputPort<Goals>("input_goals", "Original goals to remove from"),
       BT::InputPort<std::string>("costmap_cost_service",
           "Service to get cost from costmap"),
@@ -52,20 +61,13 @@ public:
       BT::InputPort<bool>("use_footprint",
           "Whether to use footprint cost"),
       BT::OutputPort<Goals>("output_goals", "Goals with in-collision goals removed"),
-    };
+    });
   }
 
 private:
-  void halt() override {}
-  BT::NodeStatus tick() override;
-
-  rclcpp::Node::SharedPtr node_;
-  rclcpp::Client<nav2_msgs::srv::GetCosts>::SharedPtr get_cost_client_;
-  bool initialized_;
-  std::string costmap_cost_service_;
   bool use_footprint_;
   double cost_threshold_;
-  std::chrono::milliseconds server_timeout_;
+  Goals input_goals_;
 };
 
 }  // namespace nav2_behavior_tree

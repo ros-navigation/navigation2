@@ -25,71 +25,47 @@ namespace nav2_behavior_tree
 {
 
 RemoveInCollisionGoals::RemoveInCollisionGoals(
-  const std::string & name,
+  const std::string & service_node_name,
   const BT::NodeConfiguration & conf)
-: BT::ActionNodeBase(name, conf),
-  initialized_(false),
-  costmap_cost_service_("/global_costmap/get_cost_global_costmap"),
+: BtServiceNode<nav2_msgs::srv::GetCosts>(service_node_name, conf),
   use_footprint_(true),
   cost_threshold_(253)
 {}
 
-void RemoveInCollisionGoals::initialize()
+
+void RemoveInCollisionGoals::on_tick()
 {
-  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
-  server_timeout_ = config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
-
-  getInput("costmap_cost_service", costmap_cost_service_);
-
-  get_cost_client_ = node_->create_client<nav2_msgs::srv::GetCosts>(
-    costmap_cost_service_);
-}
-
-inline BT::NodeStatus RemoveInCollisionGoals::tick()
-{
-  setStatus(BT::NodeStatus::RUNNING);
-
-  if (!initialized_) {
-    initialize();
-  }
-
   getInput("use_footprint", use_footprint_);
   getInput("cost_threshold", cost_threshold_);
 
-  Goals goal_poses;
-  getInput("input_goals", goal_poses);
+  Goals input_goals;
+  getInput("input_goals", input_goals_);
 
-  if (goal_poses.empty()) {
-    setOutput("output_goals", goal_poses);
-    return BT::NodeStatus::SUCCESS;
+  if (input_goals_.empty()) {
+    setOutput("output_goals", input_goals_);
+    should_send_request_ = false;
   }
 
   Goals valid_goal_poses;
-  auto request = std::make_shared<nav2_msgs::srv::GetCosts::Request>();
-  request->use_footprint = use_footprint_;
+  request_->use_footprint = use_footprint_;
 
-  for (const auto & goal : goal_poses) {
+  for (const auto & goal : input_goals) {
     geometry_msgs::msg::Pose2D pose;
     pose.x = goal.pose.position.x;
     pose.y = goal.pose.position.y;
     pose.theta = tf2::getYaw(goal.pose.orientation);
-    request->poses.push_back(pose);
+    request_->poses.push_back(pose);
   }
+}
 
-  auto future = get_cost_client_->async_send_request(request);
-  auto ret = rclcpp::spin_until_future_complete(node_, future, server_timeout_);
-  if (ret == rclcpp::FutureReturnCode::SUCCESS) {
-    auto response = future.get();
-    for (size_t i = 0; i < response->costs.size(); ++i) {
-      if (response->costs[i] <= cost_threshold_) {
-        valid_goal_poses.push_back(goal_poses[i]);
-      }
+BT::NodeStatus RemoveInCollisionGoals::on_completion(
+  std::shared_ptr<nav2_msgs::srv::GetCosts::Response> response)
+{
+  Goals valid_goal_poses;
+  for (size_t i = 0; i < response->costs.size(); ++i) {
+    if (response->costs[i] <= cost_threshold_) {
+      valid_goal_poses.push_back(input_goals_[i]);
     }
-  } else {
-    RCLCPP_ERROR(
-      node_->get_logger(),
-      "RemoveInCollisionGoals BT node failed to call GetCost service of costmap");
-    return BT::NodeStatus::FAILURE;
   }
   setOutput("output_goals", valid_goal_poses);
   return BT::NodeStatus::SUCCESS;
