@@ -34,6 +34,10 @@ namespace route_tool
 
     void routeTool::on_load_button_clicked(void)
     {
+        graph_to_id_map_.clear();
+        edge_to_node_map_.clear();
+        graph_to_incoming_edges_map_.clear();
+        graph_.clear();
         struct passwd *pw = getpwuid(getuid());
         std::string homedir(pw->pw_dir);
         QString filename = QFileDialog::getOpenFileName(this,
@@ -45,6 +49,12 @@ namespace route_tool
             max_node_id = std::max(node.nodeid, max_node_id);
             for (const auto & edge : node.neighbors) {
                 max_node_id = std::max(edge.edgeid, max_node_id);
+                edge_to_node_map_[edge.edgeid] = node.nodeid;
+                if (graph_to_incoming_edges_map_.find(edge.end->nodeid) != graph_to_incoming_edges_map_.end()) {
+                    graph_to_incoming_edges_map_[edge.end->nodeid].push_back(edge.start->nodeid);
+                } else {
+                    graph_to_incoming_edges_map_[edge.end->nodeid] = std::vector<unsigned int> {edge.start->nodeid};
+                }
             }
         }
         next_node_id_ = max_node_id;
