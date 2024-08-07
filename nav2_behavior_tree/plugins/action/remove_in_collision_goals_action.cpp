@@ -45,8 +45,6 @@ void RemoveInCollisionGoals::on_tick()
     setOutput("output_goals", input_goals_);
     should_send_request_ = false;
   }
-
-  Goals valid_goal_poses;
   request_->use_footprint = use_footprint_;
 
   for (const auto & goal : input_goals) {
