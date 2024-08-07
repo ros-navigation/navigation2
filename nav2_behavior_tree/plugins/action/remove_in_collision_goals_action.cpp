@@ -44,6 +44,7 @@ void RemoveInCollisionGoals::on_tick()
   if (input_goals_.empty()) {
     setOutput("output_goals", input_goals_);
     should_send_request_ = false;
+    return;
   }
   request_->use_footprint = use_footprint_;
 
