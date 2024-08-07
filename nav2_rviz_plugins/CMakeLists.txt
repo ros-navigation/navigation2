@@ -72,7 +72,6 @@ target_link_libraries(${library_name} PUBLIC
   ${std_msgs_TARGETS}
   tf2_geometry_msgs::tf2_geometry_msgs
   ${visualization_msgs_TARGETS}
-  # TODO(clalancette): We aren't linking against any Qt libraries here?
 )
 target_link_libraries(${library_name} PRIVATE
   ament_index_cpp::ament_index_cpp

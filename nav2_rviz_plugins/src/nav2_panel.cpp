@@ -781,6 +781,9 @@ Nav2Panel::onInitialize()
   node_ptr_ = getDisplayContext()->getRosNodeAbstraction().lock();
   if (node_ptr_ == nullptr) {
     // The node no longer exists, so just don't initialize
+    RCLCPP_ERROR(
+      rclcpp::get_logger("nav2_panel"),
+      "Underlying ROS node no longer exists, initialization failed");
     return;
   }
   rclcpp::Node::SharedPtr node = node_ptr_->get_raw_node();
