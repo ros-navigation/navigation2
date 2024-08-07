@@ -25,6 +25,7 @@ namespace route_tool
         node_->activate();
         tf_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
         graph_loader_ = std::make_shared<nav2_route::GraphLoader>(node_, tf_, "map");
+        graph_saver_ = std::make_shared<nav2_route::GraphSaver>(node_, tf_, "map");
     }
 
     void routeTool::update_display(void)
@@ -39,11 +40,26 @@ namespace route_tool
         tr("Open Address Book"), "",
         tr("Address Book (*.geojson);;All Files (*)"));
         graph_loader_->loadGraphFromFile(graph_, graph_to_id_map_, filename.toStdString());
+        unsigned int max_node_id = 0;
+        for (const auto & node : graph_) {
+            max_node_id = std::max(node.nodeid, max_node_id);
+            for (const auto & edge : node.neighbors) {
+                max_node_id = std::max(edge.edgeid, max_node_id);
+            }
+        }
+        next_node_id_ = max_node_id;
+        update_route_graph();
     }
 
     void routeTool::on_save_button_clicked(void)
     {
-        // TODO
+        struct passwd *pw = getpwuid(getuid());
+        std::string homedir(pw->pw_dir);
+        QString filename = QFileDialog::getSaveFileName(this,
+        tr("Open Address Book"), "",
+        tr("Address Book (*.geojson);;All Files (*)"));
+        RCLCPP_INFO(node_->get_logger(), "Filename: %s", filename.toStdString().c_str());
+        graph_saver_->saveGraphToFile(graph_, filename.toStdString());
     }
 
     void routeTool::on_create_button_clicked(void)

@@ -18,6 +18,8 @@
 #include <std_msgs/msg/string.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
 #include <nav2_route/graph_loader.hpp>
+#include <nav2_route/graph_saver.hpp>
+#include <nav2_route/graph_loader.hpp>
 #include <nav2_route/types.hpp>
 #include <nav2_route/utils.hpp>
 
@@ -93,6 +95,7 @@ namespace route_tool
 
             nav2_util::LifecycleNode::SharedPtr node_;
             std::shared_ptr<nav2_route::GraphLoader> graph_loader_;
+            std::shared_ptr<nav2_route::GraphSaver> graph_saver_;
             std::shared_ptr<tf2_ros::Buffer> tf_;
             nav2_route::Graph graph_;
             nav2_route::GraphToIDMap graph_to_id_map_;

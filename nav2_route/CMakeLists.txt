@@ -68,6 +68,7 @@ add_library(${library_name} SHARED
   src/node_spatial_tree.cpp
   src/path_converter.cpp
   src/graph_loader.cpp
+  src/graph_saver.cpp
   src/goal_intent_extractor.cpp
 )
 
@@ -124,6 +125,14 @@ ament_target_dependencies(graph_file_loaders
     ${dependencies}
 )
 
+add_library(graph_file_savers SHARED
+  src/plugins/graph_file_savers/geojson_graph_file_saver.cpp  
+)
+
+ament_target_dependencies(graph_file_savers
+  ${dependencies}
+)
+
 # Generate header for ui
 qt5_wrap_ui(route_tool_UIS_H resource/route_tool.ui)
 qt5_wrap_cpp(route_tool_MOCS include/nav2_route/route_tool/route_tool.hpp)
@@ -149,7 +158,7 @@ install(TARGETS ${executable_name}
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
-install(TARGETS ${library_name} edge_scorers route_operations graph_file_loaders route_tool_rviz_panel
+install(TARGETS ${library_name} edge_scorers route_operations graph_file_loaders graph_file_savers route_tool_rviz_panel
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -168,5 +177,5 @@ endif()
 
 ament_export_include_directories(include)
 ament_export_dependencies(${dependencies})
-ament_export_libraries(${library_name} edge_scorers route_operations graph_file_loaders route_tool_rviz_panel)
+ament_export_libraries(${library_name} edge_scorers route_operations graph_file_loaders graph_file_savers route_tool_rviz_panel)
 ament_package()
