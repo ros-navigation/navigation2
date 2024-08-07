@@ -19,6 +19,7 @@
 #include <memory>
 #include <string>
 #include <mutex>
+#include <functional>
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/lifecycle_node.hpp"
