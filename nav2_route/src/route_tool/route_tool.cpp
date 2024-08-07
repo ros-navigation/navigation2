@@ -26,10 +26,9 @@ namespace route_tool
         tf_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
         graph_loader_ = std::make_shared<nav2_route::GraphLoader>(node_, tf_, "map");
         graph_saver_ = std::make_shared<nav2_route::GraphSaver>(node_, tf_, "map");
-    }
-
-    void routeTool::update_display(void)
-    {
+        ui_->add_node_button->setChecked(true);
+        ui_->edit_node_button->setChecked(true);
+        ui_->remove_node_button->setChecked(true);
     }
 
     void routeTool::on_load_button_clicked(void)
@@ -174,19 +173,35 @@ namespace route_tool
         }
     }
 
+    void routeTool::on_add_node_button_toggled(void)
+    {
+        if (ui_->add_node_button->isChecked()) {
+            ui_->add_text->setText("Position:");
+            ui_->add_label_1->setText("X:");
+            ui_->add_label_2->setText("Y:");
+        } else {
+            ui_->add_text->setText("Connections:");
+            ui_->add_label_1->setText("Start Node ID:");
+            ui_->add_label_2->setText("End Node ID:");
+
+        } 
+    }
+
+    void routeTool::on_edit_node_button_toggled(void) {
+        if (ui_->edit_node_button->isChecked()) {
+            ui_->edit_text->setText("Position:");
+            ui_->edit_label_1->setText("X:");
+            ui_->edit_label_2->setText("Y:");
+        } else {
+            ui_->edit_text->setText("Connections:");
+            ui_->edit_label_1->setText("Start Node ID:");
+            ui_->edit_label_2->setText("End Node ID:");
+        } 
+    }
+
     void routeTool::update_route_graph(void)
     {
         graph_vis_publisher_->publish(nav2_route::utils::toMsg(graph_, "map", node_->now()));
-    }
-
-    void routeTool::save_route_graph(void)
-    {
-        // TODO
-    }
-
-    void routeTool::load_map(std::string filename)
-    {
-        RCLCPP_INFO(node_->get_logger(), "Map: %s", filename.c_str());
     }
 
     void routeTool::save(rviz_common::Config config) const

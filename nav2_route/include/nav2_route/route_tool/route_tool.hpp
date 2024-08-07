@@ -74,11 +74,9 @@ namespace route_tool
 
             void on_delete_button_clicked(void);
 
-            void update_display(void);
+            void on_add_node_button_toggled(void);
 
-        Q_SIGNALS:
-
-            void display_changed();
+            void on_edit_node_button_toggled(void);
 
         /**
          *  Finally, we close up with protected member variables
@@ -90,8 +88,6 @@ namespace route_tool
 
         private:
             void update_route_graph(void);
-            void save_route_graph(void);
-            void load_map(std::string filename);
 
             nav2_util::LifecycleNode::SharedPtr node_;
             std::shared_ptr<nav2_route::GraphLoader> graph_loader_;
