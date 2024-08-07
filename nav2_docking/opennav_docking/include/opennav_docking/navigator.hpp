@@ -18,6 +18,7 @@
 #include <vector>
 #include <memory>
 #include <string>
+#include <functional>
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
@@ -67,11 +68,14 @@ public:
    * May throw exception if fails to navigate or communicate
    * Blocks until completion.
    * @param pose Pose to go to
-   * @param max_staging_duration Maximum time to get to the staging pose
+   * @param remaining_staging_duration Remaining time to get to the staging pose
+   * @param isPreempted Function to check if preempted
+   * @param recursed True if recursed (used to retry once)
    */
   void goToPose(
     const geometry_msgs::msg::PoseStamped & pose,
-    const rclcpp::Duration & max_staging_duration,
+    rclcpp::Duration remaining_staging_duration,
+    std::function<bool()> isPreempted,
     bool recursed = false);
 
 protected:
