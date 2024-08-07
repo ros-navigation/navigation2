@@ -38,7 +38,6 @@ void RemoveInCollisionGoals::on_tick()
   getInput("use_footprint", use_footprint_);
   getInput("cost_threshold", cost_threshold_);
 
-  Goals input_goals;
   getInput("input_goals", input_goals_);
 
   if (input_goals_.empty()) {
@@ -48,7 +47,7 @@ void RemoveInCollisionGoals::on_tick()
   }
   request_->use_footprint = use_footprint_;
 
-  for (const auto & goal : input_goals) {
+  for (const auto & goal : input_goals_) {
     geometry_msgs::msg::Pose2D pose;
     pose.x = goal.pose.position.x;
     pose.y = goal.pose.position.y;
