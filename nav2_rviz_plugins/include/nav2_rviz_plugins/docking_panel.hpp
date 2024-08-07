@@ -19,12 +19,14 @@
 #include <QtWidgets>
 #include <QBasicTimer>
 
+#include <memory>
 #include <string>
 
 // ROS
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "rviz_common/panel.hpp"
+#include "rviz_common/ros_integration/ros_node_abstraction_iface.hpp"
 #include "sensor_msgs/msg/battery_state.hpp"
 #include "nav2_msgs/action/dock_robot.hpp"
 #include "nav2_msgs/action/undock_robot.hpp"
@@ -124,6 +126,9 @@ private:
   rclcpp_action::Client<Undock>::SharedPtr undock_client_;
   DockGoalHandle::SharedPtr dock_goal_handle_;
   UndockGoalHandle::SharedPtr undock_goal_handle_;
+
+  // The Node pointer that we need to keep alive for the duration of this plugin.
+  std::shared_ptr<rviz_common::ros_integration::RosNodeAbstractionIface> node_ptr_;
 
   // Docking / Undocking action feedback subscribers
   rclcpp::Subscription<Dock::Impl::FeedbackMessage>::SharedPtr docking_feedback_sub_;
