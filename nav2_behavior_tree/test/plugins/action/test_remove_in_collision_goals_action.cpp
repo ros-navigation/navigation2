@@ -60,6 +60,15 @@ public:
     config_->blackboard->set(
       "node",
       node_);
+    config_->blackboard->set<std::chrono::milliseconds>(
+      "server_timeout",
+      std::chrono::milliseconds(20));
+    config_->blackboard->set<std::chrono::milliseconds>(
+      "bt_loop_duration",
+      std::chrono::milliseconds(10));
+    config_->blackboard->set<std::chrono::milliseconds>(
+      "wait_for_service_timeout",
+      std::chrono::milliseconds(1000));
 
     BT::NodeBuilder builder =
       [](const std::string & name, const BT::NodeConfiguration & config)
