@@ -17,6 +17,7 @@
 
 #include <string>
 #include "behaviortree_cpp/behavior_tree.h"
+#include "nav2_behavior_tree/bt_utils.hpp"
 
 namespace nav2_behavior_tree
 {

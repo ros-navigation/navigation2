@@ -23,6 +23,7 @@
 #include "tf2_ros/buffer.h"
 
 #include "behaviortree_cpp/decorator_node.h"
+#include "nav2_behavior_tree/bt_utils.hpp"
 
 namespace nav2_behavior_tree
 {

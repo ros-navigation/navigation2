@@ -20,7 +20,6 @@
 #include "nav2_util/node_utils.hpp"
 
 #include "nav2_behavior_tree/plugins/condition/goal_reached_condition.hpp"
-#include "nav2_behavior_tree/bt_utils.hpp"
 
 namespace nav2_behavior_tree
 {
