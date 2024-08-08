@@ -506,6 +506,7 @@ void ControllerServer::computeControl()
     publishZeroVelocity();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::INVALID_CONTROLLER;
+    result->error_msg = e.what();
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::ControllerTFError & e) {
@@ -513,6 +514,7 @@ void ControllerServer::computeControl()
     publishZeroVelocity();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::TF_ERROR;
+    result->error_msg = e.what();
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::NoValidControl & e) {
@@ -520,6 +522,7 @@ void ControllerServer::computeControl()
     publishZeroVelocity();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::NO_VALID_CONTROL;
+    result->error_msg = e.what();
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::FailedToMakeProgress & e) {
@@ -527,6 +530,7 @@ void ControllerServer::computeControl()
     publishZeroVelocity();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::FAILED_TO_MAKE_PROGRESS;
+    result->error_msg = e.what();
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::PatienceExceeded & e) {
@@ -534,6 +538,7 @@ void ControllerServer::computeControl()
     publishZeroVelocity();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::PATIENCE_EXCEEDED;
+    result->error_msg = e.what();
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::InvalidPath & e) {
@@ -541,6 +546,7 @@ void ControllerServer::computeControl()
     publishZeroVelocity();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::INVALID_PATH;
+    result->error_msg = e.what();
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::ControllerException & e) {
@@ -548,6 +554,7 @@ void ControllerServer::computeControl()
     publishZeroVelocity();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::UNKNOWN;
+    result->error_msg = e.what();
     action_server_->terminate_current(result);
     return;
   } catch (std::exception & e) {
@@ -555,6 +562,7 @@ void ControllerServer::computeControl()
     publishZeroVelocity();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::UNKNOWN;
+    result->error_msg = e.what();
     action_server_->terminate_current(result);
     return;
   }
