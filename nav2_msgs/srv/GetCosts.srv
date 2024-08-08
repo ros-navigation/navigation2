@@ -1,0 +1,6 @@
+# Get costmap costs at given poses
+
+bool use_footprint
+geometry_msgs/Pose2D[] poses
+---
+float32[] costs

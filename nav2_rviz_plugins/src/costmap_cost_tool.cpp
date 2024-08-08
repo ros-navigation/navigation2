@@ -54,9 +54,9 @@ void CostmapCostTool::onInitialize()
   rclcpp::Node::SharedPtr node = node_ptr_->get_raw_node();
 
   local_cost_client_ =
-    node->create_client<nav2_msgs::srv::GetCost>("/local_costmap/get_cost_local_costmap");
+    node->create_client<nav2_msgs::srv::GetCosts>("/local_costmap/get_cost_local_costmap");
   global_cost_client_ =
-    node->create_client<nav2_msgs::srv::GetCost>("/global_costmap/get_cost_global_costmap");
+    node->create_client<nav2_msgs::srv::GetCosts>("/global_costmap/get_cost_global_costmap");
 }
 
 void CostmapCostTool::activate() {}
@@ -95,9 +95,12 @@ int CostmapCostTool::processMouseEvent(rviz_common::ViewportMouseEvent & event)
 void CostmapCostTool::callCostService(float x, float y)
 {
   // Create request for local costmap
-  auto request = std::make_shared<nav2_msgs::srv::GetCost::Request>();
-  request->x = x;
-  request->y = y;
+  auto request = std::make_shared<nav2_msgs::srv::GetCosts::Request>();
+  geometry_msgs::msg::Pose2D pose;
+  pose.x = x;
+  pose.y = y;
+  request->poses.push_back(pose);
+  request->use_footprint = false;
 
   // Call local costmap service
   if (local_cost_client_->wait_for_service(std::chrono::seconds(1))) {
@@ -113,24 +116,24 @@ void CostmapCostTool::callCostService(float x, float y)
 }
 
 void CostmapCostTool::handleLocalCostResponse(
-  rclcpp::Client<nav2_msgs::srv::GetCost>::SharedFuture future)
+  rclcpp::Client<nav2_msgs::srv::GetCosts>::SharedFuture future)
 {
   rclcpp::Node::SharedPtr node = node_ptr_->get_raw_node();
   auto response = future.get();
-  if (response->cost != -1) {
-    RCLCPP_INFO(node->get_logger(), "Local costmap cost: %.1f", response->cost);
+  if (response->costs[0] != -1) {
+    RCLCPP_INFO(node->get_logger(), "Local costmap cost: %.1f", response->costs[0]);
   } else {
     RCLCPP_ERROR(node->get_logger(), "Failed to get local costmap cost");
   }
 }
 
 void CostmapCostTool::handleGlobalCostResponse(
-  rclcpp::Client<nav2_msgs::srv::GetCost>::SharedFuture future)
+  rclcpp::Client<nav2_msgs::srv::GetCosts>::SharedFuture future)
 {
   rclcpp::Node::SharedPtr node = node_ptr_->get_raw_node();
   auto response = future.get();
-  if (response->cost != -1) {
-    RCLCPP_INFO(node->get_logger(), "Global costmap cost: %.1f", response->cost);
+  if (response->costs[0] != -1) {
+    RCLCPP_INFO(node->get_logger(), "Global costmap cost: %.1f", response->costs[0]);
   } else {
     RCLCPP_ERROR(node->get_logger(), "Failed to get global costmap cost");
   }

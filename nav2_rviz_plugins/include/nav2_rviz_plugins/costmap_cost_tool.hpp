@@ -17,7 +17,7 @@
 
 #include <memory>
 
-#include <nav2_msgs/srv/get_cost.hpp>
+#include <nav2_msgs/srv/get_costs.hpp>
 #include <rviz_common/ros_integration/ros_node_abstraction_iface.hpp>
 #include <rviz_common/tool.hpp>
 #include <rviz_default_plugins/tools/point/point_tool.hpp>
@@ -41,15 +41,15 @@ public:
 
   void callCostService(float x, float y);
 
-  void handleLocalCostResponse(rclcpp::Client<nav2_msgs::srv::GetCost>::SharedFuture);
-  void handleGlobalCostResponse(rclcpp::Client<nav2_msgs::srv::GetCost>::SharedFuture);
+  void handleLocalCostResponse(rclcpp::Client<nav2_msgs::srv::GetCosts>::SharedFuture);
+  void handleGlobalCostResponse(rclcpp::Client<nav2_msgs::srv::GetCosts>::SharedFuture);
 
 private Q_SLOTS:
   void updateAutoDeactivate();
 
 private:
-  rclcpp::Client<nav2_msgs::srv::GetCost>::SharedPtr local_cost_client_;
-  rclcpp::Client<nav2_msgs::srv::GetCost>::SharedPtr global_cost_client_;
+  rclcpp::Client<nav2_msgs::srv::GetCosts>::SharedPtr local_cost_client_;
+  rclcpp::Client<nav2_msgs::srv::GetCosts>::SharedPtr global_cost_client_;
   // The Node pointer that we need to keep alive for the duration of this plugin.
   std::shared_ptr<rviz_common::ros_integration::RosNodeAbstractionIface> node_ptr_;
 
