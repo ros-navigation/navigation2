@@ -15,13 +15,11 @@
 #ifndef NAV2_GRACEFUL_CONTROLLER__EGO_POLAR_COORDS_HPP_
 #define NAV2_GRACEFUL_CONTROLLER__EGO_POLAR_COORDS_HPP_
 
-#include <math.h>
+#include <cmath>
 
 #include "angles/angles.h"
 #include "geometry_msgs/msg/pose.hpp"
 #include "tf2/utils.h"
-#include "tf2/transform_datatypes.h"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 namespace nav2_graceful_controller
 {
