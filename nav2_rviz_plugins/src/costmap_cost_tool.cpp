@@ -43,11 +43,20 @@ void CostmapCostTool::onInitialize()
   setName("Costmap Cost");
   setIcon(rviz_common::loadPixmap("package://rviz_default_plugins/icons/classes/PointStamped.png"));
 
-  node_ = context_->getRosNodeAbstraction().lock()->get_raw_node();
+  node_ptr_ = context_->getRosNodeAbstraction().lock();
+  if (node_ptr_ == nullptr) {
+    // The node no longer exists, so just don't initialize
+    RCLCPP_ERROR(
+      rclcpp::get_logger("costmap_cost_tool"),
+      "Underlying ROS node no longer exists, initialization failed");
+    return;
+  }
+  rclcpp::Node::SharedPtr node = node_ptr_->get_raw_node();
+
   local_cost_client_ =
-    node_->create_client<nav2_msgs::srv::GetCosts>("/local_costmap/get_cost_local_costmap");
+    node->create_client<nav2_msgs::srv::GetCosts>("/local_costmap/get_cost_local_costmap");
   global_cost_client_ =
-    node_->create_client<nav2_msgs::srv::GetCosts>("/global_costmap/get_cost_global_costmap");
+    node->create_client<nav2_msgs::srv::GetCosts>("/global_costmap/get_cost_global_costmap");
 }
 
 void CostmapCostTool::activate() {}
@@ -109,22 +118,24 @@ void CostmapCostTool::callCostService(float x, float y)
 void CostmapCostTool::handleLocalCostResponse(
   rclcpp::Client<nav2_msgs::srv::GetCosts>::SharedFuture future)
 {
+  rclcpp::Node::SharedPtr node = node_ptr_->get_raw_node();
   auto response = future.get();
   if (response->costs[0] != -1) {
-    RCLCPP_INFO(node_->get_logger(), "Local costmap cost: %.1f", response->costs[0]);
+    RCLCPP_INFO(node->get_logger(), "Local costmap cost: %.1f", response->costs[0]);
   } else {
-    RCLCPP_ERROR(node_->get_logger(), "Failed to get local costmap cost");
+    RCLCPP_ERROR(node->get_logger(), "Failed to get local costmap cost");
   }
 }
 
 void CostmapCostTool::handleGlobalCostResponse(
   rclcpp::Client<nav2_msgs::srv::GetCosts>::SharedFuture future)
 {
+  rclcpp::Node::SharedPtr node = node_ptr_->get_raw_node();
   auto response = future.get();
   if (response->costs[0] != -1) {
-    RCLCPP_INFO(node_->get_logger(), "Global costmap cost: %.1f", response->costs[0]);
+    RCLCPP_INFO(node->get_logger(), "Global costmap cost: %.1f", response->costs[0]);
   } else {
-    RCLCPP_ERROR(node_->get_logger(), "Failed to get global costmap cost");
+    RCLCPP_ERROR(node->get_logger(), "Failed to get global costmap cost");
   }
 }
 }  // namespace nav2_rviz_plugins

@@ -15,7 +15,10 @@
 #ifndef NAV2_RVIZ_PLUGINS__COSTMAP_COST_TOOL_HPP_
 #define NAV2_RVIZ_PLUGINS__COSTMAP_COST_TOOL_HPP_
 
+#include <memory>
+
 #include <nav2_msgs/srv/get_costs.hpp>
+#include <rviz_common/ros_integration/ros_node_abstraction_iface.hpp>
 #include <rviz_common/tool.hpp>
 #include <rviz_default_plugins/tools/point/point_tool.hpp>
 #include <rclcpp/rclcpp.hpp>
@@ -47,7 +50,8 @@ private Q_SLOTS:
 private:
   rclcpp::Client<nav2_msgs::srv::GetCosts>::SharedPtr local_cost_client_;
   rclcpp::Client<nav2_msgs::srv::GetCosts>::SharedPtr global_cost_client_;
-  rclcpp::Node::SharedPtr node_;
+  // The Node pointer that we need to keep alive for the duration of this plugin.
+  std::shared_ptr<rviz_common::ros_integration::RosNodeAbstractionIface> node_ptr_;
 
   QCursor std_cursor_;
   QCursor hit_cursor_;

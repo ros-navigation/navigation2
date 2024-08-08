@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#include <math.h>
-
+#include <cmath>
 #include <memory>
 #include <string>
 #include <vector>
@@ -22,6 +21,7 @@
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_planner/planner_server.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "rcl_interfaces/msg/set_parameters_result.hpp"
 
 class PlannerShim : public nav2_planner::PlannerServer
 {

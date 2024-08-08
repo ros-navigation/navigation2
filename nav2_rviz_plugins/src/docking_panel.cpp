@@ -12,14 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// C++
-#include <stdio.h>
-
 // QT
 #include <QLineEdit>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
+
+// C++
+#include <chrono>
+#include <memory>
+#include <sstream>
+#include <string>
+
+#include <rclcpp/rclcpp.hpp>
 #include <rviz_common/display_context.hpp>
 
 #include "nav2_util/geometry_utils.hpp"
@@ -114,7 +119,15 @@ DockingPanel::DockingPanel(QWidget * parent)
 
 void DockingPanel::onInitialize()
 {
-  auto node = getDisplayContext()->getRosNodeAbstraction().lock()->get_raw_node();
+  node_ptr_ = getDisplayContext()->getRosNodeAbstraction().lock();
+  if (node_ptr_ == nullptr) {
+    // The node no longer exists, so just don't initialize
+    RCLCPP_ERROR(
+      rclcpp::get_logger("docking_panel"),
+      "Underlying ROS node no longer exists, initialization failed");
+    return;
+  }
+  rclcpp::Node::SharedPtr node = node_ptr_->get_raw_node();
 
   // Create action feedback subscriber
   docking_feedback_sub_ = node->create_subscription<Dock::Impl::FeedbackMessage>(
