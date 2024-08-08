@@ -54,12 +54,9 @@ public:
   {
     return providedBasicPorts({
         BT::InputPort<Goals>("input_goals", "Original goals to remove from"),
-        BT::InputPort<std::string>("costmap_cost_service",
-          "Service to get cost from costmap"),
-        BT::InputPort<double>("cost_threshold",
+        BT::InputPort<double>("cost_threshold", 254.0,
           "Cost threshold for considering a goal in collision"),
-        BT::InputPort<bool>("use_footprint",
-          "Whether to use footprint cost"),
+        BT::InputPort<bool>("use_footprint", true, "Whether to use footprint cost"),
         BT::OutputPort<Goals>("output_goals", "Goals with in-collision goals removed"),
     });
   }

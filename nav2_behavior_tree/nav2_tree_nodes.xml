@@ -100,6 +100,14 @@
       <output_port name="output_goals">Set of goals after removing any passed</output_port>
     </Action>
 
+    <Action ID="RemoveInCollisionGoals">
+      <input_port name="service_name">Costmap service name responsible for getting the cost</input_port>
+      <input_port name="input_goals">A vector of goals to check if in collision</input_port>
+      <input_port name="use_footprint">Whether to use the footprint cost or the point cost.</input_port>
+      <input_port name="cost_threshold">The cost threshold above which a waypoint is considered in collision and should be removed.</input_port>
+      <output_port name="output_goals">A vector of goals containing only those that are not in collision.</output_port>
+    </Action>
+
     <Action ID="SmoothPath">
       <input_port name="smoother_id" default="SmoothPath"/>
       <input_port name="unsmoothed_path">Path to be smoothed</input_port>
