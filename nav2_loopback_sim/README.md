@@ -37,7 +37,7 @@ ros2 launch nav2_bringup tb4_loopback_simulation.launch.py  # Nav2 integrated na
 - `base_frame_id`: The base frame to use (default `base_link`)
 - `odom_frame_id`: The odom frame to use (default `odom`)
 - `map_frame_id`: The map frame to use (default `map`)
-- `scan_frame_id`: The map frame to use (default `base_scan` for TB3, `rplidar_link` for TB4)
+- `scan_frame_id`: The can frame to use to publish a scan to keep the collision monitor fed and happy (default `base_scan` for TB3, `rplidar_link` for TB4)
 
 ### Topics
 
