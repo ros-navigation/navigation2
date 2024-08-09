@@ -37,7 +37,6 @@ namespace route_tool
 
         clicked_point_subscription_ = node->create_subscription<geometry_msgs::msg::PointStamped>(
             "clicked_point", 1, [this](const geometry_msgs::msg::PointStamped::SharedPtr msg) {
-            RCLCPP_INFO(node_->get_logger(), "Got clicked point");
             ui_->add_field_1->setText(std::to_string(msg->point.x).c_str());
             ui_->add_field_2->setText(std::to_string(msg->point.y).c_str());
             ui_->edit_field_1->setText(std::to_string(msg->point.x).c_str());
