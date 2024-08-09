@@ -15,20 +15,12 @@
 #ifndef NAV2_WAYPOINT_FOLLOWER__PLUGINS__PHOTO_AT_WAYPOINT_HPP_
 #define NAV2_WAYPOINT_FOLLOWER__PLUGINS__PHOTO_AT_WAYPOINT_HPP_
 
-/**
- * While C++17 isn't the project standard. We have to force LLVM/CLang
- * to ignore deprecated declarations
- */
-#define _LIBCPP_NO_EXPERIMENTAL_DEPRECATION_WARNING_FILESYSTEM
-
-
 #include <filesystem>
 #include <mutex>
 #include <string>
 #include <exception>
 
 #include "rclcpp/rclcpp.hpp"
-#include "rclcpp_components/register_node_macro.hpp"
 
 #include "sensor_msgs/msg/image.hpp"
 #include "nav2_core/waypoint_task_executor.hpp"
