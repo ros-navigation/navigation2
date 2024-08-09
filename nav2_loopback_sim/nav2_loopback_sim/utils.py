@@ -13,9 +13,9 @@
 # limitations under the License.
 
 
+from geometry_msgs.msg import Quaternion, Transform
 import numpy as np
 import tf_transformations
-from geometry_msgs.msg import Transform, TransformStamped, Quaternion
 
 
 """
@@ -35,10 +35,8 @@ def addYawToQuat(quaternion, yaw_to_add):
     new_quaternion.w = new_quaternion_array[3]
     return new_quaternion
 
+
 def transformStampedToMatrix(transform):
-    """
-    Converts a geometry_msgs/TransformStamped to a 4x4 numpy matrix.
-    """
     translation = transform.transform.translation
     rotation = transform.transform.rotation
     matrix = np.eye(4)
@@ -54,15 +52,12 @@ def transformStampedToMatrix(transform):
     matrix[:3, :3] = rotation_matrix[:3, :3]
     return matrix
 
+
 def matrixToTransform(matrix):
-    """
-    Converts a 4x4 numpy matrix to a geometry_msgs/Transform.
-    """
     transform = Transform()
     transform.translation.x = matrix[0, 3]
     transform.translation.y = matrix[1, 3]
     transform.translation.z = matrix[2, 3]
-    rotation_matrix = matrix[:3, :3]
     quaternion = tf_transformations.quaternion_from_matrix(matrix)
     transform.rotation.x = quaternion[0]
     transform.rotation.y = quaternion[1]

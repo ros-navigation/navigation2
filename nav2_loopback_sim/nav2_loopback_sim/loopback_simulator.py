@@ -13,21 +13,20 @@
 # limitations under the License.
 
 
-import copy
 import math
 
-from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped, Twist
-from geometry_msgs.msg import TransformStamped, Vector3, Quaternion
+from geometry_msgs.msg import PoseWithCovarianceStamped, Twist
+from geometry_msgs.msg import Quaternion, TransformStamped, Vector3
 from nav_msgs.msg import Odometry
-import numpy as np
 import rclpy
 from rclpy.duration import Duration
 from rclpy.node import Node
-from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
+from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
 from sensor_msgs.msg import LaserScan
+from tf2_ros import TransformBroadcaster
 import tf_transformations
-from tf2_ros import Buffer, TransformBroadcaster, TransformListener
-from .utils import transformStampedToMatrix, matrixToTransform, addYawToQuat
+
+from .utils import addYawToQuat, matrixToTransform, transformStampedToMatrix
 
 
 """
@@ -87,10 +86,10 @@ class LoopbackSimulator(Node):
             durability=DurabilityPolicy.VOLATILE,
             depth=10)
         self.scan_pub = self.create_publisher(LaserScan, 'scan', sensor_qos)
-    
+
         self.setupTimer = self.create_timer(0.1, self.setupTimerCallback)
         self.info('Loopback simulator initialized')
-    
+
     def setupTimerCallback(self):
         # Publish initial identity odom transform & laser scan to warm up system
         self.tf_broadcaster.sendTransform(self.t_odom_to_base_link)
@@ -123,7 +122,7 @@ class LoopbackSimulator(Node):
                 self.setupTimer = None
             self.timer = self.create_timer(self.update_dur, self.timerCallback)
             return
- 
+
         self.initial_pose = msg.pose.pose
 
         # Adjust map->odom transform based on new initial pose, keeping odom->base_link the same
@@ -137,14 +136,16 @@ class LoopbackSimulator(Node):
         mat_map_to_base_link = transformStampedToMatrix(t_map_to_base_link)
         mat_odom_to_base_link = transformStampedToMatrix(self.t_odom_to_base_link)
         mat_base_link_to_odom = tf_transformations.inverse_matrix(mat_odom_to_base_link)
-        mat_map_to_odom = tf_transformations.concatenate_matrices(mat_map_to_base_link, mat_base_link_to_odom)
+        mat_map_to_odom = \
+            tf_transformations.concatenate_matrices(mat_map_to_base_link, mat_base_link_to_odom)
         self.t_map_to_odom.transform = matrixToTransform(mat_map_to_odom)
 
     def timerCallback(self):
         # If no data, just republish existing transforms without change
-        if self.curr_cmd_vel is None or self.get_clock().now() - self.curr_cmd_vel_time > Duration(seconds=1):
+        one_sec = Duration(seconds=1)
+        if self.curr_cmd_vel is None or self.get_clock().now() - self.curr_cmd_vel_time > one_sec:
             self.publishTransforms(self.t_map_to_odom, self.t_odom_to_base_link)
-            self.curr_cmd_vel= None
+            self.curr_cmd_vel = None
             return
 
         # Update odom->base_link from cmd_vel
@@ -187,7 +188,7 @@ class LoopbackSimulator(Node):
         odom_to_base_link.header.stamp = self.get_clock().now().to_msg()
         self.tf_broadcaster.sendTransform(map_to_odom)
         self.tf_broadcaster.sendTransform(odom_to_base_link)
-    
+
     def publishOdometry(self, odom_to_base_link):
         odom = Odometry()
         odom.header.stamp = self.get_clock().now().to_msg()
