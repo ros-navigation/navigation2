@@ -51,12 +51,13 @@ namespace route_tool
                 edge_to_node_map_[edge.edgeid] = node.nodeid;
                 if (graph_to_incoming_edges_map_.find(edge.end->nodeid) != graph_to_incoming_edges_map_.end()) {
                     graph_to_incoming_edges_map_[edge.end->nodeid].push_back(edge.edgeid);
+                    RCLCPP_INFO(node_->get_logger(), "Inserting additional incoming edge %d for node %d", edge.edgeid, edge.end->nodeid);
                 } else {
                     graph_to_incoming_edges_map_[edge.end->nodeid] = std::vector<unsigned int> {edge.edgeid};
                 }
             }
         }
-        next_node_id_ = max_node_id;
+        next_node_id_ = max_node_id + 1;
         update_route_graph();
     }
 
@@ -159,13 +160,16 @@ namespace route_tool
                 // Need to adjust pointers and idx map since indices in the vector changed
                 for (auto idx = graph_to_id_map_[node_id]; idx < graph_.size(); idx++) {
                     auto& moved_node = graph_[idx];
-                    RCLCPP_INFO(node_->get_logger(), "Processing node %d", moved_node.nodeid);
                     graph_to_id_map_[moved_node.nodeid]--;
+                }
+                for (auto idx = graph_to_id_map_[node_id]; idx < graph_.size(); idx++) {
+                    auto& moved_node = graph_[idx];
                     for (auto& edge : moved_node.neighbors) {
                         edge.start = &moved_node;
                     }
                     RCLCPP_INFO(node_->get_logger(), "Edited start edges for %d", moved_node.nodeid);
                     for (auto edge_id : graph_to_incoming_edges_map_[moved_node.nodeid]) {
+                        RCLCPP_INFO(node_->get_logger(), "Looking for edge %d point at node %d", edge_id, moved_node.nodeid);
                         auto start_node = &graph_[graph_to_id_map_[edge_to_node_map_[edge_id]]];
                         for (auto itr = start_node->neighbors.begin(); itr != start_node->neighbors.end(); itr++) {
                             if (itr->edgeid == edge_id) {
