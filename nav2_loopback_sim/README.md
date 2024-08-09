@@ -17,6 +17,7 @@ It is convenient to be able to test systems by being able to:
 - Arbitrarily transport the robot to any location and accurately navigate without waiting for a particle filter to converge for testing behaviors and reproducing higher-level issues
 - Write unit or system tests on areas that are not dependent on low-level controller or localization performance without needing to spin up a compute-heavy process like Gazebo or Isaac Sim to provide odometry and sensor data, such as global planning, autonomy behavior trees, etc
 - Perform R&D on various sensitive systems easily without concerning yourself with the errors accumulated with localization performance or imperfect dynamic models to get a proof of concept started
+- Simulate N robots simultaneously with a lower compute footprint
 - When otherwise highly compute constrained and need to simulate a robotic system
 
 ## How to Use
