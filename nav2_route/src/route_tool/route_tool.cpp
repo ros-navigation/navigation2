@@ -50,9 +50,9 @@ namespace route_tool
                 max_node_id = std::max(edge.edgeid, max_node_id);
                 edge_to_node_map_[edge.edgeid] = node.nodeid;
                 if (graph_to_incoming_edges_map_.find(edge.end->nodeid) != graph_to_incoming_edges_map_.end()) {
-                    graph_to_incoming_edges_map_[edge.end->nodeid].push_back(edge.start->nodeid);
+                    graph_to_incoming_edges_map_[edge.end->nodeid].push_back(edge.edgeid);
                 } else {
-                    graph_to_incoming_edges_map_[edge.end->nodeid] = std::vector<unsigned int> {edge.start->nodeid};
+                    graph_to_incoming_edges_map_[edge.end->nodeid] = std::vector<unsigned int> {edge.edgeid};
                 }
             }
         }
@@ -140,9 +140,10 @@ namespace route_tool
     void routeTool::on_delete_button_clicked(void)
     {
         if (ui_->remove_node_button->isChecked()) {
-            auto node_id = ui_->remove_id->toPlainText().toInt();
+            unsigned int node_id = ui_->remove_id->toPlainText().toInt();
             // Remove edges pointing to the removed node
-            for (auto& edge_id : graph_to_incoming_edges_map_[node_id]) {
+            for (auto edge_id : graph_to_incoming_edges_map_[node_id]) {
+                RCLCPP_INFO(node_->get_logger(), "Looking for edge %d", edge_id);
                 auto start_node = &graph_[graph_to_id_map_[edge_to_node_map_[edge_id]]];
                 for (auto itr = start_node->neighbors.begin(); itr != start_node->neighbors.end(); itr++) {
                     if (itr->edgeid == edge_id) {
@@ -153,10 +154,32 @@ namespace route_tool
                     }
                 }
             }
-            graph_.erase(graph_.begin() + graph_to_id_map_[node_id]);
-            graph_to_id_map_.erase(node_id);
-            graph_to_incoming_edges_map_.erase(node_id);
-            RCLCPP_INFO(node_->get_logger(), "Removed node %d", node_id);
+            if (graph_[graph_to_id_map_[node_id]].nodeid == node_id) {
+                graph_.erase(graph_.begin() + graph_to_id_map_[node_id]);
+                // Need to adjust pointers and idx map since indices in the vector changed
+                for (auto idx = graph_to_id_map_[node_id]; idx < graph_.size(); idx++) {
+                    auto& moved_node = graph_[idx];
+                    RCLCPP_INFO(node_->get_logger(), "Processing node %d", moved_node.nodeid);
+                    graph_to_id_map_[moved_node.nodeid]--;
+                    for (auto& edge : moved_node.neighbors) {
+                        edge.start = &moved_node;
+                    }
+                    RCLCPP_INFO(node_->get_logger(), "Edited start edges for %d", moved_node.nodeid);
+                    for (auto edge_id : graph_to_incoming_edges_map_[moved_node.nodeid]) {
+                        auto start_node = &graph_[graph_to_id_map_[edge_to_node_map_[edge_id]]];
+                        for (auto itr = start_node->neighbors.begin(); itr != start_node->neighbors.end(); itr++) {
+                            if (itr->edgeid == edge_id) {
+                                itr->end = &moved_node;
+                                RCLCPP_INFO(node_->get_logger(), "Found edge %d pointing at node %d", edge_id, itr->end->nodeid);
+                            }
+                        }
+                    }
+                    RCLCPP_INFO(node_->get_logger(), "Edited end edges for %d", moved_node.nodeid);
+                }
+                graph_to_id_map_.erase(node_id);
+                graph_to_incoming_edges_map_.erase(node_id);
+                RCLCPP_INFO(node_->get_logger(), "Removed node %d", node_id);
+            }
             update_route_graph();
         } else if (ui_->remove_edge_button->isChecked()) {
             auto edge_id = (unsigned int) ui_->remove_id->toPlainText().toInt();
