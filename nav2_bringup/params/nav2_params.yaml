@@ -426,4 +426,4 @@ loopback_simulator:
     odom_frame_id: "odom"
     map_frame_id: "map"
     scan_frame_id: "base_scan"  # tb4_loopback_simulator.launch.py remaps to 'rplidar_link'
-    update_duration: 0.01
+    update_duration: 0.02

@@ -73,8 +73,6 @@ class LoopbackSimulator(Node):
         self.t_odom_to_base_link.child_frame_id = self.base_frame_id
 
         self.tf_broadcaster = TransformBroadcaster(self)
-        self.tf_buffer = Buffer()
-        self.tf_listener = TransformListener(self.tf_buffer, self)
 
         self.initial_pose_sub = self.create_subscription(
             PoseWithCovarianceStamped,
@@ -180,8 +178,7 @@ class LoopbackSimulator(Node):
         scan.range_min = 0.1
         scan.range_max = 100.0
         num_samples = int((scan.angle_max - scan.angle_min) / scan.angle_increment)
-        for i in range(num_samples):
-            scan.ranges.append(scan.range_max - 0.01)
+        scan.ranges = [scan.range_max - 0.01] * num_samples
         self.scan_pub.publish(scan)
 
     def publishTransforms(self, map_to_odom, odom_to_base_link):
