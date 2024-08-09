@@ -1,5 +1,6 @@
 #include "nav2_route/route_tool/route_tool.hpp"
 #include <pluginlib/class_list_macros.hpp>
+#include "rviz_common/display_context.hpp"
 #include <QDesktopServices>
 #include <QUrl>
 #include <unistd.h>
@@ -31,6 +32,19 @@ namespace route_tool
         ui_->remove_node_button->setChecked(true);
     }
 
+    void routeTool::onInitialize(void) {
+        auto node = getDisplayContext()->getRosNodeAbstraction().lock()->get_raw_node();
+
+        clicked_point_subscription_ = node->create_subscription<geometry_msgs::msg::PointStamped>(
+            "clicked_point", 1, [this](const geometry_msgs::msg::PointStamped::SharedPtr msg) {
+            RCLCPP_INFO(node_->get_logger(), "Got clicked point");
+            ui_->add_field_1->setText(std::to_string(msg->point.x).c_str());
+            ui_->add_field_2->setText(std::to_string(msg->point.y).c_str());
+            ui_->edit_field_1->setText(std::to_string(msg->point.x).c_str());
+            ui_->edit_field_2->setText(std::to_string(msg->point.y).c_str());
+        });
+    }
+
     void routeTool::on_load_button_clicked(void)
     {
         graph_to_id_map_.clear();
@@ -51,7 +65,6 @@ namespace route_tool
                 edge_to_node_map_[edge.edgeid] = node.nodeid;
                 if (graph_to_incoming_edges_map_.find(edge.end->nodeid) != graph_to_incoming_edges_map_.end()) {
                     graph_to_incoming_edges_map_[edge.end->nodeid].push_back(edge.edgeid);
-                    RCLCPP_INFO(node_->get_logger(), "Inserting additional incoming edge %d for node %d", edge.edgeid, edge.end->nodeid);
                 } else {
                     graph_to_incoming_edges_map_[edge.end->nodeid] = std::vector<unsigned int> {edge.edgeid};
                 }
@@ -68,7 +81,7 @@ namespace route_tool
         QString filename = QFileDialog::getSaveFileName(this,
         tr("Open Address Book"), "",
         tr("Address Book (*.geojson);;All Files (*)"));
-        RCLCPP_INFO(node_->get_logger(), "Filename: %s", filename.toStdString().c_str());
+        RCLCPP_INFO(node_->get_logger(), "Save graph to: %s", filename.toStdString().c_str());
         graph_saver_->saveGraphToFile(graph_, filename.toStdString());
     }
 
@@ -99,6 +112,8 @@ namespace route_tool
             RCLCPP_INFO(node_->get_logger(), "Adding edge from %d to %d", start_node, end_node);
             update_route_graph();
         }
+        ui_->add_field_1->setText("");
+        ui_->add_field_2->setText("");
     }
 
     void routeTool::on_confirm_button_clicked(void)
@@ -118,7 +133,6 @@ namespace route_tool
             auto current_start_node = &graph_[graph_to_id_map_[edge_to_node_map_[edge_id]]];
             for (auto itr = current_start_node->neighbors.begin(); itr != current_start_node->neighbors.end(); itr++) {
                 if (itr->edgeid == edge_id) {
-                    RCLCPP_INFO(node_->get_logger(), "Found and removed edge connecting %d and %d", itr->start->nodeid, itr->end->nodeid);
                     current_start_node->neighbors.erase(itr);
                     break;
                 }
@@ -126,7 +140,6 @@ namespace route_tool
             // Create new edge with same ID using new start and stop nodes
             nav2_route::EdgeCost edge_cost;
             graph_[graph_to_id_map_[new_start]].addEdge(edge_cost, &(graph_[graph_to_id_map_[new_end]]), edge_id);
-            RCLCPP_INFO(node_->get_logger(), "Adding edge from %d to %d", new_start, new_end);
             edge_to_node_map_[edge_id] = new_start;
             if (graph_to_incoming_edges_map_.find(new_end) != graph_to_incoming_edges_map_.end()) {
                 graph_to_incoming_edges_map_[new_end].push_back(edge_id);
@@ -135,7 +148,9 @@ namespace route_tool
             }
             update_route_graph();
         }
-
+        ui_->edit_id->setText("");
+        ui_->edit_field_1->setText("");
+        ui_->edit_field_2->setText("");
     }
 
     void routeTool::on_delete_button_clicked(void)
@@ -144,11 +159,9 @@ namespace route_tool
             unsigned int node_id = ui_->remove_id->toPlainText().toInt();
             // Remove edges pointing to the removed node
             for (auto edge_id : graph_to_incoming_edges_map_[node_id]) {
-                RCLCPP_INFO(node_->get_logger(), "Looking for edge %d", edge_id);
                 auto start_node = &graph_[graph_to_id_map_[edge_to_node_map_[edge_id]]];
                 for (auto itr = start_node->neighbors.begin(); itr != start_node->neighbors.end(); itr++) {
                     if (itr->edgeid == edge_id) {
-                        RCLCPP_INFO(node_->get_logger(), "Found and removed edge %d", edge_id);
                         start_node->neighbors.erase(itr);
                         edge_to_node_map_.erase(edge_id);
                         break;
@@ -167,18 +180,14 @@ namespace route_tool
                     for (auto& edge : moved_node.neighbors) {
                         edge.start = &moved_node;
                     }
-                    RCLCPP_INFO(node_->get_logger(), "Edited start edges for %d", moved_node.nodeid);
                     for (auto edge_id : graph_to_incoming_edges_map_[moved_node.nodeid]) {
-                        RCLCPP_INFO(node_->get_logger(), "Looking for edge %d point at node %d", edge_id, moved_node.nodeid);
                         auto start_node = &graph_[graph_to_id_map_[edge_to_node_map_[edge_id]]];
                         for (auto itr = start_node->neighbors.begin(); itr != start_node->neighbors.end(); itr++) {
                             if (itr->edgeid == edge_id) {
                                 itr->end = &moved_node;
-                                RCLCPP_INFO(node_->get_logger(), "Found edge %d pointing at node %d", edge_id, itr->end->nodeid);
                             }
                         }
                     }
-                    RCLCPP_INFO(node_->get_logger(), "Edited end edges for %d", moved_node.nodeid);
                 }
                 graph_to_id_map_.erase(node_id);
                 graph_to_incoming_edges_map_.erase(node_id);
@@ -190,7 +199,7 @@ namespace route_tool
             auto start_node = &graph_[graph_to_id_map_[edge_to_node_map_[edge_id]]];
             for (auto itr = start_node->neighbors.begin(); itr != start_node->neighbors.end(); itr++) {
                 if (itr->edgeid == edge_id) {
-                    RCLCPP_INFO(node_->get_logger(), "Found and removed edge %d", edge_id);
+                    RCLCPP_INFO(node_->get_logger(), "Removed edge %d", edge_id);
                     start_node->neighbors.erase(itr);
                     edge_to_node_map_.erase(edge_id);
                     break;
@@ -198,6 +207,7 @@ namespace route_tool
             }
             update_route_graph();
         }
+        ui_->remove_id->setText("");
     }
 
     void routeTool::on_add_node_button_toggled(void)

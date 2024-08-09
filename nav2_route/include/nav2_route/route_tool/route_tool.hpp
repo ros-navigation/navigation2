@@ -16,6 +16,7 @@
 // Other ROS dependencies
 #include <std_msgs/msg/int16.hpp>
 #include <std_msgs/msg/string.hpp>
+#include <geometry_msgs/msg/point_stamped.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
 #include <nav2_route/graph_loader.hpp>
 #include <nav2_route/graph_saver.hpp>
@@ -51,6 +52,8 @@ namespace route_tool
              *  widget as they normally would with Qt.
              */
             routeTool(QWidget * parent = nullptr);
+
+            void onInitialize() override;
 
             /**
              *  Now we declare overrides of rviz_common::Panel functions for saving and
@@ -88,7 +91,6 @@ namespace route_tool
 
         private:
             void update_route_graph(void);
-
             nav2_util::LifecycleNode::SharedPtr node_;
             std::shared_ptr<nav2_route::GraphLoader> graph_loader_;
             std::shared_ptr<nav2_route::GraphSaver> graph_saver_;
@@ -100,6 +102,9 @@ namespace route_tool
 
             rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
                 graph_vis_publisher_;
+            rclcpp::Subscription<geometry_msgs::msg::PointStamped>::SharedPtr
+                clicked_point_subscription_;
+
             unsigned int next_node_id_ = 0;
 
 
