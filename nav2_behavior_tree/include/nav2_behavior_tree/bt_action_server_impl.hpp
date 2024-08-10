@@ -379,7 +379,7 @@ void BtActionServer<ActionT>::cleanErrorCodes()
     name = error_code_name_prefix + "_error_code";
     blackboard_->set<unsigned short>(name, 0);  //NOLINT
     name = error_code_name_prefix + "_error_msg";
-    blackboard_->set<std::string>(name, 0);  //NOLINT
+    blackboard_->set<std::string>(name, "");
   }
 }
 
