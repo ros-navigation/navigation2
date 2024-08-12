@@ -25,14 +25,13 @@ Transformation utilities for the loopback simulator
 
 def addYawToQuat(quaternion, yaw_to_add):
     q = [quaternion.x, quaternion.y, quaternion.z, quaternion.w]
-    _, _, yaw = tf_transformations.euler_from_quaternion(q)
-    new_yaw = yaw + yaw_to_add
-    new_quaternion_array = tf_transformations.quaternion_from_euler(0.0, 0.0, new_yaw)
+    q2 = tf_transformations.quaternion_from_euler(0.0, 0.0, yaw_to_add)
+    q_new = tf_transformations.quaternion_multiply(q, q2)
     new_quaternion = Quaternion()
-    new_quaternion.x = new_quaternion_array[0]
-    new_quaternion.y = new_quaternion_array[1]
-    new_quaternion.z = new_quaternion_array[2]
-    new_quaternion.w = new_quaternion_array[3]
+    new_quaternion.x = q_new[0]
+    new_quaternion.y = q_new[1]
+    new_quaternion.z = q_new[2]
+    new_quaternion.w = q_new[3]
     return new_quaternion
 
 

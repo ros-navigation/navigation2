@@ -110,6 +110,7 @@ class LoopbackSimulator(Node):
             self.initial_pose = msg.pose.pose
             self.t_map_to_odom.transform.translation.x = self.initial_pose.position.x
             self.t_map_to_odom.transform.translation.y = self.initial_pose.position.y
+            self.t_map_to_odom.transform.translation.z = 0.0
             self.t_map_to_odom.transform.rotation = self.initial_pose.orientation
             self.t_odom_to_base_link.transform.translation = Vector3()
             self.t_odom_to_base_link.transform.rotation = Quaternion()
@@ -131,7 +132,7 @@ class LoopbackSimulator(Node):
         t_map_to_base_link.child_frame_id = 'base_link'
         t_map_to_base_link.transform.translation.x = self.initial_pose.position.x
         t_map_to_base_link.transform.translation.y = self.initial_pose.position.y
-        t_map_to_base_link.transform.translation.z = self.initial_pose.position.z
+        t_map_to_base_link.transform.translation.z = 0.0
         t_map_to_base_link.transform.rotation = self.initial_pose.orientation
         mat_map_to_base_link = transformStampedToMatrix(t_map_to_base_link)
         mat_odom_to_base_link = transformStampedToMatrix(self.t_odom_to_base_link)
