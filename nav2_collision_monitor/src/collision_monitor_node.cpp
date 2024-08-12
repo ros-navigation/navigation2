@@ -355,7 +355,9 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in)
 
   // Fill collision_points array from different data sources
   for (std::shared_ptr<Source> source : sources_) {
-    source->getData(curr_time, collision_points);
+    if (source->getEnabled()) {
+      source->getData(curr_time, collision_points);
+    }
   }
 
   // By default - there is no action

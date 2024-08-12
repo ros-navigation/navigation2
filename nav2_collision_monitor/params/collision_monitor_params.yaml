@@ -45,8 +45,10 @@ collision_monitor:
     scan:
       type: "scan"
       topic: "/scan"
+      enabled: True
     pointcloud:
       type: "pointcloud"
       topic: "/intel_realsense_r200_depth/points"
       min_height: 0.1
       max_height: 0.5
+      enabled: True

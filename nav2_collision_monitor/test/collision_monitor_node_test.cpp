@@ -905,6 +905,9 @@ TEST_F(Tester, testPolygonNotEnabled)
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.0, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
+  // ASSERT_TRUE(waitActionState(500ms));
+  // ASSERT_EQ(action_state_->action_type, STOP);
+  // ASSERT_EQ(action_state_->polygon_name, "Stop");
 
   // Disable polygon by calling service
   auto set_parameters_msg = std::make_shared<rcl_interfaces::srv::SetParameters::Request>();
@@ -926,59 +929,68 @@ TEST_F(Tester, testPolygonNotEnabled)
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.2, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.1, EPSILON);
+  // ASSERT_TRUE(waitActionState(500ms));
+  // ASSERT_EQ(action_state_->action_type, DO_NOTHING);
+  // ASSERT_EQ(action_state_->polygon_name, "");
 
   // Stop Collision Monitor node
   cm_->stop();
 }
 
-// TEST_F(Tester, testSourceNotEnabled)
-// {
-//   // Set Collision Monitor parameters.
-//   // Create a STOP polygon
-//   setCommonParameters();
-//   addPolygon("Stop", POLYGON, 1.0, "stop");
-//   // Create a Scan source
-//   addSource(SCAN_NAME, SCAN);
-//   setVectors({"Stop"}, {SCAN_NAME});
+TEST_F(Tester, testSourceNotEnabled)
+{
+  // Set Collision Monitor parameters.
+  // Create a STOP polygon
+  setCommonParameters();
+  addPolygon("Stop", POLYGON, 1.0, "stop");
+  // Create a Scan source
+  addSource(SCAN_NAME, SCAN);
+  setVectors({"Stop"}, {SCAN_NAME});
 
-//   // Start Collision Monitor node
-//   cm_->start();
+  // Start Collision Monitor node
+  cm_->start();
 
-//   // Check that robot stops when source is enabled
-//   rclcpp::Time curr_time = cm_->now();
-//   sendTransforms(curr_time);
-//   publishScan(0.5, curr_time);
-//   ASSERT_TRUE(waitData(0.5, 500ms, curr_time));
-//   publishCmdVel(0.5, 0.2, 0.1);
-//   ASSERT_TRUE(waitCmdVel(500ms));
-//   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.0, EPSILON);
-//   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
-//   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
+  // Check that robot stops when source is enabled
+  rclcpp::Time curr_time = cm_->now();
+  sendTransforms(curr_time);
+  publishScan(0.5, curr_time);
+  ASSERT_TRUE(waitData(0.5, 500ms, curr_time));
+  publishCmdVel(0.5, 0.2, 0.1);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.0, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
+  // ASSERT_TRUE(waitActionState(500ms));
+  // ASSERT_EQ(action_state_->action_type, STOP);
+  // ASSERT_EQ(action_state_->polygon_name, "Stop");
 
-//   // Disable source by calling service
-//   auto set_parameters_msg = std::make_shared<rcl_interfaces::srv::SetParameters::Request>();
-//   auto parameter_msg = std::make_shared<rcl_interfaces::msg::Parameter>();
-//   parameter_msg->name = std::string(SCAN_NAME) + ".enabled";
-//   parameter_msg->value.type = rcl_interfaces::msg::ParameterType::PARAMETER_BOOL;
-//   parameter_msg->value.bool_value = false;
-//   set_parameters_msg->parameters.push_back(*parameter_msg);
-//   auto result_future = parameters_client_->async_send_request(set_parameters_msg).future.share();
-//   ASSERT_TRUE(waitFuture(result_future, 2s));
+  // Disable source by calling service
+  auto set_parameters_msg = std::make_shared<rcl_interfaces::srv::SetParameters::Request>();
+  auto parameter_msg = std::make_shared<rcl_interfaces::msg::Parameter>();
+  parameter_msg->name = std::string(SCAN_NAME) + ".enabled";
+  parameter_msg->value.type = rcl_interfaces::msg::ParameterType::PARAMETER_BOOL;
+  parameter_msg->value.bool_value = false;
+  set_parameters_msg->parameters.push_back(*parameter_msg);
+  auto result_future = parameters_client_->async_send_request(set_parameters_msg).future.share();
+  ASSERT_TRUE(waitFuture(result_future, 2s));
 
-//   // Check that robot does not stop when source is disabled
-//   curr_time = cm_->now();
-//   sendTransforms(curr_time);
-//   publishScan(0.5, curr_time);
-//   ASSERT_TRUE(waitData(0.5, 500ms, curr_time));
-//   publishCmdVel(0.5, 0.2, 0.1);
-//   ASSERT_TRUE(waitCmdVel(500ms));
-//   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
-//   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.2, EPSILON);
-//   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.1, EPSILON);
+  // Check that robot does not stop when source is disabled
+  curr_time = cm_->now();
+  sendTransforms(curr_time);
+  publishScan(0.5, curr_time);
+  ASSERT_TRUE(waitData(0.5, 500ms, curr_time));
+  publishCmdVel(0.5, 0.2, 0.1);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->linear.y, 0.2, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->angular.z, 0.1, EPSILON);
+  // ASSERT_TRUE(waitActionState(500ms));
+  // ASSERT_EQ(action_state_->action_type, DO_NOTHING);
+  // ASSERT_EQ(action_state_->polygon_name, "");
 
-//   // Stop Collision Monitor node
-//   cm_->stop();
-// }
+  // Stop Collision Monitor node
+  cm_->stop();
+}
 
 TEST_F(Tester, testProcessNonActive)
 {
