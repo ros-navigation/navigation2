@@ -359,7 +359,8 @@ void RouteServer::setRouteGraph(
   std::shared_ptr<nav2_msgs::srv::SetRouteGraph::Response> response)
 {
   RCLCPP_INFO(get_logger(), "Setting new route graph: %s.", request->graph_filepath.c_str());
-
+  graph_.clear();
+  id_to_graph_map_.clear();
   try {
     if (graph_loader_->loadGraphFromFile(graph_, id_to_graph_map_, request->graph_filepath)) {
       goal_intent_extractor_->setGraph(graph_, &id_to_graph_map_);
