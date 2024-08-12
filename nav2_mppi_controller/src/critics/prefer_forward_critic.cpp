@@ -14,6 +14,8 @@
 
 #include "nav2_mppi_controller/critics/prefer_forward_critic.hpp"
 
+#include <Eigen/Dense>
+
 namespace mppi::critics
 {
 
@@ -40,7 +42,7 @@ void PreferForwardCritic::score(CriticData & data)
 
   if (power_ > 1u) {
     data.costs += Eigen::pow(
-      (std::move(data.state.vx.unaryExpr([&](const float & x){ return std::max(-x, 0.0f);})) * data.model_dt).rowwise().sum() * weight_, power_);
+      (data.state.vx.unaryExpr([&](const float & x){ return std::max(-x, 0.0f);}) * data.model_dt).rowwise().sum() * weight_, power_);
   } else {
     data.costs += (data.state.vx.unaryExpr([&](const float & x){ return std::max(-x, 0.0f);}) * data.model_dt).rowwise().sum() * weight_;
   }

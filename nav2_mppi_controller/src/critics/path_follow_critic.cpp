@@ -14,8 +14,7 @@
 
 #include "nav2_mppi_controller/critics/path_follow_critic.hpp"
 
-#include <xtensor/xmath.hpp>
-#include <xtensor/xsort.hpp>
+#include <Eigen/Dense>
 
 namespace mppi::critics
 {
@@ -67,9 +66,9 @@ void PathFollowCritic::score(CriticData & data)
   const auto delta_x = last_x - path_x;
   const auto delta_y = last_y - path_y;
   if (power_ > 1u) {
-    data.costs += Eigen::pow(weight_ * std::move((delta_x.square() + delta_y.square()).sqrt()), power_);
+    data.costs += (((delta_x.square() + delta_y.square()).sqrt()) * weight_).pow(power_);
   } else {
-    data.costs += weight_ * std::move((delta_x.square() + delta_y.square()).sqrt());
+    data.costs += ((delta_x.square() + delta_y.square()).sqrt()) * weight_;
   }
 }
 

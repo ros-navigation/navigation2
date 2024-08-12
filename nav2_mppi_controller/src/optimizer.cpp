@@ -20,6 +20,7 @@
 #include <string>
 #include <vector>
 #include <cmath>
+#include <chrono>
 
 #include "nav2_core/controller_exceptions.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
@@ -174,6 +175,7 @@ geometry_msgs::msg::TwistStamped Optimizer::evalControl(
 void Optimizer::optimize()
 {
   for (size_t i = 0; i < settings_.iteration_count; ++i) {
+
     generateNoisedTrajectories();
     critic_manager_.evalTrajectoriesScores(critics_data_);
     updateControlSequence();
@@ -219,16 +221,11 @@ void Optimizer::prepare(
 void Optimizer::shiftControlSequence()
 {
   //using namespace xt::placeholders;  // NOLINT
-  Eigen::ArrayXf temp_var(settings_.time_steps);
-  temp_var.head(settings_.time_steps - 1) = control_sequence_.vx.tail(settings_.time_steps - 1);
-  control_sequence_.vx.head(settings_.time_steps - 1) = temp_var.head(settings_.time_steps - 1);
-
-  temp_var.head(settings_.time_steps - 1) = control_sequence_.wz.tail(settings_.time_steps - 1);
-  control_sequence_.wz.head(settings_.time_steps - 1) = temp_var.head(settings_.time_steps - 1);
+  control_sequence_.vx = utils::rollColumns(control_sequence_.vx, 1);
+  control_sequence_.wz = utils::rollColumns(control_sequence_.wz, 1);
 
   if (isHolonomic()) {
-    temp_var.head(settings_.time_steps - 1) = control_sequence_.vy.tail(settings_.time_steps - 1);
-    control_sequence_.vy.head(settings_.time_steps - 1) = temp_var.head(settings_.time_steps - 1);
+    control_sequence_.vy = utils::rollColumns(control_sequence_.vy, 1);
   }
 }
 
@@ -287,11 +284,11 @@ void Optimizer::updateStateVelocities(
 void Optimizer::updateInitialStateVelocities(
   models::State & state) const
 {
-  state.vx.col(0) += static_cast<float>(state.speed.linear.x);
-  state.wz.col(0) += static_cast<float>(state.speed.angular.z);
+  state.vx.col(0) = static_cast<float>(state.speed.linear.x);
+  state.wz.col(0) = static_cast<float>(state.speed.angular.z);
 
   if (isHolonomic()) {
-    state.vy.col(0) += static_cast<float>(state.speed.linear.y);
+    state.vy.col(0) = static_cast<float>(state.speed.linear.y);
   }
 }
 
@@ -339,42 +336,34 @@ void Optimizer::integrateStateVelocities(
   models::State & state) const
 {
   const float initial_yaw = static_cast<float>(tf2::getYaw(state.pose.pose.orientation));
+  const unsigned int n_cols = state.wz.cols();
+  const float & dt_time = settings_.model_dt;
 
-  trajectories.yaws.col(0) = state.wz.col(0) * settings_.model_dt + initial_yaw;
-  for(unsigned int i = 1; i != state.wz.cols(); i++)
+  trajectories.yaws.col(0) = state.wz.col(0) * dt_time + initial_yaw;
+  for(unsigned int i = 1; i != n_cols; i++)
   {
-    trajectories.yaws.col(i) = trajectories.yaws.col(i - 1) + state.wz.col(i) * settings_.model_dt;
+    trajectories.yaws.col(i) = trajectories.yaws.col(i - 1) + state.wz.col(i) * dt_time;
   }
 
-  auto yaw_cos = trajectories.yaws.cos().eval();
-  auto yaw_sin = trajectories.yaws.sin().eval();
-  {
-    Eigen::ArrayXXf temp_var(settings_.batch_size, settings_.time_steps);
-    temp_var.rightCols(settings_.time_steps - 1) = yaw_cos.leftCols(settings_.time_steps - 1);
-    yaw_cos.rightCols(settings_.time_steps - 1) = temp_var.rightCols(settings_.time_steps - 1);
-    yaw_cos.col(0) = cosf(initial_yaw);
+  auto yaw_cos = (utils::rollColumns(trajectories.yaws, -1).cos()).eval();
+  auto yaw_sin = (utils::rollColumns(trajectories.yaws, -1).sin()).eval();
 
-    temp_var.rightCols(settings_.time_steps - 1) = yaw_sin.leftCols(settings_.time_steps - 1);
-    yaw_sin.rightCols(settings_.time_steps - 1) = temp_var.rightCols(settings_.time_steps - 1);
-    yaw_sin.col(0) = sinf(initial_yaw);
-  }
-
+  yaw_cos.col(0) = cosf(initial_yaw);
+  yaw_sin.col(0) = sinf(initial_yaw);
   auto dx = (state.vx * yaw_cos).eval();
   auto dy = (state.vx * yaw_sin).eval();
 
   if (isHolonomic()) {
-    //auto && ddx = (state.vy * yaw_sin).eval();
-    //auto && ddy = (state.vy * yaw_cos).eval();
     dx = dx - state.vy * yaw_sin;
     dy = dy + state.vy * yaw_cos;
   }
 
-  trajectories.x.col(0) = dx.col(0) * settings_.model_dt + state.pose.pose.position.x;
-  trajectories.y.col(0) = dy.col(0) * settings_.model_dt + state.pose.pose.position.y;
-  for(unsigned int i = 1; i != dx.cols(); i++)
+  trajectories.x.col(0) = dx.col(0) * dt_time + state.pose.pose.position.x;
+  trajectories.y.col(0) = dy.col(0) * dt_time + state.pose.pose.position.y;
+  for(unsigned int i = 1; i != n_cols; i++)
   {
-    trajectories.x.col(i) = trajectories.x.col(i - 1) + dx.col(i) * settings_.model_dt;
-    trajectories.y.col(i) = trajectories.y.col(i - 1) + dy.col(i) * settings_.model_dt;
+    trajectories.x.col(i) = trajectories.x.col(i - 1) + dx.col(i) * dt_time;
+    trajectories.y.col(i) = trajectories.y.col(i - 1) + dy.col(i) * dt_time;
   }
 }
 
@@ -405,12 +394,12 @@ void Optimizer::updateControlSequence()
   costs_ += s.gamma / powf(s.sampling_std.vx, 2) * (bounded_noises_vx.rowwise() * control_sequence_.vx.transpose()).rowwise().sum();
   costs_ += s.gamma / powf(s.sampling_std.wz, 2) * (bounded_noises_wz.rowwise() * control_sequence_.wz.transpose()).rowwise().sum();
   if (is_holo) {
-    auto && bounded_noises_vy = state_.cvy.rowwise() - control_sequence_.vy.transpose();
+    auto bounded_noises_vy = state_.cvy.rowwise() - control_sequence_.vy.transpose();
     costs_ += s.gamma / powf(s.sampling_std.vy, 2) * (bounded_noises_vy.rowwise() * control_sequence_.vy.transpose()).rowwise().sum();
   }
 
   auto && costs_normalized = costs_ - costs_.minCoeff();
-  auto && exponents = (-1 / settings_.temperature * costs_normalized).exp();
+  auto && exponents = ((-1 / settings_.temperature * costs_normalized).exp()).eval();
   auto && softmaxes = (exponents / exponents.sum()).eval();
 
   control_sequence_.vx = (state_.cvx.colwise() * softmaxes).colwise().sum();

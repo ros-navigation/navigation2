@@ -35,9 +35,9 @@ struct Trajectories
     */
   void reset(unsigned int batch_size, unsigned int time_steps)
   {
-    x = Eigen::ArrayXXf::Zero(batch_size, time_steps);
-    y = Eigen::ArrayXXf::Zero(batch_size, time_steps);
-    yaws = Eigen::ArrayXXf::Zero(batch_size, time_steps);
+    x = Eigen::ArrayXXf::Zero(batch_size, time_steps);;
+    y = Eigen::ArrayXXf::Zero(batch_size, time_steps);;
+    yaws = Eigen::ArrayXXf::Zero(batch_size, time_steps);;
   }
 };
 

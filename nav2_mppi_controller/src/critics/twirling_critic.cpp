@@ -14,6 +14,8 @@
 
 #include "nav2_mppi_controller/critics/twirling_critic.hpp"
 
+#include <Eigen/Dense>
+
 namespace mppi::critics
 {
 

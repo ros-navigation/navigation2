@@ -265,8 +265,8 @@ inline bool withinPositionGoalTolerance(
 template<typename T>
 auto normalize_angles(const T & angles)
 {
-  auto theta = ((angles + M_PIF).unaryExpr([](const float x){ return std::fmod(x, 2.0f * M_PIF);})).eval();
-  return (theta < 0.0f).select(theta + M_PIF, theta - M_PIF).eval();
+  Eigen::ArrayXXf theta = (angles + M_PIF).unaryExpr([](const float x){ float remainder =  std::fmod(x, 2.0f * M_PIF); return remainder < 0.0f ? remainder + M_PIF : remainder - M_PIF;});
+  return ((theta < 0.0f).select(theta + M_PIF, theta - M_PIF)).eval();
 }
 
 /**
@@ -308,11 +308,12 @@ inline size_t findPathFurthestReachedPoint(const CriticData & data)
 
   int max_id_by_trajectories = 0, min_id_by_path = 0;
   float min_distance_by_path = std::numeric_limits<float>::max();
-
-  for (int i = 0; i < dists.rows(); i++) {
+  int n_rows = dists.rows();
+  int n_cols = dists.cols();
+  for (int i = 0; i < n_rows; i++) {
     min_id_by_path = 0;
     min_distance_by_path = std::numeric_limits<float>::max();
-    for (int j = max_id_by_trajectories; j < dists.cols(); j++) {
+    for (int j = max_id_by_trajectories; j < n_cols; j++) {
       const float cur_dist = dists(i, j);
       if (cur_dist < min_distance_by_path) {
         min_distance_by_path = cur_dist;
@@ -689,6 +690,45 @@ struct Pose2D
 {
   float x, y, theta;
 };
+
+template<class T>
+auto rollColumns(T&& e, std::ptrdiff_t shift)
+{
+  shift = shift >= 0 ? shift : e.cols() + shift;
+  auto flat_size = shift * e.rows();
+  Eigen::ArrayXXf cpyMatrix(e.rows(), e.cols());
+  std::copy(e.data(), e.data() + flat_size, std::copy(e.data() + flat_size, e.data() + e.size(), cpyMatrix.data()));
+  return cpyMatrix;
+}
+
+inline auto point_corrected_yaws(const Eigen::ArrayXf & yaws, const Eigen::ArrayXf & yaws_between_points)
+{
+  const auto yaws_ptr = yaws.data();
+  const auto yaws_between_points_ptr = yaws_between_points.data();
+  int size = yaws.size();
+  Eigen::ArrayXf yaws_between_points_corrected(size);
+  auto yaws_between_points_corrected_ptr = yaws_between_points_corrected.data();
+  for(int i = 0; i != size; i++)
+  {
+    const float & yaw_between_points = *(yaws_between_points_ptr + i);
+    *(yaws_between_points_corrected_ptr + i) = *(yaws_ptr + i) < M_PIF_2 ? yaw_between_points : angles::normalize_angle(yaw_between_points + M_PIF);
+  }
+  return yaws_between_points_corrected;
+}
+
+inline auto point_corrected_yaws(const Eigen::ArrayXf & yaws_between_points, const float & goal_yaw)
+{
+  const auto yaws_between_points_ptr = yaws_between_points.data();
+  int size = yaws_between_points.size();
+  Eigen::ArrayXf yaws_between_points_corrected(size);
+  auto yaws_between_points_corrected_ptr = yaws_between_points_corrected.data();
+  for(int i = 0; i != size; i++)
+  {
+    const float & yaw_between_points = *(yaws_between_points_ptr + i);
+    *(yaws_between_points_corrected_ptr + i) = std::abs(angles::normalize_angle(yaw_between_points - goal_yaw)) < M_PIF_2 ? yaw_between_points : angles::normalize_angle(yaw_between_points + M_PIF);
+  }
+  return yaws_between_points_corrected;
+}
 
 }  // namespace mppi::utils
 

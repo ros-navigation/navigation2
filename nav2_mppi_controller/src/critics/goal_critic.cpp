@@ -48,10 +48,10 @@ void GoalCritic::score(CriticData & data)
   const auto delta_x = data.trajectories.x - goal_x;
   const auto delta_y = data.trajectories.y - goal_y;
 
-  if (power_ > 1u) {
-    data.costs += Eigen::pow((((delta_x.square() + delta_y.square()).sqrt()).rowwise().mean()) * weight_, power_);
+  if(power_ > 1u) {
+    data.costs += (((delta_x.square() + delta_y.square()).sqrt()).rowwise().mean() * weight_).pow(power_);
   } else {
-    data.costs += (((delta_x.square() + delta_y.square()).sqrt()).rowwise().mean()) * weight_;
+    data.costs += (((delta_x.square() + delta_y.square()).sqrt()).rowwise().mean() * weight_).eval();
   }
 }
 

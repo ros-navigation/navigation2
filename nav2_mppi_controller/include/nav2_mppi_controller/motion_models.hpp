@@ -63,43 +63,33 @@ public:
    */
   virtual void predict(models::State & state)
   {
-    // Previously completed via tensor views, but found to be 10x slower
-    // using namespace xt::placeholders;  // NOLINT
-    // xt::noalias(xt::view(state.vx, xt::all(), xt::range(1, _))) =
-    //   xt::noalias(xt::view(state.cvx, xt::all(), xt::range(0, -1)));
-    // xt::noalias(xt::view(state.wz, xt::all(), xt::range(1, _))) =
-    //   xt::noalias(xt::view(state.cwz, xt::all(), xt::range(0, -1)));
-    // if (isHolonomic()) {
-    //   xt::noalias(xt::view(state.vy, xt::all(), xt::range(1, _))) =
-    //     xt::noalias(xt::view(state.cvy, xt::all(), xt::range(0, -1)));
-    // }
-
     const bool is_holo = isHolonomic();
     float && max_delta_vx = model_dt_ * control_constraints_.ax_max;
     float && min_delta_vx = model_dt_ * control_constraints_.ax_min;
     float && max_delta_vy = model_dt_ * control_constraints_.ay_max;
     float && max_delta_wz = model_dt_ * control_constraints_.az_max;
 
-    for (unsigned int i = 0; i != state.vx.rows(); i++) {
-      float vx_last = state.vx(i, 0);
-      float vy_last = state.vy(i, 0);
-      float wz_last = state.wz(i, 0);
-      for (unsigned int j = 1; j != state.vx.cols(); j++) {
-        float & cvx_curr = state.cvx(i, j - 1);
-        cvx_curr = std::clamp(cvx_curr, vx_last + min_delta_vx, vx_last + max_delta_vx);
-        state.vx(i, j) = cvx_curr;
-        vx_last = cvx_curr;
+    unsigned int n_rows = state.vx.rows();
+    unsigned int n_cols = state.vx.cols();
 
-        float & cwz_curr = state.cwz(i, j - 1);
+    // Default layout in eigen is column-major, hence accessing elements in column-major fashion to utilize L1 cache as much as possible
+    for (unsigned int i = 1; i != n_cols; i++) {
+      for (unsigned int j = 0; j != n_rows; j++) {
+        float & vx_last = state.vx(j, i - 1);
+        float & cvx_curr = state.cvx(j, i - 1);
+        cvx_curr = std::clamp(cvx_curr, vx_last + min_delta_vx, vx_last + max_delta_vx);
+        state.vx(j, i) = cvx_curr;
+        
+        float & wz_last = state.wz(j, i - 1);
+        float & cwz_curr = state.cwz(j, i - 1);
         cwz_curr = std::clamp(cwz_curr, wz_last - max_delta_wz, wz_last + max_delta_wz);
-        state.wz(i, j) = cwz_curr;
-        wz_last = cwz_curr;
+        state.wz(j, i) = cwz_curr;
 
         if (is_holo) {
-          float & cvy_curr = state.cvy(i, j - 1);
+          float & vy_last = state.vy(j, i - 1);
+          float & cvy_curr = state.cvy(j, i - 1);
           cvy_curr = std::clamp(cvy_curr, vy_last - max_delta_vy, vy_last + max_delta_vy);
-          state.vy(i, j) = cvy_curr;
-          vy_last = cvy_curr;
+          state.vy(j, i) = cvy_curr;       
         }
       }
     }
@@ -154,10 +144,18 @@ public:
    */
   void applyConstraints(models::ControlSequence & control_sequence) override
   {
-    auto & vx = control_sequence.vx;
-    auto & wz = control_sequence.wz;
+    const auto vx_ptr = control_sequence.vx.data();
+    auto wz_ptr = control_sequence.wz.data();
+    int steps = control_sequence.vx.size();
+    for(int i = 0; i < steps; i++)
+    {
+      float && wz_constrained = std::abs(*(vx_ptr + i) / min_turning_r_);
+      float & wz_curr = *(wz_ptr + i);
+      wz_curr = std::clamp(wz_curr, -1 * wz_constrained, wz_constrained);
+    }
+    // Taking more time compared to for loop
+    //wz = ((vx.abs() / wz.abs() < min_turning_r_).select(wz, wz.sign() * vx / min_turning_r_)).eval();
 
-    wz = (vx.abs() / wz.abs() < min_turning_r_).select(wz, wz.sign() * vx / min_turning_r_);
   }
 
   /**

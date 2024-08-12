@@ -122,23 +122,30 @@ void ObstaclesCritic::score(CriticData & data)
   Eigen::ArrayXf raw_cost = Eigen::ArrayXf::Zero(data.costs.size());
   Eigen::ArrayXf repulsive_cost = Eigen::ArrayXf::Zero(data.costs.size());
 
-  const int traj_len = data.trajectories.x.cols();
+  const unsigned int traj_len = data.trajectories.x.cols();
+  const unsigned int batch_size = data.trajectories.x.rows();
   bool all_trajectories_collide = true;
-  for (int i = 0; i < data.trajectories.x.rows(); ++i) {
-    bool trajectory_collide = false;
-    float traj_cost = 0.0f;
-    const auto & traj = data.trajectories;
-    CollisionCost pose_cost;
-    raw_cost[i] = 0.0f;
-    repulsive_cost[i] = 0.0f;
+  const auto & traj = data.trajectories;
 
-    for (int j = 0; j < traj_len; j++) {
-      pose_cost = costAtPose(traj.x(i, j), traj.y(i, j), traj.yaws(i, j));
+  // Default layout in eigen is column-major, hence accessing elements in column-major fashion to utilize L1 cache as much as possible
+  for(unsigned int i = 0; i != traj_len; i++)
+  {
+    bool trajectory_collide = false;
+    CollisionCost pose_cost;
+    for(unsigned int j = 0; j != batch_size; j++)
+    {
+      if(raw_cost[j] == collision_cost_)
+      {
+        continue;
+      }
+
+      pose_cost = costAtPose(traj.x(j, i), traj.y(j, i), traj.yaws(j, i));
       if (pose_cost.cost < 1.0f) {continue;}  // In free space
 
       if (inCollision(pose_cost.cost)) {
         trajectory_collide = true;
-        break;
+        raw_cost[j] = collision_cost_;
+        continue;
       }
 
       // Cannot process repulsion if inflation layer does not exist
@@ -149,18 +156,20 @@ void ObstaclesCritic::score(CriticData & data)
       const float dist_to_obj = distanceToObstacle(pose_cost);
 
       // Let near-collision trajectory points be punished severely
+      float traj_cost = 0.0f;
       if (dist_to_obj < collision_margin_distance_) {
-        traj_cost += (collision_margin_distance_ - dist_to_obj);
+        traj_cost = (collision_margin_distance_ - dist_to_obj);
       }
 
       // Generally prefer trajectories further from obstacles
       if (!near_goal) {
-        repulsive_cost[i] += inflation_radius_ - dist_to_obj;
+        repulsive_cost[j] += inflation_radius_ - dist_to_obj;
       }
+      raw_cost[j] += traj_cost;
     }
 
     if (!trajectory_collide) {all_trajectories_collide = false;}
-    raw_cost[i] = trajectory_collide ? collision_cost_ : traj_cost;
+
   }
 
   // Normalize repulsive cost by trajectory length & lowest score to not overweight importance
