@@ -34,8 +34,8 @@ from .utils import (
     get_world2map_coordinates,
     matrixToTransform,
     transformStampedToMatrix,
-    
 )
+
 """
 This is a loopback simulator that replaces a physics simulator to create a
 frictionless, inertialess, and collisionless simulation environment. It
@@ -197,7 +197,7 @@ class LoopbackSimulator(Node):
         self.scan_msg.range_min = 0.05
         self.scan_msg.range_max = 100.0
         num_samples = int(
-            (self.scan_msg.angle_max - self.scan_msg.angle_min) / 
+            (self.scan_msg.angle_max - self.scan_msg.angle_min) /
             self.scan_msg.angle_increment)
         self.scan_msg.ranges = [0.0] * num_samples
         x, y, theta = self.get_laser_pose()
@@ -293,8 +293,8 @@ class LoopbackSimulator(Node):
 
         start_x, start_y = get_world2map_coordinates(x, y, self.map)
 
-        if (start_x < 0 or start_y < 0 or 
-            start_x >= self.map.info.width or start_y >= self.map.info.height):
+        if (start_x < 0 or start_y < 0 or
+                start_x >= self.map.info.width or start_y >= self.map.info.height):
             # Outside the map, find entry point
             delta_x = abs(self.map.info.origin.position.x - x)
             delta_y = abs(self.map.info.origin.position.y - y)
@@ -329,7 +329,7 @@ class LoopbackSimulator(Node):
 
                 # tMax - voxel boundary crossing
                 tMax[i] = (voxel_border[i] - origin[i]) / direction[i]
-                # tDelta - distance along ray 
+                # tDelta - distance along ray
                 # so that vertical/horizontal component equals one voxel
                 tDelta[i] = self.map.info.resolution / abs(direction[i])
             else:
@@ -346,9 +346,8 @@ class LoopbackSimulator(Node):
             tMax[dim] += tDelta[dim]
 
             # Check map inbounds
-            if (current[0] < 0 or current[0] >= self.map.info.width or 
-                current[1] < 0 or current[1] >= self.map.info.height):
-                # self.get_logger().info("Here-1")
+            if (current[0] < 0 or current[0] >= self.map.info.width or
+                    current[1] < 0 or current[1] >= self.map.info.height):
                 return self.scan_msg.range_max
 
             # Determine current range
@@ -358,7 +357,6 @@ class LoopbackSimulator(Node):
 
             # Are we at max range?
             if current_range > self.scan_msg.range_max:
-                # self.get_logger().info("Here-1")
                 return self.scan_msg.range_max
             else:
                 occ = get_map_occupancy(current[0], current[1], self.map)

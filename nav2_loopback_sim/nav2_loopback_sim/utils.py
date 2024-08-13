@@ -74,9 +74,9 @@ def get_world2map_coordinates(world_x, world_y, map_msg):
 
 
 def get_map2world_coordinates(map_x, map_y, map_msg):
-    world_x = ((map_x * map_msg.info.resolution) + map_msg.info.origin.position.x + 
+    world_x = ((map_x * map_msg.info.resolution) + map_msg.info.origin.position.x +
                0.5 * map_msg.info.resolution)
-    world_y = ((map_y * map_msg.info.resolution) + map_msg.info.origin.position.y + 
+    world_y = ((map_y * map_msg.info.resolution) + map_msg.info.origin.position.y +
                0.5 * map_msg.info.resolution)
     return world_x, world_y
 
