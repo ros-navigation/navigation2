@@ -22,7 +22,7 @@
 #include <vector>
 #include <string>
 #include <limits>
-
+#include "nav2_msgs/msg/collision_monitor_state.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
@@ -46,6 +46,7 @@ static const char SOURCE_FRAME_ID[]{"base_source"};
 static const char ODOM_FRAME_ID[]{"odom"};
 static const char CMD_VEL_IN_TOPIC[]{"cmd_vel_in"};
 static const char CMD_VEL_OUT_TOPIC[]{"cmd_vel_out"};
+static const char STATE_TOPIC[]{"collision_monitor_state"};
 static const char FOOTPRINT_TOPIC[]{"footprint"};
 static const char SCAN_NAME[]{"Scan"};
 static const char POINTCLOUD_NAME[]{"PointCloud"};
@@ -71,6 +72,15 @@ enum SourceType
   SCAN = 1,
   POINTCLOUD = 2,
   RANGE = 3
+};
+
+enum ActionType
+{
+  DO_NOTHING = 0,
+  STOP = 1,
+  SLOWDOWN = 2,
+  APPROACH = 3,
+  LIMIT = 4,
 };
 
 class CollisionMonitorWrapper : public nav2_collision_monitor::CollisionMonitor
@@ -150,9 +160,11 @@ public:
   bool waitFuture(
     rclcpp::Client<rcl_interfaces::srv::SetParameters>::SharedFuture,
     const std::chrono::nanoseconds & timeout);
+  bool waitActionState(const std::chrono::nanoseconds & timeout);
 
 protected:
   void cmdVelOutCallback(geometry_msgs::msg::Twist::SharedPtr msg);
+  void actionStateCallback(nav2_msgs::msg::CollisionMonitorState::SharedPtr msg);
 
   // CollisionMonitor node
   std::shared_ptr<CollisionMonitorWrapper> cm_;
@@ -170,7 +182,11 @@ protected:
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_out_sub_;
 
   geometry_msgs::msg::Twist::SharedPtr cmd_vel_out_;
-
+  
+  // CollisionMonitor Action state
+  rclcpp::Subscription<nav2_msgs::msg::CollisionMonitorState>::SharedPtr action_state_sub_;
+  nav2_msgs::msg::CollisionMonitorState::SharedPtr action_state_;
+  
   // Service client for setting CollisionMonitor parameters
   rclcpp::Client<rcl_interfaces::srv::SetParameters>::SharedPtr parameters_client_;
 };  // Tester
@@ -195,6 +211,9 @@ Tester::Tester()
     CMD_VEL_OUT_TOPIC, rclcpp::SystemDefaultsQoS(),
     std::bind(&Tester::cmdVelOutCallback, this, std::placeholders::_1));
   
+  action_state_sub_ = cm_->create_subscription<nav2_msgs::msg::CollisionMonitorState>(
+    STATE_TOPIC, rclcpp::SystemDefaultsQoS(),
+    std::bind(&Tester::actionStateCallback, this, std::placeholders::_1));
   parameters_client_ =
     cm_->create_client<rcl_interfaces::srv::SetParameters>(
     std::string(
@@ -571,9 +590,27 @@ bool Tester::waitFuture(
   return false;
 }
 
+bool Tester::waitActionState(const std::chrono::nanoseconds & timeout)
+{
+  rclcpp::Time start_time = cm_->now();
+  while (rclcpp::ok() && cm_->now() - start_time <= rclcpp::Duration(timeout)) {
+    if (action_state_) {
+      return true;
+    }
+    rclcpp::spin_some(cm_->get_node_base_interface());
+    std::this_thread::sleep_for(10ms);
+  }
+  return false;
+}
+
 void Tester::cmdVelOutCallback(geometry_msgs::msg::Twist::SharedPtr msg)
 {
   cmd_vel_out_ = msg;
+}
+
+void Tester::actionStateCallback(nav2_msgs::msg::CollisionMonitorState::SharedPtr msg)
+{
+  action_state_ = msg;
 }
 
 TEST_F(Tester, testProcessStopSlowdown)
@@ -905,9 +942,9 @@ TEST_F(Tester, testPolygonNotEnabled)
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.0, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
-  // ASSERT_TRUE(waitActionState(500ms));
-  // ASSERT_EQ(action_state_->action_type, STOP);
-  // ASSERT_EQ(action_state_->polygon_name, "Stop");
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, STOP);
+  ASSERT_EQ(action_state_->polygon_name, "Stop");
 
   // Disable polygon by calling service
   auto set_parameters_msg = std::make_shared<rcl_interfaces::srv::SetParameters::Request>();
@@ -929,9 +966,9 @@ TEST_F(Tester, testPolygonNotEnabled)
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.2, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.1, EPSILON);
-  // ASSERT_TRUE(waitActionState(500ms));
-  // ASSERT_EQ(action_state_->action_type, DO_NOTHING);
-  // ASSERT_EQ(action_state_->polygon_name, "");
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, DO_NOTHING);
+  ASSERT_EQ(action_state_->polygon_name, "");
 
   // Stop Collision Monitor node
   cm_->stop();
@@ -961,8 +998,8 @@ TEST_F(Tester, testSourceNotEnabled)
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
   // ASSERT_TRUE(waitActionState(500ms));
-  // ASSERT_EQ(action_state_->action_type, STOP);
-  // ASSERT_EQ(action_state_->polygon_name, "Stop");
+  ASSERT_EQ(action_state_->action_type, STOP);
+  ASSERT_EQ(action_state_->polygon_name, "Stop");
 
   // Disable source by calling service
   auto set_parameters_msg = std::make_shared<rcl_interfaces::srv::SetParameters::Request>();
@@ -984,9 +1021,9 @@ TEST_F(Tester, testSourceNotEnabled)
   ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.2, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.1, EPSILON);
-  // ASSERT_TRUE(waitActionState(500ms));
-  // ASSERT_EQ(action_state_->action_type, DO_NOTHING);
-  // ASSERT_EQ(action_state_->polygon_name, "");
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, DO_NOTHING);
+  ASSERT_EQ(action_state_->polygon_name, "");
 
   // Stop Collision Monitor node
   cm_->stop();
