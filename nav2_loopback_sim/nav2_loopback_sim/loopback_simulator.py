@@ -19,25 +19,23 @@ from geometry_msgs.msg import PoseWithCovarianceStamped, Twist
 from geometry_msgs.msg import Quaternion, TransformStamped, Vector3
 from nav_msgs.msg import Odometry
 from nav_msgs.srv import GetMap
-from tf2_ros import TransformListener, Buffer
-import tf_transformations
 import rclpy
 from rclpy.duration import Duration
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
 from sensor_msgs.msg import LaserScan
-from tf2_ros import TransformBroadcaster
+from tf2_ros import Buffer, TransformBroadcaster, TransformListener
 import tf_transformations
 
 from .utils import (
-    addYawToQuat, 
-    matrixToTransform, 
-    transformStampedToMatrix, 
-    get_world2map_coordinates, 
-    get_map2world_coordinates, 
-    get_map_occupancy
+    addYawToQuat,
+    get_map2world_coordinates,
+    get_map_occupancy,
+    get_world2map_coordinates,
+    matrixToTransform,
+    transformStampedToMatrix,
+    
 )
-
 """
 This is a loopback simulator that replaces a physics simulator to create a
 frictionless, inertialess, and collisionless simulation environment. It
@@ -98,7 +96,7 @@ class LoopbackSimulator(Node):
         self.scan_pub = self.create_publisher(LaserScan, 'scan', sensor_qos)
 
         self.setupTimer = self.create_timer(0.1, self.setupTimerCallback)
-        
+
         self.map_client = self.create_client(GetMap, '/map_server/map')
 
         self.tf_buffer = Buffer()
@@ -192,12 +190,15 @@ class LoopbackSimulator(Node):
         self.scan_msg.header.frame_id = self.scan_frame_id
         self.scan_msg.angle_min = -math.pi
         self.scan_msg.angle_max = math.pi
-        self.scan_msg.angle_increment = 0.0261799 # 1.5 degrees
+        # 1.5 degrees
+        self.scan_msg.angle_increment = 0.0261799
         self.scan_msg.time_increment = 0.0
         self.scan_msg.scan_time = 0.1
         self.scan_msg.range_min = 0.05
         self.scan_msg.range_max = 100.0
-        num_samples = int((self.scan_msg.angle_max - self.scan_msg.angle_min) / self.scan_msg.angle_increment)
+        num_samples = int(
+            (self.scan_msg.angle_max - self.scan_msg.angle_min) / 
+            self.scan_msg.angle_increment)
         self.scan_msg.ranges = [0.0] * num_samples
         x, y, theta = self.get_laser_pose()
         self.get_laserscan(num_samples, x, y, theta)
@@ -228,7 +229,7 @@ class LoopbackSimulator(Node):
     def debug(self, msg):
         self.get_logger().debug(msg)
         return
-    
+
     def get_map(self):
         request = GetMap.Request()
         if self.map_client.wait_for_service(timeout_sec=1.0):
@@ -237,7 +238,8 @@ class LoopbackSimulator(Node):
             rclpy.spin_until_future_complete(self, future)
             if future.result() is not None:
                 self.map = future.result().map
-                self.get_logger().info(f'Received map data, {self.map.info.width}X{self.map.info.height}, resolution:={self.map.info.resolution}')
+                self.get_logger().info(
+                    f'Received map data, {self.map.info.width}X{self.map.info.height}')
             else:
                 self.get_logger().error('Failed to call map service')
         else:
@@ -247,11 +249,11 @@ class LoopbackSimulator(Node):
         try:
             if self.initial_pose is None:
                 return 0.0, 0.0, 0.0
-            
+
             if self.map is None:
                 self.get_map()
                 return 0.0, 0.0, 0.0
-            
+
             # Wait for transform and lookup
             now = rclpy.time.Time()
             transform = self.tf_buffer.lookup_transform(
@@ -287,67 +289,73 @@ class LoopbackSimulator(Node):
         # Using "A Faster Voxel Traversal Algorithm for Ray Tracing" by Amanatides & Woo
         # ======== Initialization Phase ========
         origin = [x, y]  # u
-        dir = [math.cos(theta), math.sin(theta)]  # v
-        
+        direction = [math.cos(theta), math.sin(theta)]  # v
+
         start_x, start_y = get_world2map_coordinates(x, y, self.map)
-        
-        if start_x < 0 or start_y < 0 or start_x >= self.map.info.width or start_y >= self.map.info.height:
+
+        if (start_x < 0 or start_y < 0 or 
+            start_x >= self.map.info.width or start_y >= self.map.info.height):
             # Outside the map, find entry point
             delta_x = abs(self.map.info.origin.position.x - x)
             delta_y = abs(self.map.info.origin.position.y - y)
-            intersect_x = x + (dir[0] * delta_x)
-            intersect_y = y + (dir[1] * delta_y)
+            intersect_x = x + (direction[0] * delta_x)
+            intersect_y = y + (direction[1] * delta_y)
             start_x, start_y = get_world2map_coordinates(intersect_x, intersect_y, self.map)
-        
+
         current = [start_x, start_y]  # X, Y
         step = [0, 0]  # stepX, stepY
         tMax = [0.0, 0.0]  # tMaxX, tMaxY
         tDelta = [0.0, 0.0]  # tDeltaX, tDeltaY
-        
+
         voxel_border = [0.0, 0.0]
-        voxel_border[0], voxel_border[1] = get_map2world_coordinates(current[0], current[1], self.map)
+        voxel_border[0], voxel_border[1] = get_map2world_coordinates(
+            current[0], current[1], self.map)
         voxel_border[0] -= 0.5 * self.map.info.resolution  # This is the lower left voxel corner
         voxel_border[1] -= 0.5 * self.map.info.resolution  # This is the lower left voxel corner
-        
+
         for i in range(2):  # For each dimension (x, y)
             # Determine step direction
-            if dir[i] > 0.0:
+            if direction[i] > 0.0:
                 step[i] = 1
-            elif dir[i] < 0.0:
+            elif direction[i] < 0.0:
                 step[i] = -1
             else:
                 step[i] = 0
-            
+
             # Determine tMax, tDelta
             if step[i] != 0:
                 if step[i] == 1:
                     voxel_border[i] += step[i] * self.map.info.resolution
-                
+
                 # tMax - voxel boundary crossing
-                tMax[i] = (voxel_border[i] - origin[i]) / dir[i]
-                # tDelta - distance along ray so that vertical/horizontal component equals one voxel
-                tDelta[i] = self.map.info.resolution / abs(dir[i])
+                tMax[i] = (voxel_border[i] - origin[i]) / direction[i]
+                # tDelta - distance along ray 
+                # so that vertical/horizontal component equals one voxel
+                tDelta[i] = self.map.info.resolution / abs(direction[i])
             else:
                 tMax[i] = float('inf')
                 tDelta[i] = float('inf')
-        
+
         # ======== Incremental Traversal ========
         while True:
             # Advance
             dim = 0 if tMax[0] < tMax[1] else 1
-            
+
             # Advance one voxel
             current[dim] += step[dim]
             tMax[dim] += tDelta[dim]
-            
+
             # Check map inbounds
-            if current[0] < 0 or current[0] >= self.map.info.width or current[1] < 0 or current[1] >= self.map.info.height:
+            if (current[0] < 0 or current[0] >= self.map.info.width or 
+                current[1] < 0 or current[1] >= self.map.info.height):
                 # self.get_logger().info("Here-1")
                 return self.scan_msg.range_max
-            
+
             # Determine current range
-            current_range = math.sqrt((current[0] - start_x) ** 2 + (current[1] - start_y) ** 2) * self.map.info.resolution
-            
+            current_range = math.sqrt(
+                (current[0] - start_x) ** 2 + (current[1] - start_y) ** 2
+                ) * self.map.info.resolution
+
             # Are we at max range?
             if current_range > self.scan_msg.range_max:
                 # self.get_logger().info("Here-1")
@@ -360,6 +368,7 @@ class LoopbackSimulator(Node):
                         continue
 
                     return current_range
+
 
 def main():
     rclpy.init()
