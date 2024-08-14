@@ -102,9 +102,9 @@ class LoopbackSimulator(Node):
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
-        self.info('Loopback simulator initialized')
-
         self.getMap()
+
+        self.info('Loopback simulator initialized')
 
     def setupTimerCallback(self):
         # Publish initial identity odom transform & laser scan to warm up system
@@ -186,7 +186,7 @@ class LoopbackSimulator(Node):
     def publishLaserScan(self):
         # Publish a bogus laser scan for collision monitor
         self.scan_msg = LaserScan()
-        self.scan_msg.header.stamp = (self.get_clock().now()).to_msg()
+        # self.scan_msg.header.stamp = (self.get_clock().now()).to_msg()
         self.scan_msg.header.frame_id = self.scan_frame_id
         self.scan_msg.angle_min = -math.pi
         self.scan_msg.angle_max = math.pi
@@ -238,19 +238,19 @@ class LoopbackSimulator(Node):
             rclpy.spin_until_future_complete(self, future)
             if future.result() is not None:
                 self.map = future.result().map
-                self.get_logger().info('Laser scan will be populated')
+                self.get_logger().info('Laser scan will be populated using map data')
             else:
-                self.get_logger().warn('Failed to get map')
-                self.get_logger().info('Laser scan will be populated using max range')
+                self.get_logger().warn('Failed to get map, '
+                    'Laser scan will be populated using max range')
         else:
-            self.get_logger().warn('Failed to get map')
-            self.get_logger().info('Laser scan will be populated using max range')
+            self.get_logger().warn('Failed to get map, '
+                'Laser scan will be populated using max range')
 
     def getLaserPose(self):
-        try:
-            if self.initial_pose is None:
-                return 0.0, 0.0, 0.0
+        if self.initial_pose is None:
+            return 0.0, 0.0, 0.0
 
+        try:
             # Wait for transform and lookup
             now = rclpy.time.Time()
             transform = self.tf_buffer.lookup_transform(
@@ -275,13 +275,13 @@ class LoopbackSimulator(Node):
 
     def getLaserScan(self, num_samples, x, y, theta):
         if self.map is None or self.initial_pose is None:
-            self.scan_msg.ranges = [self.scan_msg.range_max - 0.01] * num_samples
+            self.scan_msg.ranges = [self.scan_msg.range_max - 0.1] * num_samples
             return
 
         mx, my = worldToMap(x, y, self.map)
 
         if not mx and not my:
-            self.scan_msg.ranges = [self.scan_msg.range_max - 0.01] * num_samples
+            self.scan_msg.ranges = [self.scan_msg.range_max - 0.1] * num_samples
             return
 
         for i in range(int(num_samples)):
@@ -338,7 +338,7 @@ class LoopbackSimulator(Node):
             # Check map inbounds
             if (current[0] < 0 or current[0] >= self.map.info.width or
                     current[1] < 0 or current[1] >= self.map.info.height):
-                return self.scan_msg.range_max - 0.01
+                return self.scan_msg.range_max - 0.1
 
             # Determine current range
             current_range = math.sqrt(
@@ -347,7 +347,7 @@ class LoopbackSimulator(Node):
 
             # Are we at max range?
             if current_range > self.scan_msg.range_max:
-                return self.scan_msg.range_max - 0.01
+                return self.scan_msg.range_max - 0.1
             else:
                 occ = getMapOccupancy(current[0], current[1], self.map)
                 if occ >= 60:  # Current cell is occupied
