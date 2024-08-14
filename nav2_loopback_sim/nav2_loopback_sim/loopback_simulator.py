@@ -240,11 +240,15 @@ class LoopbackSimulator(Node):
                 self.map = future.result().map
                 self.get_logger().info('Laser scan will be populated using map data')
             else:
-                self.get_logger().warn('Failed to get map, '
-                    'Laser scan will be populated using max range')
+                self.get_logger().warn(
+                    'Failed to get map, '
+                    'Laser scan will be populated using max range'
+                )
         else:
-            self.get_logger().warn('Failed to get map, '
-                'Laser scan will be populated using max range')
+            self.get_logger().warn(
+                'Failed to get map, '
+                'Laser scan will be populated using max range'
+            )
 
     def getLaserPose(self):
         if self.initial_pose is None:
