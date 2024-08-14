@@ -238,13 +238,13 @@ class LoopbackSimulator(Node):
             rclpy.spin_until_future_complete(self, future)
             if future.result() is not None:
                 self.map = future.result().map
-                self.get_logger().info(f'Laser scan will be populated')
+                self.get_logger().info('Laser scan will be populated')
             else:
                 self.get_logger().warn('Failed to get map')
-                self.get_logger().info(f'Laser scan will be populated using max range')
+                self.get_logger().info('Laser scan will be populated using max range')
         else:
             self.get_logger().warn('Failed to get map')
-            self.get_logger().info(f'Laser scan will be populated using max range')
+            self.get_logger().info('Laser scan will be populated using max range')
 
     def getLaserPose(self):
         try:
@@ -277,13 +277,13 @@ class LoopbackSimulator(Node):
         if self.map is None or self.initial_pose is None:
             self.scan_msg.ranges = [self.scan_msg.range_max - 0.01] * num_samples
             return
-        
+
         mx, my = worldToMap(x, y, self.map)
 
         if not mx and not my:
             self.scan_msg.ranges = [self.scan_msg.range_max - 0.01] * num_samples
             return
-                
+
         for i in range(int(num_samples)):
             curr_angle = theta + self.scan_msg.angle_min + i * self.scan_msg.angle_increment
             self.scan_msg.ranges[i] = self.findMapRange(mx, my, x, y, curr_angle)
