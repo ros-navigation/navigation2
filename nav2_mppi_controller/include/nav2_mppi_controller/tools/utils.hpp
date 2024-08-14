@@ -666,7 +666,7 @@ inline unsigned int removePosesAfterFirstInversion(nav_msgs::msg::Path & path)
  * @return dist Distance to look for
  * @return init Starting index to indec from
  */
-/*inline unsigned int findClosestPathPt(
+inline unsigned int findClosestPathPt(
   const std::vector<float> & vec, const float dist, const unsigned int init = 0u)
 {
   float distim1 = init != 0u ? vec[init] : 0.0f;  // First is 0, no accumulated distance yet
@@ -683,7 +683,7 @@ inline unsigned int removePosesAfterFirstInversion(nav_msgs::msg::Path & path)
     distim1 = disti;
   }
   return size - 1;
-}*/
+}
 
 // A struct to hold pose data in floating point resolution
 struct Pose2D
@@ -691,6 +691,11 @@ struct Pose2D
   float x, y, theta;
 };
 
+/**
+ * @brief Shift columns of a Eigen Array
+ * @param e input Eigen Array or expression
+ * @return a column wise shifted Eigen Array
+ */
 template<class T>
 auto rollColumns(T&& e, std::ptrdiff_t shift)
 {

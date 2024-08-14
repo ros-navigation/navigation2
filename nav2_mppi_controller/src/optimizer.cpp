@@ -28,9 +28,6 @@
 namespace mppi
 {
 
-//using namespace xt::placeholders;  // NOLINT
-//using xt::evaluation_strategy::immediate;
-
 void Optimizer::initialize(
   rclcpp_lifecycle::LifecycleNode::WeakPtr parent, const std::string & name,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
@@ -220,7 +217,6 @@ void Optimizer::prepare(
 
 void Optimizer::shiftControlSequence()
 {
-  //using namespace xt::placeholders;  // NOLINT
   control_sequence_.vx = utils::rollColumns(control_sequence_.vx, 1);
   control_sequence_.wz = utils::rollColumns(control_sequence_.wz, 1);
 
