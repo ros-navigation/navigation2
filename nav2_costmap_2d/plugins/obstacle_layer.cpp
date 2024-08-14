@@ -71,10 +71,6 @@ ObstacleLayer::~ObstacleLayer()
 void ObstacleLayer::onInitialize()
 {
   bool track_unknown_space;
-  double transform_tolerance;
-
-  // The topics that we'll subscribe to from the parameter server
-  std::string topics_string;
 
   declareParameter("enabled", rclcpp::ParameterValue(true));
   declareParameter("footprint_clearing_enabled", rclcpp::ParameterValue(true));
@@ -95,7 +91,7 @@ void ObstacleLayer::onInitialize()
   node->get_parameter(name_ + "." + "combination_method", combination_method_);
   node->get_parameter("track_unknown_space", track_unknown_space);
   node->get_parameter("transform_tolerance", transform_tolerance);
-  node->get_parameter(name_ + "." + "observation_sources", topics_string);
+  node->get_parameter(name_ + "." + "observation_sources", observation_sources_);
 
   dyn_params_handler_ = node->add_on_set_parameters_callback(
     std::bind(
@@ -105,7 +101,7 @@ void ObstacleLayer::onInitialize()
 
   RCLCPP_INFO(
     logger_,
-    "Subscribed to Topics: %s", topics_string.c_str());
+    "Subscribed to Topics: %s", observation_sources_.c_str());
 
   rolling_window_ = layered_costmap_->isRolling();
 
@@ -121,11 +117,23 @@ void ObstacleLayer::onInitialize()
 
   global_frame_ = layered_costmap_->getGlobalFrameID();
 
+  initializeObservationSources(observation_sources_);
+}
+
+void ObstacleLayer::initializeObservationSources(std::string sources)
+{
+  // now we need to split the topics based on whitespace which we can use a stringstream for
+  std::stringstream ss(sources);
+
+  auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+
   auto sub_opt = rclcpp::SubscriptionOptions();
   sub_opt.callback_group = callback_group_;
 
-  // now we need to split the topics based on whitespace which we can use a stringstream for
-  std::stringstream ss(topics_string);
+  RCLCPP_INFO(logger_, "Initializing observation sources: %s", sources.c_str());
 
   std::string source;
   while (ss >> source) {
@@ -313,7 +321,77 @@ ObstacleLayer::dynamicParametersCallback(
       if (param_name == name_ + "." + "combination_method") {
         combination_method_ = parameter.as_int();
       }
+    } else if (param_type == ParameterType::PARAMETER_STRING) {
+      if (param_name == name_ + "." + "observation_sources") {
+        std::stringstream ss(parameter.as_string());
+        std::string source;
+
+        std::stringstream ss_old(observation_sources_);
+        std::string source_old;
+
+        bool source_exists = false;
+        std::vector<std::string> matched_sources;
+        std::ostringstream new_sources_stream;
+
+        //find sources that already have been defined
+        while (ss >> source) {
+          while (ss_old >> source_old) {
+            if (source == source_old) {
+              source_exists = true;
+              matched_sources.push_back(source);
+              break;
+            }
+          }
+
+          if (!source_exists) {
+            if (!new_sources_stream.str().empty()) {
+              new_sources_stream << " ";
+            }
+            new_sources_stream << source;
+            continue;
+          }
+
+          source_exists = false;
+        }
+
+        std::string new_sources = new_sources_stream.str();
+        std::string topic;
+        std::int16_t index = 0;
+        std::stringstream ss_old_final(observation_sources_);
+
+        // find the subscribers that weren't mentioned and remove them
+        while (ss_old_final >> source_old) {
+          if (std::find(matched_sources.begin(), matched_sources.end(), source_old) == matched_sources.end()) {
+            // The observation source needs to be removed
+            RCLCPP_INFO(
+              logger_,
+              "Removing observation source: %s", source_old.c_str());
+
+            // assume that the order of the sources in observation_sources_ is the same as in the vectors
+            observation_subscribers_.erase(observation_subscribers_.begin() + index);
+            observation_buffers_.erase(observation_buffers_.begin() + index);
+            observation_notifiers_.erase(observation_notifiers_.begin() + index);
+            marking_buffers_.erase(marking_buffers_.begin() + index); 
+            clearing_buffers_.erase(clearing_buffers_.begin() + index); 
+          } else {
+            index++;
+          }
+        }
+
+        auto start_index = observation_subscribers_.size() - 1;
+        if (!new_sources.empty()) {
+          initializeObservationSources(new_sources);
+
+          for (auto i = start_index; i < observation_subscribers_.size(); i++) {
+            observation_subscribers_[i]->subscribe();
+          }
+        }
+
+        //replace with new sources
+        observation_sources_ = parameter.as_string();
+      }
     }
+
   }
 
   result.successful = true;

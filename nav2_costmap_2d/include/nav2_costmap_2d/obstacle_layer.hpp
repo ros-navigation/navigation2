@@ -85,6 +85,10 @@ public:
    */
   virtual void onInitialize();
   /**
+   * @brief Initialize observation sources
+   */
+  virtual void initializeObservationSources(std::string sources);
+  /**
    * @brief Update the bounds of the master costmap by this layer's update dimensions
    * @param robot_x X pose of robot
    * @param robot_y Y pose of robot
@@ -253,6 +257,9 @@ protected:
   bool rolling_window_;
   bool was_reset_;
   int combination_method_;
+  std::string observation_sources_;
+  double transform_tolerance;
+
 };
 
 }  // namespace nav2_costmap_2d
