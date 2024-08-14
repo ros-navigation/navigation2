@@ -29,11 +29,11 @@ import tf_transformations
 
 from .utils import (
     addYawToQuat,
-    get_map2world_coordinates,
-    get_map_occupancy,
-    get_world2map_coordinates,
+    getMapOccupancy,
+    mapToWorld,
     matrixToTransform,
     transformStampedToMatrix,
+    worldToMap,
 )
 
 """
@@ -102,9 +102,9 @@ class LoopbackSimulator(Node):
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
-        self.get_map()
-
         self.info('Loopback simulator initialized')
+
+        self.getMap()
 
     def setupTimerCallback(self):
         # Publish initial identity odom transform & laser scan to warm up system
@@ -200,8 +200,8 @@ class LoopbackSimulator(Node):
             (self.scan_msg.angle_max - self.scan_msg.angle_min) /
             self.scan_msg.angle_increment)
         self.scan_msg.ranges = [0.0] * num_samples
-        x, y, theta = self.get_laser_pose()
-        self.get_laserscan(num_samples, x, y, theta)
+        x, y, theta = self.getLaserPose()
+        self.getLaserScan(num_samples, x, y, theta)
         self.scan_pub.publish(self.scan_msg)
 
     def publishTransforms(self, map_to_odom, odom_to_base_link):
@@ -230,34 +230,31 @@ class LoopbackSimulator(Node):
         self.get_logger().debug(msg)
         return
 
-    def get_map(self):
+    def getMap(self):
         request = GetMap.Request()
-        if self.map_client.wait_for_service(timeout_sec=1.0):
+        if self.map_client.wait_for_service(timeout_sec=5.0):
             # Request to get map
             future = self.map_client.call_async(request)
             rclpy.spin_until_future_complete(self, future)
             if future.result() is not None:
                 self.map = future.result().map
-                self.get_logger().info(
-                    f'Received map data, {self.map.info.width}X{self.map.info.height}')
+                self.get_logger().info(f'Laser scan will be populated')
             else:
-                self.get_logger().error('Failed to call map service')
+                self.get_logger().warn('Failed to get map')
+                self.get_logger().info(f'Laser scan will be populated using max range')
         else:
-            self.get_logger().error('Map service not available')
+            self.get_logger().warn('Failed to get map')
+            self.get_logger().info(f'Laser scan will be populated using max range')
 
-    def get_laser_pose(self):
+    def getLaserPose(self):
         try:
             if self.initial_pose is None:
-                return 0.0, 0.0, 0.0
-
-            if self.map is None:
-                self.get_map()
                 return 0.0, 0.0, 0.0
 
             # Wait for transform and lookup
             now = rclpy.time.Time()
             transform = self.tf_buffer.lookup_transform(
-                'map', self.scan_frame_id, now, rclpy.duration.Duration(seconds=1.0))
+                'map', self.scan_frame_id, now, rclpy.duration.Duration(seconds=0.1))
 
             # Extract pose information
             x = transform.transform.translation.x
@@ -276,42 +273,35 @@ class LoopbackSimulator(Node):
             self.get_logger().error('Transform lookup failed: %s' % str(ex))
             return 0.0, 0.0, 0.0
 
-    def get_laserscan(self, num_samples, x, y, theta):
-        for i in range(int(num_samples)):
-            if self.map is None:
-                self.scan_msg.ranges = [self.scan_msg.range_max] * num_samples
-                break
-            else:
-                curr_angle = theta + self.scan_msg.angle_min + i * self.scan_msg.angle_increment
-                self.scan_msg.ranges[i] = self.find_map_range(x, y, curr_angle)
+    def getLaserScan(self, num_samples, x, y, theta):
+        if self.map is None or self.initial_pose is None:
+            self.scan_msg.ranges = [self.scan_msg.range_max - 0.01] * num_samples
+            return
+        
+        mx, my = worldToMap(x, y, self.map)
 
-    def find_map_range(self, x, y, theta):
+        if not mx and not my:
+            self.scan_msg.ranges = [self.scan_msg.range_max - 0.01] * num_samples
+            return
+                
+        for i in range(int(num_samples)):
+            curr_angle = theta + self.scan_msg.angle_min + i * self.scan_msg.angle_increment
+            self.scan_msg.ranges[i] = self.findMapRange(mx, my, x, y, curr_angle)
+
+    def findMapRange(self, mx, my, x, y, theta):
         # Using "A Faster Voxel Traversal Algorithm for Ray Tracing" by Amanatides & Woo
         # ======== Initialization Phase ========
         origin = [x, y]  # u
         direction = [math.cos(theta), math.sin(theta)]  # v
 
-        start_x, start_y = get_world2map_coordinates(x, y, self.map)
-
-        if (start_x < 0 or start_y < 0 or
-                start_x >= self.map.info.width or start_y >= self.map.info.height):
-            # Outside the map, find entry point
-            delta_x = abs(self.map.info.origin.position.x - x)
-            delta_y = abs(self.map.info.origin.position.y - y)
-            intersect_x = x + (direction[0] * delta_x)
-            intersect_y = y + (direction[1] * delta_y)
-            start_x, start_y = get_world2map_coordinates(intersect_x, intersect_y, self.map)
-
-        current = [start_x, start_y]  # X, Y
+        current = [mx, my]  # X, Y
         step = [0, 0]  # stepX, stepY
         tMax = [0.0, 0.0]  # tMaxX, tMaxY
         tDelta = [0.0, 0.0]  # tDeltaX, tDeltaY
 
         voxel_border = [0.0, 0.0]
-        voxel_border[0], voxel_border[1] = get_map2world_coordinates(
+        voxel_border[0], voxel_border[1] = mapToWorld(
             current[0], current[1], self.map)
-        voxel_border[0] -= 0.5 * self.map.info.resolution  # This is the lower left voxel corner
-        voxel_border[1] -= 0.5 * self.map.info.resolution  # This is the lower left voxel corner
 
         for i in range(2):  # For each dimension (x, y)
             # Determine step direction
@@ -348,22 +338,22 @@ class LoopbackSimulator(Node):
             # Check map inbounds
             if (current[0] < 0 or current[0] >= self.map.info.width or
                     current[1] < 0 or current[1] >= self.map.info.height):
-                return self.scan_msg.range_max
+                return self.scan_msg.range_max - 0.01
 
             # Determine current range
             current_range = math.sqrt(
-                (current[0] - start_x) ** 2 + (current[1] - start_y) ** 2
+                (current[0] - mx) ** 2 + (current[1] - my) ** 2
                 ) * self.map.info.resolution
 
             # Are we at max range?
             if current_range > self.scan_msg.range_max:
-                return self.scan_msg.range_max
+                return self.scan_msg.range_max - 0.01
             else:
-                occ = get_map_occupancy(current[0], current[1], self.map)
+                occ = getMapOccupancy(current[0], current[1], self.map)
                 if occ >= 60:  # Current cell is occupied
                     # Is range less than min range
                     if current_range < self.scan_msg.range_min:
-                        continue
+                        return 0.0
 
                     return current_range
 

@@ -67,19 +67,24 @@ def matrixToTransform(matrix):
     return transform
 
 
-def get_world2map_coordinates(world_x, world_y, map_msg):
+def worldToMap(world_x, world_y, map_msg):
+    # Check if world coordinates are out of bounds
+    if (world_x < map_msg.info.origin.position.x or world_y < map_msg.info.origin.position.y):
+        return None, None  # Coordinates are out of bounds
+
     map_x = int(math.floor((world_x - map_msg.info.origin.position.x) / map_msg.info.resolution))
     map_y = int(math.floor((world_y - map_msg.info.origin.position.y) / map_msg.info.resolution))
+
+    if not map_x < map_msg.info.width or not map_y < map_msg.info.height:
+        return None, None  # Coordinates are out of bounds
     return map_x, map_y
 
 
-def get_map2world_coordinates(map_x, map_y, map_msg):
-    world_x = ((map_x * map_msg.info.resolution) + map_msg.info.origin.position.x +
-               0.5 * map_msg.info.resolution)
-    world_y = ((map_y * map_msg.info.resolution) + map_msg.info.origin.position.y +
-               0.5 * map_msg.info.resolution)
+def mapToWorld(map_x, map_y, map_msg):
+    world_x = map_msg.info.origin.position.x + ((map_x + 0.5) * map_msg.info.resolution)
+    world_y = map_msg.info.origin.position.y + ((map_y + 0.5) * map_msg.info.resolution)
     return world_x, world_y
 
 
-def get_map_occupancy(x, y, map_msg):
+def getMapOccupancy(x, y, map_msg):
     return map_msg.data[y * map_msg.info.width + x]
