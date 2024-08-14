@@ -44,6 +44,7 @@ Polygon::~Polygon()
 {
   RCLCPP_INFO(logger_, "[%s]: Destroying Polygon", polygon_name_.c_str());
   poly_.clear();
+  dyn_params_handler_.reset();
 }
 
 bool Polygon::configure()
@@ -82,6 +83,10 @@ bool Polygon::configure()
       polygon_pub_topic, polygon_qos);
   }
 
+  // Add callback for dynamic parameters
+  dyn_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(&Polygon::dynamicParametersCallback, this, std::placeholders::_1));
+  
   return true;
 }
 
@@ -107,6 +112,11 @@ std::string Polygon::getName() const
 ActionType Polygon::getActionType() const
 {
   return action_type_;
+}
+
+bool Polygon::getEnabled() const
+{
+  return enabled_;
 }
 
 int Polygon::getMaxPoints() const
@@ -245,6 +255,10 @@ bool Polygon::getCommonParameters(std::string & polygon_pub_topic)
     }
 
     nav2_util::declare_parameter_if_not_declared(
+      node, polygon_name_ + ".enabled", rclcpp::ParameterValue(true));
+    enabled_ = node->get_parameter(polygon_name_ + ".enabled").as_bool();
+    
+    nav2_util::declare_parameter_if_not_declared(
       node, polygon_name_ + ".max_points", rclcpp::ParameterValue(3));
     max_points_ = node->get_parameter(polygon_name_ + ".max_points").as_int();
 
@@ -348,6 +362,26 @@ bool Polygon::getParameters(std::string & polygon_pub_topic, std::string & footp
   }
 
   return true;
+}
+
+rcl_interfaces::msg::SetParametersResult
+Polygon::dynamicParametersCallback(
+  std::vector<rclcpp::Parameter> parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+
+  for (auto parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+
+    if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_BOOL) {
+      if (param_name == polygon_name_ + "." + "enabled") {
+        enabled_ = parameter.as_bool();
+      }
+    }
+  }
+  result.successful = true;
+  return result;
 }
 
 inline bool Polygon::isPointInside(const Point & point) const

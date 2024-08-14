@@ -46,6 +46,17 @@ Source::~Source()
 {
 }
 
+bool Source::configure()
+{
+  auto node = node_.lock();
+
+  // Add callback for dynamic parameters
+  dyn_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(&Source::dynamicParametersCallback, this, std::placeholders::_1));
+
+  return true;
+}
+
 void Source::getCommonParameters(std::string & source_topic)
 {
   auto node = node_.lock();
@@ -57,6 +68,10 @@ void Source::getCommonParameters(std::string & source_topic)
     node, source_name_ + ".topic",
     rclcpp::ParameterValue("scan"));  // Set deafult topic for laser scanner
   source_topic = node->get_parameter(source_name_ + ".topic").as_string();
+
+  nav2_util::declare_parameter_if_not_declared(
+    node, source_name_ + ".enabled", rclcpp::ParameterValue(true));
+  enabled_ = node->get_parameter(source_name_ + ".enabled").as_bool();
 }
 
 bool Source::sourceValid(
@@ -76,6 +91,31 @@ bool Source::sourceValid(
   }
 
   return true;
+}
+
+bool Source::getEnabled() const
+{
+  return enabled_;
+}
+
+rcl_interfaces::msg::SetParametersResult
+Source::dynamicParametersCallback(
+  std::vector<rclcpp::Parameter> parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+
+  for (auto parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+
+    if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_BOOL) {
+      if (param_name == source_name_ + "." + "enabled") {
+        enabled_ = parameter.as_bool();
+      }
+    }
+  }
+  result.successful = true;
+  return result;
 }
 
 }  // namespace nav2_collision_monitor

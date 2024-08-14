@@ -22,6 +22,7 @@ collision_monitor:
       max_points: 3
       visualize: True
       polygon_pub_topic: "polygon_stop"
+      enabled: True
     PolygonSlow:
       type: "polygon"
       points: [0.4, 0.4, 0.4, -0.4, -0.4, -0.4, -0.4, 0.4]
@@ -30,6 +31,7 @@ collision_monitor:
       slowdown_ratio: 0.3
       visualize: True
       polygon_pub_topic: "polygon_slowdown"
+      enabled: True
     FootprintApproach:
       type: "polygon"
       action_type: "approach"
@@ -38,12 +40,15 @@ collision_monitor:
       simulation_time_step: 0.1
       max_points: 5
       visualize: False
+      enabled: True
     observation_sources: ["scan"]
     scan:
       type: "scan"
       topic: "/scan"
+      enabled: True
     pointcloud:
       type: "pointcloud"
       topic: "/intel_realsense_r200_depth/points"
       min_height: 0.1
       max_height: 0.5
+      enabled: True
