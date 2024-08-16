@@ -73,10 +73,12 @@ class LoopbackSimulator(Node):
         self.scan_frame_id = self.get_parameter('scan_frame_id').get_parameter_value().string_value
 
         self.declare_parameter('publish_map_odom_tf', False)
-        self.publish_map_odom_tf = self.get_parameter('publish_map_odom_tf').get_parameter_value().bool_value
+        self.publish_map_odom_tf = self.get_parameter(
+            'publish_map_odom_tf').get_parameter_value().bool_value
 
         self.declare_parameter('scan_publish_rate', 10.0)
-        self.scan_publish_rate = self.get_parameter('scan_publish_rate').get_parameter_value().double_value
+        self.scan_publish_rate = self.get_parameter(
+            'scan_publish_rate').get_parameter_value().double_value
 
         self.t_map_to_odom = TransformStamped()
         self.t_map_to_odom.header.frame_id = self.map_frame_id
