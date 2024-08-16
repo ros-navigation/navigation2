@@ -17,9 +17,6 @@
 namespace mppi::critics
 {
 
-using namespace xt::placeholders;  // NOLINT
-using xt::evaluation_strategy::immediate;
-
 void PathAlignCritic::initialize()
 {
   auto getParam = parameters_handler_->getParamGetter(name_);
@@ -69,8 +66,8 @@ void PathAlignCritic::score(CriticData & data)
     }
   }
 
-  const size_t batch_size = data.trajectories.x.shape(0);
-  auto && cost = xt::xtensor<float, 1>::from_shape({data.costs.shape(0)});
+  const size_t batch_size = data.trajectories.x.cols();
+  Eigen::ArrayXf cost(data.costs.rows());
 
   // Find integrated distance in the path
   std::vector<float> path_integrated_distances(path_segments_count, 0.0f);
@@ -98,18 +95,16 @@ void PathAlignCritic::score(CriticData & data)
   unsigned int path_pt = 0u;
   float traj_integrated_distance = 0.0f;
 
+  int strided_traj_rows = data.trajectories.x.rows();
+  int strided_traj_cols = data.trajectories.x.cols()/trajectory_point_step_ + 1;
+  int outer_stride = strided_traj_rows * trajectory_point_step_;
   // Get strided trajectory information
-  const auto T_x = xt::view(
-    data.trajectories.x, xt::all(),
-    xt::range(0, _, trajectory_point_step_));
-  const auto T_y = xt::view(
-    data.trajectories.y, xt::all(),
-    xt::range(0, _, trajectory_point_step_));
-  const auto T_yaw = xt::view(
-    data.trajectories.yaws, xt::all(),
-    xt::range(0, _, trajectory_point_step_));
-  const auto traj_sampled_size = T_x.shape(1);
+  const auto T_x = Eigen::Map<Eigen::ArrayXXf, 0, Eigen::Stride<-1,-1>>(data.trajectories.x.data(), strided_traj_rows, strided_traj_cols, Eigen::Stride<-1, -1>(outer_stride, 1));
+  const auto T_y = Eigen::Map<Eigen::ArrayXXf, 0, Eigen::Stride<-1,-1>>(data.trajectories.y.data(), strided_traj_rows, strided_traj_cols, Eigen::Stride<-1, -1>(outer_stride, 1));
+  const auto T_yaw = Eigen::Map<Eigen::ArrayXXf, 0, Eigen::Stride<-1,-1>>(data.trajectories.yaws.data(), strided_traj_rows, strided_traj_cols, Eigen::Stride<-1, -1>(outer_stride, 1));
+  const auto traj_sampled_size = T_x.cols();
 
+  // TODO: check performance for both row-major and column-major looping
   for (size_t t = 0; t < batch_size; ++t) {
     summed_path_dist = 0.0f;
     num_samples = 0u;
@@ -117,7 +112,7 @@ void PathAlignCritic::score(CriticData & data)
     path_pt = 0u;
     float Tx_m1 = T_x(t, 0);
     float Ty_m1 = T_y(t, 0);
-    for (size_t p = 1; p < traj_sampled_size; p++) {
+    for (int p = 1; p < traj_sampled_size; p++) {
       const float Tx = T_x(t, p);
       const float Ty = T_y(t, p);
       dx = Tx - Tx_m1;
@@ -144,14 +139,14 @@ void PathAlignCritic::score(CriticData & data)
       }
     }
     if (num_samples > 0u) {
-      cost[t] = summed_path_dist / static_cast<float>(num_samples);
+      cost(t) = summed_path_dist / static_cast<float>(num_samples);
     } else {
-      cost[t] = 0.0f;
+      cost(t) = 0.0f;
     }
   }
 
   if (power_ > 1u) {
-    data.costs += xt::pow(std::move(cost) * weight_, power_);
+    data.costs += (std::move(cost) * weight_).pow(power_);
   } else {
     data.costs += std::move(cost) * weight_;
   }

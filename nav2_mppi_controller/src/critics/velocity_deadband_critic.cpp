@@ -40,59 +40,32 @@ void VelocityDeadbandCritic::initialize()
 
 void VelocityDeadbandCritic::score(CriticData & data)
 {
-  using xt::evaluation_strategy::immediate;
 
   if (!enabled_) {
     return;
   }
 
-  auto & vx = data.state.vx;
-  auto & wz = data.state.wz;
-
   if (data.motion_model->isHolonomic()) {
-    auto & vy = data.state.vy;
     if (power_ > 1u) {
-      data.costs += xt::pow(
-        xt::sum(
-          std::move(
-            xt::maximum(fabs(deadband_velocities_.at(0)) - xt::fabs(vx), 0) +
-            xt::maximum(fabs(deadband_velocities_.at(1)) - xt::fabs(vy), 0) +
-            xt::maximum(fabs(deadband_velocities_.at(2)) - xt::fabs(wz), 0)) *
-          data.model_dt,
-          {1}, immediate) *
-        weight_,
-        power_);
+      data.costs += ((((fabs(deadband_velocities_[0]) - data.state.vx.abs()).max(0.0f) + 
+                     (fabs(deadband_velocities_[1]) - data.state.vy.abs()).max(0.0f) +
+                     (fabs(deadband_velocities_[2]) - data.state.wz.abs()).max(0.0f)) * data.model_dt).rowwise().sum() * weight_).pow(power_);
     } else {
-      data.costs += xt::sum(
-        (std::move(
-          xt::maximum(fabs(deadband_velocities_.at(0)) - xt::fabs(vx), 0) +
-          xt::maximum(fabs(deadband_velocities_.at(1)) - xt::fabs(vy), 0) +
-          xt::maximum(fabs(deadband_velocities_.at(2)) - xt::fabs(wz), 0))) *
-        data.model_dt,
-        {1}, immediate) *
-        weight_;
+      data.costs += (((fabs(deadband_velocities_[0]) - data.state.vx.abs()).max(0.0f) + 
+                     (fabs(deadband_velocities_[1]) - data.state.vy.abs()).max(0.0f) +
+                     (fabs(deadband_velocities_[2]) - data.state.wz.abs()).max(0.0f)) * data.model_dt).rowwise().sum() * weight_;
     }
     return;
   }
 
   if (power_ > 1u) {
-    data.costs += xt::pow(
-      xt::sum(
-        std::move(
-          xt::maximum(fabs(deadband_velocities_.at(0)) - xt::fabs(vx), 0) +
-          xt::maximum(fabs(deadband_velocities_.at(2)) - xt::fabs(wz), 0)) *
-        data.model_dt,
-        {1}, immediate) *
-      weight_,
-      power_);
+    data.costs += ((((fabs(deadband_velocities_[0]) - data.state.vx.abs()).max(0.0f) + 
+                     (fabs(deadband_velocities_[1]) - data.state.vy.abs()).max(0.0f) +
+                     (fabs(deadband_velocities_[2]) - data.state.wz.abs()).max(0.0f)) * data.model_dt).rowwise().sum() * weight_).pow(power_);
   } else {
-    data.costs += xt::sum(
-      (std::move(
-        xt::maximum(fabs(deadband_velocities_.at(0)) - xt::fabs(vx), 0) +
-        xt::maximum(fabs(deadband_velocities_.at(2)) - xt::fabs(wz), 0))) *
-      data.model_dt,
-      {1}, immediate) *
-      weight_;
+    data.costs += (((fabs(deadband_velocities_[0]) - data.state.vx.abs()).max(0.0f) + 
+                     (fabs(deadband_velocities_[1]) - data.state.vy.abs()).max(0.0f) +
+                     (fabs(deadband_velocities_[2]) - data.state.wz.abs()).max(0.0f)) * data.model_dt).rowwise().sum() * weight_;
   }
   return;
 }
