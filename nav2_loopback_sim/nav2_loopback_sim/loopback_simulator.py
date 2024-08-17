@@ -324,7 +324,7 @@ class LoopbackSimulator(Node):
     #     max_distance = math.sqrt(
     #         (self.map.info.width * self.map.info.resolution) ** 2 +
     #         (self.map.info.height * self.map.info.resolution) ** 2)
-    #     max_distance = max(max_distance, self.scan_msg.range_max)
+        # max_distance = min(max_distance, self.scan_msg.range_max)
     #     for i in range(num_samples):
     #         curr_angle = theta + self.scan_msg.angle_min + i * self.scan_msg.angle_increment
     #         x1 = float(x0) + max_distance * math.cos(curr_angle)
