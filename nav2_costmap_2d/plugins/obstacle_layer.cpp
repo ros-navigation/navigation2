@@ -333,7 +333,7 @@ ObstacleLayer::dynamicParametersCallback(
         std::vector<std::string> matched_sources;
         std::ostringstream new_sources_stream;
 
-        //find sources that already have been defined
+        //find all the sources that have already been set.
         while (ss >> source) {
           while (ss_old >> source_old) {
             if (source == source_old) {
@@ -359,7 +359,7 @@ ObstacleLayer::dynamicParametersCallback(
         std::int16_t index = 0;
         std::stringstream ss_old_final(observation_sources_);
 
-        // find the subscribers that weren't mentioned and remove them
+        // find and remove the sources that were not passed into the parameter update
         while (ss_old_final >> source_old) {
           if (std::find(matched_sources.begin(), matched_sources.end(), source_old) == matched_sources.end()) {
             // The observation source needs to be removed
@@ -378,6 +378,7 @@ ObstacleLayer::dynamicParametersCallback(
           }
         }
 
+        //initializse any new sources
         auto start_index = observation_subscribers_.size() - 1;
         if (!new_sources.empty()) {
           initializeObservationSources(new_sources);
@@ -387,7 +388,6 @@ ObstacleLayer::dynamicParametersCallback(
           }
         }
 
-        //replace with new sources
         observation_sources_ = parameter.as_string();
       }
     }
