@@ -107,9 +107,17 @@ ament_target_dependencies(simple_charging_dock
 )
 target_link_libraries(simple_charging_dock pose_filter)
 
+add_library(simple_non_charging_dock SHARED
+  src/simple_non_charging_dock.cpp
+)
+ament_target_dependencies(simple_non_charging_dock
+  ${dependencies}
+)
+target_link_libraries(simple_non_charging_dock pose_filter)
+
 pluginlib_export_plugin_description_file(opennav_docking_core plugins.xml)
 
-install(TARGETS ${library_name} controller pose_filter simple_charging_dock
+install(TARGETS ${library_name} controller pose_filter simple_charging_dock simple_non_charging_dock
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
