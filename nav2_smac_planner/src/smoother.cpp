@@ -14,8 +14,15 @@
 
 #include <ompl/base/ScopedState.h>
 #include <ompl/base/spaces/DubinsStateSpace.h>
-#include <vector>
+
+#include <chrono>
 #include <memory>
+#include <vector>
+
+#include "angles/angles.h"
+
+#include "tf2/utils.h"
+
 #include "nav2_smac_planner/smoother.hpp"
 
 namespace nav2_smac_planner
