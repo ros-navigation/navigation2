@@ -15,11 +15,6 @@
 #include <chrono>
 #include <thread>
 
-#pragma GCC diagnostic ignored "-Warray-bounds"
-#pragma GCC diagnostic ignored "-Wstringop-overflow"
-#include <xtensor/xrandom.hpp>
-#pragma GCC diagnostic pop
-
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_mppi_controller/tools/utils.hpp"
@@ -120,9 +115,9 @@ TEST(UtilsTests, ConversionTests)
   models::Path path_t = toTensor(path);
 
   // Check population is correct
-  EXPECT_EQ(path_t.x.shape(0), 5u);
-  EXPECT_EQ(path_t.y.shape(0), 5u);
-  EXPECT_EQ(path_t.yaws.shape(0), 5u);
+  EXPECT_EQ(path_t.x.rows(), 5u);
+  EXPECT_EQ(path_t.y.rows(), 5u);
+  EXPECT_EQ(path_t.yaws.rows(), 5u);
   EXPECT_EQ(path_t.x(2), 5);
   EXPECT_EQ(path_t.y(2), 50);
   EXPECT_NEAR(path_t.yaws(2), 0.0, 1e-6);
@@ -172,9 +167,10 @@ TEST(UtilsTests, WithTolTests)
 TEST(UtilsTests, AnglesTests)
 {
   // Test angle normalization by creating insane angles
-  xt::xtensor<float, 1> angles, zero_angles;
-  angles = xt::ones<float>({100});
-  for (unsigned int i = 0; i != angles.shape(0); i++) {
+  Eigen::ArrayXf angles(100);
+  angles.setConstant(1.0f);
+
+  for (unsigned int i = 0; i != angles.size(); i++) {
     angles(i) = i * i;
     if (i % 2 == 0) {
       angles(i) *= -1;
@@ -182,15 +178,17 @@ TEST(UtilsTests, AnglesTests)
   }
 
   auto norm_ang = normalize_angles(angles);
-  for (unsigned int i = 0; i != norm_ang.shape(0); i++) {
-    EXPECT_TRUE((norm_ang(i) >= -M_PI) && (norm_ang(i) <= M_PI));
+  for (unsigned int i = 0; i != norm_ang.size(); i++) {
+    //Sstd::cout << "norm_ang(" << i << ") = " << norm_ang(i) << std::endl;
+    EXPECT_TRUE((norm_ang(i) >= -M_PIF) && (norm_ang(i) <= M_PIF));
   }
 
   // Test shortest angular distance
-  zero_angles = xt::zeros<float>({100});
+  Eigen::ArrayXf zero_angles(100);
+  zero_angles.setZero();
   auto ang_dist = shortest_angular_distance(angles, zero_angles);
-  for (unsigned int i = 0; i != ang_dist.shape(0); i++) {
-    EXPECT_TRUE((ang_dist(i) >= -M_PI) && (ang_dist(i) <= M_PI));
+  for (unsigned int i = 0; i != ang_dist.size(); i++) {
+    EXPECT_TRUE((ang_dist(i) >= -M_PIF) && (ang_dist(i) <= M_PIF));
   }
 
   // Test point-pose angle
@@ -225,7 +223,7 @@ TEST(UtilsTests, FurthestAndClosestReachedPoint)
   models::State state;
   models::Trajectories generated_trajectories;
   models::Path path;
-  xt::xtensor<float, 1> costs;
+  Eigen::ArrayXf costs;
   float model_dt = 0.1;
 
   CriticData data =
@@ -245,9 +243,9 @@ TEST(UtilsTests, FurthestAndClosestReachedPoint)
   EXPECT_EQ(data2.furthest_reached_path_point, 0);
 
   // Test the actual computation of the path point reached
-  generated_trajectories.x = xt::ones<float>({100, 2});
-  generated_trajectories.y = xt::zeros<float>({100, 2});
-  generated_trajectories.yaws = xt::zeros<float>({100, 2});
+  generated_trajectories.x = Eigen::ArrayXXf::Ones(100, 2);
+  generated_trajectories.y = Eigen::ArrayXXf::Zero(100, 2);
+  generated_trajectories.yaws = Eigen::ArrayXXf::Zero(100, 2);
 
   nav_msgs::msg::Path plan;
   plan.poses.resize(10);
@@ -260,7 +258,7 @@ TEST(UtilsTests, FurthestAndClosestReachedPoint)
   CriticData data3 =
   {state, generated_trajectories, path, costs, model_dt, false, nullptr, nullptr,
     std::nullopt, std::nullopt};  /// Caution, keep references
-  EXPECT_EQ(findPathFurthestReachedPoint(data3), 5u);
+  EXPECT_EQ(findPathFurthestReachedPoint(data3), 5);
 }
 
 TEST(UtilsTests, findPathCosts)
@@ -268,7 +266,7 @@ TEST(UtilsTests, findPathCosts)
   models::State state;
   models::Trajectories generated_trajectories;
   models::Path path;
-  xt::xtensor<float, 1> costs;
+  Eigen::ArrayXf costs;
   float model_dt = 0.1;
 
   CriticData data =
@@ -316,7 +314,7 @@ TEST(UtilsTests, findPathCosts)
   // This should be evaluated and have real outputs now
   setPathCostsIfNotSet(data3, costmap_ros);
   EXPECT_TRUE(data3.path_pts_valid.has_value());
-  for (unsigned int i = 0; i != path.x.shape(0) - 1; i++) {
+  for (unsigned int i = 0; i != path.x.size() - 1; i++) {
     if (i == 1 || i == 10) {
       EXPECT_FALSE((*data3.path_pts_valid)[i]);
     } else {
@@ -328,12 +326,12 @@ TEST(UtilsTests, findPathCosts)
 TEST(UtilsTests, SmootherTest)
 {
   models::ControlSequence noisey_sequence, sequence_init;
-  noisey_sequence.vx = 0.2 * xt::ones<float>({30});
-  noisey_sequence.vy = 0.0 * xt::ones<float>({30});
-  noisey_sequence.wz = 0.3 * xt::ones<float>({30});
+  noisey_sequence.vx = 0.2 * Eigen::ArrayXf::Ones(30);
+  noisey_sequence.vy = 0.0 * Eigen::ArrayXf::Ones(30);
+  noisey_sequence.wz = 0.3 * Eigen::ArrayXf::Ones(30);
 
   // Make the sequence noisy
-  auto noises = xt::random::randn<float>({30}, 0.0, 0.2);
+  auto noises = ((Eigen::ArrayXf::Random(30)).abs()) / 5.0f;
   noisey_sequence.vx += noises;
   noisey_sequence.vy += noises;
   noisey_sequence.wz += noises;
@@ -371,7 +369,7 @@ TEST(UtilsTests, SmootherTest)
 
   // Check that path is smoother
   float smoothed_val{0}, original_val{0};
-  for (unsigned int i = 1; i != noisey_sequence.vx.shape(0) - 1; i++) {
+  for (unsigned int i = 1; i != noisey_sequence.vx.size() - 1; i++) {
     smoothed_val += fabs(noisey_sequence.vx(i) - 0.2);
     smoothed_val += fabs(noisey_sequence.vy(i) - 0.0);
     smoothed_val += fabs(noisey_sequence.wz(i) - 0.3);
