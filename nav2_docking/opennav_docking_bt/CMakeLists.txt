@@ -2,56 +2,56 @@ cmake_minimum_required(VERSION 3.5)
 project(opennav_docking_bt)
 
 find_package(ament_cmake REQUIRED)
+find_package(behaviortree_cpp REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(nav2_behavior_tree REQUIRED)
+find_package(nav2_common REQUIRED)
+find_package(nav2_core REQUIRED)
+find_package(nav2_msgs REQUIRED)
+find_package(nav2_util REQUIRED)
+find_package(nav_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
-find_package(std_msgs REQUIRED)
-find_package(nav2_util REQUIRED)
-find_package(nav2_msgs REQUIRED)
-find_package(nav2_core REQUIRED)
-find_package(nav2_behavior_tree REQUIRED)
-find_package(nav_msgs REQUIRED)
-find_package(geometry_msgs REQUIRED)
-find_package(behaviortree_cpp REQUIRED)
 
-# potentially replace with nav2_common, nav2_package()
-set(CMAKE_CXX_STANDARD 17)
-add_compile_options(-Wall -Wextra -Wpedantic -Werror -Wdeprecated -fPIC -Wshadow -Wnull-dereference)
-
-include_directories(
-  include
-)
-
-set(dependencies
-  rclcpp
-  rclcpp_action
-  std_msgs
-  nav2_util
-  nav2_msgs
-  nav2_core
-  nav2_behavior_tree
-  nav_msgs
-  geometry_msgs
-  behaviortree_cpp
-)
+nav2_package()
 
 add_library(opennav_dock_action_bt_node SHARED src/dock_robot.cpp)
-list(APPEND plugin_libs opennav_dock_action_bt_node)
+target_include_directories(opennav_dock_action_bt_node
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+)
+target_compile_definitions(opennav_dock_action_bt_node PRIVATE BT_PLUGIN_EXPORT)
+target_link_libraries(opennav_dock_action_bt_node PUBLIC
+  behaviortree_cpp::behaviortree_cpp
+  ${geometry_msgs_TARGETS}
+  nav2_behavior_tree::nav2_behavior_tree
+  ${nav2_msgs_TARGETS}
+)
+
 add_library(opennav_undock_action_bt_node SHARED src/undock_robot.cpp)
-list(APPEND plugin_libs opennav_undock_action_bt_node)
+target_include_directories(opennav_undock_action_bt_node
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+)
+target_compile_definitions(opennav_undock_action_bt_node PRIVATE BT_PLUGIN_EXPORT)
+target_link_libraries(opennav_undock_action_bt_node PUBLIC
+  behaviortree_cpp::behaviortree_cpp
+  ${geometry_msgs_TARGETS}
+  nav2_behavior_tree::nav2_behavior_tree
+  ${nav2_msgs_TARGETS}
+)
 
-foreach(bt_plugin ${plugin_libs})
-  ament_target_dependencies(${bt_plugin} ${dependencies})
-  target_compile_definitions(${bt_plugin} PRIVATE BT_PLUGIN_EXPORT)
-endforeach()
-
-install(TARGETS ${plugin_libs}
+install(TARGETS opennav_dock_action_bt_node opennav_undock_action_bt_node
+  EXPORT ${PROJECT_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
 )
 
 install(DIRECTORY include/
-  DESTINATION include/
+  DESTINATION include/${PROJECT_NAME}
 )
 
 install(DIRECTORY behavior_trees DESTINATION share/${PROJECT_NAME})
@@ -63,7 +63,13 @@ if(BUILD_TESTING)
   add_subdirectory(test)
 endif()
 
-ament_export_include_directories(include)
-ament_export_libraries(${plugin_libs})
-ament_export_dependencies(${dependencies})
+ament_export_include_directories(include/${PROJECT_NAME})
+ament_export_libraries(opennav_dock_action_bt_node opennav_undock_action_bt_node)
+ament_export_dependencies(
+  behaviortree_cpp
+  geometry_msgs
+  nav2_behavior_tree
+  nav2_msgs
+)
+ament_export_targets(${PROJECT_NAME})
 ament_package()
