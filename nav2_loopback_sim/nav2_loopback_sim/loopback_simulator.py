@@ -19,6 +19,7 @@ from geometry_msgs.msg import PoseWithCovarianceStamped, Twist
 from geometry_msgs.msg import Quaternion, TransformStamped, Vector3
 from nav_msgs.msg import Odometry
 from nav_msgs.srv import GetMap
+from nav2_simple_commander.line_iterator import LineIterator
 import rclpy
 from rclpy.duration import Duration
 from rclpy.node import Node
@@ -27,18 +28,13 @@ from sensor_msgs.msg import LaserScan
 from tf2_ros import Buffer, TransformBroadcaster, TransformListener
 import tf_transformations
 
-# from nav2_simple_commander.line_iterator import LineIterator
-
 from .utils import (
     addYawToQuat,
     getMapOccupancy,
-    mapToWorld,
     matrixToTransform,
     transformStampedToMatrix,
     worldToMap,
 )
-
-LETHAL_OBSTACLE = 100
 
 """
 This is a loopback simulator that replaces a physics simulator to create a
@@ -76,10 +72,6 @@ class LoopbackSimulator(Node):
 
         self.declare_parameter('scan_frame_id', 'base_scan')
         self.scan_frame_id = self.get_parameter('scan_frame_id').get_parameter_value().string_value
-
-        self.declare_parameter('publish_map_odom_tf', True)
-        self.publish_map_odom_tf = self.get_parameter(
-            'publish_map_odom_tf').get_parameter_value().bool_value
 
         self.declare_parameter('scan_publish_dur', 0.1)
         self.scan_publish_dur = self.get_parameter(
@@ -133,7 +125,6 @@ class LoopbackSimulator(Node):
         # Publish initial identity odom transform & laser scan to warm up system
         self.tf_broadcaster.sendTransform(self.t_odom_to_base_link)
         if self.mat_base_to_laser is None:
-            self.mat_odom_to_base = transformStampedToMatrix(self.t_odom_to_base_link)
             self.getBaseToLaserTf()
 
     def cmdVelCallback(self, msg):
@@ -156,7 +147,6 @@ class LoopbackSimulator(Node):
             self.t_odom_to_base_link.transform.translation = Vector3()
             self.t_odom_to_base_link.transform.rotation = Quaternion()
             self.publishTransforms(self.t_map_to_odom, self.t_odom_to_base_link)
-            self.mat_map_to_odom = transformStampedToMatrix(self.t_map_to_odom)
 
             # Start republication timer and velocity processing
             if self.setupTimer is not None:
@@ -208,8 +198,6 @@ class LoopbackSimulator(Node):
 
         self.publishTransforms(self.t_map_to_odom, self.t_odom_to_base_link)
         self.publishOdometry(self.t_odom_to_base_link)
-        self.mat_map_to_odom = transformStampedToMatrix(self.t_map_to_odom)
-        self.mat_odom_to_base = transformStampedToMatrix(self.t_odom_to_base_link)
 
     def publishLaserScan(self):
         # Publish a bogus laser scan for collision monitor
@@ -235,8 +223,7 @@ class LoopbackSimulator(Node):
         map_to_odom.header.stamp = \
             (self.get_clock().now() + Duration(seconds=self.update_dur)).to_msg()
         odom_to_base_link.header.stamp = self.get_clock().now().to_msg()
-        if self.publish_map_odom_tf:
-            self.tf_broadcaster.sendTransform(map_to_odom)
+        self.tf_broadcaster.sendTransform(map_to_odom)
         self.tf_broadcaster.sendTransform(odom_to_base_link)
 
     def publishOdometry(self, odom_to_base_link):
@@ -279,9 +266,12 @@ class LoopbackSimulator(Node):
             )
 
     def getLaserPose(self):
+        mat_map_to_odom = transformStampedToMatrix(self.t_map_to_odom)
+        mat_odom_to_base = transformStampedToMatrix(self.t_odom_to_base_link)
+
         mat_map_to_laser = tf_transformations.concatenate_matrices(
-            self.mat_map_to_odom,
-            self.mat_odom_to_base,
+            mat_map_to_odom,
+            mat_odom_to_base,
             self.mat_base_to_laser
         )
         transform = matrixToTransform(mat_map_to_laser)
@@ -302,119 +292,41 @@ class LoopbackSimulator(Node):
             self.scan_msg.ranges = [self.scan_msg.range_max - 0.1] * num_samples
             return
 
-        x, y, theta = self.getLaserPose()
+        x0, y0, theta = self.getLaserPose()
 
-        mx, my = worldToMap(x, y, self.map)
+        mx0, my0 = worldToMap(x0, y0, self.map)
 
-        if not mx and not my:
+        if not 0 < mx0 < self.map.info.width or not 0 < my0 < self.map.info.height:
+            # outside map
             self.scan_msg.ranges = [self.scan_msg.range_max - 0.1] * num_samples
             return
 
-        for i in range(int(num_samples)):
+        for i in range(num_samples):
             curr_angle = theta + self.scan_msg.angle_min + i * self.scan_msg.angle_increment
-            self.scan_msg.ranges[i] = self.findMapRange(mx, my, x, y, curr_angle)
+            x1 = x0 + self.scan_msg.range_max * math.cos(curr_angle)
+            y1 = y0 + self.scan_msg.range_max * math.sin(curr_angle)
 
-    # def getLaserScan(self, num_samples):
-    #     if self.map is None or self.initial_pose is None or self.mat_base_to_laser is None:
-    #         self.scan_msg.ranges = [self.scan_msg.range_max - 0.1] * num_samples
-    #         return
+            mx1, my1 = worldToMap(x1, y1, self.map)
 
-    #     x0, y0 ,theta = self.getLaserPose()
+            line_iterator = LineIterator(mx0, my0, mx1, my1, 0.5)
 
-    #     max_distance = math.sqrt(
-    #         (self.map.info.width * self.map.info.resolution) ** 2 +
-    #         (self.map.info.height * self.map.info.resolution) ** 2)
-        # max_distance = min(max_distance, self.scan_msg.range_max)
-    #     for i in range(num_samples):
-    #         curr_angle = theta + self.scan_msg.angle_min + i * self.scan_msg.angle_increment
-    #         x1 = float(x0) + max_distance * math.cos(curr_angle)
-    #         y1 = float(y0) + max_distance * math.sin(curr_angle)
+            while line_iterator.isValid():
+                mx, my = int(line_iterator.getX()), int(line_iterator.getY())
 
-    #         line_iterator = LineIterator(float(x0), float(y0), x1, y1, self.map.info.resolution)
+                if not 0 < mx < self.map.info.width or not 0 < my < self.map.info.height:
+                    # if outside map then check next ray
+                    break
 
-    #         while line_iterator.isValid():
-    #             mx, my = worldToMap(line_iterator.getX(), line_iterator.getY(), self.map)
+                point_cost = getMapOccupancy(mx, my, self.map)
 
-    #             if not mx and not my:
-    #                 break
+                if point_cost >= 60:
+                    self.scan_msg.ranges[i] = math.sqrt(
+                        (int(line_iterator.getX()) - mx0) ** 2 +
+                        (int(line_iterator.getY()) - my0) ** 2
+                    ) * self.map.info.resolution
+                    break
 
-    #             point_cost = getMapOccupancy(mx, my, self.map)
-
-    #             if point_cost >= 60:
-    #                 self.scan_msg.ranges[i] = math.sqrt(
-    #                     (line_iterator.getX() - x0) ** 2 + (line_iterator.getY() - y0) ** 2)
-    #                 break
-
-    #             line_iterator.advance()
-
-    def findMapRange(self, mx, my, x, y, theta):
-        # Using "A Faster Voxel Traversal Algorithm for Ray Tracing" by Amanatides & Woo
-        # ======== Initialization Phase ========
-        origin = [x, y]  # u
-        direction = [math.cos(theta), math.sin(theta)]  # v
-
-        current = [mx, my]  # X, Y
-        step = [0, 0]  # stepX, stepY
-        tMax = [0.0, 0.0]  # tMaxX, tMaxY
-        tDelta = [0.0, 0.0]  # tDeltaX, tDeltaY
-
-        voxel_border = [0.0, 0.0]
-        voxel_border[0], voxel_border[1] = mapToWorld(
-            current[0], current[1], self.map)
-
-        for i in range(2):  # For each dimension (x, y)
-            # Determine step direction
-            if direction[i] > 0.0:
-                step[i] = 1
-            elif direction[i] < 0.0:
-                step[i] = -1
-            else:
-                step[i] = 0
-
-            # Determine tMax, tDelta
-            if step[i] != 0:
-                if step[i] == 1:
-                    voxel_border[i] += step[i] * self.map.info.resolution
-
-                # tMax - voxel boundary crossing
-                tMax[i] = (voxel_border[i] - origin[i]) / direction[i]
-                # tDelta - distance along ray
-                # so that vertical/horizontal component equals one voxel
-                tDelta[i] = self.map.info.resolution / abs(direction[i])
-            else:
-                tMax[i] = float('inf')
-                tDelta[i] = float('inf')
-
-        # ======== Incremental Traversal ========
-        while True:
-            # Advance
-            dim = 0 if tMax[0] < tMax[1] else 1
-
-            # Advance one voxel
-            current[dim] += step[dim]
-            tMax[dim] += tDelta[dim]
-
-            # Check map inbounds
-            if (current[0] < 0 or current[0] >= self.map.info.width or
-                    current[1] < 0 or current[1] >= self.map.info.height):
-                return self.scan_msg.range_max - 0.1
-
-            # Determine current range
-            current_range = math.sqrt(
-                (current[0] - mx) ** 2 + (current[1] - my) ** 2
-                ) * self.map.info.resolution
-
-            # Are we at max range?
-            if current_range > self.scan_msg.range_max:
-                return self.scan_msg.range_max - 0.1
-            else:
-                occ = getMapOccupancy(current[0], current[1], self.map)
-                if occ >= 60:  # Current cell is occupied
-                    # Is range less than min range
-                    if current_range < self.scan_msg.range_min:
-                        return 0.0
-
-                    return current_range
+                line_iterator.advance()
 
 
 def main():
