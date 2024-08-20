@@ -153,7 +153,7 @@ public:
       float & wz_curr = *(wz_ptr + i);
       wz_curr = std::clamp(wz_curr, -1 * wz_constrained, wz_constrained);
     }
-    // Taking more time compared to for loop on raw ointer
+    // Taking more time compared to for loop on raw pointer
     //wz = ((vx.abs() / wz.abs() < min_turning_r_).select(wz, wz.sign() * vx / min_turning_r_)).eval();
 
   }
