@@ -17,9 +17,9 @@ import math
 
 from geometry_msgs.msg import PoseWithCovarianceStamped, Twist
 from geometry_msgs.msg import Quaternion, TransformStamped, Vector3
+from nav2_simple_commander.line_iterator import LineIterator
 from nav_msgs.msg import Odometry
 from nav_msgs.srv import GetMap
-from nav2_simple_commander.line_iterator import LineIterator
 import rclpy
 from rclpy.duration import Duration
 from rclpy.node import Node
