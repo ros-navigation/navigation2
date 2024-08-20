@@ -166,7 +166,7 @@ class LoopbackSimulator(Node):
         # Adjust map->odom transform based on new initial pose, keeping odom->base_link the same
         t_map_to_base_link = TransformStamped()
         t_map_to_base_link.header = msg.header
-        t_map_to_base_link.child_frame_id = 'base_link'
+        t_map_to_base_link.child_frame_id = self.base_frame_id
         t_map_to_base_link.transform.translation.x = self.initial_pose.position.x
         t_map_to_base_link.transform.translation.y = self.initial_pose.position.y
         t_map_to_base_link.transform.translation.z = 0.0
