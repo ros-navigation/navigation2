@@ -21,7 +21,6 @@
 #include <string>
 
 #include "nlohmann/json.hpp"
-#include "Eigen/Core"
 #include "geometry_msgs/msg/quaternion.hpp"
 #include "geometry_msgs/msg/pose.hpp"
 #include "tf2/utils.h"
