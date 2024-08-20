@@ -215,7 +215,7 @@ class LoopbackSimulator(Node):
         self.scan_msg.time_increment = 0.0
         self.scan_msg.scan_time = 0.1
         self.scan_msg.range_min = 0.05
-        self.scan_msg.range_max = 100.0
+        self.scan_msg.range_max = 30.0
         num_samples = int(
             (self.scan_msg.angle_max - self.scan_msg.angle_min) /
             self.scan_msg.angle_increment)
