@@ -77,6 +77,10 @@ class LoopbackSimulator(Node):
         self.scan_publish_dur = self.get_parameter(
             'scan_publish_dur').get_parameter_value().double_value
 
+        self.declare_parameter('publish_map_odom_tf', True)
+        self.publish_map_odom_tf = self.get_parameter(
+            'publish_map_odom_tf').get_parameter_value().bool_value
+
         self.t_map_to_odom = TransformStamped()
         self.t_map_to_odom.header.frame_id = self.map_frame_id
         self.t_map_to_odom.child_frame_id = self.odom_frame_id
@@ -202,7 +206,7 @@ class LoopbackSimulator(Node):
     def publishLaserScan(self):
         # Publish a bogus laser scan for collision monitor
         self.scan_msg = LaserScan()
-        self.scan_msg.header.stamp = (self.get_clock().now()).to_msg()
+        # self.scan_msg.header.stamp = (self.get_clock().now()).to_msg()
         self.scan_msg.header.frame_id = self.scan_frame_id
         self.scan_msg.angle_min = -math.pi
         self.scan_msg.angle_max = math.pi
@@ -223,7 +227,8 @@ class LoopbackSimulator(Node):
         map_to_odom.header.stamp = \
             (self.get_clock().now() + Duration(seconds=self.update_dur)).to_msg()
         odom_to_base_link.header.stamp = self.get_clock().now().to_msg()
-        self.tf_broadcaster.sendTransform(map_to_odom)
+        if self.publish_map_odom_tf:
+            self.tf_broadcaster.sendTransform(map_to_odom)
         self.tf_broadcaster.sendTransform(odom_to_base_link)
 
     def publishOdometry(self, odom_to_base_link):
