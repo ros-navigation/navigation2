@@ -16,7 +16,6 @@
 #define OPENNAV_DOCKING__POSE_FILTER_HPP_
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 namespace opennav_docking
 {
