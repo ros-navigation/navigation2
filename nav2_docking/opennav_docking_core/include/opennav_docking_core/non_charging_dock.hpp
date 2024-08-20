@@ -101,7 +101,7 @@ public:
   bool isCharging() final
   {
     throw std::runtime_error("This dock is not a charging dock!");
-  };
+  }
 
   /**
    * @brief Undocking while current is still flowing can damage a charge dock
@@ -112,23 +112,23 @@ public:
    * NOTE: this function is expected to return QUICKLY. Blocking here will block
    * the docking controller loop.
    */
-  virtual bool disableCharging() final
+  bool disableCharging() final
   {
     throw std::runtime_error("This dock is not a charging dock!");
-  };
+  }
 
   /**
    * @brief Similar to isCharging() but called when undocking.
    */
-  virtual bool hasStoppedCharging() final
+  bool hasStoppedCharging() final
   {
     throw std::runtime_error("This dock is not a charging dock!");
-  };
+  }
 
   /**
    * @brief Gets if this is a charging-typed dock
    */
-  virtual bool isCharger() final {return false;}
+  bool isCharger() final {return false;}
 };
 
 }  // namespace opennav_docking_core

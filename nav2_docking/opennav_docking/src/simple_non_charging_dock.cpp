@@ -148,7 +148,7 @@ geometry_msgs::msg::PoseStamped SimpleNonChargingDock::getStagingPose(
   return staging_pose;
 }
 
-bool SimpleNonChargingDock::getRefinedPose(geometry_msgs::msg::PoseStamped & pose, std::string /*id*/)
+bool SimpleNonChargingDock::getRefinedPose(geometry_msgs::msg::PoseStamped & pose, std::string)
 {
   // If using not detection, set the dock pose to the static fixed-frame version
   if (!use_external_detection_pose_) {
