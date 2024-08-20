@@ -206,7 +206,7 @@ class LoopbackSimulator(Node):
     def publishLaserScan(self):
         # Publish a bogus laser scan for collision monitor
         self.scan_msg = LaserScan()
-        # self.scan_msg.header.stamp = (self.get_clock().now()).to_msg()
+        self.scan_msg.header.stamp = (self.get_clock().now()).to_msg()
         self.scan_msg.header.frame_id = self.scan_frame_id
         self.scan_msg.angle_min = -math.pi
         self.scan_msg.angle_max = math.pi
