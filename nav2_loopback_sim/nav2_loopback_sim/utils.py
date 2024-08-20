@@ -13,6 +13,8 @@
 # limitations under the License.
 
 
+import math
+
 from geometry_msgs.msg import Quaternion, Transform
 import numpy as np
 import tf_transformations
@@ -63,3 +65,13 @@ def matrixToTransform(matrix):
     transform.rotation.z = quaternion[2]
     transform.rotation.w = quaternion[3]
     return transform
+
+
+def worldToMap(world_x, world_y, map_msg):
+    map_x = int(math.floor((world_x - map_msg.info.origin.position.x) / map_msg.info.resolution))
+    map_y = int(math.floor((world_y - map_msg.info.origin.position.y) / map_msg.info.resolution))
+    return map_x, map_y
+
+
+def getMapOccupancy(x, y, map_msg):
+    return map_msg.data[y * map_msg.info.width + x]
