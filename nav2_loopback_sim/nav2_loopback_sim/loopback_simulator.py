@@ -15,7 +15,7 @@
 
 import math
 
-from geometry_msgs.msg import PoseWithCovarianceStamped, Twist
+from geometry_msgs.msg import PoseWithCovarianceStamped, Twist, TwistStamped
 from geometry_msgs.msg import Quaternion, TransformStamped, Vector3
 from nav2_simple_commander.line_iterator import LineIterator
 from nav_msgs.msg import Odometry
@@ -73,6 +73,9 @@ class LoopbackSimulator(Node):
         self.declare_parameter('scan_frame_id', 'base_scan')
         self.scan_frame_id = self.get_parameter('scan_frame_id').get_parameter_value().string_value
 
+        self.declare_parameter('enable_stamped_cmd_vel', False)
+        use_stamped = self.get_parameter('enable_stamped_cmd_vel').get_parameter_value().bool_value
+
         self.declare_parameter('scan_publish_dur', 0.1)
         self.scan_publish_dur = self.get_parameter(
             'scan_publish_dur').get_parameter_value().double_value
@@ -93,9 +96,14 @@ class LoopbackSimulator(Node):
         self.initial_pose_sub = self.create_subscription(
             PoseWithCovarianceStamped,
             'initialpose', self.initialPoseCallback, 10)
-        self.cmd_vel_sub = self.create_subscription(
-            Twist,
-            'cmd_vel', self.cmdVelCallback, 10)
+        if not use_stamped:
+            self.cmd_vel_sub = self.create_subscription(
+                Twist,
+                'cmd_vel', self.cmdVelCallback, 10)
+        else:
+            self.cmd_vel_sub = self.create_subscription(
+                TwistStamped,
+                'cmd_vel', self.cmdVelStampedCallback, 10)
         self.odom_pub = self.create_publisher(Odometry, 'odom', 10)
 
         sensor_qos = QoSProfile(
@@ -138,6 +146,14 @@ class LoopbackSimulator(Node):
             return
         self.curr_cmd_vel = msg
         self.curr_cmd_vel_time = self.get_clock().now()
+
+    def cmdVelStampedCallback(self, msg):
+        self.debug('Received cmd_vel')
+        if self.initial_pose is None:
+            # Don't consider velocities before the initial pose is set
+            return
+        self.curr_cmd_vel = msg.twist
+        self.curr_cmd_vel_time = rclpy.time.Time.from_msg(msg.header.stamp)
 
     def initialPoseCallback(self, msg):
         self.info('Received initial pose!')
