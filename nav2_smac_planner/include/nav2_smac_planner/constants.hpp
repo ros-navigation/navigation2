@@ -59,11 +59,11 @@ inline MotionModel fromString(const std::string & n)
   }
 }
 
-const float UNKNOWN = 255.0;
-const float OCCUPIED = 254.0;
-const float INSCRIBED = 253.0;
-const float MAX_NON_OBSTACLE = 252.0;
-const float FREE = 0;
+const float UNKNOWN_COST = 255.0;
+const float OCCUPIED_COST = 254.0;
+const float INSCRIBED_COST = 253.0;
+const float MAX_NON_OBSTACLE_COST = 252.0;
+const float FREE_COST = 0;
 
 }  // namespace nav2_smac_planner
 

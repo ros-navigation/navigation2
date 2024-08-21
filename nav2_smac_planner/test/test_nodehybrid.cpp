@@ -362,10 +362,8 @@ TEST(NodeHybridTest, test_node_reeds_neighbors)
     std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, 72, lnode);
   checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
   nav2_smac_planner::NodeHybrid * node = new nav2_smac_planner::NodeHybrid(49);
-  std::function<bool(const uint64_t &,
-    nav2_smac_planner::NodeHybrid * &)> neighborGetter =
-    [&, this](const uint64_t & index,
-    nav2_smac_planner::NodeHybrid * & neighbor_rtn) -> bool
+  std::function<bool(const uint64_t &, nav2_smac_planner::NodeHybrid * &)> neighborGetter =
+    [](const uint64_t &, nav2_smac_planner::NodeHybrid * &) -> bool
     {
       // because we don't return a real object
       return false;

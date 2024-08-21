@@ -37,9 +37,9 @@ public:
    * @brief A constructor for nav2_smac_planner::NodeBasic
    * @param index The index of this node for self-reference
    */
-  explicit NodeBasic(const uint64_t index)
-  : index(index),
-    graph_node_ptr(nullptr)
+  explicit NodeBasic(const uint64_t new_index)
+  : graph_node_ptr(nullptr),
+    index(new_index)
   {
   }
 

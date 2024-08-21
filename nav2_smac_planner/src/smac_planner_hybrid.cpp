@@ -288,7 +288,6 @@ void SmacPlannerHybrid::activate()
 
   // Special case handling to obtain resolution changes in global costmap
   auto resolution_remote_cb = [this](const rclcpp::Parameter & p) {
-      auto node = _node.lock();
       dynamicParametersCallback(
         {rclcpp::Parameter("resolution", rclcpp::ParameterValue(p.as_double()))});
     };
