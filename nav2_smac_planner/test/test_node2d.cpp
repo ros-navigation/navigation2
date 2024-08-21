@@ -142,14 +142,9 @@ TEST(Node2DTest, test_node_2d_neighbors)
   unsigned char cost = static_cast<unsigned int>(1);
   nav2_smac_planner::Node2D * node = new nav2_smac_planner::Node2D(1);
   node->setCost(cost);
-  std::function<bool(const uint64_t &,
-    nav2_smac_planner::Node2D * &)> neighborGetter =
-    [&, this](const uint64_t & index,
-    nav2_smac_planner::Node2D * & neighbor_rtn) -> bool
+  std::function<bool(const uint64_t &, nav2_smac_planner::Node2D * &)> neighborGetter =
+    [](const uint64_t &, nav2_smac_planner::Node2D * &) -> bool
     {
-      (void)index;
-      (void)neighbor_rtn;
-
       return false;
     };
 

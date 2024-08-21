@@ -337,44 +337,29 @@ void AnalyticExpansion<NodeT>::cleanNode(const NodePtr & /*expanded_nodes*/)
 template<>
 typename AnalyticExpansion<Node2D>::AnalyticExpansionNodes AnalyticExpansion<Node2D>::
 getAnalyticPath(
-  const NodePtr & node,
-  const NodePtr & goal,
-  const NodeGetter & node_getter,
-  const ompl::base::StateSpacePtr & state_space)
+  const NodePtr &,
+  const NodePtr &,
+  const NodeGetter &,
+  const ompl::base::StateSpacePtr &)
 {
-  (void)node;
-  (void)goal;
-  (void)node_getter;
-  (void)state_space;
-
   return AnalyticExpansionNodes();
 }
 
 template<>
 typename AnalyticExpansion<Node2D>::NodePtr AnalyticExpansion<Node2D>::setAnalyticPath(
-  const NodePtr & node,
-  const NodePtr & goal_node,
-  const AnalyticExpansionNodes & expanded_nodes)
+  const NodePtr &,
+  const NodePtr &,
+  const AnalyticExpansionNodes &)
 {
-  (void)node;
-  (void)goal_node;
-  (void)expanded_nodes;
-
   return NodePtr(nullptr);
 }
 
 template<>
 typename AnalyticExpansion<Node2D>::NodePtr AnalyticExpansion<Node2D>::tryAnalyticExpansion(
-  const NodePtr & current_node, const NodePtr & goal_node,
-  const NodeGetter & getter, int & analytic_iterations,
-  int & closest_distance)
+  const NodePtr &, const NodePtr &,
+  const NodeGetter &, int &,
+  int &)
 {
-  (void)current_node;
-  (void)goal_node;
-  (void)getter;
-  (void)analytic_iterations;
-  (void)closest_distance;
-
   return NodePtr(nullptr);
 }
 

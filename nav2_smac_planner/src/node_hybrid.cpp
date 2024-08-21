@@ -564,11 +564,9 @@ float NodeHybrid::adjustedFootprintCost(const float & cost)
 
 float NodeHybrid::getObstacleHeuristic(
   const Coordinates & node_coords,
-  const Coordinates & goal_coords,
+  const Coordinates &,
   const float & cost_penalty)
 {
-  (void)goal_coords;
-
   // If already expanded, return the cost
   auto costmap = costmap_ros->getCostmap();
   const bool is_circular = costmap_ros->getUseRadius();
