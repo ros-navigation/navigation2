@@ -22,6 +22,8 @@ find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(visualization_msgs REQUIRED)
 
+nav2_package()
+
 if(MSVC)
   add_compile_definitions(_USE_MATH_DEFINES)
 else()

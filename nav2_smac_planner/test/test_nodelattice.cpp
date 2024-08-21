@@ -308,6 +308,9 @@ TEST(NodeLatticeTest, test_get_neighbors)
     [&, this](const uint64_t & index,
     nav2_smac_planner::NodeLattice * & neighbor_rtn) -> bool
     {
+      (void)index;
+      (void)neighbor_rtn;
+
       // because we don't return a real object
       return false;
     };

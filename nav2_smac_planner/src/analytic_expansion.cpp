@@ -342,6 +342,11 @@ getAnalyticPath(
   const NodeGetter & node_getter,
   const ompl::base::StateSpacePtr & state_space)
 {
+  (void)node;
+  (void)goal;
+  (void)node_getter;
+  (void)state_space;
+
   return AnalyticExpansionNodes();
 }
 
@@ -351,6 +356,10 @@ typename AnalyticExpansion<Node2D>::NodePtr AnalyticExpansion<Node2D>::setAnalyt
   const NodePtr & goal_node,
   const AnalyticExpansionNodes & expanded_nodes)
 {
+  (void)node;
+  (void)goal_node;
+  (void)expanded_nodes;
+
   return NodePtr(nullptr);
 }
 
@@ -360,6 +369,12 @@ typename AnalyticExpansion<Node2D>::NodePtr AnalyticExpansion<Node2D>::tryAnalyt
   const NodeGetter & getter, int & analytic_iterations,
   int & closest_distance)
 {
+  (void)current_node;
+  (void)goal_node;
+  (void)getter;
+  (void)analytic_iterations;
+  (void)closest_distance;
+
   return NodePtr(nullptr);
 }
 

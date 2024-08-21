@@ -367,6 +367,9 @@ TEST(NodeHybridTest, test_node_reeds_neighbors)
     [&, this](const uint64_t & index,
     nav2_smac_planner::NodeHybrid * & neighbor_rtn) -> bool
     {
+      (void)index;
+      (void)neighbor_rtn;
+
       // because we don't return a real object
       return false;
     };

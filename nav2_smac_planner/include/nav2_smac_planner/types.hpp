@@ -110,7 +110,7 @@ struct SmootherParams
  * @struct nav2_smac_planner::TurnDirection
  * @brief A struct with the motion primitive's direction embedded
  */
-enum struct TurnDirection
+enum class TurnDirection
 {
   UNKNOWN = 0,
   FORWARD = 1,

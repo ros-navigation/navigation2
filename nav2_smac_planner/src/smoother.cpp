@@ -170,7 +170,7 @@ bool Smoother::smoothImpl(
         cost = static_cast<float>(costmap->getCost(mx, my));
       }
 
-      if (cost > MAX_NON_OBSTACLE && cost != UNKNOWN) {
+      if (cost > MAX_NON_OBSTACLE_COST && cost != UNKNOWN_COST) {
         RCLCPP_DEBUG(
           rclcpp::get_logger("SmacPlannerSmoother"),
           "Smoothing process resulted in an infeasible collision. "
@@ -374,7 +374,7 @@ void Smoother::findBoundaryExpansion(
     // Check for collision
     unsigned int mx, my;
     costmap->worldToMap(x, y, mx, my);
-    if (static_cast<float>(costmap->getCost(mx, my)) >= INSCRIBED) {
+    if (static_cast<float>(costmap->getCost(mx, my)) >= INSCRIBED_COST) {
       expansion.in_collision = true;
     }
 

@@ -147,6 +147,9 @@ TEST(Node2DTest, test_node_2d_neighbors)
     [&, this](const uint64_t & index,
     nav2_smac_planner::Node2D * & neighbor_rtn) -> bool
     {
+      (void)index;
+      (void)neighbor_rtn;
+
       return false;
     };
 
