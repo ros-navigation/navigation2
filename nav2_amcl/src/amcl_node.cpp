@@ -28,7 +28,7 @@
 #include <utility>
 #include <vector>
 
-#include "message_filters/subscriber.h"
+#include "message_filters/subscriber.hpp"
 #include "nav2_amcl/angleutils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_amcl/pf/pf.hpp"
