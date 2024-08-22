@@ -108,6 +108,12 @@ protected:
     */
   void visualize(nav_msgs::msg::Path transformed_plan);
 
+   /**
+    * @brief Publish the optimal trajectory in the form of a path message
+    * @param trajectory Optimal trajectory
+    */
+  void publish_optimal_path(const xt::xtensor<float, 2> & optimal_traj);
+
   std::string name_;
   rclcpp_lifecycle::LifecycleNode::WeakPtr parent_;
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
@@ -118,6 +124,8 @@ protected:
   Optimizer optimizer_;
   PathHandler path_handler_;
   TrajectoryVisualizer trajectory_visualizer_;
+
+  rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr optimal_path_pub_;
 
   bool visualize_;
 };
