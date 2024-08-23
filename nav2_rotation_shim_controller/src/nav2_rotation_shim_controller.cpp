@@ -156,7 +156,7 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
           sampled_pt_goal, sampled_pt_goal, *tf_,
           pose.header.frame_id))
       {
-        throw nav2_core::ControllerTFError("Failed to transform pose to base frame!");
+        throw nav2_core::runtime_error("Failed to transform pose to base frame!");
       }
 
       if (utils::withinPositionGoalTolerance(
@@ -245,7 +245,7 @@ geometry_msgs::msg::PoseStamped RotationShimController::getSampledPathPt()
 geometry_msgs::msg::PoseStamped RotationShimController::getSampledPathGoal()
 {
   if (current_path_.poses.empty()) {
-    throw nav2_core::InvalidPath("Path is empty - cannot find a goal point");
+    throw nav2_core::runtime_error("Path is empty - cannot find a goal point");
   }
 
   auto goal = current_path_.poses.back();
