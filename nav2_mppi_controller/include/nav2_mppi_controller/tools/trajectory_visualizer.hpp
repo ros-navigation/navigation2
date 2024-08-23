@@ -97,7 +97,7 @@ public:
     * @brief Visualize the plan
     * @param plan Plan to visualize
     */
-  void visualize(const nav_msgs::msg::Path & plan,const builtin_interfaces::msg::Time & cmd_stamp);
+  void visualize(const nav_msgs::msg::Path & plan, const builtin_interfaces::msg::Time & cmd_stamp);
 
   /**
     * @brief Reset object

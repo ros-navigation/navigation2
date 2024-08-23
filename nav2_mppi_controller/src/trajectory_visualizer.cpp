@@ -120,7 +120,9 @@ void TrajectoryVisualizer::reset()
   optimal_traj_ = std::make_unique<xt::xtensor<float, 2>>();
 }
 
-void TrajectoryVisualizer::visualize(const nav_msgs::msg::Path & plan, const builtin_interfaces::msg::Time & cmd_stamp)
+void TrajectoryVisualizer::visualize(
+  const nav_msgs::msg::Path & plan,
+  const builtin_interfaces::msg::Time & cmd_stamp)
 {
   if (trajectories_publisher_->get_subscription_count() > 0) {
     trajectories_publisher_->publish(std::move(points_));

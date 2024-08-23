@@ -59,7 +59,8 @@ TEST(TrajectoryVisualizerTests, VisPathRepub)
   TrajectoryVisualizer vis;
   vis.on_configure(node, "my_name", "map", parameters_handler.get());
   vis.on_activate();
-  vis.visualize(pub_path);
+  builtin_interfaces::msg::Time bogus_stamp;
+  vis.visualize(pub_path, bogus_stamp);
 
   rclcpp::spin_some(node->get_node_base_interface());
   EXPECT_EQ(recieved_path.poses.size(), 5u);
@@ -83,7 +84,8 @@ TEST(TrajectoryVisualizerTests, VisOptimalTrajectory)
   vis.on_activate();
   vis.add(optimal_trajectory, "Optimal Trajectory");
   nav_msgs::msg::Path bogus_path;
-  vis.visualize(bogus_path);
+  builtin_interfaces::msg::Time bogus_stamp;
+  vis.visualize(bogus_path, bogus_stamp);
 
   rclcpp::spin_some(node->get_node_base_interface());
   EXPECT_EQ(recieved_msg.markers.size(), 0u);
@@ -91,7 +93,7 @@ TEST(TrajectoryVisualizerTests, VisOptimalTrajectory)
   // Now populated with content, should publish
   optimal_trajectory = xt::ones<float>({20, 2});
   vis.add(optimal_trajectory, "Optimal Trajectory");
-  vis.visualize(bogus_path);
+  vis.visualize(bogus_path, bogus_stamp);
 
   rclcpp::spin_some(node->get_node_base_interface());
 
@@ -147,9 +149,72 @@ TEST(TrajectoryVisualizerTests, VisCandidateTrajectories)
   vis.on_activate();
   vis.add(candidate_trajectories, "Candidate Trajectories");
   nav_msgs::msg::Path bogus_path;
-  vis.visualize(bogus_path);
+  builtin_interfaces::msg::Time bogus_stamp;
+  vis.visualize(bogus_path, bogus_stamp);
 
   rclcpp::spin_some(node->get_node_base_interface());
   // 40 * 4, for 5 trajectory steps + 3 point steps
   EXPECT_EQ(recieved_msg.markers.size(), 160u);
+}
+
+TEST(TrajectoryVisualizerTests, VisOptimalPath)
+{
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  auto parameters_handler = std::make_unique<ParametersHandler>(node);
+  builtin_interfaces::msg::Time cmd_stamp;
+  cmd_stamp.sec = 5;
+  cmd_stamp.nanosec = 10;
+
+  nav_msgs::msg::Path recieved_path;
+  auto my_sub = node->create_subscription<nav_msgs::msg::Path>(
+    "/local_plan", 10,
+    [&](const nav_msgs::msg::Path msg) {recieved_path = msg;});
+
+  // optimal_trajectory empty, should fail to publish
+  xt::xtensor<float, 2> optimal_trajectory;
+  TrajectoryVisualizer vis;
+  vis.on_configure(node, "my_name", "fkmap", parameters_handler.get());
+  vis.on_activate();
+  vis.add(optimal_trajectory, "Optimal Trajectory");
+  nav_msgs::msg::Path bogus_path;
+  vis.visualize(bogus_path, cmd_stamp);
+
+  rclcpp::spin_some(node->get_node_base_interface());
+  EXPECT_EQ(recieved_path.poses.size(), 0u);
+
+  // Now populated with content, should publish
+  optimal_trajectory.resize({20, 2});
+  for (unsigned int i = 0; i != optimal_trajectory.shape()[0] - 1; i++) {
+    optimal_trajectory(i, 0) = static_cast<float>(i);
+    optimal_trajectory(i, 1) = static_cast<float>(i);
+  }
+  vis.add(optimal_trajectory, "Optimal Trajectory");
+  vis.visualize(bogus_path, cmd_stamp);
+
+  rclcpp::spin_some(node->get_node_base_interface());
+
+  // Should have a 20 points path in the map frame and with same stamp than velocity command
+  EXPECT_EQ(recieved_path.poses.size(), 20u);
+  EXPECT_EQ(recieved_path.header.frame_id, "fkmap");
+  EXPECT_EQ(recieved_path.header.stamp.sec, cmd_stamp.sec);
+  EXPECT_EQ(recieved_path.header.stamp.nanosec, cmd_stamp.nanosec);
+
+  tf2::Quaternion quat;
+  for (unsigned int i = 0; i != recieved_path.poses.size() - 1; i++) {
+    // Poses should be in map frame too
+    EXPECT_EQ(recieved_path.poses[i].header.frame_id, "fkmap");
+
+    // Check positions are correct
+    EXPECT_EQ(recieved_path.poses[i].pose.position.x, static_cast<float>(i));
+    EXPECT_EQ(recieved_path.poses[i].pose.position.y, static_cast<float>(i));
+    EXPECT_EQ(recieved_path.poses[i].pose.position.z, 0.0);
+
+    // Check orientations are correct
+    quat.setRPY(0., 0., optimal_trajectory(i, 2));
+    auto expected_orientation = tf2::toMsg(quat);
+    EXPECT_EQ(recieved_path.poses[i].pose.orientation.x, expected_orientation.x);
+    EXPECT_EQ(recieved_path.poses[i].pose.orientation.y, expected_orientation.y);
+    EXPECT_EQ(recieved_path.poses[i].pose.orientation.z, expected_orientation.z);
+    EXPECT_EQ(recieved_path.poses[i].pose.orientation.w, expected_orientation.w);
+  }
 }
