@@ -18,6 +18,7 @@
 
 #include <chrono>
 #include <memory>
+#include <string>
 #include <utility>
 
 #include "nav2_behaviors/timed_behavior.hpp"
