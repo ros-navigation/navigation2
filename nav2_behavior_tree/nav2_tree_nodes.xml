@@ -15,6 +15,7 @@
       <input_port name="server_timeout">Server timeout</input_port>
       <input_port name="disable_collision_checks">Disable collision checking</input_port>
       <output_port name="error_code_id">"Back up error code"</output_port>
+      <output_port name="error_msg">"Back up error message"</output_port>
     </Action>
 
     <Action ID="DriveOnHeading">
@@ -25,6 +26,7 @@
       <input_port name="server_timeout">Server timeout</input_port>
       <input_port name="disable_collision_checks">Disable collision checking</input_port>
       <output_port name="error_code_id">"Drive on heading error code"</output_port>
+      <output_port name="error_msg">"Drive on heading error message"</output_port>
     </Action>
 
     <Action ID="CancelControl">
@@ -82,6 +84,7 @@
       <input_port name="server_timeout">Server timeout</input_port>
       <output_port name="path">Path created by ComputePathToPose node</output_port>
       <output_port name="error_code_id">"Compute path to pose error code"</output_port>
+      <output_port name="error_msg">"Compute path to pose error message"</output_port>
     </Action>
 
     <Action ID="ComputePathThroughPoses">
@@ -92,6 +95,7 @@
       <input_port name="planner_id">Mapped name to the planner plugin type to use</input_port>
       <output_port name="path">Path created by ComputePathToPose node</output_port>
       <output_port name="error_code_id">"Compute path through poses error code"</output_port>
+      <output_port name="error_msg">"Compute path through poses error message"</output_port>
     </Action>
 
     <Action ID="RemovePassedGoals">
@@ -129,6 +133,7 @@
       <input_port name="service_name">Service name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
       <output_port name="error_code_id">Follow Path error code</output_port>
+      <output_port name="error_msg">Follow Path error message</output_port>
     </Action>
 
     <Action ID="NavigateToPose">
@@ -137,6 +142,7 @@
         <input_port name="server_timeout">Server timeout</input_port>
         <input_port name="behavior_tree">Behavior tree to run</input_port>
         <output_port name="error_code_id">Navigate to pose error code</output_port>
+        <output_port name="error_msg">Navigate to pose error message</output_port>
     </Action>
 
     <Action ID="NavigateThroughPoses">
@@ -145,6 +151,7 @@
         <input_port name="server_timeout">Server timeout</input_port>
         <input_port name="behavior_tree">Behavior tree to run</input_port>
         <output_port name="error_code_id">Navigate through poses error code</output_port>
+        <output_port name="error_msg">Navigate through poses error message</output_port>
     </Action>
 
     <Action ID="ReinitializeGlobalLocalization">
@@ -206,6 +213,7 @@
       <input_port name="server_timeout">Server timeout</input_port>
       <input_port name="disable_collision_checks">Disable collision checking</input_port>
       <output_port name="error_code_id">Spin error code</output_port>
+      <output_port name="error_msg">Spin error message</output_port>
     </Action>
 
     <Action ID="Wait">
@@ -220,6 +228,7 @@
       <input_port name="server_name">Service name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
       <output_port name="error_code_id">Assisted teleop error code</output_port>
+      <output_port name="error_msg">Assisted teleop error message</output_port>
     </Action>
 
     <!-- ############################### CONDITION NODES ############################## -->

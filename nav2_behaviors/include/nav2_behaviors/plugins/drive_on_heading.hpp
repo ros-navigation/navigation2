@@ -62,17 +62,18 @@ public:
    */
   ResultStatus onRun(const std::shared_ptr<const typename ActionT::Goal> command) override
   {
+    std::string error_msg;
     if (command->target.y != 0.0 || command->target.z != 0.0) {
-      RCLCPP_INFO(
-        this->logger_,
-        "DrivingOnHeading in Y and Z not supported, will only move in X.");
-      return ResultStatus{Status::FAILED, ActionT::Result::INVALID_INPUT};
+      error_msg = "DrivingOnHeading in Y and Z not supported, will only move in X.";
+      RCLCPP_INFO(this->logger_, error_msg.c_str());
+      return ResultStatus{Status::FAILED, ActionT::Result::INVALID_INPUT, error_msg};
     }
 
     // Ensure that both the speed and direction have the same sign
     if (!((command->target.x > 0.0) == (command->speed > 0.0)) ) {
-      RCLCPP_ERROR(this->logger_, "Speed and command sign did not match");
-      return ResultStatus{Status::FAILED, ActionT::Result::INVALID_INPUT};
+      error_msg = "Speed and command sign did not match";
+      RCLCPP_ERROR(this->logger_, error_msg.c_str());
+      return ResultStatus{Status::FAILED, ActionT::Result::INVALID_INPUT, error_msg};
     }
 
     command_x_ = command->target.x;
@@ -86,11 +87,12 @@ public:
         initial_pose_, *this->tf_, this->local_frame_, this->robot_base_frame_,
         this->transform_tolerance_))
     {
-      RCLCPP_ERROR(this->logger_, "Initial robot pose is not available.");
-      return ResultStatus{Status::FAILED, ActionT::Result::TF_ERROR};
+      error_msg = "Initial robot pose is not available.";
+      RCLCPP_ERROR(this->logger_, error_msg.c_str());
+      return ResultStatus{Status::FAILED, ActionT::Result::TF_ERROR, error_msg};
     }
 
-    return ResultStatus{Status::SUCCEEDED, ActionT::Result::NONE};
+    return ResultStatus{Status::SUCCEEDED, ActionT::Result::NONE, ""};
   }
 
   /**
@@ -102,10 +104,10 @@ public:
     rclcpp::Duration time_remaining = end_time_ - this->clock_->now();
     if (time_remaining.seconds() < 0.0 && command_time_allowance_.seconds() > 0.0) {
       this->stopRobot();
-      RCLCPP_WARN(
-        this->logger_,
-        "Exceeded time allowance before reaching the DriveOnHeading goal - Exiting DriveOnHeading");
-      return ResultStatus{Status::FAILED, ActionT::Result::TIMEOUT};
+      std::string error_msg =
+        "Exceeded time allowance before reaching the DriveOnHeading goal - Exiting DriveOnHeading";
+      RCLCPP_WARN(this->logger_, error_msg.c_str());
+      return ResultStatus{Status::FAILED, ActionT::Result::TIMEOUT, error_msg};
     }
 
     geometry_msgs::msg::PoseStamped current_pose;
@@ -113,8 +115,9 @@ public:
         current_pose, *this->tf_, this->local_frame_, this->robot_base_frame_,
         this->transform_tolerance_))
     {
-      RCLCPP_ERROR(this->logger_, "Current robot pose is not available.");
-      return ResultStatus{Status::FAILED, ActionT::Result::TF_ERROR};
+      std::string error_msg = "Current robot pose is not available.";
+      RCLCPP_ERROR(this->logger_, error_msg.c_str());
+      return ResultStatus{Status::FAILED, ActionT::Result::TF_ERROR, error_msg};
     }
 
     double diff_x = initial_pose_.pose.position.x - current_pose.pose.position.x;
@@ -126,7 +129,7 @@ public:
 
     if (distance >= std::fabs(command_x_)) {
       this->stopRobot();
-      return ResultStatus{Status::SUCCEEDED, ActionT::Result::NONE};
+      return ResultStatus{Status::SUCCEEDED, ActionT::Result::NONE, ""};
     }
 
     auto cmd_vel = std::make_unique<geometry_msgs::msg::TwistStamped>();
@@ -166,14 +169,15 @@ public:
 
     if (!isCollisionFree(distance, cmd_vel->twist, pose2d)) {
       this->stopRobot();
-      RCLCPP_WARN(this->logger_, "Collision Ahead - Exiting DriveOnHeading");
-      return ResultStatus{Status::FAILED, ActionT::Result::COLLISION_AHEAD};
+      std::string error_msg = "Collision Ahead - Exiting DriveOnHeading";
+      RCLCPP_WARN(this->logger_, error_msg.c_str());
+      return ResultStatus{Status::FAILED, ActionT::Result::COLLISION_AHEAD, error_msg};
     }
 
     last_vel_ = cmd_vel->twist.linear.x;
     this->vel_pub_->publish(std::move(cmd_vel));
 
-    return ResultStatus{Status::RUNNING, ActionT::Result::NONE};
+    return ResultStatus{Status::RUNNING, ActionT::Result::NONE, ""};
   }
 
   /**
