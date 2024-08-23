@@ -328,8 +328,9 @@ void BtActionServer<ActionT>::executeCallback()
       break;
 
     case nav2_behavior_tree::BtStatus::FAILED:
-      action_server_->terminate_current(result);
-      RCLCPP_ERROR(logger_, "Goal failed");
+	  action_server_->terminate_current(result);
+      RCLCPP_ERROR(logger_, "Goal failed error_code:%d error_msg:'%s'", result->error_code,
+        result->error_msg.c_str());
       break;
 
     case nav2_behavior_tree::BtStatus::CANCELED:

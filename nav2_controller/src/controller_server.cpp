@@ -704,20 +704,24 @@ void ControllerServer::updateGlobalPath()
     if (findControllerId(goal->controller_id, current_controller)) {
       current_controller_ = current_controller;
     } else {
-      RCLCPP_INFO(
-        get_logger(), "Terminating action, invalid controller %s requested.",
-        goal->controller_id.c_str());
-      action_server_->terminate_current();
+      std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
+      result->error_code = Action::Result::INVALID_CONTROLLER;
+      result->error_msg = "Terminating action, invalid controller " +
+        goal->controller_id +" requested.";
+      RCLCPP_INFO(get_logger(), result->error_msg.c_str());
+      action_server_->terminate_current(result);
       return;
     }
     std::string current_goal_checker;
     if (findGoalCheckerId(goal->goal_checker_id, current_goal_checker)) {
       current_goal_checker_ = current_goal_checker;
     } else {
-      RCLCPP_INFO(
-        get_logger(), "Terminating action, invalid goal checker %s requested.",
-        goal->goal_checker_id.c_str());
-      action_server_->terminate_current();
+      std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
+      result->error_code = Action::Result::INVALID_CONTROLLER;
+      result->error_msg = "Terminating action, invalid goal checker " +
+        goal->goal_checker_id + " requested.";
+      RCLCPP_INFO(get_logger(), result->error_msg.c_str());
+      action_server_->terminate_current(result);
       return;
     }
     std::string current_progress_checker;
@@ -730,10 +734,12 @@ void ControllerServer::updateGlobalPath()
         progress_checkers_[current_progress_checker_]->reset();
       }
     } else {
-      RCLCPP_INFO(
-        get_logger(), "Terminating action, invalid progress checker %s requested.",
-        goal->progress_checker_id.c_str());
-      action_server_->terminate_current();
+      std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
+      result->error_code = Action::Result::INVALID_CONTROLLER;
+      result->error_msg = "Terminating action, invalid progress checker " +
+        goal->progress_checker_id + " requested.";
+      RCLCPP_INFO(get_logger(), result->error_msg.c_str());
+      action_server_->terminate_current(result);
       return;
     }
     setPlannerPath(goal->path);
