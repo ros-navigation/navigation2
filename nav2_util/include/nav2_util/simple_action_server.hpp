@@ -578,22 +578,23 @@ protected:
    *        This allows for ActionT::Result messages that do not contain
    *        an error_code or error_msg such as test_msgs::action::Fibonacci
    */
-  template <typename T, typename = void>
+  template<typename T, typename = void>
   struct has_error_msg : std::false_type {};
-  template <typename T>
-  struct has_error_msg<T, std::void_t<decltype(T::error_msg)>> : std::true_type {};
-  template <typename T, typename = void>
+  template<typename T>
+  struct has_error_msg<T, std::void_t<decltype(T::error_msg)>>: std::true_type {};
+  template<typename T, typename = void>
   struct has_error_code : std::false_type {};
-  template <typename T>
-  struct has_error_code<T, std::void_t<decltype(T::error_code)>> : std::true_type {};
+  template<typename T>
+  struct has_error_code<T, std::void_t<decltype(T::error_code)>>: std::true_type {};
 
-  template <typename T>
-  std::string get_error_details_if_available(const T& result)
+  template<typename T>
+  std::string get_error_details_if_available(const T & result)
   {
     if constexpr (has_error_code<typename ActionT::Result>::value &&
-                  has_error_msg<typename ActionT::Result>::value) {
+      has_error_msg<typename ActionT::Result>::value)
+    {
       return " error_code:" + std::to_string(result->error_code) +
-        ", error_msg:'" + result->error_msg + "'.";
+             ", error_msg:'" + result->error_msg + "'.";
     } else if constexpr (has_error_code<typename ActionT::Result>::value) {
       return " error_code:" + std::to_string(result->error_code) + ".";
     } else {
