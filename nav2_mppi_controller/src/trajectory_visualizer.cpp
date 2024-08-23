@@ -28,6 +28,7 @@ void TrajectoryVisualizer::on_configure(
   trajectories_publisher_ =
     node->create_publisher<visualization_msgs::msg::MarkerArray>("/trajectories", 1);
   transformed_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("transformed_global_plan", 1);
+  optimal_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("/local_plan", 1);
   parameters_handler_ = parameters_handler;
 
   auto getParam = parameters_handler->getParamGetter(name + ".TrajectoryVisualizer");
@@ -42,18 +43,21 @@ void TrajectoryVisualizer::on_cleanup()
 {
   trajectories_publisher_.reset();
   transformed_path_pub_.reset();
+  optimal_path_pub_.reset();
 }
 
 void TrajectoryVisualizer::on_activate()
 {
   trajectories_publisher_->on_activate();
   transformed_path_pub_->on_activate();
+  optimal_path_pub_->on_activate();
 }
 
 void TrajectoryVisualizer::on_deactivate()
 {
   trajectories_publisher_->on_deactivate();
   transformed_path_pub_->on_deactivate();
+  optimal_path_pub_->on_deactivate();
 }
 
 void TrajectoryVisualizer::add(
@@ -81,6 +85,8 @@ void TrajectoryVisualizer::add(
   for (size_t i = 0; i < size; i++) {
     add_marker(i);
   }
+
+  optimal_traj_ = std::make_unique<xt::xtensor<float, 2>>(trajectory);
 }
 
 void TrajectoryVisualizer::add(
@@ -111,12 +117,17 @@ void TrajectoryVisualizer::reset()
 {
   marker_id_ = 0;
   points_ = std::make_unique<visualization_msgs::msg::MarkerArray>();
+  optimal_traj_ = std::make_unique<xt::xtensor<float, 2>>();
 }
 
-void TrajectoryVisualizer::visualize(const nav_msgs::msg::Path & plan)
+void TrajectoryVisualizer::visualize(const nav_msgs::msg::Path & plan, const builtin_interfaces::msg::Time & cmd_stamp)
 {
   if (trajectories_publisher_->get_subscription_count() > 0) {
     trajectories_publisher_->publish(std::move(points_));
+  }
+
+  if (optimal_path_pub_->get_subscription_count() > 0) {
+    publish_optimal_path(cmd_stamp);
   }
 
   reset();
@@ -125,6 +136,35 @@ void TrajectoryVisualizer::visualize(const nav_msgs::msg::Path & plan)
     auto plan_ptr = std::make_unique<nav_msgs::msg::Path>(plan);
     transformed_path_pub_->publish(std::move(plan_ptr));
   }
+}
+
+void TrajectoryVisualizer::publish_optimal_path(const builtin_interfaces::msg::Time & cmd_stamp)
+{
+  auto & size = optimal_traj_->shape()[0];
+  if (size == 0) {
+    return;
+  }
+
+  nav_msgs::msg::Path optimal_path;
+  optimal_path.header.stamp = cmd_stamp;
+  optimal_path.header.frame_id = frame_id_;
+
+  for (size_t i = 0; i < size; i++) {
+    // create new pose for the path
+    geometry_msgs::msg::PoseStamped pose_stamped;
+    pose_stamped.header.frame_id = frame_id_;
+
+    // position & orientation
+    pose_stamped.pose = utils::createPose((*optimal_traj_)(i, 0), (*optimal_traj_)(i, 1), 0.0);
+
+    tf2::Quaternion quaternion_tf2;
+    quaternion_tf2.setRPY(0., 0., (*optimal_traj_)(i, 2));
+    pose_stamped.pose.orientation = tf2::toMsg(quaternion_tf2);
+
+    // add pose to the path
+    optimal_path.poses.push_back(pose_stamped);
+  }
+  optimal_path_pub_->publish(optimal_path);
 }
 
 }  // namespace mppi

@@ -45,8 +45,6 @@ void MPPIController::configure(
     parent_, name_,
     costmap_ros_->getGlobalFrameID(), parameters_handler_.get());
 
-  optimal_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("local_plan", 1);
-
   RCLCPP_INFO(logger_, "Configured MPPI Controller: %s", name_.c_str());
 }
 
@@ -62,14 +60,12 @@ void MPPIController::activate()
 {
   trajectory_visualizer_.on_activate();
   parameters_handler_->start();
-  optimal_path_pub_->on_activate();
   RCLCPP_INFO(logger_, "Activated MPPI Controller: %s", name_.c_str());
 }
 
 void MPPIController::deactivate()
 {
   trajectory_visualizer_.on_deactivate();
-  optimal_path_pub_->on_deactivate();
   RCLCPP_INFO(logger_, "Deactivated MPPI Controller: %s", name_.c_str());
 }
 
@@ -102,22 +98,18 @@ geometry_msgs::msg::TwistStamped MPPIController::computeVelocityCommands(
   RCLCPP_INFO(logger_, "Control loop execution time: %ld [ms]", duration);
 #endif
 
-  if (optimal_path_pub_->get_subscription_count() > 0) {
-    publish_optimal_path(optimizer_.getOptimizedTrajectory());
-  }
-
   if (visualize_) {
-    visualize(std::move(transformed_plan));
+    visualize(std::move(transformed_plan), cmd.header.stamp);
   }
 
   return cmd;
 }
 
-void MPPIController::visualize(nav_msgs::msg::Path transformed_plan)
+void MPPIController::visualize(nav_msgs::msg::Path transformed_plan, const builtin_interfaces::msg::Time & cmd_stamp)
 {
   trajectory_visualizer_.add(optimizer_.getGeneratedTrajectories(), "Candidate Trajectories");
   trajectory_visualizer_.add(optimizer_.getOptimizedTrajectory(), "Optimal Trajectory");
-  trajectory_visualizer_.visualize(std::move(transformed_plan));
+  trajectory_visualizer_.visualize(std::move(transformed_plan), cmd_stamp);
 }
 
 void MPPIController::setPlan(const nav_msgs::msg::Path & path)
@@ -128,36 +120,6 @@ void MPPIController::setPlan(const nav_msgs::msg::Path & path)
 void MPPIController::setSpeedLimit(const double & speed_limit, const bool & percentage)
 {
   optimizer_.setSpeedLimit(speed_limit, percentage);
-}
-
-void MPPIController::publish_optimal_path(const xt::xtensor<float, 2> & optimal_traj)
-{
-  auto & size = optimal_traj.shape()[0];
-  if (!size) {
-    return;
-  }
-
-  nav_msgs::msg::Path optimal_path;
-  optimal_path.header.stamp = clock_->now();
-  optimal_path.header.frame_id = (costmap_ros_->getGlobalFrameID()).c_str();
-
-  for (size_t i = 0; i < size; i++) {
-    // create new pose for the path
-    geometry_msgs::msg::PoseStamped pose_stamped;
-    pose_stamped.header.frame_id = (costmap_ros_->getGlobalFrameID()).c_str();
-
-    // position & orientation
-    pose_stamped.pose = utils::createPose(optimal_traj(i, 0), optimal_traj(i, 1), 0.);
-
-    tf2::Quaternion quaternion_tf2;
-    quaternion_tf2.setRPY(0., 0., optimal_traj(i, 2));
-    auto quaternion = tf2::toMsg(quaternion_tf2);
-    pose_stamped.pose.orientation = quaternion;
-
-    // add pose to the path
-    optimal_path.poses.push_back(pose_stamped);
-  }
-  optimal_path_pub_->publish(optimal_path);
 }
 
 }  // namespace nav2_mppi_controller
