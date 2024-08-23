@@ -730,7 +730,7 @@ inline auto point_corrected_yaws(const Eigen::ArrayXf & yaws_between_points, con
   for(int i = 0; i != size; i++)
   {
     const float & yaw_between_points = *(yaws_between_points_ptr + i);
-    *(yaws_between_points_corrected_ptr + i) = std::abs(angles::normalize_angle(yaw_between_points - goal_yaw)) < M_PIF_2 ? yaw_between_points : angles::normalize_angle(yaw_between_points + M_PIF);
+    *(yaws_between_points_corrected_ptr + i) = fabs(angles::normalize_angle(yaw_between_points - goal_yaw)) < M_PIF_2 ? yaw_between_points : angles::normalize_angle(yaw_between_points + M_PIF);
   }
   return yaws_between_points_corrected;
 }

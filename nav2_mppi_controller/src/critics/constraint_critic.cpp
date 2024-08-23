@@ -58,17 +58,11 @@ void ConstraintCritic::score(CriticData & data)
   // Omnidirectional motion model
   auto omni = dynamic_cast<OmniMotionModel *>(data.motion_model.get());
   if (omni != nullptr) {
-    int n_rows = data.state.vx.rows();
-    int n_cols = data.state.vx.cols();
+    auto & vx = data.state.vx;
+    unsigned int n_rows = data.state.vx.rows();
+    unsigned int n_cols = data.state.vx.cols();
     Eigen::ArrayXXf sgn(n_rows, n_cols);
-    auto vx_ptr = data.state.vx.data();
-    for(int i = 0; i != n_cols; i++)
-    {
-      for(int j = 0; j != n_rows; j++)
-      {
-        sgn(j, i) = *(vx_ptr + i * n_rows + j) > 0.0f ? 1.0f : -1.0f;
-      }
-    }
+    sgn = vx.unaryExpr([](const float x){ return copysignf(1.0f, x);});
 
     auto vel_total = (data.state.vx.square() + data.state.vy.square()).sqrt() * sgn;
     if (power_ > 1u) {
