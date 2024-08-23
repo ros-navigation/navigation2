@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>dwb_core</name>
-  <version>1.2.9</version>
+  <version>1.2.10</version>
   <description>TODO</description>
   <maintainer email="carl.r.delsey@intel.com">Carl Delsey</maintainer>
   <license>BSD-3-Clause</license>
