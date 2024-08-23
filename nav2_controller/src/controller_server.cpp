@@ -707,7 +707,7 @@ void ControllerServer::updateGlobalPath()
       std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
       result->error_code = Action::Result::INVALID_CONTROLLER;
       result->error_msg = "Terminating action, invalid controller " +
-        goal->controller_id +" requested.";
+        goal->controller_id + " requested.";
       RCLCPP_INFO(get_logger(), result->error_msg.c_str());
       action_server_->terminate_current(result);
       return;
