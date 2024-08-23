@@ -15,15 +15,10 @@
 #ifndef NAV2_SMAC_PLANNER__NODE_HYBRID_HPP_
 #define NAV2_SMAC_PLANNER__NODE_HYBRID_HPP_
 
-#include <math.h>
-#include <vector>
-#include <cmath>
-#include <iostream>
 #include <functional>
-#include <queue>
 #include <memory>
 #include <utility>
-#include <limits>
+#include <vector>
 
 #include "ompl/base/StateSpace.h"
 

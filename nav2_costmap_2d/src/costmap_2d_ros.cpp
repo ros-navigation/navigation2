@@ -252,9 +252,9 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
   }
 
   // Service to get the cost at a point
-  get_cost_service_ = create_service<nav2_msgs::srv::GetCost>(
+  get_cost_service_ = create_service<nav2_msgs::srv::GetCosts>(
     "get_cost_" + getName(),
-    std::bind(&Costmap2DROS::getCostCallback, this, std::placeholders::_1, std::placeholders::_2,
+    std::bind(&Costmap2DROS::getCostsCallback, this, std::placeholders::_1, std::placeholders::_2,
       std::placeholders::_3));
 
   // Add cleaning service
@@ -825,34 +825,40 @@ Costmap2DROS::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameter
   return result;
 }
 
-void Costmap2DROS::getCostCallback(
+void Costmap2DROS::getCostsCallback(
   const std::shared_ptr<rmw_request_id_t>,
-  const std::shared_ptr<nav2_msgs::srv::GetCost::Request> request,
-  const std::shared_ptr<nav2_msgs::srv::GetCost::Response> response)
+  const std::shared_ptr<nav2_msgs::srv::GetCosts::Request> request,
+  const std::shared_ptr<nav2_msgs::srv::GetCosts::Response> response)
 {
   unsigned int mx, my;
 
   Costmap2D * costmap = layered_costmap_->getCostmap();
 
-  if (request->use_footprint) {
-    Footprint footprint = layered_costmap_->getFootprint();
-    FootprintCollisionChecker<Costmap2D *> collision_checker(costmap);
+  for (const auto & pose : request->poses) {
+    bool in_bounds = costmap->worldToMap(pose.x, pose.y, mx, my);
 
-    RCLCPP_INFO(
-      get_logger(), "Received request to get cost at footprint pose (%.2f, %.2f, %.2f)",
-      request->x, request->y, request->theta);
+    if (!in_bounds) {
+      response->costs.push_back(-1.0);
+      continue;
+    }
 
-    response->cost = collision_checker.footprintCostAtPose(
-      request->x, request->y, request->theta, footprint);
-  } else if (costmap->worldToMap(request->x, request->y, mx, my)) {
-    RCLCPP_INFO(
-      get_logger(), "Received request to get cost at point (%f, %f)", request->x, request->y);
+    if (request->use_footprint) {
+      Footprint footprint = layered_costmap_->getFootprint();
+      FootprintCollisionChecker<Costmap2D *> collision_checker(costmap);
 
-    // Get the cost at the map coordinates
-    response->cost = static_cast<float>(costmap->getCost(mx, my));
-  } else {
-    RCLCPP_WARN(get_logger(), "Point (%f, %f) is out of bounds", request->x, request->y);
-    response->cost = -1.0;
+      RCLCPP_DEBUG(
+        get_logger(), "Received request to get cost at footprint pose (%.2f, %.2f, %.2f)",
+        pose.x, pose.y, pose.theta);
+
+      response->costs.push_back(
+        collision_checker.footprintCostAtPose(pose.x, pose.y, pose.theta, footprint));
+    } else {
+      RCLCPP_DEBUG(
+        get_logger(), "Received request to get cost at point (%f, %f)", pose.x, pose.y);
+
+      // Get the cost at the map coordinates
+      response->costs.push_back(static_cast<float>(costmap->getCost(mx, my)));
+    }
   }
 }
 

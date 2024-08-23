@@ -2,57 +2,42 @@ cmake_minimum_required(VERSION 3.5)
 project(nav2_velocity_smoother)
 
 find_package(ament_cmake REQUIRED)
+find_package(geometry_msgs REQUIRED)
 find_package(nav2_common REQUIRED)
+find_package(nav2_util REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
-find_package(geometry_msgs REQUIRED)
-find_package(nav2_util REQUIRED)
-
-if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 17)
-endif()
+find_package(rclcpp_lifecycle REQUIRED)
 
 nav2_package()
 
-include_directories(
-  include
-)
-
 set(executable_name velocity_smoother)
 set(library_name ${executable_name}_core)
-
-set(dependencies
-  rclcpp
-  rclcpp_components
-  geometry_msgs
-  nav2_util
-)
 
 # Main library
 add_library(${library_name} SHARED
   src/velocity_smoother.cpp
 )
-ament_target_dependencies(${library_name}
-  ${dependencies}
+target_include_directories(${library_name}
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+)
+target_link_libraries(${library_name} PUBLIC
+  ${geometry_msgs_TARGETS}
+  nav2_util::nav2_util_core
+  rclcpp::rclcpp
+  rclcpp_lifecycle::rclcpp_lifecycle
+)
+target_link_libraries(${library_name} PRIVATE
+  rclcpp_components::component
 )
 
 # Main executable
 add_executable(${executable_name}
   src/main.cpp
 )
-ament_target_dependencies(${executable_name}
-  ${dependencies}
-)
-target_link_libraries(${executable_name} ${library_name})
-
-if(BUILD_TESTING)
-  find_package(ament_lint_auto REQUIRED)
-  # the following line skips the linter which checks for copyrights
-  set(ament_cmake_copyright_FOUND TRUE)
-  ament_lint_auto_find_test_dependencies()
-
-  find_package(ament_cmake_gtest REQUIRED)
-endif()
+target_link_libraries(${executable_name} PRIVATE ${library_name} rclcpp::rclcpp)
 
 rclcpp_components_register_nodes(${library_name} "nav2_velocity_smoother::VelocitySmoother")
 
@@ -68,17 +53,28 @@ install(TARGETS ${executable_name}
 )
 
 install(DIRECTORY include/
-  DESTINATION include/
+  DESTINATION include/${PROJECT_NAME}
 )
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
+  # the following line skips the linter which checks for copyrights
+  set(ament_cmake_copyright_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
+
   find_package(ament_cmake_gtest REQUIRED)
+  find_package(nav_msgs REQUIRED)
+
+  ament_find_gtest()
   add_subdirectory(test)
 endif()
 
-ament_export_include_directories(include)
+ament_export_include_directories(include/${PROJECT_NAME})
 ament_export_libraries(${library_name})
-ament_export_dependencies(${dependencies})
+ament_export_dependencies(
+  geometry_msgs
+  nav2_util
+  rclcpp
+  rclcpp_lifecycle
+)
 ament_package()

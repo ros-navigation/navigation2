@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#include <vector>
-#include <string>
+#include <chrono>
 #include <fstream>
+#include <filesystem>
 #include <memory>
+#include <string>
 #include <utility>
-#include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
+#include <vector>
 
 #include "gtest/gtest.h"
 
@@ -31,16 +31,18 @@
 #include "tf2_ros/create_timer_ros.h"
 
 #include "nav2_util/odometry_utils.hpp"
+#include "nav2_util/string_utils.hpp"
 
 #include "nav2_behavior_tree/plugins_list.hpp"
 
 #include "rclcpp/rclcpp.hpp"
 #include "ament_index_cpp/get_package_share_directory.hpp"
 
+#include "geometry_msgs/msg/pose_stamped.hpp"
+
 #include "server_handler.hpp"
 
 using namespace std::chrono_literals;
-namespace fs = boost::filesystem;
 
 namespace nav2_system_tests
 {
@@ -61,8 +63,7 @@ public:
 
     odom_smoother_ = std::make_shared<nav2_util::OdomSmoother>(node_);
 
-    std::vector<std::string> plugin_libs;
-    boost::split(plugin_libs, nav2::details::BT_BUILTIN_PLUGINS, boost::is_any_of(";"));
+    nav2_util::Tokens plugin_libs = nav2_util::split(nav2::details::BT_BUILTIN_PLUGINS, ';');
 
     for (const auto & p : plugin_libs) {
       factory_.registerFromPlugin(BT::SharedLibrary::getOSName(p));
@@ -194,12 +195,12 @@ std::shared_ptr<BehaviorTreeHandler> BehaviorTreeTestFixture::bt_handler = nullp
 
 TEST_F(BehaviorTreeTestFixture, TestBTXMLFiles)
 {
-  fs::path root = ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
+  std::filesystem::path root = ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
   root /= "behavior_trees/";
 
-  if (boost::filesystem::exists(root) && boost::filesystem::is_directory(root)) {
-    for (auto const & entry : boost::filesystem::recursive_directory_iterator(root)) {
-      if (boost::filesystem::is_regular_file(entry) && entry.path().extension() == ".xml") {
+  if (std::filesystem::exists(root) && std::filesystem::is_directory(root)) {
+    for (auto const & entry : std::filesystem::recursive_directory_iterator(root)) {
+      if (std::filesystem::is_regular_file(entry) && entry.path().extension() == ".xml") {
         std::cout << entry.path().string() << std::endl;
         EXPECT_EQ(bt_handler->loadBehaviorTree(entry.path().string()), true);
       }
@@ -216,7 +217,7 @@ TEST_F(BehaviorTreeTestFixture, TestBTXMLFiles)
 TEST_F(BehaviorTreeTestFixture, TestAllSuccess)
 {
   // Load behavior tree from file
-  fs::path bt_file = ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
+  std::filesystem::path bt_file = ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
   bt_file /= "behavior_trees/";
   bt_file /= "navigate_to_pose_w_replanning_and_recovery.xml";
   EXPECT_EQ(bt_handler->loadBehaviorTree(bt_file.string()), true);
@@ -258,7 +259,7 @@ TEST_F(BehaviorTreeTestFixture, TestAllSuccess)
 TEST_F(BehaviorTreeTestFixture, TestAllFailure)
 {
   // Load behavior tree from file
-  fs::path bt_file = ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
+  std::filesystem::path bt_file = ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
   bt_file /= "behavior_trees/";
   bt_file /= "navigate_to_pose_w_replanning_and_recovery.xml";
   EXPECT_EQ(bt_handler->loadBehaviorTree(bt_file.string()), true);
@@ -310,7 +311,7 @@ TEST_F(BehaviorTreeTestFixture, TestAllFailure)
 TEST_F(BehaviorTreeTestFixture, TestNavigateSubtreeRecoveries)
 {
   // Load behavior tree from file
-  fs::path bt_file = ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
+  std::filesystem::path bt_file = ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
   bt_file /= "behavior_trees/";
   bt_file /= "navigate_to_pose_w_replanning_and_recovery.xml";
   EXPECT_EQ(bt_handler->loadBehaviorTree(bt_file.string()), true);
@@ -364,7 +365,7 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateSubtreeRecoveries)
 TEST_F(BehaviorTreeTestFixture, TestNavigateRecoverySimple)
 {
   // Load behavior tree from file
-  fs::path bt_file = ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
+  std::filesystem::path bt_file = ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
   bt_file /= "behavior_trees/";
   bt_file /= "navigate_to_pose_w_replanning_and_recovery.xml";
   EXPECT_EQ(bt_handler->loadBehaviorTree(bt_file.string()), true);
@@ -458,7 +459,7 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateRecoverySimple)
 TEST_F(BehaviorTreeTestFixture, TestNavigateRecoveryComplex)
 {
   // Load behavior tree from file
-  fs::path bt_file = ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
+  std::filesystem::path bt_file = ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
   bt_file /= "behavior_trees/";
   bt_file /= "navigate_to_pose_w_replanning_and_recovery.xml";
   EXPECT_EQ(bt_handler->loadBehaviorTree(bt_file.string()), true);
@@ -522,7 +523,7 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateRecoveryComplex)
 TEST_F(BehaviorTreeTestFixture, TestRecoverySubtreeGoalUpdated)
 {
   // Load behavior tree from file
-  fs::path bt_file = ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
+  std::filesystem::path bt_file = ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
   bt_file /= "behavior_trees/";
   bt_file /= "navigate_to_pose_w_replanning_and_recovery.xml";
   EXPECT_EQ(bt_handler->loadBehaviorTree(bt_file.string()), true);

@@ -52,7 +52,7 @@
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_costmap_2d/layer.hpp"
 #include "nav2_util/lifecycle_node.hpp"
-#include "nav2_msgs/srv/get_cost.hpp"
+#include "nav2_msgs/srv/get_costs.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "tf2/convert.h"
 #include "tf2/LinearMath/Transform.h"
@@ -345,10 +345,10 @@ public:
    * @param request x and y coordinates in map
    * @param response cost of the point
   */
-  void getCostCallback(
+  void getCostsCallback(
     const std::shared_ptr<rmw_request_id_t>,
-    const std::shared_ptr<nav2_msgs::srv::GetCost::Request> request,
-    const std::shared_ptr<nav2_msgs::srv::GetCost::Response> response);
+    const std::shared_ptr<nav2_msgs::srv::GetCosts::Request> request,
+    const std::shared_ptr<nav2_msgs::srv::GetCosts::Response> response);
 
 protected:
   // Publishers and subscribers
@@ -425,7 +425,7 @@ protected:
   std::vector<geometry_msgs::msg::Point> padded_footprint_;
 
   // Services
-  rclcpp::Service<nav2_msgs::srv::GetCost>::SharedPtr get_cost_service_;
+  rclcpp::Service<nav2_msgs::srv::GetCosts>::SharedPtr get_cost_service_;
   std::unique_ptr<ClearCostmapService> clear_costmap_service_;
 
   // Dynamic parameters handler

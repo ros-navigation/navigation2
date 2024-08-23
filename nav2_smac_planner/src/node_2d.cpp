@@ -128,7 +128,7 @@ void Node2D::getNeighbors(
   uint64_t index;
   NodePtr neighbor;
   uint64_t node_i = this->getIndex();
-  const Coordinates parent = getCoords(this->getIndex());
+  const Coordinates coord_parent = getCoords(this->getIndex());
   Coordinates child;
 
   for (unsigned int i = 0; i != _neighbors_grid_offsets.size(); ++i) {
@@ -136,7 +136,7 @@ void Node2D::getNeighbors(
 
     // Check for wrap around conditions
     child = getCoords(index);
-    if (fabs(parent.x - child.x) > 1 || fabs(parent.y - child.y) > 1) {
+    if (fabs(coord_parent.x - child.x) > 1 || fabs(coord_parent.y - child.y) > 1) {
       continue;
     }
 
