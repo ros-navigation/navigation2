@@ -125,12 +125,6 @@ LifecycleManager::managerCallback(
     case ManageLifecycleNodes::Request::STARTUP:
       response->success = startup();
       break;
-    case ManageLifecycleNodes::Request::CONFIGURE:
-      response->success = configure();
-      break;
-    case ManageLifecycleNodes::Request::CLEANUP:
-      response->success = cleanup();
-      break;
     case ManageLifecycleNodes::Request::RESET:
       response->success = reset();
       break;
@@ -294,34 +288,6 @@ LifecycleManager::startup()
   message("Managed nodes are active");
   system_active_ = true;
   createBondTimer();
-  return true;
-}
-
-bool
-LifecycleManager::configure()
-{
-  message("Configuring managed nodes...");
-  if (!changeStateForAllNodes(Transition::TRANSITION_CONFIGURE)) {
-    RCLCPP_ERROR(get_logger(), "Failed to configure all requested nodes. Aborting bringup.");
-    managed_nodes_state_ = NodeState::UNKNOWN;
-    return false;
-  }
-  message("Managed nodes are now configured");
-  managed_nodes_state_ = NodeState::INACTIVE;
-  return true;
-}
-
-bool
-LifecycleManager::cleanup()
-{
-  message("Cleaning up managed nodes...");
-  if (!changeStateForAllNodes(Transition::TRANSITION_CLEANUP)) {
-    RCLCPP_ERROR(get_logger(), "Failed to cleanup all requested nodes. Aborting cleanup.");
-    managed_nodes_state_ = NodeState::UNKNOWN;
-    return false;
-  }
-  message("Managed nodes have been cleaned up");
-  managed_nodes_state_ = NodeState::UNCONFIGURED;
   return true;
 }
 

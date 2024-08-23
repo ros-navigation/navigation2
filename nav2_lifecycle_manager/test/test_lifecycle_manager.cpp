@@ -100,8 +100,6 @@ TEST(LifecycleClientTest, BasicTest)
     client.is_active(std::chrono::nanoseconds(1000000000)));
   EXPECT_TRUE(client.resume());
   EXPECT_TRUE(client.reset());
-  EXPECT_TRUE(client.configure());
-  EXPECT_TRUE(client.cleanup());
   EXPECT_TRUE(client.shutdown());
 }
 

@@ -79,16 +79,6 @@ public:
    */
   bool reset(const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1));
   /**
-   * @brief Make configure service call
-   * @return true or false
-   */
-  bool configure(const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1));
-  /**
-   * @brief Make cleanup service call
-   * @return true or false
-   */
-  bool cleanup(const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1));
-  /**
    * @brief Check if lifecycle node manager server is active
    * @return ACTIVE or INACTIVE or TIMEOUT
    */
