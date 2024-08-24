@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>nav2_smac_planner</name>
-  <version>1.3.1</version>
+  <version>1.3.2</version>
   <description>Smac global planning plugin: A*, Hybrid-A*, State Lattice</description>
   <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
   <license>Apache-2.0</license>
