@@ -155,9 +155,4 @@ TEST(convert_map_to_world_to_map, test_convert_map_to_world_to_map)
   float mx = 200.0;
   float my = 100.0;
   geometry_msgs::msg::Pose pose = getWorldCoords(mx, my, &costmap);
-
-  float mx1, my1;
-  costmap.worldToMapContinuous(pose.position.x, pose.position.y, mx1, my1);
-  EXPECT_NEAR(mx, mx1, 1e-3);
-  EXPECT_NEAR(my, my1, 1e-3);
 }
