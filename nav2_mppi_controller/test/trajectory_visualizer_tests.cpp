@@ -59,8 +59,7 @@ TEST(TrajectoryVisualizerTests, VisPathRepub)
   TrajectoryVisualizer vis;
   vis.on_configure(node, "my_name", "map", parameters_handler.get());
   vis.on_activate();
-  builtin_interfaces::msg::Time bogus_stamp;
-  vis.visualize(pub_path, bogus_stamp);
+  vis.visualize(pub_path);
 
   rclcpp::spin_some(node->get_node_base_interface());
   EXPECT_EQ(recieved_path.poses.size(), 5u);
@@ -82,18 +81,18 @@ TEST(TrajectoryVisualizerTests, VisOptimalTrajectory)
   TrajectoryVisualizer vis;
   vis.on_configure(node, "my_name", "fkmap", parameters_handler.get());
   vis.on_activate();
-  vis.add(optimal_trajectory, "Optimal Trajectory");
-  nav_msgs::msg::Path bogus_path;
   builtin_interfaces::msg::Time bogus_stamp;
-  vis.visualize(bogus_path, bogus_stamp);
+  vis.add(optimal_trajectory, "Optimal Trajectory", bogus_stamp);
+  nav_msgs::msg::Path bogus_path;
+  vis.visualize(bogus_path);
 
   rclcpp::spin_some(node->get_node_base_interface());
   EXPECT_EQ(recieved_msg.markers.size(), 0u);
 
   // Now populated with content, should publish
   optimal_trajectory = xt::ones<float>({20, 2});
-  vis.add(optimal_trajectory, "Optimal Trajectory");
-  vis.visualize(bogus_path, bogus_stamp);
+  vis.add(optimal_trajectory, "Optimal Trajectory", bogus_stamp);
+  vis.visualize(bogus_path);
 
   rclcpp::spin_some(node->get_node_base_interface());
 
@@ -149,8 +148,7 @@ TEST(TrajectoryVisualizerTests, VisCandidateTrajectories)
   vis.on_activate();
   vis.add(candidate_trajectories, "Candidate Trajectories");
   nav_msgs::msg::Path bogus_path;
-  builtin_interfaces::msg::Time bogus_stamp;
-  vis.visualize(bogus_path, bogus_stamp);
+  vis.visualize(bogus_path);
 
   rclcpp::spin_some(node->get_node_base_interface());
   // 40 * 4, for 5 trajectory steps + 3 point steps
@@ -167,7 +165,7 @@ TEST(TrajectoryVisualizerTests, VisOptimalPath)
 
   nav_msgs::msg::Path recieved_path;
   auto my_sub = node->create_subscription<nav_msgs::msg::Path>(
-    "/local_plan", 10,
+    "optimal_trajectory", 10,
     [&](const nav_msgs::msg::Path msg) {recieved_path = msg;});
 
   // optimal_trajectory empty, should fail to publish
@@ -175,9 +173,9 @@ TEST(TrajectoryVisualizerTests, VisOptimalPath)
   TrajectoryVisualizer vis;
   vis.on_configure(node, "my_name", "fkmap", parameters_handler.get());
   vis.on_activate();
-  vis.add(optimal_trajectory, "Optimal Trajectory");
+  vis.add(optimal_trajectory, "Optimal Trajectory", cmd_stamp);
   nav_msgs::msg::Path bogus_path;
-  vis.visualize(bogus_path, cmd_stamp);
+  vis.visualize(bogus_path);
 
   rclcpp::spin_some(node->get_node_base_interface());
   EXPECT_EQ(recieved_path.poses.size(), 0u);
@@ -188,8 +186,8 @@ TEST(TrajectoryVisualizerTests, VisOptimalPath)
     optimal_trajectory(i, 0) = static_cast<float>(i);
     optimal_trajectory(i, 1) = static_cast<float>(i);
   }
-  vis.add(optimal_trajectory, "Optimal Trajectory");
-  vis.visualize(bogus_path, cmd_stamp);
+  vis.add(optimal_trajectory, "Optimal Trajectory", cmd_stamp);
+  vis.visualize(bogus_path);
 
   rclcpp::spin_some(node->get_node_base_interface());
 

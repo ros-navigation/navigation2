@@ -79,7 +79,9 @@ public:
     * @brief Add an optimal trajectory to visualize
     * @param trajectory Optimal trajectory
     */
-  void add(const xt::xtensor<float, 2> & trajectory, const std::string & marker_namespace);
+  void add(
+    const xt::xtensor<float, 2> & trajectory, const std::string & marker_namespace,
+    const builtin_interfaces::msg::Time & cmd_stamp);
 
   /**
     * @brief Add candidate trajectories to visualize
@@ -91,13 +93,15 @@ public:
     * @brief Publish the optimal trajectory in the form of a path message
     * @param trajectory Optimal trajectory
     */
-  void publish_optimal_path(const builtin_interfaces::msg::Time & cmd_stamp);
+  void populate_optimal_path(
+    const xt::xtensor<float, 2> & optimal_traj,
+    const builtin_interfaces::msg::Time & cmd_stamp);
 
   /**
     * @brief Visualize the plan
     * @param plan Plan to visualize
     */
-  void visualize(const nav_msgs::msg::Path & plan, const builtin_interfaces::msg::Time & cmd_stamp);
+  void visualize(const nav_msgs::msg::Path & plan);
 
   /**
     * @brief Reset object
@@ -111,7 +115,7 @@ protected:
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> transformed_path_pub_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> optimal_path_pub_;
 
-  std::unique_ptr<xt::xtensor<float, 2>> optimal_traj_;
+  std::unique_ptr<nav_msgs::msg::Path> optimal_path_;
   std::unique_ptr<visualization_msgs::msg::MarkerArray> points_;
   int marker_id_ = 0;
 
