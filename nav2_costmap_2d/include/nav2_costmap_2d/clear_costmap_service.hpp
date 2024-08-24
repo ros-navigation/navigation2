@@ -49,6 +49,11 @@ public:
   ClearCostmapService() = delete;
 
   /**
+   * @brief A destructor
+   */
+  ~ClearCostmapService();
+
+  /**
    * @brief Clears the region outside of a user-specified area reverting to the static map
    */
   void clearRegion(double reset_distance, bool invert);

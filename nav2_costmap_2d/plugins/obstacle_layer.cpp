@@ -304,8 +304,11 @@ ObstacleLayer::dynamicParametersCallback(
         max_obstacle_height_ = parameter.as_double();
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
-      if (param_name == name_ + "." + "enabled") {
+      if (param_name == name_ + "." + "enabled" && enabled_ != parameter.as_bool()) {
         enabled_ = parameter.as_bool();
+        if (enabled_) {
+          current_ = false;
+        }
       } else if (param_name == name_ + "." + "footprint_clearing_enabled") {
         footprint_clearing_enabled_ = parameter.as_bool();
       }

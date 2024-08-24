@@ -235,6 +235,7 @@ protected:
   int _timing_interval = 5000;
 
   bool _traverse_unknown;
+  bool _is_initialized;
   int _max_iterations;
   int _max_on_approach_iterations;
   double _max_planning_time;
