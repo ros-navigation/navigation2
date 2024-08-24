@@ -147,3 +147,12 @@ TEST(create_marker, test_createMarker)
   EXPECT_EQ(marker2.id, 8u);
   EXPECT_EQ(marker2.points.size(), 0u);
 }
+
+TEST(convert_map_to_world_to_map, test_convert_map_to_world_to_map)
+{
+  auto costmap = nav2_costmap_2d::Costmap2D(10.0, 10.0, 0.05, 0.0, 0.0, 0);
+
+  float mx = 200.0;
+  float my = 100.0;
+  geometry_msgs::msg::Pose pose = getWorldCoords(mx, my, &costmap);
+}
