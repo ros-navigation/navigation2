@@ -26,7 +26,6 @@
   <build_depend>geometry_msgs</build_depend>
   <build_depend>std_msgs</build_depend>
   <build_depend>tf2_geometry_msgs</build_depend>
-  <!-- <build_depend>gazebo_ros_pkgs</build_depend> Remove/Replace after https://github.com/ros-navigation/navigation2/pull/3634 -->
   <build_depend>launch_ros</build_depend>
   <build_depend>launch_testing</build_depend>
   <build_depend>nav2_planner</build_depend>
@@ -50,7 +49,6 @@
   <exec_depend>std_msgs</exec_depend>
   <exec_depend>tf2_geometry_msgs</exec_depend>
   <exec_depend>nav2_minimal_tb3_sim</exec_depend>
-  <!-- <exec_depend>gazebo_ros_pkgs</exec_depend> Remove/Replace after https://github.com/ros-navigation/navigation2/pull/3634 -->
   <exec_depend>navigation2</exec_depend>
   <exec_depend>lcov</exec_depend>
   <exec_depend>robot_state_publisher</exec_depend>

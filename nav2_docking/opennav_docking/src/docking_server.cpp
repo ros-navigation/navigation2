@@ -132,6 +132,7 @@ DockingServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   navigator_->deactivate();
   vel_publisher_->on_deactivate();
 
+  remove_on_set_parameters_callback(dyn_params_handler_.get());
   dyn_params_handler_.reset();
   tf2_listener_.reset();
 
@@ -252,8 +253,15 @@ void DockingServer::dockRobot()
     {
       RCLCPP_INFO(get_logger(), "Robot already within pre-staging pose tolerance for dock");
     } else {
+      std::function<bool()> isPreempted = [this]() {
+          return checkAndWarnIfCancelled(docking_action_server_, "dock_robot") ||
+                 checkAndWarnIfPreempted(docking_action_server_, "dock_robot");
+        };
+
       navigator_->goToPose(
-        initial_staging_pose, rclcpp::Duration::from_seconds(goal->max_staging_time));
+        initial_staging_pose,
+        rclcpp::Duration::from_seconds(goal->max_staging_time),
+        isPreempted);
       RCLCPP_INFO(get_logger(), "Successful navigation to staging pose");
     }
 
@@ -371,7 +379,7 @@ void DockingServer::doInitialPerception(Dock * dock, geometry_msgs::msg::PoseSta
   rclcpp::Rate loop_rate(controller_frequency_);
   auto start = this->now();
   auto timeout = rclcpp::Duration::from_seconds(initial_perception_timeout_);
-  while (!dock->plugin->getRefinedPose(dock_pose)) {
+  while (!dock->plugin->getRefinedPose(dock_pose, dock->id)) {
     if (this->now() - start > timeout) {
       throw opennav_docking_core::FailedToDetectDock("Failed initial dock detection");
     }
@@ -407,7 +415,7 @@ bool DockingServer::approachDock(Dock * dock, geometry_msgs::msg::PoseStamped & 
     }
 
     // Update perception
-    if (!dock->plugin->getRefinedPose(dock_pose)) {
+    if (!dock->plugin->getRefinedPose(dock_pose, dock->id)) {
       throw opennav_docking_core::FailedToDetectDock("Failed dock detection");
     }
 

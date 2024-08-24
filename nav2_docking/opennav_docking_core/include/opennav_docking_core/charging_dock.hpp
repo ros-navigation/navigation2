@@ -81,7 +81,7 @@ public:
    * @param pose The initial estimate of the dock pose.
    * @param frame The frame of the initial estimate.
    */
-  virtual bool getRefinedPose(geometry_msgs::msg::PoseStamped & pose) = 0;
+  virtual bool getRefinedPose(geometry_msgs::msg::PoseStamped & pose, std::string id) = 0;
 
   /**
    * @brief Have we made contact with dock? This can be implemented in a variety

@@ -330,13 +330,18 @@ MotionPoses HybridMotionTable::getProjections(const NodeHybrid * node)
 
 unsigned int HybridMotionTable::getClosestAngularBin(const double & theta)
 {
-  return static_cast<unsigned int>(floor(theta / static_cast<double>(bin_size))) %
-         num_angle_quantization;
+  auto bin = static_cast<unsigned int>(round(static_cast<float>(theta) / bin_size));
+  return bin < num_angle_quantization ? bin : 0u;
 }
 
 float HybridMotionTable::getAngleFromBin(const unsigned int & bin_idx)
 {
   return bin_idx * bin_size;
+}
+
+double HybridMotionTable::getAngle(const double & theta)
+{
+  return theta / bin_size;
 }
 
 NodeHybrid::NodeHybrid(const uint64_t index)

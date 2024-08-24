@@ -8,6 +8,11 @@ target_link_libraries(costmap_convesion_test
   ${PROJECT_NAME}::nav2_costmap_2d_core
 )
 
+ament_add_gtest(costmap_cost_service_test costmap_cost_service_test.cpp)
+target_link_libraries(costmap_cost_service_test
+  ${PROJECT_NAME}::nav2_costmap_2d_core
+)
+
 ament_add_gtest(declare_parameter_test declare_parameter_test.cpp)
 target_link_libraries(declare_parameter_test
   ${PROJECT_NAME}::nav2_costmap_2d_core

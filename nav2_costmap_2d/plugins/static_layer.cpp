@@ -112,6 +112,10 @@ StaticLayer::activate()
 void
 StaticLayer::deactivate()
 {
+  auto node = node_.lock();
+  if (dyn_params_handler_ && node) {
+    node->remove_on_set_parameters_callback(dyn_params_handler_.get());
+  }
   dyn_params_handler_.reset();
 }
 
@@ -318,6 +322,7 @@ StaticLayer::incomingUpdate(map_msgs::msg::OccupancyGridUpdate::ConstSharedPtr u
       "StaticLayer: Map update ignored. Current map is in frame %s "
       "but update was in frame %s",
       map_frame_.c_str(), update->header.frame_id.c_str());
+    return;
   }
 
   unsigned int di = 0;

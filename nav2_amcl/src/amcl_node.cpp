@@ -312,7 +312,8 @@ AmclNode::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   pose_pub_->on_deactivate();
   particle_cloud_pub_->on_deactivate();
 
-  // reset dynamic parameter handler
+  // shutdown and reset dynamic parameter handler
+  remove_on_set_parameters_callback(dyn_params_handler_.get());
   dyn_params_handler_.reset();
 
   // destroy bond connection
@@ -540,8 +541,8 @@ AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::Sha
       global_frame_id_.c_str());
     return;
   }
-  if (abs(msg->pose.pose.position.x) > map_->size_x ||
-    abs(msg->pose.pose.position.y) > map_->size_y)
+  if (first_map_received_ && (abs(msg->pose.pose.position.x) > map_->size_x ||
+    abs(msg->pose.pose.position.y) > map_->size_y))
   {
     RCLCPP_ERROR(
       get_logger(), "Received initialpose from message is out of the size of map. Rejecting.");

@@ -72,7 +72,8 @@ public:
     Costmap2D * costmap,
     std::string global_frame,
     std::string topic_name,
-    bool always_send_full_costmap = false);
+    bool always_send_full_costmap = false,
+    double map_vis_z = 0.0);
 
   /**
    * @brief  Destructor
@@ -166,6 +167,7 @@ private:
   double saved_origin_y_;
   bool active_;
   bool always_send_full_costmap_;
+  double map_vis_z_;
 
   // Publisher for translated costmap values as msg::OccupancyGrid used in visualization
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::OccupancyGrid>::SharedPtr costmap_pub_;
