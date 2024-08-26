@@ -15,26 +15,21 @@
 #include <cmath>
 
 #include "nav2_util/node_utils.hpp"
-#include "opennav_docking/simple_charging_dock.hpp"
+#include "opennav_docking/simple_non_charging_dock.hpp"
 
 namespace opennav_docking
 {
 
-void SimpleChargingDock::configure(
+void SimpleNonChargingDock::configure(
   const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
   const std::string & name, std::shared_ptr<tf2_ros::Buffer> tf)
 {
   name_ = name;
   tf2_buffer_ = tf;
-  is_charging_ = false;
   node_ = parent.lock();
   if (!node_) {
     throw std::runtime_error{"Failed to lock node"};
   }
-
-  // Optionally use battery info to check when charging, else say charging if docked
-  nav2_util::declare_parameter_if_not_declared(
-    node_, name + ".use_battery_status", rclcpp::ParameterValue(true));
 
   // Parameters for optional external detection of dock pose
   nav2_util::declare_parameter_if_not_declared(
@@ -53,10 +48,6 @@ void SimpleChargingDock::configure(
     node_, name + ".external_detection_rotation_roll", rclcpp::ParameterValue(-1.57));
   nav2_util::declare_parameter_if_not_declared(
     node_, name + ".filter_coef", rclcpp::ParameterValue(0.1));
-
-  // Charging threshold from BatteryState message
-  nav2_util::declare_parameter_if_not_declared(
-    node_, name + ".charging_threshold", rclcpp::ParameterValue(0.5));
 
   // Optionally determine if docked via stall detection using joint_states
   nav2_util::declare_parameter_if_not_declared(
@@ -78,7 +69,6 @@ void SimpleChargingDock::configure(
   nav2_util::declare_parameter_if_not_declared(
     node_, name + ".staging_yaw_offset", rclcpp::ParameterValue(0.0));
 
-  node_->get_parameter(name + ".use_battery_status", use_battery_status_);
   node_->get_parameter(name + ".use_external_detection_pose", use_external_detection_pose_);
   node_->get_parameter(name + ".external_detection_timeout", external_detection_timeout_);
   node_->get_parameter(
@@ -90,7 +80,6 @@ void SimpleChargingDock::configure(
   node_->get_parameter(name + ".external_detection_rotation_pitch", pitch);
   node_->get_parameter(name + ".external_detection_rotation_roll", roll);
   external_detection_rotation_.setEuler(pitch, roll, yaw);
-  node_->get_parameter(name + ".charging_threshold", charging_threshold_);
   node_->get_parameter(name + ".stall_velocity_threshold", stall_velocity_threshold_);
   node_->get_parameter(name + ".stall_effort_threshold", stall_effort_threshold_);
   node_->get_parameter(name + ".docking_threshold", docking_threshold_);
@@ -102,14 +91,6 @@ void SimpleChargingDock::configure(
   double filter_coef;
   node_->get_parameter(name + ".filter_coef", filter_coef);
   filter_ = std::make_unique<PoseFilter>(filter_coef, external_detection_timeout_);
-
-  if (use_battery_status_) {
-    battery_sub_ = node_->create_subscription<sensor_msgs::msg::BatteryState>(
-      "battery_state", 1,
-      [this](const sensor_msgs::msg::BatteryState::SharedPtr state) {
-        is_charging_ = state->current > charging_threshold_;
-      });
-  }
 
   if (use_external_detection_pose_) {
     dock_pose_.header.stamp = rclcpp::Time(0);
@@ -130,7 +111,7 @@ void SimpleChargingDock::configure(
     }
     joint_state_sub_ = node_->create_subscription<sensor_msgs::msg::JointState>(
       "joint_states", 1,
-      std::bind(&SimpleChargingDock::jointStateCallback, this, std::placeholders::_1));
+      std::bind(&SimpleNonChargingDock::jointStateCallback, this, std::placeholders::_1));
   }
 
   dock_pose_pub_ = node_->create_publisher<geometry_msgs::msg::PoseStamped>("dock_pose", 1);
@@ -139,7 +120,7 @@ void SimpleChargingDock::configure(
   staging_pose_pub_ = node_->create_publisher<geometry_msgs::msg::PoseStamped>("staging_pose", 1);
 }
 
-geometry_msgs::msg::PoseStamped SimpleChargingDock::getStagingPose(
+geometry_msgs::msg::PoseStamped SimpleNonChargingDock::getStagingPose(
   const geometry_msgs::msg::Pose & pose, const std::string & frame)
 {
   // If not using detection, set the dock pose as the given dock pose estimate
@@ -167,7 +148,7 @@ geometry_msgs::msg::PoseStamped SimpleChargingDock::getStagingPose(
   return staging_pose;
 }
 
-bool SimpleChargingDock::getRefinedPose(geometry_msgs::msg::PoseStamped & pose, std::string /*id*/)
+bool SimpleNonChargingDock::getRefinedPose(geometry_msgs::msg::PoseStamped & pose, std::string)
 {
   // If using not detection, set the dock pose to the static fixed-frame version
   if (!use_external_detection_pose_) {
@@ -236,7 +217,7 @@ bool SimpleChargingDock::getRefinedPose(geometry_msgs::msg::PoseStamped & pose, 
   return true;
 }
 
-bool SimpleChargingDock::isDocked()
+bool SimpleNonChargingDock::isDocked()
 {
   if (joint_state_sub_) {
     // Using stall detection
@@ -259,29 +240,14 @@ bool SimpleChargingDock::isDocked()
     return false;
   }
 
-  // If we are close enough, pretend we are charging
+  // If we are close enough, we are docked
   double d = std::hypot(
     base_pose.pose.position.x - dock_pose_.pose.position.x,
     base_pose.pose.position.y - dock_pose_.pose.position.y);
   return d < docking_threshold_;
 }
 
-bool SimpleChargingDock::isCharging()
-{
-  return use_battery_status_ ? is_charging_ : isDocked();
-}
-
-bool SimpleChargingDock::disableCharging()
-{
-  return true;
-}
-
-bool SimpleChargingDock::hasStoppedCharging()
-{
-  return !isCharging();
-}
-
-void SimpleChargingDock::jointStateCallback(const sensor_msgs::msg::JointState::SharedPtr state)
+void SimpleNonChargingDock::jointStateCallback(const sensor_msgs::msg::JointState::SharedPtr state)
 {
   double velocity = 0.0;
   double effort = 0.0;
@@ -305,4 +271,4 @@ void SimpleChargingDock::jointStateCallback(const sensor_msgs::msg::JointState::
 }  // namespace opennav_docking
 
 #include "pluginlib/class_list_macros.hpp"
-PLUGINLIB_EXPORT_CLASS(opennav_docking::SimpleChargingDock, opennav_docking_core::ChargingDock)
+PLUGINLIB_EXPORT_CLASS(opennav_docking::SimpleNonChargingDock, opennav_docking_core::ChargingDock)

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef OPENNAV_DOCKING__SIMPLE_CHARGING_DOCK_HPP_
-#define OPENNAV_DOCKING__SIMPLE_CHARGING_DOCK_HPP_
+#ifndef OPENNAV_DOCKING__SIMPLE_NON_CHARGING_DOCK_HPP_
+#define OPENNAV_DOCKING__SIMPLE_NON_CHARGING_DOCK_HPP_
 
 #include <string>
 #include <memory>
@@ -25,20 +25,20 @@
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2/utils.h"
 
-#include "opennav_docking_core/charging_dock.hpp"
+#include "opennav_docking_core/non_charging_dock.hpp"
 #include "opennav_docking/pose_filter.hpp"
 
 namespace opennav_docking
 {
 
-class SimpleChargingDock : public opennav_docking_core::ChargingDock
+class SimpleNonChargingDock : public opennav_docking_core::NonChargingDock
 {
 public:
   /**
    * @brief Constructor
    */
-  SimpleChargingDock()
-  : ChargingDock()
+  SimpleNonChargingDock()
+  : NonChargingDock()
   {}
 
   /**
@@ -88,21 +88,6 @@ public:
    */
   virtual bool isDocked();
 
-  /**
-   * @copydoc opennav_docking_core::ChargingDock::isCharging
-   */
-  virtual bool isCharging();
-
-  /**
-   * @copydoc opennav_docking_core::ChargingDock::disableCharging
-   */
-  virtual bool disableCharging();
-
-  /**
-   * @brief Similar to isCharging() but called when undocking.
-   */
-  virtual bool hasStoppedCharging();
-
 protected:
   void jointStateCallback(const sensor_msgs::msg::JointState::SharedPtr state);
 
@@ -116,11 +101,6 @@ protected:
   // This is the actual dock pose once it has the specified translation/rotation applied
   // If not subscribed to a topic, this is simply the database dock pose
   geometry_msgs::msg::PoseStamped dock_pose_;
-
-  // Subscribe to battery message, used to determine if charging
-  rclcpp::Subscription<sensor_msgs::msg::BatteryState>::SharedPtr battery_sub_;
-  bool is_charging_;
-  bool use_battery_status_;
 
   // Optionally subscribe to joint state message, used to determine if stalled
   rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_state_sub_;
@@ -138,8 +118,6 @@ protected:
   // Filtering of detected poses
   std::shared_ptr<PoseFilter> filter_;
 
-  // Threshold that battery current must exceed to be "charging" (in Amperes)
-  double charging_threshold_;
   // If not using an external pose reference, this is the distance threshold
   double docking_threshold_;
   std::string base_frame_id_;
@@ -153,4 +131,4 @@ protected:
 
 }  // namespace opennav_docking
 
-#endif  // OPENNAV_DOCKING__SIMPLE_CHARGING_DOCK_HPP_
+#endif  // OPENNAV_DOCKING__SIMPLE_NON_CHARGING_DOCK_HPP_
