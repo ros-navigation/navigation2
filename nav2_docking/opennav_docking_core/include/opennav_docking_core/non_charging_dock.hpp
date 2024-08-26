@@ -12,34 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef OPENNAV_DOCKING_CORE__CHARGING_DOCK_HPP_
-#define OPENNAV_DOCKING_CORE__CHARGING_DOCK_HPP_
+#ifndef OPENNAV_DOCKING_CORE__NON_CHARGING_DOCK_HPP_
+#define OPENNAV_DOCKING_CORE__NON_CHARGING_DOCK_HPP_
 
 #include <string>
 #include <memory>
 
-#include "rclcpp/rclcpp.hpp"
-#include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav2_util/lifecycle_node.hpp"
-#include "tf2_ros/buffer.h"
+#include "opennav_docking_core/charging_dock.hpp"
 
 
 namespace opennav_docking_core
 {
 
 /**
- * @class ChargingDock
- * @brief Abstract interface for a charging dock for the docking framework
+ * @class NonChargingDock
+ * @brief Abstract interface for a non-charging dock for the docking framework
  */
-class ChargingDock
+class NonChargingDock : public ChargingDock
 {
 public:
-  using Ptr = std::shared_ptr<ChargingDock>;
+  using Ptr = std::shared_ptr<NonChargingDock>;
 
   /**
    * @brief Virtual destructor
    */
-  virtual ~ChargingDock() {}
+  virtual ~NonChargingDock() {}
 
   /**
    * @param  parent pointer to user's node
@@ -101,7 +98,10 @@ public:
    * NOTE: this function is expected to return QUICKLY. Blocking here will block
    * the docking controller loop.
    */
-  virtual bool isCharging() = 0;
+  bool isCharging() final
+  {
+    throw std::runtime_error("This dock is not a charging dock!");
+  }
 
   /**
    * @brief Undocking while current is still flowing can damage a charge dock
@@ -112,24 +112,25 @@ public:
    * NOTE: this function is expected to return QUICKLY. Blocking here will block
    * the docking controller loop.
    */
-  virtual bool disableCharging() = 0;
+  bool disableCharging() final
+  {
+    throw std::runtime_error("This dock is not a charging dock!");
+  }
 
   /**
    * @brief Similar to isCharging() but called when undocking.
    */
-  virtual bool hasStoppedCharging() = 0;
+  bool hasStoppedCharging() final
+  {
+    throw std::runtime_error("This dock is not a charging dock!");
+  }
 
   /**
    * @brief Gets if this is a charging-typed dock
    */
-  virtual bool isCharger() {return true;}
-
-  std::string getName() {return name_;}
-
-protected:
-  std::string name_;
+  bool isCharger() final {return false;}
 };
 
 }  // namespace opennav_docking_core
 
-#endif  // OPENNAV_DOCKING_CORE__CHARGING_DOCK_HPP_
+#endif  // OPENNAV_DOCKING_CORE__NON_CHARGING_DOCK_HPP_

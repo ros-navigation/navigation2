@@ -1,6 +1,6 @@
 # Open Navigation's Nav2 Docking Framework
 
-This package contains an automatic robot docking framework & auxiliary tools. It uses plugin `dock` implementations for a particular platform to enable the framework to generalize to robots of many different kinematic models, charging methods, sensor modalities, and so on. It can also handle a database of many different docking locations and dock models to handle a heterogeneous environment. This task server is designed be called by an application BT or autonomy application to dock once completed with tasks or battery is low -- _not_ within the navigate-to-pose action itself (though `undock` may be called from inside navigate actions!).
+This package contains an automatic robot docking framework & auxiliary tools. It uses plugin `dock` implementations for a particular platform to enable the framework to generalize to robots of many different kinematic models, charging methods, sensor modalities, non-charging dock request needs, and so on. It can also handle a database of many different docking locations and dock models to handle a heterogeneous environment. This task server is designed be called by an application BT or autonomy application to dock once completed with tasks or battery is low -- _not_ within the navigate-to-pose action itself (though `undock` may be called from inside navigate actions!).
 
 This work is sponsored by [NVIDIA](https://www.nvidia.com/en-us/) and created by [Open Navigation LLC](https://opennav.org).
 
@@ -24,9 +24,9 @@ The Docking Framework has 5 main components:
 - `Navigator`: A NavigateToPose action client to navigate the robot to the dock's staging pose if not with the prestaging tolerances 
 - `DockDatabase`: A database of dock instances in an environment and their associated interfaces for transacting with each type. An arbitrary number of types are supported.
 - `Controller`: A spiral-based graceful controller to use for the vision-control loop for docking
-- `ChargingDock`: Plugins that describe the dock and how to transact with it (check if charging, detection, etc). You can find this plugin header in the `opennav_docking_core` package.
+- `ChargingDock` and `NonChargingDock`: Plugins that describe the dock and how to transact with it (check if charging, detection, etc). You can find these plugin headers in the `opennav_docking_core` package.
 
-The `ChargingDock` plugins are the heart of the customizability of the framework to support any type of charging dock for any kind of robot. The `DockDatabase` is how you describe where these docks exist in your environment to interact with and any of them may be used in your docking request. 
+The `ChargingDock` and `NonChargingDock` plugins are the heart of the customizability of the framework to support any type of charging or non-charging dock for any kind of robot. This means you can both dock with charging stations, as well as non-charging infrastructure such as static locations (ex. conveyers) or dynamic locations (ex. pallets). The `DockDatabase` is how you describe where these docks exist in your environment to interact with and any of them may be used in your docking request. For dynamic locations like docking with movable objects, the action request can include an approximate docking location that uses vision-control loops to refine motion into it.
 
 The docking procedure is as follows:
 1. Take action request and obtain the dock's plugin and its pose
@@ -34,7 +34,7 @@ The docking procedure is as follows:
 3. Use the dock's plugin to initially detect the dock and return the docking pose
 4. Enter a vision-control loop where the robot attempts to reach the docking pose while its actively being refined by the vision system
 5. Exit the vision-control loop once contact has been detected or charging has started 
-6. Wait until charging starts and return success.
+6. Wait until charging starts (if applicable) and return success.
 
 If anywhere this procedure is unsuccessful, `N` retries may be made by driving back to the dock's staging pose and trying again. If still unsuccessful, it will return a failure code to indicate what kind of failure occurred to the client.
 
@@ -74,7 +74,7 @@ This service exists to potentially reload the dock server's known dock database 
 
 There are two unique elements to consider in specifying docks: dock _instances_ and dock _plugins_. Dock instances are instances of a particular dock in the map, as the database may contain many known docks (and you can specify which by name you'd like to dock at). Dock plugins are the model of dock that each is an instance of. The plugins contain the capabilities to generically detect and connect to a particular dock model. This separation allows us to efficiently enable many individual docking locations of potentially several different revisions with different attributes.
 
-The **dock plugins** are specified in the parameter file as shown below. If you're familiar with plugins in other Nav2 servers, this should look like a familiar design pattern. Note that there is no specific information about the dock's pose or instances. These are generic attributes about the dock revision (such as staging pose, enable charging command, detection method, etc). You can add additional parameters in the dock's namespace as you choose (for example `timeout`).
+The **dock plugins** are specified in the parameter file as shown below. If you're familiar with plugins in other Nav2 servers, this should look like a familiar design pattern. Note that there is no specific information about the dock's pose or instances. These are generic attributes about the dock revision (such as staging pose, enable charging command, detection method, etc). You can add additional parameters in the dock's namespace as you choose (for example `timeout`). These can be of both charging and non-charging types.
 
 ```
 dock_plugins: ["dockv1", "dockv3"]
@@ -145,23 +145,26 @@ There are two functions used during dock approach:
  * `isCharging`: The approach stops when the robot reports `isDocked`, then we wait
    for charging to start by calling `isCharging`.
    * This may be implemented using the `sensor_msgs/BatteryState` message to check the power status or for charging current.
+   * Used for charging-typed plugins.
 
 Similarly, there are two functions used during undocking:
 
  * `disableCharging`: This function is called before undocking commences to help
    prevent wear on the charge contacts. If the charge dock supports turning off
    the charge current, it should be done here.
+   * Used for charging-typed plugins.
  * `hasStoppedCharging`: This function is called while the controller is undocking.
    Undocking is successful when charging has stopped and the robot has returned to
    the staging pose.
+   * Used for charging-typed plugins.
 
 Keep in mind that the docking and undocking functions should return quickly as they
 will be called inside the control loop. Also make sure that `isDocked` should
 return true if `isCharging` returns true.
 
-### Simple Charging Dock Plugin
+### Simple (Non-) Charging Dock Plugins
 
-The `SimpleChargingDock` plugin is an example with many common options which may be fully functional for
+The `SimpleChargingDock` and `SimpleNonChargingDock` plugins are examples with many common options which may be fully functional for
 some robots.
 
 `getStagingPose` applys a parameterized translational and rotational offset to the dock pose to obtain the staging pose.
@@ -174,7 +177,7 @@ During the docking approach, there are two options for detecting `isDocked`:
 1. We can check the joint states of the wheels if the current has spiked above a set threshold to indicate that the robot has made contact with the dock or other physical object.
 2. The dock pose is compared with the robot pose and `isDocked` returns true when the distance drops below the specified `docking_threshold`.
 
-The `isCharging` and `hasStoppedCharging` functions have two options:
+The `isCharging` and `hasStoppedCharging` functions have two options, when using the charging dock type:
 1. Subscribing to a `sensor_msgs/BatteryState` message on topic `battery_state`. The robot is considered charging when the `current` field of the message exceeds the `charging_threshold`.
 2. We can return that we are charging is `isDocked() = true`, which is useful for initial testing or low-reliability docking until battery state or similar information is available.
 
