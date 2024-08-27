@@ -106,7 +106,9 @@ protected:
     * @brief Visualize trajectories
     * @param transformed_plan Transformed input plan
     */
-  void visualize(nav_msgs::msg::Path transformed_plan);
+  void visualize(
+    nav_msgs::msg::Path transformed_plan,
+    const builtin_interfaces::msg::Time & cmd_stamp);
 
   std::string name_;
   rclcpp_lifecycle::LifecycleNode::WeakPtr parent_;
