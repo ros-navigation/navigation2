@@ -82,13 +82,24 @@ void TrajectoryVisualizer::add(
       auto marker = utils::createMarker(
         marker_id_++, pose, scale, color, frame_id_, marker_namespace);
       points_->markers.push_back(marker);
+
+      // populate optimal path
+      geometry_msgs::msg::PoseStamped pose_stamped;
+      pose_stamped.header.frame_id = frame_id_;
+      pose_stamped.pose = pose;
+
+      tf2::Quaternion quaternion_tf2;
+      quaternion_tf2.setRPY(0., 0., trajectory(i, 2));
+      pose_stamped.pose.orientation = tf2::toMsg(quaternion_tf2);
+
+      optimal_path_->poses.push_back(pose_stamped);
     };
 
+  optimal_path_->header.stamp = cmd_stamp;
+  optimal_path_->header.frame_id = frame_id_;
   for (size_t i = 0; i < size; i++) {
     add_marker(i);
   }
-
-  populate_optimal_path(trajectory, cmd_stamp);
 }
 
 void TrajectoryVisualizer::add(
@@ -137,35 +148,6 @@ void TrajectoryVisualizer::visualize(const nav_msgs::msg::Path & plan)
   if (transformed_path_pub_->get_subscription_count() > 0) {
     auto plan_ptr = std::make_unique<nav_msgs::msg::Path>(plan);
     transformed_path_pub_->publish(std::move(plan_ptr));
-  }
-}
-
-void TrajectoryVisualizer::populate_optimal_path(
-  const xt::xtensor<float, 2> & optimal_traj,
-  const builtin_interfaces::msg::Time & cmd_stamp)
-{
-  auto & size = optimal_traj.shape()[0];
-  if (size == 0) {
-    return;
-  }
-
-  optimal_path_->header.stamp = cmd_stamp;
-  optimal_path_->header.frame_id = frame_id_;
-
-  for (size_t i = 0; i < size; i++) {
-    // create new pose for the path
-    geometry_msgs::msg::PoseStamped pose_stamped;
-    pose_stamped.header.frame_id = frame_id_;
-
-    // position & orientation
-    pose_stamped.pose = utils::createPose(optimal_traj(i, 0), optimal_traj(i, 1), 0.0);
-
-    tf2::Quaternion quaternion_tf2;
-    quaternion_tf2.setRPY(0., 0., optimal_traj(i, 2));
-    pose_stamped.pose.orientation = tf2::toMsg(quaternion_tf2);
-
-    // add pose to the path
-    optimal_path_->poses.push_back(pose_stamped);
   }
 }
 

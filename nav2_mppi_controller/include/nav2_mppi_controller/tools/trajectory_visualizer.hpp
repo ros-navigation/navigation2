@@ -90,14 +90,6 @@ public:
   void add(const models::Trajectories & trajectories, const std::string & marker_namespace);
 
   /**
-    * @brief Publish the optimal trajectory in the form of a path message
-    * @param trajectory Optimal trajectory
-    */
-  void populate_optimal_path(
-    const xt::xtensor<float, 2> & optimal_traj,
-    const builtin_interfaces::msg::Time & cmd_stamp);
-
-  /**
     * @brief Visualize the plan
     * @param plan Plan to visualize
     */

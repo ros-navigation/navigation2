@@ -205,7 +205,7 @@ TEST(TrajectoryVisualizerTests, VisOptimalPath)
     // Check positions are correct
     EXPECT_EQ(recieved_path.poses[i].pose.position.x, static_cast<float>(i));
     EXPECT_EQ(recieved_path.poses[i].pose.position.y, static_cast<float>(i));
-    EXPECT_EQ(recieved_path.poses[i].pose.position.z, 0.0);
+    EXPECT_EQ(recieved_path.poses[i].pose.position.z, 0.06);
 
     // Check orientations are correct
     quat.setRPY(0., 0., optimal_trajectory(i, 2));
