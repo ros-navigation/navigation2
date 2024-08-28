@@ -69,6 +69,8 @@ void ComputePathToPoseAction::halt()
 {
   nav_msgs::msg::Path empty_path;
   setOutput("path", empty_path);
+  // DO NOT reset "error_code_id" output port, we want to read it later
+  // DO NOT reset "error_msg" output port, we want to read it later
   BtActionNode::halt();
 }
 
