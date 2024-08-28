@@ -66,6 +66,15 @@ BT::NodeStatus ComputePathThroughPosesAction::on_cancelled()
   return BT::NodeStatus::SUCCESS;
 }
 
+void ComputePathThroughPosesAction::halt()
+{
+  nav_msgs::msg::Path empty_path;
+  setOutput("path", empty_path);
+  // DO NOT reset "error_code_id" output port, we want to read it later
+  // DO NOT reset "error_msg" output port, we want to read it later
+  BtActionNode::halt();
+}
+
 }  // namespace nav2_behavior_tree
 
 #include "behaviortree_cpp/bt_factory.h"
