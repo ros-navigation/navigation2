@@ -92,16 +92,13 @@ NavigateThroughPosesNavigator::goalCompleted(
   typename ActionT::Result::SharedPtr result,
   const nav2_behavior_tree::BtStatus /*final_bt_status*/)
 {
-  if (result->error_code == 0 && internal_error_code_ != 0)
-  {
+  if (result->error_code == 0 && internal_error_code_ != 0) {
     RCLCPP_WARN(logger_,
       "NavigateThroughPosesNavigator::goalCompleted, set result to internal error %d:'%s'.",
       internal_error_code_, internal_error_msg_.c_str());
     result->error_code = internal_error_code_;
     result->error_msg = internal_error_msg_;
-  }
-  else
-  {
+  } else {
     RCLCPP_INFO(logger_, "NavigateThroughPosesNavigator::goalCompleted result %d:'%s'.",
       result->error_code,
       result->error_msg.c_str());
