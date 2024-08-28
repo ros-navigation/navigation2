@@ -225,8 +225,8 @@ public:
     blackboard->set("number_recoveries", 0);  // NOLINT
     blackboard->set("odom_smoother", odom_smoother);  // NOLINT
 
-    current_error_code_ = 0;
-    current_error_msg_ = "";
+    internal_error_code_ = 0;
+    internal_error_msg_ = "";
 
     return configure(parent_node, odom_smoother) && ok;
   }
@@ -375,9 +375,9 @@ protected:
   FeedbackUtils feedback_utils_;
   NavigatorMuxer * plugin_muxer_;
 
-  // Error tracking
-  uint16_t current_error_code_;
-  std::string current_error_msg_;
+  // internal error tracking (IOW not behaviorTree blackboard errors)
+  uint16_t internal_error_code_;
+  std::string internal_error_msg_;
 };
 
 }  // namespace nav2_core
