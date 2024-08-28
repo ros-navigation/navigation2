@@ -44,8 +44,8 @@ NavigateToPoseNavigator::configure(
   // Odometry smoother object for getting current speed
   odom_smoother_ = odom_smoother;
 
-  current_error_code_ = ActionT::Result::NONE;
-  current_error_msg_ = "";
+  internal_error_code_ = ActionT::Result::NONE;
+  internal_error_msg_ = "";
 
   self_client_ = rclcpp_action::create_client<ActionT>(node, getName());
 
@@ -91,10 +91,10 @@ NavigateToPoseNavigator::goalReceived(ActionT::Goal::ConstSharedPtr goal)
   auto bt_xml_filename = goal->behavior_tree;
 
   if (!bt_action_server_->loadBehaviorTree(bt_xml_filename)) {
-    current_error_code_ = ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE;
-    current_error_msg_ = "Error loading XML file: " + bt_xml_filename +
+    internal_error_code_ = ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE;
+    internal_error_msg_ = "Error loading XML file: " + bt_xml_filename +
       ". Navigation canceled.";
-    RCLCPP_ERROR(logger_, current_error_msg_.c_str());
+    RCLCPP_ERROR(logger_, internal_error_msg_.c_str());
     return false;
   }
 
@@ -106,8 +106,20 @@ NavigateToPoseNavigator::goalCompleted(
   typename ActionT::Result::SharedPtr result,
   const nav2_behavior_tree::BtStatus /*final_bt_status*/)
 {
-  result->error_code = current_error_code_;
-  result->error_msg = current_error_msg_;
+  if (result->error_code == 0 && !internal_error_code_ == 0)
+  {
+    RCLCPP_WARN(logger_,
+      "NavigateThroughPosesNavigator::goalCompleted, set result to internal error %d:%s.",
+      internal_error_code_, internal_error_msg_.c_str());
+    result->error_code = internal_error_code_;
+    result->error_msg = internal_error_msg_;
+  }
+  else
+  {
+    RCLCPP_INFO(logger_, "NavigateThroughPosesNavigator::goalCompleted result %d:%s.",
+      result->error_code,
+      result->error_msg.c_str());
+  }
 }
 
 void
@@ -220,9 +232,9 @@ NavigateToPoseNavigator::initializeGoalPose(ActionT::Goal::ConstSharedPtr goal)
       feedback_utils_.global_frame, feedback_utils_.robot_frame,
       feedback_utils_.transform_tolerance))
   {
-    current_error_code_ = ActionT::Result::POSE_NOT_AVAILABLE;
-    current_error_msg_ = "Initial robot pose is not available.";
-    RCLCPP_ERROR(logger_, current_error_msg_.c_str());
+    internal_error_code_ = ActionT::Result::POSE_NOT_AVAILABLE;
+    internal_error_msg_ = "Initial robot pose is not available.";
+    RCLCPP_ERROR(logger_, internal_error_msg_.c_str());
     return false;
   }
 
@@ -231,15 +243,15 @@ NavigateToPoseNavigator::initializeGoalPose(ActionT::Goal::ConstSharedPtr goal)
       goal->pose, goal_pose, *feedback_utils_.tf, feedback_utils_.global_frame,
       feedback_utils_.transform_tolerance))
   {
-    current_error_code_ = ActionT::Result::GOAL_TRANSFORMATION_ERROR;
-    current_error_msg_ =
+    internal_error_code_ = ActionT::Result::GOAL_TRANSFORMATION_ERROR;
+    internal_error_msg_ =
       "Failed to transform a goal pose provided with frame_id '" +
       goal->pose.header.frame_id +
       "' to the global frame '" +
       feedback_utils_.global_frame +
       "'.";
 
-    RCLCPP_ERROR(logger_, current_error_msg_.c_str());
+    RCLCPP_ERROR(logger_, internal_error_msg_.c_str());
     return false;
   }
 
