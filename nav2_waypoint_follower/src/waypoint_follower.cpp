@@ -454,7 +454,8 @@ WaypointFollower::goalResponseCallback(
   if (!goal) {
     current_goal_status_.status = ActionStatus::FAILED;
     current_goal_status_.error_code = nav2_msgs::action::FollowWaypoints::Result::UNKNOWN;
-    current_goal_status_.error_msg = "navigate_to_pose action client failed to send goal to server.";
+    current_goal_status_.error_msg =
+      "navigate_to_pose action client failed to send goal to server.";
     RCLCPP_ERROR(get_logger(), current_goal_status_.error_msg.c_str());
   }
 }
