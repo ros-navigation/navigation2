@@ -46,6 +46,7 @@ static const char POLYGON_SUB_TOPIC[]{"polygon_sub"};
 static const char POLYGON_PUB_TOPIC[]{"polygon_pub"};
 static const char POLYGON_NAME[]{"TestPolygon"};
 static const char CIRCLE_NAME[]{"TestCircle"};
+static const char OBSERVATION_SOURCE_NAME[]{"source"};
 static const std::vector<double> SQUARE_POLYGON {
   0.5, 0.5, 0.5, -0.5, -0.5, -0.5, -0.5, 0.5};
 static const std::vector<double> ARBITRARY_POLYGON {
@@ -235,7 +236,11 @@ public:
 
 protected:
   // Working with parameters
-  void setCommonParameters(const std::string & polygon_name, const std::string & action_type);
+  void setCommonParameters(
+    const std::string & polygon_name, const std::string & action_type,
+    const std::vector<std::string> & observation_sources =
+    std::vector<std::string>({OBSERVATION_SOURCE_NAME}),
+    const std::vector<std::string> & sources_names = std::vector<std::string>());
   void setPolygonParameters(
     const char * points,
     const bool is_static);
@@ -289,7 +294,10 @@ Tester::~Tester()
   tf_buffer_.reset();
 }
 
-void Tester::setCommonParameters(const std::string & polygon_name, const std::string & action_type)
+void Tester::setCommonParameters(
+  const std::string & polygon_name, const std::string & action_type,
+  const std::vector<std::string> & observation_sources,
+  const std::vector<std::string> & sources_names)
 {
   test_node_->declare_parameter(
     polygon_name + ".action_type", rclcpp::ParameterValue(action_type));
@@ -336,6 +344,18 @@ void Tester::setCommonParameters(const std::string & polygon_name, const std::st
     polygon_name + ".polygon_pub_topic", rclcpp::ParameterValue(POLYGON_PUB_TOPIC));
   test_node_->set_parameter(
     rclcpp::Parameter(polygon_name + ".polygon_pub_topic", POLYGON_PUB_TOPIC));
+
+  test_node_->declare_parameter(
+    "observation_sources", rclcpp::ParameterValue(observation_sources));
+  test_node_->set_parameter(
+    rclcpp::Parameter("observation_sources", observation_sources));
+
+  if (!sources_names.empty()) {
+    test_node_->declare_parameter(
+      polygon_name + ".sources_names", rclcpp::ParameterValue(sources_names));
+    test_node_->set_parameter(
+      rclcpp::Parameter(polygon_name + ".sources_names", sources_names));
+  }
 }
 
 void Tester::setPolygonParameters(
@@ -862,25 +882,26 @@ TEST_F(Tester, testPolygonGetCollisionTime)
   // Forward movement check
   nav2_collision_monitor::Velocity vel{0.5, 0.0, 0.0};  // 0.5 m/s forward movement
   // Two points 0.2 m ahead the footprint (0.5 m)
-  std::vector<nav2_collision_monitor::Point> points{{0.7, -0.01}, {0.7, 0.01}};
+  std::unordered_map<std::string, std::vector<nav2_collision_monitor::Point>> points_map;
+  points_map.insert({OBSERVATION_SOURCE_NAME, {{0.7, -0.01}, {0.7, 0.01}}});
   // Collision is expected to be ~= 0.2 m / 0.5 m/s seconds
-  EXPECT_NEAR(polygon_->getCollisionTime(points, vel), 0.4, SIMULATION_TIME_STEP);
+  EXPECT_NEAR(polygon_->getCollisionTime(points_map, vel), 0.4, SIMULATION_TIME_STEP);
 
   // Backward movement check
   vel = {-0.5, 0.0, 0.0};  // 0.5 m/s backward movement
   // Two points 0.2 m behind the footprint (0.5 m)
-  points.clear();
-  points = {{-0.7, -0.01}, {-0.7, 0.01}};
+  points_map.clear();
+  points_map.insert({OBSERVATION_SOURCE_NAME, {{-0.7, -0.01}, {-0.7, 0.01}}});
   // Collision is expected to be in ~= 0.2 m / 0.5 m/s seconds
-  EXPECT_NEAR(polygon_->getCollisionTime(points, vel), 0.4, SIMULATION_TIME_STEP);
+  EXPECT_NEAR(polygon_->getCollisionTime(points_map, vel), 0.4, SIMULATION_TIME_STEP);
 
   // Sideway movement check
   vel = {0.0, 0.5, 0.0};  // 0.5 m/s sideway movement
   // Two points 0.1 m ahead the footprint (0.5 m)
-  points.clear();
-  points = {{-0.01, 0.6}, {0.01, 0.6}};
+  points_map.clear();
+  points_map.insert({OBSERVATION_SOURCE_NAME, {{-0.01, 0.6}, {0.01, 0.6}}});
   // Collision is expected to be in ~= 0.1 m / 0.5 m/s seconds
-  EXPECT_NEAR(polygon_->getCollisionTime(points, vel), 0.2, SIMULATION_TIME_STEP);
+  EXPECT_NEAR(polygon_->getCollisionTime(points_map, vel), 0.2, SIMULATION_TIME_STEP);
 
   // Rotation check
   vel = {0.0, 0.0, 1.0};  // 1.0 rad/s rotation
@@ -894,27 +915,27 @@ TEST_F(Tester, testPolygonGetCollisionTime)
   //     |    '    |
   //     -----------
   //          '
-  points.clear();
-  points = {{0.49, -0.01}, {0.49, 0.01}};
+  points_map.clear();
+  points_map.insert({OBSERVATION_SOURCE_NAME, {{0.49, -0.01}, {0.49, 0.01}}});
   // Collision is expected to be in ~= 45 degrees * M_PI / (180 degrees * 1.0 rad/s) seconds
   double exp_res = 45 / 180 * M_PI;
-  EXPECT_NEAR(polygon_->getCollisionTime(points, vel), exp_res, EPSILON);
+  EXPECT_NEAR(polygon_->getCollisionTime(points_map, vel), exp_res, EPSILON);
 
   // Two points are already inside footprint
   vel = {0.5, 0.0, 0.0};  // 0.5 m/s forward movement
   // Two points inside
-  points.clear();
-  points = {{0.1, -0.01}, {0.1, 0.01}};
+  points_map.clear();
+  points_map.insert({OBSERVATION_SOURCE_NAME, {{0.1, -0.01}, {0.1, 0.01}}});
   // Collision already appeared: collision time should be 0
-  EXPECT_NEAR(polygon_->getCollisionTime(points, vel), 0.0, EPSILON);
+  EXPECT_NEAR(polygon_->getCollisionTime(points_map, vel), 0.0, EPSILON);
 
   // All points are out of simulation prediction
   vel = {0.5, 0.0, 0.0};  // 0.5 m/s forward movement
   // Two points 0.6 m ahead the footprint (0.5 m)
-  points.clear();
-  points = {{1.1, -0.01}, {1.1, 0.01}};
+  points_map.clear();
+  points_map.insert({OBSERVATION_SOURCE_NAME, {{1.1, -0.01}, {1.1, 0.01}}});
   // There is no collision: return value should be negative
-  EXPECT_LT(polygon_->getCollisionTime(points, vel), 0.0);
+  EXPECT_LT(polygon_->getCollisionTime(points_map, vel), 0.0);
 }
 
 TEST_F(Tester, testPolygonPublish)
@@ -945,6 +966,9 @@ TEST_F(Tester, testPolygonDefaultVisualize)
     std::string(POLYGON_NAME) + ".action_type", rclcpp::ParameterValue("stop"));
   test_node_->set_parameter(
     rclcpp::Parameter(std::string(POLYGON_NAME) + ".action_type", "stop"));
+  std::vector<std::string> observation_sources = {OBSERVATION_SOURCE_NAME};
+  test_node_->declare_parameter("observation_sources", rclcpp::ParameterValue(observation_sources));
+  test_node_->set_parameter(rclcpp::Parameter("observation_sources", observation_sources));
   setPolygonParameters(SQUARE_POLYGON_STR, true);
 
   // Create new polygon
@@ -975,6 +999,44 @@ TEST_F(Tester, testPolygonInvalidPointsString)
     test_node_, POLYGON_NAME,
     tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_FALSE(polygon_->configure());
+}
+
+TEST_F(Tester, testPolygonSourceDefaultAssociation)
+{
+  // By default, a polygon uses all observation sources
+  std::vector<std::string> all_sources = {"source_1", "source_2", "source_3"};
+  setCommonParameters(POLYGON_NAME, "stop", all_sources);  // no polygon sources names specified
+  setPolygonParameters(SQUARE_POLYGON_STR, true);
+  polygon_ = std::make_shared<PolygonWrapper>(
+    test_node_, POLYGON_NAME,
+    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
+  ASSERT_TRUE(polygon_->configure());
+  ASSERT_EQ(polygon_->getSourcesNames(), all_sources);
+}
+
+TEST_F(Tester, testPolygonSourceInvalidAssociation)
+{
+  // If a source is not defined as observation source, polygon cannot use it: config should fail
+  setCommonParameters(
+    POLYGON_NAME, "stop", {"source_1", "source_2", "source_3"}, {"source_1", "source_4"});
+  setPolygonParameters(SQUARE_POLYGON_STR, true);
+  polygon_ = std::make_shared<PolygonWrapper>(
+    test_node_, POLYGON_NAME,
+    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
+  ASSERT_FALSE(polygon_->configure());
+}
+
+TEST_F(Tester, testPolygonSourceAssociation)
+{
+  // Checks that, if declared, only the specific sources associated to polygon are saved
+  std::vector<std::string> poly_sources = {"source_1", "source_3"};
+  setCommonParameters(POLYGON_NAME, "stop", {"source_1", "source_2", "source_3"}, poly_sources);
+  setPolygonParameters(SQUARE_POLYGON_STR, true);
+  polygon_ = std::make_shared<PolygonWrapper>(
+    test_node_, POLYGON_NAME,
+    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
+  ASSERT_TRUE(polygon_->configure());
+  ASSERT_EQ(polygon_->getSourcesNames(), poly_sources);
 }
 
 int main(int argc, char ** argv)
