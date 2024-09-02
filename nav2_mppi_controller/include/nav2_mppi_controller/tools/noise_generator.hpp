@@ -77,9 +77,7 @@ public:
    * @param settings Settings of controller
    * @param is_holonomic If base is holonomic
    */
-  void reset(mppi::models::OptimizerSettings & settings, bool is_holonomic);
-
-  
+  void reset(mppi::models::OptimizerSettings & settings, bool is_holonomic);  
 
 protected:
   /**

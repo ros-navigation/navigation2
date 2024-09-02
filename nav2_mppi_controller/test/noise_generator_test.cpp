@@ -70,7 +70,7 @@ TEST(NoiseGeneratorTest, NoiseGeneratorMain)
   // Populate a potential control sequence
   mppi::models::ControlSequence control_sequence;
   control_sequence.reset(25);
-  for (unsigned int i = 0; i != control_sequence.vx.shape(0); i++) {
+  for (unsigned int i = 0; i != control_sequence.vx.rows(); i++) {
     control_sequence.vx(i) = i;
     control_sequence.vy(i) = i;
     control_sequence.wz(i) = i;

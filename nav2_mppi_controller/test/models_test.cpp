@@ -35,9 +35,9 @@ TEST(ModelsTest, ControlSequenceTest)
 {
   // populate the object
   ControlSequence sequence;
-  sequence.vx = xt::ones<float>({10});
-  sequence.vy = xt::ones<float>({10});
-  sequence.wz = xt::ones<float>({10});
+  sequence.vx = Eigen::ArrayXf::Ones(10);
+  sequence.vy = Eigen::ArrayXf::Ones(10);
+  sequence.wz = Eigen::ArrayXf::Ones(10);
 
   // Show you can get contents
   EXPECT_EQ(sequence.vx(4), 1);
@@ -50,18 +50,18 @@ TEST(ModelsTest, ControlSequenceTest)
   EXPECT_EQ(sequence.vx(4), 0);
   EXPECT_EQ(sequence.vy(4), 0);
   EXPECT_EQ(sequence.wz(4), 0);
-  EXPECT_EQ(sequence.vx.shape(0), 20u);
-  EXPECT_EQ(sequence.vy.shape(0), 20u);
-  EXPECT_EQ(sequence.wz.shape(0), 20u);
+  EXPECT_EQ(sequence.vx.rows(), 20);
+  EXPECT_EQ(sequence.vy.rows(), 20);
+  EXPECT_EQ(sequence.wz.rows(), 20);
 }
 
 TEST(ModelsTest, PathTest)
 {
   // populate the object
   Path path;
-  path.x = xt::ones<float>({10});
-  path.y = xt::ones<float>({10});
-  path.yaws = xt::ones<float>({10});
+  path.x = Eigen::ArrayXf::Ones();
+  path.y = Eigen::ArrayXf::Ones();
+  path.yaws = Eigen::ArrayXf::Ones();
 
   // Show you can get contents
   EXPECT_EQ(path.x(4), 1);
@@ -74,21 +74,21 @@ TEST(ModelsTest, PathTest)
   EXPECT_EQ(path.x(4), 0);
   EXPECT_EQ(path.y(4), 0);
   EXPECT_EQ(path.yaws(4), 0);
-  EXPECT_EQ(path.x.shape(0), 20u);
-  EXPECT_EQ(path.y.shape(0), 20u);
-  EXPECT_EQ(path.yaws.shape(0), 20u);
+  EXPECT_EQ(path.x.rows(), 20);
+  EXPECT_EQ(path.y.rows(), 20);
+  EXPECT_EQ(path.yaws.rows(), 20);
 }
 
 TEST(ModelsTest, StateTest)
 {
   // populate the object
   State state;
-  state.vx = xt::ones<float>({10, 10});
-  state.vy = xt::ones<float>({10, 10});
-  state.wz = xt::ones<float>({10, 10});
-  state.cvx = xt::ones<float>({10, 10});
-  state.cvy = xt::ones<float>({10, 10});
-  state.cwz = xt::ones<float>({10, 10});
+  state.vx = Eigen::ArrayXXf::Ones(10, 10);
+  state.vy = Eigen::ArrayXXf::Ones(10, 10);
+  state.wz = Eigen::ArrayXXf::Ones(10, 10);
+  state.cvx = Eigen::ArrayXXf::Ones(10, 10);
+  state.cvy = Eigen::ArrayXXf::Ones(10, 10);
+  state.cwz = Eigen::ArrayXXf::Ones(10, 10);
 
   // Show you can get contents
   EXPECT_EQ(state.cvx(4), 1);
@@ -107,27 +107,27 @@ TEST(ModelsTest, StateTest)
   EXPECT_EQ(state.vx(4), 0);
   EXPECT_EQ(state.vy(4), 0);
   EXPECT_EQ(state.wz(4), 0);
-  EXPECT_EQ(state.cvx.shape(0), 20u);
-  EXPECT_EQ(state.cvy.shape(0), 20u);
-  EXPECT_EQ(state.cwz.shape(0), 20u);
-  EXPECT_EQ(state.cvx.shape(1), 40u);
-  EXPECT_EQ(state.cvy.shape(1), 40u);
-  EXPECT_EQ(state.cwz.shape(1), 40u);
-  EXPECT_EQ(state.vx.shape(0), 20u);
-  EXPECT_EQ(state.vy.shape(0), 20u);
-  EXPECT_EQ(state.wz.shape(0), 20u);
-  EXPECT_EQ(state.vx.shape(1), 40u);
-  EXPECT_EQ(state.vy.shape(1), 40u);
-  EXPECT_EQ(state.wz.shape(1), 40u);
+  EXPECT_EQ(state.cvx.rows(), 20);
+  EXPECT_EQ(state.cvy.rows(), 20);
+  EXPECT_EQ(state.cwz.rows(), 20);
+  EXPECT_EQ(state.cvx.cols(), 40);
+  EXPECT_EQ(state.cvy.cols(), 40);
+  EXPECT_EQ(state.cwz.cols(), 40);
+  EXPECT_EQ(state.vx.rows(), 20);
+  EXPECT_EQ(state.vy.rows(), 20);
+  EXPECT_EQ(state.wz.rows(), 20);
+  EXPECT_EQ(state.vx.cols(), 40);
+  EXPECT_EQ(state.vy.cols(), 40);
+  EXPECT_EQ(state.wz.cols(), 40);
 }
 
 TEST(ModelsTest, TrajectoriesTest)
 {
   // populate the object
   Trajectories trajectories;
-  trajectories.x = xt::ones<float>({10, 10});
-  trajectories.y = xt::ones<float>({10, 10});
-  trajectories.yaws = xt::ones<float>({10, 10});
+  trajectories.x = Eigen::ArrayXXf::Ones(10, 10);
+  trajectories.y = Eigen::ArrayXXf::Ones(10, 10);
+  trajectories.yaws = Eigen::ArrayXXf::Ones(10, 10);
 
   // Show you can get contents
   EXPECT_EQ(trajectories.x(4), 1);
@@ -140,10 +140,10 @@ TEST(ModelsTest, TrajectoriesTest)
   EXPECT_EQ(trajectories.x(4), 0);
   EXPECT_EQ(trajectories.y(4), 0);
   EXPECT_EQ(trajectories.yaws(4), 0);
-  EXPECT_EQ(trajectories.x.shape(0), 20u);
-  EXPECT_EQ(trajectories.y.shape(0), 20u);
-  EXPECT_EQ(trajectories.yaws.shape(0), 20u);
-  EXPECT_EQ(trajectories.x.shape(1), 40u);
-  EXPECT_EQ(trajectories.y.shape(1), 40u);
-  EXPECT_EQ(trajectories.yaws.shape(1), 40u);
+  EXPECT_EQ(trajectories.x.rows(), 20);
+  EXPECT_EQ(trajectories.y.rows(), 20);
+  EXPECT_EQ(trajectories.yaws.rows(), 20);
+  EXPECT_EQ(trajectories.x.cols(), 40);
+  EXPECT_EQ(trajectories.y.cols(), 40);
+  EXPECT_EQ(trajectories.yaws.cols(), 40);
 }

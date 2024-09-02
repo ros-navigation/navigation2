@@ -97,46 +97,45 @@ void PathAngleCritic::score(CriticData & data)
   }
 
   int && rightmost_idx = data.trajectories.y.cols() - 1;
-  auto yaws_between_points = (goal_y - data.trajectories.y.col(rightmost_idx)).binaryExpr(
-    (goal_x - data.trajectories.x.col(rightmost_idx)), [&](const float & y, const float & x){return std::atan2(y, x);}).eval();
+  auto diff_y = goal_y - data.trajectories.y.col(rightmost_idx);
+  auto diff_x = goal_x - data.trajectories.x.col(rightmost_idx);
+  auto yaws_between_points = diff_y.binaryExpr(diff_x, [&](const float & y, const float & x){return atan2f(y, x);});
 
   switch (mode_) {
     case PathAngleMode::FORWARD_PREFERENCE:
       {
-        Eigen::ArrayXf yaws =
-          Eigen::abs(
-          utils::shortest_angular_distance(data.trajectories.yaws.col(rightmost_idx), yaws_between_points));
+        auto yaws =
+          utils::shortest_angular_distance(data.trajectories.yaws.col(rightmost_idx), yaws_between_points).abs();
         if (power_ > 1u) {
-          data.costs += Eigen::pow(std::move(yaws) * weight_, power_);
+          data.costs += (yaws * weight_).pow(power_);
         } else {
-          data.costs += (std::move(yaws) * weight_).eval();
+          data.costs += yaws * weight_;
         }
         return;
       }
     case PathAngleMode::NO_DIRECTIONAL_PREFERENCE:
       {
-        Eigen::ArrayXf yaws =
-          Eigen::abs(
-          utils::shortest_angular_distance(data.trajectories.yaws.col(rightmost_idx), yaws_between_points));
-        Eigen::ArrayXf yaws_between_points_corrected = utils::point_corrected_yaws(yaws, yaws_between_points);
-        Eigen::ArrayXf corrected_yaws = Eigen::abs(
-          utils::shortest_angular_distance(data.trajectories.yaws.col(rightmost_idx), std::move(yaws_between_points_corrected)));
+        auto yaws =
+          utils::shortest_angular_distance(data.trajectories.yaws.col(rightmost_idx), yaws_between_points).abs();
+        auto yaws_between_points_corrected = utils::point_corrected_yaws(yaws, yaws_between_points);
+        auto corrected_yaws =
+          utils::shortest_angular_distance(data.trajectories.yaws.col(rightmost_idx), yaws_between_points_corrected).abs();
         if (power_ > 1u) {
-          data.costs += Eigen::pow(std::move(corrected_yaws) * weight_, power_);
+          data.costs += (corrected_yaws * weight_).pow(power_);
         } else {
-          data.costs += std::move(corrected_yaws) * weight_;
+          data.costs += corrected_yaws * weight_;
         }
         return;
       }
     case PathAngleMode::CONSIDER_FEASIBLE_PATH_ORIENTATIONS:
       {
-        Eigen::ArrayXf yaws_between_points_corrected = utils::point_corrected_yaws(yaws_between_points, goal_yaw);
-        Eigen::ArrayXf corrected_yaws = Eigen::abs(
-          utils::shortest_angular_distance(data.trajectories.yaws.col(rightmost_idx), std::move(yaws_between_points_corrected)));
+        auto yaws_between_points_corrected = utils::point_corrected_yaws(yaws_between_points, goal_yaw);
+        auto corrected_yaws = 
+          utils::shortest_angular_distance(data.trajectories.yaws.col(rightmost_idx), yaws_between_points_corrected).abs();
         if (power_ > 1u) {
-          data.costs += Eigen::pow(std::move(corrected_yaws) * weight_, power_);
+          data.costs += (corrected_yaws * weight_).pow(power_);
         } else {
-          data.costs += std::move(corrected_yaws) * weight_;
+          data.costs += corrected_yaws * weight_;
         }
         return;
       }

@@ -45,22 +45,22 @@ TEST(MotionModelTests, DiffDriveTest)
     std::make_unique<DiffDriveMotionModel>();
 
   // Check that predict properly populates the trajectory velocities with the control velocities
-  state.cvx = 10 * xt::ones<float>({batches, timesteps});
-  state.cvy = 5 * xt::ones<float>({batches, timesteps});
-  state.cwz = 1 * xt::ones<float>({batches, timesteps});
+  state.cvx = 10 * Eigen::ArrayXXf::Ones(batches, timesteps);
+  state.cvy = 5 * Eigen::ArrayXXf::Ones(batches, timesteps);
+  state.cwz = 1 * Eigen::ArrayXXf::Ones(batches, timesteps);
 
   // Manually set state index 0 from initial conditions which would be the speed of the robot
-  xt::view(state.vx, xt::all(), 0) = 10;
-  xt::view(state.wz, xt::all(), 0) = 1;
+  state.vx.col(0) = 10;
+  state.wz.col(0) = 1;
 
   model->predict(state);
 
   EXPECT_EQ(state.vx, state.cvx);
-  EXPECT_EQ(state.vy, xt::zeros<float>({batches, timesteps}));  // non-holonomic
+  EXPECT_EQ(state.vy.isApprox(Eigen::ArrayXXf::Zero(batches, timesteps)));  // non-holonomic
   EXPECT_EQ(state.wz, state.cwz);
 
   // Check that application of constraints are empty for Diff Drive
-  for (unsigned int i = 0; i != control_sequence.vx.shape(0); i++) {
+  for (unsigned int i = 0; i != control_sequence.vx.rows(); i++) {
     control_sequence.vx(i) = i * i * i;
     control_sequence.wz(i) = i * i * i;
   }
@@ -90,14 +90,14 @@ TEST(MotionModelTests, OmniTest)
     std::make_unique<OmniMotionModel>();
 
   // Check that predict properly populates the trajectory velocities with the control velocities
-  state.cvx = 10 * xt::ones<float>({batches, timesteps});
-  state.cvy = 5 * xt::ones<float>({batches, timesteps});
-  state.cwz = 1 * xt::ones<float>({batches, timesteps});
+  state.cvx = 10 * Eigen::ArrayXXf::Ones(batches, timesteps);
+  state.cvy = 5 * Eigen::ArrayXXf::Ones(batches, timesteps);
+  state.cwz = 1 * Eigen::ArrayXXf::Ones(batches, timesteps);
 
   // Manually set state index 0 from initial conditions which would be the speed of the robot
-  xt::view(state.vx, xt::all(), 0) = 10;
-  xt::view(state.vy, xt::all(), 0) = 5;
-  xt::view(state.wz, xt::all(), 0) = 1;
+  state.vx.col(0) = 10;
+  state.vy.col(0) = 5;
+  state.wz.col(0) = 1;
 
   model->predict(state);
 
@@ -106,7 +106,7 @@ TEST(MotionModelTests, OmniTest)
   EXPECT_EQ(state.wz, state.cwz);
 
   // Check that application of constraints are empty for Omni Drive
-  for (unsigned int i = 0; i != control_sequence.vx.shape(0); i++) {
+  for (unsigned int i = 0; i != control_sequence.vx.rows(); i++) {
     control_sequence.vx(i) = i * i * i;
     control_sequence.vy(i) = i * i * i;
     control_sequence.wz(i) = i * i * i;
@@ -139,22 +139,22 @@ TEST(MotionModelTests, AckermannTest)
     std::make_unique<AckermannMotionModel>(&param_handler);
 
   // Check that predict properly populates the trajectory velocities with the control velocities
-  state.cvx = 10 * xt::ones<float>({batches, timesteps});
-  state.cvy = 5 * xt::ones<float>({batches, timesteps});
-  state.cwz = 1 * xt::ones<float>({batches, timesteps});
+  state.cvx = 10 * Eigen::ArrayXXf::Ones(batches, timesteps);
+  state.cvy = 5 * Eigen::ArrayXXf::Ones(batches, timesteps);
+  state.cwz = 1 * Eigen::ArrayXXf::Ones(batches, timesteps);
 
   // Manually set state index 0 from initial conditions which would be the speed of the robot
-  xt::view(state.vx, xt::all(), 0) = 10;
-  xt::view(state.wz, xt::all(), 0) = 1;
+  state.vx.col(0) = 10;
+  state.wz.col(0) = 1;
 
   model->predict(state);
 
   EXPECT_EQ(state.vx, state.cvx);
-  EXPECT_EQ(state.vy, xt::zeros<float>({batches, timesteps}));  // non-holonomic
+  EXPECT_EQ(state.vy.isApprox(Eigen::ArrayXXf::Zero(batches, timesteps)));  // non-holonomic
   EXPECT_EQ(state.wz, state.cwz);
 
   // Check that application of constraints are non-empty for Ackermann Drive
-  for (unsigned int i = 0; i != control_sequence.vx.shape(0); i++) {
+  for (unsigned int i = 0; i != control_sequence.vx.rows(); i++) {
     control_sequence.vx(i) = i * i * i;
     control_sequence.wz(i) = i * i * i * i;
   }
@@ -167,7 +167,7 @@ TEST(MotionModelTests, AckermannTest)
 
   // Now, check the specifics of the minimum curvature constraint
   EXPECT_NEAR(model->getMinTurningRadius(), 0.2, 1e-6);
-  for (unsigned int i = 1; i != control_sequence.vx.shape(0); i++) {
+  for (unsigned int i = 1; i != control_sequence.vx.rows(); i++) {
     EXPECT_TRUE(fabs(control_sequence.vx(i)) / fabs(control_sequence.wz(i)) >= 0.2);
   }
 

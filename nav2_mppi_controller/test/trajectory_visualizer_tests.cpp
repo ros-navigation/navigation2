@@ -77,7 +77,7 @@ TEST(TrajectoryVisualizerTests, VisOptimalTrajectory)
     [&](const visualization_msgs::msg::MarkerArray msg) {recieved_msg = msg;});
 
   // optimal_trajectory empty, should fail to publish
-  xt::xtensor<float, 2> optimal_trajectory;
+  Eigen::ArrayXXf optimal_trajectory;
   TrajectoryVisualizer vis;
   vis.on_configure(node, "my_name", "fkmap", parameters_handler.get());
   vis.on_activate();
@@ -89,7 +89,7 @@ TEST(TrajectoryVisualizerTests, VisOptimalTrajectory)
   EXPECT_EQ(recieved_msg.markers.size(), 0u);
 
   // Now populated with content, should publish
-  optimal_trajectory = xt::ones<float>({20, 2});
+  optimal_trajectory = Eigen::ArrayXXf::Ones(20,2);
   vis.add(optimal_trajectory, "Optimal Trajectory");
   vis.visualize(bogus_path);
 
@@ -138,9 +138,9 @@ TEST(TrajectoryVisualizerTests, VisCandidateTrajectories)
     [&](const visualization_msgs::msg::MarkerArray msg) {recieved_msg = msg;});
 
   models::Trajectories candidate_trajectories;
-  candidate_trajectories.x = xt::ones<float>({200, 12});
-  candidate_trajectories.y = xt::ones<float>({200, 12});
-  candidate_trajectories.yaws = xt::ones<float>({200, 12});
+  candidate_trajectories.x = Eigen::ArrayXXf::Ones(200, 12);
+  candidate_trajectories.y = Eigen::ArrayXXf::Ones(200, 12);
+  candidate_trajectories.yaws = Eigen::ArrayXXf::Ones(200, 12);
 
   TrajectoryVisualizer vis;
   vis.on_configure(node, "my_name", "fkmap", parameters_handler.get());
