@@ -138,10 +138,10 @@ ament_add_test(test_costmap_subscriber_exec
 # ament_add_gtest_executable(costmap_tester
 #   costmap_tester.cpp
 # )
-# ament_target_dependencies(costmap_tester
-#   ${dependencies}
-# )
 # target_link_libraries(costmap_tester
-#   nav2_costmap_2d_core
 #   layers
+#   nav2_costmap_2d::nav2_costmap_2d_core
+#   nav2_util::nav2_utils_core
+#   rclcpp::rclcpp
+#   tf2_ros::tf2_ros
 # )

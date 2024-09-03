@@ -60,6 +60,15 @@ target_link_libraries(test_simple_charging_dock
   simple_charging_dock
   tf2_geometry_msgs::tf2_geometry_msgs
 )
+ament_add_gtest(test_simple_non_charging_dock
+  test_simple_non_charging_dock.cpp
+)
+ament_target_dependencies(test_simple_non_charging_dock
+  ${dependencies}
+)
+target_link_libraries(test_simple_non_charging_dock
+  ${library_name} simple_non_charging_dock
+)
 
 # Test Pose Filter (unit)
 ament_add_gtest(test_pose_filter
