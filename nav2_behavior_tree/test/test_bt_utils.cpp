@@ -264,7 +264,7 @@ TEST(PathPortTest, test_wrong_syntax)
     R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-            <PathPortTest test="0;map;1.0;2.0;3.0;4.0;5.0;6.0;7.0;0;map;1.0;2.0;3.0;4.0;5.0;6.0" />
+            <PathPortTest test="0;map;0;map;1.0;2.0;3.0;4.0;5.0;6.0;7.0;0;map;8.0;9.0;10.0;11.0;12.0;13.0" />
         </BehaviorTree>
       </root>)";
 
@@ -277,7 +277,7 @@ TEST(PathPortTest, test_wrong_syntax)
     R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-            <PathPortTest test="0;map;1.0;2.0;3.0;4.0;5.0;6.0;7.0;0;map;1.0;2.0;3.0;4.0;5.0;6.0;7.0;8.0" />
+            <PathPortTest test="0;map;0;map;1.0;2.0;3.0;4.0;5.0;6.0;" />
         </BehaviorTree>
       </root>)";
 

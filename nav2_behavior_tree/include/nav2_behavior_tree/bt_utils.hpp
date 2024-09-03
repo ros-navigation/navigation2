@@ -145,7 +145,7 @@ inline nav_msgs::msg::Path convertFromString(const StringView key)
 {
   // 9 real numbers separated by semicolons
   auto parts = BT::splitString(key, ';');
-  if ((parts.size() - 9) % 7 == 0) {
+  if ((parts.size() - 2) % 9 != 0) {
     throw std::runtime_error("invalid number of fields for Path attribute)");
   } else {
     nav_msgs::msg::Path path;
