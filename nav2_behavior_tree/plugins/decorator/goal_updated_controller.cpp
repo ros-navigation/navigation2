@@ -36,8 +36,8 @@ BT::NodeStatus GoalUpdatedController::tick()
     // Reset since we're starting a new iteration of
     // the goal updated controller (moving from IDLE to RUNNING)
 
-    BT::getInputOrBlackboard("goals", goals_);
-    BT::getInputOrBlackboard("goal", goal_);
+    goals_ = config().blackboard->get<std::vector<geometry_msgs::msg::PoseStamped>>("goals");
+    goal_ = config().blackboard->get<geometry_msgs::msg::PoseStamped>("goal");
 
     goal_was_updated_ = true;
   }
@@ -45,9 +45,9 @@ BT::NodeStatus GoalUpdatedController::tick()
   setStatus(BT::NodeStatus::RUNNING);
 
   std::vector<geometry_msgs::msg::PoseStamped> current_goals;
-  BT::getInputOrBlackboard("goals", current_goals);
+  current_goals = config().blackboard->get<std::vector<geometry_msgs::msg::PoseStamped>>("goals");
   geometry_msgs::msg::PoseStamped current_goal;
-  BT::getInputOrBlackboard("goal", current_goal);
+  current_goal = config().blackboard->get<geometry_msgs::msg::PoseStamped>("goal");
 
   if (goal_ != current_goal || goals_ != current_goals) {
     goal_ = current_goal;
