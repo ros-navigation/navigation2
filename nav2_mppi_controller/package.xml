@@ -25,10 +25,8 @@
   <depend>tf2_eigen</depend>
   <depend>tf2_ros</depend>
   <depend>std_msgs</depend>
-  <depend>xtensor</depend>
   <depend>libomp-dev</depend>
   <depend>benchmark</depend>
-  <depend>xsimd</depend>
   <depend>eigen3_cmake_module</depend>
   <depend>eigen</depend>
 

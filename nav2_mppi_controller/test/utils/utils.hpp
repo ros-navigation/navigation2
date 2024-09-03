@@ -109,7 +109,7 @@ void printMapWithTrajectoryAndGoal(
   // add trajectory on map
   unsigned int point_mx = 0;
   unsigned int point_my = 0;
-  for (size_t i = 0; i < trajectory.shape()[0]; ++i) {
+  for (size_t i = 0; i < trajectory.rows(); ++i) {
     costmap2d.worldToMap(trajectory(i, 0), trajectory(i, 1), point_mx, point_my);
     costmap2d.setCost(point_mx, point_my, trajectory_cost);
   }
@@ -182,7 +182,7 @@ bool inCollision(const TTrajectory & trajectory, const nav2_costmap_2d::Costmap2
   unsigned int point_mx = 0;
   unsigned int point_my = 0;
 
-  for (size_t i = 0; i < trajectory.shape(0); ++i) {
+  for (size_t i = 0; i < trajectory.rows(); ++i) {
     costmap.worldToMap(trajectory(i, 0), trajectory(i, 1), point_mx, point_my);
     auto cost_ = costmap.getCost(point_mx, point_my);
     if (cost_ > nav2_costmap_2d::FREE_SPACE || cost_ == nav2_costmap_2d::NO_INFORMATION) {
@@ -237,7 +237,7 @@ bool isGoalReached(
     };
   // clang-format on
 
-  for (size_t i = 0; i < trajectory.shape(0); ++i) {
+  for (size_t i = 0; i < trajectory.rows(); ++i) {
     costmap.worldToMap(trajectory(i, 0), trajectory(i, 1), trajectory_j, trajectory_i);
     if (match_near(trajectory_i, trajectory_j)) {
       return true;

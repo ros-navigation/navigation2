@@ -55,9 +55,9 @@ TEST(MotionModelTests, DiffDriveTest)
 
   model->predict(state);
 
-  EXPECT_EQ(state.vx, state.cvx);
-  EXPECT_EQ(state.vy.isApprox(Eigen::ArrayXXf::Zero(batches, timesteps)));  // non-holonomic
-  EXPECT_EQ(state.wz, state.cwz);
+  EXPECT_TRUE(state.vx.isApprox(state.cvx));
+  EXPECT_TRUE(state.vy.isApprox(Eigen::ArrayXXf::Zero(batches, timesteps)));  // non-holonomic
+  EXPECT_TRUE(state.wz.isApprox(state.cwz));
 
   // Check that application of constraints are empty for Diff Drive
   for (unsigned int i = 0; i != control_sequence.vx.rows(); i++) {
@@ -67,9 +67,9 @@ TEST(MotionModelTests, DiffDriveTest)
 
   models::ControlSequence initial_control_sequence = control_sequence;
   model->applyConstraints(control_sequence);
-  EXPECT_EQ(initial_control_sequence.vx, control_sequence.vx);
-  EXPECT_EQ(initial_control_sequence.vy, control_sequence.vy);
-  EXPECT_EQ(initial_control_sequence.wz, control_sequence.wz);
+  EXPECT_TRUE(initial_control_sequence.vx.isApprox(control_sequence.vx));
+  EXPECT_TRUE(initial_control_sequence.vy.isApprox(control_sequence.vy));
+  EXPECT_TRUE(initial_control_sequence.wz.isApprox(control_sequence.wz));
 
   // Check that Diff Drive is properly non-holonomic
   EXPECT_EQ(model->isHolonomic(), false);
@@ -101,9 +101,9 @@ TEST(MotionModelTests, OmniTest)
 
   model->predict(state);
 
-  EXPECT_EQ(state.vx, state.cvx);
-  EXPECT_EQ(state.vy, state.cvy);  // holonomic
-  EXPECT_EQ(state.wz, state.cwz);
+  EXPECT_TRUE(state.vx.isApprox(state.cvx));
+  EXPECT_TRUE(state.vy.isApprox(state.cvy));  // holonomic
+  EXPECT_TRUE(state.wz.isApprox(state.cwz));
 
   // Check that application of constraints are empty for Omni Drive
   for (unsigned int i = 0; i != control_sequence.vx.rows(); i++) {
@@ -114,9 +114,9 @@ TEST(MotionModelTests, OmniTest)
 
   models::ControlSequence initial_control_sequence = control_sequence;
   model->applyConstraints(control_sequence);
-  EXPECT_EQ(initial_control_sequence.vx, control_sequence.vx);
-  EXPECT_EQ(initial_control_sequence.vy, control_sequence.vy);
-  EXPECT_EQ(initial_control_sequence.wz, control_sequence.wz);
+  EXPECT_TRUE(initial_control_sequence.vx.isApprox(control_sequence.vx));
+  EXPECT_TRUE(initial_control_sequence.vy.isApprox(control_sequence.vy));
+  EXPECT_TRUE(initial_control_sequence.wz.isApprox(control_sequence.wz));
 
   // Check that Omni Drive is properly holonomic
   EXPECT_EQ(model->isHolonomic(), true);
@@ -149,9 +149,9 @@ TEST(MotionModelTests, AckermannTest)
 
   model->predict(state);
 
-  EXPECT_EQ(state.vx, state.cvx);
-  EXPECT_EQ(state.vy.isApprox(Eigen::ArrayXXf::Zero(batches, timesteps)));  // non-holonomic
-  EXPECT_EQ(state.wz, state.cwz);
+  EXPECT_TRUE(state.vx.isApprox(state.cvx));
+  EXPECT_TRUE(state.vy.isApprox(Eigen::ArrayXXf::Zero(batches, timesteps)));  // non-holonomic
+  EXPECT_TRUE(state.wz.isApprox(state.cwz));
 
   // Check that application of constraints are non-empty for Ackermann Drive
   for (unsigned int i = 0; i != control_sequence.vx.rows(); i++) {
@@ -162,8 +162,8 @@ TEST(MotionModelTests, AckermannTest)
   models::ControlSequence initial_control_sequence = control_sequence;
   model->applyConstraints(control_sequence);
   // VX equal since this doesn't change, the WZ is reduced if breaking the constraint
-  EXPECT_EQ(initial_control_sequence.vx, control_sequence.vx);
-  EXPECT_NE(initial_control_sequence.wz, control_sequence.wz);
+  EXPECT_TRUE(initial_control_sequence.vx.isApprox(control_sequence.vx));
+  EXPECT_FALSE(initial_control_sequence.wz.isApprox(control_sequence.wz));
 
   // Now, check the specifics of the minimum curvature constraint
   EXPECT_NEAR(model->getMinTurningRadius(), 0.2, 1e-6);

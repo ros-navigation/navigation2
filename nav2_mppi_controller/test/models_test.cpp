@@ -59,9 +59,9 @@ TEST(ModelsTest, PathTest)
 {
   // populate the object
   Path path;
-  path.x = Eigen::ArrayXf::Ones();
-  path.y = Eigen::ArrayXf::Ones();
-  path.yaws = Eigen::ArrayXf::Ones();
+  path.x = Eigen::ArrayXf::Ones(10);
+  path.y = Eigen::ArrayXf::Ones(10);
+  path.yaws = Eigen::ArrayXf::Ones(10);
 
   // Show you can get contents
   EXPECT_EQ(path.x(4), 1);

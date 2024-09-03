@@ -708,30 +708,34 @@ auto rollColumns(T&& e, std::ptrdiff_t shift)
 
 inline auto point_corrected_yaws(const Eigen::ArrayXf & yaws, const Eigen::ArrayXf & yaws_between_points)
 {
-  const auto yaws_ptr = yaws.data();
-  const auto yaws_between_points_ptr = yaws_between_points.data();
   int size = yaws.size();
   Eigen::ArrayXf yaws_between_points_corrected(size);
-  auto yaws_between_points_corrected_ptr = yaws_between_points_corrected.data();
   for(int i = 0; i != size; i++)
   {
-    const float & yaw_between_points = *(yaws_between_points_ptr + i);
-    *(yaws_between_points_corrected_ptr + i) = *(yaws_ptr + i) < M_PIF_2 ? yaw_between_points : angles::normalize_angle(yaw_between_points + M_PIF);
+    const float & yaw_between_points = yaws_between_points[i];
+    yaws_between_points_corrected[i] = yaws[i] < M_PIF_2 ? yaw_between_points : angles::normalize_angle(yaw_between_points + M_PIF);
   }
+
+  // binaryExpr slower than for loop
+  // Eigen::ArrayXf yaws_between_points_corrected = yaws.binaryExpr(yaws_between_points, [&](const float & yaw, const float & yaw_between_points)
+  //     {return yaw < M_PIF_2 ? yaw_between_points : normalize_anglef(yaw_between_points + M_PIF);});
   return yaws_between_points_corrected;
 }
 
 inline auto point_corrected_yaws(const Eigen::ArrayXf & yaws_between_points, const float & goal_yaw)
 {
-  const auto yaws_between_points_ptr = yaws_between_points.data();
   int size = yaws_between_points.size();
   Eigen::ArrayXf yaws_between_points_corrected(size);
-  auto yaws_between_points_corrected_ptr = yaws_between_points_corrected.data();
   for(int i = 0; i != size; i++)
   {
-    const float & yaw_between_points = *(yaws_between_points_ptr + i);
-    *(yaws_between_points_corrected_ptr + i) = fabs(angles::normalize_angle(yaw_between_points - goal_yaw)) < M_PIF_2 ? yaw_between_points : angles::normalize_angle(yaw_between_points + M_PIF);
+    const float & yaw_between_points = yaws_between_points[i];
+    yaws_between_points_corrected[i] = fabs(angles::normalize_angle(yaw_between_points - goal_yaw)) < M_PIF_2 ? 
+        yaw_between_points : angles::normalize_angle(yaw_between_points + M_PIF);
   }
+
+  // unaryExpr slower than for loop
+  // Eigen::ArrayXf yaws_between_points_corrected = yaws_between_points.unaryExpr([&](const float & yaw_between_points)
+  //     {return fabs(normalize_anglef(yaw_between_points - goal_yaw)) < M_PIF_2 ? yaw_between_points : normalize_anglef(yaw_between_points + M_PIF);});
   return yaws_between_points_corrected;
 }
 

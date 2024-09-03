@@ -1,19 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 project(nav2_mppi_controller)
 
-add_definitions(-DXTENSOR_ENABLE_XSIMD)
-add_definitions(-DXTENSOR_USE_XSIMD)
-
-set(XTENSOR_USE_TBB 0)
-set(XTENSOR_USE_OPENMP 0)
-set(XTENSOR_USE_XSIMD 1)
-
-# set(XTENSOR_DEFAULT_LAYOUT column_major)  # row_major, column_major
-# set(XTENSOR_DEFAULT_TRAVERSAL row_major)  # row_major, column_major
-
 find_package(ament_cmake REQUIRED)
-find_package(xsimd REQUIRED)
-find_package(xtensor REQUIRED)
 find_package(Eigen3 REQUIRED)
 
 include_directories(
@@ -97,8 +85,8 @@ set(libraries mppi_controller mppi_critics)
 
 foreach(lib IN LISTS libraries)
   target_compile_options(${lib} PUBLIC -fconcepts)
-  target_include_directories(${lib} PUBLIC ${xsimd_INCLUDE_DIRS})  # ${OpenMP_INCLUDE_DIRS}
-  target_link_libraries(${lib} xtensor xtensor::optimize xtensor::use_xsimd)
+  target_include_directories(${lib} PUBLIC)  # ${OpenMP_INCLUDE_DIRS}
+  target_link_libraries(${lib})
   ament_target_dependencies(${lib} ${dependencies_pkgs})
 endforeach()
 

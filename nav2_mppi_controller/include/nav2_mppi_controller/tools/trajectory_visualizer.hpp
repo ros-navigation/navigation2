@@ -18,12 +18,7 @@
 #include <memory>
 #include <string>
 
-// xtensor creates warnings that needs to be ignored as we are building with -Werror
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Warray-bounds"
-#pragma GCC diagnostic ignored "-Wstringop-overflow"
-#include <xtensor/xtensor.hpp>
-#pragma GCC diagnostic pop
+#include <Eigen/Dense>
 
 #include "nav_msgs/msg/path.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -79,7 +74,7 @@ public:
     * @brief Add an optimal trajectory to visualize
     * @param trajectory Optimal trajectory
     */
-  void add(const xt::xtensor<float, 2> & trajectory, const std::string & marker_namespace);
+  void add(const Eigen::ArrayXXf & trajectory, const std::string & marker_namespace);
 
   /**
     * @brief Add candidate trajectories to visualize
