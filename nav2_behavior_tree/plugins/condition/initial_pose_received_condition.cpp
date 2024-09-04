@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include "nav2_behavior_tree/plugins/condition/initial_pose_received_condition.hpp"
-#include "nav2_behavior_tree/bt_utils.hpp"
 
 namespace nav2_behavior_tree
 {
