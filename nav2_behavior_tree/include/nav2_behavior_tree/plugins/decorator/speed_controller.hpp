@@ -25,6 +25,7 @@
 #include "nav2_util/odometry_utils.hpp"
 
 #include "behaviortree_cpp/decorator_node.h"
+#include "nav2_behavior_tree/bt_utils.hpp"
 
 namespace nav2_behavior_tree
 {
