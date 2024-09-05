@@ -41,9 +41,9 @@ void MPPIController::configure(
   // Configure composed objects
   optimizer_.initialize(parent_, name_, costmap_ros_, parameters_handler_.get());
   path_handler_.initialize(parent_, name_, costmap_ros_, tf_buffer_, parameters_handler_.get());
-  //trajectory_visualizer_.on_configure(
-    //parent_, name_,
-    //costmap_ros_->getGlobalFrameID(), parameters_handler_.get());
+  trajectory_visualizer_.on_configure(
+    parent_, name_,
+    costmap_ros_->getGlobalFrameID(), parameters_handler_.get());
 
   RCLCPP_INFO(logger_, "Configured MPPI Controller: %s", name_.c_str());
 }
@@ -51,21 +51,21 @@ void MPPIController::configure(
 void MPPIController::cleanup()
 {
   optimizer_.shutdown();
-  //trajectory_visualizer_.on_cleanup();
+  trajectory_visualizer_.on_cleanup();
   parameters_handler_.reset();
   RCLCPP_INFO(logger_, "Cleaned up MPPI Controller: %s", name_.c_str());
 }
 
 void MPPIController::activate()
 {
-  //trajectory_visualizer_.on_activate();
+  trajectory_visualizer_.on_activate();
   parameters_handler_->start();
   RCLCPP_INFO(logger_, "Activated MPPI Controller: %s", name_.c_str());
 }
 
 void MPPIController::deactivate()
 {
-  //trajectory_visualizer_.on_deactivate();
+  trajectory_visualizer_.on_deactivate();
   RCLCPP_INFO(logger_, "Deactivated MPPI Controller: %s", name_.c_str());
 }
 
@@ -105,11 +105,11 @@ geometry_msgs::msg::TwistStamped MPPIController::computeVelocityCommands(
   return cmd;
 }
 
-void MPPIController::visualize(nav_msgs::msg::Path /*transformed_plan*/)
+void MPPIController::visualize(nav_msgs::msg::Path transformed_plan)
 {
-  //trajectory_visualizer_.add(optimizer_.getGeneratedTrajectories(), "Candidate Trajectories");
-  //trajectory_visualizer_.add(optimizer_.getOptimizedTrajectory(), "Optimal Trajectory");
-  //trajectory_visualizer_.visualize(std::move(transformed_plan));
+  trajectory_visualizer_.add(optimizer_.getGeneratedTrajectories(), "Candidate Trajectories");
+  trajectory_visualizer_.add(optimizer_.getOptimizedTrajectory(), "Optimal Trajectory");
+  trajectory_visualizer_.visualize(std::move(transformed_plan));
 }
 
 void MPPIController::setPlan(const nav_msgs::msg::Path & path)

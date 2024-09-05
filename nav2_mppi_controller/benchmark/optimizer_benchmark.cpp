@@ -116,7 +116,8 @@ static void BM_Omni(benchmark::State & state)
 {
   bool consider_footprint = true;
   std::string motion_model = "Omni";
-  std::vector<std::string> critics = {};
+  std::vector<std::string> critics = {{"GoalCritic"}, {"GoalAngleCritic"}, {"ObstaclesCritic"},
+    {"PathAngleCritic"}, {"PathFollowCritic"}, {"PreferForwardCritic"}};
 
   prepareAndRunBenchmark(consider_footprint, motion_model, critics, state);
 }
