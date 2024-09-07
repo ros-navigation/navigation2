@@ -249,6 +249,16 @@ void WaypointFollower::followWaypointsHandler(
   bool new_goal = true;
 
   while (rclcpp::ok()) {
+    // Check if asked to stop processing action
+    if (action_server->is_cancel_requested()) {
+      auto cancel_future = nav_to_pose_client_->async_cancel_all_goals();
+      callback_group_executor_.spin_until_future_complete(cancel_future);
+      // for result callback processing
+      callback_group_executor_.spin_some();
+      action_server->terminate_all();
+      return;
+    }
+
     // Check if asked to process another action
     if (action_server->is_preempt_requested()) {
       RCLCPP_INFO(get_logger(), "Preempting the goal pose.");
@@ -266,16 +276,6 @@ void WaypointFollower::followWaypointsHandler(
       }
       goal_index = 0;
       new_goal = true;
-    }
-
-    // Check if asked to stop processing action
-    if (action_server->is_cancel_requested()) {
-      auto cancel_future = nav_to_pose_client_->async_cancel_all_goals();
-      callback_group_executor_.spin_until_future_complete(cancel_future);
-      // for result callback processing
-      callback_group_executor_.spin_some();
-      action_server->terminate_all();
-      return;
     }
 
     // Check if we need to send a new goal
