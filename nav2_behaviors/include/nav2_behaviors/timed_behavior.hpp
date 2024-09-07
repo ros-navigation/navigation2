@@ -226,9 +226,9 @@ protected:
     ResultStatus on_run_result = onRun(action_server_->get_current_goal());
     if (on_run_result.status != Status::SUCCEEDED) {
       result->error_code = on_run_result.error_code;
-      result->error_msg = "Initial checks failed for " + behavior_name_ + " - " +
-        on_run_result.error_msg;
-      RCLCPP_INFO(logger_, result->error_msg.c_str());
+      result->error_msg = on_run_result.error_msg;
+      RCLCPP_INFO(logger_, "Initial checks failed for %s - %s", behavior_name_.c_str(),
+        on_run_result.error_msg.c_str());
       action_server_->terminate_current(result);
       return;
     }
