@@ -86,7 +86,15 @@ class DummyFollowPathActionServer : public DummyActionServer<nav2_msgs::action::
 {
 public:
   explicit DummyFollowPathActionServer(const rclcpp::Node::SharedPtr & node)
-  : DummyActionServer(node, "follow_path") {}
+  : DummyActionServer(node, "follow_path")
+  {
+    result_ = std::make_shared<nav2_msgs::action::FollowPath::Result>();
+  }
+
+  std::shared_ptr<nav2_msgs::action::FollowPath::Result> fillResult() override
+  {
+    return result_;
+  }
 
 protected:
   void updateResultForFailure(
@@ -96,6 +104,9 @@ protected:
     result->error_code = nav2_msgs::action::FollowPath::Result::NO_VALID_CONTROL;
     result->error_msg = "No valid control";
   }
+
+private:
+  std::shared_ptr<nav2_msgs::action::FollowPath::Result> result_;
 };
 
 

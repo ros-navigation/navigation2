@@ -80,7 +80,7 @@ def main(argv=sys.argv[1:]):
                 navigator.result_future.result().result.error_code == error_code
             ), 'Follow path error code does not match'
             assert (
-                navigator.result_future.result().result.error_msg != ""
+                navigator.result_future.result().result.error_msg != ''
             ), 'Follow path error_msg is empty'
 
         else:
@@ -115,7 +115,7 @@ def main(argv=sys.argv[1:]):
             result.error_code == error_code
         ), 'Compute path to pose error does not match'
         assert (
-            result.error_msg != ""
+            result.error_msg != ''
         ), 'Compute path to pose error_msg empty'
 
     def cancel_task():
@@ -152,7 +152,7 @@ def main(argv=sys.argv[1:]):
             result.error_code == error_code
         ), 'Compute path through pose error does not match'
         assert (
-            result.error_msg != ""
+            result.error_msg != ''
         ), 'Compute path through pose error_msg is empty'
     # Check compute path to pose cancel
     threading.Thread(target=cancel_task).start()
@@ -191,7 +191,7 @@ def main(argv=sys.argv[1:]):
     for smoother, error_code in smoother.items():
         result = navigator._smoothPathImpl(a_path, smoother)
         assert result.error_code == error_code, 'Smoother error does not match'
-        assert result.error_msg != "", 'Smoother error_msg is empty'
+        assert result.error_msg != '', 'Smoother error_msg is empty'
 
     navigator.lifecycleShutdown()
     rclpy.shutdown()
