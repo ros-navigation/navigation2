@@ -704,7 +704,6 @@ void ControllerServer::updateGlobalPath()
       result->error_code = Action::Result::INVALID_CONTROLLER;
       result->error_msg = "Terminating action, invalid controller " +
         goal->controller_id + " requested.";
-      RCLCPP_INFO(get_logger(), result->error_msg.c_str());
       action_server_->terminate_current(result);
       return;
     }
@@ -716,7 +715,6 @@ void ControllerServer::updateGlobalPath()
       result->error_code = Action::Result::INVALID_CONTROLLER;
       result->error_msg = "Terminating action, invalid goal checker " +
         goal->goal_checker_id + " requested.";
-      RCLCPP_INFO(get_logger(), result->error_msg.c_str());
       action_server_->terminate_current(result);
       return;
     }
@@ -734,7 +732,6 @@ void ControllerServer::updateGlobalPath()
       result->error_code = Action::Result::INVALID_CONTROLLER;
       result->error_msg = "Terminating action, invalid progress checker " +
         goal->progress_checker_id + " requested.";
-      RCLCPP_INFO(get_logger(), result->error_msg.c_str());
       action_server_->terminate_current(result);
       return;
     }
