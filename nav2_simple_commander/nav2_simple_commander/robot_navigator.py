@@ -169,7 +169,9 @@ class BasicNavigator(Node):
         self.goal_handle = send_goal_future.result()
 
         if not self.goal_handle.accepted:
-            self.error(f'Goal with {len(poses)} poses was rejected!')
+            msg = f'NavigateThroughPoses request with {len(poses)} was rejected!'
+            self.setTaskError(NavigateThroughPoses.UNKNOWN, msg)
+            self.error(msg)
             return False
 
         self.result_future = self.goal_handle.get_result_async()
@@ -200,13 +202,15 @@ class BasicNavigator(Node):
         self.goal_handle = send_goal_future.result()
 
         if not self.goal_handle.accepted:
-            self.error(
-                'Goal to '
+            msg = (
+                'NavigateToPose goal to '
                 + str(pose.pose.position.x)
                 + ' '
                 + str(pose.pose.position.y)
                 + ' was rejected!'
             )
+            self.setTaskError(NavigateToPose.UNKNOWN, msg)
+            self.error(msg)
             return False
 
         self.result_future = self.goal_handle.get_result_async()
@@ -230,7 +234,9 @@ class BasicNavigator(Node):
         self.goal_handle = send_goal_future.result()
 
         if not self.goal_handle.accepted:
-            self.error(f'Following {len(poses)} waypoints request was rejected!')
+            msg = f'Following {len(poses)} waypoints request was rejected!'
+            self.setTaskError(FollowWaypoints.UNKNOWN, msg)
+            self.error(msg)
             return False
 
         self.result_future = self.goal_handle.get_result_async()
@@ -254,9 +260,9 @@ class BasicNavigator(Node):
         self.goal_handle = send_goal_future.result()
 
         if not self.goal_handle.accepted:
-            self.error(
-                f'Following {len(gps_poses)} gps waypoints request was rejected!'
-            )
+            msg = f'Following {len(gps_poses)} gps waypoints request was rejected!'
+            self.setTaskError(FollowGPSWaypoints.UNKNOWN, msg)
+            self.error(msg)
             return False
 
         self.result_future = self.goal_handle.get_result_async()
@@ -280,7 +286,9 @@ class BasicNavigator(Node):
         self.goal_handle = send_goal_future.result()
 
         if not self.goal_handle.accepted:
-            self.error('Spin request was rejected!')
+            msg = 'Spin request was rejected!'
+            self.setTaskError(Spin.UNKNOWN, msg)
+            self.error(msg)
             return False
 
         self.result_future = self.goal_handle.get_result_async()
@@ -306,7 +314,9 @@ class BasicNavigator(Node):
         self.goal_handle = send_goal_future.result()
 
         if not self.goal_handle.accepted:
-            self.error('Backup request was rejected!')
+            msg = 'Backup request was rejected!'
+            self.setTaskError(BackUp.UNKNOWN, msg)
+            self.error(msg)
             return False
 
         self.result_future = self.goal_handle.get_result_async()
@@ -332,7 +342,9 @@ class BasicNavigator(Node):
         self.goal_handle = send_goal_future.result()
 
         if not self.goal_handle.accepted:
-            self.error('Drive On Heading request was rejected!')
+            msg = 'Drive On Heading request was rejected!'
+            self.setTaskError(DriveOnHeading.UNKNOWN, msg)
+            self.error(msg)
             return False
 
         self.result_future = self.goal_handle.get_result_async()
@@ -356,7 +368,9 @@ class BasicNavigator(Node):
         self.goal_handle = send_goal_future.result()
 
         if not self.goal_handle.accepted:
-            self.error('Assisted Teleop request was rejected!')
+            msg = 'Assisted Teleop request was rejected!'
+            self.setTaskError(AssistedTeleop.UNKNOWN, msg)
+            self.error(msg)
             return False
 
         self.result_future = self.goal_handle.get_result_async()
@@ -382,7 +396,9 @@ class BasicNavigator(Node):
         self.goal_handle = send_goal_future.result()
 
         if not self.goal_handle.accepted:
-            self.error('Follow path was rejected!')
+            msg = 'FollowPath goal was rejected!'
+            self.setTaskError(FollowPath.UNKNOWN, msg)
+            self.error(msg)
             return False
 
         self.result_future = self.goal_handle.get_result_async()
@@ -408,8 +424,9 @@ class BasicNavigator(Node):
         self.goal_handle = send_goal_future.result()
 
         if not self.goal_handle.accepted:
-            self.setTaskError(DockRobot.UNKNOWN, 'Docking request was rejected')
-            self.info('Docking request was rejected!')
+            msg = 'DockRobot request was rejected!'
+            self.setTaskError(DockRobot.UNKNOWN, msg)
+            self.error(msg)
             return False
 
         self.result_future = self.goal_handle.get_result_async()
@@ -434,8 +451,9 @@ class BasicNavigator(Node):
         self.goal_handle = send_goal_future.result()
 
         if not self.goal_handle.accepted:
-            self.setTaskError(DockRobot.UNKNOWN, 'Docking request was rejected')
-            self.info('Docking request was rejected!')
+            msg = 'DockRobot request was rejected!'
+            self.setTaskError(DockRobot.UNKNOWN, msg)
+            self.error(msg)
             return False
 
         self.result_future = self.goal_handle.get_result_async()
@@ -458,8 +476,9 @@ class BasicNavigator(Node):
         self.goal_handle = send_goal_future.result()
 
         if not self.goal_handle.accepted:
-            self.setTaskError(UndockRobot.UNKNOWN, 'Undocking request was rejected')
-            self.info('Undocking request was rejected!')
+            msg = 'UndockRobot request was rejected!'
+            self.setTaskError(UndockRobot.UNKNOWN, msg)
+            self.error(msg)
             return False
 
         self.result_future = self.goal_handle.get_result_async()
@@ -560,7 +579,7 @@ class BasicNavigator(Node):
             self.error('Get path was rejected!')
             self.status = GoalStatus.UNKNOWN
             result = ComputePathToPose.Result()
-            result.error_code = ComputePathToPose.NONE
+            result.error_code = ComputePathToPose.UNKNOWN
             result.error_msg = 'Get path was rejected'
             return result
 
