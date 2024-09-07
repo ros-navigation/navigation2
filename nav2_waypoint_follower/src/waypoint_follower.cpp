@@ -321,6 +321,7 @@ void WaypointFollower::followWaypointsHandler(
         RCLCPP_WARN(get_logger(), result->error_msg.c_str());
         action_server->terminate_current(result);
         current_goal_status_.error_code = 0;
+        current_goal_status_.error_msg = "";
         return;
       } else {
         RCLCPP_INFO(
@@ -355,6 +356,7 @@ void WaypointFollower::followWaypointsHandler(
         RCLCPP_WARN(get_logger(), result->error_msg.c_str());
         action_server->terminate_current(result);
         current_goal_status_.error_code = 0;
+        current_goal_status_.error_msg = "";
         return;
       } else {
         RCLCPP_INFO(
@@ -374,6 +376,7 @@ void WaypointFollower::followWaypointsHandler(
             poses.size());
           action_server->succeeded_current(result);
           current_goal_status_.error_code = 0;
+          current_goal_status_.error_msg = "";
           return;
         }
         RCLCPP_INFO(
