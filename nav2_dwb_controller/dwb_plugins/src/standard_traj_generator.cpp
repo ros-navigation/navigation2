@@ -158,8 +158,6 @@ dwb_msgs::msg::Trajectory2D StandardTrajectoryGenerator::generateTrajectory(
   //  simulate the trajectory
   geometry_msgs::msg::Pose2D pose = start_pose;
   nav_2d_msgs::msg::Twist2D vel = start_vel;
-
-  
   double running_time = 0.0;
   std::vector<double> steps = getTimeSteps(cmd_vel);
   traj.poses.push_back(start_pose);
