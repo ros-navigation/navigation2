@@ -147,7 +147,7 @@ protected:
   /// @brief the name of the overlying plugin ID
   std::string plugin_name_;
 
-  /// @brief Option to limit velocity in the trajectory generator by using current velocity over current velocity in trajectory
+  /// @brief Option to limit velocity in the trajectory generator by using current velocity for trajectory
   bool limit_vel_cmd_in_traj_;
 
   /* Backwards Compatibility Parameter: include_last_point
