@@ -15,7 +15,6 @@
 #include <string>
 #include <vector>
 #include "nav2_behavior_tree/plugins/condition/goal_updated_condition.hpp"
-#include "nav2_behavior_tree/bt_utils.hpp"
 
 namespace nav2_behavior_tree
 {

@@ -18,6 +18,7 @@
 #include <memory>
 
 #include "rclcpp/rclcpp.hpp"
+#include "rclcpp_lifecycle/state.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_msgs/msg/costmap_filter_info.hpp"
 

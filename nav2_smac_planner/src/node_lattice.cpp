@@ -12,16 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#include <math.h>
-#include <chrono>
-#include <vector>
-#include <memory>
 #include <algorithm>
-#include <queue>
-#include <limits>
-#include <string>
-#include <fstream>
+#include <chrono>
 #include <cmath>
+#include <fstream>
+#include <limits>
+#include <memory>
+#include <queue>
+#include <string>
+#include <vector>
+
+#include "angles/angles.h"
 
 #include "ompl/base/ScopedState.h"
 #include "ompl/base/spaces/DubinsStateSpace.h"
@@ -178,6 +179,11 @@ unsigned int LatticeMotionTable::getClosestAngularBin(const double & theta)
 float & LatticeMotionTable::getAngleFromBin(const unsigned int & bin_idx)
 {
   return lattice_metadata.heading_angles[bin_idx];
+}
+
+double LatticeMotionTable::getAngle(const double & theta)
+{
+  return getClosestAngularBin(theta);
 }
 
 NodeLattice::NodeLattice(const uint64_t index)

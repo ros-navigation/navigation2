@@ -12,7 +12,11 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
+#include <functional>
 #include <vector>
+
+#include "geometry_msgs/msg/pose_stamped.hpp"
+
 #include "nav2_core/planner_exceptions.hpp"
 #include "nav2_theta_star_planner/theta_star.hpp"
 

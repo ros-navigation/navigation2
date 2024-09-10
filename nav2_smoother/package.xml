@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>nav2_smoother</name>
-  <version>1.2.0</version>
+  <version>1.3.1</version>
   <description>Smoother action interface</description>
   <maintainer email="vargovcik@robotechvision.com">Matej Vargovcik</maintainer>
   <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
@@ -10,22 +10,25 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <build_depend>nav2_common</build_depend>
+
   <depend>angles</depend>
+  <depend>nav2_core</depend>
+  <depend>nav2_costmap_2d</depend>
+  <depend>nav2_msgs</depend>
+  <depend>nav2_util</depend>
+  <depend>nav_2d_utils</depend>
+  <depend>pluginlib</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>
-  <depend>rclcpp_action</depend>
-  <depend>std_msgs</depend>
-  <depend>nav2_util</depend>
-  <depend>nav2_msgs</depend>
-  <depend>nav_2d_utils</depend>
-  <depend>nav_2d_msgs</depend>
-  <depend>nav2_core</depend>
-  <depend>pluginlib</depend>
+  <depend>rclcpp_lifecycle</depend>
+  <depend>tf2</depend>
+  <depend>tf2_ros</depend>
 
+  <test_depend>ament_cmake_gtest</test_depend>
+  <test_depend>ament_index_cpp</test_depend>
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
-  <test_depend>ament_cmake_gtest</test_depend>
-  <test_depend>ament_cmake_pytest</test_depend>
+  <test_depend>rclcpp_action</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

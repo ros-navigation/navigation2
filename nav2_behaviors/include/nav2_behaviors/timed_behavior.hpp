@@ -237,15 +237,6 @@ protected:
 
     while (rclcpp::ok()) {
       elasped_time_ = clock_->now() - start_time;
-      if (action_server_->is_cancel_requested()) {
-        RCLCPP_INFO(logger_, "Canceling %s", behavior_name_.c_str());
-        stopRobot();
-        result->total_elapsed_time = elasped_time_;
-        onActionCompletion(result);
-        action_server_->terminate_all(result);
-        return;
-      }
-
       // TODO(orduno) #868 Enable preempting a Behavior on-the-fly without stopping
       if (action_server_->is_preempt_requested()) {
         RCLCPP_ERROR(
@@ -256,6 +247,15 @@ protected:
         result->total_elapsed_time = clock_->now() - start_time;
         onActionCompletion(result);
         action_server_->terminate_current(result);
+        return;
+      }
+
+      if (action_server_->is_cancel_requested()) {
+        RCLCPP_INFO(logger_, "Canceling %s", behavior_name_.c_str());
+        stopRobot();
+        result->total_elapsed_time = elasped_time_;
+        onActionCompletion(result);
+        action_server_->terminate_all(result);
         return;
       }
 

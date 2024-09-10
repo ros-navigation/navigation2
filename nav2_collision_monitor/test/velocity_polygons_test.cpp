@@ -14,13 +14,13 @@
 
 #include <gtest/gtest.h>
 
-#include <math.h>
 #include <chrono>
+#include <cmath>
+#include <limits>
 #include <memory>
+#include <string>
 #include <utility>
 #include <vector>
-#include <string>
-#include <limits>
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/lifecycle_node.hpp"
@@ -208,6 +208,12 @@ void Tester::setCommonParameters(const std::string & polygon_name, const std::st
     polygon_name + ".polygon_pub_topic", rclcpp::ParameterValue(POLYGON_PUB_TOPIC));
   test_node_->set_parameter(
     rclcpp::Parameter(polygon_name + ".polygon_pub_topic", POLYGON_PUB_TOPIC));
+
+  std::vector<std::string> default_observation_sources = {"source"};
+  test_node_->declare_parameter(
+    "observation_sources", rclcpp::ParameterValue(default_observation_sources));
+  test_node_->set_parameter(
+    rclcpp::Parameter("observation_sources", default_observation_sources));
 }
 
 void Tester::setVelocityPolygonParameters(const bool is_holonomic)

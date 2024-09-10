@@ -47,7 +47,8 @@ public:
    * @param plugin_libraries vector of BT plugin library names to load
    */
   explicit BehaviorTreeEngine(
-    const std::vector<std::string> & plugin_libraries);
+    const std::vector<std::string> & plugin_libraries,
+    rclcpp::Node::SharedPtr node);
   virtual ~BehaviorTreeEngine() {}
 
   /**
@@ -93,6 +94,9 @@ public:
 protected:
   // The factory that will be used to dynamically construct the behavior tree
   BT::BehaviorTreeFactory factory_;
+
+  // Clock
+  rclcpp::Clock::SharedPtr clock_;
 };
 
 }  // namespace nav2_behavior_tree

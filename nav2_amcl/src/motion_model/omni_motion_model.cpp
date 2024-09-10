@@ -19,7 +19,12 @@
  *
  */
 
+#include <cmath>
+
+#include "nav2_amcl/angleutils.hpp"
 #include "nav2_amcl/motion_model/omni_motion_model.hpp"
+#include "nav2_amcl/pf/pf_pdf.hpp"
+#include "nav2_amcl/pf/pf_vector.hpp"
 
 namespace nav2_amcl
 {

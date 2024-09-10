@@ -2,46 +2,33 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>dwb_core</name>
-  <version>1.2.0</version>
-  <description>TODO</description>
+  <version>1.3.1</version>
+  <description>DWB core interfaces package</description>
   <maintainer email="carl.r.delsey@intel.com">Carl Delsey</maintainer>
   <license>BSD-3-Clause</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <build_depend>nav2_common</build_depend>
 
-  <build_depend>rclcpp</build_depend>
-  <build_depend>std_msgs</build_depend>
-  <build_depend>geometry_msgs</build_depend>
-  <build_depend>nav_2d_msgs</build_depend>
-  <build_depend>dwb_msgs</build_depend>
-  <build_depend>nav2_costmap_2d</build_depend>
-  <build_depend>pluginlib</build_depend>
-  <build_depend>sensor_msgs</build_depend>
-  <build_depend>visualization_msgs</build_depend>
-  <build_depend>nav_2d_utils</build_depend>
-  <build_depend>nav_msgs</build_depend>
-  <build_depend>tf2_ros</build_depend>
-  <build_depend>nav2_util</build_depend>
-  <build_depend>nav2_core</build_depend>
+  <depend>builtin_interfaces</depend>
+  <depend>dwb_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>nav2_core</depend>
+  <depend>nav2_costmap_2d</depend>
+  <depend>nav2_util</depend>
+  <depend>nav_2d_msgs</depend>
+  <depend>nav_2d_utils</depend>
+  <depend>nav_msgs</depend>
+  <depend>pluginlib</depend>
+  <depend>rclcpp</depend>
+  <depend>rclcpp_lifecycle</depend>
+  <depend>sensor_msgs</depend>
+  <depend>tf2_ros</depend>
+  <depend>visualization_msgs</depend>
 
-  <exec_depend>rclcpp</exec_depend>
-  <exec_depend>std_msgs</exec_depend>
-  <exec_depend>rclcpp</exec_depend>
-  <exec_depend>std_msgs</exec_depend>
-  <exec_depend>geometry_msgs</exec_depend>
-  <exec_depend>dwb_msgs</exec_depend>
-  <exec_depend>nav2_costmap_2d</exec_depend>
-  <exec_depend>nav_2d_utils</exec_depend>
-  <exec_depend>pluginlib</exec_depend>
-  <exec_depend>nav_msgs</exec_depend>
-  <exec_depend>tf2_ros</exec_depend>
-  <exec_depend>nav2_util</exec_depend>
-  <exec_depend>nav2_core</exec_depend>
-
+  <test_depend>ament_cmake_gtest</test_depend>
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
-  <test_depend>ament_cmake_gtest</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

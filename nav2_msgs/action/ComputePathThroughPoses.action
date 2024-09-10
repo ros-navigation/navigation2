@@ -23,5 +23,6 @@ uint16 NO_VIAPOINTS_GIVEN=309
 nav_msgs/Path path
 builtin_interfaces/Duration planning_time
 uint16 error_code
+string error_msg
 ---
 #feedback definition

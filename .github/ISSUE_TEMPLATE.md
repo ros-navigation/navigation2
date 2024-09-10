@@ -1,7 +1,7 @@
 <!--
-For general questions, please ask on ROS answers: https://answers.ros.org, make sure to include at least the `ros2` tag and the rosdistro version you are running, e.g. `ardent`.
+For general questions, please ask on Robotics Stack Exchange: https://robotics.stackexchange.com/, make sure to include at least the `ros2` and `nav2` tags and the rosdistro version you are running, e.g. `ardent`.
 For general design discussions, please post on discourse: https://discourse.ros.org/c/ng-ros
-Not sure if this is the right repository? Open an issue on https://github.com/ros-planning/navigation2
+Not sure if this is the right repository? Open an issue on https://github.com/ros-navigation/navigation2
 For Bug report or feature requests, please fill out the relevant category below
 -->
 

@@ -2,33 +2,32 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>nav2_rviz_plugins</name>
-  <version>1.2.0</version>
+  <version>1.3.1</version>
   <description>Navigation 2 plugins for rviz</description>
   <maintainer email="michael.jeronimo@intel.com">Michael Jeronimo</maintainer>
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+  <build_depend>nav2_common</build_depend>
   <build_depend>qtbase5-dev</build_depend>
 
+  <depend>ament_index_cpp</depend>
   <depend>geometry_msgs</depend>
-  <depend>nav2_util</depend>
   <depend>nav2_lifecycle_manager</depend>
   <depend>nav2_msgs</depend>
-  <depend>nav_msgs</depend>
+  <depend>nav2_util</depend>
   <depend>pluginlib</depend>
   <depend>rclcpp</depend>
-  <depend>rclcpp_lifecycle</depend>
-  <depend>resource_retriever</depend>
+  <depend>rclcpp_action</depend>
   <depend>rviz_common</depend>
   <depend>rviz_default_plugins</depend>
   <depend>rviz_ogre_vendor</depend>
   <depend>rviz_rendering</depend>
   <depend>std_msgs</depend>
   <depend>tf2_geometry_msgs</depend>
-  <depend>urdf</depend>
   <depend>visualization_msgs</depend>
   <depend>yaml_cpp_vendor</depend>
-  
+
   <exec_depend>libqt5-core</exec_depend>
   <exec_depend>libqt5-gui</exec_depend>
   <exec_depend>libqt5-opengl</exec_depend>

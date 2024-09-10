@@ -41,20 +41,21 @@ struct _rtk_fig_t;
 // Limits
 #define MAP_WIFI_MAX_LEVELS 8
 
-
+// make sure that the sizeof(map_cell_t) == 5
+#pragma pack(push, 1)
 // Description for a single map cell.
 typedef struct
 {
   // Occupancy state (-1 = free, 0 = unknown, +1 = occ)
-  int occ_state;
+  int8_t occ_state;
 
   // Distance to the nearest occupied cell
-  double occ_dist;
+  float occ_dist;
 
   // Wifi levels
   // int wifi_levels[MAP_WIFI_MAX_LEVELS];
 } map_cell_t;
-
+#pragma pack(pop)
 
 // Description for a map
 typedef struct

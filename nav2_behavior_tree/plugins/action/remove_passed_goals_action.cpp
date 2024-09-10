@@ -20,7 +20,6 @@
 #include "nav2_util/geometry_utils.hpp"
 
 #include "nav2_behavior_tree/plugins/action/remove_passed_goals_action.hpp"
-#include "nav2_behavior_tree/bt_utils.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -43,6 +42,7 @@ void RemovePassedGoals::initialize()
 
   robot_base_frame_ = BT::deconflictPortAndParamFrame<std::string>(
     node, "robot_base_frame", this);
+  initialized_ = true;
 }
 
 inline BT::NodeStatus RemovePassedGoals::tick()

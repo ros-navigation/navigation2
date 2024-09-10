@@ -2,66 +2,45 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>nav2_system_tests</name>
-  <version>1.2.0</version>
-  <description>TODO</description>
+  <version>1.3.1</version>
+  <description>A sets of system-level tests for Nav2 usually involving full robot simulation</description>
   <maintainer email="carlos.a.orduno@intel.com">Carlos Orduno</maintainer>
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <build_depend>nav2_common</build_depend>
 
-  <build_depend>rclcpp</build_depend>
-  <build_depend>rclpy</build_depend>
-  <build_depend>nav2_util</build_depend>
-  <build_depend>nav2_map_server</build_depend>
-  <build_depend>nav2_msgs</build_depend>
-  <build_depend>nav2_lifecycle_manager</build_depend>
-  <build_depend>nav2_navfn_planner</build_depend>
-  <build_depend>nav2_behavior_tree</build_depend>
-  <build_depend>nav_msgs</build_depend>
-  <build_depend>visualization_msgs</build_depend>
-  <build_depend>nav2_amcl</build_depend>
-  <build_depend>launch_ros</build_depend>
-  <build_depend>launch_testing</build_depend>
-  <build_depend>geometry_msgs</build_depend>
-  <build_depend>std_msgs</build_depend>
-  <build_depend>tf2_geometry_msgs</build_depend>
-  <!-- <build_depend>gazebo_ros_pkgs</build_depend> Remove/Replace after https://github.com/ros-navigation/navigation2/pull/3634 -->
-  <build_depend>launch_ros</build_depend>
-  <build_depend>launch_testing</build_depend>
-  <build_depend>nav2_planner</build_depend>
-
-  <exec_depend>launch_ros</exec_depend>
-  <exec_depend>launch_testing</exec_depend>
-  <exec_depend>rclcpp</exec_depend>
-  <exec_depend>rclpy</exec_depend>
-  <exec_depend>nav2_bringup</exec_depend>
-  <exec_depend>nav2_util</exec_depend>
-  <exec_depend>nav2_map_server</exec_depend>
-  <exec_depend>nav2_msgs</exec_depend>
-  <exec_depend>nav2_lifecycle_manager</exec_depend>
-  <exec_depend>nav2_navfn_planner</exec_depend>
-  <exec_depend>nav2_behavior_tree</exec_depend>
-  <exec_depend>nav_msgs</exec_depend>
-  <exec_depend>visualization_msgs</exec_depend>
-  <exec_depend>geometry_msgs</exec_depend>
-  <exec_depend>nav2_amcl</exec_depend>
-  <exec_depend>std_msgs</exec_depend>
-  <exec_depend>tf2_geometry_msgs</exec_depend>
-  <!-- <exec_depend>gazebo_ros_pkgs</exec_depend> Remove/Replace after https://github.com/ros-navigation/navigation2/pull/3634 -->
-  <exec_depend>navigation2</exec_depend>
-  <exec_depend>lcov</exec_depend>
-  <exec_depend>robot_state_publisher</exec_depend>
-  <exec_depend>nav2_planner</exec_depend>
-
-  <test_depend>ament_lint_common</test_depend>
-  <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_cmake_gtest</test_depend>
   <test_depend>ament_cmake_pytest</test_depend>
+  <test_depend>ament_index_cpp</test_depend>
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+  <test_depend>geometry_msgs</test_depend>
   <test_depend>launch</test_depend>
   <test_depend>launch_ros</test_depend>
   <test_depend>launch_testing</test_depend>
-  <test_depend>python3-zmq</test_depend>
+  <test_depend>lcov</test_depend>
+  <test_depend>nav2_amcl</test_depend>
+  <test_depend>nav2_behavior_tree</test_depend>
+  <test_depend>nav2_bringup</test_depend>
+  <test_depend>nav2_lifecycle_manager</test_depend>
+  <test_depend>nav2_map_server</test_depend>
+  <test_depend>nav2_minimal_tb3_sim</test_depend>
+  <test_depend>nav2_msgs</test_depend>
+  <test_depend>nav2_navfn_planner</test_depend>
+  <test_depend>nav2_planner</test_depend>
+  <test_depend>nav2_util</test_depend>
+  <test_depend>nav_msgs</test_depend>
+  <test_depend>navigation2</test_depend>
+  <test_depend>rclcpp</test_depend>
+  <test_depend>rclcpp_lifecycle</test_depend>
+  <test_depend>rclpy</test_depend>
+  <test_depend>robot_state_publisher</test_depend>
+  <test_depend>std_msgs</test_depend>
+  <test_depend>tf2</test_depend>
+  <test_depend>tf2_geometry_msgs</test_depend>
+  <test_depend>tf2_ros</test_depend>
+  <test_depend>visualization_msgs</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

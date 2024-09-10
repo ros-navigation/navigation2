@@ -15,21 +15,12 @@
 #ifndef NAV2_SMAC_PLANNER__NODE_LATTICE_HPP_
 #define NAV2_SMAC_PLANNER__NODE_LATTICE_HPP_
 
-#include <math.h>
-
-#include <vector>
-#include <cmath>
-#include <iostream>
 #include <functional>
-#include <queue>
 #include <memory>
-#include <utility>
-#include <limits>
 #include <string>
+#include <vector>
 
-#include "nlohmann/json.hpp"
 #include "ompl/base/StateSpace.h"
-#include "angles/angles.h"
 
 #include "nav2_smac_planner/constants.hpp"
 #include "nav2_smac_planner/types.hpp"
@@ -96,6 +87,13 @@ struct LatticeMotionTable
    * @return Raw orientation in radians
    */
   float & getAngleFromBin(const unsigned int & bin_idx);
+
+  /**
+   * @brief Get the angular bin to use from a raw orientation
+   * @param theta Angle in radians
+   * @return bin index of closest angle to request
+   */
+  double getAngle(const double & theta);
 
   unsigned int size_x;
   unsigned int num_angle_quantization;

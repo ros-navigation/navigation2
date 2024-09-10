@@ -15,15 +15,10 @@
 #ifndef NAV2_SMAC_PLANNER__NODE_HYBRID_HPP_
 #define NAV2_SMAC_PLANNER__NODE_HYBRID_HPP_
 
-#include <math.h>
-#include <vector>
-#include <cmath>
-#include <iostream>
 #include <functional>
-#include <queue>
 #include <memory>
 #include <utility>
-#include <limits>
+#include <vector>
 
 #include "ompl/base/StateSpace.h"
 
@@ -111,6 +106,13 @@ struct HybridMotionTable
    * @return Raw orientation in radians
    */
   float getAngleFromBin(const unsigned int & bin_idx);
+
+  /**
+   * @brief Get the angle scaled across bins from a raw orientation
+   * @param theta Angle in radians
+   * @return angle scaled across bins
+   */
+  double getAngle(const double & theta);
 
   MotionModel motion_model = MotionModel::UNKNOWN;
   MotionPoses projections;

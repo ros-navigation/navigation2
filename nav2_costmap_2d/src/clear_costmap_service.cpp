@@ -59,6 +59,14 @@ ClearCostmapService::ClearCostmapService(
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 
+ClearCostmapService::~ClearCostmapService()
+{
+  // make sure services shutdown.
+  clear_except_service_.reset();
+  clear_around_service_.reset();
+  clear_entire_service_.reset();
+}
+
 void ClearCostmapService::clearExceptRegionCallback(
   const shared_ptr<rmw_request_id_t>/*request_header*/,
   const shared_ptr<ClearExceptRegion::Request> request,

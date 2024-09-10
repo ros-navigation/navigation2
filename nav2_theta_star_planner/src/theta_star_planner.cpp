@@ -15,6 +15,10 @@
 #include <vector>
 #include <memory>
 #include <string>
+
+#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "rclcpp/rclcpp.hpp"
+
 #include "nav2_theta_star_planner/theta_star_planner.hpp"
 #include "nav2_theta_star_planner/theta_star.hpp"
 
@@ -86,6 +90,11 @@ void ThetaStarPlanner::activate()
 void ThetaStarPlanner::deactivate()
 {
   RCLCPP_INFO(logger_, "Deactivating plugin %s of type nav2_theta_star_planner", name_.c_str());
+  auto node = parent_node_.lock();
+  if (node && dyn_params_handler_) {
+    node->remove_on_set_parameters_callback(dyn_params_handler_.get());
+  }
+  dyn_params_handler_.reset();
 }
 
 nav_msgs::msg::Path ThetaStarPlanner::createPlan(

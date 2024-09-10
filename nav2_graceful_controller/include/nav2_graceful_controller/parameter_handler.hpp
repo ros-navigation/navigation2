@@ -70,13 +70,15 @@ public:
   /**
    * @brief Destructor for nav2_graceful_controller::ParameterHandler
    */
-  ~ParameterHandler() = default;
+  ~ParameterHandler();
 
   std::mutex & getMutex() {return mutex_;}
 
   Parameters * getParams() {return &params_;}
 
 protected:
+  rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
+
   /**
    * @brief Callback executed when a parameter change is detected
    * @param event ParameterEvent message

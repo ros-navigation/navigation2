@@ -26,7 +26,7 @@ def generate_launch_description():
     config = os.path.join(
         get_package_share_directory('nav2_bringup'), 'params', 'nav2_params.yaml'
     )
-    map_file = os.path.join(nav2_bringup_dir, 'maps', 'turtlebot3_world.yaml')
+    map_file = os.path.join(nav2_bringup_dir, 'maps', 'tb3_sandbox.yaml')
     lifecycle_nodes = ['map_server', 'planner_server']
 
     return LaunchDescription(
@@ -53,13 +53,31 @@ def generate_launch_description():
                 package='tf2_ros',
                 executable='static_transform_publisher',
                 output='screen',
-                arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'map'],
+                arguments=[
+                    '--x', '0',
+                    '--y', '0',
+                    '--z', '0',
+                    '--roll', '0',
+                    '--pitch', '0',
+                    '--yaw', '0',
+                    '--frame-id', 'base_link',
+                    '--child-frame-id', 'map'
+                ],
             ),
             Node(
                 package='tf2_ros',
                 executable='static_transform_publisher',
                 output='screen',
-                arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'odom'],
+                arguments=[
+                    '--x', '0',
+                    '--y', '0',
+                    '--z', '0',
+                    '--roll', '0',
+                    '--pitch', '0',
+                    '--yaw', '0',
+                    '--frame-id', 'base_link',
+                    '--child-frame-id', 'odom'
+                ],
             ),
             Node(
                 package='nav2_lifecycle_manager',

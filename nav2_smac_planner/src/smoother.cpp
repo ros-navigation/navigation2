@@ -14,8 +14,15 @@
 
 #include <ompl/base/ScopedState.h>
 #include <ompl/base/spaces/DubinsStateSpace.h>
-#include <vector>
+
+#include <chrono>
 #include <memory>
+#include <vector>
+
+#include "angles/angles.h"
+
+#include "tf2/utils.h"
+
 #include "nav2_smac_planner/smoother.hpp"
 
 namespace nav2_smac_planner
@@ -163,7 +170,7 @@ bool Smoother::smoothImpl(
         cost = static_cast<float>(costmap->getCost(mx, my));
       }
 
-      if (cost > MAX_NON_OBSTACLE && cost != UNKNOWN) {
+      if (cost > MAX_NON_OBSTACLE_COST && cost != UNKNOWN_COST) {
         RCLCPP_DEBUG(
           rclcpp::get_logger("SmacPlannerSmoother"),
           "Smoothing process resulted in an infeasible collision. "
@@ -367,7 +374,7 @@ void Smoother::findBoundaryExpansion(
     // Check for collision
     unsigned int mx, my;
     costmap->worldToMap(x, y, mx, my);
-    if (static_cast<float>(costmap->getCost(mx, my)) >= INSCRIBED) {
+    if (static_cast<float>(costmap->getCost(mx, my)) >= INSCRIBED_COST) {
       expansion.in_collision = true;
     }
 

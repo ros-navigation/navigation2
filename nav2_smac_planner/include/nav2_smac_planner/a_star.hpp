@@ -16,14 +16,12 @@
 #ifndef NAV2_SMAC_PLANNER__A_STAR_HPP_
 #define NAV2_SMAC_PLANNER__A_STAR_HPP_
 
-#include <vector>
-#include <iostream>
-#include <unordered_map>
+#include <functional>
 #include <memory>
 #include <queue>
-#include <utility>
 #include <tuple>
-#include "Eigen/Core"
+#include <utility>
+#include <vector>
 
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_core/planner_exceptions.hpp"
@@ -250,13 +248,8 @@ protected:
   inline void populateExpansionsLog(
     const NodePtr & node, std::vector<std::tuple<float, float, float>> * expansions_log);
 
-  /**
-   * @brief Clear Start
-   */
-  void clearStart();
-
-
   bool _traverse_unknown;
+  bool _is_initialized;
   int _max_iterations;
   int _max_on_approach_iterations;
   int _terminal_checking_interval;

@@ -115,7 +115,7 @@ TEST(CriticTests, ConstraintsCritic)
   // Now with ackermann, all in constraint so no costs to score
   state.vx = 0.40 * Eigen::ArrayXXf::Ones(1000, 30);
   state.wz = 1.5 * Eigen::ArrayXXf::Ones(1000, 30);
-  data.motion_model = std::make_shared<AckermannMotionModel>(&param_handler);
+  data.motion_model = std::make_shared<AckermannMotionModel>(&param_handler, node->get_name());
   critic.score(data);
   EXPECT_NEAR(costs.sum(), 0, 1e-6);
 

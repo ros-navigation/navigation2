@@ -14,7 +14,7 @@
 
 #include <memory>
 
-#include "nav2_util/base_footprint_publisher.hpp"
+#include "base_footprint_publisher.hpp"
 
 int main(int argc, char ** argv)
 {

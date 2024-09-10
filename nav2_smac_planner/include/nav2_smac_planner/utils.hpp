@@ -21,7 +21,6 @@
 #include <string>
 
 #include "nlohmann/json.hpp"
-#include "Eigen/Core"
 #include "geometry_msgs/msg/quaternion.hpp"
 #include "geometry_msgs/msg/pose.hpp"
 #include "tf2/utils.h"
@@ -46,9 +45,9 @@ inline geometry_msgs::msg::Pose getWorldCoords(
 {
   geometry_msgs::msg::Pose msg;
   msg.position.x =
-    static_cast<float>(costmap->getOriginX()) + (mx + 0.5) * costmap->getResolution();
+    static_cast<float>(costmap->getOriginX()) + (mx - 0.5) * costmap->getResolution();
   msg.position.y =
-    static_cast<float>(costmap->getOriginY()) + (my + 0.5) * costmap->getResolution();
+    static_cast<float>(costmap->getOriginY()) + (my - 0.5) * costmap->getResolution();
   return msg;
 }
 

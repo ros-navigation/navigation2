@@ -15,13 +15,11 @@
 #ifndef NAV2_GRACEFUL_CONTROLLER__EGO_POLAR_COORDS_HPP_
 #define NAV2_GRACEFUL_CONTROLLER__EGO_POLAR_COORDS_HPP_
 
-#include <math.h>
+#include <cmath>
 
 #include "angles/angles.h"
 #include "geometry_msgs/msg/pose.hpp"
 #include "tf2/utils.h"
-#include "tf2/transform_datatypes.h"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 namespace nav2_graceful_controller
 {
@@ -33,7 +31,6 @@ namespace nav2_graceful_controller
 struct EgocentricPolarCoordinates
 {
   float r;       // Radial distance between the robot pose and the target pose.
-                 // Negative value if the robot is moving backwards.
   float phi;     // Orientation of target with respect to the line of sight
                  // from the robot to the target.
   float delta;   // Steering angle of the robot with respect to the line of sight.
@@ -68,21 +65,6 @@ struct EgocentricPolarCoordinates
     r = sqrt(dX * dX + dY * dY);
     phi = angles::normalize_angle(tf2::getYaw(target.orientation) + line_of_sight);
     delta = angles::normalize_angle(tf2::getYaw(current.orientation) + line_of_sight);
-    // If the robot is moving backwards, flip the sign of the radial distance
-    r *= backward ? -1.0 : 1.0;
-  }
-
-  /**
-   * @brief Construct a new egocentric polar coordinates for the target pose.
-   *
-   * @param target Target pose.
-   * @param backward If true, the robot is moving backwards. Defaults to false.
-   */
-  explicit EgocentricPolarCoordinates(
-    const geometry_msgs::msg::Pose & target,
-    bool backward = false)
-  {
-    EgocentricPolarCoordinates(target, geometry_msgs::msg::Pose(), backward);
   }
 };
 

@@ -216,7 +216,7 @@ typename AnalyticExpansion<NodeT>::AnalyticExpansionNodes AnalyticExpansion<Node
     // Make sure in range [0, 2PI)
     theta = (reals[2] < 0.0) ? (reals[2] + 2.0 * M_PI) : reals[2];
     theta = (theta > 2.0 * M_PI) ? (theta - 2.0 * M_PI) : theta;
-    angle = node->motion_table.getClosestAngularBin(theta);
+    angle = node->motion_table.getAngle(theta);
 
     // Turn the pose into a node, and check if it is valid
     index = NodeT::getIndex(
@@ -337,28 +337,28 @@ void AnalyticExpansion<NodeT>::cleanNode(const NodePtr & /*expanded_nodes*/)
 template<>
 typename AnalyticExpansion<Node2D>::AnalyticExpansionNodes AnalyticExpansion<Node2D>::
 getAnalyticPath(
-  const NodePtr & node,
-  const NodePtr & goal,
-  const NodeGetter & node_getter,
-  const ompl::base::StateSpacePtr & state_space)
+  const NodePtr &,
+  const NodePtr &,
+  const NodeGetter &,
+  const ompl::base::StateSpacePtr &)
 {
   return AnalyticExpansionNodes();
 }
 
 template<>
 typename AnalyticExpansion<Node2D>::NodePtr AnalyticExpansion<Node2D>::setAnalyticPath(
-  const NodePtr & node,
-  const NodePtr & goal_node,
-  const AnalyticExpansionNodes & expanded_nodes)
+  const NodePtr &,
+  const NodePtr &,
+  const AnalyticExpansionNodes &)
 {
   return NodePtr(nullptr);
 }
 
 template<>
 typename AnalyticExpansion<Node2D>::NodePtr AnalyticExpansion<Node2D>::tryAnalyticExpansion(
-  const NodePtr & current_node, const NodePtr & goal_node,
-  const NodeGetter & getter, int & analytic_iterations,
-  int & closest_distance)
+  const NodePtr &, const NodePtr &,
+  const NodeGetter &, int &,
+  int &)
 {
   return NodePtr(nullptr);
 }

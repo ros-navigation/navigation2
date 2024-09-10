@@ -18,7 +18,6 @@
 #include <algorithm>
 #include <limits>
 
-#include "Eigen/Core"
 #include "nav2_smac_planner/smac_planner_lattice.hpp"
 
 // #define BENCHMARK_TESTING
@@ -249,6 +248,11 @@ void SmacPlannerLattice::deactivate()
   if (_debug_visualizations) {
     _expansions_publisher->on_deactivate();
     _planned_footprints_publisher->on_deactivate();
+  }
+  // shutdown dyn_param_handler
+  auto node = _node.lock();
+  if (_dyn_params_handler && node) {
+    node->remove_on_set_parameters_callback(_dyn_params_handler.get());
   }
   _dyn_params_handler.reset();
 }

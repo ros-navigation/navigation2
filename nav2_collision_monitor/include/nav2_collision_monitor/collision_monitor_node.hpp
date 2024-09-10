@@ -18,6 +18,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <unordered_map>
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/twist.hpp"
@@ -159,28 +160,30 @@ protected:
   /**
    * @brief Processes the polygon of STOP, SLOWDOWN and LIMIT action type
    * @param polygon Polygon to process
-   * @param collision_points Array of 2D obstacle points
+   * @param sources_collision_points_map Map containing source name as key and
+   * array of source's 2D obstacle points as value
    * @param velocity Desired robot velocity
    * @param robot_action Output processed robot action
    * @return True if returned action is caused by current polygon, otherwise false
    */
   bool processStopSlowdownLimit(
     const std::shared_ptr<Polygon> polygon,
-    const std::vector<Point> & collision_points,
+    const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map,
     const Velocity & velocity,
     Action & robot_action) const;
 
   /**
    * @brief Processes APPROACH action type
    * @param polygon Polygon to process
-   * @param collision_points Array of 2D obstacle points
+   * @param sources_collision_points_map Map containing source name as key and
+   * array of source's 2D obstacle points as value
    * @param velocity Desired robot velocity
    * @param robot_action Output processed robot action
    * @return True if returned action is caused by current polygon, otherwise false
    */
   bool processApproach(
     const std::shared_ptr<Polygon> polygon,
-    const std::vector<Point> & collision_points,
+    const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map,
     const Velocity & velocity,
     Action & robot_action) const;
 

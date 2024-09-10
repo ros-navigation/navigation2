@@ -59,9 +59,7 @@ public:
     // Get the required items from the blackboard
     auto bt_loop_duration =
       config().blackboard->template get<std::chrono::milliseconds>("bt_loop_duration");
-    server_timeout_ =
-      config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
-    getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
+    getInputOrBlackboard("server_timeout", server_timeout_);
     wait_for_service_timeout_ =
       config().blackboard->template get<std::chrono::milliseconds>("wait_for_service_timeout");
 
@@ -84,12 +82,12 @@ public:
       service_name_.c_str());
     if (!service_client_->wait_for_service(wait_for_service_timeout_)) {
       RCLCPP_ERROR(
-        node_->get_logger(), "\"%s\" service server not available after waiting for 1 s",
-        service_node_name.c_str());
+        node_->get_logger(), "\"%s\" service server not available after waiting for %.2fs",
+        service_name_.c_str(), wait_for_service_timeout_.count() / 1000.0);
       throw std::runtime_error(
               std::string(
                 "Service server %s not available",
-                service_node_name.c_str()));
+                service_name_.c_str()));
     }
 
     RCLCPP_DEBUG(

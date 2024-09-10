@@ -36,6 +36,7 @@ AStarAlgorithm<NodeT>::AStarAlgorithm(
   const MotionModel & motion_model,
   const SearchInfo & search_info)
 : _traverse_unknown(true),
+  _is_initialized(false),
   _max_iterations(0),
   _terminal_checking_interval(5000),
   _max_planning_time(0),
@@ -70,7 +71,10 @@ void AStarAlgorithm<NodeT>::initialize(
   _max_on_approach_iterations = max_on_approach_iterations;
   _terminal_checking_interval = terminal_checking_interval;
   _max_planning_time = max_planning_time;
-  NodeT::precomputeDistanceHeuristic(lookup_table_size, _motion_model, dim_3_size, _search_info);
+  if (!_is_initialized) {
+    NodeT::precomputeDistanceHeuristic(lookup_table_size, _motion_model, dim_3_size, _search_info);
+  }
+  _is_initialized = true;
   _dim3_size = dim_3_size;
   _expander = std::make_unique<AnalyticExpansion<NodeT>>(
     _motion_model, _search_info, _traverse_unknown, _dim3_size);
@@ -250,8 +254,6 @@ bool AStarAlgorithm<NodeT>::areInputsValid()
   }
 
   // Note: We do not check the if the start is valid because it is cleared
-  clearStart();
-
   return true;
 }
 
@@ -482,20 +484,6 @@ template<typename NodeT>
 unsigned int & AStarAlgorithm<NodeT>::getSizeDim3()
 {
   return _dim3_size;
-}
-
-template<>
-void AStarAlgorithm<Node2D>::clearStart()
-{
-  auto coords = Node2D::getCoords(_start->getIndex());
-  _costmap->setCost(coords.x, coords.y, nav2_costmap_2d::FREE_SPACE);
-}
-
-template<typename NodeT>
-void AStarAlgorithm<NodeT>::clearStart()
-{
-  auto coords = NodeT::getCoords(_start->getIndex(), _costmap->getSizeInCellsX(), getSizeDim3());
-  _costmap->setCost(coords.x, coords.y, nav2_costmap_2d::FREE_SPACE);
 }
 
 // Instantiate algorithm for the supported template types
