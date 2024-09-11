@@ -221,8 +221,8 @@ TEST(MotionModelTests, AckermannReversingTest)
   models::ControlSequence initial_control_sequence = control_sequence;
   model->applyConstraints(control_sequence);
   // VX equal since this doesn't change, the WZ is reduced if breaking the constraint
-  EXPECT_EQ(initial_control_sequence.vx, control_sequence.vx);
-  EXPECT_NE(initial_control_sequence.wz, control_sequence.wz);
+  EXPECT_TRUE(initial_control_sequence.vx.isApprox(control_sequence.vx));
+  EXPECT_FALSE(initial_control_sequence.wz.isApprox(control_sequence.wz));
   for (unsigned int i = 1; i != control_sequence.wz.rows(); i++) {
     EXPECT_GT(control_sequence.wz(i), 0.0);
   }
@@ -237,8 +237,8 @@ TEST(MotionModelTests, AckermannReversingTest)
   models::ControlSequence initial_control_sequence2 = control_sequence2;
   model->applyConstraints(control_sequence2);
   // VX equal since this doesn't change, the WZ is reduced if breaking the constraint
-  EXPECT_EQ(initial_control_sequence2.vx, control_sequence2.vx);
-  EXPECT_NE(initial_control_sequence2.wz, control_sequence2.wz);
+  EXPECT_TRUE(initial_control_sequence2.vx.isApprox(control_sequence2.vx));
+  EXPECT_FALSE(initial_control_sequence2.wz.isApprox(control_sequence2.wz));
   for (unsigned int i = 1; i != control_sequence2.wz.rows(); i++) {
     EXPECT_LT(control_sequence2.wz(i), 0.0);
   }
