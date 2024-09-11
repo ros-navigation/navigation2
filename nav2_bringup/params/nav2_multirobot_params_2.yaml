@@ -68,6 +68,7 @@ bt_navigator:
 controller_server:
   ros__parameters:
     controller_frequency: 20.0
+    costmap_update_timeout: 0.30
     min_x_velocity_threshold: 0.001
     min_y_velocity_threshold: 0.5
     min_theta_velocity_threshold: 0.001
@@ -197,6 +198,7 @@ map_server:
 planner_server:
   ros__parameters:
     planner_plugins: ["GridBased"]
+    costmap_update_timeout: 1.0
     GridBased:
       plugin: "nav2_navfn_planner::NavfnPlanner"
       tolerance: 0.5
