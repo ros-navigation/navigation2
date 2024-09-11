@@ -35,7 +35,7 @@ bool PathLongerOnApproach::isPathUpdated(
   nav_msgs::msg::Path & old_path)
 {
   return old_path.poses.size() != 0 &&
-         new_path.poses.size() != 0 && new_path.poses.size() > old_path.poses.size() &&
+         new_path.poses.size() != 0 &&
          old_path.poses.back().pose.position == new_path.poses.back().pose.position;
 }
 
