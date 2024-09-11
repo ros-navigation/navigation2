@@ -40,32 +40,35 @@ void VelocityDeadbandCritic::initialize()
 
 void VelocityDeadbandCritic::score(CriticData & data)
 {
-
   if (!enabled_) {
     return;
   }
 
   if (data.motion_model->isHolonomic()) {
     if (power_ > 1u) {
-      data.costs += ((((fabs(deadband_velocities_[0]) - data.state.vx.abs()).max(0.0f) + 
-                     (fabs(deadband_velocities_[1]) - data.state.vy.abs()).max(0.0f) +
-                     (fabs(deadband_velocities_[2]) - data.state.wz.abs()).max(0.0f)) * data.model_dt).rowwise().sum() * weight_).pow(power_);
+      data.costs += ((((fabs(deadband_velocities_[0]) - data.state.vx.abs()).max(0.0f) +
+        (fabs(deadband_velocities_[1]) - data.state.vy.abs()).max(0.0f) +
+        (fabs(deadband_velocities_[2]) - data.state.wz.abs()).max(0.0f)) *
+        data.model_dt).rowwise().sum() * weight_).pow(power_);
     } else {
-      data.costs += (((fabs(deadband_velocities_[0]) - data.state.vx.abs()).max(0.0f) + 
-                     (fabs(deadband_velocities_[1]) - data.state.vy.abs()).max(0.0f) +
-                     (fabs(deadband_velocities_[2]) - data.state.wz.abs()).max(0.0f)) * data.model_dt).rowwise().sum() * weight_;
+      data.costs += (((fabs(deadband_velocities_[0]) - data.state.vx.abs()).max(0.0f) +
+        (fabs(deadband_velocities_[1]) - data.state.vy.abs()).max(0.0f) +
+        (fabs(deadband_velocities_[2]) - data.state.wz.abs()).max(0.0f)) *
+        data.model_dt).rowwise().sum() * weight_;
     }
     return;
   }
 
   if (power_ > 1u) {
-    data.costs += ((((fabs(deadband_velocities_[0]) - data.state.vx.abs()).max(0.0f) + 
-                     (fabs(deadband_velocities_[1]) - data.state.vy.abs()).max(0.0f) +
-                     (fabs(deadband_velocities_[2]) - data.state.wz.abs()).max(0.0f)) * data.model_dt).rowwise().sum() * weight_).pow(power_);
+    data.costs += ((((fabs(deadband_velocities_[0]) - data.state.vx.abs()).max(0.0f) +
+      (fabs(deadband_velocities_[1]) - data.state.vy.abs()).max(0.0f) +
+      (fabs(deadband_velocities_[2]) - data.state.wz.abs()).max(0.0f)) *
+      data.model_dt).rowwise().sum() * weight_).pow(power_);
   } else {
-    data.costs += (((fabs(deadband_velocities_[0]) - data.state.vx.abs()).max(0.0f) + 
-                     (fabs(deadband_velocities_[1]) - data.state.vy.abs()).max(0.0f) +
-                     (fabs(deadband_velocities_[2]) - data.state.wz.abs()).max(0.0f)) * data.model_dt).rowwise().sum() * weight_;
+    data.costs += (((fabs(deadband_velocities_[0]) - data.state.vx.abs()).max(0.0f) +
+      (fabs(deadband_velocities_[1]) - data.state.vy.abs()).max(0.0f) +
+      (fabs(deadband_velocities_[2]) - data.state.wz.abs()).max(0.0f)) *
+      data.model_dt).rowwise().sum() * weight_;
   }
   return;
 }

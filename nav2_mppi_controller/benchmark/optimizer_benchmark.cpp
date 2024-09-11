@@ -14,6 +14,8 @@
 
 #include <benchmark/benchmark.h>
 
+#include <Eigen/Dense>
+
 #include <string>
 #include <vector>
 
@@ -26,8 +28,6 @@
 #include <nav2_costmap_2d/costmap_2d.hpp>
 #include <nav2_costmap_2d/costmap_2d_ros.hpp>
 #include <nav2_core/goal_checker.hpp>
-
-#include <Eigen/Dense>
 
 #include "nav2_mppi_controller/optimizer.hpp"
 #include "nav2_mppi_controller/motion_models.hpp"

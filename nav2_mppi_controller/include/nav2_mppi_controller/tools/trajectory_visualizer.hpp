@@ -15,10 +15,10 @@
 #ifndef NAV2_MPPI_CONTROLLER__TOOLS__TRAJECTORY_VISUALIZER_HPP_
 #define NAV2_MPPI_CONTROLLER__TOOLS__TRAJECTORY_VISUALIZER_HPP_
 
+#include <Eigen/Dense>
+
 #include <memory>
 #include <string>
-
-#include <Eigen/Dense>
 
 #include "nav_msgs/msg/path.hpp"
 #include "rclcpp/rclcpp.hpp"

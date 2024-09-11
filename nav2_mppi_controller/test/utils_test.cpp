@@ -179,7 +179,6 @@ TEST(UtilsTests, AnglesTests)
 
   auto norm_ang = normalize_angles(angles);
   for (unsigned int i = 0; i != norm_ang.size(); i++) {
-    //Sstd::cout << "norm_ang(" << i << ") = " << norm_ang(i) << std::endl;
     EXPECT_TRUE((norm_ang(i) >= -M_PIF) && (norm_ang(i) <= M_PIF));
   }
 

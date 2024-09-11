@@ -20,11 +20,6 @@
 namespace mppi
 {
 
-std::normal_distribution<float> NoiseGenerator::ndistribution_vx_;
-std::normal_distribution<float> NoiseGenerator::ndistribution_vy_;
-std::normal_distribution<float> NoiseGenerator::ndistribution_wz_;
-std::default_random_engine NoiseGenerator::generator_;
-
 void NoiseGenerator::initialize(
   mppi::models::OptimizerSettings & settings, bool is_holonomic,
   const std::string & name, ParametersHandler * param_handler)
@@ -113,10 +108,13 @@ void NoiseGenerator::noiseThread()
 void NoiseGenerator::generateNoisedControls()
 {
   auto & s = settings_;
-  noises_vx_ = Eigen::ArrayXXf::NullaryExpr(s.batch_size, s.time_steps, [&] () {return ndistribution_vx_(generator_);});
-  noises_wz_ = Eigen::ArrayXXf::NullaryExpr(s.batch_size, s.time_steps, [&] () {return ndistribution_wz_(generator_);});
+  noises_vx_ = Eigen::ArrayXXf::NullaryExpr(
+    s.batch_size, s.time_steps, [&] () {return ndistribution_vx_(generator_);});
+  noises_wz_ = Eigen::ArrayXXf::NullaryExpr(
+    s.batch_size, s.time_steps, [&] () {return ndistribution_wz_(generator_);});
   if(is_holonomic_) {
-    noises_vy_ = Eigen::ArrayXXf::NullaryExpr(s.batch_size, s.time_steps, [&] () {return ndistribution_vy_(generator_);});
+    noises_vy_ = Eigen::ArrayXXf::NullaryExpr(
+      s.batch_size, s.time_steps, [&] () {return ndistribution_vy_(generator_);});
   }
 }
 

@@ -127,15 +127,13 @@ void ObstaclesCritic::score(CriticData & data)
   bool all_trajectories_collide = true;
   const auto & traj = data.trajectories;
 
-  // Default layout in eigen is column-major, hence accessing elements in column-major fashion to utilize L1 cache as much as possible
-  for(unsigned int i = 0; i != traj_len; i++)
-  {
+  // Default layout in eigen is column-major, hence accessing elements
+  // in column-major fashion to utilize L1 cache as much as possible
+  for(unsigned int i = 0; i != traj_len; i++) {
     bool trajectory_collide = false;
     CollisionCost pose_cost;
-    for(unsigned int j = 0; j != batch_size; j++)
-    {
-      if(raw_cost[j] == collision_cost_)
-      {
+    for(unsigned int j = 0; j != batch_size; j++) {
+      if(raw_cost[j] == collision_cost_) {
         continue;
       }
 
@@ -169,7 +167,6 @@ void ObstaclesCritic::score(CriticData & data)
     }
 
     if (!trajectory_collide) {all_trajectories_collide = false;}
-
   }
 
   // Normalize repulsive cost by trajectory length & lowest score to not overweight importance
@@ -177,7 +174,8 @@ void ObstaclesCritic::score(CriticData & data)
   auto && repulsive_cost_normalized = (repulsive_cost - repulsive_cost.minCoeff()) / traj_len;
 
   if (power_ > 1u) {
-    data.costs += Eigen::pow((critical_weight_ * raw_cost) + (repulsion_weight_ * repulsive_cost_normalized), power_);
+    data.costs += Eigen::pow(
+      (critical_weight_ * raw_cost) + (repulsion_weight_ * repulsive_cost_normalized), power_);
   } else {
     data.costs += (critical_weight_ * raw_cost) + (repulsion_weight_ * repulsive_cost_normalized);
   }

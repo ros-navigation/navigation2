@@ -15,10 +15,10 @@
 #ifndef NAV2_MPPI_CONTROLLER__OPTIMIZER_HPP_
 #define NAV2_MPPI_CONTROLLER__OPTIMIZER_HPP_
 
+#include <Eigen/Dense>
+
 #include <string>
 #include <memory>
-
-#include <Eigen/Dense>
 
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 
@@ -50,7 +50,7 @@ namespace mppi
  */
 class Optimizer
 {
-public:  
+public:
   /**
     * @brief Constructor for mppi::Optimizer
     */
@@ -196,7 +196,7 @@ protected:
    * @param state fill state
    */
   void integrateStateVelocities(
-    Eigen::ArrayXXf & trajectories,
+    Eigen::Array<float, -1, 3> & trajectories,
     const Eigen::ArrayXXf & state) const;
 
   /**

@@ -15,10 +15,10 @@
 #ifndef NAV2_MPPI_CONTROLLER__CRITIC_DATA_HPP_
 #define NAV2_MPPI_CONTROLLER__CRITIC_DATA_HPP_
 
+#include <Eigen/Dense>
+
 #include <memory>
 #include <vector>
-
-#include <Eigen/Dense>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_core/goal_checker.hpp"
@@ -39,7 +39,7 @@ namespace mppi
 struct CriticData
 {
   const models::State & state;
-  const models::Trajectories & trajectories;
+  models::Trajectories & trajectories;
   const models::Path & path;
 
   Eigen::ArrayXf & costs;

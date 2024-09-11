@@ -20,8 +20,6 @@
 #include <vector>
 #include <pluginlib/class_loader.hpp>
 
-
-
 #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 

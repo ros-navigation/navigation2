@@ -25,9 +25,6 @@ foreach(name IN LISTS TEST_NAMES)
     nav2_costmap_2d::nav2_costmap_2d_core
     rclcpp::rclcpp
     rclcpp_lifecycle::rclcpp_lifecycle
-    xtensor
-    xtensor::optimize
-    xtensor::use_xsimd
     nav2_core::nav2_core
   )
 
@@ -44,9 +41,6 @@ target_link_libraries(critics_tests
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   nav2_costmap_2d::nav2_costmap_2d_core
-  xtensor
-  xtensor::optimize
-  xtensor::use_xsimd
 )
 if(${TEST_DEBUG_INFO})
   target_compile_definitions(critics_tests PUBLIC -DTEST_DEBUG_INFO)

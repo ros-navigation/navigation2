@@ -15,14 +15,15 @@
 #ifndef NAV2_MPPI_CONTROLLER__MOTION_MODELS_HPP_
 #define NAV2_MPPI_CONTROLLER__MOTION_MODELS_HPP_
 
+#include <Eigen/Dense>
+
 #include <cstdint>
 #include <string>
+#include <algorithm>
 
 #include "nav2_mppi_controller/models/control_sequence.hpp"
 #include "nav2_mppi_controller/models/state.hpp"
 #include "nav2_mppi_controller/models/constraints.hpp"
-
-#include <Eigen/Dense>
 
 #include "nav2_mppi_controller/tools/parameters_handler.hpp"
 
@@ -72,14 +73,15 @@ public:
     unsigned int n_rows = state.vx.rows();
     unsigned int n_cols = state.vx.cols();
 
-    // Default layout in eigen is column-major, hence accessing elements in column-major fashion to utilize L1 cache as much as possible
+    // Default layout in eigen is column-major, hence accessing elements in
+    // column-major fashion to utilize L1 cache as much as possible
     for (unsigned int i = 1; i != n_cols; i++) {
       for (unsigned int j = 0; j != n_rows; j++) {
         float & vx_last = state.vx(j, i - 1);
         float & cvx_curr = state.cvx(j, i - 1);
         cvx_curr = std::min(vx_last + max_delta_vx, std::max(cvx_curr, vx_last + min_delta_vx));
         state.vx(j, i) = cvx_curr;
-        
+
         float & wz_last = state.wz(j, i - 1);
         float & cwz_curr = state.cwz(j, i - 1);
         cwz_curr = std::min(wz_last + max_delta_wz, std::max(cwz_curr, wz_last - max_delta_wz));
@@ -89,7 +91,7 @@ public:
           float & vy_last = state.vy(j, i - 1);
           float & cvy_curr = state.cvy(j, i - 1);
           cvy_curr = std::min(vy_last + max_delta_vy, std::max(cvy_curr, vy_last - max_delta_vy));
-          state.vy(j, i) = cvy_curr;       
+          state.vy(j, i) = cvy_curr;
         }
       }
     }
@@ -147,15 +149,14 @@ public:
     const auto vx_ptr = control_sequence.vx.data();
     auto wz_ptr = control_sequence.wz.data();
     int steps = control_sequence.vx.size();
-    for(int i = 0; i < steps; i++)
-    {
-      float && wz_constrained = fabs(*(vx_ptr + i) / min_turning_r_);
+    for(int i = 0; i < steps; i++) {
+      float wz_constrained = fabs(*(vx_ptr + i) / min_turning_r_);
       float & wz_curr = *(wz_ptr + i);
       wz_curr = std::min(wz_constrained, std::max(wz_curr, -1 * wz_constrained));
     }
     // Taking more time compared to for loop
-    //wz = ((vx.abs() / wz.abs() < min_turning_r_).select(wz, wz.sign() * vx / min_turning_r_)).eval();
-
+    // wz = ((vx.abs() / wz.abs() < min_turning_r_).select(
+    // wz, wz.sign() * vx / min_turning_r_)).eval();
   }
 
   /**

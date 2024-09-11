@@ -123,16 +123,19 @@ void CostCritic::score(CriticData & data)
   Eigen::ArrayXf repulsive_cost(data.costs.rows());
   bool all_trajectories_collide = true;
 
-  int strided_traj_cols = data.trajectories.x.cols()/trajectory_point_step_ + 1;
+  int strided_traj_cols = data.trajectories.x.cols() / trajectory_point_step_ + 1;
   int strided_traj_rows = data.trajectories.x.rows();
   int outer_stride = strided_traj_rows * trajectory_point_step_;
 
-  const auto traj_x = Eigen::Map<Eigen::ArrayXXf, 0, Eigen::Stride<-1,-1>>
-    (data.trajectories.x.data(), strided_traj_rows, strided_traj_cols, Eigen::Stride<-1, -1>(outer_stride, 1));
-  const auto traj_y = Eigen::Map<Eigen::ArrayXXf, 0, Eigen::Stride<-1,-1>>
-    (data.trajectories.y.data(), strided_traj_rows, strided_traj_cols, Eigen::Stride<-1, -1>(outer_stride, 1));
-  const auto traj_yaw = Eigen::Map<Eigen::ArrayXXf, 0, Eigen::Stride<-1,-1>>
-    (data.trajectories.yaws.data(), strided_traj_rows, strided_traj_cols, Eigen::Stride<-1, -1>(outer_stride, 1));
+  const auto traj_x = Eigen::Map<Eigen::ArrayXXf, 0,
+      Eigen::Stride<-1, -1>>(data.trajectories.x.data(), strided_traj_rows, strided_traj_cols,
+      Eigen::Stride<-1, -1>(outer_stride, 1));
+  const auto traj_y = Eigen::Map<Eigen::ArrayXXf, 0,
+      Eigen::Stride<-1, -1>>(data.trajectories.y.data(), strided_traj_rows, strided_traj_cols,
+      Eigen::Stride<-1, -1>(outer_stride, 1));
+  const auto traj_yaw = Eigen::Map<Eigen::ArrayXXf, 0,
+      Eigen::Stride<-1, -1>>(data.trajectories.yaws.data(), strided_traj_rows, strided_traj_cols,
+      Eigen::Stride<-1, -1>(outer_stride, 1));
 
   for (int i = 0; i < strided_traj_rows; ++i) {
     bool trajectory_collide = false;
@@ -183,9 +186,10 @@ void CostCritic::score(CriticData & data)
   }
 
   if (power_ > 1u) {
-    data.costs += (std::move(repulsive_cost) * (weight_/static_cast<float>(strided_traj_cols))).pow(power_);
+    data.costs += (std::move(repulsive_cost) *
+      (weight_ / static_cast<float>(strided_traj_cols))).pow(power_);
   } else {
-    data.costs += std::move(repulsive_cost) * (weight_/static_cast<float>(strided_traj_cols));
+    data.costs += std::move(repulsive_cost) * (weight_ / static_cast<float>(strided_traj_cols));
   }
 
   data.fail_flag = all_trajectories_collide;

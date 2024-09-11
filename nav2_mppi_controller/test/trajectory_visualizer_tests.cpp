@@ -90,7 +90,7 @@ TEST(TrajectoryVisualizerTests, VisOptimalTrajectory)
   EXPECT_EQ(recieved_msg.markers.size(), 0u);
 
   // Now populated with content, should publish
-  optimal_trajectory = Eigen::ArrayXXf::Ones(20,2);
+  optimal_trajectory = Eigen::ArrayXXf::Ones(20, 2);
   vis.add(optimal_trajectory, "Optimal Trajectory", bogus_stamp);
   vis.visualize(bogus_path);
 
@@ -169,7 +169,7 @@ TEST(TrajectoryVisualizerTests, VisOptimalPath)
     [&](const nav_msgs::msg::Path msg) {recieved_path = msg;});
 
   // optimal_trajectory empty, should fail to publish
-  xt::xtensor<float, 2> optimal_trajectory;
+  Eigen::ArrayXXf optimal_trajectory;
   TrajectoryVisualizer vis;
   vis.on_configure(node, "my_name", "fkmap", parameters_handler.get());
   vis.on_activate();
@@ -181,8 +181,8 @@ TEST(TrajectoryVisualizerTests, VisOptimalPath)
   EXPECT_EQ(recieved_path.poses.size(), 0u);
 
   // Now populated with content, should publish
-  optimal_trajectory.resize({20, 2});
-  for (unsigned int i = 0; i != optimal_trajectory.shape()[0] - 1; i++) {
+  optimal_trajectory.resize(20, 2);
+  for (unsigned int i = 0; i != optimal_trajectory.rows() - 1; i++) {
     optimal_trajectory(i, 0) = static_cast<float>(i);
     optimal_trajectory(i, 1) = static_cast<float>(i);
   }

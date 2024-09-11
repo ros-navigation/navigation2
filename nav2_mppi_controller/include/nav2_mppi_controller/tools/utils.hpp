@@ -16,14 +16,14 @@
 #ifndef NAV2_MPPI_CONTROLLER__TOOLS__UTILS_HPP_
 #define NAV2_MPPI_CONTROLLER__TOOLS__UTILS_HPP_
 
+#include <Eigen/Dense>
+
 #include <algorithm>
 #include <chrono>
 #include <string>
 #include <limits>
 #include <memory>
 #include <vector>
-
-#include <Eigen/Dense>
 
 #include "angles/angles.h"
 
@@ -265,8 +265,13 @@ inline bool withinPositionGoalTolerance(
 template<typename T>
 auto normalize_angles(const T & angles)
 {
-  Eigen::ArrayXXf theta = (angles + M_PIF).unaryExpr([](const float x){ float remainder =  std::fmod(x, 2.0f * M_PIF); return remainder < 0.0f ? remainder + M_PIF : remainder - M_PIF;});
-  return ((theta < 0.0f).select(theta + M_PIF, theta - M_PIF)).eval();
+  // Eigen::ArrayXXf theta = (angles + M_PIF).unaryExpr([](const float x){
+  //   float remainder =  std::fmod(x, 2.0f * M_PIF);
+  //   return remainder < 0.0f ? remainder + M_PIF : remainder - M_PIF;
+  //  });
+  // return ((theta < 0.0f).select(theta + M_PIF, theta - M_PIF)).eval();
+  auto theta = angles - (M_PIF * ((angles + M_PIF_2) * (1.0f / M_PIF)).floor());
+  return theta;
 }
 
 /**
@@ -308,12 +313,12 @@ inline size_t findPathFurthestReachedPoint(const CriticData & data)
 
   int max_id_by_trajectories = 0, min_id_by_path = 0;
   float min_distance_by_path = std::numeric_limits<float>::max();
-  int n_rows = dists.rows();
-  int n_cols = dists.cols();
-  for (int i = 0; i < n_rows; i++) {
+  size_t n_rows = dists.rows();
+  size_t n_cols = dists.cols();
+  for (size_t i = 0; i != n_rows; i++) {
     min_id_by_path = 0;
     min_distance_by_path = std::numeric_limits<float>::max();
-    for (int j = max_id_by_trajectories; j < n_cols; j++) {
+    for (size_t j = max_id_by_trajectories; j != n_cols; j++) {
       const float cur_dist = dists(i, j);
       if (cur_dist < min_distance_by_path) {
         min_distance_by_path = cur_dist;
@@ -691,51 +696,63 @@ struct Pose2D
   float x, y, theta;
 };
 
+// TODO(Ayush1285) Re-factor this utility method to
+// perform in-place column shifting operation
 /**
- * @brief Shift columns of a Eigen Array
- * @param e input Eigen Array or expression
- * @return a column wise shifted Eigen Array
+ * @brief Shift the columns of a Eigen Array
+ * @param e Eigen expression or Array
+ * @param shift Number of columns by which array will be shifted
+ *     ex: -1 means shifting columns to right by 1 place
+ * @return shifted Eigen Array
  */
 template<class T>
-auto rollColumns(T&& e, std::ptrdiff_t shift)
+auto rollColumns(T && e, std::ptrdiff_t shift)
 {
   shift = shift >= 0 ? shift : e.cols() + shift;
   auto flat_size = shift * e.rows();
   Eigen::ArrayXXf cpyMatrix(e.rows(), e.cols());
-  std::copy(e.data(), e.data() + flat_size, std::copy(e.data() + flat_size, e.data() + e.size(), cpyMatrix.data()));
+  std::copy(e.data(), e.data() + flat_size, std::copy(
+    e.data() + flat_size, e.data() + e.size(), cpyMatrix.data()));
   return cpyMatrix;
 }
 
-inline auto point_corrected_yaws(const Eigen::ArrayXf & yaws, const Eigen::ArrayXf & yaws_between_points)
+inline auto point_corrected_yaws(
+  const Eigen::ArrayXf & yaws, const Eigen::ArrayXf & yaws_between_points)
 {
   int size = yaws.size();
   Eigen::ArrayXf yaws_between_points_corrected(size);
-  for(int i = 0; i != size; i++)
-  {
+  for(int i = 0; i != size; i++) {
     const float & yaw_between_points = yaws_between_points[i];
-    yaws_between_points_corrected[i] = yaws[i] < M_PIF_2 ? yaw_between_points : angles::normalize_angle(yaw_between_points + M_PIF);
+    yaws_between_points_corrected[i] = yaws[i] < M_PIF_2 ?
+      yaw_between_points : angles::normalize_angle(yaw_between_points + M_PIF);
   }
 
   // binaryExpr slower than for loop
-  // Eigen::ArrayXf yaws_between_points_corrected = yaws.binaryExpr(yaws_between_points, [&](const float & yaw, const float & yaw_between_points)
-  //     {return yaw < M_PIF_2 ? yaw_between_points : normalize_anglef(yaw_between_points + M_PIF);});
+  // Eigen::ArrayXf yaws_between_points_corrected = yaws.binaryExpr(
+  //   yaws_between_points, [&](const float & yaw, const float & yaw_between_points) {
+  //   return yaw < M_PIF_2 ? yaw_between_points : normalize_anglef(yaw_between_points + M_PIF);
+  //   });
   return yaws_between_points_corrected;
 }
 
-inline auto point_corrected_yaws(const Eigen::ArrayXf & yaws_between_points, const float & goal_yaw)
+inline auto point_corrected_yaws(
+  const Eigen::ArrayXf & yaws_between_points, const float & goal_yaw)
 {
   int size = yaws_between_points.size();
   Eigen::ArrayXf yaws_between_points_corrected(size);
-  for(int i = 0; i != size; i++)
-  {
+  for(int i = 0; i != size; i++) {
     const float & yaw_between_points = yaws_between_points[i];
-    yaws_between_points_corrected[i] = fabs(angles::normalize_angle(yaw_between_points - goal_yaw)) < M_PIF_2 ? 
-        yaw_between_points : angles::normalize_angle(yaw_between_points + M_PIF);
+    yaws_between_points_corrected[i] = fabs(
+      angles::normalize_angle(yaw_between_points - goal_yaw)) < M_PIF_2 ?
+      yaw_between_points : angles::normalize_angle(yaw_between_points + M_PIF);
   }
 
   // unaryExpr slower than for loop
-  // Eigen::ArrayXf yaws_between_points_corrected = yaws_between_points.unaryExpr([&](const float & yaw_between_points)
-  //     {return fabs(normalize_anglef(yaw_between_points - goal_yaw)) < M_PIF_2 ? yaw_between_points : normalize_anglef(yaw_between_points + M_PIF);});
+  // Eigen::ArrayXf yaws_between_points_corrected = yaws_between_points.unaryExpr(
+  //   [&](const float & yaw_between_points) {
+  //   return fabs(normalize_anglef(yaw_between_points - goal_yaw)) < M_PIF_2 ?
+  //   yaw_between_points : normalize_anglef(yaw_between_points + M_PIF);
+  //   });
   return yaws_between_points_corrected;
 }
 

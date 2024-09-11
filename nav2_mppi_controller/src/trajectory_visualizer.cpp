@@ -97,7 +97,7 @@ void TrajectoryVisualizer::add(
 
   optimal_path_->header.stamp = cmd_stamp;
   optimal_path_->header.frame_id = frame_id_;
-  for (size_t i = 0; i != size; i++) {
+  for (size_t i = 0; i < size; i++) {
     add_marker(i);
   }
 }

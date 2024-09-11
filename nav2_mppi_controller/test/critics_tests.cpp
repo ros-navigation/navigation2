@@ -105,7 +105,7 @@ TEST(CriticTests, ConstraintsCritic)
 
   // provide out of minimum velocity constraint
   auto first_batch_traj_in_full = state.vx.row(0);
-  first_batch_traj_in_full = -0.45 * Eigen::ArrayXf::Ones(30);;
+  first_batch_traj_in_full = -0.45 * Eigen::ArrayXf::Ones(30);
   critic.score(data);
   EXPECT_GT(costs.sum(), 0);
   // 4.0 weight * 0.1 model_dt * 0.1 error introduced * 30 timesteps = 1.2
@@ -451,7 +451,7 @@ TEST(CriticTests, TwirlingCritic)
   costs = Eigen::ArrayXf::Zero(1000);
 
   // Now try again with some wiggling noise
-  traj_view = Eigen::ArrayXf::Random(30).abs()/2.0f;
+  traj_view = Eigen::ArrayXf::Random(30).abs() / 2.0f;
   critic.score(data);
   EXPECT_NEAR(costs(0), 3.3, 4e-1);  // (mean of noise with mu=0, sigma=0.5 * 10.0 weight
 }

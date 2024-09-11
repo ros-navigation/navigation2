@@ -44,10 +44,12 @@ void GoalAngleCritic::score(CriticData & data)
   const auto goal_idx = data.path.x.size() - 1;
   const float goal_yaw = data.path.yaws(goal_idx);
 
-  if( power_ > 1u) {
-    data.costs += (((utils::shortest_angular_distance(data.trajectories.yaws, goal_yaw).abs()).rowwise().mean())*weight_).pow(power_);
+  if(power_ > 1u) {
+    data.costs += (((utils::shortest_angular_distance(data.trajectories.yaws, goal_yaw).abs()).
+      rowwise().mean()) * weight_).pow(power_);
   } else {
-    data.costs += ((utils::shortest_angular_distance(data.trajectories.yaws, goal_yaw).abs()).rowwise().mean())*weight_;
+    data.costs += ((utils::shortest_angular_distance(data.trajectories.yaws, goal_yaw).abs()).
+      rowwise().mean()) * weight_;
   }
 }
 
