@@ -45,6 +45,7 @@ PlannerServer::PlannerServer(const rclcpp::NodeOptions & options)
   gp_loader_("nav2_core", "nav2_core::GlobalPlanner"),
   default_ids_{"GridBased"},
   default_types_{"nav2_navfn_planner::NavfnPlanner"},
+  costmap_update_timeout_(1s),
   costmap_(nullptr)
 {
   RCLCPP_INFO(get_logger(), "Creating");
@@ -53,6 +54,7 @@ PlannerServer::PlannerServer(const rclcpp::NodeOptions & options)
   declare_parameter("planner_plugins", default_ids_);
   declare_parameter("expected_planner_frequency", 1.0);
   declare_parameter("action_server_result_timeout", 10.0);
+  declare_parameter("costmap_update_timeout", 1.0);
 
   get_parameter("planner_plugins", planner_ids_);
   if (planner_ids_ == default_ids_) {
@@ -150,6 +152,10 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   get_parameter("action_server_result_timeout", action_server_result_timeout);
   rcl_action_server_options_t server_options = rcl_action_server_get_default_options();
   server_options.result_timeout.nanoseconds = RCL_S_TO_NS(action_server_result_timeout);
+
+  double costmap_update_timeout_dbl;
+  get_parameter("costmap_update_timeout", costmap_update_timeout_dbl);
+  costmap_update_timeout_ = rclcpp::Duration::from_seconds(costmap_update_timeout_dbl);
 
   // Create the action servers for path planning to a pose and through poses
   action_server_pose_ = std::make_unique<ActionServerToPose>(
@@ -284,7 +290,11 @@ void PlannerServer::waitForCostmap()
 {
   // Don't compute a plan until costmap is valid (after clear costmap)
   rclcpp::Rate r(100);
+  auto waiting_start = now();
   while (!costmap_ros_->isCurrent()) {
+    if (now() - waiting_start > costmap_update_timeout_) {
+      throw nav2_core::PlannerTimedOut("Costmap timed out waiting for update");
+    }
     r.sleep();
   }
 }
