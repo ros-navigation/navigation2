@@ -165,7 +165,7 @@ dwb_msgs::msg::Trajectory2D StandardTrajectoryGenerator::generateTrajectory(
   for (double dt : steps) {
     //  calculate velocities
     vel = computeNewVelocity(cmd_vel, vel, dt);
-    if(!first_vel && limit_vel_cmd_in_traj_){
+    if (!first_vel && limit_vel_cmd_in_traj_) {
         traj.velocity = vel;
         first_vel = true;
     }
