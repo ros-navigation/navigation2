@@ -77,7 +77,7 @@ void StandardTrajectoryGenerator::initialize(
 
   nav2_util::declare_parameter_if_not_declared(
     nh,
-    plugin_name + ".limit_vel_cmd_in_traj_", rclcpp::ParameterValue(false));
+    plugin_name + ".limit_vel_cmd_in_traj", rclcpp::ParameterValue(false));
 
   /*
    * If discretize_by_time, then sim_granularity represents the amount of time that should be between
@@ -93,7 +93,7 @@ void StandardTrajectoryGenerator::initialize(
   nh->get_parameter(plugin_name + ".linear_granularity", linear_granularity_);
   nh->get_parameter(plugin_name + ".angular_granularity", angular_granularity_);
   nh->get_parameter(plugin_name + ".include_last_point", include_last_point_);
-  nh->get_parameter(plugin_name + ".limit_vel_cmd_in_traj_", limit_vel_cmd_in_traj_);
+  nh->get_parameter(plugin_name + ".limit_vel_cmd_in_traj", limit_vel_cmd_in_traj_);
 }
 
 void StandardTrajectoryGenerator::initializeIterator(
@@ -161,13 +161,13 @@ dwb_msgs::msg::Trajectory2D StandardTrajectoryGenerator::generateTrajectory(
   double running_time = 0.0;
   std::vector<double> steps = getTimeSteps(cmd_vel);
   traj.poses.push_back(start_pose);
-  bool firstVel = false;
+  bool first_vel = false;
   for (double dt : steps) {
     //  calculate velocities
     vel = computeNewVelocity(cmd_vel, vel, dt);
-    if(!firstVel && limit_vel_cmd_in_traj_){
+    if(!first_vel && limit_vel_cmd_in_traj_){
         traj.velocity = vel;
-        firstVel = true;
+        first_vel = true;
     }
 
     //  update the position of the robot using the velocities passed in
