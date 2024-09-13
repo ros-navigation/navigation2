@@ -65,7 +65,9 @@ BT::NodeStatus RemoveInCollisionGoals::on_completion(
 
   Goals valid_goal_poses;
   for (size_t i = 0; i < response->costs.size(); ++i) {
-    if ((response->costs[i] == 255 && !consider_unknown_as_obstacle_) || response->costs[i] < cost_threshold_) {
+    if ((response->costs[i] == 255 && !consider_unknown_as_obstacle_) ||
+      response->costs[i] < cost_threshold_)
+    {
       valid_goal_poses.push_back(input_goals_[i]);
     }
   }
