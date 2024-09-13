@@ -343,12 +343,12 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateSubtreeRecoveries)
 
   // Goal count should be 2 since only two goals were sent to ComputePathToPose and FollowPath
   EXPECT_EQ(server_handler->compute_path_to_pose_server->getGoalCount(), 2);
-  EXPECT_EQ(server_handler->compute_path_to_pose_server->fillResult()->error_code, 0);
-  EXPECT_EQ(server_handler->compute_path_to_pose_server->fillResult()->error_msg, "");
+  EXPECT_EQ(server_handler->compute_path_to_pose_server->fillResult()->error_code, 207);
+  EXPECT_EQ(server_handler->compute_path_to_pose_server->fillResult()->error_msg, "Timeout");
 
   EXPECT_EQ(server_handler->follow_path_server->getGoalCount(), 2);
-  EXPECT_EQ(server_handler->follow_path_server->fillResult()->error_code, 0);
-  EXPECT_EQ(server_handler->follow_path_server->fillResult()->error_msg, "");
+  EXPECT_EQ(server_handler->follow_path_server->fillResult()->error_code, 106);
+  EXPECT_EQ(server_handler->follow_path_server->fillResult()->error_msg, "No valid control");
 
   // Navigate subtree recovery services are called once each
   EXPECT_EQ(server_handler->clear_local_costmap_server->getRequestCount(), 1);
@@ -406,13 +406,13 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateRecoverySimple)
 
   // FollowPath is called 4 times
   EXPECT_EQ(server_handler->follow_path_server->getGoalCount(), 4);
-  EXPECT_EQ(server_handler->follow_path_server->fillResult()->error_code, 0);
-  EXPECT_EQ(server_handler->follow_path_server->fillResult()->error_msg, "");
+  EXPECT_EQ(server_handler->follow_path_server->fillResult()->error_code, 106);
+  EXPECT_EQ(server_handler->follow_path_server->fillResult()->error_msg, "No valid control");
 
   // ComputePathToPose is called 3 times
   EXPECT_EQ(server_handler->compute_path_to_pose_server->getGoalCount(), 3);
-  EXPECT_EQ(server_handler->compute_path_to_pose_server->fillResult()->error_code, 0);
-  EXPECT_EQ(server_handler->compute_path_to_pose_server->fillResult()->error_msg, "");
+  EXPECT_EQ(server_handler->compute_path_to_pose_server->fillResult()->error_code, 207);
+  EXPECT_EQ(server_handler->compute_path_to_pose_server->fillResult()->error_msg, "Timeout");
 
   // Local costmap is cleared 3 times
   EXPECT_EQ(server_handler->clear_local_costmap_server->getRequestCount(), 3);
@@ -504,13 +504,13 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateRecoveryComplex)
 
   // ComputePathToPose is called 12 times
   EXPECT_EQ(server_handler->compute_path_to_pose_server->getGoalCount(), 7);
-  EXPECT_EQ(server_handler->compute_path_to_pose_server->fillResult()->error_code, 0);
-  EXPECT_EQ(server_handler->compute_path_to_pose_server->fillResult()->error_msg, "");
+  EXPECT_EQ(server_handler->compute_path_to_pose_server->fillResult()->error_code, 207);
+  EXPECT_EQ(server_handler->compute_path_to_pose_server->fillResult()->error_msg, "Timeout");
 
   // FollowPath is called 4 times
   EXPECT_EQ(server_handler->follow_path_server->getGoalCount(), 14);
-  EXPECT_EQ(server_handler->follow_path_server->fillResult()->error_code, 0);
-  EXPECT_EQ(server_handler->follow_path_server->fillResult()->error_msg, "");
+  EXPECT_EQ(server_handler->follow_path_server->fillResult()->error_code, 106);
+  EXPECT_EQ(server_handler->follow_path_server->fillResult()->error_msg, "No valid control");
 
   // Local costmap is cleared 5 times
   EXPECT_EQ(server_handler->clear_local_costmap_server->getRequestCount(), 9);
@@ -587,13 +587,13 @@ TEST_F(BehaviorTreeTestFixture, TestRecoverySubtreeGoalUpdated)
 
   // ComputePathToPose is called 4 times
   EXPECT_EQ(server_handler->compute_path_to_pose_server->getGoalCount(), 3);
-  EXPECT_EQ(server_handler->compute_path_to_pose_server->fillResult()->error_code, 0);
-  EXPECT_EQ(server_handler->compute_path_to_pose_server->fillResult()->error_msg, "");
+  EXPECT_EQ(server_handler->compute_path_to_pose_server->fillResult()->error_code, 207);
+  EXPECT_EQ(server_handler->compute_path_to_pose_server->fillResult()->error_msg, "Timeout");
 
   // FollowPath is called 3 times
   EXPECT_EQ(server_handler->follow_path_server->getGoalCount(), 5);
-  EXPECT_EQ(server_handler->follow_path_server->fillResult()->error_code, 0);
-  EXPECT_EQ(server_handler->follow_path_server->fillResult()->error_msg, "");
+  EXPECT_EQ(server_handler->follow_path_server->fillResult()->error_code, 106);
+  EXPECT_EQ(server_handler->follow_path_server->fillResult()->error_msg, "No valid control");
 
   // Local costmap is cleared 2 times
   EXPECT_EQ(server_handler->clear_local_costmap_server->getRequestCount(), 3);
