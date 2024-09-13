@@ -862,7 +862,8 @@ void Costmap2DROS::getCostsCallback(
           pose_transformed.pose.position.y, yaw, footprint));
     } else {
       RCLCPP_DEBUG(
-        get_logger(), "Received request to get cost at point (%f, %f)", pose_transformed.pose.position.x,
+        get_logger(), "Received request to get cost at point (%f, %f)",
+          pose_transformed.pose.position.x,
         pose_transformed.pose.position.y);
 
       // Get the cost at the map coordinates
