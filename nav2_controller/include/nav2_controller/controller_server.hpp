@@ -177,6 +177,10 @@ protected:
    */
   void publishZeroVelocity();
   /**
+   * @brief Called on goal exit
+   */
+  void onGoalExit();
+  /**
    * @brief Checks if goal is reached
    * @return true or false
    */
@@ -267,6 +271,7 @@ protected:
 
   double failure_tolerance_;
   bool use_realtime_priority_;
+  bool publish_zero_velocity_;
 
   // Whether we've published the single controller warning yet
   geometry_msgs::msg::PoseStamped end_pose_;
