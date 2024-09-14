@@ -53,6 +53,8 @@ void RotationShimController::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, plugin_name_ + ".angular_dist_threshold", rclcpp::ParameterValue(0.785));  // 45 deg
   nav2_util::declare_parameter_if_not_declared(
+    node, plugin_name_ + ".angular_disengage_threshold", rclcpp::ParameterValue(0.785/3.0));  // 15 deg
+  nav2_util::declare_parameter_if_not_declared(
     node, plugin_name_ + ".forward_sampling_distance", rclcpp::ParameterValue(0.5));
   nav2_util::declare_parameter_if_not_declared(
     node, plugin_name_ + ".rotate_to_heading_angular_vel", rclcpp::ParameterValue(1.8));
@@ -66,6 +68,9 @@ void RotationShimController::configure(
     node, plugin_name_ + ".rotate_to_goal_heading", rclcpp::ParameterValue(false));
 
   node->get_parameter(plugin_name_ + ".angular_dist_threshold", angular_dist_threshold_);
+  angular_dist_threshold_param_ = angular_dist_threshold_;
+  node->get_parameter(
+    plugin_name_ + ".angular_disengage_threshold", angular_disengage_threshold_);
   node->get_parameter(plugin_name_ + ".forward_sampling_distance", forward_sampling_distance_);
   node->get_parameter(
     plugin_name_ + ".rotate_to_heading_angular_vel",
@@ -191,11 +196,13 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
       double angular_distance_to_heading =
         std::atan2(sampled_pt_base.position.y, sampled_pt_base.position.x);
       if (fabs(angular_distance_to_heading) > angular_dist_threshold_) {
+        angular_dist_threshold_ = angular_disengage_threshold_;
         RCLCPP_DEBUG(
           logger_,
           "Robot is not within the new path's rough heading, rotating to heading...");
         return computeRotateToHeadingCommand(angular_distance_to_heading, pose, velocity);
       } else {
+        angular_dist_threshold_ = angular_dist_threshold_param_;
         RCLCPP_DEBUG(
           logger_,
           "Robot is at the new path's rough heading, passing to controller");

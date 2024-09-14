@@ -172,7 +172,8 @@ protected:
   nav2_core::Controller::Ptr primary_controller_;
   bool path_updated_;
   nav_msgs::msg::Path current_path_;
-  double forward_sampling_distance_, angular_dist_threshold_;
+  double forward_sampling_distance_, angular_dist_threshold_, angular_dist_threshold_param_;
+  double angular_disengage_threshold_;
   double rotate_to_heading_angular_vel_, max_angular_accel_;
   double control_duration_, simulate_ahead_time_;
   bool rotate_to_goal_heading_;
