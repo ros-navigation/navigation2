@@ -36,6 +36,7 @@ bool PathLongerOnApproach::isPathUpdated(
 {
   return old_path.poses.size() != 0 &&
          new_path.poses.size() != 0 &&
+         new_path.poses.size() != old_path.poses.size() &&
          old_path.poses.back().pose.position == new_path.poses.back().pose.position;
 }
 
