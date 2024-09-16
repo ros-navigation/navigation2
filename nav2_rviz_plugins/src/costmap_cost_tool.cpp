@@ -123,7 +123,7 @@ void CostmapCostTool::handleLocalCostResponse(
 {
   rclcpp::Node::SharedPtr node = node_ptr_->get_raw_node();
   auto response = future.get();
-  RCLCPP_INFO(node_->get_logger(), "Local costmap cost: %.1f", response->costs[0]);
+  RCLCPP_INFO(node->get_logger(), "Local costmap cost: %.1f", response->costs[0]);
 }
 
 void CostmapCostTool::handleGlobalCostResponse(
@@ -131,7 +131,7 @@ void CostmapCostTool::handleGlobalCostResponse(
 {
   rclcpp::Node::SharedPtr node = node_ptr_->get_raw_node();
   auto response = future.get();
-  RCLCPP_INFO(node_->get_logger(), "Global costmap cost: %.1f", response->costs[0]);
+  RCLCPP_INFO(node->get_logger(), "Global costmap cost: %.1f", response->costs[0]);
 }
 }  // namespace nav2_rviz_plugins
 
