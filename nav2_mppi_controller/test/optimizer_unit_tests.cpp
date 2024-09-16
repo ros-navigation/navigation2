@@ -106,12 +106,12 @@ public:
   {
     reset();
 
-    EXPECT_TRUE(state_.vx.isApprox(Eigen::ArrayXXf::Zero(1000, 50)));
-    EXPECT_TRUE(control_sequence_.vx.isApprox(Eigen::ArrayXf::Zero(50)));
+    EXPECT_TRUE(state_.vx.isApproxToConstant(0.0f));
+    EXPECT_TRUE(control_sequence_.vx.isApproxToConstant(0.0f));
     EXPECT_EQ(control_history_[0].vx, 0.0);
     EXPECT_EQ(control_history_[0].vy, 0.0);
     EXPECT_NEAR(costs_.sum(), 0, 1e-6);
-    EXPECT_TRUE(generated_trajectories_.x.isApprox(Eigen::ArrayXXf::Zero(1000, 50)));
+    EXPECT_TRUE(generated_trajectories_.x.isApproxToConstant(0.0f));
   }
 
   bool fallbackWrapper(bool fail)
@@ -247,7 +247,7 @@ TEST(OptimizerTests, BasicInitializedFunctions)
   auto trajs = optimizer_tester.getGeneratedTrajectories();
   EXPECT_EQ(trajs.x.rows(), 1000);
   EXPECT_EQ(trajs.x.cols(), 50);
-  EXPECT_TRUE(trajs.x.isApprox(Eigen::ArrayXXf::Zero(1000, 50)));
+  EXPECT_TRUE(trajs.x.isApproxToConstant(0.0f));
 
   optimizer_tester.resetMotionModel();
   optimizer_tester.testSetOmniModel();
@@ -401,7 +401,7 @@ TEST(OptimizerTests, shiftControlSequenceTests)
   optimizer_tester.initialize(node, "mppic", costmap_ros, &param_handler);
 
   // Test shiftControlSequence by setting the 2nd value to something unique to neighbors
-  auto sequence = optimizer_tester.grabControlSequence();
+  auto & sequence = optimizer_tester.grabControlSequence();
   sequence.reset(100);
   sequence.vx(0) = 9999;
   sequence.vx(1) = 6;
@@ -491,34 +491,34 @@ TEST(OptimizerTests, applyControlSequenceConstraintsTests)
   // in motion_models_test.cpp
   optimizer_tester.resetMotionModel();
   optimizer_tester.testSetOmniModel();
-  auto sequence = optimizer_tester.grabControlSequence();
+  auto & sequence = optimizer_tester.grabControlSequence();
 
   // Test boundary of limits
   sequence.vx = Eigen::ArrayXf::Ones(50);
   sequence.vy = 0.75 * Eigen::ArrayXf::Ones(50);
   sequence.wz = 2.0 * Eigen::ArrayXf::Ones(50);
   optimizer_tester.applyControlSequenceConstraintsWrapper();
-  EXPECT_TRUE(sequence.vx.isApprox(Eigen::ArrayXf::Ones(50)));
-  EXPECT_TRUE(sequence.vy.isApprox(0.75 * Eigen::ArrayXf::Ones(50)));
-  EXPECT_TRUE(sequence.wz.isApprox(2.0 * Eigen::ArrayXf::Ones(50)));
+  EXPECT_TRUE(sequence.vx.isApproxToConstant(1.0f));
+  EXPECT_TRUE(sequence.vy.isApproxToConstant(0.75f));
+  EXPECT_TRUE(sequence.wz.isApproxToConstant(2.0f));
 
   // Test breaking limits sets to maximum
   sequence.vx = 5.0 * Eigen::ArrayXf::Ones(50);
   sequence.vy = 5.0 * Eigen::ArrayXf::Ones(50);
   sequence.wz = 5.0 * Eigen::ArrayXf::Ones(50);
   optimizer_tester.applyControlSequenceConstraintsWrapper();
-  EXPECT_TRUE(sequence.vx.isApprox(Eigen::ArrayXf::Ones(50)));
-  EXPECT_TRUE(sequence.vy.isApprox(0.75 * Eigen::ArrayXf::Ones(50)));
-  EXPECT_TRUE(sequence.wz.isApprox(2.0 * Eigen::ArrayXf::Ones(50)));
+  EXPECT_TRUE(sequence.vx.isApproxToConstant(1.0f));
+  EXPECT_TRUE(sequence.vy.isApproxToConstant(0.75f));
+  EXPECT_TRUE(sequence.wz.isApproxToConstant(2.0f));
 
   // Test breaking limits sets to minimum
   sequence.vx = -5.0 * Eigen::ArrayXf::Ones(50);
   sequence.vy = -5.0 * Eigen::ArrayXf::Ones(50);
   sequence.wz = -5.0 * Eigen::ArrayXf::Ones(50);
   optimizer_tester.applyControlSequenceConstraintsWrapper();
-  EXPECT_TRUE(sequence.vx.isApprox(-1.0 * Eigen::ArrayXf::Ones(50)));
-  EXPECT_TRUE(sequence.vy.isApprox(-0.75 * Eigen::ArrayXf::Ones(50)));
-  EXPECT_TRUE(sequence.wz.isApprox(-2.0 * Eigen::ArrayXf::Ones(50)));
+  EXPECT_TRUE(sequence.vx.isApproxToConstant(-1.0f));
+  EXPECT_TRUE(sequence.vy.isApproxToConstant(-0.75f));
+  EXPECT_TRUE(sequence.wz.isApproxToConstant(-2.0f));
 }
 
 TEST(OptimizerTests, updateStateVelocitiesTests)
@@ -611,14 +611,14 @@ TEST(OptimizerTests, integrateStateVelocitiesTests)
   models::State state;
   state.reset(1000, 50);
   models::Trajectories traj;
+  traj.reset(1000, 50);
   state.vx = 0.1 * Eigen::ArrayXXf::Ones(1000, 50);
   state.vx.col(0) = Eigen::ArrayXf::Zero(1000);
   state.vy = Eigen::ArrayXXf::Zero(1000, 50);
   state.wz = Eigen::ArrayXXf::Zero(1000, 50);
-
   optimizer_tester.integrateStateVelocitiesWrapper(traj, state);
-  EXPECT_TRUE(traj.y.isApprox(Eigen::ArrayXXf::Zero(1000, 50)));
-  EXPECT_TRUE(traj.yaws.isApprox(Eigen::ArrayXXf::Zero(1000, 50)));
+  EXPECT_TRUE(traj.y.isApproxToConstant(0.0f));
+  EXPECT_TRUE(traj.yaws.isApproxToConstant(0.0f));
   for (unsigned int i = 0; i != traj.x.cols(); i++) {
     EXPECT_NEAR(traj.x(1, i), i * 0.1 /*vel*/ * 0.1 /*dt*/, 1e-3);
   }
@@ -628,7 +628,7 @@ TEST(OptimizerTests, integrateStateVelocitiesTests)
   state.vy.col(0) = Eigen::ArrayXf::Zero(1000);
   optimizer_tester.integrateStateVelocitiesWrapper(traj, state);
 
-  EXPECT_TRUE(traj.yaws.isApprox(Eigen::ArrayXXf::Zero(1000, 50)));
+  EXPECT_TRUE(traj.yaws.isApproxToConstant(0.0f));
   for (unsigned int i = 0; i != traj.x.cols(); i++) {
     EXPECT_NEAR(traj.x(1, i), i * 0.1 /*vel*/ * 0.1 /*dt*/, 1e-3);
     EXPECT_NEAR(traj.y(1, i), i * 0.2 /*vel*/ * 0.1 /*dt*/, 1e-3);
@@ -643,7 +643,6 @@ TEST(OptimizerTests, integrateStateVelocitiesTests)
   float x = 0;
   float y = 0;
   for (unsigned int i = 1; i != traj.x.cols(); i++) {
-    std::cout << i << std::endl;
     x += (0.1 /*vx*/ * cosf(0.2 /*wz*/ * 0.1 /*model_dt*/ * (i - 1))) * 0.1 /*model_dt*/;
     y += (0.1 /*vx*/ * sinf(0.2 /*wz*/ * 0.1 /*model_dt*/ * (i - 1))) * 0.1 /*model_dt*/;
 

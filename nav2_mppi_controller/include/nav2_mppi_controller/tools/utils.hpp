@@ -696,24 +696,34 @@ struct Pose2D
   float x, y, theta;
 };
 
-// TODO(Ayush1285) Re-factor this utility method to
-// perform in-place column shifting operation
 /**
- * @brief Shift the columns of a Eigen Array
- * @param e Eigen expression or Array
- * @param shift Number of columns by which array will be shifted
- *     ex: -1 means shifting columns to right by 1 place
- * @return shifted Eigen Array
+ * @brief Shift the columns of a 2D Eigen Array or scalar values of
+ *    1D Eigen Array by 1 place.
+ * @param e Eigen Array
+ * @param direction direction in which Array will be shifted.
+ *     1 for shift in right direction and -1 for left direction.
  */
-template<class T>
-auto rollColumns(T && e, std::ptrdiff_t shift)
+inline void shiftColumnsByOnePlace(Eigen::Ref<Eigen::ArrayXXf> e, int direction)
 {
-  shift = shift >= 0 ? shift : e.cols() + shift;
-  auto flat_size = shift * e.rows();
-  Eigen::ArrayXXf cpyMatrix(e.rows(), e.cols());
-  std::copy(e.data(), e.data() + flat_size, std::copy(
-    e.data() + flat_size, e.data() + e.size(), cpyMatrix.data()));
-  return cpyMatrix;
+  int size = e.size();
+  if((e.cols() == 1 || e.rows() == 1) && size > 1) {
+    auto start_ptr = direction == 1 ? e.data() + size - 2 : e.data() + 1;
+    auto end_ptr = direction == 1 ? e.data() : e.data() + size - 1;
+    while(start_ptr != end_ptr) {
+      *(start_ptr + direction) = *start_ptr;
+      start_ptr -= direction;
+    }
+    *(start_ptr + direction) = *start_ptr;
+  } else {
+    auto start_ptr = direction == 1 ? e.data() + size - 2 * e.rows() : e.data() + e.rows();
+    auto end_ptr = direction == 1 ? e.data() : e.data() + size - e.rows();
+    auto span = e.rows();
+    while(start_ptr != end_ptr) {
+      std::copy(start_ptr, start_ptr + span, start_ptr + direction * span);
+      start_ptr -= (direction * span);
+    }
+    std::copy(start_ptr, start_ptr + span, start_ptr + direction * span);
+  }
 }
 
 inline auto point_corrected_yaws(

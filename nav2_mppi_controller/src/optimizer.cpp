@@ -213,11 +213,15 @@ void Optimizer::prepare(
 
 void Optimizer::shiftControlSequence()
 {
-  control_sequence_.vx = utils::rollColumns(control_sequence_.vx, 1);
-  control_sequence_.wz = utils::rollColumns(control_sequence_.wz, 1);
+  auto size = control_sequence_.vx.size();
+  utils::shiftColumnsByOnePlace(control_sequence_.vx, -1);
+  utils::shiftColumnsByOnePlace(control_sequence_.wz, -1);
+  control_sequence_.vx(size - 1) = control_sequence_.vx(size - 2);
+  control_sequence_.wz(size - 1) = control_sequence_.wz(size - 2);
 
   if (isHolonomic()) {
-    control_sequence_.vy = utils::rollColumns(control_sequence_.vy, 1);
+    utils::shiftColumnsByOnePlace(control_sequence_.vy, -1);
+    control_sequence_.vy(size - 1) = control_sequence_.vy(size - 2);
   }
 }
 
@@ -243,6 +247,11 @@ void Optimizer::applyControlSequenceConstraints()
     s.constraints.vy, std::max(control_sequence_.vy(0), -s.constraints.vy));
   float wz_last = std::min(
     s.constraints.wz, std::max(control_sequence_.wz(0), -s.constraints.wz));
+  control_sequence_.vx(0) = vx_last;
+  control_sequence_.wz(0) = wz_last;
+  if (isHolonomic()) {
+    control_sequence_.vy(0) = vy_last;
+  }
 
   for (unsigned int i = 1; i != control_sequence_.vx.size(); i++) {
     float & vx_curr = control_sequence_.vx(i);
@@ -313,10 +322,10 @@ void Optimizer::integrateStateVelocities(
     last_yaw = curr_yaw;
   }
 
-  Eigen::ArrayXf yaw_cos = utils::rollColumns(traj_yaws, -1).cos();
-  Eigen::ArrayXf yaw_sin = utils::rollColumns(traj_yaws, -1).sin();
-  yaw_cos(0) = cosf(initial_yaw);
-  yaw_sin(0) = sinf(initial_yaw);
+  utils::shiftColumnsByOnePlace(traj_yaws, 1);
+  traj_yaws(0) = initial_yaw;
+  Eigen::ArrayXf yaw_cos = traj_yaws.cos();
+  Eigen::ArrayXf yaw_sin = traj_yaws.sin();
 
   auto dx = (vx * yaw_cos).eval();
   auto dy = (vx * yaw_sin).eval();
@@ -352,12 +361,10 @@ void Optimizer::integrateStateVelocities(
   for(unsigned int i = 1; i != n_cols; i++) {
     trajectories.yaws.col(i) = trajectories.yaws.col(i - 1) + state.wz.col(i) * settings_.model_dt;
   }
-
-  auto yaw_cos = (utils::rollColumns(trajectories.yaws, -1).cos()).eval();
-  auto yaw_sin = (utils::rollColumns(trajectories.yaws, -1).sin()).eval();
-
-  yaw_cos.col(0) = cosf(initial_yaw);
-  yaw_sin.col(0) = sinf(initial_yaw);
+  utils::shiftColumnsByOnePlace(trajectories.yaws, 1);
+  trajectories.yaws.col(0) = initial_yaw;
+  auto yaw_cos = trajectories.yaws.cos().eval();
+  auto yaw_sin = trajectories.yaws.sin().eval();
 
   auto dx = (state.vx * yaw_cos).eval();
   auto dy = (state.vx * yaw_sin).eval();

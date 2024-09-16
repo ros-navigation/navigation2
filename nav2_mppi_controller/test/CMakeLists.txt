@@ -12,7 +12,6 @@ set(TEST_NAMES
   optimizer_unit_tests
 )
 
-
 foreach(name IN LISTS TEST_NAMES)
   ament_add_gtest(${name}
     ${name}.cpp

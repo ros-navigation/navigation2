@@ -41,9 +41,9 @@ struct ControlSequence
 
   void reset(unsigned int time_steps)
   {
-    vx = Eigen::ArrayXf::Zero(time_steps);
-    vy = Eigen::ArrayXf::Zero(time_steps);
-    wz = Eigen::ArrayXf::Zero(time_steps);
+    vx.setZero(time_steps);
+    vy.setZero(time_steps);
+    wz.setZero(time_steps);
   }
 };
 

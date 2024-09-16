@@ -46,13 +46,13 @@ struct State
     */
   void reset(unsigned int batch_size, unsigned int time_steps)
   {
-    vx = Eigen::ArrayXXf::Zero(batch_size, time_steps);
-    vy = Eigen::ArrayXXf::Zero(batch_size, time_steps);
-    wz = Eigen::ArrayXXf::Zero(batch_size, time_steps);
+    vx.setZero(batch_size, time_steps);
+    vy.setZero(batch_size, time_steps);
+    wz.setZero(batch_size, time_steps);
 
-    cvx = Eigen::ArrayXXf::Zero(batch_size, time_steps);
-    cvy = Eigen::ArrayXXf::Zero(batch_size, time_steps);
-    cwz = Eigen::ArrayXXf::Zero(batch_size, time_steps);
+    cvx.setZero(batch_size, time_steps);
+    cvy.setZero(batch_size, time_steps);
+    cwz.setZero(batch_size, time_steps);
   }
 };
 }  // namespace mppi::models

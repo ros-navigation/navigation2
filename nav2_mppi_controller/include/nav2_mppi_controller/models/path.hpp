@@ -35,9 +35,9 @@ struct Path
     */
   void reset(unsigned int size)
   {
-    x = Eigen::ArrayXf::Zero(size);
-    y = Eigen::ArrayXf::Zero(size);
-    yaws = Eigen::ArrayXf::Zero(size);
+    x.setZero(size);
+    y.setZero(size);
+    yaws.setZero(size);
   }
 };
 

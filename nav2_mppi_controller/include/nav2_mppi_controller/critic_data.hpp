@@ -39,7 +39,7 @@ namespace mppi
 struct CriticData
 {
   const models::State & state;
-  models::Trajectories & trajectories;
+  const models::Trajectories & trajectories;
   const models::Path & path;
 
   Eigen::ArrayXf & costs;

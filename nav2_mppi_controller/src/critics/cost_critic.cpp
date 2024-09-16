@@ -127,13 +127,13 @@ void CostCritic::score(CriticData & data)
   int strided_traj_rows = data.trajectories.x.rows();
   int outer_stride = strided_traj_rows * trajectory_point_step_;
 
-  const auto traj_x = Eigen::Map<Eigen::ArrayXXf, 0,
+  const auto traj_x = Eigen::Map<const Eigen::ArrayXXf, 0,
       Eigen::Stride<-1, -1>>(data.trajectories.x.data(), strided_traj_rows, strided_traj_cols,
       Eigen::Stride<-1, -1>(outer_stride, 1));
-  const auto traj_y = Eigen::Map<Eigen::ArrayXXf, 0,
+  const auto traj_y = Eigen::Map<const Eigen::ArrayXXf, 0,
       Eigen::Stride<-1, -1>>(data.trajectories.y.data(), strided_traj_rows, strided_traj_cols,
       Eigen::Stride<-1, -1>(outer_stride, 1));
-  const auto traj_yaw = Eigen::Map<Eigen::ArrayXXf, 0,
+  const auto traj_yaw = Eigen::Map<const Eigen::ArrayXXf, 0,
       Eigen::Stride<-1, -1>>(data.trajectories.yaws.data(), strided_traj_rows, strided_traj_cols,
       Eigen::Stride<-1, -1>(outer_stride, 1));
 
