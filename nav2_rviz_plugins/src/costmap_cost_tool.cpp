@@ -94,10 +94,12 @@ int CostmapCostTool::processMouseEvent(rviz_common::ViewportMouseEvent & event)
 
 void CostmapCostTool::callCostService(float x, float y)
 {
+  rclcpp::Node::SharedPtr node = node_ptr_->get_raw_node();
   // Create request for local costmap
   auto request = std::make_shared<nav2_msgs::srv::GetCosts::Request>();
   geometry_msgs::msg::PoseStamped pose;
   pose.header.frame_id = context_->getFixedFrame().toStdString();
+  pose.header.stamp = node->now();
   pose.pose.position.x = x;
   pose.pose.position.y = y;
   request->poses.push_back(pose);
