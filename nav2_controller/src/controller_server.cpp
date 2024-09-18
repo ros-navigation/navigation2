@@ -301,9 +301,6 @@ ControllerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   costmap_ros_->deactivate();
 
   publishZeroVelocity();
-  for (auto & controller : controllers_) {
-    controller.second->reset();
-  }
   vel_publisher_->on_deactivate();
 
   remove_on_set_parameters_callback(dyn_params_handler_.get());
@@ -560,7 +557,7 @@ void ControllerServer::computeControl()
     return;
   } catch (nav2_core::ControllerTimedOut & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    publishZeroVelocity();
+    onGoalExit();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::CONTROLLER_TIMED_OUT;
     action_server_->terminate_current(result);
