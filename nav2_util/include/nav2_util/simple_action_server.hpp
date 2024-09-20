@@ -557,7 +557,7 @@ protected:
 
     if (is_active(handle)) {
       if (handle->is_canceling()) {
-        warn_msg("Client requested to cancel the goal. Cancelling.");
+        info_msg("Client requested to cancel the goal. Cancelling.");
         handle->canceled(result);
       } else {
         warn_msg("Aborting handle.");
