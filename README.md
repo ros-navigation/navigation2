@@ -40,10 +40,11 @@ Please thank our amazing sponsors for their generous support of Nav2 on behalf o
 
 ### [Stereolabs](https://www.stereolabs.com/) produces the high-quality ZED stereo cameras with a complete vision pipeline from neural depth to SLAM, 3D object tracking, AI and more.
 
-## Citation
+## Contribution
+Welcome to the CARMA contributing guide. Please read this guide to learn about our development process, how to propose pull requests and improvements, and how to build and test your changes to this project. [CARMA Contributing Guide](https://github.com/usdot-fhwa-stol/carma-platform/blob/develop/Contributing.md) 
 
-If you use the navigation framework, an algorithm from this repository, or ideas from it
-please cite this work in your papers!
+## Code of Conduct 
+Please read our [CARMA Code of Conduct](https://github.com/usdot-fhwa-stol/carma-platform/blob/develop/Code_of_Conduct.md) which outlines our expectations for participants within the CARMA community, as well as steps to reporting unacceptable behavior. We are committed to providing a welcoming and inspiring community for all and expect our code of conduct to be honored. Anyone who violates this code of conduct may be banned from the community.
 
  - S. Macenski, F. Martín, R. White, J. Clavero. [**The Marathon 2: A Navigation System**](https://arxiv.org/abs/2003.00368). IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), 2020.
 
@@ -99,7 +100,8 @@ If you use the Regulated Pure Pursuit Controller algorithm or software from this
 
  If you use our work on VSLAM and formal comparisons for service robot needs, please cite the paper:
 
- - A. Merzlyakov, S. Macenski. [**A Comparison of Modern General-Purpose Visual SLAM Approaches**](https://arxiv.org/abs/2107.07589). IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), 2021.
+## Contact
+Please click on the CARMA logo below to visit the Federal Highway Adminstration(FHWA) CARMA website.
 
  ```bibtex
  @InProceedings{vslamComparison2021,
