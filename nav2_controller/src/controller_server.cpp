@@ -293,6 +293,7 @@ ControllerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
    */
   costmap_ros_->deactivate();
 
+  // Always publish a zero velocity when deactivating the controller server
   geometry_msgs::msg::TwistStamped velocity;
   velocity.twist.angular.x = 0;
   velocity.twist.angular.y = 0;
