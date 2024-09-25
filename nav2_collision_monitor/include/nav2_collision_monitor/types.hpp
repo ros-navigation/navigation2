@@ -15,6 +15,8 @@
 #ifndef NAV2_COLLISION_MONITOR__TYPES_HPP_
 #define NAV2_COLLISION_MONITOR__TYPES_HPP_
 
+#include <string>
+
 namespace nav2_collision_monitor
 {
 
@@ -73,6 +75,7 @@ struct Action
 {
   ActionType action_type;
   Velocity req_vel;
+  std::string polygon_name;
 };
 
 }  // namespace nav2_collision_monitor

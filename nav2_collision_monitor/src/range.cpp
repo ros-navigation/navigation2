@@ -64,17 +64,17 @@ void Range::configure()
     std::bind(&Range::dataCallback, this, std::placeholders::_1));
 }
 
-void Range::getData(
+bool Range::getData(
   const rclcpp::Time & curr_time,
   std::vector<Point> & data) const
 {
   // Ignore data from the source if it is not being published yet or
   // not being published for a long time
   if (data_ == nullptr) {
-    return;
+    return false;
   }
   if (!sourceValid(data_->header.stamp, curr_time)) {
-    return;
+    return false;
   }
 
   // Ignore data, if its range is out of scope of range sensor abilities
@@ -83,7 +83,7 @@ void Range::getData(
       logger_,
       "[%s]: Data range %fm is out of {%f..%f} sensor span. Ignoring...",
       source_name_.c_str(), data_->range, data_->min_range, data_->max_range);
-    return;
+    return false;
   }
 
   tf2::Transform tf_transform;
@@ -96,7 +96,7 @@ void Range::getData(
         base_frame_id_, curr_time, global_frame_id_,
         transform_tolerance_, tf_buffer_, tf_transform))
     {
-      return;
+      return false;
     }
   } else {
     // Obtaining the transform to get data from source frame to base frame without time shift
@@ -107,7 +107,7 @@ void Range::getData(
         data_->header.frame_id, base_frame_id_,
         transform_tolerance_, tf_buffer_, tf_transform))
     {
-      return;
+      return false;
     }
   }
 
@@ -141,6 +141,8 @@ void Range::getData(
 
   // Refill data array
   data.push_back({p_v3_b.x(), p_v3_b.y()});
+
+  return true;
 }
 
 void Range::getParameters(std::string & source_topic)
