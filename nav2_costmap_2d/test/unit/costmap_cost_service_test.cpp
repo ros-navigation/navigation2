@@ -50,9 +50,9 @@ protected:
 TEST_F(GetCostServiceTest, TestWithoutFootprint)
 {
   auto request = std::make_shared<nav2_msgs::srv::GetCosts::Request>();
-  geometry_msgs::msg::Pose2D pose;
-  pose.x = 0.5;
-  pose.y = 1.0;
+  geometry_msgs::msg::PoseStamped pose;
+  pose.pose.position.x = 0.5;
+  pose.pose.position.y = 1.0;
   request->poses.push_back(pose);
   request->use_footprint = false;
 
@@ -72,10 +72,12 @@ TEST_F(GetCostServiceTest, TestWithoutFootprint)
 TEST_F(GetCostServiceTest, TestWithFootprint)
 {
   auto request = std::make_shared<nav2_msgs::srv::GetCosts::Request>();
-  geometry_msgs::msg::Pose2D pose;
-  pose.x = 0.5;
-  pose.y = 1.0;
-  pose.theta = 0.5;
+  geometry_msgs::msg::PoseStamped pose;
+  pose.pose.position.x = 0.5;
+  pose.pose.position.y = 1.0;
+  tf2::Quaternion q;
+  q.setRPY(0, 0, 0.5);
+  pose.pose.orientation = tf2::toMsg(q);
   request->poses.push_back(pose);
   request->use_footprint = true;
 
