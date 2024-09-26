@@ -52,17 +52,23 @@ public:
 
   static BT::PortsList providedPorts()
   {
-    return providedBasicPorts({
+    return providedBasicPorts(
+      {
         BT::InputPort<Goals>("input_goals", "Original goals to remove from"),
-        BT::InputPort<double>("cost_threshold", 254.0,
+        BT::InputPort<double>(
+          "cost_threshold", 254.0,
           "Cost threshold for considering a goal in collision"),
         BT::InputPort<bool>("use_footprint", true, "Whether to use footprint cost"),
+        BT::InputPort<bool>(
+          "consider_unknown_as_obstacle", false,
+          "Whether to consider unknown cost as obstacle"),
         BT::OutputPort<Goals>("output_goals", "Goals with in-collision goals removed"),
-    });
+      });
   }
 
 private:
   bool use_footprint_;
+  bool consider_unknown_as_obstacle_;
   double cost_threshold_;
   Goals input_goals_;
 };
