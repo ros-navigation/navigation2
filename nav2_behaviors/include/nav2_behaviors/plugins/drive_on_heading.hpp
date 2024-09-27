@@ -74,7 +74,7 @@ public:
     command_speed_ = command->speed;
     command_time_allowance_ = command->time_allowance;
 
-    end_time_ = this->steady_clock_.now() + command_time_allowance_;
+    end_time_ = this->clock_->now() + command_time_allowance_;
 
     if (!nav2_util::getCurrentPose(
         initial_pose_, *this->tf_, this->global_frame_, this->robot_base_frame_,
@@ -93,7 +93,7 @@ public:
    */
   ResultStatus onCycleUpdate()
   {
-    rclcpp::Duration time_remaining = end_time_ - this->steady_clock_.now();
+    rclcpp::Duration time_remaining = end_time_ - this->clock_->now();
     if (time_remaining.seconds() < 0.0 && command_time_allowance_.seconds() > 0.0) {
       this->stopRobot();
       RCLCPP_WARN(

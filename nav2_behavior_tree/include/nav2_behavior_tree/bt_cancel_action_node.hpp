@@ -59,6 +59,8 @@ public:
     server_timeout_ =
       config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
     getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
+    wait_for_service_timeout_ =
+      config().blackboard->template get<std::chrono::milliseconds>("wait_for_service_timeout");
 
     std::string remapped_action_name;
     if (getInput("server_name", remapped_action_name)) {
@@ -89,10 +91,10 @@ public:
 
     // Make sure the server is actually there before continuing
     RCLCPP_DEBUG(node_->get_logger(), "Waiting for \"%s\" action server", action_name.c_str());
-    if (!action_client_->wait_for_action_server(1s)) {
+    if (!action_client_->wait_for_action_server(wait_for_service_timeout_)) {
       RCLCPP_ERROR(
-        node_->get_logger(), "\"%s\" action server not available after waiting for 1 s",
-        action_name.c_str());
+        node_->get_logger(), "\"%s\" action server not available after waiting for %.2fs",
+        action_name.c_str(), wait_for_service_timeout_.count() / 1000.0);
       throw std::runtime_error(
               std::string("Action server ") + action_name +
               std::string(" not available"));
@@ -168,6 +170,8 @@ protected:
   // The timeout value while waiting for response from a server when a
   // new action goal is canceled
   std::chrono::milliseconds server_timeout_;
+  // The timeout value for waiting for a service to response
+  std::chrono::milliseconds wait_for_service_timeout_;
 };
 
 }  // namespace nav2_behavior_tree

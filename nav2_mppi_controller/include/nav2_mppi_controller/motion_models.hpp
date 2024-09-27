@@ -88,9 +88,9 @@ public:
   /**
     * @brief Constructor for mppi::AckermannMotionModel
     */
-  explicit AckermannMotionModel(ParametersHandler * param_handler)
+  explicit AckermannMotionModel(ParametersHandler * param_handler, const std::string & name)
   {
-    auto getParam = param_handler->getParamGetter("AckermannConstraints");
+    auto getParam = param_handler->getParamGetter(name + ".AckermannConstraints");
     getParam(min_turning_r_, "min_turning_r", 0.2);
   }
 
@@ -112,8 +112,8 @@ public:
     auto & vx = control_sequence.vx;
     auto & wz = control_sequence.wz;
 
-    auto view = xt::masked_view(wz, xt::fabs(vx) / xt::fabs(wz) < min_turning_r_);
-    view = xt::sign(wz) * vx / min_turning_r_;
+    auto view = xt::masked_view(wz, (xt::fabs(vx) / xt::fabs(wz)) < min_turning_r_);
+    view = xt::sign(wz) * xt::fabs(vx) / min_turning_r_;
   }
 
   /**

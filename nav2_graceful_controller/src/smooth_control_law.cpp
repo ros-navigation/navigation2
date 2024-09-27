@@ -43,8 +43,7 @@ void SmoothControlLaw::setSlowdownRadius(double slowdown_radius)
 }
 
 void SmoothControlLaw::setSpeedLimit(
-  const double v_linear_min, const double v_linear_max,
-  const double v_angular_max)
+  const double v_linear_min, const double v_linear_max, const double v_angular_max)
 {
   v_linear_min_ = v_linear_min;
   v_linear_max_ = v_linear_max;
@@ -59,6 +58,8 @@ geometry_msgs::msg::Twist SmoothControlLaw::calculateRegularVelocity(
   auto ego_coords = EgocentricPolarCoordinates(target, current, backward);
   // Calculate the curvature
   double curvature = calculateCurvature(ego_coords.r, ego_coords.phi, ego_coords.delta);
+  // Invert the curvature if the robot is moving backwards
+  curvature = backward ? -curvature : curvature;
 
   // Adjust the linear velocity as a function of the path curvature to
   // slowdown the controller as it approaches its target

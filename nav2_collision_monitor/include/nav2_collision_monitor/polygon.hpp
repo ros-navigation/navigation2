@@ -86,6 +86,11 @@ public:
    * @return Action type for current polygon
    */
   ActionType getActionType() const;
+   /**
+   * @brief Obtains polygon enabled state
+   * @return Whether polygon is enabled
+   */
+  bool getEnabled() const;
   /**
    * @brief Obtains polygon maximum points to enter inside polygon causing no action
    * @return Maximum points to enter to current polygon and take no action
@@ -161,6 +166,14 @@ protected:
    * @param point Given point to check
    * @return True if given point is inside polygon, otherwise false
    */
+
+  /**
+   * @brief Callback executed when a parameter change is detected
+   * @param event ParameterEvent message
+   */
+  rcl_interfaces::msg::SetParametersResult dynamicParametersCallback(
+    std::vector<rclcpp::Parameter> parameters);
+
   bool isPointInside(const Point & point) const;
 
   // ----- Variables -----
@@ -169,7 +182,9 @@ protected:
   nav2_util::LifecycleNode::WeakPtr node_;
   /// @brief Collision monitor node logger stored for further usage
   rclcpp::Logger logger_{rclcpp::get_logger("collision_monitor")};
-
+  /// @brief Dynamic parameters handler
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
+  
   // Basic parameters
   /// @brief Name of polygon
   std::string polygon_name_;
@@ -185,6 +200,8 @@ protected:
   double simulation_time_step_;
   /// @brief Footprint subscriber
   std::unique_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
+  /// @brief Whether polygon is enabled
+  bool enabled_;
 
   // Global variables
   /// @brief TF buffer

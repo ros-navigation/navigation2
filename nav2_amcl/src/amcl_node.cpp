@@ -49,6 +49,7 @@
 #pragma GCC diagnostic pop
 
 #include "nav2_amcl/portable_utils.hpp"
+#include "nav2_util/validate_messages.hpp"
 
 using namespace std::placeholders;
 using rcl_interfaces::msg::ParameterType;
@@ -523,11 +524,8 @@ AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::Sha
 
   RCLCPP_INFO(get_logger(), "initialPoseReceived");
 
-  if (msg->header.frame_id == "") {
-    // This should be removed at some point
-    RCLCPP_WARN(
-      get_logger(),
-      "Received initial pose with empty frame_id. You should always supply a frame_id.");
+  if (!nav2_util::validateMsg(*msg)) {
+    RCLCPP_ERROR(get_logger(), "Received initialpose message is malformed. Rejecting.");
     return;
   }
   if (nav2_util::strip_leading_slash(msg->header.frame_id) != global_frame_id_) {
@@ -1360,6 +1358,7 @@ AmclNode::dynamicParametersCallback(
     lasers_update_.clear();
     frame_to_laser_.clear();
     laser_scan_connection_.disconnect();
+    laser_scan_filter_.reset();
     laser_scan_sub_.reset();
 
     initMessageFilters();
@@ -1381,6 +1380,10 @@ void
 AmclNode::mapReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
 {
   RCLCPP_DEBUG(get_logger(), "AmclNode: A new map was received.");
+  if (!nav2_util::validateMsg(*msg)) {
+    RCLCPP_ERROR(get_logger(), "Received map message is malformed. Rejecting.");
+    return;
+  }
   if (first_map_only_ && first_map_received_) {
     return;
   }

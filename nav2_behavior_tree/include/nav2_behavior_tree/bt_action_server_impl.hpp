@@ -61,6 +61,12 @@ BtActionServer<ActionT>::BtActionServer(
   if (!node->has_parameter("default_server_timeout")) {
     node->declare_parameter("default_server_timeout", 20);
   }
+  if (!node->has_parameter("always_reload_bt_xml")) {
+    node->declare_parameter("always_reload_bt_xml", false);
+  }
+  if (!node->has_parameter("wait_for_service_timeout")) {
+    node->declare_parameter("wait_for_service_timeout", 1000);
+  }
 
   std::vector<std::string> error_code_names = {
     "follow_path_error_code",
@@ -90,7 +96,7 @@ BtActionServer<ActionT>::BtActionServer(
         error_codes_str += " " + error_code;
       }
       RCLCPP_INFO_STREAM(logger_, "Error_code parameters were set to:" << error_codes_str);
-    }
+    } 
   }
 }
 
@@ -144,6 +150,10 @@ bool BtActionServer<ActionT>::on_configure()
   bt_loop_duration_ = std::chrono::milliseconds(timeout);
   node->get_parameter("default_server_timeout", timeout);
   default_server_timeout_ = std::chrono::milliseconds(timeout);
+  int wait_for_service_timeout;
+  node->get_parameter("wait_for_service_timeout", wait_for_service_timeout);
+  wait_for_service_timeout_ = std::chrono::milliseconds(wait_for_service_timeout);
+  node->get_parameter("always_reload_bt_xml", always_reload_bt_xml_);
 
   // Get error code id names to grab off of the blackboard
   error_code_names_ = node->get_parameter("error_code_names").as_string_array();
@@ -158,6 +168,9 @@ bool BtActionServer<ActionT>::on_configure()
   blackboard_->set<rclcpp::Node::SharedPtr>("node", client_node_);  // NOLINT
   blackboard_->set<std::chrono::milliseconds>("server_timeout", default_server_timeout_);  // NOLINT
   blackboard_->set<std::chrono::milliseconds>("bt_loop_duration", bt_loop_duration_);  // NOLINT
+  blackboard_->set<std::chrono::milliseconds>(
+    "wait_for_service_timeout",
+    wait_for_service_timeout_);
 
   return true;
 }
@@ -200,8 +213,8 @@ bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filena
   // Empty filename is default for backward compatibility
   auto filename = bt_xml_filename.empty() ? default_bt_xml_filename_ : bt_xml_filename;
 
-  // Use previous BT if it is the existing one
-  if (current_bt_xml_filename_ == filename) {
+  // Use previous BT if it is the existing one and always reload flag is not set to true
+  if (!always_reload_bt_xml_ && current_bt_xml_filename_ == filename) {
     RCLCPP_DEBUG(logger_, "BT will not be reloaded as the given xml is already loaded");
     return true;
   }
@@ -225,6 +238,9 @@ bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filena
       blackboard->set<rclcpp::Node::SharedPtr>("node", client_node_);
       blackboard->set<std::chrono::milliseconds>("server_timeout", default_server_timeout_);
       blackboard->set<std::chrono::milliseconds>("bt_loop_duration", bt_loop_duration_);
+      blackboard->set<std::chrono::milliseconds>(
+        "wait_for_service_timeout",
+        wait_for_service_timeout_);
     }
   } catch (const std::exception & e) {
     RCLCPP_ERROR(logger_, "Exception when loading BT: %s", e.what());

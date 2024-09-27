@@ -40,8 +40,6 @@ ClearCostmapService::ClearCostmapService(
   logger_ = node->get_logger();
   reset_value_ = costmap_.getCostmap()->getDefaultValue();
 
-  node->get_parameter("clearable_layers", clearable_layers_);
-
   clear_except_service_ = node->create_service<ClearExceptRegion>(
     "clear_except_" + costmap_.getName(),
     std::bind(
@@ -59,6 +57,14 @@ ClearCostmapService::ClearCostmapService(
     std::bind(
       &ClearCostmapService::clearEntireCallback, this,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+}
+
+ClearCostmapService::~ClearCostmapService()
+{
+  // make sure services shutdown.
+  clear_except_service_.reset();
+  clear_around_service_.reset();
+  clear_entire_service_.reset();
 }
 
 void ClearCostmapService::clearExceptRegionCallback(
