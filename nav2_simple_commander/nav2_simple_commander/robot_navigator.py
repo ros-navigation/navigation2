@@ -136,6 +136,7 @@ class BasicNavigator(Node):
         self.spin_client.destroy()
         self.backup_client.destroy()
         self.drive_on_heading_client.destroy()
+        self.assisted_teleop_client.destroy()
         super().destroy_node()
 
     def setInitialPose(self, initial_pose):
