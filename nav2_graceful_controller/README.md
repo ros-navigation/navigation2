@@ -1,5 +1,5 @@
 # Graceful Motion Controller
-The graceful motion controller implements a controller based on the works of Jong Jin Park in "Graceful Navigation for Mobile Robots in Dynamic and Uncertain Environments". (2016). In this implementation, a `motion_target` is set at a distance away from the robot that is exponentially stable to generate a smooth trajectory for the robot to follow.
+The graceful motion controller implements a controller based on the works of Jong Jin Park in "A Smooth Control Law for Graceful Motion of Differential Wheeled Mobile Robots in 2D Environment". In this implementation, a `motion_target` is set at a distance away from the robot that is exponentially stable to generate a smooth trajectory for the robot to follow.
 
 See its [Configuration Guide Page](https://docs.nav2.org/configuration/packages/configuring-graceful-motion-controller.html) for additional parameter descriptions.
 
