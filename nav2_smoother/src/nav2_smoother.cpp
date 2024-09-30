@@ -63,7 +63,7 @@ SmootherServer::~SmootherServer()
 }
 
 nav2_util::CallbackReturn
-SmootherServer::on_configure(const rclcpp_lifecycle::State &)
+SmootherServer::on_configure(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Configuring smoother server");
 
@@ -100,6 +100,7 @@ SmootherServer::on_configure(const rclcpp_lifecycle::State &)
     *costmap_sub_, *footprint_sub_, this->get_name());
 
   if (!loadSmootherPlugins()) {
+    on_cleanup(state);
     return nav2_util::CallbackReturn::FAILURE;
   }
 
@@ -162,14 +163,22 @@ bool SmootherServer::loadSmootherPlugins()
 }
 
 nav2_util::CallbackReturn
-SmootherServer::on_activate(const rclcpp_lifecycle::State &)
+SmootherServer::on_activate(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
   plan_publisher_->on_activate();
   SmootherMap::iterator it;
   for (it = smoothers_.begin(); it != smoothers_.end(); ++it) {
-    it->second->activate();
+    try {
+      it->second->activate();
+    } catch (const std::exception & ex) {
+      RCLCPP_FATAL(
+        get_logger(), "Failed to activate smoother. Exception: %s",
+        ex.what());
+      on_deactivate(state);
+      return nav2_util::CallbackReturn::FAILURE;
+    }
   }
   action_server_->activate();
 
