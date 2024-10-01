@@ -254,7 +254,8 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
   // Service to get the cost at a point
   get_cost_service_ = create_service<nav2_msgs::srv::GetCosts>(
     "get_cost_" + getName(),
-    std::bind(&Costmap2DROS::getCostsCallback, this, std::placeholders::_1, std::placeholders::_2,
+    std::bind(
+      &Costmap2DROS::getCostsCallback, this, std::placeholders::_1, std::placeholders::_2,
       std::placeholders::_3));
 
   // Add cleaning service
@@ -835,12 +836,17 @@ void Costmap2DROS::getCostsCallback(
   Costmap2D * costmap = layered_costmap_->getCostmap();
 
   for (const auto & pose : request->poses) {
-    bool in_bounds = costmap->worldToMap(pose.x, pose.y, mx, my);
+    geometry_msgs::msg::PoseStamped pose_transformed;
+    transformPoseToGlobalFrame(pose, pose_transformed);
+    bool in_bounds = costmap->worldToMap(
+      pose_transformed.pose.position.x,
+      pose_transformed.pose.position.y, mx, my);
 
     if (!in_bounds) {
-      response->costs.push_back(-1.0);
+      response->costs.push_back(NO_INFORMATION);
       continue;
     }
+    double yaw = tf2::getYaw(pose_transformed.pose.orientation);
 
     if (request->use_footprint) {
       Footprint footprint = layered_costmap_->getFootprint();
@@ -848,13 +854,17 @@ void Costmap2DROS::getCostsCallback(
 
       RCLCPP_DEBUG(
         get_logger(), "Received request to get cost at footprint pose (%.2f, %.2f, %.2f)",
-        pose.x, pose.y, pose.theta);
+        pose_transformed.pose.position.x, pose_transformed.pose.position.y, yaw);
 
       response->costs.push_back(
-        collision_checker.footprintCostAtPose(pose.x, pose.y, pose.theta, footprint));
+        collision_checker.footprintCostAtPose(
+          pose_transformed.pose.position.x,
+          pose_transformed.pose.position.y, yaw, footprint));
     } else {
       RCLCPP_DEBUG(
-        get_logger(), "Received request to get cost at point (%f, %f)", pose.x, pose.y);
+        get_logger(), "Received request to get cost at point (%f, %f)",
+          pose_transformed.pose.position.x,
+        pose_transformed.pose.position.y);
 
       // Get the cost at the map coordinates
       response->costs.push_back(static_cast<float>(costmap->getCost(mx, my)));
