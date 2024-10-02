@@ -54,7 +54,7 @@ void RotationShimController::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, plugin_name_ + ".angular_dist_threshold", rclcpp::ParameterValue(0.785));  // 45 deg
   nav2_util::declare_parameter_if_not_declared(
-    node, plugin_name_ + ".angular_disengage_threshold", rclcpp::ParameterValue(0.785 / 2.0));
+    node, plugin_name_ + ".angular_disengage_threshold", rclcpp::ParameterValue(0.785));
   nav2_util::declare_parameter_if_not_declared(
     node, plugin_name_ + ".forward_sampling_distance", rclcpp::ParameterValue(0.5));
   nav2_util::declare_parameter_if_not_declared(
