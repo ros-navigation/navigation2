@@ -82,9 +82,9 @@ void NoiseGenerator::reset(mppi::models::OptimizerSettings & settings, bool is_h
   // Recompute the noises on reset, initialization, and fallback
   {
     std::unique_lock<std::mutex> guard(noise_lock_);
-    noises_vx_ = Eigen::ArrayXXf::Zero(settings_.batch_size, settings_.time_steps);
-    noises_vy_ = Eigen::ArrayXXf::Zero(settings_.batch_size, settings_.time_steps);
-    noises_wz_ = Eigen::ArrayXXf::Zero(settings_.batch_size, settings_.time_steps);
+    noises_vx_.setZero(settings_.batch_size, settings_.time_steps);
+    noises_vy_.setZero(settings_.batch_size, settings_.time_steps);
+    noises_wz_.setZero(settings_.batch_size, settings_.time_steps);
     ready_ = true;
   }
 

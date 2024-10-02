@@ -196,7 +196,7 @@ protected:
    * @param state fill state
    */
   void integrateStateVelocities(
-    Eigen::Array<float, -1, 3> & trajectories,
+    Eigen::Array<float, Eigen::Dynamic, 3> & trajectories,
     const Eigen::ArrayXXf & state) const;
 
   /**

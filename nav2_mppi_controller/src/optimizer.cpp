@@ -300,7 +300,7 @@ void Optimizer::propagateStateVelocitiesFromInitials(
 }
 
 void Optimizer::integrateStateVelocities(
-  Eigen::Array<float, -1, 3> & trajectory,
+  Eigen::Array<float, Eigen::Dynamic, 3> & trajectory,
   const Eigen::ArrayXXf & sequence) const
 {
   float initial_yaw = static_cast<float>(tf2::getYaw(state_.pose.pose.orientation));
@@ -386,8 +386,8 @@ Eigen::ArrayXXf Optimizer::getOptimizedTrajectory()
 {
   const bool is_holo = isHolonomic();
   Eigen::ArrayXXf sequence = Eigen::ArrayXXf(settings_.time_steps, is_holo ? 3 : 2);
-  Eigen::Array<float, -1, 3> trajectories =
-    Eigen::Array<float, -1, 3>(settings_.time_steps, 3);
+  Eigen::Array<float, Eigen::Dynamic, 3> trajectories =
+    Eigen::Array<float, Eigen::Dynamic, 3>(settings_.time_steps, 3);
 
   sequence.col(0) = control_sequence_.vx;
   sequence.col(1) = control_sequence_.wz;
