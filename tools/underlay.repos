@@ -34,4 +34,4 @@ repositories:
   ros-navigation/nav2_minimal_turtlebot_simulation:
     type: git
     url:  https://github.com/ros-navigation/nav2_minimal_turtlebot_simulation.git
-    version: main
+    version: main 
