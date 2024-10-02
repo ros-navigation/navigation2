@@ -97,17 +97,18 @@ void PathAngleCritic::score(CriticData & data)
       throw nav2_core::ControllerException("Invalid path angle mode!");
   }
 
-  int && rightmost_idx = data.trajectories.y.cols() - 1;
+  int rightmost_idx = data.trajectories.y.cols() - 1;
   auto diff_y = goal_y - data.trajectories.y.col(rightmost_idx);
   auto diff_x = goal_x - data.trajectories.x.col(rightmost_idx);
   auto yaws_between_points = diff_y.binaryExpr(
-    diff_x, [&](const float & y, const float & x){return atan2f(y, x);});
+    diff_x, [&](const float & y, const float & x){return atan2f(y, x);}).eval();
 
   switch (mode_) {
     case PathAngleMode::FORWARD_PREFERENCE:
       {
+        auto rightmost_yaw = data.trajectories.yaws.col(rightmost_idx);
         auto yaws = utils::shortest_angular_distance(
-          data.trajectories.yaws.col(rightmost_idx), yaws_between_points).abs();
+          rightmost_yaw, yaws_between_points).abs();
         if (power_ > 1u) {
           data.costs += (yaws * weight_).pow(power_);
         } else {
@@ -117,11 +118,12 @@ void PathAngleCritic::score(CriticData & data)
       }
     case PathAngleMode::NO_DIRECTIONAL_PREFERENCE:
       {
+        auto rightmost_yaw = data.trajectories.yaws.col(rightmost_idx);
         auto yaws = utils::shortest_angular_distance(
-          data.trajectories.yaws.col(rightmost_idx), yaws_between_points).abs();
+          rightmost_yaw, yaws_between_points).abs();
         auto yaws_between_points_corrected = utils::point_corrected_yaws(yaws, yaws_between_points);
         auto corrected_yaws = utils::shortest_angular_distance(
-          data.trajectories.yaws.col(rightmost_idx), yaws_between_points_corrected).abs();
+          rightmost_yaw, yaws_between_points_corrected).abs();
         if (power_ > 1u) {
           data.costs += (corrected_yaws * weight_).pow(power_);
         } else {
@@ -131,10 +133,11 @@ void PathAngleCritic::score(CriticData & data)
       }
     case PathAngleMode::CONSIDER_FEASIBLE_PATH_ORIENTATIONS:
       {
+        auto rightmost_yaw = data.trajectories.yaws.col(rightmost_idx);
         auto yaws_between_points_corrected =
           utils::point_corrected_yaws(yaws_between_points, goal_yaw);
         auto corrected_yaws = utils::shortest_angular_distance(
-          data.trajectories.yaws.col(rightmost_idx), yaws_between_points_corrected).abs();
+          rightmost_yaw, yaws_between_points_corrected).abs();
         if (power_ > 1u) {
           data.costs += (corrected_yaws * weight_).pow(power_);
         } else {

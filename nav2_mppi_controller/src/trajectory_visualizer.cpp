@@ -110,8 +110,8 @@ void TrajectoryVisualizer::add(
   const float shape_1 = static_cast<float>(n_cols);
   points_->markers.reserve(floor(n_rows / trajectory_step_) * floor(n_cols * time_step_));
 
-  for (size_t i = 0; i != n_rows; i += trajectory_step_) {
-    for (size_t j = 0; j != n_cols; j += time_step_) {
+  for (size_t i = 0; i < n_rows; i += trajectory_step_) {
+    for (size_t j = 0; j < n_cols; j += time_step_) {
       const float j_flt = static_cast<float>(j);
       float blue_component = 1.0f - j_flt / shape_1;
       float green_component = j_flt / shape_1;

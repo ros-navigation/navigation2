@@ -66,8 +66,9 @@ void PathAlignCritic::score(CriticData & data)
     }
   }
 
-  const size_t batch_size = data.trajectories.x.cols();
+  const size_t batch_size = data.trajectories.x.rows();
   Eigen::ArrayXf cost(data.costs.rows());
+  cost.setZero();
 
   // Find integrated distance in the path
   std::vector<float> path_integrated_distances(path_segments_count, 0.0f);
@@ -151,9 +152,9 @@ void PathAlignCritic::score(CriticData & data)
   }
 
   if (power_ > 1u) {
-    data.costs += (std::move(cost) * weight_).pow(power_);
+    data.costs += (cost * weight_).pow(power_).eval();
   } else {
-    data.costs += std::move(cost) * weight_;
+    data.costs += (cost * weight_).eval();
   }
 }
 

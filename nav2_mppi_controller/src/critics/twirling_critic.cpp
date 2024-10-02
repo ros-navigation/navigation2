@@ -39,9 +39,9 @@ void TwirlingCritic::score(CriticData & data)
   }
 
   if (power_ > 1u) {
-    data.costs += Eigen::pow((Eigen::abs(data.state.wz)).rowwise().mean().eval() * weight_, power_);
+    data.costs += ((data.state.wz.abs().rowwise().mean()) * weight_).pow(power_).eval();
   } else {
-    data.costs += (Eigen::abs(data.state.wz)).rowwise().mean().eval() * weight_;
+    data.costs += ((data.state.wz.abs().rowwise().mean()) * weight_).eval();
   }
 }
 

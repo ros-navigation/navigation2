@@ -46,10 +46,10 @@ void GoalAngleCritic::score(CriticData & data)
 
   if(power_ > 1u) {
     data.costs += (((utils::shortest_angular_distance(data.trajectories.yaws, goal_yaw).abs()).
-      rowwise().mean()) * weight_).pow(power_);
+      rowwise().mean()) * weight_).pow(power_).eval();
   } else {
-    data.costs += ((utils::shortest_angular_distance(data.trajectories.yaws, goal_yaw).abs()).
-      rowwise().mean()) * weight_;
+    data.costs += (((utils::shortest_angular_distance(data.trajectories.yaws, goal_yaw).abs()).
+      rowwise().mean()) * weight_).eval();
   }
 }
 

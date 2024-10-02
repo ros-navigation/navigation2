@@ -14,6 +14,7 @@
 
 #include <chrono>
 #include <thread>
+#include <random>
 
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
@@ -177,7 +178,7 @@ TEST(UtilsTests, AnglesTests)
     }
   }
 
-  auto norm_ang = normalize_angles(angles);
+  auto norm_ang = normalize_angles(angles).eval();
   for (unsigned int i = 0; i != norm_ang.size(); i++) {
     EXPECT_TRUE((norm_ang(i) >= -M_PIF) && (norm_ang(i) <= M_PIF));
   }
@@ -185,7 +186,7 @@ TEST(UtilsTests, AnglesTests)
   // Test shortest angular distance
   Eigen::ArrayXf zero_angles(100);
   zero_angles.setZero();
-  auto ang_dist = shortest_angular_distance(angles, zero_angles);
+  auto ang_dist = shortest_angular_distance(angles, zero_angles).eval();
   for (unsigned int i = 0; i != ang_dist.size(); i++) {
     EXPECT_TRUE((ang_dist(i) >= -M_PIF) && (ang_dist(i) <= M_PIF));
   }
@@ -330,7 +331,10 @@ TEST(UtilsTests, SmootherTest)
   noisey_sequence.wz = 0.3 * Eigen::ArrayXf::Ones(30);
 
   // Make the sequence noisy
-  auto noises = ((Eigen::ArrayXf::Random(30)).abs()) / 5.0f;
+  std::mt19937 engine;
+  std::normal_distribution<float> normal_dist = std::normal_distribution(0.0f, 0.2f);
+  auto noises = Eigen::ArrayXf::NullaryExpr(
+    30, [&] () {return normal_dist(engine);});
   noisey_sequence.vx += noises;
   noisey_sequence.vy += noises;
   noisey_sequence.wz += noises;

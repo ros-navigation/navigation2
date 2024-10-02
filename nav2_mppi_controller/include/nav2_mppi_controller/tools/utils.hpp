@@ -265,13 +265,12 @@ inline bool withinPositionGoalTolerance(
 template<typename T>
 auto normalize_angles(const T & angles)
 {
-  // Eigen::ArrayXXf theta = (angles + M_PIF).unaryExpr([](const float x){
-  //   float remainder =  std::fmod(x, 2.0f * M_PIF);
-  //   return remainder < 0.0f ? remainder + M_PIF : remainder - M_PIF;
-  //  });
-  // return ((theta < 0.0f).select(theta + M_PIF, theta - M_PIF)).eval();
-  auto theta = angles - (M_PIF * ((angles + M_PIF_2) * (1.0f / M_PIF)).floor());
-  return theta;
+  return (angles + M_PIF).unaryExpr([&](const float x){
+             float remainder = std::fmod(x, 2.0f * M_PIF);
+             return remainder < 0.0f ? remainder + M_PIF : remainder - M_PIF;
+             });
+  // auto theta = angles - (M_PIF * ((angles + M_PIF_2) * (1.0f / M_PIF)).floor());
+  // return theta;
 }
 
 /**
@@ -303,11 +302,12 @@ auto shortest_angular_distance(
  */
 inline size_t findPathFurthestReachedPoint(const CriticData & data)
 {
-  const auto traj_x = data.trajectories.x.col(-1);
-  const auto traj_y = data.trajectories.y.col(-1);
+  int traj_cols = data.trajectories.x.cols();
+  const auto traj_x = data.trajectories.x.col(traj_cols - 1);
+  const auto traj_y = data.trajectories.y.col(traj_cols - 1);
 
-  const auto dx = (data.path.x.transpose()).replicate(traj_x.rows(), 1) - traj_x;
-  const auto dy = (data.path.y.transpose()).replicate(traj_y.rows(), 1) - traj_y;
+  const auto dx = (data.path.x.transpose()).replicate(traj_x.rows(), 1).colwise() - traj_x;
+  const auto dy = (data.path.y.transpose()).replicate(traj_y.rows(), 1).colwise() - traj_y;
 
   const auto dists = dx * dx + dy * dy;
 
@@ -453,8 +453,9 @@ inline void savitskyGolayFilter(
   const models::OptimizerSettings & settings)
 {
   // Savitzky-Golay Quadratic, 9-point Coefficients
-  Eigen::Array<float, 9, 1> filter = {-21.0, 14.0, 39.0, 54.0, 59.0, 54.0, 39.0, 14.0, -21.0};
-  filter /= 231.0;
+  Eigen::Array<float, 9, 1> filter = {-21.0f, 14.0f, 39.0f, 54.0f, 59.0f, 54.0f, 39.0f, 14.0f,
+    -21.0f};
+  filter /= 231.0f;
 
   const unsigned int num_sequences = control_sequence.vx.size() - 1;
 
@@ -464,7 +465,7 @@ inline void savitskyGolayFilter(
   }
 
   auto applyFilter = [&](const Eigen::Array<float, 9, 1> & data) -> float {
-      return (data * filter).sum();
+      return (data * filter).eval().sum();
     };
 
   auto applyFilterOverAxis =
