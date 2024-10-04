@@ -53,7 +53,7 @@ ParametersHandler::dynamicParamsCallback(
 {
   rcl_interfaces::msg::SetParametersResult result;
   std::lock_guard<std::mutex> lock(parameters_change_mutex_);
-  bool success =true;
+  bool success = true;
 
   for (auto & pre_cb : pre_callbacks_) {
     pre_cb();
