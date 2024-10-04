@@ -240,13 +240,6 @@ protected:
     std::vector<rclcpp::Parameter> parameters);
 
   /**
-   * @brief Checks if point is inside polygon
-   * @param point Given point to check
-   * @return True if given point is inside polygon, otherwise false
-   */
-  bool isPointInside(const Point & point) const;
-
-  /**
    * @brief Extracts Polygon points from a string with of the form [[x1,y1],[x2,y2],[x3,y3]...]
    * @param poly_string Input String containing the verteceis of the polygon
    * @param polygon Output Point vector with all the vertecies of the polygon
