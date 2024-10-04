@@ -95,8 +95,20 @@ nav_msgs::msg::Path ThetaStarPlanner::createPlan(
 
   // Corner case of start and goal beeing on the same cell
   unsigned int mx_start, my_start, mx_goal, my_goal;
-  planner_->costmap_->worldToMap(start.pose.position.x, start.pose.position.y, mx_start, my_start);
-  planner_->costmap_->worldToMap(goal.pose.position.x, goal.pose.position.y, mx_goal, my_goal);
+  if (!planner_->costmap_->worldToMap(
+      start.pose.position.x, start.pose.position.y, mx_start, my_start))
+  {
+    RCLCPP_WARN(logger_, "Start Coordinates were outside map bounds");
+    return global_path;
+  }
+
+  if (!planner_->costmap_->worldToMap(
+      goal.pose.position.x, goal.pose.position.y, mx_goal, my_goal))
+  {
+    RCLCPP_WARN(logger_, "Goal Coordinates were outside map bounds");
+    return global_path;
+  }
+
   if (mx_start == mx_goal && my_start == my_goal) {
     if (planner_->costmap_->getCost(mx_start, my_start) == nav2_costmap_2d::LETHAL_OBSTACLE) {
       RCLCPP_WARN(logger_, "Failed to create a unique pose path because of obstacles");
