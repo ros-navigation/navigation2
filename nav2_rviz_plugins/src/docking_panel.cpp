@@ -185,6 +185,16 @@ DockingPanel::~DockingPanel()
 {
 }
 
+void DockingPanel::load(const rviz_common::Config & config)
+{
+  Panel::load(config);
+}
+
+void DockingPanel::save(rviz_common::Config config) const
+{
+  Panel::save(config);
+}
+
 void DockingPanel::onDockingButtonPressed()
 {
   if (!docking_in_progress_) {

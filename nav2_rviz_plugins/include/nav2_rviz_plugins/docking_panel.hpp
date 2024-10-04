@@ -37,6 +37,7 @@ class QPushButton;
 namespace nav2_rviz_plugins
 {
 
+/// Panel to interface to the docking server
 class DockingPanel : public rviz_common::Panel
 {
   Q_OBJECT
@@ -44,7 +45,12 @@ class DockingPanel : public rviz_common::Panel
 public:
   explicit DockingPanel(QWidget * parent = 0);
   virtual ~DockingPanel();
+
   void onInitialize() override;
+
+  /// Load and save configuration data
+  void load(const rviz_common::Config & config) override;
+  void save(rviz_common::Config config) const override;
 
 private Q_SLOTS:
   void onDockingButtonPressed();
