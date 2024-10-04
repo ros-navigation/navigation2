@@ -245,6 +245,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
       true /*spin thread*/, server_options, use_realtime_priority_ /*soft realtime*/);
   } catch (const std::runtime_error & e) {
     RCLCPP_ERROR(get_logger(), "Error creating action server! %s", e.what());
+    on_cleanup(state);
     return nav2_util::CallbackReturn::FAILURE;
   }
 
@@ -257,7 +258,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 }
 
 nav2_util::CallbackReturn
-ControllerServer::on_activate(const rclcpp_lifecycle::State & state)
+ControllerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
@@ -268,15 +269,6 @@ ControllerServer::on_activate(const rclcpp_lifecycle::State & state)
   ControllerMap::iterator it;
   for (it = controllers_.begin(); it != controllers_.end(); ++it) {
     it->second->activate();
-    try {
-      it->second->activate();
-    } catch (const std::exception & ex) {
-      RCLCPP_FATAL(
-        get_logger(), "Failed to activate controller. Exception: %s",
-        ex.what());
-      on_deactivate(state);
-      return nav2_util::CallbackReturn::FAILURE;
-    }
   }
   vel_publisher_->on_activate();
   action_server_->activate();

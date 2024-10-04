@@ -44,7 +44,7 @@ VelocitySmoother::~VelocitySmoother()
 }
 
 nav2_util::CallbackReturn
-VelocitySmoother::on_configure(const rclcpp_lifecycle::State &)
+VelocitySmoother::on_configure(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Configuring velocity smoother");
   auto node = shared_from_this();
@@ -144,6 +144,7 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State &)
       nav2_util::setSoftRealTimePriority();
     } catch (const std::runtime_error & e) {
       RCLCPP_ERROR(get_logger(), "%s", e.what());
+      on_cleanup(state);
       return nav2_util::CallbackReturn::FAILURE;
     }
   }

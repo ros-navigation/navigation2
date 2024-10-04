@@ -178,7 +178,7 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
 }
 
 nav2_util::CallbackReturn
-PlannerServer::on_activate(const rclcpp_lifecycle::State & state)
+PlannerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
@@ -192,15 +192,7 @@ PlannerServer::on_activate(const rclcpp_lifecycle::State & state)
 
   PlannerMap::iterator it;
   for (it = planners_.begin(); it != planners_.end(); ++it) {
-    try {
-      it->second->activate();
-    } catch (const std::exception & ex) {
-      RCLCPP_FATAL(
-        get_logger(), "Failed to activate global planner. Exception: %s",
-        ex.what());
-      on_deactivate(state);
-      return nav2_util::CallbackReturn::FAILURE;
-    }
+    it->second->activate();
   }
 
   auto node = shared_from_this();

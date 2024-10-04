@@ -78,7 +78,7 @@ BehaviorServer::~BehaviorServer()
 }
 
 nav2_util::CallbackReturn
-BehaviorServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
+BehaviorServer::on_configure(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
 
@@ -91,6 +91,7 @@ BehaviorServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   behavior_types_.resize(behavior_ids_.size());
   if (!loadBehaviorPlugins()) {
+    on_cleanup(state);
     return nav2_util::CallbackReturn::FAILURE;
   }
   setupResourcesForBehaviorPlugins();
