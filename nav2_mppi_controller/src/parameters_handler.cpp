@@ -53,6 +53,7 @@ ParametersHandler::dynamicParamsCallback(
 {
   rcl_interfaces::msg::SetParametersResult result;
   std::lock_guard<std::mutex> lock(parameters_change_mutex_);
+  bool success =true;
 
   for (auto & pre_cb : pre_callbacks_) {
     pre_cb();
@@ -67,6 +68,7 @@ ParametersHandler::dynamicParamsCallback(
       callback->second(param);
     } else {
       RCLCPP_WARN(logger_, "Parameter %s not found", param_name.c_str());
+      success = false;
     }
   }
 
@@ -74,7 +76,7 @@ ParametersHandler::dynamicParamsCallback(
     post_cb();
   }
 
-  result.successful = true;
+  result.successful = success;
   return result;
 }
 
