@@ -39,6 +39,7 @@
 #include "nav2_controller/plugins/simple_goal_checker.hpp"
 #include "nav2_controller/plugins/stopped_goal_checker.hpp"
 #include "nav_2d_utils/conversions.hpp"
+#include "nav_msgs/msg/path.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 
 using nav2_controller::SimpleGoalChecker;
@@ -49,6 +50,7 @@ void checkMacro(
   double x0, double y0, double theta0,
   double x1, double y1, double theta1,
   double xv, double yv, double thetav,
+  const nav_msgs::msg::Path & path,
   bool expected_result)
 {
   gc.reset();
@@ -67,12 +69,12 @@ void checkMacro(
     EXPECT_TRUE(
       gc.isGoalReached(
         nav_2d_utils::pose2DToPose(pose0),
-        nav_2d_utils::pose2DToPose(pose1), nav_2d_utils::twist2Dto3D(v)));
+        nav_2d_utils::pose2DToPose(pose1), nav_2d_utils::twist2Dto3D(v), path));
   } else {
     EXPECT_FALSE(
       gc.isGoalReached(
         nav_2d_utils::pose2DToPose(pose0),
-        nav_2d_utils::pose2DToPose(pose1), nav_2d_utils::twist2Dto3D(v)));
+        nav_2d_utils::pose2DToPose(pose1), nav_2d_utils::twist2Dto3D(v), path));
   }
 }
 
@@ -81,20 +83,22 @@ void sameResult(
   double x0, double y0, double theta0,
   double x1, double y1, double theta1,
   double xv, double yv, double thetav,
+  const nav_msgs::msg::Path & path,
   bool expected_result)
 {
-  checkMacro(gc0, x0, y0, theta0, x1, y1, theta1, xv, yv, thetav, expected_result);
-  checkMacro(gc1, x0, y0, theta0, x1, y1, theta1, xv, yv, thetav, expected_result);
+  checkMacro(gc0, x0, y0, theta0, x1, y1, theta1, xv, yv, thetav, path, expected_result);
+  checkMacro(gc1, x0, y0, theta0, x1, y1, theta1, xv, yv, thetav, path, expected_result);
 }
 
 void trueFalse(
   nav2_core::GoalChecker & gc0, nav2_core::GoalChecker & gc1,
   double x0, double y0, double theta0,
   double x1, double y1, double theta1,
-  double xv, double yv, double thetav)
+  double xv, double yv, double thetav,
+  const nav_msgs::msg::Path & path)
 {
-  checkMacro(gc0, x0, y0, theta0, x1, y1, theta1, xv, yv, thetav, true);
-  checkMacro(gc1, x0, y0, theta0, x1, y1, theta1, xv, yv, thetav, false);
+  checkMacro(gc0, x0, y0, theta0, x1, y1, theta1, xv, yv, thetav, path, true);
+  checkMacro(gc1, x0, y0, theta0, x1, y1, theta1, xv, yv, thetav, path, false);
 }
 class TestLifecycleNode : public nav2_util::LifecycleNode
 {
@@ -162,18 +166,19 @@ TEST(VelocityIterator, two_checks)
   SimpleGoalChecker gc;
   StoppedGoalChecker sgc;
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+  nav_msgs::msg::Path path;
 
   gc.initialize(x, "nav2_controller", costmap);
   sgc.initialize(x, "nav2_controller", costmap);
-  sameResult(gc, sgc, 0, 0, 0, 0, 0, 0, 0, 0, 0, true);
-  sameResult(gc, sgc, 0, 0, 0, 1, 0, 0, 0, 0, 0, false);
-  sameResult(gc, sgc, 0, 0, 0, 0, 1, 0, 0, 0, 0, false);
-  sameResult(gc, sgc, 0, 0, 0, 0, 0, 1, 0, 0, 0, false);
-  sameResult(gc, sgc, 0, 0, 3.14, 0, 0, -3.14, 0, 0, 0, true);
-  trueFalse(gc, sgc, 0, 0, 3.14, 0, 0, -3.14, 1, 0, 0);
-  trueFalse(gc, sgc, 0, 0, 0, 0, 0, 0, 1, 0, 0);
-  trueFalse(gc, sgc, 0, 0, 0, 0, 0, 0, 0, 1, 0);
-  trueFalse(gc, sgc, 0, 0, 0, 0, 0, 0, 0, 0, 1);
+  sameResult(gc, sgc, 0, 0, 0, 0, 0, 0, 0, 0, 0, path, true);
+  sameResult(gc, sgc, 0, 0, 0, 1, 0, 0, 0, 0, 0, path, false);
+  sameResult(gc, sgc, 0, 0, 0, 0, 1, 0, 0, 0, 0, path, false);
+  sameResult(gc, sgc, 0, 0, 0, 0, 0, 1, 0, 0, 0, path, false);
+  sameResult(gc, sgc, 0, 0, 3.14, 0, 0, -3.14, 0, 0, 0, path, true);
+  trueFalse(gc, sgc, 0, 0, 3.14, 0, 0, -3.14, 1, 0, 0, path);
+  trueFalse(gc, sgc, 0, 0, 0, 0, 0, 0, 1, 0, 0, path);
+  trueFalse(gc, sgc, 0, 0, 0, 0, 0, 0, 0, 1, 0, path);
+  trueFalse(gc, sgc, 0, 0, 0, 0, 0, 0, 0, 0, 1, path);
 }
 
 TEST(StoppedGoalChecker, get_tol_and_dynamic_params)
