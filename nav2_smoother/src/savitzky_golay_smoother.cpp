@@ -118,74 +118,44 @@ bool SavitzkyGolaySmoother::smoothImpl(
     };
 
   auto applyFilterOverAxes =
-    [&](std::vector<geometry_msgs::msg::PoseStamped> & plan_pts) -> void
+    [&](std::vector<geometry_msgs::msg::PoseStamped> & plan_pts,
+    const std::vector<geometry_msgs::msg::PoseStamped> & init_plan_pts) -> void
     {
-      // Handle initial boundary conditions, first point is fixed
-      unsigned int idx = 1;
-      plan_pts[idx].pose.position = applyFilter(
-      {
-        plan_pts[idx - 1].pose.position,
-        plan_pts[idx - 1].pose.position,
-        plan_pts[idx - 1].pose.position,
-        plan_pts[idx].pose.position,
-        plan_pts[idx + 1].pose.position,
-        plan_pts[idx + 2].pose.position,
-        plan_pts[idx + 3].pose.position});
+      auto pt_m3 = init_plan_pts[0].pose.position;
+      auto pt_m2 = init_plan_pts[0].pose.position;
+      auto pt_m1 = init_plan_pts[0].pose.position;
+      auto pt = init_plan_pts[1].pose.position;
+      auto pt_p1 = init_plan_pts[2].pose.position;
+      auto pt_p2 = init_plan_pts[3].pose.position;
+      auto pt_p3 = init_plan_pts[4].pose.position;
 
-      idx++;
-      plan_pts[idx].pose.position = applyFilter(
-      {
-        plan_pts[idx - 2].pose.position,
-        plan_pts[idx - 2].pose.position,
-        plan_pts[idx - 1].pose.position,
-        plan_pts[idx].pose.position,
-        plan_pts[idx + 1].pose.position,
-        plan_pts[idx + 2].pose.position,
-        plan_pts[idx + 3].pose.position});
+      // First point is fixed
+      for (unsigned int idx = 1; idx != path_size - 1; idx++) {
+        plan_pts[idx].pose.position = applyFilter({pt_m3, pt_m2, pt_m1, pt, pt_p1, pt_p2, pt_p3});
+        pt_m3 = pt_m2;
+        pt_m2 = pt_m1;
+        pt_m1 = pt;
+        pt = pt_p1;
+        pt_p1 = pt_p2;
+        pt_p2 = pt_p3;
 
-      // Apply nominal filter
-      for (idx = 3; idx < path_size - 4; ++idx) {
-        plan_pts[idx].pose.position = applyFilter(
-        {
-          plan_pts[idx - 3].pose.position,
-          plan_pts[idx - 2].pose.position,
-          plan_pts[idx - 1].pose.position,
-          plan_pts[idx].pose.position,
-          plan_pts[idx + 1].pose.position,
-          plan_pts[idx + 2].pose.position,
-          plan_pts[idx + 3].pose.position});
+        if (idx + 4 < path_size - 1) {
+          pt_p3 = init_plan_pts[idx + 4].pose.position;
+        } else {
+          // Return the last point
+          pt_p3 = init_plan_pts[path_size - 1].pose.position;
+        }
       }
-
-      // Handle terminal boundary conditions, last point is fixed
-      idx++;
-      plan_pts[idx].pose.position = applyFilter(
-      {
-        plan_pts[idx - 3].pose.position,
-        plan_pts[idx - 2].pose.position,
-        plan_pts[idx - 1].pose.position,
-        plan_pts[idx].pose.position,
-        plan_pts[idx + 1].pose.position,
-        plan_pts[idx + 2].pose.position,
-        plan_pts[idx + 2].pose.position});
-
-      idx++;
-      plan_pts[idx].pose.position = applyFilter(
-      {
-        plan_pts[idx - 3].pose.position,
-        plan_pts[idx - 2].pose.position,
-        plan_pts[idx - 1].pose.position,
-        plan_pts[idx].pose.position,
-        plan_pts[idx + 1].pose.position,
-        plan_pts[idx + 1].pose.position,
-        plan_pts[idx + 1].pose.position});
     };
 
-  applyFilterOverAxes(path.poses);
+  const auto initial_path_poses = path.poses;
+  applyFilterOverAxes(path.poses, initial_path_poses);
 
   // Lets do additional refinement, it shouldn't take more than a couple milliseconds
   if (do_refinement_) {
     for (int i = 0; i < refinement_num_; i++) {
-      applyFilterOverAxes(path.poses);
+      const auto reined_initial_path_poses = path.poses;
+      applyFilterOverAxes(path.poses, reined_initial_path_poses);
     }
   }
 
