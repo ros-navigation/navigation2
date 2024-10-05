@@ -180,9 +180,9 @@ def main(argv=sys.argv[1:]):
     time.sleep(2)
     test.cancel_goal()
 
-    # set waypoint outside of map
+    # set waypoint outside of map but not outide the utm zone
     time.sleep(2)
-    test.setWaypoints([[35.0, -118.0]])
+    test.setWaypoints([[55.929834, -3.184343]])
     result = test.run(True, False)
     assert not result
     result = not result
@@ -193,7 +193,7 @@ def main(argv=sys.argv[1:]):
 
     # stop on failure test with bogous waypoint
     test.setStopFailureParam(True)
-    bwps = [[55.944831, -3.186998], [35.0, -118.0], [55.944782, -3.187060]]
+    bwps = [[55.944831, -3.186998], [55.929834, -3.184343], [55.944782, -3.187060]]
     test.setWaypoints(bwps)
     result = test.run(True, False)
     assert not result
