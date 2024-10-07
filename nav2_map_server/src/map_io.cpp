@@ -505,7 +505,7 @@ void tryWriteMapToFile(
             if (map_cell < 0 || 100 < map_cell) {
               q = MaxRGB;
             } else {
-              q = map_cell / 255.0 * MaxRGB;
+              q = map_cell / 100.0 * MaxRGB;
             }
             pixel = Magick::Color(q, q, q);
             break;
