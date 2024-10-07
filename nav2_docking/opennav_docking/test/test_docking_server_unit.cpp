@@ -180,10 +180,28 @@ TEST(DockingServerTests, testErrorExceptions)
 TEST(DockingServerTests, getateGoalDock)
 {
   auto node = std::make_shared<opennav_docking::DockingServer>();
+
+  // Setup 1 instance of the test failure dock & its plugin instance
+  node->declare_parameter(
+    "docks",
+    rclcpp::ParameterValue(std::vector<std::string>{"test_dock"}));
+  node->declare_parameter(
+    "test_dock.type",
+    rclcpp::ParameterValue(std::string{"dock_plugin"}));
+  node->declare_parameter(
+    "test_dock.pose",
+    rclcpp::ParameterValue(std::vector<double>{0.0, 0.0, 0.0}));
+  node->declare_parameter(
+    "dock_plugins",
+    rclcpp::ParameterValue(std::vector<std::string>{"dock_plugin"}));
+  node->declare_parameter(
+    "dock_plugin.plugin",
+    rclcpp::ParameterValue(std::string{"opennav_docking::TestFailureDock"}));
+
   node->on_configure(rclcpp_lifecycle::State());
   std::shared_ptr<const DockRobot::Goal> goal = std::make_shared<const DockRobot::Goal>();
   auto dock = node->generateGoalDock(goal);
-  EXPECT_EQ(dock->plugin, nullptr);
+  EXPECT_NE(dock->plugin, nullptr);
   EXPECT_EQ(dock->frame, std::string());
   node->stashDockData(false, dock, true);
 }
@@ -191,6 +209,24 @@ TEST(DockingServerTests, getateGoalDock)
 TEST(DockingServerTests, testDynamicParams)
 {
   auto node = std::make_shared<opennav_docking::DockingServer>();
+
+  // Setup 1 instance of the test failure dock & its plugin instance
+  node->declare_parameter(
+    "docks",
+    rclcpp::ParameterValue(std::vector<std::string>{"test_dock"}));
+  node->declare_parameter(
+    "test_dock.type",
+    rclcpp::ParameterValue(std::string{"dock_plugin"}));
+  node->declare_parameter(
+    "test_dock.pose",
+    rclcpp::ParameterValue(std::vector<double>{0.0, 0.0, 0.0}));
+  node->declare_parameter(
+    "dock_plugins",
+    rclcpp::ParameterValue(std::vector<std::string>{"dock_plugin"}));
+  node->declare_parameter(
+    "dock_plugin.plugin",
+    rclcpp::ParameterValue(std::string{"opennav_docking::TestFailureDock"}));
+
   node->on_configure(rclcpp_lifecycle::State());
   node->on_activate(rclcpp_lifecycle::State());
 
@@ -221,6 +257,10 @@ TEST(DockingServerTests, testDynamicParams)
   EXPECT_EQ(node->get_parameter("base_frame").as_string(), std::string("hi"));
   EXPECT_EQ(node->get_parameter("fixed_frame").as_string(), std::string("hi"));
   EXPECT_EQ(node->get_parameter("max_retries").as_int(), 7);
+
+  node->on_deactivate(rclcpp_lifecycle::State());
+  node->on_cleanup(rclcpp_lifecycle::State());
+  node.reset();
 }
 
 }  // namespace opennav_docking
