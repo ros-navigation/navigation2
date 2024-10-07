@@ -58,7 +58,7 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /robot_description
+        Value: robot_description
       Enabled: false
       Links:
         All Links Enabled: true
@@ -148,7 +148,7 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Best Effort
-        Value: /scan
+        Value: scan
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
@@ -181,7 +181,7 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Best Effort
-        Value: /mobile_base/sensors/bumper_pointcloud
+        Value: mobile_base/sensors/bumper_pointcloud
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
@@ -199,13 +199,13 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /map
+        Value: map
       Update Topic:
         Depth: 5
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /map_updates
+        Value: map_updates
       Use Timestamp: false
       Value: true
     - Alpha: 1
@@ -222,7 +222,7 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Best Effort
-        Value: /particle_cloud
+        Value: particle_cloud
       Value: true
     - Class: rviz_common/Group
       Displays:
@@ -240,13 +240,13 @@ Visualization Manager:
             Filter size: 10
             History Policy: Keep Last
             Reliability Policy: Reliable
-            Value: /global_costmap/costmap
+            Value: global_costmap/costmap
           Update Topic:
             Depth: 5
             Durability Policy: Volatile
             History Policy: Keep Last
             Reliability Policy: Reliable
-            Value: /global_costmap/costmap_updates
+            Value: global_costmap/costmap_updates
           Use Timestamp: false
           Value: true
         - Alpha: 0.30000001192092896
@@ -263,13 +263,13 @@ Visualization Manager:
             Filter size: 10
             History Policy: Keep Last
             Reliability Policy: Reliable
-            Value: /downsampled_costmap
+            Value: downsampled_costmap
           Update Topic:
             Depth: 5
             Durability Policy: Volatile
             History Policy: Keep Last
             Reliability Policy: Reliable
-            Value: /downsampled_costmap_updates
+            Value: downsampled_costmap_updates
           Use Timestamp: false
           Value: true
         - Alpha: 1
@@ -298,7 +298,7 @@ Visualization Manager:
             Filter size: 10
             History Policy: Keep Last
             Reliability Policy: Reliable
-            Value: /plan
+            Value: plan
           Value: true
         - Alpha: 1
           Autocompute Intensity Bounds: true
@@ -329,7 +329,7 @@ Visualization Manager:
             Durability Policy: Volatile
             History Policy: Keep Last
             Reliability Policy: Reliable
-            Value: /global_costmap/voxel_marked_cloud
+            Value: global_costmap/voxel_marked_cloud
           Use Fixed Frame: true
           Use rainbow: true
           Value: true
@@ -344,7 +344,7 @@ Visualization Manager:
             Filter size: 10
             History Policy: Keep Last
             Reliability Policy: Reliable
-            Value: /global_costmap/published_footprint
+            Value: global_costmap/published_footprint
           Value: false
       Enabled: true
       Name: Global Planner
@@ -364,13 +364,13 @@ Visualization Manager:
             Filter size: 10
             History Policy: Keep Last
             Reliability Policy: Reliable
-            Value: /local_costmap/costmap
+            Value: local_costmap/costmap
           Update Topic:
             Depth: 5
             Durability Policy: Volatile
             History Policy: Keep Last
             Reliability Policy: Reliable
-            Value: /local_costmap/costmap_updates
+            Value: local_costmap/costmap_updates
           Use Timestamp: false
           Value: true
         - Alpha: 1
@@ -399,7 +399,7 @@ Visualization Manager:
             Filter size: 10
             History Policy: Keep Last
             Reliability Policy: Reliable
-            Value: /local_plan
+            Value: local_plan
           Value: true
         - Class: rviz_default_plugins/MarkerArray
           Enabled: false
@@ -411,7 +411,7 @@ Visualization Manager:
             Durability Policy: Volatile
             History Policy: Keep Last
             Reliability Policy: Reliable
-            Value: /marker
+            Value: marker
           Value: false
         - Alpha: 1
           Class: rviz_default_plugins/Polygon
@@ -424,7 +424,7 @@ Visualization Manager:
             Filter size: 10
             History Policy: Keep Last
             Reliability Policy: Reliable
-            Value: /local_costmap/published_footprint
+            Value: local_costmap/published_footprint
           Value: true
         - Alpha: 1
           Autocompute Intensity Bounds: true
@@ -455,7 +455,7 @@ Visualization Manager:
             Durability Policy: Volatile
             History Policy: Keep Last
             Reliability Policy: Reliable
-            Value: /local_costmap/voxel_marked_cloud
+            Value: local_costmap/voxel_marked_cloud
           Use Fixed Frame: true
           Use rainbow: true
           Value: true
@@ -475,7 +475,7 @@ Visualization Manager:
             Durability Policy: Volatile
             History Policy: Keep Last
             Reliability Policy: Reliable
-            Value: /intel_realsense_r200_depth/image_raw
+            Value: intel_realsense_r200_depth/image_raw
           Value: true
         - Alpha: 1
           Autocompute Intensity Bounds: true
@@ -506,7 +506,7 @@ Visualization Manager:
             Durability Policy: Volatile
             History Policy: Keep Last
             Reliability Policy: Reliable
-            Value: /intel_realsense_r200_depth/points
+            Value: intel_realsense_r200_depth/points
           Use Fixed Frame: true
           Use rainbow: true
           Value: true
@@ -522,7 +522,7 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /waypoints
+        Value: waypoints
       Value: true
   Enabled: true
   Global Options:
@@ -545,7 +545,7 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /initialpose
+        Value: initialpose
     - Class: rviz_default_plugins/PublishPoint
       Single click: true
       Topic:
@@ -553,7 +553,7 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /clicked_point
+        Value: clicked_point
     - Class: nav2_rviz_plugins/GoalTool
   Transformation:
     Current:
