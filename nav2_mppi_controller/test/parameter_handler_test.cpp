@@ -168,8 +168,49 @@ TEST(ParameterHandlerTest, DynamicAndStaticParametersTest)
     node->get_node_services_interface());
 
   auto results = rec_param->set_parameters_atomically(
-    {rclcpp::Parameter("dynamic_int", 10),
-      rclcpp::Parameter("static_int", 10)});
+  {
+    rclcpp::Parameter("my_node.verbose", true),
+    rclcpp::Parameter("dynamic_int", 10),
+    rclcpp::Parameter("static_int", 10)
+  });
+
+  rclcpp::spin_until_future_complete(
+    node->get_node_base_interface(),
+    results);
+
+  // Now, only param1 should change, param 2 should be the same
+  EXPECT_EQ(p1, 10);
+  EXPECT_EQ(p2, 7);
+}
+
+TEST(ParameterHandlerTest, DynamicAndStaticParametersNotVerboseTest)
+{
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  node->declare_parameter("dynamic_int", rclcpp::ParameterValue(7));
+  node->declare_parameter("static_int", rclcpp::ParameterValue(7));
+  ParametersHandlerWrapper handler(node);
+  handler.start();
+
+  // Get parameters and check they have initial values
+  auto getParamer = handler.getParamGetter("");
+  int p1 = 0, p2 = 0;
+  getParamer(p1, "dynamic_int", 0, ParameterType::Dynamic);
+  getParamer(p2, "static_int", 0, ParameterType::Static);
+  EXPECT_EQ(p1, 7);
+  EXPECT_EQ(p2, 7);
+
+  // Now change them both via dynamic parameters
+  auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
+    node->get_node_base_interface(), node->get_node_topics_interface(),
+    node->get_node_graph_interface(),
+    node->get_node_services_interface());
+
+  auto results = rec_param->set_parameters_atomically(
+  {
+    // Don't set default param rclcpp::Parameter("my_node.verbose", false),
+    rclcpp::Parameter("dynamic_int", 10),
+    rclcpp::Parameter("static_int", 10)
+  });
 
   rclcpp::spin_until_future_complete(
     node->get_node_base_interface(),
