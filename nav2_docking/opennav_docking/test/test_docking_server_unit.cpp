@@ -175,6 +175,10 @@ TEST(DockingServerTests, testErrorExceptions)
       EXPECT_TRUE(false);
     }
   }
+  node->on_deactivate(rclcpp_lifecycle::State());
+  node->on_cleanup(rclcpp_lifecycle::State());
+  node->on_shutdown(rclcpp_lifecycle::State());
+  node.reset();
 }
 
 TEST(DockingServerTests, getateGoalDock)
@@ -204,6 +208,9 @@ TEST(DockingServerTests, getateGoalDock)
   EXPECT_NE(dock->plugin, nullptr);
   EXPECT_EQ(dock->frame, std::string());
   node->stashDockData(false, dock, true);
+  node->on_cleanup(rclcpp_lifecycle::State());
+  node->on_shutdown(rclcpp_lifecycle::State());
+  node.reset();
 }
 
 TEST(DockingServerTests, testDynamicParams)
@@ -260,6 +267,7 @@ TEST(DockingServerTests, testDynamicParams)
 
   node->on_deactivate(rclcpp_lifecycle::State());
   node->on_cleanup(rclcpp_lifecycle::State());
+  node->on_shutdown(rclcpp_lifecycle::State());
   node.reset();
 }
 
