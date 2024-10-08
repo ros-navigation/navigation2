@@ -220,3 +220,36 @@ TEST(ParameterHandlerTest, DynamicAndStaticParametersNotVerboseTest)
   EXPECT_EQ(p1, 10);
   EXPECT_EQ(p2, 7);
 }
+
+TEST(ParameterHandlerTest, DynamicAndStaticParametersNotDeclaredTest)
+{
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+
+  node->declare_parameter("dynamic_int", rclcpp::ParameterValue(7));
+  node->declare_parameter("static_int", rclcpp::ParameterValue(7));
+  ParametersHandlerWrapper handler(node);
+  handler.start();
+
+  // Set verbose true to get more information about bad parameter usage
+  auto getParamer = handler.getParamGetter("");
+  auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
+    node->get_node_base_interface(), node->get_node_topics_interface(),
+    node->get_node_graph_interface(),
+    node->get_node_services_interface());
+
+  auto results = rec_param->set_parameters_atomically(
+  {
+    rclcpp::Parameter("my_node.verbose", true),
+  });
+
+  rclcpp::spin_until_future_complete(
+    node->get_node_base_interface(),
+    results);
+
+  // Try to access some parameters that have not been declared
+  int p1 = 0, p2 = 0;
+  EXPECT_THROW(getParamer(p1, "not_declared", 8, ParameterType::Dynamic),
+               rclcpp::exceptions::InvalidParameterValueException);
+  EXPECT_THROW(getParamer(p2, "not_declared2", 9, ParameterType::Static),
+               rclcpp::exceptions::InvalidParameterValueException);
+}
