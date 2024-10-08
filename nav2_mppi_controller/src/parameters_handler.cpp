@@ -39,7 +39,6 @@ void ParametersHandler::start()
 {
   auto node = node_.lock();
 
-  // Register the special case "verbose" parameter before registering dynamicParamsCallback
   auto get_param = getParamGetter(node_name_);
   get_param(verbose_, "verbose", false);
 
@@ -70,11 +69,8 @@ ParametersHandler::dynamicParamsCallback(
       callback->second(param);
     } else {
       if (verbose_) {
-        // Expected if static parameter, ie one with no registered callback is attempted
-        // to be changed
         RCLCPP_WARN(logger_, "Parameter callback func for '%s' not found", param_name.c_str());
       }
-      // success = true; // Decision ??? Still return true to avoid exception ???
       success = false;
     }
   }

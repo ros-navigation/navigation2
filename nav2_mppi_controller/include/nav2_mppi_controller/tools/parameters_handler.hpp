@@ -211,7 +211,7 @@ void ParametersHandler::getParam(
 
   if (param_type == ParameterType::Dynamic) {
     if (verbose_) {
-      RCLCPP_INFO(node->get_logger(), "setDynamicParamCallback for %s", name.c_str());
+      RCLCPP_DEBUG(node->get_logger(), "setDynamicParamCallback for %s", name.c_str());
     }
     setDynamicParamCallback(setting, name);
   } else {
