@@ -233,6 +233,7 @@ DockingPanel::DockingPanel(QWidget * parent)
     [this] {
       // Load the plugins if not already loaded
       if (!plugins_loaded_) {
+        RCLCPP_INFO(client_node_->get_logger(), "Loading dock plugins");
         nav2_rviz_plugins::pluginLoader(
         client_node_, server_failed_, "docking_server", "dock_plugins", dock_type_);
         plugins_loaded_ = true;
