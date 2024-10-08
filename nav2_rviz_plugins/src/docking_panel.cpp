@@ -72,7 +72,6 @@ DockingPanel::DockingPanel(QWidget * parent)
   docking_feedback_indicator_->setText(getDockFeedbackLabel());
   docking_goal_status_indicator_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
   docking_feedback_indicator_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-  nav_to_staging_checkbox_->setFixedWidth(150);
 
   pre_initial_ = new QState();
   pre_initial_->setObjectName("pre_initial");
@@ -185,10 +184,21 @@ DockingPanel::DockingPanel(QWidget * parent)
   info_layout_->addWidget(docking_goal_status_indicator_);
   info_layout_->addWidget(docking_result_indicator_);
   feedback_layout_->addWidget(docking_feedback_indicator_);
-  dock_id_layout_->addWidget(new QLabel("Dock id"));
+
+  QLabel * nav_stage_label = new QLabel("Nav. to staging pose");
+  QLabel * dock_id_label = new QLabel("Dock id");
+  QLabel * dock_type_label = new QLabel("Dock type");
+
+  nav_stage_label->setFixedWidth(150);
+  dock_id_label->setFixedWidth(150);
+  dock_type_label->setFixedWidth(170);
+
+  nav_stage_layout_->addWidget(nav_stage_label);
+  nav_stage_layout_->addWidget(nav_to_staging_checkbox_);
+  dock_id_layout_->addWidget(dock_id_label);
   dock_id_layout_->addWidget(use_dock_id_checkbox_);
   dock_id_layout_->addWidget(dock_id_);
-  dock_type_layout_->addWidget(new QLabel("Dock type"));
+  dock_type_layout_->addWidget(dock_type_label);
   dock_type_layout_->addWidget(dock_type_);
   dock_pose_layout_->addWidget(new QLabel("Dock pose {X"));
   dock_pose_layout_->addWidget(dock_pose_x_);
@@ -197,16 +207,19 @@ DockingPanel::DockingPanel(QWidget * parent)
   dock_pose_layout_->addWidget(new QLabel("θ"));
   dock_pose_layout_->addWidget(dock_pose_yaw_);
   dock_pose_layout_->addWidget(new QLabel("}"));
-  nav_stage_layout_->addWidget(nav_to_staging_checkbox_);
-  nav_stage_layout_->addWidget(new QLabel("Navigate to staging pose"));
+
+  QGroupBox * group_box = new QGroupBox();
+  QVBoxLayout * group_box_layout = new QVBoxLayout;
+  group_box_layout->addLayout(nav_stage_layout_);
+  group_box_layout->addLayout(dock_id_layout_);
+  group_box_layout->addLayout(dock_type_layout_);
+  group_box_layout->addLayout(dock_pose_layout_);
+  group_box->setLayout(group_box_layout);
 
   main_layout_->setContentsMargins(10, 10, 10, 10);
   main_layout_->addLayout(info_layout_);
   main_layout_->addLayout(feedback_layout_);
-  main_layout_->addLayout(nav_stage_layout_);
-  main_layout_->addLayout(dock_id_layout_);
-  main_layout_->addLayout(dock_type_layout_);
-  main_layout_->addLayout(dock_pose_layout_);
+  main_layout_->addWidget(group_box);
   main_layout_->addWidget(docking_button_);
   main_layout_->addWidget(undocking_button_);
 
