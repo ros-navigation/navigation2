@@ -505,13 +505,11 @@ void tryWriteMapToFile(
             if (map_cell < 0 || 100 < map_cell) {
               q = MaxRGB;
             }
-            else if (map_cell == 100)
-            {
+            else if (map_cell == 100) {
               // LETHAL obstacle
               q = 254 / 255.0 * MaxRGB;
             }
-            else if (map_cell == 99)
-            {
+            else if (map_cell == 99) {
               // INSCRIBED obstacle
               q = 253 / 255.0 * MaxRGB;
             }
