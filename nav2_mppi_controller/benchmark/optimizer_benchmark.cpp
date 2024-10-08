@@ -14,6 +14,8 @@
 
 #include <benchmark/benchmark.h>
 
+#include <Eigen/Dense>
+
 #include <string>
 #include <vector>
 
@@ -26,10 +28,6 @@
 #include <nav2_costmap_2d/costmap_2d.hpp>
 #include <nav2_costmap_2d/costmap_2d_ros.hpp>
 #include <nav2_core/goal_checker.hpp>
-
-#include <xtensor/xarray.hpp>
-#include <xtensor/xio.hpp>
-#include <xtensor/xview.hpp>
 
 #include "nav2_mppi_controller/optimizer.hpp"
 #include "nav2_mppi_controller/motion_models.hpp"
@@ -121,7 +119,7 @@ static void BM_Omni(benchmark::State & state)
   bool consider_footprint = true;
   std::string motion_model = "Omni";
   std::vector<std::string> critics = {{"GoalCritic"}, {"GoalAngleCritic"}, {"ObstaclesCritic"},
-    {"TwirlingCritic"}, {"PathFollowCritic"}, {"PreferForwardCritic"}};
+    {"PathAngleCritic"}, {"PathFollowCritic"}, {"PreferForwardCritic"}};
 
   prepareAndRunBenchmark(consider_footprint, motion_model, critics, state);
 }

@@ -16,23 +16,14 @@
 #ifndef NAV2_MPPI_CONTROLLER__TOOLS__UTILS_HPP_
 #define NAV2_MPPI_CONTROLLER__TOOLS__UTILS_HPP_
 
+#include <Eigen/Dense>
+
 #include <algorithm>
 #include <chrono>
 #include <string>
 #include <limits>
 #include <memory>
 #include <vector>
-
-// xtensor creates warnings that needs to be ignored as we are building with -Werror
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Warray-bounds"
-#pragma GCC diagnostic ignored "-Wstringop-overflow"
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
-#include <xtensor/xarray.hpp>
-#include <xtensor/xnorm.hpp>
-#include <xtensor/xmath.hpp>
-#include <xtensor/xview.hpp>
-#pragma GCC diagnostic pop
 
 #include "angles/angles.h"
 
@@ -60,8 +51,6 @@
 
 namespace mppi::utils
 {
-using xt::evaluation_strategy::immediate;
-
 /**
  * @brief Convert data into pose
  * @param x X position
@@ -212,7 +201,7 @@ inline bool withinPositionGoalTolerance(
   const geometry_msgs::msg::Pose & robot,
   const models::Path & path)
 {
-  const auto goal_idx = path.x.shape(0) - 1;
+  const auto goal_idx = path.x.size() - 1;
   const auto goal_x = path.x(goal_idx);
   const auto goal_y = path.y(goal_idx);
 
@@ -248,7 +237,7 @@ inline bool withinPositionGoalTolerance(
   const geometry_msgs::msg::Pose & robot,
   const models::Path & path)
 {
-  const auto goal_idx = path.x.shape(0) - 1;
+  const auto goal_idx = path.x.size() - 1;
   const float goal_x = path.x(goal_idx);
   const float goal_y = path.y(goal_idx);
 
@@ -276,8 +265,12 @@ inline bool withinPositionGoalTolerance(
 template<typename T>
 auto normalize_angles(const T & angles)
 {
-  auto theta = xt::eval(xt::fmod(angles + M_PIF, 2.0f * M_PIF));
-  return xt::eval(xt::where(theta < 0.0f, theta + M_PIF, theta - M_PIF));
+  return (angles + M_PIF).unaryExpr([&](const float x){
+             float remainder = std::fmod(x, 2.0f * M_PIF);
+             return remainder < 0.0f ? remainder + M_PIF : remainder - M_PIF;
+             });
+  // auto theta = angles - (M_PIF * ((angles + M_PIF_2) * (1.0f / M_PIF)).floor());
+  // return theta;
 }
 
 /**
@@ -309,21 +302,23 @@ auto shortest_angular_distance(
  */
 inline size_t findPathFurthestReachedPoint(const CriticData & data)
 {
-  const auto traj_x = xt::view(data.trajectories.x, xt::all(), -1, xt::newaxis());
-  const auto traj_y = xt::view(data.trajectories.y, xt::all(), -1, xt::newaxis());
+  int traj_cols = data.trajectories.x.cols();
+  const auto traj_x = data.trajectories.x.col(traj_cols - 1);
+  const auto traj_y = data.trajectories.y.col(traj_cols - 1);
 
-  const auto dx = data.path.x - traj_x;
-  const auto dy = data.path.y - traj_y;
+  const auto dx = (data.path.x.transpose()).replicate(traj_x.rows(), 1).colwise() - traj_x;
+  const auto dy = (data.path.y.transpose()).replicate(traj_y.rows(), 1).colwise() - traj_y;
 
   const auto dists = dx * dx + dy * dy;
 
-  size_t max_id_by_trajectories = 0, min_id_by_path = 0;
+  int max_id_by_trajectories = 0, min_id_by_path = 0;
   float min_distance_by_path = std::numeric_limits<float>::max();
-
-  for (size_t i = 0; i < dists.shape(0); i++) {
+  size_t n_rows = dists.rows();
+  size_t n_cols = dists.cols();
+  for (size_t i = 0; i != n_rows; i++) {
     min_id_by_path = 0;
     min_distance_by_path = std::numeric_limits<float>::max();
-    for (size_t j = max_id_by_trajectories; j < dists.shape(1); j++) {
+    for (size_t j = max_id_by_trajectories; j != n_cols; j++) {
       const float cur_dist = dists(i, j);
       if (cur_dist < min_distance_by_path) {
         min_distance_by_path = cur_dist;
@@ -356,7 +351,7 @@ inline void findPathCosts(
 {
   auto * costmap = costmap_ros->getCostmap();
   unsigned int map_x, map_y;
-  const size_t path_segments_count = data.path.x.shape(0) - 1;
+  const size_t path_segments_count = data.path.x.size() - 1;
   data.path_pts_valid = std::vector<bool>(path_segments_count, false);
   const bool tracking_unknown = costmap_ros->getLayeredCostmap()->isTrackingUnknown();
   for (unsigned int idx = 0; idx < path_segments_count; idx++) {
@@ -458,21 +453,22 @@ inline void savitskyGolayFilter(
   const models::OptimizerSettings & settings)
 {
   // Savitzky-Golay Quadratic, 9-point Coefficients
-  xt::xarray<float> filter = {-21.0, 14.0, 39.0, 54.0, 59.0, 54.0, 39.0, 14.0, -21.0};
-  filter /= 231.0;
+  Eigen::Array<float, 9, 1> filter = {-21.0f, 14.0f, 39.0f, 54.0f, 59.0f, 54.0f, 39.0f, 14.0f,
+    -21.0f};
+  filter /= 231.0f;
 
   // Too short to smooth meaningfully
-  const unsigned int num_sequences = control_sequence.vx.shape(0) - 1;
+  const unsigned int num_sequences = control_sequence.vx.size() - 1;
   if (num_sequences < 20) {
     return;
   }
 
-  auto applyFilter = [&](const xt::xarray<float> & data) -> float {
-      return xt::sum(data * filter, {0}, immediate)();
+  auto applyFilter = [&](const Eigen::Array<float, 9, 1> & data) -> float {
+      return (data * filter).eval().sum();
     };
 
   auto applyFilterOverAxis =
-    [&](xt::xtensor<float, 1> & sequence, const xt::xtensor<float, 1> & initial_sequence,
+    [&](Eigen::ArrayXf & sequence, const Eigen::ArrayXf & initial_sequence,
     const float hist_0, const float hist_1, const float hist_2, const float hist_3) -> void
     {
       float pt_m4 = hist_0;
@@ -611,6 +607,76 @@ struct Pose2D
 {
   float x, y, theta;
 };
+
+/**
+ * @brief Shift the columns of a 2D Eigen Array or scalar values of
+ *    1D Eigen Array by 1 place.
+ * @param e Eigen Array
+ * @param direction direction in which Array will be shifted.
+ *     1 for shift in right direction and -1 for left direction.
+ */
+inline void shiftColumnsByOnePlace(Eigen::Ref<Eigen::ArrayXXf> e, int direction)
+{
+  int size = e.size();
+  if((e.cols() == 1 || e.rows() == 1) && size > 1) {
+    auto start_ptr = direction == 1 ? e.data() + size - 2 : e.data() + 1;
+    auto end_ptr = direction == 1 ? e.data() : e.data() + size - 1;
+    while(start_ptr != end_ptr) {
+      *(start_ptr + direction) = *start_ptr;
+      start_ptr -= direction;
+    }
+    *(start_ptr + direction) = *start_ptr;
+  } else {
+    auto start_ptr = direction == 1 ? e.data() + size - 2 * e.rows() : e.data() + e.rows();
+    auto end_ptr = direction == 1 ? e.data() : e.data() + size - e.rows();
+    auto span = e.rows();
+    while(start_ptr != end_ptr) {
+      std::copy(start_ptr, start_ptr + span, start_ptr + direction * span);
+      start_ptr -= (direction * span);
+    }
+    std::copy(start_ptr, start_ptr + span, start_ptr + direction * span);
+  }
+}
+
+inline auto point_corrected_yaws(
+  const Eigen::ArrayXf & yaws, const Eigen::ArrayXf & yaws_between_points)
+{
+  int size = yaws.size();
+  Eigen::ArrayXf yaws_between_points_corrected(size);
+  for(int i = 0; i != size; i++) {
+    const float & yaw_between_points = yaws_between_points[i];
+    yaws_between_points_corrected[i] = yaws[i] < M_PIF_2 ?
+      yaw_between_points : angles::normalize_angle(yaw_between_points + M_PIF);
+  }
+
+  // binaryExpr slower than for loop
+  // Eigen::ArrayXf yaws_between_points_corrected = yaws.binaryExpr(
+  //   yaws_between_points, [&](const float & yaw, const float & yaw_between_points) {
+  //   return yaw < M_PIF_2 ? yaw_between_points : normalize_anglef(yaw_between_points + M_PIF);
+  //   });
+  return yaws_between_points_corrected;
+}
+
+inline auto point_corrected_yaws(
+  const Eigen::ArrayXf & yaws_between_points, const float & goal_yaw)
+{
+  int size = yaws_between_points.size();
+  Eigen::ArrayXf yaws_between_points_corrected(size);
+  for(int i = 0; i != size; i++) {
+    const float & yaw_between_points = yaws_between_points[i];
+    yaws_between_points_corrected[i] = fabs(
+      angles::normalize_angle(yaw_between_points - goal_yaw)) < M_PIF_2 ?
+      yaw_between_points : angles::normalize_angle(yaw_between_points + M_PIF);
+  }
+
+  // unaryExpr slower than for loop
+  // Eigen::ArrayXf yaws_between_points_corrected = yaws_between_points.unaryExpr(
+  //   [&](const float & yaw_between_points) {
+  //   return fabs(normalize_anglef(yaw_between_points - goal_yaw)) < M_PIF_2 ?
+  //   yaw_between_points : normalize_anglef(yaw_between_points + M_PIF);
+  //   });
+  return yaws_between_points_corrected;
+}
 
 }  // namespace mppi::utils
 

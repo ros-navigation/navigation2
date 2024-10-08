@@ -117,7 +117,7 @@ TEST(CriticManagerTests, BasicCriticOperations)
   models::ControlSequence control_sequence;
   models::Trajectories generated_trajectories;
   models::Path path;
-  xt::xtensor<float, 1> costs;
+  Eigen::ArrayXf costs;
   float model_dt = 0.1;
   CriticData data =
   {state, generated_trajectories, path, costs, model_dt, false, nullptr, nullptr,

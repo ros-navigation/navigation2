@@ -1,13 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 project(nav2_mppi_controller)
 
-add_definitions(-DXTENSOR_ENABLE_XSIMD)
-add_definitions(-DXTENSOR_USE_XSIMD)
-
-set(XTENSOR_USE_TBB 0)
-set(XTENSOR_USE_OPENMP 0)
-set(XTENSOR_USE_XSIMD 1)
-
 find_package(ament_cmake REQUIRED)
 find_package(angles REQUIRED)
 find_package(geometry_msgs REQUIRED)
@@ -24,8 +17,12 @@ find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(visualization_msgs REQUIRED)
-find_package(xsimd REQUIRED)
-find_package(xtensor REQUIRED)
+find_package(Eigen3 REQUIRED)
+
+include_directories(
+  include
+  ${EIGEN3_INCLUDE_DIR}
+)
 
 nav2_package()
 
@@ -63,10 +60,9 @@ add_library(mppi_controller SHARED
   src/path_handler.cpp
   src/trajectory_visualizer.cpp
 )
-target_compile_options(mppi_controller PUBLIC -fconcepts -O3 -finline-limit=10000000 -ffp-contract=fast -ffast-math -mtune=generic)
+target_compile_options(mppi_controller PUBLIC -fconcepts -O3)
 target_include_directories(mppi_controller
   PUBLIC
-    ${xsimd_INCLUDE_DIRS}
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(mppi_controller PUBLIC
@@ -84,9 +80,6 @@ target_link_libraries(mppi_controller PUBLIC
   tf2_geometry_msgs::tf2_geometry_msgs
   tf2_ros::tf2_ros
   ${visualization_msgs_TARGETS}
-  xtensor
-  xtensor::optimize
-  xtensor::use_xsimd
 )
 
 add_library(mppi_critics SHARED
@@ -102,10 +95,9 @@ add_library(mppi_critics SHARED
   src/critics/twirling_critic.cpp
   src/critics/velocity_deadband_critic.cpp
 )
-target_compile_options(mppi_critics PUBLIC -fconcepts -O3 -finline-limit=10000000 -ffp-contract=fast -ffast-math -mtune=generic)
+target_compile_options(mppi_critics PUBLIC -fconcepts -O3)
 target_include_directories(mppi_critics
   PUBLIC
-    ${xsimd_INCLUDE_DIRS}
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(mppi_critics PUBLIC
@@ -122,9 +114,6 @@ target_link_libraries(mppi_critics PUBLIC
   tf2_geometry_msgs::tf2_geometry_msgs
   tf2_ros::tf2_ros
   ${visualization_msgs_TARGETS}
-  xtensor
-  xtensor::optimize
-  xtensor::use_xsimd
 )
 target_link_libraries(mppi_critics PRIVATE
   pluginlib::pluginlib
@@ -150,7 +139,7 @@ if(BUILD_TESTING)
   ament_find_gtest()
 
   add_subdirectory(test)
-  # add_subdirectory(benchmark)
+  add_subdirectory(benchmark)
 endif()
 
 ament_export_libraries(${libraries})
@@ -168,7 +157,7 @@ ament_export_dependencies(
   tf2_geometry_msgs
   tf2_ros
   visualization_msgs
-  xtensor
+  Eigen3
 )
 ament_export_include_directories(include/${PROJECT_NAME})
 ament_export_targets(nav2_mppi_controller)
