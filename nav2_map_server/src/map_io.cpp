@@ -504,16 +504,13 @@ void tryWriteMapToFile(
             Magick::Quantum q;
             if (map_cell < 0 || 100 < map_cell) {
               q = MaxRGB;
-            }
-            else if (map_cell == 100) {
+            } else if (map_cell == 100) {
               // LETHAL obstacle
               q = 254 / 255.0 * MaxRGB;
-            }
-            else if (map_cell == 99) {
+            } else if (map_cell == 99) {
               // INSCRIBED obstacle
               q = 253 / 255.0 * MaxRGB;
-            }
-            else {
+            } else {
               q = map_cell / 255.0 * MaxRGB;
             }
             pixel = Magick::Color(q, q, q);
