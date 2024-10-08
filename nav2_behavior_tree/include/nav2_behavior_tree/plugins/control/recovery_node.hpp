@@ -16,6 +16,7 @@
 #define NAV2_BEHAVIOR_TREE__PLUGINS__CONTROL__RECOVERY_NODE_HPP_
 
 #include <string>
+#include "rclcpp/rclcpp.hpp"
 #include "behaviortree_cpp_v3/control_node.h"
 
 namespace nav2_behavior_tree
@@ -56,14 +57,20 @@ public:
   static BT::PortsList providedPorts()
   {
     return {
-      BT::InputPort<int>("number_of_retries", 1, "Number of retries")
+      BT::InputPort<int>("number_of_retries", 1, "Number of retries"),
+      BT::InputPort<int>(
+        "timeout", 0,
+        "Timeout in (uint) seconds for resetting retry count (0 - disbale)")
     };
   }
 
 private:
+  rclcpp::Node::SharedPtr node_;
   unsigned int current_child_idx_;
   unsigned int number_of_retries_;
+  unsigned int timeout_;
   unsigned int retry_count_;
+  rclcpp::Time last_recovery_time_;
 
   /**
    * @brief The main override required by a BT action

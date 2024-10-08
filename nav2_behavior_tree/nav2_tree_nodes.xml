@@ -266,6 +266,7 @@
 
     <Control ID="RecoveryNode">
       <input_port name="number_of_retries">Number of retries</input_port>
+      <input_port name="timeout">Timeout in (uint) seconds for resetting retry count (0 - disable)</input_port>
     </Control>
 
     <Control ID="RoundRobin"/>

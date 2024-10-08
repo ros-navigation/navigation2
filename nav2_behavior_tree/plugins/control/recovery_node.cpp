@@ -24,9 +24,12 @@ RecoveryNode::RecoveryNode(
 : BT::ControlNode::ControlNode(name, conf),
   current_child_idx_(0),
   number_of_retries_(1),
-  retry_count_(0)
+  retry_count_(0),
+  last_recovery_time_(rclcpp::Time(0, 0, RCL_ROS_TIME))
 {
   getInput("number_of_retries", number_of_retries_);
+  getInput("timeout", timeout_);
+  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
 }
 
 BT::NodeStatus RecoveryNode::tick()
@@ -38,6 +41,13 @@ BT::NodeStatus RecoveryNode::tick()
   }
 
   setStatus(BT::NodeStatus::RUNNING);
+
+  // if reached timeout reset retry_count_
+  if (timeout_ > 0 &&
+    node_->now() > last_recovery_time_ + std::chrono::seconds(timeout_))
+  {
+    retry_count_ = 0;
+  }
 
   while (current_child_idx_ < children_count && retry_count_ <= number_of_retries_) {
     TreeNode * child_node = children_nodes_[current_child_idx_];
@@ -83,6 +93,7 @@ BT::NodeStatus RecoveryNode::tick()
           {
             // halt second child, increment recovery count, and tick first child in next iteration
             ControlNode::haltChild(1);
+            last_recovery_time_ = node_->now();
             retry_count_++;
             current_child_idx_--;
           }
@@ -118,6 +129,7 @@ void RecoveryNode::halt()
   ControlNode::halt();
   retry_count_ = 0;
   current_child_idx_ = 0;
+  last_recovery_time_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
 }
 
 }  // namespace nav2_behavior_tree
