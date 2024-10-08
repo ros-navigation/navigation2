@@ -100,9 +100,11 @@ public:
     * @brief Set a parameter to a dynamic parameter callback
     * @param setting Parameter
     * @param name Name of parameter
+    * @param param_type Type of parameter (dynamic or static)
     */
   template<typename T>
-  void setDynamicParamCallback(T & setting, const std::string & name);
+  void setDynamicParamCallback(
+    T & setting, const std::string & name, ParameterType param_type = ParameterType::Dynamic);
 
   /**
     * @brief Get mutex lock for changing parameters
@@ -208,19 +210,7 @@ void ParametersHandler::getParam(
     node, name, rclcpp::ParameterValue(default_value));
 
   setParam<ParamT>(setting, name, node);
-
-  if (param_type == ParameterType::Dynamic) {
-    if (verbose_) {
-      RCLCPP_DEBUG(node->get_logger(), "setDynamicParamCallback for %s", name.c_str());
-    }
-    setDynamicParamCallback(setting, name);
-  } else {
-    if (verbose_) {
-      RCLCPP_DEBUG(
-        node->get_logger(), "ParameterType::Static therefore no setDynamicParamCallback for %s",
-        name.c_str());
-    }
-  }
+  setDynamicParamCallback(setting, name, param_type);
 }
 
 template<typename ParamT, typename SettingT, typename NodeT>
@@ -233,13 +223,14 @@ void ParametersHandler::setParam(
 }
 
 template<typename T>
-void ParametersHandler::setDynamicParamCallback(T & setting, const std::string & name)
+void ParametersHandler::setDynamicParamCallback(
+  T & setting, const std::string & name, ParameterType param_type)
 {
   if (get_param_callbacks_.find(name) != get_param_callbacks_.end()) {
     return;
   }
 
-  auto callback = [this, &setting, name](const rclcpp::Parameter & param) {
+  auto dynamic_callback = [this, &setting, name](const rclcpp::Parameter & param) {
       setting = as<T>(param);
 
       if (verbose_) {
@@ -247,10 +238,17 @@ void ParametersHandler::setDynamicParamCallback(T & setting, const std::string &
       }
     };
 
-  addDynamicParamCallback(name, callback);
+  auto static_callback = [this, &setting, name](const rclcpp::Parameter & param) {
+      if (verbose_) {
+        RCLCPP_DEBUG(logger_, "Ignoring change to static parameter: %s",
+          std::to_string(param).c_str());
+      }
+    };
 
-  if (verbose_) {
-    RCLCPP_INFO(logger_, "Dynamic Parameter added %s", name.c_str());
+  if (param_type == ParameterType::Dynamic) {
+    addDynamicParamCallback(name, dynamic_callback);
+  } else {
+    addDynamicParamCallback(name, static_callback);
   }
 }
 
