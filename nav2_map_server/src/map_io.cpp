@@ -501,24 +501,24 @@ void tryWriteMapToFile(
             }
             break;
           case MapMode::Raw:
-          {
-            double cell_cost;
-            if (map_cell >= nav2_util::OCC_GRID_FREE && map_cell <= nav2_util::OCC_GRID_OCCUPIED) {
-              // Linear conversion from OccupancyGrid data range [OCC_GRID_FREE..OCC_GRID_OCCUPIED]
-              // to costmap data range [FREE_SPACE..LETHAL_OBSTACLE]
-              uint8_t lethal_obstacle_cost = 254; // nav2_costmap_2d::LETHAL_OBSTACLE
-              uint8_t free_space_cost = 0; // nav2_costmap_2d::FREE_SPACE
-              cell_cost = static_cast<double>(map_cell) * (lethal_obstacle_cost - free_space_cost)
-                / (nav2_util::OCC_GRID_OCCUPIED - nav2_util::OCC_GRID_FREE);
-            } else {
-              // nav2_util::OCC_GRID_UNKNOWN or other invalid values
-              uint8_t no_information_cost = 255; // nav2_costmap_2d::NO_INFORMATION
-              cell_cost = no_information_cost;
+            {
+              double cell_cost;
+              if (map_cell >= nav2_util::OCC_GRID_FREE && map_cell <= nav2_util::OCC_GRID_OCCUPIED) {
+                // Linear conversion from OccupancyGrid data range [OCC_GRID_FREE..OCC_GRID_OCCUPIED]
+                // to costmap data range [FREE_SPACE..LETHAL_OBSTACLE]
+                uint8_t lethal_obstacle_cost = 254; // nav2_costmap_2d::LETHAL_OBSTACLE
+                uint8_t free_space_cost = 0; // nav2_costmap_2d::FREE_SPACE
+                cell_cost = static_cast<double>(map_cell) * (lethal_obstacle_cost - free_space_cost)
+                  / (nav2_util::OCC_GRID_OCCUPIED - nav2_util::OCC_GRID_FREE);
+              } else {
+                // nav2_util::OCC_GRID_UNKNOWN or other invalid values
+                uint8_t no_information_cost = 255; // nav2_costmap_2d::NO_INFORMATION
+                cell_cost = no_information_cost;
+              }
+              Magick::Quantum q = std::round((cell_cost / 255.) * MaxRGB);
+              pixel = Magick::Color(q, q, q);
+              break;
             }
-            Magick::Quantum q = std::round((cell_cost / 255.) * MaxRGB);
-            pixel = Magick::Color(q, q, q);
-            break;
-          }
           default:
             std::cerr << "[ERROR] [map_io]: Map mode should be Trinary, Scale or Raw" << std::endl;
             throw std::runtime_error("Invalid map mode");
