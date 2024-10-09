@@ -205,7 +205,6 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
         in_rotation_ = true;
         return computeRotateToHeadingCommand(angular_distance_to_heading, pose, velocity);
       } else {
-        angular_dist_threshold_ = angular_dist_threshold_param_;
         RCLCPP_DEBUG(
           logger_,
           "Robot is at the new path's rough heading, passing to controller");
