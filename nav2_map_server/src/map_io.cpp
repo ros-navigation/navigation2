@@ -504,7 +504,8 @@ void tryWriteMapToFile(
             {
               double cell_cost;
               if (map_cell >= nav2_util::OCC_GRID_FREE &&
-                map_cell <= nav2_util::OCC_GRID_OCCUPIED) {
+                map_cell <= nav2_util::OCC_GRID_OCCUPIED)
+              {
                 // Linear conversion from OccupancyGrid data range [OCC_GRID_FREE..OCC_GRID_OCCUPIED]
                 // to costmap data range [FREE_SPACE..LETHAL_OBSTACLE]
                 uint8_t lethal_obstacle_cost = 254; // nav2_costmap_2d::LETHAL_OBSTACLE
