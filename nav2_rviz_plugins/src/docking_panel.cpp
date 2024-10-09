@@ -63,6 +63,8 @@ DockingPanel::DockingPanel(QWidget * parent)
   dock_pose_yaw_ = new QLineEdit;
 
   // Create the state machine used to present the proper control button states in the UI
+  const char * nav_to_stage_msg = "Navigate to the staging pose before docking";
+  const char * use_dock_id_msg = "Use the dock id or the dock pose to dock the robot";
   const char * dock_msg = "Dock the robot at the specified docking station";
   const char * undock_msg = "Undock the robot from the docking station";
   const char * cancel_dock_msg = "Cancel the current docking action";
@@ -103,7 +105,9 @@ DockingPanel::DockingPanel(QWidget * parent)
   idle_->assignProperty(undocking_button_, "enabled", true);
 
   idle_->assignProperty(nav_to_staging_checkbox_, "enabled", true);
+  idle_->assignProperty(nav_to_staging_checkbox_, "toolTip", nav_to_stage_msg);
   idle_->assignProperty(use_dock_id_checkbox_, "enabled", true);
+  idle_->assignProperty(use_dock_id_checkbox_, "toolTip", use_dock_id_msg);
   idle_->assignProperty(dock_id_, "enabled", true);
   idle_->assignProperty(dock_type_, "enabled", true);
 
