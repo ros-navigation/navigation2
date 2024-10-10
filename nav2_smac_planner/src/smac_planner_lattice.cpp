@@ -141,6 +141,20 @@ void SmacPlannerLattice::configure(
     node, name + ".debug_visualizations", rclcpp::ParameterValue(false));
   node->get_parameter(name + ".debug_visualizations", _debug_visualizations);
 
+  std::string goal_heading_type;
+  nav2_util::declare_parameter_if_not_declared(
+    node, name + ".goal_heading_mode", rclcpp::ParameterValue("DEFAULT"));
+  node->get_parameter(name + ".goal_heading_mode", goal_heading_type);
+  GoalHeadingMode goal_heading_mode = fromStringToGH(goal_heading_type);
+  goal_heading_mode = fromStringToGH(goal_heading_type);
+  if (goal_heading_mode == GoalHeadingMode::UNKNOWN) {
+    std::string error_msg = "Unable to get GoalHeader type. Given '" + goal_heading_type + "' "
+      "Valid options are DEFAULT, BIDIRECTIONAL, ALL_DIRECTION. ";
+    throw nav2_core::PlannerException(error_msg);
+  } else {
+    _goal_heading_mode = goal_heading_mode;
+  }
+
   _metadata = LatticeMotionTable::getLatticeMetadata(_search_info.lattice_filepath);
   _search_info.minimum_turning_radius =
     _metadata.min_turning_radius / (_costmap->getResolution());
@@ -304,7 +318,8 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
   }
   _a_star->setGoal(
     mx, my,
-    NodeLattice::motion_table.getClosestAngularBin(tf2::getYaw(goal.pose.orientation)));
+    NodeLattice::motion_table.getClosestAngularBin(tf2::getYaw(goal.pose.orientation)),
+    _goal_heading_mode);
 
   // Setup message
   nav_msgs::msg::Path plan;
@@ -541,6 +556,22 @@ SmacPlannerLattice::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
         _metadata = LatticeMotionTable::getLatticeMetadata(_search_info.lattice_filepath);
         _search_info.minimum_turning_radius =
           _metadata.min_turning_radius / (_costmap->getResolution());
+      } else if (name == _name + ".goal_heading_mode") {
+        std::string goal_heading_type = parameter.as_string();
+        GoalHeadingMode goal_heading_mode = fromStringToGH(goal_heading_type);
+        RCLCPP_INFO(
+          _logger,
+          "GoalHeadingMode type set to '%s'.",
+          goal_heading_type.c_str());
+        if (goal_heading_mode == GoalHeadingMode::UNKNOWN) {
+          RCLCPP_WARN(
+            _logger,
+            "Unable to get GoalHeader type. Given '%s', "
+            "Valid options are DEFAULT, BIDIRECTIONAL, ALL_DIRECTION. ",
+            goal_heading_type.c_str());
+        } else {
+          _goal_heading_mode = goal_heading_mode;
+        }
       }
     }
   }
