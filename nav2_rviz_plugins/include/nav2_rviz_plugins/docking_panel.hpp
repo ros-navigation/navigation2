@@ -90,6 +90,9 @@ private:
   // The (non-spinning) client node used to invoke the action client
   rclcpp::Node::SharedPtr client_node_;
 
+  // The Node pointer that we need to keep alive for the duration of this plugin.
+  std::shared_ptr<rviz_common::ros_integration::RosNodeAbstractionIface> node_ptr_;
+
   // Timeout value when waiting for action servers to respond
   std::chrono::milliseconds server_timeout_;
 
