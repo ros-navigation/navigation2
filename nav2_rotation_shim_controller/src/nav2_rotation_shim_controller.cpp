@@ -66,6 +66,8 @@ void RotationShimController::configure(
     node, plugin_name_ + ".primary_controller", rclcpp::PARAMETER_STRING);
   nav2_util::declare_parameter_if_not_declared(
     node, plugin_name_ + ".rotate_to_goal_heading", rclcpp::ParameterValue(false));
+  nav2_util::declare_parameter_if_not_declared(
+    node, plugin_name_ + ".rotate_to_heading_once", rclcpp::ParameterValue(false));
 
   node->get_parameter(plugin_name_ + ".angular_dist_threshold", angular_dist_threshold_);
   node->get_parameter(plugin_name_ + ".angular_disengage_threshold", angular_disengage_threshold_);
@@ -81,6 +83,7 @@ void RotationShimController::configure(
   control_duration_ = 1.0 / control_frequency;
 
   node->get_parameter(plugin_name_ + ".rotate_to_goal_heading", rotate_to_goal_heading_);
+  node->get_parameter(plugin_name_ + ".rotate_to_heading_once", rotate_to_heading_once_);
 
   try {
     primary_controller_ = lp_loader_.createUniqueInstance(primary_controller);
@@ -335,9 +338,20 @@ void RotationShimController::isCollisionFree(
   }
 }
 
+bool RotationShimController::isGoalChanged(const nav_msgs::msg::Path & path)
+{
+  // Return true if rotating or if the current path is empty
+  if (in_rotation_ || current_path_.poses.empty()) {
+    return true;
+  }
+
+  // Check if the last pose of the current and new paths differ
+  return current_path_.poses.back().pose != path.poses.back().pose;
+}
+
 void RotationShimController::setPlan(const nav_msgs::msg::Path & path)
 {
-  path_updated_ = true;
+  path_updated_ = rotate_to_heading_once_ ? isGoalChanged(path) : true;
   current_path_ = path;
   primary_controller_->setPlan(path);
 }
@@ -372,6 +386,8 @@ RotationShimController::dynamicParametersCallback(std::vector<rclcpp::Parameter>
     } else if (type == ParameterType::PARAMETER_BOOL) {
       if (name == plugin_name_ + ".rotate_to_goal_heading") {
         rotate_to_goal_heading_ = parameter.as_bool();
+      } else if (name == plugin_name_ + ".rotate_to_heading_once") {
+        rotate_to_heading_once_ = parameter.as_bool();
       }
     }
   }
