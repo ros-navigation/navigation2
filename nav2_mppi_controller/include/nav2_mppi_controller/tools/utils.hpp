@@ -618,6 +618,7 @@ struct Pose2D
 inline void shiftColumnsByOnePlace(Eigen::Ref<Eigen::ArrayXXf> e, int direction)
 {
   int size = e.size();
+  if(size == 1) {return;}
   if((e.cols() == 1 || e.rows() == 1) && size > 1) {
     auto start_ptr = direction == 1 ? e.data() + size - 2 : e.data() + 1;
     auto end_ptr = direction == 1 ? e.data() : e.data() + size - 1;
@@ -648,12 +649,6 @@ inline auto point_corrected_yaws(
     yaws_between_points_corrected[i] = yaws[i] < M_PIF_2 ?
       yaw_between_points : angles::normalize_angle(yaw_between_points + M_PIF);
   }
-
-  // binaryExpr slower than for loop
-  // Eigen::ArrayXf yaws_between_points_corrected = yaws.binaryExpr(
-  //   yaws_between_points, [&](const float & yaw, const float & yaw_between_points) {
-  //   return yaw < M_PIF_2 ? yaw_between_points : normalize_anglef(yaw_between_points + M_PIF);
-  //   });
   return yaws_between_points_corrected;
 }
 
@@ -668,13 +663,6 @@ inline auto point_corrected_yaws(
       angles::normalize_angle(yaw_between_points - goal_yaw)) < M_PIF_2 ?
       yaw_between_points : angles::normalize_angle(yaw_between_points + M_PIF);
   }
-
-  // unaryExpr slower than for loop
-  // Eigen::ArrayXf yaws_between_points_corrected = yaws_between_points.unaryExpr(
-  //   [&](const float & yaw_between_points) {
-  //   return fabs(normalize_anglef(yaw_between_points - goal_yaw)) < M_PIF_2 ?
-  //   yaw_between_points : normalize_anglef(yaw_between_points + M_PIF);
-  //   });
   return yaws_between_points_corrected;
 }
 

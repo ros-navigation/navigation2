@@ -65,10 +65,10 @@ public:
   virtual void predict(models::State & state)
   {
     const bool is_holo = isHolonomic();
-    float && max_delta_vx = model_dt_ * control_constraints_.ax_max;
-    float && min_delta_vx = model_dt_ * control_constraints_.ax_min;
-    float && max_delta_vy = model_dt_ * control_constraints_.ay_max;
-    float && max_delta_wz = model_dt_ * control_constraints_.az_max;
+    float max_delta_vx = model_dt_ * control_constraints_.ax_max;
+    float min_delta_vx = model_dt_ * control_constraints_.ax_min;
+    float max_delta_vy = model_dt_ * control_constraints_.ay_max;
+    float max_delta_wz = model_dt_ * control_constraints_.az_max;
 
     unsigned int n_rows = state.vx.rows();
     unsigned int n_cols = state.vx.cols();
@@ -77,18 +77,18 @@ public:
     // column-major fashion to utilize L1 cache as much as possible
     for (unsigned int i = 1; i != n_cols; i++) {
       for (unsigned int j = 0; j != n_rows; j++) {
-        float & vx_last = state.vx(j, i - 1);
+        float vx_last = state.vx(j, i - 1);
         float & cvx_curr = state.cvx(j, i - 1);
         cvx_curr = std::min(vx_last + max_delta_vx, std::max(cvx_curr, vx_last + min_delta_vx));
         state.vx(j, i) = cvx_curr;
 
-        float & wz_last = state.wz(j, i - 1);
+        float wz_last = state.wz(j, i - 1);
         float & cwz_curr = state.cwz(j, i - 1);
         cwz_curr = std::min(wz_last + max_delta_wz, std::max(cwz_curr, wz_last - max_delta_wz));
         state.wz(j, i) = cwz_curr;
 
         if (is_holo) {
-          float & vy_last = state.vy(j, i - 1);
+          float vy_last = state.vy(j, i - 1);
           float & cvy_curr = state.cvy(j, i - 1);
           cvy_curr = std::min(vy_last + max_delta_vy, std::max(cvy_curr, vy_last - max_delta_vy));
           state.vy(j, i) = cvy_curr;

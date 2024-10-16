@@ -133,7 +133,7 @@ void Optimizer::reset()
 
   settings_.constraints = settings_.base_constraints;
 
-  costs_ = Eigen::ArrayXf::Zero(settings_.batch_size);
+  costs_.setZero(settings_.batch_size);
   generated_trajectories_.reset(settings_.batch_size, settings_.time_steps);
 
   noise_generator_.reset(settings_, isHolonomic());
@@ -202,7 +202,7 @@ void Optimizer::prepare(
   state_.pose = robot_pose;
   state_.speed = robot_speed;
   path_ = utils::toTensor(plan);
-  costs_.fill(0.0f);
+  costs_.setZero();
 
   critics_data_.fail_flag = false;
   critics_data_.goal_checker = goal_checker;
@@ -404,21 +404,21 @@ void Optimizer::updateControlSequence()
 {
   const bool is_holo = isHolonomic();
   auto & s = settings_;
-  auto && bounded_noises_vx = state_.cvx.rowwise() - control_sequence_.vx.transpose();
-  auto && bounded_noises_wz = state_.cwz.rowwise() - control_sequence_.wz.transpose();
-  costs_ += s.gamma / powf(s.sampling_std.vx, 2) *
-    (bounded_noises_vx.rowwise() * control_sequence_.vx.transpose()).rowwise().sum();
-  costs_ += s.gamma / powf(s.sampling_std.wz, 2) *
-    (bounded_noises_wz.rowwise() * control_sequence_.wz.transpose()).rowwise().sum();
+  auto bounded_noises_vx = state_.cvx.rowwise() - control_sequence_.vx.transpose();
+  auto bounded_noises_wz = state_.cwz.rowwise() - control_sequence_.wz.transpose();
+  costs_ += (s.gamma / powf(s.sampling_std.vx, 2) *
+    (bounded_noises_vx.rowwise() * control_sequence_.vx.transpose()).rowwise().sum()).eval();
+  costs_ += (s.gamma / powf(s.sampling_std.wz, 2) *
+    (bounded_noises_wz.rowwise() * control_sequence_.wz.transpose()).rowwise().sum()).eval();
   if (is_holo) {
     auto bounded_noises_vy = state_.cvy.rowwise() - control_sequence_.vy.transpose();
-    costs_ += s.gamma / powf(s.sampling_std.vy, 2) *
-      (bounded_noises_vy.rowwise() * control_sequence_.vy.transpose()).rowwise().sum();
+    costs_ += (s.gamma / powf(s.sampling_std.vy, 2) *
+      (bounded_noises_vy.rowwise() * control_sequence_.vy.transpose()).rowwise().sum()).eval();
   }
 
-  auto && costs_normalized = costs_ - costs_.minCoeff();
-  auto && exponents = ((-1 / settings_.temperature * costs_normalized).exp()).eval();
-  auto && softmaxes = (exponents / exponents.sum()).eval();
+  auto costs_normalized = costs_ - costs_.minCoeff();
+  auto exponents = ((-1 / settings_.temperature * costs_normalized).exp()).eval();
+  auto softmaxes = (exponents / exponents.sum()).eval();
 
   control_sequence_.vx = (state_.cvx.colwise() * softmaxes).colwise().sum();
   control_sequence_.wz = (state_.cwz.colwise() * softmaxes).colwise().sum();

@@ -447,3 +447,68 @@ TEST(UtilsTests, RemovePosesAfterPathInversionTest)
   EXPECT_EQ(path.poses.size(), 11u);
   EXPECT_EQ(path.poses.back().pose.position.x, 10);
 }
+
+TEST(UtilsTests, ShiftColumnsByOnePlaceTest)
+{
+  // Try with scalar value
+  Eigen::ArrayXf scalar_val(1);
+  scalar_val(0) = 5;
+  utils::shiftColumnsByOnePlace(scalar_val, 1);
+  EXPECT_EQ(scalar_val.size(), 1);
+  EXPECT_EQ(scalar_val(0), 5);
+
+  // Try with one dimensional array, shift right
+  Eigen::ArrayXf array_1d(4);
+  array_1d << 1, 2, 3, 4;
+  utils::shiftColumnsByOnePlace(array_1d, 1);
+  EXPECT_EQ(array_1d.size(), 4);
+  EXPECT_EQ(array_1d(1), 1);
+  EXPECT_EQ(array_1d(2), 2);
+  EXPECT_EQ(array_1d(3), 3);
+
+  // Try with one dimensional array, shift left
+  array_1d(1) = 5;
+  utils::shiftColumnsByOnePlace(array_1d, -1);
+  EXPECT_EQ(array_1d.size(), 4);
+  EXPECT_EQ(array_1d(0), 5);
+  EXPECT_EQ(array_1d(1), 2);
+  EXPECT_EQ(array_1d(2), 3);
+
+  // Try with two dimensional array, shift right
+  // 1 2 3 4        1 1 2 3
+  // 5 6 7 8    ->  5 5 6 7
+  // 9 10 11 12     9 9 10 11
+  Eigen::ArrayXXf array_2d(3, 4);
+  array_2d << 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12;
+  utils::shiftColumnsByOnePlace(array_2d, 1);
+  EXPECT_EQ(array_2d.rows(), 3);
+  EXPECT_EQ(array_2d.cols(), 4);
+  EXPECT_EQ(array_2d(0, 1), 1);
+  EXPECT_EQ(array_2d(1, 1), 5);
+  EXPECT_EQ(array_2d(2, 1), 9);
+  EXPECT_EQ(array_2d(0, 2), 2);
+  EXPECT_EQ(array_2d(1, 2), 6);
+  EXPECT_EQ(array_2d(2, 2), 10);
+  EXPECT_EQ(array_2d(0, 3), 3);
+  EXPECT_EQ(array_2d(1, 3), 7);
+  EXPECT_EQ(array_2d(2, 3), 11);
+
+  array_2d.col(0).setZero();
+
+  // Try with two dimensional array, shift left
+  // 0 1 2 3      1 2 3 3
+  // 0 5 6 7   -> 5 6 7 7
+  // 0 9 10 11    9 10 11 11
+  utils::shiftColumnsByOnePlace(array_2d, -1);
+  EXPECT_EQ(array_2d.rows(), 3);
+  EXPECT_EQ(array_2d.cols(), 4);
+  EXPECT_EQ(array_2d(0, 0), 1);
+  EXPECT_EQ(array_2d(1, 0), 5);
+  EXPECT_EQ(array_2d(2, 0), 9);
+  EXPECT_EQ(array_2d(0, 1), 2);
+  EXPECT_EQ(array_2d(1, 1), 6);
+  EXPECT_EQ(array_2d(2, 1), 10);
+  EXPECT_EQ(array_2d(0, 2), 3);
+  EXPECT_EQ(array_2d(1, 2), 7);
+  EXPECT_EQ(array_2d(2, 2), 11);
+}

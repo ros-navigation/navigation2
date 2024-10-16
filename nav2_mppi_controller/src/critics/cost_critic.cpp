@@ -121,9 +121,10 @@ void CostCritic::score(CriticData & data)
   }
 
   Eigen::ArrayXf repulsive_cost(data.costs.rows());
+  repulsive_cost.setZero();
   bool all_trajectories_collide = true;
 
-  int strided_traj_cols = data.trajectories.x.cols() / trajectory_point_step_ + 1;
+  int strided_traj_cols = floor(data.trajectories.x.cols() / trajectory_point_step_);
   int strided_traj_rows = data.trajectories.x.rows();
   int outer_stride = strided_traj_rows * trajectory_point_step_;
 
@@ -140,8 +141,7 @@ void CostCritic::score(CriticData & data)
   for (int i = 0; i < strided_traj_rows; ++i) {
     bool trajectory_collide = false;
     float pose_cost = 0.0f;
-    float & traj_cost = repulsive_cost[i];
-    traj_cost = 0.0f;
+    float & traj_cost = repulsive_cost(i);
 
     for (int j = 0; j < strided_traj_cols; j++) {
       float Tx = traj_x(i, j);
