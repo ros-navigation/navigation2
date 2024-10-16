@@ -49,7 +49,7 @@ WaypointFollower::~WaypointFollower()
 }
 
 nav2_util::CallbackReturn
-WaypointFollower::on_configure(const rclcpp_lifecycle::State & /*state*/)
+WaypointFollower::on_configure(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
 
@@ -92,6 +92,7 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & /*state*/)
     RCLCPP_FATAL(
       get_logger(),
       "Failed to create waypoint_task_executor. Exception: %s", ex.what());
+    on_cleanup(state);
   }
 
   return nav2_util::CallbackReturn::SUCCESS;

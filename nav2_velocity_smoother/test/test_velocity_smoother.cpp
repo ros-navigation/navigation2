@@ -39,7 +39,10 @@ class VelSmootherShim : public nav2_velocity_smoother::VelocitySmoother
 public:
   VelSmootherShim()
   : VelocitySmoother() {}
-  void configure(const rclcpp_lifecycle::State & state) {this->on_configure(state);}
+  nav2_util::CallbackReturn configure(const rclcpp_lifecycle::State & state)
+  {
+    return this->on_configure(state);
+  }
   void activate(const rclcpp_lifecycle::State & state) {this->on_activate(state);}
   void deactivate(const rclcpp_lifecycle::State & state) {this->on_deactivate(state);}
   void cleanup(const rclcpp_lifecycle::State & state) {this->on_cleanup(state);}
@@ -587,10 +590,10 @@ TEST(VelocitySmootherTest, testInvalidParams)
   std::vector<double> max_vels{0.0, 0.0};  // invalid size
   smoother->declare_parameter("max_velocity", rclcpp::ParameterValue(max_vels));
   rclcpp_lifecycle::State state;
-  EXPECT_THROW(smoother->configure(state), std::runtime_error);
+  EXPECT_EQ(smoother->configure(state), nav2_util::CallbackReturn::FAILURE);
 
   smoother->set_parameter(rclcpp::Parameter("feedback", std::string("LAWLS")));
-  EXPECT_THROW(smoother->configure(state), std::runtime_error);
+  EXPECT_EQ(smoother->configure(state), nav2_util::CallbackReturn::FAILURE);
 }
 
 TEST(VelocitySmootherTest, testInvalidParamsAccelDecel)
@@ -606,13 +609,13 @@ TEST(VelocitySmootherTest, testInvalidParamsAccelDecel)
   smoother->declare_parameter("max_velocity", rclcpp::ParameterValue(bad_test_max_vel));
   smoother->declare_parameter("min_velocity", rclcpp::ParameterValue(bad_test_min_vel));
   rclcpp_lifecycle::State state;
-  EXPECT_THROW(smoother->configure(state), std::runtime_error);
+  EXPECT_EQ(smoother->configure(state), nav2_util::CallbackReturn::FAILURE);
 
   smoother->set_parameter(rclcpp::Parameter("max_accel", rclcpp::ParameterValue(bad_test_accel)));
-  EXPECT_THROW(smoother->configure(state), std::runtime_error);
+  EXPECT_EQ(smoother->configure(state), nav2_util::CallbackReturn::FAILURE);
 
   smoother->set_parameter(rclcpp::Parameter("max_decel", rclcpp::ParameterValue(bad_test_decel)));
-  EXPECT_THROW(smoother->configure(state), std::runtime_error);
+  EXPECT_EQ(smoother->configure(state), nav2_util::CallbackReturn::FAILURE);
 }
 
 TEST(VelocitySmootherTest, testDynamicParameter)

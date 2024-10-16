@@ -103,7 +103,7 @@ BtNavigator::~BtNavigator()
 }
 
 nav2_util::CallbackReturn
-BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
+BtNavigator::on_configure(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
 
@@ -170,6 +170,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
         get_logger(), "Failed to create navigator id %s of type %s."
         " Exception: %s", navigator_ids[i].c_str(), navigator_type.c_str(),
         ex.what());
+      on_cleanup(state);
       return nav2_util::CallbackReturn::FAILURE;
     }
   }
@@ -183,11 +184,12 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
 }
 
 nav2_util::CallbackReturn
-BtNavigator::on_activate(const rclcpp_lifecycle::State & /*state*/)
+BtNavigator::on_activate(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Activating");
   for (size_t i = 0; i != navigators_.size(); i++) {
     if (!navigators_[i]->on_activate()) {
+      on_deactivate(state);
       return nav2_util::CallbackReturn::FAILURE;
     }
   }

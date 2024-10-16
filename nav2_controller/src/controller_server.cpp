@@ -77,7 +77,7 @@ ControllerServer::~ControllerServer()
 }
 
 nav2_util::CallbackReturn
-ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
+ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Configuring controller interface");
 
@@ -160,6 +160,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
       RCLCPP_FATAL(
         get_logger(),
         "Failed to create goal checker. Exception: %s", ex.what());
+      on_cleanup(state);
       return nav2_util::CallbackReturn::FAILURE;
     }
   }
@@ -188,6 +189,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
       RCLCPP_FATAL(
         get_logger(),
         "Failed to create controller. Exception: %s", ex.what());
+      on_cleanup(state);
       return nav2_util::CallbackReturn::FAILURE;
     }
   }
