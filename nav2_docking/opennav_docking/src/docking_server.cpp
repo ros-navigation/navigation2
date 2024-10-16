@@ -43,7 +43,7 @@ DockingServer::DockingServer(const rclcpp::NodeOptions & options)
 }
 
 nav2_util::CallbackReturn
-DockingServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
+DockingServer::on_configure(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Configuring %s", get_name());
   auto node = shared_from_this();
@@ -90,6 +90,7 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   navigator_ = std::make_unique<Navigator>(node);
   dock_db_ = std::make_unique<DockDatabase>(mutex_);
   if (!dock_db_->initialize(node, tf2_buffer_)) {
+    on_cleanup(state);
     return nav2_util::CallbackReturn::FAILURE;
   }
 

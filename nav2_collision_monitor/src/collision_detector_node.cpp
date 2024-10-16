@@ -40,7 +40,7 @@ CollisionDetector::~CollisionDetector()
 }
 
 nav2_util::CallbackReturn
-CollisionDetector::on_configure(const rclcpp_lifecycle::State & /*state*/)
+CollisionDetector::on_configure(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
 
@@ -60,6 +60,7 @@ CollisionDetector::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   // Obtaining ROS parameters
   if (!getParameters()) {
+    on_cleanup(state);
     return nav2_util::CallbackReturn::FAILURE;
   }
 

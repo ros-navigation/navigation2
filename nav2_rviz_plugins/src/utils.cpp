@@ -38,9 +38,7 @@ void pluginLoader(
       RCLCPP_ERROR(node->get_logger(), "Interrupted while waiting for the service. Exiting.");
       rclcpp::shutdown();
     }
-    RCLCPP_INFO(
-      node->get_logger(),
-      "%s service not available", server_name.c_str());
+    RCLCPP_INFO(node->get_logger(), "%s service not available", server_name.c_str());
     server_unavailable = true;
     server_failed = true;
     break;
