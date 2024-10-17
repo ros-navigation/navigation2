@@ -269,6 +269,7 @@ geometry_msgs::msg::PoseStamped RotationShimController::getSampledPathGoal()
   }
 
   auto goal = current_path_.poses.back();
+  goal.header.frame_id = current_path_.header.frame_id;
   goal.header.stamp = clock_->now();
   return goal;
 }
