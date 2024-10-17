@@ -15,15 +15,11 @@
 #ifndef NAV2_MPPI_CONTROLLER__MODELS__STATE_HPP_
 #define NAV2_MPPI_CONTROLLER__MODELS__STATE_HPP_
 
-// xtensor creates warnings that needs to be ignored as we are building with -Werror
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Warray-bounds"
-#pragma GCC diagnostic ignored "-Wstringop-overflow"
-#include <xtensor/xtensor.hpp>
-#pragma GCC diagnostic pop
+#include <Eigen/Dense>
 
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <geometry_msgs/msg/twist.hpp>
+
 
 namespace mppi::models
 {
@@ -34,13 +30,13 @@ namespace mppi::models
  */
 struct State
 {
-  xt::xtensor<float, 2> vx;
-  xt::xtensor<float, 2> vy;
-  xt::xtensor<float, 2> wz;
+  Eigen::ArrayXXf vx;
+  Eigen::ArrayXXf vy;
+  Eigen::ArrayXXf wz;
 
-  xt::xtensor<float, 2> cvx;
-  xt::xtensor<float, 2> cvy;
-  xt::xtensor<float, 2> cwz;
+  Eigen::ArrayXXf cvx;
+  Eigen::ArrayXXf cvy;
+  Eigen::ArrayXXf cwz;
 
   geometry_msgs::msg::PoseStamped pose;
   geometry_msgs::msg::Twist speed;
@@ -50,13 +46,13 @@ struct State
     */
   void reset(unsigned int batch_size, unsigned int time_steps)
   {
-    vx = xt::zeros<float>({batch_size, time_steps});
-    vy = xt::zeros<float>({batch_size, time_steps});
-    wz = xt::zeros<float>({batch_size, time_steps});
+    vx.setZero(batch_size, time_steps);
+    vy.setZero(batch_size, time_steps);
+    wz.setZero(batch_size, time_steps);
 
-    cvx = xt::zeros<float>({batch_size, time_steps});
-    cvy = xt::zeros<float>({batch_size, time_steps});
-    cwz = xt::zeros<float>({batch_size, time_steps});
+    cvx.setZero(batch_size, time_steps);
+    cvy.setZero(batch_size, time_steps);
+    cwz.setZero(batch_size, time_steps);
   }
 };
 }  // namespace mppi::models
