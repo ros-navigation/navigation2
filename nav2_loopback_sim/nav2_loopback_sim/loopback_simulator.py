@@ -85,8 +85,8 @@ class LoopbackSimulator(Node):
         self.publish_map_odom_tf = self.get_parameter(
             'publish_map_odom_tf').get_parameter_value().bool_value
 
-        self.declare_parameter("publish_clock", True)
-        self.publish_clock = self.get_parameter("publish_clock").get_parameter_value().bool_value
+        self.declare_parameter('publish_clock', True)
+        self.publish_clock = self.get_parameter('publish_clock').get_parameter_value().bool_value
 
         self.t_map_to_odom = TransformStamped()
         self.t_map_to_odom.header.frame_id = self.map_frame_id
@@ -118,7 +118,7 @@ class LoopbackSimulator(Node):
 
         if self.publish_clock:
             self.clock_timer = self.create_timer(0.1, self.clockTimerCallback)
-            self.clock_pub = self.create_publisher(Clock, "/clock", 10)
+            self.clock_pub = self.create_publisher(Clock, '/clock', 10)
 
         self.setupTimer = self.create_timer(0.1, self.setupTimerCallback)
 
