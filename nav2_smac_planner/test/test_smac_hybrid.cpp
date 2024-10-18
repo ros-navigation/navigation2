@@ -126,7 +126,9 @@ TEST(SmacTest, test_smac_se2_reconfigure)
       rclcpp::Parameter("test.analytic_expansion_max_length", 42.0),
       rclcpp::Parameter("test.max_on_approach_iterations", 42),
       rclcpp::Parameter("test.terminal_checking_interval", 42),
-      rclcpp::Parameter("test.motion_model_for_search", std::string("REEDS_SHEPP"))});
+      rclcpp::Parameter("test.motion_model_for_search", std::string("REEDS_SHEPP")),
+      rclcpp::Parameter("test.goal_heading_mode", std::string("BIDIRECTIONAL"))});
+
 
   rclcpp::spin_until_future_complete(
     nodeSE2->get_node_base_interface(),
@@ -155,7 +157,9 @@ TEST(SmacTest, test_smac_se2_reconfigure)
   EXPECT_EQ(
     nodeSE2->get_parameter("test.motion_model_for_search").as_string(),
     std::string("REEDS_SHEPP"));
-
+  EXPECT_EQ(
+    nodeSE2->get_parameter("test.goal_heading_mode").as_string(),
+    std::string("BIDIRECTIONAL"));
   auto results2 = rec_param->set_parameters_atomically(
     {rclcpp::Parameter("resolution", 0.2)});
   rclcpp::spin_until_future_complete(

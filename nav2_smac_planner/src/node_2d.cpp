@@ -81,12 +81,12 @@ float Node2D::getTraversalCost(const NodePtr & child)
 
 float Node2D::getHeuristicCost(
   const Coordinates & node_coords,
-  const Coordinates & goal_coordinates)
+  const CoordinateVector & goals_coords)
 {
   // Using Moore distance as it more accurately represents the distances
   // even a Van Neumann neighborhood robot can navigate.
-  auto dx = goal_coordinates.x - node_coords.x;
-  auto dy = goal_coordinates.y - node_coords.y;
+  auto dx = goals_coords[0].x - node_coords.x;
+  auto dy = goals_coords[0].y - node_coords.y;
   return std::sqrt(dx * dx + dy * dy);
 }
 
