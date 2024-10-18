@@ -116,7 +116,10 @@ class NavTester(Node):
         rclpy.spin_until_future_complete(self, get_result_future)
         status = get_result_future.result().status
         if status != GoalStatus.STATUS_SUCCEEDED:
-            self.info_msg(f'Goal failed with status code: {status}')
+            result = get_result_future.result().result
+            self.info_msg(f'Goal failed with status code: {status}'
+                          f' error code:{result.error_code}'
+                          f' error msg:{result.error_msg}')
             return False
 
         self.info_msg('Goal succeeded!')
@@ -149,7 +152,10 @@ class NavTester(Node):
         rclpy.spin_until_future_complete(self, get_result_future)
         status = get_result_future.result().status
         if status != GoalStatus.STATUS_SUCCEEDED:
-            self.info_msg(f'Goal failed with status code: {status}')
+            result = get_result_future.result().result
+            self.info_msg(f'Goal failed with status code: {status}'
+                          f' error code:{result.error_code}'
+                          f' error msg:{result.error_msg}')
             return False
 
         self.info_msg('Goal succeeded!')
@@ -186,7 +192,10 @@ class NavTester(Node):
         rclpy.spin_until_future_complete(self, get_result_future)
         status = get_result_future.result().status
         if status != GoalStatus.STATUS_SUCCEEDED:
-            self.info_msg(f'Goal failed with status code: {status}')
+            result = get_result_future.result().result
+            self.info_msg(f'Goal failed with status code: {status}'
+                          f' error code:{result.error_code}'
+                          f' error msg:{result.error_msg}')
             return False
 
         self.info_msg('Goal succeeded!')

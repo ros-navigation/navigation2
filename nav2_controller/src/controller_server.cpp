@@ -522,6 +522,7 @@ void ControllerServer::computeControl()
     onGoalExit();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::INVALID_CONTROLLER;
+    result->error_msg = e.what();
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::ControllerTFError & e) {
@@ -529,6 +530,7 @@ void ControllerServer::computeControl()
     onGoalExit();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::TF_ERROR;
+    result->error_msg = e.what();
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::NoValidControl & e) {
@@ -536,6 +538,7 @@ void ControllerServer::computeControl()
     onGoalExit();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::NO_VALID_CONTROL;
+    result->error_msg = e.what();
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::FailedToMakeProgress & e) {
@@ -543,6 +546,7 @@ void ControllerServer::computeControl()
     onGoalExit();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::FAILED_TO_MAKE_PROGRESS;
+    result->error_msg = e.what();
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::PatienceExceeded & e) {
@@ -550,6 +554,7 @@ void ControllerServer::computeControl()
     onGoalExit();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::PATIENCE_EXCEEDED;
+    result->error_msg = e.what();
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::InvalidPath & e) {
@@ -557,6 +562,7 @@ void ControllerServer::computeControl()
     onGoalExit();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::INVALID_PATH;
+    result->error_msg = e.what();
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::ControllerTimedOut & e) {
@@ -564,6 +570,7 @@ void ControllerServer::computeControl()
     onGoalExit();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::CONTROLLER_TIMED_OUT;
+    result->error_msg = e.what();
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::ControllerException & e) {
@@ -571,6 +578,7 @@ void ControllerServer::computeControl()
     onGoalExit();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::UNKNOWN;
+    result->error_msg = e.what();
     action_server_->terminate_current(result);
     return;
   } catch (std::exception & e) {
@@ -578,6 +586,7 @@ void ControllerServer::computeControl()
     onGoalExit();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::UNKNOWN;
+    result->error_msg = e.what();
     action_server_->terminate_current(result);
     return;
   }
@@ -696,20 +705,22 @@ void ControllerServer::updateGlobalPath()
     if (findControllerId(goal->controller_id, current_controller)) {
       current_controller_ = current_controller;
     } else {
-      RCLCPP_INFO(
-        get_logger(), "Terminating action, invalid controller %s requested.",
-        goal->controller_id.c_str());
-      action_server_->terminate_current();
+      std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
+      result->error_code = Action::Result::INVALID_CONTROLLER;
+      result->error_msg = "Terminating action, invalid controller " +
+        goal->controller_id + " requested.";
+      action_server_->terminate_current(result);
       return;
     }
     std::string current_goal_checker;
     if (findGoalCheckerId(goal->goal_checker_id, current_goal_checker)) {
       current_goal_checker_ = current_goal_checker;
     } else {
-      RCLCPP_INFO(
-        get_logger(), "Terminating action, invalid goal checker %s requested.",
-        goal->goal_checker_id.c_str());
-      action_server_->terminate_current();
+      std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
+      result->error_code = Action::Result::INVALID_CONTROLLER;
+      result->error_msg = "Terminating action, invalid goal checker " +
+        goal->goal_checker_id + " requested.";
+      action_server_->terminate_current(result);
       return;
     }
     std::string current_progress_checker;
@@ -722,10 +733,11 @@ void ControllerServer::updateGlobalPath()
         progress_checkers_[current_progress_checker_]->reset();
       }
     } else {
-      RCLCPP_INFO(
-        get_logger(), "Terminating action, invalid progress checker %s requested.",
-        goal->progress_checker_id.c_str());
-      action_server_->terminate_current();
+      std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
+      result->error_code = Action::Result::INVALID_CONTROLLER;
+      result->error_msg = "Terminating action, invalid progress checker " +
+        goal->progress_checker_id + " requested.";
+      action_server_->terminate_current(result);
       return;
     }
     setPlannerPath(goal->path);
