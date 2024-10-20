@@ -512,3 +512,43 @@ TEST(UtilsTests, ShiftColumnsByOnePlaceTest)
   EXPECT_EQ(array_2d(1, 2), 7);
   EXPECT_EQ(array_2d(2, 2), 11);
 }
+
+TEST(UtilsTests, NormalizeYawsBetweenPointsTest)
+{
+  Eigen::ArrayXf last_yaws(10);
+  last_yaws.setZero();
+
+  Eigen::ArrayXf yaw_between_points(10);
+  yaw_between_points.setZero(10);
+
+  // Try with both angles 0
+  Eigen::ArrayXf yaws_between_points_corrected = utils::normalize_yaws_between_points(last_yaws,
+    yaw_between_points);
+  EXPECT_TRUE(yaws_between_points_corrected.isApprox(yaw_between_points));
+
+  // Try with yaw between points as pi/4
+  yaw_between_points.setConstant(M_PIF_2 / 2);
+  yaws_between_points_corrected = utils::normalize_yaws_between_points(last_yaws,
+    yaw_between_points);
+  EXPECT_TRUE(yaws_between_points_corrected.isApprox(yaw_between_points));
+
+  // Try with yaw between points as pi/2
+  yaw_between_points.setConstant(M_PIF_2);
+  yaws_between_points_corrected = utils::normalize_yaws_between_points(last_yaws,
+    yaw_between_points);
+  EXPECT_TRUE(yaws_between_points_corrected.isApprox(yaw_between_points));
+
+  // Try with a few yaw betweem points  more than pi/2
+  yaw_between_points[1] = 1.2 * M_PIF_2;
+  yaws_between_points_corrected = utils::normalize_yaws_between_points(last_yaws,
+    yaw_between_points);
+  EXPECT_NEAR(yaws_between_points_corrected[1], -0.8 * M_PIF_2, 1e-3);
+  EXPECT_NEAR(yaws_between_points_corrected[0], yaw_between_points[0], 1e-3);
+  EXPECT_NEAR(yaws_between_points_corrected[9], yaw_between_points[9], 1e-3);
+
+  // Try with goal angle 0
+  float goal_angle = 0;
+  yaws_between_points_corrected = utils::normalize_yaws_between_points(goal_angle,
+    yaw_between_points);
+  EXPECT_NEAR(yaws_between_points_corrected[1], -0.8 * M_PIF_2, 1e-3);
+}

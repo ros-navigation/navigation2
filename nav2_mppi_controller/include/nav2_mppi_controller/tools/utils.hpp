@@ -265,12 +265,10 @@ inline bool withinPositionGoalTolerance(
 template<typename T>
 auto normalize_angles(const T & angles)
 {
-  return (angles + M_PIF).unaryExpr([&](const float x){
+  return (angles + M_PIF).unaryExpr([&](const float x) {
              float remainder = std::fmod(x, 2.0f * M_PIF);
              return remainder < 0.0f ? remainder + M_PIF : remainder - M_PIF;
              });
-  // auto theta = angles - (M_PIF * ((angles + M_PIF_2) * (1.0f / M_PIF)).floor());
-  // return theta;
 }
 
 /**
@@ -639,29 +637,45 @@ inline void shiftColumnsByOnePlace(Eigen::Ref<Eigen::ArrayXXf> e, int direction)
   }
 }
 
-inline auto point_corrected_yaws(
-  const Eigen::ArrayXf & yaws, const Eigen::ArrayXf & yaws_between_points)
+/**
+ * @brief Normalize the yaws between points on the basis of final yaw angle
+ *    of the trajectory.
+ * @param last_yaws Final yaw angles of the trajectories.
+ * @param yaw_between_points Yaw angles calculated between x and y co-ordinates of the trajectories.
+ * @return Normalized yaw between points.
+ */
+inline auto normalize_yaws_between_points(
+  const Eigen::Ref<const Eigen::ArrayXf> & last_yaws,
+  const Eigen::Ref<const Eigen::ArrayXf> & yaw_between_points)
 {
+  Eigen::ArrayXf yaws = utils::shortest_angular_distance(
+          last_yaws, yaw_between_points).abs();
   int size = yaws.size();
   Eigen::ArrayXf yaws_between_points_corrected(size);
   for(int i = 0; i != size; i++) {
-    const float & yaw_between_points = yaws_between_points[i];
+    const float & yaw_between_point = yaw_between_points[i];
     yaws_between_points_corrected[i] = yaws[i] < M_PIF_2 ?
-      yaw_between_points : angles::normalize_angle(yaw_between_points + M_PIF);
+      yaw_between_point : angles::normalize_angle(yaw_between_point + M_PIF);
   }
   return yaws_between_points_corrected;
 }
 
-inline auto point_corrected_yaws(
-  const Eigen::ArrayXf & yaws_between_points, const float & goal_yaw)
+/**
+ * @brief Normalize the yaws between points on the basis of goal angle.
+ * @param goal_yaw Goal yaw angle.
+ * @param yaw_between_points Yaw angles calculated between x and y co-ordinates of the trajectories.
+ * @return Normalized yaw between points
+ */
+inline auto normalize_yaws_between_points(
+  const float & goal_yaw, const Eigen::Ref<const Eigen::ArrayXf> & yaw_between_points)
 {
-  int size = yaws_between_points.size();
+  int size = yaw_between_points.size();
   Eigen::ArrayXf yaws_between_points_corrected(size);
   for(int i = 0; i != size; i++) {
-    const float & yaw_between_points = yaws_between_points[i];
+    const float & yaw_between_point = yaw_between_points[i];
     yaws_between_points_corrected[i] = fabs(
-      angles::normalize_angle(yaw_between_points - goal_yaw)) < M_PIF_2 ?
-      yaw_between_points : angles::normalize_angle(yaw_between_points + M_PIF);
+      angles::normalize_angle(yaw_between_point - goal_yaw)) < M_PIF_2 ?
+      yaw_between_point : angles::normalize_angle(yaw_between_point + M_PIF);
   }
   return yaws_between_points_corrected;
 }
