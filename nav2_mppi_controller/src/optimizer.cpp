@@ -243,13 +243,14 @@ void Optimizer::applyControlSequenceConstraints()
   float max_delta_wz = s.model_dt * s.constraints.az_max;
   float vx_last = std::min(
     s.constraints.vx_max, std::max(control_sequence_.vx(0), s.constraints.vx_min));
-  float vy_last = std::min(
-    s.constraints.vy, std::max(control_sequence_.vy(0), -s.constraints.vy));
   float wz_last = std::min(
     s.constraints.wz, std::max(control_sequence_.wz(0), -s.constraints.wz));
+  float vy_last = 0;
   control_sequence_.vx(0) = vx_last;
   control_sequence_.wz(0) = wz_last;
   if (isHolonomic()) {
+    vy_last = std::min(
+    s.constraints.vy, std::max(control_sequence_.vy(0), -s.constraints.vy));
     control_sequence_.vy(0) = vy_last;
   }
 
