@@ -117,6 +117,9 @@ void RegulatedPurePursuitController::configure(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".use_interpolation",
     rclcpp::ParameterValue(true));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".interpolate_curvature_after_goal",
+    rclcpp::ParameterValue(false));
 
   node->get_parameter(plugin_name_ + ".desired_linear_vel", desired_linear_vel_);
   base_desired_linear_vel_ = desired_linear_vel_;
@@ -176,6 +179,8 @@ void RegulatedPurePursuitController::configure(
   node->get_parameter(
     plugin_name_ + ".use_interpolation",
     use_interpolation_);
+  node->get_parameter(plugin_name_ + ".interpolate_curvature_after_goal",
+    interpolate_curvature_after_goal_);
 
   transform_tolerance_ = tf2::durationFromSec(transform_tolerance);
   control_duration_ = 1.0 / control_frequency;
@@ -312,7 +317,12 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   }
 
   auto carrot_pose = getLookAheadPoint(lookahead_dist, transformed_plan);
-  carrot_pub_->publish(createCarrotMsg(carrot_pose));
+  auto rotate_to_path_carrot_pose = carrot_pose;
+  if (interpolate_curvature_after_goal_)
+  {
+    rotate_to_path_carrot_pose = getLookAheadPoint(lookahead_dist, transformed_plan, true);
+  }
+  carrot_pub_->publish(createCarrotMsg(rotate_to_path_carrot_pose));
 
   double linear_vel, angular_vel;
 
@@ -341,7 +351,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   if (shouldRotateToGoalHeading(carrot_pose)) {
     double angle_to_goal = tf2::getYaw(transformed_plan.poses.back().pose.orientation);
     rotateToHeading(linear_vel, angular_vel, angle_to_goal, speed);
-  } else if (shouldRotateToPath(carrot_pose, angle_to_heading)) {
+  } else if (shouldRotateToPath(rotate_to_path_carrot_pose, angle_to_heading)) {
     rotateToHeading(linear_vel, angular_vel, angle_to_heading, speed);
   } else {
     applyConstraints(
@@ -435,7 +445,8 @@ geometry_msgs::msg::Point RegulatedPurePursuitController::circleSegmentIntersect
 
 geometry_msgs::msg::PoseStamped RegulatedPurePursuitController::getLookAheadPoint(
   const double & lookahead_dist,
-  const nav_msgs::msg::Path & transformed_plan)
+  const nav_msgs::msg::Path & transformed_plan,
+  bool interpolate_after_goal)
 {
   // Find the first pose which is at a distance greater than the lookahead distance
   auto goal_pose_it = std::find_if(
@@ -445,8 +456,33 @@ geometry_msgs::msg::PoseStamped RegulatedPurePursuitController::getLookAheadPoin
 
   // If the no pose is not far enough, take the last pose
   if (goal_pose_it == transformed_plan.poses.end()) {
-    goal_pose_it = std::prev(transformed_plan.poses.end());
-  } else if (use_interpolation_ && goal_pose_it != transformed_plan.poses.begin()) {
+    if (interpolate_after_goal) {
+      auto last_pose_it = std::prev(transformed_plan.poses.end());
+      auto prev_last_pose_it = std::prev(last_pose_it);
+
+      double end_path_orientation = atan2(
+        last_pose_it->pose.position.y - prev_last_pose_it->pose.position.y,
+        last_pose_it->pose.position.x - prev_last_pose_it->pose.position.x);
+
+      // Project the last segment out to guarantee it is beyond the look ahead
+      // distance
+      auto projected_position = last_pose_it->pose.position;
+      projected_position.x += cos(end_path_orientation) * lookahead_dist;
+      projected_position.y += sin(end_path_orientation) * lookahead_dist;
+
+      // Use the circle intersection to find the position at the correct look
+      // ahead distance
+      const auto interpolated_position = circleSegmentIntersection(
+        last_pose_it->pose.position, projected_position, lookahead_dist);
+
+      geometry_msgs::msg::PoseStamped interpolated_pose;
+      interpolated_pose.header = last_pose_it->header;
+      interpolated_pose.pose.position = interpolated_position;
+      return interpolated_pose;
+    } else {
+      goal_pose_it = std::prev(transformed_plan.poses.end());
+    }
+  } else if (goal_pose_it != transformed_plan.poses.begin()) {
     // Find the point on the line segment between the two poses
     // that is exactly the lookahead distance away from the robot pose (the origin)
     // This can be found with a closed form for the intersection of a segment and a circle

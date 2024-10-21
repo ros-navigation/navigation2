@@ -248,9 +248,13 @@ protected:
    * @brief Get lookahead point
    * @param lookahead_dist Optimal lookahead distance
    * @param path Current global path
+   * @param interpolate_after_goal If true, interpolate the lookahead point after the goal based
+   * on the orientation given by the position of the last two pose of the path
    * @return Lookahead point
    */
-  geometry_msgs::msg::PoseStamped getLookAheadPoint(const double &, const nav_msgs::msg::Path &);
+  geometry_msgs::msg::PoseStamped getLookAheadPoint(
+    const double &, const nav_msgs::msg::Path &,
+    bool interpolate_after_goal = false);
 
   /**
    * @brief checks for the cusp position
@@ -307,6 +311,7 @@ protected:
   bool allow_reversing_;
   double max_robot_pose_search_dist_;
   bool use_interpolation_;
+  bool interpolate_curvature_after_goal_;
 
   nav_msgs::msg::Path global_plan_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> global_path_pub_;
