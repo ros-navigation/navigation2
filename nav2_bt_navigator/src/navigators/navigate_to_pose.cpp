@@ -31,6 +31,12 @@ NavigateToPoseNavigator::configure(
   start_time_ = rclcpp::Time(0);
   auto node = parent_node.lock();
 
+  if (!node->has_parameter("start_blackboard_id")) {
+    node->declare_parameter("start_blackboard_id", std::string("start"));
+  }
+
+  start_blackboard_id_ = node->get_parameter("start_blackboard_id").as_string();
+
   if (!node->has_parameter("goal_blackboard_id")) {
     node->declare_parameter("goal_blackboard_id", std::string("goal"));
   }
@@ -263,6 +269,9 @@ NavigateToPoseNavigator::initializeGoalPose(ActionT::Goal::ConstSharedPtr goal)
   start_time_ = clock_->now();
   auto blackboard = bt_action_server_->getBlackboard();
   blackboard->set<int>("number_recoveries", 0);  // NOLINT
+
+  // Set the start pose on the blackboard
+  blackboard->set<geometry_msgs::msg::PoseStamped>(start_blackboard_id_, current_pose);
 
   // Update the goal pose on the blackboard
   blackboard->set<geometry_msgs::msg::PoseStamped>(goal_blackboard_id_, goal->pose);
