@@ -1,6 +1,3 @@
-#include <string>
-#include <memory>
-
 #include "nav2_behavior_tree/plugins/action/clear_grid_around_pose_service.hpp"
 
 namespace nav2_behavior_tree
