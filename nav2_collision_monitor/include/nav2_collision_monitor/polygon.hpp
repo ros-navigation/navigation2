@@ -23,7 +23,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/polygon_stamped.hpp"
 
-#include "tf2/time.h"
+#include "tf2/time.hpp"
 #include "tf2_ros/buffer.h"
 
 #include "nav2_util/lifecycle_node.hpp"
