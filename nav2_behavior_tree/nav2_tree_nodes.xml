@@ -247,6 +247,10 @@
     <Condition ID="InitialPoseReceived">
     </Condition>
 
+    <Condition ID="IsInAllowedArea">
+      <input_port name="topic_name"> Name of the allowed area topic </input_port>
+    </Condition>
+
     <Condition ID="IsPathValid">
       <input_port name="path"> Path to validate </input_port>
       <input_port name="server_timeout"> Server timeout </input_port>
