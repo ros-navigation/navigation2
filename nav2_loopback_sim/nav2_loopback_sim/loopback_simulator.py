@@ -24,6 +24,7 @@ import rclpy
 from rclpy.duration import Duration
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
+from rosgraph_msgs.msg import Clock
 from sensor_msgs.msg import LaserScan
 from tf2_ros import Buffer, TransformBroadcaster, TransformListener
 import tf_transformations
@@ -84,6 +85,9 @@ class LoopbackSimulator(Node):
         self.publish_map_odom_tf = self.get_parameter(
             'publish_map_odom_tf').get_parameter_value().bool_value
 
+        self.declare_parameter('publish_clock', True)
+        self.publish_clock = self.get_parameter('publish_clock').get_parameter_value().bool_value
+
         self.t_map_to_odom = TransformStamped()
         self.t_map_to_odom.header.frame_id = self.map_frame_id
         self.t_map_to_odom.child_frame_id = self.odom_frame_id
@@ -112,6 +116,10 @@ class LoopbackSimulator(Node):
             depth=10)
         self.scan_pub = self.create_publisher(LaserScan, 'scan', sensor_qos)
 
+        if self.publish_clock:
+            self.clock_timer = self.create_timer(0.1, self.clockTimerCallback)
+            self.clock_pub = self.create_publisher(Clock, '/clock', 10)
+
         self.setupTimer = self.create_timer(0.1, self.setupTimerCallback)
 
         self.map_client = self.create_client(GetMap, '/map_server/map')
@@ -138,6 +146,11 @@ class LoopbackSimulator(Node):
         self.tf_broadcaster.sendTransform(self.t_odom_to_base_link)
         if self.mat_base_to_laser is None:
             self.getBaseToLaserTf()
+
+    def clockTimerCallback(self):
+        msg = Clock()
+        msg.clock = self.get_clock().now().to_msg()
+        self.clock_pub.publish(msg)
 
     def cmdVelCallback(self, msg):
         self.debug('Received cmd_vel')
