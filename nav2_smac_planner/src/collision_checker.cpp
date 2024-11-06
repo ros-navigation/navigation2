@@ -55,13 +55,13 @@ void GridCollisionChecker::setFootprint(
 {
   possible_collision_cost_ = static_cast<float>(possible_collision_cost);
   if (possible_collision_cost_ <= 0.0f) {
-  RCLCPP_ERROR_THROTTLE(
-    logger_, *clock_, 1000,
-    "Inflation layer either not found or inflation is not set sufficiently for "
-    "optimized non-circular collision checking capabilities. It is HIGHLY recommended to set"
-    " the inflation radius to be at MINIMUM half of the robot's largest cross-section. See "
-    "github.com/ros-planning/navigation2/tree/main/nav2_smac_planner#potential-fields"
-    " for full instructions. This will substantially impact run-time performance.");
+    RCLCPP_ERROR_THROTTLE(
+      logger_, *clock_, 1000,
+      "Inflation layer either not found or inflation is not set sufficiently for "
+      "optimized non-circular collision checking capabilities. It is HIGHLY recommended to set"
+      " the inflation radius to be at MINIMUM half of the robot's largest cross-section. See "
+      "github.com/ros-planning/navigation2/tree/main/nav2_smac_planner#potential-fields"
+      " for full instructions. This will substantially impact run-time performance.");
   }
 
   footprint_is_radius_ = radius;
