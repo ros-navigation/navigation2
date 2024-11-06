@@ -150,8 +150,7 @@ public:
 
   /**
    * @brief  Get the cost of a cell in the costmap
-   * @param mx The x coordinate of the cell
-   * @param my The y coordinate of the cell
+   * @param index The cell index
    * @return The cost of the cell
    */
   unsigned char getCost(unsigned int index) const;
