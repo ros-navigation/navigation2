@@ -241,7 +241,7 @@ ament_target_dependencies(route_tool_rviz_panel ${dependencies})
 target_link_libraries(route_tool_rviz_panel ${library_name} rviz_common::rviz_common)
 target_compile_definitions(route_tool_rviz_panel PRIVATE QT_NO_KEYWORDS)
 
-pluginlib_export_plugin_description_file(route_tool plugins.xml)
+pluginlib_export_plugin_description_file(nav2_route plugins.xml)
 pluginlib_export_plugin_description_file(rviz_common rviz2_plugins.xml)
 
 install(DIRECTORY include/
