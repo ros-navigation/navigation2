@@ -184,18 +184,18 @@ LoadParameters loadMapYaml(const std::string & yaml_filename)
     load_parameters.negate = yaml_get_value<bool>(doc, "negate");
   }
 
-  RCLCPP_DEBUG_STREAM(rclcpp::get_logger("map_io"), "resolution: " << load_parameters.resolution);
-  RCLCPP_DEBUG_STREAM(rclcpp::get_logger("map_io"), "origin[0]: " << load_parameters.origin[0]);
-  RCLCPP_DEBUG_STREAM(rclcpp::get_logger("map_io"), "origin[1]: " << load_parameters.origin[1]);
-  RCLCPP_DEBUG_STREAM(rclcpp::get_logger("map_io"), "origin[2]: " << load_parameters.origin[2]);
-  RCLCPP_DEBUG_STREAM(rclcpp::get_logger("map_io"), "free_thresh: " << load_parameters.free_thresh);
-  RCLCPP_DEBUG_STREAM(
+  RCLCPP_INFO_STREAM(rclcpp::get_logger("map_io"), "resolution: " << load_parameters.resolution);
+  RCLCPP_INFO_STREAM(rclcpp::get_logger("map_io"), "origin[0]: " << load_parameters.origin[0]);
+  RCLCPP_INFO_STREAM(rclcpp::get_logger("map_io"), "origin[1]: " << load_parameters.origin[1]);
+  RCLCPP_INFO_STREAM(rclcpp::get_logger("map_io"), "origin[2]: " << load_parameters.origin[2]);
+  RCLCPP_INFO_STREAM(rclcpp::get_logger("map_io"), "free_thresh: " << load_parameters.free_thresh);
+  RCLCPP_INFO_STREAM(
     rclcpp::get_logger(
       "map_io"), "occupied_thresh: " << load_parameters.occupied_thresh);
-  RCLCPP_DEBUG_STREAM(
+  RCLCPP_INFO_STREAM(
     rclcpp::get_logger("map_io"),
     "mode: " << map_mode_to_string(load_parameters.mode));
-  RCLCPP_DEBUG_STREAM(rclcpp::get_logger("map_io"), "negate: " << load_parameters.negate);
+  RCLCPP_INFO_STREAM(rclcpp::get_logger("map_io"), "negate: " << load_parameters.negate);
 
   return load_parameters;
 }
@@ -297,7 +297,7 @@ void loadMapFromFile(
   msg.header.frame_id = "map";
   msg.header.stamp = clock.now();
 
-  RCLCPP_DEBUG_STREAM(
+  RCLCPP_INFO_STREAM(
     rclcpp::get_logger(
       "map_io"), "Read map " << load_parameters.image_file_name
                              << ": " << msg.info.width << " X " << msg.info.height << " map @ "
