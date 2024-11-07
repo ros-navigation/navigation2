@@ -31,8 +31,7 @@ TransformAvailableCondition::TransformAvailableCondition(
   const std::string & condition_name,
   const BT::NodeConfiguration & conf)
 : BT::ConditionNode(condition_name, conf),
-  was_found_(false),
-  initialized_(false)
+  was_found_(false)
 {
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
   tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
@@ -56,12 +55,11 @@ void TransformAvailableCondition::initialize()
   }
 
   RCLCPP_DEBUG(node_->get_logger(), "Initialized an TransformAvailableCondition BT node");
-  initialized_ = true;
 }
 
 BT::NodeStatus TransformAvailableCondition::tick()
 {
-  if (!initialized_) {
+  if (!BT::isStatusActive(status())) {
     initialize();
   }
 
