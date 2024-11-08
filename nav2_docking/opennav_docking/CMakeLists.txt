@@ -107,29 +107,15 @@ ament_target_dependencies(simple_charging_dock
 )
 target_link_libraries(simple_charging_dock pose_filter)
 
+
+
 add_library(simple_non_charging_dock SHARED
   src/simple_non_charging_dock.cpp
 )
-target_include_directories(simple_non_charging_dock
-  PUBLIC
-    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+ament_target_dependencies(simple_non_charging_dock
+  ${dependencies}
 )
-target_link_libraries(simple_non_charging_dock PUBLIC
-  ${geometry_msgs_TARGETS}
-  opennav_docking_core::opennav_docking_core
-  pose_filter
-  rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
-  ${sensor_msgs_TARGETS}
-  tf2_geometry_msgs::tf2_geometry_msgs
-  tf2_ros::tf2_ros
-)
-target_link_libraries(simple_non_charging_dock PRIVATE
-  nav2_util::nav2_util_core
-  pluginlib::pluginlib
-  tf2::tf2
-)
+target_link_libraries(simple_non_charging_dock pose_filter)
 
 pluginlib_export_plugin_description_file(opennav_docking_core plugins.xml)
 
