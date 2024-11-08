@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>nav2_smoother</name>
-  <version>1.1.16</version>
+  <version>1.1.17</version>
   <description>Smoother action interface</description>
   <maintainer email="vargovcik@robotechvision.com">Matej Vargovcik</maintainer>
   <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
