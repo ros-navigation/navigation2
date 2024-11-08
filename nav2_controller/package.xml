@@ -16,6 +16,7 @@
   <depend>nav2_util</depend>
   <depend>nav2_msgs</depend>
   <depend>nav_2d_utils</depend>
+  <depend>nav2_costmap_2d</depend>
   <depend>nav_2d_msgs</depend>
   <depend>nav2_core</depend>
   <depend>pluginlib</depend>
