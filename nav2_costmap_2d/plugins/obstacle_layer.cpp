@@ -225,7 +225,8 @@ void ObstacleLayer::onInitialize()
       source.c_str(), topic.c_str(),
       global_frame_.c_str(), expected_update_rate, observation_keep_time);
 
-    const auto custom_qos_profile = rclcpp::SensorDataQoS().keep_last(50);
+    rmw_qos_profile_t custom_qos_profile = rmw_qos_profile_sensor_data;
+    custom_qos_profile.depth = 50;
 
     // create a callback for the topic
     if (data_type == "LaserScan") {
