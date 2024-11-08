@@ -132,8 +132,10 @@ std::string expand_user_home_dir_if_needed(
     return yaml_filename;
   }
   if (home_variable_value.empty()) {
-    std::cout << "[INFO] [map_io]: Map yaml file name starts with '~/' but no HOME variable set. \n"
-              << "[INFO] [map_io] User home dir will be not expanded \n";
+    RCLCPP_INFO_STREAM(
+      rclcpp::get_logger(
+        "map_io"), "Map yaml file name starts with '~/' but no HOME variable set. \n"
+        << "[INFO] [map_io] User home dir will be not expanded \n");
     return yaml_filename;
   }
   const std::string prefix{home_variable_value};
@@ -181,15 +183,18 @@ LoadParameters loadMapYaml(const std::string & yaml_filename)
     load_parameters.negate = yaml_get_value<bool>(doc, "negate");
   }
 
-  std::cout << "[DEBUG] [map_io]: resolution: " << load_parameters.resolution << std::endl;
-  std::cout << "[DEBUG] [map_io]: origin[0]: " << load_parameters.origin[0] << std::endl;
-  std::cout << "[DEBUG] [map_io]: origin[1]: " << load_parameters.origin[1] << std::endl;
-  std::cout << "[DEBUG] [map_io]: origin[2]: " << load_parameters.origin[2] << std::endl;
-  std::cout << "[DEBUG] [map_io]: free_thresh: " << load_parameters.free_thresh << std::endl;
-  std::cout << "[DEBUG] [map_io]: occupied_thresh: " << load_parameters.occupied_thresh <<
-    std::endl;
-  std::cout << "[DEBUG] [map_io]: mode: " << map_mode_to_string(load_parameters.mode) << std::endl;
-  std::cout << "[DEBUG] [map_io]: negate: " << load_parameters.negate << std::endl;  //NOLINT
+  RCLCPP_INFO_STREAM(rclcpp::get_logger("map_io"), "resolution: " << load_parameters.resolution);
+  RCLCPP_INFO_STREAM(rclcpp::get_logger("map_io"), "origin[0]: " << load_parameters.origin[0]);
+  RCLCPP_INFO_STREAM(rclcpp::get_logger("map_io"), "origin[1]: " << load_parameters.origin[1]);
+  RCLCPP_INFO_STREAM(rclcpp::get_logger("map_io"), "origin[2]: " << load_parameters.origin[2]);
+  RCLCPP_INFO_STREAM(rclcpp::get_logger("map_io"), "free_thresh: " << load_parameters.free_thresh);
+  RCLCPP_INFO_STREAM(
+    rclcpp::get_logger(
+      "map_io"), "occupied_thresh: " << load_parameters.occupied_thresh);
+  RCLCPP_INFO_STREAM(
+    rclcpp::get_logger("map_io"),
+    "mode: " << map_mode_to_string(load_parameters.mode));
+  RCLCPP_INFO_STREAM(rclcpp::get_logger("map_io"), "negate: " << load_parameters.negate);
 
   return load_parameters;
 }
@@ -201,8 +206,9 @@ void loadMapFromFile(
   Magick::InitializeMagick(nullptr);
   nav_msgs::msg::OccupancyGrid msg;
 
-  std::cout << "[INFO] [map_io]: Loading image_file: " <<
-    load_parameters.image_file_name << std::endl;
+  RCLCPP_INFO_STREAM(
+    rclcpp::get_logger("map_io"), "Loading image_file: " <<
+      load_parameters.image_file_name);
   Magick::Image img(load_parameters.image_file_name);
 
   // Copy the image data into the map structure
@@ -290,9 +296,11 @@ void loadMapFromFile(
   msg.header.frame_id = "map";
   msg.header.stamp = clock.now();
 
-  std::cout <<
-    "[DEBUG] [map_io]: Read map " << load_parameters.image_file_name << ": " << msg.info.width <<
-    " X " << msg.info.height << " map @ " << msg.info.resolution << " m/cell" << std::endl;
+  RCLCPP_INFO_STREAM(
+    rclcpp::get_logger(
+      "map_io"), "Read map " << load_parameters.image_file_name
+                             << ": " << msg.info.width << " X " << msg.info.height << " map @ "
+                             << msg.info.resolution << " m/cell");
 
   map = msg;
 }
@@ -302,30 +310,32 @@ LOAD_MAP_STATUS loadMapFromYaml(
   nav_msgs::msg::OccupancyGrid & map)
 {
   if (yaml_file.empty()) {
-    std::cerr << "[ERROR] [map_io]: YAML file name is empty, can't load!" << std::endl;
+    RCLCPP_ERROR_STREAM(rclcpp::get_logger("map_io"), "YAML file name is empty, can't load!");
     return MAP_DOES_NOT_EXIST;
   }
-  std::cout << "[INFO] [map_io]: Loading yaml file: " << yaml_file << std::endl;
+  RCLCPP_INFO_STREAM(rclcpp::get_logger("map_io"), "Loading yaml file: " << yaml_file);
   LoadParameters load_parameters;
   try {
     load_parameters = loadMapYaml(yaml_file);
   } catch (YAML::Exception & e) {
-    std::cerr <<
-      "[ERROR] [map_io]: Failed processing YAML file " << yaml_file << " at position (" <<
-      e.mark.line << ":" << e.mark.column << ") for reason: " << e.what() << std::endl;
+    RCLCPP_ERROR_STREAM(
+      rclcpp::get_logger(
+        "map_io"), "Failed processing YAML file " << yaml_file << " at position (" <<
+        e.mark.line << ":" << e.mark.column << ") for reason: " << e.what());
     return INVALID_MAP_METADATA;
   } catch (std::exception & e) {
-    std::cerr <<
-      "[ERROR] [map_io]: Failed to parse map YAML loaded from file " << yaml_file <<
-      " for reason: " << e.what() << std::endl;
+    RCLCPP_ERROR_STREAM(
+      rclcpp::get_logger("map_io"), "Failed to parse map YAML loaded from file " << yaml_file <<
+        " for reason: " << e.what());
     return INVALID_MAP_METADATA;
   }
   try {
     loadMapFromFile(load_parameters, map);
   } catch (std::exception & e) {
-    std::cerr <<
-      "[ERROR] [map_io]: Failed to load image file " << load_parameters.image_file_name <<
-      " for reason: " << e.what() << std::endl;
+    RCLCPP_ERROR_STREAM(
+      rclcpp::get_logger(
+        "map_io"), "Failed to load image file " << load_parameters.image_file_name <<
+        " for reason: " << e.what());
     return INVALID_MAP_DATA;
   }
 
@@ -350,40 +360,46 @@ void checkSaveParameters(SaveParameters & save_parameters)
     rclcpp::Clock clock(RCL_SYSTEM_TIME);
     save_parameters.map_file_name = "map_" +
       std::to_string(static_cast<int>(clock.now().seconds()));
-    std::cout << "[WARN] [map_io]: Map file unspecified. Map will be saved to " <<
-      save_parameters.map_file_name << " file" << std::endl;
+    RCLCPP_WARN_STREAM(
+      rclcpp::get_logger("map_io"), "Map file unspecified. Map will be saved to " <<
+        save_parameters.map_file_name << " file");
   }
 
   // Checking thresholds
   if (save_parameters.occupied_thresh == 0.0) {
     save_parameters.occupied_thresh = 0.65;
-    std::cout << "[WARN] [map_io]: Occupied threshold unspecified. Setting it to default value: " <<
-      save_parameters.occupied_thresh << std::endl;
+    RCLCPP_WARN_STREAM(
+      rclcpp::get_logger(
+        "map_io"), "Occupied threshold unspecified. Setting it to default value: " <<
+        save_parameters.occupied_thresh);
   }
   if (save_parameters.free_thresh == 0.0) {
     save_parameters.free_thresh = 0.25;
-    std::cout << "[WARN] [map_io]: Free threshold unspecified. Setting it to default value: " <<
-      save_parameters.free_thresh << std::endl;
+    RCLCPP_WARN_STREAM(
+      rclcpp::get_logger("map_io"), "Free threshold unspecified. Setting it to default value: " <<
+        save_parameters.free_thresh);
   }
   if (1.0 < save_parameters.occupied_thresh) {
-    std::cerr << "[ERROR] [map_io]: Threshold_occupied must be 1.0 or less" << std::endl;
+    RCLCPP_ERROR_STREAM(rclcpp::get_logger("map_io"), "Threshold_occupied must be 1.0 or less");
     throw std::runtime_error("Incorrect thresholds");
   }
   if (save_parameters.free_thresh < 0.0) {
-    std::cerr << "[ERROR] [map_io]: Free threshold must be 0.0 or greater" << std::endl;
+    RCLCPP_ERROR_STREAM(rclcpp::get_logger("map_io"), "Free threshold must be 0.0 or greater");
     throw std::runtime_error("Incorrect thresholds");
   }
   if (save_parameters.occupied_thresh <= save_parameters.free_thresh) {
-    std::cerr << "[ERROR] [map_io]: Threshold_free must be smaller than threshold_occupied" <<
-      std::endl;
+    RCLCPP_ERROR_STREAM(
+      rclcpp::get_logger(
+        "map_io"), "Threshold_free must be smaller than threshold_occupied");
     throw std::runtime_error("Incorrect thresholds");
   }
 
   // Checking image format
   if (save_parameters.image_format == "") {
     save_parameters.image_format = save_parameters.mode == MapMode::Scale ? "png" : "pgm";
-    std::cout << "[WARN] [map_io]: Image format unspecified. Setting it to: " <<
-      save_parameters.image_format << std::endl;
+    RCLCPP_WARN_STREAM(
+      rclcpp::get_logger("map_io"), "Image format unspecified. Setting it to: " <<
+        save_parameters.image_format);
   }
 
   std::transform(
@@ -406,24 +422,25 @@ void checkSaveParameters(SaveParameters & save_parameters)
       ss << "'" << format_name << "'";
       first = false;
     }
-    std::cout <<
-      "[WARN] [map_io]: Requested image format '" << save_parameters.image_format <<
-      "' is not one of the recommended formats: " << ss.str() << std::endl;
+    RCLCPP_WARN_STREAM(
+      rclcpp::get_logger("map_io"), "Requested image format '" << save_parameters.image_format <<
+        "' is not one of the recommended formats: " << ss.str());
   }
   const std::string FALLBACK_FORMAT = "png";
 
   try {
     Magick::CoderInfo info(save_parameters.image_format);
     if (!info.isWritable()) {
-      std::cout <<
-        "[WARN] [map_io]: Format '" << save_parameters.image_format <<
-        "' is not writable. Using '" << FALLBACK_FORMAT << "' instead" << std::endl;
+      RCLCPP_WARN_STREAM(
+        rclcpp::get_logger("map_io"), "Format '" << save_parameters.image_format <<
+          "' is not writable. Using '" << FALLBACK_FORMAT << "' instead");
       save_parameters.image_format = FALLBACK_FORMAT;
     }
   } catch (Magick::ErrorOption & e) {
-    std::cout <<
-      "[WARN] [map_io]: Format '" << save_parameters.image_format << "' is not usable. Using '" <<
-      FALLBACK_FORMAT << "' instead:" << std::endl << e.what() << std::endl;
+    RCLCPP_WARN_STREAM(
+      rclcpp::get_logger(
+        "map_io"), "Format '" << save_parameters.image_format << "' is not usable. Using '" <<
+        FALLBACK_FORMAT << "' instead:" << std::endl << e.what());
     save_parameters.image_format = FALLBACK_FORMAT;
   }
 
@@ -434,10 +451,10 @@ void checkSaveParameters(SaveParameters & save_parameters)
     save_parameters.image_format == "jpg" ||
     save_parameters.image_format == "jpeg"))
   {
-    std::cout <<
-      "[WARN] [map_io]: Map mode 'scale' requires transparency, but format '" <<
-      save_parameters.image_format <<
-      "' does not support it. Consider switching image format to 'png'." << std::endl;
+    RCLCPP_WARN_STREAM(
+      rclcpp::get_logger("map_io"), "Map mode 'scale' requires transparency, but format '" <<
+        save_parameters.image_format <<
+        "' does not support it. Consider switching image format to 'png'.");
   }
 }
 
@@ -451,9 +468,10 @@ void tryWriteMapToFile(
   const nav_msgs::msg::OccupancyGrid & map,
   const SaveParameters & save_parameters)
 {
-  std::cout <<
-    "[INFO] [map_io]: Received a " << map.info.width << " X " << map.info.height << " map @ " <<
-    map.info.resolution << " m/pix" << std::endl;
+  RCLCPP_INFO_STREAM(
+    rclcpp::get_logger(
+      "map_io"), "Received a " << map.info.width << " X " << map.info.height << " map @ " <<
+      map.info.resolution << " m/pix");
 
   std::string mapdatafile = save_parameters.map_file_name + "." + save_parameters.image_format;
   {
@@ -509,14 +527,18 @@ void tryWriteMapToFile(
             pixel = Magick::Color(q, q, q);
             break;
           default:
-            std::cerr << "[ERROR] [map_io]: Map mode should be Trinary, Scale or Raw" << std::endl;
+            RCLCPP_ERROR_STREAM(
+              rclcpp::get_logger(
+                "map_io"), "Map mode should be Trinary, Scale or Raw");
             throw std::runtime_error("Invalid map mode");
         }
         image.pixelColor(x, y, pixel);
       }
     }
 
-    std::cout << "[INFO] [map_io]: Writing map occupancy data to " << mapdatafile << std::endl;
+    RCLCPP_INFO_STREAM(
+      rclcpp::get_logger("map_io"),
+      "Writing map occupancy data to " << mapdatafile);
     image.write(mapdatafile);
   }
 
@@ -545,15 +567,15 @@ void tryWriteMapToFile(
     e << YAML::Key << "free_thresh" << YAML::Value << save_parameters.free_thresh;
 
     if (!e.good()) {
-      std::cout <<
-        "[WARN] [map_io]: YAML writer failed with an error " << e.GetLastError() <<
-        ". The map metadata may be invalid." << std::endl;
+      RCLCPP_ERROR_STREAM(
+        rclcpp::get_logger("map_io"), "YAML writer failed with an error " << e.GetLastError() <<
+          ". The map metadata may be invalid.");
     }
 
-    std::cout << "[INFO] [map_io]: Writing map metadata to " << mapmetadatafile << std::endl;
+    RCLCPP_INFO_STREAM(rclcpp::get_logger("map_io"), "Writing map metadata to " << mapmetadatafile);
     std::ofstream(mapmetadatafile) << e.c_str();
   }
-  std::cout << "[INFO] [map_io]: Map saved" << std::endl;
+  RCLCPP_INFO_STREAM(rclcpp::get_logger("map_io"), "Map saved");
 }
 
 bool saveMapToFile(
@@ -569,7 +591,9 @@ bool saveMapToFile(
 
     tryWriteMapToFile(map, save_parameters_loc);
   } catch (std::exception & e) {
-    std::cout << "[ERROR] [map_io]: Failed to write map for reason: " << e.what() << std::endl;
+    RCLCPP_ERROR_STREAM(
+      rclcpp::get_logger("map_io"),
+      "Failed to write map for reason: " << e.what());
     return false;
   }
   return true;

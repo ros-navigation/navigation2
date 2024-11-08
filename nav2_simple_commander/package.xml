@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>nav2_simple_commander</name>
-  <version>1.3.2</version>
+  <version>1.3.3</version>
   <description>An importable library for writing mobile robot applications in python3</description>
   <maintainer email="stevenmacenski@gmail.com">steve</maintainer>
   <license>Apache-2.0</license>

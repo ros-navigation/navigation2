@@ -143,7 +143,8 @@ public:
   void setCommonParameters();
   void addPolygon(
     const std::string & polygon_name, const PolygonType type,
-    const double size, const std::string & at);
+    const double size, const std::string & at,
+    const std::vector<std::string> & sources_names = std::vector<std::string>());
   void addPolygonVelocitySubPolygon(
     const std::string & polygon_name, const std::string & sub_polygon_name,
     const double linear_min, const double linear_max,
@@ -309,7 +310,8 @@ void Tester::setCommonParameters()
 
 void Tester::addPolygon(
   const std::string & polygon_name, const PolygonType type,
-  const double size, const std::string & at)
+  const double size, const std::string & at,
+  const std::vector<std::string> & sources_names)
 {
   if (type == POLYGON) {
     cm_->declare_parameter(
@@ -408,6 +410,13 @@ void Tester::addPolygon(
     polygon_name + ".polygon_pub_topic", rclcpp::ParameterValue(polygon_name));
   cm_->set_parameter(
     rclcpp::Parameter(polygon_name + ".polygon_pub_topic", polygon_name));
+
+  if (!sources_names.empty()) {
+    cm_->declare_parameter(
+      polygon_name + ".sources_names", rclcpp::ParameterValue(sources_names));
+    cm_->set_parameter(
+      rclcpp::Parameter(polygon_name + ".sources_names", sources_names));
+  }
 }
 
 void Tester::addPolygonVelocitySubPolygon(
@@ -1499,9 +1508,10 @@ TEST_F(Tester, testCollisionPointsMarkers)
   // Share TF
   sendTransforms(curr_time);
 
+  // No source published, empty marker array published
   publishCmdVel(0.5, 0.2, 0.1);
   ASSERT_TRUE(waitCollisionPointsMarker(500ms));
-  ASSERT_EQ(collision_points_marker_msg_->markers[0].points.size(), 0u);
+  ASSERT_EQ(collision_points_marker_msg_->markers.size(), 0u);
 
   publishScan(0.5, curr_time);
   ASSERT_TRUE(waitData(0.5, 500ms, curr_time));
@@ -1575,6 +1585,48 @@ TEST_F(Tester, testVelocityPolygonStop)
   ASSERT_TRUE(waitActionState(500ms));
   ASSERT_EQ(action_state_->action_type, STOP);
   ASSERT_EQ(action_state_->polygon_name, "VelocityPoylgon");
+
+  // Stop Collision Monitor node
+  cm_->stop();
+}
+
+TEST_F(Tester, testSourceAssociatedToPolygon)
+{
+  // Set Collision Monitor parameters:
+  // - 2 sources (scan and range)
+  // - 1 stop polygon associated to range source
+  // - 1 slowdown polygon (associated with all sources by default)
+  setCommonParameters();
+  addSource(SCAN_NAME, SCAN);
+  addSource(RANGE_NAME, RANGE);
+  std::vector<std::string> range_only_sources_names = {RANGE_NAME};
+  std::vector<std::string> all_sources_names = {SCAN_NAME, RANGE_NAME};
+  addPolygon("StopOnRangeSource", POLYGON, 1.0, "stop", range_only_sources_names);
+  addPolygon("SlowdownOnAllSources", POLYGON, 1.0, "slowdown");
+  setVectors({"StopOnRangeSource", "SlowdownOnAllSources"}, {SCAN_NAME, RANGE_NAME});
+
+  // Start Collision Monitor node
+  cm_->start();
+
+  // Share TF
+  rclcpp::Time curr_time = cm_->now();
+  sendTransforms(curr_time);
+
+  // Publish sources so that :
+  // - scan obstacle is in polygons
+  // - range obstacle is far away from polygons
+  publishScan(0.5, curr_time);
+  publishRange(4.5, curr_time);
+  ASSERT_TRUE(waitData(0.5, 500ms, curr_time));
+
+  // Publish cmd vel
+  publishCmdVel(0.5, 0.0, 0.0);
+  ASSERT_TRUE(waitCmdVel(500ms));
+
+  // Since the stop polygon is only checking range source, slowdown action should be applied
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, SLOWDOWN);
+  ASSERT_EQ(action_state_->polygon_name, "SlowdownOnAllSources");
 
   // Stop Collision Monitor node
   cm_->stop();

@@ -40,7 +40,7 @@ CollisionDetector::~CollisionDetector()
 }
 
 nav2_util::CallbackReturn
-CollisionDetector::on_configure(const rclcpp_lifecycle::State & /*state*/)
+CollisionDetector::on_configure(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
 
@@ -60,6 +60,7 @@ CollisionDetector::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   // Obtaining ROS parameters
   if (!getParameters()) {
+    on_cleanup(state);
     return nav2_util::CallbackReturn::FAILURE;
   }
 
@@ -168,14 +169,14 @@ bool CollisionDetector::getParameters()
   const bool base_shift_correction =
     get_parameter("base_shift_correction").as_bool();
 
-  if (!configurePolygons(base_frame_id, transform_tolerance)) {
-    return false;
-  }
-
   if (!configureSources(
       base_frame_id, odom_frame_id, transform_tolerance, source_timeout,
       base_shift_correction))
   {
+    return false;
+  }
+
+  if (!configurePolygons(base_frame_id, transform_tolerance)) {
     return false;
   }
 

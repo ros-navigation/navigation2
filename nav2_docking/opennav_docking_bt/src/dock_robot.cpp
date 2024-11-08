@@ -31,7 +31,8 @@ DockRobotAction::DockRobotAction(
 void DockRobotAction::on_tick()
 {
   // Get core inputs about what to perform
-  if (getInput("use_dock_id", goal_.use_dock_id)) {
+  [[maybe_unused]] auto res = getInput("use_dock_id", goal_.use_dock_id);
+  if (goal_.use_dock_id) {
     getInput("dock_id", goal_.dock_id);
   } else {
     getInput("dock_pose", goal_.dock_pose);
