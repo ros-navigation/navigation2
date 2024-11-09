@@ -45,9 +45,8 @@ public:
    * @returns True if command is valid, false otherwise.
    */
   bool computeVelocityCommand(
-    const geometry_msgs::msg::Pose & pose, geometry_msgs::msg::Twist & cmd,
+    const geometry_msgs::msg::Pose & pose,const geometry_msgs::msg::Pose & robot_pose, geometry_msgs::msg::Twist & cmd,
     bool backward = false);
-  
 
   /**
    * @brief Callback executed when a parameter change is detected
@@ -69,6 +68,7 @@ public:
 
 protected:
   std::unique_ptr<nav2_graceful_controller::SmoothControlLaw> control_law_;
+
   double k_phi_, k_delta_, beta_, lambda_;
   double slowdown_radius_, v_linear_min_, v_linear_max_, v_angular_max_,v_angular_min_;
 };

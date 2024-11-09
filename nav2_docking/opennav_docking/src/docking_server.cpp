@@ -41,7 +41,8 @@ DockingServer::DockingServer(const rclcpp::NodeOptions & options)
   declare_parameter("dock_backwards", false);
   declare_parameter("dock_prestaging_tolerance", 0.5);
   declare_parameter("initial_rotation", true);
-  declare_parameter("initial_rotation_min_angle", 0.3);
+  declare_parameter("initial_rotation_min_angle", 0.5);
+  declare_parameter("dock_backwards_without_sensor", true);
 }
 
 nav2_util::CallbackReturn
@@ -63,6 +64,7 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
   get_parameter("dock_prestaging_tolerance", dock_prestaging_tolerance_);
   get_parameter("initial_rotation", initial_rotation_);
   get_parameter("initial_rotation_min_angle", initial_rotation_min_angle_);
+  get_parameter("dock_backwards_without_sensor", dock_backwards_without_sensor_);
   RCLCPP_INFO(get_logger(), "Controller frequency set to %.4fHz", controller_frequency_);
 
   vel_publisher_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel", 1);
@@ -389,6 +391,17 @@ void DockingServer::doInitialPerception(Dock * dock, geometry_msgs::msg::PoseSta
   publishDockingFeedback(DockRobot::Feedback::INITIAL_PERCEPTION);
   rclcpp::Rate loop_rate(controller_frequency_);
   auto start = this->now();
+  // If docking without sensors, stop the robot for short time to get a stable and quality detection of docking pose
+  if(dock_backwards_without_sensor_){
+      publishZeroVelocity();
+      while (rclcpp::ok()) {
+        if (this->now() - start > rclcpp::Duration::from_seconds(1.0)) {
+          break;
+        }
+      }
+  }
+
+  start = this->now();
   auto timeout = rclcpp::Duration::from_seconds(initial_perception_timeout_);
   while (!dock->plugin->getRefinedPose(dock_pose, dock->id)) {
     if (this->now() - start > timeout) {
@@ -426,7 +439,7 @@ bool DockingServer::approachDock(Dock * dock, geometry_msgs::msg::PoseStamped & 
     }
 
     // Update perception
-    if (!dock->plugin->getRefinedPose(dock_pose, dock->id)) {
+    if (!dock_backwards_without_sensor_ && !dock->plugin->getRefinedPose(dock_pose, dock->id)) {
       throw opennav_docking_core::FailedToDetectDock("Failed dock detection");
     }
 
@@ -442,16 +455,16 @@ bool DockingServer::approachDock(Dock * dock, geometry_msgs::msg::PoseStamped & 
     }
 
     // Compute and publish controls
-    geometry_msgs::msg::Twist command;
+    auto command = std::make_unique<geometry_msgs::msg::TwistStamped>();
 
     geometry_msgs::msg::PoseStamped robot_pose = getRobotPoseInFrame(target_pose.header.frame_id);
     const double angle_to_goal = angles::shortest_angular_distance(
     tf2::getYaw(robot_pose.pose.orientation), atan2(robot_pose.pose.position.y - target_pose.pose.position.y, robot_pose.pose.position.x - target_pose.pose.position.x));
 
-    // Compute and publish controls
-    auto command = std::make_unique<geometry_msgs::msg::TwistStamped>();
-    command->header.stamp = now();
-    if (!controller_->computeVelocityCommand(target_pose.pose, command->twist, dock_backwards_)) {
+    if(initial_rotation_ && fabs(angle_to_goal) > initial_rotation_min_angle_){
+      command->twist = controller_->rotateToTarget(angle_to_goal);
+    }
+    else if (!controller_->computeVelocityCommand(target_pose.pose, robot_pose.pose, command->twist, dock_backwards_)) {
       throw opennav_docking_core::FailedToControl("Failed to get control");
     }
     vel_publisher_->publish(std::move(command));
@@ -750,6 +763,9 @@ DockingServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> paramete
     } else if(type == ParameterType::PARAMETER_BOOL){
       if (name == "initial_rotation") {
         initial_rotation_ = parameter.as_bool();
+      }
+      if (name == "dock_backwards_without_sensor") {
+        dock_backwards_without_sensor_ = parameter.as_bool();
       }
     }
   }
