@@ -149,6 +149,13 @@ protected:
     const geometry_msgs::msg::PoseStamped & pose);
 
   /**
+   * @brief Checks if the goal has changed based on the given path.
+   * @param path The path to compare with the current goal.
+   * @return True if the goal has changed, false otherwise.
+   */
+  bool isGoalChanged(const nav_msgs::msg::Path & path);
+
+  /**
    * @brief Callback executed when a parameter change is detected
    * @param event ParameterEvent message
    */
@@ -168,10 +175,10 @@ protected:
   nav2_core::Controller::Ptr primary_controller_;
   bool path_updated_;
   nav_msgs::msg::Path current_path_;
-  double forward_sampling_distance_, angular_dist_threshold_;
+  double forward_sampling_distance_, angular_dist_threshold_, angular_disengage_threshold_;
   double rotate_to_heading_angular_vel_, max_angular_accel_;
   double control_duration_, simulate_ahead_time_;
-  bool rotate_to_goal_heading_;
+  bool rotate_to_goal_heading_, in_rotation_, rotate_to_heading_once_;
 
   // Dynamic parameters handler
   std::mutex mutex_;

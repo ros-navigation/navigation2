@@ -362,10 +362,8 @@ TEST(NodeHybridTest, test_node_reeds_neighbors)
     std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, 72, lnode);
   checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
   nav2_smac_planner::NodeHybrid * node = new nav2_smac_planner::NodeHybrid(49);
-  std::function<bool(const uint64_t &,
-    nav2_smac_planner::NodeHybrid * &)> neighborGetter =
-    [&, this](const uint64_t & index,
-    nav2_smac_planner::NodeHybrid * & neighbor_rtn) -> bool
+  std::function<bool(const uint64_t &, nav2_smac_planner::NodeHybrid * &)> neighborGetter =
+    [](const uint64_t &, nav2_smac_planner::NodeHybrid * &) -> bool
     {
       // because we don't return a real object
       return false;
@@ -396,7 +394,7 @@ TEST(NodeHybridTest, basic_get_closest_angular_bin_test)
   {
     motion_table.bin_size = M_PI;
     motion_table.num_angle_quantization = 2;
-    double test_theta = M_PI;
+    double test_theta = M_PI / 2.0 - 0.000001;
     unsigned int expected_angular_bin = 0;
     unsigned int calculated_angular_bin = motion_table.getClosestAngularBin(test_theta);
     EXPECT_EQ(expected_angular_bin, calculated_angular_bin);
@@ -414,8 +412,8 @@ TEST(NodeHybridTest, basic_get_closest_angular_bin_test)
   {
     motion_table.bin_size = 0.0872664675;
     motion_table.num_angle_quantization = 72;
-    double test_theta = 6.28318526567925;
-    unsigned int expected_angular_bin = 71;
+    double test_theta = 6.28317530718;  // 0.0001 less than 2 pi
+    unsigned int expected_angular_bin = 0;  // should be closer to wrap around
     unsigned int calculated_angular_bin = motion_table.getClosestAngularBin(test_theta);
     EXPECT_EQ(expected_angular_bin, calculated_angular_bin);
   }

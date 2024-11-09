@@ -44,7 +44,8 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
   default_goal_checker_types_{"nav2_controller::SimpleGoalChecker"},
   lp_loader_("nav2_core", "nav2_core::Controller"),
   default_ids_{"FollowPath"},
-  default_types_{"dwb_core::DWBLocalPlanner"}
+  default_types_{"dwb_core::DWBLocalPlanner"},
+  costmap_update_timeout_(300ms)
 {
   RCLCPP_INFO(get_logger(), "Creating controller server");
 
@@ -63,6 +64,8 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
 
   declare_parameter("failure_tolerance", rclcpp::ParameterValue(0.0));
   declare_parameter("use_realtime_priority", rclcpp::ParameterValue(false));
+  declare_parameter("publish_zero_velocity", rclcpp::ParameterValue(true));
+  declare_parameter("costmap_update_timeout", 0.30);  // 300ms
 
   // The costmap node is used in the implementation of the controller
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
@@ -79,7 +82,7 @@ ControllerServer::~ControllerServer()
 }
 
 nav2_util::CallbackReturn
-ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
+ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 {
   auto node = shared_from_this();
 
@@ -128,6 +131,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   get_parameter("speed_limit_topic", speed_limit_topic);
   get_parameter("failure_tolerance", failure_tolerance_);
   get_parameter("use_realtime_priority", use_realtime_priority_);
+  get_parameter("publish_zero_velocity", publish_zero_velocity_);
 
   costmap_ros_->configure();
   // Launch a thread to run the costmap node
@@ -148,6 +152,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
       RCLCPP_FATAL(
         get_logger(),
         "Failed to create progress_checker. Exception: %s", ex.what());
+      on_cleanup(state);
       return nav2_util::CallbackReturn::FAILURE;
     }
   }
@@ -174,6 +179,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
       RCLCPP_FATAL(
         get_logger(),
         "Failed to create goal checker. Exception: %s", ex.what());
+      on_cleanup(state);
       return nav2_util::CallbackReturn::FAILURE;
     }
   }
@@ -202,6 +208,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
       RCLCPP_FATAL(
         get_logger(),
         "Failed to create controller. Exception: %s", ex.what());
+      on_cleanup(state);
       return nav2_util::CallbackReturn::FAILURE;
     }
   }
@@ -222,6 +229,10 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   rcl_action_server_options_t server_options = rcl_action_server_get_default_options();
   server_options.result_timeout.nanoseconds = RCL_S_TO_NS(action_server_result_timeout);
 
+  double costmap_update_timeout_dbl;
+  get_parameter("costmap_update_timeout", costmap_update_timeout_dbl);
+  costmap_update_timeout_ = rclcpp::Duration::from_seconds(costmap_update_timeout_dbl);
+
   // Create the action server that we implement with our followPath method
   // This may throw due to real-time prioritzation if user doesn't have real-time permissions
   try {
@@ -234,6 +245,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
       true /*spin thread*/, server_options, use_realtime_priority_ /*soft realtime*/);
   } catch (const std::runtime_error & e) {
     RCLCPP_ERROR(get_logger(), "Error creating action server! %s", e.what());
+    on_cleanup(state);
     return nav2_util::CallbackReturn::FAILURE;
   }
 
@@ -470,7 +482,7 @@ void ControllerServer::computeControl()
         if (controllers_[current_controller_]->cancel()) {
           RCLCPP_INFO(get_logger(), "Cancellation was successful. Stopping the robot.");
           action_server_->terminate_all();
-          publishZeroVelocity();
+          onGoalExit();
           return;
         } else {
           RCLCPP_INFO_THROTTLE(
@@ -480,7 +492,11 @@ void ControllerServer::computeControl()
 
       // Don't compute a trajectory until costmap is valid (after clear costmap)
       rclcpp::Rate r(100);
+      auto waiting_start = now();
       while (!costmap_ros_->isCurrent()) {
+        if (now() - waiting_start > costmap_update_timeout_) {
+          throw nav2_core::ControllerTimedOut("Costmap timed out waiting for update");
+        }
         r.sleep();
       }
 
@@ -503,56 +519,63 @@ void ControllerServer::computeControl()
     }
   } catch (nav2_core::InvalidController & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    publishZeroVelocity();
+    onGoalExit();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::INVALID_CONTROLLER;
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::ControllerTFError & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    publishZeroVelocity();
+    onGoalExit();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::TF_ERROR;
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::NoValidControl & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    publishZeroVelocity();
+    onGoalExit();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::NO_VALID_CONTROL;
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::FailedToMakeProgress & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    publishZeroVelocity();
+    onGoalExit();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::FAILED_TO_MAKE_PROGRESS;
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::PatienceExceeded & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    publishZeroVelocity();
+    onGoalExit();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::PATIENCE_EXCEEDED;
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::InvalidPath & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    publishZeroVelocity();
+    onGoalExit();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::INVALID_PATH;
     action_server_->terminate_current(result);
     return;
+  } catch (nav2_core::ControllerTimedOut & e) {
+    RCLCPP_ERROR(this->get_logger(), "%s", e.what());
+    onGoalExit();
+    std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
+    result->error_code = Action::Result::CONTROLLER_TIMED_OUT;
+    action_server_->terminate_current(result);
+    return;
   } catch (nav2_core::ControllerException & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    publishZeroVelocity();
+    onGoalExit();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::UNKNOWN;
     action_server_->terminate_current(result);
     return;
   } catch (std::exception & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    publishZeroVelocity();
+    onGoalExit();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::UNKNOWN;
     action_server_->terminate_current(result);
@@ -561,7 +584,7 @@ void ControllerServer::computeControl()
 
   RCLCPP_DEBUG(get_logger(), "Controller succeeded, setting result");
 
-  publishZeroVelocity();
+  onGoalExit();
 
   // TODO(orduno) #861 Handle a pending preemption and set controller name
   action_server_->succeeded_current();
@@ -729,6 +752,13 @@ void ControllerServer::publishZeroVelocity()
   velocity.header.frame_id = costmap_ros_->getBaseFrameID();
   velocity.header.stamp = now();
   publishVelocity(velocity);
+}
+
+void ControllerServer::onGoalExit()
+{
+  if (publish_zero_velocity_) {
+    publishZeroVelocity();
+  }
 
   // Reset the state of the controllers after the task has ended
   ControllerMap::iterator it;

@@ -44,7 +44,7 @@ VelocitySmoother::~VelocitySmoother()
 }
 
 nav2_util::CallbackReturn
-VelocitySmoother::on_configure(const rclcpp_lifecycle::State &)
+VelocitySmoother::on_configure(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Configuring velocity smoother");
   auto node = shared_from_this();
@@ -76,24 +76,35 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State &)
 
   for (unsigned int i = 0; i != 3; i++) {
     if (max_decels_[i] > 0.0) {
-      throw std::runtime_error(
-              "Positive values set of deceleration! These should be negative to slow down!");
+      RCLCPP_ERROR(
+        get_logger(),
+        "Positive values set of deceleration! These should be negative to slow down!");
+      on_cleanup(state);
+      return nav2_util::CallbackReturn::FAILURE;
     }
     if (max_accels_[i] < 0.0) {
-      throw std::runtime_error(
-              "Negative values set of acceleration! These should be positive to speed up!");
+      RCLCPP_ERROR(
+        get_logger(),
+        "Negative values set of acceleration! These should be positive to speed up!");
+      on_cleanup(state);
+      return nav2_util::CallbackReturn::FAILURE;
     }
     if (min_velocities_[i] > 0.0) {
-      throw std::runtime_error(
-              "Positive values set of min_velocities! These should be negative!");
+      RCLCPP_ERROR(
+        get_logger(), "Positive values set of min_velocities! These should be negative!");
+      on_cleanup(state);
+      return nav2_util::CallbackReturn::FAILURE;
     }
     if (max_velocities_[i] < 0.0) {
-      throw std::runtime_error(
-              "Negative values set of max_velocities! These should be positive!");
+      RCLCPP_ERROR(
+        get_logger(), "Negative values set of max_velocities! These should be positive!");
+      on_cleanup(state);
+      return nav2_util::CallbackReturn::FAILURE;
     }
     if (min_velocities_[i] > max_velocities_[i]) {
-      throw std::runtime_error(
-              "Min velocities are higher than max velocities!");
+      RCLCPP_ERROR(get_logger(), "Min velocities are higher than max velocities!");
+      on_cleanup(state);
+      return nav2_util::CallbackReturn::FAILURE;
     }
   }
 
@@ -112,9 +123,12 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State &)
   if (max_velocities_.size() != 3 || min_velocities_.size() != 3 ||
     max_accels_.size() != 3 || max_decels_.size() != 3 || deadband_velocities_.size() != 3)
   {
-    throw std::runtime_error(
-            "Invalid setting of kinematic and/or deadband limits!"
-            " All limits must be size of 3 representing (x, y, theta).");
+    RCLCPP_ERROR(
+      get_logger(),
+      "Invalid setting of kinematic and/or deadband limits!"
+      " All limits must be size of 3 representing (x, y, theta).");
+    on_cleanup(state);
+    return nav2_util::CallbackReturn::FAILURE;
   }
 
   // Get control type
@@ -124,7 +138,11 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State &)
     open_loop_ = false;
     odom_smoother_ = std::make_unique<nav2_util::OdomSmoother>(node, odom_duration_, odom_topic_);
   } else {
-    throw std::runtime_error("Invalid feedback_type, options are OPEN_LOOP and CLOSED_LOOP.");
+    RCLCPP_ERROR(
+      get_logger(),
+      "Invalid feedback_type, options are OPEN_LOOP and CLOSED_LOOP.");
+    on_cleanup(state);
+    return nav2_util::CallbackReturn::FAILURE;
   }
 
   // Setup inputs / outputs
@@ -144,6 +162,7 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State &)
       nav2_util::setSoftRealTimePriority();
     } catch (const std::runtime_error & e) {
       RCLCPP_ERROR(get_logger(), "%s", e.what());
+      on_cleanup(state);
       return nav2_util::CallbackReturn::FAILURE;
     }
   }

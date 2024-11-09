@@ -8,25 +8,30 @@
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+  <build_depend>nav2_common</build_depend>
 
   <depend>angles</depend>
-  <depend>rclcpp</depend>
-  <depend>rclcpp_action</depend>
-  <depend>rclcpp_lifecycle</depend>
+  <depend>geometry_msgs</depend>
   <depend>nav2_graceful_controller</depend>
   <depend>nav2_msgs</depend>
   <depend>nav2_util</depend>
   <depend>nav_msgs</depend>
-  <depend>geometry_msgs</depend>
-  <depend>builtin_interfaces</depend>
-  <depend>sensor_msgs</depend>
-  <depend>pluginlib</depend>
-  <depend>yaml_cpp_vendor</depend>
   <depend>opennav_docking_core</depend>
+  <depend>pluginlib</depend>
+  <depend>rclcpp</depend>
+  <depend>rclcpp_action</depend>
+  <depend>rclcpp_components</depend>
+  <depend>rclcpp_lifecycle</depend>
+  <depend>rcl_interfaces</depend>
+  <depend>sensor_msgs</depend>
+  <depend>tf2</depend>
+  <depend>tf2_geometry_msgs</depend>
   <depend>tf2_ros</depend>
+  <depend>yaml_cpp_vendor</depend>
 
   <test_depend>ament_cmake_gtest</test_depend>
   <test_depend>ament_cmake_pytest</test_depend>
+  <test_depend>ament_index_cpp</test_depend>
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
 

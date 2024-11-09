@@ -17,6 +17,8 @@
 #include <vector>
 #include <string>
 
+#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "nav_msgs/msg/path.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "planner_tester.hpp"
 #include "nav2_util/lifecycle_utils.hpp"

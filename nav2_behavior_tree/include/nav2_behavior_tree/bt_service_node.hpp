@@ -59,9 +59,7 @@ public:
     // Get the required items from the blackboard
     auto bt_loop_duration =
       config().blackboard->template get<std::chrono::milliseconds>("bt_loop_duration");
-    server_timeout_ =
-      config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
-    getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
+    getInputOrBlackboard("server_timeout", server_timeout_);
     wait_for_service_timeout_ =
       config().blackboard->template get<std::chrono::milliseconds>("wait_for_service_timeout");
 

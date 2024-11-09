@@ -11,6 +11,7 @@
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+  <build_depend>nav2_common</build_depend>
 
   <!-- nav2_bringup doesn't belong for recursive dependencies -->
   <exec_depend>nav2_amcl</exec_depend>
