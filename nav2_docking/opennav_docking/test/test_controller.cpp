@@ -39,8 +39,9 @@ TEST(ControllerTests, ObjectLifecycle)
   auto controller = std::make_unique<opennav_docking::Controller>(node);
 
   geometry_msgs::msg::Pose pose;
+  geometry_msgs::msg::Pose robot_pose;
   geometry_msgs::msg::Twist cmd_out, cmd_init;
-  EXPECT_TRUE(controller->computeVelocityCommand(pose, cmd_out));
+  EXPECT_TRUE(controller->computeVelocityCommand(pose,robot_pose, cmd_out));
   EXPECT_NE(cmd_init, cmd_out);
   controller.reset();
 }
@@ -63,6 +64,7 @@ TEST(ControllerTests, DynamicParameters) {
       rclcpp::Parameter("controller.v_linear_min", 5.0),
       rclcpp::Parameter("controller.v_linear_max", 6.0),
       rclcpp::Parameter("controller.v_angular_max", 7.0),
+      rclcpp::Parameter("controller.v_angular_min", 2.0),
       rclcpp::Parameter("controller.slowdown_radius", 8.0)});
 
   // Spin
@@ -76,6 +78,7 @@ TEST(ControllerTests, DynamicParameters) {
   EXPECT_EQ(node->get_parameter("controller.v_linear_min").as_double(), 5.0);
   EXPECT_EQ(node->get_parameter("controller.v_linear_max").as_double(), 6.0);
   EXPECT_EQ(node->get_parameter("controller.v_angular_max").as_double(), 7.0);
+  EXPECT_EQ(node->get_parameter("controller.v_angular_min").as_double(), 2.0);
   EXPECT_EQ(node->get_parameter("controller.slowdown_radius").as_double(), 8.0);
 }
 

@@ -40,6 +40,8 @@ DockingServer::DockingServer(const rclcpp::NodeOptions & options)
   declare_parameter("fixed_frame", "odom");
   declare_parameter("dock_backwards", false);
   declare_parameter("dock_prestaging_tolerance", 0.5);
+  declare_parameter("initial_rotation", true);
+  declare_parameter("initial_rotation_min_angle", 0.3);
 }
 
 nav2_util::CallbackReturn
@@ -59,6 +61,8 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
   get_parameter("fixed_frame", fixed_frame_);
   get_parameter("dock_backwards", dock_backwards_);
   get_parameter("dock_prestaging_tolerance", dock_prestaging_tolerance_);
+  get_parameter("initial_rotation", initial_rotation_);
+  get_parameter("initial_rotation_min_angle", initial_rotation_min_angle_);
   RCLCPP_INFO(get_logger(), "Controller frequency set to %.4fHz", controller_frequency_);
 
   vel_publisher_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel", 1);
@@ -437,15 +441,12 @@ bool DockingServer::approachDock(Dock * dock, geometry_msgs::msg::PoseStamped & 
         tf2::getYaw(target_pose.pose.orientation) + M_PI);
     }
 
-    // The control law can get jittery when close to the end when atan2's can explode.
-    // Thus, we backward project the controller's target pose a little bit after the
-    // dock so that the robot never gets to the end of the spiral before its in contact
-    // with the dock to stop the docking procedure.
-    const double backward_projection = 0.25;
-    const double yaw = tf2::getYaw(target_pose.pose.orientation);
-    target_pose.pose.position.x += cos(yaw) * backward_projection;
-    target_pose.pose.position.y += sin(yaw) * backward_projection;
-    tf2_buffer_->transform(target_pose, target_pose, base_frame_);
+    // Compute and publish controls
+    geometry_msgs::msg::Twist command;
+
+    geometry_msgs::msg::PoseStamped robot_pose = getRobotPoseInFrame(target_pose.header.frame_id);
+    const double angle_to_goal = angles::shortest_angular_distance(
+    tf2::getYaw(robot_pose.pose.orientation), atan2(robot_pose.pose.position.y - target_pose.pose.position.y, robot_pose.pose.position.x - target_pose.pose.position.x));
 
     // Compute and publish controls
     auto command = std::make_unique<geometry_msgs::msg::TwistStamped>();
@@ -557,7 +558,7 @@ bool DockingServer::getCommandToPose(
   tf2_buffer_->transform(target_pose, target_pose, base_frame_);
 
   // Compute velocity command
-  if (!controller_->computeVelocityCommand(target_pose.pose, cmd, backward)) {
+  if (!controller_->computeVelocityCommand(target_pose.pose,robot_pose.pose, cmd, backward)) {
     throw opennav_docking_core::FailedToControl("Failed to get control");
   }
 
@@ -733,6 +734,8 @@ DockingServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> paramete
         undock_linear_tolerance_ = parameter.as_double();
       } else if (name == "undock_angular_tolerance") {
         undock_angular_tolerance_ = parameter.as_double();
+      } else if (name == "initial_rotation_min_angle") {
+        initial_rotation_min_angle_ = parameter.as_double();
       }
     } else if (type == ParameterType::PARAMETER_STRING) {
       if (name == "base_frame") {
@@ -743,6 +746,10 @@ DockingServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> paramete
     } else if (type == ParameterType::PARAMETER_INTEGER) {
       if (name == "max_retries") {
         max_retries_ = parameter.as_int();
+      }
+    } else if(type == ParameterType::PARAMETER_BOOL){
+      if (name == "initial_rotation") {
+        initial_rotation_ = parameter.as_bool();
       }
     }
   }

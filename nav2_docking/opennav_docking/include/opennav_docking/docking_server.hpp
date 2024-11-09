@@ -244,6 +244,10 @@ protected:
   bool dock_backwards_;
   // The tolerance to the dock's staging pose not requiring navigation
   double dock_prestaging_tolerance_;
+  // The difference in the path orientation and the starting robot orientation to trigger a rotate in place, if initial_rotation is enabled.
+  double initial_rotation_min_angle_;
+  // Enable a rotation in place to the goal before starting the path. The control law may generate large sweeping arcs to the goal pose, depending on the initial robot orientation and k_phi, k_delta.
+  bool initial_rotation_;
 
   // This is a class member so it can be accessed in publish feedback
   rclcpp::Time action_start_time_;
