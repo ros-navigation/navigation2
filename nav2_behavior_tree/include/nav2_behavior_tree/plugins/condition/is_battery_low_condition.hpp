@@ -86,7 +86,6 @@ private:
   double min_battery_;
   bool is_voltage_;
   bool is_battery_low_;
-  bool initialized_;
 };
 
 }  // namespace nav2_behavior_tree
