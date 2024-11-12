@@ -86,7 +86,7 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
 
   // Create composed utilities
   mutex_ = std::make_shared<std::mutex>();
-  controller_ = std::make_unique<Controller>(node);
+  controller_ = std::make_unique<Controller>(node, tf2_buffer_, fixed_frame_, base_frame_);
   navigator_ = std::make_unique<Navigator>(node);
   dock_db_ = std::make_unique<DockDatabase>(mutex_);
   if (!dock_db_->initialize(node, tf2_buffer_)) {
@@ -248,8 +248,7 @@ void DockingServer::dockRobot()
     // Send robot to its staging pose
     publishDockingFeedback(DockRobot::Feedback::NAV_TO_STAGING_POSE);
     const auto initial_staging_pose = dock->getStagingPose();
-    const auto robot_pose = getRobotPoseInFrame(
-      initial_staging_pose.header.frame_id);
+    const auto robot_pose = getRobotPoseInFrame(initial_staging_pose.header.frame_id);
     if (!goal->navigate_to_staging_pose ||
       utils::l2Norm(robot_pose.pose, initial_staging_pose.pose) < dock_prestaging_tolerance_)
     {

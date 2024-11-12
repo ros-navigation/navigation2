@@ -1,4 +1,5 @@
 // Copyright (c) 2024 Open Navigation LLC
+// Copyright (c) 2024 Alberto J. Tudela Roldán
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,13 +17,21 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "opennav_docking/controller.hpp"
+#include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/node_utils.hpp"
+#include "nav_2d_utils/conversions.hpp"
+#include "tf2/utils.h"
 
 namespace opennav_docking
 {
 
-Controller::Controller(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node)
+Controller::Controller(
+  const rclcpp_lifecycle::LifecycleNode::SharedPtr & node, std::shared_ptr<tf2_ros::Buffer> tf,
+  std::string fixed_frame, std::string base_frame)
+: tf2_buffer_(tf), fixed_frame_(fixed_frame), base_frame_(base_frame)
 {
+  logger_ = node->get_logger();
+
   nav2_util::declare_parameter_if_not_declared(
     node, "controller.k_phi", rclcpp::ParameterValue(3.0));
   nav2_util::declare_parameter_if_not_declared(
@@ -39,6 +48,22 @@ Controller::Controller(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node)
     node, "controller.v_angular_max", rclcpp::ParameterValue(0.75));
   nav2_util::declare_parameter_if_not_declared(
     node, "controller.slowdown_radius", rclcpp::ParameterValue(0.25));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "controller.use_collision_detection", rclcpp::ParameterValue(true));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "controller.costmap_topic",
+    rclcpp::ParameterValue(std::string("local_costmap/costmap_raw")));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "controller.footprint_topic", rclcpp::ParameterValue(
+      std::string("local_costmap/published_footprint")));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "controller.transform_tolerance", rclcpp::ParameterValue(0.1));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "controller.projection_time", rclcpp::ParameterValue(5.0));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "controller.simulation_time_step", rclcpp::ParameterValue(0.1));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "controller.collision_tolerance", rclcpp::ParameterValue(0.30));
 
   node->get_parameter("controller.k_phi", k_phi_);
   node->get_parameter("controller.k_delta", k_delta_);
@@ -55,6 +80,32 @@ Controller::Controller(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node)
   // Add callback for dynamic parameters
   dyn_params_handler_ = node->add_on_set_parameters_callback(
     std::bind(&Controller::dynamicParametersCallback, this, std::placeholders::_1));
+
+  node->get_parameter("controller.use_collision_detection", use_collision_detection_);
+  node->get_parameter("controller.projection_time", projection_time_);
+  node->get_parameter("controller.simulation_time_step", simulation_time_step_);
+
+  if (use_collision_detection_) {
+    double transform_tolerance;
+    std::string costmap_topic, footprint_topic;
+    node->get_parameter("controller.costmap_topic", costmap_topic);
+    node->get_parameter("controller.footprint_topic", footprint_topic);
+    node->get_parameter("controller.transform_tolerance", transform_tolerance);
+    node->get_parameter("controller.collision_tolerance", collision_tolerance_);
+    configureCollisionChecker(node, costmap_topic, footprint_topic, transform_tolerance);
+  }
+
+  trajectory_pub_ =
+    node->create_publisher<nav_msgs::msg::Path>(node->get_name() + std::string("/trajectory"), 1);
+}
+
+Controller::~Controller()
+{
+  control_law_.reset();
+  trajectory_pub_.reset();
+  costmap_sub_.reset();
+  footprint_sub_.reset();
+  collision_checker_.reset();
 }
 
 bool Controller::computeVelocityCommand(
@@ -62,7 +113,63 @@ bool Controller::computeVelocityCommand(
 {
   std::lock_guard<std::mutex> lock(dynamic_params_lock_);
   cmd = control_law_->calculateRegularVelocity(pose, backward);
+  return isTrajectoryCollisionFree(pose, backward);
+}
+
+bool Controller::isTrajectoryCollisionFree(
+  const geometry_msgs::msg::Pose & target_pose, bool backward)
+{
+  // Visualization of the trajectory
+  nav_msgs::msg::Path trajectory;
+  trajectory.header.frame_id = base_frame_;
+
+  // First pose
+  geometry_msgs::msg::PoseStamped next_pose;
+  next_pose.header.frame_id = base_frame_;
+  next_pose.pose.orientation.w = 1.0;
+  trajectory.poses.push_back(next_pose);
+
+  // Generate path
+  for (double t = 0; t < projection_time_; t += simulation_time_step_) {
+    // Apply velocities to calculate next pose
+    next_pose.pose = control_law_->calculateNextPose(
+      simulation_time_step_, target_pose, next_pose.pose, backward);
+
+    // Add the pose to the trajectory for visualization
+    trajectory.poses.push_back(next_pose);
+
+    // Transform pose from base_frame into fixed_frame
+    geometry_msgs::msg::PoseStamped local_pose = next_pose;
+    local_pose.header.stamp = rclcpp::Time(0);
+    tf2_buffer_->transform(local_pose, local_pose, fixed_frame_);
+
+    // Check for collisions at the projected pose
+    auto projected_pose = nav_2d_utils::poseToPose2D(local_pose.pose);
+    double distance = nav2_util::geometry_utils::euclidean_distance(target_pose, next_pose.pose);
+    if (use_collision_detection_ &&
+      !collision_checker_->isCollisionFree(projected_pose) && distance > collision_tolerance_)
+    {
+      RCLCPP_INFO(
+        logger_, "Collision detected at pose: (%.2f, %.2f, %.2f) in frame %s",
+        projected_pose.x, projected_pose.y, projected_pose.theta, fixed_frame_.c_str());
+      return false;
+    }
+  }
+
+  trajectory_pub_->publish(trajectory);
+
   return true;
+}
+
+void Controller::configureCollisionChecker(
+  const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
+  std::string costmap_topic, std::string footprint_topic, double transform_tolerance)
+{
+  costmap_sub_ = std::make_unique<nav2_costmap_2d::CostmapSubscriber>(node, costmap_topic);
+  footprint_sub_ = std::make_unique<nav2_costmap_2d::FootprintSubscriber>(
+    node, footprint_topic, *tf2_buffer_, base_frame_, transform_tolerance);
+  collision_checker_ = std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
+    *costmap_sub_, *footprint_sub_, node->get_name());
 }
 
 rcl_interfaces::msg::SetParametersResult
@@ -92,6 +199,10 @@ Controller::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
         v_angular_max_ = parameter.as_double();
       } else if (name == "controller.slowdown_radius") {
         slowdown_radius_ = parameter.as_double();
+      } else if (name == "controller.projection_time") {
+        projection_time_ = parameter.as_double();
+      } else if (name == "controller.simulation_time_step") {
+        simulation_time_step_ = parameter.as_double();
       }
 
       // Update the smooth control law with the new params
