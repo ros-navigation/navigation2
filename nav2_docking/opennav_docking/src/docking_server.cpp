@@ -426,6 +426,7 @@ void DockingServer::rotateToDock(const geometry_msgs::msg::PoseStamped & dock_po
   rclcpp::Rate loop_rate(controller_frequency_);
   geometry_msgs::msg::PoseStamped robot_pose = getRobotPoseInFrame(dock_pose.header.frame_id);
   double angle_to_goal;
+  auto command = std::make_unique<geometry_msgs::msg::TwistStamped>();
   while(rclcpp::ok()){
     angle_to_goal = angles::shortest_angular_distance(tf2::getYaw(robot_pose.pose.orientation), 
     atan2(robot_pose.pose.position.y - dock_pose.pose.position.y, 
@@ -433,6 +434,7 @@ void DockingServer::rotateToDock(const geometry_msgs::msg::PoseStamped & dock_po
     if(fabs(angle_to_goal) > 0.1){
       break;
     }
+    command->header.stamp = now();
     command = controller_->rotateToTarget(angle_to_goal);
     vel_publisher_->publish(command);
     loop_rate.sleep();
@@ -478,6 +480,7 @@ bool DockingServer::approachDock(Dock * dock, geometry_msgs::msg::PoseStamped & 
     // Compute and publish controls
     auto command = std::make_unique<geometry_msgs::msg::TwistStamped>();
     command->header.stamp = now();
+    geometry_msgs::msg::PoseStamped robot_pose = getRobotPoseInFrame(dock_pose.header.frame_id);
     if (!controller_->computeVelocityCommand(target_pose.pose, robot_pose.pose, command->twist, dock_backwards_)) {
       throw opennav_docking_core::FailedToControl("Failed to get control");
     }

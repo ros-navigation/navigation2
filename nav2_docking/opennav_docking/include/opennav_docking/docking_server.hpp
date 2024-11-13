@@ -95,7 +95,7 @@ public:
   /**
   * @brief Perform a pure rotation to dock orientation.
   */
-  void DockingServer::rotateToDock(const geometry_msgs::msg::PoseStamped & dock_pose);
+  void rotateToDock(const geometry_msgs::msg::PoseStamped & dock_pose);
 
 
   /**
