@@ -41,7 +41,7 @@ TEST(ControllerTests, ObjectLifecycle)
   geometry_msgs::msg::Pose pose;
   geometry_msgs::msg::Pose robot_pose;
   geometry_msgs::msg::Twist cmd_out, cmd_init;
-  EXPECT_TRUE(controller->computeVelocityCommand(pose,robot_pose, cmd_out));
+  EXPECT_TRUE(controller->computeVelocityCommand(pose, robot_pose, cmd_out));
   EXPECT_NE(cmd_init, cmd_out);
   controller.reset();
 }

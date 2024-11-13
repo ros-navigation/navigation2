@@ -41,7 +41,7 @@ DockingServer::DockingServer(const rclcpp::NodeOptions & options)
   declare_parameter("dock_backwards", false);
   declare_parameter("dock_prestaging_tolerance", 0.5);
   declare_parameter("initial_rotation", true);
-  declare_parameter("backward_blind", false); 
+  declare_parameter("backward_blind", false);
 }
 
 nav2_util::CallbackReturn
@@ -65,11 +65,11 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
   get_parameter("backward_blind", backward_blind_);
   if(backward_blind_ && !dock_backwards_){
     RCLCPP_ERROR(get_logger(), "backward_blind is enabled when dock_backwards is disabled.");
-    return nav2_util::CallbackReturn::FAILURE; 
+    return nav2_util::CallbackReturn::FAILURE;
   } else{
-    // If you have backward_blind and dock_backward then 
-    //we know we need to do the initial rotation to go from forward to reverse 
-    //before doing the rest of the procedure. The initial_rotation would thus always be true.
+    // If you have backward_blind and dock_backward then
+    // we know we need to do the initial rotation to go from forward to reverse
+    // before doing the rest of the procedure. The initial_rotation would thus always be true.
     initial_rotation_ = true;
   }
   RCLCPP_INFO(get_logger(), "Controller frequency set to %.4fHz", controller_frequency_);
@@ -90,7 +90,6 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
     std::bind(&DockingServer::dockRobot, this),
     nullptr, std::chrono::milliseconds(500),
     true, server_options);
-
   undocking_action_server_ = std::make_unique<UndockingActionServer>(
     node, "undock_robot",
     std::bind(&DockingServer::undockRobot, this),
@@ -296,7 +295,6 @@ void DockingServer::dockRobot()
         if(backward_blind_){
           rotateToDock(dock_pose);
         }
-        
         // Approach the dock using control law
         if (approachDock(dock, dock_pose)) {
           // We are docked, wait for charging to begin
@@ -428,8 +426,8 @@ void DockingServer::rotateToDock(const geometry_msgs::msg::PoseStamped & dock_po
   double angle_to_goal;
   auto command = std::make_unique<geometry_msgs::msg::TwistStamped>();
   while(rclcpp::ok()){
-    angle_to_goal = angles::shortest_angular_distance(tf2::getYaw(robot_pose.pose.orientation), 
-    atan2(robot_pose.pose.position.y - dock_pose.pose.position.y, 
+    angle_to_goal = angles::shortest_angular_distance(tf2::getYaw(robot_pose.pose.orientation),
+    atan2(robot_pose.pose.position.y - dock_pose.pose.position.y,
     robot_pose.pose.position.x - dock_pose.pose.position.x));
     if(fabs(angle_to_goal) > 0.1){
       break;
@@ -481,7 +479,8 @@ bool DockingServer::approachDock(Dock * dock, geometry_msgs::msg::PoseStamped & 
     auto command = std::make_unique<geometry_msgs::msg::TwistStamped>();
     command->header.stamp = now();
     geometry_msgs::msg::PoseStamped robot_pose = getRobotPoseInFrame(dock_pose.header.frame_id);
-    if (!controller_->computeVelocityCommand(target_pose.pose, robot_pose.pose, command->twist, dock_backwards_)) {
+    if (!controller_->computeVelocityCommand(target_pose.pose, robot_pose.pose,
+    command->twist, dock_backwards_)) {
       throw opennav_docking_core::FailedToControl("Failed to get control");
     }
     vel_publisher_->publish(std::move(command));
@@ -588,7 +587,7 @@ bool DockingServer::getCommandToPose(
   tf2_buffer_->transform(target_pose, target_pose, base_frame_);
 
   // Compute velocity command
-  if (!controller_->computeVelocityCommand(target_pose.pose,robot_pose.pose, cmd, backward)) {
+  if (!controller_->computeVelocityCommand(target_pose.pose, robot_pose.pose, cmd, backward)) {
     throw opennav_docking_core::FailedToControl("Failed to get control");
   }
 
