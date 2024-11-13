@@ -435,7 +435,7 @@ void DockingServer::rotateToDock(const geometry_msgs::msg::PoseStamped & dock_po
       break;
     }
     command->header.stamp = now();
-    command = controller_->rotateToTarget(angle_to_goal);
+    command->twist = controller_->rotateToTarget(angle_to_goal);
     vel_publisher_->publish(std::move(command));
     loop_rate.sleep();
   }
