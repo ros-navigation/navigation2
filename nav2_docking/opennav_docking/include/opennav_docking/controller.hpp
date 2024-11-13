@@ -46,7 +46,6 @@ public:
    */
   bool computeVelocityCommand(
     const geometry_msgs::msg::Pose & pose,
-    const geometry_msgs::msg::Pose & robot_pose,
     geometry_msgs::msg::Twist & cmd, bool backward = false);
 
   /**

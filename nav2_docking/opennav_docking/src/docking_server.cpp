@@ -471,7 +471,7 @@ bool DockingServer::approachDock(Dock * dock, geometry_msgs::msg::PoseStamped & 
       // Make sure that the target pose is pointing at the robot when moving backwards
       // This is to ensure that the robot doesn't try to dock from the wrong side
       target_pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(
-        yaw + M_PI); 
+        yaw + M_PI);
       target_pose.pose.position.x -= cos(yaw) * backward_projection;
       target_pose.pose.position.y -= sin(yaw) * backward_projection;
     } else {
@@ -483,8 +483,7 @@ bool DockingServer::approachDock(Dock * dock, geometry_msgs::msg::PoseStamped & 
     // Compute and publish controls
     auto command = std::make_unique<geometry_msgs::msg::TwistStamped>();
     command->header.stamp = now();
-    geometry_msgs::msg::PoseStamped robot_pose = getRobotPoseInFrame(dock_pose.header.frame_id);
-    if (!controller_->computeVelocityCommand(target_pose.pose, robot_pose.pose,
+    if (!controller_->computeVelocityCommand(target_pose.pose,
     command->twist, dock_backwards_))
     {
       throw opennav_docking_core::FailedToControl("Failed to get control");
@@ -593,7 +592,7 @@ bool DockingServer::getCommandToPose(
   tf2_buffer_->transform(target_pose, target_pose, base_frame_);
 
   // Compute velocity command
-  if (!controller_->computeVelocityCommand(target_pose.pose, robot_pose.pose, cmd, backward)) {
+  if (!controller_->computeVelocityCommand(target_pose.pose, cmd, backward)) {
     throw opennav_docking_core::FailedToControl("Failed to get control");
   }
 
