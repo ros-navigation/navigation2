@@ -93,6 +93,12 @@ public:
   bool approachDock(Dock * dock, geometry_msgs::msg::PoseStamped & dock_pose);
 
   /**
+  * @brief Perform a pure rotation to dock orientation.
+  */
+void DockingServer::rotateToDock(const geometry_msgs::msg::PoseStamped & dock_pose)
+
+
+  /**
    * @brief Wait for charging to begin.
    * @param dock Dock instance, used to query isCharging().
    * @returns True if charging successfully started within alloted time.
@@ -244,12 +250,10 @@ protected:
   bool dock_backwards_;
   // The tolerance to the dock's staging pose not requiring navigation
   double dock_prestaging_tolerance_;
-  // The difference in the path orientation and the starting robot orientation to trigger a rotate in place, if initial_rotation is enabled.
-  double initial_rotation_min_angle_;
   // Enable a rotation in place to the goal before starting the path. The control law may generate large sweeping arcs to the goal pose, depending on the initial robot orientation and k_phi, k_delta.
   bool initial_rotation_;
   // Enable aproaching a docking station only with initial detection without updates
-  bool dock_backwards_without_sensor_;
+  bool backward_blind;
 
   // This is a class member so it can be accessed in publish feedback
   rclcpp::Time action_start_time_;

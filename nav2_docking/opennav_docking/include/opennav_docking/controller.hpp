@@ -70,7 +70,7 @@ protected:
   std::unique_ptr<nav2_graceful_controller::SmoothControlLaw> control_law_;
 
   double k_phi_, k_delta_, beta_, lambda_;
-  double slowdown_radius_, v_linear_min_, v_linear_max_, v_angular_max_,v_angular_min_;
+  double slowdown_radius_, v_linear_min_, v_linear_max_, v_angular_max_, v_angular_min_;
 };
 
 }  // namespace opennav_docking

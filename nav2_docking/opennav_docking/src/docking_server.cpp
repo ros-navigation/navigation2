@@ -41,8 +41,7 @@ DockingServer::DockingServer(const rclcpp::NodeOptions & options)
   declare_parameter("dock_backwards", false);
   declare_parameter("dock_prestaging_tolerance", 0.5);
   declare_parameter("initial_rotation", true);
-  declare_parameter("initial_rotation_min_angle", 0.5);
-  declare_parameter("dock_backwards_without_sensor", true);
+  declare_parameter("backward_blind", false); 
 }
 
 nav2_util::CallbackReturn
@@ -63,8 +62,15 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
   get_parameter("dock_backwards", dock_backwards_);
   get_parameter("dock_prestaging_tolerance", dock_prestaging_tolerance_);
   get_parameter("initial_rotation", initial_rotation_);
-  get_parameter("initial_rotation_min_angle", initial_rotation_min_angle_);
-  get_parameter("dock_backwards_without_sensor", dock_backwards_without_sensor_);
+  get_parameter("backward_blind", backward_blind_);
+  if(backward_blind_ && !dock_backwards_){
+    RCLCPP_ERROR(get_logger(), "Docking server configuration is invalid. backward_blind is enabled when dock_backwards is disabled.");
+    return nav2_util::CallbackReturn::FAILURE; 
+  } 
+  else{
+    // If you have backward_blind and dock_backward then we know we need to do the initial rotation to go from forward to reverse before doing the rest of the procedure. The initial_rotation would thus always be true.
+    initial_rotation_ = true;
+  }
   RCLCPP_INFO(get_logger(), "Controller frequency set to %.4fHz", controller_frequency_);
 
   vel_publisher_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel", 1);
@@ -285,6 +291,11 @@ void DockingServer::dockRobot()
     rclcpp::Time dock_contact_time;
     while (rclcpp::ok()) {
       try {
+        // Perform pure rotation to dock orientation
+        if(initial_rotation_){
+          rotateToDock();
+        }
+        
         // Approach the dock using control law
         if (approachDock(dock, dock_pose)) {
           // We are docked, wait for charging to begin
@@ -391,17 +402,7 @@ void DockingServer::doInitialPerception(Dock * dock, geometry_msgs::msg::PoseSta
   publishDockingFeedback(DockRobot::Feedback::INITIAL_PERCEPTION);
   rclcpp::Rate loop_rate(controller_frequency_);
   auto start = this->now();
-  // If docking without sensors, stop the robot for short time to get a stable and quality detection of docking pose
-  if(dock_backwards_without_sensor_){
-      publishZeroVelocity();
-      while (rclcpp::ok()) {
-        if (this->now() - start > rclcpp::Duration::from_seconds(1.0)) {
-          break;
-        }
-      }
-  }
 
-  start = this->now();
   auto timeout = rclcpp::Duration::from_seconds(initial_perception_timeout_);
   while (!dock->plugin->getRefinedPose(dock_pose, dock->id)) {
     if (this->now() - start > timeout) {
@@ -414,6 +415,23 @@ void DockingServer::doInitialPerception(Dock * dock, geometry_msgs::msg::PoseSta
       return;
     }
 
+    loop_rate.sleep();
+  }
+}
+
+
+
+void DockingServer::rotateToDock(const geometry_msgs::msg::PoseStamped & dock_pose){
+  rclcpp::Rate loop_rate(controller_frequency_);
+  geometry_msgs::msg::PoseStamped robot_pose = getRobotPoseInFrame(dock_pose.header.frame_id);
+  double angle_to_goal;
+  while(rclcpp::ok()){
+    angle_to_goal = angles::shortest_angular_distance(tf2::getYaw(robot_pose.pose.orientation), atan2(robot_pose.pose.position.y - dock_pose.pose.position.y, robot_pose.pose.position.x - dock_pose.pose.position.x));
+    if(fabs(angle_to_goal) > 0.1){
+      break;
+    }
+    command = controller_->rotateToTarget(angle_to_goal);
+    vel_publisher_->publish(command);
     loop_rate.sleep();
   }
 }
@@ -439,7 +457,7 @@ bool DockingServer::approachDock(Dock * dock, geometry_msgs::msg::PoseStamped & 
     }
 
     // Update perception
-    if (!dock_backwards_without_sensor_ && !dock->plugin->getRefinedPose(dock_pose, dock->id)) {
+    if (!backward_blind_ && !dock->plugin->getRefinedPose(dock_pose, dock->id)) {
       throw opennav_docking_core::FailedToDetectDock("Failed dock detection");
     }
 
@@ -456,15 +474,8 @@ bool DockingServer::approachDock(Dock * dock, geometry_msgs::msg::PoseStamped & 
 
     // Compute and publish controls
     auto command = std::make_unique<geometry_msgs::msg::TwistStamped>();
-
-    geometry_msgs::msg::PoseStamped robot_pose = getRobotPoseInFrame(target_pose.header.frame_id);
-    const double angle_to_goal = angles::shortest_angular_distance(
-    tf2::getYaw(robot_pose.pose.orientation), atan2(robot_pose.pose.position.y - target_pose.pose.position.y, robot_pose.pose.position.x - target_pose.pose.position.x));
-
-    if(initial_rotation_ && fabs(angle_to_goal) > initial_rotation_min_angle_){
-      command->twist = controller_->rotateToTarget(angle_to_goal);
-    }
-    else if (!controller_->computeVelocityCommand(target_pose.pose, robot_pose.pose, command->twist, dock_backwards_)) {
+    command->header.stamp = now();
+    if (!controller_->computeVelocityCommand(target_pose.pose, robot_pose.pose, command->twist, dock_backwards_)) {
       throw opennav_docking_core::FailedToControl("Failed to get control");
     }
     vel_publisher_->publish(std::move(command));
@@ -747,8 +758,6 @@ DockingServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> paramete
         undock_linear_tolerance_ = parameter.as_double();
       } else if (name == "undock_angular_tolerance") {
         undock_angular_tolerance_ = parameter.as_double();
-      } else if (name == "initial_rotation_min_angle") {
-        initial_rotation_min_angle_ = parameter.as_double();
       }
     } else if (type == ParameterType::PARAMETER_STRING) {
       if (name == "base_frame") {
@@ -761,11 +770,16 @@ DockingServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> paramete
         max_retries_ = parameter.as_int();
       }
     } else if(type == ParameterType::PARAMETER_BOOL){
+      if (name == "dock_backwards") {
+        dock_backwards_ = parameter.as_bool();
+      }
       if (name == "initial_rotation") {
         initial_rotation_ = parameter.as_bool();
       }
-      if (name == "dock_backwards_without_sensor") {
-        dock_backwards_without_sensor_ = parameter.as_bool();
+      if (name == "backward_blind") {
+        backward_blind_ = parameter.as_bool();
+        initial_rotation_ = parameter.as_bool();
+        dock_backwards_ = parameter.as_bool();
       }
     }
   }
