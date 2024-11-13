@@ -40,7 +40,6 @@ DockingServer::DockingServer(const rclcpp::NodeOptions & options)
   declare_parameter("fixed_frame", "odom");
   declare_parameter("dock_backwards", false);
   declare_parameter("dock_prestaging_tolerance", 0.5);
-  declare_parameter("initial_rotation", true);
   declare_parameter("backward_blind", false);
 }
 
@@ -61,16 +60,10 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
   get_parameter("fixed_frame", fixed_frame_);
   get_parameter("dock_backwards", dock_backwards_);
   get_parameter("dock_prestaging_tolerance", dock_prestaging_tolerance_);
-  get_parameter("initial_rotation", initial_rotation_);
   get_parameter("backward_blind", backward_blind_);
   if(backward_blind_ && !dock_backwards_) {
     RCLCPP_ERROR(get_logger(), "backward_blind is enabled when dock_backwards is disabled.");
     return nav2_util::CallbackReturn::FAILURE;
-  } else {
-    // If you have backward_blind and dock_backward then
-    // we know we need to do the initial rotation to go from forward to reverse
-    // before doing the rest of the procedure. The initial_rotation would thus always be true.
-    initial_rotation_ = true;
   }
   RCLCPP_INFO(get_logger(), "Controller frequency set to %.4fHz", controller_frequency_);
 
@@ -474,6 +467,17 @@ bool DockingServer::approachDock(Dock * dock, geometry_msgs::msg::PoseStamped & 
         tf2::getYaw(target_pose.pose.orientation) + M_PI);
     }
 
+    // The control law can get jittery when close to the end when atan2's can explode.
+    // Thus, we backward project the controller's target pose a little bit after the
+    // dock so that the robot never gets to the end of the spiral before its in contact
+    // with the dock to stop the docking procedure.
+    // (1 - 2 * dock_backwards_) converts `true` to -1 and `false` to 1
+    const double backward_projection = 0.25;
+    const double yaw = tf2::getYaw(target_pose.pose.orientation);
+    target_pose.pose.position.x += (1 - 2 * dock_backwards_) * cos(yaw) * backward_projection;
+    target_pose.pose.position.y += (1 - 2 * dock_backwards_) * sin(yaw) * backward_projection;
+    tf2_buffer_->transform(target_pose, target_pose, base_frame_);
+    
     // Compute and publish controls
     auto command = std::make_unique<geometry_msgs::msg::TwistStamped>();
     command->header.stamp = now();
@@ -780,8 +784,6 @@ DockingServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> paramete
       }
       if (name == "backward_blind") {
         backward_blind_ = parameter.as_bool();
-        initial_rotation_ = parameter.as_bool();
-        dock_backwards_ = parameter.as_bool();
       }
     }
   }

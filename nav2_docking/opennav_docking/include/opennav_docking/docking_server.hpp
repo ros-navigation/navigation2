@@ -249,10 +249,6 @@ protected:
   bool dock_backwards_;
   // The tolerance to the dock's staging pose not requiring navigation
   double dock_prestaging_tolerance_;
-  // Enable a rotation in place to the goal before starting the path.
-  // The control law may generate large sweeping arcs to the goal pose,
-  // depending on the initial robot orientation and k_phi, k_delta.
-  bool initial_rotation_;
   // Enable aproaching a docking station only with initial detection without updates
   bool backward_blind_;
 
