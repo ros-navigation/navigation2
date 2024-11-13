@@ -64,8 +64,7 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
   get_parameter("initial_rotation", initial_rotation_);
   get_parameter("backward_blind", backward_blind_);
   if(backward_blind_ && !dock_backwards_){
-    RCLCPP_ERROR(get_logger(), "Docking server configuration is invalid. 
-    backward_blind is enabled when dock_backwards is disabled.");
+    RCLCPP_ERROR(get_logger(), "backward_blind is enabled when dock_backwards is disabled.");
     return nav2_util::CallbackReturn::FAILURE; 
   } else{
     // If you have backward_blind and dock_backward then 

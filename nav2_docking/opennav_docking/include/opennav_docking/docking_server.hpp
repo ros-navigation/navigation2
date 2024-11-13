@@ -95,7 +95,7 @@ public:
   /**
   * @brief Perform a pure rotation to dock orientation.
   */
-void DockingServer::rotateToDock(const geometry_msgs::msg::PoseStamped & dock_pose)
+  void DockingServer::rotateToDock(const geometry_msgs::msg::PoseStamped & dock_pose);
 
 
   /**
@@ -255,7 +255,7 @@ protected:
   // depending on the initial robot orientation and k_phi, k_delta.
   bool initial_rotation_;
   // Enable aproaching a docking station only with initial detection without updates
-  bool backward_blind;
+  bool backward_blind_;
 
   // This is a class member so it can be accessed in publish feedback
   rclcpp::Time action_start_time_;
