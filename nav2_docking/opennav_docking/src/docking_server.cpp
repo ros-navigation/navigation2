@@ -292,7 +292,7 @@ void DockingServer::dockRobot()
     while (rclcpp::ok()) {
       try {
         // Perform pure rotation to dock orientation
-        if(initial_rotation_){
+        if(backward_blind_){
           rotateToDock();
         }
         
@@ -772,9 +772,6 @@ DockingServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> paramete
     } else if(type == ParameterType::PARAMETER_BOOL){
       if (name == "dock_backwards") {
         dock_backwards_ = parameter.as_bool();
-      }
-      if (name == "initial_rotation") {
-        initial_rotation_ = parameter.as_bool();
       }
       if (name == "backward_blind") {
         backward_blind_ = parameter.as_bool();
