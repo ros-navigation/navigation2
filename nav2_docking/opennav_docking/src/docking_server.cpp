@@ -63,10 +63,10 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
   get_parameter("dock_prestaging_tolerance", dock_prestaging_tolerance_);
   get_parameter("initial_rotation", initial_rotation_);
   get_parameter("backward_blind", backward_blind_);
-  if(backward_blind_ && !dock_backwards_){
+  if(backward_blind_ && !dock_backwards_) {
     RCLCPP_ERROR(get_logger(), "backward_blind is enabled when dock_backwards is disabled.");
     return nav2_util::CallbackReturn::FAILURE;
-  } else{
+  } else {
     // If you have backward_blind and dock_backward then
     // we know we need to do the initial rotation to go from forward to reverse
     // before doing the rest of the procedure. The initial_rotation would thus always be true.
@@ -292,7 +292,7 @@ void DockingServer::dockRobot()
     while (rclcpp::ok()) {
       try {
         // Perform pure rotation to dock orientation
-        if(backward_blind_){
+        if(backward_blind_) {
           rotateToDock(dock_pose);
         }
         // Approach the dock using control law
@@ -420,16 +420,17 @@ void DockingServer::doInitialPerception(Dock * dock, geometry_msgs::msg::PoseSta
 
 
 
-void DockingServer::rotateToDock(const geometry_msgs::msg::PoseStamped & dock_pose){
+void DockingServer::rotateToDock(const geometry_msgs::msg::PoseStamped & dock_pose)
+{
   rclcpp::Rate loop_rate(controller_frequency_);
   geometry_msgs::msg::PoseStamped robot_pose = getRobotPoseInFrame(dock_pose.header.frame_id);
   double angle_to_goal;
   auto command = std::make_unique<geometry_msgs::msg::TwistStamped>();
-  while(rclcpp::ok()){
+  while(rclcpp::ok()) {
     angle_to_goal = angles::shortest_angular_distance(tf2::getYaw(robot_pose.pose.orientation),
     atan2(robot_pose.pose.position.y - dock_pose.pose.position.y,
     robot_pose.pose.position.x - dock_pose.pose.position.x));
-    if(fabs(angle_to_goal) > 0.1){
+    if(fabs(angle_to_goal) < 0.02) {
       break;
     }
     command->header.stamp = now();
@@ -774,7 +775,7 @@ DockingServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> paramete
       if (name == "max_retries") {
         max_retries_ = parameter.as_int();
       }
-    } else if(type == ParameterType::PARAMETER_BOOL){
+    } else if(type == ParameterType::PARAMETER_BOOL) {
       if (name == "dock_backwards") {
         dock_backwards_ = parameter.as_bool();
       }
