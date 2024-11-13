@@ -481,7 +481,8 @@ bool DockingServer::approachDock(Dock * dock, geometry_msgs::msg::PoseStamped & 
     command->header.stamp = now();
     geometry_msgs::msg::PoseStamped robot_pose = getRobotPoseInFrame(dock_pose.header.frame_id);
     if (!controller_->computeVelocityCommand(target_pose.pose, robot_pose.pose,
-    command->twist, dock_backwards_)) {
+    command->twist, dock_backwards_))
+    {
       throw opennav_docking_core::FailedToControl("Failed to get control");
     }
     vel_publisher_->publish(std::move(command));

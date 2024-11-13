@@ -60,10 +60,10 @@ Controller::Controller(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node)
     std::bind(&Controller::dynamicParametersCallback, this, std::placeholders::_1));
 }
 
- bool Controller::computeVelocityCommand(
-    const geometry_msgs::msg::Pose & pose,
-    const geometry_msgs::msg::Pose & robot_pose,
-    geometry_msgs::msg::Twist & cmd, bool backward)
+bool Controller::computeVelocityCommand(
+  const geometry_msgs::msg::Pose & pose,
+  const geometry_msgs::msg::Pose & robot_pose,
+  geometry_msgs::msg::Twist & cmd, bool backward)
 {
   std::lock_guard<std::mutex> lock(dynamic_params_lock_);
   cmd = control_law_->calculateRegularVelocity(pose, robot_pose, backward);
