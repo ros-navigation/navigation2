@@ -61,8 +61,8 @@ Controller::Controller(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node)
 }
 
  bool Controller::computeVelocityCommand(
-    const geometry_msgs::msg::Pose & pose,const geometry_msgs::msg::Pose & robot_pose, geometry_msgs::msg::Twist & cmd,
-    bool backward)
+    const geometry_msgs::msg::Pose & pose, const geometry_msgs::msg::Pose & robot_pose, 
+    geometry_msgs::msg::Twist & cmd, bool backward)
 {
   std::lock_guard<std::mutex> lock(dynamic_params_lock_);
   cmd = control_law_->calculateRegularVelocity(pose,robot_pose, backward);
@@ -117,10 +117,11 @@ geometry_msgs::msg::Twist Controller::rotateToTarget(const double & angle_to_tar
   vel.linear.x = 0.0;
   vel.angular.z = 0.0;
   if(angle_to_target > 0) {
-    vel.angular.z = std::clamp(1.0 * angle_to_target * v_angular_max_, v_angular_min_, v_angular_max_);
-  } 
-  else if (angle_to_target < 0) {
-    vel.angular.z = std::clamp(1.0 * angle_to_target * v_angular_max_, -v_angular_max_, -v_angular_min_);
+    vel.angular.z = std::clamp(1.0 * angle_to_target * v_angular_max_, 
+    v_angular_min_, v_angular_max_);
+  } else if (angle_to_target < 0) {
+    vel.angular.z = std::clamp(1.0 * angle_to_target * v_angular_max_, 
+    -v_angular_max_, -v_angular_min_);
   }
   return vel;
 }
