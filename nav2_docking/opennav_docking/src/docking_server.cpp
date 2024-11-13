@@ -294,7 +294,7 @@ void DockingServer::dockRobot()
       try {
         // Perform pure rotation to dock orientation
         if(backward_blind_){
-          rotateToDock();
+          rotateToDock(dock_pose);
         }
         
         // Approach the dock using control law
