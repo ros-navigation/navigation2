@@ -461,7 +461,7 @@ bool DockingServer::approachDock(Dock * dock, geometry_msgs::msg::PoseStamped & 
     target_pose.header.stamp = rclcpp::Time(0);
 
     const double backward_projection = 0.25;
-    const double yaw = tf2::getYaw(target_pose.pose.orientation);
+    double yaw = tf2::getYaw(target_pose.pose.orientation);
 
     // The control law can get jittery when close to the end when atan2's can explode.
     // Thus, we backward project the controller's target pose a little bit after the
@@ -472,6 +472,7 @@ bool DockingServer::approachDock(Dock * dock, geometry_msgs::msg::PoseStamped & 
       // This is to ensure that the robot doesn't try to dock from the wrong side
       target_pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(
         yaw + M_PI);
+      yaw = tf2::getYaw(target_pose.pose.orientation);
       target_pose.pose.position.x -= cos(yaw) * backward_projection;
       target_pose.pose.position.y -= sin(yaw) * backward_projection;
     } else {
