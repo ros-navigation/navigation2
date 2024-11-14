@@ -414,10 +414,11 @@ void DockingServer::doInitialPerception(Dock * dock, geometry_msgs::msg::PoseSta
 void DockingServer::rotateToDock(const geometry_msgs::msg::PoseStamped & dock_pose)
 {
   rclcpp::Rate loop_rate(controller_frequency_);
-  geometry_msgs::msg::PoseStamped robot_pose = getRobotPoseInFrame(dock_pose.header.frame_id);
+  geometry_msgs::msg::PoseStamped robot_pose;
   double angle_to_goal;
   auto command = std::make_unique<geometry_msgs::msg::TwistStamped>();
   while(rclcpp::ok()) {
+    robot_pose = getRobotPoseInFrame(dock_pose.header.frame_id);
     angle_to_goal = angles::shortest_angular_distance(tf2::getYaw(robot_pose.pose.orientation),
     atan2(robot_pose.pose.position.y - dock_pose.pose.position.y,
     robot_pose.pose.position.x - dock_pose.pose.position.x));
