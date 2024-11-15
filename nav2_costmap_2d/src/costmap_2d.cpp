@@ -219,6 +219,7 @@ Costmap2D & Costmap2D::operator=(const Costmap2D & map)
   resolution_ = map.resolution_;
   origin_x_ = map.origin_x_;
   origin_y_ = map.origin_y_;
+  default_value_ = map.default_value_;
 
   // initialize our various maps
   initMaps(size_x_, size_y_);
