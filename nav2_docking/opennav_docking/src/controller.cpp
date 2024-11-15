@@ -48,7 +48,6 @@ Controller::Controller(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node)
   node->get_parameter("controller.lambda", lambda_);
   node->get_parameter("controller.v_linear_min", v_linear_min_);
   node->get_parameter("controller.v_linear_max", v_linear_max_);
-  node->get_parameter("controller.v_angular_min", v_angular_min_);
   node->get_parameter("controller.v_angular_max", v_angular_max_);
   node->get_parameter("controller.slowdown_radius", slowdown_radius_);
   control_law_ = std::make_unique<nav2_graceful_controller::SmoothControlLaw>(
@@ -94,8 +93,6 @@ Controller::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
         v_linear_max_ = parameter.as_double();
       } else if (name == "controller.v_angular_max") {
         v_angular_max_ = parameter.as_double();
-      } else if (name == "controller.v_angular_min") {
-        v_angular_min_ = parameter.as_double();
       } else if (name == "controller.slowdown_radius") {
         slowdown_radius_ = parameter.as_double();
       }
@@ -111,20 +108,19 @@ Controller::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
   return result;
 }
 
-geometry_msgs::msg::Twist Controller::rotateToTarget(const double & angle_to_target)
+geometry_msgs::msg::Twist Controller::computeRotateToHeadingCommand(
+  const double & angular_distance_to_heading,
+  const geometry_msgs::msg::Twist & current_velocity,
+  const double & dt)
 {
-  geometry_msgs::msg::Twist vel;
-  vel.linear.x = 0.0;
-  vel.angular.z = 0.0;
-  if(angle_to_target > 0) {
-    vel.angular.z = std::clamp(1.0 * angle_to_target * v_angular_max_,
-    v_angular_min_, v_angular_max_);
-  } else if (angle_to_target < 0) {
-    vel.angular.z = std::clamp(1.0 * angle_to_target * v_angular_max_,
-    -v_angular_max_, -v_angular_min_);
-  }
-  return vel;
+  geometry_msgs::msg::Twist cmd_vel;
+  const double sign = angular_distance_to_heading > 0.0 ? 1.0 : -1.0;
+  const double angular_vel = sign * rotate_to_heading_angular_vel_;
+  const double min_feasible_angular_speed = current_velocity.angular.z - rotate_to_heading_max_angular_accel_ * dt;
+  const double max_feasible_angular_speed = current_velocity.angular.z + rotate_to_heading_max_angular_accel_ * dt;
+  cmd_vel.angular.z =
+    std::clamp(angular_vel, min_feasible_angular_speed, max_feasible_angular_speed);
+  return cmd_vel;
 }
-
 
 }  // namespace opennav_docking

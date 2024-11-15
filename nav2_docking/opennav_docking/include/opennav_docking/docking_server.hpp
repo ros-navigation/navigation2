@@ -33,6 +33,7 @@
 #include "opennav_docking/navigator.hpp"
 #include "opennav_docking_core/charging_dock.hpp"
 #include "tf2_ros/transform_listener.h"
+#include "nav_2d_utils/odom_subscriber.hpp"
 
 namespace opennav_docking
 {
@@ -251,11 +252,14 @@ protected:
   double dock_prestaging_tolerance_;
   // Enable aproaching a docking station only with initial detection without updates
   bool backward_blind_;
+  // Angle in which robot can stop initial rotation
+  double backward_rotation_tolerance_;
 
   // This is a class member so it can be accessed in publish feedback
   rclcpp::Time action_start_time_;
 
   std::unique_ptr<nav2_util::TwistPublisher> vel_publisher_;
+  std::unique_ptr<nav_2d_utils::OdomSubscriber> odom_sub_;
   std::unique_ptr<DockingActionServer> docking_action_server_;
   std::unique_ptr<UndockingActionServer> undocking_action_server_;
 

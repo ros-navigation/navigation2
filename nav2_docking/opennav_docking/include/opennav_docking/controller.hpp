@@ -60,17 +60,23 @@ public:
   std::mutex dynamic_params_lock_;
 
   /**
-   * @brief Perform a rotation about an angle.
-   * @param angle_to_target Rotation angle <-2*pi;2*pi>.
-   * @returns Twist command.
+   * @brief Perform a command for in-place rotation.
+   * @param angular_distance_to_heading Angular distance to goal
+   * @param current_velocity Current angular velocity
+   * @param dt Control loop duration [s]
+   * @returns TwistStamped command.
    */
-  geometry_msgs::msg::Twist rotateToTarget(const double & angle_to_target);
+  geometry_msgs::msg::Twist computeRotateToHeadingCommand(
+    const double & angular_distance_to_heading,
+    const geometry_msgs::msg::Twist & current_velocity,
+    const double & dt);
 
 protected:
   std::unique_ptr<nav2_graceful_controller::SmoothControlLaw> control_law_;
 
   double k_phi_, k_delta_, beta_, lambda_;
-  double slowdown_radius_, v_linear_min_, v_linear_max_, v_angular_max_, v_angular_min_;
+  double slowdown_radius_, v_linear_min_, v_linear_max_, v_angular_max_;
+  double rotate_to_heading_angular_vel_, rotate_to_heading_max_angular_accel_;
 };
 
 }  // namespace opennav_docking
