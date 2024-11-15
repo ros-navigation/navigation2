@@ -101,6 +101,7 @@ protected:
   std::mutex dynamic_params_lock_;
 
   rclcpp::Logger logger_{rclcpp::get_logger("Controller")};
+  rclcpp::Clock::SharedPtr clock_;
 
   // Smooth control law
   std::unique_ptr<nav2_graceful_controller::SmoothControlLaw> control_law_;

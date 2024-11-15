@@ -88,7 +88,8 @@ TEST(ControllerTests, DynamicParameters) {
       rclcpp::Parameter("controller.v_angular_max", 7.0),
       rclcpp::Parameter("controller.slowdown_radius", 8.0),
       rclcpp::Parameter("controller.projection_time", 9.0),
-      rclcpp::Parameter("controller.simulation_time_step", 10.0)});
+      rclcpp::Parameter("controller.simulation_time_step", 10.0),
+      rclcpp::Parameter("controller.collision_tolerance", 11.0)});
 
   // Spin
   rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
@@ -104,6 +105,7 @@ TEST(ControllerTests, DynamicParameters) {
   EXPECT_EQ(node->get_parameter("controller.slowdown_radius").as_double(), 8.0);
   EXPECT_EQ(node->get_parameter("controller.projection_time").as_double(), 9.0);
   EXPECT_EQ(node->get_parameter("controller.simulation_time_step").as_double(), 10.0);
+  EXPECT_EQ(node->get_parameter("controller.collision_tolerance").as_double(), 11.0);
 }
 
 }  // namespace opennav_docking

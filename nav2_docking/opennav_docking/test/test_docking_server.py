@@ -41,15 +41,16 @@ def generate_test_description():
             executable='opennav_docking',
             name='docking_server',
             parameters=[{'wait_charge_timeout': 1.0,
+                         'controller': {'use_collision_detection': False},
                          'dock_plugins': ['test_dock_plugin'],
                          'test_dock_plugin': {
-                            'plugin': 'opennav_docking::SimpleChargingDock',
-                            'use_battery_status': True},
+                             'plugin': 'opennav_docking::SimpleChargingDock',
+                             'use_battery_status': True},
                          'docks': ['test_dock'],
                          'test_dock': {
-                            'type': 'test_dock_plugin',
-                            'frame': 'odom',
-                            'pose': [10.0, 0.0, 0.0]
+                             'type': 'test_dock_plugin',
+                             'frame': 'odom',
+                             'pose': [10.0, 0.0, 0.0]
                          }}],
             output='screen',
         ),

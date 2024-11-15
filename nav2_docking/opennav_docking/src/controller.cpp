@@ -31,6 +31,7 @@ Controller::Controller(
 : tf2_buffer_(tf), fixed_frame_(fixed_frame), base_frame_(base_frame)
 {
   logger_ = node->get_logger();
+  clock_ = node->get_clock();
 
   nav2_util::declare_parameter_if_not_declared(
     node, "controller.k_phi", rclcpp::ParameterValue(3.0));
@@ -96,7 +97,7 @@ Controller::Controller(
   }
 
   trajectory_pub_ =
-    node->create_publisher<nav_msgs::msg::Path>(node->get_name() + std::string("/trajectory"), 1);
+    node->create_publisher<nav_msgs::msg::Path>("docking_trajectory", 1);
 }
 
 Controller::~Controller()
@@ -122,12 +123,25 @@ bool Controller::isTrajectoryCollisionFree(
   // Visualization of the trajectory
   nav_msgs::msg::Path trajectory;
   trajectory.header.frame_id = base_frame_;
+  trajectory.header.stamp = clock_->now();
 
   // First pose
   geometry_msgs::msg::PoseStamped next_pose;
   next_pose.header.frame_id = base_frame_;
   next_pose.pose.orientation.w = 1.0;
   trajectory.poses.push_back(next_pose);
+
+  // Get the transform from base_frame to fixed_frame
+  geometry_msgs::msg::TransformStamped base_to_fixed_transform;
+  try {
+    base_to_fixed_transform =
+      tf2_buffer_->lookupTransform(fixed_frame_, base_frame_, tf2::TimePointZero);
+  } catch (tf2::TransformException & ex) {
+    RCLCPP_ERROR(
+      logger_, "Could not get transform from %s to %s: %s",
+      base_frame_.c_str(), fixed_frame_.c_str(), ex.what());
+    return false;
+  }
 
   // Generate path
   for (double t = 0; t < projection_time_; t += simulation_time_step_) {
@@ -140,18 +154,24 @@ bool Controller::isTrajectoryCollisionFree(
 
     // Transform pose from base_frame into fixed_frame
     geometry_msgs::msg::PoseStamped local_pose = next_pose;
-    local_pose.header.stamp = rclcpp::Time(0);
-    tf2_buffer_->transform(local_pose, local_pose, fixed_frame_);
+    local_pose.header.stamp = trajectory.header.stamp;
+    tf2::doTransform(local_pose, local_pose, base_to_fixed_transform);
 
-    // Check for collisions at the projected pose
+    // Compute the distance between the end of the current trajectory and the dock pose
+    double dock_collision_distance =
+      nav2_util::geometry_utils::euclidean_distance(target_pose, next_pose.pose);
+
+    // If this distance is greater than the collision_tolerance, check for collisions
+    // Skipping the last part of the trajectory where the dock should be
     auto projected_pose = nav_2d_utils::poseToPose2D(local_pose.pose);
-    double distance = nav2_util::geometry_utils::euclidean_distance(target_pose, next_pose.pose);
     if (use_collision_detection_ &&
-      !collision_checker_->isCollisionFree(projected_pose) && distance > collision_tolerance_)
+      dock_collision_distance > collision_tolerance_ &&
+      !collision_checker_->isCollisionFree(projected_pose))
     {
-      RCLCPP_INFO(
+      RCLCPP_WARN(
         logger_, "Collision detected at pose: (%.2f, %.2f, %.2f) in frame %s",
         projected_pose.x, projected_pose.y, projected_pose.theta, fixed_frame_.c_str());
+      trajectory_pub_->publish(trajectory);
       return false;
     }
   }
@@ -203,6 +223,8 @@ Controller::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
         projection_time_ = parameter.as_double();
       } else if (name == "controller.simulation_time_step") {
         simulation_time_step_ = parameter.as_double();
+      } else if (name == "controller.collision_tolerance") {
+        collision_tolerance_ = parameter.as_double();
       }
 
       // Update the smooth control law with the new params
