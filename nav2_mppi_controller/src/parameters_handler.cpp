@@ -53,8 +53,10 @@ ParametersHandler::dynamicParamsCallback(
   std::vector<rclcpp::Parameter> parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
+  result.successful = true;
+  result.reason = "";
+
   std::lock_guard<std::mutex> lock(parameters_change_mutex_);
-  bool success = true;
 
   for (auto & pre_cb : pre_callbacks_) {
     pre_cb();
@@ -66,10 +68,10 @@ ParametersHandler::dynamicParamsCallback(
     if (auto callback = get_param_callbacks_.find(param_name);
       callback != get_param_callbacks_.end())
     {
-      callback->second(param);
+      callback->second(param, result);
     } else {
-      RCLCPP_ERROR(logger_, "Parameter callback func for '%s' not found", param_name.c_str());
-      success = false;
+      result.successful = false;
+      result.reason += "get_param_callback func for '" + param_name + "' not found.\n";
     }
   }
 
@@ -77,7 +79,9 @@ ParametersHandler::dynamicParamsCallback(
     post_cb();
   }
 
-  result.successful = success;
+  if (!result.successful) {
+    RCLCPP_ERROR(logger_, result.reason.c_str());
+  }
   return result;
 }
 
