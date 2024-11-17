@@ -184,10 +184,9 @@ TEST(ParameterHandlerTest, DynamicAndStaticParametersTest)
   auto result = result_future.get();
   EXPECT_EQ(result.successful, false);
   EXPECT_FALSE(result.reason.empty());
+  EXPECT_EQ(result.reason, std::string("Rejected change to static parameter: ") +
+    "{\"name\": \"static_int\", \"type\": \"integer\", \"value\": \"10\"}");
 
-  RCLCPP_INFO(node->get_logger(),
-    "set parameters %s", result.successful ? "successful" : "unsuccessful");
-  RCLCPP_INFO(node->get_logger(), "Reason: %s", result.reason.c_str() );
   // Now, only param1 should change, param 2 should be the same
   EXPECT_EQ(p1, 10);
   EXPECT_EQ(p2, 7);
@@ -230,9 +229,8 @@ TEST(ParameterHandlerTest, DynamicAndStaticParametersNotVerboseTest)
   auto result = result_future.get();
   EXPECT_EQ(result.successful, false);
   EXPECT_FALSE(result.reason.empty());
-  RCLCPP_INFO(node->get_logger(),
-    "Set parameters %s", result.successful ? "successful" : "unsuccessful");
-  RCLCPP_INFO(node->get_logger(), "Reason: %s", result.reason.c_str() );
+  EXPECT_EQ(result.reason, std::string("Rejected change to static parameter: ") +
+    "{\"name\": \"static_int\", \"type\": \"integer\", \"value\": \"10\"}");
 
   // Now, only param1 should change, param 2 should be the same
   EXPECT_EQ(p1, 10);
@@ -268,9 +266,6 @@ TEST(ParameterHandlerTest, DynamicAndStaticParametersNotDeclaredTest)
   auto result = result_future.get();
   EXPECT_EQ(result.successful, true);
   EXPECT_TRUE(result.reason.empty());
-  RCLCPP_INFO(node->get_logger(),
-    "set parameters %s", result.successful ? "successful" : "unsuccessful");
-  RCLCPP_INFO(node->get_logger(), "Reason: %s", result.reason.c_str() );
 
   // Try to access some parameters that have not been declared
   int p1 = 0, p2 = 0;
@@ -278,4 +273,26 @@ TEST(ParameterHandlerTest, DynamicAndStaticParametersNotDeclaredTest)
                rclcpp::exceptions::InvalidParameterValueException);
   EXPECT_THROW(getParamer(p2, "not_declared2", 9, ParameterType::Static),
                rclcpp::exceptions::InvalidParameterValueException);
+
+  // Try to set some parameters that have not been declared via the service client
+  result_future = rec_param->set_parameters_atomically({
+    rclcpp::Parameter("static_int", 10),
+    rclcpp::Parameter("not_declared", true),
+    rclcpp::Parameter("not_declared2", true),
+  });
+
+  rc = rclcpp::spin_until_future_complete(
+    node->get_node_base_interface(),
+    result_future);
+  ASSERT_EQ(rclcpp::FutureReturnCode::SUCCESS, rc);
+
+  result = result_future.get();
+  EXPECT_EQ(result.successful, false);
+  EXPECT_FALSE(result.reason.empty());
+  // The ParameterNotDeclaredException handler in rclcpp/parameter_service.cpp
+  // overrides any other reasons and does not provide details to the service client.
+  EXPECT_EQ(result.reason, std::string("One or more parameters were not declared before setting"));
+
+  EXPECT_EQ(p1, 0);
+  EXPECT_EQ(p2, 0);
 }
