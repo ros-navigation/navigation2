@@ -25,7 +25,7 @@
 #include <nav2_route/utils.hpp>
 
 
-namespace route_tool
+namespace nav2_rviz_plugins
 {
     /**
      *  Here we declare our new subclass of rviz::Panel. Every panel which
@@ -33,7 +33,7 @@ namespace route_tool
      *  rviz::Panel.
      */
 
-    class routeTool : public rviz_common::Panel
+    class RouteTool : public rviz_common::Panel
     {
         /**
          * This class uses Qt slots and is a subclass of QObject, so it needs
@@ -51,7 +51,7 @@ namespace route_tool
              *  someone using the class for something else to pass in a parent
              *  widget as they normally would with Qt.
              */
-            routeTool(QWidget * parent = nullptr);
+            RouteTool(QWidget * parent = nullptr);
 
             void onInitialize() override;
 
@@ -109,5 +109,5 @@ namespace route_tool
 
 
     };
-} // namespace route_tool
+} // namespace nav2_rviz_plugins
 #endif
