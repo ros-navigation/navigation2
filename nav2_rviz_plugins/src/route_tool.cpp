@@ -1,5 +1,4 @@
-#include "nav2_route/route_tool/route_tool.hpp"
-#include <pluginlib/class_list_macros.hpp>
+#include "nav2_rviz_plugins/route_tool.hpp"
 #include "rviz_common/display_context.hpp"
 #include <QDesktopServices>
 #include <QUrl>
@@ -9,11 +8,10 @@
 #include <pwd.h>
 #include <iostream>
 
-PLUGINLIB_EXPORT_CLASS(route_tool::routeTool, rviz_common::Panel)
 
-namespace route_tool
+namespace nav2_rviz_plugins
 {
-    routeTool::routeTool(QWidget * parent)
+    RouteTool::RouteTool(QWidget * parent)
     :   rviz_common::Panel(parent),
         ui_(std::make_unique<Ui::route_tool>())
     {
@@ -33,7 +31,7 @@ namespace route_tool
         graph_.reserve(10000);
     }
 
-    void routeTool::onInitialize(void) {
+    void RouteTool::onInitialize(void) {
         auto node = getDisplayContext()->getRosNodeAbstraction().lock()->get_raw_node();
 
         clicked_point_subscription_ = node->create_subscription<geometry_msgs::msg::PointStamped>(
@@ -45,7 +43,7 @@ namespace route_tool
         });
     }
 
-    void routeTool::on_load_button_clicked(void)
+    void RouteTool::on_load_button_clicked(void)
     {
         graph_to_id_map_.clear();
         edge_to_node_map_.clear();
@@ -74,7 +72,7 @@ namespace route_tool
         update_route_graph();
     }
 
-    void routeTool::on_save_button_clicked(void)
+    void RouteTool::on_save_button_clicked(void)
     {
         struct passwd *pw = getpwuid(getuid());
         std::string homedir(pw->pw_dir);
@@ -85,7 +83,7 @@ namespace route_tool
         graph_saver_->saveGraphToFile(graph_, filename.toStdString());
     }
 
-    void routeTool::on_create_button_clicked(void)
+    void RouteTool::on_create_button_clicked(void)
     {
         if (ui_->add_field_1->toPlainText() == "" || ui_->add_field_2->toPlainText() == "") return;
         if (ui_->add_node_button->isChecked()) {
@@ -117,7 +115,7 @@ namespace route_tool
         ui_->add_field_2->setText("");
     }
 
-    void routeTool::on_confirm_button_clicked(void)
+    void RouteTool::on_confirm_button_clicked(void)
     {
         if (ui_->edit_id->toPlainText() == "" || ui_->edit_field_1->toPlainText() == "" || ui_->edit_field_2->toPlainText() == "") return;
         if (ui_->edit_node_button->isChecked()) {
@@ -158,7 +156,7 @@ namespace route_tool
         ui_->edit_field_2->setText("");
     }
 
-    void routeTool::on_delete_button_clicked(void)
+    void RouteTool::on_delete_button_clicked(void)
     {
         if ( ui_->remove_id->toPlainText() == "") return;
         if (ui_->remove_node_button->isChecked()) {
@@ -216,7 +214,7 @@ namespace route_tool
         ui_->remove_id->setText("");
     }
 
-    void routeTool::on_add_node_button_toggled(void)
+    void RouteTool::on_add_node_button_toggled(void)
     {
         if (ui_->add_node_button->isChecked()) {
             ui_->add_text->setText("Position:");
@@ -230,7 +228,7 @@ namespace route_tool
         } 
     }
 
-    void routeTool::on_edit_node_button_toggled(void) {
+    void RouteTool::on_edit_node_button_toggled(void) {
         if (ui_->edit_node_button->isChecked()) {
             ui_->edit_text->setText("Position:");
             ui_->edit_label_1->setText("X:");
@@ -242,18 +240,21 @@ namespace route_tool
         } 
     }
 
-    void routeTool::update_route_graph(void)
+    void RouteTool::update_route_graph(void)
     {
         graph_vis_publisher_->publish(nav2_route::utils::toMsg(graph_, "map", node_->now()));
     }
 
-    void routeTool::save(rviz_common::Config config) const
+    void RouteTool::save(rviz_common::Config config) const
     {
         rviz_common::Panel::save(config);
     }
 
-    void routeTool::load(const rviz_common::Config & config)
+    void RouteTool::load(const rviz_common::Config & config)
     {
         rviz_common::Panel::load(config);
     }
-} // namespace route_tool
+} // namespace nav2_rviz_plugins
+
+#include <pluginlib/class_list_macros.hpp>
+PLUGINLIB_EXPORT_CLASS(nav2_rviz_plugins::RouteTool, rviz_common::Panel)

@@ -37,7 +37,7 @@ def generate_launch_description():
         package='rviz2',
         executable='rviz2',
         output='screen',
-        arguments=['-d' + os.path.join(get_package_share_directory('nav2_route'), 'rviz', 'route_tool.rviz')])
+        arguments=['-d' + os.path.join(get_package_share_directory('nav2_rviz_plugins'), 'rviz', 'route_tool.rviz')])
     
     start_map_server = launch_ros.actions.Node(
         package='nav2_map_server',

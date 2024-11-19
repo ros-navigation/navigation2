@@ -8,6 +8,8 @@ find_package(nav2_common REQUIRED)
 find_package(nav2_lifecycle_manager REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(nav2_util REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(nav2_route REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets Test Concurrent)
 find_package(rclcpp REQUIRED)
@@ -33,12 +35,22 @@ set(nav2_rviz_plugins_headers_to_moc
   include/nav2_rviz_plugins/goal_pose_updater.hpp
   include/nav2_rviz_plugins/goal_tool.hpp
   include/nav2_rviz_plugins/nav2_panel.hpp
+  include/nav2_rviz_plugins/route_tool.hpp
   include/nav2_rviz_plugins/selector.hpp
   include/nav2_rviz_plugins/particle_cloud_display/particle_cloud_display.hpp
 )
+
 foreach(header "${nav2_rviz_plugins_headers_to_moc}")
   qt5_wrap_cpp(nav2_rviz_plugins_moc_files "${header}")
 endforeach()
+
+qt5_wrap_ui(route_tool_UIS_H resource/route_tool.ui)
+
+# Qt5 boilerplate options from http://doc.qt.io/qt-5/cmake-manual.html
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTORCC ON)
 
 set(library_name ${PROJECT_NAME})
 
@@ -47,10 +59,12 @@ add_library(${library_name} SHARED
   src/docking_panel.cpp
   src/goal_tool.cpp
   src/nav2_panel.cpp
+  src/route_tool.cpp
   src/selector.cpp
   src/utils.cpp
   src/particle_cloud_display/flat_weighted_arrows_array.cpp
   src/particle_cloud_display/particle_cloud_display.cpp
+  
   ${nav2_rviz_plugins_moc_files}
 )
 target_include_directories(${library_name} PUBLIC
@@ -99,6 +113,8 @@ install(
   DESTINATION "share/${PROJECT_NAME}"
 )
 
+install(DIRECTORY rviz launch DESTINATION share/${PROJECT_NAME})
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
@@ -110,6 +126,7 @@ ament_export_dependencies(
   geometry_msgs
   nav2_lifecycle_manager
   nav2_msgs
+  nav2_route
   nav2_util
   Qt5
   rclcpp

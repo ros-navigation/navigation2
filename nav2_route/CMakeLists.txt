@@ -9,7 +9,6 @@ find_package(rclcpp_components REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
-find_package(rviz2 REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(nav2_core REQUIRED)
 find_package(nav_msgs REQUIRED)
@@ -20,10 +19,6 @@ find_package(visualization_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(nanoflann REQUIRED)
 find_package(nlohmann_json REQUIRED)
-find_package(rviz_common REQUIRED)
-find_package(Qt5Core REQUIRED)
-find_package(Qt5Gui REQUIRED)
-find_package(Qt5Widgets REQUIRED)
 
 nav2_package()
 
@@ -44,17 +39,7 @@ set(dependencies
   nav2_core
   nanoflann
   nlohmann_json
-  rviz_common
-  Qt5Core
-  Qt5Gui
-  Qt5Widgets
 )
-
-# Qt5 boilerplate options from http://doc.qt.io/qt-5/cmake-manual.html
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTOUIC ON)
-set(CMAKE_AUTORCC ON)
 
 include_directories(
   include
@@ -227,22 +212,7 @@ ament_target_dependencies(graph_file_savers
   ${dependencies}
 )
 
-# Generate header for ui
-qt5_wrap_ui(route_tool_UIS_H resource/route_tool.ui)
-qt5_wrap_cpp(route_tool_MOCS include/nav2_route/route_tool/route_tool.hpp)
-
-add_library(route_tool_rviz_panel SHARED
-  src/route_tool/route_tool.cpp
-  ${route_tool_UIS_H}
-  ${route_tool_MOCS}
-)
-
-ament_target_dependencies(route_tool_rviz_panel ${dependencies})
-target_link_libraries(route_tool_rviz_panel ${library_name} rviz_common::rviz_common)
-target_compile_definitions(route_tool_rviz_panel PRIVATE QT_NO_KEYWORDS)
-
 pluginlib_export_plugin_description_file(nav2_route plugins.xml)
-pluginlib_export_plugin_description_file(rviz_common rviz2_plugins.xml)
 
 install(DIRECTORY include/
   DESTINATION include/${PROJECT_NAME}
@@ -252,7 +222,7 @@ install(TARGETS ${executable_name}
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
-install(TARGETS ${library_name} edge_scorers route_operations graph_file_loaders graph_file_savers route_tool_rviz_panel
+install(TARGETS ${library_name} edge_scorers route_operations graph_file_loaders graph_file_savers
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -272,5 +242,5 @@ endif()
 
 ament_export_include_directories(include/${PROJECT_NAME})
 ament_export_dependencies(${dependencies})
-ament_export_libraries(${library_name} edge_scorers route_operations graph_file_loaders graph_file_savers route_tool_rviz_panel)
+ament_export_libraries(${library_name} edge_scorers route_operations graph_file_loaders graph_file_savers)
 ament_package()
