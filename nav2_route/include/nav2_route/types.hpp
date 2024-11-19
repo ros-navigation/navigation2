@@ -17,7 +17,6 @@
 #include <any>
 #include <vector>
 #include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <limits>
 #include <geometry_msgs/msg/pose_stamped.hpp>

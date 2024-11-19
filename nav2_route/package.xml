@@ -15,7 +15,6 @@
   <depend>std_msgs</depend>
   <depend>geometry_msgs</depend>
   <depend>nav2_costmap_2d</depend>
-  <depend>rviz2</depend>
   <depend>pluginlib</depend>
   <depend>visualization_msgs</depend>
   <depend>nav2_msgs</depend>
