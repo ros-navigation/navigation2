@@ -90,6 +90,18 @@ public:
   explicit Costmap2DROS(const std::string & name, const bool & use_sim_time = false);
 
   /**
+   * @brief  Constructor for the wrapper, the node will
+   * be placed in a namespace equal to the parent_namespace and the node's name
+   * @param name Name of the costmap ROS node
+   * @param name Absolute namespace of the node hosting the costmap node
+   * @param use_sim_time Whether to use simulation or real time
+   */
+  explicit Costmap2DROS(
+    const std::string & name,
+    const std::string & parent_namespace,
+    const bool & use_sim_time = false);
+
+  /**
    * @brief  Constructor for the wrapper
    * @param name Name of the costmap ROS node
    * @param parent_namespace Absolute namespace of the node hosting the costmap node
