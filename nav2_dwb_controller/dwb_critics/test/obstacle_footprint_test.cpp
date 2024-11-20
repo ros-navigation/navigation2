@@ -125,11 +125,13 @@ TEST(ObstacleFootprint, Prepare)
 
   auto node = nav2_util::LifecycleNode::make_shared("costmap_tester");
 
-  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_global_costmap");
+  std::string costmap_name = "test_global_costmap";
+  std::string ns = "/ns";
+  auto costmap_ros =
+    std::make_shared<nav2_costmap_2d::Costmap2DROS>(costmap_name, ns, costmap_name, false);
   costmap_ros->configure();
 
   std::string name = "name";
-  std::string ns = "ns";
   critic->initialize(node, name, ns, costmap_ros);
 
   geometry_msgs::msg::Pose2D pose;
