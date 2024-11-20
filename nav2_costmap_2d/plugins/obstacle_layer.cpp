@@ -189,17 +189,7 @@ void ObstacleLayer::onInitialize()
     node->get_parameter(name_ + "." + source + "." + "raytrace_min_range", raytrace_min_range);
     node->get_parameter(name_ + "." + source + "." + "raytrace_max_range", raytrace_max_range);
 
-    // If the user passed a relative topic, use it as relative to this node's parent namespace.
-    // For example:
-    //   * User chosen namespace is `tb4`.
-    //   * User chosen topic is `scan`.
-    //   * Node namespace will be `/tb4/global_costmap`.
-    //   * Topic will be remapped to `/tb4/scan` rather than `/tb4/global_costmap/scan`
-    if (topic[0] != '/') {
-      std::string node_namespace = node->get_namespace();
-      std::string parent_namespace = node_namespace.substr(0, node_namespace.rfind("/"));
-      topic = parent_namespace + "/" + topic;
-    }
+    topic = joinWithParentNamespace(topic);
 
     RCLCPP_DEBUG(
       logger_,

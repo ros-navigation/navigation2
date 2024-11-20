@@ -38,6 +38,8 @@
 #ifndef NAV2_COSTMAP_2D__COSTMAP_LAYER_HPP_
 #define NAV2_COSTMAP_2D__COSTMAP_LAYER_HPP_
 
+#include <string>
+
 #include <rclcpp/rclcpp.hpp>
 #include <nav2_costmap_2d/layer.hpp>
 #include <nav2_costmap_2d/layered_costmap.hpp>
@@ -191,6 +193,23 @@ protected:
  * @param function_name The name of the function calling this conversion (for logging)
  */
   CombinationMethod combination_method_from_int(const int value);
+
+  /**
+   * Joins the specified topic with the parent namespace of the costmap node.
+   * If the topic has an absolute path, it is returned instead.
+   *
+   * This is necessary for user defined relative topics to work as expected since costmap layers
+   * add a an additional `costmap_name` namespace to the topic.
+   * For example:
+   *   * User chosen namespace is `tb4`.
+   *   * User chosen topic is `scan`.
+   *   * Costmap node namespace will be `/tb4/global_costmap`.
+   *   * Without this function, the topic would be `/tb4/global_costmap/scan`.
+   *   * With this function, topic will be remapped to `/tb4/scan`.
+   *
+   * @param topic the topic to parse
+   */
+  std::string joinWithParentNamespace(const std::string & topic);
 
 private:
   double extra_min_x_, extra_max_x_, extra_min_y_, extra_max_y_;

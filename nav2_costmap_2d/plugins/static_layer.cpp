@@ -155,6 +155,7 @@ StaticLayer::getParameters()
   } else {
     map_topic_ = global_map_topic;
   }
+  map_topic_ = joinWithParentNamespace(map_topic_);
   node->get_parameter(
     name_ + "." + "map_subscribe_transient_local",
     map_subscribe_transient_local_);
