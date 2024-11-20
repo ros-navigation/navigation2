@@ -66,12 +66,12 @@ void ConstraintCritic::score(CriticData & data)
     Eigen::ArrayXXf sgn(n_rows, n_cols);
     sgn = vx.unaryExpr([](const float x){return copysignf(1.0f, x);});
 
-    auto vel_total = (data.state.vx.square() + data.state.vy.square()).sqrt() * sgn;
+    auto vel_total = sgn * (data.state.vx.square() + data.state.vy.square()).sqrt();
     if (power_ > 1u) {
-      data.costs += ((std::move((vel_total - max_vel_).max(0.0f) + (min_vel_ - vel_total).
+      data.costs += ((((vel_total - max_vel_).max(0.0f) + (min_vel_ - vel_total).
         max(0.0f)) * data.model_dt).rowwise().sum().eval() * weight_).pow(power_).eval();
     } else {
-      data.costs += ((std::move((vel_total - max_vel_).max(0.0f) + (min_vel_ - vel_total).
+      data.costs += ((((vel_total - max_vel_).max(0.0f) + (min_vel_ - vel_total).
         max(0.0f)) * data.model_dt).rowwise().sum().eval() * weight_).eval();
     }
     return;
@@ -85,11 +85,11 @@ void ConstraintCritic::score(CriticData & data)
     float min_turning_rad = acker->getMinTurningRadius();
     auto out_of_turning_rad_motion = (min_turning_rad - (vx.abs() / wz.abs())).max(0.0f);
     if (power_ > 1u) {
-      data.costs += ((std::move((vx - max_vel_).max(0.0f) + (min_vel_ - vx).max(0.0f) +
+      data.costs += ((((vx - max_vel_).max(0.0f) + (min_vel_ - vx).max(0.0f) +
         out_of_turning_rad_motion) * data.model_dt).rowwise().sum().eval() *
         weight_).pow(power_).eval();
     } else {
-      data.costs += ((std::move((vx - max_vel_).max(0.0f) + (min_vel_ - vx).max(0.0f) +
+      data.costs += ((((vx - max_vel_).max(0.0f) + (min_vel_ - vx).max(0.0f) +
         out_of_turning_rad_motion) * data.model_dt).rowwise().sum().eval() * weight_).eval();
     }
     return;

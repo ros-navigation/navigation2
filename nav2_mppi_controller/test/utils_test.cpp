@@ -519,6 +519,9 @@ TEST(UtilsTests, ShiftColumnsByOnePlaceTest)
   EXPECT_EQ(array_2d(0, 3), 3);
   EXPECT_EQ(array_2d(1, 3), 7);
   EXPECT_EQ(array_2d(2, 3), 11);
+
+  // Try with invalid direction value.
+  EXPECT_THROW(utils::shiftColumnsByOnePlace(array_2d, -2), std::logic_error);
 }
 
 TEST(UtilsTests, NormalizeYawsBetweenPointsTest)

@@ -617,6 +617,10 @@ inline void shiftColumnsByOnePlace(Eigen::Ref<Eigen::ArrayXXf> e, int direction)
 {
   int size = e.size();
   if(size == 1) {return;}
+  if(abs(direction) != 1) {
+    throw std::logic_error("Invalid direction, only 1 and -1 are valid values.");
+  }
+
   if((e.cols() == 1 || e.rows() == 1) && size > 1) {
     auto start_ptr = direction == 1 ? e.data() + size - 2 : e.data() + 1;
     auto end_ptr = direction == 1 ? e.data() : e.data() + size - 1;

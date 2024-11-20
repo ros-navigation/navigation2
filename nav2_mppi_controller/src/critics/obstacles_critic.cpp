@@ -174,8 +174,8 @@ void ObstaclesCritic::score(CriticData & data)
   auto && repulsive_cost_normalized = (repulsive_cost - repulsive_cost.minCoeff()) / traj_len;
 
   if (power_ > 1u) {
-    data.costs += Eigen::pow(
-      (critical_weight_ * raw_cost) + (repulsion_weight_ * repulsive_cost_normalized), power_);
+    data.costs +=
+      (critical_weight_ * raw_cost) + (repulsion_weight_ * repulsive_cost_normalized).pow(power_);
   } else {
     data.costs += (critical_weight_ * raw_cost) + (repulsion_weight_ * repulsive_cost_normalized);
   }
