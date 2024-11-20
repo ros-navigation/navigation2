@@ -65,7 +65,7 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
   get_parameter("dock_prestaging_tolerance", dock_prestaging_tolerance_);
   get_parameter("backward_blind", backward_blind_);
   get_parameter("odom_topic", odom_topic);
-  get_parameter("backward_rotation_tolerance",backward_rotation_tolerance_);
+  get_parameter("backward_rotation_tolerance", backward_rotation_tolerance_);
   if(backward_blind_ && !dock_backwards_) {
     RCLCPP_ERROR(get_logger(), "backward_blind is enabled when dock_backwards is disabled.");
     return nav2_util::CallbackReturn::FAILURE;
@@ -478,25 +478,22 @@ bool DockingServer::approachDock(Dock * dock, geometry_msgs::msg::PoseStamped & 
     geometry_msgs::msg::PoseStamped target_pose = dock_pose;
     target_pose.header.stamp = rclcpp::Time(0);
 
-    const double backward_projection = 0.25;
-    double yaw = tf2::getYaw(target_pose.pose.orientation);
-
     // The control law can get jittery when close to the end when atan2's can explode.
     // Thus, we backward project the controller's target pose a little bit after the
     // dock so that the robot never gets to the end of the spiral before its in contact
     // with the dock to stop the docking procedure.
+    const double backward_projection = 0.25;
+    const double yaw = tf2::getYaw(target_pose.pose.orientation);
+    target_pose.pose.position.x += cos(yaw) * backward_projection;
+    target_pose.pose.position.y += sin(yaw) * backward_projection;
+
+    // Make sure that the target pose is pointing at the robot when moving backwards
+    // This is to ensure that the robot doesn't try to dock from the wrong side
     if (dock_backwards_) {
-      // Make sure that the target pose is pointing at the robot when moving backwards
-      // This is to ensure that the robot doesn't try to dock from the wrong side
-      target_pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(
-        yaw + M_PI);
-      yaw = tf2::getYaw(target_pose.pose.orientation);
-      target_pose.pose.position.x -= cos(yaw) * backward_projection;
-      target_pose.pose.position.y -= sin(yaw) * backward_projection;
-    } else {
-      target_pose.pose.position.x += cos(yaw) * backward_projection;
-      target_pose.pose.position.y += sin(yaw) * backward_projection;
+      target_pose.pose.orientation = 
+        nav2_util::geometry_utils::orientationAroundZAxis(yaw + M_PI);
     }
+
     tf2_buffer_->transform(target_pose, target_pose, base_frame_);
 
     // Compute and publish controls

@@ -116,8 +116,10 @@ geometry_msgs::msg::Twist Controller::computeRotateToHeadingCommand(
   geometry_msgs::msg::Twist cmd_vel;
   const double sign = angular_distance_to_heading > 0.0 ? 1.0 : -1.0;
   const double angular_vel = sign * rotate_to_heading_angular_vel_;
-  const double min_feasible_angular_speed = current_velocity.angular.z - rotate_to_heading_max_angular_accel_ * dt;
-  const double max_feasible_angular_speed = current_velocity.angular.z + rotate_to_heading_max_angular_accel_ * dt;
+  const double min_feasible_angular_speed =
+    current_velocity.angular.z - rotate_to_heading_max_angular_accel_ * dt;
+  const double max_feasible_angular_speed =
+    current_velocity.angular.z + rotate_to_heading_max_angular_accel_ * dt;
   cmd_vel.angular.z =
     std::clamp(angular_vel, min_feasible_angular_speed, max_feasible_angular_speed);
   return cmd_vel;
