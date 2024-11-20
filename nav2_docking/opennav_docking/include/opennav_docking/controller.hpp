@@ -22,11 +22,11 @@
 
 #include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/twist.hpp"
-#include "nav_msgs/msg/path.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "nav2_costmap_2d/footprint_subscriber.hpp"
 #include "nav2_costmap_2d/costmap_topic_collision_checker.hpp"
 #include "nav2_graceful_controller/smooth_control_law.hpp"
+#include "nav_msgs/msg/path.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 
 namespace opennav_docking
@@ -59,22 +59,25 @@ public:
    * @brief Compute a velocity command using control law.
    * @param pose Target pose, in robot centric coordinates.
    * @param cmd Command velocity.
+   * @param is_docking If true, robot is docking. If false, robot is undocking.
    * @param backward If true, robot will drive backwards to goal.
    * @returns True if command is valid, false otherwise.
    */
   bool computeVelocityCommand(
-    const geometry_msgs::msg::Pose & pose, geometry_msgs::msg::Twist & cmd, bool backward = false);
+    const geometry_msgs::msg::Pose & pose, geometry_msgs::msg::Twist & cmd, bool is_docking,
+    bool backward = false);
 
 protected:
   /**
    * @brief Check if a trajectory is collision free.
    *
    * @param target_pose Target pose, in robot centric coordinates.
+   * @param is_docking If true, robot is docking. If false, robot is undocking.
    * @param backward If true, robot will drive backwards to goal.
    * @return True if trajectory is collision free.
    */
   bool isTrajectoryCollisionFree(
-    const geometry_msgs::msg::Pose & target_pose, bool backward = false);
+    const geometry_msgs::msg::Pose & target_pose, bool is_docking, bool backward = false);
 
   /**
    * @brief Callback executed when a parameter change is detected.
@@ -116,6 +119,7 @@ protected:
   double projection_time_;
   double simulation_time_step_;
   double collision_tolerance_;
+  double transform_tolerance_;
   std::shared_ptr<tf2_ros::Buffer> tf2_buffer_;
   std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
   std::unique_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;

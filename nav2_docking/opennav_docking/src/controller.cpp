@@ -85,15 +85,14 @@ Controller::Controller(
   node->get_parameter("controller.use_collision_detection", use_collision_detection_);
   node->get_parameter("controller.projection_time", projection_time_);
   node->get_parameter("controller.simulation_time_step", simulation_time_step_);
+  node->get_parameter("controller.transform_tolerance", transform_tolerance_);
 
   if (use_collision_detection_) {
-    double transform_tolerance;
     std::string costmap_topic, footprint_topic;
     node->get_parameter("controller.costmap_topic", costmap_topic);
     node->get_parameter("controller.footprint_topic", footprint_topic);
-    node->get_parameter("controller.transform_tolerance", transform_tolerance);
     node->get_parameter("controller.collision_tolerance", collision_tolerance_);
-    configureCollisionChecker(node, costmap_topic, footprint_topic, transform_tolerance);
+    configureCollisionChecker(node, costmap_topic, footprint_topic, transform_tolerance_);
   }
 
   trajectory_pub_ =
@@ -104,21 +103,22 @@ Controller::~Controller()
 {
   control_law_.reset();
   trajectory_pub_.reset();
+  collision_checker_.reset();
   costmap_sub_.reset();
   footprint_sub_.reset();
-  collision_checker_.reset();
 }
 
 bool Controller::computeVelocityCommand(
-  const geometry_msgs::msg::Pose & pose, geometry_msgs::msg::Twist & cmd, bool backward)
+  const geometry_msgs::msg::Pose & pose, geometry_msgs::msg::Twist & cmd, bool is_docking,
+  bool backward)
 {
   std::lock_guard<std::mutex> lock(dynamic_params_lock_);
   cmd = control_law_->calculateRegularVelocity(pose, backward);
-  return isTrajectoryCollisionFree(pose, backward);
+  return isTrajectoryCollisionFree(pose, is_docking, backward);
 }
 
 bool Controller::isTrajectoryCollisionFree(
-  const geometry_msgs::msg::Pose & target_pose, bool backward)
+  const geometry_msgs::msg::Pose & target_pose, bool is_docking, bool backward)
 {
   // Visualization of the trajectory
   nav_msgs::msg::Path trajectory;
@@ -128,14 +128,14 @@ bool Controller::isTrajectoryCollisionFree(
   // First pose
   geometry_msgs::msg::PoseStamped next_pose;
   next_pose.header.frame_id = base_frame_;
-  next_pose.pose.orientation.w = 1.0;
   trajectory.poses.push_back(next_pose);
 
   // Get the transform from base_frame to fixed_frame
   geometry_msgs::msg::TransformStamped base_to_fixed_transform;
   try {
-    base_to_fixed_transform =
-      tf2_buffer_->lookupTransform(fixed_frame_, base_frame_, tf2::TimePointZero);
+    base_to_fixed_transform = tf2_buffer_->lookupTransform(
+      fixed_frame_, base_frame_, trajectory.header.stamp,
+      tf2::durationFromSec(transform_tolerance_));
   } catch (tf2::TransformException & ex) {
     RCLCPP_ERROR(
       logger_, "Could not get transform from %s to %s: %s",
@@ -157,12 +157,15 @@ bool Controller::isTrajectoryCollisionFree(
     local_pose.header.stamp = trajectory.header.stamp;
     tf2::doTransform(local_pose, local_pose, base_to_fixed_transform);
 
-    // Compute the distance between the end of the current trajectory and the dock pose
-    double dock_collision_distance =
-      nav2_util::geometry_utils::euclidean_distance(target_pose, next_pose.pose);
+    // Determine the distance at which to check for collisions
+    // Skip the final segment of the trajectory for docking
+    // and the initial segment for undocking
+    // This avoids false positives when the robot is at the dock
+    double dock_collision_distance = is_docking ?
+      nav2_util::geometry_utils::euclidean_distance(target_pose, next_pose.pose) :
+      std::hypot(next_pose.pose.position.x, next_pose.pose.position.y);
 
     // If this distance is greater than the collision_tolerance, check for collisions
-    // Skipping the last part of the trajectory where the dock should be
     auto projected_pose = nav_2d_utils::poseToPose2D(local_pose.pose);
     if (use_collision_detection_ &&
       dock_collision_distance > collision_tolerance_ &&
