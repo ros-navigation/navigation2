@@ -41,7 +41,10 @@ def generate_test_description():
             executable='opennav_docking',
             name='docking_server',
             parameters=[{'wait_charge_timeout': 1.0,
-                         'controller': {'use_collision_detection': False},
+                         'controller': {
+                             'use_collision_detection': False,
+                             'transform_tolerance': 0.5,
+                         },
                          'dock_plugins': ['test_dock_plugin'],
                          'test_dock_plugin': {
                              'plugin': 'opennav_docking::SimpleChargingDock',
