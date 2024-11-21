@@ -53,11 +53,20 @@ void GeoJsonGraphFileSaver::loadNodesFromGraph(
   Graph & graph, std::vector<Json> & json_features)
 {
   for (const auto & node : graph) {
-    Json json_feature, json_properties, json_geometry;
+    Json json_feature, json_properties, json_geometry, json_metadata, json_operations;
     json_geometry["type"] = "Point";
     json_geometry["coordinates"] = std::vector<float>{node.coords.x, node.coords.y};
     json_feature["geometry"] = json_geometry;
     json_properties["id"] = node.nodeid;
+    json_properties["frame"] = node.coords.frame_id;
+    convertMetaDataToJson(node.metadata, json_metadata);
+    if (json_metadata.size()) {
+      json_properties["metadata"] = json_metadata;
+    }
+    convertOperationsToJson(node.operations, json_operations);
+    if (json_operations.size()) {
+      json_properties["operations"] = json_operations;
+    }
     json_feature["properties"] = json_properties;
     json_feature["type"] = "Feature";
     json_features.push_back(json_feature);
@@ -69,16 +78,87 @@ void GeoJsonGraphFileSaver::loadEdgesFromGraph(
 {
   for (const auto & node : graph) {
     for (const auto & edge : node.neighbors) {
-      Json json_edge, json_properties, json_geometry;
+      Json json_edge, json_properties, json_geometry, json_metadata, json_operations;
       json_geometry["type"] = "MultiLineString";
       json_edge["geometry"] = json_geometry;
       json_properties["id"] = edge.edgeid;
       json_properties["startid"] = edge.start->nodeid;
       json_properties["endid"] = edge.end->nodeid;
+      convertMetaDataToJson(edge.metadata, json_metadata);
+      if (json_metadata.size()) {
+        json_properties["metadata"] = json_metadata;
+      }
+      convertOperationsToJson(edge.operations, json_operations);
+      if (json_operations.size()) {
+        json_properties["operations"] = json_operations;
+      }
       json_edge["properties"] = json_properties;
       json_edge["type"] = "Feature";
+      if (edge.edge_cost.cost != 0.0) {
+        json_edge["cost"] = edge.edge_cost.cost;
+      }
       json_edges.push_back(json_edge);
     }
+  }
+}
+
+void GeoJsonGraphFileSaver::convertMetaDataToJson(
+  const Metadata & metadata, Json & json_metadata) 
+{
+  for (auto itr = metadata.data.begin(); itr != metadata.data.end(); itr++) {
+    if (itr->second.type() == typeid(std::string)) {
+      json_metadata[itr->first] = std::any_cast<std::string>(itr->second);
+    } else if (itr->second.type() == typeid(int)) {
+      json_metadata[itr->first] = std::any_cast<int>(itr->second);
+    } else if (itr->second.type() == typeid(unsigned int)) {
+      json_metadata[itr->first] = std::any_cast<unsigned int>(itr->second);
+    } else if (itr->second.type() == typeid(float)) {
+      json_metadata[itr->first] = std::any_cast<float>(itr->second);
+    } else if (itr->second.type() == typeid(bool)) {
+      json_metadata[itr->first] = std::any_cast<bool>(itr->second);
+    } else if (itr->second.type() == typeid(std::nullptr_t)) {
+      json_metadata[itr->first] = nullptr;
+    } else if (itr->second.type() == typeid(Metadata)) {
+      // If the itr->second is another Metadata, recursively convert it to JSON
+      Json nested_metadata_json;
+      convertMetaDataToJson(std::any_cast<Metadata>(itr->second), nested_metadata_json);
+      json_metadata[itr->first] = nested_metadata_json;
+    } else if (itr->second.type() == typeid(std::vector<std::any>)) {
+      // If the itr->second is a vector, convert each element
+      std::vector<Json> arrayJson;
+      for (const auto& element : std::any_cast<std::vector<std::any>>(itr->second)) {
+        if (element.type() == typeid(std::string)) {
+          arrayJson.push_back(std::any_cast<std::string>(element));
+        } else if (element.type() == typeid(int)) {
+          arrayJson.push_back(std::any_cast<int>(element));
+        } else if (element.type() == typeid(unsigned int)) {
+          arrayJson.push_back(std::any_cast<unsigned int>(element));
+        } else if (element.type() == typeid(float)) {
+          arrayJson.push_back(std::any_cast<float>(element));
+        } else if (element.type() == typeid(bool)) {
+          arrayJson.push_back(std::any_cast<bool>(element));
+        }
+      }
+      json_metadata[itr->first] = arrayJson;
+    } else {
+      // If we have an unknown type, handle as needed
+      json_metadata[itr->first] = itr->second.type().name();
+    }
+  }
+}
+
+void GeoJsonGraphFileSaver::convertOperationsToJson(
+  const Operations & operations, Json & json_operations)
+{
+  for (const auto & operation : operations) {
+    Json json_operation, json_metadata;
+    json_operation["type"] = operation.type;
+    json_operation["trigger"] = operation.trigger;  // TODO: Needs to convert int to string
+    convertMetaDataToJson(operation.metadata, json_metadata);
+    if (json_metadata.size()) {
+      json_operation["metadata"] = json_metadata;
+    }
+    json_operations[operation.type] = json_operation;
   }
 }
 }  // namespace nav2_route
