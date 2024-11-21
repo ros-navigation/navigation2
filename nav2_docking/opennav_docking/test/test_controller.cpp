@@ -59,7 +59,7 @@ public:
 
   void setCollisionTolerance(double tolerance)
   {
-    collision_tolerance_ = tolerance;
+    dock_collision_threshold_ = tolerance;
   }
 };
 
@@ -237,7 +237,7 @@ TEST(ControllerTests, DynamicParameters) {
       rclcpp::Parameter("controller.slowdown_radius", 8.0),
       rclcpp::Parameter("controller.projection_time", 9.0),
       rclcpp::Parameter("controller.simulation_time_step", 10.0),
-      rclcpp::Parameter("controller.collision_tolerance", 11.0)});
+      rclcpp::Parameter("controller.dock_collision_threshold", 11.0)});
 
   // Spin
   rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
@@ -253,7 +253,7 @@ TEST(ControllerTests, DynamicParameters) {
   EXPECT_EQ(node->get_parameter("controller.slowdown_radius").as_double(), 8.0);
   EXPECT_EQ(node->get_parameter("controller.projection_time").as_double(), 9.0);
   EXPECT_EQ(node->get_parameter("controller.simulation_time_step").as_double(), 10.0);
-  EXPECT_EQ(node->get_parameter("controller.collision_tolerance").as_double(), 11.0);
+  EXPECT_EQ(node->get_parameter("controller.dock_collision_threshold").as_double(), 11.0);
 }
 
 TEST(ControllerTests, TFException)
@@ -285,7 +285,7 @@ TEST(ControllerTests, CollisionCheckerDockForward) {
   nav2_util::declare_parameter_if_not_declared(
     node, "controller.simulation_time_step", rclcpp::ParameterValue(0.1));
   nav2_util::declare_parameter_if_not_declared(
-    node, "controller.collision_tolerance", rclcpp::ParameterValue(0.3));
+    node, "controller.dock_collision_threshold", rclcpp::ParameterValue(0.3));
 
   auto controller = std::make_unique<opennav_docking::ControllerFixture>(
     node, tf, "test_base_frame", "test_base_frame");
@@ -350,7 +350,7 @@ TEST(ControllerTests, CollisionCheckerDockBackward) {
   nav2_util::declare_parameter_if_not_declared(
     node, "controller.simulation_time_step", rclcpp::ParameterValue(0.1));
   nav2_util::declare_parameter_if_not_declared(
-    node, "controller.collision_tolerance", rclcpp::ParameterValue(0.3));
+    node, "controller.dock_collision_threshold", rclcpp::ParameterValue(0.3));
 
   auto controller = std::make_unique<opennav_docking::ControllerFixture>(
     node, tf, "test_base_frame", "test_base_frame");
@@ -415,7 +415,7 @@ TEST(ControllerTests, CollisionCheckerUndockBackward) {
   nav2_util::declare_parameter_if_not_declared(
     node, "controller.simulation_time_step", rclcpp::ParameterValue(0.1));
   nav2_util::declare_parameter_if_not_declared(
-    node, "controller.collision_tolerance", rclcpp::ParameterValue(0.3));
+    node, "controller.dock_collision_threshold", rclcpp::ParameterValue(0.3));
 
   auto controller = std::make_unique<opennav_docking::ControllerFixture>(
     node, tf, "test_base_frame", "test_base_frame");
@@ -488,7 +488,7 @@ TEST(ControllerTests, CollisionCheckerUndockForward) {
   nav2_util::declare_parameter_if_not_declared(
     node, "controller.simulation_time_step", rclcpp::ParameterValue(0.1));
   nav2_util::declare_parameter_if_not_declared(
-    node, "controller.collision_tolerance", rclcpp::ParameterValue(0.3));
+    node, "controller.dock_collision_threshold", rclcpp::ParameterValue(0.3));
 
   auto controller = std::make_unique<opennav_docking::ControllerFixture>(
     node, tf, "test_base_frame", "test_base_frame");

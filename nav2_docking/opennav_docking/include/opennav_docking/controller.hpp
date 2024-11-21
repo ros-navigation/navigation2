@@ -118,7 +118,7 @@ protected:
   bool use_collision_detection_;
   double projection_time_;
   double simulation_time_step_;
-  double collision_tolerance_;
+  double dock_collision_threshold_;
   double transform_tolerance_;
   std::shared_ptr<tf2_ros::Buffer> tf2_buffer_;
   std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;

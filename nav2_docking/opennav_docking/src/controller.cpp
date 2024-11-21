@@ -64,7 +64,7 @@ Controller::Controller(
   nav2_util::declare_parameter_if_not_declared(
     node, "controller.simulation_time_step", rclcpp::ParameterValue(0.1));
   nav2_util::declare_parameter_if_not_declared(
-    node, "controller.collision_tolerance", rclcpp::ParameterValue(0.30));
+    node, "controller.dock_collision_threshold", rclcpp::ParameterValue(0.3));
 
   node->get_parameter("controller.k_phi", k_phi_);
   node->get_parameter("controller.k_delta", k_delta_);
@@ -91,7 +91,7 @@ Controller::Controller(
     std::string costmap_topic, footprint_topic;
     node->get_parameter("controller.costmap_topic", costmap_topic);
     node->get_parameter("controller.footprint_topic", footprint_topic);
-    node->get_parameter("controller.collision_tolerance", collision_tolerance_);
+    node->get_parameter("controller.dock_collision_threshold", dock_collision_threshold_);
     configureCollisionChecker(node, costmap_topic, footprint_topic, transform_tolerance_);
   }
 
@@ -165,15 +165,15 @@ bool Controller::isTrajectoryCollisionFree(
       nav2_util::geometry_utils::euclidean_distance(target_pose, next_pose.pose) :
       std::hypot(next_pose.pose.position.x, next_pose.pose.position.y);
 
-    // If this distance is greater than the collision_tolerance, check for collisions
-    auto projected_pose = nav_2d_utils::poseToPose2D(local_pose.pose);
+    // If this distance is greater than the dock_collision_threshold, check for collisions
     if (use_collision_detection_ &&
-      dock_collision_distance > collision_tolerance_ &&
-      !collision_checker_->isCollisionFree(projected_pose))
+      dock_collision_distance > dock_collision_threshold_ &&
+      !collision_checker_->isCollisionFree(nav_2d_utils::poseToPose2D(local_pose.pose)))
     {
       RCLCPP_WARN(
         logger_, "Collision detected at pose: (%.2f, %.2f, %.2f) in frame %s",
-        projected_pose.x, projected_pose.y, projected_pose.theta, fixed_frame_.c_str());
+        local_pose.pose.position.x, local_pose.pose.position.y, local_pose.pose.position.z,
+        local_pose.header.frame_id.c_str());
       trajectory_pub_->publish(trajectory);
       return false;
     }
@@ -226,8 +226,8 @@ Controller::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
         projection_time_ = parameter.as_double();
       } else if (name == "controller.simulation_time_step") {
         simulation_time_step_ = parameter.as_double();
-      } else if (name == "controller.collision_tolerance") {
-        collision_tolerance_ = parameter.as_double();
+      } else if (name == "controller.dock_collision_threshold") {
+        dock_collision_threshold_ = parameter.as_double();
       }
 
       // Update the smooth control law with the new params
