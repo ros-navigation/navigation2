@@ -222,7 +222,7 @@ For debugging purposes, there are several publishers which can be used with RVIZ
 | controller.transform_tolerance | Time with which to post-date the transform that is published, to indicate that this transform is valid into the future. | double | 0.1     |
 | controller.projection_time | Time to look ahead for collisions (s). | double | 5.0     |
 | controller.simulation_time_step | Time step for projections (s). | double | 0.1     |
-| controller.dock_collision_threshold | Distance (m) to the dock pose to not consider it a collision | double | 0.3     |
+| controller.dock_collision_threshold | Distance (m) from the dock pose to ignore collisions. | double | 0.3     |
 
 Note: `dock_plugins` and either `docks` or `dock_database` are required.
 
