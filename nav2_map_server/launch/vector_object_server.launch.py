@@ -81,8 +81,10 @@ def generate_launch_description():
             source_file=params_file,
             root_key=namespace,
             param_rewrites={},
-            convert_types=True),
-        allow_substs=True)
+            convert_types=True,
+        ),
+        allow_substs=True,
+    )
 
     # Declare node launching commands
     load_nodes = GroupAction(
@@ -92,15 +94,6 @@ def generate_launch_description():
             PushROSNamespace(
                 condition=IfCondition(NotEqualsSubstitution(LaunchConfiguration('namespace'), '')),
                 namespace=namespace),
-            Node(
-                package='nav2_lifecycle_manager',
-                executable='lifecycle_manager',
-                name='lifecycle_manager_vo_server',
-                output='screen',
-                emulate_tty=True,  # https://github.com/ros2/launch/issues/188
-                parameters=[{'autostart': autostart},
-                            {'node_names': lifecycle_nodes}],
-                remappings=remappings),
             Node(
                 package='nav2_map_server',
                 executable='vector_object_server',
@@ -116,6 +109,15 @@ def generate_launch_description():
                 output='screen',
                 emulate_tty=True,  # https://github.com/ros2/launch/issues/188
                 parameters=[configured_params],
+                remappings=remappings),
+            Node(
+                package='nav2_lifecycle_manager',
+                executable='lifecycle_manager',
+                name='lifecycle_manager_vo_server',
+                output='screen',
+                emulate_tty=True,  # https://github.com/ros2/launch/issues/188
+                parameters=[{'autostart': autostart},
+                            {'node_names': lifecycle_nodes}],
                 remappings=remappings)
         ]
     )
@@ -131,13 +133,6 @@ def generate_launch_description():
                 target_container=container_name,
                 composable_node_descriptions=[
                     ComposableNode(
-                        package='nav2_lifecycle_manager',
-                        plugin='nav2_lifecycle_manager::LifecycleManager',
-                        name='lifecycle_manager_vo_server',
-                        parameters=[{'autostart': autostart},
-                                    {'node_names': lifecycle_nodes}],
-                        remappings=remappings),
-                    ComposableNode(
                         package='nav2_map_server',
                         plugin='nav2_map_server::VectorObjectServer',
                         name='vector_object_server',
@@ -148,6 +143,13 @@ def generate_launch_description():
                         plugin='nav2_map_server::CostmapFilterInfoServer',
                         name='costmap_filter_info_server',
                         parameters=[configured_params],
+                        remappings=remappings),
+                    ComposableNode(
+                        package='nav2_lifecycle_manager',
+                        plugin='nav2_lifecycle_manager::LifecycleManager',
+                        name='lifecycle_manager_vo_server',
+                        parameters=[{'autostart': autostart},
+                                    {'node_names': lifecycle_nodes}],
                         remappings=remappings)
                 ],
             )

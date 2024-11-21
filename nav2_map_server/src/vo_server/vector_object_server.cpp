@@ -140,54 +140,46 @@ VectorObjectServer::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 
 bool VectorObjectServer::obtainParams()
 {
+  auto node = shared_from_this();
+
   // Main ROS-parameters
-  map_topic_ = getParameter(
-    shared_from_this(), "map_topic", "vo_map").as_string();
-  global_frame_id_ = getParameter(
-    shared_from_this(), "global_frame_id", "map").as_string();
-  resolution_ = getParameter(
-    shared_from_this(), "resolution", 0.05).as_double();
-  default_value_ = getParameter(
-    shared_from_this(), "default_value", nav2_util::OCC_GRID_UNKNOWN).as_int();
-  overlay_type_ = static_cast<OverlayType>(getParameter(
-      shared_from_this(), "overlay_type", static_cast<int>(OverlayType::OVERLAY_SEQ)).as_int());
-  update_frequency_ = getParameter(
-    shared_from_this(), "update_frequency", 1.0).as_double();
-  transform_tolerance_ = getParameter(
-    shared_from_this(), "transform_tolerance", 0.1).as_double();
+  map_topic_ = getParameter(node, "map_topic", "vo_map").as_string();
+  global_frame_id_ = getParameter(node, "global_frame_id", "map").as_string();
+  resolution_ = getParameter(node, "resolution", 0.05).as_double();
+  default_value_ = getParameter(node, "default_value", nav2_util::OCC_GRID_UNKNOWN).as_int();
+  overlay_type_ = static_cast<OverlayType>(getParameter(node, "overlay_type",
+      static_cast<int>(OverlayType::OVERLAY_SEQ)).as_int());
+  update_frequency_ = getParameter(node, "update_frequency", 1.0).as_double();
+  transform_tolerance_ = getParameter(node, "transform_tolerance", 0.1).as_double();
 
   // Shapes
-  std::vector<std::string> shape_names = getParameter(
-    shared_from_this(), "shapes", std::vector<std::string>()).as_string_array();
+  auto shape_names = getParameter(node, "shapes", std::vector<std::string>()).as_string_array();
   for (std::string shape_name : shape_names) {
     std::string shape_type;
-
     try {
-      shape_type = getParameter(
-        shared_from_this(), shape_name + ".type", rclcpp::PARAMETER_STRING).as_string();
+      shape_type = getParameter(node, shape_name + ".type", rclcpp::PARAMETER_STRING).as_string();
     } catch (const std::exception & ex) {
       RCLCPP_ERROR(
-        get_logger(),
-        "Error while getting shape %s type: %s",
-        shape_name.c_str(), ex.what());
+        get_logger(), "Error while getting shape %s type: %s", shape_name.c_str(), ex.what());
       return false;
     }
 
     if (shape_type == "polygon") {
-      std::shared_ptr<Polygon> polygon = std::make_shared<Polygon>(shared_from_this());
+      auto polygon = std::make_shared<Polygon>(node);
       if (!polygon->obtainParams(shape_name)) {
         return false;
       }
       shapes_.push_back(polygon);
     } else if (shape_type == "circle") {
-      std::shared_ptr<Circle> circle = std::make_shared<Circle>(shared_from_this());
-
+      auto circle = std::make_shared<Circle>(node);
       if (!circle->obtainParams(shape_name)) {
         return false;
       }
       shapes_.push_back(circle);
     } else {
-      RCLCPP_ERROR(get_logger(), "Please specify correct shape %s type", shape_name.c_str());
+      RCLCPP_ERROR(get_logger(),
+        "Please specify the correct type for shape %s. Supported types are 'polygon' and 'circle'",
+        shape_name.c_str());
       return false;
     }
   }
@@ -232,21 +224,12 @@ void VectorObjectServer::getMapBoundaries(
   max_y = std::numeric_limits<double>::lowest();
 
   double min_p_x, min_p_y, max_p_x, max_p_y;
-
   for (auto shape : shapes_) {
     shape->getBoundaries(min_p_x, min_p_y, max_p_x, max_p_y);
-    if (min_p_x < min_x) {
-      min_x = min_p_x;
-    }
-    if (min_p_y < min_y) {
-      min_y = min_p_y;
-    }
-    if (max_p_x > max_x) {
-      max_x = max_p_x;
-    }
-    if (max_p_y > max_y) {
-      max_y = max_p_y;
-    }
+    min_x = std::min(min_x, min_p_x);
+    min_y = std::min(min_y, min_p_y);
+    max_x = std::max(max_x, max_p_x);
+    max_y = std::max(max_y, max_p_y);
   }
 
   if (
@@ -269,6 +252,7 @@ void VectorObjectServer::updateMap(
   if (size_x < 0) {
     throw std::runtime_error("Incorrect map x-size");
   }
+
   if (size_y < 0) {
     throw std::runtime_error("Incorrect map y-size");
   }
@@ -276,6 +260,7 @@ void VectorObjectServer::updateMap(
   if (!map_) {
     map_ = std::make_shared<nav_msgs::msg::OccupancyGrid>();
   }
+
   if (
     map_->info.width != static_cast<unsigned int>(size_x) ||
     map_->info.height != static_cast<unsigned int>(size_y))
@@ -288,6 +273,7 @@ void VectorObjectServer::updateMap(
     // Map size was not changed
     memset(map_->data.data(), default_value_, size_x * size_y * sizeof(int8_t));
   }
+
   map_->header.frame_id = global_frame_id_;
   map_->info.resolution = resolution_;
   map_->info.origin.position.x = min_x;
@@ -316,8 +302,7 @@ void VectorObjectServer::putVectorObjectsOnMap()
       {
         RCLCPP_ERROR(
           get_logger(),
-          "Error to get shape boundaries on map (UUID: %s)",
-          shape->getUUID().c_str());
+          "Error to get shape boundaries on map (UUID: %s)", shape->getUUID().c_str());
         return;
       }
 
@@ -341,7 +326,7 @@ void VectorObjectServer::putVectorObjectsOnMap()
 
 void VectorObjectServer::publishMap()
 {
-  if (map_) {
+  if (map_ && map_pub_->get_subscription_count() > 0) {
     auto map = std::make_unique<nav_msgs::msg::OccupancyGrid>(*map_);
     map_pub_->publish(std::move(map));
   }

@@ -231,18 +231,10 @@ void Polygon::getBoundaries(double & min_x, double & min_y, double & max_x, doub
   max_y = std::numeric_limits<double>::lowest();
 
   for (auto point : polygon_->points) {
-    if (point.x < min_x) {
-      min_x = point.x;
-    }
-    if (point.y < min_y) {
-      min_y = point.y;
-    }
-    if (point.x > max_x) {
-      max_x = point.x;
-    }
-    if (point.y > max_y) {
-      max_y = point.y;
-    }
+    min_x = std::min(min_x, static_cast<double>(point.x));
+    min_y = std::min(min_y, static_cast<double>(point.y));
+    max_x = std::max(max_x, static_cast<double>(point.x));
+    max_y = std::max(max_y, static_cast<double>(point.y));
   }
 }
 
