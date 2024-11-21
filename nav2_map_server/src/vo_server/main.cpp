@@ -14,9 +14,8 @@
 
 #include <memory>
 
-#include "rclcpp/rclcpp.hpp"
-
 #include "nav2_map_server/vector_object_server.hpp"
+#include "rclcpp/rclcpp.hpp"
 
 int main(int argc, char * argv[])
 {

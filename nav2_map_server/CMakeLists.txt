@@ -11,6 +11,7 @@ find_package(nav_msgs REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(nav2_util REQUIRED)
+find_package(PkgConfig REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
@@ -167,7 +168,7 @@ target_link_libraries(${costmap_filter_info_server_executable} PRIVATE
 )
 
 add_executable(${vo_server_executable}
-  src/vo_server/vector_object_server_node.cpp)
+  src/vo_server/main.cpp)
 target_include_directories(${vo_server_executable}
   PRIVATE
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
