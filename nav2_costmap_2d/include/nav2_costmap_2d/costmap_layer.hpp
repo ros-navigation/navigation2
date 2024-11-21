@@ -206,6 +206,7 @@ protected:
    *   * Costmap node namespace will be `/tb4/global_costmap`.
    *   * Without this function, the topic would be `/tb4/global_costmap/scan`.
    *   * With this function, topic will be remapped to `/tb4/scan`.
+   * Use global topic `/scan` if you do not wish the node namespace to apply
    *
    * @param topic the topic to parse
    */
