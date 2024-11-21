@@ -77,6 +77,20 @@ protected:
    */
   void loadEdgesFromGraph(Graph & graph, std::vector<Json> & json_edges);
 
+  /**
+   * @brief Convert graph metadata to Json
+   * @param metadata Metadata from a node or edge in the graph
+   * @param json_metadata Json entry containing metadata
+   */
+  void convertMetaDataToJson(const Metadata & metadata, Json & json_metadata);
+
+  /**
+   * @brief Convert graph operation to Json
+   * @param Operations Operations information from the graph
+   * @param json_operations Json entries containing operation data
+   */
+  void convertOperationsToJson(const Operations & operations, Json & json_operations);
+
   rclcpp::Logger logger_{rclcpp::get_logger("GeoJsonGraphFileSaver")};
 };
 
