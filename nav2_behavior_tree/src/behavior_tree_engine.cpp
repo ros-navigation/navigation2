@@ -49,7 +49,6 @@ BehaviorTreeEngine::run(
   std::function<bool()> cancelRequested,
   std::chrono::milliseconds loopTimeout)
 {
-  rclcpp::WallRate loopRate(loopTimeout);
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
 
   // Loop until something happens with ROS or the node completes
@@ -64,13 +63,7 @@ BehaviorTreeEngine::run(
 
       onLoop();
 
-      if (!loopRate.sleep()) {
-        RCLCPP_DEBUG_THROTTLE(
-          rclcpp::get_logger("BehaviorTreeEngine"),
-          *clock_, 1000,
-          "Behavior Tree tick rate %0.2f was exceeded!",
-          1.0 / (loopRate.period().count() * 1.0e-9));
-      }
+      tree->sleep(loopTimeout);
     }
   } catch (const std::exception & ex) {
     RCLCPP_ERROR(
