@@ -41,6 +41,10 @@ Controller::Controller(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node)
     node, "controller.v_angular_max", rclcpp::ParameterValue(0.75));
   nav2_util::declare_parameter_if_not_declared(
     node, "controller.slowdown_radius", rclcpp::ParameterValue(0.25));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "controller.rotate_to_heading_angular_vel", rclcpp::ParameterValue(1.0));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "controller.rotate_to_heading_max_angular_accel", rclcpp::ParameterValue(3.2));
 
   node->get_parameter("controller.k_phi", k_phi_);
   node->get_parameter("controller.k_delta", k_delta_);
@@ -50,6 +54,8 @@ Controller::Controller(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node)
   node->get_parameter("controller.v_linear_max", v_linear_max_);
   node->get_parameter("controller.v_angular_max", v_angular_max_);
   node->get_parameter("controller.slowdown_radius", slowdown_radius_);
+  node->get_parameter("controller.rotate_to_heading_angular_vel", rotate_to_heading_angular_vel_);
+  node->get_parameter("controller.rotate_to_heading_max_angular_accel", rotate_to_heading_max_angular_accel_);
   control_law_ = std::make_unique<nav2_graceful_controller::SmoothControlLaw>(
     k_phi_, k_delta_, beta_, lambda_, slowdown_radius_, v_linear_min_, v_linear_max_,
     v_angular_max_);
@@ -95,7 +101,10 @@ Controller::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
         v_angular_max_ = parameter.as_double();
       } else if (name == "controller.slowdown_radius") {
         slowdown_radius_ = parameter.as_double();
-      }
+      } else if (name == "controller.rotate_to_heading_angular_vel") {
+        rotate_to_heading_angular_vel_ = parameter.as_double();
+      } else if (name == "controller.rotate_to_heading_max_angular_accel") {
+        rotate_to_heading_max_angular_accel_ = parameter.as_double();
 
       // Update the smooth control law with the new params
       control_law_->setCurvatureConstants(k_phi_, k_delta_, beta_, lambda_);
