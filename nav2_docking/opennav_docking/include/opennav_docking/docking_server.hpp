@@ -118,12 +118,13 @@ public:
    * @param pose The pose to command towards.
    * @param linear_tolerance Pose is reached when linear distance is within this tolerance.
    * @param angular_tolerance Pose is reached when angular distance is within this tolerance.
+   * @param is_docking If true, the robot is docking. If false, the robot is undocking.
    * @param backward If true, the robot will drive backwards.
    * @returns True if pose is reached.
    */
   bool getCommandToPose(
     geometry_msgs::msg::Twist & cmd, const geometry_msgs::msg::PoseStamped & pose,
-    double linear_tolerance, double angular_tolerance, bool backward);
+    double linear_tolerance, double angular_tolerance, bool is_docking, bool backward);
 
   /**
    * @brief Get the robot pose (aka base_frame pose) in another frame.
