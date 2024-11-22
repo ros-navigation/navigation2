@@ -210,6 +210,7 @@ For debugging purposes, there are several publishers which can be used with RVIZ
 | docks  |  Instead of `dock_database`, the set of docks specified in the params file itself | vector<string> | N/A     |
 | navigator_bt_xml  | BT XML to use for Navigator, if non-default | string | ""     |
 <<<<<<< HEAD
+<<<<<<< HEAD
 | controller.k_phi  | Ratio of the rate of change of angle relative to distance from the target. Much be > 0. | double | 3.0  |
 | controller.k_delta  |  Higher values result in converging to the target more quickly. | double | 2.0     |
 | controller.beta  |  Parameter to reduce linear velocity proportional to path curvature. Increasing this linearly reduces the velocity (v(t) = v_max / (1 + beta * |curv|^lambda)). | double | 0.4  |
@@ -220,6 +221,8 @@ For debugging purposes, there are several publishers which can be used with RVIZ
 | controller.v_angular_max |  Maximum angular velocity for approaching dock. | double | 0.75    |
 | controller.slowdown_radius |  Radius to end goal to commense slow down. | double | 0.25     |
 =======
+=======
+>>>>>>> 90a6c8d8 (Added collision detection for docking (#4752))
 | controller.k_phi  | Ratio of the rate of change in phi to the rate of change in r. Controls the convergence of the slow subsystem  | double | 3.0  |
 | controller.k_delta  | Constant factor applied to the heading error feedback. Controls the convergence of the fast subsystem | double | 2.0     |
 | controller.beta  | Constant factor applied to the path curvature. This value must be positive. Determines how fast the velocity drops when the curvature increases | double | 0.4  |
@@ -235,7 +238,6 @@ For debugging purposes, there are several publishers which can be used with RVIZ
 | controller.projection_time | Time to look ahead for collisions (s). | double | 5.0     |
 | controller.simulation_time_step | Time step for projections (s). | double | 0.1     |
 | controller.dock_collision_threshold | Distance (m) from the dock pose to ignore collisions. | double | 0.3     |
->>>>>>> 90a6c8d8 (Added collision detection for docking (#4752))
 
 Note: `dock_plugins` and either `docks` or `dock_database` are required.
 

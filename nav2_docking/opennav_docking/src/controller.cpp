@@ -50,10 +50,13 @@ Controller::Controller(
   nav2_util::declare_parameter_if_not_declared(
     node, "controller.slowdown_radius", rclcpp::ParameterValue(0.25));
   nav2_util::declare_parameter_if_not_declared(
+<<<<<<< HEAD
     node, "controller.rotate_to_heading_angular_vel", rclcpp::ParameterValue(1.0));
   nav2_util::declare_parameter_if_not_declared(
     node, "controller.rotate_to_heading_max_angular_accel", rclcpp::ParameterValue(3.2));
   nav2_util::declare_parameter_if_not_declared(
+=======
+>>>>>>> 90a6c8d8 (Added collision detection for docking (#4752))
     node, "controller.use_collision_detection", rclcpp::ParameterValue(true));
   nav2_util::declare_parameter_if_not_declared(
     node, "controller.costmap_topic",
@@ -228,10 +231,13 @@ Controller::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
         v_angular_max_ = parameter.as_double();
       } else if (name == "controller.slowdown_radius") {
         slowdown_radius_ = parameter.as_double();
+<<<<<<< HEAD
       } else if (name == "controller.rotate_to_heading_angular_vel") {
         rotate_to_heading_angular_vel_ = parameter.as_double();
       } else if (name == "controller.rotate_to_heading_max_angular_accel") {
         rotate_to_heading_max_angular_accel_ = parameter.as_double();
+=======
+>>>>>>> 90a6c8d8 (Added collision detection for docking (#4752))
       } else if (name == "controller.projection_time") {
         projection_time_ = parameter.as_double();
       } else if (name == "controller.simulation_time_step") {
