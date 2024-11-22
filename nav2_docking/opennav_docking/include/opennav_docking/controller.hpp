@@ -67,6 +67,18 @@ public:
     const geometry_msgs::msg::Pose & pose, geometry_msgs::msg::Twist & cmd, bool is_docking,
     bool backward = false);
 
+  /**
+   * @brief Perform a command for in-place rotation.
+   * @param angular_distance_to_heading Angular distance to goal
+   * @param current_velocity Current angular velocity
+   * @param dt Control loop duration [s]
+   * @returns TwistStamped command.
+   */
+  geometry_msgs::msg::Twist computeRotateToHeadingCommand(
+    const double & angular_distance_to_heading,
+    const geometry_msgs::msg::Twist & current_velocity,
+    const double & dt);
+    
 protected:
   /**
    * @brief Check if a trajectory is collision free.
@@ -102,18 +114,6 @@ protected:
   // Dynamic parameters handler
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
   std::mutex dynamic_params_lock_;
-
-  /**
-   * @brief Perform a command for in-place rotation.
-   * @param angular_distance_to_heading Angular distance to goal
-   * @param current_velocity Current angular velocity
-   * @param dt Control loop duration [s]
-   * @returns TwistStamped command.
-   */
-  geometry_msgs::msg::Twist computeRotateToHeadingCommand(
-    const double & angular_distance_to_heading,
-    const geometry_msgs::msg::Twist & current_velocity,
-    const double & dt);
 
 protected:
   rclcpp::Logger logger_{rclcpp::get_logger("Controller")};
