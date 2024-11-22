@@ -67,6 +67,18 @@ public:
     const geometry_msgs::msg::Pose & pose, geometry_msgs::msg::Twist & cmd, bool is_docking,
     bool backward = false);
 
+protected:
+  /**
+   * @brief Check if a trajectory is collision free.
+   *
+   * @param target_pose Target pose, in robot centric coordinates.
+   * @param is_docking If true, robot is docking. If false, robot is undocking.
+   * @param backward If true, robot will drive backwards to goal.
+   * @return True if trajectory is collision free.
+   */
+  bool isTrajectoryCollisionFree(
+    const geometry_msgs::msg::Pose & target_pose, bool is_docking, bool backward = false);
+
   /**
    * @brief Perform a command for in-place rotation.
    * @param angular_distance_to_heading Angular distance to goal
