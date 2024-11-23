@@ -258,7 +258,7 @@ void Optimizer::applyControlSequenceConstraints()
     vx_last = vx_curr;
 
     float & wz_curr = control_sequence_.wz(i);
-    wz_curr = utils::clamp(-s.constraints.wz, s.constraints.wz, vx_curr);
+    wz_curr = utils::clamp(-s.constraints.wz, s.constraints.wz, wz_curr);
     wz_curr = utils::clamp(wz_last - max_delta_wz, wz_last + max_delta_wz, wz_curr);
     wz_last = wz_curr;
 
