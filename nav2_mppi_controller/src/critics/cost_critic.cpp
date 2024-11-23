@@ -35,10 +35,11 @@ void CostCritic::initialize()
   weight_ /= 254.0f;
 
   // Normalize weight when parameter is changed dynamically as well
-  auto weightDynamicCb = [&](const rclcpp::Parameter & weight) {
+  auto weightDynamicCb = [&](
+    const rclcpp::Parameter & weight, rcl_interfaces::msg::SetParametersResult & /*result*/) {
       weight_ = weight.as_double() / 254.0f;
     };
-  parameters_handler_->addDynamicParamCallback(name_ + ".cost_weight", weightDynamicCb);
+  parameters_handler_->addParamCallback(name_ + ".cost_weight", weightDynamicCb);
 
   collision_checker_.setCostmap(costmap_);
   possible_collision_cost_ = findCircumscribedCost(costmap_ros_);
