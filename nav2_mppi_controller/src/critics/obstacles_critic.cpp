@@ -159,10 +159,10 @@ void ObstaclesCritic::score(CriticData & data)
       if (!near_goal) {
         repulsive_cost[i] += inflation_radius_ - dist_to_obj;
       }
-
-      if (!trajectory_collide) {all_trajectories_collide = false;}
-      raw_cost(i) = trajectory_collide ? collision_cost_ : traj_cost;
     }
+
+    if (!trajectory_collide) {all_trajectories_collide = false;}
+      raw_cost(i) = trajectory_collide ? collision_cost_ : traj_cost;
   }
 
   // Normalize repulsive cost by trajectory length & lowest score to not overweight importance
@@ -171,7 +171,7 @@ void ObstaclesCritic::score(CriticData & data)
 
   if (power_ > 1u) {
     data.costs +=
-      (critical_weight_ * raw_cost) + (repulsion_weight_ * repulsive_cost_normalized).pow(power_);
+      ((critical_weight_ * raw_cost) + (repulsion_weight_ * repulsive_cost_normalized)).pow(power_);
   } else {
     data.costs += (critical_weight_ * raw_cost) + (repulsion_weight_ * repulsive_cost_normalized);
   }
