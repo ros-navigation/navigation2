@@ -241,34 +241,31 @@ void Optimizer::applyControlSequenceConstraints()
   float min_delta_vx = s.model_dt * s.constraints.ax_min;
   float max_delta_vy = s.model_dt * s.constraints.ay_max;
   float max_delta_wz = s.model_dt * s.constraints.az_max;
-  float vx_last = std::min(
-    s.constraints.vx_max, std::max(control_sequence_.vx(0), s.constraints.vx_min));
-  float wz_last = std::min(
-    s.constraints.wz, std::max(control_sequence_.wz(0), -s.constraints.wz));
-  float vy_last = 0;
+  float vx_last = utils::clamp(s.constraints.vx_min, s.constraints.vx_max, control_sequence_.vx(0));
+  float wz_last = utils::clamp(-s.constraints.wz, s.constraints.wz, control_sequence_.wz(0));
   control_sequence_.vx(0) = vx_last;
   control_sequence_.wz(0) = wz_last;
+  float vy_last = 0;
   if (isHolonomic()) {
-    vy_last = std::min(
-    s.constraints.vy, std::max(control_sequence_.vy(0), -s.constraints.vy));
+    vy_last = utils::clamp(-s.constraints.vy, s.constraints.vy, control_sequence_.vy(0));
     control_sequence_.vy(0) = vy_last;
   }
 
   for (unsigned int i = 1; i != control_sequence_.vx.size(); i++) {
     float & vx_curr = control_sequence_.vx(i);
-    vx_curr = std::min(s.constraints.vx_max, std::max(vx_curr, s.constraints.vx_min));
-    vx_curr = std::min(vx_last + max_delta_vx, std::max(vx_curr, vx_last + min_delta_vx));
+    vx_curr = utils::clamp(s.constraints.vx_min, s.constraints.vx_max, vx_curr);
+    vx_curr = utils::clamp(vx_last + min_delta_vx, vx_last + max_delta_vx, vx_curr);
     vx_last = vx_curr;
 
     float & wz_curr = control_sequence_.wz(i);
-    wz_curr = std::min(s.constraints.wz, std::max(wz_curr, -s.constraints.wz));
-    wz_curr = std::min(wz_last + max_delta_wz, std::max(wz_curr, wz_last - max_delta_wz));
+    wz_curr = utils::clamp(-s.constraints.wz, s.constraints.wz, vx_curr);
+    wz_curr = utils::clamp(wz_last - max_delta_wz, wz_last + max_delta_wz, wz_curr);
     wz_last = wz_curr;
 
     if (isHolonomic()) {
       float & vy_curr = control_sequence_.vy(i);
-      vy_curr = std::min(s.constraints.vy, std::max(vy_curr, -s.constraints.vy));
-      vy_curr = std::min(vy_last + max_delta_vy, std::max(vy_curr, vy_last - max_delta_vy));
+      vy_curr = utils::clamp(-s.constraints.vy, s.constraints.vy, vy_curr);
+      vy_curr = utils::clamp(vy_last - max_delta_vy, vy_last + max_delta_vy, vy_curr);
       vy_last = vy_curr;
     }
   }
