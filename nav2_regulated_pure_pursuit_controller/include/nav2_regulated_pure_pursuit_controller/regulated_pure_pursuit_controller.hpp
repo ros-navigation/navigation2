@@ -33,6 +33,7 @@
 
 namespace nav2_regulated_pure_pursuit_controller
 {
+  using PathIterator = std::vector<geometry_msgs::msg::PoseStamped>::iterator;
 
 /**
  * @class nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController
@@ -245,19 +246,117 @@ protected:
     double r);
 
   /**
+    * @brief normalize
+    * Normalizes the angle to be -M_PI circle to +M_PI circle
+    * It takes and returns radians.
+    * @param angles Angles to normalize
+    * @return normalized angles
+    */
+  template<typename T>
+  auto normalize_angles(const T & angles)
+  {
+    auto && theta = fmod(angles + M_PI, 2.0 * M_PI);
+    if (theta < 0)
+      theta += 360;
+    return theta - M_PI;
+  }
+
+
+  /**
+    * @brief shortest_angular_distance
+    *
+    * Given 2 angles, this returns the shortest angular
+    * difference.  The inputs and ouputs are of course radians.
+    *
+    * The result
+    * would always be -pi <= result <= pi.  Adding the result
+    * to "from" will always get you an equivelent angle to "to".
+    * @param from Start angle
+    * @param to End angle
+    * @return Shortest distance between angles
+    */
+  template<typename F, typename T>
+  auto shortest_angular_distance(
+    const F & from,
+    const T & to)
+  {
+    return normalize_angles(to - from);
+  }
+
+  /**
    * @brief Get lookahead point
    * @param lookahead_dist Optimal lookahead distance
    * @param path Current global path
    * @return Lookahead point
    */
   geometry_msgs::msg::PoseStamped getLookAheadPoint(const double &, const nav_msgs::msg::Path &);
-
+  
   /**
-   * @brief checks for the cusp position
-   * @param pose Pose input to determine the cusp position
-   * @return robot distance from the cusp
+   * @brief Find the iterator of the first pose at which there is an inversion on the path,
+   * @param path to check for inversion
+   * @return the first point after the inversion found in the path
    */
-  double findVelocitySignChange(const nav_msgs::msg::Path & transformed_plan);
+  inline unsigned int findFirstPathInversion(nav_msgs::msg::Path & path)
+  {
+    // At least 3 poses for a possible inversion
+    if (path.poses.size() < 3) {
+      return path.poses.size();
+    }
+
+    // Iterating through the path to determine the position of the path inversion
+    for (unsigned int idx = 1; idx < path.poses.size() - 1; ++idx) {
+      // We have two vectors for the dot product OA and AB. Determining the vectors.
+      float oa_x = path.poses[idx].pose.position.x -
+        path.poses[idx - 1].pose.position.x;
+      float oa_y = path.poses[idx].pose.position.y -
+        path.poses[idx - 1].pose.position.y;
+      float ab_x = path.poses[idx + 1].pose.position.x -
+        path.poses[idx].pose.position.x;
+      float ab_y = path.poses[idx + 1].pose.position.y -
+        path.poses[idx].pose.position.y;
+
+      // Checking for the existance of cusp, in the path, using the dot product.
+      float dot_product = (oa_x * ab_x) + (oa_y * ab_y);
+      if (dot_product < 0.0) {
+        return idx + 1;
+      }
+    }
+
+    return path.poses.size();
+  }
+  
+  /**
+   * @brief Find and remove poses after the first inversion in the path
+   * @param path to check for inversion
+   * @return The location of the inversion, return 0 if none exist
+   */
+  inline unsigned int removePosesAfterFirstInversion(nav_msgs::msg::Path & path)
+  {
+    nav_msgs::msg::Path cropped_path = path;
+    const unsigned int first_after_inversion = findFirstPathInversion(cropped_path);
+    if (first_after_inversion == path.poses.size()) {
+      return 0u;
+    }
+
+    cropped_path.poses.erase(
+      cropped_path.poses.begin() + first_after_inversion, cropped_path.poses.end());
+    path = cropped_path;
+    return first_after_inversion;
+  }
+  
+    /**
+    * @brief Prune a path to only interesting portions
+    * @param plan Plan to prune
+    * @param end Final path iterator
+    */
+  void prunePlan(nav_msgs::msg::Path & plan, const PathIterator end);
+  
+  /**
+    * @brief Check if the robot pose is within the set inversion tolerances
+    * @param robot_pose Robot's current pose to check
+    * @return bool If the robot pose is within the set inversion tolerances
+    */
+  bool isWithinInversionTolerances(const geometry_msgs::msg::PoseStamped & robot_pose);
 
   /**
    * Get the greatest extent of the costmap in meters from the center.
@@ -307,8 +406,12 @@ protected:
   bool allow_reversing_;
   double max_robot_pose_search_dist_;
   bool use_interpolation_;
+  float inversion_xy_tolerance_{0.2};
+  float inversion_yaw_tolerance_{0.4};
+  unsigned int inversion_locale_{0u};
 
   nav_msgs::msg::Path global_plan_;
+  nav_msgs::msg::Path global_plan_up_to_inversion_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> global_path_pub_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PointStamped>>
   carrot_pub_;

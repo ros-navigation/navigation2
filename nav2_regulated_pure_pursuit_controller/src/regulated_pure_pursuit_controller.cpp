@@ -19,6 +19,7 @@
 #include <memory>
 #include <vector>
 #include <utility>
+#include <tuple>
 
 #include "nav2_regulated_pure_pursuit_controller/regulated_pure_pursuit_controller.hpp"
 #include "nav2_core/exceptions.hpp"
@@ -112,6 +113,10 @@ void RegulatedPurePursuitController::configure(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".allow_reversing", rclcpp::ParameterValue(false));
   declare_parameter_if_not_declared(
+    node, plugin_name_ + ".inversion_xy_tolerance", rclcpp::ParameterValue(0.2));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".inversion_yaw_tolerance", rclcpp::ParameterValue(0.4));
+  declare_parameter_if_not_declared(
     node, plugin_name_ + ".max_robot_pose_search_dist",
     rclcpp::ParameterValue(getCostmapMaxExtent()));
   declare_parameter_if_not_declared(
@@ -169,6 +174,9 @@ void RegulatedPurePursuitController::configure(
   node->get_parameter(plugin_name_ + ".rotate_to_heading_min_angle", rotate_to_heading_min_angle_);
   node->get_parameter(plugin_name_ + ".max_angular_accel", max_angular_accel_);
   node->get_parameter(plugin_name_ + ".allow_reversing", allow_reversing_);
+  node->get_parameter(plugin_name_ + "inversion_xy_tolerance", inversion_xy_tolerance_);
+  node->get_parameter(plugin_name_ + "inversion_yaw_tolerance", inversion_yaw_tolerance_);
+  inversion_locale_ = 0u;
   node->get_parameter("controller_frequency", control_frequency);
   node->get_parameter(
     plugin_name_ + ".max_robot_pose_search_dist",
@@ -293,25 +301,16 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   } else {
     goal_dist_tol_ = pose_tolerance.position.x;
   }
-
+  
   // Transform path to robot base frame
   auto transformed_plan = transformGlobalPlan(pose);
 
   // Find look ahead distance and point on path and publish
   double lookahead_dist = getLookAheadDistance(speed);
-
-  // Check for reverse driving
-  if (allow_reversing_) {
-    // Cusp check
-    double dist_to_cusp = findVelocitySignChange(transformed_plan);
-
-    // if the lookahead distance is further than the cusp, use the cusp distance instead
-    if (dist_to_cusp < lookahead_dist) {
-      lookahead_dist = dist_to_cusp;
-    }
-  }
-
-  auto carrot_pose = getLookAheadPoint(lookahead_dist, transformed_plan);
+  
+  geometry_msgs::msg::PoseStamped carrot_pose;
+  carrot_pose = getLookAheadPoint(lookahead_dist, transformed_plan);
+  
   carrot_pub_->publish(createCarrotMsg(carrot_pose));
 
   double linear_vel, angular_vel;
@@ -669,6 +668,10 @@ void RegulatedPurePursuitController::applyConstraints(
 void RegulatedPurePursuitController::setPlan(const nav_msgs::msg::Path & path)
 {
   global_plan_ = path;
+  global_plan_up_to_inversion_ = global_plan_;
+  if (allow_reversing_) {
+    inversion_locale_ = removePosesAfterFirstInversion(global_plan_up_to_inversion_);
+  }
 }
 
 void RegulatedPurePursuitController::setSpeedLimit(
@@ -692,40 +695,42 @@ void RegulatedPurePursuitController::setSpeedLimit(
 nav_msgs::msg::Path RegulatedPurePursuitController::transformGlobalPlan(
   const geometry_msgs::msg::PoseStamped & pose)
 {
-  if (global_plan_.poses.empty()) {
+  if (global_plan_up_to_inversion_.poses.empty()) {
     throw nav2_core::PlannerException("Received plan with zero length");
   }
 
   // let's get the pose of the robot in the frame of the plan
   geometry_msgs::msg::PoseStamped robot_pose;
-  if (!transformPose(global_plan_.header.frame_id, pose, robot_pose)) {
+  if (!transformPose(global_plan_up_to_inversion_.header.frame_id, pose, robot_pose)) {
     throw nav2_core::PlannerException("Unable to transform robot pose into global plan's frame");
   }
 
   // We'll discard points on the plan that are outside the local costmap
   double max_costmap_extent = getCostmapMaxExtent();
-
+  
+  auto begin = global_plan_up_to_inversion_.poses.begin();
+  
   auto closest_pose_upper_bound =
     nav2_util::geometry_utils::first_after_integrated_distance(
-    global_plan_.poses.begin(), global_plan_.poses.end(), max_robot_pose_search_dist_);
+    global_plan_up_to_inversion_.poses.begin(), global_plan_up_to_inversion_.poses.end(), max_robot_pose_search_dist_);
 
   // First find the closest pose on the path to the robot
   // bounded by when the path turns around (if it does) so we don't get a pose from a later
   // portion of the path
   auto transformation_begin =
     nav2_util::geometry_utils::min_by(
-    global_plan_.poses.begin(), closest_pose_upper_bound,
+    begin, closest_pose_upper_bound,
     [&robot_pose](const geometry_msgs::msg::PoseStamped & ps) {
       return euclidean_distance(robot_pose, ps);
     });
 
   // Find points up to max_transform_dist so we only transform them.
   auto transformation_end = std::find_if(
-    transformation_begin, global_plan_.poses.end(),
+    transformation_begin, global_plan_up_to_inversion_.poses.end(),
     [&](const auto & pose) {
       return euclidean_distance(pose, robot_pose) > max_costmap_extent;
     });
-
+  
   // Lambda to transform a PoseStamped from global frame to local
   auto transformGlobalPoseToLocal = [&](const auto & global_plan_pose) {
       geometry_msgs::msg::PoseStamped stamped_pose, transformed_pose;
@@ -745,10 +750,18 @@ nav_msgs::msg::Path RegulatedPurePursuitController::transformGlobalPlan(
     transformGlobalPoseToLocal);
   transformed_plan.header.frame_id = costmap_ros_->getBaseFrameID();
   transformed_plan.header.stamp = robot_pose.header.stamp;
-
-  // Remove the portion of the global plan that we've already passed so we don't
-  // process it on the next iteration (this is called path pruning)
-  global_plan_.poses.erase(begin(global_plan_.poses), transformation_begin);
+  
+  prunePlan(global_plan_up_to_inversion_, transformation_begin);
+  
+  if (allow_reversing_ && inversion_locale_ != 0u) {
+    if (isWithinInversionTolerances(robot_pose)) {
+      // Remove the portion of the global plan from starting point up to inversion_locale_ (index)
+      prunePlan(global_plan_, global_plan_.poses.begin() + inversion_locale_);
+      global_plan_up_to_inversion_ = global_plan_;
+      inversion_locale_ = removePosesAfterFirstInversion(global_plan_up_to_inversion_);
+    }
+  }
+   
   global_path_pub_->publish(transformed_plan);
 
   if (transformed_plan.poses.empty()) {
@@ -756,36 +769,6 @@ nav_msgs::msg::Path RegulatedPurePursuitController::transformGlobalPlan(
   }
 
   return transformed_plan;
-}
-
-double RegulatedPurePursuitController::findVelocitySignChange(
-  const nav_msgs::msg::Path & transformed_plan)
-{
-  // Iterating through the transformed global path to determine the position of the cusp
-  for (unsigned int pose_id = 1; pose_id < transformed_plan.poses.size() - 1; ++pose_id) {
-    // We have two vectors for the dot product OA and AB. Determining the vectors.
-    double oa_x = transformed_plan.poses[pose_id].pose.position.x -
-      transformed_plan.poses[pose_id - 1].pose.position.x;
-    double oa_y = transformed_plan.poses[pose_id].pose.position.y -
-      transformed_plan.poses[pose_id - 1].pose.position.y;
-    double ab_x = transformed_plan.poses[pose_id + 1].pose.position.x -
-      transformed_plan.poses[pose_id].pose.position.x;
-    double ab_y = transformed_plan.poses[pose_id + 1].pose.position.y -
-      transformed_plan.poses[pose_id].pose.position.y;
-
-    /* Checking for the existance of cusp, in the path, using the dot product
-    and determine it's distance from the robot. If there is no cusp in the path,
-    then just determine the distance to the goal location. */
-    if ( (oa_x * ab_x) + (oa_y * ab_y) < 0.0) {
-      // returning the distance if there is a cusp
-      // The transformed path is in the robots frame, so robot is at the origin
-      return hypot(
-        transformed_plan.poses[pose_id].pose.position.x,
-        transformed_plan.poses[pose_id].pose.position.y);
-    }
-  }
-
-  return std::numeric_limits<double>::max();
 }
 
 bool RegulatedPurePursuitController::transformPose(
@@ -868,6 +851,10 @@ RegulatedPurePursuitController::dynamicParametersCallback(
         max_angular_accel_ = parameter.as_double();
       } else if (name == plugin_name_ + ".rotate_to_heading_min_angle") {
         rotate_to_heading_min_angle_ = parameter.as_double();
+      } else if (name == plugin_name_ + ".inversion_xy_tolerance") {
+        inversion_xy_tolerance_ = parameter.as_double();
+      } else if (name == plugin_name_ + ".inversion_yaw_tolerance") {
+        inversion_yaw_tolerance_ = parameter.as_double();
       }
     } else if (type == ParameterType::PARAMETER_BOOL) {
       if (name == plugin_name_ + ".use_velocity_scaled_lookahead_dist") {
@@ -898,6 +885,27 @@ RegulatedPurePursuitController::dynamicParametersCallback(
 
   result.successful = true;
   return result;
+}
+  
+bool RegulatedPurePursuitController::isWithinInversionTolerances(const geometry_msgs::msg::PoseStamped & robot_pose)
+{
+  // Keep full path if we are within tolerance of the inversion pose
+  const auto last_pose = global_plan_up_to_inversion_.poses.back();
+  float distance = hypotf(
+    robot_pose.pose.position.x - last_pose.pose.position.x,
+    robot_pose.pose.position.y - last_pose.pose.position.y);
+
+  float angle_distance = shortest_angular_distance(
+    tf2::getYaw(robot_pose.pose.orientation),
+    tf2::getYaw(last_pose.pose.orientation));
+
+
+  return distance <= inversion_xy_tolerance_ && fabs(angle_distance) <= inversion_yaw_tolerance_;
+}
+  
+  void RegulatedPurePursuitController::prunePlan(nav_msgs::msg::Path & plan, const PathIterator end)
+{
+  plan.poses.erase(plan.poses.begin(), end);
 }
 
 }  // namespace nav2_regulated_pure_pursuit_controller
