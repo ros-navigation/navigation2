@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Leidos
+// Copyright (c) 2024 Leidos
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -43,7 +43,9 @@ class GraphSaver
 public:
   /**
    * @brief A constructor for nav2_route::GraphSaver
-   * @param options Additional options to control creation of the node.
+   * @param node Lifecycle node encapsulated by the GraphSaver
+   * @param tf A tf buffer
+   * @param frame Coordinate frame that the graph belongs to 
    */
   explicit GraphSaver(
     nav2_util::LifecycleNode::SharedPtr node,
