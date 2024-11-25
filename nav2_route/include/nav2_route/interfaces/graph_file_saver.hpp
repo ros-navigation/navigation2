@@ -55,7 +55,7 @@ public:
   /**
    * @brief Method to save the graph to the filepath
    * @param graph The graph to save
-   * @param filepath The path to save the file to save to
+   * @param filepath The path to save the file to
    * @return true if graph was successfully saved
    */
   virtual bool saveGraphToFile(
