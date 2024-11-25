@@ -68,8 +68,14 @@ public:
   static BT::PortsList providedPorts()
   {
     return {
-      BT::InputPort<double>("velocity_threshold", 0.1, "Velocity threshold below which robot is considered stopped"),
-      BT::InputPort<std::chrono::milliseconds>("time_stopped_threshold", 1000, "Time threshold for which the velocity needs to be below the threshold to consider the robot stopped")
+      BT::InputPort<double>("velocity_threshold", 0.1,
+          "Velocity threshold below which robot is considered stopped"),
+      BT::InputPort<std::chrono::milliseconds>("time_stopped_threshold", 1000,
+          "Time threshold for which the velocity needs to be below the threshold to consider the robot stopped"),
+      BT::InputPort<std::string>(
+        "topic_name",
+        "odom",
+        "the odometry topic name"),
     };
   }
 
@@ -80,6 +86,7 @@ private:
   rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
   std::thread callback_group_executor_thread;
 
+  std::string topic_name_;
   std::atomic<bool> is_stopped_;
   double velocity_threshold_;
   std::chrono::milliseconds time_stopped_threshold_;
