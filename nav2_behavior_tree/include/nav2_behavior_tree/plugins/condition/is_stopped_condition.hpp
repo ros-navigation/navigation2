@@ -28,7 +28,7 @@ namespace nav2_behavior_tree
 
 /**
  * @brief A BT::ConditionNode that tracks robot odometry and returns SUCCESS
- * if robot is stuck somewhere and FAILURE otherwise
+ * if robot is considered stopped for long enough, RUNNING if stopped but not for long enough and FAILURE otherwise
  */
 class IsStoppedCondition : public BT::ConditionNode
 {
@@ -99,4 +99,4 @@ private:
 
 }  // namespace nav2_behavior_tree
 
-#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__IS_STUCK_CONDITION_HPP_
+#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__IS_STOPPED_CONDITION_HPP_
