@@ -273,12 +273,9 @@ std::string CostmapLayer::joinWithParentNamespace(const std::string & topic)
   }
 
   if (topic[0] != '/') {
-    auto parent_param = node->get_parameter("__parent_namespace");
-    if (parent_param.get_type() != rclcpp::ParameterType::PARAMETER_STRING) {
-      throw std::runtime_error{"__parent_namespace parameter not found or wrong type"};
-    }
-    auto parent_ns = parent_param.as_string();
-    return (parent_ns == "/" ? "/" : parent_ns + "/") + topic;
+    std::string node_namespace = node->get_namespace();
+    std::string parent_namespace = node_namespace.substr(0, node_namespace.rfind("/"));
+    return parent_namespace + "/" + topic;
   }
 
   return topic;
