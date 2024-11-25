@@ -25,32 +25,32 @@ LoopRate::LoopRate(const rclcpp::Duration & period, BT::Tree * tree)
 // Similar to rclcpp::WallRate::sleep() but using tree_->sleep()
 bool LoopRate::sleep()
 {
-    // Time coming into sleep
+  // Time coming into sleep
   auto now = clock_->now();
-    // Time of next interval
+  // Time of next interval
   auto next_interval = last_interval_ + period_;
-    // Detect backwards time flow
+  // Detect backwards time flow
   if (now < last_interval_) {
-        // Best thing to do is to set the next_interval to now + period
+    // Best thing to do is to set the next_interval to now + period
     next_interval = now + period_;
   }
-    // Update the interval
+  // Update the interval
   last_interval_ += period_;
-    // If the time_to_sleep is negative or zero, don't sleep
+  // If the time_to_sleep is negative or zero, don't sleep
   if (next_interval <= now) {
-        // If an entire cycle was missed then reset next interval.
-        // This might happen if the loop took more than a cycle.
-        // Or if time jumps forward.
+    // If an entire cycle was missed then reset next interval.
+    // This might happen if the loop took more than a cycle.
+    // Or if time jumps forward.
     if (now > next_interval + period_) {
       last_interval_ = now + period_;
     }
-        // Either way do not sleep and return false
+    // Either way do not sleep and return false
     return false;
   }
-    // Calculate the time to sleep
+  // Calculate the time to sleep
   auto time_to_sleep = next_interval - now;
   std::chrono::nanoseconds time_to_sleep_ns(time_to_sleep.nanoseconds());
-    // Sleep (will get interrupted by ctrl-c, may not sleep full time)
+  // Sleep (can get interrupted by emitWakeUpSignal())
   tree_->sleep(time_to_sleep_ns);
   return true;
 }
