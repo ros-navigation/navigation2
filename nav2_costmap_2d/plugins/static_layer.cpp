@@ -151,12 +151,11 @@ StaticLayer::getParameters()
   node->get_parameter(name_ + "." + "map_topic", private_map_topic);
   node->get_parameter("map_topic", global_map_topic);
   if (!private_map_topic.empty()) {
-    // global_map_topic_ is already in parent namespace, so we only need to process
-    // the local topic
-    map_topic_ = joinWithParentNamespace(private_map_topic);
+    map_topic_ = private_map_topic;
   } else {
     map_topic_ = global_map_topic;
   }
+  map_topic_ = joinWithParentNamespace(map_topic_);
   node->get_parameter(
     name_ + "." + "map_subscribe_transient_local",
     map_subscribe_transient_local_);
