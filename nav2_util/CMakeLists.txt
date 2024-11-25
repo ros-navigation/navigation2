@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 project(nav2_util)
 
 find_package(ament_cmake REQUIRED)
+find_package(behaviortree_cpp REQUIRED)
 find_package(bond REQUIRED)
 find_package(bondcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
@@ -43,6 +44,7 @@ endif()
 ament_export_include_directories(include/${PROJECT_NAME})
 ament_export_libraries(${library_name})
 ament_export_dependencies(
+  behaviortree_cpp
   bondcpp
   geometry_msgs
   lifecycle_msgs

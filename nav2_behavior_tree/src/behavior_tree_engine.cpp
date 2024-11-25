@@ -21,6 +21,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "behaviortree_cpp/utils/shared_library.h"
+#include "nav2_util/bt_loop_rate.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -49,6 +50,7 @@ BehaviorTreeEngine::run(
   std::function<bool()> cancelRequested,
   std::chrono::milliseconds loopTimeout)
 {
+  nav2_util::LoopRate loopRate(loopTimeout, tree);
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
 
   // Loop until something happens with ROS or the node completes
@@ -62,8 +64,13 @@ BehaviorTreeEngine::run(
       result = tree->tickOnce();
 
       onLoop();
-
-      tree->sleep(loopTimeout);
+      if (!loopRate.sleep()) {
+        RCLCPP_DEBUG_THROTTLE(
+          rclcpp::get_logger("BehaviorTreeEngine"),
+          *clock_, 1000,
+          "Behavior Tree tick rate %0.2f was exceeded!",
+          1.0 / (loopRate.period().count() * 1.0e-9));
+      }
     }
   } catch (const std::exception & ex) {
     RCLCPP_ERROR(

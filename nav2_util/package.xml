@@ -13,6 +13,7 @@
 
   <depend>nav2_common</depend>
 
+  <depend>behaviortree_cpp</depend>
   <depend>bond</depend>
   <depend>bondcpp</depend>
   <depend>builtin_interfaces</depend>
