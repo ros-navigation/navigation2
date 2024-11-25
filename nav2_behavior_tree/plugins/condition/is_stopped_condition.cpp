@@ -29,7 +29,7 @@ IsStoppedCondition::IsStoppedCondition(
   is_stopped_(false),
   velocity_threshold_(0.1),
   time_stopped_threshold_(1000),
-  stopped_stamp_(rclcpp::Time(0))
+  stopped_stamp_(rclcpp::Time(0, 0, RCL_ROS_TIME))
 {
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
   getInput("topic_name", topic_name_);
@@ -60,13 +60,14 @@ void IsStoppedCondition::onOdomReceived(const typename nav_msgs::msg::Odometry::
 {
   getInput("velocity_threshold", velocity_threshold_);
   getInput("time_stopped_threshold", time_stopped_threshold_);
+  std::lock_guard<std::mutex> lock(mutex_);
 
   // Check if the robot is stopped for a certain amount of time
-  if (msg->twist.twist.linear.x < velocity_threshold_ &&
-    msg->twist.twist.linear.y < velocity_threshold_ &&
-    msg->twist.twist.angular.z < velocity_threshold_)
+  if (abs(msg->twist.twist.linear.x) < velocity_threshold_ &&
+    abs(msg->twist.twist.linear.y) < velocity_threshold_ &&
+    abs(msg->twist.twist.angular.z) < velocity_threshold_)
   {
-    if (stopped_stamp_ == rclcpp::Time(0)) {
+    if (stopped_stamp_ == rclcpp::Time(0, 0, RCL_ROS_TIME)) {
       stopped_stamp_ = rclcpp::Time(msg->header.stamp);
     } else if (rclcpp::Time(msg->header.stamp) - stopped_stamp_ >
       rclcpp::Duration(time_stopped_threshold_))
@@ -74,9 +75,7 @@ void IsStoppedCondition::onOdomReceived(const typename nav_msgs::msg::Odometry::
       is_stopped_ = true;
     }
   } else {
-    stopped_stamp_ = rclcpp::Time(0);
-
-    std::lock_guard<std::mutex> lock(mutex_);
+    stopped_stamp_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
     is_stopped_ = false;
   }
 }
@@ -86,8 +85,9 @@ BT::NodeStatus IsStoppedCondition::tick()
   std::lock_guard<std::mutex> lock(mutex_);
   if (is_stopped_) {
     return BT::NodeStatus::SUCCESS;
-  } else if (stopped_stamp_ != rclcpp::Time(0)) {
+  } else if (stopped_stamp_ != rclcpp::Time(0, 0, RCL_ROS_TIME)) {
     // Robot was stopped but not for long enough
+    RCLCPP_INFO(node_->get_logger(), "Robot is not stopped, waiting");
     return BT::NodeStatus::RUNNING;
   } else {
     return BT::NodeStatus::FAILURE;
