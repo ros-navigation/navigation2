@@ -97,6 +97,7 @@ public:
     global_frame_("map")
   {
     // Declare non-plugin specific costmap parameters
+    declare_parameter("__parent_namespace", rclcpp::ParameterValue(std::string("/")));
     declare_parameter("map_topic", rclcpp::ParameterValue(std::string("map")));
     declare_parameter("track_unknown_space", rclcpp::ParameterValue(true));
     declare_parameter("use_maximum", rclcpp::ParameterValue(false));
