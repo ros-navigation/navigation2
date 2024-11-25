@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Leidos
+// Copyright (c) 2024 Leidos
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -42,7 +42,6 @@ namespace nav2_rviz_plugins
         ui_->add_node_button->setChecked(true);
         ui_->edit_node_button->setChecked(true);
         ui_->remove_node_button->setChecked(true);
-        graph_.reserve(10000);
     }
 
     void RouteTool::onInitialize(void) {

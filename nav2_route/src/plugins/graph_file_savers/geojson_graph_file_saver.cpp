@@ -40,12 +40,20 @@ bool GeoJsonGraphFileSaver::saveGraphToFile(
   json_crs["properties"] = json_properties;
   json_graph["crs"] = json_crs;
   std::vector<Json> json_features;
-  loadNodesFromGraph(graph, json_features);
-  loadEdgesFromGraph(graph, json_features);
-  json_graph["features"] = json_features;
-  std::ofstream file(filepath);
-  file << json_graph.dump(4) << std::endl;
-  file.close();
+  try {
+    loadNodesFromGraph(graph, json_features);
+    loadEdgesFromGraph(graph, json_features);
+    json_graph["features"] = json_features;
+    std::ofstream file(filepath);
+    file << json_graph.dump(4) << std::endl;
+    file.close();
+  } catch (const std::ios_base::failure & e) {
+    RCLCPP_ERROR(logger_, "Error: %s", e.what());
+  } catch (const std::bad_alloc& e) {
+    RCLCPP_ERROR(logger_, "Error allocating memory to save the GEOJson file");
+  } catch (const std::exception & e) {
+    RCLCPP_ERROR(logger_, "An error occured: %s", e.what());
+  }
   return true;
 }
 

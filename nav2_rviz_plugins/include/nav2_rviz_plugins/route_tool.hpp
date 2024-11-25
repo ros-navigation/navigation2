@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Leidos
+// Copyright (c) 2024 Leidos
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -101,7 +101,6 @@ namespace nav2_rviz_plugins
         protected:
             // UI pointer
             std::unique_ptr<Ui::route_tool> ui_;
-            // ROS declaration
 
         private:
             void update_route_graph(void);

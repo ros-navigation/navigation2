@@ -66,28 +66,28 @@ protected:
   /**
    * @brief Add nodes into the graph
    * @param[out] graph The graph that will contain the new nodes
-   * @param[in] nodes The nodes to be added into the graph
+   * @param[in] json_features Json array to add the nodes to
    */
   void loadNodesFromGraph(Graph & graph, std::vector<Json> & json_features);
 
   /**
    * @brief Add edges into the graph
    * @param[out] graph The graph that will contain the new edges
-   * @param[in] edges The edges to be added into the graph
+   * @param[in] json_edges Json array to add the edges to
    */
   void loadEdgesFromGraph(Graph & graph, std::vector<Json> & json_edges);
 
   /**
    * @brief Convert graph metadata to Json
    * @param metadata Metadata from a node or edge in the graph
-   * @param json_metadata Json entry containing metadata
+   * @param json_metadata Json entry to store metadata in
    */
   void convertMetaDataToJson(const Metadata & metadata, Json & json_metadata);
 
   /**
    * @brief Convert graph operation to Json
    * @param Operations Operations information from the graph
-   * @param json_operations Json entries containing operation data
+   * @param json_operations Json entry to store operation data in
    */
   void convertOperationsToJson(const Operations & operations, Json & json_operations);
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Leidos
+// Copyright (c) 2024 Leidos
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -48,11 +48,10 @@ GraphSaver::GraphSaver(
   // Create graph file saver plugin
   try {
     plugin_type_ = nav2_util::get_plugin_type_param(node, graph_file_saver_id);
-    GraphFileSaver::Ptr graph_parser = plugin_loader_.createSharedInstance((plugin_type_));
+    graph_file_saver_ = plugin_loader_.createSharedInstance((plugin_type_));
     RCLCPP_INFO(
       logger_, "Created GraphFileSaver %s of type %s",
       graph_file_saver_id.c_str(), plugin_type_.c_str());
-    graph_file_saver_ = std::move(graph_parser);
     graph_file_saver_->configure(node);
   } catch (pluginlib::PluginlibException & ex) {
     RCLCPP_FATAL(
@@ -73,6 +72,10 @@ bool GraphSaver::saveGraphToFile(
     filepath = graph_filepath_;
   } else if (filepath.empty() && graph_filepath_.empty()) {
     // No graph to try to save
+    RCLCPP_WARN(
+      logger_,
+      "The graph filepath was not provided and no default was specified. "
+      "Failed to save the route graph.");
     return false;
   }
 
@@ -100,21 +103,26 @@ bool GraphSaver::transformGraph(Graph & graph)
   for (auto & node : graph) {
     std::string node_frame = node.coords.frame_id;
     if (node_frame.empty() || node_frame == route_frame_) {
+      // If there is no frame provided or the frame of the node is the same as the route graph
+      // then no transform is required
       continue;
     }
-
+    // Find the transform to convert node from node frame to route frame
     if (cached_transforms.find(node_frame) == cached_transforms.end()) {
       tf2::Transform tf_transform;
       bool got_transform = nav2_util::getTransform(
         node_frame, route_frame_, tf2::durationFromSec(0.1), tf_, tf_transform);
 
       if (!got_transform) {
+        RCLCPP_WARN(logger_, 
+        "Could not get transform from node frame %s to route frame %s", 
+        node_frame.c_str(), route_frame_.c_str());
         return false;
       }
 
       cached_transforms.insert({node_frame, tf_transform});
     }
-
+    // Apply the transform
     tf2::Vector3 graph_coord(
       node.coords.x,
       node.coords.y,

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2024, Leidos
+# Copyright (c) 2024 Leidos
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -51,7 +51,6 @@ def generate_launch_description():
         executable='lifecycle_manager',
         name='lifecycle_manager',
         output='screen',
-        emulate_tty=True,  # https://github.com/ros2/launch/issues/188
         parameters=[{'use_sim_time': False},
                 {'autostart': True},
                 {'node_names': ["map_server"]}])
