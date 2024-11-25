@@ -161,7 +161,7 @@ void GeoJsonGraphFileSaver::convertOperationsToJson(
   for (const auto & operation : operations) {
     Json json_operation, json_metadata;
     json_operation["type"] = operation.type;
-    json_operation["trigger"] = operation.trigger;  // TODO: Needs to convert int to string
+    json_operation["trigger"] = operation.trigger;
     convertMetaDataToJson(operation.metadata, json_metadata);
     if (json_metadata.size()) {
       json_operation["metadata"] = json_metadata;
