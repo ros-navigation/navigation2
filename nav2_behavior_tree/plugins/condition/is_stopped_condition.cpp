@@ -87,7 +87,6 @@ BT::NodeStatus IsStoppedCondition::tick()
     return BT::NodeStatus::SUCCESS;
   } else if (stopped_stamp_ != rclcpp::Time(0, 0, RCL_ROS_TIME)) {
     // Robot was stopped but not for long enough
-    RCLCPP_INFO(node_->get_logger(), "Robot is not stopped, waiting");
     return BT::NodeStatus::RUNNING;
   } else {
     return BT::NodeStatus::FAILURE;
