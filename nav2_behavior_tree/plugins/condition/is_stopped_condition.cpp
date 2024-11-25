@@ -32,6 +32,8 @@ IsStoppedCondition::IsStoppedCondition(
   stopped_stamp_(rclcpp::Time(0))
 {
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+  getInput("topic_name", topic_name_);
+
   callback_group_ = node_->create_callback_group(
     rclcpp::CallbackGroupType::MutuallyExclusive,
     false);
@@ -41,7 +43,7 @@ IsStoppedCondition::IsStoppedCondition(
   rclcpp::SubscriptionOptions sub_option;
   sub_option.callback_group = callback_group_;
   odom_sub_ = node_->create_subscription<nav_msgs::msg::Odometry>(
-    "odom",
+    topic_name_,
     rclcpp::SystemDefaultsQoS(),
     std::bind(&IsStoppedCondition::onOdomReceived, this, std::placeholders::_1),
     sub_option);
@@ -66,7 +68,9 @@ void IsStoppedCondition::onOdomReceived(const typename nav_msgs::msg::Odometry::
   {
     if (stopped_stamp_ == rclcpp::Time(0)) {
       stopped_stamp_ = rclcpp::Time(msg->header.stamp);
-    } else if (rclcpp::Time(msg->header.stamp) - stopped_stamp_ > rclcpp::Duration(time_stopped_threshold_)) {
+    } else if (rclcpp::Time(msg->header.stamp) - stopped_stamp_ >
+      rclcpp::Duration(time_stopped_threshold_))
+    {
       is_stopped_ = true;
     }
   } else {
@@ -82,12 +86,10 @@ BT::NodeStatus IsStoppedCondition::tick()
   std::lock_guard<std::mutex> lock(mutex_);
   if (is_stopped_) {
     return BT::NodeStatus::SUCCESS;
-  }
-  else if (stopped_stamp_ != rclcpp::Time(0)) {
+  } else if (stopped_stamp_ != rclcpp::Time(0)) {
     // Robot was stopped but not for long enough
     return BT::NodeStatus::RUNNING;
-  }
-  else {
+  } else {
     return BT::NodeStatus::FAILURE;
   }
 }
