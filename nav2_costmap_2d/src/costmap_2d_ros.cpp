@@ -837,14 +837,11 @@ void Costmap2DROS::getCostsCallback(
 
   for (const auto & pose : request->poses) {
     geometry_msgs::msg::PoseStamped pose_transformed;
-    transformPoseToGlobalFrame(pose, pose_transformed);
-    bool in_bounds = costmap->worldToMap(
-      pose_transformed.pose.position.x,
-      pose_transformed.pose.position.y, mx, my);
-
-    if (!in_bounds) {
-      response->costs.push_back(NO_INFORMATION);
-      continue;
+    if (!transformPoseToGlobalFrame(pose, pose_transformed)) {
+      response->costs.clear();
+      RCLCPP_ERROR(
+        get_logger(), "Failed to transform, returning empty costs");
+      return;
     }
     double yaw = tf2::getYaw(pose_transformed.pose.orientation);
 
@@ -866,6 +863,14 @@ void Costmap2DROS::getCostsCallback(
           pose_transformed.pose.position.x,
         pose_transformed.pose.position.y);
 
+      bool in_bounds = costmap->worldToMap(
+        pose_transformed.pose.position.x,
+        pose_transformed.pose.position.y, mx, my);
+
+      if (!in_bounds) {
+        response->costs.push_back(LETHAL_OBSTACLE);
+        continue;
+      }
       // Get the cost at the map coordinates
       response->costs.push_back(static_cast<float>(costmap->getCost(mx, my)));
     }
