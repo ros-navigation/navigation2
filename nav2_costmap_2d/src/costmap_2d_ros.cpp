@@ -868,7 +868,7 @@ void Costmap2DROS::getCostsCallback(
         pose_transformed.pose.position.y, mx, my);
 
       if (!in_bounds) {
-        response->costs.push_back(NO_INFORMATION);
+        response->costs.push_back(LETHAL_OBSTACLE);
         continue;
       }
       // Get the cost at the map coordinates
