@@ -68,13 +68,44 @@ public:
    * @brief Get twist msg from smoother
    * @return twist Twist msg
    */
-  inline geometry_msgs::msg::Twist getTwist() {return vel_smooth_.twist;}
+  inline geometry_msgs::msg::Twist getTwist()
+  {
+    std::lock_guard<std::mutex> lock(odom_mutex_);
+    return vel_smooth_.twist;
+  }
 
   /**
    * @brief Get twist stamped msg from smoother
    * @return twist TwistStamped msg
    */
-  inline geometry_msgs::msg::TwistStamped getTwistStamped() {return vel_smooth_;}
+  inline geometry_msgs::msg::TwistStamped getTwistStamped()
+  {
+    std::lock_guard<std::mutex> lock(odom_mutex_);
+    return vel_smooth_;
+  }
+
+  /**
+   * @brief Get raw twist msg from smoother (without smoothing)
+   * @return twist Twist msg
+   */
+  inline geometry_msgs::msg::Twist getRawTwist()
+  {
+    std::lock_guard<std::mutex> lock(odom_mutex_);
+    return odom_history_.back().twist.twist;
+  }
+
+    /**
+   * @brief Get raw twist stamped msg from smoother (without smoothing)
+   * @return twist TwistStamped msg
+   */
+  inline geometry_msgs::msg::TwistStamped getRawTwistStamped()
+  {
+    std::lock_guard<std::mutex> lock(odom_mutex_);
+    geometry_msgs::msg::TwistStamped twist_stamped;
+    twist_stamped.header = odom_history_.back().header;
+    twist_stamped.twist = odom_history_.back().twist.twist;
+    return twist_stamped;
+  }
 
 protected:
   /**
