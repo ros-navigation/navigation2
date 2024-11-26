@@ -136,7 +136,7 @@ StaticLayer::getParameters()
   declareParameter("subscribe_to_updates", rclcpp::ParameterValue(false));
   declareParameter("map_subscribe_transient_local", rclcpp::ParameterValue(true));
   declareParameter("transform_tolerance", rclcpp::ParameterValue(0.0));
-  declareParameter("map_topic", rclcpp::ParameterValue(""));
+  declareParameter("map_topic", rclcpp::ParameterValue("map"));
   declareParameter("footprint_clearing_enabled", rclcpp::ParameterValue(false));
 
   auto node = node_.lock();
@@ -147,14 +147,7 @@ StaticLayer::getParameters()
   node->get_parameter(name_ + "." + "enabled", enabled_);
   node->get_parameter(name_ + "." + "subscribe_to_updates", subscribe_to_updates_);
   node->get_parameter(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_);
-  std::string private_map_topic, global_map_topic;
-  node->get_parameter(name_ + "." + "map_topic", private_map_topic);
-  node->get_parameter("map_topic", global_map_topic);
-  if (!private_map_topic.empty()) {
-    map_topic_ = private_map_topic;
-  } else {
-    map_topic_ = global_map_topic;
-  }
+  node->get_parameter(name_ + "." + "map_topic", map_topic_);
   map_topic_ = joinWithParentNamespace(map_topic_);
   node->get_parameter(
     name_ + "." + "map_subscribe_transient_local",

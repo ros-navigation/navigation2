@@ -372,7 +372,6 @@ protected:
 
   std::unique_ptr<LayeredCostmap> layered_costmap_{nullptr};
   std::string name_;
-  std::string parent_namespace_;
 
   /**
    * @brief Function on timer for costmap update

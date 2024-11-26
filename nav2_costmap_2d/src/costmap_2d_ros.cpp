@@ -70,7 +70,6 @@ Costmap2DROS::Costmap2DROS(const rclcpp::NodeOptions & options)
     "nav2_costmap_2d::ObstacleLayer",
     "nav2_costmap_2d::InflationLayer"}
 {
-  declare_parameter("map_topic", rclcpp::ParameterValue(std::string("map")));
   is_lifecycle_follower_ = false;
   init();
 }
@@ -92,16 +91,12 @@ Costmap2DROS::Costmap2DROS(
     "--ros-args", "-p", "use_sim_time:=" + std::string(use_sim_time ? "true" : "false"),
   })),
   name_(name),
-  parent_namespace_(parent_namespace),
   default_plugins_{"static_layer", "obstacle_layer", "inflation_layer"},
   default_types_{
     "nav2_costmap_2d::StaticLayer",
     "nav2_costmap_2d::ObstacleLayer",
     "nav2_costmap_2d::InflationLayer"}
 {
-  declare_parameter(
-    "map_topic", rclcpp::ParameterValue(
-      (parent_namespace_ == "/" ? "/" : parent_namespace_ + "/") + std::string("map")));
   init();
 }
 
