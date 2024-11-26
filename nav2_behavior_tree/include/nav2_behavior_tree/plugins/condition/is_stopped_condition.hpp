@@ -22,6 +22,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "behaviortree_cpp/condition_node.h"
 #include "nav_msgs/msg/odometry.hpp"
+#include "nav2_util/odometry_utils.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -50,12 +51,6 @@ public:
   ~IsStoppedCondition() override;
 
   /**
-   * @brief Callback function for odom topic
-   * @param msg Shared pointer to nav_msgs::msg::Odometry::SharedPtr message
-   */
-  void onOdomReceived(const typename nav_msgs::msg::Odometry::SharedPtr msg);
-
-  /**
    * @brief The main override required by a BT action
    * @return BT::NodeStatus Status of tick execution
    */
@@ -72,29 +67,17 @@ public:
           "Velocity threshold below which robot is considered stopped"),
       BT::InputPort<std::chrono::milliseconds>("time_stopped_threshold", 1000,
           "Time threshold for which the velocity needs to be below the threshold to consider the robot stopped"),
-      BT::InputPort<std::string>(
-        "topic_name",
-        "odom",
-        "the odometry topic name"),
     };
   }
 
 private:
-  // The node that will be used for any ROS operations
   rclcpp::Node::SharedPtr node_;
-  rclcpp::CallbackGroup::SharedPtr callback_group_;
-  rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
-  std::thread callback_group_executor_thread;
 
-  std::string topic_name_;
-  std::atomic<bool> is_stopped_;
   double velocity_threshold_;
   std::chrono::milliseconds time_stopped_threshold_;
   rclcpp::Time stopped_stamp_;
-  std::mutex mutex_;
 
-  // Listen to odometry
-  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
+  std::shared_ptr<nav2_util::OdomSmoother> odom_smoother_;
 };
 
 }  // namespace nav2_behavior_tree
