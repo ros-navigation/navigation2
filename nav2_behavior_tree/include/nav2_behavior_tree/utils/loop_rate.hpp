@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BEHAVIOR_TREE__BT_LOOP_RATE_HPP_
-#define NAV2_BEHAVIOR_TREE__BT_LOOP_RATE_HPP_
+#ifndef NAV2_BEHAVIOR_TREE__UTILS__LOOP_RATE_HPP_
+#define NAV2_BEHAVIOR_TREE__UTILS__LOOP_RATE_HPP_
+
+#include <memory>
 
 #include "rclcpp/rclcpp.hpp"
 #include "behaviortree_cpp/bt_factory.h"
@@ -75,6 +77,6 @@ private:
   BT::Tree * tree_;
 };
 
-}  // namespace nav2_behaviour_tree
+}  // namespace nav2_behavior_tree
 
-#endif  // NAV2_BEHAVIOR_TREE__BT_LOOP_RATE_HPP_
+#endif  // NAV2_BEHAVIOR_TREE__UTILS__LOOP_RATE_HPP_
