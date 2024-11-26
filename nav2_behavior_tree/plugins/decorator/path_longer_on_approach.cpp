@@ -34,9 +34,10 @@ bool PathLongerOnApproach::isPathUpdated(
   nav_msgs::msg::Path & new_path,
   nav_msgs::msg::Path & old_path)
 {
-  return new_path != old_path && old_path.poses.size() != 0 &&
+  return old_path.poses.size() != 0 &&
          new_path.poses.size() != 0 &&
-         old_path.poses.back().pose == new_path.poses.back().pose;
+         new_path.poses.size() != old_path.poses.size() &&
+         old_path.poses.back().pose.position == new_path.poses.back().pose.position;
 }
 
 bool PathLongerOnApproach::isRobotInGoalProximity(
@@ -62,10 +63,12 @@ inline BT::NodeStatus PathLongerOnApproach::tick()
   getInput("prox_len", prox_len_);
   getInput("length_factor", length_factor_);
 
-  if (status() == BT::NodeStatus::IDLE) {
-    // Reset the starting point since we're starting a new iteration of
-    // PathLongerOnApproach (moving from IDLE to RUNNING)
-    first_time_ = true;
+  if (first_time_ == false) {
+    if (old_path_.poses.empty() || new_path_.poses.empty() ||
+      old_path_.poses.back().pose != new_path_.poses.back().pose)
+    {
+      first_time_ = true;
+    }
   }
 
   setStatus(BT::NodeStatus::RUNNING);
@@ -78,13 +81,12 @@ inline BT::NodeStatus PathLongerOnApproach::tick()
     const BT::NodeStatus child_state = child_node_->executeTick();
     switch (child_state) {
       case BT::NodeStatus::RUNNING:
-        return BT::NodeStatus::RUNNING;
+        return child_state;
       case BT::NodeStatus::SUCCESS:
-        old_path_ = new_path_;
-        return BT::NodeStatus::SUCCESS;
       case BT::NodeStatus::FAILURE:
         old_path_ = new_path_;
-        return BT::NodeStatus::FAILURE;
+        resetChild();
+        return child_state;
       default:
         old_path_ = new_path_;
         return BT::NodeStatus::FAILURE;
