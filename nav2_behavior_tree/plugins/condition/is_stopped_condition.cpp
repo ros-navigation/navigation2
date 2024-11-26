@@ -26,73 +26,48 @@ IsStoppedCondition::IsStoppedCondition(
   const std::string & condition_name,
   const BT::NodeConfiguration & conf)
 : BT::ConditionNode(condition_name, conf),
-  is_stopped_(false),
   velocity_threshold_(0.1),
   time_stopped_threshold_(1000),
   stopped_stamp_(rclcpp::Time(0, 0, RCL_ROS_TIME))
 {
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
-  getInput("topic_name", topic_name_);
-
-  callback_group_ = node_->create_callback_group(
-    rclcpp::CallbackGroupType::MutuallyExclusive,
-    false);
-  callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
-  callback_group_executor_thread = std::thread([this]() {callback_group_executor_.spin();});
-
-  rclcpp::SubscriptionOptions sub_option;
-  sub_option.callback_group = callback_group_;
-  odom_sub_ = node_->create_subscription<nav_msgs::msg::Odometry>(
-    topic_name_,
-    rclcpp::SystemDefaultsQoS(),
-    std::bind(&IsStoppedCondition::onOdomReceived, this, std::placeholders::_1),
-    sub_option);
+  odom_smoother_ = config().blackboard->get<std::shared_ptr<nav2_util::OdomSmoother>>(
+    "odom_smoother");
 }
 
 IsStoppedCondition::~IsStoppedCondition()
 {
   RCLCPP_DEBUG(node_->get_logger(), "Shutting down IsStoppedCondition BT node");
-  callback_group_executor_.cancel();
-  callback_group_executor_thread.join();
-}
-
-void IsStoppedCondition::onOdomReceived(const typename nav_msgs::msg::Odometry::SharedPtr msg)
-{
-  getInput("velocity_threshold", velocity_threshold_);
-  getInput("time_stopped_threshold", time_stopped_threshold_);
-  std::lock_guard<std::mutex> lock(mutex_);
-
-  // Check if the robot is stopped for a certain amount of time
-  if (abs(msg->twist.twist.linear.x) < velocity_threshold_ &&
-    abs(msg->twist.twist.linear.y) < velocity_threshold_ &&
-    abs(msg->twist.twist.angular.z) < velocity_threshold_)
-  {
-    if (stopped_stamp_ == rclcpp::Time(0, 0, RCL_ROS_TIME)) {
-      stopped_stamp_ = rclcpp::Time(msg->header.stamp);
-    } else if (rclcpp::Time(msg->header.stamp) - stopped_stamp_ >
-      rclcpp::Duration(time_stopped_threshold_))
-    {
-      is_stopped_ = true;
-    }
-  } else {
-    stopped_stamp_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
-    is_stopped_ = false;
-  }
 }
 
 BT::NodeStatus IsStoppedCondition::tick()
 {
-  std::lock_guard<std::mutex> lock(mutex_);
-  if (is_stopped_) {
-    return BT::NodeStatus::SUCCESS;
-  } else if (stopped_stamp_ != rclcpp::Time(0, 0, RCL_ROS_TIME)) {
-    // Robot was stopped but not for long enough
-    return BT::NodeStatus::RUNNING;
+  auto twist = odom_smoother_->getRawTwistStamped();
+
+  // if there is no timestamp, set it to now
+  if (twist.header.stamp.sec == 0 && twist.header.stamp.nanosec == 0) {
+    twist.header.stamp = node_->get_clock()->now();
+  }
+
+  if (abs(twist.twist.linear.x) < velocity_threshold_ &&
+    abs(twist.twist.linear.y) < velocity_threshold_ &&
+    abs(twist.twist.angular.z) < velocity_threshold_)
+  {
+    if (stopped_stamp_ == rclcpp::Time(0, 0, RCL_ROS_TIME)) {
+      stopped_stamp_ = rclcpp::Time(twist.header.stamp);
+    }
+
+    if (node_->get_clock()->now() - stopped_stamp_ > rclcpp::Duration(time_stopped_threshold_)) {
+      return BT::NodeStatus::SUCCESS;
+    } else {
+      return BT::NodeStatus::RUNNING;
+    }
+
   } else {
+    stopped_stamp_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
     return BT::NodeStatus::FAILURE;
   }
 }
-
 
 }  // namespace nav2_behavior_tree
 
