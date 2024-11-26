@@ -82,25 +82,15 @@ public:
   explicit Costmap2DROS(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
 
   /**
-   * @brief  Constructor for the wrapper, the node will
-   * be placed in a namespace equal to the node's name
-   * @param name Name of the costmap ROS node
-   * @param use_sim_time Whether to use simulation or real time
-   */
-  explicit Costmap2DROS(const std::string & name, const bool & use_sim_time = false);
-
-  /**
    * @brief  Constructor for the wrapper
-   * @param name Name of the costmap ROS node
+   * @param name Name of the costmap ROS node which will also be used as a local namespace
    * @param parent_namespace Absolute namespace of the node hosting the costmap node
-   * @param local_namespace Namespace to append to the parent namespace
    * @param use_sim_time Whether to use simulation or real time
    */
   explicit Costmap2DROS(
     const std::string & name,
-    const std::string & parent_namespace,
-    const std::string & local_namespace,
-    const bool & use_sim_time);
+    const std::string & parent_namespace = "/",
+    const bool & use_sim_time = false);
 
   /**
    * @brief Common initialization for constructors

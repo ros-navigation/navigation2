@@ -45,7 +45,6 @@ public:
     costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
       name_,
       std::string{get_namespace()},
-      name_,
       get_parameter("use_sim_time").as_bool());
     costmap_thread_ = std::make_unique<nav2_util::NodeThread>(costmap_ros_);
 

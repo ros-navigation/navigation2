@@ -128,7 +128,7 @@ TEST(ObstacleFootprint, Prepare)
   std::string ns = "/ns";
   std::string costmap_name = "test_global_costmap";
   auto costmap_ros =
-    std::make_shared<nav2_costmap_2d::Costmap2DROS>(costmap_name, ns, costmap_name, false);
+    std::make_shared<nav2_costmap_2d::Costmap2DROS>(costmap_name, ns, false);
   costmap_ros->configure();
 
   std::string name = "name";
@@ -190,7 +190,7 @@ TEST(ObstacleFootprint, PointCost)
   std::string ns = "/ns";
   std::string costmap_name = "test_global_costmap";
   auto costmap_ros =
-    std::make_shared<nav2_costmap_2d::Costmap2DROS>(costmap_name, ns, costmap_name, false);
+    std::make_shared<nav2_costmap_2d::Costmap2DROS>(costmap_name, ns, false);
   costmap_ros->configure();
 
   std::string name = "name";
@@ -215,7 +215,7 @@ TEST(ObstacleFootprint, LineCost)
   std::string ns = "/ns";
   std::string costmap_name = "test_global_costmap";
   auto costmap_ros =
-    std::make_shared<nav2_costmap_2d::Costmap2DROS>(costmap_name, ns, costmap_name, false);
+    std::make_shared<nav2_costmap_2d::Costmap2DROS>(costmap_name, ns, false);
   costmap_ros->configure();
 
   std::string name = "name";
