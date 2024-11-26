@@ -18,6 +18,7 @@
 #include <string>
 #include <atomic>
 #include <deque>
+#include <memory>
 
 #include "rclcpp/rclcpp.hpp"
 #include "behaviortree_cpp/condition_node.h"
@@ -65,8 +66,8 @@ public:
     return {
       BT::InputPort<double>("velocity_threshold", 0.1,
           "Velocity threshold below which robot is considered stopped"),
-      BT::InputPort<std::chrono::milliseconds>("time_stopped_threshold", 1000,
-          "Time threshold for which the velocity needs to be below the threshold to consider the robot stopped"),
+      BT::InputPort<std::chrono::milliseconds>("duration_stopped", 1000,
+          "Duration (ms) the velocity must remain below the threshold."),
     };
   }
 
@@ -74,7 +75,7 @@ private:
   rclcpp::Node::SharedPtr node_;
 
   double velocity_threshold_;
-  std::chrono::milliseconds time_stopped_threshold_;
+  std::chrono::milliseconds duration_stopped_;
   rclcpp::Time stopped_stamp_;
 
   std::shared_ptr<nav2_util::OdomSmoother> odom_smoother_;
