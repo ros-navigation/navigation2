@@ -9,14 +9,12 @@ add_library(${library_name} SHARED
   node_thread.cpp
   odometry_utils.cpp
   array_parser.cpp
-  bt_loop_rate.cpp
 )
 target_include_directories(${library_name}
   PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(${library_name} PUBLIC
-  behaviortree_cpp::behaviortree_cpp
   bondcpp::bondcpp
   ${geometry_msgs_TARGETS}
   ${lifecycle_msgs_TARGETS}

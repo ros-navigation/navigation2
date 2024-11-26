@@ -21,7 +21,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "behaviortree_cpp/utils/shared_library.h"
-#include "nav2_util/bt_loop_rate.hpp"
+#include "nav2_behavior_tree/utils/loop_rate.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -50,7 +50,7 @@ BehaviorTreeEngine::run(
   std::function<bool()> cancelRequested,
   std::chrono::milliseconds loopTimeout)
 {
-  nav2_util::LoopRate loopRate(loopTimeout, tree);
+  nav2_behavior_tree::LoopRate loopRate(loopTimeout, tree);
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
 
   // Loop until something happens with ROS or the node completes
