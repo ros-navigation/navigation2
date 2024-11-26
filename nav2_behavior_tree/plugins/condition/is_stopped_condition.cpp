@@ -27,7 +27,7 @@ IsStoppedCondition::IsStoppedCondition(
   const BT::NodeConfiguration & conf)
 : BT::ConditionNode(condition_name, conf),
   velocity_threshold_(0.1),
-  time_stopped_threshold_(1000),
+  duration_stopped_(1000),
   stopped_stamp_(rclcpp::Time(0, 0, RCL_ROS_TIME))
 {
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
@@ -57,7 +57,7 @@ BT::NodeStatus IsStoppedCondition::tick()
       stopped_stamp_ = rclcpp::Time(twist.header.stamp);
     }
 
-    if (node_->get_clock()->now() - stopped_stamp_ > rclcpp::Duration(time_stopped_threshold_)) {
+    if (node_->get_clock()->now() - stopped_stamp_ > rclcpp::Duration(duration_stopped_)) {
       return BT::NodeStatus::SUCCESS;
     } else {
       return BT::NodeStatus::RUNNING;
