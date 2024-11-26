@@ -227,6 +227,11 @@
 
     <Condition ID="IsStuck"/>
 
+    <Condition ID="IsStopped">
+      <input_port name="velocity_threshold">Velocity threshold below which robot is considered stopped</input_port>
+      <input_port name="duration_stopped">Duration (ms) the velocity must remain below the threshold</input_port>
+    </Condition>
+
     <Condition ID="TransformAvailable">
       <input_port name="child">Child frame for transform</input_port>
       <input_port name="parent">Parent frame for transform</input_port>

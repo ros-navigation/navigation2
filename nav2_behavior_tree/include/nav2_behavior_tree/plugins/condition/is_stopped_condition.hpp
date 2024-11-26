@@ -67,7 +67,7 @@ public:
       BT::InputPort<double>("velocity_threshold", 0.1,
           "Velocity threshold below which robot is considered stopped"),
       BT::InputPort<std::chrono::milliseconds>("duration_stopped", 1000,
-          "Duration (ms) the velocity must remain below the threshold."),
+          "Duration (ms) the velocity must remain below the threshold"),
     };
   }
 
