@@ -58,6 +58,7 @@ BT::NodeStatus IsStoppedCondition::tick()
     }
 
     if (node_->get_clock()->now() - stopped_stamp_ > rclcpp::Duration(duration_stopped_)) {
+      stopped_stamp_ = rclcpp::Time(0, 0, RCL_ROS_TIME);
       return BT::NodeStatus::SUCCESS;
     } else {
       return BT::NodeStatus::RUNNING;
