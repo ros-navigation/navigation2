@@ -5,7 +5,8 @@
 #include "nav2_util/node_utils.hpp"
 #include "rclcpp/parameter_events_filter.hpp"
 #include "pluginlib/class_list_macros.hpp"
-PLUGINLIB_EXPORT_CLASS(plugin_container_layer::PluginContainerLayer, nav2_costmap_2d::Layer)
+
+PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::PluginContainerLayer, nav2_costmap_2d::Layer)
 
 using std::vector;
 
