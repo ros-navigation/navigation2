@@ -690,7 +690,7 @@ inline auto normalize_yaws_between_points(
  * @param upper_bound Upper bound.
  * @return Clamped output.
  */
-inline auto clamp(
+inline float clamp(
   const float lower_bound, const float upper_bound, const float input)
 {
   return std::min(upper_bound, std::max(input, lower_bound));

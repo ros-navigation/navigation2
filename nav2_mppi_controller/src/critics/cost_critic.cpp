@@ -187,10 +187,10 @@ void CostCritic::score(CriticData & data)
   }
 
   if (power_ > 1u) {
-    data.costs += (std::move(repulsive_cost) *
+    data.costs += (repulsive_cost *
       (weight_ / static_cast<float>(strided_traj_cols))).pow(power_);
   } else {
-    data.costs += std::move(repulsive_cost) * (weight_ / static_cast<float>(strided_traj_cols));
+    data.costs += repulsive_cost * (weight_ / static_cast<float>(strided_traj_cols));
   }
 
   data.fail_flag = all_trajectories_collide;

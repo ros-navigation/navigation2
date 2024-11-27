@@ -30,6 +30,13 @@
 namespace mppi
 {
 
+// Forward declaration of utils method, since utils.hpp can't be included here due
+// to recursive inclusion.
+namespace utils
+{
+float clamp(const float lower_bound, const float upper_bound, const float input);
+}
+
 /**
  * @class mppi::MotionModel
  * @brief Abstract motion model for modeling a vehicle
@@ -79,18 +86,18 @@ public:
       for (unsigned int j = 0; j != n_rows; j++) {
         float vx_last = state.vx(j, i - 1);
         float & cvx_curr = state.cvx(j, i - 1);
-        cvx_curr = std::min(vx_last + max_delta_vx, std::max(cvx_curr, vx_last + min_delta_vx));
+        cvx_curr = utils::clamp(vx_last + min_delta_vx, vx_last + max_delta_vx, cvx_curr);
         state.vx(j, i) = cvx_curr;
 
         float wz_last = state.wz(j, i - 1);
         float & cwz_curr = state.cwz(j, i - 1);
-        cwz_curr = std::min(wz_last + max_delta_wz, std::max(cwz_curr, wz_last - max_delta_wz));
+        cwz_curr = utils::clamp(wz_last - max_delta_wz, wz_last + max_delta_wz, cwz_curr);
         state.wz(j, i) = cwz_curr;
 
         if (is_holo) {
           float vy_last = state.vy(j, i - 1);
           float & cvy_curr = state.cvy(j, i - 1);
-          cvy_curr = std::min(vy_last + max_delta_vy, std::max(cvy_curr, vy_last - max_delta_vy));
+          cvy_curr = utils::clamp(vy_last - max_delta_vy, vy_last + max_delta_vy, cvy_curr);
           state.vy(j, i) = cvy_curr;
         }
       }
@@ -152,11 +159,8 @@ public:
     for(int i = 0; i < steps; i++) {
       float wz_constrained = fabs(*(vx_ptr + i) / min_turning_r_);
       float & wz_curr = *(wz_ptr + i);
-      wz_curr = std::min(wz_constrained, std::max(wz_curr, -1 * wz_constrained));
+      wz_curr = utils::clamp(-1 * wz_constrained, wz_constrained, wz_curr);
     }
-    // Taking more time compared to for loop
-    // wz = ((vx.abs() / wz.abs() < min_turning_r_).select(
-    // wz, wz.sign() * vx / min_turning_r_)).eval();
   }
 
   /**

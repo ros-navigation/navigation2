@@ -20,6 +20,7 @@
 #include "nav2_mppi_controller/motion_models.hpp"
 #include "nav2_mppi_controller/models/state.hpp"
 #include "nav2_mppi_controller/models/control_sequence.hpp"
+#include "nav2_mppi_controller/tools/utils.hpp"
 
 // Tests motion models
 

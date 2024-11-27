@@ -320,10 +320,12 @@ void Optimizer::integrateStateVelocities(
     last_yaw = curr_yaw;
   }
 
-  utils::shiftColumnsByOnePlace(traj_yaws, 1);
-  traj_yaws(0) = initial_yaw;
   Eigen::ArrayXf yaw_cos = traj_yaws.cos();
   Eigen::ArrayXf yaw_sin = traj_yaws.sin();
+  utils::shiftColumnsByOnePlace(yaw_cos, 1);
+  utils::shiftColumnsByOnePlace(yaw_sin, 1);
+  yaw_cos(0) = cosf(initial_yaw);
+  yaw_sin(0) = sinf(initial_yaw);
 
   auto dx = (vx * yaw_cos).eval();
   auto dy = (vx * yaw_sin).eval();
@@ -359,10 +361,13 @@ void Optimizer::integrateStateVelocities(
   for(unsigned int i = 1; i != n_cols; i++) {
     trajectories.yaws.col(i) = trajectories.yaws.col(i - 1) + state.wz.col(i) * settings_.model_dt;
   }
-  utils::shiftColumnsByOnePlace(trajectories.yaws, 1);
-  trajectories.yaws.col(0) = initial_yaw;
-  auto yaw_cos = trajectories.yaws.cos().eval();
-  auto yaw_sin = trajectories.yaws.sin().eval();
+
+  Eigen::ArrayXXf yaw_cos = trajectories.yaws.cos();
+  Eigen::ArrayXXf yaw_sin = trajectories.yaws.sin();
+  utils::shiftColumnsByOnePlace(yaw_cos, 1);
+  utils::shiftColumnsByOnePlace(yaw_sin, 1);
+  yaw_cos.col(0) = cosf(initial_yaw);
+  yaw_sin.col(0) = sinf(initial_yaw);
 
   auto dx = (state.vx * yaw_cos).eval();
   auto dy = (state.vx * yaw_sin).eval();
