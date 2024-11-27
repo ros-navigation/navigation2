@@ -529,6 +529,25 @@ TEST_F(Tester, testPolygonBordersOutOfBoundaries)
   verifyMapEmpty(map);
 }
 
+TEST_F(Tester, testPolygonBordersOnePointInsideBoundaries)
+{
+  setPolygonParams("");
+  node_->set_parameter(
+    rclcpp::Parameter(std::string(POLYGON_NAME) + ".closed", false));
+  // Now, set the first point inside the map and the others out of the map
+  node_->set_parameter(
+    rclcpp::Parameter(
+      std::string(POLYGON_NAME) + ".points",
+      std::vector<double>{0.5, 0.5, 6.0, 5.0, 5.0, 6.0}));
+  ASSERT_TRUE(polygon_->obtainParams(POLYGON_NAME));
+
+  nav_msgs::msg::OccupancyGrid::SharedPtr map = makeMap();
+
+  polygon_->putBorders(map, nav2_map_server::OverlayType::OVERLAY_SEQ);
+
+  verifyMapEmpty(map);
+}
+
 TEST_F(Tester, testPolygonDifferentFrame)
 {
   setPolygonParams("");
@@ -716,6 +735,25 @@ TEST_F(Tester, testCircleBordersOutOfBoundaries)
     rclcpp::Parameter(
       std::string(CIRCLE_NAME) + ".center",
       std::vector<double>{5.0, 5.0}));
+  ASSERT_TRUE(circle_->obtainParams(CIRCLE_NAME));
+
+  nav_msgs::msg::OccupancyGrid::SharedPtr map = makeMap();
+
+  circle_->putBorders(map, nav2_map_server::OverlayType::OVERLAY_SEQ);
+
+  verifyMapEmpty(map);
+}
+
+TEST_F(Tester, testCircleBordersOutsideMap)
+{
+  setCircleParams("");
+  node_->set_parameter(
+    rclcpp::Parameter(std::string(CIRCLE_NAME) + ".fill", false));
+  // Set circle to be out of map
+  node_->set_parameter(
+    rclcpp::Parameter(
+      std::string(CIRCLE_NAME) + ".center",
+      std::vector<double>{-3.0, -3.0}));
   ASSERT_TRUE(circle_->obtainParams(CIRCLE_NAME));
 
   nav_msgs::msg::OccupancyGrid::SharedPtr map = makeMap();

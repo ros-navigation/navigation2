@@ -106,8 +106,7 @@ protected:
    * @param max_y output max Y-boundary of required map
    * @throw std::exception if can not obtain one of the map boundaries
    */
-  void getMapBoundaries(
-    double & min_x, double & min_y, double & max_x, double & max_y) const;
+  void getMapBoundaries(double & min_x, double & min_y, double & max_x, double & max_y) const;
 
   /**
    * @brief Creates or updates existing map with required sizes and fills it with default value

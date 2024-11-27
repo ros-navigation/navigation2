@@ -81,6 +81,22 @@ public:
   {
     process_map_ = process_map;
   }
+
+  void getMapBoundaries(double & min_x, double & min_y, double & max_x, double & max_y) const
+  {
+    VectorObjectServer::getMapBoundaries(min_x, min_y, max_x, max_y);
+  }
+
+  void updateMap(
+    const double & min_x, const double & min_y, const double & max_x, const double & max_y)
+  {
+    VectorObjectServer::updateMap(min_x, min_y, max_x, max_y);
+  }
+
+  void putVectorObjectsOnMap()
+  {
+    VectorObjectServer::putVectorObjectsOnMap();
+  }
 };  // VOServerWrapper
 
 class Tester : public ::testing::Test
@@ -423,7 +439,7 @@ void Tester::verifyMap(bool is_circle, double poly_x_end, double circle_cx)
 
   // Map should contain polygon and circle and will look like:
   //
-  // polygon {x1, y1} (and map's origin): shuld be always {-1.0, -1.0}
+  // polygon {x1, y1} (and map's origin): should be always {-1.0, -1.0}
   // V
   // xxxxxx....xxx.
   // xxxxxx...xxxxx < circle is optionally placed on map
@@ -603,7 +619,7 @@ TEST_F(Tester, testAddShapes)
   compareCircleObjects(c_check, co_msg);
 
   // Now move X-coordinate of polygon's border and
-  // add a new circle fully plaecd inside first one
+  // add a new circle fully placed inside first one
   // through AddShapes.srv:
   // Update polygon x2-coordinate to 1.5
   po_msg->points[0].x = 1.5;
@@ -952,7 +968,7 @@ TEST_F(Tester, testOverlayMax)
   // Wait for the map
   waitMap(500ms);
 
-  // Verify that ovelrap on map generated correctly
+  // Verify that overlap on map generated correctly
   double my = 9;
   double mx = 1;  // inside polygon
   ASSERT_EQ(map_->data[my * map_->info.width + mx], POLYGON_VAL);
@@ -998,7 +1014,7 @@ TEST_F(Tester, testOverlayMin)
   // Wait for the map
   waitMap(500ms);
 
-  // Verify that ovelrap on map generated correctly
+  // Verify that overlap on map generated correctly
   double my = 9;
   double mx = 1;  // inside polygon
   ASSERT_EQ(map_->data[my * map_->info.width + mx], POLYGON_VAL);
@@ -1052,7 +1068,7 @@ TEST_F(Tester, testOverlaySeq)
   // Wait for the map
   waitMap(500ms);
 
-  // Verify that ovelrap on map generated correctly
+  // Verify that overlap on map generated correctly
   double my = 9;
   double mx = 1;  // inside polygon
   ASSERT_EQ(map_->data[my * map_->info.width + mx], POLYGON_VAL);
@@ -1138,7 +1154,7 @@ TEST_F(Tester, testShapesMove)
   // Move frame with polygon
   sendTransform(0.5);
 
-  // Map is being pusblished dynamically. Wait for the map to be published one more time
+  // Map is being published dynamically. Wait for the map to be published one more time
   map_.reset();
   // Check that polygon and circle are in correct positions on map
   verifyMap(true, 1.0, 2.5);  // Polygon is moved 0.5m towards to the circle
@@ -1263,6 +1279,58 @@ TEST_F(Tester, switchProcessMap)
   ASSERT_EQ(map_->info.height, 1);
 
   vo_server_->stop();
+}
+
+TEST_F(Tester, testIncorrectMapBoundaries) {
+  setVOServerParams();
+  vo_server_->start();
+
+  // Set min_x > max_x
+  EXPECT_THROW(vo_server_->updateMap(1.0, 0.1, 0.1, 1.0), std::runtime_error);
+
+  // Set min_y > max_y
+  EXPECT_THROW(vo_server_->updateMap(0.1, 1.0, 1.0, 0.1), std::runtime_error);
+}
+
+TEST_F(Tester, testIncorrectMapBoundariesWhenNoShapes) {
+  setVOServerParams();
+  vo_server_->start();
+  double min_x, min_y, max_x, max_y;
+  EXPECT_THROW(vo_server_->getMapBoundaries(min_x, min_y, max_x, max_y), std::runtime_error);
+}
+
+TEST_F(Tester, testShapeOutsideMap) {
+  setVOServerParams();
+  vo_server_->start();
+
+  // Add polygon and circle on map
+  auto add_shapes_msg = std::make_shared<nav2_msgs::srv::AddShapes::Request>();
+  // Prepare polygon object to add
+  auto po_msg = makePolygonObject(
+    std::vector<unsigned char>{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1});
+  // Prepare circle object to add
+  auto co_msg = makeCircleObject(
+    std::vector<unsigned char>{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2});
+
+  add_shapes_msg->polygons.push_back(*po_msg);
+  add_shapes_msg->circles.push_back(*co_msg);
+  map_.reset();  // Resetting the map to ensure that updated one is received later
+  auto add_shapes_result =
+    sendRequest<nav2_msgs::srv::AddShapes>(add_shapes_client_, add_shapes_msg, 2s);
+  ASSERT_NE(add_shapes_result, nullptr);
+  ASSERT_TRUE(add_shapes_result->success);
+
+  // Check the map has been updated correctly
+  verifyMap(true);
+
+  // Modify the map to have a shape outside the map
+  vo_server_->updateMap(2.0, 2.0, 4.0, 4.0);
+
+  // Try to put the shapes back in the map
+  vo_server_->putVectorObjectsOnMap();
+
+  // Verify that map did not corrupted after all false-manipulations
+  verifyMap(true);
 }
 
 int main(int argc, char ** argv)
