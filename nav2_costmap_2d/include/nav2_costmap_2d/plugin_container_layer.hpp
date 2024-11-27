@@ -1,6 +1,6 @@
-
 #ifndef NAV2_COSTMAP_2D__PLUGIN_CONTAINER_LAYER_HPP_
 #define NAV2_COSTMAP_2D__PLUGIN_CONTAINER_LAYER_HPP_
+
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/layer.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
@@ -8,7 +8,7 @@
 #include "nav2_costmap_2d/observation_buffer.hpp"
 #include "nav2_costmap_2d/inflation_layer.hpp"
 #include "tf2_ros/message_filter.h"
-#include "message_filters/subscriber.h"
+#include "message_filters/subscriber.hpp"
 #include <Eigen/Dense>
 #include <cmath>
 #include "pluginlib/class_loader.hpp"
