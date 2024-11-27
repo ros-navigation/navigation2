@@ -71,6 +71,12 @@ public:
   inline geometry_msgs::msg::Twist getTwist()
   {
     std::lock_guard<std::mutex> lock(odom_mutex_);
+    if (!received_odom_) {
+      RCLCPP_ERROR(rclcpp::get_logger("OdomSmoother"),
+          "OdomSmoother has not received any data yet, returning empty Twist");
+      geometry_msgs::msg::Twist twist;
+      return twist;
+    }
     return vel_smooth_.twist;
   }
 
@@ -81,6 +87,12 @@ public:
   inline geometry_msgs::msg::TwistStamped getTwistStamped()
   {
     std::lock_guard<std::mutex> lock(odom_mutex_);
+    if (!received_odom_) {
+      RCLCPP_ERROR(rclcpp::get_logger("OdomSmoother"),
+          "OdomSmoother has not received any data yet, returning empty Twist");
+      geometry_msgs::msg::TwistStamped twist_stamped;
+      return twist_stamped;
+    }
     return vel_smooth_;
   }
 
@@ -91,6 +103,12 @@ public:
   inline geometry_msgs::msg::Twist getRawTwist()
   {
     std::lock_guard<std::mutex> lock(odom_mutex_);
+    if (!received_odom_) {
+      RCLCPP_ERROR(rclcpp::get_logger("OdomSmoother"),
+          "OdomSmoother has not received any data yet, returning empty Twist");
+      geometry_msgs::msg::Twist twist;
+      return twist;
+    }
     return odom_history_.back().twist.twist;
   }
 
@@ -102,6 +120,11 @@ public:
   {
     std::lock_guard<std::mutex> lock(odom_mutex_);
     geometry_msgs::msg::TwistStamped twist_stamped;
+    if (!received_odom_) {
+      RCLCPP_ERROR(rclcpp::get_logger("OdomSmoother"),
+          "OdomSmoother has not received any data yet, returning empty Twist");
+      return twist_stamped;
+    }
     twist_stamped.header = odom_history_.back().header;
     twist_stamped.twist = odom_history_.back().twist.twist;
     return twist_stamped;
@@ -119,6 +142,7 @@ protected:
    */
   void updateState();
 
+  bool received_odom_;
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
   nav_msgs::msg::Odometry odom_cumulate_;
   geometry_msgs::msg::TwistStamped vel_smooth_;
