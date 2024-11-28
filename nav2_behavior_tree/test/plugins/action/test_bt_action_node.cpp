@@ -25,6 +25,7 @@
 
 #include "behaviortree_cpp/bt_factory.h"
 #include "nav2_behavior_tree/bt_action_node.hpp"
+#include "nav2_behavior_tree/utils/loop_rate.hpp"
 
 #include "test_msgs/action/fibonacci.hpp"
 
@@ -260,7 +261,7 @@ TEST_F(BTActionNodeTestFixture, test_server_timeout_success)
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
 
   // BT loop execution rate
-  rclcpp::WallRate loopRate(10ms);
+  nav2_behavior_tree::LoopRate loopRate(10ms, tree_.get());
 
   // main BT execution loop
   while (rclcpp::ok() && result == BT::NodeStatus::RUNNING) {
