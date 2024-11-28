@@ -38,6 +38,7 @@ namespace nav2_behavior_tree
 class GoalUpdater : public BT::DecoratorNode
 {
 public:
+  typedef std::vector<geometry_msgs::msg::PoseStamped> Goals;
   /**
    * @brief A constructor for nav2_behavior_tree::GoalUpdater
    * @param xml_tag_name Name for the XML tag for this node
@@ -55,10 +56,10 @@ public:
   {
     return {
       BT::InputPort<geometry_msgs::msg::PoseStamped>("input_goal", "Original Goal"),
-      BT::InputPort<nav2_msgs::msg::PosesStamped>("input_goals", "Original Goals"),
+      BT::InputPort<Goals>("input_goals", "Original Goals"),
       BT::OutputPort<geometry_msgs::msg::PoseStamped>("output_goal",
           "Received Goal by subscription"),
-      BT::OutputPort<nav2_msgs::msg::PosesStamped>("output_goals", "Received Goals by subscription")
+      BT::OutputPort<Goals>("output_goals", "Received Goals by subscription")
     };
   }
 
@@ -85,7 +86,7 @@ private:
   rclcpp::Subscription<nav2_msgs::msg::PosesStamped>::SharedPtr goals_sub_;
 
   geometry_msgs::msg::PoseStamped last_goal_received_;
-  nav2_msgs::msg::PosesStamped last_goals_received_;
+  Goals last_goals_received_;
 
   rclcpp::Node::SharedPtr node_;
   rclcpp::CallbackGroup::SharedPtr callback_group_;

@@ -62,7 +62,7 @@ GoalUpdater::GoalUpdater(
 inline BT::NodeStatus GoalUpdater::tick()
 {
   geometry_msgs::msg::PoseStamped goal;
-  nav2_msgs::msg::PosesStamped goals;
+  Goals goals;
 
   getInput("input_goal", goal);
   getInput("input_goals", goals);
@@ -84,7 +84,7 @@ inline BT::NodeStatus GoalUpdater::tick()
     }
   }
 
-  if (!last_goals_received_.poses.empty()) {
+  if (!last_goals_received_.empty()) {
     goals = last_goals_received_;
   }
 
@@ -104,7 +104,7 @@ void
 GoalUpdater::callback_updated_goals(const nav2_msgs::msg::PosesStamped::SharedPtr msg)
 {
   std::lock_guard<std::mutex> lock(mutex_);
-  last_goals_received_ = *msg;
+  last_goals_received_ = msg->poses;
 }
 
 }  // namespace nav2_behavior_tree
