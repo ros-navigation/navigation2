@@ -34,6 +34,9 @@ public:
     odom_smoother_ = std::make_shared<nav2_util::OdomSmoother>(node_);
     config_->blackboard->set(
       "odom_smoother", odom_smoother_);  // NOLINT
+    // shorten duration_stopped  from default to make the test faster
+    std::chrono::milliseconds duration = 100ms;
+    config_->input_ports["duration_stopped"] = std::to_string(duration.count()) + "ms";
     bt_node_ = std::make_shared<nav2_behavior_tree::IsStoppedCondition>("is_stopped", *config_);
   }
 
@@ -65,22 +68,17 @@ TEST_F(IsStoppedTestFixture, test_behavior)
   odom_msg.header.stamp = time;
   odom_msg.twist.twist.linear.x = 1.0;
   odom_pub->publish(odom_msg);
-  odom_pub->publish(odom_msg);
-  std::this_thread::sleep_for(500ms);
+  std::this_thread::sleep_for(10ms);
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
 
   // Test RUNNING when robot is stopped but not long enough
   odom_msg.header.stamp = node_->now();
   odom_msg.twist.twist.linear.x = 0.001;
   odom_pub->publish(odom_msg);
-  std::this_thread::sleep_for(500ms);
+  std::this_thread::sleep_for(90ms);
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::RUNNING);
-
   // Test SUCCESS when robot is stopped for long enough
-  odom_msg.header.stamp = node_->now();
-  odom_msg.twist.twist.linear.x = 0.001;
-  odom_pub->publish(odom_msg);
-  std::this_thread::sleep_for(1100ms);
+  std::this_thread::sleep_for(20ms);  // 20ms + 90ms = 110ms
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
 
   // Test FAILURE immediately after robot starts moving
@@ -89,6 +87,24 @@ TEST_F(IsStoppedTestFixture, test_behavior)
   odom_pub->publish(odom_msg);
   std::this_thread::sleep_for(10ms);
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
+
+  // Test SUCCESS when robot is stopped for long with a back-dated timestamp
+  odom_msg.header.stamp = node_->now() - rclcpp::Duration(2, 0);
+  odom_msg.twist.twist.angular.z = 0;
+  odom_msg.twist.twist.linear.x = 0.001;
+  odom_pub->publish(odom_msg);
+  std::this_thread::sleep_for(10ms);  // wait just enough for the message to be received
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
+
+  // Test SUCCESS when robot is stopped for long enough without a stamp for odometry
+  odom_msg.header.stamp = rclcpp::Time(0, 0, RCL_ROS_TIME);
+  odom_msg.twist.twist.linear.x = 0.001;
+  odom_pub->publish(odom_msg);
+  std::this_thread::sleep_for(10ms);
+  // In the first tick, the timestamp is set
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::RUNNING);
+  std::this_thread::sleep_for(110ms);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
 }
 
 int main(int argc, char ** argv)
