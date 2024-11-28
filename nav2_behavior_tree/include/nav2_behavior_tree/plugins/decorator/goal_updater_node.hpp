@@ -56,7 +56,8 @@ public:
     return {
       BT::InputPort<geometry_msgs::msg::PoseStamped>("input_goal", "Original Goal"),
       BT::InputPort<nav2_msgs::msg::PosesStamped>("input_goals", "Original Goals"),
-      BT::OutputPort<geometry_msgs::msg::PoseStamped>("output_goal", "Received Goal by subscription"),
+      BT::OutputPort<geometry_msgs::msg::PoseStamped>("output_goal",
+          "Received Goal by subscription"),
       BT::OutputPort<nav2_msgs::msg::PosesStamped>("output_goals", "Received Goals by subscription")
     };
   }
@@ -89,8 +90,6 @@ private:
   rclcpp::Node::SharedPtr node_;
   rclcpp::CallbackGroup::SharedPtr callback_group_;
   rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
-
-  // mutex
   std::mutex mutex_;
 };
 
