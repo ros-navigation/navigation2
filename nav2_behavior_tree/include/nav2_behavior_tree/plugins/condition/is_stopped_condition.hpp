@@ -24,6 +24,10 @@
 #include "behaviortree_cpp/condition_node.h"
 #include "nav_msgs/msg/odometry.hpp"
 #include "nav2_util/odometry_utils.hpp"
+#include "nav2_behavior_tree/bt_utils.hpp"
+
+
+using namespace std::chrono_literals; // NOLINT
 
 namespace nav2_behavior_tree
 {
@@ -66,7 +70,7 @@ public:
     return {
       BT::InputPort<double>("velocity_threshold", 0.01,
           "Velocity threshold below which robot is considered stopped"),
-      BT::InputPort<std::chrono::milliseconds>("duration_stopped", 1000,
+      BT::InputPort<std::chrono::milliseconds>("duration_stopped", 1000ms,
           "Duration (ms) the velocity must remain below the threshold"),
     };
   }

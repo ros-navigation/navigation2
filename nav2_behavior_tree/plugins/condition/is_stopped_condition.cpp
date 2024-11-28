@@ -17,8 +17,6 @@
 
 #include "nav2_behavior_tree/plugins/condition/is_stopped_condition.hpp"
 
-using namespace std::chrono_literals; // NOLINT
-
 namespace nav2_behavior_tree
 {
 
@@ -27,7 +25,7 @@ IsStoppedCondition::IsStoppedCondition(
   const BT::NodeConfiguration & conf)
 : BT::ConditionNode(condition_name, conf),
   velocity_threshold_(0.01),
-  duration_stopped_(1000),
+  duration_stopped_(1000ms),
   stopped_stamp_(rclcpp::Time(0, 0, RCL_ROS_TIME))
 {
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
@@ -42,6 +40,9 @@ IsStoppedCondition::~IsStoppedCondition()
 
 BT::NodeStatus IsStoppedCondition::tick()
 {
+  getInput("velocity_threshold", velocity_threshold_);
+  getInput("duration_stopped", duration_stopped_);
+
   auto twist = odom_smoother_->getRawTwistStamped();
 
   // if there is no timestamp, set it to now
