@@ -26,7 +26,7 @@ IsStoppedCondition::IsStoppedCondition(
   const std::string & condition_name,
   const BT::NodeConfiguration & conf)
 : BT::ConditionNode(condition_name, conf),
-  velocity_threshold_(0.1),
+  velocity_threshold_(0.01),
   duration_stopped_(1000),
   stopped_stamp_(rclcpp::Time(0, 0, RCL_ROS_TIME))
 {
