@@ -1,5 +1,6 @@
 // Copyright (c) 2018 Intel Corporation
 // Copyright (c) 2020 Francisco Martin Rico
+// Copyright (c) 2024 Angsa Robotics
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,8 +19,10 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "nav2_msgs/msg/poses_stamped.hpp"
 
 #include "behaviortree_cpp/decorator_node.h"
 
@@ -52,9 +55,9 @@ public:
   {
     return {
       BT::InputPort<geometry_msgs::msg::PoseStamped>("input_goal", "Original Goal"),
-      BT::OutputPort<geometry_msgs::msg::PoseStamped>(
-        "output_goal",
-        "Received Goal by subscription"),
+      BT::InputPort<nav2_msgs::msg::PosesStamped>("input_goals", "Original Goals"),
+      BT::OutputPort<geometry_msgs::msg::PoseStamped>("output_goal", "Received Goal by subscription"),
+      BT::OutputPort<nav2_msgs::msg::PosesStamped>("output_goals", "Received Goals by subscription")
     };
   }
 
@@ -71,13 +74,24 @@ private:
    */
   void callback_updated_goal(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
 
+  /**
+   * @brief Callback function for goals update topic
+   * @param msg Shared pointer to vector of geometry_msgs::msg::PoseStamped message
+   */
+  void callback_updated_goals(const nav2_msgs::msg::PosesStamped::SharedPtr msg);
+
   rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
+  rclcpp::Subscription<nav2_msgs::msg::PosesStamped>::SharedPtr goals_sub_;
 
   geometry_msgs::msg::PoseStamped last_goal_received_;
+  nav2_msgs::msg::PosesStamped last_goals_received_;
 
   rclcpp::Node::SharedPtr node_;
   rclcpp::CallbackGroup::SharedPtr callback_group_;
   rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
+
+  // mutex
+  std::mutex mutex_;
 };
 
 }  // namespace nav2_behavior_tree
