@@ -34,8 +34,9 @@ public:
     odom_smoother_ = std::make_shared<nav2_util::OdomSmoother>(node_);
     config_->blackboard->set(
       "odom_smoother", odom_smoother_);  // NOLINT
+    // shorten duration_stopped  from default to make the test faster
     std::chrono::milliseconds duration = 100ms;
-    config_->input_ports["duration_stopped"] = std::to_string(duration.count()) + "ms"; // to make the test faster
+    config_->input_ports["duration_stopped"] = std::to_string(duration.count()) + "ms";
     bt_node_ = std::make_shared<nav2_behavior_tree::IsStoppedCondition>("is_stopped", *config_);
   }
 
@@ -77,7 +78,7 @@ TEST_F(IsStoppedTestFixture, test_behavior)
   std::this_thread::sleep_for(90ms);
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::RUNNING);
   // Test SUCCESS when robot is stopped for long enough
-  std::this_thread::sleep_for(20ms); // 20ms + 90ms = 110ms
+  std::this_thread::sleep_for(20ms);  // 20ms + 90ms = 110ms
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
 
   // Test FAILURE immediately after robot starts moving
@@ -92,7 +93,7 @@ TEST_F(IsStoppedTestFixture, test_behavior)
   odom_msg.twist.twist.angular.z = 0;
   odom_msg.twist.twist.linear.x = 0.001;
   odom_pub->publish(odom_msg);
-  std::this_thread::sleep_for(10ms); // wait just enough for the message to be received
+  std::this_thread::sleep_for(10ms);  // wait just enough for the message to be received
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
 
   // Test SUCCESS when robot is stopped for long enough without a stamp for odometry
@@ -100,7 +101,8 @@ TEST_F(IsStoppedTestFixture, test_behavior)
   odom_msg.twist.twist.linear.x = 0.001;
   odom_pub->publish(odom_msg);
   std::this_thread::sleep_for(10ms);
-  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::RUNNING); // In the first tick, the timestamp is set
+  // In the first tick, the timestamp is set
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::RUNNING);
   std::this_thread::sleep_for(110ms);
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
 }
