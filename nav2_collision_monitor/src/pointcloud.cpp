@@ -144,6 +144,10 @@ PointCloud::dynamicParametersCallback(
       } else if (param_name == source_name_ + "." + "max_height") {
         max_height_ = parameter.as_double();
       }
+    } else if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_BOOL) {
+      if (param_name == source_name_ + "." + "enabled") {
+        enabled_ = parameter.as_bool();
+      }
     }
   }
   result.successful = true;
