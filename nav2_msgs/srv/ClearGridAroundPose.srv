@@ -1,0 +1,7 @@
+# Clears the given costmap layer around a pose in a square defined by reset_distance
+# Since the base costmap layer does not suport this, it is meant to be used on a specific layers
+
+float32 reset_distance
+geometry_msgs/PoseStamped pose
+---
+bool status
