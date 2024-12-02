@@ -13,7 +13,7 @@ using std::vector;
 namespace nav2_costmap_2d
 {
 PluginContainerLayer::PluginContainerLayer()
-: default_plugins_{"static_layer", "obstacle_layer", "inflation_layer"},
+: default_plugins_{},
   default_types_{
     "nav2_costmap_2d::StaticLayer",
     "nav2_costmap_2d::ObstacleLayer",
@@ -23,7 +23,9 @@ PluginContainerLayer::PluginContainerLayer()
 }
 
 PluginContainerLayer::~PluginContainerLayer()
-{}
+{
+  costmap_ = NULL;
+}
 
 void PluginContainerLayer::onInitialize()
 {
@@ -37,9 +39,9 @@ void PluginContainerLayer::onInitialize()
   primary_costmap_.setDefaultValue(0);
   combined_costmap_.setDefaultValue(0);
 
-  node->declare_parameter(name_ + "." + "enabled", rclcpp::ParameterValue(false));
+  node->declare_parameter(name_ + "." + "enabled", rclcpp::ParameterValue(true));
   node->declare_parameter(name_ + "." + "plugins", rclcpp::ParameterValue(default_plugins_));
-  node->declare_parameter(name_ + "." + "combination_method", rclcpp::ParameterValue(0));
+  node->declare_parameter(name_ + "." + "combination_method", rclcpp::ParameterValue(1));
 
   node->get_parameter(name_ + "." + "enabled", enabled_);
   node->get_parameter(name_ + "." + "plugins", plugin_names_);
@@ -57,12 +59,9 @@ void PluginContainerLayer::onInitialize()
 
   // Then load and add the plug-ins to the costmap
   for (unsigned int i = 0; i < plugin_names_.size(); ++i) {
-    std::shared_ptr<Layer> plugin = plugin_loader_.createSharedInstance(plugin_types_[i]); //this is a shared pointer to a Layer called plugin
+    std::shared_ptr<Layer> plugin = plugin_loader_.createSharedInstance(plugin_types_[i]);
     std::unique_lock<Costmap2D::mutex_t> lock(*(layered_costmap_->getCostmap()->getMutex()));
-    addPlugin(plugin);
-    plugin->initialize(
-      layered_costmap_, name_ + "." + plugin_names_[i], tf_, node,
-      callback_group_);
+    addPlugin(plugin, name_ + "." + plugin_names_[i]);
     lock.unlock();
   }
 
@@ -71,9 +70,11 @@ void PluginContainerLayer::onInitialize()
 
 }
 
-void PluginContainerLayer::addPlugin(std::shared_ptr<Layer> plugin)
+void PluginContainerLayer::addPlugin(std::shared_ptr<Layer> plugin, std::string layer_name)
 {
   plugins_.push_back(plugin);
+  auto node = node_.lock();
+  plugin->initialize(layered_costmap_, layer_name, tf_, node, callback_group_);
 }
 
 void PluginContainerLayer::updateBounds(
@@ -108,7 +109,6 @@ void PluginContainerLayer::updateCosts(
   //1. clear combined map
   combined_costmap_.resetMap(min_i, min_j, max_i, max_j);
   //2. update the internal costmap with the plugins associated with the layer
-
   for (vector<std::shared_ptr<Layer>>::iterator plugin = plugins_.begin(); plugin != plugins_.end();
     ++plugin)
   {
