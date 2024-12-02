@@ -92,7 +92,7 @@ public:
   {
     return true;
   }
-  void addPlugin(std::shared_ptr<Layer> plugin);
+  void addPlugin(std::shared_ptr<Layer> plugin, std::string layer_name);
   pluginlib::ClassLoader<Layer> plugin_loader_{"nav2_costmap_2d", "nav2_costmap_2d::Layer"};
   /**
    * @brief Callback executed when a parameter change is detected
