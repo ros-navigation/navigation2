@@ -85,6 +85,36 @@ public:
 
   ~TestNode() {}
 
+  void waitForMap(std::shared_ptr<nav2_costmap_2d::StaticLayer> & slayer)
+  {
+    while (!slayer->isCurrent()) {
+      rclcpp::spin_some(node_->get_node_base_interface());
+    }
+  }
+
+  std::vector<geometry_msgs::msg::Point> setRadii(
+    nav2_costmap_2d::LayeredCostmap & layers,
+    double length, double width)
+  {
+    std::vector<geometry_msgs::msg::Point> polygon;
+    geometry_msgs::msg::Point p;
+    p.x = width;
+    p.y = length;
+    polygon.push_back(p);
+    p.x = width;
+    p.y = -length;
+    polygon.push_back(p);
+    p.x = -width;
+    p.y = -length;
+    polygon.push_back(p);
+    p.x = -width;
+    p.y = length;
+    polygon.push_back(p);
+    layers.setFootprint(polygon);
+
+    return polygon;
+  }
+
 protected:
   std::shared_ptr<TestLifecycleNode> node_;
 };
@@ -119,25 +149,21 @@ protected:
  * Test if combining layers different plugin container layers works
  */
 
-TEST_F(TestNode, testAddingLayers) {
+TEST_F(TestNode, testObstacleLayers) {
   tf2_ros::Buffer tf(node_->get_clock());
 
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
   layers.resizeMap(10, 10, 1, 0, 0);
-  std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_a = nullptr;
-  std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_b = nullptr;
 
-  //Add one plugin container layer
+  std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_a = nullptr;
   addPluginContainerLayer(layers, tf, node_, pclayer_a, "pclayer_a");
 
-  //Add a second plugin container layer
+  std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_b = nullptr;
   addPluginContainerLayer(layers, tf, node_, pclayer_b, "pclayer_b");
 
-  //Initialize an obstacle layer and add it to the first plugin container layer
   std::shared_ptr<nav2_costmap_2d::ObstacleLayer> olayer_a = std::make_shared<nav2_costmap_2d::ObstacleLayer>();
   pclayer_a->addPlugin(olayer_a, "obstacles");
 
-  //Initialize an obstacle layer and add it to the second plugin container layer
   std::shared_ptr<nav2_costmap_2d::ObstacleLayer> olayer_b = std::make_shared<nav2_costmap_2d::ObstacleLayer>();
   pclayer_b->addPlugin(olayer_b, "obstacles");
 
@@ -148,6 +174,131 @@ TEST_F(TestNode, testAddingLayers) {
 
   nav2_costmap_2d::Costmap2D * costmap = layers.getCostmap();
 
-  //We expect that the two plugin container layers have combined to give us two lethal points
   ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE), 2);
+}
+
+TEST_F(TestNode, testObstacleAndStaticLayers) {
+  tf2_ros::Buffer tf(node_->get_clock());
+
+  node_->declare_parameter("pclayer_a.static.map_topic",
+    rclcpp::ParameterValue(std::string("map")));
+
+  nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
+
+  layers.resizeMap(10, 10, 1, 0, 0);
+
+  std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_a = nullptr;
+  addPluginContainerLayer(layers, tf, node_, pclayer_a, "pclayer_a");
+
+  std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_b = nullptr;
+  addPluginContainerLayer(layers, tf, node_, pclayer_b, "pclayer_b");
+
+  std::shared_ptr<nav2_costmap_2d::StaticLayer> slayer = std::make_shared<nav2_costmap_2d::StaticLayer>();
+  pclayer_a->addPlugin(slayer, "static");
+
+  std::shared_ptr<nav2_costmap_2d::ObstacleLayer> olayer_b = std::make_shared<nav2_costmap_2d::ObstacleLayer>();
+  pclayer_b->addPlugin(olayer_b, "obstacles");
+
+  addObservation(olayer_b, 3.0, 8.0);
+
+  waitForMap(slayer);
+
+  layers.updateMap(0, 0, 0);
+
+  nav2_costmap_2d::Costmap2D * costmap = layers.getCostmap();
+
+  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE), 21);
+}
+
+TEST_F(TestNode, testDifferentInflationLayers) {
+  tf2_ros::Buffer tf(node_->get_clock());
+
+  node_->declare_parameter("pclayer_a.static.map_topic",
+    rclcpp::ParameterValue(std::string("map")));
+
+  node_->declare_parameter("pclayer_b.inflation.cost_scaling_factor",
+    rclcpp::ParameterValue(1.0));
+
+  node_->declare_parameter("pclayer_b.inflation.inflation_radius",
+    rclcpp::ParameterValue(1.0));
+
+  nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
+
+  layers.resizeMap(10, 10, 1, 0, 0);
+
+  std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_a = nullptr;
+  addPluginContainerLayer(layers, tf, node_, pclayer_a, "pclayer_a");
+
+  std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_b = nullptr;
+  addPluginContainerLayer(layers, tf, node_, pclayer_b, "pclayer_b");
+
+  std::shared_ptr<nav2_costmap_2d::StaticLayer> slayer = std::make_shared<nav2_costmap_2d::StaticLayer>();
+  pclayer_a->addPlugin(slayer, "static");
+
+  std::shared_ptr<nav2_costmap_2d::ObstacleLayer> olayer_b = std::make_shared<nav2_costmap_2d::ObstacleLayer>();
+  pclayer_b->addPlugin(olayer_b, "obstacles");
+
+  std::shared_ptr<nav2_costmap_2d::InflationLayer> ilayer_b = std::make_shared<nav2_costmap_2d::InflationLayer>();
+  pclayer_b->addPlugin(ilayer_b, "inflation");
+
+  std::vector<geometry_msgs::msg::Point> polygon = setRadii(layers, 1, 1);
+  layers.setFootprint(polygon);
+
+  addObservation(olayer_b, 5.0, 4.0);
+
+  waitForMap(slayer);
+
+  layers.updateMap(0, 0, 0);
+
+  nav2_costmap_2d::Costmap2D * costmap = layers.getCostmap();
+
+  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE), 21);
+  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), 4);
+}
+
+TEST_F(TestNode, testDifferentInflationLayers2) {
+  tf2_ros::Buffer tf(node_->get_clock());
+
+  node_->declare_parameter("pclayer_a.static.map_topic",
+    rclcpp::ParameterValue(std::string("map")));
+
+  node_->declare_parameter("pclayer_a.inflation.cost_scaling_factor",
+    rclcpp::ParameterValue(1.0));
+
+  node_->declare_parameter("pclayer_a.inflation.inflation_radius",
+    rclcpp::ParameterValue(1.0));
+
+  nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
+
+  layers.resizeMap(10, 10, 1, 0, 0);
+
+  std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_a = nullptr;
+  addPluginContainerLayer(layers, tf, node_, pclayer_a, "pclayer_a");
+
+  std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_b = nullptr;
+  addPluginContainerLayer(layers, tf, node_, pclayer_b, "pclayer_b");
+
+  std::shared_ptr<nav2_costmap_2d::StaticLayer> slayer = std::make_shared<nav2_costmap_2d::StaticLayer>();
+  pclayer_a->addPlugin(slayer, "static");
+
+  std::shared_ptr<nav2_costmap_2d::InflationLayer> ilayer_a = std::make_shared<nav2_costmap_2d::InflationLayer>();
+  pclayer_a->addPlugin(ilayer_a, "inflation");
+
+  std::shared_ptr<nav2_costmap_2d::ObstacleLayer> olayer_b = std::make_shared<nav2_costmap_2d::ObstacleLayer>();
+  pclayer_b->addPlugin(olayer_b, "obstacles");
+
+  //initialize footprint
+  std::vector<geometry_msgs::msg::Point> polygon = setRadii(layers, 1, 1);
+  layers.setFootprint(polygon);
+
+  addObservation(olayer_b, 9.0, 9.0);
+
+  waitForMap(slayer);
+
+  layers.updateMap(0, 0, 0);
+
+  nav2_costmap_2d::Costmap2D * costmap = layers.getCostmap();
+
+  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE), 21);
+  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), 28);
 }
