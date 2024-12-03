@@ -112,6 +112,7 @@ BT::NodeStatus RecoveryNode::tick()
         throw BT::LogicError("A child node must never return IDLE");
     }  // end switch
   }
+  halt();
   throw BT::LogicError("A recovery node has exactly 2 children and should never reach here");
 }
 
