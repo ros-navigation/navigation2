@@ -36,7 +36,6 @@ void PluginContainerLayer::onInitialize()
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  primary_costmap_.setDefaultValue(0);
   combined_costmap_.setDefaultValue(0);
 
   node->declare_parameter(name_ + "." + "enabled", rclcpp::ParameterValue(true));
@@ -48,13 +47,9 @@ void PluginContainerLayer::onInitialize()
   node->get_parameter(name_ + "." + "combination_method", combination_method_);
 
   plugin_types_.resize(plugin_names_.size());
-  filter_types_.resize(filter_names_.size());
 
   for (size_t i = 0; i < plugin_names_.size(); ++i) {
     plugin_types_[i] = nav2_util::get_plugin_type_param(node, name_ + "." + plugin_names_[i]);
-  }
-  for (size_t i = 0; i < filter_names_.size(); ++i) {
-    filter_types_[i] = nav2_util::get_plugin_type_param(node, name_ + "." + filter_names_[i]);
   }
 
   // Then load and add the plug-ins to the costmap
@@ -74,7 +69,7 @@ void PluginContainerLayer::addPlugin(std::shared_ptr<Layer> plugin, std::string 
 {
   plugins_.push_back(plugin);
   auto node = node_.lock();
-  plugin->initialize(layered_costmap_, layer_name, tf_, node, callback_group_);
+  plugin->initialize(layered_costmap_, name_ + "." + layer_name, tf_, node, callback_group_);
 }
 
 void PluginContainerLayer::updateBounds(
@@ -106,16 +101,15 @@ void PluginContainerLayer::updateCosts(
     return;
   }
 
-  //1. clear combined map
   combined_costmap_.resetMap(min_i, min_j, max_i, max_j);
-  //2. update the internal costmap with the plugins associated with the layer
+
   for (vector<std::shared_ptr<Layer>>::iterator plugin = plugins_.begin(); plugin != plugins_.end();
     ++plugin)
   {
     (*plugin)->updateCosts(combined_costmap_, min_i, min_j, max_i, max_j);
   }
-  //3. point the private member costmap to the char map of the Costmap2D
-  costmap_ = combined_costmap_.getCharMap(); //This will point to the CharMap...this feels memory leaky
+
+  costmap_ = combined_costmap_.getCharMap();
 
   //4. update master grid depending on what method we pick
   switch (combination_method_) {
@@ -176,7 +170,7 @@ void PluginContainerLayer::matchSize()
   resizeMap(
     master->getSizeInCellsX(), master->getSizeInCellsY(),
     master->getResolution(), master->getOriginX(), master->getOriginY());
-  primary_costmap_.resizeMap(size_x_, size_y_, resolution_, origin_x_, origin_y_); //Where do I get these numbers
+
   combined_costmap_.resizeMap(size_x_, size_y_, resolution_, origin_x_, origin_y_); //Where do I get these numbers
 
   for (vector<std::shared_ptr<Layer>>::iterator plugin = plugins_.begin(); plugin != plugins_.end();
@@ -199,6 +193,11 @@ rcl_interfaces::msg::SetParametersResult PluginContainerLayer::dynamicParameters
     if (param_type == ParameterType::PARAMETER_INTEGER) {
       if (param_name == name_ + "." + "combination_method") {
         combination_method_ = parameter.as_int();
+      }
+    } else if (param_type == ParameterType::PARAMETER_BOOL) {
+      if (param_name == name_ + "." + "enabled" && enabled_ != parameter.as_bool()) {
+        enabled_ = parameter.as_bool();
+        current_ = false;
       }
     }
   }

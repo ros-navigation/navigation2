@@ -108,19 +108,12 @@ private:
   bool rolling_window_;
   int combination_method_;
   std::vector<std::shared_ptr<Layer>> plugins_;
-  std::vector<std::shared_ptr<Layer>> filters_;
   std::vector<std::string> default_plugins_;
   std::vector<std::string> default_types_;
   std::vector<std::string> plugin_names_;
   std::vector<std::string> plugin_types_;
-  std::vector<std::string> filter_names_;
-  std::vector<std::string> filter_types_;
-  // primary_costmap_ is a bottom costmap used by plugins when costmap filters were enabled.
-  // combined_costmap_ is a final costmap where all results produced by plugins and filters (if any)
-  // to be merged.
-  // The separation is aimed to avoid interferences of work between plugins and filters.
-  // primay_costmap_ and combined_costmap_ have the same sizes, origins and default values.
-  Costmap2D primary_costmap_, combined_costmap_;
+
+  Costmap2D combined_costmap_;
 };
 } // namespace nav2_costmap_2d
 #endif  // NAV2_COSTMAP_2D__PLUGIN_CONTAINER_LAYER_HPP_
