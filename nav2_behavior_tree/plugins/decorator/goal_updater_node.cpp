@@ -52,7 +52,7 @@ GoalUpdater::GoalUpdater(
     rclcpp::SystemDefaultsQoS(),
     std::bind(&GoalUpdater::callback_updated_goal, this, _1),
     sub_option);
-  goals_sub_ = node_->create_subscription<nav2_msgs::msg::PosesStamped>(
+  goals_sub_ = node_->create_subscription<nav2_msgs::msg::PoseStampedArray>(
     goals_updater_topic,
     rclcpp::SystemDefaultsQoS(),
     std::bind(&GoalUpdater::callback_updated_goals, this, _1),
@@ -101,7 +101,7 @@ GoalUpdater::callback_updated_goal(const geometry_msgs::msg::PoseStamped::Shared
 }
 
 void
-GoalUpdater::callback_updated_goals(const nav2_msgs::msg::PosesStamped::SharedPtr msg)
+GoalUpdater::callback_updated_goals(const nav2_msgs::msg::PoseStampedArray::SharedPtr msg)
 {
   std::lock_guard<std::mutex> lock(mutex_);
   last_goals_received_ = msg->poses;

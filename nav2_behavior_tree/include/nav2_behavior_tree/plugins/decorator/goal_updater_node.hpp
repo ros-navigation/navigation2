@@ -22,7 +22,7 @@
 #include <vector>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav2_msgs/msg/poses_stamped.hpp"
+#include "nav2_msgs/msg/pose_stamped_array.hpp"
 
 #include "behaviortree_cpp/decorator_node.h"
 
@@ -80,10 +80,10 @@ private:
    * @brief Callback function for goals update topic
    * @param msg Shared pointer to vector of geometry_msgs::msg::PoseStamped message
    */
-  void callback_updated_goals(const nav2_msgs::msg::PosesStamped::SharedPtr msg);
+  void callback_updated_goals(const nav2_msgs::msg::PoseStampedArray::SharedPtr msg);
 
   rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
-  rclcpp::Subscription<nav2_msgs::msg::PosesStamped>::SharedPtr goals_sub_;
+  rclcpp::Subscription<nav2_msgs::msg::PoseStampedArray>::SharedPtr goals_sub_;
 
   geometry_msgs::msg::PoseStamped last_goal_received_;
   Goals last_goals_received_;
