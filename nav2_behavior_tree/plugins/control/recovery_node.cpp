@@ -64,7 +64,7 @@ BT::NodeStatus RecoveryNode::tick()
               // halt first child and tick second child in next iteration
               ControlNode::haltChild(0);
               current_child_idx_++;
-              break;
+              return BT::NodeStatus::RUNNING;
             } else {
               // reset node and return failure when max retries has been exceeded
               halt();
@@ -97,8 +97,8 @@ BT::NodeStatus RecoveryNode::tick()
             ControlNode::haltChild(1);
             retry_count_++;
             current_child_idx_ = 0;
+            return BT::NodeStatus::RUNNING;
           }
-          break;
 
         case BT::NodeStatus::FAILURE:
           // reset node and return failure if second child fails
