@@ -17,7 +17,7 @@ import time
 import unittest
 
 from action_msgs.msg import GoalStatus
-from geometry_msgs.msg import TransformStamped, Twist
+from geometry_msgs.msg import TransformStamped, Twist, TwistStamped
 from launch import LaunchDescription
 from launch_ros.actions import Node
 import launch_testing
@@ -90,8 +90,8 @@ class TestDockingServer(unittest.TestCase):
         rclpy.shutdown()
 
     def command_velocity_callback(self, msg):
-        self.node.get_logger().info('Command: %f %f' % (msg.linear.x, msg.angular.z))
-        self.command = msg
+        self.node.get_logger().info('Command: %f %f' % (msg.twist.linear.x, msg.twist.angular.z))
+        self.command = msg.twist
 
     def timer_callback(self):
         # Propagate command
@@ -155,7 +155,7 @@ class TestDockingServer(unittest.TestCase):
 
         # Subscribe to command velocity
         self.node.create_subscription(
-            Twist,
+            TwistStamped,
             'cmd_vel',
             self.command_velocity_callback,
             10
