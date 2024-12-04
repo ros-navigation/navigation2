@@ -28,12 +28,10 @@ namespace nav2_costmap_2d
 {
 PluginContainerLayer::PluginContainerLayer()
 {
-  costmap_ = NULL;
 }
 
 PluginContainerLayer::~PluginContainerLayer()
 {
-  costmap_ = NULL;
 }
 
 void PluginContainerLayer::onInitialize()
@@ -43,8 +41,6 @@ void PluginContainerLayer::onInitialize()
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
   }
-
-  combined_costmap_.setDefaultValue(0);
 
   node->declare_parameter(name_ + "." + "enabled", rclcpp::ParameterValue(true));
   node->declare_parameter(name_ + "." + "plugins",
@@ -111,15 +107,14 @@ void PluginContainerLayer::updateCosts(
     return;
   }
 
-  combined_costmap_.resetMap(min_i, min_j, max_i, max_j);
+  resetMap(min_i, min_j, max_i, max_j);
 
   for (vector<std::shared_ptr<Layer>>::iterator plugin = plugins_.begin(); plugin != plugins_.end();
     ++plugin)
   {
-    (*plugin)->updateCosts(combined_costmap_, min_i, min_j, max_i, max_j);
+    (*plugin)->updateCosts(*this, min_i, min_j, max_i, max_j);
   }
 
-  costmap_ = combined_costmap_.getCharMap();
 
   switch (combination_method_) {
     case CombinationMethod::Overwrite:
@@ -181,8 +176,6 @@ void PluginContainerLayer::matchSize()
   resizeMap(
     master->getSizeInCellsX(), master->getSizeInCellsY(),
     master->getResolution(), master->getOriginX(), master->getOriginY());
-
-  combined_costmap_.resizeMap(size_x_, size_y_, resolution_, origin_x_, origin_y_);
 
   for (vector<std::shared_ptr<Layer>>::iterator plugin = plugins_.begin(); plugin != plugins_.end();
     ++plugin)
