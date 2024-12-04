@@ -278,7 +278,7 @@ class BasicNavigator(Node):
         self.result_future = self.goal_handle.get_result_async()
         return True
 
-    def backup(self, backup_dist=0.15, backup_speed=0.025, time_allowance=10):
+    def backup(self, backup_dist=0.15, backup_speed=0.025, time_allowance=10, disable_collision_checking=False):
         self.debug("Waiting for 'Backup' action server")
         while not self.backup_client.wait_for_server(timeout_sec=1.0):
             self.info("'Backup' action server not available, waiting...")
@@ -286,6 +286,7 @@ class BasicNavigator(Node):
         goal_msg.target = Point(x=float(backup_dist))
         goal_msg.speed = backup_speed
         goal_msg.time_allowance = Duration(sec=time_allowance)
+        goal_msg.disable_collision_checking = disable_collision_checking
 
         self.info(f'Backing up {goal_msg.target.x} m at {goal_msg.speed} m/s....')
         send_goal_future = self.backup_client.send_goal_async(
@@ -301,7 +302,7 @@ class BasicNavigator(Node):
         self.result_future = self.goal_handle.get_result_async()
         return True
 
-    def driveOnHeading(self, dist=0.15, speed=0.025, time_allowance=10):
+    def driveOnHeading(self, dist=0.15, speed=0.025, time_allowance=10, disable_collision_checking=False):
         self.debug("Waiting for 'DriveOnHeading' action server")
         while not self.backup_client.wait_for_server(timeout_sec=1.0):
             self.info("'DriveOnHeading' action server not available, waiting...")
@@ -309,6 +310,7 @@ class BasicNavigator(Node):
         goal_msg.target = Point(x=float(dist))
         goal_msg.speed = speed
         goal_msg.time_allowance = Duration(sec=time_allowance)
+        goal_msg.disable_collision_checking = disable_collision_checking
 
         self.info(f'Drive {goal_msg.target.x} m on heading at {goal_msg.speed} m/s....')
         send_goal_future = self.drive_on_heading_client.send_goal_async(
