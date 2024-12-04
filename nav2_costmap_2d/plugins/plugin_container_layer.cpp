@@ -64,7 +64,7 @@ void PluginContainerLayer::onInitialize()
   for (unsigned int i = 0; i < plugin_names_.size(); ++i) {
     std::shared_ptr<Layer> plugin = plugin_loader_.createSharedInstance(plugin_types_[i]);
     std::unique_lock<Costmap2D::mutex_t> lock(*(layered_costmap_->getCostmap()->getMutex()));
-    addPlugin(plugin, name_ + "." + plugin_names_[i]);
+    addPlugin(plugin, plugin_names_[i]);
     lock.unlock();
   }
 
