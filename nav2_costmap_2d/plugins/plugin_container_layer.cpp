@@ -43,7 +43,6 @@ PluginContainerLayer::~PluginContainerLayer()
 
 void PluginContainerLayer::onInitialize()
 {
-
   auto node = node_.lock();
 
   if (!node) {
@@ -76,7 +75,6 @@ void PluginContainerLayer::onInitialize()
 
   PluginContainerLayer::matchSize();
   current_ = true;
-
 }
 
 void PluginContainerLayer::addPlugin(std::shared_ptr<Layer> plugin, std::string layer_name)
@@ -109,7 +107,6 @@ void PluginContainerLayer::updateCosts(
   int max_i,
   int max_j)
 {
-
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   if (!enabled_) {
     return;
@@ -125,7 +122,6 @@ void PluginContainerLayer::updateCosts(
 
   costmap_ = combined_costmap_.getCharMap();
 
-  //4. update master grid depending on what method we pick
   switch (combination_method_) {
     case 0:  // Overwrite
       updateWithOverwrite(master_grid, min_i, min_j, max_i, max_j);
@@ -133,7 +129,7 @@ void PluginContainerLayer::updateCosts(
     case 1:  // Maximum
       updateWithMax(master_grid, min_i, min_j, max_i, max_j);
       break;
-    default: // Nothing
+    default:  // Nothing
       break;
   }
 
@@ -178,14 +174,13 @@ void PluginContainerLayer::onFootprintChanged()
 
 void PluginContainerLayer::matchSize()
 {
-
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   Costmap2D * master = layered_costmap_->getCostmap();
   resizeMap(
     master->getSizeInCellsX(), master->getSizeInCellsY(),
     master->getResolution(), master->getOriginX(), master->getOriginY());
 
-  combined_costmap_.resizeMap(size_x_, size_y_, resolution_, origin_x_, origin_y_); //Where do I get these numbers
+  combined_costmap_.resizeMap(size_x_, size_y_, resolution_, origin_x_, origin_y_);
 
   for (vector<std::shared_ptr<Layer>>::iterator plugin = plugins_.begin(); plugin != plugins_.end();
     ++plugin)
@@ -220,4 +215,4 @@ rcl_interfaces::msg::SetParametersResult PluginContainerLayer::dynamicParameters
   return result;
 }
 
-} // namespace nav2_costmap_2d
+}  // namespace nav2_costmap_2d

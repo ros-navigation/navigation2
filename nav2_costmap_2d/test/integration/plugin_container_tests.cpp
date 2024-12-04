@@ -175,10 +175,12 @@ TEST_F(TestNode, testObstacleLayers) {
   std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_b = nullptr;
   addPluginContainerLayer(layers, tf, node_, pclayer_b, "pclayer_b");
 
-  std::shared_ptr<nav2_costmap_2d::ObstacleLayer> olayer_a = std::make_shared<nav2_costmap_2d::ObstacleLayer>();
+  std::shared_ptr<nav2_costmap_2d::ObstacleLayer> olayer_a =
+    std::make_shared<nav2_costmap_2d::ObstacleLayer>();
   pclayer_a->addPlugin(olayer_a, "obstacles");
 
-  std::shared_ptr<nav2_costmap_2d::ObstacleLayer> olayer_b = std::make_shared<nav2_costmap_2d::ObstacleLayer>();
+  std::shared_ptr<nav2_costmap_2d::ObstacleLayer> olayer_b =
+    std::make_shared<nav2_costmap_2d::ObstacleLayer>();
   pclayer_b->addPlugin(olayer_b, "obstacles");
 
   addObservation(olayer_a, 5.0, 5.0);
@@ -207,10 +209,12 @@ TEST_F(TestNode, testObstacleAndStaticLayers) {
   std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_b = nullptr;
   addPluginContainerLayer(layers, tf, node_, pclayer_b, "pclayer_b");
 
-  std::shared_ptr<nav2_costmap_2d::StaticLayer> slayer = std::make_shared<nav2_costmap_2d::StaticLayer>();
+  std::shared_ptr<nav2_costmap_2d::StaticLayer> slayer =
+    std::make_shared<nav2_costmap_2d::StaticLayer>();
   pclayer_a->addPlugin(slayer, "static");
 
-  std::shared_ptr<nav2_costmap_2d::ObstacleLayer> olayer_b = std::make_shared<nav2_costmap_2d::ObstacleLayer>();
+  std::shared_ptr<nav2_costmap_2d::ObstacleLayer> olayer_b =
+    std::make_shared<nav2_costmap_2d::ObstacleLayer>();
   pclayer_b->addPlugin(olayer_b, "obstacles");
 
   addObservation(olayer_b, 3.0, 8.0);
@@ -246,13 +250,16 @@ TEST_F(TestNode, testDifferentInflationLayers) {
   std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_b = nullptr;
   addPluginContainerLayer(layers, tf, node_, pclayer_b, "pclayer_b");
 
-  std::shared_ptr<nav2_costmap_2d::StaticLayer> slayer = std::make_shared<nav2_costmap_2d::StaticLayer>();
+  std::shared_ptr<nav2_costmap_2d::StaticLayer> slayer =
+    std::make_shared<nav2_costmap_2d::StaticLayer>();
   pclayer_a->addPlugin(slayer, "static");
 
-  std::shared_ptr<nav2_costmap_2d::ObstacleLayer> olayer_b = std::make_shared<nav2_costmap_2d::ObstacleLayer>();
+  std::shared_ptr<nav2_costmap_2d::ObstacleLayer> olayer_b =
+    std::make_shared<nav2_costmap_2d::ObstacleLayer>();
   pclayer_b->addPlugin(olayer_b, "obstacles");
 
-  std::shared_ptr<nav2_costmap_2d::InflationLayer> ilayer_b = std::make_shared<nav2_costmap_2d::InflationLayer>();
+  std::shared_ptr<nav2_costmap_2d::InflationLayer> ilayer_b =
+    std::make_shared<nav2_costmap_2d::InflationLayer>();
   pclayer_b->addPlugin(ilayer_b, "inflation");
 
   std::vector<geometry_msgs::msg::Point> polygon = setRadii(layers, 1, 1);
@@ -292,16 +299,18 @@ TEST_F(TestNode, testDifferentInflationLayers2) {
   std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_b = nullptr;
   addPluginContainerLayer(layers, tf, node_, pclayer_b, "pclayer_b");
 
-  std::shared_ptr<nav2_costmap_2d::StaticLayer> slayer = std::make_shared<nav2_costmap_2d::StaticLayer>();
+  std::shared_ptr<nav2_costmap_2d::StaticLayer> slayer =
+    std::make_shared<nav2_costmap_2d::StaticLayer>();
   pclayer_a->addPlugin(slayer, "static");
 
-  std::shared_ptr<nav2_costmap_2d::InflationLayer> ilayer_a = std::make_shared<nav2_costmap_2d::InflationLayer>();
+  std::shared_ptr<nav2_costmap_2d::InflationLayer> ilayer_a =
+    std::make_shared<nav2_costmap_2d::InflationLayer>();
   pclayer_a->addPlugin(ilayer_a, "inflation");
 
-  std::shared_ptr<nav2_costmap_2d::ObstacleLayer> olayer_b = std::make_shared<nav2_costmap_2d::ObstacleLayer>();
+  std::shared_ptr<nav2_costmap_2d::ObstacleLayer> olayer_b =
+    std::make_shared<nav2_costmap_2d::ObstacleLayer>();
   pclayer_b->addPlugin(olayer_b, "obstacles");
 
-  //initialize footprint
   std::vector<geometry_msgs::msg::Point> polygon = setRadii(layers, 1, 1);
   layers.setFootprint(polygon);
 

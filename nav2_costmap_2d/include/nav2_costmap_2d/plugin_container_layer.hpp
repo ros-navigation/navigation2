@@ -15,6 +15,11 @@
 #ifndef NAV2_COSTMAP_2D__PLUGIN_CONTAINER_LAYER_HPP_
 #define NAV2_COSTMAP_2D__PLUGIN_CONTAINER_LAYER_HPP_
 
+#include <Eigen/Dense>
+#include <cmath>
+#include <memory>
+#include <string>
+#include <vector>
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/layer.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
@@ -23,9 +28,8 @@
 #include "nav2_costmap_2d/inflation_layer.hpp"
 #include "tf2_ros/message_filter.h"
 #include "message_filters/subscriber.hpp"
-#include <Eigen/Dense>
-#include <cmath>
 #include "pluginlib/class_loader.hpp"
+
 using nav2_costmap_2d::LETHAL_OBSTACLE;
 using nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE;
 using nav2_costmap_2d::NO_INFORMATION;
@@ -129,5 +133,5 @@ private:
 
   Costmap2D combined_costmap_;
 };
-} // namespace nav2_costmap_2d
+}  // namespace nav2_costmap_2d
 #endif  // NAV2_COSTMAP_2D__PLUGIN_CONTAINER_LAYER_HPP_
