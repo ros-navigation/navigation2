@@ -126,8 +126,6 @@ private:
 
   int combination_method_;
   std::vector<std::shared_ptr<Layer>> plugins_;
-  std::vector<std::string> default_plugins_;
-  std::vector<std::string> default_types_;
   std::vector<std::string> plugin_names_;
   std::vector<std::string> plugin_types_;
 

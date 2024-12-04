@@ -27,11 +27,6 @@ using std::vector;
 namespace nav2_costmap_2d
 {
 PluginContainerLayer::PluginContainerLayer()
-: default_plugins_{},
-  default_types_{
-    "nav2_costmap_2d::StaticLayer",
-    "nav2_costmap_2d::ObstacleLayer",
-    "nav2_costmap_2d::InflationLayer"}
 {
   costmap_ = NULL;
 }
@@ -52,7 +47,8 @@ void PluginContainerLayer::onInitialize()
   combined_costmap_.setDefaultValue(0);
 
   node->declare_parameter(name_ + "." + "enabled", rclcpp::ParameterValue(true));
-  node->declare_parameter(name_ + "." + "plugins", rclcpp::ParameterValue(default_plugins_));
+  node->declare_parameter(name_ + "." + "plugins",
+      rclcpp::ParameterValue(std::vector<std::string>{}));
   node->declare_parameter(name_ + "." + "combination_method", rclcpp::ParameterValue(1));
 
   node->get_parameter(name_ + "." + "enabled", enabled_);
