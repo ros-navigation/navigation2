@@ -113,6 +113,7 @@ void GeoJsonGraphFileSaver::loadEdgesFromGraph(
 void GeoJsonGraphFileSaver::convertMetaDataToJson(
   const Metadata & metadata, Json & json_metadata) 
 {
+  /* Function partially created using GPT */
   for (auto itr = metadata.data.begin(); itr != metadata.data.end(); itr++) {
     if (itr->second.type() == typeid(std::string)) {
       json_metadata[itr->first] = std::any_cast<std::string>(itr->second);
