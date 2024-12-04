@@ -123,7 +123,7 @@ private:
   /// @brief Dynamic parameters handler
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr
     dyn_params_handler_;
-  bool rolling_window_;
+
   int combination_method_;
   std::vector<std::shared_ptr<Layer>> plugins_;
   std::vector<std::string> default_plugins_;
