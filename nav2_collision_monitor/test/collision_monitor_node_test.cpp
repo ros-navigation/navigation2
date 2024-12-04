@@ -220,6 +220,7 @@ protected:
 Tester::Tester()
 {
   cm_ = std::make_shared<CollisionMonitorWrapper>();
+  cm_->declare_parameter("enable_stamped_cmd_vel", rclcpp::ParameterValue(false));
 
   footprint_pub_ = cm_->create_publisher<geometry_msgs::msg::PolygonStamped>(
     FOOTPRINT_TOPIC, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());

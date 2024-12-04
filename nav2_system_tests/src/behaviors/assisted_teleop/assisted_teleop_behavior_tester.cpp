@@ -54,13 +54,13 @@ AssistedTeleopBehaviorTester::AssistedTeleopBehaviorTester()
     node_->create_publisher<std_msgs::msg::Empty>("preempt_teleop", 10);
 
   cmd_vel_pub_ =
-    node_->create_publisher<geometry_msgs::msg::Twist>("cmd_vel_teleop", 10);
+    node_->create_publisher<geometry_msgs::msg::TwistStamped>("cmd_vel_teleop", 10);
 
   subscription_ = node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "amcl_pose", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
     std::bind(&AssistedTeleopBehaviorTester::amclPoseCallback, this, std::placeholders::_1));
 
-  filtered_vel_sub_ = node_->create_subscription<geometry_msgs::msg::Twist>(
+  filtered_vel_sub_ = node_->create_subscription<geometry_msgs::msg::TwistStamped>(
     "cmd_vel",
     rclcpp::SystemDefaultsQoS(),
     std::bind(&AssistedTeleopBehaviorTester::filteredVelCallback, this, std::placeholders::_1));
@@ -167,9 +167,9 @@ bool AssistedTeleopBehaviorTester::defaultAssistedTeleopTest(
   counter_ = 0;
   auto start_time = std::chrono::system_clock::now();
   while (rclcpp::ok()) {
-    geometry_msgs::msg::Twist cmd_vel = geometry_msgs::msg::Twist();
-    cmd_vel.linear.x = lin_vel;
-    cmd_vel.angular.z = ang_vel;
+    geometry_msgs::msg::TwistStamped cmd_vel = geometry_msgs::msg::TwistStamped();
+    cmd_vel.twist.linear.x = lin_vel;
+    cmd_vel.twist.angular.z = ang_vel;
     cmd_vel_pub_->publish(cmd_vel);
 
     if (counter_ > 1) {
@@ -265,9 +265,9 @@ void AssistedTeleopBehaviorTester::amclPoseCallback(
 }
 
 void AssistedTeleopBehaviorTester::filteredVelCallback(
-  geometry_msgs::msg::Twist::SharedPtr msg)
+  geometry_msgs::msg::TwistStamped::SharedPtr msg)
 {
-  if (msg->linear.x == 0.0f) {
+  if (msg->twist.linear.x == 0.0f) {
     counter_++;
   } else {
     counter_ = 0;
