@@ -184,6 +184,18 @@ void PluginContainerLayer::matchSize()
   }
 }
 
+bool PluginContainerLayer::isClearable()
+{
+  for (vector<std::shared_ptr<Layer>>::iterator plugin = plugins_.begin(); plugin != plugins_.end();
+    ++plugin)
+  {
+    if(!(*plugin)->isClearable()) {
+      return false;
+    }
+  }
+  return true;
+}
+
 rcl_interfaces::msg::SetParametersResult PluginContainerLayer::dynamicParametersCallback(
   std::vector<rclcpp::Parameter> parameters)
 {

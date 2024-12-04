@@ -106,10 +106,8 @@ public:
   /**
    * @brief If clearing operations should be processed on this layer or not
    */
-  virtual bool isClearable()
-  {
-    return true;
-  }
+  virtual bool isClearable();
+
   void addPlugin(std::shared_ptr<Layer> plugin, std::string layer_name);
   pluginlib::ClassLoader<Layer> plugin_loader_{"nav2_costmap_2d", "nav2_costmap_2d::Layer"};
   /**
