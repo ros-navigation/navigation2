@@ -51,6 +51,11 @@
       <description>Parse the geojson graph file into the graph data type</description>
     </class>
   </library>
+  <library path="graph_file_savers">
+    <class type="nav2_route::GeoJsonGraphFileSaver" base_class_type="nav2_route::GraphFileSaver">
+      <description>Save a route graph to a geojson graph file</description>
+    </class>
+  </library>
 
   <library path="route_operations">
     <class type="nav2_route::CollisionMonitor" base_class_type="nav2_route::RouteOperation">

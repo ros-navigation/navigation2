@@ -122,7 +122,7 @@ protected:
     // indicate the endpoint for the particular service call.
     if (!main_srv_name_.empty()) {
       main_client_ = node->create_client<SrvT>(
-        main_srv_name_, rclcpp::SystemDefaultsQoS(), callback_group_);
+        main_srv_name_, rmw_qos_profile_services_default, callback_group_);
     }
   }
 
@@ -163,7 +163,7 @@ protected:
     } else {
       auto node = node_.lock();
       auto client = node->create_client<SrvT>(
-        srv_name, rclcpp::SystemDefaultsQoS(), callback_group_);
+        srv_name, rmw_qos_profile_services_default, callback_group_);
       response = callService(client, req);
     }
 
