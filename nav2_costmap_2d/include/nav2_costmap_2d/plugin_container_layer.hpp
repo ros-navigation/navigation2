@@ -124,7 +124,7 @@ private:
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr
     dyn_params_handler_;
 
-  int combination_method_;
+  nav2_costmap_2d::CombinationMethod combination_method_;
   std::vector<std::shared_ptr<Layer>> plugins_;
   std::vector<std::string> plugin_names_;
   std::vector<std::string> plugin_types_;

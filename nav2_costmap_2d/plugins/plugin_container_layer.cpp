@@ -53,7 +53,10 @@ void PluginContainerLayer::onInitialize()
 
   node->get_parameter(name_ + "." + "enabled", enabled_);
   node->get_parameter(name_ + "." + "plugins", plugin_names_);
-  node->get_parameter(name_ + "." + "combination_method", combination_method_);
+
+  int combination_method_param{};
+  node->get_parameter(name_ + "." + "combination_method", combination_method_param);
+  combination_method_ = combination_method_from_int(combination_method_param);
 
   plugin_types_.resize(plugin_names_.size());
 
@@ -119,13 +122,16 @@ void PluginContainerLayer::updateCosts(
   costmap_ = combined_costmap_.getCharMap();
 
   switch (combination_method_) {
-    case 0:  // Overwrite
+    case CombinationMethod::Overwrite:
       updateWithOverwrite(master_grid, min_i, min_j, max_i, max_j);
       break;
-    case 1:  // Maximum
+    case CombinationMethod::Max:
       updateWithMax(master_grid, min_i, min_j, max_i, max_j);
       break;
-    default:  // Nothing
+    case CombinationMethod::MaxWithoutUnknownOverwrite:
+      updateWithMaxWithoutUnknownOverwrite(master_grid, min_i, min_j, max_i, max_j);
+      break;
+    default: // Nothing
       break;
   }
 
@@ -197,7 +203,7 @@ rcl_interfaces::msg::SetParametersResult PluginContainerLayer::dynamicParameters
 
     if (param_type == ParameterType::PARAMETER_INTEGER) {
       if (param_name == name_ + "." + "combination_method") {
-        combination_method_ = parameter.as_int();
+        combination_method_ = combination_method_from_int(parameter.as_int());
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == name_ + "." + "enabled" && enabled_ != parameter.as_bool()) {
