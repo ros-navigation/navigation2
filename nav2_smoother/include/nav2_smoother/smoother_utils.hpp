@@ -30,7 +30,7 @@
 #include "nav2_util/node_utils.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "angles/angles.h"
-#include "tf2/utils.h"
+#include "tf2/utils.hpp"
 
 namespace smoother_utils
 {

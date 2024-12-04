@@ -18,7 +18,7 @@
 
 #include "nav2_behavior_tree/plugins/action/remove_in_collision_goals_action.hpp"
 #include "nav2_behavior_tree/bt_utils.hpp"
-#include "tf2/utils.h"
+#include "tf2/utils.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 namespace nav2_behavior_tree
