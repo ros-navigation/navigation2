@@ -77,6 +77,7 @@ Note: The maximum allowed time to collision is thresholded by the lookahead poin
 | `approach_velocity_scaling_dist` | Integrated distance from end of transformed path at which to start applying velocity scaling. This defaults to the forward extent of the costmap minus one costmap cell length. | 
 | `use_collision_detection` | Whether to enable collision detection. |
 | `max_allowed_time_to_collision_up_to_carrot` | The time to project a velocity command to check for collisions when `use_collision_detection` is `true`. It is limited to maximum distance of lookahead distance selected. |
+| `min_distance_to_obstacle` | The shorter distance at which the robot is allowed to be from an obstacle along its trajectory. Set <= 0.0 to disable. It is limited to maximum distance of lookahead distance selected. |
 | `use_regulated_linear_velocity_scaling` | Whether to use the regulated features for curvature | 
 | `use_cost_regulated_linear_velocity_scaling` | Whether to use the regulated features for proximity to obstacles | 
 | `cost_scaling_dist` | The minimum distance from an obstacle to trigger the scaling of linear velocity, if `use_cost_regulated_linear_velocity_scaling` is enabled. The value set should be smaller or equal to the `inflation_radius` set in the inflation layer of costmap, since inflation is used to compute the distance from obstacles | 
