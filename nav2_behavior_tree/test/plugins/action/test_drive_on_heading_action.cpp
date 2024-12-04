@@ -125,6 +125,7 @@ TEST_F(DriveOnHeadingActionTestFixture, test_ports)
       </root>)";
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+  EXPECT_EQ(tree_->rootNode()->getInput<bool>("disable_collision_checking"), false);
   EXPECT_EQ(tree_->rootNode()->getInput<double>("dist_to_travel"), 0.15);
   EXPECT_EQ(tree_->rootNode()->getInput<double>("speed"), 0.025);
   EXPECT_EQ(tree_->rootNode()->getInput<double>("time_allowance"), 10.0);
@@ -133,11 +134,12 @@ TEST_F(DriveOnHeadingActionTestFixture, test_ports)
     R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-            <DriveOnHeading dist_to_travel="2" speed="0.26" />
+            <DriveOnHeading dist_to_travel="2" speed="0.26" disable_collision_checking="true" />
         </BehaviorTree>
       </root>)";
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+  EXPECT_EQ(tree_->rootNode()->getInput<bool>("disable_collision_checking"), true);
   EXPECT_EQ(tree_->rootNode()->getInput<double>("dist_to_travel"), 2.0);
   EXPECT_EQ(tree_->rootNode()->getInput<double>("speed"), 0.26);
 }

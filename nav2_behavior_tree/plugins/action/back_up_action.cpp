@@ -36,6 +36,8 @@ void nav2_behavior_tree::BackUpAction::initialize()
   getInput("backup_speed", speed);
   double time_allowance;
   getInput("time_allowance", time_allowance);
+  double disable_collision_checking;
+  getInput("disable_collision_checking", disable_collision_checking);
 
   // Populate the input message
   goal_.target.x = dist;
@@ -43,6 +45,7 @@ void nav2_behavior_tree::BackUpAction::initialize()
   goal_.target.z = 0.0;
   goal_.speed = speed;
   goal_.time_allowance = rclcpp::Duration::from_seconds(time_allowance);
+  goal_.disable_collision_checking = disable_collision_checking;
 }
 
 void BackUpAction::on_tick()
