@@ -42,10 +42,12 @@ void PluginContainerLayer::onInitialize()
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  node->declare_parameter(name_ + "." + "enabled", rclcpp::ParameterValue(true));
-  node->declare_parameter(name_ + "." + "plugins",
+  nav2_util::declare_parameter_if_not_declared(node, name_ + "." + "enabled",
+      rclcpp::ParameterValue(true));
+  nav2_util::declare_parameter_if_not_declared(node, name_ + "." + "plugins",
       rclcpp::ParameterValue(std::vector<std::string>{}));
-  node->declare_parameter(name_ + "." + "combination_method", rclcpp::ParameterValue(1));
+  nav2_util::declare_parameter_if_not_declared(node, name_ + "." + "combination_method",
+      rclcpp::ParameterValue(1));
 
   node->get_parameter(name_ + "." + "enabled", enabled_);
   node->get_parameter(name_ + "." + "plugins", plugin_names_);
@@ -53,6 +55,13 @@ void PluginContainerLayer::onInitialize()
   int combination_method_param{};
   node->get_parameter(name_ + "." + "combination_method", combination_method_param);
   combination_method_ = combination_method_from_int(combination_method_param);
+
+  dyn_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(
+      &PluginContainerLayer::dynamicParametersCallback,
+      this,
+      std::placeholders::_1));
+
 
   plugin_types_.resize(plugin_names_.size());
 
@@ -115,7 +124,6 @@ void PluginContainerLayer::updateCosts(
     (*plugin)->updateCosts(*this, min_i, min_j, max_i, max_j);
   }
 
-
   switch (combination_method_) {
     case CombinationMethod::Overwrite:
       updateWithOverwrite(master_grid, min_i, min_j, max_i, max_j);
@@ -126,7 +134,7 @@ void PluginContainerLayer::updateCosts(
     case CombinationMethod::MaxWithoutUnknownOverwrite:
       updateWithMaxWithoutUnknownOverwrite(master_grid, min_i, min_j, max_i, max_j);
       break;
-    default: // Nothing
+    default:  // Nothing
       break;
   }
 
@@ -158,6 +166,8 @@ void PluginContainerLayer::reset()
   {
     (*plugin)->reset();
   }
+
+  current_ = false;
 }
 
 void PluginContainerLayer::onFootprintChanged()

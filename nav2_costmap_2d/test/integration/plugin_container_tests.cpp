@@ -325,3 +325,298 @@ TEST_F(TestNode, testDifferentInflationLayers2) {
   ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE), 21);
   ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), 28);
 }
+
+TEST_F(TestNode, testResetting) {
+  tf2_ros::Buffer tf(node_->get_clock());
+
+  node_->declare_parameter("pclayer_a.static.map_topic",
+    rclcpp::ParameterValue(std::string("map")));
+
+  node_->declare_parameter("pclayer_a.inflation.cost_scaling_factor",
+    rclcpp::ParameterValue(1.0));
+
+  node_->declare_parameter("pclayer_a.inflation.inflation_radius",
+    rclcpp::ParameterValue(1.0));
+
+  node_->declare_parameter("pclayer_b.inflation.cost_scaling_factor",
+    rclcpp::ParameterValue(1.0));
+
+  node_->declare_parameter("pclayer_b.inflation.inflation_radius",
+    rclcpp::ParameterValue(1.0));
+
+  nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
+
+  layers.resizeMap(10, 10, 1, 0, 0);
+
+  std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_a = nullptr;
+  addPluginContainerLayer(layers, tf, node_, pclayer_a, "pclayer_a");
+
+  std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_b = nullptr;
+  addPluginContainerLayer(layers, tf, node_, pclayer_b, "pclayer_b");
+
+  std::shared_ptr<nav2_costmap_2d::StaticLayer> slayer =
+    std::make_shared<nav2_costmap_2d::StaticLayer>();
+  pclayer_a->addPlugin(slayer, "pclayer_a.static");
+
+  std::shared_ptr<nav2_costmap_2d::InflationLayer> ilayer_a =
+    std::make_shared<nav2_costmap_2d::InflationLayer>();
+  pclayer_a->addPlugin(ilayer_a, "pclayer_a.inflation");
+
+  std::shared_ptr<nav2_costmap_2d::ObstacleLayer> olayer_b =
+    std::make_shared<nav2_costmap_2d::ObstacleLayer>();
+  pclayer_b->addPlugin(olayer_b, "pclayer_b.obstacles");
+
+  std::shared_ptr<nav2_costmap_2d::InflationLayer> ilayer_b =
+    std::make_shared<nav2_costmap_2d::InflationLayer>();
+  pclayer_b->addPlugin(ilayer_b, "pclayer_a.inflation");
+
+  std::vector<geometry_msgs::msg::Point> polygon = setRadii(layers, 1, 1);
+  layers.setFootprint(polygon);
+
+  addObservation(olayer_b, 9.0, 9.0);
+
+  waitForMap(slayer);
+
+  ASSERT_EQ(pclayer_a->isCurrent(), true);
+  ASSERT_EQ(pclayer_b->isCurrent(), true);
+
+  ASSERT_EQ(slayer->isCurrent(), true);
+  ASSERT_EQ(ilayer_a->isCurrent(), true);
+  ASSERT_EQ(olayer_b->isCurrent(), true);
+  ASSERT_EQ(ilayer_b->isCurrent(), true);
+
+  pclayer_a->reset();
+  pclayer_b->reset();
+
+  ASSERT_EQ(pclayer_a->isCurrent(), false);
+  ASSERT_EQ(pclayer_b->isCurrent(), false);
+
+  ASSERT_EQ(slayer->isCurrent(), false);
+  ASSERT_EQ(ilayer_a->isCurrent(), false);
+  ASSERT_EQ(olayer_b->isCurrent(), false);
+  ASSERT_EQ(ilayer_b->isCurrent(), false);
+}
+
+TEST_F(TestNode, testOverwriteCombinationMethods) {
+  tf2_ros::Buffer tf(node_->get_clock());
+
+  node_->declare_parameter("pclayer_a.static.map_topic",
+    rclcpp::ParameterValue(std::string("map")));
+
+  node_->declare_parameter("pclayer_a.inflation.cost_scaling_factor",
+    rclcpp::ParameterValue(1.0));
+
+  node_->declare_parameter("pclayer_a.inflation.inflation_radius",
+    rclcpp::ParameterValue(1.0));
+
+  node_->declare_parameter("pclayer_b.inflation.cost_scaling_factor",
+    rclcpp::ParameterValue(1.0));
+
+  node_->declare_parameter("pclayer_b.inflation.inflation_radius",
+    rclcpp::ParameterValue(1.0));
+
+  nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
+
+  layers.resizeMap(10, 10, 1, 0, 0);
+
+  std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_a = nullptr;
+  addPluginContainerLayer(layers, tf, node_, pclayer_a, "pclayer_a");
+
+  std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_b = nullptr;
+  addPluginContainerLayer(layers, tf, node_, pclayer_b, "pclayer_b");
+
+  node_->set_parameter(rclcpp::Parameter("pclayer_b.combination_method", 0));
+
+  std::shared_ptr<nav2_costmap_2d::StaticLayer> slayer =
+    std::make_shared<nav2_costmap_2d::StaticLayer>();
+  pclayer_a->addPlugin(slayer, "pclayer_a.static");
+
+  std::shared_ptr<nav2_costmap_2d::InflationLayer> ilayer_a =
+    std::make_shared<nav2_costmap_2d::InflationLayer>();
+  pclayer_a->addPlugin(ilayer_a, "pclayer_a.inflation");
+
+  std::shared_ptr<nav2_costmap_2d::ObstacleLayer> olayer_b =
+    std::make_shared<nav2_costmap_2d::ObstacleLayer>();
+  pclayer_b->addPlugin(olayer_b, "pclayer_b.obstacles");
+
+  std::shared_ptr<nav2_costmap_2d::InflationLayer> ilayer_b =
+    std::make_shared<nav2_costmap_2d::InflationLayer>();
+  pclayer_b->addPlugin(ilayer_b, "pclayer_a.inflation");
+
+  std::vector<geometry_msgs::msg::Point> polygon = setRadii(layers, 1, 1);
+  layers.setFootprint(polygon);
+
+  addObservation(olayer_b, 9.0, 9.0);
+
+  waitForMap(slayer);
+
+  layers.updateMap(0, 0, 0);
+
+  nav2_costmap_2d::Costmap2D * costmap = layers.getCostmap();
+
+  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE), 1);
+  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), 2);
+}
+
+TEST_F(TestNode, testWithoutUnknownOverwriteCombinationMethods) {
+  tf2_ros::Buffer tf(node_->get_clock());
+
+  node_->declare_parameter("pclayer_a.static.map_topic",
+    rclcpp::ParameterValue(std::string("map")));
+
+  node_->declare_parameter("pclayer_a.inflation.cost_scaling_factor",
+    rclcpp::ParameterValue(1.0));
+
+  node_->declare_parameter("pclayer_a.inflation.inflation_radius",
+    rclcpp::ParameterValue(1.0));
+
+  node_->declare_parameter("pclayer_b.inflation.cost_scaling_factor",
+    rclcpp::ParameterValue(1.0));
+
+  node_->declare_parameter("pclayer_b.inflation.inflation_radius",
+    rclcpp::ParameterValue(1.0));
+
+  nav2_costmap_2d::LayeredCostmap layers("frame", false, true);
+
+  layers.resizeMap(10, 10, 1, 0, 0);
+
+  std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_a = nullptr;
+  addPluginContainerLayer(layers, tf, node_, pclayer_a, "pclayer_a");
+
+  std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_b = nullptr;
+  addPluginContainerLayer(layers, tf, node_, pclayer_b, "pclayer_b");
+
+  node_->set_parameter(rclcpp::Parameter("pclayer_a.combination_method", 2));
+  node_->set_parameter(rclcpp::Parameter("pclayer_b.combination_method", 2));
+
+  std::shared_ptr<nav2_costmap_2d::StaticLayer> slayer =
+    std::make_shared<nav2_costmap_2d::StaticLayer>();
+  pclayer_a->addPlugin(slayer, "pclayer_a.static");
+
+  std::shared_ptr<nav2_costmap_2d::InflationLayer> ilayer_a =
+    std::make_shared<nav2_costmap_2d::InflationLayer>();
+  pclayer_a->addPlugin(ilayer_a, "pclayer_a.inflation");
+
+  std::shared_ptr<nav2_costmap_2d::ObstacleLayer> olayer_b =
+    std::make_shared<nav2_costmap_2d::ObstacleLayer>();
+  pclayer_b->addPlugin(olayer_b, "pclayer_b.obstacles");
+
+  std::shared_ptr<nav2_costmap_2d::InflationLayer> ilayer_b =
+    std::make_shared<nav2_costmap_2d::InflationLayer>();
+  pclayer_b->addPlugin(ilayer_b, "pclayer_a.inflation");
+
+  std::vector<geometry_msgs::msg::Point> polygon = setRadii(layers, 1, 1);
+  layers.setFootprint(polygon);
+
+  addObservation(olayer_b, 9.0, 9.0);
+
+  waitForMap(slayer);
+
+  layers.updateMap(0, 0, 0);
+
+  nav2_costmap_2d::Costmap2D * costmap = layers.getCostmap();
+
+  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::NO_INFORMATION), 100);
+}
+
+TEST_F(TestNode, testClearable) {
+  tf2_ros::Buffer tf(node_->get_clock());
+
+  nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
+
+  std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_a = nullptr;
+  addPluginContainerLayer(layers, tf, node_, pclayer_a, "pclayer_a");
+
+  std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_b = nullptr;
+  addPluginContainerLayer(layers, tf, node_, pclayer_b, "pclayer_b");
+
+  std::shared_ptr<nav2_costmap_2d::StaticLayer> slayer =
+    std::make_shared<nav2_costmap_2d::StaticLayer>();
+  pclayer_a->addPlugin(slayer, "pclayer_a.static");
+
+  std::shared_ptr<nav2_costmap_2d::ObstacleLayer> olayer_a =
+    std::make_shared<nav2_costmap_2d::ObstacleLayer>();
+  pclayer_a->addPlugin(olayer_a, "pclayer_a.obstacles");
+
+  std::shared_ptr<nav2_costmap_2d::ObstacleLayer> olayer_b =
+    std::make_shared<nav2_costmap_2d::ObstacleLayer>();
+  pclayer_b->addPlugin(olayer_b, "pclayer_b.obstacles");
+
+  waitForMap(slayer);
+
+  ASSERT_EQ(pclayer_a->isClearable(), false);
+  ASSERT_EQ(pclayer_b->isClearable(), true);
+}
+
+TEST_F(TestNode, testDynParamsSetPluginContainerLayer)
+{
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+
+  // Add obstacle layer
+  std::vector<std::string> plugins_str;
+  plugins_str.push_back("plugin_container_layer_a");
+  plugins_str.push_back("plugin_container_layer_b");
+  costmap->set_parameter(rclcpp::Parameter("plugins", plugins_str));
+
+  costmap->declare_parameter("plugin_container_layer_a.plugin",
+    rclcpp::ParameterValue(std::string("nav2_costmap_2d::PluginContainerLayer")));
+  costmap->declare_parameter("plugin_container_layer_b.plugin",
+    rclcpp::ParameterValue(std::string("nav2_costmap_2d::PluginContainerLayer")));
+
+  std::vector<std::string> plugins_str_a;
+  plugins_str_a.push_back("obstacle_layer");
+  plugins_str_a.push_back("inflation_layer");
+  costmap->declare_parameter("plugin_container_layer_a.plugins",
+    rclcpp::ParameterValue(plugins_str_a));
+
+  costmap->declare_parameter("plugin_container_layer_a.obstacle_layer.plugin",
+    rclcpp::ParameterValue(std::string("nav2_costmap_2d::ObstacleLayer")));
+  costmap->declare_parameter("plugin_container_layer_a.inflation_layer.plugin",
+    rclcpp::ParameterValue(std::string("nav2_costmap_2d::InflationLayer")));
+
+  std::vector<std::string> plugins_str_b;
+  plugins_str_b.push_back("static_layer");
+  plugins_str_b.push_back("inflation_layer");
+  costmap->declare_parameter("plugin_container_layer_b.plugins",
+    rclcpp::ParameterValue(plugins_str_b));
+
+  costmap->declare_parameter("plugin_container_layer_b.static_layer.plugin",
+    rclcpp::ParameterValue(std::string("nav2_costmap_2d::StaticLayer")));
+  costmap->declare_parameter("plugin_container_layer_b.inflation_layer.plugin",
+    rclcpp::ParameterValue(std::string("nav2_costmap_2d::InflationLayer")));
+
+
+  costmap->set_parameter(rclcpp::Parameter("global_frame", std::string("map")));
+  costmap->set_parameter(rclcpp::Parameter("robot_base_frame", std::string("base_link")));
+
+  costmap->on_configure(rclcpp_lifecycle::State());
+
+  costmap->on_activate(rclcpp_lifecycle::State());
+
+  auto parameter_client = std::make_shared<rclcpp::AsyncParametersClient>(
+    costmap->get_node_base_interface(), costmap->get_node_topics_interface(),
+    costmap->get_node_graph_interface(),
+    costmap->get_node_services_interface());
+
+  auto results = parameter_client->set_parameters_atomically(
+  {
+    rclcpp::Parameter("plugin_container_layer_a.combination_method", 2),
+    rclcpp::Parameter("plugin_container_layer_b.combination_method", 1),
+    rclcpp::Parameter("plugin_container_layer_a.enabled", false),
+    rclcpp::Parameter("plugin_container_layer_b.enabled", true)
+  });
+
+  rclcpp::spin_until_future_complete(
+    costmap->get_node_base_interface(),
+    results);
+
+  EXPECT_EQ(costmap->get_parameter("plugin_container_layer_a.combination_method").as_int(), 2);
+  EXPECT_EQ(costmap->get_parameter("plugin_container_layer_b.combination_method").as_int(), 1);
+
+  EXPECT_EQ(costmap->get_parameter("plugin_container_layer_a.enabled").as_bool(), false);
+  EXPECT_EQ(costmap->get_parameter("plugin_container_layer_b.enabled").as_bool(), true);
+
+  costmap->on_deactivate(rclcpp_lifecycle::State());
+  costmap->on_cleanup(rclcpp_lifecycle::State());
+  costmap->on_shutdown(rclcpp_lifecycle::State());
+}
