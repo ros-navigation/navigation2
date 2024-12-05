@@ -74,7 +74,7 @@ class LoopbackSimulator(Node):
         self.declare_parameter('scan_frame_id', 'base_scan')
         self.scan_frame_id = self.get_parameter('scan_frame_id').get_parameter_value().string_value
 
-        self.declare_parameter('enable_stamped_cmd_vel', False)
+        self.declare_parameter('enable_stamped_cmd_vel', True)
         use_stamped = self.get_parameter('enable_stamped_cmd_vel').get_parameter_value().bool_value
 
         self.declare_parameter('scan_publish_dur', 0.1)

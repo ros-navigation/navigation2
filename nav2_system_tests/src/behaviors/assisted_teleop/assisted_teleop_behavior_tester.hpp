@@ -24,7 +24,7 @@
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
-#include "geometry_msgs/msg/twist.hpp"
+#include "geometry_msgs/msg/twist_stamped.hpp"
 #include "geometry_msgs/msg/pose2_d.hpp"
 #include "nav2_costmap_2d/costmap_topic_collision_checker.hpp"
 #include "nav2_msgs/action/assisted_teleop.hpp"
@@ -68,7 +68,7 @@ private:
 
   void amclPoseCallback(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr);
 
-  void filteredVelCallback(geometry_msgs::msg::Twist::SharedPtr msg);
+  void filteredVelCallback(geometry_msgs::msg::TwistStamped::SharedPtr msg);
 
   unsigned int counter_;
   bool is_active_;
@@ -83,11 +83,11 @@ private:
   // Publishers
   rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr initial_pose_pub_;
   rclcpp::Publisher<std_msgs::msg::Empty>::SharedPtr preempt_pub_;
-  rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub_;
+  rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr cmd_vel_pub_;
 
   // Subscribers
   rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr subscription_;
-  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr filtered_vel_sub_;
+  rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr filtered_vel_sub_;
 
   // Action client to call AssistedTeleop action
   rclcpp_action::Client<AssistedTeleop>::SharedPtr client_ptr_;

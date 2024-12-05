@@ -189,6 +189,7 @@ void ObstacleLayer::onInitialize()
     node->get_parameter(name_ + "." + source + "." + "raytrace_min_range", raytrace_min_range);
     node->get_parameter(name_ + "." + source + "." + "raytrace_max_range", raytrace_max_range);
 
+    topic = joinWithParentNamespace(topic);
 
     RCLCPP_DEBUG(
       logger_,

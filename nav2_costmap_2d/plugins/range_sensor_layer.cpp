@@ -130,6 +130,7 @@ void RangeSensorLayer::onInitialize()
 
   // Traverse the topic names list subscribing to all of them with the same callback method
   for (auto & topic_name : topic_names) {
+    topic_name = joinWithParentNamespace(topic_name);
     if (input_sensor_type == InputSensorType::VARIABLE) {
       processRangeMessageFunc_ = std::bind(
         &RangeSensorLayer::processVariableRangeMsg, this,

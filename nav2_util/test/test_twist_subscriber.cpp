@@ -29,6 +29,7 @@ TEST(TwistSubscriber, Unstamped)
   auto sub_node = std::make_shared<nav2_util::LifecycleNode>("sub_node", "");
   sub_node->configure();
   sub_node->activate();
+  sub_node->declare_parameter("enable_stamped_cmd_vel", rclcpp::ParameterValue(false));
 
   geometry_msgs::msg::TwistStamped sub_msg {};
   auto vel_subscriber = std::make_unique<nav2_util::TwistSubscriber>(

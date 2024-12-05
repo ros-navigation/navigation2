@@ -58,9 +58,6 @@ using rcl_interfaces::msg::ParameterType;
 
 namespace nav2_costmap_2d
 {
-Costmap2DROS::Costmap2DROS(const std::string & name, const bool & use_sim_time)
-: Costmap2DROS(name, "/", name, use_sim_time) {}
-
 Costmap2DROS::Costmap2DROS(const rclcpp::NodeOptions & options)
 : nav2_util::LifecycleNode("costmap", "", options),
   name_("costmap"),
@@ -70,7 +67,6 @@ Costmap2DROS::Costmap2DROS(const rclcpp::NodeOptions & options)
     "nav2_costmap_2d::ObstacleLayer",
     "nav2_costmap_2d::InflationLayer"}
 {
-  declare_parameter("map_topic", rclcpp::ParameterValue(std::string("map")));
   is_lifecycle_follower_ = false;
   init();
 }
@@ -78,7 +74,6 @@ Costmap2DROS::Costmap2DROS(const rclcpp::NodeOptions & options)
 Costmap2DROS::Costmap2DROS(
   const std::string & name,
   const std::string & parent_namespace,
-  const std::string & local_namespace,
   const bool & use_sim_time)
 : nav2_util::LifecycleNode(name, "",
     // NodeOption arguments take precedence over the ones provided on the command line
@@ -87,21 +82,17 @@ Costmap2DROS::Costmap2DROS(
     //              of the namespaces
     rclcpp::NodeOptions().arguments({
     "--ros-args", "-r", std::string("__ns:=") +
-    nav2_util::add_namespaces(parent_namespace, local_namespace),
+    nav2_util::add_namespaces(parent_namespace, name),
     "--ros-args", "-r", name + ":" + std::string("__node:=") + name,
     "--ros-args", "-p", "use_sim_time:=" + std::string(use_sim_time ? "true" : "false"),
   })),
   name_(name),
-  parent_namespace_(parent_namespace),
   default_plugins_{"static_layer", "obstacle_layer", "inflation_layer"},
   default_types_{
     "nav2_costmap_2d::StaticLayer",
     "nav2_costmap_2d::ObstacleLayer",
     "nav2_costmap_2d::InflationLayer"}
 {
-  declare_parameter(
-    "map_topic", rclcpp::ParameterValue(
-      (parent_namespace_ == "/" ? "/" : parent_namespace_ + "/") + std::string("map")));
   init();
 }
 

@@ -29,6 +29,7 @@ TEST(TwistPublisher, Unstamped)
   rclcpp::init(0, nullptr);
   auto pub_node = std::make_shared<nav2_util::LifecycleNode>("pub_node", "");
   pub_node->configure();
+  pub_node->declare_parameter("enable_stamped_cmd_vel", rclcpp::ParameterValue(false));
   auto vel_publisher = std::make_unique<nav2_util::TwistPublisher>(pub_node, "cmd_vel", 1);
   ASSERT_EQ(vel_publisher->get_subscription_count(), 0);
   EXPECT_FALSE(vel_publisher->is_activated());

@@ -93,7 +93,8 @@ TEST(ParameterHandlerTest, PrePostDynamicCallbackTest)
       post_triggered = true;
     };
 
-  auto dynamicCb = [&](const rclcpp::Parameter & /*param*/) {
+  auto dynamicCb = [&](const rclcpp::Parameter & /*param*/,
+    rcl_interfaces::msg::SetParametersResult & /*result*/) {
       dynamic_triggered = true;
     };
 
@@ -104,8 +105,8 @@ TEST(ParameterHandlerTest, PrePostDynamicCallbackTest)
   ParametersHandlerWrapper a;
   a.addPreCallback(preCb);
   a.addPostCallback(postCb);
-  a.addDynamicParamCallback("use_sim_time", dynamicCb);
-  a.setDynamicParamCallback(val, "blah_blah");
+  a.addParamCallback("use_sim_time", dynamicCb);
+  a.setParamCallback(val, "blah_blah");
 
   // Dynamic callback should not trigger, wrong parameter, but val should be updated
   a.dynamicParamsCallback(std::vector<rclcpp::Parameter>{random_param});
@@ -148,6 +149,7 @@ TEST(ParameterHandlerTest, GetSystemParamsTest)
 TEST(ParameterHandlerTest, DynamicAndStaticParametersTest)
 {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+
   node->declare_parameter("dynamic_int", rclcpp::ParameterValue(7));
   node->declare_parameter("static_int", rclcpp::ParameterValue(7));
   ParametersHandlerWrapper handler(node);
@@ -167,15 +169,130 @@ TEST(ParameterHandlerTest, DynamicAndStaticParametersTest)
     node->get_node_graph_interface(),
     node->get_node_services_interface());
 
-  auto results = rec_param->set_parameters_atomically(
-    {rclcpp::Parameter("dynamic_int", 10),
-      rclcpp::Parameter("static_int", 10)});
+  std::shared_future<rcl_interfaces::msg::SetParametersResult> result_future =
+    rec_param->set_parameters_atomically({
+    rclcpp::Parameter("my_node.verbose", true),
+    rclcpp::Parameter("dynamic_int", 10),
+    rclcpp::Parameter("static_int", 10)
+  });
 
-  rclcpp::spin_until_future_complete(
+  auto rc = rclcpp::spin_until_future_complete(
     node->get_node_base_interface(),
-    results);
+    result_future);
+  ASSERT_EQ(rclcpp::FutureReturnCode::SUCCESS, rc);
+
+  auto result = result_future.get();
+  EXPECT_EQ(result.successful, false);
+  EXPECT_FALSE(result.reason.empty());
+  EXPECT_EQ(result.reason, std::string("Rejected change to static parameter: ") +
+    "{\"name\": \"static_int\", \"type\": \"integer\", \"value\": \"10\"}");
 
   // Now, only param1 should change, param 2 should be the same
   EXPECT_EQ(p1, 10);
   EXPECT_EQ(p2, 7);
+}
+
+TEST(ParameterHandlerTest, DynamicAndStaticParametersNotVerboseTest)
+{
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  node->declare_parameter("dynamic_int", rclcpp::ParameterValue(7));
+  node->declare_parameter("static_int", rclcpp::ParameterValue(7));
+  ParametersHandlerWrapper handler(node);
+  handler.start();
+
+  // Get parameters and check they have initial values
+  auto getParamer = handler.getParamGetter("");
+  int p1 = 0, p2 = 0;
+  getParamer(p1, "dynamic_int", 0, ParameterType::Dynamic);
+  getParamer(p2, "static_int", 0, ParameterType::Static);
+  EXPECT_EQ(p1, 7);
+  EXPECT_EQ(p2, 7);
+
+  // Now change them both via dynamic parameters
+  auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
+    node->get_node_base_interface(), node->get_node_topics_interface(),
+    node->get_node_graph_interface(),
+    node->get_node_services_interface());
+
+  std::shared_future<rcl_interfaces::msg::SetParametersResult> result_future =
+    rec_param->set_parameters_atomically({
+    // Don't set default param rclcpp::Parameter("my_node.verbose", false),
+    rclcpp::Parameter("dynamic_int", 10),
+    rclcpp::Parameter("static_int", 10)
+  });
+
+  auto rc = rclcpp::spin_until_future_complete(
+    node->get_node_base_interface(),
+    result_future);
+  ASSERT_EQ(rclcpp::FutureReturnCode::SUCCESS, rc);
+
+  auto result = result_future.get();
+  EXPECT_EQ(result.successful, false);
+  EXPECT_FALSE(result.reason.empty());
+  EXPECT_EQ(result.reason, std::string("Rejected change to static parameter: ") +
+    "{\"name\": \"static_int\", \"type\": \"integer\", \"value\": \"10\"}");
+
+  // Now, only param1 should change, param 2 should be the same
+  EXPECT_EQ(p1, 10);
+  EXPECT_EQ(p2, 7);
+}
+
+TEST(ParameterHandlerTest, DynamicAndStaticParametersNotDeclaredTest)
+{
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+
+  node->declare_parameter("dynamic_int", rclcpp::ParameterValue(7));
+  node->declare_parameter("static_int", rclcpp::ParameterValue(7));
+  ParametersHandlerWrapper handler(node);
+  handler.start();
+
+  // Set verbose true to get more information about bad parameter usage
+  auto getParamer = handler.getParamGetter("");
+  auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
+    node->get_node_base_interface(), node->get_node_topics_interface(),
+    node->get_node_graph_interface(),
+    node->get_node_services_interface());
+
+  std::shared_future<rcl_interfaces::msg::SetParametersResult>
+  result_future = rec_param->set_parameters_atomically({
+    rclcpp::Parameter("my_node.verbose", true),
+  });
+
+  auto rc = rclcpp::spin_until_future_complete(
+    node->get_node_base_interface(),
+    result_future);
+  ASSERT_EQ(rclcpp::FutureReturnCode::SUCCESS, rc);
+
+  auto result = result_future.get();
+  EXPECT_EQ(result.successful, true);
+  EXPECT_TRUE(result.reason.empty());
+
+  // Try to access some parameters that have not been declared
+  int p1 = 0, p2 = 0;
+  EXPECT_THROW(getParamer(p1, "not_declared", 8, ParameterType::Dynamic),
+               rclcpp::exceptions::InvalidParameterValueException);
+  EXPECT_THROW(getParamer(p2, "not_declared2", 9, ParameterType::Static),
+               rclcpp::exceptions::InvalidParameterValueException);
+
+  // Try to set some parameters that have not been declared via the service client
+  result_future = rec_param->set_parameters_atomically({
+    rclcpp::Parameter("static_int", 10),
+    rclcpp::Parameter("not_declared", true),
+    rclcpp::Parameter("not_declared2", true),
+  });
+
+  rc = rclcpp::spin_until_future_complete(
+    node->get_node_base_interface(),
+    result_future);
+  ASSERT_EQ(rclcpp::FutureReturnCode::SUCCESS, rc);
+
+  result = result_future.get();
+  EXPECT_EQ(result.successful, false);
+  EXPECT_FALSE(result.reason.empty());
+  // The ParameterNotDeclaredException handler in rclcpp/parameter_service.cpp
+  // overrides any other reasons and does not provide details to the service client.
+  EXPECT_EQ(result.reason, std::string("One or more parameters were not declared before setting"));
+
+  EXPECT_EQ(p1, 0);
+  EXPECT_EQ(p2, 0);
 }

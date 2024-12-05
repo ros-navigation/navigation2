@@ -113,7 +113,7 @@ def generate_launch_description():
             os.path.join(nav2_bringup_dir, 'launch', 'rviz_launch.py')
         ),
         condition=IfCondition(use_rviz),
-        launch_arguments={'namespace': '', 'use_namespace': 'False'}.items(),
+        launch_arguments={'namespace': ''}.items(),
     )
 
     # start navigation
