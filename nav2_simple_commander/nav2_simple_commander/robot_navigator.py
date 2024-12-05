@@ -278,7 +278,8 @@ class BasicNavigator(Node):
         self.result_future = self.goal_handle.get_result_async()
         return True
 
-    def backup(self, backup_dist=0.15, backup_speed=0.025, time_allowance=10, no_collision_checks=False):
+    def backup(self, backup_dist=0.15, backup_speed=0.025, time_allowance=10,
+               no_collision_checks=False):
         self.debug("Waiting for 'Backup' action server")
         while not self.backup_client.wait_for_server(timeout_sec=1.0):
             self.info("'Backup' action server not available, waiting...")
@@ -302,7 +303,8 @@ class BasicNavigator(Node):
         self.result_future = self.goal_handle.get_result_async()
         return True
 
-    def driveOnHeading(self, dist=0.15, speed=0.025, time_allowance=10, no_collision_checks=False):
+    def driveOnHeading(self, dist=0.15, speed=0.025, time_allowance=10,
+                       no_collision_checks=False):
         self.debug("Waiting for 'DriveOnHeading' action server")
         while not self.backup_client.wait_for_server(timeout_sec=1.0):
             self.info("'DriveOnHeading' action server not available, waiting...")
