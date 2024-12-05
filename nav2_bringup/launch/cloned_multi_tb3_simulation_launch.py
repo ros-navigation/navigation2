@@ -80,7 +80,7 @@ def generate_launch_description():
     declare_params_file_cmd = DeclareLaunchArgument(
         'params_file',
         default_value=os.path.join(
-            bringup_dir, 'params', 'nav2_multirobot_params_all.yaml'
+            bringup_dir, 'params', 'nav2_params.yaml'
         ),
         description='Full path to the ROS2 parameters file to use for all launched nodes',
     )
@@ -93,7 +93,7 @@ def generate_launch_description():
 
     declare_rviz_config_file_cmd = DeclareLaunchArgument(
         'rviz_config',
-        default_value=os.path.join(bringup_dir, 'rviz', 'nav2_namespaced_view.rviz'),
+        default_value=os.path.join(bringup_dir, 'rviz', 'nav2_default_view.rviz'),
         description='Full path to the RVIZ config file to use.',
     )
 
@@ -144,7 +144,6 @@ def generate_launch_description():
                     condition=IfCondition(use_rviz),
                     launch_arguments={
                         'namespace': TextSubstitution(text=robot_name),
-                        'use_namespace': 'True',
                         'rviz_config': rviz_config_file,
                     }.items(),
                 ),
@@ -154,7 +153,6 @@ def generate_launch_description():
                     ),
                     launch_arguments={
                         'namespace': robot_name,
-                        'use_namespace': 'True',
                         'map': map_yaml_file,
                         'use_sim_time': 'True',
                         'params_file': params_file,
