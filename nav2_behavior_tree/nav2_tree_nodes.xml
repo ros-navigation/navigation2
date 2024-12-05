@@ -13,7 +13,7 @@
       <input_port name="time_allowance">Allowed time for reversing</input_port>
       <input_port name="server_name">Server name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
-      <input_port name="no_collision_checks">Disable collision checking</input_port>
+      <input_port name="disable_collision_checks">Disable collision checking</input_port>
       <output_port name="error_code_id">"Back up error code"</output_port>
     </Action>
 
@@ -23,7 +23,7 @@
       <input_port name="time_allowance">Allowed time for reversing</input_port>
       <input_port name="server_name">Server name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
-      <input_port name="no_collision_checks">Disable collision checking</input_port>
+      <input_port name="disable_collision_checks">Disable collision checking</input_port>
       <output_port name="error_code_id">"Drive on heading error code"</output_port>
     </Action>
 

@@ -3,7 +3,7 @@
 geometry_msgs/Point target
 float32 speed
 builtin_interfaces/Duration time_allowance
-bool no_collision_checks
+bool disable_collision_checks
 ---
 #result definition
 

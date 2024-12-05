@@ -24,7 +24,7 @@ New as of September 2023: the simple navigator constructor will accept a `namesp
 | followWaypoints(poses)            | Requests the robot to follow a set of waypoints (list of `PoseStamped`). This will execute the specific `TaskExecutor` at each pose.   |
 | followPath(path, controller_id='', goal_checker_id='') | Requests the robot to follow a path from a starting to a goal `PoseStamped`, `nav_msgs/Path`.     |
 | spin(spin_dist=1.57, time_allowance=10)   | Requests the robot to performs an in-place rotation by a given angle.      |
-| backup(backup_dist=0.15, backup_speed=0.025, time_allowance=10, no_collision_checks=False) | Requests the robot to back up by a given distance.         |
+| backup(backup_dist=0.15, backup_speed=0.025, time_allowance=10, disable_collision_checks=False) | Requests the robot to back up by a given distance.         |
 | cancelTask()                       | Cancel an ongoing task request.|
 | isTaskComplete()                   | Checks if task is complete yet, times out at `100ms`.  Returns `True` if completed and `False` if still going.                  |
 | getFeedback()                     | Gets feedback from task, returns action server feedback object. |
