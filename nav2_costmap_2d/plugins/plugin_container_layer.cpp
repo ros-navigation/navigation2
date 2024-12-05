@@ -116,8 +116,6 @@ void PluginContainerLayer::updateCosts(
     return;
   }
 
-  resetMap(min_i, min_j, max_i, max_j);
-
   for (vector<std::shared_ptr<Layer>>::iterator plugin = plugins_.begin(); plugin != plugins_.end();
     ++plugin)
   {
