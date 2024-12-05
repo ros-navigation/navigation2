@@ -71,21 +71,31 @@ inline BT::NodeStatus GoalUpdater::tick()
   callback_group_executor_.spin_all(std::chrono::milliseconds(1));
   callback_group_executor_.spin_all(std::chrono::milliseconds(49));
 
-  if (last_goal_received_.header.stamp != rclcpp::Time(0)) {
+  if (last_goal_received_.header.stamp == rclcpp::Time(0)) {
+    // if the goal doesn't have a timestamp, we don't do any timestamp-checking and accept it
+    setOutput("output_goal", last_goal_received_);
+  }
+  else {
     auto last_goal_received_time = rclcpp::Time(last_goal_received_.header.stamp);
     auto goal_time = rclcpp::Time(goal.header.stamp);
     if (last_goal_received_time > goal_time) {
-      goal = last_goal_received_;
+      setOutput("output_goal", last_goal_received_);
     } else {
       RCLCPP_WARN(
         node_->get_logger(), "The timestamp of the received goal (%f) is older than the "
         "current goal (%f). Ignoring the received goal.",
         last_goal_received_time.seconds(), goal_time.seconds());
+      setOutput("output_goal", goal);
     }
   }
-  setOutput("output_goal", goal);
 
-  if (last_goals_received_.header.stamp != rclcpp::Time(0) && !last_goals_received_.poses.empty()) {
+  if (last_goals_received_.poses.empty()) {
+    setOutput("output_goals", goals);
+  }
+  else if (last_goals_received_.header.stamp == rclcpp::Time(0)) {
+    setOutput("output_goals", last_goals_received_.poses);
+  }
+  else {
     auto last_goals_received_time = rclcpp::Time(last_goals_received_.header.stamp);
     rclcpp::Time most_recent_goal_time =  rclcpp::Time(0, 0, node_->get_clock()->get_clock_type());
     for (const auto & g : goals) {
@@ -94,16 +104,16 @@ inline BT::NodeStatus GoalUpdater::tick()
       }
     }
     if (last_goals_received_time > most_recent_goal_time) {
-      goals = last_goals_received_.poses;
+      setOutput("output_goals", last_goals_received_.poses);
     } else {
       RCLCPP_WARN(
         node_->get_logger(), "None of the received goals (most recent: %f) are more recent than the "
         "current goals (oldest: %f). Ignoring the received goals.",
         last_goals_received_time.seconds(), most_recent_goal_time.seconds());
+      setOutput("output_goals", goals);
     }
   }
 
-  setOutput("output_goals", goals);
   return child_node_->executeTick();
 }
 
