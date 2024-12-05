@@ -77,6 +77,7 @@ public:
     command_x_ = command->target.x;
     command_speed_ = command->speed;
     command_time_allowance_ = command->time_allowance;
+    command_disable_collision_checks_ = command->disable_collision_checks;
 
     end_time_ = this->clock_->now() + command_time_allowance_;
 
