@@ -74,8 +74,7 @@ inline BT::NodeStatus GoalUpdater::tick()
   if (last_goal_received_.header.stamp == rclcpp::Time(0)) {
     // if the goal doesn't have a timestamp, we don't do any timestamp-checking and accept it
     setOutput("output_goal", last_goal_received_);
-  }
-  else {
+  } else {
     auto last_goal_received_time = rclcpp::Time(last_goal_received_.header.stamp);
     auto goal_time = rclcpp::Time(goal.header.stamp);
     if (last_goal_received_time > goal_time) {
@@ -91,13 +90,11 @@ inline BT::NodeStatus GoalUpdater::tick()
 
   if (last_goals_received_.poses.empty()) {
     setOutput("output_goals", goals);
-  }
-  else if (last_goals_received_.header.stamp == rclcpp::Time(0)) {
+  } else if (last_goals_received_.header.stamp == rclcpp::Time(0)) {
     setOutput("output_goals", last_goals_received_.poses);
-  }
-  else {
+  } else {
     auto last_goals_received_time = rclcpp::Time(last_goals_received_.header.stamp);
-    rclcpp::Time most_recent_goal_time =  rclcpp::Time(0, 0, node_->get_clock()->get_clock_type());
+    rclcpp::Time most_recent_goal_time = rclcpp::Time(0, 0, node_->get_clock()->get_clock_type());
     for (const auto & g : goals) {
       if (rclcpp::Time(g.header.stamp) > most_recent_goal_time) {
         most_recent_goal_time = rclcpp::Time(g.header.stamp);
@@ -107,7 +104,8 @@ inline BT::NodeStatus GoalUpdater::tick()
       setOutput("output_goals", last_goals_received_.poses);
     } else {
       RCLCPP_WARN(
-        node_->get_logger(), "None of the received goals (most recent: %f) are more recent than the "
+        node_->get_logger(),
+          "None of the received goals (most recent: %f) are more recent than the "
         "current goals (oldest: %f). Ignoring the received goals.",
         last_goals_received_time.seconds(), most_recent_goal_time.seconds());
       setOutput("output_goals", goals);
