@@ -86,12 +86,11 @@ private:
   rclcpp::Subscription<nav2_msgs::msg::PoseStampedArray>::SharedPtr goals_sub_;
 
   geometry_msgs::msg::PoseStamped last_goal_received_;
-  Goals last_goals_received_;
+  nav2_msgs::msg::PoseStampedArray last_goals_received_;
 
   rclcpp::Node::SharedPtr node_;
   rclcpp::CallbackGroup::SharedPtr callback_group_;
   rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
-  std::mutex mutex_;
 };
 
 }  // namespace nav2_behavior_tree
