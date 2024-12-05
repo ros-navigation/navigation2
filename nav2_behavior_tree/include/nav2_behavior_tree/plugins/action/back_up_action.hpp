@@ -80,7 +80,7 @@ public:
         BT::InputPort<double>("backup_dist", 0.15, "Distance to backup"),
         BT::InputPort<double>("backup_speed", 0.025, "Speed at which to backup"),
         BT::InputPort<double>("time_allowance", 10.0, "Allowed time for reversing"),
-        BT::InputPort<bool>("disable_collision_checking", false, "Disable collision checking"),
+        BT::InputPort<bool>("no_collision_checks", false, "Disable collision checking"),
         BT::OutputPort<ActionResult::_error_code_type>(
           "error_code_id", "The back up behavior server error code")
       });

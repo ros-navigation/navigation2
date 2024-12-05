@@ -10,20 +10,20 @@
     <Action ID="BackUp">
       <input_port name="backup_dist">Distance to backup</input_port>
       <input_port name="backup_speed">Speed at which to backup</input_port>
-      <input_port name="disable_collision_checking">Disable collision checking</input_port>
       <input_port name="time_allowance">Allowed time for reversing</input_port>
       <input_port name="server_name">Server name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
+      <input_port name="no_collision_checks">Disable collision checking</input_port>
       <output_port name="error_code_id">"Back up error code"</output_port>
     </Action>
 
     <Action ID="DriveOnHeading">
-      <input_port name="disable_collision_checking">Disable collision checking</input_port>
       <input_port name="dist_to_travel">Distance to travel</input_port>
       <input_port name="speed">Speed at which to travel</input_port>
       <input_port name="time_allowance">Allowed time for reversing</input_port>
       <input_port name="server_name">Server name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
+      <input_port name="no_collision_checks">Disable collision checking</input_port>
       <output_port name="error_code_id">"Drive on heading error code"</output_port>
     </Action>
 
@@ -203,7 +203,6 @@
       <input_port name="time_allowance">Allowed time for spinning</input_port>
       <input_port name="server_name">Server name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
-      <input_port name="disable_collision_checking">Disable collision checking</input_port>
       <output_port name="error_code_id">Spin error code</output_port>
     </Action>
 
