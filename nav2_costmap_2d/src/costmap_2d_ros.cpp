@@ -829,10 +829,12 @@ void Costmap2DROS::getCostsCallback(
   for (const auto & pose : request->poses) {
     geometry_msgs::msg::PoseStamped pose_transformed;
     if (!transformPoseToGlobalFrame(pose, pose_transformed)) {
-      response->costs.clear();
       RCLCPP_ERROR(
-        get_logger(), "Failed to transform, returning empty costs");
-      return;
+        get_logger(), "Failed to transform, cannot get cost for pose (%.2f, %.2f)",
+        pose.pose.position.x, pose.pose.position.y);
+      response->success = false;
+      response->costs.push_back(NO_INFORMATION);
+      continue;
     }
     double yaw = tf2::getYaw(pose_transformed.pose.orientation);
 

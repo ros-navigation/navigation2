@@ -55,10 +55,10 @@ void RemoveInCollisionGoals::on_tick()
 BT::NodeStatus RemoveInCollisionGoals::on_completion(
   std::shared_ptr<nav2_msgs::srv::GetCosts::Response> response)
 {
-  if (response->costs.size() != input_goals_.size()) {
+  if (!response->success) {
     RCLCPP_ERROR(
       node_->get_logger(),
-      "Received incorrect number of costs from GetCost service");
+      "GetCosts service call failed");
     return BT::NodeStatus::FAILURE;
   }
 

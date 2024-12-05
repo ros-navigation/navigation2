@@ -4,3 +4,4 @@ bool use_footprint
 geometry_msgs/PoseStamped[] poses
 ---
 float32[] costs
+bool success
