@@ -164,7 +164,7 @@ void PluginContainerLayer::reset()
   {
     (*plugin)->reset();
   }
-
+  resetMaps();
   current_ = false;
 }
 
