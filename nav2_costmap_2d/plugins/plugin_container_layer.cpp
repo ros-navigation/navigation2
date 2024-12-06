@@ -197,11 +197,11 @@ bool PluginContainerLayer::isClearable()
   for (vector<std::shared_ptr<Layer>>::iterator plugin = plugins_.begin(); plugin != plugins_.end();
     ++plugin)
   {
-    if(!(*plugin)->isClearable()) {
-      return false;
+    if((*plugin)->isClearable()) {
+      return true;
     }
   }
-  return true;
+  return false;
 }
 
 rcl_interfaces::msg::SetParametersResult PluginContainerLayer::dynamicParametersCallback(
