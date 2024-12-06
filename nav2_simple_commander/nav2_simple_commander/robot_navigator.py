@@ -256,13 +256,14 @@ class BasicNavigator(Node):
         self.result_future = self.goal_handle.get_result_async()
         return True
 
-    def spin(self, spin_dist=1.57, time_allowance=10):
+    def spin(self, spin_dist=1.57, time_allowance=10, disable_collision_checks=False):
         self.debug("Waiting for 'Spin' action server")
         while not self.spin_client.wait_for_server(timeout_sec=1.0):
             self.info("'Spin' action server not available, waiting...")
         goal_msg = Spin.Goal()
         goal_msg.target_yaw = spin_dist
         goal_msg.time_allowance = Duration(sec=time_allowance)
+        goal_msg.disable_collision_checks = disable_collision_checks
 
         self.info(f'Spinning to angle {goal_msg.target_yaw}....')
         send_goal_future = self.spin_client.send_goal_async(
