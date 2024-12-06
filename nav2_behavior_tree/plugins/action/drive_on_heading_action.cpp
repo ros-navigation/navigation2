@@ -37,7 +37,7 @@ void DriveOnHeadingAction::initialize()
   getInput("speed", speed);
   double time_allowance;
   getInput("time_allowance", time_allowance);
-  double disable_collision_checks;
+  bool disable_collision_checks;
   getInput("disable_collision_checks", disable_collision_checks);
 
   // Populate the input message
