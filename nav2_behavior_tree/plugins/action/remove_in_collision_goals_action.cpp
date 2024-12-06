@@ -59,6 +59,7 @@ BT::NodeStatus RemoveInCollisionGoals::on_completion(
     RCLCPP_ERROR(
       node_->get_logger(),
       "GetCosts service call failed");
+    setOutput("output_goals", input_goals_);
     return BT::NodeStatus::FAILURE;
   }
 

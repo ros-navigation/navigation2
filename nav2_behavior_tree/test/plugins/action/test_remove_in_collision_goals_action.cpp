@@ -25,10 +25,10 @@
 #include "utils/test_behavior_tree_fixture.hpp"
 
 
-class RemoveInCollisionGoalsService : public TestService<nav2_msgs::srv::GetCosts>
+class RemoveInCollisionGoalsSucessService : public TestService<nav2_msgs::srv::GetCosts>
 {
 public:
-  RemoveInCollisionGoalsService()
+  RemoveInCollisionGoalsSucessService()
   : TestService("/global_costmap/get_cost_global_costmap")
   {}
 
@@ -40,9 +40,28 @@ public:
     (void)request_header;
     (void)request;
     response->costs = {100, 50, 5, 254};
+    response->success = true;
   }
 };
 
+class RemoveInCollisionGoalsFailureService : public TestService<nav2_msgs::srv::GetCosts>
+{
+public:
+  RemoveInCollisionGoalsFailureService()
+  : TestService("/local_costmap/get_cost_local_costmap")
+  {}
+
+  virtual void handle_service(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<nav2_msgs::srv::GetCosts::Request> request,
+    const std::shared_ptr<nav2_msgs::srv::GetCosts::Response> response)
+  {
+    (void)request_header;
+    (void)request;
+    response->costs = {255, 50, 5, 254};
+    response->success = false;
+  }
+};
 
 class RemoveInCollisionGoalsTestFixture : public ::testing::Test
 {
@@ -86,7 +105,7 @@ public:
     delete config_;
     config_ = nullptr;
     node_.reset();
-    server_.reset();
+    success_server_.reset();
     factory_.reset();
   }
 
@@ -94,7 +113,8 @@ public:
   {
     tree_.reset();
   }
-  static std::shared_ptr<RemoveInCollisionGoalsService> server_;
+  static std::shared_ptr<RemoveInCollisionGoalsSucessService> success_server_;
+  static std::shared_ptr<RemoveInCollisionGoalsFailureService> failure_server_;
 
 protected:
   static rclcpp::Node::SharedPtr node_;
@@ -106,12 +126,14 @@ protected:
 rclcpp::Node::SharedPtr RemoveInCollisionGoalsTestFixture::node_ = nullptr;
 
 BT::NodeConfiguration * RemoveInCollisionGoalsTestFixture::config_ = nullptr;
-std::shared_ptr<RemoveInCollisionGoalsService>
-RemoveInCollisionGoalsTestFixture::server_ = nullptr;
+std::shared_ptr<RemoveInCollisionGoalsSucessService>
+RemoveInCollisionGoalsTestFixture::success_server_ = nullptr;
+std::shared_ptr<RemoveInCollisionGoalsFailureService>
+RemoveInCollisionGoalsTestFixture::failure_server_ = nullptr;
 std::shared_ptr<BT::BehaviorTreeFactory> RemoveInCollisionGoalsTestFixture::factory_ = nullptr;
 std::shared_ptr<BT::Tree> RemoveInCollisionGoalsTestFixture::tree_ = nullptr;
 
-TEST_F(RemoveInCollisionGoalsTestFixture, test_tick_remove_in_collision_goals)
+TEST_F(RemoveInCollisionGoalsTestFixture, test_tick_remove_in_collision_goals_success)
 {
   // create tree
   std::string xml_txt =
@@ -141,11 +163,13 @@ TEST_F(RemoveInCollisionGoalsTestFixture, test_tick_remove_in_collision_goals)
 
   config_->blackboard->set("goals", poses);
 
-  // tick until node succeeds
-  while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS) {
+  // tick until node is not running
+  tree_->rootNode()->executeTick();
+  while (tree_->rootNode()->status() == BT::NodeStatus::RUNNING) {
     tree_->rootNode()->executeTick();
   }
 
+  EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
   // check that it removed the point in range
   std::vector<geometry_msgs::msg::PoseStamped> output_poses;
   EXPECT_TRUE(config_->blackboard->get("goals", output_poses));
@@ -156,6 +180,54 @@ TEST_F(RemoveInCollisionGoalsTestFixture, test_tick_remove_in_collision_goals)
   EXPECT_EQ(output_poses[2], poses[2]);
 }
 
+TEST_F(RemoveInCollisionGoalsTestFixture, test_tick_remove_in_collision_goals_fail)
+{
+  // create tree
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+          <RemoveInCollisionGoals service_name="/local_costmap/get_cost_local_costmap" input_goals="{goals}" output_goals="{goals}" cost_threshold="253"/>
+        </BehaviorTree>
+      </root>)";
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+
+  // create new goal and set it on blackboard
+  std::vector<geometry_msgs::msg::PoseStamped> poses;
+  poses.resize(4);
+  poses[0].pose.position.x = 0.0;
+  poses[0].pose.position.y = 0.0;
+
+  poses[1].pose.position.x = 0.5;
+  poses[1].pose.position.y = 0.0;
+
+  poses[2].pose.position.x = 1.0;
+  poses[2].pose.position.y = 0.0;
+
+  poses[3].pose.position.x = 2.0;
+  poses[3].pose.position.y = 0.0;
+
+  config_->blackboard->set("goals", poses);
+
+  // tick until node is not running
+  tree_->rootNode()->executeTick();
+  while (tree_->rootNode()->status() == BT::NodeStatus::RUNNING) {
+    tree_->rootNode()->executeTick();
+  }
+
+  // check that it failed and returned the original goals
+  EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::FAILURE);
+  std::vector<geometry_msgs::msg::PoseStamped> output_poses;
+  EXPECT_TRUE(config_->blackboard->get("goals", output_poses));
+
+  EXPECT_EQ(output_poses.size(), 4u);
+  EXPECT_EQ(output_poses[0], poses[0]);
+  EXPECT_EQ(output_poses[1], poses[1]);
+  EXPECT_EQ(output_poses[2], poses[2]);
+  EXPECT_EQ(output_poses[3], poses[3]);
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
@@ -164,17 +236,24 @@ int main(int argc, char ** argv)
   rclcpp::init(argc, argv);
 
   // initialize service and spin on new thread
-  RemoveInCollisionGoalsTestFixture::server_ =
-    std::make_shared<RemoveInCollisionGoalsService>();
-  std::thread server_thread([]() {
-      rclcpp::spin(RemoveInCollisionGoalsTestFixture::server_);
+  RemoveInCollisionGoalsTestFixture::success_server_ =
+    std::make_shared<RemoveInCollisionGoalsSucessService>();
+  std::thread success_server_thread([]() {
+      rclcpp::spin(RemoveInCollisionGoalsTestFixture::success_server_);
+    });
+
+  RemoveInCollisionGoalsTestFixture::failure_server_ =
+    std::make_shared<RemoveInCollisionGoalsFailureService>();
+  std::thread failure_server_thread([]() {
+      rclcpp::spin(RemoveInCollisionGoalsTestFixture::failure_server_);
     });
 
   int all_successful = RUN_ALL_TESTS();
 
   // shutdown ROS
   rclcpp::shutdown();
-  server_thread.join();
+  success_server_thread.join();
+  failure_server_thread.join();
 
   return all_successful;
 }
