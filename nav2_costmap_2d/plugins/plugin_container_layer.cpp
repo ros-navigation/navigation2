@@ -62,15 +62,10 @@ void PluginContainerLayer::onInitialize()
       this,
       std::placeholders::_1));
 
-
   plugin_types_.resize(plugin_names_.size());
 
-  for (size_t i = 0; i < plugin_names_.size(); ++i) {
-    plugin_types_[i] = nav2_util::get_plugin_type_param(node, name_ + "." + plugin_names_[i]);
-  }
-
-  // Then load and add the plug-ins to the costmap
   for (unsigned int i = 0; i < plugin_names_.size(); ++i) {
+    plugin_types_[i] = nav2_util::get_plugin_type_param(node, name_ + "." + plugin_names_[i]);
     std::shared_ptr<Layer> plugin = plugin_loader_.createSharedInstance(plugin_types_[i]);
     addPlugin(plugin, plugin_names_[i]);
   }
