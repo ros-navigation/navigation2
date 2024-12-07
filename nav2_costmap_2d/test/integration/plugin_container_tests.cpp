@@ -538,14 +538,14 @@ TEST_F(TestNode, testClearable) {
     std::make_shared<nav2_costmap_2d::ObstacleLayer>();
   pclayer_a->addPlugin(olayer_a, "pclayer_a.obstacles");
 
-  std::shared_ptr<nav2_costmap_2d::ObstacleLayer> olayer_b =
-    std::make_shared<nav2_costmap_2d::ObstacleLayer>();
-  pclayer_b->addPlugin(olayer_b, "pclayer_b.obstacles");
+  std::shared_ptr<nav2_costmap_2d::StaticLayer> slayer_b =
+    std::make_shared<nav2_costmap_2d::StaticLayer>();
+  pclayer_b->addPlugin(slayer_b, "pclayer_b.obstacles");
 
   waitForMap(slayer);
 
-  ASSERT_EQ(pclayer_a->isClearable(), false);
-  ASSERT_EQ(pclayer_b->isClearable(), true);
+  ASSERT_EQ(pclayer_a->isClearable(), true);
+  ASSERT_EQ(pclayer_b->isClearable(), false);
 }
 
 TEST_F(TestNode, testDynParamsSetPluginContainerLayer)

@@ -126,8 +126,6 @@ private:
   std::vector<std::shared_ptr<Layer>> plugins_;
   std::vector<std::string> plugin_names_;
   std::vector<std::string> plugin_types_;
-
-  Costmap2D combined_costmap_;
 };
 }  // namespace nav2_costmap_2d
 #endif  // NAV2_COSTMAP_2D__PLUGIN_CONTAINER_LAYER_HPP_
