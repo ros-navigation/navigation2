@@ -70,7 +70,7 @@ void PluginContainerLayer::onInitialize()
     addPlugin(plugin, plugin_names_[i]);
   }
 
-  default_value_ = nav2_costmap_2d::FREE_SPACE;
+  default_value_ = nav2_costmap_2d::NO_INFORMATION;
 
   PluginContainerLayer::matchSize();
   current_ = true;
