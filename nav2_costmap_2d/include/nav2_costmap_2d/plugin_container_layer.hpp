@@ -107,6 +107,11 @@ public:
    * @brief If clearing operations should be processed on this layer or not
    */
   virtual bool isClearable();
+  /**
+   * @brief Clear an area in the constituent costmaps with the given dimension
+   * if invert, then clear everything except these dimensions
+   */
+  void clearArea(int start_x, int start_y, int end_x, int end_y, bool invert) override;
 
   void addPlugin(std::shared_ptr<Layer> plugin, std::string layer_name);
   pluginlib::ClassLoader<Layer> plugin_loader_{"nav2_costmap_2d", "nav2_costmap_2d::Layer"};
