@@ -17,6 +17,7 @@
 #define TESTING_HELPER_HPP_
 
 #include <memory>
+#include <string>
 
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/point_cloud2_iterator.hpp"
@@ -26,6 +27,7 @@
 #include "nav2_costmap_2d/range_sensor_layer.hpp"
 #include "nav2_costmap_2d/obstacle_layer.hpp"
 #include "nav2_costmap_2d/inflation_layer.hpp"
+#include "nav2_costmap_2d/plugin_container_layer.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 
 const double MAX_Z(1.0);
@@ -142,5 +144,16 @@ void addInflationLayer(
   layers.addPlugin(ipointer);
 }
 
+void addPluginContainerLayer(
+  nav2_costmap_2d::LayeredCostmap & layers,
+  tf2_ros::Buffer & tf, nav2_util::LifecycleNode::SharedPtr node,
+  std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> & pclayer,
+  std::string name,
+  rclcpp::CallbackGroup::SharedPtr callback_group = nullptr)
+{
+  pclayer = std::make_shared<nav2_costmap_2d::PluginContainerLayer>();
+  pclayer->initialize(&layers, name, &tf, node, callback_group);
+  layers.addPlugin(std::shared_ptr<nav2_costmap_2d::Layer>(pclayer));
+}
 
 #endif  // TESTING_HELPER_HPP_
