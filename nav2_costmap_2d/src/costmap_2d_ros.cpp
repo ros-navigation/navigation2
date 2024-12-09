@@ -861,6 +861,7 @@ void Costmap2DROS::getCostsCallback(
         pose_transformed.pose.position.y, mx, my);
 
       if (!in_bounds) {
+        response->success = false;
         response->costs.push_back(LETHAL_OBSTACLE);
         continue;
       }
