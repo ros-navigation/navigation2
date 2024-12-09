@@ -93,7 +93,9 @@ inline BT::NodeStatus GoalUpdater::tick()
   if (last_goals_received_.poses.empty()) {
     setOutput("output_goals", goals);
   } else if (last_goals_received_.header.stamp == rclcpp::Time(0)) {
-    setOutput("output_goals", last_goals_received_.poses);
+    RCLCPP_WARN(
+      node_->get_logger(), "The received goals array has no timestamp. Ignoring.");
+    setOutput("output_goals", goals);
   } else {
     auto last_goals_received_time = rclcpp::Time(last_goals_received_.header.stamp);
     rclcpp::Time most_recent_goal_time = rclcpp::Time(0, 0, node_->get_clock()->get_clock_type());
@@ -103,9 +105,7 @@ inline BT::NodeStatus GoalUpdater::tick()
       }
     }
     if (last_goals_received_time > most_recent_goal_time) {
-      RCLCPP_WARN(
-        node_->get_logger(), "The received goals array has no timestamp. Ignoring.");
-      setOutput("output_goals", goals);
+      setOutput("output_goals", last_goals_received_.poses);
     } else {
       RCLCPP_WARN(
         node_->get_logger(),
