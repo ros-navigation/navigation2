@@ -37,6 +37,16 @@ public:
 };
 RclCppFixture g_rclcppfixture;
 
+// Simple wrapper to be able to call a private member
+class HybridWrap : public nav2_smac_planner::SmacPlannerHybrid
+{
+public:
+  void callDynamicParams(std::vector<rclcpp::Parameter> parameters)
+  {
+    dynamicParametersCallback(parameters);
+  }
+};
+
 // SMAC smoke tests for plugin-level issues rather than algorithms
 // (covered by more extensively testing in other files)
 // System tests in nav2_system_tests will actually plan with this work
@@ -68,6 +78,14 @@ TEST(SmacTest, test_smac_se2)
   goal.pose.position.y = 1.0;
   goal.pose.orientation.w = 1.0;
   auto planner = std::make_unique<nav2_smac_planner::SmacPlannerHybrid>();
+
+  // invalid goal heading mode
+  nodeSE2->declare_parameter("test.goal_heading_mode", std::string("UNKNOWN"));
+  nodeSE2->set_parameter(rclcpp::Parameter("test.goal_heading_mode", std::string("UNKNOWN")));
+  EXPECT_THROW(planner->configure(nodeSE2, "test", nullptr, costmap_ros), std::runtime_error);
+
+  // valid goal heading mode
+  nodeSE2->set_parameter(rclcpp::Parameter("test.goal_heading_mode", std::string("DEFAULT")));
   planner->configure(nodeSE2, "test", nullptr, costmap_ros);
   planner->activate();
 
@@ -94,7 +112,7 @@ TEST(SmacTest, test_smac_se2_reconfigure)
     std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
   costmap_ros->on_configure(rclcpp_lifecycle::State());
 
-  auto planner = std::make_unique<nav2_smac_planner::SmacPlannerHybrid>();
+  auto planner = std::make_unique<HybridWrap>();
   planner->configure(nodeSE2, "test", nullptr, costmap_ros);
   planner->activate();
 
@@ -126,7 +144,9 @@ TEST(SmacTest, test_smac_se2_reconfigure)
       rclcpp::Parameter("test.analytic_expansion_max_length", 42.0),
       rclcpp::Parameter("test.max_on_approach_iterations", 42),
       rclcpp::Parameter("test.terminal_checking_interval", 42),
-      rclcpp::Parameter("test.motion_model_for_search", std::string("REEDS_SHEPP"))});
+      rclcpp::Parameter("test.motion_model_for_search", std::string("REEDS_SHEPP")),
+      rclcpp::Parameter("test.goal_heading_mode", std::string("BIDIRECTIONAL"))});
+
 
   rclcpp::spin_until_future_complete(
     nodeSE2->get_node_base_interface(),
@@ -155,11 +175,18 @@ TEST(SmacTest, test_smac_se2_reconfigure)
   EXPECT_EQ(
     nodeSE2->get_parameter("test.motion_model_for_search").as_string(),
     std::string("REEDS_SHEPP"));
-
+  EXPECT_EQ(
+    nodeSE2->get_parameter("test.goal_heading_mode").as_string(),
+    std::string("BIDIRECTIONAL"));
   auto results2 = rec_param->set_parameters_atomically(
     {rclcpp::Parameter("resolution", 0.2)});
   rclcpp::spin_until_future_complete(
     nodeSE2->get_node_base_interface(),
     results2);
   EXPECT_EQ(nodeSE2->get_parameter("resolution").as_double(), 0.2);
+
+  // Test reconfigure with invalid goal heading mode
+  std::vector<rclcpp::Parameter> parameters;
+  parameters.push_back(rclcpp::Parameter("test.goal_heading_mode", std::string("UNKNOWN")));
+  EXPECT_THROW(planner->callDynamicParams(parameters), std::runtime_error);
 }

@@ -73,6 +73,14 @@ TEST(SmacTest, test_smac_lattice)
   goal.pose.orientation.w = 1.0;
   auto planner = std::make_unique<nav2_smac_planner::SmacPlannerLattice>();
   try {
+    // invalid goal heading mode
+    nodeLattice->declare_parameter("test.goal_heading_mode", std::string("UNKNOWN"));
+    nodeLattice->set_parameter(rclcpp::Parameter("test.goal_heading_mode", std::string("UNKNOWN")));
+    EXPECT_THROW(planner->configure(nodeLattice, "test", nullptr, costmap_ros), std::runtime_error);
+
+    // valid goal heading mode
+    nodeLattice->set_parameter(rclcpp::Parameter("test.goal_heading_mode", std::string("DEFAULT")));
+
     // Expect to throw due to invalid prims file in param
     planner->configure(nodeLattice, "test", nullptr, costmap_ros);
   } catch (...) {
@@ -133,7 +141,8 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
       rclcpp::Parameter("test.rotation_penalty", 42.0),
       rclcpp::Parameter("test.max_on_approach_iterations", 42),
       rclcpp::Parameter("test.terminal_checking_interval", 42),
-      rclcpp::Parameter("test.allow_reverse_expansion", true)});
+      rclcpp::Parameter("test.allow_reverse_expansion", true),
+      rclcpp::Parameter("test.goal_heading_mode", std::string("BIDIRECTIONAL"))});
 
   try {
     // All of these params will re-init A* which will involve loading the control set file
@@ -148,5 +157,10 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
   // So instead, lets call manually on a change
   std::vector<rclcpp::Parameter> parameters;
   parameters.push_back(rclcpp::Parameter("test.lattice_filepath", std::string("HI")));
+  EXPECT_THROW(planner->callDynamicParams(parameters), std::runtime_error);
+
+  // same with invalid goal heading mode
+  parameters.clear();
+  parameters.push_back(rclcpp::Parameter("test.goal_heading_mode", std::string("UNKNOWN")));
   EXPECT_THROW(planner->callDynamicParams(parameters), std::runtime_error);
 }
