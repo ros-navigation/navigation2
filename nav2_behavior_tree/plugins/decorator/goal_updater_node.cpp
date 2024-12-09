@@ -72,8 +72,10 @@ inline BT::NodeStatus GoalUpdater::tick()
   callback_group_executor_.spin_all(std::chrono::milliseconds(49));
 
   if (last_goal_received_.header.stamp == rclcpp::Time(0)) {
-    // if the goal doesn't have a timestamp, we don't do any timestamp-checking and accept it
-    setOutput("output_goal", last_goal_received_);
+    // if the goal doesn't have a timestamp, we reject it
+    RCLCPP_WARN(
+      node_->get_logger(), "The received goal has no timestamp. Ignoring.");
+    setOutput("output_goal", goal);
   } else {
     auto last_goal_received_time = rclcpp::Time(last_goal_received_.header.stamp);
     auto goal_time = rclcpp::Time(goal.header.stamp);
@@ -101,7 +103,9 @@ inline BT::NodeStatus GoalUpdater::tick()
       }
     }
     if (last_goals_received_time > most_recent_goal_time) {
-      setOutput("output_goals", last_goals_received_.poses);
+      RCLCPP_WARN(
+        node_->get_logger(), "The received goals array has no timestamp. Ignoring.");
+      setOutput("output_goals", goals);
     } else {
       RCLCPP_WARN(
         node_->get_logger(),
