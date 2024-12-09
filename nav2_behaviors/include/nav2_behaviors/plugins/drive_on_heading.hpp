@@ -47,6 +47,7 @@ public:
     feedback_(std::make_shared<typename ActionT::Feedback>()),
     command_x_(0.0),
     command_speed_(0.0),
+    command_disable_collision_checks_(false),
     simulate_ahead_time_(0.0)
   {
   }
@@ -76,6 +77,7 @@ public:
     command_x_ = command->target.x;
     command_speed_ = command->speed;
     command_time_allowance_ = command->time_allowance;
+    command_disable_collision_checks_ = command->disable_collision_checks;
 
     end_time_ = this->clock_->now() + command_time_allowance_;
 
@@ -168,6 +170,10 @@ protected:
     const geometry_msgs::msg::Twist & cmd_vel,
     geometry_msgs::msg::Pose2D & pose2d)
   {
+    if (command_disable_collision_checks_) {
+      return true;
+    }
+
     // Simulate ahead by simulate_ahead_time_ in this->cycle_frequency_ increments
     int cycle_count = 0;
     double sim_position_change;
@@ -215,6 +221,7 @@ protected:
   geometry_msgs::msg::PoseStamped initial_pose_;
   double command_x_;
   double command_speed_;
+  bool command_disable_collision_checks_;
   rclcpp::Duration command_time_allowance_{0, 0};
   rclcpp::Time end_time_;
   double simulate_ahead_time_;
