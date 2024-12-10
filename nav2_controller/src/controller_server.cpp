@@ -786,7 +786,7 @@ bool ControllerServer::isGoalReached()
 
   return goal_checkers_[current_goal_checker_]->isGoalReached(
     pose.pose, transformed_end_pose.pose,
-    velocity);
+    velocity, current_path_);
 }
 
 bool ControllerServer::getRobotPose(geometry_msgs::msg::PoseStamped & pose)
