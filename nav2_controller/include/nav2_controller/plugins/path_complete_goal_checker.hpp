@@ -1,7 +1,7 @@
 /*
  * Software License Agreement (BSD License)
  *
- *  Copyright (c) 2017, Locus Robotics
+ *  Copyright (c) 2024, Joseph Duchesne
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -32,55 +32,44 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef NAV2_CONTROLLER__PLUGINS__SIMPLE_GOAL_CHECKER_HPP_
-#define NAV2_CONTROLLER__PLUGINS__SIMPLE_GOAL_CHECKER_HPP_
+#ifndef NAV2_CONTROLLER__PLUGINS__PATH_COMPLETE_GOAL_CHECKER_HPP_
+#define NAV2_CONTROLLER__PLUGINS__PATH_COMPLETE_GOAL_CHECKER_HPP_
 
-#include <memory>
 #include <string>
+#include <memory>
 #include <vector>
 
-#include "rclcpp/rclcpp.hpp"
-#include "rclcpp_lifecycle/lifecycle_node.hpp"
-#include "nav2_core/goal_checker.hpp"
-#include "rcl_interfaces/msg/set_parameters_result.hpp"
+#include "nav2_controller/plugins/simple_goal_checker.hpp"
 
 namespace nav2_controller
 {
 
 /**
- * @class SimpleGoalChecker
- * @brief Goal Checker plugin that only checks the position difference
+ * @class PathCompleteGoalChecker
+ * @brief Goal Checker plugin that checks position delta, once path is shorter than a threshold.
  *
- * This class can be stateful if the stateful parameter is set to true (which it is by default).
- * This means that the goal checker will not check if the xy position matches again once it is found to be true.
+ * A
  */
-class SimpleGoalChecker : public nav2_core::GoalChecker
+class PathCompleteGoalChecker : public SimpleGoalChecker
 {
 public:
-  SimpleGoalChecker();
+  PathCompleteGoalChecker();
+
   // Standard GoalChecker Interface
   void initialize(
     const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
     const std::string & plugin_name,
     const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
+
   void reset() override;
 
   bool isGoalReached(
     const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
     const geometry_msgs::msg::Twist & velocity, const nav_msgs::msg::Path & current_path) override;
 
-  bool getTolerances(
-    geometry_msgs::msg::Pose & pose_tolerance,
-    geometry_msgs::msg::Twist & vel_tolerance) override;
-
 protected:
-  double xy_goal_tolerance_, yaw_goal_tolerance_;
-  bool stateful_, check_xy_;
-  // Cached squared xy_goal_tolerance_
-  double xy_goal_tolerance_sq_;
-  // Dynamic parameters handler
-  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
-  std::string plugin_name_;
+  // threshold for path goal
+  int path_length_tolerence_;
 
   /**
    * @brief Callback executed when a paramter change is detected
@@ -92,4 +81,4 @@ protected:
 
 }  // namespace nav2_controller
 
-#endif  // NAV2_CONTROLLER__PLUGINS__SIMPLE_GOAL_CHECKER_HPP_
+#endif  // NAV2_CONTROLLER__PLUGINS__PATH_COMPLETE_GOAL_CHECKER_HPP_
