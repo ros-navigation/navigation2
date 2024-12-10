@@ -216,7 +216,7 @@ TEST(PathCompleteGoalChecker, test_goal_checking)
   checkMacro(pcgc, 0, 0, 0, 0, 0, 0, 0, 0, 1, path, true);
 
   // add a second default constructed pose to the path
-  // this should prevent any completions due to path_length_tolerence=1
+  // this should prevent any completions due to path_length_tolerance=1
   path.poses.emplace_back();
 
   checkMacro(pcgc, 0, 0, 0, 0, 0, 0, 0, 0, 0, path, false);
@@ -339,7 +339,7 @@ TEST(PathCompleteGoalChecker, get_tol_and_dynamic_params)
   auto results = rec_param->set_parameters_atomically(
     {rclcpp::Parameter("test3.xy_goal_tolerance", 200.0),
       rclcpp::Parameter("test3.yaw_goal_tolerance", 200.0),
-      rclcpp::Parameter("test3.path_length_tolerence", 3),
+      rclcpp::Parameter("test3.path_length_tolerance", 3),
       rclcpp::Parameter("test3.stateful", true)});
 
   rclcpp::spin_until_future_complete(
@@ -348,7 +348,7 @@ TEST(PathCompleteGoalChecker, get_tol_and_dynamic_params)
 
   EXPECT_EQ(x->get_parameter("test3.xy_goal_tolerance").as_double(), 200.0);
   EXPECT_EQ(x->get_parameter("test3.yaw_goal_tolerance").as_double(), 200.0);
-  EXPECT_EQ(x->get_parameter("test3.path_length_tolerence").as_int(), 3);
+  EXPECT_EQ(x->get_parameter("test3.path_length_tolerance").as_int(), 3);
   EXPECT_EQ(x->get_parameter("test3.stateful").as_bool(), true);
 
   // Test the dynamic parameters impacted the tolerances

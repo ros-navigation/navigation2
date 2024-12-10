@@ -69,7 +69,7 @@ public:
 
 protected:
   // threshold for path goal
-  int path_length_tolerence_;
+  int path_length_tolerance_;
 
   /**
    * @brief Callback executed when a paramter change is detected

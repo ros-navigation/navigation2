@@ -43,7 +43,7 @@ namespace nav2_controller
 {
 
 PathCompleteGoalChecker::PathCompleteGoalChecker()
-: SimpleGoalChecker(), path_length_tolerence_(1)
+: SimpleGoalChecker(), path_length_tolerance_(1)
 {
 }
 
@@ -58,10 +58,10 @@ void PathCompleteGoalChecker::initialize(
 
   nav2_util::declare_parameter_if_not_declared(
     node,
-    plugin_name + ".path_length_tolerence",
-    rclcpp::ParameterValue(path_length_tolerence_));
+    plugin_name + ".path_length_tolerance",
+    rclcpp::ParameterValue(path_length_tolerance_));
 
-  node->get_parameter(plugin_name + ".path_length_tolerence", path_length_tolerence_);
+  node->get_parameter(plugin_name + ".path_length_tolerance", path_length_tolerance_);
 
   // Replace SimpleGoalChecker's callback for dynamic parameters
   node->remove_on_set_parameters_callback(dyn_params_handler_.get());
@@ -78,9 +78,9 @@ bool PathCompleteGoalChecker::isGoalReached(
   const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
   const geometry_msgs::msg::Twist & twist, const nav_msgs::msg::Path & path)
 {
-  // return false if more than path_length_tolerence_ waypoints exist
+  // return false if more than path_length_tolerance_ waypoints exist
   // note: another useful version of this could check path length
-  if (path.poses.size() > (unsigned int)path_length_tolerence_) {
+  if (path.poses.size() > (unsigned int)path_length_tolerance_) {
     return false;
   }
   // otherwise defer to SimpleGoalChecker's isGoalReached
@@ -98,8 +98,8 @@ PathCompleteGoalChecker::dynamicParametersCallback(std::vector<rclcpp::Parameter
     const auto & name = parameter.get_name();
 
     if (type == ParameterType::PARAMETER_INTEGER) {
-      if (name == plugin_name_ + ".path_length_tolerence") {
-        path_length_tolerence_ = parameter.as_int();
+      if (name == plugin_name_ + ".path_length_tolerance") {
+        path_length_tolerance_ = parameter.as_int();
       }
     }
   }
