@@ -67,6 +67,7 @@ add_library(layers SHARED
   plugins/voxel_layer.cpp
   plugins/range_sensor_layer.cpp
   plugins/denoise_layer.cpp
+  plugins/plugin_container_layer.cpp
 )
 target_include_directories(layers
   PUBLIC
