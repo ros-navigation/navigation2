@@ -38,12 +38,14 @@
 #include "gtest/gtest.h"
 #include "nav2_controller/plugins/simple_goal_checker.hpp"
 #include "nav2_controller/plugins/stopped_goal_checker.hpp"
+#include "nav2_controller/plugins/path_complete_goal_checker.hpp"
 #include "nav_2d_utils/conversions.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 
 using nav2_controller::SimpleGoalChecker;
 using nav2_controller::StoppedGoalChecker;
+using nav2_controller::PathCompleteGoalChecker;
 
 void checkMacro(
   nav2_core::GoalChecker & gc,
@@ -78,28 +80,6 @@ void checkMacro(
   }
 }
 
-void sameResult(
-  nav2_core::GoalChecker & gc0, nav2_core::GoalChecker & gc1,
-  double x0, double y0, double theta0,
-  double x1, double y1, double theta1,
-  double xv, double yv, double thetav,
-  const nav_msgs::msg::Path & path,
-  bool expected_result)
-{
-  checkMacro(gc0, x0, y0, theta0, x1, y1, theta1, xv, yv, thetav, path, expected_result);
-  checkMacro(gc1, x0, y0, theta0, x1, y1, theta1, xv, yv, thetav, path, expected_result);
-}
-
-void trueFalse(
-  nav2_core::GoalChecker & gc0, nav2_core::GoalChecker & gc1,
-  double x0, double y0, double theta0,
-  double x1, double y1, double theta1,
-  double xv, double yv, double thetav,
-  const nav_msgs::msg::Path & path)
-{
-  checkMacro(gc0, x0, y0, theta0, x1, y1, theta1, xv, yv, thetav, path, true);
-  checkMacro(gc1, x0, y0, theta0, x1, y1, theta1, xv, yv, thetav, path, false);
-}
 class TestLifecycleNode : public nav2_util::LifecycleNode
 {
 public:
@@ -139,7 +119,7 @@ public:
   }
 };
 
-TEST(VelocityIterator, goal_checker_reset)
+TEST(SimpleGoalChecker, goal_checker_reset)
 {
   auto x = std::make_shared<TestLifecycleNode>("goal_checker");
 
@@ -149,7 +129,7 @@ TEST(VelocityIterator, goal_checker_reset)
   EXPECT_TRUE(true);
 }
 
-TEST(VelocityIterator, stopped_goal_checker_reset)
+TEST(StoppedGoalChecker, stopped_goal_checker_reset)
 {
   auto x = std::make_shared<TestLifecycleNode>("stopped_goal_checker");
 
@@ -159,46 +139,115 @@ TEST(VelocityIterator, stopped_goal_checker_reset)
   EXPECT_TRUE(true);
 }
 
-TEST(VelocityIterator, two_checks)
+TEST(StoppedGoalChecker, path_complete_goal_checker_reset)
+{
+  auto x = std::make_shared<TestLifecycleNode>("path_complete_goal_checker");
+
+  nav2_core::GoalChecker * pcgc = new PathCompleteGoalChecker;
+  pcgc->reset();
+  delete pcgc;
+  EXPECT_TRUE(true);
+}
+
+
+TEST(SimpleGoalChecker, test_goal_checking)
 {
   auto x = std::make_shared<TestLifecycleNode>("goal_checker");
 
   SimpleGoalChecker gc;
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+  nav_msgs::msg::Path path;
+  gc.initialize(x, "nav2_controller", costmap);
+
+  checkMacro(gc, 0, 0, 0, 0, 0, 0, 0, 0, 0, path, true);
+  checkMacro(gc, 0, 0, 0, 1, 0, 0, 0, 0, 0, path, false);
+  checkMacro(gc, 0, 0, 0, 0, 1, 0, 0, 0, 0, path, false);
+  checkMacro(gc, 0, 0, 0, 0, 0, 1, 0, 0, 0, path, false);
+  checkMacro(gc, 0, 0, 3.14, 0, 0, -3.14, 0, 0, 0, path, true);
+  checkMacro(gc, 0, 0, 3.14, 0, 0, -3.14, 1, 0, 0, path, true);
+  checkMacro(gc, 0, 0, 0, 0, 0, 0, 1, 0, 0, path, true);
+  checkMacro(gc, 0, 0, 0, 0, 0, 0, 0, 1, 0, path, true);
+  checkMacro(gc, 0, 0, 0, 0, 0, 0, 0, 0, 1, path, true);
+}
+
+TEST(StoppedGoalChecker, test_goal_checking)
+{
+  auto x = std::make_shared<TestLifecycleNode>("goal_checker");
+
   StoppedGoalChecker sgc;
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
   nav_msgs::msg::Path path;
 
-  gc.initialize(x, "nav2_controller", costmap);
   sgc.initialize(x, "nav2_controller", costmap);
-  sameResult(gc, sgc, 0, 0, 0, 0, 0, 0, 0, 0, 0, path, true);
-  sameResult(gc, sgc, 0, 0, 0, 1, 0, 0, 0, 0, 0, path, false);
-  sameResult(gc, sgc, 0, 0, 0, 0, 1, 0, 0, 0, 0, path, false);
-  sameResult(gc, sgc, 0, 0, 0, 0, 0, 1, 0, 0, 0, path, false);
-  sameResult(gc, sgc, 0, 0, 3.14, 0, 0, -3.14, 0, 0, 0, path, true);
-  trueFalse(gc, sgc, 0, 0, 3.14, 0, 0, -3.14, 1, 0, 0, path);
-  trueFalse(gc, sgc, 0, 0, 0, 0, 0, 0, 1, 0, 0, path);
-  trueFalse(gc, sgc, 0, 0, 0, 0, 0, 0, 0, 1, 0, path);
-  trueFalse(gc, sgc, 0, 0, 0, 0, 0, 0, 0, 0, 1, path);
+
+  checkMacro(sgc, 0, 0, 0, 0, 0, 0, 0, 0, 0, path, true);
+  checkMacro(sgc, 0, 0, 0, 1, 0, 0, 0, 0, 0, path, false);
+  checkMacro(sgc, 0, 0, 0, 0, 1, 0, 0, 0, 0, path, false);
+  checkMacro(sgc, 0, 0, 0, 0, 0, 1, 0, 0, 0, path, false);
+  checkMacro(sgc, 0, 0, 3.14, 0, 0, -3.14, 0, 0, 0, path, true);
+  checkMacro(sgc, 0, 0, 3.14, 0, 0, -3.14, 1, 0, 0, path, false);
+  checkMacro(sgc, 0, 0, 0, 0, 0, 0, 1, 0, 0, path, false);
+  checkMacro(sgc, 0, 0, 0, 0, 0, 0, 0, 1, 0, path, false);
+  checkMacro(sgc, 0, 0, 0, 0, 0, 0, 0, 0, 1, path, false);
+
+  // todo: add some where path complete goal checker differs
 }
+
+TEST(PathCompleteGoalChecker, test_goal_checking)
+{
+  auto x = std::make_shared<TestLifecycleNode>("goal_checker");
+
+  PathCompleteGoalChecker pcgc;
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+  nav_msgs::msg::Path path;
+  pcgc.initialize(x, "nav2_controller", costmap);
+
+  // add one default constructed pose to the path
+  // this should have no impact on the results vrs. SimpleGoalChecker
+  path.poses.emplace_back();
+  checkMacro(pcgc, 0, 0, 0, 0, 0, 0, 0, 0, 0, path, true);
+  checkMacro(pcgc, 0, 0, 0, 1, 0, 0, 0, 0, 0, path, false);
+  checkMacro(pcgc, 0, 0, 0, 0, 1, 0, 0, 0, 0, path, false);
+  checkMacro(pcgc, 0, 0, 0, 0, 0, 1, 0, 0, 0, path, false);
+  checkMacro(pcgc, 0, 0, 3.14, 0, 0, -3.14, 0, 0, 0, path, true);
+  checkMacro(pcgc, 0, 0, 3.14, 0, 0, -3.14, 1, 0, 0, path, true);
+  checkMacro(pcgc, 0, 0, 0, 0, 0, 0, 1, 0, 0, path, true);
+  checkMacro(pcgc, 0, 0, 0, 0, 0, 0, 0, 1, 0, path, true);
+  checkMacro(pcgc, 0, 0, 0, 0, 0, 0, 0, 0, 1, path, true);
+
+  // add a second default constructed pose to the path
+  // this should prevent any completions due to path_length_tolerence=1
+  path.poses.emplace_back();
+
+  checkMacro(pcgc, 0, 0, 0, 0, 0, 0, 0, 0, 0, path, false);
+  checkMacro(pcgc, 0, 0, 0, 1, 0, 0, 0, 0, 0, path, false);
+  checkMacro(pcgc, 0, 0, 0, 0, 1, 0, 0, 0, 0, path, false);
+  checkMacro(pcgc, 0, 0, 0, 0, 0, 1, 0, 0, 0, path, false);
+  checkMacro(pcgc, 0, 0, 3.14, 0, 0, -3.14, 0, 0, 0, path, false);
+  checkMacro(pcgc, 0, 0, 3.14, 0, 0, -3.14, 1, 0, 0, path, false);
+  checkMacro(pcgc, 0, 0, 0, 0, 0, 0, 1, 0, 0, path, false);
+  checkMacro(pcgc, 0, 0, 0, 0, 0, 0, 0, 1, 0, path, false);
+  checkMacro(pcgc, 0, 0, 0, 0, 0, 0, 0, 0, 1, path, false);
+}
+
 
 TEST(StoppedGoalChecker, get_tol_and_dynamic_params)
 {
   auto x = std::make_shared<TestLifecycleNode>("goal_checker");
 
-  SimpleGoalChecker gc;
   StoppedGoalChecker sgc;
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
 
   sgc.initialize(x, "test", costmap);
-  gc.initialize(x, "test2", costmap);
   geometry_msgs::msg::Pose pose_tol;
   geometry_msgs::msg::Twist vel_tol;
 
   // Test stopped goal checker's tolerance API
   EXPECT_TRUE(sgc.getTolerances(pose_tol, vel_tol));
-  EXPECT_EQ(vel_tol.linear.x, 0.25);
-  EXPECT_EQ(vel_tol.linear.y, 0.25);
-  EXPECT_EQ(vel_tol.angular.z, 0.25);
+  EXPECT_EQ(pose_tol.position.x, 0.25);
+  EXPECT_EQ(pose_tol.position.y, 0.25);
+  auto p2d = nav_2d_utils::poseToPose2D(pose_tol);
+  EXPECT_NEAR(p2d.theta, 0.25, 1e-6);
 
   // Test Stopped goal checker's dynamic parameters
   auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
@@ -217,8 +266,37 @@ TEST(StoppedGoalChecker, get_tol_and_dynamic_params)
   EXPECT_EQ(x->get_parameter("test.rot_stopped_velocity").as_double(), 100.0);
   EXPECT_EQ(x->get_parameter("test.trans_stopped_velocity").as_double(), 100.0);
 
+
+  // Test the dynamic parameters impacted the tolerances
+  EXPECT_TRUE(sgc.getTolerances(pose_tol, vel_tol));
+  EXPECT_EQ(vel_tol.linear.x, 100.0);
+  EXPECT_EQ(vel_tol.linear.y, 100.0);
+  EXPECT_EQ(vel_tol.angular.z, 100.0);
+}
+
+
+TEST(SimpleGoalChecker, get_tol_and_dynamic_params)
+{
+  auto x = std::make_shared<TestLifecycleNode>("goal_checker");
+
+  SimpleGoalChecker gc;
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+
+  gc.initialize(x, "test2", costmap);
+  geometry_msgs::msg::Pose pose_tol;
+  geometry_msgs::msg::Twist vel_tol;
+
+  // Test stopped goal checker's tolerance API
+  EXPECT_TRUE(gc.getTolerances(pose_tol, vel_tol));
+  EXPECT_EQ(pose_tol.position.x, 0.25);
+  EXPECT_EQ(pose_tol.position.y, 0.25);
+
   // Test normal goal checker's dynamic parameters
-  results = rec_param->set_parameters_atomically(
+  auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
+    x->get_node_base_interface(), x->get_node_topics_interface(),
+    x->get_node_graph_interface(),
+    x->get_node_services_interface());
+  auto results = rec_param->set_parameters_atomically(
     {rclcpp::Parameter("test2.xy_goal_tolerance", 200.0),
       rclcpp::Parameter("test2.yaw_goal_tolerance", 200.0),
       rclcpp::Parameter("test2.stateful", true)});
@@ -232,12 +310,49 @@ TEST(StoppedGoalChecker, get_tol_and_dynamic_params)
   EXPECT_EQ(x->get_parameter("test2.stateful").as_bool(), true);
 
   // Test the dynamic parameters impacted the tolerances
-  EXPECT_TRUE(sgc.getTolerances(pose_tol, vel_tol));
-  EXPECT_EQ(vel_tol.linear.x, 100.0);
-  EXPECT_EQ(vel_tol.linear.y, 100.0);
-  EXPECT_EQ(vel_tol.angular.z, 100.0);
-
   EXPECT_TRUE(gc.getTolerances(pose_tol, vel_tol));
+  EXPECT_EQ(pose_tol.position.x, 200.0);
+  EXPECT_EQ(pose_tol.position.y, 200.0);
+}
+
+TEST(PathCompleteGoalChecker, get_tol_and_dynamic_params)
+{
+  auto x = std::make_shared<TestLifecycleNode>("goal_checker");
+
+  PathCompleteGoalChecker pcgc;
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+
+  pcgc.initialize(x, "test3", costmap);
+  geometry_msgs::msg::Pose pose_tol;
+  geometry_msgs::msg::Twist vel_tol;
+
+  // Test stopped goal checker's tolerance API
+  EXPECT_TRUE(pcgc.getTolerances(pose_tol, vel_tol));
+  EXPECT_EQ(pose_tol.position.x, 0.25);
+  EXPECT_EQ(pose_tol.position.y, 0.25);
+
+  // Test normal goal checker's dynamic parameters
+  auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
+    x->get_node_base_interface(), x->get_node_topics_interface(),
+    x->get_node_graph_interface(),
+    x->get_node_services_interface());
+  auto results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test3.xy_goal_tolerance", 200.0),
+      rclcpp::Parameter("test3.yaw_goal_tolerance", 200.0),
+      rclcpp::Parameter("test3.path_length_tolerence", 3),
+      rclcpp::Parameter("test3.stateful", true)});
+
+  rclcpp::spin_until_future_complete(
+    x->get_node_base_interface(),
+    results);
+
+  EXPECT_EQ(x->get_parameter("test3.xy_goal_tolerance").as_double(), 200.0);
+  EXPECT_EQ(x->get_parameter("test3.yaw_goal_tolerance").as_double(), 200.0);
+  EXPECT_EQ(x->get_parameter("test3.path_length_tolerence").as_int(), 3);
+  EXPECT_EQ(x->get_parameter("test3.stateful").as_bool(), true);
+
+  // Test the dynamic parameters impacted the tolerances
+  EXPECT_TRUE(pcgc.getTolerances(pose_tol, vel_tol));
   EXPECT_EQ(pose_tol.position.x, 200.0);
   EXPECT_EQ(pose_tol.position.y, 200.0);
 }
