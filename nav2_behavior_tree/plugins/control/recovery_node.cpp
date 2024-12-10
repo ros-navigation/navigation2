@@ -37,83 +37,83 @@ BT::NodeStatus RecoveryNode::tick()
     throw BT::BehaviorTreeException("Recovery Node '" + name() + "' must only have 2 children.");
   }
 
-  if (retry_count_ > number_of_retries_) {
-    halt();
-    return BT::NodeStatus::FAILURE;
-  }
   setStatus(BT::NodeStatus::RUNNING);
 
-  TreeNode * child_node = children_nodes_[current_child_idx_];
-  const BT::NodeStatus child_status = child_node->executeTick();
+  while (current_child_idx_ < children_count && retry_count_ <= number_of_retries_) {
+    TreeNode * child_node = children_nodes_[current_child_idx_];
+    const BT::NodeStatus child_status = child_node->executeTick();
 
-  if (current_child_idx_ == 0) {
-    switch (child_status) {
-      case BT::NodeStatus::SKIPPED:
-        // If first child is skipped, the entire branch is considered skipped
-        halt();
-        return BT::NodeStatus::SKIPPED;
+    if (current_child_idx_ == 0) {
+      switch (child_status) {
+        case BT::NodeStatus::SKIPPED:
+          // If first child is skipped, the entire branch is considered skipped
+          halt();
+          return BT::NodeStatus::SKIPPED;
 
-      case BT::NodeStatus::SUCCESS:
-        // reset node and return success when first child returns success
-        halt();
-        return BT::NodeStatus::SUCCESS;
+        case BT::NodeStatus::SUCCESS:
+          // reset node and return success when first child returns success
+          halt();
+          return BT::NodeStatus::SUCCESS;
 
-      case BT::NodeStatus::RUNNING:
-        return BT::NodeStatus::RUNNING;
+        case BT::NodeStatus::RUNNING:
+          return BT::NodeStatus::RUNNING;
 
-      case BT::NodeStatus::FAILURE:
-        {
-          if (retry_count_ < number_of_retries_) {
-            // halt first child and tick second child in next iteration
-            ControlNode::haltChild(0);
-            current_child_idx_ = 1;
-            return BT::NodeStatus::RUNNING;
-          } else {
-            // reset node and return failure when max retries has been exceeded
-            halt();
+        case BT::NodeStatus::FAILURE:
+          {
+            if (retry_count_ < number_of_retries_) {
+              // halt first child and tick second child in next iteration
+              ControlNode::haltChild(0);
+              current_child_idx_++;
+              break;
+            } else {
+              // reset node and return failure when max retries has been exceeded
+              halt();
+              return BT::NodeStatus::FAILURE;
+            }
+          }
+
+        default:
+          throw BT::LogicError("A child node must never return IDLE");
+      }  // end switch
+
+    } else if (current_child_idx_ == 1) {
+      switch (child_status) {
+        case BT::NodeStatus::SKIPPED:
+          {
+            // if we skip the recovery (maybe a precondition fails), then we
+            // should assume that no recovery is possible. For this reason,
+            // we should return FAILURE and reset the index.
+            // This does not count as a retry.
+            current_child_idx_ = 0;
+            ControlNode::haltChild(1);
             return BT::NodeStatus::FAILURE;
           }
-        }
+        case BT::NodeStatus::RUNNING:
+          return child_status;
 
-      default:
-        throw BT::LogicError("A child node must never return IDLE");
-    }  // end switch
+        case BT::NodeStatus::SUCCESS:
+          {
+            // halt second child, increment recovery count, and tick first child in next iteration
+            ControlNode::haltChild(1);
+            retry_count_++;
+            current_child_idx_ = 0;
+          }
+          break;
 
-  } else if (current_child_idx_ == 1) {
-    switch (child_status) {
-      case BT::NodeStatus::SKIPPED:
-        {
-          // if we skip the recovery (maybe a precondition fails), then we
-          // should assume that no recovery is possible. For this reason,
-          // we should return FAILURE and reset the index.
-          // This does not count as a retry.
-          current_child_idx_ = 0;
-          ControlNode::haltChild(1);
+        case BT::NodeStatus::FAILURE:
+          // reset node and return failure if second child fails
+          halt();
           return BT::NodeStatus::FAILURE;
-        }
-      case BT::NodeStatus::RUNNING:
-        return child_status;
 
-      case BT::NodeStatus::SUCCESS:
-        {
-          // halt second child, increment recovery count, and tick first child in next iteration
-          ControlNode::haltChild(1);
-          retry_count_++;
-          current_child_idx_ = 0;
-          return BT::NodeStatus::RUNNING;
-        }
+        default:
+          throw BT::LogicError("A child node must never return IDLE");
+      }  // end switch
+    }
+  }  // end while loop
 
-      case BT::NodeStatus::FAILURE:
-        // reset node and return failure if second child fails
-        halt();
-        return BT::NodeStatus::FAILURE;
-
-      default:
-        throw BT::LogicError("A child node must never return IDLE");
-    }  // end switch
-  }
+  // reset node and return failure
   halt();
-  throw BT::LogicError("A recovery node has exactly 2 children and should never reach here");
+  return BT::NodeStatus::FAILURE;
 }
 
 void RecoveryNode::halt()
