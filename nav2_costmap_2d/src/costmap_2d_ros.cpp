@@ -825,15 +825,14 @@ void Costmap2DROS::getCostsCallback(
   unsigned int mx, my;
 
   Costmap2D * costmap = layered_costmap_->getCostmap();
-
+  response->success = true;
   for (const auto & pose : request->poses) {
     geometry_msgs::msg::PoseStamped pose_transformed;
-    transformPoseToGlobalFrame(pose, pose_transformed);
-    bool in_bounds = costmap->worldToMap(
-      pose_transformed.pose.position.x,
-      pose_transformed.pose.position.y, mx, my);
-
-    if (!in_bounds) {
+    if (!transformPoseToGlobalFrame(pose, pose_transformed)) {
+      RCLCPP_ERROR(
+        get_logger(), "Failed to transform, cannot get cost for pose (%.2f, %.2f)",
+        pose.pose.position.x, pose.pose.position.y);
+      response->success = false;
       response->costs.push_back(NO_INFORMATION);
       continue;
     }
@@ -857,6 +856,15 @@ void Costmap2DROS::getCostsCallback(
           pose_transformed.pose.position.x,
         pose_transformed.pose.position.y);
 
+      bool in_bounds = costmap->worldToMap(
+        pose_transformed.pose.position.x,
+        pose_transformed.pose.position.y, mx, my);
+
+      if (!in_bounds) {
+        response->success = false;
+        response->costs.push_back(LETHAL_OBSTACLE);
+        continue;
+      }
       // Get the cost at the map coordinates
       response->costs.push_back(static_cast<float>(costmap->getCost(mx, my)));
     }
