@@ -26,13 +26,6 @@ using std::vector;
 
 namespace nav2_costmap_2d
 {
-PluginContainerLayer::PluginContainerLayer()
-{
-}
-
-PluginContainerLayer::~PluginContainerLayer()
-{
-}
 
 void PluginContainerLayer::onInitialize()
 {

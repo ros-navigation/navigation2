@@ -44,14 +44,6 @@ class PluginContainerLayer : public CostmapLayer
 {
 public:
   /**
-   * @brief A constructor
-   */
-  PluginContainerLayer();
-  /**
-   * @brief A destructor
-   */
-  virtual ~PluginContainerLayer();
-  /**
    * @brief Initialization process of layer on startup
    */
   virtual void onInitialize();
