@@ -21,7 +21,7 @@
   </library>
   <library path="path_complete_goal_checker">
     <class type="nav2_controller::PathCompleteGoalChecker" base_class_type="nav2_core::GoalChecker">
-        <description>Checks if path has completed enough poses, and then if the pose is within goal window for x, y and yaw</description>
+        <description>Checks if path is below a threshold in length, and then if the  current pose is within goal window for x, y and yaw</description>
     </class>
   </library>
 </class_libraries>

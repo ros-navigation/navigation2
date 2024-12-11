@@ -85,15 +85,16 @@ controller_server:
       movement_time_allowance: 10.0
     # Goal checker parameters
     #precise_goal_checker:
-    #  plugin: "nav2_controller::SimpleGoalChecker"
+    #  plugin: "nav2_controller::PathCompleteGoalChecker"
     #  xy_goal_tolerance: 0.25
     #  yaw_goal_tolerance: 0.25
     #  stateful: True
     general_goal_checker:
       stateful: True
-      plugin: "nav2_controller::SimpleGoalChecker"
+      plugin: "nav2_controller::PathCompleteGoalChecker"
       xy_goal_tolerance: 0.25
       yaw_goal_tolerance: 0.25
+      path_length_tolerance: 1.0
     FollowPath:
       plugin: "nav2_mppi_controller::MPPIController"
       time_steps: 56

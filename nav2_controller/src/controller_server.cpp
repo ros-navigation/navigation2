@@ -41,7 +41,7 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
   default_progress_checker_types_{"nav2_controller::SimpleProgressChecker"},
   goal_checker_loader_("nav2_core", "nav2_core::GoalChecker"),
   default_goal_checker_ids_{"goal_checker"},
-  default_goal_checker_types_{"nav2_controller::SimpleGoalChecker"},
+  default_goal_checker_types_{"nav2_controller::PathCompleteGoalChecker"},
   lp_loader_("nav2_core", "nav2_core::Controller"),
   default_ids_{"FollowPath"},
   default_types_{"dwb_core::DWBLocalPlanner"},
