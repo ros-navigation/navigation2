@@ -199,7 +199,7 @@ void PluginContainerLayer::clearArea(int start_x, int start_y, int end_x, int en
     ++plugin)
   {
     auto costmap_layer = std::dynamic_pointer_cast<nav2_costmap_2d::CostmapLayer>(*plugin);
-    if (costmap_layer != nullptr) {
+    if ((*plugin)->isClearable() && costmap_layer != nullptr) {
       costmap_layer->clearArea(start_x, start_y, end_x, end_y, invert);
     }
   }
