@@ -159,12 +159,11 @@ target_link_libraries(path_complete_goal_checker PUBLIC
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   ${rcl_interfaces_TARGETS}
+  simple_goal_checker
 )
 target_link_libraries(path_complete_goal_checker PRIVATE
-  angles::angles
   nav2_util::nav2_util_core
   pluginlib::pluginlib
-  tf2::tf2
 )
 
 if(BUILD_TESTING)
