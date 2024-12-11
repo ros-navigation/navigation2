@@ -177,9 +177,16 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
     layered_costmap_->addPlugin(plugin);
 
     // TODO(mjeronimo): instead of get(), use a shared ptr
-    plugin->initialize(
+    try {
+      plugin->initialize(
       layered_costmap_.get(), plugin_names_[i], tf_buffer_.get(),
       shared_from_this(), callback_group_);
+    } catch (const std::exception & e) {
+      RCLCPP_ERROR(
+      get_logger(), "Failed to initialize costmap plugin %s! %s.", plugin_names_[i].c_str(),
+          e.what());
+      return nav2_util::CallbackReturn::FAILURE;
+    }
 
     lock.unlock();
 
