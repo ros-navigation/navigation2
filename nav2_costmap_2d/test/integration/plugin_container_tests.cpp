@@ -454,16 +454,13 @@ TEST_F(TestNode, testClearing) {
 
   ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE), 21);
   ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), 29);
+  ASSERT_EQ(olayer_b->getCost(9, 9), nav2_costmap_2d::LETHAL_OBSTACLE);
 
   pclayer_a->clearArea(-1, -1, 10, 10, false);
   pclayer_b->clearArea(-1, -1, 10, 10, false);
 
-  layers.updateMap(0, 0, 0);
-
-  costmap = layers.getCostmap();
-
-  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE), 1);
-  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), 2);
+  ASSERT_EQ(slayer->getCost(9, 0), nav2_costmap_2d::LETHAL_OBSTACLE);
+  ASSERT_EQ(olayer_b->getCost(9, 9), nav2_costmap_2d::NO_INFORMATION);
 }
 
 TEST_F(TestNode, testOverwriteCombinationMethods) {
