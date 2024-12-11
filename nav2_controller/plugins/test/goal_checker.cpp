@@ -202,9 +202,12 @@ TEST(PathCompleteGoalChecker, test_goal_checking)
   nav_msgs::msg::Path path;
   pcgc.initialize(x, "nav2_controller", costmap);
 
-  // add one default constructed pose to the path
-  // this should have no impact on the results vrs. SimpleGoalChecker
-  path.poses.emplace_back();
+  // Add one pose
+  {
+    geometry_msgs::msg::PoseStamped pose_stamped_msg;
+    pose_stamped_msg.pose.position.x = 0.0;
+    path.poses.push_back(pose_stamped_msg);
+  }
   checkMacro(pcgc, 0, 0, 0, 0, 0, 0, 0, 0, 0, path, true);
   checkMacro(pcgc, 0, 0, 0, 1, 0, 0, 0, 0, 0, path, false);
   checkMacro(pcgc, 0, 0, 0, 0, 1, 0, 0, 0, 0, path, false);
@@ -215,9 +218,13 @@ TEST(PathCompleteGoalChecker, test_goal_checking)
   checkMacro(pcgc, 0, 0, 0, 0, 0, 0, 0, 1, 0, path, true);
   checkMacro(pcgc, 0, 0, 0, 0, 0, 0, 0, 0, 1, path, true);
 
-  // add a second default constructed pose to the path
-  // this should prevent any completions due to path_length_tolerance=1
-  path.poses.emplace_back();
+  // add a second pose at {2.0,0}, making the total path length 2.0m
+  // this should prevent any completions due to path_length_tolerance=1.0
+  {
+    geometry_msgs::msg::PoseStamped pose_stamped_msg;
+    pose_stamped_msg.pose.position.x = 2.0;
+    path.poses.push_back(pose_stamped_msg);
+  }
 
   checkMacro(pcgc, 0, 0, 0, 0, 0, 0, 0, 0, 0, path, false);
   checkMacro(pcgc, 0, 0, 0, 1, 0, 0, 0, 0, 0, path, false);
@@ -339,7 +346,7 @@ TEST(PathCompleteGoalChecker, get_tol_and_dynamic_params)
   auto results = rec_param->set_parameters_atomically(
     {rclcpp::Parameter("test3.xy_goal_tolerance", 200.0),
       rclcpp::Parameter("test3.yaw_goal_tolerance", 200.0),
-      rclcpp::Parameter("test3.path_length_tolerance", 3),
+      rclcpp::Parameter("test3.path_length_tolerance", 3.0),
       rclcpp::Parameter("test3.stateful", true)});
 
   rclcpp::spin_until_future_complete(
@@ -348,7 +355,7 @@ TEST(PathCompleteGoalChecker, get_tol_and_dynamic_params)
 
   EXPECT_EQ(x->get_parameter("test3.xy_goal_tolerance").as_double(), 200.0);
   EXPECT_EQ(x->get_parameter("test3.yaw_goal_tolerance").as_double(), 200.0);
-  EXPECT_EQ(x->get_parameter("test3.path_length_tolerance").as_int(), 3);
+  EXPECT_EQ(x->get_parameter("test3.path_length_tolerance").as_double(), 3.0);
   EXPECT_EQ(x->get_parameter("test3.stateful").as_bool(), true);
 
   // Test the dynamic parameters impacted the tolerances

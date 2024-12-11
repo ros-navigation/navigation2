@@ -183,7 +183,7 @@ endif()
 
 rclcpp_components_register_nodes(${library_name} "nav2_controller::ControllerServer")
 
-install(TARGETS 
+install(TARGETS
   simple_progress_checker
   pose_progress_checker
   simple_goal_checker

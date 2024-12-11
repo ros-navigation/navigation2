@@ -35,6 +35,7 @@
 #include "nav2_controller/plugins/path_complete_goal_checker.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_util/node_utils.hpp"
+#include "nav2_util/geometry_utils.hpp"
 
 using rcl_interfaces::msg::ParameterType;
 using std::placeholders::_1;
@@ -43,7 +44,7 @@ namespace nav2_controller
 {
 
 PathCompleteGoalChecker::PathCompleteGoalChecker()
-: SimpleGoalChecker(), path_length_tolerance_(1)
+: SimpleGoalChecker(), path_length_tolerance_(1.0)
 {
 }
 
@@ -78,9 +79,9 @@ bool PathCompleteGoalChecker::isGoalReached(
   const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
   const geometry_msgs::msg::Twist & twist, const nav_msgs::msg::Path & path)
 {
-  // return false if more than path_length_tolerance_ waypoints exist
-  // note: another useful version of this could check path length
-  if (path.poses.size() > (unsigned int)path_length_tolerance_) {
+  using nav2_util::geometry_utils::is_path_longer_than_length;
+
+  if (is_path_longer_than_length(path, path_length_tolerance_)) {
     return false;
   }
   // otherwise defer to SimpleGoalChecker's isGoalReached
@@ -97,9 +98,9 @@ PathCompleteGoalChecker::dynamicParametersCallback(std::vector<rclcpp::Parameter
     const auto & type = parameter.get_type();
     const auto & name = parameter.get_name();
 
-    if (type == ParameterType::PARAMETER_INTEGER) {
+    if (type == ParameterType::PARAMETER_DOUBLE) {
       if (name == plugin_name_ + ".path_length_tolerance") {
-        path_length_tolerance_ = parameter.as_int();
+        path_length_tolerance_ = parameter.as_double();
       }
     }
   }

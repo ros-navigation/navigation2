@@ -68,8 +68,8 @@ public:
     const geometry_msgs::msg::Twist & velocity, const nav_msgs::msg::Path & current_path) override;
 
 protected:
-  // threshold for path goal
-  int path_length_tolerance_;
+  // minimum remaining path length before checking position goals
+  double path_length_tolerance_;
 
   /**
    * @brief Callback executed when a paramter change is detected

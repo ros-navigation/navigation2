@@ -140,6 +140,18 @@ TEST(GeometryUtils, is_path_longer_than_length)
   // unclear why we have a negative length, but it should work anyway
   ASSERT_TRUE(is_path_longer_than_length(empty_path, -1.0));
 
+  // a single pose path should be equivalent to empty_path above, since it also has no length
+  nav_msgs::msg::Path single_pose_path;
+  {
+    geometry_msgs::msg::PoseStamped pose_stamped_msg;
+    pose_stamped_msg.pose.position.x = 2.0;
+    single_pose_path.poses.push_back(pose_stamped_msg);
+  }
+  ASSERT_FALSE(is_path_longer_than_length(single_pose_path, 0.0));
+  ASSERT_FALSE(is_path_longer_than_length(single_pose_path, 1e-9));
+  ASSERT_FALSE(is_path_longer_than_length(single_pose_path, 1.0));
+  ASSERT_TRUE(is_path_longer_than_length(single_pose_path, -1.0));
+
   nav_msgs::msg::Path straight_line_path;
   size_t nb_path_points = 10;
   float distance_between_poses = 2.0;
