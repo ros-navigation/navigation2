@@ -675,7 +675,7 @@ void Nav2Panel::loophandler()
 
 void Nav2Panel::handleGoalLoader()
 {
-  acummulated_poses_.clear();
+  acummulated_poses_ = nav2_msgs::msg::PoseStampedArray();
 
   std::cout << "Loading Waypoints!" << std::endl;
 
@@ -699,7 +699,7 @@ void Nav2Panel::handleGoalLoader()
     auto waypoint = waypoint_iter[it->first.as<std::string>()];
     auto pose = waypoint["pose"].as<std::vector<double>>();
     auto orientation = waypoint["orientation"].as<std::vector<double>>();
-    acummulated_poses_.push_back(convert_to_msg(pose, orientation));
+    acummulated_poses_.poses.push_back(convert_to_msg(pose, orientation));
   }
 
   // Publishing Waypoint Navigation marker after loading wp's
@@ -731,7 +731,7 @@ void Nav2Panel::handleGoalSaver()
 {
 // Check if the waypoints are accumulated
 
-  if (acummulated_poses_.empty()) {
+  if (acummulated_poses_.poses.empty()) {
     std::cout << "No accumulated Points to Save!" << std::endl;
     return;
   } else {
@@ -744,18 +744,19 @@ void Nav2Panel::handleGoalSaver()
   out << YAML::BeginMap;
 
   // Save WPs to data structure
-  for (unsigned int i = 0; i < acummulated_poses_.size(); ++i) {
+  for (unsigned int i = 0; i < acummulated_poses_.poses.size(); ++i) {
     out << YAML::Key << "waypoint" + std::to_string(i);
     out << YAML::BeginMap;
     out << YAML::Key << "pose";
     std::vector<double> pose =
-    {acummulated_poses_[i].pose.position.x, acummulated_poses_[i].pose.position.y,
-      acummulated_poses_[i].pose.position.z};
+    {acummulated_poses_.poses[i].pose.position.x, acummulated_poses_.poses[i].pose.position.y,
+      acummulated_poses_.poses[i].pose.position.z};
     out << YAML::Value << pose;
     out << YAML::Key << "orientation";
     std::vector<double> orientation =
-    {acummulated_poses_[i].pose.orientation.w, acummulated_poses_[i].pose.orientation.x,
-      acummulated_poses_[i].pose.orientation.y, acummulated_poses_[i].pose.orientation.z};
+    {acummulated_poses_.poses[i].pose.orientation.w, acummulated_poses_.poses[i].pose.orientation.x,
+      acummulated_poses_.poses[i].pose.orientation.y,
+      acummulated_poses_.poses[i].pose.orientation.z};
     out << YAML::Value << orientation;
     out << YAML::EndMap;
   }
@@ -836,10 +837,10 @@ Nav2Panel::onInitialize()
       // Clearing all the stored values once reaching the final goal
       if (
         loop_count_ == stoi(nr_of_loops_->displayText().toStdString()) &&
-        goal_index_ == static_cast<int>(store_poses_.size()) - 1 &&
+        goal_index_ == static_cast<int>(store_poses_.poses.size()) - 1 &&
         msg->status_list.back().status == action_msgs::msg::GoalStatus::STATUS_SUCCEEDED)
       {
-        store_poses_.clear();
+        store_poses_ = nav2_msgs::msg::PoseStampedArray();
         waypoint_status_indicator_->clear();
         loop_no_ = "0";
         loop_count_ = 0;
@@ -935,8 +936,8 @@ Nav2Panel::onCancel()
       &Nav2Panel::onCancelButtonPressed,
       this));
   waypoint_status_indicator_->clear();
-  store_poses_.clear();
-  acummulated_poses_.clear();
+  store_poses_ = nav2_msgs::msg::PoseStampedArray();
+  acummulated_poses_ = nav2_msgs::msg::PoseStampedArray();
 }
 
 void Nav2Panel::onResumedWp()
@@ -966,12 +967,12 @@ Nav2Panel::onNewGoal(double x, double y, double theta, QString frame)
   pose.pose.position.z = 0.0;
   pose.pose.orientation = orientationAroundZAxis(theta);
 
-  if (store_poses_.empty()) {
+  if (store_poses_.poses.empty()) {
     if (state_machine_.configuration().contains(accumulating_)) {
       waypoint_status_indicator_->clear();
-      acummulated_poses_.push_back(pose);
+      acummulated_poses_.poses.push_back(pose);
     } else {
-      acummulated_poses_.clear();
+      acummulated_poses_ = nav2_msgs::msg::PoseStampedArray();
       updateWpNavigationMarkers();
       std::cout << "Start navigation" << std::endl;
       startNavigation(pose);
@@ -1030,7 +1031,7 @@ Nav2Panel::onCancelButtonPressed()
 void
 Nav2Panel::onAccumulatedWp()
 {
-  if (acummulated_poses_.empty()) {
+  if (acummulated_poses_.poses.empty()) {
     state_machine_.postEvent(new ROSActionQEvent(QActionState::INACTIVE));
     waypoint_status_indicator_->setText(
       "<b> Note: </b> Uh oh! Someone forgot to select the waypoints");
@@ -1052,7 +1053,7 @@ Nav2Panel::onAccumulatedWp()
 
   /** Making sure that the pose array does not get updated
    *  between the process**/
-  if (store_poses_.empty()) {
+  if (store_poses_.poses.empty()) {
     std::cout << "Start waypoint" << std::endl;
 
     // Setting the final loop value on the text box for sanity
@@ -1065,12 +1066,12 @@ Nav2Panel::onAccumulatedWp()
     if (store_initial_pose_) {
       try {
         init_transform = tf2_buffer_->lookupTransform(
-          acummulated_poses_[0].header.frame_id, base_frame_,
+          acummulated_poses_.poses[0].header.frame_id, base_frame_,
           tf2::TimePointZero);
       } catch (const tf2::TransformException & ex) {
         RCLCPP_INFO(
           client_node_->get_logger(), "Could not transform %s to %s: %s",
-          acummulated_poses_[0].header.frame_id.c_str(), base_frame_.c_str(), ex.what());
+          acummulated_poses_.poses[0].header.frame_id.c_str(), base_frame_.c_str(), ex.what());
         return;
       }
 
@@ -1086,24 +1087,24 @@ Nav2Panel::onAccumulatedWp()
       initial_pose.pose.orientation.w = init_transform.transform.rotation.w;
 
       // inserting the acummulated pose
-      acummulated_poses_.insert(acummulated_poses_.begin(), initial_pose);
+      acummulated_poses_.poses.insert(acummulated_poses_.poses.begin(), initial_pose);
       updateWpNavigationMarkers();
       initial_pose_stored_ = true;
       if (loop_count_ == 0) {
         goal_index_ = 1;
       }
     } else if (!store_initial_pose_ && initial_pose_stored_) {
-      acummulated_poses_.erase(
-        acummulated_poses_.begin(),
-        acummulated_poses_.begin());
+      acummulated_poses_.poses.erase(
+        acummulated_poses_.poses.begin(),
+        acummulated_poses_.poses.begin());
     }
   } else {
     std::cout << "Resuming waypoint" << std::endl;
   }
 
-  startWaypointFollowing(acummulated_poses_);
+  startWaypointFollowing(acummulated_poses_.poses);
   store_poses_ = acummulated_poses_;
-  acummulated_poses_.clear();
+  acummulated_poses_ = nav2_msgs::msg::PoseStampedArray();
 }
 
 void
@@ -1116,8 +1117,8 @@ Nav2Panel::onAccumulatedNTP()
 void
 Nav2Panel::onAccumulating()
 {
-  acummulated_poses_.clear();
-  store_poses_.clear();
+  acummulated_poses_ = nav2_msgs::msg::PoseStampedArray();
+  store_poses_ = nav2_msgs::msg::PoseStampedArray();
   loop_count_ = 0;
   loop_no_ = "0";
   initial_pose_stored_ = false;
@@ -1254,7 +1255,7 @@ Nav2Panel::startWaypointFollowing(std::vector<geometry_msgs::msg::PoseStamped> p
 }
 
 void
-Nav2Panel::startNavThroughPoses(std::vector<geometry_msgs::msg::PoseStamped> poses)
+Nav2Panel::startNavThroughPoses(nav2_msgs::msg::PoseStampedArray poses)
 {
   auto is_action_server_ready =
     nav_through_poses_action_client_->wait_for_action_server(std::chrono::seconds(5));
@@ -1272,8 +1273,8 @@ Nav2Panel::startNavThroughPoses(std::vector<geometry_msgs::msg::PoseStamped> pos
 
   RCLCPP_DEBUG(
     client_node_->get_logger(), "Sending a path of %zu waypoints:",
-    nav_through_poses_goal_.poses.size());
-  for (auto waypoint : nav_through_poses_goal_.poses) {
+    nav_through_poses_goal_.poses.poses.size());
+  for (auto waypoint : nav_through_poses_goal_.poses.poses) {
     RCLCPP_DEBUG(
       client_node_->get_logger(),
       "\t(%lf, %lf)", waypoint.pose.position.x, waypoint.pose.position.y);
@@ -1384,14 +1385,14 @@ Nav2Panel::updateWpNavigationMarkers()
 
   auto marker_array = std::make_unique<visualization_msgs::msg::MarkerArray>();
 
-  for (size_t i = 0; i < acummulated_poses_.size(); i++) {
+  for (size_t i = 0; i < acummulated_poses_.poses.size(); i++) {
     // Draw a green arrow at the waypoint pose
     visualization_msgs::msg::Marker arrow_marker;
-    arrow_marker.header = acummulated_poses_[i].header;
+    arrow_marker.header = acummulated_poses_.poses[i].header;
     arrow_marker.id = getUniqueId();
     arrow_marker.type = visualization_msgs::msg::Marker::ARROW;
     arrow_marker.action = visualization_msgs::msg::Marker::ADD;
-    arrow_marker.pose = acummulated_poses_[i].pose;
+    arrow_marker.pose = acummulated_poses_.poses[i].pose;
     arrow_marker.scale.x = 0.3;
     arrow_marker.scale.y = 0.05;
     arrow_marker.scale.z = 0.02;
@@ -1405,11 +1406,11 @@ Nav2Panel::updateWpNavigationMarkers()
 
     // Draw a red circle at the waypoint pose
     visualization_msgs::msg::Marker circle_marker;
-    circle_marker.header = acummulated_poses_[i].header;
+    circle_marker.header = acummulated_poses_.poses[i].header;
     circle_marker.id = getUniqueId();
     circle_marker.type = visualization_msgs::msg::Marker::SPHERE;
     circle_marker.action = visualization_msgs::msg::Marker::ADD;
-    circle_marker.pose = acummulated_poses_[i].pose;
+    circle_marker.pose = acummulated_poses_.poses[i].pose;
     circle_marker.scale.x = 0.05;
     circle_marker.scale.y = 0.05;
     circle_marker.scale.z = 0.05;
@@ -1423,11 +1424,11 @@ Nav2Panel::updateWpNavigationMarkers()
 
     // Draw the waypoint number
     visualization_msgs::msg::Marker marker_text;
-    marker_text.header = acummulated_poses_[i].header;
+    marker_text.header = acummulated_poses_.poses[i].header;
     marker_text.id = getUniqueId();
     marker_text.type = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
     marker_text.action = visualization_msgs::msg::Marker::ADD;
-    marker_text.pose = acummulated_poses_[i].pose;
+    marker_text.pose = acummulated_poses_.poses[i].pose;
     marker_text.pose.position.z += 0.2;  // draw it on top of the waypoint
     marker_text.scale.x = 0.07;
     marker_text.scale.y = 0.07;

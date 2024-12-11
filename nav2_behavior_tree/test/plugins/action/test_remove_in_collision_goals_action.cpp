@@ -194,19 +194,19 @@ TEST_F(RemoveInCollisionGoalsTestFixture, test_tick_remove_in_collision_goals_fa
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
 
   // create new goal and set it on blackboard
-  std::vector<geometry_msgs::msg::PoseStamped> poses;
-  poses.resize(4);
-  poses[0].pose.position.x = 0.0;
-  poses[0].pose.position.y = 0.0;
+  nav2_msgs::msg::PoseStampedArray poses;
+  poses.poses.resize(4);
+  poses.poses[0].pose.position.x = 0.0;
+  poses.poses[0].pose.position.y = 0.0;
 
-  poses[1].pose.position.x = 0.5;
-  poses[1].pose.position.y = 0.0;
+  poses.poses[1].pose.position.x = 0.5;
+  poses.poses[1].pose.position.y = 0.0;
 
-  poses[2].pose.position.x = 1.0;
-  poses[2].pose.position.y = 0.0;
+  poses.poses[2].pose.position.x = 1.0;
+  poses.poses[2].pose.position.y = 0.0;
 
-  poses[3].pose.position.x = 2.0;
-  poses[3].pose.position.y = 0.0;
+  poses.poses[3].pose.position.x = 2.0;
+  poses.poses[3].pose.position.y = 0.0;
 
   config_->blackboard->set("goals", poses);
 
@@ -218,14 +218,14 @@ TEST_F(RemoveInCollisionGoalsTestFixture, test_tick_remove_in_collision_goals_fa
 
   // check that it failed and returned the original goals
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::FAILURE);
-  std::vector<geometry_msgs::msg::PoseStamped> output_poses;
+  nav2_msgs::msg::PoseStampedArray output_poses;
   EXPECT_TRUE(config_->blackboard->get("goals", output_poses));
 
-  EXPECT_EQ(output_poses.size(), 4u);
-  EXPECT_EQ(output_poses[0], poses[0]);
-  EXPECT_EQ(output_poses[1], poses[1]);
-  EXPECT_EQ(output_poses[2], poses[2]);
-  EXPECT_EQ(output_poses[3], poses[3]);
+  EXPECT_EQ(output_poses.poses.size(), 4u);
+  EXPECT_EQ(output_poses.poses[0], poses.poses[0]);
+  EXPECT_EQ(output_poses.poses[1], poses.poses[1]);
+  EXPECT_EQ(output_poses.poses[2], poses.poses[2]);
+  EXPECT_EQ(output_poses.poses[3], poses.poses[3]);
 }
 
 int main(int argc, char ** argv)
