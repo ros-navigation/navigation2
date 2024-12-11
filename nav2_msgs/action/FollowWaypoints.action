@@ -1,7 +1,7 @@
 #goal definition
 uint32 number_of_loops
 uint32 goal_index 0
-nav2_msgs/PoseStampedArray poses
+geometry_msgs/PoseStamped[] poses
 ---
 #result definition
 
