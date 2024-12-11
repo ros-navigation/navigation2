@@ -213,7 +213,7 @@ bool
 NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr goal)
 {
   nav2_msgs::msg::PoseStampedArray pose_stamped_array = goal->poses;
-  for (auto & goal_pose : pose_stamped_array) {
+  for (auto & goal_pose : pose_stamped_array.poses) {
     if (!nav2_util::transformPoseInTargetFrame(
         goal_pose, goal_pose, *feedback_utils_.tf, feedback_utils_.global_frame,
         feedback_utils_.transform_tolerance))
