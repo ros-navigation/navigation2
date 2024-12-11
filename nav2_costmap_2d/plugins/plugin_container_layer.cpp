@@ -201,7 +201,6 @@ bool PluginContainerLayer::isClearable()
 
 void PluginContainerLayer::clearArea(int start_x, int start_y, int end_x, int end_y, bool invert)
 {
-  // TODO(alexander_yuen): Tests for this method
   CostmapLayer::clearArea(start_x, start_y, end_x, end_y, invert);
   for (vector<std::shared_ptr<Layer>>::iterator plugin = plugins_.begin(); plugin != plugins_.end();
     ++plugin)
