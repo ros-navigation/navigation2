@@ -826,7 +826,7 @@ void Costmap2DROS::getCostsCallback(
 
   Costmap2D * costmap = layered_costmap_->getCostmap();
 
-  for (const auto & pose : request->poses) {
+  for (const auto & pose : request->poses.poses) {
     geometry_msgs::msg::PoseStamped pose_transformed;
     transformPoseToGlobalFrame(pose, pose_transformed);
     bool in_bounds = costmap->worldToMap(

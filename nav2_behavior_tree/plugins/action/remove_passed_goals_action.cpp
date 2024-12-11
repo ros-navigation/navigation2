@@ -49,10 +49,10 @@ inline BT::NodeStatus RemovePassedGoals::tick()
     initialize();
   }
 
-  Goals goal_poses;
+  nav2_msgs::msg::PoseStampedArray goal_poses;
   getInput("input_goals", goal_poses);
 
-  if (goal_poses.empty()) {
+  if (goal_poses.poses.empty()) {
     setOutput("output_goals", goal_poses);
     return BT::NodeStatus::SUCCESS;
   }
@@ -61,21 +61,21 @@ inline BT::NodeStatus RemovePassedGoals::tick()
 
   geometry_msgs::msg::PoseStamped current_pose;
   if (!nav2_util::getCurrentPose(
-      current_pose, *tf_, goal_poses[0].header.frame_id, robot_base_frame_,
+      current_pose, *tf_, goal_poses.poses[0].header.frame_id, robot_base_frame_,
       transform_tolerance_))
   {
     return BT::NodeStatus::FAILURE;
   }
 
   double dist_to_goal;
-  while (goal_poses.size() > 1) {
-    dist_to_goal = euclidean_distance(goal_poses[0].pose, current_pose.pose);
+  while (goal_poses.poses.size() > 1) {
+    dist_to_goal = euclidean_distance(goal_poses.poses[0].pose, current_pose.pose);
 
     if (dist_to_goal > viapoint_achieved_radius_) {
       break;
     }
 
-    goal_poses.erase(goal_poses.begin());
+    goal_poses.poses.erase(goal_poses.poses.begin());
   }
 
   setOutput("output_goals", goal_poses);
