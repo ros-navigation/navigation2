@@ -179,6 +179,34 @@ inline double calculate_path_length(const nav_msgs::msg::Path & path, size_t sta
   return path_length;
 }
 
+/**
+ * @brief Check if path is longer than a specific lenght.
+ *        Similar to calculate_path_length(path), but short-circuits when length is exceeded.
+ * @param path Path containing the poses that are planned
+ * @param length The length we're checking against
+ * @return bool True if path is longer than length, false if path <= length
+ */
+inline bool is_path_longer_than_length(const nav_msgs::msg::Path & path, const double length)
+{
+  if (length < 0.0) {
+    return true;  // a path must be longer than a negative length
+  }
+  if (path.poses.size() == 0) {
+    return false;  // empty path can't be longer than length >= 0.0
+  }
+  size_t check_count = path.poses.size() - 1;
+  double path_length = 0.0;
+  for (size_t idx = 0; idx < check_count; ++idx) {
+    path_length += geometry_utils::euclidean_distance(path.poses[idx].pose,
+          path.poses[idx + 1].pose);
+    if (path_length > length) {
+      return true;
+    }
+  }
+  return false;
+}
+
+
 }  // namespace geometry_utils
 }  // namespace nav2_util
 

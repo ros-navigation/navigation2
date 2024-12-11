@@ -13,6 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <limits>
 #include "nav2_util/geometry_utils.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/pose.hpp"
@@ -21,6 +22,7 @@
 
 using nav2_util::geometry_utils::euclidean_distance;
 using nav2_util::geometry_utils::calculate_path_length;
+using nav2_util::geometry_utils::is_path_longer_than_length;
 
 TEST(GeometryUtils, euclidean_distance_point_3d)
 {
@@ -127,4 +129,63 @@ TEST(GeometryUtils, calculate_path_length)
   ASSERT_NEAR(
     calculate_path_length(circle_path),
     2 * pi * polar_distance, 1e-1);
+}
+
+TEST(GeometryUtils, is_path_longer_than_length)
+{
+  nav_msgs::msg::Path empty_path;
+  ASSERT_FALSE(is_path_longer_than_length(empty_path, 0.0));
+  ASSERT_FALSE(is_path_longer_than_length(empty_path, 1e-9));
+  ASSERT_FALSE(is_path_longer_than_length(empty_path, 1.0));
+  // unclear why we have a negative length, but it should work anyway
+  ASSERT_TRUE(is_path_longer_than_length(empty_path, -1.0));
+
+  nav_msgs::msg::Path straight_line_path;
+  size_t nb_path_points = 10;
+  float distance_between_poses = 2.0;
+  float current_x_loc = 0.0;
+
+  for (size_t i = 0; i < nb_path_points; ++i) {
+    geometry_msgs::msg::PoseStamped pose_stamped_msg;
+    pose_stamped_msg.pose.position.x = current_x_loc;
+
+    straight_line_path.poses.push_back(pose_stamped_msg);
+
+    current_x_loc += distance_between_poses;
+  }
+
+  ASSERT_TRUE(is_path_longer_than_length(straight_line_path, -3.14));
+  ASSERT_TRUE(is_path_longer_than_length(straight_line_path, 0.0));
+  ASSERT_TRUE(is_path_longer_than_length(straight_line_path, 1.0));
+  ASSERT_TRUE(is_path_longer_than_length(straight_line_path, 5.0));
+  ASSERT_TRUE(is_path_longer_than_length(straight_line_path, 9.999));
+  ASSERT_TRUE(is_path_longer_than_length(straight_line_path, 15.0));
+  ASSERT_TRUE(is_path_longer_than_length(straight_line_path, 17.9999));
+
+  ASSERT_FALSE(is_path_longer_than_length(straight_line_path, 18.0));
+  ASSERT_FALSE(is_path_longer_than_length(straight_line_path, 1e7));
+  ASSERT_FALSE(is_path_longer_than_length(straight_line_path,
+    std::numeric_limits<double>::infinity()));
+
+  nav_msgs::msg::Path circle_path;
+  float polar_distance = 2.0;
+  uint32_t current_polar_angle_deg = 0;
+  constexpr float pi = 3.14159265358979;
+
+  while (current_polar_angle_deg != 360) {
+    float x_loc = polar_distance * std::cos(current_polar_angle_deg * (pi / 180.0));
+    float y_loc = polar_distance * std::sin(current_polar_angle_deg * (pi / 180.0));
+
+    geometry_msgs::msg::PoseStamped pose_stamped_msg;
+    pose_stamped_msg.pose.position.x = x_loc;
+    pose_stamped_msg.pose.position.y = y_loc;
+
+    circle_path.poses.push_back(pose_stamped_msg);
+
+    current_polar_angle_deg += 1;
+  }
+
+  ASSERT_TRUE(is_path_longer_than_length(circle_path, 0.0));
+  ASSERT_TRUE(is_path_longer_than_length(circle_path, 2.0 * 2.0 * pi - 1.0));
+  ASSERT_FALSE(is_path_longer_than_length(circle_path, 2.0 * 2.0 * pi));
 }
