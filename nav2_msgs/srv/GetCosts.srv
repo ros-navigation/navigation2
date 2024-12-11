@@ -4,3 +4,4 @@ bool use_footprint
 nav2_msgs/PoseStampedArray poses
 ---
 float32[] costs
+bool success
