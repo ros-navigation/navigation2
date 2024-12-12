@@ -29,7 +29,7 @@ namespace nav2_collision_monitor
 {
 
 CollisionDetector::CollisionDetector(rclcpp::NodeOptions options)
-: nav2_util::LifecycleNode("collision_detector", "", options.use_intra_process_comms(true))
+: nav2_util::LifecycleNode("collision_detector", "", options)
 {
 }
 

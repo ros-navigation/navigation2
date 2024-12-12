@@ -56,7 +56,7 @@ namespace nav2_amcl
 using nav2_util::geometry_utils::orientationAroundZAxis;
 
 AmclNode::AmclNode(rclcpp::NodeOptions options)
-: nav2_util::LifecycleNode("amcl", "", options.use_intra_process_comms(true))
+: nav2_util::LifecycleNode("amcl", "", options)
 {
   RCLCPP_INFO(get_logger(), "Creating");
 

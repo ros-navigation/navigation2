@@ -30,7 +30,7 @@ namespace nav2_velocity_smoother
 {
 
 VelocitySmoother::VelocitySmoother(rclcpp::NodeOptions options)
-: LifecycleNode("velocity_smoother", "", options.use_intra_process_comms(true)),
+: nav2_util::LifecycleNode("velocity_smoother", "", options),
   last_command_time_{0, 0, get_clock()->get_clock_type()}
 {
 }

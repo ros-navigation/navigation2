@@ -25,7 +25,7 @@ namespace opennav_docking
 {
 
 DockingServer::DockingServer(rclcpp::NodeOptions options)
-: nav2_util::LifecycleNode("docking_server", "", options.use_intra_process_comms(true))
+: nav2_util::LifecycleNode("docking_server", "", options)
 {
   RCLCPP_INFO(get_logger(), "Creating %s", get_name());
 

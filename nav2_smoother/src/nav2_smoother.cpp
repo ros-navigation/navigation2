@@ -33,7 +33,7 @@ namespace nav2_smoother
 {
 
 SmootherServer::SmootherServer(rclcpp::NodeOptions options)
-: LifecycleNode("smoother_server", "", options.use_intra_process_comms(true)),
+: nav2_util::LifecycleNode("smoother_server", "", options),
   lp_loader_("nav2_core", "nav2_core::Smoother"),
   default_ids_{"simple_smoother"},
   default_types_{"nav2_smoother::SimpleSmoother"}

@@ -25,7 +25,7 @@ namespace nav2_map_server
 {
 
 CostmapFilterInfoServer::CostmapFilterInfoServer(rclcpp::NodeOptions options)
-: nav2_util::LifecycleNode("costmap_filter_info_server", "", options.use_intra_process_comms(true))
+: nav2_util::LifecycleNode("costmap_filter_info_server", "", options)
 {
   declare_parameter("filter_info_topic", "costmap_filter_info");
   declare_parameter("type", 0);

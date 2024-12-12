@@ -35,7 +35,7 @@ namespace nav2_controller
 {
 
 ControllerServer::ControllerServer(rclcpp::NodeOptions options)
-: nav2_util::LifecycleNode("controller_server", "", options.use_intra_process_comms(true)),
+: nav2_util::LifecycleNode("controller_server", "", options),
   progress_checker_loader_("nav2_core", "nav2_core::ProgressChecker"),
   default_progress_checker_ids_{"progress_checker"},
   default_progress_checker_types_{"nav2_controller::SimpleProgressChecker"},

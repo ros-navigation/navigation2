@@ -59,7 +59,7 @@ using rcl_interfaces::msg::ParameterType;
 namespace nav2_costmap_2d
 {
 Costmap2DROS::Costmap2DROS(rclcpp::NodeOptions options)
-: nav2_util::LifecycleNode("costmap", "", options.use_intra_process_comms(true)),
+: nav2_util::LifecycleNode("costmap", "", options),
   name_("costmap"),
   default_plugins_{"static_layer", "obstacle_layer", "inflation_layer"},
   default_types_{
