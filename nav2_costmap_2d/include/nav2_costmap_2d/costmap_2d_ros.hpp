@@ -79,7 +79,7 @@ public:
    * @brief  Constructor for the wrapper
    * @param options Additional options to control creation of the node.
    */
-  explicit Costmap2DROS(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
+  explicit Costmap2DROS(rclcpp::NodeOptions options = rclcpp::NodeOptions());
 
   /**
    * @brief  Constructor for the wrapper

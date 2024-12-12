@@ -45,7 +45,7 @@ public:
    * @brief A constructor for nav2_velocity_smoother::VelocitySmoother
    * @param options Additional options to control creation of the node.
    */
-  explicit VelocitySmoother(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
+  explicit VelocitySmoother(rclcpp::NodeOptions options = rclcpp::NodeOptions());
 
   /**
    * @brief Destructor for nav2_velocity_smoother::VelocitySmoother

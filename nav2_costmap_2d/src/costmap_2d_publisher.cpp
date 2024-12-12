@@ -68,14 +68,10 @@ Costmap2DPublisher::Costmap2DPublisher(
   logger_ = node->get_logger();
 
   auto custom_qos = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable();
-
-  // TODO(bpwilcox): port onNewSubscription functionality for publisher
   costmap_pub_ = node->create_publisher<nav_msgs::msg::OccupancyGrid>(
-    topic_name,
-    custom_qos);
+    topic_name, custom_qos);
   costmap_raw_pub_ = node->create_publisher<nav2_msgs::msg::Costmap>(
-    topic_name + "_raw",
-    custom_qos);
+    topic_name + "_raw", custom_qos);
   costmap_update_pub_ = node->create_publisher<map_msgs::msg::OccupancyGridUpdate>(
     topic_name + "_updates", custom_qos);
   costmap_raw_update_pub_ = node->create_publisher<nav2_msgs::msg::CostmapUpdate>(

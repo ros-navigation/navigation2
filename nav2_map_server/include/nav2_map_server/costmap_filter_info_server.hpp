@@ -32,7 +32,7 @@ public:
    * @brief Constructor for the nav2_map_server::CostmapFilterInfoServer
    * @param options Additional options to control creation of the node.
    */
-  explicit CostmapFilterInfoServer(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
+  explicit CostmapFilterInfoServer(rclcpp::NodeOptions options = rclcpp::NodeOptions());
 
   /**
    * @brief Destructor for the nav2_map_server::CostmapFilterInfoServer

@@ -34,7 +34,7 @@ namespace nav2_bt_navigator
 
 BtNavigator::BtNavigator(rclcpp::NodeOptions options)
 : nav2_util::LifecycleNode("bt_navigator", "",
-    options.automatically_declare_parameters_from_overrides(true)),
+    options.automatically_declare_parameters_from_overrides(true).use_intra_process_comms(true)),
   class_loader_("nav2_core", "nav2_core::NavigatorBase")
 {
   RCLCPP_INFO(get_logger(), "Creating");

@@ -51,7 +51,7 @@ public:
    * @brief A constructor for nav2_smoother::SmootherServer
    * @param options Additional options to control creation of the node.
    */
-  explicit SmootherServer(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
+  explicit SmootherServer(rclcpp::NodeOptions options = rclcpp::NodeOptions());
   /**
    * @brief Destructor for nav2_smoother::SmootherServer
    */

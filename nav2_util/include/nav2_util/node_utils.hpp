@@ -19,6 +19,7 @@
 #include <vector>
 #include <string>
 #include "rclcpp/rclcpp.hpp"
+#include "rclcpp/qos.hpp"
 #include "rcl_interfaces/srv/list_parameters.hpp"
 
 namespace nav2_util
@@ -159,6 +160,12 @@ std::string get_plugin_type_param(
  * May throw exception if unable to set prioritization successfully
  */
 void setSoftRealTimePriority();
+
+/**
+ * @brief Obtain a default QoS profile for Nav2 publishers and subscribers
+ * This is equal to the SystemDefaultsQoS but with a non-zero depth for IPC
+ */
+rclcpp::QoS DefaultQoS();
 
 }  // namespace nav2_util
 

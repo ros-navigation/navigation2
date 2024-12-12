@@ -62,7 +62,7 @@ public:
    * @brief A constructor for nav2_lifecycle_manager::LifecycleManager
    * @param options Additional options to control creation of the node.
    */
-  explicit LifecycleManager(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
+  explicit LifecycleManager(rclcpp::NodeOptions options = rclcpp::NodeOptions());
   /**
    * @brief A destructor for nav2_lifecycle_manager::LifecycleManager
    */

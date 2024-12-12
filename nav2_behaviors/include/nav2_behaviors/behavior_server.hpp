@@ -42,7 +42,7 @@ public:
    * @brief A constructor for behavior_server::BehaviorServer
    * @param options Additional options to control creation of the node.
    */
-  explicit BehaviorServer(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
+  explicit BehaviorServer(rclcpp::NodeOptions options = rclcpp::NodeOptions());
   ~BehaviorServer();
 
 protected:

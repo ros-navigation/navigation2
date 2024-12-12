@@ -50,7 +50,7 @@ public:
    * @brief A constructor for opennav_docking::DockingServer
    * @param options Additional options to control creation of the node.
    */
-  explicit DockingServer(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
+  explicit DockingServer(rclcpp::NodeOptions options = rclcpp::NodeOptions());
 
   /**
    * @brief A destructor for opennav_docking::DockingServer

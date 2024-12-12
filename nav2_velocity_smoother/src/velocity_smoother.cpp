@@ -29,8 +29,8 @@ using rcl_interfaces::msg::ParameterType;
 namespace nav2_velocity_smoother
 {
 
-VelocitySmoother::VelocitySmoother(const rclcpp::NodeOptions & options)
-: LifecycleNode("velocity_smoother", "", options),
+VelocitySmoother::VelocitySmoother(rclcpp::NodeOptions options)
+: LifecycleNode("velocity_smoother", "", options.use_intra_process_comms(true)),
   last_command_time_{0, 0, get_clock()->get_clock_type()}
 {
 }

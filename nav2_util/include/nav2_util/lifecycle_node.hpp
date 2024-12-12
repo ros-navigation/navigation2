@@ -47,7 +47,7 @@ public:
   LifecycleNode(
     const std::string & node_name,
     const std::string & ns = "",
-    const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
+    rclcpp::NodeOptions options = rclcpp::NodeOptions());
   virtual ~LifecycleNode();
 
   typedef struct

@@ -27,8 +27,8 @@ namespace nav2_waypoint_follower
 using rcl_interfaces::msg::ParameterType;
 using std::placeholders::_1;
 
-WaypointFollower::WaypointFollower(const rclcpp::NodeOptions & options)
-: nav2_util::LifecycleNode("waypoint_follower", "", options),
+WaypointFollower::WaypointFollower(rclcpp::NodeOptions options)
+: nav2_util::LifecycleNode("waypoint_follower", "", options.use_intra_process_comms(true)),
   waypoint_task_executor_loader_("nav2_waypoint_follower",
     "nav2_core::WaypointTaskExecutor")
 {

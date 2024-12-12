@@ -27,7 +27,7 @@ namespace nav2_util
 LifecycleNode::LifecycleNode(
   const std::string & node_name,
   const std::string & ns,
-  const rclcpp::NodeOptions & options)
+  rclcpp::NodeOptions options)
 : rclcpp_lifecycle::LifecycleNode(node_name, ns, options)
 {
   // server side never times out from lifecycle manager

@@ -53,7 +53,7 @@ public:
    * @brief Constructor for the nav2_collision_monitor::CollisionDetector
    * @param options Additional options to control creation of the node.
    */
-  explicit CollisionDetector(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
+  explicit CollisionDetector(rclcpp::NodeOptions options = rclcpp::NodeOptions());
   /**
    * @brief Destructor for the nav2_collision_monitor::CollisionDetector
    */

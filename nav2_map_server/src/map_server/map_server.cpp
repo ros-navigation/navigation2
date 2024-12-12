@@ -62,8 +62,9 @@ using namespace std::placeholders;
 namespace nav2_map_server
 {
 
-MapServer::MapServer(const rclcpp::NodeOptions & options)
-: nav2_util::LifecycleNode("map_server", "", options), map_available_(false)
+MapServer::MapServer(rclcpp::NodeOptions options)
+: nav2_util::LifecycleNode("map_server", "", options.use_intra_process_comms(true)),
+  map_available_(false)
 {
   RCLCPP_INFO(get_logger(), "Creating");
 

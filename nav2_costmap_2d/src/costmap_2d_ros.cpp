@@ -58,8 +58,8 @@ using rcl_interfaces::msg::ParameterType;
 
 namespace nav2_costmap_2d
 {
-Costmap2DROS::Costmap2DROS(const rclcpp::NodeOptions & options)
-: nav2_util::LifecycleNode("costmap", "", options),
+Costmap2DROS::Costmap2DROS(rclcpp::NodeOptions options)
+: nav2_util::LifecycleNode("costmap", "", options.use_intra_process_comms(true)),
   name_("costmap"),
   default_plugins_{"static_layer", "obstacle_layer", "inflation_layer"},
   default_types_{
@@ -78,9 +78,7 @@ Costmap2DROS::Costmap2DROS(
 : nav2_util::LifecycleNode(name, "",
     // NodeOption arguments take precedence over the ones provided on the command line
     // use this to make sure the node is placed on the provided namespace
-    // TODO(orduno) Pass a sub-node instead of creating a new node for better handling
-    //              of the namespaces
-    rclcpp::NodeOptions().arguments({
+    rclcpp::NodeOptions().use_intra_process_comms(true).arguments({
     "--ros-args", "-r", std::string("__ns:=") +
     nav2_util::add_namespaces(parent_namespace, name),
     "--ros-args", "-r", name + ":" + std::string("__node:=") + name,
@@ -208,11 +206,11 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
   // Create the publishers and subscribers
   footprint_sub_ = create_subscription<geometry_msgs::msg::Polygon>(
     "footprint",
-    rclcpp::SystemDefaultsQoS(),
+    nav2_util::DefaultQoS(),
     std::bind(&Costmap2DROS::setRobotFootprintPolygon, this, std::placeholders::_1));
 
   footprint_pub_ = create_publisher<geometry_msgs::msg::PolygonStamped>(
-    "published_footprint", rclcpp::SystemDefaultsQoS());
+    "published_footprint", nav2_util::DefaultQoS());
 
   costmap_publisher_ = std::make_unique<Costmap2DPublisher>(
     shared_from_this(),

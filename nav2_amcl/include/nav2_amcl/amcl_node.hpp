@@ -60,7 +60,7 @@ public:
    * @brief AMCL constructor
    * @param options Additional options to control creation of the node.
    */
-  explicit AmclNode(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
+  explicit AmclNode(rclcpp::NodeOptions options = rclcpp::NodeOptions());
   /*
    * @brief AMCL destructor
    */
