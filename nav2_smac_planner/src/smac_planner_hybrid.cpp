@@ -421,6 +421,12 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
     pose.pose = start.pose;
     pose.pose.orientation = goal.pose.orientation;
     plan.poses.push_back(pose);
+
+    // Publish raw path for debug
+    if (_raw_plan_publisher->get_subscription_count() > 0) {
+      _raw_plan_publisher->publish(plan);
+    }
+
     return plan;
   }
 
