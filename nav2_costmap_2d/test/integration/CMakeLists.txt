@@ -39,6 +39,15 @@ target_link_libraries(range_tests_exec
   ${PROJECT_NAME}::layers
 )
 
+ament_add_gtest_executable(plugin_container_tests_exec
+  plugin_container_tests.cpp
+)
+target_link_libraries(plugin_container_tests_exec
+  nav2_costmap_2d_core
+  layers
+)
+
+
 ament_add_gtest(dyn_params_tests
   dyn_params_tests.cpp
 )
@@ -111,6 +120,16 @@ ament_add_test(range_tests
     TEST_MAP=${TEST_MAP_DIR}/TenByTen.yaml
     TEST_LAUNCH_DIR=${TEST_LAUNCH_DIR}
     TEST_EXECUTABLE=$<TARGET_FILE:range_tests_exec>
+)
+
+ament_add_test(plugin_container_tests
+  GENERATE_RESULT_FOR_RETURN_CODE_ZERO
+  COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/costmap_tests_launch.py"
+  WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+  ENV
+    TEST_MAP=${TEST_MAP_DIR}/TenByTen.yaml
+    TEST_LAUNCH_DIR=${TEST_LAUNCH_DIR}
+    TEST_EXECUTABLE=$<TARGET_FILE:plugin_container_tests_exec>
 )
 
 ament_add_test(test_costmap_publisher_exec

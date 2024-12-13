@@ -88,6 +88,7 @@ add_library(layers SHARED
   plugins/voxel_layer.cpp
   plugins/range_sensor_layer.cpp
   plugins/denoise_layer.cpp
+  plugins/plugin_container_layer.cpp
 )
 add_library(${PROJECT_NAME}::layers ALIAS layers)
 ament_target_dependencies(layers
