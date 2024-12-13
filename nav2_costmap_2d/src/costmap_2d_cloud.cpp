@@ -218,9 +218,9 @@ int main(int argc, char ** argv)
   RCLCPP_DEBUG(g_node->get_logger(), "Starting up costmap_2d_cloud");
 
   pub_marked = g_node->create_publisher<sensor_msgs::msg::PointCloud2>(
-    "voxel_marked_cloud", 1);
+    "voxel_marked_cloud", nav2_util::DefaultPublisherQoS());
   pub_unknown = g_node->create_publisher<sensor_msgs::msg::PointCloud2>(
-    "voxel_unknown_cloud", 1);
+    "voxel_unknown_cloud", nav2_util::DefaultPublisherQoS());
   auto sub = g_node->create_subscription<nav2_msgs::msg::VoxelGrid>(
     "voxel_grid", rclcpp::SystemDefaultsQoS(), voxelCallback);
 

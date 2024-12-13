@@ -45,7 +45,7 @@ public:
 
     battery_pub_ = node_->create_publisher<sensor_msgs::msg::BatteryState>(
       "/battery_status",
-      rclcpp::SystemDefaultsQoS());
+      nav2_util::DefaultPublisherQoS());
   }
 
   static void TearDownTestCase()

@@ -153,7 +153,7 @@ int main(int argc, char ** argv)
   RCLCPP_DEBUG(g_node->get_logger(), "Starting costmap_2d_marker");
 
   pub = g_node->create_publisher<visualization_msgs::msg::Marker>(
-    "visualization_marker", 1);
+    "visualization_marker", nav2_util::DefaultPublisherQoS());
 
   auto sub = g_node->create_subscription<nav2_msgs::msg::VoxelGrid>(
     "voxel_grid", rclcpp::SystemDefaultsQoS(), voxelCallback);

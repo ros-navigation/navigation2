@@ -91,9 +91,8 @@ bool Polygon::configure()
       polygon_.polygon.points.push_back(p_s);
     }
 
-    rclcpp::QoS polygon_qos = rclcpp::SystemDefaultsQoS();  // set to default
     polygon_pub_ = node->create_publisher<geometry_msgs::msg::PolygonStamped>(
-      polygon_pub_topic, polygon_qos);
+      polygon_pub_topic, nav2_util::DefaultPublisherQoS());
   }
 
   // Add callback for dynamic parameters

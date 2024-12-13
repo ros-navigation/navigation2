@@ -53,7 +53,7 @@ CollisionDetector::on_configure(const rclcpp_lifecycle::State & state)
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
   state_pub_ = this->create_publisher<nav2_msgs::msg::CollisionDetectorState>(
-    "collision_detector_state", rclcpp::SystemDefaultsQoS());
+    "collision_detector_state", nav2_util::DefaultPublisherQoS());
 
   collision_points_marker_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(
     "~/collision_points_marker", 1);

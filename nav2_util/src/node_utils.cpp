@@ -104,7 +104,7 @@ void setSoftRealTimePriority()
   }
 }
 
-rclcpp::QoS DefaultQoS()
+rclcpp::QoS DefaultPublisherQoS()
 {
   return rclcpp::QoS(rclcpp::KeepLast(5)).reliable().durability_volatile();
 }

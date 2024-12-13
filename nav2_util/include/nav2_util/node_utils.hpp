@@ -162,10 +162,10 @@ std::string get_plugin_type_param(
 void setSoftRealTimePriority();
 
 /**
- * @brief Obtain a default QoS profile for Nav2 publishers and subscribers
+ * @brief Obtain a default QoS profile for Nav2 publishers
  * This is equal to the SystemDefaultsQoS but with a non-zero depth for IPC
  */
-rclcpp::QoS DefaultQoS();
+rclcpp::QoS DefaultPublisherQoS();
 
 }  // namespace nav2_util
 
