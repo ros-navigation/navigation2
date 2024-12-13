@@ -1,6 +1,6 @@
 
 #goal definition
-geometry_msgs/PoseStamped[] poses
+nav2_msgs/PoseStampedArray poses
 string behavior_tree
 ---
 #result definition

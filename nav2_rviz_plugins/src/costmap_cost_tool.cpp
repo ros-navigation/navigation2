@@ -102,7 +102,7 @@ void CostmapCostTool::callCostService(float x, float y)
   pose.header.stamp = node->now();
   pose.pose.position.x = x;
   pose.pose.position.y = y;
-  request->poses.push_back(pose);
+  request->poses.poses.push_back(pose);
   request->use_footprint = false;
 
   // Call local costmap service
