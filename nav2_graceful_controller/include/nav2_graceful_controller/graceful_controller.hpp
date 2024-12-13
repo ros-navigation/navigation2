@@ -151,6 +151,14 @@ protected:
     const std::vector<geometry_msgs::msg::PoseStamped> & poses,
     std::vector<double> & distances);
 
+  /**
+   * @brief Control law requires proper orientations, not all planners provide them
+   * @param path Path to add orientations into
+   * @returns Path with orientations.
+   */
+  std::vector<geometry_msgs::msg::PoseStamped> addOrientations(
+    const std::vector<geometry_msgs::msg::PoseStamped> & path);
+
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::string plugin_name_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;

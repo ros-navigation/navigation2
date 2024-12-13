@@ -286,7 +286,8 @@ TEST(GracefulControllerTest, dynamicParameters) {
       rclcpp::Parameter("test.prefer_final_rotation", false),
       rclcpp::Parameter("test.rotation_scaling_factor", 13.0),
       rclcpp::Parameter("test.v_angular_min_in_place", 14.0),
-      rclcpp::Parameter("test.allow_backward", true)});
+      rclcpp::Parameter("test.allow_backward", true),
+      rclcpp::Parameter("test.add_orientations", true)});
 
   // Spin
   rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
@@ -308,6 +309,7 @@ TEST(GracefulControllerTest, dynamicParameters) {
   EXPECT_EQ(node->get_parameter("test.rotation_scaling_factor").as_double(), 13.0);
   EXPECT_EQ(node->get_parameter("test.v_angular_min_in_place").as_double(), 14.0);
   EXPECT_EQ(node->get_parameter("test.allow_backward").as_bool(), true);
+  EXPECT_EQ(node->get_parameter("test.add_orientations").as_bool(), true);
 
   // Set initial rotation to true
   results = params->set_parameters_atomically(

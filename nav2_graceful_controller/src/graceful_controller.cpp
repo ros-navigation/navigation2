@@ -132,9 +132,16 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
   control_law_->setSlowdownRadius(params_->slowdown_radius);
   control_law_->setSpeedLimit(params_->v_linear_min, params_->v_linear_max, params_->v_angular_max);
 
-  // Transform path to robot base frame and publish it
+  // Transform path to robot base frame
   auto transformed_plan = path_handler_->transformGlobalPlan(
     pose, params_->max_robot_pose_search_dist);
+
+  // Add proper orientations to plan, if desired
+  if (params_->add_orientations) {
+    transformed_plan.poses = addOrientations(transformed_plan.poses);
+  }
+
+  // Publish plan for visualization
   transformed_plan_pub_->publish(transformed_plan);
 
   // Transform local frame to global frame to use in collision checking
@@ -148,7 +155,7 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
       logger_, "Could not transform %s to %s: %s",
       costmap_ros_->getBaseFrameID().c_str(), costmap_ros_->getGlobalFrameID().c_str(),
       ex.what());
-    return cmd_vel;  // TODO(fergs): this seems bad?
+    throw nav2_core::NoValidControl("Could not transform");
   }
 
   // Compute distance to goal as the path's integrated distance to account for path curvatures
@@ -420,6 +427,33 @@ void GracefulController::computeDistanceAlongPath(
     d += nav2_util::geometry_utils::euclidean_distance(poses[i - 1].pose, poses[i].pose);
     distances[i] = d;
   }
+}
+
+std::vector<geometry_msgs::msg::PoseStamped> GracefulController::addOrientations(
+  const std::vector<geometry_msgs::msg::PoseStamped> & path)
+{
+  std::vector<geometry_msgs::msg::PoseStamped> oriented_path;
+  oriented_path.resize(path.size());
+  if (path.empty()) {
+    // This really shouldn't happen
+    return oriented_path;
+  }
+
+  // The last pose will already be oriented since it is our goal
+  oriented_path.back() = path.back();
+
+  // For each pose, point at the next one
+  for (size_t i = 0; i < oriented_path.size() - 1; ++i) {
+    // XY will be unchanged
+    oriented_path[i] = path[i];
+    // Get relative yaw angle
+    double dx = path[i + 1].pose.position.x - path[i].pose.position.x;
+    double dy = path[i + 1].pose.position.y - path[i].pose.position.y;
+    double yaw = std::atan2(dy, dx);
+    oriented_path[i].pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(yaw);
+  }
+
+  return oriented_path;
 }
 
 }  // namespace nav2_graceful_controller

@@ -51,6 +51,7 @@ struct Parameters
   bool prefer_final_rotation;
   double rotation_scaling_factor;
   bool allow_backward;
+  bool add_orientations;
 };
 
 /**

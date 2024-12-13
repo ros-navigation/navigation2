@@ -43,7 +43,7 @@ ParameterHandler::ParameterHandler(
     node, plugin_name_ + ".max_lookahead", rclcpp::ParameterValue(1.0));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".max_robot_pose_search_dist",
-    rclcpp::ParameterValue(costmap_size_x / 2.0));  // TODO(fergs): this is crazy
+    rclcpp::ParameterValue(costmap_size_x / 2.0));
   declare_parameter_if_not_declared(node, plugin_name_ + ".k_phi", rclcpp::ParameterValue(3.0));
   declare_parameter_if_not_declared(node, plugin_name_ + ".k_delta", rclcpp::ParameterValue(2.0));
   declare_parameter_if_not_declared(node, plugin_name_ + ".beta", rclcpp::ParameterValue(0.2));
@@ -66,6 +66,8 @@ ParameterHandler::ParameterHandler(
     node, plugin_name_ + ".rotation_scaling_factor", rclcpp::ParameterValue(0.5));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".allow_backward", rclcpp::ParameterValue(false));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".add_orientations", rclcpp::ParameterValue(false));
 
   node->get_parameter(plugin_name_ + ".transform_tolerance", params_.transform_tolerance);
   node->get_parameter(plugin_name_ + ".min_lookahead", params_.min_lookahead);
@@ -96,6 +98,7 @@ ParameterHandler::ParameterHandler(
   node->get_parameter(plugin_name_ + ".prefer_final_rotation", params_.prefer_final_rotation);
   node->get_parameter(plugin_name_ + ".rotation_scaling_factor", params_.rotation_scaling_factor);
   node->get_parameter(plugin_name_ + ".allow_backward", params_.allow_backward);
+  node->get_parameter(plugin_name_ + ".add_orientations", params_.add_orientations);
 
   if ((params_.initial_rotation_tolerance > 0.0) && params_.allow_backward) {
     RCLCPP_WARN(
@@ -176,6 +179,8 @@ ParameterHandler::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
           continue;
         }
         params_.allow_backward = parameter.as_bool();
+      } else if (name == plugin_name_ + ".add_orientations") {
+        params_.add_orientations = parameter.as_bool();
       }
     }
   }
