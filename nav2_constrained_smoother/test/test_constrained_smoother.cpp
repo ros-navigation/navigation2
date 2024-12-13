@@ -378,7 +378,7 @@ protected:
   {
     auto output = input;
     for (size_t i = 1; i < input.size() - 1; i++) {
-      // add offset prependicular to path
+      // add offset perpendicular to path
       Eigen::Vector2d direction =
         (input[i + 1].block<2, 1>(0, 0) - input[i - 1].block<2, 1>(0, 0)).normalized();
       output[i].block<2, 1>(

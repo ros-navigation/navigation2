@@ -25,10 +25,10 @@
 #include "utils/test_behavior_tree_fixture.hpp"
 
 
-class RemoveInCollisionGoalsSucessService : public TestService<nav2_msgs::srv::GetCosts>
+class RemoveInCollisionGoalsSuccessService : public TestService<nav2_msgs::srv::GetCosts>
 {
 public:
-  RemoveInCollisionGoalsSucessService()
+  RemoveInCollisionGoalsSuccessService()
   : TestService("/global_costmap/get_cost_global_costmap")
   {}
 
@@ -113,7 +113,7 @@ public:
   {
     tree_.reset();
   }
-  static std::shared_ptr<RemoveInCollisionGoalsSucessService> success_server_;
+  static std::shared_ptr<RemoveInCollisionGoalsSuccessService> success_server_;
   static std::shared_ptr<RemoveInCollisionGoalsFailureService> failure_server_;
 
 protected:
@@ -126,7 +126,7 @@ protected:
 rclcpp::Node::SharedPtr RemoveInCollisionGoalsTestFixture::node_ = nullptr;
 
 BT::NodeConfiguration * RemoveInCollisionGoalsTestFixture::config_ = nullptr;
-std::shared_ptr<RemoveInCollisionGoalsSucessService>
+std::shared_ptr<RemoveInCollisionGoalsSuccessService>
 RemoveInCollisionGoalsTestFixture::success_server_ = nullptr;
 std::shared_ptr<RemoveInCollisionGoalsFailureService>
 RemoveInCollisionGoalsTestFixture::failure_server_ = nullptr;
@@ -237,7 +237,7 @@ int main(int argc, char ** argv)
 
   // initialize service and spin on new thread
   RemoveInCollisionGoalsTestFixture::success_server_ =
-    std::make_shared<RemoveInCollisionGoalsSucessService>();
+    std::make_shared<RemoveInCollisionGoalsSuccessService>();
   std::thread success_server_thread([]() {
       rclcpp::spin(RemoveInCollisionGoalsTestFixture::success_server_);
     });

@@ -167,7 +167,7 @@ return true if `isCharging` returns true.
 The `SimpleChargingDock` and `SimpleNonChargingDock` plugins are examples with many common options which may be fully functional for
 some robots.
 
-`getStagingPose` applys a parameterized translational and rotational offset to the dock pose to obtain the staging pose.
+`getStagingPose` applies a parameterized translational and rotational offset to the dock pose to obtain the staging pose.
 
 `getRefinedPose` can be used in two ways. 
 1. A blind approach where the returned dock pose will simply be equal to whatever was passed in from the dock database. This may work with a reduced success rate on a real robot (due to global localization error), but is useful for initial testing and simulation.
@@ -194,7 +194,7 @@ For debugging purposes, there are several publishers which can be used with RVIZ
 | Parameter                    | Description                                             | Type   | Default   |
 |------------------------------|---------------------------------------------------------|--------|-----------|
 | controller_frequency         | Control frequency (Hz) for vision-control loop          | double | 50.0      |
-| initial_perception_timeout   | Timeout (s) to wait to obtain intial perception of the dock | double | 5.0   |
+| initial_perception_timeout   | Timeout (s) to wait to obtain initial perception of the dock | double | 5.0   |
 | wait_charge_timeout          | Timeout (s) to wait to see if charging starts after docking  | double | 5.0  |
 | dock_approach_timeout        | timeout (s) to attempt vision-control approach loop    | double |  30.0      |
 | undock_linear_tolerance      | Tolerance (m) to exit the undocking control loop at staging pose    | double |  0.05      |

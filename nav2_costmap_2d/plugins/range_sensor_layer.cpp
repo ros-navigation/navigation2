@@ -523,7 +523,7 @@ void RangeSensorLayer::updateCosts(
 
 void RangeSensorLayer::reset()
 {
-  RCLCPP_DEBUG(logger_, "Reseting range sensor layer...");
+  RCLCPP_DEBUG(logger_, "Resetting range sensor layer...");
   deactivate();
   resetMaps();
   was_reset_ = true;

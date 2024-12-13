@@ -31,7 +31,7 @@ namespace nav2_util
  * purpose. However, only alphanumeric characters and '_' are allowed in node
  * names. This function replaces any invalid character with a '_'
  *
- * \param[in] potential_node_name Potential name but possibly with invalid charaters.
+ * \param[in] potential_node_name Potential name but possibly with invalid characters.
  * \return A copy of the input string but with non-alphanumeric characters replaced with '_'
  */
 std::string sanitize_node_name(const std::string & potential_node_name);

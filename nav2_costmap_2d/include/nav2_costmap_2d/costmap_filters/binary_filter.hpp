@@ -109,7 +109,7 @@ private:
 
   nav_msgs::msg::OccupancyGrid::SharedPtr filter_mask_;
 
-  std::string global_frame_;  // Frame of currnet layer (master_grid)
+  std::string global_frame_;  // Frame of current layer (master_grid)
 
   double base_, multiplier_;
   // Filter values higher than this threshold,

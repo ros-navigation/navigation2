@@ -430,7 +430,7 @@ Costmap2DROS::getParameters()
     filter_types_[i] = nav2_util::get_plugin_type_param(node, filter_names_[i]);
   }
 
-  // 2. The map publish frequency cannot be 0 (to avoid a divde-by-zero)
+  // 2. The map publish frequency cannot be 0 (to avoid a divide-by-zero)
   if (map_publish_frequency_ > 0) {
     publish_cycle_ = rclcpp::Duration::from_seconds(1 / map_publish_frequency_);
   } else {

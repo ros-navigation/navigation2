@@ -64,7 +64,7 @@ void Source::getCommonParameters(std::string & source_topic)
 
   nav2_util::declare_parameter_if_not_declared(
     node, source_name_ + ".topic",
-    rclcpp::ParameterValue("scan"));  // Set deafult topic for laser scanner
+    rclcpp::ParameterValue("scan"));  // Set default topic for laser scanner
   source_topic = node->get_parameter(source_name_ + ".topic").as_string();
 
   nav2_util::declare_parameter_if_not_declared(
