@@ -27,7 +27,7 @@
 #include "nav2_costmap_2d/observation_buffer.hpp"
 #include "nav2_costmap_2d/inflation_layer.hpp"
 #include "tf2_ros/message_filter.h"
-#include "message_filters/subscriber.hpp"
+#include "message_filters/subscriber.h"
 #include "pluginlib/class_loader.hpp"
 
 using nav2_costmap_2d::LETHAL_OBSTACLE;
