@@ -251,7 +251,7 @@ TEST(GracefulControllerTest, dynamicParameters) {
 
   // Set initial rotation and allow backward to true so it warns and allow backward is false
   nav2_util::declare_parameter_if_not_declared(
-    node, "test.initial_rotation", rclcpp::ParameterValue(true));
+    node, "test.initial_rotation_tolerance", rclcpp::ParameterValue(0.25));
   nav2_util::declare_parameter_if_not_declared(
     node, "test.allow_backward", rclcpp::ParameterValue(true));
 
@@ -828,6 +828,8 @@ TEST(GracefulControllerTest, computeVelocityCommandRotate) {
     node, "test.v_angular_max", rclcpp::ParameterValue(1.0));
   nav2_util::declare_parameter_if_not_declared(
     node, "test.rotation_scaling_factor", rclcpp::ParameterValue(0.5));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "test.add_orientations", rclcpp::ParameterValue(true));
 
   // Create a costmap of 10x10 meters
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
@@ -1137,8 +1139,8 @@ TEST(GracefulControllerTest, computeVelocityCommandFinal) {
   // Check results: the robot should do a final rotation near the target.
   // So, linear velocity should be zero and angular velocity should be a positive value below 0.5.
   EXPECT_EQ(cmd_vel.twist.linear.x, 0.0);
-  EXPECT_GE(cmd_vel.twist.angular.x, 0.0);
-  EXPECT_LE(cmd_vel.twist.angular.x, 0.5);
+  EXPECT_GT(cmd_vel.twist.angular.z, 0.0);
+  EXPECT_LE(cmd_vel.twist.angular.z, 0.5);
 }
 
 int main(int argc, char ** argv)
