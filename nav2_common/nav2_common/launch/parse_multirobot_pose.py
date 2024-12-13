@@ -33,7 +33,7 @@ class ParseMultiRobotPose:
         `target_argument` shall be 'robots'.
         Then, this will parse a string value for `robots` argument.
 
-        Each robot name which is corresponding to namespace and pose of it will be separated by `;`.
+        Each robot name which corresponds to namespace and pose of it will be separated by `;`.
         The pose consists of x, y and yaw with YAML format.
 
         :param: target argument name to parse
