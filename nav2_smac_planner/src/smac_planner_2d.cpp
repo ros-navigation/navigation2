@@ -115,7 +115,7 @@ void SmacPlanner2D::configure(
   _collision_checker.setFootprint(
     costmap_ros->getRobotFootprint(),
     true /*for 2D, most use radius*/,
-    0.0 /*for 2D cost at inscribed isn't relevent*/);
+    0.0 /*for 2D cost at inscribed isn't relevant*/);
 
   // Initialize A* template
   _a_star = std::make_unique<AStarAlgorithm<Node2D>>(_motion_model, _search_info);

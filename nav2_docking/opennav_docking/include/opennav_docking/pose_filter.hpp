@@ -30,7 +30,7 @@ public:
   /**
    * @brief Create a pose filter instance.
    * @param coef Filtering coefficient. Valid range is 0-1, where 0 means take the new measurement
-   * @param timeout If time between measurments exceeds this value, take the new measurement.
+   * @param timeout If time between measurements exceeds this value, take the new measurement.
    */
   PoseFilter(double coef, double timeout);
 

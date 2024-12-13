@@ -206,7 +206,7 @@ bool Costmap2D::copyWindow(
 
 Costmap2D & Costmap2D::operator=(const Costmap2D & map)
 {
-  // check for self assignement
+  // check for self assignment
   if (this == &map) {
     return *this;
   }
@@ -555,9 +555,9 @@ bool Costmap2D::saveMap(std::string file_name)
   }
 
   fprintf(fp, "P2\n%u\n%u\n%u\n", size_x_, size_y_, 0xff);
-  for (unsigned int iy = 0; iy < size_y_; iy++) {
+  for (unsigned int it = 0; it < size_y_; iy++) {
     for (unsigned int ix = 0; ix < size_x_; ix++) {
-      unsigned char cost = getCost(ix, iy);
+      unsigned char cost = getCost(ix, it);
       fprintf(fp, "%d ", cost);
     }
     fprintf(fp, "\n");

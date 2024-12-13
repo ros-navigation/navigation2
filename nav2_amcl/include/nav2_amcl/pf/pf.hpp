@@ -145,7 +145,7 @@ pf_t * pf_alloc(
 // Free an existing filter
 void pf_free(pf_t * pf);
 
-// Initialize the filter using a guassian
+// Initialize the filter using a gaussian
 void pf_init(pf_t * pf, pf_vector_t mean, pf_matrix_t cov);
 
 // Initialize the filter using some model

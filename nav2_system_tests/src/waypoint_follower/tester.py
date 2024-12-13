@@ -242,7 +242,7 @@ def main(argv=sys.argv[1:]):
         == ComputePathToPose.Result().GOAL_OUTSIDE_MAP
     )
 
-    # stop on failure test with bogous waypoint
+    # stop on failure test with bogus waypoint
     test.setStopFailureParam(True)
     bwps = [[-0.52, -0.54], [100.0, 100.0], [0.58, 0.52]]
     test.setWaypoints(bwps)

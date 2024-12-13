@@ -70,7 +70,7 @@ public:
 private:
   rclcpp::Node::SharedPtr node_;
   rclcpp::Client<nav2_msgs::srv::IsPathValid>::SharedPtr client_;
-  // The timeout value while waiting for a responce from the
+  // The timeout value while waiting for a response from the
   // is path valid service
   std::chrono::milliseconds server_timeout_;
 };
