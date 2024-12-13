@@ -36,6 +36,7 @@
 #include "nav2_voxel_grid/voxel_grid.hpp"
 #include "nav2_msgs/msg/voxel_grid.hpp"
 #include "nav2_util/execution_timer.hpp"
+#include "nav2_util/node_utils.hpp"
 
 static inline void mapToWorld3D(
   const unsigned int mx,

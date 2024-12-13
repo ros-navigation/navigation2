@@ -23,6 +23,7 @@
 
 #include "utils/test_behavior_tree_fixture.hpp"
 #include "nav2_behavior_tree/plugins/condition/is_battery_low_condition.hpp"
+#include "nav2_util/node_utils.hpp"
 
 class IsBatteryLowConditionTestFixture : public ::testing::Test
 {

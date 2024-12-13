@@ -46,6 +46,7 @@
 #include "nav2_msgs/msg/voxel_grid.hpp"
 #include "nav2_voxel_grid/voxel_grid.hpp"
 #include "nav2_util/execution_timer.hpp"
+#include "nav2_util/node_utils.hpp"
 
 struct Cell
 {

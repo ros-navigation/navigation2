@@ -34,6 +34,7 @@
 #include "nav2_collision_monitor/types.hpp"
 #include "nav2_collision_monitor/polygon.hpp"
 #include "nav2_collision_monitor/circle.hpp"
+#include "nav2_util/node_utils.hpp"
 
 using namespace std::chrono_literals;
 
