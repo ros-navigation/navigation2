@@ -363,6 +363,11 @@ geometry_msgs::msg::Twist GracefulController::rotateToTarget(double angle_to_tar
   geometry_msgs::msg::Twist vel;
   vel.linear.x = 0.0;
   vel.angular.z = params_->rotation_scaling_factor * angle_to_target * params_->v_angular_max;
+  if (vel.angular.z < 0.0) {
+    vel.angular.z = std::min(vel.angular.z, -params_->v_angular_min_in_place);
+  } else {
+    vel.angular.z = std::max(vel.angular.z, params_->v_angular_min_in_place);
+  }
   return vel;
 }
 

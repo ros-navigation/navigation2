@@ -55,6 +55,8 @@ ParameterHandler::ParameterHandler(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".v_angular_max", rclcpp::ParameterValue(1.0));
   declare_parameter_if_not_declared(
+    node, plugin_name_ + ".v_angular_min_in_place", rclcpp::ParameterValue(0.25));
+  declare_parameter_if_not_declared(
     node, plugin_name_ + ".slowdown_radius", rclcpp::ParameterValue(1.5));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".initial_rotation_tolerance", rclcpp::ParameterValue(0.25));
@@ -86,6 +88,8 @@ ParameterHandler::ParameterHandler(
   params_.v_linear_max_initial = params_.v_linear_max;
   node->get_parameter(plugin_name_ + ".v_angular_max", params_.v_angular_max);
   params_.v_angular_max_initial = params_.v_angular_max;
+  node->get_parameter(
+    plugin_name_ + ".v_angular_min_in_place", params_.v_angular_min_in_place);
   node->get_parameter(plugin_name_ + ".slowdown_radius", params_.slowdown_radius);
   node->get_parameter(
     plugin_name_ + ".initial_rotation_tolerance", params_.initial_rotation_tolerance);
@@ -146,6 +150,8 @@ ParameterHandler::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
       } else if (name == plugin_name_ + ".v_angular_max") {
         params_.v_angular_max = parameter.as_double();
         params_.v_angular_max_initial = params_.v_angular_max;
+      } else if (name == plugin_name_ + ".v_angular_min_in_place") {
+        params_.v_angular_min_in_place = parameter.as_double();
       } else if (name == plugin_name_ + ".slowdown_radius") {
         params_.slowdown_radius = parameter.as_double();
       } else if (name == plugin_name_ + ".initial_rotation_tolerance") {
