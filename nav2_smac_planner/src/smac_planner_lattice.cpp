@@ -333,11 +333,7 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
     std::floor(my_start) == std::floor(my_goal))
   {
     pose.pose = start.pose;
-    // if we have a different start and goal orientation, set the unique path pose to the goal
-    // orientation
-    if (start.pose.orientation != goal.pose.orientation) {
-      pose.pose.orientation = goal.pose.orientation;
-    }
+    pose.pose.orientation = goal.pose.orientation;
     plan.poses.push_back(pose);
     return plan;
   }
