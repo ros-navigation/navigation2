@@ -153,11 +153,9 @@ protected:
 
   /**
    * @brief Control law requires proper orientations, not all planners provide them
-   * @param path Path to add orientations into
-   * @returns Path with orientations.
+   * @param path Path to add orientations into, if required
    */
-  std::vector<geometry_msgs::msg::PoseStamped> addOrientations(
-    const std::vector<geometry_msgs::msg::PoseStamped> & path);
+  void validateOrientations(std::vector<geometry_msgs::msg::PoseStamped> & path);
 
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::string plugin_name_;
@@ -169,7 +167,9 @@ protected:
   Parameters * params_;
   double goal_dist_tolerance_;
   bool goal_reached_;
-  bool has_new_path_;
+
+  // True from the time a new path arrives until we have completed an initial rotation
+  bool do_initial_rotation_;
 
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> transformed_plan_pub_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> local_plan_pub_;

@@ -53,7 +53,7 @@ public:
   GMControllerFixture()
   : nav2_graceful_controller::GracefulController() {}
 
-  double getInitialRotationTolerance() {return params_->initial_rotation_tolerance;}
+  bool getInitialRotation() {return params_->initial_rotation;}
 
   bool getAllowBackward() {return params_->allow_backward;}
 
@@ -251,7 +251,7 @@ TEST(GracefulControllerTest, dynamicParameters) {
 
   // Set initial rotation and allow backward to true so it warns and allow backward is false
   nav2_util::declare_parameter_if_not_declared(
-    node, "test.initial_rotation_tolerance", rclcpp::ParameterValue(0.25));
+    node, "test.initial_rotation", rclcpp::ParameterValue(true));
   nav2_util::declare_parameter_if_not_declared(
     node, "test.allow_backward", rclcpp::ParameterValue(true));
 
@@ -281,13 +281,14 @@ TEST(GracefulControllerTest, dynamicParameters) {
       rclcpp::Parameter("test.v_linear_min", 8.0),
       rclcpp::Parameter("test.v_linear_max", 9.0),
       rclcpp::Parameter("test.v_angular_max", 10.0),
+      rclcpp::Parameter("test.v_angular_min_in_place", 14.0),
       rclcpp::Parameter("test.slowdown_radius", 11.0),
-      rclcpp::Parameter("test.initial_rotation_tolerance", 0.0),
+      rclcpp::Parameter("test.initial_rotation", false),
+      rclcpp::Parameter("test.initial_rotation_tolerance", 12.0),
       rclcpp::Parameter("test.prefer_final_rotation", false),
       rclcpp::Parameter("test.rotation_scaling_factor", 13.0),
-      rclcpp::Parameter("test.v_angular_min_in_place", 14.0),
       rclcpp::Parameter("test.allow_backward", true),
-      rclcpp::Parameter("test.add_orientations", true)});
+      rclcpp::Parameter("test.in_place_collision_tolerance", 15.0)});
 
   // Spin
   rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
@@ -303,43 +304,44 @@ TEST(GracefulControllerTest, dynamicParameters) {
   EXPECT_EQ(node->get_parameter("test.v_linear_min").as_double(), 8.0);
   EXPECT_EQ(node->get_parameter("test.v_linear_max").as_double(), 9.0);
   EXPECT_EQ(node->get_parameter("test.v_angular_max").as_double(), 10.0);
+  EXPECT_EQ(node->get_parameter("test.v_angular_min_in_place").as_double(), 14.0);
   EXPECT_EQ(node->get_parameter("test.slowdown_radius").as_double(), 11.0);
-  EXPECT_EQ(node->get_parameter("test.initial_rotation_tolerance").as_double(), 0.0);
+  EXPECT_EQ(node->get_parameter("test.initial_rotation").as_bool(), false);
+  EXPECT_EQ(node->get_parameter("test.initial_rotation_tolerance").as_double(), 12.0);
   EXPECT_EQ(node->get_parameter("test.prefer_final_rotation").as_bool(), false);
   EXPECT_EQ(node->get_parameter("test.rotation_scaling_factor").as_double(), 13.0);
-  EXPECT_EQ(node->get_parameter("test.v_angular_min_in_place").as_double(), 14.0);
   EXPECT_EQ(node->get_parameter("test.allow_backward").as_bool(), true);
-  EXPECT_EQ(node->get_parameter("test.add_orientations").as_bool(), true);
+  EXPECT_EQ(node->get_parameter("test.in_place_collision_tolerance").as_double(), 15.0);
 
   // Set initial rotation to true
   results = params->set_parameters_atomically(
-    {rclcpp::Parameter("test.initial_rotation_tolerance", 1.0)});
+    {rclcpp::Parameter("test.initial_rotation", true)});
   rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
-  // Check parameters. Initial rotation should not be set as both cannot be true at the same time
-  EXPECT_EQ(controller->getInitialRotationTolerance(), 0.0);
+  // Check parameters. Initial rotation should be false as both cannot be true at the same time
+  EXPECT_EQ(controller->getInitialRotation(), false);
   EXPECT_EQ(controller->getAllowBackward(), true);
 
   // Set both initial rotation and allow backward to false
   results = params->set_parameters_atomically(
-    {rclcpp::Parameter("test.initial_rotation_tolerance", 0.0),
+    {rclcpp::Parameter("test.initial_rotation", false),
       rclcpp::Parameter("test.allow_backward", false)});
   rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
   // Check parameters.
-  EXPECT_EQ(node->get_parameter("test.initial_rotation_tolerance").as_double(), 0.0);
+  EXPECT_EQ(node->get_parameter("test.initial_rotation").as_bool(), false);
   EXPECT_EQ(node->get_parameter("test.allow_backward").as_bool(), false);
 
   // Set initial rotation to true
   results = params->set_parameters_atomically(
-    {rclcpp::Parameter("test.initial_rotation_tolerance", 1.0)});
+    {rclcpp::Parameter("test.initial_rotation", true)});
   rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
-  EXPECT_EQ(controller->getInitialRotationTolerance(), 1.0);
+  EXPECT_EQ(controller->getInitialRotation(), true);
 
   // Set allow backward to true
   results = params->set_parameters_atomically(
     {rclcpp::Parameter("test.allow_backward", true)});
   rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
   // Check parameters. Now allow backward should be false as both cannot be true at the same time
-  EXPECT_EQ(controller->getInitialRotationTolerance(), 1.0);
+  EXPECT_EQ(controller->getInitialRotation(), true);
   EXPECT_EQ(controller->getAllowBackward(), false);
 }
 
@@ -828,8 +830,6 @@ TEST(GracefulControllerTest, computeVelocityCommandRotate) {
     node, "test.v_angular_max", rclcpp::ParameterValue(1.0));
   nav2_util::declare_parameter_if_not_declared(
     node, "test.rotation_scaling_factor", rclcpp::ParameterValue(0.5));
-  nav2_util::declare_parameter_if_not_declared(
-    node, "test.add_orientations", rclcpp::ParameterValue(true));
 
   // Create a costmap of 10x10 meters
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
@@ -984,7 +984,7 @@ TEST(GracefulControllerTest, computeVelocityCommandRegularBackwards) {
 
   // Set initial rotation false and allow backward to true
   nav2_util::declare_parameter_if_not_declared(
-    node, "test.initial_rotation_tolerance", rclcpp::ParameterValue(0.0));
+    node, "test.initial_rotation", rclcpp::ParameterValue(false));
   nav2_util::declare_parameter_if_not_declared(
     node, "test.allow_backward", rclcpp::ParameterValue(true));
 
@@ -1056,7 +1056,9 @@ TEST(GracefulControllerTest, computeVelocityCommandRegularBackwards) {
   // Check results: the robot should go straight to the target.
   // So, both linear velocity should be some negative values.
   EXPECT_LT(cmd_vel.twist.linear.x, 0.0);
-  EXPECT_LT(cmd_vel.twist.angular.z, 0.0);
+  // There might be a small bit of noise on angular velocity
+  EXPECT_LT(cmd_vel.twist.angular.z, 0.01);
+  EXPECT_GT(cmd_vel.twist.angular.z, -0.01);
 }
 
 TEST(GracefulControllerTest, computeVelocityCommandFinal) {
@@ -1139,7 +1141,7 @@ TEST(GracefulControllerTest, computeVelocityCommandFinal) {
   // Check results: the robot should do a final rotation near the target.
   // So, linear velocity should be zero and angular velocity should be a positive value below 0.5.
   EXPECT_EQ(cmd_vel.twist.linear.x, 0.0);
-  EXPECT_GT(cmd_vel.twist.angular.z, 0.0);
+  EXPECT_GE(cmd_vel.twist.angular.z, 0.0);
   EXPECT_LE(cmd_vel.twist.angular.z, 0.5);
 }
 

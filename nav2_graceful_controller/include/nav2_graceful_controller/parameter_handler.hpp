@@ -47,11 +47,12 @@ struct Parameters
   double v_angular_max_initial;
   double v_angular_min_in_place;
   double slowdown_radius;
+  bool initial_rotation;
   double initial_rotation_tolerance;
   bool prefer_final_rotation;
   double rotation_scaling_factor;
   bool allow_backward;
-  bool add_orientations;
+  double in_place_collision_tolerance;
 };
 
 /**

@@ -136,10 +136,8 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
   auto transformed_plan = path_handler_->transformGlobalPlan(
     pose, params_->max_robot_pose_search_dist);
 
-  // Add proper orientations to plan, if desired
-  if (params_->add_orientations) {
-    transformed_plan.poses = addOrientations(transformed_plan.poses);
-  }
+  // Add proper orientations to plan, if needed
+  validateOrientations(transformed_plan.poses);
 
   // Publish plan for visualization
   transformed_plan_pub_->publish(transformed_plan);
@@ -155,7 +153,7 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
       logger_, "Could not transform %s to %s: %s",
       costmap_ros_->getBaseFrameID().c_str(), costmap_ros_->getGlobalFrameID().c_str(),
       ex.what());
-    throw nav2_core::NoValidControl("Could not transform");
+    throw ex;
   }
 
   // Compute distance to goal as the path's integrated distance to account for path curvatures
@@ -166,10 +164,9 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
     goal_reached_ = true;
     double angle_to_goal = tf2::getYaw(transformed_plan.poses.back().pose.orientation);
     // Check for collisions between our current pose and goal pose
-    size_t num_steps = fabs(angle_to_goal) / 0.1;
+    size_t num_steps = fabs(angle_to_goal) / params_->in_place_collision_tolerance;
     // Need to check at least the end pose
     num_steps = std::max(static_cast<size_t>(1), num_steps);
-    // If we fail to generate an in-place rotation, maybe we need to move along path a bit more
     bool collision_free = true;
     for (size_t i = 1; i <= num_steps; ++i) {
       double step = static_cast<double>(i) / static_cast<double>(num_steps);
@@ -257,7 +254,7 @@ void GracefulController::setPlan(const nav_msgs::msg::Path & path)
 {
   path_handler_->setPlan(path);
   goal_reached_ = false;
-  has_new_path_ = true;
+  do_initial_rotation_ = true;
 }
 
 void GracefulController::setSpeedLimit(
@@ -299,12 +296,12 @@ bool GracefulController::simulateTrajectory(
   next_pose.pose.orientation.w = 1.0;
 
   // Should we simulate rotation initially?
-  bool sim_initial_rotation = has_new_path_ && (params_->initial_rotation_tolerance > 0.0);
+  bool sim_initial_rotation = do_initial_rotation_ && params_->initial_rotation;
   double angle_to_target =
     std::atan2(motion_target.pose.position.y, motion_target.pose.position.x);
   if (fabs(angle_to_target) < params_->initial_rotation_tolerance) {
     sim_initial_rotation = false;
-    has_new_path_ = false;
+    do_initial_rotation_ = false;
   }
 
   double distance = std::numeric_limits<double>::max();
@@ -370,11 +367,8 @@ geometry_msgs::msg::Twist GracefulController::rotateToTarget(double angle_to_tar
   geometry_msgs::msg::Twist vel;
   vel.linear.x = 0.0;
   vel.angular.z = params_->rotation_scaling_factor * angle_to_target * params_->v_angular_max;
-  if (vel.angular.z < 0.0) {
-    vel.angular.z = std::min(vel.angular.z, -params_->v_angular_min_in_place);
-  } else {
-    vel.angular.z = std::max(vel.angular.z, params_->v_angular_min_in_place);
-  }
+  vel.angular.z = std::copysign(1.0, vel.angular.z) * std::min(abs(vel.angular.z),
+      params_->v_angular_min_in_place);
   return vel;
 }
 
@@ -429,31 +423,26 @@ void GracefulController::computeDistanceAlongPath(
   }
 }
 
-std::vector<geometry_msgs::msg::PoseStamped> GracefulController::addOrientations(
-  const std::vector<geometry_msgs::msg::PoseStamped> & path)
+void GracefulController::validateOrientations(
+  std::vector<geometry_msgs::msg::PoseStamped> & path)
 {
-  std::vector<geometry_msgs::msg::PoseStamped> oriented_path;
-  oriented_path.resize(path.size());
-  if (path.empty()) {
-    // This really shouldn't happen
-    return oriented_path;
+  // This really shouldn't happen
+  if (path.empty()) {return;}
+
+  // Check if we actually need to add orientations
+  for (size_t i = 0; i < path.size() - 1; ++i) {
+    if (tf2::getYaw(path[i].pose.orientation) != 0.0) {return;}
   }
 
-  // The last pose will already be oriented since it is our goal
-  oriented_path.back() = path.back();
-
   // For each pose, point at the next one
-  for (size_t i = 0; i < oriented_path.size() - 1; ++i) {
-    // XY will be unchanged
-    oriented_path[i] = path[i];
+  // NOTE: control loop will handle reversing logic
+  for (size_t i = 0; i < path.size() - 1; ++i) {
     // Get relative yaw angle
     double dx = path[i + 1].pose.position.x - path[i].pose.position.x;
     double dy = path[i + 1].pose.position.y - path[i].pose.position.y;
     double yaw = std::atan2(dy, dx);
-    oriented_path[i].pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(yaw);
+    path[i].pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(yaw);
   }
-
-  return oriented_path;
 }
 
 }  // namespace nav2_graceful_controller

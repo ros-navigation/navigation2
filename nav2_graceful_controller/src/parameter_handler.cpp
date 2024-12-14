@@ -59,6 +59,8 @@ ParameterHandler::ParameterHandler(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".slowdown_radius", rclcpp::ParameterValue(1.5));
   declare_parameter_if_not_declared(
+    node, plugin_name_ + ".initial_rotation", rclcpp::ParameterValue(true));
+  declare_parameter_if_not_declared(
     node, plugin_name_ + ".initial_rotation_tolerance", rclcpp::ParameterValue(0.25));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".prefer_final_rotation", rclcpp::ParameterValue(true));
@@ -67,7 +69,7 @@ ParameterHandler::ParameterHandler(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".allow_backward", rclcpp::ParameterValue(false));
   declare_parameter_if_not_declared(
-    node, plugin_name_ + ".add_orientations", rclcpp::ParameterValue(false));
+    node, plugin_name_ + ".in_place_collision_tolerance", rclcpp::ParameterValue(0.1));
 
   node->get_parameter(plugin_name_ + ".transform_tolerance", params_.transform_tolerance);
   node->get_parameter(plugin_name_ + ".min_lookahead", params_.min_lookahead);
@@ -93,14 +95,16 @@ ParameterHandler::ParameterHandler(
   node->get_parameter(
     plugin_name_ + ".v_angular_min_in_place", params_.v_angular_min_in_place);
   node->get_parameter(plugin_name_ + ".slowdown_radius", params_.slowdown_radius);
+  node->get_parameter(plugin_name_ + ".initial_rotation", params_.initial_rotation);
   node->get_parameter(
     plugin_name_ + ".initial_rotation_tolerance", params_.initial_rotation_tolerance);
   node->get_parameter(plugin_name_ + ".prefer_final_rotation", params_.prefer_final_rotation);
   node->get_parameter(plugin_name_ + ".rotation_scaling_factor", params_.rotation_scaling_factor);
   node->get_parameter(plugin_name_ + ".allow_backward", params_.allow_backward);
-  node->get_parameter(plugin_name_ + ".add_orientations", params_.add_orientations);
+  node->get_parameter(
+    plugin_name_ + ".in_place_collision_tolerance", params_.in_place_collision_tolerance);
 
-  if ((params_.initial_rotation_tolerance > 0.0) && params_.allow_backward) {
+  if (params_.initial_rotation && params_.allow_backward) {
     RCLCPP_WARN(
       logger_, "Initial rotation and allow backward parameters are both true, "
       "setting allow backward to false.");
@@ -158,29 +162,31 @@ ParameterHandler::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
       } else if (name == plugin_name_ + ".slowdown_radius") {
         params_.slowdown_radius = parameter.as_double();
       } else if (name == plugin_name_ + ".initial_rotation_tolerance") {
-        if ((parameter.as_double() > 0.0) && params_.allow_backward) {
-          RCLCPP_WARN(
-            logger_, "Initial rotation and allow backward cannot be combined, "
-            "rejecting parameter change.");
-          continue;
-        }
         params_.initial_rotation_tolerance = parameter.as_double();
       } else if (name == plugin_name_ + ".rotation_scaling_factor") {
         params_.rotation_scaling_factor = parameter.as_double();
+      } else if (name == plugin_name_ + ".in_place_collision_tolerance") {
+        params_.in_place_collision_tolerance = parameter.as_double();
       }
     } else if (type == ParameterType::PARAMETER_BOOL) {
-      if (name == plugin_name_ + ".prefer_final_rotation") {
+      if (name == plugin_name_ + ".initial_rotation") {
+        if (parameter.as_bool() && params_.allow_backward) {
+          RCLCPP_WARN(
+            logger_, "Initial rotation and allow backward parameters are both true, "
+            "rejecting parameter change.");
+          continue;
+        }
+        params_.initial_rotation = parameter.as_bool();
+      } else if (name == plugin_name_ + ".prefer_final_rotation") {
         params_.prefer_final_rotation = parameter.as_bool();
       } else if (name == plugin_name_ + ".allow_backward") {
-        if ((params_.initial_rotation_tolerance > 0.0) && parameter.as_bool()) {
+        if (params_.initial_rotation && parameter.as_bool()) {
           RCLCPP_WARN(
-            logger_, "Initial rotation and allow backward cannot be combined, "
+            logger_, "Initial rotation and allow backward parameters are both true, "
             "rejecting parameter change.");
           continue;
         }
         params_.allow_backward = parameter.as_bool();
-      } else if (name == plugin_name_ + ".add_orientations") {
-        params_.add_orientations = parameter.as_bool();
       }
     }
   }
