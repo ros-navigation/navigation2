@@ -258,7 +258,7 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
   pose.pose.orientation.z = 0.0;
   pose.pose.orientation.w = 1.0;
 
-  // Corner case of start and goal beeing on the same cell
+  // Corner case of start and goal being on the same cell
   if (std::floor(mx_start) == std::floor(mx_goal) && std::floor(my_start) == std::floor(my_goal)) {
     pose.pose = start.pose;
     // if we have a different start and goal orientation, set the unique path pose to the goal
@@ -268,6 +268,12 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
       pose.pose.orientation = goal.pose.orientation;
     }
     plan.poses.push_back(pose);
+
+    // Publish raw path for debug
+    if (_raw_plan_publisher->get_subscription_count() > 0) {
+      _raw_plan_publisher->publish(plan);
+    }
+
     return plan;
   }
 
