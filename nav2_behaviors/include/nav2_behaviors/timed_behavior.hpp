@@ -53,6 +53,7 @@ struct ResultStatus
 {
   Status status;
   uint16_t error_code{0};
+  std::string error_msg;
 };
 
 using namespace std::chrono_literals;  //NOLINT
@@ -224,10 +225,10 @@ protected:
 
     ResultStatus on_run_result = onRun(action_server_->get_current_goal());
     if (on_run_result.status != Status::SUCCEEDED) {
-      RCLCPP_INFO(
-        logger_,
-        "Initial checks failed for %s", behavior_name_.c_str());
       result->error_code = on_run_result.error_code;
+      result->error_msg = on_run_result.error_msg;
+      RCLCPP_INFO(logger_, "Initial checks failed for %s - %s", behavior_name_.c_str(),
+        on_run_result.error_msg.c_str());
       action_server_->terminate_current(result);
       return;
     }
@@ -271,9 +272,10 @@ protected:
           return;
 
         case Status::FAILED:
-          RCLCPP_WARN(logger_, "%s failed", behavior_name_.c_str());
-          result->total_elapsed_time = clock_->now() - start_time;
           result->error_code = on_cycle_update_result.error_code;
+          result->error_msg = behavior_name_ + " failed:" + on_cycle_update_result.error_msg;
+          RCLCPP_WARN(logger_, result->error_msg.c_str());
+          result->total_elapsed_time = clock_->now() - start_time;
           onActionCompletion(result);
           action_server_->terminate_current(result);
           return;
