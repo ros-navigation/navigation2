@@ -44,9 +44,9 @@ ParameterHandler::ParameterHandler(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".max_robot_pose_search_dist",
     rclcpp::ParameterValue(costmap_size_x / 2.0));
-  declare_parameter_if_not_declared(node, plugin_name_ + ".k_phi", rclcpp::ParameterValue(3.0));
-  declare_parameter_if_not_declared(node, plugin_name_ + ".k_delta", rclcpp::ParameterValue(2.0));
-  declare_parameter_if_not_declared(node, plugin_name_ + ".beta", rclcpp::ParameterValue(0.2));
+  declare_parameter_if_not_declared(node, plugin_name_ + ".k_phi", rclcpp::ParameterValue(2.0));
+  declare_parameter_if_not_declared(node, plugin_name_ + ".k_delta", rclcpp::ParameterValue(1.0));
+  declare_parameter_if_not_declared(node, plugin_name_ + ".beta", rclcpp::ParameterValue(0.4));
   declare_parameter_if_not_declared(node, plugin_name_ + ".lambda", rclcpp::ParameterValue(2.0));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".v_linear_min", rclcpp::ParameterValue(0.1));
@@ -69,7 +69,7 @@ ParameterHandler::ParameterHandler(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".allow_backward", rclcpp::ParameterValue(false));
   declare_parameter_if_not_declared(
-    node, plugin_name_ + ".in_place_collision_tolerance", rclcpp::ParameterValue(0.1));
+    node, plugin_name_ + ".in_place_collision_resolution", rclcpp::ParameterValue(0.1));
 
   node->get_parameter(plugin_name_ + ".transform_tolerance", params_.transform_tolerance);
   node->get_parameter(plugin_name_ + ".min_lookahead", params_.min_lookahead);
@@ -102,7 +102,7 @@ ParameterHandler::ParameterHandler(
   node->get_parameter(plugin_name_ + ".rotation_scaling_factor", params_.rotation_scaling_factor);
   node->get_parameter(plugin_name_ + ".allow_backward", params_.allow_backward);
   node->get_parameter(
-    plugin_name_ + ".in_place_collision_tolerance", params_.in_place_collision_tolerance);
+    plugin_name_ + ".in_place_collision_resolution", params_.in_place_collision_resolution);
 
   if (params_.initial_rotation && params_.allow_backward) {
     RCLCPP_WARN(
@@ -165,8 +165,8 @@ ParameterHandler::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
         params_.initial_rotation_tolerance = parameter.as_double();
       } else if (name == plugin_name_ + ".rotation_scaling_factor") {
         params_.rotation_scaling_factor = parameter.as_double();
-      } else if (name == plugin_name_ + ".in_place_collision_tolerance") {
-        params_.in_place_collision_tolerance = parameter.as_double();
+      } else if (name == plugin_name_ + ".in_place_collision_resolution") {
+        params_.in_place_collision_resolution = parameter.as_double();
       }
     } else if (type == ParameterType::PARAMETER_BOOL) {
       if (name == plugin_name_ + ".initial_rotation") {

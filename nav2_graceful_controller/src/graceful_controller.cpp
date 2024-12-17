@@ -164,7 +164,7 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
     goal_reached_ = true;
     double angle_to_goal = tf2::getYaw(transformed_plan.poses.back().pose.orientation);
     // Check for collisions between our current pose and goal pose
-    size_t num_steps = fabs(angle_to_goal) / params_->in_place_collision_tolerance;
+    size_t num_steps = fabs(angle_to_goal) / params_->in_place_collision_resolution;
     // Need to check at least the end pose
     num_steps = std::max(static_cast<size_t>(1), num_steps);
     bool collision_free = true;
@@ -430,7 +430,7 @@ void GracefulController::validateOrientations(
   if (path.empty()) {return;}
 
   // Check if we actually need to add orientations
-  for (size_t i = 0; i < path.size() - 1; ++i) {
+  for (size_t i = 1; i < path.size() - 1; ++i) {
     if (tf2::getYaw(path[i].pose.orientation) != 0.0) {return;}
   }
 

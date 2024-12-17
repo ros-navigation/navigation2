@@ -52,7 +52,7 @@ struct Parameters
   bool prefer_final_rotation;
   double rotation_scaling_factor;
   bool allow_backward;
-  double in_place_collision_tolerance;
+  double in_place_collision_resolution;
 };
 
 /**
