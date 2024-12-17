@@ -70,7 +70,7 @@ std::shared_ptr<Costmap2D> CostmapSubscriber::getCostmap()
 
 rclcpp::Time CostmapSubscriber::getTimestampLastCostmapUpdate()
 {
-  if (!costmap_received_) {
+  if (!isCostmapReceived()) {
     throw std::runtime_error("Costmap is not available");
   }
 
