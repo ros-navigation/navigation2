@@ -21,6 +21,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/twist.hpp"
+#include "std_msgs/msg/bool.hpp"
 
 #include "tf2/time.h"
 #include "tf2_ros/buffer.h"
@@ -111,7 +112,9 @@ protected:
    */
   bool getParameters(
     std::string & cmd_vel_in_topic,
-    std::string & cmd_vel_out_topic);
+    std::string & cmd_vel_out_topic,
+    std::string & obstacle_detection_topic,
+    double& obstacle_det_hz);
   /**
    * @brief Supporting routine creating and configuring all polygons
    * @param base_frame_id Robot base frame ID
@@ -178,9 +181,14 @@ protected:
    * @param robot_action Robot action to print
    * @param action_polygon Pointer to a polygon causing a selected action
    */
+
+  void publishAction(
+    const Action & robot_action) const;
+
+  void publishObstacleDetected() const;
+
   void printAction(
     const Action & robot_action, const std::shared_ptr<Polygon> action_polygon) const;
-
   /**
    * @brief Polygons publishing routine. Made for visualization.
    */
@@ -205,8 +213,16 @@ protected:
   /// @brief Output cmd_vel publisher
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_out_pub_;
 
+  /// @brief Obstacle detection flag publisher
+  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Bool>::SharedPtr obstacle_detected_pub_;
+
+  rclcpp::TimerBase::SharedPtr obstacle_publish_timer_;
+
+
   /// @brief Whether main routine is active
   bool process_active_;
+
+  mutable bool obstacle_detected_;
 
   /// @brief Previous robot action
   Action robot_action_prev_;

@@ -29,7 +29,7 @@ namespace nav2_collision_monitor
 
 CollisionMonitor::CollisionMonitor(const rclcpp::NodeOptions & options)
 : nav2_util::LifecycleNode("collision_monitor", "", options),
-  process_active_(false), robot_action_prev_{DO_NOTHING, {-1.0, -1.0, -1.0}},
+  process_active_(false), obstacle_detected_(false), robot_action_prev_{DO_NOTHING, {-1.0, -1.0, -1.0}},
   stop_stamp_{0, 0, get_clock()->get_clock_type()}, stop_pub_timeout_(1.0, 0.0)
 {
 }
@@ -55,9 +55,11 @@ CollisionMonitor::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   std::string cmd_vel_in_topic;
   std::string cmd_vel_out_topic;
+  std::string obstacle_detection_topic;
+  double obstacle_det_hz;
 
   // Obtaining ROS parameters
-  if (!getParameters(cmd_vel_in_topic, cmd_vel_out_topic)) {
+  if (!getParameters(cmd_vel_in_topic, cmd_vel_out_topic, obstacle_detection_topic, obstacle_det_hz )) {
     return nav2_util::CallbackReturn::FAILURE;
   }
 
@@ -66,6 +68,14 @@ CollisionMonitor::on_configure(const rclcpp_lifecycle::State & /*state*/)
     std::bind(&CollisionMonitor::cmdVelInCallback, this, std::placeholders::_1));
   cmd_vel_out_pub_ = this->create_publisher<geometry_msgs::msg::Twist>(
     cmd_vel_out_topic, 1);
+
+  obstacle_detected_pub_ = this->create_publisher<std_msgs::msg::Bool>(
+    obstacle_detection_topic, rclcpp::SystemDefaultsQoS());
+
+  // Start the timer to publish obstacle state at 30 Hz
+  obstacle_publish_timer_ = this->create_wall_timer(
+    std::chrono::milliseconds(static_cast<int>(1000.0 / obstacle_det_hz)), 
+    std::bind(&CollisionMonitor::publishObstacleDetected, this));
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -77,6 +87,7 @@ CollisionMonitor::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
   // Activating lifecycle publisher
   cmd_vel_out_pub_->on_activate();
+  obstacle_detected_pub_->on_activate();
 
   // Activating polygons
   for (std::shared_ptr<Polygon> polygon : polygons_) {
@@ -114,6 +125,8 @@ CollisionMonitor::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 
   // Deactivating lifecycle publishers
   cmd_vel_out_pub_->on_deactivate();
+  obstacle_detected_pub_->on_deactivate();
+  obstacle_publish_timer_.reset();
 
   // Destroying bond connection
   destroyBond();
@@ -182,7 +195,9 @@ void CollisionMonitor::publishVelocity(const Action & robot_action)
 
 bool CollisionMonitor::getParameters(
   std::string & cmd_vel_in_topic,
-  std::string & cmd_vel_out_topic)
+  std::string & cmd_vel_out_topic,
+  std::string & obstacle_detection_topic,
+  double& obstacle_det_hz)
 {
   std::string base_frame_id, odom_frame_id;
   tf2::Duration transform_tolerance;
@@ -196,6 +211,15 @@ bool CollisionMonitor::getParameters(
   nav2_util::declare_parameter_if_not_declared(
     node, "cmd_vel_out_topic", rclcpp::ParameterValue("cmd_vel"));
   cmd_vel_out_topic = get_parameter("cmd_vel_out_topic").as_string();
+
+  nav2_util::declare_parameter_if_not_declared(
+    node, "obstacle_detection_topic", rclcpp::ParameterValue("obstacle_detection"));
+  obstacle_detection_topic = get_parameter("obstacle_detection_topic").as_string();
+
+  nav2_util::declare_parameter_if_not_declared(
+    this, "obstacle_det_hz", rclcpp::ParameterValue(30.0)); 
+  obstacle_det_hz = get_parameter("obstacle_det_hz").as_double();
+
 
   nav2_util::declare_parameter_if_not_declared(
     node, "base_frame_id", rclcpp::ParameterValue("base_footprint"));
@@ -390,6 +414,7 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in)
 
   if (robot_action.action_type != robot_action_prev_.action_type) {
     // Report changed robot behavior
+    publishAction(robot_action);
     printAction(robot_action, action_polygon);
   }
 
@@ -465,6 +490,7 @@ void CollisionMonitor::printAction(
       get_logger(),
       "Robot to stop due to %s polygon",
       action_polygon->getName().c_str());
+    obstacle_detected_ = true;
   } else if (robot_action.action_type == SLOWDOWN) {
     RCLCPP_INFO(
       get_logger(),
@@ -480,7 +506,38 @@ void CollisionMonitor::printAction(
     RCLCPP_INFO(
       get_logger(),
       "Robot to continue normal operation");
+    obstacle_detected_ = false;
   }
+}
+
+void CollisionMonitor::publishObstacleDetected() const
+{
+  if (!obstacle_detected_pub_->is_activated()) {
+    RCLCPP_WARN(get_logger(), "Publisher is not activated, skipping publish.");
+    return;
+  }
+  std_msgs::msg::Bool obstacle_msg;
+  obstacle_msg.data = obstacle_detected_;
+  obstacle_detected_pub_->publish(obstacle_msg);
+
+  RCLCPP_DEBUG(get_logger(), "Publishing obstacle_detected: %s", obstacle_detected_ ? "true" : "false");
+}
+
+
+void CollisionMonitor::publishAction(
+  const Action & robot_action) const
+{
+  std_msgs::msg::Bool obstacle_msg;
+  if (robot_action.action_type == STOP) {
+    obstacle_detected_ = true;
+  } 
+  else {
+    obstacle_detected_ = false;
+  }
+
+  // Publish the updated obstacle_detected_ flag
+  obstacle_msg.data = obstacle_detected_;
+  obstacle_detected_pub_->publish(obstacle_msg);
 }
 
 void CollisionMonitor::publishPolygons() const
