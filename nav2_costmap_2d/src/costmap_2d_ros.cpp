@@ -538,7 +538,7 @@ Costmap2DROS::mapUpdateLoop(double frequency)
         auto map_current = isCurrent();
         if (map_current &&  // only update costmap if it's current
           ((last_publish_ + publish_cycle_ < current_time) ||  // publish_cycle_ is due
-          (current_time < last_publish_)))     // time has moved backwards, probably due to a switch to sim_time // NOLINT
+          (current_time < last_publish_)))  // time has moved backwards, probably due to a switch to sim_time // NOLINT
         {
           RCLCPP_DEBUG(get_logger(), "Publish costmap at %s", name_.c_str());
           costmap_publisher_->publishCostmap();
