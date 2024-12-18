@@ -548,8 +548,7 @@ Costmap2DROS::mapUpdateLoop(double frequency)
           }
 
           last_publish_ = current_time;
-        }
-        else if (!map_current) {
+        } else if (!map_current) {
           RCLCPP_WARN(get_logger(), "Costmap was not published because it`s not current");
         }
       }
