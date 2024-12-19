@@ -1,3 +1,5 @@
+add_subdirectory(regression)
+
 ament_add_gtest(test_execution_timer test_execution_timer.cpp)
 target_link_libraries(test_execution_timer ${library_name})
 
