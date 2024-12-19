@@ -1,6 +1,6 @@
 # Dev Containers
 
-This folder contains the necessary files to build and run development containers for the Navigation2 project. The containers are based on the ROS 2 Rolling distribution and include all necessary dependencies to build and run the Navigation2 stack.
+This folder contains the necessary files to build and run development containers for Nav2. The containers are based on the ROS 2 Rolling distribution and include all necessary dependencies to build and run the Nav2.
 
 ## Quick Start
 
