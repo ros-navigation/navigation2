@@ -183,6 +183,8 @@ nav_msgs::msg::Path ThetaStarPlanner::linearInterpolation(
     coordsW pt1 = raw_path[j];
     p1.pose.position.x = pt1.x;
     p1.pose.position.y = pt1.y;
+    p1.header.frame_id = global_frame_;
+    p1.header.stamp = clock_->now();
     pa.poses.push_back(p1);
 
     coordsW pt2 = raw_path[j + 1];
