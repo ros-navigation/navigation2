@@ -61,7 +61,7 @@ ParameterHandler::ParameterHandler(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".initial_rotation", rclcpp::ParameterValue(true));
   declare_parameter_if_not_declared(
-    node, plugin_name_ + ".initial_rotation_tolerance", rclcpp::ParameterValue(0.25));
+    node, plugin_name_ + ".initial_rotation_tolerance", rclcpp::ParameterValue(0.75));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".prefer_final_rotation", rclcpp::ParameterValue(true));
   declare_parameter_if_not_declared(
