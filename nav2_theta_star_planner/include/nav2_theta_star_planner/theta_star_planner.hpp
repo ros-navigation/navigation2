@@ -85,7 +85,7 @@ protected:
    * @param dist_bw_points is used to send in the interpolation_resolution (which has been set as the costmap resolution)
    * @return the final path with waypoints at a distance of the value of interpolation_resolution of each other
    */
-  static nav_msgs::msg::Path linearInterpolation(
+  nav_msgs::msg::Path linearInterpolation(
     const std::vector<coordsW> & raw_path,
     const double & dist_bw_points);
 
