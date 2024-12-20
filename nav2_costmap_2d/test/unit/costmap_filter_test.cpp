@@ -19,6 +19,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/occ_grid_values.hpp"
+#include "nav2_util/occ_grid_utils.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "geometry_msgs/msg/pose2_d.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
@@ -29,13 +30,6 @@ class CostmapFilterWrapper : public nav2_costmap_2d::CostmapFilter
 {
 public:
   CostmapFilterWrapper() {}
-
-  bool worldToMask(
-    nav_msgs::msg::OccupancyGrid::ConstSharedPtr filter_mask,
-    double wx, double wy, unsigned int & mx, unsigned int & my) const
-  {
-    return nav2_costmap_2d::CostmapFilter::worldToMask(filter_mask, wx, wy, mx, my);
-  }
 
   unsigned char getMaskCost(
     nav_msgs::msg::OccupancyGrid::ConstSharedPtr filter_mask,
@@ -82,19 +76,19 @@ TEST(CostmapFilter, testWorldToMask)
   CostmapFilterWrapper cf;
   unsigned int mx, my;
   // Point inside mask
-  ASSERT_TRUE(cf.worldToMask(mask, 4.0, 5.0, mx, my));
+  ASSERT_TRUE(nav2_util::worldToMap(mask, 4.0, 5.0, mx, my));
   ASSERT_EQ(mx, 1u);
   ASSERT_EQ(my, 2u);
   // Corner cases
-  ASSERT_TRUE(cf.worldToMask(mask, 3.0, 3.0, mx, my));
+  ASSERT_TRUE(nav2_util::worldToMap(mask, 3.0, 3.0, mx, my));
   ASSERT_EQ(mx, 0u);
   ASSERT_EQ(my, 0u);
-  ASSERT_TRUE(cf.worldToMask(mask, 5.9, 5.9, mx, my));
+  ASSERT_TRUE(nav2_util::worldToMap(mask, 5.9, 5.9, mx, my));
   ASSERT_EQ(mx, 2u);
   ASSERT_EQ(my, 2u);
   // Point outside mask
-  ASSERT_FALSE(cf.worldToMask(mask, 2.9, 2.9, mx, my));
-  ASSERT_FALSE(cf.worldToMask(mask, 6.0, 6.0, mx, my));
+  ASSERT_FALSE(nav2_util::worldToMap(mask, 2.9, 2.9, mx, my));
+  ASSERT_FALSE(nav2_util::worldToMap(mask, 6.0, 6.0, mx, my));
 }
 
 TEST(CostmapFilter, testGetMaskCost)
