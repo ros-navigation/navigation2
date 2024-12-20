@@ -461,6 +461,19 @@ TEST(GracefulControllerTest, rotateToTarget) {
   // Check results: it must be a negative rotation
   EXPECT_EQ(cmd_vel.linear.x, 0.0);
   EXPECT_EQ(cmd_vel.angular.z, -0.25);
+
+  // Set very high v_angular_min_in_place velocity
+  results = params->set_parameters_atomically(
+    {rclcpp::Parameter("test.v_angular_min_in_place", 1.0)});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+
+  // Set a new angle to target
+  angle_to_target = 0.5;
+  cmd_vel = controller->rotateToTarget(angle_to_target);
+
+  // Check results: positive velocity, at least as high as min_in_place
+  EXPECT_EQ(cmd_vel.linear.x, 0.0);
+  EXPECT_EQ(cmd_vel.angular.z, 1.0);
 }
 
 TEST(GracefulControllerTest, setSpeedLimit) {
