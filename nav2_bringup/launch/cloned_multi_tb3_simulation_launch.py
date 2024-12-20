@@ -15,47 +15,46 @@
 
 
 import os
-from pathlib import Path
 import tempfile
+from pathlib import Path
 
+import yaml
 from ament_index_python.packages import get_package_share_directory
-from launch import LaunchDescription
-from launch.actions import (
-    AppendEnvironmentVariable,
-    DeclareLaunchArgument,
-    ExecuteProcess,
-    GroupAction,
-    IncludeLaunchDescription,
-    LogInfo,
-    OpaqueFunction,
-    RegisterEventHandler,
-)
+from launch import LaunchContext, LaunchDescription
+from launch.actions import (AppendEnvironmentVariable, DeclareLaunchArgument,
+                            ExecuteProcess, GroupAction,
+                            IncludeLaunchDescription, LogInfo, OpaqueFunction,
+                            RegisterEventHandler)
 from launch.conditions import IfCondition
 from launch.event_handlers import OnShutdown
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, TextSubstitution
-from nav2_common.launch import ParseMultiRobotPose
 
 
-def generate_launch_description():
-    """
-    Bring up the multi-robots with given launch arguments.
+def parse_robots_argument(robots_arg: str):
+    robots_dict = {}
+    if robots_arg:
+        robots_list = robots_arg.split(";")
+        for robot in robots_list:
+            key, value = robot.split("=")
+            key = key.strip()
+            value = yaml.safe_load(value.strip())
+            value.setdefault("x", 0.0)
+            value.setdefault("y", 0.0)
+            value.setdefault("z", 0.0)
+            value.setdefault("roll", 0.0)
+            value.setdefault("pitch", 0.0)
+            value.setdefault("yaw", 0.0)
+            robots_dict[key] = value
+    return robots_dict
 
-    Launch arguments consist of robot name(which is namespace) and pose for initialization.
-    Keep general yaml format for pose information.
-    ex) robots:='robot1={x: 1.0, y: 1.0, yaw: 1.5707}; robot2={x: 1.0, y: 1.0, yaw: 1.5707}'
-    ex) robots:='robot3={x: 1.0, y: 1.0, z: 1.0, roll: 0.0, pitch: 1.5707, yaw: 1.5707};
-                 robot4={x: 1.0, y: 1.0, z: 1.0, roll: 0.0, pitch: 1.5707, yaw: 1.5707}'
-    """
-    # Get the launch directory
+
+def launch_setup(context: LaunchContext, *args, **kwargs):
     bringup_dir = get_package_share_directory('nav2_bringup')
     launch_dir = os.path.join(bringup_dir, 'launch')
-    sim_dir = get_package_share_directory('nav2_minimal_tb3_sim')
-
-    # Simulation settings
+    
+    # Simulation settings. On this example all robots are launched with the same settings
     world = LaunchConfiguration('world')
-
-    # On this example all robots are launched with the same settings
     map_yaml_file = LaunchConfiguration('map')
     params_file = LaunchConfiguration('params_file')
     autostart = LaunchConfiguration('autostart')
@@ -63,50 +62,7 @@ def generate_launch_description():
     use_robot_state_pub = LaunchConfiguration('use_robot_state_pub')
     use_rviz = LaunchConfiguration('use_rviz')
     log_settings = LaunchConfiguration('log_settings', default='true')
-
-    # Declare the launch arguments
-    declare_world_cmd = DeclareLaunchArgument(
-        'world',
-        default_value=os.path.join(sim_dir, 'worlds', 'tb3_sandbox.sdf.xacro'),
-        description='Full path to world file to load',
-    )
-
-    declare_map_yaml_cmd = DeclareLaunchArgument(
-        'map',
-        default_value=os.path.join(bringup_dir, 'maps', 'tb3_sandbox.yaml'),
-        description='Full path to map file to load',
-    )
-
-    declare_params_file_cmd = DeclareLaunchArgument(
-        'params_file',
-        default_value=os.path.join(
-            bringup_dir, 'params', 'nav2_params.yaml'
-        ),
-        description='Full path to the ROS2 parameters file to use for all launched nodes',
-    )
-
-    declare_autostart_cmd = DeclareLaunchArgument(
-        'autostart',
-        default_value='false',
-        description='Automatically startup the stacks',
-    )
-
-    declare_rviz_config_file_cmd = DeclareLaunchArgument(
-        'rviz_config',
-        default_value=os.path.join(bringup_dir, 'rviz', 'nav2_default_view.rviz'),
-        description='Full path to the RVIZ config file to use.',
-    )
-
-    declare_use_robot_state_pub_cmd = DeclareLaunchArgument(
-        'use_robot_state_pub',
-        default_value='True',
-        description='Whether to start the robot state publisher',
-    )
-
-    declare_use_rviz_cmd = DeclareLaunchArgument(
-        'use_rviz', default_value='True', description='Whether to start RVIZ'
-    )
-
+    
     # Start Gazebo with plugin providing the robot spawning service
     world_sdf = tempfile.mktemp(prefix='nav2_', suffix='.sdf')
     world_sdf_xacro = ExecuteProcess(
@@ -121,7 +77,8 @@ def generate_launch_description():
             OpaqueFunction(function=lambda _: os.remove(world_sdf))
         ]))
 
-    robots_list = ParseMultiRobotPose('robots').value()
+    robots_string = LaunchConfiguration('robots').perform(context)
+    robots_list = parse_robots_argument(robots_string)
 
     # Define commands for launching the navigation instances
     bringup_cmd_group = []
@@ -175,56 +132,99 @@ def generate_launch_description():
 
         bringup_cmd_group.append(group)
 
-    set_env_vars_resources = AppendEnvironmentVariable(
-        'GZ_SIM_RESOURCE_PATH', os.path.join(sim_dir, 'models'))
-    set_env_vars_resources2 = AppendEnvironmentVariable(
-            'GZ_SIM_RESOURCE_PATH',
-            str(Path(os.path.join(sim_dir)).parent.resolve()))
-
-    # Create the launch description and populate
-    ld = LaunchDescription()
-    ld.add_action(set_env_vars_resources)
-    ld.add_action(set_env_vars_resources2)
-
-    # Declare the launch options
-    ld.add_action(declare_world_cmd)
-    ld.add_action(declare_map_yaml_cmd)
-    ld.add_action(declare_params_file_cmd)
-    ld.add_action(declare_use_rviz_cmd)
-    ld.add_action(declare_autostart_cmd)
-    ld.add_action(declare_rviz_config_file_cmd)
-    ld.add_action(declare_use_robot_state_pub_cmd)
+    launch_actions = []
 
     # Add the actions to start gazebo, robots and simulations
-    ld.add_action(world_sdf_xacro)
-    ld.add_action(start_gazebo_cmd)
-    ld.add_action(remove_temp_sdf_file)
+    launch_actions.append(world_sdf_xacro)
+    launch_actions.append(start_gazebo_cmd)
+    launch_actions.append(remove_temp_sdf_file)
 
-    ld.add_action(LogInfo(msg=['number_of_robots=', str(len(robots_list))]))
+    launch_actions.append(LogInfo(msg=['number_of_robots=', str(len(robots_list))]))
 
-    ld.add_action(
+    launch_actions.append(
         LogInfo(condition=IfCondition(log_settings), msg=['map yaml: ', map_yaml_file])
     )
-    ld.add_action(
+    launch_actions.append(
         LogInfo(condition=IfCondition(log_settings), msg=['params yaml: ', params_file])
     )
-    ld.add_action(
+    launch_actions.append(
         LogInfo(
             condition=IfCondition(log_settings),
             msg=['rviz config file: ', rviz_config_file],
         )
     )
-    ld.add_action(
+    launch_actions.append(
         LogInfo(
             condition=IfCondition(log_settings),
             msg=['using robot state pub: ', use_robot_state_pub],
         )
     )
-    ld.add_action(
+    launch_actions.append(
         LogInfo(condition=IfCondition(log_settings), msg=['autostart: ', autostart])
     )
 
     for cmd in bringup_cmd_group:
-        ld.add_action(cmd)
+        launch_actions.append(cmd)
+    
+    return launch_actions
 
-    return ld
+
+def generate_launch_description():
+    """
+    Bring up the multi-robots with given launch arguments.
+
+    Launch arguments consist of robot name(which is namespace) and pose for initialization.
+    Keep general yaml format for pose information.
+    ex) robots:='robot1={x: 1.0, y: 1.0, yaw: 1.5707}; robot2={x: 1.0, y: 1.0, yaw: 1.5707}'
+    ex) robots:='robot3={x: 1.0, y: 1.0, z: 1.0, roll: 0.0, pitch: 1.5707, yaw: 1.5707};
+                 robot4={x: 1.0, y: 1.0, z: 1.0, roll: 0.0, pitch: 1.5707, yaw: 1.5707}'
+    """
+    # Get the launch directory
+    bringup_dir = get_package_share_directory('nav2_bringup')
+    sim_dir = get_package_share_directory('nav2_minimal_tb3_sim')
+
+    return LaunchDescription([
+        DeclareLaunchArgument(
+            'world',
+            default_value=os.path.join(sim_dir, 'worlds', 'tb3_sandbox.sdf.xacro'),
+            description='Full path to world file to load',
+        ),
+        DeclareLaunchArgument(
+            "robots",
+            description="Robot namespaces and poses (required). Example: robot1={x: 1.0, y: 1.0, yaw: 1.5707}; robot2={x: 1.0, y: 1.0, yaw: 1.5707}"
+        ),
+        DeclareLaunchArgument(
+            'map',
+            default_value=os.path.join(bringup_dir, 'maps', 'tb3_sandbox.yaml'),
+            description='Full path to map file to load',
+        ),
+        DeclareLaunchArgument(
+            'params_file',
+            default_value=os.path.join(
+                bringup_dir, 'params', 'nav2_params.yaml'
+            ),
+            description='Full path to the ROS2 parameters file to use for all launched nodes',
+        ),
+        DeclareLaunchArgument(
+            'autostart',
+            default_value='false',
+            description='Automatically startup the stacks',
+        ),
+        DeclareLaunchArgument(
+            'rviz_config',
+            default_value=os.path.join(bringup_dir, 'rviz', 'nav2_default_view.rviz'),
+            description='Full path to the RVIZ config file to use.',
+        ),
+        DeclareLaunchArgument(
+            'use_robot_state_pub',
+            default_value='True',
+            description='Whether to start the robot state publisher',
+        ),
+        DeclareLaunchArgument(
+            'use_rviz', default_value='True', description='Whether to start RVIZ'
+        ),
+        # Set the path to the simulation resources
+        AppendEnvironmentVariable('GZ_SIM_RESOURCE_PATH', os.path.join(sim_dir, 'models')),
+        AppendEnvironmentVariable('GZ_SIM_RESOURCE_PATH', str(Path(os.path.join(sim_dir)).parent.resolve())),
+        OpaqueFunction(function=launch_setup)
+    ])
