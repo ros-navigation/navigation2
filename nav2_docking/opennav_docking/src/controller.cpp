@@ -145,8 +145,7 @@ bool Controller::isTrajectoryCollisionFree(
 
   // Generate path
   double distance = std::numeric_limits<double>::max();
-  const double resolution = v_linear_max_ * simulation_time_step_;
-  unsigned int max_iter = static_cast<unsigned int>(projection_time_ / simulation_time_step_);
+  unsigned int max_iter = static_cast<unsigned int>(ceil(projection_time_ / simulation_time_step_));
 
   do{
     // Apply velocities to calculate next pose
@@ -184,7 +183,7 @@ bool Controller::isTrajectoryCollisionFree(
 
     // Check if we reach the goal
     distance = nav2_util::geometry_utils::euclidean_distance(target_pose, next_pose.pose);
-  }while(distance > resolution && trajectory.poses.size() < max_iter);
+  }while(distance > 1e-2 && trajectory.poses.size() < max_iter);
 
   trajectory_pub_->publish(trajectory);
 
