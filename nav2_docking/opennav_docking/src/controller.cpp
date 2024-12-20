@@ -183,7 +183,7 @@ bool Controller::isTrajectoryCollisionFree(
 
     // Check if we reach the goal
     distance = nav2_util::geometry_utils::euclidean_distance(target_pose, next_pose.pose);
-  }while(distance > 1e-2 && trajectory.poses.size() < max_iter);
+  }while(distance > 1e-2 || trajectory.poses.size() < max_iter);
 
   trajectory_pub_->publish(trajectory);
 
