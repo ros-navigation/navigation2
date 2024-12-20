@@ -103,10 +103,11 @@ TEST(CriticManagerTests, BasicCriticOperations)
   models::ControlSequence control_sequence;
   models::Trajectories generated_trajectories;
   models::Path path;
+  geometry_msgs::msg::Pose goal;
   xt::xtensor<float, 1> costs;
   float model_dt = 0.1;
   CriticData data =
-  {state, generated_trajectories, path, costs, model_dt, false, nullptr, nullptr,
+  {state, generated_trajectories, path, goal, costs, model_dt, false, nullptr, nullptr,
     std::nullopt, std::nullopt};
 
   data.fail_flag = true;
