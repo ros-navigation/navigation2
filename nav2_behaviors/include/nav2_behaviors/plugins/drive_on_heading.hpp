@@ -133,7 +133,35 @@ public:
     cmd_vel->header.frame_id = this->robot_base_frame_;
     cmd_vel->twist.linear.y = 0.0;
     cmd_vel->twist.angular.z = 0.0;
-    cmd_vel->twist.linear.x = command_speed_;
+    if (acceleration_limit_ <= 0.0 && deceleration_limit_ <= 0.0) {
+      cmd_vel->twist.linear.x = command_speed_;
+    } else {
+      double current_speed = last_vel_ ? *last_vel_ : 0.0;
+      auto remaining_distance = std::fabs(command_x_) - distance;
+      double min_feasible_speed = -std::numeric_limits<double>::infinity();
+      double max_feasible_speed = std::numeric_limits<double>::infinity();
+      if (deceleration_limit_ > 0.0) {
+        min_feasible_speed = current_speed - deceleration_limit_ / this->cycle_frequency_;
+      }
+      if (acceleration_limit_ > 0.0) {
+        max_feasible_speed = current_speed + acceleration_limit_ / this->cycle_frequency_;
+      }
+      cmd_vel->twist.linear.x = std::clamp(command_speed_, min_feasible_speed, max_feasible_speed);
+
+      // Check if we need to slow down to avoid overshooting
+      bool forward = command_speed_ > 0.0 ? true : false;
+      if ((forward && deceleration_limit_ > 0.0)) {
+        double max_vel_to_stop = std::sqrt(2.0 * deceleration_limit_ * remaining_distance);
+        if (max_vel_to_stop < cmd_vel->twist.linear.x) {
+          cmd_vel->twist.linear.x = max_vel_to_stop;
+        }
+      } else if ((!forward && acceleration_limit_ > 0.0)) {
+        double max_vel_to_stop = -std::sqrt(2.0 * acceleration_limit_ * remaining_distance);
+        if (max_vel_to_stop > cmd_vel->twist.linear.x) {
+          cmd_vel->twist.linear.x = max_vel_to_stop;
+        }
+      }
+    }
 
     geometry_msgs::msg::Pose2D pose2d;
     pose2d.x = current_pose.pose.position.x;
@@ -146,6 +174,8 @@ public:
       return ResultStatus{Status::FAILED, ActionT::Result::COLLISION_AHEAD};
     }
 
+    last_vel_ = std::make_shared<double>(cmd_vel->twist.linear.x);
+
     this->vel_pub_->publish(std::move(cmd_vel));
 
     return ResultStatus{Status::RUNNING, ActionT::Result::NONE};
@@ -156,6 +186,16 @@ public:
    * @return costmap resources needed
    */
   CostmapInfoType getResourceInfo() override {return CostmapInfoType::LOCAL;}
+
+  void onCleanup() override
+  {
+    last_vel_.reset();
+  }
+
+  void onActionCompletion() override
+  {
+    last_vel_.reset();
+  }
 
 protected:
   /**
@@ -214,6 +254,15 @@ protected:
       node,
       "simulate_ahead_time", rclcpp::ParameterValue(2.0));
     node->get_parameter("simulate_ahead_time", simulate_ahead_time_);
+
+    nav2_util::declare_parameter_if_not_declared(
+      node, this->behavior_name_ + ".acceleration_limit",
+      rclcpp::ParameterValue(0.0));
+    nav2_util::declare_parameter_if_not_declared(
+      node, this->behavior_name_ + ".deceleration_limit",
+      rclcpp::ParameterValue(0.0));
+    node->get_parameter(this->behavior_name_ + ".acceleration_limit", acceleration_limit_);
+    node->get_parameter(this->behavior_name_ + ".deceleration_limit", deceleration_limit_);
   }
 
   typename ActionT::Feedback::SharedPtr feedback_;
@@ -225,6 +274,9 @@ protected:
   rclcpp::Duration command_time_allowance_{0, 0};
   rclcpp::Time end_time_;
   double simulate_ahead_time_;
+  double acceleration_limit_;
+  double deceleration_limit_;
+  std::shared_ptr<double> last_vel_;
 };
 
 }  // namespace nav2_behaviors
