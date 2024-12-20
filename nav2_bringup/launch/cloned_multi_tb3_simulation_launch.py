@@ -15,10 +15,9 @@
 
 
 import os
-import tempfile
 from pathlib import Path
+import tempfile
 
-import yaml
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchContext, LaunchDescription
 from launch.actions import (AppendEnvironmentVariable, DeclareLaunchArgument,
@@ -29,22 +28,23 @@ from launch.conditions import IfCondition
 from launch.event_handlers import OnShutdown
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, TextSubstitution
+import yaml
 
 
 def parse_robots_argument(robots_arg: str):
     robots_dict = {}
     if robots_arg:
-        robots_list = robots_arg.split(";")
+        robots_list = robots_arg.split(';')
         for robot in robots_list:
-            key, value = robot.split("=")
+            key, value = robot.split('=')
             key = key.strip()
             value = yaml.safe_load(value.strip())
-            value.setdefault("x", 0.0)
-            value.setdefault("y", 0.0)
-            value.setdefault("z", 0.0)
-            value.setdefault("roll", 0.0)
-            value.setdefault("pitch", 0.0)
-            value.setdefault("yaw", 0.0)
+            value.setdefault('x', 0.0)
+            value.setdefault('y', 0.0)
+            value.setdefault('z', 0.0)
+            value.setdefault('roll', 0.0)
+            value.setdefault('pitch', 0.0)
+            value.setdefault('yaw', 0.0)
             robots_dict[key] = value
     return robots_dict
 
@@ -52,7 +52,7 @@ def parse_robots_argument(robots_arg: str):
 def launch_setup(context: LaunchContext, *args, **kwargs):
     bringup_dir = get_package_share_directory('nav2_bringup')
     launch_dir = os.path.join(bringup_dir, 'launch')
-    
+
     # Simulation settings. On this example all robots are launched with the same settings
     world = LaunchConfiguration('world')
     map_yaml_file = LaunchConfiguration('map')
@@ -62,7 +62,7 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
     use_robot_state_pub = LaunchConfiguration('use_robot_state_pub')
     use_rviz = LaunchConfiguration('use_rviz')
     log_settings = LaunchConfiguration('log_settings', default='true')
-    
+
     # Start Gazebo with plugin providing the robot spawning service
     world_sdf = tempfile.mktemp(prefix='nav2_', suffix='.sdf')
     world_sdf_xacro = ExecuteProcess(
@@ -106,7 +106,8 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
                 ),
                 IncludeLaunchDescription(
                     PythonLaunchDescriptionSource(
-                        os.path.join(bringup_dir, 'launch', 'tb3_simulation_launch.py')
+                        os.path.join(bringup_dir, 'launch',
+                                     'tb3_simulation_launch.py')
                     ),
                     launch_arguments={
                         'namespace': robot_name,
@@ -139,13 +140,16 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
     launch_actions.append(start_gazebo_cmd)
     launch_actions.append(remove_temp_sdf_file)
 
-    launch_actions.append(LogInfo(msg=['number_of_robots=', str(len(robots_list))]))
+    launch_actions.append(
+        LogInfo(msg=['number_of_robots=', str(len(robots_list))]))
 
     launch_actions.append(
-        LogInfo(condition=IfCondition(log_settings), msg=['map yaml: ', map_yaml_file])
+        LogInfo(condition=IfCondition(log_settings),
+                msg=['map yaml: ', map_yaml_file])
     )
     launch_actions.append(
-        LogInfo(condition=IfCondition(log_settings), msg=['params yaml: ', params_file])
+        LogInfo(condition=IfCondition(log_settings),
+                msg=['params yaml: ', params_file])
     )
     launch_actions.append(
         LogInfo(
@@ -160,12 +164,13 @@ def launch_setup(context: LaunchContext, *args, **kwargs):
         )
     )
     launch_actions.append(
-        LogInfo(condition=IfCondition(log_settings), msg=['autostart: ', autostart])
+        LogInfo(condition=IfCondition(log_settings),
+                msg=['autostart: ', autostart])
     )
 
     for cmd in bringup_cmd_group:
         launch_actions.append(cmd)
-    
+
     return launch_actions
 
 
@@ -186,16 +191,18 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument(
             'world',
-            default_value=os.path.join(sim_dir, 'worlds', 'tb3_sandbox.sdf.xacro'),
+            default_value=os.path.join(
+                sim_dir, 'worlds', 'tb3_sandbox.sdf.xacro'),
             description='Full path to world file to load',
         ),
         DeclareLaunchArgument(
-            "robots",
-            description="Robot namespaces and poses (required). Example: robot1={x: 1.0, y: 1.0, yaw: 1.5707}; robot2={x: 1.0, y: 1.0, yaw: 1.5707}"
+            'robots',
+            description='Robot namespaces and poses (required)'
         ),
         DeclareLaunchArgument(
             'map',
-            default_value=os.path.join(bringup_dir, 'maps', 'tb3_sandbox.yaml'),
+            default_value=os.path.join(
+                bringup_dir, 'maps', 'tb3_sandbox.yaml'),
             description='Full path to map file to load',
         ),
         DeclareLaunchArgument(
@@ -212,7 +219,8 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'rviz_config',
-            default_value=os.path.join(bringup_dir, 'rviz', 'nav2_default_view.rviz'),
+            default_value=os.path.join(
+                bringup_dir, 'rviz', 'nav2_default_view.rviz'),
             description='Full path to the RVIZ config file to use.',
         ),
         DeclareLaunchArgument(
@@ -224,7 +232,9 @@ def generate_launch_description():
             'use_rviz', default_value='True', description='Whether to start RVIZ'
         ),
         # Set the path to the simulation resources
-        AppendEnvironmentVariable('GZ_SIM_RESOURCE_PATH', os.path.join(sim_dir, 'models')),
-        AppendEnvironmentVariable('GZ_SIM_RESOURCE_PATH', str(Path(os.path.join(sim_dir)).parent.resolve())),
+        AppendEnvironmentVariable(
+            'GZ_SIM_RESOURCE_PATH', os.path.join(sim_dir, 'models')),
+        AppendEnvironmentVariable('GZ_SIM_RESOURCE_PATH', str(
+            Path(os.path.join(sim_dir)).parent.resolve())),
         OpaqueFunction(function=launch_setup)
     ])
