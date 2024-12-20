@@ -70,11 +70,12 @@ TEST(CriticTests, ConstraintsCritic)
   models::ControlSequence control_sequence;
   models::Trajectories generated_trajectories;
   models::Path path;
+  geometry_msgs::msg::Pose goal;
   xt::xtensor<float, 1> costs = xt::zeros<float>({1000});
   float model_dt = 0.1;
   CriticData data =
-  {state, generated_trajectories, path, costs, model_dt, false, nullptr, nullptr, std::nullopt,
-    std::nullopt};
+  {state, generated_trajectories, path, goal, costs, model_dt,
+    false, nullptr, nullptr, std::nullopt, std::nullopt};
   data.motion_model = std::make_shared<DiffDriveMotionModel>();
 
   // Initialization testing
@@ -143,11 +144,12 @@ TEST(CriticTests, GoalAngleCritic)
   models::Trajectories generated_trajectories;
   generated_trajectories.reset(1000, 30);
   models::Path path;
+  geometry_msgs::msg::Pose goal;
   xt::xtensor<float, 1> costs = xt::zeros<float>({1000});
   float model_dt = 0.1;
   CriticData data =
-  {state, generated_trajectories, path, costs, model_dt, false, nullptr, nullptr, std::nullopt,
-    std::nullopt};
+  {state, generated_trajectories, path, goal, costs, model_dt,
+    false, nullptr, nullptr, std::nullopt, std::nullopt};
   data.motion_model = std::make_shared<DiffDriveMotionModel>();
 
   // Initialization testing
@@ -195,11 +197,12 @@ TEST(CriticTests, GoalCritic)
   models::Trajectories generated_trajectories;
   generated_trajectories.reset(1000, 30);
   models::Path path;
+  geometry_msgs::msg::Pose goal;
   xt::xtensor<float, 1> costs = xt::zeros<float>({1000});
   float model_dt = 0.1;
   CriticData data =
-  {state, generated_trajectories, path, costs, model_dt, false, nullptr, nullptr, std::nullopt,
-    std::nullopt};
+  {state, generated_trajectories, path, goal, costs, model_dt,
+    false, nullptr, nullptr, std::nullopt, std::nullopt};
   data.motion_model = std::make_shared<DiffDriveMotionModel>();
 
   // Initialization testing
@@ -245,11 +248,12 @@ TEST(CriticTests, PathAngleCritic)
   models::Trajectories generated_trajectories;
   generated_trajectories.reset(1000, 30);
   models::Path path;
+  geometry_msgs::msg::Pose goal;
   xt::xtensor<float, 1> costs = xt::zeros<float>({1000});
   float model_dt = 0.1;
   CriticData data =
-  {state, generated_trajectories, path, costs, model_dt, false, nullptr, nullptr, std::nullopt,
-    std::nullopt};
+  {state, generated_trajectories, path, goal, costs, model_dt,
+    false, nullptr, nullptr, std::nullopt, std::nullopt};
   data.motion_model = std::make_shared<DiffDriveMotionModel>();
   TestGoalChecker goal_checker;  // from utils_tests tolerance of 0.25 positionally
 
@@ -360,11 +364,12 @@ TEST(CriticTests, PreferForwardCritic)
   models::Trajectories generated_trajectories;
   generated_trajectories.reset(1000, 30);
   models::Path path;
+  geometry_msgs::msg::Pose goal;
   xt::xtensor<float, 1> costs = xt::zeros<float>({1000});
   float model_dt = 0.1;
   CriticData data =
-  {state, generated_trajectories, path, costs, model_dt, false, nullptr, nullptr, std::nullopt,
-    std::nullopt};
+  {state, generated_trajectories, path, goal, costs, model_dt,
+    false, nullptr, nullptr, std::nullopt, std::nullopt};
   data.motion_model = std::make_shared<DiffDriveMotionModel>();
   TestGoalChecker goal_checker;  // from utils_tests tolerance of 0.25 positionally
 
@@ -413,11 +418,12 @@ TEST(CriticTests, TwirlingCritic)
   models::Trajectories generated_trajectories;
   generated_trajectories.reset(1000, 30);
   models::Path path;
+  geometry_msgs::msg::Pose goal;
   xt::xtensor<float, 1> costs = xt::zeros<float>({1000});
   float model_dt = 0.1;
   CriticData data =
-  {state, generated_trajectories, path, costs, model_dt, false, nullptr, nullptr, std::nullopt,
-    std::nullopt};
+  {state, generated_trajectories, path, goal, costs, model_dt,
+    false, nullptr, nullptr, std::nullopt, std::nullopt};
   data.motion_model = std::make_shared<DiffDriveMotionModel>();
   TestGoalChecker goal_checker;  // from utils_tests tolerance of 0.25 positionally
   data.goal_checker = &goal_checker;
@@ -473,11 +479,12 @@ TEST(CriticTests, PathFollowCritic)
   models::Trajectories generated_trajectories;
   generated_trajectories.reset(1000, 30);
   models::Path path;
+  geometry_msgs::msg::Pose goal;
   xt::xtensor<float, 1> costs = xt::zeros<float>({1000});
   float model_dt = 0.1;
   CriticData data =
-  {state, generated_trajectories, path, costs, model_dt, false, nullptr, nullptr, std::nullopt,
-    std::nullopt};
+  {state, generated_trajectories, path, goal, costs, model_dt,
+    false, nullptr, nullptr, std::nullopt, std::nullopt};
   data.motion_model = std::make_shared<DiffDriveMotionModel>();
   TestGoalChecker goal_checker;  // from utils_tests tolerance of 0.25 positionally
   data.goal_checker = &goal_checker;
@@ -521,11 +528,12 @@ TEST(CriticTests, PathAlignCritic)
   models::Trajectories generated_trajectories;
   generated_trajectories.reset(1000, 30);
   models::Path path;
+  geometry_msgs::msg::Pose goal;
   xt::xtensor<float, 1> costs = xt::zeros<float>({1000});
   float model_dt = 0.1;
   CriticData data =
-  {state, generated_trajectories, path, costs, model_dt, false, nullptr, nullptr, std::nullopt,
-    std::nullopt};
+  {state, generated_trajectories, path, goal, costs, model_dt,
+    false, nullptr, nullptr, std::nullopt, std::nullopt};
   data.motion_model = std::make_shared<DiffDriveMotionModel>();
   TestGoalChecker goal_checker;  // from utils_tests tolerance of 0.25 positionally
   data.goal_checker = &goal_checker;
@@ -626,11 +634,12 @@ TEST(CriticTests, VelocityDeadbandCritic)
   models::ControlSequence control_sequence;
   models::Trajectories generated_trajectories;
   models::Path path;
+  geometry_msgs::msg::Pose goal;
   xt::xtensor<float, 1> costs = xt::zeros<float>({1000});
   float model_dt = 0.1;
   CriticData data =
-  {state, generated_trajectories, path, costs, model_dt, false, nullptr, nullptr, std::nullopt,
-    std::nullopt};
+  {state, generated_trajectories, path, goal, costs, model_dt,
+    false, nullptr, nullptr, std::nullopt, std::nullopt};
   data.motion_model = std::make_shared<OmniMotionModel>();
 
   // Initialization testing
