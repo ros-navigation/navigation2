@@ -152,9 +152,11 @@ bool Optimizer::isHolonomic() const
 geometry_msgs::msg::TwistStamped Optimizer::evalControl(
   const geometry_msgs::msg::PoseStamped & robot_pose,
   const geometry_msgs::msg::Twist & robot_speed,
-  const nav_msgs::msg::Path & plan, nav2_core::GoalChecker * goal_checker)
+  const nav_msgs::msg::Path & plan,
+  const geometry_msgs::msg::Pose & goal,
+  nav2_core::GoalChecker * goal_checker)
 {
-  prepare(robot_pose, robot_speed, plan, goal_checker);
+  prepare(robot_pose, robot_speed, plan, goal, goal_checker);
 
   do {
     optimize();
@@ -201,12 +203,15 @@ bool Optimizer::fallback(bool fail)
 void Optimizer::prepare(
   const geometry_msgs::msg::PoseStamped & robot_pose,
   const geometry_msgs::msg::Twist & robot_speed,
-  const nav_msgs::msg::Path & plan, nav2_core::GoalChecker * goal_checker)
+  const nav_msgs::msg::Path & plan,
+  const geometry_msgs::msg::Pose & goal,
+  nav2_core::GoalChecker * goal_checker)
 {
   state_.pose = robot_pose;
   state_.speed = robot_speed;
   path_ = utils::toTensor(plan);
   costs_.fill(0.0f);
+  goal_ = goal;
 
   critics_data_.fail_flag = false;
   critics_data_.goal_checker = goal_checker;
