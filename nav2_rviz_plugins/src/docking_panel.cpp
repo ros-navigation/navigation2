@@ -257,7 +257,7 @@ DockingPanel::DockingPanel(QWidget * parent)
       }
     });
 
-  // Conect buttons with functions
+  // Connect buttons with functions
   QObject::connect(
     use_dock_id_checkbox_, &QCheckBox::stateChanged, this, &DockingPanel::dockIdCheckbox);
 }

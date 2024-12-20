@@ -95,7 +95,7 @@ public:
   /**
    * @brief Wait for charging to begin.
    * @param dock Dock instance, used to query isCharging().
-   * @returns True if charging successfully started within alloted time.
+   * @returns True if charging successfully started within allotted time.
    */
   bool waitForCharge(Dock * dock);
 

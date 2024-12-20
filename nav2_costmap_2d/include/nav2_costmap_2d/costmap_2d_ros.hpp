@@ -421,7 +421,7 @@ protected:
   OnSetParametersCallbackHandle::SharedPtr dyn_params_handler;
 
   /**
-   * @brief Callback executed when a paramter change is detected
+   * @brief Callback executed when a parameter change is detected
    * @param parameters list of changed parameters
    */
   rcl_interfaces::msg::SetParametersResult

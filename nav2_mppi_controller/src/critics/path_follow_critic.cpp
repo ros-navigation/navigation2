@@ -43,21 +43,21 @@ void PathFollowCritic::score(CriticData & data)
   utils::setPathCostsIfNotSet(data, costmap_ros_);
   const size_t path_size = data.path.x.size() - 1;
 
-  auto offseted_idx = std::min(
+  auto offsetted_idx = std::min(
     *data.furthest_reached_path_point + offset_from_furthest_, path_size);
 
   // Drive to the first valid path point, in case of dynamic obstacles on path
   // we want to drive past it, not through it
   bool valid = false;
-  while (!valid && offseted_idx < path_size - 1) {
-    valid = (*data.path_pts_valid)[offseted_idx];
+  while (!valid && offsetted_idx < path_size - 1) {
+    valid = (*data.path_pts_valid)[offsetted_idx];
     if (!valid) {
-      offseted_idx++;
+      offsetted_idx++;
     }
   }
 
-  const auto path_x = data.path.x(offseted_idx);
-  const auto path_y = data.path.y(offseted_idx);
+  const auto path_x = data.path.x(offsetted_idx);
+  const auto path_y = data.path.y(offsetted_idx);
 
   const int && rightmost_idx = data.trajectories.x.cols() - 1;
   const auto last_x = data.trajectories.x.col(rightmost_idx);

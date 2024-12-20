@@ -110,7 +110,7 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
         // The analytic expansion can short-cut near obstacles when closer to a goal
         // So, we can attempt to refine it more by increasing the possible radius
         // higher than the minimum turning radius and use the best solution based on
-        // a scoring function similar to that used in traveral cost estimation.
+        // a scoring function similar to that used in traversal cost estimation.
         auto scoringFn = [&](const AnalyticExpansionNodes & expansion) {
             if (expansion.size() < 2) {
               return std::numeric_limits<float>::max();

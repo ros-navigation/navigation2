@@ -200,7 +200,7 @@ def generate_launch_description():
     )
 
     # The SDF file for the world is a xacro file because we wanted to
-    # conditionally load the SceneBroadcaster plugin based on wheter we're
+    # conditionally load the SceneBroadcaster plugin based on whether we're
     # running in headless mode. But currently, the Gazebo command line doesn't
     # take SDF strings for worlds, so the output of xacro needs to be saved into
     # a temporary file and passed to Gazebo.

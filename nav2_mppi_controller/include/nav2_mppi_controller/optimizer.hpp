@@ -220,7 +220,7 @@ protected:
   bool isHolonomic() const;
 
   /**
-   * @brief Using control frequence and time step size, determine if trajectory
+   * @brief Using control frequencies and time step size, determine if trajectory
    * offset should be used to populate initial state of the next cycle
    */
   void setOffset(double controller_frequency);
