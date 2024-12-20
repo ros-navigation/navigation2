@@ -17,7 +17,7 @@
 
 #include "base_footprint_publisher.hpp"
 #include "gtest/gtest.h"
-#include "tf2/exceptions.h"
+#include "tf2/exceptions.hpp"
 
 class RclCppFixture
 {

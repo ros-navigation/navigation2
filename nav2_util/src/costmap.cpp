@@ -15,7 +15,7 @@
 #include <vector>
 #include <algorithm>
 #include "nav2_util/costmap.hpp"
-#include "tf2/LinearMath/Quaternion.h"
+#include "tf2/LinearMath/Quaternion.hpp"
 #include "nav2_util/geometry_utils.hpp"
 
 using std::vector;

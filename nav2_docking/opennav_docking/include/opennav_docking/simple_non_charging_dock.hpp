@@ -23,7 +23,7 @@
 #include "sensor_msgs/msg/battery_state.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
-#include "tf2/utils.h"
+#include "tf2/utils.hpp"
 
 #include "opennav_docking_core/non_charging_dock.hpp"
 #include "opennav_docking/pose_filter.hpp"
