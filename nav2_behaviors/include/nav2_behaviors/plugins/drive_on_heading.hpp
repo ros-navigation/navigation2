@@ -187,15 +187,9 @@ public:
    */
   CostmapInfoType getResourceInfo() override {return CostmapInfoType::LOCAL;}
 
-  void onCleanup() override
-  {
-    last_vel_.reset();
-  }
+  void onCleanup() override {last_vel_.reset();}
 
-  void onActionCompletion() override
-  {
-    last_vel_.reset();
-  }
+  void onActionCompletion() override {last_vel_.reset();}
 
 protected:
   /**
