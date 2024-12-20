@@ -150,12 +150,12 @@ public:
 
       // Check if we need to slow down to avoid overshooting
       bool forward = command_speed_ > 0.0 ? true : false;
-      if ((forward && deceleration_limit_ > 0.0)) {
+      if (forward && deceleration_limit_ > 0.0) {
         double max_vel_to_stop = std::sqrt(2.0 * deceleration_limit_ * remaining_distance);
         if (max_vel_to_stop < cmd_vel->twist.linear.x) {
           cmd_vel->twist.linear.x = max_vel_to_stop;
         }
-      } else if ((!forward && acceleration_limit_ > 0.0)) {
+      } else if (!forward && acceleration_limit_ > 0.0) {
         double max_vel_to_stop = -std::sqrt(2.0 * acceleration_limit_ * remaining_distance);
         if (max_vel_to_stop > cmd_vel->twist.linear.x) {
           cmd_vel->twist.linear.x = max_vel_to_stop;
