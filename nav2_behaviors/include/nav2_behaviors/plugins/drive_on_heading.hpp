@@ -19,6 +19,7 @@
 #include <chrono>
 #include <memory>
 #include <utility>
+#include <limits>
 
 #include "nav2_behaviors/timed_behavior.hpp"
 #include "nav2_msgs/action/drive_on_heading.hpp"
