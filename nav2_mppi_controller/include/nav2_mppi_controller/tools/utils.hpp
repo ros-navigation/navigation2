@@ -229,6 +229,11 @@ inline bool withinPositionGoalTolerance(
 
 /**
  * @brief Check if the robot pose is within tolerance to the goal
+ *
+ * Deprecated!
+ * This uses the end of pruned path as the goal, if you want to use
+ * the global goal, use the other overload
+ *
  * @param pose_tolerance Pose tolerance to use
  * @param robot Pose of robot
  * @param path Path to retreive goal pose from
@@ -249,6 +254,29 @@ inline bool withinPositionGoalTolerance(
   auto dy = robot.position.y - goal_y;
 
   auto dist_sq = dx * dx + dy * dy;
+
+  if (dist_sq < pose_tolerance_sq) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * @brief Check if the robot pose is within tolerance to the goal
+ * @param pose_tolerance Pose tolerance to use
+ * @param robot Pose of robot
+ * @param path Path to retreive goal pose from
+ * @return bool If robot is within tolerance to the goal
+ */
+inline bool withinPositionGoalTolerance(
+  float pose_tolerance, const CriticData & data)
+{
+  const double & dist_sq =
+    std::pow(data.goal.position.x - data.state.pose.pose.position.x, 2) +
+    std::pow(data.goal.position.y - data.state.pose.pose.position.y, 2);
+
+  const auto pose_tolerance_sq = pose_tolerance * pose_tolerance;
 
   if (dist_sq < pose_tolerance_sq) {
     return true;
