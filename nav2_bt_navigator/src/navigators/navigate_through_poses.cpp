@@ -45,6 +45,7 @@ NavigateThroughPosesNavigator::configure(
   // Odometry smoother object for getting current speed
   odom_smoother_ = odom_smoother;
 
+  bt_action_server_->resetInternalError();
   return true;
 }
 
@@ -75,9 +76,8 @@ NavigateThroughPosesNavigator::goalReceived(ActionT::Goal::ConstSharedPtr goal)
   auto bt_xml_filename = goal->behavior_tree;
 
   if (!bt_action_server_->loadBehaviorTree(bt_xml_filename)) {
-    RCLCPP_ERROR(
-      logger_, "Error loading XML file: %s. Navigation canceled.",
-      bt_xml_filename.c_str());
+    bt_action_server_->setInternalError(ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
+      "Error loading XML file: " + bt_xml_filename + ". Navigation canceled.");
     return false;
   }
 
@@ -86,9 +86,19 @@ NavigateThroughPosesNavigator::goalReceived(ActionT::Goal::ConstSharedPtr goal)
 
 void
 NavigateThroughPosesNavigator::goalCompleted(
-  typename ActionT::Result::SharedPtr /*result*/,
+  typename ActionT::Result::SharedPtr result,
   const nav2_behavior_tree::BtStatus /*final_bt_status*/)
 {
+  if (result->error_code == 0 && bt_action_server_->setResultToInternalError(result)) {
+    RCLCPP_WARN(logger_,
+      "NavigateThroughPosesNavigator::goalCompleted, set result to internal error %d:'%s'.",
+      result->error_code,
+      result->error_msg.c_str());
+  } else {
+    RCLCPP_INFO(logger_, "NavigateThroughPosesNavigator::goalCompleted result %d:'%s'.",
+      result->error_code,
+      result->error_msg.c_str());
+  }
 }
 
 void
@@ -116,18 +126,14 @@ NavigateThroughPosesNavigator::onLoop()
       feedback_utils_.global_frame, feedback_utils_.robot_frame,
       feedback_utils_.transform_tolerance))
   {
-    RCLCPP_ERROR(logger_, "Robot pose is not available.");
+    // Robot pose is not yet available, no feedback
     return;
   }
 
-  try {
-    // Get current path points
-    nav_msgs::msg::Path current_path;
-    if (!blackboard->get(path_blackboard_id_, current_path) || current_path.poses.size() == 0u) {
-      // If no path set yet or not meaningful, can't compute ETA or dist remaining yet.
-      throw std::exception();
-    }
-
+  // Get current path points
+  nav_msgs::msg::Path current_path;
+  res = blackboard->get(path_blackboard_id_, current_path);
+  if (res && current_path.poses.size() > 0u) {
     // Find the closest pose to current pose on global path
     auto find_closest_pose_idx =
       [&current_pose, &current_path]() {
@@ -164,8 +170,6 @@ NavigateThroughPosesNavigator::onLoop()
 
     feedback_msg->distance_remaining = distance_remaining;
     feedback_msg->estimated_time_remaining = estimated_time_remaining;
-  } catch (...) {
-    // Ignore
   }
 
   int recovery_count = 0;
@@ -212,18 +216,33 @@ NavigateThroughPosesNavigator::onPreempt(ActionT::Goal::ConstSharedPtr goal)
 bool
 NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr goal)
 {
+  geometry_msgs::msg::PoseStamped current_pose;
+  if (!nav2_util::getCurrentPose(
+      current_pose, *feedback_utils_.tf,
+      feedback_utils_.global_frame, feedback_utils_.robot_frame,
+      feedback_utils_.transform_tolerance))
+  {
+    bt_action_server_->setInternalError(ActionT::Result::POSE_NOT_AVAILABLE,
+      "Initial robot pose is not available.");
+    return false;
+  }
+
   Goals goal_poses = goal->poses;
+  int i = 0;
   for (auto & goal_pose : goal_poses) {
     if (!nav2_util::transformPoseInTargetFrame(
         goal_pose, goal_pose, *feedback_utils_.tf, feedback_utils_.global_frame,
         feedback_utils_.transform_tolerance))
     {
-      RCLCPP_ERROR(
-        logger_,
-        "Failed to transform a goal pose provided with frame_id '%s' to the global frame '%s'.",
-        goal_pose.header.frame_id.c_str(), feedback_utils_.global_frame.c_str());
+      bt_action_server_->setInternalError(ActionT::Result::GOAL_TRANSFORMATION_ERROR,
+        "Failed to transform a goal pose (" + std::to_string(i) + ") provided with frame_id '" +
+        goal_pose.header.frame_id +
+        "' to the global frame '" +
+        feedback_utils_.global_frame +
+        "'.");
       return false;
     }
+    i++;
   }
 
   if (goal_poses.size() > 0) {
