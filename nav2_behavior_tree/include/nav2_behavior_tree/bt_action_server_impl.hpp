@@ -50,7 +50,9 @@ BtActionServer<ActionT>::BtActionServer(
   on_goal_received_callback_(on_goal_received_callback),
   on_loop_callback_(on_loop_callback),
   on_preempt_callback_(on_preempt_callback),
-  on_completion_callback_(on_completion_callback)
+  on_completion_callback_(on_completion_callback),
+  internal_error_code_(0),
+  internal_error_msg_()
 {
   auto node = node_.lock();
   logger_ = node->get_logger();
@@ -195,6 +197,8 @@ bool BtActionServer<ActionT>::on_configure()
     "wait_for_service_timeout",
     wait_for_service_timeout_);
 
+  resetInternalError();
+
   return true;
 }
 
@@ -246,7 +250,8 @@ bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filena
   std::ifstream xml_file(filename);
 
   if (!xml_file.good()) {
-    RCLCPP_ERROR(logger_, "Couldn't open input XML file: %s", filename.c_str());
+    setInternalError(ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
+      "Couldn't open input XML file: " + filename);
     return false;
   }
 
@@ -263,7 +268,8 @@ bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filena
         wait_for_service_timeout_);
     }
   } catch (const std::exception & e) {
-    RCLCPP_ERROR(logger_, "Exception when loading BT: %s", e.what());
+    setInternalError(ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
+      std::string("Exception when loading BT: ") + e.what());
     return false;
   }
 
@@ -343,12 +349,46 @@ void BtActionServer<ActionT>::executeCallback()
 }
 
 template<class ActionT>
+void BtActionServer<ActionT>::setInternalError(uint16_t error_code, const std::string & error_msg)
+{
+  internal_error_code_ = error_code;
+  internal_error_msg_ = error_msg;
+  RCLCPP_ERROR(logger_, "Setting internal error error_code:%d, error_msg:%s",
+    internal_error_code_, internal_error_msg_.c_str());
+}
+
+template<class ActionT>
+void BtActionServer<ActionT>::resetInternalError(void)
+{
+  internal_error_code_ = ActionT::Result::NONE;
+  internal_error_msg_ = "";
+}
+
+template<class ActionT>
+bool BtActionServer<ActionT>::setResultToInternalError(
+  typename std::shared_ptr<typename ActionT::Result> result)
+{
+  if (internal_error_code_ != ActionT::Result::NONE) {
+    result->error_code = internal_error_code_;
+    result->error_msg = internal_error_msg_;
+    return true;
+  }
+  return false;
+}
+
+template<class ActionT>
 void BtActionServer<ActionT>::populateErrorCode(
   typename std::shared_ptr<typename ActionT::Result> result)
 {
   int highest_priority_error_code = std::numeric_limits<int>::max();
   std::string highest_priority_error_msg = "";
   std::string name;
+
+  if (internal_error_code_ != 0) {
+    highest_priority_error_code = internal_error_code_;
+    highest_priority_error_msg = internal_error_msg_;
+  }
+
   for (const auto & error_code_name_prefix : error_code_name_prefixes_) {
     try {
       name = error_code_name_prefix + "_error_code";
@@ -382,6 +422,7 @@ void BtActionServer<ActionT>::cleanErrorCodes()
     name = error_code_name_prefix + "_error_msg";
     blackboard_->set<std::string>(name, "");
   }
+  resetInternalError();
 }
 
 }  // namespace nav2_behavior_tree
