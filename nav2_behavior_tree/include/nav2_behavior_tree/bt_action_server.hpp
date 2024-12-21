@@ -188,6 +188,25 @@ public:
     tree_.haltTree();
   }
 
+  /**
+   * @brief Set internal error code and message
+   * @param error_code the internal error code
+   * @param error_msg the internal error message
+   */
+  void setInternalError(uint16_t error_code, const std::string & error_msg);
+
+  /**
+   * @brief reset internal error code and message
+   */
+  void resetInternalError(void);
+
+  /**
+   * @brief set result to internal error code and message if not NONE
+   * @param result the action server result to be updated
+   * @return bool action server result was changed
+   */
+  bool setResultToInternalError(typename std::shared_ptr<typename ActionT::Result> result);
+
 protected:
   /**
    * @brief Action server callback
@@ -263,6 +282,10 @@ protected:
   OnLoopCallback on_loop_callback_;
   OnPreemptCallback on_preempt_callback_;
   OnCompletionCallback on_completion_callback_;
+
+  // internal error tracking (IOW not behaviorTree blackboard errors)
+  uint16_t internal_error_code_;
+  std::string internal_error_msg_;
 };
 
 }  // namespace nav2_behavior_tree
