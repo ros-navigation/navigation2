@@ -42,7 +42,8 @@ public:
     const rclcpp::Node::SharedPtr & node,
     std::string action_name)
   : action_name_(action_name),
-    goal_count_(0)
+    goal_count_(0),
+    result_(std::make_shared<typename ActionT::Result>())
   {
     action_server_ = rclcpp_action::create_server<ActionT>(
       node->get_node_base_interface(),
@@ -71,6 +72,7 @@ public:
     failure_ranges_.clear();
     running_ranges_.clear();
     goal_count_ = 0;
+    updateResultForSuccess(result_);
   }
 
   int getGoalCount() const
@@ -78,12 +80,12 @@ public:
     return goal_count_;
   }
 
-protected:
-  virtual std::shared_ptr<typename ActionT::Result> fillResult()
+  std::shared_ptr<typename ActionT::Result> getResult(void)
   {
-    return std::make_shared<typename ActionT::Result>();
+    return result_;
   }
 
+protected:
   virtual void updateResultForFailure(std::shared_ptr<typename ActionT::Result> & result)
   {
     result->error_code = ActionT::Result::UNKNOWN;
@@ -113,7 +115,6 @@ protected:
     const typename std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>> goal_handle)
   {
     goal_count_++;
-    auto result = fillResult();
 
     // if current goal index exists in running range, the thread sleeps for 1 second
     // to simulate a long running action
@@ -127,15 +128,15 @@ protected:
     // if current goal index exists in failure range, the goal will be aborted
     for (auto & index : failure_ranges_) {
       if (goal_count_ >= index.first && goal_count_ <= index.second) {
-        updateResultForFailure(result);
-        goal_handle->abort(result);
+        updateResultForFailure(result_);
+        goal_handle->abort(result_);
         return;
       }
     }
 
     // goal succeeds for all other indices
-    updateResultForSuccess(result);
-    goal_handle->succeed(result);
+    updateResultForSuccess(result_);
+    goal_handle->succeed(result_);
   }
 
   void handle_accepted(
@@ -157,6 +158,7 @@ protected:
   Ranges running_ranges_;
 
   unsigned int goal_count_;
+  std::shared_ptr<typename ActionT::Result> result_;
 };
 }  // namespace nav2_system_tests
 
