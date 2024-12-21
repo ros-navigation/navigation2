@@ -125,15 +125,15 @@ class NavTester(Node):
             if (result.error_code == expected_error_code and
                result.error_msg == expected_error_msg):
                 self.info_msg(f'Goal failed as expected with status code: {status}'
-                    f' error code:{result.error_code}'
-                    f' error msg:{result.error_msg}')
+                              f' error code:{result.error_code}'
+                              f' error msg:{result.error_msg}')
                 return True
             else:
                 self.error_msg(f'Goal failed unexpectedly with status code: {status}'
-                    f' Expected error_code:{expected_error_code},'
-                    f' Got error_code:{result.error_code},'
-                    f' Expected error_msg:{expected_error_msg},'
-                    f' Got error_msg:{result.error_msg}')
+                               f' Expected error_code:{expected_error_code},'
+                               f' Got error_code:{result.error_code},'
+                               f' Expected error_msg:{expected_error_msg},'
+                               f' Got error_msg:{result.error_msg}')
                 return False
 
         self.info_msg('Goal succeeded!')
@@ -228,7 +228,7 @@ def run_all_tests(robot_tester):
 
         result = robot_tester.runNavigateAction(
             goal_pose=pose_out_of_bounds,
-            behavior_tree="",
+            behavior_tree='',
             expected_error_code=304,
             expected_error_msg=('GridBasedplugin failed to plan from '
                                 '(-2.00, -0.50) to (2000.00, 4000.00): '
@@ -237,7 +237,7 @@ def run_all_tests(robot_tester):
     if result:
         result = robot_tester.runNavigateAction(
             goal_pose=pose_out_of_bounds,
-            behavior_tree="behavior_tree_that_does_not_exist.xml",
+            behavior_tree='behavior_tree_that_does_not_exist.xml',
             expected_error_code=901,
             expected_error_msg=('Error loading XML file: behavior_tree_that_does_not_exist.xml. '
                                 'Navigation canceled.'))
