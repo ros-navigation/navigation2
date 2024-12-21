@@ -84,13 +84,13 @@ protected:
     return std::make_shared<typename ActionT::Result>();
   }
 
-  virtual void updateResultForFailure(std::shared_ptr<typename ActionT::Result> &result)
+  virtual void updateResultForFailure(std::shared_ptr<typename ActionT::Result> & result)
   {
     result->error_code = ActionT::Result::UNKNOWN;
     result->error_msg = "Unknown Failure";
   }
 
-  virtual void updateResultForSuccess(std::shared_ptr<typename ActionT::Result> &result)
+  virtual void updateResultForSuccess(std::shared_ptr<typename ActionT::Result> & result)
   {
     result->error_code = ActionT::Result::NONE;
     result->error_msg = "";
