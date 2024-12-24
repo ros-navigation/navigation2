@@ -106,7 +106,7 @@ bool SimpleSmoother::smooth(
     }
   }
 
-  if (segments_smoothed == 0) {
+  if (segments_smoothed == 0 && path_segments.size() > 1) {
     throw nav2_core::FailedToSmoothPath("No segments were smoothed");
   }
 
