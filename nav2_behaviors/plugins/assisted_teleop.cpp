@@ -82,7 +82,7 @@ void AssistedTeleop::onActionCompletion(std::shared_ptr<AssistedTeleopActionResu
 
 ResultStatus AssistedTeleop::onCycleUpdate()
 {
-  feedback_->current_teleop_duration = elasped_time_;
+  feedback_->current_teleop_duration = elapsed_time_;
   action_server_->publish_feedback(feedback_);
 
   rclcpp::Duration time_remaining = end_time_ - this->clock_->now();

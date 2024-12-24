@@ -1584,7 +1584,7 @@ AmclNode::initServices()
 void
 AmclNode::initOdometry()
 {
-  // TODO(mjeronimo): We should handle persistance of the last known pose of the robot. We could
+  // TODO(mjeronimo): We should handle persistence of the last known pose of the robot. We could
   // then read that pose here and initialize using that.
 
   // When pausing and resuming, remember the last robot pose so we don't start at 0:0 again

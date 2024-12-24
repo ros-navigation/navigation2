@@ -162,7 +162,7 @@ TEST(costmap, testResetForStaticMap) {
   }
   ASSERT_EQ(hitCount, 36);
 
-  // Veriy that we have 64 non-leathal
+  // Veriy that we have 64 non-lethal
   hitCount = 0;
   for (unsigned int i = 0; i < 10; ++i) {
     for (unsigned int j = 0; j < 10; ++j) {
@@ -356,7 +356,7 @@ TEST(costmap, testWindowCopy) {
   ASSERT_EQ(windowCopy.getSizeInCellsX(), (unsigned int)6);
   ASSERT_EQ(windowCopy.getSizeInCellsY(), (unsigned int)6);
 
-  // check that we actually get the windo that we expect
+  // check that we actually get the window that we expect
   for (unsigned int i = 0; i < windowCopy.getSizeInCellsX(); ++i) {
     for (unsigned int j = 0; j < windowCopy.getSizeInCellsY(); ++j) {
       ASSERT_EQ(windowCopy.getCost(i, j), map.getCost(i + 2, j + 2));
@@ -1092,7 +1092,7 @@ TEST(costmap, testRaytracing2) {
 }
 
 /**
- * Within a certian radius of the robot, the cost map most propagate obstacles. This
+ * Within a certain radius of the robot, the cost map most propagate obstacles. This
  * is to avoid a case where a hit on a far obstacle clears inscribed radius around a
  * near one.
  */

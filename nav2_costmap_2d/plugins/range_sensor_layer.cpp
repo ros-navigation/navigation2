@@ -130,6 +130,7 @@ void RangeSensorLayer::onInitialize()
 
   // Traverse the topic names list subscribing to all of them with the same callback method
   for (auto & topic_name : topic_names) {
+    topic_name = joinWithParentNamespace(topic_name);
     if (input_sensor_type == InputSensorType::VARIABLE) {
       processRangeMessageFunc_ = std::bind(
         &RangeSensorLayer::processVariableRangeMsg, this,
@@ -522,7 +523,7 @@ void RangeSensorLayer::updateCosts(
 
 void RangeSensorLayer::reset()
 {
-  RCLCPP_DEBUG(logger_, "Reseting range sensor layer...");
+  RCLCPP_DEBUG(logger_, "Resetting range sensor layer...");
   deactivate();
   resetMaps();
   was_reset_ = true;

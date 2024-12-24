@@ -204,7 +204,7 @@ inline models::Path toTensor(const nav_msgs::msg::Path & path)
  * @brief Check if the robot pose is within the Goal Checker's tolerances to goal
  * @param global_checker Pointer to the goal checker
  * @param robot Pose of robot
- * @param path Path to retreive goal pose from
+ * @param path Path to retrieve goal pose from
  * @return bool If robot is within goal checker tolerances to the goal
  */
 inline bool withinPositionGoalTolerance(
@@ -240,7 +240,7 @@ inline bool withinPositionGoalTolerance(
  * @brief Check if the robot pose is within tolerance to the goal
  * @param pose_tolerance Pose tolerance to use
  * @param robot Pose of robot
- * @param path Path to retreive goal pose from
+ * @param path Path to retrieve goal pose from
  * @return bool If robot is within tolerance to the goal
  */
 inline bool withinPositionGoalTolerance(
@@ -284,11 +284,11 @@ auto normalize_angles(const T & angles)
   * @brief shortest_angular_distance
   *
   * Given 2 angles, this returns the shortest angular
-  * difference.  The inputs and ouputs are of course radians.
+  * difference.  The inputs and outputs are of course radians.
   *
   * The result
   * would always be -pi <= result <= pi.  Adding the result
-  * to "from" will always get you an equivelent angle to "to".
+  * to "from" will always get you an equivalent angle to "to".
   * @param from Start angle
   * @param to End angle
   * @return Shortest distance between angles
@@ -303,7 +303,7 @@ auto shortest_angular_distance(
 
 /**
  * @brief Evaluate furthest point idx of data.path which is
- * nearset to some trajectory in data.trajectories
+ * nearest to some trajectory in data.trajectories
  * @param data Data to use
  * @return Idx of furthest path point reached by a set of trajectories
  */
@@ -552,7 +552,7 @@ inline unsigned int findFirstPathInversion(nav_msgs::msg::Path & path)
     float ab_y = path.poses[idx + 1].pose.position.y -
       path.poses[idx].pose.position.y;
 
-    // Checking for the existance of cusp, in the path, using the dot product.
+    // Checking for the existence of cusp, in the path, using the dot product.
     float dot_product = (oa_x * ab_x) + (oa_y * ab_y);
     if (dot_product < 0.0f) {
       return idx + 1;

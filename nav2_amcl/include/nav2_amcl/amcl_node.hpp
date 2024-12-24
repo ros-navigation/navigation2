@@ -112,7 +112,7 @@ protected:
   typedef struct
   {
     double weight;             // Total weight (weights sum to 1)
-    pf_vector_t pf_pose_mean;  // Mean of pose esimate
+    pf_vector_t pf_pose_mean;  // Mean of pose estimate
     pf_matrix_t pf_pose_cov;   // Covariance of pose estimate
   } amcl_hyp_t;
 

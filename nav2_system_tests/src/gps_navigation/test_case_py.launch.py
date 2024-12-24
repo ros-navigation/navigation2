@@ -102,7 +102,6 @@ def generate_launch_description():
                 ),
                 launch_arguments={
                     'namespace': '',
-                    'use_namespace': 'False',
                     'use_sim_time': 'True',
                     'params_file': configured_params,
                     'use_composition': 'False',

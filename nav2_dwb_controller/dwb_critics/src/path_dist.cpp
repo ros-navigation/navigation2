@@ -85,7 +85,7 @@ bool PathDistCritic::prepare(
     return false;
   }
 
-  propogateManhattanDistances();
+  propagateManhattanDistances();
 
   return true;
 }

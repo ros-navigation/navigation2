@@ -70,7 +70,7 @@ void pf_draw_samples(pf_t * pf, rtk_fig_t * fig, int max_samples)
 }
 
 
-// Draw the hitogram (kd tree)
+// Draw the histogram (kd tree)
 void pf_draw_hist(pf_t * pf, rtk_fig_t * fig)
 {
   pf_sample_set_t * set;

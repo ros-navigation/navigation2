@@ -582,7 +582,7 @@ bool CollisionMonitor::processApproach(
   // Obtain time before a collision
   const double collision_time = polygon->getCollisionTime(sources_collision_points_map, velocity);
   if (collision_time >= 0.0) {
-    // If collision will occurr, reduce robot speed
+    // If collision will occur, reduce robot speed
     const double change_ratio = collision_time / polygon->getTimeBeforeCollision();
     const Velocity safe_vel = velocity * change_ratio;
     // Check that currently calculated velocity is safer than

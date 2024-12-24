@@ -24,8 +24,7 @@ BackUpAction::BackUpAction(
   const std::string & xml_tag_name,
   const std::string & action_name,
   const BT::NodeConfiguration & conf)
-: BtActionNode<nav2_msgs::action::BackUp>(xml_tag_name, action_name, conf),
-  initialized_(false)
+: BtActionNode<nav2_msgs::action::BackUp>(xml_tag_name, action_name, conf)
 {
 }
 
@@ -37,6 +36,8 @@ void nav2_behavior_tree::BackUpAction::initialize()
   getInput("backup_speed", speed);
   double time_allowance;
   getInput("time_allowance", time_allowance);
+  bool disable_collision_checks;
+  getInput("disable_collision_checks", disable_collision_checks);
 
   // Populate the input message
   goal_.target.x = dist;
@@ -44,12 +45,12 @@ void nav2_behavior_tree::BackUpAction::initialize()
   goal_.target.z = 0.0;
   goal_.speed = speed;
   goal_.time_allowance = rclcpp::Duration::from_seconds(time_allowance);
-  initialized_ = true;
+  goal_.disable_collision_checks = disable_collision_checks;
 }
 
 void BackUpAction::on_tick()
 {
-  if (!initialized_) {
+  if (!BT::isStatusActive(status())) {
     initialize();
   }
 

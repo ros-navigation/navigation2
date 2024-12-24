@@ -115,7 +115,7 @@ void CostmapTester::compareCells(
 
   if (cell_cost == nav2_costmap_2d::LETHAL_OBSTACLE) {
     // if the cell is a lethal obstacle,
-    // then we know that all its neighbors should have equal or slighlty less cost
+    // then we know that all its neighbors should have equal or slightly less cost
     unsigned char expected_lowest_cost = 0;
     EXPECT_TRUE(
       neighbor_cost >= expected_lowest_cost ||

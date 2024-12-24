@@ -191,14 +191,14 @@ public:
   {
     // first step to be done only at the beginning of the Action
     if (!BT::isStatusActive(status())) {
-      // setting the status to RUNNING to notify the BT Loggers (if any)
-      setStatus(BT::NodeStatus::RUNNING);
-
       // reset the flag to send the goal or not, allowing the user the option to set it in on_tick
       should_send_goal_ = true;
 
       // user defined callback, may modify "should_send_goal_".
       on_tick();
+
+      // setting the status to RUNNING to notify the BT Loggers (if any)
+      setStatus(BT::NodeStatus::RUNNING);
 
       if (!should_send_goal_) {
         return BT::NodeStatus::FAILURE;

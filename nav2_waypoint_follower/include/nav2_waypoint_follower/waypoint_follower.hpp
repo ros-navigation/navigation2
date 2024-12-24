@@ -122,7 +122,7 @@ protected:
   /**
    * @brief Templated function to perform internal logic behind waypoint following,
    *        Both GPS and non GPS waypoint following callbacks makes use of this function when a client asked to do so.
-   *        Callbacks fills in appropriate types for the tempelated types, see followWaypointCallback funtions for details.
+   *        Callbacks fills in appropriate types for the tempelated types, see followWaypointCallback functions for details.
    *
    * @tparam T action_server
    * @tparam V feedback

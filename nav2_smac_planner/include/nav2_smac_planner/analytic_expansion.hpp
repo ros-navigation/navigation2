@@ -109,6 +109,22 @@ public:
     const NodeGetter & getter, const ompl::base::StateSpacePtr & state_space);
 
   /**
+   * @brief Refined analytic path from the current node to the goal
+   * @param current_node The node to start the analytic path from
+   * @param goal_node The goal node to plan to
+   * @param getter The function object that gets valid nodes from the graph
+   * @param analytic_nodes The set of analytic nodes to refine
+   * @param best_score The best score of the analytic nodes
+   * @return Set of refined analytic expansion nodes to the goal from current node, if possible
+   */
+  void refineAnalyticPath(
+    const NodePtr & goal_node,
+    const NodeGetter & getter,
+    NodePtr & node,
+    AnalyticExpansionNodes & analytic_nodes,
+    float & best_score);
+
+  /**
    * @brief Takes final analytic expansion and appends to current expanded node
    * @param node The node to start the analytic path from
    * @param goal The goal node to plan to
@@ -121,7 +137,7 @@ public:
 
   /**
    * @brief Takes an expanded nodes to clean up, if necessary, of any state
-   * information that may be poluting it from a prior search iteration
+   * information that may be polluting it from a prior search iteration
    * @param expanded_nodes Expanded node to clean up from search
    */
   void cleanNode(const NodePtr & nodes);

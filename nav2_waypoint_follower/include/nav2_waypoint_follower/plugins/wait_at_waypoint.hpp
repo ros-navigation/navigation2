@@ -49,7 +49,7 @@ public:
   /**
    * @brief declares and loads parameters used (waypoint_pause_duration_)
    *
-   * @param parent parent node that plugin will be created withing(waypoint_follower in this case)
+   * @param parent parent node that plugin will be created within (waypoint_follower in this case)
    * @param plugin_name
    */
   void initialize(

@@ -167,7 +167,7 @@ return true if `isCharging` returns true.
 The `SimpleChargingDock` and `SimpleNonChargingDock` plugins are examples with many common options which may be fully functional for
 some robots.
 
-`getStagingPose` applys a parameterized translational and rotational offset to the dock pose to obtain the staging pose.
+`getStagingPose` applies a parameterized translational and rotational offset to the dock pose to obtain the staging pose.
 
 `getRefinedPose` can be used in two ways. 
 1. A blind approach where the returned dock pose will simply be equal to whatever was passed in from the dock database. This may work with a reduced success rate on a real robot (due to global localization error), but is useful for initial testing and simulation.
@@ -194,7 +194,7 @@ For debugging purposes, there are several publishers which can be used with RVIZ
 | Parameter                    | Description                                             | Type   | Default   |
 |------------------------------|---------------------------------------------------------|--------|-----------|
 | controller_frequency         | Control frequency (Hz) for vision-control loop          | double | 50.0      |
-| initial_perception_timeout   | Timeout (s) to wait to obtain intial perception of the dock | double | 5.0   |
+| initial_perception_timeout   | Timeout (s) to wait to obtain initial perception of the dock | double | 5.0   |
 | wait_charge_timeout          | Timeout (s) to wait to see if charging starts after docking  | double | 5.0  |
 | dock_approach_timeout        | timeout (s) to attempt vision-control approach loop    | double |  30.0      |
 | undock_linear_tolerance      | Tolerance (m) to exit the undocking control loop at staging pose    | double |  0.05      |
@@ -208,14 +208,21 @@ For debugging purposes, there are several publishers which can be used with RVIZ
 | dock_database  |  The filepath to the dock database to use for this environment | string |  N/A  |
 | docks  |  Instead of `dock_database`, the set of docks specified in the params file itself | vector<string> | N/A     |
 | navigator_bt_xml  | BT XML to use for Navigator, if non-default | string | ""     |
-| controller.k_phi  | TODO | double | 3.0  |
-| controller.k_delta  |  TODO | double | 2.0     |
-| controller.beta  |  TODO | double | 0.4  |
-| controller.lambda  |  TODO | double | 2.0     |
-| controller.v_linear_min  |  TODO | double | 0.1     |
-| controller.v_linear_max |  TODO | double | 0.25    |
-| controller.v_angular_max |  TODO | double | 0.75    |
-| controller.slowdown_radius |  TODO | double | 0.25     |
+| controller.k_phi  | Ratio of the rate of change in phi to the rate of change in r. Controls the convergence of the slow subsystem  | double | 3.0  |
+| controller.k_delta  | Constant factor applied to the heading error feedback. Controls the convergence of the fast subsystem | double | 2.0     |
+| controller.beta  | Constant factor applied to the path curvature. This value must be positive. Determines how fast the velocity drops when the curvature increases | double | 0.4  |
+| controller.lambda  | Constant factor applied to the path curvature. This value must be greater or equal to 1. Determines the sharpness of the curve: higher lambda implies sharper curves | double | 2.0     |
+| controller.v_linear_min | Minimum linear velocity (m/s) | double | 0.1     |
+| controller.v_linear_max | Maximum linear velocity (m/s) | double | 0.25    |
+| controller.v_angular_max | Maximum angular velocity (rad/s) produced by the control law | double | 0.75    |
+| controller.slowdown_radius | Radius (m) around the goal pose in which the robot will start to slow down | double | 0.25     |
+| controller.use_collision_detection | Whether to use collision detection to avoid obstacles | bool | true     |
+| controller.costmap_topic | The topic to use for the costmap | string | "local_costmap/costmap_raw"     |
+| controller.footprint_topic | The topic to use for the robot's footprint | string | "local_costmap/published_footprint"     |
+| controller.transform_tolerance | Time with which to post-date the transform that is published, to indicate that this transform is valid into the future. | double | 0.1     |
+| controller.projection_time | Time to look ahead for collisions (s). | double | 5.0     |
+| controller.simulation_time_step | Time step for projections (s). | double | 0.1     |
+| controller.dock_collision_threshold | Distance (m) from the dock pose to ignore collisions. | double | 0.3     |
 
 Note: `dock_plugins` and either `docks` or `dock_database` are required.
 

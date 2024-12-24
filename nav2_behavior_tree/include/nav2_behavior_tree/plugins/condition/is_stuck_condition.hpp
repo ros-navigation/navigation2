@@ -101,7 +101,7 @@ private:
   // Calculated states
   double current_accel_;
 
-  // Robot specific paramters
+  // Robot specific parameters
   double brake_accel_limit_;
 };
 

@@ -185,7 +185,7 @@ public:
   typedef std::recursive_mutex mutex_t;
 
   /**
-   * @brief Get the mutex of the inflation inforamtion
+   * @brief Get the mutex of the inflation information
    */
   mutex_t * getMutex()
   {

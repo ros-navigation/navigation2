@@ -87,7 +87,7 @@ void HybridMotionTable::initDubin(
   // 2) chord length must be greater than sqrt(2) to leave current cell
   // 3) maximum curvature must be respected, represented by minimum turning angle
   // Thusly:
-  // On circle of radius minimum turning angle, we need select motion primatives
+  // On circle of radius minimum turning angle, we need select motion primitives
   // with chord length > sqrt(2) and be an increment of our bin size
   //
   // chord >= sqrt(2) >= 2 * R * sin (angle / 2); where angle / N = quantized bin size

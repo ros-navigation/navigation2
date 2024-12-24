@@ -408,12 +408,12 @@ void Optimizer::updateControlSequence()
   auto && costs_normalized = costs_ - xt::amin(costs_, immediate);
   auto && exponents = xt::eval(xt::exp(-1 / settings_.temperature * costs_normalized));
   auto && softmaxes = xt::eval(exponents / xt::sum(exponents, immediate));
-  auto && softmaxes_extened = xt::eval(xt::view(softmaxes, xt::all(), xt::newaxis()));
+  auto && softmaxes_extended = xt::eval(xt::view(softmaxes, xt::all(), xt::newaxis()));
 
-  xt::noalias(control_sequence_.vx) = xt::sum(state_.cvx * softmaxes_extened, 0, immediate);
-  xt::noalias(control_sequence_.wz) = xt::sum(state_.cwz * softmaxes_extened, 0, immediate);
+  xt::noalias(control_sequence_.vx) = xt::sum(state_.cvx * softmaxes_extended, 0, immediate);
+  xt::noalias(control_sequence_.wz) = xt::sum(state_.cwz * softmaxes_extended, 0, immediate);
   if (is_holo) {
-    xt::noalias(control_sequence_.vy) = xt::sum(state_.cvy * softmaxes_extened, 0, immediate);
+    xt::noalias(control_sequence_.vy) = xt::sum(state_.cvy * softmaxes_extended, 0, immediate);
   }
 
   applyControlSequenceConstraints();

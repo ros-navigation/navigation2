@@ -320,8 +320,12 @@ bool AStarAlgorithm<NodeT>::createPath(
   CoordinateVector & path, int & iterations,
   const float & tolerance,
   std::function<bool()> cancel_checker,
-  std::vector<std::tuple<float, float, float>> * expansions_log)
+  std::vector<std::tuple<float, float, float>> * expansions_log,
+  const GoalHeadingMode & goal_heading_mode,
+  const int & coarse_search_resolution)
 {
+  (void) goal_heading_mode;
+  (void) coarse_search_resolution;
   steady_clock::time_point start_time = steady_clock::now();
   _tolerance = tolerance;
   _best_heuristic_node = {std::numeric_limits<float>::max(), 0};

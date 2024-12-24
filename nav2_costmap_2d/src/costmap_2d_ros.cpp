@@ -58,9 +58,6 @@ using rcl_interfaces::msg::ParameterType;
 
 namespace nav2_costmap_2d
 {
-Costmap2DROS::Costmap2DROS(const std::string & name, const bool & use_sim_time)
-: Costmap2DROS(name, "/", name, use_sim_time) {}
-
 Costmap2DROS::Costmap2DROS(const rclcpp::NodeOptions & options)
 : nav2_util::LifecycleNode("costmap", "", options),
   name_("costmap"),
@@ -70,7 +67,6 @@ Costmap2DROS::Costmap2DROS(const rclcpp::NodeOptions & options)
     "nav2_costmap_2d::ObstacleLayer",
     "nav2_costmap_2d::InflationLayer"}
 {
-  declare_parameter("map_topic", rclcpp::ParameterValue(std::string("map")));
   is_lifecycle_follower_ = false;
   init();
 }
@@ -78,7 +74,6 @@ Costmap2DROS::Costmap2DROS(const rclcpp::NodeOptions & options)
 Costmap2DROS::Costmap2DROS(
   const std::string & name,
   const std::string & parent_namespace,
-  const std::string & local_namespace,
   const bool & use_sim_time)
 : nav2_util::LifecycleNode(name, "",
     // NodeOption arguments take precedence over the ones provided on the command line
@@ -87,21 +82,17 @@ Costmap2DROS::Costmap2DROS(
     //              of the namespaces
     rclcpp::NodeOptions().arguments({
     "--ros-args", "-r", std::string("__ns:=") +
-    nav2_util::add_namespaces(parent_namespace, local_namespace),
+    nav2_util::add_namespaces(parent_namespace, name),
     "--ros-args", "-r", name + ":" + std::string("__node:=") + name,
     "--ros-args", "-p", "use_sim_time:=" + std::string(use_sim_time ? "true" : "false"),
   })),
   name_(name),
-  parent_namespace_(parent_namespace),
   default_plugins_{"static_layer", "obstacle_layer", "inflation_layer"},
   default_types_{
     "nav2_costmap_2d::StaticLayer",
     "nav2_costmap_2d::ObstacleLayer",
     "nav2_costmap_2d::InflationLayer"}
 {
-  declare_parameter(
-    "map_topic", rclcpp::ParameterValue(
-      (parent_namespace_ == "/" ? "/" : parent_namespace_ + "/") + std::string("map")));
   init();
 }
 
@@ -186,9 +177,14 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
     layered_costmap_->addPlugin(plugin);
 
     // TODO(mjeronimo): instead of get(), use a shared ptr
-    plugin->initialize(
-      layered_costmap_.get(), plugin_names_[i], tf_buffer_.get(),
-      shared_from_this(), callback_group_);
+    try {
+      plugin->initialize(layered_costmap_.get(), plugin_names_[i], tf_buffer_.get(),
+          shared_from_this(), callback_group_);
+    } catch (const std::exception & e) {
+      RCLCPP_ERROR(get_logger(), "Failed to initialize costmap plugin %s! %s.",
+          plugin_names_[i].c_str(), e.what());
+      return nav2_util::CallbackReturn::FAILURE;
+    }
 
     lock.unlock();
 
@@ -434,7 +430,7 @@ Costmap2DROS::getParameters()
     filter_types_[i] = nav2_util::get_plugin_type_param(node, filter_names_[i]);
   }
 
-  // 2. The map publish frequency cannot be 0 (to avoid a divde-by-zero)
+  // 2. The map publish frequency cannot be 0 (to avoid a divide-by-zero)
   if (map_publish_frequency_ > 0) {
     publish_cycle_ = rclcpp::Duration::from_seconds(1 / map_publish_frequency_);
   } else {
@@ -834,15 +830,14 @@ void Costmap2DROS::getCostsCallback(
   unsigned int mx, my;
 
   Costmap2D * costmap = layered_costmap_->getCostmap();
-
+  response->success = true;
   for (const auto & pose : request->poses) {
     geometry_msgs::msg::PoseStamped pose_transformed;
-    transformPoseToGlobalFrame(pose, pose_transformed);
-    bool in_bounds = costmap->worldToMap(
-      pose_transformed.pose.position.x,
-      pose_transformed.pose.position.y, mx, my);
-
-    if (!in_bounds) {
+    if (!transformPoseToGlobalFrame(pose, pose_transformed)) {
+      RCLCPP_ERROR(
+        get_logger(), "Failed to transform, cannot get cost for pose (%.2f, %.2f)",
+        pose.pose.position.x, pose.pose.position.y);
+      response->success = false;
       response->costs.push_back(NO_INFORMATION);
       continue;
     }
@@ -866,6 +861,15 @@ void Costmap2DROS::getCostsCallback(
           pose_transformed.pose.position.x,
         pose_transformed.pose.position.y);
 
+      bool in_bounds = costmap->worldToMap(
+        pose_transformed.pose.position.x,
+        pose_transformed.pose.position.y, mx, my);
+
+      if (!in_bounds) {
+        response->success = false;
+        response->costs.push_back(LETHAL_OBSTACLE);
+        continue;
+      }
       // Get the cost at the map coordinates
       response->costs.push_back(static_cast<float>(costmap->getCost(mx, my)));
     }

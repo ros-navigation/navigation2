@@ -57,7 +57,7 @@ bool GoalDistCritic::prepare(
   cell_values_[index] = 0.0;
   queue_->enqueueCell(local_goal_x, local_goal_y);
 
-  propogateManhattanDistances();
+  propagateManhattanDistances();
 
   return true;
 }

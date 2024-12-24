@@ -260,7 +260,7 @@ INSTANTIATE_TEST_SUITE_P(
   1.0,
   {1.0, 0.0}
 },
-    // Origin to hte negative X axis
+    // Origin to the negative X axis
     CircleSegmentIntersectionParam{
   {0.0, 0.0},
   {-2.0, 0.0},
@@ -405,7 +405,7 @@ TEST(RegulatedPurePursuitTest, projectCarrotPastGoal) {
   EXPECT_NEAR(pt.pose.position.x, cos(135.0 * M_PI / 180) * 10.0, EPSILON);
   EXPECT_NEAR(pt.pose.position.y, sin(135.0 * M_PI / 180) * 10.0, EPSILON);
 
-  // 2 poses bck
+  // 2 poses back
   path.poses.clear();
   path.poses.resize(2);
   path.poses[0].pose.position.x = -2.0;
@@ -646,7 +646,7 @@ TEST(RegulatedPurePursuitTest, applyConstraints)
   // ctrl->resetVelocityRegulationScaling();
   // curvature = 0.0;
 
-  // min changable cost
+  // min changeable cost
   // pose_cost = 1;
   // linear_vel = 0.5;
   // curr_speed.linear.x = 0.5;

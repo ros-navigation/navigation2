@@ -61,9 +61,6 @@ public:
         BT::InputPort<double>("wait_duration", 1.0, "Wait time")
       });
   }
-
-private:
-  bool initialized_;
 };
 
 }  // namespace nav2_behavior_tree

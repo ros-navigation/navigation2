@@ -198,7 +198,7 @@ protected:
   std::string global_frame_;
   std::string robot_base_frame_;
   double transform_tolerance_;
-  rclcpp::Duration elasped_time_{0, 0};
+  rclcpp::Duration elapsed_time_{0, 0};
 
   // Clock
   rclcpp::Clock::SharedPtr clock_;
@@ -236,7 +236,7 @@ protected:
     rclcpp::WallRate loop_rate(cycle_frequency_);
 
     while (rclcpp::ok()) {
-      elasped_time_ = clock_->now() - start_time;
+      elapsed_time_ = clock_->now() - start_time;
       // TODO(orduno) #868 Enable preempting a Behavior on-the-fly without stopping
       if (action_server_->is_preempt_requested()) {
         RCLCPP_ERROR(
@@ -253,7 +253,7 @@ protected:
       if (action_server_->is_cancel_requested()) {
         RCLCPP_INFO(logger_, "Canceling %s", behavior_name_.c_str());
         stopRobot();
-        result->total_elapsed_time = elasped_time_;
+        result->total_elapsed_time = elapsed_time_;
         onActionCompletion(result);
         action_server_->terminate_all(result);
         return;

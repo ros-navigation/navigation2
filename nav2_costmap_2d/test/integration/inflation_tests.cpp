@@ -264,7 +264,7 @@ TEST_F(TestNode, testInflationShouldNotCreateUnknowns)
   EXPECT_EQ(countValues(*costmap, nav2_costmap_2d::NO_INFORMATION), 0u);
 }
 
-TEST_F(TestNode, testInflationInUnkown)
+TEST_F(TestNode, testInflationInUnknown)
 {
   std::vector<rclcpp::Parameter> parameters;
   // Set cost_scaling_factor parameter to 1.0 for inflation layer
@@ -299,7 +299,7 @@ TEST_F(TestNode, testInflationInUnkown)
   EXPECT_EQ(countValues(*costmap, nav2_costmap_2d::NO_INFORMATION), 4u);
 }
 
-TEST_F(TestNode, testInflationAroundUnkown)
+TEST_F(TestNode, testInflationAroundUnknown)
 {
   auto inflation_radius = 4.1;
   std::vector<rclcpp::Parameter> parameters;

@@ -96,7 +96,7 @@ public:
  * how far each cell is from an obstacle, and is also used in a number of Trajectory cost functions.
  *
  * It is implemented with a queue. The standard operation is to enqueueCell the original set, and then
- * retreive the other cells with the isEmpty/getNextCell iterator-like functionality. getNextCell
+ * retrieve the other cells with the isEmpty/getNextCell iterator-like functionality. getNextCell
  * returns an object that contains the coordinates of this cell and the origin cell, as well as
  * the distance between them. By default, the Euclidean distance is used for ordering, but passing in
  * manhattan=true to the constructor will use the Manhattan distance.
@@ -138,7 +138,7 @@ public:
   /**
    * @brief Check to see if we should add this cell to the queue. Always true unless overridden.
    * @param cell The cell to check
-   * @return True, unless overriden
+   * @return True, unless overridden
    */
   virtual bool validCellToQueue(const CellData & /*cell*/) {return true;}
   /**

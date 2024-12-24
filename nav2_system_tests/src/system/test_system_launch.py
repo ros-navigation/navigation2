@@ -129,7 +129,6 @@ def generate_launch_description():
                 ),
                 launch_arguments={
                     'namespace': '',
-                    'use_namespace': 'False',
                     'map': map_yaml_file,
                     'use_sim_time': 'True',
                     'params_file': new_yaml,

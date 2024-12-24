@@ -286,7 +286,7 @@ public:
   }
 
   /**
-   * @brief Deactive action server
+   * @brief Deactivate action server
    */
   void deactivate()
   {

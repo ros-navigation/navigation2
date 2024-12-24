@@ -59,7 +59,7 @@ namespace dwb_critics
  *     score trajectories that have linear movement as invalid and score the rest based on the result of the
  *     scoreRotation method
  *
- * The scoreRotation method can be overriden, but the default behavior is to return the shortest angular distance
+ * The scoreRotation method can be overridden, but the default behavior is to return the shortest angular distance
  * between the goal pose and a pose from the trajectory. Which pose depends on the lookahead_time parameter.
  *  * If the lookahead_time parameter is negative, the pose evaluated will be the last pose in the trajectory,
  *    which is the same as DWA's behavior. This is the default.

@@ -108,17 +108,21 @@ public:
 
   /**
    * @brief Creating path from given costmap, start, and goal
-   * @param path Reference to a vector of indicies of generated path
+   * @param path Reference to a vector of indices of generated path
    * @param num_iterations Reference to number of iterations to create plan
    * @param tolerance Reference to tolerance in costmap nodes
    * @param cancel_checker Function to check if the task has been canceled
    * @param expansions_log Optional expansions logged for debug
+   * @param goal_heading_mode The goal heading mode to use
+   * @param coarse_search_resolution The resolution to search for goal heading
    * @return if plan was successful
    */
   bool createPath(
     CoordinateVector & path, int & num_iterations, const float & tolerance,
     std::function<bool()> cancel_checker,
-    std::vector<std::tuple<float, float, float>> * expansions_log = nullptr);
+    std::vector<std::tuple<float, float, float>> * expansions_log = nullptr,
+    const GoalHeadingMode & goal_heading_mode = GoalHeadingMode::DEFAULT,
+    const int & coarse_search_resolution = 0);
 
   /**
    * @brief Sets the collision checker to use
@@ -131,6 +135,7 @@ public:
    * @param mx The node X index of the goal
    * @param my The node Y index of the goal
    * @param dim_3 The node dim_3 index of the goal
+   * @param goal_heading_mode The goal heading mode to use
    */
   void setGoal(
     const float & mx,
@@ -175,7 +180,7 @@ public:
 
   /**
    * @brief Get maximum number of on-approach iterations after within threshold
-   * @return Reference to Maximum on-appraoch iterations parameter
+   * @return Reference to Maximum on-approach iterations parameter
    */
   int & getOnApproachMaxIterations();
 
@@ -244,7 +249,7 @@ protected:
   inline bool areInputsValid();
 
   /**
-   * @brief Clear hueristic queue of nodes to search
+   * @brief Clear heuristic queue of nodes to search
    */
   inline void clearQueue();
 

@@ -80,7 +80,6 @@ private:
 
   std::string child_frame_;
   std::string parent_frame_;
-  bool initialized_;
 };
 
 }  // namespace nav2_behavior_tree

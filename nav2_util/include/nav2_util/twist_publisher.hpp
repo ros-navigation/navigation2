@@ -61,7 +61,7 @@ public:
     using nav2_util::declare_parameter_if_not_declared;
     declare_parameter_if_not_declared(
       node, "enable_stamped_cmd_vel",
-      rclcpp::ParameterValue{false});
+      rclcpp::ParameterValue{true});
     node->get_parameter("enable_stamped_cmd_vel", is_stamped_);
     if (is_stamped_) {
       twist_stamped_pub_ = node->create_publisher<geometry_msgs::msg::TwistStamped>(
@@ -122,7 +122,7 @@ public:
 
 protected:
   std::string topic_;
-  bool is_stamped_;
+  bool is_stamped_{true};
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr twist_pub_;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::TwistStamped>::SharedPtr
     twist_stamped_pub_;

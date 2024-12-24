@@ -127,7 +127,7 @@ TEST_F(TestCostmapSubscriberShould, handleFullCostmapMsgs)
   bool always_send_full_costmap = true;
 
   std::vector<std::vector<std::uint8_t>> expectedCostmaps;
-  std::vector<std::vector<std::uint8_t>> recievedCostmaps;
+  std::vector<std::vector<std::uint8_t>> receivedCostmaps;
 
   auto costmapPublisher = std::make_shared<nav2_costmap_2d::Costmap2DPublisher>(
     node, costmapToSend.get(), "", topicName, always_send_full_costmap);
@@ -145,13 +145,13 @@ TEST_F(TestCostmapSubscriberShould, handleFullCostmapMsgs)
 
     rclcpp::spin_some(node->get_node_base_interface());
 
-    recievedCostmaps.emplace_back(getCurrentCharMapFromSubscriber());
+    receivedCostmaps.emplace_back(getCurrentCharMapFromSubscriber());
   }
 
   ASSERT_EQ(fullCostmapMsgCount, mapChanges.size());
   ASSERT_EQ(updateCostmapMsgCount, 0);
 
-  ASSERT_EQ(expectedCostmaps, recievedCostmaps);
+  ASSERT_EQ(expectedCostmaps, receivedCostmaps);
 
   costmapPublisher->on_deactivate();
 }
@@ -161,7 +161,7 @@ TEST_F(TestCostmapSubscriberShould, handleCostmapUpdateMsgs)
   bool always_send_full_costmap = false;
 
   std::vector<std::vector<std::uint8_t>> expectedCostmaps;
-  std::vector<std::vector<std::uint8_t>> recievedCostmaps;
+  std::vector<std::vector<std::uint8_t>> receivedCostmaps;
 
   auto costmapPublisher = std::make_shared<nav2_costmap_2d::Costmap2DPublisher>(
     node, costmapToSend.get(), "", topicName, always_send_full_costmap);
@@ -179,13 +179,13 @@ TEST_F(TestCostmapSubscriberShould, handleCostmapUpdateMsgs)
 
     rclcpp::spin_some(node->get_node_base_interface());
 
-    recievedCostmaps.emplace_back(getCurrentCharMapFromSubscriber());
+    receivedCostmaps.emplace_back(getCurrentCharMapFromSubscriber());
   }
 
   ASSERT_EQ(fullCostmapMsgCount, 1);
   ASSERT_EQ(updateCostmapMsgCount, mapChanges.size() - 1);
 
-  ASSERT_EQ(expectedCostmaps, recievedCostmaps);
+  ASSERT_EQ(expectedCostmaps, receivedCostmaps);
 
   costmapPublisher->on_deactivate();
 }

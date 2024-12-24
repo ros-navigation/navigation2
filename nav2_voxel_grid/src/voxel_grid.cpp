@@ -213,7 +213,7 @@ VoxelStatus VoxelGrid::getVoxelColumn(
     return MARKED;
   }
 
-  // check if the number of unkown bits qualifies the col as unknown
+  // check if the number of unknown bits qualifies the col as unknown
   if (!bitsBelowThreshold(unknown_bits, unknown_threshold)) {
     return UNKNOWN;
   }

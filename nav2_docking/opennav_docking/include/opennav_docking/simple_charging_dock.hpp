@@ -61,7 +61,7 @@ public:
   virtual void activate() {}
 
   /**
-   * @brief Method to deactive Behavior and any threads involved in execution.
+   * @brief Method to deactivate Behavior and any threads involved in execution.
    */
   virtual void deactivate() {}
 

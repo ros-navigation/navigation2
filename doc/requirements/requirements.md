@@ -199,7 +199,7 @@ ME005 | Mission Execution.Command Sequencing | 1 | The Mission Execution module 
 ME006 | Mission Execution.Logging | 1 | The Mission Execution module SHOULD log its activity. | In case of forensic analysis of a safety event, for example.
 ME007 | Mission Execution.Feedback.Inputs.Error Recovery | 1 | Upon receipt of a downstream failure (unable to execute the Navigation Command), the Mission Execution module SHOULD attempt to recover and continue execution of the mission.
 ME008 | Mission Execution.Feedback.Outputs.Progress Notification | 1 | The Mission Execution module SHALL provide progress notifications on the execution of the mission. | Intermediate steps of interest.
-ME009 | Mission Execution.Feedback.Outputs.Mission Completed | 1 | Upon successfull completion of the mission, the Mission Execution module SHALL output a corresponding notification.
+ME009 | Mission Execution.Feedback.Outputs.Mission Completed | 1 | Upon successful completion of the mission, the Mission Execution module SHALL output a corresponding notification.
 ME010 | Mission Execution.Feedback.Outputs.Mission Canceled | 1 | Upon receiving a cancellation command and cancelling the mission, the Mission Execution module SHALL output a corresponding notification.
 ME011 | Mission Execution.Feedback.Outputs.Mission Failure | 1 | If the Mission Execution module is unable to execute the mission, it MUST output a failure notification. | This would be received by the user-level interface and could necessitate user intervention, such as having a remote operating center where the remote operator "rescues" the robot.
 ME012 | Mission Execution.Safe State Upon Failure | 1 | If the Mission Execution module is unable to execute the mission, it MUST direct the robot to a safe state. | The failure could be for a variety of reasons - sensor failures, algorithmic failure, a collision, etc.
@@ -267,7 +267,7 @@ There are a few support modules and subsystems that are not part of the Navigati
 
 ### 2.4.1 Mapping
 
-The map data format should be capable of describing typical indoor and outdoor environments encoutered by the robots.
+The map data format should be capable of describing typical indoor and outdoor environments encountered by the robots.
 
 Id | Handle | Priority | Description | Notes
 -- | ------ | -------- | ----------- | -----

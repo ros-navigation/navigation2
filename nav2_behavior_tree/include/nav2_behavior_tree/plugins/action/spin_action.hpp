@@ -64,6 +64,7 @@ public:
         BT::InputPort<double>("spin_dist", 1.57, "Spin distance"),
         BT::InputPort<double>("time_allowance", 10.0, "Allowed time for spinning"),
         BT::InputPort<bool>("is_recovery", true, "True if recovery"),
+        BT::InputPort<bool>("disable_collision_checks", false, "Disable collision checking"),
         BT::OutputPort<ActionResult::_error_code_type>(
           "error_code_id", "The spin behavior error code")
       });
@@ -86,7 +87,6 @@ public:
 
 private:
   bool is_recovery_;
-  bool initialized_;
 };
 
 }  // namespace nav2_behavior_tree

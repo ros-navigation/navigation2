@@ -21,7 +21,7 @@ from nav2_simple_commander.line_iterator import LineIterator
 class TestLineIterator(unittest.TestCase):
 
     def test_type_error(self):
-        # Test if a type error raised when passing invalid arguements types
+        # Test if a type error raised when passing invalid arguments types
         self.assertRaises(TypeError, LineIterator, 0, 0, '10', 10, '1')
 
     def test_value_error(self):

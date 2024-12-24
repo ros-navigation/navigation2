@@ -27,7 +27,7 @@ namespace nav2_collision_monitor
 {
 
 /**
- * @brief Circle shape implementaiton.
+ * @brief Circle shape implementation.
  * For STOP/SLOWDOWN/LIMIT model it represents zone around the robot
  * while for APPROACH model it represents robot footprint.
  */

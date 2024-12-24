@@ -91,7 +91,7 @@ public:
 
 protected:
   /**
-   * @brief Callback executed when a paramter change is detected
+   * @brief Callback executed when a parameter change is detected
    * @param parameters list of changed parameters
    */
   rcl_interfaces::msg::SetParametersResult
@@ -124,6 +124,7 @@ protected:
   std::string _motion_model_for_search;
   MotionModel _motion_model;
   GoalHeadingMode _goal_heading_mode;
+  int _coarse_search_resolution;
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr _raw_plan_publisher;
   rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr
     _planned_footprints_publisher;

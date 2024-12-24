@@ -170,6 +170,11 @@ void SmacPlannerHybrid::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".goal_heading_mode", rclcpp::ParameterValue("DEFAULT"));
   node->get_parameter(name + ".goal_heading_mode", goal_heading_type);
+
+  nav2_util::declare_parameter_if_not_declared(
+    node, name + ".coarse_search_resolution", rclcpp::ParameterValue(4));
+  node->get_parameter(name + ".coarse_search_resolution", _coarse_search_resolution);
+
   _goal_heading_mode = fromStringToGH(goal_heading_type);
   if (_goal_heading_mode == GoalHeadingMode::UNKNOWN) {
     std::string error_msg = "Unable to get GoalHeader type. Given '" + goal_heading_type + "' "
@@ -198,6 +203,14 @@ void SmacPlannerHybrid::configure(
       _logger, "maximum iteration selected as <= 0, "
       "disabling maximum iterations.");
     _max_iterations = std::numeric_limits<int>::max();
+  }
+
+  if (_coarse_search_resolution <= 0) {
+    RCLCPP_WARN(
+      _logger, "coarse iteration resolution selected as <= 0, "
+      "disabling coarse iteration resolution search for goal heading"
+    );
+    _coarse_search_resolution = 0;
   }
 
   if (_minimum_turning_radius_global_coords < _costmap->getResolution() * _downsampling_factor) {
@@ -370,8 +383,13 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   _a_star->setCollisionChecker(&_collision_checker);
 
   // Set starting point, in A* bin search coordinates
-  float mx, my;
-  if (!costmap->worldToMapContinuous(start.pose.position.x, start.pose.position.y, mx, my)) {
+  float mx_start, my_start, mx_goal, my_goal;
+  if (!costmap->worldToMapContinuous(
+    start.pose.position.x,
+    start.pose.position.y,
+    mx_start,
+    my_start))
+  {
     throw nav2_core::StartOutsideMapBounds(
             "Start Coordinates of(" + std::to_string(start.pose.position.x) + ", " +
             std::to_string(start.pose.position.y) + ") was outside bounds");
@@ -385,10 +403,15 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   if (orientation_bin >= static_cast<float>(_angle_quantizations)) {
     orientation_bin -= static_cast<float>(_angle_quantizations);
   }
-  _a_star->setStart(mx, my, static_cast<unsigned int>(orientation_bin));
+  _a_star->setStart(mx_start, my_start, static_cast<unsigned int>(orientation_bin));
 
   // Set goal point, in A* bin search coordinates
-  if (!costmap->worldToMapContinuous(goal.pose.position.x, goal.pose.position.y, mx, my)) {
+  if (!costmap->worldToMapContinuous(
+    goal.pose.position.x,
+    goal.pose.position.y,
+    mx_goal,
+    my_goal))
+  {
     throw nav2_core::GoalOutsideMapBounds(
             "Goal Coordinates of(" + std::to_string(goal.pose.position.x) + ", " +
             std::to_string(goal.pose.position.y) + ") was outside bounds");
@@ -401,7 +424,8 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   if (orientation_bin >= static_cast<float>(_angle_quantizations)) {
     orientation_bin -= static_cast<float>(_angle_quantizations);
   }
-  _a_star->setGoal(mx, my, static_cast<unsigned int>(orientation_bin), _goal_heading_mode);
+  _a_star->setGoal(mx_goal, my_goal, static_cast<unsigned int>(orientation_bin),
+                  _goal_heading_mode);
 
   // Setup message
   nav_msgs::msg::Path plan;
@@ -415,6 +439,22 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   pose.pose.orientation.z = 0.0;
   pose.pose.orientation.w = 1.0;
 
+  // Corner case of start and goal being on the same cell
+  if (std::floor(mx_start) == std::floor(mx_goal) &&
+    std::floor(my_start) == std::floor(my_goal))
+  {
+    pose.pose = start.pose;
+    pose.pose.orientation = goal.pose.orientation;
+    plan.poses.push_back(pose);
+
+    // Publish raw path for debug
+    if (_raw_plan_publisher->get_subscription_count() > 0) {
+      _raw_plan_publisher->publish(plan);
+    }
+
+    return plan;
+  }
+
   // Compute plan
   NodeHybrid::CoordinateVector path;
   int num_iterations = 0;
@@ -426,7 +466,8 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   // Note: All exceptions thrown are handled by the planner server and returned to the action
   if (!_a_star->createPath(
       path, num_iterations,
-      _tolerance / static_cast<float>(costmap->getResolution()), cancel_checker, expansions.get()))
+      _tolerance / static_cast<float>(costmap->getResolution()), cancel_checker, expansions.get(),
+      _goal_heading_mode, _coarse_search_resolution))
   {
     if (_debug_visualizations) {
       geometry_msgs::msg::PoseArray msg;
@@ -675,6 +716,15 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
           throw nav2_core::PlannerException("Invalid GoalHeadingMode type");
         } else {
           _goal_heading_mode = goal_heading_mode;
+        }
+      } else if (name == _name + ".coarse_search_resolution") {
+        _coarse_search_resolution = parameter.as_int();
+        if (_coarse_search_resolution <= 0) {
+          RCLCPP_WARN(
+            _logger, "coarse iteration resolution selected as <= 0, "
+            "disabling coarse iteration resolution search for goal heading"
+          );
+          _coarse_search_resolution = 0;
         }
       }
     }

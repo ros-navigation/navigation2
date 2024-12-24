@@ -43,7 +43,7 @@ TEST(PoseFilterTests, FilterTests)
   // Update filter
   geometry_msgs::msg::PoseStamped pose = filter.update(meas1);
 
-  // Header frame_id is inconsistent, so pose = measurment
+  // Header frame_id is inconsistent, so pose = measurement
   EXPECT_NEAR(pose.pose.position.x, 1.0, 0.0001);
   EXPECT_NEAR(pose.pose.position.y, 3.0, 0.0001);
   EXPECT_NEAR(pose.pose.position.z, 5.0, 0.0001);

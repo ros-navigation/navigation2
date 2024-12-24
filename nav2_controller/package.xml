@@ -14,6 +14,7 @@
   <depend>geometry_msgs</depend>
   <depend>lifecycle_msgs</depend>
   <depend>nav2_core</depend>
+  <depend>nav2_costmap_2d</depend>
   <depend>nav2_msgs</depend>
   <depend>nav2_util</depend>
   <depend>nav_2d_msgs</depend>

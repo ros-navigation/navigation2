@@ -169,6 +169,11 @@ public:
   }
 
   /**
+   * @brief Automatically configure and active the node
+   */
+  void autostart();
+
+  /**
    * @brief Perform preshutdown activities before our Context is shutdown.
    * Note that this is related to our Context's shutdown sequence, not the
    * lifecycle node state machine.
@@ -207,6 +212,7 @@ protected:
   // Connection to tell that server is still up
   std::unique_ptr<bond::Bond> bond_{nullptr};
   double bond_heartbeat_period;
+  rclcpp::TimerBase::SharedPtr autostart_timer_;
 };
 
 }  // namespace nav2_util

@@ -19,7 +19,7 @@ This helps to better understand how a single trajectory looks and
 to ensure that the x, y, and yaw values are correct. This is mainly
 used for debugging when making changes to parts of the code.
 However, if you would like to see how each trajectory in your
-ouput file looks then you can run this script.
+output file looks then you can run this script.
 """
 
 import json

@@ -32,7 +32,7 @@ public:
 };
 RosLockGuard g_rclcpp;
 
-// Tests basic transition from configure->active->process->deactive->cleanup
+// Tests basic transition from configure->active->process->deactivate->cleanup
 
 TEST(ControllerStateTransitionTest, ControllerNotFail)
 {

@@ -21,6 +21,8 @@
 #include "lifecycle_msgs/msg/state.hpp"
 #include "nav2_util/node_utils.hpp"
 
+using namespace std::chrono_literals;
+
 namespace nav2_util
 {
 
@@ -39,6 +41,14 @@ LifecycleNode::LifecycleNode(
   nav2_util::declare_parameter_if_not_declared(
     this, "bond_heartbeat_period", rclcpp::ParameterValue(0.1));
   this->get_parameter("bond_heartbeat_period", bond_heartbeat_period);
+
+  bool autostart_node = false;
+  nav2_util::declare_parameter_if_not_declared(
+    this, "autostart_node", rclcpp::ParameterValue(false));
+  this->get_parameter("autostart_node", autostart_node);
+  if (autostart_node) {
+    autostart();
+  }
 
   printLifecycleNodeNotification();
 
@@ -72,6 +82,24 @@ void LifecycleNode::createBond()
     bond_->setHeartbeatTimeout(4.0);
     bond_->start();
   }
+}
+
+void LifecycleNode::autostart()
+{
+  using lifecycle_msgs::msg::State;
+  autostart_timer_ = this->create_wall_timer(
+    0s,
+    [this]() -> void {
+      autostart_timer_->cancel();
+      RCLCPP_INFO(get_logger(), "Auto-starting node: %s", this->get_name());
+      if (configure().id() != State::PRIMARY_STATE_INACTIVE) {
+        RCLCPP_ERROR(get_logger(), "Auto-starting node %s failed to configure!", this->get_name());
+        return;
+      }
+      if (activate().id() != State::PRIMARY_STATE_ACTIVE) {
+        RCLCPP_ERROR(get_logger(), "Auto-starting node %s failed to activate!", this->get_name());
+      }
+    });
 }
 
 void LifecycleNode::runCleanups()

@@ -60,7 +60,7 @@ Footprint getOrientedFootprint(
  * efficiency. This is valid if the obstacles in the local costmap are inflated.
  *
  * A more robust class could check every cell within the robot's footprint without inflating the obstacles,
- * at some computational cost. That is left as an excercise to the reader.
+ * at some computational cost. That is left as an exercise to the reader.
  */
 class ObstacleFootprintCritic : public BaseObstacleCritic
 {

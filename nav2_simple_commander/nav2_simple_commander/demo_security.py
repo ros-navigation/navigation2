@@ -72,7 +72,7 @@ def main():
         navigator.goThroughPoses(route_poses)
 
         # Do something during our route (e.x. AI detection on camera images for anomalies)
-        # Simply print ETA for the demonstation
+        # Simply print ETA for the demonstration
         i = 0
         while not navigator.isTaskComplete():
             i += 1

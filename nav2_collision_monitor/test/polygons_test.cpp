@@ -738,7 +738,7 @@ TEST_F(Tester, testPolygonTopicUpdateDifferentFrame)
   polygon_->getPolygon(poly);
   ASSERT_EQ(poly.size(), 0u);
 
-  // Publush polygon in different frame and make shure that it was set correctly
+  // Publish polygon in different frame and make sure that it was set correctly
   test_node_->publishPolygon(BASE2_FRAME_ID, true);
   ASSERT_TRUE(waitPolygon(500ms, poly));
   ASSERT_EQ(poly.size(), 4u);
@@ -778,7 +778,7 @@ TEST_F(Tester, testPolygonTopicUpdateIncorrectFrame)
   polygon_->getPolygon(poly);
   ASSERT_EQ(poly.size(), 0u);
 
-  // Publush polygon in incorrect frame and check that polygon was not updated
+  // Publish polygon in incorrect frame and check that polygon was not updated
   test_node_->publishPolygon("incorrect_frame", true);
   ASSERT_FALSE(waitPolygon(100ms, poly));
 }

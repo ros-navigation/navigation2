@@ -474,7 +474,7 @@ class TrajectoryGenerator:
         x1, y1 = arc_start_point
         x2, y2 = arc_end_point
 
-        # Find intersection point of the perpindicular lines of line 1 and 2
+        # Find intersection point of the perpendicular lines of line 1 and 2
         # that pass through arc start and arc end point respectively
         if m1 == 0:
             # If line 1 has gradient 0 then it is the x-axis.

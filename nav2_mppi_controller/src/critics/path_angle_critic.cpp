@@ -70,12 +70,12 @@ void PathAngleCritic::score(CriticData & data)
   }
 
   utils::setPathFurthestPointIfNotSet(data);
-  auto offseted_idx = std::min(
+  auto offsetted_idx = std::min(
     *data.furthest_reached_path_point + offset_from_furthest_, data.path.x.shape(0) - 1);
 
-  const float goal_x = data.path.x(offseted_idx);
-  const float goal_y = data.path.y(offseted_idx);
-  const float goal_yaw = data.path.yaws(offseted_idx);
+  const float goal_x = data.path.x(offsetted_idx);
+  const float goal_y = data.path.y(offsetted_idx);
+  const float goal_yaw = data.path.yaws(offsetted_idx);
   const geometry_msgs::msg::Pose & pose = data.state.pose.pose;
 
   switch (mode_) {

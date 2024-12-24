@@ -2,7 +2,7 @@
 
 This experiment runs a set with randomly generated goals for objective benchmarking.
 
-Bechmarking scripts require the following python packages to be installed:
+Benchmarking scripts require the following python packages to be installed:
 
 ```
 pip install transforms3d

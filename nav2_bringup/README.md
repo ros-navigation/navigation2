@@ -35,7 +35,7 @@ ros2 launch nav2_bringup cloned_multi_tb3_simulation_launch.py robots:="robot1={
 
 #### Unique
 
-There are two robots including name and intitial pose are hard-coded in the launch script. Two separated unique robots are required params file (`nav2_multirobot_params_1.yaml`, `nav2_multirobot_params_2.yaml`) for each robot to bring up.
+There are two robots including name and initial pose are hard-coded in the launch script. Two separated unique robots are required params file (`nav2_multirobot_params_1.yaml`, `nav2_multirobot_params_2.yaml`) for each robot to bring up.
 
 If you want to bringup more than two robots, you should modify the `unique_multi_tb3_simulation_launch.py` script.
 
