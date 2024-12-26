@@ -97,7 +97,7 @@ void PathAlignCritic::score(CriticData & data)
   float traj_integrated_distance = 0.0f;
 
   int strided_traj_rows = data.trajectories.x.rows();
-  int strided_traj_cols = data.trajectories.x.cols() / trajectory_point_step_ + 1;
+  int strided_traj_cols = floor((data.trajectories.x.cols() - 1) / trajectory_point_step_) + 1;
   int outer_stride = strided_traj_rows * trajectory_point_step_;
   // Get strided trajectory information
   const auto T_x = Eigen::Map<const Eigen::ArrayXXf, 0,

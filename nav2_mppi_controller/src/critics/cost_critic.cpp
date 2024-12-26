@@ -125,7 +125,7 @@ void CostCritic::score(CriticData & data)
   repulsive_cost.setZero();
   bool all_trajectories_collide = true;
 
-  int strided_traj_cols = floor(data.trajectories.x.cols() / trajectory_point_step_);
+  int strided_traj_cols = floor((data.trajectories.x.cols() - 1) / trajectory_point_step_) + 1;
   int strided_traj_rows = data.trajectories.x.rows();
   int outer_stride = strided_traj_rows * trajectory_point_step_;
 

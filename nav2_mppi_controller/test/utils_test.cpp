@@ -222,7 +222,9 @@ TEST(UtilsTests, FurthestAndClosestReachedPoint)
 {
   models::State state;
   models::Trajectories generated_trajectories;
+  generated_trajectories.reset(100, 2);
   models::Path path;
+  path.reset(10);
   Eigen::ArrayXf costs;
   float model_dt = 0.1;
 
@@ -266,6 +268,7 @@ TEST(UtilsTests, findPathCosts)
   models::State state;
   models::Trajectories generated_trajectories;
   models::Path path;
+  path.reset(50);
   Eigen::ArrayXf costs;
   float model_dt = 0.1;
 
@@ -303,7 +306,6 @@ TEST(UtilsTests, findPathCosts)
     }
   }
 
-  path.reset(50);
   path.x(1) = 999999999;  // OFF COSTMAP
   path.y(1) = 999999999;
   path.x(10) = 1.5;  // IN LETHAL
