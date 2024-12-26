@@ -530,7 +530,7 @@ TEST(CriticTests, PathAlignCritic)
   data.goal_checker = &goal_checker;
 
   // Initialization testing
-  
+
   // Make sure initializes correctly
   PathAlignCritic critic;
   critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
@@ -543,7 +543,7 @@ TEST(CriticTests, PathAlignCritic)
   path.x(9) = 0.85;
   critic.score(data);
   EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
-  
+
   // provide state pose and path far enough to enable
   // but data furthest point reached is 0 and offset default is 20, so returns
   path.x(9) = 0.15;
