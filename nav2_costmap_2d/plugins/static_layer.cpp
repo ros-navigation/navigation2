@@ -161,7 +161,7 @@ StaticLayer::getParameters()
 
   // Enforce bounds
   lethal_threshold_ = std::max(std::min(temp_lethal_threshold, 100), 0);
-  map_received_ = false;
+  has_map_to_process_ = false;
   map_received_in_update_bounds_ = false;
 
   transform_tolerance_ = tf2::durationFromSec(temp_tf_tol);
@@ -282,13 +282,9 @@ StaticLayer::incomingMap(const nav_msgs::msg::OccupancyGrid::SharedPtr new_map)
     RCLCPP_ERROR(logger_, "Received map message is malformed. Rejecting.");
     return;
   }
-  if (!map_received_) {
-    processMap(*new_map);
-    map_received_ = true;
-    return;
-  }
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   map_buffer_ = new_map;
+  has_map_to_process_ = true;
 }
 
 void
@@ -339,19 +335,22 @@ StaticLayer::updateBounds(
   double * max_x,
   double * max_y)
 {
-  if (!map_received_) {
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+
+  if (!map_buffer_) {
     map_received_in_update_bounds_ = false;
     return;
   }
+
   map_received_in_update_bounds_ = true;
 
-  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
-
   // If there is a new available map, load it.
-  if (map_buffer_) {
+  if (has_map_to_process_) {
     processMap(*map_buffer_);
-    map_buffer_ = nullptr;
+    has_map_to_process_ = false;
   }
+
+  updateFootprint(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
 
   if (!layered_costmap_->isRolling() ) {
     if (!(has_updated_data_ || has_extra_bounds_)) {
@@ -372,8 +371,6 @@ StaticLayer::updateBounds(
   *max_y = std::max(wy, *max_y);
 
   has_updated_data_ = false;
-
-  updateFootprint(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
 }
 
 void
@@ -412,7 +409,15 @@ StaticLayer::updateCosts(
   }
 
   if (footprint_clearing_enabled_) {
-    setConvexPolygonCost(transformed_footprint_, nav2_costmap_2d::FREE_SPACE);
+    for (const auto index : transformed_footprint_by_index_) {
+      master_grid.setCost(index, interpretValue(map_buffer_->data[index]));
+      costmap_[index] = interpretValue(map_buffer_->data[index]);
+    }
+    transformed_footprint_by_index_.clear();
+    setConvexPolygonCost(transformed_footprint_, [this](unsigned int index) {
+        transformed_footprint_by_index_.push_back(index);
+        return nav2_costmap_2d::FREE_SPACE;
+      });
   }
 
   if (!layered_costmap_->isRolling()) {

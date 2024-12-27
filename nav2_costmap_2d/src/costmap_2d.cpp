@@ -276,6 +276,11 @@ void Costmap2D::setCost(unsigned int mx, unsigned int my, unsigned char cost)
   costmap_[getIndex(mx, my)] = cost;
 }
 
+void Costmap2D::setCost(unsigned int index, unsigned char cost)
+{
+  costmap_[index] = cost;
+}
+
 void Costmap2D::mapToWorld(unsigned int mx, unsigned int my, double & wx, double & wy) const
 {
   wx = origin_x_ + (mx + 0.5) * resolution_;
