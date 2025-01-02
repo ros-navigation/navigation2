@@ -173,6 +173,12 @@ public:
   NodeSet & getGoals();
 
   /**
+   * @brief Get pointer reference to goals node vector
+   * @return vector of node pointers reference to the goals nodes
+   */
+  NodeVector & getGoalsVector();
+
+  /**
    * @brief Get pointer reference to goals coordinates
    * @return vector of goals coordinates reference to the goals coordinates
    */
@@ -281,6 +287,7 @@ protected:
   CoordinateVector _goals_coordinates;
   NodePtr _start;
   NodeSet _goalsSet;
+  NodeVector _goalsVector;
 
   Graph _graph;
   NodeQueue _queue;

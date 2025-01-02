@@ -37,6 +37,7 @@ class AnalyticExpansion
 public:
   typedef NodeT * NodePtr;
   typedef std::unordered_set<NodePtr> NodeSet;
+  typedef std::vector<NodePtr> NodeVector;
   typedef typename NodeT::Coordinates Coordinates;
   typedef typename NodeT::CoordinateVector CoordinateVector;
   typedef std::function<bool (const uint64_t &, NodeT * &)> NodeGetter;
@@ -86,15 +87,16 @@ public:
    * @param goals_coords vector of goal coordinates to plan to
    * @param getter Gets a node at a set of coordinates
    * @param iterations Iterations to run over
-   * @param best_cost Best heuristic cost to propertionally expand more closer to the goal
    * @return Node pointer reference to goal node with the best score out of the goals node if
    * successful, else return nullptr
    */
   NodePtr tryAnalyticExpansion(
     const NodePtr & current_node,
-    const NodeSet & goals_node,
+    const NodeVector & goals_node,
     const CoordinateVector & goals_coords,
-    const NodeGetter & getter, int & iterations, int & best_cost);
+    const NodeGetter & getter, int & iterations,
+    int & closest_distance,
+    const int & coarse_search_resolution);
 
   /**
    * @brief Perform an analytic path expansion to the goal

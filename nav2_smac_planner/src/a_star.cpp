@@ -46,6 +46,7 @@ AStarAlgorithm<NodeT>::AStarAlgorithm(
   _goals_coordinates(CoordinateVector()),
   _start(nullptr),
   _goalsSet(NodeSet()),
+  _goalsVector(NodeVector()),
   _motion_model(motion_model)
 {
   _graph.reserve(100000);
@@ -200,9 +201,11 @@ void AStarAlgorithm<Node2D>::setGoal(
   }
   _goals_coordinates.clear();
   _goalsSet.clear();
+  _goalsVector.clear();
   _goalsSet.insert(addToGraph(Node2D::getIndex(mx, my, getSizeX())));
   Node2D::Coordinates goal_coords = Node2D::Coordinates(mx, my);
   (*_goalsSet.begin())->setPose(goal_coords);
+  _goalsVector.push_back(*_goalsSet.begin());
   _goals_coordinates.push_back(goal_coords);
 }
 
@@ -276,6 +279,7 @@ void AStarAlgorithm<NodeT>::setGoal(
   for (unsigned int i = 0; i < goals.size(); i++) {
     goals[i]->setPose(_goals_coordinates[i]);
     _goalsSet.insert(goals[i]);
+    _goalsVector.push_back(goals[i]);
   }
 }
 
@@ -294,13 +298,16 @@ bool AStarAlgorithm<NodeT>::areInputsValid()
 
   // Check if ending point is valid
   if (getToleranceHeuristic() < 0.001) {
-    // if a node is not valid, prune it from the goals set
+    // if a node is not valid, prune it from the goals set, goals vector, and goals coordinates
     for (auto it = _goalsSet.begin(); it != _goalsSet.end(); ) {
       if (!(*it)->isNodeValid(_traverse_unknown, _collision_checker)) {
         _goals_coordinates.erase(
           std::remove(
             _goals_coordinates.begin(), _goals_coordinates.end(), (*it)->pose),
           _goals_coordinates.end());
+        _goalsVector.erase(
+          std::remove(_goalsVector.begin(), _goalsVector.end(), *it),
+          _goalsVector.end());
         it = _goalsSet.erase(it);
       } else {
         ++it;
@@ -324,8 +331,6 @@ bool AStarAlgorithm<NodeT>::createPath(
   const GoalHeadingMode & goal_heading_mode,
   const int & coarse_search_resolution)
 {
-  (void) goal_heading_mode;
-  (void) coarse_search_resolution;
   steady_clock::time_point start_time = steady_clock::now();
   _tolerance = tolerance;
   _best_heuristic_node = {std::numeric_limits<float>::max(), 0};
@@ -365,6 +370,12 @@ bool AStarAlgorithm<NodeT>::createPath(
       return true;
     };
 
+  int current_coarse_search_resolution = coarse_search_resolution;
+  // if the user is not in all direction mode or disabled coarse search
+  if (goal_heading_mode != GoalHeadingMode::ALL_DIRECTION || coarse_search_resolution == 0) {
+    current_coarse_search_resolution = 1;
+  }
+
   while (iterations < getMaxIterations() && !_queue.empty()) {
     // Check for planning timeout and cancel only on every Nth iteration
     if (iterations % _terminal_checking_interval == 0) {
@@ -400,8 +411,9 @@ bool AStarAlgorithm<NodeT>::createPath(
     // 2.1) Use an analytic expansion (if available) to generate a path
     expansion_result = nullptr;
     expansion_result = _expander->tryAnalyticExpansion(
-      current_node, getGoals(),
-      getGoalsCoordinates(), neighborGetter, analytic_iterations, closest_distance);
+      current_node, getGoalsVector(),
+      getGoalsCoordinates(), neighborGetter, analytic_iterations, closest_distance,
+        current_coarse_search_resolution);
     if (expansion_result != nullptr) {
       current_node = expansion_result;
     }
@@ -464,6 +476,12 @@ template<typename NodeT>
 typename AStarAlgorithm<NodeT>::NodeSet & AStarAlgorithm<NodeT>::getGoals()
 {
   return _goalsSet;
+}
+
+template<typename NodeT>
+typename AStarAlgorithm<NodeT>::NodeVector & AStarAlgorithm<NodeT>::getGoalsVector()
+{
+  return _goalsVector;
 }
 
 template<typename NodeT>
