@@ -138,6 +138,7 @@ TEST(UtilsTests, WithTolTests)
 
   nav_msgs::msg::Path path;
   path.poses.resize(2);
+  geometry_msgs::msg::Pose & goal = path.poses.back().pose;
 
   // Create CriticData with state and goal initialized
   models::State state;
@@ -147,42 +148,34 @@ TEST(UtilsTests, WithTolTests)
   xt::xtensor<float, 1> costs;
   float model_dt;
   CriticData data = {
-    state, generated_trajectories, path_critic, path.poses.back().pose,
+    state, generated_trajectories, path_critic, goal,
     costs, model_dt, false, nullptr, nullptr, std::nullopt, std::nullopt};
 
   // Test not in tolerance
-  path.poses[1].pose.position.x = 0.0;
-  path.poses[1].pose.position.y = 0.0;
-  models::Path path_t = toTensor(path);
-  EXPECT_FALSE(withinPositionGoalTolerance(goal_checker, pose, path_t));
-  EXPECT_FALSE(withinPositionGoalTolerance(0.25, pose, path_t));
-  EXPECT_FALSE(withinPositionGoalTolerance(0.25, data));
+  goal.position.x = 0.0;
+  goal.position.y = 0.0;
+  EXPECT_FALSE(withinPositionGoalTolerance(goal_checker, pose, goal));
+  EXPECT_FALSE(withinPositionGoalTolerance(0.25, pose, goal));
 
   // Test in tolerance
-  path.poses[1].pose.position.x = 9.8;
-  path.poses[1].pose.position.y = 0.95;
-  path_t = toTensor(path);
-  EXPECT_TRUE(withinPositionGoalTolerance(goal_checker, pose, path_t));
-  EXPECT_TRUE(withinPositionGoalTolerance(0.25, pose, path_t));
-  EXPECT_TRUE(withinPositionGoalTolerance(0.25, data));
+  goal.position.x = 9.8;
+  goal.position.y = 0.95;
+  EXPECT_TRUE(withinPositionGoalTolerance(goal_checker, pose, goal));
+  EXPECT_TRUE(withinPositionGoalTolerance(0.25, pose, goal));
 
-  path.poses[1].pose.position.x = 10.0;
-  path.poses[1].pose.position.y = 0.76;
-  path_t = toTensor(path);
-  EXPECT_TRUE(withinPositionGoalTolerance(goal_checker, pose, path_t));
-  EXPECT_TRUE(withinPositionGoalTolerance(0.25, pose, path_t));
-  EXPECT_TRUE(withinPositionGoalTolerance(0.25, data));
+  goal.position.x = 10.0;
+  goal.position.y = 0.76;
+  EXPECT_TRUE(withinPositionGoalTolerance(goal_checker, pose, goal));
+  EXPECT_TRUE(withinPositionGoalTolerance(0.25, pose, goal));
 
-  path.poses[1].pose.position.x = 9.76;
-  path.poses[1].pose.position.y = 1.0;
-  path_t = toTensor(path);
-  EXPECT_TRUE(withinPositionGoalTolerance(goal_checker, pose, path_t));
-  EXPECT_TRUE(withinPositionGoalTolerance(0.25, pose, path_t));
-  EXPECT_TRUE(withinPositionGoalTolerance(0.25, data));
+  goal.position.x = 9.76;
+  goal.position.y = 1.0;
+  EXPECT_TRUE(withinPositionGoalTolerance(goal_checker, pose, goal));
+  EXPECT_TRUE(withinPositionGoalTolerance(0.25, pose, goal));
 
   delete goal_checker;
   goal_checker = nullptr;
-  EXPECT_FALSE(withinPositionGoalTolerance(goal_checker, pose, path_t));
+  EXPECT_FALSE(withinPositionGoalTolerance(goal_checker, pose, goal));
 }
 
 TEST(UtilsTests, AnglesTests)
