@@ -153,6 +153,7 @@ TEST(CriticTests, GoalAngleCritic)
   path.x(9) = 10.0;
   path.y(9) = 0.0;
   path.yaws(9) = 3.14;
+  goal.position.x = 10.0;
   critic.score(data);
   EXPECT_NEAR(xt::sum(costs, immediate)(), 0, 1e-6);
 
@@ -205,6 +206,7 @@ TEST(CriticTests, GoalCritic)
   path.reset(10);
   path.x(9) = 10.0;
   path.y(9) = 0.0;
+  goal.position.x = 10.0;
   critic.score(data);
   EXPECT_NEAR(costs(2), 0.0, 1e-6);  // (0 * 5.0 weight
   EXPECT_NEAR(xt::sum(costs, immediate)(), 0.0, 1e-6);  // Should all be 0 * 1000
@@ -213,6 +215,7 @@ TEST(CriticTests, GoalCritic)
   // provide state pose and path close
   path.x(9) = 0.5;
   path.y(9) = 0.0;
+  goal.position.x = 0.5;
   critic.score(data);
   EXPECT_NEAR(costs(2), 2.5, 1e-6);  // (sqrt(10.0 * 10.0) * 5.0 weight
   EXPECT_NEAR(xt::sum(costs, immediate)(), 2500.0, 1e-6);  // should be 2.5 * 1000
@@ -257,11 +260,13 @@ TEST(CriticTests, PathAngleCritic)
   state.pose.pose.position.y = 0.0;
   path.reset(10);
   path.x(9) = 0.15;
+  goal.position.x = 0.15;
   critic.score(data);
   EXPECT_NEAR(xt::sum(costs, immediate)(), 0.0, 1e-6);
 
   // provide state pose and path close but outside of tol. with less than PI/2 angular diff.
   path.x(9) = 0.95;
+  goal.position.x = 0.95;
   data.furthest_reached_path_point = 2;  // So it grabs the 2 + offset_from_furthest_ = 6th point
   path.x(6) = 1.0;  // angle between path point and pose = 0 < max_angle_to_furthest_
   path.y(6) = 0.0;
@@ -314,11 +319,13 @@ TEST(CriticTests, PreferForwardCritic)
   state.pose.pose.position.x = 1.0;
   path.reset(10);
   path.x(9) = 10.0;
+  goal.position.x = 10.0;
   critic.score(data);
   EXPECT_NEAR(xt::sum(costs, immediate)(), 0.0f, 1e-6f);
 
   // provide state pose and path close to trigger behavior but with all forward motion
   path.x(9) = 0.15;
+  goal.position.x = 0.15;
   state.vx = xt::ones<float>({1000, 30});
   critic.score(data);
   EXPECT_NEAR(xt::sum(costs, immediate)(), 0.0f, 1e-6f);
@@ -369,11 +376,13 @@ TEST(CriticTests, TwirlingCritic)
   state.pose.pose.position.x = 1.0;
   path.reset(10);
   path.x(9) = 10.0;
+  goal.position.x = 10.0;
   critic.score(data);
   EXPECT_NEAR(xt::sum(costs, immediate)(), 0.0, 1e-6);
 
   // provide state pose and path close to trigger behavior but with no angular variation
   path.x(9) = 0.15;
+  goal.position.x = 0.15;
   state.wz = xt::zeros<float>({1000, 30});
   critic.score(data);
   EXPECT_NEAR(xt::sum(costs, immediate)(), 0.0, 1e-6);
@@ -426,16 +435,18 @@ TEST(CriticTests, PathFollowCritic)
 
   // Scoring testing
 
-  // provide state poses and path close within positional tolerances
+  // provide state poses and goal close within positional tolerances
   state.pose.pose.position.x = 2.0;
   path.reset(6);
-  path.x(5) = 1.7;
+  path.x(5) = 1.8;
+  goal.position.x = 1.8;
   critic.score(data);
   EXPECT_NEAR(xt::sum(costs, immediate)(), 0.0, 1e-6);
 
   // provide state pose and path far enough to enable
   // pose differential is (0, 0) and (0.15, 0)
   path.x(5) = 0.15;
+  goal.position.x = 0.15;
   critic.score(data);
   EXPECT_NEAR(xt::sum(costs, immediate)(), 750.0, 1e-2);  // 0.15 * 5 weight * 1000
 }
@@ -479,12 +490,14 @@ TEST(CriticTests, PathAlignCritic)
   state.pose.pose.position.x = 1.0;
   path.reset(10);
   path.x(9) = 0.85;
+  goal.position.x = 0.85;
   critic.score(data);
   EXPECT_NEAR(xt::sum(costs, immediate)(), 0.0, 1e-6);
 
   // provide state pose and path far enough to enable
   // but data furthest point reached is 0 and offset default is 20, so returns
   path.x(9) = 0.15;
+  goal.position.x = 0.15;
   critic.score(data);
   EXPECT_NEAR(xt::sum(costs, immediate)(), 0.0, 1e-6);
 
@@ -492,6 +505,7 @@ TEST(CriticTests, PathAlignCritic)
   // but with empty trajectories and paths, should still be zero
   *data.furthest_reached_path_point = 21;
   path.x(9) = 0.15;
+  goal.position.x = 0.15;
   critic.score(data);
   EXPECT_NEAR(xt::sum(costs, immediate)(), 0.0, 1e-6);
 
@@ -522,6 +536,7 @@ TEST(CriticTests, PathAlignCritic)
   path.x(19) = 0.9;
   path.x(20) = 0.9;
   path.x(21) = 0.9;
+  goal.position.x = 0.9;
   generated_trajectories.x = 0.66 * xt::ones<float>({1000, 30});
   critic.score(data);
   // 0.66 * 1000 * 10 weight * 6 num pts eval / 6 normalization term
@@ -541,6 +556,7 @@ TEST(CriticTests, PathAlignCritic)
   costs = xt::zeros<float>({1000});
   path.x = 1.5 * xt::ones<float>({22});
   path.y = 1.5 * xt::ones<float>({22});
+  goal.position.x = 1.5;
   critic.score(data);
   EXPECT_NEAR(xt::sum(costs, immediate)(), 0.0, 1e-6);
 }
@@ -584,12 +600,14 @@ TEST(CriticTests, PathAlignLegacyCritic)
   state.pose.pose.position.x = 1.0;
   path.reset(10);
   path.x(9) = 0.85;
+  goal.position.x = 0.85;
   critic.score(data);
   EXPECT_NEAR(xt::sum(costs, immediate)(), 0.0, 1e-6);
 
   // provide state pose and path far enough to enable
   // but data furthest point reached is 0 and offset default is 20, so returns
   path.x(9) = 0.15;
+  goal.position.x = 0.15;
   critic.score(data);
   EXPECT_NEAR(xt::sum(costs, immediate)(), 0.0, 1e-6);
 
@@ -597,6 +615,7 @@ TEST(CriticTests, PathAlignLegacyCritic)
   // but with empty trajectories and paths, should still be zero
   *data.furthest_reached_path_point = 21;
   path.x(9) = 0.15;
+  goal.position.x = 0.15;
   critic.score(data);
   EXPECT_NEAR(xt::sum(costs, immediate)(), 0.0, 1e-6);
 
@@ -627,6 +646,7 @@ TEST(CriticTests, PathAlignLegacyCritic)
   path.x(19) = 0.9;
   path.x(20) = 0.9;
   path.x(21) = 0.9;
+  goal.position.x = 0.9;
   generated_trajectories.x = 0.66 * xt::ones<float>({1000, 30});
   critic.score(data);
   // 0.04 * 1000 * 10 weight * 6 num pts eval / 6 normalization term
@@ -646,6 +666,7 @@ TEST(CriticTests, PathAlignLegacyCritic)
   costs = xt::zeros<float>({1000});
   path.x = 1.5 * xt::ones<float>({22});
   path.y = 1.5 * xt::ones<float>({22});
+  goal.position.x = 1.5;
   critic.score(data);
   EXPECT_NEAR(xt::sum(costs, immediate)(), 0.0, 1e-6);
 }
