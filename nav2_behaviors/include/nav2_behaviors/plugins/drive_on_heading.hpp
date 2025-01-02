@@ -184,7 +184,11 @@ public:
 
   void onCleanup() override {last_vel_ = std::numeric_limits<double>::max();}
 
-  void onActionCompletion() override {last_vel_ = std::numeric_limits<double>::max();}
+  void onActionCompletion(std::shared_ptr<typename ActionT::Result>/*result*/)
+  override
+  {
+    last_vel_ = std::numeric_limits<double>::max();
+  }
 
 protected:
   /**
