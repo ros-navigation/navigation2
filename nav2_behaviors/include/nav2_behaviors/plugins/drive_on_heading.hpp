@@ -134,29 +134,23 @@ public:
     cmd_vel->header.frame_id = this->robot_base_frame_;
     cmd_vel->twist.linear.y = 0.0;
     cmd_vel->twist.angular.z = 0.0;
-    if (acceleration_limit_ <= 0.0 && deceleration_limit_ <= 0.0) {
+    if (acceleration_limit_ <= 0.0 || deceleration_limit_ <= 0.0) {
       cmd_vel->twist.linear.x = command_speed_;
     } else {
       double current_speed = last_vel_ == std::numeric_limits<double>::max() ? 0.0 : last_vel_;
-      auto remaining_distance = std::fabs(command_x_) - distance;
-      double min_feasible_speed = -std::numeric_limits<double>::infinity();
-      double max_feasible_speed = std::numeric_limits<double>::infinity();
-      if (deceleration_limit_ > 0.0) {
-        min_feasible_speed = current_speed - deceleration_limit_ / this->cycle_frequency_;
-      }
-      if (acceleration_limit_ > 0.0) {
-        max_feasible_speed = current_speed + acceleration_limit_ / this->cycle_frequency_;
-      }
+
+      double min_feasible_speed = current_speed - deceleration_limit_ / this->cycle_frequency_;
+      double max_feasible_speed = current_speed + acceleration_limit_ / this->cycle_frequency_;
       cmd_vel->twist.linear.x = std::clamp(command_speed_, min_feasible_speed, max_feasible_speed);
 
       // Check if we need to slow down to avoid overshooting
-      bool forward = command_speed_ > 0.0;
-      if (forward && deceleration_limit_ > 0.0) {
+      auto remaining_distance = std::fabs(command_x_) - distance;
+      if (command_speed_ > 0.0) {
         double max_vel_to_stop = std::sqrt(2.0 * deceleration_limit_ * remaining_distance);
         if (max_vel_to_stop < cmd_vel->twist.linear.x) {
           cmd_vel->twist.linear.x = max_vel_to_stop;
         }
-      } else if (!forward && acceleration_limit_ > 0.0) {
+      } else {
         double max_vel_to_stop = -std::sqrt(2.0 * acceleration_limit_ * remaining_distance);
         if (max_vel_to_stop > cmd_vel->twist.linear.x) {
           cmd_vel->twist.linear.x = max_vel_to_stop;
