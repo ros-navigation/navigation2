@@ -18,8 +18,7 @@
 #include <string>
 #include <vector>
 
-#include "geometry_msgs/msg/point.hpp"
-#include "geometry_msgs/msg/quaternion.hpp"
+#include "nav2_msgs/msg/pose_stamped_array.hpp"
 #include "nav2_msgs/action/navigate_through_poses.hpp"
 #include "nav2_behavior_tree/bt_action_node.hpp"
 
@@ -74,7 +73,7 @@ public:
   {
     return providedBasicPorts(
       {
-        BT::InputPort<std::vector<geometry_msgs::msg::PoseStamped>>(
+        BT::InputPort<nav2_msgs::msg::PoseStampedArray>(
           "goals", "Destinations to plan through"),
         BT::InputPort<std::string>("behavior_tree", "Behavior tree to run"),
         BT::OutputPort<ActionResult::_error_code_type>(
