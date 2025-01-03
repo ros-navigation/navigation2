@@ -248,7 +248,7 @@ inline bool withinPositionGoalTolerance(
     std::pow(goal.position.x - robot.position.x, 2) +
     std::pow(goal.position.y - robot.position.y, 2);
 
-  const auto pose_tolerance_sq = pose_tolerance * pose_tolerance;
+  const float pose_tolerance_sq = pose_tolerance * pose_tolerance;
 
   if (dist_sq < pose_tolerance_sq) {
     return true;
