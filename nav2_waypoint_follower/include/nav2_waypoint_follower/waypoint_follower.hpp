@@ -56,6 +56,7 @@ struct GoalStatus
 {
   ActionStatus status;
   int error_code;
+  std::string error_msg;
 };
 
 /**
