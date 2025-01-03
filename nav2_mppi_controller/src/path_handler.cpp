@@ -191,11 +191,11 @@ geometry_msgs::msg::PoseStamped PathHandler::getTransformedGoal()
   auto goal = global_plan_.poses.back();
   goal.header.stamp = global_plan_.header.stamp;
   if (goal.header.frame_id.empty()) {
-    throw std::runtime_error("Goal pose has an empty frame_id");
+    throw nav2_core::ControllerTFError("Goal pose has an empty frame_id");
   }
   geometry_msgs::msg::PoseStamped transformed_goal;
   if (!transformPose(costmap_->getGlobalFrameID(), goal, transformed_goal)) {
-    throw std::runtime_error("Unable to transform goal pose into costmap frame");
+    throw nav2_core::ControllerTFError("Unable to transform goal pose into costmap frame");
   }
   return transformed_goal;
 }
