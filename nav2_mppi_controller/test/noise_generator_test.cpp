@@ -70,7 +70,7 @@ TEST(NoiseGeneratorTest, NoiseGeneratorMain)
   // Populate a potential control sequence
   mppi::models::ControlSequence control_sequence;
   control_sequence.reset(25);
-  for (unsigned int i = 0; i != control_sequence.vx.shape(0); i++) {
+  for (unsigned int i = 0; i != control_sequence.vx.rows(); i++) {
     control_sequence.vx(i) = i;
     control_sequence.vy(i) = i;
     control_sequence.wz(i) = i;
@@ -86,9 +86,9 @@ TEST(NoiseGeneratorTest, NoiseGeneratorMain)
   EXPECT_EQ(state.cvx(0), 0);
   EXPECT_EQ(state.cvy(0), 0);
   EXPECT_EQ(state.cwz(0), 0);
-  EXPECT_EQ(state.cvx(9), 9);
-  EXPECT_EQ(state.cvy(9), 9);
-  EXPECT_EQ(state.cwz(9), 9);
+  EXPECT_EQ(state.cvx(0, 9), 9);
+  EXPECT_EQ(state.cvy(0, 9), 9);
+  EXPECT_EQ(state.cwz(0, 9), 9);
 
   // Request an update with noise requested
   generator.generateNextNoises();
@@ -97,16 +97,16 @@ TEST(NoiseGeneratorTest, NoiseGeneratorMain)
   EXPECT_NE(state.cvx(0), 0);
   EXPECT_EQ(state.cvy(0), 0);  // Not populated in non-holonomic
   EXPECT_NE(state.cwz(0), 0);
-  EXPECT_NE(state.cvx(9), 9);
-  EXPECT_EQ(state.cvy(9), 9);  // Not populated in non-holonomic
-  EXPECT_NE(state.cwz(9), 9);
+  EXPECT_NE(state.cvx(0, 9), 9);
+  EXPECT_EQ(state.cvy(0, 9), 9);  // Not populated in non-holonomic
+  EXPECT_NE(state.cwz(0, 9), 9);
 
   EXPECT_NEAR(state.cvx(0), 0, 0.3);
   EXPECT_NEAR(state.cvy(0), 0, 0.3);
   EXPECT_NEAR(state.cwz(0), 0, 0.3);
-  EXPECT_NEAR(state.cvx(9), 9, 0.3);
-  EXPECT_NEAR(state.cvy(9), 9, 0.3);
-  EXPECT_NEAR(state.cwz(9), 9, 0.3);
+  EXPECT_NEAR(state.cvx(0, 9), 9, 0.3);
+  EXPECT_NEAR(state.cvy(0, 9), 9, 0.3);
+  EXPECT_NEAR(state.cwz(0, 9), 9, 0.3);
 
   // Test holonomic setting
   generator.reset(settings, true);  // Now holonomically
@@ -116,16 +116,16 @@ TEST(NoiseGeneratorTest, NoiseGeneratorMain)
   EXPECT_NE(state.cvx(0), 0);
   EXPECT_NE(state.cvy(0), 0);  // Now populated in non-holonomic
   EXPECT_NE(state.cwz(0), 0);
-  EXPECT_NE(state.cvx(9), 9);
-  EXPECT_NE(state.cvy(9), 9);  // Now populated in non-holonomic
-  EXPECT_NE(state.cwz(9), 9);
+  EXPECT_NE(state.cvx(0, 9), 9);
+  EXPECT_NE(state.cvy(0, 9), 9);  // Now populated in non-holonomic
+  EXPECT_NE(state.cwz(0, 9), 9);
 
   EXPECT_NEAR(state.cvx(0), 0, 0.3);
   EXPECT_NEAR(state.cvy(0), 0, 0.3);
   EXPECT_NEAR(state.cwz(0), 0, 0.3);
-  EXPECT_NEAR(state.cvx(9), 9, 0.3);
-  EXPECT_NEAR(state.cvy(9), 9, 0.3);
-  EXPECT_NEAR(state.cwz(9), 9, 0.3);
+  EXPECT_NEAR(state.cvx(0, 9), 9, 0.3);
+  EXPECT_NEAR(state.cvy(0, 9), 9, 0.3);
+  EXPECT_NEAR(state.cwz(0, 9), 9, 0.3);
 
   generator.shutdown();
 }
