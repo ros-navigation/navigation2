@@ -15,6 +15,7 @@ For detailed instructions on how to:
 - [General Tutorials](https://docs.nav2.org/tutorials/index.html) and [Algorithm Developer Tutorials](https://docs.nav2.org/plugin_tutorials/index.html)
 - [Configure](https://docs.nav2.org/configuration/index.html)
 - [Navigation Plugins](https://docs.nav2.org/plugins/index.html)
+- [ROSCon Talks](https://docs.nav2.org/about/roscon.html)
 - [Migration Guides](https://docs.nav2.org/migration/index.html)
 - [Container Images for Building Nav2](https://github.com/orgs/ros-navigation/packages/container/package/navigation2)
 - [Contribute](https://docs.nav2.org/development_guides/involvement_docs/index.html)
