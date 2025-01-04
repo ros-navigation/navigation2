@@ -35,7 +35,7 @@
 #include "tf2_ros/transform_broadcaster.h"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
-#include "tf2/utils.h"
+#include "tf2/utils.hpp"
 #pragma GCC diagnostic pop
 #include "nav2_util/geometry_utils.hpp"
 
