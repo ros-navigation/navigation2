@@ -162,7 +162,7 @@ protected:
   dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
 
   std::vector<geometry_msgs::msg::Point> transformed_footprint_;
-  std::vector<unsigned int> transformed_footprint_by_index_;
+  std::vector<unsigned int> cleared_indexes_in_map_;
   bool footprint_clearing_enabled_;
   /**
    * @brief Clear costmap layer info below the robot's footprint
@@ -196,7 +196,6 @@ protected:
   unsigned char unknown_cost_value_;
   bool trinary_costmap_;
   bool has_map_to_process_{false};
-  bool map_received_in_update_bounds_{false};
   tf2::Duration transform_tolerance_;
   nav_msgs::msg::OccupancyGrid::SharedPtr map_buffer_;
   // Dynamic parameters handler

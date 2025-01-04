@@ -162,7 +162,6 @@ StaticLayer::getParameters()
   // Enforce bounds
   lethal_threshold_ = std::max(std::min(temp_lethal_threshold, 100), 0);
   has_map_to_process_ = false;
-  map_received_in_update_bounds_ = false;
 
   transform_tolerance_ = tf2::durationFromSec(temp_tf_tol);
 
@@ -220,12 +219,8 @@ StaticLayer::processMap(const nav_msgs::msg::OccupancyGrid & new_map)
       new_map.info.origin.position.x, new_map.info.origin.position.y);
   }
 
-  unsigned int index = 0;
-
-  // we have a new map, update full size of map
-  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
-
   // initialize the costmap with static data
+  unsigned int index = 0;
   for (unsigned int i = 0; i < size_y; ++i) {
     for (unsigned int j = 0; j < size_x; ++j) {
       unsigned char value = new_map.data[index];
@@ -338,11 +333,8 @@ StaticLayer::updateBounds(
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
 
   if (!map_buffer_) {
-    map_received_in_update_bounds_ = false;
     return;
   }
-
-  map_received_in_update_bounds_ = true;
 
   // If there is a new available map, load it.
   if (has_map_to_process_) {
@@ -398,7 +390,7 @@ StaticLayer::updateCosts(
   if (!enabled_) {
     return;
   }
-  if (!map_received_in_update_bounds_) {
+  if (!map_buffer_) {
     static int count = 0;
     // throttle warning down to only 1/10 message rate
     if (++count == 10) {
@@ -406,18 +398,6 @@ StaticLayer::updateCosts(
       count = 0;
     }
     return;
-  }
-
-  if (footprint_clearing_enabled_) {
-    for (const auto index : transformed_footprint_by_index_) {
-      master_grid.setCost(index, interpretValue(map_buffer_->data[index]));
-      costmap_[index] = interpretValue(map_buffer_->data[index]);
-    }
-    transformed_footprint_by_index_.clear();
-    setConvexPolygonCost(transformed_footprint_, [this](unsigned int index) {
-        transformed_footprint_by_index_.push_back(index);
-        return nav2_costmap_2d::FREE_SPACE;
-      });
   }
 
   if (!layered_costmap_->isRolling()) {
@@ -462,6 +442,17 @@ StaticLayer::updateCosts(
         }
       }
     }
+  }
+
+  if (footprint_clearing_enabled_) {
+    for (const auto index : cleared_indexes_in_map_) {
+      master_grid.setCost(index, interpretValue(map_buffer_->data[index]));
+    }
+    cleared_indexes_in_map_.clear();
+    master_grid.setConvexPolygonCost(transformed_footprint_, [this](unsigned int index) {
+        cleared_indexes_in_map_.push_back(index);
+        return nav2_costmap_2d::FREE_SPACE;
+      });
   }
   current_ = true;
 }
