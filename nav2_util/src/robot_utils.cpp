@@ -18,7 +18,7 @@
 #include <cmath>
 #include <memory>
 
-#include "tf2/convert.h"
+#include "tf2/convert.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "rclcpp/logger.hpp"
 

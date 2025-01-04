@@ -109,8 +109,8 @@ void Costmap2DROS::init()
   declare_parameter("width", rclcpp::ParameterValue(5));
   declare_parameter("lethal_cost_threshold", rclcpp::ParameterValue(100));
   declare_parameter("observation_sources", rclcpp::ParameterValue(std::string("")));
-  declare_parameter("origin_x", rclcpp::ParameterValue(0.0));
-  declare_parameter("origin_y", rclcpp::ParameterValue(0.0));
+  declare_parameter("origin_x", rclcpp::ParameterValue(-2.5));
+  declare_parameter("origin_y", rclcpp::ParameterValue(-2.5));
   declare_parameter("plugins", rclcpp::ParameterValue(default_plugins_));
   declare_parameter("filters", rclcpp::ParameterValue(std::vector<std::string>()));
   declare_parameter("publish_frequency", rclcpp::ParameterValue(1.0));

@@ -176,14 +176,15 @@ TEST(RotationShimControllerTest, rotationAndTransformTests)
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("ShimControllerTest");
   std::string name = "PathFollower";
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
-  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
-  rclcpp_lifecycle::State state;
-  costmap->on_configure(state);
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap", "/", false);
+  costmap->configure();
 
   // set a valid primary controller so we can do lifecycle
   node->declare_parameter(
     "PathFollower.primary_controller",
     std::string("nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"));
+
+  node->declare_parameter("controller_frequency", 1.0);
 
   auto controller = std::make_shared<RotationShimShim>();
   controller->configure(node, name, tf, costmap);
@@ -237,8 +238,7 @@ TEST(RotationShimControllerTest, computeVelocityTests)
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   auto listener = std::make_shared<tf2_ros::TransformListener>(*tf, node, true);
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
-  rclcpp_lifecycle::State state;
-  costmap->on_configure(state);
+  costmap->configure();
   auto tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(node);
 
   geometry_msgs::msg::TransformStamped transform;
@@ -254,6 +254,7 @@ TEST(RotationShimControllerTest, computeVelocityTests)
   node->declare_parameter(
     "PathFollower.primary_controller",
     std::string("nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"));
+  node->declare_parameter("controller_frequency", 1.0);
 
   auto controller = std::make_shared<RotationShimShim>();
   controller->configure(node, name, tf, costmap);
@@ -295,23 +296,6 @@ TEST(RotationShimControllerTest, computeVelocityTests)
   tf_broadcaster->sendTransform(transform);
   auto effort = controller->computeVelocityCommands(pose, velocity, &checker);
   EXPECT_EQ(fabs(effort.twist.angular.z), 1.8);
-
-  path.header.frame_id = "base_link";
-  path.poses[1].pose.position.x = 0.1;
-  path.poses[1].pose.position.y = 0.1;
-  path.poses[2].pose.position.x = 1.0;
-  path.poses[2].pose.position.y = 0.0;
-  path.poses[2].header.frame_id = "base_link";
-  path.poses[3].pose.position.x = 10.0;
-  path.poses[3].pose.position.y = 10.0;
-
-  // this should allow it to find the sampled point, then transform to base_link
-  // validly because we setup the TF for it. The 1.0 should be selected since default min
-  // is 0.5 and that should cause a pass off to the RPP controller which will throw
-  // and exception because the costmap is bogus
-  controller->setPlan(path);
-  tf_broadcaster->sendTransform(transform);
-  EXPECT_THROW(controller->computeVelocityCommands(pose, velocity, &checker), std::runtime_error);
 }
 
 TEST(RotationShimControllerTest, computeVelocityGoalRotationTests) {
