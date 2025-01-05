@@ -14,9 +14,9 @@
 
 from typing import Dict, Text
 
-import yaml
-from launch.launch_context import LaunchContext
 import launch
+from launch.launch_context import LaunchContext
+import yaml
 
 
 class ParseMultiRobotPose(launch.Substitution):
@@ -36,27 +36,25 @@ class ParseMultiRobotPose(launch.Substitution):
         return ''
 
     def perform(self, context: LaunchContext) -> Dict:
-        """
-        Resolve and parse the robots argument string into a dictionary.
-        """
+        """Resolve and parse the robots argument string into a dictionary."""
         robots_str = self.__robots_argument.perform(context)
         if not robots_str:
             return {}
 
         multirobots = {}
-        for robot_entry in robots_str.split(";"):
-            key_val = robot_entry.strip().split("=")
+        for robot_entry in robots_str.split(';'):
+            key_val = robot_entry.strip().split('=')
             if len(key_val) != 2:
                 continue
 
             robot_name, pose_str = key_val[0].strip(), key_val[1].strip()
             robot_pose = yaml.safe_load(pose_str)
             # Set default values if not provided
-            robot_pose.setdefault("x", 0.0)
-            robot_pose.setdefault("y", 0.0)
-            robot_pose.setdefault("z", 0.0)
-            robot_pose.setdefault("roll", 0.0)
-            robot_pose.setdefault("pitch", 0.0)
-            robot_pose.setdefault("yaw", 0.0)
+            robot_pose.setdefault('x', 0.0)
+            robot_pose.setdefault('y', 0.0)
+            robot_pose.setdefault('z', 0.0)
+            robot_pose.setdefault('roll', 0.0)
+            robot_pose.setdefault('pitch', 0.0)
+            robot_pose.setdefault('yaw', 0.0)
             multirobots[robot_name] = robot_pose
         return multirobots
