@@ -104,9 +104,4 @@ void setSoftRealTimePriority()
   }
 }
 
-rclcpp::QoS DefaultPublisherQoS()
-{
-  return rclcpp::QoS(rclcpp::KeepLast(5)).reliable().durability_volatile();
-}
-
 }  // namespace nav2_util

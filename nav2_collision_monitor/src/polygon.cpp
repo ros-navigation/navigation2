@@ -92,7 +92,7 @@ bool Polygon::configure()
     }
 
     polygon_pub_ = node->create_publisher<geometry_msgs::msg::PolygonStamped>(
-      polygon_pub_topic, nav2_util::DefaultPublisherQoS());
+      polygon_pub_topic, rclcpp::SystemDefaultsQoS());
   }
 
   // Add callback for dynamic parameters

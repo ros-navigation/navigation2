@@ -22,7 +22,6 @@
 
 #include "utils/test_behavior_tree_fixture.hpp"
 #include "nav2_behavior_tree/plugins/condition/is_battery_charging_condition.hpp"
-#include "nav2_util/node_utils.hpp"
 
 class IsBatteryChargingConditionTestFixture : public ::testing::Test
 {
@@ -45,7 +44,7 @@ public:
 
     battery_pub_ = node_->create_publisher<sensor_msgs::msg::BatteryState>(
       "/battery_status",
-      nav2_util::DefaultPublisherQoS());
+      rclcpp::SystemDefaultsQoS());
   }
 
   static void TearDownTestCase()

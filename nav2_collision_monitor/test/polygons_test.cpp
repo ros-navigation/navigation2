@@ -94,7 +94,7 @@ public:
   void publishPolygon(const std::string & frame_id, const bool is_correct)
   {
     polygon_pub_ = this->create_publisher<geometry_msgs::msg::PolygonStamped>(
-      POLYGON_SUB_TOPIC, nav2_util::DefaultPublisherQoS());
+      POLYGON_SUB_TOPIC, rclcpp::SystemDefaultsQoS());
 
     std::unique_ptr<geometry_msgs::msg::PolygonStamped> msg =
       std::make_unique<geometry_msgs::msg::PolygonStamped>();
@@ -122,7 +122,7 @@ public:
   void publishRadius()
   {
     radius_pub_ = this->create_publisher<std_msgs::msg::Float32>(
-      POLYGON_SUB_TOPIC, nav2_util::DefaultPublisherQoS());
+      POLYGON_SUB_TOPIC, rclcpp::SystemDefaultsQoS());
 
     std::unique_ptr<std_msgs::msg::Float32> msg = std::make_unique<std_msgs::msg::Float32>();
     msg->data = CIRCLE_RADIUS;
