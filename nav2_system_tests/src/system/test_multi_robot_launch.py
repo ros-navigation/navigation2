@@ -73,7 +73,7 @@ def generate_launch_description():
         output='screen',
     )
 
-    # Define commands for spawing the robots into Gazebo
+    # Define commands for spawning the robots into Gazebo
     spawn_robots_cmds = []
     for robot in robots:
         spawn_robots_cmds.append(

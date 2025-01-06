@@ -25,7 +25,7 @@ DriveOnHeadingAction::DriveOnHeadingAction(
   const std::string & action_name,
   const BT::NodeConfiguration & conf)
 : BtActionNode<nav2_msgs::action::DriveOnHeading>(xml_tag_name, action_name, conf),
-  initalized_(false)
+  initialized_(false)
 {
 }
 
@@ -47,12 +47,12 @@ void DriveOnHeadingAction::initialize()
   goal_.speed = speed;
   goal_.time_allowance = rclcpp::Duration::from_seconds(time_allowance);
   goal_.disable_collision_checks = disable_collision_checks;
-  initalized_ = true;
+  initialized_ = true;
 }
 
 void DriveOnHeadingAction::on_tick()
 {
-  if (!initalized_) {
+  if (!initialized_) {
     initialize();
   }
 }

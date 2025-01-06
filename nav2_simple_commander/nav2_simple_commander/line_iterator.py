@@ -144,7 +144,7 @@ class LineIterator:
         return self.x0_
 
     def getY0(self):
-        """Get the ordinate of the intial point."""
+        """Get the ordinate of the initial point."""
         return self.y0_
 
     def getX1(self):

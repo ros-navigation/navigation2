@@ -15,6 +15,7 @@ For detailed instructions on how to:
 - [General Tutorials](https://docs.nav2.org/tutorials/index.html) and [Algorithm Developer Tutorials](https://docs.nav2.org/plugin_tutorials/index.html)
 - [Configure](https://docs.nav2.org/configuration/index.html)
 - [Navigation Plugins](https://docs.nav2.org/plugins/index.html)
+- [ROSCon Talks](https://docs.nav2.org/about/roscon.html)
 - [Migration Guides](https://docs.nav2.org/migration/index.html)
 - [Container Images for Building Nav2](https://github.com/orgs/ros-navigation/packages/container/package/navigation2)
 - [Contribute](https://docs.nav2.org/development_guides/involvement_docs/index.html)
@@ -28,7 +29,7 @@ Please visit our [documentation site](https://docs.nav2.org/). [Please visit our
 Please thank our amazing sponsors for their generous support of Nav2 on behalf of the community to allow the project to continue to be professionally maintained, developed, and supported for the long-haul! [Open Navigation LLC](https://www.opennav.org/) provides project leadership, maintenance, development, and support services to the Nav2 & ROS community. 
 
 <p align="center">
-  <img src="doc/sponsors_feb_2024.png" />
+  <img src="doc/sponsors_jan_2025.png" />
 </p>
 
 ### [Dexory](https://www.dexory.com/) develops robotics and AI logistics solutions to drive better business decisions using a digital twin of warehouses to provide inventory insights.
@@ -38,9 +39,6 @@ Please thank our amazing sponsors for their generous support of Nav2 on behalf o
 ### [Polymath Robotics](https://www.polymathrobotics.com/) creates safety-critical navigation systems for industrial vehicles that are radically simple to enable and deploy.
 
 ### [Stereolabs](https://www.stereolabs.com/) produces the high-quality ZED stereo cameras with a complete vision pipeline from neural depth to SLAM, 3D object tracking, AI and more.
-
-### Confidential is just happy to support Nav2's mission!
-
 
 ## Citation
 

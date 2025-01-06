@@ -107,7 +107,7 @@ Costmap2DPublisher::Costmap2DPublisher(
 
 Costmap2DPublisher::~Costmap2DPublisher() {}
 
-// TODO(bpwilcox): find equivalent/workaround to ros::SingleSubscriberPublishr
+// TODO(bpwilcox): find equivalent/workaround to ros::SingleSubscriberPublisher
 /*
 void Costmap2DPublisher::onNewSubscription(const ros::SingleSubscriberPublisher& pub)
 {
