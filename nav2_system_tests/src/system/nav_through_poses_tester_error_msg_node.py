@@ -27,13 +27,17 @@ from geometry_msgs.msg import PoseWithCovarianceStamped
 from lifecycle_msgs.srv import GetState
 from nav2_msgs.action import NavigateThroughPoses
 from nav2_msgs.srv import ManageLifecycleNodes
+from rcl_interfaces.srv import SetParameters
 
 import rclpy
 
 from rclpy.action import ActionClient
 from rclpy.node import Node
+from rclpy.parameter import Parameter
 from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSReliabilityPolicy
 from rclpy.qos import QoSProfile
+
+from std_msgs.msg import String
 
 
 class NavTester(Node):
@@ -43,6 +47,19 @@ class NavTester(Node):
         self.initial_pose_pub = self.create_publisher(
             PoseWithCovarianceStamped, 'initialpose', 10
         )
+
+        checker_qos = QoSProfile(
+            durability=QoSDurabilityPolicy.TRANSIENT_LOCAL,
+            reliability=QoSReliabilityPolicy.RELIABLE,
+            history=QoSHistoryPolicy.KEEP_LAST,
+            depth=1,
+        )
+
+        self.goal_checker_selector_pub = self.create_publisher(
+            String, 'goal_checker_selector', checker_qos)
+
+        self.progress_checker_selector_pub = self.create_publisher(
+            String, 'progress_checker_selector', checker_qos)
 
         pose_qos = QoSProfile(
             durability=QoSDurabilityPolicy.TRANSIENT_LOCAL,
@@ -61,6 +78,10 @@ class NavTester(Node):
             self, NavigateThroughPoses, 'navigate_through_poses'
         )
 
+        self.controller_param_cli = self.create_client(
+            SetParameters, '/controller_server/set_parameters'
+        )
+
     def info_msg(self, msg: str):
         self.get_logger().info('\033[1;37;44m' + msg + '\033[0m')
 
@@ -77,6 +98,24 @@ class NavTester(Node):
         self.info_msg('Publishing Initial Pose')
         self.initial_pose_pub.publish(msg)
         self.currentPose = self.initial_pose
+
+    def setGoalChecker(self, name):
+        msg = String()
+        msg.data = name
+        self.goal_checker_selector_pub.publish(msg)
+
+    def setProgressChecker(self, name):
+        msg = String()
+        msg.data = name
+        self.progress_checker_selector_pub.publish(msg)
+
+    def setControllerParam(self, name, parameter_type, value):
+        req = SetParameters.Request()
+        req.parameters = [
+            Parameter(name, parameter_type, value).to_parameter_msg()
+        ]
+        future = self.controller_param_cli.call_async(req)
+        rclpy.spin_until_future_complete(self, future)
 
     def getStampedPoseMsg(self, pose: Pose):
         msg = PoseStamped()
@@ -220,12 +259,33 @@ def run_all_tests(robot_tester):
     pose_out_of_bounds.orientation.z = 0.0
     pose_out_of_bounds.orientation.w = 1.0
 
+    reasonable_pose = Pose()
+    reasonable_pose.position.x = -1.0
+    reasonable_pose.position.y = 0.0
+    reasonable_pose.position.z = 0.0
+    reasonable_pose.orientation.x = 0.0
+    reasonable_pose.orientation.y = 0.0
+    reasonable_pose.orientation.z = 0.0
+    reasonable_pose.orientation.w = 1.0
+
+    robot_tester.wait_for_node_active('amcl')
+    robot_tester.wait_for_initial_pose()
+    robot_tester.wait_for_node_active('bt_navigator')
+    robot_tester.setGoalChecker('general_goal_checker')
+    robot_tester.setProgressChecker('progress_checker')
+
     result = True
     if result:
-        robot_tester.wait_for_node_active('amcl')
-        robot_tester.wait_for_initial_pose()
-        robot_tester.wait_for_node_active('bt_navigator')
+        robot_tester.info_msg('Test non existing behavior_tree xml file')
+        result = robot_tester.runNavigateAction(
+            goal_pose=pose_out_of_bounds,
+            behavior_tree='behavior_tree_that_does_not_exist.xml',
+            expected_error_code=901,
+            expected_error_msg=('Error loading XML file: behavior_tree_that_does_not_exist.xml. '
+                                'Navigation canceled.'))
 
+    if result:
+        robot_tester.info_msg('Test goal out of bounds')
         result = robot_tester.runNavigateAction(
             goal_pose=pose_out_of_bounds,
             behavior_tree='',
@@ -234,16 +294,50 @@ def run_all_tests(robot_tester):
                                 '(-2.00, -0.50) to (2000.00, 4000.00): '
                                 '"Goal Coordinates of(2000.000000, 4000.000000) '
                                 'was outside bounds"'))
+
     if result:
+        robot_tester.info_msg('Test for unknown goal checker')
+        robot_tester.setGoalChecker('junk_goal_checker')
         result = robot_tester.runNavigateAction(
-            goal_pose=pose_out_of_bounds,
-            behavior_tree='behavior_tree_that_does_not_exist.xml',
-            expected_error_code=901,
-            expected_error_msg=('Error loading XML file: behavior_tree_that_does_not_exist.xml. '
-                                'Navigation canceled.'))
+            goal_pose=reasonable_pose,
+            behavior_tree='',
+            expected_error_code=100,
+            expected_error_msg=('Failed to find goal checker name: junk_goal_checker'))
+        robot_tester.setGoalChecker('general_goal_checker')
+
+    if result:
+        robot_tester.info_msg('Test for unknown progress checker')
+        robot_tester.setProgressChecker('junk_progress_checker')
+        result = robot_tester.runNavigateAction(
+            goal_pose=reasonable_pose,
+            behavior_tree='',
+            expected_error_code=100,
+            expected_error_msg=('Failed to find progress checker name: junk_progress_checker'))
+        robot_tester.setProgressChecker('progress_checker')
+
+    if result:
+        robot_tester.info_msg('Test for impossible to achieve progress parameters')
+        robot_tester.setControllerParam(
+            'progress_checker.movement_time_allowance',
+            Parameter.Type.DOUBLE,
+            0.1)
+        robot_tester.setControllerParam(
+            'progress_checker.required_movement_radius',
+            Parameter.Type.DOUBLE,
+            10.0)
+        # Limit controller to generate very slow velocities
+        # Note assumes nav2_dwb_controller dwb_core::DWBLocalPlanner
+        robot_tester.setControllerParam(
+            'FollowPath.max_vel_x',
+            Parameter.Type.DOUBLE,
+            0.0001)
+        result = robot_tester.runNavigateAction(
+            goal_pose=reasonable_pose,
+            behavior_tree='',
+            expected_error_code=105,
+            expected_error_msg=('Failed to make progress'))
 
     # Add more tests here if desired
-
     if result:
         robot_tester.info_msg('Test PASSED')
     else:
