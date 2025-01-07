@@ -22,7 +22,7 @@
 #include <vector>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav2_msgs/msg/pose_stamped_array.hpp"
+#include "geometry_msgs/msg/pose_stamped_array.hpp"
 
 #include "behaviortree_cpp/decorator_node.h"
 
