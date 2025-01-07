@@ -69,7 +69,7 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
 
   // The costmap node is used in the implementation of the controller
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
-    "local_costmap", std::string{get_namespace()}, "local_costmap",
+    "local_costmap", std::string{get_namespace()},
     get_parameter("use_sim_time").as_bool());
 }
 
@@ -249,7 +249,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
     return nav2_util::CallbackReturn::FAILURE;
   }
 
-  // Set subscribtion to the speed limiting topic
+  // Set subscription to the speed limiting topic
   speed_limit_sub_ = create_subscription<nav2_msgs::msg::SpeedLimit>(
     speed_limit_topic, rclcpp::QoS(10),
     std::bind(&ControllerServer::speedLimitCallback, this, std::placeholders::_1));

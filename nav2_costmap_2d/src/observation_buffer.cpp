@@ -42,7 +42,7 @@
 #include <vector>
 #include <chrono>
 
-#include "tf2/convert.h"
+#include "tf2/convert.hpp"
 #include "sensor_msgs/point_cloud2_iterator.hpp"
 using namespace std::chrono_literals;
 

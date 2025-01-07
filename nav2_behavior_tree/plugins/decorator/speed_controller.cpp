@@ -50,8 +50,6 @@ SpeedController::SpeedController(
   d_rate_ = max_rate_ - min_rate_;
   d_speed_ = max_speed_ - min_speed_;
 
-  std::string odom_topic;
-  node_->get_parameter_or("odom_topic", odom_topic, std::string("odom"));
   odom_smoother_ = config().blackboard->get<std::shared_ptr<nav2_util::OdomSmoother>>(
     "odom_smoother");
 }

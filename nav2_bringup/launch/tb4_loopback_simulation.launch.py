@@ -42,7 +42,6 @@ def generate_launch_description():
 
     # Create the launch configuration variables
     namespace = LaunchConfiguration('namespace')
-    use_namespace = LaunchConfiguration('use_namespace')
     map_yaml_file = LaunchConfiguration('map')
     params_file = LaunchConfiguration('params_file')
     autostart = LaunchConfiguration('autostart')
@@ -59,12 +58,6 @@ def generate_launch_description():
     # Declare the launch arguments
     declare_namespace_cmd = DeclareLaunchArgument(
         'namespace', default_value='', description='Top-level namespace'
-    )
-
-    declare_use_namespace_cmd = DeclareLaunchArgument(
-        'use_namespace',
-        default_value='false',
-        description='Whether to apply a namespace to the navigation stack',
     )
 
     declare_map_yaml_cmd = DeclareLaunchArgument(
@@ -132,7 +125,6 @@ def generate_launch_description():
         condition=IfCondition(use_rviz),
         launch_arguments={
             'namespace': namespace,
-            'use_namespace': use_namespace,
             'use_sim_time': 'True',
             'rviz_config': rviz_config_file,
         }.items(),
@@ -142,7 +134,6 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(os.path.join(launch_dir, 'bringup_launch.py')),
         launch_arguments={
             'namespace': namespace,
-            'use_namespace': use_namespace,
             'map': map_yaml_file,
             'use_sim_time': 'True',
             'params_file': params_file,
@@ -210,7 +201,6 @@ def generate_launch_description():
 
     # Declare the launch options
     ld.add_action(declare_namespace_cmd)
-    ld.add_action(declare_use_namespace_cmd)
     ld.add_action(declare_map_yaml_cmd)
     ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_autostart_cmd)

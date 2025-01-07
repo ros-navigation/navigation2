@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
   For instructions on using Groot and description of the following BehaviorTree nodes,
-  please refer to the groot_instructions.md and REAMDE.md respectively located in the
+  please refer to the groot_instructions.md and README.md respectively located in the
   nav2_behavior_tree package.
 -->
 <root BTCPP_format="4">
@@ -13,6 +13,7 @@
       <input_port name="time_allowance">Allowed time for reversing</input_port>
       <input_port name="server_name">Server name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
+      <input_port name="disable_collision_checks">Disable collision checking</input_port>
       <output_port name="error_code_id">"Back up error code"</output_port>
     </Action>
 
@@ -22,6 +23,7 @@
       <input_port name="time_allowance">Allowed time for reversing</input_port>
       <input_port name="server_name">Server name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
+      <input_port name="disable_collision_checks">Disable collision checking</input_port>
       <output_port name="error_code_id">"Drive on heading error code"</output_port>
     </Action>
 
@@ -169,31 +171,31 @@
     <Action ID="PlannerSelector">
         <input_port name="topic_name">Name of the topic to receive planner selection commands</input_port>
         <input_port name="default_planner">Default planner of the planner selector</input_port>
-        <output_port name="selected_planner">Name of the selected planner received from the topic subcription</output_port>
+        <output_port name="selected_planner">Name of the selected planner received from the topic subscription</output_port>
     </Action>
 
     <Action ID="ControllerSelector">
         <input_port name="topic_name">Name of the topic to receive controller selection commands</input_port>
         <input_port name="default_controller">Default controller of the controller selector</input_port>
-        <output_port name="selected_controller">Name of the selected controller received from the topic subcription</output_port>
+        <output_port name="selected_controller">Name of the selected controller received from the topic subscription</output_port>
     </Action>
 
     <Action ID="SmootherSelector">
         <input_port name="topic_name">Name of the topic to receive smoother selection commands</input_port>
         <input_port name="default_smoother">Default smoother of the smoother selector</input_port>
-        <output_port name="selected_smoother">Name of the selected smoother received from the topic subcription</output_port>
+        <output_port name="selected_smoother">Name of the selected smoother received from the topic subscription</output_port>
     </Action>
 
     <Action ID="GoalCheckerSelector">
         <input_port name="topic_name">Name of the topic to receive goal checker selection commands</input_port>
         <input_port name="default_goal_checker">Default goal checker of the controller selector</input_port>
-        <output_port name="selected_goal_checker">Name of the selected goal checker received from the topic subcription</output_port>
+        <output_port name="selected_goal_checker">Name of the selected goal checker received from the topic subscription</output_port>
     </Action>
 
     <Action ID="ProgressCheckerSelector">
         <input_port name="topic_name">Name of the topic to receive progress checker selection commands</input_port>
         <input_port name="default_progress_checker">Default progress checker of the controller selector</input_port>
-        <output_port name="selected_progress_checker">Name of the selected progress checker received from the topic subcription</output_port>
+        <output_port name="selected_progress_checker">Name of the selected progress checker received from the topic subscription</output_port>
     </Action>
 
     <Action ID="Spin">
@@ -201,6 +203,7 @@
       <input_port name="time_allowance">Allowed time for spinning</input_port>
       <input_port name="server_name">Server name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
+      <input_port name="disable_collision_checks">Disable collision checking</input_port>
       <output_port name="error_code_id">Spin error code</output_port>
     </Action>
 
@@ -226,6 +229,11 @@
     </Condition>
 
     <Condition ID="IsStuck"/>
+
+    <Condition ID="IsStopped">
+      <input_port name="velocity_threshold">Velocity threshold below which robot is considered stopped</input_port>
+      <input_port name="duration_stopped">Duration (ms) the velocity must remain below the threshold</input_port>
+    </Condition>
 
     <Condition ID="TransformAvailable">
       <input_port name="child">Child frame for transform</input_port>

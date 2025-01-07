@@ -84,6 +84,13 @@ TEST(SmacTest, test_smac_lattice)
   } catch (...) {
   }
 
+  // corner case where the start and goal are on the same cell
+  goal.pose.position.x = 0.01;
+  goal.pose.position.y = 0.01;
+
+  nav_msgs::msg::Path plan = planner->createPlan(start, goal, dummy_cancel_checker);
+  EXPECT_EQ(plan.poses.size(), 1);  // single point path
+
   planner->deactivate();
   planner->cleanup();
 

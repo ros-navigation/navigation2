@@ -41,7 +41,7 @@ from .utils import (
 This is a loopback simulator that replaces a physics simulator to create a
 frictionless, inertialess, and collisionless simulation environment. It
 accepts cmd_vel messages and publishes odometry & TF messages based on the
-cumulative velocities received to mimick global localization and simulation.
+cumulative velocities received to mimic global localization and simulation.
 It also accepts initialpose messages to set the initial pose of the robot
 to place anywhere.
 """
@@ -74,7 +74,7 @@ class LoopbackSimulator(Node):
         self.declare_parameter('scan_frame_id', 'base_scan')
         self.scan_frame_id = self.get_parameter('scan_frame_id').get_parameter_value().string_value
 
-        self.declare_parameter('enable_stamped_cmd_vel', False)
+        self.declare_parameter('enable_stamped_cmd_vel', True)
         use_stamped = self.get_parameter('enable_stamped_cmd_vel').get_parameter_value().bool_value
 
         self.declare_parameter('scan_publish_dur', 0.1)

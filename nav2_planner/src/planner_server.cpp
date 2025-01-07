@@ -64,7 +64,7 @@ PlannerServer::PlannerServer(const rclcpp::NodeOptions & options)
 
   // Setup the global costmap
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
-    "global_costmap", std::string{get_namespace()}, "global_costmap",
+    "global_costmap", std::string{get_namespace()},
     get_parameter("use_sim_time").as_bool());
 }
 
@@ -141,7 +141,7 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
     RCLCPP_WARN(
       get_logger(),
       "The expected planner frequency parameter is %.4f Hz. The value should to be greater"
-      " than 0.0 to turn on duration overrrun warning messages", expected_planner_frequency);
+      " than 0.0 to turn on duration overrun warning messages", expected_planner_frequency);
     max_planner_duration_ = 0.0;
   }
 
@@ -730,7 +730,7 @@ PlannerServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> paramete
           RCLCPP_WARN(
             get_logger(),
             "The expected planner frequency parameter is %.4f Hz. The value should to be greater"
-            " than 0.0 to turn on duration overrrun warning messages", parameter.as_double());
+            " than 0.0 to turn on duration overrun warning messages", parameter.as_double());
           max_planner_duration_ = 0.0;
         }
       }

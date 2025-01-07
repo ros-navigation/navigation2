@@ -54,16 +54,16 @@
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_msgs/srv/get_costs.hpp"
 #include "pluginlib/class_loader.hpp"
-#include "tf2/convert.h"
-#include "tf2/LinearMath/Transform.h"
+#include "tf2/convert.hpp"
+#include "tf2/LinearMath/Transform.hpp"
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
-#include "tf2/time.h"
-#include "tf2/transform_datatypes.h"
+#include "tf2/time.hpp"
+#include "tf2/transform_datatypes.hpp"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
-#include "tf2/utils.h"
+#include "tf2/utils.hpp"
 #pragma GCC diagnostic pop
 
 namespace nav2_costmap_2d
@@ -82,25 +82,15 @@ public:
   explicit Costmap2DROS(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
 
   /**
-   * @brief  Constructor for the wrapper, the node will
-   * be placed in a namespace equal to the node's name
-   * @param name Name of the costmap ROS node
-   * @param use_sim_time Whether to use simulation or real time
-   */
-  explicit Costmap2DROS(const std::string & name, const bool & use_sim_time = false);
-
-  /**
    * @brief  Constructor for the wrapper
-   * @param name Name of the costmap ROS node
+   * @param name Name of the costmap ROS node which will also be used as a local namespace
    * @param parent_namespace Absolute namespace of the node hosting the costmap node
-   * @param local_namespace Namespace to append to the parent namespace
    * @param use_sim_time Whether to use simulation or real time
    */
   explicit Costmap2DROS(
     const std::string & name,
-    const std::string & parent_namespace,
-    const std::string & local_namespace,
-    const bool & use_sim_time);
+    const std::string & parent_namespace = "/",
+    const bool & use_sim_time = false);
 
   /**
    * @brief Common initialization for constructors
@@ -372,7 +362,6 @@ protected:
 
   std::unique_ptr<LayeredCostmap> layered_costmap_{nullptr};
   std::string name_;
-  std::string parent_namespace_;
 
   /**
    * @brief Function on timer for costmap update
@@ -432,7 +421,7 @@ protected:
   OnSetParametersCallbackHandle::SharedPtr dyn_params_handler;
 
   /**
-   * @brief Callback executed when a paramter change is detected
+   * @brief Callback executed when a parameter change is detected
    * @param parameters list of changed parameters
    */
   rcl_interfaces::msg::SetParametersResult

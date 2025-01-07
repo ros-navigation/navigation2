@@ -18,7 +18,7 @@
 
 #include "nav2_behavior_tree/plugins/action/remove_in_collision_goals_action.hpp"
 #include "nav2_behavior_tree/bt_utils.hpp"
-#include "tf2/utils.h"
+#include "tf2/utils.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 namespace nav2_behavior_tree
@@ -55,6 +55,14 @@ void RemoveInCollisionGoals::on_tick()
 BT::NodeStatus RemoveInCollisionGoals::on_completion(
   std::shared_ptr<nav2_msgs::srv::GetCosts::Response> response)
 {
+  if (!response->success) {
+    RCLCPP_ERROR(
+      node_->get_logger(),
+      "GetCosts service call failed");
+    setOutput("output_goals", input_goals_);
+    return BT::NodeStatus::FAILURE;
+  }
+
   Goals valid_goal_poses;
   for (size_t i = 0; i < response->costs.size(); ++i) {
     if ((response->costs[i] == 255 && !consider_unknown_as_obstacle_) ||

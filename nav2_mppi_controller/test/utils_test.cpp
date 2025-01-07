@@ -289,7 +289,7 @@ TEST(UtilsTests, findPathCosts)
     std::nullopt, std::nullopt};  /// Caution, keep references
 
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
-    "dummy_costmap", "", "dummy_costmap", true);
+    "dummy_costmap", "", true);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
   auto * costmap = costmap_ros->getCostmap();
@@ -359,7 +359,7 @@ TEST(UtilsTests, SmootherTest)
 
   savitskyGolayFilter(noisey_sequence, history, settings);
 
-  // Check history is propogated backward
+  // Check history is propagated backward
   EXPECT_NEAR(history_init[3].vx, history[2].vx, 0.02);
   EXPECT_NEAR(history_init[3].vy, history[2].vy, 0.02);
   EXPECT_NEAR(history_init[3].wz, history[2].wz, 0.02);

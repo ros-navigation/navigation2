@@ -107,7 +107,7 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(
             os.path.join(nav2_bringup_dir, 'launch', 'rviz_launch.py')
         ),
-        launch_arguments={'namespace': '', 'use_namespace': 'False'}.items(),
+        launch_arguments={'namespace': ''}.items(),
     )
 
     metrics_cmd = ExecuteProcess(

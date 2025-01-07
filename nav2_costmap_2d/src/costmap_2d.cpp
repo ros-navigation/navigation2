@@ -206,7 +206,7 @@ bool Costmap2D::copyWindow(
 
 Costmap2D & Costmap2D::operator=(const Costmap2D & map)
 {
-  // check for self assignement
+  // check for self assignment
   if (this == &map) {
     return *this;
   }

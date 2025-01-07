@@ -32,6 +32,34 @@ public:
 };
 RclCppFixture g_rclcppfixture;
 
+TEST(OdometryUtils, test_uninitialized)
+{
+  auto node = std::make_shared<rclcpp::Node>("test_node");
+  nav2_util::OdomSmoother odom_smoother(node, 0.3, "odom");
+  geometry_msgs::msg::Twist twist_msg;
+  geometry_msgs::msg::TwistStamped twist_stamped_msg;
+
+  twist_msg = odom_smoother.getTwist();
+  EXPECT_EQ(twist_msg.linear.x, 0.0);
+  EXPECT_EQ(twist_msg.linear.y, 0.0);
+  EXPECT_EQ(twist_msg.angular.z, 0.0);
+
+  twist_msg = odom_smoother.getRawTwist();
+  EXPECT_EQ(twist_msg.linear.x, 0.0);
+  EXPECT_EQ(twist_msg.linear.y, 0.0);
+  EXPECT_EQ(twist_msg.angular.z, 0.0);
+
+  twist_stamped_msg = odom_smoother.getTwistStamped();
+  EXPECT_EQ(twist_stamped_msg.twist.linear.x, 0.0);
+  EXPECT_EQ(twist_stamped_msg.twist.linear.y, 0.0);
+  EXPECT_EQ(twist_stamped_msg.twist.angular.z, 0.0);
+
+  twist_stamped_msg = odom_smoother.getRawTwistStamped();
+  EXPECT_EQ(twist_stamped_msg.twist.linear.x, 0.0);
+  EXPECT_EQ(twist_stamped_msg.twist.linear.y, 0.0);
+  EXPECT_EQ(twist_stamped_msg.twist.angular.z, 0.0);
+}
+
 TEST(OdometryUtils, test_smoothed_velocity)
 {
   auto node = std::make_shared<rclcpp::Node>("test_node");
@@ -41,6 +69,7 @@ TEST(OdometryUtils, test_smoothed_velocity)
 
   nav_msgs::msg::Odometry odom_msg;
   geometry_msgs::msg::Twist twist_msg;
+  geometry_msgs::msg::Twist twist_raw_msg;
 
   auto time = node->now();
 
@@ -67,9 +96,13 @@ TEST(OdometryUtils, test_smoothed_velocity)
   rclcpp::spin_some(node);
 
   twist_msg = odom_smoother.getTwist();
+  twist_raw_msg = odom_smoother.getRawTwist();
   EXPECT_EQ(twist_msg.linear.x, 1.5);
   EXPECT_EQ(twist_msg.linear.y, 1.5);
   EXPECT_EQ(twist_msg.angular.z, 1.5);
+  EXPECT_EQ(twist_raw_msg.linear.x, 2.0);
+  EXPECT_EQ(twist_raw_msg.linear.y, 2.0);
+  EXPECT_EQ(twist_raw_msg.angular.z, 2.0);
 
   odom_msg.header.stamp = time + rclcpp::Duration::from_seconds(0.2);
   odom_msg.twist.twist.linear.x = 3.0;
@@ -81,9 +114,13 @@ TEST(OdometryUtils, test_smoothed_velocity)
   rclcpp::spin_some(node);
 
   twist_msg = odom_smoother.getTwist();
+  twist_raw_msg = odom_smoother.getRawTwist();
   EXPECT_EQ(twist_msg.linear.x, 2.0);
   EXPECT_EQ(twist_msg.linear.y, 2.0);
   EXPECT_EQ(twist_msg.angular.z, 2.0);
+  EXPECT_EQ(twist_raw_msg.linear.x, 3.0);
+  EXPECT_EQ(twist_raw_msg.linear.y, 3.0);
+  EXPECT_EQ(twist_raw_msg.angular.z, 3.0);
 
   odom_msg.header.stamp = time + rclcpp::Duration::from_seconds(0.45);
   odom_msg.twist.twist.linear.x = 4.0;
@@ -95,9 +132,13 @@ TEST(OdometryUtils, test_smoothed_velocity)
   rclcpp::spin_some(node);
 
   twist_msg = odom_smoother.getTwist();
+  twist_raw_msg = odom_smoother.getRawTwist();
   EXPECT_EQ(twist_msg.linear.x, 3.5);
   EXPECT_EQ(twist_msg.linear.y, 3.5);
   EXPECT_EQ(twist_msg.angular.z, 3.5);
+  EXPECT_EQ(twist_raw_msg.linear.x, 4.0);
+  EXPECT_EQ(twist_raw_msg.linear.y, 4.0);
+  EXPECT_EQ(twist_raw_msg.angular.z, 4.0);
 
   odom_msg.header.stamp = time + rclcpp::Duration::from_seconds(1.0);
   odom_msg.twist.twist.linear.x = 5.0;
@@ -109,7 +150,11 @@ TEST(OdometryUtils, test_smoothed_velocity)
   rclcpp::spin_some(node);
 
   twist_msg = odom_smoother.getTwist();
+  twist_raw_msg = odom_smoother.getRawTwist();
   EXPECT_EQ(twist_msg.linear.x, 5.0);
   EXPECT_EQ(twist_msg.linear.y, 5.0);
   EXPECT_EQ(twist_msg.angular.z, 5.0);
+  EXPECT_EQ(twist_raw_msg.linear.x, 5.0);
+  EXPECT_EQ(twist_raw_msg.linear.y, 5.0);
+  EXPECT_EQ(twist_raw_msg.angular.z, 5.0);
 }

@@ -19,7 +19,7 @@
 #include <utility>
 
 #include "nav2_behaviors/plugins/spin.hpp"
-#include "tf2/utils.h"
+#include "tf2/utils.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "nav2_util/node_utils.hpp"
 
@@ -91,6 +91,7 @@ ResultStatus Spin::onRun(const std::shared_ptr<const SpinActionGoal> command)
     cmd_yaw_);
 
   command_time_allowance_ = command->time_allowance;
+  cmd_disable_collision_checks_ = command->disable_collision_checks;
   end_time_ = this->clock_->now() + command_time_allowance_;
 
   return ResultStatus{Status::SUCCEEDED, SpinActionResult::NONE};
@@ -164,6 +165,10 @@ bool Spin::isCollisionFree(
   const geometry_msgs::msg::Twist & cmd_vel,
   geometry_msgs::msg::Pose2D & pose2d)
 {
+  if (cmd_disable_collision_checks_) {
+    return true;
+  }
+
   // Simulate ahead by simulate_ahead_time_ in cycle_frequency_ increments
   int cycle_count = 0;
   double sim_position_change;
