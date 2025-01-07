@@ -53,7 +53,7 @@ TEST_F(GetCostServiceTest, TestWithoutFootprint)
   geometry_msgs::msg::PoseStamped pose;
   pose.pose.position.x = 0.5;
   pose.pose.position.y = 1.0;
-  request->poses.poses.push_back(pose);
+  request->poses.push_back(pose);
   request->use_footprint = false;
 
   auto result_future = client_->async_send_request(request);
@@ -78,7 +78,7 @@ TEST_F(GetCostServiceTest, TestWithFootprint)
   tf2::Quaternion q;
   q.setRPY(0, 0, 0.5);
   pose.pose.orientation = tf2::toMsg(q);
-  request->poses.poses.push_back(pose);
+  request->poses.push_back(pose);
   request->use_footprint = true;
 
   auto result_future = client_->async_send_request(request);

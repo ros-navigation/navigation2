@@ -48,7 +48,7 @@ void RemoveInCollisionGoals::on_tick()
   request_->use_footprint = use_footprint_;
 
   for (const auto & goal : input_goals_.poses) {
-    request_->poses.poses.push_back(goal);
+    request_->poses.push_back(goal);
   }
 }
 

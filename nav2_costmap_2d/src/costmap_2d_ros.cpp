@@ -831,7 +831,7 @@ void Costmap2DROS::getCostsCallback(
 
   Costmap2D * costmap = layered_costmap_->getCostmap();
   response->success = true;
-  for (const auto & pose : request->poses.poses) {
+  for (const auto & pose : request->poses) {
     geometry_msgs::msg::PoseStamped pose_transformed;
     if (!transformPoseToGlobalFrame(pose, pose_transformed)) {
       RCLCPP_ERROR(
