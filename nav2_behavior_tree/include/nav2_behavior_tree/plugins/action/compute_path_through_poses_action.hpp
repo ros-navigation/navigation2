@@ -75,7 +75,7 @@ public:
   {
     return providedBasicPorts(
       {
-        BT::InputPort<nav2_msgs::msg::PoseStampedArray>(
+        BT::InputPort<geometry_msgs::msg::PoseStampedArray>(
           "goals",
           "Destinations to plan through"),
         BT::InputPort<geometry_msgs::msg::PoseStamped>(

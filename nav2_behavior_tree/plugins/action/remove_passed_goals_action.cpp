@@ -49,7 +49,7 @@ inline BT::NodeStatus RemovePassedGoals::tick()
     initialize();
   }
 
-  nav2_msgs::msg::PoseStampedArray goal_poses;
+  geometry_msgs::msg::PoseStampedArray goal_poses;
   getInput("input_goals", goal_poses);
 
   if (goal_poses.poses.empty()) {

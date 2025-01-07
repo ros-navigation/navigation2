@@ -675,7 +675,7 @@ void Nav2Panel::loophandler()
 
 void Nav2Panel::handleGoalLoader()
 {
-  acummulated_poses_ = nav2_msgs::msg::PoseStampedArray();
+  acummulated_poses_ = geometry_msgs::msg::PoseStampedArray();
 
   std::cout << "Loading Waypoints!" << std::endl;
 
@@ -840,7 +840,7 @@ Nav2Panel::onInitialize()
         goal_index_ == static_cast<int>(store_poses_.poses.size()) - 1 &&
         msg->status_list.back().status == action_msgs::msg::GoalStatus::STATUS_SUCCEEDED)
       {
-        store_poses_ = nav2_msgs::msg::PoseStampedArray();
+        store_poses_ = geometry_msgs::msg::PoseStampedArray();
         waypoint_status_indicator_->clear();
         loop_no_ = "0";
         loop_count_ = 0;
@@ -936,8 +936,8 @@ Nav2Panel::onCancel()
       &Nav2Panel::onCancelButtonPressed,
       this));
   waypoint_status_indicator_->clear();
-  store_poses_ = nav2_msgs::msg::PoseStampedArray();
-  acummulated_poses_ = nav2_msgs::msg::PoseStampedArray();
+  store_poses_ = geometry_msgs::msg::PoseStampedArray();
+  acummulated_poses_ = geometry_msgs::msg::PoseStampedArray();
 }
 
 void Nav2Panel::onResumedWp()
@@ -972,7 +972,7 @@ Nav2Panel::onNewGoal(double x, double y, double theta, QString frame)
       waypoint_status_indicator_->clear();
       acummulated_poses_.poses.push_back(pose);
     } else {
-      acummulated_poses_ = nav2_msgs::msg::PoseStampedArray();
+      acummulated_poses_ = geometry_msgs::msg::PoseStampedArray();
       updateWpNavigationMarkers();
       std::cout << "Start navigation" << std::endl;
       startNavigation(pose);
@@ -1104,7 +1104,7 @@ Nav2Panel::onAccumulatedWp()
 
   startWaypointFollowing(acummulated_poses_.poses);
   store_poses_ = acummulated_poses_;
-  acummulated_poses_ = nav2_msgs::msg::PoseStampedArray();
+  acummulated_poses_ = geometry_msgs::msg::PoseStampedArray();
 }
 
 void
@@ -1117,8 +1117,8 @@ Nav2Panel::onAccumulatedNTP()
 void
 Nav2Panel::onAccumulating()
 {
-  acummulated_poses_ = nav2_msgs::msg::PoseStampedArray();
-  store_poses_ = nav2_msgs::msg::PoseStampedArray();
+  acummulated_poses_ = geometry_msgs::msg::PoseStampedArray();
+  store_poses_ = geometry_msgs::msg::PoseStampedArray();
   loop_count_ = 0;
   loop_no_ = "0";
   initial_pose_stored_ = false;
@@ -1255,7 +1255,7 @@ Nav2Panel::startWaypointFollowing(std::vector<geometry_msgs::msg::PoseStamped> p
 }
 
 void
-Nav2Panel::startNavThroughPoses(nav2_msgs::msg::PoseStampedArray poses)
+Nav2Panel::startNavThroughPoses(geometry_msgs::msg::PoseStampedArray poses)
 {
   auto is_action_server_ready =
     nav_through_poses_action_client_->wait_for_action_server(std::chrono::seconds(5));

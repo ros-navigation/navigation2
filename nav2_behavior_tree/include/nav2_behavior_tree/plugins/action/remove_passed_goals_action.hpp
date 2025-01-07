@@ -19,7 +19,7 @@
 #include <memory>
 #include <string>
 
-#include "nav2_msgs/msg/pose_stamped_array.hpp"
+#include "geometry_msgs/msg/pose_stamped_array.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "behaviortree_cpp/action_node.h"
@@ -43,9 +43,9 @@ public:
   static BT::PortsList providedPorts()
   {
     return {
-      BT::InputPort<nav2_msgs::msg::PoseStampedArray>("input_goals",
+      BT::InputPort<geometry_msgs::msg::PoseStampedArray>("input_goals",
           "Original goals to remove viapoints from"),
-      BT::OutputPort<nav2_msgs::msg::PoseStampedArray>("output_goals",
+      BT::OutputPort<geometry_msgs::msg::PoseStampedArray>("output_goals",
           "Goals with passed viapoints removed"),
       BT::InputPort<double>("radius", 0.5, "radius to goal for it to be considered for removal"),
       BT::InputPort<std::string>("global_frame", "Global frame"),

@@ -21,7 +21,7 @@
 #include <vector>
 
 #include "nav_msgs/msg/path.hpp"
-#include "nav2_msgs/msg/pose_stamped_array.hpp"
+#include "geometry_msgs/msg/pose_stamped_array.hpp"
 
 #include "behaviortree_cpp/bt_factory.h"
 
@@ -97,7 +97,7 @@ TEST_F(GetPoseFromPathTestFixture, test_tick)
 
   // create new path and set it on blackboard
   nav_msgs::msg::Path path;
-  nav2_msgs::msg::PoseStampedArray goals;
+  geometry_msgs::msg::PoseStampedArray goals;
   goals.poses.resize(2);
   goals.poses[0].pose.position.x = 1.0;
   goals.poses[1].pose.position.x = 2.0;

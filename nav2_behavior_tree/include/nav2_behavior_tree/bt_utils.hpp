@@ -24,7 +24,7 @@
 #include "behaviortree_cpp/behavior_tree.h"
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
-#include "nav2_msgs/msg/pose_stamped_array.hpp"
+#include "geometry_msgs/msg/pose_stamped_array.hpp"
 #include "nav_msgs/msg/path.hpp"
 
 namespace BT
@@ -105,19 +105,19 @@ inline geometry_msgs::msg::PoseStamped convertFromString(const StringView key)
 }
 
 /**
- * @brief Parse XML string to nav2_msgs::msg::PoseStampedArray
+ * @brief Parse XML string to geometry_msgs::msg::PoseStampedArray
  * @param key XML string
- * @return nav2_msgs::msg::PoseStampedArray
+ * @return geometry_msgs::msg::PoseStampedArray
  */
 template<>
-inline nav2_msgs::msg::PoseStampedArray convertFromString(const StringView key)
+inline geometry_msgs::msg::PoseStampedArray convertFromString(const StringView key)
 {
   // 9 real numbers separated by semicolons
   auto parts = BT::splitString(key, ';');
   if (parts.size() % 9 != 0) {
     throw std::runtime_error("invalid number of fields for PoseStampedArray attribute)");
   } else {
-    nav2_msgs::msg::PoseStampedArray pose_stamped_array;
+    geometry_msgs::msg::PoseStampedArray pose_stamped_array;
     for (size_t i = 0; i < parts.size(); i += 9) {
       geometry_msgs::msg::PoseStamped pose_stamped;
       pose_stamped.header.stamp = rclcpp::Time(BT::convertFromString<int64_t>(parts[i]));

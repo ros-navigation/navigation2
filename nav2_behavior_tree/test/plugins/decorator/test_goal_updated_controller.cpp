@@ -32,7 +32,7 @@ public:
     // Setting fake goals on blackboard
     geometry_msgs::msg::PoseStamped goal1;
     goal1.header.stamp = node_->now();
-    nav2_msgs::msg::PoseStampedArray poses1;
+    geometry_msgs::msg::PoseStampedArray poses1;
     poses1.poses.push_back(goal1);
     config_->blackboard->set("goal", goal1);
     config_->blackboard->set("goals", poses1);
@@ -63,7 +63,7 @@ TEST_F(GoalUpdatedControllerTestFixture, test_behavior)
   // Creating updated fake-goals
   geometry_msgs::msg::PoseStamped goal2;
   goal2.header.stamp = node_->now();
-  nav2_msgs::msg::PoseStampedArray poses2;
+  geometry_msgs::msg::PoseStampedArray poses2;
   poses2.poses.push_back(goal2);
 
   // starting in idle
