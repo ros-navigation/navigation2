@@ -194,68 +194,68 @@ TEST(PoseStampedPortTest, test_correct_syntax)
   EXPECT_EQ(value.pose.orientation.w, 7.0);
 }
 
-TEST(PoseStampedVectorPortTest, test_wrong_syntax)
+TEST(PoseStampedArrayPortTest, test_wrong_syntax)
 {
   std::string xml_txt =
     R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-            <PoseStampedVectorPortTest test="0;map;1.0;2.0;3.0;4.0;5.0;6.0;7.0;0;map;1.0;2.0;3.0;4.0;5.0;6.0" />
+            <PoseStampedArrayPortTest test="0;map;1.0;2.0;3.0;4.0;5.0;6.0;7.0;0;map;1.0;2.0;3.0;4.0;5.0;6.0" />
         </BehaviorTree>
       </root>)";
 
   BT::BehaviorTreeFactory factory;
-  factory.registerNodeType<TestNode<std::vector<geometry_msgs::msg::PoseStamped>>>(
-    "PoseStampedVectorPortTest");
+  factory.registerNodeType<TestNode<geometry_msgs::msg::PoseStampedArray>>(
+    "PoseStampedArrayPortTest");
   EXPECT_THROW(factory.createTreeFromText(xml_txt), std::exception);
 
   xml_txt =
     R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-            <PoseStampedVectorPortTest test="0;map;1.0;2.0;3.0;4.0;5.0;6.0;7.0;0;map;1.0;2.0;3.0;4.0;5.0;6.0;7.0;8.0" />
+            <PoseStampedArrayPortTest test="0;map;1.0;2.0;3.0;4.0;5.0;6.0;7.0;0;map;1.0;2.0;3.0;4.0;5.0;6.0;7.0;8.0" />
         </BehaviorTree>
       </root>)";
 
   EXPECT_THROW(factory.createTreeFromText(xml_txt), std::exception);
 }
 
-TEST(PoseStampedVectorPortTest, test_correct_syntax)
+TEST(PoseStampedArrayPortTest, test_correct_syntax)
 {
   std::string xml_txt =
     R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-            <PoseStampedVectorPortTest test="0;map;1.0;2.0;3.0;4.0;5.0;6.0;7.0;0;odom;8.0;9.0;10.0;11.0;12.0;13.0;14.0" />
+            <PoseStampedArrayPortTest test="0;map;1.0;2.0;3.0;4.0;5.0;6.0;7.0;0;odom;8.0;9.0;10.0;11.0;12.0;13.0;14.0" />
         </BehaviorTree>
       </root>)";
 
   BT::BehaviorTreeFactory factory;
-  factory.registerNodeType<TestNode<std::vector<geometry_msgs::msg::PoseStamped>>>(
-    "PoseStampedVectorPortTest");
+  factory.registerNodeType<TestNode<geometry_msgs::msg::PoseStampedArray>>(
+    "PoseStampedArrayPortTest");
   auto tree = factory.createTreeFromText(xml_txt);
 
   tree = factory.createTreeFromText(xml_txt);
-  std::vector<geometry_msgs::msg::PoseStamped> values;
+  geometry_msgs::msg::PoseStampedArray values;
   tree.rootNode()->getInput("test", values);
-  EXPECT_EQ(rclcpp::Time(values[0].header.stamp).nanoseconds(), 0);
-  EXPECT_EQ(values[0].header.frame_id, "map");
-  EXPECT_EQ(values[0].pose.position.x, 1.0);
-  EXPECT_EQ(values[0].pose.position.y, 2.0);
-  EXPECT_EQ(values[0].pose.position.z, 3.0);
-  EXPECT_EQ(values[0].pose.orientation.x, 4.0);
-  EXPECT_EQ(values[0].pose.orientation.y, 5.0);
-  EXPECT_EQ(values[0].pose.orientation.z, 6.0);
-  EXPECT_EQ(values[0].pose.orientation.w, 7.0);
-  EXPECT_EQ(rclcpp::Time(values[1].header.stamp).nanoseconds(), 0);
-  EXPECT_EQ(values[1].header.frame_id, "odom");
-  EXPECT_EQ(values[1].pose.position.x, 8.0);
-  EXPECT_EQ(values[1].pose.position.y, 9.0);
-  EXPECT_EQ(values[1].pose.position.z, 10.0);
-  EXPECT_EQ(values[1].pose.orientation.x, 11.0);
-  EXPECT_EQ(values[1].pose.orientation.y, 12.0);
-  EXPECT_EQ(values[1].pose.orientation.z, 13.0);
-  EXPECT_EQ(values[1].pose.orientation.w, 14.0);
+  EXPECT_EQ(rclcpp::Time(values.poses[0].header.stamp).nanoseconds(), 0);
+  EXPECT_EQ(values.poses[0].header.frame_id, "map");
+  EXPECT_EQ(values.poses[0].pose.position.x, 1.0);
+  EXPECT_EQ(values.poses[0].pose.position.y, 2.0);
+  EXPECT_EQ(values.poses[0].pose.position.z, 3.0);
+  EXPECT_EQ(values.poses[0].pose.orientation.x, 4.0);
+  EXPECT_EQ(values.poses[0].pose.orientation.y, 5.0);
+  EXPECT_EQ(values.poses[0].pose.orientation.z, 6.0);
+  EXPECT_EQ(values.poses[0].pose.orientation.w, 7.0);
+  EXPECT_EQ(rclcpp::Time(values.poses[1].header.stamp).nanoseconds(), 0);
+  EXPECT_EQ(values.poses[1].header.frame_id, "odom");
+  EXPECT_EQ(values.poses[1].pose.position.x, 8.0);
+  EXPECT_EQ(values.poses[1].pose.position.y, 9.0);
+  EXPECT_EQ(values.poses[1].pose.position.z, 10.0);
+  EXPECT_EQ(values.poses[1].pose.orientation.x, 11.0);
+  EXPECT_EQ(values.poses[1].pose.orientation.y, 12.0);
+  EXPECT_EQ(values.poses[1].pose.orientation.z, 13.0);
+  EXPECT_EQ(values.poses[1].pose.orientation.w, 14.0);
 }
 
 TEST(PathPortTest, test_wrong_syntax)
