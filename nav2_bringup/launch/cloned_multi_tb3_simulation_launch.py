@@ -134,7 +134,8 @@ def generate_launch_description():
 
     declare_robots_cmd = DeclareLaunchArgument(
         'robots',
-        default_value='robot1={x: 0.5, y: 0.5, yaw: 0}; robot2={x: -0.5, y: -0.5, yaw: 1.5707}',
+        default_value="""robot1={x: 0.5, y: 0.5, yaw: 0};
+                   robot2={x: -0.5, y: -0.5, z: 0, roll: 0, pitch: 0, yaw: 1.5707}""",
         description='Robots and their initialization poses in YAML format',
     )
 

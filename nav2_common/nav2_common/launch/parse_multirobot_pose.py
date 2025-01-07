@@ -24,7 +24,13 @@ class ParseMultiRobotPose(launch.Substitution):
     A custom substitution to parse the robots argument for multi-robot poses.
 
     Expects input in the format:
-    robots:="robot1={x: 1.0, y: 1.0, yaw: 0.0}; robot2={x: 2.0, y: 2.0, yaw: 1.5707}"
+    robots:="robot1={x: 1.0, y: 1.0, yaw: 0.0};
+             robot2={x: 1.0, y: 1.0, z: 1.0, roll: 0.0, pitch: 1.5707, yaw: 1.5707}"`
+
+    The individual robots are separated by a `;` and each robot consists of a name and pose object.
+    The name corresponds to the namespace of the robot and name of the Gazebo object.
+    The pose consists of X, Y, Z, Roll, Pitch, Yaw each of which can be omitted in which case it is
+    inferred as 0.
     """
 
     def __init__(self, robots_argument: launch.SomeSubstitutionsType) -> None:
