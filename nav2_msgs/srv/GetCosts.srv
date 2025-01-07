@@ -1,7 +1,7 @@
 # Get costmap costs at given poses
 
 bool use_footprint
-nav2_msgs/PoseStampedArray poses
+geometry_msgs/PoseStampedArray poses
 ---
 float32[] costs
 bool success
