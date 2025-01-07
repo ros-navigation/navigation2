@@ -25,14 +25,14 @@
 
 
 // @brief Validation Check
-//  Check recieved message is safe or not for the nav2-system
+//  Check received message is safe or not for the nav2-system
 //  For each msg-type known in nav2, we could check it as following:
 //  if(!validateMsg()) RCLCPP_ERROR(,"malformed msg. Rejecting.")
 //
 //  Workflow of validateMsg():
-//     if here's a sub-msg-type in the recieved msg,
+//     if here's a sub-msg-type in the received msg,
 //        the content of sub-msg would be checked as sub-msg-type
-//     then, check the whole recieved msg.
+//     then, check the whole received msg.
 //
 //  Following conditions are involved in check:
 //     1> Value Check: to avoid damaged value like like `nan`, `INF`, empty string and so on

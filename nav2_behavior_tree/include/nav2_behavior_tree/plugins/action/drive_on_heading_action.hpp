@@ -86,7 +86,7 @@ public:
   BT::NodeStatus on_cancelled() override;
 
 private:
-  bool initalized_;
+  bool initialized_;
 };
 
 }  // namespace nav2_behavior_tree

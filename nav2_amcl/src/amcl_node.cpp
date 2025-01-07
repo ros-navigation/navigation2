@@ -35,10 +35,10 @@
 #include "nav2_util/string_utils.hpp"
 #include "nav2_amcl/sensors/laser/laser.hpp"
 #include "rclcpp/node_options.hpp"
-#include "tf2/convert.h"
-#include "tf2/utils.h"
+#include "tf2/convert.hpp"
+#include "tf2/utils.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
-#include "tf2/LinearMath/Transform.h"
+#include "tf2/LinearMath/Transform.hpp"
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/message_filter.h"
 #include "tf2_ros/transform_broadcaster.h"
@@ -1584,7 +1584,7 @@ AmclNode::initServices()
 void
 AmclNode::initOdometry()
 {
-  // TODO(mjeronimo): We should handle persistance of the last known pose of the robot. We could
+  // TODO(mjeronimo): We should handle persistence of the last known pose of the robot. We could
   // then read that pose here and initialize using that.
 
   // When pausing and resuming, remember the last robot pose so we don't start at 0:0 again

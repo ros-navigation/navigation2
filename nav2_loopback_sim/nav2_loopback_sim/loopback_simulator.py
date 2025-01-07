@@ -41,7 +41,7 @@ from .utils import (
 This is a loopback simulator that replaces a physics simulator to create a
 frictionless, inertialess, and collisionless simulation environment. It
 accepts cmd_vel messages and publishes odometry & TF messages based on the
-cumulative velocities received to mimick global localization and simulation.
+cumulative velocities received to mimic global localization and simulation.
 It also accepts initialpose messages to set the initial pose of the robot
 to place anywhere.
 """

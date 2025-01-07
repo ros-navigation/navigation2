@@ -63,7 +63,7 @@ public:
   virtual void activate() = 0;
 
   /**
-   * @brief Method to deactive planner and any threads involved in execution.
+   * @brief Method to deactivate planner and any threads involved in execution.
    */
   virtual void deactivate() = 0;
 

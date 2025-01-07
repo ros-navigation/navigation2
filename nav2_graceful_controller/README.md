@@ -4,7 +4,7 @@ The graceful motion controller implements a controller based on the works of Jon
 See its [Configuration Guide Page](https://docs.nav2.org/configuration/packages/configuring-graceful-motion-controller.html) for additional parameter descriptions.
 
 ## Smooth control law
-The smooth control law is a pose-following kinematic control law that generates a smooth and confortable trajectory for the robot to follow. It is Lyapunov-based feedback control law made of three components:
+The smooth control law is a pose-following kinematic control law that generates a smooth and comfortable trajectory for the robot to follow. It is Lyapunov-based feedback control law made of three components:
 * The egocentric polar coordinates of the motion target (r, phi, delta) with respect to the robot frame.
 * A slow subsystem which describes the position of the robot.
 * A fast subsystem which describes the steering angle of the robot.

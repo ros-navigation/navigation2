@@ -79,7 +79,7 @@ def main():
     navigator.followWaypoints(inspection_points)
 
     # Do something during our route (e.x. AI to analyze stock information or upload to the cloud)
-    # Simply the current waypoint ID for the demonstation
+    # Simply the current waypoint ID for the demonstration
     i = 0
     while not navigator.isTaskComplete():
         i += 1

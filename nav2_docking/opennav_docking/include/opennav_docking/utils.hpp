@@ -24,7 +24,7 @@
 #include "nav2_util/geometry_utils.hpp"
 #include "angles/angles.h"
 #include "opennav_docking/types.hpp"
-#include "tf2/utils.h"
+#include "tf2/utils.hpp"
 
 namespace utils
 {

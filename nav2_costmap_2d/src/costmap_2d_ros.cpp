@@ -177,9 +177,14 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
     layered_costmap_->addPlugin(plugin);
 
     // TODO(mjeronimo): instead of get(), use a shared ptr
-    plugin->initialize(
-      layered_costmap_.get(), plugin_names_[i], tf_buffer_.get(),
-      shared_from_this(), callback_group_);
+    try {
+      plugin->initialize(layered_costmap_.get(), plugin_names_[i], tf_buffer_.get(),
+          shared_from_this(), callback_group_);
+    } catch (const std::exception & e) {
+      RCLCPP_ERROR(get_logger(), "Failed to initialize costmap plugin %s! %s.",
+          plugin_names_[i].c_str(), e.what());
+      return nav2_util::CallbackReturn::FAILURE;
+    }
 
     lock.unlock();
 
@@ -425,7 +430,7 @@ Costmap2DROS::getParameters()
     filter_types_[i] = nav2_util::get_plugin_type_param(node, filter_names_[i]);
   }
 
-  // 2. The map publish frequency cannot be 0 (to avoid a divde-by-zero)
+  // 2. The map publish frequency cannot be 0 (to avoid a divide-by-zero)
   if (map_publish_frequency_ > 0) {
     publish_cycle_ = rclcpp::Duration::from_seconds(1 / map_publish_frequency_);
   } else {

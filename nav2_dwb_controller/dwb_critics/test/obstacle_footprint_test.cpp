@@ -71,7 +71,7 @@ geometry_msgs::msg::Point rotate_origin(geometry_msgs::msg::Point p, double angl
   return p;
 }
 
-// Auxilary function to create a Point with given x and y values.
+// Auxiliary function to create a Point with given x and y values.
 geometry_msgs::msg::Point getPoint(double x, double y)
 {
   geometry_msgs::msg::Point p;

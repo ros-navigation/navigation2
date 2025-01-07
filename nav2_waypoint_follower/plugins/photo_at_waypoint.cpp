@@ -122,7 +122,7 @@ bool PhotoAtWaypoint::processAtWaypoint(
     cv::imwrite(full_path_image_path.c_str(), curr_frame_mat);
     RCLCPP_INFO(
       logger_,
-      "Photo has been taken sucessfully at waypoint %i", curr_waypoint_index);
+      "Photo has been taken successfully at waypoint %i", curr_waypoint_index);
   } catch (const std::exception & e) {
     RCLCPP_ERROR(
       logger_,
