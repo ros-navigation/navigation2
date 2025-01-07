@@ -20,10 +20,16 @@ import tempfile
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import (AppendEnvironmentVariable, DeclareLaunchArgument,
-                            ExecuteProcess, GroupAction,
-                            IncludeLaunchDescription, LogInfo, OpaqueFunction,
-                            RegisterEventHandler)
+from launch.actions import (
+    AppendEnvironmentVariable,
+    DeclareLaunchArgument,
+    ExecuteProcess,
+    GroupAction,
+    IncludeLaunchDescription,
+    LogInfo,
+    OpaqueFunction,
+    RegisterEventHandler,
+)
 from launch.conditions import IfCondition
 from launch.event_handlers import OnShutdown
 from launch.launch_description_sources import PythonLaunchDescriptionSource
@@ -51,12 +57,7 @@ def generate_robot_actions(context, *args, **kwargs):
         group = GroupAction(
             [
                 LogInfo(
-                    msg=[
-                        'Launching namespace=',
-                        robot_name,
-                        ' init_pose=',
-                        str(init_pose),
-                    ]
+                    msg=['Launching namespace=', robot_name, ' init_pose=', str(init_pose),]
                 ),
                 IncludeLaunchDescription(
                     PythonLaunchDescriptionSource(
@@ -70,8 +71,7 @@ def generate_robot_actions(context, *args, **kwargs):
                 ),
                 IncludeLaunchDescription(
                     PythonLaunchDescriptionSource(
-                        os.path.join(bringup_dir, 'launch',
-                                     'tb3_simulation_launch.py')
+                        os.path.join(bringup_dir, 'launch', 'tb3_simulation_launch.py')
                     ),
                     launch_arguments={
                         'namespace': robot_name,
@@ -96,8 +96,7 @@ def generate_robot_actions(context, *args, **kwargs):
         )
 
         bringup_cmd_group.append(group)
-    bringup_cmd_group.append(
-        LogInfo(msg=['number_of_robots=', str(len(robots_list))]))
+    bringup_cmd_group.append(LogInfo(msg=['number_of_robots=', str(len(robots_list))]))
     return bringup_cmd_group
 
 
@@ -217,12 +216,10 @@ def generate_launch_description():
     ld.add_action(remove_temp_sdf_file)
 
     ld.add_action(
-        LogInfo(condition=IfCondition(log_settings),
-                msg=['map yaml: ', map_yaml_file])
+        LogInfo(condition=IfCondition(log_settings), msg=['map yaml: ', map_yaml_file])
     )
     ld.add_action(
-        LogInfo(condition=IfCondition(log_settings),
-                msg=['params yaml: ', params_file])
+        LogInfo(condition=IfCondition(log_settings), msg=['params yaml: ', params_file])
     )
     ld.add_action(
         LogInfo(
@@ -237,8 +234,7 @@ def generate_launch_description():
         )
     )
     ld.add_action(
-        LogInfo(condition=IfCondition(log_settings),
-                msg=['autostart: ', autostart])
+        LogInfo(condition=IfCondition(log_settings), msg=['autostart: ', autostart])
     )
     ld.add_action(OpaqueFunction(function=generate_robot_actions))
 
