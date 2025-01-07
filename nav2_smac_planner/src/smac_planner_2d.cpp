@@ -271,7 +271,8 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
 
     // Publish raw path for debug
     if (_raw_plan_publisher->get_subscription_count() > 0) {
-      _raw_plan_publisher->publish(plan);
+      auto msg = std::make_unique<nav_msgs::msg::Path>(plan);
+      _raw_plan_publisher->publish(std::move(msg));
     }
 
     return plan;
@@ -306,7 +307,8 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
 
   // Publish raw path for debug
   if (_raw_plan_publisher->get_subscription_count() > 0) {
-    _raw_plan_publisher->publish(plan);
+    auto msg = std::make_unique<nav_msgs::msg::Path>(plan);
+    _raw_plan_publisher->publish(std::move(msg));
   }
 
   // Find how much time we have left to do smoothing

@@ -59,13 +59,13 @@ public:
 
   nav_msgs::msg::Path getPlan() {return path_handler_->getPlan();}
 
-  geometry_msgs::msg::PointStamped createMotionTargetMsg(
+  std::unique_ptr<geometry_msgs::msg::PointStamped> createMotionTargetMsg(
     const geometry_msgs::msg::PoseStamped & motion_target)
   {
     return nav2_graceful_controller::createMotionTargetMsg(motion_target);
   }
 
-  visualization_msgs::msg::Marker createSlowdownMarker(
+  std::unique_ptr<visualization_msgs::msg::Marker> createSlowdownMarker(
     const geometry_msgs::msg::PoseStamped & motion_target)
   {
     return nav2_graceful_controller::createSlowdownMarker(
@@ -367,10 +367,10 @@ TEST(GracefulControllerTest, createMotionTargetMsg) {
   auto motion_target_msg = controller->createMotionTargetMsg(motion_target);
 
   // Check results
-  EXPECT_EQ(motion_target_msg.header.frame_id, "map");
-  EXPECT_EQ(motion_target_msg.point.x, 1.0);
-  EXPECT_EQ(motion_target_msg.point.y, 2.0);
-  EXPECT_EQ(motion_target_msg.point.z, 0.01);
+  EXPECT_EQ(motion_target_msg->header.frame_id, "map");
+  EXPECT_EQ(motion_target_msg->point.x, 1.0);
+  EXPECT_EQ(motion_target_msg->point.y, 2.0);
+  EXPECT_EQ(motion_target_msg->point.z, 0.01);
 }
 
 TEST(GracefulControllerTest, createSlowdownMsg) {
@@ -405,24 +405,24 @@ TEST(GracefulControllerTest, createSlowdownMsg) {
   auto slowdown_msg = controller->createSlowdownMarker(motion_target);
 
   // Check results
-  EXPECT_EQ(slowdown_msg.header.frame_id, "map");
-  EXPECT_EQ(slowdown_msg.ns, "slowdown");
-  EXPECT_EQ(slowdown_msg.id, 0);
-  EXPECT_EQ(slowdown_msg.type, visualization_msgs::msg::Marker::SPHERE);
-  EXPECT_EQ(slowdown_msg.action, visualization_msgs::msg::Marker::ADD);
-  EXPECT_EQ(slowdown_msg.pose.position.x, 1.0);
-  EXPECT_EQ(slowdown_msg.pose.position.y, 2.0);
-  EXPECT_EQ(slowdown_msg.pose.position.z, 0.01);
-  EXPECT_EQ(slowdown_msg.pose.orientation.x, 0.0);
-  EXPECT_EQ(slowdown_msg.pose.orientation.y, 0.0);
-  EXPECT_EQ(slowdown_msg.pose.orientation.z, 0.0);
-  EXPECT_EQ(slowdown_msg.pose.orientation.w, 1.0);
-  EXPECT_EQ(slowdown_msg.scale.x, 0.4);
-  EXPECT_EQ(slowdown_msg.scale.y, 0.4);
-  EXPECT_EQ(slowdown_msg.scale.z, 0.02);
-  EXPECT_EQ(slowdown_msg.color.r, 0.0);
-  EXPECT_EQ(slowdown_msg.color.g, 1.0);
-  EXPECT_EQ(slowdown_msg.color.b, 0.0);
+  EXPECT_EQ(slowdown_msg->header.frame_id, "map");
+  EXPECT_EQ(slowdown_msg->ns, "slowdown");
+  EXPECT_EQ(slowdown_msg->id, 0);
+  EXPECT_EQ(slowdown_msg->type, visualization_msgs::msg::Marker::SPHERE);
+  EXPECT_EQ(slowdown_msg->action, visualization_msgs::msg::Marker::ADD);
+  EXPECT_EQ(slowdown_msg->pose.position.x, 1.0);
+  EXPECT_EQ(slowdown_msg->pose.position.y, 2.0);
+  EXPECT_EQ(slowdown_msg->pose.position.z, 0.01);
+  EXPECT_EQ(slowdown_msg->pose.orientation.x, 0.0);
+  EXPECT_EQ(slowdown_msg->pose.orientation.y, 0.0);
+  EXPECT_EQ(slowdown_msg->pose.orientation.z, 0.0);
+  EXPECT_EQ(slowdown_msg->pose.orientation.w, 1.0);
+  EXPECT_EQ(slowdown_msg->scale.x, 0.4);
+  EXPECT_EQ(slowdown_msg->scale.y, 0.4);
+  EXPECT_EQ(slowdown_msg->scale.z, 0.02);
+  EXPECT_EQ(slowdown_msg->color.r, 0.0);
+  EXPECT_EQ(slowdown_msg->color.g, 1.0);
+  EXPECT_EQ(slowdown_msg->color.b, 0.0);
 }
 
 TEST(GracefulControllerTest, rotateToTarget) {

@@ -183,7 +183,8 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   // Transform path to robot base frame
   auto transformed_plan = path_handler_->transformGlobalPlan(
     pose, params_->max_robot_pose_search_dist, params_->interpolate_curvature_after_goal);
-  global_path_pub_->publish(transformed_plan);
+  auto plan_msg = std::make_unique<nav_msgs::msg::Path>(transformed_plan);
+  global_path_pub_->publish(std::move(plan_msg));
 
   // Find look ahead distance and point on path and publish
   double lookahead_dist = getLookAheadDistance(speed);
@@ -276,9 +277,9 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   }
 
   // Publish whether we are rotating to goal heading
-  std_msgs::msg::Bool is_rotating_to_heading_msg;
-  is_rotating_to_heading_msg.data = is_rotating_to_heading_;
-  is_rotating_to_heading_pub_->publish(is_rotating_to_heading_msg);
+  auto is_rotating_to_heading_msg = std::make_unique<std_msgs::msg::Bool>();
+  is_rotating_to_heading_msg->data = is_rotating_to_heading_;
+  is_rotating_to_heading_pub_->publish(std::move(is_rotating_to_heading_msg));
 
   // populate and return message
   geometry_msgs::msg::TwistStamped cmd_vel;

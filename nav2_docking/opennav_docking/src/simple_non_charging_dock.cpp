@@ -144,7 +144,7 @@ geometry_msgs::msg::PoseStamped SimpleNonChargingDock::getStagingPose(
   staging_pose.pose.orientation = tf2::toMsg(orientation);
 
   // Publish staging pose for debugging purposes
-  staging_pose_pub_->publish(staging_pose);
+  staging_pose_pub_->publish(std::make_unique<geometry_msgs::msg::PoseStamped>(staging_pose));
   return staging_pose;
 }
 
@@ -152,7 +152,7 @@ bool SimpleNonChargingDock::getRefinedPose(geometry_msgs::msg::PoseStamped & pos
 {
   // If using not detection, set the dock pose to the static fixed-frame version
   if (!use_external_detection_pose_) {
-    dock_pose_pub_->publish(pose);
+    dock_pose_pub_->publish(std::make_unique<geometry_msgs::msg::PoseStamped>(pose));
     dock_pose_ = pose;
     return true;
   }
@@ -188,7 +188,7 @@ bool SimpleNonChargingDock::getRefinedPose(geometry_msgs::msg::PoseStamped & pos
 
   // Filter the detected pose
   detected = filter_->update(detected);
-  filtered_dock_pose_pub_->publish(detected);
+  filtered_dock_pose_pub_->publish(std::make_unique<geometry_msgs::msg::PoseStamped>(detected));
 
   // Rotate the just the orientation, then remove roll/pitch
   geometry_msgs::msg::PoseStamped just_orientation;
@@ -212,7 +212,7 @@ bool SimpleNonChargingDock::getRefinedPose(geometry_msgs::msg::PoseStamped & pos
   dock_pose_.pose.position.z = 0.0;
 
   // Publish & return dock pose for debugging purposes
-  dock_pose_pub_->publish(dock_pose_);
+  dock_pose_pub_->publish(std::make_unique<geometry_msgs::msg::PoseStamped>(dock_pose_));
   pose = dock_pose_;
   return true;
 }

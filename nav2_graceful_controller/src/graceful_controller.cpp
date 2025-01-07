@@ -233,12 +233,10 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
     if (simulateTrajectory(target_pose, costmap_transform, local_plan, cmd_vel, reversing)) {
       // Successfully simulated to target_pose - compute velocity at this moment
       // Publish the selected target_pose
-      auto motion_target_point = nav2_graceful_controller::createMotionTargetMsg(target_pose);
-      motion_target_pub_->publish(motion_target_point);
+      motion_target_pub_->publish(nav2_graceful_controller::createMotionTargetMsg(target_pose));
       // Publish marker for slowdown radius around motion target for debugging / visualization
-      auto slowdown_marker = nav2_graceful_controller::createSlowdownMarker(
-        target_pose, params_->slowdown_radius);
-      slowdown_pub_->publish(slowdown_marker);
+      slowdown_pub_->publish(nav2_graceful_controller::createSlowdownMarker(
+        target_pose, params_->slowdown_radius));
       // Publish the local plan
       local_plan.header = transformed_plan.header;
       local_plan_pub_->publish(local_plan);

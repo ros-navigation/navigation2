@@ -62,12 +62,12 @@ bool CollisionChecker::isCollisionImminent(
   }
 
   // visualization messages
-  nav_msgs::msg::Path arc_pts_msg;
-  arc_pts_msg.header.frame_id = costmap_ros_->getGlobalFrameID();
-  arc_pts_msg.header.stamp = robot_pose.header.stamp;
+  auto arc_pts_msg = std::make_unique<nav_msgs::msg::Path>();
+  arc_pts_msg->header.frame_id = costmap_ros_->getGlobalFrameID();
+  arc_pts_msg->header.stamp = robot_pose.header.stamp;
   geometry_msgs::msg::PoseStamped pose_msg;
-  pose_msg.header.frame_id = arc_pts_msg.header.frame_id;
-  pose_msg.header.stamp = arc_pts_msg.header.stamp;
+  pose_msg.header.frame_id = arc_pts_msg->header.frame_id;
+  pose_msg.header.stamp = arc_pts_msg->header.stamp;
 
   double projection_time = 0.0;
   if (fabs(linear_vel) < 0.01 && fabs(angular_vel) > 0.01) {
@@ -110,16 +110,16 @@ bool CollisionChecker::isCollisionImminent(
     pose_msg.pose.position.x = curr_pose.x;
     pose_msg.pose.position.y = curr_pose.y;
     pose_msg.pose.position.z = 0.01;
-    arc_pts_msg.poses.push_back(pose_msg);
+    arc_pts_msg->poses.push_back(pose_msg);
 
     // check for collision at the projected pose
     if (inCollision(curr_pose.x, curr_pose.y, curr_pose.theta)) {
-      carrot_arc_pub_->publish(arc_pts_msg);
+      carrot_arc_pub_->publish(std::move(arc_pts_msg));
       return true;
     }
   }
 
-  carrot_arc_pub_->publish(arc_pts_msg);
+  carrot_arc_pub_->publish(std::move(arc_pts_msg));
 
   return false;
 }
