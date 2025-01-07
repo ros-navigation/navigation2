@@ -98,20 +98,15 @@ inline BT::NodeStatus GoalUpdater::tick()
     setOutput("output_goals", goals);
   } else {
     auto last_goals_received_time = rclcpp::Time(last_goals_received_.header.stamp);
-    rclcpp::Time most_recent_goal_time = rclcpp::Time(0, 0, node_->get_clock()->get_clock_type());
-    for (const auto & g : goals) {
-      if (rclcpp::Time(g.header.stamp) > most_recent_goal_time) {
-        most_recent_goal_time = rclcpp::Time(g.header.stamp);
-      }
-    }
-    if (last_goals_received_time > most_recent_goal_time) {
+    auto goals_time = rclcpp::Time(goals.header.stamp);
+    if (last_goals_received_time > goals_time) {
       setOutput("output_goals", last_goals_received_.poses);
     } else {
       RCLCPP_WARN(
         node_->get_logger(),
           "None of the received goals (most recent: %f) are more recent than the "
         "current goals (oldest: %f). Ignoring the received goals.",
-        last_goals_received_time.seconds(), most_recent_goal_time.seconds());
+        last_goals_received_time.seconds(), goals_time.seconds());
       setOutput("output_goals", goals);
     }
   }
