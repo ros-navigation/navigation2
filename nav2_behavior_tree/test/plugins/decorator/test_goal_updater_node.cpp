@@ -131,7 +131,7 @@ TEST_F(GoalUpdaterTestFixture, test_older_goal_update)
   auto goal_updater_pub =
     node_->create_publisher<geometry_msgs::msg::PoseStamped>("goal_update", 10);
   auto goals_updater_pub =
-    node_->create_publisher<nav2_msgs::msg::PoseStampedArray>("goals_update", 10);
+    node_->create_publisher<geometry_msgs::msg::PoseStampedArray>("goals_update", 10);
 
   // create new goal and set it on blackboard
   geometry_msgs::msg::PoseStamped goal;
@@ -144,7 +144,7 @@ TEST_F(GoalUpdaterTestFixture, test_older_goal_update)
 
   // publish updated_goal older than goal
   geometry_msgs::msg::PoseStamped goal_to_update;
-  nav2_msgs::msg::PoseStampedArray goals_to_update;
+  geometry_msgs::msg::PoseStampedArray goals_to_update;
   goal_to_update.header.stamp = rclcpp::Time(goal.header.stamp) - rclcpp::Duration(1, 0);
   goal_to_update.pose.position.x = 2.0;
   goals_to_update.header.stamp = goal_to_update.header.stamp;
@@ -181,7 +181,7 @@ TEST_F(GoalUpdaterTestFixture, test_get_latest_goal_update)
   auto goal_updater_pub =
     node_->create_publisher<geometry_msgs::msg::PoseStamped>("goal_update", 10);
   auto goals_updater_pub =
-    node_->create_publisher<nav2_msgs::msg::PoseStampedArray>("goals_update", 10);
+    node_->create_publisher<geometry_msgs::msg::PoseStampedArray>("goals_update", 10);
 
   // create new goal and set it on blackboard
   geometry_msgs::msg::PoseStamped goal;
@@ -194,14 +194,14 @@ TEST_F(GoalUpdaterTestFixture, test_get_latest_goal_update)
 
   // publish updated_goal older than goal
   geometry_msgs::msg::PoseStamped goal_to_update_1;
-  nav2_msgs::msg::PoseStampedArray goals_to_update_1;
+  geometry_msgs::msg::PoseStampedArray goals_to_update_1;
   goal_to_update_1.header.stamp = node_->now();
   goal_to_update_1.pose.position.x = 2.0;
   goals_to_update_1.header.stamp = goal_to_update_1.header.stamp;
   goals_to_update_1.poses.push_back(goal_to_update_1);
 
   geometry_msgs::msg::PoseStamped goal_to_update_2;
-  nav2_msgs::msg::PoseStampedArray goals_to_update_2;
+  geometry_msgs::msg::PoseStampedArray goals_to_update_2;
   goal_to_update_2.header.stamp = node_->now();
   goal_to_update_2.pose.position.x = 3.0;
   goals_to_update_2.header.stamp = goal_to_update_2.header.stamp;
