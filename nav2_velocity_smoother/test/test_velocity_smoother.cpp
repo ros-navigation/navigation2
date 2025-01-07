@@ -458,7 +458,7 @@ TEST(VelocitySmootherTest, testapplyConstraintsPositiveToPositiveDecel)
   smoother->configure(state);
   double no_eta = 1.0;
 
-  // Test asymetric accel/decel use cases
+  // Test asymmetric accel/decel use cases
   double accel = 0.1;
   double decel = -1.0;
   double dv_decel = -decel / 20.0;

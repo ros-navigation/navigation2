@@ -53,8 +53,8 @@ TEST(NodeLatticeTest, parser_test)
   nav2_smac_planner::MotionPose pose;
 
   json jsonMetaData = j["lattice_metadata"];
-  json jsonPrimatives = j["primitives"];
-  json jsonPose = jsonPrimatives[0]["poses"][0];
+  json jsonPrimitives = j["primitives"];
+  json jsonPose = jsonPrimitives[0]["poses"][0];
 
   nav2_smac_planner::fromJsonToMetaData(jsonMetaData, metaData);
 
@@ -67,10 +67,10 @@ TEST(NodeLatticeTest, parser_test)
   EXPECT_EQ(metaData.motion_model, std::string("ackermann"));
 
   std::vector<nav2_smac_planner::MotionPrimitive> myPrimitives;
-  for (unsigned int i = 0; i < jsonPrimatives.size(); ++i) {
-    nav2_smac_planner::MotionPrimitive newPrimative;
-    nav2_smac_planner::fromJsonToMotionPrimitive(jsonPrimatives[i], newPrimative);
-    myPrimitives.push_back(newPrimative);
+  for (unsigned int i = 0; i < jsonPrimitives.size(); ++i) {
+    nav2_smac_planner::MotionPrimitive newPrimitive;
+    nav2_smac_planner::fromJsonToMotionPrimitive(jsonPrimitives[i], newPrimitive);
+    myPrimitives.push_back(newPrimitive);
   }
 
   // Checks for parsing primitives

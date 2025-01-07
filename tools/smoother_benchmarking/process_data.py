@@ -251,7 +251,7 @@ def main():
     path_lengths = np.asarray(path_lengths)
     total_paths = len(paths)
 
-    # [planner, smoothers] path lenghth in a row
+    # [planner, smoothers] path length in a row
     path_lengths.resize((int(total_paths / methods_num), methods_num))
     # [planner, smoothers] path length in a column
     path_lengths = path_lengths.transpose()

@@ -31,7 +31,7 @@ class LatticeGenerator:
     Handles all the logic for computing the minimal control set.
 
     Computes the minimal control set for a vehicle given its parameters.
-    Includes handling the propogating and searching along wavefronts as
+    Includes handling the propagating and searching along wavefronts as
     well as determining if a trajectory is part of the minimal set based
     on previously added trajectories.
     """
@@ -169,7 +169,7 @@ class LatticeGenerator:
         self, trajectory: Trajectory, prior_end_poses: index.Rtree
     ) -> bool:
         """
-        Determine wheter a trajectory is a minimal trajectory.
+        Determine whether a trajectory is a minimal trajectory.
 
         Uses an RTree for speedup.
 

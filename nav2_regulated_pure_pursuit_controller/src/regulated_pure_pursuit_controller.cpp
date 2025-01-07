@@ -506,7 +506,7 @@ double RegulatedPurePursuitController::findVelocitySignChange(
     double ab_y = transformed_plan.poses[pose_id + 1].pose.position.y -
       transformed_plan.poses[pose_id].pose.position.y;
 
-    /* Checking for the existance of cusp, in the path, using the dot product
+    /* Checking for the existence of cusp, in the path, using the dot product
     and determine it's distance from the robot. If there is no cusp in the path,
     then just determine the distance to the goal location. */
     const double dot_prod = (oa_x * ab_x) + (oa_y * ab_y);

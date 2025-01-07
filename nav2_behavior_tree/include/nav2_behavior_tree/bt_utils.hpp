@@ -238,7 +238,7 @@ T1 deconflictPortAndParamFrame(
 /**
  * @brief Try reading an import port first, and if that doesn't work
  * fallback to reading directly the blackboard.
- * The blackboard must be passed explitly because config() is private in BT.CPP 4.X
+ * The blackboard must be passed explicitly because config() is private in BT.CPP 4.X
  *
  * @param bt_node node
  * @param blackboard the blackboard ovtained with node->config().blackboard

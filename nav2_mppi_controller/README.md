@@ -12,6 +12,10 @@ This controller is measured to run at 50+ Hz on a modest Intel processor (4th ge
 
 It works currently with Differential, Omnidirectional, and Ackermann robots.
 
+Want to learn more? Checkout the ROSCon 2023 talk on the MPPI Controller by clicking on the image below!
+
+[![IMAGE ALT TEXT](https://github.com/user-attachments/assets/4e091c5d-9687-457c-a7fb-d0e0689fbaea)](https://vimeo.com/879001391)
+
 ## MPPI Description
 
 The MPPI algorithm is an MPC variant that finds a control velocity for the robot using an iterative approach. Using the previous time step's best control solution and the robot's current state, a set of randomly sampled perturbations from a Gaussian distribution are applied. These noised controls are forward simulated to generate a set of trajectories within the robot's motion model.
