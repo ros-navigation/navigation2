@@ -247,13 +247,15 @@ void SpeedFilter::process(
     }
 
     // Forming and publishing new SpeedLimit message
-    std::unique_ptr<nav2_msgs::msg::SpeedLimit> msg =
-      std::make_unique<nav2_msgs::msg::SpeedLimit>();
-    msg->header.frame_id = global_frame_;
-    msg->header.stamp = clock_->now();
-    msg->percentage = percentage_;
-    msg->speed_limit = speed_limit_;
-    speed_limit_pub_->publish(std::move(msg));
+    if (speed_limit_pub_->get_subscription_count() > 0) {
+      std::unique_ptr<nav2_msgs::msg::SpeedLimit> msg =
+        std::make_unique<nav2_msgs::msg::SpeedLimit>();
+      msg->header.frame_id = global_frame_;
+      msg->header.stamp = clock_->now();
+      msg->percentage = percentage_;
+      msg->speed_limit = speed_limit_;
+      speed_limit_pub_->publish(std::move(msg));
+    }
 
     speed_limit_prev_ = speed_limit_;
   }

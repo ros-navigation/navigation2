@@ -255,10 +255,12 @@ void BinaryFilter::changeState(const bool state)
   }
 
   // Forming and publishing new BinaryState message
-  std::unique_ptr<std_msgs::msg::Bool> msg =
-    std::make_unique<std_msgs::msg::Bool>();
-  msg->data = state;
-  binary_state_pub_->publish(std::move(msg));
+  if (binary_state_pub_->get_subscription_count() > 0) {
+    std::unique_ptr<std_msgs::msg::Bool> msg =
+      std::make_unique<std_msgs::msg::Bool>();
+    msg->data = state;
+    binary_state_pub_->publish(std::move(msg));
+  }
 }
 
 }  // namespace nav2_costmap_2d

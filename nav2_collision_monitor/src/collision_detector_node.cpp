@@ -376,7 +376,9 @@ void CollisionDetector::process()
         collision_points) >= polygon->getMinPoints());
   }
 
-  state_pub_->publish(std::move(state_msg));
+  if (state_pub_->get_subscription_count() > 0) {
+    state_pub_->publish(std::move(state_msg));
+  }
 
   // Publish polygons for better visualization
   publishPolygons();

@@ -114,12 +114,16 @@ bool CollisionChecker::isCollisionImminent(
 
     // check for collision at the projected pose
     if (inCollision(curr_pose.x, curr_pose.y, curr_pose.theta)) {
-      carrot_arc_pub_->publish(std::move(arc_pts_msg));
+      if (carrot_arc_pub_->get_subscription_count() > 0) {
+        carrot_arc_pub_->publish(std::move(arc_pts_msg));
+      }
       return true;
     }
   }
 
-  carrot_arc_pub_->publish(std::move(arc_pts_msg));
+  if (carrot_arc_pub_->get_subscription_count() > 0) {
+    carrot_arc_pub_->publish(std::move(arc_pts_msg));
+  }
 
   return false;
 }

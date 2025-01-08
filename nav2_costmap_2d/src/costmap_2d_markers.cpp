@@ -138,7 +138,9 @@ void voxelCallback(const nav2_msgs::msg::VoxelGrid::ConstSharedPtr grid)
     p.z = c.z;
   }
 
-  pub->publish(std::move(m));
+  if (pub->get_subscription_count() > 0) {
+    pub->publish(std::move(m));
+  }
 
   timer.end();
   RCLCPP_INFO(

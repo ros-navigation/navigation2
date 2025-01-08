@@ -583,7 +583,9 @@ Costmap2DROS::updateMap()
       transformFootprint(x, y, yaw, padded_footprint_, *footprint);
 
       RCLCPP_DEBUG(get_logger(), "Publishing footprint");
-      footprint_pub_->publish(std::move(footprint));
+      if (footprint_pub_->get_subscription_count() > 0) {
+        footprint_pub_->publish(std::move(footprint));
+      }
       initialized_ = true;
     }
   }
