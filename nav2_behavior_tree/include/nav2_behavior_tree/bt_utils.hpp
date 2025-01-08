@@ -23,8 +23,9 @@
 #include "rclcpp/node.hpp"
 #include "behaviortree_cpp/behavior_tree.h"
 #include "geometry_msgs/msg/point.hpp"
-#include "geometry_msgs/msg/quaternion.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/pose_stamped_array.hpp"
+#include "geometry_msgs/msg/quaternion.hpp"
 #include "nav_msgs/msg/path.hpp"
 
 namespace BT
