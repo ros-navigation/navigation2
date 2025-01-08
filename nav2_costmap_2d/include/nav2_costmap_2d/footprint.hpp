@@ -101,7 +101,7 @@ void transformFootprint(
  * @param  footprint A vector of points (type geometry_msgs::Point) representing a 2D polygon (footprint).
  * @return The centroid of the footprint as a geometry_msgs::Point.
 */
-geometry_msgs::Point calculateCentroid(const std::vector<geometry_msgs::Point>& footprint);
+geometry_msgs::msg::Point calculateCentroid(const std::vector<geometry_msgs::msg::Point>& footprint);
 
 /**
  * @brief  Given a pose and base footprint, build the oriented footprint of the robot (PolygonStamped)

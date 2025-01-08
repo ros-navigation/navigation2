@@ -142,7 +142,7 @@ void transformFootprint(
   }
 }
 
-geometry_msgs::Point calculateCentroid(const std::vector<geometry_msgs::Point>& footprint)
+geometry_msgs::msg::Point calculateCentroid(const std::vector<geometry_msgs::msg::Point>& footprint)
 {
   geometry_msgs::Point center;
   double sum_x = 0.0, sum_y = 0.0;
@@ -163,7 +163,7 @@ geometry_msgs::Point calculateCentroid(const std::vector<geometry_msgs::Point>& 
 
 void padFootprint(std::vector<geometry_msgs::msg::Point> & footprint, double padding)
 {
-  geometry_msgs::Point footprint_center = calculateCentroid(footprint);
+  geometry_msgs::msg::Point footprint_center = calculateCentroid(footprint);
 
   for (auto& point : footprint)
   {
