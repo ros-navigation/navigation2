@@ -145,7 +145,8 @@ public:
 
       // Check if we need to slow down to avoid overshooting
       auto remaining_distance = std::fabs(command_x_) - distance;
-      if (command_speed_ > 0.0) {
+      bool forward = command_speed_ > 0.0;
+      if (forward) {
         double max_vel_to_stop = std::sqrt(-2.0 * deceleration_limit_ * remaining_distance);
         if (max_vel_to_stop < cmd_vel->twist.linear.x) {
           cmd_vel->twist.linear.x = max_vel_to_stop;
@@ -155,6 +156,11 @@ public:
         if (max_vel_to_stop > cmd_vel->twist.linear.x) {
           cmd_vel->twist.linear.x = max_vel_to_stop;
         }
+      }
+
+      // Ensure we don't go below minimum speed
+      if (std::fabs(cmd_vel->twist.linear.x) < minimum_speed_) {
+        cmd_vel->twist.linear.x = forward ? minimum_speed_ : -minimum_speed_;
       }
     }
 
@@ -170,7 +176,6 @@ public:
     }
 
     last_vel_ = cmd_vel->twist.linear.x;
-
     this->vel_pub_->publish(std::move(cmd_vel));
 
     return ResultStatus{Status::RUNNING, ActionT::Result::NONE};
@@ -254,8 +259,12 @@ protected:
     nav2_util::declare_parameter_if_not_declared(
       node, this->behavior_name_ + ".deceleration_limit",
       rclcpp::ParameterValue(-2.5));
+    nav2_util::declare_parameter_if_not_declared(
+      node, this->behavior_name_ + ".minimum_speed",
+      rclcpp::ParameterValue(0.01));
     node->get_parameter(this->behavior_name_ + ".acceleration_limit", acceleration_limit_);
     node->get_parameter(this->behavior_name_ + ".deceleration_limit", deceleration_limit_);
+    node->get_parameter(this->behavior_name_ + ".minimum_speed", minimum_speed_);
   }
 
   typename ActionT::Feedback::SharedPtr feedback_;
@@ -269,6 +278,7 @@ protected:
   double simulate_ahead_time_;
   double acceleration_limit_;
   double deceleration_limit_;
+  double minimum_speed_;
   double last_vel_ = std::numeric_limits<double>::max();
 };
 

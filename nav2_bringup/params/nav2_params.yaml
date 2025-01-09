@@ -319,10 +319,12 @@ behavior_server:
       plugin: "nav2_behaviors::BackUp"
       acceleration_limit: 2.5
       deceleration_limit: -2.5
+      minimum_speed: 0.01
     drive_on_heading:
       plugin: "nav2_behaviors::DriveOnHeading"
       acceleration_limit: 2.5
       deceleration_limit: -2.5
+      minimum_speed: 0.01
     wait:
       plugin: "nav2_behaviors::Wait"
     assisted_teleop:
