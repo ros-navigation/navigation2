@@ -17,16 +17,6 @@
 namespace nav2_graceful_controller
 {
 
-geometry_msgs::msg::PointStamped createMotionTargetMsg(
-  const geometry_msgs::msg::PoseStamped & motion_target)
-{
-  geometry_msgs::msg::PointStamped motion_target_point;
-  motion_target_point.header = motion_target.header;
-  motion_target_point.point = motion_target.pose.position;
-  motion_target_point.point.z = 0.01;
-  return motion_target_point;
-}
-
 visualization_msgs::msg::Marker createSlowdownMarker(
   const geometry_msgs::msg::PoseStamped & motion_target, const double & slowdown_radius)
 {
