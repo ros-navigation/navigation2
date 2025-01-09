@@ -134,19 +134,19 @@ public:
     cmd_vel->header.frame_id = this->robot_base_frame_;
     cmd_vel->twist.linear.y = 0.0;
     cmd_vel->twist.angular.z = 0.0;
-    if (acceleration_limit_ <= 0.0 || deceleration_limit_ <= 0.0) {
+    if (acceleration_limit_ <= 0.0 || deceleration_limit_ >= 0.0) {
       cmd_vel->twist.linear.x = command_speed_;
     } else {
       double current_speed = last_vel_ == std::numeric_limits<double>::max() ? 0.0 : last_vel_;
 
-      double min_feasible_speed = current_speed - deceleration_limit_ / this->cycle_frequency_;
+      double min_feasible_speed = current_speed + deceleration_limit_ / this->cycle_frequency_;
       double max_feasible_speed = current_speed + acceleration_limit_ / this->cycle_frequency_;
       cmd_vel->twist.linear.x = std::clamp(command_speed_, min_feasible_speed, max_feasible_speed);
 
       // Check if we need to slow down to avoid overshooting
       auto remaining_distance = std::fabs(command_x_) - distance;
       if (command_speed_ > 0.0) {
-        double max_vel_to_stop = std::sqrt(2.0 * deceleration_limit_ * remaining_distance);
+        double max_vel_to_stop = std::sqrt(-2.0 * deceleration_limit_ * remaining_distance);
         if (max_vel_to_stop < cmd_vel->twist.linear.x) {
           cmd_vel->twist.linear.x = max_vel_to_stop;
         }
@@ -250,10 +250,10 @@ protected:
 
     nav2_util::declare_parameter_if_not_declared(
       node, this->behavior_name_ + ".acceleration_limit",
-      rclcpp::ParameterValue(0.0));
+      rclcpp::ParameterValue(2.5));
     nav2_util::declare_parameter_if_not_declared(
       node, this->behavior_name_ + ".deceleration_limit",
-      rclcpp::ParameterValue(0.0));
+      rclcpp::ParameterValue(-2.5));
     node->get_parameter(this->behavior_name_ + ".acceleration_limit", acceleration_limit_);
     node->get_parameter(this->behavior_name_ + ".deceleration_limit", deceleration_limit_);
   }
