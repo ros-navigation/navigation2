@@ -1,6 +1,6 @@
 
 #goal definition
-geometry_msgs/PoseStamped[] poses
+geometry_msgs/PoseStampedArray poses
 string behavior_tree
 ---
 #result definition
