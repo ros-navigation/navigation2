@@ -61,7 +61,7 @@ void GracefulController::configure(
   // Publishers
   transformed_plan_pub_ = node->create_publisher<nav_msgs::msg::Path>("transformed_global_plan", 1);
   local_plan_pub_ = node->create_publisher<nav_msgs::msg::Path>("local_plan", 1);
-  motion_target_pub_ = node->create_publisher<geometry_msgs::msg::PointStamped>("motion_target", 1);
+  motion_target_pub_ = node->create_publisher<geometry_msgs::msg::PoseStamped>("motion_target", 1);
   slowdown_pub_ = node->create_publisher<visualization_msgs::msg::Marker>("slowdown", 1);
 
   RCLCPP_INFO(logger_, "Configured Graceful Motion Controller: %s", plugin_name_.c_str());
@@ -233,8 +233,7 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
     if (simulateTrajectory(target_pose, costmap_transform, local_plan, cmd_vel, reversing)) {
       // Successfully simulated to target_pose - compute velocity at this moment
       // Publish the selected target_pose
-      auto motion_target_point = nav2_graceful_controller::createMotionTargetMsg(target_pose);
-      motion_target_pub_->publish(motion_target_point);
+      motion_target_pub_->publish(target_pose);
       // Publish marker for slowdown radius around motion target for debugging / visualization
       auto slowdown_marker = nav2_graceful_controller::createSlowdownMarker(
         target_pose, params_->slowdown_radius);
