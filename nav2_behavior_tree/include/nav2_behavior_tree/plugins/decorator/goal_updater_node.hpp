@@ -19,7 +19,6 @@
 
 #include <memory>
 #include <string>
-#include <vector>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/pose_stamped_array.hpp"
@@ -78,7 +77,7 @@ private:
 
   /**
    * @brief Callback function for goals update topic
-   * @param msg Shared pointer to vector of geometry_msgs::msg::PoseStamped message
+   * @param msg Shared pointer to geometry_msgs::msg::PoseStampedArray message
    */
   void callback_updated_goals(const geometry_msgs::msg::PoseStampedArray::SharedPtr msg);
 

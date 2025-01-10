@@ -99,7 +99,7 @@ inline BT::NodeStatus GoalUpdater::tick()
     auto last_goals_received_time = rclcpp::Time(last_goals_received_.header.stamp);
     auto goals_time = rclcpp::Time(goals.header.stamp);
     if (last_goals_received_time > goals_time) {
-      setOutput("output_goals", last_goals_received_.poses);
+      setOutput("output_goals", last_goals_received_);
     } else {
       RCLCPP_WARN(
         node_->get_logger(), "The timestamp of the received goals (%f) is older than the "
