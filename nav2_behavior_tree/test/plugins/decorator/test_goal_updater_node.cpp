@@ -137,6 +137,7 @@ TEST_F(GoalUpdaterTestFixture, test_older_goal_update)
   geometry_msgs::msg::PoseStampedArray goals;
   goal.header.stamp = node_->now();
   goal.pose.position.x = 1.0;
+  goals.header.stamp = goal.header.stamp;
   goals.poses.push_back(goal);
   config_->blackboard->set("goal", goal);
   config_->blackboard->set("goals", goals);
