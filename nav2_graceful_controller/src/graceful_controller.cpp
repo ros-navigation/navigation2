@@ -15,6 +15,7 @@
 #include <memory>
 #include <mutex>
 
+#include "angles/angles.h"
 #include "nav2_core/controller_exceptions.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_graceful_controller/graceful_controller.hpp"
@@ -433,7 +434,8 @@ void GracefulController::validateOrientations(
   // Check if we actually need to add orientations
   double initial_yaw = tf2::getYaw(path[1].pose.orientation);
   for (size_t i = 2; i < path.size() - 1; ++i) {
-    if (tf2::getYaw(path[i].pose.orientation) != initial_yaw) {return;}
+    double this_yaw = tf2::getYaw(path[i].pose.orientation);
+    if (angles::shortest_angular_distance(this_yaw, initial_yaw) > 1e-6) {return;}
   }
 
   // For each pose, point at the next one
