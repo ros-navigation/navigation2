@@ -105,7 +105,7 @@ inline BT::NodeStatus GoalUpdater::tick()
       RCLCPP_WARN(
         node_->get_logger(), "The timestamp of the received goals (%f) is older than the "
         "current goals (%f). Ignoring the received goals.",
-        last_goal_received_time.seconds(), goal_time.seconds());
+        last_goals_received_time.seconds(), goals_time.seconds());
       setOutput("output_goals", goals);
     }
   }
