@@ -149,7 +149,7 @@ void LifecycleNode::destroyBond()
     RCLCPP_INFO(get_logger(), "Destroying bond (%s) to lifecycle manager.", this->get_name());
 
     if (bond_) {
-      bond_.reset();
+      bond_->breakBond();
     }
   }
 }
