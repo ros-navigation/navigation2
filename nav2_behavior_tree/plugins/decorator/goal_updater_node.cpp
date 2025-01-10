@@ -73,49 +73,47 @@ inline BT::NodeStatus GoalUpdater::tick()
   if (last_goal_received_set_) {
     if (last_goal_received_.header.stamp == rclcpp::Time(0)) {
         // if the goal doesn't have a timestamp, we reject it
-        RCLCPP_WARN(
+      RCLCPP_WARN(
           node_->get_logger(), "The received goal has no timestamp. Ignoring.");
-        setOutput("output_goal", goal);
+      setOutput("output_goal", goal);
+    } else {
+      auto last_goal_received_time = rclcpp::Time(last_goal_received_.header.stamp);
+      auto goal_time = rclcpp::Time(goal.header.stamp);
+      if (last_goal_received_time >= goal_time) {
+        setOutput("output_goal", last_goal_received_);
       } else {
-        auto last_goal_received_time = rclcpp::Time(last_goal_received_.header.stamp);
-        auto goal_time = rclcpp::Time(goal.header.stamp);
-        if (last_goal_received_time >= goal_time) {
-          setOutput("output_goal", last_goal_received_);
-        } else {
-          RCLCPP_WARN(
+        RCLCPP_WARN(
             node_->get_logger(), "The timestamp of the received goal (%f) is older than the "
             "current goal (%f). Ignoring the received goal.",
             last_goal_received_time.seconds(), goal_time.seconds());
-          setOutput("output_goal", goal);
-        }
+        setOutput("output_goal", goal);
       }
-  }
-  else {
+    }
+  } else {
     setOutput("output_goal", goal);
   }
 
   if (last_goals_received_set_) {
     if (last_goals_received_.poses.empty()) {
-        setOutput("output_goals", goals);
-      } else if (last_goals_received_.header.stamp == rclcpp::Time(0)) {
-        RCLCPP_WARN(
+      setOutput("output_goals", goals);
+    } else if (last_goals_received_.header.stamp == rclcpp::Time(0)) {
+      RCLCPP_WARN(
           node_->get_logger(), "The received goals array has no timestamp. Ignoring.");
-        setOutput("output_goals", goals);
+      setOutput("output_goals", goals);
+    } else {
+      auto last_goals_received_time = rclcpp::Time(last_goals_received_.header.stamp);
+      auto goals_time = rclcpp::Time(goals.header.stamp);
+      if (last_goals_received_time >= goals_time) {
+        setOutput("output_goals", last_goals_received_);
       } else {
-        auto last_goals_received_time = rclcpp::Time(last_goals_received_.header.stamp);
-        auto goals_time = rclcpp::Time(goals.header.stamp);
-        if (last_goals_received_time >= goals_time) {
-          setOutput("output_goals", last_goals_received_);
-        } else {
-          RCLCPP_WARN(
+        RCLCPP_WARN(
             node_->get_logger(), "The timestamp of the received goals (%f) is older than the "
             "current goals (%f). Ignoring the received goals.",
             last_goals_received_time.seconds(), goals_time.seconds());
-          setOutput("output_goals", goals);
-        }
+        setOutput("output_goals", goals);
       }
-  }
-  else {
+    }
+  } else {
     setOutput("output_goals", goals);
   }
 
