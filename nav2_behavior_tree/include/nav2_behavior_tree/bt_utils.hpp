@@ -23,8 +23,9 @@
 #include "rclcpp/node.hpp"
 #include "behaviortree_cpp/behavior_tree.h"
 #include "geometry_msgs/msg/point.hpp"
-#include "geometry_msgs/msg/quaternion.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/pose_stamped_array.hpp"
+#include "geometry_msgs/msg/quaternion.hpp"
 #include "nav_msgs/msg/path.hpp"
 
 namespace BT
@@ -112,13 +113,44 @@ inline geometry_msgs::msg::PoseStamped convertFromString(const StringView key)
 template<>
 inline geometry_msgs::msg::PoseStampedArray convertFromString(const StringView key)
 {
-  // 9 real numbers separated by semicolons
   auto parts = BT::splitString(key, ';');
   if (parts.size() % 9 != 0) {
     throw std::runtime_error("invalid number of fields for PoseStampedArray attribute)");
   } else {
     geometry_msgs::msg::PoseStampedArray pose_stamped_array;
     for (size_t i = 0; i < parts.size(); i += 9) {
+      geometry_msgs::msg::PoseStamped pose_stamped;
+      pose_stamped.header.stamp = rclcpp::Time(BT::convertFromString<int64_t>(parts[i]));
+      pose_stamped.header.frame_id = BT::convertFromString<std::string>(parts[i + 1]);
+      pose_stamped.pose.position.x = BT::convertFromString<double>(parts[i + 2]);
+      pose_stamped.pose.position.y = BT::convertFromString<double>(parts[i + 3]);
+      pose_stamped.pose.position.z = BT::convertFromString<double>(parts[i + 4]);
+      pose_stamped.pose.orientation.x = BT::convertFromString<double>(parts[i + 5]);
+      pose_stamped.pose.orientation.y = BT::convertFromString<double>(parts[i + 6]);
+      pose_stamped.pose.orientation.z = BT::convertFromString<double>(parts[i + 7]);
+      pose_stamped.pose.orientation.w = BT::convertFromString<double>(parts[i + 8]);
+      pose_stamped_array.poses.push_back(pose_stamped);
+    }
+    return pose_stamped_array;
+  }
+}
+
+/**
+ * @brief Parse XML string to geometry_msgs::msg::PoseStampedArray
+ * @param key XML string
+ * @return geometry_msgs::msg::PoseStampedArray
+ */
+template<>
+inline geometry_msgs::msg::PoseStampedArray convertFromString(const StringView key)
+{
+  auto parts = BT::splitString(key, ';');
+  if ((parts.size() - 2) % 9 != 0) {
+    throw std::runtime_error("invalid number of fields for PoseStampedArray attribute)");
+  } else {
+    geometry_msgs::msg::PoseStampedArray pose_stamped_array;
+    pose_stamped_array.header.stamp = rclcpp::Time(BT::convertFromString<int64_t>(parts[0]));
+    pose_stamped_array.header.frame_id = BT::convertFromString<std::string>(parts[1]);
+    for (size_t i = 2; i < parts.size(); i += 9) {
       geometry_msgs::msg::PoseStamped pose_stamped;
       pose_stamped.header.stamp = rclcpp::Time(BT::convertFromString<int64_t>(parts[i]));
       pose_stamped.header.frame_id = BT::convertFromString<std::string>(parts[i + 1]);
@@ -143,7 +175,6 @@ inline geometry_msgs::msg::PoseStampedArray convertFromString(const StringView k
 template<>
 inline nav_msgs::msg::Path convertFromString(const StringView key)
 {
-  // 9 real numbers separated by semicolons
   auto parts = BT::splitString(key, ';');
   if ((parts.size() - 2) % 9 != 0) {
     throw std::runtime_error("invalid number of fields for Path attribute)");
