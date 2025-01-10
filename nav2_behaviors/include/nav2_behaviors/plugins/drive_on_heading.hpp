@@ -102,7 +102,7 @@ public:
       RCLCPP_WARN(
         this->logger_,
         "Exceeded time allowance before reaching the DriveOnHeading goal - Exiting DriveOnHeading");
-      return ResultStatus{Status::FAILED, ActionT::Result::NONE};
+      return ResultStatus{Status::FAILED, ActionT::Result::TIMEOUT};
     }
 
     geometry_msgs::msg::PoseStamped current_pose;
