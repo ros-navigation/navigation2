@@ -426,12 +426,14 @@ void GracefulController::computeDistanceAlongPath(
 void GracefulController::validateOrientations(
   std::vector<geometry_msgs::msg::PoseStamped> & path)
 {
-  // This really shouldn't happen
-  if (path.empty()) {return;}
+  // We never change the orientation of the first & last pose
+  // So we need at least three poses to do anything here
+  if (path.size() < 3) {return;}
 
   // Check if we actually need to add orientations
-  for (size_t i = 1; i < path.size() - 1; ++i) {
-    if (tf2::getYaw(path[i].pose.orientation) != 0.0) {return;}
+  double initial_yaw = tf2::getYaw(path[1].pose.orientation);
+  for (size_t i = 2; i < path.size() - 1; ++i) {
+    if (tf2::getYaw(path[i].pose.orientation) != initial_yaw) {return;}
   }
 
   // For each pose, point at the next one
