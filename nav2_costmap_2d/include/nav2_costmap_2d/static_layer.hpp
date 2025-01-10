@@ -154,6 +154,17 @@ protected:
    */
   unsigned char interpretValue(unsigned char value);
 
+  void getCellsOccupiedByFootprint(
+    std::vector<MapLocation> & cells_occupied_by_footprint,
+    const std::vector<geometry_msgs::msg::Point> & footprint);
+
+  void resetCells(
+    const std::vector<MapLocation> & resetting_cells, unsigned char cost);
+
+  void restoreCellsFromMap(
+    const std::vector<MapLocation> & restoring_cells,
+    const nav_msgs::msg::OccupancyGrid::SharedPtr & map_buffer);
+
   /**
    * @brief Callback executed when a parameter change is detected
    * @param event ParameterEvent message
@@ -162,8 +173,10 @@ protected:
   dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
 
   std::vector<geometry_msgs::msg::Point> transformed_footprint_;
-  std::vector<unsigned int> cleared_indexes_in_map_;
+  std::vector<MapLocation> cells_cleared_by_footprint_;
   bool footprint_clearing_enabled_;
+  bool restore_outdated_footprint_;
+
   /**
    * @brief Clear costmap layer info below the robot's footprint
    */
