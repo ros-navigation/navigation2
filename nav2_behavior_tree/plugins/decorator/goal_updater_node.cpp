@@ -17,7 +17,6 @@
 #include <string>
 #include <memory>
 
-#include "geometry_msgs/msg/pose_stamped.hpp"
 #include "behaviortree_cpp/decorator_node.h"
 
 #include "nav2_behavior_tree/plugins/decorator/goal_updater_node.hpp"
@@ -62,7 +61,7 @@ GoalUpdater::GoalUpdater(
 inline BT::NodeStatus GoalUpdater::tick()
 {
   geometry_msgs::msg::PoseStamped goal;
-  Goals goals;
+  geometry_msgs::msg::PoseStampedArray goals;
 
   getInput("input_goal", goal);
   getInput("input_goals", goals);
