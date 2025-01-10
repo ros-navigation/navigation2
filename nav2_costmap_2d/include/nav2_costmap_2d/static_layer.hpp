@@ -154,13 +154,27 @@ protected:
    */
   unsigned char interpretValue(unsigned char value);
 
+  /**
+   * @brief  Get the cells occupied by the footprint
+   * @param cells_occupied_by_footprint The cell coordinates that the footprint occupies
+   * @param footprint The footprint to perform the operation on
+   */
   void getCellsOccupiedByFootprint(
     std::vector<MapLocation> & cells_occupied_by_footprint,
     const std::vector<geometry_msgs::msg::Point> & footprint);
 
+  /**
+   * @brief  Reset the cells to a desired value
+   * @param resetting_cells The cell coordinates to reset to a desired value
+   * @param cost The value to set costs to
+   */
   void resetCells(
     const std::vector<MapLocation> & resetting_cells, unsigned char cost);
 
+  /**
+   * @brief  Restored the given cells using the latest map buffer
+   * @param restoring_cells The cell coordinates to restore by given map buffer
+   */
   void restoreCellsFromMap(
     const std::vector<MapLocation> & restoring_cells,
     const nav_msgs::msg::OccupancyGrid::SharedPtr & map_buffer);
