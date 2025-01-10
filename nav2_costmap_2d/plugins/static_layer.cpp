@@ -348,7 +348,6 @@ StaticLayer::getCellsOccupiedByFootprint(
 void StaticLayer::resetCells(
   const std::vector<MapLocation> & resetting_cells, unsigned char cost)
 {
-
   for (const auto & cell : resetting_cells) {
     setCost(cell.x, cell.y, cost);
   }
@@ -358,7 +357,6 @@ void StaticLayer::restoreCellsFromMap(
   const std::vector<MapLocation> & restoring_cells,
   const nav_msgs::msg::OccupancyGrid::SharedPtr & map_buffer)
 {
-
   for (const auto & cell : restoring_cells) {
     unsigned int index = getIndex(cell.x, cell.y);
     costmap_[index] = interpretValue(map_buffer->data[index]);
