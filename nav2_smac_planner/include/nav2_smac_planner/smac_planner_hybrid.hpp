@@ -32,7 +32,7 @@
 #include "geometry_msgs/msg/pose_array.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_util/node_utils.hpp"
-#include "tf2/utils.h"
+#include "tf2/utils.hpp"
 
 namespace nav2_smac_planner
 {
