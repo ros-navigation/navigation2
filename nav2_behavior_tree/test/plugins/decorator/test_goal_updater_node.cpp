@@ -26,7 +26,6 @@
 #include "nav2_behavior_tree/utils/test_action_server.hpp"
 #include "nav2_behavior_tree/plugins/decorator/goal_updater_node.hpp"
 
-typedef std::vector<geometry_msgs::msg::PoseStamped> Goals;
 
 class GoalUpdaterTestFixture : public ::testing::Test
 {
@@ -99,17 +98,17 @@ TEST_F(GoalUpdaterTestFixture, test_tick)
 
   // create new goal and set it on blackboard
   geometry_msgs::msg::PoseStamped goal;
-  Goals goals;
+  geometry_msgs::msg::PoseStampedArray goals;
   goal.header.stamp = node_->now();
   goal.pose.position.x = 1.0;
-  goals.push_back(goal);
+  goals.poses.push_back(goal);
   config_->blackboard->set("goal", goal);
   config_->blackboard->set("goals", goals);
 
   // tick tree without publishing updated goal and get updated_goal
   tree_->rootNode()->executeTick();
   geometry_msgs::msg::PoseStamped updated_goal;
-  Goals updated_goals;
+  geometry_msgs::msg::PoseStampedArray updated_goals;
   EXPECT_TRUE(config_->blackboard->get("updated_goal", updated_goal));
   EXPECT_TRUE(config_->blackboard->get("updated_goals", updated_goals));
 }
@@ -135,10 +134,10 @@ TEST_F(GoalUpdaterTestFixture, test_older_goal_update)
 
   // create new goal and set it on blackboard
   geometry_msgs::msg::PoseStamped goal;
-  Goals goals;
+  geometry_msgs::msg::PoseStampedArray goals;
   goal.header.stamp = node_->now();
   goal.pose.position.x = 1.0;
-  goals.push_back(goal);
+  goals.poses.push_back(goal);
   config_->blackboard->set("goal", goal);
   config_->blackboard->set("goals", goals);
 
@@ -154,7 +153,7 @@ TEST_F(GoalUpdaterTestFixture, test_older_goal_update)
   goals_updater_pub->publish(goals_to_update);
   tree_->rootNode()->executeTick();
   geometry_msgs::msg::PoseStamped updated_goal;
-  Goals updated_goals;
+  geometry_msgs::msg::PoseStampedArray updated_goals;
   EXPECT_TRUE(config_->blackboard->get("updated_goal", updated_goal));
   EXPECT_TRUE(config_->blackboard->get("updated_goals", updated_goals));
 
@@ -185,10 +184,10 @@ TEST_F(GoalUpdaterTestFixture, test_get_latest_goal_update)
 
   // create new goal and set it on blackboard
   geometry_msgs::msg::PoseStamped goal;
-  Goals goals;
+  geometry_msgs::msg::PoseStampedArray goals;
   goal.header.stamp = node_->now();
   goal.pose.position.x = 1.0;
-  goals.push_back(goal);
+  goals.poses.push_back(goal);
   config_->blackboard->set("goal", goal);
   config_->blackboard->set("goals", goals);
 
@@ -213,7 +212,7 @@ TEST_F(GoalUpdaterTestFixture, test_get_latest_goal_update)
   goals_updater_pub->publish(goals_to_update_2);
   tree_->rootNode()->executeTick();
   geometry_msgs::msg::PoseStamped updated_goal;
-  Goals updated_goals;
+  geometry_msgs::msg::PoseStampedArray updated_goals;
   EXPECT_TRUE(config_->blackboard->get("updated_goal", updated_goal));
   EXPECT_TRUE(config_->blackboard->get("updated_goals", updated_goals));
 
@@ -221,7 +220,7 @@ TEST_F(GoalUpdaterTestFixture, test_get_latest_goal_update)
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
   // expect to update goal with latest goal update
   EXPECT_EQ(updated_goal, goal_to_update_2);
-  EXPECT_EQ(updated_goals, goals_to_update_2.poses);
+  EXPECT_EQ(updated_goals, goals_to_update_2);
 }
 
 int main(int argc, char ** argv)
