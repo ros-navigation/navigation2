@@ -39,3 +39,4 @@ repositories:
     type: git
     url:  https://github.com/ros2/common_interfaces.git
     version: rolling
+

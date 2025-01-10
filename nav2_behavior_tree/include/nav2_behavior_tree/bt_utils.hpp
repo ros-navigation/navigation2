@@ -106,18 +106,18 @@ inline geometry_msgs::msg::PoseStamped convertFromString(const StringView key)
 }
 
 /**
- * @brief Parse XML string to geometry_msgs::msg::PoseStampedArray
+ * @brief Parse XML string to std::vector<geometry_msgs::msg::PoseStamped>
  * @param key XML string
- * @return geometry_msgs::msg::PoseStampedArray
+ * @return std::vector<geometry_msgs::msg::PoseStamped>
  */
 template<>
-inline geometry_msgs::msg::PoseStampedArray convertFromString(const StringView key)
+inline std::vector<geometry_msgs::msg::PoseStamped> convertFromString(const StringView key)
 {
   auto parts = BT::splitString(key, ';');
   if (parts.size() % 9 != 0) {
-    throw std::runtime_error("invalid number of fields for PoseStampedArray attribute)");
+    throw std::runtime_error("invalid number of fields for std::vector<PoseStamped> attribute)");
   } else {
-    geometry_msgs::msg::PoseStampedArray pose_stamped_array;
+    std::vector<geometry_msgs::msg::PoseStamped> poses;
     for (size_t i = 0; i < parts.size(); i += 9) {
       geometry_msgs::msg::PoseStamped pose_stamped;
       pose_stamped.header.stamp = rclcpp::Time(BT::convertFromString<int64_t>(parts[i]));
@@ -129,9 +129,9 @@ inline geometry_msgs::msg::PoseStampedArray convertFromString(const StringView k
       pose_stamped.pose.orientation.y = BT::convertFromString<double>(parts[i + 6]);
       pose_stamped.pose.orientation.z = BT::convertFromString<double>(parts[i + 7]);
       pose_stamped.pose.orientation.w = BT::convertFromString<double>(parts[i + 8]);
-      pose_stamped_array.poses.push_back(pose_stamped);
+      poses.push_back(pose_stamped);
     }
-    return pose_stamped_array;
+    return poses;
   }
 }
 
