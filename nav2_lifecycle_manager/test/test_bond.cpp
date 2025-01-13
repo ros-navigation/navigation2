@@ -90,7 +90,7 @@ public:
 
   void breakBond()
   {
-    bond_->breakBond();
+    bond_.reset();
   }
 
   std::string getState()
