@@ -82,7 +82,7 @@ inline BT::NodeStatus GoalUpdater::tick()
       if (last_goal_received_time >= goal_time) {
         setOutput("output_goal", last_goal_received_);
       } else {
-        RCLCPP_WARN(
+        RCLCPP_INFO(
             node_->get_logger(), "The timestamp of the received goal (%f) is older than the "
             "current goal (%f). Ignoring the received goal.",
             last_goal_received_time.seconds(), goal_time.seconds());
@@ -106,7 +106,7 @@ inline BT::NodeStatus GoalUpdater::tick()
       if (last_goals_received_time >= goals_time) {
         setOutput("output_goals", last_goals_received_);
       } else {
-        RCLCPP_WARN(
+        RCLCPP_INFO(
             node_->get_logger(), "The timestamp of the received goals (%f) is older than the "
             "current goals (%f). Ignoring the received goals.",
             last_goals_received_time.seconds(), goals_time.seconds());
