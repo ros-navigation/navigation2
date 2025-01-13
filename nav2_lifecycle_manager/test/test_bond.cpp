@@ -170,7 +170,7 @@ TEST(LifecycleBondTest, POSITIVE)
 
 TEST(LifecycleBondTest, NEGATIVE)
 {
-  auto node = std::make_shared<rclcpp::Node>("lifecycle_manager_test_service_client");
+  auto node = nav2_util::generate_internal_node("lifecycle_manager_test_service_client");
   nav2_lifecycle_manager::LifecycleManagerClient client("lifecycle_manager_test", node);
 
   // create node, now without bond setup to connect to. Should fail because no bond
