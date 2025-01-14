@@ -153,17 +153,22 @@ TEST(collision_footprint, test_footprint_at_pose_with_movement)
   nav2_smac_planner::GridCollisionChecker collision_checker(costmap_ros, 72, node);
   collision_checker.setFootprint(footprint, false /*use footprint*/, 0.0);
 
-  collision_checker.inCollision(50, 50, 0.0, false);
+  EXPECT_FALSE(collision_checker.inCollision(50, 50, 0.0, false));
   float cost = collision_checker.getCost();
   EXPECT_NEAR(cost, 128.0, 0.001);
 
-  collision_checker.inCollision(50, 49, 0.0, false);
+  EXPECT_TRUE(collision_checker.inCollision(50, 49, 0.0, false));
   float up_value = collision_checker.getCost();
-  EXPECT_NEAR(up_value, 254.0, 0.001);
+  EXPECT_NEAR(up_value, 128.0, 0.001);  // center cost
 
-  collision_checker.inCollision(50, 52, 0.0, false);
+  EXPECT_TRUE(collision_checker.inCollision(50, 52, 0.0, false));
   float down_value = collision_checker.getCost();
-  EXPECT_NEAR(down_value, 254.0, 0.001);
+  EXPECT_NEAR(down_value, 128.0, 0.001);  // center cost
+
+  EXPECT_TRUE(collision_checker.inCollision(11, 11, 0.0, false));
+  float other_value = collision_checker.getCost();
+  EXPECT_NEAR(other_value, 254.0, 0.001);  // center cost
+
   delete costmap_;
 }
 
@@ -200,16 +205,21 @@ TEST(collision_footprint, test_point_and_line_cost)
   nav2_smac_planner::GridCollisionChecker collision_checker(costmap_ros, 72, node);
   collision_checker.setFootprint(footprint, false /*use footprint*/, 0.0);
 
-  collision_checker.inCollision(50, 50, 0.0, false);
+  EXPECT_FALSE(collision_checker.inCollision(50, 50, 0.0, false));
   float value = collision_checker.getCost();
   EXPECT_NEAR(value, 128.0, 0.001);
 
-  collision_checker.inCollision(49, 50, 0.0, false);
+  EXPECT_TRUE(collision_checker.inCollision(49, 50, 0.0, false));
   float left_value = collision_checker.getCost();
-  EXPECT_NEAR(left_value, 254.0, 0.001);
+  EXPECT_NEAR(left_value, 128.0, 0.001);  // center cost
 
-  collision_checker.inCollision(52, 50, 0.0, false);
+  EXPECT_TRUE(collision_checker.inCollision(52, 50, 0.0, false));
   float right_value = collision_checker.getCost();
-  EXPECT_NEAR(right_value, 254.0, 0.001);
+  EXPECT_NEAR(right_value, 128.0, 0.001);  // center cost
+
+  EXPECT_TRUE(collision_checker.inCollision(39, 60, 0.0, false));
+  float other_value = collision_checker.getCost();
+  EXPECT_NEAR(other_value, 254.0, 0.001);  // center cost
+
   delete costmap_;
 }
