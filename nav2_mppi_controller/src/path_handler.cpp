@@ -186,6 +186,20 @@ void PathHandler::prunePlan(nav_msgs::msg::Path & plan, const PathIterator end)
   plan.poses.erase(plan.poses.begin(), end);
 }
 
+geometry_msgs::msg::PoseStamped PathHandler::getTransformedGoal()
+{
+  auto goal = global_plan_.poses.back();
+  goal.header = global_plan_.header;
+  if (goal.header.frame_id.empty()) {
+    throw nav2_core::ControllerTFError("Goal pose has an empty frame_id");
+  }
+  geometry_msgs::msg::PoseStamped transformed_goal;
+  if (!transformPose(costmap_->getGlobalFrameID(), goal, transformed_goal)) {
+    throw nav2_core::ControllerTFError("Unable to transform goal pose into costmap frame");
+  }
+  return transformed_goal;
+}
+
 bool PathHandler::isWithinInversionTolerances(const geometry_msgs::msg::PoseStamped & robot_pose)
 {
   // Keep full path if we are within tolerance of the inversion pose
