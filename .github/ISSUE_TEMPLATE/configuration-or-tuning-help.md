@@ -38,4 +38,5 @@ For Bug report or feature requests, please fill out the relevant category below
 
 #### What I've Tried
 <!-- Description **in detail** what you've tried, methodology, graphs or figures, and progress -->
-<!-- Note: Maintainer time is limited, I understand that you may be directed to community resources like docs.nav2.org, Robotics Stack Exchange, or other community help resources. -->
+<!-- Note: Maintainer time is limited, understand that you may be directed to community resources like docs.nav2.org, Robotics Stack Exchange, or other help resources. -->
+<!-- Note: If this is a commercial application and you would like professional hands-on support, please contact info@opennav.org instead. -->
