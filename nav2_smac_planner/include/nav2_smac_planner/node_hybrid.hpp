@@ -301,9 +301,14 @@ public:
   /**
    * @brief Check if this node is valid
    * @param traverse_unknown If we can explore unknown nodes on the graph
+   * @param collision_checker: Collision checker object
+   * @param fine_check Whether to perform a fine or coarse check on SE2 footprint
    * @return whether this node is valid and collision free
    */
-  bool isNodeValid(const bool & traverse_unknown, GridCollisionChecker * collision_checker);
+  bool isNodeValid(
+    const bool & traverse_unknown,
+    GridCollisionChecker * collision_checker,
+    const bool fine_check = true);
 
   /**
    * @brief Get traversal cost of parent node to child node

@@ -220,14 +220,22 @@ bool NodeLattice::isNodeValid(
   const bool & traverse_unknown,
   GridCollisionChecker * collision_checker,
   MotionPrimitive * motion_primitive,
-  bool is_backwards)
+  bool is_backwards,
+  bool fine_check)
 {
+  if (!std::isnan(_cell_cost) && (collision_checker->useRadius() || !fine_check)) {
+    return //TODO return type is state, not cost. Is this always true in this case?
+  }
+
   // Check primitive end pose
   // Convert grid quantization of primitives to radians, then collision checker quantization
   static const double bin_size = 2.0 * M_PI / collision_checker->getPrecomputedAngles().size();
   const double & angle = motion_table.getAngleFromBin(this->pose.theta) / bin_size;
-  if (collision_checker->inCollision(
-      this->pose.x, this->pose.y, angle /*bin in collision checker*/, traverse_unknown))
+  float curr_cell_cost;
+  if (!nav2_smac_planner::isNodeValid(
+    this->pose.x, this->pose.y, angle /*bin in collision checker*/,
+    traverse_unknown, collision_checker,
+    fine_check, curr_cell_cost))
   {
     return false;
   }
@@ -264,15 +272,14 @@ bool NodeLattice::isNodeValid(
         } else {
           prim_pose._theta = it->_theta;
         }
-        if (collision_checker->inCollision(
-            prim_pose._x,
-            prim_pose._y,
-            prim_pose._theta / bin_size /*bin in collision checker*/,
-            traverse_unknown))
+        if (!nav2_smac_planner::isNodeValid(
+          prim_pose._x, prim_pose._y, prim_pose._theta / bin_size /*bin in collision checker*/,
+          traverse_unknown, collision_checker,
+          fine_check, curr_cell_cost))
         {
           return false;
         }
-        max_cell_cost = std::max(max_cell_cost, collision_checker->getCost());
+        max_cell_cost = std::max(max_cell_cost, curr_cell_cost);
       }
     }
   }
@@ -533,7 +540,8 @@ void NodeLattice::getNeighbors(
       // Using a special isNodeValid API here, giving the motion primitive to use to
       // validity check the transition of the current node to the new node over
       if (neighbor->isNodeValid(
-          traverse_unknown, collision_checker, motion_primitives[i], backwards))
+          traverse_unknown, collision_checker, motion_primitives[i], backwards,
+          false /*coarse check*/))
       {
         neighbor->setMotionPrimitive(motion_primitives[i]);
         // Marking if this search was obtained in the reverse direction

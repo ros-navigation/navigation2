@@ -135,6 +135,36 @@ protected:
   rclcpp::Clock::SharedPtr clock_;
 };
 
+/**
+  * @brief Checks if a node is valid using the fine-to-coarse logic used
+  * in the NodeHybrid and NodeLattice implementatations to optimize for collision checking
+ **/
+inline bool isNodeValid(
+  const float x, const float y, const float theta,
+  const bool & traverse_unknown,
+  GridCollisionChecker * collision_checker,
+  const bool & fine_check,
+  float & cell_cost)
+{
+  if (fine_check) {
+    // Perform a fine collision check of center and SE2 footprint costs (if needed)
+    if (collision_checker->inCollision(x, y, theta /*bin number*/, traverse_unknown)) {
+      return false;
+    }
+  } else {
+    // Perform an initial coarse check of just the center cost needed for traversal functions
+    unsigned int node_index = collision_checker->getCostmap()->getIndex(
+      static_cast<unsigned int>(x + 0.5f),
+      static_cast<unsigned int>(y + 0.5f));
+    if (collision_checker->inCollision(node_index, traverse_unknown)) {
+      return false;
+    }
+  }
+
+  cell_cost = collision_checker->getCost();
+  return true;
+}
+
 }  // namespace nav2_smac_planner
 
 #endif  // NAV2_SMAC_PLANNER__COLLISION_CHECKER_HPP_

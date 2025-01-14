@@ -373,16 +373,21 @@ void NodeHybrid::reset()
 
 bool NodeHybrid::isNodeValid(
   const bool & traverse_unknown,
-  GridCollisionChecker * collision_checker)
+  GridCollisionChecker * collision_checker,
+  const bool fine_check)
 {
-  if (collision_checker->inCollision(
-      this->pose.x, this->pose.y, this->pose.theta /*bin number*/, traverse_unknown))
-  {
-    return false;
+  if (!std::isnan(_cell_cost) && (collision_checker->useRadius() || !fine_check)) {
+    return //TODO return type is state, not cost. Is this always true in this case?
   }
 
-  _cell_cost = collision_checker->getCost();
-  return true;
+  //Note: store cost even if returning false, if ever called, always populated.
+  //Note: collision chcker option to bypass center check. 
+  //Or, have flag if collision checker called and store outcomes. 
+
+  return nav2_smac_planner::isNodeValid(
+    this->pose.x, this->pose.y, this->pose.theta /*bin number*/,
+    traverse_unknown, collision_checker,
+    fine_check, _cell_cost);
 }
 
 float NodeHybrid::getTraversalCost(const NodePtr & child)
@@ -856,7 +861,7 @@ void NodeHybrid::getNeighbors(
           motion_projections[i]._x,
           motion_projections[i]._y,
           motion_projections[i]._theta));
-      if (neighbor->isNodeValid(traverse_unknown, collision_checker)) {
+      if (neighbor->isNodeValid(traverse_unknown, collision_checker, false /*coarse check*/)) {
         neighbor->setMotionPrimitiveIndex(i, motion_projections[i]._turn_dir);
         neighbors.push_back(neighbor);
       } else {
