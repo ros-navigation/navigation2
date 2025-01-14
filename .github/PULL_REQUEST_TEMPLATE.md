@@ -27,6 +27,13 @@
 * I added some capabilities, need to document them
 -->
 
+## Description of how this change was tested
+
+<!--
+* I wrote unit tests that cover 90%+ of changes and extensively tested on my physical robot platform in production for 1 week
+* I wrote unit tests and tested in simulation for 10 minutes
+-->
+
 ---
 
 ## Future work that may be required in bullet points
