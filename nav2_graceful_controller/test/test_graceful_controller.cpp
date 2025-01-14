@@ -59,12 +59,6 @@ public:
 
   nav_msgs::msg::Path getPlan() {return path_handler_->getPlan();}
 
-  geometry_msgs::msg::PointStamped createMotionTargetMsg(
-    const geometry_msgs::msg::PoseStamped & motion_target)
-  {
-    return nav2_graceful_controller::createMotionTargetMsg(motion_target);
-  }
-
   visualization_msgs::msg::Marker createSlowdownMarker(
     const geometry_msgs::msg::PoseStamped & motion_target)
   {
@@ -343,34 +337,6 @@ TEST(GracefulControllerTest, dynamicParameters) {
   // Check parameters. Now allow backward should be false as both cannot be true at the same time
   EXPECT_EQ(controller->getInitialRotation(), true);
   EXPECT_EQ(controller->getAllowBackward(), false);
-}
-
-TEST(GracefulControllerTest, createMotionTargetMsg) {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testGraceful");
-  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
-  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
-
-  // Create controller
-  auto controller = std::make_shared<GMControllerFixture>();
-  costmap_ros->on_configure(rclcpp_lifecycle::State());
-  controller->configure(node, "test", tf, costmap_ros);
-  controller->activate();
-
-  // Create motion target
-  geometry_msgs::msg::PoseStamped motion_target;
-  motion_target.header.frame_id = "map";
-  motion_target.pose.position.x = 1.0;
-  motion_target.pose.position.y = 2.0;
-  motion_target.pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
-
-  // Create motion target message
-  auto motion_target_msg = controller->createMotionTargetMsg(motion_target);
-
-  // Check results
-  EXPECT_EQ(motion_target_msg.header.frame_id, "map");
-  EXPECT_EQ(motion_target_msg.point.x, 1.0);
-  EXPECT_EQ(motion_target_msg.point.y, 2.0);
-  EXPECT_EQ(motion_target_msg.point.z, 0.01);
 }
 
 TEST(GracefulControllerTest, createSlowdownMsg) {

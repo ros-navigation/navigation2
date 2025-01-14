@@ -21,7 +21,7 @@
 
 #include "angles/angles.h"
 
-#include "tf2/utils.h"
+#include "tf2/utils.hpp"
 
 #include "nav2_smac_planner/smoother.hpp"
 
