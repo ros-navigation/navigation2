@@ -151,14 +151,14 @@ bool GridCollisionChecker::inCollision(
       current_footprint.push_back(new_pt);
     }
 
-    footprint_cost_ = static_cast<float>(footprintCost(current_footprint));
+    float footprint_cost = static_cast<float>(footprintCost(current_footprint));
 
-    if (footprint_cost_ == UNKNOWN_COST && traverse_unknown) {
+    if (footprint_cost == UNKNOWN_COST && traverse_unknown) {
       return false;
     }
 
     // if occupied or unknown and not to traverse unknown space
-    return footprint_cost_ >= OCCUPIED_COST;
+    return footprint_cost >= OCCUPIED_COST;
   } else {
     // if radius, then we can check the center of the cost assuming inflation is used
     footprint_cost_ = static_cast<float>(costmap_->getCost(

@@ -671,13 +671,7 @@ float NodeHybrid::getObstacleHeuristic(
           cost = static_cast<float>(costmap->getCost(new_idx));
         }
 
-        if (!is_circular) {
-          // Adjust cost value if using SE2 footprint checks
-          cost = adjustedFootprintCost(cost);
-          if (cost >= OCCUPIED_COST) {
-            continue;
-          }
-        } else if (cost >= INSCRIBED_COST) {
+        if (cost >= INSCRIBED_COST) {
           continue;
         }
 
