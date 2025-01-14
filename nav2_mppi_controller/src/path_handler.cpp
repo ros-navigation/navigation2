@@ -189,7 +189,7 @@ void PathHandler::prunePlan(nav_msgs::msg::Path & plan, const PathIterator end)
 geometry_msgs::msg::PoseStamped PathHandler::getTransformedGoal()
 {
   auto goal = global_plan_.poses.back();
-  goal.header.stamp = global_plan_.header.stamp;
+  goal.header = global_plan_.header;
   if (goal.header.frame_id.empty()) {
     throw nav2_core::ControllerTFError("Goal pose has an empty frame_id");
   }
