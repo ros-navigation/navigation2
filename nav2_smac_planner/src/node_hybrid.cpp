@@ -645,17 +645,7 @@ float NodeHybrid::getObstacleHeuristic(
           cost = static_cast<float>(costmap->getCost(new_idx));
         }
 
-<<<<<<< HEAD
-        if (!is_circular) {
-          // Adjust cost value if using SE2 footprint checks
-          cost = adjustedFootprintCost(cost);
-          if (cost >= OCCUPIED) {
-            continue;
-          }
-        } else if (cost >= INSCRIBED) {
-=======
-        if (cost >= INSCRIBED_COST) {
->>>>>>> bc9f2bc9 (Fixes smac planner non-circular footprint search issue (#4851))
+        if (cost >= INSCRIBED) {
           continue;
         }
 

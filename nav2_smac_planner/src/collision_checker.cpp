@@ -127,19 +127,11 @@ bool GridCollisionChecker::inCollision(
 
     // If its inscribed, in collision, or unknown in the middle,
     // no need to even check the footprint, its invalid
-<<<<<<< HEAD
-    if (footprint_cost_ == UNKNOWN && !traverse_unknown) {
+    if (center_cost_ == UNKNOWN && !traverse_unknown) {
       return true;
     }
 
-    if (footprint_cost_ == INSCRIBED || footprint_cost_ == OCCUPIED) {
-=======
-    if (center_cost_ == UNKNOWN_COST && !traverse_unknown) {
-      return true;
-    }
-
-    if (center_cost_ == INSCRIBED_COST || center_cost_ == OCCUPIED_COST) {
->>>>>>> bc9f2bc9 (Fixes smac planner non-circular footprint search issue (#4851))
+    if (center_cost_ == INSCRIBED || center_cost_ == OCCUPIED) {
       return true;
     }
 
@@ -160,38 +152,20 @@ bool GridCollisionChecker::inCollision(
 
     float footprint_cost = static_cast<float>(footprintCost(current_footprint));
 
-<<<<<<< HEAD
-    if (footprint_cost_ == UNKNOWN && traverse_unknown) {
-=======
-    if (footprint_cost == UNKNOWN_COST && traverse_unknown) {
->>>>>>> bc9f2bc9 (Fixes smac planner non-circular footprint search issue (#4851))
+    if (footprint_cost == UNKNOWN && traverse_unknown) {
       return false;
     }
 
     // if occupied or unknown and not to traverse unknown space
-<<<<<<< HEAD
-    return footprint_cost_ >= OCCUPIED;
+    return footprint_cost >= OCCUPIED;
   } else {
     // if radius, then we can check the center of the cost assuming inflation is used
-    footprint_cost_ = static_cast<float>(costmap_->getCost(
-        static_cast<unsigned int>(x + 0.5f), static_cast<unsigned int>(y + 0.5f)));
-
-    if (footprint_cost_ == UNKNOWN && traverse_unknown) {
-=======
-    return footprint_cost >= OCCUPIED_COST;
-  } else {
-    // if radius, then we can check the center of the cost assuming inflation is used
-    if (center_cost_ == UNKNOWN_COST && traverse_unknown) {
->>>>>>> bc9f2bc9 (Fixes smac planner non-circular footprint search issue (#4851))
+    if (center_cost_ == UNKNOWN && traverse_unknown) {
       return false;
     }
 
     // if occupied or unknown and not to traverse unknown space
-<<<<<<< HEAD
-    return footprint_cost_ >= INSCRIBED;
-=======
-    return center_cost_ >= INSCRIBED_COST;
->>>>>>> bc9f2bc9 (Fixes smac planner non-circular footprint search issue (#4851))
+    return center_cost_ >= INSCRIBED;
   }
 }
 
@@ -199,22 +173,13 @@ bool GridCollisionChecker::inCollision(
   const unsigned int & i,
   const bool & traverse_unknown)
 {
-<<<<<<< HEAD
-  footprint_cost_ = costmap_->getCost(i);
-  if (footprint_cost_ == UNKNOWN && traverse_unknown) {
-=======
   center_cost_ = costmap_->getCost(i);
-  if (center_cost_ == UNKNOWN_COST && traverse_unknown) {
->>>>>>> bc9f2bc9 (Fixes smac planner non-circular footprint search issue (#4851))
+  if (center_cost_ == UNKNOWN && traverse_unknown) {
     return false;
   }
 
   // if occupied or unknown and not to traverse unknown space
-<<<<<<< HEAD
-  return footprint_cost_ >= INSCRIBED;
-=======
-  return center_cost_ >= INSCRIBED_COST;
->>>>>>> bc9f2bc9 (Fixes smac planner non-circular footprint search issue (#4851))
+  return center_cost_ >= INSCRIBED;
 }
 
 float GridCollisionChecker::getCost()
