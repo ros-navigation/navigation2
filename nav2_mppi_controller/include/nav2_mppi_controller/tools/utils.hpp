@@ -204,11 +204,7 @@ inline models::Path toTensor(const nav_msgs::msg::Path & path)
  * @brief Check if the robot pose is within the Goal Checker's tolerances to goal
  * @param global_checker Pointer to the goal checker
  * @param robot Pose of robot
-<<<<<<< HEAD
- * @param path Path to retreive goal pose from
-=======
  * @param goal Goal pose
->>>>>>> d11de564 (Mppi goal to critic (#4822))
  * @return bool If robot is within goal checker tolerances to the goal
  */
 inline bool withinPositionGoalTolerance(
@@ -240,11 +236,7 @@ inline bool withinPositionGoalTolerance(
  * @brief Check if the robot pose is within tolerance to the goal
  * @param pose_tolerance Pose tolerance to use
  * @param robot Pose of robot
-<<<<<<< HEAD
- * @param path Path to retreive goal pose from
-=======
  * @param goal Goal pose
->>>>>>> d11de564 (Mppi goal to critic (#4822))
  * @return bool If robot is within tolerance to the goal
  */
 inline bool withinPositionGoalTolerance(
