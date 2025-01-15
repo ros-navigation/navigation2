@@ -19,7 +19,7 @@
 #include <memory>
 #include <string>
 
-#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "geometry_msgs/msg/pose_stamped_array.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "behaviortree_cpp/action_node.h"
@@ -31,8 +31,6 @@ namespace nav2_behavior_tree
 class RemovePassedGoals : public BT::ActionNodeBase
 {
 public:
-  typedef std::vector<geometry_msgs::msg::PoseStamped> Goals;
-
   RemovePassedGoals(
     const std::string & xml_tag_name,
     const BT::NodeConfiguration & conf);
@@ -45,8 +43,10 @@ public:
   static BT::PortsList providedPorts()
   {
     return {
-      BT::InputPort<Goals>("input_goals", "Original goals to remove viapoints from"),
-      BT::OutputPort<Goals>("output_goals", "Goals with passed viapoints removed"),
+      BT::InputPort<geometry_msgs::msg::PoseStampedArray>("input_goals",
+          "Original goals to remove viapoints from"),
+      BT::OutputPort<geometry_msgs::msg::PoseStampedArray>("output_goals",
+          "Goals with passed viapoints removed"),
       BT::InputPort<double>("radius", 0.5, "radius to goal for it to be considered for removal"),
       BT::InputPort<std::string>("global_frame", "Global frame"),
       BT::InputPort<std::string>("robot_base_frame", "Robot base frame"),

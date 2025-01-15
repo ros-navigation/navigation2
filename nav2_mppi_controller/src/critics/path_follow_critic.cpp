@@ -34,7 +34,7 @@ void PathFollowCritic::initialize()
 void PathFollowCritic::score(CriticData & data)
 {
   if (!enabled_ || data.path.x.size() < 2 ||
-    utils::withinPositionGoalTolerance(threshold_to_consider_, data.state.pose.pose, data.path))
+    utils::withinPositionGoalTolerance(threshold_to_consider_, data.state.pose.pose, data.goal))
   {
     return;
   }

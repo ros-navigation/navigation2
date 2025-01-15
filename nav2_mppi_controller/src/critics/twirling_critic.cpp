@@ -33,7 +33,7 @@ void TwirlingCritic::initialize()
 void TwirlingCritic::score(CriticData & data)
 {
   if (!enabled_ ||
-    utils::withinPositionGoalTolerance(data.goal_checker, data.state.pose.pose, data.path))
+    utils::withinPositionGoalTolerance(data.goal_checker, data.state.pose.pose, data.goal))
   {
     return;
   }
