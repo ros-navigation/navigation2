@@ -242,6 +242,8 @@ protected:
    */
   inline void clearGraph();
 
+  inline bool onVisitationCheckNode(const NodePtr & node);
+
   /**
    * @brief Populate a debug log of expansions for Hybrid-A* for visualization
    * @param node Node expanded
