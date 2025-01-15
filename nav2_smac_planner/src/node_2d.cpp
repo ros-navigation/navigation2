@@ -62,7 +62,7 @@ bool Node2D::isNodeValid(
 
   _in_collision = collision_checker->inCollision(this->getIndex(), traverse_unknown);
   _cell_cost = collision_checker->getCost();
-  return !in_collision;
+  return !_in_collision;
 }
 
 float Node2D::getTraversalCost(const NodePtr & child)

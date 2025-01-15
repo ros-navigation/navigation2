@@ -351,7 +351,7 @@ NodeHybrid::NodeHybrid(const uint64_t index)
   _index(index),
   _was_visited(false),
   _motion_primitive_index(std::numeric_limits<unsigned int>::max()),
-  _is_node_valid_coarse_check(false)
+  _is_node_valid(false)
 {
 }
 
