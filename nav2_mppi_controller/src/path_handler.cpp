@@ -186,10 +186,12 @@ void PathHandler::prunePlan(nav_msgs::msg::Path & plan, const PathIterator end)
   plan.poses.erase(plan.poses.begin(), end);
 }
 
-geometry_msgs::msg::PoseStamped PathHandler::getTransformedGoal()
+geometry_msgs::msg::PoseStamped PathHandler::getTransformedGoal(
+  const builtin_interfaces::msg::Time & stamp)
 {
   auto goal = global_plan_.poses.back();
-  goal.header = global_plan_.header;
+  goal.header.frame_id = global_plan_.header.frame_id;
+  goal.header.stamp = stamp;
   if (goal.header.frame_id.empty()) {
     throw std::runtime_error("Goal pose has an empty frame_id");
   }
