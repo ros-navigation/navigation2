@@ -1,0 +1,11 @@
+[diff]
+	submodule = diff
+[submodule]
+	recurse = true
+	fetchJobs = 8
+[status]
+	submodulesummary = yes
+[advice]
+	addIgnoredFile = false
+[alias]
+    rinse = !git clean -xfd && git submodule foreach --recursive git clean -xfd && git reset --hard && git submodule foreach --recursive git reset --hard && git submodule update --init --recursive
