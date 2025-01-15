@@ -350,7 +350,8 @@ NodeHybrid::NodeHybrid(const uint64_t index)
   _accumulated_cost(std::numeric_limits<float>::max()),
   _index(index),
   _was_visited(false),
-  _motion_primitive_index(std::numeric_limits<unsigned int>::max())
+  _motion_primitive_index(std::numeric_limits<unsigned int>::max()),
+  _is_node_valid(false)
 {
 }
 
@@ -369,20 +370,22 @@ void NodeHybrid::reset()
   pose.x = 0.0f;
   pose.y = 0.0f;
   pose.theta = 0.0f;
+  _is_node_valid = false;
 }
 
 bool NodeHybrid::isNodeValid(
   const bool & traverse_unknown,
   GridCollisionChecker * collision_checker)
 {
-  if (collision_checker->inCollision(
-      this->pose.x, this->pose.y, this->pose.theta /*bin number*/, traverse_unknown))
-  {
-    return false;
+  // Already found, we can return the result
+  if (!std::isnan(_cell_cost)) {
+    return _is_node_valid;
   }
 
+  _is_node_valid = !collision_checker->inCollision(
+    this->pose.x, this->pose.y, this->pose.theta /*bin number*/, traverse_unknown);
   _cell_cost = collision_checker->getCost();
-  return true;
+  return _is_node_valid;
 }
 
 float NodeHybrid::getTraversalCost(const NodePtr & child)
