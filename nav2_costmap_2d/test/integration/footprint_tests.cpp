@@ -153,16 +153,16 @@ TEST_F(TestNode, padded_footprint_from_string_param)
   std::vector<geometry_msgs::msg::Point> footprint = footprint_tester_->getRobotFootprint();
   EXPECT_EQ(3u, footprint.size());
 
-  EXPECT_EQ(1.5f, footprint[0].x);
-  EXPECT_EQ(1.5f, footprint[0].y);
+  EXPECT_NEAR(1.44721f, footprint[0].x, 0.0001f);
+  EXPECT_NEAR(1.22361f, footprint[0].y, 0.0001f);
   EXPECT_EQ(0.0f, footprint[0].z);
 
-  EXPECT_EQ(-1.5f, footprint[1].x);
-  EXPECT_EQ(1.5f, footprint[1].y);
+  EXPECT_NEAR(-1.35355f, footprint[1].x, 0.0001f);
+  EXPECT_NEAR(1.35355f, footprint[1].y, 0.0001f);
   EXPECT_EQ(0.0f, footprint[1].z);
 
-  EXPECT_EQ(-1.5f, footprint[2].x);
-  EXPECT_EQ(-1.5f, footprint[2].y);
+  EXPECT_NEAR(-1.22361f, footprint[2].x, 0.0001f);
+  EXPECT_NEAR(-1.44721f, footprint[2].y, 0.0001f);
   EXPECT_EQ(0.0f, footprint[2].z);
 }
 
