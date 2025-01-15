@@ -77,7 +77,7 @@ public:
     std::vector<rclcpp::Parameter> parameters);
 
   /**
-    * @brief Get an object to retreive parameters
+    * @brief Get an object to retrieve parameters
     * @param ns Namespace to get parameters within
     * @return Parameter getter object
     */
@@ -119,7 +119,7 @@ public:
   /**
     * @brief register a function to be called when setting a parameter
     *
-    * The callback funciton is expected to behave as follows.
+    * The callback function is expected to behave as follows.
     * Successful parameter changes should not interfere with
     * the result parameter.
     * Unsuccessful parameter changes should set the result.successful = false

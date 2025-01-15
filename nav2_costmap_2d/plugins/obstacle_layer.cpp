@@ -646,7 +646,7 @@ ObstacleLayer::raytraceFreespace(
     return;
   }
 
-  // we can pre-compute the enpoints of the map outside of the inner loop... we'll need these later
+  // we can pre-compute the endpoints of the map outside of the inner loop... we'll need these later
   double origin_x = origin_x_, origin_y = origin_y_;
   double map_end_x = origin_x + size_x_ * resolution_;
   double map_end_y = origin_y + size_y_ * resolution_;
@@ -663,7 +663,7 @@ ObstacleLayer::raytraceFreespace(
     double wx = *iter_x;
     double wy = *iter_y;
 
-    // now we also need to make sure that the enpoint we're raytracing
+    // now we also need to make sure that the endpoint we're raytracing
     // to isn't off the costmap and scale if necessary
     double a = wx - ox;
     double b = wy - oy;

@@ -115,32 +115,31 @@ bool GridCollisionChecker::inCollision(
   }
 
   // Assumes setFootprint already set
-  double wx, wy;
-  costmap_->mapToWorld(static_cast<double>(x), static_cast<double>(y), wx, wy);
+  center_cost_ = static_cast<float>(costmap_->getCost(
+    static_cast<unsigned int>(x + 0.5f), static_cast<unsigned int>(y + 0.5f)));
 
   if (!footprint_is_radius_) {
     // if footprint, then we check for the footprint's points, but first see
     // if the robot is even potentially in an inscribed collision
-    footprint_cost_ = static_cast<float>(costmap_->getCost(
-        static_cast<unsigned int>(x + 0.5f), static_cast<unsigned int>(y + 0.5f)));
-
-    if (footprint_cost_ < possible_collision_cost_ && possible_collision_cost_ > 0.0f) {
+    if (center_cost_ < possible_collision_cost_ && possible_collision_cost_ > 0.0f) {
       return false;
     }
 
     // If its inscribed, in collision, or unknown in the middle,
     // no need to even check the footprint, its invalid
-    if (footprint_cost_ == UNKNOWN_COST && !traverse_unknown) {
+    if (center_cost_ == UNKNOWN_COST && !traverse_unknown) {
       return true;
     }
 
-    if (footprint_cost_ == INSCRIBED_COST || footprint_cost_ == OCCUPIED_COST) {
+    if (center_cost_ == INSCRIBED_COST || center_cost_ == OCCUPIED_COST) {
       return true;
     }
 
     // if possible inscribed, need to check actual footprint pose.
     // Use precomputed oriented footprints are done on initialization,
     // offset by translation value to collision check
+    double wx, wy;
+    costmap_->mapToWorld(static_cast<double>(x), static_cast<double>(y), wx, wy);
     geometry_msgs::msg::Point new_pt;
     const nav2_costmap_2d::Footprint & oriented_footprint = oriented_footprints_[angle_bin];
     nav2_costmap_2d::Footprint current_footprint;
@@ -151,25 +150,22 @@ bool GridCollisionChecker::inCollision(
       current_footprint.push_back(new_pt);
     }
 
-    footprint_cost_ = static_cast<float>(footprintCost(current_footprint));
+    float footprint_cost = static_cast<float>(footprintCost(current_footprint));
 
-    if (footprint_cost_ == UNKNOWN_COST && traverse_unknown) {
+    if (footprint_cost == UNKNOWN_COST && traverse_unknown) {
       return false;
     }
 
     // if occupied or unknown and not to traverse unknown space
-    return footprint_cost_ >= OCCUPIED_COST;
+    return footprint_cost >= OCCUPIED_COST;
   } else {
     // if radius, then we can check the center of the cost assuming inflation is used
-    footprint_cost_ = static_cast<float>(costmap_->getCost(
-        static_cast<unsigned int>(x + 0.5f), static_cast<unsigned int>(y + 0.5f)));
-
-    if (footprint_cost_ == UNKNOWN_COST && traverse_unknown) {
+    if (center_cost_ == UNKNOWN_COST && traverse_unknown) {
       return false;
     }
 
     // if occupied or unknown and not to traverse unknown space
-    return footprint_cost_ >= INSCRIBED_COST;
+    return center_cost_ >= INSCRIBED_COST;
   }
 }
 
@@ -177,19 +173,19 @@ bool GridCollisionChecker::inCollision(
   const unsigned int & i,
   const bool & traverse_unknown)
 {
-  footprint_cost_ = costmap_->getCost(i);
-  if (footprint_cost_ == UNKNOWN_COST && traverse_unknown) {
+  center_cost_ = costmap_->getCost(i);
+  if (center_cost_ == UNKNOWN_COST && traverse_unknown) {
     return false;
   }
 
   // if occupied or unknown and not to traverse unknown space
-  return footprint_cost_ >= INSCRIBED_COST;
+  return center_cost_ >= INSCRIBED_COST;
 }
 
 float GridCollisionChecker::getCost()
 {
   // Assumes inCollision called prior
-  return static_cast<float>(footprint_cost_);
+  return static_cast<float>(center_cost_);
 }
 
 bool GridCollisionChecker::outsideRange(const unsigned int & max, const float & value)

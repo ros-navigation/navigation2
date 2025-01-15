@@ -152,9 +152,11 @@ bool Optimizer::isHolonomic() const
 geometry_msgs::msg::TwistStamped Optimizer::evalControl(
   const geometry_msgs::msg::PoseStamped & robot_pose,
   const geometry_msgs::msg::Twist & robot_speed,
-  const nav_msgs::msg::Path & plan, nav2_core::GoalChecker * goal_checker)
+  const nav_msgs::msg::Path & plan,
+  const geometry_msgs::msg::Pose & goal,
+  nav2_core::GoalChecker * goal_checker)
 {
-  prepare(robot_pose, robot_speed, plan, goal_checker);
+  prepare(robot_pose, robot_speed, plan, goal, goal_checker);
 
   do {
     optimize();
@@ -201,12 +203,15 @@ bool Optimizer::fallback(bool fail)
 void Optimizer::prepare(
   const geometry_msgs::msg::PoseStamped & robot_pose,
   const geometry_msgs::msg::Twist & robot_speed,
-  const nav_msgs::msg::Path & plan, nav2_core::GoalChecker * goal_checker)
+  const nav_msgs::msg::Path & plan,
+  const geometry_msgs::msg::Pose & goal,
+  nav2_core::GoalChecker * goal_checker)
 {
   state_.pose = robot_pose;
   state_.speed = robot_speed;
   path_ = utils::toTensor(plan);
   costs_.fill(0.0f);
+  goal_ = goal;
 
   critics_data_.fail_flag = false;
   critics_data_.goal_checker = goal_checker;
@@ -408,12 +413,12 @@ void Optimizer::updateControlSequence()
   auto && costs_normalized = costs_ - xt::amin(costs_, immediate);
   auto && exponents = xt::eval(xt::exp(-1 / settings_.temperature * costs_normalized));
   auto && softmaxes = xt::eval(exponents / xt::sum(exponents, immediate));
-  auto && softmaxes_extened = xt::eval(xt::view(softmaxes, xt::all(), xt::newaxis()));
+  auto && softmaxes_extended = xt::eval(xt::view(softmaxes, xt::all(), xt::newaxis()));
 
-  xt::noalias(control_sequence_.vx) = xt::sum(state_.cvx * softmaxes_extened, 0, immediate);
-  xt::noalias(control_sequence_.wz) = xt::sum(state_.cwz * softmaxes_extened, 0, immediate);
+  xt::noalias(control_sequence_.vx) = xt::sum(state_.cvx * softmaxes_extended, 0, immediate);
+  xt::noalias(control_sequence_.wz) = xt::sum(state_.cwz * softmaxes_extended, 0, immediate);
   if (is_holo) {
-    xt::noalias(control_sequence_.vy) = xt::sum(state_.cvy * softmaxes_extened, 0, immediate);
+    xt::noalias(control_sequence_.vy) = xt::sum(state_.cvy * softmaxes_extended, 0, immediate);
   }
 
   applyControlSequenceConstraints();

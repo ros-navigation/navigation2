@@ -114,19 +114,19 @@ TEST_F(RemovePassedGoalsTestFixture, test_tick)
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
 
   // create new goal and set it on blackboard
-  std::vector<geometry_msgs::msg::PoseStamped> poses;
-  poses.resize(4);
-  poses[0].pose.position.x = 0.0;
-  poses[0].pose.position.y = 0.0;
+  geometry_msgs::msg::PoseStampedArray poses;
+  poses.poses.resize(4);
+  poses.poses[0].pose.position.x = 0.0;
+  poses.poses[0].pose.position.y = 0.0;
 
-  poses[1].pose.position.x = 0.5;
-  poses[1].pose.position.y = 0.0;
+  poses.poses[1].pose.position.x = 0.5;
+  poses.poses[1].pose.position.y = 0.0;
 
-  poses[2].pose.position.x = 1.0;
-  poses[2].pose.position.y = 0.0;
+  poses.poses[2].pose.position.x = 1.0;
+  poses.poses[2].pose.position.y = 0.0;
 
-  poses[3].pose.position.x = 2.0;
-  poses[3].pose.position.y = 0.0;
+  poses.poses[3].pose.position.x = 2.0;
+  poses.poses[3].pose.position.y = 0.0;
 
   config_->blackboard->set("goals", poses);
 
@@ -136,12 +136,12 @@ TEST_F(RemovePassedGoalsTestFixture, test_tick)
   }
 
   // check that it removed the point in range
-  std::vector<geometry_msgs::msg::PoseStamped> output_poses;
+  geometry_msgs::msg::PoseStampedArray output_poses;
   EXPECT_TRUE(config_->blackboard->get("goals", output_poses));
 
-  EXPECT_EQ(output_poses.size(), 2u);
-  EXPECT_EQ(output_poses[0], poses[2]);
-  EXPECT_EQ(output_poses[1], poses[3]);
+  EXPECT_EQ(output_poses.poses.size(), 2u);
+  EXPECT_EQ(output_poses.poses[0], poses.poses[2]);
+  EXPECT_EQ(output_poses.poses[1], poses.poses[3]);
 }
 
 int main(int argc, char ** argv)

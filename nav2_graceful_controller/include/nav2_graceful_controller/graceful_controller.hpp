@@ -108,32 +108,22 @@ public:
 
 protected:
   /**
-   * @brief Get motion target point.
-   * @param motion_target_dist Optimal motion target distance
-   * @param path Current global path
-   * @return Motion target point
-   */
-  geometry_msgs::msg::PoseStamped getMotionTarget(
-    const double & motion_target_dist,
-    const nav_msgs::msg::Path & path);
-
-  /**
    * @brief Simulate trajectory calculating in every step the new velocity command based on
    * a new curvature value and checking for collisions.
    *
-   * @param robot_pose Robot pose
-   * @param motion_target Motion target point
+   * @param motion_target Motion target point (in costmap local frame?)
    * @param costmap_transform Transform between global and local costmap
    * @param trajectory Simulated trajectory
+   * @param cmd_vel Initial command velocity during simulation
    * @param backward Flag to indicate if the robot is moving backward
    * @return true if the trajectory is collision free, false otherwise
    */
   bool simulateTrajectory(
-    const geometry_msgs::msg::PoseStamped & robot_pose,
     const geometry_msgs::msg::PoseStamped & motion_target,
     const geometry_msgs::msg::TransformStamped & costmap_transform,
     nav_msgs::msg::Path & trajectory,
-    const bool & backward);
+    geometry_msgs::msg::TwistStamped & cmd_vel,
+    bool backward);
 
   /**
    * @brief Rotate the robot to face the motion target with maximum angular velocity.
@@ -141,8 +131,7 @@ protected:
    * @param angle_to_target Angle to the motion target
    * @return geometry_msgs::msg::Twist Velocity command
    */
-  geometry_msgs::msg::Twist rotateToTarget(
-    const double & angle_to_target);
+  geometry_msgs::msg::Twist rotateToTarget(double angle_to_target);
 
   /**
    * @brief Checks if the robot is in collision
@@ -152,6 +141,21 @@ protected:
    * @return Whether in collision
    */
   bool inCollision(const double & x, const double & y, const double & theta);
+
+  /**
+   * @brief Compute the distance to each pose in a path
+   * @param poses Poses to compute distances with
+   * @param distances Computed distances
+   */
+  void computeDistanceAlongPath(
+    const std::vector<geometry_msgs::msg::PoseStamped> & poses,
+    std::vector<double> & distances);
+
+  /**
+   * @brief Control law requires proper orientations, not all planners provide them
+   * @param path Path to add orientations into, if required
+   */
+  void validateOrientations(std::vector<geometry_msgs::msg::PoseStamped> & path);
 
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::string plugin_name_;
@@ -164,9 +168,12 @@ protected:
   double goal_dist_tolerance_;
   bool goal_reached_;
 
+  // True from the time a new path arrives until we have completed an initial rotation
+  bool do_initial_rotation_;
+
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> transformed_plan_pub_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> local_plan_pub_;
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PointStamped>>
+  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseStamped>>
   motion_target_pub_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::Marker>>
   slowdown_pub_;

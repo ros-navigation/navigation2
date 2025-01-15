@@ -141,7 +141,7 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
     RCLCPP_WARN(
       get_logger(),
       "The expected planner frequency parameter is %.4f Hz. The value should to be greater"
-      " than 0.0 to turn on duration overrrun warning messages", expected_planner_frequency);
+      " than 0.0 to turn on duration overrun warning messages", expected_planner_frequency);
     max_planner_duration_ = 0.0;
   }
 
@@ -394,7 +394,7 @@ void PlannerServer::computePlanThroughPoses()
 
     getPreemptedGoalIfRequested(action_server_poses_, goal);
 
-    if (goal->goals.empty()) {
+    if (goal->goals.poses.empty()) {
       throw nav2_core::NoViapointsGiven("No viapoints given");
     }
 
@@ -409,7 +409,7 @@ void PlannerServer::computePlanThroughPoses()
       };
 
     // Get consecutive paths through these points
-    for (unsigned int i = 0; i != goal->goals.size(); i++) {
+    for (unsigned int i = 0; i != goal->goals.poses.size(); i++) {
       // Get starting point
       if (i == 0) {
         curr_start = start;
@@ -419,7 +419,7 @@ void PlannerServer::computePlanThroughPoses()
         curr_start = concat_path.poses.back();
         curr_start.header = concat_path.header;
       }
-      curr_goal = goal->goals[i];
+      curr_goal = goal->goals.poses[i];
 
       // Transform them into the global frame
       if (!transformPosesToGlobalFrame(curr_start, curr_goal)) {
@@ -730,7 +730,7 @@ PlannerServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> paramete
           RCLCPP_WARN(
             get_logger(),
             "The expected planner frequency parameter is %.4f Hz. The value should to be greater"
-            " than 0.0 to turn on duration overrrun warning messages", parameter.as_double());
+            " than 0.0 to turn on duration overrun warning messages", parameter.as_double());
           max_planner_duration_ = 0.0;
         }
       }

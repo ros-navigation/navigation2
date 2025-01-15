@@ -43,7 +43,7 @@
 #include <string>
 
 #include "pluginlib/class_list_macros.hpp"
-#include "tf2/convert.h"
+#include "tf2/convert.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "nav2_util/validate_messages.hpp"
 

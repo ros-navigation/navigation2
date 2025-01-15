@@ -45,7 +45,7 @@ void pluginLoader(
   }
 
   // Loading the plugins into the combo box
-  // If server unavaialble, let the combo box be empty
+  // If server unavailable, let the combo box be empty
   if (server_unavailable) {
     return;
   }
