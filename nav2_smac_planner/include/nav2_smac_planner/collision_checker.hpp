@@ -115,7 +115,6 @@ public:
    */
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> getCostmapROS() {return costmap_ros_;}
 
-private:
   /**
    * @brief Check if value outside the range
    * @param min Minimum value of the range
@@ -130,7 +129,7 @@ protected:
   std::vector<nav2_costmap_2d::Footprint> oriented_footprints_;
   nav2_costmap_2d::Footprint unoriented_footprint_;
   float center_cost_;
-  bool footprint_is_radius_{true};
+  bool footprint_is_radius_{false};
   std::vector<float> angles_;
   float possible_collision_cost_{-1};
   rclcpp::Logger logger_{rclcpp::get_logger("SmacPlannerCollisionChecker")};
@@ -153,11 +152,19 @@ inline bool isNodeValid(
     // Perform a fine collision check of center and SE2 footprint costs (if needed)
     in_collision = collision_checker->inCollision(x, y, theta /*bin number*/, traverse_unknown);
   } else {
-    // Perform an initial coarse check of just the center cost needed for traversal functions
-    unsigned int node_index = collision_checker->getCostmap()->getIndex(
-      static_cast<unsigned int>(x + 0.5f),
-      static_cast<unsigned int>(y + 0.5f));
-    in_collision = collision_checker->inCollision(node_index, traverse_unknown);
+    const auto & cmap = collision_checker->getCostmap();
+    // Check to make sure cell is inside the map (otherwise done in Fine Check)
+    if (collision_checker->outsideRange(cmap->getSizeInCellsX(), x + 0.5f) ||
+      collision_checker->outsideRange(cmap->getSizeInCellsY(), y + 0.5f))
+    {
+      in_collision = true;
+    } else {
+      // Perform an initial coarse check of just the center cost needed for traversal functions
+      unsigned int node_index = cmap->getIndex(
+        static_cast<unsigned int>(x + 0.5f),
+        static_cast<unsigned int>(y + 0.5f));
+      in_collision = collision_checker->inCollision(node_index, traverse_unknown);
+    }
   }
 
   cell_cost = collision_checker->getCost();
