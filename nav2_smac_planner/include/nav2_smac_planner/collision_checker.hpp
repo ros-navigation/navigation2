@@ -107,6 +107,8 @@ public:
     return angles_;
   }
 
+  bool footprintAsRadius() {return footprint_is_radius_;}
+
   /**
    * @brief Get costmap ros object for inflation layer params
    * @return Costmap ros
@@ -128,7 +130,7 @@ protected:
   std::vector<nav2_costmap_2d::Footprint> oriented_footprints_;
   nav2_costmap_2d::Footprint unoriented_footprint_;
   float center_cost_;
-  bool footprint_is_radius_;
+  bool footprint_is_radius_{false};
   std::vector<float> angles_;
   float possible_collision_cost_{-1};
   rclcpp::Logger logger_{rclcpp::get_logger("SmacPlannerCollisionChecker")};
@@ -146,23 +148,20 @@ inline bool isNodeValid(
   const bool & fine_check,
   float & cell_cost)
 {
+  bool in_collision = false;
   if (fine_check) {
     // Perform a fine collision check of center and SE2 footprint costs (if needed)
-    if (collision_checker->inCollision(x, y, theta /*bin number*/, traverse_unknown)) {
-      return false;
-    }
+    in_collision = collision_checker->inCollision(x, y, theta /*bin number*/, traverse_unknown);
   } else {
     // Perform an initial coarse check of just the center cost needed for traversal functions
     unsigned int node_index = collision_checker->getCostmap()->getIndex(
       static_cast<unsigned int>(x + 0.5f),
       static_cast<unsigned int>(y + 0.5f));
-    if (collision_checker->inCollision(node_index, traverse_unknown)) {
-      return false;
-    }
+    in_collision = collision_checker->inCollision(node_index, traverse_unknown);
   }
 
   cell_cost = collision_checker->getCost();
-  return true;
+  return !in_collision;
 }
 
 }  // namespace nav2_smac_planner

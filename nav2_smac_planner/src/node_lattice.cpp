@@ -194,7 +194,8 @@ NodeLattice::NodeLattice(const uint64_t index)
   _index(index),
   _was_visited(false),
   _motion_primitive(nullptr),
-  _backwards(false)
+  _backwards(false),
+  _is_node_valid(false)
 {
 }
 
@@ -214,6 +215,7 @@ void NodeLattice::reset()
   pose.theta = 0.0f;
   _motion_primitive = nullptr;
   _backwards = false;
+  _is_node_valid = false;
 }
 
 bool NodeLattice::isNodeValid(
@@ -223,8 +225,12 @@ bool NodeLattice::isNodeValid(
   bool is_backwards,
   bool fine_check)
 {
-  if (!std::isnan(_cell_cost) && (collision_checker->useRadius() || !fine_check)) {
-    return //TODO return type is state, not cost. Is this always true in this case?
+  // Already found, we can return the result, as long as its a coarse check
+  // Note: _is_node_valid is also populated on fine checks, so if another coarse check is requested
+  // the fine check's result is going to be returned (which is OK, both use center costs and future
+  // coarse checks get additional resolution for free!). However, each fine check will be performed
+  if (!std::isnan(_cell_cost) && (collision_checker->footprintAsRadius() || !fine_check)) {
+    return _is_node_valid;
   }
 
   // Check primitive end pose
@@ -237,11 +243,13 @@ bool NodeLattice::isNodeValid(
     traverse_unknown, collision_checker,
     fine_check, curr_cell_cost))
   {
+    _is_node_valid = false;
+    _cell_cost = curr_cell_cost;
     return false;
   }
 
   // Set the cost of a node to the highest cost across the primitive
-  float max_cell_cost = collision_checker->getCost();
+  float max_cell_cost = curr_cell_cost;
 
   // If valid motion primitives are set, check intermediary poses > 1 cell apart
   if (motion_primitive) {
@@ -277,6 +285,8 @@ bool NodeLattice::isNodeValid(
           traverse_unknown, collision_checker,
           fine_check, curr_cell_cost))
         {
+          _is_node_valid = false;
+          _cell_cost = std::max(max_cell_cost, curr_cell_cost);
           return false;
         }
         max_cell_cost = std::max(max_cell_cost, curr_cell_cost);
@@ -285,7 +295,8 @@ bool NodeLattice::isNodeValid(
   }
 
   _cell_cost = max_cell_cost;
-  return true;
+  _is_node_valid = true;
+  return _is_node_valid;
 }
 
 float NodeLattice::getTraversalCost(const NodePtr & child)

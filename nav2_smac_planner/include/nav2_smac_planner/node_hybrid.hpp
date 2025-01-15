@@ -493,6 +493,7 @@ private:
   bool _was_visited;
   unsigned int _motion_primitive_index;
   TurnDirection _turn_dir;
+  bool _is_node_valid{false};
 };
 
 }  // namespace nav2_smac_planner

@@ -428,6 +428,7 @@ private:
   bool _was_visited;
   MotionPrimitive * _motion_primitive;
   bool _backwards;
+  bool _is_node_valid{false};
 };
 
 }  // namespace nav2_smac_planner

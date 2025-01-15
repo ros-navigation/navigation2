@@ -350,7 +350,8 @@ NodeHybrid::NodeHybrid(const uint64_t index)
   _accumulated_cost(std::numeric_limits<float>::max()),
   _index(index),
   _was_visited(false),
-  _motion_primitive_index(std::numeric_limits<unsigned int>::max())
+  _motion_primitive_index(std::numeric_limits<unsigned int>::max()),
+  _is_node_valid_coarse_check(false)
 {
 }
 
@@ -369,6 +370,7 @@ void NodeHybrid::reset()
   pose.x = 0.0f;
   pose.y = 0.0f;
   pose.theta = 0.0f;
+  _is_node_valid = false;
 }
 
 bool NodeHybrid::isNodeValid(
@@ -376,18 +378,20 @@ bool NodeHybrid::isNodeValid(
   GridCollisionChecker * collision_checker,
   const bool fine_check)
 {
-  if (!std::isnan(_cell_cost) && (collision_checker->useRadius() || !fine_check)) {
-    return //TODO return type is state, not cost. Is this always true in this case?
+  // Already found, we can return the result, as long as its a coarse check or radius check
+  // Note: _is_node_valid is also populated on fine checks, so if another coarse check is requested
+  // the fine check's result is going to be returned (which is OK, both use center costs and future
+  // coarse checks get additional resolution for free!). However, each fine check will be performed
+  if (!std::isnan(_cell_cost) && (collision_checker->footprintAsRadius() || !fine_check)) {
+    return _is_node_valid;
   }
 
-  //Note: store cost even if returning false, if ever called, always populated.
-  //Note: collision chcker option to bypass center check. 
-  //Or, have flag if collision checker called and store outcomes. 
-
-  return nav2_smac_planner::isNodeValid(
+  _is_node_valid = nav2_smac_planner::isNodeValid(
     this->pose.x, this->pose.y, this->pose.theta /*bin number*/,
     traverse_unknown, collision_checker,
     fine_check, _cell_cost);
+
+  return _is_node_valid;
 }
 
 float NodeHybrid::getTraversalCost(const NodePtr & child)
