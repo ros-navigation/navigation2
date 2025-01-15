@@ -84,6 +84,7 @@ public:
    * @param robot_pose Pose of the robot at given time
    * @param robot_speed Speed of the robot at given time
    * @param plan Path plan to track
+   * @param goal Given Goal pose to reach.
    * @param goal_checker Object to check if goal is completed
    * @return TwistStamped of the MPPI control
    */
