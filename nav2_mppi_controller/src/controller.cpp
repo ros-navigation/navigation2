@@ -84,7 +84,7 @@ geometry_msgs::msg::TwistStamped MPPIController::computeVelocityCommands(
 #endif
 
   std::lock_guard<std::mutex> param_lock(*parameters_handler_->getLock());
-  geometry_msgs::msg::Pose goal = path_handler_.getTransformedGoal().pose;
+  geometry_msgs::msg::Pose goal = path_handler_.getTransformedGoal(robot_pose.header.stamp).pose;
 
   nav_msgs::msg::Path transformed_plan = path_handler_.transformPath(robot_pose);
 
