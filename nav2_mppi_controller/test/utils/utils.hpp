@@ -85,7 +85,7 @@ void printMap(const nav2_costmap_2d::Costmap2D & costmap)
 /**
  * Print costmap with trajectory and goal point to stdout.
  * @param costmap map to be printed.
- * @param trajectory trajectory container (xt::tensor) to be printed.
+ * @param trajectory trajectory container (Eigen::Array) to be printed.
  * @param goal_point goal point to be printed.
  */
 template<typename TTrajectory>
@@ -172,7 +172,7 @@ void addObstacle(nav2_costmap_2d::Costmap2D * costmap, TestObstaclesSettings s)
 
 /**
  * Check the trajectory for collisions with obstacles on the map.
- * @param trajectory trajectory container (xt::tensor) to be checked.
+ * @param trajectory trajectory container (Eigen::Array) to be checked.
  * @param costmap costmap with obstacles
  * @return true - if the trajectory crosses an obstacle on the map, false - if
  * not
