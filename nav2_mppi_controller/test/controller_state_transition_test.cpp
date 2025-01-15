@@ -60,6 +60,8 @@ TEST(ControllerStateTransitionTest, ControllerNotFail)
   auto pose = getDummyPointStamped(node, start_pose);
   auto velocity = getDummyTwist();
   auto path = getIncrementalDummyPath(node, path_settings);
+  path.header.frame_id = costmap_ros->getGlobalFrameID();
+  pose.header.frame_id = costmap_ros->getGlobalFrameID();
 
   controller->setPlan(path);
 

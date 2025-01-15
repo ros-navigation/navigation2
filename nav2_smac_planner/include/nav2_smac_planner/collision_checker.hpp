@@ -130,7 +130,7 @@ protected:
   std::vector<nav2_costmap_2d::Footprint> oriented_footprints_;
   nav2_costmap_2d::Footprint unoriented_footprint_;
   float center_cost_;
-  bool footprint_is_radius_{false};
+  bool footprint_is_radius_{true};
   std::vector<float> angles_;
   float possible_collision_cost_{-1};
   rclcpp::Logger logger_{rclcpp::get_logger("SmacPlannerCollisionChecker")};
