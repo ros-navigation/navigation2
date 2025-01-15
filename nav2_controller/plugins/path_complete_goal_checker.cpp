@@ -90,6 +90,8 @@ bool PathCompleteGoalChecker::isGoalReached(
 rcl_interfaces::msg::SetParametersResult
 PathCompleteGoalChecker::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
 {
+  auto result = rcl_interfaces::msg::SetParametersResult();
+
   for (auto & parameter : parameters) {
     const auto & type = parameter.get_type();
     const auto & name = parameter.get_name();
@@ -100,6 +102,7 @@ PathCompleteGoalChecker::dynamicParametersCallback(std::vector<rclcpp::Parameter
       }
     }
   }
+  result.successful = true;
   return result;
 }
 
