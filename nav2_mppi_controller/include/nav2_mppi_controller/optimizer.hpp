@@ -15,16 +15,10 @@
 #ifndef NAV2_MPPI_CONTROLLER__OPTIMIZER_HPP_
 #define NAV2_MPPI_CONTROLLER__OPTIMIZER_HPP_
 
+#include <Eigen/Dense>
+
 #include <string>
 #include <memory>
-
-// xtensor creates warnings that needs to be ignored as we are building with -Werror
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Warray-bounds"
-#pragma GCC diagnostic ignored "-Wstringop-overflow"
-#include <xtensor/xtensor.hpp>
-#include <xtensor/xview.hpp>
-#pragma GCC diagnostic pop
 
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 
@@ -90,6 +84,7 @@ public:
    * @param robot_pose Pose of the robot at given time
    * @param robot_speed Speed of the robot at given time
    * @param plan Path plan to track
+   * @param goal Given Goal pose to reach.
    * @param goal_checker Object to check if goal is completed
    * @return TwistStamped of the MPPI control
    */
@@ -108,7 +103,7 @@ public:
    * @brief Get the optimal trajectory for a cycle for visualization
    * @return Optimal trajectory
    */
-  xt::xtensor<float, 2> getOptimizedTrajectory();
+  Eigen::ArrayXXf getOptimizedTrajectory();
 
   /**
    * @brief Set the maximum speed based on the speed limits callback
@@ -203,8 +198,8 @@ protected:
    * @param state fill state
    */
   void integrateStateVelocities(
-    xt::xtensor<float, 2> & trajectories,
-    const xt::xtensor<float, 2> & state) const;
+    Eigen::Array<float, Eigen::Dynamic, 3> & trajectories,
+    const Eigen::ArrayXXf & state) const;
 
   /**
    * @brief Update control sequence with state controls weighted by costs
@@ -258,7 +253,7 @@ protected:
   models::Trajectories generated_trajectories_;
   models::Path path_;
   geometry_msgs::msg::Pose goal_;
-  xt::xtensor<float, 1> costs_;
+  Eigen::ArrayXf costs_;
 
   CriticData critics_data_ = {
     state_, generated_trajectories_, path_, goal_,
