@@ -47,8 +47,6 @@ namespace nav2_controller
 /**
  * @class PathCompleteGoalChecker
  * @brief Goal Checker plugin that checks position delta, once path is shorter than a threshold.
- *
- *
  */
 class PathCompleteGoalChecker : public SimpleGoalChecker
 {

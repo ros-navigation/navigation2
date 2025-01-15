@@ -65,7 +65,6 @@ void PathCompleteGoalChecker::initialize(
   node->get_parameter(plugin_name + ".path_length_tolerance", path_length_tolerance_);
 
   // Replace SimpleGoalChecker's callback for dynamic parameters
-  node->remove_on_set_parameters_callback(dyn_params_handler_.get());
   dyn_params_handler_ = node->add_on_set_parameters_callback(
     std::bind(&PathCompleteGoalChecker::dynamicParametersCallback, this, _1));
 }
@@ -91,9 +90,6 @@ bool PathCompleteGoalChecker::isGoalReached(
 rcl_interfaces::msg::SetParametersResult
 PathCompleteGoalChecker::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
 {
-  // call the base class (might be unnessesary since the base class will already bind this event)
-  rcl_interfaces::msg::SetParametersResult result =
-    SimpleGoalChecker::dynamicParametersCallback(parameters);
   for (auto & parameter : parameters) {
     const auto & type = parameter.get_type();
     const auto & name = parameter.get_name();
