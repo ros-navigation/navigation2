@@ -222,14 +222,10 @@ bool NodeLattice::isNodeValid(
   const bool & traverse_unknown,
   GridCollisionChecker * collision_checker,
   MotionPrimitive * motion_primitive,
-  bool is_backwards,
-  bool fine_check)
+  bool is_backwards)
 {
-  // Already found, we can return the result, as long as its a coarse check
-  // Note: _is_node_valid is also populated on fine checks, so if another coarse check is requested
-  // the fine check's result is going to be returned (which is OK, both use center costs and future
-  // coarse checks get additional resolution for free!). However, each fine check will be performed
-  if (!std::isnan(_cell_cost) && (collision_checker->footprintAsRadius() || !fine_check)) {
+  // Already found, we can return the result
+  if (!std::isnan(_cell_cost)) {
     return _is_node_valid;
   }
 
@@ -237,19 +233,16 @@ bool NodeLattice::isNodeValid(
   // Convert grid quantization of primitives to radians, then collision checker quantization
   static const double bin_size = 2.0 * M_PI / collision_checker->getPrecomputedAngles().size();
   const double & angle = motion_table.getAngleFromBin(this->pose.theta) / bin_size;
-  float curr_cell_cost;
-  if (!nav2_smac_planner::isNodeValid(
-    this->pose.x, this->pose.y, angle /*bin in collision checker*/,
-    traverse_unknown, collision_checker,
-    fine_check, curr_cell_cost))
+  if (collision_checker->inCollision(
+      this->pose.x, this->pose.y, angle /*bin in collision checker*/, traverse_unknown))
   {
     _is_node_valid = false;
-    _cell_cost = curr_cell_cost;
+    _cell_cost = collision_checker->getCost();
     return false;
   }
 
   // Set the cost of a node to the highest cost across the primitive
-  float max_cell_cost = curr_cell_cost;
+  float max_cell_cost = collision_checker->getCost();
 
   // If valid motion primitives are set, check intermediary poses > 1 cell apart
   if (motion_primitive) {
@@ -280,16 +273,17 @@ bool NodeLattice::isNodeValid(
         } else {
           prim_pose._theta = it->_theta;
         }
-        if (!nav2_smac_planner::isNodeValid(
-          prim_pose._x, prim_pose._y, prim_pose._theta / bin_size /*bin in collision checker*/,
-          traverse_unknown, collision_checker,
-          fine_check, curr_cell_cost))
+        if (collision_checker->inCollision(
+            prim_pose._x,
+            prim_pose._y,
+            prim_pose._theta / bin_size /*bin in collision checker*/,
+            traverse_unknown))
         {
           _is_node_valid = false;
-          _cell_cost = std::max(max_cell_cost, curr_cell_cost);
+          _cell_cost = std::max(max_cell_cost, collision_checker->getCost());
           return false;
         }
-        max_cell_cost = std::max(max_cell_cost, curr_cell_cost);
+        max_cell_cost = std::max(max_cell_cost, collision_checker->getCost());
       }
     }
   }
@@ -551,8 +545,7 @@ void NodeLattice::getNeighbors(
       // Using a special isNodeValid API here, giving the motion primitive to use to
       // validity check the transition of the current node to the new node over
       if (neighbor->isNodeValid(
-          traverse_unknown, collision_checker, motion_primitives[i], backwards,
-          false /*coarse check*/))
+          traverse_unknown, collision_checker, motion_primitives[i], backwards))
       {
         neighbor->setMotionPrimitive(motion_primitives[i]);
         // Marking if this search was obtained in the reverse direction

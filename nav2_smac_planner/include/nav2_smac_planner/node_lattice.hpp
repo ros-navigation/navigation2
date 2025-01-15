@@ -263,8 +263,7 @@ public:
     const bool & traverse_unknown,
     GridCollisionChecker * collision_checker,
     MotionPrimitive * primitive = nullptr,
-    bool is_backwards = false,
-    bool fine_check = true);
+    bool is_backwards = false);
 
   /**
    * @brief Get traversal cost of parent node to child node

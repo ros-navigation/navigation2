@@ -375,22 +375,16 @@ void NodeHybrid::reset()
 
 bool NodeHybrid::isNodeValid(
   const bool & traverse_unknown,
-  GridCollisionChecker * collision_checker,
-  const bool fine_check)
+  GridCollisionChecker * collision_checker)
 {
-  // Already found, we can return the result, as long as its a coarse check or radius check
-  // Note: _is_node_valid is also populated on fine checks, so if another coarse check is requested
-  // the fine check's result is going to be returned (which is OK, both use center costs and future
-  // coarse checks get additional resolution for free!). However, each fine check will be performed
-  if (!std::isnan(_cell_cost) && (collision_checker->footprintAsRadius() || !fine_check)) {
+  // Already found, we can return the result
+  if (!std::isnan(_cell_cost)) {
     return _is_node_valid;
   }
 
-  _is_node_valid = nav2_smac_planner::isNodeValid(
-    this->pose.x, this->pose.y, this->pose.theta /*bin number*/,
-    traverse_unknown, collision_checker,
-    fine_check, _cell_cost);
-
+  _is_node_valid = !collision_checker->inCollision(
+    this->pose.x, this->pose.y, this->pose.theta /*bin number*/, traverse_unknown);
+  _cell_cost = collision_checker->getCost();
   return _is_node_valid;
 }
 
@@ -865,7 +859,7 @@ void NodeHybrid::getNeighbors(
           motion_projections[i]._x,
           motion_projections[i]._y,
           motion_projections[i]._theta));
-      if (neighbor->isNodeValid(traverse_unknown, collision_checker, false /*coarse check*/)) {
+      if (neighbor->isNodeValid(traverse_unknown, collision_checker)) {
         neighbor->setMotionPrimitiveIndex(i, motion_projections[i]._turn_dir);
         neighbors.push_back(neighbor);
       } else {

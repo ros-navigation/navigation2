@@ -326,7 +326,7 @@ bool AStarAlgorithm<NodeT>::createPath(
 
     // We allow for nodes to be queued multiple times in case
     // shorter paths result in it, but we can visit only once
-    // Also a chance to perform last-checks for fine resolution
+    // Also a chance to perform last-checks necessary.
     if (onVisitationCheckNode(current_node)) {
       continue;
     }
@@ -436,25 +436,9 @@ float AStarAlgorithm<NodeT>::getHeuristicCost(const NodePtr & node)
   return heuristic;
 }
 
-template<>
-bool AStarAlgorithm<NodeHybrid>::onVisitationCheckNode(const NodePtr & current_node)
-{
-  return current_node->wasVisited() ||
-         !current_node->isNodeValid(_traverse_unknown, _collision_checker, true /*finer check*/);
-}
-
-template<>
-bool AStarAlgorithm<NodeLattice>::onVisitationCheckNode(const NodePtr & current_node)
-{
-  return current_node->wasVisited() ||
-         !current_node->isNodeValid(_traverse_unknown, _collision_checker,
-         current_node->getMotionPrimitive(), current_node->isBackward(), true /*finer check*/);
-}
-
 template<typename NodeT>
 bool AStarAlgorithm<NodeT>::onVisitationCheckNode(const NodePtr & current_node)
 {
-  // Coarse checking on expansion & fine checking on visition not generally valid unless overridden
   return current_node->wasVisited();
 }
 

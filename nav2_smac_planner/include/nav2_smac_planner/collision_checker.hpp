@@ -107,8 +107,6 @@ public:
     return angles_;
   }
 
-  bool footprintAsRadius() {return footprint_is_radius_;}
-
   /**
    * @brief Get costmap ros object for inflation layer params
    * @return Costmap ros
@@ -135,41 +133,6 @@ protected:
   rclcpp::Logger logger_{rclcpp::get_logger("SmacPlannerCollisionChecker")};
   rclcpp::Clock::SharedPtr clock_;
 };
-
-/**
-  * @brief Checks if a node is valid using the fine-to-coarse logic used
-  * in the NodeHybrid and NodeLattice implementatations to optimize for collision checking
- **/
-inline bool isNodeValid(
-  const float x, const float y, const float theta,
-  const bool & traverse_unknown,
-  GridCollisionChecker * collision_checker,
-  const bool & fine_check,
-  float & cell_cost)
-{
-  bool in_collision = false;
-  if (fine_check) {
-    // Perform a fine collision check of center and SE2 footprint costs (if needed)
-    in_collision = collision_checker->inCollision(x, y, theta /*bin number*/, traverse_unknown);
-  } else {
-    const auto & cmap = collision_checker->getCostmap();
-    // Check to make sure cell is inside the map (otherwise done in Fine Check)
-    if (collision_checker->outsideRange(cmap->getSizeInCellsX(), x + 0.5f) ||
-      collision_checker->outsideRange(cmap->getSizeInCellsY(), y + 0.5f))
-    {
-      in_collision = true;
-    } else {
-      // Perform an initial coarse check of just the center cost needed for traversal functions
-      unsigned int node_index = cmap->getIndex(
-        static_cast<unsigned int>(x + 0.5f),
-        static_cast<unsigned int>(y + 0.5f));
-      in_collision = collision_checker->inCollision(node_index, traverse_unknown);
-    }
-  }
-
-  cell_cost = collision_checker->getCost();
-  return !in_collision;
-}
 
 }  // namespace nav2_smac_planner
 
