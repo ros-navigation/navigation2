@@ -201,10 +201,6 @@ inline bool withinPositionGoalTolerance(
   const geometry_msgs::msg::Pose & robot,
   const geometry_msgs::msg::Pose & goal)
 {
-  const auto goal_idx = path.x.size() - 1;
-  const auto goal_x = path.x(goal_idx);
-  const auto goal_y = path.y(goal_idx);
-
   if (goal_checker) {
     geometry_msgs::msg::Pose pose_tolerance;
     geometry_msgs::msg::Twist velocity_tolerance;
