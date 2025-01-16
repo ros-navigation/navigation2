@@ -374,7 +374,6 @@ StaticLayer::updateBounds(
   *max_y = std::max(wy, *max_y);
 
   has_updated_data_ = false;
-
 }
 
 void
@@ -396,7 +395,6 @@ StaticLayer::updateFootprint(
   touchByFootprint(transformed_footprint_);
   transformFootprint(robot_x, robot_y, robot_yaw, getFootprint(), transformed_footprint_);
   touchByFootprint(transformed_footprint_);
-
 }
 
 void
