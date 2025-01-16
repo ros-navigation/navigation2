@@ -26,6 +26,7 @@
 #include "nav2_route/utils.hpp"
 #include "nav2_route/edge_scorer.hpp"
 #include "nav2_core/route_exceptions.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
 
 namespace nav2_route
 {
@@ -61,8 +62,9 @@ public:
    * @return Route object containing the navigation graph route
    */
   Route findRoute(
-    Graph & graph, unsigned int start, unsigned int goal,
-    const std::vector<unsigned int> & blocked_ids);
+    Graph & graph, unsigned int start_index, unsigned int goal_index,
+    const std::vector<unsigned int> & blocked_ids,
+    const geometry_msgs::msg::PoseStamped goal);
 
 protected:
   /**
@@ -79,8 +81,9 @@ protected:
    * @param blocked_ids A set of blocked node and edge IDs not to traverse
    */
   void findShortestGraphTraversal(
-    Graph & graph, const NodePtr start, const NodePtr goal,
-    const std::vector<unsigned int> & blocked_ids);
+    Graph & graph, const NodePtr start_node, const NodePtr goal_node,
+    const std::vector<unsigned int> & blocked_ids,
+    const geometry_msgs::msg::PoseStamped goal);
 
   /**
    * @brief Gets the traversal cost for an edge using edge scorers
@@ -90,7 +93,7 @@ protected:
    * @return if this edge is valid for search
    */
   inline bool getTraversalCost(
-    const EdgePtr edge, float & score, const std::vector<unsigned int> & blocked_ids);
+    const EdgePtr edge, float & score, const std::vector<unsigned int> & blocked_ids, const geometry_msgs::msg::PoseStamped goal);
 
   /**
    * @brief Gets the next node in the priority queue for search
