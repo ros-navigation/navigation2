@@ -353,6 +353,8 @@ StaticLayer::updateBounds(
     map_buffer_ = nullptr;
   }
 
+  updateFootprint(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
+
   if (!layered_costmap_->isRolling() ) {
     if (!(has_updated_data_ || has_extra_bounds_)) {
       return;
@@ -372,8 +374,6 @@ StaticLayer::updateBounds(
   *max_y = std::max(wy, *max_y);
 
   has_updated_data_ = false;
-
-  updateFootprint(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
 }
 
 void
@@ -385,11 +385,16 @@ StaticLayer::updateFootprint(
 {
   if (!footprint_clearing_enabled_) {return;}
 
-  transformFootprint(robot_x, robot_y, robot_yaw, getFootprint(), transformed_footprint_);
+  auto touchByFootprint = [&](
+    const std::vector<geometry_msgs::msg::Point> & footprint) {
+      for (const auto & point : footprint) {
+        touch(point.x, point.y, min_x, min_y, max_x, max_y);
+      }
+    };
 
-  for (unsigned int i = 0; i < transformed_footprint_.size(); i++) {
-    touch(transformed_footprint_[i].x, transformed_footprint_[i].y, min_x, min_y, max_x, max_y);
-  }
+  touchByFootprint(transformed_footprint_);
+  transformFootprint(robot_x, robot_y, robot_yaw, getFootprint(), transformed_footprint_);
+  touchByFootprint(transformed_footprint_);
 }
 
 void
@@ -409,10 +414,6 @@ StaticLayer::updateCosts(
       count = 0;
     }
     return;
-  }
-
-  if (footprint_clearing_enabled_) {
-    setConvexPolygonCost(transformed_footprint_, nav2_costmap_2d::FREE_SPACE);
   }
 
   if (!layered_costmap_->isRolling()) {
@@ -457,6 +458,10 @@ StaticLayer::updateCosts(
         }
       }
     }
+  }
+
+  if (footprint_clearing_enabled_) {
+    master_grid.setConvexPolygonCost(transformed_footprint_, nav2_costmap_2d::FREE_SPACE);
   }
   current_ = true;
 }
