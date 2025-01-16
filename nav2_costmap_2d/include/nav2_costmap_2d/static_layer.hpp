@@ -155,31 +155,6 @@ protected:
   unsigned char interpretValue(unsigned char value);
 
   /**
-   * @brief  Get the cells occupied by the footprint
-   * @param cells_occupied_by_footprint The cell coordinates that the footprint occupies
-   * @param footprint The footprint to perform the operation on
-   */
-  void getCellsOccupiedByFootprint(
-    std::vector<MapLocation> & cells_occupied_by_footprint,
-    const std::vector<geometry_msgs::msg::Point> & footprint);
-
-  /**
-   * @brief  Reset the cells to a desired value
-   * @param resetting_cells The cell coordinates to reset to a desired value
-   * @param cost The value to set costs to
-   */
-  void resetCells(
-    const std::vector<MapLocation> & resetting_cells, unsigned char cost);
-
-  /**
-   * @brief  Restored the given cells using the latest map buffer
-   * @param restoring_cells The cell coordinates to restore by given map buffer
-   */
-  void restoreCellsFromMap(
-    const std::vector<MapLocation> & restoring_cells,
-    const nav_msgs::msg::OccupancyGrid::SharedPtr & map_buffer);
-
-  /**
    * @brief Callback executed when a parameter change is detected
    * @param event ParameterEvent message
    */
@@ -187,10 +162,7 @@ protected:
   dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
 
   std::vector<geometry_msgs::msg::Point> transformed_footprint_;
-  std::vector<MapLocation> cells_cleared_by_footprint_;
   bool footprint_clearing_enabled_;
-  bool restore_outdated_footprint_;
-
   /**
    * @brief Clear costmap layer info below the robot's footprint
    */
@@ -222,7 +194,8 @@ protected:
   unsigned char lethal_threshold_;
   unsigned char unknown_cost_value_;
   bool trinary_costmap_;
-  bool has_map_to_process_{false};
+  bool map_received_{false};
+  bool map_received_in_update_bounds_{false};
   tf2::Duration transform_tolerance_;
   nav_msgs::msg::OccupancyGrid::SharedPtr map_buffer_;
   // Dynamic parameters handler

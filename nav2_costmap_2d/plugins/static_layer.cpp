@@ -138,7 +138,6 @@ StaticLayer::getParameters()
   declareParameter("transform_tolerance", rclcpp::ParameterValue(0.0));
   declareParameter("map_topic", rclcpp::ParameterValue("map"));
   declareParameter("footprint_clearing_enabled", rclcpp::ParameterValue(false));
-  declareParameter("restore_outdated_footprint", rclcpp::ParameterValue(false));
 
   auto node = node_.lock();
   if (!node) {
@@ -148,7 +147,6 @@ StaticLayer::getParameters()
   node->get_parameter(name_ + "." + "enabled", enabled_);
   node->get_parameter(name_ + "." + "subscribe_to_updates", subscribe_to_updates_);
   node->get_parameter(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_);
-  node->get_parameter(name_ + "." + "restore_outdated_footprint", restore_outdated_footprint_);
   node->get_parameter(name_ + "." + "map_topic", map_topic_);
   map_topic_ = joinWithParentNamespace(map_topic_);
   node->get_parameter(
@@ -163,7 +161,8 @@ StaticLayer::getParameters()
 
   // Enforce bounds
   lethal_threshold_ = std::max(std::min(temp_lethal_threshold, 100), 0);
-  has_map_to_process_ = false;
+  map_received_ = false;
+  map_received_in_update_bounds_ = false;
 
   transform_tolerance_ = tf2::durationFromSec(temp_tf_tol);
 
@@ -221,8 +220,12 @@ StaticLayer::processMap(const nav_msgs::msg::OccupancyGrid & new_map)
       new_map.info.origin.position.x, new_map.info.origin.position.y);
   }
 
-  // initialize the costmap with static data
   unsigned int index = 0;
+
+  // we have a new map, update full size of map
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+
+  // initialize the costmap with static data
   for (unsigned int i = 0; i < size_y; ++i) {
     for (unsigned int j = 0; j < size_x; ++j) {
       unsigned char value = new_map.data[index];
@@ -279,9 +282,13 @@ StaticLayer::incomingMap(const nav_msgs::msg::OccupancyGrid::SharedPtr new_map)
     RCLCPP_ERROR(logger_, "Received map message is malformed. Rejecting.");
     return;
   }
+  if (!map_received_) {
+    processMap(*new_map);
+    map_received_ = true;
+    return;
+  }
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   map_buffer_ = new_map;
-  has_map_to_process_ = true;
 }
 
 void
@@ -324,44 +331,6 @@ StaticLayer::incomingUpdate(map_msgs::msg::OccupancyGridUpdate::ConstSharedPtr u
   has_updated_data_ = true;
 }
 
-void
-StaticLayer::getCellsOccupiedByFootprint(
-  std::vector<MapLocation> & cells_occupied_by_footprint,
-  const std::vector<geometry_msgs::msg::Point> & footprint)
-{
-  // we assume the polygon is given in the global_frame...
-  // we need to transform it to map coordinates
-  std::vector<MapLocation> map_polygon;
-  for (const auto & point : footprint) {
-    MapLocation loc;
-    if (!this->worldToMap(point.x, point.y, loc.x, loc.y)) {
-      // ("Polygon lies outside map bounds, so we can't fill it");
-      return;
-    }
-    map_polygon.push_back(loc);
-  }
-
-  // get the cells that fill the polygon
-  this->convexFillCells(map_polygon, cells_occupied_by_footprint);
-}
-
-void StaticLayer::resetCells(
-  const std::vector<MapLocation> & resetting_cells, unsigned char cost)
-{
-  for (const auto & cell : resetting_cells) {
-    setCost(cell.x, cell.y, cost);
-  }
-}
-
-void StaticLayer::restoreCellsFromMap(
-  const std::vector<MapLocation> & restoring_cells,
-  const nav_msgs::msg::OccupancyGrid::SharedPtr & map_buffer)
-{
-  for (const auto & cell : restoring_cells) {
-    unsigned int index = getIndex(cell.x, cell.y);
-    costmap_[index] = interpretValue(map_buffer->data[index]);
-  }
-}
 
 void
 StaticLayer::updateBounds(
@@ -370,16 +339,18 @@ StaticLayer::updateBounds(
   double * max_x,
   double * max_y)
 {
-  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
-
-  if (!map_buffer_) {
+  if (!map_received_) {
+    map_received_in_update_bounds_ = false;
     return;
   }
+  map_received_in_update_bounds_ = true;
+
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
 
   // If there is a new available map, load it.
-  if (has_map_to_process_) {
+  if (map_buffer_) {
     processMap(*map_buffer_);
-    has_map_to_process_ = false;
+    map_buffer_ = nullptr;
   }
 
   updateFootprint(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
@@ -403,6 +374,7 @@ StaticLayer::updateBounds(
   *max_y = std::max(wy, *max_y);
 
   has_updated_data_ = false;
+
 }
 
 void
@@ -414,18 +386,17 @@ StaticLayer::updateFootprint(
 {
   if (!footprint_clearing_enabled_) {return;}
 
-  if (restore_outdated_footprint_) {
-    // Increase the bounds to make the outdated footprint restored by layered costmap
-    for (const auto & point : transformed_footprint_) {
-      touch(point.x, point.y, min_x, min_y, max_x, max_y);
-    }
-  }
+  auto touchByFootprint = [&](
+    const std::vector<geometry_msgs::msg::Point> & footprint) {
+      for (const auto & point : footprint) {
+        touch(point.x, point.y, min_x, min_y, max_x, max_y);
+      }
+    };
 
+  touchByFootprint(transformed_footprint_);
   transformFootprint(robot_x, robot_y, robot_yaw, getFootprint(), transformed_footprint_);
+  touchByFootprint(transformed_footprint_);
 
-  for (const auto & point : transformed_footprint_) {
-    touch(point.x, point.y, min_x, min_y, max_x, max_y);
-  }
 }
 
 void
@@ -437,7 +408,7 @@ StaticLayer::updateCosts(
   if (!enabled_) {
     return;
   }
-  if (!map_buffer_) {
+  if (!map_received_in_update_bounds_) {
     static int count = 0;
     // throttle warning down to only 1/10 message rate
     if (++count == 10) {
@@ -445,17 +416,6 @@ StaticLayer::updateCosts(
       count = 0;
     }
     return;
-  }
-
-  if (footprint_clearing_enabled_) {
-    if (restore_outdated_footprint_) {
-      restoreCellsFromMap(cells_cleared_by_footprint_, map_buffer_);
-    }
-
-    cells_cleared_by_footprint_.clear();
-    getCellsOccupiedByFootprint(cells_cleared_by_footprint_, transformed_footprint_);
-
-    resetCells(cells_cleared_by_footprint_, nav2_costmap_2d::FREE_SPACE);
   }
 
   if (!layered_costmap_->isRolling()) {
@@ -502,6 +462,9 @@ StaticLayer::updateCosts(
     }
   }
 
+  if (footprint_clearing_enabled_) {
+    master_grid.setConvexPolygonCost(transformed_footprint_, nav2_costmap_2d::FREE_SPACE);
+  }
   current_ = true;
 }
 
@@ -544,8 +507,6 @@ StaticLayer::dynamicParametersCallback(
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == name_ + "." + "footprint_clearing_enabled") {
         footprint_clearing_enabled_ = parameter.as_bool();
-      } else if (param_name == name_ + "." + "restore_outdated_footprint") {
-        restore_outdated_footprint_ = parameter.as_bool();
       }
     }
   }
