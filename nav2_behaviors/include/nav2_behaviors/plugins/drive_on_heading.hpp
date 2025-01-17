@@ -261,7 +261,7 @@ protected:
       rclcpp::ParameterValue(-2.5));
     nav2_util::declare_parameter_if_not_declared(
       node, this->behavior_name_ + ".minimum_speed",
-      rclcpp::ParameterValue(0.01));
+      rclcpp::ParameterValue(0.10));
     node->get_parameter(this->behavior_name_ + ".acceleration_limit", acceleration_limit_);
     node->get_parameter(this->behavior_name_ + ".deceleration_limit", deceleration_limit_);
     node->get_parameter(this->behavior_name_ + ".minimum_speed", minimum_speed_);
