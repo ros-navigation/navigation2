@@ -246,6 +246,17 @@ TEST(SmootherTest, test_simple_smoother)
   straight_irregular_path.poses[6].pose.orientation = tf2::toMsg(quat2);
   EXPECT_THROW(smoother->smooth(straight_irregular_path, max_time), nav2_core::FailedToSmoothPath);
 
+  // test approach
+  nav_msgs::msg::Path approach_path;
+  approach_path.poses.resize(3);
+  approach_path.poses[0].pose.position.x = 0.5;
+  approach_path.poses[0].pose.position.y = 0.0;
+  approach_path.poses[1].pose.position.x = 0.5;
+  approach_path.poses[1].pose.position.y = 0.1;
+  approach_path.poses[2].pose.position.x = 0.5;
+  approach_path.poses[2].pose.position.y = 0.2;
+  EXPECT_TRUE(smoother->smooth(approach_path, max_time));
+
   // test max iterations
   smoother->setMaxItsToInvalid();
   nav_msgs::msg::Path max_its_path;
