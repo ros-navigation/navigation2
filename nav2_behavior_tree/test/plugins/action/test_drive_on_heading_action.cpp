@@ -22,6 +22,11 @@
 
 #include "nav2_behavior_tree/utils/test_action_server.hpp"
 #include "nav2_behavior_tree/plugins/action/drive_on_heading_action.hpp"
+#include "geometry_msgs/msg/twist_stamped.hpp"
+#include "geometry_msgs/msg/twist.hpp"
+#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_util/node_utils.hpp"
+#include "nav2_util/twist_subscriber.hpp"
 
 class DriveOnHeadingActionServer : public TestActionServer<nav2_msgs::action::DriveOnHeading>
 {
@@ -165,6 +170,50 @@ TEST_F(DriveOnHeadingActionTestFixture, test_tick)
   auto goal = action_server_->getCurrentGoal();
   EXPECT_EQ(goal->target.x, 2.0);
   EXPECT_EQ(goal->speed, 0.26f);
+}
+
+TEST_F(DriveOnHeadingActionTestFixture, test_velocity_constraints)
+{
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+            <DriveOnHeading dist_to_travel="2" speed="0.26" />
+        </BehaviorTree>
+      </root>)";
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+
+  node_->declare_parameter("DriveOnHeading.acceleration_limit", 0.1);
+  node_->declare_parameter("DriveOnHeading.deceleration_limit", -0.1);
+  node_->declare_parameter("DriveOnHeading.minimum_speed", 0.01);
+
+  std::vector<double> linear_vels;
+  auto subscription_stamped = node_->create_subscription<geometry_msgs::msg::TwistStamped>(
+    "cmd_vel",
+    1,
+    [&](geometry_msgs::msg::TwistStamped msg) {
+      linear_vels.push_back(msg.twist.linear.x);
+    });
+
+  while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS) {
+    tree_->rootNode()->executeTick();
+    rclcpp::spin_some(node_);
+  }
+
+  EXPECT_GT(linear_vels.size(), 0);
+  for (unsigned int i = 0; i != linear_vels.size(); i++) {
+    if (i > 0) {
+      double diff = linear_vels[i] - linear_vels[i - 1];
+      double accel = diff / 0.01;  // bt_loop_duration is 10ms
+
+      EXPECT_TRUE(accel <= 0.1);
+      EXPECT_TRUE(accel >= -0.1);
+    }
+
+    EXPECT_TRUE(linear_vels[i] >= 0.01);
+  }
+  EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
 }
 
 TEST_F(DriveOnHeadingActionTestFixture, test_failure)
