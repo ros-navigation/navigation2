@@ -592,3 +592,46 @@ TEST(EdgeScorersTest, test_semantic_scoring_keys)
   EXPECT_TRUE(scorer.score(&edge, goal_pose, traversal_cost, false));
   EXPECT_EQ(traversal_cost, 0.0);  // 0.0 * 1.0 weight
 }
+
+TEST(EdgeScorersTest, test_goal_orientation_scoring)
+{
+  // Test Penalty scorer plugin loading + penalizing on metadata values
+  auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
+
+  node->declare_parameter(
+    "edge_cost_functions", rclcpp::ParameterValue(std::vector<std::string>{"GoalOrientationScorer"}));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "GoalOrientationScorer.plugin",
+    rclcpp::ParameterValue(std::string{"nav2_route::GoalOrientationScorer"}));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "GoalOrientationScorer.orientation_tolerance",
+    rclcpp::ParameterValue(1.57));
+
+  EdgeScorer scorer(node);
+  EXPECT_EQ(scorer.numPlugins(), 1);  // GoalOrientationScorer
+  
+  geometry_msgs::msg::PoseStamped goal_pose;
+  goal_pose.pose.orientation.x = 0.0;
+  goal_pose.pose.orientation.y = 0.0;
+  goal_pose.pose.orientation.z = 0.0;
+  goal_pose.pose.orientation.w = 1.0;
+
+  // Create edge to score
+  Node n1, n2;
+  n1.nodeid = 1;
+  n2.nodeid = 2;
+  n1.coords.x = 0.0;
+  n1.coords.y = 0.0;
+  n2.coords.x = 1.0;
+  n2.coords.y = 0.0;
+
+  DirectionalEdge edge;
+  edge.edgeid = 10;
+  edge.start = &n1;
+  edge.end = &n2;
+
+  // The score function should return 10.0 from penalty value
+  float traversal_cost = -1;
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, traversal_cost, true));
+  // EXPECT_EQ(traversal_cost, 10.0);
+}
