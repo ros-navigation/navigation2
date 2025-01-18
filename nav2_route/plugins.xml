@@ -29,6 +29,11 @@
       <description>Cost function for adding costs to edges time to complete the edge based on previous runs and/or estimation with absolute speed limits.</description>
     </class>
   </library>
+  <library path="edge_scorers">
+    <class type="nav2_route::GoalOrientationScorer" base_class_type="nav2_route::EdgeCostFunction">
+      <description>Cost function for checking if the orientation of route matches orientation of the goal</description>
+    </class>
+  </library>
 
   <library path="route_operations">
     <class type="nav2_route::AdjustSpeedLimit" base_class_type="nav2_route::RouteOperation">
