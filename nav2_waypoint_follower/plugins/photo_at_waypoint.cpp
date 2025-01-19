@@ -119,7 +119,7 @@ bool PhotoAtWaypoint::processAtWaypoint(
     std::lock_guard<std::mutex> guard(global_mutex_);
     cv::Mat curr_frame_mat;
     deepCopyMsg2Mat(curr_frame_msg_, curr_frame_mat);
-    cv::imwrite(full_path_image_path.c_str(), curr_frame_mat);
+    cv::imwrite(full_path_image_path.string().c_str(), curr_frame_mat);
     RCLCPP_INFO(
       logger_,
       "Photo has been taken successfully at waypoint %i", curr_waypoint_index);
