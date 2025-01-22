@@ -60,7 +60,9 @@ EdgeScorer::EdgeScorer(nav2_util::LifecycleNode::SharedPtr node)
   }
 }
 
-bool EdgeScorer::score(const EdgePtr edge, const geometry_msgs::msg::PoseStamped goal_pose, float & total_score, bool final_edge)
+bool EdgeScorer::score(
+  const EdgePtr edge, const geometry_msgs::msg::PoseStamped & goal_pose,
+  bool final_edge, float & total_score)
 {
   total_score = 0.0;
   float curr_score = 0.0;
