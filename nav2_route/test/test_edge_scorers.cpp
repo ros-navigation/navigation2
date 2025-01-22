@@ -61,17 +61,17 @@ TEST(EdgeScorersTest, test_api)
   const geometry_msgs::msg::PoseStamped goal_pose;
 
   float traversal_cost = -1;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, traversal_cost, false));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
   EXPECT_EQ(traversal_cost, 0.0);  // Because nodes coords are 0/0
 
   n1.coords.x = 1.0;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, traversal_cost, false));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
   EXPECT_EQ(traversal_cost, 1.0);  // Distance is now 1m
 
   // For full coverage, add in a speed limit tag to make sure it is applied appropriately
   float speed_limit = 0.8f;
   edge.metadata.setValue<float>("speed_limit", speed_limit);
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, traversal_cost, false));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
   EXPECT_EQ(traversal_cost, 1.25);  // 1m / 0.8 = 1.25
 }
 
@@ -126,17 +126,17 @@ TEST(EdgeScorersTest, test_invalid_edge_scoring)
   edge.start = &n1;
   edge.end = &n2;
 
-  const geometry_msgs::msg::PoseStamped goal_pose; 
+  const geometry_msgs::msg::PoseStamped goal_pose;
 
   // The score function should return false since closed
   float traversal_cost = -1;
-  EXPECT_FALSE(scorer.score(&edge, goal_pose, traversal_cost, false));
+  EXPECT_FALSE(scorer.score(&edge, goal_pose, false, traversal_cost));
 
   // The score function should return true since no longer the problematic edge ID
   // and edgeid 42 as the dynamic cost of 42 assigned to it
   traversal_cost = -1;
   edge.edgeid = 11;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, traversal_cost, false));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
   EXPECT_EQ(traversal_cost, 42.0);
 
   // Try to re-open this edge
@@ -148,7 +148,7 @@ TEST(EdgeScorersTest, test_invalid_edge_scoring)
   // The score function should return true since now opened up
   traversal_cost = -1;
   edge.edgeid = 10;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, traversal_cost, false));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
 
   node_thread.reset();
 }
@@ -183,7 +183,7 @@ TEST(EdgeScorersTest, test_penalty_scoring)
 
   // The score function should return 10.0 from penalty value
   float traversal_cost = -1;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, traversal_cost, false));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
   EXPECT_EQ(traversal_cost, 10.0);
 }
 
@@ -216,7 +216,7 @@ TEST(EdgeScorersTest, test_costmap_scoring)
 
   // The score function should return false because no costmap given
   float traversal_cost = -1;
-  EXPECT_FALSE(scorer.score(&edge, goal_pose, traversal_cost, false));
+  EXPECT_FALSE(scorer.score(&edge, goal_pose, false, traversal_cost));
 
   // Create a demo costmap: * = 100, - = 0, / = 254
   // * * * * - - - - - - - -
@@ -256,7 +256,7 @@ TEST(EdgeScorersTest, test_costmap_scoring)
   n2.coords.x = 8.0;
   n2.coords.y = 8.0;
   traversal_cost = -1;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, traversal_cost, false));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
   // Segment in freespace
   EXPECT_EQ(traversal_cost, 0.0);
 
@@ -265,7 +265,7 @@ TEST(EdgeScorersTest, test_costmap_scoring)
   n2.coords.x = 2.0;
   n2.coords.y = 8.0;
   traversal_cost = -1;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, traversal_cost, false));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
   // Segment in 100 space
   EXPECT_NEAR(traversal_cost, 100.0 / 254.0, 0.01);
 
@@ -275,14 +275,14 @@ TEST(EdgeScorersTest, test_costmap_scoring)
   n2.coords.y = 5.9;
   traversal_cost = -1;
   // Segment in lethal space, won't fill in
-  EXPECT_FALSE(scorer.score(&edge, goal_pose, traversal_cost, false));
+  EXPECT_FALSE(scorer.score(&edge, goal_pose, false, traversal_cost));
 
   n1.coords.x = 1.0;
   n1.coords.y = 1.0;
   n2.coords.x = 6.0;
   n2.coords.y = 1.0;
   traversal_cost = -1;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, traversal_cost, false));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
   // Segment in 0 and 100 space, use_max so 100 (normalized)
   EXPECT_NEAR(traversal_cost, 100.0 / 254.0, 0.01);
 
@@ -292,7 +292,7 @@ TEST(EdgeScorersTest, test_costmap_scoring)
   n2.coords.y = 11.0;
   traversal_cost = -1;
   // Off map, so invalid
-  EXPECT_FALSE(scorer.score(&edge, goal_pose, traversal_cost, false));
+  EXPECT_FALSE(scorer.score(&edge, goal_pose, false, traversal_cost));
 
   node_thread.reset();
 }
@@ -371,7 +371,7 @@ TEST(EdgeScorersTest, test_costmap_scoring_alt_profile)
   n2.coords.y = 11.0;
   float traversal_cost = -1;
   // Off map, so cannot score
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, traversal_cost, false));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
   EXPECT_EQ(traversal_cost, 0.0);
 
   n1.coords.x = 4.1;
@@ -380,7 +380,7 @@ TEST(EdgeScorersTest, test_costmap_scoring_alt_profile)
   n2.coords.y = 5.9;
   traversal_cost = -1;
   // Segment in lethal space, so score is maximum (1)
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, traversal_cost, false));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
   EXPECT_NEAR(traversal_cost, 1.0, 0.01);
 
   n1.coords.x = 1.0;
@@ -388,7 +388,7 @@ TEST(EdgeScorersTest, test_costmap_scoring_alt_profile)
   n2.coords.x = 6.0;
   n2.coords.y = 1.0;
   traversal_cost = -1;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, traversal_cost, false));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
   // Segment in 0 and 100 space, 3m @ 100, 2m @ 0, averaged is 60
   EXPECT_NEAR(traversal_cost, 60.0 / 254.0, 0.01);
 
@@ -426,26 +426,26 @@ TEST(EdgeScorersTest, test_time_scoring)
 
   // The score function should return 10.0 from time taken
   float traversal_cost = -1;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, traversal_cost, false));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
   EXPECT_EQ(traversal_cost, 10.0);  // 10.0 * 1.0 weight
 
   // Without time taken or abs speed limit set, uses default max speed of 0.5 m/s
   edge.metadata.data.clear();
   traversal_cost = -1;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, traversal_cost, false));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
   EXPECT_EQ(traversal_cost, 2.0);  // 1.0 m / 0.5 m/s * 1.0 weight
 
   // Use speed limit if set
   float speed_limit = 0.85;
   edge.metadata.setValue<float>("abs_speed_limit", speed_limit);
   traversal_cost = -1;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, traversal_cost, false));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
   EXPECT_NEAR(traversal_cost, 1.1764, 0.001);  // 1.0 m / 0.85 m/s * 1.0 weight
 
   // Still use time taken measurements if given first
   edge.metadata.setValue<float>("abs_time_taken", time_taken);
   traversal_cost = -1;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, traversal_cost, false));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
   EXPECT_EQ(traversal_cost, 10.0);  // 10.0 * 1.0 weight
 }
 
@@ -492,21 +492,21 @@ TEST(EdgeScorersTest, test_semantic_scoring_key)
 
   // Should fail, since both nothing under key `class` nor metadata set at all
   float traversal_cost = -1;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, traversal_cost, false));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
   EXPECT_EQ(traversal_cost, 0.0);  // nothing is set in semantics
 
   // Should be valid under the right key
   std::string test_n = "Test1";
   edge.metadata.setValue<std::string>("class", test_n);
   traversal_cost = -1;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, traversal_cost, false));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
   EXPECT_EQ(traversal_cost, 1.0);  // 1.0 * 1.0 weight
 
   test_n = "Test2";
   edge.metadata.setValue<std::string>("class", test_n);
   n2.metadata.setValue<std::string>("class", test_n);
   traversal_cost = -1;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, traversal_cost, false));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
   EXPECT_EQ(traversal_cost, 4.0);  // (2.0 + 2.0) * 1.0 weight
 
   // Cannot find, doesn't exist
@@ -514,7 +514,7 @@ TEST(EdgeScorersTest, test_semantic_scoring_key)
   edge.metadata.setValue<std::string>("class", test_n);
   n2.metadata.setValue<std::string>("class", test_n);
   traversal_cost = -1;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, traversal_cost, false));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
   EXPECT_EQ(traversal_cost, 0.0);  // 0.0 * 1.0 weight
 }
 
@@ -564,7 +564,7 @@ TEST(EdgeScorersTest, test_semantic_scoring_keys)
 
   // Should fail, since both nothing under key `class` nor metadata set at all
   float traversal_cost = -1;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, traversal_cost, false));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
   EXPECT_EQ(traversal_cost, 0.0);  // nothing is set in semantics
 
   // Should fail, since under the class key when the semantic key is empty string
@@ -572,7 +572,7 @@ TEST(EdgeScorersTest, test_semantic_scoring_keys)
   std::string test_n = "Test1";
   edge.metadata.setValue<std::string>("class", test_n);
   traversal_cost = -1;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, traversal_cost, false));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
   EXPECT_EQ(traversal_cost, 0.0);  // 0.0 * 1.0 weight
 
   // Should succeed, since now actual class is a key, not a value of the `class` key
@@ -580,7 +580,7 @@ TEST(EdgeScorersTest, test_semantic_scoring_keys)
   edge.metadata.setValue<std::string>(test_n, test_n);
   n2.metadata.setValue<std::string>(test_n, test_n);
   traversal_cost = -1;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, traversal_cost, false));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
   EXPECT_EQ(traversal_cost, 4.0);  // (2.0 + 2.0) * 1.0 weight
 
   // Cannot find, doesn't exist
@@ -589,7 +589,7 @@ TEST(EdgeScorersTest, test_semantic_scoring_keys)
   test_n = "Test4";
   edge.metadata.setValue<std::string>(test_n, test_n);
   traversal_cost = -1;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, traversal_cost, false));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
   EXPECT_EQ(traversal_cost, 0.0);  // 0.0 * 1.0 weight
 }
 
@@ -599,7 +599,8 @@ TEST(EdgeScorersTest, test_goal_orientation_scoring)
   auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
 
   node->declare_parameter(
-    "edge_cost_functions", rclcpp::ParameterValue(std::vector<std::string>{"GoalOrientationScorer"}));
+    "edge_cost_functions",
+    rclcpp::ParameterValue(std::vector<std::string>{"GoalOrientationScorer"}));
   nav2_util::declare_parameter_if_not_declared(
     node, "GoalOrientationScorer.plugin",
     rclcpp::ParameterValue(std::string{"nav2_route::GoalOrientationScorer"}));
@@ -609,7 +610,7 @@ TEST(EdgeScorersTest, test_goal_orientation_scoring)
 
   EdgeScorer scorer(node);
   EXPECT_EQ(scorer.numPlugins(), 1);  // GoalOrientationScorer
-  
+
   geometry_msgs::msg::PoseStamped goal_pose;
   goal_pose.pose.orientation.x = 0.0;
   goal_pose.pose.orientation.y = 0.0;
@@ -630,8 +631,13 @@ TEST(EdgeScorersTest, test_goal_orientation_scoring)
   edge.start = &n1;
   edge.end = &n2;
 
-  // The score function should return 10.0 from penalty value
   float traversal_cost = -1;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, traversal_cost, true));
-  // EXPECT_EQ(traversal_cost, 10.0);
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, true, traversal_cost));
+  EXPECT_EQ(traversal_cost, -1);
+
+  edge.start = &n2;
+  edge.end = &n1;
+
+  EXPECT_FALSE(scorer.score(&edge, goal_pose, true, traversal_cost));
+  EXPECT_EQ(traversal_cost, -1);
 }
