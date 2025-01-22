@@ -38,7 +38,7 @@ void PenaltyScorer::configure(
   weight_ = static_cast<float>(node->get_parameter(getName() + ".weight").as_double());
 }
 
-bool PenaltyScorer::score(const EdgePtr edge, float & cost)
+bool PenaltyScorer::score(const EdgePtr edge, const geometry_msgs::msg::PoseStamped & /* goal_pose */, bool /* final_edge */, float & cost)
 {
   // Get the speed limit, if set for an edge
   float penalty_val = 0.0f;

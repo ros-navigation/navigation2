@@ -22,6 +22,7 @@
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "nav2_route/types.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
 
 namespace nav2_route
 {
@@ -61,7 +62,7 @@ public:
    * @param edge The edge pointer to score, which has access to the
    * start/end nodes and their associated metadata and actions
    */
-  virtual bool score(const EdgePtr edge, float & cost) = 0;
+  virtual bool score(const EdgePtr edge, const geometry_msgs::msg::PoseStamped & goal_pose, bool final_edge, float & cost) = 0;
 
   /**
    * @brief Get name of the plugin for parameter scope mapping
