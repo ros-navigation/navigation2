@@ -26,13 +26,14 @@
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2/utils.h"
+#include "angles/angles.h"
 
 namespace nav2_route
 {
 
 /**
  * @class GoalOrientationScorer
- * @brief Scores final edge by comparing the 
+ * @brief Scores final edge by comparing the
  */
 class GoalOrientationScorer : public EdgeCostFunction
 {
@@ -61,7 +62,9 @@ public:
    * @param cost of the edge scored
    * @return bool if this edge is open valid to traverse
    */
-  bool score(const EdgePtr edge, const geometry_msgs::msg::PoseStamped goal_pose, float & cost, bool final_edge) override;
+  bool score(
+    const EdgePtr edge, const geometry_msgs::msg::PoseStamped goal_pose, float & cost,
+    bool final_edge) override;
 
   /**
    * @brief Get name of the plugin for parameter scope mapping
