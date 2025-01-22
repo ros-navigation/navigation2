@@ -62,7 +62,7 @@ public:
    * @param edge The edge pointer to score, which has access to the
    * start/end nodes and their associated metadata and actions
    */
-  virtual bool score(const EdgePtr edge, const geometry_msgs::msg::PoseStamped goal_pose, float & cost, bool final_edge) = 0;
+  virtual bool score(const EdgePtr edge, const geometry_msgs::msg::PoseStamped & goal_pose, bool final_edge, float & cost) = 0;
 
   /**
    * @brief Get name of the plugin for parameter scope mapping

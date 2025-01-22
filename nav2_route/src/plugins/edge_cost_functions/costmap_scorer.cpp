@@ -74,7 +74,7 @@ void CostmapScorer::prepare()
 
 // TODO(sm) does this critic make efficiency sense at a
 // reasonable sized graph / node distance? Lower iterator density?
-bool CostmapScorer::score(const EdgePtr edge, const geometry_msgs::msg::PoseStamped /* goal_pose */, float & cost, bool /* final_edge */)
+bool CostmapScorer::score(const EdgePtr edge, const geometry_msgs::msg::PoseStamped & /* goal_pose */, bool /* final_edge */, float & cost)
 {
   if (!costmap_) {
     RCLCPP_WARN(logger_, "No costmap yet received!");

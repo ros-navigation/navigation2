@@ -73,7 +73,7 @@ bool EdgeScorer::score(
 
   for (auto & plugin : plugins_) {
     curr_score = 0.0;
-    if (plugin->score(edge, goal_pose, curr_score, final_edge)) {
+    if (plugin->score(edge, goal_pose, final_edge, curr_score)) {
       total_score += curr_score;
     } else {
       return false;

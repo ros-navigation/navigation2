@@ -69,7 +69,7 @@ void SemanticScorer::metadataValueScorer(Metadata & mdata, float & score)
   }
 }
 
-bool SemanticScorer::score(const EdgePtr edge, const geometry_msgs::msg::PoseStamped /* goal_pose */, float & cost, bool /* final_edge */)
+bool SemanticScorer::score(const EdgePtr edge, const geometry_msgs::msg::PoseStamped & /* goal_pose */, bool /* final_edge */, float & cost)
 {
   float score = 0.0;
   Metadata & node_mdata = edge->end->metadata;

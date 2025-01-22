@@ -29,14 +29,13 @@ void GoalOrientationScorer::configure(
   logger_ = node->get_logger();
 
   nav2_util::declare_parameter_if_not_declared(
-    node, getName() + ".orientation_tolerance", rclcpp::ParameterValue(M_PI));
+    node, getName() + ".orientation_tolerance", rclcpp::ParameterValue(M_PI/2.0));
   orientation_tolerance_ = node->get_parameter(getName() + ".orientation_tolerance").as_double();
 }
 
 bool GoalOrientationScorer::score(
   const EdgePtr edge,
-  const geometry_msgs::msg::PoseStamped goal_pose, float & /*cost*/,
-  bool final_edge)
+  const geometry_msgs::msg::PoseStamped & goal_pose, bool final_edge, float & /*cost*/)
 {
   if (final_edge) {
     double edge_orientation = std::atan2(
