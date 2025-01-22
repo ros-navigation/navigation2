@@ -29,26 +29,25 @@ void GoalOrientationScorer::configure(
   logger_ = node->get_logger();
 
   nav2_util::declare_parameter_if_not_declared(
-    node, getName() + ".orientation_tolerance", rclcpp::ParameterValue(2*M_PI));
+    node, getName() + ".orientation_tolerance", rclcpp::ParameterValue(M_PI));
   orientation_tolerance_ = node->get_parameter(getName() + ".orientation_tolerance").as_double();
-
 }
 
-bool GoalOrientationScorer::score(const EdgePtr edge, const geometry_msgs::msg::PoseStamped goal_pose, float & cost, bool final_edge)
+bool GoalOrientationScorer::score(
+  const EdgePtr edge,
+  const geometry_msgs::msg::PoseStamped goal_pose, float & /*cost*/,
+  bool final_edge)
 {
-  if(final_edge){
+  if (final_edge) {
+    double edge_orientation = std::atan2(
+      edge->end->coords.y - edge->start->coords.y,
+      edge->end->coords.x - edge->start->coords.x);
+    double goal_orientation = tf2::getYaw(goal_pose.pose.orientation);
+    double d_yaw = std::abs(angles::shortest_angular_distance(edge_orientation, goal_orientation));
 
-    double d_yaw = std::abs(std::atan2(edge->end->coords.y - edge->start->coords.y, edge->end->coords.x - edge->start->coords.x)-tf2::getYaw(goal_pose.pose.orientation));
-
-    if(d_yaw > M_PI){
-      d_yaw = 2*M_PI-d_yaw;
-    }
-
-    if(d_yaw > orientation_tolerance_){
-      cost = 255.0;
+    if (d_yaw > orientation_tolerance_) {
       return false;
     }
-
   }
   return true;
 }
