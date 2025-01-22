@@ -40,7 +40,7 @@ void RoutePlanner::configure(nav2_util::LifecycleNode::SharedPtr node)
 Route RoutePlanner::findRoute(
   Graph & graph, unsigned int start_index, unsigned int goal_index,
   const std::vector<unsigned int> & blocked_ids,
-  geometry_msgs::msg::PoseStamped goal_pose)
+  const geometry_msgs::msg::PoseStamped & goal_pose)
 {
   if (graph.empty()) {
     throw nav2_core::NoValidGraph("Graph is invalid for routing!");
@@ -83,7 +83,7 @@ void RoutePlanner::resetSearchStates(Graph & graph)
 void RoutePlanner::findShortestGraphTraversal(
   Graph & graph, const NodePtr start_node, const NodePtr goal_node,
   const std::vector<unsigned int> & blocked_ids,
-  geometry_msgs::msg::PoseStamped goal_pose)
+  const geometry_msgs::msg::PoseStamped & goal_pose)
 {
   // Setup the Dijkstra's search
   resetSearchStates(graph);
@@ -141,7 +141,8 @@ void RoutePlanner::findShortestGraphTraversal(
 }
 
 bool RoutePlanner::getTraversalCost(
-  const EdgePtr edge, float & score, const std::vector<unsigned int> & blocked_ids, const geometry_msgs::msg::PoseStamped goal)
+  const EdgePtr edge, float & score, const std::vector<unsigned int> & blocked_ids,
+  const geometry_msgs::msg::PoseStamped & goal)
 {
   // If edge or node is in the blocked list, as long as its not blocking the goal itself
   auto idBlocked = [&](unsigned int id) {return id == edge->edgeid || id == edge->end->nodeid;};
@@ -160,7 +161,7 @@ bool RoutePlanner::getTraversalCost(
     return true;
   }
 
-  return edge_scorer_->score(edge, goal, score, isGoal(edge->end));
+  return edge_scorer_->score(edge, goal, isGoal(edge->end), score);
 }
 
 NodeElement RoutePlanner::getNextNode()
