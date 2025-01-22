@@ -12,11 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <rclcpp/qos.hpp>
 #include <string>
 #include <memory>
 #include <vector>
 
+#include "nav2_core/planner_exceptions.hpp"
+#include "nav2_costmap_2d/cost_values.hpp"
+#include "nav2_costmap_2d/costmap_2d.hpp"
+#include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "nav2_route/goal_intent_extractor.hpp"
+#include "nav2_util/node_utils.hpp"
+#include "nav_msgs/msg/occupancy_grid.hpp"
 
 namespace nav2_route
 {
@@ -32,13 +39,12 @@ void GoalIntentExtractor::configure(
   const std::string & base_frame)
 {
   logger_ = node->get_logger();
+  clock_ = node->get_clock();
   id_to_graph_map_ = id_to_graph_map;
   graph_ = &graph;
   tf_ = tf;
   route_frame_ = route_frame;
   base_frame_ = base_frame;
-  node_spatial_tree_ = std::make_shared<NodeSpatialTree>();
-  node_spatial_tree_->computeTree(graph);
 
   nav2_util::declare_parameter_if_not_declared(
     node, "prune_goal", rclcpp::ParameterValue(true));
@@ -53,6 +59,63 @@ void GoalIntentExtractor::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, "min_dist_from_start", rclcpp::ParameterValue(0.10));
   min_dist_from_start_ = static_cast<float>(node->get_parameter("min_dist_from_start").as_double());
+
+  nav2_util::declare_parameter_if_not_declared(
+    node, "num_of_nearest_nodes", rclcpp::ParameterValue(3));
+  int num_of_nearest_nodes = node->get_parameter("num_of_nearest_nodes").as_int();
+
+  node_spatial_tree_ = std::make_shared<NodeSpatialTree>(num_of_nearest_nodes);
+  node_spatial_tree_->computeTree(graph);
+
+  nav2_util::declare_parameter_if_not_declared(
+    node, "enable_search", rclcpp::ParameterValue(false));
+  enable_search_ = node->get_parameter("enable_search").as_bool();
+
+  route_start_pose_pub_ = 
+    node->create_publisher<geometry_msgs::msg::PoseStamped>(
+    "route_start_pose", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+
+  route_goal_pose_pub_ = 
+    node->create_publisher<geometry_msgs::msg::PoseStamped>(
+    "route_goal_pose", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+
+  if (enable_search_) {
+    nav2_util::declare_parameter_if_not_declared(
+      node, "use_closest_node_on_search_failure", rclcpp::ParameterValue(true));
+    use_closest_node_on_search_failure_ = node->get_parameter("use_closest_node_on_search_failure").as_bool();
+
+    std::string costmap_topic;
+    nav2_util::declare_parameter_if_not_declared(
+      node, "costmap_topic",
+      rclcpp::ParameterValue(std::string("global_costmap/costmap_raw")));
+    node->get_parameter("costmap_topic", costmap_topic);
+
+    nav2_util::declare_parameter_if_not_declared(
+      node, "max_iterations", rclcpp::ParameterValue(10000));
+    max_iterations_ = node->get_parameter("max_iterations").as_int();
+
+    nav2_util::declare_parameter_if_not_declared(
+      node, "enable_search_viz", rclcpp::ParameterValue(true));
+    enable_search_viz_ = node->get_parameter("enable_search_viz").as_bool();
+
+    costmap_sub_ =
+      std::make_unique<nav2_costmap_2d::CostmapSubscriber>(node, costmap_topic);
+    ds_ = std::make_unique<DijkstraSearch>();
+    start_expansion_viz_ = node->create_publisher<nav_msgs::msg::OccupancyGrid>(
+      "start_expansions",
+      1);
+    goal_expansion_viz_ =
+      node->create_publisher<nav_msgs::msg::OccupancyGrid>("goal_expansions", 1);
+  }
+}
+
+void GoalIntentExtractor::initialize()
+{
+  if (enable_search_) {
+    costmap_ = costmap_sub_->getCostmap();
+    ds_->initialize(costmap_, max_iterations_);
+    costmap_frame_ = costmap_sub_->getFrameID();
+  }
 }
 
 void GoalIntentExtractor::setGraph(Graph & graph, GraphToIDMap * id_to_graph_map)
@@ -62,15 +125,16 @@ void GoalIntentExtractor::setGraph(Graph & graph, GraphToIDMap * id_to_graph_map
 }
 
 geometry_msgs::msg::PoseStamped GoalIntentExtractor::transformPose(
-  geometry_msgs::msg::PoseStamped & pose)
+  geometry_msgs::msg::PoseStamped & pose,
+  const std::string & frame_id)
 {
-  if (pose.header.frame_id != route_frame_) {
+  if (pose.header.frame_id != frame_id) {
     RCLCPP_INFO(
       logger_,
       "Request pose in %s frame. Converting to route server frame: %s.",
       pose.header.frame_id.c_str(), route_frame_.c_str());
-    if (!nav2_util::transformPoseInTargetFrame(pose, pose, *tf_, route_frame_)) {
-      throw nav2_core::RouteTFError("Failed to transform starting pose to: " + route_frame_);
+    if (!nav2_util::transformPoseInTargetFrame(pose, pose, *tf_, frame_id)) {
+      throw nav2_core::RouteTFError("Failed to transform pose to: " + frame_id);
     }
   }
   return pose;
@@ -108,21 +172,56 @@ GoalIntentExtractor::findStartandGoal(const std::shared_ptr<const GoalT> goal)
     }
   }
 
-  // transform to route_frame
-  start_ = transformPose(start_pose);
-  goal_ = transformPose(goal_pose);
+  route_start_pose_pub_->publish(start_pose);
+  route_goal_pose_pub_->publish(goal_pose);
+
+  start_ = transformPose(start_pose, route_frame_);
+  goal_ = transformPose(goal_pose, route_frame_);
 
   // Find closest route graph nodes to start and goal to plan between.
   // Note that these are the location indices in the graph
-  unsigned int start_route = 0, end_route = 0;
-  if (!node_spatial_tree_->findNearestGraphNodeToPose(start_, start_route) ||
-    !node_spatial_tree_->findNearestGraphNodeToPose(goal_, end_route))
+  std::vector<unsigned int> start_route_ids, end_route_ids;
+  if (!node_spatial_tree_->findNearestGraphNodesToPose(start_, start_route_ids) ||
+    !node_spatial_tree_->findNearestGraphNodesToPose(goal_, end_route_ids))
   {
     throw nav2_core::IndeterminantNodesOnGraph(
             "Could not determine node closest to start or goal pose requested!");
   }
 
-  return {start_route, end_route};
+  if (enable_search_) {
+    costmap_ = costmap_sub_->getCostmap();
+
+    unsigned int valid_start_route_id;
+    try {
+      valid_start_route_id = associatePoseWithGraphNode(start_route_ids, start_);
+    } catch (nav2_core::PlannerException &ex) {
+      if(use_closest_node_on_search_failure_) {
+        RCLCPP_WARN(logger_, "Node association failed to find start id. Using closeset node");
+        return {start_route_ids.front(), end_route_ids.front()};
+      }
+      throw ex;
+    }
+
+    visualizeExpansions(start_expansion_viz_);
+    ds_->clearGraph();
+
+    unsigned int valid_end_route_id;
+    try {
+      valid_end_route_id = associatePoseWithGraphNode(end_route_ids, goal_);
+    } catch (nav2_core::PlannerException &ex) {
+      if(use_closest_node_on_search_failure_) {
+        RCLCPP_WARN(logger_, "Node association failed to find end id. Using closeset node");
+        return {start_route_ids.front(), end_route_ids.front()};
+      }
+      throw ex;
+    }
+    visualizeExpansions(goal_expansion_viz_);
+    ds_->clearGraph();
+
+    return {valid_start_route_id, valid_end_route_id};
+  }
+
+  return {start_route_ids.front(), end_route_ids.front()};
 }
 
 template<typename GoalT>
@@ -191,6 +290,104 @@ Route GoalIntentExtractor::pruneStartandGoal(
   }
 
   return pruned_route;
+}
+
+unsigned int GoalIntentExtractor::associatePoseWithGraphNode(
+  std::vector<unsigned int> node_indices,
+  geometry_msgs::msg::PoseStamped & pose)
+{ 
+  auto pose_transformed = transformPose(pose, costmap_frame_);
+  unsigned int s_mx, s_my, g_mx, g_my;
+  if (!costmap_->worldToMap(
+      pose_transformed.pose.position.x, pose_transformed.pose.position.y,
+      s_mx, s_my))
+  {
+    throw nav2_core::StartOutsideMapBounds(
+            "Start Coordinates of(" + std::to_string(pose_transformed.pose.position.x) + ", " +
+            std::to_string(pose_transformed.pose.position.y) + ") was outside bounds");
+  }
+
+  auto cost = costmap_->getCost(s_mx, s_my);
+  if (cost == nav2_costmap_2d::LETHAL_OBSTACLE ||
+      cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE) {
+    throw nav2_core::StartOccupied("Start was in lethal cost");
+ }
+
+  std::vector<unsigned int> valid_node_indices;
+  std::vector<nav2_costmap_2d::MapLocation> goals;
+  for (const auto & node_index : node_indices) {
+    geometry_msgs::msg::PoseStamped route_goal;
+    geometry_msgs::msg::PoseStamped goal;
+    auto node = graph_->at(node_index);
+    route_goal.pose.position.x = node.coords.x;
+    route_goal.pose.position.y = node.coords.y;
+    route_goal.header.frame_id = node.coords.frame_id;
+    goal = transformPose(route_goal, costmap_frame_);
+
+    float goal_x = goal.pose.position.x;
+    float goal_y = goal.pose.position.y;
+    if (!costmap_->worldToMap(goal_x, goal_y, g_mx, g_my)) {
+      RCLCPP_WARN_STREAM(
+        logger_, "Goal coordinate of(" + std::to_string(goal_x) + ", " +
+        std::to_string(goal_y) + ") was outside bounds. Removing from goal list");
+      continue;
+    }
+
+    if (costmap_->getCost(g_mx, g_my) == nav2_costmap_2d::LETHAL_OBSTACLE) {
+      RCLCPP_WARN_STREAM(
+        logger_, "Goal corrdinate of(" + std::to_string(goal_x) + ", " +
+        std::to_string(goal_y) + ") was in lethal cost. Removing from goal list.");
+      continue;
+    }
+    valid_node_indices.push_back(node_index);
+    goals.push_back({g_mx, g_my});
+  }
+
+  if (goals.empty()) {
+    RCLCPP_WARN(logger_, "All goals for association were invalid");
+    throw nav2_core::PlannerException("All goals were invalid");
+  }
+
+  ds_->clearGraph();
+  ds_->setStart(s_mx, s_my);
+  ds_->setGoals(goals);
+  if (ds_->isFirstGoalVisible()) {
+    // The visiblity check only validates the first node in goal array
+    return valid_node_indices.front();
+  }
+  RCLCPP_WARN(logger_, "Visability Check failed");
+
+  unsigned int goal;
+  ds_->search(goal);
+
+  return valid_node_indices[goal];
+}
+
+void GoalIntentExtractor::visualizeExpansions(
+  rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr occ_grid_pub)
+{
+  if (!enable_search_viz_) {
+    return;
+  }
+
+  nav_msgs::msg::OccupancyGrid occ_grid_msg;
+  unsigned int width = costmap_->getSizeInCellsX();
+  unsigned int height = costmap_->getSizeInCellsY();
+  occ_grid_msg.header.frame_id = "map";
+  occ_grid_msg.info.resolution = costmap_->getResolution();
+  occ_grid_msg.info.width = width;
+  occ_grid_msg.info.height = height;
+  occ_grid_msg.info.origin.position.x = costmap_->getOriginX();
+  occ_grid_msg.info.origin.position.y = costmap_->getOriginY();
+  occ_grid_msg.info.origin.orientation.w = 1.0;
+  occ_grid_msg.data.assign(width * height, 0);
+
+  auto graph = ds_->getGraph();
+
+  for (const auto & node : *graph) {
+    occ_grid_msg.data[node.first] = 100;
+  }
+  occ_grid_pub->publish(occ_grid_msg);
 }
 
 template Route GoalIntentExtractor::pruneStartandGoal<nav2_msgs::action::ComputeRoute::Goal>(

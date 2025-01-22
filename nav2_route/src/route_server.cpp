@@ -13,6 +13,7 @@
 // limitations under the License. Reserved.
 
 #include "nav2_route/route_server.hpp"
+#include "nav2_core/planner_exceptions.hpp"
 
 using nav2_util::declare_parameter_if_not_declared;
 using std::placeholders::_1;
@@ -41,6 +42,7 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   graph_vis_publisher_ =
     node->create_publisher<visualization_msgs::msg::MarkerArray>(
     "route_graph", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+
 
   compute_route_server_ = std::make_shared<ComputeRouteServer>(
     node, "compute_route",
@@ -100,6 +102,7 @@ nav2_util::CallbackReturn
 RouteServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
+  goal_intent_extractor_->initialize();
   compute_route_server_->activate();
   compute_and_track_route_server_->activate();
   graph_vis_publisher_->on_activate();
@@ -296,6 +299,27 @@ RouteServer::processRouteRequest(
   } catch (nav2_core::RouteException & ex) {
     exceptionWarning(goal, ex);
     result->error_code = ActionT::Goal::UNKNOWN;
+    action_server->terminate_current(result);
+  } catch (nav2_core::StartOccupied & ex) {
+    result->error_code = ActionT::Goal::START_OCCUPIED;
+    action_server->terminate_current(result);
+  } catch (nav2_core::GoalOccupied & ex) {
+    result->error_code = ActionT::Goal::GOAL_OCCUPIED;
+    action_server->terminate_current(result);
+  } catch (nav2_core::NoValidPathCouldBeFound & ex) {
+    result->error_code = ActionT::Goal::NO_VALID_PATH;
+    action_server->terminate_current(result);
+  } catch (nav2_core::PlannerTimedOut & ex) {
+    result->error_code = ActionT::Goal::TIMEOUT;
+    action_server->terminate_current(result);
+  } catch (nav2_core::StartOutsideMapBounds & ex) {
+    result->error_code = ActionT::Goal::START_OUTSIDE_MAP;
+    action_server->terminate_current(result);
+  } catch (nav2_core::GoalOutsideMapBounds & ex) {
+    result->error_code = ActionT::Goal::GOAL_OUTSIDE_MAP;
+    action_server->terminate_current(result);
+  } catch (nav2_core::PlannerTFError & ex) {
+    result->error_code = ActionT::Goal::TF_ERROR;
     action_server->terminate_current(result);
   } catch (std::exception & ex) {
     exceptionWarning(goal, ex);

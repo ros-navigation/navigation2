@@ -16,6 +16,7 @@
 from geometry_msgs.msg import PoseStamped
 from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 import rclpy
+import time
 from rclpy.duration import Duration
 
 """
@@ -67,6 +68,8 @@ def main():
     goal_pose.pose.position.x = -4.11
     goal_pose.pose.position.y = -5.42
     goal_pose.pose.orientation.w = 1.0
+
+    while(True):
 
     # Sanity check a valid route exists using PoseStamped.
     # May also use NodeIDs on the graph if they are known by passing them instead as `int`

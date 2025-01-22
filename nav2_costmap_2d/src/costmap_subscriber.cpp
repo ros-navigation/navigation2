@@ -52,7 +52,15 @@ std::shared_ptr<Costmap2D> CostmapSubscriber::getCostmap()
   toCostmap2D();
   return costmap_;
 }
-
+std::string CostmapSubscriber::getFrameID()
+{
+  if (!costmap_received_) {
+    throw std::runtime_error("Costmap is not available");
+  }
+  auto current_costmap_msg = std::atomic_load(&costmap_msg_);
+  return current_costmap_msg->header.frame_id;
+}
+  
 void CostmapSubscriber::toCostmap2D()
 {
   auto current_costmap_msg = std::atomic_load(&costmap_msg_);

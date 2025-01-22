@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <ament_index_cpp/get_package_prefix.hpp>
 #include <memory>
 
 #include "nav2_route/graph_loader.hpp"
@@ -32,7 +33,9 @@ GraphLoader::GraphLoader(
   route_frame_ = frame;
 
   nav2_util::declare_parameter_if_not_declared(
-    node, "graph_filepath", rclcpp::ParameterValue(std::string("")));
+    node, "graph_filepath", rclcpp::ParameterValue(
+     ament_index_cpp::get_package_share_directory("nav2_route") +
+     "/graphs/aws_graph.geojson"));
   graph_filepath_ = node->get_parameter("graph_filepath").as_string();
 
   // Default Graph Parser

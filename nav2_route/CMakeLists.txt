@@ -54,6 +54,7 @@ add_library(${library_name} SHARED
   src/path_converter.cpp
   src/graph_loader.cpp
   src/goal_intent_extractor.cpp
+  src/dijkstra_search.cpp
 )
 
 ament_target_dependencies(${library_name}
@@ -120,7 +121,10 @@ install(TARGETS ${executable_name}
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
-install(TARGETS ${library_name} edge_scorers route_operations graph_file_loaders
+install(TARGETS ${library_name}
+    edge_scorers
+    route_operations
+    graph_file_loaders
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -139,5 +143,9 @@ endif()
 
 ament_export_include_directories(include)
 ament_export_dependencies(${dependencies})
-ament_export_libraries(${library_name} edge_scorers route_operations graph_file_loaders)
+ament_export_libraries(${library_name}
+    edge_scorers
+    route_operations
+    graph_file_loaders
+)
 ament_package()
