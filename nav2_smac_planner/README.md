@@ -19,6 +19,10 @@ We have users reporting using this on:
 
 See its [Configuration Guide Page](https://docs.nav2.org/configuration/packages/configuring-smac-planner.html) for additional parameter descriptions.
 
+Want to learn more? Checkout the ROSCon 2022 talk on the Smac Planner by clicking on the image below!
+
+[![IMAGE ALT TEXT](https://github.com/user-attachments/assets/95717450-2ff8-4576-ae38-88e7f266e8c6)](https://vimeo.com/showcase/9954564/video/767157646)
+
 ## Introduction
 
 The `nav2_smac_planner` package contains an optimized templated A* search algorithm used to create multiple A\*-based planners for multiple types of robot platforms. It was built by [Steve Macenski](https://www.linkedin.com/in/steve-macenski-41a985101/) while at [Samsung Research](https://www.sra.samsung.com/). We support **circular** differential-drive and omni-directional drive robots using the `SmacPlanner2D` planner which implements a cost-aware A\* planner. We support **legged, cars, car-like, and ackermann vehicles** using the `SmacPlannerHybrid` plugin which implements a Hybrid-A\* planner.  We support **non-circular, arbitrary shaped, any model vehicles** using the `SmacPlannerLattice` plugin which implements a State Lattice planner. It contains control sets and generators for ackermann, legged, differential drive and omnidirectional vehicles, but you may provide your own for another robot type or to have different planning behaviors. The last two plugins are also useful for curvature constrained or kinematically feasible planning, like when planning robot at high speeds to make sure they don't flip over or otherwise skid out of control. It is also applicable to non-round robots (such as large rectangular or arbitrary shaped robots of differential/omnidirectional drivetrains) that need pose-based collision checking.

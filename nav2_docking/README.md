@@ -17,6 +17,11 @@ This is split into 4 packages
 
 Click on the image above to see an extended video of docking in action.
 
+Want to learn more? Checkout the ROSCon 2024 talk on Docking by clicking on the image below!
+
+[![IMAGE ALT TEXT](https://github.com/user-attachments/assets/468bb49c-87de-4c9e-83a8-ad6f14bbd6d3)](https://vimeo.com/1024971348)
+
+
 ## Architecture
 
 The Docking Framework has 5 main components:

@@ -15,6 +15,7 @@
 #include <memory>
 #include <mutex>
 
+#include "angles/angles.h"
 #include "nav2_core/controller_exceptions.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_graceful_controller/graceful_controller.hpp"
@@ -61,7 +62,7 @@ void GracefulController::configure(
   // Publishers
   transformed_plan_pub_ = node->create_publisher<nav_msgs::msg::Path>("transformed_global_plan", 1);
   local_plan_pub_ = node->create_publisher<nav_msgs::msg::Path>("local_plan", 1);
-  motion_target_pub_ = node->create_publisher<geometry_msgs::msg::PointStamped>("motion_target", 1);
+  motion_target_pub_ = node->create_publisher<geometry_msgs::msg::PoseStamped>("motion_target", 1);
   slowdown_pub_ = node->create_publisher<visualization_msgs::msg::Marker>("slowdown", 1);
 
   RCLCPP_INFO(logger_, "Configured Graceful Motion Controller: %s", plugin_name_.c_str());
@@ -233,8 +234,7 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
     if (simulateTrajectory(target_pose, costmap_transform, local_plan, cmd_vel, reversing)) {
       // Successfully simulated to target_pose - compute velocity at this moment
       // Publish the selected target_pose
-      auto motion_target_point = nav2_graceful_controller::createMotionTargetMsg(target_pose);
-      motion_target_pub_->publish(motion_target_point);
+      motion_target_pub_->publish(target_pose);
       // Publish marker for slowdown radius around motion target for debugging / visualization
       auto slowdown_marker = nav2_graceful_controller::createSlowdownMarker(
         target_pose, params_->slowdown_radius);
@@ -426,12 +426,15 @@ void GracefulController::computeDistanceAlongPath(
 void GracefulController::validateOrientations(
   std::vector<geometry_msgs::msg::PoseStamped> & path)
 {
-  // This really shouldn't happen
-  if (path.empty()) {return;}
+  // We never change the orientation of the first & last pose
+  // So we need at least three poses to do anything here
+  if (path.size() < 3) {return;}
 
   // Check if we actually need to add orientations
-  for (size_t i = 1; i < path.size() - 1; ++i) {
-    if (tf2::getYaw(path[i].pose.orientation) != 0.0) {return;}
+  double initial_yaw = tf2::getYaw(path[1].pose.orientation);
+  for (size_t i = 2; i < path.size() - 1; ++i) {
+    double this_yaw = tf2::getYaw(path[i].pose.orientation);
+    if (angles::shortest_angular_distance(this_yaw, initial_yaw) > 1e-6) {return;}
   }
 
   // For each pose, point at the next one

@@ -35,3 +35,8 @@ repositories:
     type: git
     url:  https://github.com/ros-navigation/nav2_minimal_turtlebot_simulation.git
     version: 091b5ff12436890a54de6325df3573ae110e912b
+  ros/common_interfaces:
+    type: git
+    url:  https://github.com/ros2/common_interfaces.git
+    version: rolling
+

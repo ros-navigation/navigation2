@@ -293,6 +293,7 @@ private:
   uint64_t _index;
   bool _was_visited;
   bool _is_queued;
+  bool _in_collision{false};
 };
 
 }  // namespace nav2_smac_planner

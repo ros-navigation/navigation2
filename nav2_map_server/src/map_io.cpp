@@ -46,8 +46,8 @@
 
 #include "yaml-cpp/yaml.h"
 
-#include "tf2/LinearMath/Matrix3x3.h"
-#include "tf2/LinearMath/Quaternion.h"
+#include "tf2/LinearMath/Matrix3x3.hpp"
+#include "tf2/LinearMath/Quaternion.hpp"
 #include "nav2_util/occ_grid_values.hpp"
 
 #ifdef _WIN32

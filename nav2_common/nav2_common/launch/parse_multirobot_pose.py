@@ -12,66 +12,55 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
 from typing import Dict, Text
 
+import launch
+from launch.launch_context import LaunchContext
 import yaml
 
 
-class ParseMultiRobotPose:
-    """Parsing argument using sys module."""
+class ParseMultiRobotPose(launch.Substitution):
+    """
+    A custom substitution to parse the robots argument for multi-robot poses.
 
-    def __init__(self, target_argument: Text):
-        """
-        Parse arguments for multi-robot's pose.
+    Expects input in the format:
+    robots:="robot1={x: 1.0, y: 1.0, yaw: 0.0};
+             robot2={x: 1.0, y: 1.0, z: 1.0, roll: 0.0, pitch: 1.5707, yaw: 1.5707}"`
 
-        for example,
-        `ros2 launch nav2_bringup bringup_multirobot_launch.py
-            robots:="robot1={x: 1.0, y: 1.0, yaw: 0.0};
-                     robot2={x: 1.0, y: 1.0, z: 1.0, roll: 0.0, pitch: 1.5707, yaw: 1.5707}"`
+    The individual robots are separated by a `;` and each robot consists of a name and pose object.
+    The name corresponds to the namespace of the robot and name of the Gazebo object.
+    The pose consists of X, Y, Z, Roll, Pitch, Yaw each of which can be omitted in which case it is
+    inferred as 0.
+    """
 
-        `target_argument` shall be 'robots'.
-        Then, this will parse a string value for `robots` argument.
+    def __init__(self, robots_argument: launch.SomeSubstitutionsType) -> None:
+        super().__init__()
+        self.__robots_argument = robots_argument
 
-        Each robot name which corresponds to namespace and pose of it will be separated by `;`.
-        The pose consists of x, y and yaw with YAML format.
-
-        :param: target argument name to parse
-        """
-        self.__args: Text = self.__parse_argument(target_argument)
-
-    def __parse_argument(self, target_argument: Text) -> Text:
-        """Get value of target argument."""
-        if len(sys.argv) > 4:
-            argv = sys.argv[4:]
-            for arg in argv:
-                if arg.startswith(target_argument + ':='):
-                    return arg.replace(target_argument + ':=', '')
+    def describe(self) -> Text:
+        """Return a description of this substitution as a string."""
         return ''
 
-    def value(self) -> Dict:
-        """Get value of target argument."""
-        args = self.__args
-        parsed_args = [] if len(args) == 0 else args.split(';')
+    def perform(self, context: LaunchContext) -> Dict:
+        """Resolve and parse the robots argument string into a dictionary."""
+        robots_str = self.__robots_argument.perform(context)
+        if not robots_str:
+            return {}
+
         multirobots = {}
-        for arg in parsed_args:
-            key_val = arg.strip().split('=')
+        for robot_entry in robots_str.split(';'):
+            key_val = robot_entry.strip().split('=')
             if len(key_val) != 2:
                 continue
-            key = key_val[0].strip()
-            val = key_val[1].strip()
-            robot_pose = yaml.safe_load(val)
-            if 'x' not in robot_pose:
-                robot_pose['x'] = 0.0
-            if 'y' not in robot_pose:
-                robot_pose['y'] = 0.0
-            if 'z' not in robot_pose:
-                robot_pose['z'] = 0.0
-            if 'roll' not in robot_pose:
-                robot_pose['roll'] = 0.0
-            if 'pitch' not in robot_pose:
-                robot_pose['pitch'] = 0.0
-            if 'yaw' not in robot_pose:
-                robot_pose['yaw'] = 0.0
-            multirobots[key] = robot_pose
+
+            robot_name, pose_str = key_val[0].strip(), key_val[1].strip()
+            robot_pose = yaml.safe_load(pose_str)
+            # Set default values if not provided
+            robot_pose.setdefault('x', 0.0)
+            robot_pose.setdefault('y', 0.0)
+            robot_pose.setdefault('z', 0.0)
+            robot_pose.setdefault('roll', 0.0)
+            robot_pose.setdefault('pitch', 0.0)
+            robot_pose.setdefault('yaw', 0.0)
+            multirobots[robot_name] = robot_pose
         return multirobots

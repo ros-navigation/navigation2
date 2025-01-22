@@ -75,7 +75,7 @@ public:
   {
     return providedBasicPorts(
       {
-        BT::InputPort<std::vector<geometry_msgs::msg::PoseStamped>>(
+        BT::InputPort<geometry_msgs::msg::PoseStampedArray>(
           "goals",
           "Destinations to plan through"),
         BT::InputPort<geometry_msgs::msg::PoseStamped>(

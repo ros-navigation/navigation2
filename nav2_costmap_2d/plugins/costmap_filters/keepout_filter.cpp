@@ -38,7 +38,7 @@
 #include <string>
 #include <memory>
 #include <algorithm>
-#include "tf2/convert.h"
+#include "tf2/convert.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 #include "nav2_costmap_2d/costmap_filters/keepout_filter.hpp"

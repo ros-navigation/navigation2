@@ -20,7 +20,8 @@
 #include <nav2_msgs/srv/get_costs.hpp>
 #include <rviz_common/ros_integration/ros_node_abstraction_iface.hpp>
 #include <rviz_common/tool.hpp>
-#include <rviz_default_plugins/tools/point/point_tool.hpp>
+#include <rviz_common/properties/bool_property.hpp>
+#include <rviz_common/properties/qos_profile_property.hpp>
 #include <rclcpp/rclcpp.hpp>
 
 namespace nav2_rviz_plugins

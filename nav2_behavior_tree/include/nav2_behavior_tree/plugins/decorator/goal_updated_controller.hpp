@@ -50,7 +50,7 @@ public:
   static BT::PortsList providedPorts()
   {
     return {
-      BT::InputPort<std::vector<geometry_msgs::msg::PoseStamped>>(
+      BT::InputPort<geometry_msgs::msg::PoseStampedArray>(
         "goals", "Vector of navigation goals"),
       BT::InputPort<geometry_msgs::msg::PoseStamped>(
         "goal", "Navigation goal"),
@@ -66,7 +66,7 @@ private:
 
   bool goal_was_updated_;
   geometry_msgs::msg::PoseStamped goal_;
-  std::vector<geometry_msgs::msg::PoseStamped> goals_;
+  geometry_msgs::msg::PoseStampedArray goals_;
 };
 
 }  // namespace nav2_behavior_tree

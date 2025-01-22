@@ -33,8 +33,8 @@
  */
 
 #include <math.h>
-#include <tf2/LinearMath/Quaternion.h>
 #include <vector>
+#include <tf2/LinearMath/Quaternion.hpp>
 
 #include "gtest/gtest.h"
 #include "nav_2d_utils/conversions.hpp"

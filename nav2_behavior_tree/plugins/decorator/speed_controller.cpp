@@ -66,7 +66,7 @@ inline BT::NodeStatus SpeedController::tick()
     first_tick_ = true;
   }
 
-  std::vector<geometry_msgs::msg::PoseStamped> current_goals;
+  geometry_msgs::msg::PoseStampedArray current_goals;
   BT::getInputOrBlackboard("goals", current_goals);
   geometry_msgs::msg::PoseStamped current_goal;
   BT::getInputOrBlackboard("goal", current_goal);

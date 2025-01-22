@@ -94,7 +94,9 @@ class NavTester(Node):
 
         self.goal_pose = goal_pose if goal_pose is not None else self.goal_pose
         goal_msg = NavigateThroughPoses.Goal()
-        goal_msg.poses = [
+        goal_msg.poses.header.frame_id = 'map'
+        goal_msg.poses.header.stamp = self.get_clock().now().to_msg()
+        goal_msg.poses.poses = [
             self.getStampedPoseMsg(self.goal_pose),
             self.getStampedPoseMsg(self.goal_pose),
         ]
@@ -164,7 +166,7 @@ class NavTester(Node):
             )
 
         goal_msg = NavigateThroughPoses.Goal()
-        goal_msg.poses = [self.getStampedPoseMsg(self.initial_pose)]
+        goal_msg.poses.poses = [self.getStampedPoseMsg(self.initial_pose)]
 
         self.info_msg('Sending goal request...')
         send_goal_future = self.action_client.send_goal_async(goal_msg)

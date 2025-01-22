@@ -14,6 +14,8 @@
 
 #include "nav2_mppi_controller/critics/twirling_critic.hpp"
 
+#include <Eigen/Dense>
+
 namespace mppi::critics
 {
 
@@ -30,17 +32,16 @@ void TwirlingCritic::initialize()
 
 void TwirlingCritic::score(CriticData & data)
 {
-  using xt::evaluation_strategy::immediate;
   if (!enabled_ ||
-    utils::withinPositionGoalTolerance(data.goal_checker, data.state.pose.pose, data.path))
+    utils::withinPositionGoalTolerance(data.goal_checker, data.state.pose.pose, data.goal))
   {
     return;
   }
 
   if (power_ > 1u) {
-    data.costs += xt::pow(xt::mean(xt::fabs(data.state.wz), {1}, immediate) * weight_, power_);
+    data.costs += ((data.state.wz.abs().rowwise().mean()) * weight_).pow(power_).eval();
   } else {
-    data.costs += xt::mean(xt::fabs(data.state.wz), {1}, immediate) * weight_;
+    data.costs += ((data.state.wz.abs().rowwise().mean()) * weight_).eval();
   }
 }
 
