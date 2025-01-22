@@ -62,7 +62,9 @@ public:
    * @param final_edge whether this edge brings us to the goal or not
    * @return If edge is valid
    */
-  bool score(const EdgePtr edge, const geometry_msgs::msg::PoseStamped goal_pose, float & score, bool final_edge);
+  bool score(
+    const EdgePtr edge, const geometry_msgs::msg::PoseStamped & goal_pose, bool final_edge,
+    float & score);
 
   /**
    * @brief Provide the number of plugisn in the scorer loaded
