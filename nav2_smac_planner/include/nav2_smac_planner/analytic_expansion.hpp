@@ -21,6 +21,8 @@
 #include <unordered_set>
 #include <string>
 #include <vector>
+#include <queue>
+
 
 #include "nav2_smac_planner/node_2d.hpp"
 #include "nav2_smac_planner/node_hybrid.hpp"
@@ -92,11 +94,9 @@ public:
    */
   NodePtr tryAnalyticExpansion(
     const NodePtr & current_node,
-    const NodeVector & goals_node,
     const CoordinateVector & goals_coords,
     const NodeGetter & getter, int & iterations,
-    int & closest_distance,
-    const int & coarse_search_resolution);
+    int & closest_distance);
 
   /**
    * @brief Perform an analytic path expansion to the goal
@@ -136,6 +136,13 @@ public:
   NodePtr setAnalyticPath(
     const NodePtr & node, const NodePtr & goal,
     const AnalyticExpansionNodes & expanded_nodes);
+  
+  /**
+   * @brief Sets the goals to expand to in the analytic expansion
+   * @param goals_node set of goals node to plan to
+   * @param coarse_search_resolution The resolution to expand to
+   */
+  void setGoalsToExpand(const NodeVector & goals_node, const int & coarse_search_resolution);
 
   /**
    * @brief Takes an expanded nodes to clean up, if necessary, of any state
@@ -151,6 +158,8 @@ protected:
   unsigned int _dim_3_size;
   GridCollisionChecker * _collision_checker;
   std::list<std::unique_ptr<NodeT>> _detached_nodes;
+  std::vector<NodePtr> _goals_to_expand;
+  unsigned int _coarse_search_goal_size;
 };
 
 }  // namespace nav2_smac_planner

@@ -377,15 +377,17 @@ bool AStarAlgorithm<NodeT>::createPath(
     current_coarse_search_resolution = 1;
   }
   // print coarse search resolution 
-  RCLCPP_INFO(
-            rclcpp::get_logger("AStarAlgorithm"), "coarse **************+: %d", current_coarse_search_resolution);
+  // RCLCPP_INFO(
+  //           rclcpp::get_logger("AStarAlgorithm"), "coarse **************+: %d", current_coarse_search_resolution);
 
   std::chrono::duration<double> expansion_time = 0.0s;
 
   int number_of_expansions = 0;
-  RCLCPP_INFO(
-            rclcpp::get_logger("AStarAlgorithm"),
-            "************************************");
+  // RCLCPP_INFO(
+  //           rclcpp::get_logger("AStarAlgorithm"),
+  //           "************************************");
+  
+  _expander->setGoalsToExpand(getGoalsVector(),current_coarse_search_resolution );
 
   while (iterations < getMaxIterations() && !_queue.empty()) {
     // Check for planning timeout and cancel only on every Nth iteration
@@ -424,9 +426,8 @@ bool AStarAlgorithm<NodeT>::createPath(
     auto start_expansion = steady_clock::now();
     expansion_result = nullptr;
     expansion_result = _expander->tryAnalyticExpansion(
-      current_node, getGoalsVector(),
-      getGoalsCoordinates(), neighborGetter, analytic_iterations, closest_distance,
-        current_coarse_search_resolution);
+      current_node,
+      getGoalsCoordinates(), neighborGetter, analytic_iterations, closest_distance);
     number_of_expansions++;
     auto end_expansion = steady_clock::now();
     expansion_time += end_expansion - start_expansion;
@@ -436,17 +437,17 @@ bool AStarAlgorithm<NodeT>::createPath(
 
     // 3) Check if we're at the goal, backtrace if required
     if (isGoal(current_node)) {
-      RCLCPP_INFO(
-      rclcpp::get_logger("AStarAlgorithm"),
-      "Expansion time: %f, number of expansions: %d", expansion_time.count(), number_of_expansions);
+      // RCLCPP_INFO(
+      // rclcpp::get_logger("AStarAlgorithm"),
+      // "Expansion time: %f, number of expansions: %d", expansion_time.count(), number_of_expansions);
       return current_node->backtracePath(path);
     } else if (_best_heuristic_node.first < getToleranceHeuristic()) {
       // Optimization: Let us find when in tolerance and refine within reason
       approach_iterations++;
       if (approach_iterations >= getOnApproachMaxIterations()) {
-         RCLCPP_INFO(
-      rclcpp::get_logger("AStarAlgorithm"),
-      "Expansion time: %f, number of expansions: %d", expansion_time.count(), number_of_expansions);
+      //    RCLCPP_INFO(
+      // rclcpp::get_logger("AStarAlgorithm"),
+      // "Expansion time: %f, number of expansions: %d", expansion_time.count(), number_of_expansions);
         return _graph.at(_best_heuristic_node.second).backtracePath(path);
       }
     }

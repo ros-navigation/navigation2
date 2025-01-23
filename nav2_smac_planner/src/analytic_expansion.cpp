@@ -49,15 +49,11 @@ void AnalyticExpansion<NodeT>::setCollisionChecker(
 
 template<typename NodeT>
 typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalyticExpansion(
-  const NodePtr & current_node, const NodeVector & goals_node,
+  const NodePtr & current_node,
   const CoordinateVector & goals_coords,
   const NodeGetter & getter, int & analytic_iterations,
-  int & closest_distance,
-  const int & coarse_search_resolution)
+  int & closest_distance)
 {
-  RCLCPP_INFO(
-    rclcpp::get_logger("AStarAlgorithm"),"************************"
-  );
   // This must be a valid motion model for analytic expansion to be attempted
   if (_motion_model == MotionModel::DUBIN || _motion_model == MotionModel::REEDS_SHEPP ||
     _motion_model == MotionModel::STATE_LATTICE)
@@ -71,6 +67,7 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
     NodePtr current_best_goal = nullptr;
     NodePtr current_best_node = nullptr;
     float best_score = std::numeric_limits<float>::max();
+
     closest_distance = std::min(
       closest_distance,
       static_cast<int>(NodeT::getHeuristicCost(node_coords, goals_coords)));
@@ -85,350 +82,62 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
     analytic_iterations =
       std::min(analytic_iterations, desired_iterations);
 
-    // Always run the expansion on the first run in case there is a
-    // trivial path to be found
-    bool use_optimize = true;
-    int goal_counter = 0;
-    if (use_optimize){
-      
-      if (analytic_iterations <= 0) {
-        auto start_time = std::chrono::steady_clock::now();
-        // Reset the counter and try the analytic path expansion
-        analytic_iterations = desired_iterations;
-        std::queue<NodePtr> goals_to_expand;
-        bool found_valid_expansion = false;
-        std::chrono::duration<double> time_per_goal = std::chrono::duration<double>(0);
+    
+    if (analytic_iterations <= 0) {
+      analytic_iterations = desired_iterations;
 
-        // auto time_to_define_coarse_search_resolution = std::chrono::steady_clock::now();
+      bool found_valid_expansion = false;
+      unsigned int number_of_checked_goal = 0;
 
-        // Initialize the goals to expand with the coarse search goals, insert
-        // every coarse search goal into the goals_to_expand vector
-        for( unsigned int i = 0; i < goals_node.size(); i += coarse_search_resolution) {
-          goals_to_expand.push(goals_node[i]);
+      // First check the coarse search resolution goals
+      while(number_of_checked_goal < _coarse_search_goal_size) {
+        NodePtr current_goal_node = _goals_to_expand[number_of_checked_goal];
+        AnalyticExpansionNodes analytic_nodes =
+          getAnalyticPath(
+          current_node, current_goal_node, getter,
+          current_node->motion_table.state_space);
+        if (!analytic_nodes.empty()) {
+          NodePtr node = current_node;
+          refineAnalyticPath(
+            current_goal_node, getter, node, analytic_nodes, best_score);
+
+          // Update the best score if we found a better path
+          current_best_analytic_nodes = analytic_nodes;
+          current_best_goal = current_goal_node;
+          current_best_node = node;
+          found_valid_expansion = true;          
+          break;
         }
+        number_of_checked_goal++;
+      }
 
-        // auto time_to_create_goals_to_expand_first = std::chrono::steady_clock::now();
-
-        unsigned int expand_goal_size = goals_to_expand.size();
-
-        // first coarse iteration to find a valid goal.
-        while(!goals_to_expand.empty()) {
-          auto start_time_per_goal_first = std::chrono::steady_clock::now();
-          NodePtr current_goal_node = goals_to_expand.front();
-          goals_to_expand.pop();
+      // perform a final search if we found a goal
+      if (found_valid_expansion) {
+        for (size_t i = number_of_checked_goal; i < _goals_to_expand.size(); ++i) {
+          NodePtr current_goal_node = _goals_to_expand[i];
           AnalyticExpansionNodes analytic_nodes =
             getAnalyticPath(
             current_node, current_goal_node, getter,
             current_node->motion_table.state_space);
           if (!analytic_nodes.empty()) {
             NodePtr node = current_node;
-            refineAnalyticPath(
-              current_goal_node, getter, node, analytic_nodes, best_score);
-            int goal_index = goal_counter * coarse_search_resolution;
-            goal_counter++;
-            RCLCPP_INFO(
-              rclcpp::get_logger("AStarAlgorithm"),
-              "Goal index: %d", goal_index);
-            auto end_time_per_goal_first = std::chrono::steady_clock::now();
-            time_per_goal += end_time_per_goal_first - start_time_per_goal_first;
-            current_best_analytic_nodes = analytic_nodes;
-            current_best_goal = current_goal_node;
-            current_best_node = node;
-            found_valid_expansion = true;
-            
-            break;
-          }
-        }
-
-        // auto time_to_expand_first = std::chrono::steady_clock::now();
-
-    
-
-        // perform a final search if we found a goal
-        if (found_valid_expansion) {
-          // print goal counter
-          RCLCPP_INFO(
-            rclcpp::get_logger("AStarAlgorithm"),
-            "Number of goals: %d", goal_counter);
-          // search the rest of the goals to do a finer search if we
-          // found a valid expansion
-
-          unsigned int expand_goal_size_second = goals_to_expand.size();
-          // auto start_search_time = std::chrono::steady_clock::now();
-          if(coarse_search_resolution != 1) {
-            for ( unsigned int i = 0; i < goals_node.size(); i++) {
-              if (i % coarse_search_resolution != 0) {
-                goals_to_expand.push(goals_node[i]);
-              }
-            }
-          }
-
-          unsigned int expand_goal_size_third = goals_to_expand.size();
-
-          // auto time_to_create_goals_to_expand_second = std::chrono::steady_clock::now();
-          while(!goals_to_expand.empty()) {
-            auto start_time_per_goal = std::chrono::steady_clock::now();
-            NodePtr current_goal_node = goals_to_expand.front();
-            goals_to_expand.pop();
-            AnalyticExpansionNodes analytic_nodes =
-              getAnalyticPath(
-              current_node, current_goal_node, getter,
-              current_node->motion_table.state_space);
-            if (!analytic_nodes.empty()) {
-              NodePtr node = current_node;
-              float score = std::numeric_limits<float>::max();
-              refineAnalyticPath(
-                current_goal_node, getter, node, analytic_nodes, score);
-                goal_counter++;
-                RCLCPP_INFO(
-                  rclcpp::get_logger("AStarAlgorithm"),
-                  "Goal number: %d", goal_counter);
-
-                auto end_time_per_goal = std::chrono::steady_clock::now();
-                time_per_goal += end_time_per_goal - start_time_per_goal;
-              if (score < best_score) {
-                best_score = score;
-                current_best_analytic_nodes = analytic_nodes;
-                current_best_goal = current_goal_node;
-                current_best_node = node;
-              }
-            }
-          }
-
-          auto time_to_expand_second = std::chrono::steady_clock::now();
-
-          // print all the time taken for each step
-          // auto time_to_define = std::chrono::duration<double>(time_to_define_coarse_search_resolution - start_time);
-          // auto time_to_create_goals_to_expand_first_time = std::chrono::duration<double>(time_to_create_goals_to_expand_first - time_to_define_coarse_search_resolution);
-          // auto time_to_expand_first_time = std::chrono::duration<double>(time_to_expand_first - time_to_create_goals_to_expand_first);
-          // auto time_to_create_goals_to_expand_second_time = std::chrono::duration<double>(time_to_create_goals_to_expand_second - time_to_expand_first);
-          // auto time_to_search = std::chrono::duration<double>(time_to_expand_second - time_to_create_goals_to_expand_second);
-
-          // RCLCPP_INFO(
-          //   rclcpp::get_logger("AStarAlgorithm"),
-          //   "Time to define coarse search resolution: %f microseconds", time_to_define.count());
-          // RCLCPP_INFO(
-          //   rclcpp::get_logger("AStarAlgorithm"),
-          //   "Time to create goals to expand first: %f microseconds", time_to_create_goals_to_expand_first_time.count());
-          // RCLCPP_INFO(
-          //   rclcpp::get_logger("AStarAlgorithm"),
-          //   "Time to expand first: %f microseconds", time_to_expand_first_time.count());
-          // RCLCPP_INFO(
-          //   rclcpp::get_logger("AStarAlgorithm"),
-          //   "Time to create goals to expand second: %f microseconds", time_to_create_goals_to_expand_second_time.count());
-          // RCLCPP_INFO(
-          //   rclcpp::get_logger("AStarAlgorithm"),
-          //   "Time to search: %f microseconds", time_to_search.count());
-          // print total time taken
-          auto total_time = std::chrono::duration<double>(time_to_expand_second - start_time);
-          RCLCPP_INFO(
-            rclcpp::get_logger("AStarAlgorithm"),
-            "Total time taken: %f microseconds", total_time.count());
-          
-          RCLCPP_INFO(
-            rclcpp::get_logger("AStarAlgorithm"),
-            "Total time per goal: %f microseconds", time_per_goal.count()/goal_counter);
-          
-          // print goal counter
-          RCLCPP_INFO(
-            rclcpp::get_logger("AStarAlgorithm"),
-            "Goals found counter: %d  goal size: %ld", goal_counter, goals_node.size());
-          
-          RCLCPP_INFO(
-            rclcpp::get_logger("AStarAlgorithm"),
-            "Number of goals to expand first: %d", expand_goal_size);
-          RCLCPP_INFO(
-            rclcpp::get_logger("AStarAlgorithm"),
-            "Number of goals to expand second: %d", expand_goal_size_second);
-          RCLCPP_INFO(
-            rclcpp::get_logger("AStarAlgorithm"),
-            "Number of goals to expand third: %d", expand_goal_size_third);
-          
-          
-
-          
-          
-        }
-        
-        // auto end_time = std::chrono::steady_clock::now();
-        // std::chrono::duration<double> elapsed_seconds = end_time - start_time;
-        // RCLCPP_INFO(
-        //   rclcpp::get_logger("AStarAlgorithm"),
-        //   "Optimized analytic expansion took %f seconds", elapsed_seconds.count());
-      }
-    
-    } 
-    else {
-      if (analytic_iterations <= 0) {
-        auto start_time = std::chrono::steady_clock::now();
-         // Reset the counter and try the analytic path expansion
-        analytic_iterations = desired_iterations;
-        std::chrono::duration<double> total_time_per_goal = std::chrono::duration<double>::zero();
-        int timer_counter = 0;
-
-        NodeVector goals_to_expand;
-        for( unsigned int i = 0; i < goals_node.size(); i+=coarse_search_resolution) {
-          goals_to_expand.push_back(goals_node[i]);
-        }
-        while(!goals_to_expand.empty())
-        {
-          NodePtr goal_node = goals_to_expand.front();
-          goals_to_expand.erase(goals_to_expand.begin());
-          timer_counter++;
-          auto inside_start_time = std::chrono::steady_clock::now();
-          AnalyticExpansionNodes analytic_nodes =
-            getAnalyticPath(
-            current_node, goal_node, getter,
-            current_node->motion_table.state_space);
-          // RCLCPP_INFO(
-          //   rclcpp::get_logger("AStarAlgorithm"),
-          //   "Iteration number");
-          if (!analytic_nodes.empty()) {
-            // NodePtr node = current_node;
-            // float score = std::numeric_limits<float>::max();
-
-             // If we have a valid path, attempt to refine it
-            NodePtr node = current_node;
-            NodePtr test_node = current_node;
-            AnalyticExpansionNodes refined_analytic_nodes;
-            for (int i = 0; i < 8; i++) {
-              // Attempt to create better paths in 5 node increments, need to make sure
-              // they exist for each in order to do so (maximum of 40 points back).
-              if (test_node->parent && test_node->parent->parent && test_node->parent->parent->parent &&
-                test_node->parent->parent->parent->parent &&
-                test_node->parent->parent->parent->parent->parent)
-              {
-                test_node = test_node->parent->parent->parent->parent->parent;
-                refined_analytic_nodes =
-                  getAnalyticPath(test_node, goal_node, getter, test_node->motion_table.state_space);
-                if (refined_analytic_nodes.empty()) {
-                  break;
-                }
-                analytic_nodes = refined_analytic_nodes;
-                node = test_node;
-              } else {
-                break;
-              }
-            }
-
-            // The analytic expansion can short-cut near obstacles when closer to a goal
-            // So, we can attempt to refine it more by increasing the possible radius
-            // higher than the minimum turning radius and use the best solution based on
-            // a scoring function similar to that used in traversal cost estimation.
-            auto scoringFn = [&](const AnalyticExpansionNodes & expansion) {
-                if (expansion.size() < 2) {
-                  return std::numeric_limits<float>::max();
-                }
-
-                float score = 0.0;
-                float normalized_cost = 0.0;
-                // Analytic expansions are consistently spaced
-                const float distance = hypotf(
-                  expansion[1].proposed_coords.x - expansion[0].proposed_coords.x,
-                  expansion[1].proposed_coords.y - expansion[0].proposed_coords.y);
-                const float & weight = expansion[0].node->motion_table.cost_penalty;
-                for (auto iter = expansion.begin(); iter != expansion.end(); ++iter) {
-                  normalized_cost = iter->node->getCost() / 252.0f;
-                  // Search's Traversal Cost Function
-                  score += distance * (1.0 + weight * normalized_cost);
-                }
-                return score;
-              };
-
-            float _best_score = scoringFn(analytic_nodes);
             float score = std::numeric_limits<float>::max();
-            float min_turn_rad = node->motion_table.min_turning_radius;
-            const float max_min_turn_rad = 4.0 * min_turn_rad;  // Up to 4x the turning radius
-            while (min_turn_rad < max_min_turn_rad) {
-              min_turn_rad += 0.5;  // In Grid Coords, 1/2 cell steps
-              ompl::base::StateSpacePtr state_space;
-              if (node->motion_table.motion_model == MotionModel::DUBIN) {
-                state_space = std::make_shared<ompl::base::DubinsStateSpace>(min_turn_rad);
-              } else {
-                state_space = std::make_shared<ompl::base::ReedsSheppStateSpace>(min_turn_rad);
-              }
-              refined_analytic_nodes = getAnalyticPath(node, goal_node, getter, state_space);
-              score = scoringFn(refined_analytic_nodes);
-              if (score <= _best_score) {
-                analytic_nodes = refined_analytic_nodes;
-                _best_score = score;
-              }
-            }
-            // refineAnalyticPath(
-            //   goal_node, getter, node, analytic_nodes, score);
-              goal_counter++;
-              // time counter
-              RCLCPP_INFO(
-                rclcpp::get_logger("AStarAlgorithm"),
-                "Goal number: %d", timer_counter);
-               
+            refineAnalyticPath(
+              current_goal_node, getter, node, analytic_nodes, score);
 
-             auto inside_end_time = std::chrono::steady_clock::now();
-              total_time_per_goal += inside_end_time - inside_start_time;
-            if (_best_score < best_score) {
-              best_score = _best_score;
+            // Update the best score if we found a better path
+            if (score < best_score) {
+              best_score = score;
               current_best_analytic_nodes = analytic_nodes;
-              current_best_goal = goal_node;
+              current_best_goal = current_goal_node;
               current_best_node = node;
             }
           }
-          
-        }
-        // for(unsigned int i = 0; i < goals_node.size(); i++) {
-        //   NodePtr goal_node = goals_node[i];
-        //   timer_counter++;
-        //   auto inside_start_time = std::chrono::steady_clock::now();
-        //   AnalyticExpansionNodes analytic_nodes =
-        //     getAnalyticPath(
-        //     current_node, goal_node, getter,
-        //     current_node->motion_table.state_space);
-        //   if (!analytic_nodes.empty()) {
-        //     NodePtr node = current_node;
-        //     float score = std::numeric_limits<float>::max();
-        //     refineAnalyticPath(
-        //       goal_node, getter, node, analytic_nodes, score);
-        //       goal_counter++;
-        //       // time counter
-        //       RCLCPP_INFO(
-        //         rclcpp::get_logger("AStarAlgorithm"),
-        //         "Goal number: %d", timer_counter);
-               
-
-        //      auto inside_end_time = std::chrono::steady_clock::now();
-        //       total_time_per_goal += inside_end_time - inside_start_time;
-        //     if (score < best_score) {
-        //       best_score = score;
-        //       current_best_analytic_nodes = analytic_nodes;
-        //       current_best_goal = goal_node;
-        //       current_best_node = node;
-        //     }
-        //   }
-         
-        // }
-        if(!current_best_analytic_nodes.empty()) {
-          auto end_time = std::chrono::steady_clock::now();
-          std::chrono::duration<double> elapsed_seconds = end_time - start_time;
-          RCLCPP_INFO(
-            rclcpp::get_logger("AStarAlgorithm"),
-            "Non-optimized analytic expansion took %f seconds", elapsed_seconds.count());
-          RCLCPP_INFO(
-            rclcpp::get_logger("AStarAlgorithm"),
-            "Total time per goal: %f seconds", total_time_per_goal.count()/goal_counter);
-          
-
-          // print goal counter
-          RCLCPP_INFO(
-            rclcpp::get_logger("AStarAlgorithm"),
-            "Number of goals: %d, goal size: %ld", goal_counter, goals_node.size());
-        }
+        }    
       }
-
     }
-    
+  
     if (!current_best_analytic_nodes.empty()) {
-      RCLCPP_INFO(
-        rclcpp::get_logger("AStarAlgorithm"),
-        "Analytic expansion found a path");
       return setAnalyticPath(
         current_best_node, current_best_goal,
         current_best_analytic_nodes);
@@ -455,21 +164,8 @@ typename AnalyticExpansion<NodeT>::AnalyticExpansionNodes AnalyticExpansion<Node
   to[1] = goal->pose.y;
   to[2] = node->motion_table.getAngleFromBin(goal->pose.theta);
 
-  // print to 
- 
-
-  // printfrom 
-  RCLCPP_INFO(
-    rclcpp::get_logger("AStarAlgorithm"),
-    "From x: %f, y: %f, theta: %f", from[0], from[1], from[2]);
-  
-   RCLCPP_INFO(
-    rclcpp::get_logger("AStarAlgorithm"),
-    "Goal x: %f, y: %f, theta: %f", to[0], to[1], to[2]);
-
   float d = state_space->distance(from(), to());
 
-  // A move of sqrt(2) is guaranteed to be in a new cell
   static const float sqrt_2 = sqrtf(2.0f);
 
   // If the length is too far, exit. This prevents unsafe shortcutting of paths
@@ -737,11 +433,41 @@ typename AnalyticExpansion<Node2D>::NodePtr AnalyticExpansion<Node2D>::setAnalyt
 
 template<>
 typename AnalyticExpansion<Node2D>::NodePtr AnalyticExpansion<Node2D>::tryAnalyticExpansion(
-  const NodePtr &, const NodeVector &, const CoordinateVector &,
+  const NodePtr &, const CoordinateVector &,
   const NodeGetter &, int &,
-  int &, const int &)
+  int &)
 {
   return NodePtr(nullptr);
+}
+
+template<typename NodeT>
+void AnalyticExpansion<NodeT>::setGoalsToExpand(const NodeVector & goals_node, const int & coarse_search_resolution)
+{
+  // clear the goals to expand
+  _goals_to_expand.clear();
+  // put in order where the corase search goal goes first and then the rest
+  _coarse_search_goal_size = goals_node.size() / coarse_search_resolution;
+  _goals_to_expand.reserve(goals_node.size());
+  for (unsigned int i = 0; i < _coarse_search_goal_size; i++) {
+    unsigned int index = i * _coarse_search_goal_size;
+    _goals_to_expand[i] = goals_node[index];
+  }
+  // add the rest of the goals
+  unsigned int rest_index = _coarse_search_goal_size;
+  if(coarse_search_resolution != 1){
+    for (unsigned int i = 0; i < goals_node.size(); i++) {
+      if (i % coarse_search_resolution != 0) {
+        _goals_to_expand[rest_index] = goals_node[i];
+        rest_index++;
+      }
+    }
+  }
+}
+
+template<>
+void AnalyticExpansion<Node2D>::setGoalsToExpand(const NodeVector &, const int & )
+{
+  
 }
 
 template class AnalyticExpansion<Node2D>;
