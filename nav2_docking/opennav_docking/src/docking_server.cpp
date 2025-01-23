@@ -489,7 +489,7 @@ bool DockingServer::approachDock(Dock * dock, geometry_msgs::msg::PoseStamped & 
     // Make sure that the target pose is pointing at the robot when moving backwards
     // This is to ensure that the robot doesn't try to dock from the wrong side
     if (dock_backwards_) {
-      target_pose.pose.orientation = 
+      target_pose.pose.orientation =
         nav2_util::geometry_utils::orientationAroundZAxis(yaw + M_PI);
     }
 

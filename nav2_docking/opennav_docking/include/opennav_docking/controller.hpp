@@ -78,7 +78,7 @@ public:
     const double & angular_distance_to_heading,
     const geometry_msgs::msg::Twist & current_velocity,
     const double & dt);
-    
+
 protected:
   /**
    * @brief Check if a trajectory is collision free.
