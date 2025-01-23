@@ -19,7 +19,6 @@
 #include <algorithm>
 #include <vector>
 #include <memory>
-#include <queue>
 
 #include "nav2_smac_planner/analytic_expansion.hpp"
 
@@ -50,9 +49,11 @@ void AnalyticExpansion<NodeT>::setCollisionChecker(
 template<typename NodeT>
 typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalyticExpansion(
   const NodePtr & current_node,
+  const NodeVector & goals_to_expand,
   const CoordinateVector & goals_coords,
   const NodeGetter & getter, int & analytic_iterations,
-  int & closest_distance)
+  int & closest_distance,
+  const unsigned int & coarse_search_goal_size)
 {
   // This must be a valid motion model for analytic expansion to be attempted
   if (_motion_model == MotionModel::DUBIN || _motion_model == MotionModel::REEDS_SHEPP ||
@@ -82,16 +83,16 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
     analytic_iterations =
       std::min(analytic_iterations, desired_iterations);
 
-    
+    // Always run the expansion on the first run in case there is a
+    // trivial path to be found
     if (analytic_iterations <= 0) {
       analytic_iterations = desired_iterations;
-
       bool found_valid_expansion = false;
       unsigned int number_of_checked_goal = 0;
 
       // First check the coarse search resolution goals
-      while(number_of_checked_goal < _coarse_search_goal_size) {
-        NodePtr current_goal_node = _goals_to_expand[number_of_checked_goal];
+      while(number_of_checked_goal < coarse_search_goal_size) {
+        NodePtr current_goal_node = goals_to_expand[number_of_checked_goal];
         AnalyticExpansionNodes analytic_nodes =
           getAnalyticPath(
           current_node, current_goal_node, getter,
@@ -100,12 +101,11 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
           NodePtr node = current_node;
           refineAnalyticPath(
             current_goal_node, getter, node, analytic_nodes, best_score);
-
           // Update the best score if we found a better path
           current_best_analytic_nodes = analytic_nodes;
           current_best_goal = current_goal_node;
           current_best_node = node;
-          found_valid_expansion = true;          
+          found_valid_expansion = true;
           break;
         }
         number_of_checked_goal++;
@@ -113,8 +113,8 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
 
       // perform a final search if we found a goal
       if (found_valid_expansion) {
-        for (size_t i = number_of_checked_goal; i < _goals_to_expand.size(); ++i) {
-          NodePtr current_goal_node = _goals_to_expand[i];
+        for (size_t i = number_of_checked_goal; i < goals_to_expand.size(); i++) {
+          NodePtr current_goal_node = goals_to_expand[i];
           AnalyticExpansionNodes analytic_nodes =
             getAnalyticPath(
             current_node, current_goal_node, getter,
@@ -124,7 +124,6 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
             float score = std::numeric_limits<float>::max();
             refineAnalyticPath(
               current_goal_node, getter, node, analytic_nodes, score);
-
             // Update the best score if we found a better path
             if (score < best_score) {
               best_score = score;
@@ -133,10 +132,10 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
               current_best_node = node;
             }
           }
-        }    
+        }
       }
     }
-  
+
     if (!current_best_analytic_nodes.empty()) {
       return setAnalyticPath(
         current_best_node, current_best_goal,
@@ -433,41 +432,14 @@ typename AnalyticExpansion<Node2D>::NodePtr AnalyticExpansion<Node2D>::setAnalyt
 
 template<>
 typename AnalyticExpansion<Node2D>::NodePtr AnalyticExpansion<Node2D>::tryAnalyticExpansion(
-  const NodePtr &, const CoordinateVector &,
+  const NodePtr &,
+  const NodeVector &,
+  const CoordinateVector &,
   const NodeGetter &, int &,
-  int &)
+  int &,
+  const unsigned int &)
 {
   return NodePtr(nullptr);
-}
-
-template<typename NodeT>
-void AnalyticExpansion<NodeT>::setGoalsToExpand(const NodeVector & goals_node, const int & coarse_search_resolution)
-{
-  // clear the goals to expand
-  _goals_to_expand.clear();
-  // put in order where the corase search goal goes first and then the rest
-  _coarse_search_goal_size = goals_node.size() / coarse_search_resolution;
-  _goals_to_expand.reserve(goals_node.size());
-  for (unsigned int i = 0; i < _coarse_search_goal_size; i++) {
-    unsigned int index = i * _coarse_search_goal_size;
-    _goals_to_expand[i] = goals_node[index];
-  }
-  // add the rest of the goals
-  unsigned int rest_index = _coarse_search_goal_size;
-  if(coarse_search_resolution != 1){
-    for (unsigned int i = 0; i < goals_node.size(); i++) {
-      if (i % coarse_search_resolution != 0) {
-        _goals_to_expand[rest_index] = goals_node[i];
-        rest_index++;
-      }
-    }
-  }
-}
-
-template<>
-void AnalyticExpansion<Node2D>::setGoalsToExpand(const NodeVector &, const int & )
-{
-  
 }
 
 template class AnalyticExpansion<Node2D>;

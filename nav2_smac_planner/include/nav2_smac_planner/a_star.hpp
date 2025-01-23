@@ -18,7 +18,6 @@
 
 #include <vector>
 #include <iostream>
-#include <unordered_map>
 #include <unordered_set>
 #include <functional>
 #include <memory>
@@ -113,16 +112,12 @@ public:
    * @param tolerance Reference to tolerance in costmap nodes
    * @param cancel_checker Function to check if the task has been canceled
    * @param expansions_log Optional expansions logged for debug
-   * @param goal_heading_mode The goal heading mode to use
-   * @param coarse_search_resolution The resolution to search for goal heading
    * @return if plan was successful
    */
   bool createPath(
     CoordinateVector & path, int & num_iterations, const float & tolerance,
     std::function<bool()> cancel_checker,
-    std::vector<std::tuple<float, float, float>> * expansions_log = nullptr,
-    const GoalHeadingMode & goal_heading_mode = GoalHeadingMode::DEFAULT,
-    const int & coarse_search_resolution = 0);
+    std::vector<std::tuple<float, float, float>> * expansions_log = nullptr);
 
   /**
    * @brief Sets the collision checker to use
@@ -136,12 +131,14 @@ public:
    * @param my The node Y index of the goal
    * @param dim_3 The node dim_3 index of the goal
    * @param goal_heading_mode The goal heading mode to use
+   * @param coarse_search_resolution The resolution to search for goal heading
    */
   void setGoal(
     const float & mx,
     const float & my,
     const unsigned int & dim_3,
-    const GoalHeadingMode & goal_heading_mode = GoalHeadingMode::DEFAULT);
+    const GoalHeadingMode & goal_heading_mode = GoalHeadingMode::DEFAULT,
+    const int & coarse_search_resolution = 0);
 
   /**
    * @brief Set the starting pose for planning, as a node index
@@ -214,6 +211,15 @@ public:
    */
   unsigned int & getSizeDim3();
 
+  /**
+   * @brief Prepare goals for expansion
+   * @param goals_to_expand Vector of goals to expand
+   * @param coarse_search_goal_size Size of the coarse search goal
+   */
+  void prepareGoalsForExpansion(
+    NodeVector & goals_to_expand,
+    unsigned int & coarse_search_goal_size);
+
 protected:
   /**
    * @brief Get pointer to next goal in open set
@@ -264,6 +270,11 @@ protected:
    */
   inline void clearGraph();
 
+  /**
+   * @brief Check if node has been visited
+   * @param current_node Node to check if visited
+   * @return if node has been visited
+   */
   inline bool onVisitationCheckNode(const NodePtr & node);
 
   /**
@@ -284,12 +295,13 @@ protected:
   unsigned int _x_size;
   unsigned int _y_size;
   unsigned int _dim3_size;
+  unsigned int _coarse_search_resolution;
   SearchInfo _search_info;
 
   CoordinateVector _goals_coordinates;
   NodePtr _start;
-  NodeSet _goalsSet;
-  NodeVector _goalsVector;
+  NodeSet _goals_set;
+  NodeVector _goals_vector;
 
   Graph _graph;
   NodeQueue _queue;

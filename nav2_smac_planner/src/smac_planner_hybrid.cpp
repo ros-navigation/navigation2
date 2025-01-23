@@ -425,7 +425,7 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
     orientation_bin -= static_cast<float>(_angle_quantizations);
   }
   _a_star->setGoal(mx_goal, my_goal, static_cast<unsigned int>(orientation_bin),
-                  _goal_heading_mode);
+                  _goal_heading_mode, _coarse_search_resolution);
 
   // Setup message
   nav_msgs::msg::Path plan;
@@ -466,8 +466,7 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   // Note: All exceptions thrown are handled by the planner server and returned to the action
   if (!_a_star->createPath(
       path, num_iterations,
-      _tolerance / static_cast<float>(costmap->getResolution()), cancel_checker, expansions.get(),
-      _goal_heading_mode, _coarse_search_resolution))
+      _tolerance / static_cast<float>(costmap->getResolution()), cancel_checker, expansions.get()))
   {
     if (_debug_visualizations) {
       geometry_msgs::msg::PoseArray msg;

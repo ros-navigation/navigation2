@@ -152,7 +152,8 @@ TEST(SmacTest, test_smac_se2_reconfigure)
       rclcpp::Parameter("test.max_on_approach_iterations", 42),
       rclcpp::Parameter("test.terminal_checking_interval", 42),
       rclcpp::Parameter("test.motion_model_for_search", std::string("REEDS_SHEPP")),
-      rclcpp::Parameter("test.goal_heading_mode", std::string("BIDIRECTIONAL"))});
+      rclcpp::Parameter("test.goal_heading_mode", std::string("BIDIRECTIONAL")),
+      rclcpp::Parameter("test.coarse_search_resolution", 1)});
 
 
   rclcpp::spin_until_future_complete(
@@ -191,6 +192,7 @@ TEST(SmacTest, test_smac_se2_reconfigure)
     nodeSE2->get_node_base_interface(),
     results2);
   EXPECT_EQ(nodeSE2->get_parameter("resolution").as_double(), 0.2);
+  EXPECT_EQ(nodeSE2->get_parameter("test.coarse_search_resolution").as_int(), 1);
 
   // Test reconfigure with invalid goal heading mode
   std::vector<rclcpp::Parameter> parameters;
