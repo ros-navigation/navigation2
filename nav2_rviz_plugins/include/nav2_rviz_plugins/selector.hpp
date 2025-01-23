@@ -54,7 +54,6 @@ private:
   rclcpp::TimerBase::SharedPtr rclcpp_timer_;
 
   std::thread load_plugins_thread_;
-  std::mutex combo_box_mutex;
 
   QBasicTimer timer_;
   QVBoxLayout * main_layout_;

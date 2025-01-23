@@ -24,7 +24,6 @@ void pluginLoader(
   rclcpp::Node::SharedPtr node, const std::string & server_name,
   const std::string & plugin_type, QComboBox * combo_box)
 {
-  RCLCPP_ERROR(node->get_logger(), "Loading plugins for %s", plugin_type.c_str());
   auto parameter_client = std::make_shared<rclcpp::SyncParametersClient>(node, server_name);
 
   // Wait for the service to be available before calling it
@@ -36,7 +35,6 @@ void pluginLoader(
   }
 
   auto parameters = parameter_client->get_parameters({plugin_type});
-  RCLCPP_ERROR(node->get_logger(), "Loaded %s plugins", plugin_type.c_str());
   auto str_arr = parameters[0].as_string_array();
   for (auto str : str_arr) {
     combo_box->addItem(QString::fromStdString(str));
