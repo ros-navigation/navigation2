@@ -35,7 +35,7 @@ namespace nav2_rviz_plugins
    * @param combo_box The combo box to add the loaded plugins to
    */
 void pluginLoader(
-  rclcpp::Node::SharedPtr node, bool & server_failed, const std::string & server_name,
+  rclcpp::Node::SharedPtr node, const std::string & server_name,
   const std::string & plugin_type, QComboBox * combo_box);
 
 // Create label string from goal status msg

@@ -69,8 +69,15 @@ Selector::Selector(QWidget * parent)
   main_layout_->addLayout(row_3_label_layout_);
   main_layout_->addLayout(row_3_layout_);
 
+  controller_->addItem("Default");
+  planner_->addItem("Default");
+  goal_checker_->addItem("Default");
+  smoother_->addItem("Default");
+  progress_checker_->addItem("Default");
+
+
   setLayout(main_layout_);
-  timer_.start(200, this);
+  loadPlugins();
 
   connect(
     controller_, QOverload<int>::of(&QComboBox::activated), this,
@@ -95,16 +102,15 @@ Selector::Selector(QWidget * parent)
 
 Selector::~Selector()
 {
+  if (load_plugins_thread_.joinable()) {
+    load_plugins_thread_.join();
+  }
 }
 
 // Publish the selected controller or planner
 void Selector::setSelection(
   QComboBox * combo_box, rclcpp::Publisher<std_msgs::msg::String>::SharedPtr publisher)
 {
-  // If "default" option is selected, it gets removed and the next item is selected
-  if (combo_box->findText("Default") != -1) {
-    combo_box->removeItem(0);
-  }
 
   // if there are no plugins available, return
   if (combo_box->count() == 0) {
@@ -115,7 +121,6 @@ void Selector::setSelection(
   msg.data = combo_box->currentText().toStdString();
 
   publisher->publish(msg);
-  timer_.start(200, this);
 }
 
 // Call setSelection() for controller
@@ -148,37 +153,21 @@ void Selector::setProgressChecker()
 }
 
 void
-Selector::timerEvent(QTimerEvent * event)
+Selector::loadPlugins()
 {
-  if (event->timerId() == timer_.timerId()) {
-    if (!plugins_loaded_) {
-      nav2_rviz_plugins::pluginLoader(
-        client_node_, server_failed_, "controller_server", "controller_plugins", controller_);
-      nav2_rviz_plugins::pluginLoader(
-        client_node_, server_failed_, "planner_server", "planner_plugins", planner_);
-      nav2_rviz_plugins::pluginLoader(
-        client_node_, server_failed_, "controller_server", "goal_checker_plugins", goal_checker_);
-      nav2_rviz_plugins::pluginLoader(
-        client_node_, server_failed_, "smoother_server", "smoother_plugins", smoother_);
-      nav2_rviz_plugins::pluginLoader(
-        client_node_, server_failed_, "controller_server", "progress_checker_plugins",
-        progress_checker_);
-
-      plugins_loaded_ = true;
-    }
-
-    // Restart the timer if the one of the server fails
-    if (server_failed_ && !tried_once_) {
-      RCLCPP_INFO(client_node_->get_logger(), "Retrying to connect to the failed server.");
-      server_failed_ = false;
-      plugins_loaded_ = false;
-      tried_once_ = true;
-      timer_.start(200, this);
-      return;
-    }
-
-    timer_.stop();
-  }
+  load_plugins_thread_ = std::thread([this]() {
+    nav2_rviz_plugins::pluginLoader(
+      client_node_, "controller_server", "controller_plugins", controller_);
+    nav2_rviz_plugins::pluginLoader(
+      client_node_, "planner_server", "planner_plugins", planner_);
+    nav2_rviz_plugins::pluginLoader(
+      client_node_, "controller_server", "goal_checker_plugins", goal_checker_);
+    nav2_rviz_plugins::pluginLoader(
+      client_node_, "smoother_server", "smoother_plugins", smoother_);
+    nav2_rviz_plugins::pluginLoader(
+      client_node_, "controller_server", "progress_checker_plugins",
+      progress_checker_);
+  });
 }
 
 }  // namespace nav2_rviz_plugins

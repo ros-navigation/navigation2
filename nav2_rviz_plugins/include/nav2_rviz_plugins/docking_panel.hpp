@@ -110,7 +110,6 @@ private:
 
   // Flags to indicate if the plugins have been loaded
   bool plugins_loaded_ = false;
-  bool server_failed_ = false;
 
   QVBoxLayout * main_layout_{nullptr};
   QHBoxLayout * info_layout_{nullptr};
