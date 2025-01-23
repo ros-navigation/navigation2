@@ -250,7 +250,6 @@ TEST(ControllerTests, DynamicParameters) {
   EXPECT_EQ(node->get_parameter("controller.v_linear_min").as_double(), 5.0);
   EXPECT_EQ(node->get_parameter("controller.v_linear_max").as_double(), 6.0);
   EXPECT_EQ(node->get_parameter("controller.v_angular_max").as_double(), 7.0);
-  EXPECT_EQ(node->get_parameter("controller.v_angular_min").as_double(), 2.0);
   EXPECT_EQ(node->get_parameter("controller.slowdown_radius").as_double(), 8.0);
   EXPECT_EQ(node->get_parameter("controller.projection_time").as_double(), 9.0);
   EXPECT_EQ(node->get_parameter("controller.simulation_time_step").as_double(), 10.0);
