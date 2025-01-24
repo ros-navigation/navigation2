@@ -266,6 +266,11 @@ protected:
     node->get_parameter(this->behavior_name_ + ".acceleration_limit", acceleration_limit_);
     node->get_parameter(this->behavior_name_ + ".deceleration_limit", deceleration_limit_);
     node->get_parameter(this->behavior_name_ + ".minimum_speed", minimum_speed_);
+    if (acceleration_limit_ < 0.0 || deceleration_limit_ > 0.0) {
+      RCLCPP_ERROR(this->logger_, "DriveOnHeading: acceleration_limit and deceleration_limit must be "
+        "positive and negative respectively");
+      throw std::runtime_error{"Invalid parameter: acceleration_limit or deceleration_limit"};
+    }
   }
 
   typename ActionT::Feedback::SharedPtr feedback_;
