@@ -135,6 +135,7 @@ public:
     cmd_vel->twist.linear.y = 0.0;
     cmd_vel->twist.angular.z = 0.0;
     if (acceleration_limit_ <= 0.0 || deceleration_limit_ >= 0.0) {
+      RCLCPP_INFO_ONCE(this->logger_, "DriveOnHeading: no acceleration or deceleration limits set");
       cmd_vel->twist.linear.x = command_speed_;
     } else {
       double current_speed = last_vel_ == std::numeric_limits<double>::max() ? 0.0 : last_vel_;
