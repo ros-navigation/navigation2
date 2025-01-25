@@ -420,7 +420,7 @@ bool AStarAlgorithm<NodeT>::createPath(
     expansion_result = _expander->tryAnalyticExpansion(
       current_node, goals_to_expand,
       getGoalsCoordinates(), neighborGetter, analytic_iterations, closest_distance,
-        coarse_search_goal_size);
+        getCoarseSearchGoalSize());
     if (expansion_result != nullptr) {
       current_node = expansion_result;
     }
@@ -605,6 +605,12 @@ void AStarAlgorithm<NodeT>::prepareGoalsForExpansion(
       }
     }
   }
+}
+
+template<typename NodeT>
+unsigned int AStarAlgorithm<NodeT>::getCoarseSearchGoalSize()
+{
+  return _coarse_search_resolution;
 }
 
 // Instantiate algorithm for the supported template types
