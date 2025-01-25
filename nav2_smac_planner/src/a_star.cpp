@@ -590,7 +590,7 @@ void AStarAlgorithm<NodeT>::prepareGoalsForExpansion(
   unsigned int & coarse_search_goal_size)
 {
   coarse_search_goal_size = _goals_vector.size() / _coarse_search_resolution;
-  goals_to_expand.reserve(_goals_vector.size());
+  goals_to_expand.resize(_goals_vector.size());
   for (unsigned int i = 0; i < coarse_search_goal_size; i++) {
     unsigned int index = i * _coarse_search_resolution;
     goals_to_expand[i] = _goals_vector[index];
