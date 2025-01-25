@@ -219,7 +219,7 @@ public:
   void prepareGoalsForExpansion(
     NodeVector & goals_to_expand,
     unsigned int & coarse_search_goal_size);
-  
+
   /**
    * @brief Get the size of the goals to expand
    * @return Size of the goals to expand
