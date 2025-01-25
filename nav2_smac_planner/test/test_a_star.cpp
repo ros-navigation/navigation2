@@ -491,13 +491,13 @@ TEST(AStarTest, test_goal_heading_mode)
   a_star.setStart(10u, 10u, 0u);
   a_star.setGoal(80u, 80u, 40u, nav2_smac_planner::GoalHeadingMode::ALL_DIRECTION,
     coarse_search_resolution);
+  EXPECT_TRUE(a_star.getCoarseSearchResolution() == coarse_search_resolution);
 
   unsigned int num_bins = nav2_smac_planner::NodeHybrid::motion_table.num_angle_quantization;
   EXPECT_TRUE(a_star.getGoals().size() == num_bins);
-  EXPECT_EQ(a_star.getGoals().size(), a_star.getGoalsCoordinates().size());
+  EXPECT_TRUE(a_star.getGoals().size() == a_star.getGoalsVector().size());
+  EXPECT_TRUE(a_star.getGoals().size() == a_star.getGoalsCoordinates().size());
   EXPECT_TRUE(a_star.createPath(path, num_it, tolerance, dummy_cancel_checker, expansions.get()));
-  unsigned int coarse_search_goal_size = size_theta / coarse_search_resolution;
-  EXPECT_TRUE(a_star.getCoarseSearchGoalSize() == coarse_search_goal_size);
 
   // UNKNOWN goal heading mode
   a_star.setCollisionChecker(checker.get());

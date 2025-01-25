@@ -221,10 +221,10 @@ public:
     unsigned int & coarse_search_goal_size);
 
   /**
-   * @brief Get the size of the goals to expand
+   * @brief Get the resolution of the coarse search
    * @return Size of the goals to expand
    */
-  unsigned int getCoarseSearchGoalSize();
+  unsigned int getCoarseSearchResolution();
 
 protected:
   /**
