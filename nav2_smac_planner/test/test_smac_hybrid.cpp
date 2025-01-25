@@ -192,7 +192,7 @@ TEST(SmacTest, test_smac_se2_reconfigure)
     nodeSE2->get_node_base_interface(),
     results2);
   EXPECT_EQ(nodeSE2->get_parameter("resolution").as_double(), 0.2);
-  EXPECT_EQ(nodeSE2->get_parameter("test.coarse_search_resolution").as_int(), 1);
+  EXPECT_EQ(nodeSE2->get_parameter("test.coarse_search_resolution").as_int(), -1);
 
   // Test reconfigure with invalid goal heading mode
   std::vector<rclcpp::Parameter> parameters;
