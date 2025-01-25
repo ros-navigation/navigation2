@@ -153,7 +153,7 @@ TEST(SmacTest, test_smac_se2_reconfigure)
       rclcpp::Parameter("test.terminal_checking_interval", 42),
       rclcpp::Parameter("test.motion_model_for_search", std::string("REEDS_SHEPP")),
       rclcpp::Parameter("test.goal_heading_mode", std::string("BIDIRECTIONAL")),
-      rclcpp::Parameter("test.coarse_search_resolution", 1)});
+      rclcpp::Parameter("test.coarse_search_resolution", -1)});
 
 
   rclcpp::spin_until_future_complete(

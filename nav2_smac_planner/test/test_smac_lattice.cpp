@@ -150,7 +150,7 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
       rclcpp::Parameter("test.terminal_checking_interval", 42),
       rclcpp::Parameter("test.allow_reverse_expansion", true),
       rclcpp::Parameter("test.goal_heading_mode", std::string("BIDIRECTIONAL")),
-      rclcpp::Parameter("test.coarse_search_resolution", 1)});
+      rclcpp::Parameter("test.coarse_search_resolution", -1)});
 
   try {
     // All of these params will re-init A* which will involve loading the control set file
