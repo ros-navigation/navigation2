@@ -89,6 +89,13 @@ public:
    */
   nav_msgs::msg::Path transformPath(const geometry_msgs::msg::PoseStamped & robot_pose);
 
+  /**
+   * @brief Get the global goal pose transformed to the local frame
+   * @param stamp Time to get the goal pose at
+   * @return Transformed goal pose
+   */
+  geometry_msgs::msg::PoseStamped getTransformedGoal(const builtin_interfaces::msg::Time & stamp);
+
 protected:
   /**
     * @brief Transform a pose to another frame
