@@ -705,7 +705,7 @@ void PlannerServer::isPathValid(
       {
         response->is_valid = false;
         break;
-      } else if (cost == nav2_costmap_2d::LETHAL_OBSTACLE) {
+      } else if (cost == nav2_costmap_2d::LETHAL_OBSTACLE || cost > request->max_cost) {
         response->is_valid = false;
         break;
       }

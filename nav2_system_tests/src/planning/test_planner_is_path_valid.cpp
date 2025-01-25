@@ -32,9 +32,10 @@ TEST(testIsPathValid, testIsPathValid)
   planner_tester->loadSimpleCostmap(TestCostmap::top_left_obstacle);
 
   nav_msgs::msg::Path path;
+  uint8_t max_cost = 255;
 
   // empty path
-  bool is_path_valid = planner_tester->isPathValid(path);
+  bool is_path_valid = planner_tester->isPathValid(path, max_cost);
   EXPECT_FALSE(is_path_valid);
 
   // invalid path
@@ -46,7 +47,7 @@ TEST(testIsPathValid, testIsPathValid)
       path.poses.push_back(pose);
     }
   }
-  is_path_valid = planner_tester->isPathValid(path);
+  is_path_valid = planner_tester->isPathValid(path, max_cost);
   EXPECT_FALSE(is_path_valid);
 
   // valid path
@@ -57,8 +58,13 @@ TEST(testIsPathValid, testIsPathValid)
     pose.pose.position.y = i;
     path.poses.push_back(pose);
   }
-  is_path_valid = planner_tester->isPathValid(path);
+  is_path_valid = planner_tester->isPathValid(path, max_cost);
   EXPECT_TRUE(is_path_valid);
+
+  // valid path but higher than max cost
+  max_cost = 0;
+  is_path_valid = planner_tester->isPathValid(path, max_cost);
+  EXPECT_FALSE(is_path_valid);
 }
 
 int main(int argc, char ** argv)

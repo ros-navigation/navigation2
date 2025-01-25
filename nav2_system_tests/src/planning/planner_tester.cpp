@@ -397,12 +397,13 @@ TaskStatus PlannerTester::createPlan(
   return TaskStatus::FAILED;
 }
 
-bool PlannerTester::isPathValid(nav_msgs::msg::Path & path)
+bool PlannerTester::isPathValid(nav_msgs::msg::Path & path, uint8_t max_cost)
 {
   planner_tester_->setCostmap(costmap_.get());
   // create a fake service request
   auto request = std::make_shared<nav2_msgs::srv::IsPathValid::Request>();
   request->path = path;
+  request->max_cost = max_cost;
   auto result = path_valid_client_->async_send_request(request);
 
   RCLCPP_INFO(this->get_logger(), "Waiting for service complete");

@@ -283,6 +283,7 @@
     <Condition ID="IsPathValid">
       <input_port name="path"> Path to validate </input_port>
       <input_port name="server_timeout"> Server timeout </input_port>
+      <input_port name="max_cost"> Maximum cost of the path </input_port>
     </Condition>
 
     <Condition ID="WouldAControllerRecoveryHelp">
