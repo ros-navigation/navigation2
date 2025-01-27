@@ -136,23 +136,22 @@ public:
     cmd_vel->twist.angular.z = 0.0;
 
     double current_speed = last_vel_ == std::numeric_limits<double>::max() ? 0.0 : last_vel_;
-    double min_feasible_speed = current_speed + deceleration_limit_ / this->cycle_frequency_;
-    double max_feasible_speed = current_speed + acceleration_limit_ / this->cycle_frequency_;
+    bool forward = command_speed_ > 0.0;
+    double min_feasible_speed, max_feasible_speed;
+    if (forward) {
+      min_feasible_speed = current_speed + deceleration_limit_ / this->cycle_frequency_;
+      max_feasible_speed = current_speed + acceleration_limit_ / this->cycle_frequency_;
+    } else {
+      min_feasible_speed = current_speed - acceleration_limit_ / this->cycle_frequency_;
+      max_feasible_speed = current_speed - deceleration_limit_ / this->cycle_frequency_;
+    }
     cmd_vel->twist.linear.x = std::clamp(command_speed_, min_feasible_speed, max_feasible_speed);
 
     // Check if we need to slow down to avoid overshooting
     auto remaining_distance = std::fabs(command_x_) - distance;
-    bool forward = command_speed_ > 0.0;
-    if (forward) {
-      double max_vel_to_stop = std::sqrt(-2.0 * deceleration_limit_ * remaining_distance);
-      if (max_vel_to_stop < cmd_vel->twist.linear.x) {
-        cmd_vel->twist.linear.x = max_vel_to_stop;
-      }
-    } else {
-      double max_vel_to_stop = -std::sqrt(2.0 * acceleration_limit_ * remaining_distance);
-      if (max_vel_to_stop > cmd_vel->twist.linear.x) {
-        cmd_vel->twist.linear.x = max_vel_to_stop;
-      }
+    double max_vel_to_stop = std::sqrt(-2.0 * deceleration_limit_ * remaining_distance);
+    if (max_vel_to_stop < std::abs(cmd_vel->twist.linear.x)) {
+      cmd_vel->twist.linear.x = forward ? max_vel_to_stop : -max_vel_to_stop;
     }
 
     // Ensure we don't go below minimum speed
