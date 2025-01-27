@@ -385,16 +385,11 @@ StaticLayer::updateFootprint(
 {
   if (!footprint_clearing_enabled_) {return;}
 
-  auto touchByFootprint = [&](
-    const std::vector<geometry_msgs::msg::Point> & footprint) {
-      for (const auto & point : footprint) {
-        touch(point.x, point.y, min_x, min_y, max_x, max_y);
-      }
-    };
+  for (const auto & point : transformed_footprint_) {
+    touch(point.x, point.y, min_x, min_y, max_x, max_y);
+  }
 
-  touchByFootprint(transformed_footprint_);
   transformFootprint(robot_x, robot_y, robot_yaw, getFootprint(), transformed_footprint_);
-  touchByFootprint(transformed_footprint_);
 }
 
 void
