@@ -134,35 +134,30 @@ public:
     cmd_vel->header.frame_id = this->robot_base_frame_;
     cmd_vel->twist.linear.y = 0.0;
     cmd_vel->twist.angular.z = 0.0;
-    if (acceleration_limit_ <= 0.0 || deceleration_limit_ >= 0.0) {
-      RCLCPP_INFO_ONCE(this->logger_, "DriveOnHeading: no acceleration or deceleration limits set");
-      cmd_vel->twist.linear.x = command_speed_;
+
+    double current_speed = last_vel_ == std::numeric_limits<double>::max() ? 0.0 : last_vel_;
+    double min_feasible_speed = current_speed + deceleration_limit_ / this->cycle_frequency_;
+    double max_feasible_speed = current_speed + acceleration_limit_ / this->cycle_frequency_;
+    cmd_vel->twist.linear.x = std::clamp(command_speed_, min_feasible_speed, max_feasible_speed);
+
+    // Check if we need to slow down to avoid overshooting
+    auto remaining_distance = std::fabs(command_x_) - distance;
+    bool forward = command_speed_ > 0.0;
+    if (forward) {
+      double max_vel_to_stop = std::sqrt(-2.0 * deceleration_limit_ * remaining_distance);
+      if (max_vel_to_stop < cmd_vel->twist.linear.x) {
+        cmd_vel->twist.linear.x = max_vel_to_stop;
+      }
     } else {
-      double current_speed = last_vel_ == std::numeric_limits<double>::max() ? 0.0 : last_vel_;
-
-      double min_feasible_speed = current_speed + deceleration_limit_ / this->cycle_frequency_;
-      double max_feasible_speed = current_speed + acceleration_limit_ / this->cycle_frequency_;
-      cmd_vel->twist.linear.x = std::clamp(command_speed_, min_feasible_speed, max_feasible_speed);
-
-      // Check if we need to slow down to avoid overshooting
-      auto remaining_distance = std::fabs(command_x_) - distance;
-      bool forward = command_speed_ > 0.0;
-      if (forward) {
-        double max_vel_to_stop = std::sqrt(-2.0 * deceleration_limit_ * remaining_distance);
-        if (max_vel_to_stop < cmd_vel->twist.linear.x) {
-          cmd_vel->twist.linear.x = max_vel_to_stop;
-        }
-      } else {
-        double max_vel_to_stop = -std::sqrt(2.0 * acceleration_limit_ * remaining_distance);
-        if (max_vel_to_stop > cmd_vel->twist.linear.x) {
-          cmd_vel->twist.linear.x = max_vel_to_stop;
-        }
+      double max_vel_to_stop = -std::sqrt(2.0 * acceleration_limit_ * remaining_distance);
+      if (max_vel_to_stop > cmd_vel->twist.linear.x) {
+        cmd_vel->twist.linear.x = max_vel_to_stop;
       }
+    }
 
-      // Ensure we don't go below minimum speed
-      if (std::fabs(cmd_vel->twist.linear.x) < minimum_speed_) {
-        cmd_vel->twist.linear.x = forward ? minimum_speed_ : -minimum_speed_;
-      }
+    // Ensure we don't go below minimum speed
+    if (std::fabs(cmd_vel->twist.linear.x) < minimum_speed_) {
+      cmd_vel->twist.linear.x = forward ? minimum_speed_ : -minimum_speed_;
     }
 
     geometry_msgs::msg::Pose2D pose2d;
@@ -267,7 +262,8 @@ protected:
     node->get_parameter(this->behavior_name_ + ".deceleration_limit", deceleration_limit_);
     node->get_parameter(this->behavior_name_ + ".minimum_speed", minimum_speed_);
     if (acceleration_limit_ < 0.0 || deceleration_limit_ > 0.0) {
-      RCLCPP_ERROR(this->logger_, "DriveOnHeading: acceleration_limit and deceleration_limit must be "
+      RCLCPP_ERROR(this->logger_,
+        "DriveOnHeading: acceleration_limit and deceleration_limit must be "
         "positive and negative respectively");
       throw std::runtime_error{"Invalid parameter: acceleration_limit or deceleration_limit"};
     }
