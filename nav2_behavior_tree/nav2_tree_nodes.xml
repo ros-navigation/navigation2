@@ -13,7 +13,7 @@
       <input_port name="time_allowance">Allowed time for reversing</input_port>
       <input_port name="server_name">Server name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
-      <input_port name="disable_collision_checks">Disable collision checking</input_port>
+      <input_port name="disable_collision_checks" type="bool" default="false">Disable collision checking</input_port>
       <output_port name="error_code_id">"Back up error code"</output_port>
     </Action>
 
@@ -126,7 +126,7 @@
       <input_port name="path">Path to follow</input_port>
       <input_port name="goal_checker_id">Goal checker</input_port>
       <input_port name="progress_checker_id">Progress checker</input_port>
-      <input_port name="service_name">Service name</input_port>
+      <input_port name="server_name">Action server name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
       <output_port name="error_code_id">Follow Path error code</output_port>
     </Action>
