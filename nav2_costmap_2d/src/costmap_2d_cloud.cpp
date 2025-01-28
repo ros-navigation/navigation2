@@ -193,15 +193,13 @@ void voxelCallback(const nav2_msgs::msg::VoxelGrid::ConstSharedPtr grid)
   pcl_header.frame_id = frame_id;
   pcl_header.stamp = stamp;
 
-  if (pub_marked->get_subscription_count() > 0)
-  {
+  if (pub_marked->get_subscription_count() > 0) {
     auto cloud = std::make_unique<sensor_msgs::msg::PointCloud2>();
     pointCloud2Helper(cloud, num_marked, pcl_header, g_marked);
     pub_marked->publish(std::move(cloud));
   }
 
-  if (pub_unknown->get_subscription_count() > 0)
-  {
+  if (pub_unknown->get_subscription_count() > 0) {
     auto cloud = std::make_unique<sensor_msgs::msg::PointCloud2>();
     pointCloud2Helper(cloud, num_unknown, pcl_header, g_unknown);
     pub_unknown->publish(std::move(cloud));
