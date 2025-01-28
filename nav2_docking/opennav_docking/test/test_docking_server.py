@@ -17,32 +17,47 @@ import time
 import unittest
 
 from action_msgs.msg import GoalStatus
+from ament_index_python.packages import get_package_prefix
 from geometry_msgs.msg import TransformStamped, Twist, TwistStamped
 from launch import LaunchDescription
+from launch.actions import (
+    LogInfo,
+    SetEnvironmentVariable,
+)
 from launch_ros.actions import Node
 import launch_testing
+import launch_testing.actions
+import launch_testing.asserts
+import launch_testing.markers
+import launch_testing.util
 from nav2_msgs.action import DockRobot, NavigateToPose, UndockRobot
 import pytest
 import rclpy
-import rclpy.time
-import rclpy.duration
 from rclpy.action.client import ActionClient
 from rclpy.action.server import ActionServer
+import rclpy.duration
+import rclpy.time
 from sensor_msgs.msg import BatteryState
-from tf2_ros import TransformBroadcaster, Buffer, TransformListener
+from tf2_ros import Buffer, TransformBroadcaster, TransformListener
 
 
 # This test can be run standalone with:
 # python3 -u -m pytest test_docking_server.py -s
 
 @pytest.mark.rostest
+@launch_testing.markers.keep_alive
 def generate_test_description():
-
-    return LaunchDescription([
-        Node(
+    tmux_gdb_prefix = (
+        'tmux split-window '
+        + get_package_prefix('nav2_bringup')
+        + '/lib/nav2_bringup/gdb_tmux_splitwindow.sh'
+    )
+    logme = LogInfo(msg=f'tmux_gdb_prefix={tmux_gdb_prefix}')
+    docking_server = Node(
             package='opennav_docking',
             executable='opennav_docking',
             name='docking_server',
+            # arguments=['--ros-args', '--log-level', 'debug'],
             parameters=[{'wait_charge_timeout': 1.0,
                          'controller': {
                              'use_collision_detection': False,
@@ -59,17 +74,42 @@ def generate_test_description():
                              'pose': [10.0, 0.0, 0.0]
                          }}],
             output='screen',
-        ),
-        Node(
+        )
+    lifecycle_manager_navigation = Node(
             package='nav2_lifecycle_manager',
             executable='lifecycle_manager',
             name='lifecycle_manager_navigation',
             output='screen',
+            # prefix=tmux_gdb_prefix,
             parameters=[{'autostart': True},
                         {'node_names': ['docking_server']}]
-        ),
+        )
+
+    return LaunchDescription([
+        SetEnvironmentVariable('RCUTILS_LOGGING_BUFFERED_STREAM', '1'),
+        SetEnvironmentVariable('RCUTILS_LOGGING_USE_STDOUT', '1'),
+        logme,
+        docking_server,
+        lifecycle_manager_navigation,
+        # In tests where all of the procs under tests terminate themselves, it's necessary
+        # to add a dummy process not under test to keep the launch alive. launch_test
+        # provides a simple launch action that does this:
+        launch_testing.util.KeepAliveProc(),
         launch_testing.actions.ReadyToTest(),
-    ])
+    ]), locals()
+
+
+@launch_testing.post_shutdown_test()
+class TestPostShutdown(unittest.TestCase):
+
+    def test_action_graceful_shutdown(self,
+                                      proc_info,
+                                      docking_server,
+                                      lifecycle_manager_navigation):
+        """Test graceful shutdown."""
+        launch_testing.asserts.assertExitCodes(proc_info, process=docking_server)
+        launch_testing.asserts.assertExitCodes(proc_info,
+                                               process=lifecycle_manager_navigation)
 
 
 class TestDockingServer(unittest.TestCase):
@@ -146,7 +186,7 @@ class TestDockingServer(unittest.TestCase):
         return result
 
     def check_transform(self, timeout_sec, source_frame='odom', target_frame='base_link'):
-        """Try to look up the transform we're publishing"""
+        """Try to look up the transform we're publishing."""
         if self.transform_available:
             return True
 
@@ -162,8 +202,8 @@ class TestDockingServer(unittest.TestCase):
 
             self.node.get_logger().info('Successfully found transform:')
             self.node.get_logger().info(f'Translation: [{transform.transform.translation.x}, '
-                                 f'{transform.transform.translation.y}, '
-                                 f'{transform.transform.translation.z}]')
+                                        f'{transform.transform.translation.y}, '
+                                        f'{transform.transform.translation.z}]')
             self.transform_available = True
         except Exception as e:
             self.node.get_logger().error(f'Error looking up transform: {str(e)}')
@@ -178,7 +218,6 @@ class TestDockingServer(unittest.TestCase):
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self.node)
         self.transform_available = False
-
 
         # Create a timer to run "control loop" at 20hz
         self.timer = self.node.create_timer(0.05, self.timer_callback)
@@ -222,7 +261,7 @@ class TestDockingServer(unittest.TestCase):
         # Test docking action
         self.action_result = []
         assert self.dock_action_client.wait_for_server(timeout_sec=5.0), \
-          'dock_robot service not available'
+               'dock_robot service not available'
 
         goal = DockRobot.Goal()
         goal.use_dock_id = True
