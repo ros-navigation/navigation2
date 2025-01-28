@@ -264,7 +264,8 @@ protected:
       RCLCPP_ERROR(this->logger_,
         "DriveOnHeading: acceleration_limit and deceleration_limit must be "
         "positive and negative respectively");
-      throw std::runtime_error{"Invalid parameter: acceleration_limit or deceleration_limit"};
+      acceleration_limit_ = std::abs(acceleration_limit_);
+      deceleration_limit_ = -std::abs(deceleration_limit_);
     }
   }
 
