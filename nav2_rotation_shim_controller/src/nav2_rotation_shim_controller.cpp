@@ -295,6 +295,12 @@ RotationShimController::computeRotateToHeadingCommand(
   cmd_vel.twist.angular.z =
     std::clamp(angular_vel, min_feasible_angular_speed, max_feasible_angular_speed);
 
+  // Check if we need to slow down to avoid overshooting
+  double max_vel_to_stop = std::sqrt(2 * max_angular_accel_ * fabs(angular_distance_to_heading));
+  if (fabs(cmd_vel.twist.angular.z) > max_vel_to_stop) {
+    cmd_vel.twist.angular.z = sign * max_vel_to_stop;
+  }
+
   isCollisionFree(cmd_vel, angular_distance_to_heading, pose);
   return cmd_vel;
 }
