@@ -11,18 +11,18 @@ repositories:
   #   type: git
   #   url: https://github.com/ros-perception/vision_opencv.git
   #   version: rolling
-  # ros/bond_core:
-  #   type: git
-  #   url: https://github.com/ros/bond_core.git
-  #   version: ros2
+  ros/bond_core:
+    type: git
+    url: https://github.com/ewak/bond_core.git
+    version: feature/mw/memory_safe_subscription_callback
   # ros/diagnostics:
   #   type: git
   #   url: https://github.com/ros/diagnostics.git
-  #   version: ros2-devel   
+  #   version: ros2-devel
   # ros/geographic_info:
   #   type: git
   #   url: https://github.com/ros-geographic-info/geographic_info.git
-  #   version: ros2      
+  #   version: ros2
   # ompl/ompl:
   #   type: git
   #   url: https://github.com/ompl/ompl.git
