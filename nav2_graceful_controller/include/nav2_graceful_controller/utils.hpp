@@ -15,6 +15,8 @@
 #ifndef NAV2_GRACEFUL_CONTROLLER__UTILS_HPP_
 #define NAV2_GRACEFUL_CONTROLLER__UTILS_HPP_
 
+#include <memory>
+
 #include "geometry_msgs/msg/point_stamped.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "visualization_msgs/msg/marker.hpp"
