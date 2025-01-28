@@ -32,7 +32,7 @@ TEST(testIsPathValid, testIsPathValid)
   planner_tester->loadSimpleCostmap(TestCostmap::top_left_obstacle);
 
   nav_msgs::msg::Path path;
-  uint8_t max_cost = 255;
+  unsigned int max_cost = 255;
 
   // empty path
   bool is_path_valid = planner_tester->isPathValid(path, max_cost);

@@ -35,7 +35,7 @@ IsPathValidCondition::IsPathValidCondition(
 void IsPathValidCondition::initialize()
 {
   getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
-  getInput<uint8_t>("max_cost", max_cost_);
+  getInput<unsigned int>("max_cost", max_cost_);
 }
 
 BT::NodeStatus IsPathValidCondition::tick()

@@ -397,7 +397,7 @@ TaskStatus PlannerTester::createPlan(
   return TaskStatus::FAILED;
 }
 
-bool PlannerTester::isPathValid(nav_msgs::msg::Path & path, uint8_t max_cost)
+bool PlannerTester::isPathValid(nav_msgs::msg::Path & path, unsigned int max_cost)
 {
   planner_tester_->setCostmap(costmap_.get());
   // create a fake service request

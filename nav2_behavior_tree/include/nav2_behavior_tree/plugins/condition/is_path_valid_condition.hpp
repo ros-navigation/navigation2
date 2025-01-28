@@ -64,7 +64,7 @@ public:
     return {
       BT::InputPort<nav_msgs::msg::Path>("path", "Path to Check"),
       BT::InputPort<std::chrono::milliseconds>("server_timeout"),
-      BT::InputPort<uint8_t>("max_cost", 255, "Maximum cost of the path")
+      BT::InputPort<unsigned int>("max_cost", 255, "Maximum cost of the path")
     };
   }
 
@@ -74,7 +74,7 @@ private:
   // The timeout value while waiting for a response from the
   // is path valid service
   std::chrono::milliseconds server_timeout_;
-  uint8_t max_cost_;
+  unsigned int max_cost_;
 };
 
 }  // namespace nav2_behavior_tree

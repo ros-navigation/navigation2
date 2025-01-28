@@ -700,7 +700,7 @@ void PlannerServer::isPathValid(
       }
 
       if (use_radius &&
-        (cost == nav2_costmap_2d::LETHAL_OBSTACLE ||
+        (cost > request->max_cost || cost == nav2_costmap_2d::LETHAL_OBSTACLE ||
         cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE))
       {
         response->is_valid = false;
