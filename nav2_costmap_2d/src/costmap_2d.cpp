@@ -400,28 +400,44 @@ bool Costmap2D::setConvexPolygonCost(
   const std::vector<geometry_msgs::msg::Point> & polygon,
   unsigned char cost_value)
 {
+  std::vector<MapLocation> polygon_cells;
+  if (!getCellsOccupiedByPolygon(polygon, polygon_cells)) {
+    return false;
+  }
+
+  // set the cost of those cells
+  setCostForCells(polygon_cells, cost_value);
+  return true;
+}
+
+void Costmap2D::setCostForCells(
+  std::vector<MapLocation> given_cells,
+  unsigned char cost_value)
+{
+  for (const auto & cell : given_cells) {
+    setCost(cell.x, cell.y, cost_value);
+  }
+}
+
+bool Costmap2D::getCellsOccupiedByPolygon(
+  const std::vector<geometry_msgs::msg::Point> & polygon,
+  std::vector<MapLocation> & polygon_cells)
+{
   // we assume the polygon is given in the global_frame...
   // we need to transform it to map coordinates
   std::vector<MapLocation> map_polygon;
-  for (unsigned int i = 0; i < polygon.size(); ++i) {
+  for (const auto & cell : polygon) {
     MapLocation loc;
-    if (!worldToMap(polygon[i].x, polygon[i].y, loc.x, loc.y)) {
+    if (!worldToMap(cell.x, cell.y, loc.x, loc.y)) {
       // ("Polygon lies outside map bounds, so we can't fill it");
       return false;
     }
     map_polygon.push_back(loc);
   }
 
-  std::vector<MapLocation> polygon_cells;
-
   // get the cells that fill the polygon
   convexFillCells(map_polygon, polygon_cells);
 
-  // set the cost of those cells
-  for (unsigned int i = 0; i < polygon_cells.size(); ++i) {
-    unsigned int index = getIndex(polygon_cells[i].x, polygon_cells[i].y);
-    costmap_[index] = cost_value;
-  }
   return true;
 }
 

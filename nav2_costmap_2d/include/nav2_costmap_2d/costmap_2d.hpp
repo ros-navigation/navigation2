@@ -312,6 +312,25 @@ public:
     unsigned char cost_value);
 
   /**
+   * @brief  Gets the cells occupied by polygon
+   * @param polygon The polygon to perform the operation on
+   * @param polygon_cells The cells that fills the polygon
+   * @return True if the polygon was filled... false if it could not be filled
+   */
+  bool getCellsOccupiedByPolygon(
+    const std::vector<geometry_msgs::msg::Point> & polygon,
+    std::vector<MapLocation> & polygon_cells);
+
+  /**
+   * @brief  Sets the given cells to desired value
+   * @param given_cells The cells to perform the operation on
+   * @param cost_value The value to set costs to
+   */
+  void setCostForCells(
+    std::vector<MapLocation> given_cells,
+    unsigned char cost_value);
+
+  /**
    * @brief  Get the map cells that make up the outline of a polygon
    * @param polygon The polygon in map coordinates to rasterize
    * @param polygon_cells Will be set to the cells contained in the outline of the polygon
