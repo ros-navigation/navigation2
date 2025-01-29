@@ -23,7 +23,8 @@ namespace nav2_behavior_tree
 IsPathValidCondition::IsPathValidCondition(
   const std::string & condition_name,
   const BT::NodeConfiguration & conf)
-: BT::ConditionNode(condition_name, conf)
+: BT::ConditionNode(condition_name, conf),
+  max_cost_(253), consider_unknown_as_obstacle_(false)
 {
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
   client_ = node_->create_client<nav2_msgs::srv::IsPathValid>("is_path_valid");
@@ -34,6 +35,8 @@ IsPathValidCondition::IsPathValidCondition(
 void IsPathValidCondition::initialize()
 {
   getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
+  getInput<unsigned int>("max_cost", max_cost_);
+  getInput<bool>("consider_unknown_as_obstacle", consider_unknown_as_obstacle_);
 }
 
 BT::NodeStatus IsPathValidCondition::tick()
@@ -48,6 +51,8 @@ BT::NodeStatus IsPathValidCondition::tick()
   auto request = std::make_shared<nav2_msgs::srv::IsPathValid::Request>();
 
   request->path = path;
+  request->max_cost = max_cost_;
+  request->consider_unknown_as_obstacle = consider_unknown_as_obstacle_;
   auto result = client_->async_send_request(request);
 
   if (rclcpp::spin_until_future_complete(node_, result, server_timeout_) ==
