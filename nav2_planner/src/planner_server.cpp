@@ -701,7 +701,7 @@ void PlannerServer::isPathValid(
 
       if (cost == nav2_costmap_2d::NO_INFORMATION && request->consider_unknown_as_obstacle) {
         cost = nav2_costmap_2d::LETHAL_OBSTACLE;
-      } else if(cost == nav2_costmap_2d::NO_INFORMATION) {
+      } else if (cost == nav2_costmap_2d::NO_INFORMATION) {
         cost = nav2_costmap_2d::FREE_SPACE;
       }
 
