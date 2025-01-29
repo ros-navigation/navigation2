@@ -51,7 +51,7 @@ TEST(testIsPathValid, testIsPathValid)
   is_path_valid = planner_tester->isPathValid(path, max_cost, consider_unknown_as_obstacle);
   EXPECT_FALSE(is_path_valid);
 
-  // valid path, contains NO_INFORMATION(255)
+  // valid path
   path.poses.clear();
   for (float i = 0; i < 10; i += 1.0) {
     geometry_msgs::msg::PoseStamped pose;
@@ -62,7 +62,7 @@ TEST(testIsPathValid, testIsPathValid)
   is_path_valid = planner_tester->isPathValid(path, max_cost, consider_unknown_as_obstacle);
   EXPECT_TRUE(is_path_valid);
 
-  // valid path, contains NO_INFORMATION(255)
+  // valid path, but contains NO_INFORMATION(255)
   path.poses.clear();
   consider_unknown_as_obstacle = true;
   for (float i = 0; i < 10; i += 1.0) {
