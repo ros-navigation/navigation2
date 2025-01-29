@@ -90,4 +90,3 @@ def generate_launch_description():
     ld.add_action(exit_event_handler)
 
     return ld
-    
