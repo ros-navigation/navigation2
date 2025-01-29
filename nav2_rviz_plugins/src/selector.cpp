@@ -70,7 +70,7 @@ Selector::Selector(QWidget * parent)
   main_layout_->addLayout(row_3_layout_);
 
   setLayout(main_layout_);
-  timer_.start(200, this);
+  loadPlugins();
 
   connect(
     controller_, QOverload<int>::of(&QComboBox::activated), this,
@@ -115,7 +115,6 @@ void Selector::setSelection(
   msg.data = combo_box->currentText().toStdString();
 
   publisher->publish(msg);
-  timer_.start(200, this);
 }
 
 // Call setSelection() for controller
@@ -148,37 +147,37 @@ void Selector::setProgressChecker()
 }
 
 void
-Selector::timerEvent(QTimerEvent * event)
+Selector::loadPlugins()
 {
-  if (event->timerId() == timer_.timerId()) {
-    if (!plugins_loaded_) {
-      nav2_rviz_plugins::pluginLoader(
-        client_node_, server_failed_, "controller_server", "controller_plugins", controller_);
-      nav2_rviz_plugins::pluginLoader(
-        client_node_, server_failed_, "planner_server", "planner_plugins", planner_);
-      nav2_rviz_plugins::pluginLoader(
-        client_node_, server_failed_, "controller_server", "goal_checker_plugins", goal_checker_);
-      nav2_rviz_plugins::pluginLoader(
-        client_node_, server_failed_, "smoother_server", "smoother_plugins", smoother_);
-      nav2_rviz_plugins::pluginLoader(
-        client_node_, server_failed_, "controller_server", "progress_checker_plugins",
-        progress_checker_);
-
-      plugins_loaded_ = true;
-    }
-
-    // Restart the timer if the one of the server fails
-    if (server_failed_ && !tried_once_) {
-      RCLCPP_INFO(client_node_->get_logger(), "Retrying to connect to the failed server.");
-      server_failed_ = false;
-      plugins_loaded_ = false;
-      tried_once_ = true;
-      timer_.start(200, this);
-      return;
-    }
-
-    timer_.stop();
-  }
+  load_plugins_thread_ = std::thread([this]() {
+        rclcpp::Rate rate(0.2);
+        while (rclcpp::ok() && !plugins_loaded_) {
+          RCLCPP_INFO(client_node_->get_logger(), "Trying to load plugins...");
+          nav2_rviz_plugins::pluginLoader(
+            client_node_, server_failed_, "controller_server", "controller_plugins", controller_);
+          nav2_rviz_plugins::pluginLoader(
+            client_node_, server_failed_, "planner_server", "planner_plugins", planner_);
+          nav2_rviz_plugins::pluginLoader(
+            client_node_, server_failed_, "controller_server", "goal_checker_plugins",
+            goal_checker_);
+          nav2_rviz_plugins::pluginLoader(
+            client_node_, server_failed_, "smoother_server", "smoother_plugins", smoother_);
+          nav2_rviz_plugins::pluginLoader(
+            client_node_, server_failed_, "controller_server", "progress_checker_plugins",
+            progress_checker_);
+          if (controller_->count() > 0 &&
+          planner_->count() > 0 &&
+          goal_checker_->count() > 0 &&
+          smoother_->count() > 0 &&
+          progress_checker_->count() > 0)
+          {
+            plugins_loaded_ = true;
+          } else {
+            RCLCPP_INFO(client_node_->get_logger(), "Failed to load plugins. Retrying...");
+          }
+          rate.sleep();
+        }
+  });
 }
 
 }  // namespace nav2_rviz_plugins
