@@ -699,13 +699,19 @@ void PlannerServer::isPathValid(
             position.x, position.y, theta, footprint));
       }
 
+      if (cost == nav2_costmap_2d::NO_INFORMATION && request->consider_unknown_as_obstacle) {
+        cost = nav2_costmap_2d::LETHAL_OBSTACLE;
+      } else if(cost == nav2_costmap_2d::NO_INFORMATION) {
+        cost = nav2_costmap_2d::FREE_SPACE;
+      }
+
       if (use_radius &&
-        (cost > request->max_cost || cost == nav2_costmap_2d::LETHAL_OBSTACLE ||
+        (cost >= request->max_cost || cost == nav2_costmap_2d::LETHAL_OBSTACLE ||
         cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE))
       {
         response->is_valid = false;
         break;
-      } else if (cost == nav2_costmap_2d::LETHAL_OBSTACLE || cost > request->max_cost) {
+      } else if (cost == nav2_costmap_2d::LETHAL_OBSTACLE || cost >= request->max_cost) {
         response->is_valid = false;
         break;
       }
