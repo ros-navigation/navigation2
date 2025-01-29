@@ -15,12 +15,40 @@
 #ifndef NAV2_MPPI_CONTROLLER__CRITICS__PATH_ANGLE_CRITIC_HPP_
 #define NAV2_MPPI_CONTROLLER__CRITICS__PATH_ANGLE_CRITIC_HPP_
 
+#include <string>
 #include "nav2_mppi_controller/critic_function.hpp"
 #include "nav2_mppi_controller/models/state.hpp"
 #include "nav2_mppi_controller/tools/utils.hpp"
+#include "nav2_core/controller_exceptions.hpp"
 
 namespace mppi::critics
 {
+
+/**
+ * @brief Enum type for different modes of operation
+ */
+enum class PathAngleMode
+{
+  FORWARD_PREFERENCE = 0,
+  NO_DIRECTIONAL_PREFERENCE = 1,
+  CONSIDER_FEASIBLE_PATH_ORIENTATIONS = 2
+};
+
+/**
+ * @brief Method to convert mode enum to string for printing
+ */
+std::string modeToStr(const PathAngleMode & mode)
+{
+  if (mode == PathAngleMode::FORWARD_PREFERENCE) {
+    return "Forward Preference";
+  } else if (mode == PathAngleMode::CONSIDER_FEASIBLE_PATH_ORIENTATIONS) {
+    return "Consider Feasible Path Orientations";
+  } else if (mode == PathAngleMode::NO_DIRECTIONAL_PREFERENCE) {
+    return "No Directional Preference";
+  } else {
+    return "Invalid mode!";
+  }
+}
 
 /**
  * @class mppi::critics::ConstraintCritic
@@ -49,7 +77,7 @@ protected:
 
   size_t offset_from_furthest_{0};
   bool reversing_allowed_{true};
-  bool forward_preference_{true};
+  PathAngleMode mode_{0};
 
   unsigned int power_{0};
   float weight_{0};

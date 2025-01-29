@@ -29,6 +29,7 @@
 #include "builtin_interfaces/msg/time.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_util/geometry_utils.hpp"
+#include "nav2_core/controller_exceptions.hpp"
 
 #include "nav2_mppi_controller/tools/parameters_handler.hpp"
 
@@ -88,6 +89,13 @@ public:
    * @return global plan in local frame
    */
   nav_msgs::msg::Path transformPath(const geometry_msgs::msg::PoseStamped & robot_pose);
+
+  /**
+   * @brief Get the global goal pose transformed to the local frame
+   * @param stamp Time to get the goal pose at
+   * @return Transformed goal pose
+   */
+  geometry_msgs::msg::PoseStamped getTransformedGoal(const builtin_interfaces::msg::Time & stamp);
 
 protected:
   /**

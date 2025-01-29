@@ -34,12 +34,9 @@ void MPPIController::configure(
   parameters_handler_ = std::make_unique<ParametersHandler>(parent);
 
   auto node = parent_.lock();
-  clock_ = node->get_clock();
-  last_time_called_ = clock_->now();
   // Get high-level controller parameters
   auto getParam = parameters_handler_->getParamGetter(name_);
   getParam(visualize_, "visualize", false);
-  getParam(reset_period_, "reset_period", 1.0);
 
   // Configure composed objects
   optimizer_.initialize(parent_, name_, costmap_ros_, parameters_handler_.get());
@@ -86,19 +83,16 @@ geometry_msgs::msg::TwistStamped MPPIController::computeVelocityCommands(
   auto start = std::chrono::system_clock::now();
 #endif
 
-  if (clock_->now() - last_time_called_ > rclcpp::Duration::from_seconds(reset_period_)) {
-    reset();
-  }
-  last_time_called_ = clock_->now();
-
   std::lock_guard<std::mutex> param_lock(*parameters_handler_->getLock());
+  geometry_msgs::msg::Pose goal = path_handler_.getTransformedGoal(robot_pose.header.stamp).pose;
+
   nav_msgs::msg::Path transformed_plan = path_handler_.transformPath(robot_pose);
 
   nav2_costmap_2d::Costmap2D * costmap = costmap_ros_->getCostmap();
   std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> costmap_lock(*(costmap->getMutex()));
 
   geometry_msgs::msg::TwistStamped cmd =
-    optimizer_.evalControl(robot_pose, robot_speed, transformed_plan, goal_checker);
+    optimizer_.evalControl(robot_pose, robot_speed, transformed_plan, goal, goal_checker);
 
 #ifdef BENCHMARK_TESTING
   auto end = std::chrono::system_clock::now();
@@ -107,16 +101,18 @@ geometry_msgs::msg::TwistStamped MPPIController::computeVelocityCommands(
 #endif
 
   if (visualize_) {
-    visualize(std::move(transformed_plan));
+    visualize(std::move(transformed_plan), cmd.header.stamp);
   }
 
   return cmd;
 }
 
-void MPPIController::visualize(nav_msgs::msg::Path transformed_plan)
+void MPPIController::visualize(
+  nav_msgs::msg::Path transformed_plan,
+  const builtin_interfaces::msg::Time & cmd_stamp)
 {
   trajectory_visualizer_.add(optimizer_.getGeneratedTrajectories(), "Candidate Trajectories");
-  trajectory_visualizer_.add(optimizer_.getOptimizedTrajectory(), "Optimal Trajectory");
+  trajectory_visualizer_.add(optimizer_.getOptimizedTrajectory(), "Optimal Trajectory", cmd_stamp);
   trajectory_visualizer_.visualize(std::move(transformed_plan));
 }
 

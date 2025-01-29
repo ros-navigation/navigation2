@@ -15,14 +15,14 @@
 #ifndef NAV2_MPPI_CONTROLLER__TOOLS__NOISE_GENERATOR_HPP_
 #define NAV2_MPPI_CONTROLLER__TOOLS__NOISE_GENERATOR_HPP_
 
+#include <Eigen/Dense>
+
 #include <string>
 #include <memory>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
-
-#include <xtensor/xtensor.hpp>
-#include <xtensor/xview.hpp>
+#include <random>
 
 #include "nav2_mppi_controller/models/optimizer_settings.hpp"
 #include "nav2_mppi_controller/tools/parameters_handler.hpp"
@@ -94,9 +94,14 @@ protected:
    */
   void generateNoisedControls();
 
-  xt::xtensor<float, 2> noises_vx_;
-  xt::xtensor<float, 2> noises_vy_;
-  xt::xtensor<float, 2> noises_wz_;
+  Eigen::ArrayXXf noises_vx_;
+  Eigen::ArrayXXf noises_vy_;
+  Eigen::ArrayXXf noises_wz_;
+
+  std::default_random_engine generator_;
+  std::normal_distribution<float> ndistribution_vx_;
+  std::normal_distribution<float> ndistribution_wz_;
+  std::normal_distribution<float> ndistribution_vy_;
 
   mppi::models::OptimizerSettings settings_;
   bool is_holonomic_;
