@@ -150,7 +150,7 @@ void
 Selector::loadPlugins()
 {
   load_plugins_thread_ = std::thread([this]() {
-        rclcpp::Rate rate(0.1);
+        rclcpp::Rate rate(0.2);
         while (rclcpp::ok() && !plugins_loaded_) {
           RCLCPP_INFO(client_node_->get_logger(), "Trying to load plugins...");
           nav2_rviz_plugins::pluginLoader(
@@ -172,6 +172,8 @@ Selector::loadPlugins()
           progress_checker_->count() > 0)
           {
             plugins_loaded_ = true;
+          } else {
+            RCLCPP_INFO(client_node_->get_logger(), "Failed to load plugins. Retrying...");
           }
           rate.sleep();
         }
