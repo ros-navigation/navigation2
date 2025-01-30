@@ -118,7 +118,7 @@ void ObservationBuffer::bufferCloud(const sensor_msgs::msg::PointCloud2 & cloud)
 
     // now we need to remove observations from the cloud that are below
     // or above our height thresholds
-    sensor_msgs::msg::PointCloud2 & observation_cloud = *(observation_list_.front().cloud_);
+    sensor_msgs::msg::PointCloud2 & observation_cloud = (observation_list_.front().cloud_);
     observation_cloud.height = global_frame_cloud.height;
     observation_cloud.width = global_frame_cloud.width;
     observation_cloud.fields = global_frame_cloud.fields;
@@ -199,7 +199,7 @@ void ObservationBuffer::purgeStaleObservations()
       Observation & obs = *obs_it;
       // check if the observation is out of date... and if it is,
       // remove it and those that follow from the list
-      if ((clock_->now() - obs.cloud_->header.stamp) >
+      if ((clock_->now() - obs.cloud_.header.stamp) >
         observation_keep_time_)
       {
         observation_list_.erase(obs_it, observation_list_.end());

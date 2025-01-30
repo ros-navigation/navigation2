@@ -185,7 +185,7 @@ void VoxelLayer::updateBounds(
   {
     const Observation & obs = *it;
 
-    const sensor_msgs::msg::PointCloud2 & cloud = *(obs.cloud_);
+    const sensor_msgs::msg::PointCloud2 & cloud = obs.cloud_;
 
     double sq_obstacle_max_range = obs.obstacle_max_range_ * obs.obstacle_max_range_;
     double sq_obstacle_min_range = obs.obstacle_min_range_ * obs.obstacle_min_range_;
@@ -275,7 +275,7 @@ void VoxelLayer::raytraceFreespace(
 {
   auto clearing_endpoints_ = std::make_unique<sensor_msgs::msg::PointCloud2>();
 
-  if (clearing_observation.cloud_->height == 0 || clearing_observation.cloud_->width == 0) {
+  if (clearing_observation.cloud_.height == 0 || clearing_observation.cloud_.width == 0) {
     return;
   }
 
@@ -309,8 +309,8 @@ void VoxelLayer::raytraceFreespace(
   }
 
   clearing_endpoints_->data.clear();
-  clearing_endpoints_->width = clearing_observation.cloud_->width;
-  clearing_endpoints_->height = clearing_observation.cloud_->height;
+  clearing_endpoints_->width = clearing_observation.cloud_.width;
+  clearing_endpoints_->height = clearing_observation.cloud_.height;
   clearing_endpoints_->is_dense = true;
   clearing_endpoints_->is_bigendian = false;
 
@@ -329,9 +329,9 @@ void VoxelLayer::raytraceFreespace(
   double map_end_y = origin_y_ + getSizeInMetersY();
   double map_end_z = origin_z_ + getSizeInMetersZ();
 
-  sensor_msgs::PointCloud2ConstIterator<float> iter_x(*(clearing_observation.cloud_), "x");
-  sensor_msgs::PointCloud2ConstIterator<float> iter_y(*(clearing_observation.cloud_), "y");
-  sensor_msgs::PointCloud2ConstIterator<float> iter_z(*(clearing_observation.cloud_), "z");
+  sensor_msgs::PointCloud2ConstIterator<float> iter_x(clearing_observation.cloud_, "x");
+  sensor_msgs::PointCloud2ConstIterator<float> iter_y(clearing_observation.cloud_, "y");
+  sensor_msgs::PointCloud2ConstIterator<float> iter_z(clearing_observation.cloud_, "z");
 
   for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z) {
     double wpx = *iter_x;
@@ -429,7 +429,7 @@ void VoxelLayer::raytraceFreespace(
 
   if (publish_clearing_points) {
     clearing_endpoints_->header.frame_id = global_frame_;
-    clearing_endpoints_->header.stamp = clearing_observation.cloud_->header.stamp;
+    clearing_endpoints_->header.stamp = clearing_observation.cloud_.header.stamp;
 
     clearing_endpoints_pub_->publish(std::move(clearing_endpoints_));
   }
