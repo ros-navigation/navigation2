@@ -415,6 +415,8 @@ RotationShimController::dynamicParametersCallback(std::vector<rclcpp::Parameter>
         rotate_to_goal_heading_ = parameter.as_bool();
       } else if (name == plugin_name_ + ".rotate_to_heading_once") {
         rotate_to_heading_once_ = parameter.as_bool();
+      } else if (name == plugin_name_ + ".closed_loop") {
+        closed_loop_ = parameter.as_bool();
       }
     }
   }
