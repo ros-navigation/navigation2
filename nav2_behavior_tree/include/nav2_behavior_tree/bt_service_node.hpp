@@ -138,6 +138,9 @@ public:
       // allowing the user the option to set it in on_tick
       should_send_request_ = true;
 
+      // Clear the input request to make sure we have no leftover from previous calls
+      request_ = std::make_shared<typename ServiceT::Request>();
+
       // user defined callback, may modify "should_send_request_".
       on_tick();
 
