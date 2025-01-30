@@ -128,23 +128,28 @@ public:
     cmd_vel->linear.y = 0.0;
     cmd_vel->angular.z = 0.0;
 
-    double current_speed = last_vel_ == std::numeric_limits<double>::max() ? 0.0 : last_vel_;
-    bool forward = command_speed_ > 0.0;
-    double min_feasible_speed, max_feasible_speed;
-    if (forward) {
-      min_feasible_speed = current_speed + deceleration_limit_ / this->cycle_frequency_;
-      max_feasible_speed = current_speed + acceleration_limit_ / this->cycle_frequency_;
+    if (acceleration_limit_ == 0.0 || deceleration_limit_ == 0.0) {
+      RCLCPP_INFO_ONCE(this->logger_, "DriveOnHeading: no acceleration or deceleration limits set");
+      cmd_vel->linear.x = command_speed_;
     } else {
-      min_feasible_speed = current_speed - acceleration_limit_ / this->cycle_frequency_;
-      max_feasible_speed = current_speed - deceleration_limit_ / this->cycle_frequency_;
-    }
-    cmd_vel->linear.x = std::clamp(command_speed_, min_feasible_speed, max_feasible_speed);
+      double current_speed = last_vel_ == std::numeric_limits<double>::max() ? 0.0 : last_vel_;
+      bool forward = command_speed_ > 0.0;
+      double min_feasible_speed, max_feasible_speed;
+      if (forward) {
+        min_feasible_speed = current_speed + deceleration_limit_ / this->cycle_frequency_;
+        max_feasible_speed = current_speed + acceleration_limit_ / this->cycle_frequency_;
+      } else {
+        min_feasible_speed = current_speed - acceleration_limit_ / this->cycle_frequency_;
+        max_feasible_speed = current_speed - deceleration_limit_ / this->cycle_frequency_;
+      }
+      cmd_vel->linear.x = std::clamp(command_speed_, min_feasible_speed, max_feasible_speed);
 
-    // Check if we need to slow down to avoid overshooting
-    auto remaining_distance = std::fabs(command_x_) - distance;
-    double max_vel_to_stop = std::sqrt(-2.0 * deceleration_limit_ * remaining_distance);
-    if (max_vel_to_stop < std::abs(cmd_vel->linear.x)) {
-      cmd_vel->linear.x = forward ? max_vel_to_stop : -max_vel_to_stop;
+      // Check if we need to slow down to avoid overshooting
+      auto remaining_distance = std::fabs(command_x_) - distance;
+      double max_vel_to_stop = std::sqrt(-2.0 * deceleration_limit_ * remaining_distance);
+      if (max_vel_to_stop < std::abs(cmd_vel->linear.x)) {
+        cmd_vel->linear.x = forward ? max_vel_to_stop : -max_vel_to_stop;
+      }
     }
 
     // Ensure we don't go below minimum speed
@@ -242,7 +247,7 @@ protected:
     node->get_parameter(this->behavior_name_ + ".acceleration_limit", acceleration_limit_);
     node->get_parameter(this->behavior_name_ + ".deceleration_limit", deceleration_limit_);
     node->get_parameter(this->behavior_name_ + ".minimum_speed", minimum_speed_);
-    if (acceleration_limit_ <= 0.0 || deceleration_limit_ >= 0.0) {
+    if (acceleration_limit_ < 0.0 || deceleration_limit_ > 0.0) {
       RCLCPP_ERROR(this->logger_,
         "DriveOnHeading: acceleration_limit and deceleration_limit must be "
         "positive and negative respectively");
