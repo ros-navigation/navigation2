@@ -521,7 +521,7 @@ ObstacleLayer::updateBounds(
   {
     const Observation & obs = *it;
 
-    const sensor_msgs::msg::PointCloud2 & cloud = *(obs.cloud_);
+    const sensor_msgs::msg::PointCloud2 & cloud = obs.cloud_;
 
     double sq_obstacle_max_range = obs.obstacle_max_range_ * obs.obstacle_max_range_;
     double sq_obstacle_min_range = obs.obstacle_min_range_ * obs.obstacle_min_range_;
@@ -697,7 +697,7 @@ ObstacleLayer::raytraceFreespace(
 {
   double ox = clearing_observation.origin_.x;
   double oy = clearing_observation.origin_.y;
-  const sensor_msgs::msg::PointCloud2 & cloud = *(clearing_observation.cloud_);
+  const sensor_msgs::msg::PointCloud2 & cloud = clearing_observation.cloud_;
 
   // get the map coordinates of the origin of the sensor
   unsigned int x0, y0;
