@@ -122,6 +122,7 @@ protected:
   TrajectoryVisualizer trajectory_visualizer_;
 
   bool visualize_;
+  bool print_execution_times_;
 };
 
 }  // namespace nav2_mppi_controller
