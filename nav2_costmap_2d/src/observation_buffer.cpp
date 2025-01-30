@@ -118,7 +118,7 @@ void ObservationBuffer::bufferCloud(const sensor_msgs::msg::PointCloud2 & cloud)
 
     // now we need to remove observations from the cloud that are below
     // or above our height thresholds
-    sensor_msgs::msg::PointCloud2 & observation_cloud = *(observation_list_.front().cloud_);
+    sensor_msgs::msg::PointCloud2 & observation_cloud = (observation_list_.front().cloud_);
     observation_cloud.height = global_frame_cloud.height;
     observation_cloud.width = global_frame_cloud.width;
     observation_cloud.fields = global_frame_cloud.fields;
