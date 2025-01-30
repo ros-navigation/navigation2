@@ -122,6 +122,7 @@ void RotationShimController::activate()
 
   primary_controller_->activate();
   in_rotation_ = false;
+  last_angular_vel_ = std::numeric_limits<double>::max();
 
   auto node = node_.lock();
   dyn_params_handler_ = node->add_on_set_parameters_callback(
@@ -144,8 +145,6 @@ void RotationShimController::deactivate()
     node->remove_on_set_parameters_callback(dyn_params_handler_.get());
   }
   dyn_params_handler_.reset();
-
-  last_angular_vel_ = std::numeric_limits<double>::max();
 }
 
 void RotationShimController::cleanup()
