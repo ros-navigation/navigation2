@@ -74,7 +74,7 @@ void RotationShimController::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, plugin_name_ + ".rotate_to_heading_once", rclcpp::ParameterValue(false));
   nav2_util::declare_parameter_if_not_declared(
-    node, plugin_name_ + ".feedback", rclcpp::ParameterValue(std::string("CLOSED_LOOP")));
+    node, plugin_name_ + ".closed_loop", rclcpp::ParameterValue(true));
 
   node->get_parameter(plugin_name_ + ".angular_dist_threshold", angular_dist_threshold_);
   node->get_parameter(plugin_name_ + ".angular_disengage_threshold", angular_disengage_threshold_);
@@ -91,21 +91,7 @@ void RotationShimController::configure(
 
   node->get_parameter(plugin_name_ + ".rotate_to_goal_heading", rotate_to_goal_heading_);
   node->get_parameter(plugin_name_ + ".rotate_to_heading_once", rotate_to_heading_once_);
-
-  std::string feedback_type;
-  node->get_parameter(plugin_name_ + ".feedback", feedback_type);
-
-    // Get control type
-  if (feedback_type == "OPEN_LOOP") {
-    open_loop_ = true;
-  } else if (feedback_type == "CLOSED_LOOP") {
-    open_loop_ = false;
-  } else {
-    RCLCPP_ERROR(
-      logger_,
-      "Invalid feedback_type, options are OPEN_LOOP and CLOSED_LOOP. Setting to CLOSED_LOOP!");
-    open_loop_ = false;
-  }
+  node->get_parameter(plugin_name_ + ".closed_loop", closed_loop_);
 
   try {
     primary_controller_ = lp_loader_.createUniqueInstance(primary_controller);
@@ -315,7 +301,7 @@ RotationShimController::computeRotateToHeadingCommand(
   const geometry_msgs::msg::PoseStamped & pose,
   const geometry_msgs::msg::Twist & velocity)
 {
-  auto current = open_loop_ ? last_angular_vel_ : velocity.angular.z;
+  auto current = closed_loop_ ? velocity.angular.z : last_angular_vel_;
   if (current == std::numeric_limits<double>::max()) {
     current = 0.0;
   }

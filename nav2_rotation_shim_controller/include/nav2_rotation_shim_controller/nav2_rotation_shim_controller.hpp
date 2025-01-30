@@ -180,7 +180,7 @@ protected:
   double rotate_to_heading_angular_vel_, max_angular_accel_;
   double control_duration_, simulate_ahead_time_;
   bool rotate_to_goal_heading_, in_rotation_, rotate_to_heading_once_;
-  bool open_loop_;
+  bool closed_loop_;
   double last_angular_vel_ = std::numeric_limits<double>::max();
 
   // Dynamic parameters handler
