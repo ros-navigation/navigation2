@@ -128,12 +128,12 @@ public:
     cmd_vel->linear.y = 0.0;
     cmd_vel->angular.z = 0.0;
 
+    bool forward = command_speed_ > 0.0;
     if (acceleration_limit_ == 0.0 || deceleration_limit_ == 0.0) {
       RCLCPP_INFO_ONCE(this->logger_, "DriveOnHeading: no acceleration or deceleration limits set");
       cmd_vel->linear.x = command_speed_;
     } else {
       double current_speed = last_vel_ == std::numeric_limits<double>::max() ? 0.0 : last_vel_;
-      bool forward = command_speed_ > 0.0;
       double min_feasible_speed, max_feasible_speed;
       if (forward) {
         min_feasible_speed = current_speed + deceleration_limit_ / this->cycle_frequency_;
