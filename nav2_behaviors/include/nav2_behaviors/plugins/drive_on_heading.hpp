@@ -232,13 +232,13 @@ protected:
 
     nav2_util::declare_parameter_if_not_declared(
       node, this->behavior_name_ + ".acceleration_limit",
-      rclcpp::ParameterValue(2.5));
+      rclcpp::ParameterValue(0.0));
     nav2_util::declare_parameter_if_not_declared(
       node, this->behavior_name_ + ".deceleration_limit",
-      rclcpp::ParameterValue(-2.5));
+      rclcpp::ParameterValue(0.0));
     nav2_util::declare_parameter_if_not_declared(
       node, this->behavior_name_ + ".minimum_speed",
-      rclcpp::ParameterValue(0.10));
+      rclcpp::ParameterValue(0.0));
     node->get_parameter(this->behavior_name_ + ".acceleration_limit", acceleration_limit_);
     node->get_parameter(this->behavior_name_ + ".deceleration_limit", deceleration_limit_);
     node->get_parameter(this->behavior_name_ + ".minimum_speed", minimum_speed_);
