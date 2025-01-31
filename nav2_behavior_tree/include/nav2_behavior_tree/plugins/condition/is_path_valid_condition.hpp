@@ -68,6 +68,10 @@ public:
   }
 
 private:
+  /**
+   * @brief Function to create ROS interfaces
+   */
+  void createROSInterfaces();
   rclcpp::Node::SharedPtr node_;
   rclcpp::Client<nav2_msgs::srv::IsPathValid>::SharedPtr client_;
   // The timeout value while waiting for a response from the

@@ -84,6 +84,10 @@ public:
   static BT::PortsList providedPorts() {return {};}
 
 private:
+  /**
+   * @brief Function to create ROS interfaces
+   */
+  void createROSInterfaces();
   // The node that will be used for any ROS operations
   rclcpp::Node::SharedPtr node_;
   rclcpp::CallbackGroup::SharedPtr callback_group_;

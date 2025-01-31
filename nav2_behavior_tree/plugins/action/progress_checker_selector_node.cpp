@@ -31,6 +31,11 @@ ProgressCheckerSelector::ProgressCheckerSelector(
   const BT::NodeConfiguration & conf)
 : BT::SyncActionNode(name, conf)
 {
+  createROSInterfaces();
+}
+
+void ProgressCheckerSelector::createROSInterfaces()
+{
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
 
   getInput("topic_name", topic_name_);

@@ -33,6 +33,11 @@ GoalUpdater::GoalUpdater(
   const BT::NodeConfiguration & conf)
 : BT::DecoratorNode(name, conf)
 {
+  createROSInterfaces();
+}
+
+void GoalUpdater::createROSInterfaces()
+{
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
   callback_group_ = node_->create_callback_group(
     rclcpp::CallbackGroupType::MutuallyExclusive,

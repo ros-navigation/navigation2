@@ -33,6 +33,11 @@ SmootherSelector::SmootherSelector(
   const BT::NodeConfiguration & conf)
 : BT::SyncActionNode(name, conf)
 {
+  createROSInterfaces();
+}
+
+void SmootherSelector::createROSInterfaces()
+{
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
   callback_group_ = node_->create_callback_group(
     rclcpp::CallbackGroupType::MutuallyExclusive,

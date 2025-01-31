@@ -26,6 +26,11 @@ IsBatteryChargingCondition::IsBatteryChargingCondition(
   battery_topic_("/battery_status"),
   is_battery_charging_(false)
 {
+  createROSInterfaces();
+}
+
+void IsBatteryChargingCondition::createROSInterfaces()
+{
   getInput("battery_topic", battery_topic_);
   auto node = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
   callback_group_ = node->create_callback_group(

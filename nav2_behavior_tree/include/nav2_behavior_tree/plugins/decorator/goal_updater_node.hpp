@@ -64,6 +64,10 @@ public:
 
 private:
   /**
+   * @brief Function to create ROS interfaces
+   */
+  void createROSInterfaces();
+  /**
    * @brief The main override required by a BT action
    * @return BT::NodeStatus Status of tick execution
    */

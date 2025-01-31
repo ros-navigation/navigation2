@@ -32,6 +32,11 @@ GoalCheckerSelector::GoalCheckerSelector(
   const BT::NodeConfiguration & conf)
 : BT::SyncActionNode(name, conf)
 {
+  createROSInterfaces();
+}
+
+void GoalCheckerSelector::createROSInterfaces()
+{
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
 
   getInput("topic_name", topic_name_);

@@ -31,6 +31,22 @@ IsStuckCondition::IsStuckCondition(
   current_accel_(0.0),
   brake_accel_limit_(-10.0)
 {
+  createROSInterfaces();
+
+  RCLCPP_DEBUG(node_->get_logger(), "Initialized an IsStuckCondition BT node");
+
+  RCLCPP_INFO_ONCE(node_->get_logger(), "Waiting on odometry");
+}
+
+IsStuckCondition::~IsStuckCondition()
+{
+  RCLCPP_DEBUG(node_->get_logger(), "Shutting down IsStuckCondition BT node");
+  callback_group_executor_.cancel();
+  callback_group_executor_thread.join();
+}
+
+void IsStuckCondition::createROSInterfaces()
+{
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
   callback_group_ = node_->create_callback_group(
     rclcpp::CallbackGroupType::MutuallyExclusive,
@@ -45,17 +61,6 @@ IsStuckCondition::IsStuckCondition(
     rclcpp::SystemDefaultsQoS(),
     std::bind(&IsStuckCondition::onOdomReceived, this, std::placeholders::_1),
     sub_option);
-
-  RCLCPP_DEBUG(node_->get_logger(), "Initialized an IsStuckCondition BT node");
-
-  RCLCPP_INFO_ONCE(node_->get_logger(), "Waiting on odometry");
-}
-
-IsStuckCondition::~IsStuckCondition()
-{
-  RCLCPP_DEBUG(node_->get_logger(), "Shutting down IsStuckCondition BT node");
-  callback_group_executor_.cancel();
-  callback_group_executor_thread.join();
 }
 
 void IsStuckCondition::onOdomReceived(const typename nav_msgs::msg::Odometry::SharedPtr msg)

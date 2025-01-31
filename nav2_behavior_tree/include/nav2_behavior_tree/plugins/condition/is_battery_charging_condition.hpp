@@ -64,6 +64,11 @@ public:
 
 private:
   /**
+   * @brief Function to create ROS interfaces
+   */
+  void createROSInterfaces();
+
+  /**
    * @brief Callback function for battery topic
    * @param msg Shared pointer to sensor_msgs::msg::BatteryState message
    */
