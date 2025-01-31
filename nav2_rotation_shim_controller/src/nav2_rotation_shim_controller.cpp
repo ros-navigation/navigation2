@@ -388,6 +388,12 @@ void RotationShimController::setSpeedLimit(const double & speed_limit, const boo
   primary_controller_->setSpeedLimit(speed_limit, percentage);
 }
 
+void RotationShimController::reset()
+{
+  last_angular_vel_ = std::numeric_limits<double>::max();
+  primary_controller_->reset();
+}
+
 rcl_interfaces::msg::SetParametersResult
 RotationShimController::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
 {
