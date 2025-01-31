@@ -163,7 +163,7 @@ void VoxelLayer::updateBounds(
   useExtraBounds(min_x, min_y, max_x, max_y);
 
   bool current = true;
-  std::vector<Observation> observations, clearing_observations;
+  std::vector<Observation::ConstSharedPtr> observations, clearing_observations;
 
   // get the marking observations
   current = getMarkingObservations(observations) && current;
@@ -175,15 +175,13 @@ void VoxelLayer::updateBounds(
   current_ = current;
 
   // raytrace freespace
-  for (unsigned int i = 0; i < clearing_observations.size(); ++i) {
-    raytraceFreespace(clearing_observations[i], min_x, min_y, max_x, max_y);
+  for (const auto & clearing_observation : clearing_observations) {
+    raytraceFreespace(*clearing_observation, min_x, min_y, max_x, max_y);
   }
 
   // place the new obstacles into a priority queue... each with a priority of zero to begin with
-  for (std::vector<Observation>::const_iterator it = observations.begin(); it != observations.end();
-    ++it)
-  {
-    const Observation & obs = *it;
+  for (const auto & observation : observations) {
+    const Observation & obs = *observation;
 
     const sensor_msgs::msg::PointCloud2 & cloud = obs.cloud_;
 

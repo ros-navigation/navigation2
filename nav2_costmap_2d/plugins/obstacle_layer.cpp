@@ -206,15 +206,13 @@ void ObstacleLayer::onInitialize()
 
     // create an observation buffer
     observation_buffers_.push_back(
-      std::shared_ptr<ObservationBuffer
-      >(
-        new ObservationBuffer(
-          node, topic, observation_keep_time, expected_update_rate,
+          std::make_shared<ObservationBuffer>(node, topic, observation_keep_time,
+        expected_update_rate,
           min_obstacle_height,
           max_obstacle_height, obstacle_max_range, obstacle_min_range, raytrace_max_range,
           raytrace_min_range, *tf_,
           global_frame_,
-          sensor_frame, tf2::durationFromSec(transform_tolerance))));
+          sensor_frame, tf2::durationFromSec(transform_tolerance)));
 
     // check if we'll add this buffer to our marking observation buffers
     if (marking) {
@@ -399,7 +397,7 @@ ObstacleLayer::dynamicParametersCallback(
 void
 ObstacleLayer::laserScanCallback(
   sensor_msgs::msg::LaserScan::ConstSharedPtr message,
-  const std::shared_ptr<nav2_costmap_2d::ObservationBuffer> & buffer)
+  const std::shared_ptr<ObservationBuffer> & buffer)
 {
   // project the laser into a point cloud
   sensor_msgs::msg::PointCloud2 cloud;
@@ -433,7 +431,7 @@ ObstacleLayer::laserScanCallback(
 void
 ObstacleLayer::laserScanValidInfCallback(
   sensor_msgs::msg::LaserScan::ConstSharedPtr raw_message,
-  const std::shared_ptr<nav2_costmap_2d::ObservationBuffer> & buffer)
+  const std::shared_ptr<ObservationBuffer> & buffer)
 {
   // Filter positive infinities ("Inf"s) to max_range.
   float epsilon = 0.0001;  // a tenth of a millimeter
@@ -499,7 +497,7 @@ ObstacleLayer::updateBounds(
   useExtraBounds(min_x, min_y, max_x, max_y);
 
   bool current = true;
-  std::vector<Observation> observations, clearing_observations;
+  std::vector<Observation::ConstSharedPtr> observations, clearing_observations;
 
   // get the marking observations
   current = current && getMarkingObservations(observations);
@@ -511,15 +509,13 @@ ObstacleLayer::updateBounds(
   current_ = current;
 
   // raytrace freespace
-  for (unsigned int i = 0; i < clearing_observations.size(); ++i) {
-    raytraceFreespace(clearing_observations[i], min_x, min_y, max_x, max_y);
+  for (const auto & clearing_observation : clearing_observations) {
+    raytraceFreespace(*clearing_observation, min_x, min_y, max_x, max_y);
   }
 
   // place the new obstacles into a priority queue... each with a priority of zero to begin with
-  for (std::vector<Observation>::const_iterator it = observations.begin();
-    it != observations.end(); ++it)
-  {
-    const Observation & obs = *it;
+  for (const auto & observation : observations) {
+    const Observation & obs = *observation;
 
     const sensor_msgs::msg::PointCloud2 & cloud = obs.cloud_;
 
@@ -632,14 +628,15 @@ ObstacleLayer::updateCosts(
 
 void
 ObstacleLayer::addStaticObservation(
-  nav2_costmap_2d::Observation & obs,
+  nav2_costmap_2d::Observation obs,
   bool marking, bool clearing)
 {
+  const auto observation = Observation::make_shared(std::move(obs));
   if (marking) {
-    static_marking_observations_.push_back(obs);
+    static_marking_observations_.push_back(observation);
   }
   if (clearing) {
-    static_clearing_observations_.push_back(obs);
+    static_clearing_observations_.push_back(observation);
   }
 }
 
@@ -655,15 +652,16 @@ ObstacleLayer::clearStaticObservations(bool marking, bool clearing)
 }
 
 bool
-ObstacleLayer::getMarkingObservations(std::vector<Observation> & marking_observations) const
+ObstacleLayer::getMarkingObservations(
+  std::vector<Observation::ConstSharedPtr> & marking_observations) const
 {
   bool current = true;
   // get the marking observations
-  for (unsigned int i = 0; i < marking_buffers_.size(); ++i) {
-    marking_buffers_[i]->lock();
-    marking_buffers_[i]->getObservations(marking_observations);
-    current = marking_buffers_[i]->isCurrent() && current;
-    marking_buffers_[i]->unlock();
+  for (const auto & marking_buffer : marking_buffers_) {
+    marking_buffer->lock();
+    marking_buffer->getObservations(marking_observations);
+    current = marking_buffer->isCurrent() && current;
+    marking_buffer->unlock();
   }
   marking_observations.insert(
     marking_observations.end(),
@@ -672,15 +670,16 @@ ObstacleLayer::getMarkingObservations(std::vector<Observation> & marking_observa
 }
 
 bool
-ObstacleLayer::getClearingObservations(std::vector<Observation> & clearing_observations) const
+ObstacleLayer::getClearingObservations(
+  std::vector<Observation::ConstSharedPtr> & clearing_observations) const
 {
   bool current = true;
   // get the clearing observations
-  for (unsigned int i = 0; i < clearing_buffers_.size(); ++i) {
-    clearing_buffers_[i]->lock();
-    clearing_buffers_[i]->getObservations(clearing_observations);
-    current = clearing_buffers_[i]->isCurrent() && current;
-    clearing_buffers_[i]->unlock();
+  for (const auto & clearing_buffer : clearing_buffers_) {
+    clearing_buffer->lock();
+    clearing_buffer->getObservations(clearing_observations);
+    current = clearing_buffer->isCurrent() && current;
+    clearing_buffer->unlock();
   }
   clearing_observations.insert(
     clearing_observations.end(),
@@ -833,10 +832,8 @@ ObstacleLayer::reset()
 void
 ObstacleLayer::resetBuffersLastUpdated()
 {
-  for (unsigned int i = 0; i < observation_buffers_.size(); ++i) {
-    if (observation_buffers_[i]) {
-      observation_buffers_[i]->resetLastUpdated();
-    }
+  for (const auto & observation_buffer : observation_buffers_) {
+    observation_buffer->resetLastUpdated();
   }
 }
 

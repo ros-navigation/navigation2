@@ -144,7 +144,7 @@ BENCHMARK_F(ObservationBufferFixture, AddCloudsAndGetObersvations)(benchmark::St
     buffer_->bufferCloud(test_clouds_[1]);
     setClock(rclcpp::Time{10, 0});
     buffer_->bufferCloud(test_clouds_[2]);
-    std::vector<nav2_costmap_2d::Observation> observations{};
+    std::vector<nav2_costmap_2d::Observation::ConstSharedPtr> observations{};
     // The observation_keep_time is 10s and the age of the oldest cloud is 9s
     // so all 3 added observations should be returned
     layers_.updateMap(0, 0, 0);
