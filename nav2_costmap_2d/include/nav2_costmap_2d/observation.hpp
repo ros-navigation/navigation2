@@ -32,6 +32,7 @@
 #ifndef NAV2_COSTMAP_2D__OBSERVATION_HPP_
 #define NAV2_COSTMAP_2D__OBSERVATION_HPP_
 
+#include <utility>
 #include <geometry_msgs/msg/point.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <rclcpp/macros.hpp>
