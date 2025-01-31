@@ -20,6 +20,7 @@
 #include <memory>
 #include <algorithm>
 #include <mutex>
+#include <limits>
 
 #include "rclcpp/rclcpp.hpp"
 #include "pluginlib/class_loader.hpp"
@@ -106,6 +107,11 @@ public:
    */
   void setSpeedLimit(const double & speed_limit, const bool & percentage) override;
 
+  /**
+   * @brief Reset the state of the controller
+   */
+  void reset() override;
+
 protected:
   /**
    * @brief Finds the point on the path that is roughly the sampling
@@ -176,6 +182,8 @@ protected:
   double rotate_to_heading_angular_vel_, max_angular_accel_;
   double control_duration_, simulate_ahead_time_;
   bool rotate_to_goal_heading_, in_rotation_;
+  bool closed_loop_;
+  double last_angular_vel_ = std::numeric_limits<double>::max();
 
   // Dynamic parameters handler
   std::mutex mutex_;

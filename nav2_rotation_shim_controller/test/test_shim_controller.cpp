@@ -309,6 +309,84 @@ TEST(RotationShimControllerTest, computeVelocityTests)
   EXPECT_THROW(controller->computeVelocityCommands(pose, velocity, &checker), std::runtime_error);
 }
 
+TEST(RotationShimControllerTest, openLoopRotationTests) {
+  auto ctrl = std::make_shared<RotationShimShim>();
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("ShimControllerTest");
+  std::string name = "PathFollower";
+  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  auto listener = std::make_shared<tf2_ros::TransformListener>(*tf, node, true);
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
+  rclcpp_lifecycle::State state;
+  costmap->on_configure(state);
+  auto tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(node);
+
+  geometry_msgs::msg::TransformStamped transform;
+  transform.header.frame_id = "base_link";
+  transform.child_frame_id = "odom";
+  transform.transform.rotation.x = 0.0;
+  transform.transform.rotation.y = 0.0;
+  transform.transform.rotation.z = 0.0;
+  transform.transform.rotation.w = 1.0;
+  tf_broadcaster->sendTransform(transform);
+
+  // set a valid primary controller so we can do lifecycle
+  node->declare_parameter(
+    "PathFollower.primary_controller",
+    std::string("nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"));
+  node->declare_parameter(
+    "controller_frequency",
+    20.0);
+  node->declare_parameter(
+    "PathFollower.rotate_to_goal_heading",
+    true);
+  node->declare_parameter(
+    "PathFollower.closed_loop",
+    false);
+
+  auto controller = std::make_shared<RotationShimShim>();
+  controller->configure(node, name, tf, costmap);
+  controller->activate();
+
+  // Test state update and path setting
+  nav_msgs::msg::Path path;
+  path.header.frame_id = "base_link";
+  path.poses.resize(4);
+
+  geometry_msgs::msg::PoseStamped pose;
+  pose.header.frame_id = "base_link";
+  geometry_msgs::msg::Twist velocity;
+  nav2_controller::SimpleGoalChecker checker;
+  node->declare_parameter(
+    "checker.xy_goal_tolerance",
+    1.0);
+  checker.initialize(node, "checker", costmap);
+
+  path.header.frame_id = "base_link";
+  path.poses[0].pose.position.x = 0.0;
+  path.poses[0].pose.position.y = 0.0;
+  path.poses[1].pose.position.x = 0.05;
+  path.poses[1].pose.position.y = 0.05;
+  path.poses[2].pose.position.x = 0.10;
+  path.poses[2].pose.position.y = 0.10;
+  // goal position within checker xy_goal_tolerance
+  path.poses[3].pose.position.x = 0.20;
+  path.poses[3].pose.position.y = 0.20;
+  // goal heading 45 degrees to the left
+  path.poses[3].pose.orientation.z = -0.3826834;
+  path.poses[3].pose.orientation.w = 0.9238795;
+  path.poses[3].header.frame_id = "base_link";
+
+  // Calculate first velocity command
+  controller->setPlan(path);
+  auto cmd_vel = controller->computeVelocityCommands(pose, velocity, &checker);
+  EXPECT_NEAR(cmd_vel.twist.angular.z, -0.16, 1e-4);
+
+  // Test second velocity command with wrong odometry
+  velocity.angular.z = 1.8;
+  cmd_vel = controller->computeVelocityCommands(pose, velocity, &checker);
+  EXPECT_NEAR(cmd_vel.twist.angular.z, -0.32, 1e-4);
+}
+
 TEST(RotationShimControllerTest, computeVelocityGoalRotationTests) {
   auto ctrl = std::make_shared<RotationShimShim>();
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("ShimControllerTest");
@@ -412,7 +490,8 @@ TEST(RotationShimControllerTest, testDynamicParameter)
       rclcpp::Parameter("test.max_angular_accel", 7.0),
       rclcpp::Parameter("test.simulate_ahead_time", 7.0),
       rclcpp::Parameter("test.primary_controller", std::string("HI")),
-      rclcpp::Parameter("test.rotate_to_goal_heading", true)});
+      rclcpp::Parameter("test.rotate_to_goal_heading", true),
+      rclcpp::Parameter("test.closed_loop", false)});
 
   rclcpp::spin_until_future_complete(
     node->get_node_base_interface(),
@@ -424,4 +503,5 @@ TEST(RotationShimControllerTest, testDynamicParameter)
   EXPECT_EQ(node->get_parameter("test.max_angular_accel").as_double(), 7.0);
   EXPECT_EQ(node->get_parameter("test.simulate_ahead_time").as_double(), 7.0);
   EXPECT_EQ(node->get_parameter("test.rotate_to_goal_heading").as_bool(), true);
+  EXPECT_EQ(node->get_parameter("test.closed_loop").as_bool(), false);
 }
