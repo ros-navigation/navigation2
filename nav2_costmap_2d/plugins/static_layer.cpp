@@ -138,6 +138,7 @@ StaticLayer::getParameters()
   declareParameter("transform_tolerance", rclcpp::ParameterValue(0.0));
   declareParameter("map_topic", rclcpp::ParameterValue("map"));
   declareParameter("footprint_clearing_enabled", rclcpp::ParameterValue(false));
+  declareParameter("restore_outdated_map", rclcpp::ParameterValue(false));
 
   auto node = node_.lock();
   if (!node) {
@@ -147,6 +148,7 @@ StaticLayer::getParameters()
   node->get_parameter(name_ + "." + "enabled", enabled_);
   node->get_parameter(name_ + "." + "subscribe_to_updates", subscribe_to_updates_);
   node->get_parameter(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_);
+  node->get_parameter(name_ + "." + "restore_outdated_map", restore_outdated_map_);
   node->get_parameter(name_ + "." + "map_topic", map_topic_);
   map_topic_ = joinWithParentNamespace(map_topic_);
   node->get_parameter(
@@ -461,8 +463,10 @@ StaticLayer::updateCosts(
     }
   }
 
-  // restore the map region occupied by the polygon using cached data
-  restoreMapRegionOccupiedByPolygon(map_region_to_restore);
+  if (restore_outdated_map_) {
+    // restore the map region occupied by the polygon using cached data
+    restoreMapRegionOccupiedByPolygon(map_region_to_restore);
+  }
   current_ = true;
 }
 
@@ -503,6 +507,8 @@ StaticLayer::dynamicParametersCallback(
         current_ = false;
       } else if (param_name == name_ + "." + "footprint_clearing_enabled") {
         footprint_clearing_enabled_ = parameter.as_bool();
+      } else if (param_name == name_ + "." + "restore_outdated_map") {
+        restore_outdated_map_ = parameter.as_bool();
       }
     }
   }
