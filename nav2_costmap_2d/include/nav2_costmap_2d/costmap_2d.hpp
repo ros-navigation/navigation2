@@ -312,23 +312,30 @@ public:
     unsigned char cost_value);
 
   /**
-   * @brief  Gets the cells occupied by polygon
+   * @brief  Gets the map region occupied by polygon
    * @param polygon The polygon to perform the operation on
-   * @param polygon_cells The cells that fills the polygon
-   * @return True if the polygon was filled... false if it could not be filled
+   * @param polygon_map_region The map region occupied by the polygon
+   * @return True if the polygon_map_region was filled... false if it could not be filled
    */
-  bool getCellsOccupiedByPolygon(
+  bool getMapRegionOccupiedByPolygon(
     const std::vector<geometry_msgs::msg::Point> & polygon,
-    std::vector<MapLocation> & polygon_cells);
+    std::vector<std::pair<MapLocation, unsigned char>> & polygon_map_region);
 
   /**
-   * @brief  Sets the given cells to desired value
-   * @param given_cells The cells to perform the operation on
-   * @param cost_value The value to set costs to
+   * @brief  Sets the given map region to desired value
+   * @param polygon_map_region The map region to perform the operation on
+   * @param new_cost_value The value to set costs to
    */
-  void setCostForCells(
-    std::vector<MapLocation> given_cells,
-    unsigned char cost_value);
+  void setMapRegionOccupiedByPolygon(
+    const std::vector<std::pair<MapLocation, unsigned char>> & polygon_map_region,
+    unsigned char new_cost_value);
+
+  /**
+   * @brief  Restores the corresponding map region using given map region
+   * @param polygon_map_region The map region to perform the operation on
+   */
+  void restoreMapRegionOccupiedByPolygon(
+    const std::vector<std::pair<MapLocation, unsigned char>> & polygon_map_region);
 
   /**
    * @brief  Get the map cells that make up the outline of a polygon

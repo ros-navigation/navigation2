@@ -387,8 +387,8 @@ StaticLayer::updateFootprint(
 
   transformFootprint(robot_x, robot_y, robot_yaw, getFootprint(), transformed_footprint_);
 
-  for (const auto & point : transformed_footprint_) {
-    touch(point.x, point.y, min_x, min_y, max_x, max_y);
+  for (unsigned int i = 0; i < transformed_footprint_.size(); i++) {
+    touch(transformed_footprint_[i].x, transformed_footprint_[i].y, min_x, min_y, max_x, max_y);
   }
 }
 
@@ -413,15 +413,8 @@ StaticLayer::updateCosts(
 
   std::vector<std::pair<MapLocation, unsigned char>> map_region_to_restore;
   if (footprint_clearing_enabled_) {
-    std::vector<MapLocation> polygon_cells;
-    getCellsOccupiedByPolygon(transformed_footprint_, polygon_cells);
-
-    // save the map region occupied by the polygon to restore
-    for (auto cell : polygon_cells) {
-      map_region_to_restore.push_back({cell, getCost(cell.x, cell.y)});
-    }
-
-    setCostForCells(polygon_cells, nav2_costmap_2d::FREE_SPACE);
+    getMapRegionOccupiedByPolygon(transformed_footprint_, map_region_to_restore);
+    setMapRegionOccupiedByPolygon(map_region_to_restore, nav2_costmap_2d::FREE_SPACE);
   }
 
   if (!layered_costmap_->isRolling()) {
@@ -469,9 +462,7 @@ StaticLayer::updateCosts(
   }
 
   // restore the map region occupied by the polygon using cached data
-  for (auto [cell, cost_value] : map_region_to_restore) {
-    setCost(cell.x, cell.y, cost_value);
-  }
+  restoreMapRegionOccupiedByPolygon(map_region_to_restore);
   current_ = true;
 }
 
