@@ -400,7 +400,6 @@ bool Costmap2D::setConvexPolygonCost(
   const std::vector<geometry_msgs::msg::Point> & polygon,
   unsigned char cost_value)
 {
-
   std::vector<std::pair<MapLocation, unsigned char>> polygon_map_region;
   if (getMapRegionOccupiedByPolygon(polygon, polygon_map_region)) {
     return false;
