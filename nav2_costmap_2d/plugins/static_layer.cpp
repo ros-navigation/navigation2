@@ -501,9 +501,7 @@ StaticLayer::dynamicParametersCallback(
         height_ = size_y_;
         has_updated_data_ = true;
         current_ = false;
-      }
-    } else if (param_type == ParameterType::PARAMETER_BOOL) {
-      if (param_name == name_ + "." + "footprint_clearing_enabled") {
+      } else if (param_name == name_ + "." + "footprint_clearing_enabled") {
         footprint_clearing_enabled_ = parameter.as_bool();
       }
     }

@@ -20,18 +20,13 @@
 #include <string>
 #include <vector>
 #include <cmath>
-#include <xtensor/xmath.hpp>
-#include <xtensor/xrandom.hpp>
-#include <xtensor/xnoalias.hpp>
+#include <chrono>
 
 #include "nav2_core/controller_exceptions.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 
 namespace mppi
 {
-
-using namespace xt::placeholders;  // NOLINT
-using xt::evaluation_strategy::immediate;
 
 void Optimizer::initialize(
   rclcpp_lifecycle::LifecycleNode::WeakPtr parent, const std::string & name,
@@ -86,7 +81,7 @@ void Optimizer::getParams()
   getParam(s.sampling_std.wz, "wz_std", 0.4f);
   getParam(s.retry_attempt_limit, "retry_attempt_limit", 1);
 
-  s.base_constraints.ax_max = std::abs(s.base_constraints.ax_max);
+  s.base_constraints.ax_max = fabs(s.base_constraints.ax_max);
   if (s.base_constraints.ax_min > 0.0) {
     s.base_constraints.ax_min = -1.0 * s.base_constraints.ax_min;
     RCLCPP_WARN(
@@ -97,6 +92,7 @@ void Optimizer::getParams()
   getParam(motion_model_name, "motion_model", std::string("DiffDrive"));
 
   s.constraints = s.base_constraints;
+
   setMotionModel(motion_model_name);
   parameters_handler_->addPostCallback([this]() {reset();});
 
@@ -137,7 +133,7 @@ void Optimizer::reset()
 
   settings_.constraints = settings_.base_constraints;
 
-  costs_ = xt::zeros<float>({settings_.batch_size});
+  costs_.setZero(settings_.batch_size);
   generated_trajectories_.reset(settings_.batch_size, settings_.time_steps);
 
   noise_generator_.reset(settings_, isHolonomic());
@@ -152,9 +148,11 @@ bool Optimizer::isHolonomic() const
 geometry_msgs::msg::TwistStamped Optimizer::evalControl(
   const geometry_msgs::msg::PoseStamped & robot_pose,
   const geometry_msgs::msg::Twist & robot_speed,
-  const nav_msgs::msg::Path & plan, nav2_core::GoalChecker * goal_checker)
+  const nav_msgs::msg::Path & plan,
+  const geometry_msgs::msg::Pose & goal,
+  nav2_core::GoalChecker * goal_checker)
 {
-  prepare(robot_pose, robot_speed, plan, goal_checker);
+  prepare(robot_pose, robot_speed, plan, goal, goal_checker);
 
   do {
     optimize();
@@ -201,12 +199,15 @@ bool Optimizer::fallback(bool fail)
 void Optimizer::prepare(
   const geometry_msgs::msg::PoseStamped & robot_pose,
   const geometry_msgs::msg::Twist & robot_speed,
-  const nav_msgs::msg::Path & plan, nav2_core::GoalChecker * goal_checker)
+  const nav_msgs::msg::Path & plan,
+  const geometry_msgs::msg::Pose & goal,
+  nav2_core::GoalChecker * goal_checker)
 {
   state_.pose = robot_pose;
   state_.speed = robot_speed;
   path_ = utils::toTensor(plan);
-  costs_.fill(0.0f);
+  costs_.setZero();
+  goal_ = goal;
 
   critics_data_.fail_flag = false;
   critics_data_.goal_checker = goal_checker;
@@ -217,22 +218,15 @@ void Optimizer::prepare(
 
 void Optimizer::shiftControlSequence()
 {
-  using namespace xt::placeholders;  // NOLINT
-  control_sequence_.vx = xt::roll(control_sequence_.vx, -1);
-  control_sequence_.wz = xt::roll(control_sequence_.wz, -1);
-
-
-  xt::view(control_sequence_.vx, -1) =
-    xt::view(control_sequence_.vx, -2);
-
-  xt::view(control_sequence_.wz, -1) =
-    xt::view(control_sequence_.wz, -2);
-
+  auto size = control_sequence_.vx.size();
+  utils::shiftColumnsByOnePlace(control_sequence_.vx, -1);
+  utils::shiftColumnsByOnePlace(control_sequence_.wz, -1);
+  control_sequence_.vx(size - 1) = control_sequence_.vx(size - 2);
+  control_sequence_.wz(size - 1) = control_sequence_.wz(size - 2);
 
   if (isHolonomic()) {
-    control_sequence_.vy = xt::roll(control_sequence_.vy, -1);
-    xt::view(control_sequence_.vy, -1) =
-      xt::view(control_sequence_.vy, -2);
+    utils::shiftColumnsByOnePlace(control_sequence_.vy, -1);
+    control_sequence_.vy(size - 1) = control_sequence_.vy(size - 2);
   }
 }
 
@@ -248,32 +242,35 @@ void Optimizer::applyControlSequenceConstraints()
 {
   auto & s = settings_;
 
-  if (isHolonomic()) {
-    control_sequence_.vy = xt::clip(control_sequence_.vy, -s.constraints.vy, s.constraints.vy);
-  }
-
-  control_sequence_.vx = xt::clip(control_sequence_.vx, s.constraints.vx_min, s.constraints.vx_max);
-  control_sequence_.wz = xt::clip(control_sequence_.wz, -s.constraints.wz, s.constraints.wz);
-
   float max_delta_vx = s.model_dt * s.constraints.ax_max;
   float min_delta_vx = s.model_dt * s.constraints.ax_min;
   float max_delta_vy = s.model_dt * s.constraints.ay_max;
   float max_delta_wz = s.model_dt * s.constraints.az_max;
-  float vx_last = control_sequence_.vx(0);
-  float vy_last = control_sequence_.vy(0);
-  float wz_last = control_sequence_.wz(0);
-  for (unsigned int i = 1; i != control_sequence_.vx.shape(0); i++) {
+  float vx_last = utils::clamp(s.constraints.vx_min, s.constraints.vx_max, control_sequence_.vx(0));
+  float wz_last = utils::clamp(-s.constraints.wz, s.constraints.wz, control_sequence_.wz(0));
+  control_sequence_.vx(0) = vx_last;
+  control_sequence_.wz(0) = wz_last;
+  float vy_last = 0;
+  if (isHolonomic()) {
+    vy_last = utils::clamp(-s.constraints.vy, s.constraints.vy, control_sequence_.vy(0));
+    control_sequence_.vy(0) = vy_last;
+  }
+
+  for (unsigned int i = 1; i != control_sequence_.vx.size(); i++) {
     float & vx_curr = control_sequence_.vx(i);
-    vx_curr = std::clamp(vx_curr, vx_last + min_delta_vx, vx_last + max_delta_vx);
+    vx_curr = utils::clamp(s.constraints.vx_min, s.constraints.vx_max, vx_curr);
+    vx_curr = utils::clamp(vx_last + min_delta_vx, vx_last + max_delta_vx, vx_curr);
     vx_last = vx_curr;
 
     float & wz_curr = control_sequence_.wz(i);
-    wz_curr = std::clamp(wz_curr, wz_last - max_delta_wz, wz_last + max_delta_wz);
+    wz_curr = utils::clamp(-s.constraints.wz, s.constraints.wz, wz_curr);
+    wz_curr = utils::clamp(wz_last - max_delta_wz, wz_last + max_delta_wz, wz_curr);
     wz_last = wz_curr;
 
     if (isHolonomic()) {
       float & vy_curr = control_sequence_.vy(i);
-      vy_curr = std::clamp(vy_curr, vy_last - max_delta_vy, vy_last + max_delta_vy);
+      vy_curr = utils::clamp(-s.constraints.vy, s.constraints.vy, vy_curr);
+      vy_curr = utils::clamp(vy_last - max_delta_vy, vy_last + max_delta_vy, vy_curr);
       vy_last = vy_curr;
     }
   }
@@ -291,11 +288,11 @@ void Optimizer::updateStateVelocities(
 void Optimizer::updateInitialStateVelocities(
   models::State & state) const
 {
-  xt::noalias(xt::view(state.vx, xt::all(), 0)) = static_cast<float>(state.speed.linear.x);
-  xt::noalias(xt::view(state.wz, xt::all(), 0)) = static_cast<float>(state.speed.angular.z);
+  state.vx.col(0) = static_cast<float>(state.speed.linear.x);
+  state.wz.col(0) = static_cast<float>(state.speed.angular.z);
 
   if (isHolonomic()) {
-    xt::noalias(xt::view(state.vy, xt::all(), 0)) = static_cast<float>(state.speed.linear.y);
+    state.vy.col(0) = static_cast<float>(state.speed.linear.y);
   }
 }
 
@@ -306,36 +303,56 @@ void Optimizer::propagateStateVelocitiesFromInitials(
 }
 
 void Optimizer::integrateStateVelocities(
-  xt::xtensor<float, 2> & trajectory,
-  const xt::xtensor<float, 2> & sequence) const
+  Eigen::Array<float, Eigen::Dynamic, 3> & trajectory,
+  const Eigen::ArrayXXf & sequence) const
 {
   float initial_yaw = static_cast<float>(tf2::getYaw(state_.pose.pose.orientation));
 
-  const auto vx = xt::view(sequence, xt::all(), 0);
-  const auto wz = xt::view(sequence, xt::all(), 1);
+  const auto vx = sequence.col(0);
+  const auto wz = sequence.col(1);
 
-  auto traj_x = xt::view(trajectory, xt::all(), 0);
-  auto traj_y = xt::view(trajectory, xt::all(), 1);
-  auto traj_yaws = xt::view(trajectory, xt::all(), 2);
+  auto traj_x = trajectory.col(0);
+  auto traj_y = trajectory.col(1);
+  auto traj_yaws = trajectory.col(2);
 
-  xt::noalias(traj_yaws) = xt::cumsum(wz * settings_.model_dt, 0) + initial_yaw;
+  size_t n_size = traj_yaws.size();
 
-  auto yaw_cos = xt::roll(xt::eval(xt::cos(traj_yaws)), 1);
-  auto yaw_sin = xt::roll(xt::eval(xt::sin(traj_yaws)), 1);
-  xt::view(yaw_cos, 0) = cosf(initial_yaw);
-  xt::view(yaw_sin, 0) = sinf(initial_yaw);
-
-  auto && dx = xt::eval(vx * yaw_cos);
-  auto && dy = xt::eval(vx * yaw_sin);
-
-  if (isHolonomic()) {
-    const auto vy = xt::view(sequence, xt::all(), 2);
-    dx = dx - vy * yaw_sin;
-    dy = dy + vy * yaw_cos;
+  traj_yaws(0) = wz(0) * settings_.model_dt + initial_yaw;
+  float last_yaw = traj_yaws(0);
+  for(size_t i = 1; i != n_size; i++) {
+    float & curr_yaw = traj_yaws(i);
+    curr_yaw = last_yaw + wz(i) * settings_.model_dt;
+    last_yaw = curr_yaw;
   }
 
-  xt::noalias(traj_x) = state_.pose.pose.position.x + xt::cumsum(dx * settings_.model_dt, 0);
-  xt::noalias(traj_y) = state_.pose.pose.position.y + xt::cumsum(dy * settings_.model_dt, 0);
+  Eigen::ArrayXf yaw_cos = traj_yaws.cos();
+  Eigen::ArrayXf yaw_sin = traj_yaws.sin();
+  utils::shiftColumnsByOnePlace(yaw_cos, 1);
+  utils::shiftColumnsByOnePlace(yaw_sin, 1);
+  yaw_cos(0) = cosf(initial_yaw);
+  yaw_sin(0) = sinf(initial_yaw);
+
+  auto dx = (vx * yaw_cos).eval();
+  auto dy = (vx * yaw_sin).eval();
+
+  if (isHolonomic()) {
+    auto vy = sequence.col(2);
+    dx = (dx - vy * yaw_sin).eval();
+    dy = (dy + vy * yaw_cos).eval();
+  }
+
+  traj_x(0) = state_.pose.pose.position.x + dx(0) * settings_.model_dt;
+  traj_y(0) = state_.pose.pose.position.y + dy(0) * settings_.model_dt;
+  float last_x = traj_x(0);
+  float last_y = traj_y(0);
+  for(unsigned int i = 1; i != n_size; i++) {
+    float & curr_x = traj_x(i);
+    float & curr_y = traj_y(i);
+    curr_x = last_x + dx(i) * settings_.model_dt;
+    curr_y = last_y + dy(i) * settings_.model_dt;
+    last_x = curr_x;
+    last_y = curr_y;
+  }
 }
 
 void Optimizer::integrateStateVelocities(
@@ -343,77 +360,78 @@ void Optimizer::integrateStateVelocities(
   const models::State & state) const
 {
   const float initial_yaw = static_cast<float>(tf2::getYaw(state.pose.pose.orientation));
+  const unsigned int n_cols = trajectories.yaws.cols();
 
-  xt::noalias(trajectories.yaws) =
-    xt::cumsum(state.wz * settings_.model_dt, {1}) + initial_yaw;
+  trajectories.yaws.col(0) = state.wz.col(0) * settings_.model_dt + initial_yaw;
+  for(unsigned int i = 1; i != n_cols; i++) {
+    trajectories.yaws.col(i) = trajectories.yaws.col(i - 1) + state.wz.col(i) * settings_.model_dt;
+  }
 
-  auto yaw_cos = xt::roll(xt::eval(xt::cos(trajectories.yaws)), 1, 1);
-  auto yaw_sin = xt::roll(xt::eval(xt::sin(trajectories.yaws)), 1, 1);
-  xt::view(yaw_cos, xt::all(), 0) = cosf(initial_yaw);
-  xt::view(yaw_sin, xt::all(), 0) = sinf(initial_yaw);
+  Eigen::ArrayXXf yaw_cos = trajectories.yaws.cos();
+  Eigen::ArrayXXf yaw_sin = trajectories.yaws.sin();
+  utils::shiftColumnsByOnePlace(yaw_cos, 1);
+  utils::shiftColumnsByOnePlace(yaw_sin, 1);
+  yaw_cos.col(0) = cosf(initial_yaw);
+  yaw_sin.col(0) = sinf(initial_yaw);
 
-  auto && dx = xt::eval(state.vx * yaw_cos);
-  auto && dy = xt::eval(state.vx * yaw_sin);
+  auto dx = (state.vx * yaw_cos).eval();
+  auto dy = (state.vx * yaw_sin).eval();
 
   if (isHolonomic()) {
     dx = dx - state.vy * yaw_sin;
     dy = dy + state.vy * yaw_cos;
   }
 
-  xt::noalias(trajectories.x) = state.pose.pose.position.x +
-    xt::cumsum(dx * settings_.model_dt, {1});
-  xt::noalias(trajectories.y) = state.pose.pose.position.y +
-    xt::cumsum(dy * settings_.model_dt, {1});
+  trajectories.x.col(0) = dx.col(0) * settings_.model_dt + state.pose.pose.position.x;
+  trajectories.y.col(0) = dy.col(0) * settings_.model_dt + state.pose.pose.position.y;
+  for(unsigned int i = 1; i != n_cols; i++) {
+    trajectories.x.col(i) = trajectories.x.col(i - 1) + dx.col(i) * settings_.model_dt;
+    trajectories.y.col(i) = trajectories.y.col(i - 1) + dy.col(i) * settings_.model_dt;
+  }
 }
 
-xt::xtensor<float, 2> Optimizer::getOptimizedTrajectory()
+Eigen::ArrayXXf Optimizer::getOptimizedTrajectory()
 {
   const bool is_holo = isHolonomic();
-  auto && sequence =
-    xt::xtensor<float, 2>::from_shape({settings_.time_steps, is_holo ? 3u : 2u});
-  auto && trajectories = xt::xtensor<float, 2>::from_shape({settings_.time_steps, 3});
+  Eigen::ArrayXXf sequence = Eigen::ArrayXXf(settings_.time_steps, is_holo ? 3 : 2);
+  Eigen::Array<float, Eigen::Dynamic, 3> trajectories =
+    Eigen::Array<float, Eigen::Dynamic, 3>(settings_.time_steps, 3);
 
-  xt::noalias(xt::view(sequence, xt::all(), 0)) = control_sequence_.vx;
-  xt::noalias(xt::view(sequence, xt::all(), 1)) = control_sequence_.wz;
+  sequence.col(0) = control_sequence_.vx;
+  sequence.col(1) = control_sequence_.wz;
 
   if (is_holo) {
-    xt::noalias(xt::view(sequence, xt::all(), 2)) = control_sequence_.vy;
+    sequence.col(2) = control_sequence_.vy;
   }
 
   integrateStateVelocities(trajectories, sequence);
-  return std::move(trajectories);
+  return trajectories;
 }
 
 void Optimizer::updateControlSequence()
 {
   const bool is_holo = isHolonomic();
   auto & s = settings_;
-  auto bounded_noises_vx = state_.cvx - control_sequence_.vx;
-  auto bounded_noises_wz = state_.cwz - control_sequence_.wz;
-  xt::noalias(costs_) +=
-    s.gamma / powf(s.sampling_std.vx, 2) * xt::sum(
-    xt::view(control_sequence_.vx, xt::newaxis(), xt::all()) * bounded_noises_vx, 1, immediate);
-  xt::noalias(costs_) +=
-    s.gamma / powf(s.sampling_std.wz, 2) * xt::sum(
-    xt::view(control_sequence_.wz, xt::newaxis(), xt::all()) * bounded_noises_wz, 1, immediate);
-
+  auto bounded_noises_vx = state_.cvx.rowwise() - control_sequence_.vx.transpose();
+  auto bounded_noises_wz = state_.cwz.rowwise() - control_sequence_.wz.transpose();
+  costs_ += (s.gamma / powf(s.sampling_std.vx, 2) *
+    (bounded_noises_vx.rowwise() * control_sequence_.vx.transpose()).rowwise().sum()).eval();
+  costs_ += (s.gamma / powf(s.sampling_std.wz, 2) *
+    (bounded_noises_wz.rowwise() * control_sequence_.wz.transpose()).rowwise().sum()).eval();
   if (is_holo) {
-    auto bounded_noises_vy = state_.cvy - control_sequence_.vy;
-    xt::noalias(costs_) +=
-      s.gamma / powf(s.sampling_std.vy, 2) * xt::sum(
-      xt::view(control_sequence_.vy, xt::newaxis(), xt::all()) * bounded_noises_vy,
-      1, immediate);
+    auto bounded_noises_vy = state_.cvy.rowwise() - control_sequence_.vy.transpose();
+    costs_ += (s.gamma / powf(s.sampling_std.vy, 2) *
+      (bounded_noises_vy.rowwise() * control_sequence_.vy.transpose()).rowwise().sum()).eval();
   }
 
-  auto && costs_normalized = costs_ - xt::amin(costs_, immediate);
-  auto && exponents = xt::eval(xt::exp(-1 / settings_.temperature * costs_normalized));
-  auto && softmaxes = xt::eval(exponents / xt::sum(exponents, immediate));
-  auto && softmaxes_extended = xt::eval(xt::view(softmaxes, xt::all(), xt::newaxis()));
+  auto costs_normalized = costs_ - costs_.minCoeff();
+  auto exponents = ((-1 / settings_.temperature * costs_normalized).exp()).eval();
+  auto softmaxes = (exponents / exponents.sum()).eval();
 
-  xt::noalias(control_sequence_.vx) = xt::sum(state_.cvx * softmaxes_extended, 0, immediate);
-  xt::noalias(control_sequence_.wz) = xt::sum(state_.cwz * softmaxes_extended, 0, immediate);
+  control_sequence_.vx = (state_.cvx.colwise() * softmaxes).colwise().sum();
+  control_sequence_.wz = (state_.cwz.colwise() * softmaxes).colwise().sum();
   if (is_holo) {
-    xt::noalias(control_sequence_.vy) = xt::sum(state_.cvy * softmaxes_extended, 0, immediate);
+    control_sequence_.vy = (state_.cvy.colwise() * softmaxes).colwise().sum();
   }
 
   applyControlSequenceConstraints();

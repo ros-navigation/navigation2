@@ -27,8 +27,8 @@
   <depend>tf2_geometry_msgs</depend>
   <depend>tf2_ros</depend>
   <depend>visualization_msgs</depend>
-  <depend>xsimd</depend>
-  <depend>xtensor</depend>
+  <depend>eigen3_cmake_module</depend>
+  <depend>eigen</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

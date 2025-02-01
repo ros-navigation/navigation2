@@ -32,7 +32,6 @@ RosLockGuard g_rclcpp;
 using namespace mppi;  // NOLINT
 using namespace mppi::critics;  // NOLINT
 using namespace mppi::utils;  // NOLINT
-using xt::evaluation_strategy::immediate;
 
 class OptimizerTester : public Optimizer
 {
@@ -96,23 +95,23 @@ public:
 
   void fillOptimizerWithGarbage()
   {
-    state_.vx = 0.43432 * xt::ones<float>({1000, 10});
-    control_sequence_.vx = 342.0 * xt::ones<float>({30});
+    state_.vx = 0.43432 * Eigen::ArrayXXf::Ones(1000, 10);
+    control_sequence_.vx = 342.0 * Eigen::ArrayXf::Ones(30);
     control_history_[0] = {43, 5646, 32432};
-    costs_ = 5.32 * xt::ones<float>({56453});
-    generated_trajectories_.x = 432.234 * xt::ones<float>({7865, 1});
+    costs_ = 5.32 * Eigen::ArrayXf::Ones(56453);
+    generated_trajectories_.x = 432.234 * Eigen::ArrayXf::Ones(7865);
   }
 
   void testReset()
   {
     reset();
 
-    EXPECT_EQ(state_.vx, xt::zeros<float>({1000, 50}));
-    EXPECT_EQ(control_sequence_.vx, xt::zeros<float>({50}));
+    EXPECT_TRUE(state_.vx.isApproxToConstant(0.0f));
+    EXPECT_TRUE(control_sequence_.vx.isApproxToConstant(0.0f));
     EXPECT_EQ(control_history_[0].vx, 0.0);
     EXPECT_EQ(control_history_[0].vy, 0.0);
-    EXPECT_NEAR(xt::sum(costs_, immediate)(), 0, 1e-6);
-    EXPECT_EQ(generated_trajectories_.x, xt::zeros<float>({1000, 50}));
+    EXPECT_NEAR(costs_.sum(), 0, 1e-6);
+    EXPECT_TRUE(generated_trajectories_.x.isApproxToConstant(0.0f));
   }
 
   bool fallbackWrapper(bool fail)
@@ -123,19 +122,21 @@ public:
   void testPrepare(
     const geometry_msgs::msg::PoseStamped & robot_pose,
     const geometry_msgs::msg::Twist & robot_speed,
-    const nav_msgs::msg::Path & plan, nav2_core::GoalChecker * goal_checker)
+    const nav_msgs::msg::Path & plan,
+    const geometry_msgs::msg::Pose & goal,
+    nav2_core::GoalChecker * goal_checker)
   {
-    prepare(robot_pose, robot_speed, plan, goal_checker);
+    prepare(robot_pose, robot_speed, plan, goal, goal_checker);
 
     EXPECT_EQ(critics_data_.goal_checker, nullptr);
-    EXPECT_NEAR(xt::sum(costs_, immediate)(), 0, 1e-6);  // should be reset
+    EXPECT_NEAR(costs_.sum(), 0, 1e-6);  // should be reset
     EXPECT_FALSE(critics_data_.fail_flag);  // should be reset
     EXPECT_FALSE(critics_data_.motion_model->isHolonomic());  // object is valid + diff drive
     EXPECT_FALSE(critics_data_.furthest_reached_path_point.has_value());  // val is not set
     EXPECT_FALSE(critics_data_.path_pts_valid.has_value());  // val is not set
     EXPECT_EQ(state_.pose.pose.position.x, 999);
     EXPECT_EQ(state_.speed.linear.y, 4.0);
-    EXPECT_EQ(path_.x.shape(0), 17u);
+    EXPECT_EQ(path_.x.rows(), 17);
   }
 
   void shiftControlSequenceWrapper()
@@ -172,9 +173,9 @@ public:
     state.speed.linear.x = 5.0;
     state.speed.linear.y = 1.0;
     state.speed.angular.z = 6.0;
-    state.cvx = 0.75 * xt::ones<float>({1000, 50});
-    state.cvy = 0.5 * xt::ones<float>({1000, 50});
-    state.cwz = 0.1 * xt::ones<float>({1000, 50});
+    state.cvx = 0.75 * Eigen::ArrayXXf::Ones(1000, 50);
+    state.cvy = 0.5 * Eigen::ArrayXXf::Ones(1000, 50);
+    state.cwz = 0.1 * Eigen::ArrayXXf::Ones(1000, 50);
     updateInitialStateVelocities(state);
     EXPECT_NEAR(state.vx(0, 0), 5.0, 1e-6);
     EXPECT_NEAR(state.vy(0, 0), 1.0, 1e-6);
@@ -198,9 +199,9 @@ public:
     state.speed.linear.x = -5.0;
     state.speed.linear.y = -1.0;
     state.speed.angular.z = -6.0;
-    state.cvx = -0.75 * xt::ones<float>({1000, 50});
-    state.cvy = -0.5 * xt::ones<float>({1000, 50});
-    state.cwz = -0.1 * xt::ones<float>({1000, 50});
+    state.cvx = -0.75 * Eigen::ArrayXXf::Ones(1000, 50);
+    state.cvy = -0.5 * Eigen::ArrayXXf::Ones(1000, 50);
+    state.cwz = -0.1 * Eigen::ArrayXXf::Ones(1000, 50);
     updateStateVelocities(state);
     EXPECT_NEAR(state.vx(0, 0), -5.0, 1e-6);
     EXPECT_NEAR(state.vy(0, 0), -1.0, 1e-6);
@@ -246,9 +247,9 @@ TEST(OptimizerTests, BasicInitializedFunctions)
   // Should be empty of size batches x time steps
   // and tests getting set params: time_steps, batch_size, controller_frequency
   auto trajs = optimizer_tester.getGeneratedTrajectories();
-  EXPECT_EQ(trajs.x.shape(0), 1000u);
-  EXPECT_EQ(trajs.x.shape(1), 50u);
-  EXPECT_EQ(trajs.x, xt::zeros<float>({1000, 50}));
+  EXPECT_EQ(trajs.x.rows(), 1000);
+  EXPECT_EQ(trajs.x.cols(), 50);
+  EXPECT_TRUE(trajs.x.isApproxToConstant(0.0f));
 
   optimizer_tester.resetMotionModel();
   optimizer_tester.testSetOmniModel();
@@ -256,8 +257,8 @@ TEST(OptimizerTests, BasicInitializedFunctions)
   EXPECT_EQ(traj(5, 0), 0.0);  // x
   EXPECT_EQ(traj(5, 1), 0.0);  // y
   EXPECT_EQ(traj(5, 2), 0.0);  // yaw
-  EXPECT_EQ(traj.shape(0), 50u);
-  EXPECT_EQ(traj.shape(1), 3u);
+  EXPECT_EQ(traj.rows(), 50);
+  EXPECT_EQ(traj.cols(), 3);
 
   optimizer_tester.reset();
   optimizer_tester.shutdown();
@@ -381,9 +382,10 @@ TEST(OptimizerTests, PrepareTests)
   geometry_msgs::msg::Twist speed;
   speed.linear.y = 4.0;
   nav_msgs::msg::Path path;
+  geometry_msgs::msg::Pose goal;
   path.poses.resize(17);
 
-  optimizer_tester.testPrepare(pose, speed, path, nullptr);
+  optimizer_tester.testPrepare(pose, speed, path, goal, nullptr);
 }
 
 TEST(OptimizerTests, shiftControlSequenceTests)
@@ -495,31 +497,31 @@ TEST(OptimizerTests, applyControlSequenceConstraintsTests)
   auto & sequence = optimizer_tester.grabControlSequence();
 
   // Test boundary of limits
-  sequence.vx = xt::ones<float>({50});
-  sequence.vy = 0.75 * xt::ones<float>({50});
-  sequence.wz = 2.0 * xt::ones<float>({50});
+  sequence.vx = Eigen::ArrayXf::Ones(50);
+  sequence.vy = 0.75 * Eigen::ArrayXf::Ones(50);
+  sequence.wz = 2.0 * Eigen::ArrayXf::Ones(50);
   optimizer_tester.applyControlSequenceConstraintsWrapper();
-  EXPECT_EQ(sequence.vx, xt::ones<float>({50}));
-  EXPECT_EQ(sequence.vy, 0.75 * xt::ones<float>({50}));
-  EXPECT_EQ(sequence.wz, 2.0 * xt::ones<float>({50}));
+  EXPECT_TRUE(sequence.vx.isApproxToConstant(1.0f));
+  EXPECT_TRUE(sequence.vy.isApproxToConstant(0.75f));
+  EXPECT_TRUE(sequence.wz.isApproxToConstant(2.0f));
 
   // Test breaking limits sets to maximum
-  sequence.vx = 5.0 * xt::ones<float>({50});
-  sequence.vy = 5.0 * xt::ones<float>({50});
-  sequence.wz = 5.0 * xt::ones<float>({50});
+  sequence.vx = 5.0 * Eigen::ArrayXf::Ones(50);
+  sequence.vy = 5.0 * Eigen::ArrayXf::Ones(50);
+  sequence.wz = 5.0 * Eigen::ArrayXf::Ones(50);
   optimizer_tester.applyControlSequenceConstraintsWrapper();
-  EXPECT_EQ(sequence.vx, xt::ones<float>({50}));
-  EXPECT_EQ(sequence.vy, 0.75 * xt::ones<float>({50}));
-  EXPECT_EQ(sequence.wz, 2.0 * xt::ones<float>({50}));
+  EXPECT_TRUE(sequence.vx.isApproxToConstant(1.0f));
+  EXPECT_TRUE(sequence.vy.isApproxToConstant(0.75f));
+  EXPECT_TRUE(sequence.wz.isApproxToConstant(2.0f));
 
   // Test breaking limits sets to minimum
-  sequence.vx = -5.0 * xt::ones<float>({50});
-  sequence.vy = -5.0 * xt::ones<float>({50});
-  sequence.wz = -5.0 * xt::ones<float>({50});
+  sequence.vx = -5.0 * Eigen::ArrayXf::Ones(50);
+  sequence.vy = -5.0 * Eigen::ArrayXf::Ones(50);
+  sequence.wz = -5.0 * Eigen::ArrayXf::Ones(50);
   optimizer_tester.applyControlSequenceConstraintsWrapper();
-  EXPECT_EQ(sequence.vx, -1.0 * xt::ones<float>({50}));
-  EXPECT_EQ(sequence.vy, -0.75 * xt::ones<float>({50}));
-  EXPECT_EQ(sequence.wz, -2.0 * xt::ones<float>({50}));
+  EXPECT_TRUE(sequence.vx.isApproxToConstant(-1.0f));
+  EXPECT_TRUE(sequence.vy.isApproxToConstant(-0.75f));
+  EXPECT_TRUE(sequence.wz.isApproxToConstant(-2.0f));
 }
 
 TEST(OptimizerTests, updateStateVelocitiesTests)
@@ -571,9 +573,9 @@ TEST(OptimizerTests, getControlFromSequenceAsTwistTests)
 
   // Test conversion of control sequence into a Twist command to execute
   auto & sequence = optimizer_tester.grabControlSequence();
-  sequence.vx = 0.25 * xt::ones<float>({10});
-  sequence.vy = 0.5 * xt::ones<float>({10});
-  sequence.wz = 0.1 * xt::ones<float>({10});
+  sequence.vx = 0.25 * Eigen::ArrayXf::Ones(10);
+  sequence.vy = 0.5 * Eigen::ArrayXf::Ones(10);
+  sequence.wz = 0.1 * Eigen::ArrayXf::Ones(10);
 
   auto diff_t = optimizer_tester.getControlFromSequenceAsTwistWrapper();
   EXPECT_NEAR(diff_t.twist.linear.x, 0.25, 1e-6);
@@ -612,39 +614,38 @@ TEST(OptimizerTests, integrateStateVelocitiesTests)
   models::State state;
   state.reset(1000, 50);
   models::Trajectories traj;
-  state.vx = 0.1 * xt::ones<float>({1000, 50});
-  xt::view(state.vx, xt::all(), 0) = xt::zeros<float>({1000});
-  state.vy = xt::zeros<float>({1000, 50});
-  state.wz = xt::zeros<float>({1000, 50});
-
+  traj.reset(1000, 50);
+  state.vx = 0.1 * Eigen::ArrayXXf::Ones(1000, 50);
+  state.vx.col(0) = Eigen::ArrayXf::Zero(1000);
+  state.vy = Eigen::ArrayXXf::Zero(1000, 50);
+  state.wz = Eigen::ArrayXXf::Zero(1000, 50);
   optimizer_tester.integrateStateVelocitiesWrapper(traj, state);
-  EXPECT_EQ(traj.y, xt::zeros<float>({1000, 50}));
-  EXPECT_EQ(traj.yaws, xt::zeros<float>({1000, 50}));
-  for (unsigned int i = 0; i != traj.x.shape(1); i++) {
+  EXPECT_TRUE(traj.y.isApproxToConstant(0.0f));
+  EXPECT_TRUE(traj.yaws.isApproxToConstant(0.0f));
+  for (unsigned int i = 0; i != traj.x.cols(); i++) {
     EXPECT_NEAR(traj.x(1, i), i * 0.1 /*vel*/ * 0.1 /*dt*/, 1e-3);
   }
 
   // Give it a bit of a more complex trajectory to crunch
-  state.vy = 0.2 * xt::ones<float>({1000, 50});
-  xt::view(state.vy, xt::all(), 0) = xt::zeros<float>({1000});
+  state.vy = 0.2 * Eigen::ArrayXXf::Ones(1000, 50);
+  state.vy.col(0) = Eigen::ArrayXf::Zero(1000);
   optimizer_tester.integrateStateVelocitiesWrapper(traj, state);
 
-  EXPECT_EQ(traj.yaws, xt::zeros<float>({1000, 50}));
-  for (unsigned int i = 0; i != traj.x.shape(1); i++) {
+  EXPECT_TRUE(traj.yaws.isApproxToConstant(0.0f));
+  for (unsigned int i = 0; i != traj.x.cols(); i++) {
     EXPECT_NEAR(traj.x(1, i), i * 0.1 /*vel*/ * 0.1 /*dt*/, 1e-3);
     EXPECT_NEAR(traj.y(1, i), i * 0.2 /*vel*/ * 0.1 /*dt*/, 1e-3);
   }
 
   // Lets add some angular motion to the mix
-  state.vy = xt::zeros<float>({1000, 50});
-  state.wz = 0.2 * xt::ones<float>({1000, 50});
-  xt::view(state.wz, xt::all(), 0) = xt::zeros<float>({1000});
+  state.vy = Eigen::ArrayXXf::Zero(1000, 50);
+  state.wz = 0.2 * Eigen::ArrayXXf::Ones(1000, 50);
+  state.wz.col(0) = Eigen::ArrayXf::Zero(1000);
   optimizer_tester.integrateStateVelocitiesWrapper(traj, state);
 
   float x = 0;
   float y = 0;
-  for (unsigned int i = 1; i != traj.x.shape(1); i++) {
-    std::cout << i << std::endl;
+  for (unsigned int i = 1; i != traj.x.cols(); i++) {
     x += (0.1 /*vx*/ * cosf(0.2 /*wz*/ * 0.1 /*model_dt*/ * (i - 1))) * 0.1 /*model_dt*/;
     y += (0.1 /*vx*/ * sinf(0.2 /*wz*/ * 0.1 /*model_dt*/ * (i - 1))) * 0.1 /*model_dt*/;
 
