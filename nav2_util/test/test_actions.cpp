@@ -258,6 +258,7 @@ protected:
 
 TEST_F(ActionTest, test_simple_action)
 {
+  std::this_thread::sleep_for(std::chrono::milliseconds(5000));
   node_->activate_server();
 
   // The goal for this invocation
@@ -272,6 +273,7 @@ TEST_F(ActionTest, test_simple_action)
       future_goal_handle), rclcpp::FutureReturnCode::SUCCESS);
 
   auto goal_handle = future_goal_handle.get();
+  EXPECT_NE(goal_handle, nullptr);
 
   // Wait for the result
   auto future_result = node_->action_client_->async_get_result(goal_handle);
@@ -320,6 +322,7 @@ TEST_F(ActionTest, test_simple_action_with_feedback)
       future_goal_handle), rclcpp::FutureReturnCode::SUCCESS);
 
   auto goal_handle = future_goal_handle.get();
+  EXPECT_NE(goal_handle, nullptr);
 
   // Wait for the result
   auto future_result = node_->action_client_->async_get_result(goal_handle);
@@ -364,6 +367,7 @@ TEST_F(ActionTest, test_simple_action_activation_cycling)
   node_->deactivate_server();
 
   auto goal_handle = future_goal_handle.get();
+  EXPECT_NE(goal_handle, nullptr);
 
   // Wait for the result
   auto future_result = node_->action_client_->async_get_result(goal_handle);
@@ -430,6 +434,7 @@ TEST_F(ActionTest, test_simple_action_preemption)
       future_goal_handle), rclcpp::FutureReturnCode::SUCCESS);
 
   auto goal_handle = future_goal_handle.get();
+  EXPECT_NE(goal_handle, nullptr);
 
   // Wait for the result
   auto future_result = node_->action_client_->async_get_result(goal_handle);
@@ -478,6 +483,7 @@ TEST_F(ActionTest, test_simple_action_preemption_after_succeeded)
 
   // Get the results
   auto goal_handle = future_goal_handle.get();
+  EXPECT_NE(goal_handle, nullptr);
 
   // Wait for the result of initial goal
   auto future_result = node_->action_client_->async_get_result(goal_handle);
