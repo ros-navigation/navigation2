@@ -258,7 +258,7 @@ protected:
 
 TEST_F(ActionTest, test_simple_action)
 {
-  std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
   node_->activate_server();
 
   // The goal for this invocation
