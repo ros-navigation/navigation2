@@ -107,11 +107,6 @@ public:
    */
   void setSpeedLimit(const double & speed_limit, const bool & percentage) override;
 
-  /**
-   * @brief Reset the state of the controller
-   */
-  void reset() override;
-
 protected:
   /**
    * @brief Finds the point on the path that is roughly the sampling
