@@ -401,7 +401,7 @@ bool Costmap2D::setConvexPolygonCost(
   unsigned char cost_value)
 {
   std::vector<std::pair<MapLocation, unsigned char>> polygon_map_region;
-  if (getMapRegionOccupiedByPolygon(polygon, polygon_map_region)) {
+  if (!getMapRegionOccupiedByPolygon(polygon, polygon_map_region)) {
     return false;
   }
 
@@ -445,6 +445,7 @@ bool Costmap2D::getMapRegionOccupiedByPolygon(
 
   // get the cells that fill the polygon
   std::vector<MapLocation> polygon_cells;
+  polygon_cells.reserve(100);
   convexFillCells(map_polygon, polygon_cells);
 
   // store the cost informations of the cells
