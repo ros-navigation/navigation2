@@ -508,10 +508,6 @@ StaticLayer::dynamicParametersCallback(
         current_ = false;
       } else if (param_name == name_ + "." + "footprint_clearing_enabled") {
         footprint_clearing_enabled_ = parameter.as_bool();
-        if (!footprint_clearing_enabled_) {
-          RCLCPP_INFO(logger_, "The parameter restore_cleared_footprint will be ignored "
-                      "because footprint_clearing_enabled is False");
-        }
       } else if (param_name == name_ + "." + "restore_cleared_footprint") {
         if (footprint_clearing_enabled_) {
           restore_cleared_footprint_ = parameter.as_bool();
