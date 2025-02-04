@@ -76,8 +76,17 @@ BtActionServer<ActionT>::BtActionServer(
   }
 
   std::vector<std::string> error_code_name_prefixes = {
-    "follow_path",
+    "assisted_teleop",
+    "backup",
     "compute_path",
+    "dock_robot",
+    "drive_on_heading",
+    "follow_path",
+    "nav_thru_poses",
+    "nav_to_pose",
+    "spin",
+    "undock_robot",
+    "wait",
   };
 
   if (node->has_parameter("error_code_names")) {
