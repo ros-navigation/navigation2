@@ -21,7 +21,7 @@ import time
 from typing import Optional
 
 from action_msgs.msg import GoalStatus
-from geometry_msgs.msg import Pose, PoseStampedArray
+from geometry_msgs.msg import Pose
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from lifecycle_msgs.srv import GetState
@@ -31,7 +31,7 @@ from rcl_interfaces.srv import SetParameters
 
 import rclpy
 
-from rclpy.action import ActionClient
+from rclpy.action.client import ActionClient
 from rclpy.node import Node
 from rclpy.parameter import Parameter
 from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSReliabilityPolicy
@@ -86,7 +86,7 @@ class NavTester(Node):
         self.get_logger().info('\033[1;37;44m' + msg + '\033[0m')
 
     def warn_msg(self, msg: str):
-        self.get_logger().warn('\033[1;37;43m' + msg + '\033[0m')
+        self.get_logger().warning('\033[1;37;43m' + msg + '\033[0m')
 
     def error_msg(self, msg: str):
         self.get_logger().error('\033[1;37;41m' + msg + '\033[0m')
@@ -151,7 +151,7 @@ class NavTester(Node):
         rclpy.spin_until_future_complete(self, send_goal_future)
         goal_handle = send_goal_future.result()
 
-        if not goal_handle.accepted:
+        if goal_handle is None or not goal_handle.accepted:
             self.error_msg('Goal rejected')
             return False
 
@@ -217,7 +217,7 @@ class NavTester(Node):
             self.info_msg(f'{transition_service} service not available, waiting...')
 
         req = ManageLifecycleNodes.Request()
-        req.command = ManageLifecycleNodes.Request().SHUTDOWN
+        req.command = ManageLifecycleNodes.Request.SHUTDOWN
         future = mgr_client.call_async(req)
         try:
             self.info_msg('Shutting down navigation lifecycle manager...')
@@ -232,7 +232,7 @@ class NavTester(Node):
             self.info_msg(f'{transition_service} service not available, waiting...')
 
         req = ManageLifecycleNodes.Request()
-        req.command = ManageLifecycleNodes.Request().SHUTDOWN
+        req.command = ManageLifecycleNodes.Request.SHUTDOWN
         future = mgr_client.call_async(req)
         try:
             self.info_msg('Shutting down localization lifecycle manager...')
@@ -396,7 +396,7 @@ def main(argv=sys.argv[1:]):
         help='The robot starting and final positions.',
     )
 
-    args, unknown = parser.parse_known_args()
+    args, _ = parser.parse_known_args()
 
     rclpy.init()
 
@@ -406,6 +406,7 @@ def main(argv=sys.argv[1:]):
     # wait a few seconds to make sure entire stacks are up
     time.sleep(10)
 
+    passed = False
     for tester in testers:
         passed = run_all_tests(tester)
         if not passed:
