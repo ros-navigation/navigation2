@@ -123,6 +123,8 @@
       <output_port name="smoothed_path">Smoothed path</output_port>
       <output_port name="smoothing_duration">Smoothing duration</output_port>
       <output_port name="was_completed">True if smoothing was not interrupted by time limit</output_port>
+      <output_port name="error_code_id">"Smooth Path error code"</output_port>
+      <output_port name="error_msg">"Smooth Path error message"</output_port>
     </Action>
 
     <Action ID="FollowPath">
