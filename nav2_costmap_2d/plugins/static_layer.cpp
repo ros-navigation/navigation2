@@ -138,6 +138,7 @@ StaticLayer::getParameters()
   declareParameter("transform_tolerance", rclcpp::ParameterValue(0.0));
   declareParameter("map_topic", rclcpp::ParameterValue("map"));
   declareParameter("footprint_clearing_enabled", rclcpp::ParameterValue(false));
+  declareParameter("restore_cleared_footprint", rclcpp::ParameterValue(true));
 
   auto node = node_.lock();
   if (!node) {
@@ -147,6 +148,7 @@ StaticLayer::getParameters()
   node->get_parameter(name_ + "." + "enabled", enabled_);
   node->get_parameter(name_ + "." + "subscribe_to_updates", subscribe_to_updates_);
   node->get_parameter(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_);
+  node->get_parameter(name_ + "." + "restore_cleared_footprint", restore_cleared_footprint_);
   node->get_parameter(name_ + "." + "map_topic", map_topic_);
   map_topic_ = joinWithParentNamespace(map_topic_);
   node->get_parameter(
@@ -411,8 +413,11 @@ StaticLayer::updateCosts(
     return;
   }
 
+  std::vector<MapLocation> map_region_to_restore;
   if (footprint_clearing_enabled_) {
-    setConvexPolygonCost(transformed_footprint_, nav2_costmap_2d::FREE_SPACE);
+    map_region_to_restore.reserve(100);
+    getMapRegionOccupiedByPolygon(transformed_footprint_, map_region_to_restore);
+    setMapRegionOccupiedByPolygon(map_region_to_restore, nav2_costmap_2d::FREE_SPACE);
   }
 
   if (!layered_costmap_->isRolling()) {
@@ -458,6 +463,11 @@ StaticLayer::updateCosts(
       }
     }
   }
+
+  if (footprint_clearing_enabled_ && restore_cleared_footprint_) {
+    // restore the map region occupied by the polygon using cached data
+    restoreMapRegionOccupiedByPolygon(map_region_to_restore);
+  }
   current_ = true;
 }
 
@@ -498,6 +508,13 @@ StaticLayer::dynamicParametersCallback(
         current_ = false;
       } else if (param_name == name_ + "." + "footprint_clearing_enabled") {
         footprint_clearing_enabled_ = parameter.as_bool();
+      } else if (param_name == name_ + "." + "restore_cleared_footprint") {
+        if (footprint_clearing_enabled_) {
+          restore_cleared_footprint_ = parameter.as_bool();
+        } else {
+          RCLCPP_WARN(logger_, "restore_cleared_footprint cannot be used "
+                      "when footprint_clearing_enabled is False. Rejecting parameter update.");
+        }
       }
     }
   }
