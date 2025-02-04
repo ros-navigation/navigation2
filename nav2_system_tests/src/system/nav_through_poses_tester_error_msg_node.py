@@ -21,7 +21,7 @@ import time
 from typing import Optional
 
 from action_msgs.msg import GoalStatus
-from geometry_msgs.msg import Pose
+from geometry_msgs.msg import Pose, PoseStampedArray
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from lifecycle_msgs.srv import GetState
@@ -137,7 +137,9 @@ class NavTester(Node):
 
         self.goal_pose = goal_pose if goal_pose is not None else self.goal_pose
         goal_msg = NavigateThroughPoses.Goal()
-        goal_msg.poses = [
+        goal_msg.poses.header.frame_id = 'map'
+        goal_msg.poses.header.stamp = self.get_clock().now().to_msg()
+        goal_msg.poses.poses = [
             self.getStampedPoseMsg(self.goal_pose),
             self.getStampedPoseMsg(self.goal_pose),
         ]
