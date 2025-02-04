@@ -59,6 +59,7 @@ struct MapLocation
 {
   unsigned int x;
   unsigned int y;
+  unsigned char cost;
 };
 
 /**
@@ -320,7 +321,7 @@ public:
    */
   bool getMapRegionOccupiedByPolygon(
     const std::vector<geometry_msgs::msg::Point> & polygon,
-    std::vector<std::pair<MapLocation, unsigned char>> & polygon_map_region);
+    std::vector<MapLocation> & polygon_map_region);
 
   /**
    * @brief  Sets the given map region to desired value
@@ -328,7 +329,7 @@ public:
    * @param new_cost_value The value to set costs to
    */
   void setMapRegionOccupiedByPolygon(
-    const std::vector<std::pair<MapLocation, unsigned char>> & polygon_map_region,
+    const std::vector<MapLocation> & polygon_map_region,
     unsigned char new_cost_value);
 
   /**
@@ -336,7 +337,7 @@ public:
    * @param polygon_map_region The map region to perform the operation on
    */
   void restoreMapRegionOccupiedByPolygon(
-    const std::vector<std::pair<MapLocation, unsigned char>> & polygon_map_region);
+    const std::vector<MapLocation> & polygon_map_region);
 
   /**
    * @brief  Get the map cells that make up the outline of a polygon
@@ -595,6 +596,7 @@ protected:
     {
       MapLocation loc;
       costmap_.indexToCells(offset, loc.x, loc.y);
+      loc.cost = costmap_.getCost(loc.x, loc.y);
       cells_.push_back(loc);
     }
 

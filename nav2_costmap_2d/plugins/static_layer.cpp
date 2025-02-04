@@ -413,9 +413,9 @@ StaticLayer::updateCosts(
     return;
   }
 
-  std::vector<std::pair<MapLocation, unsigned char>> map_region_to_restore;
-  map_region_to_restore.reserve(100);
+  std::vector<MapLocation> map_region_to_restore;
   if (footprint_clearing_enabled_) {
+    map_region_to_restore.reserve(100);
     getMapRegionOccupiedByPolygon(transformed_footprint_, map_region_to_restore);
     setMapRegionOccupiedByPolygon(map_region_to_restore, nav2_costmap_2d::FREE_SPACE);
   }

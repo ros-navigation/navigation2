@@ -400,7 +400,8 @@ bool Costmap2D::setConvexPolygonCost(
   const std::vector<geometry_msgs::msg::Point> & polygon,
   unsigned char cost_value)
 {
-  std::vector<std::pair<MapLocation, unsigned char>> polygon_map_region;
+  std::vector<MapLocation> polygon_map_region;
+  polygon_map_region.reserve(100);
   if (!getMapRegionOccupiedByPolygon(polygon, polygon_map_region)) {
     return false;
   }
@@ -411,25 +412,25 @@ bool Costmap2D::setConvexPolygonCost(
 }
 
 void Costmap2D::setMapRegionOccupiedByPolygon(
-  const std::vector<std::pair<MapLocation, unsigned char>> & polygon_map_region,
+  const std::vector<MapLocation> & polygon_map_region,
   unsigned char new_cost_value)
 {
-  for (const auto & [cell, _] : polygon_map_region) {
+  for (const auto & cell : polygon_map_region) {
     setCost(cell.x, cell.y, new_cost_value);
   }
 }
 
 void Costmap2D::restoreMapRegionOccupiedByPolygon(
-  const std::vector<std::pair<MapLocation, unsigned char>> & polygon_map_region)
+  const std::vector<MapLocation> & polygon_map_region)
 {
-  for (const auto & [cell, cost_value] : polygon_map_region) {
-    setCost(cell.x, cell.y, cost_value);
+  for (const auto & cell : polygon_map_region) {
+    setCost(cell.x, cell.y, cell.cost);
   }
 }
 
 bool Costmap2D::getMapRegionOccupiedByPolygon(
   const std::vector<geometry_msgs::msg::Point> & polygon,
-  std::vector<std::pair<MapLocation, unsigned char>> & polygon_map_region)
+  std::vector<MapLocation> & polygon_map_region)
 {
   // we assume the polygon is given in the global_frame...
   // we need to transform it to map coordinates
@@ -444,14 +445,7 @@ bool Costmap2D::getMapRegionOccupiedByPolygon(
   }
 
   // get the cells that fill the polygon
-  std::vector<MapLocation> polygon_cells;
-  polygon_cells.reserve(100);
-  convexFillCells(map_polygon, polygon_cells);
-
-  // store the cost informations of the cells
-  for (const auto & cell : polygon_cells) {
-    polygon_map_region.push_back({cell, getCost(cell.x, cell.y)});
-  }
+  convexFillCells(map_polygon, polygon_map_region);
 
   return true;
 }
@@ -537,6 +531,7 @@ void Costmap2D::convexFillCells(
     for (unsigned int y = min_pt.y; y <= max_pt.y; ++y) {
       pt.x = x;
       pt.y = y;
+      pt.cost = getCost(x, y);
       polygon_cells.push_back(pt);
     }
   }
