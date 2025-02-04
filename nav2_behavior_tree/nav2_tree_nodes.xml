@@ -222,6 +222,8 @@
       <input_port name="wait_duration">Wait time</input_port>
       <input_port name="server_name">Server name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
+      <output_port name="error_code_id">Wait error code</output_port>
+      <output_port name="error_msg">Wait error message</output_port>
     </Action>
 
     <Action ID="AssistedTeleop">
