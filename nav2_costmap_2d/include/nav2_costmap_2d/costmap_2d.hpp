@@ -47,7 +47,6 @@
 #include <vector>
 #include <queue>
 #include <mutex>
-#include <utility>
 #include "geometry_msgs/msg/point.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 
