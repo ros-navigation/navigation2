@@ -28,7 +28,8 @@ add_library(${library_name} SHARED
 target_include_directories(${library_name}
   PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+)
 target_link_libraries(${library_name} PUBLIC
   ${action_msgs_TARGETS}
   behaviortree_cpp::behaviortree_cpp
@@ -244,7 +245,12 @@ install(TARGETS ${library_name} ${plugin_libs}
 
 # we will embed the list of plugin names inside a header file
 set(GENERATED_DIR ${CMAKE_CURRENT_BINARY_DIR}/gen)
+set(TREENODES_FILE nav2_tree_nodes.xml)
 configure_file(plugins_list.hpp.in ${GENERATED_DIR}/plugins_list.hpp)
+
+# create a text file listing plugin names, one per line
+string(REPLACE ";" "\n" plugin_libs_one_per_line "${plugin_libs}")
+configure_file(plugins_list.txt.in ${GENERATED_DIR}/plugins_list.txt)
 
 add_executable(generate_nav2_tree_nodes_xml src/generate_nav2_tree_nodes_xml.cpp)
 target_link_libraries(generate_nav2_tree_nodes_xml PRIVATE
@@ -253,7 +259,15 @@ target_link_libraries(generate_nav2_tree_nodes_xml PRIVATE
 )
 # allow generate_nav2_tree_nodes_xml to find plugins_list.hpp
 target_include_directories(generate_nav2_tree_nodes_xml PRIVATE ${GENERATED_DIR})
-install(TARGETS generate_nav2_tree_nodes_xml DESTINATION lib/${PROJECT_NAME})
+
+add_executable(generate_tree_nodes_xml_cli src/generate_tree_nodes_xml_cli.cpp)
+target_link_libraries(generate_tree_nodes_xml_cli PRIVATE
+  behaviortree_cpp::behaviortree_cpp
+  nav2_util::nav2_util_core
+)
+install(TARGETS generate_nav2_tree_nodes_xml generate_tree_nodes_xml_cli
+  EXPORT ${library_name}
+  DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY include/
   DESTINATION include/${PROJECT_NAME}
@@ -263,8 +277,35 @@ install(DIRECTORY test/utils/
   DESTINATION include/${PROJECT_NAME}/nav2_behavior_tree/test/utils
 )
 
-install(FILES nav2_tree_nodes.xml DESTINATION share/${PROJECT_NAME})
+add_custom_command(
+  OUTPUT ${GENERATED_DIR}/${TREENODES_FILE}
+  COMMAND  ${CMAKE_COMMAND} -E env LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}:$ENV{LD_LIBRARY_PATH}
+    $<TARGET_FILE:generate_tree_nodes_xml_cli>
+    ${GENERATED_DIR}/plugins_list.txt
+    ${GENERATED_DIR}/${TREENODES_FILE}
+  POST_BUILD
+  DEPENDS
+    ${plugin_libs}
+    $<TARGET_FILE:generate_tree_nodes_xml_cli>
+    #generate_tree_nodes_xml_cli
+    ${GENERATED_DIR}/plugins_list.txt
+  COMMENT "Generating groot tree nodes description file"
+  VERBATIM
+)
+
+add_custom_target(gen_tree_nodes_xml ALL
+  DEPENDS
+    generate_tree_nodes_xml_cli
+    ${GENERATED_DIR}/plugins_list.txt
+    ${GENERATED_DIR}/${TREENODES_FILE}
+)
+
+#NOTE: Still using manually managed ${TREENODES_FILE} in source directory
+#install(FILES ${GENERATED_DIR}/${TREENODES_FILE} DESTINATION share/${PROJECT_NAME})
+install(FILES ${TREENODES_FILE} DESTINATION share/${PROJECT_NAME})
+
 install(FILES ${GENERATED_DIR}/plugins_list.hpp DESTINATION include/${PROJECT_NAME}/${PROJECT_NAME})
+install(FILES ${GENERATED_DIR}/plugins_list.txt DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
