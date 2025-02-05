@@ -72,6 +72,10 @@ public:
 
 private:
   /**
+   * @brief Function to read parameters and initialize class variables
+   */
+  void initialize();
+  /**
    * @brief Function to create ROS interfaces
    */
   void createROSInterfaces();

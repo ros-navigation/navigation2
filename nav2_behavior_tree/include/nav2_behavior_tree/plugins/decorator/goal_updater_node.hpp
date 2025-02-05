@@ -64,6 +64,10 @@ public:
 
 private:
   /**
+   * @brief Function to read parameters and initialize class variables
+   */
+  void initialize();
+  /**
    * @brief Function to create ROS interfaces
    */
   void createROSInterfaces();
@@ -96,6 +100,8 @@ private:
   rclcpp::Node::SharedPtr node_;
   rclcpp::CallbackGroup::SharedPtr callback_group_;
   rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
+  std::string goal_updater_topic_;
+  std::string goals_updater_topic_;
 };
 
 }  // namespace nav2_behavior_tree

@@ -31,7 +31,14 @@ using std::placeholders::_1;
 GoalUpdater::GoalUpdater(
   const std::string & name,
   const BT::NodeConfiguration & conf)
-: BT::DecoratorNode(name, conf)
+: BT::DecoratorNode(name, conf),
+  goal_updater_topic_("goal_update"),
+  goals_updater_topic_("goals_update")
+{
+  createROSInterfaces();
+}
+
+void GoalUpdater::initialize()
 {
   createROSInterfaces();
 }
@@ -44,27 +51,39 @@ void GoalUpdater::createROSInterfaces()
     false);
   callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
 
-  std::string goal_updater_topic;
-  std::string goals_updater_topic;
-  node_->get_parameter_or<std::string>("goal_updater_topic", goal_updater_topic, "goal_update");
-  node_->get_parameter_or<std::string>("goals_updater_topic", goals_updater_topic, "goals_update");
+  std::string goal_updater_topic_new;
+  std::string goals_updater_topic_new;
+  node_->get_parameter_or<std::string>("goal_updater_topic", goal_updater_topic_new, "goal_update");
+  node_->get_parameter_or<std::string>("goals_updater_topic", goals_updater_topic_new,
+    "goals_update");
 
-  rclcpp::SubscriptionOptions sub_option;
-  sub_option.callback_group = callback_group_;
-  goal_sub_ = node_->create_subscription<geometry_msgs::msg::PoseStamped>(
-    goal_updater_topic,
-    rclcpp::SystemDefaultsQoS(),
-    std::bind(&GoalUpdater::callback_updated_goal, this, _1),
-    sub_option);
-  goals_sub_ = node_->create_subscription<geometry_msgs::msg::PoseStampedArray>(
-    goals_updater_topic,
-    rclcpp::SystemDefaultsQoS(),
-    std::bind(&GoalUpdater::callback_updated_goals, this, _1),
-    sub_option);
+  // Only create a new subscriber if the topic has changed or subscriber is empty
+  if (goal_updater_topic_new != goal_updater_topic_ || !goal_sub_) {
+    goal_updater_topic_ = goal_updater_topic_new;
+    rclcpp::SubscriptionOptions sub_option;
+    sub_option.callback_group = callback_group_;
+    goal_sub_ = node_->create_subscription<geometry_msgs::msg::PoseStamped>(
+      goal_updater_topic_,
+      rclcpp::SystemDefaultsQoS(),
+      std::bind(&GoalUpdater::callback_updated_goal, this, _1),
+      sub_option);
+  }
+  if (goals_updater_topic_new != goals_updater_topic_ || !goals_sub_) {
+    goals_updater_topic_ = goals_updater_topic_new;
+    goals_sub_ = node_->create_subscription<geometry_msgs::msg::PoseStampedArray>(
+      goals_updater_topic_,
+      rclcpp::SystemDefaultsQoS(),
+      std::bind(&GoalUpdater::callback_updated_goals, this, _1),
+      sub_option);
+  }
 }
 
 inline BT::NodeStatus GoalUpdater::tick()
 {
+  if (!BT::isStatusActive(status())) {
+    initialize();
+  }
+
   geometry_msgs::msg::PoseStamped goal;
   geometry_msgs::msg::PoseStampedArray goals;
 

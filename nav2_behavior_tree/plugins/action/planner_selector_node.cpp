@@ -35,30 +35,42 @@ PlannerSelector::PlannerSelector(
   createROSInterfaces();
 }
 
+void PlannerSelector::initialize()
+{
+  createROSInterfaces();
+}
+
 void PlannerSelector::createROSInterfaces()
 {
-  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
-  callback_group_ = node_->create_callback_group(
-    rclcpp::CallbackGroupType::MutuallyExclusive,
-    false);
-  callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
+  std::string topic_new;
+  getInput("topic_name", topic_new);
+  if (topic_new != topic_name_ || !planner_selector_sub_) {
+    topic_name_ = topic_new;
+    node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+    callback_group_ = node_->create_callback_group(
+      rclcpp::CallbackGroupType::MutuallyExclusive,
+      false);
+    callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
 
-  getInput("topic_name", topic_name_);
+    rclcpp::QoS qos(rclcpp::KeepLast(1));
+    qos.transient_local().reliable();
 
-  rclcpp::QoS qos(rclcpp::KeepLast(1));
-  qos.transient_local().reliable();
-
-  rclcpp::SubscriptionOptions sub_option;
-  sub_option.callback_group = callback_group_;
-  planner_selector_sub_ = node_->create_subscription<std_msgs::msg::String>(
-    topic_name_,
-    qos,
-    std::bind(&PlannerSelector::callbackPlannerSelect, this, _1),
-    sub_option);
+    rclcpp::SubscriptionOptions sub_option;
+    sub_option.callback_group = callback_group_;
+    planner_selector_sub_ = node_->create_subscription<std_msgs::msg::String>(
+      topic_name_,
+      qos,
+      std::bind(&PlannerSelector::callbackPlannerSelect, this, _1),
+      sub_option);
+  }
 }
 
 BT::NodeStatus PlannerSelector::tick()
 {
+  if (!BT::isStatusActive(status())) {
+    initialize();
+  }
+
   callback_group_executor_.spin_some();
 
   // This behavior always use the last selected planner received from the topic input.
