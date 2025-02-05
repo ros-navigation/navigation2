@@ -312,9 +312,7 @@
 
     <Decorator ID="GoalUpdater">
       <input_port name="input_goal">Original goal in</input_port>
-      <input_port name="input_goals">Original goals in</input_port>
       <output_port name="output_goal">Output goal set by subscription</output_port>
-      <output_port name="output_goals">Output goals set by subscription</output_port>
     </Decorator>
 
     <Decorator ID="SpeedController">
