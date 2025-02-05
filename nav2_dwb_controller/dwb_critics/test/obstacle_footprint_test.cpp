@@ -242,7 +242,9 @@ TEST(ObstacleFootprint, LineCost)
   costmap_ros->getCostmap()->setCost(4, 3, 100);
   costmap_ros->getCostmap()->setCost(4, 4, 100);
 
-  ASSERT_EQ(critic->lineCost(3, 3, 0, 50), 50);   // all 50
+  auto max_y_in_grid_coordinates = costmap_ros->getCostmap()->getSizeInCellsY() - 1;
+  ASSERT_EQ(max_y_in_grid_coordinates, 49);
+  ASSERT_EQ(critic->lineCost(3, 3, 0, max_y_in_grid_coordinates), 50);   // all 50
   ASSERT_EQ(critic->lineCost(4, 4, 0, 10), 100);  // all 100
   ASSERT_EQ(critic->lineCost(0, 50, 3, 3), 100);  // pass 50 and 100
 }

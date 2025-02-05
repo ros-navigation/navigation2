@@ -287,24 +287,34 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
   _a_star->setCollisionChecker(&_collision_checker);
 
   // Set starting point, in A* bin search coordinates
-  float mx, my;
-  if (!_costmap->worldToMapContinuous(start.pose.position.x, start.pose.position.y, mx, my)) {
+  float mx_start, my_start, mx_goal, my_goal;
+  if (!_costmap->worldToMapContinuous(
+    start.pose.position.x,
+    start.pose.position.y,
+    mx_start,
+    my_start))
+  {
     throw nav2_core::StartOutsideMapBounds(
             "Start Coordinates of(" + std::to_string(start.pose.position.x) + ", " +
             std::to_string(start.pose.position.y) + ") was outside bounds");
   }
   _a_star->setStart(
-    mx, my,
+    mx_start, my_start,
     NodeLattice::motion_table.getClosestAngularBin(tf2::getYaw(start.pose.orientation)));
 
   // Set goal point, in A* bin search coordinates
-  if (!_costmap->worldToMapContinuous(goal.pose.position.x, goal.pose.position.y, mx, my)) {
+  if (!_costmap->worldToMapContinuous(
+    goal.pose.position.x,
+    goal.pose.position.y,
+    mx_goal,
+    my_goal))
+  {
     throw nav2_core::GoalOutsideMapBounds(
             "Goal Coordinates of(" + std::to_string(goal.pose.position.x) + ", " +
             std::to_string(goal.pose.position.y) + ") was outside bounds");
   }
   _a_star->setGoal(
-    mx, my,
+    mx_goal, my_goal,
     NodeLattice::motion_table.getClosestAngularBin(tf2::getYaw(goal.pose.orientation)));
 
   // Setup message
@@ -318,6 +328,22 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
   pose.pose.orientation.y = 0.0;
   pose.pose.orientation.z = 0.0;
   pose.pose.orientation.w = 1.0;
+
+  // Corner case of start and goal being on the same cell
+  if (std::floor(mx_start) == std::floor(mx_goal) &&
+    std::floor(my_start) == std::floor(my_goal))
+  {
+    pose.pose = start.pose;
+    pose.pose.orientation = goal.pose.orientation;
+    plan.poses.push_back(pose);
+
+    // Publish raw path for debug
+    if (_raw_plan_publisher->get_subscription_count() > 0) {
+      _raw_plan_publisher->publish(plan);
+    }
+
+    return plan;
+  }
 
   // Compute plan
   NodeLattice::CoordinateVector path;

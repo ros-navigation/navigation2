@@ -361,8 +361,13 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   _a_star->setCollisionChecker(&_collision_checker);
 
   // Set starting point, in A* bin search coordinates
-  float mx, my;
-  if (!costmap->worldToMapContinuous(start.pose.position.x, start.pose.position.y, mx, my)) {
+  float mx_start, my_start, mx_goal, my_goal;
+  if (!costmap->worldToMapContinuous(
+    start.pose.position.x,
+    start.pose.position.y,
+    mx_start,
+    my_start))
+  {
     throw nav2_core::StartOutsideMapBounds(
             "Start Coordinates of(" + std::to_string(start.pose.position.x) + ", " +
             std::to_string(start.pose.position.y) + ") was outside bounds");
@@ -376,10 +381,15 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   if (orientation_bin >= static_cast<float>(_angle_quantizations)) {
     orientation_bin -= static_cast<float>(_angle_quantizations);
   }
-  _a_star->setStart(mx, my, static_cast<unsigned int>(orientation_bin));
+  _a_star->setStart(mx_start, my_start, static_cast<unsigned int>(orientation_bin));
 
   // Set goal point, in A* bin search coordinates
-  if (!costmap->worldToMapContinuous(goal.pose.position.x, goal.pose.position.y, mx, my)) {
+  if (!costmap->worldToMapContinuous(
+    goal.pose.position.x,
+    goal.pose.position.y,
+    mx_goal,
+    my_goal))
+  {
     throw nav2_core::GoalOutsideMapBounds(
             "Goal Coordinates of(" + std::to_string(goal.pose.position.x) + ", " +
             std::to_string(goal.pose.position.y) + ") was outside bounds");
@@ -392,7 +402,7 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   if (orientation_bin >= static_cast<float>(_angle_quantizations)) {
     orientation_bin -= static_cast<float>(_angle_quantizations);
   }
-  _a_star->setGoal(mx, my, static_cast<unsigned int>(orientation_bin));
+  _a_star->setGoal(mx_goal, my_goal, static_cast<unsigned int>(orientation_bin));
 
   // Setup message
   nav_msgs::msg::Path plan;
@@ -405,6 +415,22 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   pose.pose.orientation.y = 0.0;
   pose.pose.orientation.z = 0.0;
   pose.pose.orientation.w = 1.0;
+
+  // Corner case of start and goal being on the same cell
+  if (std::floor(mx_start) == std::floor(mx_goal) &&
+    std::floor(my_start) == std::floor(my_goal))
+  {
+    pose.pose = start.pose;
+    pose.pose.orientation = goal.pose.orientation;
+    plan.poses.push_back(pose);
+
+    // Publish raw path for debug
+    if (_raw_plan_publisher->get_subscription_count() > 0) {
+      _raw_plan_publisher->publish(plan);
+    }
+
+    return plan;
+  }
 
   // Compute plan
   NodeHybrid::CoordinateVector path;
