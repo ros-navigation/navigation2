@@ -210,7 +210,8 @@ void SmacPlannerHybrid::configure(
       _logger, "coarse iteration resolution selected as <= 0, "
       "disabling coarse iteration resolution search for goal heading"
     );
-    _coarse_search_resolution = 0;
+
+    _coarse_search_resolution = 1;
   }
 
   if (_minimum_turning_radius_global_coords < _costmap->getResolution() * _downsampling_factor) {
@@ -723,7 +724,7 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
             _logger, "coarse iteration resolution selected as <= 0, "
             "disabling coarse iteration resolution search for goal heading"
           );
-          _coarse_search_resolution = 0;
+          _coarse_search_resolution = 1;
         }
       }
     }

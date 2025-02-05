@@ -286,7 +286,10 @@ void AStarAlgorithm<NodeT>::setGoal(
     _goals_vector.push_back(goals[i]);
   }
   // Configure the coarse search resolution
-  if(goal_heading_mode != GoalHeadingMode::ALL_DIRECTION || coarse_search_resolution == 0) {
+  if (_coarse_search_resolution <= 0) {
+    throw nav2_core::PlannerException("Invalid coarse search resolution, Cannot be <= 0");
+  }
+  else if(goal_heading_mode != GoalHeadingMode::ALL_DIRECTION) {
     _coarse_search_resolution = 1;
   } else {
     _coarse_search_resolution = coarse_search_resolution;
