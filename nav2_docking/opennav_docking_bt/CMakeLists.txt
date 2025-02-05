@@ -45,35 +45,9 @@ target_link_libraries(opennav_undock_action_bt_node PUBLIC
   ${nav2_msgs_TARGETS}
 )
 
-set(GENERATED_DIR ${CMAKE_CURRENT_BINARY_DIR}/gen)
-set(TREENODES_FILE opennav_docking_tree_nodes.xml)
-string(REPLACE ";" "\n" plugin_libs_one_per_line "${plugin_libs}")
-configure_file(plugins_list.txt.in ${GENERATED_DIR}/plugins_list.txt)
-
-add_custom_command(
-  OUTPUT ${GENERATED_DIR}/${TREENODES_FILE}
-  COMMAND  ${CMAKE_COMMAND} -E env LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}:$ENV{LD_LIBRARY_PATH}
-    $<TARGET_FILE:nav2_behavior_tree::generate_tree_nodes_xml_cli>
-    ${GENERATED_DIR}/plugins_list.txt
-    ${GENERATED_DIR}/${TREENODES_FILE}
-  POST_BUILD
-  DEPENDS
-    ${plugin_libs}
-    nav2_behavior_tree::generate_tree_nodes_xml_cli
-    ${GENERATED_DIR}/plugins_list.txt
-  COMMENT "Generating groot tree nodes description file - ${plugin_libs}"
-  VERBATIM
+nav2_generate_tree_nodes_xml(
+  PLUGIN_LIBS ${plugin_libs}
 )
-
-add_custom_target(gen_tree_nodes_xml ALL
-  DEPENDS
-    nav2_behavior_tree::generate_tree_nodes_xml_cli
-    ${GENERATED_DIR}/plugins_list.txt
-    ${GENERATED_DIR}/${TREENODES_FILE}
-)
-
-install(FILES ${GENERATED_DIR}/${TREENODES_FILE} DESTINATION share/${PROJECT_NAME})
-install(FILES ${GENERATED_DIR}/plugins_list.txt DESTINATION share/${PROJECT_NAME})
 
 install(TARGETS opennav_dock_action_bt_node opennav_undock_action_bt_node
   EXPORT ${PROJECT_NAME}
