@@ -70,6 +70,8 @@ void GoalUpdater::createROSInterfaces()
   }
   if (goals_updater_topic_new != goals_updater_topic_ || !goals_sub_) {
     goals_updater_topic_ = goals_updater_topic_new;
+    rclcpp::SubscriptionOptions sub_option;
+    sub_option.callback_group = callback_group_;
     goals_sub_ = node_->create_subscription<geometry_msgs::msg::PoseStampedArray>(
       goals_updater_topic_,
       rclcpp::SystemDefaultsQoS(),
