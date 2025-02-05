@@ -181,7 +181,6 @@ void SmacPlannerLattice::configure(
       _logger, "coarse iteration resolution selected as <= 0, "
       "disabling coarse iteration resolution search for goal heading"
     );
-    throw nav2_core::PlannerException("Invalid coarse search resolution");
     _coarse_search_resolution = 1;
   }
   float lookup_table_dim =
@@ -616,7 +615,6 @@ SmacPlannerLattice::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
             _logger, "coarse iteration resolution selected as <= 0, "
             "disabling coarse iteration resolution search for goal heading"
           );
-          throw nav2_core::PlannerException("Invalid coarse search resolution");
           _coarse_search_resolution = 1;
         }
       }
