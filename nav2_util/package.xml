@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>nav2_util</name>
-  <version>1.1.17</version>
+  <version>1.1.18</version>
   <description>TODO</description>
   <maintainer email="michael.jeronimo@intel.com">Michael Jeronimo</maintainer>
   <maintainer email="mohammad.haghighipanah@intel.com">Mohammad Haghighipanah</maintainer>
