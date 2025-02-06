@@ -50,7 +50,7 @@ public:
   : BT::ActionNodeBase(service_node_name, conf), service_name_(service_name), service_node_name_(
       service_node_name)
   {
-    createROSInterfaces();
+    initialize();
 
     // Make a request for the service without parameter
     request_ = std::make_shared<typename ServiceT::Request>();

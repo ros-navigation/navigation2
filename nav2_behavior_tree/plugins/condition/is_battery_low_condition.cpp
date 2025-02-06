@@ -29,7 +29,7 @@ IsBatteryLowCondition::IsBatteryLowCondition(
   is_voltage_(false),
   is_battery_low_(false)
 {
-  createROSInterfaces();
+  initialize();
 }
 
 void IsBatteryLowCondition::initialize()
