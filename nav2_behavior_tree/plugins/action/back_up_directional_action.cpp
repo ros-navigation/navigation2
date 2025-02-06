@@ -58,50 +58,11 @@ void BackUpDirectionalAction::on_tick()
 
   nav2_util::transformPoseInTargetFrame(reference_pose, transformed_pose, *tf_buffer_, "base_link", 1.0);
 
-  std::cout << "Frame ID: " << reference_pose.header.frame_id << std::endl;
-  std::cout << "Original Pose X: " << reference_pose.pose.position.x << ", Original Y: " << reference_pose.pose.position.y << std::endl;    
-
-  std::cout << "Frame ID: " << transformed_pose.header.frame_id << std::endl;
-  std::cout << "Transformed Pose X: " << transformed_pose.pose.position.x << ", Transformed Y: " << transformed_pose.pose.position.y << std::endl;    
-
-  RCLCPP_ERROR(
-    config().blackboard->get<rclcpp::Node::SharedPtr>("node")->get_logger(),
-    "Here %f, %f", transformed_pose.pose.position.x, transformed_pose.pose.position.y);
-
-
   if (transformed_pose.pose.position.x >= 0) {
     goal_.speed = std::fabs(goal_.speed);
   } else {
     goal_.speed = -std::fabs(goal_.speed);
   }
-
-  // if (!path.poses.empty()) { // Ensure there is at least one pose in the path
-  //   const auto& pose = path.poses.back().pose.position;
-    
-  //   std::cout << "Frame ID: " << path.header.frame_id << std::endl;
-  //   std::cout << "First Pose X: " << pose.x << ", Pose Y: " << pose.y << std::endl;    
-  // } else {
-  //   std::cout << "Path contains no poses." << std::endl;
-  // }
-  
-
-  // if (!path.poses.empty()) {
-  //   auto& last_pose_stamped = path.poses.back();
-
-  //   try {
-  //     // The target frame is "base_link" and source frame is extracted from the last pose
-  //     auto transformed_pose_stamped = tf_buffer_->transform(last_pose_stamped, "base_link");
-
-  //     const auto& transformed_pose = transformed_pose_stamped.pose.position;
-
-  //     std::cout << "Frame ID: " << transformed_pose_stamped.header.frame_id << std::endl;
-  //     std::cout << "Last Pose X: " << transformed_pose.x << ", Pose Y: " << transformed_pose.y << std::endl;
-  //   } catch (const tf2::TransformException& e) {
-  //     std::cout << "Failed to transform pose to 'base_link' frame: " << e.what() << std::endl;
-  //   }
-  // } else {
-  //   std::cout << "Path contains no poses." << std::endl;
-  // }
 
   increment_recovery_count();
 }
