@@ -604,7 +604,6 @@ SmacPlannerLattice::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
             "Unable to get GoalHeader type. Given '%s', "
             "Valid options are DEFAULT, BIDIRECTIONAL, ALL_DIRECTION. ",
             goal_heading_type.c_str());
-          throw nav2_core::PlannerException("Invalid GoalHeadingMode type");
         } else {
           _goal_heading_mode = goal_heading_mode;
         }
