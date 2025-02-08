@@ -562,7 +562,7 @@ TEST(UtilsTests, NormalizeYawsBetweenPointsTest)
     yaw_between_points);
   EXPECT_TRUE(yaws_between_points_corrected.isApprox(yaw_between_points));
 
-  // Try with a few yaw betweem points  more than pi/2
+  // Try with a few yaw between points  more than pi/2
   yaw_between_points[1] = 1.2 * M_PIF_2;
   yaws_between_points_corrected = utils::normalize_yaws_between_points(last_yaws,
     yaw_between_points);

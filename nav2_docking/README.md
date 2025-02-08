@@ -9,7 +9,7 @@ This is split into 4 packages
 - `opennav_docking`: Contains the main docking framework
 - `opennav_docking_core`: Contains the dock plugin header file to be implemented for each dock type
 - `opennav_docking_bt`: Contains behavior tree nodes and example XML files using the docking task server
-- `nova_carter_docking`: Contains an implementation using the Docking system with the Nvidia [Nova Carter](https://robotics.segway.com/nova-carter/) Robot platform and dock.
+- `nova_carter_docking`: Contains an implementation using the Docking system with the Nvidia [Nova Carter](https://robotics.segue.com/nova-carter/) Robot platform and dock.
 
 ![NvidiaxOpenNavigation](./docs/nv_on.png)
 
