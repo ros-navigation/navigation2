@@ -45,7 +45,6 @@ NavigateThroughPosesNavigator::configure(
   // Odometry smoother object for getting current speed
   odom_smoother_ = odom_smoother;
 
-  bt_action_server_->resetInternalError();
   return true;
 }
 
@@ -89,13 +88,15 @@ NavigateThroughPosesNavigator::goalCompleted(
   typename ActionT::Result::SharedPtr result,
   const nav2_behavior_tree::BtStatus /*final_bt_status*/)
 {
-  if (result->error_code == 0 && bt_action_server_->setResultToInternalError(result)) {
-    RCLCPP_WARN(logger_,
-      "NavigateThroughPosesNavigator::goalCompleted, set result to internal error %d:'%s'.",
-      result->error_code,
-      result->error_msg.c_str());
+  if (result->error_code == 0) {
+    if (bt_action_server_->populateInternalError(result)) {
+      RCLCPP_WARN(logger_,
+        "NavigateThroughPosesNavigator::goalCompleted, internal error %d:'%s'.",
+        result->error_code,
+        result->error_msg.c_str());
+    }
   } else {
-    RCLCPP_INFO(logger_, "NavigateThroughPosesNavigator::goalCompleted result %d:'%s'.",
+    RCLCPP_INFO(logger_, "NavigateThroughPosesNavigator::goalCompleted error %d:'%s'.",
       result->error_code,
       result->error_msg.c_str());
   }
@@ -126,7 +127,7 @@ NavigateThroughPosesNavigator::onLoop()
       feedback_utils_.global_frame, feedback_utils_.robot_frame,
       feedback_utils_.transform_tolerance))
   {
-    // Robot pose is not yet available, no feedback
+    RCLCPP_ERROR(logger_, "Robot pose is not available.");
     return;
   }
 
@@ -222,7 +223,7 @@ NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr
       feedback_utils_.global_frame, feedback_utils_.robot_frame,
       feedback_utils_.transform_tolerance))
   {
-    bt_action_server_->setInternalError(ActionT::Result::POSE_NOT_AVAILABLE,
+    bt_action_server_->setInternalError(ActionT::Result::TF_ERROR,
       "Initial robot pose is not available.");
     return false;
   }
@@ -234,7 +235,7 @@ NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr
         goal_pose, goal_pose, *feedback_utils_.tf, feedback_utils_.global_frame,
         feedback_utils_.transform_tolerance))
     {
-      bt_action_server_->setInternalError(ActionT::Result::GOAL_TRANSFORMATION_ERROR,
+      bt_action_server_->setInternalError(ActionT::Result::TF_ERROR,
         "Failed to transform a goal pose (" + std::to_string(i) + ") provided with frame_id '" +
         goal_pose.header.frame_id +
         "' to the global frame '" +

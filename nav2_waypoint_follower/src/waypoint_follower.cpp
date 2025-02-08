@@ -233,7 +233,7 @@ void WaypointFollower::followWaypointsHandler(
 
   if (poses.empty()) {
     result->error_code =
-      nav2_msgs::action::FollowWaypoints::Result::NO_WAYPOINTS_GIVEN;
+      nav2_msgs::action::FollowWaypoints::Result::NO_VALID_WAYPOINTS;
     result->error_msg =
       "Empty vector of waypoints passed to waypoint following "
       "action potentially due to conversation failure or empty request.";
@@ -266,7 +266,7 @@ void WaypointFollower::followWaypointsHandler(
       poses = getLatestGoalPoses<T>(action_server);
       if (poses.empty()) {
         result->error_code =
-          nav2_msgs::action::FollowWaypoints::Result::NO_WAYPOINTS_GIVEN;
+          nav2_msgs::action::FollowWaypoints::Result::NO_VALID_WAYPOINTS;
         result->error_msg =
           "Empty vector of Waypoints passed to waypoint following logic. "
           "Nothing to execute, returning with failure!";
@@ -345,6 +345,7 @@ void WaypointFollower::followWaypointsHandler(
         missedWaypoint.goal = poses[goal_index];
         missedWaypoint.error_code =
           nav2_msgs::action::FollowWaypoints::Result::TASK_EXECUTOR_FAILED;
+        missedWaypoint.error_msg = "Task execution failed";
         result->missed_waypoints.push_back(missedWaypoint);
       }
       // if task execution was failed and stop_on_failure_ is on , terminate action

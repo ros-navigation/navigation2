@@ -201,11 +201,11 @@ public:
   void resetInternalError(void);
 
   /**
-   * @brief set result to internal error code and message if not NONE
+   * @brief populate result with internal error code and error_msg if not NONE
    * @param result the action server result to be updated
    * @return bool action server result was changed
    */
-  bool setResultToInternalError(typename std::shared_ptr<typename ActionT::Result> result);
+  bool populateInternalError(typename std::shared_ptr<typename ActionT::Result> result);
 
 protected:
   /**

@@ -90,8 +90,9 @@ BtActionServer<ActionT>::BtActionServer(
   };
 
   if (node->has_parameter("error_code_names")) {
-    RCLCPP_ERROR(logger_, "parameter 'error_code_names' has been replaced by "
-      " 'error_code_name_prefixes'. Please update");
+    throw std::runtime_error("parameter 'error_code_names' has been replaced by "
+      " 'error_code_name_prefixes' and MUST be removed.\n"
+      " Please review migration guide and update your configuration.");
   }
 
   if (!node->has_parameter("error_code_name_prefixes")) {
@@ -206,14 +207,13 @@ bool BtActionServer<ActionT>::on_configure()
     "wait_for_service_timeout",
     wait_for_service_timeout_);
 
-  resetInternalError();
-
   return true;
 }
 
 template<class ActionT>
 bool BtActionServer<ActionT>::on_activate()
 {
+  resetInternalError();
   if (!loadBehaviorTree(default_bt_xml_filename_)) {
     RCLCPP_ERROR(logger_, "Error loading XML file: %s", default_bt_xml_filename_.c_str());
     return false;
@@ -374,7 +374,7 @@ void BtActionServer<ActionT>::resetInternalError(void)
 }
 
 template<class ActionT>
-bool BtActionServer<ActionT>::setResultToInternalError(
+bool BtActionServer<ActionT>::populateInternalError(
   typename std::shared_ptr<typename ActionT::Result> result)
 {
   if (internal_error_code_ != ActionT::Result::NONE) {

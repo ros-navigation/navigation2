@@ -70,6 +70,7 @@ bt_navigator:
       - follow_path
       - nav_thru_poses
       - nav_to_pose
+      - route
       - spin
       - undock_robot
       - wait
