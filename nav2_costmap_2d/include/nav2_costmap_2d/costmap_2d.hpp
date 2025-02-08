@@ -58,6 +58,7 @@ struct MapLocation
 {
   unsigned int x;
   unsigned int y;
+  unsigned char cost;
 };
 
 /**
@@ -310,6 +311,32 @@ public:
   bool setConvexPolygonCost(
     const std::vector<geometry_msgs::msg::Point> & polygon,
     unsigned char cost_value);
+
+  /**
+   * @brief  Gets the map region occupied by polygon
+   * @param polygon The polygon to perform the operation on
+   * @param polygon_map_region The map region occupied by the polygon
+   * @return True if the polygon_map_region was filled... false if it could not be filled
+   */
+  bool getMapRegionOccupiedByPolygon(
+    const std::vector<geometry_msgs::msg::Point> & polygon,
+    std::vector<MapLocation> & polygon_map_region);
+
+  /**
+   * @brief  Sets the given map region to desired value
+   * @param polygon_map_region The map region to perform the operation on
+   * @param new_cost_value The value to set costs to
+   */
+  void setMapRegionOccupiedByPolygon(
+    const std::vector<MapLocation> & polygon_map_region,
+    unsigned char new_cost_value);
+
+  /**
+   * @brief  Restores the corresponding map region using given map region
+   * @param polygon_map_region The map region to perform the operation on
+   */
+  void restoreMapRegionOccupiedByPolygon(
+    const std::vector<MapLocation> & polygon_map_region);
 
   /**
    * @brief  Get the map cells that make up the outline of a polygon
@@ -568,6 +595,7 @@ protected:
     {
       MapLocation loc;
       costmap_.indexToCells(offset, loc.x, loc.y);
+      loc.cost = costmap_.getCost(loc.x, loc.y);
       cells_.push_back(loc);
     }
 

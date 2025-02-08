@@ -186,15 +186,13 @@ def add_nodes(dot, parent_dot_name, parent_node):
 # type, the name if provided, and the parameters.
 def make_label(node):
     label = "< <table border='0' cellspacing='0' cellpadding='0'>"
-    label += "<tr><td align='text'><i>' + node.tag + '</i></td></tr>"
+    label += f"<tr><td align='text'><i>{node.tag}</i></td></tr>"
     name = node.get('name')
     if name:
-        label += "<tr><td align='text'><b>' + name + '</b></td></tr>"
+        label += f"<tr><td align='text'><b>{name}</b></td></tr>"
 
-    for (param_name, value) in node.items():
-        label += (
-            "<tr><td align='left'><sub>' + param_name + '=' + value + '</sub></td></tr>"
-        )
+    for param_name, value in node.items():
+        label += f"<tr><td align='left'><sub>{param_name}={value}</sub></td></tr>"
     label += '</table> >'
     return label
 
