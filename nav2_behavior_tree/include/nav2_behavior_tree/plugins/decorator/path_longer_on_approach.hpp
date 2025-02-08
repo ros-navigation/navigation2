@@ -91,7 +91,7 @@ private:
    * @brief Checks if the new path is longer
    * @param new_path new path to the goal
    * @param old_path current path to the goal
-   * @param length_factor multipler for path length check
+   * @param length_factor multiplier for path length check
    * @return whether the new path is longer
    */
   bool isNewPathLonger(

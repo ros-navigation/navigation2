@@ -6,7 +6,7 @@ This was created by Steve Macenski of [Open Navigation LLC](https://opennav.org)
 
 **⚠️ If you need professional services related to Nav2, please contact [Open Navigation](https://www.opennav.org/) at info@opennav.org.**
 
-It is drop-in replacable with AMR simulators and global localization by providing:
+It is drop-in replaceable with AMR simulators and global localization by providing:
 - Map -> Odom transform
 - Odom -> Base Link transform, `nav_msgs/Odometry` odometry
 - Accepts the standard `/initialpose` topic for transporting the robot to another location

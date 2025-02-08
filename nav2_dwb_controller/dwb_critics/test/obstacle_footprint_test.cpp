@@ -174,7 +174,7 @@ TEST(ObstacleFootprint, Prepare)
   for (unsigned int i = 1; i < costmap_ros->getCostmap()->getSizeInCellsX(); i++) {
     costmap_ros->getCostmap()->setCost(i, 10, nav2_costmap_2d::LETHAL_OBSTACLE);
   }
-  // It should now hit an obstacle (throw an expection)
+  // It should now hit an obstacle (throw an exception)
   ASSERT_THROW(critic->scorePose(pose), dwb_core::IllegalTrajectoryException);
 }
 

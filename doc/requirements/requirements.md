@@ -322,7 +322,7 @@ LOC002 | Localization.Robot Pose.Accuracy | 1 | The Localization Module MUST pro
 ## 2.5 Open Issues
 
 * What are the performance goals for the ROS2 Navigation System?
-* What are the scalability for the ROS2 Navigaton System?
+* What are the scalability for the ROS2 Navigation System?
 * Any other important design goals to call out?
 * Should we specify a minimum target platform? Or, should this be expressed as minimum platform requirements?
 * What is the right latency value for detecting a collision? 
