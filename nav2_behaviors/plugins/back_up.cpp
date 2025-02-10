@@ -26,9 +26,9 @@ Status BackUp::onRun(const std::shared_ptr<const BackUpAction::Goal> command)
     return Status::FAILED;
   }
 
-  // Silently ensure that both the speed and direction are negative.
-  command_x_ = -std::fabs(command->target.x);
-  command_speed_ = -std::fabs(command->speed);
+  // Ensure target x is abs and speed in reversed
+  command_x_ = std::fabs(command->target.x);
+  command_speed_ = -command->speed;
   command_time_allowance_ = command->time_allowance;
 
   end_time_ = this->clock_->now() + command_time_allowance_;
