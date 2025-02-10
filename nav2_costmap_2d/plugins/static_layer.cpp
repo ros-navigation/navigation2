@@ -130,7 +130,6 @@ void
 StaticLayer::getParameters()
 {
   int temp_lethal_threshold = 0;
-  double temp_tf_tol = 0.0;
 
   declareParameter("enabled", rclcpp::ParameterValue(true));
   declareParameter("subscribe_to_updates", rclcpp::ParameterValue(false));
@@ -159,14 +158,13 @@ StaticLayer::getParameters()
   node->get_parameter("lethal_cost_threshold", temp_lethal_threshold);
   node->get_parameter("unknown_cost_value", unknown_cost_value_);
   node->get_parameter("trinary_costmap", trinary_costmap_);
-  node->get_parameter("transform_tolerance", temp_tf_tol);
+  node->get_parameter("transform_tolerance", transform_tolerance_);
+  node->get_parameter("robot_base_frame", robot_base_frame_);
 
   // Enforce bounds
   lethal_threshold_ = std::max(std::min(temp_lethal_threshold, 100), 0);
   map_received_ = false;
   map_received_in_update_bounds_ = false;
-
-  transform_tolerance_ = tf2::durationFromSec(temp_tf_tol);
 
   // Add callback for dynamic parameters
   dyn_params_handler_ = node->add_on_set_parameters_callback(
@@ -387,6 +385,18 @@ StaticLayer::updateFootprint(
 {
   if (!footprint_clearing_enabled_) {return;}
 
+  if (map_frame_.empty()) {return;}
+  if (map_frame != global_frame_) {
+    geometry_msgs::msg::PoseStamped robot_pose;
+    nav2_util::getCurrentPose(
+      robot_pose, *tf_,
+      map_frame_, robot_base_frame_, transform_tolerance_
+    );
+    robot_x = robot_pose.pose.position.x;
+    robot_y = robot_pose.pose.position.y;
+    robot_yaw = tf2::getYaw(robot_pose.pose.orientation);
+  }
+
   transformFootprint(robot_x, robot_y, robot_yaw, getFootprint(), transformed_footprint_);
 
   for (unsigned int i = 0; i < transformed_footprint_.size(); i++) {
@@ -436,7 +446,7 @@ StaticLayer::updateCosts(
     try {
       transform = tf_->lookupTransform(
         map_frame_, global_frame_, tf2::TimePointZero,
-        transform_tolerance_);
+        tf2::durationFromSec(transform_tolerance_));
     } catch (tf2::TransformException & ex) {
       RCLCPP_ERROR(logger_, "StaticLayer: %s", ex.what());
       return;
@@ -495,7 +505,7 @@ StaticLayer::dynamicParametersCallback(
         "cannot be changed while running. Rejecting parameter update.", param_name.c_str());
     } else if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (param_name == name_ + "." + "transform_tolerance") {
-        transform_tolerance_ = tf2::durationFromSec(parameter.as_double());
+        transform_tolerance_ = parameter.as_double();
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == name_ + "." + "enabled" && enabled_ != parameter.as_bool()) {

@@ -49,6 +49,8 @@
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/footprint.hpp"
+#include "nav2_util/robot_utils.hpp"
+#include "tf2/utils.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -197,7 +199,8 @@ protected:
   bool trinary_costmap_;
   bool map_received_{false};
   bool map_received_in_update_bounds_{false};
-  tf2::Duration transform_tolerance_;
+  double transform_tolerance_;
+  std::string robot_base_frame_;
   nav_msgs::msg::OccupancyGrid::SharedPtr map_buffer_;
   // Dynamic parameters handler
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
