@@ -64,9 +64,13 @@ ParametersHandler::dynamicParamsCallback(
     if (auto callback = get_param_callbacks_.find(param_name);
       callback != get_param_callbacks_.end())
     {
+<<<<<<< HEAD
       callback->second(param);
     } else {
       RCLCPP_WARN(logger_, "Parameter %s not found", param_name.c_str());
+=======
+      callback->second(param, result);
+>>>>>>> 5c763e22 (MPPI: Do not set params success in dynamic params callback to allow changing params in other plugins (#4908))
     }
   }
 
