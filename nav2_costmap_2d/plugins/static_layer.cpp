@@ -386,7 +386,7 @@ StaticLayer::updateFootprint(
   if (!footprint_clearing_enabled_) {return;}
 
   if (map_frame_.empty()) {return;}
-  if (map_frame != global_frame_) {
+  if (map_frame_ != global_frame_) {
     geometry_msgs::msg::PoseStamped robot_pose;
     nav2_util::getCurrentPose(
       robot_pose, *tf_,
