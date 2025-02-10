@@ -282,7 +282,7 @@ protected:
   double simulation_time_step_;
   /// @brief Whether polygon is enabled
   bool enabled_;
-  /// @brief Wether the subscription to polygon topic has transient local QoS durability
+  /// @brief Whether the subscription to polygon topic has transient local QoS durability
   bool polygon_subscribe_transient_local_;
   /// @brief Polygon subscription
   rclcpp::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_sub_;

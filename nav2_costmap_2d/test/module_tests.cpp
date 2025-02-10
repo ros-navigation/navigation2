@@ -616,7 +616,7 @@ TEST(costmap, testStaticMap) {
   ASSERT_EQ(worldToIndex(map, 9.99, 9.99), (unsigned int)99);
   ASSERT_EQ(worldToIndex(map, 8.2, 3.4), (unsigned int)38);
 
-  // Ensure we hit the middle of the cell for world co-ordinates
+  // Ensure we hit the middle of the cell for world coordinates
   double wx, wy;
   indexToWorld(map, 99, wx, wy);
   ASSERT_EQ(wx, 9.5);

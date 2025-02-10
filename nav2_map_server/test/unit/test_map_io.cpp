@@ -112,7 +112,7 @@ protected:
 // loaded image should match the known dimensions and content of the file.
 // Save obtained OccupancyGrid message into a tmp PGM file. Then load back saved tmp file
 // and check for consistency.
-// Succeeds all steps were passed without a problem or expection.
+// Succeeds all steps were passed without a problem or exception.
 TEST_F(MapIOTester, loadSaveValidPGM)
 {
   // 1. Load reference map file and verify obtained OccupancyGrid
@@ -141,7 +141,7 @@ TEST_F(MapIOTester, loadSaveValidPGM)
 // loaded image should match the known dimensions and content of the file.
 // Save obtained OccupancyGrid message into a tmp PNG file. Then load back saved tmp file
 // and check for consistency.
-// Succeeds all steps were passed without a problem or expection.
+// Succeeds all steps were passed without a problem or exception.
 TEST_F(MapIOTester, loadSaveValidPNG)
 {
   // 1. Load reference map file and verify obtained OccupancyGrid
@@ -170,7 +170,7 @@ TEST_F(MapIOTester, loadSaveValidPNG)
 // loaded image should match the known dimensions and content of the file.
 // Save obtained OccupancyGrid message into a tmp BMP file. Then load back saved tmp file
 // and check for consistency.
-// Succeeds all steps were passed without a problem or expection.
+// Succeeds all steps were passed without a problem or exception.
 TEST_F(MapIOTester, loadSaveValidBMP)
 {
   // 1. Load reference map file and verify obtained OccupancyGrid
@@ -198,7 +198,7 @@ TEST_F(MapIOTester, loadSaveValidBMP)
 }
 
 // Load map from a valid file. Trying to save map with different modes.
-// Succeeds all steps were passed without a problem or expection.
+// Succeeds all steps were passed without a problem or exception.
 TEST_F(MapIOTester, loadSaveMapModes)
 {
   // 1. Load map from YAML file
