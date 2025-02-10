@@ -36,12 +36,13 @@ enum class ParameterType { Dynamic, Static };
 
 /**
  * @class mppi::ParametersHandler
- * @brief Handles getting parameters and dynamic parmaeter changes
+ * @brief Handles getting parameters and dynamic parameter changes
  */
 class ParametersHandler
 {
 public:
-  using get_param_func_t = void (const rclcpp::Parameter & param);
+  using get_param_func_t = void (const rclcpp::Parameter & param,
+    rcl_interfaces::msg::SetParametersResult & result);
   using post_callback_t = void ();
   using pre_callback_t = void ();
 
@@ -58,6 +59,11 @@ public:
     const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent);
 
   /**
+    * @brief Destructor for mppi::ParametersHandler
+    */
+  ~ParametersHandler();
+
+  /**
     * @brief Starts processing dynamic parameter changes
     */
   void start();
@@ -71,7 +77,7 @@ public:
     std::vector<rclcpp::Parameter> parameters);
 
   /**
-    * @brief Get an object to retreive parameters
+    * @brief Get an object to retrieve parameters
     * @param ns Namespace to get parameters within
     * @return Parameter getter object
     */
@@ -95,9 +101,11 @@ public:
     * @brief Set a parameter to a dynamic parameter callback
     * @param setting Parameter
     * @param name Name of parameter
+    * @param param_type Type of parameter (dynamic or static)
     */
   template<typename T>
-  void setDynamicParamCallback(T & setting, const std::string & name);
+  void setParamCallback(
+    T & setting, const std::string & name, ParameterType param_type = ParameterType::Dynamic);
 
   /**
     * @brief Get mutex lock for changing parameters
@@ -109,12 +117,20 @@ public:
   }
 
   /**
-    * @brief Set a parameter to a dynamic parameter callback
+    * @brief register a function to be called when setting a parameter
+    *
+    * The callback function is expected to behave as follows.
+    * Successful parameter changes should not interfere with
+    * the result parameter.
+    * Unsuccessful parameter changes should set the result.successful = false
+    * The result.reason should have "\n" appended if not empty before
+    * appending the reason that setting THIS parameter has failed.
+    *
     * @param name Name of parameter
     * @param callback Parameter callback
     */
   template<typename T>
-  void addDynamicParamCallback(const std::string & name, T && callback);
+  void addParamCallback(const std::string & name, T && callback);
 
 protected:
   /**
@@ -155,8 +171,7 @@ protected:
 
   bool verbose_{false};
 
-  std::unordered_map<std::string, std::function<get_param_func_t>>
-  get_param_callbacks_;
+  std::unordered_map<std::string, std::function<get_param_func_t>> get_param_callbacks_;
 
   std::vector<std::function<pre_callback_t>> pre_callbacks_;
   std::vector<std::function<post_callback_t>> post_callbacks_;
@@ -174,7 +189,7 @@ inline auto ParametersHandler::getParamGetter(const std::string & ns)
 }
 
 template<typename T>
-void ParametersHandler::addDynamicParamCallback(const std::string & name, T && callback)
+void ParametersHandler::addParamCallback(const std::string & name, T && callback)
 {
   get_param_callbacks_[name] = callback;
 }
@@ -203,10 +218,7 @@ void ParametersHandler::getParam(
     node, name, rclcpp::ParameterValue(default_value));
 
   setParam<ParamT>(setting, name, node);
-
-  if (param_type == ParameterType::Dynamic) {
-    setDynamicParamCallback(setting, name);
-  }
+  setParamCallback(setting, name, param_type);
 }
 
 template<typename ParamT, typename SettingT, typename NodeT>
@@ -219,24 +231,37 @@ void ParametersHandler::setParam(
 }
 
 template<typename T>
-void ParametersHandler::setDynamicParamCallback(T & setting, const std::string & name)
+void ParametersHandler::setParamCallback(
+  T & setting, const std::string & name, ParameterType param_type)
 {
   if (get_param_callbacks_.find(name) != get_param_callbacks_.end()) {
     return;
   }
 
-  auto callback = [this, &setting, name](const rclcpp::Parameter & param) {
+  auto dynamic_callback =
+    [this, &setting, name](
+    const rclcpp::Parameter & param, rcl_interfaces::msg::SetParametersResult & /*result*/) {
       setting = as<T>(param);
-
       if (verbose_) {
         RCLCPP_INFO(logger_, "Dynamic parameter changed: %s", std::to_string(param).c_str());
       }
     };
 
-  addDynamicParamCallback(name, callback);
+  auto static_callback =
+    [this, &setting, name](
+    const rclcpp::Parameter & param, rcl_interfaces::msg::SetParametersResult & result) {
+      std::string reason = "Rejected change to static parameter: " + std::to_string(param);
+      result.successful = false;
+      if (!result.reason.empty()) {
+        result.reason += "\n";
+      }
+      result.reason += reason;
+    };
 
-  if (verbose_) {
-    RCLCPP_INFO(logger_, "Dynamic Parameter added %s", name.c_str());
+  if (param_type == ParameterType::Dynamic) {
+    addParamCallback(name, dynamic_callback);
+  } else {
+    addParamCallback(name, static_callback);
   }
 }
 

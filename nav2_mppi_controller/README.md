@@ -12,6 +12,10 @@ This controller is measured to run at 50+ Hz on a modest Intel processor (4th ge
 
 It works currently with Differential, Omnidirectional, and Ackermann robots.
 
+Want to learn more? Checkout the ROSCon 2023 talk on the MPPI Controller by clicking on the image below!
+
+[![IMAGE ALT TEXT](https://github.com/user-attachments/assets/4e091c5d-9687-457c-a7fb-d0e0689fbaea)](https://vimeo.com/879001391)
+
 ## MPPI Description
 
 The MPPI algorithm is an MPC variant that finds a control velocity for the robot using an iterative approach. Using the previous time step's best control solution and the robot's current state, a set of randomly sampled perturbations from a Gaussian distribution are applied. These noised controls are forward simulated to generate a set of trajectories within the robot's motion model.
@@ -53,7 +57,6 @@ This process is then repeated a number of times and returns a converged solution
  | gamma                      | double | Default: 0.015. A trade-off between smoothness (high) and low energy (low). This is a complex parameter that likely won't need to be changed from the default of `0.1` which works well for a broad range of cases. See Section 3D-2 in "Information Theoretic Model Predictive Control: Theory and Applications to Autonomous Driving" for detailed information.       |
  | visualize                  | bool   | Default: false. Publish visualization of trajectories, which can slow down the controller significantly. Use only for debugging.                                                                                                                                       |
  | retry_attempt_limit        | int    | Default 1. Number of attempts to find feasible trajectory on failure for soft-resets before reporting failure.                                                                                                                                                                                                       |
-| reset_period            | double    | Default 1.0. required time of inactivity to reset optimizer  (only in Humble due to backport ABI policies)            |
  | regenerate_noises          | bool   | Default false. Whether to regenerate noises each iteration or use single noise distribution computed on initialization and reset. Practically, this is found to work fine since the trajectories are being sampled stochastically from a normal distribution and reduces compute jittering at run-time due to thread wake-ups to resample normal distribution. |
 
 #### Trajectory Visualizer
@@ -108,11 +111,10 @@ Uses estimated distances from obstacles using cost and inflation parameters to a
  | critical_weight          | double | Default 20.0. Weight to apply to critic for near collisions closer than `collision_margin_distance` to prevent near collisions **only** as a method of virtually inflating the footprint. This should not be used to generally influence obstacle avoidance away from critical collisions.                                                                |
  | repulsion_weight          | double | Default 1.5. Weight to apply to critic for generally preferring routes in lower cost space. This is separated from the critical term to allow for fine tuning of obstacle behaviors with path alignment for dynamic scenes without impacting actions which may directly lead to near-collisions. This is applied within the `inflation_radius` distance from obstacles.                                                                |
  | cost_power           | int    | Default 1. Power order to apply to term.                                                                    |
- | collision_cost       | double | Default 10000.0. Cost to apply to a true collision in a trajectory.                                          |
+ | collision_cost       | double | Default 100000.0. Cost to apply to a true collision in a trajectory.                                          |
  | collision_margin_distance   | double    | Default 0.10. Margin distance from collision to apply severe penalty, similar to footprint inflation. Between 0.05-0.2 is reasonable. |
  | near_goal_distance          | double    | Default 0.5. Distance near goal to stop applying preferential obstacle term to allow robot to smoothly converge to goal pose in close proximity to obstacles.   
- | cost_scaling_factor       | double    | Default 10.0. Exponential decay factor across inflation radius. This should be the same as for your inflation layer (Humble only)
- | inflation_radius          | double    | Default 0.55. Radius to inflate costmap around lethal obstacles. This should be the same as for your inflation layer (Humble only)
+ | inflation_layer_name        | string    | Default "". Name of the inflation layer. If empty, it uses the last inflation layer in the costmap. If you have multiple inflation layers, you may want to specify the name of the layer to use. |
 
 #### Cost Critic
 
@@ -127,6 +129,7 @@ Uses inflated costmap cost directly to avoid obstacles
  | critical_cost       | double | Default 300.0. Cost to apply to a pose with any point in in inflated space to prefer distance from obstacles.                                          |
  | near_goal_distance          | double    | Default 0.5. Distance near goal to stop applying preferential obstacle term to allow robot to smoothly converge to goal pose in close proximity to obstacles.   
  | inflation_layer_name        | string    | Default "". Name of the inflation layer. If empty, it uses the last inflation layer in the costmap. If you have multiple inflation layers, you may want to specify the name of the layer to use. |
+ | trajectory_point_step      | int | Default 2. Step of trajectory points to evaluate for costs since otherwise so dense represents multiple points for a single costmap cell.   |
 
 #### Path Align Critic
  | Parameter                  | Type   | Definition                                                                                                                         |
@@ -135,21 +138,19 @@ Uses inflated costmap cost directly to avoid obstacles
  | cost_power                 | int    | Default 1. Power order to apply to term.                                                                                           |
  | threshold_to_consider      | double | Default 0.5. Distance between robot and goal above which path align cost stops being considered                                    |
  | offset_from_furthest      | double | Default 20. Checks that the candidate trajectories are sufficiently far along their way tracking the path to apply the alignment critic. This ensures that path alignment is only considered when actually tracking the path, preventing awkward initialization motions preventing the robot from leaving the path to achieve the appropriate heading.  |
- | trajectory_point_step      | double | Default 4. Step of trajectory points to evaluate for path distance to reduce compute time. Between 1-10 is typically reasonable.   |
+ | trajectory_point_step      | int | Default 4. Step of trajectory points to evaluate for path distance to reduce compute time. Between 1-10 is typically reasonable.   |
  | max_path_occupancy_ratio   | double | Default 0.07 (7%). Maximum proportion of the path that can be occupied before this critic is not considered to allow the obstacle and path follow critics to avoid obstacles while following the path's intent in presence of dynamic objects in the scene.  |
  | use_path_orientations   | bool | Default false. Whether to consider path's orientations in path alignment, which can be useful when paired with feasible smac planners to incentivize directional changes only where/when the smac planner requests them. If you want the robot to deviate and invert directions where the controller sees fit, keep as false. If your plans do not contain orientation information (e.g. navfn), keep as false.  |
-
-Note: There is a "Legacy" version of this critic also available with the same parameters of an old formulation pre-October 2023.
 
 #### Path Angle Critic
  | Parameter                 | Type   | Definition                                                                                                  |
  | ---------------           | ------ | ----------------------------------------------------------------------------------------------------------- |
- | cost_weight               | double | Default 2.0. Weight to apply to critic term.                                                                |
+ | cost_weight               | double | Default 2.2. Weight to apply to critic term.                                                                |
  | cost_power                | int    | Default 1. Power order to apply to term.                                                                    |
  | threshold_to_consider     | double | Default 0.5. Distance between robot and goal above which path angle cost stops being considered             |
  | offset_from_furthest      | int    | Default 4. Number of path points after furthest one any trajectory achieves to compute path angle relative to.  |
- | max_angle_to_furthest     | double | Default 1.2. Angular distance between robot and goal above which path angle cost starts being considered           |
- | forward_preference     | bool | Default true. Whether or not your robot has a preference for which way is forward in motion. Different from if reversing is generally allowed, but if you robot contains *no* particular preference one way or another.           |
+ | max_angle_to_furthest     | double | Default 0.785398. Angular distance between robot and goal above which path angle cost starts being considered           |
+ | mode     | int | Default 0 (Forward Preference). Enum type for mode of operations for the path angle critic depending on path input types and behavioral desires. 0: Forward Preference, penalizes high path angles relative to the robot's orientation to incentivize turning towards the path. 1: No directional preference, penalizes high path angles relative to the robot's orientation or mirrored orientation (e.g. reverse), which ever is less, when a particular direction of travel is not preferable. 2: Consider feasible path orientation, when using a feasible path whereas the path points have orientation information (e.g. Smac Planners), consider the path's requested direction of travel to penalize path angles such that the robot will follow the path in the requested direction. |
 
 
 #### Path Follow Critic
@@ -232,6 +233,7 @@ controller_server:
         cost_power: 1
         cost_weight: 5.0
         threshold_to_consider: 0.5
+      # Option to replace Cost and use Obstacles instead
       # ObstaclesCritic:
       #   enabled: true
       #   cost_power: 1
@@ -249,13 +251,13 @@ controller_server:
         consider_footprint: true
         collision_cost: 1000000.0
         near_goal_distance: 1.0
-      PathAlignCritic:
+        trajectory_point_step: 2
       PathAlignCritic:
         enabled: true
         cost_power: 1
         cost_weight: 14.0
         max_path_occupancy_ratio: 0.05
-        trajectory_point_step: 3
+        trajectory_point_step: 4
         threshold_to_consider: 0.5
         offset_from_furthest: 20
         use_path_orientations: false
@@ -304,6 +306,8 @@ If you don't require path following behavior (e.g. just want to follow a goal po
 
 By default, the controller is tuned and has the capabilities established in the PathAlign/Obstacle critics to generally follow the path closely when no obstacles prevent it, but able to deviate from the path when blocked. See `PathAlignCritic::score()` for details, but it is disabled when the local path is blocked so the obstacle critic takes over in that state.
 
+If you want to slow further on approach to goal, consider increasing the ``threshold_to_consider`` parameters to give a hand off from the path tracking critics to the goal approach critics sooner - then tune those critics for your profile of interest.
+
 ### Prediction Horizon, Costmap Sizing, and Offsets
 
 As this is a predictive planner, there is some relationship between maximum speed, prediction times, and costmap size that users should keep in mind while tuning for their application. If a controller server costmap is set to 3.0m in size, that means that with the robot in the center, there is 1.5m of information on either side of the robot. When your prediction horizon (time_steps * model_dt) at maximum speed (vx_max) is larger than this, then your robot will be artificially limited in its maximum speeds and behavior by the costmap limitation. For example, if you predict forward 3 seconds (60 steps @ 0.05s per step) at 0.5m/s maximum speed, the **minimum** required costmap radius is 1.5m - or 3m total width.
@@ -321,3 +325,7 @@ Thus, care should be taken to select weights of the obstacle critic in conjuncti
 As you increase or decrease your weights on the Obstacle, you may notice the aforementioned behaviors (e.g. won't overcome free to non-free threshold). To overcome them, increase the FollowPath critic cost to increase the desire for the trajectory planner to continue moving towards the goal. Make sure to not overshoot this though, keep them balanced. A desirable outcome is smooth motion roughly in the center of spaces without significant close interactions with obstacles. It shouldn't be perfectly following a path yet nor should the output velocity be wobbling jaggedly.
 
 Once you have your obstacle avoidance behavior tuned and matched with an appropriate path following penalty, tune the Path Align critic to align with the path. If you design exact-path-alignment behavior, its possible to skip the obstacle critic step as highly tuning the system to follow the path will give it less ability to deviate to avoid obstacles (though it'll slow and stop). Tuning the critic weight for the Obstacle critic high will do the job to avoid near-collisions but the repulsion weight is largely unnecessary to you. For others wanting more dynamic behavior, it _can_ be beneficial to slowly lower the weight on the obstacle critic to give the path alignment critic some more room to work. If your path was generated with a cost-aware planner (like all provided by Nav2) and providing paths sufficiently far from obstacles for your satisfaction, the impact of a slightly reduced Obstacle critic with a Path Alignment critic will do you well. Not over-weighting the path align critic will allow the robot to  deviate from the path to get around dynamic obstacles in the scene or other obstacles not previous considered during path planning. It is subjective as to the best behavior for your application, but it has been shown that MPPI can be an exact path tracker and/or avoid dynamic obstacles very fluidly and everywhere in between. The defaults provided are in the generally right regime for a balanced initial trade-off. 
+
+### MFMA and AVX2 Optimizations
+
+This MPPI is made possible to run on CPU-only by using a very well optimized implementation that rely on CPU vectorization through AVX2 and MFMA. All even remotely modern computers support this (2013+), but if using a very old computer you may not be able to use the plugin. Note that MPC is computationally heavy to begin with, so computers circa-2013 even if it were to have those compiler flags available probably wouldn't run it at a satisfactory rate anyway. 
