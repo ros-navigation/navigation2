@@ -663,25 +663,50 @@ void ControllerServer::computeAndPublishVelocity()
   feedback->speed = std::hypot(cmd_vel_2d.twist.linear.x, cmd_vel_2d.twist.linear.y);
 
   // Find the closest pose to current pose on global path
-  nav_msgs::msg::Path & current_path = current_path_;
-  auto find_closest_pose_idx =
-    [&pose, &current_path]() {
+  geometry_msgs::msg::PoseStamped robot_pose_in_path_frame;
+  rclcpp::Duration tolerance(rclcpp::Duration::from_seconds(costmap_ros_->getTransformTolerance()));
+  // TODO move to publishFeedback method
+  if (nav_2d_utils::transformPose(
+          costmap_ros_->getTfBuffer(), current_path_.header.frame_id, pose, robot_pose_in_path_frame, tolerance))
+  {
+    nav_msgs::msg::Path& current_path = current_path_;
+    auto find_closest_pose_idx = [&robot_pose_in_path_frame, &current_path]()
+    {
       size_t closest_pose_idx = 0;
       double curr_min_dist = std::numeric_limits<double>::max();
-      for (size_t curr_idx = 0; curr_idx < current_path.poses.size(); ++curr_idx) {
-        double curr_dist = nav2_util::geometry_utils::euclidean_distance(
-          pose, current_path.poses[curr_idx]);
-        if (curr_dist < curr_min_dist) {
+      for (size_t curr_idx = 0; curr_idx < current_path.poses.size(); ++curr_idx)
+      {
+        double curr_dist =
+            nav2_util::geometry_utils::euclidean_distance(robot_pose_in_path_frame, current_path.poses[curr_idx]);
+        if (curr_dist < curr_min_dist)
+        {
           curr_min_dist = curr_dist;
           closest_pose_idx = curr_idx;
         }
       }
+      std::cout << "curr_min_dist: " << curr_min_dist << std::endl;
       return closest_pose_idx;
     };
 
-  feedback->distance_to_goal =
-    nav2_util::geometry_utils::calculate_path_length(current_path_, find_closest_pose_idx());
-  action_server_->publish_feedback(feedback);
+    const std::size_t closest_pose_idx = find_closest_pose_idx();
+    feedback->distance_to_goal = nav2_util::geometry_utils::calculate_path_length(current_path_, closest_pose_idx);
+    feedback->closest_path_pose_idx = closest_pose_idx;
+    feedback->distance_to_path =
+        nav2_util::geometry_utils::euclidean_distance(robot_pose_in_path_frame, current_path.poses[closest_pose_idx]);
+
+    std::cout << "Controller server feedback:\n distance_to_goal: " << feedback->distance_to_goal
+              << "\n closest_path_pose_idx: " << feedback->closest_path_pose_idx
+              << "\n distance_to_path: " << feedback->distance_to_path
+              << "\n path pose: " << "[x: " << current_path.poses[closest_pose_idx].pose.position.x
+              << ", y: " << current_path.poses[closest_pose_idx].pose.position.y
+              << "]\n robot pose: " << "[x: " << robot_pose_in_path_frame.pose.position.x
+              << ", y: " << robot_pose_in_path_frame.pose.position.y << "]" << std::endl;
+    action_server_->publish_feedback(feedback);
+  }
+  else
+  {
+    RCLCPP_WARN(get_logger(), "Unable to transform robot pose into global plan's frame. Cannot provide feedback");
+  }
 
   RCLCPP_DEBUG(get_logger(), "Publishing velocity at time %.2f", now().seconds());
   publishVelocity(cmd_vel_2d);
