@@ -56,7 +56,7 @@ BT::NodeStatus FollowPathAction::on_cancelled()
 }
 
 void FollowPathAction::on_wait_for_result(
-  std::shared_ptr<const Action::Feedback>/*feedback*/)
+  std::shared_ptr<const Action::Feedback> feedback)
 {
   // Grab the new path
   nav_msgs::msg::Path new_path;
@@ -91,6 +91,16 @@ void FollowPathAction::on_wait_for_result(
   if (goal_.progress_checker_id != new_progress_checker_id) {
     goal_.progress_checker_id = new_progress_checker_id;
     goal_updated_ = true;
+  }
+
+  if (!goal_updated_ && feedback) // feedback may be nullptr if no new feedback was received
+  {
+    setOutput("distance_to_goal", static_cast<double>(feedback->distance_to_goal));
+    setOutput("closest_path_pose_idx", feedback->closest_path_pose_idx);
+    setOutput("distance_to_path", static_cast<double>(feedback->distance_to_path));
+    // std::cout << "feedback:" << "distance_to_goal: " << feedback->distance_to_goal
+    //           << "closest_path_pose_idx: " << feedback->closest_path_pose_idx
+    //           << "distance_to_path: " << feedback->distance_to_path << std::endl;
   }
 }
 
