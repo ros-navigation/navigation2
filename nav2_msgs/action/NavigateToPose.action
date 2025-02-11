@@ -7,9 +7,9 @@ string behavior_tree
 # Error codes
 # Note: The expected priority order of the errors should match the message order
 uint16 NONE=0
-uint16 UNKNOWN=9900
-uint16 FAILED_TO_LOAD_BEHAVIOR_TREE=9901
-uint16 TF_ERROR=9902
+uint16 UNKNOWN=9000
+uint16 FAILED_TO_LOAD_BEHAVIOR_TREE=9001
+uint16 TF_ERROR=9002
 
 uint16 error_code
 string error_msg
