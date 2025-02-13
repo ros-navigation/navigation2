@@ -26,7 +26,7 @@ IsBatteryChargingCondition::IsBatteryChargingCondition(
   battery_topic_("/battery_status"),
   is_battery_charging_(false)
 {
-  createROSInterfaces();
+  initialize();
 }
 
 void IsBatteryChargingCondition::initialize()

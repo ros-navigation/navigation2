@@ -32,7 +32,7 @@ GoalCheckerSelector::GoalCheckerSelector(
   const BT::NodeConfiguration & conf)
 : BT::SyncActionNode(name, conf)
 {
-  createROSInterfaces();
+  initialize();
 }
 
 void GoalCheckerSelector::initialize()

@@ -33,7 +33,7 @@ SmootherSelector::SmootherSelector(
   const BT::NodeConfiguration & conf)
 : BT::SyncActionNode(name, conf)
 {
-  createROSInterfaces();
+  initialize();
 }
 
 void SmootherSelector::initialize()

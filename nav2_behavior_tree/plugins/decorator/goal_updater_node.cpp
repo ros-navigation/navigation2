@@ -35,7 +35,7 @@ GoalUpdater::GoalUpdater(
   goal_updater_topic_("goal_update"),
   goals_updater_topic_("goals_update")
 {
-  createROSInterfaces();
+  initialize();
 }
 
 void GoalUpdater::initialize()

@@ -32,7 +32,7 @@ ControllerSelector::ControllerSelector(
   const BT::NodeConfiguration & conf)
 : BT::SyncActionNode(name, conf)
 {
-  createROSInterfaces();
+  initialize();
 }
 
 void ControllerSelector::initialize()

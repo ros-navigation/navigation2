@@ -32,7 +32,7 @@ PlannerSelector::PlannerSelector(
   const BT::NodeConfiguration & conf)
 : BT::SyncActionNode(name, conf)
 {
-  createROSInterfaces();
+  initialize();
 }
 
 void PlannerSelector::initialize()

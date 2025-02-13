@@ -31,7 +31,7 @@ ProgressCheckerSelector::ProgressCheckerSelector(
   const BT::NodeConfiguration & conf)
 : BT::SyncActionNode(name, conf)
 {
-  createROSInterfaces();
+  initialize();
 }
 
 void ProgressCheckerSelector::initialize()
