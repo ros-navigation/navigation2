@@ -185,9 +185,7 @@ void Costmap2DPublisher::prepareCostmap()
   costmap_raw_->data.resize(costmap_raw_->metadata.size_x * costmap_raw_->metadata.size_y);
 
   unsigned char * data = costmap_->getCharMap();
-  for (unsigned int i = 0; i < costmap_raw_->data.size(); i++) {
-    costmap_raw_->data[i] = data[i];
-  }
+  memcpy(costmap_raw_->data.data(), data, costmap_raw_->data.size());
 }
 
 std::unique_ptr<map_msgs::msg::OccupancyGridUpdate> Costmap2DPublisher::createGridUpdateMsg()
