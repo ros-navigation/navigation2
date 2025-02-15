@@ -96,7 +96,7 @@ NavigateThroughPosesNavigator::goalCompleted(
         result->error_msg.c_str());
     }
   } else {
-    RCLCPP_INFO(logger_, "NavigateThroughPosesNavigator::goalCompleted error %d:'%s'.",
+    RCLCPP_WARN(logger_, "NavigateThroughPosesNavigator::goalCompleted error %d:'%s'.",
       result->error_code,
       result->error_msg.c_str());
   }
