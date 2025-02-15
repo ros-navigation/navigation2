@@ -16,12 +16,14 @@
 #ifndef NAV2_SMAC_PLANNER__A_STAR_HPP_
 #define NAV2_SMAC_PLANNER__A_STAR_HPP_
 
+#include <vector>
+#include <iostream>
+#include <unordered_set>
 #include <functional>
 #include <memory>
 #include <queue>
 #include <tuple>
 #include <utility>
-#include <vector>
 
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_core/planner_exceptions.hpp"
@@ -49,6 +51,7 @@ public:
   typedef NodeT * NodePtr;
   typedef robin_hood::unordered_node_map<uint64_t, NodeT> Graph;
   typedef std::vector<NodePtr> NodeVector;
+  typedef std::unordered_set<NodePtr> NodeSet;
   typedef std::pair<float, NodeBasic<NodeT>> NodeElement;
   typedef typename NodeT::Coordinates Coordinates;
   typedef typename NodeT::CoordinateVector CoordinateVector;
@@ -90,6 +93,8 @@ public:
    * or planning time exceeded
    * @param max_planning_time Maximum time (in seconds) to wait for a plan, createPath returns
    * false after this timeout
+   * @param lookup_table_size Size of the lookup table to store heuristic values
+   * @param dim_3_size Number of quantization bins
    */
   void initialize(
     const bool & allow_unknown,
@@ -125,11 +130,15 @@ public:
    * @param mx The node X index of the goal
    * @param my The node Y index of the goal
    * @param dim_3 The node dim_3 index of the goal
+   * @param goal_heading_mode The goal heading mode to use
+   * @param coarse_search_resolution The resolution to search for goal heading
    */
   void setGoal(
     const float & mx,
     const float & my,
-    const unsigned int & dim_3);
+    const unsigned int & dim_3,
+    const GoalHeadingMode & goal_heading_mode = GoalHeadingMode::DEFAULT,
+    const int & coarse_search_resolution = 0);
 
   /**
    * @brief Set the starting pose for planning, as a node index
@@ -155,10 +164,22 @@ public:
   NodePtr & getStart();
 
   /**
-   * @brief Get pointer reference to goal node
-   * @return Node pointer reference to goal node
+   * @brief Get pointer reference to goals node
+   * @return unordered_set of node pointers reference to the goals nodes
    */
-  NodePtr & getGoal();
+  NodeSet & getGoals();
+
+  /**
+   * @brief Get pointer reference to goals node vector
+   * @return vector of node pointers reference to the goals nodes
+   */
+  NodeVector & getGoalsVector();
+
+  /**
+   * @brief Get pointer reference to goals coordinates
+   * @return vector of goals coordinates reference to the goals coordinates
+   */
+  CoordinateVector & getGoalsCoordinates();
 
   /**
    * @brief Get maximum number of on-approach iterations after within threshold
@@ -189,6 +210,21 @@ public:
    * @return Number of angle bins / Z dimension
    */
   unsigned int & getSizeDim3();
+
+  /**
+   * @brief Prepare goals for expansion
+   * @param goals_to_expand Vector of goals to expand
+   * @param coarse_search_goal_size Size of the coarse search goal
+   */
+  void prepareGoalsForExpansion(
+    NodeVector & goals_to_expand,
+    unsigned int & coarse_search_goal_size);
+
+  /**
+   * @brief Get the resolution of the coarse search
+   * @return Size of the goals to expand
+   */
+  unsigned int getCoarseSearchResolution();
 
 protected:
   /**
@@ -240,6 +276,11 @@ protected:
    */
   inline void clearGraph();
 
+  /**
+   * @brief Check if node has been visited
+   * @param current_node Node to check if visited
+   * @return if node has been visited
+   */
   inline bool onVisitationCheckNode(const NodePtr & node);
 
   /**
@@ -260,11 +301,13 @@ protected:
   unsigned int _x_size;
   unsigned int _y_size;
   unsigned int _dim3_size;
+  unsigned int _coarse_search_resolution;
   SearchInfo _search_info;
 
-  Coordinates _goal_coordinates;
+  CoordinateVector _goals_coordinates;
   NodePtr _start;
-  NodePtr _goal;
+  NodeSet _goals_set;
+  NodeVector _goals_vector;
 
   Graph _graph;
   NodeQueue _queue;

@@ -20,6 +20,8 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <queue>
+
 
 #include "nav2_smac_planner/node_2d.hpp"
 #include "nav2_smac_planner/node_hybrid.hpp"
@@ -35,7 +37,9 @@ class AnalyticExpansion
 {
 public:
   typedef NodeT * NodePtr;
+  typedef std::vector<NodePtr> NodeVector;
   typedef typename NodeT::Coordinates Coordinates;
+  typedef typename NodeT::CoordinateVector CoordinateVector;
   typedef std::function<bool (const uint64_t &, NodeT * &)> NodeGetter;
 
   /**
@@ -79,17 +83,23 @@ public:
   /**
    * @brief Attempt an analytic path completion
    * @param node The node to start the analytic path from
-   * @param goal The goal node to plan to
+   * @param goals_node set of goals node to plan to
+   * @param goals_to_expand set of goals node to plan to expand to
+   * @param goals_coords vector of goal coordinates to plan to
    * @param getter Gets a node at a set of coordinates
    * @param iterations Iterations to run over
-   * @param best_cost Best heuristic cost to propertionally expand more closer to the goal
-   * @return Node pointer reference to goal node if successful, else
-   * return nullptr
+   * @param closest_distance Closest distance to goal
+   * @param coarse_search_goal_size Coarse search goal size
+   * @return Node pointer reference to goal node with the best score out of the goals node if
+   * successful, else return nullptr
    */
   NodePtr tryAnalyticExpansion(
     const NodePtr & current_node,
-    const NodePtr & goal_node,
-    const NodeGetter & getter, int & iterations, int & best_cost);
+    const NodeVector & goals_to_expand,
+    const CoordinateVector & goals_coords,
+    const NodeGetter & getter, int & iterations,
+    int & closest_distance,
+    const unsigned int & coarse_search_goal_size);
 
   /**
    * @brief Perform an analytic path expansion to the goal
@@ -102,6 +112,22 @@ public:
   AnalyticExpansionNodes getAnalyticPath(
     const NodePtr & node, const NodePtr & goal,
     const NodeGetter & getter, const ompl::base::StateSpacePtr & state_space);
+
+  /**
+   * @brief Refined analytic path from the current node to the goal
+   * @param current_node The node to start the analytic path from
+   * @param goal_node The goal node to plan to
+   * @param getter The function object that gets valid nodes from the graph
+   * @param analytic_nodes The set of analytic nodes to refine
+   * @param best_score The best score of the analytic nodes
+   * @return Set of refined analytic expansion nodes to the goal from current node, if possible
+   */
+  void refineAnalyticPath(
+    const NodePtr & goal_node,
+    const NodeGetter & getter,
+    NodePtr & node,
+    AnalyticExpansionNodes & analytic_nodes,
+    float & best_score);
 
   /**
    * @brief Takes final analytic expansion and appends to current expanded node
