@@ -11,4 +11,4 @@ jobs:
       - name: Run codespell
         uses: codespell-project/actions-codespell@v2
         with:
-          config: ./tools/pyproject.toml
+          config: tools/pyproject.toml
