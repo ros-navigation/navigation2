@@ -3,7 +3,7 @@ for i in `seq 1 1000`;
 do
     echo "======= START OF RUN: $i ========="
 
-    # Start with a new ros2 daemon 
+    # Start with a new ros2 daemon
     ros2 daemon stop
 
     # There shouldn't be any nodes in the list

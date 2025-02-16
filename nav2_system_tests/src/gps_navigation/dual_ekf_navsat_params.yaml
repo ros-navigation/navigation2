@@ -124,4 +124,4 @@ navsat_transform:
     broadcast_cartesian_transform: true
     publish_filtered_gps: true
     use_odometry_yaw: true
-    wait_for_datum: false 
+    wait_for_datum: false

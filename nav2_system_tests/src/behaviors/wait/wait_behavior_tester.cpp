@@ -231,7 +231,7 @@ bool WaitBehaviorTester::behaviorTestCancel(
       return true;
     case rclcpp_action::GoalStatus::STATUS_CANCELING: RCLCPP_INFO(
         node_->get_logger(),
-        "Goal is cancelling");
+        "Goal is canceling");
       return true;
     case rclcpp_action::GoalStatus::STATUS_EXECUTING: RCLCPP_ERROR(
         node_->get_logger(),

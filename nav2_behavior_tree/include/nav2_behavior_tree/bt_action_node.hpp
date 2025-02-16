@@ -175,7 +175,7 @@ public:
   }
 
   /**
-   * @brief Function to perform some user-defined operation when the action is cancelled.
+   * @brief Function to perform some user-defined operation when the action is canceled.
    * @return BT::NodeStatus Returns SUCCESS by default, user may override return another value
    */
   virtual BT::NodeStatus on_cancelled()
@@ -338,8 +338,8 @@ public:
 
 protected:
   /**
-   * @brief Function to check if current goal should be cancelled
-   * @return bool True if current goal should be cancelled, false otherwise
+   * @brief Function to check if current goal should be canceled
+   * @return bool True if current goal should be canceled, false otherwise
    */
   bool should_cancel_goal()
   {
@@ -477,7 +477,7 @@ protected:
   // The timeout value for waiting for a service to response
   std::chrono::milliseconds wait_for_service_timeout_;
 
-  // To track the action server acknowledgement when a new goal is sent
+  // To track the action server acknowledgment when a new goal is sent
   std::shared_ptr<std::shared_future<typename rclcpp_action::ClientGoalHandle<ActionT>::SharedPtr>>
   future_goal_handle_;
   rclcpp::Time time_goal_sent_;
