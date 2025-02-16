@@ -8,7 +8,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Run codespell
-        uses: codespell-project/actions-codespell@v2
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          config: tools/pyproject.toml
+          python-version: '3.x'
+      - name: Install codespell
+        run: pip install codespell
+      - name: Run codespell
+        run: codespell --config ./tools/pyproject.toml
