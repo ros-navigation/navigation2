@@ -76,7 +76,7 @@ public:
   bool allow_unknown_;
   /// the x-directional and y-directional lengths of the map respectively
   int size_x_, size_y_;
-  /// the interval at which the planner checks if it has been cancelled
+  /// the interval at which the planner checks if it has been canceled
   int terminal_checking_interval_;
 
   ThetaStar();
@@ -103,7 +103,7 @@ public:
   }
 
   /**
-   * @brief initialises the values of the start and goal points
+   * @brief initializes the values of the start and goal points
    */
   void setStartAndGoal(
     const geometry_msgs::msg::PoseStamped & start,
@@ -128,13 +128,13 @@ public:
 protected:
   /// for the coordinates (x,y), it stores at node_position_[size_x_ * y + x],
   /// the pointer to the location at which the data of the node is present in nodes_data_
-  /// it is initialised with size_x_ * size_y_ elements
+  /// it is initialized with size_x_ * size_y_ elements
   /// and its number of elements increases to account for a change in map size
   std::vector<tree_node *> node_position_;
 
   /// the vector nodes_data_ stores the coordinates, costs and index of the parent node,
   /// and whether or not the node is present in queue_, for all the nodes searched
-  /// it is initialised with no elements
+  /// it is initialized with no elements
   /// and its size increases depending on the number of nodes searched
   std::vector<tree_node> nodes_data_;
 
@@ -268,7 +268,7 @@ protected:
   }
 
   /**
-   * @brief initialises the node_position_ vector by storing -1 as index for all points(x, y) within the limits of the map
+   * @brief initializes the node_position_ vector by storing -1 as index for all points(x, y) within the limits of the map
    * @param size_inc is used to increase the number of elements in node_position_ in case the size of the map increases
    */
   void initializePosn(int size_inc = 0);
@@ -305,7 +305,7 @@ protected:
   }
 
   /**
-   * @brief initialises the values of global variables at beginning of the execution of the generatePath function
+   * @brief initializes the values of global variables at beginning of the execution of the generatePath function
    */
   void resetContainers();
 

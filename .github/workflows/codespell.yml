@@ -1,0 +1,14 @@
+name: Codespell
+on:
+  pull_request:
+
+jobs:
+  codespell:
+    name: Run codespell
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run codespell
+        uses: codespell-project/actions-codespell@v2
+        with:
+          config: ./tools/pyproject.toml

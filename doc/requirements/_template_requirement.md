@@ -3,7 +3,7 @@ The \<navigation system> should be able to \<shall> \<do something>
 
 ## More details
 - Why is this needed?
-- What is the expected user interaction? 
+- What is the expected user interaction?
 - What use case does this map to?
 - Are there any non-functional requirements (build system, tools, performance, etc)
 

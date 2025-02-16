@@ -87,7 +87,7 @@ public:
    * @brief Use control law and dock perception to approach the charge dock.
    * @param dock Dock instance, gets queried for refined pose and docked state.
    * @param dock_pose Initial dock pose, will be refined by perception.
-   * @returns True if dock successfully approached, False if cancelled. For
+   * @returns True if dock successfully approached, False if canceled. For
    *          any internal error, will throw.
    */
   bool approachDock(Dock * dock, geometry_msgs::msg::PoseStamped & dock_pose);
@@ -142,7 +142,7 @@ public:
    * @brief Checks and logs warning if action canceled
    * @param action_server Action server to check for cancellation on
    * @param name Name of action to put in warning message
-   * @return True if action has been cancelled
+   * @return True if action has been canceled
    */
   template<typename ActionT>
   bool checkAndWarnIfCancelled(

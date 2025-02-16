@@ -168,7 +168,7 @@ TEST(CriticTests, GoalAngleCritic)
   critic.score(data);
   EXPECT_NEAR(costs.sum(), 0, 1e-6);
 
-  // Lets move it even closer, just to be sure it still doesn't trigger
+  // Let's move it even closer, just to be sure it still doesn't trigger
   state.pose.pose.position.x = 9.2;
   critic.score(data);
   EXPECT_NEAR(costs.sum(), 0, 1e-6);

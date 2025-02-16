@@ -114,7 +114,7 @@ preempted:
         return;
       }
 
-      // Check if we've gotten an new goal, pre-empting the current one
+      // Check if we've gotten an new goal, preempting the current one
       if (do_premptions_ && action_server_->is_preempt_requested()) {
         action_server_->accept_pending_goal();
         goto preempted;
@@ -563,7 +563,7 @@ TEST_F(ActionTest, test_handle_cancel)
       node_,
       cancel_response), rclcpp::FutureReturnCode::SUCCESS);
 
-  // Check cancelled
+  // Check canceled
   EXPECT_EQ(future_goal_handle.get()->get_status(), rclcpp_action::GoalStatus::STATUS_CANCELING);
 
   SUCCEED();

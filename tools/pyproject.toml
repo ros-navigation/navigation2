@@ -1,0 +1,10 @@
+[tool.codespell]
+builtin = "clear,rare,informal,usage,code,names,en-GB_to_en-US"
+check-filenames = true
+check-hidden = true
+ignore-words-list = "master,uint,jupyter,blacklist,whitelist,stdio,deque,thirdparty,dur,segway"
+interactive = 0
+quiet = 34
+skip="*.pgm,./build/*,./install/*,./log*,./.venv/*,./.git*,./tools/pyproject.toml"
+uri-ignore-words-list = "segue"
+write-changes = true

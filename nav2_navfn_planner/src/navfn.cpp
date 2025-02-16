@@ -463,18 +463,18 @@ NavFn::updateCell(int n)
     if (pot < potarr[n]) {
       float le = INVSQRT2 * static_cast<float>(costarr[n - 1]);
       float re = INVSQRT2 * static_cast<float>(costarr[n + 1]);
-      float ue = INVSQRT2 * static_cast<float>(costarr[n - nx]);
+      float ue = INVSQRT2 * static_cast<float>(costarr[n - nx]);   // codespell:ignore ue
       float de = INVSQRT2 * static_cast<float>(costarr[n + nx]);
       potarr[n] = pot;
       if (pot < curT) {  // low-cost buffer block
         if (l > pot + le) {push_next(n - 1);}
         if (r > pot + re) {push_next(n + 1);}
-        if (u > pot + ue) {push_next(n - nx);}
+        if (u > pot + ue) {push_next(n - nx);}   // codespell:ignore ue
         if (d > pot + de) {push_next(n + nx);}
       } else {  // overflow block
         if (l > pot + le) {push_over(n - 1);}
         if (r > pot + re) {push_over(n + 1);}
-        if (u > pot + ue) {push_over(n - nx);}
+        if (u > pot + ue) {push_over(n - nx);}  // codespell:ignore ue
         if (d > pot + de) {push_over(n + nx);}
       }
     }
@@ -537,7 +537,7 @@ NavFn::updateCellAstar(int n)
     if (pot < potarr[n]) {
       float le = INVSQRT2 * static_cast<float>(costarr[n - 1]);
       float re = INVSQRT2 * static_cast<float>(costarr[n + 1]);
-      float ue = INVSQRT2 * static_cast<float>(costarr[n - nx]);
+      float ue = INVSQRT2 * static_cast<float>(costarr[n - nx]);  // codespell:ignore ue
       float de = INVSQRT2 * static_cast<float>(costarr[n + nx]);
 
       // calculate distance
@@ -550,12 +550,12 @@ NavFn::updateCellAstar(int n)
       if (pot < curT) {  // low-cost buffer block
         if (l > pot + le) {push_next(n - 1);}
         if (r > pot + re) {push_next(n + 1);}
-        if (u > pot + ue) {push_next(n - nx);}
+        if (u > pot + ue) {push_next(n - nx);}  // codespell:ignore ue
         if (d > pot + de) {push_next(n + nx);}
       } else {
         if (l > pot + le) {push_over(n - 1);}
         if (r > pot + re) {push_over(n + 1);}
-        if (u > pot + ue) {push_over(n - nx);}
+        if (u > pot + ue) {push_over(n - nx);}  // codespell:ignore ue
         if (d > pot + de) {push_over(n + nx);}
       }
     }
@@ -583,7 +583,7 @@ NavFn::propNavFnDijkstra(int cycles, std::function<bool()> cancelChecker, bool a
 
   for (; cycle < cycles; cycle++) {  // go for this many cycles, unless interrupted
     if (cycle % terminal_checking_interval == 0 && cancelChecker()) {
-      throw nav2_core::PlannerCancelled("Planner was cancelled");
+      throw nav2_core::PlannerCancelled("Planner was canceled");
     }
 
     if (curPe == 0 && nextPe == 0) {  // priority blocks empty
@@ -673,7 +673,7 @@ NavFn::propNavFnAstar(int cycles, std::function<bool()> cancelChecker)
   // do main cycle
   for (; cycle < cycles; cycle++) {  // go for this many cycles, unless interrupted
     if (cycle % terminal_checking_interval == 0 && cancelChecker()) {
-      throw nav2_core::PlannerCancelled("Planner was cancelled");
+      throw nav2_core::PlannerCancelled("Planner was canceled");
     }
 
     if (curPe == 0 && nextPe == 0) {  // priority blocks empty

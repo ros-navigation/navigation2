@@ -11,8 +11,8 @@
 	}
 	# If any http scheme is "https", then use "wss"
 	vars @http_scheme WsScheme "wss"
-	# Else default to "ws"
-	vars WsScheme "ws"
+	# Else default to "ws" #codespell:ignore ws
+	vars WsScheme "ws" #codespell:ignore ws
 
 	# Matcher for forwarded request headers
 	@host_forwarded {
