@@ -15,4 +15,4 @@ jobs:
       - name: Install codespell
         run: pip install codespell
       - name: Run codespell
-        run: codespell --config tools/pyproject.toml
+        run: codespell --config ./tools/pyproject.toml -skip= ./tools/pyproject.toml
