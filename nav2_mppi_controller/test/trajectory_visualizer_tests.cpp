@@ -73,7 +73,7 @@ TEST(TrajectoryVisualizerTests, VisOptimalTrajectory)
 
   visualization_msgs::msg::MarkerArray received_msg;
   auto my_sub = node->create_subscription<visualization_msgs::msg::MarkerArray>(
-    "/trajectories", 10,
+    "trajectories", 10,
     [&](const visualization_msgs::msg::MarkerArray msg) {received_msg = msg;});
 
   // optimal_trajectory empty, should fail to publish
@@ -135,7 +135,7 @@ TEST(TrajectoryVisualizerTests, VisCandidateTrajectories)
 
   visualization_msgs::msg::MarkerArray received_msg;
   auto my_sub = node->create_subscription<visualization_msgs::msg::MarkerArray>(
-    "/trajectories", 10,
+    "trajectories", 10,
     [&](const visualization_msgs::msg::MarkerArray msg) {received_msg = msg;});
 
   models::Trajectories candidate_trajectories;

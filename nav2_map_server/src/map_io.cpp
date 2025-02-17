@@ -463,7 +463,7 @@ void checkSaveParameters(SaveParameters & save_parameters)
  * @brief Tries to write map data into a file
  * @param map Occupancy grid data
  * @param save_parameters Map saving parameters
- * @throw std::expection in case of problem
+ * @throw std::exception in case of problem
  */
 void tryWriteMapToFile(
   const nav_msgs::msg::OccupancyGrid & map,

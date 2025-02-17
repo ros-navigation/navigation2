@@ -28,7 +28,7 @@ namespace nav2_behavior_tree
 {
 
 /**
- * @brief A BT::DecoratorNode that ticks its child everytime when the length of
+ * @brief A BT::DecoratorNode that ticks its child every time when the length of
  * the new path is smaller than the old one by the length given by the user.
  */
 class PathLongerOnApproach : public BT::DecoratorNode
@@ -91,7 +91,7 @@ private:
    * @brief Checks if the new path is longer
    * @param new_path new path to the goal
    * @param old_path current path to the goal
-   * @param length_factor multipler for path length check
+   * @param length_factor multiplier for path length check
    * @return whether the new path is longer
    */
   bool isNewPathLonger(

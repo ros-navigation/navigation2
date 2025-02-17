@@ -171,7 +171,7 @@ TEST(VelocityIterator, min_xy)
   StandardTrajectoryGenerator gen;
   gen.initialize(nh, "dwb");
   std::vector<nav_2d_msgs::msg::Twist2D> twists = gen.getTwists(zero);
-  // Expect even more since theres no min_speed_xy
+  // Expect even more since there's no min_speed_xy
   EXPECT_EQ(twists.size(), 2015u);
   checkLimits(twists, 0.0, 0.55, -0.1, 0.1, -1.0, 1.0);
 }
@@ -182,7 +182,7 @@ TEST(VelocityIterator, min_theta)
   StandardTrajectoryGenerator gen;
   gen.initialize(nh, "dwb");
   std::vector<nav_2d_msgs::msg::Twist2D> twists = gen.getTwists(zero);
-  // Expect even more since theres no min_speed_xy
+  // Expect even more since there's no min_speed_xy
   EXPECT_EQ(twists.size(), 2015u);
   checkLimits(twists, 0.0, 0.55, -0.1, 0.1, -1.0, 1.0);
 }

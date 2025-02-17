@@ -150,6 +150,9 @@ public:
     std::lock_guard<std::recursive_mutex> lock(update_mutex_);
 
     if (!server_active_) {
+      RCLCPP_INFO(
+        node_logging_interface_->get_logger(),
+        "Action server is inactive. Rejecting the goal.");
       return rclcpp_action::GoalResponse::REJECT;
     }
 

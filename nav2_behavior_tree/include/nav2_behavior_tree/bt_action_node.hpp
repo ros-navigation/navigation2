@@ -194,6 +194,10 @@ public:
       // reset the flag to send the goal or not, allowing the user the option to set it in on_tick
       should_send_goal_ = true;
 
+      // Clear the input and output messages to make sure we have no leftover from previous calls
+      goal_ = typename ActionT::Goal();
+      result_ = typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult();
+
       // user defined callback, may modify "should_send_goal_".
       on_tick();
 

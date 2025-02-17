@@ -152,7 +152,7 @@ public:
 /**
  * @class BehaviorTreeNavigator
  * @brief Navigator interface that acts as a base class for all BT-based Navigator action's plugins
- * All methods from NavigatorBase are marked as final so they may not be overrided by derived
+ * All methods from NavigatorBase are marked as final so they may not be overridden by derived
  * methods - instead, users should use the appropriate APIs provided after BT Action handling.
  */
 template<class ActionT>

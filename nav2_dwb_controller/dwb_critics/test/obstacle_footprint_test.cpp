@@ -174,7 +174,7 @@ TEST(ObstacleFootprint, Prepare)
   for (unsigned int i = 1; i < costmap_ros->getCostmap()->getSizeInCellsX(); i++) {
     costmap_ros->getCostmap()->setCost(i, 10, nav2_costmap_2d::LETHAL_OBSTACLE);
   }
-  // It should now hit an obstacle (throw an expection)
+  // It should now hit an obstacle (throw an exception)
   ASSERT_THROW(critic->scorePose(pose), dwb_core::IllegalTrajectoryException);
 }
 
@@ -248,7 +248,9 @@ TEST(ObstacleFootprint, LineCost)
   costmap_ros->getCostmap()->setCost(4, 3, 100);
   costmap_ros->getCostmap()->setCost(4, 4, 100);
 
-  ASSERT_EQ(critic->lineCost(3, 3, 0, 50), 50);   // all 50
+  auto max_y_in_grid_coordinates = costmap_ros->getCostmap()->getSizeInCellsY() - 1;
+  ASSERT_EQ(max_y_in_grid_coordinates, 49);
+  ASSERT_EQ(critic->lineCost(3, 3, 0, max_y_in_grid_coordinates), 50);   // all 50
   ASSERT_EQ(critic->lineCost(4, 4, 0, 10), 100);  // all 100
   ASSERT_EQ(critic->lineCost(0, 50, 3, 3), 100);  // pass 50 and 100
 }

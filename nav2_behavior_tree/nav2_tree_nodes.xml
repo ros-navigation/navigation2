@@ -107,6 +107,7 @@
       <input_port name="input_goals">A vector of goals to check if in collision</input_port>
       <input_port name="use_footprint">Whether to use the footprint cost or the point cost.</input_port>
       <input_port name="cost_threshold">The cost threshold above which a waypoint is considered in collision and should be removed.</input_port>
+      <input_port name="consider_unknown_as_obstacle"> If unknown cost is considered valid </input_port>
       <output_port name="output_goals">A vector of goals containing only those that are not in collision.</output_port>
     </Action>
 
@@ -283,6 +284,8 @@
     <Condition ID="IsPathValid">
       <input_port name="path"> Path to validate </input_port>
       <input_port name="server_timeout"> Server timeout </input_port>
+      <input_port name="max_cost"> Maximum cost of the path </input_port>
+      <input_port name="consider_unknown_as_obstacle"> If unknown cost is considered valid </input_port>
     </Condition>
 
     <Condition ID="WouldAControllerRecoveryHelp">

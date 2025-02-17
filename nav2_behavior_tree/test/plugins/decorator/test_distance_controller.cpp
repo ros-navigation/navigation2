@@ -75,7 +75,7 @@ TEST_F(DistanceControllerTestFixture, test_behavior)
 
     // Wait for transforms to actually update
     // updated pose is i * 0.55
-    // we wait fot the traveled distance to reach a value > i * 0.5
+    // we wait for the traveled distance to reach a value > i * 0.5
     // we can assume the current transform has been updated at this point
     while (traveled < i * 0.5) {
       if (nav2_util::getCurrentPose(pose, *transform_handler_->getBuffer())) {

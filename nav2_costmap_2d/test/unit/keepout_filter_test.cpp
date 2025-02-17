@@ -292,7 +292,7 @@ void TestNode::testStandardScenario(unsigned char free_value, unsigned char keep
   keepout_points_.push_back(Point{4, 3});
   keepout_points_.push_back(Point{4, 4});
   verifyMasterGrid(free_value, keepout_value);
-  // Two windows outside on the horisontal/vertical edge: no new points added
+  // Two windows outside on the horizontal/vertical edge: no new points added
   keepout_filter_->process(*master_grid_, 3, 6, 5, 7, pose);
   keepout_filter_->process(*master_grid_, 6, 3, 7, 5, pose);
   verifyMasterGrid(free_value, keepout_value);

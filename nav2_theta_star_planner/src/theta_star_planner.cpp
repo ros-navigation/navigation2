@@ -107,7 +107,7 @@ nav_msgs::msg::Path ThetaStarPlanner::createPlan(
 
   std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(planner_->costmap_->getMutex()));
 
-  // Corner case of start and goal beeing on the same cell
+  // Corner case of start and goal being on the same cell
   unsigned int mx_start, my_start, mx_goal, my_goal;
   if (!planner_->costmap_->worldToMap(
       start.pose.position.x, start.pose.position.y, mx_start, my_start))

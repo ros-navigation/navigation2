@@ -800,7 +800,7 @@ bool AmclNode::updateFilter(
   // min, max, and increment angles of the laser in the base frame.
   //
   // Construct min and max angles of laser, in the base_link frame.
-  // Here we set the roll pich yaw of the lasers.  We assume roll and pich are zero.
+  // Here we set the roll pitch yaw of the lasers.  We assume roll and pitch are zero.
   geometry_msgs::msg::QuaternionStamped min_q, inc_q;
   min_q.header.stamp = laser_scan->header.stamp;
   min_q.header.frame_id = nav2_util::strip_leading_slash(laser_scan->header.frame_id);

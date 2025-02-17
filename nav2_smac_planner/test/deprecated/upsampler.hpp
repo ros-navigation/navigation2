@@ -115,7 +115,7 @@ public:
     const int total_size = 2 * (path.size() * upsample_ratio - upsample_ratio + 1);
     double parameters[total_size];  // NOLINT
 
-    // 20-4hz regularly, but dosnt work in faster cases
+    // 20-4hz regularly, but doesn't work in faster cases
     // Linearly distribute initial poses for optimization
     // TODO(stevemacenski) generalize for 2x and 4x
     unsigned int next_pt;

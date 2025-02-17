@@ -145,7 +145,7 @@ TEST_F(CancelControllerActionTestFixture, test_ports)
   // BT node should return success, once when the goal is cancelled
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
 
-  // Adding another test case to check if the goal is infact cancelling
+  // Adding another test case to check if the goal is in fact cancelling
   EXPECT_EQ(action_server_->isGoalCancelled(), true);
 }
 

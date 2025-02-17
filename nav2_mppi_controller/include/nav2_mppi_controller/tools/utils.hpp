@@ -636,7 +636,7 @@ inline void shiftColumnsByOnePlace(Eigen::Ref<Eigen::ArrayXXf> e, int direction)
  * @brief Normalize the yaws between points on the basis of final yaw angle
  *    of the trajectory.
  * @param last_yaws Final yaw angles of the trajectories.
- * @param yaw_between_points Yaw angles calculated between x and y co-ordinates of the trajectories.
+ * @param yaw_between_points Yaw angles calculated between x and y coordinates of the trajectories.
  * @return Normalized yaw between points.
  */
 inline auto normalize_yaws_between_points(
@@ -658,7 +658,7 @@ inline auto normalize_yaws_between_points(
 /**
  * @brief Normalize the yaws between points on the basis of goal angle.
  * @param goal_yaw Goal yaw angle.
- * @param yaw_between_points Yaw angles calculated between x and y co-ordinates of the trajectories.
+ * @param yaw_between_points Yaw angles calculated between x and y coordinates of the trajectories.
  * @return Normalized yaw between points
  */
 inline auto normalize_yaws_between_points(

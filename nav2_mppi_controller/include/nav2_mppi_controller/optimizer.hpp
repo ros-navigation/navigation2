@@ -208,7 +208,7 @@ protected:
   void updateControlSequence();
 
   /**
-   * @brief Convert control sequence to a twist commant
+   * @brief Convert control sequence to a twist command
    * @param stamp Timestamp to use
    * @return TwistStamped of command to send to robot base
    */

@@ -40,7 +40,7 @@
 
 <!--
 * I think there might be some optimizations to be made from STL vector
-* I see alot of redundancy in this package, we might want to add a function `bool XYZ()` to reduce clutter
+* I see a lot of redundancy in this package, we might want to add a function `bool XYZ()` to reduce clutter
 * I tested on a differential drive robot, but there might be issues turning near corners on an omnidirectional platform
 -->
 

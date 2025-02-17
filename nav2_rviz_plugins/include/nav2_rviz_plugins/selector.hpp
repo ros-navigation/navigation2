@@ -16,7 +16,6 @@
 #define NAV2_RVIZ_PLUGINS__SELECTOR_HPP_
 
 #include <QtWidgets>
-#include <QBasicTimer>
 #include <QFrame>
 #include <QGridLayout>
 #include <QScrollArea>
@@ -43,8 +42,7 @@ public:
   ~Selector();
 
 private:
-  // The (non-spinning) client node used to invoke the action client
-  void timerEvent(QTimerEvent * event) override;
+  void loadPlugins();
 
   rclcpp::Node::SharedPtr client_node_;
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_controller_;
@@ -52,13 +50,12 @@ private:
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_goal_checker_;
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_smoother_;
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_progress_checker_;
-  rclcpp::TimerBase::SharedPtr rclcpp_timer_;
 
   bool plugins_loaded_ = false;
   bool server_failed_ = false;
-  bool tried_once_ = false;
 
-  QBasicTimer timer_;
+  std::thread load_plugins_thread_;
+
   QVBoxLayout * main_layout_;
   QHBoxLayout * row_1_layout_;
   QHBoxLayout * row_2_layout_;

@@ -63,7 +63,7 @@ public:
   BT::NodeStatus on_aborted() override;
 
   /**
-   * @brief Function to perform some user-defined operation upon cancelation of the action
+   * @brief Function to perform some user-defined operation upon cancellation of the action
    */
   BT::NodeStatus on_cancelled() override;
 

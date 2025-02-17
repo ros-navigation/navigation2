@@ -211,7 +211,7 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
 
     if (dist_to_goal < params_->max_lookahead) {
       if (params_->prefer_final_rotation) {
-        // Avoid unstability and big sweeping turns at the end of paths by
+        // Avoid instability and big sweeping turns at the end of paths by
         // ignoring final heading
         double yaw = std::atan2(target_pose.pose.position.y, target_pose.pose.position.x);
         target_pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(yaw);
