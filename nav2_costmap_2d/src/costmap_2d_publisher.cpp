@@ -154,9 +154,8 @@ void Costmap2DPublisher::prepareGrid()
   grid_->data.resize(grid_->info.width * grid_->info.height);
 
   unsigned char * data = costmap_->getCharMap();
-  for (unsigned int i = 0; i < grid_->data.size(); i++) {
-    grid_->data[i] = cost_translation_table_[data[i]];
-  }
+  std::transform(data, data + grid_->data.size(), grid_->data.begin(),
+    [](unsigned char c) {return cost_translation_table_[c];});
 }
 
 void Costmap2DPublisher::prepareCostmap()
@@ -199,12 +198,15 @@ std::unique_ptr<map_msgs::msg::OccupancyGridUpdate> Costmap2DPublisher::createGr
   update->width = xn_ - x0_;
   update->height = yn_ - y0_;
   update->data.resize(update->width * update->height);
-
+  const std::uint32_t map_width = costmap_->getSizeInCellsX();
+  unsigned char * costmap_data = costmap_->getCharMap();
   std::uint32_t i = 0;
   for (std::uint32_t y = y0_; y < yn_; y++) {
-    for (std::uint32_t x = x0_; x < xn_; x++) {
-      update->data[i++] = cost_translation_table_[costmap_->getCost(x, y)];
-    }
+    std::uint32_t row_start = y * map_width + x0_;
+    std::transform(costmap_data + row_start, costmap_data + row_start + update->width,
+        update->data.begin() + i,
+      [](unsigned char c) {return cost_translation_table_[c];});
+    i += update->width;
   }
   return update;
 }
@@ -220,12 +222,14 @@ std::unique_ptr<nav2_msgs::msg::CostmapUpdate> Costmap2DPublisher::createCostmap
   msg->size_x = xn_ - x0_;
   msg->size_y = yn_ - y0_;
   msg->data.resize(msg->size_x * msg->size_y);
+  const std::uint32_t map_width = costmap_->getSizeInCellsX();
+  unsigned char * costmap_data = costmap_->getCharMap();
 
   std::uint32_t i = 0;
   for (std::uint32_t y = y0_; y < yn_; y++) {
-    for (std::uint32_t x = x0_; x < xn_; x++) {
-      msg->data[i++] = costmap_->getCost(x, y);
-    }
+    std::uint32_t row_start = y * map_width + x0_;
+    std::copy_n(costmap_data + row_start, msg->size_x, msg->data.begin() + i);
+    i += msg->size_x;
   }
   return msg;
 }
