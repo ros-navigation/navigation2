@@ -588,9 +588,16 @@ Polygon::dynamicParametersCallback(
 
 void Polygon::polygonCallback(geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg)
 {
-  RCLCPP_INFO(
+  auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+  auto& clock = *node->get_clock();
+  RCLCPP_INFO_THROTTLE(
     logger_,
-    "[%s]: Polygon shape update has been arrived",
+    clock,
+    2000,
+    "[%s]: Polygon shape update has arrived",
     polygon_name_.c_str());
   updatePolygon(msg);
 }
