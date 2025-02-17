@@ -38,9 +38,20 @@ CostmapTopicCollisionChecker::CostmapTopicCollisionChecker(
   std::string name)
 : name_(name),
   costmap_sub_(costmap_sub),
-  footprint_sub_(footprint_sub),
+  footprint_sub_(&footprint_sub),
   collision_checker_(nullptr)
 {}
+
+CostmapTopicCollisionChecker::CostmapTopicCollisionChecker(
+  CostmapSubscriber & costmap_sub,
+  std::string footprint_string,
+  std::string name)
+: name_(name),
+  costmap_sub_(costmap_sub),
+  collision_checker_(nullptr)
+{
+  makeFootprintFromString(footprint_string, footprint_);
+}
 
 bool CostmapTopicCollisionChecker::isCollisionFree(
   const geometry_msgs::msg::Pose2D & pose,
@@ -90,8 +101,13 @@ Footprint CostmapTopicCollisionChecker::getFootprint(
 {
   if (fetch_latest_footprint) {
     std_msgs::msg::Header header;
-    if (!footprint_sub_.getFootprintInRobotFrame(footprint_, header)) {
-      throw CollisionCheckerException("Current footprint not available.");
+
+    // if footprint_sub_ was not initialized (alternative constructor), we are using the
+    // footprint built from the footprint_string alternative constructor argument.
+    if (footprint_sub_) {
+      if (!footprint_sub_->getFootprintInRobotFrame(footprint_, header)) {
+        throw CollisionCheckerException("Current footprint not available.");
+      }
     }
   }
   Footprint footprint;
