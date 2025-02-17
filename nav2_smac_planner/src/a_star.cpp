@@ -46,7 +46,7 @@ AStarAlgorithm<NodeT>::AStarAlgorithm(
   _goals_coordinates(CoordinateVector()),
   _start(nullptr),
   _goals_set(NodeSet()),
-  _goals_vector(NodeVector()),
+  _goals_state(GoalStates()),
   _motion_model(motion_model)
 {
   _graph.reserve(100000);
@@ -202,11 +202,12 @@ void AStarAlgorithm<Node2D>::setGoal(
   }
   _goals_coordinates.clear();
   _goals_set.clear();
-  _goals_vector.clear();
+  _goals_state.clear();
   _goals_set.insert(addToGraph(Node2D::getIndex(mx, my, getSizeX())));
   Node2D::Coordinates goal_coords = Node2D::Coordinates(mx, my);
   (*_goals_set.begin())->setPose(goal_coords);
-  _goals_vector.push_back(*_goals_set.begin());
+  // goals state is a struct with nodeptr and valid, by default is true
+  _goals_state.push_back({*_goals_set.begin(), true});
   _goals_coordinates.push_back(goal_coords);
   _coarse_search_resolution = 1;
 }
@@ -220,8 +221,9 @@ void AStarAlgorithm<NodeT>::setGoal(
   const int & coarse_search_resolution)
 {
   _goals_set.clear();
-  _goals_vector.clear();
+  _goals_state.clear();
   NodeVector goals;
+  _coarse_search_resolution = 1;
   CoordinateVector goals_coordinates;
   unsigned int num_bins = NodeT::motion_table.num_angle_quantization;
   unsigned int dim_3_half_bin = 0;
@@ -252,6 +254,8 @@ void AStarAlgorithm<NodeT>::setGoal(
           static_cast<float>(dim_3_half_bin)));
       break;
     case GoalHeadingMode::ALL_DIRECTION:
+      // Set the coarse search resolution only for all direction
+      _coarse_search_resolution = coarse_search_resolution;
       // Add all goals for each direction
       for (unsigned int i = 0; i < num_bins; ++i) {
         goals.push_back(addToGraph(NodeT::getIndex(mx, my, i)));
@@ -283,16 +287,7 @@ void AStarAlgorithm<NodeT>::setGoal(
   for (unsigned int i = 0; i < goals.size(); i++) {
     goals[i]->setPose(_goals_coordinates[i]);
     _goals_set.insert(goals[i]);
-    _goals_vector.push_back(goals[i]);
-  }
-  // Configure the coarse search resolution
-  if (_coarse_search_resolution <= 0) {
-    throw nav2_core::PlannerException("Invalid coarse search resolution, Cannot be <= 0");
-  }
-  else if(goal_heading_mode != GoalHeadingMode::ALL_DIRECTION) {
-    _coarse_search_resolution = 1;
-  } else {
-    _coarse_search_resolution = coarse_search_resolution;
+    _goals_state.push_back({goals[i], true});
   }
 }
 
@@ -318,9 +313,13 @@ bool AStarAlgorithm<NodeT>::areInputsValid()
           std::remove(
             _goals_coordinates.begin(), _goals_coordinates.end(), (*it)->pose),
           _goals_coordinates.end());
-        _goals_vector.erase(
-          std::remove(_goals_vector.begin(), _goals_vector.end(), *it),
-          _goals_vector.end());
+        // we set the goal as invalid
+        auto goal_state_it = std::find_if(_goals_state.begin(), _goals_state.end(), 
+          [&it](const GoalState & goal_state) { return goal_state.goal == *it; });
+        if (goal_state_it != _goals_state.end()) {
+          goal_state_it->is_valid = false;
+            break;
+        }
         it = _goals_set.erase(it);
       } else {
         ++it;
@@ -351,9 +350,9 @@ bool AStarAlgorithm<NodeT>::createPath(
     return false;
   }
 
-  NodeVector goals_to_expand;
+  NodeVector coarse_list, fine_list;
   unsigned int coarse_search_goal_size;
-  prepareGoalsForExpansion(goals_to_expand, coarse_search_goal_size);
+  prepareGoalsForExpansion(coarse_list, fine_list);
 
   // 0) Add starting point to the open set
   addNode(0.0, getStart());
@@ -421,9 +420,8 @@ bool AStarAlgorithm<NodeT>::createPath(
     // 2.1) Use an analytic expansion (if available) to generate a path
     expansion_result = nullptr;
     expansion_result = _expander->tryAnalyticExpansion(
-      current_node, goals_to_expand,
-      getGoalsCoordinates(), neighborGetter, analytic_iterations, closest_distance,
-        coarse_search_goal_size);
+      current_node, coarse_list, fine_list,
+      getGoalsCoordinates(), neighborGetter, analytic_iterations, closest_distance);
     if (expansion_result != nullptr) {
       current_node = expansion_result;
     }
@@ -589,22 +587,14 @@ typename AStarAlgorithm<NodeT>::CoordinateVector & AStarAlgorithm<NodeT>::getGoa
 
 template<typename NodeT>
 void AStarAlgorithm<NodeT>::prepareGoalsForExpansion(
-  NodeVector & goals_to_expand,
-  unsigned int & coarse_search_goal_size)
+  NodeVector &  coarse_list, NodeVector & fine_list)
 {
-  coarse_search_goal_size = _goals_vector.size() / _coarse_search_resolution;
-  goals_to_expand.resize(_goals_vector.size());
-  for (unsigned int i = 0; i < coarse_search_goal_size; i++) {
-    unsigned int index = i * _coarse_search_resolution;
-    goals_to_expand[i] = _goals_vector[index];
-  }
-  // add the rest of the goals
-  unsigned int rest_index = coarse_search_goal_size;
-  if(_coarse_search_resolution != 1) {
-    for (unsigned int i = 0; i < _goals_vector.size(); i++) {
-      if (i % _coarse_search_resolution != 0) {
-        goals_to_expand[rest_index] = _goals_vector[i];
-        rest_index++;
+  for (unsigned int i = 0; i < _goals_state.size(); i++) {
+    if (_goals_state[i].is_valid) {
+      if (i % _coarse_search_resolution == 0) {
+        coarse_list.push_back(_goals_state[i].goal);
+      } else {
+        fine_list.push_back(_goals_state[i].goal);
       }
     }
   }

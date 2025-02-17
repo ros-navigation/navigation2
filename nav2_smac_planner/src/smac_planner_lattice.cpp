@@ -148,7 +148,7 @@ void SmacPlannerLattice::configure(
   _goal_heading_mode = fromStringToGH(goal_heading_type);
 
   nav2_util::declare_parameter_if_not_declared(
-    node, name + ".coarse_search_resolution", rclcpp::ParameterValue(4));
+    node, name + ".coarse_search_resolution", rclcpp::ParameterValue(1));
   node->get_parameter(name + ".coarse_search_resolution", _coarse_search_resolution);
 
   if (_goal_heading_mode == GoalHeadingMode::UNKNOWN) {
@@ -183,6 +183,14 @@ void SmacPlannerLattice::configure(
     );
     _coarse_search_resolution = 1;
   }
+
+  if (_metadata.number_of_headings % _coarse_search_resolution != 0){
+    RCLCPP_WARN(
+      _logger, "coarse iteration should be an increment of the number of angular bins configured"
+    );
+    _coarse_search_resolution = 1;
+  }
+
   float lookup_table_dim =
     static_cast<float>(_lookup_table_size) /
     static_cast<float>(_costmap->getResolution());
@@ -613,6 +621,12 @@ SmacPlannerLattice::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
           RCLCPP_WARN(
             _logger, "coarse iteration resolution selected as <= 0, "
             "disabling coarse iteration resolution search for goal heading"
+          );
+          _coarse_search_resolution = 1;
+        }
+        if (_metadata.number_of_headings % _coarse_search_resolution != 0){
+          RCLCPP_WARN(
+            _logger, "coarse iteration should be an increment of the number of angular bins configured"
           );
           _coarse_search_resolution = 1;
         }

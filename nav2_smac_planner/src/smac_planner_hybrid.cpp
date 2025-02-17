@@ -214,6 +214,13 @@ void SmacPlannerHybrid::configure(
     _coarse_search_resolution = 1;
   }
 
+  if (_angle_quantizations % _coarse_search_resolution != 0){
+    RCLCPP_WARN(
+      _logger, "coarse iteration should be an increment of the number of angular bins configured"
+    );
+    _coarse_search_resolution = 1;
+  }
+
   if (_minimum_turning_radius_global_coords < _costmap->getResolution() * _downsampling_factor) {
     RCLCPP_WARN(
       _logger, "Min turning radius cannot be less than the search grid cell resolution!");
@@ -722,6 +729,14 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
           RCLCPP_WARN(
             _logger, "coarse iteration resolution selected as <= 0, "
             "disabling coarse iteration resolution search for goal heading"
+          );
+          _coarse_search_resolution = 1;
+        }
+        
+        if (_angle_quantizations % _coarse_search_resolution != 0)
+        {
+          RCLCPP_WARN(
+            _logger, "coarse iteration should be an increment of the number of angular bins configured"
           );
           _coarse_search_resolution = 1;
         }

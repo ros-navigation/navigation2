@@ -83,8 +83,8 @@ public:
   /**
    * @brief Attempt an analytic path completion
    * @param node The node to start the analytic path from
-   * @param goals_node set of goals node to plan to
-   * @param goals_to_expand set of goals node to plan to expand to
+   * @param coarse_list Coarse list of goals nodes to plan to
+   * @param fine_list Fine list of goals nodes to plan to
    * @param goals_coords vector of goal coordinates to plan to
    * @param getter Gets a node at a set of coordinates
    * @param iterations Iterations to run over
@@ -95,7 +95,8 @@ public:
    */
   NodePtr tryAnalyticExpansion(
     const NodePtr & current_node,
-    const NodeVector & goals_to_expand,
+    const NodeVector & coarse_list,
+    const NodeVector & fine_list,
     const CoordinateVector & goals_coords,
     const NodeGetter & getter, int & iterations,
     int & closest_distance,
@@ -119,15 +120,13 @@ public:
    * @param goal_node The goal node to plan to
    * @param getter The function object that gets valid nodes from the graph
    * @param analytic_nodes The set of analytic nodes to refine
-   * @param best_score The best score of the analytic nodes
-   * @return Set of refined analytic expansion nodes to the goal from current node, if possible
+   * @return The score of the refined path
    */
-  void refineAnalyticPath(
+  float refineAnalyticPath(
     const NodePtr & goal_node,
     const NodeGetter & getter,
     NodePtr & node,
-    AnalyticExpansionNodes & analytic_nodes,
-    float & best_score);
+    AnalyticExpansionNodes & analytic_nodes);
 
   /**
    * @brief Takes final analytic expansion and appends to current expanded node

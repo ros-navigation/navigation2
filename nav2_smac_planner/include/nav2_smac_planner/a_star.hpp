@@ -51,6 +51,7 @@ public:
   typedef NodeT * NodePtr;
   typedef robin_hood::unordered_node_map<uint64_t, NodeT> Graph;
   typedef std::vector<NodePtr> NodeVector;
+  typedef GoalStates std::vector<Goal>;
   typedef std::unordered_set<NodePtr> NodeSet;
   typedef std::pair<float, NodeBasic<NodeT>> NodeElement;
   typedef typename NodeT::Coordinates Coordinates;
@@ -68,6 +69,16 @@ public:
     {
       return a.first > b.first;
     }
+  };
+
+  /**
+   * @struct nav2_smac_planner::GoalState
+   * @brief A struct to store the goal state
+   */
+  struct GoalState
+  {
+    NodePtr goal;
+    bool is_valid = true;  // default to valid
   };
 
   typedef std::priority_queue<NodeElement, std::vector<NodeElement>, NodeComparator> NodeQueue;
@@ -213,12 +224,11 @@ public:
 
   /**
    * @brief Prepare goals for expansion
-   * @param goals_to_expand Vector of goals to expand
-   * @param coarse_search_goal_size Size of the coarse search goal
+   * @param coarse_list List of goals to expand
+   * @param fine_list List of goals to refine
    */
   void prepareGoalsForExpansion(
-    NodeVector & goals_to_expand,
-    unsigned int & coarse_search_goal_size);
+  NodeVector &  coarse_list, NodeVector & fine_list);
 
   /**
    * @brief Get the resolution of the coarse search
@@ -307,7 +317,8 @@ protected:
   CoordinateVector _goals_coordinates;
   NodePtr _start;
   NodeSet _goals_set;
-  NodeVector _goals_vector;
+  GoalStates _goals_states;
+
 
   Graph _graph;
   NodeQueue _queue;
