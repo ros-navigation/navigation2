@@ -89,7 +89,6 @@ public:
    * @param getter Gets a node at a set of coordinates
    * @param iterations Iterations to run over
    * @param closest_distance Closest distance to goal
-   * @param coarse_search_goal_size Coarse search goal size
    * @return Node pointer reference to goal node with the best score out of the goals node if
    * successful, else return nullptr
    */
@@ -99,8 +98,7 @@ public:
     const NodeVector & fine_list,
     const CoordinateVector & goals_coords,
     const NodeGetter & getter, int & iterations,
-    int & closest_distance,
-    const unsigned int & coarse_search_goal_size);
+    int & closest_distance);
 
   /**
    * @brief Perform an analytic path expansion to the goal
@@ -125,7 +123,7 @@ public:
   float refineAnalyticPath(
     const NodePtr & goal_node,
     const NodeGetter & getter,
-    NodePtr & node,
+    const NodePtr & current_node,
     AnalyticExpansionNodes & analytic_nodes);
 
   /**

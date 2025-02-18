@@ -46,7 +46,7 @@ AStarAlgorithm<NodeT>::AStarAlgorithm(
   _goals_coordinates(CoordinateVector()),
   _start(nullptr),
   _goals_set(NodeSet()),
-  _goals_state(GoalStates()),
+  _goals_state(GoalStateVector()),
   _motion_model(motion_model)
 {
   _graph.reserve(100000);
@@ -314,11 +314,11 @@ bool AStarAlgorithm<NodeT>::areInputsValid()
             _goals_coordinates.begin(), _goals_coordinates.end(), (*it)->pose),
           _goals_coordinates.end());
         // we set the goal as invalid
-        auto goal_state_it = std::find_if(_goals_state.begin(), _goals_state.end(), 
-          [&it](const GoalState & goal_state) { return goal_state.goal == *it; });
+        auto goal_state_it = std::find_if(_goals_state.begin(), _goals_state.end(),
+            [&it](const GoalState & goal_state) {return goal_state.goal == *it;});
         if (goal_state_it != _goals_state.end()) {
           goal_state_it->is_valid = false;
-            break;
+          break;
         }
         it = _goals_set.erase(it);
       } else {
@@ -351,7 +351,6 @@ bool AStarAlgorithm<NodeT>::createPath(
   }
 
   NodeVector coarse_list, fine_list;
-  unsigned int coarse_search_goal_size;
   prepareGoalsForExpansion(coarse_list, fine_list);
 
   // 0) Add starting point to the open set
@@ -487,9 +486,9 @@ typename AStarAlgorithm<NodeT>::NodeSet & AStarAlgorithm<NodeT>::getGoals()
 }
 
 template<typename NodeT>
-typename AStarAlgorithm<NodeT>::NodeVector & AStarAlgorithm<NodeT>::getGoalsVector()
+typename AStarAlgorithm<NodeT>::GoalStateVector & AStarAlgorithm<NodeT>::getGoalsState()
 {
-  return _goals_vector;
+  return _goals_state;
 }
 
 template<typename NodeT>
@@ -587,7 +586,7 @@ typename AStarAlgorithm<NodeT>::CoordinateVector & AStarAlgorithm<NodeT>::getGoa
 
 template<typename NodeT>
 void AStarAlgorithm<NodeT>::prepareGoalsForExpansion(
-  NodeVector &  coarse_list, NodeVector & fine_list)
+  NodeVector & coarse_list, NodeVector & fine_list)
 {
   for (unsigned int i = 0; i < _goals_state.size(); i++) {
     if (_goals_state[i].is_valid) {

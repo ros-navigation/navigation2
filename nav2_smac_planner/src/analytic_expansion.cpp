@@ -49,11 +49,11 @@ void AnalyticExpansion<NodeT>::setCollisionChecker(
 template<typename NodeT>
 typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalyticExpansion(
   const NodePtr & current_node,
-  const NodeVector & goals_to_expand,
+  const NodeVector & coarse_list,
+  const NodeVector & fine_list,
   const CoordinateVector & goals_coords,
   const NodeGetter & getter, int & analytic_iterations,
-  int & closest_distance,
-  const unsigned int & coarse_search_goal_size)
+  int & closest_distance)
 {
   // This must be a valid motion model for analytic expansion to be attempted
   if (_motion_model == MotionModel::DUBIN || _motion_model == MotionModel::REEDS_SHEPP ||
@@ -90,8 +90,7 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
       bool found_valid_expansion = false;
 
       // First check the coarse search resolution goals
-      for (auto & current_goal_node : coarse_list)
-      {
+      for (auto & current_goal_node : coarse_list) {
         AnalyticExpansionNodes analytic_nodes =
           getAnalyticPath(
           current_node, current_goal_node, getter,
@@ -107,13 +106,12 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
             current_best_node = current_node;
             current_best_score = score;
           }
-
+        }
       }
 
       // perform a final search if we found a goal
       if (found_valid_expansion) {
-        for (auto & current_goal_node : fine_list)
-        {
+        for (auto & current_goal_node : fine_list) {
           AnalyticExpansionNodes analytic_nodes =
             getAnalyticPath(
             current_node, current_goal_node, getter,
@@ -130,6 +128,7 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
             }
           }
         }
+      }
     }
 
     if (!current_best_analytic_nodes.empty()) {
@@ -277,10 +276,10 @@ template<typename NodeT>
 float AnalyticExpansion<NodeT>::refineAnalyticPath(
   const NodePtr & goal_node,
   const NodeGetter & getter,
-  NodePtr & node,
-  AnalyticExpansionNodes & analytic_nodes,
-)
+  const NodePtr & current_node,
+  AnalyticExpansionNodes & analytic_nodes)
 {
+  NodePtr node = current_node;
   NodePtr test_node = node;
   AnalyticExpansionNodes refined_analytic_nodes;
   for (int i = 0; i < 8; i++) {
@@ -411,9 +410,8 @@ template<>
 float AnalyticExpansion<Node2D>::refineAnalyticPath(
   const NodePtr &,
   const NodeGetter &,
-  NodePtr &,
-  AnalyticExpansionNodes &,
-)
+  const NodePtr &,
+  AnalyticExpansionNodes &)
 {
   return std::numeric_limits<float>::max();
 }
@@ -434,8 +432,7 @@ typename AnalyticExpansion<Node2D>::NodePtr AnalyticExpansion<Node2D>::tryAnalyt
   const NodeVector &,
   const CoordinateVector &,
   const NodeGetter &, int &,
-  int &,
-  const unsigned int &)
+  int &)
 {
   return NodePtr(nullptr);
 }

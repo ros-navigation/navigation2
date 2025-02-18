@@ -495,7 +495,7 @@ TEST(AStarTest, test_goal_heading_mode)
 
   unsigned int num_bins = nav2_smac_planner::NodeHybrid::motion_table.num_angle_quantization;
   EXPECT_TRUE(a_star.getGoals().size() == num_bins);
-  EXPECT_TRUE(a_star.getGoals().size() == a_star.getGoalsVector().size());
+  EXPECT_TRUE(a_star.getGoals().size() == a_star.getGoalsState().size());
   EXPECT_TRUE(a_star.getGoals().size() == a_star.getGoalsCoordinates().size());
   EXPECT_TRUE(a_star.createPath(path, num_it, tolerance, dummy_cancel_checker, expansions.get()));
 

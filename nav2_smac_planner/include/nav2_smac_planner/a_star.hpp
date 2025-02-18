@@ -51,7 +51,6 @@ public:
   typedef NodeT * NodePtr;
   typedef robin_hood::unordered_node_map<uint64_t, NodeT> Graph;
   typedef std::vector<NodePtr> NodeVector;
-  typedef GoalStates std::vector<Goal>;
   typedef std::unordered_set<NodePtr> NodeSet;
   typedef std::pair<float, NodeBasic<NodeT>> NodeElement;
   typedef typename NodeT::Coordinates Coordinates;
@@ -71,6 +70,8 @@ public:
     }
   };
 
+  typedef std::priority_queue<NodeElement, std::vector<NodeElement>, NodeComparator> NodeQueue;
+
   /**
    * @struct nav2_smac_planner::GoalState
    * @brief A struct to store the goal state
@@ -81,7 +82,7 @@ public:
     bool is_valid = true;  // default to valid
   };
 
-  typedef std::priority_queue<NodeElement, std::vector<NodeElement>, NodeComparator> NodeQueue;
+  typedef std::vector<GoalState> GoalStateVector;
 
   /**
    * @brief A constructor for nav2_smac_planner::AStarAlgorithm
@@ -181,10 +182,10 @@ public:
   NodeSet & getGoals();
 
   /**
-   * @brief Get pointer reference to goals node vector
-   * @return vector of node pointers reference to the goals nodes
+   * @brief Get pointer reference to goals state
+   * @return vector of node pointers reference to the goals state
    */
-  NodeVector & getGoalsVector();
+  GoalStateVector & getGoalsState();
 
   /**
    * @brief Get pointer reference to goals coordinates
@@ -228,7 +229,7 @@ public:
    * @param fine_list List of goals to refine
    */
   void prepareGoalsForExpansion(
-  NodeVector &  coarse_list, NodeVector & fine_list);
+    NodeVector & coarse_list, NodeVector & fine_list);
 
   /**
    * @brief Get the resolution of the coarse search
@@ -317,7 +318,7 @@ protected:
   CoordinateVector _goals_coordinates;
   NodePtr _start;
   NodeSet _goals_set;
-  GoalStates _goals_states;
+  GoalStateVector _goals_state;
 
 
   Graph _graph;
