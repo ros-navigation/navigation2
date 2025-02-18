@@ -98,7 +98,7 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
         if (!analytic_nodes.empty()) {
           found_valid_expansion = true;
           bool score = refineAnalyticPath(
-            current_goal_node, getter, current_node, analytic_nodes);
+            current_node, current_goal_node, getter, analytic_nodes);
           // Update the best score if we found a better path
           if (score < current_best_score) {
             current_best_analytic_nodes = analytic_nodes;
@@ -118,7 +118,7 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
             current_node->motion_table.state_space);
           if (!analytic_nodes.empty()) {
             bool score = refineAnalyticPath(
-              current_goal_node, getter, current_node, analytic_nodes);
+              current_node, current_goal_node, getter, analytic_nodes);
             // Update the best score if we found a better path
             if (score < current_best_score) {
               current_best_analytic_nodes = analytic_nodes;
@@ -274,9 +274,9 @@ typename AnalyticExpansion<NodeT>::AnalyticExpansionNodes AnalyticExpansion<Node
 
 template<typename NodeT>
 float AnalyticExpansion<NodeT>::refineAnalyticPath(
+  const NodePtr & current_node,
   const NodePtr & goal_node,
   const NodeGetter & getter,
-  const NodePtr & current_node,
   AnalyticExpansionNodes & analytic_nodes)
 {
   NodePtr node = current_node;
@@ -409,8 +409,8 @@ getAnalyticPath(
 template<>
 float AnalyticExpansion<Node2D>::refineAnalyticPath(
   const NodePtr &,
-  const NodeGetter &,
   const NodePtr &,
+  const NodeGetter &,
   AnalyticExpansionNodes &)
 {
   return std::numeric_limits<float>::max();

@@ -16,14 +16,13 @@
 #ifndef NAV2_SMAC_PLANNER__A_STAR_HPP_
 #define NAV2_SMAC_PLANNER__A_STAR_HPP_
 
-#include <vector>
-#include <iostream>
-#include <unordered_set>
 #include <functional>
 #include <memory>
 #include <queue>
 #include <tuple>
 #include <utility>
+#include <vector>
+#include <unordered_set>
 
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_core/planner_exceptions.hpp"
@@ -224,7 +223,7 @@ public:
   unsigned int & getSizeDim3();
 
   /**
-   * @brief Prepare goals for expansion
+   * @brief Creates the coarse and fine lists of goals to expand
    * @param coarse_list List of goals to expand
    * @param fine_list List of goals to refine
    */

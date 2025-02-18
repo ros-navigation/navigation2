@@ -599,6 +599,12 @@ SmacPlannerLattice::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
         _metadata = LatticeMotionTable::getLatticeMetadata(_search_info.lattice_filepath);
         _search_info.minimum_turning_radius =
           _metadata.min_turning_radius / (_costmap->getResolution());
+        if (_metadata.number_of_headings % _coarse_search_resolution != 0) {
+          RCLCPP_WARN(
+            _logger, "coarse iteration should be an increment of the number of angular bins configured"
+          );
+          _coarse_search_resolution = 1;
+        }
       } else if (name == _name + ".goal_heading_mode") {
         std::string goal_heading_type = parameter.as_string();
         GoalHeadingMode goal_heading_mode = fromStringToGH(goal_heading_type);

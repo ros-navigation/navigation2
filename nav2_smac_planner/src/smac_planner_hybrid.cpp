@@ -695,6 +695,13 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
         int angle_quantizations = parameter.as_int();
         _angle_bin_size = 2.0 * M_PI / angle_quantizations;
         _angle_quantizations = static_cast<unsigned int>(angle_quantizations);
+
+        if (_angle_quantizations % _coarse_search_resolution != 0) {
+          RCLCPP_WARN(
+            _logger, "coarse iteration should be an increment of the number of angular bins configured"
+          );
+          _coarse_search_resolution = 1;
+        }
       }
     } else if (type == ParameterType::PARAMETER_STRING) {
       if (name == _name + ".motion_model_for_search") {

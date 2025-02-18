@@ -20,7 +20,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include <queue>
 
 
 #include "nav2_smac_planner/node_2d.hpp"
@@ -121,9 +120,9 @@ public:
    * @return The score of the refined path
    */
   float refineAnalyticPath(
+    const NodePtr & current_node,
     const NodePtr & goal_node,
     const NodeGetter & getter,
-    const NodePtr & current_node,
     AnalyticExpansionNodes & analytic_nodes);
 
   /**
