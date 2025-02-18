@@ -330,7 +330,7 @@ class BasicNavigator(Node):
         return True
 
     def assistedTeleop(self, time_allowance=30):
-        self.debug("Wainting for 'assisted_teleop' action server")
+        self.debug("Waiting for 'assisted_teleop' action server")
         while not self.assisted_teleop_client.wait_for_server(timeout_sec=1.0):
             self.info("'assisted_teleop' action server not available, waiting...")
         goal_msg = AssistedTeleop.Goal()

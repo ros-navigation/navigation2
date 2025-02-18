@@ -152,7 +152,7 @@ DockingPanel::DockingPanel(QWidget * parent)
 
   // ROSAction Transitions: So when actions are updated remotely (failing, succeeding, etc)
   // the state of the application will also update. This means that if in the processing
-  // states and then goes inactive, move back to the idle state. Vise versa as well.
+  // states and then goes inactive, move back to the idle state. Vice versa as well.
   ROSActionQTransition * idleDockTransition = new ROSActionQTransition(QActionState::INACTIVE);
   idleDockTransition->setTargetState(docking_);
   idle_->addTransition(idleDockTransition);

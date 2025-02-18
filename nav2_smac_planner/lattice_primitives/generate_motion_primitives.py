@@ -217,7 +217,7 @@ def save_visualizations(
         The minimal spanning set
 
     """
-    # Create the directory if it doesnt exist
+    # Create the directory if it doesn't exist
     visualizations_folder.mkdir(exist_ok=True)
 
     for start_angle in minimal_set_trajectories.keys():

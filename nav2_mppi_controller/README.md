@@ -123,7 +123,7 @@ Uses inflated costmap cost directly to avoid obstacles
  | Parameter            | Type   | Definition                                                                                                  |
  | ---------------      | ------ | ----------------------------------------------------------------------------------------------------------- |
  | consider_footprint   | bool   | Default: False. Whether to use point cost (if robot is circular or low compute power) or compute SE2 footprint cost. |
- | cost_weight          | double | Default 3.81. Wight to apply to critic to avoid obstacles.                                       | 
+ | cost_weight          | double | Default 3.81. Weight to apply to critic to avoid obstacles.                                       | 
  | cost_power           | int    | Default 1. Power order to apply to term.                                                                    |
  | collision_cost       | double | Default 1000000.0. Cost to apply to a true collision in a trajectory.                                          |
  | critical_cost       | double | Default 300.0. Cost to apply to a pose with any point in in inflated space to prefer distance from obstacles.                                          |

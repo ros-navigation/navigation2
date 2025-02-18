@@ -234,7 +234,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   costmap_update_timeout_ = rclcpp::Duration::from_seconds(costmap_update_timeout_dbl);
 
   // Create the action server that we implement with our followPath method
-  // This may throw due to real-time prioritzation if user doesn't have real-time permissions
+  // This may throw due to real-time prioritization if user doesn't have real-time permissions
   try {
     action_server_ = std::make_unique<ActionServer>(
       shared_from_this(),
@@ -438,7 +438,7 @@ void ControllerServer::computeControl()
   try {
     auto goal = action_server_->get_current_goal();
     if (!goal) {
-      return;  //  goal would be nullptr if action_server_ is inactivate.
+      return;  //  goal would be nullptr if action_server_ is deactivate.
     }
 
     std::string c_name = goal->controller_id;
