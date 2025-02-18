@@ -601,7 +601,8 @@ SmacPlannerLattice::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
           _metadata.min_turning_radius / (_costmap->getResolution());
         if (_metadata.number_of_headings % _coarse_search_resolution != 0) {
           RCLCPP_WARN(
-            _logger, "coarse iteration should be an increment of the number of angular bins configured"
+            _logger, "coarse iteration should be an increment of the number "
+            "of angular bins configured"
           );
           _coarse_search_resolution = 1;
         }

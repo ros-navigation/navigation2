@@ -698,7 +698,8 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
 
         if (_angle_quantizations % _coarse_search_resolution != 0) {
           RCLCPP_WARN(
-            _logger, "coarse iteration should be an increment of the number of angular bins configured"
+            _logger, "coarse iteration should be an increment of the "
+            "number of angular bins configured"
           );
           _coarse_search_resolution = 1;
         }
