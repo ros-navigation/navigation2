@@ -72,6 +72,15 @@ public:
 
 private:
   /**
+   * @brief Function to read parameters and initialize class variables
+   */
+  void initialize();
+  /**
+   * @brief Function to create ROS interfaces
+   */
+  void createROSInterfaces();
+
+  /**
    * @brief Function to perform some user-defined operation on tick
    */
   BT::NodeStatus tick() override;
