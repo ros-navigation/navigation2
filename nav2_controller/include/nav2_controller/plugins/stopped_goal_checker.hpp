@@ -67,7 +67,7 @@ public:
     geometry_msgs::msg::Twist & vel_tolerance) override;
 
 protected:
-  double rot_stopped_velocity_, trans_stopped_velocity_;
+  double rot_stopped_velocity_, trans_stopped_velocity_, trans_stopped_velocity_sqr_;
   // Dynamic parameters handler
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
   std::string plugin_name_;

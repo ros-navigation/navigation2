@@ -125,7 +125,7 @@ TEST(SimpleProgressChecker, unit_tests)
   SimpleProgressChecker pc;
   pc.initialize(x, "nav2_controller");
 
-  double time_allowance = 0.5;
+  double time_allowance = 0.1;
   int half_time_allowance_ms = static_cast<int>(time_allowance * 0.5 * 1000);
   int twice_time_allowance_ms = static_cast<int>(time_allowance * 2.0 * 1000);
 
@@ -183,7 +183,7 @@ TEST(PoseProgressChecker, unit_tests)
   PoseProgressChecker rpc;
   rpc.initialize(x, "nav2_controller");
 
-  double time_allowance = 0.5;
+  double time_allowance = 0.1;
   int half_time_allowance_ms = static_cast<int>(time_allowance * 0.5 * 1000);
   int twice_time_allowance_ms = static_cast<int>(time_allowance * 2.0 * 1000);
 
