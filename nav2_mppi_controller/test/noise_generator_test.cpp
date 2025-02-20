@@ -82,18 +82,17 @@ TEST(NoiseGeneratorTest, NoiseGeneratorMain)
   // Request an update with no noise yet generated, should result in identical outputs
   generator.initialize(settings, false, "test_name", &handler);
   generator.reset(settings, false);  // sets initial sizing and zeros out noises
-  generator.setNoisedControls(state, control_sequence);
-  EXPECT_EQ(state.cvx(0), 0);
-  EXPECT_EQ(state.cvy(0), 0);
-  EXPECT_EQ(state.cwz(0), 0);
-  EXPECT_EQ(state.cvx(0, 9), 9);
-  EXPECT_EQ(state.cvy(0, 9), 9);
-  EXPECT_EQ(state.cwz(0, 9), 9);
-
-  // Request an update with noise requested
-  generator.generateNextNoises();
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
   generator.setNoisedControls(state, control_sequence);
+
+  //saved initial state
+  auto initial_cvx_0 = state.cvx(0);
+  auto initial_cvy_0 = state.cvy(0);
+  auto initial_cwz_0 = state.cwz(0);
+  auto initial_cvx_9 = state.cvx(0, 9);
+  auto initial_cvy_9 = state.cvy(0, 9);
+  auto initial_cwz_9 = state.cwz(0, 9);
+
   EXPECT_NE(state.cvx(0), 0);
   EXPECT_EQ(state.cvy(0), 0);  // Not populated in non-holonomic
   EXPECT_NE(state.cwz(0), 0);
@@ -102,11 +101,23 @@ TEST(NoiseGeneratorTest, NoiseGeneratorMain)
   EXPECT_NE(state.cwz(0, 9), 9);
 
   EXPECT_NEAR(state.cvx(0), 0, 0.3);
-  EXPECT_NEAR(state.cvy(0), 0, 0.3);
   EXPECT_NEAR(state.cwz(0), 0, 0.3);
   EXPECT_NEAR(state.cvx(0, 9), 9, 0.3);
-  EXPECT_NEAR(state.cvy(0, 9), 9, 0.3);
   EXPECT_NEAR(state.cwz(0, 9), 9, 0.3);
+
+  // Request an update with noise requested
+  generator.generateNextNoises();
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  generator.setNoisedControls(state, control_sequence);
+
+  // Ensure the state has changed after generating new noises
+  EXPECT_NE(state.cvx(0), initial_cvx_0);
+  EXPECT_EQ(state.cvy(0), initial_cvy_0);  // Not populated in non-holonomic
+  EXPECT_NE(state.cwz(0), initial_cwz_0);
+  EXPECT_NE(state.cvx(0, 9), initial_cvx_9);
+  EXPECT_EQ(state.cvy(0, 9), initial_cvy_9);  // Not populated in non-holonomic
+  EXPECT_NE(state.cwz(0, 9), initial_cwz_9);
+
 
   // Test holonomic setting
   generator.reset(settings, true);  // Now holonomically
@@ -129,3 +140,72 @@ TEST(NoiseGeneratorTest, NoiseGeneratorMain)
 
   generator.shutdown();
 }
+
+TEST(NoiseGeneratorTest, NoiseGeneratorMainNoRegenerate)
+{
+  // This time with no regeneration of noises
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("node");
+  node->declare_parameter("test_name.regenerate_noises", rclcpp::ParameterValue(false));
+  ParametersHandler handler(node);
+  NoiseGenerator generator;
+  mppi::models::OptimizerSettings settings;
+  settings.batch_size = 100;
+  settings.time_steps = 25;
+  settings.sampling_std.vx = 0.1;
+  settings.sampling_std.vy = 0.1;
+  settings.sampling_std.wz = 0.1;
+
+  // Populate a potential control sequence
+  mppi::models::ControlSequence control_sequence;
+  control_sequence.reset(25);
+  for (unsigned int i = 0; i != control_sequence.vx.rows(); i++) {
+    control_sequence.vx(i) = i;
+    control_sequence.vy(i) = i;
+    control_sequence.wz(i) = i;
+  }
+
+  mppi::models::State state;
+  state.reset(settings.batch_size, settings.time_steps);
+
+  // Request an update with no noise yet generated, should result in identical outputs
+  generator.initialize(settings, false, "test_name", &handler);
+  generator.reset(settings, false);  // sets initial sizing and zeros out noises
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  generator.setNoisedControls(state, control_sequence);
+
+  //saved initial state
+  auto initial_cvx_0 = state.cvx(0);
+  auto initial_cvy_0 = state.cvy(0);
+  auto initial_cwz_0 = state.cwz(0);
+  auto initial_cvx_9 = state.cvx(0, 9);
+  auto initial_cvy_9 = state.cvy(0, 9);
+  auto initial_cwz_9 = state.cwz(0, 9);
+
+  EXPECT_NE(state.cvx(0), 0);
+  EXPECT_EQ(state.cvy(0), 0);  // Not populated in non-holonomic
+  EXPECT_NE(state.cwz(0), 0);
+  EXPECT_NE(state.cvx(0, 9), 9);
+  EXPECT_EQ(state.cvy(0, 9), 9);  // Not populated in non-holonomic
+  EXPECT_NE(state.cwz(0, 9), 9);
+
+  EXPECT_NEAR(state.cvx(0), 0, 0.3);
+  EXPECT_NEAR(state.cwz(0), 0, 0.3);
+  EXPECT_NEAR(state.cvx(0, 9), 9, 0.3);
+  EXPECT_NEAR(state.cwz(0, 9), 9, 0.3);
+
+  // this doesn't work if regenerate_noises is false
+  generator.generateNextNoises();
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  generator.setNoisedControls(state, control_sequence);
+
+  // Ensure the state has changed after generating new noises
+  EXPECT_EQ(state.cvx(0), initial_cvx_0);
+  EXPECT_EQ(state.cvy(0), initial_cvy_0);  // Not populated in non-holonomic
+  EXPECT_EQ(state.cwz(0), initial_cwz_0);
+  EXPECT_EQ(state.cvx(0, 9), initial_cvx_9);
+  EXPECT_EQ(state.cvy(0, 9), initial_cvy_9);  // Not populated in non-holonomic
+  EXPECT_EQ(state.cwz(0, 9), initial_cwz_9);
+
+  generator.shutdown();
+}
+
