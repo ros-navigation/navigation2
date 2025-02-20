@@ -51,6 +51,16 @@ BtNavigator::BtNavigator(rclcpp::NodeOptions options)
     this, "odom_topic", rclcpp::ParameterValue(std::string("odom")));
   declare_parameter_if_not_declared(
     this, "filter_duration", rclcpp::ParameterValue(0.3));
+  declare_parameter_if_not_declared(
+    this, "enable_groot_monitoring", rclcpp::ParameterValue(false));
+  declare_parameter_if_not_declared(
+    this, "pose_groot_publisher_port", rclcpp::ParameterValue(1666));
+  declare_parameter_if_not_declared(
+    this, "pose_groot_server_port", rclcpp::ParameterValue(1667));
+  declare_parameter_if_not_declared(
+    this, "poses_groot_publisher_port", rclcpp::ParameterValue(1668));
+  declare_parameter_if_not_declared(
+    this, "poses_groot_server_port", rclcpp::ParameterValue(1669));
 }
 
 BtNavigator::~BtNavigator()
@@ -90,6 +100,28 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & state)
   feedback_utils.global_frame = global_frame_;
   feedback_utils.robot_frame = robot_frame_;
   feedback_utils.transform_tolerance = transform_tolerance_;
+
+  if (!pose_navigator_->on_configure(
+      shared_from_this(), plugin_lib_names, feedback_utils, &plugin_muxer_))
+  {
+    return nav2_util::CallbackReturn::FAILURE;
+  }
+
+  pose_navigator_->getActionServer()->setGrootMonitoring(
+    get_parameter("enable_groot_monitoring").as_bool(),
+    get_parameter("pose_groot_publisher_port").as_int(),
+    get_parameter("pose_groot_server_port").as_int());
+
+  if (!poses_navigator_->on_configure(
+      shared_from_this(), plugin_lib_names, feedback_utils, &plugin_muxer_))
+  {
+    return nav2_util::CallbackReturn::FAILURE;
+  }
+
+  poses_navigator_->getActionServer()->setGrootMonitoring(
+    get_parameter("enable_groot_monitoring").as_bool(),
+    get_parameter("poses_groot_publisher_port").as_int(),
+    get_parameter("poses_groot_server_port").as_int());
 
   // Odometry smoother object for getting current speed
   auto node = shared_from_this();
