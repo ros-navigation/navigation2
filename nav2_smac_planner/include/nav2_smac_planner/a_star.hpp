@@ -149,7 +149,7 @@ public:
     const float & my,
     const unsigned int & dim_3,
     const GoalHeadingMode & goal_heading_mode = GoalHeadingMode::DEFAULT,
-    const int & coarse_search_resolution = 0);
+    const int & coarse_search_resolution = 1);
 
   /**
    * @brief Set the starting pose for planning, as a node index
