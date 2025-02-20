@@ -85,7 +85,7 @@ TEST(NoiseGeneratorTest, NoiseGeneratorMain)
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
   generator.setNoisedControls(state, control_sequence);
 
-  //saved initial state
+  // save initial state
   auto initial_cvx_0 = state.cvx(0);
   auto initial_cvy_0 = state.cvy(0);
   auto initial_cwz_0 = state.cwz(0);
@@ -173,7 +173,7 @@ TEST(NoiseGeneratorTest, NoiseGeneratorMainNoRegenerate)
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
   generator.setNoisedControls(state, control_sequence);
 
-  //saved initial state
+  // save initial state
   auto initial_cvx_0 = state.cvx(0);
   auto initial_cvy_0 = state.cvy(0);
   auto initial_cwz_0 = state.cwz(0);
@@ -208,4 +208,3 @@ TEST(NoiseGeneratorTest, NoiseGeneratorMainNoRegenerate)
 
   generator.shutdown();
 }
-
