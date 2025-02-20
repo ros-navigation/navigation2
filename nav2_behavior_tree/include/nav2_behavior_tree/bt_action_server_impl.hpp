@@ -245,14 +245,10 @@ bool BtActionServer<ActionT>::on_cleanup()
 }
 
 template<class ActionT>
-void BtActionServer<ActionT>::setGrootMonitoring(
-  const bool enable,
-  const unsigned publisher_port,
-  const unsigned server_port)
+void BtActionServer<ActionT>::setGrootMonitoring(const bool enable, const unsigned publisher_port)
 {
   enable_groot_monitoring_ = enable;
   groot_publisher_port_ = publisher_port;
-  groot_server_port_ = server_port;
 }
 
 template<class ActionT>
@@ -267,7 +263,7 @@ bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filena
     return true;
   }
 
-  // if a new tree is created, than the ZMQ Publisher must be destroyed
+  // if a new tree is created, than the Groot2 Publisher must be destroyed
   bt_->resetGrootMonitor();
 
   // Read the input BT XML from the specified file into a string
@@ -301,16 +297,15 @@ bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filena
 
   current_bt_xml_filename_ = filename;
 
-  // Enable monitoring with Groot
+  // Enable monitoring with Groot2
   if (enable_groot_monitoring_) {
-    // optionally add max_msg_per_second = 25 (default) here
     try {
-      bt_->addGrootMonitoring(&tree_, groot_publisher_port_, groot_server_port_);
+      bt_->addGrootMonitoring(&tree_, groot_publisher_port_);
       RCLCPP_INFO(
-        logger_, "Enabling Groot monitoring for %s: %d, %d",
-        action_name_.c_str(), groot_publisher_port_, groot_server_port_);
+        logger_, "Enabling Groot2 monitoring for %s: %d",
+        action_name_.c_str(), groot_publisher_port_);
     } catch (const std::logic_error & e) {
-      RCLCPP_ERROR(logger_, "ZMQ already enabled, Error: %s", e.what());
+      RCLCPP_ERROR(logger_, "Groot2 already enabled, Error: %s", e.what());
     }
   }
 

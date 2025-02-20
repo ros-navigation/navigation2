@@ -22,6 +22,7 @@
 
 #include "behaviortree_cpp/behavior_tree.h"
 #include "behaviortree_cpp/bt_factory.h"
+#include "behaviortree_cpp/loggers/groot2_publisher.h"
 #include "behaviortree_cpp/xml_parsing.h"
 
 #include "rclcpp/rclcpp.hpp"
@@ -86,17 +87,11 @@ public:
     BT::Blackboard::Ptr blackboard);
 
   /**
-   * @brief Add groot monitor to publish BT status changes
+   * @brief Add Groot2 monitor to publish BT status changes
    * @param tree BT to monitor
-   * @param publisher_port ZMQ publisher port for the Groot monitor
-   * @param server_port ZMQ server port for the Groot monitor
-   * @param max_msg_per_second Maximum number of messages that can be sent per second
+   * @param publisher_port Publisher port for the Groot2 monitor
    */
-  void addGrootMonitoring(
-    BT::Tree * tree,
-    uint16_t publisher_port,
-    uint16_t server_port,
-    uint16_t max_msg_per_second = 25);
+  void addGrootMonitoring(BT::Tree * tree, uint16_t publisher_port);
 
   /**
    * @brief Reset groot monitor
@@ -116,8 +111,8 @@ protected:
   // Clock
   rclcpp::Clock::SharedPtr clock_;
 
-  // Groot monitor
-  static inline std::unique_ptr<BT::PublisherZMQ> groot_monitor_;
+  // Groot2 monitor
+  std::unique_ptr<BT::Groot2Publisher> groot_monitor_;
 };
 
 }  // namespace nav2_behavior_tree

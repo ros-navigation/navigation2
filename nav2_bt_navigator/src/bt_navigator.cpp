@@ -101,28 +101,6 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & state)
   feedback_utils.robot_frame = robot_frame_;
   feedback_utils.transform_tolerance = transform_tolerance_;
 
-  if (!pose_navigator_->on_configure(
-      shared_from_this(), plugin_lib_names, feedback_utils, &plugin_muxer_))
-  {
-    return nav2_util::CallbackReturn::FAILURE;
-  }
-
-  pose_navigator_->getActionServer()->setGrootMonitoring(
-    get_parameter("enable_groot_monitoring").as_bool(),
-    get_parameter("pose_groot_publisher_port").as_int(),
-    get_parameter("pose_groot_server_port").as_int());
-
-  if (!poses_navigator_->on_configure(
-      shared_from_this(), plugin_lib_names, feedback_utils, &plugin_muxer_))
-  {
-    return nav2_util::CallbackReturn::FAILURE;
-  }
-
-  poses_navigator_->getActionServer()->setGrootMonitoring(
-    get_parameter("enable_groot_monitoring").as_bool(),
-    get_parameter("poses_groot_publisher_port").as_int(),
-    get_parameter("poses_groot_server_port").as_int());
-
   // Odometry smoother object for getting current speed
   auto node = shared_from_this();
   odom_smoother_ = std::make_shared<nav2_util::OdomSmoother>(node, filter_duration_, odom_topic_);

@@ -53,13 +53,12 @@ bt_navigator:
     navigators: ["navigate_to_pose", "navigate_through_poses"]
     navigate_to_pose:
       plugin: "nav2_bt_navigator::NavigateToPoseNavigator"
+      enable_groot_monitoring: True
+      groot_publisher_port: 1667
     navigate_through_poses:
       plugin: "nav2_bt_navigator::NavigateThroughPosesNavigator"
-    enable_groot_monitoring: True
-    pose_groot_publisher_port: 1666
-    pose_groot_server_port: 1667
-    poses_groot_publisher_port: 1668
-    poses_groot_server_port: 1669
+      enable_groot_monitoring: True
+      groot_publisher_port: 1669
     # 'default_nav_through_poses_bt_xml' and 'default_nav_to_pose_bt_xml' are use defaults:
     # nav2_bt_navigator/navigate_to_pose_w_replanning_and_recovery.xml
     # nav2_bt_navigator/navigate_through_poses_w_replanning_and_recovery.xml
