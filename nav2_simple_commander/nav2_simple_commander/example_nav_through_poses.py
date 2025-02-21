@@ -15,7 +15,6 @@
 
 """Basic navigation demo to go to poses."""
 
-
 from geometry_msgs.msg import PoseStamped
 from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 import rclpy
