@@ -1,6 +1,6 @@
 # Nav2 System Tests
 
-This is a 'top level' system test which will use Gazebo to simulate a Robot moving from an known initial starting position to a goal pose. 
+This is a 'top level' system test which will use Gazebo to simulate a Robot moving from an known initial starting position to a goal pose.
 
 ## To run the test
 First, you must build Nav2 including this package:

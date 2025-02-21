@@ -9,7 +9,7 @@ First, build the package
 ```
 colcon build --symlink-install
 ```
-After building, from /build/nav2_system_tests directory run: 
+After building, from /build/nav2_system_tests directory run:
 ```
 ctest -V -R test_localization
 ```

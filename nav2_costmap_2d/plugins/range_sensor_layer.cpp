@@ -400,13 +400,13 @@ void RangeSensorLayer::updateCostmap(
 }
 
 void RangeSensorLayer::update_cell(
-  double ox, double oy, double ot, double r,
+  double ox, double oy, double ot, double r,  // codespell:ignore ot
   double nx, double ny, bool clear)
 {
   unsigned int x, y;
   if (worldToMap(nx, ny, x, y)) {
     double dx = nx - ox, dy = ny - oy;
-    double theta = atan2(dy, dx) - ot;
+    double theta = atan2(dy, dx) - ot;  // codespell:ignore ot
     theta = angles::normalize_angle(theta);
     double phi = sqrt(dx * dx + dy * dy);
     double sensor = 0.0;

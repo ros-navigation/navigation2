@@ -133,7 +133,7 @@ void FlatWeightedArrowsArray::setManualObjectVertices(
 
     for (const auto & vertex : vertices) {
       manual_object_->position(vertex);
-      manual_object_->colour(color);
+      manual_object_->colour(color);   // codespell:ignore colour
     }
   }
 }

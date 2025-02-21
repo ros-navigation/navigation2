@@ -1,7 +1,7 @@
 <!--
   This Behavior Tree undocks the robot, performs some token application, then returns to the dock.
   Shown below is an example of how you could use dock & undock actions in your application.
-  
+
   Shown in the comment below is an example of how you could dock based on battery status as a possible common adaption:
   <ReactiveFallback name="DockIfBatteryLow">
     <inverter>

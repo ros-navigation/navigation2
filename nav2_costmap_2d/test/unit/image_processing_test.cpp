@@ -57,11 +57,11 @@ TEST_F(ImageProcTester, calculateHistogramWithoutTruncation) {
   Image<uint16_t> image = makeImage(3, 3, image_buffer_words_);
   const uint16_t max_bin_size = 3;  // three zeros
   const uint16_t max_value = 4;
-  const auto hist = histogram(image, max_value, max_bin_size);
+  const auto hist = histogram(image, max_value, max_bin_size);   // codespell:ignore hist
 
   const std::array<uint8_t, 5> expected = {3, 2, 2, 1, 1};
-  ASSERT_EQ(hist.size(), expected.size());
-  ASSERT_TRUE(std::equal(expected.begin(), expected.end(), hist.begin()));
+  ASSERT_EQ(hist.size(), expected.size());  // codespell:ignore hist
+  ASSERT_TRUE(std::equal(expected.begin(), expected.end(), hist.begin()));  // codespell:ignore hist
 }
 
 TEST_F(ImageProcTester, calculateHistogramWithTruncation) {
@@ -69,11 +69,11 @@ TEST_F(ImageProcTester, calculateHistogramWithTruncation) {
   Image<uint16_t> image = makeImage(3, 3, image_buffer_words_);
   const uint16_t max_bin_size = 2;
   const uint16_t max_value = 4;
-  const auto hist = histogram(image, max_value, max_bin_size);
+  const auto hist = histogram(image, max_value, max_bin_size);  // codespell:ignore hist
 
   const std::array<uint8_t, 5> expected = {2, 2, 2, 1, 1};
-  ASSERT_EQ(hist.size(), expected.size());
-  ASSERT_TRUE(std::equal(expected.begin(), expected.end(), hist.begin()));
+  ASSERT_EQ(hist.size(), expected.size());  // codespell:ignore hist
+  ASSERT_TRUE(std::equal(expected.begin(), expected.end(), hist.begin()));  // codespell:ignore hist
 }
 
 TEST_F(ImageProcTester, calculateHistogramOfEmpty) {
@@ -81,8 +81,8 @@ TEST_F(ImageProcTester, calculateHistogramOfEmpty) {
   const uint16_t max_value = 0;
   Image<uint16_t> empty;
 
-  const auto hist = histogram(empty, max_value, max_bin_size);
-  ASSERT_TRUE(hist.empty());
+  const auto hist = histogram(empty, max_value, max_bin_size);  // codespell:ignore hist
+  ASSERT_TRUE(hist.empty());  // codespell:ignore hist
 }
 
 

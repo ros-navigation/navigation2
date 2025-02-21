@@ -98,12 +98,12 @@ def main():
                 entry += f'[![Build Status]({binURL}badge/icon)]({binURL}) | '
         entry += '\n'
         body += entry
-    
+
     # Special case for Opennav Docking for directory structure of Nav2
     body = body.replace('| opennav_docking |', '| nav2_docking |')
     # Special case for reducing the label length
     body = body.replace('| nav2_regulated_pure_pursuit_controller |', '| nav2_regulated_pure_pursuit |')
-    
+
     print(header + '\n' + body)
 
 if __name__ == '__main__':

@@ -164,7 +164,7 @@ public:
    * @brief Accepts cancellation requests of action server.
    * @param uuid Goal ID
    * @param Goal A server goal handle to cancel
-   * @return CancelResponse response of the goal cancelled
+   * @return CancelResponse response of the goal canceled
    */
   rclcpp_action::CancelResponse handle_cancel(
     const std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionT>> handle)
@@ -370,7 +370,7 @@ public:
     }
 
     if (is_active(current_handle_) && current_handle_ != pending_handle_) {
-      debug_msg("Cancelling the previous goal");
+      debug_msg("Canceling the previous goal");
       current_handle_->abort(empty_result());
     }
 
@@ -585,7 +585,7 @@ protected:
 
     if (is_active(handle)) {
       if (handle->is_canceling()) {
-        info_msg("Client requested to cancel the goal. Cancelling.");
+        info_msg("Client requested to cancel the goal. Canceling.");
         handle->canceled(result);
       } else {
         warn_msg("Aborting handle.");

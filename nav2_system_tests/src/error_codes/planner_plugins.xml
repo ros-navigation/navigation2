@@ -41,6 +41,6 @@
     </class>
     <class type="nav2_system_tests::CancelledPlanner"
            base_class_type="nav2_core::GlobalPlanner">
-        <description>This global planner produces a cancelled exception.</description>
+        <description>This global planner produces a canceled exception.</description>
     </class>
 </library>
