@@ -25,12 +25,11 @@
 #include "nav2_amcl/map/map.hpp"
 
 /*
- * @class CellData
+ * @struct CellData
  * @brief Data about map cells
  */
-class CellData
+struct CellData
 {
-public:
   map_t * map_;
   unsigned int i_, j_;
   unsigned int src_i_, src_j_;
@@ -130,18 +129,14 @@ void enqueue(
     return;
   }
 
-  map->cells[MAP_INDEX(map, i, j)].occ_dist = distance * map->scale;
+  const int map_index = MAP_INDEX(map, i, j);
 
-  CellData cell;
-  cell.map_ = map;
-  cell.i_ = i;
-  cell.j_ = j;
-  cell.src_i_ = src_i;
-  cell.src_j_ = src_j;
+  map->cells[map_index].occ_dist = distance * map->scale;
 
-  Q.push(cell);
+  Q.emplace(CellData{map, static_cast<unsigned int>(i), static_cast<unsigned int>(j),
+      static_cast<unsigned int>(src_i), static_cast<unsigned int>(src_j)});
 
-  marked[MAP_INDEX(map, i, j)] = 1;
+  marked[map_index] = 1;
 }
 
 /*
