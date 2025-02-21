@@ -753,6 +753,8 @@ TEST_F(Tester, testPolygonTopicUpdateDifferentFrame)
 
   // Move BASE2_FRAME_ID to 0.2 m away from BASE_FRAME_ID
   sendTransforms(0.2);
+  // sleep for a short time to make sure that the transform is published
+  std::this_thread::sleep_for(50ms);
   // updatePolygon(vel) should update poly coordinates to correct ones in BASE_FRAME_ID
   nav2_collision_monitor::Velocity vel{0.0, 0.0, 0.0};
   polygon_->updatePolygon(vel);
