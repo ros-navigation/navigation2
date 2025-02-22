@@ -63,7 +63,7 @@ bool PoseProgressChecker::check(geometry_msgs::msg::PoseStamped & current_pose)
 
 bool PoseProgressChecker::isRobotMovedEnough(const geometry_msgs::msg::Pose2D & pose)
 {
-  return pose_distance(pose, baseline_pose_) > radius_ ||
+  return pose_distance_sqr(pose, baseline_pose_) > radius_sqr_ ||
          poseAngleDistance(pose, baseline_pose_) > required_movement_angle_;
 }
 
