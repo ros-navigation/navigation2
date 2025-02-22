@@ -53,13 +53,13 @@ protected:
    */
   void resetBaselinePose(const geometry_msgs::msg::Pose2D & pose);
 
-  static double pose_distance(
+  static double pose_distance_sqr(
     const geometry_msgs::msg::Pose2D &,
     const geometry_msgs::msg::Pose2D &);
 
   rclcpp::Clock::SharedPtr clock_;
 
-  double radius_;
+  double radius_, radius_sqr_;
   rclcpp::Duration time_allowance_{0, 0};
 
   geometry_msgs::msg::Pose2D baseline_pose_;
