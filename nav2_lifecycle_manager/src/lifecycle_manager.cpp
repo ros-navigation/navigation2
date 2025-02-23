@@ -44,6 +44,7 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
   declare_parameter("bond_timeout", 4.0);
   declare_parameter("bond_respawn_max_duration", 10.0);
   declare_parameter("attempt_respawn_reconnection", true);
+  declare_parameter("service_introspection_mode", "disabled");
 
   registerRclPreshutdownCallback();
 
@@ -59,19 +60,9 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
   bond_respawn_max_duration_ = rclcpp::Duration::from_seconds(respawn_timeout_s);
 
   get_parameter("attempt_respawn_reconnection", attempt_respawn_reconnection_);
+  get_parameter("service_introspection_mode", service_introspection_mode_);
 
   callback_group_ = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive, false);
-  manager_srv_ = create_service<ManageLifecycleNodes>(
-    get_name() + std::string("/manage_nodes"),
-    std::bind(&LifecycleManager::managerCallback, this, _1, _2, _3),
-    rclcpp::SystemDefaultsQoS(),
-    callback_group_);
-
-  is_active_srv_ = create_service<std_srvs::srv::Trigger>(
-    get_name() + std::string("/is_active"),
-    std::bind(&LifecycleManager::isActiveCallback, this, _1, _2, _3),
-    rclcpp::SystemDefaultsQoS(),
-    callback_group_);
 
   transition_state_map_[Transition::TRANSITION_CONFIGURE] = State::PRIMARY_STATE_INACTIVE;
   transition_state_map_[Transition::TRANSITION_CLEANUP] = State::PRIMARY_STATE_UNCONFIGURED;
@@ -92,6 +83,7 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
     [this]() -> void {
       init_timer_->cancel();
       createLifecycleServiceClients();
+      createLifecycleServiceServers();
       if (autostart_) {
         init_timer_ = this->create_wall_timer(
           0s,
@@ -197,8 +189,30 @@ LifecycleManager::createLifecycleServiceClients()
   message("Creating and initializing lifecycle service clients");
   for (auto & node_name : node_names_) {
     node_map_[node_name] =
-      std::make_shared<LifecycleServiceClient>(node_name, shared_from_this());
+      std::make_shared<LifecycleServiceClient>(node_name, shared_from_this(),
+        service_introspection_mode_);
   }
+}
+
+void
+LifecycleManager::createLifecycleServiceServers()
+{
+  message("Creating and initializing lifecycle service servers");
+  manager_srv_ = std::make_shared<nav2_util::ServiceServer<ManageLifecycleNodes>>(
+    get_name() + std::string("/manage_nodes"),
+    service_introspection_mode_,
+    shared_from_this(),
+    std::bind(&LifecycleManager::managerCallback, this, _1, _2, _3),
+    rclcpp::SystemDefaultsQoS(),
+    callback_group_);
+
+  is_active_srv_ = std::make_shared<nav2_util::ServiceServer<std_srvs::srv::Trigger>>(
+    get_name() + std::string("/is_active"),
+    service_introspection_mode_,
+    shared_from_this(),
+    std::bind(&LifecycleManager::isActiveCallback, this, _1, _2, _3),
+    rclcpp::SystemDefaultsQoS(),
+    callback_group_);
 }
 
 void

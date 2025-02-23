@@ -60,6 +60,7 @@
 #include "tf2_ros/transform_listener.h"
 #include "tf2/time.hpp"
 #include "tf2/transform_datatypes.hpp"
+#include "nav2_util/service_server.hpp"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
@@ -410,11 +411,13 @@ protected:
 
   // Derived parameters
   bool use_radius_{false};
+  std::string service_introspection_mode_{"disabled"};
   std::vector<geometry_msgs::msg::Point> unpadded_footprint_;
   std::vector<geometry_msgs::msg::Point> padded_footprint_;
 
   // Services
-  rclcpp::Service<nav2_msgs::srv::GetCosts>::SharedPtr get_cost_service_;
+  std::shared_ptr<nav2_util::ServiceServer<nav2_msgs::srv::GetCosts,
+    std::shared_ptr<nav2_util::LifecycleNode>>> get_cost_service_;
   std::unique_ptr<ClearCostmapService> clear_costmap_service_;
 
   // Dynamic parameters handler

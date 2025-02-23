@@ -54,6 +54,7 @@ PlannerServer::PlannerServer(const rclcpp::NodeOptions & options)
   declare_parameter("expected_planner_frequency", 1.0);
   declare_parameter("action_server_result_timeout", 10.0);
   declare_parameter("costmap_update_timeout", 1.0);
+  declare_parameter("service_introspection_mode", "disabled");
 
   get_parameter("planner_plugins", planner_ids_);
   if (planner_ids_ == default_ids_) {
@@ -61,7 +62,7 @@ PlannerServer::PlannerServer(const rclcpp::NodeOptions & options)
       declare_parameter(default_ids_[i] + ".plugin", default_types_[i]);
     }
   }
-
+  service_introspection_mode_ = get_parameter("service_introspection_mode").as_string();
   // Setup the global costmap
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "global_costmap", std::string{get_namespace()},
@@ -197,11 +198,13 @@ PlannerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
   auto node = shared_from_this();
 
-  is_path_valid_service_ = node->create_service<nav2_msgs::srv::IsPathValid>(
+  is_path_valid_service_ = std::make_shared<nav2_util::ServiceServer<nav2_msgs::srv::IsPathValid,
+      std::shared_ptr<nav2_util::LifecycleNode>>>(
     "is_path_valid",
-    std::bind(
-      &PlannerServer::isPathValid, this,
-      std::placeholders::_1, std::placeholders::_2));
+    service_introspection_mode_,
+    node,
+    std::bind(&PlannerServer::isPathValid, this, std::placeholders::_1, std::placeholders::_2,
+      std::placeholders::_3));
 
   // Add callback for dynamic parameters
   dyn_params_handler_ = node->add_on_set_parameters_callback(
@@ -249,6 +252,7 @@ PlannerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
+  is_path_valid_service_.reset();
   action_server_pose_.reset();
   action_server_poses_.reset();
   plan_publisher_.reset();
@@ -645,6 +649,7 @@ PlannerServer::publishPlan(const nav_msgs::msg::Path & path)
 }
 
 void PlannerServer::isPathValid(
+  const std::shared_ptr<rmw_request_id_t>/*request_header*/,
   const std::shared_ptr<nav2_msgs::srv::IsPathValid::Request> request,
   std::shared_ptr<nav2_msgs::srv::IsPathValid::Response> response)
 {

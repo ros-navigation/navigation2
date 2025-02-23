@@ -22,6 +22,7 @@
 #include "behaviortree_cpp/condition_node.h"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_msgs/srv/is_path_valid.hpp"
+#include "nav2_util/service_client.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -73,12 +74,13 @@ public:
 
 private:
   rclcpp::Node::SharedPtr node_;
-  rclcpp::Client<nav2_msgs::srv::IsPathValid>::SharedPtr client_;
+  std::shared_ptr<nav2_util::ServiceClient<nav2_msgs::srv::IsPathValid>> client_;
   // The timeout value while waiting for a response from the
   // is path valid service
   std::chrono::milliseconds server_timeout_;
   unsigned int max_cost_;
   bool consider_unknown_as_obstacle_;
+  std::string service_introspection_mode_;
 };
 
 }  // namespace nav2_behavior_tree

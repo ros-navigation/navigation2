@@ -26,6 +26,7 @@ DockDatabase::~DockDatabase()
 {
   dock_instances_.clear();
   dock_plugins_.clear();
+  reload_db_service_.reset();
 }
 
 bool DockDatabase::initialize(
@@ -54,11 +55,19 @@ bool DockDatabase::initialize(
     "Docking Server has %u dock types and %u dock instances available.",
     this->plugin_size(), this->instance_size());
 
-  reload_db_service_ = node->create_service<nav2_msgs::srv::ReloadDockDatabase>(
+  // declare the service to reload the database
+  node->declare_parameter("service_introspection_mode", "disabled");
+  std::string service_introspection_mode_ =
+    node->get_parameter("service_introspection_mode").as_string();
+
+  reload_db_service_ = std::make_shared<nav2_util::ServiceServer<nav2_msgs::srv::ReloadDockDatabase,
+      std::shared_ptr<rclcpp_lifecycle::LifecycleNode>>>(
     "~/reload_database",
+    service_introspection_mode_,
+    node->shared_from_this(),
     std::bind(
       &DockDatabase::reloadDbCb, this,
-      std::placeholders::_1, std::placeholders::_2));
+      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
   return true;
 }
@@ -80,6 +89,7 @@ void DockDatabase::deactivate()
 }
 
 void DockDatabase::reloadDbCb(
+  const std::shared_ptr<rmw_request_id_t>/*request_header*/,
   const std::shared_ptr<nav2_msgs::srv::ReloadDockDatabase::Request> request,
   std::shared_ptr<nav2_msgs::srv::ReloadDockDatabase::Response> response)
 {

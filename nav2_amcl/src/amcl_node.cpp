@@ -193,6 +193,11 @@ AmclNode::AmclNode(const rclcpp::NodeOptions & options)
     "is valid into the future");
 
   add_parameter(
+    "service_introspection_mode", rclcpp::ParameterValue(std::string("disabled")),
+    "Set this to disabled for no introspection, metadata for Only metadata without any user data contents, "
+    "and contents for User data contents with metadata");
+
+  add_parameter(
     "update_min_a", rclcpp::ParameterValue(0.2),
     "Rotational movement required before performing a filter update");
 
@@ -1097,6 +1102,7 @@ AmclNode::initParameters()
   get_parameter("sigma_hit", sigma_hit_);
   get_parameter("tf_broadcast", tf_broadcast_);
   get_parameter("transform_tolerance", tmp_tol);
+  get_parameter("service_introspection_mode", service_introspection_mode_);
   get_parameter("update_min_a", a_thresh_);
   get_parameter("update_min_d", d_thresh_);
   get_parameter("z_hit", z_hit_);
@@ -1564,18 +1570,21 @@ AmclNode::initPubSub()
 void
 AmclNode::initServices()
 {
-  global_loc_srv_ = create_service<std_srvs::srv::Empty>(
-    "reinitialize_global_localization",
+  global_loc_srv_ = std::make_shared<nav2_util::ServiceServer<std_srvs::srv::Empty,
+      std::shared_ptr<nav2_util::LifecycleNode>>>(
+    "reinitialize_global_localization", service_introspection_mode_, shared_from_this(),
     std::bind(&AmclNode::globalLocalizationCallback, this, std::placeholders::_1,
       std::placeholders::_2, std::placeholders::_3));
 
-  initial_guess_srv_ = create_service<nav2_msgs::srv::SetInitialPose>(
-    "set_initial_pose",
+  initial_guess_srv_ = std::make_shared<nav2_util::ServiceServer<nav2_msgs::srv::SetInitialPose,
+      std::shared_ptr<nav2_util::LifecycleNode>>>(
+    "set_initial_pose", service_introspection_mode_, shared_from_this(),
     std::bind(&AmclNode::initialPoseReceivedSrv, this, std::placeholders::_1, std::placeholders::_2,
       std::placeholders::_3));
 
-  nomotion_update_srv_ = create_service<std_srvs::srv::Empty>(
-    "request_nomotion_update",
+  nomotion_update_srv_ = std::make_shared<nav2_util::ServiceServer<std_srvs::srv::Empty,
+      std::shared_ptr<nav2_util::LifecycleNode>>>(
+    "request_nomotion_update", service_introspection_mode_, shared_from_this(),
     std::bind(&AmclNode::nomotionUpdateCallback, this, std::placeholders::_1, std::placeholders::_2,
       std::placeholders::_3));
 }

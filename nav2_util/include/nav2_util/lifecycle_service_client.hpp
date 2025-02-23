@@ -31,10 +31,13 @@ namespace nav2_util
 class LifecycleServiceClient
 {
 public:
-  explicit LifecycleServiceClient(const std::string & lifecycle_node_name);
+  explicit LifecycleServiceClient(
+    const std::string & lifecycle_node_name,
+    std::string service_introspection_mode = "disabled");
   LifecycleServiceClient(
     const std::string & lifecycle_node_name,
-    rclcpp::Node::SharedPtr parent_node);
+    rclcpp::Node::SharedPtr parent_node,
+    std::string service_introspection_mode = "disabled");
 
   /// Trigger a state change
   /**

@@ -74,6 +74,7 @@ void CostmapFilter::onInitialize()
     declareParameter("enabled", rclcpp::ParameterValue(true));
     declareParameter("filter_info_topic", rclcpp::PARAMETER_STRING);
     declareParameter("transform_tolerance", rclcpp::ParameterValue(0.1));
+    declareParameter("service_introspection_mode", rclcpp::ParameterValue("disabled"));
 
     // Get parameters
     node->get_parameter(name_ + "." + "enabled", enabled_);
@@ -81,13 +82,17 @@ void CostmapFilter::onInitialize()
     double transform_tolerance {};
     node->get_parameter(name_ + "." + "transform_tolerance", transform_tolerance);
     transform_tolerance_ = tf2::durationFromSec(transform_tolerance);
+    std::string service_introspection_mode_ =
+      node->get_parameter(name_ + "." + "service_introspection_mode").as_string();
 
     // Costmap Filter enabling service
-    enable_service_ = node->create_service<std_srvs::srv::SetBool>(
+    enable_service_ = std::make_shared<nav2_util::ServiceServer<std_srvs::srv::SetBool,
+        std::shared_ptr<rclcpp_lifecycle::LifecycleNode>>>(
       name_ + "/toggle_filter",
-      std::bind(
-        &CostmapFilter::enableCallback, this,
-        std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+      service_introspection_mode_,
+      node->shared_from_this(),
+      std::bind(&CostmapFilter::enableCallback, this, std::placeholders::_1,
+        std::placeholders::_2, std::placeholders::_3));
   } catch (const std::exception & ex) {
     RCLCPP_ERROR(logger_, "Parameter problem: %s", ex.what());
     throw ex;
