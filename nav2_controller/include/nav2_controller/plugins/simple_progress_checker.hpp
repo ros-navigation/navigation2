@@ -52,6 +52,11 @@ protected:
    * @param pose Current pose of the robot
    */
   void resetBaselinePose(const geometry_msgs::msg::Pose2D & pose);
+  /**
+   * @brief Sets the radius of the required movement
+   * @param radius Radius of the required movement
+   */
+  void setRadius(const double radius);
 
   static double pose_distance_sqr(
     const geometry_msgs::msg::Pose2D &,
@@ -59,7 +64,7 @@ protected:
 
   rclcpp::Clock::SharedPtr clock_;
 
-  double radius_, radius_sqr_;
+  double radius_sqr_;
   rclcpp::Duration time_allowance_{0, 0};
 
   geometry_msgs::msg::Pose2D baseline_pose_;

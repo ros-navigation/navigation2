@@ -204,6 +204,21 @@ TEST(SimpleProgressChecker, required_movement_radius) {
   constexpr auto above_axis = axis + std::numeric_limits<double>::epsilon();
   EXPECT_TRUE(
     checkMacro(progress_checker, 0, 0, 0, above_axis, above_axis, 0, twice_time_allowance_ms));
+
+  // Edge case, negative radius always true
+  results = parameters_client->set_parameters_atomically(
+    {rclcpp::Parameter("nav2_controller.required_movement_radius", -radius)});
+  rclcpp::spin_until_future_complete(
+    lifecycle_node->get_node_base_interface(),
+    results);
+  EXPECT_EQ(
+    lifecycle_node->get_parameter("nav2_controller.required_movement_radius").as_double(),
+    -radius);
+  EXPECT_TRUE(checkMacro(progress_checker, 0, 0, 0, 0, 0, 0, twice_time_allowance_ms));
+  // translation at required_movement_radius one axis
+  EXPECT_TRUE(checkMacro(progress_checker, 0, 0, 0, radius, 0, 0, twice_time_allowance_ms));
+  EXPECT_TRUE(checkMacro(progress_checker, 0, 0, 0, 0, radius, 0, twice_time_allowance_ms));
+  EXPECT_TRUE(checkMacro(progress_checker, 0, 0, 0, axis, axis, 0, twice_time_allowance_ms));
 }
 
 TEST(PoseProgressChecker, pose_progress_checker_reset)
