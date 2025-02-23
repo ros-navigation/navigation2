@@ -37,13 +37,14 @@ void SimpleProgressChecker::initialize(
 
   clock_ = node->get_clock();
 
+  auto radius = 0.5;
   nav2_util::declare_parameter_if_not_declared(
-    node, plugin_name + ".required_movement_radius", rclcpp::ParameterValue(0.5));
+    node, plugin_name + ".required_movement_radius", rclcpp::ParameterValue(radius));
   nav2_util::declare_parameter_if_not_declared(
     node, plugin_name + ".movement_time_allowance", rclcpp::ParameterValue(10.0));
   // Scale is set to 0 by default, so if it was not set otherwise, set to 0
-  node->get_parameter_or(plugin_name + ".required_movement_radius", radius_, 0.5);
-  radius_sqr_ = radius_ * radius_;
+  node->get_parameter_or(plugin_name + ".required_movement_radius", radius, radius);
+  setRadius(radius);
   double time_allowance_param = 0.0;
   node->get_parameter_or(plugin_name + ".movement_time_allowance", time_allowance_param, 10.0);
   time_allowance_ = rclcpp::Duration::from_seconds(time_allowance_param);
@@ -94,6 +95,16 @@ double SimpleProgressChecker::pose_distance_sqr(
   return dx * dx + dy * dy;
 }
 
+void SimpleProgressChecker::setRadius(double radius)
+{
+  if (radius <= 0) {
+    RCLCPP_WARN(
+      rclcpp::get_logger("SimpleProgressChecker"),
+      "Radius of required movement is not positive, progress will always be true.");
+  }
+  radius_sqr_ = radius * std::abs(radius);
+}
+
 rcl_interfaces::msg::SetParametersResult
 SimpleProgressChecker::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
 {
@@ -104,8 +115,7 @@ SimpleProgressChecker::dynamicParametersCallback(std::vector<rclcpp::Parameter> 
 
     if (type == ParameterType::PARAMETER_DOUBLE) {
       if (name == plugin_name_ + ".required_movement_radius") {
-        radius_ = parameter.as_double();
-        radius_sqr_ = radius_ * radius_;
+        setRadius(parameter.as_double());
       } else if (name == plugin_name_ + ".movement_time_allowance") {
         time_allowance_ = rclcpp::Duration::from_seconds(parameter.as_double());
       }
