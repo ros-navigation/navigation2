@@ -203,12 +203,13 @@ void AStarAlgorithm<Node2D>::setGoal(
   _goals_coordinates.clear();
   _goals_set.clear();
   _goals_state.clear();
-  _goals_set.insert(addToGraph(Node2D::getIndex(mx, my, getSizeX())));
+  NodePtr goal = addToGraph(Node2D::getIndex(mx, my, getSizeX()));
   Node2D::Coordinates goal_coords = Node2D::Coordinates(mx, my);
-  (*_goals_set.begin())->setPose(goal_coords);
-  // goals state is a struct with nodeptr and valid, by default is true
-  _goals_state.push_back({*_goals_set.begin(), true});
+  goal->setPose(goal_coords);
+
   _goals_coordinates.push_back(goal_coords);
+  _goals_set.insert(goal);
+  _goals_state.push_back({goal, true});
   _coarse_search_resolution = 1;
 }
 
@@ -592,8 +593,14 @@ void AStarAlgorithm<NodeT>::prepareGoalsForExpansion(
     if (_goals_state[i].is_valid) {
       if (i % _coarse_search_resolution == 0) {
         coarse_list.push_back(_goals_state[i].goal);
+        RCLCPP_INFO(
+          rclcpp::get_logger("nav2_smac_planner"),
+          "Adding goal %d to coarse list", i);
       } else {
         fine_list.push_back(_goals_state[i].goal);
+        RCLCPP_INFO(
+          rclcpp::get_logger("nav2_smac_planner"),
+          "Adding goal %d to fine list", i);
       }
     }
   }

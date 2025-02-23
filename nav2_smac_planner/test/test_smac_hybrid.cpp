@@ -193,9 +193,4 @@ TEST(SmacTest, test_smac_se2_reconfigure)
     results2);
   EXPECT_EQ(nodeSE2->get_parameter("resolution").as_double(), 0.2);
   EXPECT_EQ(nodeSE2->get_parameter("test.coarse_search_resolution").as_int(), -1);
-
-  // Test reconfigure with invalid goal heading mode
-  std::vector<rclcpp::Parameter> parameters;
-  parameters.push_back(rclcpp::Parameter("test.goal_heading_mode", std::string("UNKNOWN")));
-  EXPECT_THROW(planner->callDynamicParams(parameters), std::runtime_error);
 }

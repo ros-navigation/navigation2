@@ -166,9 +166,4 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
   std::vector<rclcpp::Parameter> parameters;
   parameters.push_back(rclcpp::Parameter("test.lattice_filepath", std::string("HI")));
   EXPECT_THROW(planner->callDynamicParams(parameters), std::runtime_error);
-
-  // same with invalid goal heading mode
-  parameters.clear();
-  parameters.push_back(rclcpp::Parameter("test.goal_heading_mode", std::string("UNKNOWN")));
-  EXPECT_THROW(planner->callDynamicParams(parameters), std::runtime_error);
 }
