@@ -34,12 +34,15 @@ LifecycleManagerClient::LifecycleManagerClient(
 
   // Use parent node for service call and logging
   node_ = parent_node;
+  node_->declare_parameter("service_introspection_mode", "disabled");
+  std::string service_introspection_mode =
+    node_->get_parameter("service_introspection_mode").as_string();
 
   // Create the service clients
   manager_client_ = std::make_shared<nav2_util::ServiceClient<ManageLifecycleNodes>>(
-    manage_service_name_, node_);
+    manage_service_name_, service_introspection_mode, node_);
   is_active_client_ = std::make_shared<nav2_util::ServiceClient<std_srvs::srv::Trigger>>(
-    active_service_name_, node_);
+    active_service_name_, service_introspection_mode, node_);
 }
 
 bool
