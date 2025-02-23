@@ -125,6 +125,7 @@ void Costmap2DROS::init()
   declare_parameter("unknown_cost_value", rclcpp::ParameterValue(static_cast<unsigned char>(0xff)));
   declare_parameter("update_frequency", rclcpp::ParameterValue(5.0));
   declare_parameter("use_maximum", rclcpp::ParameterValue(false));
+  declare_parameter("service_introspection_mode", rclcpp::ParameterValue("disabled"));
 }
 
 Costmap2DROS::~Costmap2DROS()
@@ -222,7 +223,7 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
   costmap_publisher_ = std::make_unique<Costmap2DPublisher>(
     shared_from_this(),
     layered_costmap_->getCostmap(), global_frame_,
-    "costmap", always_send_full_costmap_, map_vis_z_);
+    "costmap", always_send_full_costmap_, map_vis_z_, service_introspection_mode_);
 
   auto layers = layered_costmap_->getPlugins();
 
@@ -233,7 +234,7 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
         std::make_unique<Costmap2DPublisher>(
           shared_from_this(),
           costmap_layer.get(), global_frame_,
-          layer->getName(), always_send_full_costmap_, map_vis_z_)
+          layer->getName(), always_send_full_costmap_, map_vis_z_, service_introspection_mode_)
       );
     }
   }
@@ -248,14 +249,17 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
   }
 
   // Service to get the cost at a point
-  get_cost_service_ = create_service<nav2_msgs::srv::GetCosts>(
-    "get_cost_" + getName(),
-    std::bind(
-      &Costmap2DROS::getCostsCallback, this, std::placeholders::_1, std::placeholders::_2,
+  get_cost_service_ = std::make_shared<nav2_util::ServiceServer<nav2_msgs::srv::GetCosts,
+      std::shared_ptr<nav2_util::LifecycleNode>>>(
+    std::string("get_cost_") + get_name(),
+    service_introspection_mode_,
+    shared_from_this(),
+    std::bind(&Costmap2DROS::getCostsCallback, this, std::placeholders::_1, std::placeholders::_2,
       std::placeholders::_3));
 
   // Add cleaning service
-  clear_costmap_service_ = std::make_unique<ClearCostmapService>(shared_from_this(), *this);
+  clear_costmap_service_ = std::make_unique<ClearCostmapService>(shared_from_this(), *this,
+      service_introspection_mode_);
 
   executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
   executor_->add_callback_group(callback_group_, get_node_base_interface());
@@ -360,7 +364,7 @@ Costmap2DROS::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
   executor_thread_.reset();
-
+  get_cost_service_.reset();
   costmap_publisher_.reset();
   clear_costmap_service_.reset();
 
@@ -410,6 +414,7 @@ Costmap2DROS::getParameters()
   get_parameter("width", map_width_meters_);
   get_parameter("plugins", plugin_names_);
   get_parameter("filters", filter_names_);
+  get_parameter("service_introspection_mode", service_introspection_mode_);
 
   auto node = shared_from_this();
 
