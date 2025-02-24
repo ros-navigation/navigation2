@@ -203,11 +203,13 @@ void AStarAlgorithm<Node2D>::setGoal(
   _goals_coordinates.clear();
   _goals_set.clear();
   _goals_state.clear();
-  _goals_set.insert(addToGraph(Node2D::getIndex(mx, my, getSizeX())));
-  Node2D::Coordinates goal_coords = Node2D::Coordinates(mx, my);
-  (*_goals_set.begin())->setPose(goal_coords);
+  _goals_set.insert(addToGraph(
+    Node2D::getIndex(
+      static_cast<unsigned int>(mx),
+      static_cast<unsigned int>(my),
+      getSizeX())));
   _goals_state.push_back({*_goals_set.begin(), true});
-  _goals_coordinates.push_back(goal_coords);
+  _goals_coordinates.push_back(Node2D::Coordinates(mx, my));
   _coarse_search_resolution = 1;
 }
 
@@ -231,9 +233,9 @@ void AStarAlgorithm<NodeT>::setGoal(
       goals.push_back(addToGraph(NodeT::getIndex(mx, my, dim_3)));
       goals_coordinates.push_back(
         typename NodeT::Coordinates(
-          static_cast<float>(mx),
-          static_cast<float>(my),
-          static_cast<float>(dim_3)));
+          static_cast<int>(mx),
+          static_cast<int>(my),
+          static_cast<int>(dim_3)));
       break;
     case GoalHeadingMode::BIDIRECTIONAL:
       // Add two goals, one for each direction
@@ -243,14 +245,14 @@ void AStarAlgorithm<NodeT>::setGoal(
       goals.push_back(addToGraph(NodeT::getIndex(mx, my, dim_3_half_bin)));
       goals_coordinates.push_back(
         typename NodeT::Coordinates(
-          static_cast<float>(mx),
-          static_cast<float>(my),
-          static_cast<float>(dim_3)));
+          static_cast<int>(mx),
+          static_cast<int>(my),
+          static_cast<int>(dim_3)));
       goals_coordinates.push_back(
         typename NodeT::Coordinates(
-          static_cast<float>(mx),
-          static_cast<float>(my),
-          static_cast<float>(dim_3_half_bin)));
+          static_cast<int>(mx),
+          static_cast<int>(my),
+          static_cast<int>(dim_3_half_bin)));
       break;
     case GoalHeadingMode::ALL_DIRECTION:
       // Set the coarse search resolution only for all direction
@@ -294,6 +296,7 @@ template<typename NodeT>
 bool AStarAlgorithm<NodeT>::areInputsValid()
 {
   // Check if graph was filled in
+
   if (_graph.empty()) {
     throw std::runtime_error("Failed to compute path, no costmap given.");
   }
@@ -590,14 +593,8 @@ void AStarAlgorithm<NodeT>::prepareGoalsForExpansion(
     if (_goals_state[i].is_valid) {
       if (i % _coarse_search_resolution == 0) {
         coarse_list.push_back(_goals_state[i].goal);
-        RCLCPP_INFO(
-          rclcpp::get_logger("nav2_smac_planner"),
-          "Adding goal %d to coarse list", i);
       } else {
         fine_list.push_back(_goals_state[i].goal);
-        RCLCPP_INFO(
-          rclcpp::get_logger("nav2_smac_planner"),
-          "Adding goal %d to fine list", i);
       }
     }
   }
