@@ -203,13 +203,11 @@ void AStarAlgorithm<Node2D>::setGoal(
   _goals_coordinates.clear();
   _goals_set.clear();
   _goals_state.clear();
-  NodePtr goal = addToGraph(Node2D::getIndex(mx, my, getSizeX()));
+  _goals_set.insert(addToGraph(Node2D::getIndex(mx, my, getSizeX())));
   Node2D::Coordinates goal_coords = Node2D::Coordinates(mx, my);
-  goal->setPose(goal_coords);
-
+  (*_goals_set.begin())->setPose(goal_coords);
+  _goals_state.push_back({*_goals_set.begin(), true});
   _goals_coordinates.push_back(goal_coords);
-  _goals_set.insert(goal);
-  _goals_state.push_back({goal, true});
   _coarse_search_resolution = 1;
 }
 
@@ -319,7 +317,6 @@ bool AStarAlgorithm<NodeT>::areInputsValid()
             [&it](const GoalState & goal_state) {return goal_state.goal == *it;});
         if (goal_state_it != _goals_state.end()) {
           goal_state_it->is_valid = false;
-          break;
         }
         it = _goals_set.erase(it);
       } else {
