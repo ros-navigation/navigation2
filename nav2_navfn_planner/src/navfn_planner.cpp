@@ -293,10 +293,12 @@ NavfnPlanner::makePlan(
       p.position.x = goal.position.x - tolerance;
       while (p.position.x <= goal.position.x + tolerance) {
         potential = getPointPotential(p.position);
-        if (potential < POT_HIGH && squared_distance(p, goal) < best_sdist) {
-          best_sdist = sdist;
-          best_pose = p;
-          found_legal = true;
+        if (potential < POT_HIGH) {
+          if (potential < POT_HIGH && sdist < best_sdist) {
+            best_sdist = sdist;
+            best_pose = p;
+            found_legal = true;
+          }
         }
         p.position.x += resolution;
       }
