@@ -294,7 +294,8 @@ NavfnPlanner::makePlan(
       while (p.position.x <= goal.position.x + tolerance) {
         potential = getPointPotential(p.position);
         if (potential < POT_HIGH) {
-          if (potential < POT_HIGH && sdist < best_sdist) {
+          double sdist = squared_distance(p, goal);
+          if (sdist < best_sdist) {
             best_sdist = sdist;
             best_pose = p;
             found_legal = true;
