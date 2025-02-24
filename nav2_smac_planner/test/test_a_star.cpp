@@ -113,13 +113,13 @@ TEST(AStarTest, test_a_star_2d)
     a_star_2.createPath(
       path, num_it, tolerance,
       dummy_cancel_checker), std::runtime_error);
-  // a_star_2.setStart(0, 0, 0);  // valid
-  // a_star_2.setGoal(50, 50, 0);  // invalid
-  // num_it = 0;
-  // EXPECT_THROW(
-  //   a_star_2.createPath(
-  //     path, num_it, tolerance,
-  //     dummy_cancel_checker), std::runtime_error);
+  a_star_2.setStart(0, 0, 0);  // valid
+  a_star_2.setGoal(50, 50, 0);  // invalid
+  num_it = 0;
+  EXPECT_THROW(
+    a_star_2.createPath(
+      path, num_it, tolerance,
+      dummy_cancel_checker), std::runtime_error);
   num_it = 0;
   // invalid goal but liberal tolerance
   a_star_2.setStart(20, 20, 0);  // valid
@@ -130,14 +130,13 @@ TEST(AStarTest, test_a_star_2d)
     EXPECT_EQ(costmapA->getCost(path[i].x, path[i].y), 0);
   }
 
-  // EXPECT_TRUE(a_star_2.getStart() != nullptr);
-  // EXPECT_TRUE(!a_star_2.getGoals().empty());
-  // EXPECT_EQ(a_star_2.getGoals().size(), 1);
-  // EXPECT_EQ(a_star_2.getSizeX(), 100u);
-  // EXPECT_EQ(a_star_2.getSizeY(), 100u);
-  // EXPECT_EQ(a_star_2.getSizeDim3(), 1u);
-  // EXPECT_EQ(a_star_2.getToleranceHeuristic(), 20.0);
-  // EXPECT_EQ(a_star_2.getOnApproachMaxIterations(), 10);
+  EXPECT_TRUE(a_star_2.getStart() != nullptr);
+  EXPECT_TRUE(a_star_2.getGoals().size() != 0);
+  EXPECT_EQ(a_star_2.getSizeX(), 100u);
+  EXPECT_EQ(a_star_2.getSizeY(), 100u);
+  EXPECT_EQ(a_star_2.getSizeDim3(), 1u);
+  EXPECT_EQ(a_star_2.getToleranceHeuristic(), 20.0);
+  EXPECT_EQ(a_star_2.getOnApproachMaxIterations(), 10);
 
   delete costmapA;
 }
