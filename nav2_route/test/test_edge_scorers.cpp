@@ -26,6 +26,8 @@
 #include "nav2_msgs/srv/adjust_edges.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_2d_publisher.hpp"
+#include "tf2_ros/static_transform_broadcaster.h"
+#include "tf2_ros/transform_listener.h"
 
 class RclCppFixture
 {
@@ -40,14 +42,16 @@ using namespace nav2_route;  // NOLINT
 TEST(EdgeScorersTest, test_lifecycle)
 {
   auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
-  EdgeScorer scorer(node);
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer;
+  EdgeScorer scorer(node, tf_buffer);
 }
 
 TEST(EdgeScorersTest, test_api)
 {
   // Tests basic API and default behavior. Also covers the DistanceScorer plugin.
   auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
-  EdgeScorer scorer(node);
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer;
+  EdgeScorer scorer(node, tf_buffer);
   EXPECT_EQ(scorer.numPlugins(), 2);  // default DistanceScorer, AdjustEdgesScorer
 
   Node n1, n2;
@@ -61,17 +65,17 @@ TEST(EdgeScorersTest, test_api)
   const geometry_msgs::msg::PoseStamped goal_pose;
 
   float traversal_cost = -1;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, false, traversal_cost));
   EXPECT_EQ(traversal_cost, 0.0);  // Because nodes coords are 0/0
 
   n1.coords.x = 1.0;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, false, traversal_cost));
   EXPECT_EQ(traversal_cost, 1.0);  // Distance is now 1m
 
   // For full coverage, add in a speed limit tag to make sure it is applied appropriately
   float speed_limit = 0.8f;
   edge.metadata.setValue<float>("speed_limit", speed_limit);
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, false, traversal_cost));
   EXPECT_EQ(traversal_cost, 1.25);  // 1m / 0.8 = 1.25
 }
 
@@ -79,11 +83,14 @@ TEST(EdgeScorersTest, test_failed_api)
 {
   // Expect failure since plugin does not exist
   auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer;
+
   node->declare_parameter(
     "edge_cost_functions", rclcpp::ParameterValue(std::vector<std::string>{"FakeScorer"}));
   nav2_util::declare_parameter_if_not_declared(
     node, "FakeScorer.plugin", rclcpp::ParameterValue(std::string{"FakePluginPath"}));
-  EXPECT_THROW(EdgeScorer scorer(node), pluginlib::PluginlibException);
+
+  EXPECT_THROW(EdgeScorer scorer(node, tf_buffer), pluginlib::PluginlibException);
 }
 
 TEST(EdgeScorersTest, test_invalid_edge_scoring)
@@ -93,6 +100,7 @@ TEST(EdgeScorersTest, test_invalid_edge_scoring)
   auto node = std::make_shared<nav2_util::LifecycleNode>("route_server");
   auto node_thread = std::make_unique<nav2_util::NodeThread>(node);
   auto node2 = std::make_shared<rclcpp::Node>("my_node2");
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer;
 
   node->declare_parameter(
     "edge_cost_functions", rclcpp::ParameterValue(std::vector<std::string>{"AdjustEdgesScorer"}));
@@ -100,7 +108,7 @@ TEST(EdgeScorersTest, test_invalid_edge_scoring)
     node, "AdjustEdgesScorer.plugin",
     rclcpp::ParameterValue(std::string{"nav2_route::AdjustEdgesScorer"}));
 
-  EdgeScorer scorer(node);
+  EdgeScorer scorer(node, tf_buffer);
   EXPECT_EQ(scorer.numPlugins(), 1);  // AdjustEdgesScorer
 
   // Send service to set an edge as invalid
@@ -130,13 +138,13 @@ TEST(EdgeScorersTest, test_invalid_edge_scoring)
 
   // The score function should return false since closed
   float traversal_cost = -1;
-  EXPECT_FALSE(scorer.score(&edge, goal_pose, false, traversal_cost));
+  EXPECT_FALSE(scorer.score(&edge, goal_pose, false, false, traversal_cost));
 
   // The score function should return true since no longer the problematic edge ID
   // and edgeid 42 as the dynamic cost of 42 assigned to it
   traversal_cost = -1;
   edge.edgeid = 11;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, false, traversal_cost));
   EXPECT_EQ(traversal_cost, 42.0);
 
   // Try to re-open this edge
@@ -148,7 +156,7 @@ TEST(EdgeScorersTest, test_invalid_edge_scoring)
   // The score function should return true since now opened up
   traversal_cost = -1;
   edge.edgeid = 10;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, false, traversal_cost));
 
   node_thread.reset();
 }
@@ -157,6 +165,7 @@ TEST(EdgeScorersTest, test_penalty_scoring)
 {
   // Test Penalty scorer plugin loading + penalizing on metadata values
   auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer;
 
   node->declare_parameter(
     "edge_cost_functions", rclcpp::ParameterValue(std::vector<std::string>{"PenaltyScorer"}));
@@ -164,7 +173,7 @@ TEST(EdgeScorersTest, test_penalty_scoring)
     node, "PenaltyScorer.plugin",
     rclcpp::ParameterValue(std::string{"nav2_route::PenaltyScorer"}));
 
-  EdgeScorer scorer(node);
+  EdgeScorer scorer(node, tf_buffer);
   EXPECT_EQ(scorer.numPlugins(), 1);  // PenaltyScorer
   const geometry_msgs::msg::PoseStamped goal_pose;
 
@@ -183,7 +192,7 @@ TEST(EdgeScorersTest, test_penalty_scoring)
 
   // The score function should return 10.0 from penalty value
   float traversal_cost = -1;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, false, traversal_cost));
   EXPECT_EQ(traversal_cost, 10.0);
 }
 
@@ -192,6 +201,7 @@ TEST(EdgeScorersTest, test_costmap_scoring)
   // Test Penalty scorer plugin loading + penalizing on metadata values
   auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
   auto node_thread = std::make_unique<nav2_util::NodeThread>(node);
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer;
 
   node->declare_parameter(
     "edge_cost_functions", rclcpp::ParameterValue(std::vector<std::string>{"CostmapScorer"}));
@@ -199,7 +209,7 @@ TEST(EdgeScorersTest, test_costmap_scoring)
     node, "CostmapScorer.plugin",
     rclcpp::ParameterValue(std::string{"nav2_route::CostmapScorer"}));
 
-  EdgeScorer scorer(node);
+  EdgeScorer scorer(node, tf_buffer);
   EXPECT_EQ(scorer.numPlugins(), 1);  // CostmapScorer
 
   // Create edge to score
@@ -216,7 +226,7 @@ TEST(EdgeScorersTest, test_costmap_scoring)
 
   // The score function should return false because no costmap given
   float traversal_cost = -1;
-  EXPECT_FALSE(scorer.score(&edge, goal_pose, false, traversal_cost));
+  EXPECT_FALSE(scorer.score(&edge, goal_pose, false, false, traversal_cost));
 
   // Create a demo costmap: * = 100, - = 0, / = 254
   // * * * * - - - - - - - -
@@ -256,7 +266,7 @@ TEST(EdgeScorersTest, test_costmap_scoring)
   n2.coords.x = 8.0;
   n2.coords.y = 8.0;
   traversal_cost = -1;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, false, traversal_cost));
   // Segment in freespace
   EXPECT_EQ(traversal_cost, 0.0);
 
@@ -265,7 +275,7 @@ TEST(EdgeScorersTest, test_costmap_scoring)
   n2.coords.x = 2.0;
   n2.coords.y = 8.0;
   traversal_cost = -1;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, false, traversal_cost));
   // Segment in 100 space
   EXPECT_NEAR(traversal_cost, 100.0 / 254.0, 0.01);
 
@@ -275,14 +285,14 @@ TEST(EdgeScorersTest, test_costmap_scoring)
   n2.coords.y = 5.9;
   traversal_cost = -1;
   // Segment in lethal space, won't fill in
-  EXPECT_FALSE(scorer.score(&edge, goal_pose, false, traversal_cost));
+  EXPECT_FALSE(scorer.score(&edge, goal_pose, false, false, traversal_cost));
 
   n1.coords.x = 1.0;
   n1.coords.y = 1.0;
   n2.coords.x = 6.0;
   n2.coords.y = 1.0;
   traversal_cost = -1;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, false, traversal_cost));
   // Segment in 0 and 100 space, use_max so 100 (normalized)
   EXPECT_NEAR(traversal_cost, 100.0 / 254.0, 0.01);
 
@@ -292,7 +302,7 @@ TEST(EdgeScorersTest, test_costmap_scoring)
   n2.coords.y = 11.0;
   traversal_cost = -1;
   // Off map, so invalid
-  EXPECT_FALSE(scorer.score(&edge, goal_pose, false, traversal_cost));
+  EXPECT_FALSE(scorer.score(&edge, goal_pose, false, false, traversal_cost));
 
   node_thread.reset();
 }
@@ -302,6 +312,7 @@ TEST(EdgeScorersTest, test_costmap_scoring_alt_profile)
   // Test Penalty scorer plugin loading + penalizing on metadata values
   auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
   auto node_thread = std::make_unique<nav2_util::NodeThread>(node);
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer;
 
   node->declare_parameter(
     "edge_cost_functions", rclcpp::ParameterValue(std::vector<std::string>{"CostmapScorer"}));
@@ -315,7 +326,7 @@ TEST(EdgeScorersTest, test_costmap_scoring_alt_profile)
   node->declare_parameter(
     "CostmapScorer.invalid_off_map", rclcpp::ParameterValue(false));
 
-  EdgeScorer scorer(node);
+  EdgeScorer scorer(node, tf_buffer);
   EXPECT_EQ(scorer.numPlugins(), 1);  // CostmapScorer
 
   // Create edge to score
@@ -371,7 +382,7 @@ TEST(EdgeScorersTest, test_costmap_scoring_alt_profile)
   n2.coords.y = 11.0;
   float traversal_cost = -1;
   // Off map, so cannot score
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, false, traversal_cost));
   EXPECT_EQ(traversal_cost, 0.0);
 
   n1.coords.x = 4.1;
@@ -380,7 +391,7 @@ TEST(EdgeScorersTest, test_costmap_scoring_alt_profile)
   n2.coords.y = 5.9;
   traversal_cost = -1;
   // Segment in lethal space, so score is maximum (1)
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, false, traversal_cost));
   EXPECT_NEAR(traversal_cost, 1.0, 0.01);
 
   n1.coords.x = 1.0;
@@ -388,7 +399,7 @@ TEST(EdgeScorersTest, test_costmap_scoring_alt_profile)
   n2.coords.x = 6.0;
   n2.coords.y = 1.0;
   traversal_cost = -1;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, false, traversal_cost));
   // Segment in 0 and 100 space, 3m @ 100, 2m @ 0, averaged is 60
   EXPECT_NEAR(traversal_cost, 60.0 / 254.0, 0.01);
 
@@ -399,6 +410,7 @@ TEST(EdgeScorersTest, test_time_scoring)
 {
   // Test Time scorer plugin loading
   auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer;
 
   node->declare_parameter(
     "edge_cost_functions", rclcpp::ParameterValue(std::vector<std::string>{"TimeScorer"}));
@@ -406,7 +418,7 @@ TEST(EdgeScorersTest, test_time_scoring)
     node, "TimeScorer.plugin",
     rclcpp::ParameterValue(std::string{"nav2_route::TimeScorer"}));
 
-  EdgeScorer scorer(node);
+  EdgeScorer scorer(node, tf_buffer);
   EXPECT_EQ(scorer.numPlugins(), 1);  // TimeScorer
 
   // Create edge to score
@@ -426,26 +438,26 @@ TEST(EdgeScorersTest, test_time_scoring)
 
   // The score function should return 10.0 from time taken
   float traversal_cost = -1;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, false, traversal_cost));
   EXPECT_EQ(traversal_cost, 10.0);  // 10.0 * 1.0 weight
 
   // Without time taken or abs speed limit set, uses default max speed of 0.5 m/s
   edge.metadata.data.clear();
   traversal_cost = -1;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, false, traversal_cost));
   EXPECT_EQ(traversal_cost, 2.0);  // 1.0 m / 0.5 m/s * 1.0 weight
 
   // Use speed limit if set
   float speed_limit = 0.85;
   edge.metadata.setValue<float>("abs_speed_limit", speed_limit);
   traversal_cost = -1;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, false, traversal_cost));
   EXPECT_NEAR(traversal_cost, 1.1764, 0.001);  // 1.0 m / 0.85 m/s * 1.0 weight
 
   // Still use time taken measurements if given first
   edge.metadata.setValue<float>("abs_time_taken", time_taken);
   traversal_cost = -1;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, false, traversal_cost));
   EXPECT_EQ(traversal_cost, 10.0);  // 10.0 * 1.0 weight
 }
 
@@ -453,6 +465,7 @@ TEST(EdgeScorersTest, test_semantic_scoring_key)
 {
   // Test Time scorer plugin loading
   auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer;
 
   node->declare_parameter(
     "edge_cost_functions", rclcpp::ParameterValue(std::vector<std::string>{"SemanticScorer"}));
@@ -474,7 +487,7 @@ TEST(EdgeScorersTest, test_semantic_scoring_key)
       rclcpp::ParameterValue(static_cast<float>(i)));
   }
 
-  EdgeScorer scorer(node);
+  EdgeScorer scorer(node, tf_buffer);
   EXPECT_EQ(scorer.numPlugins(), 1);  // SemanticScorer
 
   const geometry_msgs::msg::PoseStamped goal_pose;
@@ -492,21 +505,21 @@ TEST(EdgeScorersTest, test_semantic_scoring_key)
 
   // Should fail, since both nothing under key `class` nor metadata set at all
   float traversal_cost = -1;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, false, traversal_cost));
   EXPECT_EQ(traversal_cost, 0.0);  // nothing is set in semantics
 
   // Should be valid under the right key
   std::string test_n = "Test1";
   edge.metadata.setValue<std::string>("class", test_n);
   traversal_cost = -1;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, false, traversal_cost));
   EXPECT_EQ(traversal_cost, 1.0);  // 1.0 * 1.0 weight
 
   test_n = "Test2";
   edge.metadata.setValue<std::string>("class", test_n);
   n2.metadata.setValue<std::string>("class", test_n);
   traversal_cost = -1;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, false, traversal_cost));
   EXPECT_EQ(traversal_cost, 4.0);  // (2.0 + 2.0) * 1.0 weight
 
   // Cannot find, doesn't exist
@@ -514,7 +527,7 @@ TEST(EdgeScorersTest, test_semantic_scoring_key)
   edge.metadata.setValue<std::string>("class", test_n);
   n2.metadata.setValue<std::string>("class", test_n);
   traversal_cost = -1;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, false, traversal_cost));
   EXPECT_EQ(traversal_cost, 0.0);  // 0.0 * 1.0 weight
 }
 
@@ -522,6 +535,7 @@ TEST(EdgeScorersTest, test_semantic_scoring_keys)
 {
   // Test Time scorer plugin loading
   auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer;
 
   node->declare_parameter(
     "edge_cost_functions", rclcpp::ParameterValue(std::vector<std::string>{"SemanticScorer"}));
@@ -546,7 +560,7 @@ TEST(EdgeScorersTest, test_semantic_scoring_keys)
       rclcpp::ParameterValue(static_cast<float>(i)));
   }
 
-  EdgeScorer scorer(node);
+  EdgeScorer scorer(node, tf_buffer);
   EXPECT_EQ(scorer.numPlugins(), 1);  // SemanticScorer
 
   // Create edge to score
@@ -564,7 +578,7 @@ TEST(EdgeScorersTest, test_semantic_scoring_keys)
 
   // Should fail, since both nothing under key `class` nor metadata set at all
   float traversal_cost = -1;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, false, traversal_cost));
   EXPECT_EQ(traversal_cost, 0.0);  // nothing is set in semantics
 
   // Should fail, since under the class key when the semantic key is empty string
@@ -572,7 +586,7 @@ TEST(EdgeScorersTest, test_semantic_scoring_keys)
   std::string test_n = "Test1";
   edge.metadata.setValue<std::string>("class", test_n);
   traversal_cost = -1;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, false, traversal_cost));
   EXPECT_EQ(traversal_cost, 0.0);  // 0.0 * 1.0 weight
 
   // Should succeed, since now actual class is a key, not a value of the `class` key
@@ -580,7 +594,7 @@ TEST(EdgeScorersTest, test_semantic_scoring_keys)
   edge.metadata.setValue<std::string>(test_n, test_n);
   n2.metadata.setValue<std::string>(test_n, test_n);
   traversal_cost = -1;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, false, traversal_cost));
   EXPECT_EQ(traversal_cost, 4.0);  // (2.0 + 2.0) * 1.0 weight
 
   // Cannot find, doesn't exist
@@ -589,7 +603,7 @@ TEST(EdgeScorersTest, test_semantic_scoring_keys)
   test_n = "Test4";
   edge.metadata.setValue<std::string>(test_n, test_n);
   traversal_cost = -1;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, traversal_cost));
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, false, traversal_cost));
   EXPECT_EQ(traversal_cost, 0.0);  // 0.0 * 1.0 weight
 }
 
@@ -597,6 +611,7 @@ TEST(EdgeScorersTest, test_goal_orientation_scoring)
 {
   // Test Penalty scorer plugin loading + penalizing on metadata values
   auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer;
 
   node->declare_parameter(
     "edge_cost_functions",
@@ -608,7 +623,7 @@ TEST(EdgeScorersTest, test_goal_orientation_scoring)
     node, "GoalOrientationScorer.orientation_tolerance",
     rclcpp::ParameterValue(1.57));
 
-  EdgeScorer scorer(node);
+  EdgeScorer scorer(node, tf_buffer);
   EXPECT_EQ(scorer.numPlugins(), 1);  // GoalOrientationScorer
 
   geometry_msgs::msg::PoseStamped goal_pose;
@@ -632,12 +647,93 @@ TEST(EdgeScorersTest, test_goal_orientation_scoring)
   edge.end = &n2;
 
   float traversal_cost = -1;
-  EXPECT_TRUE(scorer.score(&edge, goal_pose, true, traversal_cost));
-  EXPECT_EQ(traversal_cost, -1);
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, false, true, traversal_cost));
+  EXPECT_EQ(traversal_cost, 0.0);
 
   edge.start = &n2;
   edge.end = &n1;
 
-  EXPECT_FALSE(scorer.score(&edge, goal_pose, true, traversal_cost));
-  EXPECT_EQ(traversal_cost, -1);
+
+  traversal_cost = -1;
+  EXPECT_FALSE(scorer.score(&edge, goal_pose, false, true, traversal_cost));
+  EXPECT_EQ(traversal_cost, 0.0);
+}
+
+TEST(EdgeScorersTest, test_start_pose_orientation_scoring)
+{
+  // Test Penalty scorer plugin loading + penalizing on metadata values
+  auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener =
+    std::make_shared<tf2_ros::TransformListener>(*tf_buffer);
+
+  node->declare_parameter(
+    "edge_cost_functions",
+    rclcpp::ParameterValue(std::vector<std::string>{"StartPoseOrientationScorer"}));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "StartPoseOrientationScorer.plugin",
+    rclcpp::ParameterValue(std::string{"nav2_route::StartPoseOrientationScorer"}));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "StartOrientationScorer.orientation_tolerance",
+    rclcpp::ParameterValue(1.57));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "StartOrientationScorer.route_frame",
+    rclcpp::ParameterValue("map"));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "StartOrientationScorer.robot_frame",
+    rclcpp::ParameterValue("base_link"));
+
+  EdgeScorer scorer(node, tf_buffer);
+  EXPECT_EQ(scorer.numPlugins(), 1);  // GoalOrientationScorer
+
+  std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_broadcaster_ =
+    std::make_shared<tf2_ros::StaticTransformBroadcaster>(node);
+  geometry_msgs::msg::TransformStamped tf_stamped;
+  tf_stamped.header.frame_id = "map";
+  tf_stamped.header.stamp = node->get_clock()->now();
+  tf_stamped.child_frame_id = "base_link";
+  tf_stamped.transform.translation.x = 0.0;
+  tf_stamped.transform.translation.y = 0.0;
+  tf_stamped.transform.translation.z = 0.0;
+  double yaw = 0.0;
+
+  tf2::Quaternion q;
+  q.setRPY(0, 0, yaw);
+  tf_stamped.transform.rotation.x = q.getX();
+  tf_stamped.transform.rotation.y = q.getY();
+  tf_stamped.transform.rotation.z = q.getZ();
+  tf_stamped.transform.rotation.w = q.getW();
+  tf_broadcaster_->sendTransform(tf_stamped);
+
+
+  geometry_msgs::msg::PoseStamped goal_pose;
+  goal_pose.pose.orientation.x = 0.0;
+  goal_pose.pose.orientation.y = 0.0;
+  goal_pose.pose.orientation.z = 0.0;
+  goal_pose.pose.orientation.w = 1.0;
+
+  // Create edge to score
+  Node n1, n2;
+  n1.nodeid = 1;
+  n2.nodeid = 2;
+  n1.coords.x = 0.0;
+  n1.coords.y = 0.0;
+  n2.coords.x = 1.0;
+  n2.coords.y = 0.0;
+
+  DirectionalEdge edge;
+  edge.edgeid = 10;
+  edge.start = &n1;
+  edge.end = &n2;
+
+  float traversal_cost = -1;
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, true, false, traversal_cost));
+  EXPECT_EQ(traversal_cost, 0.0);
+
+  edge.start = &n2;
+  edge.end = &n1;
+
+  EXPECT_FALSE(scorer.score(&edge, goal_pose, true, false, traversal_cost));
+  EXPECT_EQ(traversal_cost, 0.0);
+
 }
