@@ -80,7 +80,7 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
       node, graph_, &id_to_graph_map_, tf_, route_frame_, base_frame_);
 
     route_planner_ = std::make_shared<RoutePlanner>();
-    route_planner_->configure(node);
+    route_planner_->configure(node, tf_);
 
     route_tracker_ = std::make_shared<RouteTracker>();
     route_tracker_->configure(
@@ -215,7 +215,9 @@ Route RouteServer::findRoute(
     route.start_node = &graph_.at(start_route);
   } else {
     // Compute the route via graph-search, returns a node-edge sequence
-    route = route_planner_->findRoute(graph_, start_route, end_route, rerouting_info.blocked_ids, goal->goal);
+    route = route_planner_->findRoute(
+      graph_, start_route, end_route, rerouting_info.blocked_ids,
+      goal->goal);
   }
 
   return goal_intent_extractor_->pruneStartandGoal(route, goal, rerouting_info);
