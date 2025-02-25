@@ -20,7 +20,9 @@
 #include <vector>
 
 #include "rclcpp/rclcpp.hpp"
+#include "behaviortree_cpp/json_export.h"
 #include "behaviortree_cpp/utils/shared_library.h"
+#include "nav2_behavior_tree/json_utils.hpp"
 #include "nav2_behavior_tree/utils/loop_rate.hpp"
 
 namespace nav2_behavior_tree
@@ -106,6 +108,15 @@ BehaviorTreeEngine::addGrootMonitoring(
 {
   // This logger publish status changes using Groot2
   groot_monitor_ = std::make_unique<BT::Groot2Publisher>(*tree, publisher_port);
+
+  // Register JSON definitions
+  BT::RegisterJsonDefinition<builtin_interfaces::msg::Time>();
+  BT::RegisterJsonDefinition<std_msgs::msg::Header>();
+  BT::RegisterJsonDefinition<geometry_msgs::msg::Point>();
+  BT::RegisterJsonDefinition<geometry_msgs::msg::Quaternion>();
+  BT::RegisterJsonDefinition<geometry_msgs::msg::Pose>();
+  BT::RegisterJsonDefinition<geometry_msgs::msg::PoseStamped>();
+  BT::RegisterJsonDefinition<std::chrono::milliseconds>();
 }
 
 void
