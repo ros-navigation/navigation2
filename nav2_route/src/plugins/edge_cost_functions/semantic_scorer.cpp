@@ -22,6 +22,7 @@ namespace nav2_route
 
 void SemanticScorer::configure(
   const rclcpp_lifecycle::LifecycleNode::SharedPtr node,
+  const std::shared_ptr<tf2_ros::Buffer>/* tf_buffer */,
   const std::string & name)
 {
   RCLCPP_INFO(node->get_logger(), "Configuring semantic scorer.");
@@ -69,7 +70,10 @@ void SemanticScorer::metadataValueScorer(Metadata & mdata, float & score)
   }
 }
 
-bool SemanticScorer::score(const EdgePtr edge, const geometry_msgs::msg::PoseStamped & /* goal_pose */, bool /* final_edge */, float & cost)
+bool SemanticScorer::score(
+  const EdgePtr edge,
+  const geometry_msgs::msg::PoseStamped & /* goal_pose */,
+  bool /* start_edge */, bool /* final_edge */, float & cost)
 {
   float score = 0.0;
   Metadata & node_mdata = edge->end->metadata;
