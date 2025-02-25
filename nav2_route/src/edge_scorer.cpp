@@ -22,7 +22,9 @@
 namespace nav2_route
 {
 
-EdgeScorer::EdgeScorer(nav2_util::LifecycleNode::SharedPtr node)
+EdgeScorer::EdgeScorer(
+  nav2_util::LifecycleNode::SharedPtr node,
+  const std::shared_ptr<tf2_ros::Buffer> tf_buffer)
 : plugin_loader_("nav2_route", "nav2_route::EdgeCostFunction")
 {
   // load plugins with a default of the DistanceScorer
@@ -49,7 +51,7 @@ EdgeScorer::EdgeScorer(nav2_util::LifecycleNode::SharedPtr node)
       RCLCPP_INFO(
         node->get_logger(), "Created edge cost function plugin %s of type %s",
         edge_cost_function_ids[i].c_str(), type.c_str());
-      scorer->configure(node, edge_cost_function_ids[i]);
+      scorer->configure(node, tf_buffer, edge_cost_function_ids[i]);
       plugins_.push_back(std::move(scorer));
     } catch (const pluginlib::PluginlibException & ex) {
       RCLCPP_FATAL(
@@ -58,11 +60,13 @@ EdgeScorer::EdgeScorer(nav2_util::LifecycleNode::SharedPtr node)
       throw ex;
     }
   }
+
+  tf_buffer_ = tf_buffer;
 }
 
 bool EdgeScorer::score(
   const EdgePtr edge, const geometry_msgs::msg::PoseStamped & goal_pose,
-  bool final_edge, float & total_score)
+  bool start_edge, bool final_edge, float & total_score)
 {
   total_score = 0.0;
   float curr_score = 0.0;
@@ -73,7 +77,7 @@ bool EdgeScorer::score(
 
   for (auto & plugin : plugins_) {
     curr_score = 0.0;
-    if (plugin->score(edge, goal_pose, final_edge, curr_score)) {
+    if (plugin->score(edge, goal_pose, start_edge, final_edge, curr_score)) {
       total_score += curr_score;
     } else {
       return false;
