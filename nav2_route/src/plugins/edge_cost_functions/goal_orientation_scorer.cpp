@@ -22,6 +22,7 @@ namespace nav2_route
 
 void GoalOrientationScorer::configure(
   const rclcpp_lifecycle::LifecycleNode::SharedPtr node,
+  const std::shared_ptr<tf2_ros::Buffer>/* tf_buffer */,
   const std::string & name)
 {
   RCLCPP_INFO(node->get_logger(), "Configuring goal orientation scorer.");
@@ -29,13 +30,14 @@ void GoalOrientationScorer::configure(
   logger_ = node->get_logger();
 
   nav2_util::declare_parameter_if_not_declared(
-    node, getName() + ".orientation_tolerance", rclcpp::ParameterValue(M_PI/2.0));
+    node, getName() + ".orientation_tolerance", rclcpp::ParameterValue(M_PI / 2.0));
   orientation_tolerance_ = node->get_parameter(getName() + ".orientation_tolerance").as_double();
 }
 
 bool GoalOrientationScorer::score(
   const EdgePtr edge,
-  const geometry_msgs::msg::PoseStamped & goal_pose, bool final_edge, float & /*cost*/)
+  const geometry_msgs::msg::PoseStamped & goal_pose, bool /* start_edge */, bool final_edge,
+  float & /* cost */)
 {
   if (final_edge) {
     double edge_orientation = std::atan2(

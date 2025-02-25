@@ -34,6 +34,11 @@
       <description>Cost function for checking if the orientation of route matches orientation of the goal</description>
     </class>
   </library>
+  <library path="edge_scorers">
+    <class type="nav2_route::StartPoseOrientationScorer" base_class_type="nav2_route::EdgeCostFunction">
+      <description>Cost function for checking if the orientation of robot matches with the orientation of the edge</description>
+    </class>
+  </library>
 
   <library path="route_operations">
     <class type="nav2_route::AdjustSpeedLimit" base_class_type="nav2_route::RouteOperation">

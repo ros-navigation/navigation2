@@ -22,6 +22,7 @@ namespace nav2_route
 
 void PenaltyScorer::configure(
   const rclcpp_lifecycle::LifecycleNode::SharedPtr node,
+  const std::shared_ptr<tf2_ros::Buffer>/* tf_buffer */,
   const std::string & name)
 {
   RCLCPP_INFO(node->get_logger(), "Configuring penalty scorer.");
@@ -38,7 +39,10 @@ void PenaltyScorer::configure(
   weight_ = static_cast<float>(node->get_parameter(getName() + ".weight").as_double());
 }
 
-bool PenaltyScorer::score(const EdgePtr edge, const geometry_msgs::msg::PoseStamped & /* goal_pose */, bool /* final_edge */, float & cost)
+bool PenaltyScorer::score(
+  const EdgePtr edge,
+  const geometry_msgs::msg::PoseStamped & /* goal_pose */,
+  bool /* start_edge */, bool /* final_edge */, float & cost)
 {
   // Get the speed limit, if set for an edge
   float penalty_val = 0.0f;

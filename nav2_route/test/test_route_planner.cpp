@@ -131,8 +131,9 @@ TEST(RoutePlannerTest, test_route_planner_positive)
   geometry_msgs::msg::PoseStamped goal_pose;
 
   auto node = std::make_shared<nav2_util::LifecycleNode>("router_test");
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer;
   RoutePlanner planner;
-  planner.configure(node);
+  planner.configure(node, tf_buffer);
   std::vector<unsigned int> blocked_ids;
   unsigned int start, goal;
 
@@ -151,7 +152,9 @@ TEST(RoutePlannerTest, test_route_planner_positive)
   start = 15;
   goal = 0;
   EXPECT_THROW(
-    planner.findRoute(graph, start, goal, blocked_ids, goal_pose), nav2_core::NoValidRouteCouldBeFound);
+    planner.findRoute(
+      graph, start, goal, blocked_ids,
+      goal_pose), nav2_core::NoValidRouteCouldBeFound);
 
   // Lets find a simple plan and then mess with the planner with blocking edges
   start = 0;
@@ -181,20 +184,24 @@ TEST(RoutePlannerTest, test_route_planner_positive)
 }
 
 TEST(RoutePlannerTest, test_route_planner_negative)
-{  
+{
   geometry_msgs::msg::PoseStamped goal_pose;
-  
+
   auto node = std::make_shared<nav2_util::LifecycleNode>("router_test");
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer;
   node->declare_parameter("max_iterations", rclcpp::ParameterValue(5));
   RoutePlanner planner;
-  planner.configure(node);
+  planner.configure(node, tf_buffer);
   std::vector<unsigned int> blocked_ids;
   unsigned int start = 0;
   unsigned int goal = 15;
   Graph graph;
 
   // No graph yet, should fail
-  EXPECT_THROW(planner.findRoute(graph, start, goal, blocked_ids, goal_pose), nav2_core::NoValidGraph);
+  EXPECT_THROW(
+    planner.findRoute(
+      graph, start, goal, blocked_ids,
+      goal_pose), nav2_core::NoValidGraph);
 
   // Create a graph to test routing upon.
   graph = create4x4Graph();
@@ -206,5 +213,8 @@ TEST(RoutePlannerTest, test_route_planner_negative)
   // If we try to plan but we both cannot override and has 0 cost, will throw
   graph[0].neighbors[1].edge_cost.overridable = false;
   graph[0].neighbors[1].edge_cost.cost = 0.0;
-  EXPECT_THROW(planner.findRoute(graph, start, goal, blocked_ids, goal_pose), nav2_core::NoValidGraph);
+  EXPECT_THROW(
+    planner.findRoute(
+      graph, start, goal, blocked_ids,
+      goal_pose), nav2_core::NoValidGraph);
 }

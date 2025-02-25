@@ -49,6 +49,7 @@ public:
    */
   void configure(
     const rclcpp_lifecycle::LifecycleNode::SharedPtr node,
+    const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
     const std::string & name) override;
 
   /**
@@ -58,7 +59,9 @@ public:
    * @param cost of the edge scored
    * @return bool if this edge is open valid to traverse
    */
-  bool score(const EdgePtr edge, const geometry_msgs::msg::PoseStamped & goal_pose, bool final_edge, float & cost) override;
+  bool score(
+    const EdgePtr edge, const geometry_msgs::msg::PoseStamped & goal_pose, bool start_edge,
+    bool final_edge, float & cost) override;
 
   /**
    * @brief Get name of the plugin for parameter scope mapping

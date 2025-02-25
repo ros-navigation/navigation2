@@ -22,6 +22,8 @@
 #include <mutex>
 #include <algorithm>
 
+#include "tf2_ros/buffer.h"
+#include "tf2_ros/transform_listener.h"
 #include "nav2_route/types.hpp"
 #include "nav2_route/utils.hpp"
 #include "nav2_route/edge_scorer.hpp"
@@ -51,7 +53,9 @@ public:
    * @brief Configure the route planner, get parameters
    * @param node Node object to get parametersfrom
    */
-  void configure(nav2_util::LifecycleNode::SharedPtr node);
+  void configure(
+    nav2_util::LifecycleNode::SharedPtr node,
+    const std::shared_ptr<tf2_ros::Buffer> tf_buffer);
 
   /**
    * @brief Find the route from start to goal on the graph
@@ -128,10 +132,19 @@ protected:
    */
   inline bool isGoal(const NodePtr node);
 
+  /**
+   * @brief Checks if a given node is the start node
+   * @param node Node to check
+   * @return bool If this node is the start
+   */
+  inline bool isStart(const NodePtr node);
+
   int max_iterations_{0};
+  unsigned int start_id_{0};
   unsigned int goal_id_{0};
   NodeQueue queue_;
   std::unique_ptr<EdgeScorer> edge_scorer_;
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
 };
 
 }  // namespace nav2_route
