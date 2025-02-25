@@ -27,14 +27,6 @@ using nav2_util::time_to_string;
 using nav2_util::declare_parameter_if_not_declared;
 using nav2_util::get_plugin_type_param;
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 TEST(SanitizeNodeName, SanitizeNodeName)
 {
   ASSERT_EQ(sanitize_node_name("bar"), "bar");
@@ -93,4 +85,17 @@ TEST(GetPluginTypeParam, GetPluginTypeParam)
   node->declare_parameter("Foo.plugin", "bar");
   ASSERT_EQ(get_plugin_type_param(node, "Foo"), "bar");
   EXPECT_THROW(get_plugin_type_param(node, "Waldo"), std::runtime_error);
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }
