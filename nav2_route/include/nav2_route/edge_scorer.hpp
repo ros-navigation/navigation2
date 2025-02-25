@@ -19,6 +19,7 @@
 #include <memory>
 #include <vector>
 
+#include "tf2_ros/buffer.h"
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_util/node_utils.hpp"
@@ -47,7 +48,9 @@ public:
   /**
    * @brief Constructor
    */
-  explicit EdgeScorer(nav2_util::LifecycleNode::SharedPtr node);
+  explicit EdgeScorer(
+    nav2_util::LifecycleNode::SharedPtr node,
+    const std::shared_ptr<tf2_ros::Buffer> tf_buffer);
 
   /**
    * @brief Destructor
@@ -63,7 +66,8 @@ public:
    * @return If edge is valid
    */
   bool score(
-    const EdgePtr edge, const geometry_msgs::msg::PoseStamped & goal_pose, bool final_edge,
+    const EdgePtr edge, const geometry_msgs::msg::PoseStamped & goal_pose, bool start_edge,
+    bool final_edge,
     float & score);
 
   /**
@@ -75,6 +79,7 @@ public:
 protected:
   pluginlib::ClassLoader<EdgeCostFunction> plugin_loader_;
   std::vector<EdgeCostFunction::Ptr> plugins_;
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
 };
 
 }  // namespace nav2_route
