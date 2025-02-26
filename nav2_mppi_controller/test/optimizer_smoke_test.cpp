@@ -28,14 +28,6 @@
 
 #include "utils/utils.hpp"
 
-class RosLockGuard
-{
-public:
-  RosLockGuard() {rclcpp::init(0, nullptr);}
-  ~RosLockGuard() {rclcpp::shutdown();}
-};
-RosLockGuard g_rclcpp;
-
 // Smoke tests the optimizer
 
 class OptimizerSuite : public ::testing::TestWithParam<std::tuple<std::string,
@@ -110,3 +102,16 @@ INSTANTIATE_TEST_SUITE_P(
           {"PathAngleCritic"}, {"PathFollowCritic"}, {"PreferForwardCritic"}}),
       true))
 );
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
+}
