@@ -78,7 +78,7 @@ public:
   struct GoalState
   {
     NodePtr goal;
-    bool is_valid = true;  // default to valid
+    bool is_valid = true;
   };
 
   typedef std::vector<GoalState> GoalStateVector;

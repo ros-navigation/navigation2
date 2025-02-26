@@ -77,9 +77,13 @@ TEST(SmacTest, test_smac_lattice)
     nodeLattice->declare_parameter("test.goal_heading_mode", std::string("UNKNOWN"));
     nodeLattice->set_parameter(rclcpp::Parameter("test.goal_heading_mode", std::string("UNKNOWN")));
     EXPECT_THROW(planner->configure(nodeLattice, "test", nullptr, costmap_ros), std::runtime_error);
-
-    // valid goal heading mode
     nodeLattice->set_parameter(rclcpp::Parameter("test.goal_heading_mode", std::string("DEFAULT")));
+
+    // invalid coarse resolution
+    nodeLattice->set_parameter(rclcpp::Parameter("test.coarse_search_resolution", -1));
+    EXPECT_NO_THROW(planner->configure(nodeLattice, "test", nullptr, costmap_ros));
+    nodeLattice->set_parameter(rclcpp::Parameter("test.coarse_search_resolution", 4));
+
 
     // Expect to throw due to invalid prims file in param
     planner->configure(nodeLattice, "test", nullptr, costmap_ros);

@@ -485,7 +485,7 @@ TEST(AStarTest, test_goal_heading_mode)
 
 
   // ALL_DIRECTION goal heading mode
-  unsigned int coarse_search_resolution = 4;
+  unsigned int coarse_search_resolution = 16;
   a_star.setCollisionChecker(checker.get());
   a_star.setStart(10u, 10u, 0u);
   a_star.setGoal(80u, 80u, 40u, nav2_smac_planner::GoalHeadingMode::ALL_DIRECTION,
@@ -493,8 +493,16 @@ TEST(AStarTest, test_goal_heading_mode)
   EXPECT_TRUE(a_star.getCoarseSearchResolution() == coarse_search_resolution);
 
   unsigned int num_bins = nav2_smac_planner::NodeHybrid::motion_table.num_angle_quantization;
+
+  // get number of valid goal states
+  unsigned int num_valid_goals = 0;
+  for (auto & goal_state : a_star.getGoalsState()) {
+    if(goal_state.is_valid) {
+      num_valid_goals++;
+    }
+  }
   EXPECT_TRUE(a_star.getGoals().size() == num_bins);
-  EXPECT_TRUE(a_star.getGoals().size() == a_star.getGoalsState().size());
+  EXPECT_TRUE(a_star.getGoals().size() == num_valid_goals);
   EXPECT_TRUE(a_star.getGoals().size() == a_star.getGoalsCoordinates().size());
   EXPECT_TRUE(a_star.createPath(path, num_it, tolerance, dummy_cancel_checker, expansions.get()));
 

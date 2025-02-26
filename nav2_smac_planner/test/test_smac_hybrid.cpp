@@ -79,13 +79,38 @@ TEST(SmacTest, test_smac_se2)
   goal.pose.orientation.w = 1.0;
   auto planner = std::make_unique<nav2_smac_planner::SmacPlannerHybrid>();
 
-  // invalid goal heading mode
   nodeSE2->declare_parameter("test.goal_heading_mode", std::string("UNKNOWN"));
+  nodeSE2->declare_parameter("test.coarse_search_resolution", -1);
+  nodeSE2->declare_parameter("test.motion_model_for_search", std::string("Invalid"));
+  nodeSE2->declare_parameter("test.max_on_approach_iterations", -1);
+  nodeSE2->declare_parameter("test.max_iterations", -1);
+
+  // invalid goal heading mode
   nodeSE2->set_parameter(rclcpp::Parameter("test.goal_heading_mode", std::string("UNKNOWN")));
   EXPECT_THROW(planner->configure(nodeSE2, "test", nullptr, costmap_ros), std::runtime_error);
-
-  // valid goal heading mode
   nodeSE2->set_parameter(rclcpp::Parameter("test.goal_heading_mode", std::string("DEFAULT")));
+
+  // Invalid motion model
+  nodeSE2->set_parameter(rclcpp::Parameter("test.motion_model_for_search", std::string("invalid")));
+  EXPECT_THROW(planner->configure(nodeSE2, "test", nullptr, costmap_ros), std::runtime_error);
+  nodeSE2->set_parameter(rclcpp::Parameter("test.motion_model_for_search", std::string("DUBIN")));
+
+  nodeSE2->set_parameter(rclcpp::Parameter("test.coarse_search_resolution", -1));
+  nodeSE2->set_parameter(rclcpp::Parameter("test.max_on_approach_iterations", -1));
+  nodeSE2->set_parameter(rclcpp::Parameter("test.max_iterations", -1));
+  EXPECT_NO_THROW(planner->configure(nodeSE2, "test", nullptr, costmap_ros));
+
+
+  // valid Configuration
+  nodeSE2->set_parameter(rclcpp::Parameter("test.coarse_search_resolution", 1));
+  nodeSE2->set_parameter(rclcpp::Parameter("test.max_on_approach_iterations", 1000));
+  nodeSE2->set_parameter(rclcpp::Parameter("test.max_iterations", 1000000));
+  nodeSE2->set_parameter(rclcpp::Parameter("test.angle_quantization_bins", 72));
+
+  // angle_quantizations not multiple of coarse search resolution-> default to 1
+  nodeSE2->set_parameter(rclcpp::Parameter("test.coarse_search_resolution", 3));
+  nodeSE2->set_parameter(rclcpp::Parameter("test.angle_quantization_bins", 70));
+
   planner->configure(nodeSE2, "test", nullptr, costmap_ros);
   planner->activate();
 
