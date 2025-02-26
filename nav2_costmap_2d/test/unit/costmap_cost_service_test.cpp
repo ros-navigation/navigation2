@@ -21,14 +21,6 @@
 #include "nav2_msgs/srv/get_costs.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 using namespace std::chrono_literals;
 
 class GetCostServiceTest : public ::testing::Test
@@ -92,4 +84,17 @@ TEST_F(GetCostServiceTest, TestWithFootprint)
   } else {
     FAIL() << "Failed to call service";
   }
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

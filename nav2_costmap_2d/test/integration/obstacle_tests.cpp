@@ -52,14 +52,6 @@ using std::none_of;
 using std::pair;
 using std::string;
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 class TestLifecycleNode : public nav2_util::LifecycleNode
 {
 public:
@@ -624,4 +616,17 @@ TEST_F(TestNodeWithoutUnknownOverwrite, testMaxWithoutUnknownOverwriteCombinatio
   int unknown_count = countValues(*(layers.getCostmap()), nav2_costmap_2d::NO_INFORMATION);
 
   ASSERT_EQ(unknown_count, 100);
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

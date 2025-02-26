@@ -26,14 +26,6 @@
 
 // Tests noise generator object
 
-class RosLockGuard
-{
-public:
-  RosLockGuard() {rclcpp::init(0, nullptr);}
-  ~RosLockGuard() {rclcpp::shutdown();}
-};
-RosLockGuard g_rclcpp;
-
 using namespace mppi;  // NOLINT
 
 TEST(NoiseGeneratorTest, NoiseGeneratorLifecycle)
@@ -128,4 +120,17 @@ TEST(NoiseGeneratorTest, NoiseGeneratorMain)
   EXPECT_NEAR(state.cwz(0, 9), 9, 0.3);
 
   generator.shutdown();
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

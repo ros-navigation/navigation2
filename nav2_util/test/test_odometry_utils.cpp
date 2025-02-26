@@ -24,14 +24,6 @@
 using namespace std::chrono;  // NOLINT
 using namespace std::chrono_literals;  // NOLINT
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 TEST(OdometryUtils, test_uninitialized)
 {
   auto node = std::make_shared<rclcpp::Node>("test_node");
@@ -157,4 +149,17 @@ TEST(OdometryUtils, test_smoothed_velocity)
   EXPECT_EQ(twist_raw_msg.linear.x, 5.0);
   EXPECT_EQ(twist_raw_msg.linear.y, 5.0);
   EXPECT_EQ(twist_raw_msg.angular.z, 5.0);
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }
