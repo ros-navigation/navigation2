@@ -18,13 +18,6 @@
 #include "nav2_costmap_2d/costmap_2d_publisher.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
 class TestCostmapSubscriberShould : public ::testing::Test
 {
 public:
@@ -195,4 +188,17 @@ TEST_F(
   throwExceptionIfGetCostmapMethodIsCalledBeforeAnyCostmapMsgReceived)
 {
   ASSERT_ANY_THROW(costmapSubscriber->getCostmap());
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }
