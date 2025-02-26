@@ -23,14 +23,6 @@
 using nav2_util::startup_lifecycle_nodes;
 using nav2_util::reset_lifecycle_nodes;
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 void SpinNodesUntilDone(
   std::vector<rclcpp_lifecycle::LifecycleNode::SharedPtr> nodes,
   std::atomic<bool> * test_done)
@@ -57,4 +49,17 @@ TEST(Lifecycle, interface)
   done = true;
   node_thread.join();
   SUCCEED();
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

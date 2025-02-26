@@ -470,4 +470,6 @@ TEST(deconflictPortAndParamFrameTest, test_correct_syntax)
     node, "test", tree.rootNode());
 
   EXPECT_EQ(value, 1);
+
+  rclcpp::shutdown();
 }

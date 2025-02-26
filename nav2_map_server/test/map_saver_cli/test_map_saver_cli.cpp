@@ -143,4 +143,6 @@ TEST(MapSaverCLI, CLITest)
     "ros2 run nav2_map_server map_saver_cli --ros-args --remap __node:=map_saver_test_node");
   return_code = system(command.c_str());
   EXPECT_EQ(return_code, 0);
+
+  rclcpp::shutdown();
 }
