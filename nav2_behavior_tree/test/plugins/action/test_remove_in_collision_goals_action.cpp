@@ -63,10 +63,10 @@ public:
   }
 };
 
-class RemoveInCollisionGoalsTestFixture : public ::testing::Test
+class BTTestEnv
 {
 public:
-  static void SetUpTestCase()
+  BTTestEnv()
   {
     node_ = std::make_shared<rclcpp::Node>("in_collision_goals_test_fixture");
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
@@ -100,7 +100,7 @@ public:
       "RemoveInCollisionGoals", builder);
   }
 
-  static void TearDownTestCase()
+  ~BTTestEnv()
   {
     delete config_;
     config_ = nullptr;
@@ -109,31 +109,16 @@ public:
     factory_.reset();
   }
 
-  void TearDown() override
-  {
-    tree_.reset();
-  }
-  static std::shared_ptr<RemoveInCollisionGoalsSuccessService> success_server_;
-  static std::shared_ptr<RemoveInCollisionGoalsFailureService> failure_server_;
-
-protected:
-  static rclcpp::Node::SharedPtr node_;
-  static BT::NodeConfiguration * config_;
-  static std::shared_ptr<BT::BehaviorTreeFactory> factory_;
-  static std::shared_ptr<BT::Tree> tree_;
+  std::shared_ptr<RemoveInCollisionGoalsSuccessService> success_server_;
+  std::shared_ptr<RemoveInCollisionGoalsFailureService> failure_server_;
+  rclcpp::Node::SharedPtr node_;
+  BT::NodeConfiguration * config_;
+  std::shared_ptr<BT::BehaviorTreeFactory> factory_;
 };
 
-rclcpp::Node::SharedPtr RemoveInCollisionGoalsTestFixture::node_ = nullptr;
+BTTestEnv * test_env = nullptr;
 
-BT::NodeConfiguration * RemoveInCollisionGoalsTestFixture::config_ = nullptr;
-std::shared_ptr<RemoveInCollisionGoalsSuccessService>
-RemoveInCollisionGoalsTestFixture::success_server_ = nullptr;
-std::shared_ptr<RemoveInCollisionGoalsFailureService>
-RemoveInCollisionGoalsTestFixture::failure_server_ = nullptr;
-std::shared_ptr<BT::BehaviorTreeFactory> RemoveInCollisionGoalsTestFixture::factory_ = nullptr;
-std::shared_ptr<BT::Tree> RemoveInCollisionGoalsTestFixture::tree_ = nullptr;
-
-TEST_F(RemoveInCollisionGoalsTestFixture, test_tick_remove_in_collision_goals_success)
+TEST(RemoveInCollisionGoalsTest, test_tick_remove_in_collision_goals_success)
 {
   // create tree
   std::string xml_txt =
@@ -144,7 +129,7 @@ TEST_F(RemoveInCollisionGoalsTestFixture, test_tick_remove_in_collision_goals_su
         </BehaviorTree>
       </root>)";
 
-  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+  BT::Tree tree_ = test_env->factory_->createTreeFromText(xml_txt, test_env->config_->blackboard);
 
   // create new goal and set it on blackboard
   geometry_msgs::msg::PoseStampedArray poses;
@@ -161,18 +146,18 @@ TEST_F(RemoveInCollisionGoalsTestFixture, test_tick_remove_in_collision_goals_su
   poses.poses[3].pose.position.x = 2.0;
   poses.poses[3].pose.position.y = 0.0;
 
-  config_->blackboard->set("goals", poses);
+  test_env->config_->blackboard->set("goals", poses);
 
   // tick until node is not running
-  tree_->rootNode()->executeTick();
-  while (tree_->rootNode()->status() == BT::NodeStatus::RUNNING) {
-    tree_->rootNode()->executeTick();
+  tree_.rootNode()->executeTick();
+  while (tree_.rootNode()->status() == BT::NodeStatus::RUNNING) {
+    tree_.rootNode()->executeTick();
   }
 
-  EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(tree_.rootNode()->status(), BT::NodeStatus::SUCCESS);
   // check that it removed the point in range
   geometry_msgs::msg::PoseStampedArray output_poses;
-  EXPECT_TRUE(config_->blackboard->get("goals", output_poses));
+  EXPECT_TRUE(test_env->config_->blackboard->get("goals", output_poses));
 
   EXPECT_EQ(output_poses.poses.size(), 3u);
   EXPECT_EQ(output_poses.poses[0], poses.poses[0]);
@@ -180,7 +165,7 @@ TEST_F(RemoveInCollisionGoalsTestFixture, test_tick_remove_in_collision_goals_su
   EXPECT_EQ(output_poses.poses[2], poses.poses[2]);
 }
 
-TEST_F(RemoveInCollisionGoalsTestFixture, test_tick_remove_in_collision_goals_fail)
+TEST(RemoveInCollisionGoalsTest, test_tick_remove_in_collision_goals_fail)
 {
   // create tree
   std::string xml_txt =
@@ -191,7 +176,7 @@ TEST_F(RemoveInCollisionGoalsTestFixture, test_tick_remove_in_collision_goals_fa
         </BehaviorTree>
       </root>)";
 
-  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+  BT::Tree tree_ = test_env->factory_->createTreeFromText(xml_txt, test_env->config_->blackboard);
 
   // create new goal and set it on blackboard
   geometry_msgs::msg::PoseStampedArray poses;
@@ -208,18 +193,18 @@ TEST_F(RemoveInCollisionGoalsTestFixture, test_tick_remove_in_collision_goals_fa
   poses.poses[3].pose.position.x = 2.0;
   poses.poses[3].pose.position.y = 0.0;
 
-  config_->blackboard->set("goals", poses);
+  test_env->config_->blackboard->set("goals", poses);
 
   // tick until node is not running
-  tree_->rootNode()->executeTick();
-  while (tree_->rootNode()->status() == BT::NodeStatus::RUNNING) {
-    tree_->rootNode()->executeTick();
+  tree_.rootNode()->executeTick();
+  while (tree_.rootNode()->status() == BT::NodeStatus::RUNNING) {
+    tree_.rootNode()->executeTick();
   }
 
   // check that it failed and returned the original goals
-  EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::FAILURE);
+  EXPECT_EQ(tree_.rootNode()->status(), BT::NodeStatus::FAILURE);
   geometry_msgs::msg::PoseStampedArray output_poses;
-  EXPECT_TRUE(config_->blackboard->get("goals", output_poses));
+  EXPECT_TRUE(test_env->config_->blackboard->get("goals", output_poses));
 
   EXPECT_EQ(output_poses.poses.size(), 4u);
   EXPECT_EQ(output_poses.poses[0], poses.poses[0]);
@@ -235,25 +220,41 @@ int main(int argc, char ** argv)
   // initialize ROS
   rclcpp::init(argc, argv);
 
+  // initialize test environment
+  test_env = new BTTestEnv();
+
+  // stop signal
+  std::atomic_bool stop_thread(false);
+
   // initialize service and spin on new thread
-  RemoveInCollisionGoalsTestFixture::success_server_ =
+  test_env->success_server_ =
     std::make_shared<RemoveInCollisionGoalsSuccessService>();
-  std::thread success_server_thread([]() {
-      rclcpp::spin(RemoveInCollisionGoalsTestFixture::success_server_);
+  std::thread success_server_thread([&stop_thread]() {
+      while (!stop_thread.load()) {
+        rclcpp::spin_some(test_env->success_server_);
+      }
     });
 
-  RemoveInCollisionGoalsTestFixture::failure_server_ =
+  test_env->failure_server_ =
     std::make_shared<RemoveInCollisionGoalsFailureService>();
-  std::thread failure_server_thread([]() {
-      rclcpp::spin(RemoveInCollisionGoalsTestFixture::failure_server_);
+  std::thread failure_server_thread([&stop_thread]() {
+      while (!stop_thread.load()) {
+        rclcpp::spin_some(test_env->failure_server_);
+      }
     });
 
   int all_successful = RUN_ALL_TESTS();
 
-  // shutdown ROS
-  rclcpp::shutdown();
+  // stop the threads
+  stop_thread.store(true);
   success_server_thread.join();
   failure_server_thread.join();
+
+  // clean the test environment
+  delete test_env;
+
+  // shutdown ROS
+  rclcpp::shutdown();
 
   return all_successful;
 }
