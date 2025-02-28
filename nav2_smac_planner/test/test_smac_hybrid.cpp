@@ -108,8 +108,7 @@ TEST(SmacTest, test_smac_se2)
   nodeSE2->set_parameter(rclcpp::Parameter("test.angle_quantization_bins", 72));
 
   // angle_quantizations not multiple of coarse search resolution-> default to 1
-  nodeSE2->set_parameter(rclcpp::Parameter("test.coarse_search_resolution", 3));
-  nodeSE2->set_parameter(rclcpp::Parameter("test.angle_quantization_bins", 70));
+  nodeSE2->set_parameter(rclcpp::Parameter("test.coarse_search_resolution", 5));
 
   planner->configure(nodeSE2, "test", nullptr, costmap_ros);
   planner->activate();
@@ -180,7 +179,6 @@ TEST(SmacTest, test_smac_se2_reconfigure)
       rclcpp::Parameter("test.goal_heading_mode", std::string("BIDIRECTIONAL")),
       rclcpp::Parameter("test.coarse_search_resolution", -1)});
 
-
   rclcpp::spin_until_future_complete(
     nodeSE2->get_node_base_interface(),
     results);
@@ -218,4 +216,15 @@ TEST(SmacTest, test_smac_se2_reconfigure)
     results2);
   EXPECT_EQ(nodeSE2->get_parameter("resolution").as_double(), 0.2);
   EXPECT_EQ(nodeSE2->get_parameter("test.coarse_search_resolution").as_int(), -1);
+
+  // test coarse resolution edge cases. Consider when coarse resolution
+  // is not multile of angle bin quantization
+  auto result3 = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.coarse_search_resolution", 7),
+      rclcpp::Parameter("test.coarse_search_resolution", 10),
+      rclcpp::Parameter("test.angle_quantization_bins", 87)}
+  );
+  rclcpp::spin_until_future_complete(
+    nodeSE2->get_node_base_interface(),
+    result3);
 }

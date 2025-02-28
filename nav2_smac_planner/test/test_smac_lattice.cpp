@@ -79,11 +79,16 @@ TEST(SmacTest, test_smac_lattice)
     EXPECT_THROW(planner->configure(nodeLattice, "test", nullptr, costmap_ros), std::runtime_error);
     nodeLattice->set_parameter(rclcpp::Parameter("test.goal_heading_mode", std::string("DEFAULT")));
 
-    // invalid coarse resolution
+    // invalid COnfiguration resolution
     nodeLattice->set_parameter(rclcpp::Parameter("test.coarse_search_resolution", -1));
-    EXPECT_NO_THROW(planner->configure(nodeLattice, "test", nullptr, costmap_ros));
-    nodeLattice->set_parameter(rclcpp::Parameter("test.coarse_search_resolution", 4));
+    nodeLattice->set_parameter(rclcpp::Parameter("test.max_iterations", -1));
 
+    EXPECT_NO_THROW(planner->configure(nodeLattice, "test", nullptr, costmap_ros));
+    // Valid configuration
+    nodeLattice->set_parameter(rclcpp::Parameter("test.max_iterations", 1000000));
+
+    // Coarse search resolution will default to 1, not muiltiple of number of heading(16 default)
+    nodeLattice->set_parameter(rclcpp::Parameter("test.coarse_search_resolution", 3));
 
     // Expect to throw due to invalid prims file in param
     planner->configure(nodeLattice, "test", nullptr, costmap_ros);
@@ -152,9 +157,7 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
       rclcpp::Parameter("test.rotation_penalty", 42.0),
       rclcpp::Parameter("test.max_on_approach_iterations", 42),
       rclcpp::Parameter("test.terminal_checking_interval", 42),
-      rclcpp::Parameter("test.allow_reverse_expansion", true),
-      rclcpp::Parameter("test.goal_heading_mode", std::string("BIDIRECTIONAL")),
-      rclcpp::Parameter("test.coarse_search_resolution", -1)});
+      rclcpp::Parameter("test.allow_reverse_expansion", true)});
 
   try {
     // All of these params will re-init A* which will involve loading the control set file
@@ -170,4 +173,14 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
   std::vector<rclcpp::Parameter> parameters;
   parameters.push_back(rclcpp::Parameter("test.lattice_filepath", std::string("HI")));
   EXPECT_THROW(planner->callDynamicParams(parameters), std::runtime_error);
+
+  // test edge cases for coarse search resolution/goal heading mode
+  auto results2 = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.goal_heading_mode", std::string("invalid")),
+      rclcpp::Parameter("test.goal_heading_mode", std::string("BIDIRECTIONAL")),
+      rclcpp::Parameter("test.coarse_search_resolution", -1),
+      rclcpp::Parameter("test.coarse_search_resolution", 7)});
+  rclcpp::spin_until_future_complete(
+  nodeLattice->get_node_base_interface(),
+  results);
 }
