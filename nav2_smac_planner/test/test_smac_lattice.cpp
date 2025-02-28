@@ -182,5 +182,5 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
       rclcpp::Parameter("test.coarse_search_resolution", 7)});
   rclcpp::spin_until_future_complete(
   nodeLattice->get_node_base_interface(),
-  results);
+  results2);
 }
