@@ -179,7 +179,7 @@ protected:
    * @brief Update the cost in a cell with information
    */
   inline void update_cell(
-    double ox, double oy, double ot,
+    double ox, double oy, double ot,   // codespell:ignore ot
     double r, double nx, double ny, bool clear);
 
   /**

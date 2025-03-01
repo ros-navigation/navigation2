@@ -63,7 +63,7 @@ DummyController::followPath(const nav2_behavior_tree::FollowPathCommand::SharedP
     std::this_thread::sleep_for(50ms);
 
     if (task_server_->cancelRequested()) {
-      RCLCPP_INFO(get_logger(), "Task cancelled");
+      RCLCPP_INFO(get_logger(), "Task canceled");
       setZeroVelocity();
       task_server_->setCanceled();
       return;
