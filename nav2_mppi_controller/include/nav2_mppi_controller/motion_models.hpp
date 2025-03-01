@@ -72,8 +72,9 @@ public:
   virtual void predict(models::State & state)
   {
     const bool is_holo = isHolonomic();
-    float max_delta_vx = model_dt_ * control_constraints_.ax_max;
-    float min_delta_vx = model_dt_ * control_constraints_.ax_min;
+
+    float max_delta_vx = 0.0;
+    float min_delta_vx = 0.0;
     float max_delta_vy = model_dt_ * control_constraints_.ay_max;
     float max_delta_wz = model_dt_ * control_constraints_.az_max;
 
@@ -86,6 +87,15 @@ public:
       for (unsigned int j = 0; j != n_rows; j++) {
         float vx_last = state.vx(j, i - 1);
         float & cvx_curr = state.cvx(j, i - 1);
+        // Accelerating if magnitude of cvx is greater than vx_last and they have the same sign
+        // Decelerating otherwise
+        if (abs(cvx_curr) >= abs(vx_last) && cvx_curr * vx_last >= 0.0) {
+          max_delta_vx = control_constraints_.ax_max * model_dt_;
+          min_delta_vx = -control_constraints_.ax_max * model_dt_;
+        } else {
+          max_delta_vx = -control_constraints_.ax_min * model_dt_;
+          min_delta_vx = control_constraints_.ax_min * model_dt_;
+        }
         cvx_curr = utils::clamp(vx_last + min_delta_vx, vx_last + max_delta_vx, cvx_curr);
         state.vx(j, i) = cvx_curr;
 

@@ -173,6 +173,7 @@ public:
     state.speed.linear.x = 5.0;
     state.speed.linear.y = 1.0;
     state.speed.angular.z = 6.0;
+    // deceleration
     state.cvx = 0.75 * Eigen::ArrayXXf::Ones(1000, 50);
     state.cvy = 0.5 * Eigen::ArrayXXf::Ones(1000, 50);
     state.cwz = 0.1 * Eigen::ArrayXXf::Ones(1000, 50);
@@ -182,7 +183,7 @@ public:
     EXPECT_NEAR(state.wz(0, 0), 6.0, 1e-6);
 
     // propagateStateVelocitiesFromInitials
-    float max_delta_vx = settings_.constraints.ax_max * settings_.model_dt;
+    float max_delta_vx = -settings_.constraints.ax_min * settings_.model_dt;
     float min_delta_vx = settings_.constraints.ax_min * settings_.model_dt;
     float max_delta_vy = settings_.constraints.ay_max * settings_.model_dt;
     float max_delta_wz = settings_.constraints.az_max * settings_.model_dt;
@@ -193,12 +194,14 @@ public:
     EXPECT_NEAR(state.vx(0, 1), std::clamp(0.75, 5.0 + min_delta_vx, 5.0 + max_delta_vx), 1e-6);
     EXPECT_NEAR(state.vy(0, 1), std::clamp(0.5, 1.0 - max_delta_vy, 1.0 + max_delta_vy), 1e-6);
     EXPECT_NEAR(state.wz(0, 1), std::clamp(0.1, 6.0 - max_delta_wz, 6.0 + max_delta_wz), 1e-6);
-
     // Putting them together: updateStateVelocities
     state.reset(1000, 50);
     state.speed.linear.x = -5.0;
     state.speed.linear.y = -1.0;
     state.speed.angular.z = -6.0;
+    // also deceleration here
+    max_delta_vx = -settings_.constraints.ax_min * settings_.model_dt;
+    min_delta_vx = settings_.constraints.ax_min * settings_.model_dt;
     state.cvx = -0.75 * Eigen::ArrayXXf::Ones(1000, 50);
     state.cvy = -0.5 * Eigen::ArrayXXf::Ones(1000, 50);
     state.cwz = -0.1 * Eigen::ArrayXXf::Ones(1000, 50);
@@ -524,6 +527,169 @@ TEST(OptimizerTests, applyControlSequenceConstraintsTests)
   EXPECT_TRUE(sequence.wz.isApproxToConstant(-2.0f));
 }
 
+TEST(OptimizerTests, applyControlSequenceConstraintsTestsAccelDecel)
+{
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  OptimizerTester optimizer_tester;
+  node->declare_parameter("controller_frequency", rclcpp::ParameterValue(30.0));
+  node->declare_parameter("mppic.model_dt", rclcpp::ParameterValue(0.1));
+  node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(1000));
+  node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(50));
+  node->declare_parameter("mppic.vx_max", rclcpp::ParameterValue(5.0));
+  node->declare_parameter("mppic.vx_min", rclcpp::ParameterValue(-5.0));
+  node->declare_parameter("mppic.vy_max", rclcpp::ParameterValue(0.75));
+  node->declare_parameter("mppic.wz_max", rclcpp::ParameterValue(2.0));
+  node->declare_parameter("mppic.ax_max", rclcpp::ParameterValue(0.5));
+  node->declare_parameter("mppic.ax_min", rclcpp::ParameterValue(-0.1));
+  node->declare_parameter("mppic.ay_max", rclcpp::ParameterValue(3.0));
+  node->declare_parameter("mppic.az_max", rclcpp::ParameterValue(3.5));
+
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  ParametersHandler param_handler(node);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+  optimizer_tester.initialize(node, "mppic", costmap_ros, &param_handler);
+
+  optimizer_tester.resetMotionModel();
+  optimizer_tester.testSetOmniModel();
+  auto & sequence = optimizer_tester.grabControlSequence();
+  float model_dt = 0.1;
+  float ax_max = 0.5;
+  float ax_min = -0.3;
+
+  // Case1: Positive to Positive Acceleration
+  sequence.vx = Eigen::ArrayXf::LinSpaced(50, 1.0, 5.0);
+  sequence.vy = 5.0 * Eigen::ArrayXf::Ones(50);
+  sequence.wz = 5.0 * Eigen::ArrayXf::Ones(50);
+  for(int i = 0; i < 50; i++) {
+    std::cout << "i" << i << " " << sequence.vx(i) << std::endl;
+  }
+  optimizer_tester.applyControlSequenceConstraintsWrapper();
+  float max_delta_vx = ax_max * model_dt;
+  float min_delta_vx = -ax_max * model_dt;
+  EXPECT_NEAR(sequence.vx(0), 1.0, 1e-6);
+  for(int i = 1; i < 50; i++) {
+    std::cout << "after clamp" << std::clamp(sequence.vx(i - 1) + min_delta_vx,
+      sequence.vx(i - 1) + max_delta_vx, sequence.vx(i)) << std::endl;
+    EXPECT_NEAR(sequence.vx(i),
+      std::clamp(sequence.vx(i - 1) + min_delta_vx, sequence.vx(i - 1) + max_delta_vx,
+      sequence.vx(i)), 1e-6);
+  }
+  // Case2: Positive to Positive Deceleration
+  sequence.vx = Eigen::ArrayXf::LinSpaced(50, 5.0, 1.0);
+  optimizer_tester.applyControlSequenceConstraintsWrapper();
+  max_delta_vx = -ax_min * model_dt;
+  min_delta_vx = ax_min * model_dt;
+  EXPECT_NEAR(sequence.vx(0), 5.0, 1e-6);
+  for(int i = 1; i < 50; i++) {
+    EXPECT_NEAR(sequence.vx(i),
+      std::clamp(sequence.vx(i - 1) + min_delta_vx, sequence.vx(i - 1) + max_delta_vx,
+      sequence.vx(i)), 1e-6);
+  }
+  // Case3: Negative to Negative Acceleration
+  sequence.vx = Eigen::ArrayXf::LinSpaced(50, -1.0, -5.0);
+  optimizer_tester.applyControlSequenceConstraintsWrapper();
+  max_delta_vx = ax_max * model_dt;
+  min_delta_vx = -ax_max * model_dt;
+  EXPECT_NEAR(sequence.vx(0), -1.0, 1e-6);
+  for(int i = 1; i < 50; i++) {
+    EXPECT_NEAR(sequence.vx(i),
+      std::clamp(sequence.vx(i - 1) + min_delta_vx, sequence.vx(i - 1) + max_delta_vx,
+      sequence.vx(i)), 1e-6);
+  }
+  // Case4: Negative to Negative Deceleration
+  sequence.vx = Eigen::ArrayXf::LinSpaced(50, -5.0, -1.0);
+  optimizer_tester.applyControlSequenceConstraintsWrapper();
+  max_delta_vx = -ax_min * model_dt;
+  min_delta_vx = ax_min * model_dt;
+  EXPECT_NEAR(sequence.vx(0), -5.0, 1e-6);
+  for(int i = 1; i < 50; i++) {
+    EXPECT_NEAR(sequence.vx(i),
+      std::clamp(sequence.vx(i - 1) + min_delta_vx, sequence.vx(i - 1) + max_delta_vx,
+      sequence.vx(i)), 1e-6);
+  }
+  // Case5: Zero to Positive Acceleration
+  sequence.vx = Eigen::ArrayXf::LinSpaced(50, 0.0, 5.0);
+  optimizer_tester.applyControlSequenceConstraintsWrapper();
+  max_delta_vx = ax_max * model_dt;
+  min_delta_vx = -ax_max * model_dt;
+  EXPECT_NEAR(sequence.vx(0), 0.0, 1e-6);
+  for(int i = 1; i < 50; i++) {
+    EXPECT_NEAR(sequence.vx(i),
+      std::clamp(sequence.vx(i - 1) + min_delta_vx, sequence.vx(i - 1) + max_delta_vx,
+      sequence.vx(i)), 1e-6);
+  }
+  // Case6: Zero to Negative Acceleration
+  sequence.vx = Eigen::ArrayXf::LinSpaced(50, 0.0, -5.0);
+  optimizer_tester.applyControlSequenceConstraintsWrapper();
+  max_delta_vx = ax_max * model_dt;
+  min_delta_vx = -ax_max * model_dt;
+  EXPECT_NEAR(sequence.vx(0), 0.0, 1e-6);
+  for(int i = 1; i < 50; i++) {
+    EXPECT_NEAR(sequence.vx(i),
+      std::clamp(sequence.vx(i - 1) + min_delta_vx, sequence.vx(i - 1) + max_delta_vx,
+      sequence.vx(i)), 1e-6);
+  }
+  // Case7: Positive to Zero Deceleration
+  sequence.vx = Eigen::ArrayXf::LinSpaced(50, 5.0, 0.0);
+  optimizer_tester.applyControlSequenceConstraintsWrapper();
+  max_delta_vx = -ax_min * model_dt;
+  min_delta_vx = ax_min * model_dt;
+  EXPECT_NEAR(sequence.vx(0), 5.0, 1e-6);
+  for(int i = 1; i < 50; i++) {
+    EXPECT_NEAR(sequence.vx(i),
+      std::clamp(sequence.vx(i - 1) + min_delta_vx, sequence.vx(i - 1) + max_delta_vx,
+      sequence.vx(i)), 1e-6);
+  }
+  // Case8: Negative to Zero Deceleration
+  sequence.vx = Eigen::ArrayXf::LinSpaced(50, -5.0, 0.0);
+  optimizer_tester.applyControlSequenceConstraintsWrapper();
+  max_delta_vx = -ax_min * model_dt;
+  min_delta_vx = ax_min * model_dt;
+  EXPECT_NEAR(sequence.vx(0), -5.0, 1e-6);
+  for(int i = 1; i < 50; i++) {
+    EXPECT_NEAR(sequence.vx(i),
+      std::clamp(sequence.vx(i - 1) + min_delta_vx, sequence.vx(i - 1) + max_delta_vx,
+      sequence.vx(i)), 1e-6);
+  }
+  // Case9: Positive to Negative Acceleration Deceleration
+  // Decel at first, accel after reaching 0 and start to go negative
+  sequence.vx = Eigen::ArrayXf::LinSpaced(50, 5.0, -5.0);
+  optimizer_tester.applyControlSequenceConstraintsWrapper();
+  EXPECT_NEAR(sequence.vx(0), 5.0, 1e-6);
+  for(int i = 1; i < 50; i++) {
+    if(sequence.vx(i - 1) >= 0.0) {
+      max_delta_vx = ax_max * model_dt;
+      min_delta_vx = -ax_max * model_dt;
+    } else {
+      max_delta_vx = -ax_min * model_dt;
+      min_delta_vx = ax_min * model_dt;
+    }
+    EXPECT_NEAR(sequence.vx(i),
+      std::clamp(sequence.vx(i - 1) + min_delta_vx, sequence.vx(i - 1) + max_delta_vx,
+      sequence.vx(i)), 1e-6);
+  }
+  // Case10: Negative to Positive Acceleration Deceleration
+  // Decel at first, accel after reaching 0 and start to go positive
+  sequence.vx = Eigen::ArrayXf::LinSpaced(50, -5.0, 5.0);
+  optimizer_tester.applyControlSequenceConstraintsWrapper();
+  EXPECT_NEAR(sequence.vx(0), -5.0, 1e-6);
+  for(int i = 1; i < 50; i++) {
+    if(sequence.vx(i - 1) <= 0.0) {
+      max_delta_vx = ax_max * model_dt;
+      min_delta_vx = -ax_max * model_dt;
+    } else {
+      max_delta_vx = -ax_min * model_dt;
+      min_delta_vx = ax_min * model_dt;
+    }
+    EXPECT_NEAR(sequence.vx(i),
+      std::clamp(sequence.vx(i - 1) + min_delta_vx, sequence.vx(i - 1) + max_delta_vx,
+      sequence.vx(i)), 1e-6);
+  }
+}
+
+
 TEST(OptimizerTests, updateStateVelocitiesTests)
 {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
@@ -536,7 +702,7 @@ TEST(OptimizerTests, updateStateVelocitiesTests)
   node->declare_parameter("mppic.vy_max", rclcpp::ParameterValue(0.60));
   node->declare_parameter("mppic.wz_max", rclcpp::ParameterValue(2.0));
   node->declare_parameter("mppic.ax_max", rclcpp::ParameterValue(3.0));
-  node->declare_parameter("mppic.ax_min", rclcpp::ParameterValue(-3.0));
+  node->declare_parameter("mppic.ax_min", rclcpp::ParameterValue(-2.0));
   node->declare_parameter("mppic.ay_max", rclcpp::ParameterValue(3.0));
   node->declare_parameter("mppic.az_max", rclcpp::ParameterValue(3.5));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
