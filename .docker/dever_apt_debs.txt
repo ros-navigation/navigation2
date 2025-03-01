@@ -1,0 +1,4 @@
+# ROS tools
+ros-${ROS_DISTRO}-rqt-common-plugins
+ros-${ROS_DISTRO}-rviz-common
+ros-${ROS_DISTRO}-rviz2
