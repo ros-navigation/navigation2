@@ -25,12 +25,11 @@
 #include "nav2_amcl/map/map.hpp"
 
 /*
- * @class CellData
+ * @struct CellData
  * @brief Data about map cells
  */
-class CellData
+struct CellData
 {
-public:
   map_t * map_;
   unsigned int i_, j_;
   unsigned int src_i_, src_j_;
@@ -114,7 +113,7 @@ get_distance_map(double scale, double max_dist)
 void enqueue(
   map_t * map, int i, int j,
   int src_i, int src_j,
-  std::priority_queue<CellData> & Q,
+  std::queue<CellData> & Q,
   CachedDistanceMap * cdm,
   unsigned char * marked)
 {
@@ -130,18 +129,14 @@ void enqueue(
     return;
   }
 
-  map->cells[MAP_INDEX(map, i, j)].occ_dist = distance * map->scale;
+  const int map_index = MAP_INDEX(map, i, j);
 
-  CellData cell;
-  cell.map_ = map;
-  cell.i_ = i;
-  cell.j_ = j;
-  cell.src_i_ = src_i;
-  cell.src_j_ = src_j;
+  map->cells[map_index].occ_dist = distance * map->scale;
 
-  Q.push(cell);
+  Q.emplace(CellData{map, static_cast<unsigned int>(i), static_cast<unsigned int>(j),
+      static_cast<unsigned int>(src_i), static_cast<unsigned int>(src_j)});
 
-  marked[MAP_INDEX(map, i, j)] = 1;
+  marked[map_index] = 1;
 }
 
 /*
@@ -152,7 +147,7 @@ void enqueue(
 void map_update_cspace(map_t * map, double max_occ_dist)
 {
   unsigned char * marked;
-  std::priority_queue<CellData> Q;
+  std::queue<CellData> Q;
 
   marked = new unsigned char[map->size_x * map->size_y];
   memset(marked, 0, sizeof(unsigned char) * map->size_x * map->size_y);
@@ -179,30 +174,30 @@ void map_update_cspace(map_t * map, double max_occ_dist)
   }
 
   while (!Q.empty()) {
-    CellData current_cell = Q.top();
+    CellData current_cell = Q.front();
     if (current_cell.i_ > 0) {
       enqueue(
-        map, current_cell.i_ - 1, current_cell.j_,
-        current_cell.src_i_, current_cell.src_j_,
-        Q, cdm, marked);
+          map, current_cell.i_ - 1, current_cell.j_,
+          current_cell.src_i_, current_cell.src_j_,
+          Q, cdm, marked);
     }
     if (current_cell.j_ > 0) {
       enqueue(
-        map, current_cell.i_, current_cell.j_ - 1,
-        current_cell.src_i_, current_cell.src_j_,
-        Q, cdm, marked);
+          map, current_cell.i_, current_cell.j_ - 1,
+          current_cell.src_i_, current_cell.src_j_,
+          Q, cdm, marked);
     }
     if (static_cast<int>(current_cell.i_) < map->size_x - 1) {
       enqueue(
-        map, current_cell.i_ + 1, current_cell.j_,
-        current_cell.src_i_, current_cell.src_j_,
-        Q, cdm, marked);
+          map, current_cell.i_ + 1, current_cell.j_,
+          current_cell.src_i_, current_cell.src_j_,
+          Q, cdm, marked);
     }
     if (static_cast<int>(current_cell.j_) < map->size_y - 1) {
       enqueue(
-        map, current_cell.i_, current_cell.j_ + 1,
-        current_cell.src_i_, current_cell.src_j_,
-        Q, cdm, marked);
+          map, current_cell.i_, current_cell.j_ + 1,
+          current_cell.src_i_, current_cell.src_j_,
+          Q, cdm, marked);
     }
 
     Q.pop();
