@@ -41,7 +41,6 @@
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_util/node_utils.hpp"
 
-using std::hypot;
 using std::fabs;
 
 using rcl_interfaces::msg::ParameterType;
@@ -74,6 +73,7 @@ void StoppedGoalChecker::initialize(
 
   node->get_parameter(plugin_name + ".rot_stopped_velocity", rot_stopped_velocity_);
   node->get_parameter(plugin_name + ".trans_stopped_velocity", trans_stopped_velocity_);
+  trans_stopped_velocity_sqr_ = trans_stopped_velocity_ * trans_stopped_velocity_;
 
   // Add callback for dynamic parameters
   dyn_params_handler_ = node->add_on_set_parameters_callback(
@@ -90,7 +90,8 @@ bool StoppedGoalChecker::isGoalReached(
   }
 
   return fabs(velocity.angular.z) <= rot_stopped_velocity_ &&
-         hypot(velocity.linear.x, velocity.linear.y) <= trans_stopped_velocity_;
+         velocity.linear.x * velocity.linear.x + velocity.linear.y * velocity.linear.y <=
+         trans_stopped_velocity_sqr_;
 }
 
 bool StoppedGoalChecker::getTolerances(
@@ -127,6 +128,7 @@ StoppedGoalChecker::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
         rot_stopped_velocity_ = parameter.as_double();
       } else if (name == plugin_name_ + ".trans_stopped_velocity") {
         trans_stopped_velocity_ = parameter.as_double();
+        trans_stopped_velocity_sqr_ = trans_stopped_velocity_ * trans_stopped_velocity_;
       }
     }
   }
