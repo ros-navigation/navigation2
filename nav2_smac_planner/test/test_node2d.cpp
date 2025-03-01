@@ -75,8 +75,10 @@ TEST(Node2DTest, test_node_2d)
 
   // check heuristic cost computation
   nav2_smac_planner::Node2D::Coordinates A(0.0, 0.0);
+  nav2_smac_planner::Node2D::CoordinateVector B_vec;
   nav2_smac_planner::Node2D::Coordinates B(10.0, 5.0);
-  EXPECT_NEAR(testB.getHeuristicCost(A, B), 11.18, 0.02);
+  B_vec.push_back(B);
+  EXPECT_NEAR(testB.getHeuristicCost(A, B_vec), 11.18, 0.02);
 
   // check operator== works on index
   unsigned char costC = '2';
