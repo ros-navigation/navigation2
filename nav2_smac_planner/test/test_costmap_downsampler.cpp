@@ -21,14 +21,6 @@
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_smac_planner/costmap_downsampler.hpp"
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 TEST(CostmapDownsampler, costmap_downsample_test)
 {
   nav2_util::LifecycleNode::SharedPtr node = std::make_shared<nav2_util::LifecycleNode>(
@@ -64,4 +56,17 @@ TEST(CostmapDownsampler, costmap_downsample_test)
   EXPECT_EQ(downsampledCostmapB->getSizeInCellsY(), 1u);
 
   downsampler.resizeCostmap();
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

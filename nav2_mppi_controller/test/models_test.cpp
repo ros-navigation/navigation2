@@ -21,14 +21,6 @@
 
 // Tests model classes with methods
 
-class RosLockGuard
-{
-public:
-  RosLockGuard() {rclcpp::init(0, nullptr);}
-  ~RosLockGuard() {rclcpp::shutdown();}
-};
-RosLockGuard g_rclcpp;
-
 using namespace mppi::models;  // NOLINT
 
 TEST(ModelsTest, ControlSequenceTest)
@@ -146,4 +138,17 @@ TEST(ModelsTest, TrajectoriesTest)
   EXPECT_EQ(trajectories.x.cols(), 40);
   EXPECT_EQ(trajectories.y.cols(), 40);
   EXPECT_EQ(trajectories.yaws.cols(), 40);
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

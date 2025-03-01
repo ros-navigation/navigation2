@@ -27,14 +27,6 @@
 // Testing the controller at high level; the nav2_graceful_controller
 // Where the control law derives has over 98% test coverage
 
-class RosLockGuard
-{
-public:
-  RosLockGuard() {rclcpp::init(0, nullptr);}
-  ~RosLockGuard() {rclcpp::shutdown();}
-};
-RosLockGuard g_rclcpp;
-
 namespace opennav_docking
 {
 
@@ -547,3 +539,16 @@ TEST(ControllerTests, CollisionCheckerUndockForward) {
 
 
 }  // namespace opennav_docking
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
+}

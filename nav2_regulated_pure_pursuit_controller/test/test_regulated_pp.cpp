@@ -27,14 +27,6 @@
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 #include "nav2_core/controller_exceptions.hpp"
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 class BasicAPIRPP : public nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController
 {
 public:
@@ -1122,4 +1114,17 @@ TEST_F(TransformGlobalPlanTest, prune_after_leaving_costmap)
   EXPECT_NEAR(transformed_plan.poses.size(), 10u, 1);
   EXPECT_NEAR(transformed_plan.poses[0].pose.position.x, 0.0, 0.5);
   EXPECT_NEAR(transformed_plan.poses[0].pose.position.y, 0.0, 0.5);
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }
