@@ -15,7 +15,6 @@
 # limitations under the License.
 
 import argparse
-import math
 import sys
 import time
 
@@ -26,15 +25,19 @@ from geometry_msgs.msg import Pose
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from lifecycle_msgs.srv import GetState
-from nav2_msgs.action import NavigateToPose
+from nav2_msgs.action import NavigateThroughPoses
 from nav2_msgs.srv import ManageLifecycleNodes
+from rcl_interfaces.srv import SetParameters
 
 import rclpy
 
-from rclpy.action import ActionClient
+from rclpy.action.client import ActionClient
 from rclpy.node import Node
+from rclpy.parameter import Parameter
 from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSReliabilityPolicy
 from rclpy.qos import QoSProfile
+
+from std_msgs.msg import String
 
 
 class NavTester(Node):
@@ -44,7 +47,19 @@ class NavTester(Node):
         self.initial_pose_pub = self.create_publisher(
             PoseWithCovarianceStamped, 'initialpose', 10
         )
-        self.goal_pub = self.create_publisher(PoseStamped, 'goal_pose', 10)
+
+        checker_qos = QoSProfile(
+            durability=QoSDurabilityPolicy.TRANSIENT_LOCAL,
+            reliability=QoSReliabilityPolicy.RELIABLE,
+            history=QoSHistoryPolicy.KEEP_LAST,
+            depth=1,
+        )
+
+        self.goal_checker_selector_pub = self.create_publisher(
+            String, 'goal_checker_selector', checker_qos)
+
+        self.progress_checker_selector_pub = self.create_publisher(
+            String, 'progress_checker_selector', checker_qos)
 
         pose_qos = QoSProfile(
             durability=QoSDurabilityPolicy.TRANSIENT_LOCAL,
@@ -59,14 +74,19 @@ class NavTester(Node):
         self.initial_pose_received = False
         self.initial_pose = initial_pose
         self.goal_pose = goal_pose
-        self.set_initial_pose_timeout = 15
-        self.action_client = ActionClient(self, NavigateToPose, 'navigate_to_pose')
+        self.action_client = ActionClient(
+            self, NavigateThroughPoses, 'navigate_through_poses'
+        )
+
+        self.controller_param_cli = self.create_client(
+            SetParameters, '/controller_server/set_parameters'
+        )
 
     def info_msg(self, msg: str):
         self.get_logger().info('\033[1;37;44m' + msg + '\033[0m')
 
     def warn_msg(self, msg: str):
-        self.get_logger().warn('\033[1;37;43m' + msg + '\033[0m')
+        self.get_logger().warning('\033[1;37;43m' + msg + '\033[0m')
 
     def error_msg(self, msg: str):
         self.get_logger().error('\033[1;37;41m' + msg + '\033[0m')
@@ -79,25 +99,51 @@ class NavTester(Node):
         self.initial_pose_pub.publish(msg)
         self.currentPose = self.initial_pose
 
+    def setGoalChecker(self, name):
+        msg = String()
+        msg.data = name
+        self.goal_checker_selector_pub.publish(msg)
+
+    def setProgressChecker(self, name):
+        msg = String()
+        msg.data = name
+        self.progress_checker_selector_pub.publish(msg)
+
+    def setControllerParam(self, name, parameter_type, value):
+        req = SetParameters.Request()
+        req.parameters = [
+            Parameter(name, parameter_type, value).to_parameter_msg()
+        ]
+        future = self.controller_param_cli.call_async(req)
+        rclpy.spin_until_future_complete(self, future)
+
     def getStampedPoseMsg(self, pose: Pose):
         msg = PoseStamped()
         msg.header.frame_id = 'map'
         msg.pose = pose
         return msg
 
-    def publishGoalPose(self, goal_pose: Optional[Pose] = None):
-        self.goal_pose = goal_pose if goal_pose is not None else self.goal_pose
-        self.goal_pub.publish(self.getStampedPoseMsg(self.goal_pose))
-
-    def runNavigateAction(self, goal_pose: Optional[Pose] = None):
+    def runNavigateAction(self,
+                          goal_pose: Optional[Pose] = None,
+                          behavior_tree: Optional[str] = None,
+                          expected_error_code: Optional[int] = None,
+                          expected_error_msg: Optional[str] = None):
         # Sends a `NavToPose` action request and waits for completion
-        self.info_msg("Waiting for 'NavigateToPose' action server")
+        self.info_msg("Waiting for 'NavigateThroughPoses' action server")
         while not self.action_client.wait_for_server(timeout_sec=1.0):
-            self.info_msg("'NavigateToPose' action server not available, waiting...")
+            self.info_msg(
+                "'NavigateThroughPoses' action server not available, waiting..."
+            )
 
         self.goal_pose = goal_pose if goal_pose is not None else self.goal_pose
-        goal_msg = NavigateToPose.Goal()
-        goal_msg.pose = self.getStampedPoseMsg(self.goal_pose)
+        goal_msg = NavigateThroughPoses.Goal()
+        goal_msg.poses.header.frame_id = 'map'
+        goal_msg.poses.header.stamp = self.get_clock().now().to_msg()
+        goal_msg.poses.poses = [
+            self.getStampedPoseMsg(self.goal_pose),
+            self.getStampedPoseMsg(self.goal_pose),
+        ]
+        goal_msg.behavior_tree = behavior_tree
 
         self.info_msg('Sending goal request...')
         send_goal_future = self.action_client.send_goal_async(goal_msg)
@@ -105,27 +151,31 @@ class NavTester(Node):
         rclpy.spin_until_future_complete(self, send_goal_future)
         goal_handle = send_goal_future.result()
 
-        if not goal_handle.accepted:
+        if goal_handle is None or not goal_handle.accepted:
             self.error_msg('Goal rejected')
             return False
 
         self.info_msg('Goal accepted')
         get_result_future = goal_handle.get_result_async()
 
-        future_return = True
-
         self.info_msg("Waiting for 'NavigateToPose' action to complete")
         rclpy.spin_until_future_complete(self, get_result_future)
         status = get_result_future.result().status
         if status != GoalStatus.STATUS_SUCCEEDED:
             result = get_result_future.result().result
-            self.info_msg(f'Goal failed with status code: {status}'
-                          f' error code:{result.error_code}'
-                          f' error msg:{result.error_msg}')
-            return False
-
-        if not future_return:
-            return False
+            if (result.error_code == expected_error_code and
+               result.error_msg == expected_error_msg):
+                self.info_msg(f'Goal failed as expected with status code: {status}'
+                              f' error code:{result.error_code}'
+                              f' error msg:{result.error_msg}')
+                return True
+            else:
+                self.error_msg(f'Goal failed unexpectedly with status code: {status}'
+                               f' Expected error_code:{expected_error_code},'
+                               f' Got error_code:{result.error_code},'
+                               f' Expected error_msg:{expected_error_msg},'
+                               f' Got error_msg:{result.error_msg}')
+                return False
 
         self.info_msg('Goal succeeded!')
         return True
@@ -134,28 +184,6 @@ class NavTester(Node):
         self.info_msg('Received amcl_pose')
         self.current_pose = msg.pose.pose
         self.initial_pose_received = True
-
-    def reachesGoal(self, timeout, distance):
-        goalReached = False
-        start_time = time.time()
-
-        while not goalReached:
-            rclpy.spin_once(self, timeout_sec=1)
-            if self.distanceFromGoal() < distance:
-                goalReached = True
-                self.info_msg('*** GOAL REACHED ***')
-                return True
-            elif timeout is not None:
-                if (time.time() - start_time) > timeout:
-                    self.error_msg('Robot timed out reaching its goal!')
-                    return False
-
-    def distanceFromGoal(self):
-        d_x = self.current_pose.position.x - self.goal_pose.position.x
-        d_y = self.current_pose.position.y - self.goal_pose.position.y
-        distance = math.sqrt(d_x * d_x + d_y * d_y)
-        self.info_msg(f'Distance from goal is: {distance}')
-        return distance
 
     def wait_for_node_active(self, node_name: str):
         # Waits for the node within the tester namespace to become active
@@ -189,7 +217,7 @@ class NavTester(Node):
             self.info_msg(f'{transition_service} service not available, waiting...')
 
         req = ManageLifecycleNodes.Request()
-        req.command = ManageLifecycleNodes.Request().SHUTDOWN
+        req.command = ManageLifecycleNodes.Request.SHUTDOWN
         future = mgr_client.call_async(req)
         try:
             self.info_msg('Shutting down navigation lifecycle manager...')
@@ -204,7 +232,7 @@ class NavTester(Node):
             self.info_msg(f'{transition_service} service not available, waiting...')
 
         req = ManageLifecycleNodes.Request()
-        req.command = ManageLifecycleNodes.Request().SHUTDOWN
+        req.command = ManageLifecycleNodes.Request.SHUTDOWN
         future = mgr_client.call_async(req)
         try:
             self.info_msg('Shutting down localization lifecycle manager...')
@@ -216,45 +244,102 @@ class NavTester(Node):
 
     def wait_for_initial_pose(self):
         self.initial_pose_received = False
-        # If the initial pose is not received within 100 seconds, return False
-        # this is because when setting a wrong initial pose, amcl_pose is not received
-        # and the test will hang indefinitely
-        start_time = time.time()
-        duration = 0
         while not self.initial_pose_received:
             self.info_msg('Setting initial pose')
             self.setInitialPose()
             self.info_msg('Waiting for amcl_pose to be received')
-            duration = time.time() - start_time
-            if duration > self.set_initial_pose_timeout:
-                self.error_msg('Timeout waiting for initial pose to be set')
-                return False
             rclpy.spin_once(self, timeout_sec=1)
-        return True
-
-
-def test_RobotMovesToGoal(robot_tester):
-    robot_tester.info_msg('Setting goal pose')
-    robot_tester.publishGoalPose()
-    robot_tester.info_msg('Waiting 60 seconds for robot to reach goal')
-    return robot_tester.reachesGoal(timeout=60, distance=0.5)
 
 
 def run_all_tests(robot_tester):
-    # set transforms to use_sim_time
+    pose_out_of_bounds = Pose()
+    pose_out_of_bounds.position.x = 2000.0
+    pose_out_of_bounds.position.y = 4000.0
+    pose_out_of_bounds.position.z = 0.0
+    pose_out_of_bounds.orientation.x = 0.0
+    pose_out_of_bounds.orientation.y = 0.0
+    pose_out_of_bounds.orientation.z = 0.0
+    pose_out_of_bounds.orientation.w = 1.0
+
+    reasonable_pose = Pose()
+    reasonable_pose.position.x = -1.0
+    reasonable_pose.position.y = 0.0
+    reasonable_pose.position.z = 0.0
+    reasonable_pose.orientation.x = 0.0
+    reasonable_pose.orientation.y = 0.0
+    reasonable_pose.orientation.z = 0.0
+    reasonable_pose.orientation.w = 1.0
+
+    robot_tester.wait_for_node_active('amcl')
+    robot_tester.wait_for_initial_pose()
+    robot_tester.wait_for_node_active('bt_navigator')
+    robot_tester.setGoalChecker('general_goal_checker')
+    robot_tester.setProgressChecker('progress_checker')
+
     result = True
     if result:
-        robot_tester.wait_for_node_active('amcl')
-        result = robot_tester.wait_for_initial_pose()
-    if result:
-        robot_tester.wait_for_node_active('bt_navigator')
-        result = robot_tester.runNavigateAction()
+        robot_tester.info_msg('Test non existing behavior_tree xml file')
+        result = robot_tester.runNavigateAction(
+            goal_pose=pose_out_of_bounds,
+            behavior_tree='behavior_tree_that_does_not_exist.xml',
+            expected_error_code=NavigateThroughPoses.Result.FAILED_TO_LOAD_BEHAVIOR_TREE,
+            expected_error_msg=('Error loading XML file: behavior_tree_that_does_not_exist.xml. '
+                                'Navigation canceled.'))
 
     if result:
-        result = test_RobotMovesToGoal(robot_tester)
+        robot_tester.info_msg('Test goal out of bounds')
+        result = robot_tester.runNavigateAction(
+            goal_pose=pose_out_of_bounds,
+            behavior_tree='',
+            expected_error_code=304,
+            expected_error_msg=('GridBasedplugin failed to plan from '
+                                '(-2.00, -0.50) to (2000.00, 4000.00): '
+                                '"Goal Coordinates of(2000.000000, 4000.000000) '
+                                'was outside bounds"'))
+
+    if result:
+        robot_tester.info_msg('Test for unknown goal checker')
+        robot_tester.setGoalChecker('junk_goal_checker')
+        result = robot_tester.runNavigateAction(
+            goal_pose=reasonable_pose,
+            behavior_tree='',
+            expected_error_code=100,
+            expected_error_msg=('Failed to find goal checker name: junk_goal_checker'))
+        robot_tester.setGoalChecker('general_goal_checker')
+
+    if result:
+        robot_tester.info_msg('Test for unknown progress checker')
+        robot_tester.setProgressChecker('junk_progress_checker')
+        result = robot_tester.runNavigateAction(
+            goal_pose=reasonable_pose,
+            behavior_tree='',
+            expected_error_code=100,
+            expected_error_msg=('Failed to find progress checker name: junk_progress_checker'))
+        robot_tester.setProgressChecker('progress_checker')
+
+    if result:
+        robot_tester.info_msg('Test for impossible to achieve progress parameters')
+        robot_tester.setControllerParam(
+            'progress_checker.movement_time_allowance',
+            Parameter.Type.DOUBLE,
+            0.1)
+        robot_tester.setControllerParam(
+            'progress_checker.required_movement_radius',
+            Parameter.Type.DOUBLE,
+            10.0)
+        # Limit controller to generate very slow velocities
+        # Note assumes nav2_dwb_controller dwb_core::DWBLocalPlanner
+        robot_tester.setControllerParam(
+            'FollowPath.max_vel_x',
+            Parameter.Type.DOUBLE,
+            0.0001)
+        result = robot_tester.runNavigateAction(
+            goal_pose=reasonable_pose,
+            behavior_tree='',
+            expected_error_code=105,
+            expected_error_msg=('Failed to make progress'))
 
     # Add more tests here if desired
-
     if result:
         robot_tester.info_msg('Test PASSED')
     else:
@@ -278,66 +363,29 @@ def fwd_pose(x=0.0, y=0.0, z=0.01):
 def get_testers(args):
     testers = []
 
-    if args.robot:
-        # Requested tester for one robot
-        init_x, init_y, final_x, final_y = args.robot[0]
-        tester = NavTester(
-            initial_pose=fwd_pose(float(init_x), float(init_y)),
-            goal_pose=fwd_pose(float(final_x), float(final_y)),
-        )
-        tester.info_msg(
-            'Starting tester, robot going from '
-            + init_x
-            + ', '
-            + init_y
-            + ' to '
-            + final_x
-            + ', '
-            + final_y
-            + '.'
-        )
-        testers.append(tester)
-        return testers
-
-    # Requested tester for multiple robots
-    for robot in args.robots:
-        namespace, init_x, init_y, final_x, final_y = robot
-        tester = NavTester(
-            namespace=namespace,
-            initial_pose=fwd_pose(float(init_x), float(init_y)),
-            goal_pose=fwd_pose(float(final_x), float(final_y)),
-        )
-        tester.info_msg(
-            'Starting tester for '
-            + namespace
-            + ' going from '
-            + init_x
-            + ', '
-            + init_y
-            + ' to '
-            + final_x
-            + ', '
-            + final_y
-        )
-        testers.append(tester)
+    init_x, init_y, final_x, final_y = args.robot[0]
+    tester = NavTester(
+        initial_pose=fwd_pose(float(init_x), float(init_y)),
+        goal_pose=fwd_pose(float(final_x), float(final_y)),
+    )
+    tester.info_msg(
+        'Starting tester, robot going from '
+        + init_x
+        + ', '
+        + init_y
+        + ' to '
+        + final_x
+        + ', '
+        + final_y
+        + '.'
+    )
+    testers.append(tester)
     return testers
-
-
-def check_args(expect_failure: str):
-    # Check if --expect_failure is True or False
-    if expect_failure != 'True' and expect_failure != 'False':
-        print(
-            '\033[1;37;41m' + ' -e flag must be set to True or False only. ' + '\033[0m'
-        )
-        exit(1)
-    else:
-        return eval(expect_failure)
 
 
 def main(argv=sys.argv[1:]):
     # The robot(s) positions from the input arguments
     parser = argparse.ArgumentParser(description='System-level navigation tester node')
-    parser.add_argument('-e', '--expect_failure')
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument(
         '-r',
@@ -347,19 +395,8 @@ def main(argv=sys.argv[1:]):
         metavar=('init_x', 'init_y', 'final_x', 'final_y'),
         help='The robot starting and final positions.',
     )
-    group.add_argument(
-        '-rs',
-        '--robots',
-        action='append',
-        nargs=5,
-        metavar=('name', 'init_x', 'init_y', 'final_x', 'final_y'),
-        help="The robot's namespace and starting and final positions. "
-        + 'Repeating the argument for multiple robots is supported.',
-    )
 
-    args, unknown = parser.parse_known_args()
-
-    expect_failure = check_args(args.expect_failure)
+    args, _ = parser.parse_known_args()
 
     rclpy.init()
 
@@ -369,9 +406,10 @@ def main(argv=sys.argv[1:]):
     # wait a few seconds to make sure entire stacks are up
     time.sleep(10)
 
+    passed = False
     for tester in testers:
         passed = run_all_tests(tester)
-        if passed != expect_failure:
+        if not passed:
             break
 
     for tester in testers:
@@ -380,7 +418,7 @@ def main(argv=sys.argv[1:]):
 
     testers[0].info_msg('Done Shutting Down.')
 
-    if passed != expect_failure:
+    if not passed:
         testers[0].info_msg('Exiting failed')
         exit(1)
     else:
