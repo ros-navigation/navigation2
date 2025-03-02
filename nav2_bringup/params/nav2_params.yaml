@@ -292,7 +292,7 @@ global_costmap:
 map_server:
   ros__parameters:
     # yaml_filename: ""
-    service_introspection_mode: disabled # disabled, metadata, contents
+    service_introspection_mode: "disabled" # disabled, metadata, contents
 
 map_saver:
   ros__parameters:
