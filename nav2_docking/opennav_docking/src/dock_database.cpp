@@ -55,8 +55,9 @@ bool DockDatabase::initialize(
     "Docking Server has %u dock types and %u dock instances available.",
     this->plugin_size(), this->instance_size());
 
-  // declare the service to reload the database
-  node->declare_parameter("service_introspection_mode", "disabled");
+  if(!node->has_parameter("service_introspection_mode")) {
+    node->declare_parameter("service_introspection_mode", "disabled");
+  }
   std::string service_introspection_mode_ =
     node->get_parameter("service_introspection_mode").as_string();
 

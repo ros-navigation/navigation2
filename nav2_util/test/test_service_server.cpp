@@ -1,0 +1,76 @@
+// Copyright (c) 2025 Maurice Alexander Purnawan
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include <memory>
+#include <string>
+#include "nav2_util/service_server.hpp"
+#include "rclcpp/rclcpp.hpp"
+#include "std_srvs/srv/empty.hpp"
+#include "std_msgs/msg/empty.hpp"
+#include "gtest/gtest.h"
+
+using nav2_util::ServiceServer;
+using std::string;
+
+class RclCppFixture
+{
+public:
+  RclCppFixture() {rclcpp::init(0, nullptr);}
+  ~RclCppFixture() {rclcpp::shutdown();}
+};
+RclCppFixture g_rclcppfixture;
+
+class TestServiceServer : public ServiceServer<std_srvs::srv::Empty>
+{
+public:
+  TestServiceServer(
+    const std::string & name,
+    std::string service_introspection_mode,
+    const rclcpp::Node::SharedPtr & provided_node,
+    CallbackType callback)
+  : ServiceServer(name, service_introspection_mode, provided_node, callback)
+  {}
+};
+
+TEST(ServiceServer, can_ServiceServer_handle_request)
+{
+  int a = 0;
+  auto node = rclcpp::Node::make_shared("test_node");
+  std::string service_introspection_mode_ = "disabled";
+
+  auto callback = [&a](const std::shared_ptr<rmw_request_id_t>,
+    const std::shared_ptr<std_srvs::srv::Empty::Request>,
+    std::shared_ptr<std_srvs::srv::Empty::Response>) {
+      a = 1;
+    };
+
+  TestServiceServer server("empty_srv", service_introspection_mode_, node, callback);
+
+  auto client_node = rclcpp::Node::make_shared("client_node");
+  auto client = client_node->create_client<std_srvs::srv::Empty>("empty_srv");
+
+  auto req = std::make_shared<std_srvs::srv::Empty::Request>();
+  auto result = client->async_send_request(req);
+
+  rclcpp::spin_some(node);
+  rclcpp::spin_some(client_node);
+
+  ASSERT_EQ(a, 1);
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}
