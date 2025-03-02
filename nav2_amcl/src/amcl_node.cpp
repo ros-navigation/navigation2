@@ -194,8 +194,8 @@ AmclNode::AmclNode(const rclcpp::NodeOptions & options)
 
   add_parameter(
     "service_introspection_mode", rclcpp::ParameterValue(std::string("disabled")),
-    "Set this to disabled for no introspection, metadata for Only metadata without any user data contents, "
-    "and contents for User data contents with metadata");
+    "Set this to disabled for no introspection, metadata for Only metadata without"
+    "any user data contents, and contents for User data contents with metadata");
 
   add_parameter(
     "update_min_a", rclcpp::ParameterValue(0.2),
