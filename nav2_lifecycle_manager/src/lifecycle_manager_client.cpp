@@ -34,7 +34,9 @@ LifecycleManagerClient::LifecycleManagerClient(
 
   // Use parent node for service call and logging
   node_ = parent_node;
-  node_->declare_parameter("service_introspection_mode", "disabled");
+  if(!node_->has_parameter("service_introspection_mode")) {
+    node_->declare_parameter("service_introspection_mode", "disabled");
+  }
   std::string service_introspection_mode =
     node_->get_parameter("service_introspection_mode").as_string();
 

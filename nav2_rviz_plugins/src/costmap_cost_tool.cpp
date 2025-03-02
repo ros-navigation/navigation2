@@ -52,8 +52,9 @@ void CostmapCostTool::onInitialize()
     return;
   }
   rclcpp::Node::SharedPtr node = node_ptr_->get_raw_node();
-
-  node->declare_parameter("service_introspection_mode", "disabled");
+  if(!node->has_parameter("service_introspection_mode")) {
+    node->declare_parameter("service_introspection_mode", "disabled");
+  }
   std::string service_introspection_mode;
   node->get_parameter("service_introspection_mode", service_introspection_mode);
   local_cost_client_ =
