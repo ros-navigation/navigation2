@@ -58,7 +58,7 @@ DummyPlanner::computePlan(const nav2_behavior_tree::ComputePathToPoseCommand::Sh
   std::this_thread::sleep_for(500ms);
 
   if (task_server_->cancelRequested()) {
-    RCLCPP_INFO(get_logger(), "Cancelled planning task.");
+    RCLCPP_INFO(get_logger(), "Canceled planning task.");
     task_server_->setCanceled();
     return;
   }

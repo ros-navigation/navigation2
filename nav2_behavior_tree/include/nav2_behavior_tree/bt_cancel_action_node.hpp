@@ -30,7 +30,7 @@ namespace nav2_behavior_tree
 using namespace std::chrono_literals;  // NOLINT
 
 /**
- * @brief Abstract class representing an action for cancelling BT node
+ * @brief Abstract class representing an action for canceling BT node
  * @tparam ActionT Type of action
  */
 template<class ActionT>

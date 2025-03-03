@@ -514,7 +514,7 @@ DWBLocalPlanner::transformGlobalPlan(
   auto prune_point = nav2_util::geometry_utils::first_after_integrated_distance(
     global_plan_.poses.begin(), global_plan_.poses.end(), forward_prune_distance_);
 
-  // Find the first pose in the plan (upto prune_point) that's less than transform_start_threshold
+  // Find the first pose in the plan (up to prune_point) that's less than transform_start_threshold
   // from the robot.
   auto transformation_begin = std::find_if(
     begin(global_plan_.poses), prune_point,

@@ -370,7 +370,7 @@ void pf_kdtree_cluster(pf_kdtree_t * self)
   while (queue_count > 0) {
     node = queue[--queue_count];
 
-    // If this node has already been labelled, skip it
+    // If this node has already been labeled, skip it
     if (node->cluster >= 0) {
       continue;
     }

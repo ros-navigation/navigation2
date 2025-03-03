@@ -154,7 +154,7 @@ planner_server:
     expected_planner_frequency: 20.0
     planner_plugins: [ "unknown", "tf_error", "start_outside_map", "goal_outside_map",
                        "start_occupied", "goal_occupied", "timeout","no_valid_path",
-                       "no_viapoints_given", "cancelled" ]
+                       "no_viapoints_given", "canceled" ]
     unknown:
       plugin: "nav2_system_tests::UnknownErrorPlanner"
     tf_error:
@@ -173,7 +173,7 @@ planner_server:
       plugin: "nav2_system_tests::NoValidPathErrorPlanner"
     no_viapoints_given:
       plugin: "nav2_system_tests::NoViapointsGivenErrorPlanner"
-    cancelled:
+    cancelled:  # codespell:ignore cancelled
       plugin: "nav2_system_tests::CancelledPlanner"
 
 smoother_server:

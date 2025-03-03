@@ -13,17 +13,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+Basic stock inspection demo.
+
+In this demonstration, the expectation
+is that there are cameras or RFID sensors mounted on the robots
+collecting information about stock quantity and location.
+"""
+
 from copy import deepcopy
 
 from geometry_msgs.msg import PoseStamped
 from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 import rclpy
-
-"""
-Basic stock inspection demo. In this demonstration, the expectation
-is that there are cameras or RFID sensors mounted on the robots
-collecting information about stock quantity and location.
-"""
 
 
 def main():
