@@ -35,7 +35,8 @@ from nav2_msgs.action import (
     UndockRobot,
 )
 from nav2_msgs.action import SmoothPath
-from nav2_msgs.srv import ClearEntireCostmap, GetCostmap, LoadMap, ManageLifecycleNodes
+from nav2_msgs.srv import GetCostmap, LoadMap, ManageLifecycleNodes
+from nav2_msgs.srv import ClearEntireCostmap, ClearCostmapExceptRegion, ClearCostmapAroundRobot
 
 import rclpy
 from rclpy.action import ActionClient
@@ -116,6 +117,12 @@ class BasicNavigator(Node):
         )
         self.clear_costmap_local_srv = self.create_client(
             ClearEntireCostmap, 'local_costmap/clear_entirely_local_costmap'
+        )
+        self.clear_costmap_except_region_srv = self.create_client(
+            ClearCostmapExceptRegion, 'local_costmap/clear_costmap_except_region'
+        )
+        self.clear_costmap_around_robot_srv = self.create_client(
+            ClearCostmapAroundRobot, 'local_costmap/clear_costmap_around_robot'
         )
         self.get_costmap_global_srv = self.create_client(
             GetCostmap, 'global_costmap/get_costmap'
@@ -764,6 +771,26 @@ class BasicNavigator(Node):
             self.info('Clear global costmaps service not available, waiting...')
         req = ClearEntireCostmap.Request()
         future = self.clear_costmap_global_srv.call_async(req)
+        rclpy.spin_until_future_complete(self, future)
+        return
+    
+    def clearCostmapExceptRegion(self, reset_distance: float):
+        """Clear the costmap except for a specified region."""
+        while not self.clear_costmap_except_region_srv.wait_for_service(timeout_sec=1.0):
+            self.info('ClearCostmapExceptRegion service not available, waiting...')
+        req = ClearCostmapExceptRegion.Request()
+        req.reset_distance = reset_distance
+        future = self.clear_costmap_except_region_srv.call_async(req)
+        rclpy.spin_until_future_complete(self, future)
+        return
+
+    def clearCostmapAroundRobot(self, reset_distance: float):
+        """Clear the costmap around the robot."""
+        while not self.clear_costmap_around_robot_srv.wait_for_service(timeout_sec=1.0):
+            self.info('ClearCostmapAroundRobot service not available, waiting...')
+        req = ClearCostmapAroundRobot.Request()
+        req.reset_distance = reset_distance
+        future = self.clear_costmap_around_robot_srv.call_async(req)
         rclpy.spin_until_future_complete(self, future)
         return
 
