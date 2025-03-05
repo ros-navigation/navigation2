@@ -35,9 +35,8 @@ from nav2_msgs.action import (
     UndockRobot,
 )
 from nav2_msgs.action import SmoothPath
-from nav2_msgs.srv import GetCostmap, LoadMap, ManageLifecycleNodes
 from nav2_msgs.srv import ClearEntireCostmap, ClearCostmapExceptRegion, ClearCostmapAroundRobot
-
+from nav2_msgs.srv import GetCostmap, LoadMap, ManageLifecycleNodes
 import rclpy
 from rclpy.action import ActionClient
 from rclpy.duration import Duration as rclpyDuration
@@ -773,7 +772,7 @@ class BasicNavigator(Node):
         future = self.clear_costmap_global_srv.call_async(req)
         rclpy.spin_until_future_complete(self, future)
         return
-    
+
     def clearCostmapExceptRegion(self, reset_distance: float):
         """Clear the costmap except for a specified region."""
         while not self.clear_costmap_except_region_srv.wait_for_service(timeout_sec=1.0):
