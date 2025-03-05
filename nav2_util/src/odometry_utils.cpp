@@ -56,7 +56,7 @@ OdomSmoother::OdomSmoother(
 : odom_history_duration_(rclcpp::Duration::from_seconds(filter_duration))
 {
   auto node = parent.lock();
-  
+ 
   rclcpp::SubscriptionOptions sub_options;
   sub_options.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
 
