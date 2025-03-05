@@ -42,8 +42,9 @@
 #include "nav_2d_msgs/msg/twist2_d_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "nav2_util/lifecycle_node.hpp"
-#include "rclcpp/rclcpp.hpp"
 #include "nav2_util/node_utils.hpp"
+#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/subscription_options.hpp"
 
 namespace nav_2d_utils
 {
@@ -70,11 +71,16 @@ public:
 
     std::string odom_topic;
     nh->get_parameter_or("odom_topic", odom_topic, default_topic);
+
+    rclcpp::SubscriptionOptions sub_options;
+    sub_options.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
+
     odom_sub_ =
       nh->create_subscription<nav_msgs::msg::Odometry>(
       odom_topic,
       rclcpp::SystemDefaultsQoS(),
-      std::bind(&OdomSubscriber::odomCallback, this, std::placeholders::_1));
+      std::bind(&OdomSubscriber::odomCallback, this, std::placeholders::_1),
+      sub_options);
   }
 
   inline nav_2d_msgs::msg::Twist2D getTwist() {return odom_vel_.velocity;}
