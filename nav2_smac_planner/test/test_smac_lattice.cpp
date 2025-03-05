@@ -175,7 +175,6 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
   EXPECT_THROW(planner->callDynamicParams(parameters), std::runtime_error);
 
   // test edge cases for coarse search resolution/goal heading mode
-
   std::vector<rclcpp::Parameter> parameters2;
   parameters2.push_back(rclcpp::Parameter("test.goal_heading_mode", std::string("invalid")));
   parameters2.push_back(rclcpp::Parameter("test.goal_heading_mode", std::string("BIDIRECTIONAL")));
