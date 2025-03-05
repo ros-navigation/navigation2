@@ -218,7 +218,7 @@ TEST(SmacTest, test_smac_se2_reconfigure)
   EXPECT_EQ(nodeSE2->get_parameter("test.coarse_search_resolution").as_int(), -1);
 
   // test coarse resolution edge cases. Consider when coarse resolution
-  // is not multile of angle bin quantization
+  // is not multiple of angle bin quantization
   auto result3 = rec_param->set_parameters_atomically(
     {rclcpp::Parameter("test.coarse_search_resolution", 7),
       rclcpp::Parameter("test.coarse_search_resolution", 10),
