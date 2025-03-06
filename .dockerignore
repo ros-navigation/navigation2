@@ -1,12 +1,11 @@
-################################################################################
-# Repo
+# Ignore everything by default
+*
 
-.circleci/
-.devcontainer/
-.dockerignore
-.git/
-.github/
-.gitignore
-**.Dockerfile
-**Dockerfile
-doc/
+# First-order allow exception for select directories
+!/.docker
+!/cache
+!/nav*
+!/tools
+
+# Second-order deny exception for Dockerfile
+/.docker/Dockerfile
