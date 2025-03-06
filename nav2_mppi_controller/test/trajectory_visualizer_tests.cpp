@@ -73,7 +73,7 @@ TEST(TrajectoryVisualizerTests, VisOptimalTrajectory)
 
   visualization_msgs::msg::MarkerArray received_msg;
   auto my_sub = node->create_subscription<visualization_msgs::msg::MarkerArray>(
-    "/trajectories", 10,
+    "trajectories", 10,
     [&](const visualization_msgs::msg::MarkerArray msg) {received_msg = msg;});
 
   // optimal_trajectory empty, should fail to publish
@@ -135,7 +135,7 @@ TEST(TrajectoryVisualizerTests, VisCandidateTrajectories)
 
   visualization_msgs::msg::MarkerArray received_msg;
   auto my_sub = node->create_subscription<visualization_msgs::msg::MarkerArray>(
-    "/trajectories", 10,
+    "trajectories", 10,
     [&](const visualization_msgs::msg::MarkerArray msg) {received_msg = msg;});
 
   models::Trajectories candidate_trajectories;
@@ -181,10 +181,11 @@ TEST(TrajectoryVisualizerTests, VisOptimalPath)
   EXPECT_EQ(received_path.poses.size(), 0u);
 
   // Now populated with content, should publish
-  optimal_trajectory.resize(20, 2);
+  optimal_trajectory.resize(20, 3);
   for (unsigned int i = 0; i != optimal_trajectory.rows() - 1; i++) {
     optimal_trajectory(i, 0) = static_cast<float>(i);
     optimal_trajectory(i, 1) = static_cast<float>(i);
+    optimal_trajectory(i, 2) = static_cast<float>(i);
   }
   vis.add(optimal_trajectory, "Optimal Trajectory", cmd_stamp);
   vis.visualize(bogus_path);

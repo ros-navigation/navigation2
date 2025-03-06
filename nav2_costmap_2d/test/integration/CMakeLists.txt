@@ -130,6 +130,7 @@ ament_add_test(plugin_container_tests
     TEST_MAP=${TEST_MAP_DIR}/TenByTen.yaml
     TEST_LAUNCH_DIR=${TEST_LAUNCH_DIR}
     TEST_EXECUTABLE=$<TARGET_FILE:plugin_container_tests_exec>
+    STATIC_ODOM_TO_BASE_LINK=true
 )
 
 ament_add_test(test_costmap_publisher_exec
@@ -140,6 +141,7 @@ ament_add_test(test_costmap_publisher_exec
     TEST_MAP=${TEST_MAP_DIR}/TenByTen.yaml
     TEST_LAUNCH_DIR=${TEST_LAUNCH_DIR}
     TEST_EXECUTABLE=$<TARGET_FILE:test_costmap_publisher_exec>
+    STATIC_ODOM_TO_BASE_LINK=true
 )
 
 ament_add_test(test_costmap_subscriber_exec
