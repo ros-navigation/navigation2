@@ -74,7 +74,6 @@ public:
 
     rclcpp::SubscriptionOptions sub_options;
     sub_options.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
-
     odom_sub_ =
       nh->create_subscription<nav_msgs::msg::Odometry>(
       odom_topic,
