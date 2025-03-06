@@ -256,6 +256,12 @@
       <output_port name="success">If the action was successful</output_port>
     </Action>
 
+    <Action ID="GetPoseFromPath">
+      <input_port name="path">Path to extract pose from</input_port>
+      <input_port name="index">Index of pose to extract from. -1 is end of list</input_port>
+      <output_port name="pose">Stamped extracted pose</output_port>
+    </Action>
+
     <!-- ############################### CONDITION NODES ############################## -->
     <Condition ID="GoalReached">
       <input_port name="goal">Destination</input_port>
