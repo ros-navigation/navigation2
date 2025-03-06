@@ -1,7 +1,7 @@
 /*
  * Software License Agreement (BSD License)
  *
- *  Copyright (c) 2017, Locus Robotics
+ *  Copyright (c) 2024, Joseph Duchesne
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -32,48 +32,45 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef NAV2_CONTROLLER__PLUGINS__STOPPED_GOAL_CHECKER_HPP_
-#define NAV2_CONTROLLER__PLUGINS__STOPPED_GOAL_CHECKER_HPP_
+#ifndef NAV2_CONTROLLER__PLUGINS__PATH_COMPLETE_GOAL_CHECKER_HPP_
+#define NAV2_CONTROLLER__PLUGINS__PATH_COMPLETE_GOAL_CHECKER_HPP_
 
-#include <memory>
 #include <string>
+#include <memory>
 #include <vector>
 
-#include "rclcpp/rclcpp.hpp"
-#include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "nav2_controller/plugins/simple_goal_checker.hpp"
 
 namespace nav2_controller
 {
 
 /**
- * @class StoppedGoalChecker
- * @brief Goal Checker plugin that checks the position difference and velocity
+ * @class PathCompleteGoalChecker
+ * @brief Goal Checker plugin that checks position delta, once path is shorter than a threshold.
  */
-class StoppedGoalChecker : public SimpleGoalChecker
+class PathCompleteGoalChecker : public SimpleGoalChecker
 {
 public:
-  StoppedGoalChecker();
+  PathCompleteGoalChecker();
+
   // Standard GoalChecker Interface
   void initialize(
     const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
     const std::string & plugin_name,
     const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
+
+  void reset() override;
+
   bool isGoalReached(
     const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
     const geometry_msgs::msg::Twist & velocity, const nav_msgs::msg::Path & current_path) override;
-  bool getTolerances(
-    geometry_msgs::msg::Pose & pose_tolerance,
-    geometry_msgs::msg::Twist & vel_tolerance) override;
 
 protected:
-  double rot_stopped_velocity_, trans_stopped_velocity_;
-  // Dynamic parameters handler
-  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
-  std::string plugin_name_;
+  // minimum remaining path length before checking position goals
+  double path_length_tolerance_;
 
   /**
-   * @brief Callback executed when a parameter change is detected
+   * @brief Callback executed when a paramter change is detected
    * @param parameters list of changed parameters
    */
   rcl_interfaces::msg::SetParametersResult
@@ -82,4 +79,4 @@ protected:
 
 }  // namespace nav2_controller
 
-#endif  // NAV2_CONTROLLER__PLUGINS__STOPPED_GOAL_CHECKER_HPP_
+#endif  // NAV2_CONTROLLER__PLUGINS__PATH_COMPLETE_GOAL_CHECKER_HPP_

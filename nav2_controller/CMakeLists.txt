@@ -145,6 +145,27 @@ target_link_libraries(stopped_goal_checker PRIVATE
   pluginlib::pluginlib
 )
 
+
+add_library(path_complete_goal_checker SHARED plugins/path_complete_goal_checker.cpp)
+target_include_directories(path_complete_goal_checker
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+)
+target_link_libraries(path_complete_goal_checker PUBLIC
+  ${geometry_msgs_TARGETS}
+  nav2_core::nav2_core
+  nav2_costmap_2d::nav2_costmap_2d_core
+  rclcpp::rclcpp
+  rclcpp_lifecycle::rclcpp_lifecycle
+  ${rcl_interfaces_TARGETS}
+  simple_goal_checker
+)
+target_link_libraries(path_complete_goal_checker PRIVATE
+  nav2_util::nav2_util_core
+  pluginlib::pluginlib
+)
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights
@@ -161,7 +182,13 @@ endif()
 
 rclcpp_components_register_nodes(${library_name} "nav2_controller::ControllerServer")
 
-install(TARGETS simple_progress_checker pose_progress_checker simple_goal_checker stopped_goal_checker ${library_name}
+install(TARGETS
+  simple_progress_checker
+  pose_progress_checker
+  simple_goal_checker
+  stopped_goal_checker
+  path_complete_goal_checker
+  ${library_name}
   EXPORT ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
@@ -181,6 +208,7 @@ ament_export_libraries(simple_progress_checker
   pose_progress_checker
   simple_goal_checker
   stopped_goal_checker
+  path_complete_goal_checker
   ${library_name})
 ament_export_dependencies(
   geometry_msgs
