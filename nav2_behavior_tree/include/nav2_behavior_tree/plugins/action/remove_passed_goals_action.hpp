@@ -48,7 +48,6 @@ public:
       BT::OutputPort<geometry_msgs::msg::PoseStampedArray>("output_goals",
           "Goals with passed viapoints removed"),
       BT::InputPort<double>("radius", 0.5, "radius to goal for it to be considered for removal"),
-      BT::InputPort<std::string>("global_frame", "Global frame"),
       BT::InputPort<std::string>("robot_base_frame", "Robot base frame"),
     };
   }

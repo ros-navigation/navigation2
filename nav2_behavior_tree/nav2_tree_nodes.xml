@@ -15,6 +15,7 @@
       <input_port name="server_timeout">Server timeout</input_port>
       <input_port name="disable_collision_checks">Disable collision checking</input_port>
       <output_port name="error_code_id">"Back up error code"</output_port>
+      <output_port name="error_msg">"Back up error message"</output_port>
     </Action>
 
     <Action ID="DriveOnHeading">
@@ -25,6 +26,7 @@
       <input_port name="server_timeout">Server timeout</input_port>
       <input_port name="disable_collision_checks">Disable collision checking</input_port>
       <output_port name="error_code_id">"Drive on heading error code"</output_port>
+      <output_port name="error_msg">"Drive on heading error message"</output_port>
     </Action>
 
     <Action ID="CancelControl">
@@ -82,6 +84,7 @@
       <input_port name="server_timeout">Server timeout</input_port>
       <output_port name="path">Path created by ComputePathToPose node</output_port>
       <output_port name="error_code_id">"Compute path to pose error code"</output_port>
+      <output_port name="error_msg">"Compute path to pose error message"</output_port>
     </Action>
 
     <Action ID="ComputePathThroughPoses">
@@ -92,12 +95,12 @@
       <input_port name="planner_id">Mapped name to the planner plugin type to use</input_port>
       <output_port name="path">Path created by ComputePathToPose node</output_port>
       <output_port name="error_code_id">"Compute path through poses error code"</output_port>
+      <output_port name="error_msg">"Compute path through poses error message"</output_port>
     </Action>
 
     <Action ID="RemovePassedGoals">
       <input_port name="input_goals">Input goals to remove if passed</input_port>
       <input_port name="radius">Radius tolerance on a goal to consider it passed</input_port>
-      <input_port name="global_frame">Global frame</input_port>
       <input_port name="robot_base_frame">Robot base frame</input_port>
       <output_port name="output_goals">Set of goals after removing any passed</output_port>
     </Action>
@@ -119,6 +122,8 @@
       <output_port name="smoothed_path">Smoothed path</output_port>
       <output_port name="smoothing_duration">Smoothing duration</output_port>
       <output_port name="was_completed">True if smoothing was not interrupted by time limit</output_port>
+      <output_port name="error_code_id">"Smooth Path error code"</output_port>
+      <output_port name="error_msg">"Smooth Path error message"</output_port>
     </Action>
 
     <Action ID="FollowPath">
@@ -129,6 +134,7 @@
       <input_port name="service_name">Service name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
       <output_port name="error_code_id">Follow Path error code</output_port>
+      <output_port name="error_msg">Follow Path error message</output_port>
     </Action>
 
     <Action ID="NavigateToPose">
@@ -137,6 +143,7 @@
         <input_port name="server_timeout">Server timeout</input_port>
         <input_port name="behavior_tree">Behavior tree to run</input_port>
         <output_port name="error_code_id">Navigate to pose error code</output_port>
+        <output_port name="error_msg">Navigate to pose error message</output_port>
     </Action>
 
     <Action ID="NavigateThroughPoses">
@@ -145,6 +152,7 @@
         <input_port name="server_timeout">Server timeout</input_port>
         <input_port name="behavior_tree">Behavior tree to run</input_port>
         <output_port name="error_code_id">Navigate through poses error code</output_port>
+        <output_port name="error_msg">Navigate through poses error message</output_port>
     </Action>
 
     <Action ID="ReinitializeGlobalLocalization">
@@ -159,6 +167,7 @@
     </Action>
 
     <Action ID="TruncatePathLocal">
+      <input_port name="input_path">Path to truncate</input_port>
       <input_port name="distance_forward">Distance in forward direction</input_port>
       <input_port name="distance_backward">Distance in backward direction</input_port>
       <input_port name="robot_frame">Robot base frame id</input_port>
@@ -204,14 +213,18 @@
       <input_port name="time_allowance">Allowed time for spinning</input_port>
       <input_port name="server_name">Server name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
+      <input_port name="is_recovery">If true recovery count will be incremented</input_port>
       <input_port name="disable_collision_checks">Disable collision checking</input_port>
       <output_port name="error_code_id">Spin error code</output_port>
+      <output_port name="error_msg">Spin error message</output_port>
     </Action>
 
     <Action ID="Wait">
       <input_port name="wait_duration">Wait time</input_port>
       <input_port name="server_name">Server name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
+      <output_port name="error_code_id">Wait error code</output_port>
+      <output_port name="error_msg">Wait error message</output_port>
     </Action>
 
     <Action ID="AssistedTeleop">
@@ -220,12 +233,12 @@
       <input_port name="server_name">Service name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
       <output_port name="error_code_id">Assisted teleop error code</output_port>
+      <output_port name="error_msg">Assisted teleop error message</output_port>
     </Action>
 
     <!-- ############################### CONDITION NODES ############################## -->
     <Condition ID="GoalReached">
         <input_port name="goal">Destination</input_port>
-        <input_port name="global_frame">Reference frame</input_port>
         <input_port name="robot_base_frame">Robot base frame</input_port>
     </Condition>
 
