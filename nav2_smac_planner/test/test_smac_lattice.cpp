@@ -73,6 +73,23 @@ TEST(SmacTest, test_smac_lattice)
   goal.pose.orientation.w = 1.0;
   auto planner = std::make_unique<nav2_smac_planner::SmacPlannerLattice>();
   try {
+    // invalid goal heading mode
+    nodeLattice->declare_parameter("test.goal_heading_mode", std::string("UNKNOWN"));
+    nodeLattice->set_parameter(rclcpp::Parameter("test.goal_heading_mode", std::string("UNKNOWN")));
+    EXPECT_THROW(planner->configure(nodeLattice, "test", nullptr, costmap_ros), std::runtime_error);
+    nodeLattice->set_parameter(rclcpp::Parameter("test.goal_heading_mode", std::string("DEFAULT")));
+
+    // invalid COnfiguration resolution
+    nodeLattice->set_parameter(rclcpp::Parameter("test.coarse_search_resolution", -1));
+    nodeLattice->set_parameter(rclcpp::Parameter("test.max_iterations", -1));
+
+    EXPECT_NO_THROW(planner->configure(nodeLattice, "test", nullptr, costmap_ros));
+    // Valid configuration
+    nodeLattice->set_parameter(rclcpp::Parameter("test.max_iterations", 1000000));
+
+    // Coarse search resolution will default to 1, not muiltiple of number of heading(16 default)
+    nodeLattice->set_parameter(rclcpp::Parameter("test.coarse_search_resolution", 3));
+
     // Expect to throw due to invalid prims file in param
     planner->configure(nodeLattice, "test", nullptr, costmap_ros);
   } catch (...) {
@@ -156,4 +173,18 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
   std::vector<rclcpp::Parameter> parameters;
   parameters.push_back(rclcpp::Parameter("test.lattice_filepath", std::string("HI")));
   EXPECT_THROW(planner->callDynamicParams(parameters), std::runtime_error);
+
+  // test edge cases for coarse search resolution/goal heading mode
+  auto results2 = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.goal_heading_mode", std::string("invalid")),
+      rclcpp::Parameter("test.goal_heading_mode", std::string("BIDIRECTIONAL")),
+      rclcpp::Parameter("test.coarse_search_resolution", -1),
+      rclcpp::Parameter("test.coarse_search_resolution", 7)});
+
+  try {
+    rclcpp::spin_until_future_complete(
+      nodeLattice->get_node_base_interface(),
+      results2);
+  } catch (...) {
+  }
 }
