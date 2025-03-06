@@ -138,32 +138,32 @@
     </Action>
 
     <Action ID="NavigateToPose">
-        <input_port name="goal">Goal</input_port>
-        <input_port name="server_name">Server name</input_port>
-        <input_port name="server_timeout">Server timeout</input_port>
-        <input_port name="behavior_tree">Behavior tree to run</input_port>
-        <output_port name="error_code_id">Navigate to pose error code</output_port>
-        <output_port name="error_msg">Navigate to pose error message</output_port>
+      <input_port name="goal">Goal</input_port>
+      <input_port name="server_name">Server name</input_port>
+      <input_port name="server_timeout">Server timeout</input_port>
+      <input_port name="behavior_tree">Behavior tree to run</input_port>
+      <output_port name="error_code_id">Navigate to pose error code</output_port>
+      <output_port name="error_msg">Navigate to pose error message</output_port>
     </Action>
 
     <Action ID="NavigateThroughPoses">
-        <input_port name="goals">Goals</input_port>
-        <input_port name="server_name">Server name</input_port>
-        <input_port name="server_timeout">Server timeout</input_port>
-        <input_port name="behavior_tree">Behavior tree to run</input_port>
-        <output_port name="error_code_id">Navigate through poses error code</output_port>
-        <output_port name="error_msg">Navigate through poses error message</output_port>
+      <input_port name="goals">Goals</input_port>
+      <input_port name="server_name">Server name</input_port>
+      <input_port name="server_timeout">Server timeout</input_port>
+      <input_port name="behavior_tree">Behavior tree to run</input_port>
+      <output_port name="error_code_id">Navigate through poses error code</output_port>
+      <output_port name="error_msg">Navigate through poses error message</output_port>
     </Action>
 
     <Action ID="ReinitializeGlobalLocalization">
-        <input_port name="service_name">Service name</input_port>
-        <input_port name="server_timeout">Server timeout</input_port>
+      <input_port name="service_name">Service name</input_port>
+      <input_port name="server_timeout">Server timeout</input_port>
     </Action>
 
     <Action ID="TruncatePath">
-        <input_port name="distance">Distance before goal to truncate</input_port>
-        <input_port name="input_path">Path to truncate</input_port>
-        <output_port name="output_path">Truncated path to utilize</output_port>
+      <input_port name="distance">Distance before goal to truncate</input_port>
+      <input_port name="input_path">Path to truncate</input_port>
+      <output_port name="output_path">Truncated path to utilize</output_port>
     </Action>
 
     <Action ID="TruncatePathLocal">
@@ -179,33 +179,33 @@
     </Action>
 
     <Action ID="PlannerSelector">
-        <input_port name="topic_name">Name of the topic to receive planner selection commands</input_port>
-        <input_port name="default_planner">Default planner of the planner selector</input_port>
-        <output_port name="selected_planner">Name of the selected planner received from the topic subscription</output_port>
+      <input_port name="topic_name">Name of the topic to receive planner selection commands</input_port>
+      <input_port name="default_planner">Default planner of the planner selector</input_port>
+      <output_port name="selected_planner">Name of the selected planner received from the topic subscription</output_port>
     </Action>
 
     <Action ID="ControllerSelector">
-        <input_port name="topic_name">Name of the topic to receive controller selection commands</input_port>
-        <input_port name="default_controller">Default controller of the controller selector</input_port>
-        <output_port name="selected_controller">Name of the selected controller received from the topic subscription</output_port>
+      <input_port name="topic_name">Name of the topic to receive controller selection commands</input_port>
+      <input_port name="default_controller">Default controller of the controller selector</input_port>
+      <output_port name="selected_controller">Name of the selected controller received from the topic subscription</output_port>
     </Action>
 
     <Action ID="SmootherSelector">
-        <input_port name="topic_name">Name of the topic to receive smoother selection commands</input_port>
-        <input_port name="default_smoother">Default smoother of the smoother selector</input_port>
-        <output_port name="selected_smoother">Name of the selected smoother received from the topic subscription</output_port>
+      <input_port name="topic_name">Name of the topic to receive smoother selection commands</input_port>
+      <input_port name="default_smoother">Default smoother of the smoother selector</input_port>
+      <output_port name="selected_smoother">Name of the selected smoother received from the topic subscription</output_port>
     </Action>
 
     <Action ID="GoalCheckerSelector">
-        <input_port name="topic_name">Name of the topic to receive goal checker selection commands</input_port>
-        <input_port name="default_goal_checker">Default goal checker of the controller selector</input_port>
-        <output_port name="selected_goal_checker">Name of the selected goal checker received from the topic subscription</output_port>
+      <input_port name="topic_name">Name of the topic to receive goal checker selection commands</input_port>
+      <input_port name="default_goal_checker">Default goal checker of the controller selector</input_port>
+      <output_port name="selected_goal_checker">Name of the selected goal checker received from the topic subscription</output_port>
     </Action>
 
     <Action ID="ProgressCheckerSelector">
-        <input_port name="topic_name">Name of the topic to receive progress checker selection commands</input_port>
-        <input_port name="default_progress_checker">Default progress checker of the controller selector</input_port>
-        <output_port name="selected_progress_checker">Name of the selected progress checker received from the topic subscription</output_port>
+      <input_port name="topic_name">Name of the topic to receive progress checker selection commands</input_port>
+      <input_port name="default_progress_checker">Default progress checker of the controller selector</input_port>
+      <output_port name="selected_progress_checker">Name of the selected progress checker received from the topic subscription</output_port>
     </Action>
 
     <Action ID="Spin">
@@ -233,13 +233,39 @@
       <input_port name="server_name">Service name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
       <output_port name="error_code_id">Assisted teleop error code</output_port>
-      <output_port name="error_msg">Assisted teleop error message</output_port>
+    </Action>
+
+    <Action ID="DockRobot">
+      <input_port name="dock_id">Dock ID or name to use</input_port>
+      <input_port name="dock_pose">The dock pose, if not using dock id</input_port>
+      <input_port name="dock_type">The dock plugin type, if using dock pose</input_port>
+      <input_port name="max_staging_time">Maximum time to navigate to the staging pose</input_port>
+      <input_port name="navigate_to_staging_pose">Whether to autonomously navigate to staging pose</input_port>
+      <input_port name="use_dock_id">Whether to use the dock's ID or dock pose fields</input_port>
+      <output_port name="error_code_id">Dock error code</output_port>
+      <output_port name="error_msg">Dock error message</output_port>
+      <output_port name="num_retries">The number of retries executed</output_port>
+      <output_port name="success">If the action was successful</output_port>
+    </Action>
+
+    <Action ID="UndockRobot">
+      <input_port name="dock_type">The dock plugin type, if not previous instance used for docking</input_port>
+      <input_port name="max_undocking_time">Maximum time to get back to the staging pose</input_port>
+      <output_port name="error_code_id">Undock error code</output_port>
+      <output_port name="error_msg">Undock error message</output_port>
+      <output_port name="success">If the action was successful</output_port>
+    </Action>
+
+    <Action ID="GetPoseFromPath">
+      <input_port name="path">Path to extract pose from</input_port>
+      <input_port name="index">Index of pose to extract from. -1 is end of list</input_port>
+      <output_port name="pose">Stamped extracted pose</output_port>
     </Action>
 
     <!-- ############################### CONDITION NODES ############################## -->
     <Condition ID="GoalReached">
-        <input_port name="goal">Destination</input_port>
-        <input_port name="robot_base_frame">Robot base frame</input_port>
+      <input_port name="goal">Destination</input_port>
+      <input_port name="robot_base_frame">Robot base frame</input_port>
     </Condition>
 
     <Condition ID="IsStuck"/>
