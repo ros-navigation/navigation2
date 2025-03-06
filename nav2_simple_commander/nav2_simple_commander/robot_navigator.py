@@ -35,7 +35,7 @@ from nav2_msgs.action import (
     UndockRobot,
 )
 from nav2_msgs.action import SmoothPath
-from nav2_msgs.srv import ClearEntireCostmap, ClearCostmapExceptRegion, ClearCostmapAroundRobot
+from nav2_msgs.srv import ClearCostmapAroundRobot, ClearCostmapExceptRegion, ClearEntireCostmap
 from nav2_msgs.srv import GetCostmap, LoadMap, ManageLifecycleNodes
 import rclpy
 from rclpy.action import ActionClient
