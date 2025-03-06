@@ -34,14 +34,6 @@ using namespace smoother_utils;  // NOLINT
 using namespace nav2_smoother;  // NOLINT
 using namespace std::chrono_literals;  // NOLINT
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 TEST(SmootherTest, test_sg_smoother_basics)
 {
   rclcpp_lifecycle::LifecycleNode::SharedPtr node =
@@ -326,4 +318,17 @@ TEST(SmootherTest, test_sg_smoother_reversing)
   }
 
   EXPECT_LT(length, base_length);
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

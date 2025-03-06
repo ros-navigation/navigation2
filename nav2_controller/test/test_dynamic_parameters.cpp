@@ -51,14 +51,6 @@ public:
   }
 };
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 TEST(WPTest, test_dynamic_parameters)
 {
   auto controller = std::make_shared<ControllerShim>();
@@ -85,4 +77,17 @@ TEST(WPTest, test_dynamic_parameters)
   EXPECT_EQ(controller->get_parameter("min_y_velocity_threshold").as_double(), 100.0);
   EXPECT_EQ(controller->get_parameter("min_theta_velocity_threshold").as_double(), 100.0);
   EXPECT_EQ(controller->get_parameter("failure_tolerance").as_double(), 5.0);
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }
