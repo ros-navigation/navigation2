@@ -17,6 +17,8 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d_publisher.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
+#include "map_msgs/msg/occupancy_grid_update.hpp"
+#include "nav_msgs/msg/occupancy_grid.hpp"
 
 class RclCppFixture
 {
@@ -31,26 +33,51 @@ public:
   TestCostmapSubscriberShould()
   : topicName("/costmap"), node(nav2_util::LifecycleNode::make_shared("test_subscriber"))
   {
-    dummyCostmapMsgSubscriber = node->create_subscription<nav2_msgs::msg::Costmap>(
-      topicName + "_raw", 10,
+    dummyCostmapMsgSubscriber = node->create_subscription<nav_msgs::msg::OccupancyGrid>(
+      topicName, 10,
       std::bind(&TestCostmapSubscriberShould::costmapCallback, this, std::placeholders::_1));
 
-    dummyCostmapUpdateMsgSubscriber =
+    dummyCostmapRawMsgSubscriber = node->create_subscription<nav2_msgs::msg::Costmap>(
+      topicName + "_raw", 10,
+      std::bind(&TestCostmapSubscriberShould::costmapRawCallback, this, std::placeholders::_1));
+
+    dummyCostmapUpdateMsgSubscriber = node->create_subscription<map_msgs::msg::OccupancyGridUpdate>(
+      topicName + "_updates", 10,
+      std::bind(&TestCostmapSubscriberShould::costmapUpdateCallback, this, std::placeholders::_1));
+
+    dummyCostmapRawUpdateMsgSubscriber =
       node->create_subscription<nav2_msgs::msg::CostmapUpdate>(
       topicName + "_raw_updates", 10, std::bind(
-        &TestCostmapSubscriberShould::costmapUpdateCallback, this,
+        &TestCostmapSubscriberShould::costmapRawUpdateCallback, this,
         std::placeholders::_1));
   }
 
   void SetUp() override
   {
     fullCostmapMsgCount = 0;
+    fullCostmapRawMsgCount = 0;
     updateCostmapMsgCount = 0;
+    updateCostmapRawMsgCount = 0;
 
     costmapSubscriber =
       std::make_unique<nav2_costmap_2d::CostmapSubscriber>(node, topicName + "_raw");
 
     costmapToSend = std::make_shared<nav2_costmap_2d::Costmap2D>(10, 10, 1.0, 0.0, 0.0);
+    if (cost_translation_table_ == NULL) {
+      cost_translation_table_ = new char[256];
+
+      // special values:
+      cost_translation_table_[0] = 0;  // NO obstacle
+      cost_translation_table_[253] = 99;  // INSCRIBED obstacle
+      cost_translation_table_[254] = 100;  // LETHAL obstacle
+      cost_translation_table_[255] = -1;  // UNKNOWN
+
+      // regular cost values scale the range 1 to 252 (inclusive) to fit
+      // into 1 to 98 (inclusive).
+      for (int i = 1; i < 253; i++) {
+        cost_translation_table_[i] = static_cast<char>(1 + (97 * (i - 1)) / 251);
+      }
+    }
   }
 
   void TearDown() override
@@ -58,14 +85,21 @@ public:
     costmapSubscriber.reset();
     costmapToSend.reset();
   }
-
-  void costmapCallback(const nav2_msgs::msg::Costmap::SharedPtr)
+  void costmapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr)
   {
     this->fullCostmapMsgCount++;
   }
-  void costmapUpdateCallback(const nav2_msgs::msg::CostmapUpdate::SharedPtr)
+  void costmapRawCallback(const nav2_msgs::msg::Costmap::SharedPtr)
+  {
+    this->fullCostmapRawMsgCount++;
+  }
+  void costmapUpdateCallback(const map_msgs::msg::OccupancyGridUpdate::SharedPtr)
   {
     this->updateCostmapMsgCount++;
+  }
+  void costmapRawUpdateCallback(const nav2_msgs::msg::CostmapUpdate::SharedPtr)
+  {
+    this->updateCostmapRawMsgCount++;
   }
 
   struct CostmapObservation
@@ -98,7 +132,7 @@ protected:
       std::vector<uint8_t>(
       currentSubscriberCostmap->getCharMap(),
       currentSubscriberCostmap->getCharMap() + currentSubscriberCostmap->getSizeInCellsX() *
-      currentSubscriberCostmap->getSizeInCellsX());
+      currentSubscriberCostmap->getSizeInCellsY());
   }
 
   std::vector<uint8_t> getCurrentCharMapToSend()
@@ -106,20 +140,26 @@ protected:
     return std::vector<uint8_t>(
       costmapToSend->getCharMap(),
       costmapToSend->getCharMap() + costmapToSend->getSizeInCellsX() *
-      costmapToSend->getSizeInCellsX());
+      costmapToSend->getSizeInCellsY());
   }
 
   int fullCostmapMsgCount;
+  int fullCostmapRawMsgCount;
   int updateCostmapMsgCount;
+  int updateCostmapRawMsgCount;
   std::string topicName;
+  char * cost_translation_table_ = NULL;
 
   nav2_util::LifecycleNode::SharedPtr node;
   rclcpp::Logger logger {rclcpp::get_logger("test_costmap_subscriber_should")};
 
   std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmapSubscriber;
   std::shared_ptr<nav2_costmap_2d::Costmap2D> costmapToSend;
-  rclcpp::Subscription<nav2_msgs::msg::Costmap>::SharedPtr dummyCostmapMsgSubscriber;
-  rclcpp::Subscription<nav2_msgs::msg::CostmapUpdate>::SharedPtr dummyCostmapUpdateMsgSubscriber;
+  rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr dummyCostmapMsgSubscriber;
+  rclcpp::Subscription<nav2_msgs::msg::Costmap>::SharedPtr dummyCostmapRawMsgSubscriber;
+  rclcpp::Subscription<map_msgs::msg::OccupancyGridUpdate>::SharedPtr
+    dummyCostmapUpdateMsgSubscriber;
+  rclcpp::Subscription<nav2_msgs::msg::CostmapUpdate>::SharedPtr dummyCostmapRawUpdateMsgSubscriber;
 };
 
 TEST_F(TestCostmapSubscriberShould, handleFullCostmapMsgs)
@@ -127,7 +167,9 @@ TEST_F(TestCostmapSubscriberShould, handleFullCostmapMsgs)
   bool always_send_full_costmap = true;
 
   std::vector<std::vector<std::uint8_t>> expectedCostmaps;
+  std::unique_ptr<nav_msgs::msg::OccupancyGrid> expectedGrids = std::make_unique<nav_msgs::msg::OccupancyGrid>();
   std::vector<std::vector<std::uint8_t>> receivedCostmaps;
+  std::unique_ptr<nav_msgs::msg::OccupancyGrid> receivedGrids = std::make_unique<nav_msgs::msg::OccupancyGrid>();
 
   auto costmapPublisher = std::make_shared<nav2_costmap_2d::Costmap2DPublisher>(
     node, costmapToSend.get(), "", topicName, always_send_full_costmap);
@@ -139,6 +181,10 @@ TEST_F(TestCostmapSubscriberShould, handleFullCostmapMsgs)
     }
 
     expectedCostmaps.emplace_back(getCurrentCharMapToSend());
+    // Grid is expected to be translated from cost translation table
+    for (auto cost : getCurrentCharMapToSend()) {
+      expectedGrids->data.push_back(cost_translation_table_[cost]);
+    }
 
     costmapPublisher->updateBounds(mapChange.x0, mapChange.xn, mapChange.y0, mapChange.yn);
     costmapPublisher->publishCostmap();
@@ -146,12 +192,18 @@ TEST_F(TestCostmapSubscriberShould, handleFullCostmapMsgs)
     rclcpp::spin_some(node->get_node_base_interface());
 
     receivedCostmaps.emplace_back(getCurrentCharMapFromSubscriber());
+    for(auto cost : getCurrentCharMapFromSubscriber()) {
+      receivedGrids->data.push_back(cost_translation_table_[cost]);
+    }
   }
 
   ASSERT_EQ(fullCostmapMsgCount, mapChanges.size());
+  ASSERT_EQ(fullCostmapRawMsgCount, mapChanges.size());
   ASSERT_EQ(updateCostmapMsgCount, 0);
+  ASSERT_EQ(updateCostmapRawMsgCount, 0);
 
   ASSERT_EQ(expectedCostmaps, receivedCostmaps);
+  ASSERT_EQ(expectedGrids->data, receivedGrids->data);
 
   costmapPublisher->on_deactivate();
 }
@@ -161,7 +213,9 @@ TEST_F(TestCostmapSubscriberShould, handleCostmapUpdateMsgs)
   bool always_send_full_costmap = false;
 
   std::vector<std::vector<std::uint8_t>> expectedCostmaps;
+  std::unique_ptr<map_msgs::msg::OccupancyGridUpdate> expectedGrids = std::make_unique<map_msgs::msg::OccupancyGridUpdate>();
   std::vector<std::vector<std::uint8_t>> receivedCostmaps;
+  std::unique_ptr<map_msgs::msg::OccupancyGridUpdate> receivedGrids = std::make_unique<map_msgs::msg::OccupancyGridUpdate>();
 
   auto costmapPublisher = std::make_shared<nav2_costmap_2d::Costmap2DPublisher>(
     node, costmapToSend.get(), "", topicName, always_send_full_costmap);
@@ -173,6 +227,9 @@ TEST_F(TestCostmapSubscriberShould, handleCostmapUpdateMsgs)
     }
 
     expectedCostmaps.emplace_back(getCurrentCharMapToSend());
+    for (auto cost : getCurrentCharMapToSend()) {
+      expectedGrids->data.push_back(cost_translation_table_[cost]);
+    }
 
     costmapPublisher->updateBounds(mapChange.x0, mapChange.xn, mapChange.y0, mapChange.yn);
     costmapPublisher->publishCostmap();
@@ -180,12 +237,18 @@ TEST_F(TestCostmapSubscriberShould, handleCostmapUpdateMsgs)
     rclcpp::spin_some(node->get_node_base_interface());
 
     receivedCostmaps.emplace_back(getCurrentCharMapFromSubscriber());
+    for(auto cost : getCurrentCharMapFromSubscriber()) {
+      receivedGrids->data.push_back(cost_translation_table_[cost]);
+    }
   }
 
   ASSERT_EQ(fullCostmapMsgCount, 1);
+  ASSERT_EQ(fullCostmapRawMsgCount, 1);
   ASSERT_EQ(updateCostmapMsgCount, mapChanges.size() - 1);
+  ASSERT_EQ(updateCostmapRawMsgCount, mapChanges.size() - 1);
 
   ASSERT_EQ(expectedCostmaps, receivedCostmaps);
+  ASSERT_EQ(expectedGrids->data, receivedGrids->data);
 
   costmapPublisher->on_deactivate();
 }
