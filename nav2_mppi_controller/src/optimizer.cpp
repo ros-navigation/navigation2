@@ -241,9 +241,8 @@ void Optimizer::generateNoisedTrajectories()
 void Optimizer::applyControlSequenceConstraints()
 {
   auto & s = settings_;
-
-  float max_delta_vx = s.model_dt * s.constraints.ax_max;
-  float min_delta_vx = s.model_dt * s.constraints.ax_min;
+  float max_delta_vx = 0.0;
+  float min_delta_vx = 0.0;
   float max_delta_vy = s.model_dt * s.constraints.ay_max;
   float max_delta_wz = s.model_dt * s.constraints.az_max;
   float vx_last = utils::clamp(s.constraints.vx_min, s.constraints.vx_max, control_sequence_.vx(0));
@@ -259,6 +258,13 @@ void Optimizer::applyControlSequenceConstraints()
   for (unsigned int i = 1; i != control_sequence_.vx.size(); i++) {
     float & vx_curr = control_sequence_.vx(i);
     vx_curr = utils::clamp(s.constraints.vx_min, s.constraints.vx_max, vx_curr);
+    if(abs(vx_curr) >= abs(vx_last) && vx_curr * vx_last >= 0.0) {
+      max_delta_vx = s.constraints.ax_max * s.model_dt;
+      min_delta_vx = -s.constraints.ax_max * s.model_dt;
+    } else {
+      max_delta_vx = -s.constraints.ax_min * s.model_dt;
+      min_delta_vx = s.constraints.ax_min * s.model_dt;
+    }
     vx_curr = utils::clamp(vx_last + min_delta_vx, vx_last + max_delta_vx, vx_curr);
     vx_last = vx_curr;
 
