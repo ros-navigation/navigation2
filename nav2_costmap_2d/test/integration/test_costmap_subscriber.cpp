@@ -167,9 +167,11 @@ TEST_F(TestCostmapSubscriberShould, handleFullCostmapMsgs)
   bool always_send_full_costmap = true;
 
   std::vector<std::vector<std::uint8_t>> expectedCostmaps;
-  std::unique_ptr<nav_msgs::msg::OccupancyGrid> expectedGrids = std::make_unique<nav_msgs::msg::OccupancyGrid>();
+  std::unique_ptr<nav_msgs::msg::OccupancyGrid> expectedGrids =
+    std::make_unique<nav_msgs::msg::OccupancyGrid>();
   std::vector<std::vector<std::uint8_t>> receivedCostmaps;
-  std::unique_ptr<nav_msgs::msg::OccupancyGrid> receivedGrids = std::make_unique<nav_msgs::msg::OccupancyGrid>();
+  std::unique_ptr<nav_msgs::msg::OccupancyGrid> receivedGrids =
+    std::make_unique<nav_msgs::msg::OccupancyGrid>();
 
   auto costmapPublisher = std::make_shared<nav2_costmap_2d::Costmap2DPublisher>(
     node, costmapToSend.get(), "", topicName, always_send_full_costmap);
@@ -213,9 +215,11 @@ TEST_F(TestCostmapSubscriberShould, handleCostmapUpdateMsgs)
   bool always_send_full_costmap = false;
 
   std::vector<std::vector<std::uint8_t>> expectedCostmaps;
-  std::unique_ptr<map_msgs::msg::OccupancyGridUpdate> expectedGrids = std::make_unique<map_msgs::msg::OccupancyGridUpdate>();
+  std::unique_ptr<map_msgs::msg::OccupancyGridUpdate> expectedGrids =
+    std::make_unique<map_msgs::msg::OccupancyGridUpdate>();
   std::vector<std::vector<std::uint8_t>> receivedCostmaps;
-  std::unique_ptr<map_msgs::msg::OccupancyGridUpdate> receivedGrids = std::make_unique<map_msgs::msg::OccupancyGridUpdate>();
+  std::unique_ptr<map_msgs::msg::OccupancyGridUpdate> receivedGrids =
+    std::make_unique<map_msgs::msg::OccupancyGridUpdate>();
 
   auto costmapPublisher = std::make_shared<nav2_costmap_2d::Costmap2DPublisher>(
     node, costmapToSend.get(), "", topicName, always_send_full_costmap);
