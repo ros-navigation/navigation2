@@ -85,17 +85,27 @@ public:
     costmapSubscriber.reset();
     costmapToSend.reset();
   }
-  void costmapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr)
+  void costmapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
   {
     this->fullCostmapMsgCount++;
+    std::vector<uint8_t> data;
+    for (unsigned int i = 0; i < msg->data.size(); i++) {
+      data.push_back(msg->data[i]);
+    }
+    receivedGrids.push_back(data);
   }
   void costmapRawCallback(const nav2_msgs::msg::Costmap::SharedPtr)
   {
     this->fullCostmapRawMsgCount++;
   }
-  void costmapUpdateCallback(const map_msgs::msg::OccupancyGridUpdate::SharedPtr)
+  void costmapUpdateCallback(const map_msgs::msg::OccupancyGridUpdate::SharedPtr update_msg)
   {
     this->updateCostmapMsgCount++;
+    std::vector<uint8_t> data;
+    for(unsigned int i = 0; i < update_msg->data.size(); i++) {
+      data.push_back(update_msg->data[i]);
+    }
+    receivedGrids.push_back(data);
   }
   void costmapRawUpdateCallback(const nav2_msgs::msg::CostmapUpdate::SharedPtr)
   {
@@ -135,12 +145,39 @@ protected:
       currentSubscriberCostmap->getSizeInCellsY());
   }
 
+  std::vector<uint8_t> getUpdatedCharMapFromSubscriber(
+    std::uint32_t x0, std::uint32_t xn,
+    std::uint32_t y0, std::uint32_t yn)
+  {
+    auto currentSubscriberCostmap = costmapSubscriber->getCostmap();
+    std::vector<uint8_t> updatedCostmap;
+    for (std::uint32_t y = y0; y < yn; y++) {
+      for (std::uint32_t x = x0; x < xn; x++) {
+        updatedCostmap.push_back(currentSubscriberCostmap->getCost(x, y));
+      }
+    }
+    return updatedCostmap;
+  }
+
   std::vector<uint8_t> getCurrentCharMapToSend()
   {
     return std::vector<uint8_t>(
       costmapToSend->getCharMap(),
       costmapToSend->getCharMap() + costmapToSend->getSizeInCellsX() *
       costmapToSend->getSizeInCellsY());
+  }
+
+  std::vector<uint8_t> getUpdatedCostmapToSend(
+    std::uint32_t x0, std::uint32_t xn,
+    std::uint32_t y0, std::uint32_t yn)
+  {
+    std::vector<uint8_t> updatedCostmap;
+    for (std::uint32_t y = y0; y < yn; y++) {
+      for (std::uint32_t x = x0; x < xn; x++) {
+        updatedCostmap.push_back(costmapToSend->getCost(x, y));
+      }
+    }
+    return updatedCostmap;
   }
 
   int fullCostmapMsgCount;
@@ -155,6 +192,7 @@ protected:
 
   std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmapSubscriber;
   std::shared_ptr<nav2_costmap_2d::Costmap2D> costmapToSend;
+  std::vector<std::vector<uint8_t>> receivedGrids;
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr dummyCostmapMsgSubscriber;
   rclcpp::Subscription<nav2_msgs::msg::Costmap>::SharedPtr dummyCostmapRawMsgSubscriber;
   rclcpp::Subscription<map_msgs::msg::OccupancyGridUpdate>::SharedPtr
@@ -167,11 +205,8 @@ TEST_F(TestCostmapSubscriberShould, handleFullCostmapMsgs)
   bool always_send_full_costmap = true;
 
   std::vector<std::vector<std::uint8_t>> expectedCostmaps;
-  std::unique_ptr<nav_msgs::msg::OccupancyGrid> expectedGrids =
-    std::make_unique<nav_msgs::msg::OccupancyGrid>();
+  std::vector<std::vector<std::uint8_t>> expectedGrids;
   std::vector<std::vector<std::uint8_t>> receivedCostmaps;
-  std::unique_ptr<nav_msgs::msg::OccupancyGrid> receivedGrids =
-    std::make_unique<nav_msgs::msg::OccupancyGrid>();
 
   auto costmapPublisher = std::make_shared<nav2_costmap_2d::Costmap2DPublisher>(
     node, costmapToSend.get(), "", topicName, always_send_full_costmap);
@@ -181,22 +216,18 @@ TEST_F(TestCostmapSubscriberShould, handleFullCostmapMsgs)
     for (const auto & observation : mapChange.observations) {
       costmapToSend->setCost(observation.x, observation.y, observation.cost);
     }
-
-    expectedCostmaps.emplace_back(getCurrentCharMapToSend());
+    std::vector<std::uint8_t> data = getCurrentCharMapToSend();
+    expectedCostmaps.emplace_back(data);
     // Grid is expected to be translated from cost translation table
-    for (auto cost : getCurrentCharMapToSend()) {
-      expectedGrids->data.push_back(cost_translation_table_[cost]);
+    std::vector<std::uint8_t> grid;
+    for (unsigned int i = 0; i < data.size(); i++) {
+      grid.push_back(cost_translation_table_[data[i]]);
     }
-
+    expectedGrids.emplace_back(grid);
     costmapPublisher->updateBounds(mapChange.x0, mapChange.xn, mapChange.y0, mapChange.yn);
     costmapPublisher->publishCostmap();
-
     rclcpp::spin_some(node->get_node_base_interface());
-
     receivedCostmaps.emplace_back(getCurrentCharMapFromSubscriber());
-    for(auto cost : getCurrentCharMapFromSubscriber()) {
-      receivedGrids->data.push_back(cost_translation_table_[cost]);
-    }
   }
 
   ASSERT_EQ(fullCostmapMsgCount, mapChanges.size());
@@ -205,7 +236,7 @@ TEST_F(TestCostmapSubscriberShould, handleFullCostmapMsgs)
   ASSERT_EQ(updateCostmapRawMsgCount, 0);
 
   ASSERT_EQ(expectedCostmaps, receivedCostmaps);
-  ASSERT_EQ(expectedGrids->data, receivedGrids->data);
+  ASSERT_EQ(expectedGrids, receivedGrids);
 
   costmapPublisher->on_deactivate();
 }
@@ -215,35 +246,41 @@ TEST_F(TestCostmapSubscriberShould, handleCostmapUpdateMsgs)
   bool always_send_full_costmap = false;
 
   std::vector<std::vector<std::uint8_t>> expectedCostmaps;
-  std::unique_ptr<map_msgs::msg::OccupancyGridUpdate> expectedGrids =
-    std::make_unique<map_msgs::msg::OccupancyGridUpdate>();
+  std::vector<std::vector<std::uint8_t>> expectedGrids;
   std::vector<std::vector<std::uint8_t>> receivedCostmaps;
-  std::unique_ptr<map_msgs::msg::OccupancyGridUpdate> receivedGrids =
-    std::make_unique<map_msgs::msg::OccupancyGridUpdate>();
 
   auto costmapPublisher = std::make_shared<nav2_costmap_2d::Costmap2DPublisher>(
     node, costmapToSend.get(), "", topicName, always_send_full_costmap);
   costmapPublisher->on_activate();
+  std::uint32_t x0 = 0;
+  std::uint32_t xn = costmapToSend->getSizeInCellsX();
+  std::uint32_t y0 = 0;
+  std::uint32_t yn = costmapToSend->getSizeInCellsY();
+  bool first_iteration = true;
 
   for (const auto & mapChange : mapChanges) {
     for (const auto & observation : mapChange.observations) {
       costmapToSend->setCost(observation.x, observation.y, observation.cost);
     }
-
-    expectedCostmaps.emplace_back(getCurrentCharMapToSend());
-    for (auto cost : getCurrentCharMapToSend()) {
-      expectedGrids->data.push_back(cost_translation_table_[cost]);
+    // Publish full costmap for the first iteration
+    if(!first_iteration) {
+      x0 = mapChange.x0;
+      xn = mapChange.xn;
+      y0 = mapChange.y0;
+      yn = mapChange.yn;
     }
-
+    std::vector<std::uint8_t> data = getUpdatedCostmapToSend(x0, xn, y0, yn);
+    expectedCostmaps.emplace_back(data);
+    std::vector<std::uint8_t> grid;
+    for (unsigned int i = 0; i < data.size(); i++) {
+      grid.push_back(cost_translation_table_[data[i]]);
+    }
+    expectedGrids.emplace_back(grid);
     costmapPublisher->updateBounds(mapChange.x0, mapChange.xn, mapChange.y0, mapChange.yn);
     costmapPublisher->publishCostmap();
-
     rclcpp::spin_some(node->get_node_base_interface());
-
-    receivedCostmaps.emplace_back(getCurrentCharMapFromSubscriber());
-    for(auto cost : getCurrentCharMapFromSubscriber()) {
-      receivedGrids->data.push_back(cost_translation_table_[cost]);
-    }
+    receivedCostmaps.emplace_back(getUpdatedCharMapFromSubscriber(x0, xn, y0, yn));
+    first_iteration = false;
   }
 
   ASSERT_EQ(fullCostmapMsgCount, 1);
@@ -252,7 +289,7 @@ TEST_F(TestCostmapSubscriberShould, handleCostmapUpdateMsgs)
   ASSERT_EQ(updateCostmapRawMsgCount, mapChanges.size() - 1);
 
   ASSERT_EQ(expectedCostmaps, receivedCostmaps);
-  ASSERT_EQ(expectedGrids->data, receivedGrids->data);
+  ASSERT_EQ(expectedGrids, receivedGrids);
 
   costmapPublisher->on_deactivate();
 }
