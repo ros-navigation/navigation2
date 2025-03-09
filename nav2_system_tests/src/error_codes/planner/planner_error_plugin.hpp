@@ -159,7 +159,7 @@ class CancelledPlanner : public UnknownErrorPlanner
       std::chrono::steady_clock::now() - start_time < std::chrono::seconds(5))
     {
       if (cancel_checker()) {
-        throw nav2_core::PlannerCancelled("Planner Cancelled");
+        throw nav2_core::PlannerCancelled("Planner Canceled");
       }
       rclcpp::sleep_for(std::chrono::milliseconds(100));
     }

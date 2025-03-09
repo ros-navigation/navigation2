@@ -13,15 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Basic navigation demo to go to pose."""
+
 from time import sleep
 
 from geometry_msgs.msg import PoseStamped
 from nav2_simple_commander.robot_navigator import BasicNavigator
 import rclpy
-
-"""
-Basic navigation demo to go to pose.
-"""
 
 
 def main():

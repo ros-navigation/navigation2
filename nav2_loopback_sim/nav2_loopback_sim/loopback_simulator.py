@@ -12,7 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+This is a loopback simulator that replaces a physics simulator.
 
+It creates a frictionless, inertialess, and collisionless simulation environment.
+It accepts cmd_vel messages and publishes odometry & TF messages based on the
+cumulative velocities received to mimic global localization and simulation.
+It also accepts initialpose messages to set the initial pose of the robot
+to place anywhere.
+"""
 import math
 
 from geometry_msgs.msg import PoseWithCovarianceStamped, Twist, TwistStamped
@@ -36,15 +44,6 @@ from .utils import (
     transformStampedToMatrix,
     worldToMap,
 )
-
-"""
-This is a loopback simulator that replaces a physics simulator to create a
-frictionless, inertialess, and collisionless simulation environment. It
-accepts cmd_vel messages and publishes odometry & TF messages based on the
-cumulative velocities received to mimic global localization and simulation.
-It also accepts initialpose messages to set the initial pose of the robot
-to place anywhere.
-"""
 
 
 class LoopbackSimulator(Node):

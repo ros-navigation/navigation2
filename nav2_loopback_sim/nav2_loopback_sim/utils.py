@@ -12,17 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Transformation utilities for the loopback simulator."""
 
 import math
 
 from geometry_msgs.msg import Quaternion, Transform
 import numpy as np
 import tf_transformations
-
-
-"""
-Transformation utilities for the loopback simulator
-"""
 
 
 def addYawToQuat(quaternion, yaw_to_add):
