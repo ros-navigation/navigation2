@@ -57,6 +57,11 @@ public:
   void initialize();
 
   /**
+   * @brief Function to create ROS interfaces
+   */
+  void createROSInterfaces();
+
+  /**
    * @brief Creates list of BT ports
    * @return BT::PortsList Containing node-specific ports
    */
