@@ -22,7 +22,7 @@
 #include "lifecycle_msgs/srv/get_state.hpp"
 
 using nav2_util::generate_internal_node;
-using std::chrono::seconds;
+using std::chrono::milliseconds;
 using std::make_shared;
 using std::string;
 using namespace std::chrono_literals;
@@ -62,7 +62,7 @@ LifecycleServiceClient::LifecycleServiceClient(
 
 bool LifecycleServiceClient::change_state(
   const uint8_t transition,
-  const seconds timeout)
+  const milliseconds timeout)
 {
   if (!change_state_.wait_for_service(timeout)) {
     throw std::runtime_error("change_state service is not available!");
@@ -74,21 +74,8 @@ bool LifecycleServiceClient::change_state(
   return response.get();
 }
 
-bool LifecycleServiceClient::change_state(
-  std::uint8_t transition)
-{
-  if (!change_state_.wait_for_service(5s)) {
-    throw std::runtime_error("change_state service is not available!");
-  }
-
-  auto request = std::make_shared<lifecycle_msgs::srv::ChangeState::Request>();
-  auto response = std::make_shared<lifecycle_msgs::srv::ChangeState::Response>();
-  request->transition.id = transition;
-  return change_state_.invoke(request, response);
-}
-
 uint8_t LifecycleServiceClient::get_state(
-  const seconds timeout)
+  const milliseconds timeout)
 {
   if (!get_state_.wait_for_service(timeout)) {
     throw std::runtime_error("get_state service is not available!");
