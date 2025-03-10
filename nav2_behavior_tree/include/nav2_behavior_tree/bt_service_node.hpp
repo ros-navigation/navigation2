@@ -23,6 +23,7 @@
 #include "nav2_util/node_utils.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_behavior_tree/bt_utils.hpp"
+#include "nav2_util/service_client.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -55,6 +56,10 @@ public:
       rclcpp::CallbackGroupType::MutuallyExclusive,
       false);
     callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
+    if(!node_->has_parameter("service_introspection_mode")) {
+      node_->declare_parameter("service_introspection_mode", "disabled");
+    }
+    service_introspection_mode_ = node_->get_parameter("service_introspection_mode").as_string();
 
     // Get the required items from the blackboard
     auto bt_loop_duration =
@@ -68,10 +73,8 @@ public:
 
     // Now that we have node_ to use, create the service client for this BT service
     getInput("service_name", service_name_);
-    service_client_ = node_->create_client<ServiceT>(
-      service_name_,
-      rclcpp::SystemDefaultsQoS(),
-      callback_group_);
+    service_client_ = std::make_shared<nav2_util::ServiceClient<ServiceT>>(
+      service_name_, service_introspection_mode_, node_);
 
     // Make a request for the service without parameter
     request_ = std::make_shared<typename ServiceT::Request>();
@@ -148,7 +151,7 @@ public:
         return BT::NodeStatus::FAILURE;
       }
 
-      future_result_ = service_client_->async_send_request(request_).share();
+      future_result_ = service_client_->invoke_shared(request_);
       sent_time_ = node_->now();
       request_sent_ = true;
     }
@@ -240,8 +243,9 @@ protected:
   }
 
   std::string service_name_, service_node_name_;
-  typename std::shared_ptr<rclcpp::Client<ServiceT>> service_client_;
+  std::shared_ptr<nav2_util::ServiceClient<ServiceT>> service_client_;
   std::shared_ptr<typename ServiceT::Request> request_;
+  std::string service_introspection_mode_;
 
   // The node that will be used for any ROS operations
   rclcpp::Node::SharedPtr node_;
