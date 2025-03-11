@@ -51,16 +51,6 @@ BtNavigator::BtNavigator(rclcpp::NodeOptions options)
     this, "odom_topic", rclcpp::ParameterValue(std::string("odom")));
   declare_parameter_if_not_declared(
     this, "filter_duration", rclcpp::ParameterValue(0.3));
-  declare_parameter_if_not_declared(
-    this, "enable_groot_monitoring", rclcpp::ParameterValue(false));
-  declare_parameter_if_not_declared(
-    this, "pose_groot_publisher_port", rclcpp::ParameterValue(1666));
-  declare_parameter_if_not_declared(
-    this, "pose_groot_server_port", rclcpp::ParameterValue(1667));
-  declare_parameter_if_not_declared(
-    this, "poses_groot_publisher_port", rclcpp::ParameterValue(1668));
-  declare_parameter_if_not_declared(
-    this, "poses_groot_server_port", rclcpp::ParameterValue(1669));
 }
 
 BtNavigator::~BtNavigator()
