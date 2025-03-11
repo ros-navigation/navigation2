@@ -125,7 +125,7 @@ TEST(SmacTest, test_smac_se2_reconfigure)
     std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
   costmap_ros->on_configure(rclcpp_lifecycle::State());
 
-  auto planner = std::make_unique<HybridWrap>();
+  auto planner = std::make_unique<nav2_smac_planner::SmacPlannerHybrid>();
   planner->configure(nodeSE2, "test", nullptr, costmap_ros);
   planner->activate();
 
