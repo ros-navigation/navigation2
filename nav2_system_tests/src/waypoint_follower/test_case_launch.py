@@ -48,10 +48,11 @@ def generate_launch_description():
 
     map_yaml_file = os.path.join(nav2_bringup_dir, 'maps', 'tb3_sandbox.yaml')
 
-
-    bt_navigator_xml = os.path.join(get_package_share_directory('nav2_bt_navigator'),
-                                    'behavior_trees',
-                                    os.getenv('BT_NAVIGATOR_XML'))
+    bt_navigator_xml = os.path.join(
+        get_package_share_directory('nav2_bt_navigator'),
+        'behavior_trees',
+        os.getenv('BT_NAVIGATOR_XML'),
+    )
 
     params_file = os.path.join(nav2_bringup_dir, 'params/nav2_params.yaml')
 
