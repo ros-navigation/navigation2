@@ -106,6 +106,7 @@ public:
     config_ = nullptr;
     node_.reset();
     success_server_.reset();
+    failure_server_.reset();
     factory_.reset();
   }
 

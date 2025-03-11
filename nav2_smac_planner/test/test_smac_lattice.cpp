@@ -28,14 +28,6 @@
 #include "nav2_smac_planner/collision_checker.hpp"
 #include "nav2_smac_planner/smac_planner_lattice.hpp"
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 // Simple wrapper to be able to call a private member
 class LatticeWrap : public nav2_smac_planner::SmacPlannerLattice
 {
@@ -187,4 +179,17 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
       results2);
   } catch (...) {
   }
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

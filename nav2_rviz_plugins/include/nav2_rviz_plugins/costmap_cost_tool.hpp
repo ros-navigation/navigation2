@@ -46,7 +46,6 @@ public:
   void handleGlobalCostResponse(rclcpp::Client<nav2_msgs::srv::GetCosts>::SharedFuture);
 
 private Q_SLOTS:
-  void updateAutoDeactivate();
 
 private:
   rclcpp::Client<nav2_msgs::srv::GetCosts>::SharedPtr local_cost_client_;

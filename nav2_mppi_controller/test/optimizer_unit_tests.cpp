@@ -21,14 +21,6 @@
 
 // Tests main optimizer functions
 
-class RosLockGuard
-{
-public:
-  RosLockGuard() {rclcpp::init(0, nullptr);}
-  ~RosLockGuard() {rclcpp::shutdown();}
-};
-RosLockGuard g_rclcpp;
-
 using namespace mppi;  // NOLINT
 using namespace mppi::critics;  // NOLINT
 using namespace mppi::utils;  // NOLINT
@@ -652,4 +644,17 @@ TEST(OptimizerTests, integrateStateVelocitiesTests)
     EXPECT_NEAR(traj.x(1, i), x, 1e-6);
     EXPECT_NEAR(traj.y(1, i), y, 1e-6);
   }
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

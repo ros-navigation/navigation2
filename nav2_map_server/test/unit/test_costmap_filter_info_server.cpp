@@ -36,14 +36,6 @@ static const double MULTIPLIER = 0.2;
 
 static const double EPSILON = std::numeric_limits<float>::epsilon();
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 class InfoServerWrapper : public nav2_map_server::CostmapFilterInfoServer
 {
 public:
@@ -174,4 +166,17 @@ TEST_F(InfoServerTester, testCostmapFilterInfoDeactivateActivate)
   EXPECT_EQ(info_->filter_mask_topic, MASK_TOPIC);
   EXPECT_NEAR(info_->base, BASE, EPSILON);
   EXPECT_NEAR(info_->multiplier, MULTIPLIER, EPSILON);
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

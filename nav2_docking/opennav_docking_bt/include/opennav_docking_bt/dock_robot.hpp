@@ -97,6 +97,8 @@ public:
           "success", "If the action was successful"),
         BT::OutputPort<ActionResult::_error_code_type>(
           "error_code_id", "Error code"),
+        BT::OutputPort<std::string>(
+          "error_msg", "Error message"),
         BT::OutputPort<ActionResult::_num_retries_type>(
           "num_retries", "The number of retries executed"),
       });

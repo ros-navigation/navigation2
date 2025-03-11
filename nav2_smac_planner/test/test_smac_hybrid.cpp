@@ -29,6 +29,7 @@
 #include "nav2_smac_planner/smac_planner_hybrid.hpp"
 #include "nav2_smac_planner/smac_planner_2d.hpp"
 
+<<<<<<< HEAD
 class RclCppFixture
 {
 public:
@@ -47,6 +48,8 @@ public:
   }
 };
 
+=======
+>>>>>>> main
 // SMAC smoke tests for plugin-level issues rather than algorithms
 // (covered by more extensively testing in other files)
 // System tests in nav2_system_tests will actually plan with this work
@@ -227,4 +230,17 @@ TEST(SmacTest, test_smac_se2_reconfigure)
   rclcpp::spin_until_future_complete(
     nodeSE2->get_node_base_interface(),
     result3);
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

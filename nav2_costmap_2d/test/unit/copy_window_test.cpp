@@ -17,14 +17,6 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 TEST(CopyWindow, copyValidWindow)
 {
   nav2_costmap_2d::Costmap2D src(10, 10, 0.1, 0.0, 0.0);
@@ -49,4 +41,17 @@ TEST(CopyWindow, copyInvalidWindow)
   // Case2: incorrect destination bounds
   ASSERT_FALSE(dst.copyWindow(src, 0, 0, 1, 1, 5, 5));
   ASSERT_FALSE(dst.copyWindow(src, 0, 0, 6, 6, 0, 0));
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

@@ -76,13 +76,16 @@ def main(argv=sys.argv[1:]):
         [
             IncludeLaunchDescription(PythonLaunchDescriptionSource([launchFile])),
             map_to_odom,
-            odom_to_base_link,
             lifecycle_manager,
         ]
     )
+    if os.getenv('STATIC_ODOM_TO_BASE_LINK') == 'true':
+        ld.add_action(odom_to_base_link)
 
     test1_action = ExecuteProcess(
-        cmd=[testExecutable], name='costmap_tests', output='screen'
+        cmd=[testExecutable],
+        name='costmap_tests',
+        output='screen'
     )
 
     lts = LaunchTestService()
