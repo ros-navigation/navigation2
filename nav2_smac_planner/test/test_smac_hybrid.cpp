@@ -29,27 +29,6 @@
 #include "nav2_smac_planner/smac_planner_hybrid.hpp"
 #include "nav2_smac_planner/smac_planner_2d.hpp"
 
-<<<<<<< HEAD
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
-// Simple wrapper to be able to call a private member
-class HybridWrap : public nav2_smac_planner::SmacPlannerHybrid
-{
-public:
-  void callDynamicParams(std::vector<rclcpp::Parameter> parameters)
-  {
-    dynamicParametersCallback(parameters);
-  }
-};
-
-=======
->>>>>>> main
 // SMAC smoke tests for plugin-level issues rather than algorithms
 // (covered by more extensively testing in other files)
 // System tests in nav2_system_tests will actually plan with this work
