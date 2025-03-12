@@ -22,14 +22,6 @@
 
 using namespace nav2_costmap_2d;  // NOLINT
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 TEST(collision_footprint, test_basic)
 {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testA");
@@ -221,4 +213,17 @@ TEST(collision_footprint, test_point_and_line_cost)
   EXPECT_NEAR(other_value, 254.0, 0.001);  // center cost
 
   delete costmap_;
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

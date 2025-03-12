@@ -21,14 +21,6 @@
 
 // Tests trajectory visualization
 
-class RosLockGuard
-{
-public:
-  RosLockGuard() {rclcpp::init(0, nullptr);}
-  ~RosLockGuard() {rclcpp::shutdown();}
-};
-RosLockGuard g_rclcpp;
-
 using namespace mppi;  // NOLINT
 
 TEST(TrajectoryVisualizerTests, StateTransition)
@@ -181,10 +173,11 @@ TEST(TrajectoryVisualizerTests, VisOptimalPath)
   EXPECT_EQ(received_path.poses.size(), 0u);
 
   // Now populated with content, should publish
-  optimal_trajectory.resize(20, 2);
+  optimal_trajectory.resize(20, 3);
   for (unsigned int i = 0; i != optimal_trajectory.rows() - 1; i++) {
     optimal_trajectory(i, 0) = static_cast<float>(i);
     optimal_trajectory(i, 1) = static_cast<float>(i);
+    optimal_trajectory(i, 2) = static_cast<float>(i);
   }
   vis.add(optimal_trajectory, "Optimal Trajectory", cmd_stamp);
   vis.visualize(bogus_path);
@@ -215,4 +208,17 @@ TEST(TrajectoryVisualizerTests, VisOptimalPath)
     EXPECT_EQ(received_path.poses[i].pose.orientation.z, expected_orientation.z);
     EXPECT_EQ(received_path.poses[i].pose.orientation.w, expected_orientation.w);
   }
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }
