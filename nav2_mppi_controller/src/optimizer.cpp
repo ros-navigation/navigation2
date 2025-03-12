@@ -323,10 +323,8 @@ void Optimizer::integrateStateVelocities(
     traj_yaws(i) = last_yaw;
   }
 
-  Eigen::ArrayXf yaw_cos(traj_yaws.rows());
-  Eigen::ArrayXf yaw_sin(traj_yaws.rows());
-  yaw_cos = traj_yaws.cos();
-  yaw_sin = traj_yaws.sin();
+  Eigen::ArrayXf yaw_cos = traj_yaws.cos();
+  Eigen::ArrayXf yaw_sin = traj_yaws.sin();
   utils::shiftColumnsByOnePlace(yaw_cos, 1);
   utils::shiftColumnsByOnePlace(yaw_sin, 1);
   yaw_cos(0) = cosf(initial_yaw);

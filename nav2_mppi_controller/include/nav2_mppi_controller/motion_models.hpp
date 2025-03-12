@@ -80,28 +80,24 @@ public:
     unsigned int n_cols = state.vx.cols();
 
     for (unsigned int i = 1; i < n_cols; i++) {
-      Eigen::ArrayXf vx_last = state.vx.col(i - 1);
       state.cvx.col(i - 1) = state.cvx.col(i - 1)
-        .cwiseMax(vx_last + min_delta_vx)
-        .cwiseMin(vx_last + max_delta_vx);
+        .cwiseMax(state.vx.col(i - 1) + min_delta_vx)
+        .cwiseMin(state.vx.col(i - 1) + max_delta_vx);
       state.vx.col(i) = state.cvx.col(i - 1);
 
-      Eigen::ArrayXf wz_last = state.wz.col(i - 1);
       state.cwz.col(i - 1) = state.cwz.col(i - 1)
-        .cwiseMax(wz_last - max_delta_wz)
-        .cwiseMin(wz_last + max_delta_wz);
+        .cwiseMax(state.wz.col(i - 1) - max_delta_wz)
+        .cwiseMin(state.wz.col(i - 1) + max_delta_wz);
       state.wz.col(i) = state.cwz.col(i - 1);
 
       if (is_holo) {
-        Eigen::ArrayXf vy_last = state.vy.col(i - 1);
         state.cvy.col(i - 1) = state.cvy.col(i - 1)
-          .cwiseMax(vy_last - max_delta_vy)
-          .cwiseMin(vy_last + max_delta_vy);
+          .cwiseMax(state.vy.col(i - 1) - max_delta_vy)
+          .cwiseMin(state.vy.col(i - 1) + max_delta_vy);
         state.vy.col(i) = state.cvy.col(i - 1);
       }
     }
   }
-
 
   /**
    * @brief Whether the motion model is holonomic, using Y axis

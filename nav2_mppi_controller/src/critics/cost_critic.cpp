@@ -174,7 +174,11 @@ void CostCritic::score(CriticData & data)
       // Let near-collision trajectory points be punished severely
       // Note that we collision check based on the footprint actual,
       // but score based on the center-point cost regardless
-      traj_cost += (pose_cost >= 253.0f) ? critical_cost_ : (!near_goal ? pose_cost : 0.0f);
+      if (pose_cost >= 253.0f /*INSCRIBED_INFLATED_OBSTACLE in float*/) {
+        traj_cost += critical_cost_;
+      } else if (!near_goal) {  // Generally prefer trajectories further from obstacles
+        traj_cost += pose_cost;
+      }
     }
 
     all_trajectories_collide &= trajectory_collide;
