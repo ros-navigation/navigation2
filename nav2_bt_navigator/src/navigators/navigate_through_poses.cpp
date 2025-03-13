@@ -116,7 +116,7 @@ NavigateThroughPosesNavigator::onLoop()
   nav_msgs::msg::Goals goal_poses;
   [[maybe_unused]] auto res = blackboard->get(goals_blackboard_id_, goal_poses);
 
-  if (goal_poses.poses.size() == 0) {
+  if (goal_poses.goals.size() == 0) {
     bt_action_server_->publishFeedback(feedback_msg);
     return;
   }
@@ -178,7 +178,7 @@ NavigateThroughPosesNavigator::onLoop()
   feedback_msg->number_of_recoveries = recovery_count;
   feedback_msg->current_pose = current_pose;
   feedback_msg->navigation_time = clock_->now() - start_time_;
-  feedback_msg->number_of_poses_remaining = goal_poses.poses.size();
+  feedback_msg->number_of_poses_remaining = goal_poses.goals.size();
 
   bt_action_server_->publishFeedback(feedback_msg);
 }
@@ -228,9 +228,9 @@ NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr
     return false;
   }
 
-  nav_msgs::msg::Goals pose_stamped_array = goal->poses;
+  nav_msgs::msg::Goals nav_msgs_goals = goal->goals;
   int i = 0;
-  for (auto & goal_pose : pose_stamped_array.poses) {
+  for (auto & goal_pose : nav_msgs_goals.goals) {
     if (!nav2_util::transformPoseInTargetFrame(
         goal_pose, goal_pose, *feedback_utils_.tf, feedback_utils_.global_frame,
         feedback_utils_.transform_tolerance))
@@ -246,11 +246,11 @@ NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr
     i++;
   }
 
-  if (pose_stamped_array.poses.size() > 0) {
+  if (nav_msgs_goals.goals.size() > 0) {
     RCLCPP_INFO(
       logger_, "Begin navigating from current location through %zu poses to (%.2f, %.2f)",
-      pose_stamped_array.poses.size(), pose_stamped_array.poses.back().pose.position.x,
-        pose_stamped_array.poses.back().pose.position.y);
+      nav_msgs_goals.goals.size(), nav_msgs_goals.goals.back().pose.position.x,
+        nav_msgs_goals.goals.back().pose.position.y);
   }
 
   // Reset state for new action feedback
@@ -260,7 +260,7 @@ NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr
 
   // Update the goal pose on the blackboard
   blackboard->set<nav_msgs::msg::Goals>(goals_blackboard_id_,
-      std::move(pose_stamped_array));
+      std::move(nav_msgs_goals));
 
   return true;
 }

@@ -147,9 +147,9 @@ inline nav_msgs::msg::Goals convertFromString(const StringView key)
   if ((parts.size() - 2) % 9 != 0) {
     throw std::runtime_error("invalid number of fields for Goals attribute)");
   } else {
-    nav_msgs::msg::Goals pose_stamped_array;
-    pose_stamped_array.header.stamp = rclcpp::Time(BT::convertFromString<int64_t>(parts[0]));
-    pose_stamped_array.header.frame_id = BT::convertFromString<std::string>(parts[1]);
+    nav_msgs::msg::Goals nav_msgs_goals;
+    nav_msgs_goals.header.stamp = rclcpp::Time(BT::convertFromString<int64_t>(parts[0]));
+    nav_msgs_goals.header.frame_id = BT::convertFromString<std::string>(parts[1]);
     for (size_t i = 2; i < parts.size(); i += 9) {
       geometry_msgs::msg::PoseStamped pose_stamped;
       pose_stamped.header.stamp = rclcpp::Time(BT::convertFromString<int64_t>(parts[i]));
@@ -161,9 +161,9 @@ inline nav_msgs::msg::Goals convertFromString(const StringView key)
       pose_stamped.pose.orientation.y = BT::convertFromString<double>(parts[i + 6]);
       pose_stamped.pose.orientation.z = BT::convertFromString<double>(parts[i + 7]);
       pose_stamped.pose.orientation.w = BT::convertFromString<double>(parts[i + 8]);
-      pose_stamped_array.poses.push_back(pose_stamped);
+      nav_msgs_goals.goals.push_back(pose_stamped);
     }
-    return pose_stamped_array;
+    return nav_msgs_goals;
   }
 }
 
