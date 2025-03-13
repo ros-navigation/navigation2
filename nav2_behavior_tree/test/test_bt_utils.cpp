@@ -258,45 +258,45 @@ TEST(PoseStampedVectorPortTest, test_correct_syntax)
   EXPECT_EQ(values[1].pose.orientation.w, 14.0);
 }
 
-TEST(PoseStampedArrayPortTest, test_wrong_syntax)
+TEST(GoalsPortTest, test_wrong_syntax)
 {
   std::string xml_txt =
     R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-            <PoseStampedArrayPortTest test="0;map;0;map;1.0;2.0;3.0;4.0;5.0;6.0;7.0;0;map;1.0;2.0;3.0;4.0;5.0;6.0" />
+            <GoalsPortTest test="0;map;0;map;1.0;2.0;3.0;4.0;5.0;6.0;7.0;0;map;1.0;2.0;3.0;4.0;5.0;6.0" />
         </BehaviorTree>
       </root>)";
 
   BT::BehaviorTreeFactory factory;
   factory.registerNodeType<TestNode<nav_msgs::msg::Goals>>(
-    "PoseStampedArrayPortTest");
+    "GoalsPortTest");
   EXPECT_THROW(factory.createTreeFromText(xml_txt), std::exception);
 
   xml_txt =
     R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-            <PoseStampedArrayPortTest test="0;map;0;map;1.0;2.0;3.0;4.0;5.0;6.0;7.0;0;map;1.0;2.0;3.0;4.0;5.0;6.0;7.0;8.0" />
+            <GoalsPortTest test="0;map;0;map;1.0;2.0;3.0;4.0;5.0;6.0;7.0;0;map;1.0;2.0;3.0;4.0;5.0;6.0;7.0;8.0" />
         </BehaviorTree>
       </root>)";
 
   EXPECT_THROW(factory.createTreeFromText(xml_txt), std::exception);
 }
 
-TEST(PoseStampedArrayPortTest, test_correct_syntax)
+TEST(GoalsPortTest, test_correct_syntax)
 {
   std::string xml_txt =
     R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-            <PoseStampedArrayPortTest test="0;map;0;map;1.0;2.0;3.0;4.0;5.0;6.0;7.0;0;odom;8.0;9.0;10.0;11.0;12.0;13.0;14.0" />
+            <GoalsPortTest test="0;map;0;map;1.0;2.0;3.0;4.0;5.0;6.0;7.0;0;odom;8.0;9.0;10.0;11.0;12.0;13.0;14.0" />
         </BehaviorTree>
       </root>)";
 
   BT::BehaviorTreeFactory factory;
   factory.registerNodeType<TestNode<nav_msgs::msg::Goals>>(
-    "PoseStampedArrayPortTest");
+    "GoalsPortTest");
   auto tree = factory.createTreeFromText(xml_txt);
 
   tree = factory.createTreeFromText(xml_txt);
