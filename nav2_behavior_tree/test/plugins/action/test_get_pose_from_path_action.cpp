@@ -21,7 +21,7 @@
 #include <vector>
 
 #include "nav_msgs/msg/path.hpp"
-#include "geometry_msgs/msg/pose_stamped_array.hpp"
+#include "nav_msgs/msg/goals.hpp"
 
 #include "behaviortree_cpp/bt_factory.h"
 

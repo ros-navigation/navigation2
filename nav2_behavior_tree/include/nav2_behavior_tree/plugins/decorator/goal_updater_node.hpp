@@ -21,7 +21,7 @@
 #include <string>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "geometry_msgs/msg/pose_stamped_array.hpp"
+#include "nav_msgs/msg/goals.hpp"
 
 #include "behaviortree_cpp/decorator_node.h"
 
