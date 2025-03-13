@@ -113,7 +113,7 @@ NavigateThroughPosesNavigator::onLoop()
 
   auto blackboard = bt_action_server_->getBlackboard();
 
-  geometry_msgs::msg::PoseStampedArray goal_poses;
+  nav_msgs::msg::Goals goal_poses;
   [[maybe_unused]] auto res = blackboard->get(goals_blackboard_id_, goal_poses);
 
   if (goal_poses.poses.size() == 0) {
@@ -228,7 +228,7 @@ NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr
     return false;
   }
 
-  geometry_msgs::msg::PoseStampedArray pose_stamped_array = goal->poses;
+  nav_msgs::msg::Goals pose_stamped_array = goal->poses;
   int i = 0;
   for (auto & goal_pose : pose_stamped_array.poses) {
     if (!nav2_util::transformPoseInTargetFrame(
@@ -259,7 +259,7 @@ NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr
   blackboard->set("number_recoveries", 0);  // NOLINT
 
   // Update the goal pose on the blackboard
-  blackboard->set<geometry_msgs::msg::PoseStampedArray>(goals_blackboard_id_,
+  blackboard->set<nav_msgs::msg::Goals>(goals_blackboard_id_,
       std::move(pose_stamped_array));
 
   return true;

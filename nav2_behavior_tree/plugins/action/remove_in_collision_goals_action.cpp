@@ -63,7 +63,7 @@ BT::NodeStatus RemoveInCollisionGoals::on_completion(
     return BT::NodeStatus::FAILURE;
   }
 
-  geometry_msgs::msg::PoseStampedArray valid_goal_poses;
+  nav_msgs::msg::Goals valid_goal_poses;
   for (size_t i = 0; i < response->costs.size(); ++i) {
     if ((response->costs[i] == 255 && !consider_unknown_as_obstacle_) ||
       response->costs[i] < cost_threshold_)

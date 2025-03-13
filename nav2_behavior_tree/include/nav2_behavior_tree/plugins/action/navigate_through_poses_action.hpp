@@ -73,7 +73,7 @@ public:
   {
     return providedBasicPorts(
       {
-        BT::InputPort<geometry_msgs::msg::PoseStampedArray>(
+        BT::InputPort<nav_msgs::msg::Goals>(
           "goals", "Destinations to plan through"),
         BT::InputPort<std::string>("behavior_tree", "Behavior tree to run"),
         BT::OutputPort<ActionResult::_error_code_type>(

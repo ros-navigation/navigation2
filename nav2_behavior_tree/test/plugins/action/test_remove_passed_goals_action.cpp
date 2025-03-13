@@ -114,7 +114,7 @@ TEST_F(RemovePassedGoalsTestFixture, test_tick)
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
 
   // create new goal and set it on blackboard
-  geometry_msgs::msg::PoseStampedArray poses;
+  nav_msgs::msg::Goals poses;
   poses.poses.resize(4);
   poses.poses[0].pose.position.x = 0.0;
   poses.poses[0].pose.position.y = 0.0;
@@ -136,7 +136,7 @@ TEST_F(RemovePassedGoalsTestFixture, test_tick)
   }
 
   // check that it removed the point in range
-  geometry_msgs::msg::PoseStampedArray output_poses;
+  nav_msgs::msg::Goals output_poses;
   EXPECT_TRUE(config_->blackboard->get("goals", output_poses));
 
   EXPECT_EQ(output_poses.poses.size(), 2u);

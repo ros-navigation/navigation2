@@ -136,18 +136,18 @@ inline std::vector<geometry_msgs::msg::PoseStamped> convertFromString(const Stri
 }
 
 /**
- * @brief Parse XML string to geometry_msgs::msg::PoseStampedArray
+ * @brief Parse XML string to nav_msgs::msg::Goals
  * @param key XML string
- * @return geometry_msgs::msg::PoseStampedArray
+ * @return nav_msgs::msg::Goals
  */
 template<>
-inline geometry_msgs::msg::PoseStampedArray convertFromString(const StringView key)
+inline nav_msgs::msg::Goals convertFromString(const StringView key)
 {
   auto parts = BT::splitString(key, ';');
   if ((parts.size() - 2) % 9 != 0) {
     throw std::runtime_error("invalid number of fields for PoseStampedArray attribute)");
   } else {
-    geometry_msgs::msg::PoseStampedArray pose_stamped_array;
+    nav_msgs::msg::Goals pose_stamped_array;
     pose_stamped_array.header.stamp = rclcpp::Time(BT::convertFromString<int64_t>(parts[0]));
     pose_stamped_array.header.frame_id = BT::convertFromString<std::string>(parts[1]);
     for (size_t i = 2; i < parts.size(); i += 9) {

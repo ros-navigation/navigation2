@@ -43,9 +43,9 @@ public:
   static BT::PortsList providedPorts()
   {
     return {
-      BT::InputPort<geometry_msgs::msg::PoseStampedArray>("input_goals",
+      BT::InputPort<nav_msgs::msg::Goals>("input_goals",
           "Original goals to remove viapoints from"),
-      BT::OutputPort<geometry_msgs::msg::PoseStampedArray>("output_goals",
+      BT::OutputPort<nav_msgs::msg::Goals>("output_goals",
           "Goals with passed viapoints removed"),
       BT::InputPort<double>("radius", 0.5, "radius to goal for it to be considered for removal"),
       BT::InputPort<std::string>("robot_base_frame", "Robot base frame"),

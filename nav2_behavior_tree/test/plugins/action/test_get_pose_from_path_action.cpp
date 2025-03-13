@@ -97,7 +97,7 @@ TEST_F(GetPoseFromPathTestFixture, test_tick)
 
   // create new path and set it on blackboard
   nav_msgs::msg::Path path;
-  geometry_msgs::msg::PoseStampedArray goals;
+  nav_msgs::msg::Goals goals;
   goals.poses.resize(2);
   goals.poses[0].pose.position.x = 1.0;
   goals.poses[1].pose.position.x = 2.0;

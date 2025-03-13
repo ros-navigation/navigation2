@@ -137,7 +137,7 @@ TEST_F(ComputePathThroughPosesActionTestFixture, test_tick)
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
 
   // create new goal and set it on blackboard
-  geometry_msgs::msg::PoseStampedArray goals;
+  nav_msgs::msg::Goals goals;
   goals.poses.resize(1);
   goals.poses[0].pose.position.x = 1.0;
   config_->blackboard->set("goals", goals);
@@ -202,7 +202,7 @@ TEST_F(ComputePathThroughPosesActionTestFixture, test_tick_use_start)
   config_->blackboard->set("start", start);
 
   // create new goal and set it on blackboard
-  geometry_msgs::msg::PoseStampedArray goals;
+  nav_msgs::msg::Goals goals;
   goals.poses.resize(1);
   goals.poses[0].pose.position.x = 1.0;
   config_->blackboard->set("goals", goals);

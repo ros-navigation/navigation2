@@ -269,7 +269,7 @@ TEST(PoseStampedArrayPortTest, test_wrong_syntax)
       </root>)";
 
   BT::BehaviorTreeFactory factory;
-  factory.registerNodeType<TestNode<geometry_msgs::msg::PoseStampedArray>>(
+  factory.registerNodeType<TestNode<nav_msgs::msg::Goals>>(
     "PoseStampedArrayPortTest");
   EXPECT_THROW(factory.createTreeFromText(xml_txt), std::exception);
 
@@ -295,12 +295,12 @@ TEST(PoseStampedArrayPortTest, test_correct_syntax)
       </root>)";
 
   BT::BehaviorTreeFactory factory;
-  factory.registerNodeType<TestNode<geometry_msgs::msg::PoseStampedArray>>(
+  factory.registerNodeType<TestNode<nav_msgs::msg::Goals>>(
     "PoseStampedArrayPortTest");
   auto tree = factory.createTreeFromText(xml_txt);
 
   tree = factory.createTreeFromText(xml_txt);
-  geometry_msgs::msg::PoseStampedArray values;
+  nav_msgs::msg::Goals values;
   tree.rootNode()->getInput("test", values);
   EXPECT_EQ(rclcpp::Time(values.poses[0].header.stamp).nanoseconds(), 0);
   EXPECT_EQ(values.poses[0].header.frame_id, "map");

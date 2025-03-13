@@ -74,7 +74,7 @@ public:
       "wait_for_service_timeout",
       std::chrono::milliseconds(1000));
     config_->blackboard->set("initial_pose_received", false);
-    geometry_msgs::msg::PoseStampedArray poses;
+    nav_msgs::msg::Goals poses;
     config_->blackboard->set(
       "goals", poses);
 
@@ -132,7 +132,7 @@ TEST_F(NavigateThroughPosesActionTestFixture, test_tick)
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
 
-  geometry_msgs::msg::PoseStampedArray poses;
+  nav_msgs::msg::Goals poses;
   poses.poses.resize(1);
   poses.poses[0].pose.position.x = -2.5;
   poses.poses[0].pose.orientation.x = 1.0;
