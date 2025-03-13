@@ -145,7 +145,7 @@ inline nav_msgs::msg::Goals convertFromString(const StringView key)
 {
   auto parts = BT::splitString(key, ';');
   if ((parts.size() - 2) % 9 != 0) {
-    throw std::runtime_error("invalid number of fields for PoseStampedArray attribute)");
+    throw std::runtime_error("invalid number of fields for Goals attribute)");
   } else {
     nav_msgs::msg::Goals pose_stamped_array;
     pose_stamped_array.header.stamp = rclcpp::Time(BT::convertFromString<int64_t>(parts[0]));
