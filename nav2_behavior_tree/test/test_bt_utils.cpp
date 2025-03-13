@@ -302,24 +302,24 @@ TEST(GoalsPortTest, test_correct_syntax)
   tree = factory.createTreeFromText(xml_txt);
   nav_msgs::msg::Goals values;
   tree.rootNode()->getInput("test", values);
-  EXPECT_EQ(rclcpp::Time(values.poses[0].header.stamp).nanoseconds(), 0);
-  EXPECT_EQ(values.poses[0].header.frame_id, "map");
-  EXPECT_EQ(values.poses[0].pose.position.x, 1.0);
-  EXPECT_EQ(values.poses[0].pose.position.y, 2.0);
-  EXPECT_EQ(values.poses[0].pose.position.z, 3.0);
-  EXPECT_EQ(values.poses[0].pose.orientation.x, 4.0);
-  EXPECT_EQ(values.poses[0].pose.orientation.y, 5.0);
-  EXPECT_EQ(values.poses[0].pose.orientation.z, 6.0);
-  EXPECT_EQ(values.poses[0].pose.orientation.w, 7.0);
-  EXPECT_EQ(rclcpp::Time(values.poses[1].header.stamp).nanoseconds(), 0);
-  EXPECT_EQ(values.poses[1].header.frame_id, "odom");
-  EXPECT_EQ(values.poses[1].pose.position.x, 8.0);
-  EXPECT_EQ(values.poses[1].pose.position.y, 9.0);
-  EXPECT_EQ(values.poses[1].pose.position.z, 10.0);
-  EXPECT_EQ(values.poses[1].pose.orientation.x, 11.0);
-  EXPECT_EQ(values.poses[1].pose.orientation.y, 12.0);
-  EXPECT_EQ(values.poses[1].pose.orientation.z, 13.0);
-  EXPECT_EQ(values.poses[1].pose.orientation.w, 14.0);
+  EXPECT_EQ(rclcpp::Time(values.goals[0].header.stamp).nanoseconds(), 0);
+  EXPECT_EQ(values.goals[0].header.frame_id, "map");
+  EXPECT_EQ(values.goals[0].pose.position.x, 1.0);
+  EXPECT_EQ(values.goals[0].pose.position.y, 2.0);
+  EXPECT_EQ(values.goals[0].pose.position.z, 3.0);
+  EXPECT_EQ(values.goals[0].pose.orientation.x, 4.0);
+  EXPECT_EQ(values.goals[0].pose.orientation.y, 5.0);
+  EXPECT_EQ(values.goals[0].pose.orientation.z, 6.0);
+  EXPECT_EQ(values.goals[0].pose.orientation.w, 7.0);
+  EXPECT_EQ(rclcpp::Time(values.goals[1].header.stamp).nanoseconds(), 0);
+  EXPECT_EQ(values.goals[1].header.frame_id, "odom");
+  EXPECT_EQ(values.goals[1].pose.position.x, 8.0);
+  EXPECT_EQ(values.goals[1].pose.position.y, 9.0);
+  EXPECT_EQ(values.goals[1].pose.position.z, 10.0);
+  EXPECT_EQ(values.goals[1].pose.orientation.x, 11.0);
+  EXPECT_EQ(values.goals[1].pose.orientation.y, 12.0);
+  EXPECT_EQ(values.goals[1].pose.orientation.z, 13.0);
+  EXPECT_EQ(values.goals[1].pose.orientation.w, 14.0);
 }
 
 TEST(PathPortTest, test_wrong_syntax)

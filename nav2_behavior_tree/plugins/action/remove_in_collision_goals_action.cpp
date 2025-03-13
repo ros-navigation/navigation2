@@ -39,7 +39,7 @@ void RemoveInCollisionGoals::on_tick()
   getInput("input_goals", input_goals_);
   getInput("consider_unknown_as_obstacle", consider_unknown_as_obstacle_);
 
-  if (input_goals_.poses.empty()) {
+  if (input_goals_.goals.empty()) {
     setOutput("output_goals", input_goals_);
     should_send_request_ = false;
     return;
@@ -47,7 +47,7 @@ void RemoveInCollisionGoals::on_tick()
   request_ = std::make_shared<nav2_msgs::srv::GetCosts::Request>();
   request_->use_footprint = use_footprint_;
 
-  for (const auto & goal : input_goals_.poses) {
+  for (const auto & goal : input_goals_.goals) {
     request_->poses.push_back(goal);
   }
 }
@@ -68,11 +68,11 @@ BT::NodeStatus RemoveInCollisionGoals::on_completion(
     if ((response->costs[i] == 255 && !consider_unknown_as_obstacle_) ||
       response->costs[i] < cost_threshold_)
     {
-      valid_goal_poses.poses.push_back(input_goals_.poses[i]);
+      valid_goal_poses.goals.push_back(input_goals_.goals[i]);
     }
   }
   // Inform if all goals have been removed
-  if (valid_goal_poses.poses.empty()) {
+  if (valid_goal_poses.goals.empty()) {
     RCLCPP_INFO(
       node_->get_logger(),
       "All goals are in collision and have been removed from the list");

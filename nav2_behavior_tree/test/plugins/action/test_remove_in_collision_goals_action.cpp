@@ -149,18 +149,18 @@ TEST_F(RemoveInCollisionGoalsTestFixture, test_tick_remove_in_collision_goals_su
 
   // create new goal and set it on blackboard
   nav_msgs::msg::Goals poses;
-  poses.poses.resize(4);
-  poses.poses[0].pose.position.x = 0.0;
-  poses.poses[0].pose.position.y = 0.0;
+  poses.goals.resize(4);
+  poses.goals[0].pose.position.x = 0.0;
+  poses.goals[0].pose.position.y = 0.0;
 
-  poses.poses[1].pose.position.x = 0.5;
-  poses.poses[1].pose.position.y = 0.0;
+  poses.goals[1].pose.position.x = 0.5;
+  poses.goals[1].pose.position.y = 0.0;
 
-  poses.poses[2].pose.position.x = 1.0;
-  poses.poses[2].pose.position.y = 0.0;
+  poses.goals[2].pose.position.x = 1.0;
+  poses.goals[2].pose.position.y = 0.0;
 
-  poses.poses[3].pose.position.x = 2.0;
-  poses.poses[3].pose.position.y = 0.0;
+  poses.goals[3].pose.position.x = 2.0;
+  poses.goals[3].pose.position.y = 0.0;
 
   config_->blackboard->set("goals", poses);
 
@@ -175,10 +175,10 @@ TEST_F(RemoveInCollisionGoalsTestFixture, test_tick_remove_in_collision_goals_su
   nav_msgs::msg::Goals output_poses;
   EXPECT_TRUE(config_->blackboard->get("goals", output_poses));
 
-  EXPECT_EQ(output_poses.poses.size(), 3u);
-  EXPECT_EQ(output_poses.poses[0], poses.poses[0]);
-  EXPECT_EQ(output_poses.poses[1], poses.poses[1]);
-  EXPECT_EQ(output_poses.poses[2], poses.poses[2]);
+  EXPECT_EQ(output_poses.goals.size(), 3u);
+  EXPECT_EQ(output_poses.goals[0], poses.goals[0]);
+  EXPECT_EQ(output_poses.goals[1], poses.goals[1]);
+  EXPECT_EQ(output_poses.goals[2], poses.goals[2]);
 }
 
 TEST_F(RemoveInCollisionGoalsTestFixture, test_tick_remove_in_collision_goals_fail)
@@ -196,18 +196,18 @@ TEST_F(RemoveInCollisionGoalsTestFixture, test_tick_remove_in_collision_goals_fa
 
   // create new goal and set it on blackboard
   nav_msgs::msg::Goals poses;
-  poses.poses.resize(4);
-  poses.poses[0].pose.position.x = 0.0;
-  poses.poses[0].pose.position.y = 0.0;
+  poses.goals.resize(4);
+  poses.goals[0].pose.position.x = 0.0;
+  poses.goals[0].pose.position.y = 0.0;
 
-  poses.poses[1].pose.position.x = 0.5;
-  poses.poses[1].pose.position.y = 0.0;
+  poses.goals[1].pose.position.x = 0.5;
+  poses.goals[1].pose.position.y = 0.0;
 
-  poses.poses[2].pose.position.x = 1.0;
-  poses.poses[2].pose.position.y = 0.0;
+  poses.goals[2].pose.position.x = 1.0;
+  poses.goals[2].pose.position.y = 0.0;
 
-  poses.poses[3].pose.position.x = 2.0;
-  poses.poses[3].pose.position.y = 0.0;
+  poses.goals[3].pose.position.x = 2.0;
+  poses.goals[3].pose.position.y = 0.0;
 
   config_->blackboard->set("goals", poses);
 
@@ -222,11 +222,11 @@ TEST_F(RemoveInCollisionGoalsTestFixture, test_tick_remove_in_collision_goals_fa
   nav_msgs::msg::Goals output_poses;
   EXPECT_TRUE(config_->blackboard->get("goals", output_poses));
 
-  EXPECT_EQ(output_poses.poses.size(), 4u);
-  EXPECT_EQ(output_poses.poses[0], poses.poses[0]);
-  EXPECT_EQ(output_poses.poses[1], poses.poses[1]);
-  EXPECT_EQ(output_poses.poses[2], poses.poses[2]);
-  EXPECT_EQ(output_poses.poses[3], poses.poses[3]);
+  EXPECT_EQ(output_poses.goals.size(), 4u);
+  EXPECT_EQ(output_poses.goals[0], poses.goals[0]);
+  EXPECT_EQ(output_poses.goals[1], poses.goals[1]);
+  EXPECT_EQ(output_poses.goals[2], poses.goals[2]);
+  EXPECT_EQ(output_poses.goals[3], poses.goals[3]);
 }
 
 int main(int argc, char ** argv)
