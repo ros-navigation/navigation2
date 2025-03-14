@@ -139,6 +139,13 @@ protected:
    */
   inline bool isStart(const NodePtr node);
 
+  /**
+   * @brief Checks edge is a start or end edge
+   * @param edge Edge to check
+   * @return EdgeType identifying whether the edge is start, end or none
+   */
+  nav2_route::EdgeType classifyEdge(const EdgePtr edge);
+
   int max_iterations_{0};
   unsigned int start_id_{0};
   unsigned int goal_id_{0};

@@ -164,7 +164,9 @@ bool RoutePlanner::getTraversalCost(
     return true;
   }
 
-  return edge_scorer_->score(edge, goal, isStart(edge->start), isGoal(edge->end), score);
+  enum EdgeType edge_type = classifyEdge(edge);
+
+  return edge_scorer_->score(edge, goal, edge_type, score);
 }
 
 NodeElement RoutePlanner::getNextNode()
@@ -198,6 +200,16 @@ bool RoutePlanner::isGoal(const NodePtr node)
 bool RoutePlanner::isStart(const NodePtr node)
 {
   return node->nodeid == start_id_;
+}
+
+nav2_route::EdgeType RoutePlanner::classifyEdge(const EdgePtr edge){
+  if (isStart(edge->start)) {
+    return nav2_route::EdgeType::START;
+  } else if (isGoal(edge->end)) {
+    return nav2_route::EdgeType::END;
+  } else {
+    return nav2_route::EdgeType::NONE;
+  }
 }
 
 }  // namespace nav2_route
