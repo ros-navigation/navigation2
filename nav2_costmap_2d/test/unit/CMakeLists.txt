@@ -62,3 +62,8 @@ ament_add_gtest(lifecycle_test lifecycle_test.cpp)
 target_link_libraries(lifecycle_test
   nav2_costmap_2d_core
 )
+
+ament_add_gtest(observation_buffer_test observation_buffer_test.cpp)
+target_link_libraries(observation_buffer_test
+  nav2_costmap_2d_core
+)
