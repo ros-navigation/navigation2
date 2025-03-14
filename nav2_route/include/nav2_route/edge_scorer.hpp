@@ -79,7 +79,6 @@ public:
 protected:
   pluginlib::ClassLoader<EdgeCostFunction> plugin_loader_;
   std::vector<EdgeCostFunction::Ptr> plugins_;
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
 };
 
 }  // namespace nav2_route

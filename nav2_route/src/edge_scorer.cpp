@@ -61,7 +61,6 @@ EdgeScorer::EdgeScorer(
     }
   }
 
-  tf_buffer_ = tf_buffer;
 }
 
 bool EdgeScorer::score(
