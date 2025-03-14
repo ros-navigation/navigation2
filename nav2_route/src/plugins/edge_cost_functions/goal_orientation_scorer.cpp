@@ -36,10 +36,10 @@ void GoalOrientationScorer::configure(
 
 bool GoalOrientationScorer::score(
   const EdgePtr edge,
-  const geometry_msgs::msg::PoseStamped & goal_pose, bool /* start_edge */, bool final_edge,
-  float & /* cost */)
+  const geometry_msgs::msg::PoseStamped & goal_pose,
+  EdgeType edge_type, float & /* cost */)
 {
-  if (final_edge) {
+  if (edge_type == EdgeType::END) {
     double edge_orientation = std::atan2(
       edge->end->coords.y - edge->start->coords.y,
       edge->end->coords.x - edge->start->coords.x);

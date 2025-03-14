@@ -43,11 +43,11 @@ void StartPoseOrientationScorer::configure(
 
 bool StartPoseOrientationScorer::score(
   const EdgePtr edge,
-  const geometry_msgs::msg::PoseStamped & /* goal_pose */, bool start_edge, bool /* final_edge */,
-  float & /* cost */)
+  const geometry_msgs::msg::PoseStamped & /* goal_pose */,
+  EdgeType edge_type, float & /* cost */)
 {
   //TODO: modify this to return a cost that is proportional to the size of the deviation from the desired start orientation
-  if (start_edge) {
+  if (edge_type == EdgeType::START) {
     double edge_orientation = std::atan2(
       edge->end->coords.y - edge->start->coords.y,
       edge->end->coords.x - edge->start->coords.x);

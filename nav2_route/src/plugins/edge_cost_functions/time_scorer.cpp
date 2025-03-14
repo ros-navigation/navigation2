@@ -49,7 +49,7 @@ void TimeScorer::configure(
 
 bool TimeScorer::score(
   const EdgePtr edge, const geometry_msgs::msg::PoseStamped & /* goal_pose */,
-  bool /* start_edge */, bool /* final_edge */, float & cost)
+  EdgeType /* edge_type */, float & cost)
 {
   // We have a previous actual time to utilize for a refined estimate
   float time = 0.0;
