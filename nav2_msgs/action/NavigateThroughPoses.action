@@ -1,6 +1,6 @@
 
 #goal definition
-geometry_msgs/Goals poses
+nav_msgs/Goals poses
 string behavior_tree
 ---
 #result definition
