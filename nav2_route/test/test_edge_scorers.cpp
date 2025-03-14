@@ -747,5 +747,4 @@ TEST(EdgeScorersTest, test_start_pose_orientation_scoring)
 
   EXPECT_FALSE(scorer.score(&edge, goal_pose, edge_type, traversal_cost));
   EXPECT_EQ(traversal_cost, 0.0);
-
 }

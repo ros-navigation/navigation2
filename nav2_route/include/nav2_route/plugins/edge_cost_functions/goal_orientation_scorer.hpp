@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__GOAl_ORIENTATION_SCORER_HPP_
+#ifndef NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__GOAL_ORIENTATION_SCORER_HPP_
 #define NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__GOAL_ORIENTATION_SCORER_HPP_
 
 #include <memory>

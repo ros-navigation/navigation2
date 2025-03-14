@@ -127,7 +127,6 @@ inline Graph create4x4Graph()
 
 TEST(RoutePlannerTest, test_route_planner_positive)
 {
-
   geometry_msgs::msg::PoseStamped goal_pose;
 
   auto node = std::make_shared<nav2_util::LifecycleNode>("router_test");

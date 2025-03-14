@@ -38,7 +38,6 @@ void StartPoseOrientationScorer::configure(
   base_frame_ = node->get_parameter("base_frame").as_string();
 
   tf_buffer_ = tf_buffer;
-
 }
 
 bool StartPoseOrientationScorer::score(
@@ -46,7 +45,8 @@ bool StartPoseOrientationScorer::score(
   const geometry_msgs::msg::PoseStamped & /* goal_pose */,
   EdgeType edge_type, float & /* cost */)
 {
-  //TODO: modify this to return a cost that is proportional to the size of the deviation from the desired start orientation
+  // TODO(alexanderjyuen): modify this to return a cost that is proportional
+  // to the size of the deviation from the desired start orientation
   if (edge_type == EdgeType::START) {
     double edge_orientation = std::atan2(
       edge->end->coords.y - edge->start->coords.y,

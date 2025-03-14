@@ -60,7 +60,6 @@ EdgeScorer::EdgeScorer(
       throw ex;
     }
   }
-
 }
 
 bool EdgeScorer::score(
