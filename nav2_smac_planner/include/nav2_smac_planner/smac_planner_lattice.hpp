@@ -88,6 +88,30 @@ public:
     const geometry_msgs::msg::PoseStamped & goal,
     std::function<bool()> cancel_checker) override;
 
+  /**
+   * @brief Get coarse search resolution
+   * @return int the coarse search resolution
+   */
+  int getCoarseSearchResolution();
+
+  /**
+   * @brief Get goal heading mode
+   * @return GoalHeadingMode goal heading mode
+   */
+  GoalHeadingMode getGoalHeadingMode();
+
+  /**
+   * @brief Get the max_iterations
+   * @return int max_iterations
+   */
+  int getMaxIterations();
+
+  /**
+   * @brief Get the mac on approach iterations
+   * @return int max_on_approach_iterations
+   */
+  int getMaxOnApproachIterations();
+
 protected:
   /**
    * @brief Callback executed when a parameter change is detected

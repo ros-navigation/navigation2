@@ -29,6 +29,16 @@
 #include "nav2_smac_planner/smac_planner_hybrid.hpp"
 #include "nav2_smac_planner/smac_planner_2d.hpp"
 
+// Simple wrapper to be able to call a private member
+class HybridWrap : public nav2_smac_planner::SmacPlannerHybrid
+{
+public:
+  void callDynamicParams(std::vector<rclcpp::Parameter> parameters)
+  {
+    dynamicParametersCallback(parameters);
+  }
+};
+
 // SMAC smoke tests for plugin-level issues rather than algorithms
 // (covered by more extensively testing in other files)
 // System tests in nav2_system_tests will actually plan with this work
@@ -61,36 +71,41 @@ TEST(SmacTest, test_smac_se2)
   goal.pose.orientation.w = 1.0;
   auto planner = std::make_unique<nav2_smac_planner::SmacPlannerHybrid>();
 
-  nodeSE2->declare_parameter("test.goal_heading_mode", std::string("UNKNOWN"));
-  nodeSE2->declare_parameter("test.coarse_search_resolution", -1);
-  nodeSE2->declare_parameter("test.motion_model_for_search", std::string("Invalid"));
-  nodeSE2->declare_parameter("test.max_on_approach_iterations", -1);
-  nodeSE2->declare_parameter("test.max_iterations", -1);
-
   // invalid goal heading mode
+  nodeSE2->declare_parameter("test.goal_heading_mode", std::string("UNKNOWN"));
   nodeSE2->set_parameter(rclcpp::Parameter("test.goal_heading_mode", std::string("UNKNOWN")));
   EXPECT_THROW(planner->configure(nodeSE2, "test", nullptr, costmap_ros), std::runtime_error);
   nodeSE2->set_parameter(rclcpp::Parameter("test.goal_heading_mode", std::string("DEFAULT")));
 
-  // Invalid motion model
+  // Invalid motion model should not change the default value
   nodeSE2->set_parameter(rclcpp::Parameter("test.motion_model_for_search", std::string("invalid")));
   EXPECT_THROW(planner->configure(nodeSE2, "test", nullptr, costmap_ros), std::runtime_error);
   nodeSE2->set_parameter(rclcpp::Parameter("test.motion_model_for_search", std::string("DUBIN")));
 
+    // invalid coarse search resolution
   nodeSE2->set_parameter(rclcpp::Parameter("test.coarse_search_resolution", -1));
   nodeSE2->set_parameter(rclcpp::Parameter("test.max_on_approach_iterations", -1));
   nodeSE2->set_parameter(rclcpp::Parameter("test.max_iterations", -1));
   EXPECT_NO_THROW(planner->configure(nodeSE2, "test", nullptr, costmap_ros));
+
+  EXPECT_EQ(planner->getCoarseSearchResolution(), 1);
+  EXPECT_EQ(planner->getMaxIterations(), std::numeric_limits<int>::max());
+  EXPECT_EQ(planner->getMaxOnApproachIterations(), std::numeric_limits<int>::max());
 
 
   // valid Configuration
   nodeSE2->set_parameter(rclcpp::Parameter("test.coarse_search_resolution", 1));
   nodeSE2->set_parameter(rclcpp::Parameter("test.max_on_approach_iterations", 1000));
   nodeSE2->set_parameter(rclcpp::Parameter("test.max_iterations", 1000000));
-  nodeSE2->set_parameter(rclcpp::Parameter("test.angle_quantization_bins", 72));
+  EXPECT_NO_THROW(planner->configure(nodeSE2, "test", nullptr, costmap_ros));
+
 
   // angle_quantizations not multiple of coarse search resolution-> default to 1
+  nodeSE2->set_parameter(rclcpp::Parameter("test.angle_quantization_bins", 72));
   nodeSE2->set_parameter(rclcpp::Parameter("test.coarse_search_resolution", 5));
+  EXPECT_NO_THROW(planner->configure(nodeSE2, "test", nullptr, costmap_ros));
+  EXPECT_EQ(planner->getCoarseSearchResolution(), 1);
+
 
   planner->configure(nodeSE2, "test", nullptr, costmap_ros);
   planner->activate();
@@ -125,7 +140,7 @@ TEST(SmacTest, test_smac_se2_reconfigure)
     std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
   costmap_ros->on_configure(rclcpp_lifecycle::State());
 
-  auto planner = std::make_unique<nav2_smac_planner::SmacPlannerHybrid>();
+  auto planner = std::make_unique<HybridWrap>();
   planner->configure(nodeSE2, "test", nullptr, costmap_ros);
   planner->activate();
 
@@ -139,7 +154,7 @@ TEST(SmacTest, test_smac_se2_reconfigure)
   auto results = rec_param->set_parameters_atomically(
     {rclcpp::Parameter("test.downsample_costmap", true),
       rclcpp::Parameter("test.downsampling_factor", 2),
-      rclcpp::Parameter("test.angle_quantization_bins", 100),
+      rclcpp::Parameter("test.angle_quantization_bins", 72),
       rclcpp::Parameter("test.allow_unknown", false),
       rclcpp::Parameter("test.max_iterations", -1),
       rclcpp::Parameter("test.minimum_turning_radius", 1.0),
@@ -167,7 +182,7 @@ TEST(SmacTest, test_smac_se2_reconfigure)
 
   EXPECT_EQ(nodeSE2->get_parameter("test.downsample_costmap").as_bool(), true);
   EXPECT_EQ(nodeSE2->get_parameter("test.downsampling_factor").as_int(), 2);
-  EXPECT_EQ(nodeSE2->get_parameter("test.angle_quantization_bins").as_int(), 100);
+  EXPECT_EQ(nodeSE2->get_parameter("test.angle_quantization_bins").as_int(), 72);
   EXPECT_EQ(nodeSE2->get_parameter("test.allow_unknown").as_bool(), false);
   EXPECT_EQ(nodeSE2->get_parameter("test.max_iterations").as_int(), -1);
   EXPECT_EQ(nodeSE2->get_parameter("test.minimum_turning_radius").as_double(), 1.0);
@@ -198,17 +213,28 @@ TEST(SmacTest, test_smac_se2_reconfigure)
     results2);
   EXPECT_EQ(nodeSE2->get_parameter("resolution").as_double(), 0.2);
   EXPECT_EQ(nodeSE2->get_parameter("test.coarse_search_resolution").as_int(), -1);
+  EXPECT_EQ(planner->getCoarseSearchResolution(), 1);
 
   // test coarse resolution edge cases. Consider when coarse resolution
-  // is not multiple of angle bin quantization
-  auto result3 = rec_param->set_parameters_atomically(
-    {rclcpp::Parameter("test.coarse_search_resolution", 7),
-      rclcpp::Parameter("test.coarse_search_resolution", 10),
-      rclcpp::Parameter("test.angle_quantization_bins", 87)}
-  );
-  rclcpp::spin_until_future_complete(
-    nodeSE2->get_node_base_interface(),
-    result3);
+  // is not multiple of angle bin quantization(72)
+  std::vector<rclcpp::Parameter> parameters;
+  parameters.push_back(rclcpp::Parameter("test.coarse_search_resolution", 7));
+  EXPECT_NO_THROW(planner->callDynamicParams(parameters));
+  EXPECT_EQ(planner->getCoarseSearchResolution(), 1);
+
+  // same test as before but the error comes from the angular bin
+  parameters.clear();
+  parameters.push_back(rclcpp::Parameter("test.coarse_search_resolution", 4));
+  parameters.push_back(rclcpp::Parameter("test.angle_quantization_bins", 87));
+  EXPECT_EQ(planner->getCoarseSearchResolution(), 1);
+
+  // test invalid goal heading mode does not modify current
+  // goal heading mode
+  parameters.clear();
+  parameters.push_back(rclcpp::Parameter("test.goal_heading_mode", std::string("BIDIRECTIONAL")));
+  parameters.push_back(rclcpp::Parameter("test.goal_heading_mode", std::string("invalid")));
+  EXPECT_NO_THROW(planner->callDynamicParams(parameters));
+  EXPECT_EQ(planner->getGoalHeadingMode(), nav2_smac_planner::GoalHeadingMode::BIDIRECTIONAL);
 }
 
 int main(int argc, char **argv)

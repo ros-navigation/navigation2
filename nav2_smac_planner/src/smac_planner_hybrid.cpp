@@ -433,7 +433,7 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
     orientation_bin -= static_cast<float>(_angle_quantizations);
   }
   _a_star->setGoal(mx_goal, my_goal, static_cast<unsigned int>(orientation_bin),
-                  _goal_heading_mode, _coarse_search_resolution);
+                  getGoalHeadingMode(), getCoarseSearchResolution());
 
   // Setup message
   nav_msgs::msg::Path plan;
@@ -703,6 +703,22 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
           );
           _coarse_search_resolution = 1;
         }
+      } else if (name == _name + ".coarse_search_resolution") {
+        _coarse_search_resolution = parameter.as_int();
+        if (_coarse_search_resolution <= 0) {
+          RCLCPP_WARN(
+            _logger, "coarse iteration resolution selected as <= 0, "
+            "disabling coarse iteration resolution search for goal heading"
+          );
+          _coarse_search_resolution = 1;
+        }
+        if (_angle_quantizations % _coarse_search_resolution != 0) {
+          RCLCPP_WARN(
+            _logger,
+              "coarse iteration should be an increment of the number of angular bins configured"
+          );
+          _coarse_search_resolution = 1;
+        }
       }
     } else if (type == ParameterType::PARAMETER_STRING) {
       if (name == _name + ".motion_model_for_search") {
@@ -731,27 +747,9 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
         } else {
           _goal_heading_mode = goal_heading_mode;
         }
-      } else if (name == _name + ".coarse_search_resolution") {
-        _coarse_search_resolution = parameter.as_int();
-        if (_coarse_search_resolution <= 0) {
-          RCLCPP_WARN(
-            _logger, "coarse iteration resolution selected as <= 0, "
-            "disabling coarse iteration resolution search for goal heading"
-          );
-          _coarse_search_resolution = 1;
-        }
-
-        if (_angle_quantizations % _coarse_search_resolution != 0) {
-          RCLCPP_WARN(
-            _logger,
-              "coarse iteration should be an increment of the number of angular bins configured"
-          );
-          _coarse_search_resolution = 1;
-        }
       }
     }
   }
-
   // Re-init if needed with mutex lock (to avoid re-init while creating a plan)
   if (reinit_a_star || reinit_downsampler || reinit_collision_checker || reinit_smoother) {
     // convert to grid coordinates
@@ -820,6 +818,26 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
   }
   result.successful = true;
   return result;
+}
+
+int SmacPlannerHybrid::getCoarseSearchResolution()
+{
+  return _coarse_search_resolution;
+}
+
+GoalHeadingMode SmacPlannerHybrid::getGoalHeadingMode()
+{
+  return _goal_heading_mode;
+}
+
+int SmacPlannerHybrid::getMaxIterations()
+{
+  return _max_iterations;
+}
+
+int SmacPlannerHybrid::getMaxOnApproachIterations()
+{
+  return _max_on_approach_iterations;
 }
 
 }  // namespace nav2_smac_planner
