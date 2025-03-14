@@ -66,8 +66,7 @@ public:
    * @return If edge is valid
    */
   bool score(
-    const EdgePtr edge, const geometry_msgs::msg::PoseStamped & goal_pose, bool start_edge,
-    bool final_edge,
+    const EdgePtr edge, const geometry_msgs::msg::PoseStamped & goal_pose, EdgeType edge_type,
     float & score);
 
   /**

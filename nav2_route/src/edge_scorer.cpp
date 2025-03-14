@@ -65,7 +65,7 @@ EdgeScorer::EdgeScorer(
 
 bool EdgeScorer::score(
   const EdgePtr edge, const geometry_msgs::msg::PoseStamped & goal_pose,
-  bool start_edge, bool final_edge, float & total_score)
+  EdgeType edge_type, float & total_score)
 {
   total_score = 0.0;
   float curr_score = 0.0;
@@ -76,7 +76,7 @@ bool EdgeScorer::score(
 
   for (auto & plugin : plugins_) {
     curr_score = 0.0;
-    if (plugin->score(edge, goal_pose, start_edge, final_edge, curr_score)) {
+    if (plugin->score(edge, goal_pose, edge_type, curr_score)) {
       total_score += curr_score;
     } else {
       return false;
