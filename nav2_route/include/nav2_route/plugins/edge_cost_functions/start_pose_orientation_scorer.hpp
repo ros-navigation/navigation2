@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Polymath Robotics Inc.
+// Copyright (c) 2025, Polymath Robotics Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -81,7 +81,7 @@ protected:
   rclcpp::Logger logger_{rclcpp::get_logger("StartPoseOrientationScorer")};
   std::string name_;
   std::string route_frame_;
-  std::string robot_frame_;
+  std::string base_frame_;
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   double orientation_tolerance_;
 };
