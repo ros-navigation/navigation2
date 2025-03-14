@@ -65,8 +65,33 @@ TEST(SmacTest, test_smac_lattice)
   goal.pose.orientation.w = 1.0;
   auto planner = std::make_unique<nav2_smac_planner::SmacPlannerLattice>();
   try {
+    // invalid goal heading mode
+    nodeLattice->declare_parameter("test.goal_heading_mode", std::string("UNKNOWN"));
+    nodeLattice->set_parameter(rclcpp::Parameter("test.goal_heading_mode", std::string("UNKNOWN")));
+    EXPECT_THROW(planner->configure(nodeLattice, "test", nullptr, costmap_ros), std::runtime_error);
+    nodeLattice->set_parameter(rclcpp::Parameter("test.goal_heading_mode", std::string("DEFAULT")));
+
+    // invalid COnfiguration resolution
+    nodeLattice->set_parameter(rclcpp::Parameter("test.coarse_search_resolution", -1));
+    nodeLattice->set_parameter(rclcpp::Parameter("test.max_iterations", -1));
+    nodeLattice->set_parameter(rclcpp::Parameter("test.max_on_approach_iterations", -1));
+
+    EXPECT_NO_THROW(planner->configure(nodeLattice, "test", nullptr, costmap_ros));
+    EXPECT_EQ(planner->getCoarseSearchResolution(), 1);
+    EXPECT_EQ(planner->getMaxIterations(), std::numeric_limits<int>::max());
+    EXPECT_EQ(planner->getMaxOnApproachIterations(), std::numeric_limits<int>::max());
+
+
+    // Valid configuration
+    nodeLattice->set_parameter(rclcpp::Parameter("test.max_iterations", 1000000));
+    nodeLattice->set_parameter(rclcpp::Parameter("test.max_on_approach_iterations", 1000));
+
+    // Coarse search resolution will default to 1, not muiltiple of number of heading(16 default)
+    nodeLattice->set_parameter(rclcpp::Parameter("test.coarse_search_resolution", 3));
+
     // Expect to throw due to invalid prims file in param
     planner->configure(nodeLattice, "test", nullptr, costmap_ros);
+    EXPECT_EQ(planner->getCoarseSearchResolution(), 1);
   } catch (...) {
   }
   planner->activate();
@@ -143,9 +168,41 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
       results);
   } catch (...) {
   }
+  // test edge cases Goal heading mode, make sure we dont reset the goal when invalid
+  std::vector<rclcpp::Parameter> parameters;
+  parameters.push_back(rclcpp::Parameter("test.goal_heading_mode", std::string("BIDIRECTIONAL")));
+  parameters.push_back(rclcpp::Parameter("test.goal_heading_mode", std::string("invalid")));
+  EXPECT_NO_THROW(planner->callDynamicParams(parameters));
+  EXPECT_EQ(planner->getGoalHeadingMode(), nav2_smac_planner::GoalHeadingMode::BIDIRECTIONAL);
+
+  // test coarse resolution edge cases.
+  // Neagtive coarse search resolution
+  parameters.clear();
+  parameters.push_back(rclcpp::Parameter("test.coarse_search_resolution", -1));
+  EXPECT_NO_THROW(planner->callDynamicParams(parameters));
+  EXPECT_EQ(planner->getCoarseSearchResolution(), 1);
+
+  // test value when coarse resolution
+  // is not multiple number_of_headings
+  parameters.clear();
+  parameters.push_back(rclcpp::Parameter("test.coarse_search_resolution", 5));
+  EXPECT_NO_THROW(planner->callDynamicParams(parameters));
+  EXPECT_EQ(planner->getCoarseSearchResolution(), 1);
+
+  // Similar modulous test but when the issue is from the  number
+  // of heading, test output includes number of heading 15
+  parameters.clear();
+  std::cout << "***************************************" << std::endl;
+  parameters.push_back(rclcpp::Parameter("test.coarse_search_resolution", 4));
+  parameters.push_back(rclcpp::Parameter("test.lattice_filepath",
+    ament_index_cpp::get_package_share_directory("nav2_smac_planner") +
+    "/sample_primitives/test/output.json"));
+  EXPECT_NO_THROW(planner->callDynamicParams(parameters));
+  EXPECT_EQ(planner->getCoarseSearchResolution(), 1);
+
 
   // So instead, lets call manually on a change
-  std::vector<rclcpp::Parameter> parameters;
+  parameters.clear();
   parameters.push_back(rclcpp::Parameter("test.lattice_filepath", std::string("HI")));
   EXPECT_THROW(planner->callDynamicParams(parameters), std::runtime_error);
 }
