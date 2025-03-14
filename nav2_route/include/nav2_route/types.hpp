@@ -254,6 +254,13 @@ struct ReroutingState
   }
 };
 
+enum class EdgeType
+{
+  NONE = 0,
+  START = 1,
+  END = 2
+};
+
 }  // namespace nav2_route
 
 #endif  // NAV2_ROUTE__TYPES_HPP_
