@@ -202,7 +202,8 @@ bool RoutePlanner::isStart(const NodePtr node)
   return node->nodeid == start_id_;
 }
 
-nav2_route::EdgeType RoutePlanner::classifyEdge(const EdgePtr edge){
+nav2_route::EdgeType RoutePlanner::classifyEdge(const EdgePtr edge)
+{
   if (isStart(edge->start)) {
     return nav2_route::EdgeType::START;
   } else if (isGoal(edge->end)) {
