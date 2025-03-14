@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Polymath Robotics Inc.
+// Copyright (c) 2025, Polymath Robotics Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,16 +32,10 @@ void StartPoseOrientationScorer::configure(
   nav2_util::declare_parameter_if_not_declared(
     node,
     getName() + ".orientation_tolerance", rclcpp::ParameterValue(M_PI / 2.0));
-  nav2_util::declare_parameter_if_not_declared(
-    node,
-    getName() + ".route_frame", rclcpp::ParameterValue("map"));
-  nav2_util::declare_parameter_if_not_declared(
-    node,
-    getName() + ".robot_frame", rclcpp::ParameterValue("base_link"));
 
   orientation_tolerance_ = node->get_parameter(getName() + ".orientation_tolerance").as_double();
-  route_frame_ = node->get_parameter(getName() + ".route_frame").as_string();
-  robot_frame_ = node->get_parameter(getName() + ".robot_frame").as_string();
+  route_frame_ = node->get_parameter("route_frame").as_string();
+  base_frame_ = node->get_parameter("base_frame").as_string();
 
   tf_buffer_ = tf_buffer;
 
@@ -52,6 +46,7 @@ bool StartPoseOrientationScorer::score(
   const geometry_msgs::msg::PoseStamped & /* goal_pose */, bool start_edge, bool /* final_edge */,
   float & /* cost */)
 {
+  //TODO: modify this to return a cost that is proportional to the size of the deviation from the desired start orientation
   if (start_edge) {
     double edge_orientation = std::atan2(
       edge->end->coords.y - edge->start->coords.y,
@@ -71,7 +66,7 @@ geometry_msgs::msg::PoseStamped StartPoseOrientationScorer::getRobotPose()
 {
   geometry_msgs::msg::PoseStamped pose;
 
-  if (!nav2_util::getCurrentPose(pose, *tf_buffer_, route_frame_, robot_frame_)) {
+  if (!nav2_util::getCurrentPose(pose, *tf_buffer_, route_frame_, base_frame_)) {
     throw nav2_core::RouteTFError("Unable to get robot pose in route frame: " + route_frame_);
   }
   return pose;
