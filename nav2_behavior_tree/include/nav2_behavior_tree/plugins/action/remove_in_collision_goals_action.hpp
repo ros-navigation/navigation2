@@ -20,7 +20,7 @@
 #include <string>
 
 #include "rclcpp/rclcpp.hpp"
-#include "geometry_msgs/msg/pose_stamped_array.hpp"
+#include "nav_msgs/msg/goals.hpp"
 #include "nav2_behavior_tree/bt_service_node.hpp"
 #include "nav2_msgs/srv/get_costs.hpp"
 
@@ -52,7 +52,7 @@ public:
   {
     return providedBasicPorts(
       {
-        BT::InputPort<geometry_msgs::msg::PoseStampedArray>("input_goals",
+        BT::InputPort<nav_msgs::msg::Goals>("input_goals",
           "Original goals to remove from"),
         BT::InputPort<double>(
           "cost_threshold", 254.0,
@@ -61,7 +61,7 @@ public:
         BT::InputPort<bool>(
           "consider_unknown_as_obstacle", false,
           "Whether to consider unknown cost as obstacle"),
-        BT::OutputPort<geometry_msgs::msg::PoseStampedArray>("output_goals",
+        BT::OutputPort<nav_msgs::msg::Goals>("output_goals",
           "Goals with in-collision goals removed"),
       });
   }
@@ -70,7 +70,7 @@ private:
   bool use_footprint_;
   bool consider_unknown_as_obstacle_;
   double cost_threshold_;
-  geometry_msgs::msg::PoseStampedArray input_goals_;
+  nav_msgs::msg::Goals input_goals_;
 };
 
 }  // namespace nav2_behavior_tree

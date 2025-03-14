@@ -44,7 +44,7 @@ BT::NodeStatus GoalUpdatedController::tick()
 
   setStatus(BT::NodeStatus::RUNNING);
 
-  geometry_msgs::msg::PoseStampedArray current_goals;
+  nav_msgs::msg::Goals current_goals;
   BT::getInputOrBlackboard("goals", current_goals);
   geometry_msgs::msg::PoseStamped current_goal;
   BT::getInputOrBlackboard("goal", current_goal);
