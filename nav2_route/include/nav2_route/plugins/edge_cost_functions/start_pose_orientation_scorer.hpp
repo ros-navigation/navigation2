@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Samsung Research America
+// Copyright (c) 2025, Polymath Robotics Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,39 +12,43 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__COSTMAP_SCORER_HPP_
-#define NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__COSTMAP_SCORER_HPP_
+#ifndef NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__START_POSE_ORIENTATION_SCORER_HPP_
+#define NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__START_POSE_ORIENTATION_SCORER_HPP_
 
 #include <memory>
 #include <string>
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "nav2_core/route_exceptions.hpp"
 #include "nav2_route/interfaces/edge_cost_function.hpp"
 #include "nav2_util/line_iterator.hpp"
 #include "nav2_util/node_utils.hpp"
+#include "nav2_util/robot_utils.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+#include "tf2/utils.h"
+#include "angles/angles.h"
 
 namespace nav2_route
 {
 
 /**
- * @class CostmapScorer
- * @brief Scores edges by the average or maximum cost found while iterating over the
- * edge's line segment in the global costmap
+ * @class StartPoseOrientationScorer
+ * @brief Scores initial edge edge by comparing the orientation of the robot's current pose and the orientation of the edge
  */
-class CostmapScorer : public EdgeCostFunction
+class StartPoseOrientationScorer : public EdgeCostFunction
 {
 public:
   /**
    * @brief Constructor
    */
-  CostmapScorer() = default;
+  StartPoseOrientationScorer() = default;
 
   /**
    * @brief destructor
    */
-  virtual ~CostmapScorer() = default;
+  virtual ~StartPoseOrientationScorer() = default;
 
   /**
    * @brief Configure
@@ -71,21 +75,17 @@ public:
    */
   std::string getName() override;
 
-  /**
-   * @brief Prepare for a new cycle, by resetting state, grabbing data
-   * to use for all immediate requests, or otherwise prepare for scoring
-   */
-  void prepare() override;
+  geometry_msgs::msg::PoseStamped getRobotPose();
 
 protected:
-  rclcpp::Logger logger_{rclcpp::get_logger("CostmapScorer")};
+  rclcpp::Logger logger_{rclcpp::get_logger("StartPoseOrientationScorer")};
   std::string name_;
-  bool use_max_, invalid_on_collision_, invalid_off_map_;
-  float weight_, max_cost_;
-  std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber_;
-  std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap_{nullptr};
+  std::string route_frame_;
+  std::string base_frame_;
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  double orientation_tolerance_;
 };
 
 }  // namespace nav2_route
 
-#endif  // NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__COSTMAP_SCORER_HPP_
+#endif  // NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__START_POSE_ORIENTATION_SCORER_HPP_
