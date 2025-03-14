@@ -144,8 +144,8 @@ TEST(AStarTest, test_a_star_2d)
   EXPECT_EQ(expander.refineAnalyticPath(nullptr, nullptr, nullptr,
     analytic_expansion_nodes), std::numeric_limits<float>::max());
   nav2_smac_planner::AnalyticExpansion<nav2_smac_planner::Node2D>::AnalyticExpansionNodes
-    expected_nodes;
-  EXPECT_TRUE(expander.getAnalyticPath(nullptr, nullptr, nullptr, nullptr) == expected_nodes);
+    expected_nodes = expander.getAnalyticPath(nullptr, nullptr, nullptr, nullptr);
+  EXPECT_EQ(expected_nodes.size(), 0);
 
   delete costmapA;
 }

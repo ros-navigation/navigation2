@@ -60,13 +60,6 @@ public:
     NodePtr node;
     Coordinates initial_coords;
     Coordinates proposed_coords;
-
-    bool operator==(const AnalyticExpansionNode & other) const
-    {
-      return node == other.node &&
-             initial_coords == other.initial_coords &&
-             proposed_coords == other.proposed_coords;
-    }
   };
 
   typedef std::vector<AnalyticExpansionNode> AnalyticExpansionNodes;
