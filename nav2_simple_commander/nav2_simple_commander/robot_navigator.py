@@ -502,7 +502,7 @@ class BasicNavigator(Node):
     def isTaskComplete(self) -> bool:
         """Check if the task request of any type is complete yet."""
         if not self.result_future:
-            # task was cancelled or completed
+            # task was canceled or completed
             return True
         rclpy.spin_until_future_complete(self, self.result_future, timeout_sec=0.10)
         if self.result_future.result():

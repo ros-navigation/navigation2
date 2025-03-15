@@ -307,7 +307,7 @@ bool AStarAlgorithm<NodeT>::createPath(
     // Check for planning timeout and cancel only on every Nth iteration
     if (iterations % _terminal_checking_interval == 0) {
       if (cancel_checker()) {
-        throw nav2_core::PlannerCancelled("Planner was cancelled");
+        throw nav2_core::PlannerCancelled("Planner was canceled");
       }
       std::chrono::duration<double> planning_duration =
         std::chrono::duration_cast<std::chrono::duration<double>>(steady_clock::now() - start_time);

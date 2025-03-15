@@ -53,7 +53,7 @@ public:
     command_ = goal->command.data;
     start_time_ = std::chrono::system_clock::now();
 
-    // onRun method can have various possible outcomes (success, failure, cancelled)
+    // onRun method can have various possible outcomes (success, failure, canceled)
     // The output is defined by the tester class on the command string.
     if (command_ == "Testing success" || command_ == "Testing failure on run") {
       initialized_ = true;

@@ -13,9 +13,9 @@ The long-term aim is for these utilities to find more permanent homes in other p
 
 ## Twist Publisher and Twist Subscriber for commanded velocities
 
-### Background 
+### Background
 
-The Twist Publisher and Twist Subscriber are utility classes to assist NAV2 transition from 
+The Twist Publisher and Twist Subscriber are utility classes to assist NAV2 transition from
 [Twist](https://github.com/ros2/common_interfaces/blob/humble/geometry_msgs/msg/Twist.msg) to [TwistStamped](https://github.com/ros2/common_interfaces/blob/humble/geometry_msgs/msg/TwistStamped.msg).
 
 Details on the migration are found in [#1594](https://github.com/ros-planning/navigation2/issues/1594).
@@ -28,4 +28,4 @@ The utility has the following effect:
 
 Every node in `nav2` that subscribes or publishes velocity commands with `Twist` now supports this optional behavior.
 The behavior up through ROS 2 Iron is preserved - using `Twist`. In a future ROS 2 version, when enough of the
-ROS ecosystem has moved to `TwistStamped`, the default may change. 
+ROS ecosystem has moved to `TwistStamped`, the default may change.
