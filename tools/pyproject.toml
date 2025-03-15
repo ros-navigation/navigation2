@@ -1,0 +1,10 @@
+[tool.codespell]
+builtin = "clear,rare,informal,usage,code,names"
+check-filenames = true
+check-hidden = true
+ignore-words = "tools/.codespell_ignore_words"
+interactive = 0
+quiet = 34
+skip="*.pgm,./build/*,./install/*,./log*,./.venv/*,./.git*,*.toml"
+uri-ignore-words-list = "segue"
+write-changes = false
