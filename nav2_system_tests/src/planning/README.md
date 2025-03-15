@@ -6,7 +6,7 @@ As mentioned above, currently the world is represented as a costmap. Simplified 
 
 PlannerTester can sequentially pass random starting and goal poses and check the returned path for possible collision along the path.
 
-Below is an example of the output from randomized testing. Blue spheres represent the starting locations, green, the goals. Red lines are the computed paths. Grey cells represent obstacles.
+Below is an example of the output from randomized testing. Blue spheres represent the starting locations, green, the goals. Red lines are the computed paths. Gray cells represent obstacles.
 
 ![alt text](example_result.png "Output Example")
 

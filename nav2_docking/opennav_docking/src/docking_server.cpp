@@ -181,7 +181,7 @@ bool DockingServer::checkAndWarnIfCancelled(
   const std::string & name)
 {
   if (action_server->is_cancel_requested()) {
-    RCLCPP_WARN(get_logger(), "Goal was cancelled. Cancelling %s action", name.c_str());
+    RCLCPP_WARN(get_logger(), "Goal was canceled. Canceling %s action", name.c_str());
     return true;
   }
   return false;
@@ -193,7 +193,7 @@ bool DockingServer::checkAndWarnIfPreempted(
   const std::string & name)
 {
   if (action_server->is_preempt_requested()) {
-    RCLCPP_WARN(get_logger(), "Goal was preempted. Cancelling %s action", name.c_str());
+    RCLCPP_WARN(get_logger(), "Goal was preempted. Canceling %s action", name.c_str());
     return true;
   }
   return false;
@@ -298,7 +298,7 @@ void DockingServer::dockRobot()
           }
         }
 
-        // Cancelled, preempted, or shutting down (recoverable errors throw DockingException)
+        // Canceled, preempted, or shutting down (recoverable errors throw DockingException)
         stashDockData(goal->use_dock_id, dock, false);
         publishZeroVelocity();
         docking_action_server_->terminate_all(result);
@@ -313,7 +313,7 @@ void DockingServer::dockRobot()
 
       // Reset to staging pose to try again
       if (!resetApproach(dock->getStagingPose())) {
-        // Cancelled, preempted, or shutting down
+        // Canceled, preempted, or shutting down
         stashDockData(goal->use_dock_id, dock, false);
         publishZeroVelocity();
         docking_action_server_->terminate_all(result);
@@ -422,7 +422,7 @@ bool DockingServer::approachDock(Dock * dock, geometry_msgs::msg::PoseStamped & 
       return true;
     }
 
-    // Stop if cancelled/preempted
+    // Stop if canceled/preempted
     if (checkAndWarnIfCancelled(docking_action_server_, "dock_robot") ||
       checkAndWarnIfPreempted(docking_action_server_, "dock_robot"))
     {
@@ -515,7 +515,7 @@ bool DockingServer::resetApproach(const geometry_msgs::msg::PoseStamped & stagin
   while (rclcpp::ok()) {
     publishDockingFeedback(DockRobot::Feedback::INITIAL_PERCEPTION);
 
-    // Stop if cancelled/preempted
+    // Stop if canceled/preempted
     if (checkAndWarnIfCancelled(docking_action_server_, "dock_robot") ||
       checkAndWarnIfPreempted(docking_action_server_, "dock_robot"))
     {
@@ -635,7 +635,7 @@ void DockingServer::undockRobot()
         throw opennav_docking_core::FailedToControl("Undocking timed out");
       }
 
-      // Stop if cancelled/preempted
+      // Stop if canceled/preempted
       if (checkAndWarnIfCancelled(undocking_action_server_, "undock_robot") ||
         checkAndWarnIfPreempted(undocking_action_server_, "undock_robot"))
       {

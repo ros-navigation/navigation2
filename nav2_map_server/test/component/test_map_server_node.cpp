@@ -186,7 +186,7 @@ TEST_F(MapServerTestFixture, LoadMapInvalidImage)
 }
 
 /**
- * Test behaviour of server if yaml_filename is set to an empty string.
+ * Test behavior of server if yaml_filename is set to an empty string.
  */
 TEST_F(MapServerTestFixture, NoInitialMap)
 {
@@ -204,7 +204,7 @@ TEST_F(MapServerTestFixture, NoInitialMap)
   RCLCPP_INFO(node_->get_logger(), "Removing yaml_filename-parameter before restarting");
   parameters_client->set_parameters({Parameter("yaml_filename", ParameterValue(""))});
 
-  // only configure node, to test behaviour of service while node is not active
+  // only configure node, to test behavior of service while node is not active
   lifecycle_client_->change_state(Transition::TRANSITION_CONFIGURE, 3s);
 
   RCLCPP_INFO(node_->get_logger(), "Testing LoadMap service while not being active");

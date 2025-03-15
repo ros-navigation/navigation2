@@ -149,10 +149,10 @@ TEST_F(CancelDriveOnHeadingTestFixture, test_ports)
   // Executing tick
   tree_->rootNode()->executeTick();
 
-  // BT node should return success, once when the goal is cancelled
+  // BT node should return success, once when the goal is canceled
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
 
-  // Adding another test case to check if the goal is in fact cancelling
+  // Adding another test case to check if the goal is in fact canceling
   EXPECT_EQ(action_server_->isGoalCancelled(), true);
 }
 
