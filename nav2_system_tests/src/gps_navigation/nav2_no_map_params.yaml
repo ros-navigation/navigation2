@@ -194,7 +194,7 @@ global_costmap:
       robot_radius: 0.22
       resolution: 0.1
       # When using GPS navigation you will potentially traverse huge environments which are not practical to
-      # fit on a big static costmap. Thus it is recommended to use a rolling global costmap large enough to 
+      # fit on a big static costmap. Thus it is recommended to use a rolling global costmap large enough to
       # contain each pair of successive waypoints. See: https://github.com/ros-planning/navigation2/issues/2174
       rolling_window: True
       width: 50

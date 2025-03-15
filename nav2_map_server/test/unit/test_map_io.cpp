@@ -224,7 +224,7 @@ TEST_F(MapIOTester, loadSaveMapModes)
 }
 
 // Try to load an invalid file with different ways.
-// Succeeds if all cases are got expected fail behaviours.
+// Succeeds if all cases are got expected fail behaviors.
 TEST_F(MapIOTester, loadInvalidFile)
 {
   // 1. Trying to load incorrect map by loadMapFromFile()
@@ -245,7 +245,7 @@ TEST_F(MapIOTester, loadInvalidFile)
 }
 
 // Load map from a valid file. Trying to save map with different sets of parameters.
-// Succeeds if all cases got expected behaviours.
+// Succeeds if all cases got expected behaviors.
 TEST_F(MapIOTester, saveInvalidParameters)
 {
   // 1. Load map from YAML file

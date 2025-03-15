@@ -54,7 +54,7 @@ BT::NodeStatus NavigateToPoseAction::on_aborted()
 
 BT::NodeStatus NavigateToPoseAction::on_cancelled()
 {
-  // Set empty error code, action was cancelled
+  // Set empty error code, action was canceled
   setOutput("error_code_id", ActionResult::NONE);
   setOutput("error_msg", "");
   return BT::NodeStatus::SUCCESS;
