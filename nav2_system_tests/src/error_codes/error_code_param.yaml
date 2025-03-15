@@ -173,7 +173,7 @@ planner_server:
       plugin: "nav2_system_tests::NoValidPathErrorPlanner"
     no_viapoints_given:
       plugin: "nav2_system_tests::NoViapointsGivenErrorPlanner"
-    cancelled:  # codespell:ignore cancelled
+    canceled:
       plugin: "nav2_system_tests::CancelledPlanner"
 
 smoother_server:
