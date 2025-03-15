@@ -124,7 +124,7 @@ def main(argv=sys.argv[1:]):
 
     # Check compute path to pose cancel
     threading.Thread(target=cancel_task).start()
-    result = navigator._getPathImpl(initial_pose, goal_pose, 'cancelled')
+    result = navigator._getPathImpl(initial_pose, goal_pose, 'canceled')
     assert (
         navigator.getResult() == TaskResult.CANCELED
     ), 'Compute path to pose cancel failed'
