@@ -64,7 +64,7 @@ def main():
             )
 
     # Robot hit a dead end, back it up
-    print('Robot hit a dead end (lets pretend), backing up...')
+    print("Robot hit a dead end (let's pretend), backing up...")
     navigator.backup(backup_dist=0.5, backup_speed=0.1)
 
     i = 0
