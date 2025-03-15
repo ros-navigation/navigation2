@@ -75,7 +75,7 @@ public:
     }
     createActionClient(action_name_);
 
-    // Give the derive class a chance to do any initialisation
+    // Give the derive class a chance to do any initialization
     RCLCPP_DEBUG(node_->get_logger(), "\"%s\" BtActionNode initialized", xml_tag_name.c_str());
   }
 
