@@ -181,9 +181,7 @@ void CostCritic::score(CriticData & data)
       }
     }
 
-    if (!trajectory_collide) {
-      all_trajectories_collide = false;
-    }
+    all_trajectories_collide &= trajectory_collide;
   }
 
   if (power_ > 1u) {
