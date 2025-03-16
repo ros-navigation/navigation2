@@ -17,7 +17,6 @@
 import argparse
 import sys
 import time
-
 from typing import Optional
 
 from action_msgs.msg import GoalStatus
@@ -28,15 +27,14 @@ from lifecycle_msgs.srv import GetState
 from nav2_msgs.action import NavigateThroughPoses
 from nav2_msgs.srv import ManageLifecycleNodes
 from rcl_interfaces.srv import SetParameters
-
 import rclpy
-
 from rclpy.action.client import ActionClient
 from rclpy.node import Node
 from rclpy.parameter import Parameter
-from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSReliabilityPolicy
+from rclpy.qos import QoSDurabilityPolicy
+from rclpy.qos import QoSHistoryPolicy
 from rclpy.qos import QoSProfile
-
+from rclpy.qos import QoSReliabilityPolicy
 from std_msgs.msg import String
 
 

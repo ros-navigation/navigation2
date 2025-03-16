@@ -15,10 +15,10 @@
 
 import math
 
-from geometry_msgs.msg import Quaternion, Transform
+from geometry_msgs.msg import Quaternion
+from geometry_msgs.msg import Transform
 import numpy as np
 import tf_transformations
-
 
 """
 Transformation utilities for the loopback simulator

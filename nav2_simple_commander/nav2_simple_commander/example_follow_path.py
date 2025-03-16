@@ -14,9 +14,9 @@
 # limitations under the License.
 
 from geometry_msgs.msg import PoseStamped
-from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
+from nav2_simple_commander.robot_navigator import BasicNavigator
+from nav2_simple_commander.robot_navigator import TaskResult
 import rclpy
-
 
 """
 Basic navigation demo to follow a given path after smoothing

@@ -15,14 +15,13 @@
 from collections import defaultdict
 from enum import Enum
 
-from helper import angle_difference, interpolate_yaws
-
+from helper import angle_difference
+from helper import interpolate_yaws
 import numpy as np
-
 from rtree import index
-
-from trajectory import Path, Trajectory, TrajectoryParameters
-
+from trajectory import Path
+from trajectory import Trajectory
+from trajectory import TrajectoryParameters
 from trajectory_generator import TrajectoryGenerator
 
 

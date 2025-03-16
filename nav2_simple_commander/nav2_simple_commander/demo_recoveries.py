@@ -14,10 +14,10 @@
 # limitations under the License.
 
 from geometry_msgs.msg import PoseStamped
-from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
+from nav2_simple_commander.robot_navigator import BasicNavigator
+from nav2_simple_commander.robot_navigator import TaskResult
 import rclpy
 from rclpy.duration import Duration
-
 
 """
 Basic recoveries demo. In this demonstration, the robot navigates
@@ -64,7 +64,7 @@ def main():
             )
 
     # Robot hit a dead end, back it up
-    print('Robot hit a dead end (lets pretend), backing up...')
+    print("Robot hit a dead end (let's pretend), backing up...")
     navigator.backup(backup_dist=0.5, backup_speed=0.1)
 
     i = 0

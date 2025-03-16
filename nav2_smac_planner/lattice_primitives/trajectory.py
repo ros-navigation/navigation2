@@ -14,8 +14,8 @@
 
 from dataclasses import dataclass
 
-from helper import angle_difference, normalize_angle
-
+from helper import angle_difference
+from helper import normalize_angle
 import numpy as np
 
 

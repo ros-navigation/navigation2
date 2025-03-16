@@ -17,18 +17,19 @@ import sys
 import time
 
 from action_msgs.msg import GoalStatus
-from geometry_msgs.msg import Point32, PolygonStamped
+from geometry_msgs.msg import Point32
+from geometry_msgs.msg import PolygonStamped
 from nav2_msgs.action import Spin
 from nav2_msgs.msg import Costmap
 from nav2_msgs.srv import ManageLifecycleNodes
-
 import rclpy
-
 from rclpy.action import ActionClient
 from rclpy.duration import Duration
 from rclpy.node import Node
-from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSReliabilityPolicy
+from rclpy.qos import QoSDurabilityPolicy
+from rclpy.qos import QoSHistoryPolicy
 from rclpy.qos import QoSProfile
+from rclpy.qos import QoSReliabilityPolicy
 
 
 class SpinTest(Node):

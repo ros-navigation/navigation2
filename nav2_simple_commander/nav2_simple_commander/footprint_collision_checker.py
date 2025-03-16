@@ -21,9 +21,11 @@ It provides the needed methods to manipulate the coordinates
 and calculate the cost of a Footprint
 """
 
-from math import cos, sin
+from math import cos
+from math import sin
 
-from geometry_msgs.msg import Point32, Polygon
+from geometry_msgs.msg import Point32
+from geometry_msgs.msg import Polygon
 from nav2_simple_commander.costmap_2d import PyCostmap2D
 from nav2_simple_commander.line_iterator import LineIterator
 

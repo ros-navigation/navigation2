@@ -18,20 +18,16 @@ from pathlib import Path
 import sys
 
 from ament_index_python.packages import get_package_share_directory
-
 from launch import LaunchDescription
 from launch import LaunchService
-from launch.actions import (
-    AppendEnvironmentVariable,
-    ExecuteProcess,
-    IncludeLaunchDescription,
-    SetEnvironmentVariable,
-)
+from launch.actions import AppendEnvironmentVariable
+from launch.actions import ExecuteProcess
+from launch.actions import IncludeLaunchDescription
+from launch.actions import SetEnvironmentVariable
 from launch.launch_context import LaunchContext
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 from launch_testing.legacy import LaunchTestService
-
 from nav2_common.launch import RewrittenYaml
 
 
@@ -48,8 +44,8 @@ def generate_launch_description():
 
     map_yaml_file = os.path.join(nav2_bringup_dir, 'maps', 'tb3_sandbox.yaml')
 
-
-    bt_navigator_xml = os.path.join(get_package_share_directory('nav2_bt_navigator'),
+    bt_navigator_xml = os.path.join(get_package_share_directory(
+                                    'nav2_bt_navigator'),
                                     'behavior_trees',
                                     os.getenv('BT_NAVIGATOR_XML'))
 

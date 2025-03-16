@@ -14,7 +14,8 @@
 
 import unittest
 
-from geometry_msgs.msg import Point32, Polygon
+from geometry_msgs.msg import Point32
+from geometry_msgs.msg import Polygon
 from nav2_simple_commander.costmap_2d import PyCostmap2D
 from nav2_simple_commander.footprint_collision_checker import FootprintCollisionChecker
 from nav_msgs.msg import OccupancyGrid

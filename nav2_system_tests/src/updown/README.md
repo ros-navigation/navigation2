@@ -1,6 +1,6 @@
 # Nav2 Updown Test
 
-This is a 'top level' system test which tests the lifecycle bringup and shutdown of the system. 
+This is a 'top level' system test which tests the lifecycle bringup and shutdown of the system.
 
 ## To run the test
 ```

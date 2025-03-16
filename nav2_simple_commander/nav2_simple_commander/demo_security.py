@@ -16,11 +16,10 @@
 from copy import deepcopy
 
 from geometry_msgs.msg import PoseStamped
-from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
-
+from nav2_simple_commander.robot_navigator import BasicNavigator
+from nav2_simple_commander.robot_navigator import TaskResult
 import rclpy
 from rclpy.duration import Duration
-
 
 """
 Basic security route patrol demo. In this demonstration, the expectation

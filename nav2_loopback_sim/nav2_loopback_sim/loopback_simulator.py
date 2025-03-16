@@ -15,27 +15,33 @@
 
 import math
 
-from geometry_msgs.msg import PoseWithCovarianceStamped, Twist, TwistStamped
-from geometry_msgs.msg import Quaternion, TransformStamped, Vector3
+from geometry_msgs.msg import PoseWithCovarianceStamped
+from geometry_msgs.msg import Quaternion
+from geometry_msgs.msg import TransformStamped
+from geometry_msgs.msg import Twist
+from geometry_msgs.msg import TwistStamped
+from geometry_msgs.msg import Vector3
 from nav2_simple_commander.line_iterator import LineIterator
 from nav_msgs.msg import Odometry
 from nav_msgs.srv import GetMap
 import rclpy
 from rclpy.duration import Duration
 from rclpy.node import Node
-from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
+from rclpy.qos import DurabilityPolicy
+from rclpy.qos import QoSProfile
+from rclpy.qos import ReliabilityPolicy
 from rosgraph_msgs.msg import Clock
 from sensor_msgs.msg import LaserScan
-from tf2_ros import Buffer, TransformBroadcaster, TransformListener
+from tf2_ros import Buffer
+from tf2_ros import TransformBroadcaster
+from tf2_ros import TransformListener
 import tf_transformations
 
-from .utils import (
-    addYawToQuat,
-    getMapOccupancy,
-    matrixToTransform,
-    transformStampedToMatrix,
-    worldToMap,
-)
+from .utils import addYawToQuat
+from .utils import getMapOccupancy
+from .utils import matrixToTransform
+from .utils import transformStampedToMatrix
+from .utils import worldToMap
 
 """
 This is a loopback simulator that replaces a physics simulator to create a
