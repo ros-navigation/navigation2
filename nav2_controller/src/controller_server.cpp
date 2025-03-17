@@ -669,8 +669,7 @@ void ControllerServer::computeAndPublishVelocity()
           costmap_ros_->getTfBuffer(), current_path_.header.frame_id, pose,
           robot_pose_in_path_frame, tolerance))
   {
-    RCLCPP_ERROR(get_logger(), "Robot pose is not available.");
-    return;
+    throw nav2_core::ControllerTFError("Failed to transform robot pose to path frame");
   }
 
   std::shared_ptr<Action::Feedback> feedback = std::make_shared<Action::Feedback>();
