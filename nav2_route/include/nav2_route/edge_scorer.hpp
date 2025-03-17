@@ -26,7 +26,7 @@
 #include "nav2_route/types.hpp"
 #include "nav2_route/utils.hpp"
 #include "nav2_route/interfaces/edge_cost_function.hpp"
-
+#include "geometry_msgs/msg/pose_stamped.hpp"
 namespace nav2_route
 {
 
@@ -57,10 +57,14 @@ public:
   /**
    * @brief Score the edge with the set of plugins
    * @param edge Ptr to edge for scoring
+   * @param goal_pose Pose Stamped of desired goal
    * @param score of edge
+   * @param final_edge whether this edge brings us to the goal or not
    * @return If edge is valid
    */
-  bool score(const EdgePtr edge, float & score);
+  bool score(
+    const EdgePtr edge, const geometry_msgs::msg::PoseStamped & goal_pose, bool final_edge,
+    float & score);
 
   /**
    * @brief Provide the number of plugisn in the scorer loaded

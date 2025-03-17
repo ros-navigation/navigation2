@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Open Navigation LLC
+// Copyright (c) 2024, Polymath Robotics Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__COSTMAP_SCORER_HPP_
-#define NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__COSTMAP_SCORER_HPP_
+#ifndef NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__GOAl_ORIENTATION_SCORER_HPP_
+#define NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__GOAL_ORIENTATION_SCORER_HPP_
 
 #include <memory>
 #include <string>
@@ -24,27 +24,29 @@
 #include "nav2_util/line_iterator.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+#include "tf2/utils.h"
+#include "angles/angles.h"
 
 namespace nav2_route
 {
 
 /**
- * @class CostmapScorer
- * @brief Scores edges by the average or maximum cost found while iterating over the
- * edge's line segment in the global costmap
+ * @class GoalOrientationScorer
+ * @brief Scores final edge by comparing the
  */
-class CostmapScorer : public EdgeCostFunction
+class GoalOrientationScorer : public EdgeCostFunction
 {
 public:
   /**
    * @brief Constructor
    */
-  CostmapScorer() = default;
+  GoalOrientationScorer() = default;
 
   /**
    * @brief destructor
    */
-  virtual ~CostmapScorer() = default;
+  virtual ~GoalOrientationScorer() = default;
 
   /**
    * @brief Configure
@@ -68,21 +70,12 @@ public:
    */
   std::string getName() override;
 
-  /**
-   * @brief Prepare for a new cycle, by resetting state, grabbing data
-   * to use for all immediate requests, or otherwise prepare for scoring
-   */
-  void prepare() override;
-
 protected:
-  rclcpp::Logger logger_{rclcpp::get_logger("CostmapScorer")};
+  rclcpp::Logger logger_{rclcpp::get_logger("GoalOrientationScorer")};
   std::string name_;
-  bool use_max_, invalid_on_collision_, invalid_off_map_;
-  float weight_, max_cost_;
-  std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber_;
-  std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap_{nullptr};
+  double orientation_tolerance_;
 };
 
 }  // namespace nav2_route
 
-#endif  // NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__COSTMAP_SCORER_HPP_
+#endif  // NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__GOAL_ORIENTATION_SCORER_HPP_

@@ -38,8 +38,9 @@ void RoutePlanner::configure(nav2_util::LifecycleNode::SharedPtr node)
 }
 
 Route RoutePlanner::findRoute(
-  Graph & graph, unsigned int start, unsigned int goal,
-  const std::vector<unsigned int> & blocked_ids)
+  Graph & graph, unsigned int start_index, unsigned int goal_index,
+  const std::vector<unsigned int> & blocked_ids,
+  const geometry_msgs::msg::PoseStamped & goal_pose)
 {
   if (graph.empty()) {
     throw nav2_core::NoValidGraph("Graph is invalid for routing!");
@@ -48,9 +49,9 @@ Route RoutePlanner::findRoute(
   // Find the start and goal pointers, it is important in this function
   // that these are the actual pointers, so that copied addresses are
   // not lost in the route when this function goes out of scope.
-  const NodePtr & start_node = &graph.at(start);
-  const NodePtr & goal_node = &graph.at(goal);
-  findShortestGraphTraversal(graph, start_node, goal_node, blocked_ids);
+  const NodePtr & start_node = &graph.at(start_index);
+  const NodePtr & goal_node = &graph.at(goal_index);
+  findShortestGraphTraversal(graph, start_node, goal_node, blocked_ids, goal_pose);
 
   EdgePtr & parent_edge = goal_node->search_state.parent_edge;
   if (!parent_edge) {
@@ -80,14 +81,15 @@ void RoutePlanner::resetSearchStates(Graph & graph)
 }
 
 void RoutePlanner::findShortestGraphTraversal(
-  Graph & graph, const NodePtr start, const NodePtr goal,
-  const std::vector<unsigned int> & blocked_ids)
+  Graph & graph, const NodePtr start_node, const NodePtr goal_node,
+  const std::vector<unsigned int> & blocked_ids,
+  const geometry_msgs::msg::PoseStamped & goal_pose)
 {
   // Setup the Dijkstra's search
   resetSearchStates(graph);
-  goal_id_ = goal->nodeid;
-  start->search_state.integrated_cost = 0.0;
-  addNode(0.0, start);
+  goal_id_ = goal_node->nodeid;
+  start_node->search_state.integrated_cost = 0.0;
+  addNode(0.0, start_node);
 
   NodePtr neighbor{nullptr};
   EdgePtr edge{nullptr};
@@ -116,7 +118,7 @@ void RoutePlanner::findShortestGraphTraversal(
       neighbor = edge->end;
 
       // If edge is invalid (lane closed, occupied, etc), don't expand
-      if (!getTraversalCost(edge, traversal_cost, blocked_ids)) {
+      if (!getTraversalCost(edge, traversal_cost, blocked_ids, goal_pose)) {
         continue;
       }
 
@@ -139,7 +141,8 @@ void RoutePlanner::findShortestGraphTraversal(
 }
 
 bool RoutePlanner::getTraversalCost(
-  const EdgePtr edge, float & score, const std::vector<unsigned int> & blocked_ids)
+  const EdgePtr edge, float & score, const std::vector<unsigned int> & blocked_ids,
+  const geometry_msgs::msg::PoseStamped & goal)
 {
   // If edge or node is in the blocked list, as long as its not blocking the goal itself
   auto idBlocked = [&](unsigned int id) {return id == edge->edgeid || id == edge->end->nodeid;};
@@ -158,7 +161,7 @@ bool RoutePlanner::getTraversalCost(
     return true;
   }
 
-  return edge_scorer_->score(edge, score);
+  return edge_scorer_->score(edge, goal, isGoal(edge->end), score);
 }
 
 NodeElement RoutePlanner::getNextNode()

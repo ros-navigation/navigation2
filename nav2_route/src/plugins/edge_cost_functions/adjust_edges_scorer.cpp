@@ -63,7 +63,7 @@ void AdjustEdgesScorer::closedEdgesCb(
   response->success = true;
 }
 
-bool AdjustEdgesScorer::score(const EdgePtr edge, float & cost)
+bool AdjustEdgesScorer::score(const EdgePtr edge, const geometry_msgs::msg::PoseStamped & /* goal_pose */, bool /* final_edge */, float & cost)
 {
   // Find if this edge is in the closed set of edges
   if (closed_edges_.find(edge->edgeid) != closed_edges_.end()) {

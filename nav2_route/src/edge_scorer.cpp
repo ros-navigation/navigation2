@@ -60,7 +60,9 @@ EdgeScorer::EdgeScorer(nav2_util::LifecycleNode::SharedPtr node)
   }
 }
 
-bool EdgeScorer::score(const EdgePtr edge, float & total_score)
+bool EdgeScorer::score(
+  const EdgePtr edge, const geometry_msgs::msg::PoseStamped & goal_pose,
+  bool final_edge, float & total_score)
 {
   total_score = 0.0;
   float curr_score = 0.0;
@@ -71,7 +73,7 @@ bool EdgeScorer::score(const EdgePtr edge, float & total_score)
 
   for (auto & plugin : plugins_) {
     curr_score = 0.0;
-    if (plugin->score(edge, curr_score)) {
+    if (plugin->score(edge, goal_pose, final_edge, curr_score)) {
       total_score += curr_score;
     } else {
       return false;
