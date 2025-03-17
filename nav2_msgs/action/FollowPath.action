@@ -24,6 +24,4 @@ string error_msg
 ---
 #feedback definition
 float32 distance_to_goal
-uint64 closest_path_pose_idx   # index of the pose on global path closest to current robot pose
-float32 distance_to_path
 float32 speed

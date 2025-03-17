@@ -696,10 +696,6 @@ void ControllerServer::computeAndPublishVelocity()
   const std::size_t closest_pose_idx = find_closest_pose_idx();
   feedback->distance_to_goal = nav2_util::geometry_utils::calculate_path_length(current_path_,
       closest_pose_idx);
-  feedback->closest_path_pose_idx = closest_pose_idx;
-  feedback->distance_to_path =
-    nav2_util::geometry_utils::euclidean_distance(robot_pose_in_path_frame,
-      current_path.poses[closest_pose_idx]);
   action_server_->publish_feedback(feedback);
 }
 
