@@ -63,12 +63,6 @@ repos:
         language: system
         types: [cmake]
         entry: ament_lint_cmake
-    -   id: ament_cpplint
-        name: ament_cpplint
-        description: Code style checking using cpplint.
-        language: system
-        types: [c++]
-        entry: ament_cpplint
     -   id: ament_uncrustify
         name: ament_uncrustify
         description: Code style checking using uncrustify.
@@ -76,6 +70,12 @@ repos:
         types: [c++]
         args: ["--reformat"]
         entry: ament_uncrustify
+    -   id: ament_cpplint
+        name: ament_cpplint
+        description: Code style checking using cpplint.
+        language: system
+        types: [c++]
+        entry: ament_cpplint
     -   id: ament_xmllint
         name: ament_xmllint
         description: Check XML markup using xmllint.
