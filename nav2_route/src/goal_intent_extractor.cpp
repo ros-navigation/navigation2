@@ -58,6 +58,7 @@ void GoalIntentExtractor::configure(
 void GoalIntentExtractor::setGraph(Graph & graph, GraphToIDMap * id_to_graph_map)
 {
   id_to_graph_map_ = id_to_graph_map;
+  graph_ = &graph;
   node_spatial_tree_->computeTree(graph);
 }
 

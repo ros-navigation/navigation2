@@ -210,8 +210,8 @@ struct Route
  */
 enum class TrackerResult
 {
-  INTERRUPTED = 0,
-  REROUTE = 1,
+  EXITED = 0,
+  INTERRUPTED = 1,
   COMPLETED = 2
 };
 

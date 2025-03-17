@@ -371,9 +371,21 @@ Note that there are parameters like `prune_goal`, `min_distance_from_start` and 
 ## New
 
 - [ ] Summarize progrss, what's left From my thoughts
-- [ ] What's to change: Server (error code, error msg, exceptions). Review planner server / controller server for potential other updates (cancel CB; other improvements)
+- [ ] What's to change: Server (error code, error msg, exceptions, isRequestValid). Review planner server / controller server for potential other updates (cancel CB; other improvements)
 
-- Recall what things do; blocked ids, rerouting, route operation/client, collision, review files
+- Recall what things do; blocked ids, rerouting, route operation/client, collision, review files, pruneStartandGoal
+
+QUestions:
+  - What's up with `pruneStartandGoal`? Is there a better way to do this?
+  - `getTraversalCost` edge_cost.overridable, check all works
+  - `getTraversalCost` blocked goal exception, should remove and fail planning instead?
+  - `rerouting_info` check up. ReroutingState
+  - `isStartOrEndNode` check up
+  - `nodeAchieved` be simplified? `collision monitor perform` too
+  - ` RouteTrackingState`
+  - `use_feedback_operations_` really necessary?
+  - `OperationTrigger` use? Operations/Operation/OperationPtrs/OperationsResult
+  * DirectionalEdge -> operations; Node->operations, are they really used?
 
 - [ ] System tests for coverage, others missing
 - [ ] simple commander examples
@@ -383,12 +395,12 @@ Note that there are parameters like `prune_goal`, `min_distance_from_start` and 
 
 ---
 
-- [ ] replan edge on line segment from edge fromthe closest point, not from the robots pose to the next node
-
 - [ ] path marker points align with direction
 - [ ] Sample files: new maps used in nav2
 - [ ] QGIS demo + plugins for editing and visualizing graphs
 - [ ] use map for checking start/goal nodes for infra blockages not just NN. Evaluate K. Share costmap? 
+    * `findStartandGoal`, use Kd-tree to get closest ~5 and use that?
+    * Or, use BFS and remove the Kd-tree
 
 - [ ] edges have non-straight paths. Path as edge metadata. Concat when creating the route path. transfortm poses? 
 - [ ] Enable or document the use for blocking edges or pausing for anothe robot locking out an edge. Blocked edges due to other robots , Go another way ando/or wait
@@ -399,7 +411,10 @@ Note that there are parameters like `prune_goal`, `min_distance_from_start` and 
 - [ ] GPS?
 - [ ] Navigator plugin type?
 - [ ] nodes as poses?
-
+- [ ] collision monotir use footprints? or at least the costmap topic collision checker
+- [ ] option for collision montir to fail rather than reroute
+- [ ] TODOs
+- [ ] Extra critics and operation plugins
 
 - [ ] Quality: 
   - Missing readme plugins, other plugins to add for usefulness

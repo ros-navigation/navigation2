@@ -49,9 +49,9 @@ void CollisionMonitor::configure(
     node, getName() + ".max_collision_dist", rclcpp::ParameterValue(5.0));
   max_collision_dist_ = static_cast<float>(
     node->get_parameter(getName() + ".max_collision_dist").as_double());
-  if (max_collision_dist_ < 0) {
+  if (max_collision_dist_ <= 0.0) {
     RCLCPP_INFO(
-      logger_, "Max collision distance to evaluate is negative, checking the full route.");
+      logger_, "Max collision distance to evaluate is zero or negative, checking the full route.");
     max_collision_dist_ = std::numeric_limits<float>::max();
   }
 }
@@ -85,9 +85,9 @@ OperationResult CollisionMonitor::perform(
   getCostmap();
 
   float dist_checked = 0.0;
-  Coordinates start = utils::findClosestPoint(
-    curr_pose, curr_edge->start->coords, curr_edge->end->coords);
   Coordinates end = curr_edge->end->coords;
+  Coordinates start = utils::findClosestPoint(
+    curr_pose, curr_edge->start->coords, end);
   unsigned int curr_edge_id = curr_edge->edgeid;
 
   bool final_edge = false;

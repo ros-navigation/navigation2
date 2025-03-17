@@ -78,7 +78,7 @@ rclcpp_components_register_nodes(${library_name} "nav2_route::RouteServer")
 add_library(edge_scorers SHARED
   src/plugins/edge_cost_functions/distance_scorer.cpp
   src/plugins/edge_cost_functions/time_scorer.cpp
-  src/plugins/edge_cost_functions/adjust_edges_scorer.cpp
+  src/plugins/edge_cost_functions/dynamic_edges_scorer.cpp
   src/plugins/edge_cost_functions/penalty_scorer.cpp
   src/plugins/edge_cost_functions/costmap_scorer.cpp
   src/plugins/edge_cost_functions/semantic_scorer.cpp

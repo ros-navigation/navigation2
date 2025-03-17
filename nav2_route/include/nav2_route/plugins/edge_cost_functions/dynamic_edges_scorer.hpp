@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__ADJUST_EDGES_SCORER_HPP_
-#define NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__ADJUST_EDGES_SCORER_HPP_
+#ifndef NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__DYNAMIC_EDGES_SCORER_HPP_
+#define NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__DYNAMIC_EDGES_SCORER_HPP_
 
 #include <memory>
 #include <string>
@@ -30,22 +30,22 @@ namespace nav2_route
 {
 
 /**
- * @class AdjustEdgesScorer
+ * @class DynamicEdgesScorer
  * @brief Rejects edges that are in the closed set of edges for navigation to prevent
  * routes from containing paths blocked or otherwise deemed not currently traversable
  */
-class AdjustEdgesScorer : public EdgeCostFunction
+class DynamicEdgesScorer : public EdgeCostFunction
 {
 public:
   /**
    * @brief Constructor
    */
-  AdjustEdgesScorer() = default;
+   DynamicEdgesScorer() = default;
 
   /**
    * @brief destructor
    */
-  virtual ~AdjustEdgesScorer() = default;
+  virtual ~DynamicEdgesScorer() = default;
 
   /**
    * @brief Configure
@@ -79,7 +79,7 @@ public:
     std::shared_ptr<nav2_msgs::srv::AdjustEdges::Response> response);
 
 protected:
-  rclcpp::Logger logger_{rclcpp::get_logger("AdjustEdgesScorer")};
+  rclcpp::Logger logger_{rclcpp::get_logger("DynamicEdgesScorer")};
   std::string name_;
   std::set<unsigned int> closed_edges_;
   std::unordered_map<unsigned int, float> dynamic_penalties_;
@@ -88,4 +88,4 @@ protected:
 
 }  // namespace nav2_route
 
-#endif  // NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__ADJUST_EDGES_SCORER_HPP_
+#endif  // NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__DYNAMIC_EDGES_SCORER_HPP_

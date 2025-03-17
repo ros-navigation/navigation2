@@ -157,7 +157,7 @@ OperationsResult OperationsManager::process(
           node, edge_entered, edge_exited, route, pose, &operations[i]->metadata);
         updateResult(op->second->getName(), op_result, result);
       } else if (use_feedback_operations_) {
-        RCLCPP_INFO(
+        RCLCPP_DEBUG(
           logger_, "Operation '%s' should be called from action feedback!",
           operations[i]->type.c_str());
         result.operations_triggered.push_back(operations[i]->type);

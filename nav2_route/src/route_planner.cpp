@@ -47,8 +47,8 @@ Route RoutePlanner::findRoute(
   }
 
   // Find the start and goal pointers, it is important in this function
-  // that these are the actual pointers, so that copied addresses are
-  // not lost in the route when this function goes out of scope.
+  // that the start node is the underlying pointer, so that the address
+  // is valid when this function goes out of scope
   const NodePtr & start_node = &graph.at(start_index);
   const NodePtr & goal_node = &graph.at(goal_index);
   findShortestGraphTraversal(graph, start_node, goal_node, blocked_ids, goal_pose);
@@ -97,6 +97,11 @@ void RoutePlanner::findShortestGraphTraversal(
   int iterations = 0;
   while (!queue_.empty() && iterations < max_iterations_) {
     iterations++;
+    if (iterations >= max_iterations_) {
+      // Reset states
+      clearQueue();
+      throw nav2_core::TimedOut("Maximum iterations was exceeded!");
+    }
 
     // Get the next lowest cost node
     auto [curr_cost, node] = getNextNode();
@@ -108,7 +113,9 @@ void RoutePlanner::findShortestGraphTraversal(
 
     // We have the shortest path
     if (isGoal(node)) {
-      break;
+      // Reset states
+      clearQueue();
+      return;
     }
 
     // Expand to connected nodes
@@ -131,13 +138,6 @@ void RoutePlanner::findShortestGraphTraversal(
       }
     }
   }
-
-  // Reset states
-  clearQueue();
-
-  if (iterations >= max_iterations_) {
-    throw nav2_core::TimedOut("Maximum iterations was exceeded!");
-  }
 }
 
 bool RoutePlanner::getTraversalCost(
@@ -152,7 +152,7 @@ bool RoutePlanner::getTraversalCost(
   }
 
   if (!edge->edge_cost.overridable || edge_scorer_->numPlugins() == 0) {
-    if (edge->edge_cost.cost == 0.0) {
+    if (edge->edge_cost.cost <= 0.0) {
       throw nav2_core::NoValidGraph(
               "Edge " + std::to_string(edge->edgeid) +
               " doesn't contain and cannot compute a valid edge cost!");

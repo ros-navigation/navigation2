@@ -69,8 +69,7 @@ nav_msgs::msg::Path PathConverter::densify(
   }
 
   // publish path similar to planner server
-  auto path_ptr = std::make_unique<nav_msgs::msg::Path>(path);
-  path_pub_->publish(std::move(path_ptr));
+  path_pub_->publish(std::make_unique<nav_msgs::msg::Path>(path));
 
   return path;
 }

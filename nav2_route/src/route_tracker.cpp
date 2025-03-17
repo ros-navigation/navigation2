@@ -69,16 +69,12 @@ bool RouteTracker::nodeAchieved(
   const bool in_radius =
     (dist_mag <= (is_boundary_node ? boundary_radius_threshold_ : radius_threshold_));
 
-  // Within 0.1mm is achieved
-  if (dist_mag < 1e-4) {
+  // Within 0.1mm is achieved or within radius and now not, consider node achieved
+  if (dist_mag < 1e-4 || (!in_radius && state.within_radius)) {
     return true;
   }
 
-  // If was within radius and now not, consider node achieved
-  if (!in_radius && state.within_radius) {
-    return true;
-  }
-
+  // Update the state for the next iteration
   state.within_radius = in_radius;
 
   // If start or end node, use the radius check only since the final node may not pass
@@ -174,9 +170,9 @@ TrackerResult RouteTracker::trackRoute(
 
     // Check if OK to keep processing
     if (action_server_->is_cancel_requested()) {
-      return TrackerResult::REROUTE;
+      return TrackerResult::INTERRUPTED;
     } else if (action_server_->is_preempt_requested()) {
-      return TrackerResult::REROUTE;
+      return TrackerResult::INTERRUPTED;
     }
 
     // Update the tracking state
@@ -228,13 +224,13 @@ TrackerResult RouteTracker::trackRoute(
       // Update so during rerouting we can check if we are continuing on the same edge
       rerouting_info.curr_edge = state.current_edge;
       RCLCPP_INFO(logger_, "Rerouting requested by route tracking operations!");
-      return TrackerResult::REROUTE;
+      return TrackerResult::INTERRUPTED;
     }
 
     r.sleep();
   }
 
-  return TrackerResult::INTERRUPTED;
+  return TrackerResult::EXITED;
 }
 
 }  // namespace nav2_route

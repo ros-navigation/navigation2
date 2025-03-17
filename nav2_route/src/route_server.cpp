@@ -71,7 +71,7 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   try {
     graph_loader_ = std::make_shared<GraphLoader>(node, tf_, route_frame_);
-    if (!graph_loader_->loadGraphFromFile(graph_, id_to_graph_map_)) {
+    if (!graph_loader_->loadGraphFromParameter(graph_, id_to_graph_map_)) {
       return nav2_util::CallbackReturn::FAILURE;
     }
 
@@ -149,7 +149,7 @@ rclcpp::Duration
 RouteServer::findPlanningDuration(const rclcpp::Time & start_time)
 {
   auto cycle_duration = this->now() - start_time;
-  if (max_planning_time_ && cycle_duration.seconds() > max_planning_time_) {
+  if (max_planning_time_ > 0.0 && cycle_duration.seconds() > max_planning_time_) {
     RCLCPP_WARN(
       get_logger(),
       "Route planner missed its desired rate of %.4f Hz. Current loop rate is %.4f Hz",
@@ -171,13 +171,13 @@ RouteServer::isRequestValid(
 
   if (action_server->is_cancel_requested()) {
     RCLCPP_INFO(get_logger(), "Goal was canceled. Canceling route planning action.");
-    action_server->terminate_all();
+    action_server->terminate_current();
     return false;
   }
 
   if (graph_.empty()) {
     RCLCPP_INFO(get_logger(), "No graph set! Aborting request.");
-    action_server->terminate_all();
+    action_server->terminate_current();
     return false;
   }
 
@@ -255,9 +255,11 @@ RouteServer::processRouteRequest(
             populateActionResult(result, route, path, planning_duration);
             action_server->succeeded_current(result);
             return;
-          case TrackerResult::REROUTE:
-            break;
           case TrackerResult::INTERRUPTED:
+            // Reroute, cancel, or preempt requested
+            break;
+          case TrackerResult::EXITED:
+            // rclcpp::ok() is false, so just return
             return;
         }
       } else {
@@ -337,6 +339,7 @@ void RouteServer::setRouteGraph(
       get_logger(),
       "Failed to set new route graph due to %s!", ex.what());
     response->success = false;
+    return;
   }
 
   goal_intent_extractor_->setGraph(graph_, &id_to_graph_map_);
