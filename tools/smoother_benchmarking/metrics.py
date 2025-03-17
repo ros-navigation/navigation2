@@ -17,9 +17,7 @@
 import math
 import os
 import pickle
-from random import randint
-from random import seed
-from random import uniform
+from random import randint, seed, uniform
 
 from geometry_msgs.msg import PoseStamped
 from nav2_simple_commander.robot_navigator import BasicNavigator

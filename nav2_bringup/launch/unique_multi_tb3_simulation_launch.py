@@ -26,19 +26,13 @@ import tempfile
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import AppendEnvironmentVariable
-from launch.actions import DeclareLaunchArgument
-from launch.actions import ExecuteProcess
-from launch.actions import GroupAction
-from launch.actions import IncludeLaunchDescription
-from launch.actions import LogInfo
-from launch.actions import OpaqueFunction
-from launch.actions import RegisterEventHandler
+from launch.actions import (AppendEnvironmentVariable, DeclareLaunchArgument, ExecuteProcess,
+                            GroupAction, IncludeLaunchDescription, LogInfo, OpaqueFunction,
+                            RegisterEventHandler)
 from launch.conditions import IfCondition
 from launch.event_handlers import OnShutdown
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration
-from launch.substitutions import TextSubstitution
+from launch.substitutions import LaunchConfiguration, TextSubstitution
 
 
 def generate_launch_description():

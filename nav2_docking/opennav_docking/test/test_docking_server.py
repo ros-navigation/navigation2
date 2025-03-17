@@ -12,16 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from math import acos
-from math import cos
-from math import sin
+from math import acos, cos, sin
 import time
 import unittest
 
 from action_msgs.msg import GoalStatus
-from geometry_msgs.msg import TransformStamped
-from geometry_msgs.msg import Twist
-from geometry_msgs.msg import TwistStamped
+from geometry_msgs.msg import TransformStamped, Twist, TwistStamped
 from launch import LaunchDescription
 # from launch.actions import SetEnvironmentVariable
 from launch_ros.actions import Node
@@ -30,9 +26,7 @@ import launch_testing.actions
 import launch_testing.asserts
 import launch_testing.markers
 import launch_testing.util
-from nav2_msgs.action import DockRobot
-from nav2_msgs.action import NavigateToPose
-from nav2_msgs.action import UndockRobot
+from nav2_msgs.action import DockRobot, NavigateToPose, UndockRobot
 import pytest
 import rclpy
 from rclpy.action.client import ActionClient

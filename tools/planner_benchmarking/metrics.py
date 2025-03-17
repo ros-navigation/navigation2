@@ -17,9 +17,7 @@ import glob
 import math
 import os
 import pickle
-from random import randint
-from random import seed
-from random import uniform
+from random import randint, seed, uniform
 import time
 
 from geometry_msgs.msg import PoseStamped

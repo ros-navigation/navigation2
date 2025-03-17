@@ -19,38 +19,19 @@ import time
 
 from action_msgs.msg import GoalStatus
 from builtin_interfaces.msg import Duration
-from geometry_msgs.msg import Point
-from geometry_msgs.msg import PoseStamped
-from geometry_msgs.msg import PoseWithCovarianceStamped
+from geometry_msgs.msg import Point, PoseStamped, PoseWithCovarianceStamped
 from lifecycle_msgs.srv import GetState
-from nav2_msgs.action import AssistedTeleop
-from nav2_msgs.action import BackUp
-from nav2_msgs.action import ComputePathThroughPoses
-from nav2_msgs.action import ComputePathToPose
-from nav2_msgs.action import DockRobot
-from nav2_msgs.action import DriveOnHeading
-from nav2_msgs.action import FollowGPSWaypoints
-from nav2_msgs.action import FollowPath
-from nav2_msgs.action import FollowWaypoints
-from nav2_msgs.action import NavigateThroughPoses
-from nav2_msgs.action import NavigateToPose
-from nav2_msgs.action import SmoothPath
-from nav2_msgs.action import Spin
-from nav2_msgs.action import UndockRobot
-from nav2_msgs.srv import ClearCostmapAroundRobot
-from nav2_msgs.srv import ClearCostmapExceptRegion
-from nav2_msgs.srv import ClearEntireCostmap
-from nav2_msgs.srv import GetCostmap
-from nav2_msgs.srv import LoadMap
-from nav2_msgs.srv import ManageLifecycleNodes
+from nav2_msgs.action import (AssistedTeleop, BackUp, ComputePathThroughPoses, ComputePathToPose,
+                              DockRobot, DriveOnHeading, FollowGPSWaypoints, FollowPath,
+                              FollowWaypoints, NavigateThroughPoses, NavigateToPose, SmoothPath,
+                              Spin, UndockRobot)
+from nav2_msgs.srv import (ClearCostmapAroundRobot, ClearCostmapExceptRegion, ClearEntireCostmap,
+                           GetCostmap, LoadMap, ManageLifecycleNodes)
 import rclpy
 from rclpy.action import ActionClient
 from rclpy.duration import Duration as rclpyDuration
 from rclpy.node import Node
-from rclpy.qos import QoSDurabilityPolicy
-from rclpy.qos import QoSHistoryPolicy
-from rclpy.qos import QoSProfile
-from rclpy.qos import QoSReliabilityPolicy
+from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy
 
 
 class TaskResult(Enum):

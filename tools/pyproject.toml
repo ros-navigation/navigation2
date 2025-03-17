@@ -10,3 +10,5 @@ uri-ignore-words-list = "segue"
 write-changes = false
 [tool.isort]
 profile = "google"
+force_single_line = false
+line_length = 99

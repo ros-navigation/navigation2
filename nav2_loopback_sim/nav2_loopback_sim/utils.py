@@ -15,8 +15,7 @@
 
 import math
 
-from geometry_msgs.msg import Quaternion
-from geometry_msgs.msg import Transform
+from geometry_msgs.msg import Quaternion, Transform
 import numpy as np
 import tf_transformations
 

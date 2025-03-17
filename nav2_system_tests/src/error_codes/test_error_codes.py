@@ -18,12 +18,8 @@ import threading
 import time
 
 from geometry_msgs.msg import PoseStamped
-from nav2_msgs.action import ComputePathThroughPoses
-from nav2_msgs.action import ComputePathToPose
-from nav2_msgs.action import FollowPath
-from nav2_msgs.action import SmoothPath
-from nav2_simple_commander.robot_navigator import BasicNavigator
-from nav2_simple_commander.robot_navigator import TaskResult
+from nav2_msgs.action import ComputePathThroughPoses, ComputePathToPose, FollowPath, SmoothPath
+from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 from nav_msgs.msg import Path
 import rclpy
 
