@@ -1,0 +1,23 @@
+{
+    "name": "Nav2: {{placeholder "http.vars.ReqHost"}}",
+    "short_name": "Nav2: {{placeholder "http.vars.ReqHost"}}",
+    "icons": [
+        {
+          "src": "/media/icons/nav2/any_icon_x512.webp",
+          "sizes": "512x512",
+          "type": "image/webp",
+          "purpose": "any"
+        },
+        {
+          "src": "/media/icons/nav2/maskable_icon_x512.webp",
+          "sizes": "512x512",
+          "type": "image/webp",
+          "purpose": "maskable"
+        }
+    ],
+    "id": "/nav2/",
+    "start_url": "/nav2/",
+    "theme_color": "#ffffff",
+    "background_color": "#ffffff",
+    "display": "standalone"
+}

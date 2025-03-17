@@ -88,7 +88,7 @@ public:
   virtual void activate() = 0;
 
   /**
-   * @brief Method to deactive planner and any threads involved in execution.
+   * @brief Method to deactivate planner and any threads involved in execution.
    */
   virtual void deactivate() = 0;
 
@@ -115,6 +115,16 @@ public:
     const geometry_msgs::msg::PoseStamped & pose,
     const geometry_msgs::msg::Twist & velocity,
     nav2_core::GoalChecker * goal_checker) = 0;
+
+  /**
+   * @brief Cancel the current control action
+   * @return True if the cancellation was successful. If false is returned, computeVelocityCommands
+   * will be called until cancel returns true.
+   */
+  virtual bool cancel()
+  {
+    return true;
+  }
 
   /**
    * @brief Limits the maximum linear speed of the robot.

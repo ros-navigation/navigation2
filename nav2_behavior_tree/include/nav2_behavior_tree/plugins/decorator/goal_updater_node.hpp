@@ -1,5 +1,6 @@
 // Copyright (c) 2018 Intel Corporation
 // Copyright (c) 2020 Francisco Martin Rico
+// Copyright (c) 2024 Angsa Robotics
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,8 +21,9 @@
 #include <string>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "nav_msgs/msg/goals.hpp"
 
-#include "behaviortree_cpp_v3/decorator_node.h"
+#include "behaviortree_cpp/decorator_node.h"
 
 #include "rclcpp/rclcpp.hpp"
 
@@ -52,13 +54,23 @@ public:
   {
     return {
       BT::InputPort<geometry_msgs::msg::PoseStamped>("input_goal", "Original Goal"),
-      BT::OutputPort<geometry_msgs::msg::PoseStamped>(
-        "output_goal",
-        "Received Goal by subscription"),
+      BT::InputPort<nav_msgs::msg::Goals>("input_goals", "Original Goals"),
+      BT::OutputPort<geometry_msgs::msg::PoseStamped>("output_goal",
+          "Received Goal by subscription"),
+      BT::OutputPort<nav_msgs::msg::Goals>("output_goals",
+          "Received Goals by subscription")
     };
   }
 
 private:
+  /**
+   * @brief Function to read parameters and initialize class variables
+   */
+  void initialize();
+  /**
+   * @brief Function to create ROS interfaces
+   */
+  void createROSInterfaces();
   /**
    * @brief The main override required by a BT action
    * @return BT::NodeStatus Status of tick execution
@@ -71,13 +83,25 @@ private:
    */
   void callback_updated_goal(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
 
+  /**
+   * @brief Callback function for goals update topic
+   * @param msg Shared pointer to nav_msgs::msg::Goals message
+   */
+  void callback_updated_goals(const nav_msgs::msg::Goals::SharedPtr msg);
+
   rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
+  rclcpp::Subscription<nav_msgs::msg::Goals>::SharedPtr goals_sub_;
 
   geometry_msgs::msg::PoseStamped last_goal_received_;
+  bool last_goal_received_set_{false};
+  nav_msgs::msg::Goals last_goals_received_;
+  bool last_goals_received_set_{false};
 
   rclcpp::Node::SharedPtr node_;
   rclcpp::CallbackGroup::SharedPtr callback_group_;
   rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
+  std::string goal_updater_topic_;
+  std::string goals_updater_topic_;
 };
 
 }  // namespace nav2_behavior_tree

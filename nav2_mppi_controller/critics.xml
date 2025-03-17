@@ -1,0 +1,49 @@
+<class_libraries>
+  <library path="mppi_critics">
+
+    <class type="mppi::critics::ObstaclesCritic" base_class_type="mppi::critics::CriticFunction">
+      <description>mppi critic for obstacle avoidance</description>
+    </class>
+
+    <class type="mppi::critics::CostCritic" base_class_type="mppi::critics::CriticFunction">
+      <description>mppi critic for obstacle avoidance using costmap score</description>
+    </class>
+
+    <class type="mppi::critics::GoalCritic" base_class_type="mppi::critics::CriticFunction">
+      <description>mppi critic for driving towards the goal</description>
+    </class>
+
+    <class type="mppi::critics::GoalAngleCritic" base_class_type="mppi::critics::CriticFunction">
+      <description>mppi critic for achieving the goal heading angle</description>
+    </class>
+
+    <class type="mppi::critics::PathAlignCritic" base_class_type="mppi::critics::CriticFunction">
+      <description>mppi critic for aligning to path</description>
+    </class>
+
+    <class type="mppi::critics::PathAngleCritic" base_class_type="mppi::critics::CriticFunction">
+      <description>mppi critic for tracking the path in the correct heading</description>
+    </class>
+
+    <class type="mppi::critics::PathFollowCritic" base_class_type="mppi::critics::CriticFunction">
+      <description>mppi critic for driving towards the goal that is furthest among trajectories nearest path points</description>
+    </class>
+
+    <class type="mppi::critics::PreferForwardCritic" base_class_type="mppi::critics::CriticFunction">
+      <description></description>
+    </class>
+
+    <class type="mppi::critics::TwirlingCritic" base_class_type="mppi::critics::CriticFunction">
+      <description>mppi critic for preventing twirling behavior when using omnidirectional models</description>
+    </class>
+
+    <class type="mppi::critics::ConstraintCritic" base_class_type="mppi::critics::CriticFunction">
+      <description>mppi critic for incentivizing moving within kinematic and dynamic bounds</description>
+    </class>
+
+    <class type="mppi::critics::VelocityDeadbandCritic" base_class_type="mppi::critics::CriticFunction">
+      <description>mppi critic for restricting command velocities in deadband range</description>
+    </class>
+
+  </library>
+</class_libraries>

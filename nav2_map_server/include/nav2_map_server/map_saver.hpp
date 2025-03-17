@@ -16,10 +16,11 @@
 #ifndef NAV2_MAP_SERVER__MAP_SAVER_HPP_
 #define NAV2_MAP_SERVER__MAP_SAVER_HPP_
 
-#include <string>
 #include <memory>
+#include <string>
 
 #include "rclcpp/rclcpp.hpp"
+#include "rclcpp_lifecycle/state.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_msgs/srv/save_map.hpp"
 

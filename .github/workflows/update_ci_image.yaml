@@ -12,6 +12,7 @@ on:
       - '**/package.xml'
       - '**/*.repos'
       - 'Dockerfile'
+      - '.github/workflows/update_ci_image.yaml'
 
 jobs:
   check_ci_files:
@@ -25,8 +26,8 @@ jobs:
         id: check
         if: github.event_name == 'push'
         run: |
-          echo "::set-output name=trigger::true"
-          echo "::set-output name=no_cache::false"
+          echo "trigger=true" >> $GITHUB_OUTPUT
+          echo "no_cache=false" >> $GITHUB_OUTPUT
   check_ci_image:
     name: Check CI Image
     if: github.event_name == 'schedule'
@@ -36,7 +37,7 @@ jobs:
       trigger: ${{ steps.check.outputs.trigger }}
       no_cache: ${{ steps.check.outputs.no_cache }}
     container:
-      image: ghcr.io/ros-planning/navigation2:main
+      image: ghcr.io/${{ github.repository }}:${{ github.ref_name }}
     steps:
       - name: "Check apt updates"
         id: check
@@ -51,9 +52,9 @@ jobs:
           cat upgrade.log
           cat upgrade.log \
             | grep "^0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.$" \
-            && echo "::set-output name=trigger::false" \
-            || echo "::set-output name=trigger::true"
-          echo "::set-output name=no_cache::true"
+            && echo "trigger=false" >> $GITHUB_OUTPUT \
+            || echo "trigger=true" >> $GITHUB_OUTPUT
+          echo "no_cache=true" >> $GITHUB_OUTPUT
   rebuild_ci_image:
     name: Rebuild CI Image
     if: always()
@@ -62,10 +63,11 @@ jobs:
       - check_ci_image
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
       - name: Login to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
@@ -73,8 +75,11 @@ jobs:
       - name: Set build config
         id: config
         run: |
-          timestamp=$(date --utc +%Y%m%d%H%M%S)
-          echo "::set-output name=timestamp::${timestamp}"
+          created=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+          echo "created=${created}" >> $GITHUB_OUTPUT
+
+          version=$(grep -oP '(?<=<version>).*?(?=</version>)' navigation2/package.xml)
+          echo "version=${version}" >> $GITHUB_OUTPUT
 
           no_cache=false
           if  [ "${{needs.check_ci_files.outputs.no_cache}}" == 'true' ] || \
@@ -82,7 +87,7 @@ jobs:
           then
             no_cache=true
           fi
-          echo "::set-output name=no_cache::${no_cache}"
+          echo "no_cache=${no_cache}" >> $GITHUB_OUTPUT
 
           trigger=false
           if  [ "${{needs.check_ci_files.outputs.trigger}}" == 'true' ] || \
@@ -90,21 +95,36 @@ jobs:
           then
             trigger=true
           fi
-          echo "::set-output name=trigger::${trigger}"
-      - name: Build and push
+          echo "trigger=${trigger}" >> $GITHUB_OUTPUT
+      - name: Build and push ${{ github.ref_name }}
         if: steps.config.outputs.trigger == 'true'
         id: docker_build
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v6
         with:
+          context: .
           pull: true
           push: true
+          provenance: false
           no-cache: ${{ steps.config.outputs.no_cache }}
-          cache-from: type=registry,ref=ghcr.io/ros-planning/navigation2:main
+          cache-from: type=registry,ref=ghcr.io/${{ github.repository }}:${{ github.ref_name }}
           cache-to: type=inline
           target: builder
           tags: |
-            ghcr.io/ros-planning/navigation2:main
-            ghcr.io/ros-planning/navigation2:main-${{ steps.config.outputs.timestamp }}
+            ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+            ghcr.io/${{ github.repository }}:${{ github.ref_name }}-${{ steps.config.outputs.version }}
+          labels: |
+            org.opencontainers.image.authors=${{ github.event.repository.owner.html_url }}
+            org.opencontainers.image.created=${{ steps.config.outputs.created }}
+            org.opencontainers.image.description=${{ github.event.repository.description }}
+            org.opencontainers.image.documentation=${{ github.event.repository.homepage }}
+            org.opencontainers.image.licenses=${{ github.event.repository.license.spdx_id }}
+            org.opencontainers.image.ref.name=${{ github.ref }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=${{ github.event.repository.clone_url }}
+            org.opencontainers.image.title=${{ github.event.repository.name }}
+            org.opencontainers.image.url=${{ github.event.repository.html_url }}
+            org.opencontainers.image.vendor=${{ github.event.repository.owner.login }}
+            org.opencontainers.image.version=${{ steps.config.outputs.version }}
       - name: Image digest
         if: steps.config.outputs.trigger == 'true'
         run: echo ${{ steps.docker_build.outputs.digest }}

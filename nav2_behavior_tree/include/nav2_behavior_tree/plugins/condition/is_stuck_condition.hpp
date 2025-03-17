@@ -20,7 +20,7 @@
 #include <deque>
 
 #include "rclcpp/rclcpp.hpp"
-#include "behaviortree_cpp_v3/condition_node.h"
+#include "behaviortree_cpp/condition_node.h"
 #include "nav_msgs/msg/odometry.hpp"
 
 namespace nav2_behavior_tree
@@ -101,7 +101,7 @@ private:
   // Calculated states
   double current_accel_;
 
-  // Robot specific paramters
+  // Robot specific parameters
   double brake_accel_limit_;
 };
 

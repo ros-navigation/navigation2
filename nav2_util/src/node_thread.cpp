@@ -13,13 +13,13 @@
 // limitations under the License.
 
 #include <memory>
-
 #include "nav2_util/node_thread.hpp"
 
 namespace nav2_util
 {
 
-NodeThread::NodeThread(rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base)
+NodeThread::NodeThread(
+  rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base)
 : node_(node_base)
 {
   executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
@@ -35,7 +35,10 @@ NodeThread::NodeThread(rclcpp::node_interfaces::NodeBaseInterface::SharedPtr nod
 NodeThread::NodeThread(rclcpp::executors::SingleThreadedExecutor::SharedPtr executor)
 : executor_(executor)
 {
-  thread_ = std::make_unique<std::thread>([&]() {executor_->spin();});
+  thread_ = std::make_unique<std::thread>(
+    [&]() {
+      executor_->spin();
+    });
 }
 
 NodeThread::~NodeThread()

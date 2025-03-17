@@ -60,7 +60,7 @@ void InputAtWaypoint::initialize(
   nav2_util::declare_parameter_if_not_declared(
     node, plugin_name + ".input_topic",
     rclcpp::ParameterValue("input_at_waypoint/input"));
-  node->get_parameter(plugin_name + ".timeout", timeout);
+  timeout = node->get_parameter(plugin_name + ".timeout").as_double();
   node->get_parameter(plugin_name + ".enabled", is_enabled_);
   node->get_parameter(plugin_name + ".input_topic", input_topic);
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Samsung Research America
+// Copyright (c) 2025 Open Navigation LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -62,29 +62,29 @@ inline visualization_msgs::msg::MarkerArray toMsg(
   curr_marker.action = 0;
 
   auto getSphereSize = []() {
-      geometry_msgs::msg::Vector3 msg;
-      msg.x = 0.05;
-      msg.y = 0.05;
-      msg.z = 0.05;
-      return msg;
+      geometry_msgs::msg::Vector3 v_msg;
+      v_msg.x = 0.05;
+      v_msg.y = 0.05;
+      v_msg.z = 0.05;
+      return v_msg;
     };
 
   auto getSphereColor = []() {
-      std_msgs::msg::ColorRGBA msg;
-      msg.r = 1.0;
-      msg.g = 0.0;
-      msg.b = 0.0;
-      msg.a = 1.0;
-      return msg;
+      std_msgs::msg::ColorRGBA c_msg;
+      c_msg.r = 1.0;
+      c_msg.g = 0.0;
+      c_msg.b = 0.0;
+      c_msg.a = 1.0;
+      return c_msg;
     };
 
   auto getLineColor = []() {
-      std_msgs::msg::ColorRGBA msg;
-      msg.r = 0.0;
-      msg.g = 1.0;
-      msg.b = 0.0;
-      msg.a = 0.5;  // So bi-directional connections stand out overlapping
-      return msg;
+      std_msgs::msg::ColorRGBA c_msg;
+      c_msg.r = 0.0;
+      c_msg.g = 1.0;
+      c_msg.b = 0.0;
+      c_msg.a = 0.5;  // So bi-directional connections stand out overlapping
+      return c_msg;
     };
 
   unsigned int marker_idx = 1;

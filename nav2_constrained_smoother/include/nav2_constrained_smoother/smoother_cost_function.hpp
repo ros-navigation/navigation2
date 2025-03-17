@@ -57,7 +57,8 @@ public:
     double next_to_last_length_ratio,
     bool reversing,
     const nav2_costmap_2d::Costmap2D * costmap,
-    const std::shared_ptr<ceres::BiCubicInterpolator<ceres::Grid2D<u_char>>> & costmap_interpolator,
+    const std::shared_ptr<ceres::BiCubicInterpolator<ceres::Grid2D<unsigned char>>> &
+    costmap_interpolator,
     const SmootherParams & params,
     double costmap_weight)
   : original_pos_(original_pos),
@@ -159,7 +160,7 @@ protected:
     Eigen::Matrix<T, 2, 1> center = arcCenter(
       pt_prev, pt, pt_next,
       next_to_last_length_ratio_ < 0);
-    if (ceres::isinf(center[0])) {
+    if (CERES_ISINF(center[0])) {
       return;
     }
     T turning_rad = (pt - center).norm();
@@ -244,7 +245,7 @@ protected:
   double costmap_weight_;
   Eigen::Vector2d costmap_origin_;
   double costmap_resolution_;
-  std::shared_ptr<ceres::BiCubicInterpolator<ceres::Grid2D<u_char>>> costmap_interpolator_;
+  std::shared_ptr<ceres::BiCubicInterpolator<ceres::Grid2D<unsigned char>>> costmap_interpolator_;
 };
 
 }  // namespace nav2_constrained_smoother

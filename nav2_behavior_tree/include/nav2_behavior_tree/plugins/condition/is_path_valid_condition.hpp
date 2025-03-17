@@ -19,7 +19,7 @@
 #include <memory>
 
 #include "rclcpp/rclcpp.hpp"
-#include "behaviortree_cpp_v3/condition_node.h"
+#include "behaviortree_cpp/condition_node.h"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_msgs/srv/is_path_valid.hpp"
 
@@ -51,6 +51,11 @@ public:
   BT::NodeStatus tick() override;
 
   /**
+   * @brief Function to read parameters and initialize class variables
+   */
+  void initialize();
+
+  /**
    * @brief Creates list of BT ports
    * @return BT::PortsList Containing node-specific ports
    */
@@ -58,16 +63,22 @@ public:
   {
     return {
       BT::InputPort<nav_msgs::msg::Path>("path", "Path to Check"),
-      BT::InputPort<std::chrono::milliseconds>("server_timeout")
+      BT::InputPort<std::chrono::milliseconds>("server_timeout"),
+      BT::InputPort<unsigned int>("max_cost", 253, "Maximum cost of the path"),
+      BT::InputPort<bool>(
+          "consider_unknown_as_obstacle", false,
+          "Whether to consider unknown cost as obstacle")
     };
   }
 
 private:
   rclcpp::Node::SharedPtr node_;
   rclcpp::Client<nav2_msgs::srv::IsPathValid>::SharedPtr client_;
-  // The timeout value while waiting for a responce from the
+  // The timeout value while waiting for a response from the
   // is path valid service
   std::chrono::milliseconds server_timeout_;
+  unsigned int max_cost_;
+  bool consider_unknown_as_obstacle_;
 };
 
 }  // namespace nav2_behavior_tree

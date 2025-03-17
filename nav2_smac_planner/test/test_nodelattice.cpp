@@ -22,6 +22,7 @@
 #include "nav2_smac_planner/node_lattice.hpp"
 #include "gtest/gtest.h"
 #include "ament_index_cpp/get_package_share_directory.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 
 using json = nlohmann::json;
 
@@ -44,8 +45,8 @@ TEST(NodeLatticeTest, parser_test)
   nav2_smac_planner::MotionPose pose;
 
   json jsonMetaData = j["lattice_metadata"];
-  json jsonPrimatives = j["primitives"];
-  json jsonPose = jsonPrimatives[0]["poses"][0];
+  json jsonPrimitives = j["primitives"];
+  json jsonPose = jsonPrimitives[0]["poses"][0];
 
   nav2_smac_planner::fromJsonToMetaData(jsonMetaData, metaData);
 
@@ -58,10 +59,10 @@ TEST(NodeLatticeTest, parser_test)
   EXPECT_EQ(metaData.motion_model, std::string("ackermann"));
 
   std::vector<nav2_smac_planner::MotionPrimitive> myPrimitives;
-  for (unsigned int i = 0; i < jsonPrimatives.size(); ++i) {
-    nav2_smac_planner::MotionPrimitive newPrimative;
-    nav2_smac_planner::fromJsonToMotionPrimitive(jsonPrimatives[i], newPrimative);
-    myPrimitives.push_back(newPrimative);
+  for (unsigned int i = 0; i < jsonPrimitives.size(); ++i) {
+    nav2_smac_planner::MotionPrimitive newPrimitive;
+    nav2_smac_planner::fromJsonToMotionPrimitive(jsonPrimitives[i], newPrimitive);
+    myPrimitives.push_back(newPrimitive);
   }
 
   // Checks for parsing primitives
@@ -111,9 +112,12 @@ TEST(NodeLatticeTest, test_node_lattice_neighbors_and_parsing)
     nav2_smac_planner::MotionModel::STATE_LATTICE, x, y, angle_quantization, info);
 
   nav2_smac_planner::NodeLattice aNode(0);
+  unsigned int direction_change_index = 0;
   aNode.setPose(nav2_smac_planner::NodeHybrid::Coordinates(0, 0, 0));
   nav2_smac_planner::MotionPrimitivePtrs projections =
-    nav2_smac_planner::NodeLattice::motion_table.getMotionPrimitives(&aNode);
+    nav2_smac_planner::NodeLattice::motion_table.getMotionPrimitives(
+    &aNode,
+    direction_change_index);
 
   EXPECT_NEAR(projections[0]->poses.back()._x, 0.5, 0.01);
   EXPECT_NEAR(projections[0]->poses.back()._y, -0.35, 0.01);
@@ -121,7 +125,9 @@ TEST(NodeLatticeTest, test_node_lattice_neighbors_and_parsing)
 
   EXPECT_NEAR(
     nav2_smac_planner::NodeLattice::motion_table.getLatticeMetadata(
-      filePath).grid_resolution, 0.05, 0.005);
+      filePath)
+    .grid_resolution,
+    0.05, 0.005);
 }
 
 TEST(NodeLatticeTest, test_node_lattice_conversions)
@@ -164,6 +170,7 @@ TEST(NodeLatticeTest, test_node_lattice_conversions)
 
 TEST(NodeLatticeTest, test_node_lattice)
 {
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
   std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_smac_planner");
   std::string filePath =
     pkg_share_dir +
@@ -206,8 +213,15 @@ TEST(NodeLatticeTest, test_node_lattice)
 
   nav2_costmap_2d::Costmap2D * costmapA = new nav2_costmap_2d::Costmap2D(
     10, 10, 0.05, 0.0, 0.0, 0);
+
+  // Convert raw costmap into a costmap ros object
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  auto costmap = costmap_ros->getCostmap();
+  *costmap = *costmapA;
+
   std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
-    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmapA, 72);
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, 72, node);
   checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
 
   // test node valid and cost
@@ -238,9 +252,9 @@ TEST(NodeLatticeTest, test_node_lattice)
   delete costmapA;
 }
 
-
 TEST(NodeLatticeTest, test_get_neighbors)
 {
+  auto lnode = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
   std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_smac_planner");
   std::string filePath =
     pkg_share_dir +
@@ -270,12 +284,19 @@ TEST(NodeLatticeTest, test_get_neighbors)
 
   nav2_costmap_2d::Costmap2D * costmapA = new nav2_costmap_2d::Costmap2D(
     10, 10, 0.05, 0.0, 0.0, 0);
+
+  // Convert raw costmap into a costmap ros object
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  auto costmap = costmap_ros->getCostmap();
+  *costmap = *costmapA;
+
   std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
-    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmapA, 72);
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, 72, lnode);
   checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
 
-  std::function<bool(const unsigned int &, nav2_smac_planner::NodeLattice * &)> neighborGetter =
-    [&, this](const unsigned int & index, nav2_smac_planner::NodeLattice * & neighbor_rtn) -> bool
+  std::function<bool(const uint64_t &, nav2_smac_planner::NodeLattice * &)> neighborGetter =
+    [](const uint64_t &, nav2_smac_planner::NodeLattice * &) -> bool
     {
       // because we don't return a real object
       return false;
@@ -287,4 +308,95 @@ TEST(NodeLatticeTest, test_get_neighbors)
   EXPECT_EQ(neighbors.size(), 0u);
 
   delete costmapA;
+}
+
+TEST(NodeLatticeTest, test_node_lattice_custom_footprint)
+{
+  auto lnode = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_smac_planner");
+  std::string filePath =
+    pkg_share_dir +
+    "/sample_primitives/5cm_resolution/0.5m_turning_radius/ackermann" +
+    "/output.json";
+
+  nav2_smac_planner::SearchInfo info;
+  info.minimum_turning_radius = 0.5;
+  info.non_straight_penalty = 1;
+  info.change_penalty = 1;
+  info.reverse_penalty = 1;
+  info.cost_penalty = 1;
+  info.retrospective_penalty = 0.1;
+  info.analytic_expansion_ratio = 1;
+  info.lattice_filepath = filePath;
+  info.cache_obstacle_heuristic = true;
+  info.allow_reverse_expansion = true;
+
+  unsigned int x = 100;
+  unsigned int y = 100;
+  unsigned int angle_quantization = 16;
+
+  nav2_smac_planner::NodeLattice::initMotionModel(
+    nav2_smac_planner::MotionModel::STATE_LATTICE, x, y, angle_quantization, info);
+
+  nav2_smac_planner::NodeLattice node(49);
+
+  nav2_costmap_2d::Costmap2D * costmap = new nav2_costmap_2d::Costmap2D(
+    40, 40, 0.05, 0.0, 0.0, 0);
+
+  // Convert raw costmap into a costmap ros object
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  auto costmapi = costmap_ros->getCostmap();
+  *costmapi = *costmap;
+
+  std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, 72, lnode);
+
+  // Make some custom asymmetrical footprint
+  nav2_costmap_2d::Footprint footprint;
+  geometry_msgs::msg::Point p;
+  p.x = -0.1;
+  p.y = -0.15;
+  footprint.push_back(p);
+  p.x = 0.35;
+  p.y = -0.15;
+  footprint.push_back(p);
+  p.x = 0.35;
+  p.y = 0.22;
+  footprint.push_back(p);
+  p.x = -0.1;
+  p.y = 0.22;
+  footprint.push_back(p);
+  checker->setFootprint(footprint, false, 0.0);
+
+  // Setting initial robot pose to (1.0, 1.0, 0.0)
+  node.pose.x = 20;
+  node.pose.y = 20;
+  node.pose.theta = 0;
+
+  // initialize direction change index
+  unsigned int direction_change_index = 0;
+  // Test that the node is valid though all motion primitives poses for custom footprint
+  nav2_smac_planner::MotionPrimitivePtrs motion_primitives =
+    nav2_smac_planner::NodeLattice::motion_table.getMotionPrimitives(&node, direction_change_index);
+  EXPECT_GT(motion_primitives.size(), 0u);
+  for (unsigned int i = 0; i < motion_primitives.size(); i++) {
+    EXPECT_EQ(node.isNodeValid(true, checker.get(), motion_primitives[i], false), true);
+    EXPECT_EQ(node.isNodeValid(true, checker.get(), motion_primitives[i], true), true);
+  }
+
+  delete costmap;
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

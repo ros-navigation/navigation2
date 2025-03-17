@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Samsung Research America
+// Copyright (c) 2025, Open Navigation LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@ TEST(NodeSpatialTreeTest, test_kd_tree)
       EXPECT_TRUE(false);  // Unable to find nearest neighbor!
     }
 
-    unsigned int closest_via_brute_force;
+    unsigned int closest_via_brute_force = 0u;
     float closest_dist = std::numeric_limits<float>::max();
     for (unsigned int j = 0; j != graph_size; j++) {
       float dist = hypotf(

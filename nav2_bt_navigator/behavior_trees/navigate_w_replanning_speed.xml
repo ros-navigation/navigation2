@@ -2,13 +2,15 @@
   This Behavior Tree replans the global path periodically proprortional to speed.
 -->
 
-<root main_tree_to_execute="MainTree">
+<root BTCPP_format="4" main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
     <PipelineSequence name="NavigateWithReplanning">
-      <SpeedController min_rate="0.1" max_rate="1.0" min_speed="0.0" max_speed="0.26" filter_duration="0.3">
-        <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased" error_code_id="{compute_path_error_code}"/>
+      <ControllerSelector selected_controller="{selected_controller}" default_controller="FollowPath" topic_name="controller_selector"/>
+      <PlannerSelector selected_planner="{selected_planner}" default_planner="GridBased" topic_name="planner_selector"/>
+      <SpeedController min_rate="0.1" max_rate="1.0" min_speed="0.0" max_speed="0.26">
+        <ComputePathToPose goal="{goal}" path="{path}" planner_id="{selected_planner}" error_code_id="{compute_path_error_code}" error_msg="{compute_path_error_msg}"/>
       </SpeedController>
-      <FollowPath path="{path}" controller_id="FollowPath" error_code_id="{follow_path_error_code}"/>
+      <FollowPath path="{path}" controller_id="{selected_controller}" error_code_id="{follow_path_error_code}" error_msg="{follow_path_error_msg}"/>
     </PipelineSequence>
   </BehaviorTree>
 </root>

@@ -38,6 +38,17 @@ namespace nav2_lifecycle_manager
 using namespace std::chrono_literals;  // NOLINT
 
 using nav2_msgs::srv::ManageLifecycleNodes;
+
+/// @brief Enum to for keeping track of the state of managed nodes
+enum NodeState
+{
+  UNCONFIGURED,
+  ACTIVE,
+  INACTIVE,
+  FINALIZED,
+  UNKNOWN,
+};
+
 /**
  * @class nav2_lifecycle_manager::LifecycleManager
  * @brief Implements service interface to transition the lifecycle nodes of
@@ -69,7 +80,7 @@ protected:
    * @brief Lifecycle node manager callback function
    * @param request_header Header of the service request
    * @param request Service request
-   * @param reponse Service response
+   * @param response Service response
    */
   void managerCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
@@ -80,7 +91,7 @@ protected:
    * state.
    * @param request_header Header of the request
    * @param request Service request
-   * @param reponse Service response
+   * @param response Service response
    */
   void isActiveCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
@@ -93,6 +104,16 @@ protected:
    * @return true or false
    */
   bool startup();
+  /**
+   * @brief Configures the managed nodes.
+   * @return true or false
+   */
+  bool configure();
+  /**
+   * @brief Cleanups the managed nodes
+   * @return true or false
+   */
+  bool cleanup();
   /**
    * @brief Deactivate, clean up and shut down all the managed nodes.
    * @return true or false
@@ -113,6 +134,13 @@ protected:
    * @return true or false
    */
   bool resume();
+
+  /**
+   * @brief Perform preshutdown activities before our Context is shutdown.
+   * Note that this is related to our Context's shutdown sequence, not the
+   * lifecycle node state machine or shutdown().
+   */
+  void onRclPreshutdown();
 
   // Support function for creating service clients
   /**
@@ -182,9 +210,22 @@ protected:
 
   // Diagnostics functions
   /**
-   * @brief function to check if the Nav2 system is active
+   * @brief function to check the state of Nav2 nodes
    */
-  void CreateActiveDiagnostic(diagnostic_updater::DiagnosticStatusWrapper & stat);
+  void CreateDiagnostic(diagnostic_updater::DiagnosticStatusWrapper & stat);
+
+  /**
+   * Register our preshutdown callback for this Node's rcl Context.
+   * The callback fires before this Node's Context is shutdown.
+   * Note this is not directly related to the lifecycle state machine or the
+   * shutdown() instance function.
+   */
+  void registerRclPreshutdownCallback();
+
+  /**
+   * @brief function to check if managed nodes are active
+   */
+  bool isActive();
 
   // Timer thread to look at bond connections
   rclcpp::TimerBase::SharedPtr init_timer_;
@@ -210,7 +251,7 @@ protected:
   bool autostart_;
   bool attempt_respawn_reconnection_;
 
-  bool system_active_{false};
+  NodeState managed_nodes_state_{NodeState::UNCONFIGURED};
   diagnostic_updater::Updater diagnostics_updater_;
 
   rclcpp::Time bond_respawn_start_time_{0};

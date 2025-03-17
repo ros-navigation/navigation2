@@ -18,6 +18,8 @@
 #include <cmath>
 #include <functional>
 
+#include "tf2/transform_datatypes.hpp"
+
 #include "nav2_util/node_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
 
@@ -31,10 +33,11 @@ Range::Range(
   const std::string & base_frame_id,
   const std::string & global_frame_id,
   const tf2::Duration & transform_tolerance,
-  const rclcpp::Duration & source_timeout)
+  const rclcpp::Duration & source_timeout,
+  const bool base_shift_correction)
 : Source(
     node, source_name, tf_buffer, base_frame_id, global_frame_id,
-    transform_tolerance, source_timeout),
+    transform_tolerance, source_timeout, base_shift_correction),
   data_(nullptr)
 {
   RCLCPP_INFO(logger_, "[%s]: Creating Range", source_name_.c_str());
@@ -48,6 +51,7 @@ Range::~Range()
 
 void Range::configure()
 {
+  Source::configure();
   auto node = node_.lock();
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
@@ -63,38 +67,31 @@ void Range::configure()
     std::bind(&Range::dataCallback, this, std::placeholders::_1));
 }
 
-void Range::getData(
+bool Range::getData(
   const rclcpp::Time & curr_time,
-  std::vector<Point> & data) const
+  std::vector<Point> & data)
 {
   // Ignore data from the source if it is not being published yet or
   // not being published for a long time
   if (data_ == nullptr) {
-    return;
+    return false;
   }
   if (!sourceValid(data_->header.stamp, curr_time)) {
-    return;
+    return false;
   }
 
   // Ignore data, if its range is out of scope of range sensor abilities
   if (data_->range < data_->min_range || data_->range > data_->max_range) {
-    RCLCPP_WARN(
+    RCLCPP_DEBUG(
       logger_,
       "[%s]: Data range %fm is out of {%f..%f} sensor span. Ignoring...",
       source_name_.c_str(), data_->range, data_->min_range, data_->max_range);
-    return;
+    return false;
   }
 
-  // Obtaining the transform to get data from source frame and time where it was received
-  // to the base frame and current time
   tf2::Transform tf_transform;
-  if (
-    !nav2_util::getTransform(
-      data_->header.frame_id, data_->header.stamp,
-      base_frame_id_, curr_time, global_frame_id_,
-      transform_tolerance_, tf_buffer_, tf_transform))
-  {
-    return;
+  if (!getTransform(curr_time, data_->header, tf_transform)) {
+    return false;
   }
 
   // Calculate poses and refill data array
@@ -127,6 +124,8 @@ void Range::getData(
 
   // Refill data array
   data.push_back({p_v3_b.x(), p_v3_b.y()});
+
+  return true;
 }
 
 void Range::getParameters(std::string & source_topic)

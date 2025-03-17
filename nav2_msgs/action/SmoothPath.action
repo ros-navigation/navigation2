@@ -1,3 +1,11 @@
+#goal definition
+nav_msgs/Path path
+string smoother_id
+builtin_interfaces/Duration max_smoothing_duration
+bool check_for_collisions
+---
+#result definition
+
 # Error codes
 # Note: The expected priority order of the errors should match the message order
 uint16 NONE=0
@@ -8,16 +16,10 @@ uint16 SMOOTHED_PATH_IN_COLLISION=503
 uint16 FAILED_TO_SMOOTH_PATH=504
 uint16 INVALID_PATH=505
 
-#goal definition
-nav_msgs/Path path
-string smoother_id
-builtin_interfaces/Duration max_smoothing_duration
-bool check_for_collisions
----
-#result definition
 nav_msgs/Path path
 builtin_interfaces/Duration smoothing_duration
 bool was_completed
 uint16 error_code
+string error_msg
 ---
 #feedback definition

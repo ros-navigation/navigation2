@@ -33,12 +33,12 @@ _commands:
         - restore_cache:
             name: Restore Cache << parameters.key >>
             keys:
-              - "<< parameters.key >>-v12\
+              - "<< parameters.key >>-v31\
                 -{{ arch }}\
                 -{{ .Branch }}\
                 -{{ .Environment.CIRCLE_PR_NUMBER }}\
                 -{{ checksum  \"<< parameters.workspace >>/lockfile.txt\" }}"
-              - "<< parameters.key >>-v12\
+              - "<< parameters.key >>-v31\
                 -{{ arch }}\
                 -main\
                 -<no value>\
@@ -58,7 +58,7 @@ _commands:
       steps:
         - save_cache:
             name: Save Cache << parameters.key >>
-            key: "<< parameters.key >>-v12\
+            key: "<< parameters.key >>-v31\
               -{{ arch }}\
               -{{ .Branch }}\
               -{{ .Environment.CIRCLE_PR_NUMBER }}\
@@ -123,15 +123,24 @@ _commands:
           type: string
         mixins:
           type: string
+        packages_skip_regex:
+          default: ""
+          type: string
+        restore:
+          default: true
+          type: boolean
         build:
           default: true
           type: boolean
       steps:
         - store_artifacts:
             path: << parameters.workspace >>/lockfile.txt
-        - restore_from_cache:
-            key: << parameters.key >>
-            workspace: << parameters.workspace >>
+        - when:
+            condition: << parameters.restore >>
+            steps:
+              - restore_from_cache:
+                  key: << parameters.key >>
+                  workspace: << parameters.workspace >>
         - when:
             condition: << parameters.build >>
             steps:
@@ -176,6 +185,7 @@ _commands:
                       BUILD_PACKAGES=$(
                         colcon list \
                           --names-only \
+                          --packages-skip-regex << parameters.packages_skip_regex >> \
                           --packages-above \
                             $BUILD_UNFINISHED \
                             $BUILD_FAILED \
@@ -216,6 +226,9 @@ _commands:
           type: string
         cache_test:
           type: boolean
+        packages_skip_regex:
+          type: string
+          default: ""
       steps:
         - run:
             name: Test Workspace | << parameters.workspace >>
@@ -251,6 +264,7 @@ _commands:
                 TEST_PACKAGES=$(
                   colcon list \
                     --names-only \
+                    --packages-skip-regex << parameters.packages_skip_regex >> \
                     --packages-above \
                       $TEST_UNPASSED \
                       $TEST_FAILURES \
@@ -260,7 +274,8 @@ _commands:
               then
                 TEST_PACKAGES=$(
                   colcon list \
-                    --names-only)
+                    --names-only \
+                    --packages-skip-regex << parameters.packages_skip_regex >> )
               fi
               TEST_PACKAGES=$(
                 echo $TEST_PACKAGES \
@@ -301,9 +316,14 @@ _commands:
             when: always
         - store_artifacts:
             path: << parameters.workspace >>/log/test
-        - store_test_results:
-            path: << parameters.workspace >>/test_results
         - store_artifacts:
+            path: << parameters.workspace >>/test_results
+        - run:
+            name: Prepare Test Results
+            working_directory: << parameters.workspace >>
+            command: find test_results -name "Test.xml" -type f -delete
+            when: always
+        - store_test_results:
             path: << parameters.workspace >>/test_results
 
 _steps:
@@ -365,6 +385,10 @@ _steps:
       underlay: /opt/underlay_ws
       workspace: /opt/overlay_ws
       mixins: ${OVERLAY_MIXINS}
+  build_workspace_overlay: &build_workspace_overlay
+    setup_workspace:
+      <<: *setup_workspace_overlay
+      packages_skip_regex: << parameters.packages_skip_regex >>
   restore_overlay_workspace: &restore_overlay_workspace
     setup_workspace:
       <<: *setup_workspace_overlay
@@ -374,6 +398,7 @@ _steps:
       key: overlay_ws
       workspace: /opt/overlay_ws
       cache_test: << parameters.cache_test >>
+      packages_skip_regex: << parameters.packages_skip_regex >>
   collect_overlay_coverage: &collect_overlay_coverage
     run:
       name: Collect Code Coverage
@@ -411,8 +436,11 @@ commands:
       - *install_overlay_dependencies
   build_source:
     description: "Build Source"
+    parameters:
+      packages_skip_regex:
+        type: string
     steps:
-      - *setup_overlay_workspace
+      - *build_workspace_overlay
   restore_build:
     description: "Restore Build"
     steps:
@@ -426,6 +454,8 @@ commands:
     parameters:
       cache_test:
         type: boolean
+      packages_skip_regex:
+        type: string
     steps:
       - *test_overlay_workspace
   report_coverage:
@@ -452,7 +482,8 @@ _environments:
 executors:
   release_exec:
     docker:
-      - image: ghcr.io/ros-planning/navigation2:main
+      - image: ghcr.io/ros-navigation/navigation2:main
+    resource_class: large
     working_directory: /opt/overlay_ws
     environment:
       <<: *common_environment
@@ -460,8 +491,14 @@ executors:
       OVERLAY_MIXINS: "release ccache coverage-gcc lld"
 
 _jobs:
+  job_build: &job_build
+    parameters: &job_build_parameters
+      packages_skip_regex:
+        type: string
+        default: ""
   job_test: &job_test
     parameters:
+      <<: *job_build_parameters
       cache_test:
         type: boolean
         default: false
@@ -474,11 +511,15 @@ _jobs:
 
 jobs:
   release_build: &release_build
+    <<: *job_build
     executor: release_exec
     steps:
       - checkout_source
       - setup_dependencies
-      - build_source
+      - build_source:
+          packages_skip_regex: << parameters.packages_skip_regex >>
+  system_build: &system_build
+    <<: *release_build
   release_test: &release_test
     <<: *job_test
     executor: release_exec
@@ -486,27 +527,41 @@ jobs:
       - restore_build
       - test_build:
           cache_test: << parameters.cache_test >>
+          packages_skip_regex: << parameters.packages_skip_regex >>
       - report_coverage
+
+_parameters:
+  release_parameters: &release_parameters
+    packages_skip_regex: "nav2_system_tests"
 
 workflows:
   version: 2
   build_and_test:
     jobs:
-      - release_build
-      - release_test:
+      - release_build:
+          <<: *release_parameters
+      - system_build:
           requires:
             - release_build
+      - release_test:
+          requires:
+            - system_build
           cache_test: true
   nightly:
     jobs:
-      - release_build
-      - release_test:
+      - release_build:
+          <<: *release_parameters
+      - system_build:
           requires:
             - release_build
+      - release_test:
+          requires:
+            - system_build
+          <<: *release_parameters
           matrix:
+            alias: release_test
             parameters:
               rmw:
-                - rmw_connextdds
                 - rmw_cyclonedds_cpp
                 - rmw_fastrtps_cpp
     triggers:

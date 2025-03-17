@@ -46,12 +46,16 @@ protected:
    * @param pose Current pose of the robot
    * @return true, if movement is greater than radius_, or false
    */
-  bool is_robot_moved_enough(const geometry_msgs::msg::Pose2D & pose);
+  bool isRobotMovedEnough(const geometry_msgs::msg::Pose2D & pose);
   /**
    * @brief Resets baseline pose with the current pose of the robot
    * @param pose Current pose of the robot
    */
-  void reset_baseline_pose(const geometry_msgs::msg::Pose2D & pose);
+  void resetBaselinePose(const geometry_msgs::msg::Pose2D & pose);
+
+  static double pose_distance(
+    const geometry_msgs::msg::Pose2D &,
+    const geometry_msgs::msg::Pose2D &);
 
   rclcpp::Clock::SharedPtr clock_;
 
@@ -67,7 +71,7 @@ protected:
   std::string plugin_name_;
 
   /**
-   * @brief Callback executed when a paramter change is detected
+   * @brief Callback executed when a parameter change is detected
    * @param parameters list of changed parameters
    */
   rcl_interfaces::msg::SetParametersResult

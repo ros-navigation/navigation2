@@ -12,15 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import unittest
 from cmath import sqrt
+import unittest
+
 from nav2_simple_commander.line_iterator import LineIterator
 
 
 class TestLineIterator(unittest.TestCase):
 
     def test_type_error(self):
-        # Test if a type error raised when passing invalid arguements types
+        # Test if a type error raised when passing invalid arguments types
         self.assertRaises(TypeError, LineIterator, 0, 0, '10', 10, '1')
 
     def test_value_error(self):
@@ -57,7 +58,7 @@ class TestLineIterator(unittest.TestCase):
         i = 0
         while lt.isValid():
             self.assertEqual(lt.getX(), lt.getX0() + i)
-            self.assertEqual(lt.getY(), lt.getY0() + (i*2))
+            self.assertEqual(lt.getY(), lt.getY0() + (i * 2))
             lt.advance()
             i += 1
 
@@ -66,7 +67,7 @@ class TestLineIterator(unittest.TestCase):
         i = 0
         while lt.isValid():
             self.assertEqual(lt.getX(), lt.getX0() + i)
-            self.assertEqual(lt.getY(), lt.getY0() + (-i*2))
+            self.assertEqual(lt.getY(), lt.getY0() + (-i * 2))
             lt.advance()
             i += 1
 

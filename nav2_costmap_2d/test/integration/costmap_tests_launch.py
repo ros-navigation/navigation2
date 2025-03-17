@@ -27,21 +27,41 @@ from launch_testing.legacy import LaunchTestService
 
 
 def main(argv=sys.argv[1:]):
-    launchFile = os.path.join(os.getenv('TEST_LAUNCH_DIR'), 'costmap_map_server.launch.py')
+    launchFile = os.path.join(
+        os.getenv('TEST_LAUNCH_DIR'), 'costmap_map_server.launch.py'
+    )
     testExecutable = os.getenv('TEST_EXECUTABLE')
 
     map_to_odom = launch_ros.actions.Node(
         package='tf2_ros',
         executable='static_transform_publisher',
         output='screen',
-        arguments=['0', '0', '0', '0', '0', '0', 'map', 'odom']
+        arguments=[
+            '--x', '0',
+            '--y', '0',
+            '--z', '0',
+            '--roll', '0',
+            '--pitch', '0',
+            '--yaw', '0',
+            '--frame-id', 'map',
+            '--child-frame-id', 'odom'
+        ],
     )
 
     odom_to_base_link = launch_ros.actions.Node(
         package='tf2_ros',
         executable='static_transform_publisher',
         output='screen',
-        arguments=['0', '0', '0', '0', '0', '0', 'odom', 'base_link']
+        arguments=[
+            '--x', '0',
+            '--y', '0',
+            '--z', '0',
+            '--roll', '0',
+            '--pitch', '0',
+            '--yaw', '0',
+            '--frame-id', 'odom',
+            '--child-frame-id', 'base_link'
+        ],
     )
 
     lifecycle_manager = launch_ros.actions.Node(
@@ -49,14 +69,18 @@ def main(argv=sys.argv[1:]):
         executable='lifecycle_manager',
         name='lifecycle_manager',
         output='screen',
-        parameters=[{'node_names': ['map_server']}, {'autostart': True}])
+        parameters=[{'node_names': ['map_server']}, {'autostart': True}],
+    )
 
-    ld = LaunchDescription([
-        IncludeLaunchDescription(PythonLaunchDescriptionSource([launchFile])),
-        map_to_odom,
-        odom_to_base_link,
-        lifecycle_manager
-    ])
+    ld = LaunchDescription(
+        [
+            IncludeLaunchDescription(PythonLaunchDescriptionSource([launchFile])),
+            map_to_odom,
+            lifecycle_manager,
+        ]
+    )
+    if os.getenv('STATIC_ODOM_TO_BASE_LINK') == 'true':
+        ld.add_action(odom_to_base_link)
 
     test1_action = ExecuteProcess(
         cmd=[testExecutable],

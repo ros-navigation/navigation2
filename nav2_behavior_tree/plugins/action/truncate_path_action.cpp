@@ -20,7 +20,7 @@
 #include "nav_msgs/msg/path.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "behaviortree_cpp_v3/decorator_node.h"
+#include "behaviortree_cpp/decorator_node.h"
 
 #include "nav2_behavior_tree/plugins/action/truncate_path_action.hpp"
 
@@ -33,12 +33,12 @@ TruncatePath::TruncatePath(
 : BT::ActionNodeBase(name, conf),
   distance_(1.0)
 {
-  getInput("distance", distance_);
 }
 
 inline BT::NodeStatus TruncatePath::tick()
 {
   setStatus(BT::NodeStatus::RUNNING);
+  getInput("distance", distance_);
 
   nav_msgs::msg::Path input_path;
 
@@ -82,7 +82,7 @@ inline BT::NodeStatus TruncatePath::tick()
 
 }  // namespace nav2_behavior_tree
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
   factory.registerNodeType<nav2_behavior_tree::TruncatePath>("TruncatePath");

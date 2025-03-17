@@ -12,16 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <cmath>
 #include <limits>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "behaviortree_cpp_v3/decorator_node.h"
+#include "behaviortree_cpp/decorator_node.h"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav_msgs/msg/path.hpp"
+#include "rclcpp/rclcpp.hpp"
+#include "tf2/LinearMath/Quaternion.hpp"
+#include "tf2_ros/buffer.h"
 #include "tf2_ros/create_timer_ros.h"
 
 #include "nav2_behavior_tree/plugins/action/truncate_path_local_action.hpp"
@@ -150,7 +154,7 @@ TruncatePathLocal::poseDistance(
 
 }  // namespace nav2_behavior_tree
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory) {
   factory.registerNodeType<nav2_behavior_tree::TruncatePathLocal>(
     "TruncatePathLocal");

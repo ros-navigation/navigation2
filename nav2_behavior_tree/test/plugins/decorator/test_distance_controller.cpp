@@ -21,8 +21,8 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_util/robot_utils.hpp"
 
-#include "../../test_behavior_tree_fixture.hpp"
-#include "../../test_dummy_tree_node.hpp"
+#include "utils/test_behavior_tree_fixture.hpp"
+#include "utils/test_dummy_tree_node.hpp"
 #include "nav2_behavior_tree/plugins/decorator/distance_controller.hpp"
 
 class DistanceControllerTestFixture : public nav2_behavior_tree::BehaviorTreeTestFixture
@@ -30,6 +30,9 @@ class DistanceControllerTestFixture : public nav2_behavior_tree::BehaviorTreeTes
 public:
   void SetUp()
   {
+    config_->input_ports["distance"] = 1.0;
+    config_->input_ports["global_frame"] = "map";
+    config_->input_ports["robot_base_frame"] = "base_link";
     bt_node_ = std::make_shared<nav2_behavior_tree::DistanceController>(
       "distance_controller", *config_);
     dummy_node_ = std::make_shared<nav2_behavior_tree::DummyNode>();
@@ -72,7 +75,7 @@ TEST_F(DistanceControllerTestFixture, test_behavior)
 
     // Wait for transforms to actually update
     // updated pose is i * 0.55
-    // we wait fot the traveled distance to reach a value > i * 0.5
+    // we wait for the traveled distance to reach a value > i * 0.5
     // we can assume the current transform has been updated at this point
     while (traveled < i * 0.5) {
       if (nav2_util::getCurrentPose(pose, *transform_handler_->getBuffer())) {

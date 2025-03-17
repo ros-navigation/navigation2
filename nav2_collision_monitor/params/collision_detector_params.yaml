@@ -1,0 +1,28 @@
+collision_detector:
+  ros__parameters:
+    frequency: 10.0
+    base_frame_id: "base_footprint"
+    odom_frame_id: "odom"
+    transform_tolerance: 0.5
+    source_timeout: 5.0
+    base_shift_correction: True
+    polygons: ["PolygonFront"]
+    PolygonFront:
+      type: "polygon"
+      points: "[[0.3, 0.3], [0.3, -0.3], [0.0, -0.3], [0.0, 0.3]]"
+      action_type: "none"
+      min_points: 4
+      visualize: True
+      polygon_pub_topic: "polygon_front"
+      enabled: True
+    observation_sources: ["scan"]
+    scan:
+      type: "scan"
+      topic: "scan"
+      enabled: True
+    pointcloud:
+      type: "pointcloud"
+      topic: "/intel_realsense_r200_depth/points"
+      min_height: 0.1
+      max_height: 0.5
+      enabled: True

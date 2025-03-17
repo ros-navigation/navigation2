@@ -1,14 +1,18 @@
-# Error codes
-# Note: The expected priority order of the errors should match the message order
-uint16 NONE=0
-
 #goal definition
 geometry_msgs/PoseStamped pose
 string behavior_tree
 ---
 #result definition
-std_msgs/Empty result
+
+# Error codes
+# Note: The expected priority order of the errors should match the message order
+uint16 NONE=0
+uint16 UNKNOWN=9000
+uint16 FAILED_TO_LOAD_BEHAVIOR_TREE=9001
+uint16 TF_ERROR=9002
+
 uint16 error_code
+string error_msg
 ---
 #feedback definition
 geometry_msgs/PoseStamped current_pose

@@ -1,55 +1,61 @@
 <?xml version="1.0"?>
 <!--
   For instructions on using Groot and description of the following BehaviorTree nodes,
-  please refer to the groot_instructions.md and REAMDE.md respectively located in the
+  please refer to the groot_instructions.md and README.md respectively located in the
   nav2_behavior_tree package.
 -->
-<root>
+<root BTCPP_format="4">
   <TreeNodesModel>
     <!-- ############################### ACTION NODES ################################# -->
     <Action ID="BackUp">
       <input_port name="backup_dist">Distance to backup</input_port>
       <input_port name="backup_speed">Speed at which to backup</input_port>
       <input_port name="time_allowance">Allowed time for reversing</input_port>
-      <input_port name="server_name">Service name</input_port>
+      <input_port name="server_name">Server name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
+      <input_port name="disable_collision_checks">Disable collision checking</input_port>
+      <output_port name="error_code_id">"Back up error code"</output_port>
+      <output_port name="error_msg">"Back up error message"</output_port>
     </Action>
 
     <Action ID="DriveOnHeading">
       <input_port name="dist_to_travel">Distance to travel</input_port>
       <input_port name="speed">Speed at which to travel</input_port>
       <input_port name="time_allowance">Allowed time for reversing</input_port>
-      <input_port name="server_name">Service name</input_port>
+      <input_port name="server_name">Server name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
+      <input_port name="disable_collision_checks">Disable collision checking</input_port>
+      <output_port name="error_code_id">"Drive on heading error code"</output_port>
+      <output_port name="error_msg">"Drive on heading error message"</output_port>
     </Action>
 
     <Action ID="CancelControl">
-      <input_port name="service_name">Service name to cancel the controller server</input_port>
+      <input_port name="server_name">Server name to cancel the controller server</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
     </Action>
 
     <Action ID="CancelBackUp">
-      <input_port name="service_name">Service name to cancel the backup behavior</input_port>
+      <input_port name="server_name">Server name to cancel the backup behavior</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
     </Action>
 
     <Action ID="CancelDriveOnHeading">
-      <input_port name="service_name">Service name to cancel the drive on heading behavior</input_port>
+      <input_port name="server_name">Service name to cancel the drive on heading behavior</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
     </Action>
 
     <Action ID="CancelSpin">
-      <input_port name="service_name">Service name to cancel the spin behavior</input_port>
+      <input_port name="server_name">Server name to cancel the spin behavior</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
     </Action>
 
     <Action ID="CancelAssistedTeleop">
-      <input_port name="service_name">Service name to cancel the assisted teleop behavior</input_port>
+      <input_port name="server_name">Server name to cancel the assisted teleop behavior</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
     </Action>
 
     <Action ID="CancelWait">
-      <input_port name="service_name">Service name to cancel the wait behavior</input_port>
+      <input_port name="server_name">Server name to cancel the wait behavior</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
     </Action>
 
@@ -74,28 +80,38 @@
       <input_port name="goal">Destination to plan to</input_port>
       <input_port name="start">Start pose of the path if overriding current robot pose</input_port>
       <input_port name="planner_id">Mapped name to the planner plugin type to use</input_port>
-      <input_port name="service_name">Service name</input_port>
+      <input_port name="server_name">Server name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
       <output_port name="path">Path created by ComputePathToPose node</output_port>
       <output_port name="error_code_id">"Compute path to pose error code"</output_port>
+      <output_port name="error_msg">"Compute path to pose error message"</output_port>
     </Action>
 
     <Action ID="ComputePathThroughPoses">
       <input_port name="goals">Destinations to plan through</input_port>
       <input_port name="start">Start pose of the path if overriding current robot pose</input_port>
-      <input_port name="service_name">Service name</input_port>
+      <input_port name="server_name">Server name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
       <input_port name="planner_id">Mapped name to the planner plugin type to use</input_port>
       <output_port name="path">Path created by ComputePathToPose node</output_port>
       <output_port name="error_code_id">"Compute path through poses error code"</output_port>
+      <output_port name="error_msg">"Compute path through poses error message"</output_port>
     </Action>
 
     <Action ID="RemovePassedGoals">
       <input_port name="input_goals">Input goals to remove if passed</input_port>
       <input_port name="radius">Radius tolerance on a goal to consider it passed</input_port>
-      <input_port name="global_frame">Global frame</input_port>
       <input_port name="robot_base_frame">Robot base frame</input_port>
       <output_port name="output_goals">Set of goals after removing any passed</output_port>
+    </Action>
+
+    <Action ID="RemoveInCollisionGoals">
+      <input_port name="service_name">Costmap service name responsible for getting the cost</input_port>
+      <input_port name="input_goals">A vector of goals to check if in collision</input_port>
+      <input_port name="use_footprint">Whether to use the footprint cost or the point cost.</input_port>
+      <input_port name="cost_threshold">The cost threshold above which a waypoint is considered in collision and should be removed.</input_port>
+      <input_port name="consider_unknown_as_obstacle"> If unknown cost is considered valid </input_port>
+      <output_port name="output_goals">A vector of goals containing only those that are not in collision.</output_port>
     </Action>
 
     <Action ID="SmoothPath">
@@ -106,45 +122,52 @@
       <output_port name="smoothed_path">Smoothed path</output_port>
       <output_port name="smoothing_duration">Smoothing duration</output_port>
       <output_port name="was_completed">True if smoothing was not interrupted by time limit</output_port>
+      <output_port name="error_code_id">"Smooth Path error code"</output_port>
+      <output_port name="error_msg">"Smooth Path error message"</output_port>
     </Action>
 
     <Action ID="FollowPath">
       <input_port name="controller_id" default="FollowPath"/>
       <input_port name="path">Path to follow</input_port>
-      <input_port name="goal_checker_id" default="GoalChecker">Goal checker</input_port>
+      <input_port name="goal_checker_id">Goal checker</input_port>
+      <input_port name="progress_checker_id">Progress checker</input_port>
       <input_port name="service_name">Service name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
       <output_port name="error_code_id">Follow Path error code</output_port>
+      <output_port name="error_msg">Follow Path error message</output_port>
     </Action>
 
     <Action ID="NavigateToPose">
-        <input_port name="goal">Goal</input_port>
-        <input_port name="service_name">Service name</input_port>
-        <input_port name="server_timeout">Server timeout</input_port>
-        <input_port name="behavior_tree">Behavior tree to run</input_port>
-        <output_port name="error_code_id">Navigate to pose error code</output_port>
+      <input_port name="goal">Goal</input_port>
+      <input_port name="server_name">Server name</input_port>
+      <input_port name="server_timeout">Server timeout</input_port>
+      <input_port name="behavior_tree">Behavior tree to run</input_port>
+      <output_port name="error_code_id">Navigate to pose error code</output_port>
+      <output_port name="error_msg">Navigate to pose error message</output_port>
     </Action>
 
     <Action ID="NavigateThroughPoses">
-        <input_port name="goals">Goals</input_port>
-        <input_port name="service_name">Service name</input_port>
-        <input_port name="server_timeout">Server timeout</input_port>
-        <input_port name="behavior_tree">Behavior tree to run</input_port>
-        <output_port name="error_code_id">Navigate through poses error code</output_port>
+      <input_port name="goals">Goals</input_port>
+      <input_port name="server_name">Server name</input_port>
+      <input_port name="server_timeout">Server timeout</input_port>
+      <input_port name="behavior_tree">Behavior tree to run</input_port>
+      <output_port name="error_code_id">Navigate through poses error code</output_port>
+      <output_port name="error_msg">Navigate through poses error message</output_port>
     </Action>
 
     <Action ID="ReinitializeGlobalLocalization">
-        <input_port name="service_name">Service name</input_port>
-        <input_port name="server_timeout">Server timeout</input_port>
+      <input_port name="service_name">Service name</input_port>
+      <input_port name="server_timeout">Server timeout</input_port>
     </Action>
 
     <Action ID="TruncatePath">
-        <input_port name="distance">Distance before goal to truncate</input_port>
-        <input_port name="input_path">Path to truncate</input_port>
-        <output_port name="output_path">Truncated path to utilize</output_port>
+      <input_port name="distance">Distance before goal to truncate</input_port>
+      <input_port name="input_path">Path to truncate</input_port>
+      <output_port name="output_path">Truncated path to utilize</output_port>
     </Action>
 
     <Action ID="TruncatePathLocal">
+      <input_port name="input_path">Path to truncate</input_port>
       <input_port name="distance_forward">Distance in forward direction</input_port>
       <input_port name="distance_backward">Distance in backward direction</input_port>
       <input_port name="robot_frame">Robot base frame id</input_port>
@@ -156,40 +179,52 @@
     </Action>
 
     <Action ID="PlannerSelector">
-        <input_port name="topic_name">Name of the topic to receive planner selection commands</input_port>
-        <input_port name="default_planner">Default planner of the planner selector</input_port>
-        <output_port name="selected_planner">Name of the selected planner received from the topic subcription</output_port>
+      <input_port name="topic_name">Name of the topic to receive planner selection commands</input_port>
+      <input_port name="default_planner">Default planner of the planner selector</input_port>
+      <output_port name="selected_planner">Name of the selected planner received from the topic subscription</output_port>
     </Action>
 
     <Action ID="ControllerSelector">
-        <input_port name="topic_name">Name of the topic to receive controller selection commands</input_port>
-        <input_port name="default_controller">Default controller of the controller selector</input_port>
-        <output_port name="selected_controller">Name of the selected controller received from the topic subcription</output_port>
+      <input_port name="topic_name">Name of the topic to receive controller selection commands</input_port>
+      <input_port name="default_controller">Default controller of the controller selector</input_port>
+      <output_port name="selected_controller">Name of the selected controller received from the topic subscription</output_port>
     </Action>
 
     <Action ID="SmootherSelector">
-        <input_port name="topic_name">Name of the topic to receive smoother selection commands</input_port>
-        <input_port name="default_smoother">Default smoother of the smoother selector</input_port>
-        <output_port name="selected_smoother">Name of the selected smoother received from the topic subcription</output_port>
+      <input_port name="topic_name">Name of the topic to receive smoother selection commands</input_port>
+      <input_port name="default_smoother">Default smoother of the smoother selector</input_port>
+      <output_port name="selected_smoother">Name of the selected smoother received from the topic subscription</output_port>
     </Action>
 
     <Action ID="GoalCheckerSelector">
-        <input_port name="topic_name">Name of the topic to receive goal checker selection commands</input_port>
-        <input_port name="default_goal_checker">Default goal checker of the controller selector</input_port>
-        <output_port name="selected_goal_checker">Name of the selected goal checker received from the topic subcription</output_port>
+      <input_port name="topic_name">Name of the topic to receive goal checker selection commands</input_port>
+      <input_port name="default_goal_checker">Default goal checker of the controller selector</input_port>
+      <output_port name="selected_goal_checker">Name of the selected goal checker received from the topic subscription</output_port>
+    </Action>
+
+    <Action ID="ProgressCheckerSelector">
+      <input_port name="topic_name">Name of the topic to receive progress checker selection commands</input_port>
+      <input_port name="default_progress_checker">Default progress checker of the controller selector</input_port>
+      <output_port name="selected_progress_checker">Name of the selected progress checker received from the topic subscription</output_port>
     </Action>
 
     <Action ID="Spin">
       <input_port name="spin_dist">Spin distance</input_port>
       <input_port name="time_allowance">Allowed time for spinning</input_port>
-      <input_port name="server_name">Service name</input_port>
+      <input_port name="server_name">Server name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
+      <input_port name="is_recovery">If true recovery count will be incremented</input_port>
+      <input_port name="disable_collision_checks">Disable collision checking</input_port>
+      <output_port name="error_code_id">Spin error code</output_port>
+      <output_port name="error_msg">Spin error message</output_port>
     </Action>
 
     <Action ID="Wait">
       <input_port name="wait_duration">Wait time</input_port>
-      <input_port name="server_name">Service name</input_port>
+      <input_port name="server_name">Server name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
+      <output_port name="error_code_id">Wait error code</output_port>
+      <output_port name="error_msg">Wait error message</output_port>
     </Action>
 
     <Action ID="AssistedTeleop">
@@ -197,30 +232,72 @@
       <input_port name="is_recovery">If true recovery count will be incremented</input_port>
       <input_port name="server_name">Service name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
+      <output_port name="error_code_id">Assisted teleop error code</output_port>
+    </Action>
+
+    <Action ID="DockRobot">
+      <input_port name="dock_id">Dock ID or name to use</input_port>
+      <input_port name="dock_pose">The dock pose, if not using dock id</input_port>
+      <input_port name="dock_type">The dock plugin type, if using dock pose</input_port>
+      <input_port name="max_staging_time">Maximum time to navigate to the staging pose</input_port>
+      <input_port name="navigate_to_staging_pose">Whether to autonomously navigate to staging pose</input_port>
+      <input_port name="use_dock_id">Whether to use the dock's ID or dock pose fields</input_port>
+      <output_port name="error_code_id">Dock error code</output_port>
+      <output_port name="error_msg">Dock error message</output_port>
+      <output_port name="num_retries">The number of retries executed</output_port>
+      <output_port name="success">If the action was successful</output_port>
+    </Action>
+
+    <Action ID="UndockRobot">
+      <input_port name="dock_type">The dock plugin type, if not previous instance used for docking</input_port>
+      <input_port name="max_undocking_time">Maximum time to get back to the staging pose</input_port>
+      <output_port name="error_code_id">Undock error code</output_port>
+      <output_port name="error_msg">Undock error message</output_port>
+      <output_port name="success">If the action was successful</output_port>
+    </Action>
+
+    <Action ID="GetPoseFromPath">
+      <input_port name="path">Path to extract pose from</input_port>
+      <input_port name="index">Index of pose to extract from. -1 is end of list</input_port>
+      <output_port name="pose">Stamped extracted pose</output_port>
     </Action>
 
     <!-- ############################### CONDITION NODES ############################## -->
     <Condition ID="GoalReached">
-        <input_port name="goal">Destination</input_port>
-        <input_port name="global_frame">Reference frame</input_port>
-        <input_port name="robot_base_frame">Robot base frame</input_port>
+      <input_port name="goal">Destination</input_port>
+      <input_port name="robot_base_frame">Robot base frame</input_port>
     </Condition>
 
     <Condition ID="IsStuck"/>
+
+    <Condition ID="IsStopped">
+      <input_port name="velocity_threshold">Velocity threshold below which robot is considered stopped</input_port>
+      <input_port name="duration_stopped">Duration (ms) the velocity must remain below the threshold</input_port>
+    </Condition>
 
     <Condition ID="TransformAvailable">
       <input_port name="child">Child frame for transform</input_port>
       <input_port name="parent">Parent frame for transform</input_port>
     </Condition>
 
-    <Condition ID="GoalUpdated"/>
+    <Condition ID="GoalUpdated">
+      <input_port name="goal">Vector of navigation goals</input_port>
+      <input_port name="goals">Navigation goal</input_port>
+    </Condition>
 
-    <Condition ID="GlobalUpdatedGoal"/>
+    <Condition ID="GlobalUpdatedGoal">
+      <input_port name="goal">Vector of navigation goals</input_port>
+      <input_port name="goals">Navigation goal</input_port>
+    </Condition>
 
     <Condition ID="IsBatteryLow">
       <input_port name="min_battery">Min battery % or voltage before triggering</input_port>
       <input_port name="battery_topic">Topic for battery info</input_port>
       <input_port name="is_voltage">Bool if check based on voltage or total %</input_port>
+    </Condition>
+
+    <Condition ID="IsBatteryCharging">
+      <input_port name="battery_topic">Topic for battery info</input_port>
     </Condition>
 
     <Condition ID="DistanceTraveled">
@@ -240,12 +317,33 @@
     </Condition>
 
     <Condition ID="InitialPoseReceived">
+      <input_port name="initial_pose_received">SUCCESS if initial_pose_received true</input_port>
     </Condition>
 
     <Condition ID="IsPathValid">
       <input_port name="path"> Path to validate </input_port>
       <input_port name="server_timeout"> Server timeout </input_port>
+      <input_port name="max_cost"> Maximum cost of the path </input_port>
+      <input_port name="consider_unknown_as_obstacle"> If unknown cost is considered valid </input_port>
     </Condition>
+
+    <Condition ID="WouldAControllerRecoveryHelp">
+      <input_port name="error_code">Error code</input_port>
+    </Condition>
+
+    <Condition ID="WouldAPlannerRecoveryHelp">
+      <input_port name="error_code">Error code</input_port>
+    </Condition>
+
+    <Condition ID="WouldASmootherRecoveryHelp">
+      <input_port name="error_code">Error code</input_port>
+    </Condition>
+
+    <Condition ID="AreErrorCodesPresent">
+      <input_port name="error_code">Error code</input_port>
+      <input_port name="error_codes_to_check">Error codes to check, user defined</input_port>
+    </Condition>
+
 
     <!-- ############################### CONTROL NODES ################################ -->
     <Control ID="PipelineSequence"/>
@@ -272,7 +370,9 @@
 
     <Decorator ID="GoalUpdater">
       <input_port name="input_goal">Original goal in</input_port>
+      <input_port name="input_goals">Original goals in</input_port>
       <output_port name="output_goal">Output goal set by subscription</output_port>
+      <output_port name="output_goals">Output goals set by subscription</output_port>
     </Decorator>
 
     <Decorator ID="SpeedController">
@@ -280,7 +380,8 @@
       <input_port name="max_rate">Maximum rate</input_port>
       <input_port name="min_speed">Minimum speed</input_port>
       <input_port name="max_speed">Maximum speed</input_port>
-      <input_port name="filter_duration">Duration (secs) for velocity smoothing filter</input_port>
+      <input_port name="goal">Vector of navigation goals</input_port>
+      <input_port name="goals">Navigation goal</input_port>
     </Decorator>
 
     <Decorator ID="PathLongerOnApproach">
@@ -290,6 +391,8 @@
     </Decorator>
 
     <Decorator ID="GoalUpdatedController">
+      <input_port name="goal">Vector of navigation goals</input_port>
+      <input_port name="goals">Navigation goal</input_port>
     </Decorator>
 
   </TreeNodesModel>

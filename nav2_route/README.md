@@ -1,33 +1,33 @@
 # Nav2 Route Server
 
-The Route Server is a Nav2 Task server to compliment the Planner Server's free-space planning capabilities with pre-defined Navigation Route Graph planning, created by [Steve Macenski](https://www.linkedin.com/in/steve-macenski-41a985101/) while at [Samsung Research America](https://www.sra.samsung.com/) with assistence from [Josh Wallace](https://www.linkedin.com/in/joshua-wallace-b4848a113/) at Locus Robotics.
-This graph has few rules associated with it and may be generated manually or automatically via AI, geometric, or probablistic techniques.
-This package then takes a planning request and uses this graph to find a valid route through the environment via an optimal search-based algorithm.
-It may also live monitor and analyze the route's process to execute custom behaviors on entering or leaving edges or achieving particular graph nodes.
+The Route Server is a Nav2 Task server to compliment the Planner Server's free-space planning capabilities with pre-defined Navigation Route Graph planning, created by [Steve Macenski](https://www.linkedin.com/in/steve-macenski-41a985101/) at [Open Navigation](https://www.opennav.org/) with assistence from [Josh Wallace](https://www.linkedin.com/in/joshua-wallace-b4848a113/) at Locus Robotics.
+This graph has very few rules associated with it and may be generated manually or automatically via AI, geometric, or probablistic techniques.
+This package then takes a planning request and uses this graph to find a valid route through the environment via an optimal search-based algorithm. It uses plugin-based scoring functions to be applied each edge based on abitrary user-defined semantic information and the chosen optimization criteria(s).
+
+The Nav2 Route Server may also live monitor and analyze the route's process to execute custom behaviors on entering or leaving edges or achieving particular graph nodes. These behaviors are defined as another type of plugin and can leverage the graph's edges' and nodes' arbitrary semantic data.
 
 There are plugin interfaces throughout the server to enable a great deal of application-specific customization:
-- Custom search-prioritization behavior with edge scoring plugins (e.g. minimize distance or time, mark blocked routes, enact static or dynamic penalties for danger and application-specific knowledge, etc)
-- Custom operations to perform during route execution, triggered when entering or leaving an edge or achieving a graph node on the path (e.g. open door, pause at node to wait for clearance, adjust maximum speed, etc)
+- Custom search-prioritization behavior with edge scoring plugins (e.g. minimize distance or time, mark blocked routes, enact static or dynamic penalties for danger and application-specific knowledge, prefer main arteries)
+- Custom operations to perform during route execution, triggered when entering or leaving an edge or achieving a graph node on the path (e.g. open door, pause at node to wait for clearance, adjust maximum speed, turn on lights, change mode)
 - Parsers of navigation graph files to use any type of format desirable (e.g. geoJSON, OpenStreetMap)
 
-Additionally, the parsers store **additional arbitrary metadata** specified within the navigation graph files to store information such as speed limits, added costs, or operations to perform.
-Thus, we do not restrict the data that can be embedded in the navigation route graph for an application and this metadata is communicated to the edge scoring and operations plugins to adjust behavior.
-Note however that plugins may also use outside information from topics, services, and actions for dynamic behavior or centralized knowledge sharing as well. 
+Additionally, the server leverages **additional arbitrary metadata** specified within the navigation graph files to store information such as speed limits, added costs, or operations to perform.
+Thus, we do not restrict the data that can be embedded in the navigation route graph for an application and this metadata is communicated to the edge scoring and operations plugins to adjust behavior as demanded by the application.
+Note that plugins may also use outside information from topics, services, and actions for dynamic behavior or centralized knowledge sharing as well if desired.
 
 [A demo of the basic features can be seen here](https://www.youtube.com/watch?v=T57pac6q4RU) using the `route_example_launch.py` provided in `nav2_simple_commander`.
 
 ## Features
 
 - Optimized Dikjstra's planning algorithm modeled off of the Smac Planner A* implementation
-- Cleverly designed for no run-time lookups on the graph during search (2 lookups to find the start and goal edges on request initialization)
-- Use of Kd-trees for finding the nearest node to arbitrary start and goal poses in the graph
+- Use of Kd-trees for finding the nearest node to arbitrary start and goal poses in the graph for pose-based planning requests
 - Highly efficient graph representation to maximize caching in a single data structure containing both edges' and nodes' objects and relationships with localized information
-- All edges are directional
+- All edges are directional allowing for single-direction lanes
 - Data in files may be with respect to any frame in the TF tree and are transformed to a centralized frame automatically
 - Action interface response returns both a sparse route of nodes and edges for client applications with navigation graph knowledge and `nav_msgs/Path` dense paths minimicking freespace planning for drop-in behavior replacement of the Planner Server.  
 - Action interface request can process requests with start / goal node IDs or euclidean poses
 - Service interface to change navigation route graphs at run-time
-- Edge scoring dynamic plugins return a cost for traversing an edge and may mark an edge as invalid in current conditions
+- Edge scoring dynamic plugins return a cost for traversing an edge and may mark an edge as invalid in current conditions from sensor or system state data
 - Graph file parsing dynamic plugins allow for use of custom or proprietary formats
 - Operation dynamic plugins to perform arbitrary tasks at a given node or when entering or leaving an edge on the route
 - Operation may be graph-centric (e.g. graph file identifies operation to perform) or plugin-centric (e.g. plugins self-identify nodes and edges to act upon) 
@@ -56,10 +56,6 @@ The interface definitions can be found in the `include/nav2_route/interfaces` di
 
 ## Metrics
 
-The script used for this analysis can be found in `test/performance_benchmarking.cpp`.
-
-### Typical Performance
-
 A set of 1,000 experiments were run with the route planner with randomly selected start and goal poses, with various sized graphs. These metrics provide some reasonable benchmarking for performance of how the route server will perform in your application with various sized graphs that represent your environment:
 
 | Graph size  | Ave. Search Time    |
@@ -70,33 +66,9 @@ A set of 1,000 experiments were run with the route planner with randomly selecte
 | 250,000     | 11.36 ms            |
 | 1,000,000   | 44.07 ms            |
 
-This is in comparison with typical run-times of free-space global planners between 20 ms - 240 ms (depending on environment size and structure). Thus, the typical performance of using the route planner - even in truly massive environments to need hundreds of thousands of nodes of interest or importance - is well in excess of freespace planning. This enables Nav2 to operate in much larger spaces and still perform global routing.
+This is in comparison with typical run-times of free-space global planners between 50 ms - 400 ms (depending on environment size and structure). Thus, the typical performance of using the route planner - even in truly massive environments to need hundreds of thousands of nodes of interest or importance - is well in excess of freespace planning. This enables Nav2 to operate in much larger spaces and still perform global routing.
 
-### Worse-Case Performance
-
-Its useful to repeat these 1,000 experiments but now instead of using random start and goal poses, we utilize the known corners of the a graph to provide "worst case" metrics if the route planner needs to plan clear across an entire space.
-
-| Graph size  | Ave. Search Time    |
-| ----------- | ------------------- |
-| 100         | 0.024 ms            |
-| 10,000      | 1.81 ms             |
-| 90,000      | 21.62 ms            |
-| 250,000     | 65.30 ms            |
-| 1,000,000   | 263.9 ms            |
-
-Comparing with the run-times of free-space global planners, it is well within the ballpark for drop-in level replacement without needing to think too much about its performance relative to previous planning options - even in the worst case! 
-
-### Kd Tree Lookups
-
-Besides the route planning itself, the second most expensive operation (beyond the overhead of ROS) is correlating the requested start and goal poses with nodes in the graph for search. The use of Kd-trees to find the nearest start and goal nodes is over 140x faster than data-structure lookups. Experiments show this is sufficiently fast for even remarkably massive graphs to be inconsequential in terms of compute time utilized:
-
-| Graph size  | Kd Tree Lookup      |
-| ----------- | ------------------- |
-| 100         | 0.00020 ms          |
-| 10,000      | 0.00027 ms          |
-| 90,000      | 0.00061 ms          |
-| 250,000     | 0.00076 ms          |
-| 1,000,000   | 0.00103 ms          |
+The script used for this analysis can be found in `test/performance_benchmarking.cpp`.
 
 ## Parameters
 
@@ -380,7 +352,7 @@ A special case exists for rerouting, where as if we reroute along the same edge 
 
 ### Gap and Trivial Routing
 
-If a routing or rerouting request is made using poses which are not known to be nodes in the graph, there may be a gap between the robot's pose and the start of the route (as well as the end of the route and the goal pose) -- or a "last-mile" problem. This gap may be trivial to overcome with denser graphs and small distances beetween nodes that a local trajectory planner can overcome. However, with sparser graphs, some kind of augmentation would likely be required. For example: 
+If a routing or rerouting request is made using poses which are not known to be nodes in the graph, there may be a gap between the robot's pose and the start of the route (as well as the end of the route and the goal pose) -- or a "last-mile" problem. This gap may be trivial to overcome with denser graphs and small distances between nodes that a local trajectory planner can overcome. However, with sparser graphs, some kind of augmentation would likely be required. For example: 
 - (A) Using a behavior tree which uses free-space planning to connect the robot and goal poses with the start / end of the route
 - (B) Using the waypoint follower (or navigate through poses or otherwise) that takes the nodes and uses them as waypoints terminating with the goal pose for freespace navigation using the route as a general prior
 - (C) some other solution which will get the robot from its pose, through the route, to the goal
@@ -396,12 +368,32 @@ Note that there are parameters like `prune_goal`, `min_distance_from_start` and 
 
 # Steve's TODO list
 
+## New
+
+- [ ] Simple commander API
+
+- [ ] Summarize progrss, what's left
+  * From notes, event comments, my thoughts, docs left, design docs, .txt files readme
+- [ ] What's to change: Server (error code, error msg, exceptions), copyright, Simple API (examples)
+- [ ] Review planner server / controller server for potential other updates (cancel CB; other improvements)
+- [ ] System tests for coverage, others missing
+- [ ] Review msg/srv/action definitions
+
+---
+
 - [ ] path marker points align with direction
-- [ ] Sample files: AWS final
+- [ ] Sample files: new maps used in nav2
 - [ ] QGIS demo + plugins for editing and visualizing graphs
 - [ ] use map for checking start/goal nodes for infra blockages not just NN. Evaluate K. Share costmap?
 
+- [ ] edges have non-straight paths
+- [ ] Enable or document the use for blocking edges or pausing for anothe robot locking out an edge
+- [ ] yaml file substittutions
+- [ ] Update cmake
+
 - [ ] Quality: 
+  - Missing readme plugins, other plugins to add
+  - Readme msising context, uses cases for (planner replacement, tracking, route->global->local, route->local, navigate through poses)
   - BT nodes for 2x route APIs + cancel nodes (+ groot xml + add to BT navlist + add to default yaml list),
   - web documentation (BT node configuration page, package configuration page, migration),
   - Keep graph visualization in rviz but turn off by default

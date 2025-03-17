@@ -32,7 +32,6 @@ class SmoothPathAction : public nav2_behavior_tree::BtActionNode<nav2_msgs::acti
 {
   using Action = nav2_msgs::action::SmoothPath;
   using ActionResult = Action::Result;
-  using ActionGoal = Action::Goal;
 
 public:
   /**
@@ -88,6 +87,8 @@ public:
           "was_completed", "True if smoothing was not interrupted by time limit"),
         BT::OutputPort<ActionResult::_error_code_type>(
           "error_code_id", "The smooth path error code"),
+        BT::OutputPort<std::string>(
+          "error_msg", "The smooth path error msg"),
       });
   }
 };

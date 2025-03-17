@@ -38,6 +38,8 @@
 #ifndef NAV2_COSTMAP_2D__COSTMAP_LAYER_HPP_
 #define NAV2_COSTMAP_2D__COSTMAP_LAYER_HPP_
 
+#include <string>
+
 #include <rclcpp/rclcpp.hpp>
 #include <nav2_costmap_2d/layer.hpp>
 #include <nav2_costmap_2d/layered_costmap.hpp>
@@ -132,6 +134,19 @@ protected:
    * Updates the master_grid within the specified
    * bounding box using this layer's values.
    *
+   * Sets the new value to the maximum of the master_grid's value
+   * and this layer's value. If the master value is NO_INFORMATION,
+   * it is NOT overwritten. If the layer's value is NO_INFORMATION,
+   * the master value does not change.
+   */
+  void updateWithMaxWithoutUnknownOverwrite(
+    nav2_costmap_2d::Costmap2D & master_grid, int min_i, int min_j, int max_i,
+    int max_j);
+
+  /*
+   * Updates the master_grid within the specified
+   * bounding box using this layer's values.
+   *
    * Sets the new value to the sum of the master grid's value
    * and this layer's value. If the master value is NO_INFORMATION,
    * it is overwritten with the layer's value. If the layer's value
@@ -171,6 +186,31 @@ protected:
    */
   void useExtraBounds(double * min_x, double * min_y, double * max_x, double * max_y);
   bool has_extra_bounds_;
+
+  /**
+ * @brief Converts an integer to a CombinationMethod enum and logs on failure
+ * @param value The integer to convert
+ * @param function_name The name of the function calling this conversion (for logging)
+ */
+  CombinationMethod combination_method_from_int(const int value);
+
+  /**
+   * Joins the specified topic with the parent namespace of the costmap node.
+   * If the topic has an absolute path, it is returned instead.
+   *
+   * This is necessary for user defined relative topics to work as expected since costmap layers
+   * add a an additional `costmap_name` namespace to the topic.
+   * For example:
+   *   * User chosen namespace is `tb4`.
+   *   * User chosen topic is `scan`.
+   *   * Costmap node namespace will be `/tb4/global_costmap`.
+   *   * Without this function, the topic would be `/tb4/global_costmap/scan`.
+   *   * With this function, topic will be remapped to `/tb4/scan`.
+   * Use global topic `/scan` if you do not wish the node namespace to apply
+   *
+   * @param topic the topic to parse
+   */
+  std::string joinWithParentNamespace(const std::string & topic);
 
 private:
   double extra_min_x_, extra_max_x_, extra_min_y_, extra_max_y_;

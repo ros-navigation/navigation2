@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#include <math.h>
-
+#include <cmath>
 #include <memory>
 #include <string>
 #include <vector>
@@ -22,6 +21,7 @@
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_planner/planner_server.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "rcl_interfaces/msg/set_parameters_result.hpp"
 
 class PlannerShim : public nav2_planner::PlannerServer
 {
@@ -51,14 +51,6 @@ public:
   }
 };
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 TEST(WPTest, test_dynamic_parameters)
 {
   auto planner = std::make_shared<PlannerShim>();
@@ -87,4 +79,17 @@ TEST(WPTest, test_dynamic_parameters)
     results);
 
   EXPECT_EQ(planner->get_parameter("expected_planner_frequency").as_double(), -1.0);
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

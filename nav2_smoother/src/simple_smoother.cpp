@@ -65,12 +65,13 @@ bool SimpleSmoother::smooth(
   steady_clock::time_point start = steady_clock::now();
   double time_remaining = max_time.seconds();
 
-  bool success = true, reversing_segment;
-  unsigned int segments_smoothed = 0;
+  bool reversing_segment;
   nav_msgs::msg::Path curr_path_segment;
   curr_path_segment.header = path.header;
 
   std::vector<PathSegment> path_segments = findDirectionalPathSegments(path);
+
+  std::lock_guard<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap->getMutex()));
 
   for (unsigned int i = 0; i != path_segments.size(); i++) {
     if (path_segments[i].end - path_segments[i].start > 9) {
@@ -86,15 +87,9 @@ bool SimpleSmoother::smooth(
       time_remaining = max_time.seconds() - duration_cast<duration<double>>(now - start).count();
       refinement_ctr_ = 0;
 
-      bool segment_was_smoothed = smoothImpl(
-        curr_path_segment, reversing_segment, costmap.get(), time_remaining);
-
-      if (segment_was_smoothed) {
-        segments_smoothed++;
-      }
-
-      // Smooth path segment naively
-      success = success && segment_was_smoothed;
+      // Attempt to smooth the segment
+      // May throw SmootherTimedOut
+      smoothImpl(curr_path_segment, reversing_segment, costmap.get(), time_remaining);
 
       // Assemble the path changes to the main path
       std::copy(
@@ -104,14 +99,10 @@ bool SimpleSmoother::smooth(
     }
   }
 
-  if (segments_smoothed == 0) {
-    throw nav2_core::FailedToSmoothPath("No segments were smoothed");
-  }
-
-  return success;
+  return true;
 }
 
-bool SimpleSmoother::smoothImpl(
+void SimpleSmoother::smoothImpl(
   nav_msgs::msg::Path & path,
   bool & reversing_segment,
   const nav2_costmap_2d::Costmap2D * costmap,
@@ -140,7 +131,7 @@ bool SimpleSmoother::smoothImpl(
         "Number of iterations has exceeded limit of %i.", max_its_);
       path = last_path;
       updateApproximatePathOrientations(path, reversing_segment);
-      return false;
+      return;
     }
 
     // Make sure still have time left to process
@@ -186,7 +177,7 @@ bool SimpleSmoother::smoothImpl(
           "Returning the last path before the infeasibility was introduced.");
         path = last_path;
         updateApproximatePathOrientations(path, reversing_segment);
-        return false;
+        return;
       }
     }
 
@@ -202,7 +193,6 @@ bool SimpleSmoother::smoothImpl(
 
   updateApproximatePathOrientations(new_path, reversing_segment);
   path = new_path;
-  return true;
 }
 
 double SimpleSmoother::getFieldByDim(

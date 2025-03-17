@@ -2,7 +2,7 @@
 
 This experiment runs a set with randomly generated goals for objective benchmarking.
 
-Bechmarking scripts require the following python packages to be installed:
+Benchmarking scripts require the following python packages to be installed:
 
 ```
 pip install transforms3d
@@ -18,7 +18,7 @@ planner_server:
     expected_planner_frequency: 20.0
     planner_plugins: ["SmacHybrid"]
     SmacHybrid:
-      plugin: "nav2_smac_planner/SmacPlannerHybrid"
+      plugin: "nav2_smac_planner::SmacPlannerHybrid"
       tolerance: 0.5
       motion_model_for_search: "DUBIN" # default, non-reverse motion
       smooth_path: false # should be disabled for experiment

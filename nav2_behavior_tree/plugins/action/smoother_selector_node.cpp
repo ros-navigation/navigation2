@@ -33,28 +33,45 @@ SmootherSelector::SmootherSelector(
   const BT::NodeConfiguration & conf)
 : BT::SyncActionNode(name, conf)
 {
-  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
-  callback_group_ = node_->create_callback_group(
-    rclcpp::CallbackGroupType::MutuallyExclusive,
-    false);
-  callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
+  initialize();
+}
 
-  getInput("topic_name", topic_name_);
+void SmootherSelector::initialize()
+{
+  createROSInterfaces();
+}
 
-  rclcpp::QoS qos(rclcpp::KeepLast(1));
-  qos.transient_local().reliable();
+void SmootherSelector::createROSInterfaces()
+{
+  std::string topic_new;
+  getInput("topic_name", topic_new);
+  if (topic_new != topic_name_ || !smoother_selector_sub_) {
+    topic_name_ = topic_new;
+    node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+    callback_group_ = node_->create_callback_group(
+      rclcpp::CallbackGroupType::MutuallyExclusive,
+      false);
+    callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
 
-  rclcpp::SubscriptionOptions sub_option;
-  sub_option.callback_group = callback_group_;
-  smoother_selector_sub_ = node_->create_subscription<std_msgs::msg::String>(
-    topic_name_,
-    qos,
-    std::bind(&SmootherSelector::callbackSmootherSelect, this, _1),
-    sub_option);
+    rclcpp::QoS qos(rclcpp::KeepLast(1));
+    qos.transient_local().reliable();
+
+    rclcpp::SubscriptionOptions sub_option;
+    sub_option.callback_group = callback_group_;
+    smoother_selector_sub_ = node_->create_subscription<std_msgs::msg::String>(
+      topic_name_,
+      qos,
+      std::bind(&SmootherSelector::callbackSmootherSelect, this, _1),
+      sub_option);
+  }
 }
 
 BT::NodeStatus SmootherSelector::tick()
 {
+  if (!BT::isStatusActive(status())) {
+    initialize();
+  }
+
   callback_group_executor_.spin_some();
 
   // This behavior always use the last selected smoother received from the topic input.
@@ -85,7 +102,7 @@ SmootherSelector::callbackSmootherSelect(const std_msgs::msg::String::SharedPtr 
 
 }  // namespace nav2_behavior_tree
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
   factory.registerNodeType<nav2_behavior_tree::SmootherSelector>("SmootherSelector");

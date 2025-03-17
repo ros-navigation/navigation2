@@ -18,7 +18,7 @@
 
 #include <string>
 #include <memory>
-#include <experimental/filesystem>  // NOLINT
+#include <filesystem>
 
 #include "rclcpp/rclcpp.hpp"
 
@@ -29,18 +29,9 @@
 
 #define TEST_DIR TEST_DIRECTORY
 
-using std::experimental::filesystem::path;
+using std::filesystem::path;
 using lifecycle_msgs::msg::Transition;
 using namespace nav2_map_server;  // NOLINT
-
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-
-RclCppFixture g_rclcppfixture;
 
 class MapSaverTestFixture : public ::testing::Test
 {
@@ -117,7 +108,7 @@ TEST_F(MapSaverTestFixture, SaveMap)
   RCLCPP_INFO(node_->get_logger(), "Waiting for save_map service");
   ASSERT_TRUE(client->wait_for_service());
 
-  // 1. Send valid save_map serivce request
+  // 1. Send valid save_map service request
   req->map_topic = "map";
   req->map_url = path(g_tmp_dir) / path(g_valid_map_name);
   req->image_format = "png";
@@ -146,7 +137,7 @@ TEST_F(MapSaverTestFixture, SaveMapDefaultParameters)
   RCLCPP_INFO(node_->get_logger(), "Waiting for save_map service");
   ASSERT_TRUE(client->wait_for_service());
 
-  // 1. Send save_map serivce request with default parameters
+  // 1. Send save_map service request with default parameters
   req->map_topic = "";
   req->map_url = path(g_tmp_dir) / path(g_valid_map_name);
   req->image_format = "";
@@ -176,7 +167,7 @@ TEST_F(MapSaverTestFixture, SaveMapInvalidParameters)
   RCLCPP_INFO(node_->get_logger(), "Waiting for save_map service");
   ASSERT_TRUE(client->wait_for_service());
 
-  // 1. Trying to send save_map serivce request with different sets of parameters
+  // 1. Trying to send save_map service request with different sets of parameters
   // In case of map is expected to be saved correctly, verify it
   req->map_topic = "invalid_map";
   req->map_url = path(g_tmp_dir) / path(g_valid_map_name);
@@ -219,4 +210,17 @@ TEST_F(MapSaverTestFixture, SaveMapInvalidParameters)
   req->occupied_thresh = 0.2;
   resp = send_request<nav2_msgs::srv::SaveMap>(node_, client, req);
   ASSERT_EQ(resp->result, false);
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

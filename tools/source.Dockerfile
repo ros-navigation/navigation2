@@ -49,7 +49,7 @@ WORKDIR $OVERLAY_WS/src
 COPY ./ ./ros-planning/navigation2
 RUN colcon list --names-only | cat >> /opt/packages.txt
 
-# remove skiped packages
+# remove skipped packages
 WORKDIR /opt
 RUN find ./ \
       -name "AMENT_IGNORE" -o \
@@ -117,7 +117,7 @@ FROM ros2_builder AS ros2_tester
 
 # test overlay build
 ARG RUN_TESTS
-ARG FAIL_ON_TEST_FAILURE=True
+ARG FAIL_ON_TEST_FAILURE
 RUN if [ -n "$RUN_TESTS" ]; then \
         . install/setup.sh && \
         colcon test && \
@@ -165,7 +165,7 @@ FROM underlay_builder AS underlay_tester
 
 # test overlay build
 ARG RUN_TESTS
-ARG FAIL_ON_TEST_FAILURE=True
+ARG FAIL_ON_TEST_FAILURE
 RUN if [ -n "$RUN_TESTS" ]; then \
         . install/setup.sh && \
         colcon test && \
@@ -216,7 +216,7 @@ FROM overlay_builder AS overlay_tester
 
 # test overlay build
 ARG RUN_TESTS
-ARG FAIL_ON_TEST_FAILURE=True
+ARG FAIL_ON_TEST_FAILURE
 RUN if [ -n "$RUN_TESTS" ]; then \
         . install/setup.sh && \
         colcon test && \

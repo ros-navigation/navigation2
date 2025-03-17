@@ -16,9 +16,9 @@
 #define NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__NAVIGATE_THROUGH_POSES_ACTION_HPP_
 
 #include <string>
+#include <vector>
 
-#include "geometry_msgs/msg/point.hpp"
-#include "geometry_msgs/msg/quaternion.hpp"
+#include "nav_msgs/msg/goals.hpp"
 #include "nav2_msgs/action/navigate_through_poses.hpp"
 #include "nav2_behavior_tree/bt_action_node.hpp"
 
@@ -32,7 +32,6 @@ class NavigateThroughPosesAction : public BtActionNode<nav2_msgs::action::Naviga
 {
   using Action = nav2_msgs::action::NavigateThroughPoses;
   using ActionResult = Action::Result;
-  using ActionGoal = Action::Goal;
 
 public:
   /**
@@ -74,10 +73,13 @@ public:
   {
     return providedBasicPorts(
       {
-        BT::InputPort<geometry_msgs::msg::PoseStamped>("goals", "Destinations to plan through"),
+        BT::InputPort<nav_msgs::msg::Goals>(
+          "goals", "Destinations to plan through"),
         BT::InputPort<std::string>("behavior_tree", "Behavior tree to run"),
         BT::OutputPort<ActionResult::_error_code_type>(
           "error_code_id", "The navigate through poses error code"),
+        BT::OutputPort<std::string>(
+          "error_msg", "The navigate through poses error msg"),
       });
   }
 };

@@ -17,9 +17,9 @@
 #include <set>
 #include <string>
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 
-#include "../../test_action_server.hpp"
+#include "nav2_behavior_tree/utils/test_action_server.hpp"
 #include "nav2_behavior_tree/plugins/action/wait_cancel_node.hpp"
 #include "lifecycle_msgs/srv/change_state.hpp"
 
@@ -55,7 +55,7 @@ public:
     // Create the blackboard that will be shared by all of the nodes in the tree
     config_->blackboard = BT::Blackboard::create();
     // Put items on the blackboard
-    config_->blackboard->set<rclcpp::Node::SharedPtr>(
+    config_->blackboard->set(
       "node",
       node_);
     config_->blackboard->set<std::chrono::milliseconds>(
@@ -64,6 +64,9 @@ public:
     config_->blackboard->set<std::chrono::milliseconds>(
       "bt_loop_duration",
       std::chrono::milliseconds(10));
+    config_->blackboard->set<std::chrono::milliseconds>(
+      "wait_for_service_timeout",
+      std::chrono::milliseconds(1000));
     client_ = rclcpp_action::create_client<nav2_msgs::action::Wait>(
       node_, "wait");
 
@@ -117,7 +120,7 @@ TEST_F(CancelWaitActionTestFixture, test_ports)
 {
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
              <CancelWait name="WaitCancel"/>
         </BehaviorTree>
@@ -145,7 +148,7 @@ TEST_F(CancelWaitActionTestFixture, test_ports)
   // BT node should return success, once when the goal is cancelled
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
 
-  // Adding another test case to check if the goal is infact cancelling
+  // Adding another test case to check if the goal is in fact cancelling
   EXPECT_EQ(action_server_->isGoalCancelled(), true);
 }
 

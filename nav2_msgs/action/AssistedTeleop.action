@@ -2,7 +2,17 @@
 builtin_interfaces/Duration time_allowance
 ---
 #result definition
+
+# Error codes
+# Note: The expected priority order of the error should match the message order
+uint16 NONE=0
+uint16 UNKNOWN=730
+uint16 TIMEOUT=731
+uint16 TF_ERROR=732
+
 builtin_interfaces/Duration total_elapsed_time
+uint16 error_code
+string error_msg
 ---
 #feedback
 builtin_interfaces/Duration current_teleop_duration

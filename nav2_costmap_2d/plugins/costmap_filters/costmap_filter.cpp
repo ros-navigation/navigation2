@@ -2,6 +2,7 @@
  *
  * Software License Agreement (BSD License)
  *
+ *  Copyright (c) 2008, 2013, Willow Garage, Inc.
  *  Copyright (c) 2020 Samsung Research Russia
  *  All rights reserved.
  *
@@ -32,7 +33,9 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *
- * Author: Alexey Merzlyakov
+ * Author: Eitan Marder-Eppstein
+ *         David V. Lu!!
+ *         Alexey Merzlyakov
  *********************************************************************/
 
 #include "nav2_costmap_2d/costmap_filters/costmap_filter.hpp"
@@ -41,6 +44,9 @@
 
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "geometry_msgs/msg/point_stamped.hpp"
+
+#include "nav2_costmap_2d/cost_values.hpp"
+#include "nav2_util/occ_grid_values.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -72,7 +78,7 @@ void CostmapFilter::onInitialize()
     // Get parameters
     node->get_parameter(name_ + "." + "enabled", enabled_);
     filter_info_topic_ = node->get_parameter(name_ + "." + "filter_info_topic").as_string();
-    double transform_tolerance;
+    double transform_tolerance {};
     node->get_parameter(name_ + "." + "transform_tolerance", transform_tolerance);
     transform_tolerance_ = tf2::durationFromSec(transform_tolerance);
 
@@ -187,23 +193,41 @@ bool CostmapFilter::worldToMask(
   nav_msgs::msg::OccupancyGrid::ConstSharedPtr filter_mask,
   double wx, double wy, unsigned int & mx, unsigned int & my) const
 {
-  double origin_x = filter_mask->info.origin.position.x;
-  double origin_y = filter_mask->info.origin.position.y;
-  double resolution = filter_mask->info.resolution;
-  unsigned int size_x = filter_mask->info.width;
-  unsigned int size_y = filter_mask->info.height;
+  const double origin_x = filter_mask->info.origin.position.x;
+  const double origin_y = filter_mask->info.origin.position.y;
+  const double resolution = filter_mask->info.resolution;
+  const unsigned int size_x = filter_mask->info.width;
+  const unsigned int size_y = filter_mask->info.height;
 
   if (wx < origin_x || wy < origin_y) {
     return false;
   }
 
-  mx = std::round((wx - origin_x) / resolution);
-  my = std::round((wy - origin_y) / resolution);
+  mx = static_cast<unsigned int>((wx - origin_x) / resolution);
+  my = static_cast<unsigned int>((wy - origin_y) / resolution);
   if (mx >= size_x || my >= size_y) {
     return false;
   }
 
   return true;
+}
+
+unsigned char CostmapFilter::getMaskCost(
+  nav_msgs::msg::OccupancyGrid::ConstSharedPtr filter_mask,
+  const unsigned int mx, const unsigned int & my) const
+{
+  const unsigned int index = my * filter_mask->info.width + mx;
+
+  const char data = filter_mask->data[index];
+  if (data == nav2_util::OCC_GRID_UNKNOWN) {
+    return NO_INFORMATION;
+  } else {
+    // Linear conversion from OccupancyGrid data range [OCC_GRID_FREE..OCC_GRID_OCCUPIED]
+    // to costmap data range [FREE_SPACE..LETHAL_OBSTACLE]
+    return std::round(
+      static_cast<double>(data) * (LETHAL_OBSTACLE - FREE_SPACE) /
+      (nav2_util::OCC_GRID_OCCUPIED - nav2_util::OCC_GRID_FREE));
+  }
 }
 
 }  // namespace nav2_costmap_2d

@@ -2,46 +2,100 @@ collision_monitor:
   ros__parameters:
     base_frame_id: "base_footprint"
     odom_frame_id: "odom"
-    cmd_vel_in_topic: "cmd_vel_raw"
+    cmd_vel_in_topic: "cmd_vel_smoothed"
     cmd_vel_out_topic: "cmd_vel"
+    state_topic: "collision_monitor_state"
     transform_tolerance: 0.5
     source_timeout: 5.0
+    base_shift_correction: True
     stop_pub_timeout: 2.0
-    # Polygons represent zone around the robot for "stop" and "slowdown" action types,
+    # Polygons represent zone around the robot for "stop", "slowdown" and "limit" action types,
     # and robot footprint for "approach" action type.
-    # Footprint could be "polygon" type with dynamically set footprint from footprint_topic
-    # or "circle" type with static footprint set by radius. "footprint_topic" parameter
+    # (1) Footprint could be "polygon" type with dynamically set footprint from footprint_topic
+    # (2) "circle" type with static footprint set by radius. "footprint_topic" parameter
     # to be ignored in circular case.
+    # (3) "velocity_polygon" type with dynamically set polygon from velocity_polygons
     polygons: ["PolygonStop"]
     PolygonStop:
       type: "polygon"
-      points: [0.3, 0.3, 0.3, -0.3, 0.0, -0.3, 0.0, 0.3]
+      points: "[[0.3, 0.3], [0.3, -0.3], [0.0, -0.3], [0.0, 0.3]]"
       action_type: "stop"
-      max_points: 3
+      min_points: 4
       visualize: True
       polygon_pub_topic: "polygon_stop"
+      enabled: True
     PolygonSlow:
       type: "polygon"
-      points: [0.4, 0.4, 0.4, -0.4, -0.4, -0.4, -0.4, 0.4]
+      points: "[[0.4, 0.4], [0.4, -0.4], [-0.4, -0.4], [-0.4, 0.4]]"
       action_type: "slowdown"
-      max_points: 3
+      min_points: 4
       slowdown_ratio: 0.3
       visualize: True
       polygon_pub_topic: "polygon_slowdown"
+      enabled: True
+    PolygonLimit:
+      type: "polygon"
+      points: "[[0.5, 0.5], [0.5, -0.5], [-0.5, -0.5], [-0.5, 0.5]]"
+      action_type: "limit"
+      min_points: 4
+      linear_limit: 0.4
+      angular_limit: 0.5
+      visualize: True
+      polygon_pub_topic: "polygon_limit"
+      enabled: True
     FootprintApproach:
       type: "polygon"
       action_type: "approach"
       footprint_topic: "/local_costmap/published_footprint"
       time_before_collision: 2.0
       simulation_time_step: 0.1
-      max_points: 5
+      min_points: 6
       visualize: False
+      enabled: True
+    VelocityPolygonStop:
+      type: "velocity_polygon"
+      action_type: "stop"
+      min_points: 6
+      visualize: True
+      enabled: True
+      polygon_pub_topic: "velocity_polygon_stop"
+      velocity_polygons: ["rotation", "translation_forward", "translation_backward", "stopped"]
+      holonomic: false
+      rotation:
+        points: "[[0.3, 0.3], [0.3, -0.3], [-0.3, -0.3], [-0.3, 0.3]]"
+        linear_min: 0.0
+        linear_max: 0.05
+        theta_min: -1.0
+        theta_max: 1.0
+      translation_forward:
+        points: "[[0.35, 0.3], [0.35, -0.3], [-0.2, -0.3], [-0.2, 0.3]]"
+        linear_min: 0.0
+        linear_max: 1.0
+        theta_min: -1.0
+        theta_max: 1.0
+      translation_backward:
+        points: "[[0.2, 0.3], [0.2, -0.3], [-0.35, -0.3], [-0.35, 0.3]]"
+        linear_min: -1.0
+        linear_max: 0.0
+        theta_min: -1.0
+        theta_max: 1.0
+      # This is the last polygon to be checked, it should cover the entire range of robot's velocities
+      # It is used as the stopped polygon when the robot is not moving and as a fallback if the velocity
+      # is not covered by any of the other sub-polygons 
+      stopped:
+        points: "[[0.25, 0.25], [0.25, -0.25], [-0.25, -0.25], [-0.25, 0.25]]"
+        linear_min: -1.0
+        linear_max: 1.0
+        theta_min: -1.0
+        theta_max: 1.0
     observation_sources: ["scan"]
     scan:
       type: "scan"
-      topic: "/scan"
+      topic: "scan"
+      enabled: True
     pointcloud:
       type: "pointcloud"
       topic: "/intel_realsense_r200_depth/points"
       min_height: 0.1
       max_height: 0.5
+      enabled: True

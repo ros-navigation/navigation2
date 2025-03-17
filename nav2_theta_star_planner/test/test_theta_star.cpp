@@ -19,13 +19,6 @@
 #include "nav2_theta_star_planner/theta_star.hpp"
 #include "nav2_theta_star_planner/theta_star_planner.hpp"
 
-class init_rclcpp
-{
-public:
-  init_rclcpp() {rclcpp::init(0, nullptr);}
-  ~init_rclcpp() {rclcpp::shutdown();}
-};
-
 /// class created to access the protected members of the ThetaStar class
 /// u is used as shorthand for use
 class test_theta_star : public theta_star::ThetaStar
@@ -60,16 +53,16 @@ public:
 
   void uresetContainers() {nodes_data_.clear(); resetContainers();}
 
-  bool runAlgo(std::vector<coordsW> & path)
+  bool runAlgo(
+    std::vector<coordsW> & path,
+    std::function<bool()> cancel_checker = [] () {return false;})
   {
     if (!isUnsafeToPlan()) {
-      return generatePath(path);
+      return generatePath(path, cancel_checker);
     }
     return false;
   }
 };
-
-init_rclcpp node;
 
 // Tests meant to test the algorithm itself and its helper functions
 TEST(ThetaStarTest, test_theta_star) {
@@ -95,7 +88,6 @@ TEST(ThetaStarTest, test_theta_star) {
   planner_->setStartAndGoal(start, goal);
   EXPECT_TRUE(planner_->src_.x == s.x && planner_->src_.y == s.y);
   EXPECT_TRUE(planner_->dst_.x == g.x && planner_->dst_.y == g.y);
-
   /// Check if the initializePosn function works properly
   planner_->uinitializePosn(size_x * size_y);
   EXPECT_EQ(planner_->getSizeOfNodePosition(), (size_x * size_y));
@@ -121,7 +113,7 @@ TEST(ThetaStarTest, test_theta_star) {
   EXPECT_FALSE(planner_->isSafe(10, 10));      // cost at this point is 253 (>LETHAL_COST)
 
   /// Check if the functions addIndex & getIndex work properly
-  coordsM c = {20, 30};
+  coordsM c = {18, 18};
   planner_->uaddToNodesData(0);
   planner_->uaddIndex(c.x, c.y);
   tree_node * c_node = planner_->ugetIndex(c.x, c.y);
@@ -163,7 +155,11 @@ TEST(ThetaStarPlanner, test_theta_star_planner) {
   planner_2d->configure(life_node, "test", nullptr, costmap_ros);
   planner_2d->activate();
 
-  nav_msgs::msg::Path path = planner_2d->createPlan(start, goal);
+  auto dummy_cancel_checker = []() {
+      return false;
+    };
+
+  nav_msgs::msg::Path path = planner_2d->createPlan(start, goal, dummy_cancel_checker);
   EXPECT_GT(static_cast<int>(path.poses.size()), 0);
 
   // test if the goal is unsafe
@@ -175,7 +171,7 @@ TEST(ThetaStarPlanner, test_theta_star_planner) {
   goal.pose.position.x = 1.0;
   goal.pose.position.y = 1.0;
 
-  EXPECT_THROW(planner_2d->createPlan(start, goal), nav2_core::GoalOccupied);
+  EXPECT_THROW(planner_2d->createPlan(start, goal, dummy_cancel_checker), nav2_core::GoalOccupied);
 
   planner_2d->deactivate();
   planner_2d->cleanup();
@@ -213,7 +209,8 @@ TEST(ThetaStarPlanner, test_theta_star_reconfigure)
       rclcpp::Parameter("test.w_euc_cost", 1.0),
       rclcpp::Parameter("test.w_traversal_cost", 2.0),
       rclcpp::Parameter("test.use_final_approach_orientation", false),
-      rclcpp::Parameter("test.allow_unknown", false)});
+      rclcpp::Parameter("test.allow_unknown", false),
+      rclcpp::Parameter("test.terminal_checking_interval", 100)});
 
   rclcpp::spin_until_future_complete(
     life_node->get_node_base_interface(),
@@ -226,8 +223,22 @@ TEST(ThetaStarPlanner, test_theta_star_reconfigure)
   EXPECT_EQ(life_node->get_parameter("test.w_traversal_cost").as_double(), 2.0);
   EXPECT_EQ(life_node->get_parameter("test.use_final_approach_orientation").as_bool(), false);
   EXPECT_EQ(life_node->get_parameter("test.allow_unknown").as_bool(), false);
+  EXPECT_EQ(life_node->get_parameter("test.terminal_checking_interval").as_int(), 100);
 
   rclcpp::spin_until_future_complete(
     life_node->get_node_base_interface(),
     results);
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

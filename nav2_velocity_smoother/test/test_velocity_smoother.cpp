@@ -22,24 +22,20 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_velocity_smoother/velocity_smoother.hpp"
 #include "nav_msgs/msg/odometry.hpp"
-#include "geometry_msgs/msg/twist.hpp"
+#include "geometry_msgs/msg/twist_stamped.hpp"
+#include "nav2_util/twist_subscriber.hpp"
 
 using namespace std::chrono_literals;
-
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
 
 class VelSmootherShim : public nav2_velocity_smoother::VelocitySmoother
 {
 public:
   VelSmootherShim()
   : VelocitySmoother() {}
-  void configure(const rclcpp_lifecycle::State & state) {this->on_configure(state);}
+  nav2_util::CallbackReturn configure(const rclcpp_lifecycle::State & state)
+  {
+    return this->on_configure(state);
+  }
   void activate(const rclcpp_lifecycle::State & state) {this->on_activate(state);}
   void deactivate(const rclcpp_lifecycle::State & state) {this->on_deactivate(state);}
   void cleanup(const rclcpp_lifecycle::State & state) {this->on_cleanup(state);}
@@ -47,9 +43,12 @@ public:
 
   bool isOdomSmoother() {return odom_smoother_ ? true : false;}
   bool hasCommandMsg() {return last_command_time_.nanoseconds() != 0;}
-  geometry_msgs::msg::Twist::SharedPtr lastCommandMsg() {return command_;}
+  geometry_msgs::msg::TwistStamped::SharedPtr lastCommandMsg() {return command_;}
 
-  void sendCommandMsg(geometry_msgs::msg::Twist::SharedPtr msg) {inputCommandCallback(msg);}
+  void sendCommandMsg(geometry_msgs::msg::TwistStamped::SharedPtr msg)
+  {
+    inputCommandStampedCallback(msg);
+  }
 };
 
 TEST(VelocitySmootherTest, openLoopTestTimer)
@@ -66,16 +65,19 @@ TEST(VelocitySmootherTest, openLoopTestTimer)
   smoother->activate(state);
 
   std::vector<double> linear_vels;
-  auto subscription = smoother->create_subscription<geometry_msgs::msg::Twist>(
+  auto subscription = nav2_util::TwistSubscriber(
+    smoother,
     "cmd_vel_smoothed",
     1,
     [&](geometry_msgs::msg::Twist::SharedPtr msg) {
       linear_vels.push_back(msg->linear.x);
+    }, [&](geometry_msgs::msg::TwistStamped::SharedPtr msg) {
+      linear_vels.push_back(msg->twist.linear.x);
     });
 
   // Send a velocity command
-  auto cmd = std::make_shared<geometry_msgs::msg::Twist>();
-  cmd->linear.x = 1.0;  // Max is 0.5, so should threshold
+  auto cmd = std::make_shared<geometry_msgs::msg::TwistStamped>();
+  cmd->twist.linear.x = 1.0;  // Max is 0.5, so should threshold
   smoother->sendCommandMsg(cmd);
 
   // Process velocity smoothing and send updated odometry based on commands
@@ -117,11 +119,14 @@ TEST(VelocitySmootherTest, approxClosedLoopTestTimer)
   smoother->activate(state);
 
   std::vector<double> linear_vels;
-  auto subscription = smoother->create_subscription<geometry_msgs::msg::Twist>(
+  auto subscription = nav2_util::TwistSubscriber(
+    smoother,
     "cmd_vel_smoothed",
     1,
     [&](geometry_msgs::msg::Twist::SharedPtr msg) {
       linear_vels.push_back(msg->linear.x);
+    }, [&](geometry_msgs::msg::TwistStamped::SharedPtr msg) {
+      linear_vels.push_back(msg->twist.linear.x);
     });
 
   auto odom_pub = smoother->create_publisher<nav_msgs::msg::Odometry>("odom", 1);
@@ -137,8 +142,8 @@ TEST(VelocitySmootherTest, approxClosedLoopTestTimer)
   }
 
   // Send a velocity command
-  auto cmd = std::make_shared<geometry_msgs::msg::Twist>();
-  cmd->linear.x = 1.0;  // Max is 0.5, so should threshold
+  auto cmd = std::make_shared<geometry_msgs::msg::TwistStamped>();
+  cmd->twist.linear.x = 1.0;  // Max is 0.5, so should threshold
   smoother->sendCommandMsg(cmd);
 
   // Process velocity smoothing and send updated odometry based on commands
@@ -179,17 +184,56 @@ TEST(VelocitySmootherTest, testfindEtaConstraint)
   // default frequency is 20.0
   smoother->configure(state);
 
-  // In range
-  EXPECT_EQ(smoother->findEtaConstraint(1.0, 1.0, 1.5, -2.0), -1);
-  EXPECT_EQ(smoother->findEtaConstraint(0.5, 0.55, 1.5, -2.0), -1);
-  EXPECT_EQ(smoother->findEtaConstraint(0.5, 0.45, 1.5, -2.0), -1);
-  // Too high
-  EXPECT_EQ(smoother->findEtaConstraint(1.0, 2.0, 1.5, -2.0), 0.075);
-  // Too low
-  EXPECT_EQ(smoother->findEtaConstraint(1.0, 0.0, 1.5, -2.0), 0.1);
+  double accel = 0.1;    // dv 0.005
+  double decel = -1.0;  // dv 0.05
 
-  // In a more realistic situation accelerating linear axis
-  EXPECT_NEAR(smoother->findEtaConstraint(0.40, 0.50, 1.5, -2.0), 0.75, 0.001);
+  // In range
+  // Constant positive
+  EXPECT_EQ(smoother->findEtaConstraint(1.0, 1.0, accel, decel), -1);
+  // Constant negative
+  EXPECT_EQ(smoother->findEtaConstraint(-1.0, -1.0, accel, decel), -1);
+  // Positive To Positive Accel
+  EXPECT_EQ(smoother->findEtaConstraint(0.5, 0.504, accel, decel), -1);
+  // Positive To Positive Decel
+  EXPECT_EQ(smoother->findEtaConstraint(0.5, 0.46, accel, decel), -1);
+  // 0 To Positive Accel
+  EXPECT_EQ(smoother->findEtaConstraint(0.0, 0.004, accel, decel), -1);
+  // Positive To 0 Decel
+  EXPECT_EQ(smoother->findEtaConstraint(0.04, 0.0, accel, decel), -1);
+  // Negative To Negative Accel
+  EXPECT_EQ(smoother->findEtaConstraint(-0.5, -0.504, accel, decel), -1);
+  // Negative To Negative Decel
+  EXPECT_EQ(smoother->findEtaConstraint(-0.5, -0.46, accel, decel), -1);
+  // 0 To Negative Accel
+  EXPECT_EQ(smoother->findEtaConstraint(0.0, -0.004, accel, decel), -1);
+  // Negative To 0 Decel
+  EXPECT_EQ(smoother->findEtaConstraint(-0.04, 0.0, accel, decel), -1);
+  // Negative to Positive
+  EXPECT_EQ(smoother->findEtaConstraint(-0.02, 0.02, accel, decel), -1);
+  // Positive to Negative
+  EXPECT_EQ(smoother->findEtaConstraint(0.02, -0.02, accel, decel), -1);
+
+  // Faster than limit
+  // Positive To Positive Accel
+  EXPECT_EQ(smoother->findEtaConstraint(0.5, 1.5, accel, decel), 0.005);
+  // Positive To Positive Decel
+  EXPECT_EQ(smoother->findEtaConstraint(1.5, 0.5, accel, decel), 0.05);
+  // 0 To Positive Accel
+  EXPECT_EQ(smoother->findEtaConstraint(0.0, 1.0, accel, decel), 0.005);
+  // Positive To 0 Decel
+  EXPECT_EQ(smoother->findEtaConstraint(1.0, 0.0, accel, decel), 0.05);
+  // Negative To Negative Accel
+  EXPECT_EQ(smoother->findEtaConstraint(-0.5, -1.5, accel, decel), 0.005);
+  // Negative To Negative Decel
+  EXPECT_EQ(smoother->findEtaConstraint(-1.5, -0.5, accel, decel), 0.05);
+  // 0 To Negative Accel
+  EXPECT_EQ(smoother->findEtaConstraint(0.0, -1.0, accel, decel), 0.005);
+  // Negative To 0 Decel
+  EXPECT_EQ(smoother->findEtaConstraint(-1.0, 0.0, accel, decel), 0.05);
+  // Negative to Positive
+  EXPECT_EQ(smoother->findEtaConstraint(-0.2, 0.8, accel, decel), 0.05);
+  // Positive to Negative
+  EXPECT_EQ(smoother->findEtaConstraint(0.2, -0.8, accel, decel), 0.05);
 }
 
 TEST(VelocitySmootherTest, testapplyConstraints)
@@ -217,6 +261,300 @@ TEST(VelocitySmootherTest, testapplyConstraints)
   EXPECT_NEAR(smoother->applyConstraints(0.8, 1.0, 3.2, -3.2, 0.75), 1.075, 0.95);
 }
 
+TEST(VelocitySmootherTest, testapplyConstraintsPositiveToPositiveAccel)
+{
+  auto smoother =
+    std::make_shared<VelSmootherShim>();
+  rclcpp_lifecycle::State state;
+  // default frequency is 20.0
+  smoother->configure(state);
+  double no_eta = 1.0;
+  double accel = 0.1;
+  double decel = -1.0;
+  double dv_accel = accel / 20.0;
+  double init_vel, target_vel, v_curr;
+  uint steps_to_target;
+
+  init_vel = 1.0;
+  target_vel = 2.0;
+  steps_to_target = abs(target_vel - init_vel) / dv_accel;
+
+  v_curr = init_vel;
+  for (size_t i = 1; i < steps_to_target + 1; i++) {
+    v_curr = smoother->applyConstraints(v_curr, target_vel, accel, decel, no_eta);
+    EXPECT_NEAR(v_curr, init_vel + i * dv_accel, 0.001);
+  }
+  EXPECT_NEAR(v_curr, target_vel, 0.001);
+  v_curr = smoother->applyConstraints(v_curr, target_vel, accel, decel, no_eta);
+  EXPECT_NEAR(v_curr, target_vel, 0.001);
+}
+
+TEST(VelocitySmootherTest, testapplyConstraintsZeroToPositiveAccel)
+{
+  auto smoother =
+    std::make_shared<VelSmootherShim>();
+  rclcpp_lifecycle::State state;
+  // default frequency is 20.0
+  smoother->configure(state);
+  double no_eta = 1.0;
+  double accel = 0.1;
+  double decel = -1.0;
+  double dv_accel = accel / 20.0;
+  double init_vel, target_vel, v_curr;
+  uint steps_to_target;
+
+  init_vel = 0.0;
+  target_vel = 2.0;
+  steps_to_target = abs(target_vel - init_vel) / dv_accel;
+
+  v_curr = init_vel;
+  for (size_t i = 1; i < steps_to_target + 1; i++) {
+    v_curr = smoother->applyConstraints(v_curr, target_vel, accel, decel, no_eta);
+    EXPECT_NEAR(v_curr, init_vel + i * dv_accel, 0.001);
+  }
+  EXPECT_NEAR(v_curr, target_vel, 0.001);
+  v_curr = smoother->applyConstraints(v_curr, target_vel, accel, decel, no_eta);
+  EXPECT_NEAR(v_curr, target_vel, 0.001);
+}
+
+TEST(VelocitySmootherTest, testapplyConstraintsNegativeToPositiveDecelAccel)
+{
+  auto smoother =
+    std::make_shared<VelSmootherShim>();
+  rclcpp_lifecycle::State state;
+  // default frequency is 20.0
+  smoother->configure(state);
+  double no_eta = 1.0;
+  double accel = 0.1;
+  double decel = -1.0;
+  double dv_accel = accel / 20.0;
+  double dv_decel = -decel / 20.0;
+  double init_vel, target_vel, v_curr;
+  uint steps_below_zero, steps_above_zero;
+
+  init_vel = -1.0;
+  target_vel = 2.0;
+  steps_below_zero = -init_vel / dv_decel;
+  steps_above_zero = target_vel / dv_accel;
+
+  v_curr = init_vel;
+  for (size_t i = 1; i < steps_below_zero + steps_above_zero + 1; i++) {
+    v_curr = smoother->applyConstraints(v_curr, target_vel, accel, decel, no_eta);
+    if (v_curr > 0) {
+      EXPECT_NEAR(v_curr, (i - steps_below_zero) * dv_accel, 0.001);
+    } else {
+      EXPECT_NEAR(v_curr, init_vel + i * dv_decel, 0.001);
+    }
+  }
+  EXPECT_NEAR(v_curr, target_vel, 0.001);
+  v_curr = smoother->applyConstraints(v_curr, target_vel, accel, decel, no_eta);
+  EXPECT_NEAR(v_curr, target_vel, 0.001);
+}
+
+TEST(VelocitySmootherTest, testapplyConstraintsNegativeToNegativeAccel)
+{
+  auto smoother =
+    std::make_shared<VelSmootherShim>();
+  rclcpp_lifecycle::State state;
+  // default frequency is 20.0
+  smoother->configure(state);
+  double no_eta = 1.0;
+  double accel = 0.1;
+  double decel = -1.0;
+  double dv_accel = accel / 20.0;
+  double init_vel, target_vel, v_curr;
+  uint steps_to_target;
+
+  init_vel = -1.0;
+  target_vel = -2.0;
+  steps_to_target = abs(target_vel - init_vel) / dv_accel;
+
+  v_curr = init_vel;
+  for (size_t i = 1; i < steps_to_target + 1; i++) {
+    v_curr = smoother->applyConstraints(v_curr, target_vel, accel, decel, no_eta);
+    EXPECT_NEAR(v_curr, init_vel - i * dv_accel, 0.001);
+  }
+  EXPECT_NEAR(v_curr, target_vel, 0.001);
+  v_curr = smoother->applyConstraints(v_curr, target_vel, accel, decel, no_eta);
+  EXPECT_NEAR(v_curr, target_vel, 0.001);
+}
+
+TEST(VelocitySmootherTest, testapplyConstraintsZeroToNegativeAccel)
+{
+  auto smoother =
+    std::make_shared<VelSmootherShim>();
+  rclcpp_lifecycle::State state;
+  // default frequency is 20.0
+  smoother->configure(state);
+  double no_eta = 1.0;
+  double accel = 0.1;
+  double decel = -1.0;
+  double dv_accel = accel / 20.0;
+  double init_vel, target_vel, v_curr;
+  uint steps_to_target;
+
+  init_vel = 0.0;
+  target_vel = -2.0;
+  steps_to_target = abs(target_vel - init_vel) / dv_accel;
+
+  v_curr = init_vel;
+  for (size_t i = 1; i < steps_to_target + 1; i++) {
+    v_curr = smoother->applyConstraints(v_curr, target_vel, accel, decel, no_eta);
+    EXPECT_NEAR(v_curr, init_vel - i * dv_accel, 0.001);
+  }
+  EXPECT_NEAR(v_curr, target_vel, 0.001);
+  v_curr = smoother->applyConstraints(v_curr, target_vel, accel, decel, no_eta);
+  EXPECT_NEAR(v_curr, target_vel, 0.001);
+}
+
+TEST(VelocitySmootherTest, testapplyConstraintsPositiveToNegativeDecelAccel)
+{
+  auto smoother =
+    std::make_shared<VelSmootherShim>();
+  rclcpp_lifecycle::State state;
+  // default frequency is 20.0
+  smoother->configure(state);
+  double no_eta = 1.0;
+  double accel = 0.1;
+  double decel = -1.0;
+  double dv_accel = accel / 20.0;
+  double dv_decel = -decel / 20.0;
+  double init_vel, target_vel, v_curr;
+  uint steps_below_zero, steps_above_zero;
+
+  init_vel = 1.0;
+  target_vel = -2.0;
+  steps_above_zero = init_vel / dv_decel;
+  steps_below_zero = -target_vel / dv_accel;
+
+  v_curr = init_vel;
+  for (size_t i = 1; i < steps_below_zero + steps_above_zero + 1; i++) {
+    v_curr = smoother->applyConstraints(v_curr, target_vel, accel, decel, no_eta);
+    if (v_curr < 0) {
+      EXPECT_NEAR(v_curr, -static_cast<int>(i - steps_above_zero) * dv_accel, 0.001);
+    } else {
+      EXPECT_NEAR(v_curr, init_vel - i * dv_decel, 0.001);
+    }
+  }
+  EXPECT_NEAR(v_curr, target_vel, 0.001);
+  v_curr = smoother->applyConstraints(v_curr, target_vel, accel, decel, no_eta);
+  EXPECT_NEAR(v_curr, target_vel, 0.001);
+}
+
+TEST(VelocitySmootherTest, testapplyConstraintsPositiveToPositiveDecel)
+{
+  auto smoother =
+    std::make_shared<VelSmootherShim>();
+  rclcpp_lifecycle::State state;
+  // default frequency is 20.0
+  smoother->configure(state);
+  double no_eta = 1.0;
+
+  // Test asymmetric accel/decel use cases
+  double accel = 0.1;
+  double decel = -1.0;
+  double dv_decel = -decel / 20.0;
+  double init_vel, target_vel, v_curr;
+  uint steps_to_target;
+
+  init_vel = 2.0;
+  target_vel = 1.0;
+  steps_to_target = abs(target_vel - init_vel) / dv_decel;
+
+  v_curr = init_vel;
+  for (size_t i = 1; i < steps_to_target + 1; i++) {
+    v_curr = smoother->applyConstraints(v_curr, target_vel, accel, decel, no_eta);
+    EXPECT_NEAR(v_curr, init_vel - i * dv_decel, 0.001);
+  }
+  EXPECT_NEAR(v_curr, target_vel, 0.001);
+  v_curr = smoother->applyConstraints(v_curr, target_vel, accel, decel, no_eta);
+  EXPECT_NEAR(v_curr, target_vel, 0.001);
+}
+
+TEST(VelocitySmootherTest, testapplyConstraintsPositiveToZeroDecel)
+{
+  auto smoother =
+    std::make_shared<VelSmootherShim>();
+  rclcpp_lifecycle::State state;
+  // default frequency is 20.0
+  smoother->configure(state);
+  double no_eta = 1.0;
+  double accel = 0.1;
+  double decel = -1.0;
+  double dv_decel = -decel / 20.0;
+  double init_vel, target_vel, v_curr;
+  uint steps_to_target;
+
+  init_vel = 2.0;
+  target_vel = 0.0;
+  steps_to_target = abs(target_vel - init_vel) / dv_decel;
+
+  v_curr = init_vel;
+  for (size_t i = 1; i < steps_to_target + 1; i++) {
+    v_curr = smoother->applyConstraints(v_curr, target_vel, accel, decel, no_eta);
+    EXPECT_NEAR(v_curr, init_vel - i * dv_decel, 0.001);
+  }
+  EXPECT_NEAR(v_curr, target_vel, 0.001);
+  v_curr = smoother->applyConstraints(v_curr, target_vel, accel, decel, no_eta);
+  EXPECT_NEAR(v_curr, target_vel, 0.001);
+}
+
+TEST(VelocitySmootherTest, testapplyConstraintsNegativeToNegativeDecel)
+{
+  auto smoother =
+    std::make_shared<VelSmootherShim>();
+  rclcpp_lifecycle::State state;
+  // default frequency is 20.0
+  smoother->configure(state);
+  double no_eta = 1.0;
+  double accel = 0.1;
+  double decel = -1.0;
+  double dv_decel = -decel / 20.0;
+  double init_vel, target_vel, v_curr;
+  uint steps_to_target;
+
+  init_vel = -2.0;
+  target_vel = -1.0;
+  steps_to_target = abs(target_vel - init_vel) / dv_decel;
+
+  v_curr = init_vel;
+  for (size_t i = 1; i < steps_to_target + 1; i++) {
+    v_curr = smoother->applyConstraints(v_curr, target_vel, accel, decel, no_eta);
+    EXPECT_NEAR(v_curr, init_vel + i * dv_decel, 0.001);
+  }
+  EXPECT_NEAR(v_curr, target_vel, 0.001);
+  v_curr = smoother->applyConstraints(v_curr, target_vel, accel, decel, no_eta);
+  EXPECT_NEAR(v_curr, target_vel, 0.001);
+}
+
+TEST(VelocitySmootherTest, testapplyConstraintsNegativeToZeroDecel)
+{
+  auto smoother =
+    std::make_shared<VelSmootherShim>();
+  rclcpp_lifecycle::State state;
+  // default frequency is 20.0
+  smoother->configure(state);
+  double no_eta = 1.0;
+  double accel = 0.1;
+  double decel = -1.0;
+  double dv_decel = -decel / 20.0;
+  double init_vel, target_vel, v_curr;
+  uint steps_to_target;
+
+  init_vel = -2.0;
+  target_vel = 0.0;
+  steps_to_target = abs(target_vel - init_vel) / dv_decel;
+
+  v_curr = init_vel;
+  for (size_t i = 1; i < steps_to_target + 1; i++) {
+    v_curr = smoother->applyConstraints(v_curr, target_vel, accel, decel, no_eta);
+    EXPECT_NEAR(v_curr, init_vel + i * dv_decel, 0.001);
+  }
+  EXPECT_NEAR(v_curr, target_vel, 0.001);
+  v_curr = smoother->applyConstraints(v_curr, target_vel, accel, decel, no_eta);
+  EXPECT_NEAR(v_curr, target_vel, 0.001);
+}
+
 TEST(VelocitySmootherTest, testCommandCallback)
 {
   auto smoother =
@@ -225,15 +563,15 @@ TEST(VelocitySmootherTest, testCommandCallback)
   smoother->configure(state);
   smoother->activate(state);
 
-  auto pub = smoother->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 1);
+  auto pub = smoother->create_publisher<geometry_msgs::msg::TwistStamped>("cmd_vel", 1);
   pub->on_activate();
-  auto msg = std::make_unique<geometry_msgs::msg::Twist>();
-  msg->linear.x = 100.0;
+  auto msg = std::make_unique<geometry_msgs::msg::TwistStamped>();
+  msg->twist.linear.x = 100.0;
   pub->publish(std::move(msg));
   rclcpp::spin_some(smoother->get_node_base_interface());
 
   EXPECT_TRUE(smoother->hasCommandMsg());
-  EXPECT_EQ(smoother->lastCommandMsg()->linear.x, 100.0);
+  EXPECT_EQ(smoother->lastCommandMsg()->twist.linear.x, 100.0);
 }
 
 TEST(VelocitySmootherTest, testClosedLoopSub)
@@ -254,10 +592,32 @@ TEST(VelocitySmootherTest, testInvalidParams)
   std::vector<double> max_vels{0.0, 0.0};  // invalid size
   smoother->declare_parameter("max_velocity", rclcpp::ParameterValue(max_vels));
   rclcpp_lifecycle::State state;
-  EXPECT_THROW(smoother->configure(state), std::runtime_error);
+  EXPECT_EQ(smoother->configure(state), nav2_util::CallbackReturn::FAILURE);
 
   smoother->set_parameter(rclcpp::Parameter("feedback", std::string("LAWLS")));
-  EXPECT_THROW(smoother->configure(state), std::runtime_error);
+  EXPECT_EQ(smoother->configure(state), nav2_util::CallbackReturn::FAILURE);
+}
+
+TEST(VelocitySmootherTest, testInvalidParamsAccelDecel)
+{
+  auto smoother =
+    std::make_shared<VelSmootherShim>();
+
+  std::vector<double> bad_test_accel{-10.0, -10.0, -10.0};
+  std::vector<double> bad_test_decel{10.0, 10.0, 10.0};
+  std::vector<double> bad_test_min_vel{10.0, 10.0, 10.0};
+  std::vector<double> bad_test_max_vel{-10.0, -10.0, -10.0};
+
+  smoother->declare_parameter("max_velocity", rclcpp::ParameterValue(bad_test_max_vel));
+  smoother->declare_parameter("min_velocity", rclcpp::ParameterValue(bad_test_min_vel));
+  rclcpp_lifecycle::State state;
+  EXPECT_EQ(smoother->configure(state), nav2_util::CallbackReturn::FAILURE);
+
+  smoother->set_parameter(rclcpp::Parameter("max_accel", rclcpp::ParameterValue(bad_test_accel)));
+  EXPECT_EQ(smoother->configure(state), nav2_util::CallbackReturn::FAILURE);
+
+  smoother->set_parameter(rclcpp::Parameter("max_decel", rclcpp::ParameterValue(bad_test_decel)));
+  EXPECT_EQ(smoother->configure(state), nav2_util::CallbackReturn::FAILURE);
 }
 
 TEST(VelocitySmootherTest, testDynamicParameter)
@@ -280,6 +640,8 @@ TEST(VelocitySmootherTest, testDynamicParameter)
   std::vector<double> min_accel{0.0, 0.0, 0.0};
   std::vector<double> deadband{0.0, 0.0, 0.0};
   std::vector<double> bad_test{0.0, 0.0};
+  std::vector<double> bad_test_accel{-10.0, -10.0, -10.0};
+  std::vector<double> bad_test_decel{10.0, 10.0, 10.0};
 
   auto results = rec_param->set_parameters_atomically(
     {rclcpp::Parameter("smoothing_frequency", 100.0),
@@ -329,9 +691,32 @@ TEST(VelocitySmootherTest, testDynamicParameter)
   rclcpp::spin_until_future_complete(smoother->get_node_base_interface(), results);
   EXPECT_FALSE(results.get().successful);
 
+  // Test invalid accel / decel
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("max_accel", bad_test_accel)});
+  rclcpp::spin_until_future_complete(smoother->get_node_base_interface(), results);
+  EXPECT_FALSE(results.get().successful);
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("max_decel", bad_test_decel)});
+  rclcpp::spin_until_future_complete(smoother->get_node_base_interface(), results);
+  EXPECT_FALSE(results.get().successful);
+
   // test full state after major changes
   smoother->deactivate(state);
   smoother->cleanup(state);
   smoother->shutdown(state);
   smoother.reset();
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

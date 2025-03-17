@@ -31,7 +31,6 @@ class FollowPathAction : public BtActionNode<nav2_msgs::action::FollowPath>
 {
   using Action = nav2_msgs::action::FollowPath;
   using ActionResult = Action::Result;
-  using ActionGoal = Action::Goal;
 
 public:
   /**
@@ -84,8 +83,11 @@ public:
         BT::InputPort<nav_msgs::msg::Path>("path", "Path to follow"),
         BT::InputPort<std::string>("controller_id", ""),
         BT::InputPort<std::string>("goal_checker_id", ""),
+        BT::InputPort<std::string>("progress_checker_id", ""),
         BT::OutputPort<ActionResult::_error_code_type>(
           "error_code_id", "The follow path error code"),
+        BT::OutputPort<std::string>(
+          "error_msg", "The follow path error msg"),
       });
   }
 };

@@ -27,6 +27,7 @@
 
 using nav2_behaviors::TimedBehavior;
 using nav2_behaviors::Status;
+using nav2_behaviors::ResultStatus;
 using BehaviorAction = nav2_msgs::action::DummyBehavior;
 using ClientGoalHandle = rclcpp_action::ClientGoalHandle<BehaviorAction>;
 
@@ -45,7 +46,7 @@ public:
 
   ~DummyBehavior() = default;
 
-  Status onRun(const std::shared_ptr<const BehaviorAction::Goal> goal) override
+  ResultStatus onRun(const std::shared_ptr<const BehaviorAction::Goal> goal) override
   {
     // A normal behavior would catch the command and initialize
     initialized_ = false;
@@ -56,20 +57,20 @@ public:
     // The output is defined by the tester class on the command string.
     if (command_ == "Testing success" || command_ == "Testing failure on run") {
       initialized_ = true;
-      return Status::SUCCEEDED;
+      return ResultStatus{Status::SUCCEEDED, 0, ""};
     }
 
-    return Status::FAILED;
+    return ResultStatus{Status::FAILED, 0, "failed"};
   }
 
-  Status onCycleUpdate() override
+  ResultStatus onCycleUpdate() override
   {
     // A normal behavior would set the robot in motion in the first call
     // and check for robot states on subsequent calls to check if the movement
     // was completed.
 
     if (command_ != "Testing success" || !initialized_) {
-      return Status::FAILED;
+      return ResultStatus{Status::FAILED, 0, "failed"};
     }
 
     // For testing, pretend the robot takes some fixed
@@ -79,10 +80,10 @@ public:
 
     if (current_time - start_time_ >= motion_duration) {
       // Movement was completed
-      return Status::SUCCEEDED;
+      return ResultStatus{Status::SUCCEEDED, 0, ""};
     }
 
-    return Status::RUNNING;
+    return ResultStatus{Status::RUNNING, 0, ""};
   }
 
   /**
@@ -102,7 +103,7 @@ private:
 class BehaviorTest : public ::testing::Test
 {
 protected:
-  BehaviorTest() {SetUp();}
+  BehaviorTest() = default;
   ~BehaviorTest() = default;
 
   void SetUp() override

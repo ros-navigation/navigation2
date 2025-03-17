@@ -91,6 +91,9 @@ void DWBLocalPlanner::configure(
     node, dwb_plugin_name_ + ".prune_distance",
     rclcpp::ParameterValue(2.0));
   declare_parameter_if_not_declared(
+    node, dwb_plugin_name_ + ".forward_prune_distance",
+    rclcpp::ParameterValue(2.0));
+  declare_parameter_if_not_declared(
     node, dwb_plugin_name_ + ".debug_trajectory_details",
     rclcpp::ParameterValue(false));
   declare_parameter_if_not_declared(
@@ -115,6 +118,13 @@ void DWBLocalPlanner::configure(
 
   node->get_parameter(dwb_plugin_name_ + ".prune_plan", prune_plan_);
   node->get_parameter(dwb_plugin_name_ + ".prune_distance", prune_distance_);
+  node->get_parameter(dwb_plugin_name_ + ".forward_prune_distance", forward_prune_distance_);
+  if (forward_prune_distance_ < 0.0) {
+    RCLCPP_WARN(
+      logger_, "Forward prune distance is negative, setting to max to search"
+      " every point on path for the closest value.");
+    forward_prune_distance_ = std::numeric_limits<double>::max();
+  }
   node->get_parameter(dwb_plugin_name_ + ".debug_trajectory_details", debug_trajectory_details_);
   node->get_parameter(dwb_plugin_name_ + ".trajectory_generator_name", traj_generator_name);
   node->get_parameter(
@@ -474,7 +484,6 @@ DWBLocalPlanner::transformGlobalPlan(
   double dist_threshold = std::max(costmap->getSizeInCellsX(), costmap->getSizeInCellsY()) *
     costmap->getResolution() / 2.0;
 
-
   // If prune_plan is enabled (it is by default) then we want to restrict the
   // plan to distances within that range as well.
   double prune_dist = prune_distance_;
@@ -489,20 +498,21 @@ DWBLocalPlanner::transformGlobalPlan(
     transform_start_threshold = dist_threshold;
   }
 
-  // Set the maximum distance we'll include points after the part of the part of
-  // the plan near the robot (the end of the plan). This determines the amount
-  // of the plan passed on to the critics
+  // Set the maximum distance we'll include points after the part of the plan
+  // near the robot (the end of the plan). This determines the amount of the
+  // plan passed on to the critics
   double transform_end_threshold;
+  double forward_prune_dist = forward_prune_distance_;
   if (shorten_transformed_plan_) {
-    transform_end_threshold = std::min(dist_threshold, prune_dist);
+    transform_end_threshold = std::min(dist_threshold, forward_prune_dist);
   } else {
     transform_end_threshold = dist_threshold;
   }
 
-  // Find the first pose in the global plan that's further than prune distance
+  // Find the first pose in the global plan that's further than forward prune distance
   // from the robot using integrated distance
   auto prune_point = nav2_util::geometry_utils::first_after_integrated_distance(
-    global_plan_.poses.begin(), global_plan_.poses.end(), prune_dist);
+    global_plan_.poses.begin(), global_plan_.poses.end(), forward_prune_distance_);
 
   // Find the first pose in the plan (upto prune_point) that's less than transform_start_threshold
   // from the robot.
@@ -516,8 +526,8 @@ DWBLocalPlanner::transformGlobalPlan(
   // from the robot using integrated distance
   auto transformation_end = std::find_if(
     transformation_begin, global_plan_.poses.end(),
-    [&](const auto & pose) {
-      return euclidean_distance(pose, robot_pose.pose) > transform_end_threshold;
+    [&](const auto & global_plan_pose) {
+      return euclidean_distance(global_plan_pose, robot_pose.pose) > transform_end_threshold;
     });
 
   // Transform the near part of the global plan into the robot's frame of reference.

@@ -43,7 +43,7 @@ static void tred2(double V[n][n], double d[n], double e[n])
 //  Fortran subroutine in EISPACK.
 
   int i, j, k;
-  double f, g, h, hh;
+  double f, g, hh;
   for (j = 0; j < n; j++) {
     d[j] = V[n - 1][j];
   }
@@ -122,7 +122,7 @@ static void tred2(double V[n][n], double d[n], double e[n])
   for (i = 0; i < n - 1; i++) {
     V[n - 1][i] = V[i][i];
     V[i][i] = 1.0;
-    h = d[i + 1];
+    const double h = d[i + 1];
     if (h != 0.0) {
       for (k = 0; k <= i; k++) {
         d[k] = V[k][i + 1] / h;

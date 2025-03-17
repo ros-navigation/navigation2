@@ -57,12 +57,12 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
     _motion_model == MotionModel::STATE_LATTICE)
   {
     // See if we are closer and should be expanding more often
-    auto costmap = _collision_checker->getCostmap();
     const Coordinates node_coords =
-      NodeT::getCoords(current_node->getIndex(), costmap->getSizeInCellsX(), _dim_3_size);
+      NodeT::getCoords(
+      current_node->getIndex(), _collision_checker->getCostmap()->getSizeInCellsX(), _dim_3_size);
     closest_distance = std::min(
       closest_distance,
-      static_cast<int>(NodeT::getHeuristicCost(node_coords, goal_node->pose, costmap)));
+      static_cast<int>(NodeT::getHeuristicCost(node_coords, goal_node->pose)));
 
     // We want to expand at a rate of d/expansion_ratio,
     // but check to see if we are so close that we would be expanding every iteration
@@ -80,7 +80,8 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
     if (analytic_iterations <= 0) {
       // Reset the counter and try the analytic path expansion
       analytic_iterations = desired_iterations;
-      AnalyticExpansionNodes analytic_nodes = getAnalyticPath(current_node, goal_node, getter);
+      AnalyticExpansionNodes analytic_nodes =
+        getAnalyticPath(current_node, goal_node, getter, current_node->motion_table.state_space);
       if (!analytic_nodes.empty()) {
         // If we have a valid path, attempt to refine it
         NodePtr node = current_node;
@@ -94,7 +95,8 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
             test_node->parent->parent->parent->parent->parent)
           {
             test_node = test_node->parent->parent->parent->parent->parent;
-            refined_analytic_nodes = getAnalyticPath(test_node, goal_node, getter);
+            refined_analytic_nodes =
+              getAnalyticPath(test_node, goal_node, getter, test_node->motion_table.state_space);
             if (refined_analytic_nodes.empty()) {
               break;
             }
@@ -102,6 +104,50 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
             node = test_node;
           } else {
             break;
+          }
+        }
+
+        // The analytic expansion can short-cut near obstacles when closer to a goal
+        // So, we can attempt to refine it more by increasing the possible radius
+        // higher than the minimum turning radius and use the best solution based on
+        // a scoring function similar to that used in traversal cost estimation.
+        auto scoringFn = [&](const AnalyticExpansionNodes & expansion) {
+            if (expansion.size() < 2) {
+              return std::numeric_limits<float>::max();
+            }
+
+            float score = 0.0;
+            float normalized_cost = 0.0;
+            // Analytic expansions are consistently spaced
+            const float distance = hypotf(
+              expansion[1].proposed_coords.x - expansion[0].proposed_coords.x,
+              expansion[1].proposed_coords.y - expansion[0].proposed_coords.y);
+            const float & weight = expansion[0].node->motion_table.cost_penalty;
+            for (auto iter = expansion.begin(); iter != expansion.end(); ++iter) {
+              normalized_cost = iter->node->getCost() / 252.0f;
+              // Search's Traversal Cost Function
+              score += distance * (1.0 + weight * normalized_cost);
+            }
+            return score;
+          };
+
+        float best_score = scoringFn(analytic_nodes);
+        float score = std::numeric_limits<float>::max();
+        float min_turn_rad = node->motion_table.min_turning_radius;
+        const float max_min_turn_rad = 4.0 * min_turn_rad;  // Up to 4x the turning radius
+        while (min_turn_rad < max_min_turn_rad) {
+          min_turn_rad += 0.5;  // In Grid Coords, 1/2 cell steps
+          ompl::base::StateSpacePtr state_space;
+          if (node->motion_table.motion_model == MotionModel::DUBIN) {
+            state_space = std::make_shared<ompl::base::DubinsStateSpace>(min_turn_rad);
+          } else {
+            state_space = std::make_shared<ompl::base::ReedsSheppStateSpace>(min_turn_rad);
+          }
+          refined_analytic_nodes = getAnalyticPath(node, goal_node, getter, state_space);
+          score = scoringFn(refined_analytic_nodes);
+          if (score <= best_score) {
+            analytic_nodes = refined_analytic_nodes;
+            best_score = score;
           }
         }
 
@@ -120,10 +166,10 @@ template<typename NodeT>
 typename AnalyticExpansion<NodeT>::AnalyticExpansionNodes AnalyticExpansion<NodeT>::getAnalyticPath(
   const NodePtr & node,
   const NodePtr & goal,
-  const NodeGetter & node_getter)
+  const NodeGetter & node_getter,
+  const ompl::base::StateSpacePtr & state_space)
 {
-  static ompl::base::ScopedState<> from(node->motion_table.state_space), to(
-    node->motion_table.state_space), s(node->motion_table.state_space);
+  static ompl::base::ScopedState<> from(state_space), to(state_space), s(state_space);
   from[0] = node->pose.x;
   from[1] = node->pose.y;
   from[2] = node->motion_table.getAngleFromBin(node->pose.theta);
@@ -131,19 +177,20 @@ typename AnalyticExpansion<NodeT>::AnalyticExpansionNodes AnalyticExpansion<Node
   to[1] = goal->pose.y;
   to[2] = node->motion_table.getAngleFromBin(goal->pose.theta);
 
-  float d = node->motion_table.state_space->distance(from(), to());
+  float d = state_space->distance(from(), to());
+
+  // A move of sqrt(2) is guaranteed to be in a new cell
+  static const float sqrt_2 = sqrtf(2.0f);
 
   // If the length is too far, exit. This prevents unsafe shortcutting of paths
   // into higher cost areas far out from the goal itself, let search to the work of getting
   // close before the analytic expansion brings it home. This should never be smaller than
   // 4-5x the minimum turning radius being used, or planning times will begin to spike.
-  if (d > _search_info.analytic_expansion_max_length) {
+  if (d > _search_info.analytic_expansion_max_length || d < sqrt_2) {
     return AnalyticExpansionNodes();
   }
 
-  // A move of sqrt(2) is guaranteed to be in a new cell
-  static const float sqrt_2 = std::sqrt(2.);
-  unsigned int num_intervals = std::floor(d / sqrt_2);
+  unsigned int num_intervals = static_cast<unsigned int>(std::floor(d / sqrt_2));
 
   AnalyticExpansionNodes possible_nodes;
   // When "from" and "to" are zero or one cell away,
@@ -154,20 +201,22 @@ typename AnalyticExpansion<NodeT>::AnalyticExpansionNodes AnalyticExpansion<Node
 
   // Pre-allocate
   NodePtr prev(node);
-  unsigned int index = 0;
+  uint64_t index = 0;
   NodePtr next(nullptr);
   float angle = 0.0;
   Coordinates proposed_coordinates;
   bool failure = false;
+  std::vector<float> node_costs;
+  node_costs.reserve(num_intervals);
 
   // Check intermediary poses (non-goal, non-start)
-  for (float i = 1; i < num_intervals; i++) {
-    node->motion_table.state_space->interpolate(from(), to(), i / num_intervals, s());
+  for (float i = 1; i <= num_intervals; i++) {
+    state_space->interpolate(from(), to(), i / num_intervals, s());
     reals = s.reals();
     // Make sure in range [0, 2PI)
     theta = (reals[2] < 0.0) ? (reals[2] + 2.0 * M_PI) : reals[2];
     theta = (theta > 2.0 * M_PI) ? (theta - 2.0 * M_PI) : theta;
-    angle = node->motion_table.getClosestAngularBin(theta);
+    angle = node->motion_table.getAngle(theta);
 
     // Turn the pose into a node, and check if it is valid
     index = NodeT::getIndex(
@@ -182,6 +231,7 @@ typename AnalyticExpansion<NodeT>::AnalyticExpansionNodes AnalyticExpansion<Node
       if (next->isNodeValid(_traverse_unknown, _collision_checker) && next != prev) {
         // Save the node, and its previous coordinates in case we need to abort
         possible_nodes.emplace_back(next, initial_node_coords, proposed_coordinates);
+        node_costs.emplace_back(next->getCost());
         prev = next;
       } else {
         // Abort
@@ -193,6 +243,39 @@ typename AnalyticExpansion<NodeT>::AnalyticExpansionNodes AnalyticExpansion<Node
       // Abort
       failure = true;
       break;
+    }
+  }
+
+  if (!failure) {
+    // We found 'a' valid expansion. Now to tell if its a quality option...
+    const float max_cost = _search_info.analytic_expansion_max_cost;
+    auto max_cost_it = std::max_element(node_costs.begin(), node_costs.end());
+    if (max_cost_it != node_costs.end() && *max_cost_it > max_cost) {
+      // If any element is above the comfortable cost limit, check edge cases:
+      // (1) Check if goal is in greater than max_cost space requiring
+      //  entering it, but only entering it on final approach, not in-and-out
+      // (2) Checks if goal is in normal space, but enters costed space unnecessarily
+      //  mid-way through, skirting obstacle or in non-globally confined space
+      bool cost_exit_high_cost_region = false;
+      for (auto iter = node_costs.rbegin(); iter != node_costs.rend(); ++iter) {
+        const float & curr_cost = *iter;
+        if (curr_cost <= max_cost) {
+          cost_exit_high_cost_region = true;
+        } else if (curr_cost > max_cost && cost_exit_high_cost_region) {
+          failure = true;
+          break;
+        }
+      }
+
+      // (3) Handle exception: there may be no other option close to goal
+      // if max cost is set too low (optional)
+      if (failure) {
+        if (d < 2.0f * M_PI * goal->motion_table.min_turning_radius &&
+          _search_info.analytic_expansion_max_cost_override)
+        {
+          failure = false;
+        }
+      }
     }
   }
 
@@ -254,27 +337,28 @@ void AnalyticExpansion<NodeT>::cleanNode(const NodePtr & /*expanded_nodes*/)
 template<>
 typename AnalyticExpansion<Node2D>::AnalyticExpansionNodes AnalyticExpansion<Node2D>::
 getAnalyticPath(
-  const NodePtr & node,
-  const NodePtr & goal,
-  const NodeGetter & node_getter)
+  const NodePtr &,
+  const NodePtr &,
+  const NodeGetter &,
+  const ompl::base::StateSpacePtr &)
 {
   return AnalyticExpansionNodes();
 }
 
 template<>
 typename AnalyticExpansion<Node2D>::NodePtr AnalyticExpansion<Node2D>::setAnalyticPath(
-  const NodePtr & node,
-  const NodePtr & goal_node,
-  const AnalyticExpansionNodes & expanded_nodes)
+  const NodePtr &,
+  const NodePtr &,
+  const AnalyticExpansionNodes &)
 {
   return NodePtr(nullptr);
 }
 
 template<>
 typename AnalyticExpansion<Node2D>::NodePtr AnalyticExpansion<Node2D>::tryAnalyticExpansion(
-  const NodePtr & current_node, const NodePtr & goal_node,
-  const NodeGetter & getter, int & analytic_iterations,
-  int & closest_distance)
+  const NodePtr &, const NodePtr &,
+  const NodeGetter &, int &,
+  int &)
 {
   return NodePtr(nullptr);
 }

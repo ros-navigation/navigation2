@@ -38,7 +38,6 @@
 #include <memory>
 #include <string>
 
-#include "rclcpp/rclcpp.hpp"
 #include "nav_2d_msgs/msg/twist2_d.hpp"
 #include "dwb_plugins/kinematic_parameters.hpp"
 #include "nav2_util/lifecycle_node.hpp"

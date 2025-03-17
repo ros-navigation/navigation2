@@ -15,6 +15,8 @@
 #ifndef NAV2_COLLISION_MONITOR__TYPES_HPP_
 #define NAV2_COLLISION_MONITOR__TYPES_HPP_
 
+#include <string>
+
 namespace nav2_collision_monitor
 {
 
@@ -65,7 +67,8 @@ enum ActionType
   DO_NOTHING = 0,  // No action
   STOP = 1,  // Stop the robot
   SLOWDOWN = 2,  // Slowdown in percentage from current operating speed
-  APPROACH = 3  // Keep constant time interval before collision
+  APPROACH = 3,  // Keep constant time interval before collision
+  LIMIT = 4  // Limit absolute velocity from current operating speed
 };
 
 /// @brief Action for robot
@@ -73,6 +76,7 @@ struct Action
 {
   ActionType action_type;
   Velocity req_vel;
+  std::string polygon_name;
 };
 
 }  // namespace nav2_collision_monitor

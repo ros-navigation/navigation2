@@ -18,9 +18,9 @@
 #include <set>
 #include <string>
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 
-#include "../../test_service.hpp"
+#include "utils/test_service.hpp"
 #include "nav2_behavior_tree/plugins/action/clear_costmap_service.hpp"
 
 class ClearEntireCostmapService : public TestService<nav2_msgs::srv::ClearEntireCostmap>
@@ -44,7 +44,7 @@ public:
     // Create the blackboard that will be shared by all of the nodes in the tree
     config_->blackboard = BT::Blackboard::create();
     // Put items on the blackboard
-    config_->blackboard->set<rclcpp::Node::SharedPtr>(
+    config_->blackboard->set(
       "node",
       node_);
     config_->blackboard->set<std::chrono::milliseconds>(
@@ -53,8 +53,11 @@ public:
     config_->blackboard->set<std::chrono::milliseconds>(
       "bt_loop_duration",
       std::chrono::milliseconds(10));
-    config_->blackboard->set<bool>("initial_pose_received", false);
-    config_->blackboard->set<int>("number_recoveries", 0);
+    config_->blackboard->set<std::chrono::milliseconds>(
+      "wait_for_service_timeout",
+      std::chrono::milliseconds(1000));
+    config_->blackboard->set("initial_pose_received", false);
+    config_->blackboard->set("number_recoveries", 0);
 
     factory_->registerNodeType<nav2_behavior_tree::ClearEntireCostmapService>("ClearEntireCostmap");
   }
@@ -97,7 +100,7 @@ TEST_F(ClearEntireCostmapServiceTestFixture, test_tick)
 {
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <ClearEntireCostmap service_name="clear_entire_costmap"/>
         </BehaviorTree>
@@ -130,7 +133,7 @@ public:
     // Create the blackboard that will be shared by all of the nodes in the tree
     config_->blackboard = BT::Blackboard::create();
     // Put items on the blackboard
-    config_->blackboard->set<rclcpp::Node::SharedPtr>(
+    config_->blackboard->set(
       "node",
       node_);
     config_->blackboard->set<std::chrono::milliseconds>(
@@ -139,8 +142,11 @@ public:
     config_->blackboard->set<std::chrono::milliseconds>(
       "bt_loop_duration",
       std::chrono::milliseconds(10));
-    config_->blackboard->set<bool>("initial_pose_received", false);
-    config_->blackboard->set<int>("number_recoveries", 0);
+    config_->blackboard->set<std::chrono::milliseconds>(
+      "wait_for_service_timeout",
+      std::chrono::milliseconds(1000));
+    config_->blackboard->set("initial_pose_received", false);
+    config_->blackboard->set("number_recoveries", 0);
 
     factory_->registerNodeType<nav2_behavior_tree::ClearCostmapExceptRegionService>(
       "ClearCostmapExceptRegion");
@@ -189,7 +195,7 @@ TEST_F(ClearCostmapExceptRegionServiceTestFixture, test_tick)
 {
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <ClearCostmapExceptRegion service_name="clear_costmap_except_region"/>
         </BehaviorTree>
@@ -222,7 +228,7 @@ public:
     // Create the blackboard that will be shared by all of the nodes in the tree
     config_->blackboard = BT::Blackboard::create();
     // Put items on the blackboard
-    config_->blackboard->set<rclcpp::Node::SharedPtr>(
+    config_->blackboard->set(
       "node",
       node_);
     config_->blackboard->set<std::chrono::milliseconds>(
@@ -231,8 +237,11 @@ public:
     config_->blackboard->set<std::chrono::milliseconds>(
       "bt_loop_duration",
       std::chrono::milliseconds(10));
-    config_->blackboard->set<bool>("initial_pose_received", false);
-    config_->blackboard->set<int>("number_recoveries", 0);
+    config_->blackboard->set<std::chrono::milliseconds>(
+      "wait_for_service_timeout",
+      std::chrono::milliseconds(1000));
+    config_->blackboard->set("initial_pose_received", false);
+    config_->blackboard->set("number_recoveries", 0);
 
     factory_->registerNodeType<nav2_behavior_tree::ClearCostmapAroundRobotService>(
       "ClearCostmapAroundRobot");
@@ -281,7 +290,7 @@ TEST_F(ClearCostmapAroundRobotServiceTestFixture, test_tick)
 {
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <ClearCostmapAroundRobot service_name="clear_costmap_around_robot"/>
         </BehaviorTree>

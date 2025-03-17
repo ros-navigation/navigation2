@@ -35,7 +35,7 @@ namespace nav2_util
 
 /**
  * @class OdomSmoother
- * Wrapper for getting smooth odometry readings using a simple moving avergae.
+ * Wrapper for getting smooth odometry readings using a simple moving average.
  * Subscribes to the topic with a mutex.
  */
 class OdomSmoother
@@ -68,13 +68,67 @@ public:
    * @brief Get twist msg from smoother
    * @return twist Twist msg
    */
-  inline geometry_msgs::msg::Twist getTwist() {return vel_smooth_.twist;}
+  inline geometry_msgs::msg::Twist getTwist()
+  {
+    std::lock_guard<std::mutex> lock(odom_mutex_);
+    if (!received_odom_) {
+      RCLCPP_ERROR(rclcpp::get_logger("OdomSmoother"),
+          "OdomSmoother has not received any data yet, returning empty Twist");
+      geometry_msgs::msg::Twist twist;
+      return twist;
+    }
+    return vel_smooth_.twist;
+  }
 
   /**
    * @brief Get twist stamped msg from smoother
    * @return twist TwistStamped msg
    */
-  inline geometry_msgs::msg::TwistStamped getTwistStamped() {return vel_smooth_;}
+  inline geometry_msgs::msg::TwistStamped getTwistStamped()
+  {
+    std::lock_guard<std::mutex> lock(odom_mutex_);
+    if (!received_odom_) {
+      RCLCPP_ERROR(rclcpp::get_logger("OdomSmoother"),
+          "OdomSmoother has not received any data yet, returning empty Twist");
+      geometry_msgs::msg::TwistStamped twist_stamped;
+      return twist_stamped;
+    }
+    return vel_smooth_;
+  }
+
+  /**
+   * @brief Get raw twist msg from smoother (without smoothing)
+   * @return twist Twist msg
+   */
+  inline geometry_msgs::msg::Twist getRawTwist()
+  {
+    std::lock_guard<std::mutex> lock(odom_mutex_);
+    if (!received_odom_) {
+      RCLCPP_ERROR(rclcpp::get_logger("OdomSmoother"),
+          "OdomSmoother has not received any data yet, returning empty Twist");
+      geometry_msgs::msg::Twist twist;
+      return twist;
+    }
+    return odom_history_.back().twist.twist;
+  }
+
+    /**
+   * @brief Get raw twist stamped msg from smoother (without smoothing)
+   * @return twist TwistStamped msg
+   */
+  inline geometry_msgs::msg::TwistStamped getRawTwistStamped()
+  {
+    std::lock_guard<std::mutex> lock(odom_mutex_);
+    geometry_msgs::msg::TwistStamped twist_stamped;
+    if (!received_odom_) {
+      RCLCPP_ERROR(rclcpp::get_logger("OdomSmoother"),
+          "OdomSmoother has not received any data yet, returning empty Twist");
+      return twist_stamped;
+    }
+    twist_stamped.header = odom_history_.back().header;
+    twist_stamped.twist = odom_history_.back().twist.twist;
+    return twist_stamped;
+  }
 
 protected:
   /**
@@ -88,6 +142,7 @@ protected:
    */
   void updateState();
 
+  bool received_odom_;
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
   nav_msgs::msg::Odometry odom_cumulate_;
   geometry_msgs::msg::TwistStamped vel_smooth_;

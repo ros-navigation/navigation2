@@ -22,14 +22,6 @@
 #include "tf2_ros/transform_listener.h"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 class CostmapRosLifecycleNode : public nav2_util::LifecycleNode
 {
 public:
@@ -45,7 +37,6 @@ public:
     costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
       name_,
       std::string{get_namespace()},
-      name_,
       get_parameter("use_sim_time").as_bool());
     costmap_thread_ = std::make_unique<nav2_util::NodeThread>(costmap_ros_);
 
@@ -117,7 +108,7 @@ public:
 protected:
   void layerCallback(const nav2_msgs::msg::Costmap::SharedPtr layer)
   {
-    if (!callback_hit_) {
+    if (!callback_hit_ && (layer->data.size() == 100)) {
       layer_promise_.set_value(layer);
       callback_hit_ = true;
     }
@@ -157,22 +148,38 @@ TEST_F(CostmapRosTestFixture, costmap_pub_test)
 {
   auto future = layer_subscriber_->layer_promise_.get_future();
   auto status = future.wait_for(std::chrono::seconds(5));
-  EXPECT_TRUE(status == std::future_status::ready);
+  ASSERT_TRUE(status == std::future_status::ready);
 
   auto costmap_raw = future.get();
 
   // Check first 20 cells of the 10by10 map
+  ASSERT_EQ(costmap_raw->data.size(), 100u);
   unsigned int i = 0;
   for (; i < 7; ++i) {
-    EXPECT_EQ(costmap_raw->data[i], nav2_costmap_2d::FREE_SPACE);
+    EXPECT_EQ(costmap_raw->data.at(i), nav2_costmap_2d::FREE_SPACE);
   }
   for (; i < 10; ++i) {
-    EXPECT_EQ(costmap_raw->data[i++], nav2_costmap_2d::LETHAL_OBSTACLE);
+    EXPECT_EQ(costmap_raw->data.at(i), nav2_costmap_2d::LETHAL_OBSTACLE);
   }
   for (; i < 17; ++i) {
-    EXPECT_EQ(costmap_raw->data[i], nav2_costmap_2d::FREE_SPACE);
+    EXPECT_EQ(costmap_raw->data.at(i), nav2_costmap_2d::FREE_SPACE);
   }
   for (; i < 20; ++i) {
-    EXPECT_EQ(costmap_raw->data[i++], nav2_costmap_2d::LETHAL_OBSTACLE);
+    EXPECT_EQ(costmap_raw->data.at(i), nav2_costmap_2d::LETHAL_OBSTACLE);
   }
+
+  SUCCEED();
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

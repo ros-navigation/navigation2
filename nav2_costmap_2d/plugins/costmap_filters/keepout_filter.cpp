@@ -38,7 +38,7 @@
 #include <string>
 #include <memory>
 #include <algorithm>
-#include "tf2/convert.h"
+#include "tf2/convert.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 #include "nav2_costmap_2d/costmap_filters/keepout_filter.hpp"
@@ -48,8 +48,8 @@ namespace nav2_costmap_2d
 {
 
 KeepoutFilter::KeepoutFilter()
-: filter_info_sub_(nullptr), mask_sub_(nullptr), mask_costmap_(nullptr),
-  mask_frame_(""), global_frame_("")
+: filter_info_sub_(nullptr), mask_sub_(nullptr), filter_mask_(nullptr),
+  global_frame_("")
 {
 }
 
@@ -130,7 +130,7 @@ void KeepoutFilter::maskCallback(
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  if (!mask_costmap_) {
+  if (!filter_mask_) {
     RCLCPP_INFO(
       logger_,
       "KeepoutFilter: Received filter mask from %s topic.", mask_topic_.c_str());
@@ -139,12 +139,11 @@ void KeepoutFilter::maskCallback(
       logger_,
       "KeepoutFilter: New filter mask arrived from %s topic. Updating old filter mask.",
       mask_topic_.c_str());
-    mask_costmap_.reset();
+    filter_mask_.reset();
   }
 
-  // Making a new mask_costmap_
-  mask_costmap_ = std::make_unique<Costmap2D>(*msg);
-  mask_frame_ = msg->header.frame_id;
+  // Store filter_mask_
+  filter_mask_ = msg;
 }
 
 void KeepoutFilter::process(
@@ -154,7 +153,7 @@ void KeepoutFilter::process(
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
-  if (!mask_costmap_) {
+  if (!filter_mask_) {
     // Show warning message every 2 seconds to not litter an output
     RCLCPP_WARN_THROTTLE(
       logger_, *(clock_), 2000,
@@ -167,20 +166,22 @@ void KeepoutFilter::process(
   int mg_min_x, mg_min_y;  // masger_grid indexes of bottom-left window corner
   int mg_max_x, mg_max_y;  // masger_grid indexes of top-right window corner
 
-  if (mask_frame_ != global_frame_) {
+  const std::string mask_frame = filter_mask_->header.frame_id;
+
+  if (mask_frame != global_frame_) {
     // Filter mask and current layer are in different frames:
-    // prepare frame transformation if mask_frame_ != global_frame_
+    // prepare frame transformation if mask_frame != global_frame_
     geometry_msgs::msg::TransformStamped transform;
     try {
       transform = tf_->lookupTransform(
-        mask_frame_, global_frame_, tf2::TimePointZero,
+        mask_frame, global_frame_, tf2::TimePointZero,
         transform_tolerance_);
     } catch (tf2::TransformException & ex) {
       RCLCPP_ERROR(
         logger_,
         "KeepoutFilter: Failed to get costmap frame (%s) "
         "transformation to mask frame (%s) with error: %s",
-        global_frame_.c_str(), mask_frame_.c_str(), ex.what());
+        global_frame_.c_str(), mask_frame.c_str(), ex.what());
       return;
     }
     tf2::fromMsg(transform.transform, tf2_transform);
@@ -192,9 +193,9 @@ void KeepoutFilter::process(
   } else {
     // Filter mask and current layer are in the same frame:
     // apply the following optimization - iterate only in overlapped
-    // (min_i, min_j)..(max_i, max_j) & mask_costmap_ area.
+    // (min_i, min_j)..(max_i, max_j) & filter_mask_ area.
     //
-    //           mask_costmap_
+    //           filter_mask_
     //       *----------------------------*
     //       |                            |
     //       |                            |
@@ -213,10 +214,10 @@ void KeepoutFilter::process(
     double wx, wy;  // world coordinates
 
     // Calculating bounds corresponding to bottom-left overlapping (1) corner
-    // mask_costmap_ -> master_grid intexes conversion
-    const double half_cell_size = 0.5 * mask_costmap_->getResolution();
-    wx = mask_costmap_->getOriginX() + half_cell_size;
-    wy = mask_costmap_->getOriginY() + half_cell_size;
+    // filter_mask_ -> master_grid indexes conversion
+    const double half_cell_size = 0.5 * filter_mask_->info.resolution;
+    wx = filter_mask_->info.origin.position.x + half_cell_size;
+    wy = filter_mask_->info.origin.position.y + half_cell_size;
     master_grid.worldToMapNoBounds(wx, wy, mg_min_x, mg_min_y);
     // Calculation of (1) corner bounds
     if (mg_min_x >= max_i || mg_min_y >= max_j) {
@@ -227,11 +228,11 @@ void KeepoutFilter::process(
     mg_min_y = std::max(min_j, mg_min_y);
 
     // Calculating bounds corresponding to top-right window (2) corner
-    // mask_costmap_ -> master_grid intexes conversion
-    wx = mask_costmap_->getOriginX() +
-      mask_costmap_->getSizeInCellsX() * mask_costmap_->getResolution() + half_cell_size;
-    wy = mask_costmap_->getOriginY() +
-      mask_costmap_->getSizeInCellsY() * mask_costmap_->getResolution() + half_cell_size;
+    // filter_mask_ -> master_grid intexes conversion
+    wx = filter_mask_->info.origin.position.x +
+      filter_mask_->info.width * filter_mask_->info.resolution + half_cell_size;
+    wy = filter_mask_->info.origin.position.y +
+      filter_mask_->info.height * filter_mask_->info.resolution + half_cell_size;
     master_grid.worldToMapNoBounds(wx, wy, mg_max_x, mg_max_y);
     // Calculation of (2) corner bounds
     if (mg_max_x <= min_i || mg_max_y <= min_j) {
@@ -251,8 +252,8 @@ void KeepoutFilter::process(
   unsigned int i, j;  // master_grid iterators
   unsigned int index;  // corresponding index of master_grid
   double gl_wx, gl_wy;  // world coordinates in a global_frame_
-  double msk_wx, msk_wy;  // world coordinates in a mask_frame_
-  unsigned int mx, my;  // mask_costmap_ coordinates
+  double msk_wx, msk_wy;  // world coordinates in a mask_frame
+  unsigned int mx, my;  // filter_mask_ coordinates
   unsigned char data, old_data;  // master_grid element data
 
   // Main master_grid updating loop
@@ -262,11 +263,11 @@ void KeepoutFilter::process(
     for (j = mg_min_y_u; j < mg_max_y_u; j++) {
       index = master_grid.getIndex(i, j);
       old_data = master_array[index];
-      // Calculating corresponding to (i, j) point at mask_costmap_:
+      // Calculating corresponding to (i, j) point at filter_mask_:
       // Get world coordinates in global_frame_
       master_grid.mapToWorld(i, j, gl_wx, gl_wy);
-      if (mask_frame_ != global_frame_) {
-        // Transform (i, j) point from global_frame_ to mask_frame_
+      if (mask_frame != global_frame_) {
+        // Transform (i, j) point from global_frame_ to mask_frame
         tf2::Vector3 point(gl_wx, gl_wy, 0);
         point = tf2_transform * point;
         msk_wx = point.x();
@@ -276,9 +277,9 @@ void KeepoutFilter::process(
         msk_wx = gl_wx;
         msk_wy = gl_wy;
       }
-      // Get mask coordinates corresponding to (i, j) point at mask_costmap_
-      if (mask_costmap_->worldToMap(msk_wx, msk_wy, mx, my)) {
-        data = mask_costmap_->getCost(mx, my);
+      // Get mask coordinates corresponding to (i, j) point at filter_mask_
+      if (worldToMask(filter_mask_, msk_wx, msk_wy, mx, my)) {
+        data = getMaskCost(filter_mask_, mx, my);
         // Update if mask_ data is valid and greater than existing master_grid's one
         if (data == NO_INFORMATION) {
           continue;
@@ -303,7 +304,7 @@ bool KeepoutFilter::isActive()
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
-  if (mask_costmap_) {
+  if (filter_mask_) {
     return true;
   }
   return false;

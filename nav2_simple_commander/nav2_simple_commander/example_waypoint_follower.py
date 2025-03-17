@@ -32,10 +32,10 @@ def main():
     initial_pose = PoseStamped()
     initial_pose.header.frame_id = 'map'
     initial_pose.header.stamp = navigator.get_clock().now().to_msg()
-    initial_pose.pose.position.x = 3.45
-    initial_pose.pose.position.y = 2.15
-    initial_pose.pose.orientation.z = 1.0
-    initial_pose.pose.orientation.w = 0.0
+    initial_pose.pose.position.x = 0.0
+    initial_pose.pose.position.y = 0.0
+    initial_pose.pose.orientation.z = 0.0
+    initial_pose.pose.orientation.w = 1.0
     navigator.setInitialPose(initial_pose)
 
     # Activate navigation, if not autostarted. This should be called after setInitialPose()
@@ -59,28 +59,28 @@ def main():
     goal_pose1 = PoseStamped()
     goal_pose1.header.frame_id = 'map'
     goal_pose1.header.stamp = navigator.get_clock().now().to_msg()
-    goal_pose1.pose.position.x = 1.5
-    goal_pose1.pose.position.y = 0.55
-    goal_pose1.pose.orientation.w = 0.707
-    goal_pose1.pose.orientation.z = 0.707
+    goal_pose1.pose.position.x = 10.15
+    goal_pose1.pose.position.y = -0.77
+    goal_pose1.pose.orientation.w = 1.0
+    goal_pose1.pose.orientation.z = 0.0
     goal_poses.append(goal_pose1)
 
     # additional goals can be appended
     goal_pose2 = PoseStamped()
     goal_pose2.header.frame_id = 'map'
     goal_pose2.header.stamp = navigator.get_clock().now().to_msg()
-    goal_pose2.pose.position.x = 1.5
-    goal_pose2.pose.position.y = -3.75
-    goal_pose2.pose.orientation.w = 0.707
-    goal_pose2.pose.orientation.z = 0.707
+    goal_pose2.pose.position.x = 17.86
+    goal_pose2.pose.position.y = -0.77
+    goal_pose2.pose.orientation.w = 1.0
+    goal_pose2.pose.orientation.z = 0.0
     goal_poses.append(goal_pose2)
     goal_pose3 = PoseStamped()
     goal_pose3.header.frame_id = 'map'
     goal_pose3.header.stamp = navigator.get_clock().now().to_msg()
-    goal_pose3.pose.position.x = -3.6
-    goal_pose3.pose.position.y = -4.75
-    goal_pose3.pose.orientation.w = 0.707
-    goal_pose3.pose.orientation.z = 0.707
+    goal_pose3.pose.position.x = 21.58
+    goal_pose3.pose.position.y = -3.5
+    goal_pose3.pose.orientation.w = 1.0
+    goal_pose3.pose.orientation.z = 0.0
     goal_poses.append(goal_pose3)
 
     # sanity check a valid path exists
@@ -101,8 +101,12 @@ def main():
         i = i + 1
         feedback = navigator.getFeedback()
         if feedback and i % 5 == 0:
-            print('Executing current waypoint: ' +
-                  str(feedback.current_waypoint + 1) + '/' + str(len(goal_poses)))
+            print(
+                'Executing current waypoint: '
+                + str(feedback.current_waypoint + 1)
+                + '/'
+                + str(len(goal_poses))
+            )
             now = navigator.get_clock().now()
 
             # Some navigation timeout to demo cancellation
@@ -114,10 +118,10 @@ def main():
                 goal_pose4 = PoseStamped()
                 goal_pose4.header.frame_id = 'map'
                 goal_pose4.header.stamp = now.to_msg()
-                goal_pose4.pose.position.x = -5.0
-                goal_pose4.pose.position.y = -4.75
-                goal_pose4.pose.orientation.w = 0.707
-                goal_pose4.pose.orientation.z = 0.707
+                goal_pose4.pose.position.x = 0.0
+                goal_pose4.pose.position.y = 0.0
+                goal_pose4.pose.orientation.w = 1.0
+                goal_pose4.pose.orientation.z = 0.0
                 goal_poses = [goal_pose4]
                 nav_start = now
                 navigator.followWaypoints(goal_poses)
@@ -129,7 +133,8 @@ def main():
     elif result == TaskResult.CANCELED:
         print('Goal was canceled!')
     elif result == TaskResult.FAILED:
-        print('Goal failed!')
+        (error_code, error_msg) = navigator.getTaskError()
+        print('Goal failed!{error_code}:{error_msg}')
     else:
         print('Goal has an invalid return status!')
 

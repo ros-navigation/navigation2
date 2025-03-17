@@ -1,4 +1,5 @@
 // Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2023 Open Navigation LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,9 +16,10 @@
 #ifndef NAV2_UTIL__NODE_UTILS_HPP_
 #define NAV2_UTIL__NODE_UTILS_HPP_
 
+#include <vector>
 #include <string>
 #include "rclcpp/rclcpp.hpp"
-#include "pluginlib/exceptions.hpp"
+#include "rcl_interfaces/srv/list_parameters.hpp"
 
 namespace nav2_util
 {
@@ -29,7 +31,7 @@ namespace nav2_util
  * purpose. However, only alphanumeric characters and '_' are allowed in node
  * names. This function replaces any invalid character with a '_'
  *
- * \param[in] potential_node_name Potential name but possibly with invalid charaters.
+ * \param[in] potential_node_name Potential name but possibly with invalid characters.
  * \return A copy of the input string but with non-alphanumeric characters replaced with '_'
  */
 std::string sanitize_node_name(const std::string & potential_node_name);
@@ -139,14 +141,24 @@ std::string get_plugin_type_param(
   std::string plugin_type;
   try {
     if (!node->get_parameter(plugin_name + ".plugin", plugin_type)) {
-      throw pluginlib::PluginlibException("Can not get 'plugin' param value for " + plugin_name);
+      RCLCPP_FATAL(
+        node->get_logger(), "Can not get 'plugin' param value for %s", plugin_name.c_str());
+      throw std::runtime_error("No 'plugin' param for param ns!");
     }
   } catch (rclcpp::exceptions::ParameterUninitializedException & ex) {
-    throw pluginlib::PluginlibException("'plugin' param not defined for " + plugin_name);
+    RCLCPP_FATAL(node->get_logger(), "'plugin' param not defined for %s", plugin_name.c_str());
+    throw std::runtime_error("No 'plugin' param for param ns!");
   }
 
   return plugin_type;
 }
+
+/**
+ * @brief Sets the caller thread to have a soft-realtime prioritization by
+ * increasing the priority level of the host thread.
+ * May throw exception if unable to set prioritization successfully
+ */
+void setSoftRealTimePriority();
 
 }  // namespace nav2_util
 

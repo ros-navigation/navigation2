@@ -40,8 +40,6 @@ ClearCostmapService::ClearCostmapService(
   logger_ = node->get_logger();
   reset_value_ = costmap_.getCostmap()->getDefaultValue();
 
-  node->get_parameter("clearable_layers", clearable_layers_);
-
   clear_except_service_ = node->create_service<ClearExceptRegion>(
     "clear_except_" + costmap_.getName(),
     std::bind(
@@ -61,13 +59,21 @@ ClearCostmapService::ClearCostmapService(
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 
+ClearCostmapService::~ClearCostmapService()
+{
+  // make sure services shutdown.
+  clear_except_service_.reset();
+  clear_around_service_.reset();
+  clear_entire_service_.reset();
+}
+
 void ClearCostmapService::clearExceptRegionCallback(
   const shared_ptr<rmw_request_id_t>/*request_header*/,
   const shared_ptr<ClearExceptRegion::Request> request,
   const shared_ptr<ClearExceptRegion::Response>/*response*/)
 {
   RCLCPP_INFO(
-    logger_,
+    logger_, "%s",
     ("Received request to clear except a region the " + costmap_.getName()).c_str());
 
   clearRegion(request->reset_distance, true);
@@ -87,7 +93,7 @@ void ClearCostmapService::clearEntireCallback(
   const std::shared_ptr<ClearEntirely::Response>/*response*/)
 {
   RCLCPP_INFO(
-    logger_,
+    logger_, "%s",
     ("Received request to clear entirely the " + costmap_.getName()).c_str());
 
   clearEntirely();
@@ -99,7 +105,7 @@ void ClearCostmapService::clearRegion(const double reset_distance, bool invert)
 
   if (!getPosition(x, y)) {
     RCLCPP_ERROR(
-      logger_,
+      logger_, "%s",
       "Cannot clear map because robot pose cannot be retrieved.");
     return;
   }

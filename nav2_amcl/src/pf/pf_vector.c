@@ -35,7 +35,7 @@
 
 
 // Return a zero vector
-pf_vector_t pf_vector_zero()
+pf_vector_t pf_vector_zero(void)
 {
   pf_vector_t c;
 
@@ -130,7 +130,7 @@ pf_vector_t pf_vector_coord_add(pf_vector_t a, pf_vector_t b)
 
 
 // Return a zero matrix
-pf_matrix_t pf_matrix_zero()
+pf_matrix_t pf_matrix_zero(void)
 {
   int i, j;
   pf_matrix_t c;

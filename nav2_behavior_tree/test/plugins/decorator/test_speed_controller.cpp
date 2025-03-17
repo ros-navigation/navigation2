@@ -22,8 +22,8 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_util/robot_utils.hpp"
 
-#include "../../test_behavior_tree_fixture.hpp"
-#include "../../test_dummy_tree_node.hpp"
+#include "utils/test_behavior_tree_fixture.hpp"
+#include "utils/test_dummy_tree_node.hpp"
 #include "nav2_behavior_tree/plugins/decorator/speed_controller.hpp"
 
 using namespace std::chrono;  // NOLINT
@@ -34,12 +34,23 @@ class SpeedControllerTestFixture : public nav2_behavior_tree::BehaviorTreeTestFi
 public:
   void SetUp()
   {
+    odom_smoother_ = std::make_shared<nav2_util::OdomSmoother>(node_);
+    config_->blackboard->set(
+      "odom_smoother", odom_smoother_);  // NOLINT
+
     geometry_msgs::msg::PoseStamped goal;
     goal.header.stamp = node_->now();
     config_->blackboard->set("goal", goal);
 
-    std::vector<geometry_msgs::msg::PoseStamped> fake_poses;
-    config_->blackboard->set<std::vector<geometry_msgs::msg::PoseStamped>>("goals", fake_poses);  // NOLINT
+    nav_msgs::msg::Goals fake_poses;
+    config_->blackboard->set("goals", fake_poses);  // NOLINT
+
+    config_->input_ports["min_rate"] = 0.1;
+    config_->input_ports["max_rate"] = 1.0;
+    config_->input_ports["min_speed"] = 0.0;
+    config_->input_ports["max_speed"] = 0.5;
+    config_->input_ports["goals"] = "";
+    config_->input_ports["goal"] = "";
 
     bt_node_ = std::make_shared<nav2_behavior_tree::SpeedController>("speed_controller", *config_);
     dummy_node_ = std::make_shared<nav2_behavior_tree::DummyNode>();
@@ -50,13 +61,17 @@ public:
   {
     dummy_node_.reset();
     bt_node_.reset();
+    odom_smoother_.reset();
   }
 
 protected:
+  static std::shared_ptr<nav2_util::OdomSmoother> odom_smoother_;
   static std::shared_ptr<nav2_behavior_tree::SpeedController> bt_node_;
   static std::shared_ptr<nav2_behavior_tree::DummyNode> dummy_node_;
 };
 
+std::shared_ptr<nav2_util::OdomSmoother>
+SpeedControllerTestFixture::odom_smoother_ = nullptr;
 std::shared_ptr<nav2_behavior_tree::SpeedController>
 SpeedControllerTestFixture::bt_node_ = nullptr;
 std::shared_ptr<nav2_behavior_tree::DummyNode>

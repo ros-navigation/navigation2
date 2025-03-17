@@ -19,8 +19,8 @@
  *
  */
 
-#include <math.h>
-#include <assert.h>
+#include <cassert>
+#include <cmath>
 
 #include "nav2_amcl/sensors/laser/laser.hpp"
 
@@ -53,6 +53,17 @@ LikelihoodFieldModel::sensorFunction(LaserData * data, pf_sample_set_t * set)
 
   self = reinterpret_cast<LikelihoodFieldModel *>(data->laser);
 
+  // Pre-compute a couple of things
+  double z_hit_denom = 2 * self->sigma_hit_ * self->sigma_hit_;
+  double z_rand_mult = 1.0 / data->range_max;
+
+  step = (data->range_count - 1) / (self->max_beams_ - 1);
+
+  // Step size must be at least 1
+  if (step < 1) {
+    step = 1;
+  }
+
   total_weight = 0.0;
 
   // Compute the sample weights
@@ -64,17 +75,6 @@ LikelihoodFieldModel::sensorFunction(LaserData * data, pf_sample_set_t * set)
     pose = pf_vector_coord_add(self->laser_pose_, pose);
 
     p = 1.0;
-
-    // Pre-compute a couple of things
-    double z_hit_denom = 2 * self->sigma_hit_ * self->sigma_hit_;
-    double z_rand_mult = 1.0 / data->range_max;
-
-    step = (data->range_count - 1) / (self->max_beams_ - 1);
-
-    // Step size must be at least 1
-    if (step < 1) {
-      step = 1;
-    }
 
     for (i = 0; i < data->range_count; i += step) {
       obs_range = data->ranges[i][0];

@@ -1,0 +1,179 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Web Server",
+            "icon": {
+                "id": "debug-start"
+            },
+            "type": "process",
+            "command": "caddy",
+            "args": [
+                "run",
+                "--watch"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/.devcontainer/caddy"
+            },
+            "isBackground": true,
+            "hide": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "Stop Web Server",
+            "icon": {
+                "id": "debug-stop"
+            },
+            "type": "shell",
+            "command": "echo ${input:Terminate Web Server}",
+            "hide": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "System Monitor",
+            "icon": {
+                "id": "debug-start"
+            },
+            "type": "process",
+            "command": "glances",
+            "args": [
+                "-w"
+            ],
+            "isBackground": true,
+            "hide": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "Stop System Monitor",
+            "icon": {
+                "id": "debug-stop"
+            },
+            "type": "shell",
+            "command": "echo ${input:Terminate System Monitor}",
+            "hide": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "Gzweb Bridge",
+            "icon": {
+                "id": "debug-start"
+            },
+            "type": "process",
+            "command": "npm",
+            "args": [
+                "start"
+            ],
+            "options": {
+                "cwd": "${env:GZWEB_WS}",
+                "env": {
+                    "npm_config_port": "9090"
+                }
+            },
+            "hide": true,
+            "isBackground": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "Stop Gzweb Bridge",
+            "icon": {
+                "id": "debug-stop"
+            },
+            "type": "shell",
+            "command": "echo ${input:Terminate Gzweb Bridge}",
+            "hide": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "Foxglove Bridge",
+            "icon": {
+                "id": "debug-start"
+            },
+            "type": "shell",
+            "command": "source ./install/setup.bash && ros2 run foxglove_bridge foxglove_bridge",
+            "options": {
+                "cwd": "${env:OVERLAY_WS}",
+            },
+            "isBackground": true,
+            "hide": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "Stop Foxglove Bridge",
+            "icon": {
+                "id": "debug-stop"
+            },
+            "type": "shell",
+            "command": "echo ${input:Terminate Foxglove Bridge}",
+            "hide": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "Start Visualizations",
+            "icon": {
+                "id": "debug-start"
+            },
+            "dependsOn": [
+                "Web Server",
+                "System Monitor",
+                "Gzweb Bridge",
+                "Foxglove Bridge"
+            ],
+            // "hide": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "Stop Visualizations",
+            "icon": {
+                "id": "debug-stop"
+            },
+            "dependsOn": [
+                "Stop Web Server",
+                "Stop System Monitor",
+                "Stop Gzweb Bridge",
+                "Stop Foxglove Bridge"
+            ],
+            // "hide": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "Restart Visualizations",
+            "icon": {
+                "id": "debug-restart"
+            },
+            "dependsOn": [
+                "Stop Visualizations",
+                "Start Visualizations"
+            ],
+            "dependsOrder": "sequence",
+            "problemMatcher": []
+        }
+    ],
+    "inputs": [
+        {
+            "id": "Terminate Web Server",
+            "type": "command",
+            "command": "workbench.action.tasks.terminate",
+            "args": "Web Server"
+        },
+        {
+            "id": "Terminate System Monitor",
+            "type": "command",
+            "command": "workbench.action.tasks.terminate",
+            "args": "System Monitor"
+        },
+        {
+            "id": "Terminate Gzweb Bridge",
+            "type": "command",
+            "command": "workbench.action.tasks.terminate",
+            "args": "Gzweb Bridge"
+        },
+        {
+            "id": "Terminate Foxglove Bridge",
+            "type": "command",
+            "command": "workbench.action.tasks.terminate",
+            "args": "Foxglove Bridge"
+        },
+    ]
+}

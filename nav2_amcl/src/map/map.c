@@ -25,11 +25,7 @@
  * CVS: $Id: map.c 1713 2003-08-23 04:03:43Z inspectorg $
 **************************************************************************/
 
-#include <assert.h>
-#include <math.h>
 #include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
 
 #include "nav2_amcl/map/map.hpp"
 
