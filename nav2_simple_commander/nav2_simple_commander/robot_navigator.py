@@ -779,10 +779,7 @@ class BasicNavigator(Node):
             goal_msg.use_poses = True
         else:
             self.setTaskError(ComputeAndTrackRoute.UNKNOWN, 'Request type fields were invalid!')
-            self.warn('Getting and tracking route failed with'
-                      f' status code:{self.status}'
-                      f' error code:{rtn.error_code}'
-                      f' error msg:{rtn.error_msg}')
+            self.error('Invalid start and goal types. Must be PoseStamped for pose or int for ID')
             return False
 
         self.info('Computing and tracking route...')

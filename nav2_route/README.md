@@ -8,7 +8,7 @@ The Nav2 Route Server may also live monitor and analyze the route's process to e
 
 There are plugin interfaces throughout the server to enable a great deal of application-specific customization:
 - Custom search-prioritization behavior with edge scoring plugins (e.g. minimize distance or time, mark blocked routes, enact static or dynamic penalties for danger and application-specific knowledge, prefer main arteries)
-- Custom operations to perform during route execution, triggered when entering or leaving an edge or achieving a graph node on the path (e.g. open door, pause at node to wait for clearance, adjust maximum speed, turn on lights, change mode)
+- Custom operations to perform during route execution: (a) triggered when entering or leaving an edge, (b) achieving a graph node on the route, (c) or performed consistently (e.g. open door, pause at node to wait for clearance, adjust maximum speed, turn on lights, change mode, check for future collisions)
 - Parsers of navigation graph files to use any type of format desirable (e.g. geoJSON, OpenStreetMap)
 
 Additionally, the server leverages **additional arbitrary metadata** specified within the navigation graph files to store information such as speed limits, added costs, or operations to perform.
@@ -370,30 +370,41 @@ Note that there are parameters like `prune_goal`, `min_distance_from_start` and 
 
 ## New
 
-- [ ] Simple commander API
+- [ ] Summarize progrss, what's left From my thoughts
+- [ ] What's to change: Server (error code, error msg, exceptions). Review planner server / controller server for potential other updates (cancel CB; other improvements)
 
-- [ ] Summarize progrss, what's left
-  * From notes, event comments, my thoughts, docs left, design docs, .txt files readme
-- [ ] What's to change: Server (error code, error msg, exceptions), copyright, Simple API (examples)
-- [ ] Review planner server / controller server for potential other updates (cancel CB; other improvements)
+- Recall what things do; blocked ids, rerouting, route operation/client, collision, review files
+
 - [ ] System tests for coverage, others missing
+- [ ] simple commander examples
 - [ ] Review msg/srv/action definitions
 
+- [ ] update graphs, tests, examples for TB4 & warehouse world
+
 ---
+
+- [ ] replan edge on line segment from edge fromthe closest point, not from the robots pose to the next node
 
 - [ ] path marker points align with direction
 - [ ] Sample files: new maps used in nav2
 - [ ] QGIS demo + plugins for editing and visualizing graphs
-- [ ] use map for checking start/goal nodes for infra blockages not just NN. Evaluate K. Share costmap?
+- [ ] use map for checking start/goal nodes for infra blockages not just NN. Evaluate K. Share costmap? 
 
-- [ ] edges have non-straight paths
-- [ ] Enable or document the use for blocking edges or pausing for anothe robot locking out an edge
+- [ ] edges have non-straight paths. Path as edge metadata. Concat when creating the route path. transfortm poses? 
+- [ ] Enable or document the use for blocking edges or pausing for anothe robot locking out an edge. Blocked edges due to other robots , Go another way ando/or wait
 - [ ] yaml file substittutions
 - [ ] Update cmake
+- [ ] Simple commander seprate goal handler stuff
+- [ ] Josh PR, Leidos docs PRs / rviz panel plugin
+- [ ] GPS?
+- [ ] Navigator plugin type?
+- [ ] nodes as poses?
+
 
 - [ ] Quality: 
-  - Missing readme plugins, other plugins to add
+  - Missing readme plugins, other plugins to add for usefulness
   - Readme msising context, uses cases for (planner replacement, tracking, route->global->local, route->local, navigate through poses)
+  - Docs: Prove point with plugins, but arbitrary behaviors and annotations
   - BT nodes for 2x route APIs + cancel nodes (+ groot xml + add to BT navlist + add to default yaml list),
   - web documentation (BT node configuration page, package configuration page, migration),
   - Keep graph visualization in rviz but turn off by default
@@ -402,11 +413,20 @@ Note that there are parameters like `prune_goal`, `min_distance_from_start` and 
   - Tutorials (bt xml change, plugin customize (op/edge), file field examples)
   - BT XMLs (first/last mile, freq. replanning, navigation using it, WPF using it, clearance)
   - Demos (route -> global -> local. outdoor non-planar. waypoint follower (GPS?) of route nodes. controller server of dense path)
+  - Demos:
+    - 1. Route -> Smoother -> Controller for direct route following, spline turns for tracking with min radius
+    - 2. 3 Stage planning BT: Route -> Global planner to node(s) in the future with compute path to pose // compute path through poses -> trajectory planning
+    - 3. Plan from pose on-to/off-of graph with feaislbe planner -> route plan -> trajectory planner
+    - 4. Using ComputeAndTrackRoute in BT (+/- some of these?)
+    - 5. Global planner fallback if route is blocked after N seconds, until next node or after distance from blockage back on route's edge (BT XML)
 
   - Finish system test with route file + evaluation
-  - stop / clearance
+  - stop / clearance -- open-RMF inspired (idr what; look into it)
 
 - [ ] Testing by users
+- [ ] Add temporal element that can track relative to other routes other robots are taking. Put higher cost in edges with overlap with other platforms to reduce overlap
+  * other multi-robot things like block edges due to other robot's occupation
+- [ ] Provide a 'force to go through these edges' capability
 
 # Questions
 
