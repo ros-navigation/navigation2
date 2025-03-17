@@ -29,6 +29,8 @@ namespace nav2_behavior_tree
 /**
  * @brief A BT::ConditionNode that returns SUCCESS if there is a valid transform
  * between two specified frames and FAILURE otherwise
+ * @warning This is an Asynchronous Node, which will reset when halted
+ *          Use cautiously with Reactive control nodes (only one Asynchronous action may be used)
  */
 class TransformAvailableCondition : public BT::ConditionNode
 {

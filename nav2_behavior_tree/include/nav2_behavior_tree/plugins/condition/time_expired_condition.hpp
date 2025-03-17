@@ -27,6 +27,8 @@ namespace nav2_behavior_tree
 /**
  * @brief A BT::ConditionNode that returns SUCCESS every time a specified
  * time period passes and FAILURE otherwise
+ * @warning This is an Asynchronous (long-running) Node, which will reset when halted
+ *          Use cautiously with Reactive control nodes (only one Asynchronous action may be used)
  */
 class TimeExpiredCondition : public BT::ConditionNode
 {

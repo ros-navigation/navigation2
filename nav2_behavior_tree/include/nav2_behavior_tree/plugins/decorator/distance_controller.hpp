@@ -31,6 +31,8 @@ namespace nav2_behavior_tree
 /**
  * @brief A BT::DecoratorNode that ticks its child every time the robot
  * travels a specified distance
+ * @warning This is an Asynchronous (long-running) Decorator (may return RUNNING), which will reset when halted
+ *          Use cautiously with Reactive control nodes (only one Asynchronous action may be used)
  */
 class DistanceController : public BT::DecoratorNode
 {
