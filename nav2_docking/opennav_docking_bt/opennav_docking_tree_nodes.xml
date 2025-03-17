@@ -1,0 +1,28 @@
+<root BTCPP_format="4">
+    <TreeNodesModel>
+        <Action ID="DockRobot">
+            <input_port name="dock_id" type="std::string">Dock ID or name to use</input_port>
+            <input_port name="navigate_to_staging_pose" type="bool" default="true">Whether to autonomously navigate to staging pose</input_port>
+            <input_port name="dock_pose" type="geometry_msgs::msg::PoseStamped_&lt;std::allocator&lt;void&gt; &gt;">The dock pose, if not using dock id</input_port>
+            <input_port name="max_staging_time" type="float" default="1000.000000">Maximum time to navigate to the staging pose</input_port>
+            <input_port name="dock_type" type="std::string">The dock plugin type, if using dock pose</input_port>
+            <output_port name="num_retries" type="unsigned short">The number of retries executed</output_port>
+            <output_port name="success" type="bool">If the action was successful</output_port>
+            <output_port name="error_msg" type="std::string">Error message</output_port>
+            <output_port name="error_code_id" type="unsigned short">Error code</output_port>
+            <input_port name="server_timeout" type="std::chrono::milliseconds"/>
+            <input_port name="use_dock_id" type="bool" default="true">Whether to use the dock's ID or dock pose fields</input_port>
+            <input_port name="server_name" type="std::string">Action server name</input_port>
+        </Action>
+        <Action ID="UndockRobot">
+            <input_port name="dock_type" type="std::string">The dock plugin type, if not previous instance used for docking</input_port>
+            <input_port name="max_undocking_time" type="float" default="30.000000">Maximum time to get back to the staging pose</input_port>
+            <output_port name="success" type="bool">If the action was successful</output_port>
+            <output_port name="error_msg" type="std::string">Error message</output_port>
+            <output_port name="error_code_id" type="unsigned short">Error code</output_port>
+            <input_port name="server_timeout" type="std::chrono::milliseconds"/>
+            <input_port name="server_name" type="std::string">Action server name</input_port>
+        </Action>
+    </TreeNodesModel>
+</root>
+

@@ -28,7 +28,8 @@ add_library(${library_name} SHARED
 target_include_directories(${library_name}
   PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+)
 target_link_libraries(${library_name} PUBLIC
   ${action_msgs_TARGETS}
   behaviortree_cpp::behaviortree_cpp
@@ -244,6 +245,7 @@ install(TARGETS ${library_name} ${plugin_libs}
 
 # we will embed the list of plugin names inside a header file
 set(GENERATED_DIR ${CMAKE_CURRENT_BINARY_DIR}/gen)
+set(TREENODES_FILE nav2_tree_nodes.xml)
 configure_file(plugins_list.hpp.in ${GENERATED_DIR}/plugins_list.hpp)
 
 add_executable(generate_nav2_tree_nodes_xml src/generate_nav2_tree_nodes_xml.cpp)
@@ -253,7 +255,22 @@ target_link_libraries(generate_nav2_tree_nodes_xml PRIVATE
 )
 # allow generate_nav2_tree_nodes_xml to find plugins_list.hpp
 target_include_directories(generate_nav2_tree_nodes_xml PRIVATE ${GENERATED_DIR})
-install(TARGETS generate_nav2_tree_nodes_xml DESTINATION lib/${PROJECT_NAME})
+
+add_executable(generate_tree_nodes_xml_cli src/generate_tree_nodes_xml_cli.cpp)
+add_executable(nav2_behavior_tree::generate_tree_nodes_xml_cli ALIAS generate_tree_nodes_xml_cli)
+target_link_libraries(generate_tree_nodes_xml_cli PRIVATE
+  behaviortree_cpp::behaviortree_cpp
+  nav2_util::nav2_util_core
+)
+
+include(cmake/generate_tree_nodes_xml.cmake)
+nav2_generate_tree_nodes_xml(
+  PLUGIN_LIBS ${plugin_libs}
+)
+
+install(TARGETS generate_nav2_tree_nodes_xml generate_tree_nodes_xml_cli
+  EXPORT ${library_name}
+  DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY include/
   DESTINATION include/${PROJECT_NAME}
@@ -263,6 +280,11 @@ install(DIRECTORY test/utils/
   DESTINATION include/${PROJECT_NAME}/nav2_behavior_tree/test/utils
 )
 
+install(DIRECTORY cmake
+  DESTINATION share/${PROJECT_NAME}
+)
+
+#NOTE: Still using manually managed nav2_tree_nodes.xml in source directory
 install(FILES nav2_tree_nodes.xml DESTINATION share/${PROJECT_NAME})
 install(FILES ${GENERATED_DIR}/plugins_list.hpp DESTINATION include/${PROJECT_NAME}/${PROJECT_NAME})
 
@@ -301,4 +323,6 @@ ament_export_dependencies(
 )
 ament_export_targets(${library_name})
 
-ament_package()
+ament_package(
+    CONFIG_EXTRAS "nav2_behavior_tree-extras.cmake"
+)

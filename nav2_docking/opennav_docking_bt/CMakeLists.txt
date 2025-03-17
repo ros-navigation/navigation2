@@ -16,6 +16,7 @@ find_package(rclcpp_action REQUIRED)
 nav2_package()
 
 add_library(opennav_dock_action_bt_node SHARED src/dock_robot.cpp)
+list(APPEND plugin_libs opennav_dock_action_bt_node)
 target_include_directories(opennav_dock_action_bt_node
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
@@ -30,6 +31,7 @@ target_link_libraries(opennav_dock_action_bt_node PUBLIC
 )
 
 add_library(opennav_undock_action_bt_node SHARED src/undock_robot.cpp)
+list(APPEND plugin_libs opennav_undock_action_bt_node)
 target_include_directories(opennav_undock_action_bt_node
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
@@ -41,6 +43,10 @@ target_link_libraries(opennav_undock_action_bt_node PUBLIC
   ${geometry_msgs_TARGETS}
   nav2_behavior_tree::nav2_behavior_tree
   ${nav2_msgs_TARGETS}
+)
+
+nav2_generate_tree_nodes_xml(
+  PLUGIN_LIBS ${plugin_libs}
 )
 
 install(TARGETS opennav_dock_action_bt_node opennav_undock_action_bt_node
@@ -64,7 +70,7 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include/${PROJECT_NAME})
-ament_export_libraries(opennav_dock_action_bt_node opennav_undock_action_bt_node)
+ament_export_libraries(${plugin_libs})
 ament_export_dependencies(
   behaviortree_cpp
   geometry_msgs
