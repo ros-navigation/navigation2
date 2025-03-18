@@ -22,6 +22,7 @@
   <depend>tf2_ros</depend>
   <depend>nav2_util</depend>
   <depend>nav2_core</depend>
+  <depend>angles</depend>
   <depend>lib-nanoflann</depend>
   <depend>nlohmann-json</depend>
 

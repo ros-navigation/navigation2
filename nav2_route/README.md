@@ -372,12 +372,14 @@ Note that there are parameters like `prune_goal`, `min_distance_from_start` and 
 
 Questions:
   - What's up with `pruneStartandGoal`? Is there a better way to do this?
-  - route operation/client, collision
-  - Pruning when first time and using poses? What happen then? Wouldn't we want a partial bit?
+    - Pruning when first time and using poses? What happen then? Wouldn't we want a partial bit?
+    - Why `max_dist_from_edge_`? Why any of the dist parameters? (cehck out docs above too)
+    - why `prune_goal_`? When to use each? Consider removal.
 
-- [ ] Review msg/srv/action definitions
-- [ ] Update cmake
+  - route operation client oddness
+  - collision
 
+  - Route include edge start/end position informations?
 
 - [ ] System tests for coverage, others missing
 - [ ] simple commander examples
@@ -404,10 +406,11 @@ Questions:
 - [ ] nodes as poses?
 - [ ] collision monotir use footprints? or at least the costmap topic collision checker
 - [ ] option for collision montir to fail rather than reroute
-- [ ] TODOs
 - [ ] Extra critics and operation plugins
 - [ ] Question that'll come up: persist blocked edges between calls and the timemarker betwen sesions
 - [ ] Simplify: nodeAchieved, collision monitor perform, others. Possibility to clean up the `ReroutingState` mess
+- [ ] does this  collision sorer critic make efficiency sense at a reasonable sized graph / node distance? Lower iterator density?
+- [ ] Dump graph to file again and/or get full graph message
 
 - [ ] Quality: 
   - Missing readme plugins, other plugins to add for usefulness
