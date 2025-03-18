@@ -47,7 +47,7 @@ TEST(GraphLoader, test_invalid_plugin)
   nav2_util::declare_parameter_if_not_declared(
     node, "graph_file_loader", rclcpp::ParameterValue(default_plugin));
 
-  EXPECT_THROW(GraphLoader graph_loader(node, tf, frame), pluginlib::PluginlibException);
+  EXPECT_THROW(GraphLoader graph_loader(node, tf, frame), std::runtime_error);
 }
 
 TEST(GraphLoader, test_api)
@@ -66,6 +66,6 @@ TEST(GraphLoader, test_api)
   Graph graph;
   GraphToIDMap graph_to_id_map;
   std::string filepath;
-
-  EXPECT_TRUE(graph_loader.loadGraphFromFile(graph, graph_to_id_map, filepath));
+  EXPECT_TRUE(graph_loader.loadGraphFromParameter(graph, graph_to_id_map));
+  EXPECT_FALSE(graph_loader.loadGraphFromFile(graph, graph_to_id_map, filepath));
 }

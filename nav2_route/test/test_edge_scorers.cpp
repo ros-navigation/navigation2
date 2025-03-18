@@ -633,11 +633,12 @@ TEST(EdgeScorersTest, test_goal_orientation_scoring)
 
   float traversal_cost = -1;
   EXPECT_TRUE(scorer.score(&edge, goal_pose, true, traversal_cost));
-  EXPECT_EQ(traversal_cost, -1);
+  EXPECT_EQ(traversal_cost, 0.0);
 
   edge.start = &n2;
   edge.end = &n1;
 
+  traversal_cost = -1;
   EXPECT_FALSE(scorer.score(&edge, goal_pose, true, traversal_cost));
-  EXPECT_EQ(traversal_cost, -1);
+  EXPECT_EQ(traversal_cost, 0.0);
 }

@@ -29,7 +29,7 @@ void GoalOrientationScorer::configure(
   logger_ = node->get_logger();
 
   nav2_util::declare_parameter_if_not_declared(
-    node, getName() + ".orientation_tolerance", rclcpp::ParameterValue(M_PI/2.0));
+    node, getName() + ".orientation_tolerance", rclcpp::ParameterValue(M_PI / 2.0));
   orientation_tolerance_ = node->get_parameter(getName() + ".orientation_tolerance").as_double();
 }
 

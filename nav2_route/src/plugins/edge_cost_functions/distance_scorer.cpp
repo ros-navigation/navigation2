@@ -38,7 +38,10 @@ void DistanceScorer::configure(
   weight_ = static_cast<float>(node->get_parameter(getName() + ".weight").as_double());
 }
 
-bool DistanceScorer::score(const EdgePtr edge, const geometry_msgs::msg::PoseStamped & /* goal_pose */, bool /* final_edge */, float & cost)
+bool DistanceScorer::score(
+  const EdgePtr edge,
+  const geometry_msgs::msg::PoseStamped & /* goal_pose */,
+  bool /* final_edge */, float & cost)
 {
   // Get the speed limit, if set for an edge
   float speed_val = 1.0f;

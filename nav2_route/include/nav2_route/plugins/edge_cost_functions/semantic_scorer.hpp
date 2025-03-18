@@ -59,7 +59,9 @@ public:
    * @param cost of the edge scored
    * @return bool if this edge is open valid to traverse
    */
-  bool score(const EdgePtr edge, const geometry_msgs::msg::PoseStamped & goal_pose, bool final_edge, float & cost) override;
+  bool score(
+    const EdgePtr edge, const geometry_msgs::msg::PoseStamped & goal_pose, bool final_edge,
+    float & cost) override;
 
   /**
    * @brief Scores graph object based on metadata's semantic value at key

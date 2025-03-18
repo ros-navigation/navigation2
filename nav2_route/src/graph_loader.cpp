@@ -110,7 +110,8 @@ bool GraphLoader::loadGraphFromParameter(
   if (!transformGraph(graph)) {
     RCLCPP_WARN(
       logger_,
-      "Failed to transform nodes graph file (%s) to %s!", graph_filepath_.c_str(), route_frame_.c_str());
+      "Failed to transform nodes graph file (%s) to %s!",
+      graph_filepath_.c_str(), route_frame_.c_str());
     return false;
   }
 

@@ -370,15 +370,18 @@ Note that there are parameters like `prune_goal`, `min_distance_from_start` and 
 
 ## New
 
-- [ ] What's to change: Server (error code, error msg, exceptions, isRequestValid). Review planner server / controller server for potential other updates (cancel CB; other improvements)
+- [ ] Server (error code, error msg, exceptions), 
+- [ ] cancel b reactivity
+      auto cancel_checker = [this]() {
+        return action_server_poses_->is_cancel_requested();
+      };
+
+      std::function<bool()> cancel_checker
 
 
 Questions:
   - What's up with `pruneStartandGoal`? Is there a better way to do this?
-  - `use_feedback_operations_` really necessary?
-  
   - route operation/client, collision
- 
   - Pruning when first time and using poses? What happen then? Wouldn't we want a partial bit?
 
 
@@ -406,6 +409,7 @@ Questions:
 - [ ] Simple commander seprate goal handler stuff
 - [ ] Josh PR, Leidos docs PRs / rviz panel plugin
 - [ ] GPS?
+- [ ] Dynamic parameters + mutex lock
 - [ ] Navigator plugin type?
 - [ ] nodes as poses?
 - [ ] collision monotir use footprints? or at least the costmap topic collision checker
@@ -419,7 +423,7 @@ Questions:
   - Missing readme plugins, other plugins to add for usefulness
   - Readme msising context, uses cases for (planner replacement, tracking, route->global->local, route->local, navigate through poses)
   - Docs: Prove point with plugins, but arbitrary behaviors and annotations
-  - BT nodes for 2x route APIs + cancel nodes (+ groot xml + add to BT navlist + add to default yaml list),
+  - BT nodes for 2x route APIs + cancel nodes (+ groot xml + add to BT navlist + add to default yaml list + error code/msg/ports),
   - web documentation (BT node configuration page, package configuration page, migration),
   - Keep graph visualization in rviz but turn off by default
   - Default graph sandbox + launch configuration to set (and get filepath + mirror `map` comments). 

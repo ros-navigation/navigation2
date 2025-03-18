@@ -79,7 +79,7 @@ public:
    * @param graph_file_loader_id The id of the GraphFileLoader
    * @return bool If successful or none provided
    */
-   bool loadGraphFromParameter(
+  bool loadGraphFromParameter(
     Graph & graph,
     GraphToIDMap & idx_map);
 

@@ -171,7 +171,7 @@ RouteServer::isRequestValid(
 
   if (action_server->is_cancel_requested()) {
     RCLCPP_INFO(get_logger(), "Goal was canceled. Canceling route planning action.");
-    action_server->terminate_current();
+    action_server->terminate_all();
     return false;
   }
 
@@ -206,7 +206,7 @@ Route RouteServer::findRoute(
   // If we're rerouting, use the rerouting start node and pose as the new start
   if (rerouting_info.rerouting_start_id != std::numeric_limits<unsigned int>::max()) {
     start_route = id_to_graph_map_.at(rerouting_info.rerouting_start_id);
-    goal_intent_extractor_->setStart(rerouting_info.rerouting_start_pose);
+    goal_intent_extractor_->overrideStart(rerouting_info.rerouting_start_pose);
   }
 
   Route route;
@@ -216,7 +216,9 @@ Route RouteServer::findRoute(
     route.start_node = &graph_.at(start_route);
   } else {
     // Compute the route via graph-search, returns a node-edge sequence
-    route = route_planner_->findRoute(graph_, start_route, end_route, rerouting_info.blocked_ids, goal->goal);
+    route = route_planner_->findRoute(
+      graph_, start_route, end_route, rerouting_info.blocked_ids,
+      goal->goal);
   }
 
   return goal_intent_extractor_->pruneStartandGoal(route, goal, rerouting_info);

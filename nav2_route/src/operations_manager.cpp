@@ -28,9 +28,6 @@ OperationsManager::OperationsManager(nav2_util::LifecycleNode::SharedPtr node)
 : plugin_loader_("nav2_route", "nav2_route::RouteOperation")
 {
   logger_ = node->get_logger();
-  nav2_util::declare_parameter_if_not_declared(
-    node, "use_feedback_operations", rclcpp::ParameterValue(true));
-  use_feedback_operations_ = node->get_parameter("use_feedback_operations").as_bool();
 
   // Have some default operations
   const std::vector<std::string> default_plugin_ids(
@@ -156,11 +153,6 @@ OperationsResult OperationsManager::process(
         OperationResult op_result = op->second->perform(
           node, edge_entered, edge_exited, route, pose, &operations[i]->metadata);
         updateResult(op->second->getName(), op_result, result);
-      } else if (use_feedback_operations_) {
-        RCLCPP_DEBUG(
-          logger_, "Operation '%s' should be called from action feedback!",
-          operations[i]->type.c_str());
-        result.operations_triggered.push_back(operations[i]->type);
       } else {
         throw nav2_core::OperationFailed(
                 "Operation " + operations[i]->type +

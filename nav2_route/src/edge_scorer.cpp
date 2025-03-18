@@ -26,9 +26,9 @@ EdgeScorer::EdgeScorer(nav2_util::LifecycleNode::SharedPtr node)
 : plugin_loader_("nav2_route", "nav2_route::EdgeCostFunction")
 {
   // load plugins with a default of the DistanceScorer
-  const std::vector<std::string> default_plugin_ids({"DistanceScorer", "AdjustEdgesScorer"});
+  const std::vector<std::string> default_plugin_ids({"DistanceScorer", "DynamicEdgesScorer"});
   const std::vector<std::string> default_plugin_types(
-    {"nav2_route::DistanceScorer", "nav2_route::AdjustEdgesScorer"});
+    {"nav2_route::DistanceScorer", "nav2_route::DynamicEdgesScorer"});
 
   nav2_util::declare_parameter_if_not_declared(
     node, "edge_cost_functions", rclcpp::ParameterValue(default_plugin_ids));

@@ -23,7 +23,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "nav2_route/interfaces/edge_cost_function.hpp"
-#include "nav2_msgs/srv/adjust_edges.hpp"
+#include "nav2_msgs/srv/dynamic_edges.hpp"
 #include "nav2_util/node_utils.hpp"
 
 namespace nav2_route
@@ -40,7 +40,7 @@ public:
   /**
    * @brief Constructor
    */
-   DynamicEdgesScorer() = default;
+  DynamicEdgesScorer() = default;
 
   /**
    * @brief destructor
@@ -61,7 +61,9 @@ public:
    * @param cost of the edge scored
    * @return bool if this edge is open valid to traverse
    */
-  bool score(const EdgePtr edge, const geometry_msgs::msg::PoseStamped & goal_pose, bool final_edge, float & cost) override;
+  bool score(
+    const EdgePtr edge, const geometry_msgs::msg::PoseStamped & goal_pose, bool final_edge,
+    float & cost) override;
 
   /**
    * @brief Get name of the plugin for parameter scope mapping
@@ -75,15 +77,15 @@ public:
    * @param response Response to service (empty)
    */
   void closedEdgesCb(
-    const std::shared_ptr<nav2_msgs::srv::AdjustEdges::Request> request,
-    std::shared_ptr<nav2_msgs::srv::AdjustEdges::Response> response);
+    const std::shared_ptr<nav2_msgs::srv::DynamicEdges::Request> request,
+    std::shared_ptr<nav2_msgs::srv::DynamicEdges::Response> response);
 
 protected:
   rclcpp::Logger logger_{rclcpp::get_logger("DynamicEdgesScorer")};
   std::string name_;
   std::set<unsigned int> closed_edges_;
   std::unordered_map<unsigned int, float> dynamic_penalties_;
-  rclcpp::Service<nav2_msgs::srv::AdjustEdges>::SharedPtr service_;
+  rclcpp::Service<nav2_msgs::srv::DynamicEdges>::SharedPtr service_;
 };
 
 }  // namespace nav2_route

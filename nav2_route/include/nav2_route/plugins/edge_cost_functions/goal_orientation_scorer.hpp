@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__GOAl_ORIENTATION_SCORER_HPP_
+#ifndef NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__GOAL_ORIENTATION_SCORER_HPP_
 #define NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__GOAL_ORIENTATION_SCORER_HPP_
 
 #include <memory>
@@ -62,7 +62,9 @@ public:
    * @param cost of the edge scored
    * @return bool if this edge is open valid to traverse
    */
-  bool score(const EdgePtr edge, const geometry_msgs::msg::PoseStamped & goal_pose, bool final_edge, float & cost) override;
+  bool score(
+    const EdgePtr edge, const geometry_msgs::msg::PoseStamped & goal_pose, bool final_edge,
+    float & cost) override;
 
   /**
    * @brief Get name of the plugin for parameter scope mapping

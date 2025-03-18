@@ -28,7 +28,7 @@ void DynamicEdgesScorer::configure(
   name_ = name;
   logger_ = node->get_logger();
   service_ =
-    node->create_service<nav2_msgs::srv::AdjustEdges>(
+    node->create_service<nav2_msgs::srv::DynamicEdges>(
     std::string(node->get_name()) + "/" + getName() + "/adjust_edges", std::bind(
       &DynamicEdgesScorer::closedEdgesCb, this,
       std::placeholders::_1, std::placeholders::_2));
@@ -38,8 +38,8 @@ void DynamicEdgesScorer::configure(
 }
 
 void DynamicEdgesScorer::closedEdgesCb(
-  const std::shared_ptr<nav2_msgs::srv::AdjustEdges::Request> request,
-  std::shared_ptr<nav2_msgs::srv::AdjustEdges::Response> response)
+  const std::shared_ptr<nav2_msgs::srv::DynamicEdges::Request> request,
+  std::shared_ptr<nav2_msgs::srv::DynamicEdges::Response> response)
 {
   RCLCPP_INFO(logger_, "Edge closure and cost adjustment in progress!");
 
@@ -63,7 +63,10 @@ void DynamicEdgesScorer::closedEdgesCb(
   response->success = true;
 }
 
-bool DynamicEdgesScorer::score(const EdgePtr edge, const geometry_msgs::msg::PoseStamped & /* goal_pose */, bool /* final_edge */, float & cost)
+bool DynamicEdgesScorer::score(
+  const EdgePtr edge,
+  const geometry_msgs::msg::PoseStamped & /* goal_pose */,
+  bool /* final_edge */, float & cost)
 {
   // Find if this edge is in the closed set of edges
   if (closed_edges_.find(edge->edgeid) != closed_edges_.end()) {

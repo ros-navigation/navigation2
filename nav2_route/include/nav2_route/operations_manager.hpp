@@ -116,7 +116,6 @@ protected:
   std::vector<RouteOperation::Ptr> change_operations_;
   std::vector<RouteOperation::Ptr> query_operations_;
   rclcpp::Logger logger_{rclcpp::get_logger("OperationsManager")};
-  bool use_feedback_operations_;
 };
 
 }  // namespace nav2_route

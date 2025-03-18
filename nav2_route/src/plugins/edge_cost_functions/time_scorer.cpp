@@ -46,7 +46,9 @@ void TimeScorer::configure(
   max_vel_ = static_cast<float>(node->get_parameter(getName() + ".max_vel").as_double());
 }
 
-bool TimeScorer::score(const EdgePtr edge, const geometry_msgs::msg::PoseStamped & /* goal_pose */, bool /* final_edge */, float & cost)
+bool TimeScorer::score(
+  const EdgePtr edge, const geometry_msgs::msg::PoseStamped & /* goal_pose */,
+  bool /* final_edge */, float & cost)
 {
   // We have a previous actual time to utilize for a refined estimate
   float time = 0.0;
