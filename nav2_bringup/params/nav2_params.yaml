@@ -362,7 +362,7 @@ waypoint_follower:
 
 route_server:
   ros__parameters:
-    graph_filepath: "/home/steve/Documents/nav2_ws/src/navigation2/nav2_route/graphs/aws_graph.geojson"
+    graph_filepath: "($find nav2_route)/graphs/aws_graph.geojson"
     boundary_radius_to_achieve_node: 1.0
     radius_to_achieve_node: 2.0
     operations: ["AdjustSpeedLimit", "ReroutingService", "CollisionMonitor"]

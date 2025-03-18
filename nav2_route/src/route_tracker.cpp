@@ -156,6 +156,10 @@ TrackerResult RouteTracker::trackRoute(
   // start, retain the state so we can continue as previously set with
   // refined node achievement logic and performing edge operations on exit
   if (rerouting_info.curr_edge) {
+    // state.next_node is not updated since the first edge is removed from route when rerouted
+    // along the same edge in the goal intent extractor. Thus, state.next_node is still the
+    // future node to reach in this case and we add in the state.last_node and state.current_edge
+    // to represent the 'currently' progressing edge that is omitted from the route (and its start)
     state.current_edge = rerouting_info.curr_edge;
     state.last_node = state.current_edge->start;
     publishFeedback(
@@ -197,6 +201,8 @@ TrackerResult RouteTracker::trackRoute(
 
     if (completed) {
       RCLCPP_INFO(logger_, "Routing to goal completed!");
+      // Publishing last feedback
+      publishFeedback(false, 0, state.last_node->nodeid, 0, ops_result.operations_triggered);
       return TrackerResult::COMPLETED;
     }
 
@@ -219,6 +225,9 @@ TrackerResult RouteTracker::trackRoute(
       if (state.last_node) {
         rerouting_info.rerouting_start_id = state.last_node->nodeid;
         rerouting_info.rerouting_start_pose = robot_pose;
+      } else {
+        rerouting_info.rerouting_start_id = std::numeric_limits<unsigned int>::max();
+        rerouting_info.rerouting_start_pose = geometry_msgs::msg::PoseStamped();
       }
 
       // Update so during rerouting we can check if we are continuing on the same edge

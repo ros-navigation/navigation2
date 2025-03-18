@@ -61,7 +61,7 @@ public:
     const NodePtr node, const EdgePtr edge_enter, const EdgePtr edge_exit);
 
   /**
-   * @brief Finds the set of operations stored in graph objects
+   * @brief Finds the set of operations stored in graph objects, by event
    * @param node op_vec Operations vector to check
    * @param trigger Trigger for which operations in op_vec should be included
    * @param operations Output vector populated with relavent operations
@@ -99,7 +99,7 @@ public:
 
 protected:
   /**
-   * @brief Processes a vector of operations plugins
+   * @brief Processes a vector of operations plugins, by trigger
    * @param operations Operations to trigger
    * @param Results to populate from operations
    */

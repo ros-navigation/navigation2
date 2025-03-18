@@ -61,7 +61,6 @@ typedef Node * NodePtr;
 typedef std::vector<Node> NodeVector;
 typedef NodeVector Graph;
 typedef std::unordered_map<unsigned int, unsigned int> GraphToIDMap;
-typedef std::vector<NodePtr> NodePtrVector;
 typedef std::pair<float, NodePtr> NodeElement;
 typedef std::pair<unsigned int, unsigned int> NodeExtents;
 
@@ -232,15 +231,33 @@ struct RouteTrackingState
  * @brief State shared to objects to communicate important rerouting data
  * to avoid rerouting over blocked edges, ensure reroute from the current
  * appropriate starting point along the route, and state of edges if pruned
- * for seeding the Tracker's state.
+ * for seeding the Tracker's state. Admittedly, this is a bit complex, so more
+ * context is provided inline.
  */
 struct ReroutingState
 {
-  unsigned int rerouting_start_id{std::numeric_limits<unsigned int>::max()};
+  // Communicate edges identified as blocked by the operational plugins like collision checkers.
+  // This is fully managed by the route tracker when populated.
   std::vector<unsigned int> blocked_ids;
+
+  // Used to determine if this is the first planning iteration in the goal intent extractor
+  // to bypass pruning. Fully managed in the goal intent extractor.
   bool first_time{true};
+
+  // Used to mark current edge being tracked by the route, if progress was made before rerouting.
+  // It is reset in the goal intent extractor if the previous progressed edge is different from
+  // the new edge from planning. Otherwise, used in the path converter to create new dense path
+  // with partial progress information and in the tracker to seed the state to continue.
+  // It is managed by both the goal intent extractor and the route tracker.
   EdgePtr curr_edge{nullptr};
   Coordinates closest_pt_on_edge;
+
+  // Used to mark the route tracking state before rerouting was requested.
+  // When route tracking made some progress, the Start ID and pose are populated
+  // and used by the goal intent extractor to override the initial request's
+  // start, current pose along the edge, and pruning criteria. Otherwise, the initial request
+  // information is used. This is managed by the route tracker but used by goal intent extractor.
+  unsigned int rerouting_start_id{std::numeric_limits<unsigned int>::max()};
   geometry_msgs::msg::PoseStamped rerouting_start_pose;
 
   void reset()

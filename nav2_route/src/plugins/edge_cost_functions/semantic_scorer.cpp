@@ -39,8 +39,8 @@ void SemanticScorer::configure(
     semantic_info_[cl] = static_cast<float>(cost);
   }
 
-  // Find the key to look for semantic data for. If set to empty string, will search
-  // instead for any key in the metadata.
+  // Find the key to look for semantic data for within the metdata. If set to empty string,
+  // will search instead for any key in the metadata.
   nav2_util::declare_parameter_if_not_declared(
     node, getName() + ".semantic_key", rclcpp::ParameterValue(std::string("class")));
   key_ = node->get_parameter(getName() + ".semantic_key").as_string();

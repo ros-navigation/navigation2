@@ -8,7 +8,7 @@ The Nav2 Route Server may also live monitor and analyze the route's process to e
 
 There are plugin interfaces throughout the server to enable a great deal of application-specific customization:
 - Custom search-prioritization behavior with edge scoring plugins (e.g. minimize distance or time, mark blocked routes, enact static or dynamic penalties for danger and application-specific knowledge, prefer main arteries)
-- Custom operations to perform during route execution: (a) triggered when entering or leaving an edge, (b) achieving a graph node on the route, (c) or performed consistently (e.g. open door, pause at node to wait for clearance, adjust maximum speed, turn on lights, change mode, check for future collisions)
+- Custom operations to perform during route execution: (a) triggered when entering or leaving an edge, (b) achieving a graph node on the route, (c) performed consistently (e.g. open door, pause at node to wait for clearance, adjust maximum speed, turn on lights, change mode, check for future collisions)
 - Parsers of navigation graph files to use any type of format desirable (e.g. geoJSON, OpenStreetMap)
 
 Additionally, the server leverages **additional arbitrary metadata** specified within the navigation graph files to store information such as speed limits, added costs, or operations to perform.
@@ -236,9 +236,9 @@ While technically optional, it is highly recommended to also provide:
 - The node's frame of reference (`frame`), if not the global frame and you want it transformed
 - The Operation's `trigger` (e.g. enter, exit edge, node achieved) and `type` (e.g. action to perform), as relevent
 
-While optional, it is somewhat recommended to provide, if relevent:
-- The edge's `cost`, if it is fixed or edge scoring plugins are not used
-- Whether the edge's cost is `overridable` with edge scoring plugins, if provided
+While optional, it is somewhat recommended to provide, if relevent to your needs:
+- The edge's `cost`, if it is fixed and known at graph generation time or edge scoring plugins are not used
+- Whether the edge's cost is `overridable` with edge scoring plugins, if those plugins are provided.
 
 Otherwise, the Node, Edge, and Operations may contain other arbitrary application-specific fields with key-value pairs under the `metadata` key-name.
 These can be primitive types (float, int, string, etc), vector types (e.g. a polygon or other vector of information), or even contain information nested under namespaces - whereas a metadata object may exist as a key's value within `metadata`.
@@ -370,22 +370,18 @@ Note that there are parameters like `prune_goal`, `min_distance_from_start` and 
 
 ## New
 
-- [ ] Summarize progrss, what's left From my thoughts
 - [ ] What's to change: Server (error code, error msg, exceptions, isRequestValid). Review planner server / controller server for potential other updates (cancel CB; other improvements)
 
-- Recall what things do; blocked ids, rerouting, route operation/client, collision, review files, pruneStartandGoal
 
-QUestions:
+Questions:
   - What's up with `pruneStartandGoal`? Is there a better way to do this?
-  - `getTraversalCost` edge_cost.overridable, check all works
-  - `getTraversalCost` blocked goal exception, should remove and fail planning instead?
-  - `rerouting_info` check up. ReroutingState
-  - `isStartOrEndNode` check up
-  - `nodeAchieved` be simplified? `collision monitor perform` too
-  - ` RouteTrackingState`
   - `use_feedback_operations_` really necessary?
-  - `OperationTrigger` use? Operations/Operation/OperationPtrs/OperationsResult
-  * DirectionalEdge -> operations; Node->operations, are they really used?
+  
+  - route operation/client, collision
+ 
+  - Pruning when first time and using poses? What happen then? Wouldn't we want a partial bit?
+
+
 
 - [ ] System tests for coverage, others missing
 - [ ] simple commander examples
@@ -395,6 +391,7 @@ QUestions:
 
 ---
 
+- [ ] fix reoute operation client; creation of srv client in-perform is deeply flawed
 - [ ] path marker points align with direction
 - [ ] Sample files: new maps used in nav2
 - [ ] QGIS demo + plugins for editing and visualizing graphs
@@ -415,6 +412,8 @@ QUestions:
 - [ ] option for collision montir to fail rather than reroute
 - [ ] TODOs
 - [ ] Extra critics and operation plugins
+- [ ] Question that'll come up: persist blocked edges between calls and the timemarker betwen sesions
+- [ ] Simplify: nodeAchieved, collision monitor perform, others. Possibility to clean up the `ReroutingState` mess
 
 - [ ] Quality: 
   - Missing readme plugins, other plugins to add for usefulness

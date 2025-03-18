@@ -148,7 +148,7 @@ TEST(GoalIntentExtractorTest, test_start_goal_finder)
   auto start = extractor.getStart();
   EXPECT_EQ(start.pose.position.x, 0.0);
   EXPECT_EQ(start.pose.position.y, 0.0);
-  extractor.setStart(p1);
+  extractor.overrideStart(p1);
   start = extractor.getStart();
   EXPECT_EQ(start.pose.position.x, 45.0);
 

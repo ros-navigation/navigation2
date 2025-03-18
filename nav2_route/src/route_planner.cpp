@@ -144,13 +144,16 @@ bool RoutePlanner::getTraversalCost(
   const EdgePtr edge, float & score, const std::vector<unsigned int> & blocked_ids,
   const geometry_msgs::msg::PoseStamped & goal)
 {
-  // If edge or node is in the blocked list, as long as its not blocking the goal itself
-  auto idBlocked = [&](unsigned int id) {return id == edge->edgeid || id == edge->end->nodeid;};
-  auto is_blocked = std::find_if(blocked_ids.begin(), blocked_ids.end(), idBlocked);
-  if (is_blocked != blocked_ids.end() && !isGoal(edge->end)) {
+  // If edge or node is in the blocked list, don't expand
+  auto is_blocked = std::find_if(
+    blocked_ids.begin(), blocked_ids.end(),
+    [&](unsigned int id) {return id == edge->edgeid || id == edge->end->nodeid;});
+  if (is_blocked != blocked_ids.end()) {
     return false;
   }
 
+  // If an edge's cost is marked as not to be overridden by scoring plugins
+  // Or there are no scoring plugins, use the edge's cost, if it is valid (positive)
   if (!edge->edge_cost.overridable || edge_scorer_->numPlugins() == 0) {
     if (edge->edge_cost.cost <= 0.0) {
       throw nav2_core::NoValidGraph(

@@ -77,8 +77,9 @@ geometry_msgs::msg::PoseStamped GoalIntentExtractor::transformPose(
   return pose;
 }
 
-void GoalIntentExtractor::setStart(const geometry_msgs::msg::PoseStamped & start_pose)
+void GoalIntentExtractor::overrideStart(const geometry_msgs::msg::PoseStamped & start_pose)
 {
+  // Override the start pose when rerouting is requested, using the current pose
   start_ = start_pose;
 }
 
@@ -140,7 +141,7 @@ Route GoalIntentExtractor::pruneStartandGoal(
   bool first_time = rerouting_info.first_time;
   rerouting_info.first_time = false;
 
-  // Cannot prune if no edges to prune or if using nodeIDs (no effect)
+  // Cannot prune if no edges to prune or if using nodeIDs in the initial request (no effect)
   if (input_route.edges.empty() || (!goal->use_poses && first_time)) {
     return pruned_route;
   }
