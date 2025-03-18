@@ -370,26 +370,17 @@ Note that there are parameters like `prune_goal`, `min_distance_from_start` and 
 
 ## New
 
-- [ ] Server (error code, error msg, exceptions), 
-- [ ] cancel b reactivity
-      auto cancel_checker = [this]() {
-        return action_server_poses_->is_cancel_requested();
-      };
-
-      std::function<bool()> cancel_checker
-
-
 Questions:
   - What's up with `pruneStartandGoal`? Is there a better way to do this?
   - route operation/client, collision
   - Pruning when first time and using poses? What happen then? Wouldn't we want a partial bit?
 
+- [ ] Review msg/srv/action definitions
+- [ ] Update cmake
 
 
 - [ ] System tests for coverage, others missing
 - [ ] simple commander examples
-- [ ] Review msg/srv/action definitions
-
 - [ ] update graphs, tests, examples for TB4 & warehouse world
 
 ---
@@ -405,7 +396,6 @@ Questions:
 - [ ] edges have non-straight paths. Path as edge metadata. Concat when creating the route path. transfortm poses? 
 - [ ] Enable or document the use for blocking edges or pausing for anothe robot locking out an edge. Blocked edges due to other robots , Go another way ando/or wait
 - [ ] yaml file substittutions
-- [ ] Update cmake
 - [ ] Simple commander seprate goal handler stuff
 - [ ] Josh PR, Leidos docs PRs / rviz panel plugin
 - [ ] GPS?

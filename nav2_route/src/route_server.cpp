@@ -275,36 +275,44 @@ RouteServer::processRouteRequest(
   } catch (nav2_core::NoValidRouteCouldBeFound & ex) {
     exceptionWarning(goal, ex);
     result->error_code = ActionT::Goal::NO_VALID_ROUTE;
+    result->error_msg = ex.what();
     action_server->terminate_current(result);
   } catch (nav2_core::TimedOut & ex) {
     exceptionWarning(goal, ex);
     result->error_code = ActionT::Goal::TIMEOUT;
+    result->error_msg = ex.what();
     action_server->terminate_current(result);
   } catch (nav2_core::RouteTFError & ex) {
     exceptionWarning(goal, ex);
     result->error_code = ActionT::Goal::TF_ERROR;
+    result->error_msg = ex.what();
     action_server->terminate_current(result);
   } catch (nav2_core::NoValidGraph & ex) {
     exceptionWarning(goal, ex);
     result->error_code = ActionT::Goal::NO_VALID_GRAPH;
+    result->error_msg = ex.what();
     action_server->terminate_current(result);
   } catch (nav2_core::IndeterminantNodesOnGraph & ex) {
     exceptionWarning(goal, ex);
     result->error_code = ActionT::Goal::INDETERMINANT_NODES_ON_GRAPH;
+    result->error_msg = ex.what();
     action_server->terminate_current(result);
   } catch (nav2_core::OperationFailed & ex) {
     // A special case since Operation Failed is only in Compute & Track
     // actions, specifying it to allow otherwise fully shared code
     exceptionWarning(goal, ex);
     result->error_code = ComputeAndTrackRoute::Goal::OPERATION_FAILED;
+    result->error_msg = ex.what();
     action_server->terminate_current(result);
   } catch (nav2_core::RouteException & ex) {
     exceptionWarning(goal, ex);
     result->error_code = ActionT::Goal::UNKNOWN;
+    result->error_msg = ex.what();
     action_server->terminate_current(result);
   } catch (std::exception & ex) {
     exceptionWarning(goal, ex);
     result->error_code = ActionT::Goal::UNKNOWN;
+    result->error_msg = ex.what();
     action_server->terminate_current(result);
   }
 }

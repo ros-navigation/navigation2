@@ -17,7 +17,8 @@ bool use_start # Whether to use the start field or find the start pose in TF
 bool use_poses # Whether to use the poses or the IDs fields for request
 ---
 #result definition
-uint16 error_code
+uint16 error_code 0
+string error_msg
 ---
 #feedback definition
 uint16 last_node_id

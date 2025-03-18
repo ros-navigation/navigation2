@@ -64,9 +64,6 @@ OperationsManager::OperationsManager(nav2_util::LifecycleNode::SharedPtr node)
         graph_operations_[operation->getName()] = operation;
       }
     } catch (const pluginlib::PluginlibException & ex) {
-      RCLCPP_FATAL(
-        node->get_logger(),
-        "Failed to create route operation. Exception: %s", ex.what());
       throw ex;
     }
   }

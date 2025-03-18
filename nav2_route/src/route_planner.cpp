@@ -97,11 +97,6 @@ void RoutePlanner::findShortestGraphTraversal(
   int iterations = 0;
   while (!queue_.empty() && iterations < max_iterations_) {
     iterations++;
-    if (iterations >= max_iterations_) {
-      // Reset states
-      clearQueue();
-      throw nav2_core::TimedOut("Maximum iterations was exceeded!");
-    }
 
     // Get the next lowest cost node
     auto [curr_cost, node] = getNextNode();
@@ -138,6 +133,9 @@ void RoutePlanner::findShortestGraphTraversal(
       }
     }
   }
+
+  clearQueue();
+  throw nav2_core::TimedOut("Maximum iterations was exceeded!");
 }
 
 bool RoutePlanner::getTraversalCost(

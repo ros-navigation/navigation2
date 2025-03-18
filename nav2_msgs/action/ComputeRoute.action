@@ -20,6 +20,7 @@ bool use_poses # Whether to use the poses or the IDs fields for request
 builtin_interfaces/Duration planning_time
 nav_msgs/Path path
 Route route
-uint16 error_code
+uint16 error_code 0
+string error_msg
 ---
 #feedback definition
