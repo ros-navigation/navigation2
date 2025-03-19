@@ -1,2 +1,2 @@
 [tool.mypy]
-files = "nav2_smac_planner/"
+files = "nav2_smac_planner/**"
