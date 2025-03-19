@@ -64,7 +64,7 @@ EdgeScorer::EdgeScorer(
 
 bool EdgeScorer::score(
   const EdgePtr edge, const geometry_msgs::msg::PoseStamped & goal_pose,
-  EdgeType edge_type, float & total_score)
+  const EdgeType & edge_type, float & total_score)
 {
   total_score = 0.0;
   float curr_score = 0.0;

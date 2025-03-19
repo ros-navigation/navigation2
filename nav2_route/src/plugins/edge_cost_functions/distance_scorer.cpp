@@ -42,7 +42,7 @@ void DistanceScorer::configure(
 bool DistanceScorer::score(
   const EdgePtr edge,
   const geometry_msgs::msg::PoseStamped & /* goal_pose */,
-  EdgeType /* edge_type */, float & cost)
+  const EdgeType & /* edge_type */, float & cost)
 {
   // Get the speed limit, if set for an edge
   float speed_val = 1.0f;

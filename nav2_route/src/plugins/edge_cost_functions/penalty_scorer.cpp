@@ -42,7 +42,7 @@ void PenaltyScorer::configure(
 bool PenaltyScorer::score(
   const EdgePtr edge,
   const geometry_msgs::msg::PoseStamped & /* goal_pose */,
-  EdgeType /* edge_type */, float & cost)
+  const EdgeType & /* edge_type */, float & cost)
 {
   // Get the speed limit, if set for an edge
   float penalty_val = 0.0f;

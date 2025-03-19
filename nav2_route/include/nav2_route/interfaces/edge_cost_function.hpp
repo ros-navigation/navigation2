@@ -66,7 +66,7 @@ public:
    */
   virtual bool score(
     const EdgePtr edge, const geometry_msgs::msg::PoseStamped & goal_pose,
-    EdgeType edge_type, float & cost) = 0;
+    const EdgeType & edge_type, float & cost) = 0;
 
   /**
    * @brief Get name of the plugin for parameter scope mapping

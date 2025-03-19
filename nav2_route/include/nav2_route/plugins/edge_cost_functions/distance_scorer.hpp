@@ -61,7 +61,7 @@ public:
    */
   bool score(
     const EdgePtr edge, const geometry_msgs::msg::PoseStamped & goal_pose,
-    EdgeType edge_type, float & cost) override;
+    const EdgeType & edge_type, float & cost) override;
 
   /**
    * @brief Get name of the plugin for parameter scope mapping

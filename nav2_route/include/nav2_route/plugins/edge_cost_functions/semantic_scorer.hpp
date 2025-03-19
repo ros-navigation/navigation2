@@ -62,7 +62,7 @@ public:
    */
   bool score(
     const EdgePtr edge, const geometry_msgs::msg::PoseStamped & goal_pose,
-    EdgeType edge_type, float & cost) override;
+    const EdgeType & edge_type, float & cost) override;
 
   /**
    * @brief Scores graph object based on metadata's semantic value at key

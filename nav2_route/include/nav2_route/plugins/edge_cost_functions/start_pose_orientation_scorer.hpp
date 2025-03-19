@@ -67,7 +67,7 @@ public:
    */
   bool score(
     const EdgePtr edge, const geometry_msgs::msg::PoseStamped & goal_pose,
-    EdgeType edge_type, float & cost) override;
+    const EdgeType & edge_type, float & cost) override;
 
   /**
    * @brief Get name of the plugin for parameter scope mapping
@@ -84,6 +84,8 @@ protected:
   std::string base_frame_;
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   double orientation_tolerance_;
+  float orientation_weight_;
+  bool use_orientation_threshold_;
 };
 
 }  // namespace nav2_route

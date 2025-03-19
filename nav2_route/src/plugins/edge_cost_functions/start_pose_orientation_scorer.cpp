@@ -33,9 +33,17 @@ void StartPoseOrientationScorer::configure(
     node,
     getName() + ".orientation_tolerance", rclcpp::ParameterValue(M_PI / 2.0));
 
+  nav2_util::declare_parameter_if_not_declared(
+    node, getName() + ".orientation_weight", rclcpp::ParameterValue(1.0));
+  
+  nav2_util::declare_parameter_if_not_declared(
+    node, getName() + ".use_orientation_threshold", rclcpp::ParameterValue(false));
+
   orientation_tolerance_ = node->get_parameter(getName() + ".orientation_tolerance").as_double();
+  // orientation_weight_ = static_cast<float>(node->get_parameter(getName() + ".weight").as_double());
   route_frame_ = node->get_parameter("route_frame").as_string();
   base_frame_ = node->get_parameter("base_frame").as_string();
+  // use_orientation_threshold_ = node->get_parameter("use_orientation_threshold").as_bool();
 
   tf_buffer_ = tf_buffer;
 }
@@ -43,7 +51,7 @@ void StartPoseOrientationScorer::configure(
 bool StartPoseOrientationScorer::score(
   const EdgePtr edge,
   const geometry_msgs::msg::PoseStamped & /* goal_pose */,
-  EdgeType edge_type, float & /* cost */)
+  const EdgeType & edge_type, float & /* cost */)
 {
   // TODO(alexanderjyuen): modify this to return a cost that is proportional
   // to the size of the deviation from the desired start orientation
@@ -58,6 +66,14 @@ bool StartPoseOrientationScorer::score(
     if (d_yaw > orientation_tolerance_) {
       return false;
     }
+
+    // if(use_orientation_threshold_){
+    //   if (d_yaw > orientation_tolerance_) {
+    //     return false;
+    //   }
+    // }
+
+    // cost = orientation_weight_*static_cast<float>(d_yaw);
   }
   return true;
 }
