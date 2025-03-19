@@ -18,7 +18,7 @@
 #include <memory>
 #include <set>
 
-#include "../../test_behavior_tree_fixture.hpp"
+#include "utils/test_behavior_tree_fixture.hpp"
 #include "nav2_behavior_tree/plugins/decorator/rate_controller.hpp"
 
 using namespace std::chrono;  // NOLINT
@@ -29,6 +29,7 @@ class RateControllerTestFixture : public nav2_behavior_tree::BehaviorTreeTestFix
 public:
   void SetUp()
   {
+    config_->input_ports["hz"] = 10.0;
     bt_node_ = std::make_shared<nav2_behavior_tree::RateController>(
       "rate_controller", *config_);
     dummy_node_ = std::make_shared<nav2_behavior_tree::DummyNode>();

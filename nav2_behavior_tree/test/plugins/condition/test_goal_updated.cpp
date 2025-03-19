@@ -20,7 +20,7 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_util/robot_utils.hpp"
 
-#include "../../test_behavior_tree_fixture.hpp"
+#include "utils/test_behavior_tree_fixture.hpp"
 #include "nav2_behavior_tree/plugins/condition/goal_updated_condition.hpp"
 
 class GoalUpdatedConditionTestFixture : public nav2_behavior_tree::BehaviorTreeTestFixture
@@ -28,6 +28,8 @@ class GoalUpdatedConditionTestFixture : public nav2_behavior_tree::BehaviorTreeT
 public:
   void SetUp()
   {
+    config_->input_ports["goals"] = "";
+    config_->input_ports["goal"] = "";
     bt_node_ = std::make_shared<nav2_behavior_tree::GoalUpdatedCondition>(
       "goal_updated", *config_);
   }

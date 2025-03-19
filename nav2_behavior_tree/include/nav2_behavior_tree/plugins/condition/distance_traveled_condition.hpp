@@ -19,11 +19,12 @@
 #include <string>
 #include <memory>
 
-#include "behaviortree_cpp_v3/condition_node.h"
+#include "behaviortree_cpp/condition_node.h"
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "tf2_ros/buffer.h"
+#include "nav2_behavior_tree/bt_utils.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -53,6 +54,11 @@ public:
   BT::NodeStatus tick() override;
 
   /**
+   * @brief Function to read parameters and initialize class variables
+   */
+  void initialize();
+
+  /**
    * @brief Creates list of BT ports
    * @return BT::PortsList Containing node-specific ports
    */
@@ -60,8 +66,8 @@ public:
   {
     return {
       BT::InputPort<double>("distance", 1.0, "Distance"),
-      BT::InputPort<std::string>("global_frame", std::string("map"), "Global frame"),
-      BT::InputPort<std::string>("robot_base_frame", std::string("base_link"), "Robot base frame")
+      BT::InputPort<std::string>("global_frame", "Global frame"),
+      BT::InputPort<std::string>("robot_base_frame", "Robot base frame")
     };
   }
 
@@ -73,8 +79,7 @@ private:
 
   double distance_;
   double transform_tolerance_;
-  std::string global_frame_;
-  std::string robot_base_frame_;
+  std::string global_frame_, robot_base_frame_;
 };
 
 }  // namespace nav2_behavior_tree

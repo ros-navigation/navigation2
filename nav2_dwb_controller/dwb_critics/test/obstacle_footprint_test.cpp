@@ -71,7 +71,7 @@ geometry_msgs::msg::Point rotate_origin(geometry_msgs::msg::Point p, double angl
   return p;
 }
 
-// Auxilary function to create a Point with given x and y values.
+// Auxiliary function to create a Point with given x and y values.
 geometry_msgs::msg::Point getPoint(double x, double y)
 {
   geometry_msgs::msg::Point p;
@@ -105,8 +105,7 @@ TEST(ObstacleFootprint, GetOrientedFootprint)
   pose.theta = theta;
   footprint_after = dwb_critics::getOrientedFootprint(pose, footprint_before);
 
-  uint i;
-  for (i = 0; i < footprint_before.size(); i++) {
+  for (uint i = 0; i < footprint_before.size(); i++) {
     ASSERT_EQ(rotate_origin(footprint_before[i], theta), footprint_after[i]);
   }
 
@@ -126,11 +125,13 @@ TEST(ObstacleFootprint, Prepare)
 
   auto node = nav2_util::LifecycleNode::make_shared("costmap_tester");
 
-  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_global_costmap");
+  std::string ns = "/ns";
+  std::string costmap_name = "test_global_costmap";
+  auto costmap_ros =
+    std::make_shared<nav2_costmap_2d::Costmap2DROS>(costmap_name, ns, false);
   costmap_ros->configure();
 
   std::string name = "name";
-  std::string ns = "ns";
   critic->initialize(node, name, ns, costmap_ros);
 
   geometry_msgs::msg::Pose2D pose;
@@ -173,7 +174,7 @@ TEST(ObstacleFootprint, Prepare)
   for (unsigned int i = 1; i < costmap_ros->getCostmap()->getSizeInCellsX(); i++) {
     costmap_ros->getCostmap()->setCost(i, 10, nav2_costmap_2d::LETHAL_OBSTACLE);
   }
-  // It should now hit an obstacle (throw an expection)
+  // It should now hit an obstacle (throw an exception)
   ASSERT_THROW(critic->scorePose(pose), dwb_core::IllegalTrajectoryException);
 }
 
@@ -186,11 +187,13 @@ TEST(ObstacleFootprint, PointCost)
 
   auto node = nav2_util::LifecycleNode::make_shared("costmap_tester");
 
-  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_global_costmap");
+  std::string ns = "/ns";
+  std::string costmap_name = "test_global_costmap";
+  auto costmap_ros =
+    std::make_shared<nav2_costmap_2d::Costmap2DROS>(costmap_name, ns, false);
   costmap_ros->configure();
 
   std::string name = "name";
-  std::string ns = "ns";
   critic->initialize(node, name, ns, costmap_ros);
 
   costmap_ros->getCostmap()->setCost(0, 0, nav2_costmap_2d::LETHAL_OBSTACLE);
@@ -209,11 +212,13 @@ TEST(ObstacleFootprint, LineCost)
 
   auto node = nav2_util::LifecycleNode::make_shared("costmap_tester");
 
-  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_global_costmap");
+  std::string ns = "/ns";
+  std::string costmap_name = "test_global_costmap";
+  auto costmap_ros =
+    std::make_shared<nav2_costmap_2d::Costmap2DROS>(costmap_name, ns, false);
   costmap_ros->configure();
 
   std::string name = "name";
-  std::string ns = "ns";
   critic->initialize(node, name, ns, costmap_ros);
 
   costmap_ros->getCostmap()->setCost(3, 3, nav2_costmap_2d::LETHAL_OBSTACLE);
@@ -243,7 +248,9 @@ TEST(ObstacleFootprint, LineCost)
   costmap_ros->getCostmap()->setCost(4, 3, 100);
   costmap_ros->getCostmap()->setCost(4, 4, 100);
 
-  ASSERT_EQ(critic->lineCost(3, 3, 0, 50), 50);   // all 50
+  auto max_y_in_grid_coordinates = costmap_ros->getCostmap()->getSizeInCellsY() - 1;
+  ASSERT_EQ(max_y_in_grid_coordinates, 49);
+  ASSERT_EQ(critic->lineCost(3, 3, 0, max_y_in_grid_coordinates), 50);   // all 50
   ASSERT_EQ(critic->lineCost(4, 4, 0, 10), 100);  // all 100
   ASSERT_EQ(critic->lineCost(0, 50, 3, 3), 100);  // pass 50 and 100
 }

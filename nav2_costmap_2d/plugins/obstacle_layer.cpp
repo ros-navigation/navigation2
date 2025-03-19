@@ -62,6 +62,10 @@ namespace nav2_costmap_2d
 
 ObstacleLayer::~ObstacleLayer()
 {
+  auto node = node_.lock();
+  if (dyn_params_handler_ && node) {
+    node->remove_on_set_parameters_callback(dyn_params_handler_.get());
+  }
   dyn_params_handler_.reset();
   for (auto & notifier : observation_notifiers_) {
     notifier.reset();
@@ -92,10 +96,13 @@ void ObstacleLayer::onInitialize()
   node->get_parameter(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_);
   node->get_parameter(name_ + "." + "min_obstacle_height", min_obstacle_height_);
   node->get_parameter(name_ + "." + "max_obstacle_height", max_obstacle_height_);
-  node->get_parameter(name_ + "." + "combination_method", combination_method_);
   node->get_parameter("track_unknown_space", track_unknown_space);
   node->get_parameter("transform_tolerance", transform_tolerance);
   node->get_parameter(name_ + "." + "observation_sources", topics_string);
+
+  int combination_method_param{};
+  node->get_parameter(name_ + "." + "combination_method", combination_method_param);
+  combination_method_ = combination_method_from_int(combination_method_param);
 
   dyn_params_handler_ = node->add_on_set_parameters_callback(
     std::bind(
@@ -182,6 +189,7 @@ void ObstacleLayer::onInitialize()
     node->get_parameter(name_ + "." + source + "." + "raytrace_min_range", raytrace_min_range);
     node->get_parameter(name_ + "." + source + "." + "raytrace_max_range", raytrace_max_range);
 
+    topic = joinWithParentNamespace(topic);
 
     RCLCPP_DEBUG(
       logger_,
@@ -218,8 +226,7 @@ void ObstacleLayer::onInitialize()
       source.c_str(), topic.c_str(),
       global_frame_.c_str(), expected_update_rate, observation_keep_time);
 
-    rmw_qos_profile_t custom_qos_profile = rmw_qos_profile_sensor_data;
-    custom_qos_profile.depth = 50;
+    const auto custom_qos_profile = rclcpp::SensorDataQoS().keep_last(50);
 
     // create a callback for the topic
     if (data_type == "LaserScan") {
@@ -304,14 +311,17 @@ ObstacleLayer::dynamicParametersCallback(
         max_obstacle_height_ = parameter.as_double();
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
-      if (param_name == name_ + "." + "enabled") {
+      if (param_name == name_ + "." + "enabled" && enabled_ != parameter.as_bool()) {
         enabled_ = parameter.as_bool();
+        if (enabled_) {
+          current_ = false;
+        }
       } else if (param_name == name_ + "." + "footprint_clearing_enabled") {
         footprint_clearing_enabled_ = parameter.as_bool();
       }
     } else if (param_type == ParameterType::PARAMETER_INTEGER) {
       if (param_name == name_ + "." + "combination_method") {
-        combination_method_ = parameter.as_int();
+        combination_method_ = combination_method_from_int(parameter.as_int());
       }
     }
   }
@@ -540,11 +550,14 @@ ObstacleLayer::updateCosts(
   }
 
   switch (combination_method_) {
-    case 0:  // Overwrite
+    case CombinationMethod::Overwrite:
       updateWithOverwrite(master_grid, min_i, min_j, max_i, max_j);
       break;
-    case 1:  // Maximum
+    case CombinationMethod::Max:
       updateWithMax(master_grid, min_i, min_j, max_i, max_j);
+      break;
+    case CombinationMethod::MaxWithoutUnknownOverwrite:
+      updateWithMaxWithoutUnknownOverwrite(master_grid, min_i, min_j, max_i, max_j);
       break;
     default:  // Nothing
       break;
@@ -633,7 +646,7 @@ ObstacleLayer::raytraceFreespace(
     return;
   }
 
-  // we can pre-compute the enpoints of the map outside of the inner loop... we'll need these later
+  // we can pre-compute the endpoints of the map outside of the inner loop... we'll need these later
   double origin_x = origin_x_, origin_y = origin_y_;
   double map_end_x = origin_x + size_x_ * resolution_;
   double map_end_y = origin_y + size_y_ * resolution_;
@@ -650,7 +663,7 @@ ObstacleLayer::raytraceFreespace(
     double wx = *iter_x;
     double wy = *iter_y;
 
-    // now we also need to make sure that the enpoint we're raytracing
+    // now we also need to make sure that the endpoint we're raytracing
     // to isn't off the costmap and scale if necessary
     double a = wx - ox;
     double b = wy - oy;

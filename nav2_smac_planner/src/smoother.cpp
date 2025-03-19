@@ -14,8 +14,15 @@
 
 #include <ompl/base/ScopedState.h>
 #include <ompl/base/spaces/DubinsStateSpace.h>
-#include <vector>
+
+#include <chrono>
 #include <memory>
+#include <vector>
+
+#include "angles/angles.h"
+
+#include "tf2/utils.hpp"
+
 #include "nav2_smac_planner/smoother.hpp"
 
 namespace nav2_smac_planner
@@ -163,7 +170,7 @@ bool Smoother::smoothImpl(
         cost = static_cast<float>(costmap->getCost(mx, my));
       }
 
-      if (cost > MAX_NON_OBSTACLE && cost != UNKNOWN) {
+      if (cost > MAX_NON_OBSTACLE_COST && cost != UNKNOWN_COST) {
         RCLCPP_DEBUG(
           rclcpp::get_logger("SmacPlannerSmoother"),
           "Smoothing process resulted in an infeasible collision. "
@@ -240,7 +247,7 @@ std::vector<PathSegment> Smoother::findDirectionalPathSegments(const nav_msgs::m
     double ab_y = path.poses[idx + 1].pose.position.y -
       path.poses[idx].pose.position.y;
 
-    // Checking for the existance of cusp, in the path, using the dot product.
+    // Checking for the existence of cusp, in the path, using the dot product.
     double dot_product = (oa_x * ab_x) + (oa_y * ab_y);
     if (dot_product < 0.0) {
       curr_segment.end = idx;
@@ -248,7 +255,7 @@ std::vector<PathSegment> Smoother::findDirectionalPathSegments(const nav_msgs::m
       curr_segment.start = idx;
     }
 
-    // Checking for the existance of a differential rotation in place.
+    // Checking for the existence of a differential rotation in place.
     double cur_theta = tf2::getYaw(path.poses[idx].pose.orientation);
     double next_theta = tf2::getYaw(path.poses[idx + 1].pose.orientation);
     double dtheta = angles::shortest_angular_distance(cur_theta, next_theta);
@@ -367,7 +374,7 @@ void Smoother::findBoundaryExpansion(
     // Check for collision
     unsigned int mx, my;
     costmap->worldToMap(x, y, mx, my);
-    if (static_cast<float>(costmap->getCost(mx, my)) >= INSCRIBED) {
+    if (static_cast<float>(costmap->getCost(mx, my)) >= INSCRIBED_COST) {
       expansion.in_collision = true;
     }
 

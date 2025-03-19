@@ -58,6 +58,7 @@ struct MapLocation
 {
   unsigned int x;
   unsigned int y;
+  unsigned char cost;
 };
 
 /**
@@ -150,8 +151,7 @@ public:
 
   /**
    * @brief  Get the cost of a cell in the costmap
-   * @param mx The x coordinate of the cell
-   * @param my The y coordinate of the cell
+   * @param index The cell index
    * @return The cost of the cell
    */
   unsigned char getCost(unsigned int index) const;
@@ -182,6 +182,16 @@ public:
    * @return True if the conversion was successful (legal bounds) false otherwise
    */
   bool worldToMap(double wx, double wy, unsigned int & mx, unsigned int & my) const;
+
+  /**
+   * @brief  Convert from world coordinates to map coordinates
+   * @param  wx The x world coordinate
+   * @param  wy The y world coordinate
+   * @param  mx Will be set to the associated map x coordinate
+   * @param  my Will be set to the associated map y coordinate
+   * @return True if the conversion was successful (legal bounds) false otherwise
+   */
+  bool worldToMapContinuous(double wx, double wy, float & mx, float & my) const;
 
   /**
    * @brief  Convert from world coordinates to map coordinates without checking for legal bounds
@@ -301,6 +311,32 @@ public:
   bool setConvexPolygonCost(
     const std::vector<geometry_msgs::msg::Point> & polygon,
     unsigned char cost_value);
+
+  /**
+   * @brief  Gets the map region occupied by polygon
+   * @param polygon The polygon to perform the operation on
+   * @param polygon_map_region The map region occupied by the polygon
+   * @return True if the polygon_map_region was filled... false if it could not be filled
+   */
+  bool getMapRegionOccupiedByPolygon(
+    const std::vector<geometry_msgs::msg::Point> & polygon,
+    std::vector<MapLocation> & polygon_map_region);
+
+  /**
+   * @brief  Sets the given map region to desired value
+   * @param polygon_map_region The map region to perform the operation on
+   * @param new_cost_value The value to set costs to
+   */
+  void setMapRegionOccupiedByPolygon(
+    const std::vector<MapLocation> & polygon_map_region,
+    unsigned char new_cost_value);
+
+  /**
+   * @brief  Restores the corresponding map region using given map region
+   * @param polygon_map_region The map region to perform the operation on
+   */
+  void restoreMapRegionOccupiedByPolygon(
+    const std::vector<MapLocation> & polygon_map_region);
 
   /**
    * @brief  Get the map cells that make up the outline of a polygon
@@ -559,6 +595,7 @@ protected:
     {
       MapLocation loc;
       costmap_.indexToCells(offset, loc.x, loc.y);
+      loc.cost = costmap_.getCost(loc.x, loc.y);
       cells_.push_back(loc);
     }
 

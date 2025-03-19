@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Samsung Research America
+// Copyright (c) 2025, Open Navigation LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@
 #include "nav2_util/service_client.hpp"
 #include "nav2_util/node_thread.hpp"
 #include "nav2_route/edge_scorer.hpp"
-#include "nav2_msgs/srv/adjust_edges.hpp"
+#include "nav2_msgs/srv/dynamic_edges.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_2d_publisher.hpp"
 #include "tf2_ros/static_transform_broadcaster.h"
@@ -97,26 +97,26 @@ TEST(EdgeScorersTest, test_failed_api)
 TEST(EdgeScorersTest, test_invalid_edge_scoring)
 {
   // Test API for the edge scorer to maintain proper state when a plugin
-  // rejects and edge. Also covers the AdjustEdgesScorer plugin to demonstrate.
+  // rejects and edge. Also covers the DynamicEdgesScorer plugin to demonstrate.
   auto node = std::make_shared<nav2_util::LifecycleNode>("route_server");
   auto node_thread = std::make_unique<nav2_util::NodeThread>(node);
   auto node2 = std::make_shared<rclcpp::Node>("my_node2");
   std::shared_ptr<tf2_ros::Buffer> tf_buffer;
 
   node->declare_parameter(
-    "edge_cost_functions", rclcpp::ParameterValue(std::vector<std::string>{"AdjustEdgesScorer"}));
+    "edge_cost_functions", rclcpp::ParameterValue(std::vector<std::string>{"DynamicEdgesScorer"}));
   nav2_util::declare_parameter_if_not_declared(
-    node, "AdjustEdgesScorer.plugin",
-    rclcpp::ParameterValue(std::string{"nav2_route::AdjustEdgesScorer"}));
+    node, "DynamicEdgesScorer.plugin",
+    rclcpp::ParameterValue(std::string{"nav2_route::DynamicEdgesScorer"}));
 
   EdgeScorer scorer(node, tf_buffer);
   EXPECT_EQ(scorer.numPlugins(), 1);  // AdjustEdgesScorer
 
   // Send service to set an edge as invalid
   auto srv_client =
-    nav2_util::ServiceClient<nav2_msgs::srv::AdjustEdges>(
-    "route_server/AdjustEdgesScorer/adjust_edges", node2);
-  auto req = std::make_shared<nav2_msgs::srv::AdjustEdges::Request>();
+    nav2_util::ServiceClient<nav2_msgs::srv::DynamicEdges>(
+    "route_server/DynamicEdgesScorer/adjust_edges", node2);
+  auto req = std::make_shared<nav2_msgs::srv::DynamicEdges::Request>();
   req->closed_edges.push_back(10u);
   req->adjust_edges.resize(1);
   req->adjust_edges[0].edgeid = 11u;
@@ -150,7 +150,7 @@ TEST(EdgeScorersTest, test_invalid_edge_scoring)
   EXPECT_EQ(traversal_cost, 42.0);
 
   // Try to re-open this edge
-  auto req2 = std::make_shared<nav2_msgs::srv::AdjustEdges::Request>();
+  auto req2 = std::make_shared<nav2_msgs::srv::DynamicEdges::Request>();
   req2->opened_edges.push_back(10u);
   auto resp2 = srv_client.invoke(req2, std::chrono::nanoseconds(1000000000));
   EXPECT_TRUE(resp2->success);

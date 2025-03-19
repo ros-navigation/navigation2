@@ -19,8 +19,8 @@
 #include <set>
 #include <string>
 
-#include "../../test_action_server.hpp"
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "nav2_behavior_tree/utils/test_action_server.hpp"
+#include "behaviortree_cpp/bt_factory.h"
 #include "nav2_behavior_tree/plugins/action/planner_selector_node.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "std_msgs/msg/string.hpp"
@@ -38,7 +38,7 @@ public:
     // Create the blackboard that will be shared by all of the nodes in the tree
     config_->blackboard = BT::Blackboard::create();
     // Put items on the blackboard
-    config_->blackboard->set<rclcpp::Node::SharedPtr>("node", node_);
+    config_->blackboard->set("node", node_);
 
     BT::NodeBuilder builder = [](const std::string & name, const BT::NodeConfiguration & config) {
         return std::make_unique<nav2_behavior_tree::PlannerSelector>(name, config);
@@ -78,7 +78,7 @@ TEST_F(PlannerSelectorTestFixture, test_custom_topic)
   // create tree
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
           <PlannerSelector selected_planner="{selected_planner}" default_planner="GridBased" topic_name="planner_selector_custom_topic_name"/>
         </BehaviorTree>
@@ -93,7 +93,7 @@ TEST_F(PlannerSelectorTestFixture, test_custom_topic)
 
   // check default value
   std::string selected_planner_result;
-  config_->blackboard->get("selected_planner", selected_planner_result);
+  EXPECT_TRUE(config_->blackboard->get("selected_planner", selected_planner_result));
 
   EXPECT_EQ(selected_planner_result, "GridBased");
 
@@ -117,7 +117,7 @@ TEST_F(PlannerSelectorTestFixture, test_custom_topic)
   }
 
   // check planner updated
-  config_->blackboard->get("selected_planner", selected_planner_result);
+  EXPECT_TRUE(config_->blackboard->get("selected_planner", selected_planner_result));
   EXPECT_EQ("RRT", selected_planner_result);
 }
 
@@ -126,7 +126,7 @@ TEST_F(PlannerSelectorTestFixture, test_default_topic)
   // create tree
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
           <PlannerSelector selected_planner="{selected_planner}" default_planner="GridBased"/>
         </BehaviorTree>
@@ -141,7 +141,7 @@ TEST_F(PlannerSelectorTestFixture, test_default_topic)
 
   // check default value
   std::string selected_planner_result;
-  config_->blackboard->get("selected_planner", selected_planner_result);
+  EXPECT_TRUE(config_->blackboard->get("selected_planner", selected_planner_result));
 
   EXPECT_EQ(selected_planner_result, "GridBased");
 
@@ -165,7 +165,7 @@ TEST_F(PlannerSelectorTestFixture, test_default_topic)
   }
 
   // check planner updated
-  config_->blackboard->get("selected_planner", selected_planner_result);
+  EXPECT_TRUE(config_->blackboard->get("selected_planner", selected_planner_result));
   EXPECT_EQ("RRT", selected_planner_result);
 }
 

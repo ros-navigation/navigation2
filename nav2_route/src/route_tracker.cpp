@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Samsung Research America
+// Copyright (c) 2025, Open Navigation LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -69,16 +69,12 @@ bool RouteTracker::nodeAchieved(
   const bool in_radius =
     (dist_mag <= (is_boundary_node ? boundary_radius_threshold_ : radius_threshold_));
 
-  // Within 0.1mm is achieved
-  if (dist_mag < 1e-4) {
+  // Within 0.1mm is achieved or within radius and now not, consider node achieved
+  if (dist_mag < 1e-4 || (!in_radius && state.within_radius)) {
     return true;
   }
 
-  // If was within radius and now not, consider node achieved
-  if (!in_radius && state.within_radius) {
-    return true;
-  }
-
+  // Update the state for the next iteration
   state.within_radius = in_radius;
 
   // If start or end node, use the radius check only since the final node may not pass
@@ -160,6 +156,10 @@ TrackerResult RouteTracker::trackRoute(
   // start, retain the state so we can continue as previously set with
   // refined node achievement logic and performing edge operations on exit
   if (rerouting_info.curr_edge) {
+    // state.next_node is not updated since the first edge is removed from route when rerouted
+    // along the same edge in the goal intent extractor. Thus, state.next_node is still the
+    // future node to reach in this case and we add in the state.last_node and state.current_edge
+    // to represent the 'currently' progressing edge that is omitted from the route (and its start)
     state.current_edge = rerouting_info.curr_edge;
     state.last_node = state.current_edge->start;
     publishFeedback(
@@ -174,9 +174,9 @@ TrackerResult RouteTracker::trackRoute(
 
     // Check if OK to keep processing
     if (action_server_->is_cancel_requested()) {
-      return TrackerResult::REROUTE;
+      return TrackerResult::INTERRUPTED;
     } else if (action_server_->is_preempt_requested()) {
-      return TrackerResult::REROUTE;
+      return TrackerResult::INTERRUPTED;
     }
 
     // Update the tracking state
@@ -201,6 +201,8 @@ TrackerResult RouteTracker::trackRoute(
 
     if (completed) {
       RCLCPP_INFO(logger_, "Routing to goal completed!");
+      // Publishing last feedback
+      publishFeedback(false, 0, state.last_node->nodeid, 0, ops_result.operations_triggered);
       return TrackerResult::COMPLETED;
     }
 
@@ -223,18 +225,21 @@ TrackerResult RouteTracker::trackRoute(
       if (state.last_node) {
         rerouting_info.rerouting_start_id = state.last_node->nodeid;
         rerouting_info.rerouting_start_pose = robot_pose;
+      } else {
+        rerouting_info.rerouting_start_id = std::numeric_limits<unsigned int>::max();
+        rerouting_info.rerouting_start_pose = geometry_msgs::msg::PoseStamped();
       }
 
       // Update so during rerouting we can check if we are continuing on the same edge
       rerouting_info.curr_edge = state.current_edge;
       RCLCPP_INFO(logger_, "Rerouting requested by route tracking operations!");
-      return TrackerResult::REROUTE;
+      return TrackerResult::INTERRUPTED;
     }
 
     r.sleep();
   }
 
-  return TrackerResult::INTERRUPTED;
+  return TrackerResult::EXITED;
 }
 
 }  // namespace nav2_route

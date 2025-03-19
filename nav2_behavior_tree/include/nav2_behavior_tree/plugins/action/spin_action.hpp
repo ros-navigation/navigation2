@@ -28,6 +28,9 @@ namespace nav2_behavior_tree
  */
 class SpinAction : public BtActionNode<nav2_msgs::action::Spin>
 {
+  using Action = nav2_msgs::action::Spin;
+  using ActionResult = Action::Result;
+
 public:
   /**
    * @brief A constructor for nav2_behavior_tree::SpinAction
@@ -46,6 +49,11 @@ public:
   void on_tick() override;
 
   /**
+   * @brief Function to read parameters and initialize class variables
+   */
+  void initialize();
+
+  /**
    * @brief Creates list of BT ports
    * @return BT::PortsList Containing basic ports along with node-specific ports
    */
@@ -55,9 +63,29 @@ public:
       {
         BT::InputPort<double>("spin_dist", 1.57, "Spin distance"),
         BT::InputPort<double>("time_allowance", 10.0, "Allowed time for spinning"),
-        BT::InputPort<bool>("is_recovery", true, "True if recovery")
+        BT::InputPort<bool>("is_recovery", true, "True if recovery"),
+        BT::InputPort<bool>("disable_collision_checks", false, "Disable collision checking"),
+        BT::OutputPort<ActionResult::_error_code_type>(
+          "error_code_id", "The spin behavior error code"),
+        BT::OutputPort<std::string>(
+          "error_msg", "The spin behavior error msg"),
       });
   }
+
+  /**
+   * @brief Function to perform some user-defined operation upon successful completion of the action
+   */
+  BT::NodeStatus on_success() override;
+
+  /**
+   * @brief Function to perform some user-defined operation upon abortion of the action
+   */
+  BT::NodeStatus on_aborted() override;
+
+  /**
+   * @brief Function to perform some user-defined operation upon cancellation of the action
+   */
+  BT::NodeStatus on_cancelled() override;
 
 private:
   bool is_recovery_;

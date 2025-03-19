@@ -81,11 +81,13 @@ public:
    * @brief Creating a plan from start and goal poses
    * @param start Start pose
    * @param goal Goal pose
+   * @param cancel_checker Function to check if the task has been canceled
    * @return nav_msgs::Path of the generated path
    */
   nav_msgs::msg::Path createPlan(
     const geometry_msgs::msg::PoseStamped & start,
-    const geometry_msgs::msg::PoseStamped & goal) override;
+    const geometry_msgs::msg::PoseStamped & goal,
+    std::function<bool()> cancel_checker) override;
 
 protected:
   /**
@@ -93,12 +95,14 @@ protected:
    * @param start Start pose
    * @param goal Goal pose
    * @param tolerance Relaxation constraint in x and y
+   * @param cancel_checker Function to check if the task has been canceled
    * @param plan Path to be computed
    * @return true if can find the path
    */
   bool makePlan(
     const geometry_msgs::msg::Pose & start,
     const geometry_msgs::msg::Pose & goal, double tolerance,
+    std::function<bool()> cancel_checker,
     nav_msgs::msg::Path & plan);
 
   /**
@@ -223,7 +227,7 @@ protected:
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
 
   /**
-   * @brief Callback executed when a paramter change is detected
+   * @brief Callback executed when a parameter change is detected
    * @param parameters list of changed parameters
    */
   rcl_interfaces::msg::SetParametersResult

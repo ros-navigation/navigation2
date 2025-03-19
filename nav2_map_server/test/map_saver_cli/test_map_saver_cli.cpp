@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
-#include <experimental/filesystem>
+#include <filesystem>
 #include <string>
 #include <memory>
 #include <utility>
@@ -61,7 +61,7 @@ TEST(MapSaverCLI, CLITest)
   // succeed on real map
   RCLCPP_INFO(node->get_logger(), "Calling saver...");
 
-  EXPECT_FALSE(std::experimental::filesystem::exists(file_path + ".yaml"));
+  EXPECT_FALSE(std::filesystem::exists(file_path + ".yaml"));
 
   std::string command =
     std::string(
@@ -73,34 +73,34 @@ TEST(MapSaverCLI, CLITest)
 
   RCLCPP_INFO(node->get_logger(), "Checking on file...");
 
-  EXPECT_TRUE(std::experimental::filesystem::exists(file_path + ".pgm"));
-  EXPECT_EQ(std::experimental::filesystem::file_size(file_path + ".pgm"), 20ul);
+  EXPECT_TRUE(std::filesystem::exists(file_path + ".pgm"));
+  EXPECT_EQ(std::filesystem::file_size(file_path + ".pgm"), 20ul);
 
-  if (std::experimental::filesystem::exists(file_path + ".yaml")) {
-    std::experimental::filesystem::remove(file_path + ".yaml");
+  if (std::filesystem::exists(file_path + ".yaml")) {
+    std::filesystem::remove(file_path + ".yaml");
   }
-  if (std::experimental::filesystem::exists(file_path + ".pgm")) {
-    std::experimental::filesystem::remove(file_path + ".pgm");
+  if (std::filesystem::exists(file_path + ".pgm")) {
+    std::filesystem::remove(file_path + ".pgm");
   }
 
   // fail on bogus map
   RCLCPP_INFO(node->get_logger(), "Calling saver...");
 
-  EXPECT_FALSE(std::experimental::filesystem::exists(file_path + ".yaml"));
+  EXPECT_FALSE(std::filesystem::exists(file_path + ".yaml"));
 
   command =
     std::string(
     "ros2 run nav2_map_server map_saver_cli "
     "-t map_failure --occ 100 --free 2 --mode trinary --fmt png -f ") + file_path +
-    std::string("--ros-args __node:=map_saver_test_node");
+    std::string(" --ros-args --remap __node:=map_saver_test_node");
   return_code = system(command.c_str());
-  EXPECT_EQ(return_code, 65280);
+  EXPECT_EQ(return_code, 256);
 
   rclcpp::Rate(0.25).sleep();
 
   RCLCPP_INFO(node->get_logger(), "Checking on file...");
 
-  EXPECT_FALSE(std::experimental::filesystem::exists(file_path + ".yaml"));
+  EXPECT_FALSE(std::filesystem::exists(file_path + ".yaml"));
 
   RCLCPP_INFO(node->get_logger(), "Testing help...");
   command =
@@ -140,7 +140,9 @@ TEST(MapSaverCLI, CLITest)
 
   command =
     std::string(
-    "ros2 run nav2_map_server map_saver_cli --ros-args -r __node:=map_saver_test_node");
+    "ros2 run nav2_map_server map_saver_cli --ros-args --remap __node:=map_saver_test_node");
   return_code = system(command.c_str());
   EXPECT_EQ(return_code, 0);
+
+  rclcpp::shutdown();
 }

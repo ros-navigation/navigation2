@@ -63,23 +63,7 @@ public:
   std::shared_ptr<DummyNode> node;
 };
 
-class RclCppFixture
-{
-public:
-  RclCppFixture()
-  {
-    rclcpp::init(0, nullptr);
-  }
-
-  ~RclCppFixture()
-  {
-    rclcpp::shutdown();
-  }
-};
-
-RclCppFixture g_rclcppfixture;
-
-TEST(LifeycleCLI, fails_no_node_name)
+TEST(LifecycleCLI, fails_no_node_name)
 {
   Handle handle;
   auto rc = system("ros2 run nav2_util lifecycle_bringup");
@@ -94,7 +78,7 @@ TEST(LifeycleCLI, fails_no_node_name)
   SUCCEED();
 }
 
-TEST(LifeycleCLI, succeeds_node_name)
+TEST(LifecycleCLI, succeeds_node_name)
 {
   Handle handle;
   auto rc = system("ros2 run nav2_util lifecycle_bringup nav2_test_cli");
@@ -107,6 +91,19 @@ TEST(LifeycleCLI, succeeds_node_name)
   (void)rc;
   EXPECT_EQ(handle.node->activated, true);
   SUCCEED();
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }
 
 #endif  // NAV2_UTIL__TEST__TEST_LIFECYCLE_CLI_NODE_HPP_

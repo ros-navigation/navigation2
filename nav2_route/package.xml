@@ -16,10 +16,13 @@
   <depend>geometry_msgs</depend>
   <depend>nav2_costmap_2d</depend>
   <depend>pluginlib</depend>
+  <depend>visualization_msgs</depend>
+  <depend>nav2_msgs</depend>
   <depend>nav_msgs</depend>
   <depend>tf2_ros</depend>
   <depend>nav2_util</depend>
   <depend>nav2_core</depend>
+  <depend>angles</depend>
   <depend>lib-nanoflann</depend>
   <depend>nlohmann-json</depend>
 

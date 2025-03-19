@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Samsung Research America
+// Copyright (c) 2025 Open Navigation LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -66,7 +66,11 @@ public:
    */
   virtual bool score(
     const EdgePtr edge, const geometry_msgs::msg::PoseStamped & goal_pose,
+<<<<<<< HEAD
     const EdgeType & edge_type, float & cost) = 0;
+=======
+    bool final_edge, float & cost) = 0;
+>>>>>>> nav2_route_server
 
   /**
    * @brief Get name of the plugin for parameter scope mapping

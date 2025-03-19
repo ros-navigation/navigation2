@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Samsung Research America
+// Copyright (c) 2025, Open Navigation LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,9 +28,6 @@ OperationsManager::OperationsManager(nav2_util::LifecycleNode::SharedPtr node)
 : plugin_loader_("nav2_route", "nav2_route::RouteOperation")
 {
   logger_ = node->get_logger();
-  nav2_util::declare_parameter_if_not_declared(
-    node, "use_feedback_operations", rclcpp::ParameterValue(true));
-  use_feedback_operations_ = node->get_parameter("use_feedback_operations").as_bool();
 
   // Have some default operations
   const std::vector<std::string> default_plugin_ids(
@@ -67,9 +64,6 @@ OperationsManager::OperationsManager(nav2_util::LifecycleNode::SharedPtr node)
         graph_operations_[operation->getName()] = operation;
       }
     } catch (const pluginlib::PluginlibException & ex) {
-      RCLCPP_FATAL(
-        node->get_logger(),
-        "Failed to create route operation. Exception: %s", ex.what());
       throw ex;
     }
   }
@@ -141,7 +135,7 @@ OperationsResult OperationsManager::process(
   EdgePtr edge_exited =
     state.route_edges_idx > 0 ? route.edges[state.route_edges_idx - 1] : nullptr;
 
-  // If we have rerouting info curr_edge, then after the first node is achieved,
+  // If we have rerouting_info.curr_edge, then after the first node is achieved,
   // the robot is exiting the partial previous edge.
   if (state.route_edges_idx == 0 && rerouting_info.curr_edge) {
     edge_exited = rerouting_info.curr_edge;
@@ -156,11 +150,6 @@ OperationsResult OperationsManager::process(
         OperationResult op_result = op->second->perform(
           node, edge_entered, edge_exited, route, pose, &operations[i]->metadata);
         updateResult(op->second->getName(), op_result, result);
-      } else if (use_feedback_operations_) {
-        RCLCPP_INFO(
-          logger_, "Operation '%s' should be called from action feedback!",
-          operations[i]->type.c_str());
-        result.operations_triggered.push_back(operations[i]->type);
       } else {
         throw nav2_core::OperationFailed(
                 "Operation " + operations[i]->type +

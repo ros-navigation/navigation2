@@ -199,7 +199,7 @@ ME005 | Mission Execution.Command Sequencing | 1 | The Mission Execution module 
 ME006 | Mission Execution.Logging | 1 | The Mission Execution module SHOULD log its activity. | In case of forensic analysis of a safety event, for example.
 ME007 | Mission Execution.Feedback.Inputs.Error Recovery | 1 | Upon receipt of a downstream failure (unable to execute the Navigation Command), the Mission Execution module SHOULD attempt to recover and continue execution of the mission.
 ME008 | Mission Execution.Feedback.Outputs.Progress Notification | 1 | The Mission Execution module SHALL provide progress notifications on the execution of the mission. | Intermediate steps of interest.
-ME009 | Mission Execution.Feedback.Outputs.Mission Completed | 1 | Upon successfull completion of the mission, the Mission Execution module SHALL output a corresponding notification.
+ME009 | Mission Execution.Feedback.Outputs.Mission Completed | 1 | Upon successful completion of the mission, the Mission Execution module SHALL output a corresponding notification.
 ME010 | Mission Execution.Feedback.Outputs.Mission Canceled | 1 | Upon receiving a cancellation command and cancelling the mission, the Mission Execution module SHALL output a corresponding notification.
 ME011 | Mission Execution.Feedback.Outputs.Mission Failure | 1 | If the Mission Execution module is unable to execute the mission, it MUST output a failure notification. | This would be received by the user-level interface and could necessitate user intervention, such as having a remote operating center where the remote operator "rescues" the robot.
 ME012 | Mission Execution.Safe State Upon Failure | 1 | If the Mission Execution module is unable to execute the mission, it MUST direct the robot to a safe state. | The failure could be for a variety of reasons - sensor failures, algorithmic failure, a collision, etc.
@@ -267,7 +267,7 @@ There are a few support modules and subsystems that are not part of the Navigati
 
 ### 2.4.1 Mapping
 
-The map data format should be capable of describing typical indoor and outdoor environments encoutered by the robots.
+The map data format should be capable of describing typical indoor and outdoor environments encountered by the robots.
 
 Id | Handle | Priority | Description | Notes
 -- | ------ | -------- | ----------- | -----
@@ -278,7 +278,7 @@ MAP004 | Mapping.Data Model.Unknown Space | 1 | Maps provided by the Mapping Sub
 MAP005 | Mapping.Data Model.Surface Planarity | 1 | The map data format SHALL be capable of describing the planarity of traversable surfaces. | Can describe uneven ground.
 MAP006 | Mapping.Data Model.Safety Zone | 1 | The map data format SHALL be capable of defining regions where the robot may have to adjust its operations according to specified constraints.
 MAP007 | Mapping.Data Model.Safety Zone.Name | 1 | The map data format SHOULD allow for naming each safety zone. | *TODO: Does it need to be a unique name?*
-MAP008 | Mapping.Data Model.Safety Zone.Type | 1 | The map data format SHOULD allow for defining types of safety zones. | To allow for re-use of a safety zone type without redefining policy. Could be an "intersection" type, for example. May want to slot down at all intersections, for example.
+MAP008 | Mapping.Data Model.Safety Zone.Type | 1 | The map data format SHOULD allow for defining types of safety zones. | To allow for reuse of a safety zone type without redefining policy. Could be an "intersection" type, for example. May want to slot down at all intersections, for example.
 MAP009 | Mapping.Data Model.Safety Zone.Policy | 1 | The map data format SHALL be capable of expressing policy associated with each safety zone and safety zone type. | Maximum speed, (increased) distance to people, etc.
 MAP010 | Mapping.Data Model.Safety Zone.Policy.Keep Out Zone | 1 | The map data format SHALL be capable of expressing that a robot must not navigate through this zone.
 MAP011 | Mapping.Data Model.Lanes | 1 | The map data format SHALL be able to specify virtual lanes. | May prefer specified lanes in a warehouse, for example.
@@ -322,7 +322,7 @@ LOC002 | Localization.Robot Pose.Accuracy | 1 | The Localization Module MUST pro
 ## 2.5 Open Issues
 
 * What are the performance goals for the ROS2 Navigation System?
-* What are the scalability for the ROS2 Navigaton System?
+* What are the scalability for the ROS2 Navigation System?
 * Any other important design goals to call out?
 * Should we specify a minimum target platform? Or, should this be expressed as minimum platform requirements?
 * What is the right latency value for detecting a collision? 

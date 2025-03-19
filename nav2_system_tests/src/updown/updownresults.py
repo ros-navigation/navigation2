@@ -14,8 +14,8 @@
 # limitations under the License.
 
 
-# To use this script, run the `test_updown_reliablity` script and log the output
-# > ./test_updown_reliablity |& tee /tmp/updown.log
+# To use this script, run the `test_updown_reliability` script and log the output
+# > ./test_updown_reliability |& tee /tmp/updown.log
 # When the test is completed, pipe the log to this script to get a summary of the
 # results
 # > ./updownresults.py < /tmp/updown.log
@@ -59,11 +59,11 @@ def main():
         if 'The system is active' in line:
             bringup_successful = True
 
-        if 'The system has been sucessfully shut down' in line:
+        if 'The system has been successfully shut down' in line:
             shutdown_successful = True
 
     print('Number of tests: ', test_count)
-    print('Number of successes: ', test_count-fail_count)
+    print('Number of successes: ', test_count - fail_count)
     print('Number of successful bringups', successful_bringup_count)
     print('Number of successful shutdowns', successful_shutdown_count)
 

@@ -59,7 +59,7 @@ public:
       for (int j = 40; j < 100; ++j) {
         int dist_x = std::max(0, std::max(60 - j, j - 80));
         int dist_y = std::max(0, std::max(30 - i, i - 40));
-        double dist = sqrt(dist_x * dist_x + dist_y * dist_y);
+        double dist = sqrt(dist_x * dist_x + dist_y * dist_y) * costmap->metadata.resolution;
         unsigned char cost;
         if (dist == 0) {
           cost = nav2_costmap_2d::LETHAL_OBSTACLE;
@@ -68,7 +68,7 @@ public:
         } else {
           double factor =
             exp(
-            -1.0 * cost_scaling_factor * (dist * costmap->metadata.resolution - inscribed_radius));
+            -1.0 * cost_scaling_factor * (dist - inscribed_radius));
           cost =
             static_cast<unsigned char>((nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE - 1) * factor);
         }
@@ -82,7 +82,12 @@ public:
   void setCostmap(nav2_msgs::msg::Costmap::SharedPtr msg)
   {
     costmap_msg_ = msg;
-    costmap_received_ = true;
+    costmap_ = std::make_shared<nav2_costmap_2d::Costmap2D>(
+      msg->metadata.size_x, msg->metadata.size_y,
+      msg->metadata.resolution, msg->metadata.origin.position.x,
+      msg->metadata.origin.position.y);
+
+    processCurrentCostmapMsg();
   }
 };
 
@@ -100,7 +105,7 @@ protected:
   SmootherTest() {SetUp();}
   ~SmootherTest() {}
 
-  void SetUp()
+  void SetUp() override
   {
     node_lifecycle_ =
       std::make_shared<rclcpp_lifecycle::LifecycleNode>(
@@ -141,7 +146,7 @@ protected:
       std::shared_ptr<nav2_costmap_2d::FootprintSubscriber>());
     smoother_->activate();
 
-    node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_smooth", 15000.0));
+    node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_smooth", 2000000.0));
     node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.minimum_turning_radius", 0.4));
     node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_curve", 30.0));
     node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_dist", 0.0));
@@ -373,7 +378,7 @@ protected:
   {
     auto output = input;
     for (size_t i = 1; i < input.size() - 1; i++) {
-      // add offset prependicular to path
+      // add offset perpendicular to path
       Eigen::Vector2d direction =
         (input[i + 1].block<2, 1>(0, 0) - input[i - 1].block<2, 1>(0, 0)).normalized();
       output[i].block<2, 1>(
@@ -399,7 +404,7 @@ protected:
   int cusp_i_ = -1;
   QualityCriterion3 mvmt_smoothness_criterion_ =
     [this](int i, const Eigen::Vector3d & prev_p, const Eigen::Vector3d & p,
-      const Eigen::Vector3d & next_p) {
+    const Eigen::Vector3d & next_p) {
       Eigen::Vector2d prev_mvmt = p.block<2, 1>(0, 0) - prev_p.block<2, 1>(0, 0);
       Eigen::Vector2d next_mvmt = next_p.block<2, 1>(0, 0) - p.block<2, 1>(0, 0);
       if (i == cusp_i_) {
@@ -614,7 +619,7 @@ TEST_F(SmootherTest, testingObstacleAvoidance)
   footprint.push_back(pointMsg(-0.4, -0.25));
   footprint.push_back(pointMsg(0.4, -0.25));
 
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_smooth", 15000.0));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_smooth", 2000000.0));
   node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.015));
   reloadParams();
 
@@ -644,7 +649,7 @@ TEST_F(SmootherTest, testingObstacleAvoidance)
     straight_near_obstacle, smoothed_path,
     cost_avoidance_criterion);
   EXPECT_GT(cost_avoidance_improvement, 0.0);
-  EXPECT_NEAR(cost_avoidance_improvement, 12.9, 1.0);
+  EXPECT_NEAR(cost_avoidance_improvement, 9.4, 1.0);
 }
 
 TEST_F(SmootherTest, testingObstacleAvoidanceNearCusps)
@@ -723,6 +728,7 @@ TEST_F(SmootherTest, testingObstacleAvoidanceNearCusps)
   footprint.push_back(pointMsg(0.4, -0.2));
 
   // first smooth with homogeneous w_cost to compare
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_smooth", 15000.0));
   node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.015));
   // higher w_curve significantly decreases convergence speed here
   // path feasibility can be restored by subsequent resmoothing with higher w_curve
@@ -809,7 +815,7 @@ TEST_F(SmootherTest, testingObstacleAvoidanceNearCusps)
   footprint.push_back(pointMsg(0.15, -0.2));
 
   // reset parameters back to homogeneous and shift cost check point to the center of the footprint
-  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_smooth", 15000));
+  node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_smooth", 15000.0));
   node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_curve", 1.0));
   node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.w_cost", 0.015));
   node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.cusp_zone_length", -1.0));
@@ -980,7 +986,7 @@ TEST_F(SmootherTest, testingDownsamplingUpsampling)
   int cusp_i_out = 6;  // for upsampled path
   QualityCriterion3 mvmt_smoothness_criterion_out =
     [&cusp_i_out](int i, const Eigen::Vector3d & prev_p, const Eigen::Vector3d & p,
-      const Eigen::Vector3d & next_p) {
+    const Eigen::Vector3d & next_p) {
       Eigen::Vector2d prev_mvmt = p.block<2, 1>(0, 0) - prev_p.block<2, 1>(0, 0);
       Eigen::Vector2d next_mvmt = next_p.block<2, 1>(0, 0) - p.block<2, 1>(0, 0);
       if (i == cusp_i_out) {
@@ -995,7 +1001,7 @@ TEST_F(SmootherTest, testingDownsamplingUpsampling)
     &mvmt_smoothness_criterion_out);
   // more poses -> smoother path
   EXPECT_GT(smoothness_improvement, 0.0);
-  EXPECT_NEAR(smoothness_improvement, 65.7, 1.0);
+  EXPECT_NEAR(smoothness_improvement, 63.9, 1.0);
 
   // upsample above original size
   node_lifecycle_->set_parameter(rclcpp::Parameter("SmoothPath.path_upsampling_factor", 2));
@@ -1010,7 +1016,7 @@ TEST_F(SmootherTest, testingDownsamplingUpsampling)
     &mvmt_smoothness_criterion_out);
   // even more poses -> even smoother path
   EXPECT_GT(smoothness_improvement, 0.0);
-  EXPECT_NEAR(smoothness_improvement, 83.7, 1.0);
+  EXPECT_NEAR(smoothness_improvement, 82.2, 1.0);
 }
 
 TEST_F(SmootherTest, testingStartGoalOrientations)
@@ -1032,7 +1038,7 @@ TEST_F(SmootherTest, testingStartGoalOrientations)
   double mvmt_smoothness_improvement =
     assessPathImprovement(sharp_turn_90, smoothed_path, mvmt_smoothness_criterion_);
   EXPECT_GT(mvmt_smoothness_improvement, 0.0);
-  EXPECT_NEAR(mvmt_smoothness_improvement, 53.3, 1.0);
+  EXPECT_NEAR(mvmt_smoothness_improvement, 55.2, 1.0);
   // no change in orientations
   EXPECT_NEAR(smoothed_path.front()[2], 0, 0.001);
   EXPECT_NEAR(smoothed_path.back()[2], M_PI / 2, 0.001);
@@ -1049,10 +1055,10 @@ TEST_F(SmootherTest, testingStartGoalOrientations)
   mvmt_smoothness_improvement =
     assessPathImprovement(smoothed_path, smoothed_path_sg_overwritten, mvmt_smoothness_criterion_);
   EXPECT_GT(mvmt_smoothness_improvement, 0.0);
-  EXPECT_NEAR(mvmt_smoothness_improvement, 98.3, 1.0);
+  EXPECT_NEAR(mvmt_smoothness_improvement, 58.9, 1.0);
   // orientations adjusted to follow the path
-  EXPECT_NEAR(smoothed_path_sg_overwritten.front()[2], M_PI / 4, 0.1);
-  EXPECT_NEAR(smoothed_path_sg_overwritten.back()[2], M_PI / 4, 0.1);
+  EXPECT_NEAR(smoothed_path_sg_overwritten.front()[2], M_PI / 8, 0.1);
+  EXPECT_NEAR(smoothed_path_sg_overwritten.back()[2], 3 * M_PI / 8, 0.1);
 
   // test short paths
   std::vector<Eigen::Vector3d> short_screwed_path =

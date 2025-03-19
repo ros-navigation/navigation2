@@ -53,22 +53,6 @@ using std::none_of;
 using std::pair;
 using std::string;
 
-class RclCppFixture
-{
-public:
-  RclCppFixture()
-  {
-    rclcpp::init(0, nullptr);
-  }
-
-  ~RclCppFixture()
-  {
-    rclcpp::shutdown();
-  }
-};
-
-RclCppFixture g_rclcppfixture;
-
 class TestLifecycleNode : public nav2_util::LifecycleNode
 {
 public:
@@ -187,7 +171,7 @@ TEST_F(TestNode, testClearingAtMaxRange) {
 }
 
 // Testing fixed scan with robot forward motion
-TEST_F(TestNode, testProbabalisticModelForward) {
+TEST_F(TestNode, testProbabilisticModelForward) {
   geometry_msgs::msg::TransformStamped transform;
   transform.header.stamp = node_->now();
   transform.header.frame_id = "frame";
@@ -240,7 +224,7 @@ TEST_F(TestNode, testProbabalisticModelForward) {
 }
 
 // Testing fixed motion with downward movement
-TEST_F(TestNode, testProbabalisticModelDownward) {
+TEST_F(TestNode, testProbabilisticModelDownward) {
   geometry_msgs::msg::TransformStamped transform;
   transform.header.stamp = node_->now();
   transform.header.frame_id = "frame";
@@ -291,4 +275,17 @@ TEST_F(TestNode, testProbabalisticModelDownward) {
   ASSERT_EQ(layers.getCostmap()->getCost(3, 5), 254);
   ASSERT_EQ(layers.getCostmap()->getCost(3, 6), 0);
   ASSERT_EQ(layers.getCostmap()->getCost(3, 7), 254);
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

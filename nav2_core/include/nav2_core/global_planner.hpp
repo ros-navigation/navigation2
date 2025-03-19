@@ -63,7 +63,7 @@ public:
   virtual void activate() = 0;
 
   /**
-   * @brief Method to deactive planner and any threads involved in execution.
+   * @brief Method to deactivate planner and any threads involved in execution.
    */
   virtual void deactivate() = 0;
 
@@ -71,11 +71,13 @@ public:
    * @brief Method create the plan from a starting and ending goal.
    * @param start The starting pose of the robot
    * @param goal  The goal pose of the robot
+   * @param cancel_checker Function to check if the action has been canceled
    * @return      The sequence of poses to get from start to goal, if any
    */
   virtual nav_msgs::msg::Path createPlan(
     const geometry_msgs::msg::PoseStamped & start,
-    const geometry_msgs::msg::PoseStamped & goal) = 0;
+    const geometry_msgs::msg::PoseStamped & goal,
+    std::function<bool()> cancel_checker) = 0;
 };
 
 }  // namespace nav2_core

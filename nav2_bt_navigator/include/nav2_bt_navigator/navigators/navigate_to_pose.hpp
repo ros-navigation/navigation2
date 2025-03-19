@@ -1,4 +1,4 @@
-// Copyright (c) 2021 Samsung Research
+// Copyright (c) 2021-2023 Samsung Research
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav2_bt_navigator/navigator.hpp"
+#include "nav2_core/behavior_tree_navigator.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
@@ -36,7 +36,7 @@ namespace nav2_bt_navigator
  * @brief A navigator for navigating to a specified pose
  */
 class NavigateToPoseNavigator
-  : public nav2_bt_navigator::Navigator<nav2_msgs::action::NavigateToPose>
+  : public nav2_core::BehaviorTreeNavigator<nav2_msgs::action::NavigateToPose>
 {
 public:
   using ActionT = nav2_msgs::action::NavigateToPose;
@@ -45,7 +45,7 @@ public:
    * @brief A constructor for NavigateToPoseNavigator
    */
   NavigateToPoseNavigator()
-  : Navigator() {}
+  : BehaviorTreeNavigator() {}
 
   /**
    * @brief A configure state transition to configure navigator's state
@@ -72,7 +72,7 @@ public:
    * @brief Get action name for this navigator
    * @return string Name of action server
    */
-  std::string getName() {return std::string("navigate_to_pose");}
+  std::string getName() override {return std::string("navigate_to_pose");}
 
   /**
    * @brief Get navigator's default BT
@@ -116,8 +116,9 @@ protected:
   /**
    * @brief Goal pose initialization on the blackboard
    * @param goal Action template's goal message to process
+   * @return bool if goal was initialized successfully to be processed
    */
-  void initializeGoalPose(ActionT::Goal::ConstSharedPtr goal);
+  bool initializeGoalPose(ActionT::Goal::ConstSharedPtr goal);
 
   rclcpp::Time start_time_;
 

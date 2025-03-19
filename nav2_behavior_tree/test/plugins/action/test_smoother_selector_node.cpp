@@ -19,8 +19,8 @@
 #include <set>
 #include <string>
 
-#include "../../test_action_server.hpp"
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "nav2_behavior_tree/utils/test_action_server.hpp"
+#include "behaviortree_cpp/bt_factory.h"
 #include "nav2_behavior_tree/plugins/action/smoother_selector_node.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "std_msgs/msg/string.hpp"
@@ -38,7 +38,7 @@ public:
     // Create the blackboard that will be shared by all of the nodes in the tree
     config_->blackboard = BT::Blackboard::create();
     // Put items on the blackboard
-    config_->blackboard->set<rclcpp::Node::SharedPtr>("node", node_);
+    config_->blackboard->set("node", node_);
 
     BT::NodeBuilder builder = [](const std::string & name, const BT::NodeConfiguration & config) {
         return std::make_unique<nav2_behavior_tree::SmootherSelector>(name, config);
@@ -80,7 +80,7 @@ TEST_F(SmootherSelectorTestFixture, test_custom_topic)
   // create tree
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
           <SmootherSelector selected_smoother="{selected_smoother}" default_smoother="DWB" topic_name="smoother_selector_custom_topic_name"/>
         </BehaviorTree>
@@ -95,7 +95,7 @@ TEST_F(SmootherSelectorTestFixture, test_custom_topic)
 
   // check default value
   std::string selected_smoother_result;
-  config_->blackboard->get("selected_smoother", selected_smoother_result);
+  EXPECT_TRUE(config_->blackboard->get("selected_smoother", selected_smoother_result));
 
   EXPECT_EQ(selected_smoother_result, "DWB");
 
@@ -119,7 +119,7 @@ TEST_F(SmootherSelectorTestFixture, test_custom_topic)
   }
 
   // check smoother updated
-  config_->blackboard->get("selected_smoother", selected_smoother_result);
+  EXPECT_TRUE(config_->blackboard->get("selected_smoother", selected_smoother_result));
   EXPECT_EQ("DWC", selected_smoother_result);
 }
 
@@ -128,7 +128,7 @@ TEST_F(SmootherSelectorTestFixture, test_default_topic)
   // create tree
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
           <SmootherSelector selected_smoother="{selected_smoother}" default_smoother="GridBased"/>
         </BehaviorTree>
@@ -143,7 +143,7 @@ TEST_F(SmootherSelectorTestFixture, test_default_topic)
 
   // check default value
   std::string selected_smoother_result;
-  config_->blackboard->get("selected_smoother", selected_smoother_result);
+  EXPECT_TRUE(config_->blackboard->get("selected_smoother", selected_smoother_result));
 
   EXPECT_EQ(selected_smoother_result, "GridBased");
 
@@ -167,7 +167,7 @@ TEST_F(SmootherSelectorTestFixture, test_default_topic)
   }
 
   // check smoother updated
-  config_->blackboard->get("selected_smoother", selected_smoother_result);
+  EXPECT_TRUE(config_->blackboard->get("selected_smoother", selected_smoother_result));
   EXPECT_EQ("RRT", selected_smoother_result);
 }
 

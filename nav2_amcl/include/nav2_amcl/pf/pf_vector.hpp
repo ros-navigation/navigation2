@@ -49,7 +49,7 @@ typedef struct
 
 
 // Return a zero vector
-pf_vector_t pf_vector_zero();
+pf_vector_t pf_vector_zero(void);
 
 // Check for NAN or INF in any component
 // int pf_vector_finite(pf_vector_t a);
@@ -71,7 +71,7 @@ pf_vector_t pf_vector_coord_add(pf_vector_t a, pf_vector_t b);
 
 
 // Return a zero matrix
-pf_matrix_t pf_matrix_zero();
+pf_matrix_t pf_matrix_zero(void);
 
 // Check for NAN or INF in any component
 // int pf_matrix_finite(pf_matrix_t a);

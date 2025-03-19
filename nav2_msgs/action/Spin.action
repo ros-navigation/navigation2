@@ -1,9 +1,21 @@
 #goal definition
 float32 target_yaw
 builtin_interfaces/Duration time_allowance
+bool disable_collision_checks False
 ---
 #result definition
+
+# Error codes
+# Note: The expected priority order of the error should match the message order
+uint16 NONE=0
+uint16 UNKNOWN=700
+uint16 TIMEOUT=701
+uint16 TF_ERROR=702
+uint16 COLLISION_AHEAD=703
+
 builtin_interfaces/Duration total_elapsed_time
+uint16 error_code
+string error_msg
 ---
 #feedback definition
 float32 angular_distance_traveled

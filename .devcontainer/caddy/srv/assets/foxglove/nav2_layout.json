@@ -1,0 +1,463 @@
+{
+    "configById": {
+      "3D!18i6zy7": {
+        "layers": {
+          "845139cb-26bc-40b3-8161-8ab60af4baf5": {
+            "visible": true,
+            "frameLocked": true,
+            "label": "Grid",
+            "instanceId": "845139cb-26bc-40b3-8161-8ab60af4baf5",
+            "layerId": "foxglove.Grid",
+            "size": 10,
+            "divisions": 10,
+            "lineWidth": 1,
+            "color": "#A0A0A4ff",
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "order": 1
+          }
+        },
+        "cameraState": {
+          "perspective": true,
+          "distance": 21.05263157877764,
+          "phi": 38.925517117715195,
+          "thetaOffset": -138.92710744521386,
+          "targetOffset": [
+            -2.6847696124888896,
+            0.2191229688744439,
+            3.6086809432821955e-16
+          ],
+          "target": [
+            0,
+            0,
+            0
+          ],
+          "targetOrientation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "fovy": 45,
+          "near": 0.5,
+          "far": 5000
+        },
+        "followMode": "follow-pose",
+        "scene": {
+          "transforms": {
+            "showLabel": false,
+            "editable": false,
+            "labelSize": 0.049999999999999975,
+            "enablePreloading": false,
+            "lineWidth": 2
+          }
+        },
+        "transforms": {
+          "frame:camera_link": {
+            "visible": false
+          },
+          "frame:camera_depth_frame": {
+            "visible": false
+          },
+          "frame:camera_depth_optical_frame": {
+            "visible": false
+          },
+          "frame:camera_rgb_frame": {
+            "visible": false
+          },
+          "frame:camera_rgb_optical_frame": {
+            "visible": false
+          },
+          "frame:imu_link": {
+            "visible": false
+          },
+          "frame:caster_back_right_link": {
+            "visible": false
+          },
+          "frame:caster_back_left_link": {
+            "visible": false
+          },
+          "frame:odom": {
+            "visible": true
+          },
+          "frame:base_footprint": {
+            "visible": true
+          },
+          "frame:wheel_left_link": {
+            "visible": false
+          },
+          "frame:wheel_right_link": {
+            "visible": false
+          },
+          "frame:base_link": {
+            "visible": false
+          },
+          "frame:base_scan": {
+            "visible": false
+          },
+          "frame:map": {
+            "visible": true
+          }
+        },
+        "topics": {
+          "/scan": {
+            "visible": true,
+            "colorField": "intensity",
+            "colorMode": "flat",
+            "colorMap": "turbo",
+            "pointSize": 5,
+            "flatColor": "#ff0000"
+          },
+          "/global_costmap/costmap": {
+            "visible": true,
+            "maxColor": "#E800174d",
+            "unknownColor": "#5700ff4d",
+            "minColor": "#ffffff4d",
+            "invalidColor": "#ff00ff4d",
+            "colorMode": "costmap",
+            "alpha": 0.3
+          },
+          "/global_costmap/obstacle_layer": {
+            "visible": false
+          },
+          "/global_costmap/voxel_marked_cloud": {
+            "visible": false
+          },
+          "/goal_pose": {
+            "visible": false
+          },
+          "/local_costmap/costmap": {
+            "visible": false
+          },
+          "/local_costmap/voxel_layer": {
+            "visible": false
+          },
+          "/local_costmap/clearing_endpoints": {
+            "visible": false,
+            "colorField": "x",
+            "colorMode": "colormap",
+            "colorMap": "turbo"
+          },
+          "/map": {
+            "visible": true,
+            "minColor": "#ffffff",
+            "maxColor": "#000000",
+            "unknownColor": "#708986ff",
+            "frameLocked": false,
+            "colorMode": "map"
+          },
+          "/amcl_pose": {
+            "visible": false
+          },
+          "/local_plan": {
+            "visible": true,
+            "lineWidth": 0.01,
+            "gradient": [
+              "#c8ff00c7",
+              "#00c8ffba"
+            ]
+          },
+          "/plan": {
+            "visible": false,
+            "gradient": [
+              "rgba(124, 107, 255, 1)",
+              "#ff6b6b"
+            ],
+            "lineWidth": 1
+          },
+          "/plan_smoothed": {
+            "visible": false
+          },
+          "/received_global_plan": {
+            "visible": true,
+            "gradient": [
+              "#ff0000c7",
+              "#6b70ffc2"
+            ],
+            "lineWidth": 0.02,
+            "type": "line",
+            "arrowScale": [
+              0.02,
+              0.0015,
+              0.0015
+            ]
+          },
+          "/transformed_global_plan": {
+            "visible": false
+          },
+          "/robot_description": {
+            "visible": false
+          },
+          "/cost_cloud": {
+            "visible": false
+          },
+          "/initialpose": {
+            "visible": false
+          }
+        },
+        "publish": {
+          "type": "pose_estimate",
+          "poseTopic": "/move_base_simple/goal",
+          "pointTopic": "",
+          "poseEstimateTopic": "/initialpose",
+          "poseEstimateXDeviation": 0.5,
+          "poseEstimateYDeviation": 0.5,
+          "poseEstimateThetaDeviation": 0.26179939
+        },
+        "followTf": "map"
+      },
+      "DiagnosticSummary!3bo4e39": {
+        "minLevel": 0,
+        "pinnedIds": [],
+        "hardwareIdFilter": "",
+        "topicToRender": "/diagnostics",
+        "sortByLevel": true
+      },
+      "RosOut!1iib9dq": {
+        "searchTerms": [],
+        "minLogLevel": 1
+      },
+      "3D!2agiaqk": {
+        "layers": {
+          "845139cb-26bc-40b3-8161-8ab60af4baf5": {
+            "visible": false,
+            "frameLocked": true,
+            "label": "Grid",
+            "instanceId": "845139cb-26bc-40b3-8161-8ab60af4baf5",
+            "layerId": "foxglove.Grid",
+            "size": 10,
+            "divisions": 10,
+            "lineWidth": 1,
+            "color": "#A0A0A4ff",
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "order": 1
+          }
+        },
+        "cameraState": {
+          "perspective": true,
+          "distance": 4.078136514883917,
+          "phi": 56.068374260572,
+          "thetaOffset": 92.50000000000723,
+          "targetOffset": [
+            0.03816360663426963,
+            0.15755079607173259,
+            7.341598429161142e-18
+          ],
+          "target": [
+            0,
+            0,
+            0
+          ],
+          "targetOrientation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "fovy": 45,
+          "near": 0.5,
+          "far": 5000
+        },
+        "followMode": "follow-pose",
+        "scene": {
+          "transforms": {
+            "showLabel": true,
+            "editable": false,
+            "labelSize": 0.049999999999999975,
+            "enablePreloading": false,
+            "lineWidth": 2
+          }
+        },
+        "transforms": {
+          "frame:camera_link": {
+            "visible": false
+          },
+          "frame:camera_depth_frame": {
+            "visible": false
+          },
+          "frame:camera_depth_optical_frame": {
+            "visible": false
+          },
+          "frame:camera_rgb_frame": {
+            "visible": false
+          },
+          "frame:camera_rgb_optical_frame": {
+            "visible": false
+          },
+          "frame:imu_link": {
+            "visible": false
+          },
+          "frame:caster_back_right_link": {
+            "visible": false
+          },
+          "frame:caster_back_left_link": {
+            "visible": false
+          },
+          "frame:odom": {
+            "visible": true
+          },
+          "frame:base_footprint": {
+            "visible": true
+          },
+          "frame:wheel_left_link": {
+            "visible": false
+          },
+          "frame:wheel_right_link": {
+            "visible": false
+          },
+          "frame:base_link": {
+            "visible": false
+          },
+          "frame:base_scan": {
+            "visible": false
+          },
+          "frame:map": {
+            "visible": true
+          }
+        },
+        "topics": {
+          "/scan": {
+            "visible": true,
+            "colorField": "intensity",
+            "colorMode": "flat",
+            "colorMap": "turbo",
+            "pointSize": 5,
+            "flatColor": "#ff0000"
+          },
+          "/global_costmap/costmap": {
+            "visible": true,
+            "maxColor": "#E800174d",
+            "unknownColor": "#5700ff4d",
+            "minColor": "#ffffff4d",
+            "invalidColor": "#ff00ff4d",
+            "colorMode": "costmap",
+            "alpha": 0.3
+          },
+          "/global_costmap/obstacle_layer": {
+            "visible": false
+          },
+          "/global_costmap/voxel_marked_cloud": {
+            "visible": false
+          },
+          "/goal_pose": {
+            "visible": false
+          },
+          "/local_costmap/costmap": {
+            "visible": false
+          },
+          "/local_costmap/voxel_layer": {
+            "visible": false
+          },
+          "/local_costmap/clearing_endpoints": {
+            "visible": false,
+            "colorField": "x",
+            "colorMode": "colormap",
+            "colorMap": "turbo"
+          },
+          "/map": {
+            "visible": true,
+            "minColor": "#ffffff",
+            "maxColor": "#000000",
+            "unknownColor": "#708986ff",
+            "frameLocked": false,
+            "colorMode": "map"
+          },
+          "/amcl_pose": {
+            "visible": false
+          },
+          "/local_plan": {
+            "visible": true,
+            "lineWidth": 0.01,
+            "gradient": [
+              "#c8ff00c7",
+              "#00c8ffba"
+            ]
+          },
+          "/plan": {
+            "visible": false,
+            "gradient": [
+              "rgba(124, 107, 255, 1)",
+              "#ff6b6b"
+            ],
+            "lineWidth": 1
+          },
+          "/plan_smoothed": {
+            "visible": false
+          },
+          "/received_global_plan": {
+            "visible": true,
+            "gradient": [
+              "#ff0000c7",
+              "#6b70ffc2"
+            ],
+            "lineWidth": 0.02,
+            "type": "line",
+            "arrowScale": [
+              0.02,
+              0.0015,
+              0.0015
+            ]
+          },
+          "/transformed_global_plan": {
+            "visible": false
+          },
+          "/robot_description": {
+            "visible": true
+          },
+          "/cost_cloud": {
+            "visible": false
+          },
+          "/initialpose": {
+            "visible": false
+          }
+        },
+        "publish": {
+          "type": "pose_estimate",
+          "poseTopic": "/move_base_simple/goal",
+          "pointTopic": "",
+          "poseEstimateTopic": "/initialpose",
+          "poseEstimateXDeviation": 0.5,
+          "poseEstimateYDeviation": 0.5,
+          "poseEstimateThetaDeviation": 0.26179939
+        },
+        "followTf": "base_link"
+      }
+    },
+    "globalVariables": {},
+    "userNodes": {},
+    "playbackConfig": {
+      "speed": 1
+    },
+    "layout": {
+      "first": "3D!18i6zy7",
+      "second": {
+        "first": "DiagnosticSummary!3bo4e39",
+        "second": {
+          "first": "RosOut!1iib9dq",
+          "second": "3D!2agiaqk",
+          "direction": "column"
+        },
+        "direction": "column",
+        "splitPercentage": 28.227360308285164
+      },
+      "direction": "row",
+      "splitPercentage": 74.87855655794587
+    }
+  }

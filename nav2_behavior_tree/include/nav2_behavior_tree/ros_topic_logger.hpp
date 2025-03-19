@@ -19,10 +19,11 @@
 #include <memory>
 #include <utility>
 
-#include "behaviortree_cpp_v3/loggers/abstract_logger.h"
+#include "behaviortree_cpp/loggers/abstract_logger.h"
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_msgs/msg/behavior_tree_log.hpp"
 #include "nav2_msgs/msg/behavior_tree_status_change.h"
+#include "tf2/time.hpp"
 #include "tf2_ros/buffer_interface.h"
 
 namespace nav2_behavior_tree
@@ -69,6 +70,7 @@ public:
     // before converting to a msg.
     event.timestamp = tf2_ros::toMsg(tf2::TimePoint(timestamp));
     event.node_name = node.name();
+    event.uid = node.UID();
     event.previous_status = toStr(prev_status, false);
     event.current_status = toStr(status, false);
     event_log_.push_back(std::move(event));

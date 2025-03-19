@@ -22,7 +22,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/battery_state.hpp"
-#include "behaviortree_cpp_v3/condition_node.h"
+#include "behaviortree_cpp/condition_node.h"
 
 namespace nav2_behavior_tree
 {
@@ -50,6 +50,16 @@ public:
    * @return BT::NodeStatus Status of tick execution
    */
   BT::NodeStatus tick() override;
+
+  /**
+   * @brief Function to read parameters and initialize class variables
+   */
+  void initialize();
+
+  /**
+   * @brief Function to create ROS interfaces
+   */
+  void createROSInterfaces();
 
   /**
    * @brief Creates list of BT ports

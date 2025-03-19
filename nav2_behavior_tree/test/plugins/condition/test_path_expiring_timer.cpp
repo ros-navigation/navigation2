@@ -18,9 +18,10 @@
 #include <set>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "nav_msgs/msg/path.hpp"
 #include "nav2_util/robot_utils.hpp"
 
-#include "../../test_behavior_tree_fixture.hpp"
+#include "utils/test_behavior_tree_fixture.hpp"
 #include "nav2_behavior_tree/plugins/condition/path_expiring_timer_condition.hpp"
 
 using namespace std::chrono;  // NOLINT
@@ -33,8 +34,11 @@ public:
   {
     node_ = std::make_shared<rclcpp::Node>("test_path_expiring_condition");
     config_ = new BT::NodeConfiguration();
+    config_->input_ports["seconds"] = 1.0;
+    config_->input_ports["path"] = "";
+
     config_->blackboard = BT::Blackboard::create();
-    config_->blackboard->set<rclcpp::Node::SharedPtr>("node", node_);
+    config_->blackboard->set("node", node_);
     bt_node_ = std::make_shared<nav2_behavior_tree::PathExpiringTimerCondition>(
       "time_expired", *config_);
   }
@@ -78,7 +82,7 @@ TEST_F(PathExpiringTimerConditionTestFixture, test_behavior)
   pose.pose.position.x = 1.0;
   path.poses.push_back(pose);
 
-  config_->blackboard->set<nav_msgs::msg::Path>("path", path);
+  config_->blackboard->set("path", path);
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
   rclcpp::sleep_for(1500ms);
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);

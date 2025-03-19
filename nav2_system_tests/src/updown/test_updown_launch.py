@@ -25,56 +25,105 @@ from launch_ros.actions import Node
 def generate_launch_description():
 
     # Configuration parameters for the launch
-    launch_dir = os.path.join(
-        get_package_share_directory('nav2_bringup'), 'launch')
+    nav2_bringup_dir = get_package_share_directory('nav2_bringup')
 
-    map_yaml_file = os.path.join(
-        get_package_share_directory('nav2_system_tests'), 'maps/map_circular.yaml')
+    map_yaml_file = os.path.join(nav2_bringup_dir, 'maps', 'tb3_sandbox.yaml')
 
     # Specify the actions
     start_tf_cmd_1 = Node(
         package='tf2_ros',
         executable='static_transform_publisher',
         output='screen',
-        arguments=['0', '0', '0', '0', '0', '0', 'map', 'odom'])
+        arguments=[
+            '--x', '0',
+            '--y', '0',
+            '--z', '0',
+            '--roll', '0',
+            '--pitch', '0',
+            '--yaw', '0',
+            '--frame-id', 'map',
+            '--child-frame-id', 'odom'
+        ],
+    )
 
     start_tf_cmd_2 = Node(
         package='tf2_ros',
         executable='static_transform_publisher',
         output='screen',
-        arguments=['0', '0', '0', '0', '0', '0', 'odom', 'base_footprint'])
+        arguments=[
+            '--x', '0',
+            '--y', '0',
+            '--z', '0',
+            '--roll', '0',
+            '--pitch', '0',
+            '--yaw', '0',
+            '--frame-id', 'odom',
+            '--child-frame-id', 'base_footprint'
+        ],
+    )
 
     start_tf_cmd_3 = Node(
-       package='tf2_ros',
-       executable='static_transform_publisher',
-       output='screen',
-       arguments=['0', '0', '0', '0', '0', '0', 'base_footprint', 'base_link'])
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        output='screen',
+        arguments=[
+            '--x', '0',
+            '--y', '0',
+            '--z', '0',
+            '--roll', '0',
+            '--pitch', '0',
+            '--yaw', '0',
+            '--frame-id', 'base_footprint',
+            '--child-frame-id', 'base_link'
+        ],
+    )
 
     start_tf_cmd_4 = Node(
         package='tf2_ros',
         executable='static_transform_publisher',
         output='screen',
-        arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'base_scan'])
+        arguments=[
+            '--x', '0',
+            '--y', '0',
+            '--z', '0',
+            '--roll', '0',
+            '--pitch', '0',
+            '--yaw', '0',
+            '--frame-id', 'base_link',
+            '--child-frame-id', 'base_scan'
+        ],
+    )
 
     nav2_bringup = launch.actions.IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(launch_dir, 'bringup_launch.py')),
-        launch_arguments={'map': map_yaml_file,
-                          'use_sim_time': 'True',
-                          'use_composition': 'False',
-                          'autostart': 'False'}.items())
+            os.path.join(nav2_bringup_dir, 'launch', 'bringup_launch.py')),
+        launch_arguments={
+            'map': map_yaml_file,
+            'use_sim_time': 'True',
+            'use_composition': 'False',
+            'autostart': 'False',
+        }.items(),
+    )
 
     start_test = launch.actions.ExecuteProcess(
         cmd=[
             os.path.join(
                 get_package_prefix('nav2_system_tests'),
-                'lib/nav2_system_tests/test_updown')],
-        cwd=[launch_dir], output='screen')
+                'lib/nav2_system_tests/test_updown',
+            )
+        ],
+        cwd=[nav2_bringup_dir],
+        output='screen',
+    )
 
     test_exit_event_handler = launch.actions.RegisterEventHandler(
         event_handler=launch.event_handlers.OnProcessExit(
             target_action=start_test,
-            on_exit=launch.actions.EmitEvent(event=launch.events.Shutdown(reason='Done!'))))
+            on_exit=launch.actions.EmitEvent(
+                event=launch.events.Shutdown(reason='Done!')
+            ),
+        )
+    )
 
     # Compose the launch description
 

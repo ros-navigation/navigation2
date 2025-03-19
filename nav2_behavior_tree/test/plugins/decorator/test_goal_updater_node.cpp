@@ -21,9 +21,9 @@
 #include "nav_msgs/msg/path.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 
-#include "../../test_action_server.hpp"
+#include "nav2_behavior_tree/utils/test_action_server.hpp"
 #include "nav2_behavior_tree/plugins/decorator/goal_updater_node.hpp"
 
 
@@ -40,7 +40,7 @@ public:
     // Create the blackboard that will be shared by all of the nodes in the tree
     config_->blackboard = BT::Blackboard::create();
     // Put items on the blackboard
-    config_->blackboard->set<rclcpp::Node::SharedPtr>(
+    config_->blackboard->set(
       "node",
       node_);
 
@@ -86,9 +86,9 @@ TEST_F(GoalUpdaterTestFixture, test_tick)
   // create tree
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-          <GoalUpdater input_goal="{goal}" output_goal="{updated_goal}">
+          <GoalUpdater input_goal="{goal}" input_goals="{goals}" output_goal="{updated_goal}" output_goals="{updated_goals}">
             <AlwaysSuccess/>
           </GoalUpdater>
         </BehaviorTree>
@@ -98,39 +98,130 @@ TEST_F(GoalUpdaterTestFixture, test_tick)
 
   // create new goal and set it on blackboard
   geometry_msgs::msg::PoseStamped goal;
+  nav_msgs::msg::Goals goals;
   goal.header.stamp = node_->now();
   goal.pose.position.x = 1.0;
+  goals.goals.push_back(goal);
   config_->blackboard->set("goal", goal);
+  config_->blackboard->set("goals", goals);
 
-  // tick until node succeeds
-  while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS) {
-    tree_->rootNode()->executeTick();
-  }
-
+  // tick tree without publishing updated goal and get updated_goal
+  tree_->rootNode()->executeTick();
   geometry_msgs::msg::PoseStamped updated_goal;
-  config_->blackboard->get("updated_goal", updated_goal);
+  nav_msgs::msg::Goals updated_goals;
+  EXPECT_TRUE(config_->blackboard->get("updated_goal", updated_goal));
+  EXPECT_TRUE(config_->blackboard->get("updated_goals", updated_goals));
+}
 
-  EXPECT_EQ(updated_goal, goal);
+TEST_F(GoalUpdaterTestFixture, test_older_goal_update)
+{
+  // create tree
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+          <GoalUpdater input_goal="{goal}" input_goals="{goals}" output_goal="{updated_goal}" output_goals="{updated_goals}">
+            <AlwaysSuccess/>
+          </GoalUpdater>
+        </BehaviorTree>
+      </root>)";
 
-  geometry_msgs::msg::PoseStamped goal_to_update;
-  goal_to_update.header.stamp = node_->now();
-  goal_to_update.pose.position.x = 2.0;
-
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
   auto goal_updater_pub =
     node_->create_publisher<geometry_msgs::msg::PoseStamped>("goal_update", 10);
+  auto goals_updater_pub =
+    node_->create_publisher<nav_msgs::msg::Goals>("goals_update", 10);
 
-  auto start = node_->now();
-  while ((node_->now() - start).seconds() < 0.5) {
-    tree_->rootNode()->executeTick();
-    goal_updater_pub->publish(goal_to_update);
+  // create new goal and set it on blackboard
+  geometry_msgs::msg::PoseStamped goal;
+  nav_msgs::msg::Goals goals;
+  goal.header.stamp = node_->now();
+  goal.pose.position.x = 1.0;
+  goals.header.stamp = goal.header.stamp;
+  goals.goals.push_back(goal);
+  config_->blackboard->set("goal", goal);
+  config_->blackboard->set("goals", goals);
 
-    rclcpp::spin_some(node_);
-  }
+  // publish updated_goal older than goal
+  geometry_msgs::msg::PoseStamped goal_to_update;
+  nav_msgs::msg::Goals goals_to_update;
+  goal_to_update.header.stamp = rclcpp::Time(goal.header.stamp) - rclcpp::Duration(1, 0);
+  goal_to_update.pose.position.x = 2.0;
+  goals_to_update.header.stamp = goal_to_update.header.stamp;
+  goals_to_update.goals.push_back(goal_to_update);
 
-  config_->blackboard->get("updated_goal", updated_goal);
+  goal_updater_pub->publish(goal_to_update);
+  goals_updater_pub->publish(goals_to_update);
+  tree_->rootNode()->executeTick();
+  geometry_msgs::msg::PoseStamped updated_goal;
+  nav_msgs::msg::Goals updated_goals;
+  EXPECT_TRUE(config_->blackboard->get("updated_goal", updated_goal));
+  EXPECT_TRUE(config_->blackboard->get("updated_goals", updated_goals));
 
-  EXPECT_NE(updated_goal, goal);
-  EXPECT_EQ(updated_goal, goal_to_update);
+  // expect to succeed and not update goal
+  EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(updated_goal, goal);
+  EXPECT_EQ(updated_goals, goals);
+}
+
+TEST_F(GoalUpdaterTestFixture, test_get_latest_goal_update)
+{
+  // create tree
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+          <GoalUpdater input_goal="{goal}" input_goals="{goals}" output_goal="{updated_goal}" output_goals="{updated_goals}">
+            <AlwaysSuccess/>
+          </GoalUpdater>
+        </BehaviorTree>
+      </root>)";
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+  auto goal_updater_pub =
+    node_->create_publisher<geometry_msgs::msg::PoseStamped>("goal_update", 10);
+  auto goals_updater_pub =
+    node_->create_publisher<nav_msgs::msg::Goals>("goals_update", 10);
+
+  // create new goal and set it on blackboard
+  geometry_msgs::msg::PoseStamped goal;
+  nav_msgs::msg::Goals goals;
+  goal.header.stamp = node_->now();
+  goal.pose.position.x = 1.0;
+  goals.goals.push_back(goal);
+  config_->blackboard->set("goal", goal);
+  config_->blackboard->set("goals", goals);
+
+  // publish updated_goal older than goal
+  geometry_msgs::msg::PoseStamped goal_to_update_1;
+  nav_msgs::msg::Goals goals_to_update_1;
+  goal_to_update_1.header.stamp = node_->now();
+  goal_to_update_1.pose.position.x = 2.0;
+  goals_to_update_1.header.stamp = goal_to_update_1.header.stamp;
+  goals_to_update_1.goals.push_back(goal_to_update_1);
+
+  geometry_msgs::msg::PoseStamped goal_to_update_2;
+  nav_msgs::msg::Goals goals_to_update_2;
+  goal_to_update_2.header.stamp = node_->now();
+  goal_to_update_2.pose.position.x = 3.0;
+  goals_to_update_2.header.stamp = goal_to_update_2.header.stamp;
+  goals_to_update_2.goals.push_back(goal_to_update_2);
+
+  goal_updater_pub->publish(goal_to_update_1);
+  goals_updater_pub->publish(goals_to_update_1);
+  goal_updater_pub->publish(goal_to_update_2);
+  goals_updater_pub->publish(goals_to_update_2);
+  tree_->rootNode()->executeTick();
+  geometry_msgs::msg::PoseStamped updated_goal;
+  nav_msgs::msg::Goals updated_goals;
+  EXPECT_TRUE(config_->blackboard->get("updated_goal", updated_goal));
+  EXPECT_TRUE(config_->blackboard->get("updated_goals", updated_goals));
+
+  // expect to succeed
+  EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
+  // expect to update goal with latest goal update
+  EXPECT_EQ(updated_goal, goal_to_update_2);
+  EXPECT_EQ(updated_goals, goals_to_update_2);
 }
 
 int main(int argc, char ** argv)

@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Samsung Research America
+// Copyright (c) 2025, Open Navigation LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -86,7 +86,7 @@ TEST(OperationsManagerTest, test_find_operations_failure2)
   // This plugin does not exist
   auto node = std::make_shared<nav2_util::LifecycleNode>("operations_manager_test");
   node->declare_parameter("operations", rclcpp::ParameterValue(std::vector<std::string>{"hi"}));
-  EXPECT_THROW(OperationsManager manager(node), pluginlib::PluginlibException);
+  EXPECT_THROW(OperationsManager manager(node), std::runtime_error);
 }
 
 TEST(OperationsManagerTest, test_processing_fail)
@@ -220,8 +220,6 @@ TEST(OperationsManagerTest, test_trigger_event_on_graph)
   // Operations Manager as well as the route operations client.
   node->declare_parameter(
     "operations", rclcpp::ParameterValue(std::vector<std::string>{"OpenDoor"}));
-  node->declare_parameter(
-    "use_feedback_operations", rclcpp::ParameterValue(true));
   nav2_util::declare_parameter_if_not_declared(
     node, "OpenDoor.plugin",
     rclcpp::ParameterValue(std::string{"nav2_route::TriggerEvent"}));
@@ -252,13 +250,9 @@ TEST(OperationsManagerTest, test_trigger_event_on_graph)
   std::string key = "service_name";
   op3.metadata.setValue<std::string>(key, service_name);
 
-  // Should do nothing in the operations manager
-  // use_feedback_operations is true so should just log that it can't find the operaiton
-  // never gets to plugin, so no throw of lack of server
+  // Should do nothing in the operations manager, throw
   node2.operations.push_back(op);
-  auto result = manager.process(true, state, route, pose, info);
-  EXPECT_EQ(result.operations_triggered.size(), 1u);
-  EXPECT_FALSE(result.reroute);
+  EXPECT_THROW(manager.process(true, state, route, pose, info), nav2_core::OperationFailed);
 
   // Now, lets try a node that should make it through the operations manager but fail
   // because the proper service_name was provided neither in the parameter nor operation
@@ -289,7 +283,7 @@ TEST(OperationsManagerTest, test_trigger_event_on_graph)
 
   auto service = node_int->create_service<std_srvs::srv::Trigger>(service_name, callback);
 
-  result = manager.process(true, state, route, pose, info);
+  auto result = manager.process(true, state, route, pose, info);
   EXPECT_EQ(result.operations_triggered.size(), 1u);
   EXPECT_FALSE(result.reroute);
   EXPECT_TRUE(got_srv);
@@ -305,8 +299,6 @@ TEST(OperationsManagerTest, test_trigger_event_on_graph_global_service)
   // Set the global service to use intead of file settings for conflict testing
   node->declare_parameter(
     "operations", rclcpp::ParameterValue(std::vector<std::string>{"OpenDoor"}));
-  node->declare_parameter(
-    "use_feedback_operations", rclcpp::ParameterValue(true));
   nav2_util::declare_parameter_if_not_declared(
     node, "OpenDoor.plugin",
     rclcpp::ParameterValue(std::string{"nav2_route::TriggerEvent"}));
@@ -377,7 +369,8 @@ TEST(OperationsManagerTest, test_trigger_event_on_graph_global_service)
 
   auto service2 = node_int->create_service<std_srvs::srv::Trigger>("hello_world", callback2);
 
-  result = manager.process(true, state, route, pose, info);
+  OperationsManager manager2(node);
+  result = manager2.process(true, state, route, pose, info);
   EXPECT_EQ(result.operations_triggered.size(), 1u);
   EXPECT_FALSE(result.reroute);
   EXPECT_TRUE(got_srv2);
@@ -393,8 +386,6 @@ TEST(OperationsManagerTest, test_trigger_event_on_graph_failures)
   // when a graph object contains the request for opening a door only
   node->declare_parameter(
     "operations", rclcpp::ParameterValue(std::vector<std::string>{"OpenDoor"}));
-  node->declare_parameter(
-    "use_feedback_operations", rclcpp::ParameterValue(false));
   nav2_util::declare_parameter_if_not_declared(
     node, "OpenDoor.plugin",
     rclcpp::ParameterValue(std::string{"nav2_route::TriggerEvent"}));

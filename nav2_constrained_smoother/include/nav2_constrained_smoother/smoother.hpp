@@ -142,10 +142,10 @@ private:
     std::vector<bool> & optimized)
   {
     // Create costmap grid
-    costmap_grid_ = std::make_shared<ceres::Grid2D<u_char>>(
+    costmap_grid_ = std::make_shared<ceres::Grid2D<unsigned char>>(
       costmap->getCharMap(), 0, costmap->getSizeInCellsY(), 0, costmap->getSizeInCellsX());
-    auto costmap_interpolator = std::make_shared<ceres::BiCubicInterpolator<ceres::Grid2D<u_char>>>(
-      *costmap_grid_);
+    auto costmap_interpolator =
+      std::make_shared<ceres::BiCubicInterpolator<ceres::Grid2D<unsigned char>>>(*costmap_grid_);
 
     // Create residual blocks
     const double cusp_half_length = params.cusp_zone_length / 2;
@@ -194,8 +194,8 @@ private:
       // update cusp zone costmap weights
       if (is_cusp) {
         double len_to_cusp = current_segment_len;
-        for (int i = potential_cusp_funcs.size() - 1; i >= 0; i--) {
-          auto & f = potential_cusp_funcs[i];
+        for (int i_cusp = potential_cusp_funcs.size() - 1; i_cusp >= 0; i_cusp--) {
+          auto & f = potential_cusp_funcs[i_cusp];
           double new_weight =
             params.cusp_costmap_weight * (1.0 - len_to_cusp / cusp_half_length) +
             params.costmap_weight * len_to_cusp / cusp_half_length;
@@ -293,7 +293,7 @@ private:
     }
     int last_i = 0;
     int prelast_i = -1;
-    Eigen::Vector2d prelast_dir;
+    Eigen::Vector2d prelast_dir = {0, 0};
     for (int i = 1; i <= static_cast<int>(path_optim.size()); i++) {
       if (i == static_cast<int>(path_optim.size()) || optimized[i]) {
         if (prelast_i != -1) {
@@ -394,7 +394,7 @@ private:
 
   bool debug_;
   ceres::Solver::Options options_;
-  std::shared_ptr<ceres::Grid2D<u_char>> costmap_grid_;
+  std::shared_ptr<ceres::Grid2D<unsigned char>> costmap_grid_;
 };
 
 }  // namespace nav2_constrained_smoother

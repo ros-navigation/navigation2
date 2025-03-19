@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Samsung Research America
+// Copyright (c) 2025 Open Navigation LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -183,7 +183,7 @@ protected:
     if (!client->wait_for_service(1s)) {
       throw nav2_core::OperationFailed(
               "Route operation service " +
-              std::string(client->get_service_name()) + "is not available!");
+              std::string(client->get_service_name()) + " is not available!");
     }
 
     auto result = client->async_send_request(req);
@@ -192,7 +192,7 @@ protected:
     {
       throw nav2_core::OperationFailed(
               "Route operation service " +
-              std::string(client->get_service_name()) + "failed to call!");
+              std::string(client->get_service_name()) + " failed to call!");
     }
 
     return result.get();

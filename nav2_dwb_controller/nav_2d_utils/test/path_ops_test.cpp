@@ -63,7 +63,7 @@ TEST(path_ops_test, AdjustResolutionSimple)
 
   nav_2d_msgs::msg::Path2D out = adjustPlanResolution(in, RESOLUTION);
   float length = 100;
-  ulong number_of_points = ceil(length / (2 * RESOLUTION));
+  uint32_t number_of_points = ceil(length / (2 * RESOLUTION));
   EXPECT_EQ(out.poses.size(), number_of_points);
   float max_length = length / (number_of_points - 1);
 

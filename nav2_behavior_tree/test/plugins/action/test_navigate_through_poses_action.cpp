@@ -23,9 +23,9 @@
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 
-#include "../../test_action_server.hpp"
+#include "nav2_behavior_tree/utils/test_action_server.hpp"
 #include "nav2_behavior_tree/plugins/action/navigate_through_poses_action.hpp"
 
 class NavigateThroughPosesActionServer
@@ -61,7 +61,7 @@ public:
     // Create the blackboard that will be shared by all of the nodes in the tree
     config_->blackboard = BT::Blackboard::create();
     // Put items on the blackboard
-    config_->blackboard->set<rclcpp::Node::SharedPtr>(
+    config_->blackboard->set(
       "node",
       node_);
     config_->blackboard->set<std::chrono::milliseconds>(
@@ -70,9 +70,12 @@ public:
     config_->blackboard->set<std::chrono::milliseconds>(
       "bt_loop_duration",
       std::chrono::milliseconds(10));
-    config_->blackboard->set<bool>("initial_pose_received", false);
-    std::vector<geometry_msgs::msg::PoseStamped> poses;
-    config_->blackboard->set<std::vector<geometry_msgs::msg::PoseStamped>>(
+    config_->blackboard->set<std::chrono::milliseconds>(
+      "wait_for_service_timeout",
+      std::chrono::milliseconds(1000));
+    config_->blackboard->set("initial_pose_received", false);
+    nav_msgs::msg::Goals poses;
+    config_->blackboard->set(
       "goals", poses);
 
     BT::NodeBuilder builder =
@@ -121,7 +124,7 @@ TEST_F(NavigateThroughPosesActionTestFixture, test_tick)
   // create tree
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <NavigateThroughPoses goals="{goals}" />
         </BehaviorTree>
@@ -129,11 +132,11 @@ TEST_F(NavigateThroughPosesActionTestFixture, test_tick)
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
 
-  std::vector<geometry_msgs::msg::PoseStamped> poses;
-  poses.resize(1);
-  poses[0].pose.position.x = -2.5;
-  poses[0].pose.orientation.x = 1.0;
-  config_->blackboard->set<std::vector<geometry_msgs::msg::PoseStamped>>("goals", poses);
+  nav_msgs::msg::Goals poses;
+  poses.goals.resize(1);
+  poses.goals[0].pose.position.x = -2.5;
+  poses.goals[0].pose.orientation.x = 1.0;
+  config_->blackboard->set("goals", poses);
 
   // tick until node succeeds
   while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS) {
@@ -145,7 +148,7 @@ TEST_F(NavigateThroughPosesActionTestFixture, test_tick)
   EXPECT_EQ(action_server_->getCurrentGoal()->poses, poses);
 
   // halt node so another goal can be sent
-  tree_->rootNode()->halt();
+  tree_->haltTree();
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::IDLE);
 }
 

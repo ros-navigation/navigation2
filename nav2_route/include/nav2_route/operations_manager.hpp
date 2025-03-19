@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Samsung Research America
+// Copyright (c) 2025 Open Navigation LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -61,7 +61,7 @@ public:
     const NodePtr node, const EdgePtr edge_enter, const EdgePtr edge_exit);
 
   /**
-   * @brief Finds the set of operations stored in graph objects
+   * @brief Finds the set of operations stored in graph objects, by event
    * @param node op_vec Operations vector to check
    * @param trigger Trigger for which operations in op_vec should be included
    * @param operations Output vector populated with relavent operations
@@ -99,7 +99,7 @@ public:
 
 protected:
   /**
-   * @brief Processes a vector of operations plugins
+   * @brief Processes a vector of operations plugins, by trigger
    * @param operations Operations to trigger
    * @param Results to populate from operations
    */
@@ -116,7 +116,6 @@ protected:
   std::vector<RouteOperation::Ptr> change_operations_;
   std::vector<RouteOperation::Ptr> query_operations_;
   rclcpp::Logger logger_{rclcpp::get_logger("OperationsManager")};
-  bool use_feedback_operations_;
 };
 
 }  // namespace nav2_route

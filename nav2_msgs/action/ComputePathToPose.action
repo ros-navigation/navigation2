@@ -1,16 +1,3 @@
-# Error codes
-# Note: The expected priority order of the errors should match the message order
-uint16 NONE=0
-uint16 UNKNOWN=200
-uint16 INVALID_PLANNER=201
-uint16 TF_ERROR=2002
-uint16 START_OUTSIDE_MAP=203
-uint16 GOAL_OUTSIDE_MAP=204
-uint16 START_OCCUPIED=205
-uint16 GOAL_OCCUPIED=206
-uint16 TIMEOUT=207
-uint16 NO_VALID_PATH=208
-
 #goal definition
 geometry_msgs/PoseStamped goal
 geometry_msgs/PoseStamped start
@@ -18,8 +5,23 @@ string planner_id
 bool use_start # If false, use current robot pose as path start, if true, use start above instead
 ---
 #result definition
+
+# Error codes
+# Note: The expected priority order of the errors should match the message order
+uint16 NONE=0
+uint16 UNKNOWN=200
+uint16 INVALID_PLANNER=201
+uint16 TF_ERROR=202
+uint16 START_OUTSIDE_MAP=203
+uint16 GOAL_OUTSIDE_MAP=204
+uint16 START_OCCUPIED=205
+uint16 GOAL_OCCUPIED=206
+uint16 TIMEOUT=207
+uint16 NO_VALID_PATH=208
+
 nav_msgs/Path path
 builtin_interfaces/Duration planning_time
 uint16 error_code
+string error_msg
 ---
 #feedback definition

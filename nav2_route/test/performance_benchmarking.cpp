@@ -1,4 +1,4 @@
-// Copyright (c) 2023 Samsung Research
+// Copyright (c) 2025 Samsung Research
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -117,18 +117,20 @@ int main(int argc, char const * argv[])
   //   (end - start).seconds() * 1000.0 / static_cast<double>(NUM_TESTS));
   // RCLCPP_INFO(
   //   node->get_logger(),
-  //   "Averaged route size: %f", static_cast<double>(route_legs) / static_cast<double>(NUM_TESTS));
+  //   "Averaged route size: %f", static_cast<double>(route_legs) / static_cast<double>(NUM_TESTS))
 
-  // Third test: Check how much time it takes to do random lookups in the Kd-tree of various graph sizes
+  // Third test:
+  // Check how much time it takes to do random lookups in the Kd-tree of various graph sizes
   std::shared_ptr<NodeSpatialTree> kd_tree = std::make_shared<NodeSpatialTree>();
   kd_tree->computeTree(graph);
 
   auto start = node->now();
+  unsigned int seed = 1u;
   for (unsigned int i = 0; i != NUM_TESTS; i++) {
     unsigned int kd_tree_idx;
     geometry_msgs::msg::PoseStamped pose;
-    pose.pose.position.x = static_cast<float>(rand() % DIM);
-    pose.pose.position.y = static_cast<float>(rand() % DIM);
+    pose.pose.position.x = static_cast<float>(rand_r(&seed) % DIM);
+    pose.pose.position.y = static_cast<float>(rand_r(&seed) % DIM);
     kd_tree->findNearestGraphNodeToPose(pose, kd_tree_idx);
   }
   auto end = node->now();

@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Samsung Research America
+// Copyright (c) 2025, Open Navigation LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -148,7 +148,7 @@ TEST(GoalIntentExtractorTest, test_start_goal_finder)
   auto start = extractor.getStart();
   EXPECT_EQ(start.pose.position.x, 0.0);
   EXPECT_EQ(start.pose.position.y, 0.0);
-  extractor.setStart(p1);
+  extractor.overrideStart(p1);
   start = extractor.getStart();
   EXPECT_EQ(start.pose.position.x, 45.0);
 

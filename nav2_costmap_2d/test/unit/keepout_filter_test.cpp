@@ -292,7 +292,7 @@ void TestNode::testStandardScenario(unsigned char free_value, unsigned char keep
   keepout_points_.push_back(Point{4, 3});
   keepout_points_.push_back(Point{4, 4});
   verifyMasterGrid(free_value, keepout_value);
-  // Two windows outside on the horisontal/vertical edge: no new points added
+  // Two windows outside on the horizontal/vertical edge: no new points added
   keepout_filter_->process(*master_grid_, 3, 6, 5, 7, pose);
   keepout_filter_->process(*master_grid_, 6, 3, 7, 5, pose);
   verifyMasterGrid(free_value, keepout_value);
@@ -341,7 +341,7 @@ void TestNode::reset()
 
 TEST_F(TestNode, testFreeMasterLethalKeepout)
 {
-  // Initilize test system
+  // Initialize test system
   createMaps(nav2_costmap_2d::FREE_SPACE, nav2_util::OCC_GRID_OCCUPIED, "map");
   publishMaps();
   createKeepoutFilter("map");
@@ -356,7 +356,7 @@ TEST_F(TestNode, testFreeMasterLethalKeepout)
 
 TEST_F(TestNode, testUnknownMasterNonLethalKeepout)
 {
-  // Initilize test system
+  // Initialize test system
   createMaps(
     nav2_costmap_2d::NO_INFORMATION,
     (nav2_util::OCC_GRID_OCCUPIED - nav2_util::OCC_GRID_FREE) / 2,
@@ -376,7 +376,7 @@ TEST_F(TestNode, testUnknownMasterNonLethalKeepout)
 
 TEST_F(TestNode, testFreeKeepout)
 {
-  // Initilize test system
+  // Initialize test system
   createMaps(nav2_costmap_2d::FREE_SPACE, nav2_util::OCC_GRID_FREE, "map");
   publishMaps();
   createKeepoutFilter("map");
@@ -395,7 +395,7 @@ TEST_F(TestNode, testFreeKeepout)
 
 TEST_F(TestNode, testUnknownKeepout)
 {
-  // Initilize test system
+  // Initialize test system
   createMaps(nav2_costmap_2d::FREE_SPACE, nav2_util::OCC_GRID_UNKNOWN, "map");
   publishMaps();
   createKeepoutFilter("map");
@@ -414,7 +414,7 @@ TEST_F(TestNode, testUnknownKeepout)
 
 TEST_F(TestNode, testInfoRePublish)
 {
-  // Initilize test system
+  // Initialize test system
   createMaps(nav2_costmap_2d::FREE_SPACE, nav2_util::OCC_GRID_OCCUPIED, "map");
   publishMaps();
   createKeepoutFilter("map");
@@ -433,7 +433,7 @@ TEST_F(TestNode, testInfoRePublish)
 
 TEST_F(TestNode, testMaskRePublish)
 {
-  // Initilize test system
+  // Initialize test system
   createMaps(nav2_costmap_2d::FREE_SPACE, nav2_util::OCC_GRID_OCCUPIED, "map");
   publishMaps();
   createKeepoutFilter("map");
@@ -451,7 +451,7 @@ TEST_F(TestNode, testMaskRePublish)
 
 TEST_F(TestNode, testDifferentFrames)
 {
-  // Initilize test system
+  // Initialize test system
   createMaps(nav2_costmap_2d::FREE_SPACE, nav2_util::OCC_GRID_OCCUPIED, "map");
   publishMaps();
   createKeepoutFilter("odom");

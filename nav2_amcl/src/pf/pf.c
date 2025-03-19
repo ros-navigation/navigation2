@@ -67,7 +67,7 @@ pf_t * pf_alloc(
   // the max error between the true distribution and the estimated
   // distribution.  [z] is the upper standard normal quantile for (1 -
   // p), where p is the probability that the error on the estimated
-  // distrubition will be less than [err].
+  // distribution will be less than [err].
   pf->pop_err = 0.01;
   pf->pop_z = 3;
   pf->dist_threshold = 0.5;
@@ -123,7 +123,7 @@ void pf_free(pf_t * pf)
   free(pf);
 }
 
-// Initialize the filter using a guassian
+// Initialize the filter using a gaussian
 void pf_init(pf_t * pf, pf_vector_t mean, pf_matrix_t cov)
 {
   int i;
@@ -463,7 +463,6 @@ void pf_cluster_stats(pf_t * pf, pf_sample_set_t * set)
 
   // Workspace
   double m[4], c[2][2];
-  size_t count;
   double weight;
 
   // Cluster the samples
@@ -474,7 +473,6 @@ void pf_cluster_stats(pf_t * pf, pf_sample_set_t * set)
 
   for (i = 0; i < set->cluster_max_count; i++) {
     cluster = set->clusters + i;
-    cluster->count = 0;
     cluster->weight = 0;
     cluster->mean = pf_vector_zero();
     cluster->cov = pf_matrix_zero();
@@ -490,7 +488,6 @@ void pf_cluster_stats(pf_t * pf, pf_sample_set_t * set)
   }
 
   // Initialize overall filter stats
-  count = 0;
   weight = 0.0;
   set->mean = pf_vector_zero();
   set->cov = pf_matrix_zero();
@@ -521,10 +518,8 @@ void pf_cluster_stats(pf_t * pf, pf_sample_set_t * set)
 
     cluster = set->clusters + cidx;
 
-    cluster->count += 1;
     cluster->weight += sample->weight;
 
-    count += 1;
     weight += sample->weight;
 
     // Compute mean

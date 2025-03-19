@@ -30,14 +30,6 @@
 #include "nav2_util/lifecycle_node.hpp"
 #include "rclcpp/rclcpp.hpp"
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 // SMAC smoke tests for plugin-level issues rather than algorithms
 // (covered by more extensively testing in other files)
 // System tests in nav2_system_tests will actually plan with this work
@@ -57,6 +49,10 @@ TEST(SmacTest, test_smac_2d) {
   node2D->declare_parameter("test.downsampling_factor", 2);
   node2D->set_parameter(rclcpp::Parameter("test.downsampling_factor", 2));
 
+  auto dummy_cancel_checker = []() {
+      return false;
+    };
+
   geometry_msgs::msg::PoseStamped start, goal;
   start.pose.position.x = 0.0;
   start.pose.position.y = 0.0;
@@ -69,9 +65,16 @@ TEST(SmacTest, test_smac_2d) {
   planner_2d->configure(node2D, "test", nullptr, costmap_ros);
   planner_2d->activate();
   try {
-    planner_2d->createPlan(start, goal);
+    planner_2d->createPlan(start, goal, dummy_cancel_checker);
   } catch (...) {
   }
+
+  // corner case where the start and goal are on the same cell
+  goal.pose.position.x = 0.01;
+  goal.pose.position.y = 0.01;
+
+  nav_msgs::msg::Path plan = planner_2d->createPlan(start, goal, dummy_cancel_checker);
+  EXPECT_EQ(plan.poses.size(), 1);  // single point path
 
   planner_2d->deactivate();
   planner_2d->cleanup();
@@ -108,6 +111,7 @@ TEST(SmacTest, test_smac_2d_reconfigure) {
       rclcpp::Parameter("test.downsampling_factor", 2),
       rclcpp::Parameter("test.max_iterations", -1),
       rclcpp::Parameter("test.max_on_approach_iterations", -1),
+      rclcpp::Parameter("test.terminal_checking_interval", 100),
       rclcpp::Parameter("test.use_final_approach_orientation", false)});
 
   rclcpp::spin_until_future_complete(
@@ -127,6 +131,9 @@ TEST(SmacTest, test_smac_2d_reconfigure) {
   EXPECT_EQ(
     node2D->get_parameter("test.max_on_approach_iterations").as_int(),
     -1);
+  EXPECT_EQ(
+    node2D->get_parameter("test.terminal_checking_interval").as_int(),
+    100);
 
   results = rec_param->set_parameters_atomically(
     {rclcpp::Parameter("test.downsample_costmap", true)});
@@ -134,4 +141,17 @@ TEST(SmacTest, test_smac_2d_reconfigure) {
   rclcpp::spin_until_future_complete(
     node2D->get_node_base_interface(),
     results);
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

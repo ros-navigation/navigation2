@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Samsung Research America
+// Copyright (c) 2025 Open Navigation LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -89,7 +89,7 @@ protected:
   std::string time_tag_;
   rclcpp::Clock::SharedPtr clock_;
   rclcpp::Time edge_start_time_;
-  unsigned int curr_edge;
+  unsigned int curr_edge_;
 };
 
 }  // namespace nav2_route

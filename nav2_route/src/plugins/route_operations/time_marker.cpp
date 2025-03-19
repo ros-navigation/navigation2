@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Samsung Research America
+// Copyright (c) 2025, Open Navigation LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -44,9 +44,9 @@ OperationResult TimeMarker::perform(
 {
   OperationResult result;
   rclcpp::Time now = clock_->now();
-  if (!edge_exited || edge_exited->edgeid != curr_edge) {
+  if (!edge_exited || edge_exited->edgeid != curr_edge_) {
     edge_start_time_ = now;
-    curr_edge = edge_entered ? edge_entered->edgeid : 0;
+    curr_edge_ = edge_entered ? edge_entered->edgeid : 0;
     return result;
   }
 
@@ -56,7 +56,7 @@ OperationResult TimeMarker::perform(
   }
 
   edge_start_time_ = now;
-  curr_edge = edge_entered ? edge_entered->edgeid : 0;
+  curr_edge_ = edge_entered ? edge_entered->edgeid : 0;
   return result;
 }
 

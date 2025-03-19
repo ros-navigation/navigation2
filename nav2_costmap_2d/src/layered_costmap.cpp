@@ -68,14 +68,15 @@ LayeredCostmap::LayeredCostmap(std::string global_frame, bool rolling_window, bo
   initialized_(false),
   size_locked_(false),
   circumscribed_radius_(1.0),
-  inscribed_radius_(0.1)
+  inscribed_radius_(0.1),
+  footprint_(std::make_shared<std::vector<geometry_msgs::msg::Point>>())
 {
   if (track_unknown) {
-    primary_costmap_.setDefaultValue(255);
-    combined_costmap_.setDefaultValue(255);
+    primary_costmap_.setDefaultValue(NO_INFORMATION);
+    combined_costmap_.setDefaultValue(NO_INFORMATION);
   } else {
-    primary_costmap_.setDefaultValue(0);
-    combined_costmap_.setDefaultValue(0);
+    primary_costmap_.setDefaultValue(FREE_SPACE);
+    combined_costmap_.setDefaultValue(FREE_SPACE);
   }
 }
 
@@ -93,6 +94,12 @@ void LayeredCostmap::addPlugin(std::shared_ptr<Layer> plugin)
 {
   std::unique_lock<Costmap2D::mutex_t> lock(*(combined_costmap_.getMutex()));
   plugins_.push_back(plugin);
+}
+
+void LayeredCostmap::addFilter(std::shared_ptr<Layer> filter)
+{
+  std::unique_lock<Costmap2D::mutex_t> lock(*(combined_costmap_.getMutex()));
+  filters_.push_back(filter);
 }
 
 void LayeredCostmap::resizeMap(
@@ -256,22 +263,27 @@ bool LayeredCostmap::isCurrent()
   for (vector<std::shared_ptr<Layer>>::iterator plugin = plugins_.begin();
     plugin != plugins_.end(); ++plugin)
   {
-    current_ = current_ && (*plugin)->isCurrent();
+    current_ = current_ && ((*plugin)->isCurrent() || !(*plugin)->isEnabled());
   }
   for (vector<std::shared_ptr<Layer>>::iterator filter = filters_.begin();
     filter != filters_.end(); ++filter)
   {
-    current_ = current_ && (*filter)->isCurrent();
+    current_ = current_ && ((*filter)->isCurrent() || !(*filter)->isEnabled());
   }
   return current_;
 }
 
 void LayeredCostmap::setFootprint(const std::vector<geometry_msgs::msg::Point> & footprint_spec)
 {
-  footprint_ = footprint_spec;
-  nav2_costmap_2d::calculateMinAndMaxDistances(
-    footprint_spec,
-    inscribed_radius_, circumscribed_radius_);
+  std::pair<double, double> inside_outside = nav2_costmap_2d::calculateMinAndMaxDistances(
+    footprint_spec);
+  // use atomic store here since footprint is used by various planners/controllers
+  // and not otherwise locked
+  std::atomic_store(
+    &footprint_,
+    std::make_shared<std::vector<geometry_msgs::msg::Point>>(footprint_spec));
+  inscribed_radius_.store(std::get<0>(inside_outside));
+  circumscribed_radius_.store(std::get<1>(inside_outside));
 
   for (vector<std::shared_ptr<Layer>>::iterator plugin = plugins_.begin();
     plugin != plugins_.end();

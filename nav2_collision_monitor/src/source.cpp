@@ -19,6 +19,7 @@
 #include "geometry_msgs/msg/transform_stamped.hpp"
 
 #include "nav2_util/node_utils.hpp"
+#include "nav2_util/robot_utils.hpp"
 
 namespace nav2_collision_monitor
 {
@@ -30,15 +31,28 @@ Source::Source(
   const std::string & base_frame_id,
   const std::string & global_frame_id,
   const tf2::Duration & transform_tolerance,
-  const rclcpp::Duration & source_timeout)
+  const rclcpp::Duration & source_timeout,
+  const bool base_shift_correction)
 : node_(node), source_name_(source_name), tf_buffer_(tf_buffer),
   base_frame_id_(base_frame_id), global_frame_id_(global_frame_id),
-  transform_tolerance_(transform_tolerance), source_timeout_(source_timeout)
+  transform_tolerance_(transform_tolerance), source_timeout_(source_timeout),
+  base_shift_correction_(base_shift_correction)
 {
 }
 
 Source::~Source()
 {
+}
+
+bool Source::configure()
+{
+  auto node = node_.lock();
+
+  // Add callback for dynamic parameters
+  dyn_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(&Source::dynamicParametersCallback, this, std::placeholders::_1));
+
+  return true;
 }
 
 void Source::getCommonParameters(std::string & source_topic)
@@ -50,8 +64,18 @@ void Source::getCommonParameters(std::string & source_topic)
 
   nav2_util::declare_parameter_if_not_declared(
     node, source_name_ + ".topic",
-    rclcpp::ParameterValue("scan"));  // Set deafult topic for laser scanner
+    rclcpp::ParameterValue("scan"));  // Set default topic for laser scanner
   source_topic = node->get_parameter(source_name_ + ".topic").as_string();
+
+  nav2_util::declare_parameter_if_not_declared(
+    node, source_name_ + ".enabled", rclcpp::ParameterValue(true));
+  enabled_ = node->get_parameter(source_name_ + ".enabled").as_bool();
+
+  nav2_util::declare_parameter_if_not_declared(
+    node, source_name_ + ".source_timeout",
+    rclcpp::ParameterValue(source_timeout_.seconds()));      // node source_timeout by default
+  source_timeout_ = rclcpp::Duration::from_seconds(
+    node->get_parameter(source_name_ + ".source_timeout").as_double());
 }
 
 bool Source::sourceValid(
@@ -61,7 +85,7 @@ bool Source::sourceValid(
   // Source is considered as not valid, if latest received data timestamp is earlier
   // than current time by source_timeout_ interval
   const rclcpp::Duration dt = curr_time - source_time;
-  if (dt > source_timeout_) {
+  if (source_timeout_.seconds() != 0.0 && dt > source_timeout_) {
     RCLCPP_WARN(
       logger_,
       "[%s]: Latest source and current collision monitor node timestamps differ on %f seconds. "
@@ -70,6 +94,67 @@ bool Source::sourceValid(
     return false;
   }
 
+  return true;
+}
+
+bool Source::getEnabled() const
+{
+  return enabled_;
+}
+
+std::string Source::getSourceName() const
+{
+  return source_name_;
+}
+
+rclcpp::Duration Source::getSourceTimeout() const
+{
+  return source_timeout_;
+}
+
+rcl_interfaces::msg::SetParametersResult
+Source::dynamicParametersCallback(
+  std::vector<rclcpp::Parameter> parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+
+  for (auto parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+
+    if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_BOOL) {
+      if (param_name == source_name_ + "." + "enabled") {
+        enabled_ = parameter.as_bool();
+      }
+    }
+  }
+  result.successful = true;
+  return result;
+}
+
+bool Source::getTransform(
+  const rclcpp::Time & curr_time,
+  const std_msgs::msg::Header & data_header,
+  tf2::Transform & tf_transform) const
+{
+  if (base_shift_correction_) {
+    if (
+      !nav2_util::getTransform(
+        data_header.frame_id, data_header.stamp,
+        base_frame_id_, curr_time, global_frame_id_,
+        transform_tolerance_, tf_buffer_, tf_transform))
+    {
+      return false;
+    }
+  } else {
+    if (
+      !nav2_util::getTransform(
+        data_header.frame_id, base_frame_id_,
+        transform_tolerance_, tf_buffer_, tf_transform))
+    {
+      return false;
+    }
+  }
   return true;
 }
 

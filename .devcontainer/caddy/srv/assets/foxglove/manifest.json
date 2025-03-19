@@ -1,0 +1,40 @@
+{
+    "name": "Foxglove: {{placeholder "http.vars.ReqHost"}}",
+    "short_name": "Foxglove: {{placeholder "http.vars.ReqHost"}}",
+    "icons": [
+      {
+        "src": "/media/icons/foxglove/any_icon_x512.webp",
+        "sizes": "512x512",
+        "type": "image/webp",
+        "purpose": "any"
+      },
+      {
+        "src": "/media/icons/foxglove/maskable_icon_x512.webp",
+        "sizes": "512x512",
+        "type": "image/webp",
+        "purpose": "maskable"
+      }
+    ],
+    "id": "/foxglove/",
+    "start_url": "/foxglove/autoconnect",
+    "theme_color": "#6F3BE8",
+    "background_color": "#6F3BE8",
+    "display": "fullscreen",
+    "shortcuts" : [
+        {
+          "name": "Auto Connect",
+          "url": "/foxglove/autoconnect",
+          "description": "Auto connect to default data source"
+        },
+        {
+          "name": "Auto Layout",
+          "url": "/foxglove/autolayout",
+          "description": "Auto connect using default layout"
+        },
+        {
+          "name": "Manual Connect",
+          "url": "/foxglove/",
+          "description": "Manually connect to data source"
+        }
+      ]
+}

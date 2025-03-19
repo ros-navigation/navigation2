@@ -99,10 +99,9 @@ private:
   rclcpp::Subscription<nav2_msgs::msg::CostmapFilterInfo>::SharedPtr filter_info_sub_;
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr mask_sub_;
 
-  std::unique_ptr<Costmap2D> mask_costmap_;
+  nav_msgs::msg::OccupancyGrid::SharedPtr filter_mask_;
 
-  std::string mask_frame_;  // Frame where mask located in
-  std::string global_frame_;  // Frame of currnet layer (master_grid)
+  std::string global_frame_;  // Frame of current layer (master_grid)
 };
 
 }  // namespace nav2_costmap_2d

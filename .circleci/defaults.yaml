@@ -6,7 +6,7 @@ _common: &common
 "build":
   <<: *common
   "executor": "parallel"
-  "parallel-workers": 2
+  "parallel-workers": 4
   "symlink-install": true
 "test":
   <<: *common

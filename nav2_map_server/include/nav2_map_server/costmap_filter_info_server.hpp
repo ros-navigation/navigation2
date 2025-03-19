@@ -18,6 +18,7 @@
 #include <memory>
 
 #include "rclcpp/rclcpp.hpp"
+#include "rclcpp_lifecycle/state.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_msgs/msg/costmap_filter_info.hpp"
 
@@ -29,8 +30,10 @@ class CostmapFilterInfoServer : public nav2_util::LifecycleNode
 public:
   /**
    * @brief Constructor for the nav2_map_server::CostmapFilterInfoServer
+   * @param options Additional options to control creation of the node.
    */
-  CostmapFilterInfoServer();
+  explicit CostmapFilterInfoServer(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
+
   /**
    * @brief Destructor for the nav2_map_server::CostmapFilterInfoServer
    */

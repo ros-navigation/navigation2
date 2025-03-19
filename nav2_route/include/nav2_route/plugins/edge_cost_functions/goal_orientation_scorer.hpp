@@ -66,8 +66,13 @@ public:
    * @return bool if this edge is open valid to traverse
    */
   bool score(
+<<<<<<< HEAD
     const EdgePtr edge, const geometry_msgs::msg::PoseStamped & goal_pose,
     const EdgeType & edge_type, float & cost) override;
+=======
+    const EdgePtr edge, const geometry_msgs::msg::PoseStamped & goal_pose, bool final_edge,
+    float & cost) override;
+>>>>>>> nav2_route_server
 
   /**
    * @brief Get name of the plugin for parameter scope mapping

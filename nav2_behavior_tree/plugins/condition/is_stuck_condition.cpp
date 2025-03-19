@@ -95,7 +95,7 @@ void IsStuckCondition::logStuck(const std::string & msg) const
     return;
   }
 
-  RCLCPP_INFO(node_->get_logger(), msg.c_str());
+  RCLCPP_INFO(node_->get_logger(), "%s", msg.c_str());
   prev_msg = msg;
 }
 
@@ -143,7 +143,7 @@ bool IsStuckCondition::isStuck()
 
 }  // namespace nav2_behavior_tree
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
   factory.registerNodeType<nav2_behavior_tree::IsStuckCondition>("IsStuck");

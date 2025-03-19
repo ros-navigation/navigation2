@@ -43,25 +43,33 @@ SpeedController::SpeedController(
 
   if (min_rate_ <= 0.0 || max_rate_ <= 0.0) {
     std::string err_msg = "SpeedController node cannot have rate <= 0.0";
-    RCLCPP_FATAL(node_->get_logger(), err_msg.c_str());
+    RCLCPP_FATAL(node_->get_logger(), "%s", err_msg.c_str());
     throw BT::BehaviorTreeException(err_msg);
   }
 
   d_rate_ = max_rate_ - min_rate_;
   d_speed_ = max_speed_ - min_speed_;
 
-  double duration = 0.3;
-  getInput("filter_duration", duration);
-  std::string odom_topic;
-  node_->get_parameter_or("odom_topic", odom_topic, std::string("odom"));
-  odom_smoother_ = std::make_shared<nav2_util::OdomSmoother>(node_, duration, odom_topic);
+  odom_smoother_ = config().blackboard->get<std::shared_ptr<nav2_util::OdomSmoother>>(
+    "odom_smoother");
 }
 
 inline BT::NodeStatus SpeedController::tick()
 {
-  auto current_goal = config().blackboard->get<geometry_msgs::msg::PoseStamped>("goal");
-  auto current_goals =
-    config().blackboard->get<std::vector<geometry_msgs::msg::PoseStamped>>("goals");
+  if (!BT::isStatusActive(status())) {
+    // Reset since we're starting a new iteration of
+    // the speed controller (moving from IDLE to RUNNING)
+    BT::getInputOrBlackboard("goals", goals_);
+    BT::getInputOrBlackboard("goal", goal_);
+    period_ = 1.0 / max_rate_;
+    start_ = node_->now();
+    first_tick_ = true;
+  }
+
+  nav_msgs::msg::Goals current_goals;
+  BT::getInputOrBlackboard("goals", current_goals);
+  geometry_msgs::msg::PoseStamped current_goal;
+  BT::getInputOrBlackboard("goal", current_goal);
 
   if (goal_ != current_goal || goals_ != current_goals) {
     // Reset state and set period to max since we have a new goal
@@ -90,19 +98,7 @@ inline BT::NodeStatus SpeedController::tick()
       start_ = node_->now();
     }
 
-    const BT::NodeStatus child_state = child_node_->executeTick();
-
-    switch (child_state) {
-      case BT::NodeStatus::RUNNING:
-        return BT::NodeStatus::RUNNING;
-
-      case BT::NodeStatus::SUCCESS:
-        return BT::NodeStatus::SUCCESS;
-
-      case BT::NodeStatus::FAILURE:
-      default:
-        return BT::NodeStatus::FAILURE;
-    }
+    return child_node_->executeTick();
   }
 
   return status();
@@ -110,7 +106,7 @@ inline BT::NodeStatus SpeedController::tick()
 
 }  // namespace nav2_behavior_tree
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
   factory.registerNodeType<nav2_behavior_tree::SpeedController>("SpeedController");

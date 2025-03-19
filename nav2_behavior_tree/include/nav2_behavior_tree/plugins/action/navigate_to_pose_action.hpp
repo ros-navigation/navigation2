@@ -32,7 +32,6 @@ class NavigateToPoseAction : public BtActionNode<nav2_msgs::action::NavigateToPo
 {
   using Action = nav2_msgs::action::NavigateToPose;
   using ActionResult = Action::Result;
-  using ActionGoal = Action::Goal;
 
 public:
   /**
@@ -78,6 +77,8 @@ public:
         BT::InputPort<std::string>("behavior_tree", "Behavior tree to run"),
         BT::OutputPort<ActionResult::_error_code_type>(
           "error_code_id", "Navigate to pose error code"),
+        BT::OutputPort<std::string>(
+          "error_msg", "Navigate to pose error msg"),
       });
   }
 };

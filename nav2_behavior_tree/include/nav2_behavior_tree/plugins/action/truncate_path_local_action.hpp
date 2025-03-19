@@ -22,7 +22,7 @@
 
 #include "nav_msgs/msg/path.hpp"
 
-#include "behaviortree_cpp_v3/action_node.h"
+#include "behaviortree_cpp/action_node.h"
 #include "tf2_ros/buffer.h"
 
 namespace nav2_behavior_tree

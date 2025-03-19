@@ -26,10 +26,10 @@ BehaviorServer::BehaviorServer(const rclcpp::NodeOptions & options)
 : LifecycleNode("behavior_server", "", options),
   plugin_loader_("nav2_core", "nav2_core::Behavior"),
   default_ids_{"spin", "backup", "drive_on_heading", "wait"},
-  default_types_{"nav2_behaviors/Spin",
-    "nav2_behaviors/BackUp",
-    "nav2_behaviors/DriveOnHeading",
-    "nav2_behaviors/Wait"}
+  default_types_{"nav2_behaviors::Spin",
+    "nav2_behaviors::BackUp",
+    "nav2_behaviors::DriveOnHeading",
+    "nav2_behaviors::Wait"}
 {
   declare_parameter(
     "local_costmap_topic",
@@ -78,7 +78,7 @@ BehaviorServer::~BehaviorServer()
 }
 
 nav2_util::CallbackReturn
-BehaviorServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
+BehaviorServer::on_configure(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
 
@@ -91,6 +91,7 @@ BehaviorServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   behavior_types_.resize(behavior_ids_.size());
   if (!loadBehaviorPlugins()) {
+    on_cleanup(state);
     return nav2_util::CallbackReturn::FAILURE;
   }
   setupResourcesForBehaviorPlugins();
@@ -105,13 +106,13 @@ BehaviorServer::loadBehaviorPlugins()
   auto node = shared_from_this();
 
   for (size_t i = 0; i != behavior_ids_.size(); i++) {
-    behavior_types_[i] = nav2_util::get_plugin_type_param(node, behavior_ids_[i]);
     try {
+      behavior_types_[i] = nav2_util::get_plugin_type_param(node, behavior_ids_[i]);
       RCLCPP_INFO(
         get_logger(), "Creating behavior plugin %s of type %s",
         behavior_ids_[i].c_str(), behavior_types_[i].c_str());
       behaviors_.push_back(plugin_loader_.createUniqueInstance(behavior_types_[i]));
-    } catch (const pluginlib::PluginlibException & ex) {
+    } catch (const std::exception & ex) {
       RCLCPP_FATAL(
         get_logger(), "Failed to create behavior %s of type %s."
         " Exception: %s", behavior_ids_[i].c_str(), behavior_types_[i].c_str(),
@@ -147,8 +148,8 @@ void BehaviorServer::setupResourcesForBehaviorPlugins()
   get_parameter("global_costmap_topic", global_costmap_topic);
   get_parameter("local_footprint_topic", local_footprint_topic);
   get_parameter("global_footprint_topic", global_footprint_topic);
-  get_parameter("transform_tolerance", transform_tolerance);
   get_parameter("robot_base_frame", robot_base_frame);
+  transform_tolerance = get_parameter("transform_tolerance").as_double();
 
   bool need_local_costmap = false;
   bool need_global_costmap = false;

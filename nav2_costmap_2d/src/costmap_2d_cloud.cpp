@@ -225,6 +225,11 @@ int main(int argc, char ** argv)
     "voxel_grid", rclcpp::SystemDefaultsQoS(), voxelCallback);
 
   rclcpp::spin(g_node->get_node_base_interface());
+
+  g_node.reset();
+  pub_marked.reset();
+  pub_unknown.reset();
+
   rclcpp::shutdown();
 
   return 0;

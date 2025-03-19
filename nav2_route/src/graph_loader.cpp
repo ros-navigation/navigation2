@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Samsung Research America
+// Copyright (c) 2025, Open Navigation LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -36,23 +36,22 @@ GraphLoader::GraphLoader(
   graph_filepath_ = node->get_parameter("graph_filepath").as_string();
 
   // Default Graph Parser
-  const std::string default_plugin_type = "nav2_route::GeoJsonGraphFileLoader";
   nav2_util::declare_parameter_if_not_declared(
     node, "graph_file_loader", rclcpp::ParameterValue(default_plugin_id_));
   auto graph_file_loader_id = node->get_parameter("graph_file_loader").as_string();
   if (graph_file_loader_id == default_plugin_id_) {
     nav2_util::declare_parameter_if_not_declared(
-      node, default_plugin_id_ + ".plugin", rclcpp::ParameterValue(default_plugin_type));
+      node, default_plugin_id_ + ".plugin",
+      rclcpp::ParameterValue("nav2_route::GeoJsonGraphFileLoader"));
   }
 
   // Create graph file loader plugin
   try {
     plugin_type_ = nav2_util::get_plugin_type_param(node, graph_file_loader_id);
-    GraphFileLoader::Ptr graph_parser = plugin_loader_.createSharedInstance((plugin_type_));
+    graph_file_loader_ = plugin_loader_.createSharedInstance((plugin_type_));
     RCLCPP_INFO(
       logger_, "Created GraphFileLoader %s of type %s",
       graph_file_loader_id.c_str(), plugin_type_.c_str());
-    graph_file_loader_ = std::move(graph_parser);
     graph_file_loader_->configure(node);
   } catch (pluginlib::PluginlibException & ex) {
     RCLCPP_FATAL(
@@ -65,16 +64,12 @@ GraphLoader::GraphLoader(
 bool GraphLoader::loadGraphFromFile(
   Graph & graph,
   GraphToIDMap & graph_to_id_map,
-  std::string filepath)
+  const std::string & filepath)
 {
-  if (filepath.empty() && !graph_filepath_.empty()) {
-    RCLCPP_DEBUG(
-      logger_, "The graph filepath was not provided. "
-      "Setting to %s", graph_filepath_.c_str());
-    filepath = graph_filepath_;
-  } else if (filepath.empty() && graph_filepath_.empty()) {
-    // No graph to try to load
-    return true;
+  if (filepath.empty()) {
+    RCLCPP_ERROR(
+      logger_, "The graph filepath was not provided.");
+    return false;
   }
 
   RCLCPP_INFO(
@@ -89,6 +84,34 @@ bool GraphLoader::loadGraphFromFile(
     RCLCPP_WARN(
       logger_,
       "Failed to transform nodes graph file (%s) to %s!", filepath.c_str(), route_frame_.c_str());
+    return false;
+  }
+
+  return true;
+}
+
+bool GraphLoader::loadGraphFromParameter(
+  Graph & graph,
+  GraphToIDMap & graph_to_id_map)
+{
+  if (graph_filepath_.empty()) {
+    RCLCPP_INFO(logger_, "No graph file provided to load yet.");
+    return true;
+  }
+
+  RCLCPP_INFO(
+    logger_,
+    "Loading graph file from %s, by parser %s", graph_filepath_.c_str(), plugin_type_.c_str());
+
+  if (!graph_file_loader_->loadGraphFromFile(graph, graph_to_id_map, graph_filepath_)) {
+    return false;
+  }
+
+  if (!transformGraph(graph)) {
+    RCLCPP_WARN(
+      logger_,
+      "Failed to transform nodes graph file (%s) to %s!",
+      graph_filepath_.c_str(), route_frame_.c_str());
     return false;
   }
 

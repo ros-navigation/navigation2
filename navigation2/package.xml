@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>navigation2</name>
-  <version>1.1.0</version>
+  <version>1.3.1</version>
   <description>
     ROS2 Navigation Stack
   </description>
@@ -11,6 +11,7 @@
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+  <build_depend>nav2_common</build_depend>
 
   <!-- nav2_bringup doesn't belong for recursive dependencies -->
   <exec_depend>nav2_amcl</exec_depend>
@@ -22,9 +23,11 @@
   <exec_depend>nav2_core</exec_depend>
   <exec_depend>nav2_costmap_2d</exec_depend>
   <exec_depend>nav2_dwb_controller</exec_depend>
+  <exec_depend>nav2_graceful_controller</exec_depend>
   <exec_depend>nav2_lifecycle_manager</exec_depend>
   <exec_depend>nav2_map_server</exec_depend>
   <exec_depend>nav2_msgs</exec_depend>
+  <exec_depend>nav2_mppi_controller</exec_depend>
   <exec_depend>nav2_navfn_planner</exec_depend>
   <exec_depend>nav2_planner</exec_depend>
   <exec_depend>nav2_behaviors</exec_depend>
@@ -40,6 +43,9 @@
   <exec_depend>nav2_velocity_smoother</exec_depend>
   <exec_depend>nav2_voxel_grid</exec_depend>
   <exec_depend>nav2_waypoint_follower</exec_depend>
+  <exec_depend>opennav_docking</exec_depend>
+  <exec_depend>opennav_docking_bt</exec_depend>
+  <exec_depend>opennav_docking_core</exec_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

@@ -57,7 +57,7 @@ RUN apt-get update && \
       ros-$ROS_DISTRO-rmw-fastrtps-cpp \
       ros-$ROS_DISTRO-rmw-connextdds \
       ros-$ROS_DISTRO-rmw-cyclonedds-cpp \
-    && pip3 install \
+    && pip3 install --break-system-packages \
       fastcov \
       git+https://github.com/ruffsl/colcon-cache.git@a937541bfc496c7a267db7ee9d6cceca61e470ca \
       git+https://github.com/ruffsl/colcon-clean.git@a7f1074d1ebc1a54a6508625b117974f2672f2a9 \
@@ -96,6 +96,7 @@ ARG OVERLAY_WS
 ENV OVERLAY_WS $OVERLAY_WS
 WORKDIR $OVERLAY_WS
 COPY --from=cacher /tmp/$OVERLAY_WS ./
+
 RUN . $UNDERLAY_WS/install/setup.sh && \
     apt-get update && rosdep install -q -y \
       --from-paths src \
@@ -125,10 +126,101 @@ RUN sed --in-place \
 
 # test overlay build
 ARG RUN_TESTS
-ARG FAIL_ON_TEST_FAILURE=True
+ARG FAIL_ON_TEST_FAILURE
 RUN if [ -n "$RUN_TESTS" ]; then \
         . install/setup.sh && \
         colcon test && \
         colcon test-result \
           || ([ -z "$FAIL_ON_TEST_FAILURE" ] || exit 1) \
     fi
+
+# multi-stage for developing
+FROM builder AS dever
+
+# edit apt for caching
+RUN mv /etc/apt/apt.conf.d/docker-clean /etc/apt/
+
+# install developer dependencies
+RUN apt-get update && \
+    apt-get install -y \
+      bash-completion \
+      gdb \
+      wget && \
+    pip3 install --break-system-packages \
+      bottle \
+      glances
+
+# source underlay for shell
+RUN echo 'source "$UNDERLAY_WS/install/setup.bash"' >> /etc/bash.bashrc
+
+# multi-stage for caddy
+FROM caddy:builder AS caddyer
+
+# build custom modules
+RUN xcaddy build \
+    --with github.com/caddyserver/replace-response
+
+# multi-stage for visualizing
+FROM dever AS visualizer
+
+ENV ROOT_SRV /srv
+RUN mkdir -p $ROOT_SRV
+
+# install demo dependencies
+RUN apt-get update && apt-get install -y \
+      ros-$ROS_DISTRO-rviz2 
+
+# install gzweb dependacies
+RUN apt-get install -y --no-install-recommends \
+      imagemagick \
+      libboost-all-dev \
+      libgazebo-dev \
+      libgts-dev \
+      libjansson-dev \
+      libtinyxml-dev \
+      nodejs \
+      npm \
+      psmisc \
+      xvfb
+
+# clone gzweb
+ENV GZWEB_WS /opt/gzweb
+RUN git clone https://github.com/osrf/gzweb.git $GZWEB_WS
+
+# setup gzweb
+RUN cd $GZWEB_WS && . /usr/share/gazebo/setup.sh && \
+    GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:$(find /opt/ros/$ROS_DISTRO/share \
+      -mindepth 1 -maxdepth 2 -type d -name "models" | paste -s -d: -) && \
+    sed -i "s|var modelList =|var modelList = []; var oldModelList =|g" gz3d/src/gzgui.js && \
+    xvfb-run -s "-screen 0 1280x1024x24" ./deploy.sh -m local && \
+    ln -s $GZWEB_WS/http/client/assets http/client/assets/models && \
+    ln -s $GZWEB_WS/http/client $ROOT_SRV/gzweb
+
+# patch gzsever
+RUN GZSERVER=$(which gzserver) && \
+    mv $GZSERVER $GZSERVER.orig && \
+    echo '#!/bin/bash' > $GZSERVER && \
+    echo 'exec xvfb-run -s "-screen 0 1280x1024x24" gzserver.orig "$@"' >> $GZSERVER && \
+    chmod +x $GZSERVER
+
+# install foxglove dependacies
+RUN apt-get install -y --no-install-recommends \
+      ros-$ROS_DISTRO-foxglove-bridge
+
+# setup foxglove
+# Use custom fork until PR is merged:
+# https://github.com/foxglove/studio/pull/5987
+# COPY --from=ghcr.io/foxglove/studio /src $ROOT_SRV/foxglove
+COPY --from=ghcr.io/ruffsl/foxglove_studio@sha256:8a2f2be0a95f24b76b0d7aa536f1c34f3e224022eed607cbf7a164928488332e /src $ROOT_SRV/foxglove
+
+# install web server
+COPY --from=caddyer /usr/bin/caddy /usr/bin/caddy
+
+# download media files
+RUN mkdir -p $ROOT_SRV/media && cd /tmp && \
+    export ICONS="icons.tar.gz" && wget https://github.com/ros-planning/navigation2/files/11506823/$ICONS && \
+    echo "cae5e2a5230f87b004c8232b579781edb4a72a7431405381403c6f9e9f5f7d41 $ICONS" | sha256sum -c && \
+    tar xvz -C $ROOT_SRV/media -f $ICONS && rm $ICONS
+
+# multi-stage for exporting
+FROM tester AS exporter

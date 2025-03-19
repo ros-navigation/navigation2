@@ -32,7 +32,7 @@
 /* Author: Brian Gerkey */
 
 #include <gtest/gtest.h>
-#include <experimental/filesystem>
+#include <filesystem>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -50,16 +50,7 @@
 
 using namespace std;  // NOLINT
 using namespace nav2_map_server;  // NOLINT
-using std::experimental::filesystem::path;
-
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-
-RclCppFixture g_rclcppfixture;
+using std::filesystem::path;
 
 class MapIOTester : public ::testing::Test
 {
@@ -112,7 +103,7 @@ protected:
 // loaded image should match the known dimensions and content of the file.
 // Save obtained OccupancyGrid message into a tmp PGM file. Then load back saved tmp file
 // and check for consistency.
-// Succeeds all steps were passed without a problem or expection.
+// Succeeds all steps were passed without a problem or exception.
 TEST_F(MapIOTester, loadSaveValidPGM)
 {
   // 1. Load reference map file and verify obtained OccupancyGrid
@@ -141,7 +132,7 @@ TEST_F(MapIOTester, loadSaveValidPGM)
 // loaded image should match the known dimensions and content of the file.
 // Save obtained OccupancyGrid message into a tmp PNG file. Then load back saved tmp file
 // and check for consistency.
-// Succeeds all steps were passed without a problem or expection.
+// Succeeds all steps were passed without a problem or exception.
 TEST_F(MapIOTester, loadSaveValidPNG)
 {
   // 1. Load reference map file and verify obtained OccupancyGrid
@@ -170,7 +161,7 @@ TEST_F(MapIOTester, loadSaveValidPNG)
 // loaded image should match the known dimensions and content of the file.
 // Save obtained OccupancyGrid message into a tmp BMP file. Then load back saved tmp file
 // and check for consistency.
-// Succeeds all steps were passed without a problem or expection.
+// Succeeds all steps were passed without a problem or exception.
 TEST_F(MapIOTester, loadSaveValidBMP)
 {
   // 1. Load reference map file and verify obtained OccupancyGrid
@@ -198,7 +189,7 @@ TEST_F(MapIOTester, loadSaveValidBMP)
 }
 
 // Load map from a valid file. Trying to save map with different modes.
-// Succeeds all steps were passed without a problem or expection.
+// Succeeds all steps were passed without a problem or exception.
 TEST_F(MapIOTester, loadSaveMapModes)
 {
   // 1. Load map from YAML file
@@ -310,4 +301,44 @@ TEST_F(MapIOTester, loadInvalidYAML)
 {
   LoadParameters loadParameters;
   ASSERT_ANY_THROW(loadParameters = loadMapYaml(path(TEST_DIR) / path("invalid_file.yaml")));
+}
+
+TEST(HomeUserExpanderTestSuite, homeUserExpanderShouldNotChangeInputStringWhenShorterThanTwo)
+{
+  const std::string emptyFileName{};
+  ASSERT_EQ(emptyFileName, expand_user_home_dir_if_needed(emptyFileName, "/home/user"));
+}
+
+TEST(
+  HomeUserExpanderTestSuite,
+  homeUserExpanderShouldNotChangeInputStringWhenInputStringDoesNotStartWithHomeSequence)
+{
+  const std::string fileName{"valid_file.yaml"};
+  ASSERT_EQ(fileName, expand_user_home_dir_if_needed(fileName, "/home/user"));
+}
+
+TEST(HomeUserExpanderTestSuite, homeUserExpanderShouldNotChangeInputStringWhenHomeVariableNotFound)
+{
+  const std::string fileName{"~/valid_file.yaml"};
+  ASSERT_EQ(fileName, expand_user_home_dir_if_needed(fileName, ""));
+}
+
+TEST(HomeUserExpanderTestSuite, homeUserExpanderShouldExpandHomeSequenceWhenHomeVariableSet)
+{
+  const std::string fileName{"~/valid_file.yaml"};
+  const std::string expectedOutputFileName{"/home/user/valid_file.yaml"};
+  ASSERT_EQ(expectedOutputFileName, expand_user_home_dir_if_needed(fileName, "/home/user"));
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

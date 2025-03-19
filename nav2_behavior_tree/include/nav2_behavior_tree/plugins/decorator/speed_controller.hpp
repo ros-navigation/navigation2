@@ -24,7 +24,8 @@
 #include "nav_msgs/msg/odometry.hpp"
 #include "nav2_util/odometry_utils.hpp"
 
-#include "behaviortree_cpp_v3/decorator_node.h"
+#include "behaviortree_cpp/decorator_node.h"
+#include "nav2_behavior_tree/bt_utils.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -57,7 +58,10 @@ public:
       BT::InputPort<double>("max_rate", 1.0, "Maximum rate"),
       BT::InputPort<double>("min_speed", 0.0, "Minimum speed"),
       BT::InputPort<double>("max_speed", 0.5, "Maximum speed"),
-      BT::InputPort<double>("filter_duration", 0.3, "Duration (secs) for velocity smoothing filter")
+      BT::InputPort<nav_msgs::msg::Goals>(
+        "goals", "Vector of navigation goals"),
+      BT::InputPort<geometry_msgs::msg::PoseStamped>(
+        "goal", "Navigation goal"),
     };
   }
 
@@ -116,7 +120,7 @@ private:
 
   // current goal
   geometry_msgs::msg::PoseStamped goal_;
-  std::vector<geometry_msgs::msg::PoseStamped> goals_;
+  nav_msgs::msg::Goals goals_;
 };
 
 }  // namespace nav2_behavior_tree

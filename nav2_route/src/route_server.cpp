@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Samsung Research America
+// Copyright (c) 2025, Open Navigation LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -71,7 +71,7 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   try {
     graph_loader_ = std::make_shared<GraphLoader>(node, tf_, route_frame_);
-    if (!graph_loader_->loadGraphFromFile(graph_, id_to_graph_map_)) {
+    if (!graph_loader_->loadGraphFromParameter(graph_, id_to_graph_map_)) {
       return nav2_util::CallbackReturn::FAILURE;
     }
 
@@ -149,7 +149,7 @@ rclcpp::Duration
 RouteServer::findPlanningDuration(const rclcpp::Time & start_time)
 {
   auto cycle_duration = this->now() - start_time;
-  if (max_planning_time_ && cycle_duration.seconds() > max_planning_time_) {
+  if (max_planning_time_ > 0.0 && cycle_duration.seconds() > max_planning_time_) {
     RCLCPP_WARN(
       get_logger(),
       "Route planner missed its desired rate of %.4f Hz. Current loop rate is %.4f Hz",
@@ -177,7 +177,7 @@ RouteServer::isRequestValid(
 
   if (graph_.empty()) {
     RCLCPP_INFO(get_logger(), "No graph set! Aborting request.");
-    action_server->terminate_all();
+    action_server->terminate_current();
     return false;
   }
 
@@ -203,9 +203,10 @@ Route RouteServer::findRoute(
   // Find the search boundaries
   auto [start_route, end_route] = goal_intent_extractor_->findStartandGoal(goal);
 
+  // If we're rerouting, use the rerouting start node and pose as the new start
   if (rerouting_info.rerouting_start_id != std::numeric_limits<unsigned int>::max()) {
     start_route = id_to_graph_map_.at(rerouting_info.rerouting_start_id);
-    goal_intent_extractor_->setStart(rerouting_info.rerouting_start_pose);
+    goal_intent_extractor_->overrideStart(rerouting_info.rerouting_start_pose);
   }
 
   Route route;
@@ -257,9 +258,11 @@ RouteServer::processRouteRequest(
             populateActionResult(result, route, path, planning_duration);
             action_server->succeeded_current(result);
             return;
-          case TrackerResult::REROUTE:
-            break;
           case TrackerResult::INTERRUPTED:
+            // Reroute, cancel, or preempt requested
+            break;
+          case TrackerResult::EXITED:
+            // rclcpp::ok() is false, so just return
             return;
         }
       } else {
@@ -272,36 +275,44 @@ RouteServer::processRouteRequest(
   } catch (nav2_core::NoValidRouteCouldBeFound & ex) {
     exceptionWarning(goal, ex);
     result->error_code = ActionT::Goal::NO_VALID_ROUTE;
+    result->error_msg = ex.what();
     action_server->terminate_current(result);
   } catch (nav2_core::TimedOut & ex) {
     exceptionWarning(goal, ex);
     result->error_code = ActionT::Goal::TIMEOUT;
+    result->error_msg = ex.what();
     action_server->terminate_current(result);
   } catch (nav2_core::RouteTFError & ex) {
     exceptionWarning(goal, ex);
     result->error_code = ActionT::Goal::TF_ERROR;
+    result->error_msg = ex.what();
     action_server->terminate_current(result);
   } catch (nav2_core::NoValidGraph & ex) {
     exceptionWarning(goal, ex);
     result->error_code = ActionT::Goal::NO_VALID_GRAPH;
+    result->error_msg = ex.what();
     action_server->terminate_current(result);
   } catch (nav2_core::IndeterminantNodesOnGraph & ex) {
     exceptionWarning(goal, ex);
     result->error_code = ActionT::Goal::INDETERMINANT_NODES_ON_GRAPH;
+    result->error_msg = ex.what();
     action_server->terminate_current(result);
   } catch (nav2_core::OperationFailed & ex) {
     // A special case since Operation Failed is only in Compute & Track
     // actions, specifying it to allow otherwise fully shared code
     exceptionWarning(goal, ex);
     result->error_code = ComputeAndTrackRoute::Goal::OPERATION_FAILED;
+    result->error_msg = ex.what();
     action_server->terminate_current(result);
   } catch (nav2_core::RouteException & ex) {
     exceptionWarning(goal, ex);
     result->error_code = ActionT::Goal::UNKNOWN;
+    result->error_msg = ex.what();
     action_server->terminate_current(result);
   } catch (std::exception & ex) {
     exceptionWarning(goal, ex);
     result->error_code = ActionT::Goal::UNKNOWN;
+    result->error_msg = ex.what();
     action_server->terminate_current(result);
   }
 }
@@ -339,6 +350,7 @@ void RouteServer::setRouteGraph(
       get_logger(),
       "Failed to set new route graph due to %s!", ex.what());
     response->success = false;
+    return;
   }
 
   goal_intent_extractor_->setGraph(graph_, &id_to_graph_map_);

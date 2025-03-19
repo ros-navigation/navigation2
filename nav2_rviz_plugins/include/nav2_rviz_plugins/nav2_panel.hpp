@@ -31,9 +31,13 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "rviz_common/panel.hpp"
+#include "rviz_common/ros_integration/ros_node_abstraction_iface.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 #include "nav2_util/geometry_utils.hpp"
+#include "tf2_ros/transform_listener.h"
+#include "tf2_ros/create_timer_ros.h"
+#include "tf2_ros/buffer.h"
 
 class QPushButton;
 
@@ -64,22 +68,41 @@ private Q_SLOTS:
   void onCancel();
   void onPause();
   void onResume();
+  void onResumedWp();
   void onAccumulatedWp();
   void onAccumulatedNTP();
   void onAccumulating();
   void onNewGoal(double x, double y, double theta, QString frame);
+  void handleGoalSaver();
+  void handleGoalLoader();
+  void loophandler();
+  void initialStateHandler();
 
 private:
   void loadLogFiles();
   void onCancelButtonPressed();
   void timerEvent(QTimerEvent * event) override;
+  bool isLoopValueValid(std::string & loop);
 
   int unique_id {0};
+  int goal_index_ = 0;
+  int loop_count_ = 0;
+  bool store_initial_pose_ = false;
+  bool initial_pose_stored_ = false;
+  bool loop_counter_stop_ = true;
+  std::string loop_no_ = "0";
+  std::string base_frame_;
+
+  // The Node pointer that we need to keep alive for the duration of this plugin.
+  std::shared_ptr<rviz_common::ros_integration::RosNodeAbstractionIface> node_ptr_;
 
   // Call to send NavigateToPose action request for goal poses
+  geometry_msgs::msg::PoseStamped convert_to_msg(
+    std::vector<double> pose,
+    std::vector<double> orientation);
   void startWaypointFollowing(std::vector<geometry_msgs::msg::PoseStamped> poses);
   void startNavigation(geometry_msgs::msg::PoseStamped);
-  void startNavThroughPoses(std::vector<geometry_msgs::msg::PoseStamped> poses);
+  void startNavThroughPoses(nav_msgs::msg::Goals poses);
   using NavigationGoalHandle =
     rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateToPose>;
   using WaypointFollowerGoalHandle =
@@ -90,7 +113,7 @@ private:
   // The (non-spinning) client node used to invoke the action client
   rclcpp::Node::SharedPtr client_node_;
 
-  // Timeout value when waiting for action servers to respnd
+  // Timeout value when waiting for action servers to respond
   std::chrono::milliseconds server_timeout_;
 
   // A timer used to check on the completion status of the action
@@ -113,6 +136,10 @@ private:
   rclcpp::Subscription<nav2_msgs::action::NavigateThroughPoses::Impl::GoalStatusMessage>::SharedPtr
     nav_through_poses_goal_status_sub_;
 
+  // Tf's for initial pose
+  std::shared_ptr<tf2_ros::Buffer> tf2_buffer_;
+  std::shared_ptr<tf2_ros::TransformListener> transform_listener_;
+
   // Goal-related state
   nav2_msgs::action::NavigateToPose::Goal navigation_goal_;
   nav2_msgs::action::FollowWaypoints::Goal waypoint_follower_goal_;
@@ -125,14 +152,23 @@ private:
   std::shared_ptr<nav2_lifecycle_manager::LifecycleManagerClient> client_nav_;
   std::shared_ptr<nav2_lifecycle_manager::LifecycleManagerClient> client_loc_;
 
+  QCheckBox * store_initial_pose_checkbox_{nullptr};
+
   QPushButton * start_reset_button_{nullptr};
   QPushButton * pause_resume_button_{nullptr};
   QPushButton * navigation_mode_button_{nullptr};
+  QPushButton * save_waypoints_button_{nullptr};
+  QPushButton * load_waypoints_button_{nullptr};
+  QPushButton * pause_waypoint_button_{nullptr};
 
   QLabel * navigation_status_indicator_{nullptr};
   QLabel * localization_status_indicator_{nullptr};
   QLabel * navigation_goal_status_indicator_{nullptr};
   QLabel * navigation_feedback_indicator_{nullptr};
+  QLabel * waypoint_status_indicator_{nullptr};
+  QLabel * number_of_loops_{nullptr};
+
+  QLineEdit * nr_of_loops_{nullptr};
 
   QStateMachine state_machine_;
   InitialThread * initial_thread_;
@@ -143,6 +179,11 @@ private:
   QState * reset_{nullptr};
   QState * paused_{nullptr};
   QState * resumed_{nullptr};
+  QState * paused_wp_{nullptr};
+  QState * resumed_wp_{nullptr};
+
+  QLabel * imgDisplayLabel_{nullptr};
+
   // The following states are added to allow for the state of the button to only expose reset
   // while the NavigateToPoses action is not active. While running, the user will be allowed to
   // cancel the action. The ROSActionTransition allows for the state of the action to be detected
@@ -155,7 +196,8 @@ private:
   QState * accumulated_wp_{nullptr};
   QState * accumulated_nav_through_poses_{nullptr};
 
-  std::vector<geometry_msgs::msg::PoseStamped> acummulated_poses_;
+  nav_msgs::msg::Goals acummulated_poses_;
+  nav_msgs::msg::Goals store_poses_;
 
   // Publish the visual markers with the waypoints
   void updateWpNavigationMarkers();
@@ -164,10 +206,6 @@ private:
   int getUniqueId();
 
   void resetUniqueId();
-
-  // create label string from goal status msg
-  static inline QString getGoalStatusLabel(
-    int8_t status = action_msgs::msg::GoalStatus::STATUS_UNKNOWN);
 
   // create label string from feedback msg
   static inline QString getNavToPoseFeedbackLabel(

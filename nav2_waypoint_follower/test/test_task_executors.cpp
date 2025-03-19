@@ -27,15 +27,6 @@
 #include "nav2_waypoint_follower/plugins/wait_at_waypoint.hpp"
 #include "nav2_waypoint_follower/plugins/input_at_waypoint.hpp"
 
-
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 TEST(WaypointFollowerTest, WaitAtWaypoint)
 {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testWaypointNode");
@@ -71,7 +62,7 @@ TEST(WaypointFollowerTest, InputAtWaypoint)
   auto pub = node->create_publisher<std_msgs::msg::Empty>("input_at_waypoint/input", 1);
   pub->on_activate();
   auto publish_message =
-    [&, this]() -> void
+    [&]() -> void
     {
       rclcpp::Rate(5).sleep();
       auto msg = std::make_unique<std_msgs::msg::Empty>();
@@ -117,7 +108,7 @@ TEST(WaypointFollowerTest, PhotoAtWaypoint)
   std::unique_lock<std::mutex> lck(mtx, std::defer_lock);
   bool data_published = false;
   auto publish_message =
-    [&, this]() -> void
+    [&]() -> void
     {
       rclcpp::Rate(5).sleep();
       auto msg = std::make_unique<sensor_msgs::msg::Image>();
@@ -161,4 +152,17 @@ TEST(WaypointFollowerTest, PhotoAtWaypoint)
 
   // plugin is not enabled, should exit
   EXPECT_TRUE(paw->processAtWaypoint(pose, 0));
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

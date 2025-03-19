@@ -31,7 +31,6 @@ class ComputePathToPoseAction : public BtActionNode<nav2_msgs::action::ComputePa
 {
   using Action = nav2_msgs::action::ComputePathToPose;
   using ActionResult = Action::Result;
-  using ActionGoal = Action::Goal;
 
 public:
   /**
@@ -87,6 +86,8 @@ public:
         BT::OutputPort<nav_msgs::msg::Path>("path", "Path created by ComputePathToPose node"),
         BT::OutputPort<ActionResult::_error_code_type>(
           "error_code_id", "The compute path to pose error code"),
+        BT::OutputPort<std::string>(
+          "error_msg", "The compute path to pose error msg"),
       });
   }
 };

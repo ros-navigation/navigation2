@@ -49,6 +49,11 @@ public:
   ClearCostmapService() = delete;
 
   /**
+   * @brief A destructor
+   */
+  ~ClearCostmapService();
+
+  /**
    * @brief Clears the region outside of a user-specified area reverting to the static map
    */
   void clearRegion(double reset_distance, bool invert);
@@ -67,7 +72,6 @@ private:
 
   // Clearing parameters
   unsigned char reset_value_;
-  std::vector<std::string> clearable_layers_;
 
   // Server for clearing the costmap
   rclcpp::Service<nav2_msgs::srv::ClearCostmapExceptRegion>::SharedPtr clear_except_service_;

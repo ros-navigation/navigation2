@@ -1,0 +1,7 @@
+<class_libraries>
+    <library path="nav2_graceful_controller">
+        <class type="nav2_graceful_controller::GracefulController" base_class_type="nav2_core::Controller">
+            <description>Graceful controller for Nav2</description>
+        </class>
+    </library>
+</class_libraries>

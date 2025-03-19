@@ -39,7 +39,7 @@
 #define NAV2_COSTMAP_2D__VOXEL_LAYER_HPP_
 
 #include <vector>
-#include "message_filters/subscriber.h"
+#include "message_filters/subscriber.hpp"
 
 #include <rclcpp/rclcpp.hpp>
 #include <nav2_costmap_2d/layer.hpp>
@@ -133,7 +133,6 @@ protected:
    */
   virtual void resetMaps();
 
-private:
   /**
    * @brief Use raycasting between 2 points to clear freespace
    */
@@ -152,7 +151,7 @@ private:
     clearing_endpoints_pub_;
 
   /**
-   * @brief Covert world coordinates into map coordinates
+   * @brief Convert world coordinates into map coordinates
    */
   inline bool worldToMap3DFloat(
     double wx, double wy, double wz, double & mx, double & my,
@@ -172,7 +171,7 @@ private:
   }
 
   /**
-   * @brief Covert world coordinates into map coordinates
+   * @brief Convert world coordinates into map coordinates
    */
   inline bool worldToMap3D(
     double wx, double wy, double wz, unsigned int & mx, unsigned int & my,
@@ -194,7 +193,7 @@ private:
   }
 
   /**
-   * @brief Covert map coordinates into world coordinates
+   * @brief Convert map coordinates into world coordinates
    */
   inline void mapToWorld3D(
     unsigned int mx, unsigned int my, unsigned int mz, double & wx,

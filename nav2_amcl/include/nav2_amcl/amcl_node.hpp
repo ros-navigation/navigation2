@@ -29,24 +29,21 @@
 #include <vector>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "message_filters/subscriber.h"
+#include "message_filters/subscriber.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_amcl/motion_model/motion_model.hpp"
 #include "nav2_amcl/sensors/laser/laser.hpp"
 #include "nav2_msgs/msg/particle.hpp"
 #include "nav2_msgs/msg/particle_cloud.hpp"
+#include "nav2_msgs/srv/set_initial_pose.hpp"
 #include "nav_msgs/srv/set_map.hpp"
+#include "pluginlib/class_loader.hpp"
+#include "rclcpp/node_options.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
 #include "std_srvs/srv/empty.hpp"
+#include "tf2_ros/message_filter.h"
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2_ros/transform_listener.h"
-#include "pluginlib/class_loader.hpp"
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#pragma GCC diagnostic ignored "-Wreorder"
-#include "tf2_ros/message_filter.h"
-#pragma GCC diagnostic pop
 
 #define NEW_UNIFORM_SAMPLING 1
 
@@ -115,7 +112,7 @@ protected:
   typedef struct
   {
     double weight;             // Total weight (weights sum to 1)
-    pf_vector_t pf_pose_mean;  // Mean of pose esimate
+    pf_vector_t pf_pose_mean;  // Mean of pose estimate
     pf_matrix_t pf_pose_cov;   // Covariance of pose estimate
   } amcl_hyp_t;
 
@@ -151,7 +148,8 @@ protected:
   std::recursive_mutex mutex_;
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::ConstSharedPtr map_sub_;
 #if NEW_UNIFORM_SAMPLING
-  static std::vector<std::pair<int, int>> free_space_indices;
+  struct Point2D { int32_t x; int32_t y; };
+  static std::vector<Point2D> free_space_indices;
 #endif
 
   // Transforms
@@ -209,6 +207,16 @@ protected:
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<std_srvs::srv::Empty::Request> request,
     std::shared_ptr<std_srvs::srv::Empty::Response> response);
+
+  // service server for providing an initial pose guess
+  rclcpp::Service<nav2_msgs::srv::SetInitialPose>::SharedPtr initial_guess_srv_;
+  /*
+   * @brief Service callback for an initial pose guess request
+   */
+  void initialPoseReceivedSrv(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<nav2_msgs::srv::SetInitialPose::Request> request,
+    std::shared_ptr<nav2_msgs::srv::SetInitialPose::Response> response);
 
   // Let amcl update samples without requiring motion
   rclcpp::Service<std_srvs::srv::Empty>::SharedPtr nomotion_update_srv_;
@@ -380,6 +388,7 @@ protected:
   double z_rand_;
   std::string scan_topic_{"scan"};
   std::string map_topic_{"map"};
+  bool freespace_downsampling_ = false;
 };
 
 }  // namespace nav2_amcl

@@ -22,18 +22,15 @@
 #include <algorithm>
 
 #include "rclcpp/rclcpp.hpp"
-#include "rclcpp_action/rclcpp_action.hpp"
 #include "nav2_msgs/action/compute_path_to_pose.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_msgs/srv/get_costmap.hpp"
 #include "nav2_msgs/srv/is_path_valid.hpp"
-#include "visualization_msgs/msg/marker.hpp"
 #include "nav2_util/costmap.hpp"
 #include "nav2_util/node_thread.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
-#include "tf2_msgs/msg/tf_message.hpp"
 #include "nav2_planner/planner_server.hpp"
 #include "tf2_ros/transform_broadcaster.h"
 
@@ -62,6 +59,9 @@ public:
 
   void setCostmap(nav2_util::Costmap * costmap)
   {
+    std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(
+      *(costmap_ros_->getCostmap()->getMutex()));
+
     nav2_msgs::msg::CostmapMetaData prop;
     nav2_msgs::msg::Costmap cm = costmap->get_costmap(prop);
     prop = cm.metadata;
@@ -84,7 +84,8 @@ public:
       return false;
     }
     try {
-      path = planners_["GridBased"]->createPlan(start, goal);
+      auto dummy_cancel_checker = []() {return false;};
+      path = planners_["GridBased"]->createPlan(start, goal, dummy_cancel_checker);
       // The situation when createPlan() did not throw any exception
       // does not guarantee that plan was created correctly.
       // So it should be checked additionally that path is correct.
@@ -157,7 +158,9 @@ public:
     const unsigned int number_tests,
     const float acceptable_fail_ratio);
 
-  bool isPathValid(nav_msgs::msg::Path & path);
+  bool isPathValid(
+    nav_msgs::msg::Path & path, unsigned int max_cost,
+    bool consider_unknown_as_obstacle);
 
 private:
   void setCostmap();

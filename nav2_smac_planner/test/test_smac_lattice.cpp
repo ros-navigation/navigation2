@@ -28,14 +28,6 @@
 #include "nav2_smac_planner/collision_checker.hpp"
 #include "nav2_smac_planner/smac_planner_lattice.hpp"
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 // Simple wrapper to be able to call a private member
 class LatticeWrap : public nav2_smac_planner::SmacPlannerLattice
 {
@@ -54,10 +46,15 @@ TEST(SmacTest, test_smac_lattice)
 {
   rclcpp_lifecycle::LifecycleNode::SharedPtr nodeLattice =
     std::make_shared<rclcpp_lifecycle::LifecycleNode>("SmacLatticeTest");
+  nodeLattice->declare_parameter("test.debug_visualizations", rclcpp::ParameterValue(true));
 
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros =
     std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
   costmap_ros->on_configure(rclcpp_lifecycle::State());
+
+  auto dummy_cancel_checker = []() {
+      return false;
+    };
 
   geometry_msgs::msg::PoseStamped start, goal;
   start.pose.position.x = 0.0;
@@ -75,9 +72,16 @@ TEST(SmacTest, test_smac_lattice)
   planner->activate();
 
   try {
-    planner->createPlan(start, goal);
+    planner->createPlan(start, goal, dummy_cancel_checker);
   } catch (...) {
   }
+
+  // corner case where the start and goal are on the same cell
+  goal.pose.position.x = 0.01;
+  goal.pose.position.y = 0.01;
+
+  nav_msgs::msg::Path plan = planner->createPlan(start, goal, dummy_cancel_checker);
+  EXPECT_EQ(plan.poses.size(), 1);  // single point path
 
   planner->deactivate();
   planner->cleanup();
@@ -127,6 +131,7 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
       rclcpp::Parameter("test.tolerance", 42.0),
       rclcpp::Parameter("test.rotation_penalty", 42.0),
       rclcpp::Parameter("test.max_on_approach_iterations", 42),
+      rclcpp::Parameter("test.terminal_checking_interval", 42),
       rclcpp::Parameter("test.allow_reverse_expansion", true)});
 
   try {
@@ -143,4 +148,17 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
   std::vector<rclcpp::Parameter> parameters;
   parameters.push_back(rclcpp::Parameter("test.lattice_filepath", std::string("HI")));
   EXPECT_THROW(planner->callDynamicParams(parameters), std::runtime_error);
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

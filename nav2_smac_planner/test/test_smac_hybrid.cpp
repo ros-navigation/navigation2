@@ -29,14 +29,6 @@
 #include "nav2_smac_planner/smac_planner_hybrid.hpp"
 #include "nav2_smac_planner/smac_planner_2d.hpp"
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 // SMAC smoke tests for plugin-level issues rather than algorithms
 // (covered by more extensively testing in other files)
 // System tests in nav2_system_tests will actually plan with this work
@@ -45,6 +37,7 @@ TEST(SmacTest, test_smac_se2)
 {
   rclcpp_lifecycle::LifecycleNode::SharedPtr nodeSE2 =
     std::make_shared<rclcpp_lifecycle::LifecycleNode>("SmacSE2Test");
+  nodeSE2->declare_parameter("test.debug_visualizations", rclcpp::ParameterValue(true));
 
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros =
     std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
@@ -54,6 +47,10 @@ TEST(SmacTest, test_smac_se2)
   nodeSE2->set_parameter(rclcpp::Parameter("test.downsample_costmap", true));
   nodeSE2->declare_parameter("test.downsampling_factor", 2);
   nodeSE2->set_parameter(rclcpp::Parameter("test.downsampling_factor", 2));
+
+  auto dummy_cancel_checker = []() {
+      return false;
+    };
 
   geometry_msgs::msg::PoseStamped start, goal;
   start.pose.position.x = 0.0;
@@ -67,9 +64,16 @@ TEST(SmacTest, test_smac_se2)
   planner->activate();
 
   try {
-    planner->createPlan(start, goal);
+    planner->createPlan(start, goal, dummy_cancel_checker);
   } catch (...) {
   }
+
+  // corner case where the start and goal are on the same cell
+  goal.pose.position.x = 0.01;
+  goal.pose.position.y = 0.01;
+
+  nav_msgs::msg::Path plan = planner->createPlan(start, goal, dummy_cancel_checker);
+  EXPECT_EQ(plan.poses.size(), 1);  // single point path
 
   planner->deactivate();
   planner->cleanup();
@@ -92,6 +96,8 @@ TEST(SmacTest, test_smac_se2_reconfigure)
   auto planner = std::make_unique<nav2_smac_planner::SmacPlannerHybrid>();
   planner->configure(nodeSE2, "test", nullptr, costmap_ros);
   planner->activate();
+
+  nodeSE2->declare_parameter("resolution", 0.05);
 
   auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
     nodeSE2->get_node_base_interface(), nodeSE2->get_node_topics_interface(),
@@ -118,6 +124,7 @@ TEST(SmacTest, test_smac_se2_reconfigure)
       rclcpp::Parameter("test.smooth_path", false),
       rclcpp::Parameter("test.analytic_expansion_max_length", 42.0),
       rclcpp::Parameter("test.max_on_approach_iterations", 42),
+      rclcpp::Parameter("test.terminal_checking_interval", 42),
       rclcpp::Parameter("test.motion_model_for_search", std::string("REEDS_SHEPP"))});
 
   rclcpp::spin_until_future_complete(
@@ -143,7 +150,28 @@ TEST(SmacTest, test_smac_se2_reconfigure)
   EXPECT_EQ(nodeSE2->get_parameter("test.lookup_table_size").as_double(), 30.0);
   EXPECT_EQ(nodeSE2->get_parameter("test.analytic_expansion_max_length").as_double(), 42.0);
   EXPECT_EQ(nodeSE2->get_parameter("test.max_on_approach_iterations").as_int(), 42);
+  EXPECT_EQ(nodeSE2->get_parameter("test.terminal_checking_interval").as_int(), 42);
   EXPECT_EQ(
     nodeSE2->get_parameter("test.motion_model_for_search").as_string(),
     std::string("REEDS_SHEPP"));
+
+  auto results2 = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("resolution", 0.2)});
+  rclcpp::spin_until_future_complete(
+    nodeSE2->get_node_base_interface(),
+    results2);
+  EXPECT_EQ(nodeSE2->get_parameter("resolution").as_double(), 0.2);
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

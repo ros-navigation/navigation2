@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Samsung Research America
+// Copyright (c) 2025 Open Navigation LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ public:
   ~GraphLoader() = default;
 
   /**
-   * @brief Loads a graph object with file information
+   * @brief Loads a graph object with file information from a filepath
    * @param graph Graph to populate
    * @param idx_map A map translating nodeid's to graph idxs for use in graph modification
    * services and idx-based route planning requests. This is much faster than using a
@@ -68,7 +68,20 @@ public:
   bool loadGraphFromFile(
     Graph & graph,
     GraphToIDMap & idx_map,
-    std::string filepath = "");
+    const std::string & filepath);
+
+  /**
+   * @brief Loads a graph object with file information from ROS parameter, if provided
+   * @param graph Graph to populate
+   * @param idx_map A map translating nodeid's to graph idxs for use in graph modification
+   * services and idx-based route planning requests. This is much faster than using a
+   * map the full graph data structure.
+   * @param graph_file_loader_id The id of the GraphFileLoader
+   * @return bool If successful or none provided
+   */
+  bool loadGraphFromParameter(
+    Graph & graph,
+    GraphToIDMap & idx_map);
 
 protected:
   /**

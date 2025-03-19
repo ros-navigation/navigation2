@@ -1,0 +1,42 @@
+#goal definition
+
+bool use_dock_id True  # Whether to use the dock_id or dock_pose fields
+string dock_id  # Dock name or ID to dock at, from given dock database
+
+geometry_msgs/PoseStamped dock_pose  # Dock pose
+string dock_type  # If using dock_pose, what type of dock it is. Not necessary if only using one type of dock.
+
+float32 max_staging_time 1000.0  # Maximum time for navigation to get to the dock's staging pose.
+bool navigate_to_staging_pose True  # Whether or not to navigate to staging pose or assume robot is already at staging pose within tolerance to execute behavior
+
+---
+#result definition
+
+# Error codes
+# Note: The expected priority order of the errors should match the message order
+uint16 NONE=0
+uint16 DOCK_NOT_IN_DB=901
+uint16 DOCK_NOT_VALID=902
+uint16 FAILED_TO_STAGE=903
+uint16 FAILED_TO_DETECT_DOCK=904
+uint16 FAILED_TO_CONTROL=905
+uint16 FAILED_TO_CHARGE=906
+uint16 UNKNOWN=999
+
+bool success True  # docking success status
+uint16 error_code 0  # Contextual error code, if any
+uint16 num_retries 0  # Number of retries attempted
+string error_msg
+---
+#feedback definition
+
+uint16 NONE=0
+uint16 NAV_TO_STAGING_POSE=1
+uint16 INITIAL_PERCEPTION=2
+uint16 CONTROLLING=3
+uint16 WAIT_FOR_CHARGE=4
+uint16 RETRY=5
+
+uint16 state  # Current docking state
+builtin_interfaces/Duration docking_time  # Docking time elapsed
+uint16 num_retries 0  # Number of retries attempted

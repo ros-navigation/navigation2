@@ -34,14 +34,6 @@ using namespace smoother_utils;  // NOLINT
 using namespace nav2_smoother;  // NOLINT
 using namespace std::chrono_literals;  // NOLINT
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 TEST(SmootherTest, test_sg_smoother_basics)
 {
   rclcpp_lifecycle::LifecycleNode::SharedPtr node =
@@ -206,16 +198,12 @@ TEST(SmootherTest, test_sg_smoother_noisey_path)
   EXPECT_TRUE(smoother->smooth(noisey_path_refined, max_time));
 
   length = 0;
-  double non_refined_length = 0;
   for (unsigned int i = 0; i != noisey_path.poses.size() - 1; i++) {
     length += std::hypot(
       noisey_path_refined.poses[i + 1].pose.position.x -
       noisey_path_refined.poses[i].pose.position.x,
       noisey_path_refined.poses[i + 1].pose.position.y -
       noisey_path_refined.poses[i].pose.position.y);
-    non_refined_length += std::hypot(
-      noisey_path.poses[i + 1].pose.position.x - noisey_path_baseline.poses[i].pose.position.x,
-      noisey_path.poses[i + 1].pose.position.y - noisey_path_baseline.poses[i].pose.position.y);
   }
 
   EXPECT_LT(length, base_length);
@@ -330,4 +318,17 @@ TEST(SmootherTest, test_sg_smoother_reversing)
   }
 
   EXPECT_LT(length, base_length);
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

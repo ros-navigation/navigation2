@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>nav2_bringup</name>
-  <version>1.1.0</version>
+  <version>1.3.1</version>
   <description>Bringup scripts and configurations for the Nav2 stack</description>
   <maintainer email="michael.jeronimo@intel.com">Michael Jeronimo</maintainer>
   <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
@@ -15,10 +15,17 @@
   <build_depend>navigation2</build_depend>
   <build_depend>launch_ros</build_depend>
 
+  <exec_depend>diff_drive_controller</exec_depend>
+  <exec_depend>joint_state_broadcaster</exec_depend>
   <exec_depend>launch_ros</exec_depend>
   <exec_depend>navigation2</exec_depend>
   <exec_depend>nav2_common</exec_depend>
+  <exec_depend>ros_gz_bridge</exec_depend>
+  <exec_depend>ros_gz_sim</exec_depend>
   <exec_depend>slam_toolbox</exec_depend>
+  <exec_depend>xacro</exec_depend>
+  <exec_depend>nav2_minimal_tb4_sim</exec_depend>
+  <exec_depend>nav2_minimal_tb3_sim</exec_depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
