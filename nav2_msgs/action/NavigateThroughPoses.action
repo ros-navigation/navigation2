@@ -22,3 +22,4 @@ builtin_interfaces/Duration estimated_time_remaining
 int16 number_of_recoveries
 float32 distance_remaining
 int16 number_of_poses_remaining
+WaypointStatus[] waypoint_statuses
