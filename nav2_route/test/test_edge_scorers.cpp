@@ -669,7 +669,7 @@ TEST(EdgeScorersTest, test_goal_orientation_scoring)
   EXPECT_EQ(traversal_cost, 0.0);
 }
 
-TEST(EdgeScorersTest, test_start_pose_orientation_scoring)
+TEST(EdgeScorersTest, test_start_pose_orientation_threshold)
 {
   // Test Penalty scorer plugin loading + penalizing on metadata values
   auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
@@ -684,8 +684,11 @@ TEST(EdgeScorersTest, test_start_pose_orientation_scoring)
     node, "StartPoseOrientationScorer.plugin",
     rclcpp::ParameterValue(std::string{"nav2_route::StartPoseOrientationScorer"}));
   nav2_util::declare_parameter_if_not_declared(
-    node, "StartOrientationScorer.orientation_tolerance",
+    node, "StartPoseOrientationScorer.orientation_tolerance",
     rclcpp::ParameterValue(1.57));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "StartPoseOrientationScorer.use_orientation_threshold",
+    rclcpp::ParameterValue(true));
   nav2_util::declare_parameter_if_not_declared(
     node, "route_frame",
     rclcpp::ParameterValue("map"));
@@ -747,4 +750,92 @@ TEST(EdgeScorersTest, test_start_pose_orientation_scoring)
 
   EXPECT_FALSE(scorer.score(&edge, goal_pose, edge_type, traversal_cost));
   EXPECT_EQ(traversal_cost, 0.0);
+}
+
+TEST(EdgeScorersTest, test_start_pose_orientation_scoring)
+{
+  // Test Penalty scorer plugin loading + penalizing on metadata values
+  auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener =
+    std::make_shared<tf2_ros::TransformListener>(*tf_buffer);
+
+  double orientation_weight = 100.0;
+
+  node->declare_parameter(
+    "edge_cost_functions",
+    rclcpp::ParameterValue(std::vector<std::string>{"StartPoseOrientationScorer"}));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "StartPoseOrientationScorer.plugin",
+    rclcpp::ParameterValue(std::string{"nav2_route::StartPoseOrientationScorer"}));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "StartPoseOrientationScorer.orientation_tolerance",
+    rclcpp::ParameterValue(1.57));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "StartPoseOrientationScorer.use_orientation_thershold",
+    rclcpp::ParameterValue(false));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "StartPoseOrientationScorer.orientation_weight",
+    rclcpp::ParameterValue(orientation_weight));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "route_frame",
+    rclcpp::ParameterValue("map"));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "base_frame",
+    rclcpp::ParameterValue("base_link"));
+
+  EdgeScorer scorer(node, tf_buffer);
+  EXPECT_EQ(scorer.numPlugins(), 1);  // GoalOrientationScorer
+
+  std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_broadcaster_ =
+    std::make_shared<tf2_ros::StaticTransformBroadcaster>(node);
+  geometry_msgs::msg::TransformStamped tf_stamped;
+  tf_stamped.header.frame_id = "map";
+  tf_stamped.header.stamp = node->get_clock()->now();
+  tf_stamped.child_frame_id = "base_link";
+  tf_stamped.transform.translation.x = 0.0;
+  tf_stamped.transform.translation.y = 0.0;
+  tf_stamped.transform.translation.z = 0.0;
+  double yaw = 0.0;
+
+  tf2::Quaternion q;
+  q.setRPY(0, 0, yaw);
+  tf_stamped.transform.rotation.x = q.getX();
+  tf_stamped.transform.rotation.y = q.getY();
+  tf_stamped.transform.rotation.z = q.getZ();
+  tf_stamped.transform.rotation.w = q.getW();
+  tf_broadcaster_->sendTransform(tf_stamped);
+
+
+  geometry_msgs::msg::PoseStamped goal_pose;
+  goal_pose.pose.orientation.x = 0.0;
+  goal_pose.pose.orientation.y = 0.0;
+  goal_pose.pose.orientation.z = 0.0;
+  goal_pose.pose.orientation.w = 1.0;
+
+  EdgeType edge_type = EdgeType::START;
+
+  // Create edge to score
+  Node n1, n2;
+  n1.nodeid = 1;
+  n2.nodeid = 2;
+  n1.coords.x = 0.0;
+  n1.coords.y = 0.0;
+  n2.coords.x = 1.0;
+  n2.coords.y = 0.0;
+
+  DirectionalEdge edge;
+  edge.edgeid = 10;
+  edge.start = &n1;
+  edge.end = &n2;
+
+  float traversal_cost = -1;
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, edge_type, traversal_cost));
+  EXPECT_EQ(traversal_cost, 0.0);
+
+  edge.start = &n2;
+  edge.end = &n1;
+
+  EXPECT_TRUE(scorer.score(&edge, goal_pose, edge_type, traversal_cost));
+  EXPECT_NEAR(traversal_cost, orientation_weight * M_PI, 0.001);
 }
