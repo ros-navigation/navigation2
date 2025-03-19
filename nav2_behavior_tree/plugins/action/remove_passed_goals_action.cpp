@@ -67,6 +67,21 @@ inline BT::NodeStatus RemovePassedGoals::tick()
     return BT::NodeStatus::FAILURE;
   }
 
+  // get the `waypoint_statuses` vector if provided
+  std::vector<nav2_msgs::msg::WaypointStatus> waypoint_statuses;
+  auto get_waypoint_statuses_res = getInput("input_waypoint_statuses", waypoint_statuses);
+  size_t cur_waypoint_index = 0;
+  if (get_waypoint_statuses_res) {
+    while (cur_waypoint_index < waypoint_statuses.size()) {
+      if (waypoint_statuses[cur_waypoint_index].waypoint_status ==
+        nav2_msgs::msg::WaypointStatus::PENDING)
+      {
+        break;
+      }
+      ++cur_waypoint_index;
+    }
+  }
+
   double dist_to_goal;
   while (goal_poses.goals.size() > 1) {
     dist_to_goal = euclidean_distance(goal_poses.goals[0].pose, current_pose.pose);
@@ -76,9 +91,18 @@ inline BT::NodeStatus RemovePassedGoals::tick()
     }
 
     goal_poses.goals.erase(goal_poses.goals.begin());
+    // mark waypoint statuses if the vector is provided
+    if (get_waypoint_statuses_res) {
+      waypoint_statuses[cur_waypoint_index].waypoint_status =
+        nav2_msgs::msg::WaypointStatus::COMPLETED;
+      ++cur_waypoint_index;
+    }
   }
 
   setOutput("output_goals", goal_poses);
+  if (get_waypoint_statuses_res) {
+    setOutput("output_waypoint_statuses", waypoint_statuses);
+  }
 
   return BT::NodeStatus::SUCCESS;
 }

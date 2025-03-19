@@ -63,12 +63,18 @@ BT::NodeStatus RemoveInCollisionGoals::on_completion(
     return BT::NodeStatus::FAILURE;
   }
 
+  // get the `waypoint_statuses` vector if provided
+  std::vector<nav2_msgs::msg::WaypointStatus> waypoint_statuses;
+  auto get_waypoint_statuses_res = getInput("input_waypoint_statuses", waypoint_statuses);
+
   nav_msgs::msg::Goals valid_goal_poses;
   for (size_t i = 0; i < response->costs.size(); ++i) {
     if ((response->costs[i] == 255 && !consider_unknown_as_obstacle_) ||
       response->costs[i] < cost_threshold_)
     {
       valid_goal_poses.goals.push_back(input_goals_.goals[i]);
+    } else if (get_waypoint_statuses_res) {
+      waypoint_statuses[i].waypoint_status = nav2_msgs::msg::WaypointStatus::SKIPPED;
     }
   }
   // Inform if all goals have been removed
@@ -78,6 +84,9 @@ BT::NodeStatus RemoveInCollisionGoals::on_completion(
       "All goals are in collision and have been removed from the list");
   }
   setOutput("output_goals", valid_goal_poses);
+  if (get_waypoint_statuses_res) {
+    setOutput("output_waypoint_statuses", waypoint_statuses);
+  }
   return BT::NodeStatus::SUCCESS;
 }
 
