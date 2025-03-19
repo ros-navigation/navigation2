@@ -33,7 +33,9 @@ namespace nav2_route
 
 /**
  * @class GoalOrientationScorer
- * @brief Scores final edge by comparing the
+ * @brief Rejects or accepts final edge depending on the edge's deviation 
+ * from the goal pose orientation. If the deviation is above some user 
+ * defined threshold, false is returned, if it is below, true is returned
  */
 class GoalOrientationScorer : public EdgeCostFunction
 {

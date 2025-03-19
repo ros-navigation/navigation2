@@ -35,7 +35,11 @@ namespace nav2_route
 
 /**
  * @class StartPoseOrientationScorer
- * @brief Scores initial edge edge by comparing the orientation of the robot's current pose and the orientation of the edge
+ * @brief Scores initial edge by comparing the orientation of the robot's current 
+ * pose and the orientation of the edge by multiplying the deviation from the desired 
+ * orientation with a user defined weight. An alternative method can be selected, with 
+ * the use_orientation_threshold flag, which rejects the edge it is greater than some 
+ * tolerance
  */
 class StartPoseOrientationScorer : public EdgeCostFunction
 {
