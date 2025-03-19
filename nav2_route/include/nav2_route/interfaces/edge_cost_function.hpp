@@ -66,11 +66,7 @@ public:
    */
   virtual bool score(
     const EdgePtr edge, const geometry_msgs::msg::PoseStamped & goal_pose,
-<<<<<<< HEAD
     const EdgeType & edge_type, float & cost) = 0;
-=======
-    bool final_edge, float & cost) = 0;
->>>>>>> nav2_route_server
 
   /**
    * @brief Get name of the plugin for parameter scope mapping
