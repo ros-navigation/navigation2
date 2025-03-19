@@ -95,6 +95,24 @@ float CostCritic::findCircumscribedCost(
   return circumscribed_cost_;
 }
 
+bool CostCritic::inCollision(float cost) const
+{
+  bool is_tracking_unknown =
+    costmap_ros_->getLayeredCostmap()->isTrackingUnknown();
+
+  using namespace nav2_costmap_2d; // NOLINT
+  switch (static_cast<unsigned char>(cost)) {
+    case (LETHAL_OBSTACLE):
+      return true;
+    case (INSCRIBED_INFLATED_OBSTACLE):
+      return consider_footprint_ ? false : true;
+    case (NO_INFORMATION):
+      return is_tracking_unknown ? false : true;
+  }
+
+  return false;
+}
+
 void CostCritic::score(CriticData & data)
 {
   if (!enabled_) {
@@ -153,27 +171,36 @@ void CostCritic::score(CriticData & data)
       // The footprintCostAtPose will always return "INSCRIBED" if footprint is over it
       // So the center point has more information than the footprint
       if (!worldToMapFloat(Tx, Ty, x_i, y_i)) {
-        if (!is_tracking_unknown_) {
-          traj_cost = collision_cost_;
-          trajectory_collide = true;
-          break;
-        }
-        pose_cost = 255.0f;  // NO_INFORMATION in float
+        pose_cost = nav2_costmap_2d::NO_INFORMATION;
       } else {
+        // Get center cost
         pose_cost = static_cast<float>(costmap->getCost(getIndex(x_i, y_i)));
-        if (pose_cost < 1.0f) {
-          continue;  // In free space
-        }
-        if (inCollision(pose_cost, Tx, Ty, traj_yaw(i, j))) {
-          traj_cost = collision_cost_;
+        // Skip footprint cost if point cost has already exceeded inscribed obstacle cost
+        if (pose_cost >= nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE) {
           trajectory_collide = true;
           break;
+        }
+        // Get footprint cost
+        if (consider_footprint_ &&
+          (pose_cost >= possible_collision_cost_ || possible_collision_cost_ < 1.0f))
+        {
+          pose_cost = static_cast<float>(collision_checker_.footprintCostAtPose(
+                static_cast<double>(Tx), static_cast<double>(Ty),
+              static_cast<double>(traj_yaw(i, j)),
+                costmap_ros_->getRobotFootprint()));
         }
       }
-
+      if (pose_cost < 1.0f) {
+        continue;    // In free space
+      }
+      // Check if the pose is in collision
+      if(inCollision(pose_cost)) {
+        trajectory_collide = true;
+        break;
+      }
       // Let near-collision trajectory points be punished severely
-      // Note that we collision check based on the footprint actual,
-      // but score based on the center-point cost regardless
+      // This will apply when footprint steps in the inscribed space
+      // and the center point is not in collision
       if (pose_cost >= 253.0f /*INSCRIBED_INFLATED_OBSTACLE in float*/) {
         traj_cost += critical_cost_;
       } else if (!near_goal) {  // Generally prefer trajectories further from obstacles
@@ -183,6 +210,8 @@ void CostCritic::score(CriticData & data)
 
     if (!trajectory_collide) {
       all_trajectories_collide = false;
+    } else {
+      traj_cost = collision_cost_;
     }
   }
 
