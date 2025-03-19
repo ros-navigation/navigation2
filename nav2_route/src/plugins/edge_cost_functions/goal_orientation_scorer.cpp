@@ -22,6 +22,7 @@ namespace nav2_route
 
 void GoalOrientationScorer::configure(
   const rclcpp_lifecycle::LifecycleNode::SharedPtr node,
+  const std::shared_ptr<tf2_ros::Buffer>/* tf_buffer */,
   const std::string & name)
 {
   RCLCPP_INFO(node->get_logger(), "Configuring goal orientation scorer.");
@@ -35,9 +36,10 @@ void GoalOrientationScorer::configure(
 
 bool GoalOrientationScorer::score(
   const EdgePtr edge,
-  const geometry_msgs::msg::PoseStamped & goal_pose, bool final_edge, float & /*cost*/)
+  const geometry_msgs::msg::PoseStamped & goal_pose,
+  const EdgeType & edge_type, float & /* cost */)
 {
-  if (final_edge) {
+  if (edge_type == EdgeType::END) {
     double edge_orientation = std::atan2(
       edge->end->coords.y - edge->start->coords.y,
       edge->end->coords.x - edge->start->coords.x);

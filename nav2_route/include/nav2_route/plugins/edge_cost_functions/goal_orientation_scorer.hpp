@@ -33,7 +33,9 @@ namespace nav2_route
 
 /**
  * @class GoalOrientationScorer
- * @brief Scores final edge by comparing the
+ * @brief Rejects or accepts final edge depending on the edge's deviation 
+ * from the goal pose orientation. If the deviation is above some user 
+ * defined threshold, false is returned, if it is below, true is returned
  */
 class GoalOrientationScorer : public EdgeCostFunction
 {
@@ -53,6 +55,7 @@ public:
    */
   void configure(
     const rclcpp_lifecycle::LifecycleNode::SharedPtr node,
+    const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
     const std::string & name) override;
 
   /**
@@ -63,8 +66,8 @@ public:
    * @return bool if this edge is open valid to traverse
    */
   bool score(
-    const EdgePtr edge, const geometry_msgs::msg::PoseStamped & goal_pose, bool final_edge,
-    float & cost) override;
+    const EdgePtr edge, const geometry_msgs::msg::PoseStamped & goal_pose,
+    const EdgeType & edge_type, float & cost) override;
 
   /**
    * @brief Get name of the plugin for parameter scope mapping

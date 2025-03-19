@@ -24,7 +24,9 @@
 namespace nav2_route
 {
 
-void RoutePlanner::configure(nav2_util::LifecycleNode::SharedPtr node)
+void RoutePlanner::configure(
+  nav2_util::LifecycleNode::SharedPtr node,
+  const std::shared_ptr<tf2_ros::Buffer> tf_buffer)
 {
   nav2_util::declare_parameter_if_not_declared(
     node, "max_iterations", rclcpp::ParameterValue(0));
@@ -34,7 +36,7 @@ void RoutePlanner::configure(nav2_util::LifecycleNode::SharedPtr node)
     max_iterations_ = std::numeric_limits<int>::max();
   }
 
-  edge_scorer_ = std::make_unique<EdgeScorer>(node);
+  edge_scorer_ = std::make_unique<EdgeScorer>(node, tf_buffer);
 }
 
 Route RoutePlanner::findRoute(
@@ -87,6 +89,7 @@ void RoutePlanner::findShortestGraphTraversal(
 {
   // Setup the Dijkstra's search
   resetSearchStates(graph);
+  start_id_ = start_node->nodeid;
   goal_id_ = goal_node->nodeid;
   start_node->search_state.integrated_cost = 0.0;
   addNode(0.0, start_node);
@@ -165,7 +168,7 @@ bool RoutePlanner::getTraversalCost(
     return true;
   }
 
-  return edge_scorer_->score(edge, goal, isGoal(edge->end), score);
+  return edge_scorer_->score(edge, goal, classifyEdge(edge), score);
 }
 
 NodeElement RoutePlanner::getNextNode()
@@ -194,6 +197,21 @@ void RoutePlanner::clearQueue()
 bool RoutePlanner::isGoal(const NodePtr node)
 {
   return node->nodeid == goal_id_;
+}
+
+bool RoutePlanner::isStart(const NodePtr node)
+{
+  return node->nodeid == start_id_;
+}
+
+nav2_route::EdgeType RoutePlanner::classifyEdge(const EdgePtr edge)
+{
+  if (isStart(edge->start)) {
+    return EdgeType::START;
+  } else if (isGoal(edge->end)) {
+    return EdgeType::END;
+  }
+  return nav2_route::EdgeType::NONE;
 }
 
 }  // namespace nav2_route

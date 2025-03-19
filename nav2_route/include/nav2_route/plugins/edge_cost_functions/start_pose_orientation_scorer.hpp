@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Open Navigation LLC
+// Copyright (c) 2025, Polymath Robotics Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,38 +12,47 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__TIME_SCORER_HPP_
-#define NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__TIME_SCORER_HPP_
+#ifndef NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__START_POSE_ORIENTATION_SCORER_HPP_
+#define NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__START_POSE_ORIENTATION_SCORER_HPP_
 
 #include <memory>
 #include <string>
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "nav2_core/route_exceptions.hpp"
 #include "nav2_route/interfaces/edge_cost_function.hpp"
+#include "nav2_util/line_iterator.hpp"
 #include "nav2_util/node_utils.hpp"
+#include "nav2_util/robot_utils.hpp"
+#include "nav2_costmap_2d/costmap_subscriber.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+#include "tf2/utils.h"
+#include "angles/angles.h"
 
 namespace nav2_route
 {
 
 /**
- * @class TimeScorer
- * @brief Scores edges by the time to traverse an edge.
- * It uses previous times to navigate the edge primarily, then secondarily uses
- * maximum speed and absolute speed limits to estimate with edge length.
+ * @class StartPoseOrientationScorer
+ * @brief Scores initial edge by comparing the orientation of the robot's current 
+ * pose and the orientation of the edge by multiplying the deviation from the desired 
+ * orientation with a user defined weight. An alternative method can be selected, with 
+ * the use_orientation_threshold flag, which rejects the edge it is greater than some 
+ * tolerance
  */
-class TimeScorer : public EdgeCostFunction
+class StartPoseOrientationScorer : public EdgeCostFunction
 {
 public:
   /**
    * @brief Constructor
    */
-  TimeScorer() = default;
+  StartPoseOrientationScorer() = default;
 
   /**
    * @brief destructor
    */
-  virtual ~TimeScorer() = default;
+  virtual ~StartPoseOrientationScorer() = default;
 
   /**
    * @brief Configure
@@ -70,12 +79,19 @@ public:
    */
   std::string getName() override;
 
+  geometry_msgs::msg::PoseStamped getRobotPose();
+
 protected:
+  rclcpp::Logger logger_{rclcpp::get_logger("StartPoseOrientationScorer")};
   std::string name_;
-  std::string speed_tag_, prev_time_tag_;
-  float weight_, max_vel_;
+  std::string route_frame_;
+  std::string base_frame_;
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  double orientation_tolerance_;
+  float orientation_weight_;
+  bool use_orientation_threshold_;
 };
 
 }  // namespace nav2_route
 
-#endif  // NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__TIME_SCORER_HPP_
+#endif  // NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__START_POSE_ORIENTATION_SCORER_HPP_

@@ -130,8 +130,9 @@ TEST(RoutePlannerTest, test_route_planner_positive)
   geometry_msgs::msg::PoseStamped goal_pose;
 
   auto node = std::make_shared<nav2_util::LifecycleNode>("router_test");
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer;
   RoutePlanner planner;
-  planner.configure(node);
+  planner.configure(node, tf_buffer);
   std::vector<unsigned int> blocked_ids;
   unsigned int start, goal;
 
@@ -186,9 +187,10 @@ TEST(RoutePlannerTest, test_route_planner_negative)
   geometry_msgs::msg::PoseStamped goal_pose;
 
   auto node = std::make_shared<nav2_util::LifecycleNode>("router_test");
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer;
   node->declare_parameter("max_iterations", rclcpp::ParameterValue(5));
   RoutePlanner planner;
-  planner.configure(node);
+  planner.configure(node, tf_buffer);
   std::vector<unsigned int> blocked_ids;
   unsigned int start = 0;
   unsigned int goal = 15;

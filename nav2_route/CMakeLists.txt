@@ -88,6 +88,7 @@ add_library(edge_scorers SHARED
   src/plugins/edge_cost_functions/costmap_scorer.cpp
   src/plugins/edge_cost_functions/semantic_scorer.cpp
   src/plugins/edge_cost_functions/goal_orientation_scorer.cpp
+  src/plugins/edge_cost_functions/start_pose_orientation_scorer.cpp
 )
 target_include_directories(edge_scorers
   PUBLIC

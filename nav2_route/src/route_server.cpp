@@ -80,7 +80,7 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
       node, graph_, &id_to_graph_map_, tf_, route_frame_, base_frame_);
 
     route_planner_ = std::make_shared<RoutePlanner>();
-    route_planner_->configure(node);
+    route_planner_->configure(node, tf_);
 
     route_tracker_ = std::make_shared<RouteTracker>();
     route_tracker_->configure(
