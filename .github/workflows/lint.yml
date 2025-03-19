@@ -31,4 +31,5 @@ jobs:
       with:
         linter: mypy
         distribution: rolling
+        packages: "*"
         arguments: "--config tools/pyproject.toml"
