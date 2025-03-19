@@ -45,12 +45,22 @@ target_link_libraries(${library_name} PUBLIC
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action
   rclcpp_lifecycle::rclcpp_lifecycle
-  robot_localization::rl_lib
   tf2_ros::tf2_ros
 )
 target_link_libraries(${library_name} PRIVATE
   rclcpp_components::component
 )
+
+# Extract the major version (first number before the dot)
+string(REGEX MATCH "^[0-9]+" ROS2_MAJOR_VERSION "${rclcpp_VERSION}")
+# Convert to integer
+if(ROS2_MAJOR_VERSION GREATER 29)
+    message(STATUS "ROS2_MAJOR_VERSION (${ROS2_MAJOR_VERSION}) is greater than 29 (Kilted and newer).")
+    target_link_libraries(${library_name} PUBLIC robot_localization::rl_lib)
+else()
+    message(STATUS "ROS2_MAJOR_VERSION (${ROS2_MAJOR_VERSION}) is NOT greater than 29 (Jazzy and older).")
+    ament_target_dependencies(${library_name} PUBLIC robot_localization)
+endif()
 
 add_executable(${executable_name}
   src/main.cpp
