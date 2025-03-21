@@ -54,7 +54,6 @@ PlannerServer::PlannerServer(const rclcpp::NodeOptions & options)
   declare_parameter("expected_planner_frequency", 1.0);
   declare_parameter("action_server_result_timeout", 10.0);
   declare_parameter("costmap_update_timeout", 1.0);
-  declare_parameter("service_introspection_mode", "disabled");
 
   get_parameter("planner_plugins", planner_ids_);
   if (planner_ids_ == default_ids_) {
@@ -62,7 +61,6 @@ PlannerServer::PlannerServer(const rclcpp::NodeOptions & options)
       declare_parameter(default_ids_[i] + ".plugin", default_types_[i]);
     }
   }
-  service_introspection_mode_ = get_parameter("service_introspection_mode").as_string();
   // Setup the global costmap
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "global_costmap", std::string{get_namespace()},
@@ -201,7 +199,6 @@ PlannerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   is_path_valid_service_ = std::make_shared<nav2_util::ServiceServer<nav2_msgs::srv::IsPathValid,
       std::shared_ptr<nav2_util::LifecycleNode>>>(
     "is_path_valid",
-    service_introspection_mode_,
     node,
     std::bind(&PlannerServer::isPathValid, this, std::placeholders::_1, std::placeholders::_2,
       std::placeholders::_3));

@@ -391,7 +391,6 @@ protected:
   double sigma_hit_;
   bool tf_broadcast_;
   tf2::Duration transform_tolerance_;
-  std::string service_introspection_mode_;
   double a_thresh_;
   double d_thresh_;
   double z_hit_;

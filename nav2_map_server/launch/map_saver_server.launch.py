@@ -26,7 +26,6 @@ def generate_launch_description():
     save_map_timeout = 2.0
     free_thresh_default = 0.25
     occupied_thresh_default = 0.65
-    service_introspection_mode = 'disabled'
 
     # Nodes launching commands
     start_map_saver_server_cmd = launch_ros.actions.Node(
@@ -38,7 +37,6 @@ def generate_launch_description():
             {'save_map_timeout': save_map_timeout},
             {'free_thresh_default': free_thresh_default},
             {'occupied_thresh_default': occupied_thresh_default},
-            {'service_introspection_mode': service_introspection_mode},
         ],
     )
 

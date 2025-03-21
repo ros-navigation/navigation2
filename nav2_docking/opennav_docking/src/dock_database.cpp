@@ -55,16 +55,9 @@ bool DockDatabase::initialize(
     "Docking Server has %u dock types and %u dock instances available.",
     this->plugin_size(), this->instance_size());
 
-  if(!node->has_parameter("service_introspection_mode")) {
-    node->declare_parameter("service_introspection_mode", "disabled");
-  }
-  std::string service_introspection_mode_ =
-    node->get_parameter("service_introspection_mode").as_string();
-
   reload_db_service_ = std::make_shared<nav2_util::ServiceServer<nav2_msgs::srv::ReloadDockDatabase,
       std::shared_ptr<rclcpp_lifecycle::LifecycleNode>>>(
     "~/reload_database",
-    service_introspection_mode_,
     node->shared_from_this(),
     std::bind(
       &DockDatabase::reloadDbCb, this,

@@ -28,12 +28,7 @@ IsPathValidCondition::IsPathValidCondition(
   max_cost_(253), consider_unknown_as_obstacle_(false)
 {
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
-  nav2_util::declare_parameter_if_not_declared(
-    node_, "service_introspection_mode",
-    rclcpp::ParameterValue(std::string("disabled")));
-  node_->get_parameter("service_introspection_mode", service_introspection_mode_);
   client_ = std::make_shared<nav2_util::ServiceClient<nav2_msgs::srv::IsPathValid>>("is_path_valid",
-    service_introspection_mode_,
       node_);
 
   server_timeout_ = config().blackboard->template get<std::chrono::milliseconds>("server_timeout");

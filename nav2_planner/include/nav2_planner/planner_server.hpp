@@ -261,8 +261,6 @@ protected:
   // Publishers for the path
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr plan_publisher_;
 
-  // String to store the service introspection mode
-  std::string service_introspection_mode_;
   // Service to determine if the path is valid
   std::shared_ptr<nav2_util::ServiceServer<nav2_msgs::srv::IsPathValid,
     std::shared_ptr<nav2_util::LifecycleNode>>> is_path_valid_service_;

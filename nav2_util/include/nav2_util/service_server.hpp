@@ -38,7 +38,6 @@ public:
 
   explicit ServiceServer(
     const std::string & service_name,
-    std::string service_introspection_mode,
     const NodeT & node,
     CallbackType callback,
     const rclcpp::QoS & qos = rclcpp::ServicesQoS(),
@@ -55,11 +54,16 @@ public:
       callback_group);
 
     rcl_service_introspection_state_t introspection_state = RCL_SERVICE_INTROSPECTION_OFF;
-    if (service_introspection_mode == "disabled") {
+    if(!node->has_parameter("service_introspection_mode")) {
+      node->declare_parameter("service_introspection_mode", "disabled");
+    }
+    std::string service_introspection_mode_ =
+      node->get_parameter("service_introspection_mode").as_string();
+    if (service_introspection_mode_ == "disabled") {
       introspection_state = RCL_SERVICE_INTROSPECTION_OFF;
-    } else if (service_introspection_mode == "metadata") {
+    } else if (service_introspection_mode_ == "metadata") {
       introspection_state = RCL_SERVICE_INTROSPECTION_METADATA;
-    } else if (service_introspection_mode == "contents") {
+    } else if (service_introspection_mode_ == "contents") {
       introspection_state = RCL_SERVICE_INTROSPECTION_CONTENTS;
     }
 

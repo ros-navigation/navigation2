@@ -36,9 +36,8 @@ class TestServiceClient : public ServiceClient<std_srvs::srv::Empty>
 public:
   TestServiceClient(
     const std::string & name,
-    std::string service_introspection_mode = "disabled",
     const rclcpp::Node::SharedPtr & provided_node = rclcpp::Node::SharedPtr())
-  : ServiceClient(name, service_introspection_mode, provided_node)
+  : ServiceClient(name, provided_node)
   {}
 
   string name() {return node_->get_name();}
@@ -47,9 +46,8 @@ public:
 
 TEST(ServiceClient, can_ServiceClient_use_passed_in_node)
 {
-  std::string service_introspection_mode_ = "disabled";
   auto node = rclcpp::Node::make_shared("test_node");
-  TestServiceClient t("bar", service_introspection_mode_, node);
+  TestServiceClient t("bar", node);
   ASSERT_EQ(t.getNode(), node);
   ASSERT_EQ(t.name(), "test_node");
 }
@@ -72,8 +70,7 @@ TEST(ServiceClient, can_ServiceClient_invoke_in_callback)
   auto pub_thread = std::thread([&]() {rclcpp::spin(pub_node);});
 
   auto sub_node = rclcpp::Node::make_shared("sub_node");
-  std::string service_introspection_mode_ = "metadata";
-  ServiceClient<std_srvs::srv::Empty> client("empty_srv", service_introspection_mode_, sub_node);
+  ServiceClient<std_srvs::srv::Empty> client("empty_srv", sub_node);
   auto sub = sub_node->create_subscription<std_msgs::msg::Empty>(
     "empty_topic",
     rclcpp::QoS(1),
@@ -91,45 +88,11 @@ TEST(ServiceClient, can_ServiceClient_invoke_in_callback)
   ASSERT_EQ(a, 1);
 }
 
-TEST(ServiceClient, can_ServiceClient_invoke_shared)
-{
-  rclcpp::init(0, nullptr);
-  int a = 0;
-  auto service_node = rclcpp::Node::make_shared("service_node");
-  auto service = service_node->create_service<std_srvs::srv::Empty>(
-    "empty_srv",
-    [&a](std_srvs::srv::Empty::Request::SharedPtr, std_srvs::srv::Empty::Response::SharedPtr) {
-      a = 1;
-    });
-  auto srv_thread = std::thread([&]() {rclcpp::spin(service_node);});
-
-  auto pub_node = rclcpp::Node::make_shared("pub_node");
-  auto pub = pub_node->create_publisher<std_msgs::msg::Empty>(
-    "empty_topic",
-    rclcpp::QoS(1).transient_local());
-  auto pub_thread = std::thread([&]() {rclcpp::spin(pub_node);});
-
-  auto sub_node = rclcpp::Node::make_shared("sub_node");
-  std::string service_introspection_mode_ = "contents";
-  ServiceClient<std_srvs::srv::Empty> client("empty_srv", service_introspection_mode_, sub_node);
-
-  auto req = std::make_shared<std_srvs::srv::Empty::Request>();
-  auto future_result = client.invoke_shared(req);
-
-  ASSERT_EQ(future_result.wait_for(std::chrono::seconds(1)), std::future_status::ready);
-  ASSERT_EQ(a, 1);
-
-  rclcpp::shutdown();
-  srv_thread.join();
-  pub_thread.join();
-}
-
 TEST(ServiceClient, can_ServiceClient_timeout)
 {
   rclcpp::init(0, nullptr);
   auto node = rclcpp::Node::make_shared("test_node");
-  std::string service_introspection_mode_ = "disabled";
-  TestServiceClient t("bar", service_introspection_mode_, node);
+  TestServiceClient t("bar", node);
   rclcpp::spin_some(node);
   bool ready = t.wait_for_service(std::chrono::milliseconds(10));
   rclcpp::shutdown();

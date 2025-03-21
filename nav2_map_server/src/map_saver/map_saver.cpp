@@ -51,7 +51,6 @@ MapSaver::MapSaver(const rclcpp::NodeOptions & options)
   declare_parameter("free_thresh_default", 0.25);
   declare_parameter("occupied_thresh_default", 0.65);
   declare_parameter("map_subscribe_transient_local", true);
-  declare_parameter("service_introspection_mode", "disabled");
 }
 
 MapSaver::~MapSaver()
@@ -71,13 +70,11 @@ MapSaver::on_configure(const rclcpp_lifecycle::State & /*state*/)
   free_thresh_default_ = get_parameter("free_thresh_default").as_double();
   occupied_thresh_default_ = get_parameter("occupied_thresh_default").as_double();
   map_subscribe_transient_local_ = get_parameter("map_subscribe_transient_local").as_bool();
-  std::string service_introspection_mode_ = get_parameter("service_introspection_mode").as_string();
 
   // Create a service that saves the occupancy grid from map topic to a file
   save_map_service_ = std::make_shared<nav2_util::ServiceServer<nav2_msgs::srv::SaveMap,
       std::shared_ptr<nav2_util::LifecycleNode>>>(
     service_prefix + save_map_service_name_,
-    service_introspection_mode_,
     shared_from_this(),
     std::bind(&MapSaver::saveMapCallback, this, _1, _2, _3));
 

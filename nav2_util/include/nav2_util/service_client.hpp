@@ -37,7 +37,6 @@ public:
   */
   explicit ServiceClient(
     const std::string & service_name,
-    std::string service_introspection_mode,
     const NodeT & provided_node)
   : service_name_(service_name), node_(provided_node)
   {
@@ -50,12 +49,16 @@ public:
       rclcpp::SystemDefaultsQoS(),
       callback_group_);
     rcl_service_introspection_state_t introspection_state = RCL_SERVICE_INTROSPECTION_OFF;
-
-    if (service_introspection_mode == "disabled") {
+    if(!node_->has_parameter("service_introspection_mode")) {
+      node_->declare_parameter("service_introspection_mode", "disabled");
+    }
+    std::string service_introspection_mode_ =
+      node_->get_parameter("service_introspection_mode").as_string();
+    if (service_introspection_mode_ == "disabled") {
       introspection_state = RCL_SERVICE_INTROSPECTION_OFF;
-    } else if (service_introspection_mode == "metadata") {
+    } else if (service_introspection_mode_ == "metadata") {
       introspection_state = RCL_SERVICE_INTROSPECTION_METADATA;
-    } else if (service_introspection_mode == "contents") {
+    } else if (service_introspection_mode_ == "contents") {
       introspection_state = RCL_SERVICE_INTROSPECTION_CONTENTS;
     }
 
@@ -140,37 +143,14 @@ public:
   }
 
   /**
-  * @brief Invoke the service and block until completed
+  * @brief Asynchronously call the service
   * @param request The request object to call the service using
   * @return std::shared_future<typename ResponseType::SharedPtr> The shared future of the service response
   */
-  std::shared_future<typename ResponseType::SharedPtr> invoke_shared(
-    typename RequestType::SharedPtr & request,
-    const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1))
+  std::shared_future<typename ResponseType::SharedPtr> async_call(
+    typename RequestType::SharedPtr & request)
   {
-    while (!client_->wait_for_service(std::chrono::seconds(1))) {
-      if (!rclcpp::ok()) {
-        throw std::runtime_error(
-                service_name_ + " service client: interrupted while waiting for service");
-      }
-      RCLCPP_INFO(
-        node_->get_logger(), "%s service client: waiting for service to appear...",
-        service_name_.c_str());
-    }
-
-    RCLCPP_DEBUG(
-      node_->get_logger(), "%s service client: send async request",
-      service_name_.c_str());
     auto future_result = client_->async_send_request(request);
-
-    if (callback_group_executor_.spin_until_future_complete(future_result, timeout) !=
-      rclcpp::FutureReturnCode::SUCCESS)
-    {
-      // Pending request must be manually cleaned up if execution is interrupted or timed out
-      client_->remove_pending_request(future_result);
-      throw std::runtime_error(service_name_ + " service client: async_send_request failed");
-    }
-
     return future_result.share();
   }
 
