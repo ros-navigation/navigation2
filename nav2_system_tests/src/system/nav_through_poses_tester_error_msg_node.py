@@ -132,7 +132,7 @@ class NavTester(Node):
         goal_msg = NavigateThroughPoses.Goal()
         goal_msg.poses.header.frame_id = 'map'
         goal_msg.poses.header.stamp = self.get_clock().now().to_msg()
-        goal_msg.poses.poses = [
+        goal_msg.poses.goals = [
             self.getStampedPoseMsg(self.goal_pose),
             self.getStampedPoseMsg(self.goal_pose),
         ]

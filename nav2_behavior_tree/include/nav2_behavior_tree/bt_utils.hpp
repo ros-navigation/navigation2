@@ -24,9 +24,9 @@
 #include "behaviortree_cpp/behavior_tree.h"
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "geometry_msgs/msg/pose_stamped_array.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
 #include "nav_msgs/msg/path.hpp"
+#include "nav_msgs/msg/goals.hpp"
 
 namespace BT
 {
@@ -136,20 +136,20 @@ inline std::vector<geometry_msgs::msg::PoseStamped> convertFromString(const Stri
 }
 
 /**
- * @brief Parse XML string to geometry_msgs::msg::PoseStampedArray
+ * @brief Parse XML string to nav_msgs::msg::Goals
  * @param key XML string
- * @return geometry_msgs::msg::PoseStampedArray
+ * @return nav_msgs::msg::Goals
  */
 template<>
-inline geometry_msgs::msg::PoseStampedArray convertFromString(const StringView key)
+inline nav_msgs::msg::Goals convertFromString(const StringView key)
 {
   auto parts = BT::splitString(key, ';');
   if ((parts.size() - 2) % 9 != 0) {
-    throw std::runtime_error("invalid number of fields for PoseStampedArray attribute)");
+    throw std::runtime_error("invalid number of fields for Goals attribute)");
   } else {
-    geometry_msgs::msg::PoseStampedArray pose_stamped_array;
-    pose_stamped_array.header.stamp = rclcpp::Time(BT::convertFromString<int64_t>(parts[0]));
-    pose_stamped_array.header.frame_id = BT::convertFromString<std::string>(parts[1]);
+    nav_msgs::msg::Goals goals_array;
+    goals_array.header.stamp = rclcpp::Time(BT::convertFromString<int64_t>(parts[0]));
+    goals_array.header.frame_id = BT::convertFromString<std::string>(parts[1]);
     for (size_t i = 2; i < parts.size(); i += 9) {
       geometry_msgs::msg::PoseStamped pose_stamped;
       pose_stamped.header.stamp = rclcpp::Time(BT::convertFromString<int64_t>(parts[i]));
@@ -161,9 +161,9 @@ inline geometry_msgs::msg::PoseStampedArray convertFromString(const StringView k
       pose_stamped.pose.orientation.y = BT::convertFromString<double>(parts[i + 6]);
       pose_stamped.pose.orientation.z = BT::convertFromString<double>(parts[i + 7]);
       pose_stamped.pose.orientation.w = BT::convertFromString<double>(parts[i + 8]);
-      pose_stamped_array.poses.push_back(pose_stamped);
+      goals_array.goals.push_back(pose_stamped);
     }
-    return pose_stamped_array;
+    return goals_array;
   }
 }
 
