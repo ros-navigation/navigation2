@@ -42,6 +42,13 @@ NavigateThroughPosesNavigator::configure(
 
   path_blackboard_id_ = node->get_parameter("path_blackboard_id").as_string();
 
+  if (!node->has_parameter("waypoint_statuses_blackboard_id")) {
+    node->declare_parameter("waypoint_statuses_blackboard_id", std::string("waypoint_statuses"));
+  }
+
+  waypoint_statuses_blackboard_id_ =
+    node->get_parameter("waypoint_statuses_blackboard_id").as_string();
+
   // Odometry smoother object for getting current speed
   odom_smoother_ = odom_smoother;
 
@@ -115,6 +122,9 @@ NavigateThroughPosesNavigator::onLoop()
 
   nav_msgs::msg::Goals goal_poses;
   [[maybe_unused]] auto res = blackboard->get(goals_blackboard_id_, goal_poses);
+
+  feedback_msg->waypoint_statuses =
+    blackboard->get<std::vector<nav2_msgs::msg::WaypointStatus>>(waypoint_statuses_blackboard_id_);
 
   if (goal_poses.goals.size() == 0) {
     bt_action_server_->publishFeedback(feedback_msg);
@@ -261,6 +271,11 @@ NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr
   // Update the goal pose on the blackboard
   blackboard->set<nav_msgs::msg::Goals>(goals_blackboard_id_,
       std::move(goals_array));
+
+  // Reset the waypoint states vector in the blackboard
+  auto waypoint_statuses = std::vector<nav2_msgs::msg::WaypointStatus>(goals_array.goals.size());
+  blackboard->set<decltype(waypoint_statuses)>(waypoint_statuses_blackboard_id_,
+      std::move(waypoint_statuses));
 
   return true;
 }
