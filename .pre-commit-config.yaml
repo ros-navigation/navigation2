@@ -27,6 +27,7 @@ repos:
         args: ["--allow-multiple-documents"]
       - id: debug-statements
       - id: end-of-file-fixer
+      - id: forbid-submodules
       - id: mixed-line-ending
       - id: trailing-whitespace
         exclude_types: [rst]
