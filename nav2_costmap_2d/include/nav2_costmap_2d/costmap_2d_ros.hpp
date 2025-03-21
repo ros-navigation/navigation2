@@ -411,7 +411,6 @@ protected:
 
   // Derived parameters
   bool use_radius_{false};
-  std::string service_introspection_mode_{"disabled"};
   std::vector<geometry_msgs::msg::Point> unpadded_footprint_;
   std::vector<geometry_msgs::msg::Point> padded_footprint_;
 

@@ -174,7 +174,7 @@ public:
         return BT::NodeStatus::FAILURE;
       }
 
-      future_result_ = service_client_->invoke_shared(request_);
+      future_result_ = service_client_->async_call(request_);
       sent_time_ = node_->now();
       request_sent_ = true;
     }
@@ -268,7 +268,6 @@ protected:
   std::string service_name_, service_node_name_;
   std::shared_ptr<nav2_util::ServiceClient<ServiceT>> service_client_;
   std::shared_ptr<typename ServiceT::Request> request_;
-  std::string service_introspection_mode_;
 
   // The node that will be used for any ROS operations
   rclcpp::Node::SharedPtr node_;

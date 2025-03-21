@@ -74,8 +74,7 @@ public:
     std::string global_frame,
     std::string topic_name,
     bool always_send_full_costmap = false,
-    double map_vis_z = 0.0,
-    std::string service_introspection_mode = "disabled");
+    double map_vis_z = 0.0);
 
   /**
    * @brief  Destructor

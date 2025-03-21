@@ -33,7 +33,7 @@ using ClearEntirely = nav2_msgs::srv::ClearEntireCostmap;
 
 ClearCostmapService::ClearCostmapService(
   const nav2_util::LifecycleNode::WeakPtr & parent,
-  Costmap2DROS & costmap, std::string service_introspection_mode)
+  Costmap2DROS & costmap)
 : costmap_(costmap)
 {
   auto node = parent.lock();
@@ -43,7 +43,6 @@ ClearCostmapService::ClearCostmapService(
   clear_except_service_ = std::make_shared<nav2_util::ServiceServer<ClearExceptRegion,
       std::shared_ptr<rclcpp_lifecycle::LifecycleNode>>>(
     std::string("clear_except_") + costmap_.getName(),
-    service_introspection_mode,
     node->shared_from_this(),
     std::bind(
       &ClearCostmapService::clearExceptRegionCallback, this,
@@ -52,7 +51,6 @@ ClearCostmapService::ClearCostmapService(
   clear_around_service_ = std::make_shared<nav2_util::ServiceServer<ClearAroundRobot,
       std::shared_ptr<rclcpp_lifecycle::LifecycleNode>>>(
     std::string("clear_around_") + costmap_.getName(),
-    service_introspection_mode,
     node->shared_from_this(),
     std::bind(
       &ClearCostmapService::clearAroundRobotCallback, this,
@@ -61,7 +59,6 @@ ClearCostmapService::ClearCostmapService(
   clear_entire_service_ = std::make_shared<nav2_util::ServiceServer<ClearEntirely,
       std::shared_ptr<rclcpp_lifecycle::LifecycleNode>>>(
     std::string("clear_entirely_") + costmap_.getName(),
-    service_introspection_mode,
     node->shared_from_this(),
     std::bind(
       &ClearCostmapService::clearEntireCallback, this,

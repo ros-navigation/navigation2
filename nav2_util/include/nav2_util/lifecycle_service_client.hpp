@@ -32,12 +32,10 @@ class LifecycleServiceClient
 {
 public:
   explicit LifecycleServiceClient(
-    const std::string & lifecycle_node_name,
-    std::string service_introspection_mode = "disabled");
+    const std::string & lifecycle_node_name);
   LifecycleServiceClient(
     const std::string & lifecycle_node_name,
-    rclcpp::Node::SharedPtr parent_node,
-    std::string service_introspection_mode = "disabled");
+    rclcpp::Node::SharedPtr parent_node);
 
   /// Trigger a state change
   /**

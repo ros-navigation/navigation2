@@ -35,7 +35,6 @@ WaypointFollower::WaypointFollower(const rclcpp::NodeOptions & options)
   RCLCPP_INFO(get_logger(), "Creating");
 
   declare_parameter("stop_on_failure", true);
-  declare_parameter("service_introspection_mode", "disabled");
   declare_parameter("loop_rate", 20);
 
   declare_parameter("action_server_result_timeout", 900.0);
@@ -62,7 +61,6 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & state)
   auto node = shared_from_this();
 
   stop_on_failure_ = get_parameter("stop_on_failure").as_bool();
-  service_introspection_mode_ = get_parameter("service_introspection_mode").as_string();
   loop_rate_ = get_parameter("loop_rate").as_int();
   waypoint_task_executor_id_ = get_parameter("waypoint_task_executor_plugin").as_string();
   global_frame_id_ = get_parameter("global_frame_id").as_string();
@@ -98,7 +96,6 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & state)
     nav2_util::ServiceClient<robot_localization::srv::FromLL,
     std::shared_ptr<nav2_util::LifecycleNode>>>(
     "/fromLL",
-    service_introspection_mode_,
     node);
 
   gps_action_server_ = std::make_unique<ActionServerGPS>(

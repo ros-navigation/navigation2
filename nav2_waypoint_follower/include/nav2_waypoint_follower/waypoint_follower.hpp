@@ -221,7 +221,6 @@ protected:
   waypoint_task_executor_;
   std::string waypoint_task_executor_id_;
   std::string waypoint_task_executor_type_;
-  std::string service_introspection_mode_;
 };
 
 }  // namespace nav2_waypoint_follower

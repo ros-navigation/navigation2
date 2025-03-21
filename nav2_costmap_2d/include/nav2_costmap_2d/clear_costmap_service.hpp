@@ -43,8 +43,7 @@ public:
    * @brief A constructor
    */
   ClearCostmapService(
-    const nav2_util::LifecycleNode::WeakPtr & parent, Costmap2DROS & costmap,
-    std::string service_introspection_mode);
+    const nav2_util::LifecycleNode::WeakPtr & parent, Costmap2DROS & costmap);
 
   /**
    * @brief A constructor

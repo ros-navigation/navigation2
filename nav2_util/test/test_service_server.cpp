@@ -36,10 +36,9 @@ class TestServiceServer : public ServiceServer<std_srvs::srv::Empty>
 public:
   TestServiceServer(
     const std::string & name,
-    std::string service_introspection_mode,
     const rclcpp::Node::SharedPtr & provided_node,
     CallbackType callback)
-  : ServiceServer(name, service_introspection_mode, provided_node, callback)
+  : ServiceServer(name, provided_node, callback)
   {}
 };
 
@@ -47,7 +46,6 @@ TEST(ServiceServer, can_ServiceServer_handle_request)
 {
   int a = 0;
   auto node = rclcpp::Node::make_shared("test_node");
-  std::string service_introspection_mode_ = "disabled";
 
   auto callback = [&a](const std::shared_ptr<rmw_request_id_t>,
     const std::shared_ptr<std_srvs::srv::Empty::Request>,
@@ -55,7 +53,7 @@ TEST(ServiceServer, can_ServiceServer_handle_request)
       a = 1;
     };
 
-  TestServiceServer server("empty_srv", service_introspection_mode_, node, callback);
+  TestServiceServer server("empty_srv", node, callback);
 
   auto client_node = rclcpp::Node::make_shared("client_node");
   auto client = client_node->create_client<std_srvs::srv::Empty>("empty_srv");

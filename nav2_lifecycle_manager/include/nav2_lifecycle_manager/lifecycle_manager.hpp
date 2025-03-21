@@ -263,8 +263,6 @@ protected:
 
   rclcpp::Time bond_respawn_start_time_{0};
   rclcpp::Duration bond_respawn_max_duration_{10s};
-
-  std::string service_introspection_mode_;
 };
 
 }  // namespace nav2_lifecycle_manager

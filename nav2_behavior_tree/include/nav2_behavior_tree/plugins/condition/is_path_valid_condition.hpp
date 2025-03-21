@@ -80,7 +80,6 @@ private:
   std::chrono::milliseconds server_timeout_;
   unsigned int max_cost_;
   bool consider_unknown_as_obstacle_;
-  std::string service_introspection_mode_;
 };
 
 }  // namespace nav2_behavior_tree
