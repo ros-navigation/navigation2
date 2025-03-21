@@ -28,7 +28,7 @@ public:
   void SetUp()
   {
     uint16_t error_code = ActionResult::NONE;
-    std::vector<int> error_codes_to_check = {ActionResult::UNKNOWN}; //NOLINT
+    std::set<uint16_t> error_codes_to_check = {ActionResult::UNKNOWN}; //NOLINT
     config_->blackboard->set("error_code", error_code);
     config_->blackboard->set("error_codes_to_check", error_codes_to_check);
 

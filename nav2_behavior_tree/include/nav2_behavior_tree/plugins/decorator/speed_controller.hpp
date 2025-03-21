@@ -58,7 +58,7 @@ public:
       BT::InputPort<double>("max_rate", 1.0, "Maximum rate"),
       BT::InputPort<double>("min_speed", 0.0, "Minimum speed"),
       BT::InputPort<double>("max_speed", 0.5, "Maximum speed"),
-      BT::InputPort<nav_msgs::msg::Goals>(
+      BT::InputPort<geometry_msgs::msg::PoseStampedArray>(
         "goals", "Vector of navigation goals"),
       BT::InputPort<geometry_msgs::msg::PoseStamped>(
         "goal", "Navigation goal"),
@@ -120,7 +120,7 @@ private:
 
   // current goal
   geometry_msgs::msg::PoseStamped goal_;
-  nav_msgs::msg::Goals goals_;
+  geometry_msgs::msg::PoseStampedArray goals_;
 };
 
 }  // namespace nav2_behavior_tree

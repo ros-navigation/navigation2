@@ -39,8 +39,7 @@ Polygon::Polygon(
 : node_(node), polygon_name_(polygon_name), action_type_(DO_NOTHING),
   slowdown_ratio_(0.0), linear_limit_(0.0), angular_limit_(0.0),
   footprint_sub_(nullptr), tf_buffer_(tf_buffer),
-  base_frame_id_(base_frame_id), transform_tolerance_(transform_tolerance),
-  node_clock_(nullptr)
+  base_frame_id_(base_frame_id), transform_tolerance_(transform_tolerance)
 {
   RCLCPP_INFO(logger_, "[%s]: Creating Polygon", polygon_name_.c_str());
 }
@@ -52,7 +51,6 @@ Polygon::~Polygon()
   polygon_pub_.reset();
   poly_.clear();
   dyn_params_handler_.reset();
-  node_clock_.reset();
 }
 
 bool Polygon::configure()
@@ -62,7 +60,6 @@ bool Polygon::configure()
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  node_clock_ = node->get_clock();
   std::string polygon_sub_topic, polygon_pub_topic, footprint_topic;
 
   if (!getParameters(polygon_sub_topic, polygon_pub_topic, footprint_topic)) {
@@ -591,11 +588,9 @@ Polygon::dynamicParametersCallback(
 
 void Polygon::polygonCallback(geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg)
 {
-  RCLCPP_INFO_THROTTLE(
+  RCLCPP_INFO(
     logger_,
-    *node_clock_,
-    2000,
-    "[%s]: Polygon shape update has arrived",
+    "[%s]: Polygon shape update has been arrived",
     polygon_name_.c_str());
   updatePolygon(msg);
 }

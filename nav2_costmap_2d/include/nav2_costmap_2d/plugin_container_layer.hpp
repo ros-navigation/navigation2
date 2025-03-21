@@ -20,7 +20,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/layer.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
@@ -28,6 +27,7 @@
 #include "nav2_costmap_2d/observation_buffer.hpp"
 #include "nav2_costmap_2d/inflation_layer.hpp"
 #include "tf2_ros/message_filter.h"
+#include "message_filters/subscriber.hpp"
 #include "pluginlib/class_loader.hpp"
 
 using nav2_costmap_2d::LETHAL_OBSTACLE;

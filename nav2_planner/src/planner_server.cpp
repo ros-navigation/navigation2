@@ -394,7 +394,7 @@ void PlannerServer::computePlanThroughPoses()
 
     getPreemptedGoalIfRequested(action_server_poses_, goal);
 
-    if (goal->goals.goals.empty()) {
+    if (goal->goals.poses.empty()) {
       throw nav2_core::NoViapointsGiven("No viapoints given");
     }
 
@@ -409,7 +409,7 @@ void PlannerServer::computePlanThroughPoses()
       };
 
     // Get consecutive paths through these points
-    for (unsigned int i = 0; i != goal->goals.goals.size(); i++) {
+    for (unsigned int i = 0; i != goal->goals.poses.size(); i++) {
       // Get starting point
       if (i == 0) {
         curr_start = start;
@@ -419,7 +419,7 @@ void PlannerServer::computePlanThroughPoses()
         curr_start = concat_path.poses.back();
         curr_start.header = concat_path.header;
       }
-      curr_goal = goal->goals.goals[i];
+      curr_goal = goal->goals.poses[i];
 
       // Transform them into the global frame
       if (!transformPosesToGlobalFrame(curr_start, curr_goal)) {

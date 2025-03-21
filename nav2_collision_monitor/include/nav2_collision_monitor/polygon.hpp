@@ -298,8 +298,6 @@ protected:
   std::string base_frame_id_;
   /// @brief Transform tolerance
   tf2::Duration transform_tolerance_;
-  /// @brief Collision monitor node's clock
-  rclcpp::Clock::SharedPtr node_clock_;
 
   // Visualization
   /// @brief Whether to publish the polygon

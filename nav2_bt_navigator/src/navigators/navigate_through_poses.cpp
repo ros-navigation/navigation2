@@ -113,10 +113,10 @@ NavigateThroughPosesNavigator::onLoop()
 
   auto blackboard = bt_action_server_->getBlackboard();
 
-  nav_msgs::msg::Goals goal_poses;
+  geometry_msgs::msg::PoseStampedArray goal_poses;
   [[maybe_unused]] auto res = blackboard->get(goals_blackboard_id_, goal_poses);
 
-  if (goal_poses.goals.size() == 0) {
+  if (goal_poses.poses.size() == 0) {
     bt_action_server_->publishFeedback(feedback_msg);
     return;
   }
@@ -178,7 +178,7 @@ NavigateThroughPosesNavigator::onLoop()
   feedback_msg->number_of_recoveries = recovery_count;
   feedback_msg->current_pose = current_pose;
   feedback_msg->navigation_time = clock_->now() - start_time_;
-  feedback_msg->number_of_poses_remaining = goal_poses.goals.size();
+  feedback_msg->number_of_poses_remaining = goal_poses.poses.size();
 
   bt_action_server_->publishFeedback(feedback_msg);
 }
@@ -228,9 +228,9 @@ NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr
     return false;
   }
 
-  nav_msgs::msg::Goals goals_array = goal->poses;
+  geometry_msgs::msg::PoseStampedArray pose_stamped_array = goal->poses;
   int i = 0;
-  for (auto & goal_pose : goals_array.goals) {
+  for (auto & goal_pose : pose_stamped_array.poses) {
     if (!nav2_util::transformPoseInTargetFrame(
         goal_pose, goal_pose, *feedback_utils_.tf, feedback_utils_.global_frame,
         feedback_utils_.transform_tolerance))
@@ -246,11 +246,11 @@ NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr
     i++;
   }
 
-  if (goals_array.goals.size() > 0) {
+  if (pose_stamped_array.poses.size() > 0) {
     RCLCPP_INFO(
       logger_, "Begin navigating from current location through %zu poses to (%.2f, %.2f)",
-      goals_array.goals.size(), goals_array.goals.back().pose.position.x,
-        goals_array.goals.back().pose.position.y);
+      pose_stamped_array.poses.size(), pose_stamped_array.poses.back().pose.position.x,
+        pose_stamped_array.poses.back().pose.position.y);
   }
 
   // Reset state for new action feedback
@@ -259,8 +259,8 @@ NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr
   blackboard->set("number_recoveries", 0);  // NOLINT
 
   // Update the goal pose on the blackboard
-  blackboard->set<nav_msgs::msg::Goals>(goals_blackboard_id_,
-      std::move(goals_array));
+  blackboard->set<geometry_msgs::msg::PoseStampedArray>(goals_blackboard_id_,
+      std::move(pose_stamped_array));
 
   return true;
 }

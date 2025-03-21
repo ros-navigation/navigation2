@@ -39,6 +39,7 @@
 #define NAV2_COSTMAP_2D__VOXEL_LAYER_HPP_
 
 #include <vector>
+#include "message_filters/subscriber.hpp"
 
 #include <rclcpp/rclcpp.hpp>
 #include <nav2_costmap_2d/layer.hpp>
