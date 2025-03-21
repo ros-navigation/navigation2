@@ -89,6 +89,30 @@ public:
     const geometry_msgs::msg::PoseStamped & goal,
     std::function<bool()> cancel_checker)  override;
 
+  /**
+   * @brief Get coarse search resolution
+   * @return int the coarse search resolution
+   */
+  int getCoarseSearchResolution();
+
+  /**
+   * @brief Get goal heading mode
+   * @return GoalHeadingMode goal heading mode
+   */
+  GoalHeadingMode getGoalHeadingMode();
+
+  /**
+   * @brief Get the max_iterations
+   * @return int max_iterations
+   */
+  int getMaxIterations();
+
+  /**
+   * @brief Get the mac on approach iterations
+   * @return int max_on_approach_iterations
+   */
+  int getMaxOnApproachIterations();
+
 protected:
   /**
    * @brief Callback executed when a parameter change is detected
@@ -123,6 +147,8 @@ protected:
   bool _debug_visualizations;
   std::string _motion_model_for_search;
   MotionModel _motion_model;
+  GoalHeadingMode _goal_heading_mode;
+  int _coarse_search_resolution;
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr _raw_plan_publisher;
   rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr
     _planned_footprints_publisher;
