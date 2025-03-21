@@ -15,7 +15,7 @@
 
 #ifndef NAV2_BEHAVIOR_TREE__BEHAVIOR_TREE_ENGINE_HPP_
 #define NAV2_BEHAVIOR_TREE__BEHAVIOR_TREE_ENGINE_HPP_
-//TOLONGLINE AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -33,7 +33,7 @@ namespace nav2_behavior_tree
  * @enum nav2_behavior_tree::BtStatus
  * @brief An enum class representing BT execution status
  */
-enum class BtStatus { SUCCEEDED, FAILED, CANCELED};
+enum class BtStatus { SUCCEEDED, FAILED, CANCELED };
 
 /**
  * @class nav2_behavior_tree::BehaviorTreeEngine
