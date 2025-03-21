@@ -619,7 +619,7 @@ class BasicNavigator(Node):
         goal_msg.start = start
         goal_msg.goals.header.frame_id = 'map'
         goal_msg.goals.header.stamp = self.get_clock().now().to_msg()
-        goal_msg.goals.poses = goals
+        goal_msg.goals.goals = goals
         goal_msg.planner_id = planner_id
         goal_msg.use_start = use_start
 

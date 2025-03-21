@@ -72,7 +72,7 @@ void GoalUpdater::createROSInterfaces()
     goals_updater_topic_ = goals_updater_topic_new;
     rclcpp::SubscriptionOptions sub_option;
     sub_option.callback_group = callback_group_;
-    goals_sub_ = node_->create_subscription<geometry_msgs::msg::PoseStampedArray>(
+    goals_sub_ = node_->create_subscription<nav_msgs::msg::Goals>(
       goals_updater_topic_,
       rclcpp::SystemDefaultsQoS(),
       std::bind(&GoalUpdater::callback_updated_goals, this, _1),
@@ -87,7 +87,7 @@ inline BT::NodeStatus GoalUpdater::tick()
   }
 
   geometry_msgs::msg::PoseStamped goal;
-  geometry_msgs::msg::PoseStampedArray goals;
+  nav_msgs::msg::Goals goals;
 
   getInput("input_goal", goal);
   getInput("input_goals", goals);
@@ -120,7 +120,7 @@ inline BT::NodeStatus GoalUpdater::tick()
   }
 
   if (last_goals_received_set_) {
-    if (last_goals_received_.poses.empty()) {
+    if (last_goals_received_.goals.empty()) {
       setOutput("output_goals", goals);
     } else if (last_goals_received_.header.stamp == rclcpp::Time(0)) {
       RCLCPP_WARN(
@@ -154,7 +154,7 @@ GoalUpdater::callback_updated_goal(const geometry_msgs::msg::PoseStamped::Shared
 }
 
 void
-GoalUpdater::callback_updated_goals(const geometry_msgs::msg::PoseStampedArray::SharedPtr msg)
+GoalUpdater::callback_updated_goals(const nav_msgs::msg::Goals::SharedPtr msg)
 {
   last_goals_received_ = *msg;
   last_goals_received_set_ = true;
