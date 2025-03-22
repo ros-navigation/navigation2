@@ -110,6 +110,8 @@ controller_server:
       transform_tolerance: 0.1
       min_lookahead: 0.25
       max_lookahead: 1.0
+      lookahead_resolution: 0.1
+      interpolate_after_goal: true
       initial_rotation: true
       initial_rotation_threshold: 0.75
       prefer_final_rotation: true
