@@ -46,10 +46,16 @@ public:
 
 TEST(ServiceClient, can_ServiceClient_use_passed_in_node)
 {
-  auto node = rclcpp::Node::make_shared("test_node");
-  TestServiceClient t("bar", node);
-  ASSERT_EQ(t.getNode(), node);
-  ASSERT_EQ(t.name(), "test_node");
+  std::vector<std::string> introspection_modes = {
+    "disabled", "metadata", "contents"
+  };
+  for(const auto & mode : introspection_modes) {
+    auto node = rclcpp::Node::make_shared("test_node" + mode);
+    node->declare_parameter("service_introspection_mode", mode);
+    TestServiceClient t("bar", node);
+    ASSERT_EQ(t.getNode(), node);
+    ASSERT_EQ(t.name(), "test_node" + mode);
+  }
 }
 
 TEST(ServiceClient, can_ServiceClient_invoke_in_callback)

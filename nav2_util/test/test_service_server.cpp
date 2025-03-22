@@ -42,29 +42,37 @@ public:
   {}
 };
 
-TEST(ServiceServer, can_ServiceServer_handle_request)
+TEST(ServiceServer, can_handle_all_introspection_modes)
 {
-  int a = 0;
-  auto node = rclcpp::Node::make_shared("test_node");
+  std::vector<std::string> introspection_modes = {
+    "disabled", "metadata", "contents"
+  };
 
-  auto callback = [&a](const std::shared_ptr<rmw_request_id_t>,
-    const std::shared_ptr<std_srvs::srv::Empty::Request>,
-    std::shared_ptr<std_srvs::srv::Empty::Response>) {
-      a = 1;
-    };
+  for (const auto & mode : introspection_modes) {
+    int a = 0;
+    auto node = rclcpp::Node::make_shared("test_node_" + mode);
 
-  TestServiceServer server("empty_srv", node, callback);
+    node->declare_parameter("service_introspection_mode", mode);
 
-  auto client_node = rclcpp::Node::make_shared("client_node");
-  auto client = client_node->create_client<std_srvs::srv::Empty>("empty_srv");
+    auto callback = [&a](const std::shared_ptr<rmw_request_id_t>,
+      const std::shared_ptr<std_srvs::srv::Empty::Request>,
+      std::shared_ptr<std_srvs::srv::Empty::Response>) {
+        a = 1;
+      };
 
-  auto req = std::make_shared<std_srvs::srv::Empty::Request>();
-  auto result = client->async_send_request(req);
+    TestServiceServer server("empty_srv_" + mode, node, callback);
 
-  rclcpp::spin_some(node);
-  rclcpp::spin_some(client_node);
+    auto client_node = rclcpp::Node::make_shared("client_node_" + mode);
+    auto client = client_node->create_client<std_srvs::srv::Empty>("empty_srv_" + mode);
 
-  ASSERT_EQ(a, 1);
+    ASSERT_TRUE(client->wait_for_service(std::chrono::seconds(1)));
+
+    auto req = std::make_shared<std_srvs::srv::Empty::Request>();
+    auto result = client->async_send_request(req);
+    rclcpp::spin_some(node);
+    rclcpp::spin_some(client_node);
+    ASSERT_EQ(a, 1);
+  }
 }
 
 int main(int argc, char **argv)

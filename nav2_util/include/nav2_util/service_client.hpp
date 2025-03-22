@@ -160,6 +160,12 @@ public:
     return future_result.share();
   }
 
+
+  /**
+  * @brief Asynchronously call the service with a callback
+  * @param request The request object to call the service using
+  * @param callback The callback to call when the service response is received
+  */
   template<typename CallbackT>
   void async_call(
     typename RequestType::SharedPtr & request,
