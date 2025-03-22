@@ -16,6 +16,7 @@
 #include <string>
 
 #include "nav2_util/odometry_utils.hpp"
+#include "rclcpp/subscription_options.hpp"
 
 using namespace std::chrono;  // NOLINT
 using namespace std::chrono_literals;  // NOLINT
@@ -30,10 +31,14 @@ OdomSmoother::OdomSmoother(
 : received_odom_(false), odom_history_duration_(rclcpp::Duration::from_seconds(filter_duration))
 {
   auto node = parent.lock();
+
+  rclcpp::SubscriptionOptions sub_options;
+  sub_options.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
   odom_sub_ = node->create_subscription<nav_msgs::msg::Odometry>(
     odom_topic,
     rclcpp::SystemDefaultsQoS(),
-    std::bind(&OdomSmoother::odomCallback, this, std::placeholders::_1));
+    std::bind(&OdomSmoother::odomCallback, this, std::placeholders::_1),
+    sub_options);
 
   odom_cumulate_.twist.twist.linear.x = 0;
   odom_cumulate_.twist.twist.linear.y = 0;
@@ -50,10 +55,14 @@ OdomSmoother::OdomSmoother(
 : odom_history_duration_(rclcpp::Duration::from_seconds(filter_duration))
 {
   auto node = parent.lock();
+
+  rclcpp::SubscriptionOptions sub_options;
+  sub_options.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
   odom_sub_ = node->create_subscription<nav_msgs::msg::Odometry>(
     odom_topic,
     rclcpp::SystemDefaultsQoS(),
-    std::bind(&OdomSmoother::odomCallback, this, std::placeholders::_1));
+    std::bind(&OdomSmoother::odomCallback, this, std::placeholders::_1),
+    sub_options);
 
   odom_cumulate_.twist.twist.linear.x = 0;
   odom_cumulate_.twist.twist.linear.y = 0;
