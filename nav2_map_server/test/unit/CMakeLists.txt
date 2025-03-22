@@ -18,3 +18,25 @@ target_link_libraries(test_costmap_filter_info_server
   ${library_name}
   ${map_io_library_name}
 )
+
+# test_vector_object_shapes unit test
+ament_add_gtest(test_vector_object_shapes
+  test_vector_object_shapes.cpp
+)
+
+ament_target_dependencies(test_vector_object_shapes ${vo_server_dependencies})
+
+target_link_libraries(test_vector_object_shapes
+  ${vo_library_name}
+)
+
+# test_vector_object_server unit test
+ament_add_gtest(test_vector_object_server
+  test_vector_object_server.cpp
+)
+
+ament_target_dependencies(test_vector_object_server ${vo_server_dependencies})
+
+target_link_libraries(test_vector_object_server
+  ${vo_library_name}
+)
