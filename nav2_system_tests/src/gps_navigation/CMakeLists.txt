@@ -6,4 +6,3 @@ ament_add_test(test_gps_waypoint_follower
   ENV
     TEST_DIR=${CMAKE_CURRENT_SOURCE_DIR}
 )
-

@@ -18,18 +18,12 @@ import os
 import sys
 
 from ament_index_python.packages import get_package_share_directory
-
 from launch import LaunchDescription, LaunchService
-from launch.actions import (
-    ExecuteProcess,
-    GroupAction,
-    IncludeLaunchDescription,
-    SetEnvironmentVariable,
-)
+from launch.actions import (ExecuteProcess, GroupAction, IncludeLaunchDescription,
+                            SetEnvironmentVariable)
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import TextSubstitution
 from launch_ros.actions import Node, PushROSNamespace
-
 from launch_testing.legacy import LaunchTestService
 
 

@@ -17,10 +17,8 @@
 import os
 import sys
 
-from launch import LaunchDescription
-from launch import LaunchService
+from launch import LaunchDescription, LaunchService
 from launch.actions import ExecuteProcess
-
 from launch_testing.legacy import LaunchTestService
 
 

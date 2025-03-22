@@ -629,7 +629,7 @@ TEST(OptimizerTests, integrateStateVelocitiesTests)
     EXPECT_NEAR(traj.y(1, i), i * 0.2 /*vel*/ * 0.1 /*dt*/, 1e-3);
   }
 
-  // Lets add some angular motion to the mix
+  // Let's add some angular motion to the mix
   state.vy = Eigen::ArrayXXf::Zero(1000, 50);
   state.wz = 0.2 * Eigen::ArrayXXf::Ones(1000, 50);
   state.wz.col(0) = Eigen::ArrayXf::Zero(1000);

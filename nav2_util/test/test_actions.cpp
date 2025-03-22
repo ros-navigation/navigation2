@@ -114,7 +114,7 @@ preempted:
         return;
       }
 
-      // Check if we've gotten an new goal, pre-empting the current one
+      // Check if we've gotten an new goal, preempting the current one
       if (do_premptions_ && action_server_->is_preempt_requested()) {
         action_server_->accept_pending_goal();
         goto preempted;

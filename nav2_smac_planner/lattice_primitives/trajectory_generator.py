@@ -16,7 +16,6 @@ import logging
 from typing import Tuple, Union
 
 import numpy as np
-
 from trajectory import Path, Trajectory, TrajectoryParameters
 
 logger = logging.getLogger(__name__)

@@ -58,9 +58,8 @@ class RewrittenYaml(launch.Substitution):
         :param: convert_types whether to attempt converting the string to a number or boolean
         """
 
-        from launch.utilities import (
-            normalize_to_list_of_substitutions,
-        )  # import here to avoid loop
+        # import here to avoid loop
+        from launch.utilities import normalize_to_list_of_substitutions
 
         self.__source_file = normalize_to_list_of_substitutions(source_file)
         self.__param_rewrites = {}

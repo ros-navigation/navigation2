@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List
-from typing import Text
+from typing import List, Text
 
 import launch
 import yaml
@@ -37,9 +36,8 @@ class HasNodeParams(launch.Substitution):
     :param: node_name the name of the node to check
     """
 
-        from launch.utilities import (
-            normalize_to_list_of_substitutions,
-        )  # import here to avoid loop
+        # import here to avoid loop
+        from launch.utilities import normalize_to_list_of_substitutions
 
         self.__source_file = normalize_to_list_of_substitutions(source_file)
         self.__node_name = node_name

@@ -20,19 +20,13 @@ from pathlib import Path
 import sys
 
 from ament_index_python.packages import get_package_share_directory
-from launch import LaunchDescription
-from launch import LaunchService
-from launch.actions import (
-    AppendEnvironmentVariable,
-    ExecuteProcess,
-    IncludeLaunchDescription,
-    SetEnvironmentVariable,
-)
+from launch import LaunchDescription, LaunchService
+from launch.actions import (AppendEnvironmentVariable, ExecuteProcess, IncludeLaunchDescription,
+                            SetEnvironmentVariable)
 from launch.launch_context import LaunchContext
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 from launch_testing.legacy import LaunchTestService
-
 from nav2_common.launch import RewrittenYaml
 
 

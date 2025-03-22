@@ -37,7 +37,7 @@ The directory to save the visualizations can be specified by passing in a path w
 Note: None of these parameters have defaults. They all must be specified through the [config.json](config.json) file.
 
 **motion_model** (string)
-    
+
 The type of motion model used. Accepted values:
 - `ackermann`: Only forward and reversing trajectories
 - `diff`: Forward moving trajectories + rotation in place by a single angular bin
@@ -119,11 +119,11 @@ A list of dictionaries where each dictionary represents an individual motion pri
 This section describes how the various portions of the generation algorithm works.
 
 ### Angle Discretization
-Dividing a full turn into uniform angular headings presents several problems. The biggest problem is that it will create angles for which a straight trajectory does not land nicely on an endpoint that aligns with the grid. Instead we discretize the angles in a way that ensures straight paths will land on endpoints aligned with the grid. 
+Dividing a full turn into uniform angular headings presents several problems. The biggest problem is that it will create angles for which a straight trajectory does not land nicely on an endpoint that aligns with the grid. Instead we discretize the angles in a way that ensures straight paths will land on endpoints aligned with the grid.
 
 ![ ](docs/angle_discretization.png)
 
-The image shows how the angular headings are generated. The same idea can be extended to a higher number of headings. As a result, the number of headings parameter is restricted to multiples of 8.  
+The image shows how the angular headings are generated. The same idea can be extended to a higher number of headings. As a result, the number of headings parameter is restricted to multiples of 8.
 
 ### Trajectory Generator
 1. Create two lines. Line 1 passes through start point with angle of start angle, and line 2 passes through the end point with angle of end angle
