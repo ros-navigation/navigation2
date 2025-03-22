@@ -16,7 +16,7 @@
 #define NAV2_UTIL__SERVICE_CLIENT_HPP_
 
 #include <string>
-
+#include <utility>
 #include "rclcpp/rclcpp.hpp"
 
 namespace nav2_util
@@ -37,17 +37,39 @@ public:
   */
   explicit ServiceClient(
     const std::string & service_name,
-    const NodeT & provided_node)
+    const NodeT & provided_node, rclcpp::CallbackGroup::SharedPtr callback_group = nullptr)
   : service_name_(service_name), node_(provided_node)
   {
-    callback_group_ = node_->create_callback_group(
-      rclcpp::CallbackGroupType::MutuallyExclusive,
-      false);
-    callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
+    if(!callback_group) {
+      callback_group_ = node_->create_callback_group(
+        rclcpp::CallbackGroupType::MutuallyExclusive,
+        false);
+      callback_group_executor_.add_callback_group(callback_group_,
+          node_->get_node_base_interface());
+    } else {
+      callback_group_ = callback_group;
+    }
+
     client_ = node_->template create_client<ServiceT>(
       service_name,
       rclcpp::SystemDefaultsQoS(),
       callback_group_);
+    rcl_service_introspection_state_t introspection_state = RCL_SERVICE_INTROSPECTION_OFF;
+    if(!node_->has_parameter("service_introspection_mode")) {
+      node_->declare_parameter("service_introspection_mode", "disabled");
+    }
+    std::string service_introspection_mode_ =
+      node_->get_parameter("service_introspection_mode").as_string();
+    if (service_introspection_mode_ == "disabled") {
+      introspection_state = RCL_SERVICE_INTROSPECTION_OFF;
+    } else if (service_introspection_mode_ == "metadata") {
+      introspection_state = RCL_SERVICE_INTROSPECTION_METADATA;
+    } else if (service_introspection_mode_ == "contents") {
+      introspection_state = RCL_SERVICE_INTROSPECTION_CONTENTS;
+    }
+
+    this->client_->configure_introspection(
+        node_->get_clock(), rclcpp::SystemDefaultsQoS(), introspection_state);
   }
 
   using RequestType = typename ServiceT::Request;
@@ -124,6 +146,26 @@ public:
 
     response = future_result.get();
     return response.get();
+  }
+
+  /**
+  * @brief Asynchronously call the service
+  * @param request The request object to call the service using
+  * @return std::shared_future<typename ResponseType::SharedPtr> The shared future of the service response
+  */
+  std::shared_future<typename ResponseType::SharedPtr> async_call(
+    typename RequestType::SharedPtr & request)
+  {
+    auto future_result = client_->async_send_request(request);
+    return future_result.share();
+  }
+
+  template<typename CallbackT>
+  void async_call(
+    typename RequestType::SharedPtr & request,
+    CallbackT && callback)
+  {
+    client_->async_send_request(request, std::forward<CallbackT>(callback));
   }
 
   /**

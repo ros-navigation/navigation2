@@ -30,7 +30,8 @@ using namespace std::chrono_literals;
 namespace nav2_util
 {
 
-LifecycleServiceClient::LifecycleServiceClient(const string & lifecycle_node_name)
+LifecycleServiceClient::LifecycleServiceClient(
+  const string & lifecycle_node_name)
 : node_(generate_internal_node(lifecycle_node_name + "_lifecycle_client")),
   change_state_(lifecycle_node_name + "/change_state", node_),
   get_state_(lifecycle_node_name + "/get_state", node_)

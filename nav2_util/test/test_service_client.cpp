@@ -37,7 +37,8 @@ public:
   TestServiceClient(
     const std::string & name,
     const rclcpp::Node::SharedPtr & provided_node = rclcpp::Node::SharedPtr())
-  : ServiceClient(name, provided_node) {}
+  : ServiceClient(name, provided_node)
+  {}
 
   string name() {return node_->get_name();}
   const rclcpp::Node::SharedPtr & getNode() {return node_;}

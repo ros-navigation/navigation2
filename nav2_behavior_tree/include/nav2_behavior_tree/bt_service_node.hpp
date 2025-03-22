@@ -23,6 +23,7 @@
 #include "nav2_util/node_utils.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_behavior_tree/bt_utils.hpp"
+#include "nav2_util/service_client.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -115,10 +116,8 @@ public:
       callback_group_executor_.add_callback_group(callback_group_,
           node_->get_node_base_interface());
 
-      service_client_ = node_->create_client<ServiceT>(
-        service_name_,
-        rclcpp::SystemDefaultsQoS(),
-        callback_group_);
+      service_client_ = std::make_shared<nav2_util::ServiceClient<ServiceT>>(
+      service_name_, node_, callback_group_);
     }
   }
 
@@ -173,7 +172,7 @@ public:
         return BT::NodeStatus::FAILURE;
       }
 
-      future_result_ = service_client_->async_send_request(request_).share();
+      future_result_ = service_client_->async_call(request_);
       sent_time_ = node_->now();
       request_sent_ = true;
     }
@@ -265,7 +264,7 @@ protected:
   }
 
   std::string service_name_, service_node_name_;
-  typename std::shared_ptr<rclcpp::Client<ServiceT>> service_client_;
+  std::shared_ptr<nav2_util::ServiceClient<ServiceT>> service_client_;
   std::shared_ptr<typename ServiceT::Request> request_;
 
   // The node that will be used for any ROS operations
