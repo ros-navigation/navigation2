@@ -133,8 +133,8 @@ protected:
   DockPluginMap dock_plugins_;
   DockMap dock_instances_;
   pluginlib::ClassLoader<opennav_docking_core::ChargingDock> dock_loader_;
-  std::shared_ptr<nav2_util::ServiceServer<nav2_msgs::srv::ReloadDockDatabase,
-    std::shared_ptr<rclcpp_lifecycle::LifecycleNode>>> reload_db_service_;
+  nav2_util::ServiceServer<nav2_msgs::srv::ReloadDockDatabase,
+    std::shared_ptr<rclcpp_lifecycle::LifecycleNode>>::SharedPtr reload_db_service_;
 };
 
 }  // namespace opennav_docking

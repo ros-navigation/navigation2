@@ -82,7 +82,7 @@ TEST(TrajectoryVisualizerTests, VisOptimalTrajectory)
   EXPECT_EQ(received_msg.markers.size(), 0u);
 
   // Now populated with content, should publish
-  optimal_trajectory = Eigen::ArrayXXf::Ones(20, 2);
+  optimal_trajectory = Eigen::ArrayXXf::Ones(20, 3);
   vis.add(optimal_trajectory, "Optimal Trajectory", bogus_stamp);
   vis.visualize(bogus_path);
 

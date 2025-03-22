@@ -415,8 +415,8 @@ protected:
   std::vector<geometry_msgs::msg::Point> padded_footprint_;
 
   // Services
-  std::shared_ptr<nav2_util::ServiceServer<nav2_msgs::srv::GetCosts,
-    std::shared_ptr<nav2_util::LifecycleNode>>> get_cost_service_;
+  nav2_util::ServiceServer<nav2_msgs::srv::GetCosts,
+    std::shared_ptr<nav2_util::LifecycleNode>>::SharedPtr get_cost_service_;
   std::unique_ptr<ClearCostmapService> clear_costmap_service_;
 
   // Dynamic parameters handler

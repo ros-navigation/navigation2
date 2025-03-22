@@ -35,6 +35,7 @@ public:
   using ResponseType = typename ServiceT::Response;
   using CallbackType = std::function<void(const std::shared_ptr<rmw_request_id_t>,
       const std::shared_ptr<RequestType>, std::shared_ptr<ResponseType>)>;
+  using SharedPtr = std::shared_ptr<ServiceServer<ServiceT, NodeT>>;
 
   explicit ServiceServer(
     const std::string & service_name,

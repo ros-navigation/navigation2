@@ -262,8 +262,8 @@ protected:
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr plan_publisher_;
 
   // Service to determine if the path is valid
-  std::shared_ptr<nav2_util::ServiceServer<nav2_msgs::srv::IsPathValid,
-    std::shared_ptr<nav2_util::LifecycleNode>>> is_path_valid_service_;
+  nav2_util::ServiceServer<nav2_msgs::srv::IsPathValid,
+    std::shared_ptr<nav2_util::LifecycleNode>>::SharedPtr is_path_valid_service_;
 };
 
 }  // namespace nav2_planner

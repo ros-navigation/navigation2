@@ -75,8 +75,8 @@ protected:
   std::unique_ptr<nav2_util::NodeThread> service_thread_;
 
   // The services provided by this node
-  std::shared_ptr<nav2_util::ServiceServer<ManageLifecycleNodes>> manager_srv_;
-  std::shared_ptr<nav2_util::ServiceServer<std_srvs::srv::Trigger>> is_active_srv_;
+  nav2_util::ServiceServer<ManageLifecycleNodes>::SharedPtr manager_srv_;
+  nav2_util::ServiceServer<std_srvs::srv::Trigger>::SharedPtr is_active_srv_;
   /**
    * @brief Lifecycle node manager callback function
    * @param request_header Header of the service request

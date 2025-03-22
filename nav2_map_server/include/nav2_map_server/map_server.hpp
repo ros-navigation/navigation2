@@ -127,12 +127,12 @@ protected:
   const std::string load_map_service_name_{"load_map"};
 
   // A service to provide the occupancy grid (GetMap) and the message to return
-  std::shared_ptr<nav2_util::ServiceServer<nav_msgs::srv::GetMap,
-    std::shared_ptr<nav2_util::LifecycleNode>>> occ_service_;
+  nav2_util::ServiceServer<nav_msgs::srv::GetMap,
+    std::shared_ptr<nav2_util::LifecycleNode>>::SharedPtr occ_service_;
 
   // A service to load the occupancy grid from file at run time (LoadMap)
-  std::shared_ptr<nav2_util::ServiceServer<nav2_msgs::srv::LoadMap,
-    std::shared_ptr<nav2_util::LifecycleNode>>> load_map_service_;
+  nav2_util::ServiceServer<nav2_msgs::srv::LoadMap,
+    std::shared_ptr<nav2_util::LifecycleNode>>::SharedPtr load_map_service_;
 
   // A topic on which the occupancy grid will be published
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::OccupancyGrid>::SharedPtr occ_pub_;

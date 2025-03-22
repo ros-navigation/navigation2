@@ -16,7 +16,7 @@
 #define NAV2_UTIL__SERVICE_CLIENT_HPP_
 
 #include <string>
-
+#include <utility>
 #include "rclcpp/rclcpp.hpp"
 
 namespace nav2_util
@@ -37,13 +37,19 @@ public:
   */
   explicit ServiceClient(
     const std::string & service_name,
-    const NodeT & provided_node)
+    const NodeT & provided_node, rclcpp::CallbackGroup::SharedPtr callback_group = nullptr)
   : service_name_(service_name), node_(provided_node)
   {
-    callback_group_ = node_->create_callback_group(
-      rclcpp::CallbackGroupType::MutuallyExclusive,
-      false);
-    callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
+    if(!callback_group) {
+      callback_group_ = node_->create_callback_group(
+        rclcpp::CallbackGroupType::MutuallyExclusive,
+        false);
+      callback_group_executor_.add_callback_group(callback_group_,
+          node_->get_node_base_interface());
+    } else {
+      callback_group_ = callback_group;
+    }
+
     client_ = node_->template create_client<ServiceT>(
       service_name,
       rclcpp::SystemDefaultsQoS(),
@@ -152,6 +158,14 @@ public:
   {
     auto future_result = client_->async_send_request(request);
     return future_result.share();
+  }
+
+  template<typename CallbackT>
+  void async_call(
+    typename RequestType::SharedPtr & request,
+    CallbackT && callback)
+  {
+    client_->async_send_request(request, std::forward<CallbackT>(callback));
   }
 
   /**

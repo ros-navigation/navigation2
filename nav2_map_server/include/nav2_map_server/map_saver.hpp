@@ -112,8 +112,8 @@ protected:
   // The name of the service for saving a map from topic
   const std::string save_map_service_name_{"save_map"};
   // A service to save the map to a file at run time (SaveMap)
-  std::shared_ptr<nav2_util::ServiceServer<nav2_msgs::srv::SaveMap,
-    std::shared_ptr<nav2_util::LifecycleNode>>> save_map_service_;
+  nav2_util::ServiceServer<nav2_msgs::srv::SaveMap,
+    std::shared_ptr<nav2_util::LifecycleNode>>::SharedPtr save_map_service_;
 };
 
 }  // namespace nav2_map_server

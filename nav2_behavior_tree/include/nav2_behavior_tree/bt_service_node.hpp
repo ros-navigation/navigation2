@@ -116,10 +116,8 @@ public:
       callback_group_executor_.add_callback_group(callback_group_,
           node_->get_node_base_interface());
 
-      service_client_ = node_->create_client<ServiceT>(
-        service_name_,
-        rclcpp::SystemDefaultsQoS(),
-        callback_group_);
+      service_client_ = std::make_shared<nav2_util::ServiceClient<ServiceT>>(
+      service_name_, node_, callback_group_);
     }
   }
 
