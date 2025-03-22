@@ -129,6 +129,15 @@ void ClearCostmapService::clearLayerRegion(
 {
   std::unique_lock<Costmap2D::mutex_t> lock(*(costmap->getMutex()));
 
+  // If the reset distance is greater than the costmap size, clear the entire costmap
+  if (reset_distance >= costmap->getSizeInMetersX() &&
+    reset_distance >= costmap->getSizeInMetersY())
+  {
+    RCLCPP_INFO(logger_, "Reset area exceeds local costmap size. Clearing entire costmap.");
+    clearEntirely();
+    return;
+  }
+
   double start_point_x = pose_x - reset_distance / 2;
   double start_point_y = pose_y - reset_distance / 2;
   double end_point_x = start_point_x + reset_distance;
