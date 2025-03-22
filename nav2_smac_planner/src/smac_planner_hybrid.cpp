@@ -166,6 +166,11 @@ void SmacPlannerHybrid::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".motion_model_for_search", rclcpp::ParameterValue(std::string("DUBIN")));
   node->get_parameter(name + ".motion_model_for_search", _motion_model_for_search);
+  // Note that we need to declare it here to prevent the parameter from being declared in the
+  // dynamic reconfigure callback
+  nav2_util::declare_parameter_if_not_declared(
+    node, "service_introspection_mode", rclcpp::ParameterValue("disabled"));
+
   _motion_model = fromString(_motion_model_for_search);
   if (_motion_model == MotionModel::UNKNOWN) {
     RCLCPP_WARN(

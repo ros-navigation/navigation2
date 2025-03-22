@@ -109,15 +109,34 @@ void CostmapCostTool::callCostService(float x, float y)
   request->use_footprint = false;
 
   // Call local costmap service
-  if(local_cost_client_->wait_for_service(std::chrono::seconds(1))) {
-    auto local_cost_response_ = local_cost_client_->async_call(request).get();
-    RCLCPP_INFO(node->get_logger(), "Local costmap cost: %.1f", local_cost_response_->costs[0]);
+  if (local_cost_client_->wait_for_service(std::chrono::seconds(1))) {
+    local_cost_client_->async_call(
+      request,
+      std::bind(&CostmapCostTool::handleLocalCostResponse, this, std::placeholders::_1));
   }
+
   // Call global costmap service
-  if(global_cost_client_->wait_for_service(std::chrono::seconds(1))) {
-    auto global_cost_response_ = global_cost_client_->async_call(request).get();
-    RCLCPP_INFO(node->get_logger(), "Global costmap cost: %.1f", global_cost_response_->costs[0]);
+  if (global_cost_client_->wait_for_service(std::chrono::seconds(1))) {
+    global_cost_client_->async_call(
+      request,
+      std::bind(&CostmapCostTool::handleGlobalCostResponse, this, std::placeholders::_1));
   }
+}
+
+void CostmapCostTool::handleLocalCostResponse(
+  rclcpp::Client<nav2_msgs::srv::GetCosts>::SharedFuture future)
+{
+  rclcpp::Node::SharedPtr node = node_ptr_->get_raw_node();
+  auto response = future.get();
+  RCLCPP_INFO(node->get_logger(), "Local costmap cost: %.1f", response->costs[0]);
+}
+
+void CostmapCostTool::handleGlobalCostResponse(
+  rclcpp::Client<nav2_msgs::srv::GetCosts>::SharedFuture future)
+{
+  rclcpp::Node::SharedPtr node = node_ptr_->get_raw_node();
+  auto response = future.get();
+  RCLCPP_INFO(node->get_logger(), "Global costmap cost: %.1f", response->costs[0]);
 }
 }  // namespace nav2_rviz_plugins
 

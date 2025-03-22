@@ -93,6 +93,10 @@ void SmacPlanner2D::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".max_planning_time", rclcpp::ParameterValue(2.0));
   node->get_parameter(name + ".max_planning_time", _max_planning_time);
+  // Note that we need to declare it here to prevent the parameter from being declared in the
+  // dynamic reconfigure callback
+  nav2_util::declare_parameter_if_not_declared(
+    node, "service_introspection_mode", rclcpp::ParameterValue("disabled"));
 
   _motion_model = MotionModel::TWOD;
 

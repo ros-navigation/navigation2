@@ -207,8 +207,8 @@ protected:
    * @brief Initialize state services
    */
   void initServices();
-  std::shared_ptr<nav2_util::ServiceServer<std_srvs::srv::Empty,
-    std::shared_ptr<nav2_util::LifecycleNode>>> global_loc_srv_;
+  nav2_util::ServiceServer<std_srvs::srv::Empty,
+    std::shared_ptr<nav2_util::LifecycleNode>>::SharedPtr global_loc_srv_;
   /*
    * @brief Service callback for a global relocalization request
    */
@@ -218,8 +218,8 @@ protected:
     std::shared_ptr<std_srvs::srv::Empty::Response> response);
 
   // service server for providing an initial pose guess
-  std::shared_ptr<nav2_util::ServiceServer<nav2_msgs::srv::SetInitialPose,
-    std::shared_ptr<nav2_util::LifecycleNode>>> initial_guess_srv_;
+  nav2_util::ServiceServer<nav2_msgs::srv::SetInitialPose,
+    std::shared_ptr<nav2_util::LifecycleNode>>::SharedPtr initial_guess_srv_;
   /*
    * @brief Service callback for an initial pose guess request
    */
@@ -229,8 +229,8 @@ protected:
     std::shared_ptr<nav2_msgs::srv::SetInitialPose::Response> response);
 
   // Let amcl update samples without requiring motion
-  std::shared_ptr<nav2_util::ServiceServer<std_srvs::srv::Empty,
-    std::shared_ptr<nav2_util::LifecycleNode>>> nomotion_update_srv_;
+  nav2_util::ServiceServer<std_srvs::srv::Empty,
+    std::shared_ptr<nav2_util::LifecycleNode>>::SharedPtr nomotion_update_srv_;
   /*
    * @brief Request an AMCL update even though the robot hasn't moved
    */

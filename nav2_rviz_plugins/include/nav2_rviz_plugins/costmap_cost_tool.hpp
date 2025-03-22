@@ -43,6 +43,9 @@ public:
 
   void callCostService(float x, float y);
 
+  void handleLocalCostResponse(rclcpp::Client<nav2_msgs::srv::GetCosts>::SharedFuture);
+  void handleGlobalCostResponse(rclcpp::Client<nav2_msgs::srv::GetCosts>::SharedFuture);
+
 private Q_SLOTS:
 
 private:
