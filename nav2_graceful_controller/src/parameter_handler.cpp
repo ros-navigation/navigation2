@@ -70,6 +70,8 @@ ParameterHandler::ParameterHandler(
     node, plugin_name_ + ".allow_backward", rclcpp::ParameterValue(false));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".in_place_collision_resolution", rclcpp::ParameterValue(0.1));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".use_collision_detection", rclcpp::ParameterValue(true));
 
   node->get_parameter(plugin_name_ + ".transform_tolerance", params_.transform_tolerance);
   node->get_parameter(plugin_name_ + ".min_lookahead", params_.min_lookahead);
@@ -103,6 +105,8 @@ ParameterHandler::ParameterHandler(
   node->get_parameter(plugin_name_ + ".allow_backward", params_.allow_backward);
   node->get_parameter(
     plugin_name_ + ".in_place_collision_resolution", params_.in_place_collision_resolution);
+  node->get_parameter(
+    plugin_name_ + ".use_collision_detection", params_.use_collision_detection);
 
   if (params_.initial_rotation && params_.allow_backward) {
     RCLCPP_WARN(

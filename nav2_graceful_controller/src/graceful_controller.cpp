@@ -56,8 +56,11 @@ void GracefulController::configure(
     params_->v_linear_min, params_->v_linear_max, params_->v_angular_max);
 
   // Initialize footprint collision checker
-  collision_checker_ = std::make_unique<nav2_costmap_2d::
-      FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>(costmap_ros_->getCostmap());
+  if(params_->use_collision_detection)
+  {
+    collision_checker_ = std::make_unique<nav2_costmap_2d::
+    FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>(costmap_ros_->getCostmap());
+  }
 
   // Publishers
   transformed_plan_pub_ = node->create_publisher<nav_msgs::msg::Path>("transformed_global_plan", 1);
@@ -169,6 +172,7 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
     // Need to check at least the end pose
     num_steps = std::max(static_cast<size_t>(1), num_steps);
     bool collision_free = true;
+    bool use_collision_detection = params_->use_collision_detection;
     for (size_t i = 1; i <= num_steps; ++i) {
       double step = static_cast<double>(i) / static_cast<double>(num_steps);
       double yaw = step * angle_to_goal;
@@ -177,7 +181,7 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
       next_pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(yaw);
       geometry_msgs::msg::PoseStamped costmap_pose;
       tf2::doTransform(next_pose, costmap_pose, costmap_transform);
-      if (inCollision(
+      if (use_collision_detection && inCollision(
           costmap_pose.pose.position.x, costmap_pose.pose.position.y,
           tf2::getYaw(costmap_pose.pose.orientation)))
       {
@@ -348,7 +352,7 @@ bool GracefulController::simulateTrajectory(
     // Check for collision
     geometry_msgs::msg::PoseStamped global_pose;
     tf2::doTransform(next_pose, global_pose, costmap_transform);
-    if (inCollision(
+    if (params_->use_collision_detection && inCollision(
         global_pose.pose.position.x, global_pose.pose.position.y,
         tf2::getYaw(global_pose.pose.orientation)))
     {
