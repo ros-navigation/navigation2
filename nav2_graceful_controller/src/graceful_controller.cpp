@@ -348,7 +348,7 @@ geometry_msgs::msg::PoseStamped GracefulController::getLookAheadPoint(
       double interpolated_yaw = atan2(
         interpolated_position.y - last_pose_it->pose.position.y,
         interpolated_position.x - last_pose_it->pose.position.x);
-      
+
       geometry_msgs::msg::Quaternion interpolated_orientation;
       interpolated_orientation.x = 0.0;
       interpolated_orientation.y = 0.0;
