@@ -32,5 +32,3 @@ jobs:
         linter: mypy
         distribution: rolling
         package-name: "nav2_smac_planner"
-
-        
