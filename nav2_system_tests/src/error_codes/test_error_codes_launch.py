@@ -16,10 +16,8 @@
 import os
 import sys
 
-from launch import LaunchDescription
-from launch import LaunchService
-from launch.actions import ExecuteProcess
-from launch.actions import GroupAction
+from launch import LaunchDescription, LaunchService
+from launch.actions import ExecuteProcess, GroupAction
 from launch_ros.actions import Node
 from launch_testing.legacy import LaunchTestService
 

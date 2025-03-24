@@ -21,10 +21,8 @@ import time
 
 import constants
 from lattice_generator import LatticeGenerator
-
 import matplotlib.pyplot as plt
 import numpy as np
-
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
