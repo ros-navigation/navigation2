@@ -16,7 +16,6 @@
 #include <chrono>
 #include <memory>
 #include <string>
-#include "nav2_util/node_utils.hpp"
 
 namespace nav2_behavior_tree
 {

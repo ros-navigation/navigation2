@@ -26,7 +26,6 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 
-
 namespace nav2_map_server
 {
 
