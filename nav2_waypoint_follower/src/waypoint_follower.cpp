@@ -92,11 +92,12 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & state)
       this), nullptr, std::chrono::milliseconds(
       500), false, server_options);
 
-  from_ll_to_map_client_ = std::make_unique<
-    nav2_util::ServiceClient<robot_localization::srv::FromLL,
-    std::shared_ptr<nav2_util::LifecycleNode>>>(
-    "/fromLL",
-    node);
+  // from_ll_to_map_client_ = std::make_unique<
+  //   nav2_util::ServiceClient<robot_localization::srv::FromLL,
+  //   std::shared_ptr<nav2_util::LifecycleNode>>>(
+  //   "/fromLL",
+  //   node);
+  
 
   gps_action_server_ = std::make_unique<ActionServerGPS>(
     get_node_base_interface(),
@@ -171,7 +172,7 @@ WaypointFollower::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   xyz_action_server_.reset();
   nav_to_pose_client_.reset();
   gps_action_server_.reset();
-  from_ll_to_map_client_.reset();
+  // from_ll_to_map_client_.reset();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -506,32 +507,32 @@ WaypointFollower::convertGPSPosesToMapPoses(
     request->ll_point.longitude = curr_geopose.position.longitude;
     request->ll_point.altitude = curr_geopose.position.altitude;
 
-    from_ll_to_map_client_->wait_for_service((std::chrono::seconds(1)));
-    if (!from_ll_to_map_client_->invoke(request, response)) {
-      RCLCPP_ERROR(
-        this->get_logger(),
-        "fromLL service of robot_localization could not convert %i th GPS waypoint to"
-        "%s frame, going to skip this point!"
-        "Make sure you have run navsat_transform_node of robot_localization",
-        waypoint_index, global_frame_id_.c_str());
-      if (stop_on_failure_) {
-        RCLCPP_ERROR(
-          this->get_logger(),
-          "Conversion of %i th GPS waypoint to"
-          "%s frame failed and stop_on_failure is set to true"
-          "Not going to execute any of waypoints, exiting with failure!",
-          waypoint_index, global_frame_id_.c_str());
-        return std::vector<geometry_msgs::msg::PoseStamped>();
-      }
-      continue;
-    } else {
-      geometry_msgs::msg::PoseStamped curr_pose_map_frame;
-      curr_pose_map_frame.header.frame_id = global_frame_id_;
-      curr_pose_map_frame.header.stamp = this->now();
-      curr_pose_map_frame.pose.position = response->map_point;
-      curr_pose_map_frame.pose.orientation = curr_geopose.orientation;
-      poses_in_map_frame_vector.push_back(curr_pose_map_frame);
-    }
+    // from_ll_to_map_client_->wait_for_service((std::chrono::seconds(1)));
+    // if (!from_ll_to_map_client_->invoke(request, response)) {
+    //   RCLCPP_ERROR(
+    //     this->get_logger(),
+    //     "fromLL service of robot_localization could not convert %i th GPS waypoint to"
+    //     "%s frame, going to skip this point!"
+    //     "Make sure you have run navsat_transform_node of robot_localization",
+    //     waypoint_index, global_frame_id_.c_str());
+    //   if (stop_on_failure_) {
+    //     RCLCPP_ERROR(
+    //       this->get_logger(),
+    //       "Conversion of %i th GPS waypoint to"
+    //       "%s frame failed and stop_on_failure is set to true"
+    //       "Not going to execute any of waypoints, exiting with failure!",
+    //       waypoint_index, global_frame_id_.c_str());
+    //     return std::vector<geometry_msgs::msg::PoseStamped>();
+    //   }
+    //   continue;
+    // } else {
+    //   geometry_msgs::msg::PoseStamped curr_pose_map_frame;
+    //   curr_pose_map_frame.header.frame_id = global_frame_id_;
+    //   curr_pose_map_frame.header.stamp = this->now();
+    //   curr_pose_map_frame.pose.position = response->map_point;
+    //   curr_pose_map_frame.pose.orientation = curr_geopose.orientation;
+    //   poses_in_map_frame_vector.push_back(curr_pose_map_frame);
+    // }
     waypoint_index++;
   }
   RCLCPP_INFO(

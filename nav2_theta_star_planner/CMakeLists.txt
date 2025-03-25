@@ -26,20 +26,32 @@ target_include_directories(${library_name}
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
-target_link_libraries(${library_name} PUBLIC
-  ${geometry_msgs_TARGETS}
-  nav2_core::nav2_core
-  nav2_costmap_2d::nav2_costmap_2d_core
-  nav2_util::nav2_util_core
-  ${nav_msgs_TARGETS}
-  rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
-  ${rcl_interfaces_TARGETS}
-  tf2_ros::tf2_ros
+ament_target_dependencies(${library_name}
+  geometry_msgs
+  nav2_core
+  nav2_costmap_2d
+  nav2_util
+  nav_msgs
+  rclcpp
+  rclcpp_lifecycle
+  rcl_interfaces
+  tf2_ros
+  pluginlib
 )
-target_link_libraries(${library_name} PRIVATE
-  pluginlib::pluginlib
-)
+# target_link_libraries(${library_name} PUBLIC
+#   ${geometry_msgs_TARGETS}
+#   nav2_core::nav2_core
+#   nav2_costmap_2d::nav2_costmap_2d_core
+#   nav2_util::nav2_util_core
+#   ${nav_msgs_TARGETS}
+#   rclcpp::rclcpp
+#   rclcpp_lifecycle::rclcpp_lifecycle
+#   ${rcl_interfaces_TARGETS}
+#   tf2_ros::tf2_ros
+# )
+# target_link_libraries(${library_name} PRIVATE
+#   pluginlib::pluginlib
+# )
 target_compile_options(${library_name} PRIVATE -O3)
 
 pluginlib_export_plugin_description_file(nav2_core theta_star_planner.xml)
@@ -69,12 +81,14 @@ if(BUILD_TESTING)
   ament_find_gtest()
 
   ament_add_gtest(test_theta_star test/test_theta_star.cpp)
+  ament_target_dependencies(test_theta_star
+    geometry_msgs
+    nav2_costmap_2d
+    rclcpp
+    rclcpp_lifecycle
+  )
   target_link_libraries(test_theta_star
     ${library_name}
-    ${geometry_msgs_TARGETS}
-    nav2_costmap_2d::nav2_costmap_2d_core
-    rclcpp::rclcpp
-    rclcpp_lifecycle::rclcpp_lifecycle
   )
 endif()
 
@@ -84,7 +98,8 @@ ament_export_libraries(${library_name})
 ament_export_dependencies(
   geometry_msgs
   nav2_core
-  nav2_costmap_2dnav2_util
+  nav2_costmap_2d
+  nav2_util
   nav_msgs
   rclcpp
   rclcpp_lifecycle

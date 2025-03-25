@@ -117,7 +117,7 @@ public:
 
       service_client_ = node_->create_client<ServiceT>(
         service_name_,
-        rclcpp::SystemDefaultsQoS(),
+        rclcpp::SystemDefaultsQoS().get_rmw_qos_profile(),
         callback_group_);
     }
   }

@@ -15,6 +15,11 @@ target_include_directories(opennav_docking_core
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
+# ament_target_dependencies(opennav_docking_core
+#   geometry_msgs
+#   rclcpp_lifecycle
+#   tf2_ros
+# )
 target_link_libraries(opennav_docking_core INTERFACE
   ${geometry_msgs_TARGETS}
   rclcpp_lifecycle::rclcpp_lifecycle

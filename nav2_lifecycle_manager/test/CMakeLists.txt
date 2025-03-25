@@ -1,11 +1,16 @@
 ament_add_gtest_executable(test_lifecycle_gtest
   test_lifecycle_manager.cpp
 )
+ament_target_dependencies(test_lifecycle_gtest
+  nav2_util
+  rclcpp
+  rclcpp_lifecycle
+)
 target_link_libraries(test_lifecycle_gtest
   ${library_name}
-  nav2_util::nav2_util_core
-  rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
+  # nav2_util::nav2_util_core
+  # rclcpp::rclcpp
+  # rclcpp_lifecycle::rclcpp_lifecycle
 )
 
 ament_add_test(test_lifecycle
@@ -20,10 +25,14 @@ ament_add_test(test_lifecycle
 ament_add_gtest_executable(test_bond_gtest
   test_bond.cpp
 )
+ament_target_dependencies(test_bond_gtest
+  nav2_util
+  rclcpp
+)
 target_link_libraries(test_bond_gtest
   ${library_name}
-  nav2_util::nav2_util_core
-  rclcpp::rclcpp
+  # nav2_util::nav2_util_core
+  # rclcpp::rclcpp
 )
 
 ament_add_test(test_bond

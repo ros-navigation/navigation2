@@ -54,7 +54,7 @@ public:
   /**
    * @brief Overrides TF2 subscription callback to inject base footprint publisher
    */
-  void subscription_callback(tf2_msgs::msg::TFMessage::ConstSharedPtr msg, bool is_static) override
+  void subscription_callback(tf2_msgs::msg::TFMessage::ConstSharedPtr msg, bool is_static) //override
   {
     TransformListener::subscription_callback(msg, is_static);
 

@@ -14,9 +14,12 @@ target_include_directories(voxel_grid
   PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
-target_link_libraries(voxel_grid PUBLIC
-  rclcpp::rclcpp
+ament_target_dependencies(voxel_grid
+  rclcpp
 )
+# target_link_libraries(voxel_grid PUBLIC
+#   rclcpp::rclcpp
+# )
 
 install(TARGETS voxel_grid
   EXPORT voxel_grid

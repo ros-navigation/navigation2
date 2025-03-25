@@ -21,6 +21,23 @@ find_package(tf2_ros REQUIRED)
 
 nav2_package()
 
+set(dependencies
+  geometry_msgs
+  nav2_core
+  nav2_costmap_2d
+  nav2_msgs
+  nav2_util
+  nav_2d_msgs
+  nav_2d_utils
+  pluginlib
+  rclcpp
+  rclcpp_lifecycle
+  rcl_interfaces
+  tf2_ros
+  lifecycle_msgs
+  rclcpp_components
+)
+
 set(executable_name controller_server)
 
 set(library_name ${executable_name}_core)
@@ -33,25 +50,28 @@ target_include_directories(${library_name}
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
-target_link_libraries(${library_name} PUBLIC
-  ${geometry_msgs_TARGETS}
-  nav2_core::nav2_core
-  nav2_costmap_2d::nav2_costmap_2d_core
-  ${nav2_msgs_TARGETS}
-  nav2_util::nav2_util_core
-  ${nav_2d_msgs_TARGETS}
-  nav_2d_utils::conversions
-  nav_2d_utils::tf_help
-  pluginlib::pluginlib
-  rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
-  ${rcl_interfaces_TARGETS}
-  tf2_ros::tf2_ros
+ament_target_dependencies(${library_name}
+  ${dependencies}
 )
-target_link_libraries(${library_name} PRIVATE
-  ${lifecycle_msgs_TARGETS}
-  rclcpp_components::component
-)
+# target_link_libraries(${library_name} PUBLIC
+#   ${geometry_msgs_TARGETS}
+#   nav2_core::nav2_core
+#   nav2_costmap_2d::nav2_costmap_2d_core
+#   ${nav2_msgs_TARGETS}
+#   nav2_util::nav2_util_core
+#   ${nav_2d_msgs_TARGETS}
+#   nav_2d_utils::conversions
+#   nav_2d_utils::tf_help
+#   pluginlib::pluginlib
+#   rclcpp::rclcpp
+#   rclcpp_lifecycle::rclcpp_lifecycle
+#   ${rcl_interfaces_TARGETS}
+#   tf2_ros::tf2_ros
+# )
+# target_link_libraries(${library_name} PRIVATE
+#   ${lifecycle_msgs_TARGETS}
+#   rclcpp_components::component
+# )
 
 add_executable(${executable_name}
   src/main.cpp
@@ -61,8 +81,10 @@ target_include_directories(${executable_name}
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
-target_link_libraries(${executable_name} PRIVATE
-  rclcpp::rclcpp
+ament_target_dependencies(${executable_name}
+  ${dependencies}
+)
+target_link_libraries(${executable_name}
   ${library_name}
 )
 
@@ -72,18 +94,21 @@ target_include_directories(simple_progress_checker
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
-target_link_libraries(simple_progress_checker PUBLIC
-  ${geometry_msgs_TARGETS}
-  nav2_core::nav2_core
-  rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
-  ${rcl_interfaces_TARGETS}
+ament_target_dependencies(simple_progress_checker
+  ${dependencies}
 )
-target_link_libraries(simple_progress_checker PRIVATE
-  nav2_util::nav2_util_core
-  nav_2d_utils::conversions
-  pluginlib::pluginlib
-)
+# target_link_libraries(simple_progress_checker PUBLIC
+#   ${geometry_msgs_TARGETS}
+#   nav2_core::nav2_core
+#   rclcpp::rclcpp
+#   rclcpp_lifecycle::rclcpp_lifecycle
+#   ${rcl_interfaces_TARGETS}
+# )
+# target_link_libraries(simple_progress_checker PRIVATE
+#   nav2_util::nav2_util_core
+#   nav_2d_utils::conversions
+#   pluginlib::pluginlib
+# )
 
 add_library(pose_progress_checker SHARED plugins/pose_progress_checker.cpp)
 target_include_directories(pose_progress_checker
@@ -91,19 +116,32 @@ target_include_directories(pose_progress_checker
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
-target_link_libraries(pose_progress_checker PUBLIC
-  ${geometry_msgs_TARGETS}
-  rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
-  ${rcl_interfaces_TARGETS}
+ament_target_dependencies(pose_progress_checker
+  geometry_msgs
+  rclcpp
+  rclcpp_lifecycle
+  rcl_interfaces
+  angles
+  nav2_util
+  nav_2d_utils
+  pluginlib
+)
+target_link_libraries(pose_progress_checker
   simple_progress_checker
 )
-target_link_libraries(pose_progress_checker PRIVATE
-  angles::angles
-  nav2_util::nav2_util_core
-  nav_2d_utils::conversions
-  pluginlib::pluginlib
-)
+# target_link_libraries(pose_progress_checker PUBLIC
+#   ${geometry_msgs_TARGETS}
+#   rclcpp::rclcpp
+#   rclcpp_lifecycle::rclcpp_lifecycle
+#   ${rcl_interfaces_TARGETS}
+#   simple_progress_checker
+# )
+# target_link_libraries(pose_progress_checker PRIVATE
+#   angles::angles
+#   nav2_util::nav2_util_core
+#   nav_2d_utils::conversions
+#   pluginlib::pluginlib
+# )
 
 add_library(simple_goal_checker SHARED plugins/simple_goal_checker.cpp)
 target_include_directories(simple_goal_checker
@@ -111,20 +149,32 @@ target_include_directories(simple_goal_checker
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
-target_link_libraries(simple_goal_checker PUBLIC
-  ${geometry_msgs_TARGETS}
-  nav2_core::nav2_core
-  nav2_costmap_2d::nav2_costmap_2d_core
-  rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
-  ${rcl_interfaces_TARGETS}
+ament_target_dependencies(simple_goal_checker
+  geometry_msgs
+  nav2_core
+  nav2_costmap_2d
+  rclcpp
+  rclcpp_lifecycle
+  rcl_interfaces
+  angles
+  nav2_util
+  pluginlib
+  tf2
 )
-target_link_libraries(simple_goal_checker PRIVATE
-  angles::angles
-  nav2_util::nav2_util_core
-  pluginlib::pluginlib
-  tf2::tf2
-)
+# target_link_libraries(simple_goal_checker PUBLIC
+#   ${geometry_msgs_TARGETS}
+#   nav2_core::nav2_core
+#   nav2_costmap_2d::nav2_costmap_2d_core
+#   rclcpp::rclcpp
+#   rclcpp_lifecycle::rclcpp_lifecycle
+#   ${rcl_interfaces_TARGETS}
+# )
+# target_link_libraries(simple_goal_checker PRIVATE
+#   angles::angles
+#   nav2_util::nav2_util_core
+#   pluginlib::pluginlib
+#   tf2::tf2
+# )
 
 add_library(stopped_goal_checker SHARED plugins/stopped_goal_checker.cpp)
 target_include_directories(stopped_goal_checker
@@ -132,18 +182,30 @@ target_include_directories(stopped_goal_checker
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
-target_link_libraries(stopped_goal_checker PUBLIC
-  ${geometry_msgs_TARGETS}
-  nav2_costmap_2d::nav2_costmap_2d_core
-  rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
-  ${rcl_interfaces_TARGETS}
+ament_target_dependencies(stopped_goal_checker
+  geometry_msgs
+  nav2_costmap_2d
+  rclcpp
+  rclcpp_lifecycle
+  rcl_interfaces
+  nav2_util
+  pluginlib
+)
+target_link_libraries(stopped_goal_checker
   simple_goal_checker
 )
-target_link_libraries(stopped_goal_checker PRIVATE
-  nav2_util::nav2_util_core
-  pluginlib::pluginlib
-)
+# target_link_libraries(stopped_goal_checker PUBLIC
+#   ${geometry_msgs_TARGETS}
+#   nav2_costmap_2d::nav2_costmap_2d_core
+#   rclcpp::rclcpp
+#   rclcpp_lifecycle::rclcpp_lifecycle
+#   ${rcl_interfaces_TARGETS}
+#   simple_goal_checker
+# )
+# target_link_libraries(stopped_goal_checker PRIVATE
+#   nav2_util::nav2_util_core
+#   pluginlib::pluginlib
+# )
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

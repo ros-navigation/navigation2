@@ -7,12 +7,15 @@ target_link_libraries(test_bt_utils
 function(plugin_add_test target filename plugin)
   ament_add_gtest(${target} ${filename})
   target_link_libraries(${target}
-    ${geometry_msgs_TARGETS}
-    nav2_util::nav2_util_core
-    behaviortree_cpp::behaviortree_cpp
+    # ${geometry_msgs_TARGETS}
+    # nav2_util::nav2_util_core
+    # behaviortree_cpp::behaviortree_cpp
     ${library_name}
     ${plugin}
   )
+  ament_target_dependencies(${target} 
+    ${dependencies})
+
   target_include_directories(${target}
     PRIVATE
     "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/test>")

@@ -73,10 +73,12 @@ target_link_libraries(${library_name} PUBLIC
   tf2_geometry_msgs::tf2_geometry_msgs
   ${visualization_msgs_TARGETS}
 )
+
+ament_target_dependencies(${library_name}
+  yaml-cpp)
 target_link_libraries(${library_name} PRIVATE
   ament_index_cpp::ament_index_cpp
   pluginlib::pluginlib
-  yaml-cpp::yaml-cpp
 )
 
 pluginlib_export_plugin_description_file(rviz_common plugins_description.xml)

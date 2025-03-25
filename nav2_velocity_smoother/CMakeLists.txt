@@ -23,21 +23,34 @@ target_include_directories(${library_name}
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
-target_link_libraries(${library_name} PUBLIC
-  ${geometry_msgs_TARGETS}
-  nav2_util::nav2_util_core
-  rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
+ament_target_dependencies(${library_name}
+  geometry_msgs
+  nav2_util
+  rclcpp
+  rclcpp_lifecycle
+  rclcpp_components
 )
-target_link_libraries(${library_name} PRIVATE
-  rclcpp_components::component
-)
+# target_link_libraries(${library_name} PUBLIC
+#   ${geometry_msgs_TARGETS}
+#   nav2_util::nav2_util_core
+#   rclcpp::rclcpp
+#   rclcpp_lifecycle::rclcpp_lifecycle
+# )
+# target_link_libraries(${library_name} PRIVATE
+#   rclcpp_components::component
+# )
 
 # Main executable
 add_executable(${executable_name}
   src/main.cpp
 )
-target_link_libraries(${executable_name} PRIVATE ${library_name} rclcpp::rclcpp)
+ament_target_dependencies(${executable_name}
+rclcpp
+)
+target_link_libraries(${executable_name}
+  ${library_name}
+)
+# target_link_libraries(${executable_name} PRIVATE ${library_name} rclcpp::rclcpp)
 
 rclcpp_components_register_nodes(${library_name} "nav2_velocity_smoother::VelocitySmoother")
 

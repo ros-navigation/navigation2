@@ -35,21 +35,34 @@ target_include_directories(${PROJECT_NAME} PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
-target_link_libraries(${PROJECT_NAME} PUBLIC
-  costmap_queue::costmap_queue
-  dwb_core::dwb_core
-  ${dwb_msgs_TARGETS}
-  ${geometry_msgs_TARGETS}
-  nav2_costmap_2d::nav2_costmap_2d_core
-  ${nav_2d_msgs_TARGETS}
-  rclcpp::rclcpp
+ament_target_dependencies(${PROJECT_NAME}
+  costmap_queue
+  dwb_core
+  dwb_msgs
+  geometry_msgs
+  nav2_costmap_2d
+  nav_2d_msgs
+  rclcpp
+  angles
+  nav2_util
+  nav_2d_utils
+  pluginlib
 )
-target_link_libraries(${PROJECT_NAME} PRIVATE
-  angles::angles
-  nav2_util::nav2_util_core
-  nav_2d_utils::path_ops
-  pluginlib::pluginlib
-)
+# target_link_libraries(${PROJECT_NAME} PUBLIC
+#   costmap_queue::costmap_queue
+#   dwb_core::dwb_core
+#   ${dwb_msgs_TARGETS}
+#   ${geometry_msgs_TARGETS}
+#   nav2_costmap_2d::nav2_costmap_2d_core
+#   ${nav_2d_msgs_TARGETS}
+#   rclcpp::rclcpp
+# )
+# target_link_libraries(${PROJECT_NAME} PRIVATE
+#   angles::angles
+#   nav2_util::nav2_util_core
+#   nav_2d_utils::path_ops
+#   pluginlib::pluginlib
+# )
 
 install(TARGETS ${PROJECT_NAME}
   EXPORT ${PROJECT_NAME}

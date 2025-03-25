@@ -20,28 +20,53 @@ find_package(tf2_ros REQUIRED)
 
 nav2_package()
 
+include_directories(
+  include
+)
+
 set(library_name ${PROJECT_NAME})
+
+set(dependencies
+  rclcpp
+  rclcpp_action
+  rclcpp_lifecycle
+  geometry_msgs
+  sensor_msgs
+  nav2_msgs
+  nav_msgs
+  behaviortree_cpp
+  tf2
+  tf2_ros
+  tf2_geometry_msgs
+  std_msgs
+  std_srvs
+  nav2_util
+)
 
 add_library(${library_name} SHARED
   src/behavior_tree_engine.cpp
 )
 target_include_directories(${library_name}
-  PUBLIC
-  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
-target_link_libraries(${library_name} PUBLIC
-  ${action_msgs_TARGETS}
-  behaviortree_cpp::behaviortree_cpp
-  ${geometry_msgs_TARGETS}
-  ${nav_msgs_TARGETS}
-  ${nav2_msgs_TARGETS}
-  nav2_util::nav2_util_core
-  rclcpp::rclcpp
-  rclcpp_action::rclcpp_action
-  rclcpp_lifecycle::rclcpp_lifecycle
-  ${sensor_msgs_TARGETS}
-  tf2::tf2
-  tf2_ros::tf2_ros
+ PUBLIC
+ "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+ "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+# target_link_libraries(${library_name} PUBLIC
+#  ${action_msgs_TARGETS}
+#  behaviortree_cpp::behaviortree_cpp
+#  ${geometry_msgs_TARGETS}
+#  ${nav_msgs_TARGETS}
+#  ${nav2_msgs_TARGETS}
+#  nav2_util::nav2_util_core
+#  rclcpp::rclcpp
+#  rclcpp_action::rclcpp_action
+#  rclcpp_lifecycle::rclcpp_lifecycle
+#  ${sensor_msgs_TARGETS}
+#  tf2::tf2
+#  tf2_ros::tf2_ros
+# )
+
+ament_target_dependencies(${library_name}
+  ${dependencies}
 )
 
 add_library(nav2_compute_path_to_pose_action_bt_node SHARED plugins/action/compute_path_to_pose_action.cpp)
@@ -214,24 +239,25 @@ list(APPEND plugin_libs nav2_goal_updated_controller_bt_node)
 
 foreach(bt_plugin ${plugin_libs})
   target_include_directories(${bt_plugin}
-    PRIVATE
-    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
-  target_link_libraries(${bt_plugin} PUBLIC
-    behaviortree_cpp::behaviortree_cpp
-    ${geometry_msgs_TARGETS}
-    ${nav_msgs_TARGETS}
-    ${nav2_msgs_TARGETS}
-    nav2_util::nav2_util_core
-    rclcpp::rclcpp
-    rclcpp_action::rclcpp_action
-    rclcpp_lifecycle::rclcpp_lifecycle
-    ${sensor_msgs_TARGETS}
-    tf2::tf2
-    tf2_ros::tf2_ros
-    ${std_msgs_TARGETS}
-    ${std_srvs_TARGETS}
-  )
+   PRIVATE
+   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+  # target_link_libraries(${bt_plugin} PUBLIC
+  #  behaviortree_cpp #::behaviortree_cpp
+  #  ${geometry_msgs_TARGETS}
+  #  ${nav_msgs_TARGETS}
+  #  ${nav2_msgs_TARGETS}
+  #  nav2_util::nav2_util_core
+  #  rclcpp::rclcpp
+  #  rclcpp_action::rclcpp_action
+  #  rclcpp_lifecycle::rclcpp_lifecycle
+  #  ${sensor_msgs_TARGETS}
+  #  tf2::tf2
+  #  tf2_ros::tf2_ros
+  #  ${std_msgs_TARGETS}
+  #  ${std_srvs_TARGETS}
+  # )
+  ament_target_dependencies(${bt_plugin} ${dependencies})
   target_compile_definitions(${bt_plugin} PRIVATE BT_PLUGIN_EXPORT)
 endforeach()
 
@@ -247,10 +273,13 @@ set(GENERATED_DIR ${CMAKE_CURRENT_BINARY_DIR}/gen)
 configure_file(plugins_list.hpp.in ${GENERATED_DIR}/plugins_list.hpp)
 
 add_executable(generate_nav2_tree_nodes_xml src/generate_nav2_tree_nodes_xml.cpp)
-target_link_libraries(generate_nav2_tree_nodes_xml PRIVATE
-  behaviortree_cpp::behaviortree_cpp
-  nav2_util::nav2_util_core
-)
+# target_link_libraries(generate_nav2_tree_nodes_xml PRIVATE
+#   behaviortree_cpp #::behaviortree_cpp
+#   nav2_util::nav2_util_core
+# )
+ament_target_dependencies(generate_nav2_tree_nodes_xml
+  behaviortree_cpp
+  nav2_util)
 # allow generate_nav2_tree_nodes_xml to find plugins_list.hpp
 target_include_directories(generate_nav2_tree_nodes_xml PRIVATE ${GENERATED_DIR})
 install(TARGETS generate_nav2_tree_nodes_xml DESTINATION lib/${PROJECT_NAME})
@@ -280,25 +309,30 @@ ament_export_include_directories(
   include/${PROJECT_NAME}
 )
 
-ament_export_libraries(${library_name})
-
-ament_export_dependencies(
-  action_msgs
-  behaviortree_cpp
-  geometry_msgs
-  nav2_common
-  nav2_msgs
-  nav2_util
-  nav_msgs
-  rclcpp
-  rclcpp_action
-  rclcpp_lifecycle
-  sensor_msgs
-  std_msgs
-  std_srvs
-  tf2
-  tf2_ros
+ament_export_libraries(
+  ${library_name}
+  ${plugin_libs}
 )
+
+# ament_export_dependencies(
+#  action_msgs
+#  behaviortree_cpp
+#  geometry_msgs
+#  nav2_common
+#  nav2_msgs
+#  nav2_util
+#  nav_msgs
+#  rclcpp
+#  rclcpp_action
+#  rclcpp_lifecycle
+#  sensor_msgs
+#  std_msgs
+#  std_srvs
+#  tf2
+#  tf2_ros
+# )
+ament_export_dependencies(${dependencies})
+
 ament_export_targets(${library_name})
 
 ament_package()

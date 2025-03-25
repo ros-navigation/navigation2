@@ -36,13 +36,20 @@ target_include_directories(controller
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
-target_link_libraries(controller PUBLIC
-  ${geometry_msgs_TARGETS}
-  nav2_graceful_controller::nav2_graceful_controller
-  rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
-  ${rcl_interfaces_TARGETS}
+ament_target_dependencies(controller
+  geometry_msgs
+  nav2_graceful_controller
+  rclcpp
+  rclcpp_lifecycle
+  rcl_interfaces
 )
+# target_link_libraries(controller PUBLIC
+#   ${geometry_msgs_TARGETS}
+#   nav2_graceful_controller::nav2_graceful_controller
+#   rclcpp::rclcpp
+#   rclcpp_lifecycle::rclcpp_lifecycle
+#   ${rcl_interfaces_TARGETS}
+# )
 
 add_library(${library_name} SHARED
   src/docking_server.cpp
@@ -54,25 +61,44 @@ target_include_directories(${library_name}
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
-target_link_libraries(${library_name} PUBLIC
-  angles::angles
+ament_target_dependencies(${library_name}
+  angles
+  geometry_msgs
+  nav2_msgs
+  nav2_util
+  opennav_docking_core
+  pluginlib
+  rclcpp
+  rclcpp_action
+  rclcpp_lifecycle
+  rcl_interfaces
+  tf2_ros
+  yaml_cpp_vendor
+  rclcpp_components
+  tf2_geometry_msgs
+)
+target_link_libraries(${library_name}
   controller
-  ${geometry_msgs_TARGETS}
-  ${nav2_msgs_TARGETS}
-  nav2_util::nav2_util_core
-  opennav_docking_core::opennav_docking_core
-  pluginlib::pluginlib
-  rclcpp::rclcpp
-  rclcpp_action::rclcpp_action
-  rclcpp_lifecycle::rclcpp_lifecycle
-  ${rcl_interfaces_TARGETS}
-  tf2_ros::tf2_ros
-  yaml-cpp::yaml-cpp
 )
-target_link_libraries(${library_name} PRIVATE
-  rclcpp_components::component
-  tf2_geometry_msgs::tf2_geometry_msgs
-)
+# target_link_libraries(${library_name} PUBLIC
+#   angles::angles
+#   controller
+#   ${geometry_msgs_TARGETS}
+#   ${nav2_msgs_TARGETS}
+#   nav2_util::nav2_util_core
+#   opennav_docking_core::opennav_docking_core
+#   pluginlib::pluginlib
+#   rclcpp::rclcpp
+#   rclcpp_action::rclcpp_action
+#   rclcpp_lifecycle::rclcpp_lifecycle
+#   ${rcl_interfaces_TARGETS}
+#   tf2_ros::tf2_ros
+#   yaml-cpp::yaml-cpp
+# )
+# target_link_libraries(${library_name} PRIVATE
+#   rclcpp_components::component
+#   tf2_geometry_msgs::tf2_geometry_msgs
+# )
 
 add_library(pose_filter SHARED
   src/pose_filter.cpp
@@ -82,13 +108,18 @@ target_include_directories(pose_filter
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
-target_link_libraries(pose_filter PUBLIC
-  ${geometry_msgs_TARGETS}
+ament_target_dependencies(pose_filter
+  geometry_msgs
+  rclcpp
+  tf2_geometry_msgs
 )
-target_link_libraries(pose_filter PRIVATE
-  rclcpp::rclcpp
-  tf2_geometry_msgs::tf2_geometry_msgs
-)
+# target_link_libraries(pose_filter PUBLIC
+#   ${geometry_msgs_TARGETS}
+# )
+# target_link_libraries(pose_filter PRIVATE
+#   rclcpp::rclcpp
+#   tf2_geometry_msgs::tf2_geometry_msgs
+# )
 
 add_executable(${executable_name}
   src/main.cpp
@@ -98,7 +129,13 @@ target_include_directories(${executable_name}
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
-target_link_libraries(${executable_name} PRIVATE ${library_name} rclcpp::rclcpp)
+ament_target_dependencies(${executable_name}
+  rclcpp
+)
+target_link_libraries(${executable_name}
+  ${library_name}
+)
+# target_link_libraries(${executable_name} PRIVATE ${library_name} rclcpp::rclcpp)
 
 rclcpp_components_register_nodes(${library_name} "opennav_docking::DockingServer")
 
@@ -110,21 +147,36 @@ target_include_directories(simple_charging_dock
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
-target_link_libraries(simple_charging_dock PUBLIC
-  ${geometry_msgs_TARGETS}
-  opennav_docking_core::opennav_docking_core
+ament_target_dependencies(simple_charging_dock
+  geometry_msgs
+  opennav_docking_core
+  rclcpp
+  rclcpp_lifecycle
+  sensor_msgs
+  tf2_geometry_msgs
+  tf2_ros
+  nav2_util
+  pluginlib
+  tf2
+)
+target_link_libraries(simple_charging_dock
   pose_filter
-  rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
-  ${sensor_msgs_TARGETS}
-  tf2_geometry_msgs::tf2_geometry_msgs
-  tf2_ros::tf2_ros
 )
-target_link_libraries(simple_charging_dock PRIVATE
-  nav2_util::nav2_util_core
-  pluginlib::pluginlib
-  tf2::tf2
-)
+# target_link_libraries(simple_charging_dock PUBLIC
+#   ${geometry_msgs_TARGETS}
+#   opennav_docking_core::opennav_docking_core
+#   pose_filter
+#   rclcpp::rclcpp
+#   rclcpp_lifecycle::rclcpp_lifecycle
+#   ${sensor_msgs_TARGETS}
+#   tf2_geometry_msgs::tf2_geometry_msgs
+#   tf2_ros::tf2_ros
+# )
+# target_link_libraries(simple_charging_dock PRIVATE
+#   nav2_util::nav2_util_core
+#   pluginlib::pluginlib
+#   tf2::tf2
+# )
 
 add_library(simple_non_charging_dock SHARED
   src/simple_non_charging_dock.cpp
@@ -134,6 +186,21 @@ target_include_directories(simple_non_charging_dock
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
+# ament_target_dependencies(simple_non_charging_dock
+#   geometry_msgs
+#   opennav_docking_core
+#   rclcpp
+#   rclcpp_lifecycle
+#   sensor_msgs
+#   tf2_geometry_msgs
+#   tf2_ros
+#   nav2_util
+#   pluginlib
+#   tf2
+# )
+# target_link_libraries(simple_non_charging_dock
+#   pose_filter
+# )
 target_link_libraries(simple_non_charging_dock PUBLIC
   ${geometry_msgs_TARGETS}
   opennav_docking_core::opennav_docking_core

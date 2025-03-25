@@ -30,22 +30,39 @@ target_include_directories(${library_name}
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
-target_link_libraries(${library_name} PUBLIC
+ament_target_dependencies(${library_name}
+  # Ceres
+  # Eigen3
+  nav2_core
+  nav2_costmap_2d
+  nav2_util
+  rclcpp
+  rclcpp_lifecycle
+  tf2_ros
+  geometry_msgs
+  nav_msgs
+  pluginlib
+)
+target_link_libraries(${library_name}
   Ceres::ceres
   Eigen3::Eigen
-  nav2_core::nav2_core
-  nav2_costmap_2d::nav2_costmap_2d_client
-  nav2_costmap_2d::nav2_costmap_2d_core
-  nav2_util::nav2_util_core
-  rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
-  tf2_ros::tf2_ros
 )
-target_link_libraries(${library_name} PRIVATE
-  ${geometry_msgs_TARGETS}
-  ${nav_msgs_TARGETS}
-  pluginlib::pluginlib
-)
+# target_link_libraries(${library_name} PUBLIC
+#   Ceres::ceres
+#   Eigen3::Eigen
+#   nav2_core::nav2_core
+#   nav2_costmap_2d::nav2_costmap_2d_client
+#   nav2_costmap_2d::nav2_costmap_2d_core
+#   nav2_util::nav2_util_core
+#   rclcpp::rclcpp
+#   rclcpp_lifecycle::rclcpp_lifecycle
+#   tf2_ros::tf2_ros
+# )
+# target_link_libraries(${library_name} PRIVATE
+#   ${geometry_msgs_TARGETS}
+#   ${nav_msgs_TARGETS}
+#   pluginlib::pluginlib
+# )
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

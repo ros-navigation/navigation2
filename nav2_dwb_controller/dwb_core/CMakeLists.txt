@@ -32,24 +32,41 @@ target_include_directories(dwb_core PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
-target_link_libraries(dwb_core PUBLIC
-  ${builtin_interfaces_TARGETS}
-  ${dwb_msgs_TARGETS}
-  ${geometry_msgs_TARGETS}
-  nav2_core::nav2_core
-  nav2_costmap_2d::nav2_costmap_2d_core
-  nav2_util::nav2_util_core
-  ${nav_2d_msgs_TARGETS}
-  nav_2d_utils::conversions
-  nav_2d_utils::tf_help
-  ${nav_msgs_TARGETS}
-  pluginlib::pluginlib
-  rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
-  ${sensor_msgs_TARGETS}
-  tf2_ros::tf2_ros
-  ${visualization_msgs_TARGETS}
+ament_target_dependencies(dwb_core
+  builtin_interfaces
+  dwb_msgs
+  geometry_msgs
+  nav2_core
+  nav2_costmap_2d
+  nav2_util
+  nav_2d_msgs
+  nav_2d_utils
+  nav_msgs
+  pluginlib
+  rclcpp
+  rclcpp_lifecycle
+  sensor_msgs
+  tf2_ros
+  visualization_msgs
 )
+# target_link_libraries(dwb_core PUBLIC
+#   ${builtin_interfaces_TARGETS}
+#   ${dwb_msgs_TARGETS}
+#   ${geometry_msgs_TARGETS}
+#   nav2_core::nav2_core
+#   nav2_costmap_2d::nav2_costmap_2d_core
+#   nav2_util::nav2_util_core
+#   ${nav_2d_msgs_TARGETS}
+#   nav_2d_utils::conversions
+#   nav_2d_utils::tf_help
+#   ${nav_msgs_TARGETS}
+#   pluginlib::pluginlib
+#   rclcpp::rclcpp
+#   rclcpp_lifecycle::rclcpp_lifecycle
+#   ${sensor_msgs_TARGETS}
+#   tf2_ros::tf2_ros
+#   ${visualization_msgs_TARGETS}
+# )
 
 install(TARGETS dwb_core
   EXPORT dwb_core

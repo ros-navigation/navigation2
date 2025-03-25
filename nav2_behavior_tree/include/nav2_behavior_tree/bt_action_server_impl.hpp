@@ -162,7 +162,7 @@ bool BtActionServer<ActionT>::on_configure()
     node, "robot_base_frame", rclcpp::ParameterValue(std::string("base_link")));
   nav2_util::declare_parameter_if_not_declared(
     node, "transform_tolerance", rclcpp::ParameterValue(0.1));
-  rclcpp::copy_all_parameter_values(node, client_node_);
+  // rclcpp::copy_all_parameter_values(node, client_node_);
 
   // set the timeout in seconds for the action server to discard goal handles if not finished
   double action_server_result_timeout =

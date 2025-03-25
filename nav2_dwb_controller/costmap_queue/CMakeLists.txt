@@ -16,9 +16,12 @@ target_include_directories(${PROJECT_NAME}
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
-target_link_libraries(${PROJECT_NAME} PUBLIC
-  nav2_costmap_2d::nav2_costmap_2d_core
+ament_target_dependencies(${PROJECT_NAME}
+  nav2_costmap_2d
 )
+# target_link_libraries(${PROJECT_NAME} PUBLIC
+#   nav2_costmap_2d::nav2_costmap_2d_core
+# )
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -38,10 +41,14 @@ if(BUILD_TESTING)
   )
 
   ament_add_gtest(utest test/utest.cpp)
+  ament_target_dependencies(utest
+    nav2_costmap_2d
+    rclcpp
+  )
   target_link_libraries(utest
     ${PROJECT_NAME}
-    nav2_costmap_2d::nav2_costmap_2d_core
-    rclcpp::rclcpp
+    # nav2_costmap_2d::nav2_costmap_2d_core
+    # rclcpp::rclcpp
   )
 endif()
 

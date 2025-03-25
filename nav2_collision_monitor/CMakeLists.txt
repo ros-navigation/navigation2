@@ -18,6 +18,25 @@ find_package(visualization_msgs REQUIRED)
 
 nav2_package()
 
+include_directories(
+  include
+)
+
+set(dependencies
+  rclcpp
+  rclcpp_components
+  rclcpp_lifecycle
+  sensor_msgs
+  geometry_msgs
+  tf2
+  tf2_ros
+  tf2_geometry_msgs
+  nav2_util
+  nav2_costmap_2d
+  nav2_msgs
+  visualization_msgs
+)
+
 set(monitor_executable_name collision_monitor)
 set(detector_executable_name collision_detector)
 set(monitor_library_name ${monitor_executable_name}_core)
@@ -35,26 +54,26 @@ add_library(${monitor_library_name} SHARED
   src/range.cpp
   src/kinematics.cpp
 )
+ament_target_dependencies(${monitor_library_name}
+  rclcpp
+  rclcpp_components
+  rclcpp_lifecycle
+  sensor_msgs
+  geometry_msgs
+  tf2
+  tf2_ros
+  tf2_geometry_msgs
+  nav2_util
+  nav2_costmap_2d
+  nav2_msgs
+  visualization_msgs
+)
+
 target_include_directories(${monitor_library_name}
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
-target_link_libraries(${monitor_library_name} PUBLIC
-  ${geometry_msgs_TARGETS}
-  nav2_costmap_2d::nav2_costmap_2d_client
-  nav2_costmap_2d::nav2_costmap_2d_core
-  ${nav2_msgs_TARGETS}
-  nav2_util::nav2_util_core
-  rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
-  ${sensor_msgs_TARGETS}
-  tf2::tf2
-  tf2_ros::tf2_ros
-  ${visualization_msgs_TARGETS}
-)
-target_link_libraries(${monitor_library_name} PRIVATE
-  rclcpp_components::component
-)
+
 
 add_library(${detector_library_name} SHARED
   src/collision_detector_node.cpp
@@ -68,48 +87,40 @@ add_library(${detector_library_name} SHARED
   src/range.cpp
   src/kinematics.cpp
 )
+ament_target_dependencies(${detector_library_name}
+  ${dependencies}
+)
 target_include_directories(${detector_library_name}
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
-target_link_libraries(${detector_library_name} PUBLIC
-  ${geometry_msgs_TARGETS}
-  nav2_costmap_2d::nav2_costmap_2d_client
-  nav2_costmap_2d::nav2_costmap_2d_core
-  ${nav2_msgs_TARGETS}
-  nav2_util::nav2_util_core
-  rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
-  ${sensor_msgs_TARGETS}
-  tf2_ros::tf2_ros
-  tf2::tf2
-  ${visualization_msgs_TARGETS}
-)
-target_link_libraries(${detector_library_name} PRIVATE
-  rclcpp_components::component
-)
+
 
 add_executable(${monitor_executable_name}
   src/collision_monitor_main.cpp
+)
+ament_target_dependencies(${monitor_executable_name}
+  ${dependencies}
 )
 target_include_directories(${monitor_executable_name}
   PRIVATE
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
-target_link_libraries(${monitor_executable_name} PRIVATE
-  rclcpp::rclcpp
+target_link_libraries(${monitor_executable_name}
   ${monitor_library_name}
 )
 
 add_executable(${detector_executable_name}
   src/collision_detector_main.cpp
 )
+ament_target_dependencies(${detector_executable_name}
+  ${dependencies}
+)
 target_include_directories(${detector_executable_name}
   PRIVATE
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
-target_link_libraries(${detector_executable_name} PRIVATE
-  rclcpp::rclcpp
+target_link_libraries(${detector_executable_name}
   ${detector_library_name}
 )
 
@@ -151,18 +162,7 @@ endif()
 
 ament_export_include_directories(include/${PROJECT_NAME})
 ament_export_libraries(${monitor_library_name} ${detector_library_name})
-ament_export_dependencies(
-  geometry_msgs
-  nav2_costmap_2d
-  nav2_msgs
-  nav2_util
-  rclcpp
-  rclcpp_lifecycle
-  sensor_msgs
-  tf2
-  tf2_ros
-  visualization_msgs
-)
+ament_export_dependencies(${dependencies})
 ament_export_targets(export_${PROJECT_NAME})
 
 ament_package()

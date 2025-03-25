@@ -21,6 +21,17 @@ target_include_directories(nav2_core
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
+# ament_target_dependencies(nav2_core
+#   geometry_msgs
+#   nav2_behavior_tree
+#   nav2_costmap_2d
+#   nav2_util
+#   nav_msgs
+#   pluginlib
+#   rclcpp
+#   rclcpp_lifecycle
+#   tf2_ros
+# )
 target_link_libraries(nav2_core INTERFACE
   ${geometry_msgs_TARGETS}
   nav2_behavior_tree::nav2_behavior_tree

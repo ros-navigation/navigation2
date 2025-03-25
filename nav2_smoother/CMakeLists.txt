@@ -29,24 +29,38 @@ target_include_directories(${library_name}
   PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
-target_link_libraries(${library_name} PUBLIC
-  nav2_core::nav2_core
-  nav2_costmap_2d::nav2_costmap_2d_client
-  nav2_costmap_2d::nav2_costmap_2d_core
-  ${nav2_msgs_TARGETS}
-  nav2_util::nav2_util_core
-  ${nav_msgs_TARGETS}
-  pluginlib::pluginlib
-  rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
-  tf2_ros::tf2_ros
+ament_target_dependencies(${library_name}
+  nav2_core
+  nav2_costmap_2d
+  nav2_msgs
+  nav2_util
+  nav_msgs
+  pluginlib
+  rclcpp
+  rclcpp_lifecycle
+  tf2
+  tf2_ros
+  nav_2d_utils
+  rclcpp_components
 )
-target_link_libraries(${library_name} PRIVATE
-  nav_2d_utils::conversions
-  nav_2d_utils::tf_help
-  rclcpp_components::component
-  tf2::tf2
-)
+# target_link_libraries(${library_name} PUBLIC
+#   nav2_core::nav2_core
+#   nav2_costmap_2d::nav2_costmap_2d_client
+#   nav2_costmap_2d::nav2_costmap_2d_core
+#   ${nav2_msgs_TARGETS}
+#   nav2_util::nav2_util_core
+#   ${nav_msgs_TARGETS}
+#   pluginlib::pluginlib
+#   rclcpp::rclcpp
+#   rclcpp_lifecycle::rclcpp_lifecycle
+#   tf2_ros::tf2_ros
+# )
+# target_link_libraries(${library_name} PRIVATE
+#   nav_2d_utils::conversions
+#   nav_2d_utils::tf_help
+#   rclcpp_components::component
+#   tf2::tf2
+# )
 
 # Main executable
 add_executable(${executable_name}
@@ -56,7 +70,12 @@ target_include_directories(${executable_name}
   PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
-target_link_libraries(${executable_name} PRIVATE rclcpp::rclcpp ${library_name})
+ament_target_dependencies(${executable_name}
+  rclcpp
+)
+target_link_libraries(${executable_name}
+  ${library_name}
+)
 
 # Simple Smoother plugin
 add_library(simple_smoother SHARED
@@ -66,21 +85,33 @@ target_include_directories(simple_smoother
   PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
-target_link_libraries(simple_smoother PUBLIC
-  angles::angles
-  nav2_core::nav2_core
-  nav2_costmap_2d::nav2_costmap_2d_core
-  nav2_costmap_2d::nav2_costmap_2d_client
-  nav2_util::nav2_util_core
-  ${nav_msgs_TARGETS}
-  rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
-  tf2::tf2
-  tf2_ros::tf2_ros
+ament_target_dependencies(simple_smoother
+  angles
+  nav2_core
+  nav2_costmap_2d
+  nav2_util
+  nav_msgs
+  rclcpp
+  rclcpp_lifecycle
+  tf2
+  tf2_ros
+  pluginlib
 )
-target_link_libraries(simple_smoother PRIVATE
-  pluginlib::pluginlib
-)
+# target_link_libraries(simple_smoother PUBLIC
+#   angles::angles
+#   nav2_core::nav2_core
+#   nav2_costmap_2d::nav2_costmap_2d_core
+#   nav2_costmap_2d::nav2_costmap_2d_client
+#   nav2_util::nav2_util_core
+#   ${nav_msgs_TARGETS}
+#   rclcpp::rclcpp
+#   rclcpp_lifecycle::rclcpp_lifecycle
+#   tf2::tf2
+#   tf2_ros::tf2_ros
+# )
+# target_link_libraries(simple_smoother PRIVATE
+#   pluginlib::pluginlib
+# )
 
 # Savitzky Golay Smoother plugin
 add_library(savitzky_golay_smoother SHARED
@@ -90,21 +121,33 @@ target_include_directories(savitzky_golay_smoother
   PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
-target_link_libraries(savitzky_golay_smoother PUBLIC
-  angles::angles
-  nav2_core::nav2_core
-  nav2_costmap_2d::nav2_costmap_2d_core
-  nav2_costmap_2d::nav2_costmap_2d_client
-  nav2_util::nav2_util_core
-  ${nav_msgs_TARGETS}
-  rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
-  tf2::tf2
-  tf2_ros::tf2_ros
+ament_target_dependencies(savitzky_golay_smoother
+  angles
+  nav2_core
+  nav2_costmap_2d
+  nav2_util
+  nav_msgs
+  rclcpp
+  rclcpp_lifecycle
+  tf2
+  tf2_ros
+  pluginlib
 )
-target_link_libraries(savitzky_golay_smoother PRIVATE
-  pluginlib::pluginlib
-)
+# target_link_libraries(savitzky_golay_smoother PUBLIC
+#   angles::angles
+#   nav2_core::nav2_core
+#   nav2_costmap_2d::nav2_costmap_2d_core
+#   nav2_costmap_2d::nav2_costmap_2d_client
+#   nav2_util::nav2_util_core
+#   ${nav_msgs_TARGETS}
+#   rclcpp::rclcpp
+#   rclcpp_lifecycle::rclcpp_lifecycle
+#   tf2::tf2
+#   tf2_ros::tf2_ros
+# )
+# target_link_libraries(savitzky_golay_smoother PRIVATE
+#   pluginlib::pluginlib
+# )
 
 pluginlib_export_plugin_description_file(nav2_core plugins.xml)
 

@@ -28,12 +28,18 @@ target_include_directories(smooth_control_law
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
-target_link_libraries(smooth_control_law PUBLIC
-  angles::angles
-  ${geometry_msgs_TARGETS}
-  nav2_util::nav2_util_core
-  tf2::tf2
+ament_target_dependencies(smooth_control_law
+  angles
+  geometry_msgs
+  nav2_util
+  tf2
 )
+# target_link_libraries(smooth_control_law PUBLIC
+#   angles::angles
+#   ${geometry_msgs_TARGETS}
+#   nav2_util::nav2_util_core
+#   tf2::tf2
+# )
 
 # Add Graceful Controller
 set(library_name nav2_graceful_controller)
@@ -49,25 +55,44 @@ target_include_directories(${library_name}
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
-target_link_libraries(${library_name} PUBLIC
-  ${geometry_msgs_TARGETS}
-  nav2_core::nav2_core
-  nav2_util::nav2_util_core
-  nav2_costmap_2d::nav2_costmap_2d_core
-  nav_2d_utils::tf_help
-  ${nav_msgs_TARGETS}
-  pluginlib::pluginlib
-  rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
-  ${rcl_interfaces_TARGETS}
+ament_target_dependencies(${library_name}
+  geometry_msgs
+  nav2_core
+  nav2_util
+  nav2_costmap_2d
+  nav_2d_utils
+  nav_msgs
+  pluginlib
+  rclcpp
+  rclcpp_lifecycle
+  rcl_interfaces
+  tf2
+  tf2_ros
+  visualization_msgs
+  tf2_geometry_msgs
+)
+target_link_libraries(${library_name}
   smooth_control_law
-  tf2::tf2
-  tf2_ros::tf2_ros
-  ${visualization_msgs_TARGETS}
 )
-target_link_libraries(${library_name} PRIVATE
-  tf2_geometry_msgs::tf2_geometry_msgs
-)
+# target_link_libraries(${library_name} PUBLIC
+#   ${geometry_msgs_TARGETS}
+#   nav2_core::nav2_core
+#   nav2_util::nav2_util_core
+#   nav2_costmap_2d::nav2_costmap_2d_core
+#   nav_2d_utils::tf_help
+#   ${nav_msgs_TARGETS}
+#   pluginlib::pluginlib
+#   rclcpp::rclcpp
+#   rclcpp_lifecycle::rclcpp_lifecycle
+#   ${rcl_interfaces_TARGETS}
+#   smooth_control_law
+#   tf2::tf2
+#   tf2_ros::tf2_ros
+#   ${visualization_msgs_TARGETS}
+# )
+# target_link_libraries(${library_name} PRIVATE
+#   tf2_geometry_msgs::tf2_geometry_msgs
+# )
 
 install(TARGETS smooth_control_law ${library_name}
   EXPORT nav2_graceful_controller
