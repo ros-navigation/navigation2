@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef RCLCPP__COPY_ALL_PARAMETER_VALUES_HPP_
-#define RCLCPP__COPY_ALL_PARAMETER_VALUES_HPP_
+#ifndef NAV2_UTIL__COPY_ALL_PARAMETER_VALUES_HPP_
+#define NAV2_UTIL__COPY_ALL_PARAMETER_VALUES_HPP_
 
 #include <string>
 #include <vector>
@@ -79,4 +79,4 @@ copy_all_parameter_values(
 
 }  // namespace rclcpp
 
-#endif  // RCLCPP__COPY_ALL_PARAMETER_VALUES_HPP_
+#endif  // NAV2_UTIL__COPY_ALL_PARAMETER_VALUES_HPP_

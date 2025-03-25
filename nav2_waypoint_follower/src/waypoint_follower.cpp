@@ -97,7 +97,6 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & state)
   //   std::shared_ptr<nav2_util::LifecycleNode>>>(
   //   "/fromLL",
   //   node);
-  
 
   gps_action_server_ = std::make_unique<ActionServerGPS>(
     get_node_base_interface(),
