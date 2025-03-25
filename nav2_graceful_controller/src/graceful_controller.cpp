@@ -171,7 +171,6 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
     // Need to check at least the end pose
     num_steps = std::max(static_cast<size_t>(1), num_steps);
     bool collision_free = true;
-    bool use_collision_detection = params_->use_collision_detection;
     for (size_t i = 1; i <= num_steps; ++i) {
       double step = static_cast<double>(i) / static_cast<double>(num_steps);
       double yaw = step * angle_to_goal;
@@ -180,7 +179,7 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
       next_pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(yaw);
       geometry_msgs::msg::PoseStamped costmap_pose;
       tf2::doTransform(next_pose, costmap_pose, costmap_transform);
-      if (use_collision_detection && inCollision(
+      if (params_->use_collision_detection && inCollision(
           costmap_pose.pose.position.x, costmap_pose.pose.position.y,
           tf2::getYaw(costmap_pose.pose.orientation)))
       {

@@ -191,6 +191,8 @@ ParameterHandler::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
           continue;
         }
         params_.allow_backward = parameter.as_bool();
+      } else if (name == plugin_name_ + ".use_collision_detection") {
+        params_.use_collision_detection = parameter.as_bool();
       }
     }
   }
