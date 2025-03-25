@@ -19,9 +19,6 @@ target_include_directories(${PROJECT_NAME}
 ament_target_dependencies(${PROJECT_NAME}
   nav2_costmap_2d
 )
-# target_link_libraries(${PROJECT_NAME} PUBLIC
-#   nav2_costmap_2d::nav2_costmap_2d_core
-# )
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -47,8 +44,6 @@ if(BUILD_TESTING)
   )
   target_link_libraries(utest
     ${PROJECT_NAME}
-    # nav2_costmap_2d::nav2_costmap_2d_core
-    # rclcpp::rclcpp
   )
 endif()
 

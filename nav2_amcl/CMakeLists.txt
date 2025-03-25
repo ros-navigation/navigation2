@@ -115,25 +115,9 @@ ament_target_dependencies(${library_name}
   rclcpp_components
   tf2_geometry_msgs
 )
-target_link_libraries(${library_name} #PUBLIC
-  # ${geometry_msgs_TARGETS}
-  # message_filters::message_filters
-  # nav2_util::nav2_util_core
-  # ${sensor_msgs_TARGETS}
-  # ${std_srvs_TARGETS}
-  # pluginlib::pluginlib
+target_link_libraries(${library_name}
   sensors_lib
-  # rclcpp::rclcpp
-  # rclcpp_lifecycle::rclcpp_lifecycle
-  # ${nav_msgs_TARGETS}
-  # tf2_ros::tf2_ros
-  # tf2::tf2
-  # ${nav2_msgs_TARGETS}
 )
-# target_link_libraries(${library_name} PRIVATE
-#   rclcpp_components::component
-#   tf2_geometry_msgs::tf2_geometry_msgs
-# )
 
 add_executable(${executable_name}
   src/main.cpp
@@ -142,7 +126,7 @@ target_include_directories(${executable_name}
   PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
-target_link_libraries(${executable_name} #PRIVATE
+target_link_libraries(${executable_name}
   ${library_name}
 )
 

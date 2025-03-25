@@ -76,7 +76,6 @@ TEST(DynParamTestNode, testDynParamsSet)
     rclcpp::Parameter("robot_base_frame", "wrong_test_frame"),
   });
 
-  
   // rclcpp::spin_all(node->get_node_base_interface(), std::chrono::milliseconds(50));
   // rclcpp::spin_all(costmap->get_node_base_interface(), std::chrono::milliseconds(50));
   rclcpp::spin_some(node->get_node_base_interface());

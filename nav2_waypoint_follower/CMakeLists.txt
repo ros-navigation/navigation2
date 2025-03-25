@@ -48,21 +48,6 @@ ament_target_dependencies(${library_name}
   tf2_ros
   rclcpp_components
 )
-# target_link_libraries(${library_name} PUBLIC
-#   ${geographic_msgs_TARGETS}
-#   nav2_core::nav2_core
-#   ${nav2_msgs_TARGETS}
-#   nav2_util::nav2_util_core
-#   ${nav_msgs_TARGETS}
-#   pluginlib::pluginlib
-#   rclcpp::rclcpp
-#   rclcpp_action::rclcpp_action
-#   rclcpp_lifecycle::rclcpp_lifecycle
-#   tf2_ros::tf2_ros
-# )
-# target_link_libraries(${library_name} PRIVATE
-#   rclcpp_components::component
-# )
 
 # Extract the major version (first number before the dot)
 string(REGEX MATCH "^[0-9]+" ROS2_MAJOR_VERSION "${rclcpp_VERSION}")
@@ -70,11 +55,9 @@ string(REGEX MATCH "^[0-9]+" ROS2_MAJOR_VERSION "${rclcpp_VERSION}")
 if(ROS2_MAJOR_VERSION GREATER_EQUAL 29)
     message(STATUS "ROS2_MAJOR_VERSION (${ROS2_MAJOR_VERSION}) is greater than 29 (Kilted and newer).")
     target_link_libraries(${library_name} robot_localization::rl_lib)
-    # target_link_libraries(${library_name} PUBLIC robot_localization::rl_lib)
 else()
     message(STATUS "ROS2_MAJOR_VERSION (${ROS2_MAJOR_VERSION}) is NOT greater than 29 (Jazzy and older).")
     ament_target_dependencies(${library_name} robot_localization)
-    # ament_target_dependencies(${library_name} PUBLIC robot_localization)
 endif()
 
 add_executable(${executable_name}
@@ -87,9 +70,8 @@ target_include_directories(${executable_name} PRIVATE
 ament_target_dependencies(${executable_name}
   rclcpp
 )
-target_link_libraries(${executable_name} #PRIVATE
+target_link_libraries(${executable_name}
   ${library_name}
-  # rclcpp::rclcpp
 )
 
 add_library(wait_at_waypoint SHARED plugins/wait_at_waypoint.cpp)
@@ -106,16 +88,6 @@ ament_target_dependencies(wait_at_waypoint
   pluginlib
   nav2_util
 )
-# target_link_libraries(wait_at_waypoint PUBLIC
-#   ${geometry_msgs_TARGETS}
-#   rclcpp::rclcpp
-#   rclcpp_lifecycle::rclcpp_lifecycle
-#   nav2_core::nav2_core
-# )
-# target_link_libraries(wait_at_waypoint PRIVATE
-#   pluginlib::pluginlib
-#   nav2_util::nav2_util_core
-# )
 
 add_library(photo_at_waypoint SHARED plugins/photo_at_waypoint.cpp)
 target_include_directories(photo_at_waypoint PUBLIC
@@ -136,20 +108,6 @@ ament_target_dependencies(photo_at_waypoint
 target_link_libraries(photo_at_waypoint
   opencv_core
 )
-# target_link_libraries(photo_at_waypoint PUBLIC
-#   cv_bridge::cv_bridge
-#   ${geometry_msgs_TARGETS}
-#   image_transport::image_transport
-#   nav2_core::nav2_core
-#   opencv_core
-#   rclcpp::rclcpp
-#   rclcpp_lifecycle::rclcpp_lifecycle
-#   ${sensor_msgs_TARGETS}
-# )
-# target_link_libraries(photo_at_waypoint PRIVATE
-#   nav2_util::nav2_util_core
-#   pluginlib::pluginlib
-# )
 
 add_library(input_at_waypoint SHARED plugins/input_at_waypoint.cpp)
 target_include_directories(input_at_waypoint PUBLIC
@@ -165,17 +123,6 @@ ament_target_dependencies(input_at_waypoint
   pluginlib
   nav2_util
 )
-# target_link_libraries(input_at_waypoint PUBLIC
-#   ${geometry_msgs_TARGETS}
-#   nav2_core::nav2_core
-#   rclcpp::rclcpp
-#   rclcpp_lifecycle::rclcpp_lifecycle
-#   ${std_msgs_TARGETS}
-# )
-# target_link_libraries(input_at_waypoint PRIVATE
-#   pluginlib::pluginlib
-#   nav2_util::nav2_util_core
-# )
 
 rclcpp_components_register_nodes(${library_name} "nav2_waypoint_follower::WaypointFollower")
 

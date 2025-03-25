@@ -5,10 +5,6 @@ ament_target_dependencies(test_localization_node
   geometry_msgs
   rclcpp
 )
-# target_link_libraries(test_localization_node
-#   ${geometry_msgs_TARGETS}
-#   rclcpp::rclcpp
-# )
 
 ament_add_test(test_localization
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO

@@ -29,23 +29,7 @@ ament_target_dependencies(${library_name}
   tf2_geometry_msgs
   bond
 )
-# target_link_libraries(${library_name} PUBLIC
-#   bondcpp::bondcpp
-#   ${geometry_msgs_TARGETS}
-#   ${lifecycle_msgs_TARGETS}
-#   ${nav2_msgs_TARGETS}
-#   ${nav_msgs_TARGETS}
-#   ${rcl_interfaces_TARGETS}
-#   rclcpp::rclcpp
-#   rclcpp_action::rclcpp_action
-#   rclcpp_lifecycle::rclcpp_lifecycle
-#   tf2_ros::tf2_ros
-#   tf2::tf2
-#   ${tf2_geometry_msgs_TARGETS}
-# )
-# target_link_libraries(${library_name} PRIVATE
-#   ${bond_TARGETS}
-# )
+
 
 add_executable(lifecycle_bringup
   lifecycle_bringup_commandline.cpp
@@ -56,19 +40,18 @@ ament_target_dependencies(lifecycle_bringup
 target_link_libraries(lifecycle_bringup
   ${library_name}
 )
-# target_link_libraries(lifecycle_bringup PRIVATE ${library_name} rclcpp::rclcpp)
 
-add_executable(base_footprint_publisher
-  base_footprint_publisher.cpp
-)
-ament_target_dependencies(base_footprint_publisher
-  rclcpp
-  tf2_msgs
-)
-target_link_libraries(base_footprint_publisher
-  ${library_name}
-)
-# target_link_libraries(base_footprint_publisher PRIVATE ${library_name} rclcpp::rclcpp ${tf2_msgs_TARGETS})
+## Commented because it is not possible to be used with Humble
+# add_executable(base_footprint_publisher
+#   base_footprint_publisher.cpp
+# )
+# ament_target_dependencies(base_footprint_publisher
+#   rclcpp
+#   tf2_msgs
+# )
+# target_link_libraries(base_footprint_publisher
+#   ${library_name}
+# )
 
 install(TARGETS
   ${library_name}

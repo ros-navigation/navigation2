@@ -8,9 +8,6 @@ ament_target_dependencies(test_lifecycle_gtest
 )
 target_link_libraries(test_lifecycle_gtest
   ${library_name}
-  # nav2_util::nav2_util_core
-  # rclcpp::rclcpp
-  # rclcpp_lifecycle::rclcpp_lifecycle
 )
 
 ament_add_test(test_lifecycle
@@ -31,8 +28,6 @@ ament_target_dependencies(test_bond_gtest
 )
 target_link_libraries(test_bond_gtest
   ${library_name}
-  # nav2_util::nav2_util_core
-  # rclcpp::rclcpp
 )
 
 ament_add_test(test_bond

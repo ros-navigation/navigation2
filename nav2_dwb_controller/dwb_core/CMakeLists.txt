@@ -49,24 +49,6 @@ ament_target_dependencies(dwb_core
   tf2_ros
   visualization_msgs
 )
-# target_link_libraries(dwb_core PUBLIC
-#   ${builtin_interfaces_TARGETS}
-#   ${dwb_msgs_TARGETS}
-#   ${geometry_msgs_TARGETS}
-#   nav2_core::nav2_core
-#   nav2_costmap_2d::nav2_costmap_2d_core
-#   nav2_util::nav2_util_core
-#   ${nav_2d_msgs_TARGETS}
-#   nav_2d_utils::conversions
-#   nav_2d_utils::tf_help
-#   ${nav_msgs_TARGETS}
-#   pluginlib::pluginlib
-#   rclcpp::rclcpp
-#   rclcpp_lifecycle::rclcpp_lifecycle
-#   ${sensor_msgs_TARGETS}
-#   tf2_ros::tf2_ros
-#   ${visualization_msgs_TARGETS}
-# )
 
 install(TARGETS dwb_core
   EXPORT dwb_core

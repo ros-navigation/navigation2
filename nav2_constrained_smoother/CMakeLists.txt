@@ -47,22 +47,6 @@ target_link_libraries(${library_name}
   Ceres::ceres
   Eigen3::Eigen
 )
-# target_link_libraries(${library_name} PUBLIC
-#   Ceres::ceres
-#   Eigen3::Eigen
-#   nav2_core::nav2_core
-#   nav2_costmap_2d::nav2_costmap_2d_client
-#   nav2_costmap_2d::nav2_costmap_2d_core
-#   nav2_util::nav2_util_core
-#   rclcpp::rclcpp
-#   rclcpp_lifecycle::rclcpp_lifecycle
-#   tf2_ros::tf2_ros
-# )
-# target_link_libraries(${library_name} PRIVATE
-#   ${geometry_msgs_TARGETS}
-#   ${nav_msgs_TARGETS}
-#   pluginlib::pluginlib
-# )
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

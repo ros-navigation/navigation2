@@ -12,13 +12,3 @@ ament_target_dependencies(test_behavior_tree_node
   rclcpp
   tf2_ros
 )
-# target_link_libraries(test_behavior_tree_node
-#   ament_index_cpp::ament_index_cpp
-#   behaviortree_cpp::behaviortree_cpp
-#   ${geometry_msgs_TARGETS}
-#   nav2_behavior_tree::nav2_behavior_tree
-#   ${nav2_msgs_TARGETS}
-#   nav2_util::nav2_util_core
-#   rclcpp::rclcpp
-#   tf2_ros::tf2_ros
-# )

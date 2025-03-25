@@ -48,17 +48,6 @@ ament_target_dependencies(${library_name}
   rclcpp_lifecycle
 )
 
-# target_link_libraries(${library_name}
-#   nav2_core::nav2_core
-#   nav2_util::nav2_util_core
-#   pluginlib::pluginlib
-#   rclcpp::rclcpp
-#   rclcpp_action::rclcpp_action
-#   tf2_ros::tf2_ros
-#   rclcpp_components::component
-#   rclcpp_lifecycle::rclcpp_lifecycle
-# )
-
 add_executable(${executable_name}
   src/main.cpp
 )
@@ -70,9 +59,8 @@ target_include_directories(${executable_name}
 ament_target_dependencies(${executable_name}
   rclcpp
 )
-target_link_libraries(${executable_name} #PRIVATE
+target_link_libraries(${executable_name}
   ${library_name}
-  # rclcpp:rclcpp
 )
 
 add_library(nav2_navigate_to_pose_navigator SHARED src/navigators/navigate_to_pose.cpp)
@@ -96,19 +84,6 @@ ament_target_dependencies(nav2_navigate_to_pose_navigator
   rclcpp_lifecycle
 )
 
-# target_link_libraries(nav2_navigate_to_pose_navigator
-#   ${geometry_msgs_TARGETS}
-#   nav2_core::nav2_core
-#   ${nav2_msgs_TARGETS}
-#   nav2_util::nav2_util_core
-#   ${nav_msgs_TARGETS}
-#   rclcpp::rclcpp
-#   rclcpp_action::rclcpp_action
-#   ament_index_cpp::ament_index_cpp
-#   pluginlib::pluginlib
-#   rclcpp_lifecycle::rclcpp_lifecycle
-# )
-
 add_library(nav2_navigate_through_poses SHARED src/navigators/navigate_through_poses.cpp)
 target_include_directories(nav2_navigate_through_poses
   PUBLIC
@@ -128,20 +103,6 @@ ament_target_dependencies(nav2_navigate_through_poses
   rclcpp_lifecycle
   nav2_behavior_tree
 )
-# target_link_libraries(nav2_navigate_through_poses PUBLIC
-#   ${geometry_msgs_TARGETS}
-#   nav2_core::nav2_core
-#   ${nav2_msgs_TARGETS}
-#   ${nav_msgs_TARGETS}
-#   nav2_util::nav2_util_core
-#   rclcpp::rclcpp
-#   rclcpp_action::rclcpp_action
-# )
-# target_link_libraries(nav2_navigate_through_poses PRIVATE
-#   ament_index_cpp::ament_index_cpp
-#   pluginlib::pluginlib
-#   rclcpp_lifecycle::rclcpp_lifecycle
-# )
 
 pluginlib_export_plugin_description_file(nav2_core navigator_plugins.xml)
 rclcpp_components_register_nodes(${library_name} "nav2_bt_navigator::BtNavigator")

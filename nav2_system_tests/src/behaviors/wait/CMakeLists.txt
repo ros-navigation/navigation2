@@ -14,16 +14,6 @@ ament_target_dependencies(${test_wait_behavior_exec}
   tf2
   tf2_ros
 )
-# target_link_libraries(${test_wait_behavior_exec}
-#   angles::angles
-#   ${geometry_msgs_TARGETS}
-#   ${nav2_msgs_TARGETS}
-#   nav2_util::nav2_util_core
-#   rclcpp::rclcpp
-#   rclcpp_action::rclcpp_action
-#   tf2::tf2
-#   tf2_ros::tf2_ros
-# )
 
 ament_add_test(test_wait_behavior
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO

@@ -12,7 +12,6 @@ ament_target_dependencies(test_service_client
     std_srvs
 )
 target_link_libraries(test_service_client ${library_name})
-# target_link_libraries(test_service_client ${library_name} ${std_srvs_TARGETS})
 
 ament_add_gtest(test_string_utils test_string_utils.cpp)
 target_link_libraries(test_string_utils ${library_name})
@@ -23,7 +22,6 @@ ament_target_dependencies(test_lifecycle_utils
     rclcpp_lifecycle
 )
 target_link_libraries(test_lifecycle_utils ${library_name})
-# target_link_libraries(test_lifecycle_utils ${library_name} rclcpp_lifecycle::rclcpp_lifecycle)
 
 ament_add_gtest(test_actions test_actions.cpp)
 ament_target_dependencies(test_actions
@@ -31,28 +29,24 @@ ament_target_dependencies(test_actions
     test_msgs
 )
 target_link_libraries(test_actions ${library_name})
-# target_link_libraries(test_actions ${library_name} rclcpp_action::rclcpp_action ${test_msgs_TARGETS})
 
 ament_add_gtest(test_lifecycle_node test_lifecycle_node.cpp)
 ament_target_dependencies(test_lifecycle_node
     rclcpp_lifecycle
 )
 target_link_libraries(test_lifecycle_node ${library_name})
-# target_link_libraries(test_lifecycle_node ${library_name} rclcpp_lifecycle::rclcpp_lifecycle)
 
 ament_add_gtest(test_lifecycle_cli_node test_lifecycle_cli_node.cpp)
 ament_target_dependencies(test_lifecycle_cli_node
     rclcpp_lifecycle
 )
 target_link_libraries(test_lifecycle_cli_node ${library_name})
-# target_link_libraries(test_lifecycle_cli_node ${library_name} rclcpp_lifecycle::rclcpp_lifecycle)
 
 ament_add_gtest(test_geometry_utils test_geometry_utils.cpp)
 ament_target_dependencies(test_geometry_utils
     geometry_msgs
 )
 target_link_libraries(test_geometry_utils ${library_name})
-# target_link_libraries(test_geometry_utils ${library_name} ${geometry_msgs_TARGETS})
 
 ament_add_gtest(test_odometry_utils test_odometry_utils.cpp)
 ament_target_dependencies(test_odometry_utils
@@ -60,24 +54,22 @@ ament_target_dependencies(test_odometry_utils
     geometry_msgs
 )
 target_link_libraries(test_odometry_utils ${library_name})
-# target_link_libraries(test_odometry_utils ${library_name} ${nav_msgs_TARGETS} ${geometry_msgs_TARGETS})
 
 ament_add_gtest(test_robot_utils test_robot_utils.cpp)
 ament_target_dependencies(test_robot_utils
     geometry_msgs
 )
 target_link_libraries(test_robot_utils ${library_name})
-# target_link_libraries(test_robot_utils ${library_name} ${geometry_msgs_TARGETS})
 
-ament_add_gtest(test_base_footprint_publisher test_base_footprint_publisher.cpp)
-target_include_directories(test_base_footprint_publisher PRIVATE "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>")
-ament_target_dependencies(test_base_footprint_publisher
-    geometry_msgs
-    tf2_ros
-    rclcpp
-)
-target_link_libraries(test_base_footprint_publisher ${library_name})
-# target_link_libraries(test_base_footprint_publisher ${library_name} tf2_ros::tf2_ros rclcpp::rclcpp ${geometry_msgs_TARGETS})
+## Commented because it is not possible to be used with Humble
+# ament_add_gtest(test_base_footprint_publisher test_base_footprint_publisher.cpp)
+# target_include_directories(test_base_footprint_publisher PRIVATE "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>")
+# ament_target_dependencies(test_base_footprint_publisher
+#     geometry_msgs
+#     tf2_ros
+#     rclcpp
+# )
+# target_link_libraries(test_base_footprint_publisher ${library_name})
 
 ament_add_gtest(test_array_parser test_array_parser.cpp)
 target_link_libraries(test_array_parser ${library_name})
@@ -88,7 +80,6 @@ ament_target_dependencies(test_twist_publisher
     rclcpp
 )
 target_link_libraries(test_twist_publisher ${library_name})
-# target_link_libraries(test_twist_publisher ${library_name} rclcpp::rclcpp ${geometry_msgs_TARGETS})
 
 ament_add_gtest(test_twist_subscriber test_twist_subscriber.cpp)
 ament_target_dependencies(test_twist_subscriber
@@ -96,7 +87,6 @@ ament_target_dependencies(test_twist_subscriber
     rclcpp
 )
 target_link_libraries(test_twist_subscriber ${library_name})
-# target_link_libraries(test_twist_subscriber ${library_name} rclcpp::rclcpp ${geometry_msgs_TARGETS})
 
 ament_add_gtest(test_validation_messages test_validation_messages.cpp)
 ament_target_dependencies(test_validation_messages
@@ -105,4 +95,6 @@ ament_target_dependencies(test_validation_messages
     builtin_interfaces
 )
 target_link_libraries(test_validation_messages ${library_name})
-# target_link_libraries(test_validation_messages ${library_name} ${builtin_interfaces_TARGETS} ${std_msgs_TARGETS} ${geometry_msgs_TARGETS})
+
+ament_add_gtest(test_copy_all_parameter_values test_copy_all_parameter_values.cpp)
+target_link_libraries(test_copy_all_parameter_values ${library_name})

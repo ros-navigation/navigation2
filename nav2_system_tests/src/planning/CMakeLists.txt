@@ -20,19 +20,6 @@ ament_add_gtest_executable(${test_planner_costmaps_exec}
 ament_target_dependencies(${test_planner_costmaps_exec}
   ${dependencies}
 )
-# target_link_libraries(${test_planner_costmaps_exec}
-#   ${geometry_msgs_TARGETS}
-#   nav2_map_server::map_io
-#   nav2_map_server::map_server_core
-#   ${nav2_msgs_TARGETS}
-#   nav2_planner::planner_server_core
-#   nav2_util::nav2_util_core
-#   ${nav_msgs_TARGETS}
-#   rclcpp::rclcpp
-#   rclcpp_lifecycle::rclcpp_lifecycle
-#   tf2_ros::tf2_ros
-#   ${visualization_msgs_TARGETS}
-# )
 
 set(test_planner_random_exec test_planner_random_node)
 
@@ -43,19 +30,6 @@ ament_add_gtest_executable(${test_planner_random_exec}
 ament_target_dependencies(${test_planner_random_exec}
   ${dependencies}
 )
-# target_link_libraries(${test_planner_random_exec}
-#   ${geometry_msgs_TARGETS}
-#   nav2_map_server::map_io
-#   nav2_map_server::map_server_core
-#   ${nav2_msgs_TARGETS}
-#   nav2_planner::planner_server_core
-#   nav2_util::nav2_util_core
-#   ${nav_msgs_TARGETS}
-#   rclcpp::rclcpp
-#   rclcpp_lifecycle::rclcpp_lifecycle
-#   tf2_ros::tf2_ros
-#   ${visualization_msgs_TARGETS}
-# )
 
 ament_add_test(test_planner_costmaps
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
@@ -85,19 +59,6 @@ ament_add_gtest(test_planner_plugins
 ament_target_dependencies(test_planner_plugins
   ${dependencies}
 )
-# target_link_libraries(test_planner_plugins
-#   ${geometry_msgs_TARGETS}
-#   nav2_core::nav2_core
-#   nav2_map_server::map_io
-#   nav2_map_server::map_server_core
-#   ${nav2_msgs_TARGETS}
-#   nav2_planner::planner_server_core
-#   nav2_util::nav2_util_core
-#   ${nav_msgs_TARGETS}
-#   rclcpp::rclcpp
-#   rclcpp_lifecycle::rclcpp_lifecycle
-#   tf2_ros::tf2_ros
-# )
 
 ament_add_gtest(test_planner_is_path_valid
   planner_tester.cpp
@@ -106,14 +67,3 @@ ament_add_gtest(test_planner_is_path_valid
 ament_target_dependencies(test_planner_is_path_valid
   ${dependencies}
 )
-# target_link_libraries(test_planner_is_path_valid
-#   ${geometry_msgs_TARGETS}
-#   nav2_map_server::map_io
-#   nav2_map_server::map_server_core
-#   ${nav2_msgs_TARGETS}
-#   nav2_planner::planner_server_core
-#   nav2_util::nav2_util_core
-#   rclcpp::rclcpp
-#   rclcpp_lifecycle::rclcpp_lifecycle
-#   tf2_ros::tf2_ros
-# )

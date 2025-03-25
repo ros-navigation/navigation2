@@ -31,17 +31,6 @@ ament_target_dependencies(conversions
   nav2_util
   tf2_geometry_msgs
 )
-# target_link_libraries(conversions PUBLIC
-#   ${geometry_msgs_TARGETS}
-#   ${nav_2d_msgs_TARGETS}
-#   ${nav_msgs_TARGETS}
-#   rclcpp::rclcpp
-#   tf2::tf2
-# )
-# target_link_libraries(conversions PRIVATE
-#   nav2_util::nav2_util_core
-#   tf2_geometry_msgs::tf2_geometry_msgs
-# )
 
 add_library(path_ops SHARED
   src/path_ops.cpp)
@@ -54,12 +43,6 @@ ament_target_dependencies(path_ops
   nav_2d_msgs
   geometry_msgs
 )
-# target_link_libraries(path_ops PUBLIC
-#   ${nav_2d_msgs_TARGETS}
-# )
-# target_link_libraries(path_ops PRIVATE
-#   ${geometry_msgs_TARGETS}
-# )
 
 add_library(tf_help SHARED
   src/tf_help.cpp
@@ -82,15 +65,6 @@ ament_target_dependencies(tf_help
 target_link_libraries(tf_help
   conversions
 )
-# target_link_libraries(tf_help PUBLIC
-#   conversions
-#   ${geometry_msgs_TARGETS}
-#   ${nav_2d_msgs_TARGETS}
-#   rclcpp::rclcpp
-#   tf2::tf2
-#   tf2_geometry_msgs::tf2_geometry_msgs
-#   tf2_ros::tf2_ros
-# )
 
 install(TARGETS conversions path_ops tf_help
   EXPORT ${PROJECT_NAME}

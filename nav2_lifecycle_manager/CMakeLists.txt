@@ -38,19 +38,6 @@ ament_target_dependencies(${library_name}
   lifecycle_msgs
   rclcpp_components
 )
-# target_link_libraries(${library_name} PUBLIC
-#   bondcpp::bondcpp
-#   diagnostic_updater::diagnostic_updater
-#   nav2_util::nav2_util_core
-#   rclcpp::rclcpp
-#   rclcpp_action::rclcpp_action
-#   ${std_srvs_TARGETS}
-# )
-# target_link_libraries(${library_name} PRIVATE
-#   ${diagnostic_msgs_TARGETS}
-#   ${lifecycle_msgs_TARGETS}
-#   rclcpp_components::component
-# )
 
 add_executable(lifecycle_manager
   src/main.cpp
@@ -66,10 +53,6 @@ ament_target_dependencies(lifecycle_manager
 target_link_libraries(lifecycle_manager
   ${library_name}
 )
-# target_link_libraries(lifecycle_manager PRIVATE
-#   ${library_name}
-#   rclcpp::rclcpp
-# )
 
 rclcpp_components_register_nodes(${library_name} "nav2_lifecycle_manager::LifecycleManager")
 

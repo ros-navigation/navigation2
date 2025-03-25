@@ -17,10 +17,6 @@ target_include_directories(voxel_grid
 ament_target_dependencies(voxel_grid
   rclcpp
 )
-# target_link_libraries(voxel_grid PUBLIC
-#   rclcpp::rclcpp
-# )
-
 install(TARGETS voxel_grid
   EXPORT voxel_grid
   ARCHIVE DESTINATION lib

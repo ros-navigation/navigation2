@@ -43,24 +43,6 @@ ament_target_dependencies(${library_name}
   nav_2d_utils
   rclcpp_components
 )
-# target_link_libraries(${library_name} PUBLIC
-#   nav2_core::nav2_core
-#   nav2_costmap_2d::nav2_costmap_2d_client
-#   nav2_costmap_2d::nav2_costmap_2d_core
-#   ${nav2_msgs_TARGETS}
-#   nav2_util::nav2_util_core
-#   ${nav_msgs_TARGETS}
-#   pluginlib::pluginlib
-#   rclcpp::rclcpp
-#   rclcpp_lifecycle::rclcpp_lifecycle
-#   tf2_ros::tf2_ros
-# )
-# target_link_libraries(${library_name} PRIVATE
-#   nav_2d_utils::conversions
-#   nav_2d_utils::tf_help
-#   rclcpp_components::component
-#   tf2::tf2
-# )
 
 # Main executable
 add_executable(${executable_name}
@@ -97,21 +79,6 @@ ament_target_dependencies(simple_smoother
   tf2_ros
   pluginlib
 )
-# target_link_libraries(simple_smoother PUBLIC
-#   angles::angles
-#   nav2_core::nav2_core
-#   nav2_costmap_2d::nav2_costmap_2d_core
-#   nav2_costmap_2d::nav2_costmap_2d_client
-#   nav2_util::nav2_util_core
-#   ${nav_msgs_TARGETS}
-#   rclcpp::rclcpp
-#   rclcpp_lifecycle::rclcpp_lifecycle
-#   tf2::tf2
-#   tf2_ros::tf2_ros
-# )
-# target_link_libraries(simple_smoother PRIVATE
-#   pluginlib::pluginlib
-# )
 
 # Savitzky Golay Smoother plugin
 add_library(savitzky_golay_smoother SHARED
@@ -133,21 +100,6 @@ ament_target_dependencies(savitzky_golay_smoother
   tf2_ros
   pluginlib
 )
-# target_link_libraries(savitzky_golay_smoother PUBLIC
-#   angles::angles
-#   nav2_core::nav2_core
-#   nav2_costmap_2d::nav2_costmap_2d_core
-#   nav2_costmap_2d::nav2_costmap_2d_client
-#   nav2_util::nav2_util_core
-#   ${nav_msgs_TARGETS}
-#   rclcpp::rclcpp
-#   rclcpp_lifecycle::rclcpp_lifecycle
-#   tf2::tf2
-#   tf2_ros::tf2_ros
-# )
-# target_link_libraries(savitzky_golay_smoother PRIVATE
-#   pluginlib::pluginlib
-# )
 
 pluginlib_export_plugin_description_file(nav2_core plugins.xml)
 

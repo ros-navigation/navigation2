@@ -9,4 +9,3 @@ ament_target_dependencies(test_behaviors
 target_link_libraries(test_behaviors
   ${library_name}
 )
-# target_link_libraries(test_behaviors rclcpp::rclcpp rclcpp_action::rclcpp_action ${nav2_msgs_TARGETS} ${library_name})

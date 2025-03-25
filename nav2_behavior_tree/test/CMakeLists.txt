@@ -7,9 +7,6 @@ target_link_libraries(test_bt_utils
 function(plugin_add_test target filename plugin)
   ament_add_gtest(${target} ${filename})
   target_link_libraries(${target}
-    # ${geometry_msgs_TARGETS}
-    # nav2_util::nav2_util_core
-    # behaviortree_cpp::behaviortree_cpp
     ${library_name}
     ${plugin}
   )

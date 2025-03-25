@@ -34,12 +34,6 @@ ament_target_dependencies(smooth_control_law
   nav2_util
   tf2
 )
-# target_link_libraries(smooth_control_law PUBLIC
-#   angles::angles
-#   ${geometry_msgs_TARGETS}
-#   nav2_util::nav2_util_core
-#   tf2::tf2
-# )
 
 # Add Graceful Controller
 set(library_name nav2_graceful_controller)
@@ -74,25 +68,6 @@ ament_target_dependencies(${library_name}
 target_link_libraries(${library_name}
   smooth_control_law
 )
-# target_link_libraries(${library_name} PUBLIC
-#   ${geometry_msgs_TARGETS}
-#   nav2_core::nav2_core
-#   nav2_util::nav2_util_core
-#   nav2_costmap_2d::nav2_costmap_2d_core
-#   nav_2d_utils::tf_help
-#   ${nav_msgs_TARGETS}
-#   pluginlib::pluginlib
-#   rclcpp::rclcpp
-#   rclcpp_lifecycle::rclcpp_lifecycle
-#   ${rcl_interfaces_TARGETS}
-#   smooth_control_law
-#   tf2::tf2
-#   tf2_ros::tf2_ros
-#   ${visualization_msgs_TARGETS}
-# )
-# target_link_libraries(${library_name} PRIVATE
-#   tf2_geometry_msgs::tf2_geometry_msgs
-# )
 
 install(TARGETS smooth_control_law ${library_name}
   EXPORT nav2_graceful_controller

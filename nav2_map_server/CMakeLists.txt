@@ -51,15 +51,6 @@ ament_target_dependencies(${map_io_library_name}
 target_link_libraries(${map_io_library_name}
   ${GRAPHICSMAGICKCPP_LIBRARIES}
 )
-# target_link_libraries(${map_io_library_name} PUBLIC
-#   nav2_util::nav2_util_core
-#   ${nav_msgs_TARGETS}
-# )
-# target_link_libraries(${map_io_library_name} PRIVATE
-#   ${GRAPHICSMAGICKCPP_LIBRARIES}
-#   tf2::tf2
-#   yaml-cpp #::yaml-cpp
-# )
 
 add_library(${library_name} SHARED
   src/map_server/map_server.cpp
@@ -82,19 +73,6 @@ ament_target_dependencies(${library_name}
 target_link_libraries(${library_name}
   ${map_io_library_name}
 )
-# target_link_libraries(${library_name} PUBLIC
-#   ${map_io_library_name}
-#   ${nav_msgs_TARGETS}
-#   ${nav2_msgs_TARGETS}
-#   nav2_util::nav2_util_core
-#   rclcpp::rclcpp
-#   rclcpp_lifecycle::rclcpp_lifecycle
-# )
-# target_link_libraries(${library_name} PRIVATE
-#   ${lifecycle_msgs_TARGETS}
-#   rclcpp_components::component
-#   yaml-cpp #::yaml-cpp
-# )
 
 add_executable(${map_server_executable}
   src/map_server/main.cpp)
@@ -109,11 +87,6 @@ target_link_libraries(${map_server_executable}
   ${library_name}
   ${map_io_library_name}
 )
-# target_link_libraries(${map_server_executable} PRIVATE
-#   ${library_name}
-#   ${map_io_library_name}
-#   rclcpp::rclcpp
-# )
 
 add_executable(${map_saver_cli_executable}
   src/map_saver/main_cli.cpp)
@@ -132,15 +105,6 @@ target_link_libraries(${map_saver_cli_executable}
   ${library_name}
   ${map_io_library_name}
 )
-# target_link_libraries(${map_saver_cli_executable} PRIVATE
-#   ${library_name}
-#   ${map_io_library_name}
-#   ${nav_msgs_TARGETS}
-#   ${nav2_msgs_TARGETS}
-#   nav2_util::nav2_util_core
-#   rclcpp::rclcpp
-#   rclcpp_lifecycle::rclcpp_lifecycle
-# )
 
 add_executable(${map_saver_server_executable}
   src/map_saver/main_server.cpp)
@@ -159,15 +123,6 @@ target_link_libraries(${map_saver_server_executable}
   ${library_name}
   ${map_io_library_name}
 )
-# target_link_libraries(${map_saver_server_executable} PRIVATE
-#   ${library_name}
-#   ${map_io_library_name}
-#   ${nav_msgs_TARGETS}
-#   ${nav2_msgs_TARGETS}
-#   nav2_util::nav2_util_core
-#   rclcpp::rclcpp
-#   rclcpp_lifecycle::rclcpp_lifecycle
-# )
 
 add_executable(${costmap_filter_info_server_executable}
   src/costmap_filter_info/main.cpp)
@@ -186,15 +141,6 @@ target_link_libraries(${costmap_filter_info_server_executable}
   ${library_name}
   ${map_io_library_name}
 )
-# target_link_libraries(${costmap_filter_info_server_executable} PRIVATE
-#   ${library_name}
-#   ${map_io_library_name}
-#   ${nav_msgs_TARGETS}
-#   ${nav2_msgs_TARGETS}
-#   nav2_util::nav2_util_core
-#   rclcpp::rclcpp
-#   rclcpp_lifecycle::rclcpp_lifecycle
-# )
 
 rclcpp_components_register_nodes(${library_name} "nav2_map_server::CostmapFilterInfoServer")
 rclcpp_components_register_nodes(${library_name} "nav2_map_server::MapSaver")

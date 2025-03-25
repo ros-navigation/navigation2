@@ -15,18 +15,6 @@ ament_target_dependencies(${test_assisted_teleop_behavior}
   tf2
   tf2_ros
 )
-# target_link_libraries(${test_assisted_teleop_behavior}
-#   ${geometry_msgs_TARGETS}
-#   nav2_costmap_2d::nav2_costmap_2d_core
-#   nav2_costmap_2d::nav2_costmap_2d_client
-#   nav2_util::nav2_util_core
-#   ${nav2_msgs_TARGETS}
-#   rclcpp::rclcpp
-#   rclcpp_action::rclcpp_action
-#   ${std_msgs_TARGETS}
-#   tf2::tf2
-#   tf2_ros::tf2_ros
-# )
 
 ament_add_test(test_assisted_teleop_behavior
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO

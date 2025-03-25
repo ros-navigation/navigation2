@@ -38,19 +38,6 @@ ament_target_dependencies(standard_traj_generator
   pluginlib
 )
 
-# target_link_libraries(standard_traj_generator PUBLIC
-#   dwb_core::dwb_core
-#   ${dwb_msgs_TARGETS}
-#   ${geometry_msgs_TARGETS}
-#   nav2_util::nav2_util_core
-#   ${nav_2d_msgs_TARGETS}
-#   rclcpp::rclcpp
-#   ${rcl_interfaces_TARGETS}
-# )
-# target_link_libraries(standard_traj_generator PRIVATE
-#   nav_2d_utils::conversions
-#   pluginlib::pluginlib
-# )
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

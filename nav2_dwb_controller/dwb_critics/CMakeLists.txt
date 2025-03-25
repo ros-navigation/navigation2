@@ -48,21 +48,6 @@ ament_target_dependencies(${PROJECT_NAME}
   nav_2d_utils
   pluginlib
 )
-# target_link_libraries(${PROJECT_NAME} PUBLIC
-#   costmap_queue::costmap_queue
-#   dwb_core::dwb_core
-#   ${dwb_msgs_TARGETS}
-#   ${geometry_msgs_TARGETS}
-#   nav2_costmap_2d::nav2_costmap_2d_core
-#   ${nav_2d_msgs_TARGETS}
-#   rclcpp::rclcpp
-# )
-# target_link_libraries(${PROJECT_NAME} PRIVATE
-#   angles::angles
-#   nav2_util::nav2_util_core
-#   nav_2d_utils::path_ops
-#   pluginlib::pluginlib
-# )
 
 install(TARGETS ${PROJECT_NAME}
   EXPORT ${PROJECT_NAME}

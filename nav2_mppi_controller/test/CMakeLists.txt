@@ -18,13 +18,6 @@ foreach(name IN LISTS TEST_NAMES)
   )
   target_link_libraries(${name}
     mppi_controller
-    # ${geometry_msgs_TARGETS}
-    # ${nav_msgs_TARGETS}
-    # nav2_core::nav2_core
-    # nav2_costmap_2d::nav2_costmap_2d_core
-    # rclcpp::rclcpp
-    # rclcpp_lifecycle::rclcpp_lifecycle
-    # nav2_core::nav2_core
   )
   ament_target_dependencies(${name}
     geometry_msgs
