@@ -74,7 +74,7 @@ public:
 
 private:
   rclcpp::Node::SharedPtr node_;
-  std::shared_ptr<nav2_util::ServiceClient<nav2_msgs::srv::IsPathValid>> client_;
+  nav2_util::ServiceClient<nav2_msgs::srv::IsPathValid>::SharedPtr client_;
   // The timeout value while waiting for a response from the
   // is path valid service
   std::chrono::milliseconds server_timeout_;

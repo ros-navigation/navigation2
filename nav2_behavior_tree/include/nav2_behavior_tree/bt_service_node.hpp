@@ -264,7 +264,7 @@ protected:
   }
 
   std::string service_name_, service_node_name_;
-  std::shared_ptr<nav2_util::ServiceClient<ServiceT>> service_client_;
+  typename nav2_util::ServiceClient<ServiceT>::SharedPtr service_client_;
   std::shared_ptr<typename ServiceT::Request> request_;
 
   // The node that will be used for any ROS operations

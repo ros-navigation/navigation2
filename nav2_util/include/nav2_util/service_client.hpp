@@ -16,15 +16,16 @@
 #define NAV2_UTIL__SERVICE_CLIENT_HPP_
 
 #include <string>
-#include <utility>
+#include <memory>
 #include "rclcpp/rclcpp.hpp"
+#include <nav2_msgs/srv/get_costs.hpp>
 
 namespace nav2_util
 {
 
 /**
  * @class nav2_util::ServiceClient
- * @brief A simple wrapper on ROS2 services for invoke() and block-style calling
+ * @brief A simple wrapper on ROS2 services client
  */
 template<class ServiceT, typename NodeT = rclcpp::Node::SharedPtr>
 class ServiceClient
@@ -58,13 +59,11 @@ public:
     if(!node_->has_parameter("service_introspection_mode")) {
       node_->declare_parameter("service_introspection_mode", "disabled");
     }
-    std::string service_introspection_mode_ =
+    std::string service_introspection_mode =
       node_->get_parameter("service_introspection_mode").as_string();
-    if (service_introspection_mode_ == "disabled") {
-      introspection_state = RCL_SERVICE_INTROSPECTION_OFF;
-    } else if (service_introspection_mode_ == "metadata") {
+    if (service_introspection_mode == "metadata") {
       introspection_state = RCL_SERVICE_INTROSPECTION_METADATA;
-    } else if (service_introspection_mode_ == "contents") {
+    } else if (service_introspection_mode == "contents") {
       introspection_state = RCL_SERVICE_INTROSPECTION_CONTENTS;
     }
 
@@ -74,6 +73,7 @@ public:
 
   using RequestType = typename ServiceT::Request;
   using ResponseType = typename ServiceT::Response;
+  using SharedPtr = std::shared_ptr<ServiceClient<ServiceT, NodeT>>;
 
   /**
   * @brief Invoke the service and block until completed or timed out
@@ -167,11 +167,9 @@ public:
   * @param callback The callback to call when the service response is received
   */
   template<typename CallbackT>
-  void async_call(
-    typename RequestType::SharedPtr & request,
-    CallbackT && callback)
+  void async_call(typename RequestType::SharedPtr request, CallbackT && callback)
   {
-    client_->async_send_request(request, std::forward<CallbackT>(callback));
+    client_->async_send_request(request, callback);
   }
 
   /**

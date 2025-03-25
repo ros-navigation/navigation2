@@ -61,6 +61,7 @@ PlannerServer::PlannerServer(const rclcpp::NodeOptions & options)
       declare_parameter(default_ids_[i] + ".plugin", default_types_[i]);
     }
   }
+
   // Setup the global costmap
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "global_costmap", std::string{get_namespace()},

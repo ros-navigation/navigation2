@@ -85,7 +85,7 @@ Costmap2DPublisher::Costmap2DPublisher(
   costmap_service_ = std::make_shared<nav2_util::ServiceServer<nav2_msgs::srv::GetCostmap,
       std::shared_ptr<rclcpp_lifecycle::LifecycleNode>>>(
     std::string("get_") + topic_name,
-    node->shared_from_this(),
+    node,
     std::bind(
       &Costmap2DPublisher::costmap_service_callback, this,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));

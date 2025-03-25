@@ -25,7 +25,7 @@ namespace nav2_util
 
 /**
  * @class nav2_util::ServiceServer
- * @brief A simple wrapper on ROS2 services for invoke() and block-style calling
+ * @brief A simple wrapper on ROS2 services server
  */
 template<class ServiceT, typename NodeT = rclcpp::Node::SharedPtr>
 class ServiceServer
@@ -58,13 +58,11 @@ public:
     if(!node->has_parameter("service_introspection_mode")) {
       node->declare_parameter("service_introspection_mode", "disabled");
     }
-    std::string service_introspection_mode_ =
+    std::string service_introspection_mode =
       node->get_parameter("service_introspection_mode").as_string();
-    if (service_introspection_mode_ == "disabled") {
-      introspection_state = RCL_SERVICE_INTROSPECTION_OFF;
-    } else if (service_introspection_mode_ == "metadata") {
+    if (service_introspection_mode == "metadata") {
       introspection_state = RCL_SERVICE_INTROSPECTION_METADATA;
-    } else if (service_introspection_mode_ == "contents") {
+    } else if (service_introspection_mode == "contents") {
       introspection_state = RCL_SERVICE_INTROSPECTION_CONTENTS;
     }
 
@@ -76,8 +74,6 @@ protected:
   std::string service_name_;
   CallbackType callback_;
   typename rclcpp::Service<ServiceT>::SharedPtr server_;
-  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr
-    on_set_parameters_callback_handle_;
 };
 
 }  // namespace nav2_util

@@ -49,8 +49,8 @@ public:
 private Q_SLOTS:
 
 private:
-  std::shared_ptr<nav2_util::ServiceClient<nav2_msgs::srv::GetCosts>> local_cost_client_;
-  std::shared_ptr<nav2_util::ServiceClient<nav2_msgs::srv::GetCosts>> global_cost_client_;
+  nav2_util::ServiceClient<nav2_msgs::srv::GetCosts>::SharedPtr local_cost_client_;
+  nav2_util::ServiceClient<nav2_msgs::srv::GetCosts>::SharedPtr global_cost_client_;
   // The Node pointer that we need to keep alive for the duration of this plugin.
   std::shared_ptr<rviz_common::ros_integration::RosNodeAbstractionIface> node_ptr_;
 

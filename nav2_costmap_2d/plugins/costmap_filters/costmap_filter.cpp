@@ -86,7 +86,7 @@ void CostmapFilter::onInitialize()
     enable_service_ = std::make_shared<nav2_util::ServiceServer<std_srvs::srv::SetBool,
         std::shared_ptr<rclcpp_lifecycle::LifecycleNode>>>(
       name_ + "/toggle_filter",
-      node->shared_from_this(),
+      node,
       std::bind(&CostmapFilter::enableCallback, this, std::placeholders::_1,
         std::placeholders::_2, std::placeholders::_3));
   } catch (const std::exception & ex) {
