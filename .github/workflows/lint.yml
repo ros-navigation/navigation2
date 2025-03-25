@@ -19,3 +19,16 @@ jobs:
         linter: ${{ matrix.linter }}
         distribution: rolling
         package-name: "*"
+
+  ament_lint_mypy:
+    name: ament_mypy
+    runs-on: ubuntu-latest
+    container:
+      image: rostooling/setup-ros-docker:ubuntu-noble-ros-rolling-ros-base-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: ros-tooling/action-ros-lint@v0.1
+      with:
+        linter: mypy
+        distribution: rolling
+        package-name: "nav2_smac_planner"

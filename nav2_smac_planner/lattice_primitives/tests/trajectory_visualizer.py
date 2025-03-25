@@ -24,12 +24,14 @@ output file looks then you can run this script.
 
 import json
 from pathlib import Path
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
 
 
-def plot_arrow(x, y, yaw, length=1.0, fc='r', ec='k'):
+def plot_arrow(x: float, y: float, yaw: float, length: float = 1.0, fc: str = 'r', ec: str = 'k'
+               ) -> None:
     """Plot arrow."""
     plt.arrow(
         x,
@@ -43,7 +45,7 @@ def plot_arrow(x, y, yaw, length=1.0, fc='r', ec='k'):
     plt.plot(0, 0)
 
 
-def read_trajectories_data(file_path):
+def read_trajectories_data(file_path: Path) -> Any:
 
     with open(file_path) as data_file:
         trajectory_data = json.load(data_file)
