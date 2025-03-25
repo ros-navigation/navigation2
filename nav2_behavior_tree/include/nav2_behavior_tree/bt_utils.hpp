@@ -175,7 +175,7 @@ inline nav_msgs::msg::Goals convertFromString(const StringView key)
   if (StartWith(key, "json:")) {
     auto new_key = key;
     new_key.remove_prefix(5);
-    return convertFromJSON<geometry_msgs::msg::PoseStampedArray>(new_key);
+    return convertFromJSON<nav_msgs::msg::Goals>(new_key);
   }
 
   auto parts = BT::splitString(key, ';');
