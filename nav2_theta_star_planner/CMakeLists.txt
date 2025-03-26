@@ -38,20 +38,6 @@ ament_target_dependencies(${library_name}
   tf2_ros
   pluginlib
 )
-# target_link_libraries(${library_name} PUBLIC
-#   ${geometry_msgs_TARGETS}
-#   nav2_core::nav2_core
-#   nav2_costmap_2d::nav2_costmap_2d_core
-#   nav2_util::nav2_util_core
-#   ${nav_msgs_TARGETS}
-#   rclcpp::rclcpp
-#   rclcpp_lifecycle::rclcpp_lifecycle
-#   ${rcl_interfaces_TARGETS}
-#   tf2_ros::tf2_ros
-# )
-# target_link_libraries(${library_name} PRIVATE
-#   pluginlib::pluginlib
-# )
 target_compile_options(${library_name} PRIVATE -O3)
 
 pluginlib_export_plugin_description_file(nav2_core theta_star_planner.xml)
