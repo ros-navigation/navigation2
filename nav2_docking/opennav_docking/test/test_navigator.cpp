@@ -81,6 +81,28 @@ protected:
   bool toggle_{false};
 };
 
+TEST(NavigatorTests, TestNavigatorReconfigure)
+{
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test_node");
+  auto navigator = std::make_unique<Navigator>(node);
+  node->configure();
+  node->activate();
+  navigator->activate();
+  navigator->deactivate();
+  navigator.reset();
+
+  // Create and activate again
+  EXPECT_NO_THROW(navigator = std::make_unique<Navigator>(node));
+  navigator->activate();
+  navigator->deactivate();
+
+  // Reset the node
+  navigator.reset();
+  node->deactivate();
+  node->cleanup();
+  node->shutdown();
+}
+
 TEST(NavigatorTests, TestNavigator)
 {
   auto dummy_navigator_node = std::make_shared<DummyNavigationServer>();
