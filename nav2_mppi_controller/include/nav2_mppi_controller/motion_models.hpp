@@ -75,6 +75,7 @@ public:
     float max_delta_vx = model_dt_ * control_constraints_.ax_max;
     float min_delta_vx = model_dt_ * control_constraints_.ax_min;
     float max_delta_vy = model_dt_ * control_constraints_.ay_max;
+    float min_delta_vy = model_dt_ * control_constraints_.ay_min;
     float max_delta_wz = model_dt_ * control_constraints_.az_max;
 
     unsigned int n_cols = state.vx.cols();
@@ -92,7 +93,7 @@ public:
 
       if (is_holo) {
         state.cvy.col(i - 1) = state.cvy.col(i - 1)
-          .cwiseMax(state.vy.col(i - 1) - max_delta_vy)
+          .cwiseMax(state.vy.col(i - 1) + min_delta_vy)
           .cwiseMin(state.vy.col(i - 1) + max_delta_vy);
         state.vy.col(i) = state.cvy.col(i - 1);
       }
@@ -114,7 +115,7 @@ public:
 protected:
   float model_dt_{0.0};
   models::ControlConstraints control_constraints_{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
-    0.0f};
+    0.0f, 0.0f};
 };
 
 /**
