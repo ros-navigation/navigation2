@@ -80,6 +80,8 @@ protected:
   rclcpp::Logger logger_{rclcpp::get_logger("GoalOrientationScorer")};
   std::string name_;
   double orientation_tolerance_;
+  float orientation_weight_;
+  bool use_orientation_threshold_;
 };
 
 }  // namespace nav2_route

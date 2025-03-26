@@ -624,7 +624,7 @@ TEST(EdgeScorersTest, test_semantic_scoring_keys)
   EXPECT_EQ(traversal_cost, 0.0);  // 0.0 * 1.0 weight
 }
 
-TEST(EdgeScorersTest, test_goal_orientation_scoring)
+TEST(EdgeScorersTest, test_goal_orientation_threshold)
 {
   // Test Penalty scorer plugin loading + penalizing on metadata values
   auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
@@ -639,6 +639,9 @@ TEST(EdgeScorersTest, test_goal_orientation_scoring)
   nav2_util::declare_parameter_if_not_declared(
     node, "GoalOrientationScorer.orientation_tolerance",
     rclcpp::ParameterValue(1.57));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "GoalOrientationScorer.use_orientation_threshold",
+    rclcpp::ParameterValue(true));
 
   EdgeScorer scorer(node, tf_buffer);
   EXPECT_EQ(scorer.numPlugins(), 1);  // GoalOrientationScorer
@@ -686,6 +689,77 @@ TEST(EdgeScorersTest, test_goal_orientation_scoring)
   EXPECT_THROW(scorer.score(&edge, route_data, edge_type, traversal_cost), nav2_core::InvalidCriticUse);
 }
 
+TEST(EdgeScorersTest, test_goal_orientation_scoring)
+{
+  // Test Penalty scorer plugin loading + penalizing on metadata values
+  auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer;
+
+  double orientation_weight = 100.0;
+
+  node->declare_parameter(
+    "edge_cost_functions",
+    rclcpp::ParameterValue(std::vector<std::string>{"GoalOrientationScorer"}));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "GoalOrientationScorer.plugin",
+    rclcpp::ParameterValue(std::string{"nav2_route::GoalOrientationScorer"}));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "GoalOrientationScorer.orientation_tolerance",
+    rclcpp::ParameterValue(1.57));
+      nav2_util::declare_parameter_if_not_declared(
+    node, "GoalOrientationScorer.use_orientation_thershold",
+    rclcpp::ParameterValue(false));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "GoalOrientationScorer.orientation_weight",
+    rclcpp::ParameterValue(orientation_weight));
+
+
+  EdgeScorer scorer(node, tf_buffer);
+  EXPECT_EQ(scorer.numPlugins(), 1);  // GoalOrientationScorer
+
+  geometry_msgs::msg::PoseStamped start_pose, goal_pose;
+  goal_pose.pose.orientation.x = 0.0;
+  goal_pose.pose.orientation.y = 0.0;
+  goal_pose.pose.orientation.z = 0.0;
+  goal_pose.pose.orientation.w = 1.0;
+
+  RouteData route_data;
+  route_data.goal_pose = goal_pose;
+  route_data.use_poses = true;
+
+  EdgeType edge_type = EdgeType::END;
+
+  // Create edge to score
+  Node n1, n2;
+  n1.nodeid = 1;
+  n2.nodeid = 2;
+  n1.coords.x = 0.0;
+  n1.coords.y = 0.0;
+  n2.coords.x = 1.0;
+  n2.coords.y = 0.0;
+
+  DirectionalEdge edge;
+  edge.edgeid = 10;
+  edge.start = &n1;
+  edge.end = &n2;
+
+  float traversal_cost = -1;
+  EXPECT_TRUE(scorer.score(&edge, route_data, edge_type, traversal_cost));
+  EXPECT_EQ(traversal_cost, 0.0);
+
+  edge.start = &n2;
+  edge.end = &n1;
+
+
+  traversal_cost = -1;
+  EXPECT_TRUE(scorer.score(&edge, route_data, edge_type, traversal_cost));
+  EXPECT_NEAR(traversal_cost, orientation_weight * M_PI, 0.001);
+
+  route_data.use_poses = false;
+  
+  EXPECT_THROW(scorer.score(&edge, route_data, edge_type, traversal_cost), nav2_core::InvalidCriticUse);
+}
+
 TEST(EdgeScorersTest, test_start_pose_orientation_threshold)
 {
   // Test Penalty scorer plugin loading + penalizing on metadata values
@@ -706,12 +780,6 @@ TEST(EdgeScorersTest, test_start_pose_orientation_threshold)
   nav2_util::declare_parameter_if_not_declared(
     node, "StartPoseOrientationScorer.use_orientation_threshold",
     rclcpp::ParameterValue(true));
-  nav2_util::declare_parameter_if_not_declared(
-    node, "route_frame",
-    rclcpp::ParameterValue("map"));
-  nav2_util::declare_parameter_if_not_declared(
-    node, "base_frame",
-    rclcpp::ParameterValue("base_link"));
 
   EdgeScorer scorer(node, tf_buffer);
   EXPECT_EQ(scorer.numPlugins(), 1);  // GoalOrientationScorer
@@ -799,12 +867,6 @@ TEST(EdgeScorersTest, test_start_pose_orientation_scoring)
   nav2_util::declare_parameter_if_not_declared(
     node, "StartPoseOrientationScorer.orientation_weight",
     rclcpp::ParameterValue(orientation_weight));
-  nav2_util::declare_parameter_if_not_declared(
-    node, "route_frame",
-    rclcpp::ParameterValue("map"));
-  nav2_util::declare_parameter_if_not_declared(
-    node, "base_frame",
-    rclcpp::ParameterValue("base_link"));
 
   EdgeScorer scorer(node, tf_buffer);
   EXPECT_EQ(scorer.numPlugins(), 1);  // GoalOrientationScorer

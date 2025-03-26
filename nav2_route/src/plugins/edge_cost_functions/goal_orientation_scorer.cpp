@@ -31,13 +31,24 @@ void GoalOrientationScorer::configure(
 
   nav2_util::declare_parameter_if_not_declared(
     node, getName() + ".orientation_tolerance", rclcpp::ParameterValue(M_PI / 2.0));
+
+  nav2_util::declare_parameter_if_not_declared(
+    node, getName() + ".orientation_weight", rclcpp::ParameterValue(1.0));
+
+  nav2_util::declare_parameter_if_not_declared(
+    node, getName() + ".use_orientation_threshold", rclcpp::ParameterValue(false));
+  
   orientation_tolerance_ = node->get_parameter(getName() + ".orientation_tolerance").as_double();
+  orientation_weight_ =
+    static_cast<float>(node->get_parameter(getName() + ".orientation_weight").as_double());
+  use_orientation_threshold_ =
+    node->get_parameter(getName() + ".use_orientation_threshold").as_bool();
 }
 
 bool GoalOrientationScorer::score(
   const EdgePtr edge,
   const RouteData & route_data,
-  const EdgeType & edge_type, float & /* cost */)
+  const EdgeType & edge_type, float & cost)
 {
   
   if (!route_data.use_poses) {
@@ -51,9 +62,13 @@ bool GoalOrientationScorer::score(
     double goal_orientation = tf2::getYaw(route_data.goal_pose.pose.orientation);
     double d_yaw = std::abs(angles::shortest_angular_distance(edge_orientation, goal_orientation));
 
-    if (d_yaw > orientation_tolerance_) {
-      return false;
+    if (use_orientation_threshold_) {
+      if (d_yaw > orientation_tolerance_) {
+        return false;
+      }
     }
+
+    cost = orientation_weight_ * static_cast<float>(d_yaw);
   }
   return true;
 }
