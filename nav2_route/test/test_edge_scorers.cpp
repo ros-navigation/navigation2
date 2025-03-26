@@ -649,6 +649,7 @@ TEST(EdgeScorersTest, test_goal_orientation_scoring)
   goal_pose.pose.orientation.w = 1.0;
 
   RouteData route_data;
+  route_data.goal_pose = goal_pose;
 
   EdgeType edge_type = EdgeType::END;
 
@@ -722,11 +723,11 @@ TEST(EdgeScorersTest, test_start_pose_orientation_threshold)
 
   tf2::Quaternion q;
   q.setRPY(0, 0, yaw);
-  tf_stamped.transform.rotation.x = q.getX();
-  tf_stamped.transform.rotation.y = q.getY();
-  tf_stamped.transform.rotation.z = q.getZ();
-  tf_stamped.transform.rotation.w = q.getW();
-  tf_broadcaster_->sendTransform(tf_stamped);
+  // tf_stamped.transform.rotation.x = q.getX();
+  // tf_stamped.transform.rotation.y = q.getY();
+  // tf_stamped.transform.rotation.z = q.getZ();
+  // tf_stamped.transform.rotation.w = q.getW();
+  // tf_broadcaster_->sendTransform(tf_stamped);
 
 
   geometry_msgs::msg::PoseStamped start_pose, goal_pose;
@@ -735,7 +736,20 @@ TEST(EdgeScorersTest, test_start_pose_orientation_threshold)
   goal_pose.pose.orientation.z = 0.0;
   goal_pose.pose.orientation.w = 1.0;
 
+  start_pose.header.frame_id = "map";
+  start_pose.header.stamp = node->get_clock()->now();
+  
+  start_pose.pose.position.x = 0.0;
+  start_pose.pose.position.x = 0.0;
+  start_pose.pose.position.z = 0.0;
+
+  start_pose.pose.orientation.x = q.getX();
+  start_pose.pose.orientation.y = q.getY();
+  start_pose.pose.orientation.z = q.getZ();
+  start_pose.pose.orientation.w = q.getW();
+
   RouteData route_data;
+  route_data.start_pose = start_pose;
 
   EdgeType edge_type = EdgeType::START;
 

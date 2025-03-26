@@ -37,15 +37,15 @@ void GoalOrientationScorer::configure(
 bool GoalOrientationScorer::score(
   const EdgePtr edge,
   const geometry_msgs::msg::PoseStamped & /* start_pose */, 
-  const geometry_msgs::msg::PoseStamped & goal_pose, 
-  const RouteData & /* route_data */,
+  const geometry_msgs::msg::PoseStamped & /* goal_pose */, 
+  const RouteData & route_data,
   const EdgeType & edge_type, float & /* cost */)
 {
   if (edge_type == EdgeType::END) {
     double edge_orientation = std::atan2(
       edge->end->coords.y - edge->start->coords.y,
       edge->end->coords.x - edge->start->coords.x);
-    double goal_orientation = tf2::getYaw(goal_pose.pose.orientation);
+    double goal_orientation = tf2::getYaw(route_data.goal_pose.pose.orientation);
     double d_yaw = std::abs(angles::shortest_angular_distance(edge_orientation, goal_orientation));
 
     if (d_yaw > orientation_tolerance_) {
