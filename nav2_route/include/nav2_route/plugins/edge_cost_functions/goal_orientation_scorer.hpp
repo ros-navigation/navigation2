@@ -34,9 +34,11 @@ namespace nav2_route
 
 /**
  * @class GoalOrientationScorer
- * @brief Rejects or accepts final edge depending on the edge's deviation 
- * from the goal pose orientation. If the deviation is above some user 
- * defined threshold, false is returned, if it is below, true is returned
+ * @brief Scores an edge leading to the goal node by comparing the orientation of the route 
+ * pose and the orientation of the edge by multiplying the deviation from the desired 
+ * orientation with a user defined weight. An alternative method can be selected, with 
+ * the use_orientation_threshold flag, which rejects the edge it is greater than some 
+ * tolerance
  */
 class GoalOrientationScorer : public EdgeCostFunction
 {
