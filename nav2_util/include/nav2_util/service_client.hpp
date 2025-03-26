@@ -155,7 +155,13 @@ public:
       node_->get_logger(), "%s service client: send async request",
       service_name_.c_str());
     auto future_result = client_->async_send_request(request);
-    future_result.wait();
+    if(callback_group_executor_) {
+      // Internal thread is spinning executor already
+      future_result.wait();
+    } else {
+      // No internal spin thread; spin node directly
+      rclcpp::spin_until_future_complete(node_, future_result);
+    }
     response = future_result.get();
     return response.get();
   }
