@@ -20,11 +20,11 @@ from pathlib import Path
 import time
 from typing import Any, cast, Dict, List, TypedDict
 
-import constants
-from lattice_generator import ConfigDict, LatticeGenerator
 import matplotlib.pyplot as plt
+from nav2_smac_planner.lattice_primitives import constants
+from nav2_smac_planner.lattice_primitives.lattice_generator import ConfigDict, LatticeGenerator
+from nav2_smac_planner.lattice_primitives.trajectory import Trajectory
 import numpy as np
-from trajectory import Trajectory
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

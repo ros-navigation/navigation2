@@ -15,7 +15,7 @@
 from dataclasses import dataclass
 from typing import Any, Union
 
-from helper import angle_difference, normalize_angle
+from nav2_smac_planner.lattice_primitives.helper import angle_difference, normalize_angle
 import numpy as np
 from numpy.typing import NDArray
 
@@ -61,9 +61,10 @@ class TrajectoryParameters:
     @property
     def arc_length(self) -> TrajectoryFloat:
         """Arc length of the trajectory."""
-        return self.turning_radius * angle_difference(
+        result: TrajectoryFloat = self.turning_radius * angle_difference(
             self.start_angle, self.end_angle, self.left_turn
         )
+        return result
 
     @property
     def start_straight_length(self) -> AnyFloat:

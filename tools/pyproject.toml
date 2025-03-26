@@ -12,3 +12,11 @@ write-changes = false
 profile = "google"
 force_single_line = false
 line_length = 99
+
+[tool.mypy]
+explicit_package_bases = true
+strict = true
+
+[[tool.mypy.overrides]]
+module = ["matplotlib.*", "rtree.*"]
+ignore_missing_imports = true
