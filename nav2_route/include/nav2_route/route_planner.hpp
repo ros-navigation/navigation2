@@ -90,7 +90,8 @@ protected:
     Graph & graph, const NodePtr start_node, const NodePtr goal_node,
     const std::vector<unsigned int> & blocked_ids,
     const geometry_msgs::msg::PoseStamped & start_pose,
-    const geometry_msgs::msg::PoseStamped & goal_pose);
+    const geometry_msgs::msg::PoseStamped & goal_pose,
+    const RouteData & route_data);
 
   /**
    * @brief Gets the traversal cost for an edge using edge scorers
@@ -101,7 +102,7 @@ protected:
    */
   inline bool getTraversalCost(
     const EdgePtr edge, float & score, const std::vector<unsigned int> & blocked_ids,
-    const geometry_msgs::msg::PoseStamped & start, const geometry_msgs::msg::PoseStamped & goal);
+    const geometry_msgs::msg::PoseStamped & start, const geometry_msgs::msg::PoseStamped & goal, const RouteData & route_data);
 
   /**
    * @brief Gets the next node in the priority queue for search
