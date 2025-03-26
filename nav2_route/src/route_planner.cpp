@@ -43,7 +43,8 @@ Route RoutePlanner::findRoute(
   Graph & graph, unsigned int start_index, unsigned int goal_index,
   const std::vector<unsigned int> & blocked_ids,
   const geometry_msgs::msg::PoseStamped & start_pose,
-  const geometry_msgs::msg::PoseStamped & goal_pose)
+  const geometry_msgs::msg::PoseStamped & goal_pose,
+  const RouteData & /* route_data */)
 {
   if (graph.empty()) {
     throw nav2_core::NoValidGraph("Graph is invalid for routing!");

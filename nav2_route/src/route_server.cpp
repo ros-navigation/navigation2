@@ -216,11 +216,17 @@ Route RouteServer::findRoute(
     route.start_node = &graph_.at(start_route);
   } else {
     //populate struct with start id, goal id, start pose, goal pose, and whether we are using pose
+    RouteData route_data;
+    route_data.start_nodeid = start_route;
+    route_data.goal_nodeid = end_route;
+    route_data.start_pose = goal_intent_extractor_->getStart();
+    route_data.goal_pose = goal->goal;
+    route_data.use_poses = goal->use_poses;
 
     // Compute the route via graph-search, returns a node-edge sequence
     route = route_planner_->findRoute(
       graph_, start_route, end_route, rerouting_info.blocked_ids, goal_intent_extractor_->getStart(),
-      goal->goal);
+      goal->goal, route_data);
   }
 
   return goal_intent_extractor_->pruneStartandGoal(route, goal, rerouting_info);
