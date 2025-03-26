@@ -64,6 +64,7 @@ EdgeScorer::EdgeScorer(
 
 bool EdgeScorer::score(
   const EdgePtr edge, const geometry_msgs::msg::PoseStamped & start_pose, const geometry_msgs::msg::PoseStamped & goal_pose,
+  const RouteData & route_data,
   const EdgeType & edge_type, float & total_score)
 {
   total_score = 0.0;
@@ -75,7 +76,7 @@ bool EdgeScorer::score(
 
   for (auto & plugin : plugins_) {
     curr_score = 0.0;
-    if (plugin->score(edge, start_pose, goal_pose, edge_type, curr_score)) {
+    if (plugin->score(edge, start_pose, goal_pose, route_data, edge_type, curr_score)) {
       total_score += curr_score;
     } else {
       return false;
