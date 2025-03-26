@@ -41,6 +41,7 @@ void PenaltyScorer::configure(
 
 bool PenaltyScorer::score(
   const EdgePtr edge,
+  const geometry_msgs::msg::PoseStamped & /* start_pose */, 
   const geometry_msgs::msg::PoseStamped & /* goal_pose */,
   const EdgeType & /* edge_type */, float & cost)
 {
