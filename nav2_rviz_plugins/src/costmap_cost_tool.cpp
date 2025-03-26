@@ -56,12 +56,12 @@ void CostmapCostTool::onInitialize()
     std::make_shared<nav2_util::ServiceClient<nav2_msgs::srv::GetCosts>>(
       "/local_costmap/get_cost_local_costmap",
       node,
-      node->get_node_base_interface()->get_default_callback_group());
+      false);
   global_cost_client_ =
     std::make_shared<nav2_util::ServiceClient<nav2_msgs::srv::GetCosts>>(
       "/global_costmap/get_cost_global_costmap",
       node,
-      node->get_node_base_interface()->get_default_callback_group());
+      false);
 }
 
 void CostmapCostTool::activate() {}
@@ -111,7 +111,7 @@ void CostmapCostTool::callCostService(float x, float y)
   request->use_footprint = false;
 
   // Call local costmap service
-  if(local_cost_client_->wait_for_service(std::chrono::seconds(1))) {
+  if (local_cost_client_->wait_for_service(std::chrono::seconds(1))) {
     local_cost_client_->async_call(
       request,
       std::bind(&CostmapCostTool::handleLocalCostResponse, this, std::placeholders::_1));

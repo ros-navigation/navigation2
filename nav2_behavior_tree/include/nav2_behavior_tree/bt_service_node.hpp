@@ -110,14 +110,8 @@ public:
     if (service_new != service_name_ || !service_client_) {
       service_name_ = service_new;
       node_ = config().blackboard->template get<rclcpp::Node::SharedPtr>("node");
-      callback_group_ = node_->create_callback_group(
-        rclcpp::CallbackGroupType::MutuallyExclusive,
-        false);
-      callback_group_executor_.add_callback_group(callback_group_,
-          node_->get_node_base_interface());
-
       service_client_ = std::make_shared<nav2_util::ServiceClient<ServiceT>>(
-      service_name_, node_, callback_group_);
+      service_name_, node_, true);
     }
   }
 
@@ -219,15 +213,15 @@ public:
     if (remaining > std::chrono::milliseconds(0)) {
       auto timeout = remaining > max_timeout_ ? max_timeout_ : remaining;
 
-      rclcpp::FutureReturnCode rc;
-      rc = callback_group_executor_.spin_until_future_complete(future_result_, timeout);
-      if (rc == rclcpp::FutureReturnCode::SUCCESS) {
+      std::future_status future;
+      future = future_result_.wait_for(timeout);
+      if(future == std::future_status::ready) {
         request_sent_ = false;
         BT::NodeStatus status = on_completion(future_result_.get());
         return status;
       }
 
-      if (rc == rclcpp::FutureReturnCode::TIMEOUT) {
+      if (future == std::future_status::timeout) {
         on_wait_for_result();
         elapsed = (node_->now() - sent_time_).template to_chrono<std::chrono::milliseconds>();
         if (elapsed < server_timeout_) {
@@ -269,8 +263,6 @@ protected:
 
   // The node that will be used for any ROS operations
   rclcpp::Node::SharedPtr node_;
-  rclcpp::CallbackGroup::SharedPtr callback_group_;
-  rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
 
   // The timeout value while to use in the tick loop while waiting for
   // a result from the server

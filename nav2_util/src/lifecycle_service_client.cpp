@@ -33,8 +33,8 @@ namespace nav2_util
 LifecycleServiceClient::LifecycleServiceClient(
   const string & lifecycle_node_name)
 : node_(generate_internal_node(lifecycle_node_name + "_lifecycle_client")),
-  change_state_(lifecycle_node_name + "/change_state", node_),
-  get_state_(lifecycle_node_name + "/get_state", node_)
+  change_state_(lifecycle_node_name + "/change_state", node_, true),
+  get_state_(lifecycle_node_name + "/get_state", node_, true)
 {
   // Block until server is up
   rclcpp::Rate r(20);
@@ -49,8 +49,8 @@ LifecycleServiceClient::LifecycleServiceClient(
   const string & lifecycle_node_name,
   rclcpp::Node::SharedPtr parent_node)
 : node_(parent_node),
-  change_state_(lifecycle_node_name + "/change_state", node_),
-  get_state_(lifecycle_node_name + "/get_state", node_)
+  change_state_(lifecycle_node_name + "/change_state", node_, true),
+  get_state_(lifecycle_node_name + "/get_state", node_, true)
 {
   // Block until server is up
   rclcpp::Rate r(20);

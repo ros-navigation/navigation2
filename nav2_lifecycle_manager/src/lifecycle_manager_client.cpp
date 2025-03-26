@@ -37,9 +37,9 @@ LifecycleManagerClient::LifecycleManagerClient(
 
   // Create the service clients
   manager_client_ = std::make_shared<nav2_util::ServiceClient<ManageLifecycleNodes>>(
-    manage_service_name_, node_);
+    manage_service_name_, node_, true);
   is_active_client_ = std::make_shared<nav2_util::ServiceClient<std_srvs::srv::Trigger>>(
-    active_service_name_, node_);
+    active_service_name_, node_, true);
 }
 
 bool

@@ -28,7 +28,7 @@ IsPathValidCondition::IsPathValidCondition(
 {
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
   client_ = std::make_shared<nav2_util::ServiceClient<nav2_msgs::srv::IsPathValid>>("is_path_valid",
-      node_);
+      node_, false);
 
   server_timeout_ = config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
 }
