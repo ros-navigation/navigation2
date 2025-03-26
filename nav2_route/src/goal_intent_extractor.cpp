@@ -195,6 +195,11 @@ Route GoalIntentExtractor::pruneStartandGoal(
   return pruned_route;
 }
 
+geometry_msgs::msgs::PoseStamped  GoalIntentExtractor::getStart()
+{
+  return start_;
+}
+
 template Route GoalIntentExtractor::pruneStartandGoal<nav2_msgs::action::ComputeRoute::Goal>(
   const Route & input_route,
   const std::shared_ptr<const nav2_msgs::action::ComputeRoute::Goal> goal,

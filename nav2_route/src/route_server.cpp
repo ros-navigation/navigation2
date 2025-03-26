@@ -217,7 +217,7 @@ Route RouteServer::findRoute(
   } else {
     // Compute the route via graph-search, returns a node-edge sequence
     route = route_planner_->findRoute(
-      graph_, start_route, end_route, rerouting_info.blocked_ids,
+      graph_, start_route, end_route, rerouting_info.blocked_ids, goal_intent_extractor->getStart(),
       goal->goal);
   }
 

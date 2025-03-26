@@ -111,6 +111,12 @@ public:
    */
   void overrideStart(const geometry_msgs::msg::PoseStamped & start_pose);
 
+  /**
+   * @brief gets the desired start pose
+   * @return PoseStamped of start pose
+   */
+  geometry_msgs::msgs::PoseStamped getStart();
+
 protected:
   rclcpp::Logger logger_{rclcpp::get_logger("GoalIntentExtractor")};
   std::shared_ptr<NodeSpatialTree> node_spatial_tree_;
