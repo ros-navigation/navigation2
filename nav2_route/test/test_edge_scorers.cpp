@@ -26,6 +26,7 @@
 #include "nav2_msgs/srv/dynamic_edges.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_2d_publisher.hpp"
+#include "nav2_core/route_exceptions.hpp"
 #include "tf2_ros/static_transform_broadcaster.h"
 #include "tf2_ros/transform_listener.h"
 
@@ -650,6 +651,7 @@ TEST(EdgeScorersTest, test_goal_orientation_scoring)
 
   RouteData route_data;
   route_data.goal_pose = goal_pose;
+  route_data.use_poses = true;
 
   EdgeType edge_type = EdgeType::END;
 
@@ -678,6 +680,10 @@ TEST(EdgeScorersTest, test_goal_orientation_scoring)
   traversal_cost = -1;
   EXPECT_FALSE(scorer.score(&edge, route_data, edge_type, traversal_cost));
   EXPECT_EQ(traversal_cost, 0.0);
+
+  route_data.use_poses = false;
+  
+  EXPECT_THROW(scorer.score(&edge, route_data, edge_type, traversal_cost), nav2_core::InvalidCriticUse);
 }
 
 TEST(EdgeScorersTest, test_start_pose_orientation_threshold)
@@ -710,25 +716,10 @@ TEST(EdgeScorersTest, test_start_pose_orientation_threshold)
   EdgeScorer scorer(node, tf_buffer);
   EXPECT_EQ(scorer.numPlugins(), 1);  // GoalOrientationScorer
 
-  std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_broadcaster_ =
-    std::make_shared<tf2_ros::StaticTransformBroadcaster>(node);
-  geometry_msgs::msg::TransformStamped tf_stamped;
-  tf_stamped.header.frame_id = "map";
-  tf_stamped.header.stamp = node->get_clock()->now();
-  tf_stamped.child_frame_id = "base_link";
-  tf_stamped.transform.translation.x = 0.0;
-  tf_stamped.transform.translation.y = 0.0;
-  tf_stamped.transform.translation.z = 0.0;
   double yaw = 0.0;
 
   tf2::Quaternion q;
   q.setRPY(0, 0, yaw);
-  // tf_stamped.transform.rotation.x = q.getX();
-  // tf_stamped.transform.rotation.y = q.getY();
-  // tf_stamped.transform.rotation.z = q.getZ();
-  // tf_stamped.transform.rotation.w = q.getW();
-  // tf_broadcaster_->sendTransform(tf_stamped);
-
 
   geometry_msgs::msg::PoseStamped start_pose, goal_pose;
   goal_pose.pose.orientation.x = 0.0;
@@ -750,6 +741,7 @@ TEST(EdgeScorersTest, test_start_pose_orientation_threshold)
 
   RouteData route_data;
   route_data.start_pose = start_pose;
+  route_data.use_poses = true;
 
   EdgeType edge_type = EdgeType::START;
 
@@ -776,6 +768,10 @@ TEST(EdgeScorersTest, test_start_pose_orientation_threshold)
 
   EXPECT_FALSE(scorer.score(&edge, route_data, edge_type, traversal_cost));
   EXPECT_EQ(traversal_cost, 0.0);
+
+  route_data.use_poses = false;
+  
+  EXPECT_THROW(scorer.score(&edge, route_data, edge_type, traversal_cost), nav2_core::InvalidCriticUse);
 }
 
 TEST(EdgeScorersTest, test_start_pose_orientation_scoring)
@@ -812,26 +808,11 @@ TEST(EdgeScorersTest, test_start_pose_orientation_scoring)
 
   EdgeScorer scorer(node, tf_buffer);
   EXPECT_EQ(scorer.numPlugins(), 1);  // GoalOrientationScorer
-
-  std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_broadcaster_ =
-    std::make_shared<tf2_ros::StaticTransformBroadcaster>(node);
-  geometry_msgs::msg::TransformStamped tf_stamped;
-  tf_stamped.header.frame_id = "map";
-  tf_stamped.header.stamp = node->get_clock()->now();
-  tf_stamped.child_frame_id = "base_link";
-  tf_stamped.transform.translation.x = 0.0;
-  tf_stamped.transform.translation.y = 0.0;
-  tf_stamped.transform.translation.z = 0.0;
+  
   double yaw = 0.0;
 
   tf2::Quaternion q;
   q.setRPY(0, 0, yaw);
-  tf_stamped.transform.rotation.x = q.getX();
-  tf_stamped.transform.rotation.y = q.getY();
-  tf_stamped.transform.rotation.z = q.getZ();
-  tf_stamped.transform.rotation.w = q.getW();
-  tf_broadcaster_->sendTransform(tf_stamped);
-
 
   geometry_msgs::msg::PoseStamped start_pose, goal_pose;
   goal_pose.pose.orientation.x = 0.0;
@@ -839,7 +820,22 @@ TEST(EdgeScorersTest, test_start_pose_orientation_scoring)
   goal_pose.pose.orientation.z = 0.0;
   goal_pose.pose.orientation.w = 1.0;
 
+  start_pose.header.frame_id = "map";
+  start_pose.header.stamp = node->get_clock()->now();
+  
+  start_pose.pose.position.x = 0.0;
+  start_pose.pose.position.x = 0.0;
+  start_pose.pose.position.z = 0.0;
+
+  start_pose.pose.orientation.x = q.getX();
+  start_pose.pose.orientation.y = q.getY();
+  start_pose.pose.orientation.z = q.getZ();
+  start_pose.pose.orientation.w = q.getW();
+
+
   RouteData route_data;
+  route_data.start_pose = start_pose;
+  route_data.use_poses = true;
 
   EdgeType edge_type = EdgeType::START;
 
@@ -866,4 +862,9 @@ TEST(EdgeScorersTest, test_start_pose_orientation_scoring)
 
   EXPECT_TRUE(scorer.score(&edge, route_data, edge_type, traversal_cost));
   EXPECT_NEAR(traversal_cost, orientation_weight * M_PI, 0.001);
+
+  route_data.use_poses = false;
+  
+  EXPECT_THROW(scorer.score(&edge, route_data, edge_type, traversal_cost), nav2_core::InvalidCriticUse);
+
 }

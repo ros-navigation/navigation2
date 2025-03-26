@@ -39,6 +39,11 @@ bool GoalOrientationScorer::score(
   const RouteData & route_data,
   const EdgeType & edge_type, float & /* cost */)
 {
+  
+  if (!route_data.use_poses) {
+    throw nav2_core::InvalidCriticUse("Cannot use goal orientation scorer without goal pose specified!");
+  }
+
   if (edge_type == EdgeType::END) {
     double edge_orientation = std::atan2(
       edge->end->coords.y - edge->start->coords.y,

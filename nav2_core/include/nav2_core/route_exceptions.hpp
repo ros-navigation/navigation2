@@ -71,6 +71,13 @@ public:
   : RouteException(description) {}
 };
 
+class InvalidCriticUse : public RouteException
+{
+public:
+  explicit InvalidCriticUse(const std::string & description)
+  : RouteException(description) {}
+};
+
 }  // namespace nav2_core
 
 #endif  // NAV2_CORE__ROUTE_EXCEPTIONS_HPP_

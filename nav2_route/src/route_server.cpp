@@ -311,6 +311,10 @@ RouteServer::processRouteRequest(
     result->error_code = ComputeAndTrackRoute::Goal::OPERATION_FAILED;
     result->error_msg = ex.what();
     action_server->terminate_current(result);
+  } catch (nav2_core::InvalidCriticUse & ex) {
+    exceptionWarning(goal, ex);
+    result->error_code = ActionT::Goal::UNKNOWN;
+    action_server->terminate_current(result);
   } catch (nav2_core::RouteException & ex) {
     exceptionWarning(goal, ex);
     result->error_code = ActionT::Goal::UNKNOWN;

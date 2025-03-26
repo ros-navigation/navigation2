@@ -53,6 +53,11 @@ bool StartPoseOrientationScorer::score(
   const RouteData & route_data,
   const EdgeType & edge_type, float & cost)
 {
+  
+  if (!route_data.use_poses) {
+    throw nav2_core::InvalidCriticUse("Cannot use start pose orientation scorer without start pose specified!");
+  }
+
   if (edge_type == EdgeType::START) {
     double edge_orientation = std::atan2(
       edge->end->coords.y - edge->start->coords.y,
